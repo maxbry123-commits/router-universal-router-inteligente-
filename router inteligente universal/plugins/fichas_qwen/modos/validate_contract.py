@@ -187,9 +187,14 @@ def loop_errors(doc: dict[str, Any]) -> list[str]:
 ESTADOS_TAREA = {"pending", "running", "verifying", "passed", "blocked_with_evidence", "skipped"}
 
 
-def check_state_errors(doc: dict) -> list[str]:
-    """Valida un state/progress.json generado por loop_controller (fail-closed)."""
+def check_state_errors(doc: dict, exclude: set[str] | None = None) -> list[str]:
+    """Valida un state/progress.json generado por loop_controller (fail-closed).
+
+    `exclude`: ids de tarea que no cuentan en la validacion (p. ej. el nodo final
+    que se esta ejecutando a si mismo: corre --check-state mientras sigue running).
+    """
     errs = []
+    excl = exclude or set()
     if not isinstance(doc, dict):
         return ["progress: no es un objeto JSON"]
     if not doc.get("contract_id") or not isinstance(doc["contract_id"], str):
@@ -209,6 +214,9 @@ def check_state_errors(doc: dict) -> list[str]:
             continue
         if not t.get("id") or not isinstance(t["id"], str):
             errs.append(f"{tag}: falta 'id'")
+            continue
+        if t["id"] in excl:
+            continue
         st = t.get("status")
         if st not in ESTADOS_TAREA:
             errs.append(f"{tag} ({t.get('id', '?')}): status invalido '{st}'")
@@ -225,10 +233,18 @@ def check_state_errors(doc: dict) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else argv
-    if len(args) == 2 and args[0] == "--check-state":
+    if len(args) >= 2 and args[0] == "--check-state":
         try:
+            excl = set()
+            rest = args[2:]
+            j = 0
+            while j < len(rest):
+                if rest[j] == "--exclude" and j + 1 < len(rest):
+                    excl.add(rest[j + 1]); j += 2
+                else:
+                    j += 1
             doc = load(Path(args[1]))
-            errors = check_state_errors(doc)
+            errors = check_state_errors(doc, exclude=excl)
         except Exception as exc:
             print(f"VEREDICTO: FAIL\n - {type(exc).__name__}: {exc}")
             return 1
@@ -240,7 +256,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"VEREDICTO: PASS (estado del bucle verificado, {len(doc.get('tasks', []))} tareas)")
         return 0
     if len(args) != 1:
-        print("Uso: python validate_contract.py ruta/contrato.json | --check-state state/progress.json\nVEREDICTO: FAIL")
+        print("Uso: python validate_contract.py ruta/contrato.json | --check-state state/progress.json [--exclude ID ...]\nVEREDICTO: FAIL")
         return 2
     try:
         file = Path(args[0])
