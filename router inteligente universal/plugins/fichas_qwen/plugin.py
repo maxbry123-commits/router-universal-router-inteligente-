@@ -1150,6 +1150,7 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
     siguiente = int(previo.get('siguiente', 1)) if isinstance(previo, dict) else 1
     resumen = str(previo.get('resumen') or '') if isinstance(previo, dict) else ''
     piezas = list(previo.get('piezas') or []) if isinstance(previo, dict) else []
+    sin_prog, trunc_n = 0, 0  # >>> PARCHE_CICLO <<< contadores: vueltas seguidas sin progreso verificable / cortes de salida
     for parte in range(siguiente, max_partes + 1):
         if opts.get('pid') in _CANCEL:
             raise RuntimeError('GAP_LOOP_CANCELADO')
@@ -1166,8 +1167,21 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
                     'Si sigue trabajo: CONTINUAR_PARTE. Si acabaste TODO con evidencia: TAREA_COMPLETA.\n'
                     'No generes informe final ni respuesta al Director entre partes.')
         antes = len(opts.setdefault('herr', {}).setdefault(nid, []))
-        texto = _llamar_harness_3(modelo, pedido, ficha, n, opts)
+        trunc = False
+        try:  # >>> PARCHE_CICLO <<< P3: corte de salida = continuacion TECNICA; el parcial se guarda como dato y nunca se ejecuta
+            texto = _llamar_harness_3(modelo, pedido, ficha, n, opts)
+        except RuntimeError as x_:
+            if not str(x_).startswith('GAP_OUTPUT_TRUNCATED'):
+                raise
+            trunc, texto, trunc_n = True, '', trunc_n + 1
+            if trunc_n > 3:
+                raise RuntimeError('GAP_LOOP_TRUNCADO_REPETIDO: 3 cortes de salida seguidos; checkpoint conservado')
+            resumen = 'SALIDA CORTADA POR LIMITE (dato parcial, NO ejecutado): ' + str((opts.get('salidas_parciales') or {}).pop(nid, '') or '')[-1400:] + chr(10) + 'Reanuda con un fragmento mas corto, sin repetir lo ya hecho.'
         delta = opts['herr'][nid][antes:]
+        if trunc:
+            opts.setdefault('out', {})['__loop__:' + nid] = {'siguiente': parte + 1, 'resumen': resumen, 'piezas': list(piezas), 'input_sha': input_sha, 'modelo': modelo, 'ultima_marca': 'TRUNCADO', 't': time.time()}
+            _ck_guardar(str(opts.get('pid') or ''), str(opts.get('fid') or ''), dict(opts['out']), estado='RUNNING')
+            continue
         piezas.append(_sin_marcas(texto))
         resumen = _sin_marcas(texto)[-1800:]
         opts.setdefault('out', {})['__loop__:' + nid] = {'siguiente': parte + 1, 'resumen': resumen, 'piezas': list(piezas),
@@ -1182,6 +1196,9 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
             opts['out'].pop('__loop__:' + nid, None)
             return '\n\n'.join(x for x in piezas if x).strip()
         if _marca(texto, 'CONTINUAR_PARTE') or any(x.get('ok') and x.get('mutacion_real') for x in delta):
+            sin_prog = 0 if any(x.get('ok') for x in delta) else sin_prog + 1  # >>> PARCHE_CICLO <<< P1: continuar solo es legitimo con progreso verificable (tool OK)
+            if sin_prog >= 3:
+                raise RuntimeError('GAP_LOOP_SIN_PROGRESO: BLOQUEADO tras %d partes seguidas sin herramienta OK; checkpoint conservado' % sin_prog)
             continue
         raise RuntimeError('GAP_LOOP_SIN_MARCA: parte %d no indico continuar ni terminar' % parte)
     raise RuntimeError('GAP_LOOP_MAX_PARTES: %d; checkpoint conservado para reanudar' % max_partes)
