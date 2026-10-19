@@ -778,11 +778,18 @@ export async function mount(root, { api, tell }) {
     if (!e || !colaTxt || !bar.querySelector('#buzon-cola').open) return;
     const tareas = (e.tareas || []).map(t => '- ' + (t.estado || '?') + ' · ' + (t.texto || t.id || '')).join('\n');
     const preg = (e.preguntas || e.pendientes || []);
-    let html = '<pre style="margin:0;white-space:pre-wrap">' + ('vuelta ' + (e.vuelta ?? '?') + '\n' + (tareas || '(sin tareas)')) + '</pre>';
+    colaTxt.textContent = '';  // DSL A07.1: DOM con textContent/createElement — el texto del modelo NUNCA entra por innerHTML
+    const pre = document.createElement('pre');
+    pre.style.cssText = 'margin:0;white-space:pre-wrap';
+    pre.textContent = 'vuelta ' + (e.vuelta ?? '?') + '\n' + (tareas || '(sin tareas)');
+    colaTxt.appendChild(pre);
     for (const pd of preg) {
-      html += '<div style="margin-top:4px">P: ' + (pd.pregunta || pd) + ' <input data-pid="' + (pd.id || '') + '" placeholder="respuesta" style="font:inherit;width:60%"><button data-resp="' + (pd.id || '') + '" style="font:inherit">Responder</button></div>';
+      const d = document.createElement('div'); d.style.marginTop = '4px';
+      d.appendChild(document.createTextNode('P: ' + (pd.pregunta || pd) + ' '));
+      const inp = document.createElement('input'); inp.dataset.pid = pd.id || ''; inp.placeholder = 'respuesta'; inp.style.cssText = 'font:inherit;width:60%';
+      const bt = document.createElement('button'); bt.dataset.resp = pd.id || ''; bt.textContent = 'Responder'; bt.style.font = 'inherit';
+      d.appendChild(inp); d.appendChild(bt); colaTxt.appendChild(d);
     }
-    colaTxt.innerHTML = html;
     colaTxt.querySelectorAll('button[data-resp]').forEach(b => b.addEventListener('click', async () => {
       const inp = colaTxt.querySelector('input[data-pid="' + b.dataset.resp + '"]');
       await fqCall('responder_pendiente', { id: b.dataset.resp, respuesta: inp ? inp.value : '' });
