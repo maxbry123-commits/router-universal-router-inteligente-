@@ -27,7 +27,11 @@
       "chat_async",
       "resultado",
       "loop_run",
-      "llm"
+      "llm",
+      "buzon_enviar",
+      "estado_objetivo",
+      "responder_pendiente",
+      "pendientes_director"
     ]
   },
   "seguridad": {
