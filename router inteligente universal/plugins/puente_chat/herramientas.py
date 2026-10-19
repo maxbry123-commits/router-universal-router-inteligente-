@@ -837,7 +837,7 @@ def _t_delegar_paralelo(a):
     subs = (a.get('subtareas') or [])[:12]
     if not subs:
         return 'GAP DELEGACION_VACIA: falta subtareas'
-    n = max(1, min(int(a.get('max_paralelo') or 6), 6))
+    n = max(1, min(int(a.get('max_paralelo') or 4), 4))  # AUDIT: tope 4 = concurrencia recomendada Token Plan (3-4 agentes)
     try:
         from plugins.fichas_qwen import plugin as _fq_d  # noqa: PLC0415
         dl_nodo = float((_fq_d._NODO_CALL.get() or {}).get('deadline') or 0)  # deadline del nodo padre (ContextVar del lado ficha)
@@ -907,7 +907,7 @@ def _t_regla_yaiwes(a):
 
 
 TOOLS.extend([
-    _fn('delegar_paralelo', 'Reparte subtareas a varios modelos/recursos A LA VEZ (max 6 en paralelo, un solo nivel; subagentes solo lectura). subtareas: [{texto, recurso?, max_tokens?}] — recurso: ficha4:<modelo> | nvcode:<modelo> | groq:<modelo>.',
+    _fn('delegar_paralelo', 'Reparte subtareas a varios modelos/recursos A LA VEZ (max 4 en paralelo, un solo nivel; subagentes solo lectura). subtareas: [{texto, recurso?, max_tokens?}] — recurso: ficha4:<modelo> | nvcode:<modelo> | groq:<modelo>.',
         {'subtareas': {'type': 'array', 'items': O}, 'max_paralelo': {'type': 'integer'}}, ['subtareas']),
     _fn('preguntar_director', 'Deja una pregunta en la cola del Director sin detenerte: devuelve "registrado" y tu sigues con otra tarea; la respuesta llega como instruccion en la siguiente vuelta.',
         {'pregunta': S, 'proceso_id': S}, ['pregunta']),

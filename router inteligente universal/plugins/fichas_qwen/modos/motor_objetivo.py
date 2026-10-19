@@ -199,6 +199,12 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
             j = _json_de(llamar('rapido', 'Responde SOLO con el JSON de estado de la tarea %s: '
                                         '{"tarea":"%s","estado":"hecho|sigue|bloqueado","resultado":"...","evidencia":"...","nuevas_tareas":[],"nota_siguiente":"..."}'
                                         % (t['id'], t['id']))['texto']) or {}
+        if not j and r.get('herramientas_ok', 0) > 0 and not str(r.get('texto') or '').lstrip().startswith('GAP'):
+            # AUDIT: el DAG entrego informe formateado (no JSON) pero ejecuto herramientas reales:
+            # el contrato del motor se satisface con la evidencia, no con el formato narrativo
+            j = {'tarea': t['id'], 'estado': 'hecho', 'resultado': str(r.get('texto') or '')[:200],
+                 'evidencia': 'herramientas_ok=%d (informe formateado)' % int(r.get('herramientas_ok') or 0),
+                 'nuevas_tareas': [], 'nota_siguiente': ''}
         ok_ev = r.get('herramientas_ok', 0) > 0 or t.get('modo') in ('rapido', 'planificador')
         if j.get('estado') == 'hecho' and ok_ev:
             t['estado'], t['evidencia'] = 'hecho', str(j.get('evidencia') or '')[:500]

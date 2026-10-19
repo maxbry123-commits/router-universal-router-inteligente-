@@ -34,7 +34,7 @@ _LAYOUT_D_SYS = ('Eres un ejecutor de tareas. NO respondas con texto de confirma
                  'Si no puedes ejecutar la herramienta, devuelve un error estructurado, no un acuse.')  # INPUT 129 Claude: system del layout D_solo_tarea
 _CIERRE_USER = 'Responde con el RESULTADO. Si hay herramienta para esto, llámala en este turno. Nunca acuses recibo.'  # DSL G3: el user siempre cierra con esta linea fija (recencia)
 _ULT_POLL: dict[str, float] = {}  # fix 7: ultima vez que el chat pregunto por el proceso (/resultado)
-HUERFANO_S = 180  # fix 7: proceso sin /resultado en 180 s = nadie lo espera -> se cancela y libera la cola
+HUERFANO_S = 900  # fix 7 + AUDIT: 180 s mataba tareas largas LOOP desde el movil; 15 min da margen al polling lento
 _LOCK = threading.Lock()
 _PROCESOS: dict[str, tuple[Any, float]] = {}
 _CANCEL: set[str] = set()  # procesos que el usuario detuvo con Detener: no se lanzan mas pasos
@@ -236,7 +236,7 @@ _TAREAS = {}  # plan pendiente de aprobacion por (ficha, conversacion)
 _FORMATO = ('RESUMEN CORTO', 'DIAGRAMA', 'CHECK', 'VALIDACION', 'RUTAS')
 _FMT_DEF = 'FORMATO OBLIGATORIO DE PLAN Y SALIDA. Cinco secciones, cada una con su encabezado en una linea propia: 1) RESUMEN CORTO (2 a 4 lineas). 2) DIAGRAMA DE FLUJO del workflow Loop en horizontal, de izquierda a derecha con flechas y la vuelta del loop; copia el DIAGRAMA REAL que se te adjunta. 3) CHECK LISTA: una linea por tarea, con ✅ las realizadas y ⬜ las pendientes. 4) VALIDACION de cambios o verificacion: que se verifico, con que evidencia real (archivo, commit, prueba, resultado) y que no se pudo verificar. 5) 3 RUTAS para mejorar, cambiar o tarea por hacer. La ruta 1 SIEMPRE propone activar la nueva verificacion: auditoria forense X-Ray, verificacion cruzada con el codigo fuente y verificacion cruzada con el input block verbatim del Director (si el Director responde ok o confirmo, la hacen Qwen 3.8 Flash, DeepSeek V4 Flash y Qwen 3.8 Flash a la vez: revisan, refactorizan, resuelven gaps y mejoran lo ya hecho). Sin parrafos largos ni trazas internas. En el PLAN: CHECK LISTA = tareas pendientes, VALIDACION = como se verificara, y termina con la linea ESPERANDO_APROBACION.'
 _PANEL_DEF = ['ficha-qwen37flash', 'ficha-dsv4flash', 'ficha-qwen38flash']  # verificacion cruzada: 3 modelos distintos, sin duplicados (GLM 5.2 solo si el Director lo ordena)
-_NOMBRES = {'ficha-qwen37flash': 'Qwen 3.7 Flash', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-glm52': 'GLM 5.2', 'ficha-qwen38flash': 'Qwen 3.8 Flash'}
+_NOMBRES = {'ficha-qwen37flash': 'Qwen 3.6 Flash', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-glm52': 'GLM 5.2', 'ficha-qwen38flash': 'Qwen 3.8 Flash'}
 _VERIF = {}  # propuesta de verificacion cruzada pendiente por (ficha, conversacion)
 
 
@@ -314,7 +314,7 @@ def _asegurar_formato_base(texto, ficha, nid, nodos, elegido, opts, plan=False):
     return '', ', '.join(_faltan(r or texto, ficha))
 
 
-_NOMBRES_V = {'ficha-qwen37flash': 'Qwen 3.7 Flash', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-qwen38flash': 'Qwen 3.8 Flash', 'ficha-glm52': 'GLM 5.2'}
+_NOMBRES_V = {'ficha-qwen37flash': 'Qwen 3.6 Flash', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-qwen38flash': 'Qwen 3.8 Flash', 'ficha-glm52': 'GLM 5.2'}
 
 
 def _con_propuesta(t: str, ficha: dict[str, Any]) -> str:
@@ -708,7 +708,7 @@ _FAST_TASKS_BLOQUEADOS = {'tool', 'code', 'debug', 'refactor', 'frontend', 'reas
 _NO_CONSULTA = re.compile(r'(?i)\b(audit|x-?ray|forens|deploy|despliega|commit|push|herramienta|tools?|ejecuta|ejecutar|agente|workflow|repo\b|repositorio|github|archivo|/aprobar)')
 _NOMBRES = {'ficha-qwen38max': 'Qwen 3.8 Max', 'ficha-qwen38flash': 'Qwen 3.8 Flash', 'ficha-qwen37max': 'Qwen 3.7 Max', 'ficha-qwen37plus': 'Qwen 3.7 Plus',
             'ficha-qwen36flash': 'Qwen 3.6 Flash', 'ficha-dsv4pro': 'DeepSeek V4 Pro', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-glm52': 'GLM 5.2',
-            'ficha-qwen37flash': 'Qwen 3.7 Flash'}  # nombre visible del panel de verificacion cruzada
+            'ficha-qwen37flash': 'Qwen 3.6 Flash'}  # nombre visible del panel de verificacion cruzada
 
 
 def _fast_cfg(ficha: dict[str, Any]) -> dict[str, Any]:

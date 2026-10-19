@@ -722,7 +722,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             if tools:
                 cuerpo['tools'] = tools
                 cuerpo['tool_choice'] = 'auto'
-                if _FORCE_TOOL.get():  # FIX glm52 INPUT 129: el reintento exige la tool
+                if _FORCE_TOOL.get() and not str(modelo).startswith('qwen'):  # FIX glm52 INPUT 129: required solo donde el proveedor lo admite; Qwen solo acepta auto (HTTP 400 en required)
                     cuerpo['tool_choice'] = 'required'
             pol = _politica(modelo) if proveedor == 'qwencloud' else {}
             _POL.set(pol)
@@ -832,8 +832,16 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 continue
             if ultimo[0] in (404, 410):
                 return ultimo  # modelo retirado/inexistente (p. ej. kimi-k3 en NVIDIA = 410): ninguna clave lo arregla
-            if ultimo[0] in (401, 403, 429):
-                muertas.add(i)  # clave sin acceso o sin cuota: no insistir en la segunda vuelta
+            if ultimo[0] in (401, 403):
+                muertas.add(i)  # clave sin acceso: no insistir en la segunda vuelta
+                continue
+            if ultimo[0] == 429:
+                det429 = json.dumps(ultimo[1]).lower()
+                if 'insufficient_quota' in det429 or 'quota' in det429 and 'rate' not in det429:
+                    muertas.add(i)  # 429 por cuota agotada: la clave no sirve este ciclo
+                else:
+                    _r429 = fin - time.monotonic()  # 429 rate-limit: la clave sigue viva; espera corta y sigue la otra clave
+                    time.sleep(min(10, max(0.5, _r429 - 5))) if _r429 > 6 else None
                 continue
             if ultimo[0] == 400:
                 detalle = json.dumps(ultimo[1])
@@ -2719,20 +2727,25 @@ _QWEN_CACHE = {}
 
 
 def _qwen_conf():
-    if "k" not in _QWEN_CACHE:
+    import os
+    sello = _CONFIG_DIR / "modelos-14.cordis.yml.sello"
+    mtime = sello.stat().st_mtime if sello.exists() else 0
+    if "k" not in _QWEN_CACHE or _QWEN_CACHE.get("mtime") != mtime:
+        # AUDIT: clave renovada en el sello -> recargar (nunca cachear una credencial vieja)
+        _QWEN_CACHE.clear()
         import hashlib
-        import os
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
         clave = os.environ.get("FICHA_CLAVE_BANCO") or os.environ.get("RIU_VAULT_PASSPHRASE") or ""
         if not clave:
             raise RuntimeError("SIN_CLAVE_DEL_BANCO_EN_EL_ROUTER")
-        blob = (_CONFIG_DIR / "modelos-14.cordis.yml.sello").read_bytes()
+        blob = sello.read_bytes()
         cab = b"FICHA-SELLO-1"
         k = len(cab)
         llave = hashlib.scrypt(clave.encode(), salt=blob[k:k + 16], n=2 ** 15, r=8, p=1, dklen=32, maxmem=2 ** 26)
         texto = AESGCM(llave).decrypt(blob[k + 16:k + 28], blob[k + 28:], cab).decode("utf-8")
         _QWEN_CACHE["k"] = re.search(r'apiKey:\s*"([^"]+)"', texto).group(1)
         _QWEN_CACHE["url"] = re.search(r'baseURL:\s*"([^"]+)"', texto).group(1).rstrip("/")
+        _QWEN_CACHE["mtime"] = mtime
     return _QWEN_CACHE["k"], _QWEN_CACHE["url"]
 
 

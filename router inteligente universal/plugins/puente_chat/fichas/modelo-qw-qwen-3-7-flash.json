@@ -1,12 +1,13 @@
 {
   "id": "qw-qwen-3-7-flash",
-  "nombre": "Qwen 3.7 Flash",
+  "nombre": "Qwen 3.6 Flash",
   "proveedor": "qwencloud",
-  "modelo": "qwen3.7-flash",
+  "modelo": "qwen3.6-flash",
   "timeout_s": 90,
   "tipo": "api",
   "claves": "banco",
   "rotacion": "mismo-modelo",
   "herramientas": true,
-  "memoria": true
+  "memoria": true,
+  "nota": "AUDIT 19-oct: qwen3.7-flash no esta en Token Plan Individual (404); apunta a qwen3.6-flash conservando id/revisor distinto"
 }
