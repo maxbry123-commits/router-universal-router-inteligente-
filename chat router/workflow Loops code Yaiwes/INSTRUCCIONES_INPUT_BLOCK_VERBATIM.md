@@ -3,7 +3,7 @@
 Fuente de la verdad: todos los inputs/instrucciones/prompts recibidos de Antonio en esta sesión, texto exacto 1 a 1, sin resumir ni editar.
 
 - Sesión: `devin-6ae7e452334a4819bc462545418a6daa` (web, usuario Antonio / maxbry123-commits)
-- Mensajes: **124** (extraídos del historial de eventos de la sesión)
+- Mensajes: **125** (extraídos del historial de eventos de la sesión)
 - Generado: 2026-10-18 UTC
 - Anexos de texto: **27** archivos únicos (dedupe sha256) · Imágenes: **41** únicas
 - Las líneas `ATTACHMENT:"url"` dentro de los mensajes se conservan verbatim; el contenido de cada adjunto de texto está en ANEXOS al final.
@@ -13715,6 +13715,21 @@ vasa hacer esta tarea 1 a 1 imput block verbartin que te manda  Claude y luego h
 
 # FIX: el modelo responde al envoltorio de gobernanza ("entendido") en vez de ejecutar la tarea
 [FIX completo de Claude con secciones 1-6: diagnostico A/B, soluciones S1-S7, codigo prompt_layouts.py, test_prompt_layouts.py (7 tests), integracion parche quirúrgico en marcadores MODOS, prompt para Devin — copiado 1 a 1 en modos/prompt_layouts.py y modos/test_prompt_layouts.py; texto integro del bloque disponible en el adjunto del mensaje]
+
+---
+
+## INPUT 125 — 2026-10-19 (sesion devin-6ae7e452334a4819bc462545418a6daa)
+
+te muestro soluciones — analisis de Claude (recibido verbatim):
+
+- El ACK no es ejecucion: assistant.content="Entendido..." con tool_calls=[] debe ser NODE_FAILURE_RETRYABLE (REQUIRED_TOOL_NOT_EXECUTED), no NODE_SUCCESS. El modelo propone, el sistema ejecuta.
+- 7 categorias de fallo (hoy colapsadas en HERRAMIENTA_NO_EJECUTADA): ACK_ONLY, NO_TOOL_DECISION, TOOL_IN_REASONING, TOOL_PARSE_FAILURE, TOOL_DISPATCH_FAILURE, TOOL_EXECUTION_FAILURE, TOOL_EXECUTED.
+- Qwen3.8: prompt corto -> tool_calls correcto; prompt largo -> texto plano. Respalda D_solo_tarea (reducir interferencia contextual).
+- DeepSeek V4 (dsv4flash/pro): tools en reasoning nunca se despachan; thinking activo por defecto; politica = D_solo_tarea + tools minimos + thinking configurable + retry alternando thinking + contexto fresco.
+- Thinking on/off por MODELO, no universal.
+- Tres capas: layout B (mejora instruccion), D_solo_tarea (reduce interferencia), executor determinista (garantiza que respuesta sin ejecucion no se acepta).
+
+sigue modo recepción
 
 ---
 
