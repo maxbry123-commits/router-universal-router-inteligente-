@@ -142,10 +142,17 @@ def github_escribir(a):
 
 
 def github_api(a):
-    metodo = str(a.get('metodo') or 'GET').upper()
+    metodo = str(a.get('metodo') or a.get('method') or 'GET').upper()
     if metodo not in ('GET', 'POST', 'PUT', 'PATCH', 'DELETE'):
         return 'ERROR: metodo invalido'
-    st, d = _peticion(metodo, API + a.get('ruta', ''), a.get('cuerpo'))
+    ruta = str(a.get('ruta') or a.get('endpoint') or a.get('path') or '').strip()  # mismos alias que herramientas.github_api
+    if ruta.startswith('https://api.github.com'):
+        ruta = ruta[len('https://api.github.com'):]
+    elif ruta.startswith('api.github.com'):
+        ruta = ruta[len('api.github.com'):]
+    if ruta and not ruta.startswith('/'):
+        ruta = '/' + ruta
+    st, d = _peticion(metodo, API + ruta, a.get('cuerpo') or a.get('body'))
     return json.dumps({'status': st, 'data': d})[:12000]
 
 
