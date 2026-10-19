@@ -666,9 +666,24 @@ export async function mount(root, { api, tell }) {
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });  // Detener ya vale desde aqui: tambien mientras se restaura el historial o se arma el contexto
       const ctxPrev = soloLiteralQwen ? previo(c, rawText) : undefined;  // ficha 2/3: verbatim; consil-code: ultimos 20; Team 5: sin contexto_previo
+      const _multiSel = fq === "1" && c.paralelo ? (c.selectorQwenMulti || []).slice(0, 6) : [];  // >>> MODOS <<< T6: fan-out paralelo
+      const _fanout = async () => {  // una llamada por modelo elegido; cada burbuja lleva su nombre
+        const rs = await Promise.allSettled(_multiSel.map((m, i) => window.RIU_HARNESS({
+          model: 'qw-' + (m.modelo_id_slug || 'modelo'), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null,
+          contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion + '-' + (m.modelo_id_slug || i), instrucciones_fijas: fijasQwen || undefined,
+          mode_request: modeUI ? modeUI.getModeRequest() : undefined,
+          qwen: { plugin: "fichas_qwen", ficha_qwen: "1", modelo: m.label || m.modelo_id_slug || "", task_type: "chat" }, avisar: () => {} })));
+        const partes = rs.map((r, i) => {
+          const nom = _multiSel[i].label || _multiSel[i].modelo_id_slug || ('modelo ' + (i + 1));
+          return r.status === 'fulfilled' ? ('── ' + nom + ' ──\n' + (r.value.reply || 'Sin respuesta')) : ('── ' + nom + ' ──\nGAP: ' + (r.reason && r.reason.message || r.reason));
+        });
+        return { reply: partes.join('\n\n'), tools: [], ms: 0 };
+      };
       const answer = window.RIU_CONFIG?.harnessUrl
-        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, mode_request: modeUI ? modeUI.getModeRequest() : undefined,  // >>> MODOS <<<
-        qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
+        ? (_multiSel.length > 1
+            ? await Promise.race([_fanout(), raceDetener])  // >>> MODOS <<< T6: misma tarea a cada modelo; un proceso por modelo en el backend
+            : await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, mode_request: modeUI ? modeUI.getModeRequest() : undefined,  // >>> MODOS <<<
+        qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener]))
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);  // >>> MODOS <<< body ya lleva mode_request
       c.detenerFn = null;
       if (c.detenerFlag) throw new Error("PROCESO_DETENIDO");  // detenido mientras la respuesta llegaba: no pintar respuesta tardia
