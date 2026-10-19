@@ -994,6 +994,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         requiere_tools = True
     if n.get('id') in ('N4', 'P3') and opts.get('muta') and not opts.get('aprobado'):  # >>> PARCHE_N4 <<< plan sin aprobar: el escritor solo entrega el PLAN; tools opcionales (read), no exigidas
         requiere_tools = False
+    if not escribe and not fast and 'requiere_tools' not in n and (str(n.get('id')) in ('N1', 'N2', 'N3', 'N3B', 'N3D', 'N5', 'N6', 'N7', 'N8') or str(n.get('id')).startswith('V')):  # >>> PARCHE_N7 <<<
+        requiere_tools = False  # un verificador puede dar veredicto de texto con la evidencia de la traza; la lectura sigue disponible
     # puerta de capacidades por nodo: WRITE solo si el nodo ejecutor tiene escritura aprobada; READ si declara tools; NONE si no las necesita.
     # Ficha 1 (chat suelto): el input del usuario fija la puerta (consulta normal -> NONE, externa -> READ).
     cap_in = str(opts.get('cap_in') or 'none')
@@ -1699,6 +1701,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             prompt += nl * 2 + _fmt_txt(ficha) + nl * 2 + 'DIAGRAMA REAL DEL WORKFLOW (copialo tal cual en la seccion DIAGRAMA DE FLUJO):' + nl + _diagrama(ficha, nodos, orden, out, opts, 'N4')
         if n.get('id') == 'N4' and opts.get('aprobado') and opts.get('plan'):
             prompt += nl * 2 + 'PLAN APROBADO POR EL DIRECTOR (ejecutalo tal cual; si cambia el alcance, detente y pide aprobacion otra vez):' + nl + str(opts['plan'])[:6000]
+        if n.get('id') in ('N4', 'P3') and opts.get('aprobado'):  # >>> PARCHE_N7 <<<
+            prompt += nl * 2 + 'PUBLICAR: para crear o cambiar archivos en GitHub usa la herramienta github_escribir (repo, ruta, contenido, mensaje, rama). github_api solo sirve para leer (GET). Tras escribir, verifica con github_leer e informa ruta y commit. Si motor_extraer o motor_descargar falla, lee el error real del resultado y corrige antes de reintentar.'
         if n.get('id') == 'N4' and opts.get('correccion'):
             prompt += nl * 2 + 'CORRECCION PEDIDA POR EL VERIFICADOR (corrige unicamente este fallo; no repitas operaciones ya completadas):' + nl + str(opts['correccion'])
         if n.get('id') == fin_id and obligatorio and not (n.get('id') == 'N4' and opts.get('muta') and not opts.get('aprobado')):
@@ -1780,10 +1784,27 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                     sys.modules['puente_herramientas']._REGLA_NODO.reset(_tok_regla)  # DSL A08.3: restaurar, nunca fugado
                 except Exception:  # noqa: BLE001
                     pass
+        if (isinstance(r, str) and r.startswith('GAP') and not _escribe_nodo(n, opts) and mod  # >>> PARCHE_N7 <<< 1 reintento ante 'sin respuesta' transitoria (post-restart)
+                and any(k_ in r for k_ in ('RESPUESTA_VACIA', 'HARNESS_', 'TIMEOUT', 'HTTP 5', 'HTTP 0'))
+                and 'TRUNCATED' not in r and 'CONSTITUTION' not in r and time.monotonic() < _nc0['deadline'] - 20):
+            _tok_r = _NODO_CALL.set(_nc0)
+            try:
+                r = _llamar_harness(mod, prompt, ficha, n, opts)
+                opts.setdefault('layout_attempts', []).append({'nodo': n.get('id'), 'layout': 'R', 'categoria': 'REINTENTO_TRANSITORIO'})
+            except Exception as x_:  # noqa: BLE001
+                r = 'GAP %s (%s) [reintento]: %s' % (i, mod, x_)
+            finally:
+                _NODO_CALL.reset(_tok_r)
+        if (isinstance(r, str) and not r.startswith('GAP') and n.get('id') in ('N6', 'N7', 'N8') and not _escribe_nodo(n, opts)  # >>> PARCHE_N7 <<< veredicto de texto sin tools: vale con la evidencia de N4
+                and not any(x_.get('ok') for x_ in opts.get('herr', {}).get(str(n.get('id')), [])[_h0:]) and re.search(r'(?im)^[ \t]*VEREDICTO:', r)):
+            _ev4 = [x_ for x_ in opts.get('herr', {}).get('N4', []) if x_.get('ok')][-8:]
+            r = r + nl + 'EVIDENCIA_DE_TRAZA (verificador sin tools; herramientas ejecutadas por N4): ' + ('; '.join('%s mutacion_real=%s' % (x_.get('herramienta'), x_.get('mutacion_real')) for x_ in _ev4) or 'ninguna')
         # DSL G14/A01: evidencia obligatoria — solo el DELTA de esta ejecucion (desde _h0), no exitos de nodos previos
         if n.get('requiere_evidencia') and opts.get('aprobado') and (opts.get('muta') or opts.get('es_cambio')) and not str(r).startswith('GAP'):
             _delta = opts.get('herr', {}).get(str(n.get('id')), [])[_h0:]
             _ok_ev = any(x.get('ok') and (not _escribe_nodo(n, opts) or x.get('mutacion_real')) for x in _delta)
+            if not _ok_ev and not _escribe_nodo(n, opts) and n.get('id') in ('N5', 'N6', 'N7', 'N8') and any(x.get('ok') and x.get('mutacion_real') for x in opts.get('herr', {}).get('N4', [])):  # >>> PARCHE_N7 <<<
+                _ok_ev = True  # el verificador valida contra la traza del escritor
             if not _ok_ev:
                 r = 'GAP SIN_EVIDENCIA (%s): no hay tool real OK de esta ejecucion' % n.get('id')
         if n.get('cadena_pide_aprobacion') and not opts.get('aprobado') and not str(r).startswith('GAP'):  # DSL A04.1: P2 cierra el plan, no ejecuta

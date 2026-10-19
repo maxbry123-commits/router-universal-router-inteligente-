@@ -1475,11 +1475,13 @@ def _motor_ejecutar(nom, args):
     try:
         if nom == 'motor_descargar':
             texto, usadas = _motor_descarga(str(a.get('origen') or '') + ' -> ' + str(a.get('destino') or ''))
+            if str(texto).startswith('MOTOR_ERROR'):  # >>> PARCHE_N7 <<<
+                return str(texto)[:2500]
             return json.dumps({'estado': 'ok', 'resultado': texto, 'motor': usadas}, ensure_ascii=False)
         if nom == 'motor_extraer':
             r = _xray(ses, str(a.get('archivo') or ''))
             if not r.get('ok'):
-                return 'MOTOR_ERROR: ' + str(r.get('error') or r.get('detalle') or 'xray fallo')
+                return 'MOTOR_ERROR: ' + str(r.get('error') or 'xray fallo') + ((' | ' + str(r.get('detalle'))) if r.get('detalle') else '')
             return _xray_texto_out(r)[:4000]
         if nom in ('motor_copiar', 'motor_mover'):
             r = _mover_raiz({'sesion': ses, 'op': 'copiar' if nom == 'motor_copiar' else 'mover',
@@ -1509,13 +1511,17 @@ def _motor_descarga(pregunta):
     except Exception:  # noqa: BLE001
         pass
     base = str(_CONFIG_DIR / 'motores_descarga')
+    rc_ = None  # >>> PARCHE_N7 <<<
     try:
         e = dict(_os.environ, **env_extra)
         r = _sub.run(['python3', base + '/' + fichero], env=e, capture_output=True, text=True, timeout=300)
         salida_motor = (r.stdout or '') + (r.stderr or '')
+        rc_ = r.returncode
         usadas.append('motor:' + fichero)
     except Exception as x:  # noqa: BLE001
         salida_motor = 'MOTOR_ERROR ' + str(x)[:200]
+    if rc_ not in (0, None) or salida_motor.startswith('MOTOR_ERROR'):  # >>> PARCHE_N7 <<< el modelo ve por que fallo el motor
+        return 'MOTOR_ERROR: ' + fichero + ' codigo=' + str(rc_) + chr(10) + salida_motor[-1800:], usadas
     fin = _paso_llm('nvidia', 'meta/muse-glimmer-30b',
         [{'role': 'system', 'content': _SYS_PIPE},
          {'role': 'user', 'content': 'Resume el resultado del motor para el usuario en 3 lineas.\nPlan: %s\nSalida del motor:\n%s' % (expl, salida_motor[:3000])}], 120)
