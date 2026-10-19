@@ -3,3 +3,4 @@ router inteligente universal/agents-yaiwes/agent-10-model-install/steps/**/resul
 **/agent-10-model-install/steps/**/results/models/
 __pycache__/
 *.pyc
+router inteligente universal/plugins/fichas_qwen/riu_data/
