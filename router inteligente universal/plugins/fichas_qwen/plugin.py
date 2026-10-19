@@ -988,6 +988,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     if fast:
         escribe = False
     requiere_tools = False if fast else (bool(n['requiere_tools']) if 'requiere_tools' in n else bool(opts.get('muta')))
+    if escribe:  # >>> PARCHE_N4 <<< escritor aprobado: debe ejecutar herramientas reales
+        requiere_tools = True
     # puerta de capacidades por nodo: WRITE solo si el nodo ejecutor tiene escritura aprobada; READ si declara tools; NONE si no las necesita.
     # Ficha 1 (chat suelto): el input del usuario fija la puerta (consulta normal -> NONE, externa -> READ).
     cap_in = str(opts.get('cap_in') or 'none')
@@ -1030,7 +1032,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     r = pc._chat({'model': qw, 'messages': ([{'role': 'system', 'content': _sp}] if _sp else []) + [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,  # >>> MODOS <<< FIX gobernanza: system aparte (S1)
                   'ficha_id': str(ficha.get('ficha') or ''), 'active_anchors_v1': bool(opts.get('active_anchors_v1')),
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
-                  'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo,
+                  'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo, 'motor': bool(escribe and cap_nodo == 'write'),  # >>> PARCHE_N4 <<<
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
                   'dsv4_think': _nc.get('dsv4_think'),  # DSL N1/N2: intento 2 DeepSeek con thinking explícito (False con required)
@@ -1340,6 +1342,14 @@ def _cadena_para(mensaje, opts, ficha):
         if (modo and modo in (a.get('modo') or [])) or (tt and tt in (a.get('task_type') or [])):
             return cid, c
     return None, None
+
+
+def _cadena_por_id(cid):  # >>> PARCHE_N4 <<<
+    try:
+        c = (json.loads((DIR / 'fichas' / 'cadenas.json').read_text(encoding='utf-8')).get('cadenas') or {}).get(str(cid))
+    except Exception:  # noqa: BLE001
+        return None, None
+    return (str(cid), c) if isinstance(c, dict) else (None, None)
 
 
 def _cad_lim():
@@ -1970,6 +1980,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             mensaje = str(pend_t['input'])
             plan_ap = str(pend_t['plan']) + ((chr(10) * 2 + 'OBSERVACIONES DEL DIRECTOR AL APROBAR: ' + extra) if extra else '')
             opts.update(muta=True, previo=dict(pend_t.get('previo') or {}), plan=plan_ap, tarea_id=str(pend_t.get('tarea_id') or opts['tarea_id']), constitucion_hash=str(pend_t.get('constitucion_hash') or ''))
+            opts['cap_in'] = 'write'  # >>> PARCHE_N4 <<< /aprobar: CAP_WRITE del plan aprobado
             if pend_t.get('cadena'):  # DSL A04.1: /aprobar recupera LA MISMA cadena y retoma en el nodo que se detuvo
                 opts.update(cadena=pend_t['cadena'], cadena_retomar=str(pend_t.get('cadena_stop_en') or ''), cadena_correcciones=int(pend_t.get('cadena_correcciones') or 0), loop_salida_privada=True)
         opts['plan_stop'] = bool(opts['muta'] and not ap)
@@ -1987,7 +1998,9 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             else:
                 _cid = None
                 if str(FICHAS[fid].get('ficha') or fid) in ('ficha1-modelos', 'ficha4-workflow-yaiwes') and not opts.get('fast_lane'):
-                    _cid, _cad = _cadena_para(mensaje, opts, FICHAS[fid])  # DSL G16: cadena declarativa -> nodos del mismo motor (F1/F4; F2/F3 ya son DAG)
+                    _cid, _cad = (_cadena_por_id(opts['cadena']) if (opts.get('aprobado') and opts.get('cadena')) else (None, None))  # >>> PARCHE_N4 <<<
+                    if not _cid:
+                        _cid, _cad = _cadena_para(mensaje, opts, FICHAS[fid])  # DSL G16: cadena declarativa -> nodos del mismo motor (F1/F4; F2/F3 ya son DAG)
                     if _cid:
                         _ficha_c = dict(FICHAS[fid], nodos=_expandir_cadena(_cad, _cad_lim()))
                         opts['cadena'] = _cid

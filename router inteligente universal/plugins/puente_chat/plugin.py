@@ -912,7 +912,7 @@ def _limpiar_texto(c):
     return c.strip()
 
 
-_FALLO = ('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0')
+_FALLO = ('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0', 'MOTOR_ERROR')  # >>> PARCHE_N4 <<<
 
 
 def _es_mutacion(nom, args):
@@ -920,6 +920,8 @@ def _es_mutacion(nom, args):
     a = args if isinstance(args, dict) else {}
     met = str(a.get('metodo') or a.get('method') or 'GET').upper()
     acc = str(a.get('accion') or '').lower()
+    if nom in ('motor_copiar', 'motor_mover', 'motor_descargar'):  # >>> PARCHE_N4 <<<
+        return True
     if nom in ('github_escribir', 'hf_escribir'):
         return True
     if nom == 'hf_almacenamiento':
@@ -968,6 +970,7 @@ def _bucle(llamar, mensajes):
         from plugins.puente_chat.capacidad import catalogo_para as _catalogo_para
         tools_vis = _catalogo_para(_CAP_TOOLS.get(), h.TOOLS)
         if _MOTOR_HAB.get() and tools_vis is not None:
+            conoc = conoc | {(t_.get('function') or {}).get('name') for t_ in _MOTOR_TOOLS}  # >>> PARCHE_N4 <<<
             tools_vis = list(tools_vis) + _MOTOR_TOOLS  # ⚙ Motor ON: descargar/extraer/copiar/mover del motor existente
     else:
         tools_vis = None
