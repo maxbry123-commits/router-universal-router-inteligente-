@@ -15,6 +15,7 @@ import random
 import os
 import re
 import secrets
+import sys
 import threading
 import time
 import urllib.request
@@ -943,6 +944,12 @@ def _consult(ficha, nodos, mensaje, elegido, pid, opts):
 _FAST_LOW = {'ficha-qwen37max', 'ficha-qwen37plus'}  # FAST: serie 3.7 sin thinking (con low aun razona ~1400 tokens, TTFT 20 s > tope FAST 25 s; false medido OK)
 
 
+def _escribe_nodo(n, opts):
+    # DSL A02: la declaracion del nodo gana; N4 se mantiene para JSON legacy (gobernanza/_scope_nodo mandan despues)
+    declarado = n['escribe'] if 'escribe' in n else n.get('id') == 'N4'
+    return bool(declarado and opts.get('aprobado') and opts.get('muta'))
+
+
 def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     # Ask consil por el Harness original (puente_chat): mismo HTTP, mismas herramientas, mismo modelo Qwencloud
     _tp = next((x.get('tipo') for x in (ficha.get('selector') or []) if x.get('id') == modelo), None)
@@ -975,7 +982,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
             )
     elif len(prompt) > limite:
         raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
-    escribe = bool((n.get('id') == 'N4') if (opts.get('gobernanza') or {}).get('enabled') else (n.get('escribe') or n.get('id') == 'N4')) and bool(opts.get('aprobado'))
+    escribe = _escribe_nodo(n, opts)  # DSL A02: escritura por declaracion del nodo, no por id fijo
     if fast:
         escribe = False
     requiere_tools = False if fast else (bool(n['requiere_tools']) if 'requiere_tools' in n else bool(opts.get('muta')))
@@ -1011,6 +1018,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     _pidp = str(opts.get('pid') or '')
 
     def _sf_parcial(c_: str) -> None:  # texto parcial visible: solo respuesta directa (FAST o Ficha 1), ultimo nodo que escribe gana
+        if opts.get('loop_salida_privada'):
+            return  # DSL A02.5: nunca llenar _PARCIAL en ejecuciones LOOP; solo el visor recibe _nota/_prog
         if _pidp and (fast or opts.get('fid') == 'ficha1-modelos'):
             _bp.append(c_)
             _PARCIAL[_pidp] = ''.join(_bp)
@@ -1056,13 +1065,19 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         if 'tool' in det.lower() and '400' in det:
             raise RuntimeError('MODELO_SIN_TOOLS:' + qw)
         raise RuntimeError('HARNESS_' + str(r['error']) + (':' + det if det else ''))
+    # DSL A01: registrar PRIMERO el resultado real de herramientas; nunca inferirlo del texto
+    herramientas = [x for x in (r.get('herramientas') or []) if isinstance(x, dict)]
+    bolsa = opts.setdefault('herr', {}).setdefault(str(n.get('id')), [])
+    bolsa.extend({'herramienta': x.get('herramienta') or x.get('tool'), 'ok': bool(x.get('ok')), 'mutacion_real': bool(x.get('mutacion_real'))} for x in herramientas)
+    nuevas_ok = any(x.get('ok') for x in herramientas)
+    nuevas_mut = any(x.get('ok') and x.get('mutacion_real') for x in herramientas)
+    if escribe and opts.get('muta') and not nuevas_mut:
+        raise RuntimeError('EJECUCION_SIN_EVIDENCIA:' + str(n.get('id')))
     t = str(((r.get('choices') or [{}])[0].get('message') or {}).get('content') or '').strip()
+    if not t and nuevas_ok:
+        return 'RESULTADO_EJECUTADO_CON_TOOL: ' + ', '.join(str(x.get('herramienta') or x.get('tool')) for x in herramientas if x.get('ok'))
     if not t:
         raise RuntimeError('RESPUESTA_VACIA:' + qw)
-    usadas = [x for x in (r.get('herramientas') or []) if isinstance(x, dict)]
-    opts.setdefault('herr', {}).setdefault(str(n.get('id')), []).extend([{'herramienta': x.get('herramienta'), 'ok': bool(x.get('ok')), 'mutacion_real': bool(x.get('mutacion_real'))} for x in usadas])
-    if escribe and opts.get('muta') and not any(x.get('mutacion_real') for x in opts['herr'][str(n.get('id'))]):
-        raise RuntimeError('EJECUCION_SIN_EVIDENCIA: la tarea pedia cambios y ninguna herramienta de escritura termino bien')
     return t
 
 
@@ -1111,45 +1126,70 @@ def _nota(opts, nid, txt):
 
 
 def _llamar_con_partes(modelo, prompt, ficha, n, opts):
-    # codigo largo: partes de 500 a 1000 lineas; cada parte es una llamada nueva que sigue donde quedo la anterior; no hay salida hasta TAREA_COMPLETA
+    # DSL A02.4 LOOP CODA: cursor comprobable (siguiente/piezas/input_sha/modelo) en el mismo checkpoint _ck; trigger dentro del MISMO worker
     nid = str(n.get('id'))
     lp = ficha.get('loop') or {}
-    maxp = int(lp.get('max_partes_codigo') or 12)
-    tope = float(lp.get('max_segundos_codigo') or 1800)
-    nl = chr(10)
-    t0 = time.time()
-    base = prompt + nl * 2 + _REGLA_CODIGO
-    partes = []
-    for k in range(1, maxp + 1):
-        antes = len((opts.get('herr') or {}).get(nid, []))
-        p = base
-        if k > 1:
-            hechas = ', '.join('%s%s' % (h.get('herramienta'), '' if h.get('ok') else '(fallo)') for h in (opts.get('herr') or {}).get(nid, [])[-12:])
-            p = (base + nl * 2 + 'CONTINUACION (parte %d): ya hiciste las partes anteriores. Esto es lo ultimo que reportaste:' % k + nl + _sin_marcas(partes[-1])[-1500:] + nl +
-                 'Herramientas usadas hasta ahora (las ultimas): ' + hechas + nl +
-                 'No repitas nada ya escrito: lee con las herramientas el estado real de los archivos, sigue exactamente donde quedaste y termina con CONTINUAR_PARTE o TAREA_COMPLETA.')
-        _nota(opts, nid, 'escribiendo codigo, parte %d' % k)
-        t = _llamar_harness_3(modelo, p, ficha, n, opts)
-        partes.append(t)
-        nuevas = (opts.get('herr') or {}).get(nid, [])[antes:]
-        escribio = any(h.get('mutacion_real') for h in nuevas)
-        if _marca(t, 'TAREA_COMPLETA'):
-            break
-        cortada = (t or '').count(chr(96) * 3) % 2 == 1  # bloque de codigo sin cerrar: la salida se corto
-        if not (_marca(t, 'CONTINUAR_PARTE') or cortada or escribio):
-            break
-        if time.time() - t0 > tope:
-            raise RuntimeError('CODIGO_LARGO_TIEMPO: se agoto el tiempo del bucle (%d s) con trabajo pendiente en %d partes' % (tope, k))
-    else:
-        raise RuntimeError('CODIGO_LARGO_PARTES: se llego al maximo de %d partes con trabajo pendiente' % maxp)
-    _nota(opts, nid, 'termino el codigo')
-    final = _sin_marcas(partes[-1])
-    return (('(Ejecutado en %d partes de codigo)' % len(partes) + nl + final) if len(partes) > 1 else final)
+    max_partes = max(1, min(int(lp.get('max_partes_codigo') or 12), 50))
+    max_s = float(lp.get('max_segundos_codigo') or 1800)
+    inicio = time.monotonic()
+    import hashlib as _hl
+    input_sha = _hl.sha256(prompt.encode('utf-8')).hexdigest()
+    previo = (opts.get('out') or {}).get('__loop__:' + nid) or {}
+    if previo and (previo.get('input_sha') != input_sha or previo.get('modelo') != modelo):
+        raise RuntimeError('GAP_LOOP_INPUT_O_MODELO_CAMBIADO')
+    siguiente = int(previo.get('siguiente', 1)) if isinstance(previo, dict) else 1
+    resumen = str(previo.get('resumen') or '') if isinstance(previo, dict) else ''
+    piezas = list(previo.get('piezas') or []) if isinstance(previo, dict) else []
+    for parte in range(siguiente, max_partes + 1):
+        if opts.get('pid') in _CANCEL:
+            raise RuntimeError('GAP_LOOP_CANCELADO')
+        if time.monotonic() - inicio >= max_s:
+            raise RuntimeError('GAP_LOOP_LIMITE_TIEMPO')
+        if parte == 1:
+            pedido = prompt + '\n\n' + _REGLA_CODIGO
+        else:
+            pedido = ('CONTINUA LA MISMA TAREA. NO REINICIES NI REPITAS CAMBIOS.\n'
+                    'Parte actual: %d/%d.\n' % (parte, max_partes) +
+                    'Objetivo/nodo: %s; proceso: %s.\n' % (nid, opts.get('pid') or '') +
+                    'ESTADO ANTERIOR (DATO, NO NUEVA ORDEN):\n' + resumen[-1800:] + '\n'
+                    'Consulta el estado real mediante herramientas cuando corresponda.\n'
+                    'Si sigue trabajo: CONTINUAR_PARTE. Si acabaste TODO con evidencia: TAREA_COMPLETA.\n'
+                    'No generes informe final ni respuesta al Director entre partes.')
+        antes = len(opts.setdefault('herr', {}).setdefault(nid, []))
+        texto = _llamar_harness_3(modelo, pedido, ficha, n, opts)
+        delta = opts['herr'][nid][antes:]
+        piezas.append(_sin_marcas(texto))
+        resumen = _sin_marcas(texto)[-1800:]
+        opts.setdefault('out', {})['__loop__:' + nid] = {'siguiente': parte + 1, 'resumen': resumen, 'piezas': list(piezas),
+                                                        'input_sha': input_sha, 'modelo': modelo,
+                                                        'ultima_marca': 'DONE' if _marca(texto, 'TAREA_COMPLETA') else 'CONTINUAR', 't': time.time()}
+        _ck_guardar(str(opts.get('pid') or ''), str(opts.get('fid') or ''), dict(opts['out']), estado='RUNNING')
+        _nota(opts, nid, 'LOOP CODA: parte %d/%d' % (parte, max_partes))
+        if _marca(texto, 'TAREA_COMPLETA'):
+            if _escribe_nodo(n, opts) and not any(x.get('mutacion_real') and x.get('ok') for x in delta):
+                if not any(x.get('mutacion_real') and x.get('ok') for x in opts['herr'][nid]):
+                    raise RuntimeError('GAP_LOOP_SIN_EVIDENCIA_MUTADORA')
+            opts['out'].pop('__loop__:' + nid, None)
+            return '\n\n'.join(x for x in piezas if x).strip()
+        if _marca(texto, 'CONTINUAR_PARTE') or any(x.get('ok') and x.get('mutacion_real') for x in delta):
+            continue
+        raise RuntimeError('GAP_LOOP_SIN_MARCA: parte %d no indico continuar ni terminar' % parte)
+    raise RuntimeError('GAP_LOOP_MAX_PARTES: %d; checkpoint conservado para reanudar' % max_partes)
+
+
+def _requiere_loop_salida(n, opts):
+    # DSL A02.3: solo nodos declarados escritores o salida larga explicita; nunca toda consulta
+    if opts.get('fast_lane') or opts.get('fast_consult'):
+        return False
+    if n.get('id') in ('P3', 'N4') and _escribe_nodo(n, opts):
+        return True
+    return bool(n.get('continuar_salida') and opts.get('loop_salida'))
 
 
 def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
-    escribe = bool((n.get('id') == 'N4') if (opts.get('gobernanza') or {}).get('enabled') else (n.get('escribe') or n.get('id') == 'N4')) and bool(opts.get('aprobado'))
-    return (_llamar_con_partes if escribe else _llamar_harness_3)(modelo, prompt, ficha, n, opts)
+    if _requiere_loop_salida(n, opts):
+        return _llamar_con_partes(modelo, prompt, ficha, n, opts)
+    return _llamar_harness_3(modelo, prompt, ficha, n, opts)
 
 
 _PROG_T: dict[str, dict[str, list]] = {}
@@ -1234,8 +1274,11 @@ def _ck_guardar(pid: str, fid: str, out: dict[str, Any], payload: dict[str, Any]
     try:
         mem, scope_for = _pc()._memoria()
         prev = _ck_cargar(pid) or {}
-        rec = {'estado': estado, 'fid': fid, 'out': dict(out), 'payload': payload if payload is not None else prev.get('payload'),
-               'resultado': resultado if resultado is not None else prev.get('resultado'), 'ts': time.time()}
+        rec = dict(prev)  # DSL A10: conserva campos anteriores (reanudaciones, input_sha, cadena, tarea, receipts)
+        rec.update({'estado': estado, 'fid': fid, 'out': dict(out) if out else prev.get('out') or {},
+                    'payload': payload if payload is not None else prev.get('payload'),
+                    'resultado': resultado if resultado is not None else prev.get('resultado'),
+                    'reanudaciones': int(prev.get('reanudaciones') or 0), 'ts': time.time()})
         mem.save(scope_for('chat-ui', 'task:' + pid), 'ck', rec)
         try:
             _hfs().handle('write', {'path': 'tasks/%s.ck.json' % pid, 'content': json.dumps(rec, ensure_ascii=False)})  # espejo en el bucket: /data no sobrevive al reinicio del Space
@@ -1342,6 +1385,16 @@ def _buzon_enviar(proceso_id: str, tipo: str, texto: str) -> dict:
         return {'error': 'GAP_BUZON_SIN_SQLITE'}
     if tipo not in ('instruccion', 'tarea', 'prioridad', 'pausa', 'continuar', 'cancelar'):
         return {'error': 'GAP_BUZON_TIPO', 'validos': ['instruccion', 'tarea', 'prioridad', 'pausa', 'continuar', 'cancelar']}
+    # DSL A07.2: no insertar si el proceso no esta activo (ni en _PROCESOS ni con checkpoint RUNNING); sin recibido:true
+    activo = proceso_id in _PROCESOS
+    if not activo:
+        try:
+            _ck = _ck_cargar(proceso_id) or {}
+            activo = str(_ck.get('estado') or '').upper() in ('RUNNING', 'CORRIENDO', 'PAUSADO')
+        except Exception:  # noqa: BLE001
+            activo = False
+    if not activo:
+        return {'ok': False, 'error': 'PROCESO_NO_ACTIVO'}
     db.execute('INSERT INTO buzon (proceso_id, tipo, texto, creado, aplicado_en_vuelta) VALUES (?,?,?,?,NULL)', (proceso_id, tipo, str(texto)[:4000], time.time()))
     db.commit()
     return {'ok': True, 'se_aplica_en': 'vuelta siguiente'}
@@ -1388,6 +1441,7 @@ _CAPAS_MODO = {'rapido': ['core'], 'code': ['core', 'b3'], 'auditor': ['core', '
 
 def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, opts: dict[str, Any]) -> tuple[str, list]:
     # DSL G17: el motor de objetivos corre en el MISMO hilo de chat_async (proceso_id + polling)
+    opts['loop_salida_privada'] = True  # DSL A02.3: nunca respuesta intermedia al chat en ejecuciones LOOP
     import motor_objetivo as _mo  # noqa: PLC0415
     pid = str(p.get('_pid') or '')
     obj_in = p.get('objetivo')
@@ -1404,6 +1458,17 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
         # una llamada por vuelta por el MISMO Harness (Constitucion, solo_lectura, scope intactos)
         n = {'id': 'MOTOR', 'rol': '', 'requiere_tools': modo in ('code', 'auditor', 'paralelo'),
              'escribe': modo == 'code' and bool(opts.get('aprobado')), 'timeout_s': 300}
+        if modo == 'code' and str(ficha.get('ficha') or '') in ('ficha2-dag-codigo', 'ficha3-frontend'):
+            # DSL A05: ejecucion real por el DAG de la propia ficha (receipts MOTOR:Tn); nunca motor recursivo ni chat dentro de vuelta
+            import re as _re_m
+            _tid = (_re_m.search(r'TAREA DE ESTA VUELTA:\s*<?(?:tarea_verbatim[^>]*>)?\s*(\w+)', prompt) or [None, '?'])[1] or '?'
+            try:
+                r_final, _tr = _correr(ficha, prompt, elegido, pid, dict(opts, recibo_tarea='MOTOR:%s' % _tid))
+            except Exception as x:  # noqa: BLE001
+                return {'texto': 'GAP ' + str(x)[:200], 'herramientas_ok': 0, 'mutaciones_ok': 0}
+            _hn = [x for k, v in (opts.get('herr') or {}).items() for x in v]
+            return {'texto': str(r_final), 'herramientas_ok': sum(1 for x in _hn if x.get('ok')),
+                    'mutaciones_ok': sum(1 for x in _hn if x.get('ok') and x.get('mutacion_real'))}
         if modo == 'paralelo':  # DSL G18: la vuelta puede repartir subtareas con delegar_paralelo
             prompt += '\n\nPuedes repartir subtareas a varios modelos a la vez con la herramienta delegar_paralelo (un solo nivel, max 6).'
         _nc_m = {'sys_prompt': '', 'forzar_tool': False, 'dsv4_think': None, 'per_attempt_s': 0,
@@ -1553,9 +1618,17 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         _sys_prompt = ''  # >>> MODOS <<< reinicia por nodo
         _nc0 = {'sys_prompt': '', 'forzar_tool': False, 'dsv4_think': None, 'per_attempt_s': 0,
                 'deadline': time.monotonic() + int(n.get('timeout_s') or _cfg(ficha)[0])}  # DSL N1/N4: estado por nodo en ContextVar + deadline total
-        _tok_nc = None  # DSL G7: el ContextVar se fija dentro del try y se resetea SIEMPRE en finally
+        _tok_nc = None
+        _tok_regla = None  # DSL A08.3: _REGLA_NODO se resetea a 0 a la ENTRADA del nodo (no por reintento) y se restaura en finally
+        try:
+            _tok_regla = sys.modules['puente_herramientas']._REGLA_NODO.set(0)
+        except Exception:  # noqa: BLE001
+            _tok_regla = None
         nl = chr(10)
+        _tope_ctx = int(opts.get('cadena_ctx_chars') or 6000) if opts.get('cadena') else None  # DSL A04.2: 6000 entre pasos, no cero ni ilimitado
         ctx = (nl * 2).join('[%s]%s%s' % (d, nl, out[d]) for d in n.get('depende_de', []) if out.get(d))
+        if _tope_ctx is not None and len(ctx) > _tope_ctx:
+            ctx = '[CONTEXTO PREVIO RECORTADO; VERIFICAR FUENTE REAL]\n' + ctx[-(_tope_ctx - 60):]
         if opts.get('fast_lane') and n.get('id') == 'N4':
             prompt = ('MODO RESPUESTA RAPIDA.' + nl + 'Responde directamente a la pregunta del usuario.' + nl + 'No uses herramientas.' + nl + 'No hagas cambios.' + nl +
                       'No crees planes ni diagramas salvo que el usuario los pida.' + nl + 'Se claro y breve, pero responde completamente.' + nl * 2 +
@@ -1659,13 +1732,19 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         finally:
             if _tok_nc is not None:
                 _NODO_CALL.reset(_tok_nc)  # DSL G7: el contexto del nodo nunca se fuga a la siguiente llamada
-        # DSL G14: evidencia obligatoria — tarea de cambio aprobada solo da PASS con herramienta ok real
+            if _tok_regla is not None:
+                try:
+                    sys.modules['puente_herramientas']._REGLA_NODO.reset(_tok_regla)  # DSL A08.3: restaurar, nunca fugado
+                except Exception:  # noqa: BLE001
+                    pass
+        # DSL G14/A01: evidencia obligatoria — solo el DELTA de esta ejecucion (desde _h0), no exitos de nodos previos
         if n.get('requiere_evidencia') and opts.get('aprobado') and (opts.get('muta') or opts.get('es_cambio')) and not str(r).startswith('GAP'):
-            _hev = [x for x in opts.get('herr', {}).get(str(n.get('id')), []) if x.get('ok')]
-            if n.get('escribe') or n.get('id') == 'N4':
-                _hev = [x for x in _hev if x.get('mutacion_real')]
-            if not _hev:
-                r = 'GAP SIN_EVIDENCIA (%s): la tarea aprobada exige ejecucion real y ninguna herramienta ok produjo evidencia' % n.get('id')
+            _delta = opts.get('herr', {}).get(str(n.get('id')), [])[_h0:]
+            _ok_ev = any(x.get('ok') and (not _escribe_nodo(n, opts) or x.get('mutacion_real')) for x in _delta)
+            if not _ok_ev:
+                r = 'GAP SIN_EVIDENCIA (%s): no hay tool real OK de esta ejecucion' % n.get('id')
+        if n.get('cadena_pide_aprobacion') and not opts.get('aprobado') and not str(r).startswith('GAP'):  # DSL A04.1: P2 cierra el plan, no ejecuta
+            r = str(r) + chr(10) * 2 + 'ESPERANDO_APROBACION'
         if i not in opts.setdefault('abandonados', set()):
             _prog(pid, i, 'gap' if r.startswith('GAP') else 'ok')
         opts.setdefault('tiempos', {})[i] = int((time.time() - _tn) * 1000)
@@ -1688,7 +1767,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                     _espera = _pausa_paso - (time.time() - _ult_fin)
                     if _espera > 0:
                         time.sleep(_espera)
-                futs = {i: ex.submit(nodo, i) for i in listos}
+                futs = {i: ex.submit(nodo, i) for i in listos if not (nodos[i].get('escribe') and not opts.get('aprobado') and opts.get('cadena'))}  # DSL A04.1: en cadena, el ejecutor no corre sin aprobacion
                 lp_ = ficha.get('loop') or {}
                 tope_cod = float(lp_.get('max_segundos_codigo') or 1800)
                 ana_max = float(lp_.get('analisis_max_s') or 120)
@@ -1705,6 +1784,11 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                             out[i] = f.result()
                             opts['_ultimo_paso_fin'] = time.time()  # DSL G16b
                             _ck_guardar(pid, str(ficha.get('id') or ficha.get('ficha') or ''), out)  # checkpoint por paso: reanuda tras reinicio sin repetir (idempotente)
+                            if nodos[i].get('cadena_pide_aprobacion') and not opts.get('aprobado'):  # DSL A04.1: P2 entrega plan y para
+                                opts['estado'] = 'ESPERANDO_APROBACION'
+                                opts['plan_stop'] = True
+                                opts['plan'] = out[i]
+                                opts['cadena_stop_en'] = i
                         elif ahora > lim:
                             opts.setdefault('abandonados', set()).add(i)
                             out[i] = 'GAP %s: TIMEOUT_NODO: el nodo no respondio en %d s; se sigue sin su resultado' % (i, lim)
@@ -1719,13 +1803,21 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                         pend.remove(i)
             finally:
                 ex.shutdown(wait=False, cancel_futures=True)
-            if opts.get('plan_stop') and out.get('N4'):  # plan sin aprobar: se detiene aqui, antes de cualquier escritura
+            if opts.get('plan_stop') and (out.get('N4') or opts.get('cadena_stop_en')):  # plan sin aprobar: se detiene aqui, antes de cualquier escritura
                 break
 
     if opts.get('fast_lane') and len(orden) == 1 and orden[0] == 'N4':
         out['N4'] = nodo('N4')
     else:
         _dag()
+    if opts.get('cadena') and opts.get('aprobado'):  # DSL A04.3: una sola correccion P4 -> P3; P1/P2 jamas se repiten
+        fallo_p4 = str(out.get('P4') or '').lstrip()
+        if fallo_p4.startswith(('FAIL', 'VEREDICTO: FAIL', 'GAP')) and opts.get('cadena_correcciones', 0) < 1:
+            opts['cadena_correcciones'] = 1
+            opts['correccion'] = fallo_p4[:1500]
+            for paso in ('P3', 'P4', 'P5'):
+                out.pop(paso, None)
+            _dag()
     maxc = int((ficha.get('loop') or {}).get('correcciones') or 1)
     ronda = 0
     tope_s = float((ficha.get('loop') or {}).get('max_segundos') or 600)
@@ -1739,7 +1831,9 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     usados = {d for n in nodos.values() for d in n.get("depende_de", [])}
     finales = [i for i in orden if i not in usados and nodos[i].get("tipo") != "goals"]
     final = out.get(finales[-1], "") if finales else ""
-    if opts.get('plan_stop') and out.get('N4'):
+    if opts.get('cadena_stop_en') and opts.get('cadena'):  # DSL A04.1: fin de la fase plan: devolver P2, no GAP FINAL
+        final = str(out.get(opts['cadena_stop_en']) or '')
+    elif opts.get('plan_stop') and out.get('N4'):
         final = out['N4']
         if not final.startswith('GAP'):
             txt, gap = _asegurar_formato(final, ficha, 'N4', nodos, elegido, opts, plan=True)
@@ -1839,7 +1933,9 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     pend_t = _pend_cargar(fid, ses) if ap else None
     from plugins.puente_chat.capacidad import capacidad_de as _capacidad_de
     _cap_in = _capacidad_de(mensaje)  # unica autoridad de permisos: muta solo si la puerta CAP dice WRITE
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'instrucciones_fijas': str(p.get('instrucciones_fijas') or ''), 'thinking': bool(p.get('thinking') or p.get('thinking_requested')), 'active_anchors_v1': p.get('active_anchors_v1') is True, 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'instrucciones_fijas': str(p.get('instrucciones_fijas') or ''), 'thinking': bool(p.get('thinking') or p.get('thinking_requested')), 'active_anchors_v1': p.get('active_anchors_v1') is True, 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else []),
+        'loop_salida': str(p.get('task_type') or '').lower() in ('code_largo', 'implement_feature'),  # DSL A02.3: salida larga solo para tipos que la piden
+        'cadena_ctx_chars': 6000}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
     # >>> MODOS BEGIN  (punto E: fuera de bucle la fase es 'execute'; el system_block viaja por instrucciones_fijas, que ya se anade al prompt)
     if modo:
         opts['modos'] = modo
@@ -1861,6 +1957,8 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             mensaje = str(pend_t['input'])
             plan_ap = str(pend_t['plan']) + ((chr(10) * 2 + 'OBSERVACIONES DEL DIRECTOR AL APROBAR: ' + extra) if extra else '')
             opts.update(muta=True, previo=dict(pend_t.get('previo') or {}), plan=plan_ap, tarea_id=str(pend_t.get('tarea_id') or opts['tarea_id']), constitucion_hash=str(pend_t.get('constitucion_hash') or ''))
+            if pend_t.get('cadena'):  # DSL A04.1: /aprobar recupera LA MISMA cadena y retoma en el nodo que se detuvo
+                opts.update(cadena=pend_t['cadena'], cadena_retomar=str(pend_t.get('cadena_stop_en') or ''), cadena_correcciones=int(pend_t.get('cadena_correcciones') or 0), loop_salida_privada=True)
         opts['plan_stop'] = bool(opts['muta'] and not ap)
         opts['pregunta'] = mensaje
         opts['reanudar'] = bool(pend_t and pend_t.get('constitucion_hash'))  # /aprobar: reconstruye la entrada constitucional congelada por task_id
@@ -1886,7 +1984,8 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
                     salida, traza = _correr(FICHAS[fid], mensaje, str(p.get("modelo") or ""), str(p.get("_pid") or ""), opts)
         salida = _anexo_salida(FICHAS[fid], salida, opts)
         if opts.get('estado') == 'ESPERANDO_APROBACION':
-            _pend_guardar(fid, ses, {'input': mensaje, 'plan': salida, 'previo': {k: v for k, v in (opts.get('out') or {}).items() if k != 'N4'}, 'tarea_id': opts['tarea_id'], 'constitucion_hash': str(opts.get('constitucion_hash') or ''), 't': time.time()})
+            _pend_guardar(fid, ses, {'input': mensaje, 'plan': salida, 'previo': {k: v for k, v in (opts.get('out') or {}).items() if k != 'N4'}, 'tarea_id': opts['tarea_id'], 'constitucion_hash': str(opts.get('constitucion_hash') or ''), 't': time.time(),
+                                     'cadena': str(opts.get('cadena') or ''), 'cadena_stop_en': str(opts.get('cadena_stop_en') or ''), 'cadena_correcciones': int(opts.get('cadena_correcciones') or 0)})
         elif pend_t and not str(salida).startswith('GAP'):
             _pend_cerrar(fid, ses)
         if opts.get('verif_ok'):  # propuesta de verificacion cruzada: ok / confirmo / proceder con verificacion
@@ -2019,8 +2118,10 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
             return {'error': 'GAP_BUZON_SIN_SQLITE'}
         _idp = int(p.get('id') or 0)
         _resp = str(p.get('respuesta') or '')
-        db.execute('UPDATE pendientes_director SET respuesta=?, respondido=? WHERE id=?', (_resp, time.time(), _idp))
+        cur = db.execute('UPDATE pendientes_director SET respuesta=?, respondido=? WHERE id=? AND respuesta IS NULL', (_resp, time.time(), _idp))  # DSL A07.3: solo una respuesta
         db.commit()
+        if cur.rowcount != 1:
+            return {'error': 'PENDIENTE_NO_EXISTE_O_YA_RESPONDIDA'}
         try:
             _pidq = db.execute('SELECT proceso_id FROM pendientes_director WHERE id=?', (_idp,)).fetchone()
             if _pidq:

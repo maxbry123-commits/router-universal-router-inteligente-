@@ -50,19 +50,19 @@ def _toca(prog, ahora, ultima):
     if cu.get('diario'):
         try:
             hh, mm = (int(x) for x in str(cu['diario']).split(':')[:2])
-            # zona declarada del programa (America/Bogota en el contrato); el Router corre en UTC,
-            # y la comparacion de hora se hace en la zona pedida si zoneinfo esta disponible
+            # DSL A10.2: ultima ocurrencia programada en la zona del programa; toca si ya paso y no se lanzo
+            import datetime as _dt  # noqa: PLC0415
             try:
                 from zoneinfo import ZoneInfo  # noqa: PLC0415
-                _lt = time.localtime(ahora + 0) if not prog.get('zona') else None
-                import datetime as _dt  # noqa: PLC0415
-                _ahora_z = _dt.datetime.now(ZoneInfo(str(prog.get('zona') or 'UTC')))
+                tz = ZoneInfo(str(prog.get('zona') or 'UTC'))
             except Exception:  # noqa: BLE001
-                import datetime as _dt  # noqa: PLC0415
-                _ahora_z = _dt.datetime.utcnow()
-            if (_ahora_z.hour, _ahora_z.minute) != (hh, mm):
-                return False
-            return (ahora - ultima) >= 20 * 3600 or (ahora - ultima) > CATCHUP_S
+                tz = _dt.timezone.utc
+            ahora_z = _dt.datetime.fromtimestamp(ahora, tz)
+            ult_prog = ahora_z.replace(hour=hh, minute=mm, second=0, microsecond=0)
+            if ult_prog.timestamp() > ahora:
+                ult_prog -= _dt.timedelta(days=1)
+            # dentro de la ventana catch-up y sin lanzar desde esa ocurrencia
+            return ult_prog.timestamp() <= ahora < ult_prog.timestamp() + CATCHUP_S and ultima < ult_prog.timestamp()
         except Exception:  # noqa: BLE001
             return False
     return False
