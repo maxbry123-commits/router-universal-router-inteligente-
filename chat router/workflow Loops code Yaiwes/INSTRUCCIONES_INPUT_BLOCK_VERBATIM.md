@@ -30110,3 +30110,275 @@ Notas de configuración:
 > 6. Abre PR **sin merge**.
 
 anota continúidsd y incorpora y sigue modo recepción
+
+---
+
+## INPUT 129
+
+Problema
+
+Los modelos dsv4flash, dsv4pro y room-qwen38 devuelven un acuse de recibo (ej. "Entendido. Estoy listo…") sin emitir tool_calls. El nodo se marca como ejecutado pero la herramienta nunca se invoca. En dsv4flash además el nodo alcanza TIMEOUT_NODO (150 s) porque el reintento ack → layout D duplica la latencia y agota el tope global.
+
+Causa (investigación en comunidad Qwen / DeepSeek / GLM)
+
+1. Inconsistencia de tool‑calling en modelos Flash/Pro: DeepSeek V4 Flash devuelve output.type=message sin tool call de forma reproducible. Qwen emite tool calls como XML dentro del razonamiento o con argumentos vacíos que el parser descarta silenciosamente.
+2. Layout B no es suficiente para todos los modelos: glm52 y qwen38max funcionan con layout B, pero los modelos Flash/Pro ignoran la instrucción de tool‑calling cuando el layout no es "solo tarea" (D_solo_tarea).
+3. Timeout global vs. reintento: el nodo con reintento consume 2 intentos dentro de un único presupuesto de 150 s. El primer intento (ack) ya consume tiempo, el segundo (layout D) no alcanza a completarse → TIMEOUT_NODO.
+4. Falta de fallback determinista en el executor: actualmente solo se aplica layout B fijo en el ensamblaje; no existe run_with_fallback que detecte ack y reintente con layout D dentro del nodo.
+5. Streaming sin tool_stream (GLM): GLM batchea argumentos de tool call y deja la conexión muda >30 s, provocando ReadTimeout en el proveedor. No es la causa principal de dsv4flash, pero es un riesgo latente si se usa GLM como fallback.
+
+Soluciones (mínimas y copiables)
+
+1. run_with_fallback en el executor (solución principal)
+
+Detecta ack (respuesta sin tool_calls) y reintenta con layout D_solo_tarea + timeout por intento.
+
+```python
+# executor_with_fallback.py
+import asyncio
+from typing import Any, Callable, Awaitable
+
+ACK_KEYWORDS = ("entendido", "listo", "espera", "de acuerdo", "ok")
+
+def is_ack(response: Any) -> bool:
+    """True si la respuesta es solo texto de acuse, sin tool_calls."""
+    if getattr(response, "tool_calls", None):
+        return False
+    text = (getattr(response, "content", "") or "").lower()
+    return any(k in text for k in ACK_KEYWORDS) and len(text) < 300
+
+async def run_with_fallback(
+    node_fn: Callable[..., Awaitable[Any]],
+    task: dict,
+    per_attempt_timeout: float = 75.0,   # 150s / 2 intentos
+    max_attempts: int = 2,
+) -> Any:
+    """
+    Ejecuta node_fn con reintento determinista.
+    Intento 1: layout B (el que ya usas).
+    Intento 2: layout D_solo_tarea + per_attempt_timeout.
+    """
+    last_err = None
+    for attempt in range(1, max_attempts + 1):
+        layout = "B" if attempt == 1 else "D_solo_tarea"
+        try:
+            resp = await asyncio.wait_for(
+                node_fn(task, layout=layout),
+                timeout=per_attempt_timeout,
+            )
+            if not is_ack(resp):
+                return resp
+            # ack detectado → forzar siguiente intento con layout D
+            last_err = ValueError(f"ack sin tool_calls en layout {layout}")
+        except asyncio.TimeoutError as e:
+            last_err = e
+            # si el primer intento ya agotó su presupuesto, no duplicar en vano
+            if attempt == max_attempts:
+                raise
+    raise last_err or RuntimeError("fallback determinista agotado")
+```
+
+2. Ajuste de timeout por intento (evita TIMEOUT_NODO)
+
+En lugar de un único tope de 150 s para todo el nodo, asigna per_attempt_timeout = 75 s y deja que run_with_fallback gestione los dos intentos. Si el nodo no tiene reintento, mantén el timeout original.
+
+```python
+# config_nodos.py
+NODE_TIMEOUTS = {
+    "dsv4flash":   {"per_attempt": 75.0, "max_attempts": 2},
+    "dsv4pro":     {"per_attempt": 75.0, "max_attempts": 2},
+    "room-qwen38": {"per_attempt": 75.0, "max_attempts": 2},
+    # resto de nodos sin reintento → un solo intento
+    "_default":    {"per_attempt": 150.0, "max_attempts": 1},
+}
+```
+
+3. Forzar tool‑call en el prompt (refuerzo para Qwen/DeepSeek)
+
+Añade al system prompt del layout D_solo_tarea la instrucción explícita de no responder con texto si hay una herramienta disponible. Qwen‑Agent recomienda tool_choice='required' cuando la tarea exige herramienta; DeepSeek V4 no soporta tool_choice_required de forma fiable, por eso el fallback determinista es imprescindible.
+
+```python
+# layout_d_solo_tarea_prompt.py
+LAYOUT_D_SYSTEM_PROMPT = """
+Eres un ejecutor de tareas. NO respondas con texto de confirmación.
+Si la tarea requiere una herramienta, emite la llamada a herramienta en este mismo turno.
+Si no puedes ejecutar la herramienta, devuelve un error estructurado, no un acuse.
+"""
+```
+
+4. GLM como fallback: activar tool_stream
+
+Si usas GLM como proveedor de respaldo, añade tool_stream=True junto a stream=True para evitar el idle timeout de 30 s de api.z.ai.
+
+```python
+# glm_fallback_call.py
+response = client.chat.completions.create(
+    model="glm-5.2",
+    messages=messages,
+    tools=tools,
+    stream=True,
+    tool_stream=True,   # evita el silencio de 30s al batchear tool args
+    timeout=90,
+)
+```
+
+5. Telemetría de ack para identificar nodos persistentes
+
+Registra un contador de ack_sin_tool_call por nodo. Si un nodo supera 3 acks consecutivos incluso con layout D, degrada a un modelo alternativo o marca el nodo como MODELO_NO_TOOL_CAPABLE para no consumir reintentos indefinidamente.
+
+Instrucciones de integración
+
+1. Reemplaza la llamada directa a node_fn(task) por await run_with_fallback(node_fn, task, **NODE_TIMEOUTS[nodo]).
+2. Pasa layout="D_solo_tarea" al node_fn en el segundo intento (el run_with_fallback ya lo hace).
+3. Asegúrate de que node_fn acepte el parámetro layout y lo inyecte en el prompt de ensamblaje.
+4. Mantén el layout B como primer intento para glm52 y qwen38max (no necesitan fallback, pero no se ven afectados).
+5. Ejecuta un batch de prueba con dsv4flash, dsv4pro y room-qwen38; verifica que el segundo intento produce tool_calls y que el nodo termina en <150 s totales.
+6. Si un nodo sigue devolviendo ack incluso en layout D, cambia ese nodo a un modelo con tool‑calling más consistente u(qwen38max o glm52) como fallback de modelo, no solo de layout.
+
+Explicación mínima: por qué Qwen 3.8‑Max y los modelos de créditos entran en "modo validación"
+
+No es que el modelo "se vuelva tonto". Es un desajuste de protocolo entre lo que el modelo emite y lo que tu harness/executor espera:
+
+1. Qwen emite tool calls como XML nativo, no como JSON de OpenAI. Si tu cliente solo busca tool_calls estructurados, el XML cae en content como texto plano y el executor no lo ejecuta → el modelo "ve" que no pasó nada y reintenta → bucle de validación .
+2. tool_choice: "required" es incompatible con thinking mode en DashScope. Si el modelo tiene thinking_budget o reasoning: high, la API rechaza required y el SDK hace fallback silencioso a auto. El modelo entonces "decide" no llamar la herramienta y responde con texto/ack.
+3. Herramientas diferidas invisibles: en qwen3.7-max y qwen3.8-max, herramientas como exit_plan_mode se marcan como shouldDefer y no se envían en el schema. El modelo intenta llamar una herramienta que no está en su lista y se queda en loop "stuck on ExitPlanMode".
+4. DeepSeek V4: además exige que reasoning_content se re‑inyecte en cada turno con tool_calls. Si tu executor no lo hace, el tool call se pierde o devuelve 400.
+
+---
+
+Soluciones adicionales (más allá del run_with_fallback)
+
+Solución A — Parser de recuperación XML → JSON (la pieza que falta)
+
+Cuando tool_calls llega vacío pero content contiene XML de Qwen, recuperas el tool call del texto y lo ejecutas igual. Es el fix que Qwen aplicó en su propio qwen-code para qwen3.8-max en contextos largos.
+
+```python
+# qwen_xml_recovery.py
+import re, json
+from typing import Any
+
+_QWEN_XML_RE = re.compile(
+    r'<tool_call>\s*<function=([^>]+)>(.*?)</function>\s*</tool_call>',
+    re.DOTALL,
+)
+_PARAM_RE = re.compile(r'<parameter=([^>]+)>(.*?)</parameter>', re.DOTALL)
+
+def recover_qwen_tool_calls(content: str, declared_tools: set[str]) -> list[dict]:
+    """Extrae tool_calls XML de Qwen desde content y los normaliza a OpenAI."""
+    if "<tool_call>" not in content:
+        return []
+    calls = []
+    for name, body in _QWEN_XML_RE.findall(content):
+        name = name.strip()
+        if name not in declared_tools:          # seguridad: no ejecutar tools no declaradas
+            continue
+        args = {}
+        for k, v in _PARAM_RE.findall(body):
+            raw = v.strip()
+            try:
+                args[k.strip()] = json.loads(raw)   # JSON primero
+            except json.JSONDecodeError:
+                args[k.strip()] = raw               # fallback string
+        calls.append({
+            "type": "function",
+            "function": {"name": name, "arguments": json.dumps(args, ensure_ascii=False)},
+        })
+    return calls
+```
+
+Integración en el executor (justo después de recibir la respuesta del LLM):
+
+```python
+# executor_with_xml_fallback.py
+resp = await llm_call(...)
+if not getattr(resp, "tool_calls", None):
+    recovered = recover_qwen_tool_calls(resp.content or "", declared_tools=set(tools_map))
+    if recovered:
+        resp.tool_calls = recovered          # inyectas y sigues el flujo normal
+```
+
+---
+
+Solución B — Quitar tool_choice: "required" cuando thinking está activo
+
+DashScope rechaza required en modo thinking. La regla en la comunidad es: si thinking_budget o reasoning_effort están presentes, elimina tool_choice y deja auto, o desactiva thinking para la llamada de herramienta.
+
+```python
+# fix_tool_choice_thinking.py
+def sanitize_tool_choice(payload: dict) -> dict:
+    thinking_on = any(k in payload for k in ("thinking_budget", "reasoning_effort", "enable_thinking"))
+    if thinking_on and payload.get("tool_choice") == "required":
+        payload.pop("tool_choice", None)      # auto implícito
+    return payload
+```
+
+---
+
+Solución C — Forzar que las herramientas diferidas estén declaradas
+
+Si usas qwen3.8-max en plan mode, asegúrate de que todas las herramientas que el prompt menciona estén en el schema (alwaysLoad: true). El loop "stuck on ExitPlanMode" desaparece cuando el modelo ve la herramienta en su lista.
+
+```python
+# tool_registry_fix.py
+# En tu registry, marca las herramientas críticas como no diferidas:
+CRITICAL_TOOLS = {"exit_plan_mode", "read_file", "write", "bash"}
+for name in CRITICAL_TOOLS:
+    registry[name].shouldDefer = False   # siempre en el function-declaration list
+```
+
+---
+
+Solución D — DeepSeek V4: re‑inyectar reasoning_content
+
+DeepSeek V4 exige que cada mensaje assistant con tool_calls lleve también reasoning_content (aunque sea "") en los turnos siguientes. Si no, el tool call se rompe o devuelve 400.
+
+```python
+# deepseek_reasoning_replay.py
+def ensure_reasoning_content(messages: list[dict]) -> list[dict]:
+    for m in messages:
+        if m.get("role") == "assistant" and m.get("tool_calls"):
+            m.setdefault("reasoning_content", "")   # o el texto real si lo tienes
+    return messages
+```
+
+---
+
+Solución E — Paquete listo: xml-toolcall / pi-qwen-fix
+
+Si no quieres mantener parsers propios, la comunidad ya publicó wrappers que normalizan Qwen XML a tool_calls y corrigen la incompatibilidad de function.arguments (Qwen espera objeto JSON, no string).
+
+```bash
+# Para Qwen vía OpenCode / Claude Code Router
+npm install -g xml-toolcall
+# o para el provider alibaba-qwen
+npm install -g pi-qwen-fix
+```
+
+---
+
+Resumen de qué aplicar primero
+
+Prioridad Fix Ataca
+1 Solución A (parser XML→JSON) Acks sin tool_calls en Qwen
+2 Solución B (quitar required con thinking) Rechazo silencioso de tool call
+3 Solución C (herramientas no diferidas) Loop "stuck on ExitPlanMode"
+4 Solución D (replay reasoning_content) Fallo específico de DeepSeek V4
+
+Con A + B, Qwen 3.8‑Max deja de responder con ack y empieza a ejecutar la herramienta en el primer turno. Con C eliminas el bucle de validación en plan mode. Con D cubres DeepSeek sin tocar el resto del pipeline.
+
+ok eso engloba un proceso de información bastante para aplicar quiero que lo apliques todo en todos los lugares que puedas y en todas las fichas 
+
+quiero que me des el enlace del archivo readme y handoff incluye los enlaces todas las  fichas 
+
+paso 1 📌 
+aplicas todos los cambios editas quirúrgicamente todas las fichas 
+
+paso 2 📌 
+le planteas a GLM 5  y qwen 3.8 Max el problema intentas por el chat si no te funciona crea un puente temporar para que puedas usar la sdk y conseguir que GLM 5 y qwen 3.8 Max lee los archivos y el gaps y te de una solución adicional cada modelo sobre el problema 
+
+paso 3 📌 pruebas 
+
+
+puedes hacerlo puedes hacer los cambios ?  o necesitas a Claude ?
+
+escrube 1 a 1 imput block verbartin la información en la continuidad del Readme

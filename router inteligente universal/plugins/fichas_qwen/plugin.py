@@ -948,6 +948,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         raise RuntimeError('FICHA_QW_NO_EXISTE:' + str(modelo))
     api_s, _, max_tok, limite = _cfg(ficha)
     api_s = int(n.get('timeout_s') or api_s)
+    if opts.get('_per_attempt_s'):  # >>> MODOS <<< FIX Claude INPUT 129: timeout por intento (75s c/u dentro del tope del nodo)
+        api_s = min(api_s, int(opts['_per_attempt_s']))
     max_tok = int(n.get('max_output_tokens') or max_tok)
     fast = bool(opts.get('fast_lane'))
     if fast and not opts.get('fast_consult'):
@@ -1381,6 +1383,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                 _prog(pid, i, 'trabajando')  # En cola hasta adquirir el slot: no mostrar trabajando mientras espera _SEM
                 # >>> MODOS BEGIN  FIX Claude S4: detector de acuse + reintento layout D (system vacio)
                 opts['_sys_prompt'] = _sys_prompt
+                opts['_per_attempt_s'] = max(30, int(int(n.get('timeout_s') or _cfg(ficha)[0]) * 0.5))  # INPUT 129: cada intento cabe en el tope del nodo
                 r = _llamar_harness(mod, prompt, ficha, n, opts)
                 try:
                     import prompt_layouts as _pl  # noqa: PLC0415

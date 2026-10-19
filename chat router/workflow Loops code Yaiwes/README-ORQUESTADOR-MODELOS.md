@@ -72,3 +72,13 @@ Timeout de red NO prueba que una escritura no se ejecutó -> idempotency keys / 
 - Chunking local en el propio tool: fetch raw → indexar → devolver sólo regiones (mejor que mandar 1.1MB al LLM).
 - Estado EXECUTION_STATE_UNKNOWN cuando tool_call llegó y dispatch empezó sin confirmación — distinto de NO_TOOL.
 - Escrituras: retry solo con idempotencia / verificación de estado tras timeout.
+
+## 10. INPUT 129 — Soluciones A-E de Claude y su estado REAL en el código
+- **A — Parser XML→JSON de Qwen**: YA EXISTE — `_calls_texto()` en puente_chat/plugin.py:785 recupera `<tool_call><function=X><parameter=Y>`, `<invoke>` y JSON suelto; aplicado sobre content (L995) y reasoning_content (L997, según política buscar_tool_calls_en). No requiere cambio.
+- **B — quitar tool_choice=required con thinking**: YA OK — el código solo usa `tool_choice:'auto'` (puente_chat L648); nunca manda required. Nada que sanear.
+- **C — herramientas no diferidas (shouldDefer)**: N/A — el registry del router no difiere herramientas; el catálogo se envía entero según cap_nodo.
+- **D — re-inyectar reasoning_content (DeepSeek V4)**: YA EXISTE — L1013-1016 conserva reasoning_content en el assistant con tool_calls cuando la política lo pide; las fichas dsv4 ya declaran `conservar_reasoning_content_con_tools: true`.
+- **run_with_fallback + timeout por intento**: APLICADO — detector ack + retry layout D + fallback de modelo (F) + `_per_attempt_s` = 50% del tope del nodo (75s de 150s).
+- **GLM tool_stream=True**: PENDIENTE VERIFICAR — soportado en _extras (L525-526) via `con_tools.tool_stream`; la ficha glm52 lo deja en false por nota. Solo activarlo si aparece ReadTimeout>30s de api.z.ai.
+- **Telemetría ack por nodo**: PARCIAL — `layout_attempts` registra cada intento (nodo, layout, modelo, ack, why); falta contador persistente MODELO_NO_TOOL_CAPABLE tras 3 acks (exec_dispatch.Profile lo cubre cuando se cablee completo).
+- Solución E (npm xml-toolcall/pi-qwen-fix): no aplica, el parser propio ya cubre los 3 formatos.
