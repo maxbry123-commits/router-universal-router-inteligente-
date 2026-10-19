@@ -124,3 +124,21 @@ Commits: `d9fd131` (G1-G19 core), `276ca41` (allowed_actions + frontend + G16b).
 - G1/G2/G3: el system final es UNO con bloques; rol dsv4 en user.
 - G13: el recorte nunca toca core/const/rol/tarea/cierre.
 - G17/G18/G19: motor, buzón y paralelo por los endpoints reales.
+
+## DSL DAG — LOOP CODA / GAPS QWEN38 (2026-10-19) — A01..A10
+
+| nodo | gap | archivo:linea | cambio real | estado |
+|---|---|---|---|---|
+| A01 | GAP-X01/X04 | plugins/fichas_qwen/plugin.py:_llamar_harness_1 (~1060) | `opts['herr'][nid]` se llena ANTES de extraer texto; `content=''` + tools ok → `RESULTADO_EJECUTADO_CON_TOOL`; `escribe` sin mutación nueva → `EJECUCION_SIN_EVIDENCIA`; G14 evalúa SOLO el delta `[_h0:]` | HECHO |
+| A02 | LOOP CODA | plugin.py `_escribe_nodo` (~946), `_requiere_loop_salida`, `_llamar_con_partes` (~1130), `_sf_parcial` (~1020), opts `loop_salida`/`loop_salida_privada`/`cadena_ctx_chars` (~1901) | cursor `{siguiente,resumen,piezas,input_sha,modelo,ultima_marca}` persistido en `out['__loop__:'+nid]` vía `_ck_guardar`; GAPs `INPUT_O_MODELO_CAMBIADO/CANCELADO/LIMITE_TIEMPO/SIN_MARCA/MAX_PARTES/SIN_EVIDENCIA_MUTADORA`; TAREA_COMPLETA devuelve todas las piezas | HECHO |
+| A03 | verbatim | modos/motor_objetivo.py `_bloques_verbatim`, `_normalizar_tarea`, `_prompt_vuelta` | entrada >8500 → partición concatenada=original con `input_bloque`+`sha_input`+`sha_objetivo`; `<tarea_verbatim sha256>`; >cola → `GAP_INPUT_EXCEDE_COLA`; dicts nunca `[:500]` | HECHO |
+| A04 | GAP-X07/X08 | plugin.py `nodo` (~1710), `_dag` (~1734-1770), final (~1798), `_pend_guardar` (~1950), `/aprobar` (~1924), fichas/cadenas.json | P2 `cadena_pide_aprobacion` → marca + `opts.estado=ESPERANDO_APROBACION` + `plan_stop` + break antes de P3; ctx entre pasos ≤6000 `[CONTEXTO PREVIO RECORTADO]`; corrección única P4→P3 (pop P3/P4/P5, `cadena_correcciones<1`); pendiente guarda cadena_id+stop+tarea_id; /aprobar retoma MISMA cadena | HECHO |
+| A05 | GAP-X09/X10 | modos/motor_objetivo.py while (~120-140); plugin.py `llamar` (~1446) | límites al TOP del bucle antes de verificar; `CUMPLIDO` exige `v.cumplido AND todas hecho AND herramientas_ok>0`; cola llena + faltantes → `GAP_MAX_TAREAS`; modo code en ficha2/3 → `_correr` real (receipt `MOTOR:Tn`) | HECHO |
+| A06 | GAP-X11 | puente_chat/herramientas.py `llamar_recurso` (~506), `_t_delegar_paralelo` (~830) | `delegacion_depth=1`, `cap_tools='read'`, `solo_lectura`, `presupuesto_s=min(120,restante)`, `max_tokens≤1500` viajan en payload LLM_CALL; deadline por subtarea → `GAP SUBTAREA_TIMEOUT` | HECHO |
+| A07 | GAP-X12/X13 | chat frontend/panel-chat.js (~781); plugin.py `_buzon_enviar` (~1384), `responder_pendiente` (~2098) | `colaTxt` por textContent/createElement; `buzon_enviar` exige PID activo (_PROCESOS o ck RUNNING) → `PROCESO_NO_ACTIVO`; `UPDATE ... AND respuesta IS NULL` + rowcount==1 → `PENDIENTE_NO_EXISTE_O_YA_RESPONDIDA` | HECHO |
+| A08 | GAP-X02/X03/X05 | puente_chat/plugin.py `_bloques_capas` (~561); fichas `nodo` (~1621-1625, ~1703) | `t[:8000]` fuera — bloque íntegro o GAP aguas abajo; `_REGLA_NODO` reset a 0 a la ENTRADA + finally-restore | HECHO |
+| A09 | GAP-X06 | puente_chat/plugin.py `_qwen_razonamiento_compatible` (~570) | no-qwen → igual; con tools `-preview`/`_SOLO_THINKING` → DROP `enable_thinking`; demás qwen → `enable_thinking=False` + drop `reasoning_effort`/`thinking_budget`; sin tools → drop `thinking_budget` si hay `reasoning_effort`; Experiment B preservado | HECHO |
+| A10 | GAP-X14/X15 | fichas `_ck_guardar` (~1276); modos/programador.py `_toca` (~50) | `rec=dict(prev); rec.update(...)` conserva `reanudaciones`+campos; `out` vacío no borra; `diario` con última ocurrencia zoneinfo-aware dentro de CATCHUP_S | HECHO |
+
+Cursor LOOP: `opts['out']['__loop__:'+nid]` = {siguiente, resumen, piezas, input_sha, modelo, ultima_marca, t} — reanudar exige SHA+modelo iguales.
+Commits: `5ddee7084b` (fichas), `a085a9a178` (puente), `18522d25ae` (frontend). Tests locales 6/6 PASS.
