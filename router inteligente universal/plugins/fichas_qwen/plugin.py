@@ -1395,7 +1395,20 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                         _ack2, _why2 = _pl.is_ack_only(str(r or '')[:2000])
                         opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': 'D', 'ack': _ack2, 'why': _why2})
                         if _ack2 and isinstance(r, str) and not r.startswith('GAP'):
-                            r = 'GAP ACUSE_RECIBIDO x2 layouts (blocked_with_evidence): ' + r[:300]
+                            # >>> MODOS <<< FIX Claude INPUT 128 FIX2: fallback de modelo (ultimo escalon)
+                            _fb_done = False
+                            for _fb in (opts.get('modelos_fallback') or ['ficha-qwen38max', 'ficha-glm52']):
+                                if _fb == mod:
+                                    continue
+                                _r2 = _llamar_harness(_fb, prompt, ficha, n, opts)
+                                _a3, _w3 = _pl.is_ack_only(str(_r2 or '')[:2000])
+                                opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': 'F', 'modelo': _fb, 'ack': _a3, 'why': _w3})
+                                if not _a3 or (isinstance(_r2, str) and _r2.startswith('GAP')):
+                                    r = _r2
+                                    _fb_done = True
+                                    break
+                            if not _fb_done:
+                                r = 'GAP ACUSE_RECIBIDO x2 layouts + fallback (blocked_with_evidence): ' + r[:300]
                 except ImportError:
                     pass
                 # <<< MODOS END
