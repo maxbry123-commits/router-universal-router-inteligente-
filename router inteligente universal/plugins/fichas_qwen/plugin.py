@@ -1374,8 +1374,23 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         try:
             with _SEM:  # maximo 6 llamadas de modelo a la vez; las demas esperan en cola sin fallar
                 _prog(pid, i, 'trabajando')  # En cola hasta adquirir el slot: no mostrar trabajando mientras espera _SEM
+                # >>> MODOS BEGIN  FIX Claude S4: detector de acuse + reintento layout D (system vacio)
                 opts['_sys_prompt'] = _sys_prompt
                 r = _llamar_harness(mod, prompt, ficha, n, opts)
+                try:
+                    import prompt_layouts as _pl  # noqa: PLC0415
+                    _ack, _why = _pl.is_ack_only(str(r or '')[:2000], (r.get('tool_calls') if isinstance(r, dict) else None))
+                    opts.setdefault('layout_attempts', []).append({'nodo': n.get('id'), 'layout': 'B', 'ack': _ack, 'why': _why})
+                    if _ack:
+                        opts['_sys_prompt'] = ''  # layout D_solo_tarea: reintento sin envoltorio
+                        r = _llamar_harness(mod, prompt, ficha, n, opts)
+                        _ack2, _why2 = _pl.is_ack_only(str(r or '')[:2000])
+                        opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': 'D', 'ack': _ack2, 'why': _why2})
+                        if _ack2 and isinstance(r, str) and not r.startswith('GAP'):
+                            r = 'GAP ACUSE_RECIBIDO x2 layouts (blocked_with_evidence): ' + r[:300]
+                except ImportError:
+                    pass
+                # <<< MODOS END
         except Exception as x:  # noqa: BLE001
             r = 'GAP %s (%s): %s' % (i, mod, x)
         if i not in opts.setdefault('abandonados', set()):
