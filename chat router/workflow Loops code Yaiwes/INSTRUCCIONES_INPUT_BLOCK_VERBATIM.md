@@ -29386,3 +29386,330 @@ dc5�J@�4�jpi! g9��6���j�{���'�|�)��2��
 | 39 | `Screenshot_20261018-154247_Edge.png` | `5b2808558e1e` |
 | 40 | `Screenshot_20261018-154256_Edge.png` | `5407aadba198` |
 | 41 | `Screenshot_20261018-154306_Edge.png` | `439ff89801b8` |
+
+---
+
+## INPUT 126
+
+Implementación base
+Una versión TypeScript razonablemente cercana a producción podría quedar así:
+
+ts
+Copiar
+type FailureKind =
+  | "ACK_ONLY"
+  | "NO_TOOL"
+  | "TOOL_IN_REASONING"
+  | "PARSE_FAILURE"
+  | "API_RETRYABLE"
+  | "TIMEOUT"
+  | "TERMINAL";
+interface AttemptPolicy {
+  layout: "B" | "D_SOLO_TAREA";
+  timeoutMs: number;
+  thinking?: boolean;
+  minimalTools?: boolean;
+}
+
+interface NodePolicy {
+  totalTimeoutMs: number;
+  reserveMs: number;
+  requiresExecution: boolean;
+  attempts: AttemptPolicy[];
+}
+
+interface ModelResult {
+  text: string;
+  rawText?: string;
+  toolCalls: unknown[];
+  toolExecutions: Array<{
+    callId: string;
+    tool: string;
+    status: "completed" | "failed";
+  }>;
+}
+
+const ACK_ONLY =
+  /^(entendido|listo|de acuerdo|comprendido|estoy listo|proceder[eé]|voy a (?:hacerlo|proceder))/i;
+
+function classifyResult(
+  result: ModelResult,
+  requiresExecution: boolean
+): "SUCCESS" | FailureKind {
+const completed = result.toolExecutions.some(
+    (x) => x.status === "completed"
+  );
+
+  if (!requiresExecution) {
+    return "SUCCESS";
+  }
+
+  // Receipt real gana sobre cualquier texto.
+  if (completed) {
+    return "SUCCESS";
+  }
+
+  const text = (result.text ?? "").trim();
+
+  if (result.toolCalls.length === 0 && ACK_ONLY.test(text)) {
+    return "ACK_ONLY";
+  }
+
+Señal de que el modelo pudo haber generado markup
+  // que el parser no convirtió en tool_calls.
+  if (
+    result.toolCalls.length === 0 &&
+    /<tool_call>|"tool_calls"|function_call/i.test(result.rawText ?? "")
+  ) {
+    return "TOOL_IN_REASONING";
+  }
+
+  if (result.toolCalls.length === 0) {
+    return "NO_TOOL";
+  }
+
+  // Hubo llamada estructurada pero jamás llegó receipt.
+  return "PARSE_FAILURE";
+}
+export async function runWithFallback(
+  task: unknown,
+  policy: NodePolicy,
+  invoke: (
+    task: unknown,
+    attempt: AttemptPolicy,
+    signal: AbortSignal
+  ) => Promise<ModelResult>
+): Promise<ModelResult> {
+  const startedAt = Date.now();
+  const absoluteDeadline = startedAt + policy.totalTimeoutMs;
+
+  let lastError: unknown;
+
+  for (const attempt of policy.attempts) {
+    const remaining =
+      absoluteDeadline - Date.now() - policy.reserveMs;
+
+    if (remaining <= 0) {
+
+throw new Error("NODE_DEADLINE_EXHAUSTED");
+    }
+
+    const attemptBudget = Math.min(
+      attempt.timeoutMs,
+      remaining
+    );
+
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => controller.abort(),
+      attemptBudget
+    );
+
+    try {
+      const result = await invoke(
+        task,
+        attempt,
+        controller.signal
+
+);
+
+      // IMPORTANTE:
+      // clasificar en cuanto termina la respuesta.
+      // Un ACK no debe consumir el resto del deadline.
+      const outcome = classifyResult(
+        result,
+        policy.requiresExecution
+      );
+
+      if (outcome === "SUCCESS") {
+        return result;
+      }
+
+      const retryable =
+
+outcome === "ACK_ONLY" ||
+        outcome === "NO_TOOL" ||
+        outcome === "TOOL_IN_REASONING" ||
+        outcome === "PARSE_FAILURE";
+
+      if (!retryable) {
+        throw new Error(`NODE_FAILED:${outcome}`);
+      }
+
+      lastError = new Error(`RETRYABLE:${outcome}`);
+    } catch (error) {
+      lastError = error;
+
+      if (controller.signal.aborted) {
+        lastError = new Error("ATTEMPT_TIMEOUT");
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+
+}
+
+  throw lastError ?? new Error("ALL_ATTEMPTS_FAILED");
+}
+
+El detalle crucial es que el segundo intento debe recibir un prompt reconstruido, no simplemente agregar:
+
+text
+Copiar
+assistant: "Entendido..."
+user: "continúa"
+Eso prolonga el estado fallido y añade ruido.
+
+Debe ser algo equivalente a:
+
+SYSTEM:
+Eres un nodo ejecutor. Esta tarea exige ejecución real.
+No respondas con un acuse de recibo.
+Usa exclusivamente las herramientas proporcionadas.
+
+TOOLS:
+[solo allowed_actions necesarias]
+
+USER:
+[TAREA SOLA]
+Esa sería la función de D_solo_tarea.
+
+Política que aplicaría a tus nodos ahora mismo
+
+Política que aplicaría a tus nodos ahora mismo
+Nodo	Ruta recomendada
+glm52	B como principal; retry D sólo si falta ejecución
+qwen38max	B como principal
+qwen36	B; ajustar presupuesto por duración, no por ACK salvo que aparezca
+qwen38flash-auditor	B; corregir fetching GitHub >1 MB
+dsv4flash	Probar D_solo_tarea directamente; toggle de thinking en matriz
+dsv4pro	Igual: D directo probablemente evita gastar un B ya conocido como problemático
+room-qwen38	Antes de insistir con prompts, instrumentar raw_response → parsed tool_calls → dispatch
+
+Ese routing adaptativo evita que cada tarea de DeepSeek pague obligatoriamente la latencia
+Ese routing adaptativo evita que cada tarea de DeepSeek pague obligatoriamente la latencia:
+
+text
+Copiar
+B malo → ACK → D
+cuando ya has observado repetidamente que B es malo para ese nodo.
+
+Timeout, GitHub de 1.1 MB y demás soluciones posibles
+No subiría simplemente TIMEOUT_NODO para todos
+Tu intuición es correcta: el sistema actual hace que:
+
+intento B
++
+retry D
+>
+TIMEOUT_NODO = 150 s
+y por tanto el propio mecanismo de recuperación convierte un fallo semántico recuperable en TIMEOUT_NODO.
+
+La solución adecuada es separar tres relojes:
+
+NODE_TOTAL_DEADLINE
+ATTEMPT_TIMEOUT
+TOOL_EXECUTION_TIMEOUT
+No son equivalentes.
+
+Por ejemplo, como configuración inicial de ingeniería —no como número universal—:
+
+dsv4flash: {
+  totalTimeoutMs: 205_000,
+  reserveMs: 15_000,
+  attempts: [
+    {
+      layout: "D_SOLO_TAREA",
+      timeoutMs: 95_000,
+      thinking: false
+    },
+    {
+      layout: "D_SOLO_TAREA",
+      timeoutMs: 95_000,
+      thinking: true
+    }
+  ]
+}
+O, si quieres mantener estrictamente el límite de 150 segundos:
+
+attempt A = máximo ~65–70 s
+attempt B = máximo ~65–70 s
+reserve   = ~10–20 s
+pero eso sólo sirve si tus distribuciones reales de latencia permiten completar una llamada DeepSeek dentro de ese presupuesto.
+
+La política definitiva debería salir de tus percentiles observados:
+P50
+P90
+P95
+P99
+por modelo × layout × thinking × tamaño_de_prompt, no de un timeout único elegido globalmente.
+
+Más importante todavía: si el ACK ya terminó, el executor debe reconocerlo inmediatamente. No hay razón para esperar hasta 150 segundos después de recibir:
+
+"Entendido. Estoy listo..."
+finish_reason = stop
+El retry debe arrancar en ese instante.
+
+Mejor que “más timeout”: deadline dinámico
+El intento debería conocer cuánto presupuesto queda:
+
+text
+Copiar
+remaining =
+  node_deadline
+  - now
+  - cleanup_reserve
+y usar:
+attempt_timeout =
+  min(configured_attempt_timeout, remaining)
+Así nunca empiezas un segundo intento que matemáticamente no puede terminar.
+
+Por eso mi respuesta concreta a tu pregunta:
+
+Sí: necesitas timeout por intento, además de un deadline total por nodo.
+
+Y el deadline total superior debe aplicarse sólo a los nodos realmente configurados con retries, no multiplicar globalmente TIMEOUT_NODO para todos
+
+La jerarquía sería:
+
+text
+Copiar
+nodo sin retry
+  total = 150 s
+
+nodo con retry semántico
+  total = mayor, calibrado por P95
+  attempt 1 = límite propio
+  attempt 2 = límite propio
+
+tool interno
+  timeout independiente
+v
+Por tanto, tu workaround:
+
+text
+Copiar
+leer primeras ~150 líneas
++
+pedir INPUTs por separado
+es válido para ahorrar tokens y respuesta del tool, pero no es la única solución.
+
+
+El fix robusto es:
+
+text
+Copiar
+Contents API
+    │
+    ├─ size <= 1 MB
+    │     └─ JSON/base64 normal
+    │
+    └─ size > 1 MB
+          ├─ raw media
+          ├─ download_url/raw
+          └─ Git Blob por SHA
+La API Contents también devuelve referencias como git_url/SHA y download_url, que permiten cambiar de estrategia para recuperar el archivo. 
+
+sigue modo recepción anota 1 a 1 imput block verbartin en la continuidad un readme cableado con las fichas y el handoff 
+
+Luego sigue modo recepción

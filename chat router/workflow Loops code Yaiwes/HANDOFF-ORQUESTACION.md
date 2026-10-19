@@ -22,8 +22,8 @@
 
 ### GAPs identificados (pendiente code de Claude o decisión)
 1. **Flag `motor` no se propaga a la ruta ficha** — leído en plugin.py L2324 (`_MOTOR_HAB.set(bool(p.get('motor')))`), la ficha no lo manda → modelos en tarea no ven motor_descargar/extraer/copiar/mover. Verificado ×2 (yo + qwen38max).
-2. **TIMEOUT_NODO 150s** — con retry ACK→D el nodo excede el tope; falta timeout por intento o tope mayor.
-3. **dsv4pro/dsv4flash no ejecutan** — `reasoning_effort:'high'` en perfiles.py envía los tool calls al reasoning (nunca se despachan). Propuesta: `enable_thinking:false` para modelos dsv4 (como Qwen Code con endpoint oficial DeepSeek). Esperando OK de Antonio o code de Claude.
+2. **TIMEOUT_NODO 150s** — Claude: separar 3 relojes (NODE_TOTAL/ATTEMPT/TOOL_EXECUTION) + deadline dinámico `min(config, deadline-now-reserve)`; nodos con retry llevan deadline mayor, no subir el tope global. Diseño completo en README §8.
+3. **dsv4pro/dsv4flash no ejecutan** — `reasoning_effort:'high'` en perfiles.py envía los tool calls al reasoning (nunca se despachan). Claude (INPUT 126): D_solo_tarea directo + thinking toggle por intento. Fix: enable_thinking off en primer intento + per-attempt timeout. Esperando OK de Antonio.
 4. **7 categorías de fallo** — hoy todo colapsa en HERRAMIENTA_NO_EJECUTADA; falta executor con contrato de ejecución (`run_node_with_execution_contract`): ACK/NO_TOOL→retry D, TOOL_IN_REASONING→parser fallback, timeouts→idempotencia.
 5. **GLM 5.2 vía Qianwen** — verificar `extra_body={"tool_stream":True}` si sigue intermitente.
 6. **ROOM CONFERENCIAS** — existe `room_debatir` (tema, participantes ≤6, rondas 1-3, asincrono); falta acción `enviar_mensaje` para que Devin/AI externo escriba un mensaje suelto + integración MCP HTTP/JSON (tarea de qwen38max).

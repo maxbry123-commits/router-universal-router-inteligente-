@@ -55,3 +55,11 @@ Timeout de red NO prueba que una escritura no se ejecutó -> idempotency keys / 
 - Detector ACK + reintento layout D por nodo (S4)
 - Desplegado en el Space; prueba A/B real: antes "entendido", después ejecución con evidencia (PASS línea 28 loop_run)
 - `validate_contract.py --exclude ID` (fix §6 ADICIONALES) aplicado
+
+## 8. Executor con contrato de ejecución (INPUT 126, diseño de Claude)
+- `classifyResult`: toolExecutions completados => SUCCESS (receipt gana sobre texto). Sin calls + regex ACK => ACK_ONLY. Sin calls pero rawText contiene `<tool_call>|"tool_calls"|function_call` => TOOL_IN_REASONING. Sin calls => NO_TOOL. Calls sin receipt => PARSE_FAILURE.
+- Retry reconstruye el prompt entero (no append "continúa" sobre el ACK): SYSTEM ejecutor + tools mínimas + USER tarea sola.
+- Routing por nodo: glm52/qwen38max/qwen36/qwen38flash => layout B; **dsv4flash/dsv4pro => D_solo_tarea directo** + thinking toggle en matriz (evita pagar latencia de un B ya sabido malo).
+- **Tres relojes**: NODE_TOTAL_DEADLINE (150s sin retry; mayor calibrado P95 con retry) + ATTEMPT_TIMEOUT por intento + TOOL_EXECUTION_TIMEOUT. Deadline dinámico: `attempt_timeout = min(config, deadline - now - reserve)`. Un ACK detectado se reintenta al instante, no espera al tope.
+- Timeout de configuración ejemplo dsv4flash: total 205s, 2×D (95s, thinking off → on), reserve 15s.
+- **Fix GitHub >1MB**: Contents API devuelve `git_url`/SHA/`download_url` → para archivos grandes usar raw media / download_url / Git Blob por SHA en vez de JSON/base64 (hoy trunca en ~INPUT 022 del fichero de instrucciones).
