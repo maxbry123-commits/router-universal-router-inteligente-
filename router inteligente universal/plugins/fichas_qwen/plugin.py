@@ -1505,7 +1505,10 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     if fid == 'ficha5-mvp':  # Team 5 MVP: camino directo (input + historial + tools -> 1 modelo -> respuesta); la cola, el proceso y el visor son los de la familia
         from . import mvp as _mvp
         p["_modo"] = modo  # >>> MODOS <<< ficha_modo para la ruta directa (system_block, reasoning, tools)
-        return _mvp.chat(p, FICHAS[fid], mensaje, ses, t0)
+        _r5 = _mvp.chat(p, FICHAS[fid], mensaje, ses, t0)  # >>> MODOS <<< el modo resuelto tambien viaja en la ruta MVP
+        if isinstance(_r5, dict) and p.get("_modo_resuelto"):
+            _r5["modo"] = p["_modo_resuelto"]  # >>> MODOS <<<
+        return _r5  # >>> MODOS <<<
     if not mensaje.lstrip().lower().startswith('/aprobar'):
         if _confirma(mensaje):  # ok / confirmo / proceder con verificacion: activa la verificacion cruzada si hay una propuesta pendiente
             pv = _verif_cargar(fid, ses)
