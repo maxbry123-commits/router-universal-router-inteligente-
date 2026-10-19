@@ -559,12 +559,36 @@ def _bloques_capas(capas, nodo=''):
         else:
             t = ''
         if t:
-            out.append(t[:8000])
+            out.append(t)  # DSL A08: bloque INTEGRO o GAP aguas abajo (nunca truncado silencioso)
     if nodo and not capas:  # sin capas explicitas: el mapa del nodo decide (capa B)
         t = _prompt_lib('bloques/%s.md' % _CAPA_NODO.get(str(nodo), '')) if _CAPA_NODO.get(str(nodo)) else ''
         if t:
-            out.append(t[:8000])
+            out.append(t)
     return out
+
+
+def _qwen_razonamiento_compatible(modelo_api, ex, tools):
+    # DSL A09/GAP-X06: compatibilidad thinking<->tools por modelo — un solo punto, sin tocar temp/top_p/globales
+    m = str(modelo_api or '')
+    if not m.startswith('qwen'):
+        return ex  # no-qwen: sale igual
+    if tools:
+        if '-preview' in m or m in _SOLO_THINKING:
+            ex.pop('enable_thinking', None)  # thinking-only: NUNCA enviar enable_thinking=false (el proveedor lo rechaza 400)
+            return ex
+        _exp_th = os.environ.get('RIU_QWEN_TOOLS_THINKING_TESTED') == '1' \
+            and str((_IDS_CTX.get() or {}).get('ficha_id') or '') in ('ficha2-dag-codigo', 'ficha3-frontend') \
+            and str(_PERFIL.get() or '') in ('code', 'auditoria')
+        if _exp_th:
+            ex['tool_choice'] = 'auto'  # Experiment B condicionado: thinking ON con tool_choice=auto (documentado QwenCloud)
+        else:
+            ex['enable_thinking'] = False  # Function Calling oficial Qwen: la llamada que decide la tool no razona
+            ex.pop('reasoning_effort', None)  # nunca enable_thinking + reasoning_effort en la misma peticion
+            ex.pop('thinking_budget', None)
+    else:
+        if 'reasoning_effort' in ex:
+            ex.pop('thinking_budget', None)  # un solo control de razonamiento por peticion
+    return ex
 
 
 def _extras(pol, tools):
@@ -709,16 +733,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                     # Intento 1 -> enable_thinking False; el reintento lo sube a True (dsv4_think via _chat).
                     ex['enable_thinking'] = bool(_DSV4_THINK.get())
                     ex.pop('reasoning_effort', None)  # un solo control de thinking por peticion
-                if tools and modelo.startswith('qwen') and modelo not in _SOLO_THINKING:
-                    _exp_th = os.environ.get('RIU_QWEN_TOOLS_THINKING_TESTED') == '1' \
-                        and str((_IDS_CTX.get() or {}).get('ficha_id') or '') in ('ficha2-dag-codigo', 'ficha3-frontend') \
-                        and str(_PERFIL.get() or '') in ('code', 'auditoria')
-                    if _exp_th:
-                        # Experiment B condicionado: thinking ON con tool_choice=auto (documentado QwenCloud).
-                        ex['tool_choice'] = 'auto'
-                    else:
-                        ex['enable_thinking'] = False  # Function Calling oficial Qwen: la llamada que decide la tool no razona
-                        ex.pop('reasoning_effort', None)  # nunca enable_thinking + reasoning_effort en la misma peticion
+                ex = _qwen_razonamiento_compatible(modelo, ex, tools)
                 # medido 16-oct en Token Plan: enable_thinking=false se acepta en los 9 modelos de texto (y es el camino rapido con tools)
                 # tool_stream NUNCA global: solo si la politica del modelo lo activa para esa tarea (con_tools.tool_stream)
             if tools and _FORCE_TOOL.get():  # FIX glm52 INPUT 129 + DSL N2: required no convive con thinking

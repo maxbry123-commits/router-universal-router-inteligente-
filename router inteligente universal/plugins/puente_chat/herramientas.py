@@ -503,7 +503,7 @@ def recursos_ids():
     return {x['id'] for x in recursos_llm()}
 
 
-def llamar_recurso(recurso, sistema, mensaje):
+def llamar_recurso(recurso, sistema, mensaje, limite_tokens=None, restante_s=None):
     recurso = str(recurso or '')
     msgs = ([{'role': 'system', 'content': str(sistema)[:2000]}] if sistema else []) + [{'role': 'user', 'content': str(mensaje or '')[:12000]}]
     if recurso not in recursos_ids():
@@ -511,7 +511,10 @@ def llamar_recurso(recurso, sistema, mensaje):
     if recurso.startswith('ficha4:'):
         if not LLM_CALL:
             return 'ERROR: GAP_FICHA4_HTTP (harness sin llm_call)'
-        d = LLM_CALL({'caller_id': 'tools-staff', 'plugin_id': 'tools', 'workflow_id': 'tools-staff', 'task_type': 'code', 'modelo': recurso[7:], 'messages': msgs, 'max_tokens': 1500})
+        # DSL A06: ContextVar no cruza HTTP — la profundidad/capa/presupuesto viaja DENTRO del payload LLM_CALL
+        d = LLM_CALL({'caller_id': 'tools-staff', 'plugin_id': 'tools', 'workflow_id': 'tools-staff', 'task_type': 'code', 'modelo': recurso[7:], 'messages': msgs,
+                      'max_tokens': min(int(limite_tokens or 1500), 1500), 'delegacion_depth': 1, 'cap_tools': 'read',
+                      'solo_lectura': True, 'presupuesto_s': min(120.0, float(restante_s or 120.0))})
         return str(d.get('reply') or '') if d.get('reply') else 'ERROR Ficha 4: ' + str(d.get('error') or 'sin respuesta') + ' ' + str(d.get('detalle') or '')
     if recurso.startswith('nvcode:'):
         if not LLM_NV:
@@ -828,19 +831,31 @@ _REGLA_NODO = _CV('riu_regla_nodo', default=0)  # DSL G15: max 5 lecturas de reg
 
 
 def _t_delegar_paralelo(a):
-    # DSL G18: fan-out de subtareas por el MISMO Harness; subagentes solo lectura; respeta _SEM
+    # DSL G18/A06: fan-out por el MISMO Harness; cada subtarea hereda CAP_READ, max_tokens<=1500 y deadline <=120 s del nodo
     if _PROF_DELEGACION.get() >= 1:
         return 'GAP DELEGACION_ANIDADA: un subagente no puede crear mas subagentes (un solo nivel)'
     subs = (a.get('subtareas') or [])[:12]
     if not subs:
         return 'GAP DELEGACION_VACIA: falta subtareas'
     n = max(1, min(int(a.get('max_paralelo') or 6), 6))
+    try:
+        from plugins.fichas_qwen import plugin as _fq_d  # noqa: PLC0415
+        dl_nodo = float((_fq_d._NODO_CALL.get() or {}).get('deadline') or 0)  # deadline del nodo padre (ContextVar del lado ficha)
+    except Exception:  # noqa: BLE001
+        dl_nodo = 0
 
     def uno(i, s):
         tok = _PROF_DELEGACION.set(1)
+        t0 = time.monotonic()
+        restante = min(120.0, (dl_nodo - t0) if dl_nodo else 120.0)
         try:
-            return i, _t_recurso({'recurso': s.get('recurso') or 'ficha4:ficha-qwen38flash',
-                                  'mensaje': str(s['texto'])[:6000], 'max_tokens': int(s.get('max_tokens') or 1500)})
+            if restante <= 2:
+                return i, 'GAP SUBTAREA_TIMEOUT'
+            r = llamar_recurso(str(s.get('recurso') or 'ficha4:ficha-qwen38flash'), '', str(s['texto'])[:6000],
+                               limite_tokens=int(s.get('max_tokens') or 1500), restante_s=restante)
+            if _tm.monotonic() - t0 > 122:
+                return i, 'GAP SUBTAREA_TIMEOUT'
+            return i, r
         except Exception as x:  # noqa: BLE001
             return i, 'GAP SUBTAREA: ' + str(x)[:200]
         finally:
