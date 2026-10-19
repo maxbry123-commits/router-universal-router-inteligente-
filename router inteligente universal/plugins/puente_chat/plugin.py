@@ -37,6 +37,7 @@ _PROG_FN = ContextVar("riu_prog_fn", default=None)  # Team 5: avisos reales de p
 _STREAM_FN = ContextVar("riu_stream_fn", default=None)  # Team 5: chunks de la respuesta final al chat en cuanto llegan
 _EXTRA_LLM = ContextVar("riu_extra_llm", default=None)  # Team 5: extras de la peticion por modelo (p.ej. reasoning_effort)
 _DSV4_THINK = ContextVar("riu_dsv4_think", default=None)  # FIX Claude INPUT 126: reintento dsv4 alterna thinking
+_FORCE_TOOL = ContextVar("riu_force_tool", default=None)  # FIX glm52 INPUT 129: reintento con tool_choice=required
 _VISTOS = ContextVar("riu_vistos", default=None)  # escrituras ya hechas de esta tarea y nodo (no se repiten)
 _PERFIL = ContextVar("riu_perfil", default="normal")  # normal / code / auditoria
 _CANCEL_FN = ContextVar("riu_cancel_fn", default=None)  # callable -> True = usuario detuvo el proceso: no lanzar mas pasos
@@ -647,6 +648,8 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             if tools:
                 cuerpo['tools'] = tools
                 cuerpo['tool_choice'] = 'auto'
+                if _FORCE_TOOL.get():  # FIX glm52 INPUT 129: el reintento exige la tool
+                    cuerpo['tool_choice'] = 'required'
             pol = _politica(modelo) if proveedor == 'qwencloud' else {}
             _POL.set(pol)
             ex = _extras(pol, tools)
@@ -668,6 +671,12 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                         ex.pop('reasoning_effort', None)  # nunca enable_thinking + reasoning_effort en la misma peticion
                 # medido 16-oct en Token Plan: enable_thinking=false se acepta en los 9 modelos de texto (y es el camino rapido con tools)
                 # tool_stream NUNCA global: solo si la politica del modelo lo activa para esa tarea (con_tools.tool_stream)
+            if tools and _FORCE_TOOL.get():  # FIX glm52 INPUT 129: required no convive con thinking en DashScope
+                ex.pop('enable_thinking', None)
+                ex.pop('reasoning_effort', None)
+                cuerpo.pop('enable_thinking', None)
+                cuerpo.pop('reasoning_effort', None)
+                cuerpo.pop('thinking_budget', None)
             cuerpo.update(ex)
             exl = _EXTRA_LLM.get() if not tools else None  # Team 5: politica propia solo en la llamada final de texto
             if proveedor == 'nvidia':
@@ -2355,6 +2364,7 @@ def _chat(p):
     _STREAM_FN.set(p.get('stream_fn') if callable(p.get('stream_fn')) else None)
     _EXTRA_LLM.set(p.get('extra_llm') if isinstance(p.get('extra_llm'), dict) else None)
     _DSV4_THINK.set(p.get('dsv4_think'))  # FIX Claude INPUT 126: toggle thinking del reintento DeepSeek
+    _FORCE_TOOL.set(bool(p.get('forzar_tool')))  # FIX glm52 INPUT 129: tool_choice=required en el reintento
     if p.get('extra_llm') is None and _CAP_TOOLS.get() == 'none' and len(pregunta or '') <= 300:
         _EXTRA_LLM.set({'enable_thinking': False})  # pregunta simple (CAP_NONE, corta): sin thinking; las complejas lo mantienen
     _tid = str(p.get('tarea_id') or '')

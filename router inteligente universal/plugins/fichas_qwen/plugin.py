@@ -1014,6 +1014,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
                   'dsv4_think': bool(opts.get('_dsv4_think')),  # >>> MODOS <<< FIX Claude INPUT 126: intento 2 DeepSeek con thinking ON
+                  'forzar_tool': bool(opts.get('_forzar_tool')),  # >>> MODOS <<< FIX glm52 INPUT 129: tool_choice=required en reintento
                   'extra_llm': (({'enable_thinking': False} if opts.get('modos_reasoning') == 'none' else {'reasoning_effort': opts['modos_reasoning']}) if opts.get('modos_reasoning') else  # >>> MODOS <<< mode_wins: el modo decide el razonamiento de la llamada
                               ({'enable_thinking': True} if opts.get('thinking') else {'enable_thinking': False} if ((perfil == 'fast' and (modelo in _FAST_LOW or cap_in == 'none')) or (cap_nodo == 'none' and cap_in == 'none' and opts.get('fid') == 'ficha1-modelos')) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None),
                   # llamadas sin tools llevan el perfil comun; con tools el Harness lo ignora (extra_llm solo se aplica si tools=None)
@@ -1367,6 +1368,10 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                 _sys_prompt = ''  # <<< MODOS END routing dsv4: layout D primario
             prompt = ('<tarea>\nTAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):\n' + mensaje + '\n</tarea>\n'
                       'Ejecuta <tarea> ahora y entrega el resultado. Prohibido responder con acuse de recibo.')
+            if n.get('requiere_tools') or opts.get('muta'):
+                # FIX qwen38max INPUT 129: guardia explicita de ejecucion con herramientas
+                prompt += ('\nOBLIGATORIO: esta tarea exige ejecucion real. Si hay una herramienta disponible para ella, '
+                           'emite la llamada a herramienta en este mismo turno; si no puedes ejecutarla, devuelve error estructurado, no un acuse.')
             # <<< MODOS END
         if n.get('id') == 'N4' and opts.get('muta') and not opts.get('aprobado'):
             prompt += nl * 2 + 'AVISO DEL SISTEMA: falta la aprobacion del Director. NO ejecutes cambios ni uses herramientas de escritura. Entrega solo el PLAN (pasos, archivos, riesgos) y termina con la linea ESPERANDO_APROBACION. El Director aprueba escribiendo /aprobar al inicio de su mensaje.'
@@ -1394,6 +1399,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                         opts['_sys_prompt'] = ''  # layout D_solo_tarea: reintento sin envoltorio
                         if str(mod or '').startswith('ficha-dsv4'):
                             opts['_dsv4_think'] = True  # FIX Claude INPUT 126: intento 2 alterna thinking
+                        opts['_forzar_tool'] = True  # FIX glm52 INPUT 129: tool_choice=required en el reintento
                         r = _llamar_harness(mod, prompt, ficha, n, opts)
                         _ack2, _why2 = _pl.is_ack_only(str(r or '')[:2000])
                         opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': 'D', 'ack': _ack2, 'why': _why2})
