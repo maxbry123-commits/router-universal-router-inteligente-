@@ -83,6 +83,12 @@ try:
 except Exception as exc:  # never take the Router down for memory GAPs
     logging.getLogger("riu").warning("memoria_yaiwes no montada: %s", exc)
 try:
+    from .mcp_route import build_mcp_router
+
+    app.include_router(build_mcp_router())  # /mcp: puerta MCP JSON-RPC (tools GitHub) para Claude.ai connector
+except Exception as exc:  # never take the Router down for the MCP door
+    logging.getLogger("riu").warning("mcp_route no montada: %s", exc)
+try:
     from ..hf_control_api import install_hf_control_plane
 
     install_hf_control_plane(app)  # /control/hf/*: autoscaler + pool temporal 16/32 GB

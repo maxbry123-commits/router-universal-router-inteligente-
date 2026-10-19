@@ -48,9 +48,25 @@ TOOLS = [
 
 def _token():
     t = os.environ.get('GITHUB_PERSONAL_ACCESS_TOKEN') or os.environ.get('RIU_GITHUB_PAT')
-    if not t:
-        raise RuntimeError('FALTA GITHUB_PERSONAL_ACCESS_TOKEN en el entorno')
-    return t
+    if t:
+        return t
+    try:  # dentro del Router: misma fuente de claves que las tools del puente
+        import sys as _s
+        h = _s.modules.get('puente_herramientas')
+        if h is None:
+            import importlib.util as _iu
+            import os as _o
+            p = _o.path.join(_o.path.dirname(_o.path.abspath(__file__)), 'plugins', 'puente_chat', 'herramientas.py')
+            spec = _iu.spec_from_file_location('puente_herramientas', p)
+            h = _iu.module_from_spec(spec)
+            _s.modules['puente_herramientas'] = h
+            spec.loader.exec_module(h)
+        ks = h._llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN'])
+        if ks:
+            return ks[0]
+    except Exception:  # noqa: BLE001
+        pass
+    raise RuntimeError('FALTA GITHUB_PERSONAL_ACCESS_TOKEN en el entorno')
 
 
 def _peticion(metodo, url, cuerpo=None, espera=40):
@@ -137,13 +153,49 @@ FUNCS = {'github_leer': github_leer, 'github_escribir': github_escribir, 'github
 
 
 def _responder(req_id, resultado=None, error=None):
+    msg = procesar_respuesta(req_id, resultado, error)
+    sys.stdout.write(json.dumps(msg, ensure_ascii=False) + '\n')
+    sys.stdout.flush()
+
+
+def procesar_respuesta(req_id, resultado=None, error=None):
     msg = {'jsonrpc': '2.0', 'id': req_id}
     if error is not None:
         msg['error'] = {'code': -32000, 'message': str(error)}
     else:
         msg['result'] = resultado
-    sys.stdout.write(json.dumps(msg, ensure_ascii=False) + '\n')
-    sys.stdout.flush()
+    return msg
+
+
+def procesar_peticion(req):
+    """Maneja un mensaje JSON-RPC MCP y devuelve el dict de respuesta (None si es notificacion)."""
+    metodo = req.get('method')
+    req_id = req.get('id')
+    if metodo in ('notifications/initialized', 'notifications/cancelled'):
+        return None
+    if metodo == 'initialize':
+        return procesar_respuesta(req_id, {'protocolVersion': req.get('params', {}).get('protocolVersion', '2024-11-05'),
+                                         'capabilities': {'tools': {}},
+                                         'serverInfo': {'name': 'riu-mcp-puente-github', 'version': '1.0.0'}})
+    if metodo == 'tools/list':
+        return procesar_respuesta(req_id, {'tools': TOOLS})
+    if metodo == 'tools/call':
+        p = req.get('params') or {}
+        fn = FUNCS.get(p.get('name'))
+        if not fn:
+            return procesar_respuesta(req_id, error='tool desconocida: %s' % p.get('name'))
+        try:
+            texto = fn(p.get('arguments') or {})
+            return procesar_respuesta(req_id, {'content': [{'type': 'text', 'text': texto}],
+                                               'isError': texto.startswith('ERROR') or texto.startswith('FALTA')})
+        except Exception as x:  # noqa: BLE001
+            return procesar_respuesta(req_id, {'content': [{'type': 'text', 'text': 'ERROR: ' + str(x)[:400]}],
+                                               'isError': True})
+    if metodo == 'ping':
+        return procesar_respuesta(req_id, {})
+    if req_id is not None:
+        return procesar_respuesta(req_id, error='metodo no soportado: %s' % metodo)
+    return None
 
 
 def main():
