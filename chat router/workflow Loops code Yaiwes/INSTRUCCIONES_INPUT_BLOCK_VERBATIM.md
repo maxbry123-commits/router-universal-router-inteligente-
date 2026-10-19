@@ -29713,3 +29713,283 @@ La API Contents también devuelve referencias como git_url/SHA y download_url, q
 sigue modo recepción anota 1 a 1 imput block verbartin en la continuidad un readme cableado con las fichas y el handoff 
 
 Luego sigue modo recepción
+
+---
+
+## INPUT 127
+
+Luego, tu propio tool puede hacer chunking:
+
+text
+Copiar
+fetch raw
+↓
+indexar localmente
+↓
+devolver sólo:
+  líneas 1–150
+  INPUT A
+  INPUT B
+  regiones solicitadas
+Eso es superior a enviar 1.1 MB al LLM.
+Reducir allowed_actions es una solución real
+Tu PASS de GLM con las 8 allowed_actions es además una buena pista de diseño.
+
+Qwen explica que el modelo decide qué herramienta usar en función de su nombre, descripción y parámetros, y recomienda descripciones claras y específicas. 
+
+Por eso no enviaría:
+
+text
+Copiar
+50 herramientas residentes
++
+"usa sólo estas 8"
+cuando se puede enviar directamente:
+
+text
+Copiar
+tools = allowed_actions[0..7]
+Esto reduce competencia entre herramientas, tokens de system prompt y superficie de error.
+
+tool_choice sirve como optimización, no como salvavidas universal
+Cuando una tarea tiene exactamente una herramienta correcta conocida de antemano, puedes considerar un named tool_choice.
+
+Qwen documenta que puede forzarse una herramienta concreta en ciertas configuraciones, pero que para Qwen thinking mode se debe desactivar thinking; required no está garantizado para la familia Qwen. 
+
+GLM, según la documentación actual de Zhipu, opera con tool_choice=auto. 
+
+Así que no construiría una abstracción:
+
+text
+Copiar
+force_tools = required
+esperando que sea portable entre proveedores.
+
+Es mejor:
+
+ts
+Copiar
+capabilities[model].toolChoice = {
+  named: true/false,
+  required: true/false,
+  requiredReliable: true/false,
+  thinkingCompatible: true/false
+}
+strict en DeepSeek sí vale la pena, pero arregla otro problema
+DeepSeek strict hace que, cuando el modelo produzca una llamada, los argumentos se ajusten al JSON Schema validado. 
+
+Eso ayuda con:
+
+text
+Copiar
+TOOL_ARGUMENTS_INVALID
+pero no resuelve por sí solo:
+
+text
+Copiar
+ACK_ONLY
+NO_TOOL
+TOOL_IN_REASONING
+Son problemas distintos.
+
+Parser correcto y logging de la salida cruda
+Para los nodos self-hosted Qwen, la comunidad de ModelScope muestra configuraciones de deployment con:
+
+text
+Copiar
+--reasoning-parser qwen3
+--tool-call-parser qwen3_coder
+--enable-auto-tool-choice
+para las generaciones recientes de Qwen3. 
+
+Y el propio issue reciente de Qwen3.8 reproduce tool calling usando qwen3_coder junto a qwen3. 
+
+Por ello, en cada fallo debes guardar al menos:
+model_id
+provider
+request_id
+
+layout_id
+thinking_mode
+prompt_tokens
+tool_count
+allowed_actions
+
+raw_finish_reason
+raw_content
+raw_reasoning_content
+raw_tool_markup_present
+
+parsed_tool_calls_count
+tool_call_names
+
+dispatch_started
+dispatch_finished
+tool_receipt
+attempt_index
+attempt_timeout
+node_elapsed
+remaining_deadline
+
+failure_class
+fallback_triggered
+Sin esos campos no puedes distinguir modelo, parser, adapter y executor.
+
+Para escrituras, retry sólo con idempotencia
+El retry automático es excelente para:
+
+text
+Copiar
+read_file
+GitHub GET
+search
+list
+fetch metadata
+pero puede ser peligroso para
+
+send_message
+create_issue
+delete_file
+write_file
+deploy
+payment
+La comunidad de Alibaba recomienda explícitamente ids de idempotencia y comprobar estado después de un timeout, ya que un timeout de comunicación no garantiza que la operación no haya ocurrido. 
+ACK antes de dispatch
+→ retry seguro
+
+timeout antes de tool_call
+→ retry seguro
+
+timeout después de dispatch de herramienta read-only
+→ normalmente retry seguro
+
+timeout después de dispatch de escritura
+→ ESTADO_INCIERTO
+→ verificar receipt/idempotency key
+→ no duplicar a ciegas
+Plan de retest y criterio para declarar el FIX completo
+No cerraría el incidente después de un solo PASS. Tu propia experiencia ya mostró que un fix puede mejorar el batch y seguir dejando dsv4flash, dsv4pro y room-qwen38 rotos.
+
+La matriz mínima
+Para cada nodo problemático ejecutaría diez repeticiones idénticas por variante:
+
+Las métricas útiles serían:
+
+text
+Copiar
+execution_success_rate
+ack_only_rate
+no_tool_rate
+tool_in_reasoning_rate
+parse_failure_rate
+dispatch_failure_rate
+
+first_attempt_success_rate
+fallback_recovery_rate
+
+p50_latency
+p95_latency
+p99_latency
+
+Criterio de PASS
+Para tu watchdog, propongo que un nodo marcado execution_required=true sólo pueda producir:
+
+text
+Copiar
+PASS
+cuando haya algo equivalente a:
+
+json
+Copiar
+{
+  "execution_required": true,
+  "tool_calls": 1,
+  "tool_dispatches": 1,
+  "tool_receipts": 1,
+  "evidence_valid": true
+}
+Un:
+
+json
+Copiar
+{
+  "content": "Entendido, procederé.",
+  "tool_calls": 0
+}
+debe convertirse directamente en:
+
+text
+Copiar
+ACK_ONLY → FALLBACK
+y no en success.
+
+Un:
+
+json
+Copiar
+{
+  "raw_content": "<tool_call>...</tool_call>",
+  "tool_calls": []
+}
+debe ser:
+
+text
+Copiar
+TOOL_PARSE_FAILURE
+y no confundirse con ACK.
+
+Y un:
+
+text
+Copiar
+tool_call recibido
+dispatch iniciado
+sin confirmación final
+debe ser:
+
+text
+Copiar
+EXECUTION_STATE_UNKNOWN
+no NO_TOOL.
+
+Orden de implementación
+
+que más probablemente resuelva tu batch
+Prioridad	Cambio	Qué resuelve
+P0	execution_required + success predicate basado en receipt	Impide aceptar ACK como éxito
+P0	run_with_fallback() determinista	Recupera dsv4flash/dsv4pro cuando el primer intento no actúa
+P0	timeout por intento + deadline total	Evita que el retry se mate a sí mismo a los 150 s
+P0	clasificar ACK inmediatamente al finish_reason	Evita desperdiciar el deadline después de una respuesta ya final
+P0	GitHub raw/blob para >1 MB	Corrige qwen38flash-auditor sin culpar al modelo
+P1	D_solo_tarea + tools mínimas	Reduce sensibilidad al contexto/prompt
+P1	telemetría raw → parser → dispatch → receipt	Separa room-qwen38 modelo/parser/executor
+P1	policy específica thinking por modelo	Ataca DeepSeek tool-in-thinking sin romper Qwen3.8
+P1	comprobar tool_stream=True en GLM 5.2 vía Qwen	Evita desaparición de tool_calls en esa ruta 
+P2	named tool choice donde sea compatible	Mejora tareas de herramienta única
+P2	DeepSeek strict	Reduce argumentos/schema inválidos 
+P2	fallback de modelo DS → qwen38max/glm52	Último escalón para tareas donde importa más ejecutar que conservar modelo
+P2	circuit breaker / máximo de intentos	Evita loops y gasto infinito
+P2	idempotency keys	Hace seguros los retries con efectos laterales 
+P3	suite permanente de 10–30 ejecuciones por combinación
+Diagnóstico final
+Con la evidencia disponible, asignaría la causalidad así:
+
+Muy alta confianza — executor incompleto.
+El sistema no posee todavía una regla suficientemente fuerte de “una tarea que exige tool execution no puede terminar sin tool receipt”. El hecho de que el propio Qwen diga que el cumplimiento de protocolo no está garantizado significa que esta defensa pertenece obligatoriamente al runtime. 
+
+Muy alta confianza — arquitectura de timeout incompatible con fallback secuencial.
+Según tus logs, el nuevo retry existe en alguna ruta pero el límite global de 150 segundos mata la operación. Esto no es un problema del modelo: es una contradicción directa entre número de intentos y presupuesto temporal.
+
+Alta confianza — sensibilidad por modelo/template/contexto.
+Tu mismo layout B produce PASS en GLM/Qwen Max y ACK en DeepSeek. Los reportes recientes de Qwen3.8 corroboran que composición y tamaño del prompt pueden cambiar tool calling. 
+
+Alta confianza — DeepSeek-V4-Flash tiene una clase documentada de tool-in-thinking bajo Qwen Code.
+El reporte público coincide de forma poco común con tu combinación y síntoma. 
+
+Media-alta confianza — parser/adapter explica una parte de HERRAMIENTA_NO_EJECUTADA.
+Qwen reconoce tool calls malformadas/parsing corner cases, vLLM mantiene parsers específicos y la comunidad ModelScope muestra casos donde hay markup de herramienta pero tool_calls=[]. 
+
+Prácticamente confirmada — el problema del archivo de 1.1 MB es independiente.
+GitHub fija justamente en 1 MB el límite a partir del cual cambia el modo de recuperación del endpoint Contents; entre 1 y 100 MB debe usarse raw/object, recomendándose raw para obtener el contenido. 
+
+sigue anotando 1 a 1 imput block verbartin en la continuidad del readme y sigue modo recepción

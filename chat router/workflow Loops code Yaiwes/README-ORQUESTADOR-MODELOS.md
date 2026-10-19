@@ -63,3 +63,12 @@ Timeout de red NO prueba que una escritura no se ejecutó -> idempotency keys / 
 - **Tres relojes**: NODE_TOTAL_DEADLINE (150s sin retry; mayor calibrado P95 con retry) + ATTEMPT_TIMEOUT por intento + TOOL_EXECUTION_TIMEOUT. Deadline dinámico: `attempt_timeout = min(config, deadline - now - reserve)`. Un ACK detectado se reintenta al instante, no espera al tope.
 - Timeout de configuración ejemplo dsv4flash: total 205s, 2×D (95s, thinking off → on), reserve 15s.
 - **Fix GitHub >1MB**: Contents API devuelve `git_url`/SHA/`download_url` → para archivos grandes usar raw media / download_url / Git Blob por SHA en vez de JSON/base64 (hoy trunca en ~INPUT 022 del fichero de instrucciones).
+
+## 9. Plan P0-P3 de Claude (INPUT 127)
+- **P0**: predicate de éxito = receipt real (execution_required && receipts==0 -> no PASS); run_with_fallback determinista; timeout por intento + deadline total; clasificar ACK al finish_reason; GitHub raw/blob para >1MB (contents API trunca a 1MB exactamente).
+- **P1**: D_solo_tarea + tools mínimas (allowed_actions directo, no 50 residentes + "usa estas 8"); telemetría raw→parser→dispatch→receipt; thinking por modelo (hecho: dsv4 toggle deployado); tool_stream=True en GLM 5.2 vía Qwen (verificar).
+- **P2**: named tool_choice donde compatible (capability matrix por modelo, no `required` universal); DeepSeek strict; fallback de modelo dsv4→qwen38max/glm52; circuit breaker; idempotency keys para escrituras.
+- **P3**: suite permanente 10-30 ejecuciones por combinación; métricas execution_success_rate, ack_only_rate, tool_in_reasoning_rate, fallback_recovery_rate, p50/p95/p99.
+- Chunking local en el propio tool: fetch raw → indexar → devolver sólo regiones (mejor que mandar 1.1MB al LLM).
+- Estado EXECUTION_STATE_UNKNOWN cuando tool_call llegó y dispatch empezó sin confirmación — distinto de NO_TOOL.
+- Escrituras: retry solo con idempotencia / verificación de estado tras timeout.
