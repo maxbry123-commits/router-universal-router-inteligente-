@@ -262,9 +262,7 @@
           "ficha-qwen38max",
           "ficha-glm52"
         ]
-      },
-      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
-    },
+      }},
     "ficha-qwen36flash": {
       "anti_loop": {
         "fingerprint": "tool + arguments normalizados",
@@ -298,9 +296,7 @@
           "ficha-qwen38max",
           "ficha-glm52"
         ]
-      },
-      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
-    },
+      }},
     "ficha-dsv4pro": {
       "conservar_reasoning_content_con_tools": true,
       "secuencia": "assistant(content, reasoning_content, tool_calls) -> tool result -> siguiente llamada",
@@ -330,9 +326,7 @@
           "ficha-qwen38max",
           "ficha-glm52"
         ]
-      },
-      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
-    },
+      }},
     "ficha-dsv4pro0813": {
       "conservar_reasoning_content_con_tools": true,
       "secuencia": "assistant(content, reasoning_content, tool_calls) -> tool result -> siguiente llamada",
@@ -362,9 +356,7 @@
           "ficha-qwen38max",
           "ficha-glm52"
         ]
-      },
-      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
-    },
+      }},
     "ficha-dsv4flash": {
       "conservar_reasoning_content_con_tools": true,
       "secuencia": "assistant(content, reasoning_content, tool_calls) -> tool result -> siguiente llamada",
@@ -394,9 +386,7 @@
           "ficha-qwen38max",
           "ficha-glm52"
         ]
-      },
-      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
-    },
+      }},
     "ficha-glm52": {
       "con_tools": {
         "probar_primero": "github_leer (solo lectura) -> tool_call estructurado",
@@ -425,9 +415,7 @@
           "ficha-qwen38max",
           "ficha-glm52"
         ]
-      },
-      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
-    },
+      }},
     "ficha-qwen38max": {
       "con_tools": {
         "reasoning_effort": {
@@ -461,9 +449,7 @@
           "ficha-qwen38max",
           "ficha-glm52"
         ]
-      },
-      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
-    }
+      }}
   },
   "formato_salida": {
     "secciones": [

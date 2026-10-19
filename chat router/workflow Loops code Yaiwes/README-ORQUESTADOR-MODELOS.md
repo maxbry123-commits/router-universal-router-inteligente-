@@ -82,3 +82,6 @@ Timeout de red NO prueba que una escritura no se ejecutó -> idempotency keys / 
 - **GLM tool_stream=True**: PENDIENTE VERIFICAR — soportado en _extras (L525-526) via `con_tools.tool_stream`; la ficha glm52 lo deja en false por nota. Solo activarlo si aparece ReadTimeout>30s de api.z.ai.
 - **Telemetría ack por nodo**: PARCIAL — `layout_attempts` registra cada intento (nodo, layout, modelo, ack, why); falta contador persistente MODELO_NO_TOOL_CAPABLE tras 3 acks (exec_dispatch.Profile lo cubre cuando se cablee completo).
 - Solución E (npm xml-toolcall/pi-qwen-fix): no aplica, el parser propio ya cubre los 3 formatos.
+
+## lectura_archivo_grande (nota operativa, antes vivia en fichas JSON — DSL N5 la saca de config)
+GitHub API trunca lecturas >1MB: leer archivos grandes por rangos/partes, no una sola llamada.

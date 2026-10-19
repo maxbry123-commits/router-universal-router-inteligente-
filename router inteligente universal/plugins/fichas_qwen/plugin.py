@@ -18,6 +18,7 @@ import secrets
 import threading
 import time
 import urllib.request
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,7 @@ FICHAS = {f.stem: json.loads(f.read_text(encoding="utf-8")) for f in sorted((DIR
 ALIAS = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "4": "ficha4-workflow-yaiwes", "5": "ficha5-mvp"}  # 5 = Team 5 MVP (camino directo, mvp.py)
 _POOL = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas_qwen")  # maximo 4 solicitudes activas; las demas esperan en cola
 _POOL_FAST = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas_qwen_fast")  # fix 7: preguntas simples (FAST) no esperan detras de tareas pesadas
+_NODO_CALL = ContextVar('riu_nodo_call', default=None)  # DSL N1: estado del nodo actual (sys_prompt/forzar_tool/dsv4_think/per_attempt_s/deadline) — NO en opts compartido
 _ULT_POLL: dict[str, float] = {}  # fix 7: ultima vez que el chat pregunto por el proceso (/resultado)
 HUERFANO_S = 180  # fix 7: proceso sin /resultado en 180 s = nadie lo espera -> se cancela y libera la cola
 _LOCK = threading.Lock()
@@ -948,8 +950,11 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         raise RuntimeError('FICHA_QW_NO_EXISTE:' + str(modelo))
     api_s, _, max_tok, limite = _cfg(ficha)
     api_s = int(n.get('timeout_s') or api_s)
-    if opts.get('_per_attempt_s'):  # >>> MODOS <<< FIX Claude INPUT 129: timeout por intento (75s c/u dentro del tope del nodo)
-        api_s = min(api_s, int(opts['_per_attempt_s']))
+    _nc = _NODO_CALL.get() or {}  # DSL N1: flags del nodo por contexto, no en opts compartido
+    if _nc.get('per_attempt_s'):  # DSL N4: cada intento cabe dentro del deadline del nodo
+        api_s = min(api_s, int(_nc['per_attempt_s']))
+    if _nc.get('deadline'):
+        api_s = int(min(api_s, max(5, _nc['deadline'] - time.monotonic() - 5)))
     max_tok = int(n.get('max_output_tokens') or max_tok)
     fast = bool(opts.get('fast_lane'))
     if fast and not opts.get('fast_consult'):
@@ -1006,15 +1011,15 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
             _bp.append(c_)
             _PARCIAL[_pidp] = ''.join(_bp)
     _tm = time.time()
-    _sp = str(opts.get('_sys_prompt') or '')
+    _sp = str(_nc.get('sys_prompt') or '')
     r = pc._chat({'model': qw, 'messages': ([{'role': 'system', 'content': _sp}] if _sp else []) + [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,  # >>> MODOS <<< FIX gobernanza: system aparte (S1)
                   'ficha_id': str(ficha.get('ficha') or ''), 'active_anchors_v1': bool(opts.get('active_anchors_v1')),
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
                   'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo,
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
-                  'dsv4_think': bool(opts.get('_dsv4_think')),  # >>> MODOS <<< FIX Claude INPUT 126: intento 2 DeepSeek con thinking ON
-                  'forzar_tool': bool(opts.get('_forzar_tool')),  # >>> MODOS <<< FIX glm52 INPUT 129: tool_choice=required en reintento
+                  'dsv4_think': _nc.get('dsv4_think'),  # DSL N1/N2: intento 2 DeepSeek con thinking explícito (False con required)
+                  'forzar_tool': bool(_nc.get('forzar_tool')),  # >>> MODOS <<< FIX glm52 INPUT 129: tool_choice=required en reintento
                   'extra_llm': (({'enable_thinking': False} if opts.get('modos_reasoning') == 'none' else {'reasoning_effort': opts['modos_reasoning']}) if opts.get('modos_reasoning') else  # >>> MODOS <<< mode_wins: el modo decide el razonamiento de la llamada
                               ({'enable_thinking': True} if opts.get('thinking') else {'enable_thinking': False} if ((perfil == 'fast' and (modelo in _FAST_LOW or cap_in == 'none')) or (cap_nodo == 'none' and cap_in == 'none' and opts.get('fid') == 'ficha1-modelos')) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None),
                   # llamadas sin tools llevan el perfil comun; con tools el Harness lo ignora (extra_llm solo se aplica si tools=None)
@@ -1352,7 +1357,9 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         _tn = time.time()
         _meta(pid, i, nodos[i].get('modelo') if nodos[i].get('modelo') != 'selector' else elegido, _tarea_visor(nodos, i))
         _sys_prompt = ''  # >>> MODOS <<< reinicia por nodo
-        opts['_sys_prompt'] = ''  # no heredar el system del nodo anterior
+        _nc0 = {'sys_prompt': '', 'forzar_tool': False, 'dsv4_think': None, 'per_attempt_s': 0,
+                'deadline': time.monotonic() + int(n.get('timeout_s') or _cfg(ficha)[0])}  # DSL N1/N4: estado por nodo en ContextVar + deadline total
+        _tok_nc = _NODO_CALL.set(_nc0)
         nl = chr(10)
         ctx = (nl * 2).join('[%s]%s%s' % (d, nl, out[d]) for d in n.get('depende_de', []) if out.get(d))
         if opts.get('fast_lane') and n.get('id') == 'N4':
@@ -1387,37 +1394,56 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             with _SEM:  # maximo 6 llamadas de modelo a la vez; las demas esperan en cola sin fallar
                 _prog(pid, i, 'trabajando')  # En cola hasta adquirir el slot: no mostrar trabajando mientras espera _SEM
                 # >>> MODOS BEGIN  FIX Claude S4: detector de acuse + reintento layout D (system vacio)
-                opts['_sys_prompt'] = _sys_prompt
-                opts['_per_attempt_s'] = max(30, int(int(n.get('timeout_s') or _cfg(ficha)[0]) * 0.5))  # INPUT 129: cada intento cabe en el tope del nodo
+                _reint = {}
+                try:
+                    _reint = (_pc()._politica(_QW.get(mod) or '') or {}).get('reintento') or {}  # DSL N5: el reintento lo dicta la politica del modelo (fuente unica ficha1)
+                except Exception:  # noqa: BLE001
+                    _reint = {}
+                _nc0['sys_prompt'] = _sys_prompt
+                _nc0['per_attempt_s'] = int(_reint.get('per_attempt_s') or max(30, int(int(n.get('timeout_s') or _cfg(ficha)[0]) * 0.5)))
+                _nc0['max_attempts'] = int(_reint.get('max_attempts') or 2)
                 r = _llamar_harness(mod, prompt, ficha, n, opts)
                 try:
                     import prompt_layouts as _pl  # noqa: PLC0415
-                    _ack, _why = _pl.is_ack_only(str(r or '')[:2000], (r.get('tool_calls') if isinstance(r, dict) else None))
+                    _ejecuto = isinstance(r, dict) and any(x.get('ok') for x in (r.get('herramientas') or []))  # DSL N3: acuse con evidencia = ya ejecuto -> EXECUTED, no reintentar
+                    _ack, _why = (False, '') if _ejecuto else _pl.is_ack_only(str(r or '')[:2000], (r.get('tool_calls') if isinstance(r, dict) else None))
+                    if _ejecuto: _cat = 'EXECUTED'
+                    elif _ack: _cat = 'ACK_ONLY'
+                    elif isinstance(r, dict) and (r.get('tool_calls') or r.get('herramientas')): _cat = 'TOOL_IN_REASONING'
+                    elif isinstance(r, dict) and not str(r.get('content') or ''): _cat = 'NO_TOOL'
+                    else: _cat = 'DISPATCH_FAILURE'
                     _lay1 = 'D' if str(mod or '').startswith('ficha-dsv4') else 'B'  # routing INPUT 126
-                    opts.setdefault('layout_attempts', []).append({'nodo': n.get('id'), 'layout': _lay1, 'ack': _ack, 'why': _why})
-                    if _ack:
-                        opts['_sys_prompt'] = ''  # layout D_solo_tarea: reintento sin envoltorio
+                    opts.setdefault('layout_attempts', []).append({'nodo': n.get('id'), 'layout': _lay1, 'ack': _ack, 'why': _why, 'categoria': _cat})
+                    if _ack and time.monotonic() < _nc0['deadline'] - 20:  # DSL N4: con <20s restantes no se lanza otro intento
+                        _nc0['sys_prompt'] = ''  # layout D_solo_tarea: reintento sin envoltorio
                         if str(mod or '').startswith('ficha-dsv4'):
-                            opts['_dsv4_think'] = True  # FIX Claude INPUT 126: intento 2 alterna thinking
-                        opts['_forzar_tool'] = True  # FIX glm52 INPUT 129: tool_choice=required en el reintento
+                            _nc0['dsv4_think'] = False  # DSL N2: reintento dsv4 con thinking OFF explicito (required no convive con thinking)
+                        _nc0['forzar_tool'] = True  # FIX glm52 INPUT 129 + DSL N2: tool_choice=required solo paso 1 del reintento
                         r = _llamar_harness(mod, prompt, ficha, n, opts)
-                        _ack2, _why2 = _pl.is_ack_only(str(r or '')[:2000])
-                        opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': 'D', 'ack': _ack2, 'why': _why2})
-                        if _ack2 and isinstance(r, str) and not r.startswith('GAP'):
-                            # >>> MODOS <<< FIX Claude INPUT 128 FIX2: fallback de modelo (ultimo escalon)
+                        _nc0['forzar_tool'] = False
+                        _ej2 = isinstance(r, dict) and any(x.get('ok') for x in (r.get('herramientas') or []))
+                        _ack2, _why2 = (False, '') if _ej2 else _pl.is_ack_only(str(r or '')[:2000])
+                        _cat2 = 'EXECUTED' if _ej2 else ('ACK_ONLY' if _ack2 else 'NO_TOOL')
+                        opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': 'D', 'ack': _ack2, 'why': _why2, 'categoria': _cat2})
+                        if _ack2 and isinstance(r, str) and not r.startswith('GAP') and time.monotonic() < _nc0['deadline'] - 20:
+                            # >>> MODOS <<< DSL N4: fallback de modelo maximo 1 y solo si queda tiempo
+                            _fb_list = [_f for _f in (_reint.get('fallback_modelo') or opts.get('modelos_fallback') or ['ficha-qwen38max', 'ficha-glm52']) if _f != mod][:1]
                             _fb_done = False
-                            for _fb in (opts.get('modelos_fallback') or ['ficha-qwen38max', 'ficha-glm52']):
-                                if _fb == mod:
-                                    continue
+                            for _fb in _fb_list:
                                 _r2 = _llamar_harness(_fb, prompt, ficha, n, opts)
-                                _a3, _w3 = _pl.is_ack_only(str(_r2 or '')[:2000])
-                                opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': 'F', 'modelo': _fb, 'ack': _a3, 'why': _w3})
+                                _ej3 = isinstance(_r2, dict) and any(x.get('ok') for x in (_r2.get('herramientas') or []))
+                                _a3, _w3 = (False, '') if _ej3 else _pl.is_ack_only(str(_r2 or '')[:2000])
+                                opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': 'F', 'modelo': _fb, 'ack': _a3, 'why': _w3, 'categoria': 'EXECUTED' if _ej3 else ('ACK_ONLY' if _a3 else 'NO_TOOL')})
                                 if not _a3 or (isinstance(_r2, str) and _r2.startswith('GAP')):
                                     r = _r2
                                     _fb_done = True
                                     break
                             if not _fb_done:
                                 r = 'GAP ACUSE_RECIBIDO x2 layouts + fallback (blocked_with_evidence): ' + r[:300]
+                        elif _ack2:
+                            r = 'GAP ACUSE_RECIBIDO + sin presupuesto para fallback (TIMEOUT): ' + r[:200]
+                    elif _ack:
+                        opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': _lay1, 'categoria': 'TIMEOUT'})
                 except ImportError:
                     pass
                 # <<< MODOS END

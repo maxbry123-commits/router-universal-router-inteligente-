@@ -671,9 +671,12 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                         ex.pop('reasoning_effort', None)  # nunca enable_thinking + reasoning_effort en la misma peticion
                 # medido 16-oct en Token Plan: enable_thinking=false se acepta en los 9 modelos de texto (y es el camino rapido con tools)
                 # tool_stream NUNCA global: solo si la politica del modelo lo activa para esa tarea (con_tools.tool_stream)
-            if tools and _FORCE_TOOL.get():  # FIX glm52 INPUT 129: required no convive con thinking en DashScope
-                ex.pop('enable_thinking', None)
+            if tools and _FORCE_TOOL.get():  # FIX glm52 INPUT 129 + DSL N2: required no convive con thinking
                 ex.pop('reasoning_effort', None)
+                if modelo.startswith('deepseek'):
+                    ex['enable_thinking'] = False  # DSL N2: dsv4 reintento con thinking OFF explicito
+                else:
+                    ex.pop('enable_thinking', None)
                 cuerpo.pop('enable_thinking', None)
                 cuerpo.pop('reasoning_effort', None)
                 cuerpo.pop('thinking_budget', None)
@@ -1108,6 +1111,7 @@ def _bucle(llamar, mensajes):
             mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:_perfil()[1]]})
         pasos += 1
         rondas += 1
+        _FORCE_TOOL.set(None)  # DSL N2: tool_choice=required solo en el paso 1 del reintento; desde el paso 2 -> auto
         if pasos >= _perfil()[2] or time.monotonic() >= fin or (rondas_max and rondas >= rondas_max):
             con_tools = False  # tiempo/pasos/rondas Team 5 agotados: pedir la respuesta final sin herramientas
 
