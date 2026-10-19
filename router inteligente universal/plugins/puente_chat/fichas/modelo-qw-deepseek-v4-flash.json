@@ -8,5 +8,7 @@
   "claves": "banco",
   "rotacion": "mismo-modelo",
   "herramientas": true,
-  "memoria": true
+  "memoria": true,
+  "per_attempt_s": 75,
+  "max_attempts": 2
 }

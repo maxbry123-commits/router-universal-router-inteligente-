@@ -252,7 +252,19 @@
         "tool_calls",
         "content",
         "reasoning_content"
-      ]
+      ],
+      "reintento": {
+        "layout": "D_solo_tarea",
+        "tool_choice": "required",
+        "thinking": "off",
+        "per_attempt_s": 75,
+        "max_attempts": 2,
+        "fallback_modelo": [
+          "ficha-qwen38max",
+          "ficha-glm52"
+        ]
+      },
+      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
     },
     "ficha-qwen36flash": {
       "anti_loop": {
@@ -276,7 +288,19 @@
         "schema",
         "arguments"
       ],
-      "no_ejecutar_texto_ambiguo": true
+      "no_ejecutar_texto_ambiguo": true,
+      "reintento": {
+        "layout": "D_solo_tarea",
+        "tool_choice": "required",
+        "thinking": "off",
+        "per_attempt_s": 75,
+        "max_attempts": 2,
+        "fallback_modelo": [
+          "ficha-qwen38max",
+          "ficha-glm52"
+        ]
+      },
+      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
     },
     "ficha-dsv4pro": {
       "conservar_reasoning_content_con_tools": true,
@@ -296,7 +320,19 @@
         "tool_calls",
         "content",
         "reasoning_content"
-      ]
+      ],
+      "reintento": {
+        "layout": "D_solo_tarea",
+        "tool_choice": "required",
+        "thinking": "off",
+        "per_attempt_s": 75,
+        "max_attempts": 2,
+        "fallback_modelo": [
+          "ficha-qwen38max",
+          "ficha-glm52"
+        ]
+      },
+      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
     },
     "ficha-dsv4pro0813": {
       "conservar_reasoning_content_con_tools": true,
@@ -316,7 +352,19 @@
         "tool_calls",
         "content",
         "reasoning_content"
-      ]
+      ],
+      "reintento": {
+        "layout": "D_solo_tarea",
+        "tool_choice": "required",
+        "thinking": "off",
+        "per_attempt_s": 75,
+        "max_attempts": 2,
+        "fallback_modelo": [
+          "ficha-qwen38max",
+          "ficha-glm52"
+        ]
+      },
+      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
     },
     "ficha-dsv4flash": {
       "conservar_reasoning_content_con_tools": true,
@@ -336,13 +384,26 @@
         "tool_calls",
         "content",
         "reasoning_content"
-      ]
+      ],
+      "reintento": {
+        "layout": "D_solo_tarea",
+        "tool_choice": "required",
+        "thinking": "off",
+        "per_attempt_s": 75,
+        "max_attempts": 2,
+        "fallback_modelo": [
+          "ficha-qwen38max",
+          "ficha-glm52"
+        ]
+      },
+      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
     },
     "ficha-glm52": {
       "con_tools": {
         "probar_primero": "github_leer (solo lectura) -> tool_call estructurado",
         "si_exige_streaming": "parsing SSE solo dentro del transporte actual",
-        "tool_stream_nota": "default false; solo activarlo si los argumentos de la tool realmente exigen streaming"
+        "tool_stream_nota": "default false; solo activarlo si los argumentos de la tool realmente exigen streaming",
+        "tool_stream": true
       },
       "clear_thinking": true,
       "excepcion_clear_thinking": "conservar thinking solo durante una tarea de arquitectura extremadamente compleja; despues volver a limpiar",
@@ -354,7 +415,19 @@
         "tool_calls",
         "content",
         "reasoning_content"
-      ]
+      ],
+      "reintento": {
+        "layout": "D_solo_tarea",
+        "tool_choice": "required",
+        "thinking": "off",
+        "per_attempt_s": 75,
+        "max_attempts": 2,
+        "fallback_modelo": [
+          "ficha-qwen38max",
+          "ficha-glm52"
+        ]
+      },
+      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
     },
     "ficha-qwen38max": {
       "con_tools": {
@@ -378,7 +451,19 @@
         "tool_calls",
         "content",
         "reasoning_content"
-      ]
+      ],
+      "reintento": {
+        "layout": "D_solo_tarea",
+        "tool_choice": "required",
+        "thinking": "off",
+        "per_attempt_s": 75,
+        "max_attempts": 2,
+        "fallback_modelo": [
+          "ficha-qwen38max",
+          "ficha-glm52"
+        ]
+      },
+      "lectura_archivo_grande": "API GitHub trunca >1MB: pedir el archivo por rangos o en varias lecturas (hallazgo qwen38max INPUT 129)"
     }
   },
   "formato_salida": {
