@@ -32,7 +32,7 @@ def build_mcp_router() -> APIRouter:
 
     @r.post('/mcp')
     async def mcp_http(request: Request):
-        key_esperada = os.getenv('RIU_PUBLIC_CHAT_KEY')
+        key_esperada = os.getenv('RIU_MCP_KEY') or os.getenv('RIU_PUBLIC_CHAT_KEY')
         if not key_esperada or request.query_params.get('key') != key_esperada:
             return JSONResponse({'jsonrpc': '2.0', 'id': None,
                                  'error': {'code': -32001, 'message': 'key invalida'}}, status_code=401)
