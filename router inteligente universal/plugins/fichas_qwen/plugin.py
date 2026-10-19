@@ -31,6 +31,7 @@ _NODO_CALL = ContextVar('riu_nodo_call', default=None)  # DSL N1: estado del nod
 _LAYOUT_D_SYS = ('Eres un ejecutor de tareas. NO respondas con texto de confirmacion.\n'
                  'Si la tarea requiere una herramienta, emite la llamada a herramienta en este mismo turno.\n'
                  'Si no puedes ejecutar la herramienta, devuelve un error estructurado, no un acuse.')  # INPUT 129 Claude: system del layout D_solo_tarea
+_CIERRE_USER = 'Responde con el RESULTADO. Si hay herramienta para esto, llámala en este turno. Nunca acuses recibo.'  # DSL G3: el user siempre cierra con esta linea fija (recencia)
 _ULT_POLL: dict[str, float] = {}  # fix 7: ultima vez que el chat pregunto por el proceso (/resultado)
 HUERFANO_S = 180  # fix 7: proceso sin /resultado en 180 s = nadie lo espera -> se cancela y libera la cola
 _LOCK = threading.Lock()
@@ -1022,6 +1023,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
                   'dsv4_think': _nc.get('dsv4_think'),  # DSL N1/N2: intento 2 DeepSeek con thinking explícito (False con required)
+                  'capas': list(_nc.get('capas') or (n.get('capas') or [])),  # DSL G10/G15: capas del prompt por nodo o modo
+                  'proceso_id': str(opts.get('pid') or ''),  # DSL G19: el buzon mid-loop del puente sabe de que proceso leer
                   'forzar_tool': bool(_nc.get('forzar_tool')),  # >>> MODOS <<< FIX glm52 INPUT 129: tool_choice=required en reintento
                   'extra_llm': (({'enable_thinking': False} if opts.get('modos_reasoning') == 'none' else {'reasoning_effort': opts['modos_reasoning']}) if opts.get('modos_reasoning') else  # >>> MODOS <<< mode_wins: el modo decide el razonamiento de la llamada
                               ({'enable_thinking': True} if opts.get('thinking') else {'enable_thinking': False} if ((perfil == 'fast' and (modelo in _FAST_LOW or cap_in == 'none')) or (cap_nodo == 'none' and cap_in == 'none' and opts.get('fid') == 'ficha1-modelos')) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None),
@@ -1279,6 +1282,183 @@ def _ck_cargar(pid: str) -> dict[str, Any] | None:
     return None
 
 
+def _cadena_para(mensaje, opts, ficha):
+    # DSL G16: seleccion determinista de cadena por modo/task_type del pedido; sin LLM
+    try:
+        cfg = json.loads((DIR / 'fichas' / 'cadenas.json').read_text(encoding='utf-8'))
+    except Exception:  # noqa: BLE001
+        return None, None
+    modo = str((opts.get('modos') or {}).get('id') or opts.get('modo') or '')
+    tt = str(opts.get('task_type') or '')
+    for cid, c in (cfg.get('cadenas') or {}).items():
+        a = c.get('activar_si') or {}
+        if (modo and modo in (a.get('modo') or [])) or (tt and tt in (a.get('task_type') or [])):
+            return cid, c
+    return None, None
+
+
+def _cad_lim():
+    try:
+        return (json.loads((DIR / 'fichas' / 'cadenas.json').read_text(encoding='utf-8')).get('limites') or {})
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _expandir_cadena(c, lim):
+    # DSL G16: cada paso de la cadena = un nodo del mismo DAG (cola, deadlines, evidencia, checkpoint)
+    nodos, prev = [], None
+    for p in (c.get('pasos') or [])[: int(lim.get('max_pasos') or 8)]:
+        nodos.append({
+            'id': p['id'], 'modelo': p.get('modelo') or 'selector',
+            'rol': p['tarea'] + '\nEntrada: la salida del paso anterior (si existe). Entrega SOLO el resultado de este paso.',
+            'depende_de': [prev] if prev else [],
+            'timeout_s': int(p.get('timeout_s') or 120), 'max_output_tokens': int(p.get('max_tokens') or 2000),
+            'requiere_tools': p.get('tools') in ('lectura', 'escritura'),
+            'escribe': p.get('tools') == 'escritura',
+            'requiere_evidencia': bool(p.get('requiere_evidencia')),
+            'capas': list(p.get('capas') or ['core']),
+            'cadena_pide_aprobacion': bool(p.get('pide_aprobacion')),
+            'cadena_corrige': p.get('corrige'),
+        })
+        prev = p['id']
+    return nodos
+
+
+def _buzon_db():
+    # DSL G19: buzon y cola de pendientes en el MISMO SQLite del Router (sin servidor nuevo)
+    try:
+        mem, _ = _pc()._memoria()
+        db = mem.sqlite.db
+        db.execute('CREATE TABLE IF NOT EXISTS buzon (id INTEGER PRIMARY KEY AUTOINCREMENT, proceso_id TEXT, tipo TEXT, texto TEXT, creado REAL, aplicado_en_vuelta INTEGER)')
+        db.execute('CREATE TABLE IF NOT EXISTS pendientes_director (id INTEGER PRIMARY KEY AUTOINCREMENT, proceso_id TEXT, pregunta TEXT, creado REAL, respuesta TEXT, respondido REAL)')
+        return db
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _buzon_enviar(proceso_id: str, tipo: str, texto: str) -> dict:
+    db = _buzon_db()
+    if db is None:
+        return {'error': 'GAP_BUZON_SIN_SQLITE'}
+    if tipo not in ('instruccion', 'tarea', 'prioridad', 'pausa', 'continuar', 'cancelar'):
+        return {'error': 'GAP_BUZON_TIPO', 'validos': ['instruccion', 'tarea', 'prioridad', 'pausa', 'continuar', 'cancelar']}
+    db.execute('INSERT INTO buzon (proceso_id, tipo, texto, creado, aplicado_en_vuelta) VALUES (?,?,?,?,NULL)', (proceso_id, tipo, str(texto)[:4000], time.time()))
+    db.commit()
+    return {'ok': True, 'se_aplica_en': 'vuelta siguiente'}
+
+
+def _buzon_leer(proceso_id: str, tipos=None) -> list[dict]:
+    db = _buzon_db()
+    if db is None:
+        return []
+    q = 'SELECT id, tipo, texto FROM buzon WHERE proceso_id=? AND aplicado_en_vuelta IS NULL'
+    args: list = [proceso_id]
+    if tipos:
+        q += ' AND tipo IN (%s)' % ','.join('?' * len(tipos)); args += list(tipos)
+    try:
+        return [{'id': r[0], 'tipo': r[1], 'texto': r[2]} for r in db.execute(q + ' ORDER BY id', args).fetchall()]
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _buzon_aplicar(mid, vuelta: int) -> None:
+    db = _buzon_db()
+    if db is None:
+        return
+    try:
+        db.execute('UPDATE buzon SET aplicado_en_vuelta=? WHERE id=?', (int(vuelta), int(mid))); db.commit()
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _pendientes_director(proceso_id: str = '') -> list[dict]:
+    db = _buzon_db()
+    if db is None:
+        return []
+    try:
+        q = 'SELECT id, proceso_id, pregunta, creado, respuesta, respondido FROM pendientes_director' + (' WHERE proceso_id=?' if proceso_id else '') + ' ORDER BY id DESC LIMIT 50'
+        return [{'id': r[0], 'proceso_id': r[1], 'pregunta': r[2], 'creado': r[3], 'respuesta': r[4], 'respondido': r[5]} for r in db.execute(q, ([proceso_id] if proceso_id else [])).fetchall()]
+    except Exception:  # noqa: BLE001
+        return []
+
+
+_CAPAS_MODO = {'rapido': ['core'], 'code': ['core', 'b3'], 'auditor': ['core', 'b4'],
+               'planificador': ['core', 'b2', 'b5'], 'paralelo': ['core', 'b3']}  # DSL G15: modo -> capas del prompt por capas
+
+
+def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, opts: dict[str, Any]) -> tuple[str, list]:
+    # DSL G17: el motor de objetivos corre en el MISMO hilo de chat_async (proceso_id + polling)
+    import motor_objetivo as _mo  # noqa: PLC0415
+    pid = str(p.get('_pid') or '')
+    obj_in = p.get('objetivo')
+    obj = dict(obj_in) if isinstance(obj_in, dict) else {'objetivo': str(obj_in or mensaje)}
+    obj.setdefault('objetivo', mensaje)
+    obj['proceso_id'] = pid
+    obj.setdefault('ficha', str(ficha.get('ficha') or ''))
+    elegido = _elegido(ficha, str(obj.get('modelo') or p.get('modelo') or ''))
+    if elegido is None:
+        return 'GAP MODELO_SELECTOR_INVALIDO: ' + repr(obj.get('modelo') or p.get('modelo')), []
+    _lim_o = dict({'max_minutos': 240}, **(obj.get('limites') or {}))
+
+    def llamar(modo: str, prompt: str) -> dict:
+        # una llamada por vuelta por el MISMO Harness (Constitucion, solo_lectura, scope intactos)
+        n = {'id': 'MOTOR', 'rol': '', 'requiere_tools': modo in ('code', 'auditor', 'paralelo'),
+             'escribe': modo == 'code' and bool(opts.get('aprobado')), 'timeout_s': 300}
+        if modo == 'paralelo':  # DSL G18: la vuelta puede repartir subtareas con delegar_paralelo
+            prompt += '\n\nPuedes repartir subtareas a varios modelos a la vez con la herramienta delegar_paralelo (un solo nivel, max 6).'
+        _nc_m = {'sys_prompt': '', 'forzar_tool': False, 'dsv4_think': None, 'per_attempt_s': 0,
+                 'deadline': time.monotonic() + float(_lim_o.get('max_minutos') or 240) * 60,
+                 'capas': list(_CAPAS_MODO.get(modo) or ['core'])}
+        _tk = _NODO_CALL.set(_nc_m)
+        _h0 = len(opts.setdefault('herr', {}).setdefault('MOTOR', []))
+        try:
+            t = _llamar_harness(elegido, prompt, ficha, n, opts)
+        except Exception as x:  # noqa: BLE001
+            t = 'GAP MOTOR: ' + str(x)[:200]
+        finally:
+            _NODO_CALL.reset(_tk)
+        nuevas = opts['herr']['MOTOR'][_h0:]
+        return {'texto': t, 'herramientas_ok': sum(1 for x in nuevas if x.get('ok'))}
+
+    def guardar(st: dict) -> None:  # checkpoint por vuelta: reanuda tras reinicio (G16b)
+        try:
+            mem, sf = _pc()._memoria()
+            mem.save(sf('chat-ui', 'motor:' + pid), 'estado', dict(st, ts=time.time()))
+            _ck_guardar(pid, str(ficha.get('ficha') or ''), {'__motor__': json.dumps(st, default=str)[:2000]}, estado='RUNNING')
+        except Exception:  # noqa: BLE001
+            pass
+
+    def progreso(txt: str) -> None:
+        _prog(pid, 'MOTOR', 'trabajando')
+        _meta(pid, 'MOTOR', elegido, txt)
+
+    def buzon(pid_: str, aplicar=None):  # DSL G19
+        if aplicar:
+            _buzon_aplicar(aplicar[0], aplicar[1])
+            return None
+        return _buzon_leer(pid_)
+
+    _estado0 = None
+    try:  # reanudacion: estado guardado del proceso anterior con el mismo proceso_id
+        mem, sf = _pc()._memoria()
+        _pr = mem.search(sf('chat-ui', 'motor:' + pid), 'estado', 1)
+        _fl = _pr if isinstance(_pr, list) else next((v for v in (_pr or {}).values() if isinstance(v, list)), [])
+        if _fl and isinstance((_fl[0].get('data') if isinstance(_fl[0], dict) else None) or _fl[0], dict):
+            _d0 = _fl[0].get('data', _fl[0])
+            if _d0.get('tareas'):
+                _estado0 = _d0
+    except Exception:  # noqa: BLE001
+        pass
+    res = _mo.correr_objetivo(obj, llamar, guardar, progreso, estado=_estado0, buzon=buzon)
+    nl = chr(10)
+    salida = ('OBJETIVO: ' + str(res.get('estado')) + ' · vueltas: ' + str(res.get('vueltas')) + nl * 2
+              + nl.join('- %s [%s] %s' % (t['id'], t['estado'], (t.get('evidencia') or t['texto'])[:120])
+                        for t in (res.get('tareas') or []))
+              + ((nl * 2 + 'EVIDENCIA: ' + str(res.get('evidencia'))) if res.get('evidencia') else '')
+              + ((nl * 2 + str(res.get('reporte'))) if res.get('reporte') else ''))
+    return salida, [{'nodo': 'MOTOR', 'vueltas': res.get('vueltas'), 'estado': res.get('estado')}]
+
+
 def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opts: dict[str, Any] | None = None) -> tuple[str, list[dict[str, Any]]]:
     nodos = {n["id"]: n for n in ficha.get("nodos", [])}
     orden = [n["id"] for n in ficha.get("nodos", [])]
@@ -1291,6 +1471,17 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     out: dict[str, str] = dict(opts.get('previo') or {})  # nodos que ya pasaron: no se repiten
     if pid and 'previo' not in opts:  # reanudacion: el checkpoint persistido cuenta como previo
         _ck0 = _ck_cargar(pid)
+        if isinstance(_ck0, dict) and opts.get('cadena'):  # DSL G16b: cadena abandonada -> GAP, no bucle de reanudaciones
+            _edad = time.time() - float(_ck0.get('ts') or 0)
+            _intentos = int(_ck0.get('reanudaciones') or 0)
+            if _edad > 4 * 3600 or _intentos >= 2:
+                return 'GAP CADENA_ABANDONADA: checkpoint de %d min con %d reanudaciones' % (_edad // 60, _intentos), []
+            _ck0['reanudaciones'] = _intentos + 1
+            try:
+                mem_, scope_for_ = _pc()._memoria()
+                mem_.save(scope_for_('chat-ui', 'task:' + pid), 'ck', _ck0)
+            except Exception:  # noqa: BLE001
+                pass
         if isinstance(_ck0, dict) and isinstance(_ck0.get('out'), dict):
             for k_, v_ in _ck0['out'].items():
                 out.setdefault(k_, v_)
@@ -1362,7 +1553,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         _sys_prompt = ''  # >>> MODOS <<< reinicia por nodo
         _nc0 = {'sys_prompt': '', 'forzar_tool': False, 'dsv4_think': None, 'per_attempt_s': 0,
                 'deadline': time.monotonic() + int(n.get('timeout_s') or _cfg(ficha)[0])}  # DSL N1/N4: estado por nodo en ContextVar + deadline total
-        _tok_nc = _NODO_CALL.set(_nc0)
+        _tok_nc = None  # DSL G7: el ContextVar se fija dentro del try y se resetea SIEMPRE en finally
         nl = chr(10)
         ctx = (nl * 2).join('[%s]%s%s' % (d, nl, out[d]) for d in n.get('depende_de', []) if out.get(d))
         if opts.get('fast_lane') and n.get('id') == 'N4':
@@ -1376,8 +1567,12 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             _mod_eff = str(elegido if n.get('modelo') == 'selector' else n.get('modelo') or '')
             if _mod_eff.startswith('ficha-dsv4'):
                 _sys_prompt = _LAYOUT_D_SYS  # <<< MODOS END routing dsv4: layout D primario con system ejecutor (INPUT 129)
-            prompt = ('<tarea>\nTAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):\n' + mensaje + '\n</tarea>\n'
-                      'Ejecuta <tarea> ahora y entrega el resultado. Prohibido responder con acuse de recibo.')
+                prompt = ('<tarea>\nTAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):\n' + mensaje + '\n</tarea>\n'
+                          + ('<rol>' + str(n.get('rol') or '')[:600] + '</rol>\n' if n.get('rol') else '')
+                          + 'Ejecuta <tarea> ahora.')  # DSL G2: en layout D el rol vive dentro del user tras </tarea>, no en el system
+            else:
+                prompt = ('<tarea>\nTAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):\n' + mensaje + '\n</tarea>\n'
+                          'Ejecuta <tarea> ahora y entrega el resultado. Prohibido responder con acuse de recibo.')
             if n.get('requiere_tools') or opts.get('muta'):
                 # FIX qwen38max INPUT 129: guardia explicita de ejecucion con herramientas
                 prompt += ('\nOBLIGATORIO: esta tarea exige ejecucion real. Si hay una herramienta disponible para ella, '
@@ -1392,6 +1587,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             prompt += nl * 2 + 'CORRECCION PEDIDA POR EL VERIFICADOR (corrige unicamente este fallo; no repitas operaciones ya completadas):' + nl + str(opts['correccion'])
         if n.get('id') == fin_id and obligatorio and not (n.get('id') == 'N4' and opts.get('muta') and not opts.get('aprobado')):
             prompt += nl * 2 + _fmt_txt(ficha) + nl * 2 + 'DIAGRAMA REAL DEL WORKFLOW (copialo tal cual en la seccion DIAGRAMA DE FLUJO):' + nl + _diagrama(ficha, nodos, orden, out, opts, str(n.get('id')))
+        if not (opts.get('fast_lane') and n.get('id') == 'N4'):
+            prompt += nl * 2 + _CIERRE_USER  # DSL G3: cierre fijo del user en layout B, D y fallback
         mod = elegido if n.get('modelo') == 'selector' else n.get('modelo')
         try:
             with _SEM:  # maximo 6 llamadas de modelo a la vez; las demas esperan en cola sin fallar
@@ -1399,22 +1596,27 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                 # >>> MODOS BEGIN  FIX Claude S4: detector de acuse + reintento layout D (system vacio)
                 _reint = {}
                 try:
-                    _reint = (_pc()._politica(_QW.get(mod) or '') or {}).get('reintento') or {}  # DSL N5: el reintento lo dicta la politica del modelo (fuente unica ficha1)
+                    _reint = ((_pc()._politica_ficha(mod) if hasattr(_pc(), '_politica_ficha') else {}) or {}).get('reintento') or {}  # DSL G5: consulta directa por id de ficha, sin mapa _QW
                 except Exception:  # noqa: BLE001
                     _reint = {}
                 _nc0['sys_prompt'] = _sys_prompt
-                _nc0['per_attempt_s'] = int(_reint.get('per_attempt_s') or max(30, int(int(n.get('timeout_s') or _cfg(ficha)[0]) * 0.5)))
+                _nc0['per_attempt_s'] = 0  # DSL G6: sin tope fijo por intento; el deadline del nodo ya limita cada llamada
                 _nc0['max_attempts'] = int(_reint.get('max_attempts') or 2)
+                _nid = str(n.get('id'))
+                _h0 = len(opts.setdefault('herr', {}).setdefault(_nid, []))  # DSL G4: la evidencia real es el delta de opts['herr'] de ESTE nodo
+                _tok_nc = _NODO_CALL.set(_nc0)
                 r = _llamar_harness(mod, prompt, ficha, n, opts)
                 try:
                     import prompt_layouts as _pl  # noqa: PLC0415
-                    _ejecuto = isinstance(r, dict) and any(x.get('ok') for x in (r.get('herramientas') or []))  # DSL N3: acuse con evidencia = ya ejecuto -> EXECUTED, no reintentar
-                    _ack, _why = (False, '') if _ejecuto else _pl.is_ack_only(str(r or '')[:2000], (r.get('tool_calls') if isinstance(r, dict) else None))
+                    _nuevas = opts['herr'][_nid][_h0:]
+                    _ejecuto = any(x.get('ok') for x in _nuevas)  # DSL G4/N3: EXECUTED solo si una herramienta real termino ok en esta llamada
+                    _ack, _why = (False, '') if _ejecuto else _pl.is_ack_only(str(r or '')[:2000])
                     if _ejecuto: _cat = 'EXECUTED'
                     elif _ack: _cat = 'ACK_ONLY'
-                    elif isinstance(r, dict) and (r.get('tool_calls') or r.get('herramientas')): _cat = 'TOOL_IN_REASONING'
-                    elif isinstance(r, dict) and not str(r.get('content') or ''): _cat = 'NO_TOOL'
-                    else: _cat = 'DISPATCH_FAILURE'
+                    elif _nuevas: _cat = 'TOOL_IN_REASONING'  # se intento herramienta (quizas rescatada del razonamiento) pero ninguna ok
+                    elif str(r or '').startswith('GAP TIMEOUT') or 'TIMEOUT' in str(r or '')[:80]: _cat = 'TIMEOUT'
+                    elif str(r or '').startswith('GAP'): _cat = 'DISPATCH_FAILURE'
+                    else: _cat = 'NO_TOOL'
                     _lay1 = 'D' if str(mod or '').startswith('ficha-dsv4') else 'B'  # routing INPUT 126
                     opts.setdefault('layout_attempts', []).append({'nodo': n.get('id'), 'layout': _lay1, 'ack': _ack, 'why': _why, 'categoria': _cat})
                     if _ack and time.monotonic() < _nc0['deadline'] - 20:  # DSL N4: con <20s restantes no se lanza otro intento
@@ -1422,9 +1624,10 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                         if str(mod or '').startswith('ficha-dsv4'):
                             _nc0['dsv4_think'] = False  # DSL N2: reintento dsv4 con thinking OFF explicito (required no convive con thinking)
                         _nc0['forzar_tool'] = True  # FIX glm52 INPUT 129 + DSL N2: tool_choice=required solo paso 1 del reintento
+                        _h0 = len(opts['herr'][_nid])
                         r = _llamar_harness(mod, prompt, ficha, n, opts)
                         _nc0['forzar_tool'] = False
-                        _ej2 = isinstance(r, dict) and any(x.get('ok') for x in (r.get('herramientas') or []))
+                        _ej2 = any(x.get('ok') for x in opts['herr'][_nid][_h0:])
                         _ack2, _why2 = (False, '') if _ej2 else _pl.is_ack_only(str(r or '')[:2000])
                         _cat2 = 'EXECUTED' if _ej2 else ('ACK_ONLY' if _ack2 else 'NO_TOOL')
                         opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': 'D', 'ack': _ack2, 'why': _why2, 'categoria': _cat2})
@@ -1433,8 +1636,9 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                             _fb_list = [_f for _f in (_reint.get('fallback_modelo') or opts.get('modelos_fallback') or ['ficha-qwen38max', 'ficha-glm52']) if _f != mod][:1]
                             _fb_done = False
                             for _fb in _fb_list:
+                                _h0 = len(opts['herr'][_nid])
                                 _r2 = _llamar_harness(_fb, prompt, ficha, n, opts)
-                                _ej3 = isinstance(_r2, dict) and any(x.get('ok') for x in (_r2.get('herramientas') or []))
+                                _ej3 = any(x.get('ok') for x in opts['herr'][_nid][_h0:])
                                 _a3, _w3 = (False, '') if _ej3 else _pl.is_ack_only(str(_r2 or '')[:2000])
                                 opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': 'F', 'modelo': _fb, 'ack': _a3, 'why': _w3, 'categoria': 'EXECUTED' if _ej3 else ('ACK_ONLY' if _a3 else 'NO_TOOL')})
                                 if not _a3 or (isinstance(_r2, str) and _r2.startswith('GAP')):
@@ -1452,6 +1656,16 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                 # <<< MODOS END
         except Exception as x:  # noqa: BLE001
             r = 'GAP %s (%s): %s' % (i, mod, x)
+        finally:
+            if _tok_nc is not None:
+                _NODO_CALL.reset(_tok_nc)  # DSL G7: el contexto del nodo nunca se fuga a la siguiente llamada
+        # DSL G14: evidencia obligatoria — tarea de cambio aprobada solo da PASS con herramienta ok real
+        if n.get('requiere_evidencia') and opts.get('aprobado') and (opts.get('muta') or opts.get('es_cambio')) and not str(r).startswith('GAP'):
+            _hev = [x for x in opts.get('herr', {}).get(str(n.get('id')), []) if x.get('ok')]
+            if n.get('escribe') or n.get('id') == 'N4':
+                _hev = [x for x in _hev if x.get('mutacion_real')]
+            if not _hev:
+                r = 'GAP SIN_EVIDENCIA (%s): la tarea aprobada exige ejecucion real y ninguna herramienta ok produjo evidencia' % n.get('id')
         if i not in opts.setdefault('abandonados', set()):
             _prog(pid, i, 'gap' if r.startswith('GAP') else 'ok')
         opts.setdefault('tiempos', {})[i] = int((time.time() - _tn) * 1000)
@@ -1460,6 +1674,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     _mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or 99
 
     def _dag() -> None:
+        _pausa_paso = float(opts.get('cadena_pausa_s') or 0)  # DSL G16b: pausa opcional entre pasos de cadena (no cuenta en el timeout)
         pend = [i for i in orden if i not in out]
         while pend:
             listos = [i for i in pend if all(d in out for d in nodos[i].get("depende_de", []))]
@@ -1468,6 +1683,11 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             ex = _cf.ThreadPoolExecutor(max_workers=max(1, min(len(listos), _mp)))
             try:
                 t_ini = time.time()
+                if _pausa_paso > 0 and opts.get('cadena'):  # DSL G16b: espera entre lanzamientos de pasos encadenados
+                    _ult_fin = float(opts.get('_ultimo_paso_fin') or 0)
+                    _espera = _pausa_paso - (time.time() - _ult_fin)
+                    if _espera > 0:
+                        time.sleep(_espera)
                 futs = {i: ex.submit(nodo, i) for i in listos}
                 lp_ = ficha.get('loop') or {}
                 tope_cod = float(lp_.get('max_segundos_codigo') or 1800)
@@ -1483,7 +1703,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                         listas = len(futs) - len(pend_f)
                         if f in hechos:
                             out[i] = f.result()
-                            _ck_guardar(pid, str(ficha.get('id') or ficha.get('ficha') or ''), out)
+                            opts['_ultimo_paso_fin'] = time.time()  # DSL G16b
+                            _ck_guardar(pid, str(ficha.get('id') or ficha.get('ficha') or ''), out)  # checkpoint por paso: reanuda tras reinicio sin repetir (idempotente)
                         elif ahora > lim:
                             opts.setdefault('abandonados', set()).add(i)
                             out[i] = 'GAP %s: TIMEOUT_NODO: el nodo no respondio en %d s; se sigue sin su resultado' % (i, lim)
@@ -1543,6 +1764,20 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             else:
                 final = txt
                 opts['verif_ok'] = True
+    _reglas = [str(x) for x in (ficha.get('reglas_revision') or []) if str(x).strip()]  # DSL G15: revision determinista por reglas de la ficha (opt-in)
+    if _reglas and not str(final).startswith('GAP'):
+        _falta = [r for r in _reglas if r not in final]
+        if _falta:
+            try:  # 1 sola correccion; si sigue faltando -> GAP
+                _corr = _llamar_harness(elegido, 'CORRECCION: tu ultima salida omite marcas obligatorias: ' + ', '.join(_falta) +
+                                      '. Reescribe la salida completa incluyendolas.\n\nSALIDA:\n' + final[:6000],
+                                      ficha, {'id': 'N-REV', 'rol': 'revisor'}, opts)
+                if not str(_corr).startswith('GAP') and all(r in _corr for r in _reglas):
+                    final = _corr
+                else:
+                    final = 'GAP REGLA_INCUMPLIDA: faltan ' + ', '.join(r for r in _reglas if r not in _corr)
+            except Exception as _e:  # noqa: BLE001
+                final = 'GAP REGLA_INCUMPLIDA: faltan ' + ', '.join(_falta) + ' (' + type(_e).__name__ + ')'
     traza = [{"nodo": i, "ms": (opts.get('tiempos') or {}).get(i), "metricas": (opts.get('metricas') or {}).get(i), "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
               "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N3B":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza","N8":"revisa y refactoriza","N3D":"analiza y decide"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP"), "herramientas": opts.get("herr", {}).get(i, [])} for i in orden if i in out]
     return final, traza
@@ -1636,7 +1871,19 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             if gc_:
                 opts['gov_ctx'] = gc_  # congelado una sola vez; los nodos paralelos reciben copia del mismo contexto
                 opts['constitucion_hash'] = str(gc_.get('constitution_hash') or '')
-            salida, traza = _correr(FICHAS[fid], mensaje, str(p.get("modelo") or ""), str(p.get("_pid") or ""), opts)
+            if p.get('objetivo') or str(p.get('modo') or '') == 'loop' or (p.get('_modo_resuelto') or {}).get('mode_id') == 'm04_agentico_loop':
+                salida, traza = _correr_objetivo(p, FICHAS[fid], mensaje, ses, opts)  # DSL G17: motor de objetivos en bucle (mismo hilo, mismo Harness)
+            else:
+                _cid = None
+                if str(FICHAS[fid].get('ficha') or fid) in ('ficha1-modelos', 'ficha4-workflow-yaiwes') and not opts.get('fast_lane'):
+                    _cid, _cad = _cadena_para(mensaje, opts, FICHAS[fid])  # DSL G16: cadena declarativa -> nodos del mismo motor (F1/F4; F2/F3 ya son DAG)
+                    if _cid:
+                        _ficha_c = dict(FICHAS[fid], nodos=_expandir_cadena(_cad, _cad_lim()))
+                        opts['cadena'] = _cid
+                        opts['cadena_pausa_s'] = float((_cad_lim() or {}).get('pausa_entre_pasos_s') or 0)
+                        salida, traza = _correr(_ficha_c, mensaje, str(p.get("modelo") or ""), str(p.get("_pid") or ""), opts)
+                if _cid is None:
+                    salida, traza = _correr(FICHAS[fid], mensaje, str(p.get("modelo") or ""), str(p.get("_pid") or ""), opts)
         salida = _anexo_salida(FICHAS[fid], salida, opts)
         if opts.get('estado') == 'ESPERANDO_APROBACION':
             _pend_guardar(fid, ses, {'input': mensaje, 'plan': salida, 'previo': {k: v for k, v in (opts.get('out') or {}).items() if k != 'N4'}, 'tarea_id': opts['tarea_id'], 'constitucion_hash': str(opts.get('constitucion_hash') or ''), 't': time.time()})
@@ -1736,6 +1983,53 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         return {"fichas": [{"n": k, "id": v, "nombre": FICHAS[v].get("ficha")} for k, v in ALIAS.items() if v in FICHAS]}
     if action == "selector":  # fuente unica del catalogo: el selector de la Ficha 1 tal cual; Team qwen y Team 5 leen lo mismo
         return {"selector": (FICHAS.get("ficha1-modelos") or {}).get("selector") or []}
+    if action == "buzon_enviar":  # DSL G19: el Director escribe al proceso en curso sin detenerlo; el acuse lo da el CODIGO, no el modelo
+        pid = str(p.get('proceso_id') or '')
+        if not pid:
+            return {'error': 'GAP_SIN_PROCESO_ID'}
+        r = _buzon_enviar(pid, str(p.get('tipo') or 'instruccion'), str(p.get('texto') or ''))
+        if r.get('ok'):
+            _pv = _PROCESOS.get(pid)
+            _vu = 'vuelta siguiente'
+            try:
+                import motor_objetivo as _mo  # noqa: PLC0415
+                _e0 = _mo.estado_de(pid)
+                if _e0.get('vuelta') is not None:
+                    _vu = 'vuelta %d' % (int(_e0['vuelta']) + 1)
+            except Exception:  # noqa: BLE001
+                pass
+            r['se_aplica_en'] = _vu
+            r['recibido'] = True  # acuse inmediato del codigo
+        return r
+    if action == "estado_objetivo":  # DSL G19: cola visible del proceso (tareas, vuelta, buzon, preguntas)
+        pid = str(p.get('proceso_id') or '')
+        try:
+            import motor_objetivo as _mo  # noqa: PLC0415
+            e = _mo.estado_de(pid)
+        except Exception:  # noqa: BLE001
+            e = {}
+        e.setdefault('proceso_id', pid)
+        e['buzon_pendiente'] = len(_buzon_leer(pid))
+        e['preguntas'] = [x for x in _pendientes_director(pid) if not x.get('respuesta')]
+        e['progreso'] = _texto_prog(pid)
+        return e
+    if action == "responder_pendiente":  # DSL G19: la respuesta del Director entra al buzon como instruccion
+        db = _buzon_db()
+        if db is None:
+            return {'error': 'GAP_BUZON_SIN_SQLITE'}
+        _idp = int(p.get('id') or 0)
+        _resp = str(p.get('respuesta') or '')
+        db.execute('UPDATE pendientes_director SET respuesta=?, respondido=? WHERE id=?', (_resp, time.time(), _idp))
+        db.commit()
+        try:
+            _pidq = db.execute('SELECT proceso_id FROM pendientes_director WHERE id=?', (_idp,)).fetchone()
+            if _pidq:
+                _buzon_enviar(str(_pidq[0]), 'instruccion', '[RESPUESTA DEL DIRECTOR a tu pregunta]: ' + _resp[:2000])
+        except Exception:  # noqa: BLE001
+            pass
+        return {'ok': True}
+    if action == "pendientes_director":
+        return {'pendientes': _pendientes_director(str(p.get('proceso_id') or ''))}
     if action == "chat":
         return _chat(p)
     if action == "chat_async":
@@ -1886,3 +2180,11 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
     if action == "llm":
         return _llm(p)
     return {"error": "ACCION_DESCONOCIDA"}
+
+
+# DSL G17: hilo programador arrancado una vez al cargar el plugin (revisa programas.json cada 30 s)
+try:
+    import modos.programador as _prog_scheduler  # noqa: PLC0415
+    _prog_scheduler.arrancar(_chat, _buzon_db)
+except Exception:  # noqa: BLE001
+    pass

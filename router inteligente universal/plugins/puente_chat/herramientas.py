@@ -817,3 +817,89 @@ FUNCS.update({'notas': _j(notas), 'pendientes': _j(pendientes), 'room_debatir': 
               'crear_agente': _j(crear_agente), 'componentes_backend': componentes_backend})
 SISTEMA += (' Tienes tambien: notas (bloc de notas verbatim), pendientes (DSL DAG de tareas con prompt JSON editable), room_debatir (ROOM '
             'CONFERENCIAS entre modelos de la Ficha 4), chat_bots y crear_agente (Chat BOTS) y componentes_backend (codigo de los componentes del chat bot).')
+
+
+# ===== DSL G18/G19/G10 — paralelo por tool, buzon al Director y reglas de la biblioteca =====
+import concurrent.futures as _cf_d
+from contextvars import ContextVar as _CV
+
+_PROF_DELEGACION = _CV('riu_prof_delegacion', default=0)  # DSL G18: un solo nivel — un subagente no delega
+_REGLA_NODO = _CV('riu_regla_nodo', default=0)  # DSL G15: max 5 lecturas de regla por nodo
+
+
+def _t_delegar_paralelo(a):
+    # DSL G18: fan-out de subtareas por el MISMO Harness; subagentes solo lectura; respeta _SEM
+    if _PROF_DELEGACION.get() >= 1:
+        return 'GAP DELEGACION_ANIDADA: un subagente no puede crear mas subagentes (un solo nivel)'
+    subs = (a.get('subtareas') or [])[:12]
+    if not subs:
+        return 'GAP DELEGACION_VACIA: falta subtareas'
+    n = max(1, min(int(a.get('max_paralelo') or 6), 6))
+
+    def uno(i, s):
+        tok = _PROF_DELEGACION.set(1)
+        try:
+            return i, _t_recurso({'recurso': s.get('recurso') or 'ficha4:ficha-qwen38flash',
+                                  'mensaje': str(s['texto'])[:6000], 'max_tokens': int(s.get('max_tokens') or 1500)})
+        except Exception as x:  # noqa: BLE001
+            return i, 'GAP SUBTAREA: ' + str(x)[:200]
+        finally:
+            _PROF_DELEGACION.reset(tok)
+    with _cf_d.ThreadPoolExecutor(max_workers=n) as ex:
+        res = dict(f.result() for f in _cf_d.as_completed([ex.submit(uno, i, s) for i, s in enumerate(subs)]))
+    return '\n\n'.join('[SUBTAREA %d] %s' % (i + 1, str(res[i])[:4000]) for i in range(len(subs)))
+
+
+def _t_preguntar_director(a):
+    # DSL G19: el modelo deja una pregunta en la cola del Director y SIGUE con otra tarea (no se detiene)
+    try:
+        from plugins.fichas_qwen import plugin as _fq  # noqa: PLC0415
+        db = _fq._buzon_db()
+        if db is None:
+            return 'GAP_BUZON_SIN_SQLITE'
+        import time as _tt
+        db.execute('INSERT INTO pendientes_director (proceso_id, pregunta, creado, respuesta, respondido) VALUES (?,?,?,NULL,NULL)',
+                   (str(a.get('proceso_id') or ''), str(a.get('pregunta') or '')[:2000], _tt.time()))
+        db.commit()
+        return 'registrado; continua con otra tarea'
+    except Exception as x:  # noqa: BLE001
+        return 'GAP PREGUNTAR_DIRECTOR: ' + str(x)[:200]
+
+
+def _t_regla_yaiwes(a):
+    # DSL G10 capa D: el modelo pide UNA regla SRC-xxx o un heading, a demanda (max 5 por nodo)
+    if _REGLA_NODO.get() >= 5:
+        return 'GAP REGLA_LIMITE: maximo 5 reglas por nodo (lee solo la que necesitas)'
+    _REGLA_NODO.set(_REGLA_NODO.get() + 1)
+    try:
+        from plugins.puente_chat import plugin as _pp  # noqa: PLC0415
+        import json as _j2
+        man = _j2.loads(_pp._prompt_lib('manifest.json') or '{}')
+        q = str(a.get('id') or a.get('heading') or '').strip()
+        hit = None
+        if q.upper().startswith('SRC-'):
+            hit = q.upper()
+        else:
+            for rid, rm in (man.get('reglas') or {}).items():
+                if str(rm.get('heading') or '').upper() == q.upper() or q.upper() in str(rm.get('heading') or '').upper():
+                    hit = rid
+                    break
+        if not hit or hit not in (man.get('reglas') or {}):
+            return 'GAP REGLA_NO_EXISTE: ' + q + ' — validas: ' + ', '.join(sorted((man.get('reglas') or {}).keys())[:114])
+        return _pp._prompt_lib(man['reglas'][hit]['archivo']) or 'GAP REGLA_VACIA'
+    except Exception as x:  # noqa: BLE001
+        return 'GAP REGLA_YAIWES: ' + str(x)[:200]
+
+
+TOOLS.extend([
+    _fn('delegar_paralelo', 'Reparte subtareas a varios modelos/recursos A LA VEZ (max 6 en paralelo, un solo nivel; subagentes solo lectura). subtareas: [{texto, recurso?, max_tokens?}] — recurso: ficha4:<modelo> | nvcode:<modelo> | groq:<modelo>.',
+        {'subtareas': {'type': 'array', 'items': O}, 'max_paralelo': {'type': 'integer'}}, ['subtareas']),
+    _fn('preguntar_director', 'Deja una pregunta en la cola del Director sin detenerte: devuelve "registrado" y tu sigues con otra tarea; la respuesta llega como instruccion en la siguiente vuelta.',
+        {'pregunta': S, 'proceso_id': S}, ['pregunta']),
+    _fn('regla_yaiwes', 'Lee UNA regla verbatim de la biblioteca YAIWES por id (SRC-001..SRC-114) o por heading. Maximo 5 por nodo — pide solo la que necesitas.',
+        {'id': S, 'heading': S}, []),
+])
+FUNCS.update({'delegar_paralelo': _t_delegar_paralelo, 'preguntar_director': _t_preguntar_director,
+              'regla_yaiwes': _t_regla_yaiwes})
+SISTEMA += (' delegar_paralelo (reparte subtareas a varios modelos a la vez, un nivel),'
+            ' preguntar_director (pregunta al Director sin detenerte), regla_yaiwes (una regla verbatim a demanda).')

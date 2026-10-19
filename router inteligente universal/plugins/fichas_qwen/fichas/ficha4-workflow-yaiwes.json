@@ -1,4 +1,5 @@
 {
+"politicas_modelo_ref": "politicas_modelo.json",
   "fast_lane": {
     "enabled": true,
     "button_override": true,

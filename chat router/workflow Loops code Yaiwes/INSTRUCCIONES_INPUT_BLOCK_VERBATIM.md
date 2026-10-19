@@ -30472,3 +30472,680 @@ salida_final:
   CORREGIDO: [N1, N2, N3, N4, N5]
   MODELOS: tabla N8
   AUDITORIA_SONNET: PASS | GAP_EXACTO
+
+## INPUT ~131 — 2026-10-19 (mensaje del usuario)
+
+Ejecutalo todas las instrucciones de Claude luego te detienes y me das la validación para auditarte y luego haces las pruebas inicia no paras tu modo Loops bucle coda hasta terminar todas las tareas que te di
+
+coloca la traza a 20 vueltas
+
+Revisé lo que ya tienes. En el chat existe el botón paralelo, que manda la misma pregunta a hasta 6 modelos de Team Qwen a la vez. Y en el puente tienes herramientas con las que un modelo llama a otros modelos o agentes: consultar un recurso LLM, crear agentes, chat de bots, sala de debate, agentes Groq y la herramienta de código NVIDIA.
+
+Lo que falta para que funcione como MiniMax son dos piezas.
+
+**Método 1: paralelo por herramienta (el modelo reparte trabajo)**
+```
+Modelo principal (vuelta N del bucle)
+   └─ llama la tool delegar_paralelo([subtarea A, subtarea B, subtarea C])
+        ├─ agente/modelo A  ┐
+        ├─ agente/modelo B  ├─ corren AL MISMO TIEMPO (máx 6, con los frenos actuales)
+        └─ agente/modelo C  ┘
+   ← recibe los 3 resultados juntos y sigue su vuelta
+```
+Hoy tus herramientas llaman a un modelo a la vez. Falta una que mande varias subtareas juntas y espere todas.
+- **Los subagentes no pueden crear más subagentes** (un solo nivel), así nunca se arma una cascada infinita.
+- **Cada subagente recibe un prompt corto** con solo su subtarea.
+
+**Método 2: hablarle sin detenerlo (buzón) y cola de tareas**
+```
+Motor en bucle trabajando (vuelta 7 de 50)…
+TÚ escribes en el chat mientras corre ──→ BUZÓN del proceso (no lo interrumpe)
+   tipos: "instrucción" · "tarea nueva" · "prioridad" · "pausa" · "continuar" · "cancelar"
+   ↓
+Al empezar la vuelta 8 el motor lee el buzón:
+   instrucción → se agrega al prompt de las siguientes vueltas
+   tarea nueva → entra a la cola
+   prioridad   → sube al primer lugar
+   pausa/cancelar → se detiene de forma segura (guarda checkpoint)
+   ↓
+El chat te responde AL INSTANTE desde el código (no el modelo): "Recibido, se aplica en la vuelta 8"
+```
+- **También al revés:** si el modelo necesita algo de ti, deja una pregunta en tu cola de pendientes y sigue con otras tareas, sin detenerse a esperarte. Cuando respondes, tu respuesta le llega en la siguiente vuelta.
+
+```markdown
+# G18 — PARALELO POR TOOL (fan-out de subagentes)  +  G19 — BUZÓN EN VIVO Y COLA (estilo MiniMax)
+ejecutor: DEVIN · verifica: CLAUDE SONNET · depende de: G17 (motor de objetivos) y G16b (checkpoint)
+reglas: NO otro Router/Harness/servidor · NO Actions · reutilizar las tools existentes (recurso_llm, crear_agente,
+        chat_bots, groq_agente, nvidia_codigo, room_debatir) y el botón paralelo del chat; no duplicarlas
+
+## G18 — TOOL delegar_paralelo (puente_chat/herramientas.py)
+schema: delegar_paralelo(subtareas: [{texto, recurso?: "ficha4:ficha-qwen38max"|"groq:<modelo>"|"agente:<nombre>",
+                                       modo?: "rapido|code|auditor", max_tokens?: int}], max_paralelo?: int<=6)
+código:
+  import concurrent.futures as cf
+  def _t_delegar_paralelo(a):
+      if _PROF_DELEGACION.get() >= 1:                       # un solo nivel: un subagente no delega
+          return 'GAP DELEGACION_ANIDADA'
+      subs = (a.get('subtareas') or [])[:12]
+      n = max(1, min(int(a.get('max_paralelo') or 6), 6))
+      def uno(i, s):
+          tok = _PROF_DELEGACION.set(1)
+          try:
+              return i, _t_recurso({'recurso': s.get('recurso') or 'ficha4:ficha-qwen38flash',
+                                    'mensaje': str(s['texto'])[:6000], 'max_tokens': int(s.get('max_tokens') or 1500)})
+          except Exception as x:  # noqa: BLE001
+              return i, 'GAP SUBTAREA: ' + str(x)[:200]
+          finally:
+              _PROF_DELEGACION.reset(tok)
+      with cf.ThreadPoolExecutor(max_workers=n) as ex:
+          res = dict(f.result() for f in cf.as_completed([ex.submit(uno, i, s) for i, s in enumerate(subs)]))
+      return '\n\n'.join('[SUBTAREA %d] %s' % (i + 1, str(res[i])[:4000]) for i in range(len(subs)))
+  _PROF_DELEGACION = ContextVar('riu_prof_delegacion', default=0)
+reglas:
+  - cada subagente pasa por el MISMO Harness (Constitución, solo_lectura, scope) — no se salta nada
+  - subagentes: solo lectura por defecto; escritura solo si el objetivo está aprobado (G17 "una_vez")
+  - respetar _SEM / _SEM_PESADO; timeout por subtarea = min(120 s, deadline del nodo)
+  - registrar en la traza: subtareas, recurso, ms, ok/GAP
+  - en el motor de objetivos (G17): una tarea puede tener modo "paralelo" -> la vuelta llama delegar_paralelo
+tests: 3 subtareas mock -> corren concurrentes (tiempo ~ la más lenta); subagente que intenta delegar -> GAP; timeout respetado
+
+## G19 — BUZÓN EN VIVO (Director -> modelo sin detenerlo) Y COLA DE PENDIENTES (modelo -> Director)
+1. Almacenamiento (SQLite del Router, tablas nuevas, NO servidor nuevo):
+   buzon(id, proceso_id, tipo, texto, creado, aplicado_en_vuelta)
+     tipo: instruccion | tarea | prioridad | pausa | continuar | cancelar
+   pendientes_director(id, proceso_id, pregunta, creado, respuesta, respondido)
+2. Endpoints (fichas_qwen handle, públicos como chat_async):
+   buzon_enviar {proceso_id, tipo, texto}  -> respuesta inmediata del código: {"ok":true,"se_aplica_en":"vuelta N+1"}
+   estado_objetivo {proceso_id}            -> {vuelta, tareas[{id,texto,estado}], buzon_pendiente, preguntas}
+   responder_pendiente {id, respuesta}
+3. Motor (motor_objetivo.correr_objetivo) — al INICIO de cada vuelta, antes de elegir tarea:
+   for m in leer_buzon(proceso_id, no_aplicados):
+     instruccion -> st['instrucciones_director'].append(texto)   # van en el prompt de TODAS las vueltas siguientes
+     tarea       -> agregar a st['tareas'] (respetando max_tareas)
+     prioridad   -> mover la tarea indicada (o nueva) al primer lugar
+     pausa       -> guardar checkpoint y esperar en bucle de 5 s hasta 'continuar' o 'cancelar' (sin gastar modelo)
+     cancelar    -> guardar checkpoint y salir con estado CANCELADO + reporte de lo hecho
+     marcar aplicado_en_vuelta = st['vuelta']
+   _prompt_vuelta agrega: "INSTRUCCIONES NUEVAS DEL DIRECTOR (obligatorias):\n- ..." si hay
+4. Dentro de una vuelta larga (_bucle de tools en puente_chat): entre paso y paso de herramientas, si hay
+   'instruccion' nueva en el buzón -> insertarla como mensaje user "[DIRECTOR, en vivo]: ..." y seguir el bucle
+   (no reinicia la llamada; el modelo la ve en el siguiente paso).
+5. Modelo -> Director sin bloquear: tool preguntar_director(pregunta) -> guarda en pendientes_director y devuelve
+   "registrado; continúa con otra tarea" ; la tarea queda 'sigue' y el motor pasa a la siguiente. Al responder el
+   Director, la respuesta entra como instruccion al buzón.
+6. Frontend (panel-chat.js), sin tocar el envío normal:
+   - Si hay un proceso en curso en esta sesión, el input muestra selector: [Al proceso en curso ▾ instrucción |
+     tarea | prioridad] y [Nueva tarea aparte]. "Al proceso" -> buzon_enviar; botones Pausa / Continuar / Cancelar.
+   - Panel "Cola": lista de tareas con estado (estado_objetivo cada 3 s) + preguntas del modelo con campo de respuesta.
+   - El acuse "Recibido, se aplica en la vuelta N" lo pone el código, no el modelo.
+tests:
+ - mock: motor en vuelta 3, llega 'tarea' -> aparece en la cola y se ejecuta; 'instruccion' -> presente en el prompt
+   de la vuelta siguiente; 'pausa' -> no hay llamadas al modelo hasta 'continuar'; 'cancelar' -> CANCELADO con reporte.
+ - preguntar_director -> la tarea queda 'sigue', el motor avanza a otra; al responder se reintegra.
+ - real: Ficha 1, objetivo de 4 tareas; a mitad enviar una tarea nueva por el chat -> se ejecuta sin reiniciar.
+
+## README — sección "Paralelo y conversación en vivo"
+"El modelo puede repartir subtareas a varios modelos a la vez con delegar_paralelo (un nivel, máx. 6).
+ Mientras un objetivo corre, lo que escribes en el chat va al buzón del proceso: instrucciones, tareas nuevas,
+ prioridad, pausa o cancelar. Se aplican en la siguiente vuelta sin detener el trabajo. Las preguntas del modelo
+ quedan en tu cola de pendientes y no lo detienen."
+```
+
+**Orden sugerido para Devin:** primero G17 (el bucle), después G19 (el buzón) y al final G18 (el paralelo). El buzón y el paralelo trabajan sobre el bucle, así que sin él no tienen dónde enchufarse.
+
+Vercel solo puente: validado (no se usó)
+
+## INPUT ~131-ADJ — 2026-10-19 (adjunto prompt-1792401634553.md de Claude)
+
+Paso 1 separa y extrae la información solo del code necesario del imput block verbartin de mis instrucciones que tiene que ver con como se debe hacer la fichas 
+para no hacer ruido con las instrucciones del imput block verbartin y el readme arquitectura de las fichas 
+
+luego realiza todas las siguientes mejoras que te manda Claude y haces los test en el chat directo si hay un Gaps me lo das te detienes y me das los detalles para que Claude OPus revise y te de instrucciones 
+
+
+# GAPS A RESOLVER — FICHAS 1–5 + CABLEADO (revisado en feat/modos-router @ d7dc0e60)
+ejecutor: DEVIN · verificador independiente: CLAUDE SONNET
+reglas: NO otro Router/Harness/servidor/agente · NO GitHub Actions · NO LFS · NO job nuevo de prueba
+        NO cambiar modelos/banco/Constitución · JSON byte-preserving · un commit por GAP con trailers
+
+## YA RESUELTO (no tocar): N1 ContextVar por nodo · N2 required solo paso 1 + dsv4 thinking OFF
+## explícito en reintento · N4 deadline por nodo y máx. 1 fallback · políticas fuera de fichas 2/3
+
+## PRIORIDAD 1 — QUE EL MODELO NO SE SALTE EL PROMPT
+G1_UN_SOLO_SYSTEM  (puente_chat/plugin.py, ~línea 2462)
+  hoy: mensajes = [system_puente] + [system_ficha(rol+ctx), user] -> 2 mensajes system; el 2º se ignora
+  fix: si p.messages trae role=system, FUSIONAR en el system del puente, en este orden:
+       1) CONSTITUCIÓN (gov_bloque) 2) "ROL DEL NODO <id>:" + rol 3) anclas DATO 4) memoria/contexto
+       Resultado: exactamente 1 system al inicio; la tarea sola en el último user.
+  test real: log del payload (sin secretos) -> count(role=system)==1 y contiene "ROL DEL NODO"
+
+G2_DSV4_SIN_ROL  (fichas_qwen/plugin.py, routing dsv4 -> _sys_prompt='')
+  hoy: para ficha-dsv4* se borra el rol del nodo y no va en ningún lado
+  fix: con layout D, poner el rol recortado (<=600 chars) DENTRO del user, después de </tarea>:
+       "<rol>...</rol>\nEjecuta <tarea> ahora." (la Constitución sigue en el system del puente)
+  test: nodo N1 Ficha 2 (dsv4pro) -> el user enviado contiene <rol>
+
+G3_RECORDATORIO_FINAL  (fichas_qwen/plugin.py, armado del user)
+  fix: cerrar SIEMPRE el user con 1 línea fija y corta (efecto recencia):
+       "Responde con el RESULTADO. Si hay herramienta para esto, llámala en este turno. Nunca acuses recibo."
+  (ya existe parecido; unificar en una constante y usarla en layouts B y D y en fallback)
+
+## PRIORIDAD 2 — CÓDIGO NUEVO QUE NO HACE LO QUE DICE
+G4_EVIDENCIA_REAL  (fichas_qwen/plugin.py, bloque acuse/reintento)
+  hoy: _ejecuto = isinstance(r, dict)... pero _llamar_harness devuelve TEXTO -> siempre False;
+       categorías siempre DISPATCH_FAILURE/NO_TOOL (falsas)
+  fix: antes de cada intento guardar n0=len(opts['herr'].get(nid,[])); después
+       nuevas=opts['herr'][nid][n0:]; _ejecuto = any(x['ok'] for x in nuevas)
+       categorías: EXECUTED si _ejecuto; ACK_ONLY si is_ack_only; TOOL_IN_REASONING si el harness
+       reporta tool en reasoning; NO_TOOL si texto sin tools; TIMEOUT/DISPATCH_FAILURE según GAP del harness
+  test: mock pc._chat que devuelve texto vacío + registra github_escribir ok -> 0 reintentos, EXECUTED
+
+G5_POLITICA_NO_SE_LEE  (fichas_qwen/plugin.py: _pc()._politica(_QW.get(mod)))
+  hoy: pasa 'qw-deepseek-v4-pro' pero _POL_MODELO usa 'deepseek-v4-pro' -> {} siempre
+  fix: función _politica_ficha(fid) en puente_chat que busque directo por 'ficha-dsv4pro' (sin mapa);
+       usarla aquí. test: política real de ficha1 -> per_attempt_s y fallback_modelo leídos (no defaults)
+
+G6_REINTENTO_POR_MODELO  (politicas de ficha1; hoy idéntico en los 7 y se pone a sí mismo de fallback)
+  qwen38max -> fallback [ficha-glm52]; glm52 -> [ficha-qwen38max]; qwen38flash/qwen36flash/dsv4* ->
+  [ficha-qwen38max]; todos thinking "off" en reintento; quitar per_attempt_s fijo (lo da el deadline)
+
+G7_RESET_CONTEXTVAR  (fichas_qwen/plugin.py: _tok_nc nunca se resetea)
+  hoy: tras el DAG, llamadas del hilo principal (anexo salida, verificación) heredan un deadline vencido -> 5 s
+  fix: try/finally: _NODO_CALL.reset(_tok_nc) al terminar cada nodo
+  test: después de _dag(), _NODO_CALL.get() is None
+
+G8_TESTS_DE_VERDAD  (modos/test_dsl_cableado.py)
+  hoy: test_n3 re-escribe la expresión sobre un dict; test_n5 usa _politica simulada -> pasan sin probar nada
+  fix: tests que llamen a nodo()/_llamar_harness real con pc._chat simulado devolviendo TEXTO,
+       y a _politica_ficha real leyendo ficha1. Prohibido re-implementar la lógica dentro del test.
+
+## PRIORIDAD 3 — CONSISTENCIA DE FICHAS
+G9_FICHA4_COPIA_DE_FICHA1
+  hoy: políticas solo en ficha1; ficha4 ya no es copia fiel (regla del Director)
+  fix: mover politicas_modelo a fichas/politicas_modelo.json; ficha1 y ficha4 con
+       "politicas_modelo_ref": "politicas_modelo.json"; _politica_ficha lee ese archivo
+
+G10_PROMPTS_Y_REGLAS_NO_CARGADOS
+  hoy: YAIWES_PROMPT_1A1_JSON_UNICO.json (134 KB), "JSON para IA", MAVIS-PARALLEL-100X, MAX-SYSTEM-100X,
+       rules_engine + prompt_rules.yaml (87 reglas): ningún código los usa
+  fix (sin inventar contenido, solo cableado):
+   a) Director entrega/aprueba un SYSTEM_CORE corto (<=3.000 tokens) extraído de sus prompts ->
+      fichas/system_core.md, con versión y sha256; el puente lo antepone en G1 (paso 0, antes de Constitución);
+      la traza guarda la versión/sha usada
+   b) rules_engine como compuerta determinista PRE (entrada) y POST (salida) por nodo; reglas = código, no texto
+   c) el resto de prompts largos -> docs/, consultables por herramienta por rangos, nunca pegados enteros
+
+G11_GLM_TOOL_STREAM
+  hoy: tool_stream=true en glm52 contra su propia nota ("default false")
+  fix: dejarlo solo si la llamada va en streaming y la prueba real pasa; si no, false (evidencia en tabla)
+
+G12_CONFIRMAR_MODELOS_FICHA3  (solo verificar, NO cambiar)
+  en esta rama Ficha 3: N1 dsv4pro, N3B/N3D/N4/N7/N8 qwen38max (distinto de main). Preguntar al Director si es lo
+  deseado antes de fusionar a main.
+
+## DAG
+P1: [G1, G2, G3] -> P2: [G4, G5, G7] -> G6 -> G8 -> G9 -> G10 -> G11
+T_LOCAL: tests con pc._chat simulado (sin red, sin job, sin Actions) — todos verdes
+T_REAL : relanzar Router misma config (backup .bak-AAAAMMDD-pre-gaps) + LIVE_URL;
+         1 llamada HTTP por modelo (qwen38max, qwen38flash, glm52, dsv4pro, dsv4flash):
+         "Lee router inteligente universal/LIVE_URL.json y dime el job_id"
+         PASS = EXECUTED + job_id correcto + 1 solo system en el payload + rol presente + < tope
+         + 1 consulta Ficha 2 y 1 plan Ficha 3 sin TIMEOUT_NODO
+HANDOFF: tabla modelo | categoría | tool | ms | reintentos | fallback | PASS/FAIL + commits
+AUDITORIA (CLAUDE_SONNET, lee código real, no el reporte): grep de cada GAP + repite 2 llamadas -> PASS | GAP_EXACTO
+
+# ADDENDUM GAPS G13–G14 (sumar al bloque G1–G12; mismas reglas, ejecutor DEVIN, verifica CLAUDE SONNET)
+
+G13_RECORTE_CON_PRIORIDAD  (puente_chat/plugin.py: _recortar + armado del system de G1)
+  hoy: si el envío supera el techo del perfil, solo suelta turnos viejos; no hay prioridad dentro del system
+  fix: armar el system único por bloques con prioridad y recortar en este orden (de lo menos a lo más importante):
+       memoria/contexto guardado -> anclas DATO -> handoff/sandbox
+       NUNCA recortar: SYSTEM_CORE, CONSTITUCIÓN, ROL DEL NODO, la tarea del user, el recordatorio final (G3)
+       cada bloque recortado deja la marca "[recortado: <bloque> N chars]" y se anota en la traza
+  test: anclas de 40.000 chars en perfil normal -> payload <= techo, "ROL DEL NODO" y tarea intactos
+
+G14_EVIDENCIA_OBLIGATORIA  (fichas_qwen/plugin.py, cierre de cada nodo)
+  hoy: nodos con "requiere_evidencia": true (ej. Ficha 1 N4) no se validan; un "listo" sin tools pasa como OK
+  fix: si nodo.requiere_evidencia y la tarea es de cambio (opts.muta o es_cambio) y aprobada:
+       PASS solo si opts['herr'][nodo] tiene >=1 herramienta ok con mutacion_real cuando escribe;
+       si no -> 'GAP SIN_EVIDENCIA' (categoría NO_TOOL), sin marcar el nodo como hecho
+       preguntas normales y FAST no se tocan (no exigen evidencia)
+  test: mock que responde "Listo, archivo actualizado" sin tools -> GAP SIN_EVIDENCIA;
+        mock con github_escribir ok -> PASS
+
+## DAG actualizado
+P1: [G1, G2, G3, G13] -> P2: [G4, G5, G7, G14] -> G6 -> G8 -> G9 -> G10 -> G11 -> T_LOCAL -> T_REAL -> HANDOFF -> AUDITORIA
+T_REAL agrega: 1 tarea de cambio aprobada en Ficha 1 con modelo que acusa -> debe terminar EXECUTED o GAP SIN_EVIDENCIA, nunca PASS vacío
+
+# G10 ACTUALIZADO — PROMPT POR CAPAS (sin borrar nada del prompt del Director) + G12 CERRADO
+ejecutor: DEVIN · verifica: CLAUDE SONNET · mismas reglas (NO otro harness, NO Actions, NO cambiar modelos)
+
+G12: CERRADO — Director confirma Ficha 3 con Qwen 3.8 Max en la rama. No tocar.
+
+G10_PROMPT_POR_CAPAS
+fuente: plugins/fichas_qwen/fichas/YAIWES_PROMPT_1A1_JSON_UNICO.json
+        (input_block_verbatim_1a1.blocks[1..5] + source_rules_verbatim_1a1[114 reglas con id/heading/category])
+
+1. BIBLIOTECA (mover, no editar texto)
+   - Crear: chat router/workflow Loops code Yaiwes/prompt/
+       bloques/bloque_1.md .. bloque_5.md   (literal 1:1, sha256 de cada uno en manifest)
+       reglas/SRC-001.md .. SRC-114.md      (literal 1:1)
+       manifest.json: {id, heading, category, bloque, sha256, capa}
+   - Mover ahí también: "JSON para IA", MAVIS-PARALLEL-100X, MAX-SYSTEM-100X (referencia)
+
+2. CAPA A — SYSTEM_CORE (siempre, todas las fichas, <= 3.000 tokens)
+   - Ensamblar por código, con los headings LITERALES:
+     B1: MODO, ROL Y PERFIL, MISION, FRONTERA DE CONFIANZA, ALCANCE Y PROTECCIÓN, REGLA CENTRAL DE CÓDIGO,
+         MANEJO DE ERRORES, DECISIONES AUTÓNOMAS, BINDING RULES, CONDICIÓN DE ÉXITO, REGLA DE REPRESENTACIÓN
+     B4: DEFINITION OF DONE, AUTORIZACIÓN
+     B5: FORMATO DE SALIDA, REGLA FINAL
+     + regla G3: "Si hay herramienta para esto, llámala en este turno. Nunca acuses recibo."
+   - Si supera 3.000 tokens: NO resumir con LLM; reportar tamaño al Director para que elija qué sección baja a capa B.
+   - Guardar: prompt/system_core.md + sha256 + versión. El puente lo pone PRIMERO en el system único (G1).
+
+3. CAPA B — REGLAS POR NODO (las elige el código, nunca el modelo)
+   mapa en manifest.json -> "capa_b":
+     ejecutor código/frontend (N4 F2/F3, N4 F1/F4 si es cambio) -> B3 completo
+     verificadores N6/N7/N8                                      -> B4 completo
+     analistas N1/N2/N3/N3B/N3D y reporte final                  -> B2 completo
+     task_type planning/architecture                             -> B5 (gestión)
+   - Se inyecta en el system único después de "ROL DEL NODO". Nunca en FAST ni en consulta FAST.
+   - Si el total supera el techo del perfil -> recortar según G13 (capa B antes que core/rol/tarea).
+
+4. CAPA C — CÓDIGO (no viaja como texto; verificar que ya está cubierto)
+   pipeline/loop/watchdog -> loop_controller; verbatim+sha256 -> prompt_import; una instrucción por nodo,
+   dedupe, drift_guard -> rules_engine como compuerta PRE/POST (cablear si falta, G10b). Listar en el handoff
+   qué regla queda cubierta por qué archivo:línea.
+
+5. CAPA D — REFERENCIA POR HERRAMIENTA
+   - Herramienta de solo lectura "regla_yaiwes(id|heading)" que devuelve la regla literal de la biblioteca.
+   - El rol de cada nodo dice: "si necesitas una regla que no está en tu system, pídela con regla_yaiwes".
+
+TESTS
+ - local: system_core.md sha estable; el system enviado contiene core + rol + capa B correcta por nodo (mock).
+ - real: 1 nodo por capa (N4 F2, N6 F2, N1 F3) -> el payload contiene sus headings; FAST no los contiene.
+ - trazabilidad: la traza de cada respuesta guarda versión/sha de system_core y lista de reglas inyectadas.
+ENTREGA: tamaño del core en tokens, mapa capa B, y lista de reglas cubiertas por código.
+
+# G10 ACTUALIZADO — PROMPT POR CAPAS (sin borrar nada del prompt del Director) + G12 CERRADO
+ejecutor: DEVIN · verifica: CLAUDE SONNET · mismas reglas (NO otro harness, NO Actions, NO cambiar modelos)
+
+G12: CERRADO — Director confirma Ficha 3 con Qwen 3.8 Max en la rama. No tocar.
+
+G10_PROMPT_POR_CAPAS
+fuente: plugins/fichas_qwen/fichas/YAIWES_PROMPT_1A1_JSON_UNICO.json
+        (input_block_verbatim_1a1.blocks[1..5] + source_rules_verbatim_1a1[114 reglas con id/heading/category])
+
+1. BIBLIOTECA (mover, no editar texto)
+   - Crear: chat router/workflow Loops code Yaiwes/prompt/
+       bloques/bloque_1.md .. bloque_5.md   (literal 1:1, sha256 de cada uno en manifest)
+       reglas/SRC-001.md .. SRC-114.md      (literal 1:1)
+       manifest.json: {id, heading, category, bloque, sha256, capa}
+   - Mover ahí también: "JSON para IA", MAVIS-PARALLEL-100X, MAX-SYSTEM-100X (referencia)
+
+2. CAPA A — SYSTEM_CORE (siempre, todas las fichas, <= 3.000 tokens)
+   - Ensamblar por código, con los headings LITERALES:
+     B1: MODO, ROL Y PERFIL, MISION, FRONTERA DE CONFIANZA, ALCANCE Y PROTECCIÓN, REGLA CENTRAL DE CÓDIGO,
+         MANEJO DE ERRORES, DECISIONES AUTÓNOMAS, BINDING RULES, CONDICIÓN DE ÉXITO, REGLA DE REPRESENTACIÓN
+     B4: DEFINITION OF DONE, AUTORIZACIÓN
+     B5: FORMATO DE SALIDA, REGLA FINAL
+     + regla G3: "Si hay herramienta para esto, llámala en este turno. Nunca acuses recibo."
+   - Si supera 3.000 tokens: NO resumir con LLM; reportar tamaño al Director para que elija qué sección baja a capa B.
+   - Guardar: prompt/system_core.md + sha256 + versión. El puente lo pone PRIMERO en el system único (G1).
+
+3. CAPA B — REGLAS POR NODO (las elige el código, nunca el modelo)
+   mapa en manifest.json -> "capa_b":
+     ejecutor código/frontend (N4 F2/F3, N4 F1/F4 si es cambio) -> B3 completo
+     verificadores N6/N7/N8                                      -> B4 completo
+     analistas N1/N2/N3/N3B/N3D y reporte final                  -> B2 completo
+     task_type planning/architecture                             -> B5 (gestión)
+   - Se inyecta en el system único después de "ROL DEL NODO". Nunca en FAST ni en consulta FAST.
+   - Si el total supera el techo del perfil -> recortar según G13 (capa B antes que core/rol/tarea).
+
+4. CAPA C — CÓDIGO (no viaja como texto; verificar que ya está cubierto)
+   pipeline/loop/watchdog -> loop_controller; verbatim+sha256 -> prompt_import; una instrucción por nodo,
+   dedupe, drift_guard -> rules_engine como compuerta PRE/POST (cablear si falta, G10b). Listar en el handoff
+   qué regla queda cubierta por qué archivo:línea.
+
+5. CAPA D — REFERENCIA POR HERRAMIENTA
+   - Herramienta de solo lectura "regla_yaiwes(id|heading)" que devuelve la regla literal de la biblioteca.
+   - El rol de cada nodo dice: "si necesitas una regla que no está en tu system, pídela con regla_yaiwes".
+
+TESTS
+ - local: system_core.md sha estable; el system enviado contiene core + rol + capa B correcta por nodo (mock).
+ - real: 1 nodo por capa (N4 F2, N6 F2, N1 F3) -> el payload contiene sus headings; FAST no los contiene.
+ - trazabilidad: la traza de cada respuesta guarda versión/sha de system_core y lista de reglas inyectadas.
+ENTREGA: tamaño del core en tokens, mapa capa B, y lista de reglas cubiertas por código.
+.# G15 — USAR EL PROMPT COMPLETO POR PARTES (modo + pasadas + a pedido + revisión)
+ejecutor: DEVIN · verifica: CLAUDE SONNET · depende de: G10 (biblioteca + system_core) · mismas reglas
+
+1. PAQUETES POR MODO (usar el modes_registry y el mode_router existentes; no crear otro selector)
+   rapido       -> system_core
+   agente/code  -> system_core + bloque_3
+   auditor      -> system_core + bloque_4
+   planificador -> system_core + bloque_2 + bloque_5
+   - Campo nuevo por modo en modes_registry.json: "capas": ["core","b3",...]
+   - El modo elegido en el chat decide el paquete; si no hay modo, se usa el mapa por nodo de G10.
+
+2. PASADAS = NODOS DEL DAG (Fichas 2 y 3; no crear nodos nuevos)
+   N1/N2/N3/N3B/N3D -> core + B2 (plan, raíz viva, arquitectura)
+   N4               -> core + B3 (construir)
+   N6/N7/N8         -> core + B4 (verificar)
+   nodo final       -> core + B5 (formato de salida / reporte)
+   La salida de cada nodo ya pasa como contexto al siguiente (depende_de): no cambiar eso.
+
+3. A PEDIDO: herramienta solo-lectura regla_yaiwes(id|heading) -> texto literal + sha256
+   - Límite: 5 reglas por nodo; queda en la traza qué reglas pidió.
+
+4. REVISIÓN FINAL CONTRA REGLAS (determinista, sin LLM clasificador)
+   - Cada regla del manifest puede declarar "chequeo": lista de marcas/secciones obligatorias en la salida.
+   - Al cerrar el nodo: si falta alguna -> UNA corrección al mismo modelo con SOLO esa regla.
+     Si vuelve a faltar -> GAP REGLA_INCUMPLIDA <id> (no PASS).
+   - FAST y consulta FAST no pasan por esta revisión.
+
+TESTS
+ - modo auditor -> el payload contiene core + B4 y no B3; modo rapido -> solo core.
+ - nodo N6 de Ficha 2 -> core + B4.
+ - mock que omite una sección obligatoria -> 1 corrección; si persiste -> GAP REGLA_INCUMPLIDA.
+ENTREGA: tabla modo/nodo -> capas enviadas (tokens) + reglas pedidas a pedido + correcciones hechas.
+
+No del todo. Lo anterior usaba los nodos que ya tienen las Fichas 2 y 3, pero no daba una forma de añadir pasos nuevos mañana sin tocar código. Esto lo resuelve: una "cadena de pasos" que se escribe en un JSON y el sistema ejecuta sola, en cola.
+
+**Cómo queda diseñado, en simple**
+```
+TÚ escribes en el chat
+   ↓
+El código elige la cadena (por modo o tipo de tarea; sin LLM)
+   ↓
+Paso 1 → llamada corta (núcleo + su capa) → resultado guardado, NO sale al chat
+   ↓  (el resultado del paso 1 entra como contexto del paso 2)
+Paso 2 → llamada corta → guardado
+   ↓
+Paso 3 → … (si escribe archivos, exige evidencia; si falta aprobación, se detiene y te pide /aprobar)
+   ↓
+Paso final → arma la respuesta con tu formato
+   ↓
+SOLO ESTO aparece en el chat (el visor muestra el avance paso a paso)
+```
+- **Cada paso es una llamada distinta:** lleva un prompt pequeño con el núcleo, la capa de ese paso y la salida del paso anterior. Así ningún modelo recibe el prompt largo entero.
+- **No es un sistema nuevo:** el código convierte la cadena en nodos de la ficha y usa el mismo motor de nodos que ya funciona en las Fichas 2 y 3, con sus tiempos, reintentos, evidencia y aprobación.
+- **Mañana, para añadir una tarea o mejora,** solo agregas un paso (o una cadena nueva) en un archivo JSON. No se toca código. Eso queda escrito en el README como regla.
+
+```markdown
+# G16 — CADENAS DE PASOS EN COLA (llamadas encadenadas, una sola salida al chat)
+ejecutor: DEVIN · verifica: CLAUDE SONNET · depende de: G1, G3, G4, G7, G10, G14
+reglas: NO otro Router/Harness/servidor/agente · NO Actions · reutilizar _correr/_dag existentes (no motor nuevo)
+
+## 1. ARCHIVO DECLARATIVO (nuevo): plugins/fichas_qwen/fichas/cadenas.json
+{
+  "version": 1,
+  "limites": {"max_pasos": 8, "max_chars_contexto_entre_pasos": 6000},
+  "cadenas": {
+    "construir_feature": {
+      "descripcion": "Planear, construir, verificar y reportar un cambio de código",
+      "activar_si": {"modo": ["agente", "agente_code"], "task_type": ["code", "frontend", "implement_feature"]},
+      "pasos": [
+        {"id": "P1", "tarea": "Analiza la tarea: archivos afectados, dependencias y riesgos. No cambies nada.",
+         "capas": ["core", "b2"], "tools": "lectura", "timeout_s": 120, "max_tokens": 1500},
+        {"id": "P2", "tarea": "Escribe el plan mínimo paso a paso con archivos exactos.",
+         "capas": ["core", "b2"], "tools": "ninguna", "timeout_s": 90, "max_tokens": 1500, "pide_aprobacion": true},
+        {"id": "P3", "tarea": "Implementa el plan aprobado. Cada cambio con herramienta real.",
+         "capas": ["core", "b3"], "tools": "escritura", "requiere_evidencia": true, "timeout_s": 300, "max_tokens": 6000},
+        {"id": "P4", "tarea": "Verifica con pruebas reales lo implementado. Devuelve VEREDICTO: PASS/FAIL + evidencia.",
+         "capas": ["core", "b4"], "tools": "lectura", "timeout_s": 180, "max_tokens": 3000, "corrige": "P3"},
+        {"id": "P5", "tarea": "Arma la salida final para el Director con el formato obligatorio.",
+         "capas": ["core", "b5"], "tools": "ninguna", "final": true, "timeout_s": 90, "max_tokens": 3000}
+      ]
+    }
+  }
+}
+# "modelo" por paso es opcional: si no está, usa el modelo del selector (no cambiar modelos en silencio).
+
+## 2. CÓDIGO (fichas_qwen/plugin.py) — expandir cadena a nodos y usar el motor actual
+def _cadena_para(mensaje, opts, ficha):
+    # selección determinista: modo/task_type del pedido; sin LLM
+    try:
+        cfg = json.loads((Path(__file__).parent / 'fichas' / 'cadenas.json').read_text(encoding='utf-8'))
+    except Exception:  # noqa: BLE001
+        return None, None
+    modo = str(opts.get('modo') or '')
+    tt = str(opts.get('task_type') or '')
+    for cid, c in (cfg.get('cadenas') or {}).items():
+        a = c.get('activar_si') or {}
+        if (modo and modo in (a.get('modo') or [])) or (tt and tt in (a.get('task_type') or [])):
+            return cid, c
+    return None, None
+
+def _expandir_cadena(c, lim):
+    nodos, prev = [], None
+    for p in (c.get('pasos') or [])[: int(lim.get('max_pasos') or 8)]:
+        nodos.append({
+            'id': p['id'], 'modelo': p.get('modelo') or 'selector',
+            'rol': p['tarea'] + '\nEntrada: la salida del paso anterior (si existe). Entrega SOLO el resultado de este paso.',
+            'depende_de': [prev] if prev else [],
+            'timeout_s': int(p.get('timeout_s') or 120), 'max_output_tokens': int(p.get('max_tokens') or 2000),
+            'requiere_tools': p.get('tools') in ('lectura', 'escritura'),
+            'escribe': p.get('tools') == 'escritura',
+            'requiere_evidencia': bool(p.get('requiere_evidencia')),
+            'capas': list(p.get('capas') or ['core']),          # G10: el puente arma el system con estas capas
+            'cadena_pide_aprobacion': bool(p.get('pide_aprobacion')),
+            'cadena_corrige': p.get('corrige'),
+        })
+        prev = p['id']
+    return nodos
+
+# En _chat, ANTES de _correr (solo Fichas 1 y 4; Fichas 2/3 ya son cadenas por su DAG):
+#   cid, c = _cadena_para(mensaje, opts, FICHAS[fid])
+#   if cid and not opts.get('fast_lane'):
+#       ficha_c = dict(FICHAS[fid], nodos=_expandir_cadena(c, cfg_limites))
+#       opts['cadena'] = cid
+#       salida, traza = _correr(ficha_c, mensaje, modelo, pid, opts)   # MISMO motor: cola, deadlines, evidencia
+#   else: flujo actual sin cambios
+
+## 3. REGLAS DE EJECUCIÓN (las cumple el motor existente; verificar, no reescribir)
+- Cola: cada paso empieza cuando termina el anterior (depende_de lineal); nunca en paralelo salvo que la
+  cadena lo declare con el mismo depende_de.
+- Contexto entre pasos: solo la salida del paso anterior, recortada a max_chars_contexto_entre_pasos
+  (no se arrastra todo el historial -> prompts cortos).
+- Sin salida al chat hasta el paso final: los pasos intermedios van a la traza y al visor (_prog), no al reply.
+- pide_aprobacion: se detiene ahí con ESPERANDO_APROBACION (mecanismo /aprobar existente) y reanuda desde
+  el paso siguiente usando opts['previo'] (no repite pasos hechos).
+- requiere_evidencia: G14 (sin herramienta ok -> GAP SIN_EVIDENCIA).
+- corrige: si el paso verificador da FAIL, vuelve UNA vez al paso indicado y luego repite la verificación
+  (reutilizar el loop de correcciones N6/N7/N8 -> N4 que ya existe, apuntándolo a cadena_corrige).
+- Cada paso guarda checkpoint (out[paso]) para poder reanudar si se cae el Router.
+
+## 4. TESTS
+- local (mock de pc._chat que devuelve texto + registra tools): la cadena de 5 pasos produce 5 llamadas en
+  orden, el reply contiene solo la salida de P5, la traza tiene P1..P5, P3 sin evidencia -> GAP SIN_EVIDENCIA.
+- real: 1 tarea pequeña con modo agente en Ficha 1 -> 5 llamadas, una sola salida en chat, < suma de topes.
+
+## 5. README (agregar sección "Cómo añadir tareas o mejoras encadenadas")
+Texto a pegar:
+  ### Cómo añadir pasos o tareas encadenadas
+  1. No se edita código. Se edita `plugins/fichas_qwen/fichas/cadenas.json`.
+  2. Para una mejora nueva: agrega un paso en la cadena que corresponda, en la posición donde debe ejecutarse,
+     con: id, tarea (una sola instrucción), capas, tools (ninguna|lectura|escritura), timeout_s, max_tokens.
+  3. Para un proceso nuevo: crea una cadena nueva con su "activar_si" (modo y/o task_type) y sus pasos.
+  4. Reglas: una instrucción por paso; máximo 8 pasos; el último paso lleva "final": true; un paso que escribe
+     lleva "requiere_evidencia": true; un paso que cambia cosas importantes lleva "pide_aprobacion": true.
+  5. Cada paso es una llamada separada con prompt corto (núcleo + sus capas + salida del paso anterior).
+     Solo el paso final sale en el chat.
+  6. Probar: test local con mock + 1 prueba real. No se usa GitHub Actions.
+```
+# G16b — DISPARO DE LA COLA (sin motor nuevo) + PAUSA + REANUDAR TRAS REINICIO
+ejecutor: DEVIN · verifica: CLAUDE SONNET · depende de: G16 · NO crear scheduler/servidor/trigger nuevo
+
+MOTOR = el existente: chat_async (hilo en segundo plano) -> _correr -> _dag()
+  - Disparo de cada paso: _dag lanza un nodo cuando todos sus depende_de están en `out` (ya implementado).
+  - Freno global: _SEM (6) y _SEM_PESADO (2 para qwen38max) — mantener.
+  - El chat solo hace polling a `resultado`; el reply sale únicamente al terminar el paso final (ya es así).
+
+1. PAUSA ENTRE PASOS (opcional, en cadenas.json)
+   "limites": {"pausa_entre_pasos_s": 2}
+   - En _dag: antes de lanzar un nodo de cadena, time.sleep(pausa) si el nodo anterior terminó hace < pausa.
+   - Nunca cuenta dentro del timeout del paso.
+
+2. REANUDAR TRAS REINICIO DEL ROUTER (conectar lo que existe)
+   - Al terminar cada paso: guardar checkpoint {proceso_id, cadena, out (pasos hechos), siguiente_paso, sha del input}
+     en el almacén de objetivos (objective_store) / SQLite del Router — no archivo nuevo.
+   - Al arrancar el Router (riu_kernel / arranque del plugin): leer checkpoints sin terminar y reanudar con
+     opts['previo'] = out guardado -> _correr salta los pasos hechos (mecanismo /aprobar existente).
+   - Un checkpoint con más de N horas o con 2 reanudaciones fallidas -> marcar GAP_CADENA_ABANDONADA y no reintentar.
+   - Escrituras ya hechas NO se repiten (idempotencia por paso: out[paso] presente = no relanzar).
+
+3. TESTS
+   - local: cadena de 3 pasos con mock; matar el proceso tras P1 (simulado) -> reanuda en P2, P1 no se repite.
+   - pausa: 3 pasos con pausa 2 s -> diferencias entre lanzamientos >= 2 s.
+
+4. README (añadir a la sección de cadenas)
+   "El disparo de cada paso lo hace el bucle de nodos existente: un paso arranca cuando termina el anterior.
+    No hay trigger externo. Si el Router se reinicia, la cadena se retoma desde el último paso guardado."
+
+# G17 — MOTOR DE OBJETIVOS EN BUCLE (LOOP hasta cumplir) + MODO POR VUELTA + DISPARADOR POR HORARIO
+ejecutor: DEVIN · verifica: CLAUDE SONNET · depende de: G1–G16b
+reglas: NO otro Router/Harness/servidor/agente externo · NO GitHub Actions · NO LFS · NO cambiar modelos
+        reutilizar loop_controller.py / objective_store.py si ya cubren algo (no duplicar); el motor vive
+        en plugins/fichas_qwen/modos/motor_objetivo.py y usa el Harness existente para cada llamada.
+
+## 1. CONTRATO DEL OBJETIVO (lo que envía el chat o el programador)
+{
+  "objetivo": "texto del Director (verbatim)",
+  "tareas": ["opcional: lista; si falta, la vuelta 0 las planifica"],
+  "ficha": "1|2|3|4|5", "modelo": "<del selector>",
+  "modo_por_defecto": "code",                 # rapido | code | auditor | planificador
+  "autorizacion": "una_vez",                  # pide /aprobar al inicio si hay escrituras; luego no vuelve a preguntar
+  "limites": {"max_vueltas": 50, "max_tareas": 50, "max_minutos": 240,
+              "max_intentos_por_tarea": 3, "max_vueltas_sin_progreso": 5, "pausa_entre_vueltas_s": 2}
+}
+
+## 2. CONTRATO DE RESPUESTA DE CADA VUELTA (el modelo DEBE responder así; el código lo valida)
+{"tarea": "T3", "estado": "hecho|sigue|bloqueado", "resultado": "qué hizo",
+ "evidencia": "archivo/commit/salida de herramienta", "nuevas_tareas": ["..."], "nota_siguiente": "..."}
+- Si no viene JSON válido: 1 reparación al mismo modelo pidiendo solo el JSON; si falla -> estado "sigue".
+
+## 3. CÓDIGO — plugins/fichas_qwen/modos/motor_objetivo.py
+import json, re, time
+
+ESTADOS = ('pendiente', 'sigue', 'hecho', 'bloqueada')
+
+def _json_de(texto):
+    m = re.search(r'\{.*\}', texto or '', re.S)
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(0))
+    except Exception:  # noqa: BLE001
+        return None
+
+def _prompt_vuelta(obj, t, resumen):
+    return ('OBJETIVO DEL DIRECTOR:\n' + obj['objetivo'] + '\n\n'
+            'TAREA ACTUAL (' + t['id'] + '): ' + t['texto'] + '\n\n'
+            'HECHO HASTA AHORA (resumen):\n' + (resumen or '(nada aún)') + '\n\n'
+            'Haz SOLO esta tarea ahora, usando herramientas si hacen falta. No pidas confirmación.\n'
+            'Responde AL FINAL con este JSON exacto: {"tarea":"' + t['id'] + '","estado":"hecho|sigue|bloqueado",'
+            '"resultado":"...","evidencia":"...","nuevas_tareas":[],"nota_siguiente":"..."}')
+
+def _prompt_plan(obj, lim):
+    return ('OBJETIVO DEL DIRECTOR:\n' + obj['objetivo'] + '\n\nDivide el objetivo en tareas pequeñas y ejecutables, '
+            'una instrucción por tarea, en orden, máximo ' + str(lim['max_tareas']) + '. '
+            'Responde SOLO JSON: {"tareas":["...","..."]}')
+
+def _prompt_verif(obj, tareas):
+    hechas = '\n'.join('- %s %s: %s' % (t['id'], t['estado'], (t.get('evidencia') or '')[:200]) for t in tareas)
+    return ('OBJETIVO:\n' + obj['objetivo'] + '\n\nESTADO DE TAREAS:\n' + hechas + '\n\n'
+            'Verifica con herramientas de lectura si el objetivo COMPLETO está cumplido. '
+            'Responde SOLO JSON: {"cumplido":true|false,"faltantes":["tarea que falta",...],"evidencia":"..."}')
+
+def correr_objetivo(obj, llamar, guardar, progreso, estado=None):
+    """llamar(modo, prompt) -> {'texto': str, 'herramientas_ok': int}  (usa el Harness existente)
+       guardar(estado) -> checkpoint (objective_store/SQLite) ; progreso(txt) -> visor, NO chat"""
+    lim = dict({'max_vueltas': 50, 'max_tareas': 50, 'max_minutos': 240, 'max_intentos_por_tarea': 3,
+                'max_vueltas_sin_progreso': 5, 'pausa_entre_vueltas_s': 2}, **(obj.get('limites') or {}))
+    st = estado or {'tareas': [], 'vuelta': 0, 'resumen': [], 't0': time.time(), 'sin_progreso': 0}
+    if not st['tareas']:
+        base = obj.get('tareas')
+        if not base:
+            r = llamar('planificador', _prompt_plan(obj, lim))
+            base = ((_json_de(r['texto']) or {}).get('tareas') or [obj['objetivo']])
+        st['tareas'] = [{'id': 'T%d' % (i + 1), 'texto': str(x)[:500], 'estado': 'pendiente', 'intentos': 0,
+                         'modo': obj.get('modo_por_defecto', 'code')} for i, x in enumerate(base[:lim['max_tareas']])]
+        guardar(st)
+    while True:
+        pend = [t for t in st['tareas'] if t['estado'] in ('pendiente', 'sigue')]
+        if not pend:
+            v = _json_de(llamar('auditor', _prompt_verif(obj, st['tareas']))['texto']) or {}
+            if v.get('cumplido'):
+                return {'estado': 'CUMPLIDO', 'tareas': st['tareas'], 'evidencia': v.get('evidencia'), 'vueltas': st['vuelta']}
+            nuevas = [f for f in (v.get('faltantes') or []) if f]
+            if not nuevas:
+                return {'estado': 'CERRADO_SIN_VERIFICAR', 'tareas': st['tareas'], 'vueltas': st['vuelta']}
+            for f in nuevas[: max(0, lim['max_tareas'] - len(st['tareas']))]:
+                st['tareas'].append({'id': 'T%d' % (len(st['tareas']) + 1), 'texto': f[:500], 'estado': 'pendiente',
+                                     'intentos': 0, 'modo': obj.get('modo_por_defecto', 'code')})
+            continue
+        if (st['vuelta'] >= lim['max_vueltas'] or time.time() - st['t0'] > lim['max_minutos'] * 60
+                or st['sin_progreso'] >= lim['max_vueltas_sin_progreso']):
+            return {'estado': 'LIMITE', 'tareas': st['tareas'], 'vueltas': st['vuelta']}
+        t = pend[0]
+        st['vuelta'] += 1
+        progreso('vuelta %d/%d · %s · %s' % (st['vuelta'], lim['max_vueltas'], t['id'], t['texto'][:80]))
+        r = llamar(t.get('modo') or 'code', _prompt_vuelta(obj, t, '\n'.join(st['resumen'][-10:])))
+        j = _json_de(r['texto']) or {}
+        ok_ev = r.get('herramientas_ok', 0) > 0 or t.get('modo') in ('rapido', 'planificador')
+        if j.get('estado') == 'hecho' and ok_ev:
+            t['estado'], t['evidencia'] = 'hecho', str(j.get('evidencia') or '')[:500]
+            st['sin_progreso'] = 0
+        else:
+            t['intentos'] += 1
+            t['estado'] = 'bloqueada' if (j.get('estado') == 'bloqueado' or t['intentos'] >= lim['max_intentos_por_tarea']) else 'sigue'
+            st['sin_progreso'] += 1
+        conocidos = {x['texto'] for x in st['tareas']}
+        for n in (j.get('nuevas_tareas') or [])[:5]:
+            if n and n not in conocidos and len(st['tareas']) < lim['max_tareas']:
+                st['tareas'].append({'id': 'T%d' % (len(st['tareas']) + 1), 'texto': str(n)[:500],
+                                     'estado': 'pendiente', 'intentos': 0, 'modo': obj.get('modo_por_defecto', 'code')})
+        st['resumen'].append('%s %s: %s' % (t['id'], t['estado'], str(j.get('resultado') or '')[:200]))
+        guardar(st)
+        time.sleep(lim['pausa_entre_vueltas_s'])
+
+## 4. CONEXIÓN EN fichas_qwen/plugin.py (sin motor nuevo de red)
+- Activación: payload con "objetivo" o modo "loop" en el selector -> chat_async corre correr_objetivo en el
+  MISMO hilo de segundo plano que ya usa (proceso_id + polling). El chat solo recibe la salida final.
+- llamar(modo, prompt):
+    Fichas 1/4/5: 1 llamada a _llamar_harness con el modelo del selector; capas del modo (G15):
+      rapido=core · code=core+B3 · auditor=core+B4 · planificador=core+B2+B5; perfil code/auditoria/normal.
+    Fichas 2/3: "code" -> _correr con su DAG completo para esa tarea; "auditor" -> solo nodo verificador;
+      "planificador"/"rapido" -> 1 llamada (no gastar el DAG en planear).
+    herramientas_ok = nuevas entradas ok en opts['herr'] durante esa llamada (G4).
+- guardar(estado): checkpoint en objective_store/SQLite por proceso_id (G16b) -> reanuda tras reinicio.
+- progreso(txt): _prog/visor; NUNCA al reply.
+- Autorización una sola vez: si el objetivo puede escribir, primera respuesta = plan + ESPERANDO_APROBACION;
+  con /aprobar el bucle corre completo con aprobado=True y no vuelve a pedir.
+- Salida final: tabla de tareas (hecho/bloqueada + evidencia) + verificación + formato obligatorio (B5).
+- Protección: Constitución, guardianes, solo_lectura y scope del Harness aplican en CADA vuelta (no se saltan).
+
+## 5. DISPARADOR POR HORARIO (dentro del Router existente; sin servidor nuevo, sin Actions)
+- Archivo: plugins/fichas_qwen/fichas/programas.json
+  [{"id":"auditoria-noche","activo":true,"zona":"America/Bogota","cuando":{"diario":"02:00"},
+    "objetivo_ref":"chat router/workflow Loops code Yaiwes/objetivos/auditoria.json","ficha":"2","modelo":"ficha-qwen38max"},
+   {"id":"revisar-cada-2h","activo":false,"cuando":{"cada_min":120},"objetivo_ref":"...","ficha":"1","modelo":"ficha-qwen38flash"}]
+- Hilo programador (plugins/fichas_qwen/modos/programador.py) arrancado una vez al cargar el plugin:
+  cada 30 s revisa programas activos; si toca -> lanza el objetivo por el mismo camino de chat_async
+  (sesion "programa-<id>"); guarda "ultima_ejecucion" en SQLite para no repetir; al reiniciar el Router,
+  si se perdió una ejecución en las últimas 6 h la corre una vez.
+- Un programa no se lanza si su ejecución anterior sigue corriendo.
+- Resultado: queda en el historial/almacén de objetivos y visible en el chat como "tarea programada".
+
+## 6. TESTS (locales con mock + 1 real)
+- mock: objetivo de 5 tareas -> 5 vueltas + verificación -> CUMPLIDO; una tarea que siempre falla -> bloqueada a los 3
+  intentos y el resto sigue; respuesta sin evidencia marcando "hecho" -> no cuenta; verificación con faltantes ->
+  tareas nuevas y el bucle continúa; límite de 50 vueltas respetado; checkpoint + reinicio -> reanuda sin repetir.
+- programador: programa "cada_min":1 con mock -> 1 lanzamiento por minuto, nunca dos a la vez.
+- real: Ficha 1 con Qwen 3.8 Flash, objetivo de 3 tareas de solo lectura -> CUMPLIDO, 1 sola salida en chat.
+
+## 7. README — sección "Motor de objetivos (LOOP)"
+"Das un objetivo (y opcionalmente tareas). El motor llama al modelo en vueltas, una tarea por vuelta,
+ sin salir al chat, hasta que la verificación final confirme el objetivo o se alcance un límite.
+ Para agregar procesos: un archivo de objetivo en workflow Loops code Yaiwes/objetivos/ y, si es por horario,
+ una entrada en programas.json. No se toca código."
