@@ -1004,7 +1004,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
             _bp.append(c_)
             _PARCIAL[_pidp] = ''.join(_bp)
     _tm = time.time()
-    r = pc._chat({'model': qw, 'messages': ([{'role': 'system', 'content': sys_prompt}] if sys_prompt else []) + [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,  # >>> MODOS <<< FIX gobernanza: system aparte (S1)
+    _sp = str(opts.get('_sys_prompt') or '')
+    r = pc._chat({'model': qw, 'messages': ([{'role': 'system', 'content': _sp}] if _sp else []) + [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,  # >>> MODOS <<< FIX gobernanza: system aparte (S1)
                   'ficha_id': str(ficha.get('ficha') or ''), 'active_anchors_v1': bool(opts.get('active_anchors_v1')),
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
                   'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo,
@@ -1131,7 +1132,7 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
     return (('(Ejecutado en %d partes de codigo)' % len(partes) + nl + final) if len(partes) > 1 else final)
 
 
-def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any], sys_prompt: str = '') -> str:
+def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     escribe = bool((n.get('id') == 'N4') if (opts.get('gobernanza') or {}).get('enabled') else (n.get('escribe') or n.get('id') == 'N4')) and bool(opts.get('aprobado'))
     return (_llamar_con_partes if escribe else _llamar_harness_3)(modelo, prompt, ficha, n, opts)
 
@@ -1347,6 +1348,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         _tn = time.time()
         _meta(pid, i, nodos[i].get('modelo') if nodos[i].get('modelo') != 'selector' else elegido, _tarea_visor(nodos, i))
         _sys_prompt = ''  # >>> MODOS <<< reinicia por nodo
+        opts['_sys_prompt'] = ''  # no heredar el system del nodo anterior
         nl = chr(10)
         ctx = (nl * 2).join('[%s]%s%s' % (d, nl, out[d]) for d in n.get('depende_de', []) if out.get(d))
         if opts.get('fast_lane') and n.get('id') == 'N4':
@@ -1372,7 +1374,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         try:
             with _SEM:  # maximo 6 llamadas de modelo a la vez; las demas esperan en cola sin fallar
                 _prog(pid, i, 'trabajando')  # En cola hasta adquirir el slot: no mostrar trabajando mientras espera _SEM
-                r = _llamar_harness(mod, prompt, ficha, n, opts, sys_prompt=locals().get('_sys_prompt') or '')
+                opts['_sys_prompt'] = _sys_prompt
+                r = _llamar_harness(mod, prompt, ficha, n, opts)
         except Exception as x:  # noqa: BLE001
             r = 'GAP %s (%s): %s' % (i, mod, x)
         if i not in opts.setdefault('abandonados', set()):
