@@ -1011,6 +1011,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
                   'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo,
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
+                  'dsv4_think': bool(opts.get('_dsv4_think')),  # >>> MODOS <<< FIX Claude INPUT 126: intento 2 DeepSeek con thinking ON
                   'extra_llm': (({'enable_thinking': False} if opts.get('modos_reasoning') == 'none' else {'reasoning_effort': opts['modos_reasoning']}) if opts.get('modos_reasoning') else  # >>> MODOS <<< mode_wins: el modo decide el razonamiento de la llamada
                               ({'enable_thinking': True} if opts.get('thinking') else {'enable_thinking': False} if ((perfil == 'fast' and (modelo in _FAST_LOW or cap_in == 'none')) or (cap_nodo == 'none' and cap_in == 'none' and opts.get('fid') == 'ficha1-modelos')) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None),
                   # llamadas sin tools llevan el perfil comun; con tools el Harness lo ignora (extra_llm solo se aplica si tools=None)
@@ -1358,6 +1359,10 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         else:
             # >>> MODOS BEGIN  FIX Claude: gobernanza(rol+ctx) -> system; tarea etiquetada -> user (layout B, S1+S2)
             _sys_prompt = (n.get('rol', '') + (nl * 2 + ctx if ctx else '')) or ''
+            # FIX Claude INPUT 126: routing por nodo — dsv4* va directo a D_solo_tarea (B es malo conocido para DeepSeek V4)
+            _mod_eff = str(elegido if n.get('modelo') == 'selector' else n.get('modelo') or '')
+            if _mod_eff.startswith('ficha-dsv4'):
+                _sys_prompt = ''  # <<< MODOS END routing dsv4: layout D primario
             prompt = ('<tarea>\nTAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):\n' + mensaje + '\n</tarea>\n'
                       'Ejecuta <tarea> ahora y entrega el resultado. Prohibido responder con acuse de recibo.')
             # <<< MODOS END
@@ -1380,9 +1385,12 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                 try:
                     import prompt_layouts as _pl  # noqa: PLC0415
                     _ack, _why = _pl.is_ack_only(str(r or '')[:2000], (r.get('tool_calls') if isinstance(r, dict) else None))
-                    opts.setdefault('layout_attempts', []).append({'nodo': n.get('id'), 'layout': 'B', 'ack': _ack, 'why': _why})
+                    _lay1 = 'D' if str(mod or '').startswith('ficha-dsv4') else 'B'  # routing INPUT 126
+                    opts.setdefault('layout_attempts', []).append({'nodo': n.get('id'), 'layout': _lay1, 'ack': _ack, 'why': _why})
                     if _ack:
                         opts['_sys_prompt'] = ''  # layout D_solo_tarea: reintento sin envoltorio
+                        if str(mod or '').startswith('ficha-dsv4'):
+                            opts['_dsv4_think'] = True  # FIX Claude INPUT 126: intento 2 alterna thinking
                         r = _llamar_harness(mod, prompt, ficha, n, opts)
                         _ack2, _why2 = _pl.is_ack_only(str(r or '')[:2000])
                         opts['layout_attempts'].append({'nodo': n.get('id'), 'layout': 'D', 'ack': _ack2, 'why': _why2})

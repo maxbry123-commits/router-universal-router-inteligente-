@@ -36,6 +36,7 @@ _RONDAS_MAX = ContextVar("riu_rondas_tools_max", default=0)  # Team 5: tope prop
 _PROG_FN = ContextVar("riu_prog_fn", default=None)  # Team 5: avisos reales de progreso (modelo / tool / respuesta)
 _STREAM_FN = ContextVar("riu_stream_fn", default=None)  # Team 5: chunks de la respuesta final al chat en cuanto llegan
 _EXTRA_LLM = ContextVar("riu_extra_llm", default=None)  # Team 5: extras de la peticion por modelo (p.ej. reasoning_effort)
+_DSV4_THINK = ContextVar("riu_dsv4_think", default=None)  # FIX Claude INPUT 126: reintento dsv4 alterna thinking
 _VISTOS = ContextVar("riu_vistos", default=None)  # escrituras ya hechas de esta tarea y nodo (no se repiten)
 _PERFIL = ContextVar("riu_perfil", default="normal")  # normal / code / auditoria
 _CANCEL_FN = ContextVar("riu_cancel_fn", default=None)  # callable -> True = usuario detuvo el proceso: no lanzar mas pasos
@@ -650,6 +651,11 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             _POL.set(pol)
             ex = _extras(pol, tools)
             if proveedor == 'qwencloud':
+                if tools and modelo.startswith('deepseek') and modelo not in _SOLO_THINKING:
+                    # FIX Claude INPUT 126: DeepSeek V4 con thinking ON mete las tool calls en el reasoning y nunca se despachan.
+                    # Intento 1 -> enable_thinking False; el reintento lo sube a True (dsv4_think via _chat).
+                    ex['enable_thinking'] = bool(_DSV4_THINK.get())
+                    ex.pop('reasoning_effort', None)  # un solo control de thinking por peticion
                 if tools and modelo.startswith('qwen') and modelo not in _SOLO_THINKING:
                     _exp_th = os.environ.get('RIU_QWEN_TOOLS_THINKING_TESTED') == '1' \
                         and str((_IDS_CTX.get() or {}).get('ficha_id') or '') in ('ficha2-dag-codigo', 'ficha3-frontend') \
@@ -2348,6 +2354,7 @@ def _chat(p):
     _PROG_FN.set(p.get('progreso_fn') if callable(p.get('progreso_fn')) else None)
     _STREAM_FN.set(p.get('stream_fn') if callable(p.get('stream_fn')) else None)
     _EXTRA_LLM.set(p.get('extra_llm') if isinstance(p.get('extra_llm'), dict) else None)
+    _DSV4_THINK.set(p.get('dsv4_think'))  # FIX Claude INPUT 126: toggle thinking del reintento DeepSeek
     if p.get('extra_llm') is None and _CAP_TOOLS.get() == 'none' and len(pregunta or '') <= 300:
         _EXTRA_LLM.set({'enable_thinking': False})  # pregunta simple (CAP_NONE, corta): sin thinking; las complejas lo mantienen
     _tid = str(p.get('tarea_id') or '')
