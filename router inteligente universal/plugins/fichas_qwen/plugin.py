@@ -28,6 +28,9 @@ ALIAS = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend"
 _POOL = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas_qwen")  # maximo 4 solicitudes activas; las demas esperan en cola
 _POOL_FAST = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas_qwen_fast")  # fix 7: preguntas simples (FAST) no esperan detras de tareas pesadas
 _NODO_CALL = ContextVar('riu_nodo_call', default=None)  # DSL N1: estado del nodo actual (sys_prompt/forzar_tool/dsv4_think/per_attempt_s/deadline) — NO en opts compartido
+_LAYOUT_D_SYS = ('Eres un ejecutor de tareas. NO respondas con texto de confirmacion.\n'
+                 'Si la tarea requiere una herramienta, emite la llamada a herramienta en este mismo turno.\n'
+                 'Si no puedes ejecutar la herramienta, devuelve un error estructurado, no un acuse.')  # INPUT 129 Claude: system del layout D_solo_tarea
 _ULT_POLL: dict[str, float] = {}  # fix 7: ultima vez que el chat pregunto por el proceso (/resultado)
 HUERFANO_S = 180  # fix 7: proceso sin /resultado en 180 s = nadie lo espera -> se cancela y libera la cola
 _LOCK = threading.Lock()
@@ -1372,7 +1375,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             # FIX Claude INPUT 126: routing por nodo — dsv4* va directo a D_solo_tarea (B es malo conocido para DeepSeek V4)
             _mod_eff = str(elegido if n.get('modelo') == 'selector' else n.get('modelo') or '')
             if _mod_eff.startswith('ficha-dsv4'):
-                _sys_prompt = ''  # <<< MODOS END routing dsv4: layout D primario
+                _sys_prompt = _LAYOUT_D_SYS  # <<< MODOS END routing dsv4: layout D primario con system ejecutor (INPUT 129)
             prompt = ('<tarea>\nTAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):\n' + mensaje + '\n</tarea>\n'
                       'Ejecuta <tarea> ahora y entrega el resultado. Prohibido responder con acuse de recibo.')
             if n.get('requiere_tools') or opts.get('muta'):
@@ -1415,7 +1418,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                     _lay1 = 'D' if str(mod or '').startswith('ficha-dsv4') else 'B'  # routing INPUT 126
                     opts.setdefault('layout_attempts', []).append({'nodo': n.get('id'), 'layout': _lay1, 'ack': _ack, 'why': _why, 'categoria': _cat})
                     if _ack and time.monotonic() < _nc0['deadline'] - 20:  # DSL N4: con <20s restantes no se lanza otro intento
-                        _nc0['sys_prompt'] = ''  # layout D_solo_tarea: reintento sin envoltorio
+                        _nc0['sys_prompt'] = _LAYOUT_D_SYS  # layout D_solo_tarea CONECTADO: system ejecutor de Claude INPUT 129 (antes vacio)
                         if str(mod or '').startswith('ficha-dsv4'):
                             _nc0['dsv4_think'] = False  # DSL N2: reintento dsv4 con thinking OFF explicito (required no convive con thinking)
                         _nc0['forzar_tool'] = True  # FIX glm52 INPUT 129 + DSL N2: tool_choice=required solo paso 1 del reintento
