@@ -1453,6 +1453,8 @@ def _mf(nombre, desc, props, req):
 
 
 _MOTOR_TOOLS = [
+    _mf('ejecutar_plan_json', 'Motor JSON: ejecuta un plan JSON estricto {meta:{name}, ops:[{id,op,path,text,depends_on}]} con ops inspect_workspace, create_directory, write_text, read_text, verify_exists, verify_contains, finish. Devuelve recibos con sha256; reanuda sin duplicar.',  # >>> PARCHE_E2E <<<
+        {'plan': {'type': 'string'}}, ['plan']),
     _mf('motor_descargar', 'Motor: descarga una URL (GitHub/Hugging Face/archivo) al destino indicado y verifica el origen antes y el destino despues.',
         {'origen': {'type': 'string'}, 'destino': {'type': 'string'}}, ['origen']),
     _mf('motor_extraer', 'Motor: extrae/audita el contenido de un archivo ya anclado (x-ray) y devuelve su estructura.',
@@ -1468,11 +1470,16 @@ _MOTOR_TOOLS = [
 
 def _motor_ejecutar(nom, args):
     # dispatch de las tools del motor existente; devuelve None si no es una tool de motor
-    if not _MOTOR_HAB.get() or not isinstance(nom, str) or not nom.startswith('motor_'):
+    if not _MOTOR_HAB.get() or not isinstance(nom, str) or not (nom.startswith('motor_') or nom == 'ejecutar_plan_json'):  # >>> PARCHE_E2E <<<
         return None
     ses = _MOTOR_SES.get() or 'general'
     a = args if isinstance(args, dict) else {}
     try:
+        if nom == 'ejecutar_plan_json':  # >>> PARCHE_E2E <<<
+            rep_ = _herr()._motor_json().ejecutar(a.get('plan'), workspace=ses)
+            if not rep_.get('ok'):
+                return 'MOTOR_ERROR: ' + json.dumps(rep_.get('errors') or rep_, ensure_ascii=False)[:2500]
+            return 'YAIWES_OP_REPORT ' + json.dumps(rep_, ensure_ascii=False)[:3500]
         if nom == 'motor_descargar':
             texto, usadas = _motor_descarga(str(a.get('origen') or '') + ' -> ' + str(a.get('destino') or ''))
             if str(texto).startswith('MOTOR_ERROR'):  # >>> PARCHE_N7 <<<

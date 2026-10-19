@@ -25,7 +25,7 @@ if str(_DIR) not in sys.path:
     sys.path.insert(0, str(_DIR))
 from motor_cli import Motor, MotorError  # noqa: E402  (referencia verbatim, no se edita)
 
-POLITICA_DEFECTO = _DIR.parent / 'fichas' / 'allowed_ops.json'  # politica FUERA del control del modelo
+POLITICA_DEFECTO = next((c for c in (_DIR.parent / 'fichas' / 'allowed_ops.json', _DIR / 'allowed_ops.json') if c.is_file()), _DIR / 'allowed_ops.json')  # >>> PARCHE_E2E <<< politica FUERA del control del modelo (el archivo real vive en motor_json/)
 _MUTAN = ('create_directory', 'write_text')
 _LOCK = threading.Lock()
 _RECIBOS = {}  # receipt_id -> recibo (memoria del proceso; el disco guarda el resto en .receipts/)

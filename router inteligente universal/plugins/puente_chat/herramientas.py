@@ -352,6 +352,20 @@ FUNCS = {'github_leer': github_leer, 'github_escribir': github_escribir, 'github
          'hf_escribir': hf_escribir, 'hf_api': hf_api, 'hf_almacenamiento': hf_almacenamiento}
 
 
+def _motor_json():  # >>> PARCHE_E2E <<< modulo del motor JSON/Python (yaiwes_motor) para es_mutante y ejecutar_plan_json
+    import importlib.util as _iu
+    import sys as _sy
+    from pathlib import Path as _P
+    if 'yaiwes_motor' in _sy.modules:
+        return _sy.modules['yaiwes_motor']
+    p = _P(__file__).resolve().parent.parent / 'fichas_qwen' / 'motor_json' / 'yaiwes_motor.py'
+    sp = _iu.spec_from_file_location('yaiwes_motor', str(p))
+    m = _iu.module_from_spec(sp)
+    _sy.modules['yaiwes_motor'] = m
+    sp.loader.exec_module(m)
+    return m
+
+
 def ejecutar(nombre, args):
     f = FUNCS.get(nombre)
     if not f:
