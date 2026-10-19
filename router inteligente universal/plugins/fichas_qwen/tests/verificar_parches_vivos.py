@@ -12,6 +12,7 @@ REQ = {  # marcador -> archivos (sufijo) donde debe aparecer
     'PARCHE_CICLO': ('fichas_qwen/plugin.py',),
     'PARCHE_ORDENES': ('fichas_qwen/plugin.py', 'fichas_qwen/modos/motor_objetivo.py'),
     'PARCHE_MOTOR_ENV': ('puente_chat/plugin.py',),
+    'PARCHE_COLA': ('fichas_qwen/plugin.py',),
     'PARCHE_T1': ('fichas_qwen/motor_json/yaiwes_motor.py', 'fichas_qwen/modos/motor_objetivo.py'),
 }
 _SUF = {s for v in REQ.values() for s in v}

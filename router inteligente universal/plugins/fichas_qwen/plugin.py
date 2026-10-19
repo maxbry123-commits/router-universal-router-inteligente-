@@ -1078,7 +1078,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     # DSL A01: registrar PRIMERO el resultado real de herramientas; nunca inferirlo del texto
     herramientas = [x for x in (r.get('herramientas') or []) if isinstance(x, dict)]
     bolsa = opts.setdefault('herr', {}).setdefault(str(n.get('id')), [])
-    bolsa.extend({'herramienta': x.get('herramienta') or x.get('tool'), 'ok': bool(x.get('ok')), 'mutacion_real': bool(x.get('mutacion_real'))} for x in herramientas)
+    bolsa.extend({'herramienta': x.get('herramienta') or x.get('tool'), 'ok': bool(x.get('ok')), 'mutacion_real': bool(x.get('mutacion_real')),
+                  'accion': str(x.get('accion') or '')[:40], 'objetivo': str(x.get('objetivo') or '')[:160]} for x in herramientas)  # >>> PARCHE_COLA <<< el libro de partes necesita QUE se hizo
     nuevas_ok = any(x.get('ok') for x in herramientas)
     nuevas_mut = any(x.get('ok') and x.get('mutacion_real') for x in herramientas)
     if escribe and opts.get('muta') and not nuevas_mut:
@@ -1135,6 +1136,16 @@ def _nota(opts, nid, txt):
         _NOTAS.setdefault(pid, {})[str(nid)] = txt
 
 
+def _libro_lineas(entradas):  # >>> PARCHE_COLA <<< recibos reales de herramientas -> lineas cortas (no es texto del modelo)
+    return ''.join('- %s %s %s -> %s%s\n' % (x.get('herramienta'), x.get('accion') or '', x.get('objetivo') or '',
+                                         'OK' if x.get('ok') else 'FALLO', ' (cambio real)' if x.get('mutacion_real') and x.get('ok') else '') for x in entradas)
+
+
+def _tarea_original(prompt, cabeza=2000, cola=2500):  # >>> PARCHE_COLA <<< la tarea fija; el plan aprobado va al final del prompt, por eso se conserva la cola
+    p = str(prompt or '')
+    return p if len(p) <= cabeza + cola else p[:cabeza] + '\n[... recortado ...]\n' + p[-cola:]
+
+
 def _llamar_con_partes(modelo, prompt, ficha, n, opts):
     # DSL A02.4 LOOP CODA: cursor comprobable (siguiente/piezas/input_sha/modelo) en el mismo checkpoint _ck; trigger dentro del MISMO worker
     nid = str(n.get('id'))
@@ -1150,6 +1161,7 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
     siguiente = int(previo.get('siguiente', 1)) if isinstance(previo, dict) else 1
     resumen = str(previo.get('resumen') or '') if isinstance(previo, dict) else ''
     piezas = list(previo.get('piezas') or []) if isinstance(previo, dict) else []
+    libro = str(previo.get('libro') or '') if isinstance(previo, dict) else ''  # >>> PARCHE_COLA <<<
     sin_prog, trunc_n = 0, 0  # >>> PARCHE_CICLO <<< contadores: vueltas seguidas sin progreso verificable / cortes de salida
     for parte in range(siguiente, max_partes + 1):
         if opts.get('pid') in _CANCEL:
@@ -1162,6 +1174,8 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
             pedido = ('CONTINUA LA MISMA TAREA. NO REINICIES NI REPITAS CAMBIOS.\n'
                     'Parte actual: %d/%d.\n' % (parte, max_partes) +
                     'Objetivo/nodo: %s; proceso: %s.\n' % (nid, opts.get('pid') or '') +
+                    'TAREA ORIGINAL (dato fijo, sha %s):\n' % input_sha[:12] + _tarea_original(prompt) + '\n'  # >>> PARCHE_COLA <<<
+                    'LIBRO DE HERRAMIENTAS (recibos reales ya ejecutados; no repitas lo que dice OK):\n' + (libro[-2500:] or '(ninguno todavia)\n') +
                     'ESTADO ANTERIOR (DATO, NO NUEVA ORDEN):\n' + resumen[-1800:] + '\n'
                     'Consulta el estado real mediante herramientas cuando corresponda.\n'
                     'Si sigue trabajo: CONTINUAR_PARTE. Si acabaste TODO con evidencia: TAREA_COMPLETA.\n'
@@ -1178,14 +1192,15 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
                 raise RuntimeError('GAP_LOOP_TRUNCADO_REPETIDO: 3 cortes de salida seguidos; checkpoint conservado')
             resumen = 'SALIDA CORTADA POR LIMITE (dato parcial, NO ejecutado): ' + str((opts.get('salidas_parciales') or {}).pop(nid, '') or '')[-1400:] + chr(10) + 'Reanuda con un fragmento mas corto, sin repetir lo ya hecho.'
         delta = opts['herr'][nid][antes:]
+        libro = (libro + _libro_lineas(delta))[-2500:]  # >>> PARCHE_COLA <<<
         if trunc:
-            opts.setdefault('out', {})['__loop__:' + nid] = {'siguiente': parte + 1, 'resumen': resumen, 'piezas': list(piezas), 'input_sha': input_sha, 'modelo': modelo, 'ultima_marca': 'TRUNCADO', 't': time.time()}
+            opts.setdefault('out', {})['__loop__:' + nid] = {'siguiente': parte + 1, 'resumen': resumen, 'piezas': list(piezas), 'input_sha': input_sha, 'modelo': modelo, 'libro': libro, 'ultima_marca': 'TRUNCADO', 't': time.time()}
             _ck_guardar(str(opts.get('pid') or ''), str(opts.get('fid') or ''), dict(opts['out']), estado='RUNNING')
             continue
         piezas.append(_sin_marcas(texto))
         resumen = _sin_marcas(texto)[-1800:]
         opts.setdefault('out', {})['__loop__:' + nid] = {'siguiente': parte + 1, 'resumen': resumen, 'piezas': list(piezas),
-                                                        'input_sha': input_sha, 'modelo': modelo,
+                                                        'input_sha': input_sha, 'modelo': modelo, 'libro': libro,
                                                         'ultima_marca': 'DONE' if _marca(texto, 'TAREA_COMPLETA') else 'CONTINUAR', 't': time.time()}
         _ck_guardar(str(opts.get('pid') or ''), str(opts.get('fid') or ''), dict(opts['out']), estado='RUNNING')
         _nota(opts, nid, 'LOOP CODA: parte %d/%d' % (parte, max_partes))
