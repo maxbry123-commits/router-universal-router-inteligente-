@@ -14,7 +14,7 @@
 - `modes_registry.json` también copiado a `chat frontend/` porque el selector lo sirve estático `/chat/ui/modes_registry.json`; el del paquete (`modos/`) es el canónico del backend. TODO: servir uno solo o sincronizar.
 - `route_request` NO corre en cada mensaje: solo si `mode_request` presente o slash de modo inicial — `/ayuda`, `/aprobar` y tráfico legacy quedan intactos.
 - `qwen.mode_request` duplicado a nivel payload: garantiza llegada a fichas_qwen sea cual sea el merge del puente.
-- Punto F (bucle DAG real): LoopController/ParallelPool presentes; el loop real por contrato queda PENDIENTE — el `_correr` existente sigue siendo el controlador del DAG por ahora (honestidad §9).
+- Punto F (bucle DAG real): RESUELTO — acción `loop_run` en `fichas_qwen.handle`: carga contrato (dict o archivo del paquete), instancia `LoopController` con ejecutor que corre cada nodo por `pc._chat` (mismo banco/tools/memoria que las fichas), `objective_path` apuntando a `state/objective-{ses}.md`. `ficha.json`: `loop_run` añadido a `allowed_actions` y `timeout_ms` 30000→120000 (tope host 120 s; un DAG con modelos reales necesita más). Verificado en vivo: contrato de 1 nodo → `state: DONE`, `promise_token <<TODO_COMPLETO>>`, nodo `passed` con evidencia. El `_correr` existente sigue para la ruta async; `loop_run` es el controlador por contrato.
 
 ## Mapeos de nombres
 

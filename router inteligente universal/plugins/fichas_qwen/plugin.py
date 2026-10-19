@@ -1757,6 +1757,50 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         _CANCEL.add(k)
         it = _PROCESOS.get(k)
         return {"estado": "cancelado", "proceso_id": k, "en_cola": bool(it and it[0].cancel())}
+    # >>> MODOS BEGIN  (punto F: bucle DAG real por contrato con LoopController del paquete)
+    if action == "loop_run":
+        if MODOS_REG is None or _mr is None:
+            return {"error": "MODE_ERROR", "code": "REGISTRY_INVALID", "detail": "paquete modos no cargado: " + _MODOS_ERR}
+        try:
+            import loop_controller as _lc  # noqa: PLC0415
+        except Exception as e:
+            return {"error": "MODE_ERROR", "code": "REGISTRY_INVALID", "detail": f"loop_controller: {e}"}
+        contrato = p.get("contract")
+        if isinstance(contrato, str):  # ruta relativa al paquete (loop_contract.example.v1_1.json)
+            try:
+                contrato = json.loads((_MODOS_DIR / contrato).read_text(encoding="utf-8"))
+            except Exception as e:
+                return {"error": "MODE_ERROR", "code": "CONTRACT_INVALID", "detail": str(e)}
+        if not isinstance(contrato, dict):
+            return {"error": "MODE_ERROR", "code": "CONTRACT_INVALID", "detail": "falta contract (dict o nombre de archivo del paquete)"}
+        ses = str(p.get('sesion') or 'fichas')[:60]
+        modelo = str(p.get('modelo') or 'ficha-qwen38flash')
+        _wd = str(_MODOS_STATE / ('loop-' + str(p.get('_pid') or secrets.token_hex(6))))
+
+        def _ejecutor(nodo, ctx):  # cada nodo del DAG corre por el mismo pc._chat que las fichas (mismo banco/tools/memoria)
+            try:
+                from plugins.puente_chat import plugin as _pc
+                prompt = str(nodo.get('prompt') or nodo.get('task') or nodo.get('id'))
+                if ctx.get('errors'):
+                    prompt += '\n\nErrores previos: ' + '; '.join(ctx['errors'])
+                r = _pc._chat({'model': modelo, 'messages': [{'role': 'user', 'content': prompt}],
+                               'max_tokens': int(p.get('max_tokens') or 2048), 'sesion': ses, 'task_id': str(p.get('_pid') or '')})
+                if isinstance(r, dict) and r.get('error'):
+                    return {'output': str(r['error']), 'cost_usd': 0}
+                txt = ''
+                if isinstance(r, dict):
+                    txt = str(r.get('reply') or ((r.get('choices') or [{}])[0].get('message') or {}).get('content') or r)
+                return {'output': txt, 'cost_usd': 0}
+            except Exception as ex:  # noqa: BLE001
+                return {'output': f'ejecutor: {ex!r}', 'cost_usd': 0}
+
+        try:
+            ctrl = _lc.LoopController(contrato, _ejecutor, _wd,
+                                    objective_path=str(_MODOS_STATE / f'objective-{ses}.md') if _modos_objetivo(ses) else None)
+            return ctrl.run()
+        except Exception as e:  # noqa: BLE001
+            return {"error": "MODE_ERROR", "code": "LOOP_INVALID", "detail": f"{type(e).__name__}: {e}"}
+    # <<< MODOS END
     if action == "llm":
         return _llm(p)
     return {"error": "ACCION_DESCONOCIDA"}
