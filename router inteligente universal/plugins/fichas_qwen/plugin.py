@@ -1503,14 +1503,15 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
             except Exception as x:  # noqa: BLE001
                 return {'texto': 'GAP MOTOR_F5: ' + str(x)[:200], 'herramientas_ok': 0}
             hs = [x for x in (r5.get('herramientas') or []) if isinstance(x, dict)]
-            return {'texto': str(r5.get('reply') or r5.get('error') or ''), 'herramientas_ok': sum(1 for x in hs if x.get('ok'))}
+            return {'texto': str(r5.get('reply') or r5.get('error') or ''), 'herramientas_ok': sum(1 for x in hs if x.get('ok')),
+                    'mutaciones_ok': sum(1 for x in hs if x.get('ok') and x.get('mutacion_real'))}  # >>> PARCHE_ORDENES <<<
         # una llamada por vuelta por el MISMO Harness (Constitucion, solo_lectura, scope intactos)
         n = {'id': 'MOTOR', 'rol': '', 'requiere_tools': modo in ('code', 'auditor', 'paralelo'),
              'escribe': modo == 'code' and bool(opts.get('aprobado')), 'timeout_s': 300}
         if modo == 'code' and str(ficha.get('ficha') or '') in ('ficha2-dag-codigo', 'ficha3-frontend'):
             # DSL A05: ejecucion real por el DAG de la propia ficha (receipts MOTOR:Tn); nunca motor recursivo ni chat dentro de vuelta
             import re as _re_m
-            _tid = (_re_m.search(r'TAREA DE ESTA VUELTA:\s*<?(?:tarea_verbatim[^>]*>)?\s*(\w+)', prompt) or [None, '?'])[1] or '?'
+            _tid = (_re_m.search(r'TAREA ACTUAL\s*\((T\d+)\)', prompt) or [None, 'SIN_ID'])[1]  # >>> PARCHE_ORDENES <<< ORDEN 07
             _snap = {k: len(v) for k, v in opts.setdefault('herr', {}).items()}  # AUDIT A5: evidencia = delta de ESTA vuelta
             try:
                 # AUDIT A5b: previo={} -> el DAG NO recarga el checkpoint del proceso (si no, la vuelta 2 reusaba
@@ -1537,7 +1538,8 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
         finally:
             _NODO_CALL.reset(_tk)
         nuevas = opts['herr']['MOTOR'][_h0:]
-        return {'texto': t, 'herramientas_ok': sum(1 for x in nuevas if x.get('ok'))}
+        return {'texto': t, 'herramientas_ok': sum(1 for x in nuevas if x.get('ok')),
+                'mutaciones_ok': sum(1 for x in nuevas if x.get('ok') and x.get('mutacion_real'))}  # >>> PARCHE_ORDENES <<<
 
     def guardar(st: dict) -> None:  # checkpoint por vuelta: reanuda tras reinicio (G16b)
         if not pid:

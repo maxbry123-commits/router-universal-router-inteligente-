@@ -107,7 +107,7 @@ def test_g17_motor():
         if modo == 'auditor':
             return {'texto': '{"cumplido": true, "evidencia": "ambas hechas"}', 'herramientas_ok': 1}  # DSL A05: verificacion exige herramienta ok
         return {'texto': '{"tarea":"T1","estado":"hecho","resultado":"ok","evidencia":"archivo","nuevas_tareas":[]}',
-                'herramientas_ok': 1}
+                'herramientas_ok': 1, 'mutaciones_ok': 1}  # ORDEN 07: una tarea CODE solo cierra con mutacion real
     guardados = []
     r = mo.correr_objetivo({'objetivo': 'probar', 'tareas': ['t1', 't2'], 'proceso_id': 't1'},
                           llamar, lambda s: guardados.append(s['vuelta']), lambda t: None)

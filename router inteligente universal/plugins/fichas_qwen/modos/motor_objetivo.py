@@ -194,18 +194,13 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
         progreso('vuelta %d/%d · %s · %s' % (st['vuelta'], lim['max_vueltas'], t['id'], t['texto'][:80]))
         r = llamar(t.get('modo') or 'code',
                    _prompt_vuelta(obj, t, '\n'.join(st['resumen'][-10:]), st.get('instrucciones_director')))
-        j = _json_de(r['texto'])
-        if j is None:  # 1 reparacion: solo el JSON
-            j = _json_de(llamar('rapido', 'Responde SOLO con el JSON de estado de la tarea %s: '
-                                        '{"tarea":"%s","estado":"hecho|sigue|bloqueado","resultado":"...","evidencia":"...","nuevas_tareas":[],"nota_siguiente":"..."}'
-                                        % (t['id'], t['id']))['texto']) or {}
-        if not j and r.get('herramientas_ok', 0) > 0 and not str(r.get('texto') or '').lstrip().startswith('GAP'):
-            # AUDIT: el DAG entrego informe formateado (no JSON) pero ejecuto herramientas reales:
-            # el contrato del motor se satisface con la evidencia, no con el formato narrativo
-            j = {'tarea': t['id'], 'estado': 'hecho', 'resultado': str(r.get('texto') or '')[:200],
-                 'evidencia': 'herramientas_ok=%d (informe formateado)' % int(r.get('herramientas_ok') or 0),
-                 'nuevas_tareas': [], 'nota_siguiente': ''}
-        ok_ev = r.get('herramientas_ok', 0) > 0 or t.get('modo') in ('rapido', 'planificador')
+        j = _json_de(r.get('texto') or '') or {}  # >>> PARCHE_ORDENES <<< ORDEN 07-B: un informe narrativo no es 'hecho'
+        if not j:
+            j = {'tarea': t['id'], 'estado': 'sigue', 'resultado': 'Falta resultado JSON verificable', 'evidencia': '',
+                 'nuevas_tareas': [], 'nota_siguiente': 'Revisar evidencia real del DAG'}
+        modo_actual = t.get('modo') or 'code'
+        ok_ev = (int(r.get('mutaciones_ok') or 0) > 0 if modo_actual == 'code'
+                 else int(r.get('herramientas_ok') or 0) > 0 or modo_actual in ('rapido', 'planificador'))
         if j.get('estado') == 'hecho' and ok_ev:
             t['estado'], t['evidencia'] = 'hecho', str(j.get('evidencia') or '')[:500]
             st['sin_progreso'] = 0

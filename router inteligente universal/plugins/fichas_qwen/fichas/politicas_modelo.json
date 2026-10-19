@@ -158,8 +158,8 @@
    "con_tools": {
     "probar_primero": "github_leer (solo lectura) -> tool_call estructurado",
     "si_exige_streaming": "parsing SSE solo dentro del transporte actual",
-    "tool_stream_nota": "default false; solo activarlo si los argumentos de la tool realmente exigen streaming",
-    "tool_stream": false
+    "tool_stream_nota": "ORDEN 01: activado solo para ficha-glm52 con tools; si hay HTTP 400, argumentos parciales o cero ejecuciones, revertir a false y documentar el mensaje del proveedor",
+    "tool_stream": true
    },
    "clear_thinking": true,
    "excepcion_clear_thinking": "conservar thinking solo durante una tarea de arquitectura extremadamente compleja; despues volver a limpiar",
