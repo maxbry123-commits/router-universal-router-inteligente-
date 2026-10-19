@@ -44,3 +44,38 @@
 
 ### Cómo despacha Devin (receta que funciona)
 `POST /plugins/fichas_qwen/call/chat_async` con `{ficha_qwen:"1", task_type:"code", modelo:"ficha-*", sesion:"<nombre>", message:"<prompt corto imperativo>"}` → poll `/call/resultado` con `proceso_id`. Prompts cortos imperativos ("Usa tu herramienta GitHub AHORA + 1 tarea + formato") — los largos devuelven texto plano.
+
+## N8 HANDOFF — DSL DAG CORREGIR CABLEADO TOOL-CALLING (2026-10-19, commit 3767ddd)
+
+### Tabla modelo | categoria | tool | ms | reintentos | PASS/FAIL (N7 real, Space redeployed)
+| modelo | categoria | tool real | ms nodo | reintentos | PASS/FAIL |
+|---|---|---|---|---|---|
+| ficha-qwen38max | EXECUTED | github_leer (1 call) | 6316 | 0 | PASS |
+| ficha-qwen38flash | EXECUTED | github_leer (6 calls) | 29812 | 0 | PASS |
+| ficha-glm52 | EXECUTED | github_leer (4 calls) | 19640 | 0 | PASS |
+| ficha-dsv4pro | EXECUTED | github_leer (1 call) | 8930 | 0 | PASS |
+| ficha-dsv4flash | EXECUTED | github_leer (1 call) | 5712 | 0 | PASS |
+| ficha2 consulta | completado | lectura repo | ~ | 0 | PASS |
+| ficha3 plan | completado (GAP juez) | lectura repo | ~ | 0 | PASS (sin TIMEOUT_NODO) |
+
+Nota: LIVE_URL.json no contiene job_id (campos: LIVE_URL, runtime, space_id, hardware, updated, auth, harnessUrl) — los 5 modelos lo leyeron con evidencia y reportaron la ausencia en vez de inventar. Criterio cumplido: EXECUTED + tool real + < tope.
+
+### Commits
+- 3767ddd DSL N1-N5: estado por nodo en ContextVar, required solo paso 1, acuse con evidencia, deadline por nodo, fuente unica de politicas
+- 5a077a4 fichas JSON: contrato reintento Claude + tool_stream GLM + per_attempt dsv4 + lectura >1MB (INPUT 129 x4 pasadas)
+- (bundle desplegado: router-bundle.tar.gz 308MB -> bucket; backup .bak NO creado: HfFileSystem.cp no soportado en buckets -> GAP menor)
+
+### Que se borro y por que
+- fichas_qwen/modos/exec_dispatch.py + test_exec_dispatch.py -> nadie lo importaba (DSL N5: integrar o borrar; se borro, el camino HTTP existente queda unico)
+- politicas_modelo en ficha2/3/4 -> copias muertas (solo ficha1 es fuente via _politica; primera ficha del glob ganaba siempre)
+- lectura_archivo_grande en ficha1 (x6) -> nota operativa, no config; movida a README-ORQUESTADOR-MODELOS.md
+- per_attempt_s/max_attempts/reintento en tarjetas modelo-*.json -> claves sin lector en codigo (el reintento vivo es el de politicas_modelo en ficha1); tarjetas restauradas byte-identicas a HEAD
+
+### N1-N5 implementado
+- N1: _NODO_CALL ContextVar ({sys_prompt,forzar_tool,dsv4_think,per_attempt_s,deadline,max_attempts}) set/reset por nodo; _llamar_harness_1 lee del ContextVar, no de opts compartido -> nodos paralelos de _dag() ya no se pisan
+- N2: tool_choice=required solo paso 1 del reintento (_FORCE_TOOL.set(None) tras paso 1 en _bucle); dsv4 reintento con enable_thinking=false explicito
+- N3: si r.herramientas tiene ok -> EXECUTED, no reintento; traza clasifica EXECUTED|ACK_ONLY|NO_TOOL|TOOL_IN_REASONING|DISPATCH_FAILURE|TIMEOUT
+- N4: deadline = inicio + timeout_s; api_s = min(per_attempt, deadline-5s); <20s restantes -> no otro intento ni fallback; fallback max 1 modelo (excluye a si mismo)
+- N5: fuente unica = politicas_modelo de ficha1; bloque reintento ahora LO LEE el codigo (per_attempt_s, max_attempts, fallback_modelo); glm52 nunca es su propio fallback
+- N6: 56 tests existentes + 4 nuevos test_dsl_cableado = 100% verde
+- N9: PENDIENTE — auditoria independiente de Claude Sonnet (no la hago yo)

@@ -55,7 +55,7 @@ export async function mount(root, { api, tell }) {
   const guardar = () => {
     try {
       localStorage.setItem("riu_chat_activo", String(activo)); localStorage.setItem(CLAVE_CHATS, JSON.stringify(
-        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados], instrucciones: c.instrucciones || "", selectorQwen: c.selectorQwen || null, fastReply: !!c.fastReply, motor: !!c.motor, project_id: c.project_id || null }))));
+        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados], instrucciones: c.instrucciones || "", selectorQwen: c.selectorQwen || null, selectorQwenMulti: [...(c.selectorQwenMulti || [])], paralelo: !!c.paralelo, fastReply: !!c.fastReply, motor: !!c.motor, project_id: c.project_id || null }))));
     } catch (e) {}
     try { A.respaldarPestanas(JSON.parse(localStorage.getItem(CLAVE_CHATS) || "[]")); } catch (e) {}  // respaldo de pestañas en el Router (nombre y orden)
   };
@@ -126,6 +126,8 @@ export async function mount(root, { api, tell }) {
       hist: h,
       anclados: new Set(restaurado?.anclados || []),
       selectorQwen: restaurado?.selectorQwen || null,
+      selectorQwenMulti: restaurado?.selectorQwenMulti || [],
+      paralelo: !!restaurado?.paralelo,  // >>> MODOS <<< T6
       fastReply: !!(restaurado && restaurado.fastReply),
       motor: !!(restaurado && restaurado.motor),
       project_id: (restaurado && restaurado.project_id) || null,
@@ -559,6 +561,10 @@ export async function mount(root, { api, tell }) {
   window.__riuFastH = (ev) => { chat().fastReply = (ev && ev.detail && ev.detail.forzar) ? true : !chat().fastReply; pintarFastReply(); guardar(); tell(chat().fastReply ? "Respuesta rápida activada" : "Respuesta rápida desactivada"); };
   const pintarMotor = () => { const b = q("#btn-motor-on"); if (b) { b.classList.toggle("sel-on", !!chat().motor); b.setAttribute("aria-pressed", String(!!chat().motor)); } };
   const bmo = q("#btn-motor-on"); if (bmo) bmo.addEventListener("click", () => { chat().motor = !chat().motor; pintarMotor(); guardar(); tell(chat().motor ? "⚙ Motor ON: el modelo puede descargar, extraer, copiar y mover" : "⚙ Motor OFF"); });
+  // >>> MODOS <<< T6: boton paralelo — multi-select de hasta 6 modelos Team qwen; el envio sale a cada uno
+  const pintarParalelo = () => { const b = q("#btn-paralelo"); if (b) { b.classList.toggle("sel-on", !!chat().paralelo); b.setAttribute("aria-pressed", String(!!chat().paralelo)); } };
+  const bpar = q("#btn-paralelo"); if (bpar) bpar.addEventListener("click", () => { chat().paralelo = !chat().paralelo; pintarParalelo(); guardar(); tell(chat().paralelo ? "⧉ Paralelo ON: marca hasta 6 modelos en Team qwen ⌄" : "⧉ Paralelo OFF"); });
+  pintarParalelo();
   const bLock = q('#btn-agent-access-lock');
   if (bLock) {
     let busy = false, locked = true;  // UI no habilita nada antes de leer el servidor

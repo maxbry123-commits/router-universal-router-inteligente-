@@ -47,13 +47,23 @@ export function conectarSelectorModelos(ctx) {
   const pintarPill = () => {
     const s = chat().selectorQwen;
     pill.textContent = "Team qwen ⌄"; if (!pill.classList.contains("bloq")) pill.title = s ? "Team qwen · " + s.label : "Team qwen";  // el modelo elegido va en el tooltip
-    pill.classList.toggle("on", !!s);
+    pill.classList.toggle("on", !!s || !!((chat().selectorQwenMulti || []).length));
     if (pillMvp) { if (!pillMvp.classList.contains("bloq")) pillMvp.title = s ? "Team 5 MVP · " + s.label : "Team 5 MVP"; pillMvp.classList.toggle("on", !!s); }
     if (window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar) window.RIU_SELECTORES.refrescar();
     window.RIU_SELECTOR_QWEN.seleccion = s ? { modelo_id_slug: s.modelo_id_slug, label: s.label, grupo: s.grupo, sesion: chat().sesion } : null;
   };
   const elegir = (m, g) => {
     const c = chat();
+    if (c.paralelo) {  // >>> MODOS <<< T6: modo paralelo = multi-seleccion (max 6) sin cerrar la hoja
+      c.selectorQwenMulti = c.selectorQwenMulti || [];
+      const i = c.selectorQwenMulti.findIndex((x) => x.label === m[1]);
+      if (i >= 0) c.selectorQwenMulti.splice(i, 1);
+      else if (c.selectorQwenMulti.length < 6) c.selectorQwenMulti.push({ modelo_id_slug: slug(m[1]), label: m[1], grupo: g.titulo });
+      else { tell("Paralelo: máximo 6 modelos"); return; }
+      pintarPill(); pintar(); guardar();
+      const SEL = window.RIU_SELECTORES; if (SEL && SEL.encender && c.selectorQwenMulti.length) SEL.encender("team-qwen");
+      return;
+    }
     const ya = c.selectorQwen && c.selectorQwen.label === m[1];
     c.selectorQwen = ya ? null : { icono: m[0], modelo_id_slug: slug(m[1]), label: m[1], grupo: g.titulo };
     const det = c.selectorQwen ? { modelo_id_slug: c.selectorQwen.modelo_id_slug, label: m[1], grupo: g.titulo, sesion: c.sesion } : null;
@@ -71,7 +81,7 @@ export function conectarSelectorModelos(ctx) {
       lista.append(node("h4", g.titulo, "mod-grupo-t"));
       const caja = node("div", "", "mod-grupo");
       for (const m of g.modelos) {
-        const sel = !!(s && s.label === m[1]);
+        const sel = !!(s && s.label === m[1]) || !!((chat().selectorQwenMulti || []).find((x) => x.label === m[1]));
         const b = node("button", "", "mod-fila" + (sel ? " sel" : ""));
         b.type = "button"; b.setAttribute("aria-pressed", String(sel));
         const txt = node("span", "", "mod-txt");
