@@ -992,6 +992,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     requiere_tools = False if fast else (bool(n['requiere_tools']) if 'requiere_tools' in n else bool(opts.get('muta')))
     if escribe:  # >>> PARCHE_N4 <<< escritor aprobado (N4/P3): debe ejecutar herramientas reales
         requiere_tools = True
+    if n.get('id') in ('N4', 'P3') and opts.get('muta') and not opts.get('aprobado'):  # >>> PARCHE_N4 <<< plan sin aprobar: el escritor solo entrega el PLAN; tools opcionales (read), no exigidas
+        requiere_tools = False
     # puerta de capacidades por nodo: WRITE solo si el nodo ejecutor tiene escritura aprobada; READ si declara tools; NONE si no las necesita.
     # Ficha 1 (chat suelto): el input del usuario fija la puerta (consulta normal -> NONE, externa -> READ).
     cap_in = str(opts.get('cap_in') or 'none')
@@ -1687,7 +1689,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             else:
                 prompt = ('<tarea>\nTAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):\n' + mensaje + '\n</tarea>\n'
                           'Ejecuta <tarea> ahora y entrega el resultado. Prohibido responder con acuse de recibo.')
-            if n.get('requiere_tools') or opts.get('muta'):
+            if (n.get('requiere_tools') or opts.get('muta')) and not (n.get('id') in ('N4', 'P3') and opts.get('muta') and not opts.get('aprobado')):  # >>> PARCHE_N4 <<< en modo plan el escritor no usa tools
                 # FIX qwen38max INPUT 129: guardia explicita de ejecucion con herramientas
                 prompt += ('\nOBLIGATORIO: esta tarea exige ejecucion real. Si hay una herramienta disponible para ella, '
                            'emite la llamada a herramienta en este mismo turno; si no puedes ejecutarla, devuelve error estructurado, no un acuse.')
