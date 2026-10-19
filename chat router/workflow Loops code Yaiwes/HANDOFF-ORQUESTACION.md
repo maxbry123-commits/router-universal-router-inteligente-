@@ -82,3 +82,45 @@ Nota: LIVE_URL.json no contiene job_id (campos: LIVE_URL, runtime, space_id, har
 - N6: 56 tests existentes + 4 nuevos test_dsl_cableado = 100% verde
 - N9: PENDIENTE — auditoria independiente de Claude Sonnet (no la hago yo)
 - PENDIENTE: auditoria de las fichas por GLM 5.2 — 2 intentos, TIMEOUT_NODO a 150s sin emitir tool calls (api.z.ai lento en tareas largas de lectura); la opinion de qwen38max si llego y se aplico (lectura_archivo_grande)
+
+
+## DSL G1–G19 (2026-10-19) — sistema único, biblioteca de capas, motor de objetivos, buzón y paralelo
+
+Implementado por DEVIN en `feat/modos-router`. Audita: CLAUDE SONNET (N9).
+
+| G | Cambio | Archivo |
+|---|--------|---------|
+| G1 | UN solo system: SYSTEM_CORE + Constitución + ROL DEL NODO + capa B + anclas/memoria/handoff fusionados; system entrante del nodo ya no duplica | puente_chat/plugin.py |
+| G2 | Rol ≤600 chars dentro del user tras `</tarea>` como `<rol>` en layout D (dsv4) | fichas_qwen/plugin.py |
+| G3 | El user siempre cierra con "Responde con el RESULTADO..." (`_CIERRE_USER`) | fichas_qwen/plugin.py |
+| G4 | Evidencia real: `_ejecuto` del delta `opts['herr'][nid]`; categorías EXECUTED/ACK_ONLY/TOOL_IN_REASONING/NO_TOOL/TIMEOUT/DISPATCH_FAILURE | fichas_qwen/plugin.py |
+| G5/G9 | `_politica_ficha(fid)` consulta directa; fuente única `fichas/politicas_modelo.json` (ficha1/ficha4 solo referencian) | puente_chat/plugin.py + fichas/ |
+| G6 | Reintento por modelo con fallback correcto (qwen38max↔glm52, otros→qwen38max), thinking off | fichas/politicas_modelo.json + plugin.py |
+| G7 | `_NODO_CALL` ContextVar con try/finally reset | fichas_qwen/plugin.py |
+| G8 | Tests reales `tests/test_g_gaps.py` (6/6: G1,G2+G3,G4,G7,G17,G18) | fichas_qwen/tests/ |
+| G10 | Biblioteca del prompt por capas `chat router/workflow Loops code Yaiwes/prompt/` (system_core ≤3000 tok, bloques 1-5, reglas SRC-001..114); capa B por nodo (`_CAPA_NODO`), tool `regla_yaiwes` (capa D, máx 5/nodo) | prompt/ + puente + herramientas |
+| G11 | glm52 `con_tools.tool_stream=false` | politicas_modelo.json |
+| G13 | Recorte con prioridad memoria→anclas→handoff/sandbox; NUNCA core/const/rol/tarea/cierre; marca `[recortado: bloque N chars]` + traza | puente_chat/plugin.py |
+| G14 | `requiere_evidencia` + mutación + aprobado → PASS solo con ≥1 tool ok (mutacion_real si escribe), si no `GAP SIN_EVIDENCIA` | fichas_qwen/plugin.py |
+| G15 | `capas` por modo en modes_registry (rapido→core, code→core+b3, auditor→core+b4, plan→core+b2+b5) + `reglas_revision` determinista (1 corrección → GAP REGLA_INCUMPLIDA) | modes_registry.json + plugin.py |
+| G16/G16b | `fichas/cadenas.json` + `_cadena_para`/`_expandir_cadena` (F1/F4), pausa entre pasos, checkpoint/reanudar reutilizando `_ck_*`, `GAP CADENA_ABANDONADA` | plugin.py + cadenas.json |
+| G17 | `modos/motor_objetivo.py` (correr_objetivo, max_vueltas=20) + activación payload `objetivo`/modo `loop` + `fichas/programas.json` + `modos/programador.py` (hilo 30 s) | modos/ + plugin.py |
+| G18 | Tool `delegar_paralelo` (≤6 paralelo, ≤12 subtareas, `_PROF_DELEGACION` un nivel, subagentes solo lectura) | puente_chat/herramientas.py |
+| G19 | Buzón SQLite (buzon/pendientes_director) + endpoints buzon_enviar/estado_objetivo/responder_pendiente/pendientes_director + `preguntar_director` + buzón mid-loop `[DIRECTOR, en vivo]` + frontend (selector, Pausa/Continuar/Cancelar, panel Cola 3 s) | plugin.py + herramientas.py + panel-chat.js + ficha.json |
+
+### T_REAL (Space redeployado, 2026-10-19)
+
+| modelo | estado | evidencia |
+|--------|--------|-----------|
+| Qwen 3.8 Max | completado | github_leer LIVE_URL real, reportó ausencia de job_id |
+| Qwen 3.8 Flash | completado | idem |
+| GLM 5.2 | completado | idem |
+| DeepSeek V4 Pro | completado | idem |
+| DeepSeek V4 Flash | completado | idem |
+
+Commits: `d9fd131` (G1-G19 core), `276ca41` (allowed_actions + frontend + G16b). Tests locales: `test_g_gaps.py` 6/6 PASS.
+
+### Pendiente para el audit (N9, Claude Sonnet)
+- G1/G2/G3: el system final es UNO con bloques; rol dsv4 en user.
+- G13: el recorte nunca toca core/const/rol/tarea/cierre.
+- G17/G18/G19: motor, buzón y paralelo por los endpoints reales.
