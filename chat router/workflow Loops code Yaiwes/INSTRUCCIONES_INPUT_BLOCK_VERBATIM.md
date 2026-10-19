@@ -29993,3 +29993,120 @@ Prácticamente confirmada — el problema del archivo de 1.1 MB es independiente
 GitHub fija justamente en 1 MB el límite a partir del cual cambia el modo de recuperación del endpoint Contents; entre 1 y 100 MB debe usarse raw/object, recomendándose raw para obtener el contenido. 
 
 sigue anotando 1 a 1 imput block verbartin en la continuidad del readme y sigue modo recepción
+
+---
+
+## INPUT 128
+
+La arquitectura objetivo, por tanto, debería quedar así:
+
+text
+Copiar
+                    ┌──────────────────────┐
+                    │      NODE TASK       │
+                    └──────────┬───────────┘
+                               │
+                     execution_required?
+                         │           │
+                       NO            YES
+                         │           │
+                    texto OK         ▼
+                               model policy
+                         ┌────────────┴────────────┐
+                         │                         │
+                  modelos estables          DS problemáticos
+                    layout BDS problemáticos
+                    layout B              D_solo_tarea
+                         │                         │
+                         └────────────┬────────────┘
+                                      ▼
+                                model response
+                                      │
+                  ┌───────────────────┼──────────────────┐
+                  │                   │                  │
+             tool receipt           ACK          markup sin
+                  │                / no tool      tool_calls
+                  │                   │                  │
+                 PASS                 ▼                  ▼
+                               semantic retry
+parser retry
+                                      │                  │
+                                      └────────┬─────────┘
+                                               ▼
+                                       second attempt
+                                               │
+                                  ┌────────────┴───────────┐
+                                  │                        │
+                                PASS                    FAIL
+                                                           │
+                                               model fallback /
+                                               explicit error
+
+Ese diseño ataca simultáneamente los tres hallazgos de tu batch: ACK sin ejecución, fallback que se pasa de 150 segundos y falsa atribución al modelo de problemas que en realidad pueden estar en parser/API de datos. Lo más importante es que deja de exigir que Qwen, DeepSeek o GLM sean perfectos: convierte sus tool calls probabilísticos en un contrato de ejecución determinista supervisado por tu executor, que es justamente donde la documentación oficial y la experiencia de las comunidades de desarrolladores sitúan la responsabilidad final. 
+
+# FIX 2: retry con fallback POR NODO (modelo + layout) dentro del executor
+
+## 1. Qué hace
+
+- Para cada nodo prueba combinaciones `(modelo, layout)` hasta que una **ejecute de verdad**.
+- Clasifica cada respuesta: `OK`, `ACK` (acuse), `VACIO`, `HERRAMIENTA_NO_EJECUTADA` y `MODEL_ERROR` (red o API; **no** envenena el perfil).
+- **Nodo que se acepta mirando el workspace** (`file_exists`, `command`, `test_suite`, etc.): si el modelo responde solo texto, falla. «Dije que lo hice» no es evidencia.
+- **Aprende:** guarda en `state/layout_profile.json` qué combinación funciona por modelo y la usa primero la próxima vez. Lo que falla siempre pasa al final (cuarentena).
+- **Acotado:** `max_attempts` (8 por defecto). Si todo falla devuelve `blocked_with_evidence` con la tabla de intentos. Nunca inventa éxito.
+- **Cuenta el costo de TODOS los intentos** (incluso los fallidos) para que el tope `max_cost_usd` del bucle los vea.
+- Si los checks del nodo fallan después, `report()` castiga esa combinación (el modelo «actuó» pero no resolvió).
+- Si el bucle pide cambiar (`force_different`, `switch_executor`, `switch_model_tier`), excluye la combinación anterior.
+
+## 2. Código: `exec_dispatch.py` (requiere `prompt_layouts.py` del fix anterior)
+
+[VER `router inteligente universal/plugins/fichas_qwen/modos/exec_dispatch.py` — copiado verbatim del bloque de Claude: EXTRA_ACK_PATTERNS, WORKSPACE_CHECKS, expects_tools_for, classify (OK/ACK/VACIO/HERRAMIENTA_NO_EJECUTADA/MODEL_ERROR), Profile (score/consec_fail/cuarentena, persistencia atomica en state/layout_profile.json), default_task, ExecDispatcher (execute con max_attempts=8 + costo de todos los intentos + on_event dispatch_attempt, report, make_executor, event_hook)]
+
+## 3. Pruebas: `test_exec_dispatch.py` (usa `loop_controller.py` y `test_additional.py` del paquete)
+
+[VER `router inteligente universal/plugins/fichas_qwen/modos/test_exec_dispatch.py` — copiado verbatim: fake_model (dsv4pro/dsv4flash acusan, glm52 ejecuta solo con <tarea>, qwenD solo con 1 mensaje), 11 tests: clasificacion acuses, expects_tools, fallback entre modelos/layouts, blocked_with_evidence acotado, herramienta no ejecutada, aprendizaje persistente, cuarentena, MODEL_ERROR no envenena, costo total, exclude+report, integracion LoopController DONE]
+
+Ejecutar: `python3 -m unittest test_exec_dispatch test_prompt_layouts -v` (deben pasar 11 + 7). RESULTADO REAL: 18/18 PASS.
+
+## 4. Integración en el executor del bucle (parche aditivo)
+
+```python
+# >>> MODOS BEGIN
+from exec_dispatch import ExecDispatcher
+from loop_controller import LoopController
+
+def call_model(model, messages):
+    r = LLAMADA_REAL(model=model, messages=messages, **params_del_modo)     # tu cliente actual
+    return {"text": TEXTO_DE(r), "tool_calls": TOOL_CALLS_DE(r), "cost_usd": COSTO_DE(r)}
+
+def run_tools(tool_calls, node):
+    return [EJECUTAR_HERRAMIENTA(tc, workdir=".") for tc in tool_calls]       # exactamente 1 resultado por llamada
+
+disp = ExecDispatcher(call_model, run_tools,
+                      models=["glm52", "qwen38max", "dsv4pro", "dsv4flash"],   # orden de preferencia
+                      profile_path="state/layout_profile.json", max_attempts=8,
+                      on_event=emit_event)
+ctrl = LoopController(contrato, disp.make_executor(ficha_modo["system_block"]), workdir=".",
+                      limits=ficha_modo["limits"], on_event=disp.event_hook(emit_event),
+                      objective_path="state/objective.md")
+reporte = ctrl.run()
+# <<< MODOS END
+```
+
+Notas de configuración:
+- **Orden de `models`:** manda a los que ya ejecutan primero (`glm52`, `qwen38max`). El perfil degrada solo a los que fallan siempre, pero si ya sabes que `dsv4flash` y `dsv4pro` no ejecutan, ponlos al final y no gastes intentos.
+- **`TOOL_CALLS_DE(r)`:** si un modelo (p. ej. `room-qwen38`) emite la herramienta como TEXTO o con otro formato, tu parser no la ve y se registra `HERRAMIENTA_NO_EJECUTADA` aunque el modelo sí lo intentó. Guarda la respuesta cruda de ese modelo y revisa el formato.
+- **Todos los intentos cuentan** para `max_cost_usd`; con `max_attempts=8` un nodo atascado puede costar hasta 8 llamadas por iteración. Baja `max_attempts` si el costo importa.
+- No lo uses en `m05_respuesta_rapida`.
+
+## 5. Prompt para pegar a Devin
+
+> **Tarea:** integrar `exec_dispatch.py` (retry + fallback por nodo) como executor del `LoopController`.
+> **Rama:** `fix/retry-fallback-nodo`. **Reglas:** cambios aditivos entre marcadores `>>> MODOS BEGIN` / `<<< MODOS END`; sin reformatear; sin secretos; no inventes nombres: ubícalos con `grep` y pega la salida. No modifiques `prompt_layouts.py` salvo para agregar patrones.
+> 1. Copia `exec_dispatch.py` y `test_exec_dispatch.py`. Corre `python3 -m unittest test_exec_dispatch test_prompt_layouts -v` y pega la salida (18 pruebas en verde).
+> 2. Conecta `call_model`, `run_tools`, `TEXTO_DE`, `TOOL_CALLS_DE` y `COSTO_DE` a los nombres reales del cliente del chat (§4). `run_tools` debe devolver exactamente un resultado por llamada.
+> 3. **Caso `room-qwen38`:** guarda la respuesta CRUDA del modelo cuando salga `HERRAMIENTA_NO_EJECUTADA`. Verifica si emite la llamada como texto o con otro formato que el parser no reconoce; si es así, corrige `TOOL_CALLS_DE`.
+> 4. **Batch real:** corre el mismo batch que falló (`glm52`, `qwen38max`, `qwen36`, `dsv4flash`, `dsv4pro`, `room-qwen38`) por el dispatcher. Pega la tabla `attempts` por nodo (modelo, layout, code) y el contenido de `state/layout_profile.json`.
+> 5. **Aceptación:** PASS solo si (i) las pruebas pasan, (ii) los nodos que antes quedaban en acuse ahora ejecutan con alguna combinación o terminan en `blocked_with_evidence` con la tabla de intentos, (iii) el `git diff` solo toca archivos nuevos y bloques entre marcadores. Si algún modelo no ejecuta con ningún layout, repórtalo; no lo declares resuelto.
+> 6. Abre PR **sin merge**.
+
+anota continúidsd y incorpora y sigue modo recepción
