@@ -30382,3 +30382,93 @@ paso 3 📌 pruebas
 puedes hacerlo puedes hacer los cambios ?  o necesitas a Claude ?
 
 escrube 1 a 1 imput block verbartin la información en la continuidad del Readme
+
+---
+
+## INPUT ~130 — DSL DAG CORREGIR CABLEADO DE TOOL-CALLING (SIN CAMBIAR ARQUITECTURA)
+
+repo: maxbry123-commits/router-universal-router-inteligente-
+rama: feat/modos-router
+archivos: router inteligente universal/plugins/fichas_qwen/plugin.py
+          router inteligente universal/plugins/puente_chat/plugin.py
+          router inteligente universal/plugins/fichas_qwen/fichas/ficha1..4-*.json
+ejecutor: DEVIN   | verificador independiente: CLAUDE SONNET (no ve el trabajo hasta N9)
+
+reglas_inviolables:
+  - NO otro Router, NO otro Harness, NO otro servidor, NO agente externo (dsh / Qwen-Agent)
+  - NO GitHub Actions, NO LFS, NO cambiar modelos, banco, Constitución, memoria, Graphiti
+  - CONSERVAR: gobernanza -> system, tarea etiquetada -> user (layout B); dsv4 intento 1 sin thinking
+  - CONSERVAR: rescate de tool calls en content y reasoning_content (ya existe en puente_chat)
+  - Edición de JSON byte-preserving (no re-formatear el archivo entero)
+  - Cada cambio: commit propio con trailers; tests locales, no CI
+
+nodos:
+  N0_BASELINE: {owner: DEVIN, depende_de: []}
+    - Guardar SHA actual de los 2 plugin.py y los 4 JSON
+    - Correr tests existentes (prompt_layouts, exec_dispatch, loop_controller); registrar resultado
+    - salida: baseline.json
+  N1_ESTADO_POR_NODO: {owner: DEVIN, depende_de: [N0]}
+    problema: _sys_prompt, _forzar_tool, _dsv4_think, _per_attempt_s viven en `opts` compartido;
+              _dag() corre nodos en paralelo con el mismo opts -> se pisan
+    cambio:
+      - Crear ContextVar (o threading.local) _NODO_CALL = {sys_prompt, forzar_tool, dsv4_think, per_attempt_s}
+      - Fijarlo al inicio de cada nodo(i) y resetearlo al terminar (try/finally)
+      - _llamar_harness_1 lee de _NODO_CALL, no de opts
+      - Borrar opts['_sys_prompt'|'_forzar_tool'|'_dsv4_think'|'_per_attempt_s']
+    test: 4 nodos en paralelo con system distinto -> cada llamada recibe SU system (mock de pc._chat)
+  N2_FORZAR_SOLO_PRIMER_PASO: {owner: DEVIN, depende_de: [N1]}
+    problema: tool_choice=required se aplica en TODOS los pasos de _bucle -> el modelo no puede cerrar
+    cambio (puente_chat):
+      - required solo en el paso 1 del reintento; desde el paso 2 -> 'auto'
+      - con required: quitar thinking (ya existe); para dsv4 el reintento manda enable_thinking=false explicito
+    test: mock que devuelve tool_call en paso 1 y texto en paso 2 -> termina en 2 pasos
+  N3_ACUSE_CON_EVIDENCIA: {owner: DEVIN, depende_de: [N1]}
+    problema: is_ack_only mira solo texto; si ya ejecuto herramientas y responde corto, reintenta
+    cambio:
+      - Antes de is_ack_only: si opts['herr'][nodo] tiene ejecuciones ok -> NO es acuse, no reintentar
+      - Clasificar y guardar en la traza: EXECUTED | ACK_ONLY | NO_TOOL | TOOL_IN_REASONING |
+        TOOL_PARSE_FAILURE | DISPATCH_FAILURE | TIMEOUT
+    test: nodo con 1 escritura ok + texto vacio -> 0 reintentos, categoria EXECUTED
+  N4_PRESUPUESTO_TOTAL: {owner: DEVIN, depende_de: [N1]}
+    problema: hasta 4 intentos x 50% del timeout = 200% > tope del nodo (TIMEOUT_NODO + hilos huerfanos)
+    cambio:
+      - deadline = inicio_nodo + timeout_s; cada intento usa min(per_attempt, deadline - ahora - 5s)
+      - si quedan < 20 s: no lanzar otro intento ni fallback -> GAP con categoria
+      - fallback de modelo: maximo 1 (no 2) y solo si queda tiempo
+    test: timeout_s=150 con mock lento -> nunca supera 150 s
+  N5_UNA_FUENTE_POR_MODELO: {owner: DEVIN, depende_de: [N0]}
+    problema: _politica() toma SOLO la primera ficha (ficha1); copias en 2/3/4 muertas;
+              bloque `reintento`, `lectura_archivo_grande` y per_attempt_s de tarjetas: nadie los lee
+    cambio:
+      - Fuente unica: politicas_modelo de ficha1 (o archivo politicas_modelo.json leido por _politica)
+      - Quitar politicas_modelo de ficha2/3/4 (byte-preserving) o dejar solo referencia
+      - `reintento`: hacer que el codigo lo lea (per_attempt_s, max_attempts, thinking, fallback_modelo)
+        y que sea distinto por modelo; si no se cablea -> borrarlo
+      - Borrar `lectura_archivo_grande` o pasarlo a README
+      - exec_dispatch.py: integrarlo de verdad o borrarlo con sus tests
+    test: cambiar un valor en la fuente unica -> la llamada real lo refleja
+  N6_TESTS_LOCALES: {owner: DEVIN, depende_de: [N2, N3, N4, N5]}
+    - Correr todos los tests de N1-N5 + los existentes; 100% verde
+    - salida: tests.log
+  N7_PRUEBA_REAL_MINIMA: {owner: DEVIN, depende_de: [N6]}
+    - Overlay de los archivos al bundle del bucket (backup .bak-AAAAMMDD-pre-cableado) y relanzar
+    - 1 llamada por modelo (qwen38max, qwen38flash, glm52, dsv4pro, dsv4flash):
+      tarea = "Lee router inteligente universal/LIVE_URL.json y dime el job_id"
+    - PASS por modelo: categoria EXECUTED, tool real usada, respuesta con el job_id correcto, < tope
+    - 1 prueba Ficha 2 consulta y 1 Ficha 3 modificacion (plan) -> sin TIMEOUT_NODO
+    - NO stress test, NO 9 modelos en paralelo
+  N8_HANDOFF: {owner: DEVIN, depende_de: [N7]}
+    - Tabla: modelo | categoria | tool | ms | reintentos | PASS/FAIL
+    - Lista exacta de commits y archivos; que se borro y por que
+  N9_AUDITORIA_INDEPENDIENTE: {owner: CLAUDE_SONNET, depende_de: [N8]}
+    - Leer el codigo real de la rama (no el reporte de Devin)
+    - Verificar: ningun flag de nodo en opts compartido; required solo paso 1; acuse mira herramientas
+      ejecutadas; suma de intentos <= tope; cada clave de JSON tiene un lector en codigo (grep)
+    - Repetir 2 de las llamadas de N7 de forma independiente
+    - salida: VEREDICTO PASS | GAP_EXACTO (archivo:linea + prueba que falla)
+
+salida_final:
+  COMMITS: [...]
+  CORREGIDO: [N1, N2, N3, N4, N5]
+  MODELOS: tabla N8
+  AUDITORIA_SONNET: PASS | GAP_EXACTO
