@@ -16,7 +16,7 @@ _EXTERNO = re.compile(r'(?i)github|hugging\s*face|huggingface|\bhf\b|\brepos?\b|
 _MUTA = re.compile(r'(borr\w*|sub\w*|commit|push|merge|actualiz\w*|elimin\w*|mov\w*|reemplaz\w*|modific\w*|cambi\w*|despleg\w*|reinici\w*|restaur\w*|renombr\w*)', re.I)
 
 # verbos ambiguos: escribir/crear/generar sobre un sistema externo NO mutan si el objeto es contenido (resumen/informe/auditoria...)
-_MUTA_DEBIL = re.compile(r'(crear?|escrib\w*|gener\w*|redact\w*|implement\w*|arregl\w*|aplica\w*|apliqu\w*|corr[ei][gj]\w*|copi\w*|extra[eií]\w*|descarg\w*|descomprim\w*|instal\w*|edit\w*|agreg\w*|a[ñn]ad\w*|integr\w*)', re.I)
+_MUTA_DEBIL = re.compile(r'(crear?|escrib\w*|gener\w*|redact\w*|implement\w*|arregl\w*|aplica\w*|apliqu\w*|corr[ei][gj]\w*|copi\w*|extra[eií]\w*|descarg\w*|descomprim\w*|instal\w*|edit\w*|agreg\w*|a[ñn]ad\w*|integr\w*)', re.I)  # >>> PARCHE_N4 <<< copiar/extraer/descargar/integrar a un recurso externo tambien escriben
 _CONTENIDO = re.compile(r'(informaci[óo]n|datos|estad[íi]sticas|resumen|informe|auditor\w*|reporte|an[áa]lisis|explicaci[óo]n|documentaci[óo]n|descripci[óo]n|lista|tabla|gu[íi]a|tutorial|diagrama|ensayo|correo|mensaje)', re.I)
 _RECURSO_EXT = re.compile(r'(archivo|fichero|file|rama|branch|issue|pull request|\bpr\b|dataset|space|job|release|tag|workflow|carpeta|directorio|commit)', re.I)
 

@@ -1,0 +1,16 @@
+{
+  "meta": {"name": "smoke_test", "note": "minimal pipeline check"},
+  "ops": [
+    {"op": "new_scene"},
+    {"op": "set_world", "color": [0.02, 0.03, 0.08], "strength": 1.0},
+    {"op": "add_material", "name": "Emit_Cyan", "emission_color": [0.0, 0.9, 1.0], "emission_strength": 5.0},
+    {"op": "add_mesh", "kind": "cube", "name": "HeroCube", "location": [0, 0, 0], "size": 1.0, "material": "Emit_Cyan"},
+    {"op": "add_light", "kind": "point", "name": "KeyLight", "location": [3, -3, 4], "energy": 500},
+    {"op": "add_camera", "name": "Cam", "location": [4, -6, 3]},
+    {"op": "track_to", "object": "Cam", "location": [0, 0, 0]},
+    {"op": "connect", "a": [1.2, 0, 0], "b": [2.5, 1.5, 0.8], "radius": 0.03, "segments": 3},
+    {"op": "set_render", "width": 640, "height": 360, "scale": 1.0},
+    {"op": "render", "path": "${PROJECT_ROOT}/output/smoke_test.png"},
+    {"op": "save", "path": "${PROJECT_ROOT}/output/smoke_test.blend"}
+  ]
+}

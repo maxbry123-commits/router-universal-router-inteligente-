@@ -34,10 +34,12 @@ _LAYOUT_D_SYS = ('Eres un ejecutor de tareas. NO respondas con texto de confirma
                  'Si no puedes ejecutar la herramienta, devuelve un error estructurado, no un acuse.')  # INPUT 129 Claude: system del layout D_solo_tarea
 _CIERRE_USER = 'Responde con el RESULTADO. Si hay herramienta para esto, llámala en este turno. Nunca acuses recibo.'  # DSL G3: el user siempre cierra con esta linea fija (recencia)
 _ULT_POLL: dict[str, float] = {}  # fix 7: ultima vez que el chat pregunto por el proceso (/resultado)
-HUERFANO_S = 900  # fix 7 + AUDIT: 180 s mataba tareas largas LOOP desde el movil; 15 min da margen al polling lento
+HUERFANO_S = 180  # fix 7: proceso sin /resultado en 180 s = nadie lo espera -> se cancela y libera la cola
 _LOCK = threading.Lock()
 _PROCESOS: dict[str, tuple[Any, float]] = {}
 _CANCEL: set[str] = set()  # procesos que el usuario detuvo con Detener: no se lanzan mas pasos
+_SIN_REAPER: set[str] = set()  # AUDIT A4: objetivos LOOP y programados: siguen sin polling (no son huerfanos)
+_PID_APROBADO_PREVIO: set[str] = set()  # AUDIT A8: solo el programador interno marca aqui (programas.json "aprobado_previo")
 
 # >>> MODOS BEGIN
 # Selector de 11 modos (paquete modos/, aditivo): el backend es la autoridad. Solo actua cuando el
@@ -184,12 +186,12 @@ def _llamar(modelo: str, prompt: str, ficha: dict[str, Any], *, timeout_override
 
 def _elegido(ficha: dict[str, Any], pedido: str) -> str:
     sel = ficha.get("selector") or []
-    if sel and not pedido:
-        return sel[0]["id"]  # sin modelo pedido: cabeza del selector (cola 1), nunca GAP por vacio
     norm = lambda s: re.sub(r"[^a-z0-9]", "", str(s).lower())  # noqa: E731
     for s in sel:
         if pedido and (pedido == s.get("id") or norm(pedido) in (norm(s.get("id")), norm(s.get("nombre")))):
             return s["id"]
+    if sel and not pedido:
+        return sel[0]["id"]  # sin modelo pedido: cabeza del selector (cola 1), nunca GAP por vacio
     return None if sel else pedido  # modelo que el selector no reconoce: nunca cambiar de modelo en silencio
 
 
@@ -988,7 +990,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     if fast:
         escribe = False
     requiere_tools = False if fast else (bool(n['requiere_tools']) if 'requiere_tools' in n else bool(opts.get('muta')))
-    if escribe:  # >>> PARCHE_N4 <<< escritor aprobado: debe ejecutar herramientas reales
+    if escribe:  # >>> PARCHE_N4 <<< escritor aprobado (N4/P3): debe ejecutar herramientas reales
         requiere_tools = True
     # puerta de capacidades por nodo: WRITE solo si el nodo ejecutor tiene escritura aprobada; READ si declara tools; NONE si no las necesita.
     # Ficha 1 (chat suelto): el input del usuario fija la puerta (consulta normal -> NONE, externa -> READ).
@@ -1032,11 +1034,11 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     r = pc._chat({'model': qw, 'messages': ([{'role': 'system', 'content': _sp}] if _sp else []) + [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,  # >>> MODOS <<< FIX gobernanza: system aparte (S1)
                   'ficha_id': str(ficha.get('ficha') or ''), 'active_anchors_v1': bool(opts.get('active_anchors_v1')),
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
-                  'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo, 'motor': bool(escribe and cap_nodo == 'write'),  # >>> PARCHE_N4 <<<
+                  'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo, 'motor': bool(escribe and cap_nodo == 'write'),  # >>> PARCHE_N4 <<< motor_* solo para el escritor con CAP_WRITE
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
                   'dsv4_think': _nc.get('dsv4_think'),  # DSL N1/N2: intento 2 DeepSeek con thinking explícito (False con required)
-                  'capas': list(_nc.get('capas') or (n.get('capas') or [])),  # DSL G10/G15: capas del prompt por nodo o modo
+                  'capas': list(_nc.get('capas') or (n.get('capas') or [])) or (['core'] if (opts.get('fast_lane') or opts.get('fast_consult')) else list((opts.get('modos') or {}).get('capas') or [])),  # GAP G15: el modo elegido en el chat decide el paquete de capas; sin modo -> mapa por nodo  # DSL G10/G15 + AUDIT A10: FAST y consulta FAST solo llevan el core (sin bloque B del nodo)
                   'proceso_id': str(opts.get('pid') or ''),  # DSL G19: el buzon mid-loop del puente sabe de que proceso leer
                   'forzar_tool': bool(_nc.get('forzar_tool')),  # >>> MODOS <<< FIX glm52 INPUT 129: tool_choice=required en reintento
                   'extra_llm': (({'enable_thinking': False} if opts.get('modos_reasoning') == 'none' else {'reasoning_effort': opts['modos_reasoning']}) if opts.get('modos_reasoning') else  # >>> MODOS <<< mode_wins: el modo decide el razonamiento de la llamada
@@ -1344,7 +1346,7 @@ def _cadena_para(mensaje, opts, ficha):
     return None, None
 
 
-def _cadena_por_id(cid):  # >>> PARCHE_N4 <<<
+def _cadena_por_id(cid):  # >>> PARCHE_N4 <<< /aprobar recupera la cadena por su id guardado
     try:
         c = (json.loads((DIR / 'fichas' / 'cadenas.json').read_text(encoding='utf-8')).get('cadenas') or {}).get(str(cid))
     except Exception:  # noqa: BLE001
@@ -1398,8 +1400,9 @@ def _buzon_enviar(proceso_id: str, tipo: str, texto: str) -> dict:
     if tipo not in ('instruccion', 'tarea', 'prioridad', 'pausa', 'continuar', 'cancelar'):
         return {'error': 'GAP_BUZON_TIPO', 'validos': ['instruccion', 'tarea', 'prioridad', 'pausa', 'continuar', 'cancelar']}
     # DSL A07.2: no insertar si el proceso no esta activo (ni en _PROCESOS ni con checkpoint RUNNING); sin recibido:true
-    activo = proceso_id in _PROCESOS
-    if not activo:
+    _it = _PROCESOS.get(proceso_id)
+    activo = bool(_it) and not _it[0].done()  # AUDIT A17: un proceso TERMINADO sigue en _PROCESOS un rato; ya no recibe mensajes
+    if not activo and not _it:
         try:
             _ck = _ck_cargar(proceso_id) or {}
             activo = str(_ck.get('estado') or '').upper() in ('RUNNING', 'CORRIENDO', 'PAUSADO')
@@ -1447,8 +1450,8 @@ def _pendientes_director(proceso_id: str = '') -> list[dict]:
         return []
 
 
-_CAPAS_MODO = {'rapido': ['core'], 'code': ['core', 'b3'], 'auditor': ['core', 'b4'],
-               'planificador': ['core', 'b2', 'b5'], 'paralelo': ['core', 'b3']}  # DSL G15: modo -> capas del prompt por capas
+_CAPAS_MODO = {'rapido': ['core'], 'code': ['core', 'b3', 'ej'], 'auditor': ['core', 'b4'],
+               'planificador': ['core', 'b2', 'b5'], 'paralelo': ['core', 'b3', 'ej']}  # DSL G15: modo -> capas del prompt por capas
 
 
 def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, opts: dict[str, Any]) -> tuple[str, list]:
@@ -1461,12 +1464,25 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
     obj.setdefault('objetivo', mensaje)
     obj['proceso_id'] = pid
     obj.setdefault('ficha', str(ficha.get('ficha') or ''))
-    elegido = _elegido(ficha, str(obj.get('modelo') or p.get('modelo') or ''))
+    _es_f5 = str(ficha.get('ficha') or '') == 'ficha5-mvp' or ficha is FICHAS.get('ficha5-mvp')
+    # AUDIT A9: Ficha 5 no tiene selector propio (usa el de Ficha 1, igual que mvp.chat)
+    elegido = _elegido(FICHAS.get('ficha1-modelos') or ficha if _es_f5 else ficha, str(obj.get('modelo') or p.get('modelo') or ''))
     if elegido is None:
         return 'GAP MODELO_SELECTOR_INVALIDO: ' + repr(obj.get('modelo') or p.get('modelo')), []
     _lim_o = dict({'max_minutos': 240}, **(obj.get('limites') or {}))
+    if pid:
+        _SIN_REAPER.add(pid)  # AUDIT A4: un objetivo sigue aunque se cierre la pestaña (nadie hace polling)
 
     def llamar(modo: str, prompt: str) -> dict:
+        if _es_f5:  # AUDIT A9: cada vuelta de Ficha 5 = una llamada por su ruta MVP (input + tools -> 1 modelo)
+            from . import mvp as _mvp_o  # noqa: PLC0415
+            try:
+                r5 = _mvp_o.chat(dict(p, message=prompt, messages=None, objetivo=None, modo=None, mode_request=None),
+                                 ficha, prompt, ses, time.time())
+            except Exception as x:  # noqa: BLE001
+                return {'texto': 'GAP MOTOR_F5: ' + str(x)[:200], 'herramientas_ok': 0}
+            hs = [x for x in (r5.get('herramientas') or []) if isinstance(x, dict)]
+            return {'texto': str(r5.get('reply') or r5.get('error') or ''), 'herramientas_ok': sum(1 for x in hs if x.get('ok'))}
         # una llamada por vuelta por el MISMO Harness (Constitucion, solo_lectura, scope intactos)
         n = {'id': 'MOTOR', 'rol': '', 'requiere_tools': modo in ('code', 'auditor', 'paralelo'),
              'escribe': modo == 'code' and bool(opts.get('aprobado')), 'timeout_s': 300}
@@ -1474,11 +1490,14 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
             # DSL A05: ejecucion real por el DAG de la propia ficha (receipts MOTOR:Tn); nunca motor recursivo ni chat dentro de vuelta
             import re as _re_m
             _tid = (_re_m.search(r'TAREA DE ESTA VUELTA:\s*<?(?:tarea_verbatim[^>]*>)?\s*(\w+)', prompt) or [None, '?'])[1] or '?'
+            _snap = {k: len(v) for k, v in opts.setdefault('herr', {}).items()}  # AUDIT A5: evidencia = delta de ESTA vuelta
             try:
-                r_final, _tr = _correr(ficha, prompt, elegido, pid, dict(opts, recibo_tarea='MOTOR:%s' % _tid))
+                # AUDIT A5b: previo={} -> el DAG NO recarga el checkpoint del proceso (si no, la vuelta 2 reusaba
+                # las salidas N1..N7 de la tarea anterior y devolvia el resultado viejo sin ejecutar nada)
+                r_final, _tr = _correr(ficha, prompt, elegido, pid, dict(opts, recibo_tarea='MOTOR:%s' % _tid, previo={}, out={}, fast_fallback=True, fast_reply=False))  # A5c: nunca FAST/consulta dentro de una vuelta de ejecución
             except Exception as x:  # noqa: BLE001
                 return {'texto': 'GAP ' + str(x)[:200], 'herramientas_ok': 0, 'mutaciones_ok': 0}
-            _hn = [x for k, v in (opts.get('herr') or {}).items() for x in v]
+            _hn = [x for k, v in (opts.get('herr') or {}).items() for x in v[_snap.get(k, 0):]]
             return {'texto': str(r_final), 'herramientas_ok': sum(1 for x in _hn if x.get('ok')),
                     'mutaciones_ok': sum(1 for x in _hn if x.get('ok') and x.get('mutacion_real'))}
         if modo == 'paralelo':  # DSL G18: la vuelta puede repartir subtareas con delegar_paralelo
@@ -1492,12 +1511,16 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
             t = _llamar_harness(elegido, prompt, ficha, n, opts)
         except Exception as x:  # noqa: BLE001
             t = 'GAP MOTOR: ' + str(x)[:200]
+            if 'OUTPUT_TRUNCATED' in str(x):  # QWEN38: el corte de salida NO es fin de tarea -> el motor continua en otra vuelta
+                t = 'GAP_OUTPUT_TRUNCATED (continuar)\n' + str((opts.get('salidas_parciales') or {}).pop('MOTOR', '') or '')[-6000:]
         finally:
             _NODO_CALL.reset(_tk)
         nuevas = opts['herr']['MOTOR'][_h0:]
         return {'texto': t, 'herramientas_ok': sum(1 for x in nuevas if x.get('ok'))}
 
     def guardar(st: dict) -> None:  # checkpoint por vuelta: reanuda tras reinicio (G16b)
+        if not pid:
+            return
         try:
             mem, sf = _pc()._memoria()
             mem.save(sf('chat-ui', 'motor:' + pid), 'estado', dict(st, ts=time.time()))
@@ -1517,6 +1540,8 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
 
     _estado0 = None
     try:  # reanudacion: estado guardado del proceso anterior con el mismo proceso_id
+        if not pid:
+            raise ValueError('sin proceso_id: no se reanuda (AUDIT A3b: la clave "motor:" vacia mezclaba ejecuciones)')
         mem, sf = _pc()._memoria()
         _pr = mem.search(sf('chat-ui', 'motor:' + pid), 'estado', 1)
         _fl = _pr if isinstance(_pr, list) else next((v for v in (_pr or {}).values() if isinstance(v, list)), [])
@@ -1526,7 +1551,10 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
                 _estado0 = _d0
     except Exception:  # noqa: BLE001
         pass
-    res = _mo.correr_objetivo(obj, llamar, guardar, progreso, estado=_estado0, buzon=buzon)
+    try:
+        res = _mo.correr_objetivo(obj, llamar, guardar, progreso, estado=_estado0, buzon=buzon)
+    finally:
+        _SIN_REAPER.discard(pid)
     nl = chr(10)
     salida = ('OBJETIVO: ' + str(res.get('estado')) + ' · vueltas: ' + str(res.get('vueltas')) + nl * 2
               + nl.join('- %s [%s] %s' % (t['id'], t['estado'], (t.get('evidencia') or t['texto'])[:120])
@@ -1631,6 +1659,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         _nc0 = {'sys_prompt': '', 'forzar_tool': False, 'dsv4_think': None, 'per_attempt_s': 0,
                 'deadline': time.monotonic() + int(n.get('timeout_s') or _cfg(ficha)[0])}  # DSL N1/N4: estado por nodo en ContextVar + deadline total
         _tok_nc = None
+        _h0 = len((opts.get('herr') or {}).get(str(n.get('id')), []))  # AUDIT A14: definido aunque la llamada falle antes (G14 lo usa fuera del try)
         _tok_regla = None  # DSL A08.3: _REGLA_NODO se resetea a 0 a la ENTRADA del nodo (no por reintento) y se restaura en finally
         try:
             _tok_regla = sys.modules['puente_herramientas']._REGLA_NODO.set(0)
@@ -1690,16 +1719,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                 _nid = str(n.get('id'))
                 _h0 = len(opts.setdefault('herr', {}).setdefault(_nid, []))  # DSL G4: la evidencia real es el delta de opts['herr'] de ESTE nodo
                 _tok_nc = _NODO_CALL.set(_nc0)
-                _gap_no_tool = False
-                try:
-                    r = _llamar_harness(mod, prompt, ficha, n, opts)
-                except RuntimeError as _e1:
-                    # GAP HERRAMIENTA_NO_EJECUTADA: el modelo respondio texto sin emitir la tool exigida — un reintento con forzar_tool (required) antes de rendirse
-                    if 'HERRAMIENTA_NO_EJECUTADA' in str(_e1) and (n.get('requiere_tools') or opts.get('muta')) and time.monotonic() < _nc0['deadline'] - 20:
-                        _gap_no_tool = True
-                        r = 'GAP HERRAMIENTA_NO_EJECUTADA'
-                    else:
-                        raise
+                r = _llamar_harness(mod, prompt, ficha, n, opts)
                 try:
                     import prompt_layouts as _pl  # noqa: PLC0415
                     _nuevas = opts['herr'][_nid][_h0:]
@@ -1713,7 +1733,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                     else: _cat = 'NO_TOOL'
                     _lay1 = 'D' if str(mod or '').startswith('ficha-dsv4') else 'B'  # routing INPUT 126
                     opts.setdefault('layout_attempts', []).append({'nodo': n.get('id'), 'layout': _lay1, 'ack': _ack, 'why': _why, 'categoria': _cat})
-                    if (_ack or _gap_no_tool) and time.monotonic() < _nc0['deadline'] - 20:  # DSL N4: con <20s restantes no se lanza otro intento
+                    if _ack and time.monotonic() < _nc0['deadline'] - 20:  # DSL N4: con <20s restantes no se lanza otro intento
                         _nc0['sys_prompt'] = _LAYOUT_D_SYS  # layout D_solo_tarea CONECTADO: system ejecutor de Claude INPUT 129 (antes vacio)
                         if str(mod or '').startswith('ficha-dsv4'):
                             _nc0['dsv4_think'] = False  # DSL N2: reintento dsv4 con thinking OFF explicito (required no convive con thinking)
@@ -1869,8 +1889,6 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         opts['parcial'] = next((out[i] for i in reversed(orden) if out.get(i) and not out[i].startswith('GAP') and nodos[i].get('tipo') != 'goals'), '')
         motivo = 'el nodo final no entrego salida' if not final else (final if final.startswith('GAP') else 'el juez final (N7) encontro un defecto real que no se pudo corregir')
         final = 'GAP FINAL: ' + motivo[:600]
-        if opts.get('parcial'):
-            final += '\n\nSALIDA PARCIAL VERIFICABLE (el juez la rechazo pero el trabajo existe):\n' + str(opts['parcial'])[:4000]  # no perder la ejecucion real
     else:
         final = _sin_veredicto(final)
         if obligatorio:  # formato de plan y salida: obligatorio en el nodo final (siempre, en las 3 fichas)
@@ -1936,6 +1954,14 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
                                         "deliverables": ["respuesta o artefacto pedido"]})
             _modos_emit("objective_pinned", {"sesion": ses})
     # <<< MODOS END
+    _es_objetivo = bool(p.get('objetivo') or str(p.get('modo') or '') == 'loop'
+                        or (p.get('_modo_resuelto') or {}).get('mode_id') == 'm04_agentico_loop')
+    if fid == 'ficha5-mvp' and _es_objetivo:  # AUDIT A9: LOOP de objetivos tambien en Ficha 5 (cada vuelta por la ruta MVP)
+        _o5 = {'aprobado': False, 'muta': False, 'sesion': ses, 'fid': fid, 'herr': {}, 'pid': str(p.get('_pid') or '')}
+        _s5, _t5 = _correr_objetivo(p, FICHAS[fid], mensaje, ses, _o5)
+        return {"model": FICHAS[fid].get("ficha", fid), "reply": _s5, "execution_path": "OBJETIVO",
+                "choices": [{"index": 0, "message": {"role": "assistant", "content": _s5}}], "traza": _t5,
+                "ms": int((time.time() - t0) * 1000)}
     if fid == 'ficha5-mvp':  # Team 5 MVP: camino directo (input + historial + tools -> 1 modelo -> respuesta); la cola, el proceso y el visor son los de la familia
         from . import mvp as _mvp
         p["_modo"] = modo  # >>> MODOS <<< ficha_modo para la ruta directa (system_block, reasoning, tools)
@@ -1980,7 +2006,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             mensaje = str(pend_t['input'])
             plan_ap = str(pend_t['plan']) + ((chr(10) * 2 + 'OBSERVACIONES DEL DIRECTOR AL APROBAR: ' + extra) if extra else '')
             opts.update(muta=True, previo=dict(pend_t.get('previo') or {}), plan=plan_ap, tarea_id=str(pend_t.get('tarea_id') or opts['tarea_id']), constitucion_hash=str(pend_t.get('constitucion_hash') or ''))
-            opts['cap_in'] = 'write'  # >>> PARCHE_N4 <<< /aprobar: CAP_WRITE del plan aprobado
+            opts['cap_in'] = 'write'  # >>> PARCHE_N4 <<< /aprobar: CAP_WRITE del plan aprobado (solo el escritor la usa; revisores siguen en READ)
             if pend_t.get('cadena'):  # DSL A04.1: /aprobar recupera LA MISMA cadena y retoma en el nodo que se detuvo
                 opts.update(cadena=pend_t['cadena'], cadena_retomar=str(pend_t.get('cadena_stop_en') or ''), cadena_correcciones=int(pend_t.get('cadena_correcciones') or 0), loop_salida_privada=True)
         opts['plan_stop'] = bool(opts['muta'] and not ap)
@@ -1993,8 +2019,29 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             if gc_:
                 opts['gov_ctx'] = gc_  # congelado una sola vez; los nodos paralelos reciben copia del mismo contexto
                 opts['constitucion_hash'] = str(gc_.get('constitution_hash') or '')
-            if p.get('objetivo') or str(p.get('modo') or '') == 'loop' or (p.get('_modo_resuelto') or {}).get('mode_id') == 'm04_agentico_loop':
-                salida, traza = _correr_objetivo(p, FICHAS[fid], mensaje, ses, opts)  # DSL G17: motor de objetivos en bucle (mismo hilo, mismo Harness)
+            _obj_pend = (pend_t or {}).get('objetivo')
+            if _es_objetivo or _obj_pend:
+                _p_obj = dict(p, objetivo=_obj_pend) if _obj_pend else p
+                _ap_obj = ap or str(p.get('_pid') or '') in _PID_APROBADO_PREVIO
+                if opts.get('muta') and not _ap_obj:
+                    # AUDIT A8: autorizacion UNA sola vez. Con escrituras: primero el plan del objetivo; con /aprobar
+                    # corre el bucle completo con aprobado=True y no vuelve a preguntar (antes: nunca podia escribir).
+                    _o = _p_obj.get('objetivo')
+                    _o = _o if isinstance(_o, dict) else {'objetivo': str(_o or mensaje)}
+                    salida = ('OBJETIVO CON ESCRITURAS: necesita tu aprobación UNA sola vez.' + chr(10) * 2 + 'OBJETIVO:' + chr(10)
+                              + str(_o.get('objetivo') or mensaje)[:3000] + chr(10) * 2
+                              + 'Límites: ' + json.dumps(_o.get('limites') or {'max_vueltas': 20, 'max_minutos': 240}, ensure_ascii=False)
+                              + chr(10) + 'Escribe /aprobar para que el motor trabaje en bucle hasta terminar sin volver a preguntarte.'
+                              + chr(10) * 2 + 'ESPERANDO_APROBACION')
+                    traza = []
+                    opts['estado'] = 'ESPERANDO_APROBACION'
+                    opts['_pend_hecho'] = True
+                    _pend_guardar(fid, ses, {'input': mensaje, 'plan': salida, 'previo': {}, 'tarea_id': opts['tarea_id'],
+                                             'constitucion_hash': str(opts.get('constitucion_hash') or ''), 't': time.time(), 'objetivo': _o})
+                else:
+                    if _ap_obj:
+                        opts.update(aprobado=True, plan_stop=False)
+                    salida, traza = _correr_objetivo(_p_obj, FICHAS[fid], mensaje, ses, opts)  # DSL G17: motor de objetivos en bucle (mismo hilo, mismo Harness)
             else:
                 _cid = None
                 if str(FICHAS[fid].get('ficha') or fid) in ('ficha1-modelos', 'ficha4-workflow-yaiwes') and not opts.get('fast_lane'):
@@ -2009,7 +2056,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
                 if _cid is None:
                     salida, traza = _correr(FICHAS[fid], mensaje, str(p.get("modelo") or ""), str(p.get("_pid") or ""), opts)
         salida = _anexo_salida(FICHAS[fid], salida, opts)
-        if opts.get('estado') == 'ESPERANDO_APROBACION':
+        if opts.get('estado') == 'ESPERANDO_APROBACION' and not opts.get('_pend_hecho'):
             _pend_guardar(fid, ses, {'input': mensaje, 'plan': salida, 'previo': {k: v for k, v in (opts.get('out') or {}).items() if k != 'N4'}, 'tarea_id': opts['tarea_id'], 'constitucion_hash': str(opts.get('constitucion_hash') or ''), 't': time.time(),
                                      'cadena': str(opts.get('cadena') or ''), 'cadena_stop_en': str(opts.get('cadena_stop_en') or ''), 'cadena_correcciones': int(opts.get('cadena_correcciones') or 0)})
         elif pend_t and not str(salida).startswith('GAP'):
@@ -2080,7 +2127,7 @@ def _reap_huerfanos(ahora: float | None = None) -> list[str]:
     ahora = time.time() if ahora is None else ahora
     fuera = []
     for k, (fut, t) in list(_PROCESOS.items()):
-        if fut.done() or k in _CANCEL:
+        if fut.done() or k in _CANCEL or k in _SIN_REAPER:
             continue
         if ahora - max(t, _ULT_POLL.get(k, t)) > HUERFANO_S:
             _CANCEL.add(k)
@@ -2108,6 +2155,18 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         return {"fichas": [{"n": k, "id": v, "nombre": FICHAS[v].get("ficha")} for k, v in ALIAS.items() if v in FICHAS]}
     if action == "selector":  # fuente unica del catalogo: el selector de la Ficha 1 tal cual; Team qwen y Team 5 leen lo mismo
         return {"selector": (FICHAS.get("ficha1-modelos") or {}).get("selector") or []}
+    if action == "prompt_info":  # AUDIT A18: comprobar EN VIVO que la biblioteca del prompt existe en el Router desplegado
+        import hashlib as _hpi  # noqa: PLC0415
+        pc_ = _pc()
+        info = {}
+        for nom in ('system_core.md', 'bloques/bloque_2.md', 'bloques/bloque_3.md', 'bloques/bloque_4.md', 'bloques/bloque_5.md'):
+            t_ = pc_._prompt_lib(nom) if hasattr(pc_, '_prompt_lib') else ''
+            info[nom] = {'chars': len(t_), 'sha256': _hpi.sha256(t_.encode('utf-8')).hexdigest()[:12] if t_ else ''}
+        core_r = pc_._core_render(pc_._prompt_lib('system_core.md'), 'N4') if hasattr(pc_, '_core_render') else ''
+        return {'ok': all(v['chars'] for v in info.values()), 'archivos': info, 'core_render_chars': len(core_r),
+                'placeholders_sin_llenar': sorted(set(re.findall(r'\[[A-Z_ /]{4,}\]', core_r)) - {'[MODO]'}),
+                'programador_activo': bool(getattr(sys, '_riu_programador_on', False)),
+                'politicas_modelo': len(pc_._politicas_fuente()) if hasattr(pc_, '_politicas_fuente') else 0}
     if action == "buzon_enviar":  # DSL G19: el Director escribe al proceso en curso sin detenerlo; el acuse lo da el CODIGO, no el modelo
         pid = str(p.get('proceso_id') or '')
         if not pid:
@@ -2310,8 +2369,68 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
 
 
 # DSL G17: hilo programador arrancado una vez al cargar el plugin (revisa programas.json cada 30 s)
+def _lanzar_programado(p: dict[str, Any]) -> dict[str, Any]:
+    # AUDIT A3: el programador entra por el MISMO camino que chat_async (proceso_id, checkpoint, visor, buzon),
+    # no llamando _chat a pelo (sin pid: sin checkpoint, sin buzon y estado mezclado entre ejecuciones).
+    pid = 'prog-%s-%s' % (str(p.pop('_programa_id', 'x'))[:40], secrets.token_hex(4))
+    if p.pop('_aprobado_previo', False):
+        _PID_APROBADO_PREVIO.add(pid)  # el Director lo decidio en programas.json; nunca desde un payload HTTP
+    _SIN_REAPER.add(pid)
+    fut = _POOL.submit(_pool_run, pid, dict(p, _pid=pid, _t_submit=time.time()))
+    _PROCESOS[pid] = (fut, time.time())
+    try:
+        return fut.result()  # el hilo del programador espera: un programa no se relanza mientras corre
+    finally:
+        _SIN_REAPER.discard(pid)
+        _PID_APROBADO_PREVIO.discard(pid)
+
+
+def _reanudar_al_arrancar(espera_s: float = 60.0, max_tareas: int = 10) -> None:
+    # GAP G16b cerrado: tras un reinicio del Router, los OBJETIVOS (LOOP/programados) con checkpoint RUNNING se retoman
+    # solos (antes solo si alguien consultaba "resultado"). Un chat normal sigue retomandose al consultar, como antes.
+    time.sleep(espera_s)
+    try:
+        r = _hfs().handle('list', {'path': 'tasks'})
+        nombres = [e.get('name') for e in (r.get('entries') or []) if str(e.get('name') or '').endswith('.ck.json')]
+    except Exception:  # noqa: BLE001
+        return
+    n = 0
+    for nom in nombres:
+        if n >= max_tareas:
+            break
+        pid = str(nom)[:-len('.ck.json')]
+        if pid in _PROCESOS:
+            continue
+        ck = _ck_cargar(pid) or {}
+        pl = ck.get('payload')
+        if ck.get('estado') != 'RUNNING' or not isinstance(pl, dict):
+            continue
+        es_obj = bool(pl.get('objetivo') or str(pl.get('modo') or '') == 'loop' or pid.startswith('prog-'))
+        if not es_obj or time.time() - float(ck.get('ts') or 0) > 6 * 3600 or int(ck.get('reanudaciones') or 0) >= 2:
+            continue
+        try:
+            rec = dict(ck, reanudaciones=int(ck.get('reanudaciones') or 0) + 1, ts=time.time())
+            mem, scope_for = _pc()._memoria()
+            mem.save(scope_for('chat-ui', 'task:' + pid), 'ck', rec)
+        except Exception:  # noqa: BLE001
+            pass
+        _SIN_REAPER.add(pid)
+        with _LOCK:
+            _PROCESOS[pid] = (_POOL.submit(_pool_run, pid, dict(pl, _pid=pid)), time.time())
+        _meta(pid, 'A0', '', 'reanudado al arrancar el Router')
+        n += 1
+
+
 try:
-    import modos.programador as _prog_scheduler  # noqa: PLC0415
-    _prog_scheduler.arrancar(_chat, _buzon_db)
+    import threading as _th_rs  # noqa: PLC0415
+    if not getattr(sys, '_riu_reanudar_on', False):
+        sys._riu_reanudar_on = True
+        _th_rs.Thread(target=_reanudar_al_arrancar, daemon=True, name='riu-reanudar').start()
+except Exception:  # noqa: BLE001
+    pass
+
+try:
+    import programador as _prog_scheduler  # noqa: PLC0415  AUDIT A3: antes "modos.programador" -> ImportError silencioso, el reloj NUNCA arrancaba
+    _prog_scheduler.arrancar(_lanzar_programado, _buzon_db)
 except Exception:  # noqa: BLE001
     pass

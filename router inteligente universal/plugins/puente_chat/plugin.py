@@ -547,15 +547,44 @@ _CAPA_NODO = {'N4': 'bloque_3', 'N6': 'bloque_4', 'N7': 'bloque_4', 'N8': 'bloqu
               'N5': 'bloque_5'}  # DSL G10 capa B: ejecutor->B3, verificador->B4, analista->B2, reporte->B5
 
 
+_CORE_VARS = {  # AUDIT A12: el archivo queda VERBATIM; los huecos de plantilla se llenan al enviar (nunca llegan "[X]" al modelo)
+    '[ROL_ESPECIALIZADO]': 'el ROL DEL NODO indicado más abajo',
+    '[NIVEL / ESPECIALIDAD / PLATAFORMA]': 'senior / el que exija la tarea / la del repositorio',
+    '[PROYECTO]': 'YAIWES',
+    '[RUTA]': 'el repositorio y rutas indicados en la tarea',
+    '[TAREA EXACTA]': 'la tarea del último mensaje del usuario',
+    '[RESULTADO]': 'el resultado verificable que pide la tarea',
+    '[EXISTENTE/AUTO-DETECT]': 'el existente (auto-detectar)',
+    '[OBJETIVO_FINAL]': 'el objetivo de la tarea del usuario',
+    '[CRITERIOS_DE_EXITO]': 'los criterios de la tarea y de la DEFINITION OF DONE',
+    '[FORMATO_EXACTO]': 'el formato que pida la tarea (si no pide, el FORMATO DE SALIDA de la ficha)',
+}
+
+
+def _core_render(t, nodo=''):
+    if not t:
+        return ''
+    for k, v in _CORE_VARS.items():
+        t = t.replace(k, v)
+    t = t.replace('[MODO]\n(ver bloque_1.md)\n', '')  # puntero a un archivo que el modelo no ve
+    t = t.replace('\nEmpieza ahora.\n', '\n')  # la orden de empezar va en el user, junto a la tarea (evita acuses)
+    t = re.sub(r'\n=+ FIN INPUT BLOCK MAESTRO UNIFICADO =+\n', '\n', t)
+    return t.strip()
+
+
 def _bloques_capas(capas, nodo=''):
     # DSL G10/G15: textos de las capas pedidas (core->system_core.md; b2..b5->bloques/) ; 'rol' lo arma la ficha
     out = []
     for c in (capas or []):
         c = str(c).lower().strip()
         if c == 'core':
-            t = _prompt_lib('system_core.md')
+            t = ''  # AUDIT A11: el core ya va SIEMPRE primero en el system (sysb['core']); no duplicarlo
         elif re.match(r'^b[2-5]$', c):
             t = _prompt_lib('bloques/%s.md' % c.replace('b', 'bloque_'))
+        elif c == 'pj':  # QWEN38 (R. Bertran): planificador JSON declarativo — el modelo propone, Python valida y ejecuta
+            t = _prompt_lib('perfiles/planificador_json.md')
+        elif c == 'ej':  # R. Bertran adaptado: contrato del ejecutor JSON (ops cerradas + recibos reales)
+            t = _prompt_lib('perfiles/ejecutor_json.md')
         else:
             t = ''
         if t:
@@ -568,27 +597,54 @@ def _bloques_capas(capas, nodo=''):
 
 
 def _qwen_razonamiento_compatible(modelo_api, ex, tools):
-    # DSL A09/GAP-X06: compatibilidad thinking<->tools por modelo — un solo punto, sin tocar temp/top_p/globales
-    m = str(modelo_api or '')
-    if not m.startswith('qwen'):
-        return ex  # no-qwen: sale igual
-    if tools:
-        if '-preview' in m or m in _SOLO_THINKING:
-            ex.pop('enable_thinking', None)  # thinking-only: NUNCA enviar enable_thinking=false (el proveedor lo rechaza 400)
-            return ex
-        _exp_th = os.environ.get('RIU_QWEN_TOOLS_THINKING_TESTED') == '1' \
-            and str((_IDS_CTX.get() or {}).get('ficha_id') or '') in ('ficha2-dag-codigo', 'ficha3-frontend') \
-            and str(_PERFIL.get() or '') in ('code', 'auditoria')
-        if _exp_th:
-            ex['tool_choice'] = 'auto'  # Experiment B condicionado: thinking ON con tool_choice=auto (documentado QwenCloud)
-        else:
-            ex['enable_thinking'] = False  # Function Calling oficial Qwen: la llamada que decide la tool no razona
-            ex.pop('reasoning_effort', None)  # nunca enable_thinking + reasoning_effort en la misma peticion
-            ex.pop('thinking_budget', None)
+    # ORDEN 03: separar planificacion, ejecucion y auditoria (thinking con tools solo tras activacion probada)
+    modelo = str(modelo_api or '')
+    if not modelo.startswith('qwen'):
+        return ex
+    ex = dict(ex)
+    if not tools:
+        ex.pop('thinking_budget', None)
+        return ex
+    thinking_tools = (
+        os.environ.get('RIU_QWEN_TOOLS_THINKING_TESTED') == '1'
+        and str((_IDS_CTX.get() or {}).get('ficha_id') or '')
+            in ('ficha2-dag-codigo', 'ficha3-frontend')
+        and str(_PERFIL.get() or '') in ('code', 'auditoria')
+        and not _FORCE_TOOL.get()
+        and modelo in ('qwen3.8-max', 'qwen3.8-flash')
+    )
+    if '-preview' in modelo or modelo in _SOLO_THINKING:
+        ex.pop('enable_thinking', None)
+        return ex
+    if thinking_tools:
+        ex['enable_thinking'] = True
+        ex['reasoning_effort'] = (
+            'medium' if modelo == 'qwen3.8-max' else 'low'
+        )
+        ex['preserve_thinking'] = True
     else:
-        if 'reasoning_effort' in ex:
-            ex.pop('thinking_budget', None)  # un solo control de razonamiento por peticion
+        ex['enable_thinking'] = False
+        ex.pop('reasoning_effort', None)
+        ex.pop('preserve_thinking', None)
+    ex.pop('thinking_budget', None)
     return ex
+
+
+def _tool_especifica_qwen(cuerpo: dict, tools: list, nombre: str) -> None:
+    # ORDEN 02: forzar una funcion CONOCIDA en Qwen con el formato oficial (nunca 'required'); solo si el DAG eligio una exacta
+    validas = {
+        x['function']['name']
+        for x in tools
+        if x.get('type') == 'function' and isinstance(x.get('function'), dict)
+    }
+    if nombre not in validas:
+        raise ValueError('GAP_TOOL_NO_DISPONIBLE:' + nombre)
+    cuerpo['tool_choice'] = {
+        'type': 'function', 'function': {'name': nombre}
+    }
+    cuerpo['enable_thinking'] = False
+    cuerpo.pop('reasoning_effort', None)
+    cuerpo.pop('thinking_budget', None)
 
 
 def _extras(pol, tools):
@@ -611,6 +667,7 @@ def _extras(pol, tools):
 
 
 _PROCESO_ID = ContextVar('riu_proceso_id', default='')  # DSL G19: proceso en curso (buzon mid-loop); por hilo, nunca compartido
+_BUZON_VISTOS = ContextVar('riu_buzon_vistos', default=None)  # AUDIT A16: ids del buzon ya inyectados en ESTA llamada (no se consumen)
 _FICHA_CTX = ContextVar('yaiwes_ficha_graphiti', default=None)  # por peticion/hilo: nunca compartido entre proyectos paralelos
 _GRAPHITI_CABLEADO = []
 
@@ -678,6 +735,28 @@ def _sin_razon_previa(ms):
             for i, m in enumerate(ms)]
 
 
+def _clasificar_error_qwen(status, payload):
+    # ORDEN 08: distinguir rate limit, cuota, autenticacion y timeout
+    detalle = json.dumps(payload, ensure_ascii=False, default=str).lower()
+    if status in (401, 403):
+        return 'AUTH'
+    if status in (404, 410):
+        return 'MODEL_UNAVAILABLE'
+    if status == 429:
+        if 'insufficient_quota' in detalle or (
+            'quota' in detalle and 'rate' not in detalle
+        ):
+            return 'QUOTA_EXHAUSTED'
+        return 'RATE_LIMIT'
+    if status in (500, 502, 503, 504):
+        return 'TRANSIENT'
+    if status == 400:
+        return 'INVALID_PARAMETERS'
+    if status == 0:
+        return 'NETWORK_TIMEOUT'
+    return 'OTHER'
+
+
 def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
     if proveedor == 'qwencloud':  # Team qwen: clave y direccion del sello de la ficha 14 (clave del banco)
         try:
@@ -722,7 +801,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             if tools:
                 cuerpo['tools'] = tools
                 cuerpo['tool_choice'] = 'auto'
-                if _FORCE_TOOL.get() and not str(modelo).startswith('qwen'):  # FIX glm52 INPUT 129: required solo donde el proveedor lo admite; Qwen solo acepta auto (HTTP 400 en required)
+                if _FORCE_TOOL.get() and not modelo.startswith('qwen'):  # FIX glm52 INPUT 129; ORDEN 02: Qwen nunca 'required'
                     cuerpo['tool_choice'] = 'required'
             pol = _politica(modelo) if proveedor == 'qwencloud' else {}
             _POL.set(pol)
@@ -733,18 +812,25 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                     # Intento 1 -> enable_thinking False; el reintento lo sube a True (dsv4_think via _chat).
                     ex['enable_thinking'] = bool(_DSV4_THINK.get())
                     ex.pop('reasoning_effort', None)  # un solo control de thinking por peticion
-                ex = _qwen_razonamiento_compatible(modelo, ex, tools)
+                ex = _qwen_razonamiento_compatible(modelo, ex, tools)  # ORDEN 03: devuelve copia
                 # medido 16-oct en Token Plan: enable_thinking=false se acepta en los 9 modelos de texto (y es el camino rapido con tools)
                 # tool_stream NUNCA global: solo si la politica del modelo lo activa para esa tarea (con_tools.tool_stream)
-            if tools and _FORCE_TOOL.get():  # FIX glm52 INPUT 129 + DSL N2: required no convive con thinking
+            if tools and _FORCE_TOOL.get():  # ORDEN 02: Qwen sin 'required' y thinking OFF en reintentos de tool
                 ex.pop('reasoning_effort', None)
-                if modelo.startswith('deepseek'):
+                ex.pop('thinking_budget', None)
+                cuerpo.pop('reasoning_effort', None)
+                cuerpo.pop('thinking_budget', None)
+                cuerpo.pop('enable_thinking', None)
+                if modelo.startswith('qwen'):
+                    cuerpo['tool_choice'] = 'auto'
+                    if '-preview' in modelo or modelo in _SOLO_THINKING:
+                        ex.pop('enable_thinking', None)
+                    else:
+                        ex['enable_thinking'] = False
+                elif modelo.startswith('deepseek'):
                     ex['enable_thinking'] = False  # DSL N2: dsv4 reintento con thinking OFF explicito
                 else:
                     ex.pop('enable_thinking', None)
-                cuerpo.pop('enable_thinking', None)
-                cuerpo.pop('reasoning_effort', None)
-                cuerpo.pop('thinking_budget', None)
             cuerpo.update(ex)
             exl = _EXTRA_LLM.get() if not tools else None  # Team 5: politica propia solo en la llamada final de texto
             if proveedor == 'nvidia':
@@ -776,9 +862,16 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             _met('t_model_start', time.monotonic())  # base del TTFT real: _http_stream lo sella en el primer delta
             _t0c = time.monotonic()
             _stream = proveedor == 'qwencloud' or (proveedor == 'nvidia' and not tools)
-            ultimo = _http_stream(base + '/chat/completions', clave, cuerpo, resta, sf or (lambda _c: None)) \
-                     if _stream \
-                     else _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+
+            def _solicitar_modelo(payload, segundos):  # ORDEN 04: SSE tambien en todos los reintentos
+                url = base + '/chat/completions'
+                if _stream:
+                    return _http_stream(
+                        url, clave, payload, segundos, sf or (lambda _c: None)
+                    )
+                return _http('POST', url, clave, payload, segundos)
+
+            ultimo = _solicitar_modelo(cuerpo, resta)
             _au = _AUDIT.get()
             if _au is not None:  # auditoria forense: request/response real al endpoint SIN secretos ni prompts
                 try:
@@ -806,7 +899,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 cuerpo['max_tokens'] = cuerpo.pop('max_completion_tokens')  # el endpoint lo rechaza: misma llamada con max_tokens
                 resta = fin - time.monotonic()
                 if resta >= 2:
-                    ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+                    ultimo = _solicitar_modelo(cuerpo, resta)
             while _es_contexto_largo(ultimo) and _soltar_turno_viejo(mensajes):
                 # no cabe en la ventana del provider: soltar UN turno completo viejo y reintentar (mismo modelo, misma clave);
                 # termina solo: cada vuelta borra un turno y el input actual / system / cadena tool son intocables
@@ -814,14 +907,14 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 if resta < 2:
                     break
                 cuerpo['messages'] = _sin_razon_previa(_recortar(mensajes))
-                ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+                ultimo = _solicitar_modelo(cuerpo, resta)
             _quitados = [k_ for k_ in ex if k_ in cuerpo] if ultimo[0] == 400 else []
             if _quitados:  # el endpoint no admite algun extra de la politica: UN reintento, mismo modelo, misma clave, sin esos extras
                 for k_ in _quitados:
                     cuerpo.pop(k_, None)
                 resta = fin - time.monotonic()
                 if resta >= 2:
-                    ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+                    ultimo = _solicitar_modelo(cuerpo, resta)
             if ultimo[0] < 400 and isinstance(ultimo[1], dict) and ultimo[1].get('choices'):
                 c = str((ultimo[1]['choices'][0].get('message') or {}).get('content') or '')
                 if not any(x in c.lower() for x in ('server is busy', 'try again later', 'service unavailable')):
@@ -832,16 +925,22 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 continue
             if ultimo[0] in (404, 410):
                 return ultimo  # modelo retirado/inexistente (p. ej. kimi-k3 en NVIDIA = 410): ninguna clave lo arregla
+            if ultimo[0] == 429:  # ORDEN 08: cuota agotada != rate limit temporal
+                causa = _clasificar_error_qwen(ultimo[0], ultimo[1])
+                if causa == 'QUOTA_EXHAUSTED':
+                    muertas.add(i)
+                    continue
+                restante = fin - time.monotonic()
+                if restante < 65:
+                    return 429, {
+                        'error': 'GAP_QWEN_RATE_LIMIT',
+                        'retry_after_s': 60,
+                        'detalle': ultimo[1],
+                    }
+                time.sleep(min(60, max(0, restante - 5)))
+                continue
             if ultimo[0] in (401, 403):
                 muertas.add(i)  # clave sin acceso: no insistir en la segunda vuelta
-                continue
-            if ultimo[0] == 429:
-                det429 = json.dumps(ultimo[1]).lower()
-                if 'insufficient_quota' in det429 or 'quota' in det429 and 'rate' not in det429:
-                    muertas.add(i)  # 429 por cuota agotada: la clave no sirve este ciclo
-                else:
-                    _r429 = fin - time.monotonic()  # 429 rate-limit: la clave sigue viva; espera corta y sigue la otra clave
-                    time.sleep(min(10, max(0.5, _r429 - 5))) if _r429 > 6 else None
                 continue
             if ultimo[0] == 400:
                 detalle = json.dumps(ultimo[1])
@@ -912,7 +1011,12 @@ def _limpiar_texto(c):
     return c.strip()
 
 
-_FALLO = ('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0', 'MOTOR_ERROR')  # >>> PARCHE_N4 <<<
+_FALLO = ('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0', 'GAP', 'TIMEOUT', 'MOTOR_ERROR')  # >>> PARCHE_N4 <<< un motor que falla nunca es exito
+
+
+def _tool_exito(res) -> bool:
+    # ORDEN 06: una respuesta GAP/ERROR/TIMEOUT nunca cuenta como herramienta exitosa
+    return not str(res or '').strip().upper().startswith(_FALLO)
 
 
 def _es_mutacion(nom, args):
@@ -920,14 +1024,19 @@ def _es_mutacion(nom, args):
     a = args if isinstance(args, dict) else {}
     met = str(a.get('metodo') or a.get('method') or 'GET').upper()
     acc = str(a.get('accion') or '').lower()
-    if nom in ('motor_copiar', 'motor_mover', 'motor_descargar'):  # >>> PARCHE_N4 <<<
-        return True
     if nom in ('github_escribir', 'hf_escribir'):
+        return True
+    if nom in ('motor_copiar', 'motor_mover', 'motor_descargar'):  # >>> PARCHE_N4 <<<
         return True
     if nom == 'hf_almacenamiento':
         return acc not in ('listar', 'leer')
     if nom in ('github_api', 'hf_api'):
         return met not in ('GET', 'HEAD')  # GET y HEAD solo leen (el catalogo READ ya anuncia GET/HEAD)
+    if nom == 'ejecutar_plan_json':  # R. Bertran adaptado: solo muta si el plan trae create_directory/write_text
+        try:
+            return bool(_herr()._motor_json().es_mutante(a.get('plan')))
+        except Exception:  # noqa: BLE001
+            return True  # ante la duda, se trata como escritura (la puerta de solo lectura lo rechaza)
     if nom in ('notas', 'pendientes', 'chat_bots', 'crear_agente'):  # t172u: escrituras de notas/pendientes/Chat BOTS (lecturas siguen libres)
         return nom == 'crear_agente' or acc in ('guardar', 'organizar', 'prompt_guardar', 'crear', 'enviar', 'mirror', 'aprobar', 'vigilar')
     return False
@@ -970,8 +1079,8 @@ def _bucle(llamar, mensajes):
         from plugins.puente_chat.capacidad import catalogo_para as _catalogo_para
         tools_vis = _catalogo_para(_CAP_TOOLS.get(), h.TOOLS)
         if _MOTOR_HAB.get() and tools_vis is not None:
-            conoc = conoc | {(t_.get('function') or {}).get('name') for t_ in _MOTOR_TOOLS}  # >>> PARCHE_N4 <<<
             tools_vis = list(tools_vis) + _MOTOR_TOOLS  # ⚙ Motor ON: descargar/extraer/copiar/mover del motor existente
+            conoc = conoc | {(t_.get('function') or {}).get('name') for t_ in _MOTOR_TOOLS}  # >>> PARCHE_N4 <<<
     else:
         tools_vis = None
     textos_previos = []
@@ -1153,7 +1262,7 @@ def _bucle(llamar, mensajes):
                             res = 'OPERACION_YA_COMPLETADA: el recurso ya existe; side effect previo confirmado'
                         elif _v is False:
                             res = _bloqueo(nom, args) or _motor_ejecutar(nom, args) or h.ejecutar(nom, args)
-                            if not str(res).startswith(_FALLO) and _tool_verificar(nom, args) is not False:
+                            if _tool_exito(res) and _tool_verificar(nom, args) is not False:
                                 _receipt_guardar(_tid, _fp, {'estado': 'DONE', 'task_id': _tid, 'nodo': _nodo_r, 'tool': nom, 'args_hash': _fp, 'resultado': str(res)[:1000]})
                         else:
                             res = 'GAP_TOOL_RESULT_INDETERMINADO: ' + nom + ' quedo PREPARED sin DONE tras un reinicio; no se repite a ciegas'  # esta tool no tiene verificacion segura
@@ -1162,7 +1271,7 @@ def _bucle(llamar, mensajes):
                             res = 'GAP_RECEIPT_NO_PERSISTIDO: no se pudo guardar el receipt durable; mutacion NO ejecutada'  # sin receipt durable no hay mutacion
                         else:
                             res = _bloqueo(nom, args) or _motor_ejecutar(nom, args) or h.ejecutar(nom, args)
-                            if not str(res).startswith(_FALLO):
+                            if _tool_exito(res):
                                 _v2 = _tool_verificar(nom, args)
                                 if _v2 is not False:  # DONE solo tras verificacion cuando la tool la permite; sin verificador, politica: DONE al exito
                                     _receipt_guardar(_tid, _fp, {'estado': 'DONE', 'task_id': _tid, 'nodo': _nodo_r, 'tool': nom, 'args_hash': _fp, 'resultado': str(res)[:1000], 'evidencia': 'verificado' if _v2 is True else 'exito-sin-verificador'})
@@ -1175,13 +1284,13 @@ def _bucle(llamar, mensajes):
                     except Exception:  # noqa: BLE001
                         pass
                 if mut:
-                    if not str(res).startswith(_FALLO):
+                    if _tool_exito(res):
                         hechas[sello] = res
                 else:
                     vistos[sello] = res
                 if 'no hay token' in res or 'herramienta desconocida' in res:
                     rotas.add(nom)
-            ok_ = not res.startswith(_FALLO)
+            ok_ = _tool_exito(res)
             ya_ = res.startswith(('OPERACION_YA_COMPLETADA', 'REPETICION_TOOL_DETECTADA'))
             usadas.append(_evi(nom, args, ok_, bool(mut and ok_ and not ya_)))
             mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:_perfil()[1]]})
@@ -1192,9 +1301,17 @@ def _bucle(llamar, mensajes):
         if _pid_loop:
             try:
                 from plugins.fichas_qwen import plugin as _fq  # noqa: PLC0415
-                for _bm in _fq._buzon_leer(_pid_loop, tipos=('instruccion', 'prioridad')):
+                # AUDIT A16: solo LEER (no consumir). El motor aplica el mensaje en la vuelta siguiente y lo
+                # conserva para todas las vueltas; 'prioridad' es solo del motor. Cada instruccion entra 1 vez por llamada.
+                _vb = _BUZON_VISTOS.get()
+                if _vb is None:
+                    _vb = set()
+                    _BUZON_VISTOS.set(_vb)
+                for _bm in _fq._buzon_leer(_pid_loop, tipos=('instruccion',)):
+                    if _bm.get('id') in _vb:
+                        continue
+                    _vb.add(_bm.get('id'))
                     mensajes.append({'role': 'user', 'content': '[DIRECTOR, en vivo]: ' + str(_bm.get('texto') or '')[:2000]})
-                    _fq._buzon_aplicar(_bm.get('id'), -1)
             except Exception:  # noqa: BLE001
                 pass
         if pasos >= _perfil()[2] or time.monotonic() >= fin or (rondas_max and rondas >= rondas_max):
@@ -2436,6 +2553,11 @@ def _chat(p):
             _cap_c = _cap_chat(pregunta)
         except Exception:  # noqa: BLE001
             _cap_c = 'write'
+        if _cap_c == 'none' and (  # ORDEN 05: CODE/auditoria con tools obtiene al menos READ (nunca WRITE por esto)
+            p.get('requiere_tools') is True
+            or str(p.get('perfil') or '') in ('code', 'auditoria')
+        ):
+            _cap_c = 'read'
         _CAP_TOOLS.set(_cap_c)
         _TOOLS_HAB.set(_cap_c != 'none')
     else:
@@ -2452,6 +2574,7 @@ def _chat(p):
     _PROG_FN.set(p.get('progreso_fn') if callable(p.get('progreso_fn')) else None)
     _STREAM_FN.set(p.get('stream_fn') if callable(p.get('stream_fn')) else None)
     _PROCESO_ID.set(str(p.get('proceso_id') or ''))  # DSL G19: buzon mid-loop del proceso en curso
+    _BUZON_VISTOS.set(None)  # AUDIT A16: cada llamada empieza sin instrucciones vistas
     _EXTRA_LLM.set(p.get('extra_llm') if isinstance(p.get('extra_llm'), dict) else None)
     _DSV4_THINK.set(p.get('dsv4_think'))  # FIX Claude INPUT 126: toggle thinking del reintento DeepSeek
     _FORCE_TOOL.set(bool(p.get('forzar_tool')))  # FIX glm52 INPUT 129: tool_choice=required en el reintento
@@ -2499,7 +2622,7 @@ def _chat(p):
     _sys_in = [str(m.get('content') or '') for m in mensajes if m.get('role') == 'system']
     mensajes = [m for m in mensajes if m.get('role') != 'system']  # DSL G1: UN SOLO system; el del nodo se funde en el bloque ROL
     sysb = {}
-    _core = _prompt_lib('system_core.md')
+    _core = _core_render(_prompt_lib('system_core.md'), str(p.get('nodo') or ''))
     if _core:
         sysb['core'] = _core  # DSL G10 capa A: SYSTEM_CORE siempre primero en el system
     sysb['const'] = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
@@ -2730,14 +2853,12 @@ _QWEN_CACHE = {}
 
 
 def _qwen_conf():
-    import os
     sello = _CONFIG_DIR / "modelos-14.cordis.yml.sello"
-    mtime = sello.stat().st_mtime if sello.exists() else 0
-    if "k" not in _QWEN_CACHE or _QWEN_CACHE.get("mtime") != mtime:
-        # AUDIT: clave renovada en el sello -> recargar (nunca cachear una credencial vieja)
-        _QWEN_CACHE.clear()
+    if "k" not in _QWEN_CACHE or _QWEN_CACHE.get("mtime") != sello.stat().st_mtime:
         import hashlib
+        import os
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        _QWEN_CACHE.clear()  # sello renovado en el banco: no usar la clave vieja
         clave = os.environ.get("FICHA_CLAVE_BANCO") or os.environ.get("RIU_VAULT_PASSPHRASE") or ""
         if not clave:
             raise RuntimeError("SIN_CLAVE_DEL_BANCO_EN_EL_ROUTER")
@@ -2748,7 +2869,7 @@ def _qwen_conf():
         texto = AESGCM(llave).decrypt(blob[k + 16:k + 28], blob[k + 28:], cab).decode("utf-8")
         _QWEN_CACHE["k"] = re.search(r'apiKey:\s*"([^"]+)"', texto).group(1)
         _QWEN_CACHE["url"] = re.search(r'baseURL:\s*"([^"]+)"', texto).group(1).rstrip("/")
-        _QWEN_CACHE["mtime"] = mtime
+        _QWEN_CACHE["mtime"] = sello.stat().st_mtime
     return _QWEN_CACHE["k"], _QWEN_CACHE["url"]
 
 
@@ -3120,7 +3241,7 @@ def _tool_verificar(nom, args):
             repo = str(a.get('repo') or '')
             if not path:
                 return None
-            r = _herramientas().ejecutar('github_api', {'metodo': 'GET', 'endpoint': 'repos/%s/contents/%s' % (repo or 'maxbry123-commits/router-universal-router-inteligente-', path)}) if repo else None
+            r = _herr().ejecutar('github_api', {'metodo': 'GET', 'endpoint': 'repos/%s/contents/%s' % (repo or 'maxbry123-commits/router-universal-router-inteligente-', path)}) if repo else None
             if isinstance(r, str) and r.startswith('{'):
                 try:
                     return bool(json.loads(r).get('sha'))
