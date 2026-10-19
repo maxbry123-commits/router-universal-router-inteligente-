@@ -3,7 +3,7 @@
 Fuente de la verdad: todos los inputs/instrucciones/prompts recibidos de Antonio en esta sesión, texto exacto 1 a 1, sin resumir ni editar.
 
 - Sesión: `devin-6ae7e452334a4819bc462545418a6daa` (web, usuario Antonio / maxbry123-commits)
-- Mensajes: **123** (extraídos del historial de eventos de la sesión)
+- Mensajes: **124** (extraídos del historial de eventos de la sesión)
 - Generado: 2026-10-18 UTC
 - Anexos de texto: **27** archivos únicos (dedupe sha256) · Imágenes: **41** únicas
 - Las líneas `ATTACHMENT:"url"` dentro de los mensajes se conservan verbatim; el contenido de cada adjunto de texto está en ANEXOS al final.
@@ -13701,6 +13701,20 @@ manda en paralelo a 2 modelos que revisen hagan Auditoría forense x Ray verific
 esro te manda Claude delega tu eres un osquestador y revisa code revisas el resultado no ejecutas asegúrate que todo lo que te doy quede escrito 1 a 1 imput block verbartin 
 
 si necesitas algo mas de Claude me avisas delegas tu no ejecutas delegas a los modelos las tareas
+
+---
+
+## INPUT 124 — 2026-10-19 (sesion devin-6ae7e452334a4819bc462545418a6daa)
+
+no puede mandar a eso modelo porque no te van a funcionar no lo van a ejecutar por el gaps que tiene la ficha te toca a ti resolverlo editar quirúrgicamente 
+
+El diagnóstico del otro agente («es comportamiento del modelo, no del cableado») no está probado. Que el modelo diga «no se proporcionó bloque de tarea» sugiere que la tarea quizá no llega en un lugar que el modelo reconozca como tarea. Una prueba A/B decide cuál de las dos causas es, y está incluida en el bloque.
+Esta es la solución completa, para copiar de una sola vez:
+
+vasa hacer esta tarea 1 a 1 imput block verbartin que te manda  Claude y luego haces 3 pruebas reales si no funciona me dices para volver a buscar otra solución yo te busco la solución con Claude inicia 
+
+# FIX: el modelo responde al envoltorio de gobernanza ("entendido") en vez de ejecutar la tarea
+[FIX completo de Claude con secciones 1-6: diagnostico A/B, soluciones S1-S7, codigo prompt_layouts.py, test_prompt_layouts.py (7 tests), integracion parche quirúrgico en marcadores MODOS, prompt para Devin — copiado 1 a 1 en modos/prompt_layouts.py y modos/test_prompt_layouts.py; texto integro del bloque disponible en el adjunto del mensaje]
 
 ---
 
