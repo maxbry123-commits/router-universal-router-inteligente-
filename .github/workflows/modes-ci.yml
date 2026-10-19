@@ -6,7 +6,7 @@ on:
     branches: ["**"]
   pull_request:
 env:
-  PKG_DIR: "."
+  PKG_DIR: "router inteligente universal/plugins/fichas_qwen/modos"
 jobs:
   verify:
     runs-on: ubuntu-latest
