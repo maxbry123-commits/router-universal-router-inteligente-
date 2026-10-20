@@ -227,6 +227,18 @@ def _agent_lock_status(sesion: str) -> bool:
         return True  # fallo de memoria: NO autorizar agentes por suposicion
 
 
+# >>> PARCHE_LOCK_DELEG <<<
+# Tools que invocan otros modelos/agentes: el boton del Director las corta sin apagar el resto del catalogo.
+_TOOLS_DELEGAN = frozenset({'groq_agente', 'nvidia_codigo', 'recurso_llm', 'agente_enlazar',
+                            'delegar_paralelo', 'room_debatir', 'chat_bots'})
+
+
+def _deleg_lock() -> bool:
+    # el bloqueo del Director por sesion: cierra SOLO las tools que delegan en otra LLM/agente
+    lk = str((_IDS_CTX.get() or {}).get('sesion') or '')
+    return bool(lk) and _agent_lock_status(lk)
+
+
 def _agent_lock_set(sesion: str, locked: bool) -> dict:
     if type(locked) is not bool:
         return {'error': 'GAP_AGENT_LOCK_INVALIDO'}
@@ -1051,14 +1063,14 @@ def _bloqueo(nom, args):
     return ''
 
 
-def _evi(nom, args, ok, mut, res=''):  # >>> PARCHE_500K <<<
+def _evi(nom, args, ok, mut):
     # evidencia real de una herramienta ejecutada: {tool, accion, objetivo, ok, mutacion_real}
     a = args if isinstance(args, dict) else {}
     acc = a.get('accion') or a.get('metodo') or a.get('method') or ''
     obj = a.get('ruta') or a.get('repo') or ''
     if a.get('repo') and a.get('ruta'):
         obj = str(a.get('repo')) + ':' + str(a.get('ruta'))
-    return {'herramienta': nom, 'tool': nom, 'accion': str(acc), 'objetivo': str(obj)[:200], 'ok': bool(ok), 'mutacion_real': bool(mut), 'detalle': str(res or '')[:100]}
+    return {'herramienta': nom, 'tool': nom, 'accion': str(acc), 'objetivo': str(obj)[:200], 'ok': bool(ok), 'mutacion_real': bool(mut)}
 
 
 def _faltantes(h, nom, args):
@@ -1081,6 +1093,9 @@ def _bucle(llamar, mensajes):
         if _MOTOR_HAB.get() and tools_vis is not None:
             tools_vis = list(tools_vis) + _MOTOR_TOOLS  # ⚙ Motor ON: descargar/extraer/copiar/mover del motor existente
             conoc = conoc | {(t_.get('function') or {}).get('name') for t_ in _MOTOR_TOOLS}  # >>> PARCHE_N4 <<<
+        if _deleg_lock():  # >>> PARCHE_LOCK_DELEG <<< fuera del catalogo las tools que invocan otra LLM/agente; motores/github siguen
+            tools_vis = [t_ for t_ in (tools_vis or []) if str((t_.get('function') or {}).get('name')) not in _TOOLS_DELEGAN]
+            conoc = conoc - _TOOLS_DELEGAN
     else:
         tools_vis = None
     textos_previos = []
@@ -1121,10 +1136,7 @@ def _bucle(llamar, mensajes):
                 pf('modelo' if con_tools else 'respuesta')
             except Exception:  # noqa: BLE001
                 pass
-        _lk_ses = str((_IDS_CTX.get() or {}).get('sesion') or '')
-        if _lk_ses and _agent_lock_status(_lk_ses):
-            return {'error': 'GAP_AGENT_ACCESS_LOCKED',
-                    'detalle': 'acceso a modelos/agentes/tools bloqueado por el Director'}, usadas
+        _lk_deleg = _deleg_lock()  # >>> PARCHE_LOCK_DELEG <<< solo delegacion: el bucle sigue con el catalogo filtrado
         _tm0 = time.time()
         s, d = llamar(mensajes, tools_vis if (con_tools and h is not None) else None)  # CAP filtrado: el modelo solo ve lo que puede usar
         if isinstance(d, dict) and d.get('error') == 'GAP_STREAM_INTERRUPTED':
@@ -1221,6 +1233,11 @@ def _bucle(llamar, mensajes):
             except ValueError:
                 args = {}
             nom = f.get('name', '')
+            if _lk_deleg and nom in _TOOLS_DELEGAN:  # >>> PARCHE_LOCK_DELEG <<< llamada colada por texto: se rechaza, no se ejecuta
+                res = 'GAP_AGENT_ACCESS_LOCKED: delegacion a otros modelos/agentes bloqueada por el Director'
+                usadas.append(_evi(nom, args, False, False))
+                mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res})
+                continue
             falt_ = _faltantes(h, nom, args)
             if falt_:  # llamada incompleta: no se ejecuta; una reparacion y si vuelve incompleta, GAP
                 faltas[nom] = faltas.get(nom, 0) + 1
@@ -1292,7 +1309,7 @@ def _bucle(llamar, mensajes):
                     rotas.add(nom)
             ok_ = _tool_exito(res)
             ya_ = res.startswith(('OPERACION_YA_COMPLETADA', 'REPETICION_TOOL_DETECTADA'))
-            usadas.append(_evi(nom, args, ok_, bool(mut and ok_ and not ya_), res))
+            usadas.append(_evi(nom, args, ok_, bool(mut and ok_ and not ya_)))
             mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:_perfil()[1]]})
         pasos += 1
         rondas += 1
@@ -2624,6 +2641,7 @@ def _chat(p):
         _VISTOS.set({})
     _DEADLINE.set(time.monotonic() + presupuesto)
     _cablear_graphiti('', '', {'project_id': str(p.get('project_id') or sesion), 'task_id': str(p.get('task_id') or p.get('tarea') or sesion),  # scope real: project:<id> si el chat pertenece a un proyecto, anchors:<sesion> si no
+                               'sesion': sesion,  # >>> PARCHE_LOCK_DELEG <<< el lock del Director se evalua por sesion real
                                'workflow_id': str(p.get('workflow_id') or ''), 'plugin_id': str(p.get('plugin_id') or ''), 'nodo': str(p.get('nodo') or ''),
                                'ficha_id': str(p.get('ficha_id') or ''),
                                'anchor_scope': (('project:' + str(p.get('project_id'))[:60]) if p.get('project_id') else ('anchors:' + str(sesion)[:60]))})
@@ -2661,6 +2679,8 @@ def _chat(p):
     if _core:
         sysb['core'] = _core  # DSL G10 capa A: SYSTEM_CORE siempre primero en el system
     sysb['const'] = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
+    if _deleg_lock():  # >>> PARCHE_LOCK_DELEG <<<
+        sysb['const'] += ' Las tools que invocan otros modelos o agentes estan BLOQUEADAS por el Director (GAP_AGENT_ACCESS_LOCKED): no las uses.'
     if gov_bloque:  # Constitucion validada: primero, antes de memoria y anclas
         sysb['const'] += ' ' + gov_bloque
     if _sys_in:
@@ -3351,3 +3371,4 @@ def handle(action, payload):
         try:return future.result()
         except Exception as exc:return {'error':'CHAT_FAILED','detalle':type(exc).__name__}
     return _original_handle(action,payload)
+
