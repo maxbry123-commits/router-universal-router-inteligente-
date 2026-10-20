@@ -42,13 +42,17 @@ def _normalizar_tarea(x, i, modo):
 
 
 def _json_de(texto):
-    m = re.search(r'\{.*\}', texto or '', re.S)
-    if not m:
-        return None
-    try:
-        return json.loads(m.group(0))
-    except Exception:  # noqa: BLE001
-        return None
+    t = texto or ''  # >>> PARCHE_AUD3 <<< primer objeto JSON completo (raw_decode); prosa con llaves despues ya no lo rompe
+    i = t.find('{')
+    while i != -1:
+        try:
+            v, _ = json.JSONDecoder().raw_decode(t[i:])
+            if isinstance(v, dict):
+                return v
+        except Exception:  # noqa: BLE001
+            pass
+        i = t.find('{', i + 1)
+    return None
 
 
 DELTA_CONTINUIDAD = (  # >>> PARCHE_T1 <<< anexo corto del ingeniero (no es un segundo system prompt)
@@ -91,7 +95,7 @@ def _prompt_vuelta(obj, t, resumen, instrucciones=None):
             'HECHO HASTA AHORA (resumen):\n' + (resumen or '(nada aún)') + ins + '\n\n'
             + DELTA_CONTINUIDAD +  # >>> PARCHE_T1 <<<
             'Haz SOLO esta tarea ahora, usando herramientas si hacen falta. No pidas confirmación.\n'
-            'Responde AL FINAL con este JSON exacto: {"tarea":"' + t['id'] + '","estado":"hecho|sigue|bloqueado",'
+            'Responde AL FINAL con este JSON exacto: {"tarea":"' + t['id'] + '","estado":"hecho|sigue|bloqueado|needs_input",'
             '"resultado":"...","evidencia":"...","nuevas_tareas":[],"nota_siguiente":"...","receipt_ids":[]}')
 
 
@@ -120,6 +124,8 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
     pid = str(obj.get('proceso_id') or '')
     lim = dict({'max_vueltas': 20, 'max_tareas': 50, 'max_minutos': 240, 'max_intentos_por_tarea': 3,
                 'max_vueltas_sin_progreso': 5, 'pausa_entre_vueltas_s': 2, 'max_continuaciones_por_tarea': 8}, **(obj.get('limites') or {}))
+    if estado:  # >>> PARCHE_AUD3 <<< al reanudar, el reloj cuenta solo el tiempo activo (no la pausa)
+        estado['t0'] = time.time() - float(estado.get('t_activo') or 0)
     st = estado or {'tareas': [], 'vuelta': 0, 'resumen': [], 't0': time.time(), 'sin_progreso': 0,
                     'instrucciones_director': [], 'reanudaciones': 0}
     if not st['tareas']:
@@ -221,6 +227,7 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
             continue
         t = pend[0]
         st['vuelta'] += 1
+        st['t_activo'] = time.time() - st['t0']
         progreso('vuelta %d/%d · %s · %s' % (st['vuelta'], lim['max_vueltas'], t['id'], t['texto'][:80]))
         r = llamar(t.get('modo') or 'code',
                    _prompt_vuelta(obj, t, '\n'.join(st['resumen'][-10:]), st.get('instrucciones_director')))
@@ -243,6 +250,9 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
         if j.get('estado') == 'hecho' and ok_ev:
             t['estado'], t['evidencia'] = 'hecho', str(j.get('evidencia') or '')[:500]
             st['sin_progreso'] = 0
+        elif j.get('estado') == 'needs_input' or j.get('needs_input'):  # >>> PARCHE_AUD3 <<< falta un dato: se bloquea con motivo, sin gastar intentos
+            t['estado'] = 'bloqueada'
+            t['falta'] = str(j.get('needs_input') if isinstance(j.get('needs_input'), str) else j.get('resultado') or '')[:200]
         elif _avance and t.get('continuaciones', 0) < lim['max_continuaciones_por_tarea']:  # >>> PARCHE_T1 <<< continuar != fallar
             t['estado'], t['huella'] = 'sigue', _huella
             t['continuaciones'] = t.get('continuaciones', 0) + 1

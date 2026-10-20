@@ -143,6 +143,8 @@ class MotorYaiwes(Motor):
             if not isinstance(doc, dict):
                 raise MotorError('JSON raíz debe ser un objeto')
             plan_sha = _sha(_canon(doc))
+            if self.job == 'plan':  # >>> PARCHE_AUD3 <<< planes sin nombre: checkpoint propio por contenido (no colisionan)
+                self.job = 'plan-' + plan_sha[:12]
             ordered = self.order(doc['ops'])
             cp_dir = self.root / '.receipts'
             cp_dir.mkdir(exist_ok=True)
