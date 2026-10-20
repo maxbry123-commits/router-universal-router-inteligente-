@@ -239,6 +239,55 @@ def _deleg_lock() -> bool:
     return bool(lk) and _agent_lock_status(lk)
 
 
+# >>> PARCHE_TOOLS_LOCK <<< un boton por tool: el Director apaga tools individuales por sesion (fail-safe: sin registro = nada bloqueado)
+def _tools_lock_set(sesion: str) -> frozenset:
+    try:
+        mem, sf = _memoria()
+        rows = mem.load(sf(DUENO, 'chat:' + str(sesion)[:60]), 'tools_lock:v1')
+        if not rows:
+            return frozenset()
+        d = rows[0].get('data') if isinstance(rows[0], dict) else None
+        if not isinstance(d, dict) or not isinstance(d.get('locked'), list):
+            return frozenset()
+        return frozenset(str(x) for x in d['locked'])
+    except Exception:  # noqa: BLE001
+        return frozenset()
+
+
+def _tools_lock_poner(sesion: str, tool: str, locked: bool) -> dict:
+    tool = str(tool or '')[:80]
+    if not tool or type(locked) is not bool:
+        return {'error': 'GAP_TOOL_LOCK_INVALIDO'}
+    try:
+        cur = set(_tools_lock_set(sesion))
+        (cur.add if locked else cur.discard)(tool)
+        mem, sf = _memoria()
+        mem.save(sf(DUENO, 'chat:' + str(sesion)[:60]), 'tools_lock:v1', {'locked': sorted(cur), 'ts': time.time()})
+        vigente = _tools_lock_set(sesion)
+        if locked != (tool in vigente):
+            return {'error': 'GAP_TOOL_LOCK_NO_PERSISTIDO'}
+        return {'ok': True, 'tool': tool, 'locked': tool in vigente, 'locked_tools': sorted(vigente)}
+    except Exception as exc:  # noqa: BLE001
+        return {'error': 'GAP_TOOL_LOCK_WRITE', 'detalle': type(exc).__name__}
+
+
+_TOOL_SECCIONES = (  # agrupacion de la ventana de tools: un boton por tool, una seccion por familia
+    ('agentes', ('groq_agente', 'agente_enlazar', 'crear_agente', 'delegar_paralelo', 'room_debatir', 'chat_bots')),
+    ('otras_llm', ('nvidia_codigo', 'recurso_llm')),
+    ('motores', ('motor_descargar', 'motor_extraer', 'motor_verificar', 'motor_copiar', 'motor_mover', 'ejecutar_plan_json')),
+    ('github', ('github_leer', 'github_escribir', 'github_api')),
+    ('huggingface', ('hf_leer', 'hf_escribir', 'hf_api', 'hf_almacenamiento')),
+    ('internet', ('internet_leer', 'internet_buscar')),
+)
+
+
+def _tool_seccion(nombre: str) -> str:
+    for _sec, _ns in _TOOL_SECCIONES:
+        if nombre in _ns:
+            return _sec
+    return 'utilidades'
+
+
 def _agent_lock_set(sesion: str, locked: bool) -> dict:
     if type(locked) is not bool:
         return {'error': 'GAP_AGENT_LOCK_INVALIDO'}
@@ -1093,9 +1142,11 @@ def _bucle(llamar, mensajes):
         if _MOTOR_HAB.get() and tools_vis is not None:
             tools_vis = list(tools_vis) + _MOTOR_TOOLS  # ⚙ Motor ON: descargar/extraer/copiar/mover del motor existente
             conoc = conoc | {(t_.get('function') or {}).get('name') for t_ in _MOTOR_TOOLS}  # >>> PARCHE_N4 <<<
-        if _deleg_lock():  # >>> PARCHE_LOCK_DELEG <<< fuera del catalogo las tools que invocan otra LLM/agente; motores/github siguen
-            tools_vis = [t_ for t_ in (tools_vis or []) if str((t_.get('function') or {}).get('name')) not in _TOOLS_DELEGAN]
-            conoc = conoc - _TOOLS_DELEGAN
+        _ses_bucle = str((_IDS_CTX.get() or {}).get('sesion') or '')
+        _apagadas = (_TOOLS_DELEGAN if _deleg_lock() else frozenset()) | _tools_lock_set(_ses_bucle)  # >>> PARCHE_TOOLS_LOCK <<< delegacion + tools apagadas una a una
+        if _apagadas:
+            tools_vis = [t_ for t_ in (tools_vis or []) if str((t_.get('function') or {}).get('name')) not in _apagadas]
+            conoc = conoc - set(_apagadas)
     else:
         tools_vis = None
     textos_previos = []
@@ -1136,7 +1187,7 @@ def _bucle(llamar, mensajes):
                 pf('modelo' if con_tools else 'respuesta')
             except Exception:  # noqa: BLE001
                 pass
-        _lk_deleg = _deleg_lock()  # >>> PARCHE_LOCK_DELEG <<< solo delegacion: el bucle sigue con el catalogo filtrado
+        _lk_tools = (_TOOLS_DELEGAN if _deleg_lock() else frozenset()) | _tools_lock_set(str((_IDS_CTX.get() or {}).get('sesion') or ''))  # >>> PARCHE_TOOLS_LOCK <<<
         _tm0 = time.time()
         s, d = llamar(mensajes, tools_vis if (con_tools and h is not None) else None)  # CAP filtrado: el modelo solo ve lo que puede usar
         if isinstance(d, dict) and d.get('error') == 'GAP_STREAM_INTERRUPTED':
@@ -1233,8 +1284,8 @@ def _bucle(llamar, mensajes):
             except ValueError:
                 args = {}
             nom = f.get('name', '')
-            if _lk_deleg and nom in _TOOLS_DELEGAN:  # >>> PARCHE_LOCK_DELEG <<< llamada colada por texto: se rechaza, no se ejecuta
-                res = 'GAP_AGENT_ACCESS_LOCKED: delegacion a otros modelos/agentes bloqueada por el Director'
+            if nom in _lk_tools:  # >>> PARCHE_TOOLS_LOCK <<< llamada colada por texto: se rechaza, no se ejecuta
+                res = 'GAP_TOOL_LOCKED: %s bloqueada por el Director' % nom if nom not in _TOOLS_DELEGAN else 'GAP_AGENT_ACCESS_LOCKED: delegacion a otros modelos/agentes bloqueada por el Director'
                 usadas.append(_evi(nom, args, False, False))
                 mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res})
                 continue
@@ -3093,6 +3144,17 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         if 'locked' not in payload:
             return {'ok': True, 'locked': _agent_lock_status(sesion_l)}
         return _agent_lock_set(sesion_l, payload['locked'])
+    if action == 'tools_lock':  # >>> PARCHE_TOOLS_LOCK <<< un boton por tool del Director, por sesion
+        sesion_l = str(payload.get('sesion') or 'general')[:60]
+        if 'tool' in payload and 'locked' in payload:
+            return _tools_lock_poner(sesion_l, str(payload.get('tool')), payload['locked'])
+        h = _herr()
+        _nombres = [str((t.get('function') or {}).get('name')) for t in h.TOOLS]
+        _nombres += [str((t.get('function') or {}).get('name')) for t in _MOTOR_TOOLS]
+        _lock = _tools_lock_set(sesion_l)
+        return {'ok': True, 'sesion': sesion_l,
+                'tools': [{'nombre': n, 'seccion': _tool_seccion(n), 'locked': n in _lock}
+                          for n in dict.fromkeys(_nombres) if n]}
     if action == 'proyecto':  # UN sistema de proyectos sobre memoria_yaiwes: scope project:<project_id>
         try:
             mem, scope_for = _memoria()
