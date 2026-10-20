@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 APP_ROOT = Path(__file__).resolve().parents[2]
-ALLOWED_PREFIXES = ("integration.", "plugins.")
+ALLOWED_PREFIXES = ("integration.", "plugins.", "router.", "fichas.")  # autorizado por Hy 2026-10-20: layout router/ fichas/ plugins/
 SCHEMA_V1 = "plugin_host/v1"
 STATE_SCHEMA = "plugin_host_state/v1"
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,39}$")
@@ -217,6 +217,9 @@ class PluginHost:
         found: dict[str, Plugin] = {}
         try:
             folders = sorted(p for p in self.plugins_dir.iterdir() if p.is_dir() and not p.name.startswith(("_", ".")))
+            for _extra in (self.plugins_dir.parent / "fichas", self.plugins_dir.parent / "router"):  # edificio 1: solo carpetas con ficha.json
+                if _extra.is_dir():
+                    folders += sorted(p for p in _extra.iterdir() if p.is_dir() and not p.name.startswith(("_", ".")) and (p / "ficha.json").is_file() and p.name not in {f.name for f in folders})
         except OSError as exc:
             self.load_error = f"no se pudo leer la carpeta de plugins ({type(exc).__name__})"
             folders = []
