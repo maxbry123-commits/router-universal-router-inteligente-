@@ -97,7 +97,8 @@ class MotorYaiwes(Motor):
                     raise MotorError('GAP_CAMPO_TIPO %s.%s: se esperaba texto' % (item['id'], k))
             if 'path' in req:
                 _p = self.path(item['path'])  # ruta vacia/absoluta/fuera del workspace: rechazo antes de mutar
-                if _p == self.root / '.receipts' or (self.root / '.receipts') in _p.parents:  # >>> PARCHE_T1 <<< el modelo no escribe donde viven los recibos
+                if any(_q.lower() == '.receipts' for _q in _p.relative_to(self.root).parts[:1]):  # >>> PARCHE_AUD <<< tambien en FS insensibles
+                     # >>> PARCHE_T1 <<< el modelo no escribe donde viven los recibos
                     raise MotorError('GAP_RUTA_RESERVADA %s: .receipts es del ejecutor' % item['id'])
             if item['op'] == 'write_text' and len(item['text']) > self.max_chars:
                 raise MotorError('GAP_TEXTO_LARGO %s: %d > %d' % (item['id'], len(item['text']), self.max_chars))
@@ -211,6 +212,8 @@ def ejecutar(plan, workspace='default', politica=None):
         doc = parse_estricto(plan)
         pol = cargar_politica(politica)
         ws = re.sub(r'[^A-Za-z0-9_-]', '-', str(workspace or 'default'))[:64] or 'default'
+        if isinstance(doc, dict) and doc.get('meta') is not None and not isinstance(doc.get('meta'), dict):  # >>> PARCHE_AUD <<<
+            raise MotorError('GAP_META_TIPO: meta debe ser objeto')
         job = (doc.get('meta') or {}).get('name') if isinstance(doc, dict) else None
         return MotorYaiwes(base_workspaces() / ws, pol, job or 'plan').run(doc)
     except (MotorError, ValueError, OSError) as x:
@@ -245,15 +248,19 @@ def recibo_existe(rid):
         if rid in _RECIBOS and _recibo_integro(_RECIBOS[rid]):
             return True
     try:
-        for cp in base_workspaces().glob('*/.receipts/*.json'):
+        _cps = list(base_workspaces().glob('*/.receipts/*.json'))
+    except Exception:  # noqa: BLE001
+        return False
+    for cp in _cps:  # >>> PARCHE_AUD <<< un checkpoint ilegible no invalida los demas
+        try:
             done = (json.loads(cp.read_text(encoding='utf-8')).get('done') or {})
             for rec in done.values():
-                if rec.get('id') == rid and _recibo_integro(rec):
+                if isinstance(rec, dict) and rec.get('id') == rid and _recibo_integro(rec):
                     with _LOCK:
                         _RECIBOS[rid] = rec
                     return True
-    except Exception:  # noqa: BLE001
-        pass
+        except Exception:  # noqa: BLE001
+            continue
     return False
 
 

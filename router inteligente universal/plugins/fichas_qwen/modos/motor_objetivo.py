@@ -60,6 +60,8 @@ DELTA_CONTINUIDAD = (  # >>> PARCHE_T1 <<< anexo corto del ingeniero (no es un s
 
 
 def _recibos_falsos(ids):  # >>> PARCHE_T1 <<< ids que el modelo nombra y el ejecutor nunca emitio
+    if ids and not isinstance(ids, list):  # >>> PARCHE_AUD <<< receipt_ids mal tipado = inventado
+        return [str(ids)[:80]]
     if not isinstance(ids, list) or not ids:
         return []
     try:
@@ -135,6 +137,10 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
             else:
                 r = llamar('planificador', _prompt_plan(obj, lim))
                 base = ((_json_de(r['texto']) or {}).get('tareas') or [obj_txt])
+                if not isinstance(base, list):  # >>> PARCHE_AUD <<< el planner solo aporta texto (y modo permitido); nunca estado/evidencia
+                    base = [obj_txt]
+                base = [({'texto': str(x.get('texto') or 'tarea')[:500], **({'modo': x['modo']} if x.get('modo') in ('code', 'auditor', 'paralelo') else {})}
+                         if isinstance(x, dict) else x) for x in base]
         st['tareas'] = [_normalizar_tarea(x, i, obj.get('modo_por_defecto', 'code')) for i, x in enumerate(base[:lim['max_tareas']])]
         guardar(st)
     if pid:
@@ -225,6 +231,7 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
         modo_actual = t.get('modo') or 'code'
         ok_ev = (int(r.get('mutaciones_ok') or 0) > 0 if modo_actual == 'code'
                  else int(r.get('herramientas_ok') or 0) > 0 or modo_actual in ('rapido', 'planificador'))
+        _ok_sigue = ok_ev or (modo_actual == 'code' and int(r.get('herramientas_ok') or 0) > 0)  # >>> PARCHE_AUD <<< leer/inspeccionar con avance real no es fallo
         _falsos = _recibos_falsos(j.get('receipt_ids'))  # >>> PARCHE_T1 <<< recibo inventado = sin evidencia
         if _falsos:
             ok_ev = False
@@ -232,7 +239,7 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
         import hashlib as _hh
         _huella = _hh.sha256(('%s|%s|%s|%s|%s' % (j.get('resultado'), j.get('evidencia'), j.get('nota_siguiente'),
                                                  r.get('mutaciones_ok'), r.get('herramientas_ok'))).encode('utf-8')).hexdigest()[:12]
-        _avance = (not _falsos) and j.get('estado') == 'sigue' and ok_ev and _huella != t.get('huella')
+        _avance = (not _falsos) and j.get('estado') == 'sigue' and _ok_sigue and _huella != t.get('huella')
         if j.get('estado') == 'hecho' and ok_ev:
             t['estado'], t['evidencia'] = 'hecho', str(j.get('evidencia') or '')[:500]
             st['sin_progreso'] = 0
@@ -245,7 +252,9 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
             t['estado'] = 'bloqueada' if (j.get('estado') == 'bloqueado' or t['intentos'] >= lim['max_intentos_por_tarea']) else 'sigue'
             st['sin_progreso'] += 1
         conocidos = {x['texto'] for x in st['tareas']}
-        for n in (j.get('nuevas_tareas') or [])[:5]:
+        _nt = j.get('nuevas_tareas')
+        _nt = [x for x in _nt if isinstance(x, str)] if isinstance(_nt, list) else []  # >>> PARCHE_AUD <<<
+        for n in _nt[:5]:
             if n and n not in conocidos and len(st['tareas']) < lim['max_tareas']:
                 st['tareas'].append({'id': 'T%d' % (len(st['tareas']) + 1), 'texto': str(n)[:500],
                                      'estado': 'pendiente', 'intentos': 0, 'modo': obj.get('modo_por_defecto', 'code')})

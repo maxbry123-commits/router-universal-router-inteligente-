@@ -1079,7 +1079,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     herramientas = [x for x in (r.get('herramientas') or []) if isinstance(x, dict)]
     bolsa = opts.setdefault('herr', {}).setdefault(str(n.get('id')), [])
     bolsa.extend({'herramienta': x.get('herramienta') or x.get('tool'), 'ok': bool(x.get('ok')), 'mutacion_real': bool(x.get('mutacion_real')),
-                  'accion': str(x.get('accion') or '')[:40], 'objetivo': str(x.get('objetivo') or '')[:160]} for x in herramientas)  # >>> PARCHE_COLA <<< el libro de partes necesita QUE se hizo
+                  'accion': str(x.get('accion') or '')[:40], 'objetivo': str(x.get('objetivo') or '')[:160], 'detalle': str(x.get('detalle') or '')[:100]} for x in herramientas)  # >>> PARCHE_COLA <<< el libro de partes necesita QUE se hizo
     nuevas_ok = any(x.get('ok') for x in herramientas)
     nuevas_mut = any(x.get('ok') and x.get('mutacion_real') for x in herramientas)
     if escribe and opts.get('muta') and not nuevas_mut:
@@ -1118,7 +1118,8 @@ def _llamar_harness_3(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
 
 _REGLA_CODIGO = ('REGLA DE CODIGO LARGO: escribe el codigo por partes de 500 a 1000 lineas como maximo por llamada y guarda cada parte con las herramientas antes de seguir. '
                  'Si al cerrar una parte todavia falta trabajo, termina con la linea CONTINUAR_PARTE: el sistema te vuelve a llamar y sigues exactamente donde quedaste, sin repetir lo ya hecho. '
-                 'Cuando TODA la tarea este terminada y verificada, termina con la linea TAREA_COMPLETA.')
+                 'Cuando TODA la tarea este terminada y verificada, termina con la linea TAREA_COMPLETA. '
+                 'ARCHIVOS GRANDES (hasta 500000 caracteres por archivo): guarda cada parte con github_escribir anexar=true y offset=<total del libro, 0 la primera vez>; no reescribas lo ya guardado.')  # >>> PARCHE_500K <<<
 _RE_MARCAS = re.compile('(?im)^[ ' + chr(9) + ']*(TAREA_COMPLETA|CONTINUAR_PARTE)[ ' + chr(9) + ']*' + chr(10) + '?')
 
 
@@ -1137,8 +1138,9 @@ def _nota(opts, nid, txt):
 
 
 def _libro_lineas(entradas):  # >>> PARCHE_COLA <<< recibos reales de herramientas -> lineas cortas (no es texto del modelo)
-    return ''.join('- %s %s %s -> %s%s\n' % (x.get('herramienta'), x.get('accion') or '', x.get('objetivo') or '',
-                                         'OK' if x.get('ok') else 'FALLO', ' (cambio real)' if x.get('mutacion_real') and x.get('ok') else '') for x in entradas)
+    return ''.join('- %s %s %s -> %s%s%s\n' % (x.get('herramienta'), ' '.join(str(x.get('accion') or '').split()), ' '.join(str(x.get('objetivo') or '').split()),  # >>> PARCHE_AUD <<<
+                                         'OK' if x.get('ok') else 'FALLO', ' (cambio real)' if x.get('mutacion_real') and x.get('ok') else '',
+                                         (' | ' + ' '.join(str(x.get('detalle')).split())[:100]) if x.get('detalle') else '') for x in entradas)
 
 
 def _tarea_original(prompt, cabeza=2000, cola=2500):  # >>> PARCHE_COLA <<< la tarea fija; el plan aprobado va al final del prompt, por eso se conserva la cola

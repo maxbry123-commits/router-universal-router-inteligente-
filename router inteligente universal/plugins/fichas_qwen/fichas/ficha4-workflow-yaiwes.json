@@ -293,8 +293,8 @@
   "mejoras": "plantilla/MEJORAS_FICHAS.yaml",
   "api_yml": "modelos-14/harness-modelos-14.cordis.yml",
   "loop": {
-    "max_partes_codigo": 12,
-    "max_segundos_codigo": 1800
+    "max_partes_codigo": 40,
+    "max_segundos_codigo": 5400
   },
   "codigo_largo": {
     "parte_lineas": "500 a 1000 por llamada",
