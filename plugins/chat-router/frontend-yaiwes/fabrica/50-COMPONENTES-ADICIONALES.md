@@ -1,1 +1,0 @@
-Ver LISTA-FINAL-FABRICA.md
