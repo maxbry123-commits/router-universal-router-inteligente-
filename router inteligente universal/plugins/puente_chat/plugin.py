@@ -236,6 +236,8 @@ _TOOLS_DELEGAN = frozenset({'groq_agente', 'nvidia_codigo', 'recurso_llm', 'agen
 def _deleg_lock() -> bool:
     # el bloqueo del Director por sesion: cierra SOLO las tools que delegan en otra LLM/agente
     lk = str((_IDS_CTX.get() or {}).get('sesion') or '')
+    if not lk:  # >>> PARCHE_BACK_G16 <<< sin sesion en _IDS_CTX (camino que no paso por _cablear_graphiti): sesion segura del backend, nunca fail-open
+        lk = str(_MOTOR_SES.get() or '')
     return bool(lk) and _agent_lock_status(lk)
 
 
@@ -379,6 +381,28 @@ def _memoria():
     return _memory(), _scope_for
 
 
+def _turno_full_leer(sesion, sha, campo='respuesta', cursor=0, limite=20000):
+    # >>> PARCHE_BACK_G15 <<< recupera el turno COMPLETO por sha y cursor; verifica el hash antes de devolver
+    import hashlib
+    if campo not in ('pregunta', 'respuesta'):
+        return {'error': 'GAP_CAMPO_INVALIDO'}
+    try:
+        mem, scope_for = _memoria()
+        rows = mem.load(scope_for(DUENO, 'chat-full:' + str(sesion)), 'archivo:turno-full:' + str(sha)) or []
+    except Exception:  # noqa: BLE001
+        return {'error': 'GAP_TURNO_FULL_NO_LEIBLE'}
+    d = next((r.get('data') for r in rows if isinstance(r, dict) and isinstance(r.get('data'), dict) and r['data'].get('sha256') == sha), None)
+    if not d:
+        return {'error': 'GAP_TURNO_FULL_NO_EXISTE'}
+    if hashlib.sha256((str(d.get('pregunta')) + '\0' + str(d.get('respuesta'))).encode('utf-8')).hexdigest() != sha:
+        return {'error': 'GAP_TURNO_FULL_CORRUPTO'}
+    t = str(d.get(campo) or '')
+    c = max(0, int(cursor or 0))
+    lim = max(1, min(int(limite or 20000), 200000))
+    sig = c + lim
+    return {'ok': True, 'sha256': sha, 'campo': campo, 'total': len(t), 'cursor': c, 'texto': t[c:sig], 'siguiente': sig if sig < len(t) else None}
+
+
 def _contexto(sesion: str, pregunta: str) -> str:
     try:
         mem, scope_for = _memoria()
@@ -422,7 +446,8 @@ def _guardar(sesion: str, modelo: str, pregunta: str, respuesta: str) -> bool:
                        for row in _rows):
                 raise RuntimeError('GAP_ARCHIVO_COMPLETO_NO_VERIFICADO')
         mem.save(scope_for(DUENO, "chat:" + sesion), "turno-%d" % int(time.time() * 1000),
-                 {"modelo": modelo, "pregunta": pregunta[:4000], "respuesta": respuesta[:8000]})
+                 {"modelo": modelo, "pregunta": pregunta[:4000], "respuesta": respuesta[:8000],
+                  **({"full_sha": _huella} if (len(pregunta) > 4000 or len(respuesta) > 8000) else {})})  # >>> PARCHE_BACK_G15 <<< el resumen corto apunta al original completo
         return True
     except Exception:  # noqa: BLE001
         return False
@@ -730,6 +755,43 @@ def _qwen_razonamiento_compatible(modelo_api, ex, tools):
         ex.pop('preserve_thinking', None)
     ex.pop('thinking_budget', None)
     return ex
+
+
+# >>> PARCHE_BACK_G03 <<< thinking_mode estructurado, validado en backend; nunca un falso ON ni enable_thinking+reasoning_effort a la vez
+def thinking_mode_resolver(modelo_api, valor, tools=False):
+    """valor: None|'auto'|'on'|'off'|bool|{'mode':'on'|'off'|'auto','effort':'low'|'medium'|'high'}.
+    -> {'ok':True,'extra':dict|None} | {'ok':False,'error':'GAP_THINKING_INVALID'|'GAP_THINKING_UNSUPPORTED','detalle':str}"""
+    if valor is None:
+        return {'ok': True, 'extra': None}
+    efecto = None
+    if isinstance(valor, bool):
+        modo = 'on' if valor else 'off'
+    elif isinstance(valor, str):
+        modo = valor.strip().lower()
+    elif isinstance(valor, dict) and set(valor) <= {'mode', 'effort'}:
+        modo = str(valor.get('mode') or '').strip().lower()
+        efecto = valor.get('effort')
+    else:
+        return {'ok': False, 'error': 'GAP_THINKING_INVALID', 'detalle': 'thinking_mode debe ser on/off/auto, bool o {mode,effort}'}
+    if modo not in ('on', 'off', 'auto') or (efecto is not None and efecto not in ('low', 'medium', 'high')) or (efecto is not None and modo != 'on'):
+        return {'ok': False, 'error': 'GAP_THINKING_INVALID', 'detalle': 'modo=%r effort=%r' % (modo, efecto)}
+    if modo == 'auto':
+        return {'ok': True, 'extra': None}
+    m = str(modelo_api or '')
+    if modo == 'off':
+        if m in _SOLO_THINKING:
+            return {'ok': False, 'error': 'GAP_THINKING_UNSUPPORTED', 'detalle': '%s no admite thinking OFF' % m}
+        if m.startswith(('qwen', 'deepseek', 'glm')) or '/' in m:
+            return {'ok': True, 'extra': {'enable_thinking': False}}  # nvidia: _llamar_api lo traduce a chat_template_kwargs
+        return {'ok': False, 'error': 'GAP_THINKING_UNSUPPORTED', 'detalle': 'proveedor de %s sin control de thinking' % m}
+    # modo == 'on'
+    if tools and not (m.startswith('qwen') and os.environ.get('RIU_QWEN_TOOLS_THINKING_TESTED') == '1'):
+        return {'ok': False, 'error': 'GAP_THINKING_UNSUPPORTED', 'detalle': 'thinking ON con tools no esta probado para %s' % m}
+    if m.startswith('qwen'):
+        return {'ok': True, 'extra': {'reasoning_effort': efecto or 'medium'}}  # un solo control: reasoning_effort
+    if m.startswith(('deepseek', 'glm')):
+        return {'ok': True, 'extra': {'enable_thinking': True}}
+    return {'ok': False, 'error': 'GAP_THINKING_UNSUPPORTED', 'detalle': 'thinking ON no controlable en %s' % m}
 
 
 def _tool_especifica_qwen(cuerpo: dict, tools: list, nombre: str) -> None:
@@ -1160,7 +1222,12 @@ def _evi(nom, args, ok, mut, res=''):  # >>> PARCHE_500K <<<
     obj = a.get('ruta') or a.get('repo') or ''
     if a.get('repo') and a.get('ruta'):
         obj = str(a.get('repo')) + ':' + str(a.get('ruta'))
-    return {'herramienta': nom, 'tool': nom, 'accion': str(acc), 'objetivo': str(obj)[:200], 'ok': bool(ok), 'mutacion_real': bool(mut), 'detalle': str(res or '')[:100]}
+    # >>> PARCHE_BACK_G11 <<< receipt real: id determinista + status + hash del payload sanitizado; lo emite SOLO el ejecutor, el texto del LLM no lo crea
+    import hashlib as _hl
+    _san = {str(k): ('[REDACTADO]' if any(x in str(k).lower() for x in ('token', 'key', 'secret', 'password', 'authorization', 'clave')) else str(v)[:200]) for k, v in sorted(a.items())}
+    _ph = _hl.sha256(json.dumps(_san, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
+    return {'herramienta': nom, 'tool': nom, 'accion': str(acc), 'objetivo': str(obj)[:200], 'ok': bool(ok), 'mutacion_real': bool(mut), 'detalle': str(res or '')[:100],
+            'receipt_id': 'tr-' + _hl.sha256((str(nom) + '|' + _ph).encode('utf-8')).hexdigest()[:16], 'status': 'OK' if ok else 'FALLO', 'payload_sanitizado': _san, 'payload_sha': _ph}
 
 
 def _faltantes(h, nom, args):
@@ -1773,6 +1840,18 @@ def _proyecto_meta(pid):
     except Exception:  # noqa: BLE001
         pass
     return {}
+
+
+def proyecto_resolver(project_id, meta=None):
+    # >>> PARCHE_BACK_G12 <<< un project_id se resuelve en la memoria local YAIWES; el repo solo existe si el proyecto lo registra
+    meta = meta if isinstance(meta, dict) else _proyecto_meta(project_id)
+    pid = str(project_id or '')
+    if not meta:
+        return {'estado': 'DESCONOCIDO', 'repo': '', 'regla': '[PROYECTO %s: GAP_PROJECT_NO_RESUELTO en memoria local. No lo trates como repositorio de GitHub, no inventes archivos, tareas ni tool calls; pide el dato o busca solo si el Director da un repo.]' % pid[:48]}
+    repo = str(meta.get('repo') or meta.get('github_repo') or '').strip()
+    if repo:
+        return {'estado': 'LOCAL_CON_REPO', 'repo': repo, 'regla': '[PROYECTO %s resuelto en memoria local; repo registrado: %s. Lee GitHub solo con herramientas y afirma solo lo leido.]' % (pid[:48], repo)}
+    return {'estado': 'LOCAL_SIN_REPO', 'repo': '', 'regla': '[PROYECTO %s resuelto en memoria local SIN repositorio registrado: proyecto no implica repo. No busques ni supongas un repo en GitHub, no inventes estructura de archivos ni tool calls.]' % pid[:48]}
 
 
 def _xray(sesion, nombre, texto=''):
@@ -2766,6 +2845,8 @@ def _chat(p):
     if p.get('project_id'):  # cabecera del proyecto (nombre/notas) delante del historial reciente
         try:
             meta_p = _proyecto_meta(p['project_id'])
+            _rp = proyecto_resolver(p['project_id'], meta_p)  # >>> PARCHE_BACK_G12 <<< memoria local YAIWES ANTES de GitHub; proyecto != repo
+            ctx = _rp['regla'] + '\n' + ctx
             if meta_p:
                 ctx = ('[PROYECTO %s] %s' % (str(meta_p.get('nombre') or p['project_id']), str(meta_p.get('notas') or '')[:600])).strip() + '\n' + ctx
         except Exception:  # noqa: BLE001
@@ -3061,6 +3142,8 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == 'agente_enlazar':  # ventana Tools: elegir el recurso LLM (Ficha 4 / NVIDIA codigo / Groq) de un agente
         return _herr().agente_enlazar(payload)
     if action == 'recurso_probar':  # ventana Tools: probar un recurso o un agente enlazado (Harness -> HTTP -> recurso)
+        if _agent_lock_status(str(payload.get('sesion') or 'general')[:60]):  # >>> PARCHE_BACK_G16 <<< entrada real de delegacion: LOCK ON = cero llamadas a agentes/LLM
+            return {'error': 'GAP_AGENT_ACCESS_LOCKED', 'detalle': 'delegacion bloqueada por el Director'}
         h = _herr()
         t0 = time.time()
         if payload.get('agente'):
@@ -3187,6 +3270,8 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             return _descargas(payload)
         except Exception as x:  # noqa: BLE001
             return {'error': 'DESCARGAS_FALLO', 'detalle': str(x)[:200]}
+    if action == 'turno_full':  # >>> PARCHE_BACK_G15 <<< lectura del turno completo por sha/cursor
+        return _turno_full_leer(str(payload.get('sesion') or 'general')[:60], str(payload.get('sha256') or ''), str(payload.get('campo') or 'respuesta'), payload.get('cursor') or 0, payload.get('limite') or 20000)
     if action == 'agent_access_lock':  # boton del Director: bloqueo servidor de agentes/LLM/tools (fail-closed)
         sesion_l = str(payload.get('sesion') or 'general')[:60]
         if 'locked' not in payload:
@@ -3301,7 +3386,7 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
                 d = dict(next(iter(prev.values()), {}) or {})  # MERGE: un upsert parcial NUNCA borra nombre/notas/anclas/estado/created_at
                 d['project_id'] = pid
                 d['_k'] = 'proyecto:' + pid
-                for k in ('nombre', 'notas', 'estado', 'anclas', 'encendido'):  # solo se pisan los campos que vienen en la peticion
+                for k in ('nombre', 'notas', 'estado', 'anclas', 'encendido', 'repo'):  # solo se pisan los campos que vienen en la peticion
                     if payload.get(k) is not None:
                         d[k] = payload[k]
                 d.setdefault('nombre', pid)

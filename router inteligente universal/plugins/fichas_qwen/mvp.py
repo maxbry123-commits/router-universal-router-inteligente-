@@ -146,6 +146,12 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
         _r = _modo['reasoning']['execute']
         ex_llm = {'enable_thinking': False} if _r == 'none' else {'reasoning_effort': _r}
     # <<< MODOS END
+    if p.get('thinking_mode') is not None:  # >>> PARCHE_BACK_G03 <<< thinking_mode estructurado validado en backend (un solo control; unsupported -> GAP, nunca falso ON)
+        _tmr = pc.thinking_mode_resolver(str(pc.FICHAS[qw][2]), p['thinking_mode'], cap != 'none')
+        if not _tmr['ok']:
+            return {'model': elegido, 'error': _tmr['error'], 'detalle': str(_tmr.get('detalle') or '')[:200]}
+        if _tmr.get('extra') is not None:
+            ex_llm = _tmr['extra']
     r = pc._chat({'model': qw, 'messages': conv, 'max_tokens': mt, 'sesion': ses,
                   'presupuesto_s': _TIMEOUT_SIMPLE_S if simple else _TIMEOUT_S, 'directo': simple, 'solo_lectura': solo_lectura, 'requiere_tools': requiere, 'tools_habilitadas': cap != 'none', 'cap_tools': cap,  # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'rondas_tools_max': 3,  # MVP: modelo->tool->modelo->tool->modelo->respuesta, sin 6 vueltas automaticas

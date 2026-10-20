@@ -117,6 +117,49 @@ def _modos_emit(ev: str, data: dict) -> None:
 # <<< MODOS END
 
 
+def _presupuesto_salida(max_nodo: Any, cap_proveedor: Any, task_budget: Any, usado: Any) -> dict[str, Any]:
+    # >>> PARCHE_BACK_G06 <<< max_output_tokens efectivo = min(nodo/fast_lane ya aplicado, tope del proveedor, presupuesto de TAREA restante); nunca infinito
+    try:
+        c = [('nodo', int(max_nodo))]
+        if cap_proveedor:
+            c.append(('proveedor', int(cap_proveedor)))
+        if task_budget not in (None, '', 0):
+            rest = int(task_budget) - int(usado or 0)
+            if rest <= 0:
+                return {'error': 'GAP_TASK_TOKEN_BUDGET_AGOTADO'}
+            c.append(('presupuesto_tarea', rest))
+    except (TypeError, ValueError):
+        return {'error': 'GAP_TOKENS_INVALIDOS'}
+    por, val = min(c, key=lambda x: x[1])
+    if val < 1:
+        return {'error': 'GAP_TOKENS_INVALIDOS'}
+    return {'max_tokens': val, 'limitado_por': por}
+
+
+# >>> PARCHE_BACK_G05 <<< entrada larga: fuente literal + sha + readback ANTES de cualquier ventana; el historial abreviado (_hist_txt) es otra cosa
+def _segmentar_integro(texto: str, tam: int) -> list[str]:
+    tam = max(1, int(tam))
+    return [texto[i:i + tam] for i in range(0, len(texto), tam)]
+
+
+def _fuente_integra_guardar(ses: str, texto: str, tam: int = 40000) -> dict[str, Any]:
+    sha = hashlib.sha256(texto.encode('utf-8')).hexdigest()
+    try:
+        mem, sf = _pc()._memoria()
+        sc = sf('chat-ui', 'fuente:' + str(ses)[:60])
+        mem.save(sc, 'fuente:' + sha, {'texto': texto, 'sha256': sha, 'chars': len(texto), 'ts': time.time(), 'integridad': 'verbatim-utf8'})
+        filas = mem.load(sc, 'fuente:' + sha) or []
+        d = next((r.get('data') for r in filas if isinstance(r, dict) and isinstance(r.get('data'), dict) and r['data'].get('sha256') == sha), None)
+    except Exception as x:  # noqa: BLE001
+        return {'error': 'GAP_FUENTE_NO_VERIFICADA', 'detalle': type(x).__name__}
+    if not d or hashlib.sha256(str(d.get('texto')).encode('utf-8')).hexdigest() != sha or d.get('texto') != texto:
+        return {'error': 'GAP_FUENTE_NO_VERIFICADA', 'detalle': 'readback distinto del original'}
+    segs = _segmentar_integro(texto, tam)
+    if hashlib.sha256(''.join(segs).encode('utf-8')).hexdigest() != sha:
+        return {'error': 'GAP_FUENTE_NO_VERIFICADA', 'detalle': 'reensamblado distinto'}
+    return {'ok': True, 'sha256': sha, 'chars': len(texto), 'segmentos': len(segs), 'segmento_sha': [hashlib.sha256(x.encode('utf-8')).hexdigest()[:12] for x in segs], 'readback_sha': sha}
+
+
 def _hist_txt(v: Any) -> str:
     # historial previo de la MISMA sesion (el chat lo manda aparte del input): max 20 mensajes y ~12.000 caracteres; solo se anade al prompt del modelo
     if isinstance(v, str):
@@ -1007,6 +1050,10 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         _fc = _fast_cfg(ficha)
         api_s = min(api_s, _fc['timeout_s'])
         max_tok = min(max_tok, _fc['max_output_tokens'])
+    _pb = _presupuesto_salida(max_tok, ((ficha.get('dsl') or {}).get('tokens') or {}).get('max_output_tokens_proveedor'), opts.get('task_token_budget'), opts.get('tokens_usados'))  # >>> PARCHE_BACK_G06 <<<
+    if _pb.get('error'):
+        raise RuntimeError(_pb['error'])
+    max_tok = _pb['max_tokens']
     if str(ficha.get('ficha') or '') in ('ficha2-dag-codigo', 'ficha3-frontend'):
         _chars_todos = len(prompt)
         if _chars_todos > limite:
@@ -1066,6 +1113,11 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
             _PARCIAL[_pidp] = ''.join(_bp)
     _tm = time.time()
     _sp = str(_nc.get('sys_prompt') or '')
+    _tmr = None  # >>> PARCHE_BACK_G03 <<< thinking_mode estructurado: el backend valida contra el modelo real; si no puede cumplirlo -> GAP, jamas falso ON
+    if opts.get('thinking_mode') is not None:
+        _tmr = pc.thinking_mode_resolver(str(pc.FICHAS[qw][2]), opts['thinking_mode'], cap_nodo != 'none')
+        if not _tmr['ok']:
+            raise RuntimeError(_tmr['error'] + ':' + str(_tmr.get('detalle') or '')[:120])
     print('[cap] ficha=%s nodo=%s cap_tools=%s escribe=%s' % (opts.get('fid'), n.get('id'), cap_nodo, bool(escribe)), file=sys.stderr, flush=True)  # >>> PARCHE_VERIF <<< el diagnostico no depende de inferencias
     r = pc._chat({'model': qw, 'messages': ([{'role': 'system', 'content': _sp}] if _sp else []) + [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,  # >>> MODOS <<< FIX gobernanza: system aparte (S1)
                   'ficha_id': str(ficha.get('ficha') or ''), 'active_anchors_v1': bool(opts.get('active_anchors_v1')),
@@ -1078,15 +1130,20 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
                   'capas': list(_nc.get('capas') or (n.get('capas') or [])) or (['core'] if (opts.get('fast_lane') or opts.get('fast_consult')) else list((opts.get('modos') or {}).get('capas') or [])),  # GAP G15: el modo elegido en el chat decide el paquete de capas; sin modo -> mapa por nodo  # DSL G10/G15 + AUDIT A10: FAST y consulta FAST solo llevan el core (sin bloque B del nodo)
                   'proceso_id': str(opts.get('pid') or ''),  # DSL G19: el buzon mid-loop del puente sabe de que proceso leer
                   'forzar_tool': bool(_nc.get('forzar_tool')),  # >>> MODOS <<< FIX glm52 INPUT 129: tool_choice=required en reintento
-                  'extra_llm': (({'enable_thinking': False} if opts.get('modos_reasoning') == 'none' else {'reasoning_effort': opts['modos_reasoning']}) if opts.get('modos_reasoning') else  # >>> MODOS <<< mode_wins: el modo decide el razonamiento de la llamada
+                  'extra_llm': _tmr['extra'] if (_tmr and _tmr.get('extra') is not None) else (({'enable_thinking': False} if opts.get('modos_reasoning') == 'none' else {'reasoning_effort': opts['modos_reasoning']}) if opts.get('modos_reasoning') else  # >>> MODOS <<< mode_wins: el modo decide el razonamiento de la llamada
                               ({'enable_thinking': True} if opts.get('thinking') else {'enable_thinking': False} if ((perfil == 'fast' and (modelo in _FAST_LOW or cap_in == 'none')) or (cap_nodo == 'none' and cap_in == 'none' and opts.get('fid') == 'ficha1-modelos')) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None),
                   # llamadas sin tools llevan el perfil comun; con tools el Harness lo ignora (extra_llm solo se aplica si tools=None)
                   'perfil': perfil,
                   # Token Plan: thinking obligado en true -> siempre SSE (como mvp.py); el chunk se reenvia si hay visor
                   'stream_fn': opts.get('stream_fn') if callable(opts.get('stream_fn')) else _sf_parcial})
-    if isinstance(r, dict) and r.get('error') == 'GAP_OUTPUT_TRUNCATED':
+    if isinstance(r, dict):  # >>> PARCHE_BACK_G06 <<< tokens reales consumidos contra task_token_budget
+        try:
+            opts['tokens_usados'] = int(opts.get('tokens_usados') or 0) + int((r.get('usage') or {}).get('completion_tokens') or 0)
+        except (TypeError, ValueError):
+            pass
+    if isinstance(r, dict) and r.get('error') in ('GAP_OUTPUT_TRUNCATED', 'GAP_STREAM_INTERRUPTED'):  # >>> PARCHE_BACK_G07 <<< SSE cortado = mismo camino que length: parcial guardado como dato + cursor del LOOP CODA
         opts.setdefault('salidas_parciales', {})[str(n.get('id'))] = str(r.get('parcial') or '')
-        raise RuntimeError('GAP_OUTPUT_TRUNCATED:' + str(n.get('id')))
+        raise RuntimeError('GAP_OUTPUT_TRUNCATED:' + str(n.get('id')) + (':STREAM_INTERRUPTED' if r.get('error') == 'GAP_STREAM_INTERRUPTED' else ''))
     try:  # metrica de latencia por nodo (solo registro, no cambia la salida)
         _perfil = perfil
         _tcs = r.get('tool_calls') if isinstance(r.get('tool_calls'), list) else (r.get('herramientas') if isinstance(r.get('herramientas'), list) else [])
@@ -1112,7 +1169,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     herramientas = [x for x in (r.get('herramientas') or []) if isinstance(x, dict)]
     bolsa = opts.setdefault('herr', {}).setdefault(str(n.get('id')), [])
     bolsa.extend({'herramienta': x.get('herramienta') or x.get('tool'), 'ok': bool(x.get('ok')), 'mutacion_real': bool(x.get('mutacion_real')),
-                  'accion': str(x.get('accion') or '')[:40], 'objetivo': str(x.get('objetivo') or '')[:160], 'detalle': str(x.get('detalle') or '')[:100]} for x in herramientas)  # >>> PARCHE_COLA <<< el libro de partes necesita QUE se hizo
+                  'accion': str(x.get('accion') or '')[:40], 'objetivo': str(x.get('objetivo') or '')[:160], 'detalle': str(x.get('detalle') or '')[:100],
+                  'receipt_id': x.get('receipt_id'), 'status': x.get('status')} for x in herramientas)  # >>> PARCHE_BACK_G11 <<< el receipt viaja tal como lo emitio el ejecutor  # >>> PARCHE_COLA <<< el libro de partes necesita QUE se hizo
     nuevas_ok = any(x.get('ok') for x in herramientas)
     nuevas_mut = any(x.get('ok') and x.get('mutacion_real') for x in herramientas)
     if escribe and opts.get('muta') and not nuevas_mut:
@@ -1198,7 +1256,7 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
     piezas = list(previo.get('piezas') or []) if isinstance(previo, dict) else []
     libro = str(previo.get('libro') or '') if isinstance(previo, dict) else ''  # >>> PARCHE_COLA <<<
     sin_prog, trunc_n = 0, 0  # >>> PARCHE_CICLO <<< contadores: vueltas seguidas sin progreso verificable / cortes de salida
-    for parte in range(siguiente, max_partes + 1):
+    for parte in range(siguiente, siguiente + max_partes):  # >>> PARCHE_BACK_G10 <<< ventana por request (max_partes) desde el cursor: reanudar no queda con rango vacio
         if opts.get('pid') in _CANCEL:
             raise RuntimeError('GAP_LOOP_CANCELADO')
         if time.monotonic() - inicio >= max_s:
@@ -1244,7 +1302,9 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
                 if not any(x.get('mutacion_real') and x.get('ok') for x in opts['herr'][nid]):
                     raise RuntimeError('GAP_LOOP_SIN_EVIDENCIA_MUTADORA')
             opts['out'].pop('__loop__:' + nid, None)
-            return '\n\n'.join(x for x in piezas if x).strip()
+            _fin = '\n\n'.join(x for x in piezas if x).strip()
+            opts.setdefault('loop_ensamblado', {})[nid] = {'segmentos': len([x for x in piezas if x]), 'sha_piezas': [_hl.sha256(x.encode('utf-8')).hexdigest()[:12] for x in piezas if x], 'sha': _hl.sha256(_fin.encode('utf-8')).hexdigest(), 'tokens_usados': int(opts.get('tokens_usados') or 0)}  # >>> PARCHE_BACK_G06 <<<
+            return _fin
         if _marca(texto, 'CONTINUAR_PARTE') or any(x.get('ok') and x.get('mutacion_real') for x in delta):
             sin_prog = 0 if any(x.get('ok') for x in delta) else sin_prog + 1  # >>> PARCHE_CICLO <<< P1: continuar solo es legitimo con progreso verificable (tool OK)
             if sin_prog >= 3:
@@ -1252,6 +1312,30 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
             continue
         raise RuntimeError('GAP_LOOP_SIN_MARCA: parte %d no indico continuar ni terminar' % parte)
     raise RuntimeError('GAP_LOOP_MAX_PARTES: %d; checkpoint conservado para reanudar' % max_partes)
+
+
+def _llamar_con_partes_reanudable(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
+    # >>> PARCHE_BACK_G10 <<< limite de request/tiempo != fin de tarea: se reanuda desde el cursor hasta DONE, GAP bloqueante o Stop;
+    # watchdog: una ventana que termina con el mismo cursor/piezas/libro que la anterior es repeticion sin avance -> GAP
+    nid = str(n.get('id'))
+    max_v = max(1, min(int((ficha.get('loop') or {}).get('max_ventanas_codigo') or 4), 8))
+    ultima = None
+    for _v in range(max_v):
+        try:
+            return _llamar_con_partes(modelo, prompt, ficha, n, opts)
+        except RuntimeError as x_:
+            m_ = str(x_)
+            if not (m_.startswith('GAP_LOOP_LIMITE_TIEMPO') or m_.startswith('GAP_LOOP_MAX_PARTES')):
+                raise  # GAP bloqueante / cancelado / sin progreso: no se reanuda
+            if opts.get('pid') in _CANCEL:
+                raise RuntimeError('GAP_LOOP_CANCELADO')
+            cur = (opts.get('out') or {}).get('__loop__:' + nid) or {}
+            marca = (cur.get('siguiente'), len(cur.get('piezas') or []), cur.get('libro'))
+            if marca == ultima:
+                raise RuntimeError('GAP_LOOP_SIN_AVANCE_ENTRE_VENTANAS: %s; checkpoint conservado' % m_[:60])
+            ultima = marca
+            _ck_guardar(str(opts.get('pid') or ''), str(opts.get('fid') or ''), dict(opts.get('out') or {}), estado='RUNNING')
+    raise RuntimeError('GAP_LOOP_VENTANAS_AGOTADAS: %d; checkpoint conservado para reanudar' % max_v)
 
 
 def _requiere_loop_salida(n, opts):
@@ -1265,7 +1349,7 @@ def _requiere_loop_salida(n, opts):
 
 def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     if _requiere_loop_salida(n, opts):
-        return _llamar_con_partes(modelo, prompt, ficha, n, opts)
+        return _llamar_con_partes_reanudable(modelo, prompt, ficha, n, opts)
     return _llamar_harness_3(modelo, prompt, ficha, n, opts)
 
 
@@ -2060,6 +2144,14 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     t0 = time.time()
     _prog(str(p.get('_pid') or ''), 'A0', 'ok')  # worker real tomando la tarea: sale de la cola
     ses = str(p.get('sesion') or 'fichas')[:60]
+    _fuente = None
+    if len(mensaje) > 12000:  # >>> PARCHE_BACK_G05 <<< mas largo que la ventana de historial: se guarda literal y verificado antes de cualquier recorte
+        _fuente = _fuente_integra_guardar(ses, mensaje)
+        if _fuente.get('error'):
+            return {'error': _fuente['error'], 'detalle': _fuente.get('detalle')}
+    _tmv = _pc().thinking_mode_resolver('', p.get('thinking_mode')) if 'thinking_mode' in p else {'ok': True}  # >>> PARCHE_BACK_G03 <<< validacion de forma temprana; la de soporte por modelo va en la llamada
+    if not _tmv['ok'] and _tmv['error'] == 'GAP_THINKING_INVALID':
+        return {'error': _tmv['error'], 'detalle': _tmv.get('detalle')}
     # >>> MODOS BEGIN  (punto D: route_request antes de despachar la ficha; la autoridad del modo es el backend)
     modo = None
     _slash_modo = False
@@ -2098,6 +2190,8 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
         from . import mvp as _mvp
         p["_modo"] = modo  # >>> MODOS <<< ficha_modo para la ruta directa (system_block, reasoning, tools)
         _r5 = _mvp.chat(p, FICHAS[fid], mensaje, ses, t0)  # >>> MODOS <<< el modo resuelto tambien viaja en la ruta MVP
+        if isinstance(_r5, dict) and _fuente:
+            _r5['fuente_integra'] = _fuente  # >>> PARCHE_BACK_G05 <<<
         if isinstance(_r5, dict) and p.get("_modo_resuelto"):
             _r5["modo"] = p["_modo_resuelto"]  # >>> MODOS <<<
         return _r5  # >>> MODOS <<<
@@ -2114,7 +2208,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     pend_t = _pend_cargar(fid, ses) if ap else None
     from plugins.puente_chat.capacidad import capacidad_de as _capacidad_de
     _cap_in = _capacidad_de(mensaje)  # unica autoridad de permisos: muta solo si la puerta CAP dice WRITE
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'instrucciones_fijas': str(p.get('instrucciones_fijas') or ''), 'thinking': bool(p.get('thinking') or p.get('thinking_requested')), 'active_anchors_v1': p.get('active_anchors_v1') is True, 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else []),
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'thinking_mode': p.get('thinking_mode'), 'task_token_budget': p.get('task_token_budget'), 'fuente_integra': _fuente, 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'instrucciones_fijas': str(p.get('instrucciones_fijas') or ''), 'thinking': bool(p.get('thinking') or p.get('thinking_requested')), 'active_anchors_v1': p.get('active_anchors_v1') is True, 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else []),
         'loop_salida': str(p.get('task_type') or '').lower() in ('code_largo', 'implement_feature'),  # DSL A02.3: salida larga solo para tipos que la piden
         'cadena_ctx_chars': 6000}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
     # >>> MODOS BEGIN  (punto E: fuera de bucle la fase es 'execute'; el system_block viaja por instrucciones_fijas, que ya se anade al prompt)
@@ -2196,7 +2290,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
         if opts.get('verif_ok'):  # propuesta de verificacion cruzada: ok / confirmo / proceder con verificacion
             _verif_guardar(fid, ses, {'input': mensaje, 'plan': str(opts.get('plan') or ''), 'salida': salida, 'tarea_id': opts['tarea_id'], 'anclados': list(opts.get('anclados') or []), 'constitucion_hash': str(opts.get('constitucion_hash') or ''), 't': time.time()})
     return {"model": FICHAS[fid].get("ficha", fid), "reply": salida, **({"modo": p["_modo_resuelto"]} if p.get("_modo_resuelto") else {}),  # >>> MODOS <<<
-            **_gov_resp(opts), "fast_lane": bool(opts.get("fast_lane")), "fast_consult": bool(opts.get("fast_consult")),
+            **_gov_resp(opts), "fast_lane": bool(opts.get("fast_lane")), "fast_consult": bool(opts.get("fast_consult")), "fuente_integra": opts.get("fuente_integra"), "loop_ensamblado": opts.get("loop_ensamblado"),
             "execution_path": ("FAST_CONSULT" if opts.get("fast_consult") else ("FAST_QA" if opts.get("fast_lane") else "HEAVY")),
             "fast_source": str(opts.get('fast_source') or 'NONE'), "fast_reject_reasons": list(opts.get('fast_reject_reasons') or []),
             "choices": [{"index": 0, "message": {"role": "assistant", "content": salida}}],
