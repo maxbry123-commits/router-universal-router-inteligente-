@@ -32,7 +32,6 @@ PROVIDERS: dict[str, dict[str, Any]] = {
     "deepseek": {"label": "DeepSeek API directa (caché de contexto nativa)", "base": "https://api.deepseek.com/v1", "env": ("DEEPSEEK_API_KEY",)},
     "moonshot": {"label": "Moonshot / Kimi API directa (caché de contexto nativa)", "base": "https://api.moonshot.ai/v1", "env": ("MOONSHOT_API_KEY",)},
     "minimax": {"label": "MiniMax API directa", "base": "https://api.minimax.io/v1", "env": ("MINIMAX_API_KEY",)},
-    "omniroute": {"label": "OmniRoute (misma maquina, puerta local)", "base": None, "env": ("OMNIROUTE_API_KEY",)},
     "local": {"label": "API local (llama.cpp / Ollama / vLLM)", "base": None, "env": ("RIU_LOCAL_API_KEY",)},
 }
 MODELS_TTL = 300.0
@@ -61,8 +60,6 @@ class ProviderError(RuntimeError):
 
 
 def base_url(provider: str) -> str | None:
-    if provider == "omniroute":
-        return (os.getenv("RIU_OMNIROUTE_BASE_URL") or "http://127.0.0.1:20128/v1").rstrip("/")
     if provider == "local":
         return (os.getenv("RIU_LOCAL_BASE_URL") or "").rstrip("/") or None
     return PROVIDERS[provider]["base"]
@@ -86,8 +83,6 @@ def resolve_key(provider: str, byok: str | None = None) -> str | None:
 
 
 def configured(provider: str) -> bool:
-    if provider == "omniroute":
-        return os.getenv("RIU_OMNIROUTE_ENABLED") == "1" or resolve_key(provider) is not None
     if provider == "local":
         return base_url("local") is not None
     return resolve_key(provider) is not None
