@@ -64,13 +64,37 @@ async function pintarVentana(caja) {
     f.append(n, btn("Probar", "secondary tv-probar", () => probar(res, { recurso: r.id })), res); recs.append(f);
   });
   const fichas = (e.fichas || []).map((f) => f.nombre).join(" · ");
+  // >>> PARCHE_TOOLS_LOCK <<< un boton por tool, agrupadas por seccion: el Director apaga lo que la LLM no necesita (sesion actual)
+  const tl = el("div", "list tv-tools");
+  try {
+    const st = await accion("tools_lock", {});
+    const porSec = {};
+    (st.tools || []).forEach((t) => { (porSec[t.seccion] = porSec[t.seccion] || []).push(t); });
+    Object.entries(porSec).forEach(([sec, ts]) => {
+      tl.append(el("div", "tv-sub", sec));
+      ts.forEach((t) => {
+        const f = el("div", "tv-fila tv-tool"); f.dataset.tool = t.nombre;
+        const n = el("div", "tv-n"); n.append(el("span", "", t.nombre));
+        const b = btn(t.locked ? "bloqueada" : "activa", "toggle" + (t.locked ? "" : " on"), async () => {
+          b.disabled = true;
+          try {
+            const r = await accion("tools_lock", { tool: t.nombre, locked: !t.locked });
+            if (r.error) { alert(r.error); } else { t.locked = r.locked; b.textContent = t.locked ? "bloqueada" : "activa"; b.classList.toggle("on", !t.locked); }
+          } catch (x) { alert(x.message); }
+          finally { b.disabled = false; }
+        });
+        b.title = t.locked ? "Tool bloqueada: la LLM no la ve ni la puede invocar" : "Tool activa en el catalogo de la LLM";
+        f.append(n, b); tl.append(f);
+      });
+    });
+  } catch (x) { tl.append(el("div", "muted", "GAP tools_lock: " + x.message)); }
   caja.replaceChildren(
     el("div", "tv-sec", "Agentes del staff (" + e.agentes.length + "/" + (e.max || 20) + ")"),
     el("div", "muted", "Elige en el selector qué modelo usa cada agente. La LLM del chat lo hace con agente_enlazar y lo usa con groq_agente."),
     lista, form,
     el("div", "tv-sec", "Recursos LLM enlazables"), recs,
     el("div", "tv-sec", "Ficha NVIDIA del chat"), el("div", "muted", fichas || "—"),
-    el("div", "tv-sec", "Tools de la LLM del chat"), el("div", "muted", e.tools.join(", ")));
+    el("div", "tv-sec", "Tools de la LLM del chat — un boton por tool"), tl);
 }
 
 function instalarChat() {
@@ -111,3 +135,4 @@ async function instalarConfig() {
 const revisar = () => { try { instalarChat(); instalarConfig(); } catch (e) { console.warn("tools-ventana", e); } };
 new MutationObserver(revisar).observe(document.body, { childList: true, subtree: true });
 revisar();
+
