@@ -80,6 +80,49 @@ def _recibos_falsos(ids):  # >>> PARCHE_T1 <<< ids que el modelo nombra y el eje
         return []  # sin motor disponible no se inventa un fallo
 
 
+# >>> PARCHE_AUD4 <<< G1/G3/G5: recibos de la tarea, temperatura por modo, aviso de truncado
+import re as _re4
+_TEMP_MODO = {'planificador': 0.2, 'auditor': 0.0, 'code': 0.2}
+AVISO_TRUNCADO = chr(10) * 2 + '[AVISO] Tu salida anterior se corto (truncada). Continua desde donde quedo, mas conciso, y cierra con el JSON pedido.' + chr(10)
+
+
+def _ids_recibo(obj):  # >>> PARCHE_AUD4 <<< receipt ids emitidos por el ejecutor (evidencia de herramientas)
+    try:
+        s = json.dumps(obj, default=str, ensure_ascii=False)
+    except Exception:  # noqa: BLE001
+        s = str(obj)
+    return sorted(set(_re4.findall(r'receipt-[A-Za-z0-9_.:-]+', s)))
+
+
+def _politica_temp_txt():  # >>> PARCHE_AUD4 <<< G3: lee fichas/politicas_modelo.json (temperature: 'no forzar ...')
+    try:
+        from pathlib import Path as _P4
+        d = json.loads((_P4(__file__).resolve().parent.parent / 'fichas' / 'politicas_modelo.json').read_text(encoding='utf-8'))
+    except Exception:  # noqa: BLE001
+        return ''
+    out = []
+
+    def _w(x):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                if k == 'temperature' and isinstance(v, str):
+                    out.append(v)
+                else:
+                    _w(v)
+        elif isinstance(x, list):
+            for v in x:
+                _w(v)
+    _w(d)
+    return ' | '.join(out)
+
+
+def _temp_modo(modo, politica_txt='', pensando=False):  # >>> PARCHE_AUD4 <<< G3: None = no forzar
+    t = _TEMP_MODO.get(modo)
+    if t is not None and pensando and 'no forzar' in str(politica_txt).lower():
+        return None
+    return t
+
+
 def _prompt_vuelta(obj, t, resumen, instrucciones=None):
     ins = ''
     if instrucciones:
@@ -230,7 +273,18 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
         st['t_activo'] = time.time() - st['t0']
         progreso('vuelta %d/%d · %s · %s' % (st['vuelta'], lim['max_vueltas'], t['id'], t['texto'][:80]))
         r = llamar(t.get('modo') or 'code',
-                   _prompt_vuelta(obj, t, '\n'.join(st['resumen'][-10:]), st.get('instrucciones_director')))
+                   _prompt_vuelta(obj, t, '\n'.join(st['resumen'][-10:]), st.get('instrucciones_director')) + (AVISO_TRUNCADO if t.get('truncados') else ''))  # >>> PARCHE_AUD4 <<< G5
+        _txt4 = str(r.get('texto') or '')
+        if r.get('truncado') or r.get('finish_reason') == 'length' or _txt4.startswith('GAP_OUTPUT_TRUNCATED'):  # >>> PARCHE_AUD4 <<< G5: truncado = continuar, sin intento ni avance
+            t['truncados'] = int(t.get('truncados') or 0) + 1
+            if t['truncados'] >= 3:
+                t['estado'] = 'bloqueada'
+                t['falta'] = 'GAP_OUTPUT_TRUNCATED: 3 salidas truncadas seguidas'
+            else:
+                t['estado'] = 'sigue'
+            guardar(st)
+            continue
+        t['truncados'] = 0
         j = _json_de(r.get('texto') or '') or {}  # >>> PARCHE_ORDENES <<< ORDEN 07-B: un informe narrativo no es 'hecho'
         if not j:
             j = {'tarea': t['id'], 'estado': 'sigue', 'resultado': 'Falta resultado JSON verificable', 'evidencia': '',
@@ -243,10 +297,21 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
         if _falsos:
             ok_ev = False
             j['resultado'] = 'GAP_RECIBO_INEXISTENTE: ' + ', '.join(_falsos)[:160]
+        # >>> PARCHE_AUD4 <<< G1: los receipt_ids que el modelo nombra deben pertenecer al conjunto emitido en ESTA tarea (no se exige recibo para cerrar: github_escribir no emite 'receipt-')
+        _em4 = st.setdefault('recibos_tarea', {}).setdefault(t['id'], [])
+        _nuevos4 = [str(x) for x in (r.get('receipt_ids') or []) if str(x) not in _em4]
+        _em4.extend(_nuevos4)
+        del _em4[:-200]
+        _mi4 = j.get('receipt_ids') if isinstance(j.get('receipt_ids'), list) else []
+        _ajenos = [str(x) for x in _mi4 if str(x) not in _em4 and str(x) not in _falsos] if 'receipt_ids' in r else []
+        if _ajenos:
+            ok_ev = False
+            j['resultado'] = 'GAP_RECIBO_AJENO: ' + ', '.join(_ajenos)[:160]
         import hashlib as _hh
-        _huella = _hh.sha256(('%s|%s|%s|%s|%s' % (j.get('resultado'), j.get('evidencia'), j.get('nota_siguiente'),
-                                                 r.get('mutaciones_ok'), r.get('herramientas_ok'))).encode('utf-8')).hexdigest()[:12]
-        _avance = (not _falsos) and j.get('estado') == 'sigue' and _ok_sigue and _huella != t.get('huella')
+        _huella = _hh.sha256(('%s|%s|%s|%s|%s|%s' % (j.get('resultado'), j.get('evidencia'), j.get('nota_siguiente'),
+                                                 r.get('mutaciones_ok'), r.get('herramientas_ok'), ','.join(_nuevos4))).encode('utf-8')).hexdigest()[:12]  # >>> PARCHE_AUD4 <<< G2: huella incluye recibos NUEVOS
+        _avance = ((not _falsos) and not _ajenos and j.get('estado') == 'sigue' and _ok_sigue and _huella != t.get('huella')  # >>> PARCHE_AUD4 <<< G2: sin recibo nuevo ni herramienta ok no es avance
+                   and (bool(_nuevos4) or int(r.get('herramientas_ok') or 0) > 0 or modo_actual in ('rapido', 'planificador')))
         if j.get('estado') == 'hecho' and ok_ev:
             t['estado'], t['evidencia'] = 'hecho', str(j.get('evidencia') or '')[:500]
             st['sin_progreso'] = 0

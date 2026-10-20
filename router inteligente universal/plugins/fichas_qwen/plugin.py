@@ -1041,6 +1041,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
                   'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo, 'motor': bool(escribe and cap_nodo == 'write'),  # >>> PARCHE_N4 <<< motor_* solo para el escritor con CAP_WRITE
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
+                  **({'temperature': _nc['temperature']} if _nc.get('temperature') is not None else {}),  # >>> PARCHE_AUD4 <<< G3
                   'dsv4_think': _nc.get('dsv4_think'),  # DSL N1/N2: intento 2 DeepSeek con thinking explícito (False con required)
                   'capas': list(_nc.get('capas') or (n.get('capas') or [])) or (['core'] if (opts.get('fast_lane') or opts.get('fast_consult')) else list((opts.get('modos') or {}).get('capas') or [])),  # GAP G15: el modo elegido en el chat decide el paquete de capas; sin modo -> mapa por nodo  # DSL G10/G15 + AUDIT A10: FAST y consulta FAST solo llevan el core (sin bloque B del nodo)
                   'proceso_id': str(opts.get('pid') or ''),  # DSL G19: el buzon mid-loop del puente sabe de que proceso leer
@@ -1343,6 +1344,21 @@ def _pool_run(pid: str, p: dict[str, Any]):
         raise
 
 
+def _motor_espejo(st: dict[str, Any], tope: int = 200000) -> str:  # >>> PARCHE_AUD4 <<< G4: espejo completo del estado del motor
+    s = json.dumps(st, default=str)
+    if len(s) > tope:
+        s = json.dumps(dict(st, resumen=list(st.get('resumen') or [])[-3:]), default=str)
+    return s[:tope]
+
+
+def _motor_estado_respaldo(pid: str) -> dict[str, Any] | None:  # >>> PARCHE_AUD4 <<< G4: respaldo si falta la memoria motor:<pid>
+    try:
+        s0 = json.loads(str(((_ck_cargar(pid) or {}).get('out') or {}).get('__motor__') or ''))
+        return s0 if isinstance(s0, dict) and s0.get('tareas') else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _ck_cargar(pid: str) -> dict[str, Any] | None:
     try:
         mem, scope_for = _pc()._memoria()
@@ -1521,7 +1537,7 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
                 return {'texto': 'GAP MOTOR_F5: ' + str(x)[:200], 'herramientas_ok': 0}
             hs = [x for x in (r5.get('herramientas') or []) if isinstance(x, dict)]
             return {'texto': str(r5.get('reply') or r5.get('error') or ''), 'herramientas_ok': sum(1 for x in hs if x.get('ok')),
-                    'mutaciones_ok': sum(1 for x in hs if x.get('ok') and x.get('mutacion_real'))}  # >>> PARCHE_ORDENES <<<
+                    'mutaciones_ok': sum(1 for x in hs if x.get('ok') and x.get('mutacion_real')), 'herr': hs}  # >>> PARCHE_ORDENES <<<
         # una llamada por vuelta por el MISMO Harness (Constitucion, solo_lectura, scope intactos)
         n = {'id': 'MOTOR', 'rol': '', 'requiere_tools': modo in ('code', 'auditor', 'paralelo'),
              'escribe': modo == 'code' and bool(opts.get('aprobado')), 'timeout_s': 300}
@@ -1544,6 +1560,12 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
         _nc_m = {'sys_prompt': '', 'forzar_tool': False, 'dsv4_think': None, 'per_attempt_s': 0,
                  'deadline': time.monotonic() + float(_lim_o.get('max_minutos') or 240) * 60,
                  'capas': list(_CAPAS_MODO.get(modo) or ['core'])}
+        try:  # >>> PARCHE_AUD4 <<< G3: temperatura por modo (planificador 0.2, auditor 0.0, code 0.2); None si la politica dice no forzar
+            _tp4 = _mo._temp_modo(modo, _mo._politica_temp_txt(), opts.get('modos_reasoning') != 'none')
+            if _tp4 is not None:
+                _nc_m['temperature'] = _tp4
+        except Exception:  # noqa: BLE001
+            pass
         _tk = _NODO_CALL.set(_nc_m)
         _h0 = len(opts.setdefault('herr', {}).setdefault('MOTOR', []))
         try:
@@ -1558,13 +1580,28 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
         return {'texto': t, 'herramientas_ok': sum(1 for x in nuevas if x.get('ok')),
                 'mutaciones_ok': sum(1 for x in nuevas if x.get('ok') and x.get('mutacion_real'))}  # >>> PARCHE_ORDENES <<<
 
+    _llamar_raw = llamar  # >>> PARCHE_AUD4 <<< G1/G5: recibos nuevos de la vuelta + bandera truncado
+
+    def llamar(modo: str, prompt: str) -> dict:  # noqa: F811
+        _s4 = {k: len(v) for k, v in opts.setdefault('herr', {}).items()}
+        r = _llamar_raw(modo, prompt)
+        if isinstance(r, dict):
+            try:
+                _d4 = [x for k, v in (opts.get('herr') or {}).items() for x in v[_s4.get(k, 0):]]
+                r.setdefault('receipt_ids', _mo._ids_recibo(_d4 + list(r.get('herr') or [])))
+                _t4 = str(r.get('texto') or '')
+                r.setdefault('truncado', _t4.startswith('GAP_OUTPUT_TRUNCATED') or 'OUTPUT_TRUNCATED' in _t4[:200] or r.get('finish_reason') == 'length')
+            except Exception:  # noqa: BLE001
+                pass
+        return r
+
     def guardar(st: dict) -> None:  # checkpoint por vuelta: reanuda tras reinicio (G16b)
         if not pid:
             return
         try:
             mem, sf = _pc()._memoria()
             mem.save(sf('chat-ui', 'motor:' + pid), 'estado', dict(st, ts=time.time()))
-            _ck_guardar(pid, str(ficha.get('ficha') or ''), {'__motor__': json.dumps(st, default=str)[:2000]}, estado='RUNNING')
+            _ck_guardar(pid, str(ficha.get('ficha') or ''), {'__motor__': _motor_espejo(st)}, estado='RUNNING')  # >>> PARCHE_AUD4 <<< G4: estado completo (antes [:2000])
         except Exception:  # noqa: BLE001
             pass
 
@@ -1591,6 +1628,8 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
                 _estado0 = _d0
     except Exception:  # noqa: BLE001
         pass
+    if _estado0 is None and pid:  # >>> PARCHE_AUD4 <<< G4: respaldo = espejo __motor__ del checkpoint
+        _estado0 = _motor_estado_respaldo(pid)
     try:
         res = _mo.correr_objetivo(obj, llamar, guardar, progreso, estado=_estado0, buzon=buzon)
     finally:
