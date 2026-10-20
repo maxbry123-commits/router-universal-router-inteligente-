@@ -17,13 +17,13 @@ _ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 def llamar(plugin: str, accion: str, payload: dict | None = None, timeout: float = 120.0) -> Any:
     """Devuelve el `result` del host si status=ok; si no, {'error': motivo, 'status': ...}."""
-    base = os.environ.get("RIU_ROUTER_URL", "").strip().rstrip("/")
+    base = (os.environ.get("RIU_ROUTER_URL", "").strip() or "http://127.0.0.1:" + os.environ.get("PORT", "7860")).rstrip("/")
     if not base:
         return {"error": "RIU_ROUTER_URL no definida", "status": "degraded"}
     if not (_ID.match(str(plugin)) and _ID.match(str(accion))):
         return {"error": "plugin/accion invalidos", "status": "degraded"}
     headers = {"Content-Type": "application/json"}
-    key = os.environ.get("RIU_API_KEY", "")
+    key = os.environ.get("RIU_API_KEY") or os.environ.get("RIU_PUBLIC_CHAT_KEY", "")
     if key:
         headers["X-API-Key"] = key
     req = urllib.request.Request(f"{base}/plugins/{plugin}/call/{accion}", data=json.dumps(payload or {}).encode(), headers=headers, method="POST")
