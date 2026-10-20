@@ -185,6 +185,8 @@ def _gh(metodo, ruta, cuerpo=None):
             ultimo = (s, d)
             continue  # sin permiso o fallo transitorio: siguiente clave
         return s, d
+    if metodo in ('PUT', 'POST', 'PATCH') and ultimo[0] in (401, 403, 404):  # >>> PARCHE_VERIF <<< mensaje explicito: no confundir con "capacidad no disponible"
+        return ultimo[0], 'ERROR SIN_PAT_CON_PUSH: ninguna clave del banco puede escribir en ese repo (HTTP %s): %s' % (ultimo[0], str(ultimo[1])[:150])
     return ultimo
 
 
@@ -305,7 +307,25 @@ def github_escribir(a):
         cuerpo['sha'] = d0['sha']
     s, d = _gh('PUT', base, cuerpo)
     if s in (200, 201) and isinstance(d, dict):
-        return 'OK commit ' + str((d.get('commit') or {}).get('sha', ''))[:10] + ' total=%d' % len(contenido)  # >>> PARCHE_500K <<<
+        csha = str((d.get('commit') or {}).get('sha', ''))
+        if not csha:
+            return 'ERROR SIN_SHA_DE_COMMIT repo=%s rama=%s ruta=%s (GitHub no devolvio commit; no se da por escrito)' % (repo, rama, a.get('ruta', ''))  # >>> PARCHE_VERIF <<<
+        # >>> PARCHE_VERIF <<< relectura: el archivo debe estar en esa rama con ese contenido; si no, no hay exito
+        s2, d2 = _gh('GET', base + '?ref=' + urllib.parse.quote(rama, safe=''))
+        try:
+            if s2 != 200 or not isinstance(d2, dict):
+                raise ValueError('HTTP %s' % s2)
+            if d2.get('content') and d2.get('encoding', 'base64') == 'base64':
+                ok = base64.b64decode(d2['content']).decode('utf-8', 'replace') == contenido.encode().decode('utf-8', 'replace')
+            else:  # archivos grandes: la API no devuelve el contenido; se compara el blob sha de git
+                import hashlib as _hl
+                _b = contenido.encode()
+                ok = d2.get('sha') == _hl.sha1(b'blob %d\0' % len(_b) + _b).hexdigest()
+            if not ok:
+                raise ValueError('contenido distinto')
+        except Exception as e:  # noqa: BLE001
+            return 'ERROR READBACK_NO_COINCIDE repo=%s rama=%s ruta=%s commit=%s (%s)' % (repo, rama, a.get('ruta', ''), csha[:10], str(e)[:80])
+        return 'OK commit ' + csha[:10] + ' total=%d repo=%s rama=%s ruta=%s verificado=relectura' % (len(contenido), repo, rama, a.get('ruta', ''))  # >>> PARCHE_500K <<<
     return 'ERROR %s %s' % (s, str(d)[:300])
 
 

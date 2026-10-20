@@ -1066,6 +1066,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
             _PARCIAL[_pidp] = ''.join(_bp)
     _tm = time.time()
     _sp = str(_nc.get('sys_prompt') or '')
+    print('[cap] ficha=%s nodo=%s cap_tools=%s escribe=%s' % (opts.get('fid'), n.get('id'), cap_nodo, bool(escribe)), file=sys.stderr, flush=True)  # >>> PARCHE_VERIF <<< el diagnostico no depende de inferencias
     r = pc._chat({'model': qw, 'messages': ([{'role': 'system', 'content': _sp}] if _sp else []) + [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,  # >>> MODOS <<< FIX gobernanza: system aparte (S1)
                   'ficha_id': str(ficha.get('ficha') or ''), 'active_anchors_v1': bool(opts.get('active_anchors_v1')),
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
