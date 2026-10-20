@@ -13,6 +13,7 @@ import importlib
 import importlib.util
 import inspect
 import json
+import logging
 import math
 import os
 import re
@@ -31,6 +32,22 @@ ENTRY_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+:[A-Za
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 CATEGORIES = ("pipeline", "transversal", "acelerador")
 MAX_FICHA_BYTES = 256 * 1024
+MAX_PLUGINS = 50  # capacity limit; override with env RIU_MAX_PLUGINS
+_log = logging.getLogger("plugin_host")
+
+
+def max_plugins() -> int:
+    """Effective plugin capacity: env RIU_MAX_PLUGINS (positive int) or MAX_PLUGINS."""
+    raw = os.environ.get("RIU_MAX_PLUGINS", "").strip()
+    if raw:
+        try:
+            v = int(raw)
+            if v > 0:
+                return v
+        except ValueError:
+            pass
+        _log.warning("RIU_MAX_PLUGINS invalido (%r): se usa %d", raw, MAX_PLUGINS)
+    return MAX_PLUGINS
 DEFAULT_TIMEOUT_S = 5.0
 MAX_TIMEOUT_S = 120.0
 MAX_INFLIGHT = 8  # calls per plugin that may be running at once; a timed-out call cannot be killed, so this bounds leaked threads
@@ -203,7 +220,14 @@ class PluginHost:
         except OSError as exc:
             self.load_error = f"no se pudo leer la carpeta de plugins ({type(exc).__name__})"
             folders = []
+        limit = max_plugins()
         for folder in folders:
+            if len(found) >= limit:
+                rej = Plugin(folder.name)
+                rej.errors = [f"H97_limite_de_plugins_superado: maximo {limit}"]
+                found[folder.name] = rej
+                _log.error("plugin '%s' rechazado: limite de %d plugins superado", folder.name, limit)
+                continue
             found[folder.name] = self._load_one(folder, overrides)
         with self._lock:
             self._overrides = overrides

@@ -393,3 +393,24 @@ def test_router_still_starts_if_the_plugin_host_cannot_be_imported():
             "print('APP-OK')\n")
     r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=180, env=dict(os.environ))
     assert r.returncode == 0 and "APP-OK" in r.stdout, (r.stdout + r.stderr)[-1500:]
+
+
+def test_limite_de_plugins_por_defecto_es_50():
+    assert H.MAX_PLUGINS == 50
+
+
+def test_limite_de_plugins_rechaza_y_registra(tmp_path, monkeypatch, caplog):
+    monkeypatch.setenv("RIU_MAX_PLUGINS", "2")
+    fichas = {f"p{i}": ficha(f"p{i}") for i in range(4)}
+    with caplog.at_level("ERROR", logger="plugin_host"):
+        host = make_host(tmp_path, fichas)
+    plugs = host._plugins
+    assert [plugs[f"p{i}"].status for i in (2, 3)] == ["invalid", "invalid"]
+    assert any("H97" in e for e in plugs["p3"].errors)
+    assert not any("H97" in e for e in plugs["p0"].errors + plugs["p1"].errors)
+    assert "limite de 2" in caplog.text
+
+
+def test_limite_env_invalido_usa_defecto(monkeypatch):
+    monkeypatch.setenv("RIU_MAX_PLUGINS", "abc")
+    assert H.max_plugins() == 50
