@@ -569,7 +569,7 @@ export async function mount(root, { api, tell }) {
   if (bLock) {
     let busy = false, locked = true;  // UI no habilita nada antes de leer el servidor
     const pintarLock = () => {
-      bLock.textContent = locked ? '🔒 IA/agentes/tools BLOQUEADOS' : '🔓 IA/agentes/tools habilitados';
+      bLock.textContent = locked ? '🔒 IA/agentes delegados BLOQUEADOS' : '🔓 IA/agentes delegados habilitados';
       bLock.setAttribute('aria-pressed', String(locked));
     };
     bLock.disabled = true; pintarLock();
@@ -797,3 +797,4 @@ export async function mount(root, { api, tell }) {
   }, 3000);
 
 }
+
