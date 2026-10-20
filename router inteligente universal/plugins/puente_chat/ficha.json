@@ -49,7 +49,12 @@
    "notas",
    "pendientes",
    "room_debatir",
-   "chat_bots"
+   "chat_bots",
+   "mirror_listar",
+   "mirror_configurar",
+   "mirror_agregar",
+   "mirror_quitar",
+   "mirror"
   ]
  },
  "seguridad": {
