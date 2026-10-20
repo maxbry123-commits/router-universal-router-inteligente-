@@ -36,9 +36,14 @@ def hydrate():
             sys.path.insert(0,str(_root))
     except Exception:
         pass
-    tar=tarfile.open(fileobj=io.BytesIO(fs().cat_file(BASE+"/codigo/router-bundle.tar.gz")),mode="r:gz")
-    tar.extractall("/tmp/kernel-bank",filter="data")
-    sys.path.insert(0,"/tmp/kernel-bank/router inteligente universal/Banco de claves")
+    try:
+        tar=tarfile.open(fileobj=io.BytesIO(fs().cat_file(BASE+"/codigo/router-bundle.tar.gz")),mode="r:gz")
+        tar.extractall("/tmp/kernel-bank",filter="data")
+        sys.path.insert(0,"/tmp/kernel-bank/router inteligente universal/Banco de claves")
+    except Exception:
+        pass  # sin bundle (git pull): el Banco de claves sale del arbol local
+    sys.path.insert(0,str(pathlib.Path.cwd()/"Banco de claves"))
+
     from secret_bank.vault import Vault
     p=pathlib.Path("/tmp/kernel-vault.db")
     p.write_bytes(gzip.decompress(base64.b64decode(fs().cat_file(BASE+"/banco/vault.db.gz.b64"))))
