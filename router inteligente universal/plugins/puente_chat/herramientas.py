@@ -27,8 +27,7 @@ def _fn(nombre, desc, props, req):
 
 TOOLS = [
     _fn('github_leer', 'Lee un archivo, o lista una carpeta, de un repositorio de GitHub de maxbry123-commits. En archivos largos usa lineas (ej "200-400") para leer un rango.', {'repo': S, 'ruta': S, 'rama': S, 'lineas': S}, ['repo']),
-    _fn('github_escribir', 'Crea o cambia un archivo en un repositorio de GitHub de maxbry123-commits (hace un commit). Archivos grandes (hasta 500000 caracteres): escribe por partes con anexar=true y offset=<caracteres que el archivo tiene ahora (0 la primera vez)>; el resultado informa total=<caracteres>.', {'repo': S, 'ruta': S, 'contenido': S, 'mensaje': S, 'rama': S, 'anexar': {'type': 'boolean'}, 'offset': {'type': 'integer'}}, ['repo', 'ruta', 'contenido']),  # >>> PARCHE_500K <<<
-
+    _fn('github_escribir', 'Crea o cambia un archivo en un repositorio de GitHub de maxbry123-commits (hace un commit).', {'repo': S, 'ruta': S, 'contenido': S, 'mensaje': S, 'rama': S}, ['repo', 'ruta', 'contenido']),
     _fn('github_api', 'Llama a la API de GitHub con los permisos de la cuenta del Director. metodo: GET, POST, PUT, PATCH o DELETE. ruta: empieza con / (ej. /repos/<owner>/<repo>/commits?per_page=3); admite ?query params.', {'metodo': S, 'ruta': S, 'cuerpo': O}, ['metodo', 'ruta']),
     _fn('hf_leer', 'Lee un archivo de un repo de Hugging Face. tipo: model, dataset o space.', {'repo': S, 'ruta': S, 'tipo': S, 'rama': S}, ['repo', 'ruta']),
     _fn('hf_escribir', 'Crea o cambia un archivo en un repo de Hugging Face de la cuenta COMAND-CENTER-1.', {'repo': S, 'ruta': S, 'contenido': S, 'mensaje': S, 'tipo': S}, ['repo', 'ruta', 'contenido']),
@@ -268,36 +267,17 @@ def github_leer(a):
     return str(d)[:3000]
 
 
-MAX_ARCHIVO_CHARS = 500000  # >>> PARCHE_500K <<<
-
-
 def github_escribir(a):
     repo = a.get('repo') or 'router-universal-router-inteligente-'
     rama = a.get('rama') or 'main'
     base = '/repos/%s/%s/contents/%s' % (OWNER, repo, urllib.parse.quote(a.get('ruta', ''), safe='/'))
     s0, d0 = _gh('GET', base + '?ref=' + urllib.parse.quote(rama, safe=''))
-    contenido = a.get('contenido') or ''  # >>> PARCHE_500K <<<
-    if a.get('anexar') in (True, 'true', 'True', 1, '1'):
-        prev = ''
-        if s0 == 200 and isinstance(d0, dict) and d0.get('content') and d0.get('encoding', 'base64') == 'base64':
-            prev = base64.b64decode(d0['content']).decode('utf-8', 'replace')
-        elif s0 not in (200, 404):
-            return 'ERROR %s no se pudo leer el archivo para anexar: %s' % (s0, str(d0)[:200])
-        try:
-            off = a.get('offset')
-            if off is not None and str(off) != '' and int(off) != len(prev):
-                return 'ERROR OFFSET_DISTINTO tamano_actual=%d (no se anexo nada; usa offset=%d)' % (len(prev), len(prev))
-        except (TypeError, ValueError):
-            return 'ERROR OFFSET_INVALIDO: debe ser un entero'
-        contenido = prev + contenido
-    if len(contenido) > MAX_ARCHIVO_CHARS:
-        return 'ERROR ARCHIVO_EXCEDE_%d_CARACTERES (total pedido %d); divide en archivos' % (MAX_ARCHIVO_CHARS, len(contenido))
-    cuerpo = {'message': a.get('mensaje') or 'cambio desde el chat', 'content': base64.b64encode(contenido.encode()).decode(), 'branch': rama}
+    cuerpo = {'message': a.get('mensaje') or 'cambio desde el chat', 'content': base64.b64encode((a.get('contenido') or '').encode()).decode(), 'branch': rama}
     if s0 == 200 and isinstance(d0, dict) and d0.get('sha'):
         cuerpo['sha'] = d0['sha']
     s, d = _gh('PUT', base, cuerpo)
     if s in (200, 201) and isinstance(d, dict):
-        return 'OK commit ' + str((d.get('commit') or {}).get('sha', ''))[:10] + ' total=%d' % len(contenido)  # >>> PARCHE_500K <<<
+        return 'OK commit ' + str((d.get('commit') or {}).get('sha', ''))[:10]
     return 'ERROR %s %s' % (s, str(d)[:300])
 
 
@@ -959,3 +939,35 @@ FUNCS.update({'delegar_paralelo': _t_delegar_paralelo, 'preguntar_director': _t_
               'regla_yaiwes': _t_regla_yaiwes})
 SISTEMA += (' delegar_paralelo (reparte subtareas a varios modelos a la vez, un nivel),'
             ' preguntar_director (pregunta al Director sin detenerte), regla_yaiwes (una regla verbatim a demanda).')
+
+
+
+# --- PARCHE_MIRROR (Director 2026-10-20): agentes mirror como tool del catalogo ---
+_MIRRORS_BASE = tuple('%s-%02d' % (t, i) for t in ('hermes', 'openclaw', 'claudecode', 'codex') for i in range(1, 11))
+
+
+def _t_mirror(a):
+    agente = str(a.get('agente') or '')[:60]
+    mensaje = str(a.get('mensaje') or '')
+    modelo = str(a.get('modelo') or '')[:120]
+    if not agente or not mensaje:
+        return 'GAP_MIRROR_ARGS: agente y mensaje requeridos'
+    if not modelo:
+        try:
+            from plugins.puente_chat import plugin as _pc
+            ses = str((_pc._IDS_CTX.get() or {}).get('sesion') or '')
+            modelo = str((_pc._mirror_cfg(ses).get('modelo') or {}).get(agente) or '')
+        except Exception:
+            modelo = ''
+    if not modelo:
+        return 'GAP_MIRROR_SIN_MODELO: configura el mirror con mirror_configurar(agente, modelo) o pasa modelo='
+    return llamar_recurso(modelo if ':' in modelo else 'ficha4:' + modelo,
+                          'Eres el agente mirror %s del sistema RIU. Responde correcto y breve.' % agente,
+                          mensaje)
+
+
+TOOLS.append(_fn('mirror_tarea',
+    'Delega una tarea a un agente mirror (hermes-NN/openclaw-NN/claudecode-NN/codex-NN). El mirror usa como motor LLM la ficha/modelo configurada por sesion (ficha4:, ficha5, nvcode: o groq:) o el parametro modelo.',
+    {'agente': S, 'mensaje': S, 'modelo': S}, ['agente', 'mensaje']))
+FUNCS['mirror_tarea'] = _t_mirror
+SISTEMA += ' mirror_tarea(agente, mensaje[, modelo]) delega una tarea a un agente mirror del staff.'
