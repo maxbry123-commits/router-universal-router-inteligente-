@@ -288,6 +288,47 @@ def _tool_seccion(nombre: str) -> str:
     return 'utilidades'
 
 
+# >>> PARCHE_MIRROR <<< agentes mirror: registro por sesion en memoria del Harness (10 por tipo) + ficha/modelo como motor LLM
+_MIRROR_TIPOS = ('hermes', 'openclaw', 'claudecode', 'codex')
+_MIRROR_MAX = 10
+
+
+def _mirror_base() -> list:
+    return [{'id': '%s-%02d' % (t, i), 'tipo': t, 'nombre': '%s %02d' % (t.title(), i)}
+            for t in _MIRROR_TIPOS for i in range(1, _MIRROR_MAX + 1)]
+
+
+def _mirror_cfg(sesion: str) -> dict:
+    try:
+        mem, sf = _memoria()
+        rows = mem.load(sf(DUENO, 'chat:' + str(sesion)[:60]), 'mirror:v1')
+        if not rows:
+            return {}
+        d = rows[0].get('data') if isinstance(rows[0], dict) else None
+        return d if isinstance(d, dict) else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _mirror_guardar(sesion: str, cfg: dict) -> None:
+    mem, sf = _memoria()
+    mem.save(sf(DUENO, 'chat:' + str(sesion)[:60]), 'mirror:v1', cfg)
+
+
+def _mirror_modelos() -> list:
+    # fichas/modelos que puede usar el motor LLM del mirror: ficha4/ficha5, NVIDIA, Groq
+    try:
+        h = _herr()
+        ids = [r for r in h.recursos_ids() if str(r).startswith(('ficha4:', 'nvcode:', 'groq:'))]
+    except Exception:  # noqa: BLE001
+        ids = []
+    out = []
+    for r in sorted(ids):
+        grp = 'Ficha 4/5' if r.startswith('ficha4:') else ('NVIDIA' if r.startswith('nvcode:') else 'Groq')
+        out.append({'id': r, 'grupo': grp, 'nombre': r.split(':', 1)[1]})
+    return out
+
+
 def _agent_lock_set(sesion: str, locked: bool) -> dict:
     if type(locked) is not bool:
         return {'error': 'GAP_AGENT_LOCK_INVALIDO'}
@@ -1112,14 +1153,14 @@ def _bloqueo(nom, args):
     return ''
 
 
-def _evi(nom, args, ok, mut, res=''):  # >>> PARCHE_500K <<<
+def _evi(nom, args, ok, mut):
     # evidencia real de una herramienta ejecutada: {tool, accion, objetivo, ok, mutacion_real}
     a = args if isinstance(args, dict) else {}
     acc = a.get('accion') or a.get('metodo') or a.get('method') or ''
     obj = a.get('ruta') or a.get('repo') or ''
     if a.get('repo') and a.get('ruta'):
         obj = str(a.get('repo')) + ':' + str(a.get('ruta'))
-    return {'herramienta': nom, 'tool': nom, 'accion': str(acc), 'objetivo': str(obj)[:200], 'ok': bool(ok), 'mutacion_real': bool(mut), 'detalle': ' '.join(str(res or '').split())[:100]}
+    return {'herramienta': nom, 'tool': nom, 'accion': str(acc), 'objetivo': str(obj)[:200], 'ok': bool(ok), 'mutacion_real': bool(mut)}
 
 
 def _faltantes(h, nom, args):
@@ -1360,7 +1401,7 @@ def _bucle(llamar, mensajes):
                     rotas.add(nom)
             ok_ = _tool_exito(res)
             ya_ = res.startswith(('OPERACION_YA_COMPLETADA', 'REPETICION_TOOL_DETECTADA'))
-            usadas.append(_evi(nom, args, ok_, bool(mut and ok_ and not ya_), res))
+            usadas.append(_evi(nom, args, ok_, bool(mut and ok_ and not ya_)))
             mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:_perfil()[1]]})
         pasos += 1
         rondas += 1
@@ -2683,8 +2724,6 @@ def _chat(p):
     _FORCE_TOOL.set(bool(p.get('forzar_tool')))  # FIX glm52 INPUT 129: tool_choice=required en el reintento
     if p.get('extra_llm') is None and _CAP_TOOLS.get() == 'none' and len(pregunta or '') <= 300:
         _EXTRA_LLM.set({'enable_thinking': False})  # pregunta simple (CAP_NONE, corta): sin thinking; las complejas lo mantienen
-    if isinstance(p.get('temperature'), (int, float)) and not isinstance(p.get('temperature'), bool):  # >>> PARCHE_AUD4 <<< G3: va como extra; el reintento sin extras la descarta si el proveedor la rechaza
-        _EXTRA_LLM.set(dict(_EXTRA_LLM.get() or {}, temperature=float(p['temperature'])))
     _tid = str(p.get('tarea_id') or '')
     if _tid:  # misma tarea y mismo nodo: las escrituras ya hechas no se repiten aunque se reintente o se corrija
         if len(_VISTOS_G) > 200:
@@ -3157,6 +3196,59 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         return {'ok': True, 'sesion': sesion_l,
                 'tools': [{'nombre': n, 'seccion': _tool_seccion(n), 'locked': n in _lock}
                           for n in dict.fromkeys(_nombres) if n]}
+    if action == 'mirror_listar':  # >>> PARCHE_MIRROR <<< selector del Director: agentes mirror + modelos/fichas para su motor
+        sesion_l = str(payload.get('sesion') or 'general')[:60]
+        cfg = _mirror_cfg(sesion_l)
+        agentes = _mirror_base() + [{'id': x['id'], 'tipo': x.get('tipo', 'custom'),
+                                     'nombre': x.get('nombre') or x['id']} for x in (cfg.get('extra') or [])]
+        mods = cfg.get('modelo') or {}
+        for a_ in agentes:
+            a_['modelo'] = mods.get(a_['id'])
+        return {'ok': True, 'agentes': agentes, 'modelos': _mirror_modelos(), 'sesion': sesion_l}
+    if action == 'mirror_configurar':
+        sesion_l = str(payload.get('sesion') or 'general')[:60]
+        ag = str(payload.get('agente') or '')[:60]
+        mod = str(payload.get('modelo') or '')[:120]
+        if not ag:
+            return {'error': 'GAP_MIRROR_AGENTE_VACIO'}
+        cfg = _mirror_cfg(sesion_l)
+        mods = cfg.setdefault('modelo', {})
+        if mod:
+            mods[ag] = mod
+        else:
+            mods.pop(ag, None)
+        _mirror_guardar(sesion_l, cfg)
+        return {'ok': True, 'agente': ag, 'modelo': mod or None}
+    if action == 'mirror_agregar':
+        sesion_l = str(payload.get('sesion') or 'general')[:60]
+        tipo = str(payload.get('tipo') or 'custom')[:30]
+        nombre = str(payload.get('nombre') or '')[:60]
+        if not nombre:
+            return {'error': 'GAP_MIRROR_NOMBRE_VACIO'}
+        cfg = _mirror_cfg(sesion_l)
+        extra = cfg.setdefault('extra', [])
+        if len([x for x in _mirror_base() + extra if str(x.get('tipo')) == tipo]) >= _MIRROR_MAX:
+            return {'error': 'GAP_MIRROR_MAX', 'tipo': tipo, 'max': _MIRROR_MAX}
+        nid = tipo + '-' + str(len(extra) + 1)
+        extra.append({'id': nid, 'tipo': tipo, 'nombre': nombre})
+        _mirror_guardar(sesion_l, cfg)
+        return {'ok': True, 'id': nid}
+    if action == 'mirror_quitar':
+        sesion_l = str(payload.get('sesion') or 'general')[:60]
+        ag = str(payload.get('agente') or '')[:60]
+        cfg = _mirror_cfg(sesion_l)
+        cfg['extra'] = [x for x in (cfg.get('extra') or []) if x.get('id') != ag]
+        mods = cfg.get('modelo') or {}
+        mods.pop(ag, None)
+        _mirror_guardar(sesion_l, cfg)
+        return {'ok': True, 'agente': ag}
+    if action == 'mirror':  # ROOM pool: debate/chat con mirror como participante (mirror_room.py)
+        try:
+            from plugins.puente_chat import mirror_room as _mr
+            return _mr.mirror(str(payload.get('origen') or ''), str(payload.get('tema') or ''),
+                              payload.get('participantes'), int(payload.get('rondas') or 1))
+        except Exception as exc:  # noqa: BLE001
+            return {'error': 'GAP_MIRROR_ROOM', 'detalle': type(exc).__name__}
     if action == 'proyecto':  # UN sistema de proyectos sobre memoria_yaiwes: scope project:<project_id>
         try:
             mem, scope_for = _memoria()
