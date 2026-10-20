@@ -1,4 +1,0 @@
-NEW_DONORS: dict = {
-    "openclaw": ("https://github.com/openclaw/openclaw", ["README.md", "src"]),
-    "rowboat": ("https://github.com/rowboatlabs/rowboat", ["README.md", "apps"]),
-}

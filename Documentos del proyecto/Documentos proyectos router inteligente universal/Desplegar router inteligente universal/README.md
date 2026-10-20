@@ -1,1 +1,0 @@
-# Desplegar router inteligente universal
