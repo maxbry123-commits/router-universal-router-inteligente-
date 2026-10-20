@@ -274,7 +274,7 @@ def _tools_lock_poner(sesion: str, tool: str, locked: bool) -> dict:
 _TOOL_SECCIONES = (  # agrupacion de la ventana de tools: un boton por tool, una seccion por familia
     ('agentes', ('groq_agente', 'agente_enlazar', 'crear_agente', 'delegar_paralelo', 'room_debatir', 'chat_bots')),
     ('otras_llm', ('nvidia_codigo', 'recurso_llm')),
-    ('motores', ('motor_descargar', 'motor_extraer', 'motor_verificar', 'motor_copiar', 'motor_mover', 'ejecutar_plan_json')),
+    ('motores', ('motor_descargar', 'motor_extraer', 'motor_verificar', 'motor_copiar', 'motor_mover', 'ejecutar_plan_json', 'verificar_recibos')),  # >>> PARCHE_RICARDO <<<
     ('github', ('github_leer', 'github_escribir', 'github_api')),
     ('huggingface', ('hf_leer', 'hf_escribir', 'hf_api', 'hf_almacenamiento')),
     ('internet', ('internet_leer', 'internet_buscar')),
@@ -1564,6 +1564,8 @@ def _mf(nombre, desc, props, req):
 _MOTOR_TOOLS = [
     _mf('ejecutar_plan_json', 'Motor JSON: ejecuta un plan JSON estricto {meta:{name}, ops:[{id,op,path,text,depends_on}]} con ops inspect_workspace, create_directory, write_text, read_text, verify_exists, verify_contains, finish. Devuelve recibos con sha256; reanuda sin duplicar.',  # >>> PARCHE_E2E <<<
         {'plan': {'type': 'string'}}, ['plan']),
+    _mf('verificar_recibos', 'Motor (SOLO LECTURA): comprueba que un receipt_id fue emitido por el ejecutor del motor JSON. Devuelve existe/no existe.',  # >>> PARCHE_RICARDO <<<
+        {'receipt_id': {'type': 'string'}}, ['receipt_id']),
     _mf('motor_descargar', 'Motor: descarga una URL (GitHub/Hugging Face/archivo) al destino indicado y verifica el origen antes y el destino despues.',
         {'origen': {'type': 'string'}, 'destino': {'type': 'string'}}, ['origen']),
     _mf('motor_extraer', 'Motor: audita el TEXTO de un archivo ya anclado (x-ray) y devuelve su estructura. NO descomprime zips: para descargar/extraer/publicar un zip usa motor_descargar.',
@@ -1579,7 +1581,7 @@ _MOTOR_TOOLS = [
 
 def _motor_ejecutar(nom, args):
     # dispatch de las tools del motor existente; devuelve None si no es una tool de motor
-    if not _MOTOR_HAB.get() or not isinstance(nom, str) or not (nom.startswith('motor_') or nom == 'ejecutar_plan_json'):  # >>> PARCHE_E2E <<<
+    if not _MOTOR_HAB.get() or not isinstance(nom, str) or not (nom.startswith('motor_') or nom in ('ejecutar_plan_json', 'verificar_recibos')):  # >>> PARCHE_E2E <<<
         return None
     ses = _MOTOR_SES.get() or 'general'
     a = args if isinstance(args, dict) else {}
@@ -1589,6 +1591,9 @@ def _motor_ejecutar(nom, args):
             if not rep_.get('ok'):
                 return 'MOTOR_ERROR: ' + json.dumps(rep_.get('errors') or rep_, ensure_ascii=False)[:2500]
             return 'YAIWES_OP_REPORT ' + json.dumps(rep_, ensure_ascii=False)[:3500]
+        if nom == 'verificar_recibos':  # >>> PARCHE_RICARDO <<< solo lectura: yaiwes_motor.recibo_existe
+            _rid = str(a.get('receipt_id') or a.get('id') or '')
+            return json.dumps({'receipt_id': _rid[:120], 'existe': bool(_herr()._motor_json().recibo_existe(_rid))}, ensure_ascii=False)
         if nom == 'motor_descargar':
             texto, usadas = _motor_descarga(str(a.get('origen') or '') + ' -> ' + str(a.get('destino') or ''))
             if str(texto).startswith('MOTOR_ERROR'):  # >>> PARCHE_N7 <<<

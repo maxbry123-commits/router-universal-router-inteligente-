@@ -133,8 +133,12 @@ def _prompt_vuelta(obj, t, resumen, instrucciones=None):
                      % (str(t.get('sha_input') or '')[:12], str(t.get('sha_objetivo') or '')[:12], str(t['input_bloque'])))
     else:
         tarea_txt = str(t.get('texto') or '')
-    return ('OBJETIVO DEL DIRECTOR:\n' + obj['objetivo'] + '\n\n'
-            'TAREA ACTUAL (' + t['id'] + '): ' + tarea_txt + '\n\n'
+    _obj_txt = obj['objetivo']
+    if t.get('input_bloque') is not None and t.get('sha_objetivo'):  # >>> PARCHE_RICARDO <<< G: con bloque verbatim el objetivo va corto + sha (el bloque ya lleva el texto)
+        _obj_txt = '(objetivo completo en bloques verbatim; objetivo_sha256=%s) %s' % (str(t['sha_objetivo'])[:12], str(obj['objetivo'])[:300])
+    _nota = ('\n\nPUNTO DE REANUDACIÓN: ' + str(t['nota'])[:200]) if t.get('nota') else ''  # >>> PARCHE_RICARDO <<< A: punto exacto donde seguir
+    return ('OBJETIVO DEL DIRECTOR:\n' + _obj_txt + '\n\n'
+            'TAREA ACTUAL (' + t['id'] + '): ' + tarea_txt + _nota + '\n\n'
             'HECHO HASTA AHORA (resumen):\n' + (resumen or '(nada aún)') + ins + '\n\n'
             + DELTA_CONTINUIDAD +  # >>> PARCHE_T1 <<<
             'Haz SOLO esta tarea ahora, usando herramientas si hacen falta. No pidas confirmación.\n'
@@ -150,6 +154,12 @@ def _prompt_plan(obj, lim):
 
 def _prompt_verif(obj, tareas):
     hechas = '\n'.join('- %s %s: %s' % (t['id'], t['estado'], (t.get('evidencia') or '')[:200]) for t in tareas)
+    _dw = obj.get('done_when')  # >>> PARCHE_RICARDO <<< C: criterios de cierre explicitos (compatible si no existe)
+    if _dw:
+        _crit = '\n'.join('- ' + str(x)[:300] for x in (_dw if isinstance(_dw, list) else [_dw]))
+        return ('OBJETIVO:\n' + obj['objetivo'] + '\n\nESTADO DE TAREAS:\n' + hechas + '\n\nCRITERIOS DE CIERRE (done_when), todos deben cumplirse:\n' + _crit + '\n\n'
+                'Verifica con herramientas de lectura cada criterio. Responde SOLO JSON: {"cumplido":true|false,'
+                '"criterios":[{"c":"criterio","ok":true|false,"evidencia":"..."}],"faltantes":["tarea que falta",...],"evidencia":"..."}')
     return ('OBJETIVO:\n' + obj['objetivo'] + '\n\nESTADO DE TAREAS:\n' + hechas + '\n\n'
             'Verifica con herramientas de lectura si el objetivo COMPLETO está cumplido. '
             'Responde SOLO JSON: {"cumplido":true|false,"faltantes":["tarea que falta",...],"evidencia":"..."}')
@@ -257,6 +267,12 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
             v = _json_de(v_r['texto']) or {}
             todas_hecho = all(t.get('estado') == 'hecho' for t in st['tareas'])
             # DSL A05: CUMPLIDO exige veredicto + todas hechas + evidencia real de herramienta; un texto NO basta
+            if obj.get('done_when'):  # >>> PARCHE_RICARDO <<< C: con done_when, todos los criterios del auditor deben venir ok:true
+                _cs = v.get('criterios')
+                if not (isinstance(_cs, list) and _cs and all(isinstance(c, dict) and c.get('ok') is True for c in _cs)):
+                    v['cumplido'] = False
+                    if not [f for f in (v.get('faltantes') or []) if f] and isinstance(_cs, list):
+                        v['faltantes'] = ['Criterio no cumplido: ' + str(c.get('c'))[:200] for c in _cs if isinstance(c, dict) and c.get('ok') is not True][:5]
             if v.get('cumplido') and todas_hecho and int(v_r.get('herramientas_ok') or 0) > 0:
                 return {'estado': 'CUMPLIDO', 'tareas': st['tareas'], 'evidencia': v.get('evidencia'), 'vueltas': st['vuelta']}
             nuevas = [f for f in (v.get('faltantes') or []) if f]
@@ -289,6 +305,9 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
         if not j:
             j = {'tarea': t['id'], 'estado': 'sigue', 'resultado': 'Falta resultado JSON verificable', 'evidencia': '',
                  'nuevas_tareas': [], 'nota_siguiente': 'Revisar evidencia real del DAG'}
+        if j.get('estado') not in ('hecho', 'sigue', 'bloqueado', 'bloqueada', 'needs_input', 'error') and not j.get('needs_input'):  # >>> PARCHE_RICARDO <<< E: estado fuera de vocabulario = fallo, no avance
+            j['resultado'] = 'GAP_ESTADO_INVALIDO'
+            j['estado'] = 'error'
         modo_actual = t.get('modo') or 'code'
         ok_ev = (int(r.get('mutaciones_ok') or 0) > 0 if modo_actual == 'code'
                  else int(r.get('herramientas_ok') or 0) > 0 or modo_actual in ('rapido', 'planificador'))
@@ -333,7 +352,10 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
             if n and n not in conocidos and len(st['tareas']) < lim['max_tareas']:
                 st['tareas'].append({'id': 'T%d' % (len(st['tareas']) + 1), 'texto': str(n)[:500],
                                      'estado': 'pendiente', 'intentos': 0, 'modo': obj.get('modo_por_defecto', 'code')})
-        st['resumen'].append('%s %s: %s' % (t['id'], t['estado'], str(j.get('resultado') or '')[:200]))
+        t['nota'] = str(j.get('nota_siguiente') or '')[:200]  # >>> PARCHE_RICARDO <<< A: punto de reanudacion para la proxima vuelta
+        st['resumen'].append('%s %s: %s' % (t['id'], t['estado'], str(j.get('resultado') or '')[:200])
+                             + ((' | nota: ' + t['nota']) if t['nota'] else '')
+                             + ((' | recibos: ' + ','.join(_nuevos4)[:200]) if _nuevos4 else ''))  # >>> PARCHE_RICARDO <<< A
         guardar(st)
         if pid:
             _ESTADOS[pid] = dict(st)
