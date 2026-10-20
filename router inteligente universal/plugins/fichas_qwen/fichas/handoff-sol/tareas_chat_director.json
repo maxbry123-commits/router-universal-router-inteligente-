@@ -1,0 +1,60 @@
+{
+ "tareas": [
+  {
+   "id": "CHAT_T1",
+   "titulo": "Boton para bloquear agentes y otras LLM sin bloquear motores/GitHub/HF/internet",
+   "tipo": "backend",
+   "estado": "hecho_verificado_en_vivo",
+   "evidencia": "PARCHE_LOCK_DELEG en plugin.py + agent_access_lock locked=true filtra solo _TOOLS_DELEGAN"
+  },
+  {
+   "id": "CHAT_T2",
+   "titulo": "Selector por secciones con un boton individual por tool",
+   "tipo": "frontend+backend",
+   "estado": "hecho_verificado_en_vivo",
+   "evidencia": "tools_lock accion + tools-ventana.js secciones; GET/SET en vivo"
+  },
+  {
+   "id": "CHAT_T3",
+   "titulo": "Sistema mirror hasta 10 agentes por tipo (Hermes, OpenClaw, Claude Code, Codex) como tools + pool ROOM + chatbot orquestador, cableados a ficha4/ficha5/Nvidia/Groq",
+   "tipo": "backend+frontend",
+   "estado": "hecho_verificado_en_rama",
+   "evidencia": "mirror_* acciones + mirror_tarea tool + mirror_room.py + agentes-mirror.js selector (commits 1514740cec, 23ef70c038, f3324c91a6, bd25bb5bfe, ba7dba8ccc, 92c8927e06, 5305177ab9)"
+  },
+  {
+   "id": "CHAT_T4",
+   "titulo": "Selector de agente debajo de selectores + segundo selector de ficha/modelo del motor del agente",
+   "tipo": "frontend",
+   "estado": "hecho_verificado_en_rama",
+   "evidencia": "agentes-mirror.js + panel-chat.html"
+  },
+  {
+   "id": "CHAT_T5",
+   "titulo": "Motor de descarga y extraccion: descargar entrega_yaiwes.zip, extraer y publicar en misma carpeta/rama",
+   "tipo": "backend",
+   "estado": "hecho_verificado_en_git",
+   "evidencia": "commit eef4001a07 — carpeta entrega/ publicada en tareas-nuevas-antonio/"
+  },
+  {
+   "id": "CHAT_T6",
+   "titulo": "Prueba real de escritura tras /aprobar para qwen/glm/deepseek",
+   "tipo": "backend",
+   "estado": "hecho_verificado_en_git",
+   "evidencia": "commits b89afb93, d13b6637, 2c9d0ab0 (v3) + 60d96365a3, 884071d146 (v2)"
+  },
+  {
+   "id": "CHAT_T7",
+   "titulo": "Migracion del Space a git pull (router_updater) con borrado del bundle",
+   "tipo": "infra",
+   "estado": "hecho_verificado_en_vivo",
+   "evidencia": "/version source=github active_sha=54d394c2; bundle+baks borrados; boot.sh codeload"
+  },
+  {
+   "id": "CHAT_T8",
+   "titulo": "Verificacion real por cada una de las 10 ordenes de correccion (PASS/FAIL con evidencia)",
+   "tipo": "backend",
+   "estado": "pendiente",
+   "evidencia": "codigo aplicado en HEAD; falta prueba real por orden — es la cola queue.json"
+  }
+ ]
+}
