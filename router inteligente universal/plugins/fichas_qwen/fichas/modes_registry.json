@@ -76,12 +76,13 @@
    ".git/"
   ],
   "targets": {
-   "router_ficha": "modes_registry.json",
+   "router_ficha": "router inteligente universal/plugins/fichas_qwen/modos/modes_registry.json",
    "backend": [
-    "<EDITAR: rutas del backend del chat>"
+    "router inteligente universal/plugins/fichas_qwen/",
+    "router inteligente universal/plugins/puente_chat/"
    ],
    "frontend": [
-    "<EDITAR: rutas del frontend del chat>"
+    "chat router/chat frontend/"
    ]
   }
  },

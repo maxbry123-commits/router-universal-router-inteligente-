@@ -1791,7 +1791,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             # FIX Claude INPUT 126: routing por nodo — dsv4* va directo a D_solo_tarea (B es malo conocido para DeepSeek V4)
             _mod_eff = str(elegido if n.get('modelo') == 'selector' else n.get('modelo') or '')
             if _mod_eff.startswith('ficha-dsv4'):
-                _sys_prompt = _LAYOUT_D_SYS  # <<< MODOS END routing dsv4: layout D primario con system ejecutor (INPUT 129)
+                _sys_prompt = _LAYOUT_D_SYS  # >>> PARCHE_OPUS <<< (marcador MODOS END inline quitado: balance BEGIN/END) routing dsv4: layout D primario con system ejecutor (INPUT 129)
                 prompt = ('<tarea>\nTAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):\n' + mensaje + '\n</tarea>\n'
                           + ('<rol>' + str(n.get('rol') or '')[:600] + '</rol>\n' if n.get('rol') else '')
                           + 'Ejecuta <tarea> ahora.')  # DSL G2: en layout D el rol vive dentro del user tras </tarea>, no en el system
