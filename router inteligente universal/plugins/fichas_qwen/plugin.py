@@ -25,6 +25,37 @@ from typing import Any
 
 DIR = Path(__file__).resolve().parent
 FICHAS = {f.stem: json.loads(f.read_text(encoding="utf-8")) for f in sorted((DIR / "fichas").glob("*.json"))}
+_FICHAS_REQUERIDAS = ("ficha1-modelos", "ficha2-dag-codigo", "ficha3-frontend", "ficha4-workflow-yaiwes", "ficha5-mvp")  # >>> PARCHE_UPDATER <<<
+_FICHAS_LOCK = threading.Lock()  # >>> PARCHE_UPDATER <<<
+
+
+def cargar_fichas_validadas(directorio: Any = None) -> dict[str, Any]:  # >>> PARCHE_UPDATER <<< valida TODO antes de tocar FICHAS; lanza ValueError si algo no vale
+    d = Path(directorio) if directorio else DIR / "fichas"
+    nuevas: dict[str, Any] = {}
+    for f in sorted(d.glob("*.json")):
+        try:
+            nuevas[f.stem] = json.loads(f.read_text(encoding="utf-8"))
+        except Exception as e:  # noqa: BLE001
+            raise ValueError("FICHA_INVALIDA:%s:%s" % (f.name, type(e).__name__)) from None
+    for fid in _FICHAS_REQUERIDAS:
+        fx = nuevas.get(fid)
+        if not isinstance(fx, dict) or not isinstance(fx.get("ficha"), str):
+            raise ValueError("FICHA_REQUERIDA_AUSENTE_O_MALFORMADA:" + fid)
+    return nuevas
+
+
+def recargar_fichas(directorio: Any = None) -> dict[str, Any]:  # >>> PARCHE_UPDATER <<< swap atomico: FICHAS = NUEVAS solo si todas validan; si no, se conservan las anteriores
+    global FICHAS
+    try:
+        nuevas = cargar_fichas_validadas(directorio)
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)[:300], "conservadas": len(FICHAS)}
+    with _FICHAS_LOCK:
+        previas = set(FICHAS)
+        FICHAS = nuevas
+    return {"ok": True, "fichas": len(nuevas), "nuevas": sorted(set(nuevas) - previas), "retiradas": sorted(previas - set(nuevas))}
+
+
 ALIAS = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "4": "ficha4-workflow-yaiwes", "5": "ficha5-mvp"}  # 5 = Team 5 MVP (camino directo, mvp.py)
 _POOL = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas_qwen")  # maximo 4 solicitudes activas; las demas esperan en cola
 _POOL_FAST = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas_qwen_fast")  # fix 7: preguntas simples (FAST) no esperan detras de tareas pesadas

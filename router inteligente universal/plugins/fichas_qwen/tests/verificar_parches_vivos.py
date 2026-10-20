@@ -18,6 +18,7 @@ REQ = {  # marcador -> archivos (sufijo) donde debe aparecer
     'PARCHE_AUD3': ('fichas_qwen/motor_json/yaiwes_motor.py', 'fichas_qwen/modos/motor_objetivo.py'),
     'PARCHE_GH_URL_ENC': ('puente_chat/herramientas.py',),
     'PARCHE_AUD4': ('fichas_qwen/modos/motor_objetivo.py', 'fichas_qwen/plugin.py', 'puente_chat/plugin.py'),
+    'PARCHE_UPDATER': ('fichas_qwen/plugin.py', 'router_updater/plugin.py'),
     'PARCHE_AUD': ('fichas_qwen/motor_json/yaiwes_motor.py', 'fichas_qwen/modos/motor_objetivo.py', 'fichas_qwen/plugin.py'),
 }
 _SUF = {s for v in REQ.values() for s in v}
