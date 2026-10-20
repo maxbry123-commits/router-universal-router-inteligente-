@@ -24,7 +24,7 @@ def escritura_activa() -> bool:
 
 
 def llave_mcp() -> str:
-    return env("RIU_MCP_KEY")
+    return env("RIU_MCP_KEY") or env("RIU_PUBLIC_CHAT_KEY")  # respaldo del MCP viejo
 
 
 def llave_chat() -> str:

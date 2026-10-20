@@ -6,6 +6,11 @@ import json
 
 from . import config, tools
 
+try:  # Request a nivel de modulo: con `from __future__ import annotations` FastAPI resuelve la anotacion aqui
+    from fastapi import Request
+except Exception:  # noqa: BLE001
+    Request = None
+
 VERSION = "2.0.0"
 
 
@@ -68,7 +73,7 @@ def handle_http(cuerpo, headers: dict, query: dict):
 
 def build_mcp_router():
     """Reemplazo de integration/chat_mvp/mcp_route.build_mcp_router (mismo nombre, mismo /mcp)."""
-    from fastapi import APIRouter, Request
+    from fastapi import APIRouter
     from fastapi.responses import JSONResponse
     r = APIRouter()
 
