@@ -25,14 +25,14 @@ def _cifrado_guardar(destino, token):
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     salt, nonce = os.urandom(16), os.urandom(12)
     ct = AESGCM(_clave(salt)).encrypt(nonce, token.encode(), destino.encode())
-    from integration.chat_mvp.memoria_loader import _memory
+    from plugins.router_api_cliente import memory as _memory
     _memory().save(_SCOPE, 'token:' + destino, {'alg': 'scrypt+aes-256-gcm', 'salt': base64.b64encode(salt).decode(), 'nonce': base64.b64encode(nonce).decode(), 'ct': base64.b64encode(ct).decode()})
 
 
 def _cifrado_leer(destino):
     try:
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-        from integration.chat_mvp.memoria_loader import _memory
+        from plugins.router_api_cliente import memory as _memory
         r = _memory().sqlite.load(_SCOPE, 'token:' + destino)
         if not r:
             return ''
@@ -50,7 +50,7 @@ def _token(destino):
         _SECRETOS[destino] = t
         return t
     try:
-        from integration.chat_mvp import providers
+        from plugins import router_api_cliente as providers
         ks = providers.env_keys({'github': 'github', 'hf': 'hf', 'vercel': 'vercel'}[destino])
         if ks:
             return ks[0]

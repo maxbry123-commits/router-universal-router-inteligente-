@@ -63,7 +63,7 @@ def _peticion(metodo, url, token, cuerpo=None, espera=40, extra=None):
 
 def _llaves(proveedor, env):
     try:
-        from integration.chat_mvp import vault_hook
+        from plugins import router_api_cliente as vault_hook
         base = list(vault_hook.provider_keys(proveedor))
     except Exception:
         base = []
@@ -662,7 +662,7 @@ _COMP_RAIZ = 'componentes/chat-bot'
 
 
 def _mem_ag():
-    from integration.chat_mvp.memoria_loader import _memory
+    from plugins.router_api_cliente import memory as _memory
     return _memory()
 
 

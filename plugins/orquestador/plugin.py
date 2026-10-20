@@ -35,7 +35,7 @@ ICONOS = ['🤖', '🧠', '🛠️', '🔎', '✍️', '📊', '🧪', '🛰️'
 
 # ---------- memoria canonica ----------
 def _mem():
-    from integration.chat_mvp.memoria_loader import _memory
+    from plugins.router_api_cliente import memory as _memory
     return _memory()
 
 

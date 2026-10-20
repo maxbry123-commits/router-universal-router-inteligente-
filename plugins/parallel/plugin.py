@@ -13,6 +13,17 @@ MAX_CALLS = 32
 SELF_ID = "parallel"
 
 
+class _Http:
+    """host.call por HTTP (edificio 2 no importa integration.plugin_host): POST /plugins/<id>/call/<accion>."""
+
+    def call(self, plugin, accion, payload, timeout):
+        from plugins.router_api_cliente import llamar
+        r = llamar(plugin, accion, payload, timeout or 120.0)
+        if isinstance(r, dict) and r.get("status") == "degraded" and "error" in r:
+            return {"status": "degraded", "reason": r["error"]}
+        return {"status": "ok", "result": r}
+
+
 def _one(host: Any, call: Any, default_timeout: float | None) -> dict[str, Any]:
     if not isinstance(call, dict) or not isinstance(call.get("plugin"), str) or not isinstance(call.get("action"), str):
         return {"status": "degraded", "reason": "call invalido: requiere plugin y action (texto)"}
@@ -33,9 +44,7 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         return {"status": "degraded", "reason": "payload.calls debe ser una lista no vacia"}
     if len(calls) > MAX_CALLS:
         return {"status": "degraded", "reason": f"maximo {MAX_CALLS} calls"}
-    from integration.plugin_host.host import get_host
-
-    host = get_host()
+    host = _Http()
     t = payload.get("timeout_s")
     t = t if isinstance(t, (int, float)) else None
     with ThreadPoolExecutor(max_workers=min(MAX_IN_FLIGHT, len(calls))) as pool:

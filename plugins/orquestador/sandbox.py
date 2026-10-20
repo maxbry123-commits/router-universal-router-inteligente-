@@ -14,7 +14,7 @@ NS = os.getenv('RIU_HF_NS') or 'COMAND-CENTER-1'
 
 def _tokens_hf():
     try:
-        from integration.chat_mvp import providers
+        from plugins import router_api_cliente as providers
         return providers.env_keys('hf')
     except Exception:  # noqa: BLE001
         return [t for t in (os.getenv('HF_TOKEN'), os.getenv('HF_WRITE_TOKEN')) if t]

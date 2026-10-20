@@ -347,7 +347,7 @@ def _agent_lock_set(sesion: str, locked: bool) -> dict:
 
 
 def _tokens_hf() -> list[str]:
-    from integration.chat_mvp import providers
+    from plugins import router_api_cliente as providers
     vistos: list[str] = []
     for t in providers.env_keys("hf"):  # fuente canonica unica: banco (provider_map hf -> huggingface) + HF_TOKEN/HF_TOKEN_1
         if t and t not in vistos:
@@ -377,7 +377,7 @@ def _scope_for(owner, scope):
 def _memoria():
     # UNICA memoria: la fachada canonica memoria_yaiwes (chat router/04-MEMORIA) que carga memoria_loader sobre el store del Router.
     # memory_runtime.py ya no existe en main (revert 4156657): no se importa.
-    from integration.chat_mvp.memoria_loader import _memory
+    from plugins.router_api_cliente import memory as _memory
     return _memory(), _scope_for
 
 
@@ -454,21 +454,11 @@ def _guardar(sesion: str, modelo: str, pregunta: str, respuesta: str) -> bool:
 
 
 def _api(proveedor: str, modelo: str, mensajes: list, max_tokens: int, tope: int) -> dict[str, Any]:
-    from integration.chat_mvp import providers
-    claves = providers.env_keys(proveedor)
-    if not claves:
-        return {"error": "SIN_CLAVES_" + proveedor.upper()}
-    fin = time.monotonic() + tope
-    providers.ATTEMPT_DEADLINE.set(fin)
-    ultimo = ""
-    for clave in claves:  # mismo modelo, otra clave; nunca otro modelo
-        if time.monotonic() >= fin:
-            break
-        try:
-            return providers.chat(proveedor, clave, modelo, mensajes, max_tokens)
-        except Exception as exc:  # noqa: BLE001
-            ultimo = str(exc)[:200]
-    return {"error": "SIN_RESPUESTA_EN_%dS" % tope if time.monotonic() >= fin else "TODAS_LAS_CLAVES_FALLARON", "detalle": ultimo}
+    from plugins import router_api_cliente as providers
+    try:
+        return providers.chat(proveedor, modelo, mensajes, max_tokens, tope)
+    except Exception as exc:  # noqa: BLE001
+        return {'error': 'ROUTER_API_NO_DISPONIBLE', 'detalle': str(exc)[:200]}  # router_api.chat: mismo bucle de claves/plazo en el edificio 1
 
 
 MAX_VIDA_L4_S = 1200  # seguridad 3: tope duro de HF (20 min), se aplica FUERA del contenedor
@@ -929,7 +919,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             return 0, {'error': 'SIN_CLAVES_QWENCLOUD', 'detalle': str(x)[:150]}
         claves, base = [k], u
     else:
-        from integration.chat_mvp import providers
+        from plugins import router_api_cliente as providers
         claves = providers.env_keys(proveedor)
         base = providers.base_url(proveedor)
     bk = proveedor
@@ -1602,7 +1592,7 @@ _MOTORES_DESC = {
 
 def _embed_rank(query, items):
     # nemotron-3-embed-1b ancla la tarea al motor que mejor encaja
-    from integration.chat_mvp import providers
+    from plugins import router_api_cliente as providers
     claves = providers.env_keys('nvidia')
     if not claves:
         return 0

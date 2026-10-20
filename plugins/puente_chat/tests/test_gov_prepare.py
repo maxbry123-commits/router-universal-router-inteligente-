@@ -363,12 +363,10 @@ def test_g_memoria_usa_fachada_canonica_no_memory_runtime():
     assert 'integration.chat_mvp.memory_runtime' not in src.replace('memory_runtime.py ya no existe', '')
     i = src.index('_CTRL_MEM = re.compile')
     j = src.index('def _contexto(')
-    fake = types.ModuleType('integration.chat_mvp.memoria_loader')
+    fake = types.ModuleType('plugins.router_api_cliente')  # edificio 2: la memoria llega por HTTP (router_api), no por import
     marca = object()
-    fake._memory = lambda: marca
-    for nombre in ('integration', 'integration.chat_mvp'):
-        sys.modules.setdefault(nombre, types.ModuleType(nombre))
-    sys.modules['integration.chat_mvp.memoria_loader'] = fake
+    fake.memory = lambda: marca
+    sys.modules['plugins.router_api_cliente'] = fake
     ns = {'re': re}
     exec(src[i:j], ns)
     mem, scope_for = ns['_memoria']()
