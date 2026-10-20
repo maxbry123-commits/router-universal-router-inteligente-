@@ -83,5 +83,15 @@ class Verif(unittest.TestCase):
         self.assertIn('SIN_PAT_CON_PUSH', d)
 
 
+class NotaNodoLectura(unittest.TestCase):
+    def test_nota_para_nodos_de_lectura_va_antes_del_bloque_del_escritor(self):
+        src = (P / 'fichas_qwen' / 'plugin.py').read_text(encoding='utf-8')
+        i = src.index('nodo de lectura): tu nodo no escribe')
+        j = src.index("PUBLICAR: para crear o cambiar archivos")
+        self.assertLess(i, j)
+        self.assertIn("n.get('id') not in ('N4', 'P3')", src[i - 400:i])
+        self.assertIn('NO es un gap', src[i:i + 300])
+
+
 if __name__ == '__main__':
     unittest.main()

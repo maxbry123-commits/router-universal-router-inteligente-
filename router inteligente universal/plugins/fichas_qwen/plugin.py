@@ -1808,6 +1808,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             prompt += nl * 2 + _fmt_txt(ficha) + nl * 2 + 'DIAGRAMA REAL DEL WORKFLOW (copialo tal cual en la seccion DIAGRAMA DE FLUJO):' + nl + _diagrama(ficha, nodos, orden, out, opts, 'N4')
         if n.get('id') == 'N4' and opts.get('aprobado') and opts.get('plan'):
             prompt += nl * 2 + 'PLAN APROBADO POR EL DIRECTOR (ejecutalo tal cual; si cambia el alcance, detente y pide aprobacion otra vez):' + nl + str(opts['plan'])[:6000]
+        if n.get('id') not in ('N4', 'P3') and n.get('tipo') != 'goals' and opts.get('muta'):  # >>> PARCHE_VERIF <<< nodo de lectura: no tener github_escribir aqui es normal, no es un gap
+            prompt += nl * 2 + 'AVISO DEL SISTEMA (nodo de lectura): tu nodo no escribe en GitHub; no tener github_escribir aqui es lo normal y NO es un gap. Si la tarea pide cambios, analiza y deja claros archivos y contenido para el escritor N4, que aplica tras /aprobar. Reporta solo lo que veas o verifiques con herramientas.'
         if n.get('id') in ('N4', 'P3') and opts.get('aprobado'):  # >>> PARCHE_N7 <<<
             prompt += nl * 2 + 'PUBLICAR: para crear o cambiar archivos en GitHub usa la herramienta github_escribir (repo, ruta, contenido, mensaje, rama). github_api solo sirve para leer (GET). Tras escribir, verifica con github_leer e informa ruta y commit. Si motor_extraer o motor_descargar falla, lee el error real del resultado y corrige antes de reintentar. Para un ZIP en GitHub: motor_descargar descarga, extrae y publica con el motor del repo (indica origen y destino); motor_extraer solo audita texto, no descomprime.'
         if n.get('id') == 'N4' and opts.get('correccion'):
