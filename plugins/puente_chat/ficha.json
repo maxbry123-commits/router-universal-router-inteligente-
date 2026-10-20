@@ -54,7 +54,8 @@
    "mirror_configurar",
    "mirror_agregar",
    "mirror_quitar",
-   "mirror"
+   "mirror",
+   "capacidad"
   ]
  },
  "seguridad": {

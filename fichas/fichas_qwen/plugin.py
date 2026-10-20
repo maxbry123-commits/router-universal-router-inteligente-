@@ -1412,20 +1412,9 @@ def _texto_prog(pid: str) -> str:
 
 
 def _hfs():
-    # plugin hf_storage ya cargado por el Router (mismo bucket permanente); si no, se carga desde su plugin.py
-    import importlib.util
-    import sys
-    for m in list(sys.modules.values()):
-        try:
-            f = str(getattr(m, '__file__', '') or '').replace(chr(92), '/')
-            if f.endswith('hf_storage/plugin.py') and hasattr(m, 'handle'):
-                return m
-        except Exception:  # noqa: BLE001
-            continue
-    spec = importlib.util.spec_from_file_location('hf_storage_desde_fichas', DIR.parent.parent / 'plugins' / 'hf_storage' / 'plugin.py')
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    # hf_storage por HTTP (POST /plugins/hf_storage/call/<accion>): el edificio 1 no importa plugins/
+    from fichas.fichas_qwen.puente_http import HFS
+    return HFS
 
 
 def _ck_guardar(pid: str, fid: str, out: dict[str, Any], payload: dict[str, Any] | None = None, estado: str = 'RUNNING', resultado: Any = None) -> None:
@@ -2206,7 +2195,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     if ap:
         mensaje = mensaje.lstrip()[len('/aprobar'):].lstrip()
     pend_t = _pend_cargar(fid, ses) if ap else None
-    from plugins.puente_chat.capacidad import capacidad_de as _capacidad_de
+    from fichas.fichas_qwen.puente_http import capacidad_de as _capacidad_de
     _cap_in = _capacidad_de(mensaje)  # unica autoridad de permisos: muta solo si la puerta CAP dice WRITE
     opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'thinking_mode': p.get('thinking_mode'), 'task_token_budget': p.get('task_token_budget'), 'fuente_integra': _fuente, 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'instrucciones_fijas': str(p.get('instrucciones_fijas') or ''), 'thinking': bool(p.get('thinking') or p.get('thinking_requested')), 'active_anchors_v1': p.get('active_anchors_v1') is True, 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else []),
         'loop_salida': str(p.get('task_type') or '').lower() in ('code_largo', 'implement_feature'),  # DSL A02.3: salida larga solo para tipos que la piden

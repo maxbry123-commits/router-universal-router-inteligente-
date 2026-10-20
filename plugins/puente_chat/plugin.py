@@ -3563,6 +3563,9 @@ import threading as _th_lp
 _LP_SEM = _th_lp.BoundedSemaphore(3)
 from concurrent.futures import wait as _cf_wait
 def handle(action, payload):
+    if action == 'capacidad':  # puerta CAP unica, expuesta por HTTP para las fichas (edificio 1)
+        from plugins.puente_chat.capacidad import capacidad_de as _cap_http
+        return {'status': 'ok', 'capacidad': _cap_http((payload or {}).get('texto'))}
     if action == 'chat_async':
         with _ASYNC_LOCK:
             now=time.time()

@@ -21,7 +21,7 @@ _MAX_DEF = {'ficha-qwen38max': 4096, 'ficha-qwen38flash': 4096, 'ficha-qwen37max
             'ficha-qwen36flash': 2048, 'ficha-dsv4pro': 4096, 'ficha-dsv4pro0813': 4096, 'ficha-dsv4flash': 4096,
             'ficha-glm52': 4096, 'ficha-qwen37flash': 2048}  # salida normal MVP; 8192 solo si el usuario pide algo largo, 16384 explicito
 from fichas.fichas_qwen.perfiles import ESFUERZO_FICHA as _RAZON  # perfil comun de los 9 modelos (sin tools): misma fuente que Fichas 1-4
-from plugins.puente_chat.capacidad import capacidad_de  # la puerta es UNA, compartida con todas las fichas: el software decide, no el modelo
+from fichas.fichas_qwen.puente_http import capacidad_de  # la puerta es UNA, compartida con todas las fichas: el software decide, no el modelo
 _TOOL_NOMBRE = ('github', 'GitHub'), ('hf_', 'Hugging Face'), ('hugging', 'Hugging Face')
 _TIMEOUT_S = 300
 _TIMEOUT_SIMPLE_S = 30  # CAP_NONE (p.ej. 'que modelo eres'): 1 llamada en stream, tope corto, GAP al instante
