@@ -1153,14 +1153,14 @@ def _bloqueo(nom, args):
     return ''
 
 
-def _evi(nom, args, ok, mut):
+def _evi(nom, args, ok, mut, res=''):  # >>> PARCHE_500K <<<
     # evidencia real de una herramienta ejecutada: {tool, accion, objetivo, ok, mutacion_real}
     a = args if isinstance(args, dict) else {}
     acc = a.get('accion') or a.get('metodo') or a.get('method') or ''
     obj = a.get('ruta') or a.get('repo') or ''
     if a.get('repo') and a.get('ruta'):
         obj = str(a.get('repo')) + ':' + str(a.get('ruta'))
-    return {'herramienta': nom, 'tool': nom, 'accion': str(acc), 'objetivo': str(obj)[:200], 'ok': bool(ok), 'mutacion_real': bool(mut)}
+    return {'herramienta': nom, 'tool': nom, 'accion': str(acc), 'objetivo': str(obj)[:200], 'ok': bool(ok), 'mutacion_real': bool(mut), 'detalle': str(res or '')[:100]}
 
 
 def _faltantes(h, nom, args):
@@ -1401,7 +1401,7 @@ def _bucle(llamar, mensajes):
                     rotas.add(nom)
             ok_ = _tool_exito(res)
             ya_ = res.startswith(('OPERACION_YA_COMPLETADA', 'REPETICION_TOOL_DETECTADA'))
-            usadas.append(_evi(nom, args, ok_, bool(mut and ok_ and not ya_)))
+            usadas.append(_evi(nom, args, ok_, bool(mut and ok_ and not ya_), res))
             mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:_perfil()[1]]})
         pasos += 1
         rondas += 1
@@ -2724,6 +2724,8 @@ def _chat(p):
     _FORCE_TOOL.set(bool(p.get('forzar_tool')))  # FIX glm52 INPUT 129: tool_choice=required en el reintento
     if p.get('extra_llm') is None and _CAP_TOOLS.get() == 'none' and len(pregunta or '') <= 300:
         _EXTRA_LLM.set({'enable_thinking': False})  # pregunta simple (CAP_NONE, corta): sin thinking; las complejas lo mantienen
+    if isinstance(p.get('temperature'), (int, float)) and not isinstance(p.get('temperature'), bool):  # >>> PARCHE_AUD4 <<< G3: va como extra; el reintento sin extras la descarta si el proveedor la rechaza
+        _EXTRA_LLM.set(dict(_EXTRA_LLM.get() or {}, temperature=float(p['temperature'])))
     _tid = str(p.get('tarea_id') or '')
     if _tid:  # misma tarea y mismo nodo: las escrituras ya hechas no se repiten aunque se reintente o se corrija
         if len(_VISTOS_G) > 200:
