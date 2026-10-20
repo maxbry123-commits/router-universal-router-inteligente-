@@ -23,6 +23,19 @@ def _hf_token_vivo(v):
             except Exception:pass
     raise RuntimeError("GAP_HF_SIN_TOKEN_VALIDO")
 def hydrate():
+    # router_updater: si hay un release sincronizado desde GitHub, correr desde el (rollback natural al tar.gz)
+    _d=pathlib.Path(os.environ.get("ROUTER_UPDATER_DIR","/data/router_updater"))
+    try:
+        _st=json.loads((_d/"state.json").read_text())
+        _rel=_d/"releases"/_st["LAST_GOOD_SHA"]
+        if _st.get("LAST_GOOD_SHA") and _rel.is_dir() and (_rel/"router inteligente universal"/"plugins").is_dir():
+            _root=_rel/"router inteligente universal"
+            os.environ["RIU_CODE_ROOT"]=str(_root)
+            os.environ["RIU_CODE_SHA"]=_st["LAST_GOOD_SHA"]
+            os.chdir(str(_root))
+            sys.path.insert(0,str(_root))
+    except Exception:
+        pass
     tar=tarfile.open(fileobj=io.BytesIO(fs().cat_file(BASE+"/codigo/router-bundle.tar.gz")),mode="r:gz")
     tar.extractall("/tmp/kernel-bank",filter="data")
     sys.path.insert(0,"/tmp/kernel-bank/router inteligente universal/Banco de claves")
