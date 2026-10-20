@@ -288,7 +288,7 @@ export async function mount(root, { api, tell }) {
 
   // ---- selector de ancla: handoffs con boton de encender + pegar enlace/handoff propio ----
   const ANCLAS = [
-    ["chat-router", "chat router/", "handoff del proyecto workflow Loops code Yaiwes"],
+    ["chat-router", "plugins/chat-router/", "handoff del proyecto workflow Loops code Yaiwes"],
     ["skill", "SKILL.md", "handoff del skill maestro Maxbry UI FROMTED"],
     ["preview", "Preview Vercel", "handoff del panel-chat de prueba"],
   ];

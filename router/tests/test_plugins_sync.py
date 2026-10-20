@@ -19,7 +19,7 @@ def _host(tmp_path):
 
 
 def _copy_template(tmp_path, name, broken=False):
-    src = ROOT / "plugins" / "remote_router"
+    src = ROOT.parent / "plugins" / "remote_router"
     dst = tmp_path / "plugins" / name
     dst.mkdir()
     ficha = json.loads((src / "ficha.json").read_text(encoding="utf-8"))

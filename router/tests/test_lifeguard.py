@@ -11,7 +11,7 @@ from types import SimpleNamespace as NS
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-spec = importlib.util.spec_from_file_location("guardian_under_test", ROOT / "agents-yaiwes" / "common" / "guardian.py")
+spec = importlib.util.spec_from_file_location("guardian_under_test", ROOT.parent / "plugins" / "agentes" / "agents-yaiwes" / "common" / "guardian.py")
 g = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = g
 spec.loader.exec_module(g)
@@ -215,14 +215,14 @@ def test_guardian_command_is_self_contained():
 def _plugin(monkeypatch):
     for k, v in ENV.items():
         monkeypatch.setenv(k, v)
-    spec2 = importlib.util.spec_from_file_location("lifeguard_plugin", ROOT / "plugins" / "lifeguard" / "plugin.py")
+    spec2 = importlib.util.spec_from_file_location("lifeguard_plugin", ROOT.parent / "plugins" / "lifeguard" / "plugin.py")
     m = importlib.util.module_from_spec(spec2)
     spec2.loader.exec_module(m)
     return m
 
 
 def test_plugin_ficha_valid():
-    f = json.loads((ROOT / "plugins" / "lifeguard" / "ficha.json").read_text())
+    f = json.loads((ROOT.parent / "plugins" / "lifeguard" / "ficha.json").read_text())
     assert f["plugin_host"]["schema"] == "plugin_host/v1" and f["plugin_host"]["enabled_default"] is False
     assert f["ejecucion"]["allowed_actions"] == ["status", "plan", "relaunch"]
 

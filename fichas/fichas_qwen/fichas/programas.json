@@ -6,7 +6,7 @@
   "cuando": {
    "diario": "02:00"
   },
-  "objetivo_ref": "chat router/workflow Loops code Yaiwes/objetivos/auditoria.json",
+  "objetivo_ref": "plugins/workflow-loop-yaiwes/objetivos/auditoria.json",
   "ficha": "2",
   "modelo": "ficha-qwen38max"
  },

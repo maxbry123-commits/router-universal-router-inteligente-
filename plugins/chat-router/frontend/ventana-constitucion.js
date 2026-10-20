@@ -3,7 +3,7 @@
 import { escribir, KEYS } from "./almacen.js";
 import { dameCon, refsCompartidas } from "./contexto.js";
 import { el, boton, crearVentana, abrirVentana, agregarPill } from "./ventanas-comun.js";
-const URL_OFICIAL = "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/plugins/puente_chat/constitucion/CONSTITUCION-YAIWES.json";
+const URL_OFICIAL = "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/reorganizacion/plugins/puente_chat/constitucion/CONSTITUCION-YAIWES.json";
 export function montarConstitucion({ root, q, tell }) {
   if (root.dataset.con) return; root.dataset.con = "1";
   const { sheet, caja } = crearVentana(root, { id: "ventana-constitucion", titulo: "Constitución sentinela", css: "ventana-constitucion" });

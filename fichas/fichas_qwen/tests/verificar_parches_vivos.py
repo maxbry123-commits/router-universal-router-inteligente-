@@ -37,13 +37,15 @@ def _leer(origen):
             for m in tf:
                 if m.isfile() and m.size < 5_000_000:
                     for s in _SUF:
-                        if m.name.endswith('/plugins/' + s) or m.name.endswith('plugins/' + s):
+                        if m.name.endswith('/plugins/' + s) or m.name.endswith('plugins/' + s) or m.name.endswith('/' + s):
                             out[s] = tf.extractfile(m).read().decode('utf-8', 'replace')
     else:
         for s in _SUF:
-            f = p / s
-            if f.is_file():
-                out[s] = f.read_text(encoding='utf-8', errors='replace')
+            # layout nuevo: fichas_qwen/ en fichas/, puente_chat/ en plugins/, router_updater/ en router/ (o raiz de plugins vieja)
+            for f in (p / s, p / 'fichas' / s, p / 'plugins' / s, p / 'router' / s):
+                if f.is_file():
+                    out[s] = f.read_text(encoding='utf-8', errors='replace')
+                    break
     return out
 
 
@@ -58,7 +60,7 @@ def verificar(origen):
 
 
 if __name__ == '__main__':
-    origen = sys.argv[1] if len(sys.argv) > 1 else str(Path(__file__).resolve().parents[2])
+    origen = sys.argv[1] if len(sys.argv) > 1 else str(Path(__file__).resolve().parents[3])  # raiz del repo
     f = verificar(origen)
     for x in f:
         print('FALTA', x)

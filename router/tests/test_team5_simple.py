@@ -1,5 +1,5 @@
 """Team 5 CAP_NONE: 1 sola llamada directa, en stream, sin tools/anexo/sentinela, tope 30 s, reasoning low."""
-import plugins.fichas_qwen.mvp as mvp
+import fichas.fichas_qwen.mvp as mvp
 
 
 class _PC:

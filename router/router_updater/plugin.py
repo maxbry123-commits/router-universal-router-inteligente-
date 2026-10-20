@@ -30,7 +30,7 @@ from typing import Any, Callable
 
 REPO_DEFECTO = "maxbry123-commits/router-universal-router-inteligente-"
 RAMA_DEFECTO = "main"
-PREFIJO_DEFECTO = "router inteligente universal/plugins"
+PREFIJO_DEFECTO = "fichas"  # subarbol que se sincroniza en caliente (fichas/fichas_qwen/...); plugins/ y router/ requieren redeploy
 DIR_DEFECTO = "/data/router_updater"
 AUTOSYNC_MIN_S = 30
 MAX_ARCHIVO = 20 * 1024 * 1024
@@ -243,7 +243,7 @@ def clasificar(path: str) -> str:
         return "ninguno"  # los tests no son codigo en ejecucion
     if nombre.endswith(".py"):
         return "restart"
-    if nombre.endswith(".json") or "fichas" in partes[:-1]:
+    if nombre.endswith(".json") or ("fichas_qwen" in partes and "fichas" in partes[partes.index("fichas_qwen") + 1:-1]):  # el prefijo "fichas" ya contiene la palabra: solo cuenta fichas_qwen/fichas/
         return "reload"
     return "ninguno"
 
@@ -305,7 +305,7 @@ def validar_staging(raiz: Path, cambios_rel: list[str], c: dict[str, Any]) -> li
             if rel.endswith("/plugin.py") and (raiz / rel).is_file():
                 base = raiz / c["prefijo"]
                 try:
-                    modn = "plugins." + str((raiz / rel).relative_to(base).with_suffix("")).replace("/", ".")
+                    modn = "fichas." + str((raiz / rel).relative_to(base).with_suffix("")).replace("/", ".")
                     r = subprocess.run([sys.executable, "-I", "-c", "import importlib,sys;sys.path.insert(0,sys.argv[1]);importlib.import_module(sys.argv[2])", str(base.parent), modn],  # noqa: S603
                                        capture_output=True, timeout=60, env={"PATH": os.environ.get("PATH", ""), "PYTHONDONTWRITEBYTECODE": "1"}, cwd=str(raiz))
                     if r.returncode != 0:

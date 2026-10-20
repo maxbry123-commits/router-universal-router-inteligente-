@@ -14,7 +14,7 @@ IDS = ["hf_storage", "hf_datasets", "hf_skills", "hf_compute"]
 
 
 def load(pid):
-    spec = importlib.util.spec_from_file_location("t_" + pid, ROOT / "plugins" / pid / "plugin.py")
+    spec = importlib.util.spec_from_file_location("t_" + pid, ROOT.parent / "plugins" / pid / "plugin.py")
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m
@@ -32,7 +32,7 @@ def mock(m, status=200, body=b"{}"):
 
 @pytest.mark.parametrize("pid", IDS)
 def test_ficha_y_estructura(pid, monkeypatch):
-    f = json.loads((ROOT / "plugins" / pid / "ficha.json").read_text(encoding="utf-8"))
+    f = json.loads((ROOT.parent / "plugins" / pid / "ficha.json").read_text(encoding="utf-8"))
     assert f["plugin_host"]["enabled_default"] is False
     assert f["ejecucion"]["entry_point"] == "plugins.%s.plugin:handle" % pid
     assert f["plugin_host"]["health_action"] in f["ejecucion"]["allowed_actions"]
@@ -48,14 +48,14 @@ def test_ficha_valida_contra_host(pid):
         from integration.plugin_host.host import check_v1
     except Exception as exc:
         pytest.skip("host no importable: %s" % exc)
-    f = json.loads((ROOT / "plugins" / pid / "ficha.json").read_text(encoding="utf-8"))
+    f = json.loads((ROOT.parent / "plugins" / pid / "ficha.json").read_text(encoding="utf-8"))
     assert check_v1(f, pid) == []
 
 
 def test_no_hay_tokens_en_codigo():
     for pid in IDS:
         for fn in ("plugin.py", "ficha.json"):
-            txt = (ROOT / "plugins" / pid / fn).read_text(encoding="utf-8")
+            txt = (ROOT.parent / "plugins" / pid / fn).read_text(encoding="utf-8")
             assert "ghp_" not in txt and "hf_" + "GP" not in txt and "hf_" + "mF" not in txt
 
 

@@ -1739,6 +1739,7 @@ def _motor_descarga(pregunta):
 
 
 _REPO_DIR = 'router-universal-router-inteligente-'
+_RAMA_HANDOFF = (os.environ.get('RIU_HANDOFF_REF') or 'reorganizacion').strip() or 'reorganizacion'  # rama del repo donde viven docs/ y plugins/chat-router (cambiar a main tras el merge)
 _URL_RE = re.compile(r'https?://\S+')
 _CODE_EXT = {'.py', '.js', '.mjs', '.ts', '.tsx', '.jsx', '.html', '.css', '.json',
              '.yaml', '.yml', '.sh', '.md', '.go', '.rs', '.java', '.c', '.cpp',
@@ -1923,19 +1924,19 @@ def _handoff(fuente):
                             'url': 'https://riu-jev-bridge-git-devin-179117-1f446d-maxbry123-8833s-projects.vercel.app/chat/ui/nuevo/panel-chat.html',
                             'usa_para': 'frontend de prueba: replicar funciones y diseno'}}
     if fuente == 'skill':
-        s, d = h._gh('GET', '/repos/maxbry123-commits/%s/contents/chat%%20router/01-PLAN/%%F0%%9F%%98%%84SKILL.md?ref=main' % _REPO_DIR)
+        s, d = h._gh('GET', '/repos/maxbry123-commits/%s/contents/docs/HANDOFF.md?ref=%s' % (_REPO_DIR, _RAMA_HANDOFF))
         extracto = ''
         if s < 400:
             try:
                 extracto = _b64.b64decode((d or {}).get('content') or '').decode('utf-8', 'replace')[:3500]
             except Exception:  # noqa: BLE001
                 pass
-        return {'handoff': {'fuente': 'chat router/01-PLAN/SKILL.md', 'skill': 'fromted-yaiwes-frontend-factory',
+        return {'handoff': {'fuente': 'docs/HANDOFF.md', 'skill': 'fromted-yaiwes-frontend-factory',
                             'usa_para': 'arquitectura, diseno y verificacion de la UI', 'extracto': extracto}}
-    s, d = h._gh('GET', '/repos/maxbry123-commits/%s/git/trees/main?recursive=1' % _REPO_DIR)
+    s, d = h._gh('GET', '/repos/maxbry123-commits/%s/git/trees/%s?recursive=1' % (_REPO_DIR, _RAMA_HANDOFF))
     archivos = [str(t.get('path')) for t in (d or {}).get('tree') or []
-                if str(t.get('path') or '').startswith('chat router/') and t.get('type') == 'blob'][:160]
-    return {'handoff': {'fuente': 'chat router/', 'proyecto': 'workflow Loops code Yaiwes', 'rama': 'main',
+                if str(t.get('path') or '').startswith('plugins/chat-router/') and t.get('type') == 'blob'][:160]
+    return {'handoff': {'fuente': 'plugins/chat-router/', 'proyecto': 'workflow-loop-yaiwes', 'rama': _RAMA_HANDOFF,
                         'archivos': archivos, 'usa_para': 'trabajar sobre el proyecto del chat'}}
 
 

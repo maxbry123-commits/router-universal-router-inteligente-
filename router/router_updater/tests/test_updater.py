@@ -8,8 +8,8 @@ sys.path.insert(0, str(RAIZ))
 import router.router_updater.plugin as U  # noqa: E402
 import fichas.fichas_qwen.plugin as FQ  # noqa: E402
 
-PREF = 'router inteligente universal/plugins'
-FICHAS_REAL = RAIZ / 'plugins' / 'fichas_qwen' / 'fichas'
+PREF = 'fichas'
+FICHAS_REAL = RAIZ / 'fichas' / 'fichas_qwen' / 'fichas'
 SECRETO = 'whsec-prueba-no-real'
 
 
@@ -182,7 +182,7 @@ class Sincronizacion(Base):
 
     def test_dockerfile_solo_se_reporta(self):
         t = arbol_base(); h1 = self.arranque(t); self.gh.blobs_pedidos.clear()
-        t['router inteligente universal/Dockerfile'] = b'FROM x\n'
+        t['Dockerfile'] = b'FROM x\n'
         t[PREF + '/requirements.txt'] = b'a==1\n'
         self.gh.commit(t); r = self.sync()
         self.assertEqual(r['estado'], 'needs_rebuild'); self.assertTrue(r['requiere_rebuild'])

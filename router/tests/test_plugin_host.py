@@ -71,7 +71,7 @@ def install_fake(monkeypatch) -> types.ModuleType:
 
 
 def test_shipped_fichas_chat_on_thinking_modes_off(tmp_path):
-    h = H.PluginHost(ROOT / "plugins", tmp_path / "state.json")
+    h = H.PluginHost(ROOT.parent / "plugins", tmp_path / "state.json")
     by_id = {p["id"]: p for p in h.list_plugins()}
     assert set(by_id) >= {"chat", "thinking-modes"}
     chat, tm = by_id["chat"], by_id["thinking-modes"]
@@ -89,7 +89,7 @@ def test_shipped_fichas_chat_on_thinking_modes_off(tmp_path):
 def test_shipped_chat_ficha_passes_the_repo_validator_but_could_not_be_active():
     validar = H.repo_validator()
     assert validar is not None
-    chat = json.loads((ROOT / "plugins" / "chat" / "ficha.json").read_text(encoding="utf-8"))
+    chat = json.loads((ROOT.parent / "plugins" / "chat" / "ficha.json").read_text(encoding="utf-8"))
     assert H.check_v1(chat, "chat") == [] and validar(chat).valido
     active = dict(chat, estado="active")  # what the README-ROJO says: without contract_hash and a real GPG key it cannot be active
     verdict = validar(active)
@@ -260,7 +260,7 @@ def test_gate_is_closed_only_for_a_valid_plugin_that_is_off(tmp_path, monkeypatc
 
 
 def test_chat_status_call_never_raises_without_the_router_dependencies(tmp_path):
-    h = H.PluginHost(ROOT / "plugins", tmp_path / "state.json")
+    h = H.PluginHost(ROOT.parent / "plugins", tmp_path / "state.json")
     out = h.call("chat", "status", timeout_s=20)
     assert out["status"] in ("ok", "degraded") and (out["status"] == "ok" or out["reason"])  # fastapi missing -> degraded, present -> ok
     assert h.get("chat")["status"] in ("ready", "degraded")
@@ -288,7 +288,7 @@ KEY = {"X-API-Key": "k1"}
 
 
 def _shipped_host(tmp_path):
-    host = H.PluginHost(ROOT / "plugins", tmp_path / "state.json")
+    host = H.PluginHost(ROOT.parent / "plugins", tmp_path / "state.json")
     H.set_host(host)
     return host
 

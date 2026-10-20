@@ -23,7 +23,7 @@ def host(tmp_path, monkeypatch):
     for k in ("RIU_DEEPSEEK_HARNESS_URL", "RIU_MCP_URL", "RIU_MCP_CONFIG", "RIU_SELF_URL", "RIU_HTTP_ALLOWLIST"):
         monkeypatch.delenv(k, raising=False)
     monkeypatch.chdir(tmp_path)
-    h = H.PluginHost(ROOT / "plugins", tmp_path / "state.json")
+    h = H.PluginHost(ROOT.parent / "plugins", tmp_path / "state.json")
     H.set_host(h)
     yield h
     H.set_host(None)
@@ -91,7 +91,7 @@ def test_deepseek_invoke_over_http(host, server, monkeypatch):
 def test_fables_enchufe(host):
     _on(host)
     assert host.call("fables_enchufe", "status")["result"]["validator_v2_cargado"] is True
-    good = json.loads((ROOT / "plugins" / "parallel" / "ficha.json").read_text(encoding="utf-8"))
+    good = json.loads((ROOT.parent / "plugins" / "parallel" / "ficha.json").read_text(encoding="utf-8"))
     r = host.call("fables_enchufe", "validate", {"ficha": good})["result"]
     assert r["status"] == "ok" and r["valido"] is True, r
     bad = host.call("fables_enchufe", "validate", {"ficha": {}})["result"]
@@ -167,7 +167,7 @@ def test_bad_plugin_does_not_break_startup(tmp_path):
     (d / "roto" / "ficha.json").write_text("{no json")
     (d / "malo" / "ficha.json").write_text(json.dumps({"plugin_host": {"schema": "plugin_host/v1", "id": "malo"}}))
     import shutil
-    shutil.copytree(ROOT / "plugins" / "parallel", d / "parallel")
+    shutil.copytree(ROOT.parent / "plugins" / "parallel", d / "parallel")
     h = H.PluginHost(d, tmp_path / "s.json")
     assert h._plugins["roto"].status == "invalid" and h._plugins["malo"].status == "invalid"
     assert h._plugins["parallel"].errors == []

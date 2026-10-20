@@ -172,7 +172,7 @@ class PluginHost:
     """Registry + harness. The constructor never raises: a folder or file that cannot be read only leaves fewer plugins."""
 
     def __init__(self, plugins_dir: Path | str | None = None, state_path: Path | str | None = None, *, use_repo_validator: bool = True) -> None:
-        self.plugins_dir = Path(plugins_dir or os.getenv("RIU_PLUGINS_DIR") or APP_ROOT / "plugins")
+        self.plugins_dir = Path(plugins_dir or os.getenv("RIU_PLUGINS_DIR") or (APP_ROOT / "plugins" if (APP_ROOT / "plugins").is_dir() else APP_ROOT.parent / "plugins"))  # layout reorganizado: plugins/ cuelga de la raiz del repo
         self.state_path = Path(state_path) if state_path else default_state_path()
         self.validator = repo_validator() if use_repo_validator else None
         self.load_error: str | None = None

@@ -1,6 +1,6 @@
 # Generado por convert_instrucciones.py desde INSTRUCCIONES_INPUT_BLOCK_VERBATIM.md
 # NO editar a mano: regenerar. kind: patch (<patch id>), meta_patch ([PATCH n]), prompt_block (PROMPT=).
-fuente: "/home/ubuntu/repos/router-universal-router-inteligente-/chat router/workflow Loops code Yaiwes/INSTRUCCIONES_INPUT_BLOCK_VERBATIM.md"
+fuente: "/home/ubuntu/repos/router-universal-router-inteligente-/plugins/workflow-loop-yaiwes/INSTRUCCIONES_INPUT_BLOCK_VERBATIM.md"
 version: 1
 reglas:
   - id: "fireword-interpretation"
@@ -1353,8 +1353,8 @@ reglas:
       ## 1. Rutas y hechos contrastados en `main`
       
       - Repo: `maxbry123-commits/router-universal-router-inteligente-`; rama `main`.
-      - `router inteligente universal/plugins/fichas_qwen/fichas/ficha2-dag-codigo.json`, blob SHA de lectura: `aa0acd5d0496e80592e08137f2bb3f9c89d2bf5c`.
-      - `router inteligente universal/plugins/fichas_qwen/fichas/ficha3-frontend.json`, blob SHA de lectura: `cd94e9cde11ff9d2a120d154b855c8b217a4dca1`.
+      - `fichas/fichas_qwen/fichas/ficha2-dag-codigo.json`, blob SHA de lectura: `aa0acd5d0496e80592e08137f2bb3f9c89d2bf5c`.
+      - `fichas/fichas_qwen/fichas/ficha3-frontend.json`, blob SHA de lectura: `cd94e9cde11ff9d2a120d154b855c8b217a4dca1`.
       - Si SHA remoto difiere, releer, auditar el diff con la versión de lectura y trabajar sobre HEAD NUEVO **sin forzar**. Los SHA anteriores son referencia, no mandato de sobrescritura.
       - Ya existen: `nodos`, `loop`, `dsl`, `verificacion_instrucciones`, `formato_salida`, `fuente_de_verdad`, `gobernanza`, `politicas_modelo`. **NO agregar duplicados de estos bloques**.
       - Diagnóstico estático: no existe campo `system_prompt` en las fichas 2 y 3; tampoco existe lectura de dicho campo en el ejecutor. **Agregarlo en Fase 1 no activa nada hasta Fase 2.**
@@ -1533,7 +1533,7 @@ reglas:
       
       ## A. BACKEND: insertar `system` desde JSON, no desde el mensaje del usuario
       
-      **Archivo:** `router inteligente universal/plugins/fichas_qwen/plugin.py`
+      **Archivo:** `fichas/fichas_qwen/plugin.py`
       
       **A1. AÑADIR** justo antes de `def _llamar_harness_1(` (sin editar las demás funciones existentes):
       
@@ -1594,7 +1594,7 @@ reglas:
       
       ## B. BACKEND: thinking ON sin romper tool calling
       
-      **Archivo:** `router inteligente universal/plugins/puente_chat/plugin.py`.
+      **Archivo:** `plugins/puente_chat/plugin.py`.
       
       **B0.** En el diccionario `ids` que `_chat` pasa a `_cablear_graphiti(..., { ... })`, añadir solo `'ficha_id': str(p.get('ficha_id') or '')`. `_IDS_CTX` ya existe y es local al contexto de la petición: no se necesita otro scheduler ni un estado global.
       
@@ -1625,7 +1625,7 @@ reglas:
       
       ## C. FRONTEND: preservar INPUT BLOCK literal SOLO en Fichas 2/3
       
-      **Archivo:** `chat router/chat frontend/panel-chat.js`.
+      **Archivo:** `plugins/chat-router/frontend/panel-chat.js`.
       
       **C1. Dentro del `submit` de `#composer`, cambiar estas dos líneas:**
       
@@ -1664,7 +1664,7 @@ reglas:
       
       El `previo()` existente usa 20 turnos: mantiene el comportamiento actual hasta una revisión de presupuesto/contexto. No presentar 20 turnos como "historial completo".
       
-      **Archivo:** `chat router/chat frontend/api.js`.
+      **Archivo:** `plugins/chat-router/frontend/api.js`.
       
       **C6.** Cambiar la lista de argumentos en `export async function harness({...})` añadiendo `instrucciones_fijas` sin quitar otros. En `const extra = Object.assign(...)`, añadir únicamente antes del cierre:
       
@@ -1680,7 +1680,7 @@ reglas:
       
       Este check evita pintar un error JSON de backend como respuesta exitosa. No cambiar manejo HTTP ni rutas.
       
-      **Archivo:** `chat router/chat frontend/chat-contexto.js`.
+      **Archivo:** `plugins/chat-router/frontend/chat-contexto.js`.
       
       Este wrapper YA antepone contexto por `aplicarAMensaje()`, lo cual rompería el literal aunque C1–C4 estén bien. Cambiar **solo** esa asignación `a.message = aplicarAMensaje(...)` dentro del wrapper:
       
@@ -1997,7 +1997,7 @@ reglas:
       
       ## II. PATCH-A — OFF REAL, SIN ARCHIVOS FANTASMA (PRIORIDAD CRÍTICA)
       
-      ### A1. `chat router/chat frontend/contexto.js`: «ON» es la única fuente de anclas opcionales
+      ### A1. `plugins/chat-router/frontend/contexto.js`: «ON» es la única fuente de anclas opcionales
       
       `ampliarAnclados(lista)` **ya existe**; no reemplazar archivo ni crear función homónima. Añadir antes de su `return` actual, sin cambiar `sinMute`, `rs`, `cs`:
       
@@ -2018,11 +2018,11 @@ reglas:
       
       **OJO:** `dameProyGlobal` existe en el mismo módulo; `ampliarAnclados` es el punto de extensión real. No activar proyectos apagados aunque contengan archivos guardados. NO limpiar sus archivos ni los `items` cuando se apagan.
       
-      ### A2. `chat router/chat frontend/api.js`: protocolo de anclas efectivas
+      ### A2. `plugins/chat-router/frontend/api.js`: protocolo de anclas efectivas
       
       Dentro de `harness(...)`, en el objeto `extra = Object.assign(...)` **agregar solo** `{ active_anchors_v1: true }` como uno de los objetos combinados para el chat web (no eliminar `anclados`, `sesion`, `project_id` ni gobernanza). El backend seguirá aceptando clientes antiguos sin el flag, pero para clientes web nuevos **no** recuperará automáticamente otras anclas. **Nota:** usar exactamente el valor `true`, nunca `false` omitido que activa un comportamiento distinto por error.
       
-      ### A3. `router inteligente universal/plugins/puente_chat/plugin.py`: NO volver a anclar TODO el proyecto
+      ### A3. `plugins/puente_chat/plugin.py`: NO volver a anclar TODO el proyecto
       
       En `_chat(p)`, buscar este bloque existente, actualmente sin comprobación ON/OFF:
       
@@ -2050,11 +2050,11 @@ reglas:
               p['anclados'] = list(dict.fromkeys(activos))
       ```
       
-      **Cableado adicional imprescindible que faltaba en Fase 2:** el flag del frontend debe atravesar la ficha antes de llegar a este `_chat`. En `router inteligente universal/plugins/fichas_qwen/plugin.py`, al construir `opts` dentro de `_chat(p)` **añadir solo** `"active_anchors_v1": p.get("active_anchors_v1") is True`. En `_llamar_harness_1(...)`, añadir solo `'active_anchors_v1': bool(opts.get('active_anchors_v1'))` al diccionario que pasa a `pc._chat`. Sin esta propagación, `PATCH-A3` funcionará en chat directo pero NO en Fichas 2/3; marcar `GAP_FLAG_PERDIDO_EN_HARNESS` si no aparece en la petición real. En Team 5 (`mvp.py`) la propagación es distinta: auditar y no editar sin ampliar alcance.
+      **Cableado adicional imprescindible que faltaba en Fase 2:** el flag del frontend debe atravesar la ficha antes de llegar a este `_chat`. En `fichas/fichas_qwen/plugin.py`, al construir `opts` dentro de `_chat(p)` **añadir solo** `"active_anchors_v1": p.get("active_anchors_v1") is True`. En `_llamar_harness_1(...)`, añadir solo `'active_anchors_v1': bool(opts.get('active_anchors_v1'))` al diccionario que pasa a `pc._chat`. Sin esta propagación, `PATCH-A3` funcionará en chat directo pero NO en Fichas 2/3; marcar `GAP_FLAG_PERDIDO_EN_HARNESS` si no aparece en la petición real. En Team 5 (`mvp.py`) la propagación es distinta: auditar y no editar sin ampliar alcance.
       
       **No añadir anclas automáticamente a `res_anc` ni por memoria ni por Graphiti.** Si la lista está vacía, el turno no accede al contenido de archivos, aunque sigan guardados. El bloque `ctx` continúa teniendo historial conversacional: eso no equivale a reactivar un archivo, pero la evidencia puede contener fragmentos antes citados; si se pide purga retrospectiva, requiere una tarea de borrado/privacidad distinta, no fingir que OFF elimina historia.
       
-      ### A4. `chat router/chat frontend/agregar-al-chat.js`: no declarar anclada una foto ANTES de subir
+      ### A4. `plugins/chat-router/frontend/agregar-al-chat.js`: no declarar anclada una foto ANTES de subir
       
       La línea actual en `inp.addEventListener('change',...)` agrega cada nombre a `o.anclados` **antes de que el backend confirme almacenamiento**. NO dejar listener vacío. Para el flujo «Agregar al proyecto», reusar la preferencia `KPS` y asignar el destino físico ANTES del evento de subida.
       
@@ -2094,7 +2094,7 @@ reglas:
       
       ## III. PATCH-B — FOTOS 8 → 25 → 100 → 101+ Y ARCHIVOS 100+
       
-      ### B1. `router inteligente universal/plugins/puente_chat/plugin.py` — ampliar LISTADO, no límite físico por subida
+      ### B1. `plugins/puente_chat/plugin.py` — ampliar LISTADO, no límite físico por subida
       
       Dentro de `if action == 'archivos':` modificar ÚNICAMENTE la cantidad de resultados de la búsqueda de archivos del scope:
       
@@ -2112,7 +2112,7 @@ reglas:
                   return {'error': 'GAP_LISTA_ARCHIVOS', 'detalle': type(exc).__name__}
       ```
       
-      ### B2. `chat router/chat frontend/panel-chat.js` — no presentar ERROR como SUBIDO
+      ### B2. `plugins/chat-router/frontend/panel-chat.js` — no presentar ERROR como SUBIDO
       
       Dentro de `const subir = async (file) => { ... }`, reemplazar únicamente el manejo del tamaño y la línea posterior a `RIU_ACCION("subir",...)`:
       
@@ -2142,7 +2142,7 @@ reglas:
       
       **Sustituye solo** el `for (const f of files)` dentro de `subirVarios`; no duplicar dos bucles. Mantener `cargarArchivos` final. Limitar el número visual de estados si es necesario, **NO limitar los archivos realmente procesados**.
       
-      ### B3. `chat router/chat frontend/almacen-archivos.js` — indicador de las últimas 12 != 12 subidas
+      ### B3. `plugins/chat-router/frontend/almacen-archivos.js` — indicador de las últimas 12 != 12 subidas
       
       Código actual: `subidas = subidas.slice(0, 12)` dentro de `pintarSub()`. Esto borra el historial visual completo y puede hacer creer que no hubo más subidas. Sustituir solo esas referencias dentro de la función:
       
@@ -2168,7 +2168,7 @@ reglas:
       
       ## IV. PATCH-C — DETECTAR SALIDA TRUNCADA Y CONTINUAR SIN FALSO PASS
       
-      ### C1. `router inteligente universal/plugins/puente_chat/plugin.py`, `_http_stream`: capturar `finish_reason`
+      ### C1. `plugins/puente_chat/plugin.py`, `_http_stream`: capturar `finish_reason`
       
       Añadir junto a `partes`, `razon`, `usage`:
       
@@ -2360,7 +2360,7 @@ reglas:
       
       ### D3. Botón en UI (añadido pequeño, sin remaquetar chat)
       
-      `chat router/chat frontend/panel-chat.html`: insertar **uno** junto a `#btn-motor-on`, con estado accesible:
+      `plugins/chat-router/frontend/panel-chat.html`: insertar **uno** junto a `#btn-motor-on`, con estado accesible:
       
       ```html
       <button type="button" id="btn-agent-access-lock" class="pill"
@@ -2369,7 +2369,7 @@ reglas:
       </button>
       ```
       
-      `chat router/chat frontend/panel-chat.js`: dentro de la función de instalación de listeners del chat, junto a `#btn-motor-on`, **agregar** este bloque, que usa el action existente `window.RIU_ACCION`; no reutilizar el PIN de bloqueo de toda la pantalla:
+      `plugins/chat-router/frontend/panel-chat.js`: dentro de la función de instalación de listeners del chat, junto a `#btn-motor-on`, **agregar** este bloque, que usa el action existente `window.RIU_ACCION`; no reutilizar el PIN de bloqueo de toda la pantalla:
       
       ```javascript
         const bLock = q('#btn-agent-access-lock');
@@ -3015,7 +3015,7 @@ reglas:
       
       ## D1 — Corregir el techo *adicional* de dos continuaciones del PARCHE 3
       
-      **Archivo:** `router inteligente universal/plugins/puente_chat/plugin.py`. **Función:** `_bucle`.
+      **Archivo:** `plugins/puente_chat/plugin.py`. **Función:** `_bucle`.
       
       En el PARCHE 3, sección **C2**, se propuso continuar solo dos veces. **ÉSA es la barrera adicional que falta eliminar.** Al aplicar el PARCHE 3, incorporar esta corrección al mismo bloque C2; **NO** crear un segundo sistema de continuación ni pegar ambos bloques.
       
@@ -3057,7 +3057,7 @@ reglas:
       
       ## D2 — Preflight del SYSTEM **más** USER: evitar que el proveedor reciba un bloque superior a su contexto
       
-      **Archivo:** `router inteligente universal/plugins/fichas_qwen/plugin.py`. **Función:** `_llamar_harness_1`. Aplicar **después** de la FASE 2 (que introduce `_yaiwes_system_messages`).
+      **Archivo:** `fichas/fichas_qwen/plugin.py`. **Función:** `_llamar_harness_1`. Aplicar **después** de la FASE 2 (que introduce `_yaiwes_system_messages`).
       
       Actualmente `if len(prompt) > limite` mide el texto `prompt`, **pero no suma el nuevo System Prompt** de los 5 bloques. El JSON puede seguir aceptando el bloque aunque la API luego rechace la petición completa.
       
@@ -3083,7 +3083,7 @@ reglas:
       
       ## D3 — Trazabilidad de entradas/salidas completas en memoria (no confundir con historial corto)
       
-      **Archivo:** `router inteligente universal/plugins/puente_chat/plugin.py`. **Función:** `_guardar`.
+      **Archivo:** `plugins/puente_chat/plugin.py`. **Función:** `_guardar`.
       
       Se detectó un GAP **no corregido** en los tres archivos anteriores: `_guardar()` guarda `pregunta[:4000]` y `respuesta[:8000]` bajo `chat:<sesion>`. Aunque la respuesta se muestre completa en UI, al recuperarla desde esa memoria pierde material. `_hist_txt()` también limita a 20 mensajes / ~12 000 caracteres, y `fichas_qwen/plugin.py` conserva solo extractos para N0/N4. No eliminar los recortes de historial destinados al contexto: **la fuente completa debe estar almacenada aparte**, no inyectarse entera en cada consulta.
       
@@ -3122,7 +3122,7 @@ reglas:
       
       ## D4 — Ruta de Ficha 4 y FAST: no ocultar `finish_reason=length` (AUDITAR, NO EDITAR EN ESTA FASE)
       
-      **Archivo:** `router inteligente universal/plugins/fichas_qwen/plugin.py`. **Función existente:** `_llamar` (es utilizada por Ficha 4 y algunas rutas de respuesta rápida).
+      **Archivo:** `fichas/fichas_qwen/plugin.py`. **Función existente:** `_llamar` (es utilizada por Ficha 4 y algunas rutas de respuesta rápida).
       
       La rama de `_llamar` actualmente hace `t = ...content.strip()` y retorna cuando `t` es no vacío, **sin leer `choices[0].finish_reason`**. El PARCHE 3/C1 añade `finish_reason` al transporte SSE, pero **la lectura directa de `_llamar` seguirá ocultando el corte** si no se corrige. Como tu alcance inicial es Fichas 2/3, **no modificar Ficha 4 ahora**. Registrar esta tarea pendiente con prueba:
       
@@ -8794,7 +8794,7 @@ reglas:
       ==================================================
       
       Archivo:
-      router inteligente universal/integration/chat_mvp/storage_lifecycle.py
+      router/integration/chat_mvp/storage_lifecycle.py
       
       GAP:
       Actualmente promueve:
@@ -8825,9 +8825,9 @@ reglas:
       ==================================================
       
       Archivos:
-      chat router/chat frontend/objetivos-ancla.js
-      chat router/chat frontend/proyecto.js
-      router inteligente universal/plugins/puente_chat/plugin.py
+      plugins/chat-router/frontend/objetivos-ancla.js
+      plugins/chat-router/frontend/proyecto.js
+      plugins/puente_chat/plugin.py
       
       Mantener:
       riu_proy_v1 = CACHE UI.
@@ -8882,7 +8882,7 @@ reglas:
       ==================================================
       
       Archivo:
-      chat router/chat frontend/anclaje-destinos.js
+      plugins/chat-router/frontend/anclaje-destinos.js
       
       ELIMINAR del método fijar():
       
@@ -8921,7 +8921,7 @@ reglas:
       ==================================================
       
       Archivo:
-      chat router/chat frontend/panel-chat.js
+      plugins/chat-router/frontend/panel-chat.js
       
       Antes de eliminar un chat:
       
@@ -8947,8 +8947,8 @@ reglas:
       ==================================================
       
       Archivos:
-      chat router/chat frontend/panel-chat.js
-      chat router/chat frontend/handoff-editor.js
+      plugins/chat-router/frontend/panel-chat.js
+      plugins/chat-router/frontend/handoff-editor.js
       
       Crear/reutilizar un helper pequeño:
       
@@ -8991,7 +8991,7 @@ reglas:
       ==================================================
       
       Archivo:
-      router inteligente universal/plugins/puente_chat/plugin.py
+      plugins/puente_chat/plugin.py
       
       CORREGIR:
       
@@ -9037,7 +9037,7 @@ reglas:
       ==================================================
       
       Archivo:
-      router inteligente universal/plugins/fichas_qwen/plugin.py
+      fichas/fichas_qwen/plugin.py
       
       Actualmente se genera un tarea_id nuevo con secrets.token_hex()
       al volver a entrar en _chat.
@@ -9064,7 +9064,7 @@ reglas:
       ==================================================
       
       Archivo:
-      router inteligente universal/plugins/puente_chat/plugin.py
+      plugins/puente_chat/plugin.py
       
       Mantener _VISTOS_G como cache RAM.
       
