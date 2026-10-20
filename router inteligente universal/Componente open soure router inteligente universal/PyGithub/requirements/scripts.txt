@@ -1,5 +1,0 @@
-libcst
-mypy
-pre-commit<4
-pytest
-requests

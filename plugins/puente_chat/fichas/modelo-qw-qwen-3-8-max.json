@@ -1,0 +1,12 @@
+{
+  "id": "qw-qwen-3-8-max",
+  "nombre": "Qwen 3.8 Max",
+  "proveedor": "qwencloud",
+  "modelo": "qwen3.8-max",
+  "timeout_s": 90,
+  "tipo": "api",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true
+}

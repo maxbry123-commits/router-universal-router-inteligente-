@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>YAIWES T2 R5A3 Browser E2E</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; }
+    #run07-editor { border: 1px solid #999; min-height: 180px; }
+    #run08-output, #e2e-status { white-space: pre-wrap; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>RUN-07 / RUN-08 Browser E2E</h1>
+  <section aria-label="RUN-07 editor"><div id="run07-editor"></div></section>
+  <section aria-label="RUN-08 inspector"><pre id="run08-output"></pre></section>
+  <output id="e2e-status">BOOTING</output>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

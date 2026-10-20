@@ -1,0 +1,47 @@
+- 2026-09-21 18:46:42Z · 7/9 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-21 22:36:38Z · 8/9 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-22 01:37:39Z · 8/9 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-22 07:45:06Z · 8/9 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 2/3)
+- 2026-09-22 13:27:06Z · 11/13 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-22 18:08:18Z · 11/13 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 2/3)
+- 2026-09-22 21:23:07Z · 11/13 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 3/3)
+- 2026-09-23 00:09:50Z · 10/16 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 00:11:37Z · 9/16 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 00:37:59Z · 7/16 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 01:43:19Z · 7/19 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-23 01:54:09Z · 7/19 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 02:03:49Z · 7/20 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 02:41:05Z · 12/20 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 05:36:39Z · 14/20 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-23 06:02:43Z · 14/20 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-23 07:19:21Z · 13/20 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-23 07:19:49Z · 13/20 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 07:41:11Z · 14/20 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-23 08:03:28Z · 15/20 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-23 08:06:08Z · 15/20 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 08:08:10Z · 15/20 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 08:09:27Z · 15/20 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 11:44:32Z · 16/20 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-23 13:45:23Z · 16/21 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-23 17:07:46Z · 15/21 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 2/3)
+- 2026-09-23 18:06:49Z · 15/21 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 20:26:27Z · 15/21 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 3/3)
+- 2026-09-23 21:37:55Z · 16/21 agentes CLOSED · hay pendientes; 3 reintentos sin avance: ESCALAR A CLAUDE (mejorar el DSL DAG, la ruta o crear agentes)
+- 2026-09-23 23:44:53Z · 16/21 agentes CLOSED · hay pendientes; 3 reintentos sin avance: ESCALAR A CLAUDE (mejorar el DSL DAG, la ruta o crear agentes)
+- 2026-09-24 00:10:08Z · 16/21 agentes CLOSED · hay pendientes; 3 reintentos sin avance: ESCALAR A CLAUDE (mejorar el DSL DAG, la ruta o crear agentes)
+- 2026-09-24 04:57:36Z · 16/21 agentes CLOSED · hay pendientes; 3 reintentos sin avance: ESCALAR A CLAUDE (mejorar el DSL DAG, la ruta o crear agentes)
+- 2026-09-24 05:07:20Z · 16/21 agentes CLOSED · hay pendientes; 3 reintentos sin avance: ESCALAR A CLAUDE (mejorar el DSL DAG, la ruta o crear agentes)
+- 2026-09-24 10:05:50Z · 17/22 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-24 10:17:42Z · 17/22 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-24 15:11:06Z · 17/22 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 2/3)
+- 2026-09-24 15:19:48Z · 17/22 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 3/3)
+- 2026-09-24 19:13:51Z · 17/22 agentes CLOSED · hay pendientes; 3 reintentos sin avance: ESCALAR A CLAUDE (mejorar el DSL DAG, la ruta o crear agentes)
+- 2026-09-24 19:21:22Z · 17/22 agentes CLOSED · hay pendientes; 3 reintentos sin avance: ESCALAR A CLAUDE (mejorar el DSL DAG, la ruta o crear agentes)
+- 2026-09-24 22:29:08Z · 17/22 agentes CLOSED · hay pendientes; 3 reintentos sin avance: ESCALAR A CLAUDE (mejorar el DSL DAG, la ruta o crear agentes)
+- 2026-09-24 22:35:29Z · 17/22 agentes CLOSED · hay pendientes; 3 reintentos sin avance: ESCALAR A CLAUDE (mejorar el DSL DAG, la ruta o crear agentes)
+- 2026-09-25 01:03:37Z · 18/23 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-25 01:34:16Z · 19/23 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-25 02:42:22Z · 21/26 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-25 05:42:50Z · 30/37 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-25 06:18:13Z · 30/38 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+- 2026-09-25 07:53:53Z · 31/38 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 2/3)

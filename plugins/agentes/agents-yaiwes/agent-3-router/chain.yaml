@@ -1,0 +1,62 @@
+schema: yaiwes.chain/v1
+
+# agent-3-router — P1 opción 3 GOLDEN: Static + OAuth + Inference Providers
+input_block: |
+  Opción 3 INPUT-l: Static Space + OAuth HF + Inference Providers. SIN Job.
+  EJECUTA publish_live.py GOLDEN con python_exec. NO regeneres el .py.
+  PASS: space_url con owner + HTTP≠404. Status PENDING_VERIFY (no CLOSED).
+  NUNCA API keys en secrets del Static Space.
+
+agent:
+  id: agent-3-router
+  framework: pocketflow
+  group: hf-chat
+  route: [nvidia, groq]
+  fallback: [minimax_m3]
+  max_tokens: 1200
+
+context:
+  text: |
+    GOLDEN publish_live.py ya crea Static Space + OAuth. Solo python_exec.
+    Job 32GB aplazado. PROHIBIDO paper CLOSED.
+
+steps:
+  - id: space_readme
+    task: |
+      README.md Static Space ya embebido en GOLDEN. No reescribas prosa.
+    checks:
+      - kind: contains
+        values: ["sdk: static", "hf_oauth"]
+      - kind: no_secrets
+
+  - id: space_index
+    task: |
+      index.html ya embebido en GOLDEN (OAuth + Inference Providers).
+    checks:
+      - kind: contains
+        values: ["oauth", "inference", "textContent"]
+      - kind: no_secrets
+
+  - id: deploy_script
+    task: |
+      Confirma publish_live.py AST OK. NO regeneres.
+    checks:
+      - kind: python_ast
+      - kind: no_secrets
+
+  - id: publish_live
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md
+    task: |
+      python_exec results/publish_live.py verbatim. CERO fences. CERO regeneración.
+      Escribe space_url con owner. Status PENDING_VERIFY. PROHIBIDO CLOSED.
+      NO lances HF Job.
+    checks:
+      - kind: contains
+        values: ["space_url", "http"]
+      - kind: no_secrets
+
+edges:
+  - space_readme -> space_index
+  - space_index -> deploy_script
+  - deploy_script -> publish_live

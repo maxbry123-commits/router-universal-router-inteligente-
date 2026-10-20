@@ -1,0 +1,5 @@
+/* ventana-constitucion.css — solo lo propio de la ventana de constitución */
+.con-cuerpo{display:grid;gap:10px}
+.con-pre{max-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;padding:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel)}
+.con-oficial summary{cursor:pointer;color:var(--quiet);padding:6px 0}
+#pill-constitucion.on::before{content:"● ";color:#fff}

@@ -1,0 +1,279 @@
+{
+  "n": 39,
+  "updated": "2026-09-09T07:04:31Z",
+  "windows": [
+    {
+      "id": "RUN-01",
+      "name": "CASCADE",
+      "file": "RUN-01.html",
+      "ficha": "FICHAS/RUN-01.json",
+      "sha12": "af2158e7671b"
+    },
+    {
+      "id": "RUN-02",
+      "name": "TREN",
+      "file": "RUN-02.html",
+      "ficha": "FICHAS/RUN-02.json",
+      "sha12": "bee075cd1f2c"
+    },
+    {
+      "id": "RUN-03",
+      "name": "AUDITOR",
+      "file": "RUN-03.html",
+      "ficha": "FICHAS/RUN-03.json",
+      "sha12": "9a50bc886b12"
+    },
+    {
+      "id": "RUN-04",
+      "name": "VENTANAS V-01…V-04",
+      "file": "RUN-04.html",
+      "ficha": "FICHAS/RUN-04.json",
+      "sha12": "62378cf5f719"
+    },
+    {
+      "id": "RUN-05",
+      "name": "ORQUESTA",
+      "file": "RUN-05.html",
+      "ficha": "FICHAS/RUN-05.json",
+      "sha12": "91bb9e9febda"
+    },
+    {
+      "id": "RUN-06",
+      "name": "panel Sandbox",
+      "file": "RUN-06.html",
+      "ficha": "FICHAS/RUN-06.json",
+      "sha12": "e4fff6417219"
+    },
+    {
+      "id": "RUN-07",
+      "name": "panel Codigo YAML",
+      "file": "RUN-07.html",
+      "ficha": "FICHAS/RUN-07.json",
+      "sha12": "24156efd80bf"
+    },
+    {
+      "id": "RUN-08",
+      "name": "panel nodo / input / out",
+      "file": "RUN-08.html",
+      "ficha": "FICHAS/RUN-08.json",
+      "sha12": "aa744d72c67e"
+    },
+    {
+      "id": "WALL-01",
+      "name": "Tab Bloques",
+      "file": "WALL-01.html",
+      "ficha": "FICHAS/WALL-01.json",
+      "sha12": "70abc9c8416b"
+    },
+    {
+      "id": "WALL-02",
+      "name": "Tab Árbol",
+      "file": "WALL-02.html",
+      "ficha": "FICHAS/WALL-02.json",
+      "sha12": "b65fa58677ab"
+    },
+    {
+      "id": "WALL-03",
+      "name": "Tab Archivos",
+      "file": "WALL-03.html",
+      "ficha": "FICHAS/WALL-03.json",
+      "sha12": "2267d455d9d6"
+    },
+    {
+      "id": "WALL-04",
+      "name": "Modo Preguntar",
+      "file": "WALL-04.html",
+      "ficha": "FICHAS/WALL-04.json",
+      "sha12": "e4945935f567"
+    },
+    {
+      "id": "WALL-05",
+      "name": "Modo Tap archivo",
+      "file": "WALL-05.html",
+      "ficha": "FICHAS/WALL-05.json",
+      "sha12": "39ed905584fa"
+    },
+    {
+      "id": "WALL-06",
+      "name": "Modo Tap bloque",
+      "file": "WALL-06.html",
+      "ficha": "FICHAS/WALL-06.json",
+      "sha12": "9e3a44b5db7a"
+    },
+    {
+      "id": "WALL-07",
+      "name": "6 raíces",
+      "file": "WALL-07.html",
+      "ficha": "FICHAS/WALL-07.json",
+      "sha12": "8919927aedda"
+    },
+    {
+      "id": "WALL-08",
+      "name": "Grid bloques 00–25",
+      "file": "WALL-08.html",
+      "ficha": "FICHAS/WALL-08.json",
+      "sha12": "6d7511038c72"
+    },
+    {
+      "id": "WALL-09",
+      "name": "Lista archivos",
+      "file": "WALL-09.html",
+      "ficha": "FICHAS/WALL-09.json",
+      "sha12": "0235ca228e30"
+    },
+    {
+      "id": "WALL-10",
+      "name": "Sheet bloque",
+      "file": "WALL-10.html",
+      "ficha": "FICHAS/WALL-10.json",
+      "sha12": "c0502d0b651a"
+    },
+    {
+      "id": "WALL-11",
+      "name": "Sheet archivo",
+      "file": "WALL-11.html",
+      "ficha": "FICHAS/WALL-11.json",
+      "sha12": "deb0f904ac12"
+    },
+    {
+      "id": "WALL-12",
+      "name": "Sheet raíz",
+      "file": "WALL-12.html",
+      "ficha": "FICHAS/WALL-12.json",
+      "sha12": "0c669c297270"
+    },
+    {
+      "id": "WALL-13",
+      "name": "Sheet extra",
+      "file": "WALL-13.html",
+      "ficha": "FICHAS/WALL-13.json",
+      "sha12": "b195b80e719f"
+    },
+    {
+      "id": "WALL-14",
+      "name": "Añadir raíz",
+      "file": "WALL-14.html",
+      "ficha": "FICHAS/WALL-14.json",
+      "sha12": "23783f6b988b"
+    },
+    {
+      "id": "WALL-15",
+      "name": "Barra Guardar / Share",
+      "file": "WALL-15.html",
+      "ficha": "FICHAS/WALL-15.json",
+      "sha12": "b00e22649f21"
+    },
+    {
+      "id": "WALL-16",
+      "name": "state.json bitácora",
+      "file": "WALL-16.html",
+      "ficha": "FICHAS/WALL-16.json",
+      "sha12": "dca3f8fa7ef3"
+    },
+    {
+      "id": "GBOT-01",
+      "name": "Cáscara Grok Bot FROMTED",
+      "file": "GBOT-01.html",
+      "ficha": "FICHAS/GBOT-01.json",
+      "sha12": "6a439088a7b8"
+    },
+    {
+      "id": "FOTO-01",
+      "name": "Motivo foto 01",
+      "file": "FOTO-01.html",
+      "ficha": "FICHAS/FOTO-01.json",
+      "sha12": "8dd11600c366"
+    },
+    {
+      "id": "FOTO-02",
+      "name": "Motivo foto 02",
+      "file": "FOTO-02.html",
+      "ficha": "FICHAS/FOTO-02.json",
+      "sha12": "6c463a1a71a5"
+    },
+    {
+      "id": "FOTO-03",
+      "name": "Motivo foto 03",
+      "file": "FOTO-03.html",
+      "ficha": "FICHAS/FOTO-03.json",
+      "sha12": "2bf16c333cb1"
+    },
+    {
+      "id": "FOTO-04",
+      "name": "Motivo foto 04",
+      "file": "FOTO-04.html",
+      "ficha": "FICHAS/FOTO-04.json",
+      "sha12": "9f6cea4d3ba2"
+    },
+    {
+      "id": "FOTO-05",
+      "name": "Motivo foto 05",
+      "file": "FOTO-05.html",
+      "ficha": "FICHAS/FOTO-05.json",
+      "sha12": "00902e025890"
+    },
+    {
+      "id": "FOTO-06",
+      "name": "Motivo foto 06",
+      "file": "FOTO-06.html",
+      "ficha": "FICHAS/FOTO-06.json",
+      "sha12": "51615fde3d29"
+    },
+    {
+      "id": "FOTO-07",
+      "name": "Motivo foto 07",
+      "file": "FOTO-07.html",
+      "ficha": "FICHAS/FOTO-07.json",
+      "sha12": "c7dd9c88b53f"
+    },
+    {
+      "id": "FOTO-08",
+      "name": "Motivo foto 08",
+      "file": "FOTO-08.html",
+      "ficha": "FICHAS/FOTO-08.json",
+      "sha12": "c9acadbdcb51"
+    },
+    {
+      "id": "FOTO-09",
+      "name": "Motivo foto 09",
+      "file": "FOTO-09.html",
+      "ficha": "FICHAS/FOTO-09.json",
+      "sha12": "2a2f742f269c"
+    },
+    {
+      "id": "FOTO-10",
+      "name": "Motivo foto 10",
+      "file": "FOTO-10.html",
+      "ficha": "FICHAS/FOTO-10.json",
+      "sha12": "3735e068f555"
+    },
+    {
+      "id": "FOTO-11",
+      "name": "Motivo foto 11",
+      "file": "FOTO-11.html",
+      "ficha": "FICHAS/FOTO-11.json",
+      "sha12": "6da22cb5664d"
+    },
+    {
+      "id": "FOTO-12",
+      "name": "Motivo foto 12",
+      "file": "FOTO-12.html",
+      "ficha": "FICHAS/FOTO-12.json",
+      "sha12": "5f0f98a942ba"
+    },
+    {
+      "id": "FOTO-13",
+      "name": "Motivo foto 13",
+      "file": "FOTO-13.html",
+      "ficha": "FICHAS/FOTO-13.json",
+      "sha12": "8668a4fa9703"
+    },
+    {
+      "id": "FOTO-14",
+      "name": "Motivo foto 14",
+      "file": "FOTO-14.html",
+      "ficha": "FICHAS/FOTO-14.json",
+      "sha12": "a6f44287ec69"
+    }
+  ]
+}

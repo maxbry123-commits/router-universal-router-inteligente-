@@ -1,0 +1,32 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+import os
+from azure.identity import DefaultAzureCredential
+from durabletask import client
+from durabletask.azuremanaged.client import DurableTaskSchedulerClient
+
+# Use environment variables if provided, otherwise use default emulator values
+taskhub_name = os.getenv("TASKHUB", "default")
+endpoint = os.getenv("ENDPOINT", "http://localhost:8080")
+
+print(f"Using taskhub: {taskhub_name}")
+print(f"Using endpoint: {endpoint}")
+
+# Set credential to None for emulator, or DefaultAzureCredential for Azure
+secure_channel = endpoint.startswith("https://")
+credential = DefaultAzureCredential() if secure_channel else None
+
+# Create a client, start an orchestration, and wait for it to finish
+c = DurableTaskSchedulerClient(host_address=endpoint, secure_channel=secure_channel,
+                               taskhub=taskhub_name, token_credential=credential)
+
+instance_id = c.schedule_new_orchestration("orchestrator")
+
+state = c.wait_for_orchestration_completion(instance_id, timeout=30)
+
+if state and state.runtime_status == client.OrchestrationStatus.COMPLETED:
+    print(f'Orchestration completed! Result: {state.serialized_output}')
+elif state:
+    print(f'Orchestration failed: {state.failure_details}')
+exit()

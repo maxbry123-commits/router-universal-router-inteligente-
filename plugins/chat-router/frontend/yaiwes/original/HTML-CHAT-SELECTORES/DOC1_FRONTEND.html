@@ -1,0 +1,2974 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAVIS M3 — Frontend Completo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ============================================================
+   DESIGN TOKENS — MAVIS M3
+   Ref visual: Claude.ai + MiniMax AI + Kimi K + BBVA dark
+   Paleta: negro profundo + azul eléctrico + verde sistema
+   Tipografía: Inter (UI) + JetBrains Mono (datos/código)
+   ============================================================ */
+
+:root[data-theme="dark"] {
+  --bg0: #080808;       /* fondo más profundo */
+  --bg1: #0f0f0f;       /* fondo principal */
+  --bg2: #161616;       /* cards/paneles */
+  --bg3: #1e1e1e;       /* hover/activo */
+  --bg4: #262626;       /* bordes visibles */
+  --border: #2a2a2a;
+  --border2: #333;
+  --text1: #f0f0f0;
+  --text2: #999;
+  --text3: #555;
+  --accent: #3b82f6;    /* azul eléctrico */
+  --accent2: #1d4ed8;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --orange: #f97316;    /* botones CTA estilo Claude */
+  --purple: #a855f7;
+  --cyan: #06b6d4;
+  --font-ui: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+:root[data-theme="light"] {
+  --bg0: #f8f8f8;
+  --bg1: #ffffff;
+  --bg2: #f0f0f0;
+  --bg3: #e8e8e8;
+  --bg4: #e0e0e0;
+  --border: #d0d0d0;
+  --border2: #c0c0c0;
+  --text1: #111111;
+  --text2: #555;
+  --text3: #999;
+  --accent: #2563eb;
+  --accent2: #1d4ed8;
+  --green: #16a34a;
+  --yellow: #d97706;
+  --red: #dc2626;
+  --orange: #ea580c;
+  --purple: #9333ea;
+  --cyan: #0891b2;
+  --shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  background: var(--bg0);
+  color: var(--text1);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   LAYOUT PRINCIPAL — 5 ZONAS FIJAS
+   TopBar | [LeftPanel | Center | RightPanel] | BottomPanel | StatusBar
+   ============================================================ */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  height: 44px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 8px;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.topbar-logo {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  margin-right: 4px;
+  user-select: none;
+}
+
+.topbar-select {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text1);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  height: 28px;
+  transition: border-color 0.15s;
+}
+.topbar-select:focus { outline: none; border-color: var(--accent); }
+
+.topbar-search-wrap { position: relative; flex: 1; max-width: 300px; }
+.topbar-search-wrap svg {
+  position: absolute;
+  left: 8px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  width: 14px; height: 14px;
+  pointer-events: none;
+}
+.topbar-search {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text1);
+  padding: 4px 10px 4px 28px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  height: 28px;
+}
+.topbar-search::placeholder { color: var(--text3); }
+.topbar-search:focus { outline: none; border-color: var(--accent); }
+
+.topbar-spacer { flex: 1; }
+
+.topbar-btn {
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+}
+.topbar-btn:hover { background: var(--bg3); color: var(--text1); }
+
+/* ── MAIN ROW ── */
+.main-row {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ============================================================
+   LEFT PANEL — SIDEBAR DOBLE
+   Referencia: Claude.ai sidebar + MiniMax sidebar
+   Comportamiento: icono colapsado siempre visible → al presionar se despliega
+   Editable con selector + para añadir funciones
+   Puede tener múltiples paneles (2, 5, 10)
+   ============================================================ */
+
+/* Rail de iconos siempre visible (colapsado) */
+.sidebar-rail {
+  width: 44px;
+  background: var(--bg1);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 4px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.rail-icon {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text3);
+  font-size: 15px;
+  transition: all 0.15s;
+  position: relative;
+}
+.rail-icon:hover { background: var(--bg3); color: var(--text1); }
+.rail-icon.active { background: var(--bg3); color: var(--accent); }
+.rail-icon .dot {
+  width: 6px; height: 6px;
+  background: var(--red);
+  border-radius: 50%;
+  position: absolute;
+  top: 4px; right: 4px;
+}
+
+/* Panel lateral desplegado */
+.sidebar {
+  width: 0;
+  background: var(--bg1);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.2s ease;
+  flex-shrink: 0;
+}
+.sidebar.open { width: 240px; }
+
+/* Secciones del sidebar */
+.sb-section {
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sb-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+.sb-section-header:hover { color: var(--text1); }
+
+.sb-section-body { padding: 2px 0 4px; }
+
+/* Items del sidebar */
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text2);
+  transition: all 0.1s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 0;
+  position: relative;
+}
+.sb-item:hover { background: var(--bg2); color: var(--text1); }
+.sb-item.active { background: var(--bg3); color: var(--text1); }
+.sb-item-icon { font-size: 13px; flex-shrink: 0; }
+.sb-item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+
+/* Indentación */
+.sb-item.l1 { padding-left: 20px; }
+.sb-item.l2 { padding-left: 30px; font-size: 11px; }
+
+/* Status dots */
+.sb-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sb-dot.green { background: var(--green); }
+.sb-dot.yellow { background: var(--yellow); }
+.sb-dot.red { background: var(--red); }
+.sb-dot.gray { background: var(--text3); }
+
+/* Badge count */
+.sb-badge {
+  background: var(--bg4);
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 10px;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+
+/* Add button en sidebar */
+.sb-add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  color: var(--accent);
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 0.15s;
+  background: none;
+  border: none;
+}
+.sb-add:hover { color: var(--text1); }
+
+/* Botones de acción configurables (MY BUTTONS) */
+.sb-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text2);
+  transition: all 0.1s;
+  border-radius: 0;
+}
+.sb-action-btn:hover { background: var(--bg2); color: var(--text1); }
+.sb-action-icon { font-size: 13px; flex-shrink: 0; }
+
+/* Scrollable section */
+.sb-scroll {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg4) transparent;
+}
+
+/* User footer */
+.sb-user {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.sb-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+.sb-username { font-size: 12px; color: var(--text2); flex: 1; }
+
+/* ============================================================
+   CENTER AREA — SISTEMA DE PESTAÑAS ACOPLABLES
+   ============================================================ */
+
+.center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg0);
+  min-width: 0;
+}
+
+/* Tab bar */
+.tab-bar {
+  height: 36px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-end;
+  padding: 0 8px;
+  gap: 2px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+
+.tab {
+  height: 32px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-bottom: none;
+  transition: all 0.15s;
+  user-select: none;
+}
+.tab:hover { color: var(--text1); background: var(--bg2); }
+.tab.active {
+  color: var(--text1);
+  background: var(--bg0);
+  border-color: var(--border);
+  border-bottom-color: var(--bg0);
+}
+.tab-x {
+  color: var(--text3);
+  font-size: 10px;
+  padding: 1px 2px;
+  border-radius: 2px;
+  line-height: 1;
+  transition: all 0.1s;
+}
+.tab-x:hover { background: var(--bg4); color: var(--text1); }
+
+/* Views */
+.view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.view.active { display: flex; }
+
+/* ============================================================
+   CHAT VIEW
+   Referencia: MiniMax AI + Claude.ai + Kimi K + Qwen
+   - Fondo limpio (oscuro por defecto)
+   - Título grande centrado en pantalla vacía
+   - Input grande redondeado
+   - Botones DENTRO del input: + Agent Thinking Modelo↑
+   - Botones DEBAJO del input: pills configurables siempre visibles
+   - Algunos botones se expanden como ventana al presionar
+   - Selector de proyecto expandible como ventana
+   - Selector de modelo (bottom sheet)
+   - Carrusel de artefactos arriba del input
+   - Context bar mostrando agentes activos/modelo/DSL activo
+   ============================================================ */
+
+.chat-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Context bar — siempre visible arriba del chat */
+.chat-context-bar {
+  padding: 5px 16px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+.ctx-chip {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ctx-chip.on { border-color: var(--accent); color: var(--accent); }
+.ctx-chip.warn { border-color: var(--yellow); color: var(--yellow); }
+
+/* Área de mensajes */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg4) transparent;
+}
+
+/* Estado vacío — título centrado estilo MiniMax/Qwen */
+.chat-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 40px 20px;
+}
+.chat-empty-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text1);
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+.chat-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 480px;
+}
+.chat-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text2);
+  transition: all 0.15s;
+}
+.chat-suggestion:hover { border-color: var(--accent); color: var(--text1); }
+
+/* Mensajes */
+.msg {
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.msg-user { align-self: flex-end; }
+.msg-system { align-self: flex-start; max-width: 100%; }
+
+.msg-bubble {
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.msg-user .msg-bubble {
+  background: var(--accent);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.msg-system .msg-bubble {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text1);
+  border-bottom-left-radius: 4px;
+}
+
+/* Archivo adjunto en mensaje */
+.msg-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text2);
+  margin-top: 6px;
+}
+
+/* Error message estilo Claude Design */
+.msg-error {
+  background: var(--bg2);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--text2);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.msg-error-icon { color: var(--yellow); flex-shrink: 0; }
+.msg-error-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.msg-error-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.msg-error-btn:hover { color: var(--text1); }
+
+.msg-meta {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--font-mono);
+  padding: 0 4px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.msg-tag {
+  background: var(--bg3);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* Feedback botones */
+.msg-feedback {
+  display: flex;
+  gap: 8px;
+  padding: 0 4px;
+}
+.feedback-btn {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px;
+  border-radius: 4px;
+  transition: all 0.1s;
+}
+.feedback-btn:hover { color: var(--text1); background: var(--bg3); }
+
+/* Carrusel de artefactos arriba del input — estilo Claude */
+.artifacts-carousel {
+  padding: 6px 14px;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.artifacts-carousel::-webkit-scrollbar { display: none; }
+.artifact-thumb {
+  flex-shrink: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--text2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: all 0.1s;
+  position: relative;
+}
+.artifact-thumb:hover { border-color: var(--accent); color: var(--text1); }
+.artifact-thumb .close-x {
+  position: absolute;
+  top: -4px; right: -4px;
+  width: 14px; height: 14px;
+  background: var(--bg4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--text3);
+}
+.artifacts-label {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text2);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── ÁREA DE INPUT ── */
+.chat-input-area {
+  background: var(--bg1);
+  border-top: 1px solid var(--border);
+  padding: 10px 14px 8px;
+  flex-shrink: 0;
+}
+
+/* Input box — gran cuadro redondeado estilo MiniMax */
+.chat-input-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 10px 12px 8px;
+  transition: border-color 0.15s;
+}
+.chat-input-box:focus-within { border-color: var(--accent); }
+
+.chat-textarea {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  max-height: 120px;
+  min-height: 22px;
+  line-height: 1.5;
+}
+.chat-textarea::placeholder { color: var(--text3); }
+
+/* Botones DENTRO del input (fila inferior del cuadro) */
+.chat-input-inner-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+/* Botón + (abre menú añadir) */
+.input-add-btn {
+  width: 28px; height: 28px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text2);
+  font-size: 16px;
+  font-weight: 300;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.input-add-btn:hover { background: var(--bg4); color: var(--text1); }
+
+/* Pill button dentro del input */
+.input-pill {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: all 0.15s;
+  font-family: var(--font-ui);
+}
+.input-pill:hover { border-color: var(--accent); color: var(--text1); }
+.input-pill.active { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.1); }
+
+/* Selector de modelo en el input (estilo Claude: "Sonnet 5 ▾") */
+.model-selector-pill {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.model-selector-pill:hover { border-color: var(--accent); }
+.model-selector-pill .chevron { color: var(--text3); font-size: 10px; }
+
+/* Botón de envío — círculo naranja estilo Claude/Kimi */
+.send-btn {
+  width: 32px; height: 32px;
+  background: var(--orange);
+  border: none;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 14px;
+  transition: all 0.15s;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.send-btn:hover { background: #ea580c; transform: scale(1.05); }
+
+/* Botón de voz */
+.voice-btn {
+  width: 28px; height: 28px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text2);
+  font-size: 13px;
+  transition: all 0.15s;
+}
+.voice-btn:hover { color: var(--text1); }
+
+/* ── BOTONES DEBAJO DEL INPUT ──
+   Referencia: MiniMax (Document / Website / Image Generation)
+   + Kimi (Agent / Slides / Kimi Claw / Agent...)
+   + Claude (botones configurables)
+   Siempre visibles. Algunos se expanden como ventana.
+   ============================================================ */
+.chat-below-btns {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.chat-below-btns::-webkit-scrollbar { display: none; }
+
+/* Pill estilo MiniMax debajo */
+.below-pill {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+}
+.below-pill:hover { border-color: var(--accent); color: var(--text1); }
+.below-pill.active { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.08); }
+
+/* Pill estilo Kimi (oscura) */
+.below-pill-dark {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.below-pill-dark:hover { border-color: var(--accent); color: var(--text1); }
+
+/* Botón Run — primario naranja/azul */
+.run-btn {
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 6px 14px;
+  font-size: 12px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.run-btn:hover { background: var(--accent2); }
+
+/* ============================================================
+   ARTIFACT PANEL — se abre a la derecha del chat
+   Referencia: Claude.ai artifacts panel
+   ============================================================ */
+.artifact-panel {
+  width: 380px;
+  background: var(--bg1);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.artifact-panel-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.artifact-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text1);
+}
+
+/* ============================================================
+   CRAZY WALL VIEW
+   Referencia: mural de bloques en tiempo real
+   Fuente de datos: SOLO Event Bus
+   ============================================================ */
+.cw-header {
+  padding: 10px 16px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.cw-live {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--green);
+  font-family: var(--font-mono);
+}
+.cw-live-dot {
+  width: 7px; height: 7px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--green);
+}
+.cw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+  gap: 10px;
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+.cw-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.cw-block::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.cw-block.green::before { background: var(--green); }
+.cw-block.yellow::before { background: var(--yellow); }
+.cw-block.red::before { background: var(--red); }
+.cw-block.gray::before { background: var(--text3); }
+.cw-block:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow); }
+.cw-type { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.cw-name { font-size: 13px; font-weight: 500; color: var(--text1); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cw-status { font-size: 11px; font-family: var(--font-mono); display: flex; align-items: center; gap: 5px; color: var(--text2); }
+.cw-progress { height: 3px; background: var(--bg4); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.cw-bar { height: 100%; background: var(--green); border-radius: 2px; transition: width 1s; }
+.cw-meta { font-size: 10px; color: var(--text3); font-family: var(--font-mono); margin-top: 4px; }
+
+/* ============================================================
+   TOPOLOGY VIEW
+   ============================================================ */
+.topo-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 24px;
+}
+.topo-canvas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.topo-node {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  color: var(--text1);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.topo-node:hover { border-color: var(--accent); }
+.topo-node.ok { border-color: var(--green); }
+.topo-node.warn { border-color: var(--yellow); }
+.topo-node.err { border-color: var(--red); }
+.topo-arrow { color: var(--text3); font-size: 16px; text-align: center; padding: 3px 0; }
+.topo-row { display: flex; gap: 24px; align-items: flex-start; }
+.topo-branch { display: flex; flex-direction: column; align-items: center; gap: 0; }
+
+/* ============================================================
+   TIMELINE VIEW
+   ============================================================ */
+.timeline-header {
+  padding: 10px 16px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.tl-filter {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text1);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+.timeline-list {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+}
+.tl-item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0 8px 16px;
+  border-left: 1px solid var(--border);
+  margin-left: 8px;
+  position: relative;
+}
+.tl-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  position: absolute;
+  left: -5px;
+  top: 12px;
+  flex-shrink: 0;
+}
+.tl-time { font-family: var(--font-mono); font-size: 11px; color: var(--text3); width: 50px; flex-shrink: 0; }
+.tl-content { flex: 1; }
+.tl-title { font-size: 12px; color: var(--text1); }
+.tl-detail { font-size: 11px; color: var(--text2); margin-top: 2px; font-family: var(--font-mono); }
+
+/* ============================================================
+   KANBAN VIEW
+   ============================================================ */
+.kanban-board {
+  display: flex;
+  gap: 10px;
+  padding: 16px;
+  overflow-x: auto;
+  flex: 1;
+}
+.kanban-col {
+  min-width: 196px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.kanban-col-h {
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.kanban-count {
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 10px;
+  color: var(--text3);
+}
+.kanban-cards { padding: 8px; display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; }
+.kanban-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.kanban-card:hover { border-color: var(--accent); }
+.kanban-card-title { font-size: 12px; color: var(--text1); margin-bottom: 4px; }
+.kanban-card-meta { font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
+.prio { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+
+/* ============================================================
+   MIND MAP VIEW
+   ============================================================ */
+.mindmap-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 24px;
+}
+.mm-center {
+  background: var(--accent);
+  color: white;
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+}
+.mm-nodes { display: flex; gap: 32px; align-items: flex-start; margin-top: 20px; }
+.mm-branch { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.mm-node {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--text1);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.mm-node:hover { border-color: var(--accent); }
+.mm-node.green { border-color: var(--green); }
+.mm-node.yellow { border-color: var(--yellow); }
+.mm-node.red { border-color: var(--red); }
+.mm-arrow { color: var(--text3); font-size: 14px; text-align: center; }
+
+/* ============================================================
+   RIGHT PANEL — INSPECTOR
+   Referencia: Inspector de motores gráficos, VSCode inspector
+   ============================================================ */
+.right-panel {
+  width: 260px;
+  background: var(--bg1);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: width 0.2s;
+}
+.right-panel.closed { width: 0; }
+.inspector-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.inspector-body { flex: 1; overflow-y: auto; padding: 10px 12px; }
+.insp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.insp-key { color: var(--text2); }
+.insp-val { color: var(--text1); font-family: var(--font-mono); font-size: 10px; }
+.insp-val.green { color: var(--green); }
+.insp-val.yellow { color: var(--yellow); }
+.insp-val.red { color: var(--red); }
+.inspector-actions {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-top: 1px solid var(--border);
+}
+.insp-btn {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text1);
+  text-align: center;
+  transition: all 0.15s;
+  font-family: var(--font-ui);
+}
+.insp-btn:hover { border-color: var(--accent); }
+.insp-btn.danger { border-color: var(--red); color: var(--red); }
+.insp-btn.danger:hover { background: rgba(239,68,68,0.1); }
+
+/* ============================================================
+   BOTTOM PANEL
+   Tabs: Logs | Timeline | Terminal | Eventos | Costo
+   ============================================================ */
+.bottom-panel {
+  height: 180px;
+  background: var(--bg1);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.bottom-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 10px;
+  background: var(--bg2);
+  flex-shrink: 0;
+}
+.bottom-tab {
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--text2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  user-select: none;
+}
+.bottom-tab:hover { color: var(--text1); }
+.bottom-tab.active { color: var(--text1); border-bottom-color: var(--accent); }
+.bottom-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.7;
+  display: none;
+  scrollbar-width: thin;
+}
+.bottom-content.active { display: block; }
+.log-ok { color: var(--green); }
+.log-warn { color: var(--yellow); }
+.log-err { color: var(--red); }
+.log-info { color: var(--text2); }
+.log-time { color: var(--text3); margin-right: 8px; }
+
+/* ============================================================
+   STATUS BAR
+   Muestra: estado sistema, agentes activos, tareas, costo, hora
+   ============================================================ */
+.status-bar {
+  height: 22px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(255,255,255,0.85);
+  flex-shrink: 0;
+  user-select: none;
+}
+.sb-item-status { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.sb-sep { opacity: 0.3; }
+
+/* ============================================================
+   SISTEMA DE PROYECTOS
+   Referencia: Claude.ai proyectos + BBVA "mis productos"
+   ============================================================ */
+
+/* Vista lista de proyectos — estilo Claude */
+.projects-list-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+.projects-search {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 8px 14px 8px 36px;
+  color: var(--text1);
+  font-size: 14px;
+  width: 100%;
+  margin-bottom: 16px;
+  position: relative;
+}
+.projects-search::placeholder { color: var(--text3); }
+.projects-search:focus { outline: none; border-color: var(--accent); }
+
+/* Card de proyecto — estilo BBVA "mis productos" */
+.project-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.project-card:hover { border-color: var(--accent); }
+.project-card.active { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+.project-card-name { font-size: 15px; font-weight: 500; color: var(--text1); margin-bottom: 4px; }
+.project-card-meta { font-size: 11px; color: var(--text3); font-family: var(--font-mono); }
+.project-card-badges { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.badge-green { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+.badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+.badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+.badge-gray { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); }
+
+/* Botón + Nuevo proyecto — naranja estilo Claude */
+.new-project-btn {
+  position: fixed;
+  bottom: 70px;
+  right: 20px;
+  background: var(--orange);
+  color: white;
+  border: none;
+  border-radius: var(--radius-xl);
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba(249,115,22,0.4);
+  transition: all 0.15s;
+  font-family: var(--font-ui);
+}
+.new-project-btn:hover { transform: scale(1.02); }
+
+/* Vista interna del proyecto — estilo Claude */
+.project-internal {
+  padding: 20px 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+.project-title { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+.project-privacy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 14px;
+}
+.project-memory-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+.project-cards-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.project-info-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.project-info-card:hover { border-color: var(--accent); }
+.project-info-card-title { font-size: 13px; font-weight: 500; color: var(--text1); margin-bottom: 8px; }
+.project-info-card-action { font-size: 12px; color: var(--orange); }
+
+/* ============================================================
+   OVERLAYS (Bottom Sheets / Modales)
+   ============================================================ */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(3px);
+}
+.overlay.open { display: flex; }
+
+/* Bottom sheet — estilo Claude/MiniMax */
+.bottom-sheet {
+  background: var(--bg1);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  width: 100%;
+  max-width: 540px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+  padding-bottom: 20px;
+}
+.sheet-handle {
+  width: 36px; height: 4px;
+  background: var(--bg4);
+  border-radius: 2px;
+  margin: 10px auto 16px;
+}
+.sheet-header {
+  padding: 0 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.sheet-close {
+  width: 28px; height: 28px;
+  background: var(--bg3);
+  border: none;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text2);
+  font-size: 14px;
+}
+.sheet-close:hover { background: var(--bg4); color: var(--text1); }
+.sheet-body { padding: 12px 16px; }
+
+/* ── SELECTOR DE MODELO — Bottom Sheet estilo Claude ── */
+.model-list { display: flex; flex-direction: column; }
+.model-option {
+  padding: 14px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.model-option:last-child { border-bottom: none; }
+.model-option:hover { background: var(--bg2); }
+.model-option.selected { background: var(--bg3); }
+.model-option.disabled { opacity: 0.4; pointer-events: none; }
+.model-opt-name { font-size: 16px; font-weight: 500; color: var(--text1); display: flex; align-items: center; gap: 8px; }
+.model-opt-desc { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.model-badge-pro {
+  background: var(--accent);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.model-badge-na {
+  background: var(--bg3);
+  color: var(--text3);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.model-section-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  font-size: 15px;
+  color: var(--text1);
+  cursor: pointer;
+  border-top: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.model-section-link:hover { background: var(--bg2); }
+
+/* ── MENÚ + AGREGAR AL CHAT — estilo Claude ── */
+.add-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.add-menu-item {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.add-menu-item:hover { border-color: var(--accent); }
+.add-menu-icon { font-size: 22px; margin-bottom: 6px; }
+.add-menu-label { font-size: 12px; color: var(--text2); }
+.add-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.add-menu-row:last-child { border-bottom: none; }
+.add-menu-row:hover { opacity: 0.8; }
+.add-menu-row-icon {
+  width: 36px; height: 36px;
+  background: var(--bg3);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.add-menu-row-text { flex: 1; }
+.add-menu-row-title { font-size: 14px; color: var(--text1); }
+.add-menu-row-sub { font-size: 12px; color: var(--text3); }
+.add-menu-toggle {
+  width: 44px; height: 24px;
+  background: var(--accent);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.add-menu-toggle::after {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  background: white;
+  border-radius: 50%;
+  top: 3px; left: 23px;
+  transition: left 0.2s;
+}
+.add-menu-chevron { color: var(--text3); font-size: 14px; }
+
+/* ── SELECTOR DE PROYECTO — expande como ventana ── */
+.project-selector-sheet {
+  background: var(--bg1);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  width: 100%;
+  max-width: 540px;
+  max-height: 70vh;
+  overflow-y: auto;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+}
+.proj-sel-search {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  color: var(--text1);
+  font-size: 13px;
+  margin-bottom: 10px;
+  font-family: var(--font-ui);
+}
+.proj-sel-search:focus { outline: none; border-color: var(--accent); }
+.proj-sel-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+.proj-sel-item:hover { opacity: 0.8; }
+.proj-sel-icon {
+  width: 36px; height: 36px;
+  background: var(--bg3);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.proj-sel-name { font-size: 14px; font-weight: 500; color: var(--text1); }
+.proj-sel-meta { font-size: 11px; color: var(--text3); font-family: var(--font-mono); }
+
+/* ── CREAR PROYECTO — Bottom Sheet ── */
+.create-proj-label {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 6px;
+  margin-top: 14px;
+  display: block;
+}
+.create-proj-input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  color: var(--text1);
+  font-size: 14px;
+  font-family: var(--font-ui);
+  resize: none;
+  min-height: 100px;
+}
+.create-proj-input:focus { outline: none; border-color: var(--accent); }
+.create-proj-btn {
+  width: 100%;
+  background: var(--bg3);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  color: var(--text1);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: all 0.15s;
+  font-family: var(--font-ui);
+}
+.create-proj-btn:hover { background: var(--accent); color: white; }
+
+/* ── WORKSPACE WINDOW ── */
+.workspace-sheet {
+  background: var(--bg1);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-xl);
+  width: 640px;
+  max-width: 95vw;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.ws-header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.ws-title { font-size: 13px; font-weight: 500; flex: 1; }
+.ws-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+.ws-btn:hover { color: var(--text1); border-color: var(--accent); }
+.ws-tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 8px; background: var(--bg1); flex-shrink: 0; }
+.ws-tab { padding: 7px 12px; font-size: 11px; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; }
+.ws-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.ws-result { flex: 1; padding: 16px; overflow-y: auto; font-size: 13px; line-height: 1.7; }
+.ws-history { border-top: 1px solid var(--border); padding: 8px 14px; font-size: 11px; color: var(--text2); font-family: var(--font-mono); max-height: 80px; overflow-y: auto; flex-shrink: 0; }
+.ws-actions { border-top: 1px solid var(--border); padding: 8px 14px; display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+
+/* ============================================================
+   COMMAND PALETTE — Ctrl+K
+   ============================================================ */
+.cmd-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+}
+.cmd-overlay.open { display: flex; }
+.cmd-palette {
+  background: var(--bg1);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  width: 480px;
+  max-width: 95vw;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.cmd-input-wrap {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cmd-input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text1);
+  font-size: 15px;
+  font-family: var(--font-ui);
+  outline: none;
+}
+.cmd-input::placeholder { color: var(--text3); }
+.cmd-list { max-height: 320px; overflow-y: auto; }
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text2);
+  transition: all 0.1s;
+}
+.cmd-item:hover, .cmd-item.selected { background: var(--bg3); color: var(--text1); }
+.cmd-item-icon { font-size: 16px; width: 24px; text-align: center; }
+.cmd-item-shortcut { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text3); background: var(--bg4); padding: 2px 6px; border-radius: 4px; }
+
+/* ============================================================
+   GRID DE INTEGRACIONES EXTERNAS
+   Referencia: BBVA "Contratar" — grid 2x2 oscuro
+   Activa programas externos: Claude Design, OCR Baidu, Kimi Claw, etc.
+   ============================================================ */
+.integrations-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+.integration-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.integration-card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow); }
+.integration-icon { font-size: 36px; }
+.integration-name { font-size: 14px; font-weight: 600; color: var(--text1); }
+.integration-badge {
+  position: absolute;
+  top: 10px; right: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.int-active { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+.int-new { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+.int-beta { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+.int-off { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); }
+
+/* ============================================================
+   TOAST / NOTIFICACIÓN
+   ============================================================ */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  right: 16px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--text1);
+  z-index: 1000;
+  display: none;
+  max-width: 320px;
+  box-shadow: var(--shadow);
+}
+.toast.show { display: block; animation: toastIn 0.2s ease; }
+@keyframes toastIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* ============================================================
+   SCROLLBAR GLOBAL
+   ============================================================ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+
+/* ============================================================
+   RESPONSIVE — mobile/tablet
+   ============================================================ */
+@media (max-width: 768px) {
+  .sidebar-rail { display: none; }
+  .sidebar.open { width: 100%; position: fixed; top: 44px; left: 0; bottom: 22px; z-index: 50; }
+  .right-panel { display: none; }
+  .bottom-panel { height: 140px; }
+  .artifact-panel { display: none; }
+  .cw-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ TOP BAR ============ -->
+  <div class="topbar">
+    <div class="topbar-logo" onclick="toast('MAVIS M3')">◈ MAVIS</div>
+    <select class="topbar-select" onchange="toast('Proyecto cambiado — contexto cargado completo')">
+      <option>📁 Mavis-IDE</option>
+      <option>📁 NCT Pipeline</option>
+      <option>📁 FABLES MYTHOS</option>
+      <option>📁 Project Alpha</option>
+    </select>
+    <select class="topbar-select">
+      <option>🖥 Workspace 1</option>
+      <option>🖥 Status Window</option>
+      <option>+ New Workspace</option>
+    </select>
+    <div class="topbar-search-wrap">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zm4.472-.36 3.528 3.528-1.06 1.06-3.528-3.527A6.96 6.96 0 0 1 6.5 13.5 7 7 0 1 1 13.5 6.5a6.96 6.96 0 0 1-1.528 4.14z"/></svg>
+      <input class="topbar-search" placeholder="Buscar todo... (Ctrl+K)">
+    </div>
+    <div class="topbar-spacer"></div>
+    <button class="topbar-btn" onclick="toast('3 notificaciones: Tarea completada, Error agente, PR abierto')">🔔</button>
+    <button class="topbar-btn" onclick="toggleTheme()">☀️</button>
+    <button class="topbar-btn" onclick="openCmd()">⌘K</button>
+    <button class="topbar-btn" onclick="toggleSidebar()">☰</button>
+  </div>
+
+  <!-- ============ MAIN ROW ============ -->
+  <div class="main-row">
+
+    <!-- SIDEBAR RAIL — siempre visible -->
+    <div class="sidebar-rail">
+      <div class="rail-icon active" onclick="toggleSidebar()" title="Proyectos">📁</div>
+      <div class="rail-icon" onclick="switchView('chat');toggleSidebar()" title="Chat">💬</div>
+      <div class="rail-icon" onclick="switchView('crazywall')" title="Crazy Wall">📊</div>
+      <div class="rail-icon" onclick="switchView('topology')" title="Topology">🗺️</div>
+      <div class="rail-icon" onclick="switchView('kanban')" title="Kanban">📋</div>
+      <div class="rail-icon" onclick="switchView('timeline')" title="Timeline">⏱</div>
+      <div class="rail-icon" onclick="switchView('mindmap')" title="Mind Map">🧠</div>
+      <div class="rail-icon" onclick="switchView('integrations')" title="Integraciones">🔌</div>
+      <div style="flex:1"></div>
+      <div class="rail-icon" onclick="toast('Configuración global')" title="Configuración">⚙️</div>
+    </div>
+
+    <!-- SIDEBAR DESPLEGABLE — igual a Claude pero extendido -->
+    <div class="sidebar" id="sidebar">
+      <div class="sb-scroll">
+
+        <!-- PROYECTOS -->
+        <div class="sb-section">
+          <div class="sb-section-header" onclick="toggleSec('sec-proj')">PROYECTOS <span>▾</span></div>
+          <div class="sb-section-body" id="sec-proj">
+            <div class="sb-item active" onclick="switchView('chat')">
+              <span class="sb-item-icon">📂</span>
+              <span class="sb-item-text">Mavis-IDE</span>
+            </div>
+            <div class="sb-item l1" onclick="switchView('chat')">
+              <span class="sb-item-icon">💬</span>
+              <span class="sb-item-text">Backend</span>
+            </div>
+            <div class="sb-item l2 active" onclick="switchView('chat')">
+              <div class="sb-dot green"></div>
+              <span class="sb-item-text">Chat 2024-01-15</span>
+            </div>
+            <div class="sb-item l2" onclick="toast('Chat 2024-01-14')">
+              <div class="sb-dot gray"></div>
+              <span class="sb-item-text">Chat 2024-01-14</span>
+            </div>
+            <div class="sb-item l1" onclick="toast('Frontend subproyecto')">
+              <span class="sb-item-icon">💬</span>
+              <span class="sb-item-text">Frontend</span>
+            </div>
+            <div class="sb-item" onclick="toast('NCT Pipeline cargado')">
+              <span class="sb-item-icon">📂</span>
+              <span class="sb-item-text">NCT Pipeline</span>
+            </div>
+            <button class="sb-add" onclick="openOverlay('create-project')">+ Nuevo proyecto</button>
+          </div>
+        </div>
+
+        <!-- RECIENTES (estilo Claude) -->
+        <div class="sb-section">
+          <div class="sb-section-header">RECIENTES</div>
+          <div class="sb-section-body">
+            <div class="sb-item" onclick="switchView('chat')">Auditoría de sistema</div>
+            <div class="sb-item" onclick="switchView('chat')">Diseño de arquitectura</div>
+            <div class="sb-item" onclick="switchView('chat')">Router orquestador</div>
+            <div class="sb-item" onclick="switchView('chat')">Análisis y propuestas</div>
+            <div class="sb-item" onclick="switchView('chat')">Asesoría técnica de pro...</div>
+          </div>
+        </div>
+
+        <!-- DOCUMENTOS -->
+        <div class="sb-section">
+          <div class="sb-section-header" onclick="toggleSec('sec-docs')">DOCUMENTOS <span>▾</span></div>
+          <div class="sb-section-body" id="sec-docs">
+            <div class="sb-item"><span class="sb-item-icon">📄</span><span class="sb-item-text">architecture.md</span></div>
+            <div class="sb-item"><span class="sb-item-icon">📄</span><span class="sb-item-text">requirements.pdf</span></div>
+            <div class="sb-item"><span class="sb-item-icon">📄</span><span class="sb-item-text">roadmap.md</span></div>
+            <button class="sb-add">+ Añadir documento</button>
+          </div>
+        </div>
+
+        <!-- AGENTES -->
+        <div class="sb-section">
+          <div class="sb-section-header" onclick="toggleSec('sec-agents')">AGENTES <span>▾</span></div>
+          <div class="sb-section-body" id="sec-agents">
+            <div class="sb-item" onclick="openInspector()">
+              <div class="sb-dot green"></div>
+              <span class="sb-item-text">Architect</span>
+            </div>
+            <div class="sb-item" onclick="toast('Programmer: RUNNING — router.py')">
+              <div class="sb-dot yellow"></div>
+              <span class="sb-item-text">Programmer</span>
+            </div>
+            <div class="sb-item" onclick="toast('Tester: IDLE')">
+              <div class="sb-dot gray"></div>
+              <span class="sb-item-text">Tester</span>
+            </div>
+            <div class="sb-item" onclick="toast('Researcher: IDLE')">
+              <div class="sb-dot gray"></div>
+              <span class="sb-item-text">Researcher</span>
+            </div>
+            <button class="sb-add">+ Añadir agente</button>
+          </div>
+        </div>
+
+        <!-- WORKFLOWS -->
+        <div class="sb-section">
+          <div class="sb-section-header" onclick="toggleSec('sec-wf')">WORKFLOWS <span>▾</span></div>
+          <div class="sb-section-body" id="sec-wf">
+            <div class="sb-item"><span class="sb-item-icon">⚡</span><span class="sb-item-text">Auth Module</span></div>
+            <div class="sb-item"><span class="sb-item-icon">⚡</span><span class="sb-item-text">New Feature</span></div>
+            <button class="sb-add">+ Nuevo workflow</button>
+          </div>
+        </div>
+
+        <!-- DSL / POLICIES -->
+        <div class="sb-section">
+          <div class="sb-section-header" onclick="toggleSec('sec-dsl')">DSL / POLICIES <span>▾</span></div>
+          <div class="sb-section-body" id="sec-dsl">
+            <div class="sb-item" onclick="toast('sentinel.py: ACTIVO — regula todo el output')">
+              <span style="color:var(--green);font-size:10px">◉</span>
+              <span class="sb-item-text">sentinel.py</span>
+              <span class="sb-badge" style="color:var(--green);border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.1)">ON</span>
+            </div>
+            <div class="sb-item" onclick="toast('judge.py: inactivo')">
+              <span style="color:var(--text3);font-size:10px">○</span>
+              <span class="sb-item-text">judge.py</span>
+            </div>
+            <div class="sb-item" onclick="toast('planner.py: inactivo')">
+              <span style="color:var(--text3);font-size:10px">○</span>
+              <span class="sb-item-text">planner.py</span>
+            </div>
+            <button class="sb-add">+ Nuevo archivo DSL</button>
+          </div>
+        </div>
+
+        <!-- MIS BOTONES — configurables -->
+        <div class="sb-section">
+          <div class="sb-section-header">MIS BOTONES</div>
+          <div class="sb-section-body">
+            <div class="sb-action-btn" onclick="openOverlay('workspace')">
+              <span class="sb-action-icon" style="color:var(--red)">⏺</span>
+              <span>Status Proyecto</span>
+            </div>
+            <div class="sb-action-btn" onclick="switchView('mindmap')">
+              <span class="sb-action-icon" style="color:var(--purple)">🧠</span>
+              <span>Mind Map</span>
+            </div>
+            <div class="sb-action-btn" onclick="toast('Loop Task 1: ejecutando...')">
+              <span class="sb-action-icon" style="color:var(--cyan)">🔄</span>
+              <span>Loop Task 1</span>
+            </div>
+            <div class="sb-action-btn" onclick="switchView('crazywall')">
+              <span class="sb-action-icon" style="color:var(--yellow)">📊</span>
+              <span>Crazy Wall</span>
+            </div>
+            <button class="sb-add" onclick="toast('Crear nuevo botón configurableC')">➕ Nuevo botón</button>
+          </div>
+        </div>
+
+        <!-- CONEXIONES -->
+        <div class="sb-section">
+          <div class="sb-section-header">CONEXIONES</div>
+          <div class="sb-section-body">
+            <div class="sb-item" onclick="toast('Claude API: ✅ 124ms')">
+              <div class="sb-dot green"></div>
+              <span class="sb-item-text">Claude API</span>
+            </div>
+            <div class="sb-item" onclick="toast('OpenClaw: ✅ 234ms')">
+              <div class="sb-dot green"></div>
+              <span class="sb-item-text">OpenClaw</span>
+            </div>
+            <div class="sb-item" onclick="toast('GitHub: ✅ Sync')">
+              <div class="sb-dot green"></div>
+              <span class="sb-item-text">GitHub/mavis-ide</span>
+            </div>
+            <div class="sb-item" onclick="toast('HF Space: ⚠ 2.1s')">
+              <div class="sb-dot yellow"></div>
+              <span class="sb-item-text">HF Space 1</span>
+            </div>
+            <div class="sb-item" onclick="toast('SQL Prod: ❌ Connection refused')">
+              <div class="sb-dot red"></div>
+              <span class="sb-item-text">SQL Prod</span>
+            </div>
+            <button class="sb-add" onclick="toast('Abre ficha de conexión universal')">➕ Nueva conexión</button>
+          </div>
+        </div>
+
+      </div><!-- end sb-scroll -->
+
+      <!-- USER FOOTER -->
+      <div class="sb-user">
+        <div class="sb-avatar">M</div>
+        <div class="sb-username">Max</div>
+        <button class="topbar-btn" onclick="toast('Configuración del usuario')">⚙️</button>
+      </div>
+    </div><!-- end sidebar -->
+
+    <!-- ============ CENTER AREA ============ -->
+    <div class="center">
+
+      <!-- TAB BAR -->
+      <div class="tab-bar">
+        <div class="tab active" id="tab-chat" onclick="switchView('chat')">💬 Chat <span class="tab-x">✕</span></div>
+        <div class="tab" id="tab-crazywall" onclick="switchView('crazywall')">📊 Crazy Wall <span class="tab-x">✕</span></div>
+        <div class="tab" id="tab-topology" onclick="switchView('topology')">🗺️ Topology <span class="tab-x">✕</span></div>
+        <div class="tab" id="tab-timeline" onclick="switchView('timeline')">⏱ Timeline <span class="tab-x">✕</span></div>
+        <div class="tab" id="tab-kanban" onclick="switchView('kanban')">📋 Kanban <span class="tab-x">✕</span></div>
+        <div class="tab" id="tab-mindmap" onclick="switchView('mindmap')">🧠 Mind Map <span class="tab-x">✕</span></div>
+        <div class="tab" id="tab-integrations" onclick="switchView('integrations')">🔌 Integraciones <span class="tab-x">✕</span></div>
+        <div class="tab" id="tab-projects" onclick="switchView('projects')">📁 Proyectos <span class="tab-x">✕</span></div>
+      </div>
+
+      <!-- ====== CHAT VIEW ====== -->
+      <div class="view active" id="view-chat">
+        <div class="chat-view">
+
+          <!-- Context bar -->
+          <div class="chat-context-bar">
+            <span style="color:var(--text3)">Contexto:</span>
+            <div class="ctx-chip on">Architect</div>
+            <div class="ctx-chip on">Programmer</div>
+            <div class="ctx-chip">Claude Sonnet</div>
+            <div class="ctx-chip on">sentinel.py</div>
+            <div class="ctx-chip">Mavis-IDE/Backend</div>
+            <div class="ctx-chip">→ Chat + GitHub</div>
+          </div>
+
+          <!-- Carrusel de artefactos -->
+          <div class="artifacts-carousel">
+            <div class="artifacts-label">2 artefactos</div>
+            <div class="artifact-thumb">📄 architecture.md <div class="close-x">✕</div></div>
+            <div class="artifact-thumb">🌐 router.html <div class="close-x">✕</div></div>
+          </div>
+
+          <!-- Mensajes -->
+          <div class="chat-messages">
+
+            <!-- Estado vacío — pantalla limpia con título centrado (se muestra cuando no hay mensajes) -->
+            <!-- Ref: MiniMax "MiniMax makes your work easier" / Qwen "¿Qué te trae por aquí hoy?" -->
+            <div class="chat-empty" id="chat-empty" style="display:none">
+              <div class="chat-empty-title">MAVIS está listo cuando tú lo estés.</div>
+              <div class="chat-suggestions">
+                <div class="chat-suggestion">⚡ Crear nuevo Task Manifest</div>
+                <div class="chat-suggestion">🔗 Configurar conexión al orquestador</div>
+                <div class="chat-suggestion">📊 Ver estado del sistema</div>
+                <div class="chat-suggestion">🤖 Asignar agentes al proyecto</div>
+              </div>
+            </div>
+
+            <!-- Mensaje del usuario -->
+            <div class="msg msg-user">
+              <div class="msg-bubble">Construye el módulo de autenticación para la REST API. Usa JWT con refresh tokens.</div>
+              <div class="msg-meta">10:21 · Tú</div>
+            </div>
+
+            <!-- Respuesta del sistema -->
+            <div class="msg msg-system">
+              <div class="msg-bubble">
+                Misión creada: <strong>Auth Module</strong><br><br>
+                Descomponiendo en épicas:<br>
+                ├── Épica 1: Diseño de API (Architect)<br>
+                ├── Épica 2: JWT Implementation (Programmer)<br>
+                ├── Épica 3: Refresh Token Logic (Programmer)<br>
+                └── Épica 4: Unit Tests (Tester)<br><br>
+                Enrutando a OpenClaw → 3 agentes activados en paralelo.
+              </div>
+              <div class="msg-meta">
+                <span class="msg-tag">OpenClaw</span>
+                <span class="msg-tag">Architect</span>
+                <span class="msg-tag">sentinel.py ✓</span>
+                10:21
+              </div>
+              <div class="msg-feedback">
+                <button class="feedback-btn">👍</button>
+                <button class="feedback-btn">👎</button>
+              </div>
+            </div>
+
+            <!-- Archivo adjunto en mensaje -->
+            <div class="msg msg-user">
+              <div class="msg-bubble">Revisa este archivo de diseño</div>
+              <div class="msg-attachment">📎 colors_and_type.css</div>
+              <div class="msg-meta">10:30 · Tú</div>
+            </div>
+
+            <!-- Mensaje de error — estilo Claude Design -->
+            <div class="msg msg-system">
+              <div class="msg-error">
+                <div class="msg-error-icon">⚠️</div>
+                <div>
+                  <div>Has alcanzado el límite de uso. Inténtalo en 24 horas.</div>
+                  <div class="msg-error-actions">
+                    <button class="msg-error-btn">↩ Reintentar</button>
+                    <button class="msg-error-btn">🚩 Reportar</button>
+                  </div>
+                </div>
+              </div>
+              <div class="msg-feedback">
+                <button class="feedback-btn">👍</button>
+                <button class="feedback-btn">👎</button>
+              </div>
+            </div>
+
+          </div><!-- end chat-messages -->
+
+          <!-- ── ÁREA DE INPUT ── -->
+          <div class="chat-input-area">
+
+            <!-- Cuadro input grande redondeado — estilo MiniMax -->
+            <div class="chat-input-box">
+              <textarea class="chat-textarea" placeholder="Escribe un mensaje..." rows="1"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();toast('▶ Enviando: DSL → OpenClaw → Agentes')}"></textarea>
+
+              <!-- Botones DENTRO del input — fila inferior -->
+              <div class="chat-input-inner-btns">
+                <div class="input-add-btn" onclick="openOverlay('add-menu')">+</div>
+                <div class="input-pill active" onclick="toast('Agente: Architect activo')">🤖 Agent</div>
+                <div class="input-pill" onclick="toast('Thinking mode: activado')">🧠 Thinking</div>
+                <div class="input-pill active" onclick="toast('DSL Consensus activo')">⚙️ DSL</div>
+                <!-- Selector de modo: Orquestador → Agentes → Modelos -->
+                <div class="model-selector-pill" onclick="openOverlay('model-selector')">
+                  🔀 Orquestador <span class="chevron">▾</span>
+                </div>
+                <div class="voice-btn" onclick="toast('Voz activada')">🎙️</div>
+                <div class="send-btn" onclick="toast('▶ Ejecutando pipeline completo')">↑</div>
+              </div>
+            </div>
+
+            <!-- Botones DEBAJO del input — siempre visibles, configurables -->
+            <!-- Ref: MiniMax (Document/Website/Image Generation) + Kimi (Agent/Slides/Kimi Claw) -->
+            <div class="chat-below-btns">
+              <!-- Selector de proyecto — se expande como ventana -->
+              <div class="below-pill" onclick="openOverlay('project-selector')">📁 Proyecto ▾</div>
+              <!-- Selector de modelo — bottom sheet estilo Claude -->
+              <div class="below-pill" onclick="openOverlay('model-selector')">🤖 Claude Sonnet ▾</div>
+              <!-- Selector de salida -->
+              <div class="below-pill" onclick="toast('Output: Chat ✓ Artifact ✓ GitHub ✓')">📤 Salida ▾</div>
+              <!-- Consensus toggle -->
+              <div class="below-pill" onclick="toast('Consensus Engine: abierto')">🧠 Consensus</div>
+              <!-- Botones estilo Kimi (pills oscuras) -->
+              <div class="below-pill-dark" onclick="toast('Document: subir documento')">📄 Document</div>
+              <div class="below-pill-dark" onclick="toast('Ficha de tarea abierta — chat se mueve a la izquierda')">📋 Ficha</div>
+              <div class="below-pill-dark" onclick="toast('Router visual abierto')">🔀 Router</div>
+              <!-- Botón Run -->
+              <div class="run-btn" onclick="toast('▶ Ejecutando: DSL → OpenClaw → Agentes → GitHub')">▶ Ejecutar</div>
+            </div>
+
+          </div><!-- end chat-input-area -->
+        </div>
+      </div><!-- end view-chat -->
+
+      <!-- ====== CRAZY WALL VIEW ====== -->
+      <div class="view" id="view-crazywall">
+        <div class="cw-header">
+          <span style="font-size:11px;font-weight:600;color:var(--text2)">CRAZY WALL — Mavis-IDE</span>
+          <div class="cw-live"><div class="cw-live-dot"></div> LIVE</div>
+          <div style="flex:1"></div>
+          <button class="topbar-btn" onclick="toast('Filtros: agente/misión/repo/tipo')">Filtros ▾</button>
+          <button class="topbar-btn" onclick="toast('+ Añadir bloque de monitoreo')">+ Bloque</button>
+        </div>
+        <div class="cw-grid">
+          <div class="cw-block green" onclick="openInspector()">
+            <div class="cw-type">Misión</div>
+            <div class="cw-name">Auth Module</div>
+            <div class="cw-status"><div class="sb-dot green"></div> Running</div>
+            <div class="cw-progress"><div class="cw-bar" style="width:62%"></div></div>
+            <div class="cw-meta">62% · ~8 min</div>
+          </div>
+          <div class="cw-block green" onclick="toast('OpenClaw: coordinando 2 agentes')">
+            <div class="cw-type">Orquestador</div>
+            <div class="cw-name">OpenClaw</div>
+            <div class="cw-status"><div class="sb-dot green"></div> Active</div>
+            <div class="cw-meta">3 tasks · $0.021</div>
+          </div>
+          <div class="cw-block yellow" onclick="openInspector()">
+            <div class="cw-type">Agente</div>
+            <div class="cw-name">Architect</div>
+            <div class="cw-status"><div class="sb-dot yellow"></div> Running</div>
+            <div class="cw-progress"><div class="cw-bar" style="width:45%;background:var(--yellow)"></div></div>
+            <div class="cw-meta">api_design.md</div>
+          </div>
+          <div class="cw-block yellow" onclick="toast('Programmer: esperando Architect')">
+            <div class="cw-type">Agente</div>
+            <div class="cw-name">Programmer</div>
+            <div class="cw-status"><div class="sb-dot yellow"></div> Waiting</div>
+            <div class="cw-meta">dep: Architect</div>
+          </div>
+          <div class="cw-block green" onclick="toast('Claude Sonnet: 1,240 tokens')">
+            <div class="cw-type">Modelo IA</div>
+            <div class="cw-name">Claude Sonnet</div>
+            <div class="cw-status"><div class="sb-dot green"></div> Active</div>
+            <div class="cw-meta">1,240 tok · $0.003</div>
+          </div>
+          <div class="cw-block green" onclick="toast('GitHub: sincronizado — PR #12')">
+            <div class="cw-type">Repositorio</div>
+            <div class="cw-name">mavis-ide/back</div>
+            <div class="cw-status"><div class="sb-dot green"></div> Synced</div>
+            <div class="cw-meta">feat/auth · 2m</div>
+          </div>
+          <div class="cw-block yellow" onclick="toast('Sandbox Docker: 2 procesos')">
+            <div class="cw-type">Sandbox</div>
+            <div class="cw-name">Docker 1</div>
+            <div class="cw-status"><div class="sb-dot yellow"></div> Busy</div>
+            <div class="cw-meta">2 procesos</div>
+          </div>
+          <div class="cw-block red" onclick="toast('Error: KeyError router.py:42 — reintentando 1/3')">
+            <div class="cw-type">Error</div>
+            <div class="cw-name">router.py:42</div>
+            <div class="cw-status"><div class="sb-dot red"></div> Error</div>
+            <div class="cw-meta" style="color:var(--red)">KeyError · retry 1/3</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== TOPOLOGY VIEW ====== -->
+      <div class="view" id="view-topology">
+        <div class="cw-header">
+          <span style="font-size:11px;font-weight:600;color:var(--text2)">TOPOLOGY CENTER</span>
+          <div class="cw-live"><div class="cw-live-dot"></div> LIVE</div>
+          <div style="flex:1"></div>
+          <button class="topbar-btn" onclick="toast('✓ 4/5 conexiones saludables')">Verificar todo</button>
+          <button class="topbar-btn" onclick="toast('+ Añadir nodo')">+ Nodo</button>
+        </div>
+        <div class="topo-view">
+          <div class="topo-canvas">
+            <div class="topo-node ok" onclick="toast('Chat Router: entrada principal')">💬 Chat Router</div>
+            <div class="topo-arrow">↓</div>
+            <div class="topo-row">
+              <div class="topo-branch">
+                <div class="topo-node ok" onclick="toast('Claude API: ✅ 124ms — clic para reemplazar')">🧠 Claude API</div>
+              </div>
+              <div class="topo-branch">
+                <div class="topo-node ok" onclick="toast('OpenClaw: ✅ 234ms — orquestador principal')">⚙️ OpenClaw</div>
+                <div class="topo-arrow">↓</div>
+                <div class="topo-row" style="gap:12px">
+                  <div class="topo-branch">
+                    <div class="topo-node warn" onclick="openInspector()" style="font-size:10px">🤖 Architect</div>
+                  </div>
+                  <div class="topo-branch">
+                    <div class="topo-node warn" onclick="toast('Programmer: running')" style="font-size:10px">🤖 Programmer</div>
+                  </div>
+                  <div class="topo-branch">
+                    <div class="topo-node" onclick="toast('Tester: idle')" style="font-size:10px">🤖 Tester</div>
+                  </div>
+                </div>
+                <div class="topo-arrow">↓</div>
+                <div class="topo-row" style="gap:12px">
+                  <div class="topo-branch">
+                    <div class="topo-node ok" onclick="toast('GitHub: ✅ Git Service Layer')" style="font-size:10px">📂 GitHub</div>
+                  </div>
+                  <div class="topo-branch">
+                    <div class="topo-node warn" onclick="toast('Sandbox: 2 procesos')" style="font-size:10px">🔧 Sandbox</div>
+                  </div>
+                  <div class="topo-branch">
+                    <div class="topo-node err" onclick="toast('SQL Prod: ❌ Connection refused — clic para corregir')" style="font-size:10px">🗄️ SQL Prod</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:16px;font-size:10px;color:var(--text3);display:flex;gap:16px">
+              <span><span style="color:var(--green)">●</span> Activo</span>
+              <span><span style="color:var(--yellow)">●</span> Lento</span>
+              <span><span style="color:var(--red)">●</span> Error</span>
+              <span><span style="color:var(--text3)">●</span> Idle</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== TIMELINE VIEW ====== -->
+      <div class="view" id="view-timeline">
+        <div class="timeline-header">
+          <span style="font-size:11px;font-weight:600;color:var(--text2)">TIMELINE — Mavis-IDE</span>
+          <div style="flex:1"></div>
+          <select class="tl-filter"><option>Todos los agentes</option><option>Architect</option></select>
+          <select class="tl-filter"><option>Todos los eventos</option><option>Solo errores</option></select>
+          <button class="topbar-btn" onclick="toast('Exportando timeline...')">Exportar</button>
+        </div>
+        <div class="timeline-list">
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--green)"></div>
+            <div class="tl-time">10:21</div>
+            <div class="tl-content"><div class="tl-title">Misión creada: Auth Module</div><div class="tl-detail">4 épicas · 3 agentes asignados</div></div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--green)"></div>
+            <div class="tl-time">10:22</div>
+            <div class="tl-content"><div class="tl-title">Architect iniciado — api_design.md</div><div class="tl-detail">HF Space: space_architect · Claude Sonnet</div></div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--yellow)"></div>
+            <div class="tl-time">10:25</div>
+            <div class="tl-content"><div class="tl-title">Programmer en espera</div><div class="tl-detail">Dependencia: output de Architect</div></div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--green)"></div>
+            <div class="tl-time">10:31</div>
+            <div class="tl-content"><div class="tl-title">Sandbox ejecutó test_auth.py</div><div class="tl-detail">Docker · 3 tests pasaron · 1.2s</div></div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--green)"></div>
+            <div class="tl-time">10:34</div>
+            <div class="tl-content"><div class="tl-title">GitHub commit — feat/auth-module</div><div class="tl-detail">api.py · auth.py · PR #12 abierto</div></div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--red)"></div>
+            <div class="tl-time">10:38</div>
+            <div class="tl-content"><div class="tl-title" style="color:var(--red)">Error: KeyError — router.py:42</div><div class="tl-detail">Programmer · Reintentando 1/3</div></div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--yellow)"></div>
+            <div class="tl-time">10:39</div>
+            <div class="tl-content"><div class="tl-title">LOps recovery iniciado</div><div class="tl-detail">Checkpoint restaurado · Paso 4</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== KANBAN VIEW ====== -->
+      <div class="view" id="view-kanban">
+        <div class="cw-header">
+          <span style="font-size:11px;font-weight:600;color:var(--text2)">KANBAN — Mavis-IDE</span>
+          <div style="flex:1"></div>
+          <button class="topbar-btn" onclick="toast('+ Nueva tarea')">+ Tarea</button>
+        </div>
+        <div class="kanban-board">
+          <div class="kanban-col">
+            <div class="kanban-col-h">Pendiente <span class="kanban-count">2</span></div>
+            <div class="kanban-cards">
+              <div class="kanban-card"><div class="kanban-card-title"><span class="prio" style="background:var(--yellow)"></span>Setup Redis Cache</div><div class="kanban-card-meta">Programmer · backend</div></div>
+              <div class="kanban-card"><div class="kanban-card-title"><span class="prio" style="background:var(--green)"></span>Write API Docs</div><div class="kanban-card-meta">Researcher · docs</div></div>
+            </div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-h">Planificando <span class="kanban-count">1</span></div>
+            <div class="kanban-cards">
+              <div class="kanban-card"><div class="kanban-card-title"><span class="prio" style="background:var(--yellow)"></span>Design DB Schema</div><div class="kanban-card-meta">Architect · OpenClaw</div></div>
+            </div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-h">En curso <span class="kanban-count">2</span></div>
+            <div class="kanban-cards">
+              <div class="kanban-card" onclick="openInspector()"><div class="kanban-card-title"><span class="prio" style="background:var(--red)"></span>JWT Implementation</div><div class="kanban-card-meta">Architect · 62%</div></div>
+              <div class="kanban-card"><div class="kanban-card-title"><span class="prio" style="background:var(--red)"></span>API Endpoints</div><div class="kanban-card-meta">Programmer · running</div></div>
+            </div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-h">En revisión <span class="kanban-count">1</span></div>
+            <div class="kanban-cards">
+              <div class="kanban-card"><div class="kanban-card-title"><span class="prio" style="background:var(--yellow)"></span>Code Review PR #11</div><div class="kanban-card-meta">Reviewer · PR open</div></div>
+            </div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-h">Bloqueado <span class="kanban-count">1</span></div>
+            <div class="kanban-cards">
+              <div class="kanban-card"><div class="kanban-card-title"><span class="prio" style="background:var(--red)"></span>Refresh Token</div><div class="kanban-card-meta">dep: JWT Implementation</div></div>
+            </div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-h">Finalizado <span class="kanban-count">3</span></div>
+            <div class="kanban-cards">
+              <div class="kanban-card"><div class="kanban-card-title"><span class="prio" style="background:var(--green)"></span>API Design</div><div class="kanban-card-meta">Architect · ✅ 10:21</div></div>
+              <div class="kanban-card"><div class="kanban-card-title"><span class="prio" style="background:var(--green)"></span>Unit Tests Setup</div><div class="kanban-card-meta">Tester · ✅ 10:31</div></div>
+              <div class="kanban-card"><div class="kanban-card-title"><span class="prio" style="background:var(--green)"></span>PR #10 Merged</div><div class="kanban-card-meta">Judge · ✅ merged</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== MIND MAP VIEW ====== -->
+      <div class="view" id="view-mindmap">
+        <div class="cw-header">
+          <span style="font-size:11px;font-weight:600;color:var(--text2)">MAPA MENTAL — Auth Module</span>
+          <div style="flex:1"></div>
+          <span style="font-size:10px;color:var(--text3)">React Flow radial en producción</span>
+        </div>
+        <div class="mindmap-view">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <div class="mm-center" onclick="toast('Misión: Auth Module · 62%')">🎯 Auth Module<br><span style="font-size:10px;opacity:0.8">62% completado</span></div>
+            <div class="mm-arrow">↓</div>
+            <div class="mm-nodes">
+              <div class="mm-branch">
+                <div class="mm-node green" onclick="openInspector()">🤖 Architect ✅</div>
+                <div class="mm-arrow">↓</div>
+                <div class="mm-node green">📄 api_design.md</div>
+                <div class="mm-arrow">↓</div>
+                <div class="mm-node">📂 GitHub PR</div>
+              </div>
+              <div class="mm-branch">
+                <div class="mm-node yellow">🤖 Programmer ⏳</div>
+                <div class="mm-arrow">↓</div>
+                <div class="mm-node">🔧 Sandbox</div>
+                <div class="mm-arrow">↓</div>
+                <div class="mm-node red">❌ Error:42</div>
+              </div>
+              <div class="mm-branch">
+                <div class="mm-node">🤖 Tester ⚪</div>
+                <div class="mm-arrow">↓</div>
+                <div class="mm-node">🧪 Tests</div>
+              </div>
+            </div>
+            <div style="font-size:10px;color:var(--text3);display:flex;gap:16px;margin-top:12px">
+              <span><span style="color:var(--green)">■</span> Completado</span>
+              <span><span style="color:var(--yellow)">■</span> En curso</span>
+              <span><span style="color:var(--red)">■</span> Error</span>
+              <span><span style="color:var(--text3)">■</span> Idle</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== INTEGRACIONES EXTERNAS ====== -->
+      <!-- Ref: BBVA "Contratar" — grid 2x2 oscuro -->
+      <!-- Activa: Claude Design, OCR Baidu, Kimi Claw, OpenClaw, etc. -->
+      <div class="view" id="view-integrations">
+        <div class="cw-header">
+          <span style="font-size:11px;font-weight:600;color:var(--text2)">INTEGRACIONES EXTERNAS</span>
+          <div style="flex:1"></div>
+          <button class="topbar-btn" onclick="toast('+ Añadir integración custom')">+ Añadir</button>
+        </div>
+        <div class="integrations-grid">
+          <div class="integration-card" onclick="toast('Claude Design: activado — abre panel de diseño')">
+            <div class="integration-icon">🎨</div>
+            <div class="integration-name">Claude Design</div>
+            <span class="integration-badge int-active">Activo</span>
+          </div>
+          <div class="integration-card" onclick="toast('OCR Baidu: configurar API key')">
+            <div class="integration-icon">📷</div>
+            <div class="integration-name">OCR Baidu</div>
+            <span class="integration-badge int-off">Inactivo</span>
+          </div>
+          <div class="integration-card" onclick="toast('Kimi Claw: activo en HF Space')">
+            <div class="integration-icon">🤖</div>
+            <div class="integration-name">Kimi Claw</div>
+            <span class="integration-badge int-active">Activo</span>
+          </div>
+          <div class="integration-card" onclick="toast('OpenClaw: orquestador principal')">
+            <div class="integration-icon">⚙️</div>
+            <div class="integration-name">OpenClaw</div>
+            <span class="integration-badge int-active">Activo</span>
+          </div>
+          <div class="integration-card" onclick="toast('MaxHermes: configurar')">
+            <div class="integration-icon">🐍</div>
+            <div class="integration-name">MaxHermes</div>
+            <span class="integration-badge int-new">Nuevo</span>
+          </div>
+          <div class="integration-card" onclick="toast('MiniMax API: conectar')">
+            <div class="integration-icon">🧠</div>
+            <div class="integration-name">MiniMax M3</div>
+            <span class="integration-badge int-beta">Beta</span>
+          </div>
+          <div class="integration-card" onclick="toast('Telegram Bot: activar')">
+            <div class="integration-icon">✈️</div>
+            <div class="integration-name">Telegram Bot</div>
+            <span class="integration-badge int-off">Inactivo</span>
+          </div>
+          <div class="integration-card" onclick="toast('+ Añadir integración personalizada')">
+            <div class="integration-icon">➕</div>
+            <div class="integration-name">Añadir nueva</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== PROYECTOS VIEW ====== -->
+      <!-- Ref: Claude.ai proyectos + BBVA "mis productos" -->
+      <div class="view" id="view-projects">
+        <div class="cw-header">
+          <span style="font-size:15px;font-weight:600;color:var(--text1)">Proyectos</span>
+          <div style="flex:1"></div>
+          <button class="topbar-btn" onclick="toast('Filtros de proyectos')">⚙️</button>
+        </div>
+        <div class="projects-list-view">
+          <div style="position:relative;margin-bottom:14px">
+            <input class="projects-search" placeholder="🔍 Buscar proyectos...">
+          </div>
+          <div class="project-card active" onclick="toast('Mavis-IDE: contexto cargado completo')">
+            <div class="project-card-name">Mavis-IDE</div>
+            <div class="project-card-meta">Editado 17 jun 2026 · 2 repos · 3 agentes</div>
+            <div class="project-card-badges">
+              <span class="badge badge-green">Activo</span>
+              <span class="badge badge-blue">Backend · Frontend</span>
+            </div>
+          </div>
+          <div class="project-card" onclick="toast('NCT Pipeline: contexto cargado')">
+            <div class="project-card-name">NCT Pipeline</div>
+            <div class="project-card-meta">Editado 10 jun 2026 · 1 repo · 5 agentes</div>
+            <div class="project-card-badges">
+              <span class="badge badge-yellow">Paso 04 activo</span>
+            </div>
+          </div>
+          <div class="project-card" onclick="toast('FABLES MYTHOS cargado')">
+            <div class="project-card-name">FABLES MYTHOS ✅✅🔒</div>
+            <div class="project-card-meta">Editado 9 jun 2026 · 3 repos</div>
+            <div class="project-card-badges">
+              <span class="badge badge-gray">Privado</span>
+            </div>
+          </div>
+          <div class="project-card" onclick="toast('G2 Cerebro cargado')">
+            <div class="project-card-name">G2 Cerebro De ✅✅🔒</div>
+            <div class="project-card-meta">Editado 5 jun 2026</div>
+          </div>
+          <div class="project-card" onclick="toast('Modo Fusión Kimi K cargado')">
+            <div class="project-card-name">Modo Fusión Kimi K Y Minim...</div>
+            <div class="project-card-meta">Editado 2 jun 2026</div>
+          </div>
+        </div>
+        <!-- Botón + Nuevo proyecto — naranja flotante estilo Claude -->
+        <button class="new-project-btn" onclick="openOverlay('create-project')">+ Nuevo proyecto</button>
+      </div>
+
+    </div><!-- end center -->
+
+    <!-- ============ RIGHT PANEL — INSPECTOR ============ -->
+    <div class="right-panel" id="rightPanel" style="display:none">
+      <div class="inspector-header">🔍 Inspector — Architect</div>
+      <div class="inspector-body">
+        <div class="insp-row"><span class="insp-key">Estado</span><span class="insp-val yellow">⏳ Running</span></div>
+        <div class="insp-row"><span class="insp-key">Progreso</span><span class="insp-val">62%</span></div>
+        <div class="insp-row"><span class="insp-key">Tarea actual</span><span class="insp-val">JWT endpoints</span></div>
+        <div class="insp-row"><span class="insp-key">Archivo</span><span class="insp-val">api_design.md</span></div>
+        <div class="insp-row"><span class="insp-key">Iniciado</span><span class="insp-val">10:22:14</span></div>
+        <div class="insp-row"><span class="insp-key">Est. restante</span><span class="insp-val">~8 min</span></div>
+        <div class="insp-row"><span class="insp-key">Costo</span><span class="insp-val">$0.014</span></div>
+        <div class="insp-row"><span class="insp-key">Tokens</span><span class="insp-val">4,200</span></div>
+        <div class="insp-row"><span class="insp-key">Modelo</span><span class="insp-val">Claude Sonnet</span></div>
+        <div class="insp-row"><span class="insp-key">Protocolo</span><span class="insp-val">MCP</span></div>
+        <div class="insp-row"><span class="insp-key">HF Space</span><span class="insp-val green">✅ online</span></div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text2);padding:4px 0">Memoria</div>
+        <div class="insp-row"><span class="insp-key">Decisiones</span><span class="insp-val green">3</span></div>
+        <div class="insp-row"><span class="insp-key">Errores</span><span class="insp-val red">1</span></div>
+        <div class="insp-row"><span class="insp-key">Archivos</span><span class="insp-val">2</span></div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text2);padding:4px 0">Conexiones</div>
+        <div class="insp-row"><span class="insp-key">Claude API</span><span class="insp-val green">✅</span></div>
+        <div class="insp-row"><span class="insp-key">GitHub</span><span class="insp-val green">✅</span></div>
+      </div>
+      <div class="inspector-actions">
+        <div class="insp-btn" onclick="openOverlay('workspace')">🖥 Abrir Workspace</div>
+        <div class="insp-btn" onclick="switchView('timeline')">⏱ Ver historial</div>
+        <div class="insp-btn" onclick="toast('⏸ Agente pausado')">⏸ Pausar agente</div>
+        <div class="insp-btn danger" onclick="toast('🛑 Agente detenido')">🛑 Detener</div>
+      </div>
+    </div>
+
+  </div><!-- end main-row -->
+
+  <!-- ============ BOTTOM PANEL ============ -->
+  <div class="bottom-panel">
+    <div class="bottom-tabs">
+      <div class="bottom-tab active" onclick="switchBTab('logs')">📋 Logs</div>
+      <div class="bottom-tab" onclick="switchBTab('terminal')">💻 Terminal</div>
+      <div class="bottom-tab" onclick="switchBTab('events')">⚡ Eventos</div>
+      <div class="bottom-tab" onclick="switchBTab('cost')">💰 Costo</div>
+    </div>
+    <div class="bottom-content active" id="btab-logs">
+      <span class="log-time">10:39:21</span><span class="log-ok">[OK]</span> LOps: checkpoint restaurado · Programmer reiniciado desde paso 4<br>
+      <span class="log-time">10:38:44</span><span class="log-err">[ERROR]</span> Programmer: KeyError en router.py línea 42 — reintentando (1/3)<br>
+      <span class="log-time">10:34:02</span><span class="log-ok">[OK]</span> GitHub: PR #12 abierto — feat/auth-module — 127 líneas añadidas<br>
+      <span class="log-time">10:31:18</span><span class="log-ok">[OK]</span> Sandbox: test_auth.py — 3 pasados, 0 fallidos, 1.2s<br>
+      <span class="log-time">10:29:54</span><span class="log-warn">[WARN]</span> HF Space 1: latencia alta 2.1s (umbral: 1.0s)<br>
+      <span class="log-time">10:22:14</span><span class="log-info">[INFO]</span> Architect iniciado — Claude Sonnet — HF Space: space_architect<br>
+      <span class="log-time">10:21:00</span><span class="log-ok">[OK]</span> Misión creada: Auth Module — 4 épicas — 3 agentes<br>
+    </div>
+    <div class="bottom-content" id="btab-terminal">
+      <span style="color:var(--green)">$ docker exec sandbox_1 python test_auth.py</span><br>
+      <span class="log-info">Running test suite...</span><br>
+      <span class="log-ok">✓ test_login_valid (0.12s)</span><br>
+      <span class="log-ok">✓ test_token_refresh (0.08s)</span><br>
+      <span class="log-err">✗ test_invalid_token: KeyError 'sub' — router.py:42</span><br>
+      <span class="log-info">1 failed, 2 passed in 1.2s</span><br>
+      <span class="log-warn">LOps: retry 1/3 iniciado...</span><br>
+    </div>
+    <div class="bottom-content" id="btab-events">
+      <span class="log-time">10:39:21</span><span class="log-warn">lops:recovery</span> — checkpoint_restored · agent:programmer<br>
+      <span class="log-time">10:38:44</span><span class="log-err">error:detected</span> — agent:programmer · file:router.py:42<br>
+      <span class="log-time">10:34:02</span><span class="log-ok">commit:created</span> — repo:mavis-ide/back · branch:feat/auth · pr:#12<br>
+      <span class="log-time">10:22:14</span><span class="log-ok">agent:started</span> — agent:architect · model:claude-sonnet<br>
+    </div>
+    <div class="bottom-content" id="btab-cost">
+      <span class="log-info">Claude Sonnet ..... <span style="color:var(--yellow)">$0.021</span> (4,200 tokens)</span><br>
+      <span class="log-info">GPT-4o ............ <span style="color:var(--yellow)">$0.018</span> (2,100 tokens)</span><br>
+      <span class="log-info">Sandbox ........... <span class="log-info">$0.003</span> (3 ejecuciones)</span><br>
+      <span style="border-top:1px solid var(--border);display:block;margin:6px 0;padding-top:6px">
+      Total ............. <span style="color:var(--yellow)">$0.042</span>
+      <span style="color:var(--text3);margin-left:8px">Presupuesto: $0.50 (8.4% usado)</span></span>
+    </div>
+  </div>
+
+  <!-- ============ STATUS BAR ============ -->
+  <div class="status-bar">
+    <div class="sb-item-status"><div class="sb-dot green" style="width:6px;height:6px"></div> Sistema activo</div>
+    <span class="sb-sep">|</span>
+    <div class="sb-item-status">🤖 2 agentes</div>
+    <span class="sb-sep">|</span>
+    <div class="sb-item-status">⚡ 3 tareas</div>
+    <span class="sb-sep">|</span>
+    <div class="sb-item-status">💰 $0.042</div>
+    <span class="sb-sep">|</span>
+    <div class="sb-item-status">📁 Mavis-IDE</div>
+    <span class="sb-sep">|</span>
+    <div class="sb-item-status" id="clock">10:39:21</div>
+  </div>
+
+</div><!-- end app -->
+
+<!-- ============================================================
+     OVERLAYS
+     ============================================================ -->
+
+<!-- SELECTOR DE MODELO — Bottom sheet estilo Claude -->
+<!-- Ref: Claude "Seleccionar modelo" con nombre+descripción+badge Pro -->
+<div class="overlay" id="overlay-model-selector" onclick="closeIfBg(event,'model-selector')">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      Seleccionar modelo
+      <button class="sheet-close" onclick="closeOverlay('model-selector')">✕</button>
+    </div>
+    <div class="model-list">
+      <div class="model-option disabled">
+        <div class="model-opt-name">Fa... <span class="model-badge-na">No disponible actualmente</span></div>
+        <div class="model-opt-desc">Para tus desafíos más difíciles</div>
+      </div>
+      <div class="model-option">
+        <div class="model-opt-name">Opus 4.8 <span class="model-badge-pro">Pro</span></div>
+        <div class="model-opt-desc">Para tareas complejas</div>
+      </div>
+      <div class="model-option selected">
+        <div class="model-opt-name">Sonnet 5</div>
+        <div class="model-opt-desc">Más eficiente para tareas diarias</div>
+      </div>
+      <div class="model-option">
+        <div class="model-opt-name">Haiku 4.5</div>
+        <div class="model-opt-desc">Más rápido para respuestas rápidas</div>
+      </div>
+      <!-- GPT, MiniMax, Gemini, etc. -->
+      <div class="model-option">
+        <div class="model-opt-name">GPT-4o</div>
+        <div class="model-opt-desc">OpenAI — via API configurada</div>
+      </div>
+      <div class="model-option">
+        <div class="model-opt-name">MiniMax M3</div>
+        <div class="model-opt-desc">MiniMax — via API configurada</div>
+      </div>
+      <div class="model-section-link" onclick="toast('Esfuerzo: Bajo / Medio / Alto')">
+        Esfuerzo <span style="color:var(--text3);margin-left:4px">Bajo</span> <span class="add-menu-chevron">›</span>
+      </div>
+      <div class="model-section-link" onclick="toast('Más modelos: lista completa de APIs configuradas')">
+        Más modelos <span class="add-menu-chevron">›</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MENÚ + AGREGAR AL CHAT — estilo Claude -->
+<div class="overlay" id="overlay-add-menu" onclick="closeIfBg(event,'add-menu')">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      Agregar al chat
+      <button class="sheet-close" onclick="closeOverlay('add-menu')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="add-menu-grid">
+        <div class="add-menu-item" onclick="toast('Cámara: tomar foto')"><div class="add-menu-icon">📷</div><div class="add-menu-label">Cámara</div></div>
+        <div class="add-menu-item" onclick="toast('Fotos: seleccionar imagen')"><div class="add-menu-icon">🖼️</div><div class="add-menu-label">Fotos</div></div>
+        <div class="add-menu-item" onclick="toast('Archivos: subir documento')"><div class="add-menu-icon">📄</div><div class="add-menu-label">Archivos</div></div>
+      </div>
+      <div class="add-menu-row" onclick="toast('Búsqueda web: activada')">
+        <div class="add-menu-row-icon">🌐</div>
+        <div class="add-menu-row-text"><div class="add-menu-row-title">Búsqueda web</div></div>
+        <div class="add-menu-toggle"></div>
+      </div>
+      <div class="add-menu-row" onclick="openOverlay('project-selector');closeOverlay('add-menu')">
+        <div class="add-menu-row-icon">📁</div>
+        <div class="add-menu-row-text">
+          <div class="add-menu-row-title">Agregar al proyecto <span class="model-badge-pro" style="font-size:9px">PRO</span></div>
+          <div class="add-menu-row-sub">Ninguno seleccionado</div>
+        </div>
+        <div class="add-menu-chevron">›</div>
+      </div>
+      <div class="add-menu-row" onclick="toast('Usar estilo: seleccionar estilo de escritura')">
+        <div class="add-menu-row-icon">✒️</div>
+        <div class="add-menu-row-text">
+          <div class="add-menu-row-title">Usar estilo</div>
+          <div class="add-menu-row-sub">Ninguno</div>
+        </div>
+        <div class="add-menu-chevron">›</div>
+      </div>
+      <div class="add-menu-row" onclick="toast('Acceso a herramientas: configurar')">
+        <div class="add-menu-row-icon">🔧</div>
+        <div class="add-menu-row-text">
+          <div class="add-menu-row-title">Acceso a herramientas</div>
+          <div class="add-menu-row-sub">Auto</div>
+        </div>
+        <div class="add-menu-chevron">›</div>
+      </div>
+      <div class="add-menu-row" onclick="toast('Conectores: MCP, APIs, integraciones')">
+        <div class="add-menu-row-icon">🔌</div>
+        <div class="add-menu-row-text"><div class="add-menu-row-title">Conectores</div></div>
+        <div class="add-menu-chevron">›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SELECTOR DE PROYECTO — expande como ventana -->
+<div class="overlay" id="overlay-project-selector" onclick="closeIfBg(event,'project-selector')">
+  <div class="bottom-sheet" style="max-height:70vh">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      Seleccionar proyecto
+      <button class="sheet-close" onclick="closeOverlay('project-selector')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <input class="proj-sel-search" placeholder="🔍 Buscar proyectos...">
+      <div class="proj-sel-item" onclick="toast('✅ Mavis-IDE cargado — memoria, agentes, repos restaurados');closeOverlay('project-selector')">
+        <div class="proj-sel-icon">📂</div>
+        <div><div class="proj-sel-name">Mavis-IDE</div><div class="proj-sel-meta">mavis-ide/backend · 3 agentes · activo</div></div>
+      </div>
+      <div class="proj-sel-item" onclick="toast('✅ NCT Pipeline cargado');closeOverlay('project-selector')">
+        <div class="proj-sel-icon">📂</div>
+        <div><div class="proj-sel-name">NCT Pipeline</div><div class="proj-sel-meta">nct/core · 5 agentes · Paso 04</div></div>
+      </div>
+      <div class="proj-sel-item" onclick="toast('✅ FABLES MYTHOS cargado');closeOverlay('project-selector')">
+        <div class="proj-sel-icon">📂</div>
+        <div><div class="proj-sel-name">FABLES MYTHOS</div><div class="proj-sel-meta">fables/core · 4 agentes</div></div>
+      </div>
+      <div class="proj-sel-item" onclick="toast('✅ G2 Cerebro cargado');closeOverlay('project-selector')">
+        <div class="proj-sel-icon">📂</div>
+        <div><div class="proj-sel-name">G2 Cerebro De ✅✅🔒</div><div class="proj-sel-meta">Editado 5 jun 2026</div></div>
+      </div>
+      <button style="width:100%;margin-top:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;color:var(--text2);font-size:13px;cursor:pointer;font-family:var(--font-ui)" onclick="closeOverlay('project-selector');openOverlay('create-project')">+ Nuevo proyecto</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREAR PROYECTO — Bottom sheet estilo Claude -->
+<div class="overlay" id="overlay-create-project" onclick="closeIfBg(event,'create-project')">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      Crear un proyecto
+      <button class="sheet-close" onclick="closeOverlay('create-project')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <label class="create-proj-label">¿En qué estás trabajando?</label>
+      <input class="create-proj-input" style="min-height:auto;height:44px" placeholder="Nombre su proyecto">
+      <label class="create-proj-label">¿Qué intenta lograr?</label>
+      <textarea class="create-proj-input" placeholder="Describa su proyecto, objetivos, tema, etc..."></textarea>
+      <button class="create-proj-btn" onclick="toast('✅ Proyecto creado — cargando contexto...');closeOverlay('create-project')">Crear proyecto</button>
+    </div>
+  </div>
+</div>
+
+<!-- WORKSPACE WINDOW — Ventana persistente de resultados -->
+<div class="overlay" id="overlay-workspace" style="align-items:center;justify-content:center" onclick="closeIfBg(event,'workspace')">
+  <div class="workspace-sheet">
+    <div class="ws-header">
+      <div class="sb-dot yellow"></div>
+      <div class="ws-title">⏺ Status Proyecto — Mavis-IDE</div>
+      <button class="ws-btn" onclick="toast('💬 Chat conectado a Architect + Programmer')">💬 Chat</button>
+      <button class="ws-btn" onclick="toast('🔄 Reiniciando manifest...')">🔄</button>
+      <button class="ws-btn" onclick="toast('📤 Compartido al chat principal')">📤</button>
+      <button class="sheet-close" onclick="closeOverlay('workspace')">✕</button>
+    </div>
+    <div class="ws-tabs">
+      <div class="ws-tab active">Resultado</div>
+      <div class="ws-tab" onclick="toast('Chat privado con los agentes que ejecutaron')">Chat</div>
+      <div class="ws-tab" onclick="toast('Editor Monaco de archivos generados')">Editor</div>
+      <div class="ws-tab" onclick="toast('Terminal xterm.js — output del sandbox')">Terminal</div>
+      <div class="ws-tab" onclick="toast('Archivos generados por esta tarea')">Archivos</div>
+      <div class="ws-tab" onclick="toast('Logs de ejecución de esta tarea')">Logs</div>
+      <div class="ws-tab" onclick="toast('state.json de todos los componentes')">Estado</div>
+    </div>
+    <div class="ws-result">
+      <div style="font-size:11px;color:var(--text2);font-family:var(--font-mono);margin-bottom:12px">ESTADO DEL SISTEMA — 10:39:21</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;display:flex;align-items:center;gap:6px">🎯 Auth Module <span style="color:var(--yellow);font-size:10px;margin-left:auto">62%</span></div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;display:flex;align-items:center;gap:6px">⚙️ OpenClaw <span style="color:var(--green);font-size:10px;margin-left:auto">✅</span></div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;display:flex;align-items:center;gap:6px">🤖 Architect <span style="color:var(--yellow);font-size:10px;margin-left:auto">⏳ 62%</span></div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;display:flex;align-items:center;gap:6px">📂 GitHub PR #12 <span style="color:var(--green);font-size:10px;margin-left:auto">abierto</span></div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;display:flex;align-items:center;gap:6px">❌ router.py:42 <span style="color:var(--red);font-size:10px;margin-left:auto">retry 1/3</span></div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;display:flex;align-items:center;gap:6px">💰 Costo total <span style="color:var(--yellow);font-size:10px;margin-left:auto">$0.042</span></div>
+      </div>
+    </div>
+    <div class="ws-history">
+      ⬆ Respuesta 1 (10:21) — Misión creada, 3 agentes asignados<br>
+      ⬆ Respuesta 2 (10:31) — Architect 45%, tests pasados<br>
+      ▶ Respuesta 3 (10:39) — Actual: Architect 62%, error en retry
+    </div>
+    <div class="ws-actions">
+      <button class="ws-btn" onclick="toast('💬 Conectando chat a los agentes activos...')">💬 Conectar chat</button>
+      <button class="ws-btn" onclick="toast('🔄 Manifest reiniciado desde el inicio')">🔄 Reiniciar</button>
+      <button class="ws-btn" onclick="toast('📤 Resultado enviado al chat como contexto')">📤 Compartir</button>
+      <button class="ws-btn" onclick="toast('⏸ LOps pausado')">⏸ Pausar</button>
+      <button class="ws-btn" onclick="closeOverlay('workspace')" style="margin-left:auto">✕ Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMMAND PALETTE — Ctrl+K -->
+<div class="cmd-overlay" id="cmd-palette" onclick="closeIfBg(event,'cmd')">
+  <div class="cmd-palette">
+    <div class="cmd-input-wrap">
+      <span style="color:var(--text3)">⌘</span>
+      <input class="cmd-input" placeholder="Buscar comando..." autofocus>
+    </div>
+    <div class="cmd-list">
+      <div class="cmd-item" onclick="toast('Nuevo proyecto');closeCmdPalette()"><span class="cmd-item-icon">📁</span> Nuevo proyecto</div>
+      <div class="cmd-item" onclick="switchView('chat');closeCmdPalette()"><span class="cmd-item-icon">💬</span> Nuevo chat</div>
+      <div class="cmd-item" onclick="toast('Nuevo Task Manifest');closeCmdPalette()"><span class="cmd-item-icon">⚡</span> Nuevo Task Manifest</div>
+      <div class="cmd-item" onclick="toast('Ficha de conexión');closeCmdPalette()"><span class="cmd-item-icon">🔗</span> Nueva conexión</div>
+      <div class="cmd-item" onclick="switchView('crazywall');closeCmdPalette()"><span class="cmd-item-icon">📊</span> Abrir Crazy Wall <span class="cmd-item-shortcut">Ctrl+W</span></div>
+      <div class="cmd-item" onclick="switchView('topology');closeCmdPalette()"><span class="cmd-item-icon">🗺️</span> Abrir Topology</div>
+      <div class="cmd-item" onclick="switchView('mindmap');closeCmdPalette()"><span class="cmd-item-icon">🧠</span> Abrir Mind Map</div>
+      <div class="cmd-item" onclick="switchView('timeline');closeCmdPalette()"><span class="cmd-item-icon">⏱</span> Abrir Timeline</div>
+      <div class="cmd-item" onclick="switchView('kanban');closeCmdPalette()"><span class="cmd-item-icon">📋</span> Abrir Kanban</div>
+      <div class="cmd-item" onclick="toggleTheme();closeCmdPalette()"><span class="cmd-item-icon">☀️</span> Cambiar tema <span class="cmd-item-shortcut">Ctrl+T</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── THEME ──
+const toggleTheme = () => {
+  const html = document.documentElement
+  const cur = html.getAttribute('data-theme')
+  html.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark')
+  toast(cur === 'dark' ? '☀️ Modo claro' : '🌙 Modo oscuro')
+}
+
+// ── SIDEBAR ──
+const toggleSidebar = () => {
+  document.getElementById('sidebar').classList.toggle('open')
+}
+const toggleSec = (id) => {
+  const el = document.getElementById(id)
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none'
+}
+
+// ── VIEWS ──
+const switchView = (name) => {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+  const view = document.getElementById('view-' + name)
+  const tab = document.getElementById('tab-' + name)
+  if (view) view.classList.add('active')
+  if (tab) tab.classList.add('active')
+}
+
+// ── BOTTOM TABS ──
+const switchBTab = (name) => {
+  document.querySelectorAll('.bottom-content').forEach(c => c.classList.remove('active'))
+  document.querySelectorAll('.bottom-tab').forEach(t => t.classList.remove('active'))
+  document.getElementById('btab-' + name).classList.add('active')
+  event.target.classList.add('active')
+}
+
+// ── OVERLAYS ──
+const openOverlay = (name) => {
+  document.getElementById('overlay-' + name).classList.add('open')
+}
+const closeOverlay = (name) => {
+  document.getElementById('overlay-' + name).classList.remove('open')
+}
+const closeIfBg = (e, name) => {
+  if (e.target === e.currentTarget) closeOverlay(name)
+}
+
+// ── INSPECTOR ──
+const openInspector = () => {
+  const rp = document.getElementById('rightPanel')
+  rp.style.display = rp.style.display === 'none' ? 'flex' : 'flex'
+  rp.style.flexDirection = 'column'
+  toast('Inspector abierto — Architect')
+}
+
+// ── COMMAND PALETTE ──
+const openCmd = () => document.getElementById('cmd-palette').classList.add('open')
+const closeCmdPalette = () => document.getElementById('cmd-palette').classList.remove('open')
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openCmd(); }
+  if (e.key === 'Escape') { closeCmdPalette(); }
+})
+
+// ── CLOCK ──
+setInterval(() => {
+  const now = new Date()
+  const el = document.getElementById('clock')
+  if (el) el.textContent = now.toLocaleTimeString()
+}, 1000)
+
+// ── TOAST ──
+let toastTimer
+const toast = (msg) => {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.classList.add('show')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800)
+}
+
+// ── AUTO-RESIZE TEXTAREA ──
+document.querySelectorAll('.chat-textarea').forEach(ta => {
+  ta.addEventListener('input', function() {
+    this.style.height = 'auto'
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px'
+  })
+})
+
+// Inicio
+toast('MAVIS M3 — Frontend cargado ✓')
+</script>
+
+</body>
+</html>

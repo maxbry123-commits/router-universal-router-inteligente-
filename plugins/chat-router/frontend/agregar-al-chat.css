@@ -1,0 +1,15 @@
+/* agregar-al-chat.css — hoja «Agregar al chat». El interruptor enciende el SÍMBOLO (la perilla) en azul eléctrico, sin cuadro de fondo. */
+.ag-cuerpo{display:grid;gap:10px}
+.ag-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ag-grande{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px 8px;min-height:96px;border-radius:18px;background:var(--panel);border:1px solid var(--border);color:var(--text);font-size:14px;cursor:pointer}
+.ag-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;min-height:56px;width:100%;text-align:left;border-radius:18px;background:var(--panel);border:1px solid var(--border);color:var(--text)}
+.ag-fila strong{display:block;font-size:15px;color:var(--title)}
+.ag-fila small{display:block;color:var(--quiet);font-size:12px}
+.ag-ch{color:var(--quiet);font-size:22px}
+.ag-lista{display:flex;flex-wrap:wrap;gap:8px;padding:0 4px}
+.ag-lista[hidden]{display:none}
+.ag-sw{position:relative;flex:0 0 auto;width:52px;height:30px;min-height:0;padding:0;border-radius:15px;background:var(--surface-alt);border:1px solid var(--border-strong);cursor:pointer}
+.ag-sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--quiet);transition:transform .2s,background .2s,box-shadow .2s}
+.ag-sw[aria-checked="true"]::after{transform:translateX(22px);background:var(--azul-electrico,#1F6BFF);box-shadow:0 0 10px var(--azul-electrico-brillo,rgba(31,107,255,.75))}
+.ag-sw:disabled{opacity:.5;cursor:default}
+@media(prefers-reduced-motion:reduce){.ag-sw::after{transition:none}}

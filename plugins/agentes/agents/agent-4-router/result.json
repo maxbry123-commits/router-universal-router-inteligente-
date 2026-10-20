@@ -1,0 +1,9 @@
+{
+ "agent": "agent-4-router",
+ "framework": "smolagents",
+ "status": "BLOCKED",
+ "attempts": 3,
+ "gaps": [
+  "AgentGenerationError: Error in generating model output:\nError code: 503 - {'error': {'message': 'Service temporarily overloaded', 'type': 'Service Unavailable', 'code': 503}}"
+ ]
+}

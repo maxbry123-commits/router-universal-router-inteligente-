@@ -1,1 +1,0 @@
-Plain-text reply was kept as thoughts. Retrying with a tool-call reminder.

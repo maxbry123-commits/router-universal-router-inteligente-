@@ -1,0 +1,97 @@
+name: Replay Query Concurrent HTTP
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/replay-query-concurrent-http.yml'
+      - 'app/Http/Controllers/Api/WorkerController.php'
+      - 'app/Http/Controllers/Api/WorkflowController.php'
+      - 'app/Support/WorkerCompatibilityHeartbeatRecorder.php'
+      - 'app/Support/WorkflowQueryTaskBroker.php'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'config/dw-bounded-growth.php'
+      - 'docker/**'
+      - 'docker-compose.published.yml'
+      - 'Dockerfile'
+      - 'scripts/regression/apache-module-preflight.sh'
+      - 'scripts/regression/replay-query-concurrent-http.sh'
+      - 'tests/Unit/Support/apache_module_preflight_test.sh'
+  pull_request:
+    paths:
+      - '.github/workflows/replay-query-concurrent-http.yml'
+      - 'app/Http/Controllers/Api/WorkerController.php'
+      - 'app/Http/Controllers/Api/WorkflowController.php'
+      - 'app/Support/WorkerCompatibilityHeartbeatRecorder.php'
+      - 'app/Support/WorkflowQueryTaskBroker.php'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'config/dw-bounded-growth.php'
+      - 'docker/**'
+      - 'docker-compose.published.yml'
+      - 'Dockerfile'
+      - 'scripts/regression/apache-module-preflight.sh'
+      - 'scripts/regression/replay-query-concurrent-http.sh'
+      - 'tests/Unit/Support/apache_module_preflight_test.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  replay-query-concurrent-http:
+    name: MySQL replay/query HTTP topology
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout server
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          persist-credentials: false
+
+      - name: Validate Apache module preflight behavior
+        run: tests/Unit/Support/apache_module_preflight_test.sh
+
+      - name: Resolve locked workflow package authority
+        id: workflow
+        run: php scripts/ci/resolve-workflow-package-authority.php
+
+      - name: Build current server image
+        shell: bash
+        env:
+          ACTIONS_SERVER_URL: ${{ github.server_url }}
+          WORKFLOW_PACKAGE_SOURCE: ${{ steps.workflow.outputs.source }}
+          WORKFLOW_PACKAGE_REF: ${{ steps.workflow.outputs.ref }}
+          WORKFLOW_PACKAGE_COMMIT: ${{ steps.workflow.outputs.commit }}
+        run: |
+          set -euo pipefail
+          build_args=(
+            --build-arg "WORKFLOW_PACKAGE_SOURCE=$WORKFLOW_PACKAGE_SOURCE"
+            --build-arg "WORKFLOW_PACKAGE_REF=$WORKFLOW_PACKAGE_REF"
+            --build-arg "WORKFLOW_PACKAGE_COMMIT=$WORKFLOW_PACKAGE_COMMIT"
+          )
+          if [[ "$ACTIONS_SERVER_URL" != "https://github.com" ]]; then
+            build_args+=(--build-arg "WORKFLOW_PACKAGE_QUALIFICATION_REF=$WORKFLOW_PACKAGE_COMMIT")
+          fi
+          docker build "${build_args[@]}" -t durable-workflow-server-replay-query .
+
+      - name: Run concurrent replay/query regression
+        if: ${{ always() && success() }}
+        env:
+          DW_SERVER_IMAGE: durable-workflow-server-replay-query
+          DW_REPLAY_QUERY_COMPOSE_PROJECT: replay-query-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+          SERVER_PORT: "0"
+        run: scripts/regression/replay-query-concurrent-http.sh
+
+      - name: Clean up replay/query Docker resources
+        if: always()
+        env:
+          DW_REPLAY_QUERY_COMPOSE_PROJECT: replay-query-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+        run: |
+          docker rm -f "${DW_REPLAY_QUERY_COMPOSE_PROJECT}-nonroot-http" >/dev/null 2>&1 || true
+          docker compose -p "$DW_REPLAY_QUERY_COMPOSE_PROJECT" \
+            -f docker-compose.published.yml down -v --remove-orphans \
+            >/dev/null 2>&1 || true

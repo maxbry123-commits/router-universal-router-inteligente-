@@ -1,0 +1,35 @@
+{
+  "bundle_bytes": 5461585,
+  "bundle_sha256": "f280d2f2862e81d128289625463ea6fc1617089b0d679f68f38884217ce8328f",
+  "extracted_tree": {
+    "bytes": 9937791,
+    "files": 544,
+    "sha256": "15d0b83df8080a30094533d0a2200e055e1397e491b4743e4506490e0dd4dec9"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 5461585,
+      "name": "strix.bundle.zip.part-0001",
+      "sha256": "f280d2f2862e81d128289625463ea6fc1617089b0d679f68f38884217ce8328f"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "strix",
+  "source_bytes": 9937791,
+  "source_commit": "ca20626f844b64e26755b7d78ae206ba8dd3acc9",
+  "source_files": 544,
+  "source_ref": "main",
+  "source_repo": "usestrix/strix",
+  "source_tree": {
+    "bytes": 9937791,
+    "files": 544,
+    "sha256": "15d0b83df8080a30094533d0a2200e055e1397e491b4743e4506490e0dd4dec9"
+  }
+}

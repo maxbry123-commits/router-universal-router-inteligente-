@@ -1,0 +1,99 @@
+/* 01-design-tokens.css
+ * Biblioteca Maxbry YAIWES — SOLO estética.
+ * Un archivo. No contiene handlers, rutas ni ids de paneles.
+ * Cablear: <link rel="stylesheet" href="./01-design-tokens.css">
+ * Mover carpeta: cambia solo la ruta del href.
+ */
+
+:root {
+  --yaiwes-font: "Segoe UI", "IBM Plex Sans", system-ui, sans-serif;
+  --yaiwes-mono: "IBM Plex Mono", "Cascadia Code", ui-monospace, monospace;
+
+  --yaiwes-bg: #0b1220;
+  --yaiwes-bg-elev: #121a2b;
+  --yaiwes-bg-panel: #172033;
+  --yaiwes-bg-input: #0e1626;
+  --yaiwes-line: #2a3754;
+  --yaiwes-line-strong: #3d4f73;
+
+  --yaiwes-text: #e8eef7;
+  --yaiwes-text-dim: #9aabc4;
+  --yaiwes-text-mute: #6d7e99;
+
+  --yaiwes-accent: #3ddc97;
+  --yaiwes-accent-2: #7c5cff;
+  --yaiwes-accent-3: #f0b429;
+  --yaiwes-danger: #ff5c7a;
+  --yaiwes-ok: #3ddc97;
+
+  --yaiwes-radius-sm: 4px;
+  --yaiwes-radius: 8px;
+  --yaiwes-radius-lg: 14px;
+  --yaiwes-pad-xs: 4px;
+  --yaiwes-pad-sm: 8px;
+  --yaiwes-pad: 12px;
+  --yaiwes-pad-lg: 20px;
+  --yaiwes-gap: 8px;
+  --yaiwes-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  --yaiwes-focus: 0 0 0 2px var(--yaiwes-bg), 0 0 0 4px var(--yaiwes-accent);
+
+  --yaiwes-btn-h-sm: 28px;
+  --yaiwes-btn-h: 36px;
+  --yaiwes-btn-h-lg: 56px;
+  --yaiwes-icon-sm: 16px;
+  --yaiwes-icon: 20px;
+  --yaiwes-icon-lg: 32px;
+  --yaiwes-z-host: 10;
+  --yaiwes-z-window: 20;
+  --yaiwes-z-config: 80;
+  --yaiwes-z-modal: 90;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--yaiwes-bg);
+  color: var(--yaiwes-text);
+  font-family: var(--yaiwes-font);
+}
+
+.yaiwes-host,
+yaiwes-window,
+yaiwes-config-panel {
+  box-sizing: border-box;
+  color: var(--yaiwes-text);
+  font-family: var(--yaiwes-font);
+}
+
+.yaiwes-host *,
+yaiwes-window *,
+yaiwes-config-panel * {
+  box-sizing: border-box;
+}
+
+.yaiwes-slot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--yaiwes-gap);
+  min-height: var(--yaiwes-btn-h);
+}
+
+.yaiwes-slot[data-slot-kind="toolbar"] {
+  padding: var(--yaiwes-pad-sm) var(--yaiwes-pad);
+  background: var(--yaiwes-bg-elev);
+  border-bottom: 1px solid var(--yaiwes-line);
+}
+
+.yaiwes-slot[data-slot-kind="group"] {
+  padding: var(--yaiwes-pad-sm);
+  border-right: 1px solid var(--yaiwes-line);
+}
+
+.yaiwes-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}

@@ -1,0 +1,12 @@
+/* encendido.css — "encendido" = el SÍMBOLO (icono o texto) se enciende en azul eléctrico con un brillo suave. Sin cuadros de fondo azules. */
+:root{--azul-electrico:#1F6BFF;--azul-electrico-brillo:rgba(31,107,255,.75)}
+/* los botones encendidos conservan su fondo normal: nada de cuadro azul */
+.sel-on.on,.sel-nuevo.on,.pill.on,.toggle.on,.mini.on,.ap-chip.on,.ap-chip[aria-pressed="true"]{background:var(--panel)!important;border-color:var(--border-strong)!important;box-shadow:none!important;color:var(--azul-electrico)!important}
+button[aria-pressed="true"]:not(.ap-sw),button[aria-checked="true"]{color:var(--azul-electrico)}
+/* el símbolo brilla */
+.sel-on.on svg,.pill.on svg,.toggle.on svg,.mini.on svg,.composer-bar .btn-microfono.on svg,button[aria-pressed="true"]:not(.ap-sw) svg{color:var(--azul-electrico);filter:drop-shadow(0 0 5px var(--azul-electrico-brillo))}
+.sel-on.on span,.toggle.on,.pill.on,.mini.on{text-shadow:0 0 8px var(--azul-electrico-brillo)}
+.toggle.on::before{color:var(--azul-electrico)!important;text-shadow:0 0 8px var(--azul-electrico-brillo)}
+.composer-bar .btn-microfono.on{background:var(--panel);border-color:var(--border-strong);color:var(--azul-electrico);animation:riu-mic-azul 1.1s ease-in-out infinite}
+@keyframes riu-mic-azul{50%{filter:drop-shadow(0 0 8px var(--azul-electrico-brillo))}}
+@media(prefers-reduced-motion:reduce){.composer-bar .btn-microfono.on{animation:none}}

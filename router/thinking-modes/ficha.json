@@ -1,0 +1,24 @@
+{
+  "plugin_host": {
+    "schema": "plugin_host/v1",
+    "id": "thinking-modes",
+    "enabled_default": false,
+    "placeholder": true,
+    "nota_roja": "ROJO: PLACEHOLDER de yaiwes_subrouters_modulares.zip (modos de pensamiento). El ZIP NO se ha descomprimido, revisado ni importado; sus pruebas eran simuladas (SIN VERIFICAR). Montado APAGADO por orden del Director; no hay codigo detras. Encender solo despues de revisar su seguridad y cablearlo."
+  },
+  "artifact_id": "riu.plugins.thinking_modes",
+  "version": "0.0.0",
+  "estado": "draft",
+  "categoria": "pipeline",
+  "etapa": "P",
+  "contrato": {"rol": "service"},
+  "ejecucion": {
+    "kind": "code",
+    "transport": "importlib",
+    "runtime_type": "hybrid",
+    "entry_point": "",
+    "allowed_actions": []
+  },
+  "seguridad": {"sandbox": "none", "permisos": [], "limites": {"timeout_ms": 5000}},
+  "firma": {"gpg_key_id": "PENDIENTE", "revocation_ref": "contracts/revocation_list.json"}
+}

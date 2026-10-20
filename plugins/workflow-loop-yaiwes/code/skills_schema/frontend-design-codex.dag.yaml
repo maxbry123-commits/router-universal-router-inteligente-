@@ -1,0 +1,28 @@
+schema_id: skills_schema/frontend-design-codex.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Revisar la interfaz RENDERIZADA, screenshots, responsive, accesibilidad,
+  browser QA
+work_surface: FRONTEND
+acceptance:
+- BROWSER PASS + VISUAL PASS gates
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/frontend-design-codex.json
+  sha256: pending
+oracle: gate:browser+visual
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

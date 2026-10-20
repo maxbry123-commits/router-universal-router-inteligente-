@@ -1,0 +1,40 @@
+{
+  "bundle_bytes": 24195290,
+  "bundle_sha256": "ae347a392901242d6af448ca336b6b892a041a25881caae62733f9642e82e47c",
+  "extracted_tree": {
+    "bytes": 36576432,
+    "files": 817,
+    "sha256": "6b1522b67cf420c1c297f5f8a4e780a31fff7a59f37bbe92535269402c72efd5"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "artemis.bundle.zip.part-0001",
+      "sha256": "ed94d1b93e612b116ff066b65384f3bf66afeed86ef5f6281c55513f59f5a7e9"
+    },
+    {
+      "bytes": 11612378,
+      "name": "artemis.bundle.zip.part-0002",
+      "sha256": "6e38946b6584ef8a01833d4fd03e807cd31444b176eb55ec643b22587103ae46"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "artemis",
+  "source_bytes": 36576432,
+  "source_commit": "351ca8422f7b5b54e80a9c1ce03a222e02415b6b",
+  "source_files": 817,
+  "source_ref": "main",
+  "source_repo": "google/artemis",
+  "source_tree": {
+    "bytes": 36576432,
+    "files": 817,
+    "sha256": "6b1522b67cf420c1c297f5f8a4e780a31fff7a59f37bbe92535269402c72efd5"
+  }
+}

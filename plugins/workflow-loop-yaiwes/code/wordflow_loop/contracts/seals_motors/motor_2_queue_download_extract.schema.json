@@ -1,0 +1,14 @@
+{
+  "schema": "yaiwes.seals-motor-contract/v1",
+  "motor": "motor_2_queue_download_extract",
+  "action": "queue_download_extract",
+  "inputs": [
+    "QUEUE_FILE",
+    "STATE_FILE",
+    "ENGINE_PATH",
+    "INDEX_PATH",
+    "MAX_RETRIES"
+  ],
+  "output": "VERIFIED_CLOSED",
+  "rule": "FUENTE CANONICA -> blob SHA -> copia exacta -> read-back -> mismo SHA"
+}

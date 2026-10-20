@@ -1,0 +1,39 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-16-chat-space-oauth
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'Base: Open WebUI ya descargado. Reciclar chat_ui.html de chat_mvp.
+
+    Carpeta UI para Vercel: "router inteligente universal/vercel-ui/" (estática; todas
+    las llamadas van a LIVE_URL del Router).
+
+    LIVE_URL se lee en runtime de: https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag
+
+    Cuentas GitHub: secretos GH_ACCOUNT_1..3 (solo nombres; el Router elige la clave).
+    Nunca claves en el HTML.
+
+    Rutas: /v1/models, /v1/chat/completions, /chat/agents, /chat/documents, /chat/github/*,
+    /chat/storage.
+
+    '
+  max_chars: 40000
+task: 'Entrega vercel.json mínimo para servir "router inteligente universal/vercel-ui/"
+  como sitio estático. Solo el JSON.
+
+  '
+checks:
+- kind: contains
+  values:
+  - '{'
+- kind: no_secrets

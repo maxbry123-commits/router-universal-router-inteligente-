@@ -1,0 +1,75 @@
+{
+  "schema": "yaiwes.t2.backend-boundary-map.v1",
+  "identity": "➡️ Astra plan fábrica UI YAIWES",
+  "task": "T2-R2_MAP_BACKEND_CONTRACTS_AND_API_MCP_BOUNDARIES",
+  "status": "VERIFIED_COMPLETE",
+  "policy": "DONOR_STAGING_ONLY",
+  "sources": [
+    "UI YAIWES interface/Backend/README.md",
+    "UI YAIWES interface/handoff UI YAIWES interface.md",
+    "UI YAIWES interface/Ui Yaiwes interface beta/02-fromted/FICHAS/*.json",
+    "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/lote-01-nucleo-host/03-action-bus.js",
+    "conectividad con Router inteligente universal/PUENTE-RIU-frontend.yaml",
+    "maxbry123-commits/router-universal-router-inteligente-:conectividad con Router inteligente universal/REGISTRY-CONECTIVIDAD-RIU.json",
+    "factory-v0/project-memory/sol-nodes/SOL-FACTORY-NODE-A.json",
+    "factory-v0/project-memory/sol-nodes/SOL-FACTORY-NODE-B.json"
+  ],
+  "ui_to_backend_path": [
+    {"order":1,"boundary":"window","contract":"UI action; no raw secret; FROMTED_THEME/FROMTED_BACKEND_WIRE input"},
+    {"order":2,"boundary":"ABS_ActionBus","contract":"registered actionId only; missing action fails closed; dispatch returns structured ok/reason"},
+    {"order":3,"boundary":"HOST_postMessage","contract":"FROMTED_ABS event bridge; window remains provider-agnostic"},
+    {"order":4,"boundary":"kernel","contract":"selects local|web|github|huggingface|gdrive|database target; owns provider-facing execution"},
+    {"order":5,"boundary":"RIU","contract":"central provider routing and runtime credential resolution; API/MCP only"},
+    {"order":6,"boundary":"provider_adapter","contract":"GitHub/Hugging Face/API or MCP operation with identity/scope/probe/read-back evidence"}
+  ],
+  "transport_map": {
+    "api": {
+      "allowed": true,
+      "uses": ["github operations","huggingface models/datasets/spaces/jobs","web/provider adapters"],
+      "credential_boundary": "runtime_env_ref/secret_ref outside UI window",
+      "required_evidence": ["identity","scope_or_permission","operation_or_probe","readback"]
+    },
+    "mcp": {
+      "allowed": true,
+      "uses": ["claude_github_mcp/repository operations where authorized"],
+      "credential_boundary": "vault_or_runtime outside UI window",
+      "required_evidence": ["repository_mount","mcp_connect","tool_list_or_repo_probe"]
+    },
+    "direct_secret_to_window": {"allowed":false,"reason":"violates window/token_ref boundary"},
+    "direct_write_to_sol_productive_backend": {"allowed":false,"reason":"ownership boundary; explicit handoff required"}
+  },
+  "frontend_contracts": {
+    "event_out": "<WINDOW_ID>.EVENT",
+    "actions": ["<WINDOW_ID>.run","<WINDOW_ID>.toggle","io.ping"],
+    "action_bus": {"unknown_action":"FAIL_CLOSED/action_missing","handler_error":"FAIL_CLOSED/handler_throw"}
+  },
+  "provider_boundaries": {
+    "github": {"route":"kernel→RIU→GitHub API/MCP adapter","state":"RIU_CREDENTIAL_E2E_PENDING_NOT_T2_BLOCKER_FOR_MAPPING"},
+    "huggingface": {"route":"kernel→RIU→HF API/jobs/spaces adapter","factory_space":"https://comand-center-1-yaiwes-ui-factory.static.hf.space/","state":"T1_DEPLOY_PROVEN; RIU_RUNTIME_CREDENTIAL_GATE_SEPARATELY_PENDING"},
+    "local": {"route":"kernel local adapter","secret_requirement":"none unless downstream provider invoked"},
+    "database": {"route":"kernel database adapter","secret_policy":"secret_ref/runtime only"},
+    "gdrive": {"route":"kernel provider adapter","secret_policy":"secret_ref/runtime only"},
+    "web": {"route":"kernel web/API adapter","secret_policy":"no raw secrets in window"}
+  },
+  "sol_boundary": {
+    "node_A":"contract consumer/evidence only until claimed; no productive backend writes",
+    "node_B":"OSS donor classification/evidence only until claimed; no productive backend writes",
+    "productive_backend":"DENY_WITHOUT_EXPLICIT_HANDOFF"
+  },
+  "riu_observations": {
+    "registered_bridges": "19/19 v2 declared in central registry",
+    "credential_e2e": "PENDING",
+    "frontend_bridge_runtime_url_fixed_to_static_host": true,
+    "frontend_bridge_fix_commit": "9f4942771230b6aafad1aeb059bdb8d68026a2dc",
+    "central_registry_write": "NOT_PERFORMED; router project ownership preserved"
+  },
+  "verification": {
+    "backend_root_remains_staging_only": true,
+    "api_boundary_explicit": true,
+    "mcp_boundary_explicit": true,
+    "secret_boundary_explicit": true,
+    "sol_ownership_preserved": true,
+    "no_module_implementation_started": true
+  },
+  "next_node": "T2-R3_MAP_OSS_REUSE_CANDIDATES_TO_CAPABILITIES"
+}

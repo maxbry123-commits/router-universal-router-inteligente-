@@ -1,0 +1,8 @@
+{
+  "id": "hf-1-qwen-3-8",
+  "nombre": "HF 1 Qwen 3.8 (27B)",
+  "tipo": "hf",
+  "archivo": "Qwen3.8-27B-UD-Q3_K_XL.gguf",
+  "herramientas": true,
+  "memoria": true
+}

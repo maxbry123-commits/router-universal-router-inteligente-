@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src 'self' blob:;">
+<title>WALL-08 · Grid bloques 00–25</title>
+<link rel="stylesheet" href="_shared/fromted.css">
+<script>window.FROMTED_LOCK={"id": "WALL-08", "name": "Grid bloques 00–25", "view": "grid"};window.FROMTED_MANIFEST={"id": "WALL-08", "in": ["FROMTED_THEME", "FROMTED_BACKEND_WIRE"], "out": ["WALL-08.EVENT"]};</script>
+<script src="_shared/abs.js"></script>
+<script src="_shared/security.js"></script>
+<script src="_shared/connectors.js"></script>
+<link rel="stylesheet" href="_shared/wall-orig.css">
+</head>
+<body data-id="WALL-08">
+<header class="top">
+  <div class="brand"><b>YAIWES</b><small>WALL-08 · Grid bloques 00–25</small></div>
+  <button type="button" data-abs="theme">Tema</button>
+  <button type="button" data-abs="ping">Ping IO</button>
+  <button type="button" class="cargar" data-abs="cargar">Cargar</button>
+  <button type="button" class="descargar" data-abs="descargar">Descargar</button>
+</header>
+
+<header class="hdr">
+  <div class="k">PLANO ÚNICO · PLAN_100 + 6 RAÍCES · <span id="ver">v2</span></div>
+  <h1>Raíz Wordflow YAIWES</h1>
+  <div class="hilo">
+    <span>INPUT</span><i>→</i><span>MISIÓN</span><i>→</i>
+    <span>KERNEL</span><i>→</i><span>WORDFLOW</span><i>→</i>
+    <span>EVIDENCIA</span><i>→</i><span>OUT</span>
+  </div>
+  <div class="modes">
+    <button id="mfile" class="on" onclick="setMode('file')">Tap archivo</button>
+    <button id="mblock" onclick="setMode('block')">Tap bloque</button>
+  </div>
+  <div class="legend">
+    <span><b style="background:var(--verde)"></b>cerrado</span>
+    <span><b style="background:var(--amarillo)"></b>pendiente</span>
+    <span><b style="background:var(--naranja)"></b>mix/plugins</span>
+    <span><b style="background:var(--rojo)"></b>faltante</span>
+  </div>
+</header>
+<div class="plane">
+  <h2>6 raíces autorizadas</h2>
+  <div class="tree" id="six"></div>
+  <h2>agente-yaiwes/ · árbol definitivo</h2>
+  <div class="tree" id="yaiwes"></div>
+  <h2>extensions/wordflow/ · R6 vivo</h2>
+  <div class="tree" id="wf"></div>
+  <h2 id="xh2">raíces añadidas</h2>
+  <div class="tree" id="extra"></div>
+</div>
+<div class="add">
+  <div class="k">AÑADIR RAÍZ · solo bloque segmentado</div>
+  <select id="clone">
+    <option value="R5">Plantilla Yaiwes wordflow/</option>
+    <option value="R1">Desplegar/</option>
+    <option value="R2">PIPELINE/</option>
+    <option value="R3">Método/</option>
+    <option value="R4">Refactoria/</option>
+    <option value="R6">Wordflow Code/</option>
+    <option value="EMPTY">Vacía</option>
+  </select>
+  <input id="ntitle" placeholder="Nombre raíz nueva">
+  <textarea id="nmd" rows="3" placeholder="Pega markdown de la raíz"></textarea>
+  <button onclick="addRoot()">Crear raíz-bloque</button>
+</div>
+<div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()"><div class="box" id="sheetbox"></div></div>
+<div class="bar">
+  <button onclick="saveVersion()">Guardar estado</button>
+  <button class="g" onclick="shareSel()">Compartir</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<footer class="foot"><span>WALL-08</span><span id="st">ABS listo</span></footer>
+<script>
+ABS.register('WALL-08.run', function(p){ return {ok:true, id:'WALL-08'}; });
+ABS.register('theme', function(){ document.body.classList.toggle('blanco'); return {theme:document.body.className}; });
+ABS.register('ping', async function(){ const r=await FROMTED_IO.ping(); document.getElementById('st').textContent=JSON.stringify(r); return r; });
+ABS.register('cargar', function(){ document.getElementById('st').textContent='Cargar · ABS'; return {op:'cargar'}; });
+ABS.register('descargar', function(){
+  const blob=new Blob([JSON.stringify({id:'WALL-08', at:Date.now()},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='WALL-08.json'; a.click();
+  return {op:'descargar'};
+});
+document.querySelectorAll('[data-abs]').forEach(function(b){ b.addEventListener('click', function(){ ABS.dispatch(b.getAttribute('data-abs')); }); });
+
+</script>
+<script src="_shared/wall-engine.js"></script>
+</body></html>

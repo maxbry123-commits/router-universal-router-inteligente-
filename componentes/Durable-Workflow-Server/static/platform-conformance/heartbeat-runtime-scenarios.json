@@ -1,0 +1,639 @@
+{
+  "schema": "durable-workflow.v2.platform-conformance.runtime-scenarios",
+  "category": "heartbeat_runtime_contract",
+  "suite_schema": "durable-workflow.v2.platform-conformance.suite",
+  "suite_version": 34,
+  "result_schema": "durable-workflow.v2.heartbeat-runtime.result",
+  "result_version": 2,
+  "result_statuses": [
+    "pass",
+    "fail",
+    "unsupported",
+    "not_covered",
+    "runner_blocked"
+  ],
+  "artifact_policy": {
+    "published_artifacts_only": true,
+    "rejects_placeholder_versions": true,
+    "requires_artifact_sources_for_each_required_artifact": true,
+    "requires_recognized_published_artifact_sources": true,
+    "requires_local_product_source_checkouts_used_false": true,
+    "required_artifacts": [
+      "server",
+      "cli",
+      "sdk-php",
+      "sdk-python",
+      "sdk-rust",
+      "waterline"
+    ],
+    "release_artifact_aliases": {
+      "sdk-python": [
+        "python"
+      ],
+      "sdk-rust": [
+        "rust"
+      ]
+    }
+  },
+  "topology": {
+    "namespace": "heartbeats-conformance",
+    "secondary_namespace": "heartbeats-conformance-other",
+    "task_queue": "hb-shared",
+    "required_workers": [
+      "sdk-php",
+      "sdk-python",
+      "sdk-rust"
+    ],
+    "required_public_surfaces": [
+      "POST /api/worker/register",
+      "POST /api/worker/heartbeat",
+      "GET /api/workers",
+      "GET /api/workers/{workerId}",
+      "dw worker:list",
+      "dw worker:describe",
+      "Waterline Worker Status view"
+    ]
+  },
+  "required_matrix": {
+    "runtimes": [
+      "sdk-php",
+      "sdk-python",
+      "sdk-rust"
+    ],
+    "client_paths": [
+      "raw-api",
+      "cli"
+    ],
+    "operator_visibility_paths": [
+      "GET /api/workers",
+      "GET /api/workers/{workerId}",
+      "dw worker:list",
+      "dw worker:describe",
+      "Waterline Worker Status view"
+    ],
+    "heartbeat_fields": [
+      "identity",
+      "task_queue",
+      "workflow_types",
+      "activity_types",
+      "task_slots",
+      "process_metrics",
+      "last_heartbeat_at",
+      "heartbeat_interval_seconds",
+      "stale_after_seconds"
+    ],
+    "routing_cells": [
+      "stale_workers_excluded_from_workflow_start",
+      "stale_workers_excluded_from_query_tasks",
+      "fresh_worker_remains_eligible_after_peer_stale"
+    ],
+    "adversarial_cells": [
+      "malformed_heartbeat_rejection",
+      "unregistered_heartbeat_rejection",
+      "cross_namespace_isolation"
+    ]
+  },
+  "common_result_evidence": [
+    "artifact_versions",
+    "runner_blocked",
+    "topology",
+    "runtime_matrix",
+    "cadence_drift_dataset",
+    "worker_list_snapshots",
+    "heartbeat_shape_diff",
+    "stale_transition",
+    "routing_exclusion",
+    "operator_visibility",
+    "adversarial_outcomes",
+    "cross_namespace_isolation"
+  ],
+  "scenarios": [
+    {
+      "id": "published_artifact_install_only",
+      "summary": "Resolve server, CLI, PHP SDK, Python SDK, Rust SDK, and Waterline from published artifact channels only."
+    },
+    {
+      "id": "worker_registration_and_ack_metadata",
+      "summary": "Register workers and prove heartbeat acknowledgements include cadence and stale-window metadata."
+    },
+    {
+      "id": "task_slot_and_process_metric_visibility",
+      "summary": "Send task-slot and process-metric updates and prove API and CLI visibility."
+    },
+    {
+      "id": "php_sdk_heartbeat_loop",
+      "summary": "Run a published PHP worker and capture periodic heartbeat records."
+    },
+    {
+      "id": "python_sdk_heartbeat_loop",
+      "summary": "Run a published Python worker and capture periodic heartbeat records."
+    },
+    {
+      "id": "rust_sdk_heartbeat_loop",
+      "summary": "Run a published Rust worker when Rust is advertised and capture periodic heartbeat records."
+    },
+    {
+      "id": "heartbeat_wire_shape_uniformity",
+      "summary": "Compare heartbeat records from each SDK and prove a uniform field set."
+    },
+    {
+      "id": "cadence_drift_window",
+      "summary": "Observe heartbeat intervals across the full cadence window and compute drift."
+    },
+    {
+      "id": "stale_worker_transition_timing",
+      "summary": "Stop a worker and prove stale transition timing from public list and detail surfaces."
+    },
+    {
+      "id": "stale_worker_routing_exclusion",
+      "summary": "Prove stale workers are excluded from workflow start admission and query-task routing."
+    },
+    {
+      "id": "restart_identity_determinism",
+      "summary": "Restart a worker and record deterministic identity behavior."
+    },
+    {
+      "id": "cli_worker_status_visibility",
+      "summary": "Prove dw worker:list and worker:describe expose heartbeat status data."
+    },
+    {
+      "id": "waterline_worker_status_visibility",
+      "summary": "Prove Waterline exposes worker heartbeat status, stale state, slots, and process metrics."
+    },
+    {
+      "id": "malformed_heartbeat_rejection",
+      "summary": "Send a malformed heartbeat and prove typed refusal without persistence."
+    },
+    {
+      "id": "unregistered_heartbeat_rejection",
+      "summary": "Send a heartbeat for an unregistered worker and prove typed refusal without persistence."
+    },
+    {
+      "id": "cross_namespace_isolation",
+      "summary": "Prove workers heartbeating in one namespace do not appear in another namespace."
+    }
+  ],
+  "scenario_requirements": {
+    "published_artifact_install_only": {
+      "required_fields": [
+        "resolved_artifact_versions",
+        "artifact_sources",
+        "local_product_source_checkouts_used"
+      ],
+      "expected_behavior": "all artifacts are resolved from published channels and no local product checkout is used as an artifact under test"
+    },
+    "worker_registration_and_ack_metadata": {
+      "required_fields": [
+        "worker_registration_responses",
+        "heartbeat_acknowledgements",
+        "heartbeat_interval_seconds",
+        "stale_after_seconds"
+      ],
+      "expected_behavior": "worker registration succeeds and heartbeat acknowledgements include cadence and stale-window metadata"
+    },
+    "task_slot_and_process_metric_visibility": {
+      "required_fields": [
+        "heartbeat_payloads",
+        "api_worker_list",
+        "api_worker_detail",
+        "cli_worker_list",
+        "cli_worker_describe"
+      ],
+      "expected_behavior": "task slot and process metric updates are visible through the public worker API and CLI worker surfaces"
+    },
+    "php_sdk_heartbeat_loop": {
+      "required_fields": [
+        "runtime",
+        "worker_id",
+        "registered_types",
+        "heartbeat_timestamps",
+        "task_slots",
+        "process_metrics",
+        "published_artifact_worker_execution",
+        "local_product_source_checkouts_used"
+      ],
+      "expected_behavior": "a published PHP worker emits periodic worker heartbeats on the shared task queue"
+    },
+    "python_sdk_heartbeat_loop": {
+      "required_fields": [
+        "runtime",
+        "worker_id",
+        "registered_types",
+        "heartbeat_timestamps",
+        "task_slots",
+        "process_metrics",
+        "published_artifact_worker_execution",
+        "local_product_source_checkouts_used"
+      ],
+      "expected_behavior": "a published Python worker emits periodic worker heartbeats on the shared task queue"
+    },
+    "rust_sdk_heartbeat_loop": {
+      "required_fields": [
+        "runtime",
+        "worker_id",
+        "registered_types",
+        "heartbeat_timestamps",
+        "task_slots",
+        "process_metrics",
+        "published_artifact_worker_execution",
+        "local_product_source_checkouts_used"
+      ],
+      "expected_behavior": "a published Rust worker emits periodic worker heartbeats when Rust is advertised as a supported public SDK"
+    },
+    "heartbeat_wire_shape_uniformity": {
+      "required_fields": [
+        "runtime_records",
+        "common_field_set",
+        "language_specific_field_diff",
+        "server_records"
+      ],
+      "expected_behavior": "PHP, Python, and Rust heartbeat records expose the same server-side field set without language-specific seams"
+    },
+    "cadence_drift_window": {
+      "required_fields": [
+        "heartbeat_timestamps",
+        "inter_arrival_seconds",
+        "nominal_interval_seconds",
+        "tolerance_percent"
+      ],
+      "expected_behavior": "each SDK heartbeat interval stays within the documented tolerance over the full observation window"
+    },
+    "stale_worker_transition_timing": {
+      "required_fields": [
+        "stopped_worker_id",
+        "stop_timestamp",
+        "stale_after_seconds",
+        "disappeared_from_default_list_at",
+        "stale_list_entry"
+      ],
+      "expected_behavior": "a stopped worker leaves the default active worker list within the acknowledged stale window and remains inspectable as stale"
+    },
+    "stale_worker_routing_exclusion": {
+      "required_fields": [
+        "stale_worker_id",
+        "fresh_worker_id",
+        "configured_stale_threshold_seconds",
+        "observed_stale_transition_timing",
+        "routing_observations_before_stale",
+        "routing_observations_after_stale",
+        "fresh_worker_eligibility_after_stale",
+        "stale_worker_claim_count",
+        "public_surfaces",
+        "conformance_run_id",
+        "timestamp"
+      ],
+      "expected_behavior": "two-worker evidence proves a stopped worker becomes stale, later routing excludes the stale worker, and a fresh peer remains eligible for workflow or query work"
+    },
+    "restart_identity_determinism": {
+      "required_fields": [
+        "stopped_worker_id",
+        "restarted_worker_id",
+        "restart_timestamp",
+        "documented_identity_policy",
+        "observed_list_transition"
+      ],
+      "expected_behavior": "worker restart identity behavior is deterministic and documented for operators"
+    },
+    "cli_worker_status_visibility": {
+      "required_fields": [
+        "list_output",
+        "describe_output",
+        "stale_filter_output",
+        "fields_present"
+      ],
+      "expected_behavior": "dw worker:list and dw worker:describe expose heartbeat status, stale state, slots, and process metrics"
+    },
+    "waterline_worker_status_visibility": {
+      "required_fields": [
+        "surface_snapshot",
+        "stale_worker_render",
+        "task_slots_render",
+        "process_metrics_render"
+      ],
+      "expected_behavior": "Waterline exposes the same worker heartbeat status information operators need without custom API calls"
+    },
+    "malformed_heartbeat_rejection": {
+      "required_fields": [
+        "request",
+        "status",
+        "typed_error",
+        "persisted"
+      ],
+      "expected_behavior": "a heartbeat missing required identity fields is rejected with a typed error and is not persisted"
+    },
+    "unregistered_heartbeat_rejection": {
+      "required_fields": [
+        "request",
+        "status",
+        "typed_error",
+        "persisted"
+      ],
+      "expected_behavior": "a heartbeat for an unregistered worker is rejected with a typed error and is not persisted"
+    },
+    "cross_namespace_isolation": {
+      "required_fields": [
+        "namespaces",
+        "worker_list_a",
+        "worker_list_b",
+        "leak_count"
+      ],
+      "expected_behavior": "worker heartbeats and worker-list visibility are isolated by namespace"
+    }
+  },
+  "host_runner_contract": {
+    "status": "required_for_passing_heartbeats_conformance",
+    "runner_repository": "platform_conformance_host",
+    "runner_id": "heartbeats",
+    "result_schema": "durable-workflow.v2.heartbeat-runtime.result",
+    "result_files": [
+      "heartbeat-runtime-result.json",
+      "heartbeat-runtime-record.json",
+      "heartbeat-cadence-dataset.json",
+      "heartbeat-request-response-captures.json",
+      "php-sdk-heartbeat-loop-evidence.json",
+      "python-sdk-heartbeat-loop-evidence.json",
+      "rust-sdk-heartbeat-loop-evidence.json",
+      "waterline-worker-status-evidence.json",
+      "heartbeat-shared-wave-result.json",
+      "heartbeat-shared-wave-isolation.json",
+      "heartbeat-shared-wave-children.json",
+      "heartbeat-shared-wave-process-cleanup.log",
+      "shared-server-state.json",
+      "shared-server-cleanup-diagnostics.json"
+    ],
+    "must_execute_against_published_artifacts": true,
+    "must_record_runner_blocked_false_for_product_evidence": true,
+    "required_execution_scopes": [
+      "published-artifact-install",
+      "php-heartbeat-loop",
+      "python-heartbeat-loop",
+      "rust-heartbeat-loop",
+      "stale-transition-and-routing",
+      "cli-worker-status",
+      "waterline-worker-status",
+      "adversarial-heartbeat-probes",
+      "cross-namespace-isolation",
+      "one-clean-shared-server-bootstrap",
+      "per-cell-timeout-and-peer-evidence-retention"
+    ],
+    "shared_server_wave": {
+      "status": "host_executable_published_artifact_runner",
+      "runner_repository": "server",
+      "runner_path": "scripts/conformance/heartbeats-wave-published-artifacts.sh",
+      "runner_command": "scripts/conformance/heartbeats-wave-published-artifacts.sh --result-dir <result-dir>",
+      "server_lifecycle_path": "scripts/conformance/heartbeats-shared-server.sh",
+      "result_schema": "durable-workflow.v2.heartbeat-runtime.shared-wave-result",
+      "result_file": "heartbeat-shared-wave-result.json",
+      "maximum_wall_time_seconds": 540,
+      "default_budget_allocation_seconds": {
+        "concurrent_cell": 450,
+        "rust_preparation": 360,
+        "rust_heartbeat_execution_reserve": 90,
+        "wave_orchestration_and_cleanup_reserve": 90
+      },
+      "clean_published_server_bootstrap_count": 1,
+      "parallel_cells": [
+        "php",
+        "python",
+        "rust",
+        "waterline"
+      ],
+      "waterline_runner_handoff_environment": "DW_HEARTBEATS_WATERLINE_RUNNER",
+      "shared_server_state_environment": [
+        "DW_HEARTBEATS_SHARED_SERVER_STATE",
+        "DW_WATERLINE_WORKER_STATUS_SHARED_SERVER_STATE"
+      ],
+      "daemon_portable_transport": {
+        "host_endpoint_mode": "executor_network_attachment",
+        "executor_identity_recorded": false,
+        "server_origin": "http://server:8080",
+        "native_host_fallback": "authenticated_published_loopback",
+        "compatibility_relay": "long_lived_in_memory_request_proxy",
+        "compose_network_owned_by_wave": true,
+        "authenticated_readiness_required": true
+      },
+      "startup_diagnostic_files": [
+        "shared-server-startup-diagnostics.json",
+        "shared-server-compose-ps.log",
+        "shared-server-port-mapping.log",
+        "shared-server-relay.log",
+        "shared-server-server.log"
+      ],
+      "isolation_dimensions": [
+        "namespace",
+        "task_queue",
+        "workflow_id",
+        "worker_id",
+        "observer_projection"
+      ],
+      "failure_policy": [
+        "bounded_per_cell_timeout",
+        "wait_for_all_peer_cells",
+        "verify_all_owned_process_groups_settled",
+        "retain_independent_cell_evidence",
+        "cleanup_shared_compose_project_after_every_terminal_path",
+        "cleanup_shared_network_cell_containers_after_every_terminal_path",
+        "cleanup_executor_network_attachment_after_every_terminal_path",
+        "cleanup_host_relay_after_every_terminal_path",
+        "verify_stable_empty_owned_resource_inventory_before_pass",
+        "classify_cleanup_failure_as_runner_evidence"
+      ],
+      "standalone_clean_bootstrap_path_preserved": true
+    },
+    "runtime_shards": {
+      "sdk-php": {
+        "artifact": "durable-workflow/sdk",
+        "focused_runner": "sdk-php-heartbeat-loop",
+        "must_cover_scenarios": [
+          "php_sdk_heartbeat_loop",
+          "heartbeat_wire_shape_uniformity",
+          "cadence_drift_window"
+        ]
+      },
+      "sdk-python": {
+        "artifact": "durable-workflow",
+        "focused_runner": "sdk-python-heartbeat-loop",
+        "must_cover_scenarios": [
+          "python_sdk_heartbeat_loop",
+          "heartbeat_wire_shape_uniformity",
+          "cadence_drift_window",
+          "stale_worker_transition_timing",
+          "restart_identity_determinism"
+        ]
+      },
+      "sdk-rust": {
+        "artifact": "durable-workflow",
+        "focused_runner": "sdk-rust-heartbeat-loop",
+        "must_cover_scenarios": [
+          "rust_sdk_heartbeat_loop",
+          "heartbeat_wire_shape_uniformity",
+          "cadence_drift_window"
+        ]
+      },
+      "waterline": {
+        "artifact": "durable-workflow/waterline",
+        "must_cover_scenarios": [
+          "waterline_worker_status_visibility"
+        ],
+        "must_capture_fields": [
+          "worker_id",
+          "task_queue",
+          "runtime",
+          "status",
+          "last_heartbeat_at",
+          "task_slots",
+          "process_metrics",
+          "stale_after_seconds"
+        ]
+      }
+    },
+    "focused_runners": {
+      "sdk-php-heartbeat-loop": {
+        "status": "host_executable_published_artifact_runner",
+        "runner_repository": "server",
+        "runner_path": "scripts/conformance/heartbeats-published-artifacts.sh",
+        "runner_command": "scripts/conformance/heartbeats-published-artifacts.sh --result-dir <result-dir>",
+        "scenario_id": "php_sdk_heartbeat_loop",
+        "result_schema": "durable-workflow.v2.heartbeat-runtime.php-sdk-loop-evidence",
+        "result_file": "php-sdk-heartbeat-loop-evidence.json",
+        "host_runner_implemented": true,
+        "must_execute_against_published_artifacts": true,
+        "must_record_runner_blocked_false_for_product_evidence": true,
+        "shared_server_state_environment": "DW_HEARTBEATS_SHARED_SERVER_STATE",
+        "standalone_clean_bootstrap_default": true,
+        "required_artifact_pins": [
+          "server",
+          "cli",
+          "sdk-php"
+        ],
+        "required_worker_api": [
+          "DurableWorkflow\\Client",
+          "DurableWorkflow\\Worker::tick()",
+          "DurableWorkflow\\Client::heartbeatWorker()"
+        ],
+        "must_prove": [
+          "exact_packagist_sdk_package_install",
+          "real_workflow_completion_on_unique_task_queue",
+          "at_least_two_sdk_emitted_heartbeat_timestamps",
+          "server_acknowledged_bounded_heartbeat_cadence",
+          "api_and_cli_task_queue_freshness_visibility",
+          "stopped_php_worker_transitions_to_stale",
+          "stale_php_worker_poll_is_refused",
+          "fresh_php_peer_remains_eligible_for_new_work",
+          "artifact_versions_sources_and_run_timestamps_recorded"
+        ],
+        "does_not_claim_scenarios": [
+          "python_sdk_heartbeat_loop",
+          "rust_sdk_heartbeat_loop",
+          "waterline_worker_status_visibility"
+        ]
+      },
+      "sdk-python-heartbeat-loop": {
+        "status": "host_executable_published_artifact_runner",
+        "runner_repository": "server",
+        "runner_path": "scripts/conformance/heartbeats-python-published-artifacts.sh",
+        "runner_command": "scripts/conformance/heartbeats-python-published-artifacts.sh --result-dir <result-dir>",
+        "scenario_id": "python_sdk_heartbeat_loop",
+        "result_schema": "durable-workflow.v2.heartbeat-runtime.python-sdk-loop-evidence",
+        "result_file": "python-sdk-heartbeat-loop-evidence.json",
+        "host_runner_implemented": true,
+        "must_execute_against_published_artifacts": true,
+        "must_record_runner_blocked_false_for_product_evidence": true,
+        "shared_server_state_environment": "DW_HEARTBEATS_SHARED_SERVER_STATE",
+        "standalone_clean_bootstrap_default": true,
+        "required_artifact_pins": [
+          "server",
+          "cli",
+          "sdk-python"
+        ],
+        "required_worker_api": [
+          "durable_workflow.Client",
+          "durable_workflow.Worker.run()"
+        ],
+        "must_prove": [
+          "exact_pypi_durable_workflow_package_install",
+          "real_workflow_completion_on_unique_task_queue",
+          "at_least_two_sdk_emitted_heartbeat_timestamps",
+          "server_acknowledged_bounded_heartbeat_cadence",
+          "api_and_cli_task_queue_freshness_visibility",
+          "stopped_python_worker_transitions_to_stale",
+          "stale_python_worker_poll_is_refused",
+          "fresh_python_peer_remains_eligible_for_new_work",
+          "artifact_versions_sources_and_run_timestamps_recorded"
+        ],
+        "does_not_claim_scenarios": [
+          "php_sdk_heartbeat_loop",
+          "rust_sdk_heartbeat_loop",
+          "waterline_worker_status_visibility"
+        ]
+      },
+      "sdk-rust-heartbeat-loop": {
+        "status": "host_executable_published_artifact_runner",
+        "runner_repository": "server",
+        "runner_path": "scripts/conformance/heartbeats-rust-published-artifacts.sh",
+        "runner_command": "scripts/conformance/heartbeats-rust-published-artifacts.sh --result-dir <result-dir>",
+        "scenario_id": "rust_sdk_heartbeat_loop",
+        "result_schema": "durable-workflow.v2.heartbeat-runtime.rust-sdk-loop-evidence",
+        "result_file": "rust-sdk-heartbeat-loop-evidence.json",
+        "host_runner_implemented": true,
+        "must_execute_against_published_artifacts": true,
+        "must_record_runner_blocked_false_for_product_evidence": true,
+        "shared_server_state_environment": "DW_HEARTBEATS_SHARED_SERVER_STATE",
+        "standalone_clean_bootstrap_default": true,
+        "required_artifact_pins": [
+          "server",
+          "cli",
+          "sdk-rust"
+        ],
+        "required_worker_api": [
+          "durable_workflow::Client",
+          "durable_workflow::Worker::run_until()",
+          "durable_workflow::Worker::on_worker_heartbeat()"
+        ],
+        "must_prove": [
+          "exact_crates_io_durable_workflow_package_install",
+          "registry_checksum_and_repository_provenance",
+          "real_workflow_completion_on_unique_task_queue",
+          "at_least_two_sdk_emitted_heartbeat_timestamps",
+          "server_acknowledged_bounded_heartbeat_cadence",
+          "api_and_cli_task_queue_freshness_visibility",
+          "stopped_rust_worker_transitions_to_stale",
+          "stale_rust_worker_poll_is_refused",
+          "fresh_rust_peer_remains_eligible_for_new_work",
+          "artifact_versions_sources_and_run_timestamps_recorded"
+        ],
+        "does_not_claim_scenarios": [
+          "php_sdk_heartbeat_loop",
+          "python_sdk_heartbeat_loop",
+          "waterline_worker_status_visibility"
+        ]
+      }
+    },
+    "routing_policy": {
+      "missing_required_scenario": {
+        "scenario_status": "not_covered",
+        "finding_type": "conformance_runner_coverage_gap",
+        "owner": "conformance_harness"
+      },
+      "host_environment_failure": {
+        "scenario_status": "runner_blocked",
+        "finding_type": "runner_gap",
+        "owner": "conformance_harness"
+      },
+      "product_behavior_failure": {
+        "scenario_status": "fail",
+        "finding_source": "heartbeat_runtime_contract.finding_policy"
+      },
+      "waterline_operator_visibility_gap": {
+        "scenario_status": "fail",
+        "finding_source": "heartbeat_runtime_contract.finding_policy",
+        "owner": "waterline"
+      },
+      "unsupported_rust_public_artifact": {
+        "scenario_status": "unsupported",
+        "finding_source": "heartbeat_runtime_contract.finding_policy",
+        "owner": "sdk-rust"
+      }
+    }
+  }
+}

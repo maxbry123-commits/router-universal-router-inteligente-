@@ -1,0 +1,72 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "run_id": "RUN-002",
+ "status": "CLOSED",
+ "completed": [
+  "agent-3-router"
+ ],
+ "failed": [],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "f7fa17aa48b83ed7aa62eb4b84fac32b042aa97006337f54e518bbf63cc017ae",
+   "chars": 1000
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "node_monitor.py",
+   "sha256": "76f7f70f05ee7b89d3f236e1adec238e88ff38eda09fdbe91adccff95f385aaf"
+  },
+  {
+   "kind": "file",
+   "path": "router inteligente universal/agents/agent-3-router/results/output.txt",
+   "sha256": "f7fa17aa48b83ed7aa62eb4b84fac32b042aa97006337f54e518bbf63cc017ae"
+  }
+ ],
+ "agents": {
+  "agent-3-router": {
+   "schema": "yaiwes.crazy-wall/v1",
+   "run_id": "RUN-002",
+   "agent": "agent-3-router",
+   "completed": [
+    "generate",
+    "sheriff"
+   ],
+   "failed": [],
+   "gaps": [],
+   "evidence": [
+    {
+     "kind": "output_sha256",
+     "sha256": "f7fa17aa48b83ed7aa62eb4b84fac32b042aa97006337f54e518bbf63cc017ae",
+     "chars": 1000
+    },
+    {
+     "kind": "exec",
+     "exit": 0,
+     "file": "node_monitor.py",
+     "sha256": "76f7f70f05ee7b89d3f236e1adec238e88ff38eda09fdbe91adccff95f385aaf"
+    },
+    {
+     "kind": "file",
+     "path": "router inteligente universal/agents/agent-3-router/results/output.txt",
+     "sha256": "f7fa17aa48b83ed7aa62eb4b84fac32b042aa97006337f54e518bbf63cc017ae"
+    }
+   ],
+   "current_nodes": [
+    "sheriff"
+   ],
+   "next_nodes": [],
+   "status": "CLOSED",
+   "updated_at": "2026-09-21T07:48:13Z",
+   "framework": "pocketflow",
+   "area": "router",
+   "attempts": 1,
+   "provider": "nvidia",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "via": "route",
+   "route_trace": []
+  }
+ }
+}

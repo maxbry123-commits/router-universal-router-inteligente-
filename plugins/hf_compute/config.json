@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "umbral_pct": 80,
+  "nota_ram": "CONFLICTO SIN RESOLVER: el Director habla de un HF previo de 12 GB; GPT dejo el controlador de 16 GB (hf_worker_pool.py). Este plugin NO decide: usa los valores de este JSON. Cambiar aqui ram_gb si el Director confirma otro valor.",
+  "nota_umbral": "GPT usa 85 por defecto (HF_AUTOSCALE_THRESHOLD); el Director pidio 80. Este JSON dice 80; para que el pool de GPT coincida hay que fijar HF_AUTOSCALE_THRESHOLD=80 en el entorno (no se edito su codigo).",
+  "tramos": [
+    {
+      "id": "controlador",
+      "flavor": "cpu-basic",
+      "ram_gb": 16,
+      "permanente": true,
+      "descripcion": "HF de pago 24/7 que no duerme"
+    },
+    {
+      "id": "siguiente_16",
+      "flavor": "cpu-basic",
+      "ram_gb": 16,
+      "descripcion": "Se activa al llegar al umbral de CPU/RAM"
+    },
+    {
+      "id": "salto_32",
+      "flavor": "cpu-upgrade",
+      "ram_gb": 32,
+      "descripcion": "Se activa si el tramo de 16 GB no alcanza"
+    }
+  ],
+  "usuarios": [
+    {
+      "id": "vercel_chat",
+      "url_env": "RIU_VERCEL_CHAT_URL",
+      "health_path": "/health"
+    },
+    {
+      "id": "hermes",
+      "url_env": "RIU_HERMES_URL",
+      "health_path": "/health"
+    },
+    {
+      "id": "openclaw",
+      "url_env": "RIU_OPENCLAW_URL",
+      "health_path": "/health"
+    },
+    {
+      "id": "orquestador",
+      "url_env": "RIU_ORQUESTADOR_URL",
+      "health_path": "/health"
+    },
+    {
+      "id": "harness_deepseek",
+      "url_env": "RIU_DEEPSEEK_HARNESS_URL",
+      "health_path": "/health"
+    }
+  ],
+  "nota_usuarios": "Los nombres de las variables url_env son una convencion propuesta por este plugin (no existian en el repo): hay que definirlas para que el Router detecte quien esta activo."
+}

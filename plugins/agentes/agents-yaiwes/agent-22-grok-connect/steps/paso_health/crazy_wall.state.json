@@ -1,0 +1,28 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-22-grok-connect",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-24T23:48:33Z",
+ "router_connected": true,
+ "group": "orchestrators",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "hf",
+ "model": "deepseek-ai/DeepSeek-V4-Flash",
+ "via": "route",
+ "attempts": 1,
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "025ee581818fb8474e83139cba513d3c215c65a7d63169390c9b837fd73fa289",
+   "chars": 78
+  }
+ ],
+ "route_trace": []
+}

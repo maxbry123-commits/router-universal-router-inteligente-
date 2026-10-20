@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src 'self' blob:;">
+<title>GBOT-01 · Cáscara Grok Bot FROMTED</title>
+<link rel="stylesheet" href="_shared/fromted.css">
+<script>window.FROMTED_LOCK={"id": "GBOT-01", "name": "Cáscara Grok Bot FROMTED", "view": "shell"};window.FROMTED_MANIFEST={"id": "GBOT-01", "in": ["FROMTED_THEME", "FROMTED_BACKEND_WIRE"], "out": ["GBOT-01.EVENT"]};</script>
+<script src="_shared/abs.js"></script>
+<script src="_shared/security.js"></script>
+<script src="_shared/connectors.js"></script>
+
+</head>
+<body data-id="GBOT-01">
+<header class="top">
+  <div class="brand"><b>YAIWES</b><small>GBOT-01 · Cáscara Grok Bot FROMTED</small></div>
+  <button type="button" data-abs="theme">Tema</button>
+  <button type="button" data-abs="ping">Ping IO</button>
+  <button type="button" class="cargar" data-abs="cargar">Cargar</button>
+  <button type="button" class="descargar" data-abs="descargar">Descargar</button>
+</header>
+
+<main style="padding:12px">
+  <div class="card">
+    <div class="k">Agentes (máx 100)</div>
+    <div id="list"></div>
+    <button class="little" id="add">+ agente</button>
+    <label>on/off <input type="checkbox" id="on" checked></label>
+  </div>
+  <div class="card">
+    <div>Skills / plan / watchdog / cerebro / progreso / conexión / proyecto</div>
+    <select id="win">
+      <option>skills</option><option>plan</option><option>watchdog</option>
+      <option>visual</option><option>cerebro</option><option>progreso</option>
+      <option>conexion</option><option>proyecto</option>
+    </select>
+    <pre class="log" id="out"></pre>
+  </div>
+  <iframe class="sandbox" sandbox="allow-scripts" srcdoc="<body style='background:#000;color:#a1a1aa;font:12px monospace'>sandbox agente</body>"></iframe>
+</main>
+
+<footer class="foot"><span>GBOT-01</span><span id="st">ABS listo</span></footer>
+<script>
+ABS.register('GBOT-01.run', function(p){ return {ok:true, id:'GBOT-01'}; });
+ABS.register('theme', function(){ document.body.classList.toggle('blanco'); return {theme:document.body.className}; });
+ABS.register('ping', async function(){ const r=await FROMTED_IO.ping(); document.getElementById('st').textContent=JSON.stringify(r); return r; });
+ABS.register('cargar', function(){ document.getElementById('st').textContent='Cargar · ABS'; return {op:'cargar'}; });
+ABS.register('descargar', function(){
+  const blob=new Blob([JSON.stringify({id:'GBOT-01', at:Date.now()},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='GBOT-01.json'; a.click();
+  return {op:'descargar'};
+});
+document.querySelectorAll('[data-abs]').forEach(function(b){ b.addEventListener('click', function(){ ABS.dispatch(b.getAttribute('data-abs')); }); });
+
+const agents=JSON.parse(localStorage.getItem('GBOT-01')||'[{"n":"Alpha","on":true}]');
+function paint(){ const el=document.getElementById('list'); el.innerHTML=agents.map((a,i)=>'<div class="card '+(a.on?'on':'')+'">'+a.n+' <button data-i="'+i+'">'+(a.on?'ON':'OFF')+'</button></div>').join('');
+  localStorage.setItem('GBOT-01', JSON.stringify(agents)); }
+paint();
+document.getElementById('add').onclick=function(){ if(agents.length>=100) return; agents.push({n:'Agente '+agents.length,on:true}); paint(); ABS.dispatch('gbot.add',{n:agents.length}); };
+document.getElementById('list').onclick=function(e){ const i=e.target.getAttribute('data-i'); if(i==null)return; agents[+i].on=!agents[+i].on; paint(); };
+document.getElementById('win').onchange=function(){ document.getElementById('out').textContent='ventana '+this.value; ABS.dispatch('gbot.win',{w:this.value}); };
+
+</script>
+</body></html>

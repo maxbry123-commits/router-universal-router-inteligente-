@@ -1,0 +1,8 @@
+/* habilidades.css — menú "/" del chat (Habilidades). Tokens del tema. */
+.hab-menu{position:absolute;left:0;right:0;bottom:calc(100% + 8px);max-height:44vh;overflow:auto;display:grid;gap:2px;padding:8px;background:var(--surface);border:1px solid var(--border-strong);border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:40}
+.hab-menu[hidden]{display:none}
+.hab-t{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet-2);padding:2px 8px 6px}
+.hab-it{display:grid;gap:2px;text-align:left;padding:9px 10px;border:0;border-radius:12px;background:transparent;color:var(--text);cursor:pointer;min-height:44px}
+.hab-it strong{color:var(--title);font-size:14px}
+.hab-it span{font-size:12px;color:var(--quiet)}
+.hab-it.act,.hab-it:hover{background:var(--module-selected)}

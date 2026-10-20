@@ -1,3 +1,0 @@
-# Metrics
-
-- [overview](overview.md)

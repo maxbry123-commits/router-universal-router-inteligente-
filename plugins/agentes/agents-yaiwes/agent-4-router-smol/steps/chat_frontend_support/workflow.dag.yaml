@@ -1,0 +1,66 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-4-router-smol
+  framework: smolagents
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 3200
+context:
+  text: 'Open WebUI ya existe.
+
+    Agent 16 hace el cableado principal.
+
+    Tu trabajo es cerrar capacidades funcionales que Agent 16 deje pendientes y probarlas
+    sin pisar sus archivos mientras estén en edición.
+
+    Fuente de verdad: ➡️ ➡️ 📂 osquestador comand Center.md
+
+    '
+  max_chars: 40000
+task: 'REUTILIZA/ADAPTA -> CABLEA -> PRUEBA.
+
+  Apoya a Agent 16 únicamente en:
+
+  - selector de modelos
+
+  - selector de agente
+
+  - modo con agente / sin agente
+
+  - documentos/archivos
+
+  - visibilidad de Router/Jobs
+
+  - navegación funcional del chat
+
+  - prueba de interfaz integrada en Open WebUI
+
+
+  Antes de tocar un archivo, verifica que Agent 16 no lo tenga como objetivo activo.
+
+  No construyas UI nueva.
+
+  Devuelve HANDOFF con:
+
+  ARCHIVOS TOCADOS, PRUEBAS, RESULTADO, GAP, FIX.
+
+  '
+checks:
+- kind: contains
+  values:
+  - selector
+  - agente
+  - documentos
+  - Router
+  - Jobs
+  - PRUEBA
+  - GAP
+  - FIX
+- kind: no_secrets

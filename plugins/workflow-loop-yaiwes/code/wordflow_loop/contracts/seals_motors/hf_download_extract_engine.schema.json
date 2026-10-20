@@ -1,0 +1,17 @@
+{
+  "schema": "yaiwes.seals-motor-contract/v1",
+  "motor": "hf_download_extract_engine",
+  "action": "download_extract_verify",
+  "inputs": [
+    "SOURCE_REPO",
+    "SOURCE_REF",
+    "SLUG",
+    "DEST_REPO",
+    "DEST_BRANCH",
+    "DEST_ROOT",
+    "GITHUB_TOKEN",
+    "PUBLISH"
+  ],
+  "output": "VERIFIED_CLOSED",
+  "rule": "FUENTE CANONICA -> blob SHA -> copia exacta -> read-back -> mismo SHA"
+}

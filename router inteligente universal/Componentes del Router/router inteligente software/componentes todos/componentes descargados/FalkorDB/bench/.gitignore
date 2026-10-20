@@ -1,6 +1,0 @@
-results/
-pmc_tool
-__pycache__/
-*.profraw
-*.profdata
-baseline/

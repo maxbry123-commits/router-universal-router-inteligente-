@@ -1,0 +1,287 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\WorkflowNamespace;
+use App\Support\WorkerProtocol;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+use Workflow\V2\Models\WorkflowSchedule;
+
+class NamespaceResolverMiddlewareTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        WorkflowNamespace::query()->updateOrCreate(
+            ['name' => 'default'],
+            ['description' => 'Default namespace', 'retention_days' => 30, 'status' => 'active'],
+        );
+
+        WorkflowNamespace::query()->updateOrCreate(
+            ['name' => 'production'],
+            ['description' => 'Production namespace', 'retention_days' => 90, 'status' => 'active'],
+        );
+    }
+
+    // ── X-Namespace header ──────────────────────────────────────────
+
+    public function test_x_namespace_header_sets_namespace(): void
+    {
+        $this->createScheduleInNamespace('sched-prod', 'production');
+        $this->createScheduleInNamespace('sched-default', 'default');
+
+        $response = $this->withHeaders($this->controlPlaneHeaders(['X-Namespace' => 'production']))
+            ->getJson('/api/schedules');
+
+        $response->assertOk();
+        $schedules = $response->json('schedules');
+        $this->assertCount(1, $schedules);
+        $this->assertEquals('sched-prod', $schedules[0]['schedule_id']);
+    }
+
+    public function test_x_namespace_header_is_normalized_to_lowercase(): void
+    {
+        $this->createScheduleInNamespace('sched-default', 'default');
+
+        // 'Default' is normalized to 'default' by the middleware
+        $response = $this->withHeaders($this->controlPlaneHeaders(['X-Namespace' => 'Default']))
+            ->getJson('/api/schedules');
+
+        $response->assertOk();
+        $this->assertCount(1, $response->json('schedules'));
+        $this->assertEquals('sched-default', $response->json('schedules.0.schedule_id'));
+    }
+
+    // ── Query parameter fallback ────────────────────────────────────
+
+    public function test_namespace_query_parameter_works_when_no_header(): void
+    {
+        $this->createScheduleInNamespace('sched-prod', 'production');
+        $this->createScheduleInNamespace('sched-default', 'default');
+
+        $response = $this->withHeaders($this->controlPlaneHeaders())
+            ->getJson('/api/schedules?namespace=production');
+
+        $response->assertOk();
+        $schedules = $response->json('schedules');
+        $this->assertCount(1, $schedules);
+        $this->assertEquals('sched-prod', $schedules[0]['schedule_id']);
+    }
+
+    // ── Header takes precedence over query parameter ────────────────
+
+    public function test_header_takes_precedence_over_query_parameter(): void
+    {
+        $this->createScheduleInNamespace('sched-prod', 'production');
+        $this->createScheduleInNamespace('sched-default', 'default');
+
+        // Header says 'default', query says 'production' — header wins
+        $response = $this->withHeaders($this->controlPlaneHeaders(['X-Namespace' => 'default']))
+            ->getJson('/api/schedules?namespace=production');
+
+        $response->assertOk();
+        $schedules = $response->json('schedules');
+        $this->assertCount(1, $schedules);
+        $this->assertEquals('sched-default', $schedules[0]['schedule_id']);
+    }
+
+    // ── Config default fallback ─────────────────────────────────────
+
+    public function test_falls_back_to_config_default_when_no_header_or_query(): void
+    {
+        config(['server.default_namespace' => 'default']);
+
+        $this->createScheduleInNamespace('sched-default', 'default');
+        $this->createScheduleInNamespace('sched-prod', 'production');
+
+        // No X-Namespace header, no ?namespace= query
+        $response = $this->withHeaders($this->controlPlaneHeaders())
+            ->getJson('/api/schedules');
+
+        $response->assertOk();
+        $schedules = $response->json('schedules');
+        $this->assertCount(1, $schedules);
+        $this->assertEquals('sched-default', $schedules[0]['schedule_id']);
+    }
+
+    public function test_custom_config_default_is_used(): void
+    {
+        config(['server.default_namespace' => 'production']);
+
+        $this->createScheduleInNamespace('sched-default', 'default');
+        $this->createScheduleInNamespace('sched-prod', 'production');
+
+        $response = $this->withHeaders($this->controlPlaneHeaders())
+            ->getJson('/api/schedules');
+
+        $response->assertOk();
+        $schedules = $response->json('schedules');
+        $this->assertCount(1, $schedules);
+        $this->assertEquals('sched-prod', $schedules[0]['schedule_id']);
+    }
+
+    // ── Namespace isolation across operations ───────────────────────
+
+    public function test_namespace_resolves_for_create_operations(): void
+    {
+        $response = $this->withHeaders($this->controlPlaneHeaders(['X-Namespace' => 'production']))
+            ->postJson('/api/schedules', [
+                'schedule_id' => 'created-in-prod',
+                'spec' => ['cron_expressions' => ['0 * * * *']],
+                'action' => ['workflow_type' => 'TestWorkflow'],
+            ]);
+
+        $response->assertCreated();
+
+        $this->assertDatabaseHas('workflow_schedules', [
+            'schedule_id' => 'created-in-prod',
+            'namespace' => 'production',
+        ]);
+    }
+
+    public function test_namespace_resolves_for_namespace_list(): void
+    {
+        // Namespace CRUD endpoints don't filter by resolved namespace,
+        // but the resolver still sets the attribute for consistency
+        $response = $this->withHeaders($this->controlPlaneHeaders(['X-Namespace' => 'production']))
+            ->getJson('/api/namespaces');
+
+        $response->assertOk();
+        // Namespace list returns all namespaces regardless of resolved namespace
+        $this->assertGreaterThanOrEqual(2, count($response->json('namespaces')));
+    }
+
+    // ── Unknown namespaces are rejected ────────────────────────────
+
+    public function test_unknown_namespace_in_header_returns_404(): void
+    {
+        $response = $this->withHeaders($this->controlPlaneHeaders(['X-Namespace' => 'nope-not-here']))
+            ->getJson('/api/schedules');
+
+        $response->assertStatus(404);
+        $response->assertJson([
+            'reason' => 'namespace_not_found',
+            'namespace' => 'nope-not-here',
+        ]);
+        $this->assertStringContainsString('does not exist', $response->json('message'));
+        $this->assertNotEmpty($response->json('remediation'));
+    }
+
+    public function test_unknown_namespace_in_query_parameter_returns_404(): void
+    {
+        $response = $this->withHeaders($this->controlPlaneHeaders())
+            ->getJson('/api/schedules?namespace=also-missing');
+
+        $response->assertStatus(404);
+        $response->assertJson([
+            'reason' => 'namespace_not_found',
+            'namespace' => 'also-missing',
+        ]);
+    }
+
+    public function test_unknown_default_namespace_from_config_returns_404(): void
+    {
+        config(['server.default_namespace' => 'never-seeded']);
+
+        $response = $this->withHeaders($this->controlPlaneHeaders())
+            ->getJson('/api/schedules');
+
+        $response->assertStatus(404);
+        $response->assertJson([
+            'reason' => 'namespace_not_found',
+            'namespace' => 'never-seeded',
+        ]);
+    }
+
+    public function test_unknown_namespace_is_rejected_for_worker_endpoints(): void
+    {
+        $response = $this->withHeaders([
+            'X-Namespace' => 'ghost-namespace',
+            WorkerProtocol::HEADER => WorkerProtocol::VERSION,
+        ])->postJson('/api/worker/register', [
+            'capability_manifest' => $this->portableWorkerAffinityRefusalManifest(),
+            'worker_id' => 'w-1',
+            'task_queue' => 'default',
+            'supported_workflow_types' => [],
+            'supported_activity_types' => [],
+        ]);
+
+        $response->assertStatus(404);
+        $response->assertJson([
+            'reason' => 'namespace_not_found',
+            'namespace' => 'ghost-namespace',
+        ]);
+    }
+
+    // ── Exempt paths still accept unknown namespaces ───────────────
+
+    public function test_namespace_crud_list_is_exempt_from_validation(): void
+    {
+        // An unknown X-Namespace header must not block the caller from
+        // managing namespaces — they may be about to create it.
+        $response = $this->withHeaders($this->controlPlaneHeaders(['X-Namespace' => 'does-not-exist']))
+            ->getJson('/api/namespaces');
+
+        $response->assertOk();
+    }
+
+    public function test_namespace_crud_show_is_exempt_from_middleware_validation(): void
+    {
+        // The namespace being shown is resolved from the path, not the header —
+        // the middleware should not reject the request just because the
+        // X-Namespace header refers to a different unknown namespace.
+        $response = $this->withHeaders($this->controlPlaneHeaders(['X-Namespace' => 'unknown-namespace']))
+            ->getJson('/api/namespaces/production');
+
+        $response->assertOk();
+        $this->assertEquals('production', $response->json('name'));
+    }
+
+    public function test_namespace_crud_store_is_exempt_from_validation(): void
+    {
+        $response = $this->withHeaders($this->controlPlaneHeaders(['X-Namespace' => 'not-yet-created']))
+            ->postJson('/api/namespaces', [
+                'name' => 'new-ns',
+                'description' => 'Freshly minted',
+                'retention_days' => 7,
+            ]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('workflow_namespaces', [
+            'name' => 'new-ns',
+        ]);
+    }
+
+    public function test_cluster_info_endpoint_is_exempt_from_validation(): void
+    {
+        $response = $this->withHeaders($this->controlPlaneHeaders(['X-Namespace' => 'unknown']))
+            ->getJson('/api/cluster/info');
+
+        $response->assertOk();
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────
+
+    /**
+     * @param  array<string, string>  $extra
+     * @return array<string, string>
+     */
+    private function controlPlaneHeaders(array $extra = []): array
+    {
+        return ['X-Durable-Workflow-Control-Plane-Version' => '2'] + $extra;
+    }
+
+    private function createScheduleInNamespace(string $scheduleId, string $namespace): void
+    {
+        WorkflowSchedule::create([
+            'schedule_id' => $scheduleId,
+            'namespace' => $namespace,
+            'spec' => ['cron_expressions' => ['0 * * * *'], 'timezone' => 'UTC'],
+            'action' => ['workflow_type' => 'TestWorkflow'],
+        ]);
+    }
+}

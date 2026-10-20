@@ -1,0 +1,1 @@
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "2 agente en HF para lo que falta en tares distintas\nLe das una encadenado de pasos\nPara código usamos solo Nanbeige4.2-3B (Qwen 9B queda fuera del flujo de code)\n"}

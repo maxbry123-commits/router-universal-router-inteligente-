@@ -1,0 +1,184 @@
+[
+  {
+    "repo": "RouterArena",
+    "path": "cached_results/gpt-4o-mini.jsonl",
+    "chunks_dir": "RouterArena/cached_results/gpt-4o-mini.jsonl.chunks",
+    "bytes": 18780401,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/azure-model-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/azure-model-router.json.chunks",
+    "bytes": 15845903,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/chuzom-solo-v32.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/chuzom-solo-v32.json.chunks",
+    "bytes": 14281930,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/nadir-cascade-v2.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/nadir-cascade-v2.json.chunks",
+    "bytes": 17789256,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/lynkr.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/lynkr.json.chunks",
+    "bytes": 18650730,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/AsiaInfo-Router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/AsiaInfo-Router.json.chunks",
+    "bytes": 16246578,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/sqwish-fvcta8.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/sqwish-fvcta8.json.chunks",
+    "bytes": 27666219,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/auto_router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/auto_router.json.chunks",
+    "bytes": 21725552,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/llm-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/llm-router.json.chunks",
+    "bytes": 21120216,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/chayan.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/chayan.json.chunks",
+    "bytes": 22016152,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/cross-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/cross-router.json.chunks",
+    "bytes": 24085346,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/hybrid-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/hybrid-router.json.chunks",
+    "bytes": 23021282,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/r2-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/r2-router.json.chunks",
+    "bytes": 23055066,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/divyam-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/divyam-router.json.chunks",
+    "bytes": 24601334,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/nadir-caliper.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/nadir-caliper.json.chunks",
+    "bytes": 15822395,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/glm-4-air-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/glm-4-air-router.json.chunks",
+    "bytes": 15496836,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/agentforge-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/agentforge-router.json.chunks",
+    "bytes": 23636787,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/vllm-sr.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/vllm-sr.json.chunks",
+    "bytes": 24907540,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/BARouter.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/BARouter.json.chunks",
+    "bytes": 17477869,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/weave-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/weave-router.json.chunks",
+    "bytes": 16002775,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/cruq-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/cruq-router.json.chunks",
+    "bytes": 13720490,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/sqwish-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/sqwish-router.json.chunks",
+    "bytes": 19997326,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/orcarouter-adaptive.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/orcarouter-adaptive.json.chunks",
+    "bytes": 15707385,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/nadir-tumbler.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/nadir-tumbler.json.chunks",
+    "bytes": 14337910,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/Paix2-router.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/Paix2-router.json.chunks",
+    "bytes": 22568278,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "RouterArena",
+    "path": "router_inference/predictions/KT-ModelRouter.json",
+    "chunks_dir": "RouterArena/router_inference/predictions/KT-ModelRouter.json.chunks",
+    "bytes": 18366050,
+    "chunk_bytes": 8388608
+  }
+]

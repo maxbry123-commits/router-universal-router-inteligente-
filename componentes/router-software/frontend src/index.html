@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Router Universal NCT · Interface</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🕸</span>
+      <span class="name">Router Universal</span>
+      <span class="version-tag">v1.0.0</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="openInspector" title="Inspector">🔍</button>
+      <button class="icon-btn" id="openTopology" title="Topología">🌐</button>
+      <button class="icon-btn" id="openLogs" title="Logs">📜</button>
+      <button class="icon-btn" id="openSettings" title="Settings">⚙️</button>
+      <button class="icon-btn" id="toggleTheme" title="Tema">🌓</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Sidebar: satélites -->
+    <aside class="sidebar">
+      <div class="sidebar-h">
+        <span>📡 Satélites</span>
+        <button class="icon-btn-sm" id="addSatellite" title="Agregar">+</button>
+      </div>
+      <div class="sidebar-search">
+        <input type="text" id="satSearch" placeholder="Buscar satélite..." />
+      </div>
+      <ul class="sat-list" id="satList"></ul>
+      <div class="sidebar-footer">
+        <small id="satCount">0 satélites</small>
+        <small id="routerState">● offline</small>
+      </div>
+    </aside>
+
+    <!-- Center: composer + log -->
+    <section class="center">
+      <div class="composer">
+        <div class="composer-h">
+          <select id="capabilitySelect">
+            <option value="text">📝 Text</option>
+            <option value="code">💻 Code</option>
+            <option value="file">📁 File</option>
+            <option value="image">🖼 Image</option>
+            <option value="consensus">🤝 Consensus</option>
+            <option value="manifest">📋 Manifest</option>
+          </select>
+          <select id="transportSelect">
+            <option value="http">HTTP</option>
+            <option value="sse">SSE</option>
+            <option value="ws">WebSocket</option>
+            <option value="file">File</option>
+          </select>
+          <select id="sandboxSelect">
+            <option value="none">No sandbox</option>
+            <option value="pyodide">Pyodide (browser)</option>
+            <option value="wasm">WASM</option>
+            <option value="native">Native (VPS)</option>
+          </select>
+          <label class="timeout-input">timeout <input type="number" id="timeoutMs" value="30000" min="100" max="600000" step="100"> ms</label>
+        </div>
+        <textarea id="payloadEditor" class="payload-editor" spellcheck="false" placeholder='{"text": "Hola desde la interface"}'></textarea>
+        <div class="composer-tools">
+          <button class="btn-primary" id="sendBtn">▶ Enviar</button>
+          <button class="btn-secondary" id="broadcastBtn">📡 Broadcast a todos</button>
+          <button class="btn-secondary" id="clearBtn">🗑 Limpiar</button>
+          <label class="checkbox-label"><input type="checkbox" id="signCheck" checked> Firmar HMAC</label>
+        </div>
+      </div>
+
+      <div class="response-area">
+        <div class="response-h">
+          <span>📋 Respuestas</span>
+          <small id="responseCount">0 respuestas</small>
+        </div>
+        <div class="response-list" id="responseList"></div>
+      </div>
+    </section>
+
+    <!-- Right: inspector / topology -->
+    <aside class="inspector">
+      <div class="inspector-tabs">
+        <button class="tab-btn active" data-tab="inspector">Inspector</button>
+        <button class="tab-btn" data-tab="topology">Topología</button>
+        <button class="tab-btn" data-tab="contract">Contrato</button>
+      </div>
+      <div class="inspector-body" id="inspectorBody">
+        <div class="tab-content active" id="tab-inspector">
+          <p class="hint">Click un satélite o respuesta para inspeccionar.</p>
+          <div id="inspectorContent"></div>
+        </div>
+        <div class="tab-content" id="tab-topology">
+          <div id="topologySvg" class="topology"></div>
+        </div>
+        <div class="tab-content" id="tab-contract">
+          <pre class="contract-pre" id="contractPre">Cargando contrato...</pre>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Modals -->
+  <div class="modal-backdrop" id="settingsBackdrop">
+    <div class="modal">
+      <div class="modal-h"><h2>⚙️ Settings</h2><button class="icon-btn" id="closeSettings">✕</button></div>
+      <div class="modal-b">
+        <h3>Router backend</h3>
+        <label>Router URL <input type="text" id="routerBaseUrl" placeholder="http://95.111.232.89:7000"></label>
+        <label>HMAC secret <input type="password" id="hmacSecret" placeholder="(opcional)"></label>
+        <h3>Tema</h3>
+        <label class="row-inline">
+          Color usuario <input type="color" id="userColor" value="#00b8ff">
+          Color modelo <input type="color" id="modelColor" value="#c9d1d9">
+          Color títulos <input type="color" id="titleColor" value="#00d4aa">
+          Color fondo <input type="color" id="bgColor" value="#000000">
+        </label>
+        <h3>Persistencia</h3>
+        <p><small>Localstorage keys: <code>nct_router_sats</code>, <code>nct_router_log</code>, <code>nct_router_cfg</code></small></p>
+      </div>
+      <div class="modal-f"><button class="btn-primary" id="saveSettings">💾 Guardar</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="addSatBackdrop">
+    <div class="modal">
+      <div class="modal-h"><h2>+ Agregar satélite</h2><button class="icon-btn" id="closeAddSat">✕</button></div>
+      <div class="modal-b">
+        <label>Nombre <input id="newSatName" placeholder="mi-satelite" maxlength="30"></label>
+        <label>URL <input id="newSatUrl" placeholder="http://..."></label>
+        <label>Capability <select id="newSatCap"><option>text</option><option>code</option><option>file</option><option>image</option><option>ocr</option><option>embed</option></select></label>
+        <label>Transporte <select id="newSatTransport"><option>http</option><option>sse</option><option>ws</option><option>file</option></select></label>
+        <label>Sandbox <select id="newSatSandbox"><option value="none">none</option><option value="pyodide">pyodide</option><option value="native">native</option></select></label>
+      </div>
+      <div class="modal-f">
+        <button class="btn-secondary" id="cancelAddSat">Cancelar</button>
+        <button class="btn-primary" id="saveAddSat">💾 Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/router.js"></script>
+  <script src="js/inspector.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

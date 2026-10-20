@@ -1,0 +1,50 @@
+{
+  "bundle_bytes": 44308314,
+  "bundle_sha256": "7216507b536ab0ce2f1a644262461a7cec6d3353a84c130217d3f2b25f97ebc4",
+  "extracted_tree": {
+    "bytes": 91897962,
+    "files": 1008,
+    "sha256": "1b7fead3e626e20f9261738ceb526a497fff43af0d05402bf8b6611f3ce01e50"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "archify.bundle.zip.part-0001",
+      "sha256": "c42a1903f1a12cdd5494b9c59262b408259f231a5e95a36809212e53bbdfe158"
+    },
+    {
+      "bytes": 12582912,
+      "name": "archify.bundle.zip.part-0002",
+      "sha256": "17dc7ec708dbf33cf0cac49f6a0a8bdf0200d8843d6f2fb444cf5c3d0121f106"
+    },
+    {
+      "bytes": 12582912,
+      "name": "archify.bundle.zip.part-0003",
+      "sha256": "250a4fc9a65432d3841d7fb1efeaa55fb436ede33b1cf5f71f801c58aef83f2a"
+    },
+    {
+      "bytes": 6559578,
+      "name": "archify.bundle.zip.part-0004",
+      "sha256": "ed3cb9f7f19235eb8143b434f3e08346594cc941a85d590dca09b8c36192dbb1"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "archify",
+  "source_bytes": 91897962,
+  "source_commit": "d0c8c7e9f4e06f303389f804208d387f27019ef5",
+  "source_files": 1008,
+  "source_ref": "main",
+  "source_repo": "tt-a1i/archify",
+  "source_tree": {
+    "bytes": 91897962,
+    "files": 1008,
+    "sha256": "1b7fead3e626e20f9261738ceb526a497fff43af0d05402bf8b6611f3ce01e50"
+  }
+}

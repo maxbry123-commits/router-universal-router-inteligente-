@@ -1,0 +1,18 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-17-chat-backend-32gb",
+ "framework": "pocketflow",
+ "status": "VALIDATING",
+ "updated_at": "2026-09-23T03:18:38Z",
+ "group": "chat",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "hf",
+ "model": "deepseek-ai/DeepSeek-V4-Flash",
+ "via": "route",
+ "attempts": 1
+}

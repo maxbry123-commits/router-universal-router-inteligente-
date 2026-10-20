@@ -1,0 +1,36 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-11-download-extraction",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-22T11:46:32Z",
+ "group": "downloads",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "3377d32b150b2b8d478011c5714bb59c4ed10ab50b8056b293545dec6b04c0f7",
+   "chars": 108
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "ms_agent_framework_donor.py",
+   "sha256": "cbedfffc936406adee55b6c591aa2478796100b44554373c0eb5ec5b7f2d471e"
+  }
+ ],
+ "model": "groq/openai/gpt-oss-120b",
+ "attempts": 5,
+ "route_trace": [
+  "nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error while generating output:\nError code: 500 - {'error': {'message': 'Internal",
+  "nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error while generating output:\nError code: 500 - {'error': {'message': 'Internal",
+  "nvidia/nvidia/nemotron-3-super-120b-a12b:el Sheriff no dio PASS",
+  "nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error while generating output:\nError code: 500 - {'error': {'message': 'Internal"
+ ]
+}
