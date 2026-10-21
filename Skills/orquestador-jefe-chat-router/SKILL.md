@@ -305,6 +305,16 @@ Dame la vía más corta y rápida de solucionarlo sin romper la arquitectura. An
 
 SEGUNDA PARTE: mandar a los agentes con los prompts
 
+```text
+1 agente para huggueface 
+
+1 agente para Github 
+
+3 agente que revisan Github y huggueface
+```
+
+Agentes separados: 1 ejecutor HF, 1 ejecutor GitHub; Sheriff, Guardián y Centinela (3 agentes separados) revisan GitHub y HF, cada uno con validación de commit contra el padre.
+
 **Plantilla execution_contract (t367)**
 ```text
 <execution_contract>
