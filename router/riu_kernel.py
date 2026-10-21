@@ -25,6 +25,7 @@ def hydrate():
     try:  # vault local existente, solo lectura (sin escribir, mover ni migrar); si no existe, mandan los secrets del Space
         p=pathlib.Path(os.environ.get("RIU_VAULT_PATH","/data/riu_vault.db"))
         if not (p.is_file() and os.access(str(p),os.R_OK)):
+            print('VAULT_AUSENTE',flush=True)
             return
     except Exception as e:
         print('VAULT_FALLO tipo='+type(e).__name__,flush=True)
