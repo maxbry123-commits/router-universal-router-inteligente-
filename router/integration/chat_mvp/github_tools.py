@@ -14,7 +14,7 @@ import urllib.request
 from typing import Any, Callable, Mapping
 
 API = "https://api.github.com"
-MAX_FILE_BYTES = 200_000
+MAX_FILE_BYTES = 500_000
 DEFAULT_ENV_TOKENS = ("GITHUB_TOKEN_1", "GITHUB_TOKEN_2", "GITHUB_TOKEN_3", "RIU_GITHUB_TOKEN")
 
 
