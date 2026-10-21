@@ -20,9 +20,12 @@ def _hf_token_vivo(v):
     raise RuntimeError("GAP_HF_SIN_TOKEN_VALIDO")
 def hydrate():
     sys.path.insert(0,str(pathlib.Path.cwd()/"Banco de claves"))
+    _banco=str(pathlib.Path(__file__).resolve().parent/"banco")  # ruta real del banco en reorganizacion
+    if _banco not in sys.path:
+        sys.path.append(_banco)
 
-    from secret_bank.vault import Vault
     try:  # vault local existente, solo lectura (sin escribir, mover ni migrar); si no existe, mandan los secrets del Space
+        from secret_bank.vault import Vault
         p=pathlib.Path(os.environ.get("RIU_VAULT_PATH","/data/riu_vault.db"))
         if not (p.is_file() and os.access(str(p),os.R_OK)):
             print('VAULT_AUSENTE',flush=True)
