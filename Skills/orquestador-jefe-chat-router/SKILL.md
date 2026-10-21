@@ -144,3 +144,10 @@ Reglas:
    - Los 3 incluyen la VALIDACIÓN DE COMMIT: comparar el commit con su padre (git diff padre..commit --stat y el diff completo) para comprobar que no se cambió, borró ni renombró nada más de lo autorizado y que no se rompió nada.
 4. Si alguno da GAP, un agente nuevo lo repara sin sobreingeniería, y los 3 validan otra vez.
 5. La validación de commit de los 3 validadores (líneas OUTPUT_ONLY y evidencia cruda 1 a 1) es lo que se le da a Sol GPT para la revisión final, junto con la arquitectura y la ley inmutable.
+
+## [t374–t376] Plan de acción 3: sistema de 4 agentes (auditoría y reparación GitHub)
+- Prompts verbatim en `prompts_4_agentes.md` (misma carpeta del skill). Cada prompt es un agente separado.
+- 1 CENTINELA SUPERVISOR (alcance), 2 SHERIFF JUEZ (código), 3 GUARDIÁN VALIDADOR (instrucciones): independientes, solo lectura, cada uno inspecciona GitHub directamente.
+- 4 REFACTORÍA REPARADOR: solo se manda si hay GAPS confirmados. Parche mínimo, nuevo commit, y se repiten 1+2+3 hasta cierre verificado.
+- Salida: checklist Markdown con porcentaje, evidencia ARCHIVO:LÍNEA + URL y veredicto.
+- Tras comprobar los cambios con Sol 1 (HF) y Sol 2 (GitHub), seguir con Sol en las tareas pendientes del chat frontend y backend.
