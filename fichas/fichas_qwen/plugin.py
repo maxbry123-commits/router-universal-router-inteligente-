@@ -1915,7 +1915,16 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                 _nid = str(n.get('id'))
                 _h0 = len(opts.setdefault('herr', {}).setdefault(_nid, []))  # DSL G4: la evidencia real es el delta de opts['herr'] de ESTE nodo
                 _tok_nc = _NODO_CALL.set(_nc0)
-                r = _llamar_harness(mod, prompt, ficha, n, opts)
+                _gap_no_tool = False
+                try:
+                    r = _llamar_harness(mod, prompt, ficha, n, opts)
+                except RuntimeError as _e1:
+                    # GAP HERRAMIENTA_NO_EJECUTADA: el modelo respondio texto sin emitir la tool exigida — un reintento con forzar_tool (required) antes de rendirse
+                    if 'HERRAMIENTA_NO_EJECUTADA' in str(_e1) and (n.get('requiere_tools') or opts.get('muta')) and time.monotonic() < _nc0['deadline'] - 20:
+                        _gap_no_tool = True
+                        r = 'GAP HERRAMIENTA_NO_EJECUTADA'
+                    else:
+                        raise
                 try:
                     import prompt_layouts as _pl  # noqa: PLC0415
                     _nuevas = opts['herr'][_nid][_h0:]
@@ -1929,7 +1938,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                     else: _cat = 'NO_TOOL'
                     _lay1 = 'D' if str(mod or '').startswith('ficha-dsv4') else 'B'  # routing INPUT 126
                     opts.setdefault('layout_attempts', []).append({'nodo': n.get('id'), 'layout': _lay1, 'ack': _ack, 'why': _why, 'categoria': _cat})
-                    if _ack and time.monotonic() < _nc0['deadline'] - 20:  # DSL N4: con <20s restantes no se lanza otro intento
+                    if (_ack or _gap_no_tool) and time.monotonic() < _nc0['deadline'] - 20:  # DSL N4: con <20s restantes no se lanza otro intento
                         _nc0['sys_prompt'] = _LAYOUT_D_SYS  # layout D_solo_tarea CONECTADO: system ejecutor de Claude INPUT 129 (antes vacio)
                         if str(mod or '').startswith('ficha-dsv4'):
                             _nc0['dsv4_think'] = False  # DSL N2: reintento dsv4 con thinking OFF explicito (required no convive con thinking)
