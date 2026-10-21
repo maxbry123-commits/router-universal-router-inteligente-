@@ -129,7 +129,8 @@ async function puenteRouter(base, body, qs, headers) {
       if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: Date.now() });
       let primera = true;  // primera consulta inmediata, luego cada 250 ms (tope total sigue en deadline 560 s)
       let fallosRed = 0;  // fix 5: la red caida ya no se oculta para siempre
-      while (p.estado === 'procesando') {
+      let vaciosEstado = 0; // respuesta temporal sin estado no significa DONE; conservar PID
+      while (p.estado === 'procesando' || !p.estado) {
         if (Date.now() > deadline) { cortado = true; break; }
         if (!primera) await new Promise(resolve => setTimeout(resolve, 250)); primera = false;
         try {
@@ -137,7 +138,13 @@ async function puenteRouter(base, body, qs, headers) {
           const envelope = await poll.json().catch(() => ({}));
           if (poll.status === 401 || poll.status === 403) return { status: 401, ok: false, p: envelope };
           if (!poll.ok || envelope.status !== 'ok') throw new Error(envelope.reason || envelope.detail || ('HTTP ' + poll.status));  // /resultado fallido (cupo del host, 5xx): contar y reintentar, no cortar el chat
-          p = envelope.result || {}; fallosRed = 0; if (p.progreso || p.parcial) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso || '', parcial: p.parcial || '' } })); } catch (e) {} }
+          p = envelope.result || {}; fallosRed = 0;
+          if (!p.estado && !p.error && ++vaciosEstado >= 8) {
+            return { status: 503, ok: false, p: { estado: 'reanudable', error: 'GAP_RESULTADO_TEMPORALMENTE_VACIO', detalle: 'El trabajo sigue asociado al mismo PID; usar Retomar', proceso_id: proceso } };
+          }
+          if (p.estado) vaciosEstado = 0;
+          if (p.error && !p.estado) break; // error terminal explicito, sin confundirlo con transporte vacio
+          if (p.progreso || p.parcial) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso || '', parcial: p.parcial || '' } })); } catch (e) {} }
         } catch (e) {  // red/job en cambio: seguir esperando, pero avisar y cortar tras 80 fallos seguidos (~20 s a 250 ms)
           fallosRed++;
           try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'Sin conexión con el Router (' + fallosRed + ')…' } })); } catch (x) {}
@@ -147,7 +154,7 @@ async function puenteRouter(base, body, qs, headers) {
       }
     }
     if (!cortado && payload && payload.sesion) guardaProc(payload.sesion, null);  // termino: ya no hay nada que retomar
-    if (cortado) { return { status: 504, ok: false, p: { error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'El proceso sigue en el Router; no se relanza la tarea', proceso_id: p.proceso_id } }; }
+    if (cortado) { return { status: 504, ok: false, p: { estado: 'reanudable', error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'El proceso sigue en el Router; no se relanza la tarea', proceso_id: proceso || p.proceso_id } }; }
     if (p.estado === 'encendiendo') return { status: 202, ok: true, p };
     if (p.error) return { status: 502, ok: false, p };  // proceso terminado en error: NO se relanza otro chat_async (el reintento de red de LIVE_URL solo vale antes de obtener proceso_id)
     return { status: 200, ok: true, p };
