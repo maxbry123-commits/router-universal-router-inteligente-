@@ -136,6 +136,10 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
         ex_llm = {'enable_thinking': False}  # pregunta simple: Qwen sin thinking (Token Plan lo acepta en los modelos de texto)
     elif simple and ex_llm and ex_llm['reasoning_effort'] in ('medium', 'high'):
         ex_llm = {'reasoning_effort': 'low'}
+    if not simple and str(elegido).startswith('ficha-qwen'):
+        ex_llm = {'enable_thinking': False, 'parallel_tool_calls': False}  # Function Calling Qwen: sin reasoning_effort (perfiles.py)
+    elif not simple and elegido == 'ficha-glm52':
+        ex_llm = {'tool_stream': True}  # GLM 5.2 via Model Studio: sin tool_stream puede no devolver tool_calls
     if simple and not p.get('max_tokens'):
         mt = min(mt, 1024)
     if pid:  # mismo visor de progreso de la familia
