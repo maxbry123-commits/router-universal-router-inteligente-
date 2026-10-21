@@ -10,7 +10,10 @@ try:
     vp = pathlib.Path(os.environ.get("RIU_VAULT_PATH", "/data/riu_vault.db"))
     vp.parent.mkdir(parents=True, exist_ok=True)
     if not vp.exists():
-        shutil.copy("/tmp/kernel-vault.db", str(vp))
+        if os.path.isfile("/tmp/kernel-vault.db"):
+            shutil.copy("/tmp/kernel-vault.db", str(vp))
+        else:
+            print("VAULT_TMP_AUSENTE", flush=True)
     from integration.chat_mvp.vault_bridge import bridge
     n = bridge.unlock(os.environ["RIU_VAULT_PASSPHRASE"])
     print("vault desbloqueado: %d credenciales" % n, flush=True)
