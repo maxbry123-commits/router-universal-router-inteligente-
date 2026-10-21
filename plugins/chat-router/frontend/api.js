@@ -77,7 +77,7 @@ window.RIU_RETOMAR = async (ses) => {
     try {
       const r = await fetchT(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid, espera: 8 }) }, 16000);
       const e = await r.json().catch(() => ({})); const p = e.result || {};
-      if (!r.ok || e.status !== 'ok') { if (++malos >= 8) { guardaProc(ses, null); return { error: e.reason || e.detail || ('HTTP ' + r.status) }; } }  // respuesta invalida repetida: cortar, no girar 560 s
+      if (!r.ok || e.status !== 'ok') { if (++malos >= 8) return { estado: 'reanudable', proceso_id: v.pid, error: 'GAP_ROUTER_ESTADO_NO_CONFIRMADO', detalle: e.reason || e.detail || ('HTTP ' + r.status) }; } // sin estado terminal verificable conservar el PID
       else if (p.error) { guardaProc(ses, null); return p; }  // error real del proceso (PROCESO_NO_EXISTE tras reinicio): borrar PID y devolver ya
       else if (p.estado && p.estado !== 'procesando') { guardaProc(ses, null); return p; }
       else if (!p.estado) { if (++malos >= 8) return { estado: 'reanudable', proceso_id: v.pid, error: 'GAP_RESULTADO_TEMPORALMENTE_VACIO', detalle: 'Reconsultar el mismo PID; no relanzar el trabajo' }; }
