@@ -51,6 +51,15 @@ export async function mount(root, { api, tell }) {
   const chats = [];
   let activo = 0;
   const chat = () => chats[activo];
+  const releerAnclas = (c) => {
+    try {
+      const guardado = JSON.parse(localStorage.getItem(CLAVE_CHATS) || "[]").find((x) => x.sesion === c.sesion);
+      if (Array.isArray(guardado?.anclados)) {
+        c.anclados.clear(); guardado.anclados.forEach((a) => c.anclados.add(a));
+      }
+    } catch (e) {}
+    return [...c.anclados];
+  };
   const chatA = () => (window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : chat());  // objetivo del anclaje: el chat (por defecto) u otro (constitución, workflow, agentes, proyecto, sandbox)
   const guardar = () => {
     try {
@@ -214,7 +223,7 @@ export async function mount(root, { api, tell }) {
     pintarTabs(); guardar(); tell("Chat borrado");
   };
   try { montarProyectos(root, { tell: (t) => { try { const e = document.createElement("div"); e.className = "item message meta"; e.textContent = t; chat().hist.append(e); } catch (x) {} } }); } catch (e) {}  // ventana Proyectos disponible desde el arranque
-  window.RIU_CHAT = { chat, ocupado: () => chats.some((x) => x.ocupado), tokens: () => [...chat().anclados], pintar: () => { pintarAnclados(); guardar(); } };  // ganchos para las ventanas de workflows / constitución / claves
+  window.RIU_CHAT = { chat, ocupado: () => chats.some((x) => x.ocupado), tokens: () => [...chat().anclados], sincronizarAnclas: () => { chats.forEach(releerAnclas); pintarAnclados(); }, pintar: () => { pintarAnclados(); guardar(); } };  // ganchos para las ventanas de workflows / constitución / claves
   window.RIU_DESTINO_ARCHIVOS = () => {  // destinoArchivos(): UNICA autoridad de a donde van los archivos segun el objetivo de la ventana-ancla
     const o = window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : null;
     if (o && o.tipo === "constitucion") return { destino: "constitucion" };
@@ -661,6 +670,7 @@ export async function mount(root, { api, tell }) {
       const mensajeQwen = soloLiteralQwen ? rawText : (mvp ? rawText : A.envolver(rawText, c.instrucciones)); // no eliminar espacios del input real
       const fijasQwen = (soloLiteralQwen || mvp) ? (c.instrucciones || "") : "";
       const _conModo = modeUI ? modeUI.wrapSend((b) => b) : ((b) => b);  // >>> MODOS <<< punto B: agrega mode_request al payload sin tocar el resto
+      const anclados = releerAnclas(c);
       const body = _conModo({ message: mensajeQwen, ficha: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, thinking: modo === "think", ...(fijasQwen ? { instrucciones_fijas: fijasQwen } : {}), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : {}), ...(mvp || {}) });  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha; ficha 2/3 verbatim + instrucciones_fijas
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
@@ -670,7 +680,7 @@ export async function mount(root, { api, tell }) {
       const _fanout = async () => {  // una llamada por modelo elegido; cada burbuja lleva su nombre
         const rs = await Promise.allSettled(_multiSel.map((m, i) => window.RIU_HARNESS({
           model: 'qw-' + (m.modelo_id_slug || 'modelo'), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null,
-          contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion + '-' + (m.modelo_id_slug || i), instrucciones_fijas: fijasQwen || undefined,
+          contexto_previo: ctxPrev, anclados, sesion: c.sesion + '-' + (m.modelo_id_slug || i), instrucciones_fijas: fijasQwen || undefined,
           thinking_mode: modo === 'think' ? 'on' : 'off',
           mode_request: modeUI ? modeUI.getModeRequest() : undefined,
           qwen: { plugin: "fichas_qwen", ficha_qwen: "1", modelo: m.label || m.modelo_id_slug || "", task_type: "chat" }, avisar: () => {} })));
@@ -683,7 +693,7 @@ export async function mount(root, { api, tell }) {
       const answer = window.RIU_CONFIG?.harnessUrl
         ? (_multiSel.length > 1
             ? await Promise.race([_fanout(), raceDetener])  // >>> MODOS <<< T6: misma tarea a cada modelo; un proceso por modelo en el backend
-            : await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, thinking_mode: (fq || mvp) ? (modo === 'think' ? 'on' : 'off') : undefined, mode_request: modeUI ? modeUI.getModeRequest() : undefined,  // >>> MODOS <<<
+            : await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados, sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, thinking_mode: (fq || mvp) ? (modo === 'think' ? 'on' : 'off') : undefined, mode_request: modeUI ? modeUI.getModeRequest() : undefined,  // >>> MODOS <<<
         qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener]))
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);  // >>> MODOS <<< body ya lleva mode_request
       c.detenerFn = null;
@@ -798,4 +808,3 @@ export async function mount(root, { api, tell }) {
   }, 3000);
 
 }
-

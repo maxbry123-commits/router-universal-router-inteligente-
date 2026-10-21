@@ -14,7 +14,7 @@ export function tipoDe(n) {
   if (["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"].includes(e)) return "imagen"; if (e === "pdf") return "pdf"; if (["csv", "tsv", "xlsx", "xls", "xml"].includes(e)) return "datos"; return "otro";
 }
 const chatsGuardados = () => { try { const a = JSON.parse(localStorage.getItem("riu_chats_v1") || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
-const guardarChats = (a) => { try { localStorage.setItem("riu_chats_v1", JSON.stringify(a)); } catch (e) {} };
+const guardarChats = (a) => { try { localStorage.setItem("riu_chats_v1", JSON.stringify(a)); window.RIU_CHAT?.sincronizarAnclas?.(); } catch (e) {} };
 const sesionesDisp = () => { const c = chatsGuardados(); return c.length ? c.map((x, i) => ({ sesion: x.sesion, nombre: "Chat " + (i + 1) })) : [{ sesion: "general", nombre: "General" }]; };
 const sesionActiva = () => { const c = chatsGuardados(); if (!c.length) return "general"; const i = Number(localStorage.getItem("riu_chat_activo")) || 0; return (c[Math.min(Math.max(i, 0), c.length - 1)] || {}).sesion || "general"; };
 function anclarChat(sesion, nombre, on) { const c = chatsGuardados(), x = c.find((y) => y.sesion === sesion); if (!x) return false; const s = new Set(x.anclados || []); if (on) s.add(nombre); else s.delete(nombre); x.anclados = [...s]; guardarChats(c); return true; }
