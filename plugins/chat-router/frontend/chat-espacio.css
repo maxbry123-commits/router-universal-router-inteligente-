@@ -64,3 +64,25 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
   #sel-slot-bajo #selectores{margin:8px 0 0}
 }
 
+
+/* G17: editor 5x mas alto que el minimo original (~56px) en escritorio.
+   En movil limita el editor por viewport para conservar controles y scroll de salida. */
+#composer #message, #composer textarea {
+  min-height: min(280px, 40dvh);
+  max-height: 80dvh;
+  resize: vertical;
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+#histories .chat-history {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width:720px) {
+  #composer #message, #composer textarea {
+    min-height: min(200px, 32dvh);
+    max-height: 52dvh;
+    resize: vertical;
+  }
+  #histories .chat-history { min-height: 0; }
+}
