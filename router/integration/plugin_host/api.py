@@ -83,11 +83,4 @@ def build_plugin_router() -> APIRouter:
         """Invoke a registered plugin through the mandatory PluginHost harness."""
         return get_host().call(plugin_id, action, payload or {})
 
-    try:  # router_updater: /version, /update-status, /sync-now, /webhook/github (misma auth que el Router)
-        from plugins.router_updater.plugin import crear_router as _crear_ru
-
-        r.include_router(_crear_ru(_auth))
-    except Exception:
-        pass
-
     return r

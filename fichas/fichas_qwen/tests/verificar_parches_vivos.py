@@ -18,7 +18,6 @@ REQ = {  # marcador -> archivos (sufijo) donde debe aparecer
     'PARCHE_AUD3': ('fichas_qwen/motor_json/yaiwes_motor.py', 'fichas_qwen/modos/motor_objetivo.py'),
     'PARCHE_GH_URL_ENC': ('puente_chat/herramientas.py',),
     'PARCHE_AUD4': ('fichas_qwen/modos/motor_objetivo.py', 'fichas_qwen/plugin.py', 'puente_chat/plugin.py'),
-    'PARCHE_UPDATER': ('fichas_qwen/plugin.py', 'router_updater/plugin.py'),
     'PARCHE_VERIF': ('puente_chat/herramientas.py', 'fichas_qwen/plugin.py'),
     'PARCHE_RICARDO': ('fichas_qwen/modos/motor_objetivo.py', 'puente_chat/plugin.py'),
     'PARCHE_OPUS': ('fichas_qwen/plugin.py',),
@@ -41,7 +40,7 @@ def _leer(origen):
                             out[s] = tf.extractfile(m).read().decode('utf-8', 'replace')
     else:
         for s in _SUF:
-            # layout nuevo: fichas_qwen/ en fichas/, puente_chat/ en plugins/, router_updater/ en router/ (o raiz de plugins vieja)
+            # layout nuevo: fichas_qwen/ en fichas/, puente_chat/ en plugins/ (o raiz de plugins vieja)
             for f in (p / s, p / 'fichas' / s, p / 'plugins' / s, p / 'router' / s):
                 if f.is_file():
                     out[s] = f.read_text(encoding='utf-8', errors='replace')

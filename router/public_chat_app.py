@@ -60,3 +60,8 @@ class ChatAccess:
                 scope["headers"]=[(k,v) for k,v in scope.get("headers",[]) if k.lower()!=b"x-api-key"]+[(b"x-api-key",key.encode())]
         await self.app(scope,receive,send)
 app.add_middleware(ChatAccess)
+try:
+    from autopull import start as _autopull_start
+    _autopull_start()
+except Exception:
+    pass
