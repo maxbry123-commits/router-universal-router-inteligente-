@@ -89,11 +89,20 @@ def base_url(proveedor: str) -> str:
 
 def provider_keys(proveedor: str) -> list:
     r = llamar("router_api", "provider_keys", {"proveedor": proveedor})
-    if not isinstance(r, dict) or r.get("status") != "ok" or r.get("error"):
+    nivel = None
+    if isinstance(r, dict) and not r.get("error"):
+        sub = r.get("result") if isinstance(r.get("result"), dict) else {}
+        if r.get("status") == "ok" and "claves" in r:
+            nivel = r
+        elif sub.get("status") == "ok":
+            nivel = sub
+        elif r.get("status") == "ok":
+            nivel = r
+    if nivel is None:
         err = (r.get("error") or r.get("reason") or "fallo") if isinstance(r, dict) else type(r).__name__
         print("PROVIDER_KEYS_FALLO proveedor=%s error=%s" % (proveedor, str(err)[:200]), file=sys.stderr)  # nunca la clave
         return []
-    return list(r.get("claves") or [])
+    return list(nivel.get("claves") or [])
 
 
 def chat(proveedor: str, modelo: str, mensajes: list, max_tokens: int, tope: int) -> dict:
