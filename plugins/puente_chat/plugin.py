@@ -1261,6 +1261,9 @@ def _bucle(llamar, mensajes):
     rotas = set()  # herramientas que ya fallaron por token/desconocidas
     fin = _DEADLINE.get() or (time.monotonic() + TOPE_TOTAL_S)
     con_tools = (not fast) and _TOOLS_HAB.get()  # Team 5 apaga el catalogo en preguntas normales: el modelo no puede pedir tools por su cuenta
+    if _REQ_TOOLS.get() and (not con_tools or not tools_vis):
+        return {'error': 'GAP_TOOLS_VACIAS',
+                'detalle': 'requiere_tools=true sin catalogo de herramientas habilitado'}, usadas
     primera_llamada = True
     pasos = 0
     reintento_razonar = False
@@ -3613,4 +3616,3 @@ def handle(action, payload):
         try:return future.result()
         except Exception as exc:return {'error':'CHAT_FAILED','detalle':type(exc).__name__}
     return _original_handle(action,payload)
-
