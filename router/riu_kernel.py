@@ -23,12 +23,6 @@ def _hf_token_vivo(v):
             except Exception:pass
     raise RuntimeError("GAP_HF_SIN_TOKEN_VALIDO")
 def hydrate():
-    try:
-        tar=tarfile.open(fileobj=io.BytesIO(fs().cat_file(BASE+"/codigo/router-bundle.tar.gz")),mode="r:gz")
-        tar.extractall("/tmp/kernel-bank",filter="data")
-        sys.path.insert(0,"/tmp/kernel-bank/router inteligente universal/Banco de claves")
-    except Exception:
-        pass  # sin bundle (git pull): el Banco de claves sale del arbol local
     sys.path.insert(0,str(pathlib.Path.cwd()/"Banco de claves"))
 
     from secret_bank.vault import Vault
