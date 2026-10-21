@@ -51,10 +51,13 @@ def hydrate():
     except Exception as e:
         print('VAULT_SECRETO_FALLO ref=router/runtime-director-hash tipo='+type(e).__name__,flush=True)
     keys={}
-    for r in v.list():
-        if r["enabled"] and r["provider"]=="router" and "hash" not in r["account"]:
-            try:keys[v.get_secret(r["credential_ref"])]= "chat-ui" if "chat-ui" in r["account"] else r["account"]
-            except Exception:pass
+    try:
+        for r in v.list():
+            if r["enabled"] and r["provider"]=="router" and "hash" not in r["account"]:
+                try:keys[v.get_secret(r["credential_ref"])]= "chat-ui" if "chat-ui" in r["account"] else r["account"]
+                except Exception:pass
+    except Exception as e:
+        print('VAULT_LIST_FALLO tipo='+type(e).__name__,flush=True)
     os.environ["RIU_AGENT_API_KEYS"]=json.dumps(keys)
     os.environ["RIU_AGENT_API_KEYS_2"]="{}"
     try:
