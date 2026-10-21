@@ -47,25 +47,14 @@ TOOLS = [
 
 
 def _token():
-    t = os.environ.get('GITHUB_PERSONAL_ACCESS_TOKEN') or os.environ.get('RIU_GITHUB_PAT')
-    if t:
-        return t
-    try:  # dentro del Router: misma fuente de claves que las tools del puente
-        import sys as _s
-        h = _s.modules.get('puente_herramientas')
-        if h is None:
-            import importlib.util as _iu
-            import os as _o
-            p = _o.path.join(_o.path.dirname(_o.path.abspath(__file__)), 'plugins', 'puente_chat', 'herramientas.py')
-            spec = _iu.spec_from_file_location('puente_herramientas', p)
-            h = _iu.module_from_spec(spec)
-            _s.modules['puente_herramientas'] = h
-            spec.loader.exec_module(h)
-        ks = h._llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN'])
-        if ks:
-            return ks[0]
-    except Exception:  # noqa: BLE001
-        pass
+    # Solo entorno (edificio 1): sin importar codigo de plugins/ (edificio 2).
+    try:
+        for _k in ('GITHUB_PERSONAL_ACCESS_TOKEN', 'RIU_GITHUB_PAT', 'GITHUB_TOKEN', 'GH_TOKEN'):
+            t = (os.environ.get(_k) or '').strip()
+            if t:
+                return t
+    except Exception as exc:  # noqa: BLE001
+        print('MCP_PUENTE_TOKEN_FALLO tipo=%s' % type(exc).__name__, file=sys.stderr)
     raise RuntimeError('FALTA GITHUB_PERSONAL_ACCESS_TOKEN en el entorno')
 
 
