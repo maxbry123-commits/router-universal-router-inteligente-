@@ -280,20 +280,33 @@ def github_leer(a):
     if s != 200 or not isinstance(d, dict):
         return 'ERROR %s %s' % (s, str(d)[:300])
     if d.get('encoding') == 'base64':
-        texto = base64.b64decode(d.get('content', '')).decode('utf-8', 'replace')
-        lineas = str(a.get('lineas') or '').strip()
-        total = len(texto.splitlines())
-        if lineas:
-            m = re.match(r'^(\d*)\s*-\s*(\d*)$', lineas)
-            if m:
-                ini = int(m.group(1)) - 1 if m.group(1) else 0
+            texto = base64.b64decode(d.get('content', '')).decode('utf-8', 'replace')
+            lineas = str(a.get('lineas') or '').strip()
+            filas = texto.splitlines()
+            total = len(filas)
+            ini, fin = 1, total
+            if lineas:
+                m = re.match(r'^(\d*)\s*-\s*(\d*)$', lineas)
+                if not m:
+                    return 'ERROR: lineas debe ser "desde-hasta", ej "1-200" o "300-"'
+                ini = int(m.group(1)) if m.group(1) else 1
                 fin = int(m.group(2)) if m.group(2) else total
-                trozo = '\n'.join(texto.splitlines()[max(0, ini):fin])
-                return ('(lineas %s de %d totales)\n' % (lineas, total)) + trozo[:12000]
-            return 'ERROR: lineas debe ser "desde-hasta", ej "1-200" o "300-"'
-        if total > 300:
-            return ('(archivo de %d lineas; mostrando las primeras; pide un rango con "lineas", ej "200-400")\n' % total) + texto[:12000]
-        return texto[:12000]
+                if ini < 1 or (total and (fin < ini or ini > total)):
+                    return 'ERROR: rango de lineas fuera del archivo (%d lineas)' % total
+                fin = min(fin, total)
+            elif len(texto) <= 12000:
+                return texto
+            else:
+                fin, tam = 0, 0
+                for fila in filas:
+                    if fin and tam + len(fila) + 1 > 12000:
+                        break
+                    fin += 1
+                    tam += len(fila) + 1
+            real = '%d-%d' % (ini, fin) if total else 'ninguna'
+            trozo = '\n'.join(filas[ini - 1:fin])
+            aviso = '\nCONTINUA_DESDE_LINEA=%d' % (fin + 1) if fin < total else ''
+            return '(lineas solicitadas %s; entregadas %s de %d totales)\n%s%s' % (lineas or 'automatico', real, total, trozo, aviso)
     return str(d)[:3000]
 
 
