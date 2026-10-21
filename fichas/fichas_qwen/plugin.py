@@ -831,6 +831,7 @@ def _fast_consult_cfg(ficha: dict[str, Any]) -> dict[str, Any]:
 def _fast_consult_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], nodos: dict[str, Any]) -> bool:
     # Ficha 2/3: SOLO consulta (sin ordenar nada) -> Ask Consil (4 opiniones en paralelo) + 1 decision; sin tools, revisores ni loops
     if opts.get('thinking_mode') in (True, 'on'): return False
+    if len(str(mensaje or '')) > _fast_cfg(ficha)['context_chars']: return False  # no truncado silencioso en consulta rapida
     if not _fast_consult_cfg(ficha)['enabled'] or not all(k in nodos for k in ('N1', 'N2', 'N3', 'N3B')):
         return False
     if 'N3D' not in nodos and 'N4' not in nodos:
@@ -941,6 +942,8 @@ def _fast_qa(ficha: dict[str, Any], mensaje: str, elegido: str, pid: str, opts: 
     # FAST_QA unico para las 4 fichas: UNA llamada, sin DAG, sin tools, sin anexo de memoria, sin formato largo
     fc = _fast_cfg(ficha)
     fid = str(ficha.get('ficha') or '')
+    if len(str(mensaje or '')) > fc['context_chars']:
+        return 'GAP_FAST_INPUT_TOO_LARGE: continuar por flujo completo sin recortar el input', []
     if fid.startswith('ficha2') or fid.startswith('ficha3'):
         # Ask consil (equipo fijo): SIEMPRE el fast_model de su ficha; el selector de Team qwen no aplica aqui
         modelo = str(ficha.get('fast_model') or 'ficha-qwen38max')
@@ -951,7 +954,7 @@ def _fast_qa(ficha: dict[str, Any], mensaje: str, elegido: str, pid: str, opts: 
     nl = chr(10)
     prompt = ('MODO RESPUESTA RAPIDA.' + nl + 'Responde directamente a la pregunta.' + nl + 'No uses herramientas.' + nl + 'No ejecutes cambios.' + nl +
               'No hagas plan, DAG, checklist ni diagrama salvo que el usuario lo pida.' + nl + 'No abras otra ronda.' + nl +
-              'Responde claro y completo con la menor latencia posible.' + nl * 2 + 'PREGUNTA:' + nl + str(mensaje or '')[:fc['context_chars']] + _hb(opts, nl))
+              'Responde claro y completo con la menor latencia posible.' + nl * 2 + 'PREGUNTA:' + nl + str(mensaje or '') + _hb(opts, nl))
     n = {'id': 'FAST', 'modelo': modelo, 'timeout_s': fc['timeout_s'], 'max_output_tokens': fc['max_output_tokens'], 'requiere_tools': False, 'escribe': False}
     opts.setdefault('metricas', {})  # la copia comparte estos dicts: asi las metricas de la llamada no se pierden
     opts.setdefault('tiempos', {})
