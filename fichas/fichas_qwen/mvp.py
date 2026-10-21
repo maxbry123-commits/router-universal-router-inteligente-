@@ -156,6 +156,10 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
             return {'model': elegido, 'error': _tmr['error'], 'detalle': str(_tmr.get('detalle') or '')[:200]}
         if _tmr.get('extra') is not None:
             ex_llm = _tmr['extra']
+    if not simple and str(elegido).startswith('ficha-qwen'):  # P3: con tools la regla de perfiles.py gana sobre modo/thinking_mode
+        ex_llm = {'enable_thinking': False, 'parallel_tool_calls': False}
+    elif not simple and elegido == 'ficha-glm52':
+        ex_llm = dict(ex_llm or {}, tool_stream=True)
     r = pc._chat({'model': qw, 'messages': conv, 'max_tokens': mt, 'sesion': ses,
                   'presupuesto_s': _TIMEOUT_SIMPLE_S if simple else _TIMEOUT_S, 'directo': simple, 'solo_lectura': solo_lectura, 'requiere_tools': requiere, 'tools_habilitadas': cap != 'none', 'cap_tools': cap,  # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'rondas_tools_max': 3,  # MVP: modelo->tool->modelo->tool->modelo->respuesta, sin 6 vueltas automaticas
