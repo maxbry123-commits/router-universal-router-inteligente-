@@ -6,10 +6,6 @@ Ahora solo queda la hidratacion del banco de claves para el Space permanente:
 `python riu_kernel.py` -> pone los secretos del banco en el entorno del proceso.
 """
 import os,json,io,tarfile,pathlib,sys,base64,gzip,urllib.request
-from huggingface_hub import HfFileSystem
-NS="COMAND-CENTER-1"
-BASE="buckets/"+NS+"/yaiwes-memoria-storage/router-inteligente-universal"
-def fs(): return HfFileSystem(token=os.environ["HF_TOKEN"],skip_instance_cache=True)
 def _hf_token_vivo(v):
     # el nombre de la credencial no manda: se prueba cada token habilitado del provider huggingface contra whoami-v2 y
     # gana el primero que responda 200; si ninguno vale, fail-closed (nunca se imprime el token)
@@ -26,8 +22,13 @@ def hydrate():
     sys.path.insert(0,str(pathlib.Path.cwd()/"Banco de claves"))
 
     from secret_bank.vault import Vault
-    p=pathlib.Path("/tmp/kernel-vault.db")
-    p.write_bytes(gzip.decompress(base64.b64decode(fs().cat_file(BASE+"/banco/vault.db.gz.b64"))))
+    try:  # vault local existente, solo lectura (sin escribir, mover ni migrar); si no existe, mandan los secrets del Space
+        p=pathlib.Path(os.environ.get("RIU_VAULT_PATH","/data/riu_vault.db"))
+        if not (p.is_file() and os.access(str(p),os.R_OK)):
+            return
+    except Exception as e:
+        print('VAULT_FALLO tipo='+type(e).__name__,flush=True)
+        return
     v=Vault(p).unlock(os.environ["RIU_VAULT_PASSPHRASE"])
     os.environ["HF_TOKEN"]=_hf_token_vivo(v)  # sin hardcode: la primera credencial habilitada de huggingface que valide 200
     os.environ["GITHUB_PERSONAL_ACCESS_TOKEN"]=v.get_secret("github/director-full")
