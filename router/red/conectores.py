@@ -93,9 +93,12 @@ class ConectorGitHub:
     token_env: str = "GITHUB_TOKEN"
 
     def _api(self) -> ConectorHTTP:
+        # token: os.getenv('GITHUB_TOKEN') or os.getenv('GITHUB_PERSONAL_ACCESS_TOKEN') (solo el nombre de la variable viaja)
+        var = self.token_env if os.getenv(self.token_env) else (
+            "GITHUB_TOKEN" if os.getenv("GITHUB_TOKEN") else "GITHUB_PERSONAL_ACCESS_TOKEN")
         return ConectorHTTP(
             self.conector_id, "https://api.github.com",
-            headers_env={"Authorization": self.token_env})
+            headers_env={"Authorization": var})
 
     async def enviar(self, payload: dict) -> dict:
         accion = payload.get("_accion", "get_file")
