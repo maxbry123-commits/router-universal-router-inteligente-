@@ -80,7 +80,7 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
                 return {'model': elegido, 'error': 'GAP TOKEN_PLAN_NO_CONFIGURADO',
                         'detalle': 'base_url_ok=' + str('token-plan' in _u) + ' key_type_ok=' + str(str(_k).startswith('sk-sp'))}
         except Exception as x:  # noqa: BLE001
-            return {'model': elegido, 'error': 'GAP TOKEN_PLAN_NO_CONFIGURADO', 'detalle': str(x)[:150]}
+            return {'model': elegido, 'error': 'GAP TOKEN_PLAN_NO_CONFIGURADO', 'detalle': type(x).__name__}
     conv = _mensajes(p, mensaje)
     # >>> MODOS BEGIN  (punto E: system_block del modo va antes que todo, como mensaje system)
     _modo = p.get('_modo')
