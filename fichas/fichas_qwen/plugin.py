@@ -1100,6 +1100,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         cap_nodo = 'read'  # jamas WRITE sin el flag de escritura aprobada
     if cap_nodo in ('read', 'write') and opts.get('fid') == 'ficha1-modelos':
         requiere_tools = True  # consulta externa de Ficha 1: al menos una tool debe ejecutarse (evidencia)
+    if isinstance(_nc, dict):  # FIX GAP-02: el reintento forzar_tool de _correr usa el requiere_tools calculado aqui (selector 1)
+        _nc['requiere_tools_calc'] = bool(requiere_tools)
     if fast:
         perfil = 'fast'
     elif (n.get('id') in ('N6', 'N7', 'N8') or str(n.get('id')).startswith('V')) and not escribe:
@@ -1920,7 +1922,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                     r = _llamar_harness(mod, prompt, ficha, n, opts)
                 except RuntimeError as _e1:
                     # GAP HERRAMIENTA_NO_EJECUTADA: el modelo respondio texto sin emitir la tool exigida — un reintento con forzar_tool (required) antes de rendirse
-                    if 'HERRAMIENTA_NO_EJECUTADA' in str(_e1) and (n.get('requiere_tools') or opts.get('muta')) and time.monotonic() < _nc0['deadline'] - 20:
+                    if 'HERRAMIENTA_NO_EJECUTADA' in str(_e1) and (n.get('requiere_tools') or opts.get('muta') or _nc0.get('requiere_tools_calc')) and time.monotonic() < _nc0['deadline'] - 20:
                         _gap_no_tool = True
                         r = 'GAP HERRAMIENTA_NO_EJECUTADA'
                     else:
