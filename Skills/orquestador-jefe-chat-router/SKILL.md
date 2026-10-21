@@ -831,3 +831,9 @@ Luego sol revisa los commint
 A Sol se le pasa la validación de commit de Sheriff, Guardián y Centinela 1 a 1 (salida cruda y diff contra el padre), con la arquitectura y la ley inmutable; Sol 1 revisa el commit de HF y Sol 2 el de GitHub. Si Sol encuentra gap, Refactoría repara y se repite la validación.
 7. El supervisor confirma DENTRO. Salidas 1 a 1 + arquitectura + ley inmutable al Sol anclado "Sol Grok bot", que hace la prueba.
 8. Si la prueba falla, se repite desde el paso 1.
+
+CUARTA PARTE: después de que Sol revisa (t424–t425, confirmado por Antonio: "Exacto anota")
+1. Si Sol encuentra un gap: Refactoría repara, los 3 (Sheriff, Guardián, Centinela) validan otra vez y Sol revisa de nuevo.
+2. Si Sol confirma: el Sol anclado "Sol Grok bot" hace la prueba del chat y el backend.
+3. Si la prueba falla: se repite el plan B desde la PRIMERA PARTE (investigar), sin Claude.
+4. Si la prueba pasa: se sigue con Sol en las tareas pendientes del chat frontend y backend.
