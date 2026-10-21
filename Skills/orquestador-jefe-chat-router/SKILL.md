@@ -151,3 +151,8 @@ Reglas:
 - 4 REFACTORÍA REPARADOR: solo se manda si hay GAPS confirmados. Parche mínimo, nuevo commit, y se repiten 1+2+3 hasta cierre verificado.
 - Salida: checklist Markdown con porcentaje, evidencia ARCHIVO:LÍNEA + URL y veredicto.
 - Tras comprobar los cambios con Sol 1 (HF) y Sol 2 (GitHub), seguir con Sol en las tareas pendientes del chat frontend y backend.
+
+## [t378–t382] Reglas de delegación y supervisión
+- Un agente separado por tarea: un agente para los cambios en GitHub y otro distinto para los cambios en Hugging Face.
+- Nunca descargar ni clonar el repo en la computadora. El destino es GitHub, y se lee y cambia directo por API o conector. HF también se toca solo por API.
+- El agente "Supervisor Sheriff-Guardián-Centinela" tiene una sola función: validar que Code no haga nada fuera de las instrucciones de Antonio.
