@@ -70,6 +70,8 @@ class ConectorMCP:
                    if self.token_env in os.environ else {})
         async with httpx.AsyncClient(timeout=60) as cli:
             r = await cli.post(self.endpoint, json=rpc, headers=headers)
+            if r.status_code >= 400:
+                return {"status": "FAIL", "error": f"http_{r.status_code}"}
             data = r.json()
         if "error" in data:
             return {"status": "FAIL", "error": data["error"]}
