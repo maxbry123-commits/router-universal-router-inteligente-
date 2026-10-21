@@ -890,6 +890,18 @@ def componentes_backend(a):
     return github_leer({'repo': 'router-universal-router-inteligente-', 'ruta': base + ('/' + ruta if ruta and comp else ''), 'rama': 'reorganizacion', 'lineas': a.get('lineas')})
 
 
+def github_salud(a=None):
+    # Chequeo de salud de GitHub: autenticacion y permiso push sobre el repo, sin devolver el token
+    repo = _resolver_repo((a or {}).get('repo') or 'router-universal-router-inteligente-')
+    t = _token_gh(repo, True)
+    if not t:
+        return {'authenticated': False, 'push': False, 'http': 0}
+    s, d = _peticion('GET', 'https://api.github.com/repos/%s/%s' % (OWNER, repo), t, espera=20,
+                     extra={'Accept': 'application/vnd.github+json'})
+    push = bool(s == 200 and isinstance(d, dict) and (d.get('permissions') or {}).get('push'))
+    return {'authenticated': s == 200, 'push': push, 'http': s}
+
+
 def http_accion(action, p):
     # HTTP /plugins/puente_chat/call/<action> (mismo plugin del chat): notas, pendientes, room_debatir, chat_bots
     p = dict(p or {})
@@ -901,6 +913,8 @@ def http_accion(action, p):
         return room_debatir(dict(p, asincrono=True)) if p.get('accion') != 'trabajo' else _TRABAJOS.get(str(p.get('trabajo') or ''), {'error': 'TRABAJO_NO_EXISTE'})
     if action == 'chat_bots':
         return chat_bots(p)
+    if action == 'github_salud':
+        return github_salud(p)
     return {'error': 'ACCION_DESCONOCIDA'}
 
 
