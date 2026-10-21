@@ -2,7 +2,7 @@
   "plugin_host": {
     "schema": "plugin_host/v1",
     "id": "router_api",
-    "enabled_default": false,
+    "enabled_default": true,
     "health_action": "status",
     "nota_roja": "puerta HTTP del edificio 1 (memoria, providers, vault) para plugins; sin logica propia"
   },
