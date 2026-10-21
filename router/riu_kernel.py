@@ -27,10 +27,10 @@ def hydrate():
         if not (p.is_file() and os.access(str(p),os.R_OK)):
             print('VAULT_AUSENTE',flush=True)
             return
+        v=Vault(p).unlock(os.environ["RIU_VAULT_PASSPHRASE"])
     except Exception as e:
         print('VAULT_FALLO tipo='+type(e).__name__,flush=True)
         return
-    v=Vault(p).unlock(os.environ["RIU_VAULT_PASSPHRASE"])
     os.environ["HF_TOKEN"]=_hf_token_vivo(v)  # sin hardcode: la primera credencial habilitada de huggingface que valide 200
     os.environ["GITHUB_PERSONAL_ACCESS_TOKEN"]=v.get_secret("github/director-full")
     os.environ["RIU_ROUTER_API_KEY"]=v.get_secret("router/runtime-admin-32gb")
