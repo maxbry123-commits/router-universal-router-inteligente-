@@ -102,9 +102,10 @@ class ConectorGitHub:
 
     async def enviar(self, payload: dict) -> dict:
         accion = payload.get("_accion", "get_file")
+        ref = payload.get("ref", "reorganizacion")
         rutas = {
             "get_file": ("GET", f"/repos/{self.repo}/contents/"
-                                f"{payload.get('path','')}"),
+                                f"{payload.get('path','')}?ref={ref}"),
             "create_issue": ("POST", f"/repos/{self.repo}/issues"),
             "create_pr": ("POST", f"/repos/{self.repo}/pulls"),
             "dispatch": ("POST", f"/repos/{self.repo}/actions/workflows/"
@@ -114,6 +115,9 @@ class ConectorGitHub:
         }
         metodo, ruta = rutas.get(accion, rutas["get_file"])
         body = {k: v for k, v in payload.items() if not k.startswith("_")}
+        if accion == "commit_file":
+            body.pop("ref", None)
+            body.setdefault("branch", ref)
         return await self._api().enviar(
             {**body, "_ruta": ruta, "_metodo": metodo})
 
