@@ -8,6 +8,7 @@ pero por HTTPS dentro del Space — sin Vercel ni servicio nuevo.
 from __future__ import annotations
 
 import importlib.util
+import asyncio
 import json
 import os
 
@@ -43,7 +44,7 @@ def build_mcp_router() -> APIRouter:
                                  'error': {'code': -32700, 'message': 'JSON invalido'}}, status_code=400)
         mod = _mod()
         reqs = cuerpo if isinstance(cuerpo, list) else [cuerpo]
-        respuestas = [r2 for r2 in (mod.procesar_peticion(req) for req in reqs) if r2 is not None]
+        respuestas = await asyncio.to_thread(lambda: [r2 for r2 in (mod.procesar_peticion(req) for req in reqs) if r2 is not None])
         if not respuestas:
             return JSONResponse(None, status_code=202)  # solo notificaciones
         return JSONResponse(respuestas if isinstance(cuerpo, list) else respuestas[0],
