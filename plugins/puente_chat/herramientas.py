@@ -98,7 +98,7 @@ def _token_gh(repo='', escritura=False):
     if c and time.time() - c[1] < 600:
         return c[0]
     reserva = ''
-    for k in _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN']):
+    for k in _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN', 'GITHUB_TOKEN']):
         if repo:
             s, d = _peticion('GET', 'https://api.github.com/repos/%s/%s' % (OWNER, repo), k, espera=20,
                              extra={'Accept': 'application/vnd.github+json'})
@@ -193,7 +193,7 @@ def _gh(metodo, ruta, cuerpo=None):
     # Escritura: probar las claves del banco hasta que una tenga permiso real de commit.
     # Las PAT finas de solo lectura devuelven 403/404 aunque el repo exista y el usuario tenga push.
     ultimo = (0, 'ERROR: no hay token de GitHub valido en el banco')
-    for k in _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN']):
+    for k in _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN', 'GITHUB_TOKEN']):
         s, d = _peticion(metodo, 'https://api.github.com' + ruta, k, cuerpo, 40,
                           {'Accept': 'application/vnd.github+json'})
         if s == 401:
@@ -223,7 +223,7 @@ def _resolver_repo(nombre):
     c = _cache.get(ck)
     if c and time.time() - c[1] < 600:
         return c[0]
-    claves = _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN'])
+    claves = _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN', 'GITHUB_TOKEN'])
     for k in claves:
         s, _ = _peticion('GET', 'https://api.github.com/repos/%s/%s' % (OWNER, urllib.parse.quote(nom, safe='')),
                          k, espera=15, extra={'Accept': 'application/vnd.github+json'})
