@@ -39,8 +39,8 @@ class ChatAccess:
                 try:
                     import anyio.to_thread
                     anyio.to_thread.current_default_thread_limiter().total_tokens=100
-                except Exception:
-                    pass
+                except Exception as exc:
+                    print("ANYIO_HILOS_FALLO tipo=%s" % type(exc).__name__, flush=True)
             if _limitado(scope):
                 body=json.dumps({"status":"error","reason":"RATE_LIMIT","detail":"Demasiados envios seguidos; espera un momento"}).encode()
                 await send({"type":"http.response.start","status":429,"headers":[(b"content-type",b"application/json"),(b"retry-after",b"30")]})
@@ -64,5 +64,5 @@ app.add_middleware(ChatAccess)
 try:
     from autopull import start as _autopull_start
     _autopull_start()
-except Exception:
-    pass
+except Exception as exc:
+    print("AUTOPULL_START_FALLO tipo=%s" % type(exc).__name__, flush=True)
