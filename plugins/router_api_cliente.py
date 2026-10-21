@@ -39,8 +39,8 @@ def llamar(plugin: str, accion: str, payload: dict | None = None, timeout: float
     return {"error": str((out or {}).get("reason") or "fallo"), "status": str((out or {}).get("status") or "degraded")}
 
 
-def _api(accion: str, payload: dict) -> dict:
-    r = llamar("router_api", accion, payload)
+def _api(accion: str, payload: dict, timeout: float = 120.0) -> dict:
+    r = llamar("router_api", accion, payload, timeout)
     if not isinstance(r, dict) or r.get("status") != "ok":
         raise RuntimeError("router_api.%s: %s" % (accion, (r or {}).get("error") or (r or {}).get("reason") or "fallo"))
     return r
@@ -106,4 +106,4 @@ def provider_keys(proveedor: str) -> list:
 
 
 def chat(proveedor: str, modelo: str, mensajes: list, max_tokens: int, tope: int) -> dict:
-    return _api("chat", {"proveedor": proveedor, "modelo": modelo, "mensajes": mensajes, "max_tokens": max_tokens, "tope": tope})["respuesta"]
+    return _api("chat", {"proveedor": proveedor, "modelo": modelo, "mensajes": mensajes, "max_tokens": max_tokens, "tope": tope}, timeout=max(120.0, float(tope) + 15))["respuesta"]
