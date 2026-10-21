@@ -34,10 +34,22 @@ def hydrate():
     except Exception as e:
         print('VAULT_FALLO tipo='+type(e).__name__,flush=True)
         return
-    os.environ["HF_TOKEN"]=_hf_token_vivo(v)  # sin hardcode: la primera credencial habilitada de huggingface que valide 200
-    os.environ["GITHUB_PERSONAL_ACCESS_TOKEN"]=v.get_secret("github/director-full")
-    os.environ["RIU_ROUTER_API_KEY"]=v.get_secret("router/runtime-admin-32gb")
-    os.environ["RIU_DIRECTOR_KEY_HASH"]=v.get_secret("router/runtime-director-hash")
+    try:
+        os.environ["HF_TOKEN"]=_hf_token_vivo(v)  # sin hardcode: la primera credencial habilitada de huggingface que valide 200
+    except Exception as e:
+        print('VAULT_SECRETO_FALLO ref=huggingface tipo='+type(e).__name__,flush=True)
+    try:
+        os.environ["GITHUB_PERSONAL_ACCESS_TOKEN"]=v.get_secret("github/director-full")
+    except Exception as e:
+        print('VAULT_SECRETO_FALLO ref=github/director-full tipo='+type(e).__name__,flush=True)
+    try:
+        os.environ["RIU_ROUTER_API_KEY"]=v.get_secret("router/runtime-admin-32gb")
+    except Exception as e:
+        print('VAULT_SECRETO_FALLO ref=router/runtime-admin-32gb tipo='+type(e).__name__,flush=True)
+    try:
+        os.environ["RIU_DIRECTOR_KEY_HASH"]=v.get_secret("router/runtime-director-hash")
+    except Exception as e:
+        print('VAULT_SECRETO_FALLO ref=router/runtime-director-hash tipo='+type(e).__name__,flush=True)
     keys={}
     for r in v.list():
         if r["enabled"] and r["provider"]=="router" and "hash" not in r["account"]:
@@ -45,7 +57,10 @@ def hydrate():
             except Exception:pass
     os.environ["RIU_AGENT_API_KEYS"]=json.dumps(keys)
     os.environ["RIU_AGENT_API_KEYS_2"]="{}"
-    os.environ["RIU_PUBLIC_CHAT_KEY"]=v.get_secret("router/chat-ui-director")
+    try:
+        os.environ["RIU_PUBLIC_CHAT_KEY"]=v.get_secret("router/chat-ui-director")
+    except Exception as e:
+        print('VAULT_SECRETO_FALLO ref=router/chat-ui-director tipo='+type(e).__name__,flush=True)
 if __name__=="__main__":
     hydrate()
     print(json.dumps({"status":"HYDRATED","nota":"sin Jobs: bootstrap solo, el proceso padre lanza uvicorn"}),flush=True)
