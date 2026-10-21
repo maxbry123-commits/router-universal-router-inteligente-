@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from .router import _auth, get_store
 
 ROOT = Path(__file__).resolve().parents[3]
-PACKAGE_DIR = ROOT / "chat router" / "04-MEMORIA" / "memoria_yaiwes"
+PACKAGE_DIR = ROOT / "plugins" / "memoria" / "memoria_yaiwes"
 _facade: Any = None
 _store_id: int | None = None
 
