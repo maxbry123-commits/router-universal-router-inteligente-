@@ -294,19 +294,19 @@ def github_leer(a):
                 if ini < 1 or (total and (fin < ini or ini > total)):
                     return 'ERROR: rango de lineas fuera del archivo (%d lineas)' % total
                 fin = min(fin, total)
-            elif len(texto) <= 12000:
+            elif len(texto) <= 6000:
                 return texto
             else:
                 fin, tam = 0, 0
                 for fila in filas:
-                    if fin and tam + len(fila) + 1 > 12000:
+                    if fin and tam + len(fila) + 1 > 6000:
                         break
                     fin += 1
                     tam += len(fila) + 1
             real = '%d-%d' % (ini, fin) if total else 'ninguna'
             trozo = '\n'.join(filas[ini - 1:fin])
-            aviso = '\nCONTINUA_DESDE_LINEA=%d' % (fin + 1) if fin < total else ''
-            return '(lineas solicitadas %s; entregadas %s de %d totales)\n%s%s' % (lineas or 'automatico', real, total, trozo, aviso)
+            aviso = ' CONTINUA_DESDE_LINEA=%d' % (fin + 1) if fin < total else ''
+            return '(lineas solicitadas %s; entregadas %s de %d totales)%s\n%s' % (lineas or 'automatico', real, total, aviso, trozo)
     return str(d)[:3000]
 
 
