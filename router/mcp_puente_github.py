@@ -93,7 +93,7 @@ def _peticion(metodo, url, cuerpo=None, espera=40):
 
 def github_leer(a):
     repo, ruta = a.get('repo'), a.get('ruta') or ''
-    rama = a.get('rama') or 'main'
+    rama = a.get('rama') or os.environ.get('RIU_GH_RAMA', 'reorganizacion')
     lineas = a.get('lineas')
     if not ruta:
         ruta = ''
@@ -125,7 +125,7 @@ def github_leer(a):
 def github_escribir(a):
     repo, ruta = a.get('repo'), a.get('ruta')
     contenido, mensaje = a.get('contenido'), a.get('mensaje') or 'mcp puente: update'
-    rama = a.get('rama') or 'main'
+    rama = a.get('rama') or os.environ.get('RIU_GH_RAMA', 'reorganizacion')
     q = urllib.parse.quote(str(ruta).strip('/'), safe='')
     base = '%s/repos/%s/%s/contents/%s' % (API, OWNER, repo, q)
     st, prev = _peticion('GET', base + '?ref=' + urllib.parse.quote(rama))
