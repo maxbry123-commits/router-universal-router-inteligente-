@@ -796,6 +796,7 @@ def _fast_cfg(ficha: dict[str, Any]) -> dict[str, Any]:
 
 def _fast_chat_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], nodos: dict[str, Any]) -> bool:
     # FAST_GATE determinista (0 LLM): pregunta simple de Ficha 1/4 (un solo N4) -> una sola llamada al modelo elegido, sin tools, sin anexos, sin formato
+    if opts.get('thinking_mode') in (True, 'on'): return False  # Think explicito nunca entra al limite FAST de 500 tokens
     if not _fast_cfg(ficha)['enabled'] or len(nodos) != 1 or 'N4' not in nodos:
         return False
     if str(opts.get('cap_in') or 'none') != 'none':
@@ -811,6 +812,7 @@ def _fast_chat_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], nod
 
 def _fast_llm_ok(p: dict[str, Any], ficha: dict[str, Any]) -> bool:
     c = _fast_cfg(ficha)
+    if p.get('thinking_mode') in (True, 'on'): return False
     if not c['enabled']:
         return False
     caller = str(p.get('caller_id') or '').lower()
@@ -828,6 +830,7 @@ def _fast_consult_cfg(ficha: dict[str, Any]) -> dict[str, Any]:
 
 def _fast_consult_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], nodos: dict[str, Any]) -> bool:
     # Ficha 2/3: SOLO consulta (sin ordenar nada) -> Ask Consil (4 opiniones en paralelo) + 1 decision; sin tools, revisores ni loops
+    if opts.get('thinking_mode') in (True, 'on'): return False
     if not _fast_consult_cfg(ficha)['enabled'] or not all(k in nodos for k in ('N1', 'N2', 'N3', 'N3B')):
         return False
     if 'N3D' not in nodos and 'N4' not in nodos:
@@ -849,6 +852,7 @@ _FAST_REPLY_BLOCK = re.compile(r'(?i)\b(code|c[oó]digo|programa|programar|arqui
 
 def _fast_button_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any]) -> bool:
     # boton ⚡ Respuesta rapida: el backend VUELVE a validar (0 LLM, 0 tokens); el frontend solo lo solicita
+    if opts.get('thinking_mode') in (True, 'on'): return False
     if not bool(opts.get('fast_reply')):
         return False
     fc = _fast_cfg(ficha)
@@ -874,6 +878,7 @@ def _fast_multi_qa_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any],
     # FAST_QA para Ficha 2/3 (DAG multi-nodo): SOLO input trivial -> una llamada al fast_model del JSON, sin entrar al DAG.
     # Reutiliza las mismas compuertas que _fast_chat_ok (cap/flags/anclas/task_type/formato) menos la de un solo N4.
     fid = str(ficha.get('ficha') or '')
+    if opts.get('thinking_mode') in (True, 'on'): return False
     if not (fid.startswith('ficha2') or fid.startswith('ficha3')):
         return False
     fc = _fast_cfg(ficha)
