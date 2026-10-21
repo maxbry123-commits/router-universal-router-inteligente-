@@ -169,9 +169,9 @@ Reglas:
   Siempre con la arquitectura YAIWES completa (t347).
 
 ## [t397–t413] Plan B: el ciclo que se hizo (HF y GitHub, 02:27–04:36) y se repite si falla la prueba. Sin Claude (t398)
-1. Investigar: el mismo prompt de investigación (problema + salida cruda) a Sol, a la investigación profunda de ChatGPT y a Grok, cada uno en su chat.
-2. Repetir la investigación dándoles la arquitectura YAIWES completa + ley inmutable (t347).
-3. Proponer el mínimo viable y mandarlo a validar a los 3 (Sol, Grok, investigación profunda).
+1. Investigar (t326): un prompt con el problema, el HISTORIAL de lo intentado, la salida cruda 1 a 1 y el código actual, y la pregunta "causa raíz y vía más rápida, refuta 3 veces, escenarios y qué hacer según cada salida". Va a Sol (chat nuevo), a la investigación profunda de ChatGPT (1 a 3 chats) y a Grok (planeta123usa), cada uno por separado.
+2. Seguimiento con arquitectura (t347): a los 3 se les da la arquitectura YAIWES completa ("nada fuera de ella es viable") + la intro fija (t318): "Dame la vía más corta y rápida de solucionarlo sin romper la arquitectura. Analiza y refuta 3 veces antes de decidir. Dame una cadena de prompts separados para solucionar el gap, con los escenarios posibles y qué hacer según la salida que buscas. Valida si es la ruta más rápida y si podemos cerrar todo de una vez, sin sobreingeniería. Entrega los DSL DAG schema por separado y las instrucciones exactas para ejecutar."
+3. Validar el mínimo: REGLA DE SEGURIDAD (ley inmutable t353) + ARQUITECTURA + PROBLEMA ACTUAL + PROPUESTA A VALIDAR + la intro fija, a los 3 (Sol, Grok, investigación profunda).
 4. Consolidar en un documento: en qué coinciden, en qué difieren, propuesta más corta dentro de la regla, lista de tareas.
 5. DSL DAG con la plantilla `<execution_contract>`, refutado 3 veces, a un agente separado por tarea (uno GitHub, otro HF), solo por API.
 6. Sheriff, Guardián y Centinela validan por separado, con validación de commit contra el padre. Si hay gap, Refactoría repara y los 3 validan otra vez.
