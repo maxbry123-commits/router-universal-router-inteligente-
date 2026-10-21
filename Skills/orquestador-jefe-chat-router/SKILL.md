@@ -156,3 +156,14 @@ Reglas:
 - Un agente separado por tarea: un agente para los cambios en GitHub y otro distinto para los cambios en Hugging Face.
 - Nunca descargar ni clonar el repo en la computadora. El destino es GitHub, y se lee y cambia directo por API o conector. HF también se toca solo por API.
 - El agente "Supervisor Sheriff-Guardián-Centinela" tiene una sola función: validar que Code no haga nada fuera de las instrucciones de Antonio.
+
+## [t396–t398] Pruebas con Sol y ciclo sin Claude
+- t396: "Sigue con que sol el que trabaja en el chat y backen haga la prueba". La prueba la hace el Sol anclado "Sol Grok bot", el que trabaja en el chat y el backend. No se abren chats nuevos para la prueba.
+- t397: "Si no funciona repites el ciclo de plan B". Si la prueba falla, Code (no Sol) repite el ciclo de investigación [t326].
+- t398: "Investigación y todo el ciclo sin Claude". El ciclo [t326] corre sin Claude:
+  1. Chat nuevo con Sol, con el historial y los problemas.
+  2. De 1 a 3 chats de investigación profunda.
+  3. Grok (planeta123usa).
+  4. Consolidar sin repetir y elegir ruta y cadena de prompts.
+  5. Repetir hasta resolver.
+  Siempre con la arquitectura YAIWES completa (t347).
