@@ -2,6 +2,7 @@
 # Las claves salen del banco del Router y nunca se devuelven al modelo.
 import base64
 import json
+import logging
 import os
 import re
 import time
@@ -13,8 +14,9 @@ OWNER = 'maxbry123-commits'
 NS = 'COMAND-CENTER-1'
 BUCKET = NS + '/yaiwes-memoria-storage'
 _cache = {}
+_log = logging.getLogger(__name__)
 SISTEMA = ('Tienes herramientas reales: GitHub (cuenta maxbry123-commits) y Hugging Face (cuenta COMAND-CENTER-1). '
-           'El repo principal es router-universal-router-inteligente- (lleva guion al final) en la rama main. '
+           'El repo principal es router-universal-router-inteligente- (lleva guion al final) en la rama reorganizacion. '
            'Cuando te pidan leer, buscar, crear o cambiar archivos, repositorios, jobs o modelos, usa las herramientas en lugar de decir que no puedes. '
            'Nunca muestres claves ni tokens. Responde en espanol.')
 S = {'type': 'string'}
@@ -65,7 +67,9 @@ def _llaves(proveedor, env):
     try:
         from plugins import router_api_cliente as vault_hook
         base = list(vault_hook.provider_keys(proveedor))
-    except Exception:
+    except Exception as exc:
+        if proveedor == 'github':
+            _log.warning('GITHUB_PUENTE_HTTP_FALLO tipo=%s', type(exc).__name__)
         base = []
     if proveedor == 'github':
         try:
@@ -81,6 +85,8 @@ def _llaves(proveedor, env):
     for k in base:
         if k and k not in vistos:
             vistos.append(k)
+    if proveedor == 'github' and not vistos:
+        _log.warning('GITHUB_SIN_CANDIDATOS')
     return vistos
 
 
@@ -96,6 +102,10 @@ def _token_gh(repo='', escritura=False):
         if repo:
             s, d = _peticion('GET', 'https://api.github.com/repos/%s/%s' % (OWNER, repo), k, espera=20,
                              extra={'Accept': 'application/vnd.github+json'})
+            if s == 401:
+                _log.warning('GITHUB_TOKEN_INVALIDO HTTP=401')
+            elif s in (403, 404):
+                _log.warning('GITHUB_ACCESO_REPO_DENEGADO HTTP=%d', s)
             if s in (0, 500, 502, 503, 504):
                 # fallo transitorio de GitHub: la clave puede valer; queda de reserva
                 s2, _ = _peticion('GET', 'https://api.github.com/user', k, espera=20,
@@ -106,10 +116,15 @@ def _token_gh(repo='', escritura=False):
             if s != 200 or not isinstance(d, dict):
                 continue
             if escritura and not (d.get('permissions') or {}).get('push'):
+                _log.warning('GITHUB_SIN_PERMISO_PUSH')
                 continue
         else:
             s, _ = _peticion('GET', 'https://api.github.com/user', k, espera=20,
                              extra={'Accept': 'application/vnd.github+json'})
+            if s == 401:
+                _log.warning('GITHUB_TOKEN_INVALIDO HTTP=401')
+            elif s in (403, 404):
+                _log.warning('GITHUB_ACCESO_DENEGADO HTTP=%d', s)
             if s != 200:
                 continue
         _cache[clave_cache] = (k, time.time())
@@ -180,7 +195,11 @@ def _gh(metodo, ruta, cuerpo=None):
     ultimo = (0, 'ERROR: no hay token de GitHub valido en el banco')
     for k in _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN']):
         s, d = _peticion(metodo, 'https://api.github.com' + ruta, k, cuerpo, 40,
-                         {'Accept': 'application/vnd.github+json'})
+                          {'Accept': 'application/vnd.github+json'})
+        if s == 401:
+            _log.warning('GITHUB_TOKEN_INVALIDO HTTP=401')
+        elif s in (403, 404):
+            _log.warning('GITHUB_ESCRITURA_DENEGADA HTTP=%d', s)
         if s in (401, 403, 404, 0, 500, 502, 503, 504):
             ultimo = (s, d)
             continue  # sin permiso o fallo transitorio: siguiente clave
@@ -254,7 +273,7 @@ def _texto(s, d, limite=12000):
 def github_leer(a):
     repo = a.get('repo') or 'router-universal-router-inteligente-'
     ruta = urllib.parse.quote(a.get('ruta', '') or '', safe='/')
-    rama = urllib.parse.quote(a.get('rama') or 'main', safe='')
+    rama = urllib.parse.quote(a.get('rama') or 'reorganizacion', safe='')
     s, d = _gh('GET', '/repos/%s/%s/contents/%s?ref=%s' % (OWNER, repo, ruta, rama))
     if isinstance(d, list):
         return json.dumps([x.get('name', '') + ('/' if x.get('type') == 'dir' else '') for x in d])[:12000]
@@ -283,7 +302,7 @@ MAX_ARCHIVO_CHARS = 500000  # >>> PARCHE_500K <<<
 
 def github_escribir(a):
     repo = a.get('repo') or 'router-universal-router-inteligente-'
-    rama = a.get('rama') or 'main'
+    rama = a.get('rama') or 'reorganizacion'
     base = '/repos/%s/%s/contents/%s' % (OWNER, repo, urllib.parse.quote(a.get('ruta', ''), safe='/'))
     s0, d0 = _gh('GET', base + '?ref=' + urllib.parse.quote(rama, safe=''))
     contenido = a.get('contenido') or ''  # >>> PARCHE_500K <<<
@@ -855,7 +874,7 @@ def componentes_backend(a):
     if '..' in ruta:
         return 'ERROR: ruta no permitida'
     base = _COMP_RAIZ + ('/' + comp + '/code' if comp else '')
-    return github_leer({'repo': 'router-universal-router-inteligente-', 'ruta': base + ('/' + ruta if ruta and comp else ''), 'rama': 'main', 'lineas': a.get('lineas')})
+    return github_leer({'repo': 'router-universal-router-inteligente-', 'ruta': base + ('/' + ruta if ruta and comp else ''), 'rama': 'reorganizacion', 'lineas': a.get('lineas')})
 
 
 def http_accion(action, p):

@@ -14,14 +14,14 @@ _SELLO = None
 
 
 def _banco_unico(provider: str) -> list[str]:
-    """Banco unico: plugins/fichas_qwen/sellos/proveedores.sello, abierto con FICHA_CLAVE_BANCO."""
+    """Banco unico: fichas/fichas_qwen/sellos/proveedores.sello, abierto con FICHA_CLAVE_BANCO."""
     global _SELLO
     if _SELLO is None:
         import hashlib, json, os
         from pathlib import Path
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
         clave = os.environ.get("FICHA_CLAVE_BANCO") or ""
-        f = Path(__file__).resolve().parents[2] / "plugins" / "fichas_qwen" / "sellos" / "proveedores.sello"
+        f = Path(__file__).resolve().parents[3] / "fichas" / "fichas_qwen" / "sellos" / "proveedores.sello"
         if not clave or not f.exists():
             return []
         b = f.read_bytes(); cab = b"FICHA-SELLO-1"; k = len(cab)
