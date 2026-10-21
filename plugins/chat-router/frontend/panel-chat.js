@@ -671,6 +671,7 @@ export async function mount(root, { api, tell }) {
         const rs = await Promise.allSettled(_multiSel.map((m, i) => window.RIU_HARNESS({
           model: 'qw-' + (m.modelo_id_slug || 'modelo'), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null,
           contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion + '-' + (m.modelo_id_slug || i), instrucciones_fijas: fijasQwen || undefined,
+          thinking_mode: modo === 'think' ? 'on' : 'off',
           mode_request: modeUI ? modeUI.getModeRequest() : undefined,
           qwen: { plugin: "fichas_qwen", ficha_qwen: "1", modelo: m.label || m.modelo_id_slug || "", task_type: "chat" }, avisar: () => {} })));
         const partes = rs.map((r, i) => {
@@ -682,7 +683,7 @@ export async function mount(root, { api, tell }) {
       const answer = window.RIU_CONFIG?.harnessUrl
         ? (_multiSel.length > 1
             ? await Promise.race([_fanout(), raceDetener])  // >>> MODOS <<< T6: misma tarea a cada modelo; un proceso por modelo en el backend
-            : await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, mode_request: modeUI ? modeUI.getModeRequest() : undefined,  // >>> MODOS <<<
+            : await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, thinking_mode: (fq || mvp) ? (modo === 'think' ? 'on' : 'off') : undefined, mode_request: modeUI ? modeUI.getModeRequest() : undefined,  // >>> MODOS <<<
         qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener]))
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);  // >>> MODOS <<< body ya lleva mode_request
       c.detenerFn = null;
