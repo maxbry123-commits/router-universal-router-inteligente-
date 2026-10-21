@@ -630,9 +630,9 @@ export async function mount(root, { api, tell }) {
       abajo(c);
       return;
     }
-    const ub = burbuja(message, "user");
+    const ub = burbuja(rawText, "user");
     c.hist.append(ub);
-    A.registrar(c.sesion, "user", message);
+    A.registrar(c.sesion, "user", rawText);
     input.value = "";
     c.ocupado = true; pintarTabs();
     const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta que el Router confirma proceso_id; luego riu-progreso pone Pensando/tools
@@ -652,13 +652,13 @@ export async function mount(root, { api, tell }) {
     const agent = (q("#agent") || {}).value || "";
     const provider = (q("#provider") || {}).value || "";
     const model = (q("#model") || {}).value || "";
-    const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[modo];
+    const max_tokens = { fast: 512, balanced: 4096, think: 8192 }[modo]; // por llamada, sujeto al tope real del proveedor
     try {
       const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2, 3 y 5 = Team 5 MVP)
       const fq = selAct === "team-qwen" ? "1" : selAct === "ask-consil-code-qwen-team" ? "2" : selAct === "ask-consil-fromtend-qwen-team" ? "3" : null;
       const soloLiteralQwen = fq === "2" || fq === "3";  // ficha 2/3: input verbatim del Director (sin envolver ni trim)
       const mvp = selAct === "team-5-mvp" ? { plugin: "fichas_qwen", ficha_qwen: "5", modelo: c.selectorQwen ? c.selectorQwen.label : "", instrucciones_fijas: c.instrucciones || "" } : null;  // Team 5 MVP: fichas_qwen ficha_qwen=5, sin N4, sin fallback
-      const mensajeQwen = soloLiteralQwen ? rawText : (mvp ? message : A.envolver(message, c.instrucciones));
+      const mensajeQwen = soloLiteralQwen ? rawText : (mvp ? rawText : A.envolver(rawText, c.instrucciones)); // no eliminar espacios del input real
       const fijasQwen = (soloLiteralQwen || mvp) ? (c.instrucciones || "") : "";
       const _conModo = modeUI ? modeUI.wrapSend((b) => b) : ((b) => b);  // >>> MODOS <<< punto B: agrega mode_request al payload sin tocar el resto
       const body = _conModo({ message: mensajeQwen, ficha: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, thinking: modo === "think", ...(fijasQwen ? { instrucciones_fijas: fijasQwen } : {}), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : {}), ...(mvp || {}) });  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha; ficha 2/3 verbatim + instrucciones_fijas
