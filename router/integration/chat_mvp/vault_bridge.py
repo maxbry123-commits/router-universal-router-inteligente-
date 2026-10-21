@@ -117,7 +117,7 @@ class BankError(RuntimeError):
 
 def _load_vault_module() -> Any:
     here = Path(__file__).resolve()
-    candidates = [here.parent / "secret_vault.py", *(p / "Banco de claves" / "secret_bank" / "vault.py" for p in here.parents)]
+    candidates = [here.parent / "secret_vault.py", *(p / "Banco de claves" / "secret_bank" / "vault.py" for p in here.parents), *(p / "banco" / "secret_bank" / "vault.py" for p in here.parents)]
     for path in candidates:
         if path.is_file():
             spec = importlib.util.spec_from_file_location("riu_secret_vault", path)
