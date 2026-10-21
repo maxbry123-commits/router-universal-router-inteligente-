@@ -39,7 +39,7 @@ _SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 _SECRET_LIKE = re.compile(r"\b(?:hf_[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,})\b")
 _HANDOFF_START = "<!-- YAIWES STATE HUB START -->"
 _HANDOFF_END = "<!-- YAIWES STATE HUB END -->"
-TOKEN_VARS = ("RIU_GITHUB_PAT_FULL_ACCESO", "GH_JOB_PUSH_TOKEN", "GH_PAT_FINE_FULL", "GITHUB_TOKEN")
+TOKEN_VARS = ("RIU_GITHUB_PAT_FULL_ACCESO", "GH_JOB_PUSH_TOKEN", "GH_PAT_FINE_FULL", "GITHUB_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN")
 
 
 def _auth(key: str | None) -> None:
