@@ -169,6 +169,8 @@ Reglas:
   Siempre con la arquitectura YAIWES completa (t347).
 
 ## [t397–t413] Plan B: el ciclo que se hizo (HF y GitHub, 02:27–04:36) y se repite si falla la prueba. Sin Claude (t398)
+PRIMERA PARTE: investigar
+
 1. Investigar (t326): un prompt con el problema, el HISTORIAL de lo intentado, la salida cruda 1 a 1 y el código actual, y la pregunta "causa raíz y vía más rápida, refuta 3 veces, escenarios y qué hacer según cada salida". Va a Sol (chat nuevo), a la investigación profunda de ChatGPT (1 a 3 chats) y a Grok (planeta123usa), cada uno por separado.
 
 ### Inputs verbatim del paso 1 (copiar 1 a 1)
@@ -303,6 +305,10 @@ Valida o refuta esta propuesta contra la regla y la arquitectura.
 Dame la vía más corta y rápida de solucionarlo sin romper la arquitectura. Analiza y refuta 3 veces antes de decidir. Dame una cadena de prompts separados para solucionar el gap, con los escenarios posibles y qué hacer según la salida que buscas. Valida si es la ruta más rápida y si podemos cerrar todo de una vez, sin sobreingeniería. Entrega los DSL DAG schema por separado y las instrucciones exactas para ejecutar. Responde en español.
 ```
 
+2. Seguimiento con arquitectura (t347): a los 3 se les da la arquitectura YAIWES completa ("nada fuera de ella es viable") + la intro fija (t318): "Dame la vía más corta y rápida de solucionarlo sin romper la arquitectura. Analiza y refuta 3 veces antes de decidir. Dame una cadena de prompts separados para solucionar el gap, con los escenarios posibles y qué hacer según la salida que buscas. Valida si es la ruta más rápida y si podemos cerrar todo de una vez, sin sobreingeniería. Entrega los DSL DAG schema por separado y las instrucciones exactas para ejecutar."
+3. Validar el mínimo: REGLA DE SEGURIDAD (ley inmutable t353) + ARQUITECTURA + PROBLEMA ACTUAL + PROPUESTA A VALIDAR + la intro fija, a los 3 (Sol, Grok, investigación profunda).
+4. Consolidar en un documento: en qué coinciden, en qué difieren, propuesta más corta dentro de la regla, lista de tareas.
+
 SEGUNDA PARTE: mandar a los agentes con los prompts
 
 ```text
@@ -314,6 +320,12 @@ SEGUNDA PARTE: mandar a los agentes con los prompts
 ```
 
 Agentes separados: 1 ejecutor HF, 1 ejecutor GitHub; Sheriff, Guardián y Centinela (3 agentes separados) revisan GitHub y HF, cada uno con validación de commit contra el padre.
+
+```text
+Faltó el agente reparador solo si exite un gap
+```
+
+Agente 4 REFACTORÍA REPARADOR: se manda solo si existe un gap confirmado por Sheriff, Guardián, Centinela o Sol; parche mínimo sin sobreingeniería, nuevo commit, y los 3 validan otra vez.
 
 **Plantilla execution_contract (t367)**
 ```text
@@ -807,10 +819,15 @@ REPARAR SOLO LO NECESARIO.
 NO SOBREINGENIERÍA.
 ```
 
-2. Seguimiento con arquitectura (t347): a los 3 se les da la arquitectura YAIWES completa ("nada fuera de ella es viable") + la intro fija (t318): "Dame la vía más corta y rápida de solucionarlo sin romper la arquitectura. Analiza y refuta 3 veces antes de decidir. Dame una cadena de prompts separados para solucionar el gap, con los escenarios posibles y qué hacer según la salida que buscas. Valida si es la ruta más rápida y si podemos cerrar todo de una vez, sin sobreingeniería. Entrega los DSL DAG schema por separado y las instrucciones exactas para ejecutar."
-3. Validar el mínimo: REGLA DE SEGURIDAD (ley inmutable t353) + ARQUITECTURA + PROBLEMA ACTUAL + PROPUESTA A VALIDAR + la intro fija, a los 3 (Sol, Grok, investigación profunda).
-4. Consolidar en un documento: en qué coinciden, en qué difieren, propuesta más corta dentro de la regla, lista de tareas.
 5. DSL DAG con la plantilla `<execution_contract>`, refutado 3 veces, a un agente separado por tarea (uno GitHub, otro HF), solo por API.
 6. Sheriff, Guardián y Centinela validan por separado, con validación de commit contra el padre. Si hay gap, Refactoría repara y los 3 validan otra vez.
+
+TERCERA PARTE: Sol revisa los commits
+
+```text
+Luego sol revisa los commint
+```
+
+A Sol se le pasa la validación de commit de Sheriff, Guardián y Centinela 1 a 1 (salida cruda y diff contra el padre), con la arquitectura y la ley inmutable; Sol 1 revisa el commit de HF y Sol 2 el de GitHub. Si Sol encuentra gap, Refactoría repara y se repite la validación.
 7. El supervisor confirma DENTRO. Salidas 1 a 1 + arquitectura + ley inmutable al Sol anclado "Sol Grok bot", que hace la prueba.
 8. Si la prueba falla, se repite desde el paso 1.
