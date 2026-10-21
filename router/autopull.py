@@ -18,9 +18,7 @@ def start(repo_dir=None, interval=60):
         while True:
             time.sleep(interval)
             try:
-                _p = subprocess.run(["git", "-C", repo, "pull", "--ff-only"], capture_output=True, text=True, timeout=120)
-                if _p.returncode != 0:
-                    print("AUTOPULL_FALLO returncode=%s" % _p.returncode, file=sys.stderr)  # sin salida de git: puede traer URL con credenciales
+                _git(repo, "pull", "--ff-only")
                 new = _git(repo, "rev-parse", "HEAD")
                 if new and new != head:
                     os.execv(sys.executable, [sys.executable] + sys.argv)
