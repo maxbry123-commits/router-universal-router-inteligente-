@@ -625,7 +625,9 @@ def _politicas_fuente():
     if 'SRC' not in _POL_CACHE:
         try:
             _POL_CACHE['SRC'] = json.loads((_POL_DIR / 'politicas_modelo.json').read_text(encoding='utf-8')).get('politicas_modelo') or {}
-        except Exception:  # noqa: BLE001
+        except Exception as _x:  # noqa: BLE001
+            import sys as _sx
+            print('POLITICAS_FUENTE_FALLO: %s' % type(_x).__name__, file=_sx.stderr)
             _POL_CACHE['SRC'] = {}
     return _POL_CACHE['SRC']
 
@@ -654,7 +656,9 @@ def _prompt_lib(nombre):
     if nombre not in _PROMPT_LIB:
         try:
             _PROMPT_LIB[nombre] = (_prompt_dir() / nombre).read_text(encoding='utf-8')
-        except Exception:  # noqa: BLE001
+        except Exception as _x:  # noqa: BLE001
+            import sys as _sx
+            print('PROMPT_LIB_FALLO: %s %s' % (nombre, type(_x).__name__), file=_sx.stderr)
             _PROMPT_LIB[nombre] = ''
     return _PROMPT_LIB[nombre]
 
@@ -837,7 +841,7 @@ def llm_call(p):
     body = {k: p.get(k) for k in ('caller_id', 'plugin_id', 'workflow_id', 'project_id', 'task_id', 'session_id', 'task_type',
                                   'messages', 'participant', 'participants', 'priority', 'max_tokens', 'modelo')}
     body['ficha_qwen'] = 'ficha4-workflow-yaiwes'
-    h = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + str(_os.getenv('RIU_ROUTER_API_KEY') or '')}
+    h = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + str(_os.getenv('RIU_API_KEY') or _os.getenv('RIU_ROUTER_API_KEY') or '')}
     try:
         r = _ur.Request(url, data=json.dumps(body).encode(), headers=h, method='POST')
         d = json.loads(_ur.urlopen(r, timeout=int(_os.getenv('RIU_FICHA4_TIMEOUT') or '120')).read().decode() or '{}')
@@ -955,6 +959,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             if tools:
                 cuerpo['tools'] = tools
                 cuerpo['tool_choice'] = 'auto'
+                cuerpo['parallel_tool_calls'] = (_CAP_TOOLS.get() == 'read')  # lecturas en paralelo; escritura secuencial
                 if _FORCE_TOOL.get() and not modelo.startswith('qwen'):  # FIX glm52 INPUT 129; ORDEN 02: Qwen nunca 'required'
                     cuerpo['tool_choice'] = 'required'
             pol = _politica(modelo) if proveedor == 'qwencloud' else {}
@@ -1462,7 +1467,8 @@ def _bucle(llamar, mensajes):
             ok_ = _tool_exito(res)
             ya_ = res.startswith(('OPERACION_YA_COMPLETADA', 'REPETICION_TOOL_DETECTADA'))
             usadas.append(_evi(nom, args, ok_, bool(mut and ok_ and not ya_), res))
-            mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:_perfil()[1]]})
+            _tope_res = _perfil()[1]
+            mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:_tope_res] + ('\n[recortado: pide lineas %d-]' % (res[:_tope_res].count('\n') + 1) if len(res) > _tope_res else '')})
         pasos += 1
         rondas += 1
         _FORCE_TOOL.set(None)  # DSL N2: tool_choice=required solo en el paso 1 del reintento; desde el paso 2 -> auto
@@ -1893,7 +1899,7 @@ def _xray_texto_out(r):
 def _auditor_code(pregunta=''):
     # motor auditor de code del repo: ubica y clasifica los archivos de code del proyecto
     h = _herr()
-    s, d = h._gh('GET', '/repos/maxbry123-commits/%s/git/trees/main?recursive=1' % _REPO_DIR)
+    s, d = h._gh('GET', '/repos/maxbry123-commits/%s/git/trees/%s?recursive=1' % (_REPO_DIR, _RAMA_HANDOFF))
     if s >= 400 or not isinstance(d, dict):
         return {'error': 'AUDITOR_GITHUB_FALLO', 'detalle': str(d)[:200]}
     por_dir = {}
@@ -1938,12 +1944,12 @@ def _gh_enlace(enlace):
     enlace = str(enlace or '').strip()
     m = re.match(r'https?://github\.com/[^/]+/([^/#?]+)/(?:tree|blob)/([^/#?]+)/?(.+)?', enlace)
     if m:
-        return m.group(1), str(m.group(2) or 'main'), str(m.group(3) or '').strip('/')
+        return m.group(1), str(m.group(2) or _RAMA_HANDOFF), str(m.group(3) or '').strip('/')
     m = re.match(r'https?://github\.com/[^/]+/([^/#?]+)', enlace)
     if m:
-        return m.group(1), 'main', ''
+        return m.group(1), _RAMA_HANDOFF, ''
     partes = enlace.strip('/').split('/')
-    return partes[0], 'main', '/'.join(partes[1:]) if len(partes) > 1 else ''
+    return partes[0], _RAMA_HANDOFF, '/'.join(partes[1:]) if len(partes) > 1 else ''
 
 
 def _gh_lista(repo, rama, ruta, prof=0):
@@ -2653,7 +2659,7 @@ def _resolver_fuentes(sesion, anclados, pregunta=''):
                     falla('raiz', nom, 'GAP FUENTE_ANCLADA_NO_LEIBLE: ' + nom, 'raiz')
                     continue
                 owner, repo, ref, ruta = g
-                rama = ref or 'main'
+                rama = ref or _RAMA_HANDOFF
                 proc = 'github-raiz:%s/%s/%s@%s' % (owner, repo, ruta, rama)
                 paths, trunc = _anc_raiz_lista(owner, repo, rama, ruta)
                 if not paths:
