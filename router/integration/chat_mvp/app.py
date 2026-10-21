@@ -83,19 +83,12 @@ try:
 except Exception as exc:  # never take the Router down for memory GAPs
     logging.getLogger("riu").warning("memoria_yaiwes no montada: %s", exc)
 try:
-    import importlib.util as _ilu
-    import os as _os
-    import sys as _sys
+    from .mcp_route import build_mcp_router
 
-    # Carpeta router/mcp se carga como paquete "riu_mcp" para no chocar con el SDK `mcp` de Python.
-    _dir = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))), "mcp")
-    _spec = _ilu.spec_from_file_location("riu_mcp", _os.path.join(_dir, "__init__.py"), submodule_search_locations=[_dir])
-    _pkg = _ilu.module_from_spec(_spec)
-    _sys.modules["riu_mcp"] = _pkg
-    _spec.loader.exec_module(_pkg)
-    from riu_mcp.server import build_mcp_router
+    app.include_router(build_mcp_router())  # /mcp: puerta MCP JSON-RPC (tools GitHub) para Claude.ai connector
+    from . import mcp_fichas, mcp_route as _mcp_route
 
-    app.include_router(build_mcp_router())  # /mcp: MCP nuevo (router/mcp), llave RIU_MCP_KEY o RIU_PUBLIC_CHAT_KEY
+    mcp_fichas.instalar(_mcp_route)  # amplia el MCP original con listar_fichas, chat, resultado
 except Exception as exc:  # never take the Router down for the MCP door
     logging.getLogger("riu").warning("mcp_route no montada: %s", exc)
 try:
