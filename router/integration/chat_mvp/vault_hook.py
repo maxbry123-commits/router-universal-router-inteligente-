@@ -33,5 +33,7 @@ def _banco_unico(provider: str) -> list[str]:
 def provider_keys(provider: str) -> list[str]:
     try:
         return [*_banco_unico(provider), *list(_provider_keys(provider))]
-    except Exception:  # noqa: BLE001 - a locked or broken bank must never break the chat
+    except Exception as exc:  # noqa: BLE001 - a locked or broken bank must never break the chat
+        import sys
+        print("VAULT_PROVIDER_KEYS_FALLO proveedor=%s tipo=%s" % (provider, type(exc).__name__), file=sys.stderr)  # sin claves
         return []

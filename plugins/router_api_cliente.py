@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import urllib.error
 import urllib.request
 from typing import Any
@@ -87,7 +88,12 @@ def base_url(proveedor: str) -> str:
 
 
 def provider_keys(proveedor: str) -> list:
-    return list(_api("provider_keys", {"proveedor": proveedor})["claves"])
+    r = llamar("router_api", "provider_keys", {"proveedor": proveedor})
+    if not isinstance(r, dict) or r.get("status") != "ok" or r.get("error"):
+        err = (r.get("error") or r.get("reason") or "fallo") if isinstance(r, dict) else type(r).__name__
+        print("PROVIDER_KEYS_FALLO proveedor=%s error=%s" % (proveedor, str(err)[:200]), file=sys.stderr)  # nunca la clave
+        return []
+    return list(r.get("claves") or [])
 
 
 def chat(proveedor: str, modelo: str, mensajes: list, max_tokens: int, tope: int) -> dict:
