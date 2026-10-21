@@ -167,3 +167,11 @@ Reglas:
   4. Consolidar sin repetir y elegir ruta y cadena de prompts.
   5. Repetir hasta resolver.
   Siempre con la arquitectura YAIWES completa (t347).
+
+## [t397–t410] Plan B: el ciclo que se repite si falla la prueba (el que se usó en HF y GitHub)
+1. DSL DAG con la plantilla `<execution_contract>`, refutado 3 veces, a UN agente separado por tarea (uno GitHub, otro HF), solo por API.
+2. Sheriff, Guardián y Centinela validan por separado, con validación de commit contra el padre.
+3. Si hay gap, agente nuevo Refactoría repara sin sobreingeniería y los 3 validan otra vez.
+4. El supervisor confirma DENTRO de las instrucciones de Antonio.
+5. Salidas 1 a 1 + arquitectura + ley inmutable a Sol; el Sol anclado "Sol Grok bot" hace la prueba.
+6. Si la prueba falla, se repite desde el paso 1. Todo sin Claude (t398).
