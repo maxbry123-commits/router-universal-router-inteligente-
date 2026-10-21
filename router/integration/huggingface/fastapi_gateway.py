@@ -53,10 +53,24 @@ class ChatRequest(BaseModel):
     max_tokens: int = Field(default=256, ge=1, le=4096)
 
 
+def _commit_cargado() -> str:
+    # Commit de GitHub con el que arranco este proceso (solo lectura; permite verificar sin entrar al Space).
+    try:
+        import subprocess
+        out = subprocess.run(["git", "-C", str(Path(__file__).resolve().parents[3]), "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5).stdout.strip()
+        return out or "desconocido"
+    except Exception:
+        return "desconocido"
+
+
+COMMIT_CARGADO = _commit_cargado()
+
+
 @app.get("/health")
 def health() -> dict[str, object]:
     return {
         "status": "ok",
+        "commit": COMMIT_CARGADO,
         "registry_count": len(allowed_model_ids()),
         "route": "FastAPI->EnchufeGate->RedUniversal->HFAdapter",
         "auth": "RIU_AGENT_API_KEYS",
