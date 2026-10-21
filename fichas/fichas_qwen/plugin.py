@@ -211,6 +211,11 @@ def _cfg(ficha: dict[str, Any]) -> tuple[int, int, int, int]:
         raise RuntimeError('FICHA_SIN_CONFIG:' + repr(x))
 
 
+def _timeout_nodo(modelo: str, ficha: dict[str, Any], n: dict[str, Any]) -> int:
+    segundos = int(n.get('timeout_s') or _cfg(ficha)[0])
+    return max(240, segundos) if modelo == 'ficha-glm52' else segundos
+
+
 def _llamar(modelo: str, prompt: str, ficha: dict[str, Any], *, timeout_override: int | None = None, attempts_override: int | None = None,
             max_tokens_override: int | None = None) -> str:
     m = _modelos().get(modelo)
@@ -1046,7 +1051,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     if not qw or qw not in pc.FICHAS:
         raise RuntimeError('FICHA_QW_NO_EXISTE:' + str(modelo))
     api_s, _, max_tok, limite = _cfg(ficha)
-    api_s = int(n.get('timeout_s') or api_s)
+    api_s = _timeout_nodo(modelo, ficha, n)
     _nc = _NODO_CALL.get() or {}  # DSL N1: flags del nodo por contexto, no en opts compartido
     if _nc.get('per_attempt_s'):  # DSL N4: cada intento cabe dentro del deadline del nodo
         api_s = min(api_s, int(_nc['per_attempt_s']))
@@ -1851,7 +1856,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         _meta(pid, i, nodos[i].get('modelo') if nodos[i].get('modelo') != 'selector' else elegido, _tarea_visor(nodos, i))
         _sys_prompt = ''  # >>> MODOS <<< reinicia por nodo
         _nc0 = {'sys_prompt': '', 'forzar_tool': False, 'dsv4_think': None, 'per_attempt_s': 0,
-                'deadline': time.monotonic() + int(n.get('timeout_s') or _cfg(ficha)[0])}  # DSL N1/N4: estado por nodo en ContextVar + deadline total
+                'deadline': time.monotonic() + _timeout_nodo(elegido if n.get('modelo') == 'selector' else n.get('modelo'), ficha, n)}
         _tok_nc = None
         _h0 = len((opts.get('herr') or {}).get(str(n.get('id')), []))  # AUDIT A14: definido aunque la llamada falle antes (G14 lo usa fuera del try)
         _tok_regla = None  # DSL A08.3: _REGLA_NODO se resetea a 0 a la ENTRADA del nodo (no por reintento) y se restaura en finally
@@ -2043,7 +2048,11 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                     ahora = time.time() - t_ini
                     for i, f in list(pend_f.items()):
                         escribe_i = bool(nodos[i].get('escribe') or i == 'N4') and bool(opts.get('aprobado'))
-                        lim = (tope_cod if escribe_i else int(nodos[i].get('timeout_s') or _cfg(ficha)[0])) + 60
+                        modelo_i = elegido if nodos[i].get('modelo') == 'selector' else nodos[i].get('modelo')
+                        lim = tope_cod if escribe_i else _timeout_nodo(modelo_i, ficha, nodos[i])
+                        if modelo_i == 'ficha-glm52':
+                            lim = max(lim, _timeout_nodo(modelo_i, ficha, nodos[i]))
+                        lim += 60
                         listas = len(futs) - len(pend_f)
                         if f in hechos:
                             out[i] = f.result()
