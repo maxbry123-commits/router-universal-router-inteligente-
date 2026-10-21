@@ -122,9 +122,9 @@ async function puenteRouter(base, body, qs, headers) {
     if (!r.ok || env.status !== 'ok') return { status: r.ok ? 502 : r.status, ok: false, p: { error: env.reason || env.detail || ('HTTP ' + r.status) } };
     let p = env.result || {};
     let cortado = false;
+    let proceso = p.proceso_id || null;
     if (p.estado === 'procesando' && p.proceso_id) {
       const deadline = Date.now() + 560000;
-      const proceso = p.proceso_id;
       try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'En cola…' } })); } catch (e) {}  // process_id != modelo corriendo: el backend informa el estado real; sesion+pid aíslan el progreso entre chats
       if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: Date.now() });
       let primera = true;  // primera consulta inmediata, luego cada 250 ms (tope total sigue en deadline 560 s)
