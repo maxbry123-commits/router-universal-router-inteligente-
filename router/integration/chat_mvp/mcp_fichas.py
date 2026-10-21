@@ -56,11 +56,12 @@ REQUERIDO = {'chat': 'ficha_qwen', 'resultado': 'proceso_id'}
 
 
 def _llamar(plugin, accion, payload):
-    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    spec = importlib.util.spec_from_file_location('riu_http_plugins', os.path.join(base, 'red', 'http_plugins.py'))
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod.llamar(plugin, accion, payload)
+    # Llamada local al PluginHost del mismo proceso (sin HTTP a si mismo): misma ruta que POST /plugins/<id>/call/<accion>.
+    from ..plugin_host.host import get_host
+    out = get_host().call(plugin, accion, dict(payload or {}))
+    if isinstance(out, dict) and out.get('status') == 'ok':
+        return out.get('result')
+    return {'error': str((out or {}).get('reason') or 'fallo'), 'status': str((out or {}).get('status') or 'degraded')}
 
 
 def _es_error(res):
