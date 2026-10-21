@@ -18,7 +18,7 @@ try:
     n = bridge.unlock(os.environ["RIU_VAULT_PASSPHRASE"])
     print("vault desbloqueado: %d credenciales" % n, flush=True)
 except Exception as e:
-    print("GAP vault unlock: %s: %s" % (type(e).__name__, str(e)[:200]), flush=True)
+    print("GAP vault unlock: %s" % type(e).__name__, flush=True)
 
 import uvicorn
 uvicorn.run("public_chat_app:app", host="0.0.0.0", port=7860, timeout_keep_alive=120)
