@@ -837,3 +837,6 @@ CUARTA PARTE: después de que Sol revisa (t424–t425, confirmado por Antonio: "
 2. Si Sol confirma: el Sol anclado "Sol Grok bot" hace la prueba del chat y el backend.
 3. Si la prueba falla: se repite el plan B desde la PRIMERA PARTE (investigar), sin Claude.
 4. Si la prueba pasa: se sigue con Sol en las tareas pendientes del chat frontend y backend.
+
+## [t429] Uso de la computadora
+"No tocas la pc solo para usar el chat de sol y grock y Claude solo con autorización" — Code solo usa su computadora para los chats de Sol, Grok y Claude; Claude solo con autorización de Antonio. Todo lo demás (GitHub, HF, validadores) va por API/conector, sin clonar ni escribir repos en disco.
