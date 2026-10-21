@@ -54,7 +54,8 @@ class ChatAccess:
                     or path.startswith("/espacio/")
                     or path.startswith("/chat/")
                     or (path=="/plugins" and scope.get("method")=="GET"))
-            key=os.getenv("RIU_PUBLIC_CHAT_KEY")
+            from access_key import access_key as _access_key
+            key=_access_key()
             if public and key:
                 scope=dict(scope)
                 scope["headers"]=[(k,v) for k,v in scope.get("headers",[]) if k.lower()!=b"x-api-key"]+[(b"x-api-key",key.encode())]
