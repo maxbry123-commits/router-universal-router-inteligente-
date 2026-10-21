@@ -106,4 +106,5 @@ def provider_keys(proveedor: str) -> list:
 
 
 def chat(proveedor: str, modelo: str, mensajes: list, max_tokens: int, tope: int) -> dict:
-    return _api("chat", {"proveedor": proveedor, "modelo": modelo, "mensajes": mensajes, "max_tokens": max_tokens, "tope": tope}, timeout=max(120.0, float(tope) + 15))["respuesta"]
+    _tope = float(tope) if tope is not None else 120.0
+    return _api("chat", {"proveedor": proveedor, "modelo": modelo, "mensajes": mensajes, "max_tokens": max_tokens, "tope": tope}, timeout=max(120.0, _tope + 15))["respuesta"]
