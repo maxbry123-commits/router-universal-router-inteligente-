@@ -20,7 +20,9 @@ def _corre(guion):
             raise RuntimeError('GAP_OUTPUT_TRUNCATED:N4')
         if 'tool' in accion:
             opts['herr'].setdefault('N4', []).append({'herramienta': 'github_escribir', 'ok': True, 'mutacion_real': True})
-        return accion.replace('tool ', '')
+        if 'read' in accion:
+            opts['herr'].setdefault('N4', []).append({'herramienta': 'github_leer', 'ok': True, 'mutacion_real': False})
+        return accion.replace('tool ', '').replace('read ', '')
     fq._llamar_harness_3 = fake
     opts = {'herr': {'N4': []}, 'out': {}, 'pid': 'p', 'fid': 'f', 'aprobado': True, 'muta': True, 'cap_in': 'write'}
     try:
@@ -37,6 +39,12 @@ def test_sigue_sigue_hecho_con_progreso():
 def test_sin_progreso_bloquea():
     r, err, ped, _ = _corre(['CONTINUAR_PARTE'])
     assert err and err.startswith('GAP_LOOP_SIN_PROGRESO') and len(ped) == 3
+
+
+def test_lecturas_ok_no_reinician_sin_progreso():
+    r, err, ped, opts = _corre(['read CONTINUAR_PARTE'])
+    assert err and err.startswith('GAP_LOOP_SIN_PROGRESO') and len(ped) == 3
+    assert '__loop__:N4' in opts['out']
 
 
 def test_progreso_intermitente_no_bloquea():

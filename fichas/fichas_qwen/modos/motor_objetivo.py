@@ -311,7 +311,7 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
         modo_actual = t.get('modo') or 'code'
         ok_ev = (int(r.get('mutaciones_ok') or 0) > 0 if modo_actual == 'code'
                  else int(r.get('herramientas_ok') or 0) > 0 or modo_actual in ('rapido', 'planificador'))
-        _ok_sigue = ok_ev or (modo_actual == 'code' and int(r.get('herramientas_ok') or 0) > 0)  # >>> PARCHE_AUD <<< leer/inspeccionar con avance real no es fallo
+        _ok_sigue = ok_ev
         _falsos = _recibos_falsos(j.get('receipt_ids'))  # >>> PARCHE_T1 <<< recibo inventado = sin evidencia
         if _falsos:
             ok_ev = False

@@ -54,8 +54,15 @@ def test_g2_reformular_sin_recibo_no_es_avance():
     assert int(res['tareas'][0].get('continuaciones') or 0) == 0, res['tareas']
 
 
-def test_g2_recibo_nuevo_si_es_avance():
+def test_g2_lectura_con_recibo_nuevo_no_es_avance_code():
     pasos = [{'texto': _j('sigue', [], nota='nota %d' % k), 'mutaciones_ok': 0, 'herramientas_ok': 1,
+              'receipt_ids': ['receipt-esta-T1-%08d' % k]} for k in range(6)]
+    res, _ = _corre(pasos)
+    assert int(res['tareas'][0].get('continuaciones') or 0) == 0, res['tareas']
+
+
+def test_g2_mutacion_con_recibo_nuevo_si_es_avance():
+    pasos = [{'texto': _j('sigue', [], nota='nota %d' % k), 'mutaciones_ok': 1, 'herramientas_ok': 1,
               'receipt_ids': ['receipt-esta-T1-%08d' % k]} for k in range(6)]
     res, _ = _corre(pasos)
     assert int(res['tareas'][0].get('continuaciones') or 0) >= 1, res['tareas']

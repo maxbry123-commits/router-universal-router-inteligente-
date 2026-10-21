@@ -1316,9 +1316,9 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
             opts.setdefault('loop_ensamblado', {})[nid] = {'segmentos': len([x for x in piezas if x]), 'sha_piezas': [_hl.sha256(x.encode('utf-8')).hexdigest()[:12] for x in piezas if x], 'sha': _hl.sha256(_fin.encode('utf-8')).hexdigest(), 'tokens_usados': int(opts.get('tokens_usados') or 0)}  # >>> PARCHE_BACK_G06 <<<
             return _fin
         if _marca(texto, 'CONTINUAR_PARTE') or any(x.get('ok') and x.get('mutacion_real') for x in delta):
-            sin_prog = 0 if any(x.get('ok') for x in delta) else sin_prog + 1  # >>> PARCHE_CICLO <<< P1: continuar solo es legitimo con progreso verificable (tool OK)
+            sin_prog = 0 if any(x.get('ok') and x.get('mutacion_real') for x in delta) else sin_prog + 1
             if sin_prog >= 3:
-                raise RuntimeError('GAP_LOOP_SIN_PROGRESO: BLOQUEADO tras %d partes seguidas sin herramienta OK; checkpoint conservado' % sin_prog)
+                raise RuntimeError('GAP_LOOP_SIN_PROGRESO: BLOQUEADO tras %d partes seguidas sin mutacion OK; checkpoint conservado' % sin_prog)
             continue
         raise RuntimeError('GAP_LOOP_SIN_MARCA: parte %d no indico continuar ni terminar' % parte)
     raise RuntimeError('GAP_LOOP_MAX_PARTES: %d; checkpoint conservado para reanudar' % max_partes)
