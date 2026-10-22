@@ -32,3 +32,4 @@
 - t715: "Cometiste un grave error tu no tocas sol 1 y sol 2". Code NUNCA abre ni escribe en «📌 sol Grupo 1» ni «🚀 sol grupo 2». Ya tienen el prompt de Claude.
 - t720: "No tocas el chat sección de sol grupo 1 y grupo 2 solo puedes leer". Code solo LEE «📌 sol Grupo 1» y «🚀 sol grupo 2»; nunca escribe ni edita ahí.
 - t728: "La fuente de la verdad es el promt. Es la Regla máxima." El prompt (de Claude, en sol Grupo 1 y sol grupo 2) es la fuente de verdad y regla máxima para Grupo 1 y Grupo 2.
+- t729: "Los sentinelas revisan que no se sale del promt". Los centinelas (de Code, Grupo 1 y Grupo 2) bloquean toda salida que se salga del prompt.
