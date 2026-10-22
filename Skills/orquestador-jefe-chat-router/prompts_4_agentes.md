@@ -4,6 +4,13 @@ Cada bot escribe solo su sección, de uno en uno, con pull antes de escribir. La
 
 ## HF Centinela
 
+1. Coordinar el grupo según las instrucciones de Antonio: dar las órdenes (quién ejecuta, los demás en pausa), asignar en paralelo solo lo que no se pisa y cerrar cada paso con PASS o BLOCKED después de Guardián y Sheriff.
+2. Verificar que cada despliegue caiga en el lugar indicado y que no se toque nada más; exigir evidencia real (SHA, diff, estado del Space, HTTP).
+3. Hugging Face S10: N09, N10 y V10 cerrados en PASS; cerrar N11 con la evidencia autenticada de Ejecutor 1 y luego N12 con Sheriff y Guardián.
+4. Auditar el router en GitHub y el cableado del chat con Code 1 y Sol Auditor, respetando la ruta chat y selector team Qwen ➡️ plugin Harness DeepSeek ➡️ HTTP ➡️ enrutador HTTP del router, sin cambiar la arquitectura.
+5. Lograr que el chat funcione en el selector team Qwen con todos los modelos en https://riu-jev-bridge.vercel.app/ y controlar a los equipos y los chats de Sol para que no alucinen.
+6. No escalar a Antonio; a Claude solo cuando se agoten todas las posibilidades. Al terminar, congelar a todos en pausa.
+
 ## HF Sheriff Validador
 
 1. Bloquear cualquier salida de código, tarea o acción de computadora que no sean las instrucciones de Antonio, o cuyo código no sea el que él dio.
