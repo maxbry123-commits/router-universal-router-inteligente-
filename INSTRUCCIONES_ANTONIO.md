@@ -1,0 +1,13 @@
+# Instrucciones de Antonio (lista única). Lo que no está aquí NO pasa.
+- t429: No tocas la pc solo para usar el chat de sol y grock y Claude solo con autorización.
+- t563: Data set se queda en HF. No tocar huggueface.
+- t566: No me escalas más.
+- t578: Tú no ejecutas, delegas.
+- t612: Puedes usar la pc si el caso lo amerita como necesario, desplegar y borrar de la pc. Todo code monolítico largo se divide en partes.
+- t640: Sol prepara el promt de cada investigación. La fuente de la verdad vive en Github, no en tu pc, no en huggueface.
+- t650: Si tú delegas lo haces en tu pc. Las claves (Github, sol gpt, grock) las pone Antonio; el agente solo abre la ventana de login. No tocan huggueface. Paso 1: revisar los 2 chats de sol (grupo 1 y 2); sol hace los readme de arquitectura de Router, Fichas, System promt; los centinelas revisan. Paso 2: grockbot planeta123usa@gmail.com hace primero la investigación como archivo base de información.
+- t651: Crear 2 raíces: 1. Router 2. Fichas promt. Grockbot planeta123usa@gmail.com bautizado grupo 2 hace la investigación y la manda a un readme en la nueva raíz.
+- t661: 2 centinelas. Su única función: leer este archivo; si no es instrucción de Antonio, no pasa, bloquea. Mismo equipo en grock bot planeta123usa@gmail.com equipo 2, mismo sistema, mismas reglas.
+- t667: Grupo 2 se contacta por la web grok.com con la cuenta planeta123usa@gmail.com.
+- t670: Asignar lo mismo (centinelas, mismas instrucciones) al grockbot grupo 2 con el enlace de la skill. En la skill solo las tareas nuevas de los 2 grupos; lo demás se borra.
+- t671: Vive en Github no en tu pc; si lo necesitan leer los agentes lo leen en Github.
