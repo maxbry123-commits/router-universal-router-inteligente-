@@ -10,9 +10,11 @@ from compute import llamar
 class Simulador(BaseHTTPRequestHandler):
     cola = []
     n = 0
+    recibido = None
 
     def do_POST(self):
         type(self).n += 1
+        type(self).recibido = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         codigo, datos = self.cola.pop(0)
         self.send_response(codigo)
         self.end_headers()
@@ -37,11 +39,11 @@ class TestQwen(unittest.TestCase):
         cls.hilo.join(timeout=2)
 
     def setUp(self):
-        Simulador.n, Simulador.cola = 0, []
+        Simulador.n, Simulador.cola, Simulador.recibido = 0, [], None
 
-    def llamada(self, opciones=None):
+    def llamada(self, opciones=None, modelo="qwen3.8-max"):
         return llamar([{"role": "user", "content": "hola"}],
-                      "qwen-test", self.url, "clave-test", opciones)
+                      modelo, self.url, "clave-test", opciones)
 
     def test_texto(self):
         Simulador.cola = [(200, {"choices": [{"message": {"content": "hola"}}]})]
@@ -65,6 +67,21 @@ class TestQwen(unittest.TestCase):
                      "function": {"name": "buscar", "arguments": "{}"}}]
         Simulador.cola = [(200, {"choices": [{"message": {"tool_calls": llamadas}}]})]
         self.assertEqual(self.llamada({"tool_choice": "auto"})["tool_calls"], llamadas)
+
+    def test_thinking_qwen(self):
+        Simulador.cola = [(200, {"choices": [{"message": {"content": "ok"}}]})]
+        self.llamada()
+        self.assertIs(Simulador.recibido["enable_thinking"], True)
+
+    def test_thinking_deepseek(self):
+        Simulador.cola = [(200, {"choices": [{"message": {"content": "ok"}}]})]
+        self.llamada(modelo="deepseek-v4-pro")
+        self.assertNotIn("enable_thinking", Simulador.recibido)
+
+    def test_reasoning_effort(self):
+        Simulador.cola = [(200, {"choices": [{"message": {"content": "ok"}}]})]
+        self.llamada({"reasoning_effort": "low"})
+        self.assertEqual(Simulador.recibido["reasoning_effort"], "low")
 
 
 if __name__ == "__main__":
