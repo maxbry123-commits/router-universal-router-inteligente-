@@ -2,10 +2,11 @@
 import json
 import time
 from urllib import error, request
+from mvp import modelos
 
 REINTENTABLES = {429, 502, 503, 504}
 OPCIONES = {"tools", "tool_choice", "temperature", "top_p", "max_tokens",
-            "parallel_tool_calls", "response_format", "enable_thinking"}
+            "parallel_tool_calls", "response_format", "enable_thinking", "reasoning_effort"}
 
 
 def _endpoint(base_url):
@@ -34,6 +35,7 @@ def llamar(mensajes, modelo, base_url, clave, opciones=None):
         if nombre not in OPCIONES:
             raise ValueError("opcion Qwen no permitida: " + nombre)
         payload[nombre] = valor
+    payload.update(modelos.extra_body(modelo, opciones=opciones))
     url = _endpoint(base_url)
     for intento in range(3):
         try:
