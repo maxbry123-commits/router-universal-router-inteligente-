@@ -10,6 +10,7 @@ from cryptography.fernet import Fernet, InvalidToken
 
 MARCA = b"MVPB1"
 SECRETOS = ("HF_TOKEN", "GITHUB_TOKEN", "QWEN_API_KEY")
+ACCESO = ("RIU_API_KEY", "RIU_PUBLIC_CHAT_KEY", "RIU_MCP_KEY", "RIU_ROUTER_API_KEY")
 
 
 class Banco:
@@ -64,10 +65,12 @@ class Banco:
         return sorted(self._datos)
 
     def bootstrap_desde_env(self, mapa=None):
+        automatico = mapa is None
         mapa = mapa if mapa is not None else {nombre: nombre for nombre in SECRETOS}
         for nombre in SECRETOS:
             variable = mapa.get(nombre, nombre)
-            valor = os.environ.get(variable, "") if isinstance(variable, str) else ""
+            fuentes = ("HF_TOKEN_1_NEW", "HF_TOKEN") if nombre == "HF_TOKEN" and automatico else (variable,)
+            valor = next((os.environ[v] for v in fuentes if isinstance(v, str) and os.environ.get(v)), "")
             if nombre not in self._datos and valor:
                 self.guardar(nombre, valor)
         return self.nombres()
@@ -75,3 +78,14 @@ class Banco:
 
 def abrir(ruta, clave):
     return Banco(ruta, clave)
+
+
+def abrir_desde_env(ruta=None):
+    """Abre e inicializa el banco desde los secretos del entorno del Space."""
+    clave = next((os.environ[v] for v in ACCESO if os.environ.get(v)), None)
+    if not clave:
+        raise ValueError("falta clave de acceso RIU_* en el entorno")
+    destino = ruta or Path(__file__).resolve().parent / "data" / "banco.bin"
+    banco = abrir(destino, clave)
+    banco.bootstrap_desde_env()
+    return banco
