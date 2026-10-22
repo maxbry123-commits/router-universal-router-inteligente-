@@ -23,3 +23,5 @@
 - t693: Le pones al bot el nombre de grupo 1 y grupo 2.
 - t697/t699: Ponte en pausa tú, solo tú.
 - t701: Ya los dos están abiertos. Sigue con las 2 investigaciones, una en cada bot. Explícale que hay 3 grock bot usando la sección de chat de sol gpt, para que no se pisen. Le das el promt de sol: se lo pides a sol, uno para cada investigación. Le asignas 1 sola sección de sol a cada bot (Grupo 1: "📌 sol Grupo 1"; Grupo 2: "🚀 sol grupo 2"), que no usen ninguna más.
+- t703: Los chats "📌 sol Grupo 1" y "🚀 sol grupo 2" son para el trabajo de programación. Debes darle a cada bot una sección adicional de chat de Sol para hacer la investigación por separado; no la hacen donde ya está corriendo Sol grupo 1 y grupo 2. Mostrar antes de avanzar.
+- t704: El resultado va en dos README diferentes: "Información de investigación de programación router" y el otro de fichas. Decirle a cada bot cuál es y para qué sirve el chat de sol grupo 1 y sol grupo 2. Revisar que estén usando los centinelas antes de cada salida.
