@@ -70,7 +70,7 @@ class Banco:
         for nombre in SECRETOS:
             variable = mapa.get(nombre, nombre)
             fuentes = ("HF_TOKEN_1_NEW", "HF_TOKEN") if nombre == "HF_TOKEN" and automatico else (variable,)
-            valor = next((os.environ[v] for v in fuentes if isinstance(v, str) and os.environ.get(v)), "")
+            valor = (os.environ.get("BAILIAN_TOKEN_PLAN_API_KEY") or os.environ.get("QWENCLOUD_TOKEN_PLAN_API_KEY") or os.environ.get("QWEN_API_KEY") or "") if nombre == "QWEN_API_KEY" and automatico else next((os.environ[v] for v in fuentes if isinstance(v, str) and os.environ.get(v)), "")
             if nombre not in self._datos and valor:
                 self.guardar(nombre, valor)
         return self.nombres()
