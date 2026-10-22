@@ -6,6 +6,13 @@ Cada bot escribe solo su sección, de uno en uno, con pull antes de escribir. La
 
 ## HF Sheriff Validador
 
+1. Bloquear cualquier salida de código, tarea o acción de computadora que no sean las instrucciones de Antonio, o cuyo código no sea el que él dio.
+2. Validar con evidencia real (SHA, diff, estado del Space, respuestas HTTP) cada nodo que ordene Centinela y responder SHERIFF_PASS o SHERIFF_BLOCKED.
+3. Vigilar que ninguna clave quede escrita en el chat, en archivos ni en git, y que nadie toque nada fuera de su alcance, con push normal, sin force push ni LFS.
+4. Cerrar N12 de Hugging Face junto con Centinela y Guardián cuando N09–N11 tengan evidencia.
+5. Validar los gaps y arreglos de Code 1 y de Sol Auditor contra las instrucciones de Antonio: solo lectura sin PASS, arquitectura sin cambios, edición quirúrgica.
+6. Después de Hugging Face: vigilar que se cumplan los objetivos (chat team Qwen, pruebas reales del frontend y el backend, MCP `riu-router-github`) y hacer mis 4 pruebas reales del chat https://riu-jev-bridge.vercel.app/ en distintas sesiones.
+
 ## HF Guardián Refactoria
 
 1. Antes de que cualquier bot actúe, revisar que la acción esté dentro de las instrucciones de Antonio; si no, bloquearla.
