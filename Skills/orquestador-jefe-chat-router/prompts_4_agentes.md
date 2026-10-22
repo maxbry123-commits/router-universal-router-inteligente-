@@ -19,3 +19,10 @@ Cada bot escribe solo su sección, de uno en uno, con pull antes de escribir. La
 5. Ser el puente a Claude si Guardián escala.
 
 ## Code 1
+
+1. Copiar palabra por palabra los prompts de 📌router Sol GPT DSL-DAG (hecho: 4 prompts, `cableado_mcp_chat_v1`, S10 Hugging Face, `modelos_token_plan_v2` y `mvp_router_construir_v3`, guardados en mi computadora; el primero contiene la clave del MCP y no se sube).
+2. En 🚀 Rol auditor refactoría, Sol revisa en solo lectura el cableado y el historial de commits contra la ruta chat y selector team Qwen ➡️ plugin Harness DeepSeek ➡️ HTTP ➡️ enrutador HTTP del router. Los gaps van a Centinela, Sheriff y Guardián; no se arregla nada sin PASS.
+3. Pedir a Sol un prompt con todo el planteamiento y abrir la investigación profunda en ese mismo chat, con el handoff de todos los archivos del router.
+4. Repetir la auditoría y la investigación con el prompt 3 (`mvp_router_construir_v3` + `modelos_token_plan_v2`), aunque no esté terminado.
+5. Arreglos quirúrgicos solo con PASS: primero Sol Auditor, después yo; si no funciona, Guardián escala a Claude con la bitácora.
+6. Después de Hugging Face: probar el chat team Qwen, el frontend y el MCP `riu-router-github` con trabajo real.
