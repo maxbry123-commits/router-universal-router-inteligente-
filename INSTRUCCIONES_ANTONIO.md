@@ -20,3 +20,4 @@
 - t688: Ya no lo vas hacer tú (Grupo 1 lo hace el bot nuevo de planeta123usa, no Code).
 - t690: Haces 2 equipos en el grockbot planeta123usa@gmail.com. Grupo 1 y 2. 2 secciones diferentes.
 - t691: Idénticas.
+- t693: Le pones al bot el nombre de grupo 1 y grupo 2.
