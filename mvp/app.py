@@ -1,7 +1,7 @@
 """Chat MVP: autenticacion, banco de credenciales y cliente Token Plan."""
 import asyncio
 import hmac, uuid
-import os, subprocess
+import os, subprocess, time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException
@@ -64,6 +64,9 @@ async def chat(cuerpo: dict):
             salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"))
         except (ValueError, RuntimeError) as error:
             raise HTTPException(status_code=502, detail=str(error)) from None
+        if salida.get("status") == "error":
+            raise HTTPException(status_code=502, detail=str(salida.get("error") or "harness error"))
+        salida = salida.get("result", salida) if isinstance(salida.get("result"), dict) else salida
         return {"texto": salida.get("texto") or "", "tool_calls": salida.get("tool_calls") or []}
     banco = app.state.banco
     clave = banco.leer("QWEN_API_KEY") if banco else None
@@ -106,6 +109,13 @@ def chat_provider_models(proveedor: str):
     if proveedor != "qwen":
         raise HTTPException(status_code=404, detail="proveedor no disponible en mvp")
     return {"models": [{"model_id": m, "label": m} for m in modelos.permitidos()]}
+# --- G16: panel-chat.js:542 lee {agents:[{id,name}]} y :543-544 {accounts:[{account}]}; mvp no tiene fuente de agentes ni de cuentas GitHub -> listas vacias (sin inventar) ---
+@app.get("/chat/agents", dependencies=[Depends(verificar)])
+def chat_agents():
+    return {"agents": []}
+@app.get("/chat/github/accounts", dependencies=[Depends(verificar)])
+def chat_github_accounts():
+    return {"accounts": []}
 # --- G1/G2/G3/G4: contrato del frontend (api.js puenteRouter) sobre la logica existente de /chat ---
 BLOQUEOS = {}  # sesion -> bool (agent_access_lock, en memoria)
 TRABAJOS, _TAREAS = {}, set()  # proceso_id -> {estado, proceso_id, choices|error}; en memoria (se pierde al reiniciar)
@@ -157,6 +167,20 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
                 break
             await asyncio.sleep(0.25)
         return {"status": "ok", "result": dict(TRABAJOS[pid])}
+    if accion == "llm" and plugin == "fichas_qwen":  # G21: Ficha 4 -> modelo DIRECTO (contrato puente_chat llm_call); nunca via=harness
+        try:
+            modelo = modelos.validar(cuerpo.get("modelo") or None)
+        except (ValueError, TypeError):
+            modelo = modelos.cargar()["modelo_defecto"]
+        opciones = dict(cuerpo.get("opciones") or {})
+        if cuerpo.get("max_tokens"):
+            opciones["max_tokens"] = cuerpo["max_tokens"]
+        try:
+            salida = await chat({"modelo": modelo, "mensajes": cuerpo.get("messages") or cuerpo.get("mensajes"), "opciones": opciones})
+        except HTTPException as error:
+            return {"status": "ok", "result": {"error": "GAP_FICHA4", "detalle": str(error.detail)[:200]}}
+        return {"status": "ok", "result": {"reply": salida["texto"], "modelo": modelo,
+                                           "ficha": str(cuerpo.get("ficha_qwen") or "ficha4-workflow-yaiwes")}}
     if accion == "agent_access_lock":  # G15: panel-chat.js exige result {ok:true, locked:bool}; en memoria, bloqueado por defecto
         sesion = str(cuerpo.get("sesion") or "web-general")[:60]
         if "locked" in cuerpo:
@@ -165,4 +189,13 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
             BLOQUEOS[sesion] = cuerpo["locked"]
         return {"status": "ok", "result": {"ok": True, "sesion": sesion, "locked": BLOQUEOS.get(sesion, True)}}
     raise HTTPException(status_code=400, detail="accion no soportada en mvp")
+# --- G19: POST /chat/send (panel-chat.js sin harnessUrl) sobre la misma ruta Harness que chat_async; sin fallback ---
+@app.post("/chat/send", dependencies=[Depends(verificar)])
+async def chat_send(cuerpo: dict):
+    t0 = time.monotonic()
+    salida = await _chat_ficha(cuerpo)  # 503 HARNESS_NO_CONFIGURADO si falta RIU_DEEPSEEK_HARNESS_URL
+    msg = salida["choices"][0]["message"]
+    tools = [((t.get("function") or {}).get("name") or "tool") for t in (msg.get("tool_calls") or []) if isinstance(t, dict)]
+    return {"reply": msg["content"], "execution_path": "HARNESS", "ms": int((time.monotonic() - t0) * 1000),
+            "tools": tools, "via": "harness"}
 mcp_route.montar(app, verificar, chat, almacen)
