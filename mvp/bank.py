@@ -9,7 +9,7 @@ from pathlib import Path
 from cryptography.fernet import Fernet, InvalidToken
 
 MARCA = b"MVPB1"
-SECRETOS = ("HF_TOKEN", "GITHUB_TOKEN", "QWEN_API_KEY")
+SECRETOS = ("HF_TOKEN", "GITHUB_TOKEN", "QWEN_API_KEY", "RIU_API_KEY")  # RIU_API_KEY: credencial Harness leida en app.clave_harness (G6)
 ACCESO = ("RIU_API_KEY", "RIU_PUBLIC_CHAT_KEY", "RIU_MCP_KEY", "RIU_ROUTER_API_KEY")
 
 

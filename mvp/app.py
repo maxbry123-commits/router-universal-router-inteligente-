@@ -1,6 +1,6 @@
 """Chat MVP: autenticacion, banco de credenciales y cliente Token Plan."""
 import asyncio
-import hmac
+import hmac, uuid
 import os, subprocess
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -97,4 +97,55 @@ async def almacen(cuerpo: dict):
                                        *(cuerpo[campo] for campo in campos[accion]))
     except (ValueError, RuntimeError) as error:
         raise HTTPException(status_code=502, detail=str(error)) from None
+# --- G1/G2/G3/G4: contrato del frontend (api.js puenteRouter) sobre la logica existente de /chat ---
+TRABAJOS, _TAREAS = {}, set()  # proceso_id -> {estado, proceso_id, choices|error}; en memoria (se pierde al reiniciar)
+FICHAS_QWEN = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "5": "ficha5-mvp"}
+async def _chat_ficha(cuerpo):
+    q = {**cuerpo, **(cuerpo.get("qwen") or {})}  # api.js harness() anida {plugin, ficha_qwen, modelo} en "qwen"
+    mensajes = q.get("mensajes") or q.get("messages") or [{"role": "user", "content": str(q.get("message") or "")}]
+    if q.get("instrucciones_fijas"):
+        mensajes = [{"role": "system", "content": str(q["instrucciones_fijas"])}] + list(mensajes)
+    try:
+        modelo = modelos.validar(q.get("modelo") or None)
+    except (ValueError, TypeError):
+        modelo = modelos.cargar()["modelo_defecto"]  # el frontend manda etiquetas/fichas (nv-*, ficha*) fuera del catalogo
+    # Ruta Antonio: Qwen -> Harness DeepSeek (HTTP) -> router. Sin camino alterno; sin URL Harness falla (G5 abierto)
+    if not os.environ.get("RIU_DEEPSEEK_HARNESS_URL"):
+        raise HTTPException(status_code=503, detail="HARNESS_NO_CONFIGURADO")
+    salida = await chat({"modelo": modelo, "mensajes": mensajes, "via": "harness", "opciones": q.get("opciones")})
+    return {"estado": "listo", "via": "harness", "choices": [{"message": {
+        "role": "assistant", "content": salida["texto"], "tool_calls": salida["tool_calls"]}}]}
+async def _correr(pid, cuerpo):
+    try:
+        TRABAJOS[pid].update(await _chat_ficha(cuerpo))
+    except HTTPException as error:
+        TRABAJOS[pid].update(estado="error", error=str(error.detail))
+    except Exception as error:  # noqa: BLE001 - el proceso debe terminar siempre
+        TRABAJOS[pid].update(estado="error", error=type(error).__name__)
+@app.post("/plugins/{plugin}/call/{accion}", dependencies=[Depends(verificar)])
+async def plugin_call(plugin: str, accion: str, cuerpo: dict):
+    if plugin not in ("fichas_qwen", "puente_chat"):
+        raise HTTPException(status_code=404, detail="plugin no disponible en mvp")
+    if accion in ("fichas", "listar_fichas"):
+        return {"status": "ok", "result": {"fichas": [{"n": n, "id": i, "nombre": i} for n, i in FICHAS_QWEN.items()]}}
+    if accion in ("chat_async", "chat"):
+        pid = "p-" + (str(cuerpo.get("request_id") or "")[:64] or uuid.uuid4().hex)  # request_id fijo => mismo proceso_id
+        if pid not in TRABAJOS:
+            TRABAJOS[pid] = {"estado": "procesando", "proceso_id": pid}
+            tarea = asyncio.create_task(_correr(pid, cuerpo)); _TAREAS.add(tarea); tarea.add_done_callback(_TAREAS.discard)
+        return {"status": "ok", "result": dict(TRABAJOS[pid])}
+    if accion == "resultado":
+        pid = str(cuerpo.get("proceso_id") or "")
+        if pid not in TRABAJOS:
+            raise HTTPException(status_code=404, detail="proceso_id desconocido")
+        try:
+            espera = min(max(float(cuerpo.get("espera") or 0), 0), 8)
+        except (TypeError, ValueError):
+            espera = 0
+        for _ in range(int(espera * 4)):  # long-poll: responde apenas termina (max 8 s)
+            if TRABAJOS[pid]["estado"] != "procesando":
+                break
+            await asyncio.sleep(0.25)
+        return {"status": "ok", "result": dict(TRABAJOS[pid])}
+    raise HTTPException(status_code=400, detail="accion no soportada en mvp")
 mcp_route.montar(app, verificar, chat, almacen)
