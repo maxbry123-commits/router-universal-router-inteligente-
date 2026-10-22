@@ -1,6 +1,16 @@
 # GRUPO 0.1 — SHERIFF
 Copia 1 a 1, verbatim, del Grupo 0. Solo se guarda esto.
 
+## OBJETIVOS
+```input
+OBJETIVOS (Antonio, t775)
+1. Que Grupo 1 y Grupo 2 cumplan su ciclo.
+2. Que cumplan su prompt (fuente de la verdad) y el bucle Loop exacto de cada grupo:
+   - LOOP GRUPO 1 t730: CICLO GRUPO 1 (router). 1) Sol grupo 1 hace el code del router nuevo según el prompt de Claude; lo entrega a Grupo 1 en 1 archivo por salida. 2) El ingeniero de Grupo 1 lo pasa a los 3 verificadores (sheriff, centinela, guardián), que usan su prompt más el prompt de Claude. 3) Si está mal: el ingeniero manda a reparar a refactoría y se verifica de nuevo. 4) Si pasa: el centinela manda a un agente a desplegar; despliega y borra el code de la PC. 5) Los 3 centinelas revisan el despliegue, la organización y el cableado. 6) Mientras tanto, el ingeniero sigue con Sol pidiendo el siguiente archivo. Mismo ciclo hasta terminar el prompt de Claude. 7) Al final, los 3 verificadores revisan que todo esté cableado y cumpla las instrucciones; si no, el ingeniero orquestador lo resuelve y se verifica de nuevo.
+   - LOOP GRUPO 2 t739: FLUJO GRUPO 2 (fichas y prompt). Casi no se escribe código: se mueve y se copia con scripts, nunca un agente que reescriba (el prompt no se toca). 1) Sol escribe solo 3 scripts pequeños, 1 archivo por salida, según el prompt de Claude: inventario con huella sha256; mover el system prompt y armar el índice; extraer datos de fichas viejas y armar la ficha nueva. 2) El ingeniero de Grupo 2 corre los scripts y pasa el resultado a los 3 verificadores; mientras revisan, pide a Sol el siguiente script. 3) Tres vías en paralelo: A) el system prompt se mueve a carpetas con índice y cada archivo conserva su huella; si una cambia, se repara y se revisa. B) La ficha nueva copia de las viejas solo parámetros, límites y formato, cada dato con archivo y línea de origen; el código exacto no se pega, la ficha apunta a él con ruta y huella. C) Grupo 2 no construye el router (es de Grupo 1); solo conecta su plugin y comprueba que el router lo reconoce. 4) Verificadores: el sheriff revisa reglas (ningún prompt editado, la ficha dentro del tope, el código en su límite); el centinela revisa huellas y manda a desplegar; el guardián revisa seguridad (sin claves, sin campos prohibidos, sin salir de la arquitectura). 5) Si falla, el ingeniero lo manda al refactorizador y se verifica de nuevo; si falla 2 veces, va al Director. 6) Si pasa, el centinela despliega, el agente borra la copia local y los 3 centinelas revisan el despliegue, la organización y el cableado. 7) Al final, revisión conjunta: el prompt completo, la ficha única y el plugin conectado al router, con todas las huellas del system prompt intactas. Solo la vía B usa a Sol para escribir, y solo scripts pequeños. El system prompt nunca pasa por un agente que lo reescriba.
+3. No stop, no escala: te pegas al plan del loop y a los prompts.
+```
+
 ## INSTRUCCIONES DE ANTONIO
 ```input
 # Instrucciones de Antonio (lista única). Lo que no está aquí NO pasa.
