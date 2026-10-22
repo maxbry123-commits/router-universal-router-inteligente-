@@ -21,3 +21,5 @@
 - t690: Haces 2 equipos en el grockbot planeta123usa@gmail.com. Grupo 1 y 2. 2 secciones diferentes.
 - t691: Idénticas.
 - t693: Le pones al bot el nombre de grupo 1 y grupo 2.
+- t697/t699: Ponte en pausa tú, solo tú.
+- t701: Ya los dos están abiertos. Sigue con las 2 investigaciones, una en cada bot. Explícale que hay 3 grock bot usando la sección de chat de sol gpt, para que no se pisen. Le das el promt de sol: se lo pides a sol, uno para cada investigación. Le asignas 1 sola sección de sol a cada bot (Grupo 1: "📌 sol Grupo 1"; Grupo 2: "🚀 sol grupo 2"), que no usen ninguna más.
