@@ -8,6 +8,13 @@ Cada bot escribe solo su sección, de uno en uno, con pull antes de escribir. La
 
 ## HF Guardián Refactoria
 
+1. Antes de que cualquier bot actúe, revisar que la acción esté dentro de las instrucciones de Antonio; si no, bloquearla.
+2. Revisar cada salida y cada mensaje a Sol: solo lectura sin PASS, sin cambiar arquitectura, sin sobreingeniería, edición quirúrgica, sin claves en chat, archivos ni git.
+3. Vigilar que nadie toque nada fuera de su alcance (en `reorganizacion`, solo `Skills/orquestador-jefe-chat-router/`), con push normal, sin force push ni LFS.
+4. Cerrar N12 de Hugging Face con GUARDIAN_PASS cuando N09–N11 tengan evidencia.
+5. Después de Hugging Face: mi parte del reparto y 4 pruebas reales del chat https://riu-jev-bridge.vercel.app/ en distintas sesiones.
+6. Si el bucle completo se agota, escalar a Claude, por medio de Ejecutor 2, con la bitácora, los problemas y la investigación. Nunca escalar a Antonio.
+
 ## Huggueface Ejecutor (Ejecutor 1)
 
 ## Ejecutor 2
