@@ -31,6 +31,12 @@ Cada bot escribe solo su sección, de uno en uno, con pull antes de escribir. La
 
 ## Huggueface Ejecutor (Ejecutor 1)
 
+1. Rol: Ejecutor 1 (Huggueface Ejecutór). Ejecuta solo lo que ordena Centinela, con evidencia real (SHA, diff, HTTP).
+2. S10 hecho: N04, N05, N06/N07, N08, N09 (clone main `0ff3bb7`), N10 (`boot.sh` commit `d60ee1bf`), V10 (borrado test commit `8da27a78`). Space RUNNING, `/health` 200.
+3. Pendiente: N11 autenticado bloqueado; no hay `RIU_API_KEY` legible (secretos HF son solo escritura). Espera decisión de Centinela/Guardián/Sheriff.
+4. Siguiente: parte de Ejecutor 1 en el reparto del chat team Qwen, frontend/backend y MCP, cuando Centinela ordene.
+5. Reglas: no imprimir secretos, no tocar `/data`, no tests, no force push, no LFS, no GitHub Actions, no Vercel.
+
 ## Ejecutor 2
 
 1. Reescribir el skill (hecho, commit `42cbc90`).
