@@ -11,3 +11,7 @@
 - t667: Grupo 2 se contacta por la web grok.com con la cuenta planeta123usa@gmail.com.
 - t670: Asignar lo mismo (centinelas, mismas instrucciones) al grockbot grupo 2 con el enlace de la skill. En la skill solo las tareas nuevas de los 2 grupos; lo demás se borra.
 - t671: Vive en Github no en tu pc; si lo necesitan leer los agentes lo leen en Github.
+- t673: Todo lo hace grupo 2.
+- t680: No pasa, no sale instrucciones sin autorización del sentinela, es tu regla número 1.
+- t681: Ley.
+- t682/t683: Mándale a grockbot planeta123usa@gmail.com (la regla número 1). Si.
