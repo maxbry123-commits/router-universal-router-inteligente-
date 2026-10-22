@@ -18,3 +18,5 @@
 - t686: Vas abrir un bot nuevo en grockbot planeta123usa@gmail.com.
 - t687: Le vas asignar el trabajo de grupo 1.
 - t688: Ya no lo vas hacer tú (Grupo 1 lo hace el bot nuevo de planeta123usa, no Code).
+- t690: Haces 2 equipos en el grockbot planeta123usa@gmail.com. Grupo 1 y 2. 2 secciones diferentes.
+- t691: Idénticas.
