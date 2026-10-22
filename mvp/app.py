@@ -1,12 +1,11 @@
 """Chat MVP: autenticacion, banco de credenciales y cliente Token Plan."""
 import asyncio
 import hmac
-import os
-import subprocess
+import os, subprocess
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException
-from mvp import bank, compute, modelos, harness_client, hf_store
+from mvp import bank, compute, modelos, harness_client, hf_store, mcp_route
 @asynccontextmanager
 async def inicio(app):
     app.state.banco = None
@@ -98,3 +97,4 @@ async def almacen(cuerpo: dict):
                                        *(cuerpo[campo] for campo in campos[accion]))
     except (ValueError, RuntimeError) as error:
         raise HTTPException(status_code=502, detail=str(error)) from None
+mcp_route.montar(app, verificar, chat, almacen)
