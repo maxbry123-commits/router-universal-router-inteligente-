@@ -97,7 +97,17 @@ async def almacen(cuerpo: dict):
                                        *(cuerpo[campo] for campo in campos[accion]))
     except (ValueError, RuntimeError) as error:
         raise HTTPException(status_code=502, detail=str(error)) from None
+# --- G14: panel-chat.js lee {providers:[{id,label}]} y {models:[{model_id,label}]}; datos solo de mvp/modelos.json ---
+@app.get("/chat/providers", dependencies=[Depends(verificar)])
+def chat_providers():
+    return {"providers": [{"id": "qwen", "label": modelos.cargar()["proveedor"]}]}
+@app.get("/chat/providers/{proveedor}/models", dependencies=[Depends(verificar)])
+def chat_provider_models(proveedor: str):
+    if proveedor != "qwen":
+        raise HTTPException(status_code=404, detail="proveedor no disponible en mvp")
+    return {"models": [{"model_id": m, "label": m} for m in modelos.permitidos()]}
 # --- G1/G2/G3/G4: contrato del frontend (api.js puenteRouter) sobre la logica existente de /chat ---
+BLOQUEOS = {}  # sesion -> bool (agent_access_lock, en memoria)
 TRABAJOS, _TAREAS = {}, set()  # proceso_id -> {estado, proceso_id, choices|error}; en memoria (se pierde al reiniciar)
 FICHAS_QWEN = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "5": "ficha5-mvp"}
 async def _chat_ficha(cuerpo):
@@ -147,5 +157,12 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
                 break
             await asyncio.sleep(0.25)
         return {"status": "ok", "result": dict(TRABAJOS[pid])}
+    if accion == "agent_access_lock":  # G15: panel-chat.js exige result {ok:true, locked:bool}; en memoria, bloqueado por defecto
+        sesion = str(cuerpo.get("sesion") or "web-general")[:60]
+        if "locked" in cuerpo:
+            if type(cuerpo["locked"]) is not bool:
+                raise HTTPException(status_code=400, detail="locked debe ser booleano")
+            BLOQUEOS[sesion] = cuerpo["locked"]
+        return {"status": "ok", "result": {"ok": True, "sesion": sesion, "locked": BLOQUEOS.get(sesion, True)}}
     raise HTTPException(status_code=400, detail="accion no soportada en mvp")
 mcp_route.montar(app, verificar, chat, almacen)
