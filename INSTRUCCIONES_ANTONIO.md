@@ -15,3 +15,6 @@
 - t680: No pasa, no sale instrucciones sin autorización del sentinela, es tu regla número 1.
 - t681: Ley.
 - t682/t683: Mándale a grockbot planeta123usa@gmail.com (la regla número 1). Si.
+- t686: Vas abrir un bot nuevo en grockbot planeta123usa@gmail.com.
+- t687: Le vas asignar el trabajo de grupo 1.
+- t688: Ya no lo vas hacer tú (Grupo 1 lo hace el bot nuevo de planeta123usa, no Code).
