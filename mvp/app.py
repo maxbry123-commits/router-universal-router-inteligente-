@@ -5,10 +5,8 @@ import os
 import subprocess
 from contextlib import asynccontextmanager
 from pathlib import Path
-
 from fastapi import Depends, FastAPI, Header, HTTPException
-from mvp import bank, compute, modelos
-
+from mvp import bank, compute, modelos, harness_client
 
 @asynccontextmanager
 async def inicio(app):
@@ -28,9 +26,7 @@ async def inicio(app):
         pass
     yield
 
-
 app = FastAPI(lifespan=inicio)
-
 
 def autorizado(authorization=None, x_api_key=None):
     esperado = next((os.environ[n] for n in bank.ACCESO if os.environ.get(n)), None)
@@ -38,12 +34,17 @@ def autorizado(authorization=None, x_api_key=None):
     return bool(esperado and any(hmac.compare_digest(v, esperado)
                                  for v in (bearer, x_api_key) if isinstance(v, str)))
 
-
 def verificar(authorization: str | None = Header(None),
               x_api_key: str | None = Header(None)):
     if not autorizado(authorization, x_api_key):
         raise HTTPException(status_code=401, detail="clave de acceso invalida")
 
+def clave_harness():
+    banco = app.state.banco
+    clave = banco.leer("RIU_API_KEY") if banco else None
+    if not clave:
+        raise HTTPException(status_code=503, detail="credencial Harness ausente en banco")
+    return clave
 
 @app.get("/health")
 def health(authorization: str | None = Header(None),
@@ -57,7 +58,6 @@ def health(authorization: str | None = Header(None),
             "clave_qwen_presente": bool(modelos.clave_env() or
                                        (app.state.banco and app.state.banco.leer("QWEN_API_KEY")))}
 
-
 @app.post("/chat", dependencies=[Depends(verificar)])
 async def chat(cuerpo: dict):
     try:
@@ -67,6 +67,12 @@ async def chat(cuerpo: dict):
     mensajes = cuerpo.get("mensajes")
     if not isinstance(mensajes, list) or not mensajes:
         raise HTTPException(status_code=400, detail="mensajes debe ser lista no vacia")
+    if cuerpo.get("via") == "harness":
+        try:
+            salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"))
+        except (ValueError, RuntimeError) as error:
+            raise HTTPException(status_code=502, detail=str(error)) from None
+        return {"texto": salida.get("texto") or "", "tool_calls": salida.get("tool_calls") or []}
     banco = app.state.banco
     clave = banco.leer("QWEN_API_KEY") if banco else None
     if not clave:
@@ -77,3 +83,16 @@ async def chat(cuerpo: dict):
     except (ValueError, RuntimeError) as error:
         raise HTTPException(status_code=502, detail=str(error)) from None
     return {"texto": salida["texto"], "tool_calls": salida["tool_calls"]}
+
+@app.post("/almacen", dependencies=[Depends(verificar)])
+async def almacen(cuerpo: dict):
+    accion = cuerpo.get("accion")
+    campos = {"guardar": ("nombre", "valor"), "leer": ("nombre",),
+              "computar": ("tarea",), "status": ()}
+    if accion not in campos or any(campo not in cuerpo for campo in campos.get(accion, ())):
+        raise HTTPException(status_code=400, detail="accion o campos invalidos")
+    try:
+        return await asyncio.to_thread(getattr(harness_client, accion), clave_harness(),
+                                       *(cuerpo[campo] for campo in campos[accion]))
+    except (ValueError, RuntimeError) as error:
+        raise HTTPException(status_code=502, detail=str(error)) from None
