@@ -1,9 +1,19 @@
+import os
 import copy, json, os, subprocess, sys, tempfile, unittest
 import mythos_engine as me
 import loop_controller as lc
 import objective_store as ob
 import prompt_import as pim
 import mode_router as mr
+_CWD0 = os.getcwd(); os.chdir(os.path.dirname(os.path.abspath(__file__)))  # los datos (registro, contratos) viven junto al test
+
+def setUpModule():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+
+def tearDownModule():
+    os.chdir(_CWD0)
+
 
 SPEC = json.load(open("mythos_engine.json", encoding="utf-8"))
 REG = mr.load_registry("modes_registry.json")

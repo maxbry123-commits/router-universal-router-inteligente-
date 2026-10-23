@@ -436,6 +436,33 @@ class TestGapsChat(Base):
             self.client.post("/chat/send", headers=CAB, json={"message": "hola", "model": "qwen3.8-flash", "thinking_mode": "on"})
             self.assertIsNone(llm.call_args.args[3] or None)
 
+    def enviar_con_modo(self, **extra):
+        salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "x"}
+        self.banco.datos["RIU_API_KEY"] = "clave-harness"
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
+            r = self.client.post("/chat/send", headers=CAB, json={"message": "hola", "model": "qwen3.8-max", **extra})
+        return r, (llm.call_args.args[1] if llm.call_args else None)
+
+    def test_motores_envuelven_el_system_prompt_por_modo(self):
+        r, msgs = self.enviar_con_modo()  # Auto sin regla = modo por defecto: no se envuelve (no se pisan las tools autorizadas)
+        self.assertEqual((r.status_code, msgs), (200, [{"role": "user", "content": "hola"}]))
+        r, msgs = self.enviar_con_modo(mode_request={"mode_id": "m01_plan", "source": "button"})
+        self.assertEqual((msgs[0]["role"], msgs[-1]["content"]), ("system", "hola"))
+        self.assertIn("m01_plan", msgs[0]["content"])
+        r, msgs = self.enviar_con_modo(message="investiga sobre qwen", mode_request={"mode_id": "auto", "source": "auto"})
+        self.assertIn("m03_investigacion", msgs[0]["content"])  # Auto: lo decide la regla del clasificador
+        r, msgs = self.enviar_con_modo(message="/auto  que tal", mode_request={"mode_id": "auto", "source": "auto"})
+        self.assertEqual(msgs[-1]["content"], "que tal")  # el slash se quita del texto
+
+    def test_modo_autonomo_y_modo_invalido_fallan_cerrados(self):
+        r, msgs = self.enviar_con_modo(mode_request={"mode_id": "m04_agentico_loop", "source": "button"})
+        self.assertEqual((r.status_code, msgs), (501, None))
+        self.assertIn("m04_agentico_loop", r.json()["detail"])
+        r, _ = self.enviar_con_modo(mode_request={"mode_id": "m01_plan", "source": "auto"})
+        self.assertEqual(r.status_code, 400)
+        r, _ = self.enviar_con_modo(mode_request={"mode_id": "m99", "source": "button"})
+        self.assertEqual(r.status_code, 400)
+
     def test_errores_del_proveedor_son_visibles(self):
         with patch("mvp.app.compute.llamar", side_effect=RuntimeError("Proveedor HTTP 500")):
             r = self.client.post("/chat", headers=CAB, json={"mensajes": [{"role": "user", "content": "x"}]})

@@ -1,6 +1,16 @@
+import os
 import asyncio, copy, json, unittest
 import mode_router as mr
 import validate_modes as vm
+_CWD0 = os.getcwd(); os.chdir(os.path.dirname(os.path.abspath(__file__)))  # los datos (registro, contratos) viven junto al test
+
+def setUpModule():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+
+def tearDownModule():
+    os.chdir(_CWD0)
+
 
 REG = mr.load_registry("modes_registry.json")
 OBJ = {"goal": "Entregar modulo X", "done_when": ["tests en verde"], "constraints": ["aditivo"],

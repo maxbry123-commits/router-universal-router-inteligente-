@@ -1,5 +1,16 @@
+import os
 import unittest
 import rules_engine as R
+
+_CWD0 = os.getcwd()
+
+
+def setUpModule():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))  # prompt_rules.yaml vive junto al test
+
+
+def tearDownModule():
+    os.chdir(_CWD0)
 
 
 class TestRulesEngine(unittest.TestCase):

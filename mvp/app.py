@@ -2,11 +2,15 @@
 import asyncio
 import base64
 import hmac, logging, uuid
-import os, subprocess, time
+import os, subprocess, sys, time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException
 from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route
+_MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
+sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
+import mode_router  # noqa: E402
+REGISTRO = mode_router.load_registry(str(_MODOS / "modes_registry.json"))
 @asynccontextmanager
 async def inicio(app):
     app.state.banco = None
@@ -231,6 +235,17 @@ async def _chat_ficha(cuerpo):
         mensajes = [anclado] + list(mensajes)
     if q.get("instrucciones_fijas"):
         mensajes = [{"role": "system", "content": str(q["instrucciones_fijas"])}] + list(mensajes)
+    ultimo = mensajes[-1] if isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user" else None  # capa de motores: Router -> ficha -> modo -> system prompt
+    try:
+        ruteo = mode_router.route_request(REGISTRO, {"message": str((ultimo or {}).get("content") or ""), "mode_request": q.get("mode_request")})
+    except mode_router.ModeError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from None
+    if ruteo["ficha"]["autonomous_loop"]:
+        raise HTTPException(status_code=501, detail="modo %s: bucle autonomo sin conectar en el MVP (motor_objetivo.correr_objetivo pide objetivo fijado)" % ruteo["mode_id"])
+    if ultimo is not None and ruteo["message"].strip():  # /modo y /auto se quitan del texto
+        mensajes = [*mensajes[:-1], {**ultimo, "content": ruteo["message"]}]
+    if ruteo["source"] != "default_mode":  # el modo por defecto (m05: "sin herramientas") contradiría las tools autorizadas por el Router: sin regla ni modo elegido no se envuelve
+        mensajes = [{"role": "system", "content": ruteo["ficha"]["system_block"]}] + list(mensajes)
     seleccionado = str(q.get("modelo") or q.get("model") or "")
     seleccionado = next((m for m in modelos.permitidos() if "".join(c for c in m.lower() if c.isalnum()) == "".join(c for c in seleccionado.lower() if c.isalnum())), seleccionado)
     if seleccionado.startswith(FICHAS_HEREDADAS):  # sin selector Qwen activo el chat manda su ficha (nv-muse-glimmer): se usa el modelo por defecto y el chat muestra «Modelo solicitado · API»

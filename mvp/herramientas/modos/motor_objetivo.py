@@ -71,7 +71,7 @@ def _recibos_falsos(ids):  # >>> PARCHE_T1 <<< ids que el modelo nombra y el eje
     try:
         import importlib.util as _iu
         from pathlib import Path as _P
-        _f = _P(__file__).resolve().parent.parent / 'motor_json' / 'yaiwes_motor.py'
+        _f = _P(__file__).resolve().parent.parent / 'yaiwes_motor.py'
         _s = _iu.spec_from_file_location('yaiwes_motor_chk', _f)
         _m = _iu.module_from_spec(_s)
         _s.loader.exec_module(_m)

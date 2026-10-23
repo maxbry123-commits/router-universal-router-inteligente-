@@ -23,7 +23,7 @@ Límites conocidos: el estado se guarda por `/almacen` (HF); con HF caído se si
 
 - **Frontend** (`plugins/chat-router/frontend/mode_selector.js`): «✨ Auto» es la fila inicial del selector de modos y el valor por defecto (`localStorage chat.mode_lock.panel`; un id inválido guardado vuelve a Auto). Cada envío lleva `mode_request = {mode_id:"auto", source:"auto"}`; con un modo fijado lleva `{mode_id, source:"button"}`. El front solo propone.
 - **Resolución** (`fichas/fichas_qwen/modos/mode_router.py`, `resolve_mode`): precedencia `button_lock > slash_command > auto_classifier > default_mode` (`m05_respuesta_rapida`). En Auto: `/auto` en el mensaje se quita del texto y `classify_auto` aplica las reglas por regex del registro (`modes_registry.json`); sin coincidencia usa el modo por defecto. Auto **nunca** elige un modo autónomo (`AUTO_FORBIDDEN`); esos exigen botón, slash o palabra de gate (`INICIA`, `RUN`, `IMPUTA`).
-- **En el Router MVP**: `mvp/` no importa `mode_router` ni lee `mode_request` (solo aparece como campo del esquema MCP `chat`). El selector y el campo viajan, pero hoy el MVP los ignora; el enrutado de modos lo consume `fichas/fichas_qwen/plugin.py`.
+- **En el Router MVP**: desde esta rama `mvp/app.py` (`_chat_ficha`) llama a `mode_router.route_request` con el `mode_request` del frontend: el system block del modo viaja como primer mensaje `system` (salvo en el modo por defecto, que no envuelve para no contradecir las tools autorizadas), el `/modo` se quita del texto y un modo autónomo responde 501 (bucle sin conectar). Ver «Motores» abajo.
 
 ## Maxbry UI (skill `componentes/skills/workflow-loop-yaiwes/fromted-yaiwes-frontend-factory`)
 
@@ -41,3 +41,14 @@ Composer: fila principal ＋ · 📎 · 🎤 … Enviar; chips Auto · Pensar ·
 | Ficha heredada `nv-*`/`hf-*`/`ask-consil*` sin selector Qwen | usa el modelo por defecto (antes: error «modelo no permitido») |
 | `/chat/send`, `/chat/providers…`, `/chat/agents`, `/chat/github/accounts`, `chat_async`, `resultado` | OK |
 | `notas`, `pendientes` (organizador LLM), `groq_agentes`, `agente_enlazar`, `tools_estado`, `recurso_probar`, `mirror_*`, `handoff`, `xray`, `descargas`, `mover_raiz`, `auditor_code`, `/memoria/search`, `/chat/org/*`, `/chat/documents`, `/control/*` | NO existen en el MVP (400/404 «accion no soportada»); la UI oculta el organizador y la ventana de staff, el resto muestra el error real |
+
+## Motores que envuelven el system prompt (Router → ficha única → motores → system prompt)
+
+Movidos con `git mv` desde `fichas/fichas_qwen/` a `mvp/herramientas/` (sin código nuevo; solo cambió una ruta en `motor_objetivo.py` y el `cwd` de sus pruebas):
+- `modos/`: `mode_router` (resuelve el modo y arma el system block), `validate_modes`, `prompt_layouts` (gobernanza en `system`, tarea sola en `user`), `prompt_import` (prompt importado tras el system block), `objective_store`, `loop_controller` (bucle externo con topes), `motor_objetivo` (vueltas hasta cumplir el objetivo), `mythos_engine`, `validate_contract*`, `modes_registry.json` (el mismo que el selector del frontend) y sus pruebas.
+- `instrucciones/`: `rules_engine` + `prompt_rules.yaml` (87 reglas → bloques de sistema).
+- `yaiwes_motor.py` junto a `motor_cli.py` (ejecutor JSON con recibos).
+- System prompt: `mvp/system-prompt/` (copia con el mismo SHA que `fichas/system-prompt/`).
+
+Conectado en vivo: solo `mode_router` (modo → system block) en `_chat_ficha`. Movidos pero SIN conectar: `prompt_layouts`, `prompt_import`, `loop_controller`, `motor_objetivo`, `mythos_engine`, `rules_engine` y `yaiwes_motor`; los bucles piden un objetivo fijado (`objective_store`) que el chat aún no envía, y el system prompt largo (`mvp/system-prompt/perfiles`) solo lo usan esos bucles. Quedan en su sitio, sin tocar: `programador.py`, `apply_addon.py`, `check_integration.py`, `convert_instrucciones.py`, `qwen_blender_adapter.py`, `test_dsl_cableado.py` y `plugins/puente_chat/plugin.py` (`_prompt_lib`/`_core_render`/`_bloques_capas` están dentro de un módulo de 3.6k líneas).
+Efecto visible: Auto solo envuelve cuando una regla del clasificador acierta (agenda, plan, investigación, tool) o cuando eliges un modo; sin regla queda `m05_respuesta_rapida` y NO se añade su texto («sin herramientas»), porque pisaría las tools de GitHub/HF.
