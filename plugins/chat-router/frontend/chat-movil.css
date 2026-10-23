@@ -26,6 +26,7 @@
   #composer{max-width:600px;margin-inline:auto}
   .composer-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px}
   .composer-bar .secondary{flex:1 1 34px!important;min-width:0;max-width:44px;width:auto;height:auto;min-height:0;aspect-ratio:1/1;padding:0}
+  .composer-bar #btn-tools{flex:0 0 auto!important;max-width:none;aspect-ratio:auto;min-height:36px;padding:6px 10px;white-space:nowrap;word-break:normal;overflow-wrap:normal}
   .composer-bar .action{order:99}  /* el boton blanco de enviar conserva su forma original; solo va al final */
   /* ventanas centradas, con el borde de arriba redondeado */
   .sheet .va-caja{margin-inline:auto;border-radius:22px 22px 0 0}

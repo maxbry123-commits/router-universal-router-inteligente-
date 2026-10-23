@@ -22,14 +22,20 @@ window.RIU_SELECTOR_QWEN.modelos = GRUPOS.flatMap((g) => g.modelos.map((m) => ({
 
 export function conectarSelectorModelos(ctx) {
   const { q, chat, tell, guardar } = ctx;
-  api('/chat/providers/qwen/models').then((r) => {
+  let cargando = false;
+  const cargarCatalogo = () => {
+    if (cargando) return;
+    cargando = true;
+    api('/chat/providers/qwen/models').then((r) => {
     if (!Array.isArray(r.models) || !r.models.length) throw new Error('Catalogo vacio');
     GRUPOS.splice(0, GRUPOS.length, { titulo: 'Modelos del plan activo', modelos: r.models.map((m) => ['pensar', m.model_id, 'ID enviado al proveedor', m.model_id]) });
     window.RIU_SELECTOR_QWEN.modelos = r.models.map((m) => ({ model_id: m.model_id, modelo_id_slug: slug(m.model_id), label: m.model_id, grupo: 'Modelos del plan activo' }));
     pintar();
-  }).catch(() => { GRUPOS.splice(0, GRUPOS.length); pintar(); tell('No se pudo cargar el catalogo del Router; no se sustituira el modelo elegido'); });
+    }).catch(() => { GRUPOS.splice(0, GRUPOS.length); pintar(); lista.append(node('p', 'Router no disponible. Vuelve a abrir el selector para reintentar.', 'fila-desc')); }).finally(() => { cargando = false; });
+  };
 
   const pill = q("#sel-nuevo"), lista = q("#sh-modelos-lista");
+  if (!pill || !lista || !q("#sh-modelos")) return;
   const pillMvp = q("#sel-mvp");  // Team 5 MVP: misma hoja y mismo catalogo; la ruta de envio es otra (ficha_qwen=5)
   let hojaOrigen = "team-qwen";  // quien abrio la hoja de modelos: al elegir, se enciende ESE selector y no el otro
   const pintarPill = () => {
@@ -83,9 +89,10 @@ export function conectarSelectorModelos(ctx) {
     }
   };
   const SEL_GLOBAL = () => window.RIU_SELECTORES;
-  pill.addEventListener("click", () => { hojaOrigen = "team-qwen"; pill.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
+  pill.addEventListener("click", () => { hojaOrigen = "team-qwen"; pill.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); cargarCatalogo(); });
   if (pillMvp) pillMvp.addEventListener("click", () => { hojaOrigen = "team-5-mvp"; pillMvp.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
   new MutationObserver(pintarPill).observe(q("#chat-tabs"), { childList: true, subtree: true, attributes: true });
   pintarPill();
   conectarSelectores(ctx);
+  cargarCatalogo();
 }

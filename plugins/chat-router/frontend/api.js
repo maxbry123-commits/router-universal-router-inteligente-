@@ -23,6 +23,7 @@ function aplicarBase(url) {
 }
 const VALIDA = (u) => /^https:\/\/[a-z0-9-]+\.hf\.space$/.test(u || '');
 function refrescarLive() {
+  if (!CFG.liveUrl) return Promise.resolve(BASE);
   if (!liveRequest) liveRequest = (async () => {
     try {
       const flag = await fetchT(CFG.liveUrl + '?t=' + Date.now(), { cache: 'no-store', credentials: 'omit' }, 8000);
