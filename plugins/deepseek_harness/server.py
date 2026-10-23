@@ -2,7 +2,7 @@
 import hmac
 import os
 
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
 from plugins.router_api_cliente import llamar
 
@@ -23,7 +23,9 @@ def _router(accion, datos):
     base = os.environ.get("RIU_ROUTER_URL", "").strip()
     if not (base.startswith("https://") or base.startswith("http://127.0.0.1:")):
         raise RuntimeError("RIU_ROUTER_URL no configurada")
-    resultado = llamar("router_mvp", accion, datos)
+    resultado = llamar("fichas_qwen" if accion == "chat" else "router_mvp", "llm" if accion == "chat" else accion, datos, timeout=390)
+    if isinstance(resultado, dict) and resultado.get("status_code") == 403:
+        raise HTTPException(status_code=403, detail="Herramienta bloqueada por Router (HTTP 403)")
     if not isinstance(resultado, dict) or resultado.get("error") or resultado.get("status") == "degraded":
         motivo = resultado.get("error", "respuesta invalida") if isinstance(resultado, dict) else "respuesta invalida"
         raise RuntimeError("Router " + str(motivo)[:80])
@@ -58,10 +60,10 @@ def llm(cuerpo):
     opciones = cuerpo.get("opciones") or {}
     if not isinstance(opciones, dict) or any(k not in OPCIONES for k in opciones):
         raise ValueError("opciones no permitidas")
-    salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones})
+    salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones, **{k: cuerpo.get(k, False) for k in ("tools", "agente_tool", "llm_tool")}})
     if not isinstance(salida.get("tool_calls"), list) or not isinstance(salida.get("texto"), str):
         raise RuntimeError("Router respuesta de chat invalida")
-    return {"texto": salida["texto"], "tool_calls": salida["tool_calls"]}
+    return {"texto": salida["texto"], "tool_calls": salida["tool_calls"], "finish_reason": salida.get("finish_reason")}
 
 
 @app.post("/invoke")
@@ -82,6 +84,8 @@ def invoke(cuerpo: dict, x_api_key: str | None = Header(None)):
         if accion == "llm":
             return _ok(llm(cuerpo))
         return _err("accion no permitida")
+    except HTTPException:
+        raise
     except (ValueError, RuntimeError) as exc:
         return _err(str(exc))
     except Exception as exc:

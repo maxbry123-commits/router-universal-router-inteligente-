@@ -31,7 +31,7 @@ def llamar(plugin: str, accion: str, payload: dict | None = None, timeout: float
         with urllib.request.urlopen(req, timeout=timeout) as r:
             out = json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        return {"error": f"HTTP {exc.code}", "status": "degraded"}  # inv. 9: solo el codigo, sin reason/detail del servidor
+        return {"error": f"HTTP {exc.code}", "status": "degraded", "status_code": exc.code}  # inv. 9: solo el codigo, sin reason/detail del servidor
     except (OSError, ValueError) as exc:
         return {"error": type(exc).__name__, "status": "degraded"}
     if isinstance(out, dict) and (out.get("status") == "ok" or (plugin == "router_mvp" and accion in ("chat", "almacen"))):
