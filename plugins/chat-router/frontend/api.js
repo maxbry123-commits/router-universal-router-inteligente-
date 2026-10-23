@@ -90,7 +90,7 @@ window.RIU_RETOMAR = async (ses) => {
 try { liveRouter().catch(() => {}); } catch (e) {}  // harnessUrl listo antes del primer envio
 async function puenteRouter(base, body, qs, headers) {
   await liveRouter();
-  const baseDe = () => (body && body.plugin ? PBASE + '/plugins/' + body.plugin + '/call' : CFG.harnessUrl);  // plugin del Router elegido por el selector
+  const baseDe = () => (body && (body.plugin || body.qwen?.plugin) ? PBASE + '/plugins/' + (body.plugin || body.qwen.plugin) + '/call' : CFG.harnessUrl);  // plugin del Router elegido por el selector
   base = baseDe();
   // Puente dentro del Router (plugin puente_chat, puerta fija): POST <base>/<accion>, respuesta {status, result}.
   const q = new URLSearchParams((qs || '').replace(/^[?]/, ''));
@@ -247,7 +247,7 @@ export async function api(path, options = {}) {
   try {
     const credentials = remoto(headers);
     response = await fetchT(BASE + path, { method: options.method || "GET", headers, credentials,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body) }, path === "/chat/send" ? 120000 : 15000);  // /chat/send (sin harness) espera la respuesta completa
+      body: options.body === undefined ? undefined : JSON.stringify(options.body) }, path === "/chat/send" ? 450000 : 15000);  // /chat/send (sin harness) espera la respuesta completa
   } catch (error) {
     window.dispatchEvent(new CustomEvent("router-connection", { detail: "Sin conexión" }));
     throw error;
