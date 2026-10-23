@@ -100,6 +100,11 @@ async def _herramienta(id_, params, chat, almacen, plugin_call):
     if nombre in GITHUB and any(not isinstance(args.get(c), str) for c in esquema.get('required', [])):
         return _error(id_, -32602, 'Parametros invalidos')
     try:
+        if nombre in ("github_leer", "github_escribir") and "/" in args["repo"]:
+            dueno, repo = args["repo"].split("/", 1)
+            if dueno != github.OWNER or not repo or "/" in repo:
+                return _error(id_, -32602, "Repositorio fuera de la cuenta GitHub configurada")
+            args = {**args, "repo": repo}
         if nombre in GITHUB:
             texto = await asyncio.to_thread(GITHUB[nombre], args)
             return _ok(id_, _contenido(texto, str(texto).startswith(('ERROR', 'FALTA'))))
