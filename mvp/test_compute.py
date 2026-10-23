@@ -6,7 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from unittest.mock import patch
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-from compute import llamar
+from mvp.compute import llamar
 
 
 class Simulador(BaseHTTPRequestHandler):
@@ -57,7 +57,7 @@ class TestQwen(unittest.TestCase):
             self.llamada()
         self.assertEqual(Simulador.n, 1)
 
-    @patch("compute.time.sleep")
+    @patch("mvp.compute.time.sleep")
     def test_503(self, _):
         Simulador.cola = [(503, {}), (503, {}),
                           (200, {"choices": [{"message": {"content": "ok"}}]})]
@@ -69,6 +69,10 @@ class TestQwen(unittest.TestCase):
                      "function": {"name": "buscar", "arguments": "{}"}}]
         Simulador.cola = [(200, {"choices": [{"message": {"tool_calls": llamadas}}]})]
         self.assertEqual(self.llamada({"tool_choice": "auto"})["tool_calls"], llamadas)
+
+    def test_finish_reason(self):
+        Simulador.cola = [(200, {"choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}]})]
+        self.assertEqual(self.llamada()["finish_reason"], "stop")
 
     def test_thinking_qwen(self):
         Simulador.cola = [(200, {"choices": [{"message": {"content": "ok"}}]})]

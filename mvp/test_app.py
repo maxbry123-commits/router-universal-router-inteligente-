@@ -65,10 +65,50 @@ class TestApp(unittest.TestCase):
 
     @patch("mvp.app.compute.llamar")
     def test_chat_con_clave(self, falso):
-        falso.return_value = {"texto": "respuesta", "tool_calls": []}
+        falso.return_value = {"texto": "respuesta", "tool_calls": [], "finish_reason": "stop"}
         estado, datos = self.pedir("/chat", {"mensajes": [{"role": "user", "content": "hola"}], "modelo": ""}, True)
-        self.assertEqual((estado, datos), (200, {"texto": "respuesta", "tool_calls": []}))
+        self.assertEqual((estado, datos), (200, {"texto": "respuesta", "tool_calls": [], "finish_reason": "stop"}))
         self.assertEqual(falso.call_args.args[1], "qwen3.8-max")
+
+    @patch("mvp.app.compute.llamar")
+    def test_finish_reason(self, falso):
+        falso.return_value = {"texto": "ok", "tool_calls": [], "finish_reason": "stop"}
+        estado, datos = self.pedir("/chat", {"mensajes": [{"role": "user", "content": "hola"}]}, True)
+        self.assertEqual(estado, 200)
+        self.assertEqual(datos["finish_reason"], "stop")
+
+    @patch("mvp.app.compute.llamar")
+    def test_agente_tool_bloqueada(self, falso):
+        falso.return_value = {"texto": "", "finish_reason": "tool_calls",
+                              "tool_calls": [{"function": {"name": "github_escribir"}}]}
+        estado, datos = self.pedir("/chat", {"mensajes": [{"role": "user", "content": "hola"}],
+                                             "tools": True, "agente_tool": False}, True)
+        self.assertEqual(estado, 403)
+        self.assertIn("agente_tool=false", datos["detail"])
+
+    @patch("mvp.app.compute.llamar")
+    def test_llm_tool_bloqueada(self, falso):
+        falso.return_value = {"texto": "", "finish_reason": "tool_calls",
+                              "tool_calls": [{"function": {"name": "llm"}}]}
+        estado, datos = self.pedir("/chat", {"mensajes": [{"role": "user", "content": "hola"}],
+                                             "tools": True, "llm_tool": False}, True)
+        self.assertEqual(estado, 403)
+        self.assertIn("llm_tool=false", datos["detail"])
+
+    def test_chat_send_y_async_controles(self):
+        salida = {"status": "ok", "result": {"texto": "ok", "tool_calls": [], "finish_reason": "stop"}}
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "https://harness.invalid"}), \
+             patch("mvp.app.clave_harness", return_value="prueba"), \
+             patch("mvp.app.harness_client.llm", return_value=salida):
+            estado, datos = self.pedir("/chat/send", {"message": "hola"}, True)
+            self.assertEqual((estado, datos["finish_reason"]), (200, "stop"))
+            estado, datos = self.pedir("/plugins/fichas_qwen/call/chat_async",
+                                      {"message": "hola", "request_id": "sol2-test"}, True)
+            self.assertEqual(estado, 200)
+            pid = datos["result"]["proceso_id"]
+            estado, datos = self.pedir("/plugins/fichas_qwen/call/resultado",
+                                      {"proceso_id": pid, "espera": 2}, True)
+            self.assertEqual((estado, datos["result"]["finish_reason"]), (200, "stop"))
 
     def test_health_sin_secretos(self):
         estado, publico = self.pedir("/health")

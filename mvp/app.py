@@ -1,6 +1,6 @@
 """Chat MVP: autenticacion, banco de credenciales y cliente Token Plan."""
 import asyncio
-import hmac, uuid
+import hmac, logging, uuid
 import os, subprocess, time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -24,6 +24,34 @@ async def inicio(app):
         pass
     yield
 app = FastAPI(lifespan=inicio)
+AGENTE_TOOLS = {"github_leer", "github_escribir", "github_api"}
+LLM_TOOLS = {"chat", "llm"}
+
+def _controles(cuerpo):
+    controles = {}
+    for nombre in ("tools", "agente_tool", "llm_tool"):
+        valor = cuerpo.get(nombre, False)
+        if type(valor) is not bool:
+            raise HTTPException(status_code=400, detail=nombre + " debe ser booleano")
+        controles[nombre] = valor
+    return controles
+
+def _verificar_herramienta(nombre, controles):
+    tipo = "agente_tool" if nombre in AGENTE_TOOLS else "llm_tool" if nombre in LLM_TOOLS else None
+    bloqueo = "tools" if not controles["tools"] else tipo if tipo and not controles[tipo] else None
+    if bloqueo:
+        logging.getLogger(__name__).warning("Herramienta bloqueada por %s=false", bloqueo)
+        raise HTTPException(status_code=403, detail="Herramienta bloqueada: " + bloqueo + "=false")
+
+def _verificar_llamadas(llamadas, controles):
+    for llamada in llamadas:
+        funcion = llamada.get("function") if isinstance(llamada, dict) else None
+        _verificar_herramienta(funcion.get("name") if isinstance(funcion, dict) else None, controles)
+
+def _verificar_opciones(opciones, controles):
+    if isinstance(opciones, dict):
+        _verificar_llamadas(opciones.get("tools") or [], controles)
+
 def autorizado(authorization=None, x_api_key=None):
     esperado = next((os.environ[n] for n in bank.ACCESO if os.environ.get(n)), None)
     bearer = authorization[7:] if authorization and authorization.lower().startswith("bearer ") else None
@@ -52,6 +80,8 @@ def health(authorization: str | None = Header(None),
                                        (app.state.banco and app.state.banco.leer("QWEN_API_KEY")))}
 @app.post("/chat", dependencies=[Depends(verificar)])
 async def chat(cuerpo: dict):
+    controles = _controles(cuerpo)
+    _verificar_opciones(cuerpo.get("opciones"), controles)
     try:
         modelo = modelos.validar(cuerpo.get("modelo"))
     except (ValueError, TypeError) as error:
@@ -67,7 +97,10 @@ async def chat(cuerpo: dict):
         if salida.get("status") == "error":
             raise HTTPException(status_code=502, detail=str(salida.get("error") or "harness error"))
         salida = salida.get("result", salida) if isinstance(salida.get("result"), dict) else salida
-        return {"texto": salida.get("texto") or "", "tool_calls": salida.get("tool_calls") or []}
+        llamadas = salida.get("tool_calls") or []
+        _verificar_llamadas(llamadas, controles)
+        return {"texto": salida.get("texto") or "", "tool_calls": llamadas,
+                "finish_reason": salida.get("finish_reason") or ""}
     banco = app.state.banco
     clave = banco.leer("QWEN_API_KEY") if banco else None
     if not clave:
@@ -77,7 +110,9 @@ async def chat(cuerpo: dict):
                                          modelos.base_url(), clave, cuerpo.get("opciones"))
     except (ValueError, RuntimeError) as error:
         raise HTTPException(status_code=502, detail=str(error)) from None
-    return {"texto": salida["texto"], "tool_calls": salida["tool_calls"]}
+    _verificar_llamadas(salida["tool_calls"], controles)
+    return {"texto": salida["texto"], "tool_calls": salida["tool_calls"],
+            "finish_reason": salida.get("finish_reason") or ""}
 @app.post("/almacen", dependencies=[Depends(verificar)])
 async def almacen(cuerpo: dict):
     accion = cuerpo.get("accion")
@@ -132,14 +167,17 @@ async def _chat_ficha(cuerpo):
     # Ruta Antonio: Qwen -> Harness DeepSeek (HTTP) -> router. Sin camino alterno; sin URL Harness falla (G5 abierto)
     if not os.environ.get("RIU_DEEPSEEK_HARNESS_URL"):
         raise HTTPException(status_code=503, detail="HARNESS_NO_CONFIGURADO")
-    salida = await chat({"modelo": modelo, "mensajes": mensajes, "via": "harness", "opciones": q.get("opciones")})
-    return {"estado": "listo", "via": "harness", "choices": [{"message": {
-        "role": "assistant", "content": salida["texto"], "tool_calls": salida["tool_calls"]}}]}
+    salida = await chat({"modelo": modelo, "mensajes": mensajes, "via": "harness",
+                         "opciones": q.get("opciones"), **_controles(q)})
+    return {"estado": "listo", "via": "harness", "finish_reason": salida["finish_reason"],
+            "choices": [{"message": {"role": "assistant", "content": salida["texto"],
+                                    "tool_calls": salida["tool_calls"]},
+                         "finish_reason": salida["finish_reason"]}]}
 async def _correr(pid, cuerpo):
     try:
         TRABAJOS[pid].update(await _chat_ficha(cuerpo))
     except HTTPException as error:
-        TRABAJOS[pid].update(estado="error", error=str(error.detail))
+        TRABAJOS[pid].update(estado="error", error=str(error.detail), status_code=error.status_code)
     except Exception as error:  # noqa: BLE001 - el proceso debe terminar siempre
         TRABAJOS[pid].update(estado="error", error=type(error).__name__)
 @app.post("/plugins/{plugin}/call/{accion}", dependencies=[Depends(verificar)])
@@ -151,8 +189,10 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
     if accion in ("chat_async", "chat"):
         pid = "p-" + (str(cuerpo.get("request_id") or "")[:64] or uuid.uuid4().hex)  # request_id fijo => mismo proceso_id
         if pid not in TRABAJOS:
-            TRABAJOS[pid] = {"estado": "procesando", "proceso_id": pid}
+            TRABAJOS[pid] = {"estado": "procesando", "proceso_id": pid, "finish_reason": ""}
             tarea = asyncio.create_task(_correr(pid, cuerpo)); _TAREAS.add(tarea); tarea.add_done_callback(_TAREAS.discard)
+        if TRABAJOS[pid].get("status_code") == 403:
+            raise HTTPException(status_code=403, detail=TRABAJOS[pid]["error"])
         return {"status": "ok", "result": dict(TRABAJOS[pid])}
     if accion == "resultado":
         pid = str(cuerpo.get("proceso_id") or "")
@@ -166,6 +206,8 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
             if TRABAJOS[pid]["estado"] != "procesando":
                 break
             await asyncio.sleep(0.25)
+        if TRABAJOS[pid].get("status_code") == 403:
+            raise HTTPException(status_code=403, detail=TRABAJOS[pid]["error"])
         return {"status": "ok", "result": dict(TRABAJOS[pid])}
     if accion == "llm" and plugin == "fichas_qwen":  # G21: Ficha 4 -> modelo DIRECTO (contrato puente_chat llm_call); nunca via=harness
         try:
@@ -197,7 +239,7 @@ async def chat_send(cuerpo: dict):
     msg = salida["choices"][0]["message"]
     tools = [((t.get("function") or {}).get("name") or "tool") for t in (msg.get("tool_calls") or []) if isinstance(t, dict)]
     return {"reply": msg["content"], "execution_path": "HARNESS", "ms": int((time.monotonic() - t0) * 1000),
-            "tools": tools, "via": "harness"}
+            "tools": tools, "via": "harness", "finish_reason": salida["finish_reason"]}
 mcp_route.montar(app, verificar, chat, almacen)
 # --- G5b: Harness /invoke montado en este mismo Space (HF pide PRO para un Space nuevo). Ruta: chat -> Harness -> HTTP -> router ---
 from plugins.deepseek_harness.server import app as harness_app  # noqa: E402 - el Harness no importa mvp/; llm sigue por HTTP a fichas_qwen/call/llm
