@@ -91,7 +91,7 @@ def llm(cuerpo):
         if not llamadas and salida.get("finish_reason") == "length" and salida["texto"] and continuaciones < 2 and paso < 7:
             acumulado += salida["texto"]
             continuaciones += 1
-            mensajes.extend([{"role": "assistant", "content": salida["texto"]},
+            mensajes.extend([salida.get("mensaje_asistente") or {"role": "assistant", "content": salida["texto"]},
                              {"role": "user", "content": "Continua exactamente donde se corto la respuesta anterior, sin repetir texto ni ejecutar herramientas."}])
             opciones.pop("tools", None)
             opciones.pop("tool_choice", None)
