@@ -19,6 +19,15 @@ const etiquetaCorta = (a) => a.startsWith("handoff:") ? a.slice(8) : a.startsWit
 
 export async function mount(root, { api, tell }) {
   const q = (s) => root.querySelector(s);
+  const editor = q("#message");
+  const ajustarAlturaEditor = () => {
+    editor.style.height = "auto";
+    const limite = parseFloat(getComputedStyle(editor).maxHeight) || 128;
+    editor.style.height = Math.min(editor.scrollHeight, limite) + "px";
+  };
+  editor.addEventListener("input", ajustarAlturaEditor);
+  window.addEventListener("resize", ajustarAlturaEditor);
+  ajustarAlturaEditor();
   const copiarTexto = (t) => { try { navigator.clipboard.writeText(t); } catch (e) {} };
   const defecto = window.RIU_CONFIG?.defecto || "";
   const fichaEt = (id) => (window.RIU_CONFIG?.modelos || []).find((m) => m.id === id);
@@ -645,7 +654,7 @@ export async function mount(root, { api, tell }) {
     const ub = burbuja(rawText, "user");
     c.hist.append(ub);
     A.registrar(c.sesion, "user", rawText);
-    input.value = "";
+    input.value = ""; ajustarAlturaEditor();
     c.ocupado = true; pintarTabs();
     const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta que el Router confirma proceso_id; luego riu-progreso pone Pensando/tools
     c.hist.append(pending);
@@ -781,7 +790,7 @@ export async function mount(root, { api, tell }) {
     const input = q('#message'); const texto = (input.value || '').trim();
     if (!texto) return;
     const r = await buzonEnvio(sel.value, texto);
-    input.value = '';
+    input.value = ''; ajustarAlturaEditor();
     const ack = (r && r.se_aplica_en) ? ('Recibido, se aplica en ' + r.se_aplica_en) : 'Recibido';
     chat().hist.append(burbuja(texto, 'user')); chat().hist.append(node('div', ack, 'item message meta')); abajo(chat());
   }, true);  // capture: corre antes del handler normal de envio
