@@ -294,7 +294,7 @@ export async function mount(root, { api, tell }) {
   const pintarModos = () => {
     const lista = q("#sh-modo-lista");
     lista.replaceChildren();
-    for (const [k, et] of [["fast", "Rápido — 512 tok"], ["balanced", "Equilibrado — 1024 tok"], ["think", "Pensar — 2048 tok"]]) {
+    for (const [k, et] of [["fast", "Responde directo"], ["balanced", "Por defecto"], ["think", "Razona antes de responder"]]) {
       lista.append(fila(MODOS[k], et, k === modo, () => {
         modo = k;
         q("#modo").textContent = MODOS[k] + " ⌄";
@@ -717,7 +717,7 @@ export async function mount(root, { api, tell }) {
       if (answer.modelo_solicitado) c.hist.append(node("div", "Modelo solicitado: " + answer.modelo_solicitado + " · API: " + (answer.modelo_respuesta || "sin identificar"), "item message meta"));
       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
-      if (answer.finish_reason === "length") c.hist.append(node("div", "El proveedor alcanzo su limite de salida. Escribe «Continua» para seguir desde este punto", "item message meta"));
+      if (answer.finish_reason === "length") { const aviso = node("div", "La respuesta se cortó por el límite de salida del proveedor. ", "item message meta"), seguir = node("button", "Continuar", "mx-continuar"); seguir.type = "button"; seguir.onclick = () => { seguir.disabled = true; const m = q("#message"); m.value = "Continúa exactamente donde se cortó la respuesta anterior, sin repetir texto."; q("#composer").requestSubmit(); }; aviso.append(seguir); c.hist.append(aviso); }  // un clic y sigue desde el corte
       if (answer.execution_path === "FAST_QA") c.hist.append(node("div", "⚡ respuesta rápida · " + answer.ms + " ms", "item meta"));
       else if (answer.execution_path === "FAST_CONSULT") c.hist.append(node("div", "⚡ cónsil rápido · " + answer.ms + " ms", "item meta"));
       else if (c.fastReply && FAST_SEL() && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));

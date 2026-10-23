@@ -1,6 +1,8 @@
 """Permisos y estado del chat decididos en el servidor; el frontend solo los muestra.
 Tres permisos separados: conexion ON, herramienta ON y delegacion IA ON (solo para herramientas que llaman IA/agentes).
 El estado (sin secretos) se persiste por /almacen; los secretos de las conexiones viven en el banco cifrado."""
+import base64
+import hashlib
 import json
 import re
 import time
@@ -16,6 +18,7 @@ TOOLS = {"github_leer": ("GitHub", "github"), "github_escribir": ("GitHub", "git
 NIVELES = {"lectura": 1, "escritura": 2, "admin": 3}
 MCP = re.compile(r"mcp__([0-9a-f]{8})__([A-Za-z0-9_-]{1,49})")
 MAX_CONEXIONES, MAX_PENDIENTES, MAX_SALAS, MAX_MENSAJES = 10, 200, 20, 500
+MAX_ARCHIVO, MAX_PROYECTOS = 700_000, 50  # bytes de un archivo subido (hf_store admite 1 MB ya en base64)
 
 
 def tipo(nombre):
@@ -26,7 +29,7 @@ def _vacio():
     base = {s: [] for s in SERVICIOS}
     for s in LEGADO:
         base[s].append({"id": "defecto", "etiqueta": "Principal (banco)", "on": True})
-    return {"ia": False, "herramientas": {}, "conexiones": base, "pendientes": [], "salas": {}}
+    return {"ia": False, "herramientas": {}, "conexiones": base, "pendientes": [], "salas": {}, "archivos": {}, "sandbox": {}, "proyectos": {}}
 
 
 def _texto(valor, maximo, campo):
@@ -259,11 +262,123 @@ class Control:
         return {"salas": [{"id": s["id"], "nombre": s["nombre"], "participantes": s["participantes"], "mensajes": len(s["mensajes"])}
                           for s in salas.values() if nivel(s) >= 1]}
 
+    # --- espacio de trabajo del chat: estado, archivos subidos, sandbox y proyectos (lo que ya pedía el frontend) ---
+    def _status(self, c, banco, actor):
+        return {"ok": True, "servicio": "router_mvp", "ia": self.d["ia"]}
+
+    def _estado(self, c, banco, actor):
+        return {"sesion": str(c.get("sesion") or "web-general")[:60], "ia": self.d["ia"], "pendientes": len(self.d["pendientes"]), "salas": len(self.d["salas"]),
+                "archivos": sum(len(v) for v in self.d["archivos"].values()), "conexiones_on": {s: sum(1 for x in v if x["on"]) for s, v in self.d["conexiones"].items()}}
+
+    def _herramientas_estado(self, c, banco, actor):
+        return self._tools_lock({}, banco, actor)
+
+    def validar_subida(self, c):
+        nombre = c.get("nombre")
+        if not isinstance(nombre, str) or not 1 <= len(nombre) <= 120 or "/" in nombre or "\\" in nombre or nombre.startswith("."):
+            raise ValueError("nombre de archivo invalido")
+        try:
+            datos = base64.b64decode(c.get("datos_b64") or "", validate=True)
+        except (ValueError, TypeError):
+            raise ValueError("datos_b64 invalido") from None
+        if not datos or len(datos) > MAX_ARCHIVO:
+            raise ValueError("el archivo debe pesar entre 1 byte y %d KB" % (MAX_ARCHIVO // 1000))
+        return ruta_archivo(c, nombre), len(datos)
+
+    def _subir(self, c, banco, actor):
+        ruta, tam = self.validar_subida(c)
+        self.d["archivos"].setdefault(clave_espacio(c), {})[c["nombre"]] = {"tam": tam, "tipo": str(c.get("tipo") or "texto")[:80], "ts": time.time(), "ruta": ruta}
+        self._sucio = True
+        return {"ok": True, "nombre": c["nombre"], "tam": tam}
+
+    def _archivos(self, c, banco, actor):
+        return {"archivos": [n for n, m in self.d["archivos"].get(clave_espacio(c), {}).items() if not m.get("borrado")]}
+
+    def _archivo_borrar(self, c, banco, actor):
+        meta = self.d["archivos"].get(clave_espacio(c), {}).get(c.get("nombre"))
+        if not meta:
+            raise ValueError("archivo desconocido")
+        meta["borrado"] = not c.get("restaurar")  # borrado lógico: el contenido sigue en el almacén hasta que se sobrescriba
+        self._sucio = True
+        return {"ok": True, "nombre": c["nombre"], "borrado": meta["borrado"]}
+
+    def ruta_de(self, nombre, sesion):
+        """Ruta en el almacén de un archivo subido por esa sesión (cualquier carpeta), para anclarlo al contexto."""
+        for clave, idx in self.d["archivos"].items():
+            meta = idx.get(nombre)
+            if meta and not meta.get("borrado") and (clave.endswith("|" + str(sesion)) or clave.startswith("constitucion|")):
+                return meta["ruta"]
+        return None
+
+    def _sandbox(self, c, banco, actor):
+        ses = str(c.get("sesion") or "web-general")[:60]
+        if "texto" in c:
+            texto = c["texto"]
+            if not isinstance(texto, str) or len(texto) > 20000:
+                raise ValueError("texto debe ser cadena de hasta 20000 caracteres")
+            if texto.strip():
+                self.d["sandbox"][ses] = texto
+            else:
+                self.d["sandbox"].pop(ses, None)
+            self._sucio = True
+        texto = self.d["sandbox"].get(ses, "")
+        return {"sandbox": texto, "encendido": bool(texto)}
+
+    def _proyecto(self, c, banco, actor):
+        ps, op = self.d["proyectos"], c.get("op") or "list"
+        pid = str(c.get("project_id") or "")[:60]
+        if op in ("upsert", "get", "delete", "link_chat", "unlink_chat") and not re.fullmatch(r"[A-Za-z0-9_-]{1,60}", pid):
+            raise ValueError("project_id invalido")
+        if op == "upsert":
+            if pid not in ps and len(ps) >= MAX_PROYECTOS:
+                raise ValueError("maximo %d proyectos" % MAX_PROYECTOS)
+            p = ps.setdefault(pid, {"project_id": pid, "nombre": pid, "chats": [], "created_at": time.time()})
+            for k in ("nombre", "notas", "estado"):
+                if k in c:
+                    p[k] = str(c[k])[:2000]
+            if "encendido" in c:
+                p["encendido"] = bool(c["encendido"])
+            for k in ("anclas", "items"):
+                if isinstance(c.get(k), list):
+                    p[k] = [str(x)[:500] for x in c[k]][:200]
+            p["updated_at"] = time.time()
+            self._sucio = True
+            return {"ok": True, "proyecto": p}
+        if op in ("link_chat", "unlink_chat"):
+            p = ps.get(pid)
+            if not p:
+                raise ValueError("proyecto desconocido")
+            ses = str(c.get("sesion") or "")[:60]
+            p["chats"] = [x for x in p["chats"] if x != ses] + ([ses] if op == "link_chat" and ses else [])
+            self._sucio = True
+            return {"ok": True, "proyecto": p}
+        if op == "delete":
+            ps.pop(pid, None)
+            self._sucio = True
+            return {"ok": True}
+        if op == "get":
+            if pid not in ps:
+                raise ValueError("proyecto desconocido")
+            return {"ok": True, "proyecto": ps[pid]}
+        if op == "list":
+            return {"proyectos": list(ps.values())}
+        raise ValueError("op de proyecto no soportada")
+
     def herramienta(self, nombre, args, actor="modelo"):
         return self.ejecutar({"pendientes": "checklist", "sala": "salas"}[nombre], args, None, actor)
 
 
-ACCIONES = {"agent_access_lock", "tools_lock", "conexiones", "checklist", "salas"}
+ACCIONES = {"agent_access_lock", "tools_lock", "conexiones", "checklist", "salas", "status", "estado", "herramientas_estado",
+            "archivos", "subir", "archivo_borrar", "sandbox", "proyecto"}
+
+
+def clave_espacio(c):
+    """Carpeta lógica de un archivo: destino (chat/constitucion/proyecto) + proyecto + sesión."""
+    return "|".join((str(c.get("destino") or "chat"), str(c.get("project_id") or ""), str(c.get("sesion") or "web-general")))[:160]
+
+
+def ruta_archivo(c, nombre):
+    return "chat_archivos/" + hashlib.sha1(clave_espacio(c).encode()).hexdigest()[:12] + "/" + nombre
 
 
 def MCP_NOMBRE(con, herramienta):

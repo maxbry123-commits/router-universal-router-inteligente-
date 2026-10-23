@@ -310,6 +310,78 @@ class TestMCPCliente(Base):
         self.assertTrue({"pendientes", "sala", "github_leer", "almacen"} <= self.nombres())
 
 
+class TestEspacio(Base):
+    def subir(self, nombre="notas.txt", texto="contenido de prueba", **extra):
+        import base64
+        return self.accion("subir", {"nombre": nombre, "tipo": "texto", "datos_b64": base64.b64encode(texto.encode()).decode(), "sesion": "s1", **extra})
+
+    def test_status_estado_y_herramientas_estado(self):
+        self.assertEqual(self.accion("status")["servicio"], "router_mvp")
+        self.assertIn("commit", self.accion("status"))
+        e = self.accion("estado", {"sesion": "s1"})
+        self.assertEqual((e["sesion"], e["ia"], e["conexiones_on"]["github"]), ("s1", False, 1))
+        self.assertIn("github_leer", {t["nombre"] for t in self.accion("herramientas_estado")["tools"]})
+
+    def test_archivos_subir_listar_borrar_restaurar(self):
+        self.assertEqual(self.accion("archivos", {"sesion": "s1"}), {"archivos": [], "persistente": False})
+        self.assertEqual(self.subir()["nombre"], "notas.txt")
+        self.assertEqual(self.accion("archivos", {"sesion": "s1"})["archivos"], ["notas.txt"])
+        self.assertEqual(self.accion("archivos", {"sesion": "otra"})["archivos"], [])  # cada chat su carpeta
+        self.assertEqual(self.accion("archivos", {"sesion": "s1", "destino": "proyecto", "project_id": "p-1"})["archivos"], [])
+        self.accion("archivo_borrar", {"nombre": "notas.txt", "sesion": "s1"})
+        self.assertEqual(self.accion("archivos", {"sesion": "s1"})["archivos"], [])
+        self.accion("archivo_borrar", {"nombre": "notas.txt", "sesion": "s1", "restaurar": True})
+        self.assertEqual(self.accion("archivos", {"sesion": "s1"})["archivos"], ["notas.txt"])
+        self.accion("archivo_borrar", {"nombre": "nope.txt", "sesion": "s1"}, 400)
+
+    def test_subir_valida_y_no_deja_fantasmas(self):
+        self.accion("subir", {"nombre": "../x.txt", "datos_b64": "aG9sYQ==", "sesion": "s1"}, 400)
+        self.accion("subir", {"nombre": "a.txt", "datos_b64": "###", "sesion": "s1"}, 400)
+        self.accion("subir", {"nombre": "a.txt", "datos_b64": "", "sesion": "s1"}, 400)
+        def rechaza_codigo(clave, nombre, valor):  # hf_store._ruta no admite .py/.js/...
+            raise ValueError("ID HF no permitido")
+        with patch("mvp.app.hf_store.guardar", rechaza_codigo):
+            r = self.client.post("/plugins/puente_chat/call/subir", headers=CAB, json={"nombre": "codigo.py", "datos_b64": "aG9sYQ==", "sesion": "s1"})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("GitHub", r.json()["detail"])
+        self.assertEqual(self.accion("archivos", {"sesion": "s1"})["archivos"], [])  # nada registrado si no se guardó
+
+    def test_sandbox_encender_y_apagar(self):
+        self.assertEqual(self.accion("sandbox", {"sesion": "s1"})["encendido"], False)
+        r = self.accion("sandbox", {"sesion": "s1", "texto": "eres un revisor de código"})
+        self.assertEqual((r["encendido"], r["sandbox"]), (True, "eres un revisor de código"))
+        self.assertEqual(self.accion("sandbox", {"sesion": "otra"})["sandbox"], "")
+        self.assertEqual(self.accion("sandbox", {"sesion": "s1", "texto": ""})["encendido"], False)
+        self.accion("sandbox", {"sesion": "s1", "texto": 5}, 400)
+
+    def test_proyectos(self):
+        p = self.accion("proyecto", {"op": "upsert", "project_id": "p-1", "nombre": "Uno"})["proyecto"]
+        self.assertEqual(p["nombre"], "Uno")
+        self.accion("proyecto", {"op": "upsert", "project_id": "p-1", "notas": "n"})  # merge: conserva el nombre
+        self.assertEqual(self.accion("proyecto", {"op": "get", "project_id": "p-1"})["proyecto"]["nombre"], "Uno")
+        self.assertEqual(self.accion("proyecto", {"op": "link_chat", "project_id": "p-1", "sesion": "s1"})["proyecto"]["chats"], ["s1"])
+        self.assertEqual(self.accion("proyecto", {"op": "unlink_chat", "project_id": "p-1", "sesion": "s1"})["proyecto"]["chats"], [])
+        self.assertEqual(len(self.accion("proyecto", {"op": "list"})["proyectos"]), 1)
+        self.accion("proyecto", {"op": "upsert", "project_id": "../x"}, 400)
+        self.accion("proyecto", {"op": "get", "project_id": "nada"}, 400)
+        self.accion("proyecto", {"op": "delete", "project_id": "p-1"})
+        self.assertEqual(self.accion("proyecto")["proyectos"], [])
+
+    def test_los_anclados_llegan_al_modelo_y_los_secretos_no(self):
+        self.subir("notas.txt", "el codigo del proyecto es AZUL-7")
+        self.banco.datos["RIU_API_KEY"] = "clave-harness"
+        salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "x"}
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
+            r = self.client.post("/chat/send", headers=CAB, json={"message": "hola", "model": "qwen3.8-max", "sesion": "s1",
+                                                                  "anclados": ["notas.txt", "texto:recuerda ser breve", "secreto:hf/token", "no-existe.txt"]})
+        self.assertEqual(r.status_code, 200)
+        enviado = json.dumps(llm.call_args.args[1], ensure_ascii=False)
+        self.assertIn("AZUL-7", enviado)
+        self.assertIn("recuerda ser breve", enviado)
+        self.assertNotIn("hf/token", enviado)
+        self.assertNotIn("no-existe", enviado)
+
+
 class TestGapsChat(Base):
     def test_selector_de_modelos_sale_solo_de_modelos_json(self):
         from mvp import modelos
@@ -330,6 +402,25 @@ class TestGapsChat(Base):
         with patch("mvp.app.compute.llamar", return_value=corta):
             ok = self.client.post("/chat", headers=CAB, json={"mensajes": [{"role": "user", "content": "x"}]}).json()
         self.assertEqual((ok["texto"], ok["finish_reason"]), ("se cort", "length"))
+
+    def test_ficha_heredada_del_chat_usa_modelo_por_defecto(self):
+        salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "x"}
+        self.banco.datos["RIU_API_KEY"] = "clave-harness"
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
+            r = self.client.post("/chat/send", headers=CAB, json={"message": "hola", "model": "nv-muse-glimmer"})
+            self.assertEqual((r.status_code, llm.call_args.args[2]), (200, "qwen3.8-max"))
+            r = self.client.post("/chat/send", headers=CAB, json={"message": "hola", "model": "modelo-inexistente"})
+            self.assertEqual(r.status_code, 400)
+
+    def test_selector_pensar_llega_al_modelo(self):
+        salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "x"}
+        self.banco.datos["RIU_API_KEY"] = "clave-harness"
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
+            for modo, esperado in (("on", True), ("off", False)):
+                self.client.post("/chat/send", headers=CAB, json={"message": "hola", "model": "qwen3.8-max", "thinking_mode": modo})
+                self.assertEqual(llm.call_args.args[3], {"enable_thinking": esperado})
+            self.client.post("/chat/send", headers=CAB, json={"message": "hola", "model": "qwen3.8-flash", "thinking_mode": "on"})
+            self.assertIsNone(llm.call_args.args[3] or None)
 
     def test_errores_del_proveedor_son_visibles(self):
         with patch("mvp.app.compute.llamar", side_effect=RuntimeError("Proveedor HTTP 500")):

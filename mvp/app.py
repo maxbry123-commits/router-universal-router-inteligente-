@@ -1,5 +1,6 @@
 """Chat MVP: autenticacion, banco de credenciales y cliente Token Plan."""
 import asyncio
+import base64
 import hmac, logging, uuid
 import os, subprocess, time
 from contextlib import asynccontextmanager
@@ -164,9 +165,39 @@ async def _leer_estado():
 async def _guardar_estado(texto):
     await almacen({"accion": "guardar", "destino": "hf", "nombre": control.NOMBRE, "valor": texto})
 CONTROL.conectar(_leer_estado, _guardar_estado)  # el estado del chat se persiste por /almacen (sin secretos)
+async def _contexto_anclado(anclados, sesion):
+    """Anclas del chat -> un mensaje de sistema: archivos subidos (texto), textos y enlaces; los secretos nunca viajan al modelo."""
+    partes, total = [], 0
+    for a in (anclados if isinstance(anclados, list) else [])[:20]:
+        a = str(a)[:300]
+        if a.startswith("secreto:"):
+            continue
+        if a.split(":", 1)[0] in ("enlace", "raiz", "texto", "handoff"):
+            partes.append("- " + a)
+            continue
+        ruta = CONTROL.ruta_de(a, sesion)
+        if not ruta or total > 200_000:
+            continue
+        try:
+            crudo = (await almacen({"accion": "leer", "destino": "hf", "nombre": ruta}))["valor"]
+            texto = base64.b64decode(crudo).decode("utf-8")[:60_000]
+        except Exception:  # noqa: BLE001 - binario o almacén caído: se omite, el chat sigue
+            partes.append("- " + a + " (no se pudo leer su contenido)")
+            continue
+        total += len(texto)
+        partes.append("--- " + a + " ---\n" + texto)
+    return {"role": "system", "content": "[ANCLADOS POR EL DIRECTOR]\n" + "\n".join(partes)} if partes else None
 async def _control(accion, cuerpo, actor="director"):
     try:
+        if accion == "subir":  # el contenido se guarda por /almacen ANTES de registrarlo: sin fantasmas en el índice
+            if not CONTROL.sincronizado: await CONTROL.cargar()
+            ruta, _ = CONTROL.validar_subida(cuerpo)
+            try: await almacen({"accion": "guardar", "destino": "hf", "nombre": ruta, "valor": cuerpo["datos_b64"]})
+            except HTTPException as error:
+                if error.status_code == 400: raise ValueError("tipo de archivo no permitido en el almacén (el código va en GitHub)") from None
+                raise
         salida = await CONTROL.aplicar(accion, cuerpo, app.state.banco, actor)
+        if accion == "status": salida = {**salida, "commit": getattr(app.state, "commit", "desconocido"), "banco": bool(getattr(app.state, "banco", None))}
         if accion == "conexiones" and (cuerpo.get("accion") == "descubrir" or (cuerpo.get("accion") == "agregar" and cuerpo.get("servicio") == "mcp")):
             ident = cuerpo.get("id") or CONTROL.d["conexiones"]["mcp"][-1]["id"]
             con = next((c for c in CONTROL.d["conexiones"]["mcp"] if c["id"] == ident), None)
@@ -182,6 +213,7 @@ async def _control(accion, cuerpo, actor="director"):
     except RuntimeError as error: raise HTTPException(status_code=502, detail=str(error)) from None
 TRABAJOS, _TAREAS = {}, set()  # proceso_id -> {estado, proceso_id, choices|error}; en memoria (se pierde al reiniciar)
 FICHAS_QWEN = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "5": "ficha5-mvp"}
+FICHAS_HEREDADAS = ("nv-", "hf-", "ask-consil")  # ids de ficha del chat anterior; no son modelos del MVP
 async def _chat_ficha(cuerpo):
     q = {**cuerpo, **(cuerpo.get("qwen") or {})}  # api.js harness() anida {plugin, ficha_qwen, modelo} en "qwen"
     mensajes = q.get("mensajes") or q.get("messages") or [{"role": "user", "content": str(q.get("message") or "")}]
@@ -189,10 +221,15 @@ async def _chat_ficha(cuerpo):
         if not isinstance(q["contexto_previo"], list):
             raise HTTPException(status_code=400, detail="contexto_previo debe ser una lista")
         mensajes = list(q["contexto_previo"]) + list(mensajes)
+    anclado = await _contexto_anclado(q.get("anclados"), q.get("sesion"))
+    if anclado:
+        mensajes = [anclado] + list(mensajes)
     if q.get("instrucciones_fijas"):
         mensajes = [{"role": "system", "content": str(q["instrucciones_fijas"])}] + list(mensajes)
     seleccionado = str(q.get("modelo") or q.get("model") or "")
     seleccionado = next((m for m in modelos.permitidos() if "".join(c for c in m.lower() if c.isalnum()) == "".join(c for c in seleccionado.lower() if c.isalnum())), seleccionado)
+    if seleccionado.startswith(FICHAS_HEREDADAS):  # sin selector Qwen activo el chat manda su ficha (nv-muse-glimmer): se usa el modelo por defecto y el chat muestra «Modelo solicitado · API»
+        seleccionado = ""
     try:
         modelo = modelos.validar(seleccionado or None)
     except (ValueError, TypeError) as error:
@@ -200,8 +237,11 @@ async def _chat_ficha(cuerpo):
     # Ruta Antonio: Qwen -> Harness DeepSeek (HTTP) -> router. Sin camino alterno; sin URL Harness falla (G5 abierto)
     if not os.environ.get("RIU_DEEPSEEK_HARNESS_URL"):
         raise HTTPException(status_code=503, detail="HARNESS_NO_CONFIGURADO")
+    opciones = dict(q.get("opciones") or {})
+    if q.get("thinking_mode") in ("on", "off") and modelo == "qwen3.8-max":  # selector Pensar del chat; solo este modelo admite el interruptor (modelos.extra_body)
+        opciones.setdefault("enable_thinking", q["thinking_mode"] == "on")
     salida = await chat({"modelo": modelo, "mensajes": mensajes, "via": "harness",
-                         "opciones": q.get("opciones"), **_controles(q)})
+                         "opciones": opciones or None, **_controles(q)})
     return {"estado": "listo", "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": modelo, "modelo_respuesta": salida.get("modelo_respuesta"),
             "choices": [{"message": {"role": "assistant", "content": salida["texto"],

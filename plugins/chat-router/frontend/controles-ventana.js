@@ -18,7 +18,7 @@ function ventana(id, icono, titulo, alAbrir) {
   const s = el("div", "sheet"); s.id = "ventana-" + id; s.hidden = true;
   const c = el("div", "va-caja cv-caja"), h = el("div", "row va-head"), x = btn("✕", "secondary", () => { s.hidden = true; }), cuerpo = el("div", "list");
   s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
-  h.append(el("strong", "", icono + " " + titulo), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
+  h.append(el("strong", "", titulo), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
   b.onclick = () => { s.hidden = false; alAbrir(cuerpo, s); };
   bar.insertBefore(b, bar.querySelector(".action") || null);
 }

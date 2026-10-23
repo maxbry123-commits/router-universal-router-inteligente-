@@ -83,7 +83,7 @@ function instalar() {
   const s = el("div", "sheet"); s.id = "ventana-pendientes"; s.hidden = true;
   const c = el("div", "va-caja"), h = el("div", "row va-head"), x = el("button", "secondary", "✕"), cuerpo = el("div", "list");
   x.type = "button"; x.onclick = () => { s.hidden = true; }; s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
-  h.append(el("strong", "", "📋 Pendientes · bloc de notas"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
+  h.append(el("strong", "", "Pendientes"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
   b.onclick = () => { s.hidden = false; pintar(cuerpo); };
   const env = bar.querySelector(".action"); bar.insertBefore(b, env || null);
 }

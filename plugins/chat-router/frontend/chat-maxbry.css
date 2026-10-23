@@ -1,0 +1,90 @@
+/* chat-maxbry.css — Maxbry UI (skill fromted-yaiwes-frontend-factory). Va el ÚLTIMO: ordena composer, salida, avisos y ventanas con los tokens del tema activo.
+   Geometría del skill: tarjeta 12px, botón 10px, sheet 28px; verde = en curso, azul = encendido, rojo = alerta, gris = pendiente. */
+:root{--mx-tap:44px;--status-soft-green:rgba(18,216,106,.13);--status-soft-blue:rgba(8,72,247,.2);--status-soft-red:rgba(255,71,95,.13)}
+.mx-ico{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- composer: editor amplio + fila principal ---------- */
+html body #composer{position:sticky;bottom:8px;width:100%;max-width:920px;margin-inline:auto;padding:12px 14px 12px;background:var(--surface-alt);border:1px solid var(--border-strong);border-radius:20px;box-shadow:0 8px 28px rgba(0,0,0,.28)}
+html body #composer:focus-within{border-color:var(--status-blue)}
+html body #composer #message{display:block;width:100%;min-height:84px;max-height:38dvh;padding:8px 40px 8px 6px;font-size:16px;line-height:1.55;resize:none;border:0;background:transparent;overflow-y:auto;touch-action:pan-y}
+html body #composer #message::placeholder{color:var(--quiet-2)}
+html body #composer.mx-grande #message{min-height:55dvh;max-height:70dvh}
+@media(min-width:721px){html body #composer #message{min-height:140px;max-height:44dvh}html body #composer.mx-grande #message{min-height:60dvh}}
+html body #composer .mx-grande{position:absolute;top:8px;right:10px;width:34px;height:34px;min-height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:transparent;border:1px solid transparent;color:var(--quiet);z-index:2}
+html body #composer .mx-grande:hover,html body #composer .mx-grande[aria-pressed=true]{background:var(--panel);border-color:var(--border);color:var(--title)}
+html body #composer .mx-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:4px 0 10px;border-top:1px solid var(--border);margin-top:4px;padding-top:10px}
+html body #composer .mx-chips #mode-selector-mount{display:contents}
+html body #composer .mx-chips .ms-hint:empty{display:none}
+html body #composer .mx-chips .ms-hint{flex:1 0 100%;order:9}
+html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools{width:auto!important;max-width:100%!important;height:38px!important;min-height:38px!important;aspect-ratio:auto!important;padding:0 11px!important;display:inline-flex;align-items:center;gap:6px;border-radius:999px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--text)!important;font:600 13px/1 system-ui,sans-serif!important;white-space:nowrap;flex:0 0 auto!important}
+html body #composer .mx-chips .ms-btn[data-locked=true],html body #composer .mx-chips .mx-chip[aria-pressed=true],html body #composer .mx-chips #btn-tools[aria-pressed=true]{background:var(--status-soft-blue)!important;border-color:var(--status-blue)!important;color:var(--title)!important}
+html body #composer .mx-chips #btn-tools::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--quiet-2);flex:none}
+html body #composer .mx-chips #btn-tools[aria-pressed=true]::before{background:var(--status-blue);box-shadow:0 0 8px var(--status-blue)}
+html body #composer .mx-chips .mx-chip .mx-ico{width:16px;height:16px}
+html body #composer .composer-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin:0;padding:0}
+html body #composer .composer-bar>.secondary{flex:0 0 auto!important;width:var(--mx-tap)!important;max-width:none!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;aspect-ratio:1/1!important;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--title)}
+html body #composer .composer-bar>.secondary[hidden],html body #composer #btn-detener[hidden]{display:none!important}
+html body #composer .composer-bar>.secondary svg{width:20px;height:20px}
+html body #composer .composer-bar>.secondary#mx-mas{background:var(--module-selected);border-color:var(--border-strong)}
+html body #composer .composer-bar .anclados{order:-1;flex:1 0 100%;display:block;max-height:2.9em;overflow:hidden;margin-bottom:6px;font-size:12px;line-height:1.45;color:var(--quiet)}
+html body #composer .composer-bar .anclados:empty{display:none}
+html body #composer .composer-bar .action{flex:0 0 auto!important;margin-left:auto!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;min-width:112px!important;padding:0 20px!important;border-radius:999px!important;font-size:15px;font-weight:700;gap:8px}
+html body #composer .composer-bar .p3d{flex:0 0 auto}
+@media(max-width:380px){html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools{padding:0 9px!important;font-size:12px!important}html body #composer .composer-bar .action{min-width:var(--mx-tap)!important;width:var(--mx-tap)!important;padding:0!important}html body #composer .composer-bar .action::after{display:none}}
+
+/* ---------- bandeja «Agregar al chat» ---------- */
+#mx-hoja .mx-bandeja{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:4px 0 8px}
+#mx-hoja .mx-bandeja>button{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:auto!important;max-width:none!important;height:auto!important;min-height:84px!important;aspect-ratio:auto!important;padding:12px 4px!important;border-radius:14px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--title)!important}
+#mx-hoja .mx-bandeja>button::after{content:attr(data-mx);font-size:12px;line-height:1.2;color:var(--quiet);text-align:center;overflow-wrap:anywhere}
+#mx-hoja .mx-bandeja>button svg{width:24px!important;height:24px!important}
+#mx-hoja .mx-bandeja>button:active{background:var(--module-selected)!important}
+#mx-hoja .mx-fila-ajustes{display:flex;align-items:center;gap:12px;width:100%;padding:14px;border-radius:12px;background:var(--panel);border:1px solid var(--border);color:var(--title);text-align:left}
+#mx-hoja .mx-fila-ajustes span{flex:1;display:grid;gap:2px}#mx-hoja .mx-fila-ajustes small{color:var(--quiet);font-size:12px}
+#mx-hoja .mx-der{transform:rotate(-90deg);color:var(--quiet)}
+
+/* ---------- salida: ancha, sin recortes ---------- */
+html body #histories .chat-history{padding:6px 2px 12px;gap:12px}
+html body .chat-history .message{width:100%;max-width:100%;min-width:0;padding:12px 14px;font-size:16px;line-height:1.6;overflow-wrap:anywhere;word-break:break-word}
+html body .chat-history .message.user{width:fit-content;max-width:92%;margin-left:auto}
+html body .chat-history .message.meta{font-size:12px;line-height:1.4;padding:6px 10px}
+html body .chat-history .message .copiar,html body .chat-history .message .editar{top:-11px;right:10px;padding:4px 7px;background:var(--surface-alt);border:1px solid var(--border);border-radius:8px;z-index:2}
+html body .chat-history .message .editar{right:44px}
+html body .chat-history .riu-code{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-width:100%;font-size:13px}
+html body .chat-history .message table{display:block;max-width:100%;overflow-x:auto}
+html body .chat-history .message img,html body .chat-history .message video{max-width:100%;height:auto}
+html body .chat-history .message .txt{white-space:pre-wrap}
+html body #histories .riu-bajar{opacity:.9}
+html body .chat-history .message .mx-continuar{margin-top:8px;min-height:38px;padding:0 16px;border-radius:999px;background:var(--status-blue);border:0;color:#fff;font-weight:700}
+@media(max-width:720px){html body section:has(> #histories){height:auto;min-height:0;flex:1 1 auto}html body #histories{min-height:46dvh}}
+
+/* ---------- avisos (toast), estado del Router ---------- */
+html body #notice:not(:empty){position:fixed;top:calc(54px + env(safe-area-inset-top,0px));bottom:auto;left:50%;transform:translateX(-50%);width:max-content;max-width:min(92vw,460px);z-index:120;padding:11px 16px;border-radius:10px;border:1px solid var(--border-strong);border-left:3px solid var(--status-blue);background:var(--panel);color:var(--title);font-size:13px;line-height:1.4;text-align:left;white-space:normal;box-shadow:0 10px 35px rgba(0,0,0,.35)}
+html body #notice.err:not(:empty){border-left-color:var(--status-red);color:var(--title)}
+#movil-status::before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:var(--quiet-2);vertical-align:middle}
+#movil-status[data-estado=ok]::before{background:var(--status-green)}#movil-status[data-estado=err]::before{background:var(--status-red)}
+
+/* ---------- selectores: una sola capa, sin bordes dobles ---------- */
+html body .selectores{margin-top:12px}
+html body .sel-fila{background:transparent;border:0;padding:0;gap:8px}
+html body .sel-fila .sel-pill{border-radius:12px;min-height:46px;height:auto;padding:8px 14px;background:var(--panel);border:1px solid var(--border);justify-content:space-between}
+html body .sel-fila.activa .sel-pill{border-color:var(--status-blue);background:var(--status-soft-blue)}
+html body #sel-power .sel-fila .sel-pill{height:46px;font-size:14px}
+
+/* ---------- ventanas propias (herramientas, conexiones, ROOM, pendientes): filas tipo setting-row del skill ---------- */
+html body .tv-fila,html body .cv-fila,html body .pp-n{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin:6px 0}
+html body .tv-sub{margin:14px 2px 4px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--quiet-2);opacity:1}
+html body .tv-sec,html body .cv-sec,html body .pp-sec{margin:16px 2px 6px;font-weight:650;color:var(--title)}
+html body .tv-tool .toggle,html body .cv-fila .toggle{min-width:92px;min-height:36px;padding:0 14px;font-size:13px}
+html body .cv-form input,html body .cv-form select,html body .cv-form textarea{min-height:42px;padding:0 12px;border-radius:10px;background:var(--surface-alt);border:1px solid var(--border)}
+html body .cv-form textarea{padding:10px 12px}
+html body .cv-est{padding:2px 4px}
+html body .cv-msg{border-radius:12px}
+@media(max-width:560px){html body .cv-form input,html body .cv-form select,html body .cv-form textarea{flex:1 1 100%}html body .cv-form .action{flex:1 1 100%;min-height:44px}}
+.tag-status{display:inline-flex;gap:6px;align-items:center;font-size:11px;font-weight:750;padding:6px 9px;border-radius:8px}
+.tag-status.progress{color:var(--status-green);background:var(--status-soft-green)}.tag-status.enabled{color:var(--status-blue);background:var(--status-soft-blue)}.tag-status.warning{color:var(--status-red);background:var(--status-soft-red)}.tag-status.pending{color:var(--quiet);background:var(--module-selected)}
+
+@media(prefers-reduced-motion:reduce){html body #composer *{transition:none!important}}
+
+/* ---------- cabecera de escritorio y botón Enviar ---------- */
+@media(min-width:721px){html body .topbar .access{flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:10px;width:auto}html body .topbar .access .riu-campana{width:40px;height:40px;min-height:40px}html body .topbar .access .riu-estado{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;font-size:13px}}
+html body #composer .env-txt{display:none!important}

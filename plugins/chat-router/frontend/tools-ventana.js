@@ -102,7 +102,7 @@ async function pintarVentana(caja) {
 const avisar = (t) => { const n = document.querySelector("#notice"); if (n) n.textContent = t; else console.warn(t); };
 function aplicarIA(on) {  // única vía para reflejar IA/agentes: botón 🧰, botón de bloqueo y LLM tool leen lo mismo
   const f = window.RIU_CHAT_TOOL_FLAGS; if (f) { f.tools = f.agente_tool = f.llm_tool = !!on; }
-  const b = document.querySelector("#btn-tools"); if (b) { b.textContent = "🧰 IA/agentes " + (on ? "ON" : "OFF"); b.setAttribute("aria-pressed", String(!!on)); }
+  const b = document.querySelector("#btn-tools"); if (b) { b.textContent = "IA " + (on ? "ON" : "OFF"); b.setAttribute("aria-pressed", String(!!on)); }
   const l = document.querySelector("#btn-llm-tool"); if (l) { l.textContent = "🧠 LLM tool " + (on ? "ON" : "OFF"); l.classList.toggle("sel-on", !!on); l.setAttribute("aria-pressed", String(!!on)); }
   window.dispatchEvent(new CustomEvent("riu:ia", { detail: { on: !!on } }));
 }
@@ -111,12 +111,12 @@ function instalarChat() {
   const bar = document.querySelector("#composer .composer-bar");
   if (!bar || document.querySelector("#btn-tools")) return;
   if (!document.querySelector("#tv-css")) { const st = el("style"); st.id = "tv-css"; st.textContent = CSS; document.head.append(st); }
-  const b = el("button", "secondary", "🧰 IA/agentes OFF"); b.type = "button"; b.id = "btn-tools"; b.title = "Permitir otras IA y agentes; GitHub y HF siempre disponibles"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Permitir otras IA y agentes");
+  const b = el("button", "secondary", "IA OFF"); b.type = "button"; b.id = "btn-tools"; b.title = "Permitir otras IA y agentes; GitHub y HF siempre disponibles"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Permitir otras IA y agentes");
   const s = el("div", "sheet"); s.id = "ventana-tools"; s.hidden = true;
   const c = el("div", "va-caja"), h = el("div", "row va-head"), x = el("button", "secondary", "✕"), cuerpo = el("div", "list"); cuerpo.id = "tv-cuerpo";
   x.type = "button"; x.onclick = () => { s.hidden = true; };
   s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
-  h.append(el("strong", "", "🧰 Staff de tools"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
+  h.append(el("strong", "", "Herramientas del chat"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
   b.title = "Permitir que el modelo llame a otras IA y agentes (el servidor lo recuerda). GitHub, HF y demás herramientas tienen su ON/OFF con clic derecho o mantener pulsado";
   b.onclick = async () => {  // el servidor decide y recuerda; el navegador solo refleja su respuesta
     const flags = window.RIU_CHAT_TOOL_FLAGS; if (!flags || b.disabled) return; b.disabled = true;
