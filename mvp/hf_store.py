@@ -2,7 +2,7 @@
 import json
 import re
 from pathlib import Path
-from huggingface_hub import HfApi, hf_hub_download
+from huggingface_hub import HfFileSystem
 
 CONFIG = json.loads(Path(__file__).with_name("config.json").read_text(encoding="utf-8"))
 PROHIBIDAS = (".py", ".pyc", ".js", ".ts", ".sh", ".env", ".pem", ".key", ".p12")
@@ -34,21 +34,19 @@ def guardar(clave, nombre, valor):
     if PATRON_CLAVE.search(valor):
         raise ValueError("dato HF parece contener credenciales")
     try:
-        info = HfApi().upload_file(path_or_fileobj=valor.encode("utf-8"),
-                                   path_in_repo=ruta, repo_id=CONFIG["bucket_hf"],
-                                   repo_type="dataset", token=token)
+        with HfFileSystem(token=token).open("hf://buckets/" + CONFIG["bucket_hf"] + "/" + ruta, "wb") as archivo:
+            archivo.write(valor.encode("utf-8"))
     except Exception:
         raise RuntimeError("fallo de escritura HF") from None
-    return {"ok": True, "destino": "hf", "id": nombre, "commit": getattr(info, "oid", None)}
+    return {"ok": True, "destino": "hf", "id": nombre, "commit": None}
 
 
 def leer(clave, nombre):
     ruta = _ruta(nombre)
     token = _token(clave)
     try:
-        ruta_local = hf_hub_download(repo_id=CONFIG["bucket_hf"], filename=ruta,
-                                     repo_type="dataset", token=token)
-        valor = Path(ruta_local).read_text(encoding="utf-8")
+        with HfFileSystem(token=token).open("hf://buckets/" + CONFIG["bucket_hf"] + "/" + ruta, "rb") as archivo:
+            valor = archivo.read().decode("utf-8")
     except Exception:
         raise RuntimeError("fallo de lectura HF") from None
     return {"ok": True, "destino": "hf", "id": nombre, "valor": valor}
