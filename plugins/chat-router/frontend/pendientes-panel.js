@@ -8,6 +8,32 @@ const CSS = `#ventana-pendientes .va-caja{overflow:auto;max-height:88vh}.pp-ta{w
 .pp-sec{margin:10px 0 4px;font-weight:600}.pp-n{padding:6px 8px;border-radius:8px;background:rgba(127,127,127,.08);margin:3px 0}
 .pp-n small{opacity:.7;display:block;white-space:pre-wrap}.pp-est{font-size:12px;opacity:.85;white-space:pre-wrap}`;
 
+// Checklist (agregar, marcar, ordenar): vive en el servidor; el modelo la consulta/actualiza con la herramienta «pendientes» si está encendida
+function checklist() {
+  const caja = el("div", "list"), est = el("div", "pp-est"), nuevo = el("input"), fila = el("div", "row");
+  nuevo.placeholder = "Nuevo pendiente"; nuevo.setAttribute("aria-label", "Nuevo pendiente"); nuevo.style.flex = "1 1 160px"; nuevo.style.minWidth = "0";
+  const pintarLista = (ps) => {
+    caja.replaceChildren(...(ps.length ? ps : [{ vacio: true }]).map((p, i) => {
+      if (p.vacio) return el("div", "muted", "Sin pendientes");
+      const f = el("div", "pp-n row"), cb = el("input"), t = el("span", "", p.texto);
+      cb.type = "checkbox"; cb.checked = p.hecho; cb.setAttribute("aria-label", "Hecho: " + p.texto); cb.onchange = () => llamar({ accion: "marcar", id: p.id, hecho: cb.checked });
+      t.style.flex = "1 1 120px"; t.style.overflowWrap = "anywhere"; if (p.hecho) t.style.textDecoration = "line-through";
+      const mover = (d) => { const ids = ps.map((x) => x.id); ids.splice(i + d, 0, ids.splice(i, 1)[0]); llamar({ accion: "ordenar", ids }); };
+      f.append(cb, t);
+      if (i > 0) f.append(btn("↑", () => mover(-1)));
+      if (i < ps.length - 1) f.append(btn("↓", () => mover(1)));
+      f.append(btn("✕", () => llamar({ accion: "quitar", id: p.id })));
+      return f;
+    }));
+  };
+  const llamar = async (c) => { try { const r = await accion("checklist", c); est.textContent = r.persistente === false ? "⚠️ No se guardará tras reiniciar (almacenamiento HF no disponible)" : ""; pintarLista(r.pendientes || []); return true; } catch (x) { est.textContent = "⚠️ " + x.message; return false; } };
+  const agregar = btn("＋ Añadir", async () => { if (nuevo.value.trim() && await llamar({ accion: "agregar", texto: nuevo.value })) nuevo.value = ""; });
+  nuevo.onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); agregar.click(); } };
+  fila.append(nuevo, agregar);
+  llamar({});
+  const todo = el("div", "list"); todo.append(fila, caja, est); return todo;
+}
+
 function pintarDag(caja, v) {
   caja.replaceChildren();
   const dag = (v && v.dag) || null;
@@ -22,8 +48,11 @@ function pintarDag(caja, v) {
   });
 }
 
+let organizador = null;  // el organizador con LLM (notas + DAG) no existe en el Router MVP: se prueba una vez
 async function pintar(cuerpo) {
   cuerpo.replaceChildren(el("div", "muted", "Cargando…"));
+  if (organizador === null) { try { await accion("notas", { accion: "listar" }); organizador = true; } catch (x) { organizador = false; } }
+  if (!organizador) { cuerpo.replaceChildren(el("div", "pp-sec", "Checklist"), checklist(), el("div", "muted", "El organizador con LLM (bloc de notas y DAG) no está disponible en este Router.")); return; }
   const inTa = el("textarea", "pp-ta"), prTa = el("textarea", "pp-ta"), est = el("div", "pp-est"), dag = el("div", "list"), lista = el("div", "muted");
   inTa.rows = 5; inTa.placeholder = "Pega aquí el input block tal cual (se guarda verbatim 1:1, no se edita después)"; prTa.rows = 10;
   const avisar = (t) => { est.textContent = t; };
@@ -40,7 +69,7 @@ async function pintar(cuerpo) {
       avisar("⚠️ Tiempo agotado; la vista se actualiza cuando termine");
     } catch (x) { avisar("⚠️ " + x.message); } });
   try { const p = await accion("pendientes", { accion: "prompt_leer" }); prTa.value = JSON.stringify(p.prompt || {}, null, 2); } catch (x) { prTa.value = ""; }
-  cuerpo.replaceChildren(el("div", "pp-sec", "1) Input block verbatim"), inTa, guardarIn, lista,
+  cuerpo.replaceChildren(el("div", "pp-sec", "0) Checklist"), checklist(), el("div", "pp-sec", "1) Input block verbatim"), inTa, guardarIn, lista,
     el("div", "pp-sec", "2) Prompt JSON / system prompt del organizador (editable)"), prTa, guardarPr,
     el("div", "pp-sec", "3) Pendientes organizados (DSL DAG)"), organizar, est, dag);
   cargarInputs(); cargarVista();

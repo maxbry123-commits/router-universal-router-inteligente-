@@ -592,6 +592,7 @@ export async function mount(root, { api, tell }) {
       bLock.setAttribute('aria-pressed', String(locked));
     };
     bLock.disabled = true; pintarLock();
+    window.addEventListener('riu:ia', (e) => { locked = !e.detail.on; pintarLock(); bLock.disabled = false; });  // el botón 🧰 y el servidor mandan
     const refrescarLock = async () => {
       const r = await window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion });
       if (!r || r.ok !== true || typeof r.locked !== 'boolean') throw new Error('GAP_AGENT_LOCK_ESTADO');
@@ -603,7 +604,7 @@ export async function mount(root, { api, tell }) {
       try {
         const r = await window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion, locked: !locked });
         if (!r || r.ok !== true || r.locked !== !locked) throw new Error('GAP_AGENT_LOCK_CAMBIO');
-        locked = r.locked; chatTools.agente_tool = !locked; pintarLock();
+        locked = r.locked; (window.RIU_IA ? window.RIU_IA(!locked) : (chatTools.agente_tool = !locked)); pintarLock();
       } catch (e) { tell('GAP: no se verificó el bloqueo: ' + e.message); }
       finally { busy = false; bLock.disabled = false; }
     });

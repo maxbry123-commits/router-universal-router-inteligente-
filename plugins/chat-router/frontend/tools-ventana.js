@@ -6,7 +6,8 @@ import { accion } from "./api.js";
 const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 const btn = (txt, cls, fn) => { const b = el("button", cls || "secondary", txt); b.type = "button"; if (fn) b.onclick = fn; return b; };
 let estado = null;
-const cargar = async () => { estado = await accion("tools_estado", { rapido: true }); return estado; };
+let sinStaff = false;  // Router MVP: no hay tools_estado; se consulta una sola vez
+const cargar = async () => { if (sinStaff) throw new Error("sin staff de agentes"); try { estado = await accion("tools_estado", { rapido: true }); return estado; } catch (x) { sinStaff = /soportada|HTTP 400/.test(x.message); throw x; } };
 const CSS = `#ventana-tools .va-caja{overflow:auto;max-height:88vh}.tv-sec{margin:10px 0 4px;font-weight:600}.tv-sub{font-size:12px;opacity:.7;margin:6px 0 2px}
 .tv-fila{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 8px;border-radius:8px;background:rgba(127,127,127,.08);margin:3px 0}
 .tv-fila .tv-n{flex:1 1 140px;min-width:0;overflow:hidden;text-overflow:ellipsis}.tv-fila small{opacity:.65;display:block}
@@ -30,7 +31,7 @@ async function probar(salida, payload) {
 
 async function pintarVentana(caja) {
   caja.replaceChildren(el("div", "muted", "Cargando…"));
-  let e; try { e = await cargar(); } catch (x) { caja.replaceChildren(el("div", "muted", "Sin conexión con el Router: " + x.message)); return; }
+  let e; try { e = await cargar(); } catch (x) { e = { agentes: [], recursos: [], fichas: [], max: 20, sinStaff: true }; }  // Router MVP sin staff de agentes: las herramientas (tools_lock) siguen funcionando
   const recursos = e.recursos || [];
   const nombreRec = (id) => (recursos.find((r) => r.id === id) || {}).nombre || id;
   const guardar = async (lista) => { try { const r = await accion("groq_agentes", { agentes: lista }); if (r.error) { alert(r.error); return; } } catch (x) { alert(x.message); return; } pintarVentana(caja); };
@@ -88,6 +89,7 @@ async function pintarVentana(caja) {
       });
     });
   } catch (x) { tl.append(el("div", "muted", "GAP tools_lock: " + x.message)); }
+  if (e.sinStaff) { caja.replaceChildren(el("div", "tv-sec", "Herramientas del chat — un botón por herramienta"), el("div", "muted", "Apagar una herramienta impide que el modelo la vea y la ejecute (lo aplica el servidor)."), tl); return; }
   caja.replaceChildren(
     el("div", "tv-sec", "Agentes del staff (" + e.agentes.length + "/" + (e.max || 20) + ")"),
     el("div", "muted", "Elige en el selector qué modelo usa cada agente. La LLM del chat lo hace con agente_enlazar y lo usa con groq_agente."),
@@ -97,6 +99,14 @@ async function pintarVentana(caja) {
     el("div", "tv-sec", "Tools de la LLM del chat — un boton por tool"), tl);
 }
 
+const avisar = (t) => { const n = document.querySelector("#notice"); if (n) n.textContent = t; else console.warn(t); };
+function aplicarIA(on) {  // única vía para reflejar IA/agentes: botón 🧰, botón de bloqueo y LLM tool leen lo mismo
+  const f = window.RIU_CHAT_TOOL_FLAGS; if (f) { f.tools = f.agente_tool = f.llm_tool = !!on; }
+  const b = document.querySelector("#btn-tools"); if (b) { b.textContent = "🧰 IA/agentes " + (on ? "ON" : "OFF"); b.setAttribute("aria-pressed", String(!!on)); }
+  const l = document.querySelector("#btn-llm-tool"); if (l) { l.textContent = "🧠 LLM tool " + (on ? "ON" : "OFF"); l.classList.toggle("sel-on", !!on); l.setAttribute("aria-pressed", String(!!on)); }
+  window.dispatchEvent(new CustomEvent("riu:ia", { detail: { on: !!on } }));
+}
+window.RIU_IA = aplicarIA;
 function instalarChat() {
   const bar = document.querySelector("#composer .composer-bar");
   if (!bar || document.querySelector("#btn-tools")) return;
@@ -107,8 +117,15 @@ function instalarChat() {
   x.type = "button"; x.onclick = () => { s.hidden = true; };
   s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
   h.append(el("strong", "", "🧰 Staff de tools"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
-  b.title = "Permitir otras IA y agentes; GitHub y Hugging Face siempre disponibles";
-  b.onclick = () => { const flags = window.RIU_CHAT_TOOL_FLAGS; if (!flags) return; flags.tools = !flags.tools; flags.agente_tool = flags.tools; flags.llm_tool = flags.tools; b.textContent = "🧰 IA/agentes " + (flags.tools ? "ON" : "OFF"); b.setAttribute("aria-pressed", String(flags.tools)); };
+  b.title = "Permitir que el modelo llame a otras IA y agentes (el servidor lo recuerda). GitHub, HF y demás herramientas tienen su ON/OFF con clic derecho o mantener pulsado";
+  b.onclick = async () => {  // el servidor decide y recuerda; el navegador solo refleja su respuesta
+    const flags = window.RIU_CHAT_TOOL_FLAGS; if (!flags || b.disabled) return; b.disabled = true;
+    try { const r = await accion("agent_access_lock", { locked: !!flags.tools }); aplicarIA(!r.locked); if (r.persistente === false) avisar("IA/agentes: el cambio no se guardará tras reiniciar el servidor"); }
+    catch (x) { avisar("IA/agentes: no se pudo cambiar (" + x.message + ")"); }
+    finally { b.disabled = false; }
+  };
+  let pulsado = null; b.addEventListener("pointerdown", () => { pulsado = setTimeout(() => { pulsado = null; s.hidden = false; pintarVentana(cuerpo); }, 600); }); ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(pulsado); }));  // móvil: mantener pulsado abre la ventana
+  accion("agent_access_lock", {}).then((r) => aplicarIA(!r.locked)).catch(() => {});  // estado real del servidor al abrir el chat
   b.oncontextmenu = (ev) => { ev.preventDefault(); s.hidden = false; pintarVentana(cuerpo); };
   const env = bar.querySelector(".action"); bar.insertBefore(b, env || null);
 }
@@ -131,7 +148,7 @@ async function instalarConfig() {
       el("div", "item", "Tools: " + e.tools.join(", ")),
       el("div", "item", "Agentes del staff: " + e.agentes.length + "/" + (e.max || 20) + " — " + e.agentes.map((a) => a.nombre + (a.recurso ? " → " + a.recurso : "")).join(", ")),
       el("div", "item", "Claves · NVIDIA chat: " + (k.nvidia_chat || 0) + " · NVIDIA código: " + (k.nvidia_codigo || 0) + " · Groq: " + (k.groq || 0)));
-  } catch (x) { cuerpo.replaceChildren(el("div", "muted", "Sin conexión con el Router: " + x.message)); }
+  } catch (x) { sec.remove(); }  // sin staff de agentes en este Router: nada que mostrar aquí
 }
 
 const revisar = () => { try { instalarChat(); instalarConfig(); } catch (e) { console.warn("tools-ventana", e); } };

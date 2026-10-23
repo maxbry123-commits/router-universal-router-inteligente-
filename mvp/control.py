@@ -134,18 +134,20 @@ class Control:
         return {"ok": True, "sesion": str(c.get("sesion") or "web-general")[:60], "locked": not self.d["ia"]}
 
     def _tools_lock(self, c, banco, actor):
+        cambio = {}
         if c.get("tool") is not None:
             nombre = c["tool"]
             if not (nombre in TOOLS or tipo(nombre) or self._mcp(str(nombre))):
                 raise ValueError("herramienta desconocida")
             self.d["herramientas"][nombre] = not _booleano(c.get("locked"), "locked")
+            cambio = {"tool": nombre, "locked": c["locked"]}  # el frontend lee {locked} del cambio
             self._sucio = True
         lista = [(n, TOOLS[n][0], True) for n in TOOLS] + [(n, "IA y agentes (delegacion)", True) for n in sorted(AGENTE_TOOLS | LLM_TOOLS)]
         lista += [(MCP_NOMBRE(k, h), "MCP · " + k["etiqueta"], False) for k in self.d["conexiones"]["mcp"] for h in k.get("herramientas", [])]
         h = self.d["herramientas"]
         tools = [{"nombre": n, "seccion": s, "locked": not h.get(n, defecto), "permitida": self.decidir(n, {"tools": True, "agente_tool": True, "llm_tool": True})[0]}
                  for n, s, defecto in lista]
-        return {"tools": tools, "ia": self.d["ia"]}
+        return {"tools": tools, "ia": self.d["ia"], **cambio}
 
     def _conexiones(self, c, banco, actor):
         servicio, cons = c.get("servicio"), self.d["conexiones"]

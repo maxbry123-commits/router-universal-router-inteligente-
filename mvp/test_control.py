@@ -133,7 +133,8 @@ class TestHerramientas(Base):
         tools = {t["nombre"]: t for t in self.accion("tools_lock")["tools"]}
         self.assertFalse(tools["github_leer"]["locked"])
         self.assertIn("github_leer", self.nombres())
-        self.accion("tools_lock", {"tool": "github_leer", "locked": True})
+        cambio = self.accion("tools_lock", {"tool": "github_leer", "locked": True})
+        self.assertEqual((cambio["tool"], cambio["locked"]), ("github_leer", True))  # contrato que lee tools-ventana.js
         self.assertNotIn("github_leer", self.nombres())  # al modelo solo se le muestran las encendidas
         r = self.llamar("github_leer", {"repo": "x"})
         self.assertIn("bloqueada", r["error"]["message"])  # y se comprueba otra vez al ejecutar
