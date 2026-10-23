@@ -398,7 +398,7 @@ class TestEspacio(Base):
 
 class TestGapsChat(Base):
     def test_selector_de_modelos_sale_solo_de_modelos_json(self):
-        from mvp.ficha import modelos
+        from mvp import modelos
         for plan in ("personal", "team"):
             with patch.dict(os.environ, {"MVP_PLAN": plan}):
                 r = self.client.get("/chat/providers/qwen/models", headers=CAB).json()["models"]

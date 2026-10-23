@@ -6,7 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from unittest.mock import patch
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-from mvp.ficha.compute import llamar
+from mvp.compute import llamar
 
 
 class Simulador(BaseHTTPRequestHandler):
@@ -57,7 +57,7 @@ class TestQwen(unittest.TestCase):
             self.llamada()
         self.assertEqual(Simulador.n, 1)
 
-    @patch("mvp.ficha.compute.time.sleep")
+    @patch("mvp.compute.time.sleep")
     def test_503(self, _):
         Simulador.cola = [(503, {}), (503, {}),
                           (200, {"choices": [{"message": {"content": "ok"}}]})]

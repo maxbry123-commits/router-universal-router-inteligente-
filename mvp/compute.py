@@ -2,7 +2,7 @@
 import json
 import time
 from urllib import error, request
-from mvp.ficha import modelos
+from mvp import modelos
 
 REINTENTABLES = {429, 502, 503, 504}
 OPCIONES = {"tools", "tool_choice", "temperature", "top_p", "max_tokens",
