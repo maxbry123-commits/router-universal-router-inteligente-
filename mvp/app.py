@@ -6,6 +6,7 @@ import os, subprocess, sys, time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
@@ -33,6 +34,8 @@ async def inicio(app):
         pass
     yield
 app = FastAPI(lifespan=inicio)
+app.add_middleware(CORSMiddleware, allow_methods=["*"], allow_headers=["*"],  # el chat (Vercel) llama al Router desde otro origen; la autenticacion es la X-API-Key, no cookies
+                   allow_origin_regex=os.environ.get("RIU_CORS_REGEX", r"https://riu-jev-bridge[a-z0-9-]*\.vercel\.app|http://127\.0\.0\.1:\d+"))
 CONTROL = control.Control()
 
 def _controles(cuerpo):

@@ -463,6 +463,11 @@ class TestGapsChat(Base):
         r, _ = self.enviar_con_modo(mode_request={"mode_id": "m99", "source": "button"})
         self.assertEqual(r.status_code, 400)
 
+    def test_cors_solo_para_el_chat_de_vercel(self):
+        for origen, permitido in (("https://riu-jev-bridge.vercel.app", True), ("https://riu-jev-bridge-git-main-maxbry123-8833s-projects.vercel.app", True), ("https://malo.example.com", False)):
+            r = self.client.options("/chat/send", headers={"Origin": origen, "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "x-api-key,content-type"})
+            self.assertEqual(r.headers.get("access-control-allow-origin") == origen, permitido, origen)
+
     def test_errores_del_proveedor_son_visibles(self):
         with patch("mvp.app.compute.llamar", side_effect=RuntimeError("Proveedor HTTP 500")):
             r = self.client.post("/chat", headers=CAB, json={"mensajes": [{"role": "user", "content": "x"}]})

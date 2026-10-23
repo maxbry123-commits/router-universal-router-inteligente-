@@ -8,11 +8,11 @@ const SPRITE = '<svg xmlns="http://www.w3.org/2000/svg" id="mx-sprite" style="po
   ["shield", '<path d="M12 2 20 5v6c0 5-3 8-8 11-5-3-8-6-8-11V5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>'], ["message", '<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.3 8.3 0 0 1-3.8-.9L3 21l1.9-5.7A8.3 8.3 0 0 1 4 11.5a8.5 8.5 0 0 1 17 0Z"/>'],
   ["check", '<path d="m5 12 4 4L19 6"/>'], ["doc", '<path d="M5 2h10l5 5v15H5Z"/><path d="M15 2v5h5M8 12h9M8 16h9"/>'], ["down", '<path d="m6 9 6 6 6-6"/>'],
   ["think", '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>'],
-  ["expand", '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>'], ["x", '<path d="M5 5 19 19M19 5 5 19"/>'], ["settings", '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>'],
+  ["expand", '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>'], ["x", '<path d="M5 5 19 19M19 5 5 19"/>'], ["power", '<path d="M12 2v10M6 5a9 9 0 1 0 12 0"/>'], ["settings", '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>'],
 ].map(([id, d]) => '<symbol id="i-' + id + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + "</symbol>").join("") + "</svg>";
-const TEXTO = { "btn-archivos": "Archivos", "btn-ancla": "Anclar", "btn-sandbox": "Sandbox", "btn-copiar-input": "Copiar", "btn-conexiones": "Conexiones", "btn-room": "ROOM", "btn-pendientes": "Pendientes" };
+const TEXTO = { "btn-archivos": "Archivos", "btn-ancla": "Anclar", "btn-sandbox": "Sandbox", "btn-copiar-input": "Copiar", "btn-conexiones": "Conexiones", "btn-room": "ROOM", "btn-pendientes": "Pendientes", "btn-power": "Servidor" };
 const FIJOS = new Set(["btn-adjunto", "btn-microfono", "btn-detener", "btn-tools", "mx-mas", "mx-grande"]);  // se quedan en la fila principal
-const ICONOS = { "btn-conexiones": "shield", "btn-room": "message", "btn-pendientes": "check" };  // botones propios: iconos de línea en vez de emojis
+const ICONOS = { "btn-conexiones": "shield", "btn-room": "message", "btn-pendientes": "check", "btn-power": "power" };  // botones propios: iconos de línea en vez de emojis
 const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
 
 function sprite() { if (!document.getElementById("mx-sprite")) document.body.insertAdjacentHTML("afterbegin", SPRITE); }
@@ -79,9 +79,10 @@ function avisos() {  // #notice como toast: se retira solo (errores, más tiempo
 function estado() {  // punto de señal (skill .signal) en el estado del Router
   const s = document.querySelector("#movil-status"); if (!s || s.dataset.mx) return; s.dataset.mx = "1";
   const pintar = () => { s.dataset.estado = /error|no disponible|detenido/i.test(s.textContent) ? "err" : s.textContent.trim() ? "ok" : ""; };
+  s.style.cursor = "pointer"; s.title = "Encender, apagar o reiniciar el Router"; s.onclick = () => { const p = document.querySelector("#btn-power"); if (p) p.click(); };  // el estado abre el panel del servidor
   pintar(); new MutationObserver(pintar).observe(s, { childList: true, characterData: true, subtree: true });
 }
 
-const revisar = () => { try { const c = document.querySelector("#composer"); if (c) montar(c); avisos(); estado(); } catch (e) { console.warn("maxbry-ui", e); } };
+const revisar = () => { try { const c = document.querySelector("#composer"); if (c) montar(c); avisos(); estado(); const e = document.querySelector(".riu-estado"); if (e && !e.dataset.mx) { e.dataset.mx = "1"; e.style.cursor = "pointer"; e.onclick = () => { const p = document.querySelector("#btn-power"); if (p) p.click(); }; } } catch (e) { console.warn("maxbry-ui", e); } };
 new MutationObserver(revisar).observe(document.body, { childList: true, subtree: true });
 revisar();
