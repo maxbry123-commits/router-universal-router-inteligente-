@@ -43,6 +43,7 @@ def llamar(mensajes, modelo, base_url, clave, opciones=None):
             mensaje = bruto["choices"][0]["message"]
             return {"texto": mensaje.get("content") or "",
                     "tool_calls": mensaje.get("tool_calls") or [],
+                    "finish_reason": bruto["choices"][0].get("finish_reason") or "",
                     "uso": bruto.get("usage") or {}, "bruto": bruto}
         except error.HTTPError as exc:
             if exc.code not in REINTENTABLES or intento == 2:
