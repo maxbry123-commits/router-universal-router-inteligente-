@@ -5,7 +5,7 @@ import os, subprocess, time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException
-from mvp import bank, compute, modelos, harness_client, hf_store, mcp_route
+from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route
 @asynccontextmanager
 async def inicio(app):
     app.state.banco = None
@@ -22,10 +22,13 @@ async def inicio(app):
             app.state.commit = cmd.stdout.strip()
     except (OSError, subprocess.TimeoutExpired):
         pass
+    try:
+        await asyncio.wait_for(CONTROL.cargar(), 15)  # estado de permisos guardado por /almacen; sin HF sigue en memoria
+    except asyncio.TimeoutError:
+        pass
     yield
 app = FastAPI(lifespan=inicio)
-AGENTE_TOOLS = {"agente", "agent", "groq_agente", "agente_enlazar"}
-LLM_TOOLS = {"chat", "llm", "recurso_llm", "nvidia_codigo"}
+CONTROL = control.Control()
 
 def _controles(cuerpo):
     controles = {}
@@ -37,11 +40,10 @@ def _controles(cuerpo):
     return controles
 
 def _verificar_herramienta(nombre, controles):
-    tipo = "agente_tool" if nombre in AGENTE_TOOLS else "llm_tool" if nombre in LLM_TOOLS else None
-    bloqueo = ("tools" if not controles["tools"] else tipo if not controles[tipo] else None) if tipo else None
-    if bloqueo:
-        logging.getLogger(__name__).warning("Herramienta bloqueada por %s=false", bloqueo)
-        raise HTTPException(status_code=403, detail="Herramienta bloqueada: " + bloqueo + "=false")
+    permitido, bloqueo = CONTROL.decidir(nombre, controles)  # conexion + herramienta + delegacion IA, decididas en el servidor
+    if not permitido:
+        logging.getLogger(__name__).warning("Herramienta bloqueada por %s", bloqueo)
+        raise HTTPException(status_code=403, detail="Herramienta bloqueada: " + bloqueo)
 
 def _verificar_llamadas(llamadas, controles):
     for llamada in llamadas:
@@ -125,8 +127,9 @@ async def almacen(cuerpo: dict):
     if destino not in ("harness", "hf"): raise HTTPException(status_code=400, detail="destino no permitido")
     if destino == "hf":
         if accion not in ("guardar", "leer"): raise HTTPException(status_code=400, detail="accion HF no permitida")
-        banco = app.state.banco; clave = banco.leer("HF_TOKEN") if banco else None
-        if not clave: raise HTTPException(status_code=503, detail="HF_TOKEN no disponible en banco")
+        banco = app.state.banco
+        try: clave = CONTROL.credencial("hf", banco, estricto=False)  # primera conexion HF ON del banco; sin ninguna, la principal
+        except RuntimeError as error: raise HTTPException(status_code=503, detail=str(error)) from None
         try:
             return await asyncio.to_thread(getattr(hf_store, accion), clave, *(cuerpo[campo] for campo in campos[accion]))
         except ValueError as error: raise HTTPException(status_code=400, detail=str(error)) from None
@@ -153,7 +156,27 @@ def chat_agents():
 def chat_github_accounts():
     return {"accounts": []}
 # --- G1/G2/G3/G4: contrato del frontend (api.js puenteRouter) sobre la logica existente de /chat ---
-BLOQUEOS = {}  # sesion -> bool (agent_access_lock, en memoria)
+async def _leer_estado():
+    return (await almacen({"accion": "leer", "destino": "hf", "nombre": control.NOMBRE}))["valor"]
+async def _guardar_estado(texto):
+    await almacen({"accion": "guardar", "destino": "hf", "nombre": control.NOMBRE, "valor": texto})
+CONTROL.conectar(_leer_estado, _guardar_estado)  # el estado del chat se persiste por /almacen (sin secretos)
+async def _control(accion, cuerpo, actor="director"):
+    try:
+        salida = await CONTROL.aplicar(accion, cuerpo, app.state.banco, actor)
+        if accion == "conexiones" and (cuerpo.get("accion") == "descubrir" or (cuerpo.get("accion") == "agregar" and cuerpo.get("servicio") == "mcp")):
+            ident = cuerpo.get("id") or CONTROL.d["conexiones"]["mcp"][-1]["id"]
+            con = next((c for c in CONTROL.d["conexiones"]["mcp"] if c["id"] == ident), None)
+            if not con: raise ValueError("conexion desconocida")
+            try:
+                lista = await asyncio.to_thread(mcp_cliente.listar, con["url"], app.state.banco.leer(control._clave_banco("mcp", ident)) if app.state.banco else None)
+                salida = await CONTROL.aplicar("conexiones", {"accion": "herramientas", "id": ident, "lista": lista}, app.state.banco)
+            except (ValueError, RuntimeError) as error:
+                salida = {**await CONTROL.aplicar("conexiones", {}, None), "aviso": str(error)}
+        return salida
+    except PermissionError as error: raise HTTPException(status_code=403, detail=str(error)) from None
+    except ValueError as error: raise HTTPException(status_code=400, detail=str(error)) from None
+    except RuntimeError as error: raise HTTPException(status_code=502, detail=str(error)) from None
 TRABAJOS, _TAREAS = {}, set()  # proceso_id -> {estado, proceso_id, choices|error}; en memoria (se pierde al reiniciar)
 FICHAS_QWEN = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "5": "ficha5-mvp"}
 async def _chat_ficha(cuerpo):
@@ -232,13 +255,8 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
         return {"status": "ok", "result": {"reply": salida["texto"], "texto": salida["texto"], "tool_calls": salida["tool_calls"], "finish_reason": salida.get("finish_reason"), "modelo": modelo,
                                            "ficha": str(cuerpo.get("ficha_qwen") or "ficha4-workflow-yaiwes"),
                                            **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}}
-    if accion == "agent_access_lock":  # G15: panel-chat.js exige result {ok:true, locked:bool}; en memoria, bloqueado por defecto
-        sesion = str(cuerpo.get("sesion") or "web-general")[:60]
-        if "locked" in cuerpo:
-            if type(cuerpo["locked"]) is not bool:
-                raise HTTPException(status_code=400, detail="locked debe ser booleano")
-            BLOQUEOS[sesion] = cuerpo["locked"]
-        return {"status": "ok", "result": {"ok": True, "sesion": sesion, "locked": BLOQUEOS.get(sesion, True)}}
+    if accion in control.ACCIONES:  # IA/agentes ON/OFF (agent_access_lock, G15), herramientas, conexiones, pendientes y salas: estado del servidor, bloqueado por defecto
+        return {"status": "ok", "result": await _control(accion, cuerpo)}
     raise HTTPException(status_code=400, detail="accion no soportada en mvp")
 # --- G19: POST /chat/send (panel-chat.js sin harnessUrl) sobre la misma ruta Harness que chat_async; sin fallback ---
 @app.post("/chat/send", dependencies=[Depends(verificar)])
@@ -250,7 +268,7 @@ async def chat_send(cuerpo: dict):
     return {"reply": msg["content"], "execution_path": "HARNESS", "ms": int((time.monotonic() - t0) * 1000),
             "tools": tools, "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": salida.get("modelo_solicitado"), "modelo_respuesta": salida.get("modelo_respuesta")}
-mcp_route.montar(app, verificar, chat, almacen)
+mcp_route.montar(app, verificar, chat, almacen, CONTROL)
 # --- G5b: Harness /invoke montado en este mismo Space (HF pide PRO para un Space nuevo). Ruta: chat -> Harness -> HTTP -> router ---
 from plugins.deepseek_harness.server import app as harness_app  # noqa: E402 - el Harness no importa mvp/; llm sigue por HTTP a fichas_qwen/call/llm
 app.mount("/plugins/deepseek_harness", harness_app)  # RIU_DEEPSEEK_HARNESS_URL = https://<space>/plugins/deepseek_harness

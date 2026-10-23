@@ -2,7 +2,7 @@
 import asyncio
 import json
 from fastapi import Depends, HTTPException, Request, Response
-from mvp import modelos
+from mvp import control as permisos, mcp_cliente, modelos
 from router import mcp_puente_github as github
 
 # Esquemas de mvp/mcp_route.py y del contrato existente
@@ -54,6 +54,20 @@ HERRAMIENTAS = [
          'metodo': {'type': 'string'}, 'ruta': {'type': 'string'},
          'cuerpo': {'type': 'object'}}, 'required': ['metodo', 'ruta']}},
 ]
+# Herramientas del chat que solo existen con estado de servidor (mvp/control.py); se exponen cuando montar() recibe el control.
+HERRAMIENTAS_CONTROL = [
+    {'name': 'pendientes', 'description': 'Checklist de pendientes: listar, agregar, marcar, ordenar o quitar.',
+     'inputSchema': {'type': 'object', 'properties': {
+         'accion': {'type': 'string', 'enum': ['listar', 'agregar', 'marcar', 'ordenar', 'quitar']},
+         'id': {'type': 'string'}, 'texto': {'type': 'string'}, 'hecho': {'type': 'boolean'},
+         'ids': {'type': 'array', 'items': {'type': 'string'}}}, 'required': ['accion']}},
+    {'name': 'sala', 'description': 'ROOM CONFERENCIAS: salas compartidas con participantes, mensajes, contexto y permisos de acceso.',
+     'inputSchema': {'type': 'object', 'properties': {
+         'accion': {'type': 'string', 'enum': ['crear', 'listar', 'leer', 'enviar', 'contexto', 'permiso']},
+         'id': {'type': 'string'}, 'nombre': {'type': 'string'}, 'texto': {'type': 'string'},
+         'participante': {'type': 'string'}, 'nivel': {'type': 'string', 'enum': ['lectura', 'escritura', 'admin']},
+         'participantes': {'type': 'object'}}, 'required': ['accion']}},
+]
 GITHUB = {'github_leer': github.github_leer, 'github_escribir': github.github_escribir,
           'github_api': github.github_api}
 FICHAS = {'listar_fichas': 'fichas', 'chat': 'chat_async', 'resultado': 'resultado'}
@@ -74,13 +88,32 @@ def _contenido(salida, error=False):
     return {'content': [{'type': 'text', 'text': str(salida)}], 'isError': error}
 
 
-async def _herramienta(id_, params, chat, almacen, plugin_call):
+def _gestionada(nombre):
+    return nombre in permisos.TOOLS or nombre.startswith('mcp__')
+
+
+def _catalogo(control):
+    if control is None:
+        return HERRAMIENTAS
+    visibles = set(control.visibles())  # solo las encendidas y con conexion activa
+    externas = [{'name': permisos.MCP_NOMBRE(c, h), 'description': '[' + c['etiqueta'] + '] ' + h['descripcion'], 'inputSchema': h['esquema']}
+                for c in control.d['conexiones']['mcp'] for h in c.get('herramientas', [])]
+    return [t for t in [*HERRAMIENTAS, *HERRAMIENTAS_CONTROL, *externas] if t['name'] in visibles or not _gestionada(t['name'])]
+
+
+async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, banco=None):
     if not isinstance(params, dict) or not isinstance(params.get('arguments', {}), dict):
         return _error(id_, -32602, 'Parametros invalidos')
     nombre, args = params.get('name'), params.get('arguments', {})
-    if nombre not in {t['name'] for t in HERRAMIENTAS}:
-        return _error(id_, -32602, 'Herramienta no permitida')
-    esquema = next(t['inputSchema'] for t in HERRAMIENTAS if t['name'] == nombre)
+    catalogo = _catalogo(control)
+    if nombre not in {t['name'] for t in catalogo}:
+        motivo = control.decidir(nombre)[1] if control and isinstance(nombre, str) else ''
+        return _error(id_, -32000 if motivo else -32602, 'Herramienta bloqueada: ' + motivo if motivo else 'Herramienta no permitida')
+    if control is not None and _gestionada(nombre):  # vuelve a comprobar el permiso al ejecutar
+        permitido, motivo = control.decidir(nombre)
+        if not permitido:
+            return _error(id_, -32000, 'Herramienta bloqueada: ' + motivo)
+    esquema = next(t['inputSchema'] for t in catalogo if t['name'] == nombre)
     for campo in esquema.get('required', []):
         if campo not in args or args[campo] is None:
             return _error(id_, -32602, 'Falta parametro: ' + campo)
@@ -100,6 +133,13 @@ async def _herramienta(id_, params, chat, almacen, plugin_call):
     if nombre in GITHUB and any(not isinstance(args.get(c), str) for c in esquema.get('required', [])):
         return _error(id_, -32602, 'Parametros invalidos')
     try:
+        if nombre in ('pendientes', 'sala'):
+            salida = await control.aplicar({'pendientes': 'checklist', 'sala': 'salas'}[nombre], args, banco, 'modelo')
+            return _ok(id_, _contenido(salida))
+        if nombre.startswith('mcp__'):
+            con = next(c for c in control.d['conexiones']['mcp'] if c['id'] == nombre[5:13])
+            respuesta = await asyncio.to_thread(mcp_cliente.llamar, con['url'], banco.leer(permisos._clave_banco('mcp', con['id'])) if banco else None, nombre[15:], args)
+            return _ok(id_, _contenido(respuesta['texto'], respuesta['error']))
         if nombre in ("github_leer", "github_escribir") and "/" in args["repo"]:
             dueno, repo = args["repo"].split("/", 1)
             if dueno != github.OWNER or not repo or "/" in repo:
@@ -117,6 +157,8 @@ async def _herramienta(id_, params, chat, almacen, plugin_call):
             if nombre == 'chat':
                 args = {**args, 'modelo': modelos.validar(args.get('modelo'))}
             salida = await (chat(args) if nombre == 'chat' else almacen(args))
+    except PermissionError as exc:
+        return _ok(id_, _contenido('ERROR: ' + str(exc), True))
     except HTTPException as exc:
         return _error(id_, -32602 if exc.status_code == 400 else -32000, str(exc.detail))
     except (ValueError, TypeError) as exc:
@@ -126,7 +168,7 @@ async def _herramienta(id_, params, chat, almacen, plugin_call):
     return _ok(id_, _contenido(salida, isinstance(salida, dict) and bool(salida.get('error'))))
 
 
-async def despachar(doc, chat, almacen, plugin_call=None):
+async def despachar(doc, chat, almacen, plugin_call=None, control=None, banco=None):
     ident = doc.get('id') if isinstance(doc, dict) else None
     if not isinstance(doc, dict) or doc.get('jsonrpc') != '2.0':
         return _error(ident, -32600, 'Solicitud JSON-RPC invalida')
@@ -143,15 +185,17 @@ async def despachar(doc, chat, almacen, plugin_call=None):
     if metodo == 'ping':
         return _ok(ident, {})
     if metodo == 'tools/list':
-        return _ok(ident, {'tools': HERRAMIENTAS})
+        return _ok(ident, {'tools': _catalogo(control)})
     if metodo == 'tools/call':
-        return await _herramienta(ident, doc.get('params'), chat, almacen, plugin_call)
+        return await _herramienta(ident, doc.get('params'), chat, almacen, plugin_call, control, banco)
     return _error(ident, -32601, 'Metodo no disponible')
 
 
-def montar(api, verificar, chat, almacen):
+def montar(api, verificar, chat, almacen, control=None):
     def token_github():
         banco = getattr(api.state, 'banco', None)
+        if control is not None:
+            return control.credencial('github', banco)  # primera conexion GitHub ON
         token = banco.leer('GITHUB_TOKEN') if banco else None
         if not token:
             raise RuntimeError('GITHUB_TOKEN no disponible en banco')
@@ -166,6 +210,6 @@ def montar(api, verificar, chat, almacen):
             doc = await request.json()
         except ValueError:
             return _error(None, -32700, 'JSON invalido')
-        salida = await despachar(doc, chat, almacen, plugin_call)
+        salida = await despachar(doc, chat, almacen, plugin_call, control, getattr(api.state, 'banco', None))
         return Response(status_code=202) if salida is None else salida
     api.add_api_route('/mcp', endpoint, methods=['POST'], dependencies=[Depends(verificar)])

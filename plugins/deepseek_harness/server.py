@@ -68,7 +68,7 @@ def llm(cuerpo):
     if catalogo.get("error"):
         raise RuntimeError("No se pudo obtener el catalogo MCP")
     permitidas = {t["name"]: t for t in catalogo.get("result", {}).get("tools", [])
-                  if t["name"] in ("github_leer", "github_escribir", "almacen")}
+                  if t["name"] in ("github_leer", "github_escribir", "almacen", "pendientes", "sala") or t["name"].startswith("mcp__")}
     if not permitidas:
         raise RuntimeError("Herramientas GitHub no disponibles en MCP")
     opciones["tools"] = [{"type": "function", "function": {"name": n,
@@ -117,7 +117,7 @@ def llm(cuerpo):
                 if args.get("accion") not in ("leer", "guardar"):
                     raise ValueError("Almacen HF permite solo leer y guardar")
                 args["destino"] = "hf"
-            else:
+            elif nombre.startswith("github_"):
                 args.setdefault("rama", "main")
             if nombre == "github_escribir" and args["rama"] != "main":
                 raise HTTPException(status_code=403, detail="Escritura GitHub permitida solo en main")
