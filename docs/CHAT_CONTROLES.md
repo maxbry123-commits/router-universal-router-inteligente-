@@ -24,3 +24,20 @@ Límites conocidos: el estado se guarda por `/almacen` (HF); con HF caído se si
 - **Frontend** (`plugins/chat-router/frontend/mode_selector.js`): «✨ Auto» es la fila inicial del selector de modos y el valor por defecto (`localStorage chat.mode_lock.panel`; un id inválido guardado vuelve a Auto). Cada envío lleva `mode_request = {mode_id:"auto", source:"auto"}`; con un modo fijado lleva `{mode_id, source:"button"}`. El front solo propone.
 - **Resolución** (`fichas/fichas_qwen/modos/mode_router.py`, `resolve_mode`): precedencia `button_lock > slash_command > auto_classifier > default_mode` (`m05_respuesta_rapida`). En Auto: `/auto` en el mensaje se quita del texto y `classify_auto` aplica las reglas por regex del registro (`modes_registry.json`); sin coincidencia usa el modo por defecto. Auto **nunca** elige un modo autónomo (`AUTO_FORBIDDEN`); esos exigen botón, slash o palabra de gate (`INICIA`, `RUN`, `IMPUTA`).
 - **En el Router MVP**: `mvp/` no importa `mode_router` ni lee `mode_request` (solo aparece como campo del esquema MCP `chat`). El selector y el campo viajan, pero hoy el MVP los ignora; el enrutado de modos lo consume `fichas/fichas_qwen/plugin.py`.
+
+## Maxbry UI (skill `componentes/skills/workflow-loop-yaiwes/fromted-yaiwes-frontend-factory`)
+
+Incorporado en `plugins/chat-router/frontend/chat-maxbry.css` (se carga el último) y `maxbry-ui.js`: tokens gris V07 (ya en `shell.css`), geometría tarjeta 12 / botón 10 / sheet 28, iconos de línea del skill (sprite `i-*`), composer con divisor y chips (`tool-btn`), `mode-option` para las filas de selector, `tag-status`/punto de señal (verde en curso, azul encendido, rojo alerta, gris pendiente), `toast` para `#notice` y bandeja «Agregar al chat» (patrón de las referencias Grok/Claude de `frontend/yaiwes/original/FOTOS-REF`).
+Composer: fila principal ＋ · 📎 · 🎤 … Enviar; chips Auto · Pensar · IA; el resto de botones (archivos, anclar, sandbox, copiar, conexiones, ROOM, pendientes) viven en la bandeja. Los mismos nodos se reubican, no se clonan. Editor desde 84 px (140 en escritorio) que crece hasta 38 dvh y se amplía con ⤢ (70 dvh); la salida ocupa el 100 % del ancho y el código ajusta línea; si la respuesta se corta aparece **Continuar**.
+
+## Verificación cruzada frontend ↔ backend (acciones que llama el frontend)
+
+| Acción / ruta | Estado en `mvp/` |
+|---|---|
+| `agent_access_lock`, `tools_lock`, `conexiones`, `checklist`, `salas` | OK (`control.py`) |
+| `status`, `estado`, `herramientas_estado` | OK (antes 400: «Probar conexión» y Seguimiento fallaban) |
+| `archivos`, `subir`, `archivo_borrar`, `sandbox`, `handoff_texto`, `proyecto` | OK; el contenido va por `/almacen`; anclados, handoff y sandbox viajan al modelo (los `secreto:` nunca) |
+| `thinking_mode` (chip Pensar) | OK: `enable_thinking` solo en `qwen3.8-max` (único con interruptor, `modelos.extra_body`) |
+| Ficha heredada `nv-*`/`hf-*`/`ask-consil*` sin selector Qwen | usa el modelo por defecto (antes: error «modelo no permitido») |
+| `/chat/send`, `/chat/providers…`, `/chat/agents`, `/chat/github/accounts`, `chat_async`, `resultado` | OK |
+| `notas`, `pendientes` (organizador LLM), `groq_agentes`, `agente_enlazar`, `tools_estado`, `recurso_probar`, `mirror_*`, `handoff`, `xray`, `descargas`, `mover_raiz`, `auditor_code`, `/memoria/search`, `/chat/org/*`, `/chat/documents`, `/control/*` | NO existen en el MVP (400/404 «accion no soportada»); la UI oculta el organizador y la ventana de staff, el resto muestra el error real |

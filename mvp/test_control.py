@@ -354,6 +354,20 @@ class TestEspacio(Base):
         self.assertEqual(self.accion("sandbox", {"sesion": "s1", "texto": ""})["encendido"], False)
         self.accion("sandbox", {"sesion": "s1", "texto": 5}, 400)
 
+    def test_handoff_y_sandbox_viajan_con_el_mensaje(self):
+        self.assertEqual(self.accion("handoff_texto", {"sesion": "s1"}), {"texto": "", "encendido": False, "persistente": False})
+        self.assertTrue(self.accion("handoff_texto", {"sesion": "s1", "texto": "trabaja en el repo X"})["encendido"])
+        self.accion("sandbox", {"sesion": "s1", "texto": "eres revisor"})
+        self.banco.datos["RIU_API_KEY"] = "clave-harness"
+        salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "x"}
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
+            self.client.post("/chat/send", headers=CAB, json={"message": "hola", "model": "qwen3.8-max", "sesion": "s1"})
+            self.assertIn("trabaja en el repo X", json.dumps(llm.call_args.args[1]))
+            self.assertIn("eres revisor", json.dumps(llm.call_args.args[1]))
+            self.client.post("/chat/send", headers=CAB, json={"message": "hola", "model": "qwen3.8-max", "sesion": "otra"})
+            self.assertNotIn("repo X", json.dumps(llm.call_args.args[1]))
+        self.assertFalse(self.accion("handoff_texto", {"sesion": "s1", "texto": ""})["encendido"])
+
     def test_proyectos(self):
         p = self.accion("proyecto", {"op": "upsert", "project_id": "p-1", "nombre": "Uno"})["proyecto"]
         self.assertEqual(p["nombre"], "Uno")

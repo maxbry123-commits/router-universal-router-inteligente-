@@ -222,6 +222,11 @@ async def _chat_ficha(cuerpo):
             raise HTTPException(status_code=400, detail="contexto_previo debe ser una lista")
         mensajes = list(q["contexto_previo"]) + list(mensajes)
     anclado = await _contexto_anclado(q.get("anclados"), q.get("sesion"))
+    ses = str(q.get("sesion") or "web-general")[:60]
+    propios = [("MI HANDOFF", CONTROL.d["handoff"].get(ses)), ("SANDBOX (system prompt de code)", CONTROL.d["sandbox"].get(ses))]  # encendidos = con texto
+    propios = "\n\n".join("[" + n + "]\n" + t for n, t in propios if t)
+    if propios:
+        mensajes = [{"role": "system", "content": propios}] + list(mensajes)
     if anclado:
         mensajes = [anclado] + list(mensajes)
     if q.get("instrucciones_fijas"):

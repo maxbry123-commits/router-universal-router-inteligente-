@@ -88,3 +88,11 @@ html body .cv-msg{border-radius:12px}
 /* ---------- cabecera de escritorio y botón Enviar ---------- */
 @media(min-width:721px){html body .topbar .access{flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:10px;width:auto}html body .topbar .access .riu-campana{width:40px;height:40px;min-height:40px}html body .topbar .access .riu-estado{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;font-size:13px}}
 html body #composer .env-txt{display:none!important}
+
+/* ---------- filas de selector (modo, modelos, ficha) = .mode-option del skill ---------- */
+html body .sheet .list>.fila{min-height:56px;padding:12px 14px;margin:8px 0 0;background:var(--panel);border:1px solid var(--border);border-radius:12px}
+html body .sheet .list>.fila:hover{background:var(--panel);border-color:var(--border-strong)}
+html body .sheet .list>.fila .fila-nom{font-weight:650;font-size:14px;color:var(--title)}
+html body .sheet .list>.fila .fila-desc{font-size:12px;font-weight:400;color:var(--quiet)}
+html body .sheet .list>.fila:has(.fila-ck){border-color:var(--status-blue);background:var(--status-soft-blue)}
+html body .sheet .list>.fila .fila-ck{color:var(--status-blue);font-size:16px}

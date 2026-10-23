@@ -29,7 +29,7 @@ def _vacio():
     base = {s: [] for s in SERVICIOS}
     for s in LEGADO:
         base[s].append({"id": "defecto", "etiqueta": "Principal (banco)", "on": True})
-    return {"ia": False, "herramientas": {}, "conexiones": base, "pendientes": [], "salas": {}, "archivos": {}, "sandbox": {}, "proyectos": {}}
+    return {"ia": False, "herramientas": {}, "conexiones": base, "pendientes": [], "salas": {}, "archivos": {}, "sandbox": {}, "handoff": {}, "proyectos": {}}
 
 
 def _texto(valor, maximo, campo):
@@ -310,19 +310,26 @@ class Control:
                 return meta["ruta"]
         return None
 
-    def _sandbox(self, c, banco, actor):
+    def _texto_sesion(self, c, clave):
         ses = str(c.get("sesion") or "web-general")[:60]
         if "texto" in c:
             texto = c["texto"]
             if not isinstance(texto, str) or len(texto) > 20000:
                 raise ValueError("texto debe ser cadena de hasta 20000 caracteres")
             if texto.strip():
-                self.d["sandbox"][ses] = texto
+                self.d[clave][ses] = texto
             else:
-                self.d["sandbox"].pop(ses, None)
+                self.d[clave].pop(ses, None)
             self._sucio = True
-        texto = self.d["sandbox"].get(ses, "")
+        return self.d[clave].get(ses, "")
+
+    def _sandbox(self, c, banco, actor):
+        texto = self._texto_sesion(c, "sandbox")
         return {"sandbox": texto, "encendido": bool(texto)}
+
+    def _handoff_texto(self, c, banco, actor):  # «Mi handoff»: texto propio que viaja con cada mensaje
+        texto = self._texto_sesion(c, "handoff")
+        return {"texto": texto, "encendido": bool(texto)}
 
     def _proyecto(self, c, banco, actor):
         ps, op = self.d["proyectos"], c.get("op") or "list"
@@ -369,7 +376,7 @@ class Control:
 
 
 ACCIONES = {"agent_access_lock", "tools_lock", "conexiones", "checklist", "salas", "status", "estado", "herramientas_estado",
-            "archivos", "subir", "archivo_borrar", "sandbox", "proyecto"}
+            "archivos", "subir", "archivo_borrar", "sandbox", "handoff_texto", "proyecto"}
 
 
 def clave_espacio(c):
