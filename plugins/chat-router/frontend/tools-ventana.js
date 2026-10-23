@@ -79,7 +79,7 @@ async function pintarVentana(caja) {
           b.disabled = true;
           try {
             const r = await accion("tools_lock", { tool: t.nombre, locked: !t.locked });
-            if (r.error) { alert(r.error); } else { t.locked = r.locked; b.textContent = t.locked ? "bloqueada" : "activa"; b.classList.toggle("on", !t.locked); }
+            if (r.error) { alert(r.error); } else { t.locked = r.locked; b.textContent = t.locked ? "bloqueada" : "activa"; b.classList.toggle("on", !t.locked); if (window.RIU_CHAT_TOOL_FLAGS) window.RIU_CHAT_TOOL_FLAGS.tools = !t.locked; const staff = document.querySelector("#btn-tools"); if (staff) { staff.textContent = "🧰 Tools " + (window.RIU_CHAT_TOOL_FLAGS?.tools ? "ON" : "OFF"); staff.setAttribute("aria-pressed", String(!!window.RIU_CHAT_TOOL_FLAGS?.tools)); } }
           } catch (x) { alert(x.message); }
           finally { b.disabled = false; }
         });
@@ -101,7 +101,7 @@ function instalarChat() {
   const bar = document.querySelector("#composer .composer-bar");
   if (!bar || document.querySelector("#btn-tools")) return;
   if (!document.querySelector("#tv-css")) { const st = el("style"); st.id = "tv-css"; st.textContent = CSS; document.head.append(st); }
-  const b = el("button", "secondary", "🧰"); b.type = "button"; b.id = "btn-tools"; b.title = "Staff de tools y agentes"; b.setAttribute("aria-label", "Tools y agentes");
+  const b = el("button", "secondary", "🧰 Tools OFF"); b.type = "button"; b.id = "btn-tools"; b.title = "Staff de tools y agentes"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Tools y agentes");
   const s = el("div", "sheet"); s.id = "ventana-tools"; s.hidden = true;
   const c = el("div", "va-caja"), h = el("div", "row va-head"), x = el("button", "secondary", "✕"), cuerpo = el("div", "list"); cuerpo.id = "tv-cuerpo";
   x.type = "button"; x.onclick = () => { s.hidden = true; };
