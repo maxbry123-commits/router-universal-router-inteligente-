@@ -99,7 +99,8 @@ async def chat(cuerpo: dict):
         llamadas = salida.get("tool_calls") or []
         _verificar_llamadas(llamadas, controles)
         return {"texto": salida.get("texto") or "", "tool_calls": llamadas,
-                "finish_reason": salida.get("finish_reason")}
+                "finish_reason": salida.get("finish_reason"),
+                **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}
     banco = app.state.banco
     clave = banco.leer("QWEN_API_KEY") if banco else None
     if not clave:
@@ -111,7 +112,8 @@ async def chat(cuerpo: dict):
         raise HTTPException(status_code=502, detail=str(error)) from None
     _verificar_llamadas(salida["tool_calls"], controles)
     return {"texto": salida["texto"], "tool_calls": salida["tool_calls"],
-            "finish_reason": salida.get("finish_reason")}
+            "finish_reason": salida.get("finish_reason"),
+                **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}
 @app.post("/almacen", dependencies=[Depends(verificar)])
 async def almacen(cuerpo: dict):
     accion = cuerpo.get("accion")
@@ -163,14 +165,15 @@ async def _chat_ficha(cuerpo):
     seleccionado = next((m for m in modelos.permitidos() if "".join(c for c in m.lower() if c.isalnum()) == "".join(c for c in seleccionado.lower() if c.isalnum())), seleccionado)
     try:
         modelo = modelos.validar(seleccionado or None)
-    except (ValueError, TypeError):
-        modelo = modelos.cargar()["modelo_defecto"]  # el frontend manda etiquetas/fichas (nv-*, ficha*) fuera del catalogo
+    except (ValueError, TypeError) as error:
+        raise HTTPException(status_code=400, detail=str(error)) from None
     # Ruta Antonio: Qwen -> Harness DeepSeek (HTTP) -> router. Sin camino alterno; sin URL Harness falla (G5 abierto)
     if not os.environ.get("RIU_DEEPSEEK_HARNESS_URL"):
         raise HTTPException(status_code=503, detail="HARNESS_NO_CONFIGURADO")
     salida = await chat({"modelo": modelo, "mensajes": mensajes, "via": "harness",
                          "opciones": q.get("opciones"), **_controles(q)})
     return {"estado": "listo", "via": "harness", "finish_reason": salida["finish_reason"],
+            "modelo_solicitado": modelo, "modelo_respuesta": salida.get("modelo_respuesta"),
             "choices": [{"message": {"role": "assistant", "content": salida["texto"],
                                     "tool_calls": salida["tool_calls"]},
                          "finish_reason": salida["finish_reason"]}]}
@@ -213,8 +216,8 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
     if accion == "llm" and plugin == "fichas_qwen":  # G21: Ficha 4 -> modelo DIRECTO (contrato puente_chat llm_call); nunca via=harness
         try:
             modelo = modelos.validar(cuerpo.get("modelo") or None)
-        except (ValueError, TypeError):
-            modelo = modelos.cargar()["modelo_defecto"]
+        except (ValueError, TypeError) as error:
+            raise HTTPException(status_code=400, detail=str(error)) from None
         opciones = dict(cuerpo.get("opciones") or {})
         if cuerpo.get("max_tokens"):
             opciones["max_tokens"] = cuerpo["max_tokens"]
@@ -223,7 +226,8 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
         except HTTPException as error:
             raise
         return {"status": "ok", "result": {"reply": salida["texto"], "texto": salida["texto"], "tool_calls": salida["tool_calls"], "finish_reason": salida.get("finish_reason"), "modelo": modelo,
-                                           "ficha": str(cuerpo.get("ficha_qwen") or "ficha4-workflow-yaiwes")}}
+                                           "ficha": str(cuerpo.get("ficha_qwen") or "ficha4-workflow-yaiwes"),
+                                           **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}}
     if accion == "agent_access_lock":  # G15: panel-chat.js exige result {ok:true, locked:bool}; en memoria, bloqueado por defecto
         sesion = str(cuerpo.get("sesion") or "web-general")[:60]
         if "locked" in cuerpo:
@@ -240,7 +244,8 @@ async def chat_send(cuerpo: dict):
     msg = salida["choices"][0]["message"]
     tools = [((t.get("function") or {}).get("name") or "tool") for t in (msg.get("tool_calls") or []) if isinstance(t, dict)]
     return {"reply": msg["content"], "execution_path": "HARNESS", "ms": int((time.monotonic() - t0) * 1000),
-            "tools": tools, "via": "harness", "finish_reason": salida["finish_reason"]}
+            "tools": tools, "via": "harness", "finish_reason": salida["finish_reason"],
+            "modelo_solicitado": salida.get("modelo_solicitado"), "modelo_respuesta": salida.get("modelo_respuesta")}
 mcp_route.montar(app, verificar, chat, almacen)
 # --- G5b: Harness /invoke montado en este mismo Space (HF pide PRO para un Space nuevo). Ruta: chat -> Harness -> HTTP -> router ---
 from plugins.deepseek_harness.server import app as harness_app  # noqa: E402 - el Harness no importa mvp/; llm sigue por HTTP a fichas_qwen/call/llm

@@ -1,4 +1,5 @@
 """Harness HTTP: /invoke -> Router MVP por HTTP. Sin modelos, claves HF ni datos GitHub."""
+import json
 import hmac
 import os
 
@@ -60,10 +61,55 @@ def llm(cuerpo):
     opciones = cuerpo.get("opciones") or {}
     if not isinstance(opciones, dict) or any(k not in OPCIONES for k in opciones):
         raise ValueError("opciones no permitidas")
-    salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones, **{k: cuerpo.get(k, False) for k in ("tools", "agente_tool", "llm_tool")}})
-    if not isinstance(salida.get("tool_calls"), list) or not isinstance(salida.get("texto"), str):
-        raise RuntimeError("Router respuesta de chat invalida")
-    return {"texto": salida["texto"], "tool_calls": salida["tool_calls"], "finish_reason": salida.get("finish_reason")}
+    opciones = dict(opciones)
+    permitidas = {}
+    if cuerpo.get("tools") is True:
+        catalogo = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": "catalogo", "method": "tools/list"})
+        if catalogo.get("error"):
+            raise RuntimeError("No se pudo obtener el catalogo MCP")
+        permitidas = {t["name"]: t for t in catalogo.get("result", {}).get("tools", [])
+                      if t["name"] in ("github_leer", "github_escribir", "almacen")}
+        if not permitidas:
+            raise RuntimeError("Herramientas GitHub no disponibles en MCP")
+        opciones["tools"] = [{"type": "function", "function": {"name": n,
+            "description": t["description"], "parameters": t["inputSchema"]}} for n, t in permitidas.items()]
+        opciones["tool_choice"] = "auto"
+    mensajes = list(mensajes)
+    for paso in range(8):
+        salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
+                         **{k: cuerpo.get(k, False) for k in ("tools", "agente_tool", "llm_tool")}})
+        if not isinstance(salida.get("tool_calls"), list) or not isinstance(salida.get("texto"), str):
+            raise RuntimeError("Router respuesta de chat invalida")
+        llamadas = salida["tool_calls"]
+        if not llamadas or not permitidas:
+            return {"texto": salida["texto"], "tool_calls": llamadas, "finish_reason": salida.get("finish_reason"),
+                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta")}
+        if paso == 7:
+            raise RuntimeError("Limite de llamadas a herramientas alcanzado; no se ejecutaron las ultimas llamadas")
+        mensajes.append(salida.get("mensaje_asistente") or {"role": "assistant", "content": salida["texto"] or None, "tool_calls": llamadas})
+        for llamada in llamadas:
+            funcion = llamada.get("function") or {}
+            nombre = funcion.get("name")
+            if nombre not in permitidas:
+                raise HTTPException(status_code=403, detail="Herramienta no autorizada en Harness")
+            if not llamada.get("id"):
+                raise RuntimeError("tool_call sin id; no se ejecuto")
+            args = json.loads(funcion.get("arguments") or "{}")
+            if not isinstance(args, dict):
+                raise ValueError("Argumentos de herramienta invalidos")
+            if nombre == "almacen":
+                if args.get("accion") not in ("leer", "guardar"):
+                    raise ValueError("Almacen HF permite solo leer y guardar")
+                args["destino"] = "hf"
+            else:
+                args.setdefault("rama", "main")
+            if nombre == "github_escribir" and args["rama"] != "main":
+                raise HTTPException(status_code=403, detail="Escritura GitHub permitida solo en main")
+            resultado = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": llamada["id"],
+                "method": "tools/call", "params": {"name": nombre, "arguments": args}})
+            mensajes.append({"role": "tool", "tool_call_id": llamada["id"],
+                             "content": json.dumps(resultado, ensure_ascii=False)})
+
 
 
 @app.post("/invoke")

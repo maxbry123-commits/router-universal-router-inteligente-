@@ -7,7 +7,7 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from fastapi.testclient import TestClient
 from mvp import app as servicio, harness_client as hc
@@ -98,7 +98,8 @@ class TestHarness(unittest.TestCase):
         banco = SimpleNamespace(leer=lambda nombre: "acceso-test")
         env = {"RIU_ROUTER_URL": base, "RIU_DEEPSEEK_HARNESS_URL": base + "/plugins/deepseek_harness",
                "MVP_QWEN_BASE_URL": self.url}
-        with patch.dict(os.environ, env), patch("mvp.app.bank.abrir_desde_env", return_value=banco):
+        github = Mock(return_value="commit simulado verificado")
+        with patch.dict(os.environ, env), patch("mvp.app.bank.abrir_desde_env", return_value=banco), patch.dict(servicio.mcp_route.GITHUB, {"github_leer": github, "github_escribir": github}), patch("mvp.app.hf_store.guardar", return_value={"ok": True}) as guardar_hf:
             servidor = uvicorn.Server(uvicorn.Config(servicio.app, log_level="critical"))
             hilo = threading.Thread(target=servidor.run, kwargs={"sockets": [sock]})
             cliente = httpx.Client(base_url=base, timeout=10, trust_env=False)
@@ -128,9 +129,11 @@ class TestHarness(unittest.TestCase):
                 for nombre, controles, codigo in (("groq_agente", {"tools": True, "agente_tool": False}, 403),
                         ("llm", {"tools": True, "llm_tool": False}, 403),
                         ("github_leer", {"tools": True, "agente_tool": False}, 200),
-                        ("groq_agente", {"tools": True, "agente_tool": True}, 200)):
+                        ("github_escribir", {"tools": True, "agente_tool": False}, 200)):
                     Falso.cola = [(200, {"choices": [{"message": {"content": "", "tool_calls": [
-                        {"function": {"name": nombre, "arguments": "{}"}}]}, "finish_reason": "tool_calls"}]})]
+                        {"id": "call-test", "type": "function", "function": {"name": nombre, "arguments": json.dumps({"repo": "prueba", "ruta": "README.md", "contenido": "prueba"})}}]}, "finish_reason": "tool_calls"}]})]
+                    if codigo == 200:
+                        Falso.cola.append((200, {"choices": [{"message": {"content": "Hecho"}, "finish_reason": "stop"}]}))
                     r = cliente.post("/chat/send", json={**cuerpo, **controles}, headers=cab)
                     self.assertEqual(r.status_code, codigo, r.text)
                 Falso.cola = [(200, {"choices": [{"message": {"content": "PONG"}, "finish_reason": "stop"}]})]
@@ -138,7 +141,21 @@ class TestHarness(unittest.TestCase):
                 self.assertEqual(r.status_code, 200, r.text)
                 self.assertEqual(Falso.recibidas[-1][1]["model"], "deepseek-v4-pro")
                 self.assertTrue(all(p == "/chat/completions" for p, _, _ in Falso.recibidas))
-                self.assertEqual(len(Falso.recibidas), 9)
+                self.assertEqual(len(Falso.recibidas), 11)
+                self.assertEqual(github.call_count, 2)
+                self.assertEqual(github.call_args.args[0]["rama"], "main")
+                self.assertEqual(servicio.mcp_route.github._token(), banco.leer("GITHUB_TOKEN"))
+                Falso.cola = [(200, {"choices": [{"message": {"role": "assistant", "content": None, "tool_calls": [
+                    {"id": "hf-call", "type": "function", "function": {"name": "almacen", "arguments": json.dumps({"accion": "guardar", "nombre": "prueba.txt", "valor": "dato"})}}]}, "finish_reason": "tool_calls"}]}),
+                    (200, {"model": "qwen3.8-max", "choices": [{"message": {"content": "Guardado"}, "finish_reason": "stop"}]})]
+                r = cliente.post("/chat/send", json={**cuerpo, "tools": True}, headers=cab)
+                self.assertEqual(r.status_code, 200, r.text)
+                guardar_hf.assert_called_once_with(banco.leer("HF_TOKEN"), "prueba.txt", "dato")
+                self.assertEqual(r.json()["modelo_respuesta"], "qwen3.8-max")
+
+                r = cliente.post("/chat/send", json={**cuerpo, "modelo": "modelo-inexistente"}, headers=cab)
+                self.assertEqual(r.status_code, 400)
+                self.assertEqual(len(Falso.recibidas), 13)
             finally:
                 cliente.close()
                 servidor.should_exit = True

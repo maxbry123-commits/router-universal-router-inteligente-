@@ -678,13 +678,13 @@ export async function mount(root, { api, tell }) {
       const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2, 3 y 5 = Team 5 MVP)
       const fq = selAct === "team-qwen" ? "1" : selAct === "ask-consil-code-qwen-team" ? "2" : selAct === "ask-consil-fromtend-qwen-team" ? "3" : null;
       const soloLiteralQwen = fq === "2" || fq === "3";  // ficha 2/3: input verbatim del Director (sin envolver ni trim)
-      const mvp = selAct === "team-5-mvp" ? { plugin: "fichas_qwen", ficha_qwen: "5", modelo: c.selectorQwen ? c.selectorQwen.label : "", instrucciones_fijas: c.instrucciones || "" } : null;  // Team 5 MVP: fichas_qwen ficha_qwen=5, sin N4, sin fallback
+      const mvp = selAct === "team-5-mvp" ? { plugin: "fichas_qwen", ficha_qwen: "5", modelo: c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label) : "", instrucciones_fijas: c.instrucciones || "" } : null;  // Team 5 MVP: fichas_qwen ficha_qwen=5, sin N4, sin fallback
       const mensajeQwen = soloLiteralQwen ? rawText : (mvp ? rawText : A.envolver(rawText, c.instrucciones)); // no eliminar espacios del input real
       const fijasQwen = (soloLiteralQwen || mvp) ? (c.instrucciones || "") : "";
       const _conModo = modeUI ? modeUI.wrapSend((b) => b) : ((b) => b);  // >>> MODOS <<< punto B: agrega mode_request al payload sin tocar el resto
       const anclados = releerAnclas(c);
       const controlTools = { tools: !!chatTools.tools, agente_tool: !!chatTools.agente_tool, llm_tool: !!chatTools.llm_tool };
-      const body = _conModo({ ...controlTools, message: mensajeQwen, ficha: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, thinking: modo === "think", ...(fijasQwen ? { instrucciones_fijas: fijasQwen } : {}), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : {}), ...(mvp || {}) });  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha; ficha 2/3 verbatim + instrucciones_fijas
+      const body = _conModo({ ...controlTools, message: mensajeQwen, ficha: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, thinking: modo === "think", ...(fijasQwen ? { instrucciones_fijas: fijasQwen } : {}), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label) : "", task_type: "chat" } : {}), ...(mvp || {}) });  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha; ficha 2/3 verbatim + instrucciones_fijas
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });  // Detener ya vale desde aqui: tambien mientras se restaura el historial o se arma el contexto
@@ -696,7 +696,7 @@ export async function mount(root, { api, tell }) {
           contexto_previo: ctxPrev, anclados, sesion: c.sesion + '-' + (m.modelo_id_slug || i), instrucciones_fijas: fijasQwen || undefined,
           ...controlTools, thinking_mode: modo === 'think' ? 'on' : 'off',
           mode_request: modeUI ? modeUI.getModeRequest() : undefined,
-          qwen: { plugin: "fichas_qwen", ficha_qwen: "1", modelo: m.label || m.modelo_id_slug || "", task_type: "chat" }, avisar: () => {} })));
+          qwen: { plugin: "fichas_qwen", ficha_qwen: "1", modelo: m.model_id || m.label || m.modelo_id_slug || "", task_type: "chat" }, avisar: () => {} })));
         const partes = rs.map((r, i) => {
           const nom = _multiSel[i].label || _multiSel[i].modelo_id_slug || ('modelo ' + (i + 1));
           return r.status === 'fulfilled' ? ('── ' + nom + ' ──\n' + (r.value.reply || 'Sin respuesta')) : ('── ' + nom + ' ──\nGAP: ' + (r.reason && r.reason.message || r.reason));
@@ -707,11 +707,12 @@ export async function mount(root, { api, tell }) {
         ? (_multiSel.length > 1
             ? await Promise.race([_fanout(), raceDetener])  // >>> MODOS <<< T6: misma tarea a cada modelo; un proceso por modelo en el backend
             : await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados, sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, ...controlTools, thinking_mode: (fq || mvp) ? (modo === 'think' ? 'on' : 'off') : undefined, mode_request: modeUI ? modeUI.getModeRequest() : undefined,  // >>> MODOS <<<
-        qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener]))
+        qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label) : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener]))
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);  // >>> MODOS <<< body ya lleva mode_request
       c.detenerFn = null;
       if (c.detenerFlag) throw new Error("PROCESO_DETENIDO");  // detenido mientras la respuesta llegaba: no pintar respuesta tardia
       pending.remove();
+      if (answer.modelo_solicitado) c.hist.append(node("div", "Modelo solicitado: " + answer.modelo_solicitado + " · API: " + (answer.modelo_respuesta || "sin identificar"), "item message meta"));
       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
       if (answer.finish_reason === "length") c.hist.append(node("div", "La respuesta se corto por limite de longitud", "item message meta"));

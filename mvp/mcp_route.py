@@ -145,6 +145,13 @@ async def despachar(doc, chat, almacen, plugin_call=None):
 
 
 def montar(api, verificar, chat, almacen):
+    def token_github():
+        banco = getattr(api.state, 'banco', None)
+        token = banco.leer('GITHUB_TOKEN') if banco else None
+        if not token:
+            raise RuntimeError('GITHUB_TOKEN no disponible en banco')
+        return token
+    github._token = token_github
     # Reutilizar el handler del mismo FastAPI, sin peticiones HTTP al propio Router.
     plugin_call = next((ruta.endpoint for ruta in api.routes
                         if getattr(ruta, 'path', '') == '/plugins/{plugin}/call/{accion}'), None)

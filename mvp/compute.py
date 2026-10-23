@@ -44,7 +44,8 @@ def llamar(mensajes, modelo, base_url, clave, opciones=None):
             return {"texto": mensaje.get("content") or "",
                     "tool_calls": mensaje.get("tool_calls") or [],
                     "finish_reason": bruto["choices"][0].get("finish_reason"),
-                    "uso": bruto.get("usage") or {}, "bruto": bruto}
+                    "uso": bruto.get("usage") or {}, "bruto": bruto, "mensaje_asistente": mensaje,
+                    "modelo_solicitado": modelo, "modelo_respuesta": bruto.get("model")}
         except error.HTTPError as exc:
             if exc.code not in REINTENTABLES or intento == 2:
                 raise RuntimeError("Qwen HTTP " + str(exc.code)) from None

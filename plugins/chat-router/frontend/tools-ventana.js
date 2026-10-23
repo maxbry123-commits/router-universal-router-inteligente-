@@ -107,7 +107,9 @@ function instalarChat() {
   x.type = "button"; x.onclick = () => { s.hidden = true; };
   s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
   h.append(el("strong", "", "🧰 Staff de tools"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
-  b.onclick = () => { s.hidden = false; pintarVentana(cuerpo); };
+  b.title = "Activar o desactivar herramientas GitHub y Hugging Face del modelo";
+  b.onclick = () => { const flags = window.RIU_CHAT_TOOL_FLAGS; if (!flags) return; flags.tools = !flags.tools; b.textContent = "🧰 Tools " + (flags.tools ? "ON" : "OFF"); b.setAttribute("aria-pressed", String(flags.tools)); };
+  b.oncontextmenu = (ev) => { ev.preventDefault(); s.hidden = false; pintarVentana(cuerpo); };
   const env = bar.querySelector(".action"); bar.insertBefore(b, env || null);
 }
 
