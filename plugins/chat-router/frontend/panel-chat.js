@@ -55,7 +55,7 @@ export async function mount(root, { api, tell }) {
   if (ctlB && ctlP) ctlB.addEventListener("click", () => { const ab = ctlP.classList.toggle("abierto"); ctlB.setAttribute("aria-expanded", String(ab)); ctlB.textContent = ab ? "Controles ▴" : "Controles ▾"; });
   const medirCtl = () => { const s = document.querySelector(".topbar") || document.querySelector(".sidebar") || document.querySelector("#navigation"); const b = s ? Math.round(s.getBoundingClientRect().bottom) : 0; if (b > 0 && b < window.innerHeight * 0.8) document.documentElement.style.setProperty("--ctl-top", b + "px"); };  // la barra se pega justo debajo de la tira superior (.topbar en escritorio; .sidebar solo es la tira en movil)
   medirCtl(); window.addEventListener("resize", medirCtl);
-  const previo = (c, message) => { const h = A.cargarHistorial(c.sesion).filter((m) => m.rol === "user" || m.rol === "bot"); if (h.length && h[h.length - 1].rol === "user" && h[h.length - 1].texto === message) h.pop(); return h.slice(-20).map((m) => ({ role: m.rol === "user" ? "user" : "assistant", content: m.texto })); };  // historial de ESTA sesion, aparte del input actual
+  const previo = (c, message) => { const h = A.cargarHistorial(c.sesion).filter((m) => m.rol === "user" || m.rol === "bot"); if (h.length && h[h.length - 1].rol === "user" && h[h.length - 1].texto === message) h.pop(); return h.map((m) => ({ role: m.rol === "user" ? "user" : "assistant", content: m.texto })); };  // historial completo de ESTA sesion, aparte del input actual
   const previoTodo = (c, message) => { const h = A.cargarHistorial(c.sesion).filter((m) => m.rol === "user" || m.rol === "bot"); if (h.length && h[h.length - 1].rol === "user" && h[h.length - 1].texto === message) h.pop(); const out = []; let tam = 0; for (const m of h.slice(-20).reverse()) { const t = String(m.texto || ""); if (tam + t.length > 30000) break; tam += t.length; out.unshift({ role: m.rol === "user" ? "user" : "assistant", content: t }); } return out; };  // Team 5 MVP: ultimos 20 mensajes / ~30 KB: TODO el historial de ESTA sesion, con roles
   const chats = [];
   const chatTools = window.RIU_CHAT_TOOL_FLAGS = { tools: false, agente_tool: false, llm_tool: false };
@@ -673,7 +673,7 @@ export async function mount(root, { api, tell }) {
     const agent = (q("#agent") || {}).value || "";
     const provider = (q("#provider") || {}).value || "";
     const model = (q("#model") || {}).value || "";
-    const max_tokens = { fast: 512, balanced: 4096, think: 8192 }[modo]; // por llamada, sujeto al tope real del proveedor
+    const max_tokens = undefined; // sin tope artificial del frontend; el proveedor informa finish_reason
     try {
       const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2, 3 y 5 = Team 5 MVP)
       const fq = selAct === "team-qwen" ? "1" : selAct === "ask-consil-code-qwen-team" ? "2" : selAct === "ask-consil-fromtend-qwen-team" ? "3" : null;
@@ -688,7 +688,8 @@ export async function mount(root, { api, tell }) {
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });  // Detener ya vale desde aqui: tambien mientras se restaura el historial o se arma el contexto
-      const ctxPrev = soloLiteralQwen ? previo(c, rawText) : undefined;  // ficha 2/3: verbatim; consil-code: ultimos 20; Team 5: sin contexto_previo
+      const ctxPrev = (fq || mvp) ? previo(c, rawText) : undefined;
+      body.contexto_previo = ctxPrev;  // historial completo de esta sesion; el input actual viaja una sola vez
       const _multiSel = fq === "1" && c.paralelo ? (c.selectorQwenMulti || []).slice(0, 6) : [];  // >>> MODOS <<< T6: fan-out paralelo
       const _fanout = async () => {  // una llamada por modelo elegido; cada burbuja lleva su nombre
         const rs = await Promise.allSettled(_multiSel.map((m, i) => window.RIU_HARNESS({
@@ -715,7 +716,7 @@ export async function mount(root, { api, tell }) {
       if (answer.modelo_solicitado) c.hist.append(node("div", "Modelo solicitado: " + answer.modelo_solicitado + " · API: " + (answer.modelo_respuesta || "sin identificar"), "item message meta"));
       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
-      if (answer.finish_reason === "length") c.hist.append(node("div", "La respuesta se corto por limite de longitud", "item message meta"));
+      if (answer.finish_reason === "length") c.hist.append(node("div", "El proveedor alcanzo su limite de salida. Escribe «Continua» para seguir desde este punto", "item message meta"));
       if (answer.execution_path === "FAST_QA") c.hist.append(node("div", "⚡ respuesta rápida · " + answer.ms + " ms", "item meta"));
       else if (answer.execution_path === "FAST_CONSULT") c.hist.append(node("div", "⚡ cónsil rápido · " + answer.ms + " ms", "item meta"));
       else if (c.fastReply && FAST_SEL() && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));

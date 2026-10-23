@@ -38,7 +38,7 @@ def _controles(cuerpo):
 
 def _verificar_herramienta(nombre, controles):
     tipo = "agente_tool" if nombre in AGENTE_TOOLS else "llm_tool" if nombre in LLM_TOOLS else None
-    bloqueo = "tools" if not controles["tools"] else tipo if tipo and not controles[tipo] else None
+    bloqueo = ("tools" if not controles["tools"] else tipo if not controles[tipo] else None) if tipo else None
     if bloqueo:
         logging.getLogger(__name__).warning("Herramienta bloqueada por %s=false", bloqueo)
         raise HTTPException(status_code=403, detail="Herramienta bloqueada: " + bloqueo + "=false")
@@ -159,6 +159,10 @@ FICHAS_QWEN = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-fro
 async def _chat_ficha(cuerpo):
     q = {**cuerpo, **(cuerpo.get("qwen") or {})}  # api.js harness() anida {plugin, ficha_qwen, modelo} en "qwen"
     mensajes = q.get("mensajes") or q.get("messages") or [{"role": "user", "content": str(q.get("message") or "")}]
+    if q.get("contexto_previo"):
+        if not isinstance(q["contexto_previo"], list):
+            raise HTTPException(status_code=400, detail="contexto_previo debe ser una lista")
+        mensajes = list(q["contexto_previo"]) + list(mensajes)
     if q.get("instrucciones_fijas"):
         mensajes = [{"role": "system", "content": str(q["instrucciones_fijas"])}] + list(mensajes)
     seleccionado = str(q.get("modelo") or q.get("model") or "")

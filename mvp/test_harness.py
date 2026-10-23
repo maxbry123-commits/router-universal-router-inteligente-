@@ -116,9 +116,11 @@ class TestHarness(unittest.TestCase):
                 for motivo in ("stop", "length", None):
                     texto = "palabra " * 2000
                     Falso.cola = [(200, {"choices": [{"message": {"content": texto}, "finish_reason": motivo}]})]
+                    if motivo == "length":
+                        Falso.cola.append((200, {"choices": [{"message": {"content": "FIN"}, "finish_reason": "stop"}]}))
                     r = cliente.post("/chat/send", json=cuerpo, headers=cab)
                     self.assertEqual(r.status_code, 200, r.text)
-                    self.assertEqual((r.json()["reply"], r.json()["finish_reason"]), (texto, motivo))
+                    self.assertEqual((r.json()["reply"], r.json()["finish_reason"]), (texto + "FIN" if motivo == "length" else texto, "stop" if motivo == "length" else motivo))
                 Falso.cola = [(200, {"choices": [{"message": {"content": "PONG"}, "finish_reason": "stop"}]})]
                 r = cliente.post("/mcp", headers=cab, json={"jsonrpc": "2.0", "id": 1,
                     "method": "tools/call", "params": {"name": "chat", "arguments": {**cuerpo, "ficha_qwen": "1"}}})
@@ -128,8 +130,8 @@ class TestHarness(unittest.TestCase):
                 self.assertEqual(r.json()["result"]["structuredContent"]["finish_reason"], "stop")
                 for nombre, controles, codigo in (("groq_agente", {"tools": True, "agente_tool": False}, 403),
                         ("llm", {"tools": True, "llm_tool": False}, 403),
-                        ("github_leer", {"tools": True, "agente_tool": False}, 200),
-                        ("github_escribir", {"tools": True, "agente_tool": False}, 200)):
+                        ("github_leer", {"tools": False, "agente_tool": False}, 200),
+                        ("github_escribir", {"tools": False, "agente_tool": False}, 200)):
                     Falso.cola = [(200, {"choices": [{"message": {"content": "", "tool_calls": [
                         {"id": "call-test", "type": "function", "function": {"name": nombre, "arguments": json.dumps({"repo": "prueba", "ruta": "README.md", "contenido": "prueba"})}}]}, "finish_reason": "tool_calls"}]})]
                     if codigo == 200:
@@ -141,21 +143,34 @@ class TestHarness(unittest.TestCase):
                 self.assertEqual(r.status_code, 200, r.text)
                 self.assertEqual(Falso.recibidas[-1][1]["model"], "deepseek-v4-pro")
                 self.assertTrue(all(p == "/chat/completions" for p, _, _ in Falso.recibidas))
-                self.assertEqual(len(Falso.recibidas), 11)
+                self.assertEqual(len(Falso.recibidas), 12)
                 self.assertEqual(github.call_count, 2)
                 self.assertEqual(github.call_args.args[0]["rama"], "main")
                 self.assertEqual(servicio.mcp_route.github._token(), banco.leer("GITHUB_TOKEN"))
                 Falso.cola = [(200, {"choices": [{"message": {"role": "assistant", "content": None, "tool_calls": [
                     {"id": "hf-call", "type": "function", "function": {"name": "almacen", "arguments": json.dumps({"accion": "guardar", "nombre": "prueba.txt", "valor": "dato"})}}]}, "finish_reason": "tool_calls"}]}),
                     (200, {"model": "qwen3.8-max", "choices": [{"message": {"content": "Guardado"}, "finish_reason": "stop"}]})]
-                r = cliente.post("/chat/send", json={**cuerpo, "tools": True}, headers=cab)
+                r = cliente.post("/chat/send", json={**cuerpo, "tools": False}, headers=cab)
                 self.assertEqual(r.status_code, 200, r.text)
                 guardar_hf.assert_called_once_with(banco.leer("HF_TOKEN"), "prueba.txt", "dato")
                 self.assertEqual(r.json()["modelo_respuesta"], "qwen3.8-max")
 
                 r = cliente.post("/chat/send", json={**cuerpo, "modelo": "modelo-inexistente"}, headers=cab)
                 self.assertEqual(r.status_code, 400)
-                self.assertEqual(len(Falso.recibidas), 13)
+                self.assertEqual(len(Falso.recibidas), 14)
+                largo = "á🙂xx " * 50000 + "MARCADOR_FINAL"
+                anterior = [{"role": "user", "content": largo}, {"role": "assistant", "content": "Recibido"}]
+                Falso.cola = [(200, {"choices": [{"message": {"content": largo}, "finish_reason": "stop"}]})]
+                r = cliente.post("/chat/send", json={**cuerpo, "message": largo, "contexto_previo": anterior}, headers=cab)
+                self.assertEqual(r.status_code, 200, r.text)
+                self.assertEqual(r.json()["reply"], largo)
+                self.assertEqual(Falso.recibidas[-1][1]["messages"], anterior + [{"role": "user", "content": largo}])
+                Falso.cola = [(200, {"choices": [{"message": {"content": t}, "finish_reason": "length"}]}) for t in ("A", "B", "C")]
+                r = cliente.post("/chat/send", json=cuerpo, headers=cab)
+                self.assertEqual((r.json()["reply"], r.json()["finish_reason"]), ("ABC", "length"))
+                Falso.cola = [(200, {"choices": [{"message": {"content": "PARCIAL"}, "finish_reason": "length"}]}), (400, {})]
+                r = cliente.post("/chat/send", json=cuerpo, headers=cab)
+                self.assertEqual((r.json()["reply"], r.json()["finish_reason"]), ("PARCIAL", "length"))
             finally:
                 cliente.close()
                 servidor.should_exit = True

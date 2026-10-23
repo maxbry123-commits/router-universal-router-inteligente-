@@ -63,26 +63,42 @@ def llm(cuerpo):
         raise ValueError("opciones no permitidas")
     opciones = dict(opciones)
     permitidas = {}
-    if cuerpo.get("tools") is True:
-        catalogo = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": "catalogo", "method": "tools/list"})
-        if catalogo.get("error"):
-            raise RuntimeError("No se pudo obtener el catalogo MCP")
-        permitidas = {t["name"]: t for t in catalogo.get("result", {}).get("tools", [])
-                      if t["name"] in ("github_leer", "github_escribir", "almacen")}
-        if not permitidas:
-            raise RuntimeError("Herramientas GitHub no disponibles en MCP")
-        opciones["tools"] = [{"type": "function", "function": {"name": n,
-            "description": t["description"], "parameters": t["inputSchema"]}} for n, t in permitidas.items()]
-        opciones["tool_choice"] = "auto"
+    # GitHub/HF no dependen del permiso de delegacion a otras IA.
+    catalogo = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": "catalogo", "method": "tools/list"})
+    if catalogo.get("error"):
+        raise RuntimeError("No se pudo obtener el catalogo MCP")
+    permitidas = {t["name"]: t for t in catalogo.get("result", {}).get("tools", [])
+                  if t["name"] in ("github_leer", "github_escribir", "almacen")}
+    if not permitidas:
+        raise RuntimeError("Herramientas GitHub no disponibles en MCP")
+    opciones["tools"] = [{"type": "function", "function": {"name": n,
+        "description": t["description"], "parameters": t["inputSchema"]}} for n, t in permitidas.items()]
+    opciones["tool_choice"] = "auto"
     mensajes = list(mensajes)
+    acumulado, continuaciones = "", 0
     for paso in range(8):
-        salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
+        try:
+            salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
                          **{k: cuerpo.get(k, False) for k in ("tools", "agente_tool", "llm_tool")}})
+        except RuntimeError:
+            if not acumulado:
+                raise
+            return {"texto": acumulado, "tool_calls": [], "finish_reason": "length",
+                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta")}
         if not isinstance(salida.get("tool_calls"), list) or not isinstance(salida.get("texto"), str):
             raise RuntimeError("Router respuesta de chat invalida")
         llamadas = salida["tool_calls"]
+        if not llamadas and salida.get("finish_reason") == "length" and salida["texto"] and continuaciones < 2 and paso < 7:
+            acumulado += salida["texto"]
+            continuaciones += 1
+            mensajes.extend([{"role": "assistant", "content": salida["texto"]},
+                             {"role": "user", "content": "Continua exactamente donde se corto la respuesta anterior, sin repetir texto ni ejecutar herramientas."}])
+            opciones.pop("tools", None)
+            opciones.pop("tool_choice", None)
+            permitidas = {}
+            continue
         if not llamadas or not permitidas:
-            return {"texto": salida["texto"], "tool_calls": llamadas, "finish_reason": salida.get("finish_reason"),
+            return {"texto": acumulado + salida["texto"], "tool_calls": llamadas, "finish_reason": salida.get("finish_reason"),
                     "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta")}
         if paso == 7:
             raise RuntimeError("Limite de llamadas a herramientas alcanzado; no se ejecutaron las ultimas llamadas")
