@@ -91,43 +91,46 @@ async function pintarVentana(caja) {
   } catch (x) { tl.append(el("div", "muted", "GAP tools_lock: " + x.message)); }
   if (e.sinStaff) { caja.replaceChildren(el("div", "tv-sec", "Herramientas del chat — un botón por herramienta"), el("div", "muted", "Apagar una herramienta impide que el modelo la vea y la ejecute (lo aplica el servidor)."), tl); return; }
   caja.replaceChildren(
-    el("div", "tv-sec", "Agentes del staff (" + e.agentes.length + "/" + (e.max || 20) + ")"),
-    el("div", "muted", "Elige en el selector qué modelo usa cada agente. La LLM del chat lo hace con agente_enlazar y lo usa con groq_agente."),
+    el("div", "tv-sec", "Agentes conectados (" + e.agentes.length + "/" + (e.max || 20) + ")"),
+    el("div", "muted", "Cada agente es una sesión de chat nueva con su modelo y sus instrucciones. Con el botón Agentes en ON, el modelo del chat puede llamarlos."),
     lista, form,
     el("div", "tv-sec", "Recursos LLM enlazables"), recs,
-    el("div", "tv-sec", "Ficha NVIDIA del chat"), el("div", "muted", fichas || "—"),
+    ...(fichas ? [el("div", "tv-sec", "Fichas del chat"), el("div", "muted", fichas)] : []),
     el("div", "tv-sec", "Tools de la LLM del chat — un boton por tool"), tl);
 }
 
 const avisar = (t) => { const n = document.querySelector("#notice"); if (n) n.textContent = t; else console.warn(t); };
-function aplicarIA(on) {  // única vía para reflejar IA/agentes: botón 🧰, botón de bloqueo y LLM tool leen lo mismo
-  const f = window.RIU_CHAT_TOOL_FLAGS; if (f) { f.tools = f.agente_tool = f.llm_tool = !!on; }
-  const b = document.querySelector("#btn-tools"); if (b) { b.textContent = "IA " + (on ? "ON" : "OFF"); b.setAttribute("aria-pressed", String(!!on)); }
-  const l = document.querySelector("#btn-llm-tool"); if (l) { l.textContent = "🧠 LLM tool " + (on ? "ON" : "OFF"); l.classList.toggle("sel-on", !!on); l.setAttribute("aria-pressed", String(!!on)); }
-  window.dispatchEvent(new CustomEvent("riu:ia", { detail: { on: !!on } }));
+function aplicarFlags(r) {  // única vía para reflejar IA y Agentes (dos botones, dos permisos del servidor): chips, botón de bloqueo y LLM tool leen lo mismo
+  const ia = !r.ia_locked, ag = !r.agentes_locked, f = window.RIU_CHAT_TOOL_FLAGS;
+  if (f) { f.tools = ia || ag; f.llm_tool = ia; f.agente_tool = ag; }
+  [["#btn-tools", "IA", ia], ["#btn-agentes", "Agentes", ag]].forEach(([id, n, on]) => { const b = document.querySelector(id); if (b) { b.textContent = n + (on ? " ON" : " OFF"); b.setAttribute("aria-pressed", String(on)); } });
+  const l = document.querySelector("#btn-llm-tool"); if (l) { l.textContent = "🧠 LLM tool " + (ia ? "ON" : "OFF"); l.classList.toggle("sel-on", ia); l.setAttribute("aria-pressed", String(ia)); }
+  window.dispatchEvent(new CustomEvent("riu:ia", { detail: { on: ia || ag, ia, agentes: ag } }));
 }
-window.RIU_IA = aplicarIA;
+window.RIU_IA = (on) => aplicarFlags({ ia_locked: !on, agentes_locked: !on });  // botón 🔒 de Controles: los dos a la vez
 function instalarChat() {
   const bar = document.querySelector("#composer .composer-bar");
   if (!bar || document.querySelector("#btn-tools")) return;
   if (!document.querySelector("#tv-css")) { const st = el("style"); st.id = "tv-css"; st.textContent = CSS; document.head.append(st); }
-  const b = el("button", "secondary", "IA OFF"); b.type = "button"; b.id = "btn-tools"; b.title = "Permitir otras IA y agentes; GitHub y HF siempre disponibles"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Permitir otras IA y agentes");
+  const b = el("button", "secondary", "IA OFF"); b.type = "button"; b.id = "btn-tools"; b.title = "Permitir que el modelo consulte a otros modelos de IA (el servidor lo recuerda)"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Permitir otras IA");
   const s = el("div", "sheet"); s.id = "ventana-tools"; s.hidden = true;
   const c = el("div", "va-caja"), h = el("div", "row va-head"), x = el("button", "secondary", "✕"), cuerpo = el("div", "list"); cuerpo.id = "tv-cuerpo";
   x.type = "button"; x.onclick = () => { s.hidden = true; };
   s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
   h.append(el("strong", "", "Herramientas del chat"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
   b.title = "Permitir que el modelo llame a otras IA y agentes (el servidor lo recuerda). GitHub, HF y demás herramientas tienen su ON/OFF con clic derecho o mantener pulsado";
-  b.onclick = async () => {  // el servidor decide y recuerda; el navegador solo refleja su respuesta
-    const flags = window.RIU_CHAT_TOOL_FLAGS; if (!flags || b.disabled) return; b.disabled = true;
-    try { const r = await accion("agent_access_lock", { locked: !!flags.tools }); aplicarIA(!r.locked); if (r.persistente === false) avisar("IA/agentes: el cambio no se guardará tras reiniciar el servidor"); }
-    catch (x) { avisar("IA/agentes: no se pudo cambiar (" + x.message + ")"); }
-    finally { b.disabled = false; }
-  };
+  const chip = (btn, quien, nombre) => { btn.onclick = async () => {  // el servidor decide y recuerda; el navegador solo refleja su respuesta
+    const f = window.RIU_CHAT_TOOL_FLAGS; if (!f || btn.disabled) return; btn.disabled = true;
+    try { const r = await accion("agent_access_lock", { locked: !!(quien === "ia" ? f.llm_tool : f.agente_tool), quien }); aplicarFlags(r); if (r.persistente === false) avisar(nombre + ": el cambio no se guardará tras reiniciar el servidor"); }
+    catch (x) { avisar(nombre + ": no se pudo cambiar (" + x.message + ")"); }
+    finally { btn.disabled = false; } }; };
+  chip(b, "ia", "IA");
+  const g = el("button", "secondary", "Agentes OFF"); g.type = "button"; g.id = "btn-agentes"; g.setAttribute("aria-pressed", "false"); g.setAttribute("aria-label", "Permitir que el modelo use agentes");
+  g.title = "Permitir que el modelo delegue en los agentes conectados (cada uno con su modelo); el servidor lo recuerda"; chip(g, "agentes", "Agentes");
   let pulsado = null; b.addEventListener("pointerdown", () => { pulsado = setTimeout(() => { pulsado = null; s.hidden = false; pintarVentana(cuerpo); }, 600); }); ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(pulsado); }));  // móvil: mantener pulsado abre la ventana
-  accion("agent_access_lock", {}).then((r) => aplicarIA(!r.locked)).catch(() => {});  // estado real del servidor al abrir el chat
+  accion("agent_access_lock", {}).then(aplicarFlags).catch(() => {});  // estado real del servidor al abrir el chat
   b.oncontextmenu = (ev) => { ev.preventDefault(); s.hidden = false; pintarVentana(cuerpo); };
-  const env = bar.querySelector(".action"); bar.insertBefore(b, env || null);
+  const env = bar.querySelector(".action"); bar.insertBefore(g, env || null); bar.insertBefore(b, g);
 }
 
 async function instalarConfig() {

@@ -68,6 +68,12 @@ HERRAMIENTAS_CONTROL = [
          'participante': {'type': 'string'}, 'nivel': {'type': 'string', 'enum': ['lectura', 'escritura', 'admin']},
          'participantes': {'type': 'object'}}, 'required': ['accion']}},
 ]
+HERRAMIENTAS_CONTROL += [
+    {'name': 'agente', 'description': 'Delegar una tarea en un agente conectado (cada llamada es una sesion de chat nueva con su modelo y sus instrucciones).',
+     'inputSchema': {'type': 'object', 'properties': {'nombre': {'type': 'string'}, 'mensaje': {'type': 'string'}}, 'required': ['nombre', 'mensaje']}},
+    {'name': 'llm', 'description': 'Preguntar a otro modelo de texto del plan y recibir su respuesta.',
+     'inputSchema': {'type': 'object', 'properties': {'modelo': {'type': 'string'}, 'mensaje': {'type': 'string'}}, 'required': ['modelo', 'mensaje']}},
+]
 GITHUB = {'github_leer': github.github_leer, 'github_escribir': github.github_escribir,
           'github_api': github.github_api}
 FICHAS = {'listar_fichas': 'fichas', 'chat': 'chat_async', 'resultado': 'resultado'}
@@ -101,7 +107,7 @@ def _catalogo(control):
     return [t for t in [*HERRAMIENTAS, *HERRAMIENTAS_CONTROL, *externas] if t['name'] in visibles or not _gestionada(t['name'])]
 
 
-async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, banco=None):
+async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, banco=None, delegar=None):
     if not isinstance(params, dict) or not isinstance(params.get('arguments', {}), dict):
         return _error(id_, -32602, 'Parametros invalidos')
     nombre, args = params.get('name'), params.get('arguments', {})
@@ -136,6 +142,8 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
         if nombre in ('pendientes', 'sala'):
             salida = await control.aplicar({'pendientes': 'checklist', 'sala': 'salas'}[nombre], args, banco, 'modelo')
             return _ok(id_, _contenido(salida))
+        if nombre in ('agente', 'llm'):
+            return _ok(id_, _contenido(await delegar(nombre, args)))
         if nombre.startswith('mcp__'):
             con = next(c for c in control.d['conexiones']['mcp'] if c['id'] == nombre[5:13])
             respuesta = await asyncio.to_thread(mcp_cliente.llamar, con['url'], banco.leer(permisos._clave_banco('mcp', con['id'])) if banco else None, nombre[15:], args)
@@ -168,7 +176,7 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
     return _ok(id_, _contenido(salida, isinstance(salida, dict) and bool(salida.get('error'))))
 
 
-async def despachar(doc, chat, almacen, plugin_call=None, control=None, banco=None):
+async def despachar(doc, chat, almacen, plugin_call=None, control=None, banco=None, delegar=None):
     ident = doc.get('id') if isinstance(doc, dict) else None
     if not isinstance(doc, dict) or doc.get('jsonrpc') != '2.0':
         return _error(ident, -32600, 'Solicitud JSON-RPC invalida')
@@ -187,11 +195,11 @@ async def despachar(doc, chat, almacen, plugin_call=None, control=None, banco=No
     if metodo == 'tools/list':
         return _ok(ident, {'tools': _catalogo(control)})
     if metodo == 'tools/call':
-        return await _herramienta(ident, doc.get('params'), chat, almacen, plugin_call, control, banco)
+        return await _herramienta(ident, doc.get('params'), chat, almacen, plugin_call, control, banco, delegar)
     return _error(ident, -32601, 'Metodo no disponible')
 
 
-def montar(api, verificar, chat, almacen, control=None):
+def montar(api, verificar, chat, almacen, control=None, delegar=None):
     def token_github():
         banco = getattr(api.state, 'banco', None)
         if control is not None:
@@ -210,6 +218,6 @@ def montar(api, verificar, chat, almacen, control=None):
             doc = await request.json()
         except ValueError:
             return _error(None, -32700, 'JSON invalido')
-        salida = await despachar(doc, chat, almacen, plugin_call, control, getattr(api.state, 'banco', None))
+        salida = await despachar(doc, chat, almacen, plugin_call, control, getattr(api.state, 'banco', None), delegar)
         return Response(status_code=202) if salida is None else salida
     api.add_api_route('/mcp', endpoint, methods=['POST'], dependencies=[Depends(verificar)])

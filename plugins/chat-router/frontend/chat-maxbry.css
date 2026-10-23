@@ -16,10 +16,10 @@ html body #composer .mx-chips{display:flex;flex-wrap:wrap;align-items:center;gap
 html body #composer .mx-chips #mode-selector-mount{display:contents}
 html body #composer .mx-chips .ms-hint:empty{display:none}
 html body #composer .mx-chips .ms-hint{flex:1 0 100%;order:9}
-html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools{width:auto!important;max-width:100%!important;height:38px!important;min-height:38px!important;aspect-ratio:auto!important;padding:0 11px!important;display:inline-flex;align-items:center;gap:6px;border-radius:999px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--text)!important;font:600 13px/1 system-ui,sans-serif!important;white-space:nowrap;flex:0 0 auto!important}
-html body #composer .mx-chips .ms-btn[data-locked=true],html body #composer .mx-chips .mx-chip[aria-pressed=true],html body #composer .mx-chips #btn-tools[aria-pressed=true]{background:var(--status-soft-blue)!important;border-color:var(--status-blue)!important;color:var(--title)!important}
-html body #composer .mx-chips #btn-tools::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--quiet-2);flex:none}
-html body #composer .mx-chips #btn-tools[aria-pressed=true]::before{background:var(--status-blue);box-shadow:0 0 8px var(--status-blue)}
+html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools,html body #composer .mx-chips #btn-agentes{width:auto!important;max-width:100%!important;height:38px!important;min-height:38px!important;aspect-ratio:auto!important;padding:0 11px!important;display:inline-flex;align-items:center;gap:6px;border-radius:999px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--text)!important;font:600 13px/1 system-ui,sans-serif!important;white-space:nowrap;flex:0 0 auto!important}
+html body #composer .mx-chips .ms-btn[data-locked=true],html body #composer .mx-chips .mx-chip[aria-pressed=true],html body #composer .mx-chips #btn-tools[aria-pressed=true],html body #composer .mx-chips #btn-agentes[aria-pressed=true]{background:var(--status-soft-blue)!important;border-color:var(--status-blue)!important;color:var(--title)!important}
+html body #composer .mx-chips #btn-tools::before,html body #composer .mx-chips #btn-agentes::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--quiet-2);flex:none}
+html body #composer .mx-chips #btn-tools[aria-pressed=true]::before,html body #composer .mx-chips #btn-agentes[aria-pressed=true]::before{background:var(--status-blue);box-shadow:0 0 8px var(--status-blue)}
 html body #composer .mx-chips .mx-chip .mx-ico{width:16px;height:16px}
 html body #composer .composer-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin:0;padding:0}
 html body #composer .composer-bar>.secondary{flex:0 0 auto!important;width:var(--mx-tap)!important;max-width:none!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;aspect-ratio:1/1!important;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--title)}
@@ -30,7 +30,7 @@ html body #composer .composer-bar .anclados{order:-1;flex:1 0 100%;display:block
 html body #composer .composer-bar .anclados:empty{display:none}
 html body #composer .composer-bar .action{flex:0 0 auto!important;margin-left:auto!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;min-width:112px!important;padding:0 20px!important;border-radius:999px!important;font-size:15px;font-weight:700;gap:8px}
 html body #composer .composer-bar .p3d{flex:0 0 auto}
-@media(max-width:380px){html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools{padding:0 9px!important;font-size:12px!important}html body #composer .composer-bar .action{min-width:var(--mx-tap)!important;width:var(--mx-tap)!important;padding:0!important}html body #composer .composer-bar .action::after{display:none}}
+@media(max-width:380px){html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools,html body #composer .mx-chips #btn-agentes{padding:0 9px!important;font-size:12px!important}html body #composer .composer-bar .action{min-width:var(--mx-tap)!important;width:var(--mx-tap)!important;padding:0!important}html body #composer .composer-bar .action::after{display:none}}
 
 /* ---------- bandeja «Agregar al chat» ---------- */
 #mx-hoja .mx-bandeja{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:4px 0 8px}
@@ -79,7 +79,7 @@ html body .cv-form input,html body .cv-form select,html body .cv-form textarea{m
 html body .cv-form textarea{padding:10px 12px}
 html body .cv-est{padding:2px 4px}
 html body .cv-msg{border-radius:12px}
-@media(max-width:560px){html body .cv-form input,html body .cv-form select,html body .cv-form textarea{flex:1 1 100%}html body .cv-form .action{flex:1 1 100%;min-height:44px}}
+@media(max-width:560px){html body .cv-form input,html body .cv-form select,html body .cv-form textarea,html body .tv-form input,html body .tv-form select{flex:1 1 100%}html body .tv-form .action{flex:1 1 100%;min-height:44px}html body .cv-form .action{flex:1 1 100%;min-height:44px}}
 .tag-status{display:inline-flex;gap:6px;align-items:center;font-size:11px;font-weight:750;padding:6px 9px;border-radius:8px}
 .tag-status.progress{color:var(--status-green);background:var(--status-soft-green)}.tag-status.enabled{color:var(--status-blue);background:var(--status-soft-blue)}.tag-status.warning{color:var(--status-red);background:var(--status-soft-red)}.tag-status.pending{color:var(--quiet);background:var(--module-selected)}
 

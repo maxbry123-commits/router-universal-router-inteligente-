@@ -14,11 +14,12 @@ NOMBRE = "chat_estado/control.json"
 SERVICIOS = {"github": "GitHub", "hf": "Hugging Face", "correo": "Correo", "mcp": "Servidor MCP", "otros": "Otros"}
 LEGADO = {"github": "GITHUB_TOKEN", "hf": "HF_TOKEN"}  # credencial "defecto" de cada servicio: la que ya trae el banco
 TOOLS = {"github_leer": ("GitHub", "github"), "github_escribir": ("GitHub", "github"), "github_api": ("GitHub", "github"),
-         "almacen": ("Hugging Face", "hf"), "pendientes": ("Chat", None), "sala": ("Chat", None)}
+         "almacen": ("Hugging Face", "hf"), "pendientes": ("Chat", None), "sala": ("Chat", None),
+         "agente": ("IA y agentes", None), "llm": ("IA y agentes", None)}  # delegar en un agente / en otro modelo
 NIVELES = {"lectura": 1, "escritura": 2, "admin": 3}
 MCP = re.compile(r"mcp__([0-9a-f]{8})__([A-Za-z0-9_-]{1,49})")
 MAX_CONEXIONES, MAX_PENDIENTES, MAX_SALAS, MAX_MENSAJES = 10, 200, 20, 500
-MAX_ARCHIVO, MAX_PROYECTOS = 700_000, 50  # bytes de un archivo subido (hf_store admite 1 MB ya en base64)
+MAX_ARCHIVO, MAX_PROYECTOS, MAX_AGENTES = 700_000, 50, 50  # bytes de un archivo subido (hf_store admite 1 MB ya en base64)
 
 
 def tipo(nombre):
@@ -29,7 +30,7 @@ def _vacio():
     base = {s: [] for s in SERVICIOS}
     for s in LEGADO:
         base[s].append({"id": "defecto", "etiqueta": "Principal (banco)", "on": True})
-    return {"ia": False, "herramientas": {}, "conexiones": base, "pendientes": [], "salas": {}, "archivos": {}, "sandbox": {}, "handoff": {}, "proyectos": {}}
+    return {"ia": False, "herramientas": {}, "conexiones": base, "pendientes": [], "salas": {}, "archivos": {}, "sandbox": {}, "handoff": {}, "proyectos": {}, "agentes_on": False, "agentes": {}}
 
 
 def _texto(valor, maximo, campo):
@@ -98,11 +99,12 @@ class Control:
         return (con, m.group(2)) if con and any(h["nombre"] == m.group(2) for h in con.get("herramientas", [])) else None
 
     def decidir(self, nombre, controles=None):
-        t, c = tipo(nombre), controles or {}
-        if t:
-            for falta in (("tools", c.get("tools")), (t, c.get(t)), ("ia", self.d["ia"])):
-                if not falta[1]:
-                    return False, falta[0] + "=false"
+        t = tipo(nombre)
+        if t:  # delegacion: el servidor manda (ia para otros modelos, agentes_on para agentes); si llegan flags del cliente tambien deben estar en true
+            if controles is not None and not (controles.get("tools") and controles.get(t)):
+                return False, ("tools" if not controles.get("tools") else t) + "=false"
+            if not self.d["agentes_on" if t == "agente_tool" else "ia"]:
+                return False, ("agentes" if t == "agente_tool" else "ia") + "=false"
         if nombre.startswith("mcp__"):
             mcp = self._mcp(nombre)
             if not mcp or not mcp[0]["on"]:
@@ -131,10 +133,17 @@ class Control:
 
     # --- acciones (UI del Director y herramientas del modelo) ---
     def _agent_access_lock(self, c, banco, actor):
-        if "locked" in c:
-            self.d["ia"] = not _booleano(c["locked"], "locked")
+        if "locked" in c:  # quien: ia (otros modelos), agentes, o todo (por defecto)
+            quien, on = c.get("quien", "todo"), not _booleano(c["locked"], "locked")
+            if quien not in ("ia", "agentes", "todo"):
+                raise ValueError("quien debe ser ia, agentes o todo")
+            if quien != "agentes":
+                self.d["ia"] = on
+            if quien != "ia":
+                self.d["agentes_on"] = on
             self._sucio = True
-        return {"ok": True, "sesion": str(c.get("sesion") or "web-general")[:60], "locked": not self.d["ia"]}
+        return {"ok": True, "sesion": str(c.get("sesion") or "web-general")[:60], "locked": not (self.d["ia"] or self.d["agentes_on"]),
+                "ia_locked": not self.d["ia"], "agentes_locked": not self.d["agentes_on"]}
 
     def _tools_lock(self, c, banco, actor):
         cambio = {}
@@ -145,12 +154,49 @@ class Control:
             self.d["herramientas"][nombre] = not _booleano(c.get("locked"), "locked")
             cambio = {"tool": nombre, "locked": c["locked"]}  # el frontend lee {locked} del cambio
             self._sucio = True
-        lista = [(n, TOOLS[n][0], True) for n in TOOLS] + [(n, "IA y agentes (delegacion)", True) for n in sorted(AGENTE_TOOLS | LLM_TOOLS)]
+        lista = [(n, TOOLS[n][0], True) for n in TOOLS]
         lista += [(MCP_NOMBRE(k, h), "MCP · " + k["etiqueta"], False) for k in self.d["conexiones"]["mcp"] for h in k.get("herramientas", [])]
         h = self.d["herramientas"]
         tools = [{"nombre": n, "seccion": s, "locked": not h.get(n, defecto), "permitida": self.decidir(n, {"tools": True, "agente_tool": True, "llm_tool": True})[0]}
                  for n, s, defecto in lista]
-        return {"tools": tools, "ia": self.d["ia"], **cambio}
+        return {"tools": tools, "ia": self.d["ia"], "agentes_on": self.d["agentes_on"], **cambio}
+
+    # --- agentes conectables: cada uno = nombre + modelo + instrucciones; el chat o el modelo los llaman como una sesion nueva ---
+    def _poner_agente(self, nombre, recurso, sistema):
+        from mvp import modelos
+        if not re.fullmatch(r"[\w .-]{1,40}", str(nombre or "").strip()):
+            raise ValueError("nombre de agente invalido (1 a 40 letras, numeros, espacio, punto o guion)")
+        if recurso not in {i for i, t in modelos.catalogo() if t == "texto"}:
+            raise ValueError("recurso desconocido: elige un modelo de texto del plan")
+        n = nombre.strip()
+        if n not in self.d["agentes"] and len(self.d["agentes"]) >= MAX_AGENTES:
+            raise ValueError("maximo %d agentes" % MAX_AGENTES)
+        if not isinstance(sistema, str) or len(sistema) > 4000:
+            raise ValueError("instrucciones: texto de hasta 4000 caracteres")
+        self.d["agentes"][n] = {"recurso": recurso, "sistema": sistema}
+        self._sucio = True
+
+    def _tools_estado(self, c, banco, actor):
+        from mvp import modelos
+        return {"agentes": [{"nombre": n, "recurso": a["recurso"], "modelo": a["recurso"], "sistema": a.get("sistema", "")} for n, a in self.d["agentes"].items()],
+                "recursos": [{"id": i, "nombre": i, "grupo": "Qwen Token Plan", "via": "Router", "rol": ""} for i, t in modelos.catalogo() if t == "texto"],
+                "fichas": [], "tools": list(TOOLS), "claves": {}, "max": MAX_AGENTES}
+
+    def _agente_enlazar(self, c, banco, actor):
+        previo = self.d["agentes"].get(str(c.get("nombre") or "").strip(), {})
+        self._poner_agente(c.get("nombre"), c.get("recurso"), c["sistema"] if "sistema" in c else previo.get("sistema", ""))
+        return self._tools_estado(c, banco, actor)
+
+    def _groq_agentes(self, c, banco, actor):  # el panel guarda la lista completa (p. ej. al quitar un agente)
+        lista = c.get("agentes")
+        if not isinstance(lista, list) or len(lista) > MAX_AGENTES:
+            raise ValueError("agentes debe ser una lista de hasta %d" % MAX_AGENTES)
+        self.d["agentes"] = {}
+        for a in lista:
+            a = a if isinstance(a, dict) else {}
+            self._poner_agente(a.get("nombre"), a.get("recurso") or a.get("modelo"), a.get("sistema") or "")
+        self._sucio = True
+        return self._tools_estado(c, banco, actor)
 
     def _conexiones(self, c, banco, actor):
         servicio, cons = c.get("servicio"), self.d["conexiones"]
@@ -376,7 +422,7 @@ class Control:
 
 
 ACCIONES = {"agent_access_lock", "tools_lock", "conexiones", "checklist", "salas", "status", "estado", "herramientas_estado",
-            "archivos", "subir", "archivo_borrar", "sandbox", "handoff_texto", "proyecto"}
+            "archivos", "subir", "archivo_borrar", "sandbox", "handoff_texto", "proyecto", "tools_estado", "agente_enlazar", "groq_agentes"}
 
 
 def clave_espacio(c):

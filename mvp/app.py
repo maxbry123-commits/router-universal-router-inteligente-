@@ -334,6 +334,13 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
         return {"status": "ok", "result": {"reply": salida["texto"], "texto": salida["texto"], "tool_calls": salida["tool_calls"], "finish_reason": salida.get("finish_reason"), "modelo": modelo,
                                            "ficha": str(cuerpo.get("ficha_qwen") or "ficha4-workflow-yaiwes"),
                                            **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}}
+    if accion == "recurso_probar":  # probar un modelo o un agente del panel: una llamada real, con el tiempo que tarda
+        t0 = time.monotonic()
+        try:
+            r = await _delegar("agente" if cuerpo.get("agente") else "llm", {"nombre": cuerpo.get("agente"), "modelo": cuerpo.get("recurso"), "mensaje": cuerpo.get("mensaje") or "Responde en una linea: que modelo eres?"})
+            return {"status": "ok", "result": {"ok": True, "ms": int((time.monotonic() - t0) * 1000), "respuesta": r["texto"]}}
+        except HTTPException as error:
+            return {"status": "ok", "result": {"ok": False, "ms": int((time.monotonic() - t0) * 1000), "respuesta": str(error.detail)}}
     if accion in control.ACCIONES:  # IA/agentes ON/OFF (agent_access_lock, G15), herramientas, conexiones, pendientes y salas: estado del servidor, bloqueado por defecto
         return {"status": "ok", "result": await _control(accion, cuerpo)}
     raise HTTPException(status_code=400, detail="accion no soportada en mvp")
@@ -347,7 +354,23 @@ async def chat_send(cuerpo: dict):
     return {"reply": msg["content"], "execution_path": "HARNESS", "ms": int((time.monotonic() - t0) * 1000),
             "tools": tools, "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": salida.get("modelo_solicitado"), "modelo_respuesta": salida.get("modelo_respuesta")}
-mcp_route.montar(app, verificar, chat, almacen, CONTROL)
+async def _delegar(nombre, args):
+    """Herramientas agente/llm del modelo: una llamada nueva (sin herramientas, sin historial) al modelo del agente o al elegido."""
+    banco = app.state.banco
+    clave = banco.leer("QWEN_API_KEY") if banco else None
+    if not clave: raise HTTPException(status_code=503, detail="QWEN_API_KEY no disponible en banco")
+    if nombre == "agente":
+        a = CONTROL.d["agentes"].get(str(args.get("nombre")))
+        if not a: raise HTTPException(status_code=400, detail="agente desconocido: " + str(args.get("nombre"))[:40])
+        modelo, sistema = a["recurso"], a.get("sistema")
+    else:
+        try: modelo, sistema = modelos.validar(args.get("modelo")), None
+        except (ValueError, TypeError) as error: raise HTTPException(status_code=400, detail=str(error)) from None
+    msgs = ([{"role": "system", "content": sistema}] if sistema else []) + [{"role": "user", "content": str(args.get("mensaje"))[:20000]}]
+    try: salida = await asyncio.to_thread(compute.llamar, msgs, modelo, modelos.base_url(), clave, None)
+    except (ValueError, TypeError, RuntimeError) as error: raise HTTPException(status_code=502, detail=str(error)) from None
+    return {"agente": args.get("nombre"), "modelo": modelo, "texto": salida["texto"]}
+mcp_route.montar(app, verificar, chat, almacen, CONTROL, _delegar)
 # --- G5b: Harness /invoke montado en este mismo Space (HF pide PRO para un Space nuevo). Ruta: chat -> Harness -> HTTP -> router ---
 from plugins.deepseek_harness.server import app as harness_app  # noqa: E402 - el Harness no importa mvp/; llm sigue por HTTP a fichas_qwen/call/llm
 app.mount("/plugins/deepseek_harness", harness_app)  # RIU_DEEPSEEK_HARNESS_URL = https://<space>/plugins/deepseek_harness

@@ -97,7 +97,7 @@ class TestIA(Base):
         for nombre in ("groq_agente", "llm", "nvidia_codigo", "agente_enlazar"):
             r = self.chat(nombre)
             self.assertEqual(r.status_code, 403, nombre)
-            self.assertIn("ia=false", r.json()["detail"])
+            self.assertIn("agentes=false" if nombre in ("groq_agente", "agente_enlazar") else "ia=false", r.json()["detail"])
 
     def test_ia_on_permite_y_off_vuelve_a_bloquear_y_persiste(self):
         self.assertEqual(self.accion("agent_access_lock", {"locked": False})["locked"], False)
@@ -394,6 +394,67 @@ class TestEspacio(Base):
         self.assertIn("recuerda ser breve", enviado)
         self.assertNotIn("hf/token", enviado)
         self.assertNotIn("no-existe", enviado)
+
+
+class TestAgentes(Base):
+    def falso(self):
+        return patch("mvp.app.compute.llamar", return_value={"texto": "respuesta del agente", "tool_calls": [], "finish_reason": "stop"})
+
+    def test_dos_botones_separados_ia_y_agentes(self):
+        self.assertEqual((self.accion("agent_access_lock")["ia_locked"], self.accion("agent_access_lock")["agentes_locked"]), (True, True))
+        r = self.accion("agent_access_lock", {"locked": False, "quien": "agentes"})
+        self.assertEqual((r["ia_locked"], r["agentes_locked"], r["locked"]), (True, False, False))
+        self.assertTrue({"agente"} <= self.nombres() and "llm" not in self.nombres())  # el modelo solo ve lo que esta encendido
+        r = self.accion("agent_access_lock", {"locked": False, "quien": "ia"})
+        self.assertTrue({"agente", "llm"} <= self.nombres())
+        self.accion("agent_access_lock", {"locked": True, "quien": "agentes"})
+        self.assertTrue("agente" not in self.nombres() and "llm" in self.nombres())
+        self.accion("agent_access_lock", {"locked": True, "quien": "otro"}, 400)
+
+    def test_conectar_1_o_50_agentes_con_su_modelo(self):
+        e = self.accion("tools_estado")
+        self.assertEqual((e["agentes"], e["max"], len(e["recursos"])), ([], 50, 13))
+        e = self.accion("agente_enlazar", {"nombre": "Revisor", "recurso": "qwen3.7-plus", "sistema": "revisa codigo"})
+        self.assertEqual([(a["nombre"], a["recurso"]) for a in e["agentes"]], [("Revisor", "qwen3.7-plus")])
+        e = self.accion("agente_enlazar", {"nombre": "Revisor", "recurso": "glm-5.3"})  # cambiar solo el modelo conserva las instrucciones
+        self.assertEqual((e["agentes"][0]["recurso"], e["agentes"][0]["sistema"]), ("glm-5.3", "revisa codigo"))
+        self.accion("agente_enlazar", {"nombre": "", "recurso": "glm-5.3"}, 400)
+        self.accion("agente_enlazar", {"nombre": "X", "recurso": "qwen-image-3.0-pro"}, 400)  # solo modelos de texto
+        lista = [{"nombre": "A%d" % i, "recurso": "qwen3.8-flash"} for i in range(50)]
+        self.assertEqual(len(self.accion("groq_agentes", {"agentes": lista})["agentes"]), 50)
+        self.accion("agente_enlazar", {"nombre": "uno-mas", "recurso": "glm-5.3"}, 400)  # el 51 no entra
+        self.assertEqual(len(self.accion("groq_agentes", {"agentes": lista[:2]})["agentes"]), 2)
+        self.reiniciar()
+        self.assertEqual(len(self.accion("tools_estado")["agentes"]), 2)  # persiste por /almacen
+
+    def test_el_modelo_llama_al_agente_como_sesion_nueva(self):
+        self.accion("agente_enlazar", {"nombre": "Revisor", "recurso": "qwen3.7-plus", "sistema": "revisa codigo"})
+        self.assertIn("bloqueada", self.llamar("agente", {"nombre": "Revisor", "mensaje": "hola"})["error"]["message"])  # apagado
+        self.accion("agent_access_lock", {"locked": False, "quien": "agentes"})
+        with self.falso() as llm:
+            r = self.llamar("agente", {"nombre": "Revisor", "mensaje": "mira esto"})["result"]["structuredContent"]
+        self.assertEqual((r["texto"], r["modelo"]), ("respuesta del agente", "qwen3.7-plus"))
+        msgs = llm.call_args.args[0]
+        self.assertEqual([(m["role"], m["content"]) for m in msgs], [("system", "revisa codigo"), ("user", "mira esto")])  # sin historial ni herramientas
+        self.assertEqual(llm.call_args.args[1], "qwen3.7-plus")
+        self.assertIn("agente desconocido", self.llamar("agente", {"nombre": "Nadie", "mensaje": "x"})["error"]["message"])
+
+    def test_el_modelo_llama_a_otro_modelo_solo_con_ia_encendida(self):
+        self.accion("agent_access_lock", {"locked": False, "quien": "agentes"})
+        self.assertIn("ia=false", self.llamar("llm", {"modelo": "glm-5.3", "mensaje": "x"})["error"]["message"])
+        self.accion("agent_access_lock", {"locked": False, "quien": "ia"})
+        with self.falso() as llm:
+            r = self.llamar("llm", {"modelo": "glm-5.3", "mensaje": "hola"})["result"]["structuredContent"]
+        self.assertEqual((r["modelo"], llm.call_args.args[1]), ("glm-5.3", "glm-5.3"))
+        self.assertIn("modelo no permitido", self.llamar("llm", {"modelo": "no-existe", "mensaje": "x"})["error"]["message"])
+
+    def test_probar_un_recurso_o_un_agente_desde_el_panel(self):
+        self.accion("agente_enlazar", {"nombre": "Revisor", "recurso": "qwen3.7-plus", "sistema": "s"})
+        with self.falso():
+            self.assertEqual(self.accion("recurso_probar", {"recurso": "glm-5.3"})["respuesta"], "respuesta del agente")
+            self.assertTrue(self.accion("recurso_probar", {"agente": "Revisor"})["ok"])
+        r = self.accion("recurso_probar", {"recurso": "no-existe"})
+        self.assertEqual(r["ok"], False)
 
 
 class TestGapsChat(Base):
