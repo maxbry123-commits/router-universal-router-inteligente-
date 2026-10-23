@@ -83,6 +83,20 @@ function estado() {  // punto de señal (skill .signal) en el estado del Router
   pintar(); new MutationObserver(pintar).observe(s, { childList: true, characterData: true, subtree: true });
 }
 
-const revisar = () => { try { const c = document.querySelector("#composer"); if (c) montar(c); avisos(); estado(); const e = document.querySelector(".riu-estado"); if (e && !e.dataset.mx) { e.dataset.mx = "1"; e.style.cursor = "pointer"; e.onclick = () => { const p = document.querySelector("#btn-power"); if (p) p.click(); }; } } catch (e) { console.warn("maxbry-ui", e); } };
+const MEDIO = /\[\[(imagen|video|audio):((?:https:\/\/|data:audio\/)[^\]\s]+)\]\]/g, HAY_MEDIO = /\[\[(imagen|video|audio):/;
+function medios() {  // [[imagen:URL]] / [[video:URL]] / [[audio:URL]] que devuelve la ficha -> el medio dentro de la burbuja (solo https o audio data:)
+  document.querySelectorAll(".chat-history .message:not(.user):not(.pending) .txt:not([data-mx])").forEach((t) => {
+    t.dataset.mx = "1"; if (!HAY_MEDIO.test(t.textContent)) return;
+    const lista = [...t.textContent.matchAll(MEDIO)]; t.textContent = t.textContent.replace(MEDIO, "").trim();
+    lista.forEach(([, tipo, url]) => {
+      const m = document.createElement(tipo === "imagen" ? "img" : tipo); m.src = url; m.className = "mx-medio";
+      if (tipo === "imagen") { m.alt = "Imagen generada"; m.loading = "lazy"; } else m.controls = true;
+      const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Abrir " + tipo; a.className = "mx-medio-enlace";
+      t.after(m); m.after(a);
+    });
+  });
+}
+
+const revisar = () => { try { const c = document.querySelector("#composer"); if (c) montar(c); avisos(); estado(); medios(); const e = document.querySelector(".riu-estado"); if (e && !e.dataset.mx) { e.dataset.mx = "1"; e.style.cursor = "pointer"; e.onclick = () => { const p = document.querySelector("#btn-power"); if (p) p.click(); }; } } catch (e) { console.warn("maxbry-ui", e); } };
 new MutationObserver(revisar).observe(document.body, { childList: true, subtree: true });
 revisar();

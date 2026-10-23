@@ -402,7 +402,7 @@ class TestGapsChat(Base):
         for plan in ("personal", "team"):
             with patch.dict(os.environ, {"MVP_PLAN": plan}):
                 r = self.client.get("/chat/providers/qwen/models", headers=CAB).json()["models"]
-                self.assertEqual([m["model_id"] for m in r], modelos.permitidos())
+                self.assertEqual([m["model_id"] for m in r], [i for i, _ in modelos.catalogo()])
                 self.assertEqual(self.client.post("/chat", headers=CAB, json={"modelo": "no-existe", "mensajes": [{"role": "user", "content": "x"}]}).status_code, 400)
         with patch.dict(os.environ, {"MVP_PLAN": "personal"}):
             self.assertEqual(self.client.post("/chat", headers=CAB, json={"modelo": "qwen3.6-plus", "mensajes": [{"role": "user", "content": "x"}]}).status_code, 400)

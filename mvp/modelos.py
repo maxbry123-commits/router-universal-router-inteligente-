@@ -18,6 +18,12 @@ def permitidos(plan_=None):
     return [m['id'] for m in cargar()['texto'] if m[k]]
 
 
+def catalogo(plan_=None):
+    """Los modelos del plan con su tipo (texto, imagen, audio, video): 23 en Personal Standard."""
+    k, d = ('p' if (plan_ or plan()) == 'personal' else 't'), cargar()
+    return [(m['id'], t) for t in ('texto', 'imagen', 'audio', 'video') for m in d[t] if m[k]]
+
+
 def validar(modelo, plan_=None):
     d = cargar()
     modelo = modelo or d['modelo_defecto']

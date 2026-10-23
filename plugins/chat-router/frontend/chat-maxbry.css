@@ -96,3 +96,8 @@ html body .sheet .list>.fila .fila-nom{font-weight:650;font-size:14px;color:var(
 html body .sheet .list>.fila .fila-desc{font-size:12px;font-weight:400;color:var(--quiet)}
 html body .sheet .list>.fila:has(.fila-ck){border-color:var(--status-blue);background:var(--status-soft-blue)}
 html body .sheet .list>.fila .fila-ck{color:var(--status-blue);font-size:16px}
+
+/* ---------- medios generados (imagen, video, audio) ---------- */
+html body .chat-history .mx-medio{display:block;max-width:100%;height:auto;margin-top:10px;border-radius:12px;border:1px solid var(--border)}
+html body .chat-history audio.mx-medio{width:100%}
+html body .chat-history .mx-medio-enlace{display:inline-block;margin-top:6px;font-size:13px;color:var(--status-blue)}

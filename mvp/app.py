@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route
+from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route, multimedia
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -158,7 +158,7 @@ def chat_providers():
 def chat_provider_models(proveedor: str):
     if proveedor != "qwen":
         raise HTTPException(status_code=404, detail="proveedor no disponible en mvp")
-    return {"models": [{"model_id": m, "label": m} for m in modelos.permitidos()]}
+    return {"models": [{"model_id": m, "label": m, "tipo": t} for m, t in modelos.catalogo()]}
 # --- G16: panel-chat.js:542 lee {agents:[{id,name}]} y :543-544 {accounts:[{account}]}; mvp no tiene fuente de agentes ni de cuentas GitHub -> listas vacias (sin inventar) ---
 @app.get("/chat/agents", dependencies=[Depends(verificar)])
 def chat_agents():
@@ -221,7 +221,17 @@ async def _control(accion, cuerpo, actor="director"):
 TRABAJOS, _TAREAS = {}, set()  # proceso_id -> {estado, proceso_id, choices|error}; en memoria (se pierde al reiniciar)
 FICHAS_QWEN = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "5": "ficha5-mvp"}
 FICHAS_HEREDADAS = ("nv-", "hf-", "ask-consil")  # ids de ficha del chat anterior; no son modelos del MVP
-async def _chat_ficha(cuerpo):
+async def _generar_medio(modelo, tipo, mensajes, progreso):
+    banco = app.state.banco
+    clave = banco.leer("QWEN_API_KEY") if banco else None
+    if not clave: raise HTTPException(status_code=503, detail="QWEN_API_KEY no disponible en banco")
+    texto = next((str(m.get("content") or "") for m in reversed(mensajes) if isinstance(m, dict) and m.get("role") == "user"), "")
+    try: salida = await asyncio.to_thread(multimedia.generar, modelo, tipo, modelos.base_url(), clave, texto, progreso)
+    except ValueError as error: raise HTTPException(status_code=400, detail=str(error)) from None
+    except RuntimeError as error: raise HTTPException(status_code=502, detail=str(error)) from None
+    return {"estado": "listo", "via": "directo", "finish_reason": "stop", "modelo_solicitado": modelo, "modelo_respuesta": modelo,
+            "choices": [{"message": {"role": "assistant", "content": salida, "tool_calls": []}, "finish_reason": "stop"}]}
+async def _chat_ficha(cuerpo, progreso=None):
     q = {**cuerpo, **(cuerpo.get("qwen") or {})}  # api.js harness() anida {plugin, ficha_qwen, modelo} en "qwen"
     mensajes = q.get("mensajes") or q.get("messages") or [{"role": "user", "content": str(q.get("message") or "")}]
     if q.get("contexto_previo"):
@@ -250,9 +260,12 @@ async def _chat_ficha(cuerpo):
     if ruteo["source"] != "default_mode":  # el modo por defecto (m05: "sin herramientas") contradiría las tools autorizadas por el Router: sin regla ni modo elegido no se envuelve
         mensajes = [{"role": "system", "content": ruteo["ficha"]["system_block"]}] + list(mensajes)
     seleccionado = str(q.get("modelo") or q.get("model") or "")
-    seleccionado = next((m for m in modelos.permitidos() if "".join(c for c in m.lower() if c.isalnum()) == "".join(c for c in seleccionado.lower() if c.isalnum())), seleccionado)
+    seleccionado = next((m for m, _ in modelos.catalogo() if "".join(c for c in m.lower() if c.isalnum()) == "".join(c for c in seleccionado.lower() if c.isalnum())), seleccionado)
     if seleccionado.startswith(FICHAS_HEREDADAS):  # sin selector Qwen activo el chat manda su ficha (nv-muse-glimmer): se usa el modelo por defecto y el chat muestra «Modelo solicitado · API»
         seleccionado = ""
+    medio = dict(modelos.catalogo()).get(seleccionado)
+    if medio and medio != "texto":  # imagen, voz, ASR y video: llamada directa a la ficha (no pasan por herramientas)
+        return await _generar_medio(seleccionado, medio, mensajes, progreso)
     try:
         modelo = modelos.validar(seleccionado or None)
     except (ValueError, TypeError) as error:
@@ -272,7 +285,7 @@ async def _chat_ficha(cuerpo):
                          "finish_reason": salida["finish_reason"]}]}
 async def _correr(pid, cuerpo):
     try:
-        TRABAJOS[pid].update(await _chat_ficha(cuerpo))
+        TRABAJOS[pid].update(await _chat_ficha(cuerpo, lambda t: TRABAJOS[pid].update(progreso=t)))
     except HTTPException as error:
         TRABAJOS[pid].update(estado="error", error=str(error.detail), status_code=error.status_code)
     except Exception as error:  # noqa: BLE001 - el proceso debe terminar siempre
