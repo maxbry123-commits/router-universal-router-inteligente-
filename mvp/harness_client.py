@@ -27,9 +27,11 @@ def _enviar(accion, datos, clave):
     solicitud = request.Request(url, data=cuerpo, headers=headers, method="POST")
     for intento in range(3):
         try:
-            with request.urlopen(solicitud, timeout=140) as respuesta:
+            with request.urlopen(solicitud, timeout=420) as respuesta:
                 return json.load(respuesta)
         except error.HTTPError as exc:
+            if exc.code == 403:
+                return {"status": "error", "status_code": 403, "error": "Herramienta bloqueada por Router (HTTP 403)"}
             if exc.code not in REINTENTABLES or intento == 2:
                 raise RuntimeError("Harness HTTP " + str(exc.code)) from None
         except (error.URLError, TimeoutError, OSError):
@@ -53,6 +55,6 @@ def computar(clave, tarea):
     return _enviar("invoke", {"tool": "computar", "args": {"tarea": tarea}}, clave)
 
 
-def llm(clave, mensajes, modelo, opciones=None):
+def llm(clave, mensajes, modelo, opciones=None, controles=None):
     return _enviar("llm", {"mensajes": mensajes, "modelo": modelo,
-                          "opciones": opciones or {}}, clave)
+                          "opciones": opciones or {}, **(controles or {})}, clave)

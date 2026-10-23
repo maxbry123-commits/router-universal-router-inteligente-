@@ -24,8 +24,8 @@ async def inicio(app):
         pass
     yield
 app = FastAPI(lifespan=inicio)
-AGENTE_TOOLS = {"github_leer", "github_escribir", "github_api"}
-LLM_TOOLS = {"chat", "llm"}
+AGENTE_TOOLS = {"agente", "agent", "groq_agente", "agente_enlazar"}
+LLM_TOOLS = {"chat", "llm", "recurso_llm", "nvidia_codigo"}
 
 def _controles(cuerpo):
     controles = {}
@@ -81,7 +81,6 @@ def health(authorization: str | None = Header(None),
 @app.post("/chat", dependencies=[Depends(verificar)])
 async def chat(cuerpo: dict):
     controles = _controles(cuerpo)
-    _verificar_opciones(cuerpo.get("opciones"), controles)
     try:
         modelo = modelos.validar(cuerpo.get("modelo"))
     except (ValueError, TypeError) as error:
@@ -91,16 +90,16 @@ async def chat(cuerpo: dict):
         raise HTTPException(status_code=400, detail="mensajes debe ser lista no vacia")
     if cuerpo.get("via") == "harness":
         try:
-            salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"))
+            salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"), controles)
         except (ValueError, RuntimeError) as error:
             raise HTTPException(status_code=502, detail=str(error)) from None
         if salida.get("status") == "error":
-            raise HTTPException(status_code=502, detail=str(salida.get("error") or "harness error"))
+            raise HTTPException(status_code=403 if salida.get("status_code") == 403 else 502, detail=str(salida.get("error") or "harness error"))
         salida = salida.get("result", salida) if isinstance(salida.get("result"), dict) else salida
         llamadas = salida.get("tool_calls") or []
         _verificar_llamadas(llamadas, controles)
         return {"texto": salida.get("texto") or "", "tool_calls": llamadas,
-                "finish_reason": salida.get("finish_reason") or ""}
+                "finish_reason": salida.get("finish_reason")}
     banco = app.state.banco
     clave = banco.leer("QWEN_API_KEY") if banco else None
     if not clave:
@@ -112,7 +111,7 @@ async def chat(cuerpo: dict):
         raise HTTPException(status_code=502, detail=str(error)) from None
     _verificar_llamadas(salida["tool_calls"], controles)
     return {"texto": salida["texto"], "tool_calls": salida["tool_calls"],
-            "finish_reason": salida.get("finish_reason") or ""}
+            "finish_reason": salida.get("finish_reason")}
 @app.post("/almacen", dependencies=[Depends(verificar)])
 async def almacen(cuerpo: dict):
     accion = cuerpo.get("accion")
@@ -160,8 +159,10 @@ async def _chat_ficha(cuerpo):
     mensajes = q.get("mensajes") or q.get("messages") or [{"role": "user", "content": str(q.get("message") or "")}]
     if q.get("instrucciones_fijas"):
         mensajes = [{"role": "system", "content": str(q["instrucciones_fijas"])}] + list(mensajes)
+    seleccionado = str(q.get("modelo") or q.get("model") or "")
+    seleccionado = next((m for m in modelos.permitidos() if "".join(c for c in m.lower() if c.isalnum()) == "".join(c for c in seleccionado.lower() if c.isalnum())), seleccionado)
     try:
-        modelo = modelos.validar(q.get("modelo") or None)
+        modelo = modelos.validar(seleccionado or None)
     except (ValueError, TypeError):
         modelo = modelos.cargar()["modelo_defecto"]  # el frontend manda etiquetas/fichas (nv-*, ficha*) fuera del catalogo
     # Ruta Antonio: Qwen -> Harness DeepSeek (HTTP) -> router. Sin camino alterno; sin URL Harness falla (G5 abierto)
@@ -218,10 +219,10 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
         if cuerpo.get("max_tokens"):
             opciones["max_tokens"] = cuerpo["max_tokens"]
         try:
-            salida = await chat({"modelo": modelo, "mensajes": cuerpo.get("messages") or cuerpo.get("mensajes"), "opciones": opciones})
+            salida = await chat({"modelo": modelo, "mensajes": cuerpo.get("messages") or cuerpo.get("mensajes"), "opciones": opciones, **_controles(cuerpo)})
         except HTTPException as error:
-            return {"status": "ok", "result": {"error": "GAP_FICHA4", "detalle": str(error.detail)[:200]}}
-        return {"status": "ok", "result": {"reply": salida["texto"], "modelo": modelo,
+            raise
+        return {"status": "ok", "result": {"reply": salida["texto"], "texto": salida["texto"], "tool_calls": salida["tool_calls"], "finish_reason": salida.get("finish_reason"), "modelo": modelo,
                                            "ficha": str(cuerpo.get("ficha_qwen") or "ficha4-workflow-yaiwes")}}
     if accion == "agent_access_lock":  # G15: panel-chat.js exige result {ok:true, locked:bool}; en memoria, bloqueado por defecto
         sesion = str(cuerpo.get("sesion") or "web-general")[:60]

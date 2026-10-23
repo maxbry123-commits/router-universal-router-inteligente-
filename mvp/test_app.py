@@ -80,7 +80,7 @@ class TestApp(unittest.TestCase):
     @patch("mvp.app.compute.llamar")
     def test_agente_tool_bloqueada(self, falso):
         falso.return_value = {"texto": "", "finish_reason": "tool_calls",
-                              "tool_calls": [{"function": {"name": "github_escribir"}}]}
+                              "tool_calls": [{"function": {"name": "groq_agente"}}]}
         estado, datos = self.pedir("/chat", {"mensajes": [{"role": "user", "content": "hola"}],
                                              "tools": True, "agente_tool": False}, True)
         self.assertEqual(estado, 403)

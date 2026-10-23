@@ -8,6 +8,9 @@ from router import mcp_puente_github as github
 # Esquemas de mvp/mcp_route.py y del contrato existente
 # router/mcp_puente_github.py + router/integration/chat_mvp/mcp_fichas.py.
 _CHAT_FICHA = {
+    'tools': {'type': 'boolean', 'default': False},
+    'agente_tool': {'type': 'boolean', 'default': False},
+    'llm_tool': {'type': 'boolean', 'default': False},
     'ficha_qwen': {'type': 'string'}, 'message': {'type': 'string'},
     'messages': {'type': 'array', 'items': {'type': 'object'}},
     'sesion': {'type': 'string'}, 'request_id': {'type': 'string'},
