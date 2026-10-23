@@ -1,6 +1,6 @@
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-from mvp import modelos as m
+from mvp.ficha import modelos as m
 
 d = m.cargar()
 assert len(d['texto']) == 20 and len(d['imagen']) == 5 and len(d['audio']) == 3 and len(d['video']) == 4

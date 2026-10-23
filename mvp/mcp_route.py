@@ -2,7 +2,8 @@
 import asyncio
 import json
 from fastapi import Depends, HTTPException, Request, Response
-from mvp import control as permisos, mcp_cliente, modelos
+from mvp import control as permisos, mcp_cliente
+from mvp.ficha import modelos
 from router import mcp_puente_github as github
 
 # Esquemas de mvp/mcp_route.py y del contrato existente

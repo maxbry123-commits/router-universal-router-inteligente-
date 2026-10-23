@@ -6,7 +6,8 @@ import os, subprocess, time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException
-from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route
+from mvp import bank, control, harness_client, hf_store, mcp_cliente, mcp_route
+from mvp.ficha import compute, modelos  # R2: modelos y llamada a Qwen viven en la ficha
 @asynccontextmanager
 async def inicio(app):
     app.state.banco = None
@@ -143,7 +144,7 @@ async def almacen(cuerpo: dict):
                                        *(cuerpo[campo] for campo in campos[accion]))
     except (ValueError, RuntimeError) as error:
         raise HTTPException(status_code=502, detail=str(error)) from None
-# --- G14: panel-chat.js lee {providers:[{id,label}]} y {models:[{model_id,label}]}; datos solo de mvp/modelos.json ---
+# --- G14: panel-chat.js lee {providers:[{id,label}]} y {models:[{model_id,label}]}; datos solo de mvp/ficha/modelos.json ---
 @app.get("/chat/providers", dependencies=[Depends(verificar)])
 def chat_providers():
     return {"providers": [{"id": "qwen", "label": modelos.cargar()["proveedor"]}]}
