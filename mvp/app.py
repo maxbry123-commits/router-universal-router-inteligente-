@@ -80,6 +80,7 @@ def health(authorization: str | None = Header(None),
             "plan": modelos.plan(), "modelo_defecto": modelos.cargar()["modelo_defecto"],
             "clave_qwen_presente": bool(modelos.clave_env() or
                                        (app.state.banco and app.state.banco.leer("QWEN_API_KEY")))}
+MAX_CARACTERES = 1_000_000  # tope de texto por peticion: error claro en vez de un 502 opaco del proveedor
 @app.post("/chat", dependencies=[Depends(verificar)])
 async def chat(cuerpo: dict):
     controles = _controles(cuerpo)
@@ -90,6 +91,8 @@ async def chat(cuerpo: dict):
     mensajes = cuerpo.get("mensajes")
     if not isinstance(mensajes, list) or not mensajes:
         raise HTTPException(status_code=400, detail="mensajes debe ser lista no vacia")
+    if sum(len(str(m.get("content") or "")) for m in mensajes if isinstance(m, dict)) > MAX_CARACTERES:
+        raise HTTPException(status_code=413, detail="el contexto supera %d caracteres; acorta el mensaje o abre un chat nuevo" % MAX_CARACTERES)
     if cuerpo.get("via") == "harness":
         try:
             salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"), controles)

@@ -310,6 +310,33 @@ class TestMCPCliente(Base):
         self.assertTrue({"pendientes", "sala", "github_leer", "almacen"} <= self.nombres())
 
 
+class TestGapsChat(Base):
+    def test_selector_de_modelos_sale_solo_de_modelos_json(self):
+        from mvp import modelos
+        for plan in ("personal", "team"):
+            with patch.dict(os.environ, {"MVP_PLAN": plan}):
+                r = self.client.get("/chat/providers/qwen/models", headers=CAB).json()["models"]
+                self.assertEqual([m["model_id"] for m in r], modelos.permitidos())
+                self.assertEqual(self.client.post("/chat", headers=CAB, json={"modelo": "no-existe", "mensajes": [{"role": "user", "content": "x"}]}).status_code, 400)
+        with patch.dict(os.environ, {"MVP_PLAN": "personal"}):
+            self.assertEqual(self.client.post("/chat", headers=CAB, json={"modelo": "qwen3.6-plus", "mensajes": [{"role": "user", "content": "x"}]}).status_code, 400)
+
+    def test_limite_de_texto_y_finish_reason(self):
+        enorme = [{"role": "user", "content": "a" * 1_000_001}]
+        r = self.client.post("/chat", headers=CAB, json={"mensajes": enorme})
+        self.assertEqual(r.status_code, 413)
+        self.assertIn("caracteres", r.json()["detail"])
+        corta = {"texto": "se cort", "tool_calls": [], "finish_reason": "length"}
+        with patch("mvp.app.compute.llamar", return_value=corta):
+            ok = self.client.post("/chat", headers=CAB, json={"mensajes": [{"role": "user", "content": "x"}]}).json()
+        self.assertEqual((ok["texto"], ok["finish_reason"]), ("se cort", "length"))
+
+    def test_errores_del_proveedor_son_visibles(self):
+        with patch("mvp.app.compute.llamar", side_effect=RuntimeError("Proveedor HTTP 500")):
+            r = self.client.post("/chat", headers=CAB, json={"mensajes": [{"role": "user", "content": "x"}]})
+        self.assertEqual((r.status_code, r.json()["detail"]), (502, "Proveedor HTTP 500"))
+
+
 class TestPersistencia(unittest.IsolatedAsyncioTestCase):
     async def test_ida_y_vuelta_y_fallo_de_lectura(self):
         guardado = {}
