@@ -26,16 +26,16 @@ def llamar(plugin: str, accion: str, payload: dict | None = None, timeout: float
     key = os.environ.get("RIU_API_KEY") or os.environ.get("RIU_PUBLIC_CHAT_KEY", "")
     if key:
         headers["X-API-Key"] = key
-    req = urllib.request.Request(f"{base}/plugins/{plugin}/call/{accion}", data=json.dumps(payload or {}, default=str).encode(), headers=headers, method="POST")
+    req = urllib.request.Request(f"{base}{'/' + accion if plugin == 'router_mvp' and accion in ('chat', 'almacen', 'mcp') else '/plugins/' + plugin + '/call/' + accion}", data=json.dumps(payload or {}, default=str).encode(), headers=headers, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             out = json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        return {"error": f"HTTP {exc.code}", "status": "degraded"}  # inv. 9: solo el codigo, sin reason/detail del servidor
+        return {"error": f"HTTP {exc.code}", "status": "degraded", "status_code": exc.code}  # inv. 9: solo el codigo, sin reason/detail del servidor
     except (OSError, ValueError) as exc:
         return {"error": type(exc).__name__, "status": "degraded"}
-    if isinstance(out, dict) and out.get("status") == "ok":
-        return out.get("result")
+    if isinstance(out, dict) and (out.get("status") == "ok" or (plugin == "router_mvp" and accion in ("chat", "almacen", "mcp"))):
+        return out if plugin == "router_mvp" else out.get("result")
     return {"error": str((out or {}).get("reason") or "fallo"), "status": str((out or {}).get("status") or "degraded")}
 
 

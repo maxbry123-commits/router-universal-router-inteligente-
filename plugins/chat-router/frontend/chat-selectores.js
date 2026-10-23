@@ -83,7 +83,8 @@ const decorarFichas = (lista) => {  // Nvidia groq team: las MISMAS fichas reale
 };
 const init = () => {
   const panel = document.getElementById("selectores-panel");
-  if (!panel) return;
+  if (!panel || panel.dataset.riuSelectoresInit) return;
+  panel.dataset.riuSelectoresInit = "1";
   const activo = sessionStorage.getItem(CLAVE) || "";
   const botones = [];
   SELECTORES.forEach((s) => {
@@ -132,6 +133,7 @@ const init = () => {
   if (activo) sessionStorage.setItem(CLAVE, activo);
   actualizar();
 };
+export const conectarSelectores = init;
 const toggle = (id) => {
   const actual = sessionStorage.getItem(CLAVE) || "";
   if (actual === id) {

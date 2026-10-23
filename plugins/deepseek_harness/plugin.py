@@ -43,9 +43,9 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         return _degraded("sin RIU_DEEPSEEK_HARNESS_URL: harness no configurado")
     path = os.getenv("RIU_DEEPSEEK_HARNESS_PATH") or "/invoke"
     headers = {"Content-Type": "application/json"}
-    key = os.getenv("RIU_DEEPSEEK_HARNESS_API_KEY")
+    key = os.getenv("RIU_DEEPSEEK_HARNESS_API_KEY") or os.getenv("RIU_API_KEY")
     if key:
-        headers["Authorization"] = "Bearer " + key
+        headers["X-API-Key"] = key
     req = urllib.request.Request(base + path, data=json.dumps(payload).encode(), headers=headers, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=25) as resp:  # noqa: S310 (URL fijada por el operador via env)

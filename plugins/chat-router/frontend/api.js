@@ -23,6 +23,7 @@ function aplicarBase(url) {
 }
 const VALIDA = (u) => /^https:\/\/[a-z0-9-]+\.hf\.space$/.test(u || '');
 function refrescarLive() {
+  if (!CFG.liveUrl) return Promise.resolve(BASE);
   if (!liveRequest) liveRequest = (async () => {
     try {
       const flag = await fetchT(CFG.liveUrl + '?t=' + Date.now(), { cache: 'no-store', credentials: 'omit' }, 8000);
@@ -90,7 +91,7 @@ window.RIU_RETOMAR = async (ses) => {
 try { liveRouter().catch(() => {}); } catch (e) {}  // harnessUrl listo antes del primer envio
 async function puenteRouter(base, body, qs, headers) {
   await liveRouter();
-  const baseDe = () => (body && body.plugin ? PBASE + '/plugins/' + body.plugin + '/call' : CFG.harnessUrl);  // plugin del Router elegido por el selector
+  const baseDe = () => (body && (body.plugin || body.qwen?.plugin) ? PBASE + '/plugins/' + (body.plugin || body.qwen.plugin) + '/call' : CFG.harnessUrl);  // plugin del Router elegido por el selector
   base = baseDe();
   // Puente dentro del Router (plugin puente_chat, puerta fija): POST <base>/<accion>, respuesta {status, result}.
   const q = new URLSearchParams((qs || '').replace(/^[?]/, ''));
@@ -118,7 +119,7 @@ async function puenteRouter(base, body, qs, headers) {
       }
     }
     const env = await r.json().catch(() => ({}));
-    if (r.status === 401 || r.status === 403) return { status: 401, ok: false, p: env };
+    if (r.status === 401 || r.status === 403) return { status: r.status, ok: false, p: { error: 'HTTP ' + r.status + ': ' + (env.reason || env.detail || env.error || 'Acceso rechazado') } };
     if (!r.ok || env.status !== 'ok') return { status: r.ok ? 502 : r.status, ok: false, p: { error: env.reason || env.detail || ('HTTP ' + r.status) } };
     let p = env.result || {};
     let cortado = false;
@@ -136,7 +137,7 @@ async function puenteRouter(base, body, qs, headers) {
         try {
           const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 8 }) }, 16000);  // long-poll: el Router responde apenas hay resultado/progreso (max 8 s, max 3 a la vez por plugin: host limita 8 llamadas)
           const envelope = await poll.json().catch(() => ({}));
-          if (poll.status === 401 || poll.status === 403) return { status: 401, ok: false, p: envelope };
+          if (poll.status === 401 || poll.status === 403) return { status: poll.status, ok: false, p: { error: 'HTTP ' + poll.status + ': ' + (envelope.reason || envelope.detail || envelope.error || 'Acceso rechazado') } };
           if (!poll.ok || envelope.status !== 'ok') throw new Error(envelope.reason || envelope.detail || ('HTTP ' + poll.status));  // /resultado fallido (cupo del host, 5xx): contar y reintentar, no cortar el chat
           p = envelope.result || {}; fallosRed = 0;
           if (!p.estado && !p.error && ++vaciosEstado >= 8) {
@@ -179,14 +180,14 @@ export async function accion(acc, payload) {
   return env.result || {};
 }
 window.RIU_ACCION = accion;
-export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id, instrucciones_fijas, mode_request, thinking_mode }) {  // >>> MODOS <<< mode_request viaja en el payload
+export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id, instrucciones_fijas, mode_request, thinking_mode, tools = false, agente_tool = false, llm_tool = false }) {  // >>> MODOS <<< mode_request viaja en el payload
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
   const messages = [{ role: 'user', content: message }];
   const extra = Object.assign(
-    { active_anchors_v1: true },
+    { active_anchors_v1: true, tools: !!tools, agente_tool: !!agente_tool, llm_tool: !!llm_tool },
     { sesion: sesion || undefined, anclados: anclados || [] },
     gobernanza !== undefined ? { gobernanza } : {},
     constitucion !== undefined ? { constitucion } : {},
@@ -221,10 +222,10 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
     L4.url = r.p.url;
     r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
   }
-  if (!r.ok) throw new Error(r.p.error || r.p.detail || ('HTTP ' + r.status));
+  if (!r.ok) throw new Error(r.p.error || r.p.reason || r.p.detail || ('HTTP ' + r.status));
   if (r.p && r.p.error) throw new Error(String(r.p.error));  // GAP del backend no se presenta como respuesta OK
   const prueba = Array.isArray(r.p.traza) && r.p.traza.length ? '\n\n— Prueba de ejecución —\n' + r.p.traza.filter((t) => t.modelo !== 'goals').map((t) => t.nodo + ' · ' + String(t.modelo).replace('ficha-', '') + ' · ' + (t.rol || '') + (t.ok ? ' ✔' : ' ✘')).join('\n') : '';
-  return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || ''), traza: r.p.traza, job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })), fast_lane: !!r.p.fast_lane, fast_consult: !!r.p.fast_consult, execution_path: r.p.execution_path || "HEAVY", ms: Number(r.p.ms || 0) };
+  return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || ''), modelo_solicitado: r.p.modelo_solicitado, modelo_respuesta: r.p.modelo_respuesta, finish_reason: r.p.finish_reason || r.p.choices?.[0]?.finish_reason || null, traza: r.p.traza, job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })), fast_lane: !!r.p.fast_lane, fast_consult: !!r.p.fast_consult, execution_path: r.p.execution_path || "HEAVY", ms: Number(r.p.ms || 0) };
 }
 window.RIU_HARNESS = harness;
 export async function apagarRespaldo() {
@@ -247,7 +248,7 @@ export async function api(path, options = {}) {
   try {
     const credentials = remoto(headers);
     response = await fetchT(BASE + path, { method: options.method || "GET", headers, credentials,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body) }, path === "/chat/send" ? 120000 : 15000);  // /chat/send (sin harness) espera la respuesta completa
+      body: options.body === undefined ? undefined : JSON.stringify(options.body) }, path === "/chat/send" ? 450000 : 15000);  // /chat/send (sin harness) espera la respuesta completa
   } catch (error) {
     window.dispatchEvent(new CustomEvent("router-connection", { detail: "Sin conexión" }));
     throw error;
@@ -257,7 +258,7 @@ export async function api(path, options = {}) {
   window.dispatchEvent(new CustomEvent("router-connection", { detail: status }));
   const payload = response.headers.get("content-type")?.includes("application/json")
     ? await response.json() : { detail: `HTTP ${response.status}` };
-  if (!response.ok) throw new Error(typeof payload.detail === "string" ? payload.detail : `HTTP ${response.status}`);
+  if (!response.ok) throw new Error((response.status === 403 ? "HTTP 403: " : "") + (typeof payload.detail === "string" ? payload.detail : typeof payload.reason === "string" ? payload.reason : `HTTP ${response.status}`));
   return payload;
 }
 export async function media(id) {

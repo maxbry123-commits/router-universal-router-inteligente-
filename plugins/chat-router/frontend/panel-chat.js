@@ -19,6 +19,15 @@ const etiquetaCorta = (a) => a.startsWith("handoff:") ? a.slice(8) : a.startsWit
 
 export async function mount(root, { api, tell }) {
   const q = (s) => root.querySelector(s);
+  const editor = q("#message");
+  const ajustarAlturaEditor = () => {
+    editor.style.height = "auto";
+    const limite = parseFloat(getComputedStyle(editor).maxHeight) || 128;
+    editor.style.height = Math.min(editor.scrollHeight, limite) + "px";
+  };
+  editor.addEventListener("input", ajustarAlturaEditor);
+  window.addEventListener("resize", ajustarAlturaEditor);
+  ajustarAlturaEditor();
   const copiarTexto = (t) => { try { navigator.clipboard.writeText(t); } catch (e) {} };
   const defecto = window.RIU_CONFIG?.defecto || "";
   const fichaEt = (id) => (window.RIU_CONFIG?.modelos || []).find((m) => m.id === id);
@@ -46,9 +55,10 @@ export async function mount(root, { api, tell }) {
   if (ctlB && ctlP) ctlB.addEventListener("click", () => { const ab = ctlP.classList.toggle("abierto"); ctlB.setAttribute("aria-expanded", String(ab)); ctlB.textContent = ab ? "Controles ▴" : "Controles ▾"; });
   const medirCtl = () => { const s = document.querySelector(".topbar") || document.querySelector(".sidebar") || document.querySelector("#navigation"); const b = s ? Math.round(s.getBoundingClientRect().bottom) : 0; if (b > 0 && b < window.innerHeight * 0.8) document.documentElement.style.setProperty("--ctl-top", b + "px"); };  // la barra se pega justo debajo de la tira superior (.topbar en escritorio; .sidebar solo es la tira en movil)
   medirCtl(); window.addEventListener("resize", medirCtl);
-  const previo = (c, message) => { const h = A.cargarHistorial(c.sesion).filter((m) => m.rol === "user" || m.rol === "bot"); if (h.length && h[h.length - 1].rol === "user" && h[h.length - 1].texto === message) h.pop(); return h.slice(-20).map((m) => ({ role: m.rol === "user" ? "user" : "assistant", content: m.texto })); };  // historial de ESTA sesion, aparte del input actual
+  const previo = (c, message) => { const h = A.cargarHistorial(c.sesion).filter((m) => m.rol === "user" || m.rol === "bot"); if (h.length && h[h.length - 1].rol === "user" && h[h.length - 1].texto === message) h.pop(); return h.map((m) => ({ role: m.rol === "user" ? "user" : "assistant", content: m.texto })); };  // historial completo de ESTA sesion, aparte del input actual
   const previoTodo = (c, message) => { const h = A.cargarHistorial(c.sesion).filter((m) => m.rol === "user" || m.rol === "bot"); if (h.length && h[h.length - 1].rol === "user" && h[h.length - 1].texto === message) h.pop(); const out = []; let tam = 0; for (const m of h.slice(-20).reverse()) { const t = String(m.texto || ""); if (tam + t.length > 30000) break; tam += t.length; out.unshift({ role: m.rol === "user" ? "user" : "assistant", content: t }); } return out; };  // Team 5 MVP: ultimos 20 mensajes / ~30 KB: TODO el historial de ESTA sesion, con roles
   const chats = [];
+  const chatTools = window.RIU_CHAT_TOOL_FLAGS = { tools: false, agente_tool: false, llm_tool: false };
   let activo = 0;
   const chat = () => chats[activo];
   const releerAnclas = (c) => {
@@ -578,7 +588,7 @@ export async function mount(root, { api, tell }) {
   if (bLock) {
     let busy = false, locked = true;  // UI no habilita nada antes de leer el servidor
     const pintarLock = () => {
-      bLock.textContent = locked ? '🔒 IA/agentes delegados BLOQUEADOS' : '🔓 IA/agentes delegados habilitados';
+      bLock.textContent = (locked ? '🔒 IA/agentes delegados BLOQUEADOS' : '🔓 IA/agentes delegados habilitados') + ' · agente_tool ' + (chatTools.agente_tool ? 'ON' : 'OFF');
       bLock.setAttribute('aria-pressed', String(locked));
     };
     bLock.disabled = true; pintarLock();
@@ -593,11 +603,13 @@ export async function mount(root, { api, tell }) {
       try {
         const r = await window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion, locked: !locked });
         if (!r || r.ok !== true || r.locked !== !locked) throw new Error('GAP_AGENT_LOCK_CAMBIO');
-        locked = r.locked; pintarLock();
+        locked = r.locked; chatTools.agente_tool = !locked; pintarLock();
       } catch (e) { tell('GAP: no se verificó el bloqueo: ' + e.message); }
       finally { busy = false; bLock.disabled = false; }
     });
   }
+  const bLlm = q("#btn-llm-tool");
+  if (bLlm) bLlm.addEventListener("click", () => { chatTools.llm_tool = !chatTools.llm_tool; bLlm.textContent = "🧠 LLM tool " + (chatTools.llm_tool ? "ON" : "OFF"); bLlm.classList.toggle("sel-on", chatTools.llm_tool); bLlm.setAttribute("aria-pressed", String(chatTools.llm_tool)); });
   pintarMotor();
   const bpr = q("#btn-proyectos"); if (bpr) bpr.addEventListener("click", () => { if (window.RIU_ANCLA_ABRIR) window.RIU_ANCLA_ABRIR("proyecto"); });  // misma ventana-ancla, objetivo Proyecto
   window.addEventListener("riu:fast-reply-toggle", window.__riuFastH);
@@ -642,7 +654,7 @@ export async function mount(root, { api, tell }) {
     const ub = burbuja(rawText, "user");
     c.hist.append(ub);
     A.registrar(c.sesion, "user", rawText);
-    input.value = "";
+    input.value = ""; ajustarAlturaEditor();
     c.ocupado = true; pintarTabs();
     const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta que el Router confirma proceso_id; luego riu-progreso pone Pensando/tools
     c.hist.append(pending);
@@ -661,46 +673,50 @@ export async function mount(root, { api, tell }) {
     const agent = (q("#agent") || {}).value || "";
     const provider = (q("#provider") || {}).value || "";
     const model = (q("#model") || {}).value || "";
-    const max_tokens = { fast: 512, balanced: 4096, think: 8192 }[modo]; // por llamada, sujeto al tope real del proveedor
+    const max_tokens = undefined; // sin tope artificial del frontend; el proveedor informa finish_reason
     try {
       const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2, 3 y 5 = Team 5 MVP)
       const fq = selAct === "team-qwen" ? "1" : selAct === "ask-consil-code-qwen-team" ? "2" : selAct === "ask-consil-fromtend-qwen-team" ? "3" : null;
       const soloLiteralQwen = fq === "2" || fq === "3";  // ficha 2/3: input verbatim del Director (sin envolver ni trim)
-      const mvp = selAct === "team-5-mvp" ? { plugin: "fichas_qwen", ficha_qwen: "5", modelo: c.selectorQwen ? c.selectorQwen.label : "", instrucciones_fijas: c.instrucciones || "" } : null;  // Team 5 MVP: fichas_qwen ficha_qwen=5, sin N4, sin fallback
+      const mvp = selAct === "team-5-mvp" ? { plugin: "fichas_qwen", ficha_qwen: "5", modelo: c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label) : "", instrucciones_fijas: c.instrucciones || "" } : null;  // Team 5 MVP: fichas_qwen ficha_qwen=5, sin N4, sin fallback
       const mensajeQwen = soloLiteralQwen ? rawText : (mvp ? rawText : A.envolver(rawText, c.instrucciones)); // no eliminar espacios del input real
       const fijasQwen = (soloLiteralQwen || mvp) ? (c.instrucciones || "") : "";
       const _conModo = modeUI ? modeUI.wrapSend((b) => b) : ((b) => b);  // >>> MODOS <<< punto B: agrega mode_request al payload sin tocar el resto
       const anclados = releerAnclas(c);
-      const body = _conModo({ message: mensajeQwen, ficha: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, thinking: modo === "think", ...(fijasQwen ? { instrucciones_fijas: fijasQwen } : {}), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : {}), ...(mvp || {}) });  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha; ficha 2/3 verbatim + instrucciones_fijas
+      const controlTools = { tools: !!chatTools.tools, agente_tool: !!chatTools.agente_tool, llm_tool: !!chatTools.llm_tool };
+      const body = _conModo({ ...controlTools, message: mensajeQwen, ficha: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, thinking: modo === "think", ...(fijasQwen ? { instrucciones_fijas: fijasQwen } : {}), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label) : "", task_type: "chat" } : {}), ...(mvp || {}) });  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha; ficha 2/3 verbatim + instrucciones_fijas
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });  // Detener ya vale desde aqui: tambien mientras se restaura el historial o se arma el contexto
-      const ctxPrev = soloLiteralQwen ? previo(c, rawText) : undefined;  // ficha 2/3: verbatim; consil-code: ultimos 20; Team 5: sin contexto_previo
+      const ctxPrev = (fq || mvp) ? previo(c, rawText) : undefined;
+      body.contexto_previo = ctxPrev;  // historial completo de esta sesion; el input actual viaja una sola vez
       const _multiSel = fq === "1" && c.paralelo ? (c.selectorQwenMulti || []).slice(0, 6) : [];  // >>> MODOS <<< T6: fan-out paralelo
       const _fanout = async () => {  // una llamada por modelo elegido; cada burbuja lleva su nombre
         const rs = await Promise.allSettled(_multiSel.map((m, i) => window.RIU_HARNESS({
           model: 'qw-' + (m.modelo_id_slug || 'modelo'), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null,
           contexto_previo: ctxPrev, anclados, sesion: c.sesion + '-' + (m.modelo_id_slug || i), instrucciones_fijas: fijasQwen || undefined,
-          thinking_mode: modo === 'think' ? 'on' : 'off',
+          ...controlTools, thinking_mode: modo === 'think' ? 'on' : 'off',
           mode_request: modeUI ? modeUI.getModeRequest() : undefined,
-          qwen: { plugin: "fichas_qwen", ficha_qwen: "1", modelo: m.label || m.modelo_id_slug || "", task_type: "chat" }, avisar: () => {} })));
+          qwen: { plugin: "fichas_qwen", ficha_qwen: "1", modelo: m.model_id || m.label || m.modelo_id_slug || "", task_type: "chat" }, avisar: () => {} })));
         const partes = rs.map((r, i) => {
           const nom = _multiSel[i].label || _multiSel[i].modelo_id_slug || ('modelo ' + (i + 1));
           return r.status === 'fulfilled' ? ('── ' + nom + ' ──\n' + (r.value.reply || 'Sin respuesta')) : ('── ' + nom + ' ──\nGAP: ' + (r.reason && r.reason.message || r.reason));
         });
-        return { reply: partes.join('\n\n'), tools: [], ms: 0 };
+        return { reply: partes.join('\n\n'), tools: [], ms: 0, finish_reason: rs.some((r) => r.status === 'fulfilled' && r.value.finish_reason === 'length') ? 'length' : null };
       };
       const answer = window.RIU_CONFIG?.harnessUrl
         ? (_multiSel.length > 1
             ? await Promise.race([_fanout(), raceDetener])  // >>> MODOS <<< T6: misma tarea a cada modelo; un proceso por modelo en el backend
-            : await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados, sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, thinking_mode: (fq || mvp) ? (modo === 'think' ? 'on' : 'off') : undefined, mode_request: modeUI ? modeUI.getModeRequest() : undefined,  // >>> MODOS <<<
-        qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener]))
+            : await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados, sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, ...controlTools, thinking_mode: (fq || mvp) ? (modo === 'think' ? 'on' : 'off') : undefined, mode_request: modeUI ? modeUI.getModeRequest() : undefined,  // >>> MODOS <<<
+        qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label) : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener]))
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);  // >>> MODOS <<< body ya lleva mode_request
       c.detenerFn = null;
       if (c.detenerFlag) throw new Error("PROCESO_DETENIDO");  // detenido mientras la respuesta llegaba: no pintar respuesta tardia
       pending.remove();
+      if (answer.modelo_solicitado) c.hist.append(node("div", "Modelo solicitado: " + answer.modelo_solicitado + " · API: " + (answer.modelo_respuesta || "sin identificar"), "item message meta"));
       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
+      if (answer.finish_reason === "length") c.hist.append(node("div", "El proveedor alcanzo su limite de salida. Escribe «Continua» para seguir desde este punto", "item message meta"));
       if (answer.execution_path === "FAST_QA") c.hist.append(node("div", "⚡ respuesta rápida · " + answer.ms + " ms", "item meta"));
       else if (answer.execution_path === "FAST_CONSULT") c.hist.append(node("div", "⚡ cónsil rápido · " + answer.ms + " ms", "item meta"));
       else if (c.fastReply && FAST_SEL() && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));
@@ -709,8 +725,9 @@ export async function mount(root, { api, tell }) {
       abajo(c);
     } catch (error) {
       pending.remove();
-      A.registrar(c.sesion, "err", (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) ? "proceso detenido por el usuario" : "GAP: " + error.message);
-      c.hist.append(node("div", (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) ? "proceso detenido por el usuario" : `GAP: ${error.message}`, "item message" + (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message)) ? " meta" : " error")));
+      const detalleError = error && error.name === "AbortError" ? "Tiempo de espera agotado" : error.message;
+      A.registrar(c.sesion, "err", (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) ? "proceso detenido por el usuario" : "GAP: " + detalleError);
+      c.hist.append(node("div", (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) ? "proceso detenido por el usuario" : `GAP: ${detalleError}`, "item message" + (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message)) ? " meta" : " error")));
       abajo(c);
       if (!(c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) && !input.value) { input.value = message; input.dispatchEvent(new Event("input", { bubbles: true })); }  // si falla, el mensaje vuelve a la caja
     } finally {
@@ -775,7 +792,7 @@ export async function mount(root, { api, tell }) {
     const input = q('#message'); const texto = (input.value || '').trim();
     if (!texto) return;
     const r = await buzonEnvio(sel.value, texto);
-    input.value = '';
+    input.value = ''; ajustarAlturaEditor();
     const ack = (r && r.se_aplica_en) ? ('Recibido, se aplica en ' + r.se_aplica_en) : 'Recibido';
     chat().hist.append(burbuja(texto, 'user')); chat().hist.append(node('div', ack, 'item message meta')); abajo(chat());
   }, true);  // capture: corre antes del handler normal de envio

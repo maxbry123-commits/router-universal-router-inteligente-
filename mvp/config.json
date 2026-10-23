@@ -1,0 +1,26 @@
+{
+  "bucket_hf": "COMAND-CENTER-1/yaiwes-memoria-storage",
+  "prefijo": "riu-chat/",
+  "harness": {
+    "url_env": "RIU_DEEPSEEK_HARNESS_URL",
+    "ruta": "/invoke",
+    "acciones": [
+      "status",
+      "invoke",
+      "llm"
+    ]
+  },
+  "variables": {
+    "hf": "HF_TOKEN",
+    "github": "GITHUB_TOKEN",
+    "qwen_clave": "QWEN_API_KEY",
+    "qwen_base_url": "QWEN_BASE_URL",
+    "qwen_modelo": "QWEN_MODEL",
+    "clave_acceso": [
+      "RIU_API_KEY",
+      "RIU_PUBLIC_CHAT_KEY",
+      "RIU_MCP_KEY",
+      "RIU_ROUTER_API_KEY"
+    ]
+  }
+}
