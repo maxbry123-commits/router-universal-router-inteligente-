@@ -7,6 +7,7 @@ from mvp.pruebas_vivo.cliente import texto
 
 REPO = "maxbry123-commits/router-universal-router-inteligente-"
 FILAS = []
+CORRIDA = time.strftime("%d%H%M%S")  # cada corrida usa request_id propios: con el mismo request_id el Router devuelve el resultado guardado y no vuelve a ejecutar (idempotencia)
 
 
 def escribir_informe():
@@ -25,7 +26,7 @@ def anotar(modelo, prueba, ok, evidencia, t0):
 
 def prueba_chat(c, m, nombre, mensaje, valida, rid, **extra):
     t0 = time.time()
-    r = c.chat(m, mensaje, rid=rid, **extra)
+    r = c.chat(m, mensaje, rid=CORRIDA + rid, **extra)
     t = texto(r)
     anotar(m, nombre, r.get("estado") == "completado" and bool(valida(t, r)), t or r.get("error") or r, t0)
     return r
@@ -33,7 +34,7 @@ def prueba_chat(c, m, nombre, mensaje, valida, rid, **extra):
 
 def con_tool(c, m, nombre, mensaje, rid, comprobar):
     t0 = time.time()
-    r = c.chat(m, mensaje, rid=rid, tools=True, llm_tool=True)
+    r = c.chat(m, mensaje, rid=CORRIDA + rid, tools=True, llm_tool=True)
     ok, dato = comprobar()
     anotar(m, nombre, r.get("estado") == "completado" and ok, "chat=%s %s | usadas=%s | respuesta=%s | comprobacion=%s" % (r.get("estado"), r.get("error") or "", r.get("herramientas_usadas"), texto(r)[:120], dato), t0)  # evidencia completa: estado del chat, lo que dijo el modelo y lo que quedo guardado
 
@@ -56,7 +57,7 @@ def texto_modelo(c, m):
 def herramientas_modelo(c, m):
     con_tool(c, m, "tool pendientes", f"Usa la herramienta pendientes: agrega 'sol-{m}' y confirma.", f"v-{m}-7", contiene(c, "pendientes", {"accion": "listar"}, f"sol-{m}"))
     con_tool(c, m, "tool yaiwes_md", f"Usa yaiwes_md: escribe el texto 'proyecto-{m}' y confirma.", f"v-{m}-8", contiene(c, "yaiwes_md", {"accion": "leer"}, f"proyecto-{m}"))
-    con_tool(c, m, "tool github leer", f"Usa github_leer en el repo {REPO}, ruta README.md, rama main. Cita la primera línea.", f"v-{m}-9", lambda: (True, "ver texto de la respuesta"))
+    con_tool(c, m, "tool github leer", f"Usa github_leer en el repo {REPO}, ruta docs/README.md, rama main. Cita la primera línea.", f"v-{m}-9", lambda: (True, "ver texto de la respuesta"))
     if not any(f["prueba"] == "tool github escribir" for f in FILAS):  # una sola vez, y en main (el Harness no permite otra rama): Prueba/sol-escritura.txt
         con_tool(c, m, "tool github escribir", f"Usa github_escribir en el repo {REPO}, rama main, ruta Prueba/sol-escritura.txt, contenido 'ok-{m}', mensaje 'prueba sol'.", f"v-{m}-10",
                  contiene(c, "github_leer", {"repo": REPO, "ruta": "Prueba/sol-escritura.txt", "rama": "main"}, f"ok-{m}"))
@@ -73,7 +74,7 @@ def medios(c):
         urls[x] = texto(r).split("[[imagen:")[-1].split("]]")[0]
     prueba_chat(c, "qwen-audio-3.0-tts-plus", "voz", "Hola, esto es una prueba de voz.", lambda t, r: "[[audio:" in t, "v-tts")
     t0 = time.time()
-    r = c.chat("qwen-audio-3.0-realtime-plus", "hola", rid="v-rt")
+    r = c.chat("qwen-audio-3.0-realtime-plus", "hola", rid=CORRIDA + "v-rt")
     anotar("qwen-audio-3.0-realtime-plus", "rechazo claro (WebSocket)", "websocket" in json.dumps(r).lower(), r.get("error") or r, t0)
     if "--video" not in sys.argv:
         return  # el video es lento y caro (hasta 9 min por modelo): solo con --video
