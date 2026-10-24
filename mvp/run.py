@@ -23,7 +23,7 @@ def _head():
     return sha if ok else None
 
 
-SIN_REINICIO = ("plugins/chat-router/frontend/", "docs/", "raiz_router/", "raiz_fichas_prompt/")  # los sirve Vercel o son documentos
+SIN_REINICIO = ("plugins/chat-router/frontend/", "docs/", "raiz_router/", "raiz_fichas_prompt/", "Prueba/")  # los sirve Vercel o son documentos
 
 
 def _toca_servidor(anterior, nuevo):

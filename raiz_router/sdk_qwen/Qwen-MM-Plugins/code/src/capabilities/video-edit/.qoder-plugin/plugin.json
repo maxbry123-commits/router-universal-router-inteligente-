@@ -1,8 +1,0 @@
-{
-  "name": "qwen-mm-plugins-video-edit",
-  "displayName": "Qwen MM Plugins Video Edit",
-  "version": "1.2.0",
-  "description": "Edit existing footage into finished videos with pacing, sound, subtitles, and visual effects.",
-  "skills": "./skill",
-  "mcp": ".mcp.json"
-}
