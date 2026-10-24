@@ -593,6 +593,7 @@ export async function mount(root, { api, tell }) {
     if (bLlm) { bLlm.textContent = '🧠 LLM tool ' + (ia ? 'ON' : 'OFF'); bLlm.classList.toggle('sel-on', ia); bLlm.setAttribute('aria-pressed', String(ia)); bLlm.title = 'Permitir que el modelo consulte otros modelos (igual que el chip IA)'; }
   };
   pintarTools(!!chatTools.llm_tool, !!chatTools.agente_tool);  // el estado del servidor pudo llegar antes de este listener
+  if (window.RIU_ACCION) window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion }).then((r) => { if (r && 'ia_locked' in r) pintarTools(!r.ia_locked, !r.agentes_locked); }).catch(() => {});  // estado real al abrir; con 401 pide la clave (acceso-clave.js)
   window.addEventListener('riu:ia', (e) => pintarTools(!!e.detail.ia, !!e.detail.agentes));
   const pulsar = (sel) => () => { const chip = document.querySelector(sel); if (chip) chip.click(); else tell('GAP: falta el botón ' + sel); };
   if (bLock) bLock.addEventListener('click', pulsar('#btn-agentes'));
