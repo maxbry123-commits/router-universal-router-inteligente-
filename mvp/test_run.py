@@ -72,6 +72,18 @@ class TestAutopull(unittest.TestCase):
             reiniciar.assert_not_called()
         self.assertEqual(run._head(), nuevo)  # el código se actualiza igual, sin reiniciar
 
+    def test_commit_roto_se_deshace_y_no_reinicia(self):
+        (self.writer / "mvp").mkdir()
+        (self.writer / "mvp" / "app.py").write_text("esto no es python valido (\n")
+        git("-C", self.writer, "add", ".")
+        git("-C", self.writer, "commit", "-m", "roto")
+        git("-C", self.writer, "push", "origin", "main")
+        antes = run._head()
+        with patch.object(run.os, "execv") as reiniciar:
+            self.assertFalse(run._actualizar())
+            reiniciar.assert_not_called()
+        self.assertEqual(run._head(), antes)  # volvio a la version buena
+
     def test_pull_fallido_no_reinicia(self):
         antes = run._head()
         git("-C", self.worker, "remote", "set-url", "origin", str(self.base / "inexistente.git"))

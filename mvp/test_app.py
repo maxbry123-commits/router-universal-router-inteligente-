@@ -112,7 +112,7 @@ class TestApp(unittest.TestCase):
 
     def test_health_sin_secretos(self):
         estado, publico = self.pedir("/health")
-        self.assertEqual((estado, publico), (200, {"status": "ok"}))
+        self.assertEqual((estado, publico["status"], sorted(publico)), (200, "ok", ["commit", "status"]))  # solo estado y commit (no secreto)
         estado, privado = self.pedir("/health", clave=True)
         self.assertEqual((estado, privado["plan"], privado["modelo_defecto"]), (200, "personal", "qwen3.8-max"))
         self.assertTrue(privado["banco_abierto"] and privado["clave_qwen_presente"])

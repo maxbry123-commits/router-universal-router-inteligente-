@@ -45,3 +45,16 @@ class TestBanco(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TestClaveDeAccesoDelEntorno(unittest.TestCase):
+    def test_el_banco_actualiza_riu_api_key_si_cambia_en_el_entorno(self):
+        import os, tempfile
+        from unittest.mock import patch
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as d, patch.dict(os.environ, {"RIU_API_KEY": "clave-vieja"}):
+            b = abrir(Path(d) / "b.bin", "clave-vieja"); b.bootstrap_desde_env()
+            self.assertEqual(b.leer("RIU_API_KEY"), "clave-vieja")
+            os.environ["RIU_API_KEY"] = "clave-nueva"
+            b.bootstrap_desde_env()
+            self.assertEqual(b.leer("RIU_API_KEY"), "clave-nueva")

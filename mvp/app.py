@@ -81,7 +81,7 @@ def clave_harness():
 def health(authorization: str | None = Header(None),
            x_api_key: str | None = Header(None)):
     if not autorizado(authorization, x_api_key):
-        return {"status": "ok" if app.state.banco else "degraded"}
+        return {"status": "ok" if app.state.banco else "degraded", "commit": str(getattr(app.state, "commit", "desconocido"))[:10]}  # el commit no es secreto: sirve para comprobar que version corre
     return {"status": "ok" if app.state.banco else "degraded", "cpu": escalado.cpu_local(),
             "commit": app.state.commit, "banco_abierto": bool(app.state.banco),
             "qwen_base_url_presente": bool(modelos.base_url()),

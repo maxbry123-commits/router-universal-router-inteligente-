@@ -32,15 +32,34 @@ def _toca_servidor(anterior, nuevo):
     return not ok or any(not r.startswith(SIN_REINICIO) for r in lista.splitlines())
 
 
+def _carga_bien():
+    """El codigo nuevo debe poder importarse antes de reiniciar; si no, un commit roto dejaria el servidor caido y el autopull muerto."""
+    if not (REPO / "mvp" / "app.py").exists():
+        return True
+    try:
+        r = subprocess.run([sys.executable, "-c", "import mvp.app"], cwd=str(REPO), capture_output=True, text=True, timeout=120, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    if r.returncode:
+        print("AUTOPULL: el codigo nuevo no carga: " + r.stderr.strip()[-300:], flush=True)
+    return r.returncode == 0
+
+
 def _actualizar():
     anterior = _head()
     if not anterior:
         return False
     correcto, _ = _git("pull", "--ff-only")
     if not correcto:
+        print("AUTOPULL: git pull fallo; sigo con " + anterior[:10], flush=True)
         return False
     nuevo = _head()
     if nuevo and nuevo != anterior and _toca_servidor(anterior, nuevo):
+        if not _carga_bien():
+            _git("reset", "--hard", anterior)  # vuelve a la version que funcionaba
+            print("AUTOPULL: deshice %s y sigo con %s" % (nuevo[:10], anterior[:10]), flush=True)
+            return False
+        print("AUTOPULL: reinicio con %s" % nuevo[:10], flush=True)
         os.execv(sys.executable, [sys.executable, *sys.argv])
         return True
     return False
