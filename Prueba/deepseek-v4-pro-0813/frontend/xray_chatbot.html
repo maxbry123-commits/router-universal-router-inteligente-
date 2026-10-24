@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipo Xray Chatbot · deepseek-v4-pro-0813</title>
+<style>
+:root{
+  --azul:#2f6fed;
+  --azul-oscuro:#1e4fbf;
+  --fondo:#ffffff;
+  --borde:#e6e9f0;
+  --texto:#1b1f27;
+  --suave:#5b6472;
+  --gris:#f5f7fa;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fondo);color:var(--texto)}
+.app{max-width:760px;margin:0 auto;padding:16px}
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--borde);padding-bottom:12px;gap:8px;flex-wrap:wrap}
+h1{font-size:1.2rem;margin:0}
+.estado-dot{width:10px;height:10px;border-radius:50%;background:var(--azul);display:inline-block;margin-right:6px}
+.tabs{display:flex;gap:8px;margin:16px 0}
+.tab{padding:8px 14px;border:1px solid var(--borde);background:var(--gris);border-radius:8px;cursor:pointer;font-size:.95rem}
+.tab[aria-selected="true"]{background:var(--azul);color:#fff;border-color:var(--azul)}
+.panel{display:none}
+.panel.activo{display:block}
+.log{height:260px;overflow:auto;background:var(--gris);border:1px solid var(--borde);border-radius:10px;padding:12px}
+.msg{margin-bottom:10px}
+.msg .meta{font-size:.75rem;color:var(--suave)}
+.msg .txt{background:#fff;border:1px solid var(--borde);border-radius:8px;padding:8px 10px;margin-top:2px;word-break:break-word}
+.barra{display:flex;gap:8px;margin-top:10px}
+textarea{flex:1;resize:vertical;min-height:48px;border:1px solid var(--borde);border-radius:8px;padding:8px;font:inherit}
+button{background:var(--azul);color:#fff;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font:inherit}
+button:hover{background:var(--azul-oscuro)}
+button:focus-visible,.chip:focus-visible,.tab:focus-visible,.toggle:focus-visible{outline:3px solid #9ab6ff;outline-offset:1px}
+.seccion{margin-top:18px}
+.seccion h2{font-size:1rem;margin:0 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;border:1px solid var(--borde);background:var(--gris);cursor:pointer;font-size:.9rem}
+.chip[aria-pressed="true"]{background:var(--azul);color:#fff;border-color:var(--azul)}
+.nueva{display:flex;gap:8px;margin-top:10px}
+.enter-nueva{flex:1;border:1px solid var(--borde);border-radius:8px;padding:8px;font:inherit}
+.oculto{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);border:0}
+.lista-tareas{margin:0;padding:0;list-style:none}
+.tarea{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px;border:1px solid var(--borde);border-radius:8px;margin-bottom:8px}
+.tarea span[data-estado="pendiente"]{color:#b26a00}
+.tarea span[data-estado="hecha"]{color:#1c7d36}
+.tarea span[data-estado="cancelada"]{color:#9aa1ab;text-decoration:line-through}
+.fila-tool{display:flex;align-items:center;justify-content:space-between;padding:8px;border:1px solid var(--borde);border-radius:8px;margin-bottom:8px}
+.toggle{border:1px solid var(--borde);background:var(--gris);border-radius:16px;padding:6px 12px;cursor:pointer;min-width:92px;font-size:.9rem}
+.toggle[data-estado="idle"]{background:#eef2fb;color:var(--texto)}
+.toggle[data-estado="ok"]{background:#e7f7ec;color:#1c7d36;border-color:#b7e4c6}
+.toggle[data-estado="error"]{background:#fdeaea;color:#b23b3b;border-color:#f3c2c2}
+.pista{font-size:.75rem;color:var(--suave)}
+@media (max-width:560px){
+  .app{padding:10px}
+  .log{height:200px}
+  .barra,.nueva{flex-direction:column}
+  h1{font-size:1rem}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1><span class="estado-dot" aria-hidden="true"></span>Prototipo Xray Chatbot</h1>
+    <span class="pista" id="info-sesion"></span>
+  </header>
+  <div class="tabs" role="tablist" aria-label="Secciones del prototipo">
+    <button class="tab" id="tab-chat" role="tab" aria-selected="true" aria-controls="panel-chat">Chat</button>
+    <button class="tab" id="tab-hist" role="tab" aria-selected="false" aria-controls="panel-hist" tabindex="-1">Historial</button>
+  </div>
+
+  <section id="panel-chat" class="panel activo" role="tabpanel" aria-labelledby="tab-chat">
+    <div class="log" id="log" role="log" aria-live="polite" aria-label="Mensajes del chat"></div>
+    <div class="barra">
+      <label class="oculto" for="entrada">Escribe un mensaje</label>
+      <textarea id="entrada" placeholder="Escribe un mensaje…"></textarea>
+      <button id="btn-enviar" type="button">Enviar</button>
+    </div>
+    <div class="seccion">
+      <h2>Anclas (contexto)</h2>
+      <div class="chips" id="chips" aria-label="Anclas activas e inactivas"></div>
+      <div class="nueva">
+        <label class="oculto" for="nueva-ancla">Nueva ancla</label>
+        <input class="enter-nueva" id="nueva-ancla" type="text" placeholder="Nueva ancla…">
+        <button id="btn-ancla" type="button">Añadir ancla</button>
+      </div>
+      <p class="pista">Las anclas inactivas se excluyen del payload exportado.</p>
+    </div>
+  </section>
+
+  <section id="panel-hist" class="panel" role="tabpanel" aria-labelledby="tab-hist">
+    <div class="seccion">
+      <h2>Historial completo</h2>
+      <div class="log" id="historial" aria-label="Historial de mensajes"></div>
+    </div>
+    <div class="seccion">
+      <h2>Checklist de tareas</h2>
+      <ul class="lista-tareas" id="tareas"></ul>
+      <div class="nueva">
+        <label class="oculto" for="nueva-tarea">Nueva tarea</label>
+        <input class="enter-nueva" id="nueva-tarea" type="text" placeholder="Nueva tarea…">
+        <button id="btn-tarea" type="button">Añadir tarea</button>
+      </div>
+      <p class="pista">Clic en una tarea para rotar: pendiente ➜ hecha ➜ cancelada.</p>
+    </div>
+    <div class="seccion">
+      <h2>Estado de herramientas</h2>
+      <div id="tools"></div>
+      <p class="pista">Estados independientes: idle ➜ ok ➜ error.</p>
+    </div>
+  </section>
+</div>
+<script>
+"use strict";
+const NS = "xray_deepseek-v4-pro-0813";
+const CLAVE = NS + ".estado";
+const CICLO_TAREA = { pendiente: "hecha", hecha: "cancelada", cancelada: "pendiente" };
+const CICLO_TOOL = { idle: "ok", ok: "error", error: "idle" };
+const TOOLS = ["tools", "agente_tool", "llm_tool"];
+const NOMBRE_TOOL = { tools: "Tools", agente_tool: "Agente tool", llm_tool: "LLM tool" };
+
+function porDefecto() {
+  return {
+    sesion: { id: Date.now().toString(36), nombre: "demo", creada: new Date().toISOString() },
+    historial: [],
+    anclas: [],
+    checklist: [],
+    tools: { tools: "idle", agente_tool: "idle", llm_tool: "idle" }
+  };
+}
+
+function cargar() {
+  try {
+    const raw = localStorage.getItem(CLAVE);
+    if (!raw) return porDefecto();
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== "object") return porDefecto();
+    return Object.assign(porDefecto(), data);
+  } catch (err) {
+    return porDefecto();
+  }
+}
+
+function guardar() {
+  localStorage.setItem(CLAVE, JSON.stringify(estado));
+}
+
+function esc(texto) {
+  return String(texto).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+function nuevoId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+let estado = cargar();
+
+function renderInfo() {
+  document.getElementById("info-sesion").textContent = "Sesión: " + estado.sesion.nombre;
+}
+
+function renderChat() {
+  const log = document.getElementById("log");
+  if (!estado.historial.length) {
+    log.innerHTML = '<p class="pista">Sin mensajes todavía.</p>';
+  } else {
+    log.innerHTML = estado.historial.map(function (m) {
+      return '<div class="msg"><div class="meta">' + esc(m.autor) + " · " + esc(m.ts) +
+        '</div><div class="txt">' + esc(m.texto) + "</div></div>";
+    }).join("");
+  }
+  const chips = document.getElementById("chips");
+  if (!estado.anclas.length) {
+    chips.innerHTML = '<span class="pista">Sin anclas todavía.</span>';
+    return;
+  }
+  chips.innerHTML = estado.anclas.map(function (a) {
+    const on = a.activa ? "true" : "false";
+    const etiqueta = a.activa ? "ON" : "OFF";
+    return '<button type="button" class="chip" aria-pressed="' + on + '" data-id="' + a.id + '">' +
+      esc(a.nombre) + " · " + etiqueta + "</button>";
+  }).join("");
+}
+
+function renderHistorial() {
+  const caja = document.getElementById("historial");
+  if (!estado.historial.length) {
+    caja.innerHTML = '<p class="pista">Sin historial todavía.</p>';
+    return;
+  }
+  caja.innerHTML = estado.historial.map(function (m) {
+    return '<div class="msg"><div class="meta">' + esc(m.autor) + " · " + esc(m.ts) +
+      '</div><div class="txt">' + esc(m.texto) + "</div></div>";
+  }).join("");
+}
+
+function renderTareas() {
+  const lista = document.getElementById("tareas");
+  if (!estado.checklist.length) {
+    lista.innerHTML = '<li class="pista">Sin tareas todavía.</li>';
+    return;
+  }
+  lista.innerHTML = estado.checklist.map(function (t) {
+    return '<li class="tarea"><span data-estado="' + t.estado + '">' + esc(t.texto) + "</span>" +
+      '<button type="button" class="toggle" data-estado="' + t.estado + '" data-id="' + t.id +
+      '" aria-label="Rotar estado de tarea ' + esc(t.texto) + '">' + t.estado + "</button></li>";
+  }).join("");
+}
+
+function renderTools() {
+  const caja = document.getElementById("tools");
+  caja.innerHTML = TOOLS.map(function (tool) {
+    const est = estado.tools[tool];
+    return '<div class="fila-tool"><span>' + NOMBRE_TOOL[tool] + "</span>" +
+      '<button type="button" class="toggle" data-estado="' + est + '" data-tool="' + tool +
+      '" aria-label="Rotar estado de ' + NOMBRE_TOOL[tool] + '">' + est + "</button></div>";
+  }).join("");
+}
+
+function renderTodo() {
+  renderInfo();
+  renderChat();
+  renderHistorial();
+  renderTareas();
+  renderTools();
+}
+
+function agregarMensaje() {
+  const campo = document.getElementById("entrada");
+  const texto = campo.value.trim();
+  if (!texto) return;
+  estado.historial.push({ id: nuevoId(), autor: "usuario", texto: texto, ts: new Date().toISOString() });
+  guardar();
+  campo.value = "";
+  renderChat();
+  renderHistorial();
+}
+
+function agregarAncla() {
+  const campo = document.getElementById("nueva-ancla");
+  const nombre = campo.value.trim();
+  if (!nombre) return;
+  estado.anclas.push({ id: nuevoId(), nombre: nombre, activa: true });
+  guardar();
+  campo.value = "";
+  renderChat();
+}
+
+function alternarAncla(id) {
+  const ancla = estado.anclas.find(function (a) { return a.id === id; });
+  if (!ancla) return;
+  ancla.activa = !ancla.activa;
+  guardar();
+  renderChat();
+}
+
+function agregarTarea() {
+  const campo = document.getElementById("nueva-tarea");
+  const texto = campo.value.trim();
+  if (!texto) return;
+  estado.checklist.push({ id: nuevoId(), texto: texto, estado: "pendiente" });
+  guardar();
+  campo.value = "";
+  renderTareas();
+}
+
+function rotarTarea(id) {
+  const tarea = estado.checklist.find(function (t) { return t.id === id; });
+  if (!tarea) return;
+  tarea.estado = CICLO_TAREA[tarea.estado];
+  guardar();
+  renderTareas();
+}
+
+function rotarTool(tool) {
+  estado.tools[tool] = CICLO_TOOL[estado.tools[tool]];
+  guardar();
+  renderTools();
+}
+
+function activarTab(id) {
+  document.querySelectorAll(".tab").forEach(function (tab) {
+    const activo = tab.id === "tab-" + id;
+    tab.setAttribute("aria-selected", String(activo));
+    tab.setAttribute("tabindex", activo ? "0" : "-1");
+  });
+  document.querySelectorAll(".panel").forEach(function (panel) {
+    panel.classList.toggle("activo", panel.id === "panel-" + id);
+  });
+}
+
+document.getElementById("btn-enviar").addEventListener("click", agregarMensaje);
+document.getElementById("entrada").addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    agregarMensaje();
+  }
+});
+document.getElementById("btn-ancla").addEventListener("click", agregarAncla);
+document.getElementById("nueva-ancla").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") { e.preventDefault(); agregarAncla(); }
+});
+document.getElementById("chips").addEventListener("click", function (e) {
+  const chip = e.target.closest(".chip");
+  if (chip) alternarAncla(chip.dataset.id);
+});
+document.getElementById("tab-chat").addEventListener("click", function () { activarTab("chat"); });
+document.getElementById("tab-hist").addEventListener("click", function () { activarTab("hist"); });
+document.getElementById("btn-tarea").addEventListener("click", agregarTarea);
+document.getElementById("nueva-tarea").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") { e.preventDefault(); agregarTarea(); }
+});
+document.getElementById("tareas").addEventListener("click", function (e) {
+  const boton = e.target.closest(".toggle");
+  if (boton) rotarTarea(boton.dataset.id);
+});
+document.getElementById("tools").addEventListener("click", function (e) {
+  const boton = e.target.closest(".toggle");
+  if (boton) rotarTool(boton.dataset.tool);
+});
+
+renderTodo();
+</script>
+</body>
+</html>
