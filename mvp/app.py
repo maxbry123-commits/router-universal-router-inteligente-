@@ -63,10 +63,9 @@ def _verificar_opciones(opciones, controles):
         _verificar_llamadas(opciones.get("tools") or [], controles)
 
 def autorizado(authorization=None, x_api_key=None):
-    esperado = next((os.environ[n] for n in bank.ACCESO if os.environ.get(n)), None)
+    esperadas = [os.environ[n] for n in bank.ACCESO if os.environ.get(n)]  # cualquiera de las variables de acceso configuradas abre la puerta (p. ej. RIU_MCP_KEY para pruebas)
     bearer = authorization[7:] if authorization and authorization.lower().startswith("bearer ") else None
-    return bool(esperado and any(hmac.compare_digest(v, esperado)
-                                 for v in (bearer, x_api_key) if isinstance(v, str)))
+    return any(hmac.compare_digest(v, e) for e in esperadas for v in (bearer, x_api_key) if isinstance(v, str))
 def verificar(authorization: str | None = Header(None),
               x_api_key: str | None = Header(None), key: str | None = Query(None)):  # ?key= para clientes MCP que solo aceptan una URL
     if not autorizado(authorization, x_api_key or key):

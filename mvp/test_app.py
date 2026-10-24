@@ -138,3 +138,12 @@ class TestApp(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TestVariasClavesDeAcceso(unittest.TestCase):
+    def test_cualquier_variable_de_acceso_abre_la_puerta(self):
+        with patch.dict(os.environ, {"RIU_API_KEY": "principal", "RIU_MCP_KEY": "de-prueba"}, clear=False):
+            self.assertTrue(servicio.autorizado(None, "principal"))
+            self.assertTrue(servicio.autorizado("Bearer de-prueba", None))
+            self.assertFalse(servicio.autorizado(None, "otra"))
+            self.assertFalse(servicio.autorizado(None, None))
