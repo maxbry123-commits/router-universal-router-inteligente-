@@ -12,6 +12,7 @@ const SPRITE = '<svg xmlns="http://www.w3.org/2000/svg" id="mx-sprite" style="po
 ].map(([id, d]) => '<symbol id="i-' + id + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + "</symbol>").join("") + "</svg>";
 const TEXTO = { "btn-archivos": "Archivos", "btn-ancla": "Anclar", "btn-sandbox": "Sandbox", "btn-copiar-input": "Copiar", "btn-conexiones": "Conexiones", "btn-room": "ROOM", "btn-pendientes": "Pendientes", "btn-power": "Servidor" };
 const FIJOS = new Set(["btn-adjunto", "btn-microfono", "btn-detener", "btn-tools", "btn-agentes", "btn-prompt", "mx-mas", "mx-grande"]);  // se quedan en la fila principal
+const BANDEJA = false;  // true = esconder los botones secundarios dentro de ＋
 const ICONOS = { "btn-conexiones": "shield", "btn-room": "message", "btn-pendientes": "check", "btn-power": "power" };  // botones propios: iconos de línea en vez de emojis
 const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
 
@@ -57,8 +58,9 @@ function montar(comp) {
       if (FIJOS.has(b.id) || b.classList.contains("sh-cerrar")) return;
       b.dataset.mx = TEXTO[b.id] || (b.title || b.getAttribute("aria-label") || "").split(/[·:(]/)[0].trim().slice(0, 16);
       if (ICONOS[b.id] && !b.querySelector("svg")) b.innerHTML = SVG(ICONOS[b.id]);
-      bandeja.append(b);
+      if (BANDEJA) bandeja.append(b);  // por defecto los botones se quedan a la vista en la barra, como siempre
     });
+    mas.hidden = !bandeja.children.length;
     const a = bar.querySelector(".anclados"); if (a && a.parentElement === bar && bar.firstChild !== a) bar.insertBefore(a, bar.firstChild);
     const adj = bar.querySelector("#btn-adjunto"), mic = bar.querySelector("#btn-microfono");
     if (adj && mas.nextElementSibling !== adj) mas.after(adj);

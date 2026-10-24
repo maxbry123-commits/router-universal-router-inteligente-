@@ -23,6 +23,15 @@ def _head():
     return sha if ok else None
 
 
+SIN_REINICIO = ("plugins/chat-router/frontend/", "docs/", "raiz_router/", "raiz_fichas_prompt/")  # los sirve Vercel o son documentos
+
+
+def _toca_servidor(anterior, nuevo):
+    """Un commit solo de frontend o documentos no reinicia el Router (evita 'Error de Router' al subir cambios de pantalla)."""
+    ok, lista = _git("diff", "--name-only", anterior, nuevo)
+    return not ok or any(not r.startswith(SIN_REINICIO) for r in lista.splitlines())
+
+
 def _actualizar():
     anterior = _head()
     if not anterior:
@@ -31,7 +40,7 @@ def _actualizar():
     if not correcto:
         return False
     nuevo = _head()
-    if nuevo and nuevo != anterior:
+    if nuevo and nuevo != anterior and _toca_servidor(anterior, nuevo):
         os.execv(sys.executable, [sys.executable, *sys.argv])
         return True
     return False

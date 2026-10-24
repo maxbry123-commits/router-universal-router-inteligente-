@@ -60,6 +60,18 @@ class TestAutopull(unittest.TestCase):
         self.assertNotEqual(antes, nuevo)
         self.assertEqual(run._head(), nuevo)
 
+    def test_cambio_solo_de_frontend_no_reinicia(self):
+        (self.writer / "plugins" / "chat-router" / "frontend").mkdir(parents=True)
+        (self.writer / "plugins" / "chat-router" / "frontend" / "x.js").write_text("1\n")
+        git("-C", self.writer, "add", ".")
+        git("-C", self.writer, "commit", "-m", "pantalla")
+        git("-C", self.writer, "push", "origin", "main")
+        nuevo = git("-C", self.writer, "rev-parse", "HEAD")
+        with patch.object(run.os, "execv") as reiniciar:
+            self.assertFalse(run._actualizar())
+            reiniciar.assert_not_called()
+        self.assertEqual(run._head(), nuevo)  # el código se actualiza igual, sin reiniciar
+
     def test_pull_fallido_no_reinicia(self):
         antes = run._head()
         git("-C", self.worker, "remote", "set-url", "origin", str(self.base / "inexistente.git"))
