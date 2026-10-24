@@ -23,7 +23,7 @@ body.salida-grande #panel #composer{display:flex;align-items:flex-end;gap:8px}bo
 #buzon-bar{padding:4px 8px!important;gap:4px!important;font-size:12px!important}#buzon-bar select,#buzon-bar button{min-height:30px!important;height:30px;padding:0 8px!important;font-size:12px!important}
 
 /* ---- móvil: caja de escritura en rejilla (texto + Enviar en la misma fila; chips; herramientas desplegables sin tapar nada) ---- */
-.cb-mas{display:none}
+#panel #composer .composer-bar .cb-mas{display:none}
 @media(max-width:720px){
   #panel #composer{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-auto-rows:auto;gap:6px 8px;padding:8px 10px}
   #panel #composer .composer-bar{display:contents}
