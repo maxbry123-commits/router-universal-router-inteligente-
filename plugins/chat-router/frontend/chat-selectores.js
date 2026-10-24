@@ -88,7 +88,8 @@ const filas = () => {  // panel Selectores del chat: ⓘ diagrama, ⚡ respuesta
   lista.dataset.riuFilas = "1";
   const global = el("div", "sel-resp-global"), act = () => sessionStorage.getItem(CLAVE) || "";
   lista.before(global);
-  const modelo = (s) => s.id === "nvidia-groq-team" ? "NVIDIA" : s.id === "team-qwen" || s.id === "team-5-mvp" ? ((window.RIU_SELECTOR_QWEN || {}).seleccion || {}).label || "Qwen 3.8 Max" : (CONSIL_MODELOS[s.id] || []).map((m) => m[0]).join(" · ") || s.nombre;
+  const fichaEt = () => { try { const f = window.RIU_CHAT.chat().ficha, m = (window.RIU_CONFIG.modelos || []).find((x) => x.id === f); return m ? m.etiqueta : f || "NVIDIA"; } catch (e) { return "NVIDIA"; } };  // modelo Groq/NVIDIA elegido en la hoja de fichas
+  const modelo = (s) => s.id === "nvidia-groq-team" ? fichaEt() : s.id === "team-qwen" || s.id === "team-5-mvp" ? ((window.RIU_SELECTOR_QWEN || {}).seleccion || {}).label || "Qwen 3.8 Max" : (CONSIL_MODELOS[s.id] || []).map((m) => m[0]).join(" · ") || s.nombre;
   const fila = (s) => lista.querySelector('.sel-fila[data-selector="' + s.id + '"]');
   const refrescar = () => {
     SELECTORES.forEach((s) => {

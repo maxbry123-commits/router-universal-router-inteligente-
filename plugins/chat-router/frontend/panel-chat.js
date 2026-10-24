@@ -280,6 +280,7 @@ export async function mount(root, { api, tell }) {
     for (const m of window.RIU_CONFIG?.modelos || []) {
       lista.append(fila(m.etiqueta.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").trim(), "", m.id === chat().ficha, () => {
         chat().ficha = m.id;
+        try { window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar(); } catch (e) {}  // la fila NVIDIA/Groq muestra el modelo elegido
         pintarFichaPill();
         pintarFichas();
         cerrarHojas();
@@ -288,6 +289,7 @@ export async function mount(root, { api, tell }) {
     }
   };
   pintarFichas();
+  window.addEventListener("riu:fichas", () => { if (root.isConnected) { pintarFichas(); pintarFichaPill(); } });  // llegan los modelos de Groq/NVIDIA (fichas-externas.js)
 
   // ---- pildora de modo ----
   let modo = "balanced";
