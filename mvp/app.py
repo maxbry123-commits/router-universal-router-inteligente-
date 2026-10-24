@@ -303,7 +303,7 @@ async def _chat_ficha(cuerpo, progreso=None):
         modelo = modelos.validar(seleccionado or None)
     except (ValueError, TypeError) as error:
         raise HTTPException(status_code=400, detail=str(error)) from None
-    mensajes = [{**mensajes[0], "content": mensajes[0]["content"] + "\n\nModelo activo: %s (QwenCloud Token Plan). Si te preguntan qué modelo eres, responde con ese identificador." % modelo}] + list(mensajes[1:])  # mensajes[0] es la capa de formato
+    mensajes = [{**mensajes[0], "content": mensajes[0]["content"] + "\n\nModelo activo: %s%s, ejecutado en QwenCloud Token Plan. Si te preguntan quién o qué modelo eres, responde en una línea con ese nombre y su familia; no te presentes como otro modelo." % (modelo, " — " + modelos.marca(modelo) if modelos.marca(modelo) else "")}] + list(mensajes[1:])  # mensajes[0] es la capa de formato
     # Ruta Antonio: Qwen -> Harness DeepSeek (HTTP) -> router. Sin camino alterno; sin URL Harness falla (G5 abierto)
     if not os.environ.get("RIU_DEEPSEEK_HARNESS_URL"):
         raise HTTPException(status_code=503, detail="HARNESS_NO_CONFIGURADO")

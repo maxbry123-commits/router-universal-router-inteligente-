@@ -61,6 +61,14 @@ def base_url():
     return os.environ.get('MVP_QWEN_BASE_URL') or cargar()['base_url']
 
 
+MARCAS = (("qwen", "Qwen (Alibaba)"), ("glm", "GLM (Zhipu AI)"), ("deepseek", "DeepSeek"), ("kimi", "Kimi (Moonshot AI)"), ("minimax", "MiniMax"), ("wan", "Wan (Alibaba)"), ("happyhorse", "HappyHorse"))  # marca oficial del catalogo del Token Plan
+
+
+def marca(modelo):
+    m = str(modelo).lower()
+    return next((nombre for prefijo, nombre in MARCAS if m.startswith(prefijo)), "")
+
+
 def bases(base=None):
     """URL base oficial primero y la de QwenCloud despues (misma ruta en las dos): si una no acepta la clave se prueba la otra."""
     d, base = cargar(), (base or base_url())

@@ -28,3 +28,5 @@ e = cfg['modelProviders']['openai'][0]
 assert e['id'] == 'qwen3.8-max' and e['envKey'] == 'BAILIAN_TOKEN_PLAN_API_KEY' and e['generationConfig'] == {'extra_body': {'enable_thinking': True}}
 assert len(m.qwen_code_config('team')['modelProviders']['openai']) == 19
 print('test_modelos OK')
+assert m.marca('glm-5.3') == 'GLM (Zhipu AI)' and m.marca('deepseek-v4-pro') == 'DeepSeek' and m.marca('qwen3.8-max') == 'Qwen (Alibaba)' and m.marca('otro') == ''
+print('marcas OK')
