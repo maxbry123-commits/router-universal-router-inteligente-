@@ -81,7 +81,7 @@ function instalar() {
   const bar = document.querySelector("#composer .composer-bar");
   if (!bar || document.querySelector("#btn-pendientes")) return;
   if (!document.querySelector("#pp-css")) { const st = el("style"); st.id = "pp-css"; st.textContent = CSS; document.head.append(st); }
-  const b = el("button", "secondary", "📋"); b.type = "button"; b.id = "btn-pendientes"; b.title = "Pendientes y bloc de notas"; b.setAttribute("aria-label", "Pendientes y bloc de notas");
+  const b = el("button", "secondary"); b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>'; b.type = "button"; b.id = "btn-pendientes"; b.title = "Pendientes y bloc de notas"; b.setAttribute("aria-label", "Pendientes y bloc de notas");
   const s = el("div", "sheet"); s.id = "ventana-pendientes"; s.hidden = true;
   const c = el("div", "va-caja"), h = el("div", "row va-head"), x = el("button", "secondary", "✕"), cuerpo = el("div", "list");
   x.type = "button"; x.onclick = () => { s.hidden = true; }; s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };

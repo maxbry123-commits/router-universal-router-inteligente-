@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
+from mvp import bank, compute, control, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -172,6 +172,10 @@ async def _leer_estado():
 async def _guardar_estado(texto):
     await almacen({"accion": "guardar", "destino": "hf", "nombre": control.NOMBRE, "valor": texto})
 CONTROL.conectar(_leer_estado, _guardar_estado)  # el estado del chat se persiste por /almacen (sin secretos)
+def _clave_hf():
+    try: return CONTROL.credencial("hf", app.state.banco, estricto=False)
+    except RuntimeError as error: raise HTTPException(status_code=503, detail=str(error)) from None
+memoria.rutas(app, verificar, _clave_hf)  # historial y pestañas del chat (chat-ancla.js) en el bucket HF
 async def _contexto_anclado(anclados, sesion):
     """Anclas del chat -> un mensaje de sistema: archivos subidos (texto), textos y enlaces; los secretos nunca viajan al modelo."""
     partes, total, vistos = [], 0, set()
