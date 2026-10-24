@@ -1,33 +1,72 @@
 {
- "dsl": "SOL_MODELOS_POR_SEPARADO_v2",
+ "dsl": "SOL_MODELOS_COMPLETO_v3",
  "para": "Sol",
  "url": "https://comand-center-1-riu-router.hf.space/mcp?key=<CLAVE>",
- "protocolo": "JSON-RPC 2.0 por POST",
+ "protocolo": "JSON-RPC 2.0 por POST; chat devuelve proceso_id; resultado(proceso_id, espera=8) hasta estado=completado o error (máx 20 vueltas, video 70)",
+ "modelos": {
+  "texto": [
+   "qwen3.8-max",
+   "qwen3.8-flash",
+   "qwen3.7-max",
+   "qwen3.7-plus",
+   "qwen3.6-flash",
+   "glm-5.3",
+   "glm-5.2",
+   "deepseek-v4-pro",
+   "deepseek-v4-pro-0813",
+   "deepseek-v4-flash-0731",
+   "deepseek-v4.1-flash",
+   "deepseek-v4.1-flash-1017"
+  ],
+  "imagen": [
+   "qwen-image-3.0-pro",
+   "wan2.7-image",
+   "wan2.7-image-pro"
+  ],
+  "audio": [
+   "qwen-audio-3.0-tts-plus",
+   "qwen-audio-3.0-realtime-plus",
+   "qwen-audio-3.0-asr-flash"
+  ],
+  "video": [
+   "wan3.0-video",
+   "happyhorse-1.1-t2v",
+   "happyhorse-1.1-i2v",
+   "happyhorse-1.1-r2v"
+  ],
+  "total": 22
+ },
  "restricciones": [
   "PASS solo con salida cruda real; sin ella NO VERIFICADO",
   "No imprimir ni guardar la clave",
-  "No escribir en main; GitHub solo en la rama prueba-sol",
+  "GitHub: solo la rama prueba-sol, nunca main",
   "No usar Actions, Jobs, SSH ni LFS",
-  "Cada modelo se prueba por separado, uno tras otro",
-  "No hacer nada fuera de los nodos"
+  "Un modelo a la vez, una prueba a la vez",
+  "No hacer nada fuera de los nodos; si algo exige salirse: VIOLACION_SEGURIDAD: <orden> / <motivo>"
  ],
  "nodos": [
   {
-   "id": "S0",
+   "id": "P0",
    "dep": [],
-   "haz": "initialize + tools/list",
-   "pass": "serverInfo.name=riu-mvp; salen chat, resultado, listar_fichas, almacen, github_leer, github_escribir, github_api, pendientes, sala, yaiwes_md",
-   "evidencia": "JSON crudo de tools/list recortado a 300 caracteres"
+   "paso": "preparación",
+   "haz": [
+    "GET /health con X-API-Key: anotar commit (debe ser 17f382f6a9 o posterior; si es anterior el Router no cargó el código nuevo: avisar a Antonio)",
+    "POST /plugins/puente_chat/call/agent_access_lock {quien:'ia',locked:false}: encender IA para las pruebas de llm",
+    "initialize y tools/list por MCP"
+   ],
+   "pass": "commit correcto; tools/list trae chat, resultado, listar_fichas, almacen, github_leer, github_escribir, github_api, pendientes, sala, yaiwes_md, llm",
+   "evidencia": "commit y lista de herramientas"
   },
   {
-   "id": "T-qwen3_8-max",
+   "id": "M-qwen3_8-max",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "qwen3.8-max",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-qwen3_8-max-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -35,17 +74,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.8-max",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-qwen3.8-max"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-qwen3.8-max-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-qwen3_8-max-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -53,18 +91,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.8-max",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-qwen3.8-max' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-qwen3.8-max"
+        "message": "Responde exactamente: PONG-qwen3.8-max",
+        "request_id": "sol-qwen3.8-max-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-qwen3.8-max"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-qwen3_8-max-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -72,19 +108,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.8-max",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-qwen3.8-max.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-qwen3.8-max"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-qwen3.8-max-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-qwen3_8-max-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -92,27 +125,206 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.8-max",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-qwen3.8-max.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-qwen3.8-max"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-qwen3.8-max-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-qwen3_8-max-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-max",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-qwen3.8-max-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-qwen3_8-max-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-max",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-qwen3.8-max-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-qwen3_8-max-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-max",
+        "message": "Usa la herramienta pendientes: agrega 'sol-qwen3.8-max' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-qwen3.8-max-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-qwen3.8-max"
+    },
+    {
+     "id": "T-qwen3_8-max-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-max",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-qwen3.8-max' y luego léelo. Confirma.",
+        "request_id": "sol-qwen3.8-max-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-qwen3.8-max"
+    },
+    {
+     "id": "T-qwen3_8-max-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-max",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-qwen3.8-max-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-qwen3_8-max-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-max",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-qwen3.8-max.txt, contenido 'ok-qwen3.8-max', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-qwen3.8-max-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-qwen3.8-max",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-qwen3_8-max-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-max",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-qwen3.8-max.txt con valor 'ok-qwen3.8-max'. Confirma.",
+        "request_id": "sol-qwen3.8-max-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-qwen3.8-max.txt'}",
+     "pass": "leer devuelve ok-qwen3.8-max"
+    },
+    {
+     "id": "T-qwen3_8-max-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-max",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-qwen3.8-max-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-qwen3_8-max-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-max",
+        "message": "Usa la herramienta sala: crea la sala 'sala-qwen3.8-max' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-qwen3.8-max-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-qwen3.8-max"
     }
    ]
   },
   {
-   "id": "T-qwen3_8-flash",
+   "id": "M-qwen3_8-flash",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "qwen3.8-flash",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-qwen3_8-flash-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -120,17 +332,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.8-flash",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-qwen3.8-flash"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-qwen3.8-flash-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-qwen3_8-flash-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -138,18 +349,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.8-flash",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-qwen3.8-flash' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-qwen3.8-flash"
+        "message": "Responde exactamente: PONG-qwen3.8-flash",
+        "request_id": "sol-qwen3.8-flash-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-qwen3.8-flash"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-qwen3_8-flash-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -157,19 +366,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.8-flash",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-qwen3.8-flash.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-qwen3.8-flash"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-qwen3.8-flash-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-qwen3_8-flash-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -177,27 +383,206 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.8-flash",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-qwen3.8-flash.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-qwen3.8-flash"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-qwen3.8-flash-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-qwen3_8-flash-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-flash",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-qwen3.8-flash-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-qwen3_8-flash-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-flash",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-qwen3.8-flash-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-qwen3_8-flash-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-flash",
+        "message": "Usa la herramienta pendientes: agrega 'sol-qwen3.8-flash' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-qwen3.8-flash-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-qwen3.8-flash"
+    },
+    {
+     "id": "T-qwen3_8-flash-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-flash",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-qwen3.8-flash' y luego léelo. Confirma.",
+        "request_id": "sol-qwen3.8-flash-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-qwen3.8-flash"
+    },
+    {
+     "id": "T-qwen3_8-flash-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-flash",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-qwen3.8-flash-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-qwen3_8-flash-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-flash",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-qwen3.8-flash.txt, contenido 'ok-qwen3.8-flash', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-qwen3.8-flash-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-qwen3.8-flash",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-qwen3_8-flash-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-flash",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-qwen3.8-flash.txt con valor 'ok-qwen3.8-flash'. Confirma.",
+        "request_id": "sol-qwen3.8-flash-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-qwen3.8-flash.txt'}",
+     "pass": "leer devuelve ok-qwen3.8-flash"
+    },
+    {
+     "id": "T-qwen3_8-flash-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-flash",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-qwen3.8-flash-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-qwen3_8-flash-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.8-flash",
+        "message": "Usa la herramienta sala: crea la sala 'sala-qwen3.8-flash' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-qwen3.8-flash-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-qwen3.8-flash"
     }
    ]
   },
   {
-   "id": "T-qwen3_7-max",
+   "id": "M-qwen3_7-max",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "qwen3.7-max",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-qwen3_7-max-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -205,17 +590,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.7-max",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-qwen3.7-max"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-qwen3.7-max-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-qwen3_7-max-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -223,18 +607,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.7-max",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-qwen3.7-max' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-qwen3.7-max"
+        "message": "Responde exactamente: PONG-qwen3.7-max",
+        "request_id": "sol-qwen3.7-max-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-qwen3.7-max"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-qwen3_7-max-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -242,19 +624,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.7-max",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-qwen3.7-max.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-qwen3.7-max"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-qwen3.7-max-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-qwen3_7-max-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -262,27 +641,206 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.7-max",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-qwen3.7-max.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-qwen3.7-max"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-qwen3.7-max-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-qwen3_7-max-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-max",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-qwen3.7-max-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-qwen3_7-max-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-max",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-qwen3.7-max-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-qwen3_7-max-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-max",
+        "message": "Usa la herramienta pendientes: agrega 'sol-qwen3.7-max' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-qwen3.7-max-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-qwen3.7-max"
+    },
+    {
+     "id": "T-qwen3_7-max-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-max",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-qwen3.7-max' y luego léelo. Confirma.",
+        "request_id": "sol-qwen3.7-max-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-qwen3.7-max"
+    },
+    {
+     "id": "T-qwen3_7-max-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-max",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-qwen3.7-max-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-qwen3_7-max-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-max",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-qwen3.7-max.txt, contenido 'ok-qwen3.7-max', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-qwen3.7-max-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-qwen3.7-max",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-qwen3_7-max-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-max",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-qwen3.7-max.txt con valor 'ok-qwen3.7-max'. Confirma.",
+        "request_id": "sol-qwen3.7-max-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-qwen3.7-max.txt'}",
+     "pass": "leer devuelve ok-qwen3.7-max"
+    },
+    {
+     "id": "T-qwen3_7-max-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-max",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-qwen3.7-max-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-qwen3_7-max-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-max",
+        "message": "Usa la herramienta sala: crea la sala 'sala-qwen3.7-max' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-qwen3.7-max-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-qwen3.7-max"
     }
    ]
   },
   {
-   "id": "T-qwen3_7-plus",
+   "id": "M-qwen3_7-plus",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "qwen3.7-plus",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-qwen3_7-plus-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -290,17 +848,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.7-plus",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-qwen3.7-plus"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-qwen3.7-plus-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-qwen3_7-plus-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -308,18 +865,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.7-plus",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-qwen3.7-plus' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-qwen3.7-plus"
+        "message": "Responde exactamente: PONG-qwen3.7-plus",
+        "request_id": "sol-qwen3.7-plus-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-qwen3.7-plus"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-qwen3_7-plus-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -327,19 +882,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.7-plus",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-qwen3.7-plus.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-qwen3.7-plus"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-qwen3.7-plus-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-qwen3_7-plus-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -347,27 +899,206 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.7-plus",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-qwen3.7-plus.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-qwen3.7-plus"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-qwen3.7-plus-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-qwen3_7-plus-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-plus",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-qwen3.7-plus-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-qwen3_7-plus-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-plus",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-qwen3.7-plus-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-qwen3_7-plus-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-plus",
+        "message": "Usa la herramienta pendientes: agrega 'sol-qwen3.7-plus' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-qwen3.7-plus-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-qwen3.7-plus"
+    },
+    {
+     "id": "T-qwen3_7-plus-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-plus",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-qwen3.7-plus' y luego léelo. Confirma.",
+        "request_id": "sol-qwen3.7-plus-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-qwen3.7-plus"
+    },
+    {
+     "id": "T-qwen3_7-plus-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-plus",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-qwen3.7-plus-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-qwen3_7-plus-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-plus",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-qwen3.7-plus.txt, contenido 'ok-qwen3.7-plus', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-qwen3.7-plus-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-qwen3.7-plus",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-qwen3_7-plus-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-plus",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-qwen3.7-plus.txt con valor 'ok-qwen3.7-plus'. Confirma.",
+        "request_id": "sol-qwen3.7-plus-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-qwen3.7-plus.txt'}",
+     "pass": "leer devuelve ok-qwen3.7-plus"
+    },
+    {
+     "id": "T-qwen3_7-plus-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-plus",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-qwen3.7-plus-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-qwen3_7-plus-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.7-plus",
+        "message": "Usa la herramienta sala: crea la sala 'sala-qwen3.7-plus' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-qwen3.7-plus-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-qwen3.7-plus"
     }
    ]
   },
   {
-   "id": "T-qwen3_6-flash",
+   "id": "M-qwen3_6-flash",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "qwen3.6-flash",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-qwen3_6-flash-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -375,17 +1106,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.6-flash",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-qwen3.6-flash"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-qwen3.6-flash-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-qwen3_6-flash-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -393,18 +1123,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.6-flash",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-qwen3.6-flash' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-qwen3.6-flash"
+        "message": "Responde exactamente: PONG-qwen3.6-flash",
+        "request_id": "sol-qwen3.6-flash-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-qwen3.6-flash"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-qwen3_6-flash-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -412,19 +1140,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.6-flash",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-qwen3.6-flash.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-qwen3.6-flash"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-qwen3.6-flash-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-qwen3_6-flash-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -432,27 +1157,206 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "qwen3.6-flash",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-qwen3.6-flash.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-qwen3.6-flash"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-qwen3.6-flash-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-qwen3_6-flash-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.6-flash",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-qwen3.6-flash-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-qwen3_6-flash-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.6-flash",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-qwen3.6-flash-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-qwen3_6-flash-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.6-flash",
+        "message": "Usa la herramienta pendientes: agrega 'sol-qwen3.6-flash' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-qwen3.6-flash-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-qwen3.6-flash"
+    },
+    {
+     "id": "T-qwen3_6-flash-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.6-flash",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-qwen3.6-flash' y luego léelo. Confirma.",
+        "request_id": "sol-qwen3.6-flash-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-qwen3.6-flash"
+    },
+    {
+     "id": "T-qwen3_6-flash-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.6-flash",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-qwen3.6-flash-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-qwen3_6-flash-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.6-flash",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-qwen3.6-flash.txt, contenido 'ok-qwen3.6-flash', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-qwen3.6-flash-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-qwen3.6-flash",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-qwen3_6-flash-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.6-flash",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-qwen3.6-flash.txt con valor 'ok-qwen3.6-flash'. Confirma.",
+        "request_id": "sol-qwen3.6-flash-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-qwen3.6-flash.txt'}",
+     "pass": "leer devuelve ok-qwen3.6-flash"
+    },
+    {
+     "id": "T-qwen3_6-flash-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.6-flash",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-qwen3.6-flash-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-qwen3_6-flash-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "qwen3.6-flash",
+        "message": "Usa la herramienta sala: crea la sala 'sala-qwen3.6-flash' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-qwen3.6-flash-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-qwen3.6-flash"
     }
    ]
   },
   {
-   "id": "T-glm-5_3",
+   "id": "M-glm-5_3",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "glm-5.3",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-glm-5_3-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -460,17 +1364,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "glm-5.3",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-glm-5.3"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-glm-5.3-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-glm-5_3-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -478,18 +1381,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "glm-5.3",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-glm-5.3' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-glm-5.3"
+        "message": "Responde exactamente: PONG-glm-5.3",
+        "request_id": "sol-glm-5.3-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-glm-5.3"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-glm-5_3-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -497,19 +1398,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "glm-5.3",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-glm-5.3.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-glm-5.3"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-glm-5.3-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-glm-5_3-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -517,27 +1415,206 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "glm-5.3",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-glm-5.3.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-glm-5.3"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-glm-5.3-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-glm-5_3-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.3",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-glm-5.3-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-glm-5_3-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.3",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-glm-5.3-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-glm-5_3-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.3",
+        "message": "Usa la herramienta pendientes: agrega 'sol-glm-5.3' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-glm-5.3-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-glm-5.3"
+    },
+    {
+     "id": "T-glm-5_3-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.3",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-glm-5.3' y luego léelo. Confirma.",
+        "request_id": "sol-glm-5.3-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-glm-5.3"
+    },
+    {
+     "id": "T-glm-5_3-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.3",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-glm-5.3-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-glm-5_3-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.3",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-glm-5.3.txt, contenido 'ok-glm-5.3', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-glm-5.3-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-glm-5.3",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-glm-5_3-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.3",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-glm-5.3.txt con valor 'ok-glm-5.3'. Confirma.",
+        "request_id": "sol-glm-5.3-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-glm-5.3.txt'}",
+     "pass": "leer devuelve ok-glm-5.3"
+    },
+    {
+     "id": "T-glm-5_3-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.3",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-glm-5.3-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-glm-5_3-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.3",
+        "message": "Usa la herramienta sala: crea la sala 'sala-glm-5.3' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-glm-5.3-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-glm-5.3"
     }
    ]
   },
   {
-   "id": "T-glm-5_2",
+   "id": "M-glm-5_2",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "glm-5.2",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-glm-5_2-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -545,17 +1622,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "glm-5.2",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-glm-5.2"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-glm-5.2-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-glm-5_2-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -563,18 +1639,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "glm-5.2",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-glm-5.2' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-glm-5.2"
+        "message": "Responde exactamente: PONG-glm-5.2",
+        "request_id": "sol-glm-5.2-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-glm-5.2"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-glm-5_2-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -582,19 +1656,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "glm-5.2",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-glm-5.2.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-glm-5.2"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-glm-5.2-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-glm-5_2-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -602,27 +1673,206 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "glm-5.2",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-glm-5.2.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-glm-5.2"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-glm-5.2-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-glm-5_2-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.2",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-glm-5.2-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-glm-5_2-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.2",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-glm-5.2-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-glm-5_2-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.2",
+        "message": "Usa la herramienta pendientes: agrega 'sol-glm-5.2' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-glm-5.2-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-glm-5.2"
+    },
+    {
+     "id": "T-glm-5_2-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.2",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-glm-5.2' y luego léelo. Confirma.",
+        "request_id": "sol-glm-5.2-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-glm-5.2"
+    },
+    {
+     "id": "T-glm-5_2-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.2",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-glm-5.2-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-glm-5_2-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.2",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-glm-5.2.txt, contenido 'ok-glm-5.2', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-glm-5.2-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-glm-5.2",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-glm-5_2-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.2",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-glm-5.2.txt con valor 'ok-glm-5.2'. Confirma.",
+        "request_id": "sol-glm-5.2-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-glm-5.2.txt'}",
+     "pass": "leer devuelve ok-glm-5.2"
+    },
+    {
+     "id": "T-glm-5_2-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.2",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-glm-5.2-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-glm-5_2-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "glm-5.2",
+        "message": "Usa la herramienta sala: crea la sala 'sala-glm-5.2' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-glm-5.2-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-glm-5.2"
     }
    ]
   },
   {
-   "id": "T-deepseek-v4-pro",
+   "id": "M-deepseek-v4-pro",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "deepseek-v4-pro",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-deepseek-v4-pro-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -630,17 +1880,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-pro",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-deepseek-v4-pro"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-deepseek-v4-pro-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-deepseek-v4-pro-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -648,18 +1897,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-pro",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-deepseek-v4-pro' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-deepseek-v4-pro"
+        "message": "Responde exactamente: PONG-deepseek-v4-pro",
+        "request_id": "sol-deepseek-v4-pro-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-deepseek-v4-pro"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-deepseek-v4-pro-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -667,19 +1914,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-pro",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-deepseek-v4-pro.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-deepseek-v4-pro"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-deepseek-v4-pro-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-deepseek-v4-pro-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -687,27 +1931,206 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-pro",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-deepseek-v4-pro.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-deepseek-v4-pro"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-deepseek-v4-pro-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-deepseek-v4-pro-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-deepseek-v4-pro-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-deepseek-v4-pro-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-deepseek-v4-pro-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-deepseek-v4-pro-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro",
+        "message": "Usa la herramienta pendientes: agrega 'sol-deepseek-v4-pro' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-deepseek-v4-pro-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-deepseek-v4-pro"
+    },
+    {
+     "id": "T-deepseek-v4-pro-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-deepseek-v4-pro' y luego léelo. Confirma.",
+        "request_id": "sol-deepseek-v4-pro-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-deepseek-v4-pro"
+    },
+    {
+     "id": "T-deepseek-v4-pro-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-deepseek-v4-pro-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-deepseek-v4-pro-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-deepseek-v4-pro.txt, contenido 'ok-deepseek-v4-pro', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-deepseek-v4-pro-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-deepseek-v4-pro",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-deepseek-v4-pro-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-deepseek-v4-pro.txt con valor 'ok-deepseek-v4-pro'. Confirma.",
+        "request_id": "sol-deepseek-v4-pro-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-deepseek-v4-pro.txt'}",
+     "pass": "leer devuelve ok-deepseek-v4-pro"
+    },
+    {
+     "id": "T-deepseek-v4-pro-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-deepseek-v4-pro-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-deepseek-v4-pro-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro",
+        "message": "Usa la herramienta sala: crea la sala 'sala-deepseek-v4-pro' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-deepseek-v4-pro-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-deepseek-v4-pro"
     }
    ]
   },
   {
-   "id": "T-deepseek-v4-pro-0813",
+   "id": "M-deepseek-v4-pro-0813",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "deepseek-v4-pro-0813",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-deepseek-v4-pro-0813-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -715,17 +2138,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-pro-0813",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-deepseek-v4-pro-0813"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-deepseek-v4-pro-0813-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-deepseek-v4-pro-0813-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -733,18 +2155,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-pro-0813",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-deepseek-v4-pro-0813' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-deepseek-v4-pro-0813"
+        "message": "Responde exactamente: PONG-deepseek-v4-pro-0813",
+        "request_id": "sol-deepseek-v4-pro-0813-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-deepseek-v4-pro-0813"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-deepseek-v4-pro-0813-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -752,19 +2172,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-pro-0813",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-deepseek-v4-pro-0813.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-deepseek-v4-pro-0813"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-deepseek-v4-pro-0813-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-deepseek-v4-pro-0813-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -772,27 +2189,206 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-pro-0813",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-deepseek-v4-pro-0813.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-deepseek-v4-pro-0813"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-deepseek-v4-pro-0813-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-deepseek-v4-pro-0813-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro-0813",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-deepseek-v4-pro-0813-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-deepseek-v4-pro-0813-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro-0813",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-deepseek-v4-pro-0813-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-deepseek-v4-pro-0813-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro-0813",
+        "message": "Usa la herramienta pendientes: agrega 'sol-deepseek-v4-pro-0813' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-deepseek-v4-pro-0813-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-deepseek-v4-pro-0813"
+    },
+    {
+     "id": "T-deepseek-v4-pro-0813-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro-0813",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-deepseek-v4-pro-0813' y luego léelo. Confirma.",
+        "request_id": "sol-deepseek-v4-pro-0813-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-deepseek-v4-pro-0813"
+    },
+    {
+     "id": "T-deepseek-v4-pro-0813-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro-0813",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-deepseek-v4-pro-0813-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-deepseek-v4-pro-0813-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro-0813",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-deepseek-v4-pro-0813.txt, contenido 'ok-deepseek-v4-pro-0813', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-deepseek-v4-pro-0813-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-deepseek-v4-pro-0813",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-deepseek-v4-pro-0813-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro-0813",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-deepseek-v4-pro-0813.txt con valor 'ok-deepseek-v4-pro-0813'. Confirma.",
+        "request_id": "sol-deepseek-v4-pro-0813-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-deepseek-v4-pro-0813.txt'}",
+     "pass": "leer devuelve ok-deepseek-v4-pro-0813"
+    },
+    {
+     "id": "T-deepseek-v4-pro-0813-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro-0813",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-deepseek-v4-pro-0813-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-deepseek-v4-pro-0813-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-pro-0813",
+        "message": "Usa la herramienta sala: crea la sala 'sala-deepseek-v4-pro-0813' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-deepseek-v4-pro-0813-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-deepseek-v4-pro-0813"
     }
    ]
   },
   {
-   "id": "T-deepseek-v4-flash-0731",
+   "id": "M-deepseek-v4-flash-0731",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "deepseek-v4-flash-0731",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-deepseek-v4-flash-0731-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -800,17 +2396,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-flash-0731",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-deepseek-v4-flash-0731"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-deepseek-v4-flash-0731-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-deepseek-v4-flash-0731-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -818,18 +2413,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-flash-0731",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-deepseek-v4-flash-0731' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-deepseek-v4-flash-0731"
+        "message": "Responde exactamente: PONG-deepseek-v4-flash-0731",
+        "request_id": "sol-deepseek-v4-flash-0731-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-deepseek-v4-flash-0731"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-deepseek-v4-flash-0731-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -837,19 +2430,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-flash-0731",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-deepseek-v4-flash-0731.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-deepseek-v4-flash-0731"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-deepseek-v4-flash-0731-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-deepseek-v4-flash-0731-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -857,27 +2447,206 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4-flash-0731",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-deepseek-v4-flash-0731.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-deepseek-v4-flash-0731"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-deepseek-v4-flash-0731-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-deepseek-v4-flash-0731-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-flash-0731",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-deepseek-v4-flash-0731-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-deepseek-v4-flash-0731-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-flash-0731",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-deepseek-v4-flash-0731-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-deepseek-v4-flash-0731-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-flash-0731",
+        "message": "Usa la herramienta pendientes: agrega 'sol-deepseek-v4-flash-0731' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-deepseek-v4-flash-0731-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-deepseek-v4-flash-0731"
+    },
+    {
+     "id": "T-deepseek-v4-flash-0731-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-flash-0731",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-deepseek-v4-flash-0731' y luego léelo. Confirma.",
+        "request_id": "sol-deepseek-v4-flash-0731-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-deepseek-v4-flash-0731"
+    },
+    {
+     "id": "T-deepseek-v4-flash-0731-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-flash-0731",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-deepseek-v4-flash-0731-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-deepseek-v4-flash-0731-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-flash-0731",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-deepseek-v4-flash-0731.txt, contenido 'ok-deepseek-v4-flash-0731', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-deepseek-v4-flash-0731-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-deepseek-v4-flash-0731",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-deepseek-v4-flash-0731-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-flash-0731",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-deepseek-v4-flash-0731.txt con valor 'ok-deepseek-v4-flash-0731'. Confirma.",
+        "request_id": "sol-deepseek-v4-flash-0731-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-deepseek-v4-flash-0731.txt'}",
+     "pass": "leer devuelve ok-deepseek-v4-flash-0731"
+    },
+    {
+     "id": "T-deepseek-v4-flash-0731-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-flash-0731",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-deepseek-v4-flash-0731-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-deepseek-v4-flash-0731-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4-flash-0731",
+        "message": "Usa la herramienta sala: crea la sala 'sala-deepseek-v4-flash-0731' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-deepseek-v4-flash-0731-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-deepseek-v4-flash-0731"
     }
    ]
   },
   {
-   "id": "T-deepseek-v4_1-flash",
+   "id": "M-deepseek-v4_1-flash",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "deepseek-v4.1-flash",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-deepseek-v4_1-flash-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -885,17 +2654,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4.1-flash",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-deepseek-v4.1-flash"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-deepseek-v4.1-flash-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-deepseek-v4_1-flash-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -903,18 +2671,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4.1-flash",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-deepseek-v4.1-flash' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-deepseek-v4.1-flash"
+        "message": "Responde exactamente: PONG-deepseek-v4.1-flash",
+        "request_id": "sol-deepseek-v4.1-flash-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-deepseek-v4.1-flash"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-deepseek-v4_1-flash-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -922,19 +2688,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4.1-flash",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-deepseek-v4.1-flash.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-deepseek-v4.1-flash"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-deepseek-v4.1-flash-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-deepseek-v4_1-flash-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -942,27 +2705,206 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4.1-flash",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-deepseek-v4.1-flash.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-deepseek-v4.1-flash"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-deepseek-v4.1-flash-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-deepseek-v4.1-flash-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-deepseek-v4.1-flash-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash",
+        "message": "Usa la herramienta pendientes: agrega 'sol-deepseek-v4.1-flash' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-deepseek-v4.1-flash-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-deepseek-v4.1-flash"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-deepseek-v4.1-flash' y luego léelo. Confirma.",
+        "request_id": "sol-deepseek-v4.1-flash-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-deepseek-v4.1-flash"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-deepseek-v4.1-flash-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-deepseek-v4.1-flash.txt, contenido 'ok-deepseek-v4.1-flash', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-deepseek-v4.1-flash-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-deepseek-v4.1-flash",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-deepseek-v4.1-flash.txt con valor 'ok-deepseek-v4.1-flash'. Confirma.",
+        "request_id": "sol-deepseek-v4.1-flash-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-deepseek-v4.1-flash.txt'}",
+     "pass": "leer devuelve ok-deepseek-v4.1-flash"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-deepseek-v4.1-flash-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash",
+        "message": "Usa la herramienta sala: crea la sala 'sala-deepseek-v4.1-flash' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-deepseek-v4.1-flash-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-deepseek-v4.1-flash"
     }
    ]
   },
   {
-   "id": "T-deepseek-v4_1-flash-1017",
+   "id": "M-deepseek-v4_1-flash-1017",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "deepseek-v4.1-flash-1017",
    "pruebas": [
     {
-     "p": "identidad",
+     "id": "T-deepseek-v4_1-flash-1017-01",
+     "prueba": "nombre",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -970,17 +2912,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4.1-flash-1017",
-        "message": "Di solo el nombre exacto de tu modelo",
-        "request_id": "sol-id-deepseek-v4.1-flash-1017"
+        "message": "Responde solo el nombre exacto de tu modelo, sin más texto.",
+        "request_id": "sol-deepseek-v4.1-flash-1017-01"
        }
       }
      },
-     "luego": "resultado(espera=8) hasta estado=completado (máx 20 vueltas)",
-     "pass": "completado; texto no vacío; modelo_respuesta presente",
-     "evidencia": "texto, modelo_respuesta, finish_reason"
+     "pass": "completado; texto no vacío; modelo_respuesta presente. Anotar si el texto nombra al modelo o a otra familia"
     },
     {
-     "p": "herramienta pendientes",
+     "id": "T-deepseek-v4_1-flash-1017-02",
+     "prueba": "eco exacto",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -988,18 +2929,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4.1-flash-1017",
-        "tools": true,
-        "message": "Agrega el pendiente 'sol-deepseek-v4.1-flash-1017' con la herramienta pendientes y confirma",
-        "request_id": "sol-tool-deepseek-v4.1-flash-1017"
+        "message": "Responde exactamente: PONG-deepseek-v4.1-flash-1017",
+        "request_id": "sol-deepseek-v4.1-flash-1017-02"
        }
       }
      },
-     "luego": "resultado; después pendientes(listar)",
-     "pass": "el pendiente aparece en la lista",
-     "evidencia": "tool_calls + lista"
+     "pass": "el texto contiene PONG-deepseek-v4.1-flash-1017"
     },
     {
-     "p": "herramienta GitHub",
+     "id": "T-deepseek-v4_1-flash-1017-03",
+     "prueba": "cálculo",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -1007,19 +2946,16 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4.1-flash-1017",
-        "tools": true,
-        "message": "Con github_escribir escribe Prueba/sol-deepseek-v4.1-flash-1017.txt con el texto 'ok' en la rama prueba-sol del repo maxbry123-commits/router-universal-router-inteligente- y confirma",
-        "request_id": "sol-gh-deepseek-v4.1-flash-1017"
+        "message": "¿Cuánto es 17 por 23? Responde solo el número.",
+        "request_id": "sol-deepseek-v4.1-flash-1017-03"
        }
       }
      },
-     "luego": "resultado; después github_leer de ese archivo",
-     "pass": "github_leer devuelve 'ok'",
-     "regla": "nunca escribir en main",
-     "evidencia": "respuesta de github_leer"
+     "pass": "el texto contiene 391"
     },
     {
-     "p": "herramienta HF",
+     "id": "T-deepseek-v4_1-flash-1017-04",
+     "prueba": "idioma",
      "llamada": {
       "method": "tools/call",
       "params": {
@@ -1027,24 +2963,203 @@
        "arguments": {
         "ficha_qwen": "1",
         "modelo": "deepseek-v4.1-flash-1017",
-        "tools": true,
-        "message": "Con la herramienta almacen guarda en HF el nombre chat_estado/sol-deepseek-v4.1-flash-1017.txt con el valor 'ok' y confirma",
-        "request_id": "sol-hf-deepseek-v4.1-flash-1017"
+        "message": "Responde en español en una frase: ¿qué es un router?",
+        "request_id": "sol-deepseek-v4.1-flash-1017-04"
        }
       }
      },
-     "luego": "resultado; después almacen(leer)",
-     "pass": "leer devuelve 'ok'",
-     "evidencia": "respuesta de almacen leer"
+     "pass": "respuesta en español, no vacía"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-1017-05",
+     "prueba": "memoria de conversación",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash-1017",
+        "messages": [
+         {
+          "role": "user",
+          "content": "Mi número es 42"
+         },
+         {
+          "role": "assistant",
+          "content": "Anotado."
+         },
+         {
+          "role": "user",
+          "content": "¿Cuál es mi número? Responde solo el número."
+         }
+        ],
+        "request_id": "sol-deepseek-v4.1-flash-1017-05"
+       }
+      }
+     },
+     "pass": "el texto contiene 42"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-1017-06",
+     "prueba": "formato de salida corto",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash-1017",
+        "message": "Dime tres ventajas de usar caché.",
+        "request_id": "sol-deepseek-v4.1-flash-1017-06"
+       }
+      }
+     },
+     "pass": "respuesta breve (menos de 120 palabras), sin JSON crudo"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-1017-07",
+     "prueba": "tool pendientes",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash-1017",
+        "message": "Usa la herramienta pendientes: agrega 'sol-deepseek-v4.1-flash-1017' y luego lista los pendientes. Confirma.",
+        "request_id": "sol-deepseek-v4.1-flash-1017-07",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call pendientes {accion:'listar'}",
+     "pass": "la lista contiene sol-deepseek-v4.1-flash-1017"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-1017-08",
+     "prueba": "tool yaiwes_md",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash-1017",
+        "message": "Usa yaiwes_md: escribe el texto 'proyecto-deepseek-v4.1-flash-1017' y luego léelo. Confirma.",
+        "request_id": "sol-deepseek-v4.1-flash-1017-08",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call yaiwes_md {accion:'leer'}",
+     "pass": "leer devuelve proyecto-deepseek-v4.1-flash-1017"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-1017-09",
+     "prueba": "tool GitHub leer",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash-1017",
+        "message": "Usa github_leer en el repo maxbry123-commits/router-universal-router-inteligente-, ruta README.md de la rama main. Dime la primera línea.",
+        "request_id": "sol-deepseek-v4.1-flash-1017-09",
+        "tools": true
+       }
+      }
+     },
+     "pass": "cita una línea real del archivo; sin error de herramienta"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-1017-10",
+     "prueba": "tool GitHub escribir",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash-1017",
+        "message": "Usa github_escribir en el repo maxbry123-commits/router-universal-router-inteligente-, rama prueba-sol, ruta Prueba/sol-deepseek-v4.1-flash-1017.txt, contenido 'ok-deepseek-v4.1-flash-1017', mensaje 'prueba sol'. Confirma.",
+        "request_id": "sol-deepseek-v4.1-flash-1017-10",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call github_leer {repo,ruta,rama:'prueba-sol'}",
+     "pass": "github_leer devuelve ok-deepseek-v4.1-flash-1017",
+     "regla": "nunca escribir en main"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-1017-11",
+     "prueba": "tool HF almacén",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash-1017",
+        "message": "Usa almacen: guarda en destino hf el nombre chat_estado/sol-deepseek-v4.1-flash-1017.txt con valor 'ok-deepseek-v4.1-flash-1017'. Confirma.",
+        "request_id": "sol-deepseek-v4.1-flash-1017-11",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call almacen {accion:'leer',destino:'hf',nombre:'chat_estado/sol-deepseek-v4.1-flash-1017.txt'}",
+     "pass": "leer devuelve ok-deepseek-v4.1-flash-1017"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-1017-12",
+     "prueba": "tool llm (otro modelo)",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash-1017",
+        "message": "Usa la herramienta llm con el modelo qwen3.8-flash y el mensaje 'Di OK'. Dime qué respondió.",
+        "request_id": "sol-deepseek-v4.1-flash-1017-12",
+        "tools": true,
+        "llm_tool": true
+       }
+      }
+     },
+     "requiere": "IA ON (nodo P0)",
+     "pass": "incluye la respuesta del otro modelo"
+    },
+    {
+     "id": "T-deepseek-v4_1-flash-1017-13",
+     "prueba": "tool sala",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "deepseek-v4.1-flash-1017",
+        "message": "Usa la herramienta sala: crea la sala 'sala-deepseek-v4.1-flash-1017' y envía el mensaje 'hola sala'. Confirma.",
+        "request_id": "sol-deepseek-v4.1-flash-1017-13",
+        "tools": true
+       }
+      }
+     },
+     "luego": "call sala {accion:'listar'}",
+     "pass": "la lista contiene sala-deepseek-v4.1-flash-1017"
     }
    ]
   },
   {
-   "id": "IMG-qwen-image-3_0-pro",
+   "id": "I-qwen-image-3_0-pro",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "qwen-image-3.0-pro",
+   "prueba": "imagen",
    "llamada": {
     "method": "tools/call",
     "params": {
@@ -1052,21 +3167,21 @@
      "arguments": {
       "ficha_qwen": "1",
       "modelo": "qwen-image-3.0-pro",
-      "message": "Un gato naranja en una ventana, acuarela",
-      "request_id": "sol-qwen-image-3.0-pro"
+      "message": "Un gato naranja en una ventana, estilo acuarela",
+      "request_id": "sol-img-qwen-image-3.0-pro"
      }
     }
    },
-   "luego": "resultado (video: hasta 70 vueltas)",
-   "pass": "marca [[imagen:URL]] / [[audio:...]] / [[video:URL]] según el tipo",
-   "evidencia": "marca devuelta recortada a 200 caracteres"
+   "pass": "marca [[imagen:URL]] con URL https",
+   "guardar": "URL como IMG_qwen-image-3.0-pro"
   },
   {
-   "id": "IMG-wan2_7-image",
+   "id": "I-wan2_7-image",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "wan2.7-image",
+   "prueba": "imagen",
    "llamada": {
     "method": "tools/call",
     "params": {
@@ -1074,21 +3189,21 @@
      "arguments": {
       "ficha_qwen": "1",
       "modelo": "wan2.7-image",
-      "message": "Un gato naranja en una ventana, acuarela",
-      "request_id": "sol-wan2.7-image"
+      "message": "Un gato naranja en una ventana, estilo acuarela",
+      "request_id": "sol-img-wan2.7-image"
      }
     }
    },
-   "luego": "resultado (video: hasta 70 vueltas)",
-   "pass": "marca [[imagen:URL]] / [[audio:...]] / [[video:URL]] según el tipo",
-   "evidencia": "marca devuelta recortada a 200 caracteres"
+   "pass": "marca [[imagen:URL]] con URL https",
+   "guardar": "URL como IMG_wan2.7-image"
   },
   {
-   "id": "IMG-wan2_7-image-pro",
+   "id": "I-wan2_7-image-pro",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "wan2.7-image-pro",
+   "prueba": "imagen",
    "llamada": {
     "method": "tools/call",
     "params": {
@@ -1096,21 +3211,21 @@
      "arguments": {
       "ficha_qwen": "1",
       "modelo": "wan2.7-image-pro",
-      "message": "Un gato naranja en una ventana, acuarela",
-      "request_id": "sol-wan2.7-image-pro"
+      "message": "Un gato naranja en una ventana, estilo acuarela",
+      "request_id": "sol-img-wan2.7-image-pro"
      }
     }
    },
-   "luego": "resultado (video: hasta 70 vueltas)",
-   "pass": "marca [[imagen:URL]] / [[audio:...]] / [[video:URL]] según el tipo",
-   "evidencia": "marca devuelta recortada a 200 caracteres"
+   "pass": "marca [[imagen:URL]] con URL https",
+   "guardar": "URL como IMG_wan2.7-image-pro"
   },
   {
-   "id": "AUD-qwen-audio-3_0-tts-plus",
+   "id": "A-tts",
    "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "qwen-audio-3.0-tts-plus",
+   "prueba": "voz",
    "llamada": {
     "method": "tools/call",
     "params": {
@@ -1118,21 +3233,21 @@
      "arguments": {
       "ficha_qwen": "1",
       "modelo": "qwen-audio-3.0-tts-plus",
-      "message": "Hola, esto es una prueba",
-      "request_id": "sol-qwen-audio-3.0-tts-plus"
+      "message": "Hola, esto es una prueba de voz.",
+      "request_id": "sol-tts"
      }
     }
    },
-   "luego": "resultado (video: hasta 70 vueltas)",
-   "pass": "marca [[imagen:URL]] / [[audio:...]] / [[video:URL]] según el tipo",
-   "evidencia": "marca devuelta recortada a 200 caracteres"
+   "pass": "marca [[audio:...]] (URL o data:audio/mpeg)",
+   "guardar": "si es URL https, como AUDIO_TTS"
   },
   {
-   "id": "AUD-qwen-audio-3_0-asr-flash",
+   "id": "A-asr",
    "dep": [
-    "S0"
+    "A-tts"
    ],
    "modelo": "qwen-audio-3.0-asr-flash",
+   "prueba": "reconocimiento",
    "llamada": {
     "method": "tools/call",
     "params": {
@@ -1140,75 +3255,21 @@
      "arguments": {
       "ficha_qwen": "1",
       "modelo": "qwen-audio-3.0-asr-flash",
-      "message": "Hola, esto es una prueba",
-      "request_id": "sol-qwen-audio-3.0-asr-flash"
+      "message": "<AUDIO_TTS o URL https de un .wav>",
+      "request_id": "sol-asr"
      }
     }
    },
-   "luego": "resultado (video: hasta 70 vueltas)",
-   "pass": "marca [[imagen:URL]] / [[audio:...]] / [[video:URL]] según el tipo",
-   "evidencia": "marca devuelta recortada a 200 caracteres"
+   "pass": "texto reconocido no vacío",
+   "si_no_hay_url": "NO VERIFICADO: pedir un .wav https a Antonio"
   },
   {
-   "id": "VID-wan3_0-video",
+   "id": "A-rt",
    "dep": [
-    "S0"
-   ],
-   "modelo": "wan3.0-video",
-   "llamada": {
-    "method": "tools/call",
-    "params": {
-     "name": "chat",
-     "arguments": {
-      "ficha_qwen": "1",
-      "modelo": "wan3.0-video",
-      "message": "Una ola rompiendo en una playa",
-      "request_id": "sol-wan3.0-video"
-     }
-    }
-   },
-   "luego": "resultado (video: hasta 70 vueltas)",
-   "pass": "marca [[imagen:URL]] / [[audio:...]] / [[video:URL]] según el tipo",
-   "evidencia": "marca devuelta recortada a 200 caracteres"
-  },
-  {
-   "id": "VID-happyhorse-1_1-t2v",
-   "dep": [
-    "S0"
-   ],
-   "modelo": "happyhorse-1.1-t2v",
-   "llamada": {
-    "method": "tools/call",
-    "params": {
-     "name": "chat",
-     "arguments": {
-      "ficha_qwen": "1",
-      "modelo": "happyhorse-1.1-t2v",
-      "message": "Una ola rompiendo en una playa",
-      "request_id": "sol-happyhorse-1.1-t2v"
-     }
-    }
-   },
-   "luego": "resultado (video: hasta 70 vueltas)",
-   "pass": "marca [[imagen:URL]] / [[audio:...]] / [[video:URL]] según el tipo",
-   "evidencia": "marca devuelta recortada a 200 caracteres"
-  },
-  {
-   "id": "N-ASR",
-   "dep": [
-    "S0"
-   ],
-   "modelo": "qwen-audio-3.0-asr-flash",
-   "llamada": "chat con mensaje que incluya una URL https de un .wav (la entrega Antonio)",
-   "pass": "texto reconocido",
-   "evidencia": "texto"
-  },
-  {
-   "id": "N-RT",
-   "dep": [
-    "S0"
+    "P0"
    ],
    "modelo": "qwen-audio-3.0-realtime-plus",
+   "prueba": "rechazo claro",
    "llamada": {
     "method": "tools/call",
     "params": {
@@ -1221,58 +3282,220 @@
      }
     }
    },
-   "pass": "error claro 'usa WebSocket' (el rechazo es PASS)",
-   "evidencia": "mensaje de error"
+   "pass": "error que dice que usa WebSocket (el rechazo es PASS)"
   },
   {
-   "id": "N-I2V-R2V",
+   "id": "V-wan3_0-video",
    "dep": [
-    "S0"
+    "P0"
    ],
-   "modelo": "happyhorse-1.1-i2v / r2v",
-   "llamada": "chat con URL https de una imagen en el mensaje",
-   "pass": "[[video:URL]]; sin URL deben dar error claro",
-   "evidencia": "marca o error"
+   "modelo": "wan3.0-video",
+   "prueba": "video texto a video",
+   "llamada": {
+    "method": "tools/call",
+    "params": {
+     "name": "chat",
+     "arguments": {
+      "ficha_qwen": "1",
+      "modelo": "wan3.0-video",
+      "message": "Una ola rompiendo en una playa",
+      "request_id": "sol-vid-wan3.0-video"
+     }
+    }
+   },
+   "espera": "hasta 70 vueltas de resultado(espera=8)",
+   "pass": "marca [[video:URL]]",
+   "guardar": "tiempo total en segundos"
   },
   {
-   "id": "N-URL",
+   "id": "V-happyhorse-1_1-t2v",
    "dep": [
-    "T-qwen3_8-max"
+    "P0"
    ],
-   "haz": "Confirmar qué URL base aceptó la clave: oficial (ap-southeast-1.maas.aliyuncs.com) o QwenCloud (token-plan.maas.qwencloudapi.com)",
-   "pass": "alguna de las dos responde 200",
-   "evidencia": "cuál respondió; el Router prueba primero la oficial y luego la otra"
+   "modelo": "happyhorse-1.1-t2v",
+   "prueba": "video texto a video",
+   "llamada": {
+    "method": "tools/call",
+    "params": {
+     "name": "chat",
+     "arguments": {
+      "ficha_qwen": "1",
+      "modelo": "happyhorse-1.1-t2v",
+      "message": "Una ola rompiendo en una playa",
+      "request_id": "sol-vid-happyhorse-1.1-t2v"
+     }
+    }
+   },
+   "espera": "hasta 70 vueltas de resultado(espera=8)",
+   "pass": "marca [[video:URL]]",
+   "guardar": "tiempo total en segundos"
   },
   {
-   "id": "N-FIN",
+   "id": "V-happyhorse-1_1-i2v",
    "dep": [
-    "S0",
-    "T-qwen3_8-max",
-    "T-qwen3_8-flash",
-    "T-qwen3_7-max",
-    "T-qwen3_7-plus",
-    "T-qwen3_6-flash",
-    "T-glm-5_3",
-    "T-glm-5_2",
-    "T-deepseek-v4-pro",
-    "T-deepseek-v4-pro-0813",
-    "T-deepseek-v4-flash-0731",
-    "T-deepseek-v4_1-flash",
-    "T-deepseek-v4_1-flash-1017",
-    "IMG-qwen-image-3_0-pro",
-    "IMG-wan2_7-image",
-    "IMG-wan2_7-image-pro",
-    "AUD-qwen-audio-3_0-tts-plus",
-    "AUD-qwen-audio-3_0-asr-flash",
-    "VID-wan3_0-video",
-    "VID-happyhorse-1_1-t2v",
-    "N-ASR",
-    "N-RT",
-    "N-I2V-R2V",
-    "N-URL"
+    "I-qwen-image-3_0-pro"
    ],
-   "haz": "informe",
-   "salida": "tabla modelo | prueba | PASS/FAIL/NO VERIFICADO | evidencia cruda recortada | segundos. Lista aparte de los modelos que fallaron con el error exacto."
+   "modelo": "happyhorse-1.1-i2v",
+   "prueba": "video desde imagen",
+   "llamada": {
+    "method": "tools/call",
+    "params": {
+     "name": "chat",
+     "arguments": {
+      "ficha_qwen": "1",
+      "modelo": "happyhorse-1.1-i2v",
+      "message": "El gato camina por la ventana <IMG_qwen-image-3.0-pro>",
+      "request_id": "sol-vid-happyhorse-1.1-i2v"
+     }
+    }
+   },
+   "sin_url": {
+    "method": "tools/call",
+    "params": {
+     "name": "chat",
+     "arguments": {
+      "ficha_qwen": "1",
+      "modelo": "happyhorse-1.1-i2v",
+      "message": "El gato camina",
+      "request_id": "sol-vid-sinurl-happyhorse-1.1-i2v"
+     }
+    }
+   },
+   "pass": "con URL: [[video:URL]]; sin URL: error claro que pide una URL"
+  },
+  {
+   "id": "V-happyhorse-1_1-r2v",
+   "dep": [
+    "I-qwen-image-3_0-pro"
+   ],
+   "modelo": "happyhorse-1.1-r2v",
+   "prueba": "video desde imagen",
+   "llamada": {
+    "method": "tools/call",
+    "params": {
+     "name": "chat",
+     "arguments": {
+      "ficha_qwen": "1",
+      "modelo": "happyhorse-1.1-r2v",
+      "message": "El gato camina por la ventana <IMG_qwen-image-3.0-pro>",
+      "request_id": "sol-vid-happyhorse-1.1-r2v"
+     }
+    }
+   },
+   "sin_url": {
+    "method": "tools/call",
+    "params": {
+     "name": "chat",
+     "arguments": {
+      "ficha_qwen": "1",
+      "modelo": "happyhorse-1.1-r2v",
+      "message": "El gato camina",
+      "request_id": "sol-vid-sinurl-happyhorse-1.1-r2v"
+     }
+    }
+   },
+   "pass": "con URL: [[video:URL]]; sin URL: error claro que pide una URL"
+  },
+  {
+   "id": "N-neg",
+   "dep": [
+    "P0"
+   ],
+   "prueba": "negativas",
+   "pruebas": [
+    {
+     "id": "N1",
+     "llamada": "tools/list con clave mala",
+     "pass": "HTTP 401"
+    },
+    {
+     "id": "N2",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "modelo-que-no-existe",
+        "message": "hola",
+        "request_id": "sol-neg2"
+       }
+      }
+     },
+     "pass": "error -32602 'modelo no permitido'"
+    },
+    {
+     "id": "N3",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "chat",
+       "arguments": {
+        "ficha_qwen": "1",
+        "modelo": "auto",
+        "message": "hola",
+        "request_id": "sol-neg3"
+       }
+      }
+     },
+     "pass": "error: 'auto' ya no existe"
+    },
+    {
+     "id": "N4",
+     "llamada": "chat con message de 1.100.000 caracteres",
+     "pass": "413 con mensaje claro"
+    },
+    {
+     "id": "N5",
+     "llamada": {
+      "method": "tools/call",
+      "params": {
+       "name": "llm",
+       "arguments": {
+        "modelo": "qwen3.8-flash",
+        "mensaje": "x"
+       }
+      }
+     },
+     "preparar": "con IA OFF",
+     "pass": "-32000 herramienta bloqueada"
+    }
+   ]
+  },
+  {
+   "id": "R-fin",
+   "dep": [
+    "P0",
+    "M-qwen3_8-max",
+    "M-qwen3_8-flash",
+    "M-qwen3_7-max",
+    "M-qwen3_7-plus",
+    "M-qwen3_6-flash",
+    "M-glm-5_3",
+    "M-glm-5_2",
+    "M-deepseek-v4-pro",
+    "M-deepseek-v4-pro-0813",
+    "M-deepseek-v4-flash-0731",
+    "M-deepseek-v4_1-flash",
+    "M-deepseek-v4_1-flash-1017",
+    "I-qwen-image-3_0-pro",
+    "I-wan2_7-image",
+    "I-wan2_7-image-pro",
+    "A-tts",
+    "A-asr",
+    "A-rt",
+    "V-wan3_0-video",
+    "V-happyhorse-1_1-t2v",
+    "V-happyhorse-1_1-i2v",
+    "V-happyhorse-1_1-r2v",
+    "N-neg"
+   ],
+   "paso": "restaurar y entregar",
+   "haz": [
+    "apagar IA: agent_access_lock {quien:'ia',locked:true} si estaba OFF antes",
+    "borrar mentalmente nada: la rama prueba-sol la limpia Antonio"
+   ],
+   "salida": "tabla: modelo | prueba | PASS/FAIL/NO VERIFICADO | evidencia cruda ≤300 caracteres | segundos. Resumen por modelo (n/13 PASS). Aparte: errores exactos de cada FAIL, qué URL base respondió, y si los modelos nombran a su familia o todos dicen Qwen"
   }
  ]
 }
