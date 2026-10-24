@@ -592,7 +592,7 @@ export async function mount(root, { api, tell }) {
     if (bLock) { bLock.textContent = (ag ? '🔓' : '🔒') + ' Agente tool ' + (ag ? 'ON' : 'OFF'); bLock.setAttribute('aria-pressed', String(ag)); bLock.title = 'Permitir que el modelo delegue en agentes (igual que el chip Agentes)'; }
     if (bLlm) { bLlm.textContent = '🧠 LLM tool ' + (ia ? 'ON' : 'OFF'); bLlm.classList.toggle('sel-on', ia); bLlm.setAttribute('aria-pressed', String(ia)); bLlm.title = 'Permitir que el modelo consulte otros modelos (igual que el chip IA)'; }
   };
-  pintarTools(false, false);
+  pintarTools(!!chatTools.llm_tool, !!chatTools.agente_tool);  // el estado del servidor pudo llegar antes de este listener
   window.addEventListener('riu:ia', (e) => pintarTools(!!e.detail.ia, !!e.detail.agentes));
   const pulsar = (sel) => () => { const chip = document.querySelector(sel); if (chip) chip.click(); else tell('GAP: falta el botón ' + sel); };
   if (bLock) bLock.addEventListener('click', pulsar('#btn-agentes'));
