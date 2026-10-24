@@ -1,15 +1,13 @@
 def contar_palabras(texto):
-    """Cuenta cuántas palabras tiene un texto.
-
-    Una palabra es cualquier secuencia de caracteres separados por espacios
-    (uno o más). Si el texto está vacío o solo contiene espacios,
-    devuelve 0.
+    """Cuenta la cantidad de palabras en un texto.
 
     Args:
-        texto (str): El texto cuyo número de palabras se desea contar.
+        texto: Cadena de texto a evaluar.
 
     Returns:
-        int: La cantidad de palabras en el texto; 0 si está vacío.
+        int: 0 si la cadena es vacía o solo tiene espacios;
+        en caso contrario, la cantidad de palabras separadas
+        por espacios en blanco (ej. "hola mundo cruel" -> 3).
     """
     if not texto or not texto.strip():
         return 0
