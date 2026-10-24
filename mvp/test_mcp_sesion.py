@@ -7,6 +7,12 @@ from mvp.test_control import Base, servicio
 
 
 class SesionMCP(Base):
+    def setUp(self):
+        super().setUp(); self.client.__enter__()  # un solo bucle de eventos, como uvicorn: la tarea del chat sobrevive entre peticiones
+
+    def tearDown(self):
+        self.client.__exit__(None, None, None); super().tearDown()
+
     def rpc(self, metodo, params=None, ident=1, ruta="/mcp?key=api-ficticia"):
         return self.client.post(ruta, json={"jsonrpc": "2.0", "id": ident, "method": metodo, "params": params or {}})
 

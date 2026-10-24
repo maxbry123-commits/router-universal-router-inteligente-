@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route, multimedia, prompt, sala_turno
+from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -82,7 +82,7 @@ def health(authorization: str | None = Header(None),
            x_api_key: str | None = Header(None)):
     if not autorizado(authorization, x_api_key):
         return {"status": "ok" if app.state.banco else "degraded"}
-    return {"status": "ok" if app.state.banco else "degraded",
+    return {"status": "ok" if app.state.banco else "degraded", "cpu": escalado.cpu_local(),
             "commit": app.state.commit, "banco_abierto": bool(app.state.banco),
             "qwen_base_url_presente": bool(modelos.base_url()),
             "plan": modelos.plan(), "modelo_defecto": modelos.cargar()["modelo_defecto"],
@@ -241,6 +241,7 @@ async def _control(accion, cuerpo, actor="director"):
     except PermissionError as error: raise HTTPException(status_code=403, detail=str(error)) from None
     except ValueError as error: raise HTTPException(status_code=400, detail=str(error)) from None
     except RuntimeError as error: raise HTTPException(status_code=502, detail=str(error)) from None
+TRABAJO_VENCE, MAX_COLA, _PROPIOS = 900, 200, set()
 TRABAJOS, _TAREAS = {}, set()  # proceso_id -> {estado, proceso_id, choices|error}; en memoria (se pierde al reiniciar)
 FICHAS_QWEN = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "5": "ficha5-mvp"}
 FICHAS_HEREDADAS = ("nv-", "hf-", "ask-consil")  # ids de ficha del chat anterior; no son modelos del MVP
@@ -314,13 +315,54 @@ async def _chat_ficha(cuerpo, progreso=None):
             "choices": [{"message": {"role": "assistant", "content": salida["texto"],
                                     "tool_calls": salida["tool_calls"]},
                          "finish_reason": salida["finish_reason"]}]}
-async def _correr(pid, cuerpo):
+async def _local(pid, cuerpo):
     try:
         TRABAJOS[pid].update(await _chat_ficha(cuerpo, lambda t: TRABAJOS[pid].update(progreso=t)))
     except HTTPException as error:
         TRABAJOS[pid].update(estado="error", error=str(error.detail), status_code=error.status_code)
     except Exception as error:  # noqa: BLE001 - el proceso debe terminar siempre
         TRABAJOS[pid].update(estado="error", error=type(error).__name__)
+def _clave_acceso(): return next((os.environ[n] for n in bank.ACCESO if os.environ.get(n)), "")
+async def _persistir(pid): await asyncio.to_thread(trabajos.guardar, app.state.banco, pid, TRABAJOS[pid])
+async def _esperar_destino(pid):
+    while not (destino := await escalado.elegir(_clave_acceso())):  # los 3 servidores ocupados: el trabajo espera en cola
+        TRABAJOS[pid]["subestado"] = "en_cola"; await asyncio.sleep(2)
+    return destino
+async def _seguir_remoto(pid, url, remoto):
+    r = {"estado": "procesando", "proceso_id": remoto}
+    while r.get("estado") == "procesando":
+        TRABAJOS[pid]["subestado"] = "ejecutando"
+        r = await escalado.enviar(url, _clave_acceso(), "resultado", {"proceso_id": remoto, "espera": 8})
+    TRABAJOS[pid].update({k: v for k, v in r.items() if k != "proceso_id"})
+async def _remoto(pid, cuerpo, url):
+    TRABAJOS[pid].update(destino=url, subestado="enviado" if escalado.despierto(url) else "despertando")
+    r = await escalado.enviar(url, _clave_acceso(), "chat_async", {**cuerpo, "request_id": pid[2:]})  # mismo request_id: un reintento no ejecuta dos veces
+    TRABAJOS[pid]["proceso_remoto"] = r["proceso_id"]; await _persistir(pid)
+    if r.get("estado") == "procesando": await _seguir_remoto(pid, url, r["proceso_id"])
+    else: TRABAJOS[pid].update({k: v for k, v in r.items() if k != "proceso_id"})
+async def _correr(pid, cuerpo):
+    destino = "local"
+    try:
+        if escalado.remotos(): destino = await _esperar_destino(pid)
+        escalado.entrar(destino)
+        try: await (_local(pid, cuerpo) if destino == "local" else _remoto(pid, cuerpo, destino))
+        finally: escalado.salir(destino)
+    except escalado.DestinoError as error: TRABAJOS[pid].update(estado="error", error=str(error))
+    TRABAJOS[pid].pop("subestado", None); await _persistir(pid)
+async def _recuperar(pid):
+    """Trabajo iniciado o terminado por otro proceso: se lee del almacen; un trabajo local 'procesando' sin latido de 15 min se da por interrumpido."""
+    doc = await asyncio.to_thread(trabajos.leer, app.state.banco, pid)
+    if not doc or (doc.get("estado") == "procesando" and time.time() - doc.get("creado", 0) > TRABAJO_VENCE): return False
+    TRABAJOS[pid] = doc
+    if doc.get("estado") == "procesando" and doc.get("proceso_remoto"):
+        _lanzar(_seguir_adoptado(pid, doc["destino"], doc["proceso_remoto"]))
+    return True
+async def _seguir_adoptado(pid, url, remoto):
+    try: await _seguir_remoto(pid, url, remoto)
+    except escalado.DestinoError as error: TRABAJOS[pid].update(estado="error", error=str(error))
+    TRABAJOS[pid].pop("subestado", None); await _persistir(pid)
+def _lanzar(coro):
+    tarea = asyncio.create_task(coro); _TAREAS.add(tarea); tarea.add_done_callback(_TAREAS.discard)
 @app.post("/plugins/{plugin}/call/{accion}", dependencies=[Depends(verificar)])
 async def plugin_call(plugin: str, accion: str, cuerpo: dict):
     if plugin not in ("fichas_qwen", "puente_chat"):
@@ -328,25 +370,28 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
     if accion in ("fichas", "listar_fichas"):
         return {"status": "ok", "result": {"fichas": [{"n": n, "id": i, "nombre": i} for n, i in FICHAS_QWEN.items()]}}
     if accion in ("chat_async", "chat"):
-        pid = "p-" + (str(cuerpo.get("request_id") or "")[:64] or uuid.uuid4().hex)  # request_id fijo => mismo proceso_id
-        if pid not in TRABAJOS:
-            TRABAJOS[pid] = {"estado": "procesando", "proceso_id": pid, "finish_reason": ""}
-            tarea = asyncio.create_task(_correr(pid, cuerpo)); _TAREAS.add(tarea); tarea.add_done_callback(_TAREAS.discard)
+        pid = trabajos.identificador(cuerpo.get("request_id"), uuid.uuid4().hex)  # request_id fijo => mismo proceso_id
+        if pid not in TRABAJOS and not await _recuperar(pid):
+            if sum(1 for t in TRABAJOS.values() if t.get("subestado") == "en_cola") >= MAX_COLA:
+                raise HTTPException(status_code=429, detail="cola llena; reintenta en unos segundos")
+            TRABAJOS[pid] = {"estado": "procesando", "proceso_id": pid, "finish_reason": "", "creado": time.time()}
+            _PROPIOS.add(pid); _lanzar(_correr(pid, cuerpo))
         if TRABAJOS[pid].get("status_code") == 403:
             raise HTTPException(status_code=403, detail=TRABAJOS[pid]["error"])
         return {"status": "ok", "result": dict(TRABAJOS[pid])}
     if accion == "resultado":
         pid = str(cuerpo.get("proceso_id") or "")
-        if pid not in TRABAJOS:
+        if pid not in TRABAJOS and not await _recuperar(pid):
             raise HTTPException(status_code=404, detail="proceso_id desconocido")
         try:
             espera = min(max(float(cuerpo.get("espera") or 0), 0), 8)
         except (TypeError, ValueError):
             espera = 0
-        for _ in range(int(espera * 4)):  # long-poll: responde apenas termina (max 8 s)
+        for i in range(int(espera * 4)):  # long-poll: responde apenas termina (max 8 s)
             if TRABAJOS[pid]["estado"] != "procesando":
                 break
             await asyncio.sleep(0.25)
+            if pid not in _PROPIOS and i % 8 == 7: await _recuperar(pid)  # lo ejecuta otro proceso: se relee del almacen
         if TRABAJOS[pid].get("status_code") == 403:
             raise HTTPException(status_code=403, detail=TRABAJOS[pid]["error"])
         return {"status": "ok", "result": dict(TRABAJOS[pid])}
@@ -360,7 +405,7 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
             opciones["max_tokens"] = cuerpo["max_tokens"]
         try:
             salida = await chat({"modelo": modelo, "mensajes": cuerpo.get("messages") or cuerpo.get("mensajes"), "opciones": opciones, **_controles(cuerpo)})
-        except HTTPException as error:
+        except HTTPException:
             raise
         return {"status": "ok", "result": {"reply": salida["texto"], "texto": salida["texto"], "tool_calls": salida["tool_calls"], "finish_reason": salida.get("finish_reason"), "modelo": modelo,
                                            "ficha": str(cuerpo.get("ficha_qwen") or "ficha4-workflow-yaiwes"),
@@ -376,10 +421,21 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
         return {"status": "ok", "result": await _control(accion, cuerpo)}
     raise HTTPException(status_code=400, detail="accion no soportada en mvp")
 # --- G19: POST /chat/send (panel-chat.js sin harnessUrl) sobre la misma ruta Harness que chat_async; sin fallback ---
+async def _chat_escalado(cuerpo, tope=440):
+    """Con escalado configurado, /chat/send usa el mismo circuito (cola, destinos, registro) y espera el resultado."""
+    pid = (await plugin_call("puente_chat", "chat_async", {**cuerpo, "request_id": cuerpo.get("request_id") or uuid.uuid4().hex}))["result"]["proceso_id"]
+    for _ in range(tope * 2):
+        if TRABAJOS[pid]["estado"] != "procesando": break
+        await asyncio.sleep(0.5)
+        if pid not in _PROPIOS and TRABAJOS[pid].get("destino") is None: await _recuperar(pid)
+    r = TRABAJOS[pid]
+    if r["estado"] == "procesando": raise HTTPException(status_code=504, detail="el trabajo sigue en curso: consulta resultado con proceso_id " + pid)
+    if r["estado"] == "error": raise HTTPException(status_code=r.get("status_code") or 502, detail=r.get("error") or "error")
+    return r
 @app.post("/chat/send", dependencies=[Depends(verificar)])
 async def chat_send(cuerpo: dict):
     t0 = time.monotonic()
-    salida = await _chat_ficha(cuerpo)  # 503 HARNESS_NO_CONFIGURADO si falta RIU_DEEPSEEK_HARNESS_URL
+    salida = await (_chat_escalado(cuerpo) if escalado.remotos() else _chat_ficha(cuerpo))  # 503 HARNESS_NO_CONFIGURADO si falta RIU_DEEPSEEK_HARNESS_URL
     msg = salida["choices"][0]["message"]
     tools = [((t.get("function") or {}).get("name") or "tool") for t in (msg.get("tool_calls") or []) if isinstance(t, dict)]
     return {"reply": msg["content"], "execution_path": "HARNESS", "ms": int((time.monotonic() - t0) * 1000),

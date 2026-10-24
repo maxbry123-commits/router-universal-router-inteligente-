@@ -152,7 +152,7 @@ class TestHarness(unittest.TestCase):
                     (200, {"model": "qwen3.8-max", "choices": [{"message": {"content": "Guardado"}, "finish_reason": "stop"}]})]
                 r = cliente.post("/chat/send", json={**cuerpo, "tools": False}, headers=cab)
                 self.assertEqual(r.status_code, 200, r.text)
-                guardar_hf.assert_called_once_with(banco.leer("HF_TOKEN"), "prueba.txt", "dato")
+                guardar_hf.assert_any_call(banco.leer("HF_TOKEN"), "prueba.txt", "dato")  # además se persiste el registro del trabajo
                 self.assertEqual(r.json()["modelo_respuesta"], "qwen3.8-max")
 
                 r = cliente.post("/chat/send", json={**cuerpo, "modelo": "modelo-inexistente"}, headers=cab)
