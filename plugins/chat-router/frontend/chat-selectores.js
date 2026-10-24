@@ -81,7 +81,47 @@ const decorarFichas = (lista) => {  // Nvidia groq team: las MISMAS fichas reale
     nom.append(tag);
   }
 };
+const FAST = /^(team-qwen|ask-consil-code-qwen-team|ask-consil-fromtend-qwen-team)$/;
+const filas = () => {  // panel Selectores del chat: ⓘ diagrama, ⚡ respuesta rápida, ON/OFF y «Modelo: …» en cada fila; solo uno encendido a la vez
+  const lista = document.getElementById("sel-power");
+  if (!lista || lista.dataset.riuFilas) return;
+  lista.dataset.riuFilas = "1";
+  const global = el("div", "sel-resp-global"), act = () => sessionStorage.getItem(CLAVE) || "";
+  lista.before(global);
+  const modelo = (s) => s.id === "nvidia-groq-team" ? "NVIDIA" : s.id === "team-qwen" || s.id === "team-5-mvp" ? ((window.RIU_SELECTOR_QWEN || {}).seleccion || {}).label || "Qwen 3.8 Max" : (CONSIL_MODELOS[s.id] || []).map((m) => m[0]).join(" · ") || s.nombre;
+  const fila = (s) => lista.querySelector('.sel-fila[data-selector="' + s.id + '"]');
+  const refrescar = () => {
+    SELECTORES.forEach((s) => {
+      const f = fila(s); if (!f) return;
+      const on = act() === s.id, b = f.querySelector(".sel-on");
+      f.classList.toggle("activa", on); b.classList.toggle("on", on); b.disabled = !!act() && !on; b.setAttribute("aria-pressed", String(on));
+      b.lastChild.textContent = on ? "ON" : "OFF"; f.querySelector(".sel-resp").textContent = "Modelo: " + modelo(s);
+    });
+    const a = SELECTORES.find((s) => s.id === act());
+    global.textContent = a ? "Responde: " + a.nombre + " · " + modelo(a) : "Ningún selector encendido: responde el modelo por defecto (NVIDIA)"; global.classList.toggle("on", !!a);
+    window.dispatchEvent(new CustomEvent("riu:selector-activo", { detail: { activo: act(), anterior: "", nombre: a ? a.nombre : "" } }));
+  };
+  SELECTORES.filter((s) => !s.mirror).forEach((s) => {
+    const f = fila(s); if (!f) return;
+    if (DIAGRAMAS[s.id]) {
+      const i = el("button", "sel-info"), d = el("div", "sel-diagrama"); i.type = "button"; i.setAttribute("aria-label", "Cómo funciona " + s.nombre); i.innerHTML = svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'); d.hidden = true;
+      pintarDiagrama(d, DIAGRAMAS[s.id].texto); i.onclick = () => { d.hidden = !d.hidden; i.classList.toggle("abierto", !d.hidden); }; f.append(i); f.append(d);
+    }
+    if (FAST.test(s.id)) {
+      const z = el("button", "sel-fast"); z.type = "button"; z.setAttribute("aria-label", "Respuesta rápida"); z.dataset.selector = s.id; z.innerHTML = svg('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>');
+      z.onclick = () => { if (window.__riuFastH) window.__riuFastH(); }; f.append(z);
+    }
+    const b = el("button", "sel-on"); b.type = "button"; b.setAttribute("aria-label", "ON/OFF " + s.nombre); b.innerHTML = POWER + "<span>OFF</span>";
+    b.onclick = () => { if (act() === s.id) sessionStorage.removeItem(CLAVE); else sessionStorage.setItem(CLAVE, s.id); refrescar(); };
+    f.append(b, el("p", "sel-resp"));
+  });
+  window.addEventListener("riu:fast-reply", (e) => lista.querySelectorAll(".sel-fast").forEach((z) => { z.classList.toggle("on", !!e.detail.on); z.setAttribute("aria-pressed", String(!!e.detail.on)); }));
+  window.RIU_SELECTORES = { get activo() { return act(); }, selectores: SELECTORES, consil: CONSIL_MODELOS, mirror: MIRROR_FICHAS, refrescar,
+    encender(id) { sessionStorage.setItem(CLAVE, id); refrescar(); }, apagar() { sessionStorage.removeItem(CLAVE); refrescar(); } };
+  refrescar();
+};
 const init = () => {
+  if (!document.getElementById("selectores-panel")) return filas();
   const panel = document.getElementById("selectores-panel");
   if (!panel || panel.dataset.riuSelectoresInit) return;
   panel.dataset.riuSelectoresInit = "1";
