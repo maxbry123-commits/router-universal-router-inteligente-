@@ -10,7 +10,7 @@ module.exports = async (req, res) => {
   const token = HF_POWER_TOKEN || HF_TOKEN_1, base = "https://huggingface.co/api/spaces/" + (HF_SPACE_ID || "COMAND-CENTER-1/riu-router");
   res.setHeader("Cache-Control", "no-store");
   if (!clave || !igual(req.headers["x-api-key"], clave)) return res.status(401).json({ detail: "clave de acceso invalida" });
-  if (!token) return res.status(503).json({ detail: "falta HF_POWER_TOKEN en Vercel" });
+  if (!token) return res.status(503).json({ detail: "falta HF_TOKEN_1 (o HF_POWER_TOKEN) en Vercel" });
   const accion = req.method === "POST" ? (req.body || {}).accion : "estado";
   if (req.method !== "GET" && !ACCIONES[accion]) return res.status(400).json({ detail: "accion debe ser encender, apagar o reiniciar" });
   try {

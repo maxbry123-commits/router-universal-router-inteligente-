@@ -60,5 +60,5 @@ Efecto visible: Auto solo envuelve cuando una regla del clasificador acierta (ag
 - **Capas del prompt** (`mvp/prompt.py`, `_chat_ficha`): siempre `prompts/FORMATO_SALIDA.md` (corto por defecto, checklist, Concluido/Faltante/Pendiente/Validación, flujo A ➡️ B ➡️ C); con **System prompt ON** (apagado por defecto) se añade `mvp/system-prompt/`. Constitución, yaiwes.md, sandbox y pendientes van en un solo mensaje `system`.
 - **yaiwes.md** (antes «Mi handoff»): texto global del proyecto, mismo anclaje; herramienta `yaiwes_md` para el modelo.
 - **Pendientes**: «Organizar con IA» (`checklist` → `organizar`, `qwen3.7-plus` por defecto) solo reordena.
-- **Botón Servidor** (`api/power.js` en Vercel, proyecto `riu-jev-bridge`, Root Directory `plugins/chat-router/frontend`): estado/encender/pausar del Space. Requiere `HF_POWER_TOKEN` en Vercel. CORS del Router solo para `riu-jev-bridge*.vercel.app`.
+- **Botón Servidor** (`api/power.js` en Vercel, proyecto `riu-jev-bridge`, Root Directory `plugins/chat-router/frontend`): estado/encender/pausar del Space. Usa `HF_TOKEN_1` del entorno seguro de Vercel (ya existe en production; `HF_POWER_TOKEN` lo sustituye si se define). No hace falta crear nada. CORS del Router solo para `riu-jev-bridge*.vercel.app`.
 - **NO VERIFICADO**: Space HF (pausado), Vercel en vivo, endpoints multimedia, función power con token real.
