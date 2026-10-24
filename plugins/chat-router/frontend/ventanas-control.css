@@ -1,6 +1,9 @@
 /* ventanas-control.css — Conexiones, ROOM CONFERENCIAS y Servidor (ventanas del composer) */
 .cv-caja{overflow:auto;max-height:88vh}.cv-fila{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 8px;border-radius:8px;background:rgba(127,127,127,.08);margin:3px 0}
-.cv-fila .cv-n{flex:1 1 140px;min-width:0;overflow:hidden;text-overflow:ellipsis}.cv-fila small{opacity:.65;display:block}
+.cv-fila .cv-n{flex:1 1 140px;min-width:0;overflow:hidden;text-overflow:ellipsis}.cv-fila small{color:var(--quiet);display:block}
 .cv-form{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.cv-form input,.cv-form select,.cv-form textarea{flex:1 1 140px;min-width:0;box-sizing:border-box}
 .cv-est{font-size:12px;opacity:.85;white-space:pre-wrap;min-height:1em}.cv-msg{padding:4px 8px;margin:2px 0;border-radius:8px;background:rgba(127,127,127,.08);white-space:pre-wrap;overflow-wrap:anywhere}
 .cv-msg small{opacity:.65}.cv-sec{margin:10px 0 4px;font-weight:600}
+/* botón principal de las ventanas: azul de Enviar con texto blanco (contraste AA en todos los temas) */
+.cv-caja button.action{background:var(--azul-electrico,#1F6BFF)!important;color:#fff!important;border:0}
+html[data-theme=blanco] .cv-fila small{color:#52525b}

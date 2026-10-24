@@ -225,7 +225,7 @@ function carpetaVacia({ q }) {
 // bienvenida (spec §5) con RUI 11 gravity-letters: el chat vacío saluda y ofrece accesos rápidos reales
 function bienvenida({ q }) {
   const hist = q("#histories"); if (!hist || hist.querySelector(".riu-bienvenida")) return;
-  const w = crear("div", "riu-bienvenida"), t = crear("div", "riu-bv-titulo"); t.setAttribute("aria-label", "¿Qué hacemos hoy?");
+  const w = crear("div", "riu-bienvenida"), t = crear("div", "riu-bv-titulo"); t.setAttribute("role", "heading"); t.setAttribute("aria-level", "2"); t.setAttribute("aria-label", "¿Qué hacemos hoy?");
   let n = 0;
   "¿Qué hacemos hoy?".split(" ").forEach((pal, k, arr) => {
     const wd = crear("span", "riu-pal"); wd.setAttribute("aria-hidden", "true");

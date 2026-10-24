@@ -25,6 +25,7 @@ async function pintarConexiones(cuerpo) {
       const t = btn(c.on ? "ON" : "OFF", "toggle" + (c.on ? " on" : ""), () => cargar({ accion: "activar", servicio: actual.servicio, id: c.id, on: !c.on }));
       t.setAttribute("aria-pressed", String(c.on)); t.title = c.on ? "Conexión activa: apagarla impide nuevas ejecuciones" : "Conexión apagada";
       f.append(n, t);
+      if (c.id !== "defecto") { const q = btn("Quitar", "secondary"); q.setAttribute("aria-label", "Quitar " + c.etiqueta); q.onclick = () => { if (q.dataset.ok) return cargar({ accion: "quitar", servicio: actual.servicio, id: c.id }); q.dataset.ok = "1"; q.textContent = "¿Quitar? Confirmar"; setTimeout(() => { delete q.dataset.ok; q.textContent = "Quitar"; }, 5000); }; f.append(q); }
       if (actual.servicio === "mcp") f.append(btn("Actualizar", "secondary", () => cargar({ accion: "descubrir", id: c.id })));
       lista.append(f);
     });

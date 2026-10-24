@@ -202,7 +202,7 @@ class Control:
 
     def _conexiones(self, c, banco, actor):
         servicio, cons = c.get("servicio"), self.d["conexiones"]
-        if c.get("accion") in ("agregar", "activar") and servicio not in SERVICIOS:
+        if c.get("accion") in ("agregar", "activar", "quitar") and servicio not in SERVICIOS:
             raise ValueError("servicio no soportado")
         if c.get("accion") == "agregar":
             if len(cons[servicio]) >= MAX_CONEXIONES:
@@ -221,6 +221,13 @@ class Control:
             if not con:
                 raise ValueError("conexion desconocida")
             con["on"] = _booleano(c.get("on"), "on")
+            self._sucio = True
+        elif c.get("accion") == "quitar":  # libera el hueco (tope por servicio) y vacía su secreto en el banco
+            if c.get("id") == "defecto" or not any(x["id"] == c.get("id") for x in cons[servicio]):
+                raise ValueError("conexion desconocida o principal (no se quita)")
+            cons[servicio] = [x for x in cons[servicio] if x["id"] != c.get("id")]
+            if banco and banco.leer(_clave_banco(servicio, c["id"])) is not None:
+                banco.guardar(_clave_banco(servicio, c["id"]), "")
             self._sucio = True
         elif c.get("accion") == "herramientas":  # lista descubierta de un servidor MCP externo
             con = next((x for x in cons["mcp"] if x["id"] == c.get("id")), None)

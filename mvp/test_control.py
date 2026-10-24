@@ -159,6 +159,14 @@ class TestHerramientas(Base):
         self.assertIn("almacen", self.nombres())  # otra conexion: otro permiso
         self.assertIn("conexion=false", self.llamar("github_leer", {"repo": "x"})["error"]["message"])
 
+    def test_quitar_conexion_libera_hueco_y_borra_su_secreto(self):
+        r = self.accion("conexiones", {"accion": "agregar", "servicio": "github", "etiqueta": "otra", "secreto": "gh-otra"})
+        cid = next(x["id"] for s in r["servicios"] if s["servicio"] == "github" for x in s["conexiones"] if x["etiqueta"] == "otra")
+        r = self.accion("conexiones", {"accion": "quitar", "servicio": "github", "id": cid})
+        self.assertNotIn(cid, [x["id"] for s in r["servicios"] for x in s["conexiones"]])
+        self.assertEqual(self.banco.leer("CONN_GITHUB_" + cid), "")
+        self.accion("conexiones", {"accion": "quitar", "servicio": "github", "id": "defecto"}, 400)  # la principal del banco no se quita
+
     def test_tres_permisos_separados(self):
         ok = lambda n, c=None: servicio.CONTROL.decidir(n, c)[0]  # noqa: E731
         todo = {"tools": True, "agente_tool": True, "llm_tool": True}
