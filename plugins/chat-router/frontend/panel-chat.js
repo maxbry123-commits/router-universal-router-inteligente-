@@ -294,7 +294,7 @@ export async function mount(root, { api, tell }) {
   const pintarModos = () => {
     const lista = q("#sh-modo-lista");
     lista.replaceChildren();
-    for (const [k, et] of [["fast", "Rápido — 512 tok"], ["balanced", "Equilibrado — 1024 tok"], ["think", "Pensar — 2048 tok"]]) {
+    for (const [k, et] of [["fast", "Responde directo"], ["balanced", "Por defecto"], ["think", "Razona antes de responder"]]) {
       lista.append(fila(MODOS[k], et, k === modo, () => {
         modo = k;
         q("#modo").textContent = MODOS[k] + " ⌄";
@@ -354,14 +354,14 @@ export async function mount(root, { api, tell }) {
         c.hist.append(burbuja("MI HANDOFF anclado:\n" + texto));
         abajo(c);
       }
-      tell("Mi handoff " + (r.encendido ? "guardado y encendido" : "apagado"));
+      tell("yaiwes.md " + (r.encendido ? "guardado y encendido" : "apagado"));
     } catch (err) { tell(err.message); }
   });
   q("#mh-apagar").addEventListener("click", async () => {
     try {
       await window.RIU_ACCION("handoff_texto", { sesion: chatA().sesion, texto: "" });
       q("#mh-estado").textContent = "apagado";
-      tell("Mi handoff apagado");
+      tell("yaiwes.md apagado");
     } catch (err) { tell(err.message); }
   });
   q("#ancla-enlace-on").addEventListener("click", () => {
@@ -592,6 +592,7 @@ export async function mount(root, { api, tell }) {
       bLock.setAttribute('aria-pressed', String(locked));
     };
     bLock.disabled = true; pintarLock();
+    window.addEventListener('riu:ia', (e) => { locked = !e.detail.on; pintarLock(); bLock.disabled = false; });  // el botón 🧰 y el servidor mandan
     const refrescarLock = async () => {
       const r = await window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion });
       if (!r || r.ok !== true || typeof r.locked !== 'boolean') throw new Error('GAP_AGENT_LOCK_ESTADO');
@@ -603,7 +604,7 @@ export async function mount(root, { api, tell }) {
       try {
         const r = await window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion, locked: !locked });
         if (!r || r.ok !== true || r.locked !== !locked) throw new Error('GAP_AGENT_LOCK_CAMBIO');
-        locked = r.locked; chatTools.agente_tool = !locked; pintarLock();
+        locked = r.locked; (window.RIU_IA ? window.RIU_IA(!locked) : (chatTools.agente_tool = !locked)); pintarLock();
       } catch (e) { tell('GAP: no se verificó el bloqueo: ' + e.message); }
       finally { busy = false; bLock.disabled = false; }
     });
@@ -716,7 +717,7 @@ export async function mount(root, { api, tell }) {
       if (answer.modelo_solicitado) c.hist.append(node("div", "Modelo solicitado: " + answer.modelo_solicitado + " · API: " + (answer.modelo_respuesta || "sin identificar"), "item message meta"));
       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
-      if (answer.finish_reason === "length") c.hist.append(node("div", "El proveedor alcanzo su limite de salida. Escribe «Continua» para seguir desde este punto", "item message meta"));
+      if (answer.finish_reason === "length") { const aviso = node("div", "La respuesta se cortó por el límite de salida del proveedor. ", "item message meta"), seguir = node("button", "Continuar", "mx-continuar"); seguir.type = "button"; seguir.onclick = () => { seguir.disabled = true; const m = q("#message"); m.value = "Continúa exactamente donde se cortó la respuesta anterior, sin repetir texto."; q("#composer").requestSubmit(); }; aviso.append(seguir); c.hist.append(aviso); }  // un clic y sigue desde el corte
       if (answer.execution_path === "FAST_QA") c.hist.append(node("div", "⚡ respuesta rápida · " + answer.ms + " ms", "item meta"));
       else if (answer.execution_path === "FAST_CONSULT") c.hist.append(node("div", "⚡ cónsil rápido · " + answer.ms + " ms", "item meta"));
       else if (c.fastReply && FAST_SEL() && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));

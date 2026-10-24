@@ -1,0 +1,5 @@
+/* medios en la burbuja (chat-medios.js) y botón Continuar; no cambia el composer */
+.chat-history .riu-medio{display:block;max-width:100%;height:auto;margin-top:10px;border-radius:12px;border:1px solid var(--border)}
+.chat-history audio.riu-medio{width:100%}
+.chat-history .riu-medio-enlace{display:inline-block;margin-top:6px;font-size:13px;color:var(--status-blue)}
+.chat-history .message .mx-continuar{margin-top:8px;min-height:38px;padding:0 16px;border-radius:999px;background:var(--status-blue);border:0;color:#fff;font-weight:700}
