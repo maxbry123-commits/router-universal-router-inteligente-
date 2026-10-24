@@ -104,7 +104,7 @@ const filas = () => {  // panel Selectores del chat: ⓘ diagrama, ⚡ respuesta
   SELECTORES.filter((s) => !s.mirror).forEach((s) => {
     const f = fila(s); if (!f) return;
     if (DIAGRAMAS[s.id]) {
-      const i = el("button", "sel-info"), d = el("div", "sel-diagrama"); i.type = "button"; i.setAttribute("aria-label", "Cómo funciona " + s.nombre); i.innerHTML = svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'); d.hidden = true;
+      const i = el("button", "sel-info"), d = el("div", "sel-diagrama consil-diagrama"); i.type = "button"; i.setAttribute("aria-label", "Cómo funciona " + s.nombre); i.innerHTML = svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'); d.hidden = true;
       pintarDiagrama(d, DIAGRAMAS[s.id].texto); i.onclick = () => { d.hidden = !d.hidden; i.classList.toggle("abierto", !d.hidden); }; f.append(i); f.append(d);
     }
     if (FAST.test(s.id)) {
