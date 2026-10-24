@@ -354,7 +354,7 @@ class TestEspacio(Base):
         self.assertEqual(self.accion("sandbox", {"sesion": "s1", "texto": ""})["encendido"], False)
         self.accion("sandbox", {"sesion": "s1", "texto": 5}, 400)
 
-    def test_handoff_y_sandbox_viajan_con_el_mensaje(self):
+    def test_yaiwes_md_y_sandbox_viajan_con_el_mensaje(self):
         self.assertEqual(self.accion("handoff_texto", {"sesion": "s1"}), {"texto": "", "encendido": False, "persistente": False})
         self.assertTrue(self.accion("handoff_texto", {"sesion": "s1", "texto": "trabaja en el repo X"})["encendido"])
         self.accion("sandbox", {"sesion": "s1", "texto": "eres revisor"})
@@ -365,8 +365,24 @@ class TestEspacio(Base):
             self.assertIn("trabaja en el repo X", json.dumps(llm.call_args.args[1]))
             self.assertIn("eres revisor", json.dumps(llm.call_args.args[1]))
             self.client.post("/chat/send", headers=CAB, json={"message": "hola", "model": "qwen3.8-max", "sesion": "otra"})
-            self.assertNotIn("repo X", json.dumps(llm.call_args.args[1]))
+            self.assertIn("trabaja en el repo X", json.dumps(llm.call_args.args[1]))  # yaiwes.md es global: lo ven todos los chats
+            self.assertNotIn("eres revisor", json.dumps(llm.call_args.args[1]))  # el sandbox es de cada chat
         self.assertFalse(self.accion("handoff_texto", {"sesion": "s1", "texto": ""})["encendido"])
+
+    def test_prompt_organizador_y_constitucion(self):
+        self.assertTrue(self.accion("agent_access_lock", {"quien": "prompt"})["prompt_locked"])  # nace OFF
+        self.assertFalse(self.accion("agent_access_lock", {"quien": "prompt", "locked": False})["prompt_locked"])
+        a = self.accion("checklist", {"accion": "agregar", "texto": "uno"})["pendientes"][0]["id"]
+        b = self.accion("checklist", {"accion": "agregar", "texto": "dos"})["pendientes"][1]["id"]
+        self.banco.datos["QWEN_API_KEY"] = "k"
+        with patch("mvp.app.compute.llamar", return_value={"texto": '["%s", "zzzzzzzz", "%s"]' % (b, b)}):
+            orden = self.accion("checklist", {"accion": "organizar"})["pendientes"]
+        self.assertEqual([x["id"] for x in orden], [b, a])  # ids inventados o repetidos se ignoran; ninguno se pierde
+        self.banco.datos["RIU_API_KEY"] = "clave-harness"
+        salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "x"}
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
+            self.client.post("/chat/send", headers=CAB, json={"message": "hola", "model": "qwen3.8-max", "sesion": "s1"})
+            self.assertIn("dos", json.dumps(llm.call_args.args[1]))  # la lista de pendientes viaja al modelo
 
     def test_proyectos(self):
         p = self.accion("proyecto", {"op": "upsert", "project_id": "p-1", "nombre": "Uno"})["proyecto"]
@@ -505,13 +521,15 @@ class TestGapsChat(Base):
         return r, (llm.call_args.args[1] if llm.call_args else None)
 
     def test_motores_envuelven_el_system_prompt_por_modo(self):
-        r, msgs = self.enviar_con_modo()  # Auto sin regla = modo por defecto: no se envuelve (no se pisan las tools autorizadas)
-        self.assertEqual((r.status_code, msgs), (200, [{"role": "user", "content": "hola"}]))
+        r, msgs = self.enviar_con_modo()  # Auto sin regla = modo por defecto: solo la capa de formato, sin el texto "sin herramientas" de m05
+        self.assertEqual((r.status_code, [m["role"] for m in msgs], msgs[-1]), (200, ["system", "user"], {"role": "user", "content": "hola"}))
+        self.assertIn("FORMATO DE SALIDA", msgs[0]["content"])
+        self.assertNotIn("MODO ACTIVO", msgs[0]["content"])
         r, msgs = self.enviar_con_modo(mode_request={"mode_id": "m01_plan", "source": "button"})
-        self.assertEqual((msgs[0]["role"], msgs[-1]["content"]), ("system", "hola"))
-        self.assertIn("m01_plan", msgs[0]["content"])
+        self.assertEqual(([m["role"] for m in msgs], msgs[-1]["content"]), (["system", "system", "user"], "hola"))
+        self.assertIn("m01_plan", msgs[1]["content"])
         r, msgs = self.enviar_con_modo(message="investiga sobre qwen", mode_request={"mode_id": "auto", "source": "auto"})
-        self.assertIn("m03_investigacion", msgs[0]["content"])  # Auto: lo decide la regla del clasificador
+        self.assertIn("m03_investigacion", msgs[1]["content"])  # Auto: lo decide la regla del clasificador
         r, msgs = self.enviar_con_modo(message="/auto  que tal", mode_request={"mode_id": "auto", "source": "auto"})
         self.assertEqual(msgs[-1]["content"], "que tal")  # el slash se quita del texto
 

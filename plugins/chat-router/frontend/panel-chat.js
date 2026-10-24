@@ -354,14 +354,14 @@ export async function mount(root, { api, tell }) {
         c.hist.append(burbuja("MI HANDOFF anclado:\n" + texto));
         abajo(c);
       }
-      tell("Mi handoff " + (r.encendido ? "guardado y encendido" : "apagado"));
+      tell("yaiwes.md " + (r.encendido ? "guardado y encendido" : "apagado"));
     } catch (err) { tell(err.message); }
   });
   q("#mh-apagar").addEventListener("click", async () => {
     try {
       await window.RIU_ACCION("handoff_texto", { sesion: chatA().sesion, texto: "" });
       q("#mh-estado").textContent = "apagado";
-      tell("Mi handoff apagado");
+      tell("yaiwes.md apagado");
     } catch (err) { tell(err.message); }
   });
   q("#ancla-enlace-on").addEventListener("click", () => {

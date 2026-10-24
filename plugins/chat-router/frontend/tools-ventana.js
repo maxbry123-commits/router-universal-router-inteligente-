@@ -102,8 +102,9 @@ async function pintarVentana(caja) {
 const avisar = (t) => { const n = document.querySelector("#notice"); if (n) n.textContent = t; else console.warn(t); };
 function aplicarFlags(r) {  // única vía para reflejar IA y Agentes (dos botones, dos permisos del servidor): chips, botón de bloqueo y LLM tool leen lo mismo
   const ia = !r.ia_locked, ag = !r.agentes_locked, f = window.RIU_CHAT_TOOL_FLAGS;
+  if ("prompt_locked" in r) window.RIU_PROMPT_ON = !r.prompt_locked;  // System prompt: nace OFF; el servidor lo recuerda
   if (f) { f.tools = ia || ag; f.llm_tool = ia; f.agente_tool = ag; }
-  [["#btn-tools", "IA", ia], ["#btn-agentes", "Agentes", ag]].forEach(([id, n, on]) => { const b = document.querySelector(id); if (b) { b.textContent = n + (on ? " ON" : " OFF"); b.setAttribute("aria-pressed", String(on)); } });
+  [["#btn-tools", "IA", ia], ["#btn-agentes", "Agentes", ag], ["#btn-prompt", "System prompt", !!window.RIU_PROMPT_ON]].forEach(([id, n, on]) => { const b = document.querySelector(id); if (b) { b.textContent = n + (on ? " ON" : " OFF"); b.setAttribute("aria-pressed", String(on)); } });
   const l = document.querySelector("#btn-llm-tool"); if (l) { l.textContent = "🧠 LLM tool " + (ia ? "ON" : "OFF"); l.classList.toggle("sel-on", ia); l.setAttribute("aria-pressed", String(ia)); }
   window.dispatchEvent(new CustomEvent("riu:ia", { detail: { on: ia || ag, ia, agentes: ag } }));
 }
@@ -121,16 +122,18 @@ function instalarChat() {
   b.title = "Permitir que el modelo llame a otras IA y agentes (el servidor lo recuerda). GitHub, HF y demás herramientas tienen su ON/OFF con clic derecho o mantener pulsado";
   const chip = (btn, quien, nombre) => { btn.onclick = async () => {  // el servidor decide y recuerda; el navegador solo refleja su respuesta
     const f = window.RIU_CHAT_TOOL_FLAGS; if (!f || btn.disabled) return; btn.disabled = true;
-    try { const r = await accion("agent_access_lock", { locked: !!(quien === "ia" ? f.llm_tool : f.agente_tool), quien }); aplicarFlags(r); if (r.persistente === false) avisar(nombre + ": el cambio no se guardará tras reiniciar el servidor"); }
+    try { const r = await accion("agent_access_lock", { locked: !!(quien === "ia" ? f.llm_tool : quien === "prompt" ? window.RIU_PROMPT_ON : f.agente_tool), quien }); aplicarFlags(r); if (r.persistente === false) avisar(nombre + ": el cambio no se guardará tras reiniciar el servidor"); }
     catch (x) { avisar(nombre + ": no se pudo cambiar (" + x.message + ")"); }
     finally { btn.disabled = false; } }; };
   chip(b, "ia", "IA");
   const g = el("button", "secondary", "Agentes OFF"); g.type = "button"; g.id = "btn-agentes"; g.setAttribute("aria-pressed", "false"); g.setAttribute("aria-label", "Permitir que el modelo use agentes");
   g.title = "Permitir que el modelo delegue en los agentes conectados (cada uno con su modelo); el servidor lo recuerda"; chip(g, "agentes", "Agentes");
+  const p = el("button", "secondary", "System prompt OFF"); p.type = "button"; p.id = "btn-prompt"; p.setAttribute("aria-pressed", "false"); p.setAttribute("aria-label", "Activar el system prompt completo");
+  p.title = "Añade el system prompt completo del proyecto a cada mensaje (apagado por defecto; el servidor lo recuerda)"; chip(p, "prompt", "System prompt");
   let pulsado = null; b.addEventListener("pointerdown", () => { pulsado = setTimeout(() => { pulsado = null; s.hidden = false; pintarVentana(cuerpo); }, 600); }); ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(pulsado); }));  // móvil: mantener pulsado abre la ventana
   accion("agent_access_lock", {}).then(aplicarFlags).catch(() => {});  // estado real del servidor al abrir el chat
   b.oncontextmenu = (ev) => { ev.preventDefault(); s.hidden = false; pintarVentana(cuerpo); };
-  const env = bar.querySelector(".action"); bar.insertBefore(g, env || null); bar.insertBefore(b, g);
+  const env = bar.querySelector(".action"); bar.insertBefore(p, env || null); bar.insertBefore(g, p); bar.insertBefore(b, g);
 }
 
 async function instalarConfig() {

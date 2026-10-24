@@ -164,7 +164,9 @@ class TestHarness(unittest.TestCase):
                 r = cliente.post("/chat/send", json={**cuerpo, "message": largo, "contexto_previo": anterior}, headers=cab)
                 self.assertEqual(r.status_code, 200, r.text)
                 self.assertEqual(r.json()["reply"], largo)
-                self.assertEqual(Falso.recibidas[-1][1]["messages"], anterior + [{"role": "user", "content": largo}])
+                enviados = Falso.recibidas[-1][1]["messages"]  # capa externa: el formato de salida va primero; el historial y el mensaje llegan intactos
+                self.assertEqual((enviados[0]["role"], "FORMATO DE SALIDA" in enviados[0]["content"]), ("system", True))
+                self.assertEqual(enviados[1:], anterior + [{"role": "user", "content": largo}])
                 Falso.cola = [(200, {"choices": [{"message": {"content": t}, "finish_reason": "length"}]}) for t in ("A", "B", "C")]
                 r = cliente.post("/chat/send", json=cuerpo, headers=cab)
                 self.assertEqual((r.json()["reply"], r.json()["finish_reason"]), ("ABC", "length"))

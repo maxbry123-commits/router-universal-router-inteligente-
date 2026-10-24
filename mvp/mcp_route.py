@@ -74,6 +74,8 @@ HERRAMIENTAS_CONTROL += [
     {'name': 'llm', 'description': 'Preguntar a otro modelo de texto del plan y recibir su respuesta.',
      'inputSchema': {'type': 'object', 'properties': {'modelo': {'type': 'string'}, 'mensaje': {'type': 'string'}}, 'required': ['modelo', 'mensaje']}},
 ]
+HERRAMIENTAS_CONTROL.append({'name': 'yaiwes_md', 'description': 'yaiwes.md: informacion del proyecto compartida entre el Director y los modelos. accion leer o escribir (reemplaza el texto completo).',
+     'inputSchema': {'type': 'object', 'properties': {'accion': {'type': 'string', 'enum': ['leer', 'escribir']}, 'texto': {'type': 'string'}}, 'required': ['accion']}})
 GITHUB = {'github_leer': github.github_leer, 'github_escribir': github.github_escribir,
           'github_api': github.github_api}
 FICHAS = {'listar_fichas': 'fichas', 'chat': 'chat_async', 'resultado': 'resultado'}
@@ -139,8 +141,8 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
     if nombre in GITHUB and any(not isinstance(args.get(c), str) for c in esquema.get('required', [])):
         return _error(id_, -32602, 'Parametros invalidos')
     try:
-        if nombre in ('pendientes', 'sala'):
-            salida = await control.aplicar({'pendientes': 'checklist', 'sala': 'salas'}[nombre], args, banco, 'modelo')
+        if nombre in ('pendientes', 'sala', 'yaiwes_md'):
+            salida = await control.aplicar({'pendientes': 'checklist', 'sala': 'salas', 'yaiwes_md': 'handoff_texto'}[nombre], args, banco, 'modelo')
             return _ok(id_, _contenido(salida))
         if nombre in ('agente', 'llm'):
             return _ok(id_, _contenido(await delegar(nombre, args)))

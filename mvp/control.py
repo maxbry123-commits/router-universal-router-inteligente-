@@ -15,7 +15,7 @@ SERVICIOS = {"github": "GitHub", "hf": "Hugging Face", "correo": "Correo", "mcp"
 LEGADO = {"github": "GITHUB_TOKEN", "hf": "HF_TOKEN"}  # credencial "defecto" de cada servicio: la que ya trae el banco
 TOOLS = {"github_leer": ("GitHub", "github"), "github_escribir": ("GitHub", "github"), "github_api": ("GitHub", "github"),
          "almacen": ("Hugging Face", "hf"), "pendientes": ("Chat", None), "sala": ("Chat", None),
-         "agente": ("IA y agentes", None), "llm": ("IA y agentes", None)}  # delegar en un agente / en otro modelo
+         "agente": ("IA y agentes", None), "llm": ("IA y agentes", None), "yaiwes_md": ("Chat", None)}  # delegar en un agente / en otro modelo
 NIVELES = {"lectura": 1, "escritura": 2, "admin": 3}
 MCP = re.compile(r"mcp__([0-9a-f]{8})__([A-Za-z0-9_-]{1,49})")
 MAX_CONEXIONES, MAX_PENDIENTES, MAX_SALAS, MAX_MENSAJES = 10, 200, 20, 500
@@ -30,7 +30,7 @@ def _vacio():
     base = {s: [] for s in SERVICIOS}
     for s in LEGADO:
         base[s].append({"id": "defecto", "etiqueta": "Principal (banco)", "on": True})
-    return {"ia": False, "herramientas": {}, "conexiones": base, "pendientes": [], "salas": {}, "archivos": {}, "sandbox": {}, "handoff": {}, "proyectos": {}, "agentes_on": False, "agentes": {}}
+    return {"ia": False, "herramientas": {}, "conexiones": base, "pendientes": [], "salas": {}, "archivos": {}, "sandbox": {}, "handoff": {}, "proyectos": {}, "agentes_on": False, "agentes": {}, "prompt_on": False}
 
 
 def _texto(valor, maximo, campo):
@@ -135,15 +135,17 @@ class Control:
     def _agent_access_lock(self, c, banco, actor):
         if "locked" in c:  # quien: ia (otros modelos), agentes, o todo (por defecto)
             quien, on = c.get("quien", "todo"), not _booleano(c["locked"], "locked")
-            if quien not in ("ia", "agentes", "todo"):
-                raise ValueError("quien debe ser ia, agentes o todo")
-            if quien != "agentes":
+            if quien not in ("ia", "agentes", "todo", "prompt"):
+                raise ValueError("quien debe ser ia, agentes, todo o prompt")
+            if quien == "prompt":  # system prompt completo (core + bloques) como capa externa; apagado = chat normal
+                self.d["prompt_on"] = on
+            elif quien != "agentes":
                 self.d["ia"] = on
-            if quien != "ia":
+            if quien in ("agentes", "todo"):
                 self.d["agentes_on"] = on
             self._sucio = True
         return {"ok": True, "sesion": str(c.get("sesion") or "web-general")[:60], "locked": not (self.d["ia"] or self.d["agentes_on"]),
-                "ia_locked": not self.d["ia"], "agentes_locked": not self.d["agentes_on"]}
+                "ia_locked": not self.d["ia"], "agentes_locked": not self.d["agentes_on"], "prompt_locked": not self.d["prompt_on"]}
 
     def _tools_lock(self, c, banco, actor):
         cambio = {}
@@ -373,8 +375,10 @@ class Control:
         texto = self._texto_sesion(c, "sandbox")
         return {"sandbox": texto, "encendido": bool(texto)}
 
-    def _handoff_texto(self, c, banco, actor):  # «Mi handoff»: texto propio que viaja con cada mensaje
-        texto = self._texto_sesion(c, "handoff")
+    def _handoff_texto(self, c, banco, actor):  # yaiwes.md: informacion del proyecto que pegan el Director o el modelo; global y viaja con cada mensaje
+        if c.get("accion") == "leer":
+            c = {k: v for k, v in c.items() if k != "texto"}
+        texto = self._texto_sesion({**c, "sesion": "yaiwes"}, "handoff")
         return {"texto": texto, "encendido": bool(texto)}
 
     def _proyecto(self, c, banco, actor):
@@ -418,7 +422,7 @@ class Control:
         raise ValueError("op de proyecto no soportada")
 
     def herramienta(self, nombre, args, actor="modelo"):
-        return self.ejecutar({"pendientes": "checklist", "sala": "salas"}[nombre], args, None, actor)
+        return self.ejecutar({"pendientes": "checklist", "sala": "salas", "yaiwes_md": "handoff_texto"}[nombre], args, None, actor)
 
 
 ACCIONES = {"agent_access_lock", "tools_lock", "conexiones", "checklist", "salas", "status", "estado", "herramientas_estado",

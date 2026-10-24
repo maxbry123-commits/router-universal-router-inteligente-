@@ -52,3 +52,13 @@ Movidos con `git mv` desde `fichas/fichas_qwen/` a `mvp/herramientas/` (sin cód
 
 Conectado en vivo: solo `mode_router` (modo → system block) en `_chat_ficha`. Movidos pero SIN conectar: `prompt_layouts`, `prompt_import`, `loop_controller`, `motor_objetivo`, `mythos_engine`, `rules_engine` y `yaiwes_motor`; los bucles piden un objetivo fijado (`objective_store`) que el chat aún no envía, y el system prompt largo (`mvp/system-prompt/perfiles`) solo lo usan esos bucles. Quedan en su sitio, sin tocar: `programador.py`, `apply_addon.py`, `check_integration.py`, `convert_instrucciones.py`, `qwen_blender_adapter.py`, `test_dsl_cableado.py` y `plugins/puente_chat/plugin.py` (`_prompt_lib`/`_core_render`/`_bloques_capas` están dentro de un módulo de 3.6k líneas).
 Efecto visible: Auto solo envuelve cuando una regla del clasificador acierta (agenda, plan, investigación, tool) o cuando eliges un modo; sin regla queda `m05_respuesta_rapida` y NO se añade su texto («sin herramientas»), porque pisaría las tools de GitHub/HF.
+
+## Cierre · agentes, 23 modelos, capas del prompt y botón de encendido
+
+- **23 modelos Qwen** (`mvp/modelos.json`, `mvp/multimedia.py`): texto por `/compatible-mode`, imagen/voz/ASR/video por HTTP DashScope (marcas `[[imagen:…]]`, `[[video:…]]`, `[[audio:…]]`); realtime (WebSocket) no está en el chat. NO VERIFICADO en vivo.
+- **Agentes**: hasta 50, cada uno con su modelo (`agente_enlazar`); dos interruptores separados en el servidor, **IA** (`llm`) y **Agentes** (`agente`), más el interruptor **System prompt** (`agent_access_lock` con `quien`: `ia|agentes|prompt|todo`).
+- **Capas del prompt** (`mvp/prompt.py`, `_chat_ficha`): siempre `prompts/FORMATO_SALIDA.md` (corto por defecto, checklist, Concluido/Faltante/Pendiente/Validación, flujo A ➡️ B ➡️ C); con **System prompt ON** (apagado por defecto) se añade `mvp/system-prompt/`. Constitución, yaiwes.md, sandbox y pendientes van en un solo mensaje `system`.
+- **yaiwes.md** (antes «Mi handoff»): texto global del proyecto, mismo anclaje; herramienta `yaiwes_md` para el modelo.
+- **Pendientes**: «Organizar con IA» (`checklist` → `organizar`, `qwen3.7-plus` por defecto) solo reordena.
+- **Botón Servidor** (`api/power.js` en Vercel, proyecto `riu-jev-bridge`, Root Directory `plugins/chat-router/frontend`): estado/encender/pausar del Space. Requiere `HF_POWER_TOKEN` en Vercel. CORS del Router solo para `riu-jev-bridge*.vercel.app`.
+- **NO VERIFICADO**: Space HF (pausado), Vercel en vivo, endpoints multimedia, función power con token real.

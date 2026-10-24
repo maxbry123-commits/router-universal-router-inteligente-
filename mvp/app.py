@@ -1,13 +1,13 @@
 """Chat MVP: autenticacion, banco de credenciales y cliente Token Plan."""
 import asyncio
 import base64
-import hmac, logging, uuid
+import hmac, logging, re, uuid
 import os, subprocess, sys, time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route, multimedia
+from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route, multimedia, prompt
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -174,11 +174,15 @@ async def _guardar_estado(texto):
 CONTROL.conectar(_leer_estado, _guardar_estado)  # el estado del chat se persiste por /almacen (sin secretos)
 async def _contexto_anclado(anclados, sesion):
     """Anclas del chat -> un mensaje de sistema: archivos subidos (texto), textos y enlaces; los secretos nunca viajan al modelo."""
-    partes, total = [], 0
+    partes, total, vistos = [], 0, set()
     for a in (anclados if isinstance(anclados, list) else [])[:20]:
         a = str(a)[:300]
         if a.startswith("secreto:"):
             continue
+        a = a.split(":", 1)[1] if a.split(":", 1)[0] in ("constitucion", "archivo") else a.rsplit(":", 1)[1] if a.startswith("proyecto:") and a.count(":") >= 2 else a
+        if a in vistos:  # la misma ancla puede llegar por dos caminos (constitucion y anclados)
+            continue
+        vistos.add(a)
         if a.split(":", 1)[0] in ("enlace", "raiz", "texto", "handoff"):
             partes.append("- " + a)
             continue
@@ -194,8 +198,26 @@ async def _contexto_anclado(anclados, sesion):
         total += len(texto)
         partes.append("--- " + a + " ---\n" + texto)
     return {"role": "system", "content": "[ANCLADOS POR EL DIRECTOR]\n" + "\n".join(partes)} if partes else None
+ORGANIZADOR = "qwen3.7-plus"
+async def _organizar(cuerpo):
+    """Pendientes: un modelo (qwen3.7 por defecto) los ordena por prioridad; solo se reordena, nunca se crea ni se borra nada."""
+    lista = CONTROL.d["pendientes"]
+    clave = app.state.banco.leer("QWEN_API_KEY") if app.state.banco else None
+    if not clave: raise HTTPException(status_code=503, detail="QWEN_API_KEY no disponible en banco")
+    try: modelo = modelos.validar(cuerpo.get("modelo") or ORGANIZADOR)
+    except (ValueError, TypeError) as error: raise ValueError(str(error)) from None
+    texto = "\n".join(x["id"] + " | " + x["texto"] for x in lista)
+    pedido = [{"role": "user", "content": "Ordena estos pendientes por prioridad. Responde SOLO una lista JSON con todos los ids, sin texto extra.\n" + texto}]
+    try: salida = await asyncio.to_thread(compute.llamar, pedido, modelo, modelos.base_url(), clave, None)
+    except (ValueError, TypeError, RuntimeError) as error: raise HTTPException(status_code=502, detail=str(error)) from None
+    hallados = re.findall(r"[0-9a-f]{8}", salida["texto"])
+    ids = [i for n, i in enumerate(hallados) if i in {x["id"] for x in lista} and i not in hallados[:n]]
+    ids += [x["id"] for x in lista if x["id"] not in ids]
+    return await CONTROL.aplicar("checklist", {"accion": "ordenar", "ids": ids}, app.state.banco)
+
 async def _control(accion, cuerpo, actor="director"):
     try:
+        if accion == "checklist" and cuerpo.get("accion") == "organizar": return await _organizar(cuerpo)
         if accion == "subir":  # el contenido se guarda por /almacen ANTES de registrarlo: sin fantasmas en el índice
             if not CONTROL.sincronizado: await CONTROL.cargar()
             ruta, _ = CONTROL.validar_subida(cuerpo)
@@ -238,9 +260,15 @@ async def _chat_ficha(cuerpo, progreso=None):
         if not isinstance(q["contexto_previo"], list):
             raise HTTPException(status_code=400, detail="contexto_previo debe ser una lista")
         mensajes = list(q["contexto_previo"]) + list(mensajes)
-    anclado = await _contexto_anclado(q.get("anclados"), q.get("sesion"))
+    con = q.get("constitucion") if isinstance(q.get("constitucion"), dict) else {}
     ses = str(q.get("sesion") or "web-general")[:60]
-    propios = [("MI HANDOFF", CONTROL.d["handoff"].get(ses)), ("SANDBOX (system prompt de code)", CONTROL.d["sandbox"].get(ses))]  # encendidos = con texto
+    anclado = await _contexto_anclado(q.get("anclados"), ses)
+    arch_con = await _contexto_anclado(con.get("anclados"), ses)
+    pend = "\n".join("- [%s] %s" % ("x" if p["hecho"] else " ", p["texto"][:300]) for p in CONTROL.d["pendientes"][:30])
+    propios = [("CONSTITUCION: es ley para este trabajo; respétala al programar y en lo que respondes", (str(con.get("texto") or "").strip() + ("\n" + arch_con["content"] if arch_con else "")).strip()),
+               ("yaiwes.md (información del proyecto; la herramienta yaiwes_md la lee y la escribe)", CONTROL.d["handoff"].get("yaiwes")),
+               ("SANDBOX (system prompt de code)", CONTROL.d["sandbox"].get(ses)),
+               ("PENDIENTES (lista compartida; la herramienta pendientes la consulta y la actualiza)", pend)]  # encendidos = con texto
     propios = "\n\n".join("[" + n + "]\n" + t for n, t in propios if t)
     if propios:
         mensajes = [{"role": "system", "content": propios}] + list(mensajes)
@@ -259,6 +287,8 @@ async def _chat_ficha(cuerpo, progreso=None):
         mensajes = [*mensajes[:-1], {**ultimo, "content": ruteo["message"]}]
     if ruteo["source"] != "default_mode":  # el modo por defecto (m05: "sin herramientas") contradiría las tools autorizadas por el Router: sin regla ni modo elegido no se envuelve
         mensajes = [{"role": "system", "content": ruteo["ficha"]["system_block"]}] + list(mensajes)
+    capa = prompt.formato() + ("\n\n" + prompt.sistema() if CONTROL.d["prompt_on"] else "")  # capa externa: formato de salida siempre; system prompt completo con su boton
+    mensajes = [{"role": "system", "content": capa}] + list(mensajes)
     seleccionado = str(q.get("modelo") or q.get("model") or "")
     seleccionado = next((m for m, _ in modelos.catalogo() if "".join(c for c in m.lower() if c.isalnum()) == "".join(c for c in seleccionado.lower() if c.isalnum())), seleccionado)
     if seleccionado.startswith(FICHAS_HEREDADAS):  # sin selector Qwen activo el chat manda su ficha (nv-muse-glimmer): se usa el modelo por defecto y el chat muestra «Modelo solicitado · API»

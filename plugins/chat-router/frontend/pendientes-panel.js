@@ -29,7 +29,9 @@ function checklist() {
   const llamar = async (c) => { try { const r = await accion("checklist", c); est.textContent = r.persistente === false ? "⚠️ No se guardará tras reiniciar (almacenamiento HF no disponible)" : ""; pintarLista(r.pendientes || []); return true; } catch (x) { est.textContent = "⚠️ " + x.message; return false; } };
   const agregar = btn("＋ Añadir", async () => { if (nuevo.value.trim() && await llamar({ accion: "agregar", texto: nuevo.value })) nuevo.value = ""; });
   nuevo.onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); agregar.click(); } };
-  fila.append(nuevo, agregar);
+  const org = btn("🧠 Organizar con IA", async () => { org.disabled = true; est.textContent = "Organizando…"; if (await llamar({ accion: "organizar" })) est.textContent = ""; org.disabled = false; });
+  org.title = "Un modelo (qwen3.7 por defecto) ordena los pendientes por prioridad; no crea ni borra ninguno";
+  fila.append(nuevo, agregar, org);
   llamar({});
   const todo = el("div", "list"); todo.append(fila, caja, est); return todo;
 }

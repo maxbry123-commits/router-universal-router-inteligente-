@@ -11,7 +11,7 @@ const SPRITE = '<svg xmlns="http://www.w3.org/2000/svg" id="mx-sprite" style="po
   ["expand", '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>'], ["x", '<path d="M5 5 19 19M19 5 5 19"/>'], ["power", '<path d="M12 2v10M6 5a9 9 0 1 0 12 0"/>'], ["settings", '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>'],
 ].map(([id, d]) => '<symbol id="i-' + id + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + "</symbol>").join("") + "</svg>";
 const TEXTO = { "btn-archivos": "Archivos", "btn-ancla": "Anclar", "btn-sandbox": "Sandbox", "btn-copiar-input": "Copiar", "btn-conexiones": "Conexiones", "btn-room": "ROOM", "btn-pendientes": "Pendientes", "btn-power": "Servidor" };
-const FIJOS = new Set(["btn-adjunto", "btn-microfono", "btn-detener", "btn-tools", "btn-agentes", "mx-mas", "mx-grande"]);  // se quedan en la fila principal
+const FIJOS = new Set(["btn-adjunto", "btn-microfono", "btn-detener", "btn-tools", "btn-agentes", "btn-prompt", "mx-mas", "mx-grande"]);  // se quedan en la fila principal
 const ICONOS = { "btn-conexiones": "shield", "btn-room": "message", "btn-pendientes": "check", "btn-power": "power" };  // botones propios: iconos de línea en vez de emojis
 const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
 
