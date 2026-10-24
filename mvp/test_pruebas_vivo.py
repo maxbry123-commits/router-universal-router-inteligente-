@@ -1,4 +1,5 @@
 """El ejecutor de pruebas reales debe seguir corriendo de punta a punta (con un Router simulado) y dejar su informe."""
+import json
 import os
 import tempfile
 import unittest
@@ -29,3 +30,44 @@ class Ejecutor(unittest.TestCase):
         self.assertIn("glm-5.3", informe)
         self.assertTrue(any(f["prueba"] == "eco" and f["estado"] == "PASS" for f in pruebas.FILAS))
         self.assertEqual(sum(1 for f in pruebas.FILAS if f["prueba"] == "tool github escribir"), 1)  # una sola vez
+
+
+class RouterConEstado:
+    """Router simulado con estado: el 'modelo' ejecuta lo que pide la tarea (o algo malo si malo=True) y las herramientas lo leen de vuelta."""
+    def __init__(self, base=None, clave=None, malo=False):
+        self.archivos, self.hf, self.pend, self.malo = {}, {}, [], malo
+    def health(self): return {"status": "ok"}
+    def mcp(self, metodo, params=None): return 200, {"result": {"tools": [{"name": "chat"}]}}
+    def post(self, ruta, cuerpo, timeout=60): return 200, {}
+    def chat(self, modelo, mensaje=None, rid="x", vueltas=20, **extra):
+        if rid.endswith("t1"):
+            self.archivos[f"Prueba/{modelo}/calculadora.py"] = "import os\nos.system('echo x')\n" if self.malo else '"""m"""\ndef suma(a, b):\n    """s"""\n    return a + b\n\n\ndef resta(a, b):\n    """r"""\n    return a - b\n'
+        if rid.endswith("t2"):
+            self.hf[f"chat_estado/prueba-{modelo}.json"] = json.dumps({"modelo": modelo, "tarea": "hf", "numeros": [1, 2, 3], "suma": 6})
+        if rid.endswith("t3"):
+            self.hf[f"chat_estado/resumen-{modelo}.txt"] = "El Router decide y guarda claves; el Harness ejecuta el trabajo con plugins y herramientas."
+            self.pend.append({"id": "1", "texto": f"tarea3-{modelo}", "hecho": False})
+        return {"estado": "completado", "choices": [{"message": {"content": "hecho"}}]}
+    def herramienta(self, nombre, args):
+        if nombre == "github_leer":
+            return True, {"texto": self.archivos.get(args["ruta"], "")}
+        if nombre == "almacen":
+            return True, {"valor": self.hf.get(args["nombre"], "")}
+        if nombre == "pendientes":
+            return True, {"pendientes": self.pend}
+        return True, {}
+
+
+class TareasReales(unittest.TestCase):
+    def correr(self, malo):
+        from mvp.pruebas_vivo import tareas
+        pruebas.FILAS.clear()
+        tareas.tareas_modelo(RouterConEstado(malo=malo), "glm-5.3")
+        return {f["prueba"]: f["estado"] for f in pruebas.FILAS}
+
+    def test_tres_tareas_pasan_y_se_comprueban_leyendo_el_resultado(self):
+        self.assertEqual(set(self.correr(False).values()), {"PASS"})
+
+    def test_codigo_con_instrucciones_sueltas_no_se_ejecuta_y_falla(self):
+        r = self.correr(True)
+        self.assertEqual(r["tarea1 codigo en GitHub"], "FAIL")

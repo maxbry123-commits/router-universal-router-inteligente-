@@ -1,10 +1,10 @@
-"""Prueba real de todos los modelos y herramientas contra el Router. Uso: RIU_KEY=<clave> python3 -m mvp.pruebas_vivo.correr [--base URL] [--solo modelo] [--sin-medios] [--medios] [--video]
+"""Prueba real de todos los modelos y herramientas contra el Router. Uso: RIU_KEY=<clave> python3 -m mvp.pruebas_vivo.correr [--base URL] [--solo modelo | --modelos a,b,c] [--tareas] [--sin-medios] [--medios] [--video]
 Escribe informe_sol.md e informe_sol.json (evidencia cruda recortada, se actualiza tras cada prueba). PASS solo con salida real; sin respuesta, FAIL con el error exacto."""
 import os
 import sys
 import time
 from mvp import modelos
-from mvp.pruebas_vivo import pruebas
+from mvp.pruebas_vivo import pruebas, tareas
 from mvp.pruebas_vivo.cliente import Cliente
 from mvp.pruebas_vivo.limpiar import limpiar
 
@@ -24,14 +24,15 @@ def main(argv):
     nombres = [t["name"] for t in doc.get("result", {}).get("tools", [])]
     pruebas.anotar("router", "tools/list", codigo == 200 and "chat" in nombres, nombres, time.time())
     c.post("/plugins/puente_chat/call/agent_access_lock", {"quien": "ia", "locked": False})  # IA ON para la prueba de llm
-    lista = [argv[argv.index("--solo") + 1]] if "--solo" in argv else [] if "--medios" in argv else [m["id"] for m in modelos.cargar()["texto"] if m["p"]]
+    todos = [m["id"] for m in modelos.cargar()["texto"] if m["p"]]
+    lista = argv[argv.index("--modelos") + 1].split(",") if "--modelos" in argv else [argv[argv.index("--solo") + 1]] if "--solo" in argv else [] if "--medios" in argv else todos
     try:
         for m in lista:
-            pruebas.texto_modelo(c, m)
-        if ("--solo" not in argv and "--sin-medios" not in argv) or "--medios" in argv:
+            (tareas.tareas_modelo if "--tareas" in argv else pruebas.texto_modelo)(c, m)
+        if ("--solo" not in argv and "--sin-medios" not in argv and "--tareas" not in argv and "--modelos" not in argv) or "--medios" in argv:
             pruebas.medios(c)
     finally:
-        print("Limpieza de datos de prueba:", limpiar(c)[1] or "nada")  # los pendientes sol-* y el yaiwes.md de prueba no deben quedar en el chat real
+        print("Limpieza de datos de prueba:", limpiar(c, lista if "--modelos" in argv else None)[1] or "nada")  # con --modelos solo se borra lo de esos modelos (otro agente puede estar corriendo a la vez)  # los pendientes sol-* y el yaiwes.md de prueba no deben quedar en el chat real
     print("PASS %d / %d. Informe: informe_sol.md" % (sum(x["estado"] == "PASS" for x in pruebas.FILAS), len(pruebas.FILAS)))
 
 

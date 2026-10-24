@@ -7,13 +7,14 @@ from mvp.pruebas_vivo.cliente import Cliente
 BASE = "https://comand-center-1-riu-router.hf.space"
 
 
-def limpiar(c):
+def limpiar(c, modelos=None):
     quitados, ok = [], True
     bien, d = c.herramienta("pendientes", {"accion": "listar"})
     ok = ok and bien
     for p in (d.get("pendientes") or []) if bien else []:
-        if str(p.get("texto", "")).startswith("sol-"):
-            quitados.append(p["texto"]); c.herramienta("pendientes", {"accion": "quitar", "id": p["id"]})
+        t = str(p.get("texto", ""))
+        if t.startswith(("sol-", "tarea3-")) and (modelos is None or any(t.endswith("-" + m) for m in modelos)):
+            quitados.append(t); c.herramienta("pendientes", {"accion": "quitar", "id": p["id"]})
     bien, d = c.herramienta("yaiwes_md", {"accion": "leer"})
     ok = ok and bien
     if bien and str(d.get("texto", "")).startswith("proyecto-"):
