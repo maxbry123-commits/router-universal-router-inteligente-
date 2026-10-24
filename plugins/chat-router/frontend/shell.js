@@ -7,6 +7,9 @@ import { mount as organization } from "./panel-org.js";
 import { mount as apariencia } from "./panel-apariencia.js";
 import "./apariencia-aplicar.js";
 import "./tools-ventana.js";  // MVP tools: ventana en el chat + bloque en Configuración  // aplica la apariencia guardada en todo el chat
+import "./ventana-conexiones.js";  // Conexiones (credenciales por servicio, ON/OFF en el servidor)
+import "./ventana-room.js";  // ROOM CONFERENCIAS (salas compartidas + turno de los agentes)
+import "./ventana-servidor.js";  // Servidor del Router (encender/apagar/reiniciar vía /api/power de Vercel)
 import "./chat-medios.js";  // medios [[imagen:]] [[video:]] [[audio:]] dentro de la burbuja
 import "./pendientes-panel.js";  // t175u: panel 📋 Pendientes (bloc de notas verbatim + DSL DAG con la LLM + prompt JSON editable)
 
