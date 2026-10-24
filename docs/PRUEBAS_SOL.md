@@ -10,4 +10,5 @@ RIU_KEY='<clave>' python3 -m mvp.pruebas_vivo.correr            # todo: 12 model
 RIU_KEY='<clave>' python3 -m mvp.pruebas_vivo.correr --solo glm-5.3   # un solo modelo
 RIU_KEY='<clave>' python3 -m mvp.pruebas_vivo.correr --sin-medios     # solo texto y herramientas
 ```
+Limpieza (los modelos de prueba dejan pendientes sol-* y yaiwes.md de prueba; el ejecutor los borra solo al terminar, o a mano): `RIU_KEY=<clave> python3 -m mvp.pruebas_vivo.limpiar`
 Entrega: `informe_sol.md` y `informe_sol.json` (se crean en la carpeta actual). GitHub: solo la rama `prueba-sol`. Si falla la red/DNS: ejecutar desde otro entorno; si da 401: la clave no coincide con la del Space.

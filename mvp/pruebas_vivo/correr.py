@@ -6,6 +6,7 @@ import sys
 import time
 from mvp import modelos
 from mvp.pruebas_vivo.cliente import Cliente, texto
+from mvp.pruebas_vivo.limpiar import limpiar
 
 REPO = "maxbry123-commits/router-universal-router-inteligente-"
 FILAS = []
