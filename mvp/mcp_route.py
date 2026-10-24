@@ -127,11 +127,8 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
             return _error(id_, -32602, 'Falta parametro: ' + campo)
     if nombre == 'chat':
         if args.get('ficha_qwen'):
-            if args.get('modelo'):
-                try:
-                    modelos.validar(args['modelo'])
-                except (ValueError, TypeError) as exc:
-                    return _error(id_, -32602, str(exc))
+            if args.get('modelo') and args['modelo'] not in dict(modelos.catalogo()):  # texto, imagen, voz y video del plan (la ficha genera los medios)
+                return _error(id_, -32602, 'modelo no permitido en el plan %s' % modelos.plan())
             if not isinstance(args['ficha_qwen'], str):
                 return _error(id_, -32602, 'ficha_qwen invalida')
         elif not isinstance(args.get('mensajes'), list) or not args['mensajes']:

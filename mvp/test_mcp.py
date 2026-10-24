@@ -78,8 +78,10 @@ class TestMCP(unittest.TestCase):
         self.assertEqual(r.json()['error']['code'], -32602)
         self.assertFalse(self.chat_calls)
         r = self.enviar('tools/call', {'name':'chat', 'arguments':{'ficha_qwen':'ficha1', 'modelo':'wan3.0-video'}})
+        self.assertNotIn('error', r.json())  # por la ficha los modelos de imagen, voz y video SI se aceptan: ella genera el medio
+        self.assertEqual(len(self.ficha_calls), 1)
+        r = self.enviar('tools/call', {'name':'chat', 'arguments':{'ficha_qwen':'ficha1', 'modelo':'no-existe'}})
         self.assertEqual(r.json()['error']['code'], -32602)
-        self.assertFalse(self.ficha_calls)
 
     def test_almacen(self):
         r = self.enviar('tools/call', {'name': 'almacen', 'arguments': {'accion': 'leer', 'nombre': 'x'}})
@@ -132,3 +134,15 @@ class TestMCP(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
+
+
+class TestMediosYGithubPorMcp(unittest.TestCase):
+    def test_chat_acepta_modelos_de_medios_y_la_ruta_de_github_conserva_las_barras(self):
+        from mvp import modelos
+        self.assertIn("qwen-image-3.0-pro", dict(modelos.catalogo()))
+        import urllib.parse
+        from router import mcp_puente_github as g
+        vistos = []
+        with patch.object(g, "_peticion", lambda m, u, c=None, e=40: (vistos.append(u), (200, {"type": "file", "content": ""}))[1]), patch.object(g, "_token", lambda: "t"):
+            g.github_leer({"repo": "r", "ruta": "Prueba/sol-escritura.txt", "rama": "main"})
+        self.assertIn("/contents/Prueba/sol-escritura.txt?ref=main", vistos[0])
