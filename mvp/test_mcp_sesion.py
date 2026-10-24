@@ -53,7 +53,7 @@ class SesionMCP(Base):
 
     def test_salud_por_mcp_da_commit_y_modelos(self):
         d = self.llamar("salud", {})
-        self.assertEqual(d["status"], "ok"); self.assertIn("commit", d); self.assertIn("qwen3.8-max", d["modelos"])
+        self.assertEqual(d["status"], "ok"); self.assertIn("commit", d); self.assertIn("qwen3.8-max", d["modelos"]); self.assertEqual(d["permisos"], {"ia": False, "agentes": False, "system_prompt": False})
 
     def test_herramientas_de_control_por_mcp(self):
         self.assertEqual(self.llamar("pendientes", {"accion": "agregar", "texto": "probar"})["pendientes"][0]["texto"], "probar")

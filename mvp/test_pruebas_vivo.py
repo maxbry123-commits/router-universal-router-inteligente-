@@ -99,3 +99,17 @@ class TareasReales(unittest.TestCase):
         estados = {f["prueba"]: f["estado"] for f in pruebas.FILAS}
         self.assertEqual(estados["tarea6 codigo con funcion"], "FAIL"); self.assertIn("tarea5 yaiwes.md + checklist", estados)
 
+    def test_guion_mcp_imprime_las_llamadas_sin_red_ni_informes(self):  # para quien solo tiene herramientas MCP (Sol/Grok sin HTTP)
+        import contextlib, io, json, os, tempfile
+        from mvp.pruebas_vivo import guion
+        antes = os.getcwd(); d = tempfile.mkdtemp(); os.chdir(d)
+        try:
+            with contextlib.redirect_stdout(io.StringIO()) as sal:
+                guion.main(["x", "--modelos", "glm-5.3", "--pruebas", "t4,t6"])
+            self.assertEqual(os.listdir(d), [])  # no escribe informe_sol.*
+        finally:
+            os.chdir(antes)
+        doc = json.loads(sal.getvalue().split("\nDespues")[0])
+        chats = [p for p in doc["pasos"] if p["herramienta"] == "chat"]
+        self.assertEqual([c["argumentos"]["modelo"] for c in chats], ["glm-5.3", "glm-5.3"]); self.assertTrue(all(c["argumentos"]["llm_tool"] for c in chats))
+

@@ -26,7 +26,8 @@ def _router(accion, datos):
         raise RuntimeError("RIU_ROUTER_URL no configurada")
     resultado = llamar("fichas_qwen" if accion == "chat" else "router_mvp", "llm" if accion == "chat" else accion, datos, timeout=390)
     if isinstance(resultado, dict) and resultado.get("status_code") == 403:
-        raise HTTPException(status_code=403, detail="Herramienta bloqueada por Router (HTTP 403)")
+        causa = str(resultado.get("error") or "").split("(HTTP 403)")[-1].lstrip(": ").strip()  # p. ej. «ia=false»: quien llama debe saber qué botón encender
+        raise HTTPException(status_code=403, detail="Herramienta bloqueada por Router (HTTP 403)" + (": " + causa if causa else ""))
     if not isinstance(resultado, dict) or resultado.get("error") or resultado.get("status") == "degraded":
         motivo = resultado.get("error", "respuesta invalida") if isinstance(resultado, dict) else "respuesta invalida"
         raise RuntimeError("Router " + str(motivo)[:80])

@@ -31,7 +31,14 @@ def llamar(plugin: str, accion: str, payload: dict | None = None, timeout: float
         with urllib.request.urlopen(req, timeout=timeout) as r:
             out = json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        return {"error": f"HTTP {exc.code}", "status": "degraded", "status_code": exc.code}  # inv. 9: solo el codigo, sin reason/detail del servidor
+        causa = ""
+        if exc.code == 403:  # inv. 9: solo el codigo; unica excepcion, el nombre del permiso apagado («ia=false», «agentes=false», «herramienta=false») para saber que boton encender
+            try:
+                m = re.search(r"(?<![\w])(?:tools|ia|agentes|agente_tool|llm_tool|herramienta|conexion)=false", str(json.loads(exc.read() or b"{}").get("detail") or ""))
+                causa = ": " + m.group(0) if m else ""
+            except (ValueError, OSError):
+                causa = ""
+        return {"error": f"HTTP {exc.code}{causa}", "status": "degraded", "status_code": exc.code}
     except (OSError, ValueError) as exc:
         return {"error": type(exc).__name__, "status": "degraded"}
     if isinstance(out, dict) and (out.get("status") == "ok" or (plugin == "router_mvp" and accion in ("chat", "almacen", "mcp"))):
