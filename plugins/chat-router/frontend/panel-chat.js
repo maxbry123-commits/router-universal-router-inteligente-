@@ -586,33 +586,17 @@ export async function mount(root, { api, tell }) {
   const pintarParalelo = () => { const b = q("#btn-paralelo"); if (b) { b.classList.toggle("sel-on", !!chat().paralelo); b.setAttribute("aria-pressed", String(!!chat().paralelo)); } };
   const bpar = q("#btn-paralelo"); if (bpar) bpar.addEventListener("click", () => { chat().paralelo = !chat().paralelo; pintarParalelo(); guardar(); tell(chat().paralelo ? "⧉ Paralelo ON: marca hasta 6 modelos en Team qwen ⌄" : "⧉ Paralelo OFF"); });
   pintarParalelo();
-  const bLock = q('#btn-agent-access-lock');
-  if (bLock) {
-    let busy = false, locked = true;  // UI no habilita nada antes de leer el servidor
-    const pintarLock = () => {
-      bLock.textContent = (locked ? '🔒 IA/agentes delegados BLOQUEADOS' : '🔓 IA/agentes delegados habilitados') + ' · agente_tool ' + (chatTools.agente_tool ? 'ON' : 'OFF');
-      bLock.setAttribute('aria-pressed', String(locked));
-    };
-    bLock.disabled = true; pintarLock();
-    window.addEventListener('riu:ia', (e) => { locked = !e.detail.on; pintarLock(); bLock.disabled = false; });  // el botón 🧰 y el servidor mandan
-    const refrescarLock = async () => {
-      const r = await window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion });
-      if (!r || r.ok !== true || typeof r.locked !== 'boolean') throw new Error('GAP_AGENT_LOCK_ESTADO');
-      locked = r.locked; pintarLock(); bLock.disabled = false;
-    };
-    void refrescarLock().catch(() => { locked = true; pintarLock(); bLock.disabled = true; });
-    bLock.addEventListener('click', async () => {
-      if (busy) return; busy = true; bLock.disabled = true;
-      try {
-        const r = await window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion, locked: !locked });
-        if (!r || r.ok !== true || r.locked !== !locked) throw new Error('GAP_AGENT_LOCK_CAMBIO');
-        locked = r.locked; (window.RIU_IA ? window.RIU_IA(!locked) : (chatTools.agente_tool = !locked)); pintarLock();
-      } catch (e) { tell('GAP: no se verificó el bloqueo: ' + e.message); }
-      finally { busy = false; bLock.disabled = false; }
-    });
-  }
-  const bLlm = q("#btn-llm-tool");
-  if (bLlm) bLlm.addEventListener("click", () => { chatTools.llm_tool = !chatTools.llm_tool; bLlm.textContent = "🧠 LLM tool " + (chatTools.llm_tool ? "ON" : "OFF"); bLlm.classList.toggle("sel-on", chatTools.llm_tool); bLlm.setAttribute("aria-pressed", String(chatTools.llm_tool)); });
+  // Controles: «Agente tool» y «LLM tool» son los mismos permisos del servidor que los chips Agentes e IA (un solo estado, sin copias locales)
+  const bLock = q('#btn-agent-access-lock'), bLlm = q("#btn-llm-tool");
+  const pintarTools = (ia, ag) => {
+    if (bLock) { bLock.textContent = (ag ? '🔓' : '🔒') + ' Agente tool ' + (ag ? 'ON' : 'OFF'); bLock.setAttribute('aria-pressed', String(ag)); bLock.title = 'Permitir que el modelo delegue en agentes (igual que el chip Agentes)'; }
+    if (bLlm) { bLlm.textContent = '🧠 LLM tool ' + (ia ? 'ON' : 'OFF'); bLlm.classList.toggle('sel-on', ia); bLlm.setAttribute('aria-pressed', String(ia)); bLlm.title = 'Permitir que el modelo consulte otros modelos (igual que el chip IA)'; }
+  };
+  pintarTools(false, false);
+  window.addEventListener('riu:ia', (e) => pintarTools(!!e.detail.ia, !!e.detail.agentes));
+  const pulsar = (sel) => () => { const chip = document.querySelector(sel); if (chip) chip.click(); else tell('GAP: falta el botón ' + sel); };
+  if (bLock) bLock.addEventListener('click', pulsar('#btn-agentes'));
+  if (bLlm) bLlm.addEventListener('click', pulsar('#btn-tools'));
   pintarMotor();
   const bpr = q("#btn-proyectos"); if (bpr) bpr.addEventListener("click", () => { if (window.RIU_ANCLA_ABRIR) window.RIU_ANCLA_ABRIR("proyecto"); });  // misma ventana-ancla, objetivo Proyecto
   window.addEventListener("riu:fast-reply-toggle", window.__riuFastH);
@@ -717,6 +701,7 @@ export async function mount(root, { api, tell }) {
       if (c.detenerFlag) throw new Error("PROCESO_DETENIDO");  // detenido mientras la respuesta llegaba: no pintar respuesta tardia
       pending.remove();
       if (answer.modelo_solicitado) c.hist.append(node("div", "Modelo solicitado: " + answer.modelo_solicitado + " · API: " + (answer.modelo_respuesta || "sin identificar"), "item message meta"));
+      if (answer.aviso) c.hist.append(node("div", "Aviso: " + answer.aviso, "item message meta"));  // p. ej. modo Objetivo: un turno (sin bucle autónomo en el MVP)
       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
       if (answer.finish_reason === "length") { const aviso = node("div", "La respuesta se cortó por el límite de salida del proveedor. ", "item message meta"), seguir = node("button", "Continuar", "mx-continuar"); seguir.type = "button"; seguir.onclick = () => { seguir.disabled = true; const m = q("#message"); m.value = "Continúa exactamente donde se cortó la respuesta anterior, sin repetir texto."; q("#composer").requestSubmit(); }; aviso.append(seguir); c.hist.append(aviso); }  // un clic y sigue desde el corte

@@ -51,5 +51,9 @@ class ToolsDelChat(unittest.TestCase):
                     r = cli.post("/plugins/puente_chat/call/resultado", headers=cab, json={"proceso_id": r["proceso_id"], "espera": 1}).json()["result"]
                     if r["estado"] != "procesando": break
                 self.assertEqual(r.get("herramientas_usadas"), ["pendientes"])  # visible para el diagnostico
+                Falso.cola = [llamada("almacen", {"accion": "listar", "nombre": "x"}), FIN]  # BUG: «GAP: Almacen HF permite solo leer y guardar» cortaba el chat
+                r = cli.post("/chat/send", headers=cab, json={"message": "lista el almacen", "modelo": "qwen3.8-max", "tools": True})
+                self.assertEqual((r.status_code, r.json().get("reply")), (200, "Hecho"), r.text)  # el modelo recibe el error como resultado de la herramienta y sigue
+                self.assertIn("solo leer y guardar", json.dumps(Falso.recibidas[-1][1]["messages"][-1], ensure_ascii=False))
             finally:
                 srv.should_exit = True; hilo.join(timeout=5); http.shutdown()

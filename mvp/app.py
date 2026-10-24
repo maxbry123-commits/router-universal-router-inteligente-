@@ -296,8 +296,7 @@ async def _chat_ficha(cuerpo, progreso=None):
         ruteo = mode_router.route_request(REGISTRO, {"message": str((ultimo or {}).get("content") or ""), "mode_request": q.get("mode_request")})
     except mode_router.ModeError as error:
         raise HTTPException(status_code=400, detail=str(error)) from None
-    if ruteo["ficha"]["autonomous_loop"]:
-        raise HTTPException(status_code=501, detail="modo %s: bucle autonomo sin conectar en el MVP (motor_objetivo.correr_objetivo pide objetivo fijado)" % ruteo["mode_id"])
+    aviso_modo = ("modo %s: el bucle autónomo no está en el MVP; se respondió un turno con las reglas del modo" % ruteo["mode_id"]) if ruteo["ficha"]["autonomous_loop"] else None
     if ultimo is not None and ruteo["message"].strip():  # /modo y /auto se quitan del texto
         mensajes = [*mensajes[:-1], {**ultimo, "content": ruteo["message"]}]
     if ruteo["source"] != "default_mode":  # el modo por defecto (m05: "sin herramientas") contradiría las tools autorizadas por el Router: sin regla ni modo elegido no se envuelve
@@ -330,6 +329,7 @@ async def _chat_ficha(cuerpo, progreso=None):
     return {"estado": "completado", "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": modelo, "modelo_respuesta": salida.get("modelo_respuesta"), "herramientas_usadas": salida.get("herramientas_usadas") or [],
             **({"aviso_modelo": "sin selector de modelo encendido: respondió el modelo por defecto " + modelo} if heredada else {}),
+            **({"aviso_modo": aviso_modo} if aviso_modo else {}),
             "choices": [{"message": {"role": "assistant", "content": salida["texto"],
                                     "tool_calls": salida["tool_calls"]},
                          "finish_reason": salida["finish_reason"]}]}
@@ -458,7 +458,8 @@ async def chat_send(cuerpo: dict):
     tools = [((t.get("function") or {}).get("name") or "tool") for t in (msg.get("tool_calls") or []) if isinstance(t, dict)]
     return {"reply": msg["content"], "execution_path": "HARNESS", "ms": int((time.monotonic() - t0) * 1000),
             "tools": tools, "via": "harness", "finish_reason": salida["finish_reason"],
-            "modelo_solicitado": salida.get("modelo_solicitado"), "modelo_respuesta": salida.get("modelo_respuesta")}
+            "modelo_solicitado": salida.get("modelo_solicitado"), "modelo_respuesta": salida.get("modelo_respuesta"),
+            **{k: salida[k] for k in ("aviso_modo", "aviso_modelo") if salida.get(k)}}
 async def _delegar(nombre, args):
     """Herramientas agente/llm del modelo: una llamada nueva (sin herramientas, sin historial) al modelo del agente o al elegido."""
     if nombre == "agente":

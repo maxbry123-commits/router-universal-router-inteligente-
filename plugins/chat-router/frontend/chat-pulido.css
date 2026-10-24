@@ -11,8 +11,6 @@
 /* foco visible en todo el chat (teclado) */
 #composer button:focus-visible,#composer textarea:focus-visible,.sel-fila button:focus-visible,.chat-history button:focus-visible{outline:2px solid var(--status-blue,#2F80FF);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){#composer .composer-bar #btn-tools::before,#composer .composer-bar #btn-agentes::before,#composer .composer-bar #btn-prompt::before{box-shadow:none}}
-/* móvil: los tres chips juntos en su propia fila, antes de Enviar, ocupando el ancho por igual */
-@media(max-width:720px){#composer .composer-bar #btn-tools,#composer .composer-bar #btn-agentes,#composer .composer-bar #btn-prompt{order:50;flex:1 1 auto!important;justify-content:center}}
 /* contraste AA del texto encendido (azul sobre panel oscuro): mismo azul, más claro en temas oscuros */
 :root{--azul-texto:#8AB4FF}html[data-theme=blanco]{--azul-texto:#1F5BE0}
 .sel-on.on,.sel-nuevo.on,.pill.on,.toggle.on,.mini.on,.ap-chip.on,.ap-chip[aria-pressed="true"]{color:var(--azul-texto)!important}

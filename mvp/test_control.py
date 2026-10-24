@@ -541,10 +541,12 @@ class TestGapsChat(Base):
         r, msgs = self.enviar_con_modo(message="/auto  que tal", mode_request={"mode_id": "auto", "source": "auto"})
         self.assertEqual(msgs[-1]["content"], "que tal")  # el slash se quita del texto
 
-    def test_modo_autonomo_y_modo_invalido_fallan_cerrados(self):
-        r, msgs = self.enviar_con_modo(mode_request={"mode_id": "m04_agentico_loop", "source": "button"})
-        self.assertEqual((r.status_code, msgs), (501, None))
-        self.assertIn("m04_agentico_loop", r.json()["detail"])
+    def test_modo_autonomo_responde_un_turno_y_avisa_y_modo_invalido_falla(self):  # antes: «GAP: modo m02_objetivo … sin conectar» (501) y el botón no servía
+        for modo in ("m02_objetivo", "m04_agentico_loop"):
+            r, msgs = self.enviar_con_modo(mode_request={"mode_id": modo, "source": "button"})
+            self.assertEqual(r.status_code, 200, r.text)
+            self.assertIn(modo, msgs[1]["content"])
+            self.assertIn("un turno", r.json().get("aviso_modo", ""))
         r, _ = self.enviar_con_modo(mode_request={"mode_id": "m01_plan", "source": "auto"})
         self.assertEqual(r.status_code, 400)
         r, _ = self.enviar_con_modo(mode_request={"mode_id": "m99", "source": "button"})

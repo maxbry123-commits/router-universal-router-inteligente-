@@ -111,12 +111,16 @@ def llm(cuerpo):
             if not llamada.get("id"):
                 raise RuntimeError("tool_call sin id; no se ejecuto")
             usadas.append(nombre)
-            args = json.loads(funcion.get("arguments") or "{}")
-            if not isinstance(args, dict):
-                raise ValueError("Argumentos de herramienta invalidos")
+            try:
+                args = json.loads(funcion.get("arguments") or "{}")
+            except ValueError:
+                args = None
+            aviso = ("Argumentos de herramienta invalidos (JSON)" if not isinstance(args, dict) else
+                     "Almacen HF permite solo leer y guardar (accion leer o guardar)" if nombre == "almacen" and args.get("accion") not in ("leer", "guardar") else None)
+            if aviso:  # error de argumentos: vuelve al modelo como resultado de la herramienta para que corrija; no corta el chat
+                mensajes.append({"role": "tool", "tool_call_id": llamada["id"], "content": json.dumps({"error": aviso}, ensure_ascii=False)})
+                continue
             if nombre == "almacen":
-                if args.get("accion") not in ("leer", "guardar"):
-                    raise ValueError("Almacen HF permite solo leer y guardar")
                 args["destino"] = "hf"
             elif nombre.startswith("github_"):
                 args.setdefault("rama", "main")
