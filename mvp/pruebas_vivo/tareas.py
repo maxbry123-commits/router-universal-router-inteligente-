@@ -52,6 +52,45 @@ def tarea3_combinada(c, m, rid):
     con_tool(c, m, "tarea3 GitHub+HF+pendientes", f"Tarea combinada en 3 pasos: (1) con github_leer lee docs/ARQUITECTURA.md del repo {REPO} en la rama main; (2) resume en máximo 3 frases qué son los dos edificios y guarda ese resumen con almacen en destino hf como {nombre}; (3) con pendientes agrega el pendiente 'tarea3-{m}'. Confirma los tres pasos.", rid + "t3", comprobar)
 
 
-def tareas_modelo(c, m):
-    for tarea in (tarea1_codigo, tarea2_hf, tarea3_combinada):
-        tarea(c, m, f"v-{m}-")
+def tarea4_delegar(c, m, rid):
+    nombre = f"chat_estado/delegado-{m}.txt"
+    def comprobar():
+        ok, d = c.herramienta("almacen", {"accion": "leer", "destino": "hf", "nombre": nombre})
+        return ok and "42" in str(d.get("valor", "")), d
+    con_tool(c, m, "tarea4 delegar a otro modelo + HF", f"Tarea de delegación: usa la herramienta llm para preguntar al modelo qwen3.8-flash «¿Cuánto es 6 por 7? Responde solo el número». Guarda su respuesta con almacen en destino hf como {nombre}. Confirma.", rid + "t4", comprobar)
+
+
+def tarea5_notas(c, m, rid):
+    def comprobar():
+        oky, y = c.herramienta("yaiwes_md", {"accion": "leer"})
+        okp, p = c.herramienta("pendientes", {"accion": "listar"})
+        lista = {x["texto"]: x["hecho"] for x in p.get("pendientes", [])} if okp else {}
+        bien = oky and y.get("texto") == f"proyecto-{m}" and f"tarea5-{m}-a" in lista and lista.get(f"tarea5-{m}-b") is True
+        return bien, "yaiwes=%s | pendientes=%s" % (y.get("texto"), {k: v for k, v in lista.items() if k.startswith("tarea5-" + m)})
+    con_tool(c, m, "tarea5 yaiwes.md + checklist", f"Con yaiwes_md escribe exactamente el texto proyecto-{m}. Con pendientes agrega los pendientes tarea5-{m}-a y tarea5-{m}-b, y marca como hecho solo el segundo (tarea5-{m}-b). Confirma.", rid + "t5", comprobar)
+
+
+def tarea6_codigo(c, m, rid):
+    ruta = f"Prueba/{m}/palabras.py"
+    def comprobar():
+        ok, d = c.herramienta("github_leer", {"repo": REPO, "ruta": ruta, "rama": "main"})
+        txt = d.get("texto") if isinstance(d, dict) and "texto" in d else ""
+        try:
+            arbol = ast.parse(txt)
+        except SyntaxError as exc:
+            return False, "codigo no valido: %s" % exc
+        if not all(isinstance(n, SOLO_FUNCIONES) or (isinstance(n, ast.Expr) and isinstance(getattr(n, "value", None), ast.Constant)) for n in arbol.body):
+            return False, "el modulo tiene codigo suelto (no solo funciones)"
+        ambito = {}
+        exec(compile(arbol, "palabras.py", "exec"), ambito)  # noqa: S102 - solo definiciones de funciones
+        r = ambito["contar_palabras"]("hola mundo cruel"), ambito["contar_palabras"]("")
+        return ok and r == (3, 0), "contar_palabras('hola mundo cruel'),('')=%s" % (r,)
+    con_tool(c, m, "tarea6 codigo con funcion", f"Tarea de programación. Con github_escribir, en el repo {REPO}, rama main, crea {ruta} con una función Python contar_palabras(texto) que devuelva cuántas palabras tiene el texto (0 si está vacío), con docstring y sin código suelto fuera de la función. Luego léelo con github_leer y confirma.", rid + "t6", comprobar)
+
+
+TAREAS = {"t1": tarea1_codigo, "t2": tarea2_hf, "t3": tarea3_combinada, "t4": tarea4_delegar, "t5": tarea5_notas, "t6": tarea6_codigo}
+
+
+def tareas_modelo(c, m, pruebas=None):
+    for clave in (pruebas or ["t1", "t2", "t3"]):
+        TAREAS[clave](c, m, f"v-{m}-")

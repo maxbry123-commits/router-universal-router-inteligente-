@@ -47,6 +47,13 @@ class RouterConEstado:
         if rid.endswith("t3"):
             self.hf[f"chat_estado/resumen-{modelo}.txt"] = "El Router decide y guarda claves; el Harness ejecuta el trabajo con plugins y herramientas."
             self.pend.append({"id": "1", "texto": f"tarea3-{modelo}", "hecho": False})
+        if rid.endswith("t4"):
+            self.hf[f"chat_estado/delegado-{modelo}.txt"] = "42"
+        if rid.endswith("t5"):
+            self.yaiwes = f"proyecto-{modelo}"
+            self.pend += [{"id": "a", "texto": f"tarea5-{modelo}-a", "hecho": False}, {"id": "b", "texto": f"tarea5-{modelo}-b", "hecho": True}]
+        if rid.endswith("t6"):
+            self.archivos[f"Prueba/{modelo}/palabras.py"] = '"""m"""\ndef contar_palabras(texto):\n    """c"""\n    return len(texto.split())\n'
         return {"estado": "completado", "choices": [{"message": {"content": "hecho"}}]}
     def herramienta(self, nombre, args):
         if nombre == "github_leer":
@@ -55,14 +62,16 @@ class RouterConEstado:
             return True, {"valor": self.hf.get(args["nombre"], "")}
         if nombre == "pendientes":
             return True, {"pendientes": self.pend}
+        if nombre == "yaiwes_md":
+            return True, {"texto": getattr(self, "yaiwes", "")}
         return True, {}
 
 
 class TareasReales(unittest.TestCase):
-    def correr(self, malo):
+    def correr(self, malo, lista=None):
         from mvp.pruebas_vivo import tareas
         pruebas.FILAS.clear()
-        tareas.tareas_modelo(RouterConEstado(malo=malo), "glm-5.3")
+        tareas.tareas_modelo(RouterConEstado(malo=malo), "glm-5.3", lista)
         return {f["prueba"]: f["estado"] for f in pruebas.FILAS}
 
     def test_tres_tareas_pasan_y_se_comprueban_leyendo_el_resultado(self):
@@ -71,3 +80,7 @@ class TareasReales(unittest.TestCase):
     def test_codigo_con_instrucciones_sueltas_no_se_ejecuta_y_falla(self):
         r = self.correr(True)
         self.assertEqual(r["tarea1 codigo en GitHub"], "FAIL")
+
+    def test_las_seis_tareas_existen_y_pasan(self):
+        r = self.correr(False, ["t1", "t2", "t3", "t4", "t5", "t6"])
+        self.assertEqual((len(r), set(r.values())), (6, {"PASS"}))

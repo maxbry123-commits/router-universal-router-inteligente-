@@ -1,4 +1,4 @@
-"""Prueba real de todos los modelos y herramientas contra el Router. Uso: RIU_KEY=<clave> python3 -m mvp.pruebas_vivo.correr [--base URL] [--solo modelo | --modelos a,b,c] [--tareas] [--sin-medios] [--medios] [--video]
+"""Prueba real de todos los modelos y herramientas contra el Router. Uso: RIU_KEY=<clave> python3 -m mvp.pruebas_vivo.correr [--base URL] [--solo modelo | --modelos a,b,c] [--tareas [--pruebas t1,t2,t3,t4,t5,t6]] [--sin-medios] [--medios] [--video]
 Escribe informe_sol.md e informe_sol.json (evidencia cruda recortada, se actualiza tras cada prueba). PASS solo con salida real; sin respuesta, FAIL con el error exacto."""
 import os
 import sys
@@ -28,11 +28,12 @@ def main(argv):
     lista = argv[argv.index("--modelos") + 1].split(",") if "--modelos" in argv else [argv[argv.index("--solo") + 1]] if "--solo" in argv else [] if "--medios" in argv else todos
     try:
         for m in lista:
-            (tareas.tareas_modelo if "--tareas" in argv else pruebas.texto_modelo)(c, m)
+            tareas.tareas_modelo(c, m, argv[argv.index("--pruebas") + 1].split(",") if "--pruebas" in argv else None) if "--tareas" in argv else pruebas.texto_modelo(c, m)
         if ("--solo" not in argv and "--sin-medios" not in argv and "--tareas" not in argv and "--modelos" not in argv) or "--medios" in argv:
             pruebas.medios(c)
     finally:
-        print("Limpieza de datos de prueba:", limpiar(c, lista if "--modelos" in argv else None)[1] or "nada")  # con --modelos solo se borra lo de esos modelos (otro agente puede estar corriendo a la vez)  # los pendientes sol-* y el yaiwes.md de prueba no deben quedar en el chat real
+        con_yaiwes = "--tareas" not in argv or ("--pruebas" in argv and "t5" in argv[argv.index("--pruebas") + 1].split(","))  # yaiwes.md es global: solo lo borra quien lo uso
+        print("Limpieza de datos de prueba:", limpiar(c, lista if "--modelos" in argv else None, con_yaiwes)[1] or "nada")  # con --modelos solo se borra lo de esos modelos (otro agente puede correr a la vez)
     print("PASS %d / %d. Informe: informe_sol.md" % (sum(x["estado"] == "PASS" for x in pruebas.FILAS), len(pruebas.FILAS)))
 
 
