@@ -31,7 +31,11 @@ def _enviar(accion, datos, clave):
                 return json.load(respuesta)
         except error.HTTPError as exc:
             if exc.code == 403:
-                return {"status": "error", "status_code": 403, "error": "Herramienta bloqueada por Router (HTTP 403)"}
+                try:
+                    motivo = str(json.loads(exc.read() or b"{}").get("detail") or "")[:160]
+                except ValueError:
+                    motivo = ""
+                return {"status": "error", "status_code": 403, "error": "Herramienta bloqueada por Router (HTTP 403)" + (": " + motivo if motivo else "")}
             if exc.code not in REINTENTABLES or intento == 2:
                 raise RuntimeError("Harness HTTP " + str(exc.code)) from None
         except (error.URLError, TimeoutError, OSError):

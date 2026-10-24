@@ -86,7 +86,7 @@ class TestHarness(unittest.TestCase):
         with patch("mvp.app.compute.llamar") as directo:
             r = self.http_client.post("/chat", json={"via": "harness", "mensajes": [{"role": "user", "content": "hola"}]}, headers={"x-api-key": "acceso-test"})
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json(), {"texto": "ok", "tool_calls": [], "finish_reason": None})
+        self.assertEqual(r.json(), {"texto": "ok", "tool_calls": [], "herramientas_usadas": [], "finish_reason": None})
         self.assertEqual(Falso.recibidas[-1][1]["action"], "llm")
         directo.assert_not_called()
 

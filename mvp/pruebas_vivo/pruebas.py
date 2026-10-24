@@ -35,7 +35,7 @@ def con_tool(c, m, nombre, mensaje, rid, comprobar):
     t0 = time.time()
     r = c.chat(m, mensaje, rid=rid, tools=True, llm_tool=True)
     ok, dato = comprobar()
-    anotar(m, nombre, r.get("estado") == "completado" and ok, "chat=%s %s | respuesta=%s | comprobacion=%s" % (r.get("estado"), r.get("error") or "", texto(r)[:120], dato), t0)  # evidencia completa: estado del chat, lo que dijo el modelo y lo que quedo guardado
+    anotar(m, nombre, r.get("estado") == "completado" and ok, "chat=%s %s | usadas=%s | respuesta=%s | comprobacion=%s" % (r.get("estado"), r.get("error") or "", r.get("herramientas_usadas"), texto(r)[:120], dato), t0)  # evidencia completa: estado del chat, lo que dijo el modelo y lo que quedo guardado
 
 
 def contiene(c, herramienta, args, esperado):

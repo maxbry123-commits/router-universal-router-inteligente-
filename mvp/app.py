@@ -111,7 +111,7 @@ async def chat(cuerpo: dict):
         salida = salida.get("result", salida) if isinstance(salida.get("result"), dict) else salida
         llamadas = salida.get("tool_calls") or []
         _verificar_llamadas(llamadas, controles)
-        return {"texto": salida.get("texto") or "", "tool_calls": llamadas,
+        return {"texto": salida.get("texto") or "", "tool_calls": llamadas, "herramientas_usadas": salida.get("herramientas_usadas") or [],
                 "finish_reason": salida.get("finish_reason"),
                 **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}
     banco = app.state.banco
@@ -313,7 +313,7 @@ async def _chat_ficha(cuerpo, progreso=None):
     salida = await chat({"modelo": modelo, "mensajes": mensajes, "via": "harness",
                          "opciones": opciones or None, **_controles(q)})
     return {"estado": "completado", "via": "harness", "finish_reason": salida["finish_reason"],
-            "modelo_solicitado": modelo, "modelo_respuesta": salida.get("modelo_respuesta"),
+            "modelo_solicitado": modelo, "modelo_respuesta": salida.get("modelo_respuesta"), "herramientas_usadas": salida.get("herramientas_usadas") or [],
             **({"aviso_modelo": "sin selector de modelo encendido: respondió el modelo por defecto " + modelo} if heredada else {}),
             "choices": [{"message": {"role": "assistant", "content": salida["texto"],
                                     "tool_calls": salida["tool_calls"]},

@@ -75,7 +75,7 @@ def llm(cuerpo):
         "description": t["description"], "parameters": t["inputSchema"]}} for n, t in permitidas.items()]
     opciones["tool_choice"] = "auto"
     mensajes = list(mensajes)
-    acumulado, continuaciones = "", 0
+    acumulado, continuaciones, usadas = "", 0, []  # usadas: herramientas realmente ejecutadas (diagnostico)
     for paso in range(8):
         try:
             salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
@@ -83,7 +83,7 @@ def llm(cuerpo):
         except RuntimeError:
             if not acumulado:
                 raise
-            return {"texto": acumulado, "tool_calls": [], "finish_reason": "length",
+            return {"texto": acumulado, "tool_calls": [], "finish_reason": "length", "herramientas_usadas": usadas,
                     "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta")}
         if not isinstance(salida.get("tool_calls"), list) or not isinstance(salida.get("texto"), str):
             raise RuntimeError("Router respuesta de chat invalida")
@@ -98,7 +98,7 @@ def llm(cuerpo):
             permitidas = {}
             continue
         if not llamadas or not permitidas:
-            return {"texto": acumulado + salida["texto"], "tool_calls": llamadas, "finish_reason": salida.get("finish_reason"),
+            return {"texto": acumulado + salida["texto"], "tool_calls": llamadas, "finish_reason": salida.get("finish_reason"), "herramientas_usadas": usadas,
                     "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta")}
         if paso == 7:
             raise RuntimeError("Limite de llamadas a herramientas alcanzado; no se ejecutaron las ultimas llamadas")
@@ -110,6 +110,7 @@ def llm(cuerpo):
                 raise HTTPException(status_code=403, detail="Herramienta no autorizada en Harness")
             if not llamada.get("id"):
                 raise RuntimeError("tool_call sin id; no se ejecuto")
+            usadas.append(nombre)
             args = json.loads(funcion.get("arguments") or "{}")
             if not isinstance(args, dict):
                 raise ValueError("Argumentos de herramienta invalidos")

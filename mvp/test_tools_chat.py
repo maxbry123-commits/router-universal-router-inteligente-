@@ -45,5 +45,11 @@ class ToolsDelChat(unittest.TestCase):
                 self.assertEqual([p["texto"] for p in servicio.CONTROL.d["pendientes"]], ["sol-x"])
                 self.assertEqual(servicio.CONTROL.d["handoff"], {"yaiwes": "proyecto-x"})
                 self.assertEqual([s["nombre"] for s in servicio.CONTROL.d["salas"].values()], ["sala-x"])
+                Falso.cola = [llamada("pendientes", {"accion": "listar"}), FIN]
+                r = cli.post("/plugins/puente_chat/call/chat_async", headers=cab, json={"message": "lista", "modelo": "qwen3.8-max", "tools": True, "request_id": "diag-1"}).json()["result"]
+                for _ in range(40):
+                    r = cli.post("/plugins/puente_chat/call/resultado", headers=cab, json={"proceso_id": r["proceso_id"], "espera": 1}).json()["result"]
+                    if r["estado"] != "procesando": break
+                self.assertEqual(r.get("herramientas_usadas"), ["pendientes"])  # visible para el diagnostico
             finally:
                 srv.should_exit = True; hilo.join(timeout=5); http.shutdown()
