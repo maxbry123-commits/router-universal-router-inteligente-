@@ -69,7 +69,8 @@ def autorizado(authorization=None, x_api_key=None):
 def verificar(authorization: str | None = Header(None),
               x_api_key: str | None = Header(None), key: str | None = Query(None)):  # ?key= para clientes MCP que solo aceptan una URL
     if not autorizado(authorization, x_api_key or key):
-        raise HTTPException(status_code=401, detail="clave de acceso invalida")
+        recibida = "recibido: X-API-Key %d car., Bearer %d car." % (len(x_api_key or key or ""), len(authorization[7:]) if authorization else 0)  # solo longitudes de lo que envio el cliente: ayuda a ver si el navegador manda la clave completa
+        raise HTTPException(status_code=401, detail="clave de acceso invalida (" + recibida + ")")
 def clave_harness():
     banco = app.state.banco
     clave = banco.leer("RIU_API_KEY") if banco else None
