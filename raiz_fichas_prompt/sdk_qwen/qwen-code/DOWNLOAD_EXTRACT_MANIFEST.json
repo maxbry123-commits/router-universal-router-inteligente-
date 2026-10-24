@@ -1,0 +1,65 @@
+{
+  "bundle_bytes": 80942082,
+  "bundle_sha256": "fdb8027e4fc25724b81e4bfa35ee17bce5f544010f03b6dd40fdcab7f32ebb25",
+  "extracted_tree": {
+    "bytes": 280571295,
+    "files": 12811,
+    "sha256": "82649eed009dd5be3055b2e8ee1110c3cda5defde764e80d4785c61a24feea48"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "qwen-code.bundle.zip.part-0001",
+      "sha256": "ce8e22749f9c4f85643c065670311e48147163576672bc7f2000d818b530d308"
+    },
+    {
+      "bytes": 12582912,
+      "name": "qwen-code.bundle.zip.part-0002",
+      "sha256": "a447d9c4852c591cda6e63ef302359590fe2c70e5d27c2751506b1fdff7239a2"
+    },
+    {
+      "bytes": 12582912,
+      "name": "qwen-code.bundle.zip.part-0003",
+      "sha256": "c7d497b0f6abd85e590b588f6e2eb241057e56caea878f4c54ff915b65b5ad91"
+    },
+    {
+      "bytes": 12582912,
+      "name": "qwen-code.bundle.zip.part-0004",
+      "sha256": "f976d6b7396176c3d50b23bc5b215751d176ba907f2ed70ccc467738c3cdb668"
+    },
+    {
+      "bytes": 12582912,
+      "name": "qwen-code.bundle.zip.part-0005",
+      "sha256": "d95e162d800b2fdc10fd6ba32104d4098a7e864fc52ab9af30e52c46198cc7a0"
+    },
+    {
+      "bytes": 12582912,
+      "name": "qwen-code.bundle.zip.part-0006",
+      "sha256": "8390b2bb4aff4910d9ba593de0cd402c0f067feb03a5aeca574db9982018c878"
+    },
+    {
+      "bytes": 5444610,
+      "name": "qwen-code.bundle.zip.part-0007",
+      "sha256": "d6d8ce8edee78ce45c463ac2c607bddd9ded832c93b91ac527942ab35d271315"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "qwen-code",
+  "source_bytes": 280571295,
+  "source_commit": "7f91bc2f2430aefbf81505b268e510016582d39f",
+  "source_files": 12811,
+  "source_ref": "HEAD",
+  "source_repo": "QwenLM/qwen-code",
+  "source_tree": {
+    "bytes": 280571295,
+    "files": 12811,
+    "sha256": "82649eed009dd5be3055b2e8ee1110c3cda5defde764e80d4785c61a24feea48"
+  }
+}
