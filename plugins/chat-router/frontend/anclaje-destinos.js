@@ -1,6 +1,6 @@
 // anclaje-destinos.js — en la ventana de Anclaje: "Anclar a" Chat / Constitución / Workflows / Agentes remotos / Proyecto / Sandbox.
 // Es LA MISMA ventana para todos: al elegir el objetivo, todo lo de la ventana (enlaces, anclado ahora, instrucciones fijas, proyectos,
-// handoffs, yaiwes.md y archivos) se aplica a ese objetivo. Los archivos son compartidos. Sin elegir nada, es el chat de siempre.
+// handoffs, Mi handoff y archivos) se aplica a ese objetivo. Los archivos son compartidos. Sin elegir nada, es el chat de siempre.
 import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto, slugProy, proyId } from "./objetivos-ancla.js";
 import { el, boton, cargarCss } from "./ventanas-comun.js";
 export function montarDestinos({ root, q, tell }) {
@@ -91,12 +91,12 @@ function chipAncla(q) {  // el chip «ancla» del chat (pastilla y botón ⚓ de
   const pill = q("#ancla") || document.getElementById("ancla"); if (!pill) return;  // en móvil la pastilla se mueve fuera del panel (#mv-ctl)
   pill.textContent = "ancla · 📜 " + (on ? "ON" : "OFF") + " ⌄"; pill.classList.toggle("on", on); pill.title = "Constitución " + (on ? "ON: viaja con cada mensaje" : "OFF: no se envía");
 }
-function unBotonMiHandoff(q, tell) {  // yaiwes.md: un solo botón ON/OFF en lugar de «Encender/Guardar» + «Apagar» (los originales quedan ocultos y siguen funcionando)
+function unBotonMiHandoff(q, tell) {  // Mi handoff: un solo botón ON/OFF en lugar de «Encender/Guardar» + «Apagar» (los originales quedan ocultos y siguen funcionando)
   const g = q("#mh-guardar"), a = q("#mh-apagar"), est = q("#mh-estado"), enl = q("#ancla-enlace-on");
   if (enl) enl.textContent = "Anclar";
   if (!g || !a || !est || g.dataset.uno) return; g.dataset.uno = "1"; [g, a, est].forEach((x) => { x.style.display = "none"; });
   const t = document.createElement("button"); t.type = "button"; t.id = "mh-toggle"; g.before(t);
-  const pinta = () => { const on = est.textContent.trim() === "encendido"; t.textContent = "yaiwes.md: " + (on ? "ON" : "OFF"); t.className = "toggle" + (on ? " on" : ""); t.setAttribute("aria-pressed", String(on)); };
+  const pinta = () => { const on = est.textContent.trim() === "encendido"; t.textContent = "Mi handoff: " + (on ? "ON" : "OFF"); t.className = "toggle" + (on ? " on" : ""); t.setAttribute("aria-pressed", String(on)); };
   t.addEventListener("click", () => { if (est.textContent.trim() === "encendido") a.click(); else { const m = q("#mi-handoff"); if (!m || !m.value.trim()) { tell("Escribe tu handoff primero"); return; } g.click(); } });
   new MutationObserver(pinta).observe(est, { childList: true, characterData: true, subtree: true }); pinta();
 }
