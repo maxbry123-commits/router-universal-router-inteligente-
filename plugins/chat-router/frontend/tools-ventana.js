@@ -121,10 +121,10 @@ function instalarChat() {
   h.append(el("strong", "", "Herramientas del chat"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
   b.title = "Permitir que el modelo llame a otras IA y agentes (el servidor lo recuerda). GitHub, HF y demás herramientas tienen su ON/OFF con clic derecho o mantener pulsado";
   const chip = (btn, quien, nombre) => { btn.onclick = async () => {  // el servidor decide y recuerda; el navegador solo refleja su respuesta
-    const f = window.RIU_CHAT_TOOL_FLAGS; if (!f || btn.disabled) return; btn.disabled = true;
+    const f = window.RIU_CHAT_TOOL_FLAGS; if (!f || btn.getAttribute("aria-busy") === "true") return; btn.setAttribute("aria-busy", "true");  // sin disabled: el foco del teclado no se pierde
     try { const r = await accion("agent_access_lock", { locked: !!(quien === "ia" ? f.llm_tool : quien === "prompt" ? window.RIU_PROMPT_ON : f.agente_tool), quien }); aplicarFlags(r); if (r.persistente === false) avisar(nombre + ": el cambio no se guardará tras reiniciar el servidor"); }
     catch (x) { avisar(nombre + ": no se pudo cambiar (" + x.message + ")"); }
-    finally { btn.disabled = false; } }; };
+    finally { btn.removeAttribute("aria-busy"); } }; };
   chip(b, "ia", "IA");
   const g = el("button", "secondary", "Agentes OFF"); g.type = "button"; g.id = "btn-agentes"; g.setAttribute("aria-pressed", "false"); g.setAttribute("aria-label", "Permitir que el modelo use agentes");
   g.title = "Permitir que el modelo delegue en los agentes conectados (cada uno con su modelo); el servidor lo recuerda"; chip(g, "agentes", "Agentes");
