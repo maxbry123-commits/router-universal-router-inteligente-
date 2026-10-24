@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route, multimedia, prompt
+from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route, multimedia, prompt, sala_turno
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -218,6 +218,7 @@ async def _organizar(cuerpo):
 async def _control(accion, cuerpo, actor="director"):
     try:
         if accion == "checklist" and cuerpo.get("accion") == "organizar": return await _organizar(cuerpo)
+        if accion == "salas" and cuerpo.get("accion") == "turno": return await sala_turno.turno(CONTROL, _delegar, app.state.banco, cuerpo)
         if accion == "subir":  # el contenido se guarda por /almacen ANTES de registrarlo: sin fantasmas en el índice
             if not CONTROL.sincronizado: await CONTROL.cargar()
             ruta, _ = CONTROL.validar_subida(cuerpo)

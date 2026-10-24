@@ -572,3 +572,24 @@ class TestPersistencia(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TurnoSala(Base):
+    def accion(self, nombre, cuerpo=None):
+        r = self.client.post("/plugins/puente_chat/call/" + nombre, json=cuerpo or {}, headers=CAB)
+        self.assertEqual(r.status_code, 200, r.text)
+        return r.json().get("result")
+
+    def test_agentes_y_modelos_hablan_en_la_misma_sala(self):
+        self.accion("agent_access_lock", {"quien": "todo", "locked": False})
+        self.accion("agente_enlazar", {"op": "poner", "nombre": "Revisor", "recurso": "qwen3.7-plus", "sistema": "revisas"})
+        sid = self.accion("salas", {"accion": "crear", "nombre": "Mesa", "participantes": {"Revisor": "escritura", "qwen3.8-flash": "escritura", "Mudo": "lectura"}})["salas"][0]["id"]
+        self.accion("salas", {"accion": "enviar", "id": sid, "texto": "Opinen sobre el plan"})
+        with patch("mvp.app.compute.llamar", side_effect=lambda m, mod, *a: {"texto": "aporte de " + mod}):
+            r = self.accion("salas", {"accion": "turno", "id": sid})
+        self.assertEqual(sorted(r["hablaron"]), ["Revisor", "qwen3.8-flash"])
+        self.assertEqual([m["de"] for m in r["sala"]["mensajes"]][1:], r["hablaron"])
+        self.accion("agent_access_lock", {"quien": "agentes", "locked": True})
+        with patch("mvp.app.compute.llamar", return_value={"texto": "x"}):
+            r = self.accion("salas", {"accion": "turno", "id": sid})
+        self.assertEqual(r["hablaron"], ["qwen3.8-flash"]); self.assertEqual(r["saltadas"][0]["participante"], "Revisor")

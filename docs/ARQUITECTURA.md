@@ -1,19 +1,18 @@
-# Arquitectura: dos edificios
+# Arquitectura YAIWES (resumen operativo de la ley, 23-oct-2026)
 
-## Edificio 1: Router + fichas + system-prompt/SDK
-Carpetas `router/` y `fichas/`. Decide a quien le toca cada trabajo, guarda el banco de claves y arma el prompt de cada ficha. No ejecuta el chat.
+Texto íntegro de la ley: lo conserva Antonio; este archivo resume lo que el código debe cumplir. Todo lo no comprobado con una ejecución real se marca **NO VERIFICADO**.
 
-## Edificio 2: Harness DeepSeek + plugins
-Carpeta `plugins/`. Ejecuta el trabajo: chat-router (pantalla del chat), workflow-loop-yaiwes (bucle de trabajo), agentes, memoria/almacenamiento y motores de descarga.
+## Dos edificios
+- **Edificio 1 — Router** (`mvp/`, `router/`, `fichas/`): puerta única HTTP, banco de claves, permisos, ficha → prompt. No tiene modelos ni APIs dentro: viven en la ficha (`mvp/modelos.json`).
+- **Edificio 2 — Harness y plugins** (`plugins/`): ejecuta el trabajo (bucle de herramientas, chat, memoria, motores).
+- Entre edificios solo HTTP o MCP (`POST /plugins/<id>/call/<accion>`, `POST /mcp`). Ningún import cruzado.
 
-## Regla entre edificios
-Solo HTTP: `POST /plugins/<id>/call/<accion>`. Un edificio no importa codigo del otro.
+## Reglas
+1. Un banco y una llave de acceso; los secretos no salen del servidor ni van a GitHub.
+2. Los permisos los decide el servidor (`mvp/control.py`); el navegador solo los muestra.
+3. Cambios quirúrgicos; el código nuevo del MVP va en `mvp/`; archivos ≤100 líneas y funciones ≤25 en código nuevo.
+4. PASS solo con salida cruda de una ejecución real; si no, NO VERIFICADO.
+5. Prohibido: GitHub Actions, HF Jobs, SSH, LFS, memoria en GitHub, editar o recortar el system prompt.
 
-## Circuito
-Router -> fichas/prompt (system-prompt, reglas) -> HTTP -> plugins del Harness -> chat (respuesta al usuario).
-
-## Plugins y carga
-Cada plugin tiene `ficha.json` con `ejecucion.entry_point` (`plugins.<id>.plugin:handle`). El cargador (`router/integration/plugin_host/host.py`) solo acepta entry_points que empiezan por `integration.` o `plugins.`, y busca los plugins en `plugins/` de la raiz (o en `RIU_PLUGINS_DIR`).
-
-## Protegido (no tocar)
-plugins/memoria, hf_storage, hf_datasets, hf_skills, hf_compute, motores, motores-descarga, deepseek_harness, router/banco y todo `componentes/`.
+## Mapa
+Mapas por carpeta: `raiz_router/ARQUITECTURA.md`, `raiz_fichas_prompt/ARQUITECTURA.md`, `plugins/deepseek_harness/README.md`, `docs/MEMORIA.md`, `docs/CHAT_CONTROLES.md`. Pruebas de integración para Sol: `docs/PRUEBAS_SOL.dag.json`.
