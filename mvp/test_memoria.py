@@ -1,5 +1,6 @@
 """/memoria: respaldo del historial y de las pestañas del chat (contrato de chat-ancla.js) en el bucket HF."""
 import unittest
+from unittest.mock import patch
 from test_control import Base, CAB
 
 
@@ -35,6 +36,13 @@ class TestMemoria(Base):
     def test_sin_clave_401_y_scope_vacio_400(self):
         self.assertEqual(self.client.post("/memoria/save", json={"scope": "s", "key": "k", "data": {}}).status_code, 401)
         self.guardar("", "k", {}, 400)
+
+    def test_fallo_de_lectura_no_pisa_el_historial(self):
+        self.guardar("chat-ui:hist:web-4", "m-1-user", {"rol": "user", "texto": "valioso", "ts": 1})
+        from mvp import memoria; memoria.CACHE.clear(); antes = dict(self.nube)
+        with patch("mvp.app.hf_store.leer", side_effect=RuntimeError("fallo de lectura HF")):
+            self.guardar("chat-ui:hist:web-4", "m-2-user", {"rol": "user", "texto": "x", "ts": 2}, 502)
+        self.assertEqual(self.nube, antes)
 
     def test_scope_desconocido_devuelve_lista_vacia(self):
         r = self.client.get("/memoria/load", params={"scope": "nada", "key": "x"}, headers=CAB)

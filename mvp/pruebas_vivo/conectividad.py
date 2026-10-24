@@ -60,6 +60,11 @@ def main(argv):
     c, d = llamar(base, "/mcp", {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "chat", "arguments": {"ficha_qwen": "1", "modelo": "qwen3.8-flash", "message": "Responde solo OK", "request_id": "con-mcp-%d" % time.time()}}}, x)
     pid = (d.get("result", {}).get("structuredContent") or {}).get("proceso_id"); r = esperar(base, "fichas_qwen", x, {"estado": "procesando", "proceso_id": pid}) if pid else {}
     nota("MCP chat + resultado (mismo chat)", r.get("estado") == "completado", (r.get("choices") or [{}])[0].get("message", {}).get("content") or r)
+    c, d = llamar(base, "/mcp", {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "salud", "arguments": {}}}, x)
+    sal = d.get("result", {}).get("structuredContent") or {}
+    nota("MCP salud (commit y modelos sin HTTP directo)", sal.get("status") == "ok" and bool(sal.get("commit")), {k: sal.get(k) for k in ("commit", "plan")})
+    c, d = llamar(base, "/mcp", {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "chat", "arguments": {"ficha_qwen": "1", "modelo": "ficha-qwen38flash", "message": "Responde solo OK", "request_id": "con-alias-%d" % time.time()}}}, x)
+    nota("MCP chat con nombre antiguo (ficha-qwen38flash)", bool((d.get("result", {}).get("structuredContent") or {}).get("proceso_id")), d.get("error") or "proceso creado")
     print("PASS %d / %d" % (sum(f[1] == "PASS" for f in FILAS), len(FILAS)))
     with open("conectividad.md", "w", encoding="utf-8") as f:
         f.write("| prueba | estado | evidencia |\n|---|---|---|\n" + "".join("| %s | %s | %s |\n" % (n, e, v.replace("|", "/")) for n, e, v in FILAS))

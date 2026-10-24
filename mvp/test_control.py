@@ -10,7 +10,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from fastapi.testclient import TestClient
-from mvp import app as servicio, control
+from mvp import app as servicio, control, hf_store
 
 CAB = {"x-api-key": "api-ficticia"}
 
@@ -50,7 +50,7 @@ class Base(unittest.TestCase):
         def guardar(clave, nombre, valor):
             self.nube[nombre] = valor; return {"ok": True}
         def leer(clave, nombre):
-            if nombre not in self.nube: raise RuntimeError("fallo de lectura HF")
+            if nombre not in self.nube: raise hf_store.NoExiste("fallo de lectura HF")
             return {"ok": True, "valor": self.nube[nombre]}
         self.parches = [patch("mvp.app.hf_store.guardar", guardar), patch("mvp.app.hf_store.leer", leer),
                         patch.dict(os.environ, {"RIU_API_KEY": "api-ficticia", "MVP_MCP_LOCAL": "1"})]

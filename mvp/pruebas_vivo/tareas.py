@@ -83,7 +83,10 @@ def tarea6_codigo(c, m, rid):
             return False, "el modulo tiene codigo suelto (no solo funciones)"
         ambito = {}
         exec(compile(arbol, "palabras.py", "exec"), ambito)  # noqa: S102 - solo definiciones de funciones
-        r = ambito["contar_palabras"]("hola mundo cruel"), ambito["contar_palabras"]("")
+        f = ambito.get("contar_palabras")
+        if not callable(f):
+            return False, "palabras.py no define contar_palabras (%d caracteres leidos)" % len(txt)
+        r = f("hola mundo cruel"), f("")
         return ok and r == (3, 0), "contar_palabras('hola mundo cruel'),('')=%s" % (r,)
     con_tool(c, m, "tarea6 codigo con funcion", f"Tarea de programación. Con github_escribir, en el repo {REPO}, rama main, crea {ruta} con una función Python contar_palabras(texto) que devuelva cuántas palabras tiene el texto (0 si está vacío), con docstring y sin código suelto fuera de la función. Luego léelo con github_leer y confirma.", rid + "t6", comprobar)
 

@@ -1,4 +1,4 @@
-import json, os
+import json, os, re
 from pathlib import Path
 
 _RUTA = Path(__file__).with_name('modelos.json')
@@ -24,9 +24,25 @@ def catalogo(plan_=None):
     return [(m['id'], t) for t in ('texto', 'imagen', 'audio', 'video') for m in d[t] if m[k]]
 
 
+def _llave(nombre):  # "ficha-qwen38max", "qw-glm-5-3", "Qwen 3.8 Max", "dsv4pro" -> llave comparable
+    s = re.sub(r'^(ficha|qw)[-_]', '', str(nombre).strip().lower())
+    s = re.sub(r'^ds(?=v\d)', 'deepseek', s)
+    return re.sub(r'[^a-z0-9]', '', s)
+
+
+def canonico(nombre, plan_=None):
+    """Nombres antiguos del frontend/fichas -> id del catálogo; si no hay coincidencia se devuelve tal cual."""
+    if not nombre:
+        return nombre
+    ids = [i for i, _ in catalogo(plan_)]
+    if nombre in ids:
+        return nombre
+    return {_llave(i): i for i in ids}.get(_llave(nombre), nombre)
+
+
 def validar(modelo, plan_=None):
     d = cargar()
-    modelo = modelo or d['modelo_defecto']
+    modelo = canonico(modelo, plan_) or d['modelo_defecto']
     otros = {m['id'] for t in ('imagen', 'audio', 'video') for m in d[t]}
     if modelo in otros:
         raise ValueError('solo texto en el MVP: ' + modelo)

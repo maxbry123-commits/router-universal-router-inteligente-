@@ -24,7 +24,8 @@ def _limpio(data):  # hf_store rechaza credenciales: se ocultan para que la cola
 async def _cargar(clave, scope):
     if scope not in CACHE:
         try: CACHE[scope] = json.loads((await asyncio.to_thread(hf_store.leer, clave, _nombre(scope)))["valor"])
-        except RuntimeError: CACHE[scope] = []  # scope nuevo (o bucket sin ese archivo)
+        except hf_store.NoExiste: CACHE[scope] = []  # scope nuevo
+        except RuntimeError as error: raise HTTPException(status_code=502, detail=str(error)) from None  # no se cachea vacío: guardar encima borraría el historial
         while len(CACHE) > 50: CACHE.pop(next(iter(CACHE)))  # tope de memoria: los scopes más viejos se releen del bucket
     return CACHE[scope]
 

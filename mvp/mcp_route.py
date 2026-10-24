@@ -1,4 +1,5 @@
 """MCP JSON-RPC 2.0 del Router MVP: un endpoint y autenticacion compartida."""
+import sys
 import asyncio
 import json
 from fastapi import Depends, HTTPException, Request, Response
@@ -35,6 +36,8 @@ HERRAMIENTAS = [
          'destino': {'type': 'string', 'enum': ['hf', 'harness']},
          'nombre': {'type': 'string'}, 'valor': {'type': 'string'},
          'tarea': {'type': 'object'}}, 'required': ['accion']}},
+    {'name': 'salud', 'description': 'Estado del Router: commit que corre, plan, modelos aceptados en chat (id del catalogo) y herramientas visibles.',
+     'inputSchema': {'type': 'object', 'properties': {}}},
     {'name': 'listar_fichas', 'description': 'Lista las fichas disponibles de fichas_qwen (n, id, nombre).',
      'inputSchema': {'type': 'object', 'properties': {}}},
     {'name': 'resultado', 'description': 'Consulta el estado de un proceso de chat asincrono.',
@@ -127,8 +130,10 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
             return _error(id_, -32602, 'Falta parametro: ' + campo)
     if nombre == 'chat':
         if args.get('ficha_qwen'):
+            if args.get('modelo'):
+                args = {**args, 'modelo': modelos.canonico(args['modelo'])}  # nombres antiguos (ficha-qwen38max, qw-glm-5-3) -> id del catálogo
             if args.get('modelo') and args['modelo'] not in dict(modelos.catalogo()):  # texto, imagen, voz y video del plan (la ficha genera los medios)
-                return _error(id_, -32602, 'modelo no permitido en el plan %s' % modelos.plan())
+                return _error(id_, -32602, 'modelo no permitido en el plan %s; permitidos: %s' % (modelos.plan(), ', '.join(i for i, _ in modelos.catalogo())))
             if not isinstance(args['ficha_qwen'], str):
                 return _error(id_, -32602, 'ficha_qwen invalida')
         elif not isinstance(args.get('mensajes'), list) or not args['mensajes']:
@@ -138,6 +143,12 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
     if nombre in GITHUB and any(not isinstance(args.get(c), str) for c in esquema.get('required', [])):
         return _error(id_, -32602, 'Parametros invalidos')
     try:
+        if nombre == 'salud':  # lo mismo que GET /health, por MCP (los clientes sin HTTP directo comprueban la version)
+            app = sys.modules.get('mvp.app')
+            estado = getattr(getattr(app, 'app', None), 'state', None)
+            return _ok(id_, _contenido({'status': 'ok' if getattr(estado, 'banco', None) else 'degraded', 'commit': str(getattr(estado, 'commit', 'desconocido')),
+                                        'plan': modelos.plan(), 'modelo_defecto': modelos.cargar()['modelo_defecto'],
+                                        'modelos': [i for i, _ in modelos.catalogo()], 'herramientas': [t['name'] for t in catalogo]}))
         if nombre in ('pendientes', 'sala', 'yaiwes_md'):
             salida = await control.aplicar({'pendientes': 'checklist', 'sala': 'salas', 'yaiwes_md': 'handoff_texto'}[nombre], args, banco, 'modelo')
             return _ok(id_, _contenido(salida))

@@ -28,7 +28,10 @@ def main(argv):
     lista = argv[argv.index("--modelos") + 1].split(",") if "--modelos" in argv else [argv[argv.index("--solo") + 1]] if "--solo" in argv else [] if "--medios" in argv else todos
     try:
         for m in lista:
-            tareas.tareas_modelo(c, m, argv[argv.index("--pruebas") + 1].split(",") if "--pruebas" in argv else None) if "--tareas" in argv else pruebas.texto_modelo(c, m)
+            try:
+                tareas.tareas_modelo(c, m, argv[argv.index("--pruebas") + 1].split(",") if "--pruebas" in argv else None) if "--tareas" in argv else pruebas.texto_modelo(c, m)
+            except Exception as exc:  # un modelo que revienta queda como FAIL y la corrida sigue con el siguiente
+                pruebas.anotar(m, "corrida del modelo", False, "se corto: %r" % exc, time.time())
         if ("--solo" not in argv and "--sin-medios" not in argv and "--tareas" not in argv and "--modelos" not in argv) or "--medios" in argv:
             pruebas.medios(c)
     finally:

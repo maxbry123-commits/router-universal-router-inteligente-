@@ -6,6 +6,10 @@ from huggingface_hub import HfFileSystem
 
 CONFIG = json.loads(Path(__file__).with_name("config.json").read_text(encoding="utf-8"))
 PROHIBIDAS = (".py", ".pyc", ".js", ".ts", ".sh", ".env", ".pem", ".key", ".p12")
+class NoExiste(RuntimeError):
+    """El archivo no existe en el bucket (distinto de un fallo de red o de permisos)."""
+
+
 PATRON_CLAVE = re.compile(r"(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]{12,}|gh[pousr]_[A-Za-z0-9]{12,}|hf_[A-Za-z0-9]{20,})")
 
 
@@ -34,7 +38,7 @@ def guardar(clave, nombre, valor):
     if PATRON_CLAVE.search(valor):
         raise ValueError("dato HF parece contener credenciales")
     try:
-        with HfFileSystem(token=token).open("hf://buckets/" + CONFIG["bucket_hf"] + "/" + ruta, "wb") as archivo:
+        with HfFileSystem(token=token, skip_instance_cache=True).open("hf://buckets/" + CONFIG["bucket_hf"] + "/" + ruta, "wb") as archivo:
             archivo.write(valor.encode("utf-8"))
     except Exception:
         raise RuntimeError("fallo de escritura HF") from None
@@ -45,8 +49,10 @@ def leer(clave, nombre):
     ruta = _ruta(nombre)
     token = _token(clave)
     try:
-        with HfFileSystem(token=token).open("hf://buckets/" + CONFIG["bucket_hf"] + "/" + ruta, "rb") as archivo:
+        with HfFileSystem(token=token, skip_instance_cache=True).open("hf://buckets/" + CONFIG["bucket_hf"] + "/" + ruta, "rb") as archivo:
             valor = archivo.read().decode("utf-8")
+    except FileNotFoundError:
+        raise NoExiste("fallo de lectura HF: no existe " + nombre) from None
     except Exception:
         raise RuntimeError("fallo de lectura HF") from None
     return {"ok": True, "destino": "hf", "id": nombre, "valor": valor}

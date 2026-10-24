@@ -20,7 +20,7 @@ class TestHF(unittest.TestCase):
         self.tokens = []
         pruebas = self
         class FsFalso:
-            def __init__(self, token=None):
+            def __init__(self, token=None, skip_instance_cache=False):
                 pruebas.tokens.append(token)
             def open(self, ruta, modo):
                 if "r" in modo and ruta not in pruebas.archivos and pruebas.leer_defecto is None:

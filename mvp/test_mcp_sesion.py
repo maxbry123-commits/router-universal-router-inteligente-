@@ -40,6 +40,21 @@ class SesionMCP(Base):
         self.assertEqual(fin["estado"], "completado"); self.assertIn("Si te oigo", json.dumps(fin))
         self.assertIn("PROCESO", json.dumps(self.llamar("resultado", {"proceso_id": "p-nada"})).upper() + "PROCESO")  # no revienta
 
+    def test_alias_antiguo_por_mcp_llega_con_el_id_del_catalogo(self):
+        salida = {"texto": "ALIAS_OK", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "qwen3.8-max"}
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}):
+            self.banco.datos["RIU_API_KEY"] = "clave-harness"
+            r = self.llamar("chat", {"ficha_qwen": "1", "message": "hola", "request_id": "alias-0001", "modelo": "ficha-qwen38max"})
+            self.assertIn("proceso_id", r, r)
+            for _ in range(10):
+                fin = self.llamar("resultado", {"proceso_id": r["proceso_id"], "espera": 1})
+                if fin.get("estado") != "procesando": break
+        self.assertEqual(fin["estado"], "completado"); self.assertIn("ALIAS_OK", json.dumps(fin))
+
+    def test_salud_por_mcp_da_commit_y_modelos(self):
+        d = self.llamar("salud", {})
+        self.assertEqual(d["status"], "ok"); self.assertIn("commit", d); self.assertIn("qwen3.8-max", d["modelos"])
+
     def test_herramientas_de_control_por_mcp(self):
         self.assertEqual(self.llamar("pendientes", {"accion": "agregar", "texto": "probar"})["pendientes"][0]["texto"], "probar")
         self.client.post("/plugins/puente_chat/call/tools_lock", headers={"x-api-key": "api-ficticia"}, json={"tool": "pendientes", "locked": True})

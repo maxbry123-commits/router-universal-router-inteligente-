@@ -84,3 +84,18 @@ class TareasReales(unittest.TestCase):
     def test_las_seis_tareas_existen_y_pasan(self):
         r = self.correr(False, ["t1", "t2", "t3", "t4", "t5", "t6"])
         self.assertEqual((len(r), set(r.values())), (6, {"PASS"}))
+
+    def test_funcion_con_otro_nombre_es_fail_y_la_corrida_sigue(self):  # antes: KeyError 'contar_palabras' cortaba todo
+        from mvp.pruebas_vivo import tareas
+        pruebas.FILAS.clear()
+        r = RouterConEstado(malo=False)
+        original = r.herramienta
+        def herramienta(nombre, args):
+            if nombre == "github_leer" and args.get("ruta", "").endswith("palabras.py"):
+                return True, {"texto": "def contar(texto):\n    return len(texto.split())\n"}
+            return original(nombre, args)
+        r.herramienta = herramienta
+        tareas.tareas_modelo(r, "glm-5.3", ["t6", "t5"])
+        estados = {f["prueba"]: f["estado"] for f in pruebas.FILAS}
+        self.assertEqual(estados["tarea6 codigo con funcion"], "FAIL"); self.assertIn("tarea5 yaiwes.md + checklist", estados)
+
