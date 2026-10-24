@@ -1,5 +1,6 @@
 def contar_palabras(texto):
-    """Devuelve el número de palabras del texto (0 si está vacío)."""
-    if not texto:
-        return 0
+    """Cuenta las palabras de una cadena de texto.
+
+    Retorna 0 si la cadena está vacía y el número de palabras en caso contrario.
+    """
     return len(texto.split())
