@@ -4,5 +4,5 @@ def suma(a, b):
 
 
 def resta(a, b):
-    """Devuelve la resta de a y b (a menos b)."""
+    """Devuelve la resta de a menos b."""
     return a - b
