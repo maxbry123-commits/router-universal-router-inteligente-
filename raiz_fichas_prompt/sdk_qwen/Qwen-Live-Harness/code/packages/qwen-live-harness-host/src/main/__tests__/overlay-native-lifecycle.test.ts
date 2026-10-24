@@ -1,0 +1,1368 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, it } from 'node:test';
+import { runInNewContext } from 'node:vm';
+import ts from 'typescript';
+import { JSDOM } from 'jsdom';
+import { makeOverlayDraggable } from '../../renderer/overlay-drag.ts';
+import { CapturePlacementGuard } from '../capture-placement.ts';
+import * as positions from '../overlay-position.ts';
+import type { HostPublicState } from '../../shared/host-api.ts';
+import { OVERLAY_GEOMETRY } from '../../shared/overlay-geometry.ts';
+import { StartupInteraction } from '../startup-interaction.ts';
+import {
+  displayLiveMessage,
+  liveText,
+  isLiveLanguage,
+  liveMessage,
+} from 'qwen-live-harness/i18n';
+import { canToggleLive, shouldStopLiveOnToggle } from '../live-state-policy.ts';
+
+type Callback = (...args: unknown[]) => unknown;
+
+function fixture(minimumNativeY?: number, diagnosticsEnabled = false) {
+  const source = readFileSync(new URL('../index.ts', import.meta.url), 'utf8');
+  const tree = ts.createSourceFile(
+    'index.ts',
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  const names = new Set([
+    'showOverlay',
+    'overlayContentBounds',
+    'applyLiveStatus',
+    'stopLive',
+    'createOverlay',
+    'isTrustedSender',
+    'registerIpc',
+    'syncPointerInteractivity',
+    'dragOverlay',
+    'persistOverlayPosition',
+    'clampOverlayToDisplays',
+    'resetOverlayInteraction',
+    'dismissSettings',
+    'quitHost',
+    'publicState',
+    'resolvedTheme',
+    'activateNativeServices',
+    'deactivateNativeServices',
+    'beginMediaPermissionMonitor',
+    'scheduleReadinessReconnect',
+    'microphonePermission',
+    'cameraPermission',
+    'requestCameraPermission',
+    'applyOverlayPosition',
+    'overlayWorkArea',
+    'setOverlayLayout',
+    'subagentsAnchor',
+    'subagentsHoverRegions',
+    'maybeStartStartupInteraction',
+    'toggleLive',
+    'newConversation',
+    'positionOverlay',
+    'sendRequiredPlaybackReceipt',
+  ]);
+  const functions = tree.statements
+    .filter(
+      (node) =>
+        ts.isFunctionDeclaration(node) &&
+        node.name &&
+        names.has(node.name.text),
+    )
+    .map((node) => node.getText(tree))
+    .join('\n');
+  const placement = tree.statements
+    .filter(ts.isVariableStatement)
+    .flatMap((statement) => [...statement.declarationList.declarations])
+    .find(
+      (node) => node.name.getText(tree) === 'overlayCapturePlacement',
+    )?.initializer;
+  assert(placement);
+  const ipc = new Map<string, Callback>();
+  const area = { x: 0, y: 23, width: 1280, height: 777 };
+  const saved: Array<{ x: number; y: number }> = [];
+  const stored = {
+    position: undefined as { x: number; y: number } | undefined,
+  };
+  let hidden = 0;
+  let quitCalls = 0;
+  let quitResolves: (() => void) | undefined;
+  let quitRejects: ((error: Error) => void) | undefined;
+  const commands: string[] = [];
+  const diagnostics: Array<{ event: string; details: object }> = [];
+  const states: HostPublicState[] = [];
+  const offsets: Array<{ x: number; y: number }> = [];
+  const actions: string[] = [];
+  const playback: Array<{ kind: string; epoch: number; outputId: number }> = [];
+  const flags = { hostReady: false };
+  const resources = { audio: false, camera: false, shortcut: false };
+  const timers = new Set<object>();
+  const grants = new Map<string, (granted: boolean) => void>();
+  const timer = () => {
+    const value = { unref() {} };
+    timers.add(value);
+    return value;
+  };
+  class Window {
+    readonly events = new Map<string, Callback>();
+    readonly webContents = {
+      on: (name: string, callback: Callback) => this.events.set(name, callback),
+      setWindowOpenHandler: () => {},
+      isDestroyed: () => false,
+    };
+    readonly ignored: boolean[] = [];
+    readonly moves: Array<{ x: number; y: number }> = [];
+    visible = false;
+    shown = 0;
+    contentInsetTop = 0;
+    constructor(
+      readonly options: {
+        x?: number;
+        y?: number;
+        width: number;
+        height: number;
+      },
+    ) {}
+    isDestroyed() {
+      return false;
+    }
+    isVisible() {
+      return this.visible;
+    }
+    getBounds() {
+      return {
+        x: this.options.x ?? 40,
+        y: this.options.y ?? 80,
+        width: this.options.width,
+        height: this.options.height,
+      };
+    }
+    getContentBounds() {
+      const bounds = this.getBounds();
+      return {
+        ...bounds,
+        y: bounds.y + this.contentInsetTop,
+        height: bounds.height - this.contentInsetTop,
+      };
+    }
+    setPosition(x: number, y: number) {
+      this.options.x = x;
+      this.options.y =
+        minimumNativeY === undefined ? y : Math.max(minimumNativeY, y);
+      this.moves.push({ x, y });
+    }
+    setAlwaysOnTop() {}
+    setVisibleOnAllWorkspaces() {}
+    setIgnoreMouseEvents(value: boolean) {
+      this.ignored.push(value);
+    }
+    showInactive() {
+      this.visible = true;
+      this.shown++;
+    }
+    hide() {
+      this.visible = false;
+      hidden++;
+    }
+    on(name: string, callback: Callback) {
+      this.events.set(name, callback);
+    }
+    once() {}
+    loadFile() {
+      return Promise.resolve();
+    }
+  }
+  const context = {
+    CapturePlacementGuard,
+    audioError: undefined,
+    audioRetryPending: false,
+    hostReadinessBlocker: () => undefined,
+    shouldCaptureLiveVisual: () => false,
+    shouldCaptureLiveAudio: () => false,
+    finishAudioRetryIfReady: () => {},
+    cancelAudioRetry: () => {},
+    captureReadiness: { cancel: () => {}, acknowledge: () => {} },
+    daemonBootstrap: undefined,
+    daemonLifecycle: undefined,
+    startupInvocationError: undefined,
+    isLiveLanguage,
+    liveMessage,
+    language: 'en',
+    screenDisplays: [],
+    screenDisplaysError: undefined,
+    appshotCapture: undefined,
+    refreshScreenDisplays: () => {},
+    theme: 'system',
+    nativeTheme: { shouldUseDarkColors: true },
+    subagents: undefined,
+    BrowserWindow: Window,
+    screen: {
+      getCursorScreenPoint: () => ({ x: 400, y: 400 }),
+      getDisplayNearestPoint: () => ({ workArea: area }),
+      getDisplayMatching: () => ({ workArea: area }),
+    },
+    ipcMain: {
+      on: (name: string, fn: Callback) => ipc.set(name, fn),
+      handle: (name: string, fn: Callback) => ipc.set(name, fn),
+    },
+    app: {
+      getPath: () => '/fixture',
+      quit: () => {
+        quitCalls++;
+      },
+    },
+    daemon: {
+      getConfigFilePath: () => undefined,
+      getEpoch: () => 1,
+      sendPlaybackStarted: (epoch: number, outputId: number) => {
+        playback.push({ kind: 'started', epoch, outputId });
+        return true;
+      },
+      sendPlaybackCompleted: (epoch: number, outputId: number) => {
+        playback.push({ kind: 'completed', epoch, outputId });
+        return true;
+      },
+      requestQuit: () =>
+        new Promise<void>((resolve, reject) => {
+          quitResolves = resolve;
+          quitRejects = reject;
+        }),
+    },
+    connection: { phase: 'ready' },
+    OVERLAY_GEOMETRY,
+    StartupInteraction,
+    canToggleLive,
+    shouldStopLiveOnToggle,
+    isHostReady: () => flags.hostReady,
+    setInterval: timer,
+    setTimeout: timer,
+    clearInterval: (value: object) => timers.delete(value),
+    clearTimeout: (value: object) => timers.delete(value),
+    systemPreferences: {
+      getMediaAccessStatus: () => 'granted',
+      askForMediaAccess: (permission: string) =>
+        new Promise<boolean>((resolve) => grants.set(permission, resolve)),
+    },
+    shortcut: {
+      stop: () => {
+        resources.shortcut = false;
+      },
+    },
+    appshotReadiness: { start() {}, stop() {} },
+    failClosedForReadinessLoss: () => {},
+    failRequiredDaemonMessage: () => {
+      throw new Error('Unexpected failed playback receipt');
+    },
+    shell: {
+      openExternal: async () => {
+        throw new Error('Unexpected external settings');
+      },
+    },
+    join,
+    __dirname: '/fixture',
+    ...positions,
+    readOverlayPosition: () => stored.position,
+    saveOverlayPosition: (_path: string, position: { x: number; y: number }) =>
+      saved.push({ x: position.x, y: position.y }),
+    writeLiveDiagnostic: (event: string, details: object) =>
+      diagnostics.push({ event, details }),
+    sendRendererCommand: (channel: string, value?: unknown) => {
+      commands.push(channel);
+      if (channel === 'live:overlay-offset') {
+        const point = value as { x: number; y: number };
+        offsets.push({ x: point.x, y: point.y });
+      }
+      if (channel === 'live:audio:initialize') resources.audio = true;
+      if (channel === 'live:audio:deactivate') resources.audio = false;
+      if (channel === 'live:camera:deactivate') resources.camera = false;
+    },
+    stopLocalVisual: () => {
+      resources.camera = false;
+    },
+    stopLocalAudio: () => {},
+    closeHostAudioCapture: () => {},
+    closeHostInputCapture: () => {},
+    sendRequiredAction: (action: { action: string }) => {
+      actions.push(action.action);
+      return true;
+    },
+    overlayRecovery: { markReady: () => {}, handleFailure: () => {} },
+    isRecoverableOverlayLoadFailure: () => false,
+    syncOutputAudioEndMarkerMode: () => {},
+    publishState: (): void => {
+      states.push(controls.publicState());
+      controls.maybeStart();
+    },
+    effectiveLiveStatus: () => ({
+      v: 1,
+      available: true,
+      state: 'idle',
+      shortcut: 'Command+E',
+    }),
+    syncVisualCapture: () => {},
+  };
+  const script = `let overlay;
+let themeColor = 'iris';
+let overlayReady = true, rendererEventsEnabled = true, pointerInteractive = false;
+let pointerOverInteractive = false, settingsOpen = false, overlayDrag, desiredOverlayPosition;
+let hasCustomOverlayPosition = false;
+let overlayLayout = 'setup';
+let overlayOffset = { x: 0, y: 0 };
+let overlayPositioning = false;
+let visualGeneration = 0;
+let nativeServicesActive = false, nativeServiceGeneration = 0, liveStartPending = false, quitting = false;
+let audioTransportFailed = false, captureReadyEpoch, pendingVisualSourceChange;
+let visualSourceChangeGeneration = 0, readinessReconnectTimer, readinessReconnectReason, mediaPermissionTimer;
+let quitApproved = false, quitOperation, quitState;
+let visualInput, visualError, visualCallId, visualReady = false;
+const permissions = {}, selfChecks = {};
+const startupInteraction = new StartupInteraction();
+let live = { v: 1, available: true, state: 'idle', shortcut: 'Command+E' };
+const OVERLAY_WIDTH = 700, OVERLAY_HEIGHT = 620, diagnosticsEnabled = ${diagnosticsEnabled}, READINESS_RECONNECT_DEBOUNCE_MS = 2500;
+${functions}
+const overlayCapturePlacement = ${placement.getText(tree)};
+registerIpc();
+({ create: (ready = true) => { overlay = createOverlay(); if (ready) overlay.events.get('did-finish-load')?.(); return overlay; }, showOverlay, applyLiveStatus, stopLive,
+   clamp: () => clampOverlayToDisplays(), quitHost: () => quitHost(), publicState,
+   activate: activateNativeServices, maybeStart: maybeStartStartupInteraction, subagentsAnchor, subagentsHoverRegions,
+   protectCapture: (operation) => overlayCapturePlacement.capture(operation) });`;
+  const controls = runInNewContext(
+    ts.transpileModule(script, {
+      compilerOptions: { target: ts.ScriptTarget.ES2022 },
+    }).outputText,
+    context,
+  ) as {
+    create: (ready?: boolean) => Window;
+    showOverlay: () => void;
+    applyLiveStatus: (status: HostPublicState['live']) => void;
+    stopLive: () => void;
+    clamp: () => void;
+    quitHost: () => Promise<void>;
+    publicState: () => HostPublicState;
+    activate: () => void;
+    maybeStart: () => void;
+    protectCapture: (operation: () => Promise<void>) => Promise<void>;
+    subagentsAnchor: () =>
+      { x: number; y: number; width: number; height: number } | undefined;
+    subagentsHoverRegions: () => Array<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }>;
+  };
+  return {
+    controls,
+    logicalPosition: (window: Window) => {
+      const content = window.getContentBounds();
+      const offset = controls.publicState().overlayOffset!;
+      return { x: content.x + offset.x, y: content.y + offset.y };
+    },
+    ipc,
+    stored,
+    saved,
+    area,
+    hidden: () => hidden,
+    quitCalls: () => quitCalls,
+    finishQuit: () => quitResolves?.(),
+    failQuit: () => quitRejects?.(new Error('private transport error')),
+    commands,
+    diagnostics,
+    states,
+    offsets,
+    actions,
+    playback,
+    flags,
+    connect: () => {
+      context.connection = { phase: 'ready' };
+    },
+    resources,
+    timers,
+    grants,
+    disconnect: () => {
+      context.connection = { phase: 'disconnected' };
+    },
+  };
+}
+
+describe('native overlay interaction', () => {
+  it('undoes the observed 32px content correction after the capture lease has ended, even after capture failure', async (context) => {
+    context.mock.timers.enable({ apis: ['setTimeout'] });
+    for (const succeeded of [true, false]) {
+      const host = fixture(undefined, true);
+      Object.assign(host.area, { x: 0, y: 33, width: 1728, height: 990 });
+      const window = host.controls.create();
+      host.ipc.get('live:overlay-layout')?.(
+        { sender: window.webContents },
+        'orb',
+      );
+      const original = window.getBounds();
+      const originalLogical = host.logicalPosition(window);
+      const originalOffset = { ...host.controls.publicState().overlayOffset! };
+      const capture = host.controls.protectCapture(async () => {
+        window.options.y = original.y - 32;
+        window.options.height = original.height + 32;
+        window.events.get('resize')?.();
+        if (!succeeded) throw new Error('fixture capture failure');
+      });
+      if (succeeded) await capture;
+      else await assert.rejects(capture, /fixture capture failure/);
+      assert.equal(
+        host.controls.publicState().overlayOffset?.y,
+        originalOffset.y + 32,
+      );
+      assert.deepEqual(host.logicalPosition(window), originalLogical);
+      context.mock.timers.tick(1000);
+      const moves = window.moves.length;
+      Object.assign(window.options, original);
+      window.events.get('resize')?.();
+      window.events.get('resized')?.();
+      assert.equal(
+        host.controls.publicState().overlayOffset?.y,
+        originalOffset.y,
+      );
+      assert.deepEqual(host.logicalPosition(window), originalLogical);
+      assert.deepEqual(window.getContentBounds(), original);
+      assert.equal(window.moves.length, moves);
+      assert.deepEqual(host.offsets.at(-1), originalOffset);
+      assert.deepEqual(host.saved, []);
+      assert(
+        host.diagnostics.some(
+          (entry) =>
+            entry.event === 'overlay_capture_compensated' &&
+            (entry.details as { reason?: string }).reason ===
+              'native-geometry-restored',
+        ),
+      );
+    }
+  });
+
+  it('keeps actual content anchored through a capture top expansion, then drag, hidden-show and settings transitions', async () => {
+    for (const contentStaysPut of [false, true]) {
+      const host = fixture();
+      const window = host.controls.create();
+      const sender = { sender: window.webContents };
+      host.ipc.get('live:overlay-layout')?.(sender, 'orb');
+      host.controls.showOverlay();
+      const before = host.logicalPosition(window);
+      const beforeOffset = { ...host.controls.publicState().overlayOffset! };
+      await host.controls.protectCapture(async () => {
+        window.options.y = window.getBounds().y - 32;
+        window.options.height += 32;
+        window.contentInsetTop = contentStaysPut ? 32 : 0;
+        window.events.get('resize')?.();
+      });
+      const logical = () => {
+        const content = window.getContentBounds();
+        const offset = host.controls.publicState().overlayOffset!;
+        return { x: content.x + offset.x, y: content.y + offset.y };
+      };
+      assert.deepEqual(logical(), { x: before.x, y: before.y });
+      assert.equal(
+        host.controls.publicState().overlayOffset?.y,
+        beforeOffset.y + (contentStaysPut ? 0 : 32),
+      );
+      const drag = host.ipc.get('live:drag-overlay')!;
+      drag(sender, 'start', 500, 500);
+      drag(sender, 'move', 480, 480);
+      drag(sender, 'end', 480, 480);
+      const desired = { x: before.x - 20, y: before.y - 20 };
+      assert.deepEqual(logical(), desired);
+      assert.deepEqual(host.saved.at(-1), desired);
+      window.hide();
+      host.controls.showOverlay();
+      assert.deepEqual(logical(), desired);
+      host.ipc.get('live:settings-open')?.(sender, true);
+      host.ipc.get('live:settings-open')?.(sender, false);
+      assert.deepEqual(logical(), desired);
+      assert.equal(
+        host.controls.subagentsAnchor()?.y,
+        desired.y + OVERLAY_GEOMETRY.bounds.orb.y,
+      );
+    }
+  });
+
+  it('compensates a capture-time OS frame clamp without another native move or changing the saved UI position', async (context) => {
+    context.mock.timers.enable({ apis: ['setTimeout'] });
+    const host = fixture(undefined, true);
+    const window = host.controls.create();
+    host.ipc.get('live:overlay-layout')?.(
+      { sender: window.webContents },
+      'orb',
+    );
+    // Emulate an OS-originated frame above its work area before capture. The
+    // compact painted UI is still visible, even with its baseline offset.
+    window.options.y = host.area.y - 32;
+    const before = window.getBounds();
+    const beforeLogical = host.logicalPosition(window);
+    const beforeOffset = { ...host.controls.publicState().overlayOffset! };
+    const moves = window.moves.length;
+    await host.controls.protectCapture(async () => {
+      window.options.y = host.area.y;
+      window.events.get('move')?.();
+    });
+    const offset = host.controls.publicState().overlayOffset!;
+    assert.deepEqual(host.logicalPosition(window), beforeLogical);
+    const clampDelta = before.y - host.area.y;
+    assert.equal(offset.y, beforeOffset.y + clampDelta);
+    assert.equal(window.moves.length, moves);
+    assert.deepEqual(host.saved, []);
+    assert.deepEqual(host.offsets.at(-1), {
+      x: beforeOffset.x,
+      y: beforeOffset.y + clampDelta,
+    });
+    assert(
+      host.diagnostics.some(
+        (entry) => entry.event === 'overlay_capture_compensated',
+      ),
+    );
+    context.mock.timers.tick(501);
+  });
+
+  it('never restores an old capture anchor after a real renderer drag or window replacement', async () => {
+    const host = fixture();
+    const window = host.controls.create();
+    host.ipc.get('live:overlay-layout')?.(
+      { sender: window.webContents },
+      'orb',
+    );
+    let finish: () => void = () => {};
+    const capture = host.controls.protectCapture(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const drag = host.ipc.get('live:drag-overlay')!;
+    const sender = { sender: window.webContents };
+    drag(sender, 'start', 500, 500);
+    drag(sender, 'move', 460, 450);
+    drag(sender, 'end', 460, 450);
+    const dragged = window.getBounds();
+    const draggedLogical = host.logicalPosition(window);
+    finish();
+    await capture;
+    assert.deepEqual(window.getBounds(), dragged);
+    assert.deepEqual(host.logicalPosition(window), draggedLogical);
+    assert.deepEqual(host.saved.at(-1), draggedLogical);
+    assert.equal(
+      host.diagnostics.some(
+        (entry) => entry.event === 'overlay_capture_compensated',
+      ),
+      false,
+    );
+    const nextCapture = host.controls.protectCapture(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    host.controls.create();
+    const count = host.offsets.length;
+    window.options.y = window.getBounds().y - 32;
+    window.events.get('move')?.();
+    finish();
+    await nextCapture;
+    assert.equal(host.offsets.length, count);
+  });
+
+  it('connects a bubbled DOM drag to native movement, preserves capture through transparent space and stops on blur', () => {
+    const host = fixture();
+    const window = host.controls.create();
+    const sender = { sender: window.webContents };
+    host.ipc.get('live:overlay-layout')?.(sender, 'orb');
+    const dom = new JSDOM(
+      '<body><main><div class="dock"><div class="card"><span class="wave">Wave</span></div><button>Control</button></div></main></body>',
+    );
+    const document = dom.window.document;
+    const dock = document.querySelector<HTMLElement>('.dock')!;
+    const wave = document.querySelector('.wave')!;
+    const phases: string[] = [];
+    const dispose = makeOverlayDraggable(dock, {
+      dragOverlay: (phase, x, y) => {
+        phases.push(phase);
+        host.ipc.get('live:drag-overlay')?.(sender, phase, x, y);
+      },
+    });
+    const pointer = (
+      target: EventTarget,
+      type: string,
+      x: number,
+      y: number,
+    ) => {
+      const event = new dom.window.MouseEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        screenX: x,
+        screenY: y,
+      });
+      Object.defineProperty(event, 'pointerId', { value: 1 });
+      target.dispatchEvent(event);
+    };
+    try {
+      host.ipc.get('live:pointer-interactivity')?.(sender, true);
+      const before = host.logicalPosition(window);
+      pointer(wave, 'pointerdown', 500, 500);
+      pointer(document.body, 'pointermove', 450, 460);
+      host.ipc.get('live:pointer-interactivity')?.(sender, false);
+      assert.equal(window.ignored.at(-1), false);
+      assert.deepEqual(host.logicalPosition(window), {
+        x: before.x - 50,
+        y: before.y - 40,
+      });
+      pointer(document.body, 'pointerup', 440, 450);
+      assert.deepEqual(phases, ['start', 'move', 'end']);
+      assert.equal(window.ignored.at(-1), true);
+      assert.deepEqual(host.saved.at(-1), {
+        x: before.x - 60,
+        y: before.y - 50,
+      });
+
+      const after = window.getBounds();
+      const afterLogical = host.logicalPosition(window);
+      const control = document.querySelector('button')!;
+      pointer(control, 'pointerdown', 400, 400);
+      pointer(control, 'pointermove', 350, 350);
+      pointer(control, 'pointerup', 350, 350);
+      assert.deepEqual(window.getBounds(), after);
+      assert.deepEqual(host.logicalPosition(window), afterLogical);
+      assert.deepEqual(phases, ['start', 'move', 'end']);
+
+      pointer(wave, 'pointerdown', 400, 400);
+      pointer(document.body, 'pointermove', 380, 390);
+      window.events.get('blur')?.();
+      dom.window.dispatchEvent(new dom.window.Event('blur'));
+      const blurred = window.getBounds();
+      const blurredLogical = host.logicalPosition(window);
+      pointer(document.body, 'pointermove', 100, 100);
+      pointer(document.body, 'pointerup', 100, 100);
+      assert.deepEqual(window.getBounds(), blurred);
+      assert.deepEqual(host.logicalPosition(window), blurredLogical);
+      assert.deepEqual(phases, [
+        'start',
+        'move',
+        'end',
+        'start',
+        'move',
+        'end',
+      ]);
+      assert.equal(window.ignored.at(-1), true);
+    } finally {
+      dispose();
+      dom.window.close();
+    }
+  });
+
+  it('logs current native window movement only in debug mode without repositioning it', () => {
+    const quiet = fixture();
+    const quietWindow = quiet.controls.create();
+    quiet.diagnostics.length = 0;
+    quietWindow.events.get('move')?.();
+    assert.equal(quiet.diagnostics.length, 0);
+
+    const host = fixture(undefined, true);
+    const previous = host.controls.create();
+    const window = host.controls.create();
+    host.diagnostics.length = 0;
+    const moves = window.moves.length;
+    previous.events.get('move')?.();
+    assert.equal(host.diagnostics.length, 0);
+    window.events.get('move')?.();
+    assert.equal(window.moves.length, moves);
+    assert.equal(host.diagnostics.length, 1);
+    const log = host.diagnostics[0];
+    assert.equal(log?.event, 'overlay_native_moved');
+    assert.deepEqual(JSON.parse(JSON.stringify(log?.details)), {
+      reason: 'native-move',
+      bounds: window.getBounds(),
+      contentBounds: window.getContentBounds(),
+      offset: { x: 102, y: 14 },
+      logical: { x: 682, y: 194 },
+      nativeSize: [700, 620],
+      contentSize: [700, 620],
+      requestedCanvas: { width: 700, height: 620 },
+      isFullScreen: false,
+      isSimpleFullScreen: false,
+      isMaximized: false,
+    });
+  });
+
+  it('accepts playback receipts only from the current ready renderer with valid epoch and output identity', () => {
+    const host = fixture();
+    const window = host.controls.create(false);
+    const event = { sender: window.webContents };
+    const receipt = { epoch: 1, outputId: 7 };
+    for (const channel of [
+      'live:audio:playback-started',
+      'live:audio:playback-completed',
+    ]) {
+      const handle = host.ipc.get(channel)!;
+      handle(event, receipt);
+      assert.equal(host.playback.length, 0);
+    }
+    window.events.get('did-finish-load')?.();
+    for (const channel of [
+      'live:audio:playback-started',
+      'live:audio:playback-completed',
+    ]) {
+      const handle = host.ipc.get(channel)!;
+      handle({ sender: {} }, receipt);
+      for (const invalid of [
+        null,
+        1,
+        { epoch: 0, outputId: 7 },
+        { epoch: 1, outputId: -1 },
+        { epoch: 1, outputId: 1.5 },
+        { epoch: 1 },
+      ])
+        handle(event, invalid);
+    }
+    assert.equal(host.playback.length, 0);
+    host.ipc.get('live:audio:playback-started')!(event, receipt);
+    host.ipc.get('live:audio:playback-completed')!(event, receipt);
+    assert.deepEqual(host.playback, [
+      { kind: 'started', epoch: 1, outputId: 7 },
+      { kind: 'completed', epoch: 1, outputId: 7 },
+    ]);
+    host.controls.create();
+    host.ipc.get('live:audio:playback-started')!(event, receipt);
+    assert.equal(host.playback.length, 2);
+  });
+
+  it('places both first-run layouts at bottom-right with margins and retains a later drag', () => {
+    const host = fixture();
+    const window = host.controls.create();
+    const event = { sender: window.webContents };
+    const layout = host.ipc.get('live:overlay-layout')!;
+    const margins = (visible: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }) => {
+      const bounds = host.logicalPosition(window);
+      return {
+        right:
+          host.area.x + host.area.width - bounds.x - visible.x - visible.width,
+        bottom:
+          host.area.y +
+          host.area.height -
+          bounds.y -
+          visible.y -
+          visible.height,
+      };
+    };
+    assert.deepEqual(margins(OVERLAY_GEOMETRY.bounds.setup), {
+      right: 20,
+      bottom: 20,
+    });
+    layout(event, 'orb');
+    assert.deepEqual(margins(OVERLAY_GEOMETRY.bounds.orb), {
+      right: 20,
+      bottom: 20,
+    });
+    const anchor = host.controls.subagentsAnchor();
+    assert(anchor);
+    assert.equal(anchor.width, OVERLAY_GEOMETRY.bounds.orb.width);
+    const origin = host.logicalPosition(window);
+    assert(anchor.x <= origin.x + OVERLAY_GEOMETRY.status.x);
+    assert(
+      anchor.x + anchor.width >=
+        origin.x + OVERLAY_GEOMETRY.status.x + OVERLAY_GEOMETRY.status.width,
+    );
+    assert(
+      anchor.y + anchor.height >=
+        origin.y + OVERLAY_GEOMETRY.status.y + OVERLAY_GEOMETRY.status.height,
+    );
+    assert.equal(host.controls.subagentsHoverRegions().length, 3);
+    const blank = {
+      x: origin.x + 190,
+      y: origin.y + 220,
+    };
+    assert(
+      !host.controls
+        .subagentsHoverRegions()
+        .some(
+          (r) =>
+            blank.x >= r.x &&
+            blank.x <= r.x + r.width &&
+            blank.y >= r.y &&
+            blank.y <= r.y + r.height,
+        ),
+    );
+    const drag = host.ipc.get('live:drag-overlay')!;
+    drag(event, 'start', 1000, 700);
+    drag(event, 'end', 900, 650);
+    const dragged = window.getBounds();
+    const draggedLogical = host.logicalPosition(window);
+    host.ipc.get('live:settings-open')!(event, true);
+    host.ipc.get('live:settings-open')!(event, false);
+    assert.deepEqual(window.getBounds(), dragged);
+    assert.deepEqual(host.logicalPosition(window), draggedLogical);
+    const replacement = host.controls.create();
+    layout({ sender: replacement.webContents }, 'orb');
+    assert.deepEqual(replacement.getBounds(), dragged);
+    assert.deepEqual(host.logicalPosition(replacement), draggedLogical);
+  });
+
+  it('does not reposition the window on show/state refresh and does not hide on stop', () => {
+    const host = fixture();
+    const window = host.controls.create();
+    const initial = window.getBounds();
+    const initialLogical = host.logicalPosition(window);
+    const initialMoves = window.moves.length;
+    host.controls.showOverlay();
+    host.controls.showOverlay();
+    assert.equal(window.shown, 1);
+    assert.deepEqual(window.getBounds(), initial);
+    assert.deepEqual(host.logicalPosition(window), initialLogical);
+    assert.equal(window.moves.length, initialMoves);
+    host.controls.stopLive();
+    assert.equal(host.hidden(), 0);
+    assert.equal(window.options.height, 620);
+  });
+
+  it('never re-shows a visible UI during appshot state or transcript refreshes, including asynchronous native clamps', async () => {
+    const host = fixture();
+    const window = host.controls.create();
+    host.ipc.get('live:overlay-layout')?.(
+      { sender: window.webContents },
+      'orb',
+    );
+    host.controls.showOverlay();
+    const before = window.getBounds();
+    const moves = window.moves.length;
+    let repeatedShows = 0;
+    window.showInactive = () => {
+      repeatedShows++;
+      setImmediate(() => {
+        window.options.y = host.area.y + host.area.height - before.height;
+        window.events.get('move')?.();
+      });
+    };
+    for (const state of [
+      'speaking',
+      'thinking',
+      'listening',
+      'speaking',
+      'listening',
+    ] as const) {
+      host.controls.applyLiveStatus({
+        v: 1,
+        available: true,
+        state,
+        shortcut: 'Command+E',
+        callId: 'fixture',
+        caption: 'Fixture transcript update',
+      });
+    }
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.equal(repeatedShows, 0);
+    assert.deepEqual(window.getBounds(), before);
+    assert.equal(window.moves.length, moves);
+    assert.deepEqual(host.saved, []);
+  });
+
+  it('restores the dragged bottom-right position after native re-show clamps the canvas', () => {
+    const host = fixture();
+    const window = host.controls.create();
+    const event = { sender: window.webContents };
+    const layout = host.ipc.get('live:overlay-layout')!;
+    layout(event, 'orb');
+    const drag = host.ipc.get('live:drag-overlay')!;
+    drag(event, 'start', 1000, 700);
+    drag(event, 'end', 1100, 800);
+    const desired = { x: 931, y: 216 };
+    const before = window.getBounds();
+    assert.deepEqual(host.logicalPosition(window), desired);
+    assert.deepEqual({ x: before.x, y: before.y }, { x: 580, y: 180 });
+    assert.deepEqual(host.saved, [desired]);
+    const moves = window.moves.length;
+    host.controls.showOverlay();
+    assert.equal(window.moves.length, moves);
+
+    window.hide();
+    window.showInactive = () => {
+      window.visible = true;
+      window.options.x = 896;
+      window.options.y = 320;
+    };
+    host.controls.showOverlay();
+    assert.deepEqual(window.getBounds(), before);
+    assert.equal(window.moves.length, moves + 1);
+    assert.deepEqual(window.moves.at(-1), { x: before.x, y: before.y });
+    assert.deepEqual(host.logicalPosition(window), desired);
+    assert.equal(host.controls.publicState().overlayOffset?.x, 351);
+    assert.equal(host.controls.publicState().overlayOffset?.y, 36);
+    assert.deepEqual(host.saved, [desired]);
+    const replacement = host.controls.create();
+    layout({ sender: replacement.webContents }, 'orb');
+    assert.deepEqual(replacement.getBounds(), before);
+    assert.deepEqual(host.logicalPosition(replacement), desired);
+    assert.deepEqual(host.saved, [desired]);
+  });
+
+  it('preserves an existing native offset and saved drag position when re-show clamps another edge', () => {
+    const host = fixture(33);
+    host.area.y = 33;
+    host.stored.position = { x: 951, y: -97 };
+    const window = host.controls.create();
+    const event = { sender: window.webContents };
+    const layout = host.ipc.get('live:overlay-layout')!;
+    layout(event, 'orb');
+    const drag = host.ipc.get('live:drag-overlay')!;
+    drag(event, 'start', 292, 255);
+    drag(event, 'end', 292, 265);
+    const desired = { x: 931, y: -87 };
+    const before = window.getBounds();
+    assert.equal(before.y, 33);
+    assert.equal(host.controls.publicState().overlayOffset?.y, -120);
+    assert.deepEqual(host.saved, [desired]);
+    const moves = window.moves.length;
+    const offsets = host.offsets.length;
+    host.controls.showOverlay();
+    assert.equal(window.moves.length, moves);
+    assert.equal(host.offsets.length, offsets);
+
+    window.hide();
+    window.showInactive = () => {
+      window.visible = true;
+      window.options.x = 896;
+    };
+    host.controls.showOverlay();
+    assert.deepEqual(window.getBounds(), before);
+    assert.equal(window.moves.length, moves + 1);
+    assert.deepEqual(window.moves.at(-1), { x: before.x, y: before.y });
+    assert.deepEqual(host.logicalPosition(window), desired);
+    assert.equal(host.controls.publicState().overlayOffset?.x, 351);
+    assert.equal(host.controls.publicState().overlayOffset?.y, -120);
+    assert.deepEqual(host.saved, [desired]);
+    const replacement = host.controls.create();
+    layout({ sender: replacement.webContents }, 'orb');
+    assert.deepEqual(replacement.getBounds(), before);
+    assert.deepEqual(host.logicalPosition(replacement), desired);
+    assert.equal(host.controls.publicState().overlayOffset?.y, -120);
+    assert.deepEqual(host.saved, [desired]);
+  });
+
+  it('resets the pointer cache before accepting events from a replacement window', () => {
+    const host = fixture();
+    const first = host.controls.create();
+    const pointer = host.ipc.get('live:pointer-interactivity');
+    assert(pointer);
+    pointer({ sender: first.webContents }, true);
+    const replacement = host.controls.create();
+    pointer({ sender: first.webContents }, true);
+    assert.equal(replacement.ignored.at(-1), true);
+    pointer({ sender: replacement.webContents }, true);
+    assert.equal(replacement.ignored.at(-1), false);
+  });
+
+  it('restores a saved position and accepts only bounded drag messages from its renderer', () => {
+    const host = fixture();
+    host.stored.position = { x: 100, y: 200 };
+    const window = host.controls.create();
+    assert.equal(window.getBounds().x, 100);
+    const initialMoves = window.moves.length;
+    const drag = host.ipc.get('live:drag-overlay');
+    assert(drag);
+    drag({ sender: {} }, 'start', 300, 300);
+    drag({ sender: window.webContents }, 'move', 350, 350);
+    assert.equal(window.moves.length, initialMoves);
+    drag({ sender: window.webContents }, 'start', NaN, 300);
+    drag({ sender: window.webContents }, 'move', 350, 350);
+    assert.equal(window.moves.length, initialMoves);
+    drag({ sender: window.webContents }, 'start', 300, 300);
+    drag({ sender: window.webContents }, 'move', 350, 350);
+    drag({ sender: window.webContents }, 'end', 350, 350);
+    assert.equal(window.getBounds().x, 150);
+    assert.equal(host.logicalPosition(window).y, 214);
+    assert.deepEqual(host.saved.at(-1), { x: 150, y: 214 });
+    host.area.width = 400;
+    host.controls.clamp();
+    assert.equal(host.logicalPosition(window).x, -122);
+    assert.equal(window.getBounds().x, 0);
+  });
+
+  it('waits for the single graceful daemon quit before exiting Host', async () => {
+    const host = fixture();
+    host.controls.create();
+    const first = host.controls.quitHost();
+    const second = host.controls.quitHost();
+    assert.equal(first, second);
+    assert.equal(host.quitCalls(), 0);
+    host.finishQuit();
+    await first;
+    assert.equal(host.quitCalls(), 1);
+  });
+
+  it('keeps Host alive after a failed daemon quit and allows a safe retry', async () => {
+    const host = fixture();
+    const window = host.controls.create();
+    const quit = host.ipc.get('live:quit');
+    assert(quit);
+    assert.throws(
+      () => quit({ sender: {} }),
+      (error: Error) =>
+        /Untrusted/.test(displayLiveMessage('en', error.message)),
+    );
+    const failed = host.controls.quitHost();
+    host.failQuit();
+    await assert.rejects(
+      failed,
+      (error: Error) =>
+        displayLiveMessage('en', error.message) ===
+        liveText('en', 'ui.quitFailed'),
+    );
+    assert.equal(host.quitCalls(), 0);
+    const retry = quit({ sender: window.webContents });
+    host.finishQuit();
+    await retry;
+    assert.equal(host.quitCalls(), 1);
+  });
+
+  it('publishes native Quit pending and failed state independently of daemon connection snapshots', async () => {
+    const host = fixture();
+    const window = host.controls.create();
+    host.states.length = 0;
+    assert.equal(host.controls.publicState().quitState, undefined);
+    const first = host.controls.quitHost();
+    assert.equal(host.states.at(-1)?.quitState, 'pending');
+    host.disconnect();
+    assert.equal(host.controls.publicState().quitState, 'pending');
+    host.failQuit();
+    await assert.rejects(
+      first,
+      (error: Error) =>
+        displayLiveMessage('en', error.message) ===
+        liveText('en', 'ui.quitFailed'),
+    );
+    assert.equal(host.states.at(-1)?.quitState, 'failed');
+    assert.equal(host.quitCalls(), 0);
+    const retry = host.ipc.get('live:quit')?.({ sender: window.webContents });
+    assert.equal(host.states.at(-1)?.quitState, 'pending');
+    host.finishQuit();
+    await retry;
+    assert.deepEqual(
+      host.states.map((state) => state.quitState),
+      ['pending', 'failed', 'pending'],
+    );
+    assert.equal(host.quitCalls(), 1);
+  });
+
+  it('stops local media, permissions polling and shortcuts before waiting for daemon Quit and does not restart on failure or retry', async () => {
+    const host = fixture();
+    host.controls.create();
+    host.controls.activate();
+    host.resources.camera = host.resources.shortcut = true;
+    assert.equal(host.resources.audio, true);
+    assert.equal(host.timers.size, 1);
+    const first = host.controls.quitHost();
+    assert.deepEqual(host.resources, {
+      audio: false,
+      camera: false,
+      shortcut: false,
+    });
+    assert.equal(host.timers.size, 0);
+    assert.equal(host.controls.quitHost(), first);
+    host.controls.activate();
+    assert.equal(host.resources.audio, false);
+    host.failQuit();
+    await assert.rejects(
+      first,
+      (error: Error) =>
+        displayLiveMessage('en', error.message) ===
+        liveText('en', 'ui.quitFailed'),
+    );
+    host.controls.activate();
+    assert.equal(host.resources.audio, false);
+    const retry = host.controls.quitHost();
+    host.finishQuit();
+    await retry;
+    assert.equal(
+      host.commands.filter((value) => value === 'live:audio:initialize').length,
+      1,
+    );
+  });
+
+  it('discards late microphone and camera grants across pending and failed Quit', async () => {
+    const host = fixture();
+    const window = host.controls.create();
+    host.controls.activate();
+    const request = host.ipc.get('live:request-permission');
+    assert(request);
+    const microphone = request({ sender: window.webContents }, 'microphone');
+    const camera = request({ sender: window.webContents }, 'camera');
+    const quit = host.controls.quitHost();
+    const before = host.commands.length;
+    host.grants.get('microphone')?.(true);
+    await microphone;
+    host.failQuit();
+    await assert.rejects(
+      quit,
+      (error: Error) =>
+        displayLiveMessage('en', error.message) ===
+        liveText('en', 'ui.quitFailed'),
+    );
+    host.grants.get('camera')?.(true);
+    await camera;
+    assert.equal(
+      host.commands.slice(before).includes('live:audio:initialize'),
+      false,
+    );
+    assert.equal(
+      host.controls.publicState().permissions.camera,
+      'not_determined',
+    );
+    assert.equal(host.resources.audio, false);
+    assert.equal(host.timers.size, 0);
+  });
+
+  it('dismisses settings on current-window blur without accepting stale-window blur', () => {
+    const host = fixture();
+    const previous = host.controls.create();
+    const window = host.controls.create();
+    host.commands.length = 0;
+    const settings = host.ipc.get('live:settings-open');
+    assert(settings);
+    settings({ sender: window.webContents }, true);
+    assert.equal(window.ignored.at(-1), true);
+    host.commands.length = 0;
+    previous.events.get('blur')?.();
+    assert.deepEqual(host.commands, []);
+    window.events.get('blur')?.();
+    assert.deepEqual(host.commands, [
+      'live:overlay-offset',
+      'live:settings-dismiss',
+    ]);
+    assert.equal(window.ignored.at(-1), true);
+  });
+
+  it('uses compact bounds at edges and restores desired position after settings and preview clamps', () => {
+    const host = fixture();
+    host.stored.position = { x: 951, y: -100 };
+    const window = host.controls.create();
+    const event = { sender: window.webContents };
+    const layout = host.ipc.get('live:overlay-layout')!;
+    const settings = host.ipc.get('live:settings-open')!;
+    assert.equal(host.logicalPosition(window).x, 702);
+    layout(event, 'orb');
+    assert.deepEqual(host.logicalPosition(window), { x: 931, y: -100 });
+    settings(event, true);
+    assert.deepEqual(host.logicalPosition(window), { x: 588, y: 19 });
+    settings(event, false);
+    assert.deepEqual(host.logicalPosition(window), { x: 931, y: -100 });
+    layout(event, 'orb-preview');
+    assert.equal(host.logicalPosition(window).y, -63);
+    layout(event, 'orb');
+    assert.equal(host.logicalPosition(window).y, -100);
+    assert.deepEqual(host.saved, []);
+    const recreated = host.controls.create();
+    layout({ sender: recreated.webContents }, 'orb');
+    assert.deepEqual(host.logicalPosition(recreated), { x: 931, y: -100 });
+  });
+
+  it('keeps the same drag anchor through preview layout changes and persists only the final position', () => {
+    const host = fixture();
+    host.stored.position = { x: 400, y: 80 };
+    const window = host.controls.create();
+    const event = { sender: window.webContents };
+    const layout = host.ipc.get('live:overlay-layout')!;
+    const drag = host.ipc.get('live:drag-overlay')!;
+    layout(event, 'orb');
+    drag(event, 'start', 600, 400);
+    drag(event, 'move', 610, 410);
+    const before = window.getBounds();
+    layout(event, 'orb-preview');
+    assert.deepEqual(window.getBounds(), before);
+    assert.deepEqual(host.saved, []);
+    drag(event, 'move', 630, 440);
+    assert.deepEqual(
+      { x: window.getBounds().x, y: window.getBounds().y },
+      { x: 430, y: 120 },
+    );
+    layout(event, 'orb');
+    drag(event, 'end', 640, 445);
+    assert.deepEqual(host.saved, [{ x: 440, y: 125 }]);
+    assert.deepEqual(
+      { x: window.getBounds().x, y: window.getBounds().y },
+      { x: 440, y: 125 },
+    );
+  });
+
+  it('keeps default horizontal and bottom placement stable when the preview envelope changes', () => {
+    const host = fixture();
+    const window = host.controls.create();
+    const event = { sender: window.webContents };
+    const layout = host.ipc.get('live:overlay-layout')!;
+    layout(event, 'orb');
+    const origin = window.getBounds();
+    for (const mode of ['orb-preview', 'orb']) {
+      layout(event, mode);
+      assert.deepEqual(window.getBounds(), origin);
+    }
+    assert.deepEqual(host.saved, []);
+  });
+
+  it('accepts an initial layout before renderer ready and rejects malformed or foreign layout changes', () => {
+    const host = fixture();
+    host.stored.position = { x: 951, y: -100 };
+    const window = host.controls.create(false);
+    const layout = host.ipc.get('live:overlay-layout')!;
+    layout({ sender: window.webContents }, 'orb');
+    assert.equal(host.logicalPosition(window).x, 702);
+    window.events.get('did-finish-load')?.();
+    assert.equal(host.logicalPosition(window).x, 931);
+    layout({ sender: {} }, 'setup');
+    layout({ sender: window.webContents }, 'unexpected');
+    assert.equal(host.logicalPosition(window).x, 931);
+    assert.deepEqual(host.saved, []);
+  });
+
+  it('starts once only after readiness, and explicit stop prevents restart after reconnect', () => {
+    const host = fixture();
+    host.disconnect();
+    host.controls.create();
+    host.flags.hostReady = true;
+    host.controls.maybeStart();
+    assert.deepEqual(host.actions, []);
+    host.connect();
+    host.flags.hostReady = false;
+    host.controls.maybeStart();
+    assert.deepEqual(host.actions, []);
+    host.flags.hostReady = true;
+    host.controls.maybeStart();
+    host.controls.maybeStart();
+    assert.deepEqual(host.actions, ['toggle']);
+    host.controls.stopLive();
+    host.disconnect();
+    host.connect();
+    host.controls.maybeStart();
+    assert.deepEqual(host.actions, ['toggle', 'stop']);
+  });
+
+  it('compensates macOS top clamping and keeps drag deltas, settings and reload on the same logical position', () => {
+    const host = fixture(33);
+    host.area.y = 33;
+    host.stored.position = { x: 100, y: -97 };
+    const window = host.controls.create();
+    const event = { sender: window.webContents };
+    host.ipc.get('live:overlay-layout')!(event, 'orb');
+    assert.equal(window.getBounds().y, 33);
+    assert.equal(host.controls.publicState().overlayOffset?.y, -130);
+    const drag = host.ipc.get('live:drag-overlay')!;
+    drag(event, 'start', 292, 255);
+    drag(event, 'move', 292, 265);
+    drag(event, 'end', 292, 265);
+    assert.equal(window.getBounds().y, 33);
+    assert.equal(host.controls.publicState().overlayOffset?.y, -120);
+    assert.equal(host.saved.at(-1)?.y, -87);
+    host.ipc.get('live:settings-open')!(event, true);
+    assert.equal(host.controls.publicState().overlayOffset?.y, -4);
+    host.ipc.get('live:settings-open')!(event, false);
+    assert.equal(host.controls.publicState().overlayOffset?.y, -120);
+    assert.equal(host.saved.at(-1)?.y, -87);
+    window.events.get('did-start-loading')?.();
+    window.events.get('did-finish-load')?.();
+    assert.equal(host.controls.publicState().overlayOffset?.y, -120);
+    assert.equal(host.offsets.at(-1)?.y, -120);
+  });
+
+  it('keeps the UI inside its actual viewport when native position readback differs by several display widths', () => {
+    for (const nativeDelta of [-4096, 4096]) {
+      const host = fixture();
+      host.stored.position = { x: 400, y: 80 };
+      const window = host.controls.create();
+      const sender = { sender: window.webContents };
+      host.ipc.get('live:overlay-layout')!(sender, 'orb');
+      const drag = host.ipc.get('live:drag-overlay')!;
+      window.setPosition = (x, y) => {
+        window.moves.push({ x, y });
+        window.options.x = x + nativeDelta;
+        window.options.y = y + nativeDelta;
+        window.events.get('move')?.();
+      };
+      drag(sender, 'start', 600, 400);
+      drag(sender, 'end', 610, 410);
+      const content = window.getContentBounds();
+      const offset = host.controls.publicState().overlayOffset!;
+      const visible = OVERLAY_GEOMETRY.bounds.orb;
+      assert.deepEqual(
+        { x: offset.x, y: offset.y },
+        nativeDelta < 0 ? { x: 351, y: 36 } : { x: -5, y: -203 },
+      );
+      assert(offset.x + visible.x >= 0);
+      assert(offset.y + visible.y >= 0);
+      assert(offset.x + visible.x + visible.width <= content.width);
+      assert(offset.y + visible.y + visible.height <= content.height);
+      assert.deepEqual(host.saved.at(-1), host.logicalPosition(window));
+      assert.equal(window.ignored.at(-1), true);
+    }
+  });
+
+  it('bounds capture compensation at the canvas edge while preserving the normal 32px expansion and inverse', async () => {
+    for (const transition of [
+      'expanded-content',
+      'fixed-content',
+      'bottom-inset',
+    ]) {
+      const host = fixture(undefined, true);
+      Object.assign(host.area, { x: 0, y: 30, width: 2048, height: 1028 });
+      host.stored.position = { x: 1699, y: 474 };
+      const window = host.controls.create();
+      const sender = { sender: window.webContents };
+      host.ipc.get('live:overlay-layout')!(sender, 'orb');
+      const original = window.getBounds();
+      const getContentBounds = window.getContentBounds.bind(window);
+      assert.deepEqual(host.logicalPosition(window), { x: 1699, y: 474 });
+      assert.deepEqual(
+        { ...host.controls.publicState().overlayOffset! },
+        { x: 351, y: 36 },
+      );
+      const moves = window.moves.length;
+      await host.controls.protectCapture(async () => {
+        window.options.y = original.y - 32;
+        window.options.height = original.height + 32;
+        if (transition === 'fixed-content') window.contentInsetTop = 32;
+        if (transition === 'bottom-inset') {
+          // A native frame can report decoration at the bottom instead of
+          // growing the renderer viewport. Preserving the old anchor here is
+          // impossible; it must not translate the UI below the actual viewport.
+          window.getContentBounds = () => ({
+            ...window.getBounds(),
+            height: original.height,
+          });
+        }
+        window.events.get('resize')?.();
+      });
+      const content = window.getContentBounds();
+      const offset = host.controls.publicState().overlayOffset!;
+      const visible = OVERLAY_GEOMETRY.bounds.orb;
+      assert.equal(offset.x, 351);
+      assert.equal(offset.y, transition === 'expanded-content' ? 68 : 36);
+      assert(offset.x + visible.x >= 0);
+      assert(offset.y + visible.y >= 0);
+      assert(offset.x + visible.x + visible.width <= content.width);
+      assert(offset.y + visible.y + visible.height <= content.height);
+      assert.deepEqual(host.logicalPosition(window), {
+        x: 1699,
+        y: transition === 'bottom-inset' ? 442 : 474,
+      });
+      assert.equal(window.moves.length, moves);
+      assert.deepEqual(host.saved, []);
+      Object.assign(window.options, original);
+      window.contentInsetTop = 0;
+      window.getContentBounds = getContentBounds;
+      window.events.get('resize')?.();
+      assert.deepEqual(
+        { ...host.controls.publicState().overlayOffset! },
+        { x: 351, y: 36 },
+      );
+      assert.deepEqual(host.logicalPosition(window), { x: 1699, y: 474 });
+      assert.equal(window.moves.length, moves);
+    }
+  });
+});

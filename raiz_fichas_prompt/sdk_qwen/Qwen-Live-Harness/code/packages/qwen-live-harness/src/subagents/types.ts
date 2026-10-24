@@ -1,0 +1,600 @@
+/**
+ * @license
+ * Copyright 2026 Qwen
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+export const SUBAGENT_STATUSES = [
+  'queued',
+  'starting',
+  'running',
+  'monitoring',
+  'waiting',
+  'delivering',
+  'completed',
+  'failed',
+  'cancelled',
+  'interrupted',
+] as const;
+export type SubagentStatus = (typeof SUBAGENT_STATUSES)[number];
+export const SUBAGENT_FILTERS = [
+  'all',
+  'running',
+  'completed',
+  'needsAttention',
+] as const;
+export type SubagentFilter = (typeof SUBAGENT_FILTERS)[number];
+export type SubagentActivity = {
+  at: number;
+  kind: 'status' | 'message' | 'plan' | 'tool' | 'observation' | 'notification';
+  text: string;
+};
+export type SubagentPermission = {
+  requestHandle: string;
+  title: string;
+  titleTruncated?: boolean;
+  backend?: string;
+  sessionId?: string;
+  details?: string;
+  alwaysScope?: string;
+  choices: Array<{
+    decision: 'allow' | 'deny';
+    scope?: 'once' | 'always';
+  }>;
+};
+export const SUBAGENT_STOP_REASONS = [
+  'stopping',
+  'unsupported',
+  'untracked',
+  'ended',
+] as const;
+export type SubagentTask = {
+  id: string;
+  kind: 'harness' | 'proactive' | 'search' | 'visual';
+  title: string;
+  status: SubagentStatus;
+  createdAt: number;
+  updatedAt: number;
+  backend?: string;
+  sessionId?: string;
+  source?: string;
+  request: string;
+  activity: string;
+  output: string;
+  /** Optional application-owned display message; output remains verbatim task data. */
+  outputMessage?: string;
+  outputTruncated?: boolean;
+  events: SubagentActivity[];
+  triggerCount?: number;
+  pendingNotifications?: number;
+  notification?:
+    'queued' | 'preparing' | 'speaking' | 'delivered' | 'undelivered';
+  remainingSec?: number;
+  canStop?: boolean;
+  stopReason?: (typeof SUBAGENT_STOP_REASONS)[number];
+  permissions?: SubagentPermission[];
+  permissionsOmitted?: number;
+};
+export type SubagentsSnapshot = {
+  revision: number;
+  /** Changes to instruction receipts do not change task revisions or counts. */
+  deliveryRevision?: number;
+  /** Report and announcement changes do not imply task progress or delivery. */
+  reportRevision?: number;
+  pendingUnassignedPermissions?: number;
+  counts: {
+    running: number;
+    completed: number;
+    needsAttention: number;
+    failed: number;
+    cancelled: number;
+    interrupted: number;
+  };
+  tasks: SubagentTask[];
+  omitted: number;
+};
+export const MAX_SUBAGENTS_SNAPSHOT_BYTES = 240 * 1024;
+export const MAX_SUBAGENT_TASKS = 32;
+export const MAX_SUBAGENT_PERMISSIONS = 8;
+export const MAX_SUBAGENTS_REQUEST_BYTES = 4 * 1024;
+export const MAX_SUBAGENTS_CONTROL_BYTES = 1024 * 1024;
+export const MAX_DISCOVERED_SESSIONS = 32;
+export const MAX_INSTRUCTION_DELIVERIES = 100;
+export const INSTRUCTION_DELIVERY_STATUSES = [
+  'pending',
+  'held',
+  'delivered',
+  'denied',
+  'refused',
+  'expired',
+  'misaddressed',
+  'dropped',
+  'unknown',
+  'failed',
+] as const;
+export type InstructionDelivery = {
+  id: string;
+  session: string;
+  backend: string;
+  status: (typeof INSTRUCTION_DELIVERY_STATUSES)[number];
+  tracking: boolean;
+  createdAt: number;
+  updatedAt: number;
+  note?: string;
+};
+export const MAX_SESSION_REPORTS = 100;
+export const SESSION_REPORT_CATEGORIES = [
+  'progress',
+  'blocked',
+  'result',
+  'info',
+] as const;
+export const SESSION_REPORT_ANNOUNCEMENTS = [
+  'queued',
+  'submitted',
+  'speaking',
+  'announced',
+  'interrupted',
+  'unspoken',
+  'suppressed',
+] as const;
+export type SessionReport = {
+  id: string;
+  backend: string;
+  source: string;
+  sourceStatus: 'matched' | 'unconfirmed';
+  session?: string;
+  category: (typeof SESSION_REPORT_CATEGORIES)[number];
+  text: string;
+  receivedAt: number;
+  updatedAt: number;
+  announcement: (typeof SESSION_REPORT_ANNOUNCEMENTS)[number];
+  note?: string;
+};
+
+/** Session discovery is separate from tasks and does not imply execution. */
+export type DiscoveredSession = {
+  id: string;
+  backend: string;
+  sessionId: string;
+  title: string;
+  cwd?: string;
+  source: 'terminal';
+  status: 'unknown';
+  readOnly: boolean;
+};
+
+export type SubagentsPage = {
+  snapshot: SubagentsSnapshot;
+  offset: number;
+  total: number;
+  filter?: SubagentFilter;
+  selected?: SubagentTask;
+  unassignedPermissions?: SubagentPermission[];
+  unassignedPermissionsOmitted?: number;
+  discoveredSessions?: DiscoveredSession[];
+  discoveredSessionsOmitted?: number;
+  instructionDeliveries?: InstructionDelivery[];
+  instructionDeliveriesOmitted?: number;
+  sessionReports?: SessionReport[];
+  sessionReportsOmitted?: number;
+};
+export type SubagentsControlRequest =
+  | {
+      action: 'list';
+      offset?: number;
+      selectedId?: string;
+      filter?: SubagentFilter;
+    }
+  | { action: 'stop'; taskId: string }
+  | {
+      action: 'permission';
+      requestHandle: string;
+      decision: 'allow' | 'deny';
+      scope?: 'once' | 'always';
+    };
+export const SUBAGENTS_CONTROL_ERROR_CODES = [
+  'unsupported',
+  'unavailable',
+  'invalid_request',
+  'not_found',
+  'not_stoppable',
+  'permission_unavailable',
+  'action_failed',
+  'stale_instance',
+] as const;
+export type SubagentsControlErrorCode =
+  (typeof SUBAGENTS_CONTROL_ERROR_CODES)[number];
+export type SubagentsControlResult =
+  | { type: 'page'; page: SubagentsPage }
+  | {
+      type: 'outcome';
+      outcome: 'stopping' | 'stopped' | 'already_ended' | 'allowed' | 'denied';
+      taskId?: string;
+      requestHandle?: string;
+      scope?: 'once' | 'always';
+      message?: string;
+    }
+  | { type: 'error'; code: SubagentsControlErrorCode };
+
+const record = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+const text = (value: unknown, max: number): value is string =>
+  typeof value === 'string' && value.length <= max;
+const number = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0;
+const integer = (value: unknown): value is number =>
+  number(value) && Number.isSafeInteger(value);
+const identifier = (value: unknown): value is string =>
+  text(value, 128) && value.length > 0;
+
+function fits(value: unknown, max: number): boolean {
+  try {
+    return new TextEncoder().encode(JSON.stringify(value)).length <= max;
+  } catch {
+    return false;
+  }
+}
+
+function validPermissions(value: unknown): value is SubagentPermission[] {
+  if (!Array.isArray(value) || value.length > MAX_SUBAGENT_PERMISSIONS)
+    return false;
+  const handles = new Set<string>();
+  for (const permission of value) {
+    if (
+      !record(permission) ||
+      !identifier(permission['requestHandle']) ||
+      handles.has(permission['requestHandle']) ||
+      !text(permission['title'], 4096) ||
+      (permission['titleTruncated'] !== undefined &&
+        typeof permission['titleTruncated'] !== 'boolean') ||
+      !Array.isArray(permission['choices']) ||
+      permission['choices'].length > 3 ||
+      (permission['details'] !== undefined &&
+        !text(permission['details'], 8192)) ||
+      (permission['alwaysScope'] !== undefined &&
+        !text(permission['alwaysScope'], 1024))
+    )
+      return false;
+    handles.add(permission['requestHandle']);
+    for (const key of ['backend', 'sessionId'])
+      if (permission[key] !== undefined && !text(permission[key], 256))
+        return false;
+    const decisions = new Set<string>();
+    for (const choice of permission['choices']) {
+      if (
+        !record(choice) ||
+        (permission['titleTruncated'] === true &&
+          choice['decision'] === 'allow') ||
+        (choice['decision'] !== 'allow' && choice['decision'] !== 'deny') ||
+        decisions.has(`${choice['decision']}:${choice['scope'] ?? ''}`) ||
+        (choice['scope'] !== undefined &&
+          choice['scope'] !== 'once' &&
+          choice['scope'] !== 'always')
+      )
+        return false;
+      decisions.add(`${choice['decision']}:${choice['scope'] ?? ''}`);
+    }
+  }
+  return true;
+}
+
+function validDiscoveredSessions(value: unknown): value is DiscoveredSession[] {
+  if (!Array.isArray(value) || value.length > MAX_DISCOVERED_SESSIONS)
+    return false;
+  const ids = new Set<string>();
+  for (const session of value) {
+    if (
+      !record(session) ||
+      !identifier(session['id']) ||
+      ids.has(session['id']) ||
+      !text(session['backend'], 256) ||
+      !text(session['sessionId'], 256) ||
+      !session['sessionId'] ||
+      !text(session['title'], 240) ||
+      (session['cwd'] !== undefined && !text(session['cwd'], 4096)) ||
+      session['source'] !== 'terminal' ||
+      session['status'] !== 'unknown' ||
+      typeof session['readOnly'] !== 'boolean'
+    )
+      return false;
+    ids.add(session['id']);
+  }
+  return true;
+}
+
+function validInstructionDeliveries(
+  value: unknown,
+): value is InstructionDelivery[] {
+  if (!Array.isArray(value) || value.length > MAX_INSTRUCTION_DELIVERIES)
+    return false;
+  const ids = new Set<string>();
+  const keys = [
+    'id',
+    'session',
+    'backend',
+    'status',
+    'tracking',
+    'createdAt',
+    'updatedAt',
+    'note',
+  ];
+  for (const delivery of value) {
+    if (
+      !record(delivery) ||
+      !Object.keys(delivery).every((key) => keys.includes(key)) ||
+      !identifier(delivery['id']) ||
+      ids.has(delivery['id']) ||
+      !identifier(delivery['session']) ||
+      !text(delivery['backend'], 256) ||
+      !INSTRUCTION_DELIVERY_STATUSES.includes(
+        delivery['status'] as InstructionDelivery['status'],
+      ) ||
+      typeof delivery['tracking'] !== 'boolean' ||
+      !number(delivery['createdAt']) ||
+      !number(delivery['updatedAt']) ||
+      delivery['updatedAt'] < delivery['createdAt'] ||
+      (delivery['note'] !== undefined && !text(delivery['note'], 1024))
+    )
+      return false;
+    ids.add(delivery['id']);
+  }
+  return true;
+}
+
+function validSessionReports(value: unknown): value is SessionReport[] {
+  if (!Array.isArray(value) || value.length > MAX_SESSION_REPORTS) return false;
+  const ids = new Set<string>();
+  const keys = [
+    'id',
+    'backend',
+    'source',
+    'sourceStatus',
+    'session',
+    'category',
+    'text',
+    'receivedAt',
+    'updatedAt',
+    'announcement',
+    'note',
+  ];
+  for (const report of value) {
+    if (
+      !record(report) ||
+      !Object.keys(report).every((key) => keys.includes(key)) ||
+      !identifier(report['id']) ||
+      ids.has(report['id']) ||
+      !text(report['backend'], 256) ||
+      !text(report['source'], 240) ||
+      (report['sourceStatus'] !== 'matched' &&
+        report['sourceStatus'] !== 'unconfirmed') ||
+      (report['session'] !== undefined && !identifier(report['session'])) ||
+      !SESSION_REPORT_CATEGORIES.includes(
+        report['category'] as SessionReport['category'],
+      ) ||
+      !text(report['text'], 2000) ||
+      !number(report['receivedAt']) ||
+      !number(report['updatedAt']) ||
+      report['updatedAt'] < report['receivedAt'] ||
+      !SESSION_REPORT_ANNOUNCEMENTS.includes(
+        report['announcement'] as SessionReport['announcement'],
+      ) ||
+      (report['note'] !== undefined && !text(report['note'], 1024))
+    )
+      return false;
+    ids.add(report['id']);
+  }
+  return true;
+}
+
+function validTask(task: unknown): task is SubagentTask {
+  if (
+    !record(task) ||
+    !identifier(task['id']) ||
+    typeof task['kind'] !== 'string' ||
+    !['harness', 'proactive', 'search', 'visual'].includes(task['kind']) ||
+    !text(task['title'], 240) ||
+    !SUBAGENT_STATUSES.includes(task['status'] as SubagentStatus) ||
+    !number(task['createdAt']) ||
+    !number(task['updatedAt']) ||
+    !text(task['request'], 4096) ||
+    !text(task['activity'], 1024) ||
+    !text(task['output'], 16384) ||
+    (task['outputMessage'] !== undefined &&
+      !text(task['outputMessage'], 512)) ||
+    !Array.isArray(task['events']) ||
+    task['events'].length > 24
+  )
+    return false;
+  for (const key of ['backend', 'sessionId', 'source'])
+    if (task[key] !== undefined && !text(task[key], 256)) return false;
+  for (const key of [
+    'triggerCount',
+    'pendingNotifications',
+    'permissionsOmitted',
+  ])
+    if (task[key] !== undefined && !integer(task[key])) return false;
+  if (task['remainingSec'] !== undefined && !number(task['remainingSec']))
+    return false;
+  for (const key of ['outputTruncated', 'canStop'])
+    if (task[key] !== undefined && typeof task[key] !== 'boolean') return false;
+  if (
+    task['stopReason'] !== undefined &&
+    !SUBAGENT_STOP_REASONS.includes(
+      task['stopReason'] as (typeof SUBAGENT_STOP_REASONS)[number],
+    )
+  )
+    return false;
+  if (
+    task['permissions'] !== undefined &&
+    !validPermissions(task['permissions'])
+  )
+    return false;
+  if (
+    task['notification'] !== undefined &&
+    (typeof task['notification'] !== 'string' ||
+      !['queued', 'preparing', 'speaking', 'delivered', 'undelivered'].includes(
+        task['notification'],
+      ))
+  )
+    return false;
+  return task['events'].every(
+    (event) =>
+      record(event) &&
+      number(event['at']) &&
+      typeof event['kind'] === 'string' &&
+      [
+        'status',
+        'message',
+        'plan',
+        'tool',
+        'observation',
+        'notification',
+      ].includes(event['kind']) &&
+      text(event['text'], 1024),
+  );
+}
+
+export function parseSubagentsSnapshot(
+  value: unknown,
+): SubagentsSnapshot | undefined {
+  if (
+    !record(value) ||
+    !integer(value['revision']) ||
+    (value['deliveryRevision'] !== undefined &&
+      !integer(value['deliveryRevision'])) ||
+    (value['reportRevision'] !== undefined &&
+      !integer(value['reportRevision'])) ||
+    (value['pendingUnassignedPermissions'] !== undefined &&
+      !integer(value['pendingUnassignedPermissions'])) ||
+    !integer(value['omitted']) ||
+    !record(value['counts']) ||
+    !Array.isArray(value['tasks']) ||
+    value['tasks'].length > MAX_SUBAGENT_TASKS
+  )
+    return undefined;
+  const counts = value['counts'];
+  if (
+    ![
+      'running',
+      'completed',
+      'needsAttention',
+      'failed',
+      'cancelled',
+      'interrupted',
+    ].every((key) => integer(counts[key]))
+  )
+    return undefined;
+  const ids = new Set<string>();
+  for (const task of value['tasks']) {
+    if (!validTask(task)) return undefined;
+    if (ids.has(task['id'])) return undefined;
+    ids.add(task['id']);
+  }
+  if (!fits(value, MAX_SUBAGENTS_SNAPSHOT_BYTES)) return undefined;
+  return value as SubagentsSnapshot;
+}
+
+export function parseSubagentsControlRequest(
+  value: unknown,
+): SubagentsControlRequest | undefined {
+  if (!record(value) || !fits(value, MAX_SUBAGENTS_REQUEST_BYTES))
+    return undefined;
+  const keys = Object.keys(value);
+  if (
+    value['action'] === 'list' &&
+    keys.every((key) =>
+      ['action', 'offset', 'selectedId', 'filter'].includes(key),
+    ) &&
+    (value['filter'] === undefined ||
+      SUBAGENT_FILTERS.includes(value['filter'] as SubagentFilter)) &&
+    (value['offset'] === undefined || integer(value['offset'])) &&
+    (value['selectedId'] === undefined || identifier(value['selectedId']))
+  )
+    return value as SubagentsControlRequest;
+  if (
+    value['action'] === 'stop' &&
+    keys.every((key) => ['action', 'taskId'].includes(key)) &&
+    identifier(value['taskId'])
+  )
+    return value as SubagentsControlRequest;
+  if (
+    value['action'] === 'permission' &&
+    keys.every((key) =>
+      ['action', 'requestHandle', 'decision', 'scope'].includes(key),
+    ) &&
+    identifier(value['requestHandle']) &&
+    (value['decision'] === 'allow' || value['decision'] === 'deny') &&
+    (value['scope'] === undefined ||
+      value['scope'] === 'once' ||
+      (value['scope'] === 'always' && value['decision'] === 'allow'))
+  )
+    return value as SubagentsControlRequest;
+  return undefined;
+}
+
+export function parseSubagentsControlResult(
+  value: unknown,
+): SubagentsControlResult | undefined {
+  if (!record(value) || !fits(value, MAX_SUBAGENTS_CONTROL_BYTES))
+    return undefined;
+  if (value['type'] === 'error')
+    return SUBAGENTS_CONTROL_ERROR_CODES.includes(
+      value['code'] as SubagentsControlErrorCode,
+    )
+      ? (value as SubagentsControlResult)
+      : undefined;
+  if (value['type'] === 'outcome') {
+    if (
+      (value['scope'] !== undefined &&
+        value['scope'] !== 'once' &&
+        value['scope'] !== 'always') ||
+      (value['message'] !== undefined && !text(value['message'], 1024))
+    )
+      return undefined;
+    if (
+      (['stopping', 'stopped', 'already_ended'].includes(
+        value['outcome'] as string,
+      ) &&
+        identifier(value['taskId'])) ||
+      (['allowed', 'denied'].includes(value['outcome'] as string) &&
+        identifier(value['requestHandle']))
+    )
+      return value as SubagentsControlResult;
+    return undefined;
+  }
+  if (value['type'] !== 'page' || !record(value['page'])) return undefined;
+  const page = value['page'];
+  const snapshot = parseSubagentsSnapshot(page['snapshot']);
+  if (
+    !snapshot ||
+    !integer(page['offset']) ||
+    !integer(page['total']) ||
+    (page['filter'] !== undefined &&
+      !SUBAGENT_FILTERS.includes(page['filter'] as SubagentFilter)) ||
+    page['offset'] > page['total'] ||
+    snapshot.tasks.length > page['total'] - page['offset'] ||
+    (page['selected'] !== undefined && !validTask(page['selected'])) ||
+    (page['unassignedPermissions'] !== undefined &&
+      !validPermissions(page['unassignedPermissions'])) ||
+    (page['unassignedPermissionsOmitted'] !== undefined &&
+      !integer(page['unassignedPermissionsOmitted'])) ||
+    (page['discoveredSessions'] !== undefined &&
+      !validDiscoveredSessions(page['discoveredSessions'])) ||
+    (page['discoveredSessionsOmitted'] !== undefined &&
+      (!integer(page['discoveredSessionsOmitted']) ||
+        page['discoveredSessions'] === undefined)) ||
+    (page['instructionDeliveries'] !== undefined &&
+      !validInstructionDeliveries(page['instructionDeliveries'])) ||
+    (page['instructionDeliveriesOmitted'] !== undefined &&
+      (!integer(page['instructionDeliveriesOmitted']) ||
+        page['instructionDeliveries'] === undefined)) ||
+    (page['sessionReports'] !== undefined &&
+      !validSessionReports(page['sessionReports'])) ||
+    (page['sessionReportsOmitted'] !== undefined &&
+      (!integer(page['sessionReportsOmitted']) ||
+        page['sessionReports'] === undefined))
+  )
+    return undefined;
+  return value as SubagentsControlResult;
+}
