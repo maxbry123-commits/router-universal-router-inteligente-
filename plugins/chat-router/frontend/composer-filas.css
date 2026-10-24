@@ -21,3 +21,26 @@ body.salida-grande #panel #composer .composer-bar .cb-herr,body.salida-grande #p
 body.salida-grande #panel #composer{display:flex;align-items:flex-end;gap:8px}body.salida-grande #panel #composer #message{flex:1 1 auto;min-height:44px}body.salida-grande #panel #composer .composer-bar{flex:0 0 auto;margin:0}
 @media(max-width:480px){#panel #composer .composer-bar{gap:5px}#panel #composer .composer-bar #btn-tools,#panel #composer .composer-bar #btn-agentes,#panel #composer .composer-bar #btn-prompt{font-size:11.5px;padding:5px 8px;gap:5px}#panel #composer{padding:10px 10px 8px}}
 #buzon-bar{padding:4px 8px!important;gap:4px!important;font-size:12px!important}#buzon-bar select,#buzon-bar button{min-height:30px!important;height:30px;padding:0 8px!important;font-size:12px!important}
+
+/* ---- móvil: caja de escritura en rejilla (texto + Enviar en la misma fila; chips; herramientas desplegables sin tapar nada) ---- */
+.cb-mas{display:none}
+@media(max-width:720px){
+  #panel #composer{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-auto-rows:auto;gap:6px 8px;padding:8px 10px}
+  #panel #composer .composer-bar{display:contents}
+  #panel #composer #message{grid-column:1;grid-row:2;min-height:48px;max-height:120px;margin:0}
+  #panel #composer .composer-bar .action{grid-column:2;grid-row:2;align-self:stretch;margin:0;min-width:84px!important;height:auto;min-height:48px!important;padding:0 12px!important}
+  #panel #composer .composer-bar #anclados{grid-column:1/-1;grid-row:1;position:static;max-width:100%;max-height:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;font-size:11.5px;line-height:1.3}
+  #panel #composer .composer-bar #anclados:empty{display:none}
+  #panel #composer .composer-bar #anclados>*{display:inline;margin-right:8px}
+  #panel #composer .composer-bar .cb-chips{grid-column:1/-1;grid-row:3;display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;min-width:0}
+  #panel #composer .composer-bar .cb-chips::-webkit-scrollbar{display:none}
+  #panel #composer .composer-bar .cb-chips>*{flex:0 0 auto!important;order:0!important}
+  #panel #composer .composer-bar .cb-mas{display:inline-flex;align-items:center;gap:5px;height:36px;min-height:36px;min-width:52px;padding:0 10px;border-radius:999px;margin-left:auto;width:auto;aspect-ratio:auto;justify-content:center}
+  #panel #composer .composer-bar .cb-herr{grid-column:1/-1;grid-row:4;display:none;flex-wrap:wrap;overflow:visible;gap:6px}
+  #panel #composer.cb-abierto .composer-bar .cb-herr{display:flex}
+  #panel #composer .composer-bar .cb-herr>*{flex:0 0 auto!important}
+}
+@media(min-width:721px){#panel #composer .composer-bar .cb-chips{display:contents}}
+@media(max-width:480px){#panel #composer .composer-bar .cb-chips #btn-tools,#panel #composer .composer-bar .cb-chips #btn-agentes,#panel #composer .composer-bar .cb-chips #btn-prompt{padding:5px 8px;font-size:11.5px;gap:5px}}
+/* móvil: el marco del chat casi sin relleno (más salida) */
+@media(max-width:720px){#panel section:has(> #histories){padding:4px 6px;margin-bottom:2px;height:calc(100dvh - var(--ctl-top,41px) - 4px);border-radius:18px}#panel #histories{margin:0}}
