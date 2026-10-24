@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from unittest.mock import patch
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+from mvp import compute
 from mvp.compute import llamar
 
 
@@ -92,3 +93,33 @@ class TestQwen(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class DosUrlBase(unittest.TestCase):
+    def test_user_agent_y_alterna_si_la_oficial_rechaza(self):
+        vistos = []
+        def sol(url, payload, clave):
+            vistos.append(url)
+            if "aliyuncs.com" in url:
+                raise compute.error.HTTPError(url, 401, "no", {}, None)
+            return {"choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}], "model": "glm-5.3"}
+        with patch("mvp.compute._solicitar", sol):
+            r = compute.llamar([{"role": "user", "content": "hola"}], "glm-5.3", compute.modelos.cargar()["base_url"], "sk-sp-x")
+        self.assertEqual(r["modelo_respuesta"], "glm-5.3")
+        self.assertEqual([("aliyuncs" in u) for u in vistos], [True, False])  # primero la oficial, luego QwenCloud
+        with patch("mvp.compute.request.urlopen") as uo:
+            uo.return_value.__enter__.return_value.read.return_value = b"{}"
+            try:
+                compute._solicitar("https://x/chat/completions", {}, "k")
+            except Exception:
+                pass
+            self.assertEqual(uo.call_args.args[0].get_header("User-agent"), "qwencloud-skills")
+
+    def test_error_400_no_prueba_la_alterna(self):
+        vistos = []
+        def sol(url, payload, clave):
+            vistos.append(url); raise compute.error.HTTPError(url, 400, "malo", {}, None)
+        with patch("mvp.compute._solicitar", sol):
+            with self.assertRaises(RuntimeError):
+                compute.llamar([{"role": "user", "content": "x"}], "glm-5.3", compute.modelos.cargar()["base_url"], "k")
+        self.assertEqual(len(vistos), 1)

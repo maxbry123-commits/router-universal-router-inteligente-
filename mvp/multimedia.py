@@ -4,6 +4,7 @@ import json
 import re
 import time
 from urllib import error, request
+from mvp import modelos
 
 RUTAS = {"imagen": "/api/v1/services/aigc/multimodal-generation/generation", "video": "/api/v1/services/aigc/video-generation/video-synthesis",
          "tts": "/api/v1/services/audio/tts/SpeechSynthesizer", "tarea": "/api/v1/tasks/"}
@@ -11,7 +12,7 @@ MAX_AUDIO = 2_000_000
 
 
 def _http(url, clave, cuerpo=None, extra=None):
-    cab = {"Content-Type": "application/json", "Authorization": "Bearer " + clave, **(extra or {})}
+    cab = {"Content-Type": "application/json", "Authorization": "Bearer " + clave, "User-Agent": "qwencloud-skills", **(extra or {})}  # User-Agent: obligatorio en Token Plan
     sol = request.Request(url, data=None if cuerpo is None else json.dumps(cuerpo).encode(), headers=cab, method="GET" if cuerpo is None else "POST")
     try:
         with request.urlopen(sol, timeout=180) as r:
@@ -87,6 +88,19 @@ def asr(b, clave, url_audio):
 
 
 def generar(modelo, tipo, base_url, clave, texto, progreso=None):
+    """Prueba la URL base oficial y, si no acepta la clave o no responde (401/403/404/red), la de QwenCloud."""
+    ultimo = None
+    for base in modelos.bases(base_url):
+        try:
+            return _generar(modelo, tipo, base, clave, texto, progreso)
+        except RuntimeError as exc:
+            ultimo = exc
+            if not any(x in str(exc) for x in ("HTTP 401", "HTTP 403", "HTTP 404", "error de red")):
+                raise
+    raise ultimo
+
+
+def _generar(modelo, tipo, base_url, clave, texto, progreso=None):
     b, enlaces = raiz(base_url), re.findall(r"https?://[^\s\"'<>)]+", texto)
     prompt = re.sub(r"https?://[^\s\"'<>)]+", "", texto).strip() or texto
     if "realtime" in modelo:

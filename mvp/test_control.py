@@ -429,7 +429,7 @@ class TestAgentes(Base):
 
     def test_conectar_1_o_50_agentes_con_su_modelo(self):
         e = self.accion("tools_estado")
-        self.assertEqual((e["agentes"], e["max"], len(e["recursos"])), ([], 50, 13))
+        self.assertEqual((e["agentes"], e["max"], len(e["recursos"])), ([], 50, 12))
         e = self.accion("agente_enlazar", {"nombre": "Revisor", "recurso": "qwen3.7-plus", "sistema": "revisa codigo"})
         self.assertEqual([(a["nombre"], a["recurso"]) for a in e["agentes"]], [("Revisor", "qwen3.7-plus")])
         e = self.accion("agente_enlazar", {"nombre": "Revisor", "recurso": "glm-5.3"})  # cambiar solo el modelo conserva las instrucciones

@@ -20,12 +20,6 @@
   "modelo_defecto": "qwen3.8-max",
   "texto": [
     {
-      "id": "auto",
-      "p": 1,
-      "t": 1,
-      "th": null
-    },
-    {
       "id": "qwen3.8-max",
       "p": 1,
       "t": 1,

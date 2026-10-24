@@ -293,7 +293,8 @@ async def _chat_ficha(cuerpo, progreso=None):
     mensajes = [{"role": "system", "content": capa}] + list(mensajes)
     seleccionado = str(q.get("modelo") or q.get("model") or "")
     seleccionado = next((m for m, _ in modelos.catalogo() if "".join(c for c in m.lower() if c.isalnum()) == "".join(c for c in seleccionado.lower() if c.isalnum())), seleccionado)
-    if seleccionado.startswith(FICHAS_HEREDADAS):  # sin selector Qwen activo el chat manda su ficha (nv-muse-glimmer): se usa el modelo por defecto y el chat muestra «Modelo solicitado · API»
+    heredada = seleccionado.startswith(FICHAS_HEREDADAS)
+    if heredada:  # sin selector Qwen activo el chat manda su ficha (nv-muse-glimmer): se usa el modelo por defecto y el chat muestra «Modelo solicitado · API»
         seleccionado = ""
     medio = dict(modelos.catalogo()).get(seleccionado)
     if medio and medio != "texto":  # imagen, voz, ASR y video: llamada directa a la ficha (no pasan por herramientas)
@@ -302,6 +303,7 @@ async def _chat_ficha(cuerpo, progreso=None):
         modelo = modelos.validar(seleccionado or None)
     except (ValueError, TypeError) as error:
         raise HTTPException(status_code=400, detail=str(error)) from None
+    mensajes = [{**mensajes[0], "content": mensajes[0]["content"] + "\n\nModelo activo: %s (QwenCloud Token Plan). Si te preguntan qué modelo eres, responde con ese identificador." % modelo}] + list(mensajes[1:])  # mensajes[0] es la capa de formato
     # Ruta Antonio: Qwen -> Harness DeepSeek (HTTP) -> router. Sin camino alterno; sin URL Harness falla (G5 abierto)
     if not os.environ.get("RIU_DEEPSEEK_HARNESS_URL"):
         raise HTTPException(status_code=503, detail="HARNESS_NO_CONFIGURADO")
@@ -312,6 +314,7 @@ async def _chat_ficha(cuerpo, progreso=None):
                          "opciones": opciones or None, **_controles(q)})
     return {"estado": "completado", "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": modelo, "modelo_respuesta": salida.get("modelo_respuesta"),
+            **({"aviso_modelo": "sin selector de modelo encendido: respondió el modelo por defecto " + modelo} if heredada else {}),
             "choices": [{"message": {"role": "assistant", "content": salida["texto"],
                                     "tool_calls": salida["tool_calls"]},
                          "finish_reason": salida["finish_reason"]}]}

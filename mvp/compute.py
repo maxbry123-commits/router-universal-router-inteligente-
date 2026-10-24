@@ -17,7 +17,7 @@ def _endpoint(base_url):
 
 
 def _solicitar(url, payload, clave):
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "User-Agent": "qwencloud-skills"}  # obligatorio en Token Plan (SDK oficial)
     if clave:
         headers["Authorization"] = "Bearer " + clave
     req = request.Request(url, data=json.dumps(payload).encode("utf-8"),
@@ -36,7 +36,20 @@ def llamar(mensajes, modelo, base_url, clave, opciones=None):
             raise ValueError("opcion Qwen no permitida: " + nombre)
         payload[nombre] = valor
     payload.update(modelos.extra_body(modelo, opciones=opciones))
-    url = _endpoint(base_url)
+    ultimo = RuntimeError("Qwen error de red")
+    for base in modelos.bases(base_url):  # oficial primero, QwenCloud como alterna si la primera no acepta la clave o no responde
+        try:
+            return _intentar(_endpoint(base), payload, clave, modelo)
+        except _Alterna as exc:
+            ultimo = RuntimeError(str(exc))
+    raise ultimo
+
+
+class _Alterna(Exception):
+    """Fallo de esa URL base (401/403/404 o red): vale la pena probar la otra."""
+
+
+def _intentar(url, payload, clave, modelo):
     for intento in range(3):
         try:
             bruto = _solicitar(url, payload, clave)
@@ -47,9 +60,11 @@ def llamar(mensajes, modelo, base_url, clave, opciones=None):
                     "uso": bruto.get("usage") or {}, "bruto": bruto, "mensaje_asistente": mensaje,
                     "modelo_solicitado": modelo, "modelo_respuesta": bruto.get("model")}
         except error.HTTPError as exc:
+            if exc.code in (401, 403, 404):
+                raise _Alterna("Qwen HTTP " + str(exc.code)) from None
             if exc.code not in REINTENTABLES or intento == 2:
                 raise RuntimeError("Qwen HTTP " + str(exc.code)) from None
         except (error.URLError, TimeoutError, OSError):
             if intento == 2:
-                raise RuntimeError("Qwen error de red") from None
+                raise _Alterna("Qwen error de red") from None
         time.sleep(min(2 ** intento, 2))

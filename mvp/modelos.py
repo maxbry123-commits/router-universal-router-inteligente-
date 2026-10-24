@@ -19,7 +19,7 @@ def permitidos(plan_=None):
 
 
 def catalogo(plan_=None):
-    """Los modelos del plan con su tipo (texto, imagen, audio, video): 23 en Personal Standard."""
+    """Los modelos del plan con su tipo (texto, imagen, audio, video): 22 en Personal Standard."""
     k, d = ('p' if (plan_ or plan()) == 'personal' else 't'), cargar()
     return [(m['id'], t) for t in ('texto', 'imagen', 'audio', 'video') for m in d[t] if m[k]]
 
@@ -59,6 +59,13 @@ def clave_env():
 
 def base_url():
     return os.environ.get('MVP_QWEN_BASE_URL') or cargar()['base_url']
+
+
+def bases(base=None):
+    """URL base oficial primero y la de QwenCloud despues (misma ruta en las dos): si una no acepta la clave se prueba la otra."""
+    d, base = cargar(), (base or base_url())
+    alterna = d.get('base_url_alterna_qwencloud')
+    return [base] + ([alterna] if alterna and base == d['base_url'] and base != alterna else [])
 
 
 def qwen_code_config(plan_=None):

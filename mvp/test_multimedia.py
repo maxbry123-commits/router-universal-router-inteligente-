@@ -14,13 +14,14 @@ B = "https://token-plan.test"
 
 
 class TestCatalogo(unittest.TestCase):
-    def test_los_23_modelos_del_plan(self):
+    def test_los_22_modelos_del_plan(self):
         with patch.dict(os.environ, {"MVP_PLAN": "personal"}):
             cat = dict(modelos.catalogo())
-        self.assertEqual(len(cat), 23)
+        self.assertEqual(len(cat), 22)
         self.assertEqual(sorted(set(cat.values())), ["audio", "imagen", "texto", "video"])
-        self.assertEqual([sum(1 for t in cat.values() if t == k) for k in ("texto", "imagen", "audio", "video")], [13, 3, 3, 4])
-        for m in ("auto", "qwen3.8-max", "glm-5.3", "deepseek-v4.1-flash-1017", "qwen-image-3.0-pro", "wan2.7-image-pro", "qwen-audio-3.0-tts-plus", "qwen-audio-3.0-realtime-plus", "qwen-audio-3.0-asr-flash", "wan3.0-video", "happyhorse-1.1-r2v"):
+        self.assertEqual([sum(1 for t in cat.values() if t == k) for k in ("texto", "imagen", "audio", "video")], [12, 3, 3, 4])
+        self.assertNotIn("auto", cat)  # quitado a pedido de Antonio
+        for m in ("qwen3.8-max", "glm-5.3", "deepseek-v4.1-flash-1017", "qwen-image-3.0-pro", "wan2.7-image-pro", "qwen-audio-3.0-tts-plus", "qwen-audio-3.0-realtime-plus", "qwen-audio-3.0-asr-flash", "wan3.0-video", "happyhorse-1.1-r2v"):
             self.assertIn(m, cat)
 
 

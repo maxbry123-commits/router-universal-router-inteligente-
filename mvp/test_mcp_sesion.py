@@ -44,3 +44,10 @@ class SesionMCP(Base):
         self.assertEqual(self.llamar("pendientes", {"accion": "agregar", "texto": "probar"})["pendientes"][0]["texto"], "probar")
         self.client.post("/plugins/puente_chat/call/tools_lock", headers={"x-api-key": "api-ficticia"}, json={"tool": "pendientes", "locked": True})
         self.assertEqual(self.llamar("pendientes", {"accion": "listar"})["error"]["code"], -32000)  # apagada: el servidor la niega por MCP
+
+    def test_cada_modelo_recibe_su_identidad(self):
+        salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "glm-5.3"}
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
+            self.banco.datos["RIU_API_KEY"] = "clave-harness"
+            self.client.post("/chat/send", headers={"x-api-key": "api-ficticia"}, json={"message": "quién eres", "model": "glm-5.3"})
+        self.assertIn("Modelo activo: glm-5.3", llm.call_args.args[1][0]["content"])
