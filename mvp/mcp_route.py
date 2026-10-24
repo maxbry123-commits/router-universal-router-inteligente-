@@ -3,7 +3,7 @@ import sys
 import asyncio
 import json
 from fastapi import Depends, HTTPException, Request, Response
-from mvp import control as permisos, mcp_cliente, modelos
+from mvp import control as permisos, externos, mcp_cliente, modelos
 from router import mcp_puente_github as github
 
 # Esquemas de mvp/mcp_route.py y del contrato existente
@@ -132,7 +132,7 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
         if args.get('ficha_qwen'):
             if args.get('modelo'):
                 args = {**args, 'modelo': modelos.canonico(args['modelo'])}  # nombres antiguos (ficha-qwen38max, qw-glm-5-3) -> id del catálogo
-            if args.get('modelo') and args['modelo'] not in dict(modelos.catalogo()):  # texto, imagen, voz y video del plan (la ficha genera los medios)
+            if args.get('modelo') and args['modelo'] not in dict(modelos.catalogo()) and not externos.proveedor(args['modelo']):  # groq/<id> y nvidia/<id> los valida su API  # texto, imagen, voz y video del plan (la ficha genera los medios)
                 return _error(id_, -32602, 'modelo no permitido en el plan %s; permitidos: %s' % (modelos.plan(), ', '.join(i for i, _ in modelos.catalogo())))
             if not isinstance(args['ficha_qwen'], str):
                 return _error(id_, -32602, 'ficha_qwen invalida')
@@ -148,7 +148,8 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
             estado = getattr(getattr(app, 'app', None), 'state', None)
             return _ok(id_, _contenido({'status': 'ok' if getattr(estado, 'banco', None) else 'degraded', 'commit': str(getattr(estado, 'commit', 'desconocido')),
                                         'plan': modelos.plan(), 'modelo_defecto': modelos.cargar()['modelo_defecto'],
-                                        'modelos': [i for i, _ in modelos.catalogo()], 'herramientas': [t['name'] for t in catalogo]}))
+                                        'modelos': [i for i, _ in modelos.catalogo()], 'herramientas': [t['name'] for t in catalogo],
+                                        'proveedores_externos': {p: bool(externos.clave(p, getattr(estado, 'banco', None))) for p in externos.PROVEEDORES}}))
         if nombre in ('pendientes', 'sala', 'yaiwes_md'):
             salida = await control.aplicar({'pendientes': 'checklist', 'sala': 'salas', 'yaiwes_md': 'handoff_texto'}[nombre], args, banco, 'modelo')
             return _ok(id_, _contenido(salida))

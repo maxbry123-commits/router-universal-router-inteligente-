@@ -530,11 +530,11 @@ class TestGapsChat(Base):
 
     def test_motores_envuelven_el_system_prompt_por_modo(self):
         r, msgs = self.enviar_con_modo()  # Auto sin regla = modo por defecto: solo la capa de formato, sin el texto "sin herramientas" de m05
-        self.assertEqual((r.status_code, [m["role"] for m in msgs], msgs[-1]), (200, ["system", "user"], {"role": "user", "content": "hola"}))
+        self.assertEqual((r.status_code, [m["role"] for m in msgs], msgs[-1]), (200, ["system", "system", "user"], {"role": "user", "content": "hola"}))
         self.assertIn("FORMATO DE SALIDA", msgs[0]["content"])
         self.assertNotIn("MODO ACTIVO", msgs[0]["content"])
         r, msgs = self.enviar_con_modo(mode_request={"mode_id": "m01_plan", "source": "button"})
-        self.assertEqual(([m["role"] for m in msgs], msgs[-1]["content"]), (["system", "system", "user"], "hola"))
+        self.assertEqual(([m["role"] for m in msgs], msgs[-1]["content"]), (["system", "system", "system", "user"], "hola"))
         self.assertIn("m01_plan", msgs[1]["content"])
         r, msgs = self.enviar_con_modo(message="investiga sobre qwen", mode_request={"mode_id": "auto", "source": "auto"})
         self.assertIn("m03_investigacion", msgs[1]["content"])  # Auto: lo decide la regla del clasificador

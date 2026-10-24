@@ -60,9 +60,21 @@ class SesionMCP(Base):
         self.client.post("/plugins/puente_chat/call/tools_lock", headers={"x-api-key": "api-ficticia"}, json={"tool": "pendientes", "locked": True})
         self.assertEqual(self.llamar("pendientes", {"accion": "listar"})["error"]["code"], -32000)  # apagada: el servidor la niega por MCP
 
+    def test_identidad_va_justo_antes_del_mensaje_y_no_la_pisa_el_historial(self):  # BUG: Team qwen (qwen3.8-max) respondía «Soy deepseek…» copiando turnos de otro modelo
+        salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "qwen3.8-max"}
+        previo = [{"role": "user", "content": "Que modelo eres"}, {"role": "assistant", "content": "Soy deepseek-v4.1-flash-1017 (DeepSeek)."}]
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
+            self.banco.datos["RIU_API_KEY"] = "clave-harness"
+            r = self.llamar("chat", {"ficha_qwen": "1", "message": "Que modelo eres", "request_id": "ident-0001", "modelo": "qwen3.8-max", "contexto_previo": previo})
+            for _ in range(10):
+                if self.llamar("resultado", {"proceso_id": r["proceso_id"], "espera": 1}).get("estado") != "procesando": break
+        msgs = llm.call_args.args[1]
+        self.assertEqual(msgs[-1]["role"], "user"); self.assertEqual(msgs[-2]["role"], "system")
+        self.assertIn("Modelo activo: qwen3.8-max", msgs[-2]["content"]); self.assertIn("otros modelos", msgs[-2]["content"])
+
     def test_cada_modelo_recibe_su_identidad(self):
         salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "glm-5.3"}
         with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
             self.banco.datos["RIU_API_KEY"] = "clave-harness"
             self.client.post("/chat/send", headers={"x-api-key": "api-ficticia"}, json={"message": "quién eres", "model": "glm-5.3"})
-        self.assertIn("Modelo activo: glm-5.3", llm.call_args.args[1][0]["content"])
+        self.assertIn("Modelo activo: glm-5.3", json.dumps(llm.call_args.args[1], ensure_ascii=False))

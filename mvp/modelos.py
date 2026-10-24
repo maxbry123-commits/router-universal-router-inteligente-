@@ -41,6 +41,9 @@ def canonico(nombre, plan_=None):
 
 
 def validar(modelo, plan_=None):
+    from mvp import externos
+    if externos.proveedor(modelo):  # groq/<id> o nvidia/<id>: lo valida su API
+        return modelo
     d = cargar()
     modelo = canonico(modelo, plan_) or d['modelo_defecto']
     otros = {m['id'] for t in ('imagen', 'audio', 'video') for m in d[t]}
@@ -53,7 +56,7 @@ def validar(modelo, plan_=None):
 
 def extra_body(modelo, plan_=None, opciones=None):
     opciones = opciones or {}
-    th = {m['id']: m['th'] for m in cargar()['texto']}[modelo]
+    th = {m['id']: m['th'] for m in cargar()['texto']}.get(modelo, False)  # modelos de Groq/NVIDIA: sin extras de Qwen
     cuerpo = {}
     if th is True or (th == 'team' and (plan_ or plan()) == 'team'):
         cuerpo['enable_thinking'] = True

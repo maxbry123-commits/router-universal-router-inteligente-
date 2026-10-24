@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import bank, compute, control, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
+from mvp import bank, compute, control, externos, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -89,6 +89,20 @@ def health(authorization: str | None = Header(None),
             "clave_qwen_presente": bool(modelos.clave_env() or
                                        (app.state.banco and app.state.banco.leer("QWEN_API_KEY")))}
 MAX_CARACTERES = 1_000_000  # tope de texto por peticion: error claro en vez de un 502 opaco del proveedor
+async def _llamar_modelo(mensajes, modelo, opciones):
+    """Una llamada directa al modelo: Qwen (QWEN_API_KEY) o Groq/NVIDIA (groq/<id>, nvidia/<id>, mvp/externos.py)."""
+    banco = app.state.banco
+    try:
+        if externos.proveedor(modelo):
+            return await asyncio.to_thread(externos.llamar, mensajes, modelo, banco, opciones)
+        clave = banco.leer("QWEN_API_KEY") if banco else None
+        if not clave:
+            raise HTTPException(status_code=503, detail="QWEN_API_KEY no disponible en banco")
+        return await asyncio.to_thread(compute.llamar, mensajes, modelo, modelos.base_url(), clave, opciones)
+    except PermissionError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from None
+    except (ValueError, TypeError, RuntimeError) as error:
+        raise HTTPException(status_code=502, detail=str(error)) from None
 @app.post("/chat", dependencies=[Depends(verificar)])
 async def chat(cuerpo: dict):
     controles = _controles(cuerpo)
@@ -114,15 +128,7 @@ async def chat(cuerpo: dict):
         return {"texto": salida.get("texto") or "", "tool_calls": llamadas, "herramientas_usadas": salida.get("herramientas_usadas") or [],
                 "finish_reason": salida.get("finish_reason"),
                 **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}
-    banco = app.state.banco
-    clave = banco.leer("QWEN_API_KEY") if banco else None
-    if not clave:
-        raise HTTPException(status_code=503, detail="QWEN_API_KEY no disponible en banco")
-    try:
-        salida = await asyncio.to_thread(compute.llamar, mensajes, modelo,
-                                         modelos.base_url(), clave, cuerpo.get("opciones"))
-    except (ValueError, RuntimeError) as error:
-        raise HTTPException(status_code=502, detail=str(error)) from None
+    salida = await _llamar_modelo(mensajes, modelo, cuerpo.get("opciones"))
     _verificar_llamadas(salida["tool_calls"], controles)
     return {"texto": salida["texto"], "tool_calls": salida["tool_calls"],
             "finish_reason": salida.get("finish_reason"),
@@ -152,10 +158,13 @@ async def almacen(cuerpo: dict):
         raise HTTPException(status_code=502, detail=str(error)) from None
 # --- G14: panel-chat.js lee {providers:[{id,label}]} y {models:[{model_id,label}]}; datos solo de mvp/modelos.json ---
 @app.get("/chat/providers", dependencies=[Depends(verificar)])
-def chat_providers():
-    return {"providers": [{"id": "qwen", "label": modelos.cargar()["proveedor"]}]}
+def chat_providers():  # Groq y NVIDIA solo si hay clave: el selector no ofrece lo que no puede responder
+    return {"providers": [{"id": "qwen", "label": modelos.cargar()["proveedor"]}] + [{"id": p, "label": d["label"]} for p, d in externos.PROVEEDORES.items() if externos.clave(p, app.state.banco)]}
 @app.get("/chat/providers/{proveedor}/models", dependencies=[Depends(verificar)])
 def chat_provider_models(proveedor: str):
+    if proveedor in externos.PROVEEDORES:
+        try: return {"models": [{"model_id": m, "label": m.split("/", 1)[1], "tipo": "texto"} for m in externos.modelos(proveedor, app.state.banco)]}
+        except (RuntimeError, OSError, ValueError) as error: raise HTTPException(status_code=503, detail=str(error)[:200]) from None
     if proveedor != "qwen":
         raise HTTPException(status_code=404, detail="proveedor no disponible en mvp")
     return {"models": [{"model_id": m, "label": m, "tipo": t} for m, t in modelos.catalogo()]}
@@ -307,7 +316,9 @@ async def _chat_ficha(cuerpo, progreso=None):
         modelo = modelos.validar(seleccionado or None)
     except (ValueError, TypeError) as error:
         raise HTTPException(status_code=400, detail=str(error)) from None
-    mensajes = [{**mensajes[0], "content": mensajes[0]["content"] + "\n\nModelo activo: %s%s, ejecutado en QwenCloud Token Plan. Si te preguntan quién o qué modelo eres, responde en una línea con ese nombre y su familia; no te presentes como otro modelo." % (modelo, " — " + modelos.marca(modelo) if modelos.marca(modelo) else "")}] + list(mensajes[1:])  # mensajes[0] es la capa de formato
+    identidad = {"role": "system", "content": "Modelo activo: %s%s, ejecutado en QwenCloud Token Plan. Las respuestas anteriores de esta conversación pudieron venir de otros modelos: no copies su identidad. Si te preguntan quién o qué modelo eres, responde en una línea con ese nombre y su familia." % (modelo, " — " + modelos.marca(modelo) if modelos.marca(modelo) else "")}
+    fin = len(mensajes) - 1 if isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user" else len(mensajes)
+    mensajes = [*mensajes[:fin], identidad, *mensajes[fin:]]  # justo antes del mensaje actual: el historial de otro modelo no la tapa
     # Ruta Antonio: Qwen -> Harness DeepSeek (HTTP) -> router. Sin camino alterno; sin URL Harness falla (G5 abierto)
     if not os.environ.get("RIU_DEEPSEEK_HARNESS_URL"):
         raise HTTPException(status_code=503, detail="HARNESS_NO_CONFIGURADO")
@@ -450,9 +461,6 @@ async def chat_send(cuerpo: dict):
             "modelo_solicitado": salida.get("modelo_solicitado"), "modelo_respuesta": salida.get("modelo_respuesta")}
 async def _delegar(nombre, args):
     """Herramientas agente/llm del modelo: una llamada nueva (sin herramientas, sin historial) al modelo del agente o al elegido."""
-    banco = app.state.banco
-    clave = banco.leer("QWEN_API_KEY") if banco else None
-    if not clave: raise HTTPException(status_code=503, detail="QWEN_API_KEY no disponible en banco")
     if nombre == "agente":
         a = CONTROL.d["agentes"].get(str(args.get("nombre")))
         if not a: raise HTTPException(status_code=400, detail="agente desconocido: " + str(args.get("nombre"))[:40])
@@ -461,8 +469,7 @@ async def _delegar(nombre, args):
         try: modelo, sistema = modelos.validar(args.get("modelo")), None
         except (ValueError, TypeError) as error: raise HTTPException(status_code=400, detail=str(error)) from None
     msgs = ([{"role": "system", "content": sistema}] if sistema else []) + [{"role": "user", "content": str(args.get("mensaje"))[:20000]}]
-    try: salida = await asyncio.to_thread(compute.llamar, msgs, modelo, modelos.base_url(), clave, None)
-    except (ValueError, TypeError, RuntimeError) as error: raise HTTPException(status_code=502, detail=str(error)) from None
+    salida = await _llamar_modelo(msgs, modelo, None)
     return {"agente": args.get("nombre"), "modelo": modelo, "texto": salida["texto"]}
 mcp_route.montar(app, verificar, chat, almacen, CONTROL, _delegar)
 # --- G5b: Harness /invoke montado en este mismo Space (HF pide PRO para un Space nuevo). Ruta: chat -> Harness -> HTTP -> router ---
