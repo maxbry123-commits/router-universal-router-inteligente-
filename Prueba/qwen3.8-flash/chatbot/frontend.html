@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visor de Fragmentos · Prototipo Aislado</title>
+<style>
+:root {
+  --azul: #1d4ed8;
+  --azul-claro: #dbeafe;
+  --texto: #111827;
+  --borde: #d1d5db;
+  --fondo: #ffffff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+  line-height: 1.5;
+}
+main { max-width: 860px; margin: 0 auto; padding: 1.5rem 1rem; }
+h1 { font-size: 1.35rem; margin: 0 0 .25rem; }
+p.sub { margin: 0 0 1.25rem; color: #6b7280; font-size: .9rem; }
+.zona {
+  border: 2px dashed var(--borde);
+  border-radius: 10px;
+  padding: 1.25rem;
+  text-align: center;
+  transition: border-color .18s, background-color .18s;
+}
+.zona.activa { border-color: var(--azul); background: var(--azul-claro); }
+.zona:focus-within { outline: 2px solid var(--azul); outline-offset: 3px; }
+input[type="file"] { font: inherit; max-width: 100%; }
+.controles { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; align-items: center; }
+label { font-size: .85rem; }
+input[type="number"] {
+  width: 6.5rem; padding: .35rem .5rem;
+  border: 1px solid var(--borde); border-radius: 6px; font: inherit;
+}
+button {
+  padding: .45rem .9rem; border: 1px solid var(--azul); border-radius: 6px;
+  background: var(--fondo); color: var(--azul); font: inherit; cursor: pointer;
+}
+button:hover, button:focus-visible { background: var(--azul-claro); outline: none; }
+.vacio { color: #6b7280; font-style: italic; padding: 1.5rem 0; text-align: center; }
+.rango {
+  font-variant-numeric: tabular-nums;
+  background: var(--azul-claro); color: var(--azul);
+  padding: .25rem .6rem; border-radius: 6px; font-size: .85rem; display: inline-block;
+}
+.lista { margin: 1rem 0; display: grid; gap: .4rem; }
+.item {
+  text-align: left; width: 100%;
+  display: flex; justify-content: space-between; gap: .75rem;
+}
+.item.sel { background: var(--azul); color: #fff; border-color: var(--azul); }
+pre.visor {
+  margin-top: 1rem; padding: 1rem;
+  border: 1px solid var(--borde); border-radius: 10px;
+  background: #fafafa; white-space: pre-wrap; word-break: break-word;
+  max-height: 22rem; overflow: auto; font-size: .82rem;
+}
+.error { color: #b91c1c; font-size: .85rem; min-height: 1.2em; }
+@media (max-width: 480px) {
+  .controles { flex-direction: column; align-items: stretch; }
+  pre.visor { max-height: 15rem; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Visor de Fragmentos de Archivos Grandes</h1>
+  <p class="sub">Prototipo aislado: el troceado ocurre en el navegador, sin envios HTTP ni servidores.</p>
+
+  <section class="zona" id="zona" aria-label="Selector de archivo">
+    <label for="archivo">Selecciona un archivo</label><br>
+    <input type="file" id="archivo" accept=".txt,.log,.csv,.json,.md">
+    <div class="controles">
+      <label for="trozo">Tamanio fragmento (bytes)
+        <input type="number" id="trozo" min="64" max="1048576" step="64" value="4096">
+      </label>
+      <label for="solape">Solape (bytes)
+        <input type="number" id="solape" min="0" max="4095" step="1" value="0">
+      </label>
+      <button type="button" id="procesar">Trocear</button>
+      <button type="button" id="limpiar">Limpiar</button>
+    </div>
+    <p class="error" id="error" role="alert" aria-live="polite"></p>
+  </section>
+
+  <section aria-label="Fragmentos">
+    <p><span class="rango" id="resumen">Sin archivo cargado</span></p>
+    <div class="lista" id="lista" aria-label="Fragmentos disponibles"></div>
+  </section>
+
+  <pre class="visor" id="visor" tabindex="0" role="region"
+       aria-label="Contenido del fragmento seleccionado">Fragmento no seleccionado.</pre>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var LIMITE_BYTES = 26214400;
+  var estado = { fragmentos: [], indiceSel: -1, nombre: "" };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var zona = $("zona"), lista = $("lista"), visor = $("visor");
+  var resumen = $("resumen"), error = $("error");
+
+  function falla(msg) {
+    error.textContent = msg;
+    estado.fragmentos = [];
+    estado.indiceSel = -1;
+    pinta();
+  }
+
+  function trocear(bytes, tam, solape) {
+    var frags = [], paso = tam - solape, off = 0;
+    var txt = new TextDecoder("utf-8").decode(bytes);
+    var i = 0;
+    while (off < bytes.length) {
+      var fin = Math.min(off + tam, bytes.length);
+      frags.push({ i: i, a: off, b: fin, s: txt.slice(off, fin) });
+      i++; off += paso;
+    }
+    return frags;
+  }
+
+  function procesar() {
+    error.textContent = "";
+    var file = $("archivo").files[0];
+    if (!file) { falla("Selecciona un archivo antes de trocear."); return; }
+    var tam = parseInt($("trozo").value, 10);
+    var solape = parseInt($("solape").value, 10);
+    if (!(tam >= 64 && tam <= 1048576)) { falla("Tamanio de fragmento fuera de rango 64-1048576."); return; }
+    if (!(solape >= 0 && solape < tam)) { falla("Solape debe estar entre 0 y tamanio-1."); return; }
+    if (file.size === 0) { falla("El archivo esta vacio (0 bytes)."); return; }
+    if (file.size > LIMITE_BYTES) { falla("Archivo > 25 MB: prototipo limitado a 25 MB."); return; }
+
+    var lector = new FileReader();
+    lector.onload = function () {
+      try {
+        var bytes = new Uint8Array(lector.result);
+        estado.fragmentos = trocear(bytes, tam, solape);
+        estado.nombre = file.name;
+        estado.indiceSel = estado.fragmentos.length ? 0 : -1;
+        $("solape").max = String(tam - 1);
+        pinta();
+      } catch (e) { falla("Error al trocear: " + e.message); }
+    };
+    lector.onerror = function () { falla("No se pudo leer el archivo."); };
+    lector.readAsArrayBuffer(file);
+  }
+
+  function seleccionarIndice(n) {
+    if (n < 0 || n >= estado.fragmentos.length) return;
+    estado.indiceSel = n;
+    pinta();
+  }
+
+  function pinta() {
+    lista.innerHTML = "";
+    if (estado.fragmentos.length === 0) {
+      resumen.textContent = estado.nombre ? estado.nombre + " - sin fragmentos" : "Sin archivo cargado";
+      visor.textContent = "Fragmento no seleccionado.";
+      var p = document.createElement("p");
+      p.className = "vacio";
+      p.textContent = "Vacio: selecciona un archivo y pulsa Trocear para ver sus fragmentos.";
+      lista.appendChild(p);
+      return;
+    }
+    var total = estado.fragmentos.length;
+    var sel = estado.fragmentos[estado.indiceSel];
+    resumen.textContent = estado.nombre + " - " + total + " fragmentos" +
+      (sel ? " - rango " + sel.a + "-" + sel.b + " bytes" : "");
+
+    estado.fragmentos.forEach(function (f) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "item" + (f.i === estado.indiceSel ? " sel" : "");
+      b.setAttribute("aria-pressed", String(f.i === estado.indiceSel));
+      b.textContent = "Fragmento " + f.i;
+      var span = document.createElement("span");
+      span.textContent = f.a + "-" + f.b;
+      b.appendChild(span);
+      b.addEventListener("click", function () { seleccionarIndice(f.i); });
+      lista.appendChild(b);
+    });
+
+    visor.textContent = sel ? sel.s : "Fragmento no seleccionado.";
+    visor.setAttribute("aria-label", "Fragmento " + (sel ? sel.i : "-") + ", rango " +
+      (sel ? sel.a + " a " + sel.b : "sin rango"));
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (!estado.fragmentos.length) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+      seleccionarIndice(Math.min(estado.indiceSel + 1, estado.fragmentos.length - 1));
+      e.preventDefault();
+    } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+      seleccionarIndice(Math.max(estado.indiceSel - 1, 0));
+      e.preventDefault();
+    }
+  });
+
+  $("procesar").addEventListener("click", procesar);
+  $("limpiar").addEventListener("click", function () {
+    $("archivo").value = "";
+    estado.fragmentos = []; estado.indiceSel = -1; estado.nombre = "";
+    error.textContent = ""; pinta();
+  });
+  ["dragover", "dragenter"].forEach(function (ev) {
+    zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add("activa"); });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.remove("activa"); });
+  });
+  zona.addEventListener("drop", function (e) {
+    var dt = e.dataTransfer;
+    if (dt && dt.files && dt.files.length) {
+      $("archivo").files = dt.files;
+      procesar();
+    }
+  });
+
+  pinta();
+})();
+</script>
+</body>
+</html>
