@@ -34,6 +34,7 @@ section h2{font-size:1rem;margin-bottom:.6rem}
 .estado{font-weight:700;padding:.15rem .6rem;border-radius:.4rem;font-size:.8rem;color:#fff}
 .estado.idle{background:#9ca3af}.estado.busy{background:var(--busy)}.estado.ok{background:var(--ok)}.estado.error{background:var(--err)}
 textarea{width:100%;min-height:6rem;font-family:monospace;font-size:.8rem;border:1px solid var(--borde);border-radius:.5rem;padding:.5rem}
+#stats{font-size:.8rem;color:#6b7280;border-top:1px solid var(--borde);margin-top:.75rem;padding-top:.5rem;display:flex;gap:1rem;flex-wrap:wrap}
 @media(max-width:480px){h1{font-size:1rem}.tab{padding:.5rem}.chip{font-size:.75rem}}
 </style>
 </head>
@@ -75,10 +76,12 @@ textarea{width:100%;min-height:6rem;font-family:monospace;font-size:.8rem;border
 <ul id="lista-tareas" class="lista" aria-label="Checklist de tareas"></ul>
 </section>
 <section id="panel-tools" class="panel" role="tabpanel">
+<p id="leyenda-tools" style="font-size:.8rem;color:#6b7280;margin-bottom:.5rem">Cada herramienta cicla: idle → busy → ok → error.</p>
 <div id="lista-tools" aria-label="Estados de herramientas"></div>
 <textarea id="payload" readonly aria-label="Payload de salida sin anclas inactivas"></textarea>
 </section>
 </main>
+<footer id="stats" aria-live="polite"></footer>
 <script>
 "use strict";
 const NS="xray_deepseek-v4-flash-0731";
@@ -94,7 +97,8 @@ function renderChips(){ith("chips").innerHTML=Object.entries(estado.anclas).map(
 function renderTareas(){ith("lista-tareas").innerHTML=estado.tareas.map((t,i)=>`<li><button class="chip" aria-pressed="${t.hecha}" data-tarea="${i}">${t.hecha?"✔":"☐"}</button> <span>${esc(t.texto)}</span></li>`).join("")||"<li>Checklist vacia.</li>";}
 function renderTools(){ith("lista-tools").innerHTML=Object.entries(estado.tools).map(([k,v])=>`<div class="tog-tres"><span>${esc(k)}</span><button class="chip" data-tool="${esc(k)}" aria-label="Cambiar estado de ${esc(k)}">cambiar</button><span class="estado ${v}">${v}</span></div>`).join("");}
 function renderPayload(){const p={mensajes:estado.mensajes,anclas_activas:Object.fromEntries(Object.entries(estado.anclas).filter(([,v])=>v.activa).map(([k,v])=>[k,{texto:v.texto}])),tareas:estado.tareas,tools:estado.tools};ith("payload").value=JSON.stringify(p,null,2);}
-function render(){renderMsgs();renderHist();renderChips();renderTareas();renderTools();renderPayload();}
+function renderStats(){const activas=Object.values(estado.anclas).filter(v=>v.activa).length;ith("stats").textContent=`Mensajes: ${estado.mensajes.length} · Tareas: ${estado.tareas.length} · Anclas activas: ${activas}`;}
+function render(){renderMsgs();renderHist();renderChips();renderTareas();renderTools();renderPayload();renderStats();}
 function enviar(e){e.preventDefault();const txt=ith("input-msg").value.trim();if(!txt)return;estado.mensajes.push({rol:"usuario",texto:txt,ts:new Date().toISOString()});estado.mensajes.push({rol:"bot",texto:"Respuesta local de prueba: recibido \""+txt+"\".",ts:new Date().toISOString()});ith("input-msg").value="";guardar();render();}
 function fijarAncla(){const n=ith("input-ancla").value.trim();if(!n)return;estado.anclas[n]=estado.anclas[n]||{texto:n,activa:true};if(estado.anclas[n].activa)estado.anclas[n].activa=false;else{estado.anclas[n].activa=true;}ith("input-ancla").value="";guardar();render();}
 function addTarea(){const t=ith("input-tarea").value.trim();if(!t)return;estado.tareas.push({texto:t,hecha:false});ith("input-tarea").value="";guardar();render();}
