@@ -30,7 +30,7 @@ def llamar(mensajes, modelo, base_url, clave, opciones=None):
     """Devuelve texto, tool_calls, uso y respuesta cruda; reintenta solo fallos transitorios."""
     if not isinstance(mensajes, list) or not modelo:
         raise ValueError("Se requieren modelo y mensajes")
-    payload = {"model": modelo, "messages": mensajes, "stream": False}
+    payload = {"model": modelo, "messages": mensajes}  # igual que client.chat.completions.create del bloque (sin stream: el valor por defecto es no-stream)
     for nombre, valor in (opciones or {}).items():
         if nombre not in OPCIONES:
             raise ValueError("opcion Qwen no permitida: " + nombre)

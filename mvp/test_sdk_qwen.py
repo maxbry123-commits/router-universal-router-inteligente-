@@ -63,3 +63,25 @@ class Contrato(unittest.TestCase):
         self.assertEqual(ka["headers"], {"Authorization": "Bearer " + CLAVE, "Content-Type": "application/json", "User-Agent": "qwencloud-skills"})
         self.assertEqual(kb["headers"]["X-DashScope-Async"], "enable")
         self.assertEqual(kb["json"]["parameters"], {"resolution": "720P", "duration": 5})
+
+
+class TextoUnoAUno(unittest.TestCase):
+    def test_mensaje_simple_igual_a_llamar_modelo_del_bloque(self):
+        """Un solo mensaje de usuario, sin historial ni herramientas: misma ruta y mismo cuerpo que client.chat.completions.create."""
+        from mvp import compute
+        visto = []
+        def sol(url, payload, clave):
+            visto.append((url, payload)); return {"choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}], "model": "deepseek-v4-pro"}
+        with patch("mvp.compute._solicitar", sol):
+            compute.llamar([{"role": "user", "content": "Hola"}], "deepseek-v4-pro", sdk_qwen.QWEN_TOKEN_PLAN["base_url"], CLAVE)
+        self.assertEqual(visto, [(sdk_qwen.BASE_URL + "/compatible-mode/v1/chat/completions",
+                                  {"model": "deepseek-v4-pro", "messages": [{"role": "user", "content": "Hola"}]})])
+
+    def test_razonamiento_explicito_igual_al_bloque(self):
+        from mvp import compute
+        visto = []
+        def sol(url, payload, clave):
+            visto.append(payload); return {"choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}]}
+        with patch("mvp.compute._solicitar", sol):
+            compute.llamar([{"role": "user", "content": "Analiza este código Python."}], "qwen3.8-max", sdk_qwen.BASE_URL + "/compatible-mode/v1", CLAVE, {"enable_thinking": True})
+        self.assertEqual(visto[0]["enable_thinking"], True)  # extra_body={"enable_thinking": True} del bloque
