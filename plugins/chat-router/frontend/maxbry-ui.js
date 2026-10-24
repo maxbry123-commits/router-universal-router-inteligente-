@@ -52,7 +52,7 @@ function montar(comp) {
   const colocar = () => {  // mueve cada botón nuevo (aparecen por módulos que cargan tarde) a su sitio, sin clonar
     const modos = document.querySelector("#mode-selector-mount"); if (modos && modos.parentElement !== chips) chips.append(modos);
     if (pensar.parentElement !== chips) chips.append(pensar);
-    ["#btn-tools", "#btn-agentes"].forEach((id) => { const b = document.querySelector(id); if (b && b.parentElement !== chips) chips.append(b); });
+    ["#btn-tools", "#btn-agentes", "#btn-prompt"].forEach((id) => { const b = document.querySelector(id); if (b && b.parentElement !== chips) chips.append(b); });
     bar.querySelectorAll(":scope > button.secondary").forEach((b) => {
       if (FIJOS.has(b.id) || b.classList.contains("sh-cerrar")) return;
       b.dataset.mx = TEXTO[b.id] || (b.title || b.getAttribute("aria-label") || "").split(/[·:(]/)[0].trim().slice(0, 16);
