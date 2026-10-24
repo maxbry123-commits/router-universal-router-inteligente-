@@ -4,10 +4,9 @@ import json
 import re
 import time
 from urllib import error, request
-from mvp import modelos
+from mvp import modelos, sdk_qwen
 
-RUTAS = {"imagen": "/api/v1/services/aigc/multimodal-generation/generation", "video": "/api/v1/services/aigc/video-generation/video-synthesis",
-         "tts": "/api/v1/services/audio/tts/SpeechSynthesizer", "tarea": "/api/v1/tasks/"}
+RUTAS = {**sdk_qwen.RUTAS, "tts": sdk_qwen.RUTAS["voz"]}  # rutas del input block (sdk_qwen.py)
 MAX_AUDIO = 2_000_000
 
 
@@ -42,7 +41,7 @@ def _contenido(doc):
 
 
 def imagen(b, clave, modelo, prompt):
-    doc = _json(b + RUTAS["imagen"], clave, {"model": modelo, "input": {"messages": [{"role": "user", "content": [{"text": prompt}]}]}, "parameters": {"size": "1024*1024", "n": 1}})
+    doc = _json(b + RUTAS["imagen"], clave, sdk_qwen.cuerpo_imagen(modelo, prompt))
     url = next((c["image"] for c in _contenido(doc) if c.get("image")), None)
     if not url:
         raise RuntimeError("Qwen imagen: la respuesta no trae imagen")
@@ -50,10 +49,7 @@ def imagen(b, clave, modelo, prompt):
 
 
 def video(b, clave, modelo, prompt, url_media=None, progreso=None, espera=5, tope=540):
-    entrada = {"prompt": prompt}
-    if url_media:
-        entrada["media"] = [{"type": "reference_image" if modelo.endswith("r2v") else "first_frame", "url": url_media}]
-    doc = _json(b + RUTAS["video"], clave, {"model": modelo, "input": entrada, "parameters": {"resolution": "720P", "duration": 5}}, {"X-DashScope-Async": "enable"})
+    doc = _json(b + RUTAS["video"], clave, sdk_qwen.cuerpo_video(modelo, prompt, sdk_qwen.media_de(modelo, url_media) if url_media else None), {"X-DashScope-Async": "enable"})
     tarea = (doc.get("output") or {}).get("task_id")
     if not tarea:
         raise RuntimeError("Qwen video sin task_id: " + str(doc.get("message") or doc.get("code") or "respuesta vacia")[:120])
@@ -71,7 +67,7 @@ def video(b, clave, modelo, prompt, url_media=None, progreso=None, espera=5, top
 
 
 def voz(b, clave, texto):
-    tipo, datos = _http(b + RUTAS["tts"], clave, {"model": "qwen-audio-3.0-tts-plus", "input": {"text": texto, "voice": "longanlingxin", "format": "mp3", "sample_rate": 24000}})
+    tipo, datos = _http(b + RUTAS["tts"], clave, sdk_qwen.cuerpo_voz(texto))
     if "json" in tipo:
         url = (((json.loads(datos).get("output") or {}).get("audio")) or {}).get("url")
         if not url:
@@ -83,7 +79,7 @@ def voz(b, clave, texto):
 
 
 def asr(b, clave, url_audio):
-    doc = _json(b + RUTAS["imagen"], clave, {"model": "qwen-audio-3.0-asr-flash", "input": {"messages": [{"role": "user", "content": [{"type": "input_audio", "input_audio": {"data": url_audio}}]}]}, "parameters": {"format": "wav", "sample_rate": "16000"}})
+    doc = _json(b + RUTAS["asr"], clave, sdk_qwen.cuerpo_asr(url_audio))
     return "".join(c.get("text", "") for c in _contenido(doc)).strip() or "(sin texto reconocido)"
 
 

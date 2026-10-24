@@ -12,10 +12,7 @@
   "base_url_alterna_qwencloud": "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1",
   "anthropic_url_qwencloud": "https://token-plan.maas.qwencloudapi.com/apps/anthropic",
   "variable_clave": "BAILIAN_TOKEN_PLAN_API_KEY",
-  "variables_alternas": [
-    "QWENCLOUD_TOKEN_PLAN_API_KEY",
-    "QWEN_API_KEY"
-  ],
+  "variables_alternas": ["QWENCLOUD_API_KEY", "QWEN_API_KEY", "DASHSCOPE_API_KEY", "QWENCLOUD_TOKEN_PLAN_API_KEY"],
   "formato_clave": "sk-sp-",
   "modelo_defecto": "qwen3.8-max",
   "texto": [
