@@ -1,10 +1,11 @@
 # Pruebas reales de los modelos (para Sol o Devin)
 
+Importante: la rama por defecto del repo en GitHub es `reorganizacion` y NO tiene `mvp/`; clonar siempre con `--branch main`.
 Quien ejecuta: Devin (su entorno ya llega a hf.space) o Sol si su máquina resuelve `comand-center-1-riu-router.hf.space`.
 Requisitos: Python 3.9+, internet, la clave de acceso del Router en la variable `RIU_KEY` (nunca en archivos ni en la URL).
 
 ```
-git clone --depth 1 https://github.com/maxbry123-commits/router-universal-router-inteligente-.git
+git clone --depth 1 --branch main https://github.com/maxbry123-commits/router-universal-router-inteligente-.git
 cd router-universal-router-inteligente-
 RIU_KEY='<clave>' python3 -m mvp.pruebas_vivo.correr            # todo: 12 modelos de texto x 13 pruebas + imagen, voz, video
 RIU_KEY='<clave>' python3 -m mvp.pruebas_vivo.correr --solo glm-5.3   # un solo modelo
