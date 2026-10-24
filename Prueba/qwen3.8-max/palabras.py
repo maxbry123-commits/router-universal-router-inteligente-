@@ -1,6 +1,10 @@
 def contar_palabras(texto):
-    """Cuenta las palabras de una cadena de texto.
+    """Cuenta las palabras de `texto` separadas por espacios en blanco.
 
-    Retorna 0 si la cadena está vacía y el número de palabras en caso contrario.
+    Devuelve la cantidad de palabras; para una cadena vacía (o solo
+    espacios) devuelve 0.
+
+    Ejemplo:
+        contar_palabras("hola mundo cruel") -> 3
     """
     return len(texto.split())
