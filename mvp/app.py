@@ -5,7 +5,7 @@ import hmac, logging, re, uuid
 import os, subprocess, sys, time
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from mvp import bank, compute, control, modelos, harness_client, hf_store, mcp_cliente, mcp_route, multimedia, prompt
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
@@ -68,8 +68,8 @@ def autorizado(authorization=None, x_api_key=None):
     return bool(esperado and any(hmac.compare_digest(v, esperado)
                                  for v in (bearer, x_api_key) if isinstance(v, str)))
 def verificar(authorization: str | None = Header(None),
-              x_api_key: str | None = Header(None)):
-    if not autorizado(authorization, x_api_key):
+              x_api_key: str | None = Header(None), key: str | None = Query(None)):  # ?key= para clientes MCP que solo aceptan una URL
+    if not autorizado(authorization, x_api_key or key):
         raise HTTPException(status_code=401, detail="clave de acceso invalida")
 def clave_harness():
     banco = app.state.banco
@@ -251,7 +251,7 @@ async def _generar_medio(modelo, tipo, mensajes, progreso):
     try: salida = await asyncio.to_thread(multimedia.generar, modelo, tipo, modelos.base_url(), clave, texto, progreso)
     except ValueError as error: raise HTTPException(status_code=400, detail=str(error)) from None
     except RuntimeError as error: raise HTTPException(status_code=502, detail=str(error)) from None
-    return {"estado": "listo", "via": "directo", "finish_reason": "stop", "modelo_solicitado": modelo, "modelo_respuesta": modelo,
+    return {"estado": "completado", "via": "directo", "finish_reason": "stop", "modelo_solicitado": modelo, "modelo_respuesta": modelo,
             "choices": [{"message": {"role": "assistant", "content": salida, "tool_calls": []}, "finish_reason": "stop"}]}
 async def _chat_ficha(cuerpo, progreso=None):
     q = {**cuerpo, **(cuerpo.get("qwen") or {})}  # api.js harness() anida {plugin, ficha_qwen, modelo} en "qwen"
@@ -308,7 +308,7 @@ async def _chat_ficha(cuerpo, progreso=None):
         opciones.setdefault("enable_thinking", q["thinking_mode"] == "on")
     salida = await chat({"modelo": modelo, "mensajes": mensajes, "via": "harness",
                          "opciones": opciones or None, **_controles(q)})
-    return {"estado": "listo", "via": "harness", "finish_reason": salida["finish_reason"],
+    return {"estado": "completado", "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": modelo, "modelo_respuesta": salida.get("modelo_respuesta"),
             "choices": [{"message": {"role": "assistant", "content": salida["texto"],
                                     "tool_calls": salida["tool_calls"]},
