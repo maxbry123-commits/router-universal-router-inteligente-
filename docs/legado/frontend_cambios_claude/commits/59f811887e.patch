@@ -1,0 +1,303 @@
+59f811887e chat: Maxbry UI (composer ordenado, ＋ Agregar al chat, chips, toast), salida ancha y backend de archivos/sandbox/proyectos/pensamiento
+
+diff --git a/plugins/chat-router/frontend/chat-maxbry.css b/plugins/chat-router/frontend/chat-maxbry.css
+new file mode 100644
+index 0000000000..af7f535a34
+--- /dev/null
++++ b/plugins/chat-router/frontend/chat-maxbry.css
+@@ -0,0 +1,90 @@
++/* chat-maxbry.css — Maxbry UI (skill fromted-yaiwes-frontend-factory). Va el ÚLTIMO: ordena composer, salida, avisos y ventanas con los tokens del tema activo.
++   Geometría del skill: tarjeta 12px, botón 10px, sheet 28px; verde = en curso, azul = encendido, rojo = alerta, gris = pendiente. */
++:root{--mx-tap:44px;--status-soft-green:rgba(18,216,106,.13);--status-soft-blue:rgba(8,72,247,.2);--status-soft-red:rgba(255,71,95,.13)}
++.mx-ico{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
++
++/* ---------- composer: editor amplio + fila principal ---------- */
++html body #composer{position:sticky;bottom:8px;width:100%;max-width:920px;margin-inline:auto;padding:12px 14px 12px;background:var(--surface-alt);border:1px solid var(--border-strong);border-radius:20px;box-shadow:0 8px 28px rgba(0,0,0,.28)}
++html body #composer:focus-within{border-color:var(--status-blue)}
++html body #composer #message{display:block;width:100%;min-height:84px;max-height:38dvh;padding:8px 40px 8px 6px;font-size:16px;line-height:1.55;resize:none;border:0;background:transparent;overflow-y:auto;touch-action:pan-y}
++html body #composer #message::placeholder{color:var(--quiet-2)}
++html body #composer.mx-grande #message{min-height:55dvh;max-height:70dvh}
++@media(min-width:721px){html body #composer #message{min-height:140px;max-height:44dvh}html body #composer.mx-grande #message{min-height:60dvh}}
++html body #composer .mx-grande{position:absolute;top:8px;right:10px;width:34px;height:34px;min-height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:transparent;border:1px solid transparent;color:var(--quiet);z-index:2}
++html body #composer .mx-grande:hover,html body #composer .mx-grande[aria-pressed=true]{background:var(--panel);border-color:var(--border);color:var(--title)}
++html body #composer .mx-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:4px 0 10px;border-top:1px solid var(--border);margin-top:4px;padding-top:10px}
++html body #composer .mx-chips #mode-selector-mount{display:contents}
++html body #composer .mx-chips .ms-hint:empty{display:none}
++html body #composer .mx-chips .ms-hint{flex:1 0 100%;order:9}
++html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools{width:auto!important;max-width:100%!important;height:38px!important;min-height:38px!important;aspect-ratio:auto!important;padding:0 11px!important;display:inline-flex;align-items:center;gap:6px;border-radius:999px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--text)!important;font:600 13px/1 system-ui,sans-serif!important;white-space:nowrap;flex:0 0 auto!important}
++html body #composer .mx-chips .ms-btn[data-locked=true],html body #composer .mx-chips .mx-chip[aria-pressed=true],html body #composer .mx-chips #btn-tools[aria-pressed=true]{background:var(--status-soft-blue)!important;border-color:var(--status-blue)!important;color:var(--title)!important}
++html body #composer .mx-chips #btn-tools::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--quiet-2);flex:none}
++html body #composer .mx-chips #btn-tools[aria-pressed=true]::before{background:var(--status-blue);box-shadow:0 0 8px var(--status-blue)}
++html body #composer .mx-chips .mx-chip .mx-ico{width:16px;height:16px}
++html body #composer .composer-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin:0;padding:0}
++html body #composer .composer-bar>.secondary{flex:0 0 auto!important;width:var(--mx-tap)!important;max-width:none!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;aspect-ratio:1/1!important;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--title)}
++html body #composer .composer-bar>.secondary[hidden],html body #composer #btn-detener[hidden]{display:none!important}
++html body #composer .composer-bar>.secondary svg{width:20px;height:20px}
++html body #composer .composer-bar>.secondary#mx-mas{background:var(--module-selected);border-color:var(--border-strong)}
++html body #composer .composer-bar .anclados{order:-1;flex:1 0 100%;display:block;max-height:2.9em;overflow:hidden;margin-bottom:6px;font-size:12px;line-height:1.45;color:var(--quiet)}
++html body #composer .composer-bar .anclados:empty{display:none}
++html body #composer .composer-bar .action{flex:0 0 auto!important;margin-left:auto!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;min-width:112px!important;padding:0 20px!important;border-radius:999px!important;font-size:15px;font-weight:700;gap:8px}
++html body #composer .composer-bar .p3d{flex:0 0 auto}
++@media(max-width:380px){html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools{padding:0 9px!important;font-size:12px!important}html body #composer .composer-bar .action{min-width:var(--mx-tap)!important;width:var(--mx-tap)!important;padding:0!important}html body #composer .composer-bar .action::after{display:none}}
++
++/* ---------- bandeja «Agregar al chat» ---------- */
++#mx-hoja .mx-bandeja{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:4px 0 8px}
++#mx-hoja .mx-bandeja>button{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:auto!important;max-width:none!important;height:auto!important;min-height:84px!important;aspect-ratio:auto!important;padding:12px 4px!important;border-radius:14px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--title)!important}
++#mx-hoja .mx-bandeja>button::after{content:attr(data-mx);font-size:12px;line-height:1.2;color:var(--quiet);text-align:center;overflow-wrap:anywhere}
++#mx-hoja .mx-bandeja>button svg{width:24px!important;height:24px!important}
++#mx-hoja .mx-bandeja>button:active{background:var(--module-selected)!important}
++#mx-hoja .mx-fila-ajustes{display:flex;align-items:center;gap:12px;width:100%;padding:14px;border-radius:12px;background:var(--panel);border:1px solid var(--border);color:var(--title);text-align:left}
++#mx-hoja .mx-fila-ajustes span{flex:1;display:grid;gap:2px}#mx-hoja .mx-fila-ajustes small{color:var(--quiet);font-size:12px}
++#mx-hoja .mx-der{transform:rotate(-90deg);color:var(--quiet)}
++
++/* ---------- salida: ancha, sin recortes ---------- */
++html body #histories .chat-history{padding:6px 2px 12px;gap:12px}
++html body .chat-history .message{width:100%;max-width:100%;min-width:0;padding:12px 14px;font-size:16px;line-height:1.6;overflow-wrap:anywhere;word-break:break-word}
++html body .chat-history .message.user{width:fit-content;max-width:92%;margin-left:auto}
++html body .chat-history .message.meta{font-size:12px;line-height:1.4;padding:6px 10px}
++html body .chat-history .message .copiar,html body .chat-history .message .editar{top:-11px;right:10px;padding:4px 7px;background:var(--surface-alt);border:1px solid var(--border);border-radius:8px;z-index:2}
++html body .chat-history .message .editar{right:44px}
++html body .chat-history .riu-code{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-width:100%;font-size:13px}
++html body .chat-history .message table{display:block;max-width:100%;overflow-x:auto}
++html body .chat-history .message img,html body .chat-history .message video{max-width:100%;height:auto}
++html body .chat-history .message .txt{white-space:pre-wrap}
++html body #histories .riu-bajar{opacity:.9}
++html body .chat-history .message .mx-continuar{margin-top:8px;min-height:38px;padding:0 16px;border-radius:999px;background:var(--status-blue);border:0;color:#fff;font-weight:700}
++@media(max-width:720px){html body section:has(> #histories){height:auto;min-height:0;flex:1 1 auto}html body #histories{min-height:46dvh}}
++
++/* ---------- avisos (toast), estado del Router ---------- */
++html body #notice:not(:empty){position:fixed;top:calc(54px + env(safe-area-inset-top,0px));bottom:auto;left:50%;transform:translateX(-50%);width:max-content;max-width:min(92vw,460px);z-index:120;padding:11px 16px;border-radius:10px;border:1px solid var(--border-strong);border-left:3px solid var(--status-blue);background:var(--panel);color:var(--title);font-size:13px;line-height:1.4;text-align:left;white-space:normal;box-shadow:0 10px 35px rgba(0,0,0,.35)}
++html body #notice.err:not(:empty){border-left-color:var(--status-red);color:var(--title)}
++#movil-status::before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:var(--quiet-2);vertical-align:middle}
++#movil-status[data-estado=ok]::before{background:var(--status-green)}#movil-status[data-estado=err]::before{background:var(--status-red)}
++
++/* ---------- selectores: una sola capa, sin bordes dobles ---------- */
++html body .selectores{margin-top:12px}
++html body .sel-fila{background:transparent;border:0;padding:0;gap:8px}
++html body .sel-fila .sel-pill{border-radius:12px;min-height:46px;height:auto;padding:8px 14px;background:var(--panel);border:1px solid var(--border);justify-content:space-between}
++html body .sel-fila.activa .sel-pill{border-color:var(--status-blue);background:var(--status-soft-blue)}
++html body #sel-power .sel-fila .sel-pill{height:46px;font-size:14px}
++
++/* ---------- ventanas propias (herramientas, conexiones, ROOM, pendientes): filas tipo setting-row del skill ---------- */
++html body .tv-fila,html body .cv-fila,html body .pp-n{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin:6px 0}
++html body .tv-sub{margin:14px 2px 4px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--quiet-2);opacity:1}
++html body .tv-sec,html body .cv-sec,html body .pp-sec{margin:16px 2px 6px;font-weight:650;color:var(--title)}
++html body .tv-tool .toggle,html body .cv-fila .toggle{min-width:92px;min-height:36px;padding:0 14px;font-size:13px}
++html body .cv-form input,html body .cv-form select,html body .cv-form textarea{min-height:42px;padding:0 12px;border-radius:10px;background:var(--surface-alt);border:1px solid var(--border)}
++html body .cv-form textarea{padding:10px 12px}
++html body .cv-est{padding:2px 4px}
++html body .cv-msg{border-radius:12px}
++@media(max-width:560px){html body .cv-form input,html body .cv-form select,html body .cv-form textarea{flex:1 1 100%}html body .cv-form .action{flex:1 1 100%;min-height:44px}}
++.tag-status{display:inline-flex;gap:6px;align-items:center;font-size:11px;font-weight:750;padding:6px 9px;border-radius:8px}
++.tag-status.progress{color:var(--status-green);background:var(--status-soft-green)}.tag-status.enabled{color:var(--status-blue);background:var(--status-soft-blue)}.tag-status.warning{color:var(--status-red);background:var(--status-soft-red)}.tag-status.pending{color:var(--quiet);background:var(--module-selected)}
++
++@media(prefers-reduced-motion:reduce){html body #composer *{transition:none!important}}
++
++/* ---------- cabecera de escritorio y botón Enviar ---------- */
++@media(min-width:721px){html body .topbar .access{flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:10px;width:auto}html body .topbar .access .riu-campana{width:40px;height:40px;min-height:40px}html body .topbar .access .riu-estado{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;font-size:13px}}
++html body #composer .env-txt{display:none!important}
+diff --git a/plugins/chat-router/frontend/controles-ventana.js b/plugins/chat-router/frontend/controles-ventana.js
+index c9c20e636c..584fe51abe 100644
+--- a/plugins/chat-router/frontend/controles-ventana.js
++++ b/plugins/chat-router/frontend/controles-ventana.js
+@@ -18,7 +18,7 @@ function ventana(id, icono, titulo, alAbrir) {
+   const s = el("div", "sheet"); s.id = "ventana-" + id; s.hidden = true;
+   const c = el("div", "va-caja cv-caja"), h = el("div", "row va-head"), x = btn("✕", "secondary", () => { s.hidden = true; }), cuerpo = el("div", "list");
+   s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
+-  h.append(el("strong", "", icono + " " + titulo), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
++  h.append(el("strong", "", titulo), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
+   b.onclick = () => { s.hidden = false; alAbrir(cuerpo, s); };
+   bar.insertBefore(b, bar.querySelector(".action") || null);
+ }
+diff --git a/plugins/chat-router/frontend/maxbry-ui.js b/plugins/chat-router/frontend/maxbry-ui.js
+new file mode 100644
+index 0000000000..9b0d903f8d
+--- /dev/null
++++ b/plugins/chat-router/frontend/maxbry-ui.js
+@@ -0,0 +1,87 @@
++// maxbry-ui.js — Maxbry UI (skill fromted-yaiwes-frontend-factory): reorganiza el composer del chat sin tocar sus handlers.
++// Los mismos nodos (ids, listeners, badges) se reubican: fila principal [＋][📎][🎤] … [Enviar], chips [Auto][Pensar][IA] y bandeja «Agregar al chat».
++// Iconos de línea del skill (sprite), editor que crece solo (y se amplía con ⤢), avisos tipo toast y estado del Router con punto de señal.
++const SVG = (n, c) => '<svg class="mx-ico ' + (c || "") + '" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-' + n + '"/></svg>';
++const SPRITE = '<svg xmlns="http://www.w3.org/2000/svg" id="mx-sprite" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">' + [
++  ["plus", '<path d="M12 5v14M5 12h14"/>'], ["spark", '<path d="m12 2 2.1 7.9L22 12l-7.9 2.1L12 22l-2.1-7.9L2 12l7.9-2.1Z"/>'],
++  ["send", '<path d="m3 20 18-8L3 4l2.5 7L14 12l-8.5 1Z"/>'], ["attach", '<path d="m9 13 5.5-5.5a3 3 0 0 1 4.2 4.2l-8 8a5 5 0 0 1-7.1-7.1l8.4-8.4"/>'],
++  ["shield", '<path d="M12 2 20 5v6c0 5-3 8-8 11-5-3-8-6-8-11V5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>'], ["message", '<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.3 8.3 0 0 1-3.8-.9L3 21l1.9-5.7A8.3 8.3 0 0 1 4 11.5a8.5 8.5 0 0 1 17 0Z"/>'],
++  ["check", '<path d="m5 12 4 4L19 6"/>'], ["doc", '<path d="M5 2h10l5 5v15H5Z"/><path d="M15 2v5h5M8 12h9M8 16h9"/>'], ["down", '<path d="m6 9 6 6 6-6"/>'],
++  ["think", '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>'],
++  ["expand", '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>'], ["x", '<path d="M5 5 19 19M19 5 5 19"/>'], ["settings", '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>'],
++].map(([id, d]) => '<symbol id="i-' + id + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + "</symbol>").join("") + "</svg>";
++const TEXTO = { "btn-archivos": "Archivos", "btn-ancla": "Anclar", "btn-sandbox": "Sandbox", "btn-copiar-input": "Copiar", "btn-conexiones": "Conexiones", "btn-room": "ROOM", "btn-pendientes": "Pendientes" };
++const FIJOS = new Set(["btn-adjunto", "btn-microfono", "btn-detener", "btn-tools", "mx-mas", "mx-grande"]);  // se quedan en la fila principal
++const ICONOS = { "btn-conexiones": "shield", "btn-room": "message", "btn-pendientes": "check" };  // botones propios: iconos de línea en vez de emojis
++const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
++
++function sprite() { if (!document.getElementById("mx-sprite")) document.body.insertAdjacentHTML("afterbegin", SPRITE); }
++
++function montar(comp) {
++  const msg = comp.querySelector("#message"), bar = comp.querySelector(".composer-bar");
++  if (!msg || !bar || comp.dataset.mx) return; comp.dataset.mx = "1"; sprite();
++  const raiz = (document.querySelector("#sh-mas") || {}).parentElement || document.body;
++  // ＋ y bandeja «Agregar al chat» (patrón de las referencias Grok/Claude: tarjetas con icono + título)
++  const mas = el("button", "secondary"); mas.type = "button"; mas.id = "mx-mas"; mas.title = "Agregar al chat"; mas.setAttribute("aria-label", "Agregar al chat"); mas.setAttribute("aria-haspopup", "dialog"); mas.innerHTML = SVG("plus");
++  const hoja = el("div", "sheet"); hoja.id = "mx-hoja"; hoja.hidden = true; hoja.setAttribute("role", "dialog"); hoja.setAttribute("aria-label", "Agregar al chat");
++  const caja = el("div", "va-caja"), cab = el("div", "row va-head"), x = el("button", "secondary sh-cerrar"), bandeja = el("div", "mx-bandeja"), ajustes = el("button", "mx-fila-ajustes");
++  bandeja.id = "mx-bandeja"; x.type = "button"; x.textContent = "✕"; x.setAttribute("aria-label", "Cerrar");
++  ajustes.type = "button"; ajustes.innerHTML = SVG("settings") + "<span><strong>Herramientas y permisos</strong><small>Encender o apagar cada herramienta</small></span>" + SVG("down", "mx-der");
++  ajustes.onclick = () => { hoja.hidden = true; const t = document.querySelector("#btn-tools"); if (t) t.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })); };
++  const strong = el("strong"); strong.textContent = "Agregar al chat"; cab.append(strong, x); caja.append(cab, bandeja, ajustes); hoja.append(caja); raiz.append(hoja);
++  const cerrar = () => { hoja.hidden = true; };
++  x.onclick = cerrar; hoja.addEventListener("click", (e) => { if (e.target === hoja) cerrar(); });
++  document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrar(); });
++  mas.onclick = () => { hoja.hidden = false; };
++  bandeja.addEventListener("click", () => setTimeout(cerrar, 0));  // el botón elegido ya actuó (abre su ventana o el selector de archivos)
++  bar.insertBefore(mas, bar.firstChild);
++  // chips: Auto (selector de modos), Pensar (abre el selector de pensamiento) e IA/agentes
++  const chips = el("div", "mx-chips"); chips.setAttribute("role", "group"); chips.setAttribute("aria-label", "Modo, pensamiento e IA"); comp.insertBefore(chips, bar);
++  const pensar = el("button", "mx-chip"); pensar.type = "button"; pensar.id = "mx-pensar"; pensar.title = "Cómo piensa el modelo: rápido, equilibrado o pensar";
++  const modo = () => document.querySelector("#modo");
++  pensar.onclick = () => { const m = modo(); if (m) m.click(); };
++  const pintarPensar = () => { const m = modo(), t = m ? m.textContent.replace(/[⌄˅v]\s*$/, "").trim() : "equilibrado"; pensar.innerHTML = SVG("think") + "<span>" + (t || "equilibrado").replace(/^./, (c) => c.toUpperCase()) + "</span>"; pensar.setAttribute("aria-pressed", String(/pensar/i.test(t))); };
++  pintarPensar();
++  // editor: crece con el texto, se amplía con ⤢
++  const grande = el("button", "mx-grande"); grande.type = "button"; grande.id = "mx-grande"; grande.title = "Ampliar el editor"; grande.setAttribute("aria-label", "Ampliar el editor"); grande.setAttribute("aria-pressed", "false"); grande.innerHTML = SVG("expand");
++  comp.insertBefore(grande, msg);
++  const ajustar = () => { msg.style.height = "auto"; const max = Math.round(window.innerHeight * (comp.classList.contains("mx-grande") ? 0.7 : 0.38)); msg.style.height = Math.min(msg.scrollHeight + 2, max) + "px"; };
++  grande.onclick = () => { const on = comp.classList.toggle("mx-grande"); grande.setAttribute("aria-pressed", String(on)); ajustar(); if (on) msg.focus(); };
++  msg.addEventListener("input", ajustar); new ResizeObserver(() => { if (!msg.value) msg.style.height = ""; }).observe(comp);
++  window.addEventListener("resize", ajustar); comp.addEventListener("submit", () => setTimeout(() => { msg.style.height = ""; }, 50));
++  const colocar = () => {  // mueve cada botón nuevo (aparecen por módulos que cargan tarde) a su sitio, sin clonar
++    const modos = document.querySelector("#mode-selector-mount"); if (modos && modos.parentElement !== chips) chips.append(modos);
++    if (pensar.parentElement !== chips) chips.append(pensar);
++    const ia = document.querySelector("#btn-tools"); if (ia && ia.parentElement !== chips) chips.append(ia);
++    bar.querySelectorAll(":scope > button.secondary").forEach((b) => {
++      if (FIJOS.has(b.id) || b.classList.contains("sh-cerrar")) return;
++      b.dataset.mx = TEXTO[b.id] || (b.title || b.getAttribute("aria-label") || "").split(/[·:(]/)[0].trim().slice(0, 16);
++      if (ICONOS[b.id] && !b.querySelector("svg")) b.innerHTML = SVG(ICONOS[b.id]);
++      bandeja.append(b);
++    });
++    const a = bar.querySelector(".anclados"); if (a && a.parentElement === bar && bar.firstChild !== a) bar.insertBefore(a, bar.firstChild);
++    const adj = bar.querySelector("#btn-adjunto"), mic = bar.querySelector("#btn-microfono");
++    if (adj && mas.nextElementSibling !== adj) mas.after(adj);
++    if (mic && adj && adj.nextElementSibling !== mic) adj.after(mic);
++    pintarPensar();
++  };
++  colocar(); new MutationObserver(colocar).observe(bar, { childList: true }); const m = modo(); if (m) new MutationObserver(pintarPensar).observe(m, { childList: true, characterData: true, subtree: true });
++  // Detener solo mientras el chat trabaja (mismo estado real que el indicador de pensamiento)
++  setInterval(() => { const d = bar.querySelector("#btn-detener"); if (!d) return; let o = false; try { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); o = !!(c && c.ocupado); } catch (e) {} d.hidden = !o; }, 300);
++}
++
++function avisos() {  // #notice como toast: se retira solo (errores, más tiempo) y no tapa el chat
++  const n = document.querySelector("#notice"); if (!n || n.dataset.mx) return; n.dataset.mx = "1"; let t = 0;
++  new MutationObserver(() => { clearTimeout(t); if (!n.textContent) return; t = setTimeout(() => { n.textContent = ""; n.classList.remove("err"); }, /GAP|error|fall|HTTP|no se|bloquead/i.test(n.textContent) ? 9000 : 5000); }).observe(n, { childList: true, characterData: true, subtree: true });
++  n.addEventListener("click", () => { n.textContent = ""; });
++}
++
++function estado() {  // punto de señal (skill .signal) en el estado del Router
++  const s = document.querySelector("#movil-status"); if (!s || s.dataset.mx) return; s.dataset.mx = "1";
++  const pintar = () => { s.dataset.estado = /error|no disponible|detenido/i.test(s.textContent) ? "err" : s.textContent.trim() ? "ok" : ""; };
++  pintar(); new MutationObserver(pintar).observe(s, { childList: true, characterData: true, subtree: true });
++}
++
++const revisar = () => { try { const c = document.querySelector("#composer"); if (c) montar(c); avisos(); estado(); } catch (e) { console.warn("maxbry-ui", e); } };
++new MutationObserver(revisar).observe(document.body, { childList: true, subtree: true });
++revisar();
+diff --git a/plugins/chat-router/frontend/panel-chat.html b/plugins/chat-router/frontend/panel-chat.html
+index 519d8f8227..54e63a4413 100644
+--- a/plugins/chat-router/frontend/panel-chat.html
++++ b/plugins/chat-router/frontend/panel-chat.html
+@@ -3,6 +3,7 @@
+ <link rel="stylesheet" href="/chat/ui/chat-espacio.css">
+ <link rel="stylesheet" href="/chat/ui/chat-riu.css">
+ <link rel="stylesheet" href="/chat/ui/chat-riu2.css">
++<link rel="stylesheet" href="/chat/ui/chat-maxbry.css">
+ <script src="/chat/ui/config.js"></script>
+ <script type="module">
+   import { api } from "/chat/ui/api.js";
+diff --git a/plugins/chat-router/frontend/panel-chat.js b/plugins/chat-router/frontend/panel-chat.js
+index db3433ee74..249c8dae3a 100644
+--- a/plugins/chat-router/frontend/panel-chat.js
++++ b/plugins/chat-router/frontend/panel-chat.js
+@@ -294,7 +294,7 @@ export async function mount(root, { api, tell }) {
+   const pintarModos = () => {
+     const lista = q("#sh-modo-lista");
+     lista.replaceChildren();
+-    for (const [k, et] of [["fast", "Rápido — 512 tok"], ["balanced", "Equilibrado — 1024 tok"], ["think", "Pensar — 2048 tok"]]) {
++    for (const [k, et] of [["fast", "Responde directo"], ["balanced", "Por defecto"], ["think", "Razona antes de responder"]]) {
+       lista.append(fila(MODOS[k], et, k === modo, () => {
+         modo = k;
+         q("#modo").textContent = MODOS[k] + " ⌄";
+@@ -717,7 +717,7 @@ export async function mount(root, { api, tell }) {
+       if (answer.modelo_solicitado) c.hist.append(node("div", "Modelo solicitado: " + answer.modelo_solicitado + " · API: " + (answer.modelo_respuesta || "sin identificar"), "item message meta"));
+       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
+       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
+-      if (answer.finish_reason === "length") c.hist.append(node("div", "El proveedor alcanzo su limite de salida. Escribe «Continua» para seguir desde este punto", "item message meta"));
++      if (answer.finish_reason === "length") { const aviso = node("div", "La respuesta se cortó por el límite de salida del proveedor. ", "item message meta"), seguir = node("button", "Continuar", "mx-continuar"); seguir.type = "button"; seguir.onclick = () => { seguir.disabled = true; const m = q("#message"); m.value = "Continúa exactamente donde se cortó la respuesta anterior, sin repetir texto."; q("#composer").requestSubmit(); }; aviso.append(seguir); c.hist.append(aviso); }  // un clic y sigue desde el corte
+       if (answer.execution_path === "FAST_QA") c.hist.append(node("div", "⚡ respuesta rápida · " + answer.ms + " ms", "item meta"));
+       else if (answer.execution_path === "FAST_CONSULT") c.hist.append(node("div", "⚡ cónsil rápido · " + answer.ms + " ms", "item meta"));
+       else if (c.fastReply && FAST_SEL() && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));
+diff --git a/plugins/chat-router/frontend/pendientes-panel.js b/plugins/chat-router/frontend/pendientes-panel.js
+index fa9925ca82..c0e025a6c0 100644
+--- a/plugins/chat-router/frontend/pendientes-panel.js
++++ b/plugins/chat-router/frontend/pendientes-panel.js
+@@ -83,7 +83,7 @@ function instalar() {
+   const s = el("div", "sheet"); s.id = "ventana-pendientes"; s.hidden = true;
+   const c = el("div", "va-caja"), h = el("div", "row va-head"), x = el("button", "secondary", "✕"), cuerpo = el("div", "list");
+   x.type = "button"; x.onclick = () => { s.hidden = true; }; s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
+-  h.append(el("strong", "", "📋 Pendientes · bloc de notas"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
++  h.append(el("strong", "", "Pendientes"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
+   b.onclick = () => { s.hidden = false; pintar(cuerpo); };
+   const env = bar.querySelector(".action"); bar.insertBefore(b, env || null);
+ }
+diff --git a/plugins/chat-router/frontend/shell.html b/plugins/chat-router/frontend/shell.html
+index 4908cfeeef..f6331628ef 100644
+--- a/plugins/chat-router/frontend/shell.html
++++ b/plugins/chat-router/frontend/shell.html
+@@ -12,6 +12,7 @@
+   <link rel="stylesheet" href="/chat/ui/encendido.css">
+   <link rel="stylesheet" href="/chat/ui/boton-enviar.css">
+   <link rel="stylesheet" href="/chat/ui/chat-espacio.css">
++  <link rel="stylesheet" href="/chat/ui/chat-maxbry.css">
+   <script src="/chat/ui/version.js"></script>
+   <script src="/chat/ui/config.js"></script>
+   <script type="module" src="/chat/ui/shell.js"></script>
+diff --git a/plugins/chat-router/frontend/shell.js b/plugins/chat-router/frontend/shell.js
+index 72d4ddfe95..3c1983732f 100644
+--- a/plugins/chat-router/frontend/shell.js
++++ b/plugins/chat-router/frontend/shell.js
+@@ -7,6 +7,7 @@ import { mount as organization } from "./panel-org.js";
+ import { mount as apariencia } from "./panel-apariencia.js";
+ import "./apariencia-aplicar.js";
+ import "./tools-ventana.js";  // MVP tools: ventana en el chat + bloque en Configuración  // aplica la apariencia guardada en todo el chat
++import "./maxbry-ui.js";  // Maxbry UI: composer ordenado, ＋ Agregar al chat, chips, toast
+ import "./controles-ventana.js";  // 🔑 Conexiones y 🗣 ROOM CONFERENCIAS (estado en el servidor)
+ import "./pendientes-panel.js";  // t175u: panel 📋 Pendientes (bloc de notas verbatim + DSL DAG con la LLM + prompt JSON editable)
+ 
+diff --git a/plugins/chat-router/frontend/tools-ventana.js b/plugins/chat-router/frontend/tools-ventana.js
+index 3799c15f14..a3312739c4 100644
+--- a/plugins/chat-router/frontend/tools-ventana.js
++++ b/plugins/chat-router/frontend/tools-ventana.js
+@@ -102,7 +102,7 @@ async function pintarVentana(caja) {
+ const avisar = (t) => { const n = document.querySelector("#notice"); if (n) n.textContent = t; else console.warn(t); };
+ function aplicarIA(on) {  // única vía para reflejar IA/agentes: botón 🧰, botón de bloqueo y LLM tool leen lo mismo
+   const f = window.RIU_CHAT_TOOL_FLAGS; if (f) { f.tools = f.agente_tool = f.llm_tool = !!on; }
+-  const b = document.querySelector("#btn-tools"); if (b) { b.textContent = "🧰 IA/agentes " + (on ? "ON" : "OFF"); b.setAttribute("aria-pressed", String(!!on)); }
++  const b = document.querySelector("#btn-tools"); if (b) { b.textContent = "IA " + (on ? "ON" : "OFF"); b.setAttribute("aria-pressed", String(!!on)); }
+   const l = document.querySelector("#btn-llm-tool"); if (l) { l.textContent = "🧠 LLM tool " + (on ? "ON" : "OFF"); l.classList.toggle("sel-on", !!on); l.setAttribute("aria-pressed", String(!!on)); }
+   window.dispatchEvent(new CustomEvent("riu:ia", { detail: { on: !!on } }));
+ }
+@@ -111,12 +111,12 @@ function instalarChat() {
+   const bar = document.querySelector("#composer .composer-bar");
+   if (!bar || document.querySelector("#btn-tools")) return;
+   if (!document.querySelector("#tv-css")) { const st = el("style"); st.id = "tv-css"; st.textContent = CSS; document.head.append(st); }
+-  const b = el("button", "secondary", "🧰 IA/agentes OFF"); b.type = "button"; b.id = "btn-tools"; b.title = "Permitir otras IA y agentes; GitHub y HF siempre disponibles"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Permitir otras IA y agentes");
++  const b = el("button", "secondary", "IA OFF"); b.type = "button"; b.id = "btn-tools"; b.title = "Permitir otras IA y agentes; GitHub y HF siempre disponibles"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Permitir otras IA y agentes");
+   const s = el("div", "sheet"); s.id = "ventana-tools"; s.hidden = true;
+   const c = el("div", "va-caja"), h = el("div", "row va-head"), x = el("button", "secondary", "✕"), cuerpo = el("div", "list"); cuerpo.id = "tv-cuerpo";
+   x.type = "button"; x.onclick = () => { s.hidden = true; };
+   s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
+-  h.append(el("strong", "", "🧰 Staff de tools"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
++  h.append(el("strong", "", "Herramientas del chat"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
+   b.title = "Permitir que el modelo llame a otras IA y agentes (el servidor lo recuerda). GitHub, HF y demás herramientas tienen su ON/OFF con clic derecho o mantener pulsado";
+   b.onclick = async () => {  // el servidor decide y recuerda; el navegador solo refleja su respuesta
+     const flags = window.RIU_CHAT_TOOL_FLAGS; if (!flags || b.disabled) return; b.disabled = true;

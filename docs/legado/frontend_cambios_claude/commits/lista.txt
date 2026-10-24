@@ -1,0 +1,12 @@
+8557028764 2026-10-24 Selectores: ON/OFF, info, rapida y modelo por fila (RIU_SELECTORES) sin tocar el resto del frontend
+70cc3661f4 2026-10-24 Chat: botones del composer visibles como antes; el Router no se reinicia por cambios solo de pantalla o documentos
+54c8815ea0 2026-10-24 Chip System prompt junto a IA y Agentes (antes quedaba deformado en la fila de acciones)
+5be2929688 2026-10-24 ROOM: turno de agentes y modelos; READMEs de arquitectura/handoff; raiz limpia
+24b26c7735 2026-10-24 Boton Servidor: usa HF_TOKEN_1 del entorno de Vercel
+748db5a6e5 2026-10-24 Chat: capa de formato, system prompt ON/OFF, yaiwes.md global, organizador de pendientes, constitucion y pendientes al modelo
+7548c2cc87 2026-10-23 chat: agentes conectables (1 a 50, cada uno con su modelo) y dos botones separados IA / Agentes
+62c3e0d1ee 2026-10-23 mvp: los 23 modelos del plan Standard (13 texto, 3 imagen, 3 audio, 4 video) con generacion multimedia y medios en el chat
+9607eb66ad 2026-10-23 chat: boton Servidor (encender/apagar/reiniciar) via /api/power en Vercel, vercel.json y CORS del Router
+28bcf2b6f3 2026-10-23 chat: handoff_texto, filas de selector como mode-option y documentacion Maxbry UI + verificacion cruzada
+59f811887e 2026-10-23 chat: Maxbry UI (composer ordenado, ＋ Agregar al chat, chips, toast), salida ancha y backend de archivos/sandbox/proyectos/pensamiento
+62fbb681c4 2026-10-23 chat: IA/agentes ON/OFF desde el servidor, ventanas de Conexiones y ROOM, checklist de pendientes

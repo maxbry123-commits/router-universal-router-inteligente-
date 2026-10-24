@@ -1,0 +1,186 @@
+748db5a6e5 Chat: capa de formato, system prompt ON/OFF, yaiwes.md global, organizador de pendientes, constitucion y pendientes al modelo
+
+diff --git a/plugins/chat-router/frontend/anclaje-destinos.js b/plugins/chat-router/frontend/anclaje-destinos.js
+index cec1d86bfe..cb3e8460be 100644
+--- a/plugins/chat-router/frontend/anclaje-destinos.js
++++ b/plugins/chat-router/frontend/anclaje-destinos.js
+@@ -1,6 +1,6 @@
+ // anclaje-destinos.js — en la ventana de Anclaje: "Anclar a" Chat / Constitución / Workflows / Agentes remotos / Proyecto / Sandbox.
+ // Es LA MISMA ventana para todos: al elegir el objetivo, todo lo de la ventana (enlaces, anclado ahora, instrucciones fijas, proyectos,
+-// handoffs, Mi handoff y archivos) se aplica a ese objetivo. Los archivos son compartidos. Sin elegir nada, es el chat de siempre.
++// handoffs, yaiwes.md y archivos) se aplica a ese objetivo. Los archivos son compartidos. Sin elegir nada, es el chat de siempre.
+ import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto, slugProy, proyId } from "./objetivos-ancla.js";
+ import { el, boton, cargarCss } from "./ventanas-comun.js";
+ export function montarDestinos({ root, q, tell }) {
+@@ -91,12 +91,12 @@ function chipAncla(q) {  // el chip «ancla» del chat (pastilla y botón ⚓ de
+   const pill = q("#ancla") || document.getElementById("ancla"); if (!pill) return;  // en móvil la pastilla se mueve fuera del panel (#mv-ctl)
+   pill.textContent = "ancla · 📜 " + (on ? "ON" : "OFF") + " ⌄"; pill.classList.toggle("on", on); pill.title = "Constitución " + (on ? "ON: viaja con cada mensaje" : "OFF: no se envía");
+ }
+-function unBotonMiHandoff(q, tell) {  // Mi handoff: un solo botón ON/OFF en lugar de «Encender/Guardar» + «Apagar» (los originales quedan ocultos y siguen funcionando)
++function unBotonMiHandoff(q, tell) {  // yaiwes.md: un solo botón ON/OFF en lugar de «Encender/Guardar» + «Apagar» (los originales quedan ocultos y siguen funcionando)
+   const g = q("#mh-guardar"), a = q("#mh-apagar"), est = q("#mh-estado"), enl = q("#ancla-enlace-on");
+   if (enl) enl.textContent = "Anclar";
+   if (!g || !a || !est || g.dataset.uno) return; g.dataset.uno = "1"; [g, a, est].forEach((x) => { x.style.display = "none"; });
+   const t = document.createElement("button"); t.type = "button"; t.id = "mh-toggle"; g.before(t);
+-  const pinta = () => { const on = est.textContent.trim() === "encendido"; t.textContent = "Mi handoff: " + (on ? "ON" : "OFF"); t.className = "toggle" + (on ? " on" : ""); t.setAttribute("aria-pressed", String(on)); };
++  const pinta = () => { const on = est.textContent.trim() === "encendido"; t.textContent = "yaiwes.md: " + (on ? "ON" : "OFF"); t.className = "toggle" + (on ? " on" : ""); t.setAttribute("aria-pressed", String(on)); };
+   t.addEventListener("click", () => { if (est.textContent.trim() === "encendido") a.click(); else { const m = q("#mi-handoff"); if (!m || !m.value.trim()) { tell("Escribe tu handoff primero"); return; } g.click(); } });
+   new MutationObserver(pinta).observe(est, { childList: true, characterData: true, subtree: true }); pinta();
+ }
+diff --git a/plugins/chat-router/frontend/chat-maxbry.css b/plugins/chat-router/frontend/chat-maxbry.css
+index fa8579451d..2e1f3416c2 100644
+--- a/plugins/chat-router/frontend/chat-maxbry.css
++++ b/plugins/chat-router/frontend/chat-maxbry.css
+@@ -16,10 +16,10 @@ html body #composer .mx-chips{display:flex;flex-wrap:wrap;align-items:center;gap
+ html body #composer .mx-chips #mode-selector-mount{display:contents}
+ html body #composer .mx-chips .ms-hint:empty{display:none}
+ html body #composer .mx-chips .ms-hint{flex:1 0 100%;order:9}
+-html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools,html body #composer .mx-chips #btn-agentes{width:auto!important;max-width:100%!important;height:38px!important;min-height:38px!important;aspect-ratio:auto!important;padding:0 11px!important;display:inline-flex;align-items:center;gap:6px;border-radius:999px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--text)!important;font:600 13px/1 system-ui,sans-serif!important;white-space:nowrap;flex:0 0 auto!important}
+-html body #composer .mx-chips .ms-btn[data-locked=true],html body #composer .mx-chips .mx-chip[aria-pressed=true],html body #composer .mx-chips #btn-tools[aria-pressed=true],html body #composer .mx-chips #btn-agentes[aria-pressed=true]{background:var(--status-soft-blue)!important;border-color:var(--status-blue)!important;color:var(--title)!important}
+-html body #composer .mx-chips #btn-tools::before,html body #composer .mx-chips #btn-agentes::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--quiet-2);flex:none}
+-html body #composer .mx-chips #btn-tools[aria-pressed=true]::before,html body #composer .mx-chips #btn-agentes[aria-pressed=true]::before{background:var(--status-blue);box-shadow:0 0 8px var(--status-blue)}
++html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools,html body #composer .mx-chips #btn-agentes,html body #composer .mx-chips #btn-prompt{width:auto!important;max-width:100%!important;height:38px!important;min-height:38px!important;aspect-ratio:auto!important;padding:0 11px!important;display:inline-flex;align-items:center;gap:6px;border-radius:999px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--text)!important;font:600 13px/1 system-ui,sans-serif!important;white-space:nowrap;flex:0 0 auto!important}
++html body #composer .mx-chips .ms-btn[data-locked=true],html body #composer .mx-chips .mx-chip[aria-pressed=true],html body #composer .mx-chips #btn-tools[aria-pressed=true],html body #composer .mx-chips #btn-agentes[aria-pressed=true],html body #composer .mx-chips #btn-prompt[aria-pressed=true]{background:var(--status-soft-blue)!important;border-color:var(--status-blue)!important;color:var(--title)!important}
++html body #composer .mx-chips #btn-tools::before,html body #composer .mx-chips #btn-agentes::before,html body #composer .mx-chips #btn-prompt::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--quiet-2);flex:none}
++html body #composer .mx-chips #btn-tools[aria-pressed=true]::before,html body #composer .mx-chips #btn-agentes[aria-pressed=true],html body #composer .mx-chips #btn-prompt[aria-pressed=true]::before{background:var(--status-blue);box-shadow:0 0 8px var(--status-blue)}
+ html body #composer .mx-chips .mx-chip .mx-ico{width:16px;height:16px}
+ html body #composer .composer-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin:0;padding:0}
+ html body #composer .composer-bar>.secondary{flex:0 0 auto!important;width:var(--mx-tap)!important;max-width:none!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;aspect-ratio:1/1!important;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--title)}
+@@ -30,7 +30,7 @@ html body #composer .composer-bar .anclados{order:-1;flex:1 0 100%;display:block
+ html body #composer .composer-bar .anclados:empty{display:none}
+ html body #composer .composer-bar .action{flex:0 0 auto!important;margin-left:auto!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;min-width:112px!important;padding:0 20px!important;border-radius:999px!important;font-size:15px;font-weight:700;gap:8px}
+ html body #composer .composer-bar .p3d{flex:0 0 auto}
+-@media(max-width:380px){html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools,html body #composer .mx-chips #btn-agentes{padding:0 9px!important;font-size:12px!important}html body #composer .composer-bar .action{min-width:var(--mx-tap)!important;width:var(--mx-tap)!important;padding:0!important}html body #composer .composer-bar .action::after{display:none}}
++@media(max-width:380px){html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools,html body #composer .mx-chips #btn-agentes,html body #composer .mx-chips #btn-prompt{padding:0 9px!important;font-size:12px!important}html body #composer .composer-bar .action{min-width:var(--mx-tap)!important;width:var(--mx-tap)!important;padding:0!important}html body #composer .composer-bar .action::after{display:none}}
+ 
+ /* ---------- bandeja «Agregar al chat» ---------- */
+ #mx-hoja .mx-bandeja{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:4px 0 8px}
+diff --git a/plugins/chat-router/frontend/chat-ventanas.js b/plugins/chat-router/frontend/chat-ventanas.js
+index 935ba60087..e847939461 100644
+--- a/plugins/chat-router/frontend/chat-ventanas.js
++++ b/plugins/chat-router/frontend/chat-ventanas.js
+@@ -1,7 +1,7 @@
+ // chat-ventanas.js — comportamiento comun de las ventanas (hojas) del chat. Archivo propio.
+ // 1) tocar fuera de la ventana la cierra  2) Escape la cierra  3) deslizar hacia abajo desde la cabecera la cierra (celular)
+ // 4) ANCLAJE EN UNA SOLA VENTANA: la pastilla "ancla" y el boton ⚓ del input abren la MISMA ventana, que junta todo
+-//    (enlaces, anclado ahora, instrucciones fijas, proyectos, handoffs, Mi handoff y archivos) con un titulo por seccion.
++//    (enlaces, anclado ahora, instrucciones fijas, proyectos, handoffs, yaiwes.md y archivos) con un titulo por seccion.
+ //    No se borra ni se oculta nada: solo se mueve la ventana de handoffs dentro de la de anclaje.
+ export function conectarVentanas({ root, q }) {
+   const hojas = () => [...root.querySelectorAll(".sheet")];
+@@ -45,7 +45,7 @@ function unirAnclaje(q) {
+     if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+   }, 250));
+   const archivos = fila("#anc-subir");
+-  const tHand = titulo("Handoffs del proyecto y Mi handoff");
++  const tHand = titulo("Handoffs del proyecto y yaiwes.md");
+   const bloque = [...sh.children].filter((n) => !n.classList.contains("va-head"));
+   if (archivos) { va.insertBefore(tHand, archivos); bloque.forEach((n) => va.insertBefore(n, archivos)); antesDe(archivos, "Archivos"); }
+   else { va.append(tHand, ...bloque); }
+@@ -55,7 +55,7 @@ function unirAnclaje(q) {
+   pill.addEventListener("click", () => { if (ocupado) return; ocupado = true; btn.click(); ocupado = false; mostrar(); });  // carga tambien archivos
+   btn.addEventListener("click", () => {
+     if (ocupado || q("#ventana-ancla").hidden) return;
+-    ocupado = true; pill.click(); ocupado = false; mostrar();  // carga tambien handoffs y Mi handoff
++    ocupado = true; pill.click(); ocupado = false; mostrar();  // carga tambien handoffs y yaiwes.md
+   });
+   va.querySelectorAll("button.mini").forEach((b) => {
+     if (b.textContent.trim() === "Handoffs…") b.addEventListener("click", () => setTimeout(() => tHand.scrollIntoView({ behavior: "smooth", block: "start" }), 60));
+diff --git a/plugins/chat-router/frontend/maxbry-ui.js b/plugins/chat-router/frontend/maxbry-ui.js
+index 4a94ed6e3d..2363f5d5e1 100644
+--- a/plugins/chat-router/frontend/maxbry-ui.js
++++ b/plugins/chat-router/frontend/maxbry-ui.js
+@@ -11,7 +11,7 @@ const SPRITE = '<svg xmlns="http://www.w3.org/2000/svg" id="mx-sprite" style="po
+   ["expand", '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>'], ["x", '<path d="M5 5 19 19M19 5 5 19"/>'], ["power", '<path d="M12 2v10M6 5a9 9 0 1 0 12 0"/>'], ["settings", '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>'],
+ ].map(([id, d]) => '<symbol id="i-' + id + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + "</symbol>").join("") + "</svg>";
+ const TEXTO = { "btn-archivos": "Archivos", "btn-ancla": "Anclar", "btn-sandbox": "Sandbox", "btn-copiar-input": "Copiar", "btn-conexiones": "Conexiones", "btn-room": "ROOM", "btn-pendientes": "Pendientes", "btn-power": "Servidor" };
+-const FIJOS = new Set(["btn-adjunto", "btn-microfono", "btn-detener", "btn-tools", "btn-agentes", "mx-mas", "mx-grande"]);  // se quedan en la fila principal
++const FIJOS = new Set(["btn-adjunto", "btn-microfono", "btn-detener", "btn-tools", "btn-agentes", "btn-prompt", "mx-mas", "mx-grande"]);  // se quedan en la fila principal
+ const ICONOS = { "btn-conexiones": "shield", "btn-room": "message", "btn-pendientes": "check", "btn-power": "power" };  // botones propios: iconos de línea en vez de emojis
+ const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
+ 
+diff --git a/plugins/chat-router/frontend/panel-chat.html b/plugins/chat-router/frontend/panel-chat.html
+index 54e63a4413..58d8a60d64 100644
+--- a/plugins/chat-router/frontend/panel-chat.html
++++ b/plugins/chat-router/frontend/panel-chat.html
+@@ -40,7 +40,7 @@
+   <div id="sh-modo" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Modo</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div id="sh-modo-lista" class="list"></div></div></div>
+   <div id="sh-mas" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Más opciones</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div class="row fields"><label>Proveedor <select id="provider"><option value="auto">Automático</option></select></label><label>Modelo <select id="model"><option value="">Router elige</option></select></label><label>Agente <select id="agent"><option value="">Sin agente</option></select></label><label>Grupo <select id="group"><option value="">Predeterminado</option></select></label><label>Cuenta GitHub <select id="github"><option value="">Ninguna</option></select></label><label>Rama <input id="branch" placeholder="main" disabled></label></div></div></div>
+   <div id="ventana-ancla" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Anclar al input</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div class="row"><button type="button" id="anc-subir" class="mini">Subir archivos</button><button type="button" id="anc-todos" class="mini">Anclar todos</button><button type="button" id="anc-ninguno" class="mini">Quitar todos</button></div><div id="anc-lista" class="list"></div><div class="fila-desc">Enciende un archivo para anclarlo: va con cada mensaje y su nombre sale debajo del input. Lo que solo subes no se ancla.</div></div></div>
+-  <div id="sh-ancla" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Anclar al chat</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div id="sh-ancla-lista" class="list"></div><textarea id="mi-handoff" placeholder="Mi handoff: pega o escribe dónde debe trabajar la llm…"></textarea><div class="row"><button type="button" id="mh-guardar" class="toggle">Encender/Guardar</button><button type="button" id="mh-apagar" class="toggle rojo">Apagar</button><span id="mh-estado" class="muted"></span></div><div class="row"><input id="ancla-enlace" placeholder="Pega enlace para anclar…" autocomplete="off"><button type="button" id="ancla-enlace-on" class="mini">Encender</button></div><div class="fila-desc">Enciende un handoff del proyecto/skill/preview, guarda tu propio handoff o pega un enlace: queda anclado y se envía con cada mensaje.</div></div></div>
++  <div id="sh-ancla" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Anclar al chat</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div id="sh-ancla-lista" class="list"></div><textarea id="mi-handoff" placeholder="yaiwes.md: pega la información del proyecto donde debe trabajar la llm…"></textarea><div class="row"><button type="button" id="mh-guardar" class="toggle">Encender/Guardar</button><button type="button" id="mh-apagar" class="toggle rojo">Apagar</button><span id="mh-estado" class="muted"></span></div><div class="row"><input id="ancla-enlace" placeholder="Pega enlace para anclar…" autocomplete="off"><button type="button" id="ancla-enlace-on" class="mini">Encender</button></div><div class="fila-desc">Enciende un handoff del proyecto/skill/preview, guarda tu propio handoff o pega un enlace: queda anclado y se envía con cada mensaje.</div></div></div>
+   <div id="sh-motor" class="sheet" hidden><div class="va-caja va-ancho"><div class="row va-head"><strong>Motor descarga · extracción · copiar · mover</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div class="motor-panel"><strong>1 · Marcar</strong><label class="row"><input type="checkbox" id="motor-mover"> mover &nbsp;<input type="checkbox" id="motor-copiar" checked> copiar</label><input id="motor-origen" placeholder="Enlace origen de la raíz (GitHub)" autocomplete="off"><input id="motor-destino" placeholder="Enlace destino (GitHub)" autocomplete="off"><button type="button" id="motor-ejecutar" class="action">Ejecutar</button></div><div class="motor-panel"><strong>2 · URLs en cola</strong><input type="file" id="motor-archivo" hidden><button type="button" id="motor-archivo-btn" class="secondary">Cargar archivo (extrae las URLs visibles)</button><textarea id="motor-urls" placeholder="Escribe o pega el texto con las URLs visibles"></textarea><input id="motor-destino2" placeholder="Escribe el enlace destino (GitHub)" autocomplete="off"><button type="button" id="motor-activar" class="action">Activar (un motor por URL o en cola)</button><div id="motor-cola" class="muted"></div></div><div class="motor-panel"><strong>3 · Auditoría y seguimiento</strong><button type="button" id="motor-auditar" class="action">Auditar y ver progreso de descargas</button><div id="motor-hist" class="list"></div><div id="motor-detalle" class="muted"></div></div></div></div>
+   <div id="sh-modelos" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Team qwen</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div id="sh-modelos-lista" class="list"></div><div id="team-qwen-diagrama" class="consil-diagrama" aria-label="Micro diagrama transversal"></div></div></div>
+   <div id="sh-consil-code" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Ask cónsil code qwen team</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div id="sh-consil-code-lista" class="list"><div class="consil-vacio">Modelos pendientes</div></div><div id="consil-code-diagrama" class="consil-diagrama" aria-label="Micro diagrama transversal (pendiente)"></div></div></div>
+diff --git a/plugins/chat-router/frontend/panel-chat.js b/plugins/chat-router/frontend/panel-chat.js
+index 249c8dae3a..d37dee54ea 100644
+--- a/plugins/chat-router/frontend/panel-chat.js
++++ b/plugins/chat-router/frontend/panel-chat.js
+@@ -354,14 +354,14 @@ export async function mount(root, { api, tell }) {
+         c.hist.append(burbuja("MI HANDOFF anclado:\n" + texto));
+         abajo(c);
+       }
+-      tell("Mi handoff " + (r.encendido ? "guardado y encendido" : "apagado"));
++      tell("yaiwes.md " + (r.encendido ? "guardado y encendido" : "apagado"));
+     } catch (err) { tell(err.message); }
+   });
+   q("#mh-apagar").addEventListener("click", async () => {
+     try {
+       await window.RIU_ACCION("handoff_texto", { sesion: chatA().sesion, texto: "" });
+       q("#mh-estado").textContent = "apagado";
+-      tell("Mi handoff apagado");
++      tell("yaiwes.md apagado");
+     } catch (err) { tell(err.message); }
+   });
+   q("#ancla-enlace-on").addEventListener("click", () => {
+diff --git a/plugins/chat-router/frontend/pendientes-panel.js b/plugins/chat-router/frontend/pendientes-panel.js
+index c0e025a6c0..92197acd6f 100644
+--- a/plugins/chat-router/frontend/pendientes-panel.js
++++ b/plugins/chat-router/frontend/pendientes-panel.js
+@@ -29,7 +29,9 @@ function checklist() {
+   const llamar = async (c) => { try { const r = await accion("checklist", c); est.textContent = r.persistente === false ? "⚠️ No se guardará tras reiniciar (almacenamiento HF no disponible)" : ""; pintarLista(r.pendientes || []); return true; } catch (x) { est.textContent = "⚠️ " + x.message; return false; } };
+   const agregar = btn("＋ Añadir", async () => { if (nuevo.value.trim() && await llamar({ accion: "agregar", texto: nuevo.value })) nuevo.value = ""; });
+   nuevo.onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); agregar.click(); } };
+-  fila.append(nuevo, agregar);
++  const org = btn("🧠 Organizar con IA", async () => { org.disabled = true; est.textContent = "Organizando…"; if (await llamar({ accion: "organizar" })) est.textContent = ""; org.disabled = false; });
++  org.title = "Un modelo (qwen3.7 por defecto) ordena los pendientes por prioridad; no crea ni borra ninguno";
++  fila.append(nuevo, agregar, org);
+   llamar({});
+   const todo = el("div", "list"); todo.append(fila, caja, est); return todo;
+ }
+diff --git a/plugins/chat-router/frontend/tools-ventana.js b/plugins/chat-router/frontend/tools-ventana.js
+index 1c27ae79c1..bbb059cd49 100644
+--- a/plugins/chat-router/frontend/tools-ventana.js
++++ b/plugins/chat-router/frontend/tools-ventana.js
+@@ -102,8 +102,9 @@ async function pintarVentana(caja) {
+ const avisar = (t) => { const n = document.querySelector("#notice"); if (n) n.textContent = t; else console.warn(t); };
+ function aplicarFlags(r) {  // única vía para reflejar IA y Agentes (dos botones, dos permisos del servidor): chips, botón de bloqueo y LLM tool leen lo mismo
+   const ia = !r.ia_locked, ag = !r.agentes_locked, f = window.RIU_CHAT_TOOL_FLAGS;
++  if ("prompt_locked" in r) window.RIU_PROMPT_ON = !r.prompt_locked;  // System prompt: nace OFF; el servidor lo recuerda
+   if (f) { f.tools = ia || ag; f.llm_tool = ia; f.agente_tool = ag; }
+-  [["#btn-tools", "IA", ia], ["#btn-agentes", "Agentes", ag]].forEach(([id, n, on]) => { const b = document.querySelector(id); if (b) { b.textContent = n + (on ? " ON" : " OFF"); b.setAttribute("aria-pressed", String(on)); } });
++  [["#btn-tools", "IA", ia], ["#btn-agentes", "Agentes", ag], ["#btn-prompt", "System prompt", !!window.RIU_PROMPT_ON]].forEach(([id, n, on]) => { const b = document.querySelector(id); if (b) { b.textContent = n + (on ? " ON" : " OFF"); b.setAttribute("aria-pressed", String(on)); } });
+   const l = document.querySelector("#btn-llm-tool"); if (l) { l.textContent = "🧠 LLM tool " + (ia ? "ON" : "OFF"); l.classList.toggle("sel-on", ia); l.setAttribute("aria-pressed", String(ia)); }
+   window.dispatchEvent(new CustomEvent("riu:ia", { detail: { on: ia || ag, ia, agentes: ag } }));
+ }
+@@ -121,16 +122,18 @@ function instalarChat() {
+   b.title = "Permitir que el modelo llame a otras IA y agentes (el servidor lo recuerda). GitHub, HF y demás herramientas tienen su ON/OFF con clic derecho o mantener pulsado";
+   const chip = (btn, quien, nombre) => { btn.onclick = async () => {  // el servidor decide y recuerda; el navegador solo refleja su respuesta
+     const f = window.RIU_CHAT_TOOL_FLAGS; if (!f || btn.disabled) return; btn.disabled = true;
+-    try { const r = await accion("agent_access_lock", { locked: !!(quien === "ia" ? f.llm_tool : f.agente_tool), quien }); aplicarFlags(r); if (r.persistente === false) avisar(nombre + ": el cambio no se guardará tras reiniciar el servidor"); }
++    try { const r = await accion("agent_access_lock", { locked: !!(quien === "ia" ? f.llm_tool : quien === "prompt" ? window.RIU_PROMPT_ON : f.agente_tool), quien }); aplicarFlags(r); if (r.persistente === false) avisar(nombre + ": el cambio no se guardará tras reiniciar el servidor"); }
+     catch (x) { avisar(nombre + ": no se pudo cambiar (" + x.message + ")"); }
+     finally { btn.disabled = false; } }; };
+   chip(b, "ia", "IA");
+   const g = el("button", "secondary", "Agentes OFF"); g.type = "button"; g.id = "btn-agentes"; g.setAttribute("aria-pressed", "false"); g.setAttribute("aria-label", "Permitir que el modelo use agentes");
+   g.title = "Permitir que el modelo delegue en los agentes conectados (cada uno con su modelo); el servidor lo recuerda"; chip(g, "agentes", "Agentes");
++  const p = el("button", "secondary", "System prompt OFF"); p.type = "button"; p.id = "btn-prompt"; p.setAttribute("aria-pressed", "false"); p.setAttribute("aria-label", "Activar el system prompt completo");
++  p.title = "Añade el system prompt completo del proyecto a cada mensaje (apagado por defecto; el servidor lo recuerda)"; chip(p, "prompt", "System prompt");
+   let pulsado = null; b.addEventListener("pointerdown", () => { pulsado = setTimeout(() => { pulsado = null; s.hidden = false; pintarVentana(cuerpo); }, 600); }); ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(pulsado); }));  // móvil: mantener pulsado abre la ventana
+   accion("agent_access_lock", {}).then(aplicarFlags).catch(() => {});  // estado real del servidor al abrir el chat
+   b.oncontextmenu = (ev) => { ev.preventDefault(); s.hidden = false; pintarVentana(cuerpo); };
+-  const env = bar.querySelector(".action"); bar.insertBefore(g, env || null); bar.insertBefore(b, g);
++  const env = bar.querySelector(".action"); bar.insertBefore(p, env || null); bar.insertBefore(g, p); bar.insertBefore(b, g);
+ }
+ 
+ async function instalarConfig() {

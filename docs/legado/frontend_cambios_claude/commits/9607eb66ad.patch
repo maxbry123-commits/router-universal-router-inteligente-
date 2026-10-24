@@ -1,0 +1,164 @@
+9607eb66ad chat: boton Servidor (encender/apagar/reiniciar) via /api/power en Vercel, vercel.json y CORS del Router
+
+diff --git a/plugins/chat-router/frontend/api/power.js b/plugins/chat-router/frontend/api/power.js
+new file mode 100644
+index 0000000000..4476da70c4
+--- /dev/null
++++ b/plugins/chat-router/frontend/api/power.js
+@@ -0,0 +1,26 @@
++// api/power.js — Encender / Apagar / Reiniciar el Space del Router desde Vercel (el Router dormido no puede recibir la orden).
++// GET -> {stage, hardware}; POST {accion: encender|apagar|reiniciar}. Acceso: X-API-Key = RIU_ROUTER_API_KEY. El token nunca sale de aquí.
++const { timingSafeEqual } = require("node:crypto");
++const ACCIONES = { encender: "/restart", reiniciar: "/restart", apagar: "/pause" };  // restart es la única forma de despertar un Space en pausa
++
++const igual = (a, b) => typeof a === "string" && typeof b === "string" && a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
++
++module.exports = async (req, res) => {
++  const { RIU_ROUTER_API_KEY: clave, HF_POWER_TOKEN, HF_TOKEN_1, HF_SPACE_ID } = process.env;
++  const token = HF_POWER_TOKEN || HF_TOKEN_1, base = "https://huggingface.co/api/spaces/" + (HF_SPACE_ID || "COMAND-CENTER-1/riu-router");
++  res.setHeader("Cache-Control", "no-store");
++  if (!clave || !igual(req.headers["x-api-key"], clave)) return res.status(401).json({ detail: "clave de acceso invalida" });
++  if (!token) return res.status(503).json({ detail: "falta HF_POWER_TOKEN en Vercel" });
++  const accion = req.method === "POST" ? (req.body || {}).accion : "estado";
++  if (req.method !== "GET" && !ACCIONES[accion]) return res.status(400).json({ detail: "accion debe ser encender, apagar o reiniciar" });
++  try {
++    const r = await fetch(base + (accion === "estado" ? "/runtime" : ACCIONES[accion]), { method: accion === "estado" ? "GET" : "POST", headers: { Authorization: "Bearer " + token } });
++    const texto = await r.text();
++    let d = {}; try { d = JSON.parse(texto); } catch (e) { d = { detail: texto.slice(0, 300) }; }
++    if (!r.ok) return res.status(r.status).json({ detail: String(d.error || d.detail || "Hugging Face HTTP " + r.status).slice(0, 300) });  // 402 = faltan creditos: mensaje tal cual
++    const hw = d.hardware || {};
++    return res.status(200).json({ accion, stage: d.stage || null, hardware: hw.current || hw.requested || null });
++  } catch (e) {
++    return res.status(502).json({ detail: "Hugging Face no responde" });
++  }
++};
+diff --git a/plugins/chat-router/frontend/controles-ventana.js b/plugins/chat-router/frontend/controles-ventana.js
+index 584fe51abe..667738e4d5 100644
+--- a/plugins/chat-router/frontend/controles-ventana.js
++++ b/plugins/chat-router/frontend/controles-ventana.js
+@@ -110,6 +110,27 @@ async function pintarRoom(cuerpo, hoja) {
+   await lista();
+ }
+ 
+-const revisar = () => { try { ventana("conexiones", "🔑", "Conexiones", pintarConexiones); ventana("room", "🗣", "ROOM CONFERENCIAS", pintarRoom); } catch (e) { console.warn("controles-ventana", e); } };
++// ---------- ⏻ Servidor: encender / apagar / reiniciar el Space (la orden sale de /api/power en Vercel, no del Router dormido) ----------
++const ESTILO = { RUNNING: "enabled", PAUSED: "pending", SLEEPING: "pending", STOPPED: "pending", BUILDING: "progress", APP_STARTING: "progress", RUNNING_BUILDING: "progress" };
++async function power(metodo, accion) {
++  const r = await fetch("/api/power", { method: metodo, headers: { "Content-Type": "application/json", "X-API-Key": sessionStorage.getItem("riu_clave") || "" }, body: accion ? JSON.stringify({ accion }) : undefined });
++  const d = await r.json().catch(() => ({}));
++  if (!r.ok) throw new Error(r.status === 401 ? "clave incorrecta (usa la del chat)" : r.status === 404 ? "disponible solo en la web de Vercel" : r.status === 402 ? "Hugging Face: faltan créditos (" + (d.detail || "402") + ")" : d.detail || "HTTP " + r.status);
++  return d;
++}
++async function pintarPower(cuerpo) {
++  const est = el("div", "cv-est"), chip = el("span", "tag-status pending", "…"), hw = el("div", "muted"); let espera = 0;
++  const ver = (d) => { chip.className = "tag-status " + (/ERROR/.test(d.stage || "") ? "warning" : ESTILO[d.stage] || "pending"); chip.textContent = d.stage || "sin estado"; hw.textContent = d.hardware ? "Hardware: " + d.hardware + (d.hardware === "cpu-basic" ? " (gratis)" : " · el hardware de pago consume créditos") : ""; return d; };
++  const leer = async () => { try { return ver(await power("GET")); } catch (x) { chip.className = "tag-status warning"; chip.textContent = "error"; est.textContent = "⚠️ " + x.message; return null; } };
++  const seguir = async () => { const mia = ++espera; for (let i = 0; i < 60 && mia === espera; i++) { await new Promise((r) => setTimeout(r, 5000)); const d = await leer(); if (!d) return; if (d.stage === "RUNNING") { est.textContent = "✅ listo: el Router está encendido"; return; } if (/ERROR/.test(d.stage || "")) { est.textContent = "⚠️ el Space terminó en " + d.stage; return; } } if (mia === espera) est.textContent = "⚠️ sigue arrancando tras 5 minutos; revisa el Space"; };
++  const boton = (texto, accion, confirmar) => { const b = btn(texto, "secondary"); let t = 0;
++    const lanzar = async () => { b.disabled = true; est.textContent = "Enviando " + accion + "…"; try { ver(await power("POST", accion)); est.textContent = accion === "apagar" ? "Pausa pedida" : "Arrancando… (consulto cada 5 s)"; if (accion !== "apagar") seguir(); else { espera++; setTimeout(leer, 4000); } } catch (x) { est.textContent = "⚠️ " + x.message; } finally { b.disabled = false; b.textContent = texto; } };
++    b.onclick = () => { if (!confirmar) return lanzar(); if (t) { clearTimeout(t); t = 0; return lanzar(); } b.textContent = "¿Seguro? Confirmar"; est.textContent = "Pulsa de nuevo para " + accion + " el Router"; t = setTimeout(() => { t = 0; b.textContent = texto; est.textContent = ""; }, 5000); }; return b; };
++  const fila = el("div", "cv-form"); fila.append(boton("Encender", "encender", false), boton("Apagar", "apagar", true), boton("Reiniciar", "reiniciar", true), btn("Actualizar", "secondary", leer));
++  cuerpo.replaceChildren(el("div", "cv-sec", "Servidor del Router"), el("div", "cv-fila", ""), hw, fila, est); cuerpo.children[1].append(chip);
++  await leer();
++}
++
++const revisar = () => { try { ventana("conexiones", "🔑", "Conexiones", pintarConexiones); ventana("room", "🗣", "ROOM CONFERENCIAS", pintarRoom); ventana("power", "⏻", "Servidor del Router", pintarPower); } catch (e) { console.warn("controles-ventana", e); } };
+ new MutationObserver(revisar).observe(document.body, { childList: true, subtree: true });
+ revisar();
+diff --git a/plugins/chat-router/frontend/maxbry-ui.js b/plugins/chat-router/frontend/maxbry-ui.js
+index 9b0d903f8d..8f14b6e643 100644
+--- a/plugins/chat-router/frontend/maxbry-ui.js
++++ b/plugins/chat-router/frontend/maxbry-ui.js
+@@ -8,11 +8,11 @@ const SPRITE = '<svg xmlns="http://www.w3.org/2000/svg" id="mx-sprite" style="po
+   ["shield", '<path d="M12 2 20 5v6c0 5-3 8-8 11-5-3-8-6-8-11V5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>'], ["message", '<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.3 8.3 0 0 1-3.8-.9L3 21l1.9-5.7A8.3 8.3 0 0 1 4 11.5a8.5 8.5 0 0 1 17 0Z"/>'],
+   ["check", '<path d="m5 12 4 4L19 6"/>'], ["doc", '<path d="M5 2h10l5 5v15H5Z"/><path d="M15 2v5h5M8 12h9M8 16h9"/>'], ["down", '<path d="m6 9 6 6 6-6"/>'],
+   ["think", '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>'],
+-  ["expand", '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>'], ["x", '<path d="M5 5 19 19M19 5 5 19"/>'], ["settings", '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>'],
++  ["expand", '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>'], ["x", '<path d="M5 5 19 19M19 5 5 19"/>'], ["power", '<path d="M12 2v10M6 5a9 9 0 1 0 12 0"/>'], ["settings", '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>'],
+ ].map(([id, d]) => '<symbol id="i-' + id + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + "</symbol>").join("") + "</svg>";
+-const TEXTO = { "btn-archivos": "Archivos", "btn-ancla": "Anclar", "btn-sandbox": "Sandbox", "btn-copiar-input": "Copiar", "btn-conexiones": "Conexiones", "btn-room": "ROOM", "btn-pendientes": "Pendientes" };
++const TEXTO = { "btn-archivos": "Archivos", "btn-ancla": "Anclar", "btn-sandbox": "Sandbox", "btn-copiar-input": "Copiar", "btn-conexiones": "Conexiones", "btn-room": "ROOM", "btn-pendientes": "Pendientes", "btn-power": "Servidor" };
+ const FIJOS = new Set(["btn-adjunto", "btn-microfono", "btn-detener", "btn-tools", "mx-mas", "mx-grande"]);  // se quedan en la fila principal
+-const ICONOS = { "btn-conexiones": "shield", "btn-room": "message", "btn-pendientes": "check" };  // botones propios: iconos de línea en vez de emojis
++const ICONOS = { "btn-conexiones": "shield", "btn-room": "message", "btn-pendientes": "check", "btn-power": "power" };  // botones propios: iconos de línea en vez de emojis
+ const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
+ 
+ function sprite() { if (!document.getElementById("mx-sprite")) document.body.insertAdjacentHTML("afterbegin", SPRITE); }
+@@ -79,9 +79,10 @@ function avisos() {  // #notice como toast: se retira solo (errores, más tiempo
+ function estado() {  // punto de señal (skill .signal) en el estado del Router
+   const s = document.querySelector("#movil-status"); if (!s || s.dataset.mx) return; s.dataset.mx = "1";
+   const pintar = () => { s.dataset.estado = /error|no disponible|detenido/i.test(s.textContent) ? "err" : s.textContent.trim() ? "ok" : ""; };
++  s.style.cursor = "pointer"; s.title = "Encender, apagar o reiniciar el Router"; s.onclick = () => { const p = document.querySelector("#btn-power"); if (p) p.click(); };  // el estado abre el panel del servidor
+   pintar(); new MutationObserver(pintar).observe(s, { childList: true, characterData: true, subtree: true });
+ }
+ 
+-const revisar = () => { try { const c = document.querySelector("#composer"); if (c) montar(c); avisos(); estado(); } catch (e) { console.warn("maxbry-ui", e); } };
++const revisar = () => { try { const c = document.querySelector("#composer"); if (c) montar(c); avisos(); estado(); const e = document.querySelector(".riu-estado"); if (e && !e.dataset.mx) { e.dataset.mx = "1"; e.style.cursor = "pointer"; e.onclick = () => { const p = document.querySelector("#btn-power"); if (p) p.click(); }; } } catch (e) { console.warn("maxbry-ui", e); } };
+ new MutationObserver(revisar).observe(document.body, { childList: true, subtree: true });
+ revisar();
+diff --git a/plugins/chat-router/frontend/test/power.test.js b/plugins/chat-router/frontend/test/power.test.js
+new file mode 100644
+index 0000000000..ff3cdace10
+--- /dev/null
++++ b/plugins/chat-router/frontend/test/power.test.js
+@@ -0,0 +1,43 @@
++// node --test plugins/chat-router/frontend/test/power.test.js — la función con Hugging Face simulado (sin red, sin token real).
++const test = require("node:test"), assert = require("node:assert");
++const handler = require("../api/power.js");
++const CLAVE = "clave-prueba", TOKEN = "hf_token_secreto_de_prueba";
++process.env.RIU_ROUTER_API_KEY = CLAVE; process.env.HF_POWER_TOKEN = TOKEN; process.env.HF_SPACE_ID = "dueno/space";
++const llamar = async (req, hf) => {
++  const vistas = []; globalThis.fetch = async (url, opt) => { vistas.push([url, opt.method, opt.headers.Authorization]); return hf; };
++  let codigo, cuerpo; const res = { setHeader() {}, status(c) { codigo = c; return this; }, json(b) { cuerpo = b; return this; } };
++  await handler({ headers: { "x-api-key": CLAVE, ...(req.headers || {}) }, method: "GET", ...req }, res);
++  return { codigo, cuerpo, vistas };
++};
++const hf = (estado, objeto) => ({ ok: estado < 400, status: estado, text: async () => JSON.stringify(objeto) });
++
++test("sin clave o con clave mala: 401 y no se llama a Hugging Face", async () => {
++  for (const headers of [{ "x-api-key": undefined }, { "x-api-key": "otra" }]) {
++    const r = await llamar({ headers }, hf(200, {})); assert.equal(r.codigo, 401); assert.equal(r.vistas.length, 0);
++  }
++});
++test("estado = GET /runtime", async () => {
++  const r = await llamar({}, hf(200, { stage: "PAUSED", hardware: { current: null, requested: "cpu-basic" } }));
++  assert.deepEqual([r.codigo, r.cuerpo.stage, r.cuerpo.hardware], [200, "PAUSED", "cpu-basic"]);
++  assert.deepEqual(r.vistas[0], ["https://huggingface.co/api/spaces/dueno/space/runtime", "GET", "Bearer " + TOKEN]);
++});
++test("encender y reiniciar = POST /restart; apagar = POST /pause", async () => {
++  for (const [accion, ruta] of [["encender", "/restart"], ["reiniciar", "/restart"], ["apagar", "/pause"]]) {
++    const r = await llamar({ method: "POST", body: { accion } }, hf(200, { stage: "BUILDING" }));
++    assert.deepEqual([r.codigo, r.vistas[0][0], r.vistas[0][1]], [200, "https://huggingface.co/api/spaces/dueno/space" + ruta, "POST"]);
++  }
++});
++test("accion invalida: 400 sin llamar a Hugging Face", async () => {
++  const r = await llamar({ method: "POST", body: { accion: "borrar" } }, hf(200, {})); assert.equal(r.codigo, 400); assert.equal(r.vistas.length, 0);
++});
++test("402 (faltan creditos) se devuelve claro y el token nunca aparece", async () => {
++  const r = await llamar({ method: "POST", body: { accion: "encender" } }, hf(402, { error: "Payment required: add credits" }));
++  assert.deepEqual([r.codigo, r.cuerpo.detail], [402, "Payment required: add credits"]);
++  for (const caso of [r, await llamar({}, hf(200, { stage: "RUNNING" })), await llamar({ method: "POST", body: { accion: "apagar" } }, hf(500, { error: "x" }))])
++    assert.ok(!JSON.stringify(caso.cuerpo).includes(TOKEN));
++});
++test("Hugging Face caido: 502 claro", async () => {
++  globalThis.fetch = async () => { throw new Error("red"); };
++  let c, b; await handler({ headers: { "x-api-key": CLAVE }, method: "GET" }, { setHeader() {}, status(x) { c = x; return this; }, json(x) { b = x; return this; } });
++  assert.equal(c, 502); assert.ok(!JSON.stringify(b).includes(TOKEN));
++});
+diff --git a/plugins/chat-router/frontend/vercel.json b/plugins/chat-router/frontend/vercel.json
+new file mode 100644
+index 0000000000..08cab3360e
+--- /dev/null
++++ b/plugins/chat-router/frontend/vercel.json
+@@ -0,0 +1,11 @@
++{
++  "buildCommand": "sh build.sh",
++  "outputDirectory": ".",
++  "rewrites": [
++    { "source": "/", "destination": "/shell.html" },
++    { "source": "/chat/ui/:path*", "destination": "/:path*" },
++    { "source": "/plugins/:path*", "destination": "https://comand-center-1-riu-router.hf.space/plugins/:path*" },
++    { "source": "/vault/:path*", "destination": "https://comand-center-1-riu-router.hf.space/vault/:path*" },
++    { "source": "/health", "destination": "https://comand-center-1-riu-router.hf.space/health" }
++  ]
++}

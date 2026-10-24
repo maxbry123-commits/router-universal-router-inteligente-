@@ -1,0 +1,130 @@
+7548c2cc87 chat: agentes conectables (1 a 50, cada uno con su modelo) y dos botones separados IA / Agentes
+
+diff --git a/plugins/chat-router/frontend/chat-maxbry.css b/plugins/chat-router/frontend/chat-maxbry.css
+index 276bde5694..fa8579451d 100644
+--- a/plugins/chat-router/frontend/chat-maxbry.css
++++ b/plugins/chat-router/frontend/chat-maxbry.css
+@@ -16,10 +16,10 @@ html body #composer .mx-chips{display:flex;flex-wrap:wrap;align-items:center;gap
+ html body #composer .mx-chips #mode-selector-mount{display:contents}
+ html body #composer .mx-chips .ms-hint:empty{display:none}
+ html body #composer .mx-chips .ms-hint{flex:1 0 100%;order:9}
+-html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools{width:auto!important;max-width:100%!important;height:38px!important;min-height:38px!important;aspect-ratio:auto!important;padding:0 11px!important;display:inline-flex;align-items:center;gap:6px;border-radius:999px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--text)!important;font:600 13px/1 system-ui,sans-serif!important;white-space:nowrap;flex:0 0 auto!important}
+-html body #composer .mx-chips .ms-btn[data-locked=true],html body #composer .mx-chips .mx-chip[aria-pressed=true],html body #composer .mx-chips #btn-tools[aria-pressed=true]{background:var(--status-soft-blue)!important;border-color:var(--status-blue)!important;color:var(--title)!important}
+-html body #composer .mx-chips #btn-tools::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--quiet-2);flex:none}
+-html body #composer .mx-chips #btn-tools[aria-pressed=true]::before{background:var(--status-blue);box-shadow:0 0 8px var(--status-blue)}
++html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools,html body #composer .mx-chips #btn-agentes{width:auto!important;max-width:100%!important;height:38px!important;min-height:38px!important;aspect-ratio:auto!important;padding:0 11px!important;display:inline-flex;align-items:center;gap:6px;border-radius:999px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--text)!important;font:600 13px/1 system-ui,sans-serif!important;white-space:nowrap;flex:0 0 auto!important}
++html body #composer .mx-chips .ms-btn[data-locked=true],html body #composer .mx-chips .mx-chip[aria-pressed=true],html body #composer .mx-chips #btn-tools[aria-pressed=true],html body #composer .mx-chips #btn-agentes[aria-pressed=true]{background:var(--status-soft-blue)!important;border-color:var(--status-blue)!important;color:var(--title)!important}
++html body #composer .mx-chips #btn-tools::before,html body #composer .mx-chips #btn-agentes::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--quiet-2);flex:none}
++html body #composer .mx-chips #btn-tools[aria-pressed=true]::before,html body #composer .mx-chips #btn-agentes[aria-pressed=true]::before{background:var(--status-blue);box-shadow:0 0 8px var(--status-blue)}
+ html body #composer .mx-chips .mx-chip .mx-ico{width:16px;height:16px}
+ html body #composer .composer-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin:0;padding:0}
+ html body #composer .composer-bar>.secondary{flex:0 0 auto!important;width:var(--mx-tap)!important;max-width:none!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;aspect-ratio:1/1!important;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--title)}
+@@ -30,7 +30,7 @@ html body #composer .composer-bar .anclados{order:-1;flex:1 0 100%;display:block
+ html body #composer .composer-bar .anclados:empty{display:none}
+ html body #composer .composer-bar .action{flex:0 0 auto!important;margin-left:auto!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;min-width:112px!important;padding:0 20px!important;border-radius:999px!important;font-size:15px;font-weight:700;gap:8px}
+ html body #composer .composer-bar .p3d{flex:0 0 auto}
+-@media(max-width:380px){html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools{padding:0 9px!important;font-size:12px!important}html body #composer .composer-bar .action{min-width:var(--mx-tap)!important;width:var(--mx-tap)!important;padding:0!important}html body #composer .composer-bar .action::after{display:none}}
++@media(max-width:380px){html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools,html body #composer .mx-chips #btn-agentes{padding:0 9px!important;font-size:12px!important}html body #composer .composer-bar .action{min-width:var(--mx-tap)!important;width:var(--mx-tap)!important;padding:0!important}html body #composer .composer-bar .action::after{display:none}}
+ 
+ /* ---------- bandeja «Agregar al chat» ---------- */
+ #mx-hoja .mx-bandeja{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:4px 0 8px}
+@@ -79,7 +79,7 @@ html body .cv-form input,html body .cv-form select,html body .cv-form textarea{m
+ html body .cv-form textarea{padding:10px 12px}
+ html body .cv-est{padding:2px 4px}
+ html body .cv-msg{border-radius:12px}
+-@media(max-width:560px){html body .cv-form input,html body .cv-form select,html body .cv-form textarea{flex:1 1 100%}html body .cv-form .action{flex:1 1 100%;min-height:44px}}
++@media(max-width:560px){html body .cv-form input,html body .cv-form select,html body .cv-form textarea,html body .tv-form input,html body .tv-form select{flex:1 1 100%}html body .tv-form .action{flex:1 1 100%;min-height:44px}html body .cv-form .action{flex:1 1 100%;min-height:44px}}
+ .tag-status{display:inline-flex;gap:6px;align-items:center;font-size:11px;font-weight:750;padding:6px 9px;border-radius:8px}
+ .tag-status.progress{color:var(--status-green);background:var(--status-soft-green)}.tag-status.enabled{color:var(--status-blue);background:var(--status-soft-blue)}.tag-status.warning{color:var(--status-red);background:var(--status-soft-red)}.tag-status.pending{color:var(--quiet);background:var(--module-selected)}
+ 
+diff --git a/plugins/chat-router/frontend/maxbry-ui.js b/plugins/chat-router/frontend/maxbry-ui.js
+index e95df75a71..4a94ed6e3d 100644
+--- a/plugins/chat-router/frontend/maxbry-ui.js
++++ b/plugins/chat-router/frontend/maxbry-ui.js
+@@ -11,7 +11,7 @@ const SPRITE = '<svg xmlns="http://www.w3.org/2000/svg" id="mx-sprite" style="po
+   ["expand", '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>'], ["x", '<path d="M5 5 19 19M19 5 5 19"/>'], ["power", '<path d="M12 2v10M6 5a9 9 0 1 0 12 0"/>'], ["settings", '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>'],
+ ].map(([id, d]) => '<symbol id="i-' + id + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + "</symbol>").join("") + "</svg>";
+ const TEXTO = { "btn-archivos": "Archivos", "btn-ancla": "Anclar", "btn-sandbox": "Sandbox", "btn-copiar-input": "Copiar", "btn-conexiones": "Conexiones", "btn-room": "ROOM", "btn-pendientes": "Pendientes", "btn-power": "Servidor" };
+-const FIJOS = new Set(["btn-adjunto", "btn-microfono", "btn-detener", "btn-tools", "mx-mas", "mx-grande"]);  // se quedan en la fila principal
++const FIJOS = new Set(["btn-adjunto", "btn-microfono", "btn-detener", "btn-tools", "btn-agentes", "mx-mas", "mx-grande"]);  // se quedan en la fila principal
+ const ICONOS = { "btn-conexiones": "shield", "btn-room": "message", "btn-pendientes": "check", "btn-power": "power" };  // botones propios: iconos de línea en vez de emojis
+ const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
+ 
+@@ -52,7 +52,7 @@ function montar(comp) {
+   const colocar = () => {  // mueve cada botón nuevo (aparecen por módulos que cargan tarde) a su sitio, sin clonar
+     const modos = document.querySelector("#mode-selector-mount"); if (modos && modos.parentElement !== chips) chips.append(modos);
+     if (pensar.parentElement !== chips) chips.append(pensar);
+-    const ia = document.querySelector("#btn-tools"); if (ia && ia.parentElement !== chips) chips.append(ia);
++    ["#btn-tools", "#btn-agentes"].forEach((id) => { const b = document.querySelector(id); if (b && b.parentElement !== chips) chips.append(b); });
+     bar.querySelectorAll(":scope > button.secondary").forEach((b) => {
+       if (FIJOS.has(b.id) || b.classList.contains("sh-cerrar")) return;
+       b.dataset.mx = TEXTO[b.id] || (b.title || b.getAttribute("aria-label") || "").split(/[·:(]/)[0].trim().slice(0, 16);
+diff --git a/plugins/chat-router/frontend/tools-ventana.js b/plugins/chat-router/frontend/tools-ventana.js
+index a3312739c4..1c27ae79c1 100644
+--- a/plugins/chat-router/frontend/tools-ventana.js
++++ b/plugins/chat-router/frontend/tools-ventana.js
+@@ -91,43 +91,46 @@ async function pintarVentana(caja) {
+   } catch (x) { tl.append(el("div", "muted", "GAP tools_lock: " + x.message)); }
+   if (e.sinStaff) { caja.replaceChildren(el("div", "tv-sec", "Herramientas del chat — un botón por herramienta"), el("div", "muted", "Apagar una herramienta impide que el modelo la vea y la ejecute (lo aplica el servidor)."), tl); return; }
+   caja.replaceChildren(
+-    el("div", "tv-sec", "Agentes del staff (" + e.agentes.length + "/" + (e.max || 20) + ")"),
+-    el("div", "muted", "Elige en el selector qué modelo usa cada agente. La LLM del chat lo hace con agente_enlazar y lo usa con groq_agente."),
++    el("div", "tv-sec", "Agentes conectados (" + e.agentes.length + "/" + (e.max || 20) + ")"),
++    el("div", "muted", "Cada agente es una sesión de chat nueva con su modelo y sus instrucciones. Con el botón Agentes en ON, el modelo del chat puede llamarlos."),
+     lista, form,
+     el("div", "tv-sec", "Recursos LLM enlazables"), recs,
+-    el("div", "tv-sec", "Ficha NVIDIA del chat"), el("div", "muted", fichas || "—"),
++    ...(fichas ? [el("div", "tv-sec", "Fichas del chat"), el("div", "muted", fichas)] : []),
+     el("div", "tv-sec", "Tools de la LLM del chat — un boton por tool"), tl);
+ }
+ 
+ const avisar = (t) => { const n = document.querySelector("#notice"); if (n) n.textContent = t; else console.warn(t); };
+-function aplicarIA(on) {  // única vía para reflejar IA/agentes: botón 🧰, botón de bloqueo y LLM tool leen lo mismo
+-  const f = window.RIU_CHAT_TOOL_FLAGS; if (f) { f.tools = f.agente_tool = f.llm_tool = !!on; }
+-  const b = document.querySelector("#btn-tools"); if (b) { b.textContent = "IA " + (on ? "ON" : "OFF"); b.setAttribute("aria-pressed", String(!!on)); }
+-  const l = document.querySelector("#btn-llm-tool"); if (l) { l.textContent = "🧠 LLM tool " + (on ? "ON" : "OFF"); l.classList.toggle("sel-on", !!on); l.setAttribute("aria-pressed", String(!!on)); }
+-  window.dispatchEvent(new CustomEvent("riu:ia", { detail: { on: !!on } }));
++function aplicarFlags(r) {  // única vía para reflejar IA y Agentes (dos botones, dos permisos del servidor): chips, botón de bloqueo y LLM tool leen lo mismo
++  const ia = !r.ia_locked, ag = !r.agentes_locked, f = window.RIU_CHAT_TOOL_FLAGS;
++  if (f) { f.tools = ia || ag; f.llm_tool = ia; f.agente_tool = ag; }
++  [["#btn-tools", "IA", ia], ["#btn-agentes", "Agentes", ag]].forEach(([id, n, on]) => { const b = document.querySelector(id); if (b) { b.textContent = n + (on ? " ON" : " OFF"); b.setAttribute("aria-pressed", String(on)); } });
++  const l = document.querySelector("#btn-llm-tool"); if (l) { l.textContent = "🧠 LLM tool " + (ia ? "ON" : "OFF"); l.classList.toggle("sel-on", ia); l.setAttribute("aria-pressed", String(ia)); }
++  window.dispatchEvent(new CustomEvent("riu:ia", { detail: { on: ia || ag, ia, agentes: ag } }));
+ }
+-window.RIU_IA = aplicarIA;
++window.RIU_IA = (on) => aplicarFlags({ ia_locked: !on, agentes_locked: !on });  // botón 🔒 de Controles: los dos a la vez
+ function instalarChat() {
+   const bar = document.querySelector("#composer .composer-bar");
+   if (!bar || document.querySelector("#btn-tools")) return;
+   if (!document.querySelector("#tv-css")) { const st = el("style"); st.id = "tv-css"; st.textContent = CSS; document.head.append(st); }
+-  const b = el("button", "secondary", "IA OFF"); b.type = "button"; b.id = "btn-tools"; b.title = "Permitir otras IA y agentes; GitHub y HF siempre disponibles"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Permitir otras IA y agentes");
++  const b = el("button", "secondary", "IA OFF"); b.type = "button"; b.id = "btn-tools"; b.title = "Permitir que el modelo consulte a otros modelos de IA (el servidor lo recuerda)"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Permitir otras IA");
+   const s = el("div", "sheet"); s.id = "ventana-tools"; s.hidden = true;
+   const c = el("div", "va-caja"), h = el("div", "row va-head"), x = el("button", "secondary", "✕"), cuerpo = el("div", "list"); cuerpo.id = "tv-cuerpo";
+   x.type = "button"; x.onclick = () => { s.hidden = true; };
+   s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
+   h.append(el("strong", "", "Herramientas del chat"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
+   b.title = "Permitir que el modelo llame a otras IA y agentes (el servidor lo recuerda). GitHub, HF y demás herramientas tienen su ON/OFF con clic derecho o mantener pulsado";
+-  b.onclick = async () => {  // el servidor decide y recuerda; el navegador solo refleja su respuesta
+-    const flags = window.RIU_CHAT_TOOL_FLAGS; if (!flags || b.disabled) return; b.disabled = true;
+-    try { const r = await accion("agent_access_lock", { locked: !!flags.tools }); aplicarIA(!r.locked); if (r.persistente === false) avisar("IA/agentes: el cambio no se guardará tras reiniciar el servidor"); }
+-    catch (x) { avisar("IA/agentes: no se pudo cambiar (" + x.message + ")"); }
+-    finally { b.disabled = false; }
+-  };
++  const chip = (btn, quien, nombre) => { btn.onclick = async () => {  // el servidor decide y recuerda; el navegador solo refleja su respuesta
++    const f = window.RIU_CHAT_TOOL_FLAGS; if (!f || btn.disabled) return; btn.disabled = true;
++    try { const r = await accion("agent_access_lock", { locked: !!(quien === "ia" ? f.llm_tool : f.agente_tool), quien }); aplicarFlags(r); if (r.persistente === false) avisar(nombre + ": el cambio no se guardará tras reiniciar el servidor"); }
++    catch (x) { avisar(nombre + ": no se pudo cambiar (" + x.message + ")"); }
++    finally { btn.disabled = false; } }; };
++  chip(b, "ia", "IA");
++  const g = el("button", "secondary", "Agentes OFF"); g.type = "button"; g.id = "btn-agentes"; g.setAttribute("aria-pressed", "false"); g.setAttribute("aria-label", "Permitir que el modelo use agentes");
++  g.title = "Permitir que el modelo delegue en los agentes conectados (cada uno con su modelo); el servidor lo recuerda"; chip(g, "agentes", "Agentes");
+   let pulsado = null; b.addEventListener("pointerdown", () => { pulsado = setTimeout(() => { pulsado = null; s.hidden = false; pintarVentana(cuerpo); }, 600); }); ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(pulsado); }));  // móvil: mantener pulsado abre la ventana
+-  accion("agent_access_lock", {}).then((r) => aplicarIA(!r.locked)).catch(() => {});  // estado real del servidor al abrir el chat
++  accion("agent_access_lock", {}).then(aplicarFlags).catch(() => {});  // estado real del servidor al abrir el chat
+   b.oncontextmenu = (ev) => { ev.preventDefault(); s.hidden = false; pintarVentana(cuerpo); };
+-  const env = bar.querySelector(".action"); bar.insertBefore(b, env || null);
++  const env = bar.querySelector(".action"); bar.insertBefore(g, env || null); bar.insertBefore(b, g);
+ }
+ 
+ async function instalarConfig() {

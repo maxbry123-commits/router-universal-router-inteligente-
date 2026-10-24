@@ -1,0 +1,840 @@
+diff --git a/plugins/chat-router/frontend/anclaje-destinos.js b/plugins/chat-router/frontend/anclaje-destinos.js
+index cec1d86bfe..cb3e8460be 100644
+--- a/plugins/chat-router/frontend/anclaje-destinos.js
++++ b/plugins/chat-router/frontend/anclaje-destinos.js
+@@ -1,6 +1,6 @@
+ // anclaje-destinos.js — en la ventana de Anclaje: "Anclar a" Chat / Constitución / Workflows / Agentes remotos / Proyecto / Sandbox.
+ // Es LA MISMA ventana para todos: al elegir el objetivo, todo lo de la ventana (enlaces, anclado ahora, instrucciones fijas, proyectos,
+-// handoffs, Mi handoff y archivos) se aplica a ese objetivo. Los archivos son compartidos. Sin elegir nada, es el chat de siempre.
++// handoffs, yaiwes.md y archivos) se aplica a ese objetivo. Los archivos son compartidos. Sin elegir nada, es el chat de siempre.
+ import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto, slugProy, proyId } from "./objetivos-ancla.js";
+ import { el, boton, cargarCss } from "./ventanas-comun.js";
+ export function montarDestinos({ root, q, tell }) {
+@@ -91,12 +91,12 @@ function chipAncla(q) {  // el chip «ancla» del chat (pastilla y botón ⚓ de
+   const pill = q("#ancla") || document.getElementById("ancla"); if (!pill) return;  // en móvil la pastilla se mueve fuera del panel (#mv-ctl)
+   pill.textContent = "ancla · 📜 " + (on ? "ON" : "OFF") + " ⌄"; pill.classList.toggle("on", on); pill.title = "Constitución " + (on ? "ON: viaja con cada mensaje" : "OFF: no se envía");
+ }
+-function unBotonMiHandoff(q, tell) {  // Mi handoff: un solo botón ON/OFF en lugar de «Encender/Guardar» + «Apagar» (los originales quedan ocultos y siguen funcionando)
++function unBotonMiHandoff(q, tell) {  // yaiwes.md: un solo botón ON/OFF en lugar de «Encender/Guardar» + «Apagar» (los originales quedan ocultos y siguen funcionando)
+   const g = q("#mh-guardar"), a = q("#mh-apagar"), est = q("#mh-estado"), enl = q("#ancla-enlace-on");
+   if (enl) enl.textContent = "Anclar";
+   if (!g || !a || !est || g.dataset.uno) return; g.dataset.uno = "1"; [g, a, est].forEach((x) => { x.style.display = "none"; });
+   const t = document.createElement("button"); t.type = "button"; t.id = "mh-toggle"; g.before(t);
+-  const pinta = () => { const on = est.textContent.trim() === "encendido"; t.textContent = "Mi handoff: " + (on ? "ON" : "OFF"); t.className = "toggle" + (on ? " on" : ""); t.setAttribute("aria-pressed", String(on)); };
++  const pinta = () => { const on = est.textContent.trim() === "encendido"; t.textContent = "yaiwes.md: " + (on ? "ON" : "OFF"); t.className = "toggle" + (on ? " on" : ""); t.setAttribute("aria-pressed", String(on)); };
+   t.addEventListener("click", () => { if (est.textContent.trim() === "encendido") a.click(); else { const m = q("#mi-handoff"); if (!m || !m.value.trim()) { tell("Escribe tu handoff primero"); return; } g.click(); } });
+   new MutationObserver(pinta).observe(est, { childList: true, characterData: true, subtree: true }); pinta();
+ }
+diff --git a/plugins/chat-router/frontend/api/power.js b/plugins/chat-router/frontend/api/power.js
+new file mode 100644
+index 0000000000..984ba957bf
+--- /dev/null
++++ b/plugins/chat-router/frontend/api/power.js
+@@ -0,0 +1,26 @@
++// api/power.js — Encender / Apagar / Reiniciar el Space del Router desde Vercel (el Router dormido no puede recibir la orden).
++// GET -> {stage, hardware}; POST {accion: encender|apagar|reiniciar}. Acceso: X-API-Key = RIU_ROUTER_API_KEY. El token nunca sale de aquí.
++const { timingSafeEqual } = require("node:crypto");
++const ACCIONES = { encender: "/restart", reiniciar: "/restart", apagar: "/pause" };  // restart es la única forma de despertar un Space en pausa
++
++const igual = (a, b) => typeof a === "string" && typeof b === "string" && a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
++
++module.exports = async (req, res) => {
++  const { RIU_ROUTER_API_KEY: clave, HF_POWER_TOKEN, HF_TOKEN_1, HF_SPACE_ID } = process.env;
++  const token = HF_POWER_TOKEN || HF_TOKEN_1, base = "https://huggingface.co/api/spaces/" + (HF_SPACE_ID || "COMAND-CENTER-1/riu-router");
++  res.setHeader("Cache-Control", "no-store");
++  if (!clave || !igual(req.headers["x-api-key"], clave)) return res.status(401).json({ detail: "clave de acceso invalida" });
++  if (!token) return res.status(503).json({ detail: "falta HF_TOKEN_1 (o HF_POWER_TOKEN) en Vercel" });
++  const accion = req.method === "POST" ? (req.body || {}).accion : "estado";
++  if (req.method !== "GET" && !ACCIONES[accion]) return res.status(400).json({ detail: "accion debe ser encender, apagar o reiniciar" });
++  try {
++    const r = await fetch(base + (accion === "estado" ? "/runtime" : ACCIONES[accion]), { method: accion === "estado" ? "GET" : "POST", headers: { Authorization: "Bearer " + token } });
++    const texto = await r.text();
++    let d = {}; try { d = JSON.parse(texto); } catch (e) { d = { detail: texto.slice(0, 300) }; }
++    if (!r.ok) return res.status(r.status).json({ detail: String(d.error || d.detail || "Hugging Face HTTP " + r.status).slice(0, 300) });  // 402 = faltan creditos: mensaje tal cual
++    const hw = d.hardware || {};
++    return res.status(200).json({ accion, stage: d.stage || null, hardware: hw.current || hw.requested || null });
++  } catch (e) {
++    return res.status(502).json({ detail: "Hugging Face no responde" });
++  }
++};
+diff --git a/plugins/chat-router/frontend/chat-maxbry.css b/plugins/chat-router/frontend/chat-maxbry.css
+new file mode 100644
+index 0000000000..b6365cd0a8
+--- /dev/null
++++ b/plugins/chat-router/frontend/chat-maxbry.css
+@@ -0,0 +1,106 @@
++/* chat-maxbry.css — Maxbry UI (skill fromted-yaiwes-frontend-factory). Va el ÚLTIMO: ordena composer, salida, avisos y ventanas con los tokens del tema activo.
++   Geometría del skill: tarjeta 12px, botón 10px, sheet 28px; verde = en curso, azul = encendido, rojo = alerta, gris = pendiente. */
++:root{--mx-tap:44px;--status-soft-green:rgba(18,216,106,.13);--status-soft-blue:rgba(8,72,247,.2);--status-soft-red:rgba(255,71,95,.13)}
++.mx-ico{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
++
++/* ---------- composer: editor amplio + fila principal ---------- */
++html body #composer{position:sticky;bottom:8px;width:100%;max-width:920px;margin-inline:auto;padding:12px 14px 12px;background:var(--surface-alt);border:1px solid var(--border-strong);border-radius:20px;box-shadow:0 8px 28px rgba(0,0,0,.28)}
++html body #composer:focus-within{border-color:var(--status-blue)}
++html body #composer #message{display:block;width:100%;min-height:84px;max-height:38dvh;padding:8px 40px 8px 6px;font-size:16px;line-height:1.55;resize:none;border:0;background:transparent;overflow-y:auto;touch-action:pan-y}
++html body #composer #message::placeholder{color:var(--quiet-2)}
++html body #composer.mx-grande #message{min-height:55dvh;max-height:70dvh}
++@media(min-width:721px){html body #composer #message{min-height:140px;max-height:44dvh}html body #composer.mx-grande #message{min-height:60dvh}}
++html body #composer .mx-grande{position:absolute;top:8px;right:10px;width:34px;height:34px;min-height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:transparent;border:1px solid transparent;color:var(--quiet);z-index:2}
++html body #composer .mx-grande:hover,html body #composer .mx-grande[aria-pressed=true]{background:var(--panel);border-color:var(--border);color:var(--title)}
++html body #composer .mx-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:4px 0 10px;border-top:1px solid var(--border);margin-top:4px;padding-top:10px}
++html body #composer .mx-chips #mode-selector-mount{display:contents}
++html body #composer .mx-chips .ms-hint:empty{display:none}
++html body #composer .mx-chips .ms-hint{flex:1 0 100%;order:9}
++html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools,html body #composer .mx-chips #btn-agentes,html body #composer .mx-chips #btn-prompt{width:auto!important;max-width:100%!important;height:38px!important;min-height:38px!important;aspect-ratio:auto!important;padding:0 11px!important;display:inline-flex;align-items:center;gap:6px;border-radius:999px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--text)!important;font:600 13px/1 system-ui,sans-serif!important;white-space:nowrap;flex:0 0 auto!important}
++html body #composer .mx-chips .ms-btn[data-locked=true],html body #composer .mx-chips .mx-chip[aria-pressed=true],html body #composer .mx-chips #btn-tools[aria-pressed=true],html body #composer .mx-chips #btn-agentes[aria-pressed=true],html body #composer .mx-chips #btn-prompt[aria-pressed=true]{background:var(--status-soft-blue)!important;border-color:var(--status-blue)!important;color:var(--title)!important}
++html body #composer .mx-chips #btn-tools::before,html body #composer .mx-chips #btn-agentes::before,html body #composer .mx-chips #btn-prompt::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--quiet-2);flex:none}
++html body #composer .mx-chips #btn-tools[aria-pressed=true]::before,html body #composer .mx-chips #btn-agentes[aria-pressed=true],html body #composer .mx-chips #btn-prompt[aria-pressed=true]::before{background:var(--status-blue);box-shadow:0 0 8px var(--status-blue)}
++html body #composer .mx-chips .mx-chip .mx-ico{width:16px;height:16px}
++html body #composer .composer-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin:0;padding:0}
++html body #composer .composer-bar>.secondary{flex:0 0 auto!important;width:var(--mx-tap)!important;max-width:none!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;aspect-ratio:1/1!important;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--title)}
++html body #composer .composer-bar>.secondary[hidden],html body #composer #btn-detener[hidden]{display:none!important}
++html body #composer .composer-bar>.secondary svg{width:20px;height:20px}
++html body #composer .composer-bar>.secondary#mx-mas{background:var(--module-selected);border-color:var(--border-strong)}
++html body #composer .composer-bar .anclados{order:-1;flex:1 0 100%;display:block;max-height:2.9em;overflow:hidden;margin-bottom:6px;font-size:12px;line-height:1.45;color:var(--quiet)}
++html body #composer .composer-bar .anclados:empty{display:none}
++html body #composer .composer-bar .action{flex:0 0 auto!important;margin-left:auto!important;height:var(--mx-tap)!important;min-height:var(--mx-tap)!important;min-width:112px!important;padding:0 20px!important;border-radius:999px!important;font-size:15px;font-weight:700;gap:8px}
++html body #composer .composer-bar .p3d{flex:0 0 auto}
++@media(max-width:380px){html body #composer .mx-chips .ms-btn,html body #composer .mx-chips .mx-chip,html body #composer .mx-chips #btn-tools,html body #composer .mx-chips #btn-agentes,html body #composer .mx-chips #btn-prompt{padding:0 9px!important;font-size:12px!important}html body #composer .composer-bar .action{min-width:var(--mx-tap)!important;width:var(--mx-tap)!important;padding:0!important}html body #composer .composer-bar .action::after{display:none}}
++
++/* ---------- bandeja «Agregar al chat» ---------- */
++#mx-hoja .mx-bandeja{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:4px 0 8px}
++#mx-hoja .mx-bandeja>button{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:auto!important;max-width:none!important;height:auto!important;min-height:84px!important;aspect-ratio:auto!important;padding:12px 4px!important;border-radius:14px!important;background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--title)!important}
++#mx-hoja .mx-bandeja>button::after{content:attr(data-mx);font-size:12px;line-height:1.2;color:var(--quiet);text-align:center;overflow-wrap:anywhere}
++#mx-hoja .mx-bandeja>button svg{width:24px!important;height:24px!important}
++#mx-hoja .mx-bandeja>button:active{background:var(--module-selected)!important}
++#mx-hoja .mx-fila-ajustes{display:flex;align-items:center;gap:12px;width:100%;padding:14px;border-radius:12px;background:var(--panel);border:1px solid var(--border);color:var(--title);text-align:left}
++#mx-hoja .mx-fila-ajustes span{flex:1;display:grid;gap:2px}#mx-hoja .mx-fila-ajustes small{color:var(--quiet);font-size:12px}
++#mx-hoja .mx-der{transform:rotate(-90deg);color:var(--quiet)}
++
++/* ---------- salida: ancha, sin recortes ---------- */
++html body #histories .chat-history{padding:6px 2px 12px;gap:12px}
++html body .chat-history .message{width:100%;max-width:100%;min-width:0;padding:12px 14px;font-size:16px;line-height:1.6;overflow-wrap:anywhere;word-break:break-word}
++html body .chat-history .message.user{width:fit-content;max-width:92%;margin-left:auto}
++html body .chat-history .message.meta{font-size:12px;line-height:1.4;padding:6px 10px}
++html body .chat-history .message .copiar,html body .chat-history .message .editar{top:-11px;right:10px;padding:4px 7px;background:var(--surface-alt);border:1px solid var(--border);border-radius:8px;z-index:2}
++html body .chat-history .message .editar{right:44px}
++html body .chat-history .riu-code{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-width:100%;font-size:13px}
++html body .chat-history .message table{display:block;max-width:100%;overflow-x:auto}
++html body .chat-history .message img,html body .chat-history .message video{max-width:100%;height:auto}
++html body .chat-history .message .txt{white-space:pre-wrap}
++html body #histories .riu-bajar{opacity:.9}
++html body .chat-history .message .mx-continuar{margin-top:8px;min-height:38px;padding:0 16px;border-radius:999px;background:var(--status-blue);border:0;color:#fff;font-weight:700}
++@media(max-width:720px){html body section:has(> #histories){height:auto;min-height:0;flex:1 1 auto}html body #histories{min-height:46dvh}}
++
++/* ---------- avisos (toast), estado del Router ---------- */
++html body #notice:not(:empty){position:fixed;top:calc(54px + env(safe-area-inset-top,0px));bottom:auto;left:50%;transform:translateX(-50%);width:max-content;max-width:min(92vw,460px);z-index:120;padding:11px 16px;border-radius:10px;border:1px solid var(--border-strong);border-left:3px solid var(--status-blue);background:var(--panel);color:var(--title);font-size:13px;line-height:1.4;text-align:left;white-space:normal;box-shadow:0 10px 35px rgba(0,0,0,.35)}
++html body #notice.err:not(:empty){border-left-color:var(--status-red);color:var(--title)}
++#movil-status::before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:var(--quiet-2);vertical-align:middle}
++#movil-status[data-estado=ok]::before{background:var(--status-green)}#movil-status[data-estado=err]::before{background:var(--status-red)}
++
++/* ---------- selectores: una sola capa, sin bordes dobles ---------- */
++html body .selectores{margin-top:12px}
++html body .sel-fila{background:transparent;border:0;padding:0;gap:8px}
++html body .sel-fila .sel-pill{border-radius:12px;min-height:46px;height:auto;padding:8px 14px;background:var(--panel);border:1px solid var(--border);justify-content:space-between}
++html body .sel-fila.activa .sel-pill{border-color:var(--status-blue);background:var(--status-soft-blue)}
++html body #sel-power .sel-fila .sel-pill{height:46px;font-size:14px}
++
++/* ---------- ventanas propias (herramientas, conexiones, ROOM, pendientes): filas tipo setting-row del skill ---------- */
++html body .tv-fila,html body .cv-fila,html body .pp-n{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin:6px 0}
++html body .tv-sub{margin:14px 2px 4px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--quiet-2);opacity:1}
++html body .tv-sec,html body .cv-sec,html body .pp-sec{margin:16px 2px 6px;font-weight:650;color:var(--title)}
++html body .tv-tool .toggle,html body .cv-fila .toggle{min-width:92px;min-height:36px;padding:0 14px;font-size:13px}
++html body .cv-form input,html body .cv-form select,html body .cv-form textarea{min-height:42px;padding:0 12px;border-radius:10px;background:var(--surface-alt);border:1px solid var(--border)}
++html body .cv-form textarea{padding:10px 12px}
++html body .cv-est{padding:2px 4px}
++html body .cv-msg{border-radius:12px}
++@media(max-width:560px){html body .cv-form input,html body .cv-form select,html body .cv-form textarea,html body .tv-form input,html body .tv-form select{flex:1 1 100%}html body .tv-form .action{flex:1 1 100%;min-height:44px}html body .cv-form .action{flex:1 1 100%;min-height:44px}}
++.tag-status{display:inline-flex;gap:6px;align-items:center;font-size:11px;font-weight:750;padding:6px 9px;border-radius:8px}
++.tag-status.progress{color:var(--status-green);background:var(--status-soft-green)}.tag-status.enabled{color:var(--status-blue);background:var(--status-soft-blue)}.tag-status.warning{color:var(--status-red);background:var(--status-soft-red)}.tag-status.pending{color:var(--quiet);background:var(--module-selected)}
++
++@media(prefers-reduced-motion:reduce){html body #composer *{transition:none!important}}
++
++/* ---------- cabecera de escritorio y botón Enviar ---------- */
++@media(min-width:721px){html body .topbar .access{flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:10px;width:auto}html body .topbar .access .riu-campana{width:40px;height:40px;min-height:40px}html body .topbar .access .riu-estado{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;font-size:13px}}
++html body #composer .env-txt{display:none!important}
++
++/* ---------- filas de selector (modo, modelos, ficha) = .mode-option del skill ---------- */
++html body .sheet .list>.fila{min-height:56px;padding:12px 14px;margin:8px 0 0;background:var(--panel);border:1px solid var(--border);border-radius:12px}
++html body .sheet .list>.fila:hover{background:var(--panel);border-color:var(--border-strong)}
++html body .sheet .list>.fila .fila-nom{font-weight:650;font-size:14px;color:var(--title)}
++html body .sheet .list>.fila .fila-desc{font-size:12px;font-weight:400;color:var(--quiet)}
++html body .sheet .list>.fila:has(.fila-ck){border-color:var(--status-blue);background:var(--status-soft-blue)}
++html body .sheet .list>.fila .fila-ck{color:var(--status-blue);font-size:16px}
++
++/* ---------- medios generados (imagen, video, audio) ---------- */
++html body .chat-history .mx-medio{display:block;max-width:100%;height:auto;margin-top:10px;border-radius:12px;border:1px solid var(--border)}
++html body .chat-history audio.mx-medio{width:100%}
++html body .chat-history .mx-medio-enlace{display:inline-block;margin-top:6px;font-size:13px;color:var(--status-blue)}
++/* panel Selectores: el diagrama de ⓘ se desplaza en horizontal dentro de su fila */
++html body #sel-power .sel-diagrama{overflow-x:auto;max-width:100%}
++html body #sel-power .sel-diagrama *{white-space:nowrap}
+diff --git a/plugins/chat-router/frontend/chat-selectores.js b/plugins/chat-router/frontend/chat-selectores.js
+index 884da477d5..25518f2cef 100644
+--- a/plugins/chat-router/frontend/chat-selectores.js
++++ b/plugins/chat-router/frontend/chat-selectores.js
+@@ -81,7 +81,47 @@ const decorarFichas = (lista) => {  // Nvidia groq team: las MISMAS fichas reale
+     nom.append(tag);
+   }
+ };
++const FAST = /^(team-qwen|ask-consil-code-qwen-team|ask-consil-fromtend-qwen-team)$/;
++const filas = () => {  // panel Selectores del chat: ⓘ diagrama, ⚡ respuesta rápida, ON/OFF y «Modelo: …» en cada fila; solo uno encendido a la vez
++  const lista = document.getElementById("sel-power");
++  if (!lista || lista.dataset.riuFilas) return;
++  lista.dataset.riuFilas = "1";
++  const global = el("div", "sel-resp-global"), act = () => sessionStorage.getItem(CLAVE) || "";
++  lista.before(global);
++  const modelo = (s) => s.id === "nvidia-groq-team" ? "NVIDIA" : s.id === "team-qwen" || s.id === "team-5-mvp" ? ((window.RIU_SELECTOR_QWEN || {}).seleccion || {}).label || "Qwen 3.8 Max" : (CONSIL_MODELOS[s.id] || []).map((m) => m[0]).join(" · ") || s.nombre;
++  const fila = (s) => lista.querySelector('.sel-fila[data-selector="' + s.id + '"]');
++  const refrescar = () => {
++    SELECTORES.forEach((s) => {
++      const f = fila(s); if (!f) return;
++      const on = act() === s.id, b = f.querySelector(".sel-on");
++      f.classList.toggle("activa", on); b.classList.toggle("on", on); b.disabled = !!act() && !on; b.setAttribute("aria-pressed", String(on));
++      b.lastChild.textContent = on ? "ON" : "OFF"; f.querySelector(".sel-resp").textContent = "Modelo: " + modelo(s);
++    });
++    const a = SELECTORES.find((s) => s.id === act());
++    global.textContent = a ? "Responde: " + a.nombre + " · " + modelo(a) : "Ningún selector encendido: responde el modelo por defecto (NVIDIA)"; global.classList.toggle("on", !!a);
++    window.dispatchEvent(new CustomEvent("riu:selector-activo", { detail: { activo: act(), anterior: "", nombre: a ? a.nombre : "" } }));
++  };
++  SELECTORES.filter((s) => !s.mirror).forEach((s) => {
++    const f = fila(s); if (!f) return;
++    if (DIAGRAMAS[s.id]) {
++      const i = el("button", "sel-info"), d = el("div", "sel-diagrama"); i.type = "button"; i.setAttribute("aria-label", "Cómo funciona " + s.nombre); i.innerHTML = svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'); d.hidden = true;
++      pintarDiagrama(d, DIAGRAMAS[s.id].texto); i.onclick = () => { d.hidden = !d.hidden; i.classList.toggle("abierto", !d.hidden); }; f.append(i); f.append(d);
++    }
++    if (FAST.test(s.id)) {
++      const z = el("button", "sel-fast"); z.type = "button"; z.setAttribute("aria-label", "Respuesta rápida"); z.dataset.selector = s.id; z.innerHTML = svg('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>');
++      z.onclick = () => { if (window.__riuFastH) window.__riuFastH(); }; f.append(z);
++    }
++    const b = el("button", "sel-on"); b.type = "button"; b.setAttribute("aria-label", "ON/OFF " + s.nombre); b.innerHTML = POWER + "<span>OFF</span>";
++    b.onclick = () => { if (act() === s.id) sessionStorage.removeItem(CLAVE); else sessionStorage.setItem(CLAVE, s.id); refrescar(); };
++    f.append(b, el("p", "sel-resp"));
++  });
++  window.addEventListener("riu:fast-reply", (e) => lista.querySelectorAll(".sel-fast").forEach((z) => { z.classList.toggle("on", !!e.detail.on); z.setAttribute("aria-pressed", String(!!e.detail.on)); }));
++  window.RIU_SELECTORES = { get activo() { return act(); }, selectores: SELECTORES, consil: CONSIL_MODELOS, mirror: MIRROR_FICHAS, refrescar,
++    encender(id) { sessionStorage.setItem(CLAVE, id); refrescar(); }, apagar() { sessionStorage.removeItem(CLAVE); refrescar(); } };
++  refrescar();
++};
+ const init = () => {
++  if (!document.getElementById("selectores-panel")) return filas();
+   const panel = document.getElementById("selectores-panel");
+   if (!panel || panel.dataset.riuSelectoresInit) return;
+   panel.dataset.riuSelectoresInit = "1";
+diff --git a/plugins/chat-router/frontend/chat-ventanas.js b/plugins/chat-router/frontend/chat-ventanas.js
+index 935ba60087..e847939461 100644
+--- a/plugins/chat-router/frontend/chat-ventanas.js
++++ b/plugins/chat-router/frontend/chat-ventanas.js
+@@ -1,7 +1,7 @@
+ // chat-ventanas.js — comportamiento comun de las ventanas (hojas) del chat. Archivo propio.
+ // 1) tocar fuera de la ventana la cierra  2) Escape la cierra  3) deslizar hacia abajo desde la cabecera la cierra (celular)
+ // 4) ANCLAJE EN UNA SOLA VENTANA: la pastilla "ancla" y el boton ⚓ del input abren la MISMA ventana, que junta todo
+-//    (enlaces, anclado ahora, instrucciones fijas, proyectos, handoffs, Mi handoff y archivos) con un titulo por seccion.
++//    (enlaces, anclado ahora, instrucciones fijas, proyectos, handoffs, yaiwes.md y archivos) con un titulo por seccion.
+ //    No se borra ni se oculta nada: solo se mueve la ventana de handoffs dentro de la de anclaje.
+ export function conectarVentanas({ root, q }) {
+   const hojas = () => [...root.querySelectorAll(".sheet")];
+@@ -45,7 +45,7 @@ function unirAnclaje(q) {
+     if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+   }, 250));
+   const archivos = fila("#anc-subir");
+-  const tHand = titulo("Handoffs del proyecto y Mi handoff");
++  const tHand = titulo("Handoffs del proyecto y yaiwes.md");
+   const bloque = [...sh.children].filter((n) => !n.classList.contains("va-head"));
+   if (archivos) { va.insertBefore(tHand, archivos); bloque.forEach((n) => va.insertBefore(n, archivos)); antesDe(archivos, "Archivos"); }
+   else { va.append(tHand, ...bloque); }
+@@ -55,7 +55,7 @@ function unirAnclaje(q) {
+   pill.addEventListener("click", () => { if (ocupado) return; ocupado = true; btn.click(); ocupado = false; mostrar(); });  // carga tambien archivos
+   btn.addEventListener("click", () => {
+     if (ocupado || q("#ventana-ancla").hidden) return;
+-    ocupado = true; pill.click(); ocupado = false; mostrar();  // carga tambien handoffs y Mi handoff
++    ocupado = true; pill.click(); ocupado = false; mostrar();  // carga tambien handoffs y yaiwes.md
+   });
+   va.querySelectorAll("button.mini").forEach((b) => {
+     if (b.textContent.trim() === "Handoffs…") b.addEventListener("click", () => setTimeout(() => tHand.scrollIntoView({ behavior: "smooth", block: "start" }), 60));
+diff --git a/plugins/chat-router/frontend/controles-ventana.js b/plugins/chat-router/frontend/controles-ventana.js
+new file mode 100644
+index 0000000000..33d760cd1e
+--- /dev/null
++++ b/plugins/chat-router/frontend/controles-ventana.js
+@@ -0,0 +1,138 @@
++// controles-ventana.js — 🔑 Conexiones (servicio + varias credenciales + ON/OFF) y 🗣 ROOM CONFERENCIAS (salas compartidas).
++// El navegador solo muestra y pide: permisos, secretos y salas viven en el servidor (mvp/control.py). El secreto viaja una vez y nunca vuelve.
++import { accion } from "./api.js";
++const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
++const btn = (txt, cls, fn) => { const b = el("button", cls || "secondary", txt); b.type = "button"; if (fn) b.onclick = fn; return b; };
++const campo = (ph, tipo) => { const i = el("input"); i.placeholder = ph; i.type = tipo || "text"; i.autocomplete = "off"; i.setAttribute("aria-label", ph); return i; };
++const CSS = `.cv-caja{overflow:auto;max-height:88vh}.cv-fila{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 8px;border-radius:8px;background:rgba(127,127,127,.08);margin:3px 0}
++.cv-fila .cv-n{flex:1 1 140px;min-width:0;overflow:hidden;text-overflow:ellipsis}.cv-fila small{opacity:.65;display:block}
++.cv-form{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.cv-form input,.cv-form select,.cv-form textarea{flex:1 1 140px;min-width:0;box-sizing:border-box}
++.cv-est{font-size:12px;opacity:.85;white-space:pre-wrap;min-height:1em}.cv-msg{padding:4px 8px;margin:2px 0;border-radius:8px;background:rgba(127,127,127,.08);white-space:pre-wrap;overflow-wrap:anywhere}
++.cv-msg small{opacity:.65}.cv-sec{margin:10px 0 4px;font-weight:600}`;
++
++function ventana(id, icono, titulo, alAbrir) {
++  const bar = document.querySelector("#composer .composer-bar");
++  if (!bar || document.querySelector("#btn-" + id)) return;
++  if (!document.querySelector("#cv-css")) { const st = el("style"); st.id = "cv-css"; st.textContent = CSS; document.head.append(st); }
++  const b = btn(icono, "secondary"); b.id = "btn-" + id; b.title = titulo; b.setAttribute("aria-label", titulo);
++  const s = el("div", "sheet"); s.id = "ventana-" + id; s.hidden = true;
++  const c = el("div", "va-caja cv-caja"), h = el("div", "row va-head"), x = btn("✕", "secondary", () => { s.hidden = true; }), cuerpo = el("div", "list");
++  s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
++  h.append(el("strong", "", titulo), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
++  b.onclick = () => { s.hidden = false; alAbrir(cuerpo, s); };
++  bar.insertBefore(b, bar.querySelector(".action") || null);
++}
++const falla = (est, x) => { est.textContent = "⚠️ " + x.message; };
++
++// ---------- 🔑 Conexiones ----------
++let servicioActivo = "github";
++async function pintarConexiones(cuerpo) {
++  const est = el("div", "cv-est");
++  const cargar = async (cuerpoReq) => {
++    try {
++      const r = await accion("conexiones", cuerpoReq || {});
++      if (r.aviso) est.textContent = "⚠️ " + r.aviso;
++      else est.textContent = r.persistente === false ? "⚠️ Los cambios no se guardarán tras reiniciar (almacenamiento HF no disponible)" : "";
++      dibujar(r.servicios || []);
++    } catch (x) { falla(est, x); }
++  };
++  const dibujar = (servicios) => {
++    const sel = el("select"); sel.setAttribute("aria-label", "Servicio");
++    servicios.forEach((s) => sel.append(new Option(s.nombre, s.servicio)));
++    if (!servicios.some((s) => s.servicio === servicioActivo)) servicioActivo = (servicios[0] || {}).servicio;
++    sel.value = servicioActivo; sel.onchange = () => { servicioActivo = sel.value; dibujar(servicios); };
++    const actual = servicios.find((s) => s.servicio === servicioActivo) || { conexiones: [] };
++    const lista = el("div", "list");
++    actual.conexiones.forEach((c) => {
++      const f = el("div", "cv-fila"); f.dataset.conexion = c.id;
++      const n = el("div", "cv-n"); n.append(el("span", "", c.etiqueta), el("small", "", c.id === "defecto" ? "credencial principal del banco" : "id " + c.id + (c.herramientas && c.herramientas.length ? " · " + c.herramientas.length + " herramientas (se encienden en 🧰)" : "")));
++      const t = btn(c.on ? "ON" : "OFF", "toggle" + (c.on ? " on" : ""), () => cargar({ accion: "activar", servicio: actual.servicio, id: c.id, on: !c.on }));
++      t.setAttribute("aria-pressed", String(c.on)); t.title = c.on ? "Conexión activa: apagarla impide nuevas ejecuciones" : "Conexión apagada";
++      f.append(n, t);
++      if (actual.servicio === "mcp") f.append(btn("Actualizar", "secondary", () => cargar({ accion: "descubrir", id: c.id })));
++      lista.append(f);
++    });
++    if (!actual.conexiones.length) lista.append(el("div", "muted", "Sin conexiones: añade la primera con ＋"));
++    const et = campo("nombre de la conexión"), sec = campo("clave / token (solo viaja al servidor)", "password"), url = campo("URL del servidor MCP (https://…)");
++    url.hidden = actual.servicio !== "mcp";
++    if (actual.servicio === "mcp") sec.placeholder = "token Bearer (opcional)";
++    const mas = btn("＋ Añadir", "action", async () => {
++      const cuerpoReq = { accion: "agregar", servicio: actual.servicio, etiqueta: et.value || undefined, secreto: sec.value || undefined, url: url.value || undefined };
++      sec.value = ""; await cargar(cuerpoReq); et.value = ""; url.value = "";
++    });
++    mas.id = "cv-anadir";
++    const form = el("div", "cv-form"); form.append(et, sec, url, mas);
++    cuerpo.replaceChildren(el("div", "cv-sec", "Servicio"), sel, lista, form, est);
++  };
++  cuerpo.replaceChildren(el("div", "muted", "Cargando…"));
++  await cargar();
++}
++
++// ---------- 🗣 ROOM CONFERENCIAS ----------
++let salaAbierta = null, temporizador = null;
++async function pintarRoom(cuerpo, hoja) {
++  const est = el("div", "cv-est");
++  const llamar = async (cuerpoReq) => {
++    try { const r = await accion("salas", cuerpoReq); est.textContent = r.persistente === false ? "⚠️ Las salas no se guardarán tras reiniciar (almacenamiento HF no disponible)" : ""; return r; }
++    catch (x) { falla(est, x); return null; }
++  };
++  const lista = async () => {
++    clearInterval(temporizador); salaAbierta = null;
++    const r = await llamar({ accion: "listar" }); if (!r) return;
++    const nombre = campo("nombre de la sala"), modelo = el("select"); modelo.setAttribute("aria-label", "Acceso del modelo");
++    [["", "El modelo no participa"], ["lectura", "El modelo: lectura"], ["escritura", "El modelo: lectura y escritura"]].forEach(([v, t]) => modelo.append(new Option(t, v)));
++    const crear = btn("＋ Nueva sala", "action", async () => { const p = modelo.value ? { modelo: modelo.value } : {}; const x = await llamar({ accion: "crear", nombre: nombre.value, participantes: p }); if (x) lista(); });
++    crear.id = "cv-sala-crear";
++    const filas = (r.salas || []).map((s) => { const f = el("div", "cv-fila"); const n = el("div", "cv-n"); n.append(el("span", "", s.nombre), el("small", "", Object.keys(s.participantes).join(", ") + " · " + s.mensajes + " mensajes")); f.append(n, btn("Abrir", "secondary", () => sala(s.id))); return f; });
++    const form = el("div", "cv-form"); form.append(nombre, modelo, crear);
++    cuerpo.replaceChildren(el("div", "cv-sec", "Salas compartidas"), ...(filas.length ? filas : [el("div", "muted", "Sin salas todavía")]), form, est);
++  };
++  const sala = async (id) => {
++    salaAbierta = id;
++    const r = await llamar({ accion: "leer", id }); if (!r) return;
++    const s = r.sala;
++    const msgs = el("div", "list"); s.mensajes.forEach((m) => { const d = el("div", "cv-msg", m.texto); d.prepend(el("small", "", m.de + ": ")); msgs.append(d); });
++    const ctx = el("textarea"); ctx.rows = 3; ctx.value = s.contexto || ""; ctx.placeholder = "contexto de la sala (lo ve quien tenga acceso)"; ctx.setAttribute("aria-label", "Contexto");
++    const txt = campo("mensaje"); txt.onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); enviar.click(); } };
++    const turno = btn("🗣 Turno de los agentes", "secondary", async () => { turno.disabled = true; turno.textContent = "Hablando…"; const x = await llamar({ accion: "turno", id }); turno.disabled = false; if (x) { if ((x.saltadas || []).length) est.textContent = "Sin responder: " + x.saltadas.map((q) => q.participante + " (" + q.motivo + ")").join(", "); sala(id); } });
++    turno.title = "Cada agente o modelo de la sala lee la conversación y responde en este mismo chat (respeta los interruptores IA y Agentes)";
++    const enviar = btn("Enviar", "action", async () => { if (!txt.value.trim()) return; const x = await llamar({ accion: "enviar", id, texto: txt.value }); if (x) { txt.value = ""; sala(id); } });
++    const parts = Object.entries(s.participantes).map(([n, nv]) => { const f = el("div", "cv-fila"); f.append(el("div", "cv-n", n));
++      const sel = el("select"); ["lectura", "escritura", "admin"].forEach((v) => sel.append(new Option(v, v))); sel.value = nv; sel.disabled = n === "director"; sel.onchange = async () => { await llamar({ accion: "permiso", id, participante: n, nivel: sel.value }); sala(id); };
++      f.append(sel); if (n !== "director") f.append(btn("Quitar", "secondary", async () => { await llamar({ accion: "permiso", id, participante: n, nivel: null }); sala(id); })); return f; });
++    const np = campo("nuevo participante"), nn = el("select"); ["lectura", "escritura", "admin"].forEach((v) => nn.append(new Option(v, v)));
++    const inv = el("div", "cv-form"); inv.append(np, nn, btn("Invitar", "secondary", async () => { if (np.value.trim()) { await llamar({ accion: "permiso", id, participante: np.value, nivel: nn.value }); sala(id); } }));
++    cuerpo.replaceChildren(btn("← Salas", "secondary", lista), el("div", "cv-sec", "🗣 " + s.nombre), el("div", "cv-sec", "Mensajes"), msgs, (() => { const f = el("div", "cv-form"); f.append(txt, enviar, turno); return f; })(),
++      el("div", "cv-sec", "Contexto"), ctx, btn("Guardar contexto", "secondary", async () => { if (await llamar({ accion: "contexto", id, texto: ctx.value })) est.textContent = "Contexto guardado"; }),
++      el("div", "cv-sec", "Acceso"), ...parts, inv,
++      btn("Borrar sala", "secondary", async () => { if (confirm("¿Borrar la sala " + s.nombre + "?") && await llamar({ accion: "borrar", id })) lista(); }), est);
++    clearInterval(temporizador); temporizador = setInterval(() => { if (hoja.hidden || salaAbierta !== id || document.activeElement === txt || document.activeElement === ctx) return; sala(id); }, 8000);  // mensajes nuevos sin recargar; no pisa lo que se escribe
++  };
++  cuerpo.replaceChildren(el("div", "muted", "Cargando…"));
++  await lista();
++}
++
++// ---------- ⏻ Servidor: encender / apagar / reiniciar el Space (la orden sale de /api/power en Vercel, no del Router dormido) ----------
++const ESTILO = { RUNNING: "enabled", PAUSED: "pending", SLEEPING: "pending", STOPPED: "pending", BUILDING: "progress", APP_STARTING: "progress", RUNNING_BUILDING: "progress" };
++async function power(metodo, accion) {
++  const r = await fetch("/api/power", { method: metodo, headers: { "Content-Type": "application/json", "X-API-Key": sessionStorage.getItem("riu_clave") || "" }, body: accion ? JSON.stringify({ accion }) : undefined });
++  const d = await r.json().catch(() => ({}));
++  if (!r.ok) throw new Error(r.status === 401 ? "clave incorrecta (usa la del chat)" : r.status === 404 ? "disponible solo en la web de Vercel" : r.status === 402 ? "Hugging Face: faltan créditos (" + (d.detail || "402") + ")" : d.detail || "HTTP " + r.status);
++  return d;
++}
++async function pintarPower(cuerpo) {
++  const est = el("div", "cv-est"), chip = el("span", "tag-status pending", "…"), hw = el("div", "muted"); let espera = 0;
++  const ver = (d) => { chip.className = "tag-status " + (/ERROR/.test(d.stage || "") ? "warning" : ESTILO[d.stage] || "pending"); chip.textContent = d.stage || "sin estado"; hw.textContent = d.hardware ? "Hardware: " + d.hardware + (d.hardware === "cpu-basic" ? " (gratis)" : " · el hardware de pago consume créditos") : ""; return d; };
++  const leer = async () => { try { return ver(await power("GET")); } catch (x) { chip.className = "tag-status warning"; chip.textContent = "error"; est.textContent = "⚠️ " + x.message; return null; } };
++  const seguir = async () => { const mia = ++espera; for (let i = 0; i < 60 && mia === espera; i++) { await new Promise((r) => setTimeout(r, 5000)); const d = await leer(); if (!d) return; if (d.stage === "RUNNING") { est.textContent = "✅ listo: el Router está encendido"; return; } if (/ERROR/.test(d.stage || "")) { est.textContent = "⚠️ el Space terminó en " + d.stage; return; } } if (mia === espera) est.textContent = "⚠️ sigue arrancando tras 5 minutos; revisa el Space"; };
++  const boton = (texto, accion, confirmar) => { const b = btn(texto, "secondary"); let t = 0;
++    const lanzar = async () => { b.disabled = true; est.textContent = "Enviando " + accion + "…"; try { ver(await power("POST", accion)); est.textContent = accion === "apagar" ? "Pausa pedida" : "Arrancando… (consulto cada 5 s)"; if (accion !== "apagar") seguir(); else { espera++; setTimeout(leer, 4000); } } catch (x) { est.textContent = "⚠️ " + x.message; } finally { b.disabled = false; b.textContent = texto; } };
++    b.onclick = () => { if (!confirmar) return lanzar(); if (t) { clearTimeout(t); t = 0; return lanzar(); } b.textContent = "¿Seguro? Confirmar"; est.textContent = "Pulsa de nuevo para " + accion + " el Router"; t = setTimeout(() => { t = 0; b.textContent = texto; est.textContent = ""; }, 5000); }; return b; };
++  const fila = el("div", "cv-form"); fila.append(boton("Encender", "encender", false), boton("Apagar", "apagar", true), boton("Reiniciar", "reiniciar", true), btn("Actualizar", "secondary", leer));
++  cuerpo.replaceChildren(el("div", "cv-sec", "Servidor del Router"), el("div", "cv-fila", ""), hw, fila, est); cuerpo.children[1].append(chip);
++  await leer();
++}
++
++const revisar = () => { try { ventana("conexiones", "🔑", "Conexiones", pintarConexiones); ventana("room", "🗣", "ROOM CONFERENCIAS", pintarRoom); ventana("power", "⏻", "Servidor del Router", pintarPower); } catch (e) { console.warn("controles-ventana", e); } };
++new MutationObserver(revisar).observe(document.body, { childList: true, subtree: true });
++revisar();
+diff --git a/plugins/chat-router/frontend/maxbry-ui.js b/plugins/chat-router/frontend/maxbry-ui.js
+new file mode 100644
+index 0000000000..eb9d8eff08
+--- /dev/null
++++ b/plugins/chat-router/frontend/maxbry-ui.js
+@@ -0,0 +1,104 @@
++// maxbry-ui.js — Maxbry UI (skill fromted-yaiwes-frontend-factory): reorganiza el composer del chat sin tocar sus handlers.
++// Los mismos nodos (ids, listeners, badges) se reubican: fila principal [＋][📎][🎤] … [Enviar], chips [Auto][Pensar][IA] y bandeja «Agregar al chat».
++// Iconos de línea del skill (sprite), editor que crece solo (y se amplía con ⤢), avisos tipo toast y estado del Router con punto de señal.
++const SVG = (n, c) => '<svg class="mx-ico ' + (c || "") + '" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-' + n + '"/></svg>';
++const SPRITE = '<svg xmlns="http://www.w3.org/2000/svg" id="mx-sprite" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">' + [
++  ["plus", '<path d="M12 5v14M5 12h14"/>'], ["spark", '<path d="m12 2 2.1 7.9L22 12l-7.9 2.1L12 22l-2.1-7.9L2 12l7.9-2.1Z"/>'],
++  ["send", '<path d="m3 20 18-8L3 4l2.5 7L14 12l-8.5 1Z"/>'], ["attach", '<path d="m9 13 5.5-5.5a3 3 0 0 1 4.2 4.2l-8 8a5 5 0 0 1-7.1-7.1l8.4-8.4"/>'],
++  ["shield", '<path d="M12 2 20 5v6c0 5-3 8-8 11-5-3-8-6-8-11V5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>'], ["message", '<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.3 8.3 0 0 1-3.8-.9L3 21l1.9-5.7A8.3 8.3 0 0 1 4 11.5a8.5 8.5 0 0 1 17 0Z"/>'],
++  ["check", '<path d="m5 12 4 4L19 6"/>'], ["doc", '<path d="M5 2h10l5 5v15H5Z"/><path d="M15 2v5h5M8 12h9M8 16h9"/>'], ["down", '<path d="m6 9 6 6 6-6"/>'],
++  ["think", '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>'],
++  ["expand", '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>'], ["x", '<path d="M5 5 19 19M19 5 5 19"/>'], ["power", '<path d="M12 2v10M6 5a9 9 0 1 0 12 0"/>'], ["settings", '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>'],
++].map(([id, d]) => '<symbol id="i-' + id + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + "</symbol>").join("") + "</svg>";
++const TEXTO = { "btn-archivos": "Archivos", "btn-ancla": "Anclar", "btn-sandbox": "Sandbox", "btn-copiar-input": "Copiar", "btn-conexiones": "Conexiones", "btn-room": "ROOM", "btn-pendientes": "Pendientes", "btn-power": "Servidor" };
++const FIJOS = new Set(["btn-adjunto", "btn-microfono", "btn-detener", "btn-tools", "btn-agentes", "btn-prompt", "mx-mas", "mx-grande"]);  // se quedan en la fila principal
++const BANDEJA = false;  // true = esconder los botones secundarios dentro de ＋
++const ICONOS = { "btn-conexiones": "shield", "btn-room": "message", "btn-pendientes": "check", "btn-power": "power" };  // botones propios: iconos de línea en vez de emojis
++const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
++
++function sprite() { if (!document.getElementById("mx-sprite")) document.body.insertAdjacentHTML("afterbegin", SPRITE); }
++
++function montar(comp) {
++  const msg = comp.querySelector("#message"), bar = comp.querySelector(".composer-bar");
++  if (!msg || !bar || comp.dataset.mx) return; comp.dataset.mx = "1"; sprite();
++  const raiz = (document.querySelector("#sh-mas") || {}).parentElement || document.body;
++  // ＋ y bandeja «Agregar al chat» (patrón de las referencias Grok/Claude: tarjetas con icono + título)
++  const mas = el("button", "secondary"); mas.type = "button"; mas.id = "mx-mas"; mas.title = "Agregar al chat"; mas.setAttribute("aria-label", "Agregar al chat"); mas.setAttribute("aria-haspopup", "dialog"); mas.innerHTML = SVG("plus");
++  const hoja = el("div", "sheet"); hoja.id = "mx-hoja"; hoja.hidden = true; hoja.setAttribute("role", "dialog"); hoja.setAttribute("aria-label", "Agregar al chat");
++  const caja = el("div", "va-caja"), cab = el("div", "row va-head"), x = el("button", "secondary sh-cerrar"), bandeja = el("div", "mx-bandeja"), ajustes = el("button", "mx-fila-ajustes");
++  bandeja.id = "mx-bandeja"; x.type = "button"; x.textContent = "✕"; x.setAttribute("aria-label", "Cerrar");
++  ajustes.type = "button"; ajustes.innerHTML = SVG("settings") + "<span><strong>Herramientas y permisos</strong><small>Encender o apagar cada herramienta</small></span>" + SVG("down", "mx-der");
++  ajustes.onclick = () => { hoja.hidden = true; const t = document.querySelector("#btn-tools"); if (t) t.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })); };
++  const strong = el("strong"); strong.textContent = "Agregar al chat"; cab.append(strong, x); caja.append(cab, bandeja, ajustes); hoja.append(caja); raiz.append(hoja);
++  const cerrar = () => { hoja.hidden = true; };
++  x.onclick = cerrar; hoja.addEventListener("click", (e) => { if (e.target === hoja) cerrar(); });
++  document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrar(); });
++  mas.onclick = () => { hoja.hidden = false; };
++  bandeja.addEventListener("click", () => setTimeout(cerrar, 0));  // el botón elegido ya actuó (abre su ventana o el selector de archivos)
++  bar.insertBefore(mas, bar.firstChild);
++  // chips: Auto (selector de modos), Pensar (abre el selector de pensamiento) e IA/agentes
++  const chips = el("div", "mx-chips"); chips.setAttribute("role", "group"); chips.setAttribute("aria-label", "Modo, pensamiento e IA"); comp.insertBefore(chips, bar);
++  const pensar = el("button", "mx-chip"); pensar.type = "button"; pensar.id = "mx-pensar"; pensar.title = "Cómo piensa el modelo: rápido, equilibrado o pensar";
++  const modo = () => document.querySelector("#modo");
++  pensar.onclick = () => { const m = modo(); if (m) m.click(); };
++  const pintarPensar = () => { const m = modo(), t = m ? m.textContent.replace(/[⌄˅v]\s*$/, "").trim() : "equilibrado"; pensar.innerHTML = SVG("think") + "<span>" + (t || "equilibrado").replace(/^./, (c) => c.toUpperCase()) + "</span>"; pensar.setAttribute("aria-pressed", String(/pensar/i.test(t))); };
++  pintarPensar();
++  // editor: crece con el texto, se amplía con ⤢
++  const grande = el("button", "mx-grande"); grande.type = "button"; grande.id = "mx-grande"; grande.title = "Ampliar el editor"; grande.setAttribute("aria-label", "Ampliar el editor"); grande.setAttribute("aria-pressed", "false"); grande.innerHTML = SVG("expand");
++  comp.insertBefore(grande, msg);
++  const ajustar = () => { msg.style.height = "auto"; const max = Math.round(window.innerHeight * (comp.classList.contains("mx-grande") ? 0.7 : 0.38)); msg.style.height = Math.min(msg.scrollHeight + 2, max) + "px"; };
++  grande.onclick = () => { const on = comp.classList.toggle("mx-grande"); grande.setAttribute("aria-pressed", String(on)); ajustar(); if (on) msg.focus(); };
++  msg.addEventListener("input", ajustar); new ResizeObserver(() => { if (!msg.value) msg.style.height = ""; }).observe(comp);
++  window.addEventListener("resize", ajustar); comp.addEventListener("submit", () => setTimeout(() => { msg.style.height = ""; }, 50));
++  const colocar = () => {  // mueve cada botón nuevo (aparecen por módulos que cargan tarde) a su sitio, sin clonar
++    const modos = document.querySelector("#mode-selector-mount"); if (modos && modos.parentElement !== chips) chips.append(modos);
++    if (pensar.parentElement !== chips) chips.append(pensar);
++    ["#btn-tools", "#btn-agentes", "#btn-prompt"].forEach((id) => { const b = document.querySelector(id); if (b && b.parentElement !== chips) chips.append(b); });
++    bar.querySelectorAll(":scope > button.secondary").forEach((b) => {
++      if (FIJOS.has(b.id) || b.classList.contains("sh-cerrar")) return;
++      b.dataset.mx = TEXTO[b.id] || (b.title || b.getAttribute("aria-label") || "").split(/[·:(]/)[0].trim().slice(0, 16);
++      if (ICONOS[b.id] && !b.querySelector("svg")) b.innerHTML = SVG(ICONOS[b.id]);
++      if (BANDEJA) bandeja.append(b);  // por defecto los botones se quedan a la vista en la barra, como siempre
++    });
++    mas.hidden = !bandeja.children.length;
++    const a = bar.querySelector(".anclados"); if (a && a.parentElement === bar && bar.firstChild !== a) bar.insertBefore(a, bar.firstChild);
++    const adj = bar.querySelector("#btn-adjunto"), mic = bar.querySelector("#btn-microfono");
++    if (adj && mas.nextElementSibling !== adj) mas.after(adj);
++    if (mic && adj && adj.nextElementSibling !== mic) adj.after(mic);
++    pintarPensar();
++  };
++  colocar(); new MutationObserver(colocar).observe(bar, { childList: true }); const m = modo(); if (m) new MutationObserver(pintarPensar).observe(m, { childList: true, characterData: true, subtree: true });
++  // Detener solo mientras el chat trabaja (mismo estado real que el indicador de pensamiento)
++  setInterval(() => { const d = bar.querySelector("#btn-detener"); if (!d) return; let o = false; try { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); o = !!(c && c.ocupado); } catch (e) {} d.hidden = !o; }, 300);
++}
++
++function avisos() {  // #notice como toast: se retira solo (errores, más tiempo) y no tapa el chat
++  const n = document.querySelector("#notice"); if (!n || n.dataset.mx) return; n.dataset.mx = "1"; let t = 0;
++  new MutationObserver(() => { clearTimeout(t); if (!n.textContent) return; t = setTimeout(() => { n.textContent = ""; n.classList.remove("err"); }, /GAP|error|fall|HTTP|no se|bloquead/i.test(n.textContent) ? 9000 : 5000); }).observe(n, { childList: true, characterData: true, subtree: true });
++  n.addEventListener("click", () => { n.textContent = ""; });
++}
++
++function estado() {  // punto de señal (skill .signal) en el estado del Router
++  const s = document.querySelector("#movil-status"); if (!s || s.dataset.mx) return; s.dataset.mx = "1";
++  const pintar = () => { s.dataset.estado = /error|no disponible|detenido/i.test(s.textContent) ? "err" : s.textContent.trim() ? "ok" : ""; };
++  s.style.cursor = "pointer"; s.title = "Encender, apagar o reiniciar el Router"; s.onclick = () => { const p = document.querySelector("#btn-power"); if (p) p.click(); };  // el estado abre el panel del servidor
++  pintar(); new MutationObserver(pintar).observe(s, { childList: true, characterData: true, subtree: true });
++}
++
++const MEDIO = /\[\[(imagen|video|audio):((?:https:\/\/|data:audio\/)[^\]\s]+)\]\]/g, HAY_MEDIO = /\[\[(imagen|video|audio):/;
++function medios() {  // [[imagen:URL]] / [[video:URL]] / [[audio:URL]] que devuelve la ficha -> el medio dentro de la burbuja (solo https o audio data:)
++  document.querySelectorAll(".chat-history .message:not(.user):not(.pending) .txt:not([data-mx])").forEach((t) => {
++    t.dataset.mx = "1"; if (!HAY_MEDIO.test(t.textContent)) return;
++    const lista = [...t.textContent.matchAll(MEDIO)]; t.textContent = t.textContent.replace(MEDIO, "").trim();
++    lista.forEach(([, tipo, url]) => {
++      const m = document.createElement(tipo === "imagen" ? "img" : tipo); m.src = url; m.className = "mx-medio";
++      if (tipo === "imagen") { m.alt = "Imagen generada"; m.loading = "lazy"; } else m.controls = true;
++      const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Abrir " + tipo; a.className = "mx-medio-enlace";
++      t.after(m); m.after(a);
++    });
++  });
++}
++
++const revisar = () => { try { const c = document.querySelector("#composer"); if (c) montar(c); avisos(); estado(); medios(); const e = document.querySelector(".riu-estado"); if (e && !e.dataset.mx) { e.dataset.mx = "1"; e.style.cursor = "pointer"; e.onclick = () => { const p = document.querySelector("#btn-power"); if (p) p.click(); }; } } catch (e) { console.warn("maxbry-ui", e); } };
++new MutationObserver(revisar).observe(document.body, { childList: true, subtree: true });
++revisar();
+diff --git a/plugins/chat-router/frontend/panel-chat.html b/plugins/chat-router/frontend/panel-chat.html
+index 519d8f8227..58d8a60d64 100644
+--- a/plugins/chat-router/frontend/panel-chat.html
++++ b/plugins/chat-router/frontend/panel-chat.html
+@@ -3,6 +3,7 @@
+ <link rel="stylesheet" href="/chat/ui/chat-espacio.css">
+ <link rel="stylesheet" href="/chat/ui/chat-riu.css">
+ <link rel="stylesheet" href="/chat/ui/chat-riu2.css">
++<link rel="stylesheet" href="/chat/ui/chat-maxbry.css">
+ <script src="/chat/ui/config.js"></script>
+ <script type="module">
+   import { api } from "/chat/ui/api.js";
+@@ -39,7 +40,7 @@
+   <div id="sh-modo" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Modo</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div id="sh-modo-lista" class="list"></div></div></div>
+   <div id="sh-mas" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Más opciones</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div class="row fields"><label>Proveedor <select id="provider"><option value="auto">Automático</option></select></label><label>Modelo <select id="model"><option value="">Router elige</option></select></label><label>Agente <select id="agent"><option value="">Sin agente</option></select></label><label>Grupo <select id="group"><option value="">Predeterminado</option></select></label><label>Cuenta GitHub <select id="github"><option value="">Ninguna</option></select></label><label>Rama <input id="branch" placeholder="main" disabled></label></div></div></div>
+   <div id="ventana-ancla" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Anclar al input</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div class="row"><button type="button" id="anc-subir" class="mini">Subir archivos</button><button type="button" id="anc-todos" class="mini">Anclar todos</button><button type="button" id="anc-ninguno" class="mini">Quitar todos</button></div><div id="anc-lista" class="list"></div><div class="fila-desc">Enciende un archivo para anclarlo: va con cada mensaje y su nombre sale debajo del input. Lo que solo subes no se ancla.</div></div></div>
+-  <div id="sh-ancla" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Anclar al chat</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div id="sh-ancla-lista" class="list"></div><textarea id="mi-handoff" placeholder="Mi handoff: pega o escribe dónde debe trabajar la llm…"></textarea><div class="row"><button type="button" id="mh-guardar" class="toggle">Encender/Guardar</button><button type="button" id="mh-apagar" class="toggle rojo">Apagar</button><span id="mh-estado" class="muted"></span></div><div class="row"><input id="ancla-enlace" placeholder="Pega enlace para anclar…" autocomplete="off"><button type="button" id="ancla-enlace-on" class="mini">Encender</button></div><div class="fila-desc">Enciende un handoff del proyecto/skill/preview, guarda tu propio handoff o pega un enlace: queda anclado y se envía con cada mensaje.</div></div></div>
++  <div id="sh-ancla" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Anclar al chat</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div id="sh-ancla-lista" class="list"></div><textarea id="mi-handoff" placeholder="yaiwes.md: pega la información del proyecto donde debe trabajar la llm…"></textarea><div class="row"><button type="button" id="mh-guardar" class="toggle">Encender/Guardar</button><button type="button" id="mh-apagar" class="toggle rojo">Apagar</button><span id="mh-estado" class="muted"></span></div><div class="row"><input id="ancla-enlace" placeholder="Pega enlace para anclar…" autocomplete="off"><button type="button" id="ancla-enlace-on" class="mini">Encender</button></div><div class="fila-desc">Enciende un handoff del proyecto/skill/preview, guarda tu propio handoff o pega un enlace: queda anclado y se envía con cada mensaje.</div></div></div>
+   <div id="sh-motor" class="sheet" hidden><div class="va-caja va-ancho"><div class="row va-head"><strong>Motor descarga · extracción · copiar · mover</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div class="motor-panel"><strong>1 · Marcar</strong><label class="row"><input type="checkbox" id="motor-mover"> mover &nbsp;<input type="checkbox" id="motor-copiar" checked> copiar</label><input id="motor-origen" placeholder="Enlace origen de la raíz (GitHub)" autocomplete="off"><input id="motor-destino" placeholder="Enlace destino (GitHub)" autocomplete="off"><button type="button" id="motor-ejecutar" class="action">Ejecutar</button></div><div class="motor-panel"><strong>2 · URLs en cola</strong><input type="file" id="motor-archivo" hidden><button type="button" id="motor-archivo-btn" class="secondary">Cargar archivo (extrae las URLs visibles)</button><textarea id="motor-urls" placeholder="Escribe o pega el texto con las URLs visibles"></textarea><input id="motor-destino2" placeholder="Escribe el enlace destino (GitHub)" autocomplete="off"><button type="button" id="motor-activar" class="action">Activar (un motor por URL o en cola)</button><div id="motor-cola" class="muted"></div></div><div class="motor-panel"><strong>3 · Auditoría y seguimiento</strong><button type="button" id="motor-auditar" class="action">Auditar y ver progreso de descargas</button><div id="motor-hist" class="list"></div><div id="motor-detalle" class="muted"></div></div></div></div>
+   <div id="sh-modelos" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Team qwen</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div id="sh-modelos-lista" class="list"></div><div id="team-qwen-diagrama" class="consil-diagrama" aria-label="Micro diagrama transversal"></div></div></div>
+   <div id="sh-consil-code" class="sheet" hidden><div class="va-caja"><div class="row va-head"><strong>Ask cónsil code qwen team</strong><button type="button" class="secondary sh-cerrar">✕</button></div><div id="sh-consil-code-lista" class="list"><div class="consil-vacio">Modelos pendientes</div></div><div id="consil-code-diagrama" class="consil-diagrama" aria-label="Micro diagrama transversal (pendiente)"></div></div></div>
+diff --git a/plugins/chat-router/frontend/panel-chat.js b/plugins/chat-router/frontend/panel-chat.js
+index 2ecf82d839..d37dee54ea 100644
+--- a/plugins/chat-router/frontend/panel-chat.js
++++ b/plugins/chat-router/frontend/panel-chat.js
+@@ -294,7 +294,7 @@ export async function mount(root, { api, tell }) {
+   const pintarModos = () => {
+     const lista = q("#sh-modo-lista");
+     lista.replaceChildren();
+-    for (const [k, et] of [["fast", "Rápido — 512 tok"], ["balanced", "Equilibrado — 1024 tok"], ["think", "Pensar — 2048 tok"]]) {
++    for (const [k, et] of [["fast", "Responde directo"], ["balanced", "Por defecto"], ["think", "Razona antes de responder"]]) {
+       lista.append(fila(MODOS[k], et, k === modo, () => {
+         modo = k;
+         q("#modo").textContent = MODOS[k] + " ⌄";
+@@ -354,14 +354,14 @@ export async function mount(root, { api, tell }) {
+         c.hist.append(burbuja("MI HANDOFF anclado:\n" + texto));
+         abajo(c);
+       }
+-      tell("Mi handoff " + (r.encendido ? "guardado y encendido" : "apagado"));
++      tell("yaiwes.md " + (r.encendido ? "guardado y encendido" : "apagado"));
+     } catch (err) { tell(err.message); }
+   });
+   q("#mh-apagar").addEventListener("click", async () => {
+     try {
+       await window.RIU_ACCION("handoff_texto", { sesion: chatA().sesion, texto: "" });
+       q("#mh-estado").textContent = "apagado";
+-      tell("Mi handoff apagado");
++      tell("yaiwes.md apagado");
+     } catch (err) { tell(err.message); }
+   });
+   q("#ancla-enlace-on").addEventListener("click", () => {
+@@ -592,6 +592,7 @@ export async function mount(root, { api, tell }) {
+       bLock.setAttribute('aria-pressed', String(locked));
+     };
+     bLock.disabled = true; pintarLock();
++    window.addEventListener('riu:ia', (e) => { locked = !e.detail.on; pintarLock(); bLock.disabled = false; });  // el botón 🧰 y el servidor mandan
+     const refrescarLock = async () => {
+       const r = await window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion });
+       if (!r || r.ok !== true || typeof r.locked !== 'boolean') throw new Error('GAP_AGENT_LOCK_ESTADO');
+@@ -603,7 +604,7 @@ export async function mount(root, { api, tell }) {
+       try {
+         const r = await window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion, locked: !locked });
+         if (!r || r.ok !== true || r.locked !== !locked) throw new Error('GAP_AGENT_LOCK_CAMBIO');
+-        locked = r.locked; chatTools.agente_tool = !locked; pintarLock();
++        locked = r.locked; (window.RIU_IA ? window.RIU_IA(!locked) : (chatTools.agente_tool = !locked)); pintarLock();
+       } catch (e) { tell('GAP: no se verificó el bloqueo: ' + e.message); }
+       finally { busy = false; bLock.disabled = false; }
+     });
+@@ -716,7 +717,7 @@ export async function mount(root, { api, tell }) {
+       if (answer.modelo_solicitado) c.hist.append(node("div", "Modelo solicitado: " + answer.modelo_solicitado + " · API: " + (answer.modelo_respuesta || "sin identificar"), "item message meta"));
+       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
+       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
+-      if (answer.finish_reason === "length") c.hist.append(node("div", "El proveedor alcanzo su limite de salida. Escribe «Continua» para seguir desde este punto", "item message meta"));
++      if (answer.finish_reason === "length") { const aviso = node("div", "La respuesta se cortó por el límite de salida del proveedor. ", "item message meta"), seguir = node("button", "Continuar", "mx-continuar"); seguir.type = "button"; seguir.onclick = () => { seguir.disabled = true; const m = q("#message"); m.value = "Continúa exactamente donde se cortó la respuesta anterior, sin repetir texto."; q("#composer").requestSubmit(); }; aviso.append(seguir); c.hist.append(aviso); }  // un clic y sigue desde el corte
+       if (answer.execution_path === "FAST_QA") c.hist.append(node("div", "⚡ respuesta rápida · " + answer.ms + " ms", "item meta"));
+       else if (answer.execution_path === "FAST_CONSULT") c.hist.append(node("div", "⚡ cónsil rápido · " + answer.ms + " ms", "item meta"));
+       else if (c.fastReply && FAST_SEL() && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));
+diff --git a/plugins/chat-router/frontend/pendientes-panel.js b/plugins/chat-router/frontend/pendientes-panel.js
+index cafccca2ab..92197acd6f 100644
+--- a/plugins/chat-router/frontend/pendientes-panel.js
++++ b/plugins/chat-router/frontend/pendientes-panel.js
+@@ -8,6 +8,34 @@ const CSS = `#ventana-pendientes .va-caja{overflow:auto;max-height:88vh}.pp-ta{w
+ .pp-sec{margin:10px 0 4px;font-weight:600}.pp-n{padding:6px 8px;border-radius:8px;background:rgba(127,127,127,.08);margin:3px 0}
+ .pp-n small{opacity:.7;display:block;white-space:pre-wrap}.pp-est{font-size:12px;opacity:.85;white-space:pre-wrap}`;
+ 
++// Checklist (agregar, marcar, ordenar): vive en el servidor; el modelo la consulta/actualiza con la herramienta «pendientes» si está encendida
++function checklist() {
++  const caja = el("div", "list"), est = el("div", "pp-est"), nuevo = el("input"), fila = el("div", "row");
++  nuevo.placeholder = "Nuevo pendiente"; nuevo.setAttribute("aria-label", "Nuevo pendiente"); nuevo.style.flex = "1 1 160px"; nuevo.style.minWidth = "0";
++  const pintarLista = (ps) => {
++    caja.replaceChildren(...(ps.length ? ps : [{ vacio: true }]).map((p, i) => {
++      if (p.vacio) return el("div", "muted", "Sin pendientes");
++      const f = el("div", "pp-n row"), cb = el("input"), t = el("span", "", p.texto);
++      cb.type = "checkbox"; cb.checked = p.hecho; cb.setAttribute("aria-label", "Hecho: " + p.texto); cb.onchange = () => llamar({ accion: "marcar", id: p.id, hecho: cb.checked });
++      t.style.flex = "1 1 120px"; t.style.overflowWrap = "anywhere"; if (p.hecho) t.style.textDecoration = "line-through";
++      const mover = (d) => { const ids = ps.map((x) => x.id); ids.splice(i + d, 0, ids.splice(i, 1)[0]); llamar({ accion: "ordenar", ids }); };
++      f.append(cb, t);
++      if (i > 0) f.append(btn("↑", () => mover(-1)));
++      if (i < ps.length - 1) f.append(btn("↓", () => mover(1)));
++      f.append(btn("✕", () => llamar({ accion: "quitar", id: p.id })));
++      return f;
++    }));
++  };
++  const llamar = async (c) => { try { const r = await accion("checklist", c); est.textContent = r.persistente === false ? "⚠️ No se guardará tras reiniciar (almacenamiento HF no disponible)" : ""; pintarLista(r.pendientes || []); return true; } catch (x) { est.textContent = "⚠️ " + x.message; return false; } };
++  const agregar = btn("＋ Añadir", async () => { if (nuevo.value.trim() && await llamar({ accion: "agregar", texto: nuevo.value })) nuevo.value = ""; });
++  nuevo.onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); agregar.click(); } };
++  const org = btn("🧠 Organizar con IA", async () => { org.disabled = true; est.textContent = "Organizando…"; if (await llamar({ accion: "organizar" })) est.textContent = ""; org.disabled = false; });
++  org.title = "Un modelo (qwen3.7 por defecto) ordena los pendientes por prioridad; no crea ni borra ninguno";
++  fila.append(nuevo, agregar, org);
++  llamar({});
++  const todo = el("div", "list"); todo.append(fila, caja, est); return todo;
++}
++
+ function pintarDag(caja, v) {
+   caja.replaceChildren();
+   const dag = (v && v.dag) || null;
+@@ -22,8 +50,11 @@ function pintarDag(caja, v) {
+   });
+ }
+ 
++let organizador = null;  // el organizador con LLM (notas + DAG) no existe en el Router MVP: se prueba una vez
+ async function pintar(cuerpo) {
+   cuerpo.replaceChildren(el("div", "muted", "Cargando…"));
++  if (organizador === null) { try { await accion("notas", { accion: "listar" }); organizador = true; } catch (x) { organizador = false; } }
++  if (!organizador) { cuerpo.replaceChildren(el("div", "pp-sec", "Checklist"), checklist(), el("div", "muted", "El organizador con LLM (bloc de notas y DAG) no está disponible en este Router.")); return; }
+   const inTa = el("textarea", "pp-ta"), prTa = el("textarea", "pp-ta"), est = el("div", "pp-est"), dag = el("div", "list"), lista = el("div", "muted");
+   inTa.rows = 5; inTa.placeholder = "Pega aquí el input block tal cual (se guarda verbatim 1:1, no se edita después)"; prTa.rows = 10;
+   const avisar = (t) => { est.textContent = t; };
+@@ -40,7 +71,7 @@ async function pintar(cuerpo) {
+       avisar("⚠️ Tiempo agotado; la vista se actualiza cuando termine");
+     } catch (x) { avisar("⚠️ " + x.message); } });
+   try { const p = await accion("pendientes", { accion: "prompt_leer" }); prTa.value = JSON.stringify(p.prompt || {}, null, 2); } catch (x) { prTa.value = ""; }
+-  cuerpo.replaceChildren(el("div", "pp-sec", "1) Input block verbatim"), inTa, guardarIn, lista,
++  cuerpo.replaceChildren(el("div", "pp-sec", "0) Checklist"), checklist(), el("div", "pp-sec", "1) Input block verbatim"), inTa, guardarIn, lista,
+     el("div", "pp-sec", "2) Prompt JSON / system prompt del organizador (editable)"), prTa, guardarPr,
+     el("div", "pp-sec", "3) Pendientes organizados (DSL DAG)"), organizar, est, dag);
+   cargarInputs(); cargarVista();
+@@ -54,7 +85,7 @@ function instalar() {
+   const s = el("div", "sheet"); s.id = "ventana-pendientes"; s.hidden = true;
+   const c = el("div", "va-caja"), h = el("div", "row va-head"), x = el("button", "secondary", "✕"), cuerpo = el("div", "list");
+   x.type = "button"; x.onclick = () => { s.hidden = true; }; s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
+-  h.append(el("strong", "", "📋 Pendientes · bloc de notas"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
++  h.append(el("strong", "", "Pendientes"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
+   b.onclick = () => { s.hidden = false; pintar(cuerpo); };
+   const env = bar.querySelector(".action"); bar.insertBefore(b, env || null);
+ }
+diff --git a/plugins/chat-router/frontend/shell.html b/plugins/chat-router/frontend/shell.html
+index 4908cfeeef..20bbd33879 100644
+--- a/plugins/chat-router/frontend/shell.html
++++ b/plugins/chat-router/frontend/shell.html
+@@ -10,8 +10,10 @@
+   <link rel="stylesheet" href="/chat/ui/shell-riu.css">
+   <link rel="stylesheet" href="/chat/ui/chat-movil.css">
+   <link rel="stylesheet" href="/chat/ui/encendido.css">
++  <link rel="stylesheet" href="/chat/ui/selector-resp.css">
+   <link rel="stylesheet" href="/chat/ui/boton-enviar.css">
+   <link rel="stylesheet" href="/chat/ui/chat-espacio.css">
++  <link rel="stylesheet" href="/chat/ui/chat-maxbry.css">
+   <script src="/chat/ui/version.js"></script>
+   <script src="/chat/ui/config.js"></script>
+   <script type="module" src="/chat/ui/shell.js"></script>
+diff --git a/plugins/chat-router/frontend/shell.js b/plugins/chat-router/frontend/shell.js
+index 4b3c7add50..3c1983732f 100644
+--- a/plugins/chat-router/frontend/shell.js
++++ b/plugins/chat-router/frontend/shell.js
+@@ -7,6 +7,8 @@ import { mount as organization } from "./panel-org.js";
+ import { mount as apariencia } from "./panel-apariencia.js";
+ import "./apariencia-aplicar.js";
+ import "./tools-ventana.js";  // MVP tools: ventana en el chat + bloque en Configuración  // aplica la apariencia guardada en todo el chat
++import "./maxbry-ui.js";  // Maxbry UI: composer ordenado, ＋ Agregar al chat, chips, toast
++import "./controles-ventana.js";  // 🔑 Conexiones y 🗣 ROOM CONFERENCIAS (estado en el servidor)
+ import "./pendientes-panel.js";  // t175u: panel 📋 Pendientes (bloc de notas verbatim + DSL DAG con la LLM + prompt JSON editable)
+ 
+ const panels = { chat, archivos, seguimiento, canvas, connectors: organization, templates: organization, engineering: organization, apariencia };
+diff --git a/plugins/chat-router/frontend/test/power.test.js b/plugins/chat-router/frontend/test/power.test.js
+new file mode 100644
+index 0000000000..ff3cdace10
+--- /dev/null
++++ b/plugins/chat-router/frontend/test/power.test.js
+@@ -0,0 +1,43 @@
++// node --test plugins/chat-router/frontend/test/power.test.js — la función con Hugging Face simulado (sin red, sin token real).
++const test = require("node:test"), assert = require("node:assert");
++const handler = require("../api/power.js");
++const CLAVE = "clave-prueba", TOKEN = "hf_token_secreto_de_prueba";
++process.env.RIU_ROUTER_API_KEY = CLAVE; process.env.HF_POWER_TOKEN = TOKEN; process.env.HF_SPACE_ID = "dueno/space";
++const llamar = async (req, hf) => {
++  const vistas = []; globalThis.fetch = async (url, opt) => { vistas.push([url, opt.method, opt.headers.Authorization]); return hf; };
++  let codigo, cuerpo; const res = { setHeader() {}, status(c) { codigo = c; return this; }, json(b) { cuerpo = b; return this; } };
++  await handler({ headers: { "x-api-key": CLAVE, ...(req.headers || {}) }, method: "GET", ...req }, res);
++  return { codigo, cuerpo, vistas };
++};
++const hf = (estado, objeto) => ({ ok: estado < 400, status: estado, text: async () => JSON.stringify(objeto) });
++
++test("sin clave o con clave mala: 401 y no se llama a Hugging Face", async () => {
++  for (const headers of [{ "x-api-key": undefined }, { "x-api-key": "otra" }]) {
++    const r = await llamar({ headers }, hf(200, {})); assert.equal(r.codigo, 401); assert.equal(r.vistas.length, 0);
++  }
++});
++test("estado = GET /runtime", async () => {
++  const r = await llamar({}, hf(200, { stage: "PAUSED", hardware: { current: null, requested: "cpu-basic" } }));
++  assert.deepEqual([r.codigo, r.cuerpo.stage, r.cuerpo.hardware], [200, "PAUSED", "cpu-basic"]);
++  assert.deepEqual(r.vistas[0], ["https://huggingface.co/api/spaces/dueno/space/runtime", "GET", "Bearer " + TOKEN]);
++});
++test("encender y reiniciar = POST /restart; apagar = POST /pause", async () => {
++  for (const [accion, ruta] of [["encender", "/restart"], ["reiniciar", "/restart"], ["apagar", "/pause"]]) {
++    const r = await llamar({ method: "POST", body: { accion } }, hf(200, { stage: "BUILDING" }));
++    assert.deepEqual([r.codigo, r.vistas[0][0], r.vistas[0][1]], [200, "https://huggingface.co/api/spaces/dueno/space" + ruta, "POST"]);
++  }
++});
++test("accion invalida: 400 sin llamar a Hugging Face", async () => {
++  const r = await llamar({ method: "POST", body: { accion: "borrar" } }, hf(200, {})); assert.equal(r.codigo, 400); assert.equal(r.vistas.length, 0);
++});
++test("402 (faltan creditos) se devuelve claro y el token nunca aparece", async () => {
++  const r = await llamar({ method: "POST", body: { accion: "encender" } }, hf(402, { error: "Payment required: add credits" }));
++  assert.deepEqual([r.codigo, r.cuerpo.detail], [402, "Payment required: add credits"]);
++  for (const caso of [r, await llamar({}, hf(200, { stage: "RUNNING" })), await llamar({ method: "POST", body: { accion: "apagar" } }, hf(500, { error: "x" }))])
++    assert.ok(!JSON.stringify(caso.cuerpo).includes(TOKEN));
++});
++test("Hugging Face caido: 502 claro", async () => {
++  globalThis.fetch = async () => { throw new Error("red"); };
++  let c, b; await handler({ headers: { "x-api-key": CLAVE }, method: "GET" }, { setHeader() {}, status(x) { c = x; return this; }, json(x) { b = x; return this; } });
++  assert.equal(c, 502); assert.ok(!JSON.stringify(b).includes(TOKEN));
++});
+diff --git a/plugins/chat-router/frontend/tools-ventana.js b/plugins/chat-router/frontend/tools-ventana.js
+index 082760d67d..bbb059cd49 100644
+--- a/plugins/chat-router/frontend/tools-ventana.js
++++ b/plugins/chat-router/frontend/tools-ventana.js
+@@ -6,7 +6,8 @@ import { accion } from "./api.js";
+ const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+ const btn = (txt, cls, fn) => { const b = el("button", cls || "secondary", txt); b.type = "button"; if (fn) b.onclick = fn; return b; };
+ let estado = null;
+-const cargar = async () => { estado = await accion("tools_estado", { rapido: true }); return estado; };
++let sinStaff = false;  // Router MVP: no hay tools_estado; se consulta una sola vez
++const cargar = async () => { if (sinStaff) throw new Error("sin staff de agentes"); try { estado = await accion("tools_estado", { rapido: true }); return estado; } catch (x) { sinStaff = /soportada|HTTP 400/.test(x.message); throw x; } };
+ const CSS = `#ventana-tools .va-caja{overflow:auto;max-height:88vh}.tv-sec{margin:10px 0 4px;font-weight:600}.tv-sub{font-size:12px;opacity:.7;margin:6px 0 2px}
+ .tv-fila{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 8px;border-radius:8px;background:rgba(127,127,127,.08);margin:3px 0}
+ .tv-fila .tv-n{flex:1 1 140px;min-width:0;overflow:hidden;text-overflow:ellipsis}.tv-fila small{opacity:.65;display:block}
+@@ -30,7 +31,7 @@ async function probar(salida, payload) {
+ 
+ async function pintarVentana(caja) {
+   caja.replaceChildren(el("div", "muted", "Cargando…"));
+-  let e; try { e = await cargar(); } catch (x) { caja.replaceChildren(el("div", "muted", "Sin conexión con el Router: " + x.message)); return; }
++  let e; try { e = await cargar(); } catch (x) { e = { agentes: [], recursos: [], fichas: [], max: 20, sinStaff: true }; }  // Router MVP sin staff de agentes: las herramientas (tools_lock) siguen funcionando
+   const recursos = e.recursos || [];
+   const nombreRec = (id) => (recursos.find((r) => r.id === id) || {}).nombre || id;
+   const guardar = async (lista) => { try { const r = await accion("groq_agentes", { agentes: lista }); if (r.error) { alert(r.error); return; } } catch (x) { alert(x.message); return; } pintarVentana(caja); };
+@@ -88,29 +89,51 @@ async function pintarVentana(caja) {
+       });
+     });
+   } catch (x) { tl.append(el("div", "muted", "GAP tools_lock: " + x.message)); }
++  if (e.sinStaff) { caja.replaceChildren(el("div", "tv-sec", "Herramientas del chat — un botón por herramienta"), el("div", "muted", "Apagar una herramienta impide que el modelo la vea y la ejecute (lo aplica el servidor)."), tl); return; }
+   caja.replaceChildren(
+-    el("div", "tv-sec", "Agentes del staff (" + e.agentes.length + "/" + (e.max || 20) + ")"),
+-    el("div", "muted", "Elige en el selector qué modelo usa cada agente. La LLM del chat lo hace con agente_enlazar y lo usa con groq_agente."),
++    el("div", "tv-sec", "Agentes conectados (" + e.agentes.length + "/" + (e.max || 20) + ")"),
++    el("div", "muted", "Cada agente es una sesión de chat nueva con su modelo y sus instrucciones. Con el botón Agentes en ON, el modelo del chat puede llamarlos."),
+     lista, form,
+     el("div", "tv-sec", "Recursos LLM enlazables"), recs,
+-    el("div", "tv-sec", "Ficha NVIDIA del chat"), el("div", "muted", fichas || "—"),
++    ...(fichas ? [el("div", "tv-sec", "Fichas del chat"), el("div", "muted", fichas)] : []),
+     el("div", "tv-sec", "Tools de la LLM del chat — un boton por tool"), tl);
+ }
+ 
++const avisar = (t) => { const n = document.querySelector("#notice"); if (n) n.textContent = t; else console.warn(t); };
++function aplicarFlags(r) {  // única vía para reflejar IA y Agentes (dos botones, dos permisos del servidor): chips, botón de bloqueo y LLM tool leen lo mismo
++  const ia = !r.ia_locked, ag = !r.agentes_locked, f = window.RIU_CHAT_TOOL_FLAGS;
++  if ("prompt_locked" in r) window.RIU_PROMPT_ON = !r.prompt_locked;  // System prompt: nace OFF; el servidor lo recuerda
++  if (f) { f.tools = ia || ag; f.llm_tool = ia; f.agente_tool = ag; }
++  [["#btn-tools", "IA", ia], ["#btn-agentes", "Agentes", ag], ["#btn-prompt", "System prompt", !!window.RIU_PROMPT_ON]].forEach(([id, n, on]) => { const b = document.querySelector(id); if (b) { b.textContent = n + (on ? " ON" : " OFF"); b.setAttribute("aria-pressed", String(on)); } });
++  const l = document.querySelector("#btn-llm-tool"); if (l) { l.textContent = "🧠 LLM tool " + (ia ? "ON" : "OFF"); l.classList.toggle("sel-on", ia); l.setAttribute("aria-pressed", String(ia)); }
++  window.dispatchEvent(new CustomEvent("riu:ia", { detail: { on: ia || ag, ia, agentes: ag } }));
++}
++window.RIU_IA = (on) => aplicarFlags({ ia_locked: !on, agentes_locked: !on });  // botón 🔒 de Controles: los dos a la vez
+ function instalarChat() {
+   const bar = document.querySelector("#composer .composer-bar");
+   if (!bar || document.querySelector("#btn-tools")) return;
+   if (!document.querySelector("#tv-css")) { const st = el("style"); st.id = "tv-css"; st.textContent = CSS; document.head.append(st); }
+-  const b = el("button", "secondary", "🧰 IA/agentes OFF"); b.type = "button"; b.id = "btn-tools"; b.title = "Permitir otras IA y agentes; GitHub y HF siempre disponibles"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Permitir otras IA y agentes");
++  const b = el("button", "secondary", "IA OFF"); b.type = "button"; b.id = "btn-tools"; b.title = "Permitir que el modelo consulte a otros modelos de IA (el servidor lo recuerda)"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Permitir otras IA");
+   const s = el("div", "sheet"); s.id = "ventana-tools"; s.hidden = true;
+   const c = el("div", "va-caja"), h = el("div", "row va-head"), x = el("button", "secondary", "✕"), cuerpo = el("div", "list"); cuerpo.id = "tv-cuerpo";
+   x.type = "button"; x.onclick = () => { s.hidden = true; };
+   s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
+-  h.append(el("strong", "", "🧰 Staff de tools"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
+-  b.title = "Permitir otras IA y agentes; GitHub y Hugging Face siempre disponibles";
+-  b.onclick = () => { const flags = window.RIU_CHAT_TOOL_FLAGS; if (!flags) return; flags.tools = !flags.tools; flags.agente_tool = flags.tools; flags.llm_tool = flags.tools; b.textContent = "🧰 IA/agentes " + (flags.tools ? "ON" : "OFF"); b.setAttribute("aria-pressed", String(flags.tools)); };
++  h.append(el("strong", "", "Herramientas del chat"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
++  b.title = "Permitir que el modelo llame a otras IA y agentes (el servidor lo recuerda). GitHub, HF y demás herramientas tienen su ON/OFF con clic derecho o mantener pulsado";
++  const chip = (btn, quien, nombre) => { btn.onclick = async () => {  // el servidor decide y recuerda; el navegador solo refleja su respuesta
++    const f = window.RIU_CHAT_TOOL_FLAGS; if (!f || btn.disabled) return; btn.disabled = true;
++    try { const r = await accion("agent_access_lock", { locked: !!(quien === "ia" ? f.llm_tool : quien === "prompt" ? window.RIU_PROMPT_ON : f.agente_tool), quien }); aplicarFlags(r); if (r.persistente === false) avisar(nombre + ": el cambio no se guardará tras reiniciar el servidor"); }
++    catch (x) { avisar(nombre + ": no se pudo cambiar (" + x.message + ")"); }
++    finally { btn.disabled = false; } }; };
++  chip(b, "ia", "IA");
++  const g = el("button", "secondary", "Agentes OFF"); g.type = "button"; g.id = "btn-agentes"; g.setAttribute("aria-pressed", "false"); g.setAttribute("aria-label", "Permitir que el modelo use agentes");
++  g.title = "Permitir que el modelo delegue en los agentes conectados (cada uno con su modelo); el servidor lo recuerda"; chip(g, "agentes", "Agentes");
++  const p = el("button", "secondary", "System prompt OFF"); p.type = "button"; p.id = "btn-prompt"; p.setAttribute("aria-pressed", "false"); p.setAttribute("aria-label", "Activar el system prompt completo");
++  p.title = "Añade el system prompt completo del proyecto a cada mensaje (apagado por defecto; el servidor lo recuerda)"; chip(p, "prompt", "System prompt");
++  let pulsado = null; b.addEventListener("pointerdown", () => { pulsado = setTimeout(() => { pulsado = null; s.hidden = false; pintarVentana(cuerpo); }, 600); }); ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(pulsado); }));  // móvil: mantener pulsado abre la ventana
++  accion("agent_access_lock", {}).then(aplicarFlags).catch(() => {});  // estado real del servidor al abrir el chat
+   b.oncontextmenu = (ev) => { ev.preventDefault(); s.hidden = false; pintarVentana(cuerpo); };
+-  const env = bar.querySelector(".action"); bar.insertBefore(b, env || null);
++  const env = bar.querySelector(".action"); bar.insertBefore(p, env || null); bar.insertBefore(g, p); bar.insertBefore(b, g);
+ }
+ 
+ async function instalarConfig() {
+@@ -131,7 +154,7 @@ async function instalarConfig() {
+       el("div", "item", "Tools: " + e.tools.join(", ")),
+       el("div", "item", "Agentes del staff: " + e.agentes.length + "/" + (e.max || 20) + " — " + e.agentes.map((a) => a.nombre + (a.recurso ? " → " + a.recurso : "")).join(", ")),
+       el("div", "item", "Claves · NVIDIA chat: " + (k.nvidia_chat || 0) + " · NVIDIA código: " + (k.nvidia_codigo || 0) + " · Groq: " + (k.groq || 0)));
+-  } catch (x) { cuerpo.replaceChildren(el("div", "muted", "Sin conexión con el Router: " + x.message)); }
++  } catch (x) { sec.remove(); }  // sin staff de agentes en este Router: nada que mostrar aquí
+ }
+ 
+ const revisar = () => { try { instalarChat(); instalarConfig(); } catch (e) { console.warn("tools-ventana", e); } };
+diff --git a/plugins/chat-router/frontend/vercel.json b/plugins/chat-router/frontend/vercel.json
+new file mode 100644
+index 0000000000..08cab3360e
+--- /dev/null
++++ b/plugins/chat-router/frontend/vercel.json
+@@ -0,0 +1,11 @@
++{
++  "buildCommand": "sh build.sh",
++  "outputDirectory": ".",
++  "rewrites": [
++    { "source": "/", "destination": "/shell.html" },
++    { "source": "/chat/ui/:path*", "destination": "/:path*" },
++    { "source": "/plugins/:path*", "destination": "https://comand-center-1-riu-router.hf.space/plugins/:path*" },
++    { "source": "/vault/:path*", "destination": "https://comand-center-1-riu-router.hf.space/vault/:path*" },
++    { "source": "/health", "destination": "https://comand-center-1-riu-router.hf.space/health" }
++  ]
++}
