@@ -101,3 +101,6 @@ html body .sheet .list>.fila .fila-ck{color:var(--status-blue);font-size:16px}
 html body .chat-history .mx-medio{display:block;max-width:100%;height:auto;margin-top:10px;border-radius:12px;border:1px solid var(--border)}
 html body .chat-history audio.mx-medio{width:100%}
 html body .chat-history .mx-medio-enlace{display:inline-block;margin-top:6px;font-size:13px;color:var(--status-blue)}
+/* panel Selectores: el diagrama de ⓘ se desplaza en horizontal dentro de su fila */
+html body #sel-power .sel-diagrama{overflow-x:auto;max-width:100%}
+html body #sel-power .sel-diagrama *{white-space:nowrap}
