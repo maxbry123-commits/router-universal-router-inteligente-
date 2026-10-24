@@ -18,7 +18,7 @@ const CLAVE_CHATS = "riu_chats_v1";  // sesiones/anclas/ficha de cada pestaña: 
 const etiquetaCorta = (a) => a.startsWith("handoff:") ? a.slice(8) : a.startsWith("enlace:") ? a.slice(7, 40) : a.startsWith("raiz:") ? "raíz " + a.slice(5, 40) : a;
 
 export async function mount(root, { api, tell }) {
-  const q = (s) => root.querySelector(s);
+  const q = (s) => root.querySelector(s) || document.querySelector(s);  // en móvil shell.js lleva los controles (.ctl-int) a #movil-panel, fuera de root
   const editor = q("#message");
   const ajustarAlturaEditor = () => {
     editor.style.height = "auto";

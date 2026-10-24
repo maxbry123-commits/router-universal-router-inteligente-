@@ -94,7 +94,7 @@ const filas = () => {  // panel Selectores del chat: ⓘ diagrama, ⚡ respuesta
     SELECTORES.forEach((s) => {
       const f = fila(s); if (!f) return;
       const on = act() === s.id, b = f.querySelector(".sel-on");
-      f.classList.toggle("activa", on); b.classList.toggle("on", on); b.disabled = !!act() && !on; b.setAttribute("aria-pressed", String(on));
+      f.classList.toggle("activa", on); b.classList.toggle("on", on); b.disabled = !!act() && !on; b.title = b.disabled ? "Apaga primero el selector encendido (solo uno a la vez)" : ""; b.setAttribute("aria-pressed", String(on));
       b.lastChild.textContent = on ? "ON" : "OFF"; f.querySelector(".sel-resp").textContent = "Modelo: " + modelo(s);
     });
     const a = SELECTORES.find((s) => s.id === act());

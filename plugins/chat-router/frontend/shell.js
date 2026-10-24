@@ -57,6 +57,7 @@ async function show(view) {
   if (!panels[view]) return;
   if (cleanup) cleanup();
   cleanup = undefined;
+  document.querySelectorAll("#mv-ctl .ctl-int").forEach((n) => n.remove());  // móvil: los controles de la vista anterior no se quedan en la pestaña
   document.querySelectorAll("[data-view]").forEach(button => {
     if (button.dataset.view === view) button.setAttribute("aria-current", "page");
     else button.removeAttribute("aria-current");
