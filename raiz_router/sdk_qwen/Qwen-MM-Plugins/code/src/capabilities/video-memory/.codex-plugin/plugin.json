@@ -1,0 +1,7 @@
+{
+  "name": "qwen-mm-plugins-video-memory",
+  "version": "1.2.0",
+  "description": "Build searchable, hierarchical memory of long videos to summarize content and locate events, text, and dialogue.",
+  "skills": "./skill",
+  "mcpServers": "./.mcp.json"
+}

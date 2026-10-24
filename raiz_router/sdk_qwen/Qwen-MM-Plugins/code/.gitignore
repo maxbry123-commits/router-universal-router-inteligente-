@@ -1,0 +1,13 @@
+__pycache__/
+tests/output/
+.ruff_cache/
+.pytest_cache/
+build/
+dist/
+*.egg-info/
+*.egg
+.venv*/
+eval/
+.DS_Store
+uv.lock
+output/

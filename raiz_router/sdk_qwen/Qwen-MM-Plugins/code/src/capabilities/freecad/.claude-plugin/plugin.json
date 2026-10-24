@@ -1,0 +1,21 @@
+{
+  "name": "qwen-mm-plugins-freecad",
+  "version": "1.2.0",
+  "description": "Create and edit parametric CAD models, technical drawings, and model exports in FreeCAD.",
+  "skills": [
+    "./skill"
+  ],
+  "mcpServers": {
+    "qwen-mm-plugins-freecad": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "qwen-mm-plugins[freecad] @ git+https://github.com/QwenLM/Qwen-MM-Plugins.git@qwen-mm-plugins-freecad-v1.2.0",
+        "qwen-mm-plugins-freecad"
+      ],
+      "env": {
+        "QWEN_MM_AUTOLAUNCH": "1"
+      }
+    }
+  }
+}
