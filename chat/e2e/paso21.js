@@ -11,9 +11,7 @@ const ok = (n, c, x) => console.log((c ? 'PASS ' : 'FAIL ') + n + (x ? ' :: ' + 
   await p.goto('http://127.0.0.1:8765/chat/ui/shell.html'); await p.waitForSelector('#btn-room', { state: 'attached' }); await p.waitForTimeout(1500);
   const vis = (s) => p.evaluate((s) => { const e = document.querySelector(s); const r = e && e.getBoundingClientRect(); return !!r && r.width >= 24 && r.height >= 24; }, s);
   for (const s of ['#btn-tools', '#btn-agentes']) if (/ON/.test(await p.textContent(s))) { await p.$eval(s, e => e.click()); await p.waitForTimeout(500); }  // estado inicial conocido (el servidor recuerda)
-  await p.click('#cb-sel-herr'); await p.waitForTimeout(300);
-  for (const s of ['#btn-conexiones', '#btn-room', '#btn-power']) ok('botón visible ≥24px (ventana Herramientas) ' + s, await vis(s));
-  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  for (const s of ['#btn-conexiones', '#btn-room', '#btn-power']) ok('botón visible ≥24px (a la vista) ' + s, await vis(s));
   ok('iconos de línea, sin emoji', await p.evaluate(() => ['#btn-conexiones', '#btn-room', '#btn-power'].every(s => document.querySelector(s).querySelector('svg') && !/\p{Extended_Pictographic}/u.test(document.querySelector(s).textContent))));
   // Conexiones
   await p.$eval('#btn-conexiones', e => e.click()); await p.waitForSelector('#ventana-conexiones select');

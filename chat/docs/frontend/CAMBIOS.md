@@ -3,7 +3,7 @@
 Generado por `chat/e2e/cambios.py` desde `git log`. Para auditar un cambio: `git show <commit> -- <archivo>`.
 Columnas: commit · fecha · autor · qué · archivos · funciones (+ añadidas / − quitadas).
 
-Total de commits: **43**
+Total de commits: **45**
 
 | Commit | Fecha | Autor | Cambio | Archivos | Funciones |
 |---|---|---|---|---|---|
@@ -48,5 +48,7 @@ Total de commits: **43**
 | `f8a536e65a` | 2026-10-25 | Claude | Chat escritorio: Enviar compacto al lado del texto | `composer-filas.css` | — |
 | `5fc6df588d` | 2026-10-25 | Claude | Chat: Detener aparece en cuanto se envía | `composer-filas.js` | — |
 | `43c3163bb8` | 2026-10-25 | Claude | Frontend dividido en módulos: panel-chat.js 818→408 líneas (buzón, selects secundarios, sandbox, motor, selector de ancla, controles, envío, píldora d | `buzon-proceso.js`, `chat-riu2.js`, `controles-chat.js`, `enviar-mensaje.js`, `panel-chat.js`, `pildora-ficha.js`, `riu-campana.js` … (+10) | +montarBuzon, +montarControlesChat, +montarEnviar, +montarMotor, +montarPildoraFicha, +montarSandboxChat, +montarSelectorAncla, +montarSelectsSecundarios |
-| `4d21350bff` | 2026-10-25 | Claude | Pruebas e2e del chat en el repo (chat/e2e): servidor local con modelos simulados y la batería completa, para que Grok y cualquiera las  | `README.md`, `axe.js`, `botones.js`, `composer3_e2e.js`, `dispositivos.js`, `eslint.config.mjs`, `inventario.js` … (+11) | +_sol_falso, +apagarTodo, +clic, +corre, +correr, +elegirQwen, +encender, +f … |
+| `4d21350bff` | 2026-10-25 | Claude | Pruebas e2e del chat en el repo (plugins/chat-router/e2e): servidor local con modelos simulados y la batería completa, para que Grok y cualquiera las  | `README.md`, `axe.js`, `botones.js`, `composer3_e2e.js`, `dispositivos.js`, `eslint.config.mjs`, `inventario.js` … (+11) | +_sol_falso, +apagarTodo, +clic, +corre, +correr, +elegirQwen, +encender, +f … |
 | `1aef5be56b` | 2026-10-25 | Claude | Bloques para Grok (revisión, instrucciones, build) y README de las pruebas e2e | `README.md` | — |
+| `f147893bf5` | 2026-10-25 | Claude | Raices del chat (frontend y backend): indices con commits, cambios, handoff, instrucciones/danos/pendientes y auditor de cableado | `cableado.py`, `cambios.py`, `indice.py` | +escribir, +f, +git, +grupo, +info, +tabla |
+| `9c4e58e1a3` | 2026-10-25 | Claude | Organizar el chat en dos raices: chat/frontend y chat/backend (mvp, harness, cliente) con enlaces de compatibilidad para el Space y los plugins | `README.md`, `axe.js`, `botones.js`, `composer3_e2e.js`, `dispositivos.js`, `eslint.config.mjs`, `inventario.js` … (+328) |  · −escribir, −f, −git, −grupo, −info, −tabla |

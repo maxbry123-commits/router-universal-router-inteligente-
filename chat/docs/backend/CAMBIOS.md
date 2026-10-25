@@ -3,7 +3,7 @@
 Generado por `chat/e2e/cambios.py` desde `git log`. Para auditar un cambio: `git show <commit> -- <archivo>`.
 Columnas: commit · fecha · autor · qué · archivos · funciones (+ añadidas / − quitadas).
 
-Total de commits: **106**
+Total de commits: **107**
 
 | Commit | Fecha | Autor | Cambio | Archivos | Funciones |
 |---|---|---|---|---|---|
@@ -113,3 +113,4 @@ Total de commits: **106**
 | `8ffec72cd7` | 2026-10-24 | Claude | Chat: salida más grande (caja de escritura en filas, herramientas deslizables, ⤢ salida grande); LLM tool y Agente tool = mismos permisos del servidor | `app.py`, `test_control.py`, `test_tools_chat.py`, `server.py` | +test_modo_autonomo_responde_un_turno_y_avisa_y_modo_invalido_falla · −test_modo_autonomo_y_modo_invalido_fallan_cerrados |
 | `893b45736c` | 2026-10-24 | Claude | Pruebas MCP: salud trae permisos (t4 necesita ia=true), el 403 de una herramienta bloqueada dice la causa (ia=false), guion MCP sin Python y lista de  | `mcp_route.py`, `guion.py`, `test_mcp_sesion.py`, `test_pruebas_vivo.py`, `test_tools_chat.py`, `server.py`, `router_api_cliente.py` | +__init__, +chat, +herramienta, +main, +test_guion_mcp_imprime_las_llamadas_sin_red_ni_informes |
 | `7b2430c8e8` | 2026-10-25 | Claude | Groq/NVIDIA: el banco guarda todas las claves del Space (GROQ_API_KEY, GROQ_API_KEY_1..n, NVIDIA_API_KEY_n) y el Router prueba el pool en orden (salta | `bank.py`, `externos.py`, `mcp_route.py`, `test_externos.py` | +claves, +solicitar, +test_el_banco_guarda_las_claves_de_groq_y_nvidia_del_entorno, +test_pool_de_claves_salta_la_invalida |
+| `9c4e58e1a3` | 2026-10-25 | Claude | Organizar el chat en dos raices: chat/frontend y chat/backend (mvp, harness, cliente) con enlaces de compatibilidad para el Space y los plugins | `README.md`, `__init__.py`, `ficha.json`, `plugin.py`, `server.py`, `boot.sh`, `app.py` … (+209) | +_raiz |

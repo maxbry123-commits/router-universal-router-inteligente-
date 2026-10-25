@@ -9,7 +9,7 @@ async function corre(nombre, vp, movil) {
   await p.goto(URL); await p.waitForSelector('#btn-agentes', { state: 'attached', timeout: 15000 }); await p.waitForTimeout(1500);
   const txt = async (s) => (await p.textContent(s)).trim();
   const vis = async (s) => p.evaluate((s) => { const e = document.querySelector(s); if (!e) return false; const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none'; }, s);
-  for (const s of ['#message', '#composer .action', '#cb-sel-modelo', '#cb-sel-permisos', '#cb-sel-herr']) ok('visible ' + s, await vis(s));
+  for (const s of ['#message', '#composer .action']) ok('visible ' + s, await vis(s));
   ok('chips arrancan OFF', (await txt('#btn-tools')) === 'IA OFF' && (await txt('#btn-agentes')) === 'Agentes OFF' && (await txt('#btn-prompt')) === 'System prompt OFF');
   await p.$eval('#btn-prompt', e => e.click()); await p.waitForFunction(() => /ON/.test(document.querySelector('#btn-prompt').textContent));
   ok('System prompt ON no enciende IA ni Agentes', (await txt('#btn-tools')) === 'IA OFF' && (await txt('#btn-agentes')) === 'Agentes OFF');

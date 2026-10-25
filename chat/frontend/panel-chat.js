@@ -288,7 +288,7 @@ export async function mount(root, { api, tell }) {
   const pintarModos = () => {
     const lista = q("#sh-modo-lista");
     lista.replaceChildren();
-    for (const [k, et] of [["fast", "Responde directo"], ["balanced", "Por defecto"], ["think", "Razona antes de responder"]]) {
+    for (const [k, et] of [["fast", "Rápido — 512 tok"], ["balanced", "Equilibrado — 1024 tok"], ["think", "Pensar — 2048 tok"]]) {
       lista.append(fila(MODOS[k], et, k === modo, () => {
         modo = k;
         q("#modo").textContent = MODOS[k] + " ⌄";

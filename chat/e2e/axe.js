@@ -13,7 +13,6 @@ const VP = process.argv[2] === 'desk' ? { width: 1280, height: 800 } : { width: 
     console.log('== ' + nombre + ': ' + r.length + ' reglas fallan'); r.forEach(v => console.log(' -', v.impact, v.id, 'x' + v.n, JSON.stringify(v.ej).slice(0, 400)));
   };
   await correr('chat (composer + historial)', '#panel');
-  for (const [b2, h2] of [['#cb-sel-modelo', '#cb-modelos'], ['#cb-sel-permisos', '#cb-permisos'], ['#cb-sel-herr', '#cb-herramientas']]) { await p.click(b2); await p.waitForTimeout(400); await correr('ventana ' + h2, h2); await p.keyboard.press('Escape'); await p.waitForTimeout(200); }
   for (const id of ['room', 'conexiones', 'power']) { await p.$eval('#btn-' + id, e => e.click()); await p.waitForTimeout(900); await correr('ventana ' + id, '#ventana-' + id); await p.keyboard.press('Escape'); await p.waitForTimeout(200); }
   await b.close();
 })().catch(e => { console.log('ERROR', e.message.split('\n')[0]); process.exit(1); });

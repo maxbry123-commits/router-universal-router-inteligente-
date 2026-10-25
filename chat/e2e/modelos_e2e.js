@@ -33,7 +33,7 @@ const ok = (n, c, x) => console.log((c ? 'PASS ' : 'FAIL ') + n + (x ? ' :: ' + 
   await p.evaluate(() => [...document.querySelectorAll('#sh-groq-lista button')].find(e => /gpt-oss-120b/.test(e.textContent)).click()); await p.waitForTimeout(400);
   ok('3 la fila Groq muestra el modelo elegido', /gpt-oss-120b/.test(await p.evaluate(() => (document.querySelector('.sel-fila[data-selector="groq"] .sel-resp') || {}).textContent || '')));
   await encender('groq');
-  ok('3 fuera del selector se ve el modelo que responde', /gpt-oss-120b/.test(await p.evaluate(() => document.querySelector('#cb-sel-modelo .cb-et').textContent)));
+  ok('3 el panel Selectores muestra el modelo que responde', /gpt-oss-120b/.test(await p.evaluate(() => document.querySelector('.sel-resp-global').textContent)));
   r = await pregunta(); ok('3 responde Groq gpt-oss-120b', /Soy openai\/gpt-oss-120b en Groq/.test(r.t) && /groq\/openai\/gpt-oss-120b/.test(r.meta), r.t + ' | ' + r.meta);
   // 4) recargar: la elección se conserva y sigue respondiendo el mismo
   await p.reload(); await p.waitForSelector('#btn-prompt', { state: 'attached' }); await p.waitForTimeout(2500);

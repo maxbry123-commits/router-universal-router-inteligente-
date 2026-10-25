@@ -17,8 +17,8 @@ Base de comparación (antes de los cambios de Claude): `1b916a587c`. Revisión d
 | I8 | 3 selectores Modelo · Permisos · Herramientas con dibujo 2D | Hecho pero Antonio dice «amorfos» → **rediseñar** | `a34ccf2482` |
 | I9 | Selector superior como ventana (no carrusel) y modelos dentro de un selector | Hecho en `a34ccf2482` · sin confirmación de Antonio | `a34ccf2482` |
 | I10 | Revisar que el banco tiene claves de Groq | Hecho en código (el banco guarda GROQ_* y NVIDIA_*) | `7b2430c8e8` |
-| I11 | Botón Detener visible | **PENDIENTE** (aparece solo al enviar) | `5fc6df588d`, D2 |
-| I12 | Simulador de pensamiento (cubo + segundos) | **PENDIENTE** | D1 |
+| I11 | Botón Detener visible | **ARREGLADO** (vuelve el diseño de la base: a la vista en reposo; prueba `chat/e2e/original.js`) | `5fc6df588d`, D2 |
+| I12 | Simulador de pensamiento (cubo + segundos) | **ARREGLADO** (visible mientras trabaja; `original.js`) | D1 |
 | I13 | «Antes el modelo iba diciendo lo que hacía» | **PENDIENTE** (backend) | D4 |
 | I14 | Más de 22 componentes RIU/RUI visibles | **PENDIENTE** (22 instalados; 23–25 no existen en el skill) | D9 |
 | I15 | Trazabilidad forense X-Ray | Hecho | `docs/AUDITORIA_FRONTEND_XRAY.md`, `docs/TRAZABILIDAD_CHAT.md` |
@@ -33,10 +33,10 @@ Base de comparación (antes de los cambios de Claude): `1b916a587c`. Revisión d
 ### Frontend
 | # | Daño | Dónde | Commit | Estado |
 |---|---|---|---|---|
-| D1 | Desapareció el cubo 3D y los segundos del pensamiento | `composer-filas.js`: `QUEDAN` no incluye `.p3d`; `ordenar()` lo manda a la hoja oculta Herramientas | `a34ccf2482` | PENDIENTE |
-| D2 | Detener oculto en reposo | `composer-filas.js` / `panel-chat.js` | `a34ccf2482`, `5fc6df588d` | PENDIENTE |
-| D3 | 17 controles movidos de la pantalla a hojas (lista en `docs/AUDITORIA_FRONTEND_XRAY.md` §4) | `composer-filas.js` | `a34ccf2482` | Intencional, rechazado por Antonio |
-| D5 | Etiquetas de modo cambiadas sin pedirlo («Rápido — 512 tok» → «Responde directo», etc.) | `panel-chat.js` | `548c387b8e` | PENDIENTE |
+| D1 | **ARREGLADO** · Desapareció el cubo 3D y los segundos del pensamiento | `composer-filas.js`: `QUEDAN` no incluye `.p3d`; `ordenar()` lo manda a la hoja oculta Herramientas | `a34ccf2482` | PENDIENTE |
+| D2 | **ARREGLADO** · Detener oculto en reposo | `composer-filas.js` / `panel-chat.js` | `a34ccf2482`, `5fc6df588d` | PENDIENTE |
+| D3 | **ARREGLADO** (se quitó `composer-filas.js/css` y se cargan los controles como en la base) · 17 controles movidos de la pantalla a hojas (lista en `docs/AUDITORIA_FRONTEND_XRAY.md` §4) | `composer-filas.js` | `a34ccf2482` | Intencional, rechazado por Antonio |
+| D5 | **ARREGLADO** · Etiquetas de modo cambiadas sin pedirlo («Rápido — 512 tok» → «Responde directo», etc.) | `panel-chat.js` | `548c387b8e` | PENDIENTE |
 | D6 | Etiqueta NVIDIA con sufijo «(sin NVIDIA en el Router: responde Qwen)» | `chat-selectores.js` / `fichas-externas.js` | `6b2a24036e` | Revisar |
 | D7 | El chat no cargó ~10 min: un comentario `//` se tragó el resto de la línea | `api.js` | `8ffec72cd7` → arreglo `5f7c08eacd` | Arreglado + chequeo de sintaxis y eslint antes de subir |
 | D8 | Sin botón de proyecto en caja/Herramientas | — | decisión de base | PENDIENTE |
@@ -62,10 +62,8 @@ Base de comparación (antes de los cambios de Claude): `1b916a587c`. Revisión d
 
 ## C. Pendientes disponibles (ordenados)
 
-### Frontend (Salida 2, esperan tu orden)
-1. D1 cubo + segundos junto a Enviar, visible mientras trabaja: añadir `.p3d` a `QUEDAN` en `composer-filas.js`.
-2. D2 Detener siempre visible como en la base.
-3. D5 devolver las etiquetas de modo originales (`panel-chat.js`, lista `[["fast",…],…]`).
+### Frontend (esperan tu orden)
+1. ~~D1, D2, D3, D5~~ arreglados al revertir el composer (ver arriba).
 4. D8 «Nuevo proyecto» en Herramientas (`RIU_ANCLA_ABRIR("proyecto")`).
 5. Rediseñar los 3 selectores y sus hojas (necesito ejemplo o referencia visual tuya).
 6. D9 hacer visibles los 22 RIU; tú confirmas qué son el 23–25.

@@ -10,17 +10,12 @@ const ok = (n, c, x) => console.log((c ? 'PASS ' : 'FAIL ') + n + (x ? ' :: ' + 
     await p.screenshot({ path: 'final-' + w + '.png' });
     await p.focus('#message'); const vistos = new Set(); let sinFoco = [];
     for (let i = 0; i < 30; i++) { await p.keyboard.press('Tab'); const d = await p.evaluate(() => { const e = document.activeElement; if (!e || !e.closest('#composer')) return null; const c = getComputedStyle(e); return { id: e.id || e.getAttribute('aria-label') || e.className, foco: c.outlineStyle !== 'none' || c.boxShadow !== 'none' }; }); if (!d) break; vistos.add(d.id); if (!d.foco) sinFoco.push(d.id); }
-    const debe = ['cb-sel-modelo', 'cb-sel-permisos', 'cb-sel-herr', 'Enviar'];
+    const debe = ['btn-adjunto', 'btn-archivos', 'btn-ancla', 'btn-tools', 'btn-agentes', 'btn-prompt'];
     ok(w + 'px Tab llega a todos los botones del composer', debe.every(x => vistos.has(x)), [...vistos].join(','));
     ok(w + 'px foco visible en cada uno', sinFoco.length === 0, sinFoco.join(','));
-    await p.focus('#cb-sel-permisos'); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
     const t0 = await p.textContent('#btn-prompt'); await p.focus('#btn-prompt'); await p.keyboard.press('Enter'); await p.waitForFunction((t) => document.querySelector('#btn-prompt').textContent !== t && !document.querySelector('#btn-prompt').disabled, t0);
     await p.keyboard.press(' '); await p.waitForFunction((t) => document.querySelector('#btn-prompt').textContent === t && !document.querySelector('#btn-prompt').disabled, t0);
     ok(w + 'px Enter y Espacio activan un chip', true); await p.keyboard.press('Escape'); await p.waitForTimeout(200);
-    await p.focus('#cb-sel-herr'); await p.keyboard.press('Enter'); await p.waitForTimeout(400);
-    ok(w + 'px la ventana Herramientas abre con el foco dentro', await p.evaluate(() => !!document.activeElement.closest('#cb-herramientas')));
-    await p.keyboard.press('Escape'); await p.waitForTimeout(200);
-    ok(w + 'px Escape la cierra', await p.evaluate(() => document.querySelector('#cb-herramientas').hidden));
     await ctx.close();
   }
   await b.close();
