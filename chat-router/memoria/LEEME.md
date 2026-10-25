@@ -11,4 +11,4 @@ Cableado pendiente: herramientas `memoria_guardar` y `memoria_buscar` en MCP, pe
 
 - Arquitectura (README + input literal de Antonio): `arquitectura/`.
 
-- Dos memorias que conviven (chat = UI YAIWES, agentes = esta carpeta): ver [README-DOS-SISTEMAS-DE-MEMORIA.md](README-DOS-SISTEMAS-DE-MEMORIA.md).
+- Dos sistemas que conviven (Sistema 2 = UI YAIWES, sistema operativo de interfaz con triggers, sin memoria propia; Sistema 1 = memoria de agentes, esta carpeta): ver [README-DOS-SISTEMAS-DE-MEMORIA.md](README-DOS-SISTEMAS-DE-MEMORIA.md).

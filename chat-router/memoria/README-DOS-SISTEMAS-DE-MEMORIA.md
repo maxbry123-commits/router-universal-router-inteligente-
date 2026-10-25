@@ -1,15 +1,17 @@
-# Dos memorias que conviven con propósitos distintos
+# Dos sistemas que conviven con propósitos distintos
 
 Estado de este documento: **PROPUESTA** de arquitectura (fecha 2026-10-25), pendiente de aprobación de Antonio. Lo que existe hoy se marca como **EXISTENTE**; lo que falta, como **PROPUESTO**.
 
-## 1. Las dos memorias
+## 1. Los dos sistemas
 
-| | Memoria del chat | Memoria de los agentes |
+UI YAIWES **no es un sistema de memoria ni un agente**: es el sistema operativo de la interfaz del chat, con triggers (disparadores por evento que solo cambian la pantalla). La memoria, el estado y la auditoría viven solo en el Sistema 1. Detalle: README de https://github.com/maxbry123-commits/ui-yaiwes
+
+| | Sistema 2: control del chat | Sistema 1: memoria de los agentes |
 |---|---|---|
-| Nombre | **UI YAIWES** (sistema de control del chat) | **Sistema de memoria y almacenamiento** |
-| Qué guarda | Conversaciones, sesiones, anclas, proyecto elegido, preferencias de interfaz, lo que muestran las ventanas | Estado (planilla / handoff), conocimiento con evidencia, almacenamiento HF, auditoría, recursos, gobierno de agentes |
+| Nombre | **UI YAIWES** (sistema operativo de interfaz con triggers) | **Sistema de memoria y almacenamiento** |
+| Qué guarda | Solo preferencias y caché de interfaz en el navegador; muestra lo que el Sistema 1 le informa. No guarda la verdad | Estado (planilla / handoff), conocimiento con evidencia, almacenamiento HF, auditoría, recursos, gobierno de agentes |
 | Dónde vive | Repo `maxbry123-commits/ui-yaiwes` (https://github.com/maxbry123-commits/ui-yaiwes). Servida en `/yaiwes` desde `chat/frontend/yaiwes/` | `chat-router/memoria/` de este repo |
-| Quién la controla | La interfaz (sin lógica propia) | El software del sistema (los agentes no escriben libremente) |
+| Quién la controla | La interfaz pide y muestra, sin lógica propia; no decide ni escribe memoria | El software del sistema (los agentes no escriben libremente) |
 
 - **EXISTENTE:** UI YAIWES con 39 ventanas, host y action bus (fábrica F0–F3); puente `puente-yaiwes.js` hacia el Harness. En memoria de agentes: `chat/backend/mvp/{memoria.py,hf_store.py,trabajos.py}` cableado, y `memoria-yaiwes/` (SQLite, grafo, adaptadores) sin cablear del todo.
 - **PROPUESTO:** el kernel que une ambas por acciones y eventos (no existe todavía).
@@ -24,7 +26,7 @@ Estado de este documento: **PROPUESTA** de arquitectura (fecha 2026-10-25), pend
 6. Las ventanas no llevan tokens: GitHub, Hugging Face, Drive y base de datos los abre el kernel (hoy `connectors.js` responde `KERNEL_ONLY`).
 
 ```
-MEMORIA DEL CHAT (UI YAIWES)  --acciones/anclas-->  MEMORIA DE LOS AGENTES
+SISTEMA 2 (UI YAIWES)  --acciones/anclas-->  SISTEMA 1 (memoria de los agentes)
  ventanas, slots, action bus  <--eventos run.*/memory.*--  estado, memoria, almacenamiento,
  solo preferencias en el navegador                          auditoría, recursos, gobierno
 ```
@@ -68,4 +70,4 @@ Los 11 módulos salen de `T2-R1-WINDOW-CAPABILITY-MAP` en ui-yaiwes (EXISTENTE).
 - `puente-yaiwes.js` devuelve `{ok:true}` a toda acción distinta de `send_message` sin hacer nada; contradice `failClosed`.
 - `ABS.js` usa `postMessage(..., '*')`, prohibido por el contrato de runtime-orchestration.
 
-Referencia de la memoria del chat: README de https://github.com/maxbry123-commits/ui-yaiwes
+Referencia de UI YAIWES (sistema operativo de interfaz con triggers): README de https://github.com/maxbry123-commits/ui-yaiwes
