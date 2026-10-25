@@ -11,6 +11,7 @@ import "./ventana-conexiones.js";  // Conexiones (credenciales por servicio, ON/
 import "./ventana-room.js";  // ROOM CONFERENCIAS (salas compartidas + turno de los agentes)
 import "./ventana-servidor.js";  // Servidor del Router (encender/apagar/reiniciar vía /api/power de Vercel)
 import "./ventana-loop.js";  // LOOP del chat: encender, un paso, verificar, repetir, apagar
+import "./ventana-mcp.js";  // pruebas HTTP y MCP del Router
 import "./fichas-externas.js";  // modelos reales de Groq/NVIDIA en el selector NVIDIA (antes de montar el chat)
 import "./chat-medios.js";  // medios [[imagen:]] [[video:]] [[audio:]] dentro de la burbuja
 import "./selector-modelos.js";  // un solo selector guarda todos los selectores de modelo; fuera queda el indicador

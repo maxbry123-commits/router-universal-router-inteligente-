@@ -102,7 +102,8 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
   #composer .composer-bar > #btn-room,
   #composer .composer-bar > #btn-power,
   #composer .composer-bar > #btn-pendientes,
-  #composer .composer-bar > #btn-loop { order: 2; }
+  #composer .composer-bar > #btn-loop,
+  #composer .composer-bar > #btn-mcp { order: 2; }
   #composer .composer-bar > * { flex: 0 0 auto; white-space: nowrap; }
   #composer .composer-bar > .action { position: absolute; right: 0; bottom: 0; z-index: 30; margin-left: 0; }
   #composer .composer-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; margin: 0 0 6px; overflow: visible; }
@@ -120,3 +121,4 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
   #composer .composer-bar > #btn-detener { width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
   #btn-selector-modelos { font-size: 15px; }
 }
+#ventana-mcp .mcp-out { max-height: 160px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 13px; }
