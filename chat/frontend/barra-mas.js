@@ -84,9 +84,28 @@ function nombre(b) {
   b.append(n);
 }
 
+function devolver() {
+  const bar = document.querySelector("#composer .composer-bar");
+  const panel = document.querySelector("#mas-panel");
+  if (!bar || !panel) return;
+  const env = bar.querySelector(".action");
+  IDS.forEach((id) => {
+    const b = document.getElementById(id);
+    if (!b || b.parentNode === bar) return;
+    const nom = b.querySelector(".mas-nom");
+    if (nom) nom.remove();
+    bar.insertBefore(b, env || null);
+  });
+  panel.querySelectorAll(".mas-atajo").forEach((n) => n.remove());
+  panel.hidden = true;
+  const mas = document.querySelector("#btn-mas");
+  if (mas) mas.setAttribute("aria-expanded", "false");
+}
+
 function colocar() {
   const panel = document.querySelector("#mas-panel") || armar();
-  if (!panel || !movil()) return;
+  if (!panel) return;
+  if (!movil()) { devolver(); return; }
   IDS.forEach((id) => {
     const b = document.getElementById(id);
     if (!b || b.parentNode === panel) return;
@@ -99,4 +118,5 @@ function colocar() {
 }
 
 new MutationObserver(() => colocar()).observe(document.body, { childList: true, subtree: true });
+matchMedia("(max-width:720px)").addEventListener("change", colocar);
 colocar();

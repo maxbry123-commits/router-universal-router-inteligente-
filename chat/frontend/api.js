@@ -48,7 +48,18 @@ async function liveRouter() {
     if (VALIDA(c)) aplicarBase(c);
   }
   if (Date.now() - liveCheckedAt >= 30000) { const pr = refrescarLive(); if (!BASE) return pr; pr.catch(() => {}); }  // con BASE: refresco en segundo plano
+  anunciarRouter();
   return BASE;
+}
+let avisoRouter = false;
+function anunciarRouter() {
+  if (avisoRouter || !BASE) return;
+  const url = (PBASE || BASE).replace(/\/$/, "") + "/health";
+  fetchT(url, { cache: "no-store", credentials: "omit" }, 8000).then((r) => {
+    if (!r.ok) { window.dispatchEvent(new CustomEvent("router-connection", { detail: "Error de Router" })); return; }
+    avisoRouter = true;
+    window.dispatchEvent(new CustomEvent("router-connection", { detail: "Router disponible" }));
+  }).catch(() => { window.dispatchEvent(new CustomEvent("router-connection", { detail: "Sin conexión" })); });
 }
 
 function clave() {
