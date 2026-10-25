@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-# Motor del LOOP. Ejecuta un componente de ecc-loop.json. No usa shell ni skills.
+# Motor del LOOP. Ejecuta un componente de LOOP-wachdog-cola.json. No usa shell ni skills.
 import json
 from pathlib import Path
 
-SPEC = json.loads(Path(__file__).with_name("ecc-loop.json").read_text(encoding="utf-8"))
+SPEC_FILE = json.loads(Path(__file__).resolve().parents[1].joinpath("LOOP-wachdog-cola.json").read_text(encoding="utf-8"))
+SPEC = {"componentes": SPEC_FILE["cola"], "tope": SPEC_FILE["wachdog"]["tope"]}
 
 
 def anotar(e, extra):

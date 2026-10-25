@@ -1,0 +1,22 @@
+{
+  "raiz": "LOOP-wachdog-cola",
+  "plugin": "loop_wachdog",
+  "harness": "/plugins/loop_wachdog/call/paso",
+  "ventana": { "id": "loop", "titulo": "LOOP" },
+  "botones": [
+    { "id": "encender", "texto": "Encender", "accion": "encender" },
+    { "id": "apagar", "texto": "Apagar", "accion": "apagar" },
+    { "id": "disparar", "texto": "Disparar", "accion": "paso" },
+    { "id": "seguir", "texto": "Seguir", "accion": "seguir" },
+    { "id": "reiniciar", "texto": "Reiniciar", "accion": "reiniciar" },
+    { "id": "yaiwes", "texto": "Yaiwes", "accion": "yaiwes", "title": "Guardar en yaiwes.md" },
+    { "id": "proyecto", "texto": "Proyecto", "accion": "proyecto", "title": "Enlazar al proyecto" }
+  ],
+  "wachdog": { "intervalo_ms": 3000, "tope": 8, "pausa_si": ["falta ", "sin ", "nada ", "tope"] },
+  "cola": [
+    { "id": "contexto", "fase": "objetivo", "op": "exigir", "campo": "objetivo", "falta": "falta objetivo", "siguiente": "plan" },
+    { "id": "plan", "fase": "plan", "op": "exigir", "campo": "plan", "falta": "falta plan", "siguiente": "tarea" },
+    { "id": "probar", "fase": "tarea", "op": "tomar", "falta": "sin tareas", "siguiente": "verificar" },
+    { "id": "observar", "fase": "verificar", "op": "cerrar", "falta": "nada que verificar", "siguiente": "objetivo" }
+  ]
+}

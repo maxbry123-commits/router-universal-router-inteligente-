@@ -35,10 +35,15 @@ function anotar(e, extra) {
 let specEcc = null;
 async function spec() {
   if (specEcc) return specEcc;
-  const r = await fetch("/chat/ui/api/ecc-loop.json");
+  const r = await fetch("/chat/ui/LOOP-wachdog-cola.json");
   if (!r.ok) throw new Error("sin motor");
-  specEcc = await r.json();
+  const j = await r.json();
+  specEcc = { componentes: j.cola, tope: j.wachdog.tope, plugin: j.plugin, botones: j.botones, wachdog: j.wachdog };
   return specEcc;
+}
+function etiqueta(id, fb) {
+  const b = specEcc && (specEcc.botones || []).find((x) => x.id === id);
+  return (b && b.texto) || fb;
 }
 function eccPaso(e, spec) {
   const comps = {};
@@ -118,6 +123,17 @@ async function pedir(accion) {
   }
   guardar();
   marcarBoton();
+  if (accion === "paso" && specEcc && specEcc.plugin) {
+    const base = String((window.RIU_CONFIG || {}).proxyDestino || "").replace(/\/$/, "");
+    if (base) {
+      const h = { "Content-Type": "application/json" };
+      const k = sessionStorage.getItem("riu_clave");
+      if (k) { h["X-API-Key"] = k; h.Authorization = "Bearer " + k; }
+      const ctrl = new AbortController();
+      setTimeout(() => ctrl.abort(), 1200);
+      fetch(base + "/plugins/" + specEcc.plugin + "/call/paso", { method: "POST", headers: h, body: JSON.stringify({ accion: "paso", fase: estado.fase, nota: estado.nota }), signal: ctrl.signal }).catch(() => {});
+    }
+  }
   return estado;
 }
 
@@ -206,7 +222,7 @@ function pintarLoop(cuerpo) {
     const marcha = !estado.on ? "apagado" : reloj ? "en curso" : "en pausa";
     mando.replaceChildren(
       el("div", "", marcha + (bloqueado ? " · bloqueado" : "") + " · vuelta " + (estado.paso || 0) + "/8"),
-      el("div", "", "siguiente: " + sigue),
+      el("div", "", "siguiente: " + sigue + (specEcc && specEcc.plugin ? " · " + specEcc.plugin : "")),
     );
     traza.forEach((t) => mando.append(el("div", "", t)));
     if (!traza.length) mando.append(el("div", "", "sin traza"));
@@ -216,14 +232,14 @@ function pintarLoop(cuerpo) {
   let auto = null;
   [objetivo, plan, tareas].forEach((x) => x.addEventListener("input", () => { leerCampos(); pintar(); }));
   window.__riuLoopPintar = pintar;
-  const enc = btn("Encender", "secondary", async () => { enc.disabled = true; try { await pedir("encender"); pintar(); } finally { enc.disabled = false; } });
-  const apa = btn("Apagar", "secondary", async () => { apa.disabled = true; try { await pedir("apagar"); if (reloj) { clearInterval(reloj); reloj = 0; } pintar(); } finally { apa.disabled = false; } });
-  const di = btn("Disparar", "secondary", async () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } di.disabled = true; try { await pedir("paso"); pintar(); } finally { di.disabled = false; } });
-  auto = btn("Seguir", "secondary", () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } if (reloj) { clearInterval(reloj); reloj = 0; } else latido(); pintar(); });
-  const re = btn("Reiniciar", "secondary", async () => { if (reloj) { clearInterval(reloj); reloj = 0; } re.disabled = true; try { await pedir("reiniciar"); pintar(); } finally { re.disabled = false; } });
-  const gy = btn("Yaiwes", "secondary", () => guardarYaiwes(aviso));
+  const enc = btn(etiqueta("encender", "Encender"), "secondary", async () => { enc.disabled = true; try { await pedir("encender"); pintar(); } finally { enc.disabled = false; } });
+  const apa = btn(etiqueta("apagar", "Apagar"), "secondary", async () => { apa.disabled = true; try { await pedir("apagar"); if (reloj) { clearInterval(reloj); reloj = 0; } pintar(); } finally { apa.disabled = false; } });
+  const di = btn(etiqueta("disparar", "Disparar"), "secondary", async () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } di.disabled = true; try { await pedir("paso"); pintar(); } finally { di.disabled = false; } });
+  auto = btn(etiqueta("seguir", "Seguir"), "secondary", () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } if (reloj) { clearInterval(reloj); reloj = 0; } else latido(); pintar(); });
+  const re = btn(etiqueta("reiniciar", "Reiniciar"), "secondary", async () => { if (reloj) { clearInterval(reloj); reloj = 0; } re.disabled = true; try { await pedir("reiniciar"); pintar(); } finally { re.disabled = false; } });
+  const gy = btn(etiqueta("yaiwes", "Yaiwes"), "secondary", () => guardarYaiwes(aviso));
   gy.title = "Guardar en yaiwes.md";
-  const ep = btn("Proyecto", "secondary", () => enlazarProyecto(aviso));
+  const ep = btn(etiqueta("proyecto", "Proyecto"), "secondary", () => enlazarProyecto(aviso));
   ep.title = "Enlazar al proyecto";
   const fila = el("div", "cv-form");
   fila.append(enc, apa, di, auto, re, gy, ep);
@@ -235,3 +251,4 @@ const montar = () => { ventana("loop", "LOOP", pintarLoop); marcarBoton(); };
 new MutationObserver(montar).observe(document.body, { childList: true, subtree: true });
 montar();
 if (estado.on) latido();
+spec().catch(() => {});
