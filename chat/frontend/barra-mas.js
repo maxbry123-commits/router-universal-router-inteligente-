@@ -12,7 +12,9 @@ st.textContent = "@media(max-width:720px){"
   + "#composer .composer-bar{flex-wrap:nowrap !important;gap:6px !important}"
   + "#composer .composer-bar>button.secondary{width:34px !important;min-width:34px !important;height:34px !important}"
   + "#composer .composer-bar::after{display:none !important;content:none !important}"
-  + "#composer .composer-bar>.action{position:static !important;margin-left:auto !important;min-width:0 !important;width:auto !important;height:40px !important;min-height:40px !important;padding:0 14px !important;border-radius:12px !important}"
+  + "#composer .composer-bar>.action{position:static !important;margin-left:auto !important;min-width:40px !important;width:40px !important;height:40px !important;min-height:40px !important;padding:0 !important;border-radius:50% !important;justify-content:center}"
+  + "#composer .composer-bar>.action .env-txt{display:none !important}"
+  + "#mode-selector-mount{flex:0 0 auto;display:flex;align-items:center}"
   + "#mas-panel{position:fixed;z-index:80;left:12px;right:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px;border-radius:16px;background:var(--surface,#1e1e1e);border:1px solid var(--border);overflow:auto;box-shadow:0 12px 32px rgba(0,0,0,.5)}"
   + "#mas-panel[hidden]{display:none !important}"
   + "#mas-panel button{width:auto !important;height:auto !important;min-width:0;min-height:40px;aspect-ratio:auto;border-radius:12px;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;padding:6px 10px}"
@@ -81,8 +83,6 @@ function colocar() {
     nombre(b);
     panel.append(b);
   });
-  const modo = document.querySelector("#mode-selector-mount");
-  if (modo && modo.parentNode !== panel) panel.append(modo);
   const chips = document.querySelector("#composer .composer-chips");
   if (chips && !chips.childElementCount) chips.remove();
 }

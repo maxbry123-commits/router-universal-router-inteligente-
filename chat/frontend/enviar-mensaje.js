@@ -77,7 +77,7 @@ export function montarEnviar(ctx) {
           model: 'qw-' + (m.modelo_id_slug || 'modelo'), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null,
           contexto_previo: ctxPrev, anclados, sesion: c.sesion + '-' + (m.modelo_id_slug || i), instrucciones_fijas: fijasQwen || undefined,
           ...controlTools, thinking_mode: getModo() === 'think' ? 'on' : 'off',
-          mode_request: getModeUI() ? getModeUI().getModeRequest() : undefined,
+          mode_request: getModeUI() ? getModeUI().getModeRequest() : undefined, tool_approval: getModeUI() && getModeUI().getApproval ? getModeUI().getApproval() : undefined,
           qwen: { plugin: "fichas_qwen", ficha_qwen: "1", modelo: m.model_id || m.label || m.modelo_id_slug || "", task_type: "chat" }, avisar: () => {} })));
         const partes = rs.map((r, i) => {
           const nom = _multiSel[i].label || _multiSel[i].modelo_id_slug || ('modelo ' + (i + 1));

@@ -139,7 +139,7 @@ function instalarChat() {
   const modoPadre = modo && modo.parentNode;
   const modoAntes = modo && modo.nextSibling;
   const meter = () => {
-    if (matchMedia("(max-width:720px)").matches) { bar.before(fila); fila.append(b, g); if (modo) fila.append(modo); if (!p.isConnected) fila.append(p); }
+    if (matchMedia("(max-width:720px)").matches) { bar.before(fila); fila.append(b, g); if (!p.isConnected) fila.append(p); }
     else { if (modo && modoPadre) modoPadre.insertBefore(modo, modoAntes); fila.remove(); bar.insertBefore(p, env || null); bar.insertBefore(g, p); bar.insertBefore(b, g); }
   };
   meter();
