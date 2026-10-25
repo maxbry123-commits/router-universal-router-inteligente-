@@ -11,7 +11,27 @@ window.RIU_SELECTOR_QWEN = window.RIU_SELECTOR_QWEN || {
   modelos: [],       // catálogo visible (slugs de interfaz, NO son ids de proveedor)
 };
 
-const GRUPOS = [];  // Catalogo servido por el Router para el plan activo.
+const GRUPOS = [
+  { titulo: "Qwen", modelos: [
+    ["pensar", "Qwen 3.8 Max", "Código complejo", "qwen3.8-max"],
+    ["rayo", "Qwen 3.8 Flash", "Código rápido", "qwen3.8-flash"],
+    ["pensar", "Qwen 3.7 Max", "Razonamiento", "qwen3.7-max"],
+    ["rayo", "Qwen 3.7 Plus", "Código + visión", "qwen3.7-plus"],
+    ["rapido", "Qwen 3.6 Flash", "Rápido / económico", "qwen3.6-flash"]] },
+  { titulo: "DeepSeek", modelos: [
+    ["pensar", "DeepSeek V4 Pro", "Código complejo", "deepseek-v4-pro"],
+    ["pensar", "DeepSeek V4 Pro 0813", "Máxima profundidad", "deepseek-v4-pro-0813"],
+    ["rayo", "DeepSeek V4 Flash", "Código rápido", "deepseek-v4-flash-0731"]] },
+  { titulo: "GLM", modelos: [
+    ["pensar", "GLM 5.2", "Código + agentes", "glm-5.2"]] },
+  { titulo: "Imágenes", modelos: [
+    ["imagen", "Qwen Image 3.0 Pro", "Imágenes", "qwen-image-3.0-pro"],
+    ["imagen", "Wan 2.7 Image", "Imágenes", "wan2.7-image"]] },
+  { titulo: "Modo recepción", modelos: [
+    ["voz", "Qwen TTS", "Texto a voz", "qwen-audio-3.0-tts-plus"],
+    ["micro", "Qwen Realtime", "Voz en vivo", "qwen-audio-3.0-realtime-plus"],
+    ["texto", "Qwen ASR", "Voz a texto", "qwen-audio-3.0-asr-flash"]] },
+];
 const CATALOGO_CLAVE = "riu_catalogo_qwen";  // ultima lista que dio el Router (localStorage)
 const CATALOGO_RESPALDO = ["qwen3.8-max", "qwen3.8-flash", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-flash", "glm-5.3", "glm-5.2", "deepseek-v4-pro", "deepseek-v4-pro-0813", "deepseek-v4-flash-0731", "deepseek-v4.1-flash", "deepseek-v4.1-flash-1017", "qwen-image-3.0-pro", "wan2.7-image", "wan2.7-image-pro", "qwen-audio-3.0-tts-plus", "qwen-audio-3.0-realtime-plus", "qwen-audio-3.0-asr-flash", "wan3.0-video", "happyhorse-1.1-t2v", "happyhorse-1.1-i2v", "happyhorse-1.1-r2v"];  // plan Personal (mvp/modelos.json, p=1)
 
@@ -25,14 +45,7 @@ window.RIU_SELECTOR_QWEN.modelos = GRUPOS.flatMap((g) => g.modelos.map((m) => ({
 export function conectarSelectorModelos(ctx) {
   const { q, chat, tell, guardar } = ctx;
   let cargando = false;
-  // La lista sale siempre: primero la última que dio el Router (o el catálogo del plan Personal) y luego se refresca.
-  // Si el Router tarda (Space despertando) se reintenta y la lista no se vacía.
-  const aplicarLista = (ids) => {
-    GRUPOS.splice(0, GRUPOS.length, { titulo: 'Modelos del plan activo', modelos: ids.map((id) => ['pensar', id, 'ID enviado al proveedor', id]) });
-    window.RIU_SELECTOR_QWEN.modelos = ids.map((id) => ({ model_id: id, modelo_id_slug: slug(id), label: id, grupo: 'Modelos del plan activo' }));
-  };
-  const guardada = () => { try { const x = JSON.parse(localStorage.getItem(CATALOGO_CLAVE) || 'null'); return Array.isArray(x) && x.length ? x : null; } catch (e) { return null; } };
-  if (!GRUPOS.length) aplicarLista(guardada() || CATALOGO_RESPALDO);
+  // La lista cableada de GRUPOS no se sustituye por ids crudos. El Router solo se consulta; si no responde, la lista sigue.
   const cargarCatalogo = (intento = 1) => {
     if (cargando) return;
     cargando = true;
@@ -40,7 +53,7 @@ export function conectarSelectorModelos(ctx) {
       if (!Array.isArray(r.models) || !r.models.length) throw new Error('Catalogo vacio');
       const ids = r.models.map((m) => m.model_id);
       try { localStorage.setItem(CATALOGO_CLAVE, JSON.stringify(ids)); } catch (e) {}
-      aplicarLista(ids); pintar();
+      pintar();
     }).catch(() => {
       cargando = false;
       if (intento < 3) { setTimeout(() => cargarCatalogo(intento + 1), 4000); return; }
