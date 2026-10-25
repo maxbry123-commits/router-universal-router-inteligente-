@@ -14,3 +14,5 @@ Servidor local (`servidor.py`): el Router real (`mvp/app.py`) con modelos simula
 | `botones.js [movil\|desk] [hoja:#boton:#ventana]` | pulsa de verdad cada botón y exige un efecto |
 | `axe.js`, `teclado.js` | accesibilidad WCAG 2.2 AA y teclado |
 | `narracion.js`, `inventario.js`, `phone.js` | diagnóstico: cubo de pensamiento/Detener/textos de espera; inventario base vs. actual; captura a 345×700 |
+
+Si `playwright`/`axe-core` están en otra carpeta: `NODE_PATH=/ruta/node_modules CHROMIUM=/ruta/chromium AXE_JS=/ruta/axe.min.js bash plugins/chat-router/e2e/todo.sh`.
