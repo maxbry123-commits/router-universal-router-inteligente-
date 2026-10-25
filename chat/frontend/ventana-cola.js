@@ -22,7 +22,7 @@ function tomar(r) {
   origen = r.persistente === false ? "memoria" : "servidor";
 }
 async function refrescar() {
-  const r = await accion("checklist", {});
+  const r = await accion("checklist", { accion: "listar" });
   tomar(r);
 }
 function donde() {
@@ -35,8 +35,8 @@ function pintar(cuerpo) {
   const aviso = el("div", "cv-est");
   const estado = el("div", "wd-estado");
   const texto = el("textarea", "vn-ta");
-  texto.rows = 2;
-  texto.placeholder = "Tarea para la cola";
+  texto.rows = 1;
+  texto.placeholder = "Tarea. Enter para añadir.";
   texto.setAttribute("aria-label", "Tarea para la cola");
   const lista = el("div", "cola-lista");
   let ocupado = false;

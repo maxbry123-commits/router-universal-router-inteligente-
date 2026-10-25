@@ -139,4 +139,5 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
 #ventana-cola .cola-check { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; }
 #ventana-cola .cola-fila span { min-width: 0; overflow-wrap: anywhere; }
 #ventana-cola .cola-fila .cv-form { grid-column: 2; flex: none; margin-top: 0; }
+#ventana-cola .cola-fila button { min-height: 32px; padding: 4px 10px; }
 #ventana-cola .cola-fila.hecha span { text-decoration: line-through; opacity: .7; }
