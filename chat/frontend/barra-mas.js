@@ -33,13 +33,6 @@ function atajos(panel) {
     panel.append(b);
   });
 }
-function cuentaTareas() {
-  const b = document.getElementById("btn-tareas"); if (!b) return;
-  let n = 0;
-  try { n = (JSON.parse(localStorage.getItem("riu_tareas_v1") || "{}").tareas || []).filter((t) => t && t.on).length; } catch (e) {}
-  b.setAttribute("aria-label", n ? "Tareas, " + n + " encendidas" : "Tareas");
-  const s = b.querySelector(".mas-nom"); if (s) s.textContent = b.getAttribute("aria-label");
-}
 const movil = () => matchMedia("(max-width:720px)").matches;
 
 function armar() {
@@ -100,7 +93,6 @@ function colocar() {
     panel.append(b);
   });
   atajos(panel);
-  cuentaTareas();
   const chips = document.querySelector("#composer .composer-chips");
   if (chips && !chips.childElementCount) chips.remove();
 }

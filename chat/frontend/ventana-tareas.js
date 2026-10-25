@@ -51,10 +51,12 @@ function marcar() {
   const b = document.querySelector("#btn-tareas");
   if (!b) return;
   const n = caja().tareas.filter((t) => t.on && t.proxima && t.proxima <= Date.now()).length;
-  b.title = n ? n + " lista" : "Tareas";
-  b.setAttribute("aria-label", n ? "Tareas, " + n + " lista" : "Tareas");
+  const title = n ? n + " lista" : "Tareas";
+  const et = n ? "Tareas, " + n + " lista" : "Tareas";
+  if (b.title !== title) b.title = title;
+  if (b.getAttribute("aria-label") !== et) b.setAttribute("aria-label", et);
   const nom = b.querySelector(".mas-nom");
-  if (nom) nom.textContent = b.getAttribute("aria-label");
+  if (nom && nom.textContent !== et) nom.textContent = et;
 }
 async function avisarServidor(accion, extra) {
   if (!window.RIU_ACCION) return false;
