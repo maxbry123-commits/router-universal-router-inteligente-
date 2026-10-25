@@ -1,5 +1,5 @@
 // ventana-loop.js — LOOP del chat: objetivo, plan y tareas. Se guardan en yaiwes.md y en el proyecto LOOP.
-import { el, btn, ventana } from "./ventanas-control.js";
+import { el, btn, ventana, vivo, SIN_BACKEND } from "./ventanas-control.js";
 import { leer, escribir } from "./almacen.js";
 import { crearProyecto, listaProyectos } from "./objetivos-ancla.js";
 
@@ -9,9 +9,14 @@ const SIGUE = { objetivo: "plan", plan: "tarea", tarea: "verificar", verificar: 
 const CLAVE = "riu_loop";
 const MARCA = ["<!-- loop-yaiwes -->", "<!-- /loop-yaiwes -->"];
 let estado = { on: false, paso: 0, fase: "apagado", nota: "apagado", objetivo: "", plan: "", tareas: "" };
-let reloj = 0;
+let reloj = 0;      // temporizador del Seguir (0 = en pausa)
+let enVuelo = false;  // un solo paso a la vez: ni el reloj ni los clics lo solapan
+let backend = "";   // "" aún no se sabe · "servidor" /api/loop respondió · "sin" no hay servidor y el LOOP corre solo en este chat
 try { estado = Object.assign(estado, JSON.parse(sessionStorage.getItem(CLAVE) || "") || {}); } catch (e) {}
 
+const tope = () => (specEcc && specEcc.tope) || 8;
+const pausaPor = (nota) => ((specEcc && specEcc.wachdog && specEcc.wachdog.pausa_si) || ["falta ", "sin ", "nada ", "tope"]).some((p) => String(nota || "").startsWith(p));
+const intervalo = () => Math.max(50, Number(specEcc && specEcc.wachdog && specEcc.wachdog.intervalo_ms) || 3000);
 function guardar() { try { sessionStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (e) {} }
 function sesion() { return sessionStorage.getItem("riu_sesion") || "web-general"; }
 function marcarBoton() {
@@ -102,7 +107,7 @@ function disparar(e) {
   if (!e.disparo) return { ...e, on: true, fase: "verificar", nota: "nada que verificar" };
   const hecho2 = hecho + 1;
   const paso = (e.paso || 0) + 1;
-  if (paso >= 8) return anotar(e, { on: false, fase: "apagado", paso, hecho: hecho2, nota: "tope", disparo: e.disparo });
+  if (paso >= tope()) return anotar(e, { on: false, fase: "apagado", paso, hecho: hecho2, nota: "tope", disparo: e.disparo });
   return anotar(e, { on: true, fase: "objetivo", paso, hecho: hecho2, nota: hecho2 >= tareas.length ? "vuelta completa" : "verificado", disparo: e.disparo });
 }
 function lineas() { return String(estado.tareas || "").split(/\n/).map((x) => x.trim()).filter(Boolean); }
@@ -117,6 +122,10 @@ function meter(prev) {
 }
 
 async function pedir(accion) {
+  if (accion === "paso") { if (enVuelo) return estado; enVuelo = true; }
+  try { return await pedirReal(accion); } finally { if (accion === "paso") enVuelo = false; }
+}
+async function pedirReal(accion) {
   leerCampos();
   const s = sesion();
   const texto = { objetivo: estado.objetivo || "", plan: estado.plan || "", tareas: estado.tareas || "" };
@@ -128,7 +137,9 @@ async function pedir(accion) {
     });
     if (!r.ok) throw new Error("HTTP " + r.status);
     estado = Object.assign(texto, await r.json());
+    backend = "servidor";
   } catch (e) {
+    backend = "sin";
     if (accion === "encender") estado = { ...estado, ...texto, on: true, fase: "objetivo", nota: "en este chat" };
     else if (accion === "apagar") estado = { ...estado, ...texto, on: false, fase: "apagado", nota: "apagado" };
     else if (accion === "reiniciar") estado = { ...estado, ...texto, on: true, fase: "objetivo", paso: 0, hecho: 0, disparo: "", nota: "reinicio", traza: [] };
@@ -143,12 +154,20 @@ async function pedir(accion) {
   return estado;
 }
 
-function latido() {
+let gen = 0;  // cada Seguir/Pausa abre una generación: un paso viejo en vuelo no reprograma el reloj
+function parar() { gen++; if (reloj) { clearTimeout(reloj); reloj = 0; } }
+function latido() {  // un paso, y solo cuando termina se programa el siguiente (sin solaparse); el intervalo sale del JSON
   if (reloj) return;
-  reloj = setInterval(() => {
-    if (!estado.on || /^(falta |sin |nada |tope)/.test(estado.nota || "")) { clearInterval(reloj); reloj = 0; return; }
-    pedir("paso").then(() => { if (window.__riuLoopPintar) window.__riuLoopPintar(); });
-  }, 3000);
+  const miGen = ++gen;
+  const tic = async () => {
+    if (!estado.on || pausaPor(estado.nota)) { reloj = 0; if (window.__riuLoopPintar) window.__riuLoopPintar(); return; }
+    await pedir("paso");
+    if (window.__riuLoopPintar) window.__riuLoopPintar();
+    if (miGen !== gen) return;  // lo pausaron o reiniciaron mientras el paso estaba en vuelo
+    if (!estado.on || pausaPor(estado.nota)) { reloj = 0; if (window.__riuLoopPintar) window.__riuLoopPintar(); return; }
+    reloj = setTimeout(tic, intervalo());
+  };
+  reloj = setTimeout(tic, intervalo());
 }
 
 async function guardarYaiwes(aviso) {
@@ -175,7 +194,7 @@ async function guardarYaiwes(aviso) {
   if (aviso) aviso.textContent = nota;
 }
 
-function enlazarProyecto(aviso) {
+async function enlazarProyecto(aviso) {
   leerCampos();
   crearProyecto("LOOP");
   const t = leer("riu_proy_v1", {});
@@ -186,13 +205,17 @@ function enlazarProyecto(aviso) {
   p.items = lineas().map((x) => "texto:" + x.slice(0, 2000));
   p.on = true;
   escribir("riu_proy_v1", t);
-  try { if (window.RIU_ACCION) window.RIU_ACCION("proyecto", { op: "upsert", project_id: p.project_id, nombre: "LOOP", encendido: true }).catch(() => {}); } catch (e) {}
   guardar();
-  if (aviso) aviso.textContent = "proyecto LOOP enlazado · " + p.items.length + " tareas";
+  const base = "proyecto LOOP enlazado · " + p.items.length + " tareas";
+  if (!window.RIU_ACCION) { if (aviso) aviso.textContent = base + " · " + SIN_BACKEND + ": solo en este chat"; return; }
+  try {
+    await window.RIU_ACCION("proyecto", { op: "upsert", project_id: p.project_id, nombre: "LOOP", encendido: true });
+    if (aviso) aviso.textContent = base + " · guardado en el servidor";
+  } catch (e) { if (aviso) aviso.textContent = base + " · el servidor no lo guardó (" + (e.message || "sin respuesta") + ")"; }
 }
 
 function pintarLoop(cuerpo) {
-  const aviso = el("div", "cv-est");
+  const aviso = vivo(el("div", "cv-est"));
   const partes = el("div", "loop-partes");
   const mando = el("div", "loop-mando");
   const centro = el("div", "loop-centro");
@@ -200,11 +223,14 @@ function pintarLoop(cuerpo) {
   const barra = el("div", "loop-barra");
   const relleno = el("div", "loop-relleno");
   const lista = el("div", "loop-lista");
+  barra.setAttribute("role", "progressbar"); barra.setAttribute("aria-label", "Avance del LOOP");
+  barra.setAttribute("aria-valuemin", "0"); barra.setAttribute("aria-valuemax", "100"); barra.setAttribute("aria-valuenow", "0");
+  lista.setAttribute("role", "list");
   barra.append(relleno);
   centro.append(pct, barra, lista);
-  const objetivo = el("textarea", "vn-ta"); objetivo.id = "loop-objetivo"; objetivo.rows = 1; objetivo.placeholder = "Objetivo"; objetivo.value = estado.objetivo || "";
-  const plan = el("textarea", "vn-ta"); plan.id = "loop-plan"; plan.rows = 1; plan.placeholder = "Plan"; plan.value = estado.plan || "";
-  const tareas = el("textarea", "vn-ta"); tareas.id = "loop-tareas"; tareas.rows = 2; tareas.placeholder = "Tareas, una por línea"; tareas.value = estado.tareas || "";
+  const objetivo = el("textarea", "vn-ta"); objetivo.id = "loop-objetivo"; objetivo.rows = 1; objetivo.placeholder = "Objetivo"; objetivo.setAttribute("aria-label", "Objetivo del LOOP"); objetivo.value = estado.objetivo || "";
+  const plan = el("textarea", "vn-ta"); plan.id = "loop-plan"; plan.rows = 1; plan.placeholder = "Plan"; plan.setAttribute("aria-label", "Plan del LOOP"); plan.value = estado.plan || "";
+  const tareas = el("textarea", "vn-ta"); tareas.id = "loop-tareas"; tareas.rows = 2; tareas.placeholder = "Tareas, una por línea"; tareas.setAttribute("aria-label", "Tareas del LOOP, una por línea"); tareas.value = estado.tareas || "";
   const pintar = () => {
     partes.replaceChildren();
     PARTES.forEach((p) => { const s = el("span", estado.fase === p ? "on" : "", NOMBRE[p]); partes.append(s); });
@@ -212,13 +238,13 @@ function pintarLoop(cuerpo) {
     const hechas = Math.min(estado.hecho || 0, todas.length);
     const n = todas.length ? Math.round(hechas * 100 / todas.length) : 0;
     pct.textContent = n + "% · " + hechas + " de " + todas.length;
-    relleno.style.width = n + "%";
+    relleno.style.width = n + "%"; barra.setAttribute("aria-valuenow", String(n)); barra.setAttribute("aria-valuetext", pct.textContent);
     lista.replaceChildren();
     if (!todas.length) lista.append(el("div", "fila-desc", "Sin tareas"));
     todas.forEach((t, i) => {
       const ahora = estado.fase === "verificar" && i === hechas;
       const marca = ahora ? "ahora" : i < hechas ? "hecha" : "pendiente";
-      const row = el("div", "loop-tarea" + (ahora ? " ahora" : i < hechas ? " hecha" : ""));
+      const row = el("div", "loop-tarea" + (ahora ? " ahora" : i < hechas ? " hecha" : "")); row.setAttribute("role", "listitem");
       row.append(el("span", "", marca), el("span", "", t));
       lista.append(row);
     });
@@ -227,25 +253,26 @@ function pintarLoop(cuerpo) {
     const traza = Array.isArray(estado.traza) ? estado.traza : [];
     const marcha = !estado.on ? "apagado" : reloj ? "en curso" : "en pausa";
     mando.replaceChildren(
-      el("div", "", marcha + (bloqueado ? " · bloqueado" : "") + " · vuelta " + (estado.paso || 0) + "/8"),
-      el("div", "", "siguiente: " + sigue + (cable === "harness" ? " · en el harness" : cable === "chat" ? " · en este chat" : "")),
+      el("div", "", marcha + (bloqueado ? " · bloqueado" : "") + " · vuelta " + (estado.paso || 0) + "/" + tope()),
+      el("div", "", "siguiente: " + sigue + (cable === "harness" ? " · en el harness" : backend === "sin" || cable === "chat" ? " · " + SIN_BACKEND + ": corre solo en este chat" : "")),
     );
     traza.forEach((t) => mando.append(el("div", "", t)));
     if (!traza.length) mando.append(el("div", "", "sin traza"));
     aviso.textContent = bloqueado ? estado.nota : (estado.disparo ? "observado" : "sin disparo");
-    if (auto) auto.textContent = reloj ? "Pausa" : "Seguir";
+    if (auto) { auto.textContent = reloj ? "Pausa" : "Seguir"; auto.setAttribute("aria-pressed", reloj ? "true" : "false"); }
+    if (enc) enc.setAttribute("aria-pressed", estado.on ? "true" : "false");
   };
-  let auto = null;
+  let auto = null, enc = null;
   [objetivo, plan, tareas].forEach((x) => x.addEventListener("input", () => { leerCampos(); pintar(); }));
   window.__riuLoopPintar = pintar;
-  const enc = btn(etiqueta("encender", "Encender"), "secondary", async () => { enc.disabled = true; try { await pedir("encender"); pintar(); } finally { enc.disabled = false; } });
-  const apa = btn(etiqueta("apagar", "Apagar"), "secondary", async () => { apa.disabled = true; try { await pedir("apagar"); if (reloj) { clearInterval(reloj); reloj = 0; } pintar(); } finally { apa.disabled = false; } });
+  enc = btn(etiqueta("encender", "Encender"), "secondary", async () => { enc.disabled = true; try { await pedir("encender"); pintar(); } finally { enc.disabled = false; } });
+  const apa = btn(etiqueta("apagar", "Apagar"), "secondary", async () => { apa.disabled = true; try { await pedir("apagar"); parar(); pintar(); } finally { apa.disabled = false; } });
   const di = btn(etiqueta("disparar", "Disparar"), "secondary", async () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } di.disabled = true; try { await pedir("paso"); pintar(); } finally { di.disabled = false; } });
-  auto = btn(etiqueta("seguir", "Seguir"), "secondary", () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } if (reloj) { clearInterval(reloj); reloj = 0; } else latido(); pintar(); });
-  const re = btn(etiqueta("reiniciar", "Reiniciar"), "secondary", async () => { if (reloj) { clearInterval(reloj); reloj = 0; } re.disabled = true; try { await pedir("reiniciar"); pintar(); } finally { re.disabled = false; } });
-  const gy = btn(etiqueta("yaiwes", "Yaiwes"), "secondary", () => guardarYaiwes(aviso));
+  auto = btn(etiqueta("seguir", "Seguir"), "secondary", () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } if (reloj) parar(); else latido(); pintar(); });
+  const re = btn(etiqueta("reiniciar", "Reiniciar"), "secondary", async () => { parar(); re.disabled = true; try { await pedir("reiniciar"); pintar(); } finally { re.disabled = false; } });
+  const gy = btn(etiqueta("yaiwes", "Yaiwes"), "secondary", async () => { if (gy.disabled) return; gy.disabled = true; try { await guardarYaiwes(aviso); } finally { gy.disabled = false; } });
   gy.title = "Guardar en yaiwes.md";
-  const ep = btn(etiqueta("proyecto", "Proyecto"), "secondary", () => enlazarProyecto(aviso));
+  const ep = btn(etiqueta("proyecto", "Proyecto"), "secondary", async () => { if (ep.disabled) return; ep.disabled = true; try { await enlazarProyecto(aviso); } finally { ep.disabled = false; } });
   ep.title = "Enlazar al proyecto";
   const fila = el("div", "cv-form");
   fila.append(enc, apa, di, auto, re, gy, ep);
