@@ -15,6 +15,7 @@ const ICONOS = {  // iconos de línea (skill Maxbry): sin emojis en la barra
   tareas: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h4"/>',
   comandos: '<path d="M8 8l-3 4 3 4M13 16h6"/>',
   sesion: '<circle cx="12" cy="8" r="3"/><path d="M5 19c1.5-3 3.8-4.5 7-4.5S17.5 16 19 19"/>',
+  reglas: '<path d="M8 7h11M8 12h11M8 17h7M5 7h.01M5 12h.01M5 17h.01"/>',
 };
 export function ventana(id, titulo, alAbrir) {
   const bar = document.querySelector("#composer .composer-bar");
