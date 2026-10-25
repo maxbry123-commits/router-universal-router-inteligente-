@@ -1,7 +1,7 @@
 // ventana-cola.js — cola de trabajo. El contrato está en LOOP-wachdog-cola.json.
 // Solo habla con el plugin puente_chat del harness. No toca el router.
 import { accion } from "./api.js";
-import { el, btn, ventana } from "./ventanas-control.js";
+import { el, btn, ventana, vivo, SIN_BACKEND } from "./ventanas-control.js";
 
 const K = "riu_cola";
 let MAX = 50;
@@ -13,12 +13,15 @@ let agenteVe = null;
 function locales() {
   try {
     const g = JSON.parse(sessionStorage.getItem(K) || "[]");
-    if (Array.isArray(g)) return g.filter((t) => typeof t === "string" && t.trim()).slice(0, MAX);
+    if (Array.isArray(g)) {  // antes se guardaban solo los textos; ahora {texto, hecho}
+      return g.map((t) => (typeof t === "string" ? { texto: t, hecho: false } : t && typeof t.texto === "string" ? { texto: t.texto, hecho: !!t.hecho } : null))
+        .filter((t) => t && t.texto.trim()).slice(0, MAX);
+    }
   } catch (e) {}
   return [];
 }
 function guardarLocal() {
-  try { sessionStorage.setItem(K, JSON.stringify(tareas.map((t) => t.texto))); } catch (e) {}
+  try { sessionStorage.setItem(K, JSON.stringify(tareas.map((t) => ({ texto: t.texto, hecho: !!t.hecho })))); } catch (e) {}
 }
 function tomar(r) {
   tareas = (r.pendientes || []).filter((p) => p && p.id).map((p) => ({ id: p.id, texto: String(p.texto || ""), hecho: !!p.hecho }));
@@ -40,13 +43,14 @@ function donde() {
 }
 
 function pintar(cuerpo) {
-  const aviso = el("div", "cv-est");
-  const estado = el("div", "wd-estado");
+  const aviso = vivo(el("div", "cv-est"));
+  const estado = vivo(el("div", "wd-estado"));
   const texto = el("textarea", "vn-ta");
   texto.rows = 1;
   texto.placeholder = "Tarea. Enter para añadir.";
   texto.setAttribute("aria-label", "Tarea para la cola");
   const lista = el("div", "cola-lista");
+  lista.setAttribute("role", "list"); lista.setAttribute("aria-label", "Tareas de la cola");
   let ocupado = false;
   const ver = () => {
     const hechas = tareas.filter((t) => t.hecho).length;
@@ -57,7 +61,7 @@ function pintar(cuerpo) {
     pintarAgente();
     lista.replaceChildren();
     tareas.forEach((t, i) => {
-      const fila = el("div", "cola-fila" + (t.hecho ? " hecha" : ""));
+      const fila = el("div", "cola-fila" + (t.hecho ? " hecha" : "")); fila.setAttribute("role", "listitem");
       const hecho = el("input");
       hecho.type = "checkbox";
       hecho.checked = t.hecho;
@@ -112,7 +116,7 @@ function pintar(cuerpo) {
     ocupado = false; ver();
   };
   const agente = btn("Tool", "secondary", async () => {
-    if (agenteVe === null) return;
+    if (agenteVe === null) { aviso.textContent = SIN_BACKEND + ": no se puede cambiar la tool; el servidor no respondió"; return; }
     agente.disabled = true;
     try { await accion(cable.tool, { tool: cable.nombre, locked: !!agenteVe }); await leerAgente(); aviso.textContent = ""; }
     catch (e) { fallar(e); }
@@ -130,7 +134,7 @@ function pintar(cuerpo) {
     if (!v) { aviso.textContent = "escribe la tarea"; return; }
     if (tareas.length >= MAX) { aviso.textContent = "la cola admite 50 tareas"; return; }
     if (origen === "chat") {
-      tareas.push({ id: "", texto: v.slice(0, 200) });
+      tareas.push({ id: "", texto: v.slice(0, 200), hecho: false });
       texto.value = ""; aviso.textContent = ""; guardarLocal(); ver(); return;
     }
     add.disabled = true;
@@ -151,8 +155,8 @@ function pintar(cuerpo) {
     ver();
   }).catch(() => {
     origen = "chat";
-    tareas = locales().map((t) => ({ id: "", texto: t }));
-    aviso.textContent = "el servidor no respondió";
+    tareas = locales().map((t) => ({ id: "", texto: t.texto, hecho: t.hecho }));
+    aviso.textContent = SIN_BACKEND + ": el servidor no respondió; las tareas quedan en este chat";
     ver();
   });
 }
