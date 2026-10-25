@@ -1,46 +1,44 @@
-/* composer-filas.css — caja de escritura compacta (composer-filas.js): más espacio para la salida */
-#panel #composer{min-width:0;max-width:100%;box-sizing:border-box}#panel #composer>*{min-width:0;max-width:100%}
-#panel #composer .composer-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start!important;gap:6px;min-width:0}
-#panel #composer .composer-bar::before{content:"";order:3;flex:1 0 100%;height:0}  /* salto de fila: herramientas + Enviar arriba, chips abajo */
-#panel #composer .composer-bar #anclados{order:0;flex:1 0 100%;display:flex;gap:10px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;scrollbar-width:none;font-size:12px;color:var(--quiet);max-height:22px}
+/* composer-filas.css — caja de escritura: texto + Enviar, debajo 3 selectores (Modelo · Permisos · Herramientas) que abren su ventana */
+#panel #composer{min-width:0;max-width:100%;box-sizing:border-box;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:8px 10px;position:relative}
+#panel #composer>*{min-width:0;max-width:100%}
+#panel #composer .composer-bar{display:contents}
+#panel #composer .composer-bar #anclados{grid-column:1/-1;grid-row:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;font-size:11.5px;line-height:1.3;color:var(--quiet);max-height:none}
 #panel #composer .composer-bar #anclados:empty{display:none}
-#panel #composer .composer-bar #anclados>*{flex:0 0 auto}
-#panel #composer .composer-bar .cb-herr{order:1;flex:1 1 0;min-width:0;display:flex;flex-wrap:nowrap;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding:2px 0;-webkit-overflow-scrolling:touch}
-#panel #composer .composer-bar .cb-herr::-webkit-scrollbar{display:none}
-#panel #composer .composer-bar .cb-herr>*{flex:0 0 auto!important}
-#panel #composer .composer-bar .cb-herr>button.secondary{width:36px;height:36px;min-height:36px;aspect-ratio:1/1;max-width:none}
-#panel #composer .composer-bar #btn-tools,#panel #composer .composer-bar #btn-agentes,#panel #composer .composer-bar #btn-prompt{order:4;flex:0 1 auto!important;min-height:34px;padding:5px 10px;font-size:12px}
-#panel #composer .composer-bar .action{order:2;margin-left:0;min-width:92px!important;padding:0 14px!important;min-height:40px!important;height:40px}
-#panel #composer #message{min-height:44px}
-/* escritorio: herramientas, chips y Enviar en una sola fila */
-@media(min-width:900px){#panel #composer .composer-bar{flex-wrap:nowrap}#panel #composer .composer-bar::before{display:none}#panel #composer .composer-bar #btn-tools,#panel #composer .composer-bar #btn-agentes,#panel #composer .composer-bar #btn-prompt{order:1}#panel #composer .composer-bar .cb-herr{flex:1 1 auto}#panel #composer .composer-bar #anclados{position:absolute;left:18px;top:6px;max-width:calc(100% - 36px)}#panel #composer:has(#anclados:not(:empty)){padding-top:26px}#panel #composer{position:relative}}
-/* botón ⤢ del historial y modo salida grande: solo queda el texto y Enviar; todo vuelve con el mismo botón */
+#panel #composer .composer-bar #anclados>*{display:inline;margin-right:8px}
+#panel #composer #message{grid-column:1/5;grid-row:2;min-height:48px;max-height:30vh;margin:0}
+#panel #composer .composer-bar .action{grid-column:5/7;grid-row:2;align-self:stretch;margin:0!important;min-width:0!important;width:auto!important;height:auto!important;min-height:48px!important;padding:0 12px!important}
+/* los 3 selectores: dibujo 2D arriba y nombre debajo (tipo pestaña), nunca se pisan */
+#panel #composer .composer-bar .cb-sel{grid-row:3;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:auto!important;height:auto!important;min-height:50px!important;max-width:none!important;aspect-ratio:auto!important;padding:4px 3px!important;border-radius:14px!important;font-size:11.5px;line-height:1.15;overflow:hidden}
+#panel #composer .composer-bar .cb-sel .cb-et{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+#panel #composer .composer-bar .cb-sel .cb-flecha{display:none}
+#panel #composer .composer-bar .cb-sel-modelo{grid-column:1/3}#panel #composer .composer-bar .cb-sel-permisos{grid-column:3/5}#panel #composer .composer-bar .cb-sel-herr{grid-column:5/7}#panel #composer.cb-ocupado .composer-bar .cb-sel-herr{grid-column:5/6}
+#panel #composer .composer-bar #btn-detener{display:none!important}#panel #composer.cb-ocupado .composer-bar #btn-detener{display:inline-flex!important;grid-column:6/7;grid-row:3;justify-self:stretch;align-self:stretch;width:auto!important;height:auto!important;min-height:50px!important;border-color:var(--status-red,#FF445F)!important;color:var(--status-red,#FF445F)}  /* Detener solo mientras el chat trabaja */
+.cb-punto{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:3px;background:var(--quiet-2,#777);vertical-align:middle}.cb-punto.on{background:var(--status-blue,#2F80FF);box-shadow:0 0 5px var(--status-blue,#2F80FF)}
+/* ventanas de los selectores */
+.cb-hoja .va-caja{max-height:80dvh;overflow:auto}
+.cb-hoja .cb-cuerpo{display:flex;flex-direction:column;gap:10px}
+.cb-hoja .cb-herr{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
+.cb-hoja .cb-herr>button.secondary{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:auto!important;height:auto!important;min-height:66px!important;max-width:none!important;aspect-ratio:auto!important;padding:8px 4px!important;border-radius:14px!important}
+.cb-hoja .cb-herr>button.secondary::after{content:attr(data-et);font-size:11.5px;line-height:1.2;color:var(--quiet);text-align:center;overflow-wrap:anywhere}
+.cb-hoja .cb-herr>button.secondary svg{width:22px;height:22px}
+.cb-hoja .cb-herr>div{grid-column:1/-1}
+.cb-hoja .cb-perm{display:flex;flex-direction:column;gap:8px}
+.cb-hoja .cb-perm>button{width:100%!important;max-width:none!important;justify-content:flex-start!important;min-height:46px!important;padding:8px 14px!important;font-size:14px!important;border-radius:14px!important;display:flex!important;align-items:center;gap:10px}
+.cb-hoja .cb-perm>button::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--quiet-2,#777);flex:none}
+.cb-hoja .cb-perm>button[aria-pressed=true]{border-color:var(--status-blue,#2F80FF);color:var(--title)}
+.cb-hoja .cb-perm>button[aria-pressed=true]::before{background:var(--status-blue,#2F80FF);box-shadow:0 0 6px var(--status-blue,#2F80FF)}
+.cb-hoja .cb-nota{font-size:12px;margin:0}
+.cb-hoja #selectores{margin:0;padding:0;border:0;background:transparent}
+/* botón ⤢ del historial y modo salida grande: queda el texto y Enviar; vuelve con el mismo botón */
 #histories .riu-ampliar{position:absolute;top:6px;right:6px;z-index:3;width:30px;height:30px;min-height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--title);opacity:.85}
 #histories .riu-ampliar[aria-pressed=true]{border-color:var(--status-blue,#2F80FF);color:var(--azul-texto,#8AB4FF)}
-body.salida-grande #panel #composer .composer-bar .cb-herr,body.salida-grande #panel #composer .composer-bar #btn-tools,body.salida-grande #panel #composer .composer-bar #btn-agentes,body.salida-grande #panel #composer .composer-bar #btn-prompt,body.salida-grande #panel #composer .composer-bar #anclados,body.salida-grande #buzon-bar{display:none!important}
-body.salida-grande #panel #composer{display:flex;align-items:flex-end;gap:8px}body.salida-grande #panel #composer #message{flex:1 1 auto;min-height:44px}body.salida-grande #panel #composer .composer-bar{flex:0 0 auto;margin:0}
-@media(max-width:480px){#panel #composer .composer-bar{gap:5px}#panel #composer .composer-bar #btn-tools,#panel #composer .composer-bar #btn-agentes,#panel #composer .composer-bar #btn-prompt{font-size:11.5px;padding:5px 8px;gap:5px}#panel #composer{padding:10px 10px 8px}}
+body.salida-grande #panel #composer .composer-bar .cb-sel,body.salida-grande #panel #composer .composer-bar #anclados,body.salida-grande #panel #composer .composer-bar #btn-detener,body.salida-grande #buzon-bar{display:none!important}
 #buzon-bar{padding:4px 8px!important;gap:4px!important;font-size:12px!important}#buzon-bar select,#buzon-bar button{min-height:30px!important;height:30px;padding:0 8px!important;font-size:12px!important}
-
-/* ---- móvil: caja de escritura en rejilla (texto + Enviar en la misma fila; chips; herramientas desplegables sin tapar nada) ---- */
-#panel #composer .composer-bar .cb-mas{display:none}
-@media(max-width:720px){
-  #panel #composer{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-auto-rows:auto;gap:6px 8px;padding:8px 10px}
-  #panel #composer .composer-bar{display:contents}
-  #panel #composer #message{grid-column:1;grid-row:2;min-height:48px;max-height:120px;margin:0}
-  #panel #composer .composer-bar .action{grid-column:2;grid-row:2;align-self:stretch;margin:0;min-width:84px!important;height:auto;min-height:48px!important;padding:0 12px!important}
-  #panel #composer .composer-bar #anclados{grid-column:1/-1;grid-row:1;position:static;max-width:100%;max-height:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;font-size:11.5px;line-height:1.3}
-  #panel #composer .composer-bar #anclados:empty{display:none}
-  #panel #composer .composer-bar #anclados>*{display:inline;margin-right:8px}
-  #panel #composer .composer-bar .cb-chips{grid-column:1/-1;grid-row:3;display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;min-width:0}
-  #panel #composer .composer-bar .cb-chips::-webkit-scrollbar{display:none}
-  #panel #composer .composer-bar .cb-chips>*{flex:0 0 auto!important;order:0!important}
-  #panel #composer .composer-bar .cb-mas{display:inline-flex;align-items:center;gap:5px;height:36px;min-height:36px;min-width:52px;padding:0 10px;border-radius:999px;margin-left:auto;width:auto;aspect-ratio:auto;justify-content:center}
-  #panel #composer .composer-bar .cb-herr{grid-column:1/-1;grid-row:4;display:none;flex-wrap:wrap;overflow:visible;gap:6px}
-  #panel #composer.cb-abierto .composer-bar .cb-herr{display:flex}
-  #panel #composer .composer-bar .cb-herr>*{flex:0 0 auto!important}
-}
-@media(min-width:721px){#panel #composer .composer-bar .cb-chips{display:contents}}
-@media(max-width:480px){#panel #composer .composer-bar .cb-chips #btn-tools,#panel #composer .composer-bar .cb-chips #btn-agentes,#panel #composer .composer-bar .cb-chips #btn-prompt{padding:5px 8px;font-size:11.5px;gap:5px}}
 /* móvil: el marco del chat casi sin relleno (más salida) */
 @media(max-width:720px){#panel section:has(> #histories){padding:4px 6px;margin-bottom:2px;height:calc(100dvh - var(--ctl-top,41px) - 4px);border-radius:18px}#panel #histories{margin:0}}
+.cb-sel .cb-ico{display:flex;align-items:center;gap:2px}
+.cb-hoja .cb-herr>div:empty{display:none}
+/* panel superior (Chat ▾ / Controles ▾): ventana con los botones en rejilla debajo, sin carrusel */
+.ctl-int>.row.fields{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px!important;overflow:visible!important;flex-wrap:wrap!important;margin:8px 0!important}
+.ctl-int>.row.fields>*{max-width:none!important;width:100%;min-width:0;justify-content:center;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0!important}
+.ctl-int>.row.fields>.pill,.ctl-int>.row.fields>button{min-height:40px;border-radius:12px}

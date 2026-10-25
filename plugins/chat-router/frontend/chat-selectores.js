@@ -5,6 +5,7 @@
 const CLAVE = "riu_selector_activo";  // sessionStorage: sobrevive a recargas en esta pestaña
 const SELECTORES = [  // nombres exactos de Antonio
   { id: "nvidia-groq-team", nombre: "NVIDIA", pills: ["#sel-ngt", "#ficha"] },  // ficha NVIDIA: Glimmer / Nemotron 3 Super (Groq y NVIDIA codigo van como tools)
+  { id: "groq", nombre: "Groq", pills: ["#sel-groq"] },  // modelos reales de Groq (fichas-externas.js); sin GROQ_API_KEY en el Space lo dice
   { id: "team-qwen", nombre: "Team qwen", pills: ["#sel-nuevo"] },  // los 14 modelos QwenCloud
   { id: "ask-consil-code-qwen-team", nombre: "Ask cónsil code qwen team", pills: ["#sel-cc"] },
   { id: "ask-consil-fromtend-qwen-team", nombre: "Ask consil fromtend qwen team", pills: ["#sel-cf"] },
@@ -89,17 +90,17 @@ const filas = () => {  // panel Selectores del chat: ⓘ diagrama, ⚡ respuesta
   const global = el("div", "sel-resp-global"), act = () => sessionStorage.getItem(CLAVE) || "";
   lista.before(global);
   const fichaEt = () => { try { const f = window.RIU_CHAT.chat().ficha, m = (window.RIU_CONFIG.modelos || []).find((x) => x.id === f); return m ? m.etiqueta : f || "NVIDIA"; } catch (e) { return "NVIDIA"; } };  // modelo Groq/NVIDIA elegido en la hoja de fichas
-  const modelo = (s) => s.id === "nvidia-groq-team" ? fichaEt() : s.id === "team-qwen" || s.id === "team-5-mvp" ? ((window.RIU_SELECTOR_QWEN || {}).seleccion || {}).label || "Qwen 3.8 Max" : (CONSIL_MODELOS[s.id] || []).map((m) => m[0]).join(" · ") || s.nombre;
+  const modelo = (s) => s.id === "groq" ? ((window.RIU_GROQ || {}).modelo || (window.RIU_GROQ || {}).aviso || "elige un modelo") : s.id === "nvidia-groq-team" ? fichaEt() : s.id === "team-qwen" || s.id === "team-5-mvp" ? ((window.RIU_SELECTOR_QWEN || {}).seleccion || {}).label || "Qwen 3.8 Max" : (CONSIL_MODELOS[s.id] || []).map((m) => m[0]).join(" · ") || s.nombre;
   const fila = (s) => lista.querySelector('.sel-fila[data-selector="' + s.id + '"]');
   const refrescar = () => {
     SELECTORES.forEach((s) => {
       const f = fila(s); if (!f) return;
       const on = act() === s.id, b = f.querySelector(".sel-on");
-      f.classList.toggle("activa", on); b.classList.toggle("on", on); b.disabled = !!act() && !on; b.title = b.disabled ? "Apaga primero el selector encendido (solo uno a la vez)" : ""; b.setAttribute("aria-pressed", String(on));
+      f.classList.toggle("activa", on); b.classList.toggle("on", on); b.disabled = false; b.title = on ? "Apagar " + s.nombre : "Encender " + s.nombre + " (apaga el que esté encendido)"; b.setAttribute("aria-pressed", String(on));
       b.lastChild.textContent = on ? "ON" : "OFF"; f.querySelector(".sel-resp").textContent = "Modelo: " + modelo(s);
     });
     const a = SELECTORES.find((s) => s.id === act());
-    global.textContent = a ? "Responde: " + a.nombre + " · " + modelo(a) : "Ningún selector encendido: responde el modelo por defecto (NVIDIA)"; global.classList.toggle("on", !!a);
+    global.textContent = a ? "Responde: " + a.nombre + " · " + modelo(a) : "Ningún selector encendido: responde " + (/^nv-/.test(((window.RIU_CHAT && window.RIU_CHAT.chat()) || {}).ficha || "nv-") ? "Qwen 3.8 Max (por defecto del Router)" : fichaEt()); global.classList.toggle("on", !!a);
     window.dispatchEvent(new CustomEvent("riu:selector-activo", { detail: { activo: act(), anterior: "", nombre: a ? a.nombre : "" } }));
   };
   SELECTORES.filter((s) => !s.mirror).forEach((s) => {
@@ -150,7 +151,7 @@ const init = () => {
     botones.forEach((b) => {
       const on = b.dataset.id === act;
       b.classList.toggle("on", on);
-      b.disabled = act && !on;
+      b.disabled = false;  // tocar otro selector lo enciende y apaga el anterior (solo uno a la vez)
       b.setAttribute("aria-pressed", String(on));
     });
     const diagBox = document.getElementById("selector-diagrama");
@@ -187,7 +188,7 @@ const toggle = (id) => {
   botones.forEach((b) => {
     const on = b.dataset.id === act;
     b.classList.toggle("on", on);
-    b.disabled = act && !on;
+    b.disabled = false;
     b.setAttribute("aria-pressed", String(on));
   });
   const diagBox = document.getElementById("selector-diagrama");
