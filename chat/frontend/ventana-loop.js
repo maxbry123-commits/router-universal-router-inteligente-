@@ -66,6 +66,6 @@ function pintarLoop(cuerpo) {
   if (estado.on) latido();
 }
 
-const montar = () => { ventana("loop", "LOOP", pintarLoop); marcarBoton(); };
+const montar = () => { ventana("loop", "LOOP", pintarLoop); marcarBoton(); if (estado.on) latido(); };
 new MutationObserver(montar).observe(document.body, { childList: true, subtree: true });
 montar();
