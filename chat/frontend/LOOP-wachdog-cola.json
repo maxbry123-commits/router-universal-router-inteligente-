@@ -26,5 +26,16 @@
     { "id": "plan", "fase": "plan", "op": "exigir", "campo": "plan", "falta": "falta plan", "siguiente": "tarea" },
     { "id": "probar", "fase": "tarea", "op": "tomar", "falta": "sin tareas", "siguiente": "verificar" },
     { "id": "observar", "fase": "verificar", "op": "cerrar", "falta": "nada que verificar", "siguiente": "objetivo" }
-  ]
+  ],
+  "cola_trabajo": {
+    "id": "cola",
+    "titulo": "Cola",
+    "plugin": "puente_chat",
+    "harness": "/plugins/puente_chat/call",
+    "lista": "checklist",
+    "tool": "tools_lock",
+    "nombre_tool": "pendientes",
+    "max": 50,
+    "acciones": ["listar", "agregar", "marcar", "ordenar", "quitar"]
+  }
 }

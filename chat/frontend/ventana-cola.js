@@ -1,9 +1,11 @@
-// ventana-cola.js — cola de trabajo. Lee el checklist del harness; si no responde, se queda en este chat.
+// ventana-cola.js — cola de trabajo. El contrato está en LOOP-wachdog-cola.json.
+// Solo habla con el plugin puente_chat del harness. No toca el router.
 import { accion } from "./api.js";
 import { el, btn, ventana } from "./ventanas-control.js";
 
 const K = "riu_cola";
-const MAX = 50;
+let MAX = 50;
+const cable = { lista: "checklist", tool: "tools_lock", nombre: "pendientes", acciones: ["listar", "agregar", "marcar", "ordenar", "quitar"] };
 let tareas = [];
 let origen = "chat";
 let agenteVe = null;
@@ -23,12 +25,12 @@ function tomar(r) {
   origen = r.persistente === false ? "memoria" : "servidor";
 }
 async function refrescar() {
-  const r = await accion("checklist", { accion: "listar" });
+  const r = await accion(cable.lista, { accion: cable.acciones[0] });
   tomar(r);
 }
 async function leerAgente() {
-  const r = await accion("tools_lock", {});
-  const t = (r.tools || []).find((x) => x.nombre === "pendientes");
+  const r = await accion(cable.tool, {});
+  const t = (r.tools || []).find((x) => x.nombre === cable.nombre);
   agenteVe = !!(t && !t.locked);
 }
 function donde() {
@@ -84,7 +86,7 @@ function pintar(cuerpo) {
     if (ocupado || !tareas[i]) return;
     if (origen === "chat") { tareas[i].hecho = !tareas[i].hecho; guardarLocal(); ver(); return; }
     ocupado = true; ver();
-    try { tomar(await accion("checklist", { accion: "marcar", id: tareas[i].id, hecho: !tareas[i].hecho })); aviso.textContent = ""; }
+    try { tomar(await accion(cable.lista, { accion: cable.acciones[2], id: tareas[i].id, hecho: !tareas[i].hecho })); aviso.textContent = ""; }
     catch (e) { fallar(e); }
     ocupado = false; ver();
   };
@@ -97,7 +99,7 @@ function pintar(cuerpo) {
     ocupado = true; ver();
     const ids = tareas.map((t) => t.id);
     const a = ids[j]; ids[j] = ids[i]; ids[i] = a;
-    try { tomar(await accion("checklist", { accion: "ordenar", ids })); aviso.textContent = ""; }
+    try { tomar(await accion(cable.lista, { accion: cable.acciones[3], ids })); aviso.textContent = ""; }
     catch (e) { fallar(e); }
     ocupado = false; ver();
   };
@@ -105,14 +107,14 @@ function pintar(cuerpo) {
     if (ocupado) return;
     if (origen === "chat") { tareas.splice(i, 1); guardarLocal(); ver(); return; }
     ocupado = true; ver();
-    try { tomar(await accion("checklist", { accion: "quitar", id: tareas[i].id })); aviso.textContent = ""; }
+    try { tomar(await accion(cable.lista, { accion: cable.acciones[4], id: tareas[i].id })); aviso.textContent = ""; }
     catch (e) { fallar(e); }
     ocupado = false; ver();
   };
   const agente = btn("Tool", "secondary", async () => {
     if (agenteVe === null) return;
     agente.disabled = true;
-    try { await accion("tools_lock", { tool: "pendientes", locked: !!agenteVe }); await leerAgente(); aviso.textContent = ""; }
+    try { await accion(cable.tool, { tool: cable.nombre, locked: !!agenteVe }); await leerAgente(); aviso.textContent = ""; }
     catch (e) { fallar(e); }
     agente.disabled = false;
     pintarAgente();
@@ -133,7 +135,7 @@ function pintar(cuerpo) {
     }
     add.disabled = true;
     try {
-      tomar(await accion("checklist", { accion: "agregar", texto: v.slice(0, 200) }));
+      tomar(await accion(cable.lista, { accion: cable.acciones[1], texto: v.slice(0, 200) }));
       texto.value = ""; aviso.textContent = "";
     } catch (e) { fallar(e); }
     add.disabled = false; ver();
@@ -154,6 +156,16 @@ function pintar(cuerpo) {
     ver();
   });
 }
+
+fetch("/chat/ui/LOOP-wachdog-cola.json").then((r) => r.json()).then((j) => {
+  const c = j && j.cola_trabajo;
+  if (!c || c.plugin !== "puente_chat") return;
+  if (c.max) MAX = c.max;
+  if (c.lista) cable.lista = c.lista;
+  if (c.tool) cable.tool = c.tool;
+  if (c.nombre_tool) cable.nombre = c.nombre_tool;
+  if (Array.isArray(c.acciones) && c.acciones.length === 5) cable.acciones = c.acciones;
+}).catch(() => {});
 
 const montar = () => ventana("cola", "Cola", pintar);
 new MutationObserver(montar).observe(document.body, { childList: true, subtree: true });
