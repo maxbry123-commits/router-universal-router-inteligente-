@@ -88,7 +88,7 @@ class Sesion:
 
 
 class XrayChatbot:
-   VERSION = "0.1-backend-aislado"
+    VERSION = "0.1-backend-aislado"
     MAX_MENSAJES = 200
     MAX_HISTORIAL = 50
 
@@ -257,7 +257,7 @@ class XrayChatbot:
 
 
 def demostracion() -> Dict[str, Any]:
-    """Flujo local de prueba: session -> mensajes -> anclas -> payload."""
+    """Flujo local de prueba: sesion -> anclas -> mensajes -> checklist -> payload."""
     bot = XrayChatbot()
     sid = bot.crear_sesion("prueba backend aislada")["sesion_id"]
     bot.fijar_ancla(sid, "normas", "ON", 10)
