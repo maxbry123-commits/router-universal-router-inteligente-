@@ -3412,6 +3412,31 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             return {'error': 'OP_DESCONOCIDA', 'ops': ['list', 'get', 'upsert', 'link_chat', 'unlink_chat', 'delete']}
         except Exception as x:  # noqa: BLE001
             return {'error': 'PROYECTO_FALLO', 'detalle': str(x)[:200]}
+    if action == 'cuaderno':  # tareas, comandos, reglas, sesion y hechas de este chat. Misma memoria que el resto del puente.
+        try:
+            mem, scope_for = _memoria()
+            ses = ''.join(c for c in str(payload.get('sesion') or 'general') if c.isalnum() or c in '-_')[:60] or 'general'
+            clave = str(payload.get('clave') or '')
+            if clave not in ('tareas', 'comandos', 'reglas', 'sesion', 'hechas'):
+                return {'error': 'CLAVE'}
+            scope = scope_for(DUENO, 'chat:' + ses)
+            k = 'cuaderno:' + clave
+            if str(payload.get('op') or 'leer') == 'guardar':
+                valor = payload.get('valor')
+                if not isinstance(valor, (dict, list)) or len(json.dumps(valor)) > 20000:
+                    return {'error': 'VALOR'}
+                mem.save(scope, k, {'clave': clave, 'valor': valor, 'ts': time.time()})
+                return {'ok': True, 'clave': clave}
+            res = mem.search(scope, k, 20)
+            filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+            mejor = None
+            for f in filas:
+                d = f.get('data', f) if isinstance(f, dict) else f
+                if isinstance(d, dict) and d.get('clave') == clave and (mejor is None or float(d.get('ts') or 0) >= float(mejor.get('ts') or 0)):
+                    mejor = d
+            return {'ok': True, 'clave': clave, 'valor': None if mejor is None else mejor.get('valor')}
+        except Exception as x:  # noqa: BLE001
+            return {'error': 'CUADERNO_FALLO', 'detalle': str(x)[:200]}
     return {"error": "ACCION_DESCONOCIDA"}
 
 # Long model calls are polled through HTTP, so browser requests do not expire at the HF ingress.

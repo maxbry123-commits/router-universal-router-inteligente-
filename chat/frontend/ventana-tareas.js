@@ -2,7 +2,7 @@
 // Manual: la ventana. Tool: con IA o Agentes encendidos el modelo escribe [[TAREA:titulo|diario|08:00]]prompt[[/TAREA]].
 // El mismo objeto se ofrece al plugin cuando exista: accion "tareas". Si el servidor no la tiene, queda en este chat.
 import { el, btn, ventana } from "./ventanas-control.js";
-import { leer, escribir, uid, hash } from "./almacen.js";
+import { leer, escribir, uid, hash, cuadernoTraer } from "./almacen.js";
 import { parsearBloquesTarea, parsearBloquesHecho } from "./contexto.js";
 
 const K = "riu_tareas_v1";
@@ -231,6 +231,8 @@ function instalarTool() {
   const hist = document.querySelector("#histories");
   if (!hist || hist.dataset.tareas) return;
   hist.dataset.tareas = "1";
+  cuadernoTraer(K, () => !caja().tareas.length).then((v) => { if (v) pintar(); });
+  cuadernoTraer("riu_hechas_v1", () => !hechas().length);
   let p = 0;
   const revisar = () => {
     p = 0;

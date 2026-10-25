@@ -1,7 +1,7 @@
 // ventana-comandos.js — comandos del chat. A mano: la ventana o /comando nombre | texto.
 // Tool: con IA o Agentes encendidos, [[COMANDO:nombre]]texto[[/COMANDO]]. Se llaman con /nombre.
 import { el, btn, ventana } from "./ventanas-control.js";
-import { leer, escribir, hash } from "./almacen.js";
+import { leer, escribir, hash, cuadernoTraer } from "./almacen.js";
 import { parsearBloquesComando } from "./contexto.js";
 
 const K = "riu_comandos_v1";
@@ -73,6 +73,7 @@ function instalar() {
   const hist = document.querySelector("#histories");
   if (hist && !hist.dataset.comandos) {
     hist.dataset.comandos = "1";
+    cuadernoTraer(K, () => !listaComandos().length).then((v) => { if (v) pintar(); });
     let p = 0;
     const vistos = leer("riu_comandos_vistos_v1", []);
     const revisar = () => {

@@ -1,7 +1,7 @@
 // ventana-reglas.js — idioma de la respuesta, reglas que viajan con el mensaje y tope de lo que escribes.
 // No revisa pull requests ni cobra: solo recorta el envío si pasa el tope.
 import { el, btn, ventana } from "./ventanas-control.js";
-import { leer, escribir, hash } from "./almacen.js";
+import { leer, escribir, hash, cuadernoTraer } from "./almacen.js";
 import { parsearIdioma, parsearBloquesRegla } from "./contexto.js";
 
 const K = "riu_reglas_v1";
@@ -51,6 +51,7 @@ function instalar() {
   const hist = document.querySelector("#histories");
   if (hist && !hist.dataset.reglas) {
     hist.dataset.reglas = "1";
+    cuadernoTraer(K, () => !estadoReglas().reglas.length && !estadoReglas().idioma && !estadoReglas().topeMsg);
     let p = 0;
     const vistos = leer("riu_reglas_vistos_v1", []);
     const revisar = () => {

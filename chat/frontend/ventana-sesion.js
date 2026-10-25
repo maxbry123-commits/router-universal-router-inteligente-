@@ -1,7 +1,7 @@
 // ventana-sesion.js — memoria de este chat, tope de ese texto y notas de revisión.
 // El permiso de tools es el mismo del selector de modo. Nada de esto llama a otra organización.
 import { el, btn, ventana } from "./ventanas-control.js";
-import { leer, escribir, hash } from "./almacen.js";
+import { leer, escribir, hash, cuadernoTraer } from "./almacen.js";
 import { parsearBloquesMemoria, parsearBloquesRevision, parsearModo } from "./contexto.js";
 
 const K = "riu_sesion_v1";
@@ -84,6 +84,7 @@ function instalar() {
   const hist = document.querySelector("#histories");
   if (hist && !hist.dataset.sesionNotas) {
     hist.dataset.sesionNotas = "1";
+    cuadernoTraer(K, () => !estadoSesion().nota && !estadoSesion().revisiones.length);
     let p = 0;
     const vistos = leer("riu_sesion_vistos_v1", []);
     const revisar = () => {

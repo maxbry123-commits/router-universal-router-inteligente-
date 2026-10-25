@@ -157,7 +157,16 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
 #ventana-comandos .cv-form input:not([type=checkbox]), #ventana-comandos .cv-form textarea { width: 100%; min-height: 40px; box-sizing: border-box; }
 #ventana-comandos .cola-fila { display: grid; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 #ventana-sesion .ses-fila, #ventana-reglas .ses-fila { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-#ventana-sesion .ses-fila input, #ventana-sesion .ses-fila select, #ventana-reglas .ses-fila input, #ventana-reglas .ses-fila select { flex: 1; min-width: 0; min-height: 40px; }
+#ventana-sesion .ses-fila input, #ventana-sesion .ses-fila select, #ventana-reglas .ses-fila input, #ventana-reglas .ses-fila select { flex: 1; min-width: 0; min-height: 44px; }
+@media (max-width: 720px) {
+  .sheet .list button, .sheet .list input, .sheet .list select, .sheet .list textarea { font-size: 16px; }
+  .sheet .list button { min-height: 44px; }
+  .sheet .sh-cerrar { width: 44px; height: 44px; min-height: 44px; }
+  #ventana-reglas .cola-fila, #ventana-tareas .cola-fila:has(.toggle) {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center;
+  }
+  #ventana-reglas .cola-fila .fila-desc, #ventana-tareas .cola-fila:has(.toggle) .fila-desc { grid-column: 2; min-width: 0; }
+}
 #ventana-sesion textarea { width: 100%; box-sizing: border-box; }
 
 /* La salida ocupa lo que deja la caja. Aunque un script viejo ponga salida-x4, no se estira ni empuja la página. */
