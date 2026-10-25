@@ -5,7 +5,7 @@ import tempfile
 import types
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[3]
+REPO = Path(__file__).resolve().parents[4]
 for p in (REPO / 'router inteligente universal', REPO / 'chat router' / '04-MEMORIA'):
     if str(p) not in sys.path:
         sys.path.insert(0, str(p))

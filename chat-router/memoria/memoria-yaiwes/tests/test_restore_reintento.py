@@ -5,7 +5,7 @@ import importlib.util, os, sqlite3, sys, tempfile, threading, time
 from pathlib import Path
 
 HERE = Path(__file__).resolve()
-REPO = HERE.parents[3]
+REPO = HERE.parents[4]
 
 
 def _load(name, rel):
