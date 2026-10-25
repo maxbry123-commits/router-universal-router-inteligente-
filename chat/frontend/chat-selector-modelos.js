@@ -48,6 +48,7 @@ export function conectarSelectorModelos(ctx) {
   // La lista cableada de GRUPOS no se sustituye por ids crudos. El Router solo se consulta; si no responde, la lista sigue.
   const cargarCatalogo = (intento = 1) => {
     if (cargando) return;
+    if (!sessionStorage.getItem("riu_clave")) { pintar(); return; }
     cargando = true;
     api('/chat/providers/qwen/models').then((r) => {
       if (!Array.isArray(r.models) || !r.models.length) throw new Error('Catalogo vacio');
