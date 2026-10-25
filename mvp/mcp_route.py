@@ -150,7 +150,7 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
                                         'plan': modelos.plan(), 'modelo_defecto': modelos.cargar()['modelo_defecto'],
                                         'modelos': [i for i, _ in modelos.catalogo()], 'herramientas': [t['name'] for t in catalogo],
                                         'permisos': {'ia': bool(control.d['ia']), 'agentes': bool(control.d['agentes_on']), 'system_prompt': bool(control.d['prompt_on'])} if control else None,  # los enciende el Director en el chat (chips IA/Agentes); la prueba t4 (llm) necesita ia=true
-                                        'proveedores_externos': {p: bool(externos.clave(p, getattr(estado, 'banco', None))) for p in externos.PROVEEDORES}}))
+                                        'proveedores_externos': {p: len(externos.claves(p, getattr(estado, 'banco', None))) for p in externos.PROVEEDORES}}))
         if nombre in ('pendientes', 'sala', 'yaiwes_md'):
             salida = await control.aplicar({'pendientes': 'checklist', 'sala': 'salas', 'yaiwes_md': 'handoff_texto'}[nombre], args, banco, 'modelo')
             return _ok(id_, _contenido(salida))

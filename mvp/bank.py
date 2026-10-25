@@ -3,6 +3,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -73,6 +74,9 @@ class Banco:
             valor = (os.environ.get("BAILIAN_TOKEN_PLAN_API_KEY") or os.environ.get("QWENCLOUD_TOKEN_PLAN_API_KEY") or os.environ.get("QWEN_API_KEY") or "") if nombre == "QWEN_API_KEY" and automatico else next((os.environ[v] for v in fuentes if isinstance(v, str) and os.environ.get(v)), "")
             if valor and (nombre not in self._datos or (nombre == "RIU_API_KEY" and self._datos.get(nombre) != valor)):  # la clave de acceso del entorno manda: si se cambia en el Space, el banco la actualiza
                 self.guardar(nombre, valor)
+        for variable, valor in os.environ.items():  # pools de Groq y NVIDIA (GROQ_API_KEY, GROQ_API_KEY_1..n, NVIDIA_API_KEY_n): un solo banco para todas las claves
+            if valor and re.fullmatch(r"(GROQ|NVIDIA)_API_KEY(_\d{1,2})?", variable) and self.leer(variable) != valor:
+                self.guardar(variable, valor)
         return self.nombres()
 
 

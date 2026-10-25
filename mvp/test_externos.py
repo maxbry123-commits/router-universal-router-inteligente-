@@ -38,5 +38,26 @@ class TestExternos(Base):
         self.assertIn("groq", prov)
 
 
+    def test_pool_de_claves_salta_la_invalida(self):  # GROQ_API_KEY_1 inválida hoy (Director 2026-09-27): se usa la siguiente
+        vistos = []
+        def solicitar(url, payload, clave):
+            vistos.append(clave)
+            if clave == "gsk-mala":
+                import urllib.error
+                raise urllib.error.HTTPError(url, 401, "x", {}, None)
+            return {"model": payload["model"], "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}]}
+        with patch.dict(os.environ, {"GROQ_API_KEY": "", "GROQ_API_KEY_1": "gsk-mala", "GROQ_API_KEY_2": "gsk-buena"}), patch("mvp.compute._solicitar", solicitar):
+            self.banco.datos.pop("GROQ_API_KEY", None)
+            r = self.client.post("/chat", headers=CAB, json={"modelo": "groq/llama-3.3-70b-versatile", "mensajes": [{"role": "user", "content": "hola"}]})
+        self.assertEqual(r.status_code, 200, r.text); self.assertEqual(vistos, ["gsk-mala", "gsk-buena"])
+
+    def test_el_banco_guarda_las_claves_de_groq_y_nvidia_del_entorno(self):
+        import tempfile
+        from mvp import bank
+        with tempfile.TemporaryDirectory() as d, patch.dict(os.environ, {"GROQ_API_KEY_3": "gsk-3", "NVIDIA_API_KEY_1": "nvapi-1"}):
+            b = bank.abrir(d + "/b.bin", "clave"); b.bootstrap_desde_env()
+            self.assertEqual((b.leer("GROQ_API_KEY_3"), b.leer("NVIDIA_API_KEY_1")), ("gsk-3", "nvapi-1"))
+
+
 if __name__ == "__main__":
     unittest.main()
