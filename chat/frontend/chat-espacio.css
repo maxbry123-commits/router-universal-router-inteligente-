@@ -101,4 +101,5 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
 @media (max-width:720px) and (min-width:380px) {
   #composer .composer-bar > button.secondary,
   #composer .composer-bar > #btn-detener { width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
+  #btn-selector-modelos { font-size: 15px; }
 }
