@@ -48,7 +48,9 @@ function pintar(cuerpo) {
   let ocupado = false;
   const ver = () => {
     const hechas = tareas.filter((t) => t.hecho).length;
-    estado.textContent = tareas.length + "/" + MAX + " · " + hechas + " hechas · " + donde();
+    const f = window.RIU_CHAT_TOOL_FLAGS || {};
+    const recibe = !agenteVe ? "" : (f.tools || f.agente_tool || f.llm_tool ? " · el modelo la recibe" : " · enciende IA o Agentes");
+    estado.textContent = tareas.length + "/" + MAX + " · " + hechas + " hechas · " + donde() + recibe;
     pintarAgente();
     lista.replaceChildren();
     tareas.forEach((t, i) => {
