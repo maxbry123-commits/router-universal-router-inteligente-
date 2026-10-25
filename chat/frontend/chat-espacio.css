@@ -152,9 +152,12 @@ html.salida-x4 #histories { flex: 1 1 auto; height: auto; }
 @media (max-width: 720px) {
   .riu-bienvenida { justify-content: flex-start; padding-top: 8px; }
   .riu-bv-acc { display: none; }
-  #composer { padding-bottom: env(safe-area-inset-bottom, 0px); }
-  #composer .composer-bar > .action { position: static; right: auto; bottom: auto; }
-  #mas-panel { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 6px); z-index: 40; max-height: min(280px, 42dvh); overflow: auto; padding: 8px; border-radius: 16px; background: var(--surface, #1e1e1e); border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  #composer { padding: 8px 8px 6px; }
+  #composer .composer-bar { flex-wrap: nowrap; }
+  #composer .composer-bar::after { content: none; }
+  #composer .composer-bar > .action { position: static; margin-left: auto; }
+  #composer .composer-chips:empty { display: none; }
+  #mas-panel { position: fixed; z-index: 80; left: 12px; right: 12px; overflow: auto; }
   #mas-panel[hidden] { display: none; }
   #mas-panel button { width: auto; height: auto; min-width: 0; min-height: 40px; aspect-ratio: auto; border-radius: 12px; display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 6px 10px; }
   #mas-panel .mas-nom { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }

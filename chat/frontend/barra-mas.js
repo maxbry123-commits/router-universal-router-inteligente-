@@ -1,14 +1,31 @@
-// En el celular, LOOP, Cola, Watchdog y el resto de controles viven en un solo botón.
+// En el celular la caja queda baja: la respuesta usa el resto.
+// IA, Agentes, Auto y el resto viven en un menú que no se sale de la pantalla.
 const st = document.createElement("style");
-st.textContent = "@media(max-width:720px){.riu-bv-acc{display:none !important}.riu-bienvenida{justify-content:flex-start;padding-top:8px}#composer #message{min-height:44px !important;max-height:96px !important}}";
+st.textContent = "@media(max-width:720px){"
+  + ".riu-bv-acc{display:none !important}"
+  + ".riu-bv-titulo{font-size:18px !important}"
+  + ".riu-bienvenida{justify-content:center;padding-top:0}"
+  + "#composer{padding:8px 8px 6px !important}"
+  + "#composer #message{min-height:40px !important;height:40px;max-height:88px !important}"
+  + "#composer .composer-chips:empty{display:none !important}"
+  + "#composer .composer-bar{flex-wrap:nowrap !important;gap:6px !important}"
+  + "#composer .composer-bar>button.secondary{width:34px !important;min-width:34px !important;height:34px !important}"
+  + "#composer .composer-bar::after{display:none !important;content:none !important}"
+  + "#composer .composer-bar>.action{position:static !important;margin-left:auto !important;min-width:0 !important;width:auto !important;height:40px !important;min-height:40px !important;padding:0 14px !important;border-radius:12px !important}"
+  + "#mas-panel{position:fixed;z-index:80;left:12px;right:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px;border-radius:16px;background:var(--surface,#1e1e1e);border:1px solid var(--border);overflow:auto;box-shadow:0 12px 32px rgba(0,0,0,.5)}"
+  + "#mas-panel[hidden]{display:none !important}"
+  + "#mas-panel button{width:auto !important;height:auto !important;min-width:0;min-height:40px;aspect-ratio:auto;border-radius:12px;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;padding:6px 10px}"
+  + "#mas-panel .mas-nom{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}"
+  + "#mas-panel #mode-selector-mount{grid-column:1 / -1}"
+  + "}";
 document.head.append(st);
-const IDS = ["btn-prompt", "btn-loop", "btn-cola", "btn-watchdog", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power", "btn-sandbox", "btn-copiar-input"];
+
+const IDS = ["btn-tools", "btn-agentes", "btn-prompt", "btn-loop", "btn-cola", "btn-watchdog", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power", "btn-sandbox", "btn-copiar-input", "btn-detener"];
 const movil = () => matchMedia("(max-width:720px)").matches;
 
 function armar() {
   const bar = document.querySelector("#composer .composer-bar");
   if (!bar || document.querySelector("#btn-mas")) return null;
-  const comp = document.querySelector("#composer");
   const b = document.createElement("button");
   b.type = "button";
   b.id = "btn-mas";
@@ -24,33 +41,50 @@ function armar() {
     const abrir = panel.hidden;
     panel.hidden = !abrir;
     b.setAttribute("aria-expanded", String(abrir));
+    if (abrir) ubicar();
   };
-  comp.append(panel);
-  panel.addEventListener("click", (ev) => { if (!ev.target.closest("button")) return; panel.hidden = true; b.setAttribute("aria-expanded", "false"); });
+  document.body.append(panel);
+  panel.addEventListener("click", (ev) => {
+    if (!ev.target.closest("button")) return;
+    panel.hidden = true;
+    b.setAttribute("aria-expanded", "false");
+  });
   bar.insertBefore(b, bar.querySelector(".action") || null);
   return panel;
 }
 
+function ubicar() {
+  const panel = document.querySelector("#mas-panel");
+  const comp = document.querySelector("#composer");
+  if (!panel || !comp || panel.hidden) return;
+  const r = comp.getBoundingClientRect();
+  const alto = Math.max(160, Math.min(window.innerHeight * 0.62, r.top - 16));
+  panel.style.bottom = Math.round(window.innerHeight - r.top + 8) + "px";
+  panel.style.maxHeight = Math.round(alto) + "px";
+}
+
 function nombre(b) {
-  if (b.querySelector(".mas-nom")) return;
+  if (b.querySelector(".mas-nom") || !b.querySelector("svg") || b.textContent.trim()) return;
   const n = document.createElement("span");
   n.className = "mas-nom";
-  n.textContent = (b.getAttribute("aria-label") || b.title || "").replace(/^Activar el |^Permitir que el modelo use /, "");
+  n.textContent = b.getAttribute("aria-label") || b.title || "";
   b.append(n);
 }
 
 function colocar() {
   const panel = document.querySelector("#mas-panel") || armar();
-  if (!panel) return;
-  if (!movil()) return;
+  if (!panel || !movil()) return;
   IDS.forEach((id) => {
     const b = document.getElementById(id);
     if (!b || b.parentNode === panel) return;
     nombre(b);
     panel.append(b);
   });
+  const modo = document.querySelector("#mode-selector-mount");
+  if (modo && modo.parentNode !== panel) panel.append(modo);
+  const chips = document.querySelector("#composer .composer-chips");
+  if (chips && !chips.childElementCount) chips.remove();
 }
 
-const ver = () => { colocar(); };
-new MutationObserver(ver).observe(document.body, { childList: true, subtree: true });
-ver();
+new MutationObserver(() => colocar()).observe(document.body, { childList: true, subtree: true });
+colocar();
