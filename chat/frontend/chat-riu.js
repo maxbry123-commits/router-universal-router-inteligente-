@@ -33,6 +33,9 @@ export function conectarRiu({ q }) {
   const bajar = document.createElement("button"); bajar.type = "button"; bajar.className = "riu-bajar"; bajar.hidden = true;
   bajar.title = "Bajar al final"; bajar.setAttribute("aria-label", "Bajar al final"); bajar.innerHTML = ICO_BAJAR;
   hist.prepend(barra); hist.append(bajar);
+  const curso = document.createElement("button"); curso.type = "button"; curso.id = "en-curso"; curso.className = "en-curso"; curso.hidden = true;
+  const comp = q("#composer"); if (comp) comp.before(curso);
+  curso.addEventListener("click", () => { const p = hist.querySelector(".message.pending"); if (p) p.scrollIntoView({ block: "nearest" }); });
   const subir = document.createElement("button"); subir.type = "button"; subir.className = "riu-bajar riu-subir"; subir.hidden = true; subir.title = "Ir al principio"; subir.setAttribute("aria-label", "Ir al principio"); subir.innerHTML = ICO_BAJAR; hist.append(subir);
   subir.addEventListener("click", () => { const h = [...hist.querySelectorAll(".chat-history")].find((x) => !x.hidden && x.offsetParent !== null); if (h) h.scrollTo({ top: 0, behavior: "smooth" }); });
   const activa = () => [...hist.querySelectorAll(".chat-history")].find((h) => !h.hidden && h.offsetParent !== null);
@@ -45,7 +48,14 @@ export function conectarRiu({ q }) {
   bajar.addEventListener("click", () => { const h = activa(); if (h) h.scrollTo({ top: h.scrollHeight, behavior: "smooth" }); });
   hist.addEventListener("scroll", medir, { capture: true, passive: true });
   let pend = 0;
-  const revisar = () => { pend = 0; hist.querySelectorAll(".message:not(.user) .txt").forEach(bloquesDeCodigo); medir(); };
+  const revisar = () => {
+    pend = 0;
+    hist.querySelectorAll(".message:not(.user) .txt").forEach(bloquesDeCodigo);
+    const n = hist.querySelectorAll(".message.pending").length;
+    curso.hidden = n < 1;
+    curso.textContent = n === 1 ? "1 tarea en ejecución" : n + " tareas en ejecución";
+    medir();
+  };
   new MutationObserver(() => { if (!pend) pend = requestAnimationFrame(revisar); })
     .observe(hist, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["hidden"] });
   revisar();

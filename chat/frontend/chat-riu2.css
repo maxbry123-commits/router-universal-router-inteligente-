@@ -71,6 +71,9 @@
 .riu-pal{display:inline-block;white-space:nowrap}
 .riu-bv-titulo{text-wrap:balance}
 .con-bienvenida .chat-history:empty::before{content:none}
+#histories .chat-history{display:flex;flex-direction:column}
+#histories .chat-history::before{content:"";flex:1 0 0px;min-height:0}
+#histories .chat-history>*{flex:0 0 auto}
 @media(max-width:720px){
   .riu-bienvenida{justify-content:flex-start;padding-top:8px}
   .riu-bv-acc{display:flex}

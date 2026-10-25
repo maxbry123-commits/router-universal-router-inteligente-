@@ -169,7 +169,8 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
 }
 #ventana-sesion textarea { width: 100%; box-sizing: border-box; }
 
-/* La salida ocupa lo que deja la caja. Aunque un script viejo ponga salida-x4, no se estira ni empuja la página. */
+.en-curso{display:flex;width:100%;min-height:40px;margin:0 0 6px;padding:0 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--title);font-size:14px;align-items:center;justify-content:center}
+.en-curso[hidden]{display:none !important}
 html.salida-x4 main section:has(> #histories) { height: calc(100dvh - var(--ctl-top, 56px) - 8px); min-height: 0; }
 html.salida-x4 #histories { flex: 1 1 auto; height: auto; }
 @media (max-width: 720px) {
