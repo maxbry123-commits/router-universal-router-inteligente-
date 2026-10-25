@@ -10,7 +10,7 @@ for i in $(seq 1 40); do curl -s -m1 localhost:8765/health >/dev/null && break; 
 run() { local out; out=$(timeout 240 node "$@" 2>&1 | grep -E "^(movil |desk )?(PASS|FAIL)|^ERROR|reglas fallan"); echo "== $* : $(echo "$out" | grep -c PASS) PASS, $(echo "$out" | grep -cE 'FAIL|ERROR') FAIL"; echo "$out" | grep -E "FAIL|ERROR"; echo "$out" | grep "reglas fallan" | grep -v ": 0 reglas"; }
 run modelos_e2e.js movil; run modelos_e2e.js desk; run paso2.js; run refuta.js; run dispositivos.js
 for v in movil desk; do run rui.js $v; run paso21.js $v; run axe.js $v; done
-run teclado.js; run original.js; run tools_ctl.js movil; run tools_ctl.js desk
+run teclado.js; run original.js; run selector_ventana.js; run tools_ctl.js movil; run tools_ctl.js desk
 for v in movil desk; do echo "== botones $v: $(timeout 240 node botones.js $v 2>&1 | grep -E '^(ERR|REV)' | grep -v 'ON/OFF Team\|ON/OFF Ask\|Bajar al final\|Ir al principio\|Copiar texto\|Enviar\]' | wc -l) por revisar"; done
 node --test "$FRONT/test/power.test.js" 2>&1 | grep "^# pass\|^# fail"
 (cd "$RAIZ" && python3 -m pytest mvp -q 2>&1 | tail -1)

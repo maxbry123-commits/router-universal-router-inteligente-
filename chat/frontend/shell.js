@@ -12,6 +12,8 @@ import "./ventana-room.js";  // ROOM CONFERENCIAS (salas compartidas + turno de 
 import "./ventana-servidor.js";  // Servidor del Router (encender/apagar/reiniciar vía /api/power de Vercel)
 import "./fichas-externas.js";  // modelos reales de Groq/NVIDIA en el selector NVIDIA (antes de montar el chat)
 import "./chat-medios.js";  // medios [[imagen:]] [[video:]] [[audio:]] dentro de la burbuja
+import "./selector-modelos.js";  // un solo selector guarda todos los selectores de modelo; fuera queda el indicador
+import "./salida-ampliada.js";  // salida ×4 con el espacio que dejaba Selectores; caja de escritura fija abajo
 import "./pendientes-panel.js";  // t175u: panel 📋 Pendientes (bloc de notas verbatim + DSL DAG con la LLM + prompt JSON editable)
 
 const panels = { chat, archivos, seguimiento, canvas, connectors: organization, templates: organization, engineering: organization, apariencia };
