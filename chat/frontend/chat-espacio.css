@@ -140,4 +140,8 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
 #ventana-cola .cola-fila span { min-width: 0; overflow-wrap: anywhere; }
 #ventana-cola .cola-fila .cv-form { grid-column: 2; flex: none; margin-top: 0; }
 #ventana-cola .cola-fila button { min-height: 32px; padding: 4px 10px; }
+#ventana-cola .cola-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+#ventana-cola .cola-cabeza .wd-estado { margin: 0; min-width: 0; }
+#ventana-cola .cola-tool { flex: 0 0 auto; min-height: 32px; width: auto; }
+#ventana-cola .cola-tool[aria-pressed=true] { border-color: var(--status-blue, #2F80FF); }
 #ventana-cola .cola-fila.hecha span { text-decoration: line-through; opacity: .7; }

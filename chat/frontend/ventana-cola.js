@@ -6,6 +6,7 @@ const K = "riu_cola";
 const MAX = 50;
 let tareas = [];
 let origen = "chat";
+let agenteVe = null;
 
 function locales() {
   try {
@@ -25,6 +26,11 @@ async function refrescar() {
   const r = await accion("checklist", { accion: "listar" });
   tomar(r);
 }
+async function leerAgente() {
+  const r = await accion("tools_lock", {});
+  const t = (r.tools || []).find((x) => x.nombre === "pendientes");
+  agenteVe = !!(t && !t.locked);
+}
 function donde() {
   if (origen === "servidor") return "en el servidor";
   if (origen === "memoria") return "no se guarda al reiniciar";
@@ -43,6 +49,7 @@ function pintar(cuerpo) {
   const ver = () => {
     const hechas = tareas.filter((t) => t.hecho).length;
     estado.textContent = tareas.length + "/" + MAX + " · " + hechas + " hechas · " + donde();
+    pintarAgente();
     lista.replaceChildren();
     tareas.forEach((t, i) => {
       const fila = el("div", "cola-fila" + (t.hecho ? " hecha" : ""));
@@ -99,6 +106,20 @@ function pintar(cuerpo) {
     catch (e) { fallar(e); }
     ocupado = false; ver();
   };
+  const agente = btn("Tool", "secondary", async () => {
+    if (agenteVe === null) return;
+    agente.disabled = true;
+    try { await accion("tools_lock", { tool: "pendientes", locked: !!agenteVe }); await leerAgente(); aviso.textContent = ""; }
+    catch (e) { fallar(e); }
+    agente.disabled = false;
+    pintarAgente();
+  });
+  agente.title = "Tool pendientes del chat. ON: el agente la ve y puede usarla.";
+  agente.classList.add("cola-tool");
+  const pintarAgente = () => {
+    agente.textContent = agenteVe ? "Tool ON" : "Tool OFF";
+    agente.setAttribute("aria-pressed", agenteVe ? "true" : "false");
+  };
   const add = btn("Añadir", "secondary", async () => {
     const v = texto.value.trim();
     if (!v) { aviso.textContent = "escribe la tarea"; return; }
@@ -115,9 +136,15 @@ function pintar(cuerpo) {
     add.disabled = false; ver();
   });
   texto.onkeydown = (ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); add.click(); } };
-  cuerpo.replaceChildren(estado, texto, add, lista, aviso);
+  const cabeza = el("div", "cola-cabeza");
+  cabeza.append(estado, agente);
+  cuerpo.replaceChildren(cabeza, texto, add, lista, aviso);
   estado.textContent = "cargando";
-  refrescar().then(() => { aviso.textContent = ""; ver(); }).catch(() => {
+  refrescar().then(async () => {
+    try { await leerAgente(); } catch (e) { agenteVe = null; aviso.textContent = "el agente no respondió"; }
+    pintarAgente();
+    ver();
+  }).catch(() => {
     origen = "chat";
     tareas = locales().map((t) => ({ id: "", texto: t }));
     aviso.textContent = "el servidor no respondió";
