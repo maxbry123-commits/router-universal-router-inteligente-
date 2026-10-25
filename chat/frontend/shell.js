@@ -14,6 +14,8 @@ import "./ventana-loop.js";  // LOOP del chat: encender, un paso, verificar, rep
 import "./ventana-mcp.js";  // pruebas HTTP y MCP del Router
 import "./ventana-watchdog.js";  // ficha del Watchdog: de 10 minutos a 48 horas, sin correrlas aquí
 import "./ventana-cola.js";  // cola de trabajo: hasta 50 tareas, sin enviarlas al modelo
+import "./barra-mas.js";  // en el celular, los controles de más van en un solo botón
+import "./salida-ampliada.js";  // la respuesta se lee en el hueco de encima, sin estirar la página
 import "./fichas-externas.js";  // modelos reales de Groq/NVIDIA en el selector NVIDIA (antes de montar el chat)
 import "./chat-medios.js";  // medios [[imagen:]] [[video:]] [[audio:]] dentro de la burbuja
 import "./selector-modelos.js";  // un solo selector guarda todos los selectores de modelo; fuera queda el indicador
