@@ -11,6 +11,16 @@ export const dameAg = () => Object.assign({ items: [], notas: "", on: false }, l
 export const dameSb = () => Object.assign({ items: [], notas: "", on: false }, leer(KEYS.sandbox, {}));
 export const dameProyGlobal = () => { const t = leer("riu_proy_v1", {}); return Array.isArray(t.global) ? t.global : []; };
 export const refsCompartidas = (a) => { const r = dameClaves(); return Object.keys(r).filter((k) => r[k] && r[k].comparte && r[k].comparte[a]); };
+export function parsearBloquesTarea(texto) {
+  const out = [], re = /\[\[TAREA:([^\]\n|]{1,80})(?:\|(una|diario|semanal))?(?:\|([01]?\d|2[0-3]):([0-5]\d))?\]\]([\s\S]*?)\[\[\/TAREA\]\]/g;
+  let m;
+  while ((m = re.exec(String(texto))) !== null) {
+    const prompt = m[5].trim();
+    if (!prompt) continue;
+    out.push({ titulo: m[1].trim(), cada: m[2] || "diario", hora: (m[3] ? String(m[3]).padStart(2, "0") : "08") + ":" + (m[4] || "00"), prompt });
+  }
+  return out;
+}
 export function parsearBloquesWF(texto) {  // la IA escribe en la ventana de ejecución con: [[WF:nombre]]instrucción[[/WF]]
   const out = [], re = /\[\[WF:([^\]\n]{1,60})\]\]([\s\S]*?)\[\[\/WF\]\]/g; let m;
   while ((m = re.exec(String(texto))) !== null) { const t = m[2].trim(); if (t) out.push({ ref: m[1].trim(), texto: t }); }
@@ -44,6 +54,15 @@ export function construirPrefijo(oficial) {
   const ag = dameAg(); if (ag.on && ((ag.items || []).length || (ag.notas || "").trim())) partes.push("[AGENTES REMOTOS · código fuente + SDK]\n" + ((ag.notas || "").trim() ? ag.notas.trim() + "\n" : "") + lineas(sinMute("agentes", ag.items).map(urlDe)));
   const sb = dameSb(); if (sb.on && ((sb.items || []).length || (sb.notas || "").trim())) partes.push("[SANDBOX ANCLADO]\n" + ((sb.notas || "").trim() ? sb.notas.trim() + "\n" : "") + lineas(sinMute("sandbox", sb.items)));
   dameProyGlobal().filter((p) => p.on).forEach((p) => partes.push("[PROYECTO «" + p.nombre + "»]\n" + ((p.notas || "").trim() ? p.notas.trim() + "\n" : "") + lineas(sinMute("proyecto:" + p.nombre, p.items))));
+  try {
+    const f = typeof window !== "undefined" ? (window.RIU_CHAT_TOOL_FLAGS || {}) : {};
+    if (f.tools || f.llm_tool || f.agente_tool) {
+      const ts = ((leer("riu_tareas_v1", { tareas: [] }).tareas) || []).filter((t) => t && t.on).slice(0, 6);
+      let s = "[TAREAS] Crea una con [[TAREA:titulo|diario|08:00]]prompt[[/TAREA]]. cada: una, diario o semanal.";
+      if (ts.length) s += "\n" + ts.map((t) => "- " + String(t.titulo || "").slice(0, 80) + " · " + t.cada + " " + t.hora).join("\n");
+      partes.push(s);
+    }
+  } catch (e) {}
   return partes.join("\n\n");
 }
 export function aplicarAMensaje(msg, oficial) { const p = construirPrefijo(oficial); return p ? p + "\n\n--- MENSAJE DEL DIRECTOR ---\n" + msg : msg; }

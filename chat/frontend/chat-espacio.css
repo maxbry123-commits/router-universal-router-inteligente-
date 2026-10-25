@@ -145,6 +145,14 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
 #ventana-cola .cola-tool { flex: 0 0 auto; min-height: 32px; width: auto; }
 #ventana-cola .cola-tool[aria-pressed=true] { border-color: var(--status-blue, #2F80FF); }
 #ventana-cola .cola-fila.hecha span { text-decoration: line-through; opacity: .7; }
+#ventana-tareas .loop-partes { display: flex; gap: 6px; margin: 0 0 8px; }
+#ventana-tareas .loop-partes button { min-height: 36px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: inherit; }
+#ventana-tareas .loop-partes button.on { border-color: var(--status-blue, #2F80FF); color: var(--title); }
+#ventana-tareas .cv-form { display: grid; gap: 8px; }
+#ventana-tareas .cv-form input:not([type=checkbox]), #ventana-tareas .cv-form select, #ventana-tareas .cv-form textarea { width: 100%; min-height: 40px; box-sizing: border-box; }
+#ventana-tareas .tarea-check { display: flex; align-items: center; gap: 8px; min-height: 40px; }
+#ventana-tareas .cola-fila { display: grid; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+#ventana-tareas .tarea-archivo { display: block; width: 100%; text-align: left; min-height: 44px; padding: 8px 0; background: none; border: 0; border-bottom: 1px solid var(--border); color: inherit; overflow-wrap: anywhere; }
 
 /* La salida ocupa lo que deja la caja. Aunque un script viejo ponga salida-x4, no se estira ni empuja la página. */
 html.salida-x4 main section:has(> #histories) { height: calc(100dvh - var(--ctl-top, 56px) - 8px); min-height: 0; }
