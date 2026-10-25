@@ -1,16 +1,16 @@
 /* chat-pulido.css — ajustes de forma sin mover botones ni tocar handlers (skill Maxbry: azul = encendido, gris = apagado) */
 /* chips IA / Agentes / System prompt: píldora con texto en una línea y punto de estado */
-#composer .composer-bar #btn-tools,#composer .composer-bar #btn-agentes,#composer .composer-bar #btn-prompt{flex:0 0 auto!important;width:auto;max-width:none;height:auto;min-height:36px;aspect-ratio:auto;padding:6px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;word-break:normal;overflow-wrap:normal;font-size:13px;font-weight:600;line-height:1}
-#composer .composer-bar #btn-tools::before,#composer .composer-bar #btn-agentes::before,#composer .composer-bar #btn-prompt::before{content:"";width:8px;height:8px;border-radius:50%;flex:none;background:var(--quiet-2,#777)}
-#composer .composer-bar #btn-tools[aria-pressed=true],#composer .composer-bar #btn-agentes[aria-pressed=true],#composer .composer-bar #btn-prompt[aria-pressed=true]{border-color:var(--status-blue,#2F80FF);color:var(--title)}
-#composer .composer-bar #btn-tools[aria-pressed=true]::before,#composer .composer-bar #btn-agentes[aria-pressed=true]::before,#composer .composer-bar #btn-prompt[aria-pressed=true]::before{background:var(--status-blue,#2F80FF);box-shadow:0 0 6px var(--status-blue,#2F80FF)}
-#composer .composer-bar #btn-tools[aria-busy=true],#composer .composer-bar #btn-agentes[aria-busy=true],#composer .composer-bar #btn-prompt[aria-busy=true]{opacity:.6;cursor:progress}
+#composer #btn-tools,#composer #btn-agentes,#composer #btn-prompt{flex:0 0 auto!important;width:auto;max-width:none;height:auto;min-height:36px;aspect-ratio:auto;padding:6px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;word-break:normal;overflow-wrap:normal;font-size:13px;font-weight:600;line-height:1}
+#composer #btn-tools::before,#composer #btn-agentes::before,#composer #btn-prompt::before{content:"";width:8px;height:8px;border-radius:50%;flex:none;background:var(--quiet-2,#777)}
+#composer #btn-tools[aria-pressed=true],#composer #btn-agentes[aria-pressed=true],#composer #btn-prompt[aria-pressed=true]{border-color:var(--status-blue,#2F80FF);color:var(--title)}
+#composer #btn-tools[aria-pressed=true]::before,#composer #btn-agentes[aria-pressed=true]::before,#composer #btn-prompt[aria-pressed=true]::before{background:var(--status-blue,#2F80FF);box-shadow:0 0 6px var(--status-blue,#2F80FF)}
+#composer #btn-tools[aria-busy=true],#composer #btn-agentes[aria-busy=true],#composer #btn-prompt[aria-busy=true]{opacity:.6;cursor:progress}
 /* diagrama ⓘ de cada selector: pista horizontal propia, nunca ensancha la página */
 .sel-fila .sel-diagrama{flex:1 0 100%;min-width:0;max-width:100%;display:flex;flex-wrap:nowrap;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;padding:6px 10px;border:1px dashed var(--border-strong);border-radius:16px;font-size:12px}
 .sel-fila .sel-diagrama[hidden]{display:none}
 /* foco visible en todo el chat (teclado) */
 #composer button:focus-visible,#composer textarea:focus-visible,.sel-fila button:focus-visible,.chat-history button:focus-visible{outline:2px solid var(--status-blue,#2F80FF);outline-offset:2px}
-@media(prefers-reduced-motion:reduce){#composer .composer-bar #btn-tools::before,#composer .composer-bar #btn-agentes::before,#composer .composer-bar #btn-prompt::before{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){#composer #btn-tools::before,#composer #btn-agentes::before,#composer #btn-prompt::before{box-shadow:none}}
 /* contraste AA del texto encendido (azul sobre panel oscuro): mismo azul, más claro en temas oscuros */
 :root{--azul-texto:#8AB4FF}html[data-theme=blanco]{--azul-texto:#1F5BE0}
 .sel-on.on,.sel-nuevo.on,.pill.on,.toggle.on,.mini.on,.ap-chip.on,.ap-chip[aria-pressed="true"]{color:var(--azul-texto)!important}

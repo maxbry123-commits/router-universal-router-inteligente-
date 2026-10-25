@@ -80,7 +80,7 @@ async function pintarVentana(caja) {
           b.disabled = true;
           try {
             const r = await accion("tools_lock", { tool: t.nombre, locked: !t.locked });
-            if (r.error) { alert(r.error); } else { t.locked = r.locked; b.textContent = t.locked ? "bloqueada" : "activa"; b.classList.toggle("on", !t.locked);  const staff = document.querySelector("#btn-tools"); if (staff) { staff.textContent = "🧰 IA/agentes " + (window.RIU_CHAT_TOOL_FLAGS?.tools ? "ON" : "OFF"); staff.setAttribute("aria-pressed", String(!!window.RIU_CHAT_TOOL_FLAGS?.tools)); } }
+            if (r.error) { alert(r.error); } else { t.locked = r.locked; b.textContent = t.locked ? "bloqueada" : "activa"; b.classList.toggle("on", !t.locked); }
           } catch (x) { alert(x.message); }
           finally { b.disabled = false; }
         });
@@ -133,7 +133,17 @@ function instalarChat() {
   let pulsado = null; b.addEventListener("pointerdown", () => { pulsado = setTimeout(() => { pulsado = null; s.hidden = false; pintarVentana(cuerpo); }, 600); }); ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(pulsado); }));  // móvil: mantener pulsado abre la ventana
   accion("agent_access_lock", {}).then(aplicarFlags).catch(() => {});  // estado real del servidor al abrir el chat
   b.oncontextmenu = (ev) => { ev.preventDefault(); s.hidden = false; pintarVentana(cuerpo); };
-  const env = bar.querySelector(".action"); bar.insertBefore(p, env || null); bar.insertBefore(g, p); bar.insertBefore(b, g);
+  const env = bar.querySelector(".action");
+  const fila = el("div", "composer-chips");
+  const modo = document.querySelector("#mode-selector-mount");
+  const modoPadre = modo && modo.parentNode;
+  const modoAntes = modo && modo.nextSibling;
+  const meter = () => {
+    if (matchMedia("(max-width:720px)").matches) { bar.before(fila); fila.append(b, g); if (modo) fila.append(modo); if (!p.isConnected) fila.append(p); }
+    else { if (modo && modoPadre) modoPadre.insertBefore(modo, modoAntes); fila.remove(); bar.insertBefore(p, env || null); bar.insertBefore(g, p); bar.insertBefore(b, g); }
+  };
+  meter();
+  matchMedia("(max-width:720px)").addEventListener("change", meter);
 }
 
 async function instalarConfig() {
