@@ -94,6 +94,7 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
   #composer .composer-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; margin: 0 0 6px; overflow: visible; }
   #composer .composer-chips > button { position: static; left: auto; right: auto; bottom: auto; flex: 0 0 auto; max-width: none; overflow: visible; }
   #composer .composer-chips .ms-btn { min-height: 36px; height: 36px; padding: 4px 10px; }
+  #composer .composer-chips .ms-hint:empty { display: none; }
   .message { padding-right: 84px; }
   .message .copiar, .message .editar { min-width: 36px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; top: 4px; padding: 0; }
   .message .copiar { right: 4px; }
