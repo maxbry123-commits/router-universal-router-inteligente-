@@ -1,7 +1,7 @@
 # Instrucciones de Antonio · daños · pendientes (con referencia para auditar)
 
 Cómo auditar cualquier fila: `git show <commit> -- <archivo>` · ver el estado actual: `git blame -L <ini>,<fin> <archivo>`.
-Base de comparación (antes de los cambios de Claude): `1b916a587c`. Revisión de cableado: `python3 plugins/chat-router/e2e/cableado.py`.
+Base de comparación (antes de los cambios de Claude): `1b916a587c`. Revisión de cableado: `python3 chat/e2e/cableado.py`.
 
 ## A. Instrucciones de Antonio y su estado
 
@@ -25,7 +25,7 @@ Base de comparación (antes de los cambios de Claude): `1b916a587c`. Revisión d
 | I16 | Bloques para Grok (revisión, instrucciones, build) | Hecho | `docs/GROK_BLOQUES.md`, `1aef5be56b` |
 | I17 | Código del frontend dividido, no monolítico | Hecho en `panel-chat.js` y `chat-riu2.js` · quedan 6 archivos >150 líneas | `43c3163bb8` |
 | I18 | Todo a `main` siempre | Hecho | cada commit está en `main` |
-| I19 | Dos raíces (backend y frontend) con índice y handoff | Hecho (índices y handoff; los archivos NO se movieron, ver §D) | `docs/chat_backend/`, `docs/chat_frontend/` |
+| I19 | Dos raíces (backend y frontend) con índice y handoff | Hecho (índices y handoff; los archivos NO se movieron, ver §D) | `chat/docs/backend/`, `chat/docs/frontend/` |
 | I20 | Reglas del repo (`CLAUDE.md`): inspeccionar, no romper, modificar solo lo autorizado | Incumplido en D1, D2, D5 (ver B) | `CLAUDE.md` |
 
 ## B. Lo que se dañó o cambió sin pedirlo (código y commit)
@@ -85,4 +85,4 @@ Base de comparación (antes de los cambios de Claude): `1b916a587c`. Revisión d
 7. Revocar el token HF expuesto (acción tuya).
 
 ## D. Por qué las dos raíces no movieron archivos
-Mover `plugins/chat-router/frontend/` rompe el despliegue de Vercel (`vercel.json`, `build.sh`, imports `/chat/ui/…`) y mover `mvp/` rompe el arranque del Space (`mvp.run`, autopull). `CLAUDE.md` prohíbe cambiar la arquitectura sin autorización. Las raíces son por tanto **índices verificados** (`docs/chat_frontend/`, `docs/chat_backend/`). Si quieres moverlas de verdad, dime y lo hago con prueba de despliegue.
+Mover `chat/frontend/` rompe el despliegue de Vercel (`vercel.json`, `build.sh`, imports `/chat/ui/…`) y mover `mvp/` rompe el arranque del Space (`mvp.run`, autopull). `CLAUDE.md` prohíbe cambiar la arquitectura sin autorización. Las raíces son por tanto **índices verificados** (`chat/docs/frontend/`, `chat/docs/backend/`). Si quieres moverlas de verdad, dime y lo hago con prueba de despliegue.

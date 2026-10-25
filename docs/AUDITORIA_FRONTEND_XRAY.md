@@ -1,6 +1,6 @@
 # Auditoría forense (X-Ray) del frontend del chat — trazabilidad
 
-Generada el 2026-10-25 con `git log`, `git diff 1b916a587c HEAD` y un inventario de controles en navegador (Chromium, 345×700, base vs. actual). Alcance: `plugins/chat-router/frontend/`. Los datos salen de comandos reales, no de memoria.
+Generada el 2026-10-25 con `git log`, `git diff 1b916a587c HEAD` y un inventario de controles en navegador (Chromium, 345×700, base vs. actual). Alcance: `chat/frontend/`. Los datos salen de comandos reales, no de memoria.
 
 ## 1. Resumen
 - **Base de comparación:** `1b916a587c`, el último estado anterior al primer cambio de Claude al frontend (23-oct). Es la «pantalla vieja» de Antonio.

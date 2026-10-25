@@ -61,5 +61,5 @@ Cambio neto backend desde la base (solo `.py` de mvp, Harness y cliente): 40 arc
 ## 5. Evidencia
 
 - `python -m pytest mvp -q` → 221 passed (última corrida completa).
-- Batería e2e: `plugins/chat-router/e2e/todo.sh`.
+- Batería e2e: `chat/e2e/todo.sh`.
 - Frontend dañado / pendiente (Salida 2): D1 simulador, D2 Detener, D3 selectores, D5 etiquetas de modo, D8 Nuevo proyecto, D9 RUI = 22.

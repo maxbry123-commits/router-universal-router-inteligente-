@@ -5,7 +5,7 @@ Grok: revisa TODO el estado actual del repo `maxbry123-commits/router-universal-
 Reglas: no cambies secretos, claves ni el Router sin orden expresa; ediciones quirúrgicas (nada de reescrituras); archivos nuevos ≤100 líneas y funciones ≤25; un PASS solo con salida real de un comando. Si algo va fuera de estas instrucciones, avísalo como violación.
 Revisa, en este orden, y entrega una tabla `área | PASS/FAIL | evidencia (comando y salida real) | archivo:línea del fallo`:
 1. `python3 -m pytest mvp -q` (esperado: 221 pasan).
-2. Frontend en navegador: `bash plugins/chat-router/e2e/todo.sh` (servidor local con modelos simulados; ver README en esa carpeta). Pantalla del teléfono de Antonio: 345×700. Cada suite debe terminar con 0 FAIL.
+2. Frontend en navegador: `bash chat/e2e/todo.sh` (servidor local con modelos simulados; ver README en esa carpeta). Pantalla del teléfono de Antonio: 345×700. Cada suite debe terminar con 0 FAIL.
 3. Cableado de CADA botón y selector del chat, en móvil y escritorio: pulsar y comprobar que cambia el estado y que el backend lo recuerda (chips IA/Agentes/System prompt, ON/OFF de cada selector, LLM tool, Agente tool, Proyectos, Conexiones, ROOM, Servidor, Pendientes, Detener, ⤢).
 4. Que responde el modelo del selector (no otro): la prueba `modelos_e2e.js` y, contra el Space real, `RIU_KEY=<clave> python3 -m mvp.pruebas_vivo.conectividad`.
 5. Lo que NO esté en la lista de arriba y veas roto: repórtalo con captura.
@@ -22,7 +22,7 @@ Entrega también la lista de lo que NO pudiste probar y por qué.
 - Caja de escritura: texto+Enviar y 3 selectores (Modelo · Permisos · Herramientas); selectores de modelo dentro de la ventana Modelo; panel superior en rejilla.
 - Accesibilidad WCAG 2.2 AA (0 fallos axe en 7 temas), teclado, 22 componentes RIU con prueba.
 - Código dividido: `panel-chat.js` 818→408 líneas, `chat-riu2.js` 307→15.
-- Auditoría forense: `docs/AUDITORIA_FRONTEND_XRAY.md`. Pruebas del chat en el repo: `plugins/chat-router/e2e/`.
+- Auditoría forense: `docs/AUDITORIA_FRONTEND_XRAY.md`. Pruebas del chat en el repo: `chat/e2e/`.
 
 **Faltante / dañado por Claude (Salida 2, arreglar tal cual)**
 1. Simulador de pensamiento (cubo 3D + segundos) desapareció: `composer-filas.js`, `QUEDAN` no excluye `.p3d` y lo mueve a la ventana Herramientas. Debe verse junto a Enviar mientras el chat trabaja. Prueba: `node narracion.js` debe dar `cuboPensamiento: visible`.
@@ -42,8 +42,8 @@ Entrega también la lista de lo que NO pudiste probar y por qué.
 - Revocar el token de HF que quedó expuesto; decidir si la rama por defecto de GitHub pasa a `main`.
 
 ## Bloque 3 — Grok Build (trazabilidad + construir/arreglar)
-Contexto: frontend del chat en `plugins/chat-router/frontend/` (módulos ES, sin build; Vercel solo añade `?v=<sha>` con `build.sh`). Antes de tocar nada lee `docs/AUDITORIA_FRONTEND_XRAY.md` (historial de 40 commits, qué cambió Claude, qué dañó, con evidencia) y `docs/ARQUITECTURA.md`. Base «pantalla vieja»: commit `1b916a587c`.
-Reglas: frontend-safety (no renombrar ids, eventos ni APIs; verificar los dos lados de cada evento); un cambio quirúrgico por vez; después de CADA cambio `bash plugins/chat-router/e2e/todo.sh` (debe quedar en 0 FAIL) y mirar la captura (`node phone.js` → `phone.png`, 345×700). No uses comentarios `//` en medio de una línea de código (ya cortaron `api.js` una vez). Archivos nuevos ≤100 líneas.
+Contexto: frontend del chat en `chat/frontend/` (módulos ES, sin build; Vercel solo añade `?v=<sha>` con `build.sh`). Antes de tocar nada lee `docs/AUDITORIA_FRONTEND_XRAY.md` (historial de 40 commits, qué cambió Claude, qué dañó, con evidencia) y `docs/ARQUITECTURA.md`. Base «pantalla vieja»: commit `1b916a587c`.
+Reglas: frontend-safety (no renombrar ids, eventos ni APIs; verificar los dos lados de cada evento); un cambio quirúrgico por vez; después de CADA cambio `bash chat/e2e/todo.sh` (debe quedar en 0 FAIL) y mirar la captura (`node phone.js` → `phone.png`, 345×700). No uses comentarios `//` en medio de una línea de código (ya cortaron `api.js` una vez). Archivos nuevos ≤100 líneas.
 Construir/arreglar, en este orden, un commit por punto:
 1. `composer-filas.js`: añadir `.p3d` (clase del cubo, creado en `pensando-3d.js`) a `QUEDAN` y colocarlo en la rejilla junto a Enviar (`composer-filas.css`); visible solo mientras `chat().ocupado`.
 2. Botón `#btn-detener` visible siempre (como `1b916a587c`), rojo cuando hay proceso.
