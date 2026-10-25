@@ -12,6 +12,8 @@ window.RIU_SELECTOR_QWEN = window.RIU_SELECTOR_QWEN || {
 };
 
 const GRUPOS = [];  // Catalogo servido por el Router para el plan activo.
+const CATALOGO_CLAVE = "riu_catalogo_qwen";  // ultima lista que dio el Router (localStorage)
+const CATALOGO_RESPALDO = ["qwen3.8-max", "qwen3.8-flash", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-flash", "glm-5.3", "glm-5.2", "deepseek-v4-pro", "deepseek-v4-pro-0813", "deepseek-v4-flash-0731", "deepseek-v4.1-flash", "deepseek-v4.1-flash-1017", "qwen-image-3.0-pro", "wan2.7-image", "wan2.7-image-pro", "qwen-audio-3.0-tts-plus", "qwen-audio-3.0-realtime-plus", "qwen-audio-3.0-asr-flash", "wan3.0-video", "happyhorse-1.1-t2v", "happyhorse-1.1-i2v", "happyhorse-1.1-r2v"];  // plan Personal (mvp/modelos.json, p=1)
 
 const ICO = {  // iconos de línea monocromos (currentColor), skill Maxbry UI: sin emojis de color
   pensar: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>', rayo: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
@@ -23,15 +25,27 @@ window.RIU_SELECTOR_QWEN.modelos = GRUPOS.flatMap((g) => g.modelos.map((m) => ({
 export function conectarSelectorModelos(ctx) {
   const { q, chat, tell, guardar } = ctx;
   let cargando = false;
-  const cargarCatalogo = () => {
+  // La lista sale siempre: primero la última que dio el Router (o el catálogo del plan Personal) y luego se refresca.
+  // Si el Router tarda (Space despertando) se reintenta y la lista no se vacía.
+  const aplicarLista = (ids) => {
+    GRUPOS.splice(0, GRUPOS.length, { titulo: 'Modelos del plan activo', modelos: ids.map((id) => ['pensar', id, 'ID enviado al proveedor', id]) });
+    window.RIU_SELECTOR_QWEN.modelos = ids.map((id) => ({ model_id: id, modelo_id_slug: slug(id), label: id, grupo: 'Modelos del plan activo' }));
+  };
+  const guardada = () => { try { const x = JSON.parse(localStorage.getItem(CATALOGO_CLAVE) || 'null'); return Array.isArray(x) && x.length ? x : null; } catch (e) { return null; } };
+  if (!GRUPOS.length) aplicarLista(guardada() || CATALOGO_RESPALDO);
+  const cargarCatalogo = (intento = 1) => {
     if (cargando) return;
     cargando = true;
     api('/chat/providers/qwen/models').then((r) => {
-    if (!Array.isArray(r.models) || !r.models.length) throw new Error('Catalogo vacio');
-    GRUPOS.splice(0, GRUPOS.length, { titulo: 'Modelos del plan activo', modelos: r.models.map((m) => ['pensar', m.model_id, 'ID enviado al proveedor', m.model_id]) });
-    window.RIU_SELECTOR_QWEN.modelos = r.models.map((m) => ({ model_id: m.model_id, modelo_id_slug: slug(m.model_id), label: m.model_id, grupo: 'Modelos del plan activo' }));
-    pintar();
-    }).catch(() => { GRUPOS.splice(0, GRUPOS.length); pintar(); lista.append(node('p', 'Router no disponible. Vuelve a abrir el selector para reintentar.', 'fila-desc')); }).finally(() => { cargando = false; });
+      if (!Array.isArray(r.models) || !r.models.length) throw new Error('Catalogo vacio');
+      const ids = r.models.map((m) => m.model_id);
+      try { localStorage.setItem(CATALOGO_CLAVE, JSON.stringify(ids)); } catch (e) {}
+      aplicarLista(ids); pintar();
+    }).catch(() => {
+      cargando = false;
+      if (intento < 3) { setTimeout(() => cargarCatalogo(intento + 1), 4000); return; }
+      pintar(); lista.append(node('p', 'El Router no respondió: esta es la lista guardada. Puedes elegir igual; se actualiza al volver a abrir.', 'fila-desc'));
+    }).finally(() => { cargando = false; });
   };
 
   const pill = q("#sel-nuevo"), lista = q("#sh-modelos-lista");

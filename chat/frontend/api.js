@@ -252,6 +252,7 @@ export async function api(path, options = {}) {
       body: options.body === undefined ? undefined : JSON.stringify(options.body) }, path === "/chat/send" ? 450000 : 15000);  // /chat/send (sin harness) espera la respuesta completa
   } catch (error) {
     window.dispatchEvent(new CustomEvent("router-connection", { detail: "Sin conexión" }));
+    if (error && error.name === "AbortError") throw new Error("El Router no respondió a tiempo (puede estar despertando); reintenta en unos segundos");
     throw error;
   }
   const status = response.status === 401 || response.status === 403 ? "Acceso requerido"
