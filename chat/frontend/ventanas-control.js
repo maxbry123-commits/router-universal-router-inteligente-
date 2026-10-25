@@ -4,6 +4,9 @@ export const el = (t, c, x) => { const e = document.createElement(t); if (c) e.c
 export const btn = (txt, cls, fn) => { const b = el("button", cls || "secondary", txt); b.type = "button"; if (fn) b.onclick = fn; return b; };
 export const campo = (ph, tipo) => { const i = el("input"); i.placeholder = ph; i.type = tipo || "text"; i.autocomplete = "off"; i.setAttribute("aria-label", ph); return i; };
 export const falla = (est, x) => { est.textContent = "⚠️ " + x.message; };
+export const vivo = (e) => { e.setAttribute("role", "status"); e.setAttribute("aria-live", "polite"); return e; };  // región viva: los lectores de pantalla leen el aviso
+export const SIN_BACKEND = "SIN_BACKEND";  // el servidor (o su plugin) no existe o no responde: la interfaz lo dice y no finge
+const FOCO = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 const ICONOS = {  // iconos de línea (skill Maxbry): sin emojis en la barra
   conexiones: '<path d="M12 2 20 5v6c0 5-3 8-8 11-5-3-8-6-8-11V5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
   room: '<path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 8.3 8.3 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/>',
@@ -22,11 +25,20 @@ export function ventana(id, titulo, alAbrir) {
   if (!bar || document.querySelector("#btn-" + id)) return;
   const b = btn("", "secondary"); b.id = "btn-" + id; b.title = titulo; b.setAttribute("aria-label", titulo); b.setAttribute("aria-haspopup", "dialog");
   b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONOS[id] + "</svg>";
-  const s = el("div", "sheet"); s.id = "ventana-" + id; s.hidden = true; s.setAttribute("role", "dialog"); s.setAttribute("aria-label", titulo);
+  const s = el("div", "sheet"); s.id = "ventana-" + id; s.hidden = true; s.setAttribute("role", "dialog"); s.setAttribute("aria-modal", "true"); s.setAttribute("aria-label", titulo);
   const c = el("div", "va-caja cv-caja"), h = el("div", "row va-head"), x = btn("✕", "secondary sh-cerrar", () => { s.hidden = true; b.focus(); }), cuerpo = el("div", "list");
   x.setAttribute("aria-label", "Cerrar " + titulo);
   s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
   document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !s.hidden) { s.hidden = true; b.focus(); } });  // aunque el foco se haya perdido al repintar
+  document.addEventListener("keydown", (ev) => {  // el foco se queda dentro de la ventana mientras está abierta
+    if (ev.key !== "Tab" || s.hidden) return;
+    const dentro = [...s.querySelectorAll(FOCO)].filter((n) => n.getClientRects().length);
+    if (!dentro.length) { ev.preventDefault(); return; }
+    const primero = dentro[0], ultimo = dentro[dentro.length - 1];
+    if (!s.contains(document.activeElement)) { ev.preventDefault(); primero.focus(); }
+    else if (ev.shiftKey && document.activeElement === primero) { ev.preventDefault(); ultimo.focus(); }
+    else if (!ev.shiftKey && document.activeElement === ultimo) { ev.preventDefault(); primero.focus(); }
+  });
   h.append(el("strong", "", titulo), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
   b.onclick = () => { s.hidden = false; x.focus(); alAbrir(cuerpo, s); };
   bar.insertBefore(b, bar.querySelector(".action") || null);
