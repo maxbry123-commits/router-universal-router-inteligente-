@@ -46,17 +46,25 @@ function pintar(cuerpo) {
     lista.replaceChildren();
     tareas.forEach((t, i) => {
       const fila = el("div", "cola-fila" + (t.hecho ? " hecha" : ""));
-      fila.append(el("span", "", (i + 1) + ". " + t.texto));
+      const hecho = el("input");
+      hecho.type = "checkbox";
+      hecho.checked = t.hecho;
+      hecho.disabled = ocupado;
+      hecho.setAttribute("aria-label", (t.hecho ? "Pasar a pendiente: " : "Marcar hecha: ") + t.texto);
+      hecho.onchange = () => marcar(i);
+      const caja = el("label", "cola-check");
+      caja.append(hecho);
+      const nombre = el("span", "", (i + 1) + ". " + t.texto);
+      nombre.title = t.texto;
+      fila.append(caja, nombre);
       const acc = el("div", "cv-form");
       const up = btn("Subir", "secondary", () => mover(i, -1));
       const down = btn("Bajar", "secondary", () => mover(i, 1));
-      const marca = btn(t.hecho ? "Hecha" : "Pendiente", "secondary", () => marcar(i));
       const quitar = btn("Quitar", "secondary", () => sacar(i));
       up.disabled = i === 0 || ocupado;
       down.disabled = i === tareas.length - 1 || ocupado;
-      marca.disabled = ocupado;
       quitar.disabled = ocupado;
-      acc.append(up, down, marca, quitar);
+      acc.append(up, down, quitar);
       fila.append(acc);
       lista.append(fila);
     });
@@ -106,6 +114,7 @@ function pintar(cuerpo) {
     } catch (e) { fallar(e); }
     add.disabled = false; ver();
   });
+  texto.onkeydown = (ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); add.click(); } };
   cuerpo.replaceChildren(estado, texto, add, lista, aviso);
   estado.textContent = "cargando";
   refrescar().then(() => { aviso.textContent = ""; ver(); }).catch(() => {
