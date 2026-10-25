@@ -1,0 +1,75 @@
+{
+  "mission_id": "NCT_CODA_DAG_002",
+  "goal": "Loop CODA con dos tareas dependientes, motor Ricardo JSON/Python, verificación independiente y checkpoint existente",
+  "profile": "document",
+  "acceptance": [
+    {
+      "type": "file_exists",
+      "path": "evidencia/smoke.txt"
+    }
+  ],
+  "units": [
+    {
+      "id": "S_UNIT",
+      "goal": "Crear un archivo de prueba y verificarlo mediante el motor JSON Ricardo original aportado",
+      "block": "executor",
+      "depends_on": [],
+      "priority": 5,
+      "allowed_ops": [
+        "inspect_workspace",
+        "create_directory",
+        "write_text",
+        "read_text",
+        "verify_exists",
+        "verify_contains",
+        "finish"
+      ],
+      "acceptance": [
+        {
+          "op": "verify_exists",
+          "path": "evidencia/smoke.txt"
+        },
+        {
+          "op": "verify_contains",
+          "path": "evidencia/smoke.txt",
+          "text": "PASS: salida real"
+        }
+      ],
+      "scope": [],
+      "max_retries": 0,
+      "coda": {
+        "continue_when": "verified_progress",
+        "close_when": "acceptance_verified",
+        "on_error": "repair_or_block",
+        "handoff": "receipt"
+      }
+    },
+    {
+      "id": "V_UNIT",
+      "goal": "Verificación independiente de la evidencia creada en la tarea anterior",
+      "block": "executor",
+      "depends_on": [
+        "S_UNIT"
+      ],
+      "priority": 5,
+      "allowed_ops": [
+        "verify_exists",
+        "verify_contains",
+        "finish"
+      ],
+      "acceptance": [
+        {
+          "op": "verify_contains",
+          "path": "evidencia/smoke.txt",
+          "text": "PASS: salida real"
+        }
+      ],
+      "scope": [],
+      "max_retries": 0,
+      "coda": {
+        "close_when": "acceptance_verified",
+        "handoff": "receipt"
+      }
+    }
+  ]
+}
