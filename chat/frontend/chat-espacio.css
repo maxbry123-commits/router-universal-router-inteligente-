@@ -1,7 +1,9 @@
 /* chat-espacio.css — espacio del chat (archivo propio; se carga despues de shell.css y responsive.css).
    Salida ~2x mas alta en celular, pastillas en una sola fila, anclados en 2 lineas, input mas bajo. */
 #btn-loop[aria-pressed=true] { border-color: var(--status-blue, #2F80FF); }
-#ventana-loop textarea { width: 100%; min-height: 52px; box-sizing: border-box; margin: 0 0 8px; }
+#ventana-loop textarea { width: 100%; min-height: 40px; box-sizing: border-box; margin: 0 0 8px; }
+#ventana-loop .cv-form { margin-top: 0; }
+#ventana-loop .cv-form button { flex: 0 0 auto; min-height: 36px; }
 #ventana-loop .loop-partes { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
 #ventana-loop .loop-partes span { min-height: 32px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); }
 #ventana-loop .loop-partes span.on { border-color: var(--status-blue, #2F80FF); color: var(--title); }

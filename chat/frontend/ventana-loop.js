@@ -188,11 +188,13 @@ function pintarLoop(cuerpo) {
   const di = btn("Disparar", "secondary", async () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } di.disabled = true; try { await pedir("paso"); pintar(); } finally { di.disabled = false; } });
   auto = btn("Seguir", "secondary", () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } if (reloj) { clearInterval(reloj); reloj = 0; } else latido(); pintar(); });
   const re = btn("Reiniciar", "secondary", async () => { if (reloj) { clearInterval(reloj); reloj = 0; } re.disabled = true; try { await pedir("reiniciar"); pintar(); } finally { re.disabled = false; } });
-  const gy = btn("Guardar en yaiwes.md", "secondary", () => guardarYaiwes(aviso));
-  const ep = btn("Enlazar al proyecto", "secondary", () => enlazarProyecto(aviso));
+  const gy = btn("Yaiwes", "secondary", () => guardarYaiwes(aviso));
+  gy.title = "Guardar en yaiwes.md";
+  const ep = btn("Proyecto", "secondary", () => enlazarProyecto(aviso));
+  ep.title = "Enlazar al proyecto";
   const fila = el("div", "cv-form");
   fila.append(enc, apa, di, auto, re, gy, ep);
-  cuerpo.replaceChildren(el("div", "cv-sec", "LOOP"), partes, mando, centro, objetivo, plan, tareas, fila, aviso);
+  cuerpo.replaceChildren(el("div", "cv-sec", "LOOP"), partes, mando, fila, centro, objetivo, plan, tareas, aviso);
   pintar();
 }
 
