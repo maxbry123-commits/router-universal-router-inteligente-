@@ -41,7 +41,27 @@
         "abrir /chat/ui/version.json de producción y anotar el commit"
       ],
       "files_permitidos": [],
-      "aceptacion": "baseline registrada; si algo ya falla en main, reportarlo antes de cambiar nada"
+      "aceptacion": "baseline registrada; si algo ya falla en main, reportarlo antes de cambiar nada; si todo.sh móvil se cuelga, es el bug de N13: anotarlo y seguir con N13"
+    },
+    {
+      "id": "N13",
+      "titulo": "URGENTE: bucle infinito de MutationObserver que congela la pestaña con ancho <=720 px",
+      "depende_de": [
+        "N0"
+      ],
+      "contexto": "Hallado por el agente de la Tarea 2 y confirmado leyendo el código: en barra-mas.js el observer de document.body (childList+subtree) llama a colocar() -> cuentaTareas(), que hace .mas-nom.textContent = ... sin comparar; asignar textContent reemplaza el nodo de texto, eso dispara de nuevo el observer y se repite sin fin. Lo mismo en ventana-tareas.js marcar(). Congela la página en móvil y rompe las pruebas móviles.",
+      "pasos": [
+        "Escribir primero la prueba que falla: con viewport 345x700 y btn-tareas con .mas-nom, contar cuántas veces se ejecuta el observer en 2 s (debe ser pequeño y acotado); hoy se dispara sin fin.",
+        "barra-mas.js cuentaTareas() y ventana-tareas.js marcar(): asignar .mas-nom.textContent solo si el valor es distinto (if (s && s.textContent !== valor) s.textContent = valor).",
+        "Revisar si colocar() u otros observers del mismo archivo reescriben nodos sin comparar y aplicar la misma guarda.",
+        "Con el arreglo, correr las pruebas móviles (todo.sh) y comparar con la línea base."
+      ],
+      "files_permitidos": [
+        "chat/frontend/barra-mas.js",
+        "chat/frontend/ventana-tareas.js",
+        "chat/e2e/barra_mas_bucle.js"
+      ],
+      "aceptacion": "prueba nueva barra_mas_bucle.js: número de ejecuciones del observer acotado en 345x700, 412x915 y 720x900; las suites móviles ya no se cuelgan"
     },
     {
       "id": "N1",

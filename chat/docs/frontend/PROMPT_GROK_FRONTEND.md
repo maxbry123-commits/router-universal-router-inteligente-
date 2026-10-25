@@ -7,7 +7,7 @@ REPO (privado): maxbry123-commits/router-universal-router-inteligente-
 Clona: git clone --branch main https://github.com/maxbry123-commits/router-universal-router-inteligente-.git
 
 TAREA: ejecuta el DSL DAG del archivo chat/docs/frontend/DSL_DAG_GROK_FRONTEND.json, nodo por nodo, respetando "depende_de".
-Orden: N0 → N1, N2, N3, N4, N5, N6, N7 → N8 → N9 → N12.
+Orden: N0 → N13 (URGENTE: bucle que congela el móvil) → N1, N2, N3, N4, N5, N6, N7 → N8 → N9 → N12.
 NO ejecutes N10 (bloqueado: decisión de Antonio) ni N11 (requiere autorización de Antonio). Si N9 sale BLOQUEADO_BACKEND, déjalo así.
 
 REGLAS (también están en el JSON):
