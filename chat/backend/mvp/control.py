@@ -30,7 +30,7 @@ def _vacio():
     base = {s: [] for s in SERVICIOS}
     for s in LEGADO:
         base[s].append({"id": "defecto", "etiqueta": "Principal (banco)", "on": True})
-    return {"ia": False, "herramientas": {}, "conexiones": base, "pendientes": [], "salas": {}, "archivos": {}, "sandbox": {}, "handoff": {}, "proyectos": {}, "agentes_on": False, "agentes": {}, "prompt_on": False}
+    return {"ia": False, "herramientas": {}, "conexiones": base, "pendientes": [], "salas": {}, "archivos": {}, "sandbox": {}, "handoff": {}, "proyectos": {}, "agentes_on": False, "agentes": {}, "prompt_on": False, "cuaderno": {}}
 
 
 def _texto(valor, maximo, campo):
@@ -265,6 +265,37 @@ class Control:
         self._sucio = self._sucio or a != "listar"
         return {"pendientes": [dict(x) for x in lista]}
 
+    def _cuaderno(self, c, banco, actor):
+        # Tareas, comandos, reglas, sesión, hechas y watchdog de este chat. Mismo estado que la cola.
+        libro = self.d.get("cuaderno")
+        if not isinstance(libro, dict):
+            libro = {}
+        clave = str(c.get("clave") or "")
+        if clave not in {"tareas", "comandos", "reglas", "sesion", "hechas", "watchdog"}:
+            raise ValueError("clave de cuaderno no soportada")
+        ses = "".join(ch for ch in str(c.get("sesion") or "web-general") if ch.isalnum() or ch in "-_")[:60] or "web-general"
+        op = str(c.get("op") or "leer")
+        slot = libro.get(ses) if isinstance(libro.get(ses), dict) else {}
+        if op == "guardar":
+            valor = c.get("valor")
+            if not isinstance(valor, (dict, list)):
+                raise ValueError("valor")
+            crudo = json.dumps(valor, ensure_ascii=False)
+            if len(crudo) > 8000:
+                raise ValueError("valor supera 8000 caracteres")
+            slot = dict(slot)
+            slot[clave] = json.loads(crudo)
+            libro.pop(ses, None)
+            libro[ses] = slot
+            while len(libro) > 20:
+                del libro[next(iter(libro))]
+            self.d["cuaderno"] = libro
+            self._sucio = True
+            return {"ok": True, "clave": clave}
+        if op != "leer":
+            raise ValueError("op de cuaderno no soportada")
+        return {"ok": True, "clave": clave, "valor": slot.get(clave)}
+
     def _salas(self, c, banco, actor):
         salas, a = self.d["salas"], c.get("accion") or "listar"
         nivel = lambda s: 3 if actor == "director" else NIVELES.get(s["participantes"].get(actor), 0)  # noqa: E731
@@ -432,7 +463,7 @@ class Control:
         return self.ejecutar({"pendientes": "checklist", "sala": "salas", "yaiwes_md": "handoff_texto"}[nombre], args, None, actor)
 
 
-ACCIONES = {"agent_access_lock", "tools_lock", "conexiones", "checklist", "salas", "status", "estado", "herramientas_estado",
+ACCIONES = {"agent_access_lock", "tools_lock", "conexiones", "checklist", "cuaderno", "salas", "status", "estado", "herramientas_estado",
             "archivos", "subir", "archivo_borrar", "sandbox", "handoff_texto", "proyecto", "tools_estado", "agente_enlazar", "groq_agentes"}
 
 

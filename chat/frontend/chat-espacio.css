@@ -122,7 +122,7 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
   .message .copiar, .message .editar { min-width: 36px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; top: 4px; padding: 0; }
   .message .copiar { right: 4px; }
   .message .editar { right: 42px; }
-  .riu-bv-acc .mini { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+  .riu-bv-acc .mini { min-height: 44px; padding: 8px 14px; font-size: 15px; }
 }
 @media (max-width:720px) and (min-width:380px) {
   #composer .composer-bar > button.secondary,
@@ -133,7 +133,7 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
 #ventana-watchdog .wd-estado { font-size: 13px; margin: 0 0 8px; }
 #ventana-watchdog input { width: 100%; min-height: 40px; box-sizing: border-box; margin: 0 0 8px; }
 #ventana-watchdog .loop-partes { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
-#ventana-watchdog .loop-partes span { min-height: 32px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); }
+#ventana-watchdog .loop-partes span { min-height: 40px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--border); display: inline-flex; align-items: center; }
 #ventana-cola .cola-lista { max-height: 300px; overflow: auto; display: grid; gap: 6px; margin-top: 8px; }
 #ventana-cola .cola-fila { display: grid; grid-template-columns: 44px 1fr; align-items: center; min-width: 0; }
 #ventana-cola .cola-check { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; }
