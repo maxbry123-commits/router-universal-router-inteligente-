@@ -131,3 +131,5 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
 #ventana-mcp .mcp-out { max-height: 160px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 13px; }
 #ventana-watchdog .wd-estado { font-size: 13px; margin: 0 0 8px; }
 #ventana-watchdog input { width: 100%; min-height: 40px; box-sizing: border-box; margin: 0 0 8px; }
+#ventana-watchdog .loop-partes { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+#ventana-watchdog .loop-partes span { min-height: 32px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); }

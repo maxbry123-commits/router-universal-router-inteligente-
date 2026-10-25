@@ -4,7 +4,7 @@ import { el, btn, ventana } from "./ventanas-control.js";
 const K = "riu_watchdog";
 const LIM = { min: 10, max: 2880 };
 let presets = [["10 min", 10], ["1 h", 60], ["24 h", 1440], ["48 h", 2880]];
-let ciclo = "plan, ejecutar, observar, verificar, decidir";
+let ciclo = ["plan", "ejecutar", "observar", "verificar", "decidir"];
 let ficha = { estado: "borrador", minutos: 10, objetivo: "", validado: false };
 try { ficha = Object.assign(ficha, JSON.parse(sessionStorage.getItem(K) || "")); } catch (e) {}
 
@@ -42,7 +42,9 @@ function pintar(cuerpo) {
   presets.forEach(([t, n]) => pres.append(btn(t, "secondary", () => { min.value = String(n); ficha.minutos = n; ficha.validado = false; guardar(); ver(); })));
   const fila = el("div", "cv-form");
   fila.append(validar, activar, pausar, cancelar);
-  cuerpo.replaceChildren(el("div", "cv-sec", "Watchdog"), estado, min, pres, obj, el("div", "fila-desc", ciclo), fila, aviso);
+  const pasos = el("div", "loop-partes");
+  ciclo.forEach((n) => pasos.append(el("span", "", n)));
+  cuerpo.replaceChildren(estado, el("div", "fila-desc", "Minutos"), min, pres, obj, pasos, aviso, fila);
   ver();
 }
 
@@ -51,7 +53,7 @@ fetch("/chat/ui/LOOP-wachdog-cola.json").then((r) => r.json()).then((j) => {
   LIM.min = j.studio.minutos_min;
   LIM.max = j.studio.minutos_max;
   if (Array.isArray(j.studio.presets)) presets = j.studio.presets;
-  if (Array.isArray(j.studio.ciclo)) ciclo = j.studio.ciclo.join(", ");
+  if (Array.isArray(j.studio.ciclo)) ciclo = j.studio.ciclo;
 }).catch(() => {});
 
 const montar = () => { ventana("watchdog", "Watchdog", pintar); marcar(); };
