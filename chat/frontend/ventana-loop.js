@@ -85,17 +85,23 @@ function latido() {
 async function guardarYaiwes(aviso) {
   leerCampos();
   const ta = document.querySelector("#mi-handoff");
-  const texto = meter(ta ? ta.value : "");
-  if (ta) ta.value = texto;
+  let base = ta ? ta.value : "";
   let nota = "escrito en yaiwes.md de este chat";
   try {
     if (window.RIU_ACCION) {
+      const actual = await window.RIU_ACCION("handoff_texto", { sesion: sesion() });
+      if (actual && typeof actual.texto === "string" && actual.texto.trim()) base = actual.texto;
+      const texto = meter(base);
+      if (ta) ta.value = texto;
       const r = await window.RIU_ACCION("handoff_texto", { sesion: sesion(), texto });
       const est = document.querySelector("#mh-estado");
       if (est && r) est.textContent = r.encendido ? "encendido" : "apagado";
       nota = r && r.encendido ? "yaiwes.md encendido" : nota;
-    }
-  } catch (e) { nota = "quedó en el campo yaiwes.md; el servidor no confirmó"; }
+    } else if (ta) ta.value = meter(base);
+  } catch (e) {
+    if (ta) ta.value = meter(base);
+    nota = "quedó en el campo yaiwes.md; el servidor no confirmó";
+  }
   guardar();
   if (aviso) aviso.textContent = nota;
 }
