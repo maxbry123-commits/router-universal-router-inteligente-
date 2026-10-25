@@ -14,15 +14,32 @@ st.textContent = "@media(max-width:720px){"
   + "#composer .composer-bar>.action{position:static !important;margin-left:auto !important;min-width:40px !important;width:40px !important;height:40px !important;min-height:40px !important;padding:0 !important;border-radius:50% !important;justify-content:center}"
   + "#composer .composer-bar>.action .env-txt{display:none !important}"
   + "#mode-selector-mount{flex:0 0 auto;display:flex;align-items:center}"
-  + "#mas-panel{position:fixed;z-index:80;left:12px;right:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px;border-radius:16px;background:var(--surface,#1e1e1e);border:1px solid var(--border);overflow:auto;box-shadow:0 12px 32px rgba(0,0,0,.5)}"
+  + "#mas-panel{position:fixed;z-index:80;left:12px;right:12px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;padding:8px;border-radius:16px;background:var(--surface,#1e1e1e);border:1px solid var(--border);overflow:auto;box-shadow:0 12px 32px rgba(0,0,0,.5)}"
   + "#mas-panel[hidden]{display:none !important}"
-  + "#mas-panel button{width:auto !important;height:auto !important;min-width:0;min-height:40px;aspect-ratio:auto;border-radius:12px;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;padding:6px 10px}"
+  + "#mas-panel button{width:auto !important;max-width:100%;height:auto !important;min-width:0;min-height:40px;aspect-ratio:auto;border-radius:12px;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;padding:6px 10px}"
   + "#mas-panel .mas-nom{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}"
   + "#mas-panel #mode-selector-mount{grid-column:1 / -1}"
   + "}";
 document.head.append(st);
 
+const ATAJOS = [["Archivos", "#btn-archivos"], ["Anclaje", "#btn-ancla"], ["Claves", "#pill-claves"], ["Workflows", "#pill-workflows"]];
 const IDS = ["btn-tools", "btn-agentes", "btn-prompt", "btn-loop", "btn-cola", "btn-tareas", "btn-comandos", "btn-sesion", "btn-reglas", "btn-watchdog", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power", "btn-sandbox", "btn-copiar-input", "btn-detener"];
+function atajos(panel) {
+  if (panel.querySelector(".mas-atajo")) return;
+  ATAJOS.forEach(([n, sel]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "secondary mas-atajo"; b.textContent = n;
+    b.addEventListener("click", () => { const x = document.querySelector(sel); if (x) x.click(); });
+    panel.append(b);
+  });
+}
+function cuentaTareas() {
+  const b = document.getElementById("btn-tareas"); if (!b) return;
+  let n = 0;
+  try { n = (JSON.parse(localStorage.getItem("riu_tareas_v1") || "{}").tareas || []).filter((t) => t && t.on).length; } catch (e) {}
+  b.setAttribute("aria-label", n ? "Tareas, " + n + " encendidas" : "Tareas");
+  const s = b.querySelector(".mas-nom"); if (s) s.textContent = b.getAttribute("aria-label");
+}
 const movil = () => matchMedia("(max-width:720px)").matches;
 
 function armar() {
@@ -82,6 +99,8 @@ function colocar() {
     nombre(b);
     panel.append(b);
   });
+  atajos(panel);
+  cuentaTareas();
   const chips = document.querySelector("#composer .composer-chips");
   if (chips && !chips.childElementCount) chips.remove();
 }
