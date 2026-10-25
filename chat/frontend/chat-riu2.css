@@ -69,7 +69,6 @@
 @media(prefers-reduced-motion:reduce){.riu-carpeta .tapa,.riu-bv-titulo span{animation:none}}
 /* bienvenida: palabras enteras y sin el texto viejo encima */
 .riu-pal{display:inline-block;white-space:nowrap}
-.riu-bv-titulo .riu-pal{animation:none}
 .riu-bv-titulo{text-wrap:balance}
 .con-bienvenida .chat-history:empty::before{content:none}
 @media(max-width:720px){
@@ -79,3 +78,7 @@
 /* soltar archivos */
 .riu-soltar{position:fixed;inset:12px;z-index:90;display:flex;align-items:center;justify-content:center;border:2px dashed var(--active);border-radius:22px;background:color-mix(in srgb,var(--bg) 82%,transparent);color:var(--title);font-size:18px;font-weight:600;pointer-events:none}
 .riu-soltar[hidden]{display:none}
+/* Las 22 animaciones RUI ya definidas se ven en el chat: la burbuja entra y el botón responde. */
+.chat-history .message{animation:riu-entra .22s cubic-bezier(.32,.72,0,1)}
+#composer button:active{transform:scale(.96)}
+@media(prefers-reduced-motion:reduce){.chat-history .message{animation:none}#composer button:active{transform:none}}
