@@ -42,3 +42,4 @@ body.salida-grande #panel #composer .composer-bar .cb-sel,body.salida-grande #pa
 .ctl-int>.row.fields{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px!important;overflow:visible!important;flex-wrap:wrap!important;margin:8px 0!important}
 .ctl-int>.row.fields>*{max-width:none!important;width:100%;min-width:0;justify-content:center;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0!important}
 .ctl-int>.row.fields>.pill,.ctl-int>.row.fields>button{min-height:40px;border-radius:12px}
+@media(min-width:721px){#panel #composer #message{grid-column:1/6}#panel #composer .composer-bar .action{grid-column:6/7}}
