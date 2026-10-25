@@ -1,6 +1,7 @@
 /* chat-espacio.css — espacio del chat (archivo propio; se carga despues de shell.css y responsive.css).
    Salida ~2x mas alta en celular, pastillas en una sola fila, anclados en 2 lineas, input mas bajo. */
-#btn-loop[aria-pressed=true] { border-color: var(--status-blue, #2F80FF); }
+#btn-loop[aria-pressed=true],
+#btn-watchdog[aria-pressed=true] { border-color: var(--status-blue, #2F80FF); }
 #ventana-loop textarea { width: 100%; min-height: 40px; box-sizing: border-box; margin: 0 0 8px; }
 #ventana-loop .cv-form { margin-top: 0; }
 #ventana-loop .cv-form button { flex: 0 0 auto; min-height: 36px; }
@@ -108,7 +109,8 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
   #composer .composer-bar > #btn-power,
   #composer .composer-bar > #btn-pendientes,
   #composer .composer-bar > #btn-loop,
-  #composer .composer-bar > #btn-mcp { order: 2; }
+  #composer .composer-bar > #btn-mcp,
+  #composer .composer-bar > #btn-watchdog { order: 2; }
   #composer .composer-bar > * { flex: 0 0 auto; white-space: nowrap; }
   #composer .composer-bar > .action { position: absolute; right: 0; bottom: 0; z-index: 30; margin-left: 0; }
   #composer .composer-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; margin: 0 0 6px; overflow: visible; }
@@ -127,3 +129,5 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
   #btn-selector-modelos { font-size: 15px; }
 }
 #ventana-mcp .mcp-out { max-height: 160px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 13px; }
+#ventana-watchdog .wd-estado { font-size: 13px; margin: 0 0 8px; }
+#ventana-watchdog input { width: 100%; min-height: 40px; box-sizing: border-box; margin: 0 0 8px; }
