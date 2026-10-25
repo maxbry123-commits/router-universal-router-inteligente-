@@ -10,3 +10,5 @@ Cableado pendiente: herramientas `memoria_guardar` y `memoria_buscar` en MCP, pe
 - Las pruebas de `memoria-yaiwes/tests` ya fallaban antes (3 errores de colección por carpetas heredadas "router inteligente universal"/"chat router" inexistentes).
 
 - Arquitectura (README + input literal de Antonio): `arquitectura/`.
+
+- Dos memorias que conviven (chat = UI YAIWES, agentes = esta carpeta): ver [README-DOS-SISTEMAS-DE-MEMORIA.md](README-DOS-SISTEMAS-DE-MEMORIA.md).
