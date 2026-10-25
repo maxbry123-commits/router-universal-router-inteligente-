@@ -135,9 +135,12 @@ function instalarChat() {
   b.oncontextmenu = (ev) => { ev.preventDefault(); s.hidden = false; pintarVentana(cuerpo); };
   const env = bar.querySelector(".action");
   const fila = el("div", "composer-chips");
+  const modo = document.querySelector("#mode-selector-mount");
+  const modoPadre = modo && modo.parentNode;
+  const modoAntes = modo && modo.nextSibling;
   const meter = () => {
-    if (matchMedia("(max-width:720px)").matches) { bar.before(fila); fila.append(b, g, p); }
-    else { fila.remove(); bar.insertBefore(p, env || null); bar.insertBefore(g, p); bar.insertBefore(b, g); }
+    if (matchMedia("(max-width:720px)").matches) { bar.before(fila); fila.append(b, g, p); if (modo) fila.append(modo); }
+    else { if (modo && modoPadre) modoPadre.insertBefore(modo, modoAntes); fila.remove(); bar.insertBefore(p, env || null); bar.insertBefore(g, p); bar.insertBefore(b, g); }
   };
   meter();
   matchMedia("(max-width:720px)").addEventListener("change", meter);
