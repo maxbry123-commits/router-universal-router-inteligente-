@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve()
-REPO = HERE.parents[3] if len(HERE.parents) > 3 else HERE.parent
+REPO = HERE.parents[4] if len(HERE.parents) > 4 else HERE.parent
 
 
 def _find(name):

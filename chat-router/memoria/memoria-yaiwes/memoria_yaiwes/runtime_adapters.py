@@ -25,7 +25,7 @@ os.environ.setdefault("GRAPHITI_TELEMETRY_ENABLED", "false")
 def _componentes_en_path() -> None:
     """Codigo local de Graphiti y Graphify (copias del repo, sin pip install de graphiti-core/graphifyy)."""
     import sys
-    raiz = Path(os.getenv("RIU_COMPONENTES_DIR") or (Path(__file__).resolve().parents[3] / "router inteligente universal"
+    raiz = Path(os.getenv("RIU_COMPONENTES_DIR") or (Path(__file__).resolve().parents[4] / "router inteligente universal"
                                                        / "Componente open soure router inteligente universal"))
     for nombre in ("graphiti", "graphify"):
         d = raiz / nombre / "code"

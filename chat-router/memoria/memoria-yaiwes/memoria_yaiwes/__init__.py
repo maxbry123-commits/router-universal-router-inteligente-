@@ -15,7 +15,7 @@ from urllib.request import Request, urlopen
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 INVENTORY = ROOT / "chat router" / "03-ESTADO" / "MEMORIA-INVENTARIO.json"
 
 
