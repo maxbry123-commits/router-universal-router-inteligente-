@@ -14,6 +14,7 @@
 #ventana-loop .loop-tarea { display: flex; gap: 8px; align-items: center; min-height: 32px; }
 #ventana-loop .loop-tarea span:first-child { flex: 0 0 auto; font-size: 12px; }
 #ventana-loop .loop-tarea.hecha span:first-child { color: var(--title); }
+#ventana-loop .loop-tarea.ahora span:first-child { color: var(--status-blue, #2F80FF); }
 #ventana-loop .loop-tarea span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media(max-width:720px){
   h1{font-size:18px;margin:0 0 8px}

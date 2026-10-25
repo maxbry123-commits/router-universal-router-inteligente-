@@ -25,12 +25,13 @@ function disparar(e) {
   }
   if (fase === "tarea") {
     if (!tareas.length || hecho >= tareas.length) return { ...e, on: true, fase, nota: "sin tareas", disparo: "" };
-    return anotar(e, { on: true, fase: "verificar", hecho: hecho + 1, nota: "tarea", disparo: tareas[hecho].slice(0, 180) });
+    return anotar(e, { on: true, fase: "verificar", nota: "tarea", disparo: tareas[hecho].slice(0, 180) });
   }
   if (!e.disparo) return { ...e, on: true, fase: "verificar", nota: "nada que verificar" };
+  const hecho2 = hecho + 1;
   const paso = (e.paso || 0) + 1;
-  if (paso >= 8) return anotar(e, { on: false, fase: "apagado", paso, nota: "tope", disparo: e.disparo });
-  return anotar(e, { on: true, fase: "objetivo", paso, nota: hecho >= tareas.length ? "vuelta completa" : "verificado", disparo: e.disparo });
+  if (paso >= 8) return anotar(e, { on: false, fase: "apagado", paso, hecho: hecho2, nota: "tope", disparo: e.disparo });
+  return anotar(e, { on: true, fase: "objetivo", paso, hecho: hecho2, nota: hecho2 >= tareas.length ? "vuelta completa" : "verificado", disparo: e.disparo });
 }
 function conTexto(e, body) {
   return {

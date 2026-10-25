@@ -46,12 +46,13 @@ function disparar(e) {
   }
   if (fase === "tarea") {
     if (!tareas.length || hecho >= tareas.length) return { ...e, on: true, fase, nota: "sin tareas", disparo: "" };
-    return anotar(e, { on: true, fase: "verificar", hecho: hecho + 1, nota: "tarea", disparo: tareas[hecho].slice(0, 180) });
+    return anotar(e, { on: true, fase: "verificar", nota: "tarea", disparo: tareas[hecho].slice(0, 180) });
   }
   if (!e.disparo) return { ...e, on: true, fase: "verificar", nota: "nada que verificar" };
+  const hecho2 = hecho + 1;
   const paso = (e.paso || 0) + 1;
-  if (paso >= 8) return anotar(e, { on: false, fase: "apagado", paso, nota: "tope", disparo: e.disparo });
-  return anotar(e, { on: true, fase: "objetivo", paso, nota: hecho >= tareas.length ? "vuelta completa" : "verificado", disparo: e.disparo });
+  if (paso >= 8) return anotar(e, { on: false, fase: "apagado", paso, hecho: hecho2, nota: "tope", disparo: e.disparo });
+  return anotar(e, { on: true, fase: "objetivo", paso, hecho: hecho2, nota: hecho2 >= tareas.length ? "vuelta completa" : "verificado", disparo: e.disparo });
 }
 function lineas() { return String(estado.tareas || "").split(/\n/).map((x) => x.trim()).filter(Boolean); }
 function bloque() {
@@ -159,8 +160,10 @@ function pintarLoop(cuerpo) {
     lista.replaceChildren();
     if (!todas.length) lista.append(el("div", "fila-desc", "Sin tareas"));
     todas.forEach((t, i) => {
-      const row = el("div", "loop-tarea" + (i < hechas ? " hecha" : ""));
-      row.append(el("span", "", i < hechas ? "hecha" : "pendiente"), el("span", "", t));
+      const ahora = estado.fase === "verificar" && i === hechas;
+      const marca = ahora ? "ahora" : i < hechas ? "hecha" : "pendiente";
+      const row = el("div", "loop-tarea" + (ahora ? " ahora" : i < hechas ? " hecha" : ""));
+      row.append(el("span", "", marca), el("span", "", t));
       lista.append(row);
     });
     const bloqueado = /^(falta |sin |nada )/.test(estado.nota || "");
