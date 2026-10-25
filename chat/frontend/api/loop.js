@@ -53,10 +53,11 @@ module.exports = async (req, res) => {
   if (req.method === "POST") {
     if (body.accion === "encender") e = { ...e, on: true, fase: "objetivo", nota: "encendido" };
     else if (body.accion === "apagar") e = { ...e, on: false, fase: "apagado", nota: "apagado" };
+    else if (body.accion === "reiniciar") e = { ...e, on: true, fase: "objetivo", paso: 0, hecho: 0, disparo: "", nota: "reinicio", traza: [] };
     else if (body.accion === "paso") {
       if (!e.on) return res.status(409).json({ detail: "el loop está apagado" });
       e = disparar(e);
-    } else return res.status(400).json({ detail: "accion debe ser encender, apagar o paso" });
+    } else return res.status(400).json({ detail: "accion debe ser encender, apagar, reiniciar o paso" });
     estados.set(sesion, e);
   } else if (req.method !== "GET") return res.status(405).json({ detail: "GET o POST" });
   return res.status(200).json(e);

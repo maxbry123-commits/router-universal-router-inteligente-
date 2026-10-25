@@ -80,6 +80,7 @@ async function pedir(accion) {
   } catch (e) {
     if (accion === "encender") estado = { ...estado, ...texto, on: true, fase: "objetivo", nota: "en este chat" };
     else if (accion === "apagar") estado = { ...estado, ...texto, on: false, fase: "apagado", nota: "apagado" };
+    else if (accion === "reiniciar") estado = { ...estado, ...texto, on: true, fase: "objetivo", paso: 0, hecho: 0, disparo: "", nota: "reinicio", traza: [] };
     else if (accion === "paso" && estado.on) estado = disparar({ ...estado, ...texto, on: true });
   }
   guardar();
@@ -186,10 +187,11 @@ function pintarLoop(cuerpo) {
   const apa = btn("Apagar", "secondary", async () => { apa.disabled = true; try { await pedir("apagar"); if (reloj) { clearInterval(reloj); reloj = 0; } pintar(); } finally { apa.disabled = false; } });
   const di = btn("Disparar", "secondary", async () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } di.disabled = true; try { await pedir("paso"); pintar(); } finally { di.disabled = false; } });
   auto = btn("Seguir", "secondary", () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } if (reloj) { clearInterval(reloj); reloj = 0; } else latido(); pintar(); });
+  const re = btn("Reiniciar", "secondary", async () => { if (reloj) { clearInterval(reloj); reloj = 0; } re.disabled = true; try { await pedir("reiniciar"); pintar(); } finally { re.disabled = false; } });
   const gy = btn("Guardar en yaiwes.md", "secondary", () => guardarYaiwes(aviso));
   const ep = btn("Enlazar al proyecto", "secondary", () => enlazarProyecto(aviso));
   const fila = el("div", "cv-form");
-  fila.append(enc, apa, di, auto, gy, ep);
+  fila.append(enc, apa, di, auto, re, gy, ep);
   cuerpo.replaceChildren(el("div", "cv-sec", "LOOP"), partes, mando, centro, objetivo, plan, tareas, fila, aviso);
   pintar();
 }
