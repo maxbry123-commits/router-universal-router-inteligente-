@@ -7,9 +7,14 @@
   "plugins/router_api_cliente.py": "../chat/backend/router_api_cliente.py"
  },
  "plugins": {
+  "agentes": {
+   "destino": "../chat-router/agentes/agentes-yaiwes",
+   "enlace": true,
+   "ficha": false
+  },
   "chat": {
-   "destino": "",
-   "enlace": false,
+   "destino": "../chat-router/otros/chat",
+   "enlace": true,
    "ficha": true
   },
   "connectivity": {
@@ -28,13 +33,13 @@
    "ficha": true
   },
   "hf_datasets": {
-   "destino": "",
-   "enlace": false,
+   "destino": "../chat-router/memoria/hf_datasets",
+   "enlace": true,
    "ficha": true
   },
   "hf_skills": {
-   "destino": "",
-   "enlace": false,
+   "destino": "../chat-router/workflow-loop-code-yaiwes/hf_skills",
+   "enlace": true,
    "ficha": true
   },
   "hf_storage": {
@@ -47,14 +52,29 @@
    "enlace": false,
    "ficha": true
   },
+  "memoria": {
+   "destino": "../chat-router/memoria/memoria-yaiwes",
+   "enlace": true,
+   "ficha": false
+  },
+  "motores": {
+   "destino": "../chat-router/motores/motores",
+   "enlace": true,
+   "ficha": false
+  },
+  "motores-descarga": {
+   "destino": "../chat-router/motores/motores-descarga",
+   "enlace": true,
+   "ficha": false
+  },
   "orquestador": {
-   "destino": "",
-   "enlace": false,
+   "destino": "../chat-router/agentes/orquestacion/orquestador",
+   "enlace": true,
    "ficha": true
   },
   "parallel": {
-   "destino": "",
-   "enlace": false,
+   "destino": "../chat-router/agentes/orquestacion/parallel",
+   "enlace": true,
    "ficha": true
   },
   "puente_chat": {
@@ -71,6 +91,11 @@
    "destino": "",
    "enlace": false,
    "ficha": true
+  },
+  "workflow-loop-yaiwes": {
+   "destino": "../chat-router/workflow-loop-code-yaiwes/workflow-loop-yaiwes",
+   "enlace": true,
+   "ficha": false
   }
  },
  "protegido": {
@@ -95,8 +120,8 @@
    "sha256": "c33e1d72284565e359dddc3828d5b7683c39f97c1de34baf57d54963e9523037"
   },
   "chat/frontend": {
-   "archivos": 526,
-   "sha256": "a1bc96782ff98f0483d943ce4c7f576b0649fc9b7fab3bb9c95496f946adfb25"
+   "archivos": 534,
+   "sha256": "4119ac30c4445f0553ffe1c583b2663f69638219537be23f00831b30a0a0a9c9"
   },
   "fichas": {
    "archivos": 220,
