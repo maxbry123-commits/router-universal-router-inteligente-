@@ -166,28 +166,32 @@ function pintarLoop(cuerpo) {
     const bloqueado = /^(falta |sin |nada )/.test(estado.nota || "");
     const sigue = NOMBRE[SIGUE[estado.fase] || "objetivo"];
     const traza = Array.isArray(estado.traza) ? estado.traza : [];
+    const marcha = !estado.on ? "apagado" : reloj ? "en curso" : "en pausa";
     mando.replaceChildren(
-      el("div", "", (estado.on ? "encendido" : "apagado") + (bloqueado ? " · bloqueado" : "") + " · vuelta " + (estado.paso || 0) + "/8"),
+      el("div", "", marcha + (bloqueado ? " · bloqueado" : "") + " · vuelta " + (estado.paso || 0) + "/8"),
       el("div", "", "siguiente: " + sigue),
     );
     traza.forEach((t) => mando.append(el("div", "", t)));
     if (!traza.length) mando.append(el("div", "", "sin traza"));
     aviso.textContent = bloqueado ? estado.nota : (estado.disparo ? "observado" : "sin disparo");
+    if (auto) auto.textContent = reloj ? "Pausa" : "Seguir";
   };
+  let auto = null;
   [objetivo, plan, tareas].forEach((x) => x.addEventListener("input", () => { leerCampos(); pintar(); }));
   window.__riuLoopPintar = pintar;
-  const enc = btn("Encender", "secondary", async () => { enc.disabled = true; try { await pedir("encender"); latido(); pintar(); } finally { enc.disabled = false; } });
+  const enc = btn("Encender", "secondary", async () => { enc.disabled = true; try { await pedir("encender"); pintar(); } finally { enc.disabled = false; } });
   const apa = btn("Apagar", "secondary", async () => { apa.disabled = true; try { await pedir("apagar"); if (reloj) { clearInterval(reloj); reloj = 0; } pintar(); } finally { apa.disabled = false; } });
+  const di = btn("Disparar", "secondary", async () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } di.disabled = true; try { await pedir("paso"); pintar(); } finally { di.disabled = false; } });
+  auto = btn("Seguir", "secondary", () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } if (reloj) { clearInterval(reloj); reloj = 0; } else latido(); pintar(); });
   const gy = btn("Guardar en yaiwes.md", "secondary", () => guardarYaiwes(aviso));
   const ep = btn("Enlazar al proyecto", "secondary", () => enlazarProyecto(aviso));
-  const di = btn("Disparar", "secondary", async () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } di.disabled = true; try { await pedir("paso"); pintar(); } finally { di.disabled = false; } });
   const fila = el("div", "cv-form");
-  fila.append(enc, apa, di, gy, ep);
+  fila.append(enc, apa, di, auto, gy, ep);
   cuerpo.replaceChildren(el("div", "cv-sec", "LOOP"), partes, mando, centro, objetivo, plan, tareas, fila, aviso);
   pintar();
-  if (estado.on) latido();
 }
 
-const montar = () => { ventana("loop", "LOOP", pintarLoop); marcarBoton(); if (estado.on) latido(); };
+const montar = () => { ventana("loop", "LOOP", pintarLoop); marcarBoton(); };
 new MutationObserver(montar).observe(document.body, { childList: true, subtree: true });
 montar();
+if (estado.on) latido();
