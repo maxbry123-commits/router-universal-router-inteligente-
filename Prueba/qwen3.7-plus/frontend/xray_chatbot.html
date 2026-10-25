@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X-Ray Chatbot — qwen3.7-plus</title>
+<style>
+  :root {
+    --azul: #2563eb;
+    --azul-claro: #dbeafe;
+    --gris: #f3f4f6;
+    --texto: #111827;
+    --borde: #e5e7eb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #fff; color: var(--texto);
+    margin: 0; padding: 0; line-height: 1.5;
+  }
+  header {
+    padding: 12px 16px; border-bottom: 1px solid var(--borde);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  header h1 { font-size: 16px; margin: 0; }
+  .tabs { display: flex; gap: 4px; padding: 8px 16px; border-bottom: 1px solid var(--borde); overflow-x: auto; }
+  .tab {
+    padding: 6px 12px; border: 1px solid var(--borde); border-radius: 6px;
+    background: #fff; cursor: pointer; font-size: 13px; white-space: nowrap;
+  }
+  .tab.activa { background: var(--azul); color: #fff; border-color: var(--azul); }
+  main { padding: 16px; max-width: 720px; margin: 0 auto; }
+  section { margin-bottom: 20px; }
+  section h2 { font-size: 14px; margin: 0 0 8px; color: #374151; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px; font-size: 12px;
+    border: 1px solid var(--borde); margin: 2px; cursor: pointer; background: #fff;
+  }
+  .chip.on { background: var(--azul-claro); border-color: var(--azul); color: var(--azul); }
+  .chip.off { background: var(--gris); color: #6b7280; }
+  .switch-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .switch {
+    display: flex; align-items: center; gap: 6px; font-size: 13px;
+  }
+  .switch input { accent-color: var(--azul); }
+  .checklist { list-style: none; padding: 0; margin: 0; }
+  .checklist li {
+    padding: 6px 0; border-bottom: 1px solid var(--borde);
+    display: flex; align-items: center; gap: 8px; font-size: 13px;
+  }
+  .checklist li.done { color: #9ca3af; text-decoration: line-through; }
+  .historial {
+    border: 1px solid var(--borde); border-radius: 8px; padding: 10px;
+    max-height: 240px; overflow-y: auto; font-size: 13px; background: var(--gris);
+  }
+  .msg { margin-bottom: 6px; }
+  .msg .rol { font-weight: 600; color: var(--azul); }
+  input[type="text"] {
+    width: 100%; padding: 8px; border: 1px solid var(--borde);
+    border-radius: 6px; font-size: 13px;
+  }
+  button {
+    background: var(--azul); color: #fff; border: none;
+    padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  }
+  button:focus, .chip:focus, .tab:focus {
+    outline: 2px solid var(--azul); outline-offset: 2px;
+  }
+  @media (max-width: 480px) {
+    main { padding: 12px; }
+    header h1 { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>X-Ray Chatbot</h1>
+  <small>qwen3.7-plus</small>
+</header>
+
+<div class="tabs" id="tabs" role="tablist"></div>
+
+<main>
+  <section>
+    <h2>Anclas de archivo</h2>
+    <div id="anclas"></div>
+    <div style="margin-top:8px; display:flex; gap:6px;">
+      <input type="text" id="nueva-ancla" placeholder="nombre:contenido" aria-label="Nueva ancla">
+      <button onclick="agregarAncla()">+</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pendientes</h2>
+    <ul class="checklist" id="pendientes"></ul>
+    <div style="margin-top:8px; display:flex; gap:6px;">
+      <input type="text" id="nuevo-pendiente" placeholder="Nueva tarea" aria-label="Nueva tarea">
+      <button onclick="agregarPendiente()">+</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Tools</h2>
+    <div class="switch-row">
+      <label class="switch"><input type="checkbox" id="sw-tools" checked onchange="toggleTool('tools')"> tools</label>
+      <label class="switch"><input type="checkbox" id="sw-agente" checked onchange="toggleTool('agente_tool')"> agente_tool</label>
+      <label class="switch"><input type="checkbox" id="sw-llm" checked onchange="toggleTool('llm_tool')"> llm_tool</label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Historial</h2>
+    <div class="historial" id="historial" aria-live="polite"></div>
+    <div style="margin-top:8px; display:flex; gap:6px;">
+      <input type="text" id="nuevo-msg" placeholder="Mensaje" aria-label="Mensaje">
+      <button onclick="enviarMensaje()">Enviar</button>
+    </div>
+  </section>
+</main>
+
+<script>
+// Namespace aislado en localStorage
+const NS = "xray_qwen3.7-plus";
+const KEY = () => NS + ":estado";
+
+function cargar() {
+  const raw = localStorage.getItem(KEY());
+  if (raw) return JSON.parse(raw);
+  return {
+    sesiones: [{ id: "ses_inicial", nombre: "Chat 1", mensajes: [], anclas: {}, pendientes: [], tools: { tools: true, agente_tool: true, llm_tool: true } }],
+    activa: "ses_inicial"
+  };
+}
+
+function guardar(estado) {
+  localStorage.setItem(KEY(), JSON.stringify(estado));
+}
+
+let estado = cargar();
+
+function sesionActiva() {
+  return estado.sesiones.find(s => s.id === estado.activa);
+}
+
+function renderTabs() {
+  const cont = document.getElementById("tabs");
+  cont.innerHTML = "";
+  estado.sesiones.forEach(s => {
+    const btn = document.createElement("button");
+    btn.className = "tab" + (s.id === estado.activa ? " activa" : "");
+    btn.textContent = s.nombre;
+    btn.setAttribute("role", "tab");
+    btn.setAttribute("aria-selected", s.id === estado.activa);
+    btn.onclick = () => { estado.activa = s.id; guardar(estado); renderAll(); };
+    cont.appendChild(btn);
+  });
+}
+
+function renderAnclas() {
+  const s = sesionActiva();
+  const cont = document.getElementById("anclas");
+  cont.innerHTML = "";
+  Object.entries(s.anclas).forEach(([nombre, ancla]) => {
+    const chip = document.createElement("span");
+    chip.className = "chip " + (ancla.activo ? "on" : "off");
+    chip.textContent = nombre + (ancla.activo ? " ON" : " OFF");
+    chip.tabIndex = 0;
+    chip.onclick = () => { ancla.activo = !ancla.activo; guardar(estado); renderAnclas(); };
+    chip.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); chip.click(); } };
+    cont.appendChild(chip);
+  });
+}
+
+function renderPendientes() {
+  const s = sesionActiva();
+  const ul = document.getElementById("pendientes");
+  ul.innerHTML = "";
+  s.pendientes.forEach(p => {
+    const li = document.createElement("li");
+    if (p.hecho) li.className = "done";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = p.hecho;
+    cb.onchange = () => { p.hecho = cb.checked; guardar(estado); renderPendientes(); };
+    li.appendChild(cb);
+    li.appendChild(document.createTextNode(p.texto));
+    ul.appendChild(li);
+  });
+}
+
+function renderTools() {
+  const s = sesionActiva();
+  document.getElementById("sw-tools").checked = s.tools.tools;
+  document.getElementById("sw-agente").checked = s.tools.agente_tool;
+  document.getElementById("sw-llm").checked = s.tools.llm_tool;
+}
+
+function renderHistorial() {
+  const s = sesionActiva();
+  const cont = document.getElementById("historial");
+  cont.innerHTML = "";
+  s.mensajes.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "msg";
+    div.innerHTML = '<span class="rol">' + m.rol + ':</span> ' + m.contenido;
+    cont.appendChild(div);
+  });
+  cont.scrollTop = cont.scrollHeight;
+}
+
+function renderAll() {
+  renderTabs();
+  renderAnclas();
+  renderPendientes();
+  renderTools();
+  renderHistorial();
+}
+
+function agregarAncla() {
+  const inp = document.getElementById("nueva-ancla");
+  const val = inp.value.trim();
+  if (!val.includes(":")) return;
+  const [nombre, contenido] = val.split(":", 2);
+  const s = sesionActiva();
+  s.anclas[nombre] = { activo: true, contenido: contenido };
+  inp.value = "";
+  guardar(estado);
+  renderAnclas();
+}
+
+function agregarPendiente() {
+  const inp = document.getElementById("nuevo-pendiente");
+  const texto = inp.value.trim();
+  if (!texto) return;
+  const s = sesionActiva();
+  s.pendientes.push({ id: "pen_" + Date.now(), texto: texto, hecho: false });
+  inp.value = "";
+  guardar(estado);
+  renderPendientes();
+}
+
+function toggleTool(tool) {
+  const s = sesionActiva();
+  s.tools[tool] = !s.tools[tool];
+  guardar(estado);
+}
+
+function enviarMensaje() {
+  const inp = document.getElementById("nuevo-msg");
+  const contenido = inp.value.trim();
+  if (!contenido) return;
+  const s = sesionActiva();
+  s.mensajes.push({ id: "msg_" + Date.now(), rol: "usuario", contenido: contenido, ts: new Date().toISOString() });
+  inp.value = "";
+  guardar(estado);
+  renderHistorial();
+  // Simula respuesta
+  setTimeout(() => {
+    s.mensajes.push({ id: "msg_" + Date.now(), rol: "asistente", contenido: "Recibido (demo local).", ts: new Date().toISOString() });
+    guardar(estado);
+    renderHistorial();
+  }, 300);
+}
+
+// Pruebas manuales reproducibles (abrir consola del navegador):
+// 1) cargar() devuelve objeto con sesiones[0].id === "ses_inicial"
+// 2) Agregar ancla "test:data", hacer chip OFF, el estado guardado muestra ancla.activo === false
+// 3) Enviar mensaje, historial muestra el mensaje y no se borra al cambiar de pestaña
+// 4) Desactivar ancla, el siguiente payload simulado no debe incluir esa ancla (verificar en estado)
+// 5) Toggle tool "agente_tool", el switch refleja el cambio y persiste tras recargar
+
+renderAll();
+</script>
+</body>
+</html>
