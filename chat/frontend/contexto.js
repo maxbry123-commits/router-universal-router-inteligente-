@@ -42,6 +42,10 @@ export function parsearBloquesRevision(texto) {
   while ((m = re.exec(String(texto))) !== null) { const t = m[2].trim(); if (t) out.push({ tipo: m[1].toLowerCase(), texto: t.slice(0, 240) }); }
   return out;
 }
+export function parsearModo(texto) {
+  const m = /\[\[MODO:(preguntar|agente)\]\]/i.exec(String(texto));
+  return m ? m[1].toLowerCase() : "";
+}
 function bloqueSesion(tools) {
   let v = { memoria: true, nota: "", tope: 800, revisiones: [] };
   try { const g = leer("riu_sesion_v1", {}); v = { memoria: g.memoria !== false, nota: String(g.nota || ""), tope: Math.min(4000, Math.max(200, Number(g.tope) || 800)), revisiones: Array.isArray(g.revisiones) ? g.revisiones : [] }; } catch (e) {}
@@ -49,8 +53,29 @@ function bloqueSesion(tools) {
   if (v.memoria && v.nota.trim()) partes.push("[MEMORIA]\n" + v.nota.trim());
   if (v.revisiones.length) partes.push("[REVISION]\n" + v.revisiones.slice(0, 12).map((r) => "- " + r.tipo + ": " + String(r.texto || "").slice(0, 240)).join("\n"));
   let s = partes.join("\n").slice(0, v.tope);
-  if (tools) s = (s ? s + "\n" : "") + "Memoria: [[MEMORIA]]texto[[/MEMORIA]]. Revisión: [[REVISION:error|seguridad|aviso|nota]]texto[[/REVISION]].";
+  if (tools) s = (s ? s + "\n" : "") + "Memoria: [[MEMORIA]]texto[[/MEMORIA]]. Revisión: [[REVISION:error|seguridad|aviso|nota]]texto[[/REVISION]]. Modo: [[MODO:preguntar]] o [[MODO:agente]].";
   return s;
+}
+const IDIOMAS = { es: "español", en: "inglés", pt: "portugués" };
+export function parsearIdioma(texto) {
+  const m = /\[\[IDIOMA:(es|en|pt)\]\]/i.exec(String(texto));
+  return m ? m[1].toLowerCase() : "";
+}
+export function parsearBloquesRegla(texto) {
+  const out = [], re = /\[\[REGLA\]\]([\s\S]*?)\[\[\/REGLA\]\]/g;
+  let m;
+  while ((m = re.exec(String(texto))) !== null) { const t = m[1].trim(); if (t) out.push(t.slice(0, 240)); }
+  return out;
+}
+function bloqueReglas(tools) {
+  let v = { idioma: "", reglas: [], topeMsg: 0 };
+  try { v = Object.assign(v, leer("riu_reglas_v1", {})); } catch (e) {}
+  const partes = [];
+  if (IDIOMAS[v.idioma]) partes.push("[IDIOMA] Responde en " + IDIOMAS[v.idioma] + ".");
+  const on = (Array.isArray(v.reglas) ? v.reglas : []).filter((r) => r && r.on !== false && r.texto).slice(0, 8);
+  if (on.length) partes.push("[REGLAS]\n" + on.map((r) => "- " + String(r.texto).slice(0, 240)).join("\n"));
+  if (tools) partes.push("Idioma: [[IDIOMA:es]], [[IDIOMA:en]] o [[IDIOMA:pt]]. Regla: [[REGLA]]texto[[/REGLA]].");
+  return partes.join("\n").slice(0, 1200);
 }
 export function parsearBloquesWF(texto) {  // la IA escribe en la ventana de ejecución con: [[WF:nombre]]instrucción[[/WF]]
   const out = [], re = /\[\[WF:([^\]\n]{1,60})\]\]([\s\S]*?)\[\[\/WF\]\]/g; let m;
@@ -101,6 +126,8 @@ export function construirPrefijo(oficial) {
       const ses = bloqueSesion(false);
       if (ses) partes.push(ses);
     }
+    const rg = bloqueReglas(!!(f.tools || f.llm_tool || f.agente_tool));
+    if (rg) partes.push(rg);
   } catch (e) {}
   return partes.join("\n\n");
 }
