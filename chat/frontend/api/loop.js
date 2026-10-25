@@ -6,24 +6,31 @@ const corto = (v, n) => String(v || "").slice(0, n);
 function base(sesion) {
   return estados.get(sesion) || { on: false, paso: 0, fase: "apagado", nota: "apagado", objetivo: "", plan: "", tareas: "" };
 }
+function anotar(e, extra) {
+  const item = extra.nota + ": " + String(extra.disparo || "").slice(0, 80);
+  const traza = (Array.isArray(e.traza) ? e.traza : []).concat(item).slice(-4);
+  return { ...e, ...extra, traza };
+}
 function disparar(e) {
   const tareas = String(e.tareas || "").split(/\n/).map((s) => s.trim()).filter(Boolean);
   const fase = PARTES.includes(e.fase) ? e.fase : "objetivo";
   const hecho = e.hecho || 0;
   if (fase === "objetivo") {
     if (!String(e.objetivo || "").trim()) return { ...e, on: true, fase, nota: "falta objetivo", disparo: "" };
-    return { ...e, on: true, fase: "plan", nota: "objetivo", disparo: String(e.objetivo).trim().slice(0, 180) };
+    return anotar(e, { on: true, fase: "plan", nota: "objetivo", disparo: String(e.objetivo).trim().slice(0, 180) });
   }
   if (fase === "plan") {
     if (!String(e.plan || "").trim()) return { ...e, on: true, fase, nota: "falta plan", disparo: "" };
-    return { ...e, on: true, fase: "tarea", nota: "plan", disparo: String(e.plan).trim().slice(0, 180) };
+    return anotar(e, { on: true, fase: "tarea", nota: "plan", disparo: String(e.plan).trim().slice(0, 180) });
   }
   if (fase === "tarea") {
     if (!tareas.length || hecho >= tareas.length) return { ...e, on: true, fase, nota: "sin tareas", disparo: "" };
-    return { ...e, on: true, fase: "verificar", hecho: hecho + 1, nota: "tarea", disparo: tareas[hecho].slice(0, 180) };
+    return anotar(e, { on: true, fase: "verificar", hecho: hecho + 1, nota: "tarea", disparo: tareas[hecho].slice(0, 180) });
   }
   if (!e.disparo) return { ...e, on: true, fase: "verificar", nota: "nada que verificar" };
-  return { ...e, on: true, fase: "objetivo", paso: (e.paso || 0) + 1, nota: hecho >= tareas.length ? "vuelta completa" : "verificado" };
+  const paso = (e.paso || 0) + 1;
+  if (paso >= 8) return anotar(e, { on: false, fase: "apagado", paso, nota: "tope", disparo: e.disparo });
+  return anotar(e, { on: true, fase: "objetivo", paso, nota: hecho >= tareas.length ? "vuelta completa" : "verificado", disparo: e.disparo });
 }
 function conTexto(e, body) {
   return {
@@ -32,6 +39,7 @@ function conTexto(e, body) {
     plan: body.plan !== undefined ? corto(body.plan, 800) : e.plan,
     tareas: body.tareas !== undefined ? corto(body.tareas, 1500) : e.tareas,
     hecho: e.hecho || 0, disparo: e.disparo || "",
+    traza: Array.isArray(e.traza) ? e.traza.slice(-4) : [],
   };
 }
 

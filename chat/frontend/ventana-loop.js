@@ -27,24 +27,31 @@ function leerCampos() {
   estado.plan = document.querySelector("#loop-plan").value;
   estado.tareas = document.querySelector("#loop-tareas").value;
 }
+function anotar(e, extra) {
+  const item = extra.nota + ": " + String(extra.disparo || "").slice(0, 80);
+  const traza = (Array.isArray(e.traza) ? e.traza : []).concat(item).slice(-4);
+  return { ...e, ...extra, traza };
+}
 function disparar(e) {
   const tareas = String(e.tareas || "").split(/\n/).map((s) => s.trim()).filter(Boolean);
   const fase = PARTES.includes(e.fase) ? e.fase : "objetivo";
   const hecho = e.hecho || 0;
   if (fase === "objetivo") {
     if (!String(e.objetivo || "").trim()) return { ...e, on: true, fase, nota: "falta objetivo", disparo: "" };
-    return { ...e, on: true, fase: "plan", nota: "objetivo", disparo: String(e.objetivo).trim().slice(0, 180) };
+    return anotar(e, { on: true, fase: "plan", nota: "objetivo", disparo: String(e.objetivo).trim().slice(0, 180) });
   }
   if (fase === "plan") {
     if (!String(e.plan || "").trim()) return { ...e, on: true, fase, nota: "falta plan", disparo: "" };
-    return { ...e, on: true, fase: "tarea", nota: "plan", disparo: String(e.plan).trim().slice(0, 180) };
+    return anotar(e, { on: true, fase: "tarea", nota: "plan", disparo: String(e.plan).trim().slice(0, 180) });
   }
   if (fase === "tarea") {
     if (!tareas.length || hecho >= tareas.length) return { ...e, on: true, fase, nota: "sin tareas", disparo: "" };
-    return { ...e, on: true, fase: "verificar", hecho: hecho + 1, nota: "tarea", disparo: tareas[hecho].slice(0, 180) };
+    return anotar(e, { on: true, fase: "verificar", hecho: hecho + 1, nota: "tarea", disparo: tareas[hecho].slice(0, 180) });
   }
   if (!e.disparo) return { ...e, on: true, fase: "verificar", nota: "nada que verificar" };
-  return { ...e, on: true, fase: "objetivo", paso: (e.paso || 0) + 1, nota: hecho >= tareas.length ? "vuelta completa" : "verificado" };
+  const paso = (e.paso || 0) + 1;
+  if (paso >= 8) return anotar(e, { on: false, fase: "apagado", paso, nota: "tope", disparo: e.disparo });
+  return anotar(e, { on: true, fase: "objetivo", paso, nota: hecho >= tareas.length ? "vuelta completa" : "verificado", disparo: e.disparo });
 }
 function lineas() { return String(estado.tareas || "").split(/\n/).map((x) => x.trim()).filter(Boolean); }
 function bloque() {
@@ -81,7 +88,10 @@ async function pedir(accion) {
 
 function latido() {
   if (reloj) return;
-  reloj = setInterval(() => { if (estado.on) pedir("paso").then(() => { if (window.__riuLoopPintar) window.__riuLoopPintar(); }); else { clearInterval(reloj); reloj = 0; } }, 3000);
+  reloj = setInterval(() => {
+    if (!estado.on || /^(falta |sin |nada |tope)/.test(estado.nota || "")) { clearInterval(reloj); reloj = 0; return; }
+    pedir("paso").then(() => { if (window.__riuLoopPintar) window.__riuLoopPintar(); });
+  }, 3000);
 }
 
 async function guardarYaiwes(aviso) {
@@ -155,11 +165,13 @@ function pintarLoop(cuerpo) {
     });
     const bloqueado = /^(falta |sin |nada )/.test(estado.nota || "");
     const sigue = NOMBRE[SIGUE[estado.fase] || "objetivo"];
+    const traza = Array.isArray(estado.traza) ? estado.traza : [];
     mando.replaceChildren(
-      el("div", "", (estado.on ? "encendido" : "apagado") + (bloqueado ? " · bloqueado" : "")),
-      el("div", "", "recibo: " + (estado.disparo || "sin recibo")),
-      el("div", "", "siguiente: " + sigue + " · vuelta " + (estado.paso || 0)),
+      el("div", "", (estado.on ? "encendido" : "apagado") + (bloqueado ? " · bloqueado" : "") + " · vuelta " + (estado.paso || 0) + "/8"),
+      el("div", "", "siguiente: " + sigue),
     );
+    traza.forEach((t) => mando.append(el("div", "", t)));
+    if (!traza.length) mando.append(el("div", "", "sin traza"));
     aviso.textContent = bloqueado ? estado.nota : (estado.disparo ? "observado" : "sin disparo");
   };
   [objetivo, plan, tareas].forEach((x) => x.addEventListener("input", () => { leerCampos(); pintar(); }));

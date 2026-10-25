@@ -6,7 +6,7 @@
 #ventana-loop .loop-partes span { min-height: 32px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); }
 #ventana-loop .loop-partes span.on { border-color: var(--status-blue, #2F80FF); color: var(--title); }
 #ventana-loop .loop-pct { font-size: 13px; margin-bottom: 4px; }
-#ventana-loop .loop-mando { display: grid; gap: 2px; margin: 0 0 8px; font-size: 13px; }
+#ventana-loop .loop-mando { display: grid; gap: 2px; margin: 0 0 8px; font-size: 13px; max-height: 72px; overflow: auto; }
 #ventana-loop .loop-mando div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #ventana-loop .loop-barra { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
 #ventana-loop .loop-relleno { height: 100%; width: 0; background: var(--status-blue, #2F80FF); }
