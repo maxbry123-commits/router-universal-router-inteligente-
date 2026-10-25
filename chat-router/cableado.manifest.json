@@ -109,19 +109,19 @@
   },
   "chat/backend": {
    "archivos": 219,
-   "sha256": "4af2dcd4dcf63c676e8907e805290e7132e778419a6b7c75db957f806f9ea874"
+   "sha256": "3b1f1f20193621b6e69fe79af2f18bb1be48e291cc1622b90554399cdf1ebbf6"
   },
   "chat/e2e": {
-   "archivos": 21,
-   "sha256": "6b507bf3a4af1675bca379e7932d7d6b5afef5c49d61748d0e0897c891e3d374"
+   "archivos": 22,
+   "sha256": "f3d76913708cf61d6bb37cc9b33c7eed7133f6f83833aa83e21e208f590ce0a3"
   },
   "chat/espejo": {
    "archivos": 1,
    "sha256": "c33e1d72284565e359dddc3828d5b7683c39f97c1de34baf57d54963e9523037"
   },
   "chat/frontend": {
-   "archivos": 534,
-   "sha256": "b98b80802e40dc8633ef1041d5f8b62561b912061ff9172f1f105d23dca711e9"
+   "archivos": 538,
+   "sha256": "c4ddb0522e1f7d460c54ae5ac853d719f93ee1ba5d487bde74ac58193e4d1531"
   },
   "fichas": {
    "archivos": 220,
@@ -137,7 +137,7 @@
   },
   "plugins/puente_chat": {
    "archivos": 44,
-   "sha256": "64a7186e413524b1ceec2c9df9433a342db70dd6faa395eb879c8bf4ccf8c9ef"
+   "sha256": "0ac4e8486b1805251fc6209d7c699bcfb1b86b9254f83f0f43fc8cb8aeaac1d0"
   },
   "raiz_fichas_prompt": {
    "archivos": 5,
