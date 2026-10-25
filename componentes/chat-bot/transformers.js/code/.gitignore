@@ -1,0 +1,19 @@
+__pycache__
+.vscode
+.cache
+.DS_STORE
+.idea
+node_modules
+deno.lock
+package-lock.json
+*.local.*
+
+# Do not track build artifacts/generated files
+packages/*/dist
+packages/*/types
+*.tsbuildinfo
+
+# Do not track coverage reports
+packages/*/coverage
+
+*.local.*
