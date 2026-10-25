@@ -8,3 +8,5 @@ Cableado pendiente: herramientas `memoria_guardar` y `memoria_buscar` en MCP, pe
 - `plugins/memoria` -> `memoria-yaiwes/` (enlace `plugins/memoria`; `router/integration/chat_mvp/memoria_loader.py` sigue cargando por esa ruta). Constantes `parents[3]` -> `parents[4]` en `memoria_yaiwes/{__init__,runtime_adapters}.py` y 4 pruebas.
 - `plugins/hf_datasets` -> `hf_datasets/` (enlace `plugins/hf_datasets`, tiene ficha.json). `plugins/hf_storage` NO se movió.
 - Las pruebas de `memoria-yaiwes/tests` ya fallaban antes (3 errores de colección por carpetas heredadas "router inteligente universal"/"chat router" inexistentes).
+
+- Arquitectura (README + input literal de Antonio): `arquitectura/`.
