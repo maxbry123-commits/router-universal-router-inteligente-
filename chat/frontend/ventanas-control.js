@@ -8,6 +8,7 @@ const ICONOS = {  // iconos de línea (skill Maxbry): sin emojis en la barra
   conexiones: '<path d="M12 2 20 5v6c0 5-3 8-8 11-5-3-8-6-8-11V5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
   room: '<path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 8.3 8.3 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/>',
   power: '<path d="M12 3v9"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/>',
+  loop: '<path d="M4 12a8 8 0 0 1 13.5-5.5L20 4"/><path d="M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-13.5 5.5L4 20"/><path d="M4 20v-5h5"/>',
 };
 export function ventana(id, titulo, alAbrir) {
   const bar = document.querySelector("#composer .composer-bar");

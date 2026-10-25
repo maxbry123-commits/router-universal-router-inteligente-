@@ -1,5 +1,6 @@
 /* chat-espacio.css — espacio del chat (archivo propio; se carga despues de shell.css y responsive.css).
    Salida ~2x mas alta en celular, pastillas en una sola fila, anclados en 2 lineas, input mas bajo. */
+#btn-loop[aria-pressed=true] { border-color: var(--status-blue, #2F80FF); }
 @media(max-width:720px){
   h1{font-size:18px;margin:0 0 8px}
   .chat-tabs{margin-bottom:6px}
@@ -88,7 +89,8 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
   #composer .composer-bar > #btn-conexiones,
   #composer .composer-bar > #btn-room,
   #composer .composer-bar > #btn-power,
-  #composer .composer-bar > #btn-pendientes { order: 2; }
+  #composer .composer-bar > #btn-pendientes,
+  #composer .composer-bar > #btn-loop { order: 2; }
   #composer .composer-bar > * { flex: 0 0 auto; white-space: nowrap; }
   #composer .composer-bar > .action { position: absolute; right: 0; bottom: 0; z-index: 30; margin-left: 0; }
   #composer .composer-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; margin: 0 0 6px; overflow: visible; }
