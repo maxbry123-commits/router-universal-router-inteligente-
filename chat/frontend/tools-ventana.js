@@ -133,7 +133,14 @@ function instalarChat() {
   let pulsado = null; b.addEventListener("pointerdown", () => { pulsado = setTimeout(() => { pulsado = null; s.hidden = false; pintarVentana(cuerpo); }, 600); }); ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => { clearTimeout(pulsado); }));  // móvil: mantener pulsado abre la ventana
   accion("agent_access_lock", {}).then(aplicarFlags).catch(() => {});  // estado real del servidor al abrir el chat
   b.oncontextmenu = (ev) => { ev.preventDefault(); s.hidden = false; pintarVentana(cuerpo); };
-  const env = bar.querySelector(".action"); bar.insertBefore(p, env || null); bar.insertBefore(g, p); bar.insertBefore(b, g);
+  const env = bar.querySelector(".action");
+  const fila = el("div", "composer-chips");
+  const meter = () => {
+    if (matchMedia("(max-width:720px)").matches) { bar.before(fila); fila.append(b, g, p); }
+    else { fila.remove(); bar.insertBefore(p, env || null); bar.insertBefore(g, p); bar.insertBefore(b, g); }
+  };
+  meter();
+  matchMedia("(max-width:720px)").addEventListener("change", meter);
 }
 
 async function instalarConfig() {

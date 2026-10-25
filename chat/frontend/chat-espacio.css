@@ -85,25 +85,6 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
   #composer .composer-bar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; padding-right: 148px; }
   #composer .composer-bar > * { flex: 0 0 auto; white-space: nowrap; }
   #composer .composer-bar > .action { position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); z-index: 30; margin-left: 0; }
-  /* IA, Agentes y System prompt quedan a la vista, encima de la fila. No hay que desplazar la caja para encontrarlos. */
-  #composer { position: relative; }
-  #composer #message { margin-bottom: 40px; }
-  #composer .composer-bar > #btn-tools,
-  #composer .composer-bar > #btn-agentes,
-  #composer .composer-bar > #btn-prompt {
-    position: fixed;
-    bottom: 64px;
-    z-index: 29;
-    font-size: 12px;
-    padding: 4px 8px;
-  }
-  #composer .composer-bar > #btn-tools { left: 8px; }
-  #composer .composer-bar > #btn-agentes { left: 96px; }
-  #composer .composer-bar > #btn-prompt { left: auto; right: 8px; }
-}
-@media (max-width:360px) {
-  #composer .composer-bar > #btn-tools,
-  #composer .composer-bar > #btn-agentes,
-  #composer .composer-bar > #btn-prompt { font-size: 11px; padding: 4px 6px; }
-  #composer .composer-bar > #btn-agentes { left: 76px; }
+  #composer .composer-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; margin: 0 0 6px; overflow: visible; }
+  #composer .composer-chips > button { position: static; left: auto; right: auto; bottom: auto; flex: 0 0 auto; max-width: none; overflow: visible; }
 }
