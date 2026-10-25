@@ -16,6 +16,7 @@ import "./ventana-watchdog.js";  // ficha del Watchdog: de 10 minutos a 48 horas
 import "./ventana-cola.js";  // cola de trabajo: hasta 50 tareas, sin enviarlas al modelo
 import "./ventana-tareas.js";  // tareas programadas y artefactos reales de este chat
 import "./ventana-comandos.js";  // atajos /nombre, a mano y por el modelo
+import "./ventana-sesion.js";  // memoria, tope y revisión de este chat
 import "./barra-mas.js";  // en el celular, los controles de más van en un solo botón
 import "./salida-ampliada.js";  // la respuesta se lee en el hueco de encima, sin estirar la página
 import "./fichas-externas.js";  // modelos reales de Groq/NVIDIA en el selector NVIDIA (antes de montar el chat)

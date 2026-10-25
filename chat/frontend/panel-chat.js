@@ -378,6 +378,7 @@ export async function mount(root, { api, tell }) {
       composerEl: q("#message"),
       thinkingToggleEl: q("#modo"),   // punto C: en modos autonomos el selector de thinking queda deshabilitado
     });
+    window.RIU_MODE = modeUI;
   } catch (e) { try { console.warn("mode_selector no cargo:", e); } catch (_) {} }  // si el registro no responde, el chat sigue sin modos
   // <<< MODOS END
   montarEnviar({ q, chat, abajo, burbuja, ajustarAlturaEditor, pintarTabs, getModeUI: () => modeUI, releerAnclas, chatTools, FAST_SEL, getModo: () => modo, previo, api, tell });  // envío del mensaje: cada chat corre su tarea con su sesión, ficha, anclas, modos y herramientas → enviar-mensaje.js

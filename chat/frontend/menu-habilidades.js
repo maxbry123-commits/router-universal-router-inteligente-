@@ -12,6 +12,7 @@ export function montarHabilidades({ root, q, tell }) {
     { cmd: "/loop", nombre: "LOOP", desc: "Objetivo, plan y tareas", abre: "#btn-loop" },
     { cmd: "/cola", nombre: "Cola", desc: "Lista de trabajo", abre: "#btn-cola" },
     { cmd: "/comandos", nombre: "Comandos", desc: "Guardar un atajo de texto", abre: "#btn-comandos" },
+    { cmd: "/sesion", nombre: "Sesión", desc: "Memoria, tope y revisión", abre: "#btn-sesion" },
     ...listaComandos().map((c) => ({ cmd: "/" + c.nombre, nombre: c.nombre, desc: c.texto.slice(0, 80), ins: c.texto })),
     ...dameWF().map((w) => ({ cmd: "/wf " + w.nombre, nombre: "Workflow · " + w.nombre, desc: "Escribir una instrucción en su ejecución", ins: "/wf " + w.nombre + " " })),
     { cmd: "/workflow", nombre: "Workflow Loops code Yaiwes", desc: "Abrir la ventana", abre: "#pill-workflows" },

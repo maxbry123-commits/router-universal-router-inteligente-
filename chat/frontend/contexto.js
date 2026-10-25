@@ -30,6 +30,28 @@ export function parsearBloquesComando(texto) {
   }
   return out;
 }
+export function parsearBloquesMemoria(texto) {
+  const out = [], re = /\[\[MEMORIA\]\]([\s\S]*?)\[\[\/MEMORIA\]\]/g;
+  let m;
+  while ((m = re.exec(String(texto))) !== null) { const t = m[1].trim(); if (t) out.push(t.slice(0, 4000)); }
+  return out;
+}
+export function parsearBloquesRevision(texto) {
+  const out = [], re = /\[\[REVISION:(error|seguridad|aviso|nota)\]\]([\s\S]*?)\[\[\/REVISION\]\]/gi;
+  let m;
+  while ((m = re.exec(String(texto))) !== null) { const t = m[2].trim(); if (t) out.push({ tipo: m[1].toLowerCase(), texto: t.slice(0, 240) }); }
+  return out;
+}
+function bloqueSesion(tools) {
+  let v = { memoria: true, nota: "", tope: 800, revisiones: [] };
+  try { const g = leer("riu_sesion_v1", {}); v = { memoria: g.memoria !== false, nota: String(g.nota || ""), tope: Math.min(4000, Math.max(200, Number(g.tope) || 800)), revisiones: Array.isArray(g.revisiones) ? g.revisiones : [] }; } catch (e) {}
+  const partes = [];
+  if (v.memoria && v.nota.trim()) partes.push("[MEMORIA]\n" + v.nota.trim());
+  if (v.revisiones.length) partes.push("[REVISION]\n" + v.revisiones.slice(0, 12).map((r) => "- " + r.tipo + ": " + String(r.texto || "").slice(0, 240)).join("\n"));
+  let s = partes.join("\n").slice(0, v.tope);
+  if (tools) s = (s ? s + "\n" : "") + "Memoria: [[MEMORIA]]texto[[/MEMORIA]]. Revisión: [[REVISION:error|seguridad|aviso|nota]]texto[[/REVISION]].";
+  return s;
+}
 export function parsearBloquesWF(texto) {  // la IA escribe en la ventana de ejecución con: [[WF:nombre]]instrucción[[/WF]]
   const out = [], re = /\[\[WF:([^\]\n]{1,60})\]\]([\s\S]*?)\[\[\/WF\]\]/g; let m;
   while ((m = re.exec(String(texto))) !== null) { const t = m[2].trim(); if (t) out.push({ ref: m[1].trim(), texto: t }); }
@@ -72,7 +94,12 @@ export function construirPrefijo(oficial) {
       const cs = (leer("riu_comandos_v1", []) || []).filter((c) => c && c.nombre).slice(0, 6);
       s += "\n[COMANDOS] Crea uno con [[COMANDO:nombre]]texto[[/COMANDO]]. El usuario lo llama con /nombre.";
       if (cs.length) s += "\n" + cs.map((c) => "- /" + c.nombre + " · " + String(c.texto || "").slice(0, 80)).join("\n");
+      const ses = bloqueSesion(true);
+      if (ses) s += "\n" + ses;
       partes.push(s);
+    } else {
+      const ses = bloqueSesion(false);
+      if (ses) partes.push(ses);
     }
   } catch (e) {}
   return partes.join("\n\n");
