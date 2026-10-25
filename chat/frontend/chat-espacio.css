@@ -81,4 +81,8 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
 @media (max-width:720px) {
   #composer #message { max-height: min(128px, 20dvh); }
   #histories .chat-history { min-height: 0; }
+  #composer { width: 100%; max-width: 100%; min-width: 0; }
+  #composer .composer-bar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; padding-right: 148px; }
+  #composer .composer-bar > * { flex: 0 0 auto; white-space: nowrap; }
+  #composer .composer-bar > .action { position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); z-index: 30; margin-left: 0; }
 }
