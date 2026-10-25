@@ -245,6 +245,7 @@ export async function api(path, options = {}) {
   if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Ruta inválida");
   const headers = {};
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
+  const envioClave = !!clave();
   let response;
   try {
     const credentials = remoto(headers);
@@ -255,9 +256,10 @@ export async function api(path, options = {}) {
     if (error && error.name === "AbortError") throw new Error("El Router no respondió a tiempo (puede estar despertando); reintenta en unos segundos");
     throw error;
   }
-  const status = response.status === 401 || response.status === 403 ? "Acceso requerido"
+  const status = (response.status === 401 || response.status === 403)
+    ? (envioClave ? "Acceso requerido" : "")
     : response.status >= 500 ? "Error de Router" : "Router disponible";
-  window.dispatchEvent(new CustomEvent("router-connection", { detail: status }));
+  if (status) window.dispatchEvent(new CustomEvent("router-connection", { detail: status }));
   const payload = response.headers.get("content-type")?.includes("application/json")
     ? await response.json() : { detail: `HTTP ${response.status}` };
   if (!response.ok) throw new Error((response.status === 403 ? "HTTP 403: " : "") + (typeof payload.detail === "string" ? payload.detail : typeof payload.reason === "string" ? payload.reason : `HTTP ${response.status}`));
