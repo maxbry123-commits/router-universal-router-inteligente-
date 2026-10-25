@@ -49,8 +49,9 @@ function pintar(cuerpo) {
   const ver = () => {
     const hechas = tareas.filter((t) => t.hecho).length;
     const f = window.RIU_CHAT_TOOL_FLAGS || {};
-    const recibe = !agenteVe ? "" : (f.tools || f.agente_tool || f.llm_tool ? " · el modelo la recibe" : " · enciende IA o Agentes");
-    estado.textContent = tareas.length + "/" + MAX + " · " + hechas + " hechas · " + donde() + recibe;
+    const recibe = !agenteVe ? "" : (f.tools || f.agente_tool || f.llm_tool ? " · modelo" : " · falta IA");
+    const sitio = origen === "servidor" ? "servidor" : donde();
+    estado.textContent = tareas.length + "/" + MAX + " · " + hechas + " hechas · " + sitio + recibe;
     pintarAgente();
     lista.replaceChildren();
     tareas.forEach((t, i) => {
@@ -116,7 +117,7 @@ function pintar(cuerpo) {
     agente.disabled = false;
     pintarAgente();
   });
-  agente.title = "Tool pendientes del chat. ON: el agente la ve y puede usarla.";
+  agente.title = "Tool pendientes. Con IA o Agentes encendidos, el modelo la recibe en el mensaje.";
   agente.classList.add("cola-tool");
   const pintarAgente = () => {
     agente.textContent = agenteVe ? "Tool ON" : "Tool OFF";
