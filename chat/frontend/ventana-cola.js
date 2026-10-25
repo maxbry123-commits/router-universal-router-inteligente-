@@ -18,7 +18,7 @@ function guardarLocal() {
   try { sessionStorage.setItem(K, JSON.stringify(tareas.map((t) => t.texto))); } catch (e) {}
 }
 function tomar(r) {
-  tareas = (r.pendientes || []).filter((p) => p && p.id).map((p) => ({ id: p.id, texto: String(p.texto || "") }));
+  tareas = (r.pendientes || []).filter((p) => p && p.id).map((p) => ({ id: p.id, texto: String(p.texto || ""), hecho: !!p.hecho }));
   origen = r.persistente === false ? "memoria" : "servidor";
 }
 async function refrescar() {
@@ -41,24 +41,35 @@ function pintar(cuerpo) {
   const lista = el("div", "cola-lista");
   let ocupado = false;
   const ver = () => {
-    estado.textContent = tareas.length + "/" + MAX + " · " + donde();
+    const hechas = tareas.filter((t) => t.hecho).length;
+    estado.textContent = tareas.length + "/" + MAX + " · " + hechas + " hechas · " + donde();
     lista.replaceChildren();
     tareas.forEach((t, i) => {
-      const fila = el("div", "cola-fila");
+      const fila = el("div", "cola-fila" + (t.hecho ? " hecha" : ""));
       fila.append(el("span", "", (i + 1) + ". " + t.texto));
       const acc = el("div", "cv-form");
       const up = btn("Subir", "secondary", () => mover(i, -1));
       const down = btn("Bajar", "secondary", () => mover(i, 1));
+      const marca = btn(t.hecho ? "Hecha" : "Pendiente", "secondary", () => marcar(i));
       const quitar = btn("Quitar", "secondary", () => sacar(i));
       up.disabled = i === 0 || ocupado;
       down.disabled = i === tareas.length - 1 || ocupado;
+      marca.disabled = ocupado;
       quitar.disabled = ocupado;
-      acc.append(up, down, quitar);
+      acc.append(up, down, marca, quitar);
       fila.append(acc);
       lista.append(fila);
     });
   };
   const fallar = (e) => { aviso.textContent = e.message || "el servidor no respondió"; };
+  const marcar = async (i) => {
+    if (ocupado || !tareas[i]) return;
+    if (origen === "chat") { tareas[i].hecho = !tareas[i].hecho; guardarLocal(); ver(); return; }
+    ocupado = true; ver();
+    try { tomar(await accion("checklist", { accion: "marcar", id: tareas[i].id, hecho: !tareas[i].hecho })); aviso.textContent = ""; }
+    catch (e) { fallar(e); }
+    ocupado = false; ver();
+  };
   const mover = async (i, d) => {
     const j = i + d;
     if (j < 0 || j >= tareas.length || ocupado) return;
