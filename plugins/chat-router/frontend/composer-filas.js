@@ -40,7 +40,8 @@ function montar(bar) {
     pintarModelo(); pintarPermisos();
   };
   ordenar(); new MutationObserver(ordenar).observe(bar, { childList: true });
-  const comp = bar.closest("#composer"); setInterval(() => { let o = false; try { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); o = !!(c && c.ocupado); } catch (e) {} if (comp && comp.classList.contains("cb-ocupado") !== o) comp.classList.toggle("cb-ocupado", o); }, 300);  // Detener solo mientras trabaja
+  const comp = bar.closest("#composer"); if (comp) comp.addEventListener("submit", () => comp.classList.add("cb-ocupado"));  // Detener aparece al enviar, sin esperar al siguiente sondeo
+  setInterval(() => { let o = false; try { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); o = !!(c && c.ocupado); } catch (e) {} if (comp && comp.classList.contains("cb-ocupado") !== o) comp.classList.toggle("cb-ocupado", o); }, 300);  // Detener solo mientras trabaja
   new MutationObserver(() => { pintarModelo(); pintarPermisos(); }).observe(document.body, { subtree: true, characterData: true, childList: true, attributes: true, attributeFilter: ["aria-pressed"] });
 }
 function ampliar(hist) {
