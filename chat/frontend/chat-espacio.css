@@ -82,7 +82,8 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
   #composer #message { max-height: min(128px, 20dvh); }
   #histories .chat-history { min-height: 0; }
   #composer { width: 100%; max-width: 100%; min-width: 0; padding-bottom: 28px; }
-  #composer .composer-bar { flex-wrap: wrap; overflow-x: visible; scrollbar-width: none; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; padding-right: 0; row-gap: 6px; }
+  #composer .composer-bar { flex-wrap: wrap; justify-content: flex-start; column-gap: 8px; overflow-x: visible; scrollbar-width: none; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; padding-right: 0; row-gap: 6px; }
+  #composer .composer-bar > #mirror-selector-mount:empty { position: absolute; width: 0; height: 0; }
   #composer .composer-bar::after { content: ""; flex: 1 0 100%; height: 0; order: 1; }
   #composer .composer-bar > #btn-conexiones,
   #composer .composer-bar > #btn-room,
