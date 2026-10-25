@@ -1,0 +1,255 @@
+{
+  "dsl": "yaiwes.grok.frontend.dag.v1",
+  "fecha": "2026-10-25",
+  "emisor": "Claude (cablea y conecta) para Grok (ejecuta lo que falta en frontend)",
+  "repo": "maxbry123-commits/router-universal-router-inteligente-",
+  "clonar": "git clone --branch main https://github.com/maxbry123-commits/router-universal-router-inteligente-.git",
+  "rama_de_trabajo": "grok-frontend-2026-10-25 (NO empujes a main; Claude la fusiona, cablea y vuelve a pasar la guardia)",
+  "determinista": true,
+  "fail_closed": true,
+  "reglas_duras": [
+    "Antes de modificar, inspecciona componentes, dependencias, eventos y conexiones HTTP del archivo (CLAUDE.md del repo).",
+    "Modifica SOLO los archivos de files_permitidos de cada nodo. Cualquier otro archivo: parar y reportar.",
+    "No cambies backend (chat/backend/**, plugins/**, router/**), ni arquitectura, ni nombres de eventos/funciones existentes.",
+    "No toques chat/frontend/ventana-loop.js, ventana-cola.js, ventana-watchdog.js, LOOP-wachdog-cola.json, ventanas-control.js: otro agente los está revisando (Tarea 2).",
+    "JavaScript vanilla, sin frameworks nuevos; estilo del chat: fondo blanco, activos azules (paleta Maxbry); sin emojis de color; iconos de línea.",
+    "Un cambio por commit pequeño, con su prueba. Primero la prueba que falla (rojo), luego el cambio mínimo, luego verde.",
+    "PASS solo con salida real de comando o captura; si no puedes probarlo, escribe NO_PROBADO y por qué. Nada de 'debería funcionar'.",
+    "Sin GitHub Actions. Sin PR. Sin force-push. Respuestas cortas.",
+    "Si dos instrucciones se contradicen o algo depende de una decisión de Antonio: estado BLOQUEADO_ANTONIO, no lo implementes."
+  ],
+  "verificacion_comun": [
+    "node --check <cada .js tocado>",
+    "python3 chat/auditoria/cableado.py            # esperado FAIL=0",
+    "python3 -m pytest mvp -q                      # esperado 221 passed (no debe cambiar)",
+    "bash chat/e2e/todo.sh                         # todas las suites 0 FAIL",
+    "Captura 345x700 (móvil), 412x915 y 1280x800 de cada pantalla tocada"
+  ],
+  "entrega": {
+    "por_nodo": "tabla: nodo | PASS/FAIL/NO_PROBADO/BLOQUEADO | evidencia (salida o captura) | commit corto | archivos tocados",
+    "final": "push a la rama grok-frontend-2026-10-25 y lista de archivos cambiados; Claude hace merge, cableado y guardia"
+  },
+  "nodos": [
+    {
+      "id": "N0",
+      "titulo": "Línea base",
+      "depende_de": [],
+      "pasos": [
+        "clonar main",
+        "correr verificacion_comun completa",
+        "guardar la salida como evidencia de partida",
+        "abrir /chat/ui/version.json de producción y anotar el commit"
+      ],
+      "files_permitidos": [],
+      "aceptacion": "baseline registrada; si algo ya falla en main, reportarlo antes de cambiar nada"
+    },
+    {
+      "id": "N1",
+      "titulo": "Selector de modelos siempre visible aunque el Router no responda (pendiente #24)",
+      "depende_de": [
+        "N0"
+      ],
+      "contexto": "chat-selector-modelos.js ya trae lista de respaldo (22 modelos del plan Personal) y reintenta 3 veces; falta verificar en navegador con el Router caído y con Groq/NVIDIA.",
+      "pasos": [
+        "Con la red al Router bloqueada (Playwright route abort a /chat/providers/qwen/models y /fichas-externas) abrir el selector: la lista NO puede quedar vacía y debe mostrar la nota 'El Router no respondió: esta es la lista guardada'.",
+        "Con respuesta válida: la lista se actualiza y se guarda en localStorage riu_catalogo_qwen.",
+        "Groq/NVIDIA: si 'fichas-externas' falla, mostrar el motivo concreto ('sin conexión con el Router' / 'sin claves') y no un bloque vacío; sin inventar modelos."
+      ],
+      "files_permitidos": [
+        "chat/frontend/chat-selector-modelos.js",
+        "chat/frontend/selector-modelos.js",
+        "chat/frontend/selector-modelos.css",
+        "chat/e2e/catalogo_e2e.js",
+        "chat/e2e/selector_ventana.js"
+      ],
+      "aceptacion": "catalogo_e2e.js y selector_ventana.js 0 FAIL con Router caído y con Router vivo (mock); captura de ambos estados"
+    },
+    {
+      "id": "N2",
+      "titulo": "Límite de la ventana de entrada y de salida (pendiente #34)",
+      "depende_de": [
+        "N0"
+      ],
+      "contexto": "El editor crece hasta max-height sin constante de límite; la salida puede desbordar. El límite de servidor es backend y NO se toca.",
+      "pasos": [
+        "Definir en un solo lugar (constante CSS/JS) el alto máximo de la caja de entrada y de la ventana de salida; al superarlo, scroll interno y la barra de botones no se mueve.",
+        "Pegar 20.000 caracteres y 300 líneas: el composer no empuja los botones fuera de pantalla en 345x700; Enviar y Detener siguen visibles.",
+        "Salida larga (mensaje de 50.000 caracteres): scroll interno, sin romper el layout, copiar sigue funcionando."
+      ],
+      "files_permitidos": [
+        "chat/frontend/chat-espacio.css",
+        "chat/frontend/panel-chat.js",
+        "chat/e2e/original.js",
+        "chat/e2e/limite_ventanas.js"
+      ],
+      "aceptacion": "prueba nueva limite_ventanas.js en 3 anchos, 0 FAIL; original.js sigue en 15 PASS"
+    },
+    {
+      "id": "N3",
+      "titulo": "Botón Nuevo proyecto en la caja del chat (pendiente #35)",
+      "depende_de": [
+        "N0"
+      ],
+      "contexto": "Existe en proyecto.js / ventana-proyectos.js (panel superior). Primero verificar si el menú + ya lo abre.",
+      "pasos": [
+        "Buscar si 'Nuevo proyecto' ya es accesible desde la caja (menú +). Si ya lo es: marcar HECHO con captura y terminar.",
+        "Si no: añadir la entrada en el menú + que llame a la MISMA función del panel superior (sin duplicar lógica) y que quede el proyecto activo en el chat."
+      ],
+      "files_permitidos": [
+        "chat/frontend/proyecto.js",
+        "chat/frontend/ventana-proyectos.js",
+        "chat/frontend/barra-mas.js",
+        "chat/e2e/proyecto_nuevo.js"
+      ],
+      "aceptacion": "prueba e2e: abrir + → Nuevo proyecto → se crea y queda anclado; sin romper el flujo existente"
+    },
+    {
+      "id": "N4",
+      "titulo": "Formato de salida sin avisos innecesarios (pendiente #33)",
+      "depende_de": [
+        "N0"
+      ],
+      "contexto": "Avisos como 'Modelo solicitado…' y 'Aviso: sin selector…' los pone el chat. El formato propio del Director debe verse limpio.",
+      "pasos": [
+        "Listar todos los textos automáticos que el chat antepone/pospone a una respuesta (grep en panel-chat.js, api.js y módulos de chat).",
+        "Dejarlos en UNA línea secundaria y discreta (o detrás de un interruptor 'Ver detalles'), nunca mezclados con el cuerpo de la respuesta ni copiados al portapapeles.",
+        "Copiar mensaje y exportar conversación contienen solo la respuesta."
+      ],
+      "files_permitidos": [
+        "chat/frontend/panel-chat.js",
+        "chat/frontend/salida-ampliada.js",
+        "chat/frontend/chat-espacio.css",
+        "chat/e2e/formato_salida.js"
+      ],
+      "aceptacion": "prueba e2e: respuesta con aviso → el cuerpo copiado no contiene el aviso; captura antes/después"
+    },
+    {
+      "id": "N5",
+      "titulo": "Paneles sin backend muestran SIN_BACKEND en vez de fallar (pendiente #42, lado frontend)",
+      "depende_de": [
+        "N0"
+      ],
+      "contexto": "Archivos, Canvas, Organización y Seguimiento llaman a /chat/documents y /chat/org/* que el Router MVP no sirve. El backend NO se toca.",
+      "pasos": [
+        "Para cada llamada a /chat/documents y /chat/org/*: manejar 404/405/red con un estado visible 'SIN_BACKEND: este panel necesita el servicio X' y botón Reintentar; sin spinner infinito ni consola con errores sin tratar.",
+        "No simular datos."
+      ],
+      "files_permitidos": [
+        "chat/frontend/almacen-archivos.js",
+        "chat/frontend/panel-org.js",
+        "chat/frontend/panel-seguimiento.js",
+        "chat/frontend/panel-canvas.js",
+        "chat/e2e/sin_backend.js",
+        "chat/frontend/panel-archivos.js",
+        "chat/frontend/seguimiento-real.js",
+        "chat/frontend/canvas-visor.js"
+      ],
+      "aceptacion": "prueba e2e con endpoints en 404: cada panel muestra SIN_BACKEND y la consola no tiene errores sin capturar"
+    },
+    {
+      "id": "N6",
+      "titulo": "Ventana de motores: URL visible, buscar, actualizar, copiar y mover (pendientes #15–#17, lado frontend)",
+      "depende_de": [
+        "N0"
+      ],
+      "contexto": "ventana-motor.js existe. Las herramientas puente_chat motor_descargar/extraer/copiar/mover/verificar existen en el backend; la ventana debe poder usarlas a mano.",
+      "pasos": [
+        "Auditar qué botones tiene hoy y cuáles llaman a cada herramienta.",
+        "Añadir lo que falte: campo de URL visible, Buscar, Actualizar, Copiar, Mover y Verificar (sha256), con estado por tarea (en cola / corriendo / verificado / error) y botón Detener.",
+        "Mover/Borrar piden confirmación explícita; nunca borrar sin ella."
+      ],
+      "files_permitidos": [
+        "chat/frontend/ventana-motor.js",
+        "chat/e2e/motor_ventana.js"
+      ],
+      "aceptacion": "prueba e2e con backend simulado: cada botón dispara la herramienta correcta con los parámetros correctos; mover pide confirmación"
+    },
+    {
+      "id": "N7",
+      "titulo": "Auditoría: funciones del chat que deben ser tool vs. control visible (pendiente #27)",
+      "depende_de": [
+        "N0"
+      ],
+      "tipo": "solo_lectura",
+      "pasos": [
+        "Lista: pendientes, sala, agente, llm, yaiwes_md, almacén, memoria, motores, proyecto, ancla, archivos, sandbox, servidor (encender/apagar/reiniciar), conexiones, permisos.",
+        "Para cada una: ¿tiene control visible en el chat? ¿tiene herramienta en el Harness/MCP? ¿dónde falta? Tabla en Markdown."
+      ],
+      "files_permitidos": [],
+      "aceptacion": "tabla entregada; no se cambia código en este nodo"
+    },
+    {
+      "id": "N8",
+      "titulo": "Revisión visual real de todo el chat (pendiente #25 y #47)",
+      "depende_de": [
+        "N1",
+        "N2",
+        "N3",
+        "N4",
+        "N5",
+        "N6"
+      ],
+      "pasos": [
+        "En producción (riu-jev-bridge.vercel.app) y en móvil real 345x700: cubo de pensamiento con segundos, Detener siempre visible, modos 'Rápido — 512 tok / Equilibrado — 1024 tok / Pensar — 2048 tok', chips IA/Agentes/System prompt, selectores, menú +, ventanas.",
+        "Anotar solapes y botones que no responden con captura y consola del navegador."
+      ],
+      "files_permitidos": [],
+      "aceptacion": "tabla de capturas; los fallos nuevos vuelven a Claude como lista, no se arreglan en este nodo"
+    },
+    {
+      "id": "N9",
+      "titulo": "Narración en vivo de pasos del modelo (pendiente #32)",
+      "depende_de": [
+        "N0"
+      ],
+      "estado": "BLOQUEADO_BACKEND",
+      "contexto": "El Router no emite pasos en chat de texto. Solo preparar el lado frontend si el backend ya envía eventos; si no, no hacer nada.",
+      "pasos": [
+        "Verificar si la respuesta/stream trae 'traza' o eventos de paso; si sí, mostrarlos como lista colapsable; si no, marcar BLOQUEADO_BACKEND."
+      ],
+      "files_permitidos": [
+        "chat/frontend/panel-chat.js"
+      ],
+      "aceptacion": "con datos reales de traza: lista colapsable visible; sin datos: no aparece nada"
+    },
+    {
+      "id": "N10",
+      "titulo": "Decisiones que NO se ejecutan hasta que Antonio responda (#28, #29, #31)",
+      "depende_de": [],
+      "estado": "BLOQUEADO_ANTONIO",
+      "contexto": "Selector de modelos como ventana + indicador externo; meter los selectores dentro de un selector; botones mal ubicados. Chocan con 'volver a como estaba' (revert del composer).",
+      "pasos": [],
+      "aceptacion": "no implementar; esperar decisión"
+    },
+    {
+      "id": "N11",
+      "titulo": "UI YAIWES: dos correcciones en SU repo (solo con autorización de Antonio)",
+      "depende_de": [],
+      "estado": "REQUIERE_AUTORIZACION",
+      "repo": "maxbry123-commits/ui-yaiwes",
+      "pasos": [
+        "puente-yaiwes.js: toda acción distinta de send_message debe responder {ok:false, reason:'SIN_BACKEND'} en lugar de {ok:true} (coherente con failClosed del manifiesto de PANEL-01).",
+        "ABS.js: sustituir postMessage(msg,'*') por un origen explícito configurable (el contrato runtime-orchestration prohíbe '*')."
+      ],
+      "files_permitidos": [
+        "UI YAIWES/UI YAIWES interface/code/**/puente-yaiwes.js",
+        "UI YAIWES/UI YAIWES interface/code/**/fabrica/runtime/ABS.js"
+      ],
+      "aceptacion": "prueba de ventana: acción desconocida → SIN_BACKEND; mensaje con origen distinto al permitido → ignorado"
+    },
+    {
+      "id": "N12",
+      "titulo": "Entrega a Claude",
+      "depende_de": [
+        "N8"
+      ],
+      "pasos": [
+        "push a grok-frontend-2026-10-25",
+        "tabla final de nodos con evidencia",
+        "lista de archivos tocados"
+      ],
+      "aceptacion": "Claude fusiona con main, regenera el manifiesto de la guardia, conecta/cablea lo que falte y repite pytest + e2e"
+    }
+  ],
+  "nota_archivos_nuevos": "Los archivos chat/e2e/*.js que no existen todavía (limite_ventanas, proyecto_nuevo, formato_salida, sin_backend, motor_ventana) se CREAN en cada nodo: son las pruebas nuevas."
+}
