@@ -25,6 +25,25 @@ function leerCampos() {
   estado.plan = document.querySelector("#loop-plan").value;
   estado.tareas = document.querySelector("#loop-tareas").value;
 }
+function disparar(e) {
+  const tareas = String(e.tareas || "").split(/\n/).map((s) => s.trim()).filter(Boolean);
+  const fase = PARTES.includes(e.fase) ? e.fase : "objetivo";
+  const hecho = e.hecho || 0;
+  if (fase === "objetivo") {
+    if (!String(e.objetivo || "").trim()) return { ...e, on: true, fase, nota: "falta objetivo", disparo: "" };
+    return { ...e, on: true, fase: "plan", nota: "objetivo", disparo: String(e.objetivo).trim().slice(0, 180) };
+  }
+  if (fase === "plan") {
+    if (!String(e.plan || "").trim()) return { ...e, on: true, fase, nota: "falta plan", disparo: "" };
+    return { ...e, on: true, fase: "tarea", nota: "plan", disparo: String(e.plan).trim().slice(0, 180) };
+  }
+  if (fase === "tarea") {
+    if (!tareas.length || hecho >= tareas.length) return { ...e, on: true, fase, nota: "sin tareas", disparo: "" };
+    return { ...e, on: true, fase: "verificar", hecho: hecho + 1, nota: "tarea", disparo: tareas[hecho].slice(0, 180) };
+  }
+  if (!e.disparo) return { ...e, on: true, fase: "verificar", nota: "nada que verificar" };
+  return { ...e, on: true, fase: "objetivo", paso: (e.paso || 0) + 1, nota: hecho >= tareas.length ? "vuelta completa" : "verificado" };
+}
 function lineas() { return String(estado.tareas || "").split(/\n/).map((x) => x.trim()).filter(Boolean); }
 function bloque() {
   const tareas = lineas().map((t) => "- " + t).join("\n") || "- (sin tareas)";
@@ -49,12 +68,9 @@ async function pedir(accion) {
     if (!r.ok) throw new Error("HTTP " + r.status);
     estado = Object.assign(texto, await r.json());
   } catch (e) {
-    if (accion === "encender") estado = { ...texto, on: true, paso: estado.paso || 0, fase: "objetivo", nota: "en este chat" };
-    else if (accion === "apagar") estado = { ...texto, on: false, paso: estado.paso || 0, fase: "apagado", nota: "apagado" };
-    else if (accion === "paso" && estado.on) {
-      const fase = PARTES[(PARTES.indexOf(estado.fase) + 1) % PARTES.length];
-      estado = { ...texto, on: true, paso: estado.paso + (fase === "objetivo" ? 1 : 0), fase, nota: "en este chat" };
-    }
+    if (accion === "encender") estado = { ...estado, ...texto, on: true, fase: "objetivo", nota: "en este chat" };
+    else if (accion === "apagar") estado = { ...estado, ...texto, on: false, fase: "apagado", nota: "apagado" };
+    else if (accion === "paso" && estado.on) estado = disparar({ ...estado, ...texto, on: true });
   }
   guardar();
   marcarBoton();
@@ -109,18 +125,18 @@ function pintarLoop(cuerpo) {
   const pintar = () => {
     partes.replaceChildren();
     PARTES.forEach((p) => { const s = el("span", estado.fase === p ? "on" : "", p); partes.append(s); });
-    const n = lineas().length;
-    const actual = n ? lineas()[estado.paso % n] : "";
-    aviso.textContent = (estado.on ? "encendido" : "apagado") + " · " + estado.fase + (actual ? " · " + actual : "");
+    const hechas = estado.hecho || 0;
+    aviso.textContent = (estado.on ? "encendido" : "apagado") + " · disparo: " + (estado.disparo || "—") + " · hechas " + hechas + "/" + lineas().length;
   };
   window.__riuLoopPintar = pintar;
   const enc = btn("Encender", "secondary", async () => { enc.disabled = true; try { await pedir("encender"); latido(); pintar(); } finally { enc.disabled = false; } });
   const apa = btn("Apagar", "secondary", async () => { apa.disabled = true; try { await pedir("apagar"); if (reloj) { clearInterval(reloj); reloj = 0; } pintar(); } finally { apa.disabled = false; } });
   const gy = btn("Guardar en yaiwes.md", "secondary", () => guardarYaiwes(aviso));
   const ep = btn("Enlazar al proyecto", "secondary", () => enlazarProyecto(aviso));
+  const di = btn("Disparar", "secondary", async () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } di.disabled = true; try { await pedir("paso"); pintar(); } finally { di.disabled = false; } });
   const fila = el("div", "cv-form");
-  fila.append(enc, apa, gy, ep);
-  cuerpo.replaceChildren(el("div", "cv-sec", "LOOP"), partes, objetivo, plan, tareas, fila, el("div", "fila-desc", "El motor va en cuatro partes: objetivo, plan, tarea y verificar. yaiwes.md no se borra: solo se reemplaza el bloque del LOOP."), aviso);
+  fila.append(enc, apa, di, gy, ep);
+  cuerpo.replaceChildren(el("div", "cv-sec", "LOOP"), partes, objetivo, plan, tareas, fila, el("div", "fila-desc", "Disparar ejecuta la parte encendida: objetivo, plan, una tarea y verificar. No es una etiqueta."), aviso);
   pintar();
   if (estado.on) latido();
 }
