@@ -4,6 +4,8 @@ import { leer, escribir } from "./almacen.js";
 import { crearProyecto, listaProyectos } from "./objetivos-ancla.js";
 
 const PARTES = ["objetivo", "plan", "tarea", "verificar"];
+const NOMBRE = { objetivo: "contexto", plan: "plan", tarea: "actuar", verificar: "observar" };
+const SIGUE = { objetivo: "plan", plan: "tarea", tarea: "verificar", verificar: "objetivo" };
 const CLAVE = "riu_loop";
 const MARCA = ["<!-- loop-yaiwes -->", "<!-- /loop-yaiwes -->"];
 let estado = { on: false, paso: 0, fase: "apagado", nota: "apagado", objetivo: "", plan: "", tareas: "" };
@@ -125,6 +127,7 @@ function enlazarProyecto(aviso) {
 function pintarLoop(cuerpo) {
   const aviso = el("div", "cv-est");
   const partes = el("div", "loop-partes");
+  const mando = el("div", "loop-mando");
   const centro = el("div", "loop-centro");
   const pct = el("div", "loop-pct", "0%");
   const barra = el("div", "loop-barra");
@@ -132,17 +135,17 @@ function pintarLoop(cuerpo) {
   const lista = el("div", "loop-lista");
   barra.append(relleno);
   centro.append(pct, barra, lista);
-  const objetivo = el("textarea", "vn-ta"); objetivo.id = "loop-objetivo"; objetivo.rows = 2; objetivo.placeholder = "Objetivo"; objetivo.value = estado.objetivo || "";
-  const plan = el("textarea", "vn-ta"); plan.id = "loop-plan"; plan.rows = 2; plan.placeholder = "Plan"; plan.value = estado.plan || "";
-  const tareas = el("textarea", "vn-ta"); tareas.id = "loop-tareas"; tareas.rows = 3; tareas.placeholder = "Tareas, una por línea"; tareas.value = estado.tareas || "";
+  const objetivo = el("textarea", "vn-ta"); objetivo.id = "loop-objetivo"; objetivo.rows = 1; objetivo.placeholder = "Objetivo"; objetivo.value = estado.objetivo || "";
+  const plan = el("textarea", "vn-ta"); plan.id = "loop-plan"; plan.rows = 1; plan.placeholder = "Plan"; plan.value = estado.plan || "";
+  const tareas = el("textarea", "vn-ta"); tareas.id = "loop-tareas"; tareas.rows = 2; tareas.placeholder = "Tareas, una por línea"; tareas.value = estado.tareas || "";
   const pintar = () => {
     partes.replaceChildren();
-    PARTES.forEach((p) => { const s = el("span", estado.fase === p ? "on" : "", p); partes.append(s); });
+    PARTES.forEach((p) => { const s = el("span", estado.fase === p ? "on" : "", NOMBRE[p]); partes.append(s); });
     const todas = lineas();
     const hechas = Math.min(estado.hecho || 0, todas.length);
-    const p = todas.length ? Math.round(hechas * 100 / todas.length) : 0;
-    pct.textContent = p + "% · " + hechas + " de " + todas.length;
-    relleno.style.width = p + "%";
+    const n = todas.length ? Math.round(hechas * 100 / todas.length) : 0;
+    pct.textContent = n + "% · " + hechas + " de " + todas.length;
+    relleno.style.width = n + "%";
     lista.replaceChildren();
     if (!todas.length) lista.append(el("div", "fila-desc", "Sin tareas"));
     todas.forEach((t, i) => {
@@ -150,7 +153,14 @@ function pintarLoop(cuerpo) {
       row.append(el("span", "", i < hechas ? "hecha" : "pendiente"), el("span", "", t));
       lista.append(row);
     });
-    aviso.textContent = (estado.on ? "encendido" : "apagado") + " · " + (estado.fase === "verificar" ? "verificando" : estado.fase) + " · " + (estado.disparo || "sin disparo");
+    const bloqueado = /^(falta |sin |nada )/.test(estado.nota || "");
+    const sigue = NOMBRE[SIGUE[estado.fase] || "objetivo"];
+    mando.replaceChildren(
+      el("div", "", (estado.on ? "encendido" : "apagado") + (bloqueado ? " · bloqueado" : "")),
+      el("div", "", "recibo: " + (estado.disparo || "sin recibo")),
+      el("div", "", "siguiente: " + sigue + " · vuelta " + (estado.paso || 0)),
+    );
+    aviso.textContent = bloqueado ? estado.nota : (estado.disparo ? "observado" : "sin disparo");
   };
   [objetivo, plan, tareas].forEach((x) => x.addEventListener("input", () => { leerCampos(); pintar(); }));
   window.__riuLoopPintar = pintar;
@@ -161,7 +171,7 @@ function pintarLoop(cuerpo) {
   const di = btn("Disparar", "secondary", async () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } di.disabled = true; try { await pedir("paso"); pintar(); } finally { di.disabled = false; } });
   const fila = el("div", "cv-form");
   fila.append(enc, apa, di, gy, ep);
-  cuerpo.replaceChildren(el("div", "cv-sec", "LOOP"), partes, centro, objetivo, plan, tareas, fila, el("div", "fila-desc", "Disparar ejecuta la parte encendida. El porcentaje cuenta solo las tareas ya disparadas."), aviso);
+  cuerpo.replaceChildren(el("div", "cv-sec", "LOOP"), partes, mando, centro, objetivo, plan, tareas, fila, aviso);
   pintar();
   if (estado.on) latido();
 }
