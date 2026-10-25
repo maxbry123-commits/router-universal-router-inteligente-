@@ -42,6 +42,27 @@ export function parsearBloquesRevision(texto) {
   while ((m = re.exec(String(texto))) !== null) { const t = m[2].trim(); if (t) out.push({ tipo: m[1].toLowerCase(), texto: t.slice(0, 240) }); }
   return out;
 }
+export function parsearBloquesHecho(texto) {
+  const out = [], re = /\[\[HECHO\]\]([\s\S]*?)\[\[\/HECHO\]\]/g;
+  let m;
+  while ((m = re.exec(String(texto))) !== null) {
+    const p = m[1].split("|");
+    const titulo = (p[0] || "").trim().slice(0, 120);
+    if (titulo) out.push({ titulo, nota: (p.slice(1).join("|") || "").trim().slice(0, 160) });
+  }
+  return out;
+}
+function bloqueHechas(tools) {
+  let l = [];
+  try { const g = leer("riu_hechas_v1", []); l = Array.isArray(g) ? g : []; } catch (e) {}
+  const abiertas = l.filter((x) => x && x.titulo && !x.ok).slice(0, 8);
+  const listas = l.filter((x) => x && x.titulo && x.ok).slice(0, 5);
+  if (!abiertas.length && !tools) return "";
+  const partes = [];
+  if (abiertas.length) partes.push("[PENDIENTE]\n" + abiertas.map((x) => "- " + x.titulo).join("\n"));
+  if (tools) partes.push("Marca una como hecha con [[HECHO]]titulo|nota[[/HECHO]]." + (listas.length ? " Ya hechas: " + listas.map((x) => x.titulo).join(", ") + "." : ""));
+  return partes.join("\n").slice(0, 800);
+}
 export function parsearModo(texto) {
   const m = /\[\[MODO:(preguntar|agente)\]\]/i.exec(String(texto));
   return m ? m[1].toLowerCase() : "";
@@ -128,6 +149,8 @@ export function construirPrefijo(oficial) {
     }
     const rg = bloqueReglas(!!(f.tools || f.llm_tool || f.agente_tool));
     if (rg) partes.push(rg);
+    const he = bloqueHechas(!!(f.tools || f.llm_tool || f.agente_tool));
+    if (he) partes.push(he);
   } catch (e) {}
   return partes.join("\n\n");
 }

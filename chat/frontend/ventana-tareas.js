@@ -3,7 +3,7 @@
 // El mismo objeto se ofrece al plugin cuando exista: accion "tareas". Si el servidor no la tiene, queda en este chat.
 import { el, btn, ventana } from "./ventanas-control.js";
 import { leer, escribir, uid, hash } from "./almacen.js";
-import { parsearBloquesTarea } from "./contexto.js";
+import { parsearBloquesTarea, parsearBloquesHecho } from "./contexto.js";
 
 const K = "riu_tareas_v1";
 const CADA = [["una", "Una vez"], ["diario", "Cada día"], ["semanal", "Cada semana"]];
@@ -18,6 +18,11 @@ function caja() {
   v.vistos = Array.isArray(v.vistos) ? v.vistos : [];
   return v;
 }
+function hechas() {
+  const v = leer("riu_hechas_v1", []);
+  return Array.isArray(v) ? v.filter((x) => x && x.titulo).slice(0, 20) : [];
+}
+function guardarHechas(l) { escribir("riu_hechas_v1", l.slice(0, 20)); }
 function guardar(v) { escribir(K, v); marcar(); }
 function sesion() { return sessionStorage.getItem("riu_sesion") || "web-general"; }
 function proxima(cada, hora, desde) {
@@ -100,7 +105,7 @@ function pintarTareas(cuerpo) {
   buscar.type = "search"; buscar.placeholder = "Buscar"; buscar.value = q; buscar.setAttribute("aria-label", "Buscar tarea");
   buscar.oninput = () => { q = buscar.value; const pos = buscar.selectionStart; pintar(); const b2 = document.querySelector("#ventana-tareas input[type=search]"); if (b2) { b2.focus(); try { b2.setSelectionRange(pos, pos); } catch (e) {} } };
   const chips = el("div", "loop-partes");
-  [["tareas", "Programadas"], ["archivos", "Artefactos"]].forEach(([id, nom]) => {
+  [["tareas", "Programadas"], ["hechas", "Hechas"], ["archivos", "Artefactos"]].forEach(([id, nom]) => {
     const s = el("button", vista === id ? "on" : "", nom);
     s.type = "button";
     s.onclick = () => { vista = id; pintar(); };
@@ -132,7 +137,33 @@ function pintarTareas(cuerpo) {
   const nueva = btn("Nueva", "secondary", () => { form.hidden = !form.hidden; if (!form.hidden) titulo.focus(); });
   const qAhora = q;
   const filtra = (t) => !qAhora || (t.titulo + " " + t.prompt).toLowerCase().includes(qAhora.toLowerCase());
-  nueva.hidden = vista === "archivos";
+  nueva.hidden = vista !== "tareas";
+  if (vista === "hechas") {
+    const hs = hechas().filter((x) => !qAhora || (x.titulo + " " + (x.nota || "")).toLowerCase().includes(qAhora.toLowerCase()));
+    const ok = hechas().filter((x) => x.ok).length;
+    listaEl.append(el("div", "fila-desc", ok + "/" + hechas().length + " hechas"));
+    const ft = el("input"); ft.placeholder = "Qué hay que hacer"; ft.setAttribute("aria-label", "Pendiente"); ft.maxLength = 120;
+    const fa = el("form", "ses-fila");
+    fa.append(ft, btn("Añadir", "secondary", () => {}));
+    fa.onsubmit = (ev) => {
+      ev.preventDefault();
+      const t = ft.value.trim();
+      if (!t) return;
+      guardarHechas([{ id: hash(t + Date.now()), titulo: t, nota: "", ok: false }, ...hechas()]);
+      pintar();
+    };
+    hs.forEach((x) => {
+      const sw = el("button", "toggle" + (x.ok ? " on" : ""), x.ok ? "HECHA" : "PEND");
+      sw.type = "button"; sw.setAttribute("aria-pressed", String(!!x.ok)); sw.setAttribute("aria-label", x.titulo);
+      sw.addEventListener("click", () => { guardarHechas(hechas().map((y) => y.id === x.id ? { ...y, ok: !y.ok } : y)); pintar(); });
+      const fila = el("div", "cola-fila");
+      fila.append(sw, el("span", "", x.titulo), el("div", "fila-desc", x.nota || ""), btn("Quitar", "secondary", () => { guardarHechas(hechas().filter((y) => y.id !== x.id)); pintar(); }));
+      listaEl.append(fila);
+    });
+    cuerpo.replaceChildren(chips, buscar, fa, listaEl, aviso);
+    marcar();
+    return;
+  }
   if (vista === "tareas") {
     const ts = v.tareas.filter(filtra);
     if (!ts.length) listaEl.append(el("div", "fila-desc", "Sin tareas. Nueva, o el modelo con [[TAREA:titulo|diario|08:00]]prompt[[/TAREA]] si IA está encendida."));
@@ -205,7 +236,8 @@ function instalarTool() {
     p = 0;
     const v = caja();
     let cambio = false;
-    hist.querySelectorAll(".message:not(.user):not(.pending) .txt").forEach((sp) => parsearBloquesTarea(sp.textContent).forEach((b) => {
+    hist.querySelectorAll(".message:not(.user):not(.pending) .txt").forEach((sp) => {
+      parsearBloquesTarea(sp.textContent).forEach((b) => {
       const h = hash(b.titulo + b.cada + b.hora + b.prompt);
       if (v.vistos.includes(h)) return;
       v.vistos.push(h);
@@ -213,7 +245,15 @@ function instalarTool() {
       v.tareas.unshift(crear(b));
       v.tareas = v.tareas.slice(0, 30);
       cambio = true;
-    }));
+    });
+      parsearBloquesHecho(sp.textContent).forEach((b) => {
+        const id = hash("h" + b.titulo);
+        if (v.vistos.includes(id) || hechas().some((x) => x.id === id)) { if (!v.vistos.includes(id)) v.vistos.push(id); return; }
+        v.vistos.push(id);
+        guardarHechas([{ id, titulo: b.titulo, nota: b.nota, ok: true }, ...hechas()]);
+        cambio = true;
+      });
+    });
     if (cambio) { guardar(v); avisarServidor("guardar", { tareas: v.tareas }); pintar(); }
   };
   new MutationObserver(() => { if (!p) p = requestAnimationFrame(revisar); }).observe(hist, { childList: true, subtree: true, characterData: true });
