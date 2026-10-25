@@ -32,6 +32,36 @@ function anotar(e, extra) {
   const traza = (Array.isArray(e.traza) ? e.traza : []).concat(item).slice(-4);
   return { ...e, ...extra, traza };
 }
+let specEcc = null;
+async function spec() {
+  if (specEcc) return specEcc;
+  const r = await fetch("/chat/ui/api/ecc-loop.json");
+  if (!r.ok) throw new Error("sin motor");
+  specEcc = await r.json();
+  return specEcc;
+}
+function eccPaso(e, spec) {
+  const comps = {};
+  spec.componentes.forEach((c) => { comps[c.fase] = c; });
+  const fase = comps[e.fase] ? e.fase : "objetivo";
+  const c = comps[fase];
+  const tareas = String(e.tareas || "").split(/\n/).map((s) => s.trim()).filter(Boolean);
+  const hecho = e.hecho || 0;
+  if (c.op === "exigir") {
+    const valor = String(e[c.campo] || "").trim();
+    if (!valor) return { ...e, on: true, fase, nota: c.falta, disparo: "" };
+    return anotar(e, { on: true, fase: c.siguiente, nota: c.id, disparo: valor.slice(0, 180) });
+  }
+  if (c.op === "tomar") {
+    if (!tareas.length || hecho >= tareas.length) return { ...e, on: true, fase, nota: c.falta, disparo: "" };
+    return anotar(e, { on: true, fase: c.siguiente, nota: c.id, disparo: tareas[hecho].slice(0, 180) });
+  }
+  if (!e.disparo) return { ...e, on: true, fase, nota: c.falta };
+  const hecho2 = hecho + 1;
+  const n = (e.paso || 0) + 1;
+  if (n >= spec.tope) return anotar(e, { on: false, fase: "apagado", paso: n, hecho: hecho2, nota: "tope", disparo: e.disparo });
+  return anotar(e, { on: true, fase: c.siguiente, paso: n, hecho: hecho2, nota: hecho2 >= tareas.length ? "vuelta completa" : c.id, disparo: e.disparo });
+}
 function disparar(e) {
   const tareas = String(e.tareas || "").split(/\n/).map((s) => s.trim()).filter(Boolean);
   const fase = PARTES.includes(e.fase) ? e.fase : "objetivo";
@@ -81,7 +111,10 @@ async function pedir(accion) {
     if (accion === "encender") estado = { ...estado, ...texto, on: true, fase: "objetivo", nota: "en este chat" };
     else if (accion === "apagar") estado = { ...estado, ...texto, on: false, fase: "apagado", nota: "apagado" };
     else if (accion === "reiniciar") estado = { ...estado, ...texto, on: true, fase: "objetivo", paso: 0, hecho: 0, disparo: "", nota: "reinicio", traza: [] };
-    else if (accion === "paso" && estado.on) estado = disparar({ ...estado, ...texto, on: true });
+    else if (accion === "paso" && estado.on) {
+      try { estado = eccPaso({ ...estado, ...texto, on: true }, await spec()); }
+      catch (err) { estado = disparar({ ...estado, ...texto, on: true }); }
+    }
   }
   guardar();
   marcarBoton();

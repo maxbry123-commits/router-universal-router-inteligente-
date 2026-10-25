@@ -1,4 +1,6 @@
 // api/loop.js — estado del LOOP del chat. No toca el Router.
+const { spawnSync } = require("child_process");
+const path = require("path");
 const estados = new Map();
 const PARTES = ["objetivo", "plan", "tarea", "verificar"];
 const corto = (v, n) => String(v || "").slice(0, n);
@@ -33,6 +35,16 @@ function disparar(e) {
   if (paso >= 8) return anotar(e, { on: false, fase: "apagado", paso, hecho: hecho2, nota: "tope", disparo: e.disparo });
   return anotar(e, { on: true, fase: "objetivo", paso, hecho: hecho2, nota: hecho2 >= tareas.length ? "vuelta completa" : "verificado", disparo: e.disparo });
 }
+function pasoMotor(e) {
+  try {
+    const r = spawnSync("python3", [path.join(__dirname, "ecc_motor.py")], { input: JSON.stringify(e), encoding: "utf8", timeout: 2000 });
+    if (r.status === 0 && r.stdout) {
+      const out = JSON.parse(r.stdout);
+      if (out && out.fase) return out;
+    }
+  } catch (err) {}
+  return disparar(e);
+}
 function conTexto(e, body) {
   return {
     on: e.on, paso: e.paso, fase: e.fase, nota: e.nota,
@@ -56,7 +68,7 @@ module.exports = async (req, res) => {
     else if (body.accion === "reiniciar") e = { ...e, on: true, fase: "objetivo", paso: 0, hecho: 0, disparo: "", nota: "reinicio", traza: [] };
     else if (body.accion === "paso") {
       if (!e.on) return res.status(409).json({ detail: "el loop está apagado" });
-      e = disparar(e);
+      e = pasoMotor(e);
     } else return res.status(400).json({ detail: "accion debe ser encender, apagar, reiniciar o paso" });
     estados.set(sesion, e);
   } else if (req.method !== "GET") return res.status(405).json({ detail: "GET o POST" });
