@@ -176,7 +176,7 @@ html.salida-x4 #histories { flex: 1 1 auto; height: auto; }
   .riu-bienvenida { justify-content: flex-start; padding-top: 8px; }
   .riu-bv-acc { display: flex; justify-content: center; }
   #composer { padding: 8px 8px 6px; display: flex; flex-direction: column; }
-  #composer #btn-selector-modelos { order: 3; margin: 6px 0 0; }
+  #composer #btn-selector-modelos { order: 3; margin: 6px 0 0; align-self: stretch; width: 100%; min-height: 44px; box-sizing: border-box; justify-content: space-between; }
   #composer .composer-bar { flex-wrap: nowrap; }
   #composer .composer-bar::after { content: none; }
   #composer .composer-bar > .action { position: static; margin-left: auto; }

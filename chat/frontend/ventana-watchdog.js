@@ -8,7 +8,10 @@ let ciclo = ["plan", "ejecutar", "observar", "verificar", "decidir"];
 let ficha = { estado: "borrador", minutos: 10, objetivo: "", validado: false };
 try { ficha = Object.assign(ficha, JSON.parse(sessionStorage.getItem(K) || "")); } catch (e) {}
 
-function guardar() { try { sessionStorage.setItem(K, JSON.stringify(ficha)); } catch (e) {} }
+function guardar() {
+  try { sessionStorage.setItem(K, JSON.stringify(ficha)); } catch (e) {}
+  if (window.RIU_ACCION) window.RIU_ACCION("cuaderno", { op: "guardar", clave: "watchdog", valor: ficha }).catch(() => {});
+}
 function marcar() {
   const b = document.querySelector("#btn-watchdog");
   if (!b) return;
@@ -82,3 +85,10 @@ fetch("/chat/ui/LOOP-wachdog-cola.json").then((r) => r.json()).then((j) => {
 const montar = () => { ventana("watchdog", "Watchdog", pintar); marcar(); };
 new MutationObserver(montar).observe(document.body, { childList: true, subtree: true });
 montar();
+if (!ficha.objetivo && window.RIU_ACCION) {
+  window.RIU_ACCION("cuaderno", { op: "leer", clave: "watchdog" }).then((r) => {
+    if (!r || !r.valor || typeof r.valor !== "object" || ficha.objetivo) return;
+    ficha = Object.assign(ficha, r.valor);
+    guardar();
+  }).catch(() => {});
+}

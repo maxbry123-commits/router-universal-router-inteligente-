@@ -3417,7 +3417,7 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             mem, scope_for = _memoria()
             ses = ''.join(c for c in str(payload.get('sesion') or 'general') if c.isalnum() or c in '-_')[:60] or 'general'
             clave = str(payload.get('clave') or '')
-            if clave not in ('tareas', 'comandos', 'reglas', 'sesion', 'hechas'):
+            if clave not in ('tareas', 'comandos', 'reglas', 'sesion', 'hechas', 'watchdog'):
                 return {'error': 'CLAVE'}
             scope = scope_for(DUENO, 'chat:' + ses)
             k = 'cuaderno:' + clave
