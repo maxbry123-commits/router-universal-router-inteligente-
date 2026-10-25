@@ -21,6 +21,15 @@ export function parsearBloquesTarea(texto) {
   }
   return out;
 }
+export function parsearBloquesComando(texto) {
+  const out = [], re = /\[\[COMANDO:([a-z0-9-]{1,24})\]\]([\s\S]*?)\[\[\/COMANDO\]\]/gi;
+  let m;
+  while ((m = re.exec(String(texto))) !== null) {
+    const cuerpo = m[2].trim();
+    if (cuerpo) out.push({ nombre: m[1].toLowerCase(), texto: cuerpo.slice(0, 500) });
+  }
+  return out;
+}
 export function parsearBloquesWF(texto) {  // la IA escribe en la ventana de ejecución con: [[WF:nombre]]instrucción[[/WF]]
   const out = [], re = /\[\[WF:([^\]\n]{1,60})\]\]([\s\S]*?)\[\[\/WF\]\]/g; let m;
   while ((m = re.exec(String(texto))) !== null) { const t = m[2].trim(); if (t) out.push({ ref: m[1].trim(), texto: t }); }
@@ -60,6 +69,9 @@ export function construirPrefijo(oficial) {
       const ts = ((leer("riu_tareas_v1", { tareas: [] }).tareas) || []).filter((t) => t && t.on).slice(0, 6);
       let s = "[TAREAS] Crea una con [[TAREA:titulo|diario|08:00]]prompt[[/TAREA]]. cada: una, diario o semanal.";
       if (ts.length) s += "\n" + ts.map((t) => "- " + String(t.titulo || "").slice(0, 80) + " · " + t.cada + " " + t.hora).join("\n");
+      const cs = (leer("riu_comandos_v1", []) || []).filter((c) => c && c.nombre).slice(0, 6);
+      s += "\n[COMANDOS] Crea uno con [[COMANDO:nombre]]texto[[/COMANDO]]. El usuario lo llama con /nombre.";
+      if (cs.length) s += "\n" + cs.map((c) => "- /" + c.nombre + " · " + String(c.texto || "").slice(0, 80)).join("\n");
       partes.push(s);
     }
   } catch (e) {}

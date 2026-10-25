@@ -2,7 +2,6 @@
 // IA, Agentes, Auto y el resto viven en un menú que no se sale de la pantalla.
 const st = document.createElement("style");
 st.textContent = "@media(max-width:720px){"
-  + ".riu-bv-acc{display:none !important}"
   + ".riu-bv-titulo{font-size:18px !important}"
   + ".riu-bienvenida{justify-content:center;padding-top:0}"
   + "#composer{padding:8px 8px 6px !important;display:flex !important;flex-direction:column !important}"
@@ -23,7 +22,7 @@ st.textContent = "@media(max-width:720px){"
   + "}";
 document.head.append(st);
 
-const IDS = ["btn-tools", "btn-agentes", "btn-prompt", "btn-loop", "btn-cola", "btn-tareas", "btn-watchdog", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power", "btn-sandbox", "btn-copiar-input", "btn-detener"];
+const IDS = ["btn-tools", "btn-agentes", "btn-prompt", "btn-loop", "btn-cola", "btn-tareas", "btn-comandos", "btn-watchdog", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power", "btn-sandbox", "btn-copiar-input", "btn-detener"];
 const movil = () => matchMedia("(max-width:720px)").matches;
 
 function armar() {

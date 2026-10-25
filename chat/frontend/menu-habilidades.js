@@ -1,5 +1,6 @@
 // menu-habilidades.js — al escribir "/" en la caja del chat aparece el menú de Habilidades: acciones reales (comandos, workflows y ventanas del chat).
 import { dameWF } from "./contexto.js";
+import { listaComandos } from "./ventana-comandos.js";
 import { el, cargarCss } from "./ventanas-comun.js";
 export function montarHabilidades({ root, q, tell }) {
   const m = q("#message"), f = q("#composer"); if (!m || !f || f.dataset.hab) return; f.dataset.hab = "1"; cargarCss("habilidades");
@@ -7,6 +8,11 @@ export function montarHabilidades({ root, q, tell }) {
   let items = [], act = 0;
   const catalogo = () => [
     { cmd: "/ayuda", nombre: "Ayuda", desc: "Qué puede hacer el chat", ins: "/ayuda" },
+    { cmd: "/tareas", nombre: "Tareas", desc: "Programar y ver archivos", abre: "#btn-tareas" },
+    { cmd: "/loop", nombre: "LOOP", desc: "Objetivo, plan y tareas", abre: "#btn-loop" },
+    { cmd: "/cola", nombre: "Cola", desc: "Lista de trabajo", abre: "#btn-cola" },
+    { cmd: "/comandos", nombre: "Comandos", desc: "Guardar un atajo de texto", abre: "#btn-comandos" },
+    ...listaComandos().map((c) => ({ cmd: "/" + c.nombre, nombre: c.nombre, desc: c.texto.slice(0, 80), ins: c.texto })),
     ...dameWF().map((w) => ({ cmd: "/wf " + w.nombre, nombre: "Workflow · " + w.nombre, desc: "Escribir una instrucción en su ejecución", ins: "/wf " + w.nombre + " " })),
     { cmd: "/workflow", nombre: "Workflow Loops code Yaiwes", desc: "Abrir la ventana", abre: "#pill-workflows" },
     { cmd: "/constitucion", nombre: "Constitución sentinela", desc: "Abrir la ventana", abre: "#pill-constitucion" },
@@ -14,6 +20,9 @@ export function montarHabilidades({ root, q, tell }) {
     { cmd: "/anclaje", nombre: "Anclaje", desc: "Enlaces, archivos y handoffs", abre: "#btn-ancla" },
     { cmd: "/archivos", nombre: "Archivos", desc: "La carpeta compartida", abre: "#btn-archivos" },
     { cmd: "/sandbox", nombre: "Sandbox", desc: "Instrucciones de código", abre: "#btn-sandbox" },
+    { cmd: "/watchdog", nombre: "Watchdog", desc: "Ficha de vigilancia", abre: "#btn-watchdog" },
+    { cmd: "/mcp", nombre: "MCP", desc: "Pruebas del router", abre: "#btn-mcp" },
+    { cmd: "/conexiones", nombre: "Conexiones", desc: "Servicios encendidos", abre: "#btn-conexiones" },
   ];
   const cerrar = () => { caja.hidden = true; items = []; };
   const elegir = (it) => {
@@ -31,7 +40,7 @@ export function montarHabilidades({ root, q, tell }) {
   const actualizar = () => {
     const v = m.value; if (!/^\/[^\n]*$/.test(v)) { cerrar(); return; }
     const t = v.slice(1).toLowerCase();
-    items = catalogo().filter((it) => it.cmd.slice(1).toLowerCase().startsWith(t) || it.nombre.toLowerCase().includes(t)).slice(0, 8);
+    items = catalogo().filter((it) => it.cmd.slice(1).toLowerCase().startsWith(t) || it.nombre.toLowerCase().includes(t)).slice(0, 12);
     if (!items.length) { cerrar(); return; }
     act = Math.min(act, items.length - 1); caja.hidden = false; pintar();
   };

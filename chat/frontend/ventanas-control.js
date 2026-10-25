@@ -13,6 +13,7 @@ const ICONOS = {  // iconos de línea (skill Maxbry): sin emojis en la barra
   watchdog: '<circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/>',
   cola: '<path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/>',
   tareas: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h4"/>',
+  comandos: '<path d="M8 8l-3 4 3 4M13 16h6"/>',
 };
 export function ventana(id, titulo, alAbrir) {
   const bar = document.querySelector("#composer .composer-bar");
