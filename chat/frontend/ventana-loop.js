@@ -33,6 +33,22 @@ function anotar(e, extra) {
   return { ...e, ...extra, traza };
 }
 let specEcc = null;
+let cable = "";
+function avisarPlugin() {
+  if (cable || !specEcc || !specEcc.plugin) return;
+  const base = String((window.RIU_CONFIG || {}).proxyDestino || "").replace(/\/$/, "");
+  if (!base) { cable = "chat"; return; }
+  cable = "espera";
+  const h = { "Content-Type": "application/json" };
+  const k = sessionStorage.getItem("riu_clave");
+  if (k) { h["X-API-Key"] = k; h.Authorization = "Bearer " + k; }
+  const ctrl = new AbortController();
+  setTimeout(() => ctrl.abort(), 2500);
+  fetch(base + "/plugins/" + specEcc.plugin + "/call/paso", { method: "POST", headers: h, body: JSON.stringify({ accion: "paso" }), signal: ctrl.signal })
+    .then((r) => { cable = r.ok ? "harness" : "chat"; })
+    .catch(() => { cable = "chat"; })
+    .then(() => { if (window.__riuLoopPintar) window.__riuLoopPintar(); });
+}
 async function spec() {
   if (specEcc) return specEcc;
   const r = await fetch("/chat/ui/LOOP-wachdog-cola.json");
@@ -123,17 +139,7 @@ async function pedir(accion) {
   }
   guardar();
   marcarBoton();
-  if (accion === "paso" && specEcc && specEcc.plugin) {
-    const base = String((window.RIU_CONFIG || {}).proxyDestino || "").replace(/\/$/, "");
-    if (base) {
-      const h = { "Content-Type": "application/json" };
-      const k = sessionStorage.getItem("riu_clave");
-      if (k) { h["X-API-Key"] = k; h.Authorization = "Bearer " + k; }
-      const ctrl = new AbortController();
-      setTimeout(() => ctrl.abort(), 1200);
-      fetch(base + "/plugins/" + specEcc.plugin + "/call/paso", { method: "POST", headers: h, body: JSON.stringify({ accion: "paso", fase: estado.fase, nota: estado.nota }), signal: ctrl.signal }).catch(() => {});
-    }
-  }
+  if (accion === "paso") avisarPlugin();
   return estado;
 }
 
@@ -222,7 +228,7 @@ function pintarLoop(cuerpo) {
     const marcha = !estado.on ? "apagado" : reloj ? "en curso" : "en pausa";
     mando.replaceChildren(
       el("div", "", marcha + (bloqueado ? " · bloqueado" : "") + " · vuelta " + (estado.paso || 0) + "/8"),
-      el("div", "", "siguiente: " + sigue + (specEcc && specEcc.plugin ? " · " + specEcc.plugin : "")),
+      el("div", "", "siguiente: " + sigue + (cable === "harness" ? " · en el harness" : cable === "chat" ? " · en este chat" : "")),
     );
     traza.forEach((t) => mando.append(el("div", "", t)));
     if (!traza.length) mando.append(el("div", "", "sin traza"));
