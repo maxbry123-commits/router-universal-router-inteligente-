@@ -11,6 +11,7 @@ const ICONOS = {  // iconos de línea (skill Maxbry): sin emojis en la barra
   loop: '<path d="M4 12a8 8 0 0 1 13.5-5.5L20 4"/><path d="M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-13.5 5.5L4 20"/><path d="M4 20v-5h5"/>',
   mcp: '<path d="M4 8h5M15 8h5M4 16h5M15 16h5"/><circle cx="12" cy="8" r="2"/><circle cx="12" cy="16" r="2"/>',
   watchdog: '<circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/>',
+  cola: '<path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/>',
 };
 export function ventana(id, titulo, alAbrir) {
   const bar = document.querySelector("#composer .composer-bar");
