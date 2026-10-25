@@ -5,6 +5,14 @@
 #ventana-loop .loop-partes { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
 #ventana-loop .loop-partes span { min-height: 32px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); }
 #ventana-loop .loop-partes span.on { border-color: var(--status-blue, #2F80FF); color: var(--title); }
+#ventana-loop .loop-pct { font-size: 13px; margin-bottom: 4px; }
+#ventana-loop .loop-barra { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
+#ventana-loop .loop-relleno { height: 100%; width: 0; background: var(--status-blue, #2F80FF); }
+#ventana-loop .loop-lista { max-height: 96px; overflow: auto; margin-top: 8px; }
+#ventana-loop .loop-tarea { display: flex; gap: 8px; align-items: center; min-height: 32px; }
+#ventana-loop .loop-tarea span:first-child { flex: 0 0 auto; font-size: 12px; }
+#ventana-loop .loop-tarea.hecha span:first-child { color: var(--title); }
+#ventana-loop .loop-tarea span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media(max-width:720px){
   h1{font-size:18px;margin:0 0 8px}
   .chat-tabs{margin-bottom:6px}
