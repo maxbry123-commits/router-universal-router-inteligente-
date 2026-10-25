@@ -21,6 +21,19 @@ function meter(nombre, texto) {
   return "guardado /" + n;
 }
 function quitar(nombre) { guardarLista(listaComandos().filter((c) => c.nombre !== nombre)); }
+function repetidos() {
+  const n = new Map();
+  document.querySelectorAll("#histories .message.user .txt").forEach((sp) => {
+    const t = (sp.textContent || "").trim().replace(/\s+/g, " ");
+    if (t.length < 12 || t.length > 240 || t.startsWith("/")) return;
+    n.set(t, (n.get(t) || 0) + 1);
+  });
+  return [...n.entries()].filter(([, c]) => c > 1).sort((a, b) => b[1] - a[1]).slice(0, 5);
+}
+function slug(t) {
+  const s = t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24);
+  return s || "atajo";
+}
 
 function pintar(cuerpo) {
   const aviso = el("div", "cv-est");
@@ -44,7 +57,16 @@ function pintar(cuerpo) {
     fila.append(btn("Quitar", "secondary", () => { quitar(c.nombre); pintar(cuerpo); }));
     lista.append(fila);
   });
-  cuerpo.replaceChildren(el("div", "fila-desc", "Un comando pone su texto en la caja. No envía solo."), form, lista, aviso);
+  const sug = el("div", "cola-lista");
+  const reps = repetidos();
+  if (!reps.length) sug.append(el("div", "fila-desc", "No hay frases repetidas en este chat."));
+  reps.forEach(([t, c]) => {
+    const f = el("div", "cola-fila");
+    f.append(el("div", "fila-desc", c + " veces · " + t));
+    f.append(btn("Guardar", "secondary", () => { aviso.textContent = meter(slug(t), t); pintar(cuerpo); const a = cuerpo.querySelector(".cv-est"); if (a) a.textContent = aviso.textContent; }));
+    sug.append(f);
+  });
+  cuerpo.replaceChildren(el("div", "fila-desc", "Un comando pone su texto en la caja. No envía solo."), form, el("div", "mod-grupo-t", "De mis mensajes"), sug, lista, aviso);
 }
 
 function instalar() {

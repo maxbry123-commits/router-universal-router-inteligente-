@@ -42,6 +42,10 @@ export function parsearBloquesRevision(texto) {
   while ((m = re.exec(String(texto))) !== null) { const t = m[2].trim(); if (t) out.push({ tipo: m[1].toLowerCase(), texto: t.slice(0, 240) }); }
   return out;
 }
+export function parsearModo(texto) {
+  const m = /\[\[MODO:(preguntar|agente)\]\]/i.exec(String(texto));
+  return m ? m[1].toLowerCase() : "";
+}
 function bloqueSesion(tools) {
   let v = { memoria: true, nota: "", tope: 800, revisiones: [] };
   try { const g = leer("riu_sesion_v1", {}); v = { memoria: g.memoria !== false, nota: String(g.nota || ""), tope: Math.min(4000, Math.max(200, Number(g.tope) || 800)), revisiones: Array.isArray(g.revisiones) ? g.revisiones : [] }; } catch (e) {}
@@ -49,7 +53,7 @@ function bloqueSesion(tools) {
   if (v.memoria && v.nota.trim()) partes.push("[MEMORIA]\n" + v.nota.trim());
   if (v.revisiones.length) partes.push("[REVISION]\n" + v.revisiones.slice(0, 12).map((r) => "- " + r.tipo + ": " + String(r.texto || "").slice(0, 240)).join("\n"));
   let s = partes.join("\n").slice(0, v.tope);
-  if (tools) s = (s ? s + "\n" : "") + "Memoria: [[MEMORIA]]texto[[/MEMORIA]]. Revisión: [[REVISION:error|seguridad|aviso|nota]]texto[[/REVISION]].";
+  if (tools) s = (s ? s + "\n" : "") + "Memoria: [[MEMORIA]]texto[[/MEMORIA]]. Revisión: [[REVISION:error|seguridad|aviso|nota]]texto[[/REVISION]]. Modo: [[MODO:preguntar]] o [[MODO:agente]].";
   return s;
 }
 const IDIOMAS = { es: "español", en: "inglés", pt: "portugués" };
