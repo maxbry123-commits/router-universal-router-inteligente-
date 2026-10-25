@@ -35,7 +35,7 @@ def _head():
     return sha if ok else None
 
 
-SIN_REINICIO = ("chat/frontend/", "chat/docs/", "chat/e2e/", "chat/auditoria/", "docs/", "raiz_router/", "raiz_fichas_prompt/", "Prueba/", "chat/backend/mvp/pruebas_vivo/", "mvp/pruebas_vivo/")  # los sirve Vercel o son documentos
+SIN_REINICIO = ("chat/frontend/", "componentes/", "chat/docs/", "chat/e2e/", "chat/auditoria/", "docs/", "raiz_router/", "raiz_fichas_prompt/", "Prueba/", "chat/backend/mvp/pruebas_vivo/", "mvp/pruebas_vivo/")  # los sirve Vercel o son documentos
 
 
 def _toca_servidor(anterior, nuevo):
