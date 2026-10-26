@@ -90,7 +90,7 @@ const filas = () => {  // panel Selectores del chat: ⓘ diagrama, ⚡ respuesta
   const global = el("div", "sel-resp-global"), act = () => sessionStorage.getItem(CLAVE) || "";
   lista.before(global);
   const fichaEt = () => { try { const f = window.RIU_CHAT.chat().ficha, m = (window.RIU_CONFIG.modelos || []).find((x) => x.id === f); return m ? m.etiqueta : f || "NVIDIA"; } catch (e) { return "NVIDIA"; } };  // modelo Groq/NVIDIA elegido en la hoja de fichas
-  const modelo = (s) => s.id === "groq" ? ((window.RIU_GROQ || {}).modelo || (window.RIU_GROQ || {}).aviso || "elige un modelo") : s.id === "nvidia-groq-team" ? fichaEt() : s.id === "team-qwen" || s.id === "team-5-mvp" ? (((window.RIU_CHAT && window.RIU_CHAT.chat && window.RIU_CHAT.chat()) || {}).selectorQwen || {}).label || "Qwen 3.8 Max"  /* una sola fuente: el modelo marcado en la hoja de ESTE chat */ : (CONSIL_MODELOS[s.id] || []).map((m) => m[0]).join(" · ") || s.nombre;
+  const modelo = (s) => s.id === "groq" ? ((window.RIU_GROQ || {}).modelo || (window.RIU_GROQ || {}).aviso || "elige un modelo") : s.id === "nvidia-groq-team" ? fichaEt() : s.id === "team-qwen" || s.id === "team-5-mvp" ? ((window.RIU_SELECTOR_QWEN || {}).seleccion || {}).label || "Qwen 3.8 Max" : (CONSIL_MODELOS[s.id] || []).map((m) => m[0]).join(" · ") || s.nombre;
   const fila = (s) => lista.querySelector('.sel-fila[data-selector="' + s.id + '"]');
   const refrescar = () => {
     SELECTORES.forEach((s) => {
@@ -114,19 +114,7 @@ const filas = () => {  // panel Selectores del chat: ⓘ diagrama, ⚡ respuesta
       z.onclick = () => { if (window.__riuFastH) window.__riuFastH(); }; f.append(z);
     }
     const b = el("button", "sel-on"); b.type = "button"; b.setAttribute("aria-label", "ON/OFF " + s.nombre); b.innerHTML = POWER + "<span>OFF</span>";
-    b.onclick = () => {
-      if (act() === s.id) sessionStorage.removeItem(CLAVE);
-      else {
-        sessionStorage.setItem(CLAVE, s.id);
-        if ((s.id === "team-qwen" || s.id === "team-5-mvp") && window.RIU_CHAT) {
-          try {
-            const c = window.RIU_CHAT.chat(), sel = (window.RIU_SELECTOR_QWEN || {}).seleccion;
-            if (c && !c.selectorQwen && sel && (sel.model_id || sel.label)) c.selectorQwen = sel;
-          } catch (e) {}
-        }
-      }
-      refrescar();
-    };
+    b.onclick = () => { if (act() === s.id) sessionStorage.removeItem(CLAVE); else sessionStorage.setItem(CLAVE, s.id); refrescar(); };
     f.append(b, el("p", "sel-resp"));
   });
   window.addEventListener("riu:fast-reply", (e) => lista.querySelectorAll(".sel-fast").forEach((z) => { z.classList.toggle("on", !!e.detail.on); z.setAttribute("aria-pressed", String(!!e.detail.on)); }));

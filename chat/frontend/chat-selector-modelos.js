@@ -23,7 +23,6 @@ const GRUPOS = [
     ["pensar", "DeepSeek V4 Pro 0813", "Máxima profundidad", "deepseek-v4-pro-0813"],
     ["rayo", "DeepSeek V4 Flash", "Código rápido", "deepseek-v4-flash-0731"]] },
   { titulo: "GLM", modelos: [
-    ["pensar", "GLM 5.3", "Código + agentes", "glm-5.3"],
     ["pensar", "GLM 5.2", "Código + agentes", "glm-5.2"]] },
   { titulo: "Imágenes", modelos: [
     ["imagen", "Qwen Image 3.0 Pro", "Imágenes", "qwen-image-3.0-pro"],
