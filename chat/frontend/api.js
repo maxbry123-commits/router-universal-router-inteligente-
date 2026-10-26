@@ -180,6 +180,21 @@ export async function accion(acc, payload) {
   return env.result || {};
 }
 window.RIU_ACCION = accion;
+export async function plugin(id, action, body) {
+  await liveRouter();
+  const h = { 'Content-Type': 'application/json' };
+  const pw = sessionStorage.getItem('riu_clave');
+  if (pw) h['X-API-Key'] = pw;
+  const url = (PBASE || location.origin).replace(/\/$/, '') + '/plugins/' + id + '/call/' + action;
+  const r = await fetchT(url, { method: 'POST', headers: h, body: JSON.stringify(body || {}) }, 20000);
+  const p = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const msg = p.detail || p.error || p.reason || p.message || ('HTTP ' + r.status);
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg).slice(0, 180));
+  }
+  return p.result !== undefined && p.status === 'ok' ? p.result : p;
+}
+window.RIU_PLUGIN = plugin;
 export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id, instrucciones_fijas, mode_request, thinking_mode, tools = false, agente_tool = false, llm_tool = false }) {  // >>> MODOS <<< mode_request viaja en el payload
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };

@@ -276,7 +276,54 @@ function pintarLoop(cuerpo) {
   ep.title = "Enlazar al proyecto";
   const fila = el("div", "cv-form");
   fila.append(enc, apa, di, auto, re, gy, ep);
-  cuerpo.replaceChildren(el("div", "cv-sec", "LOOP"), partes, mando, fila, centro, objetivo, plan, tareas, aviso);
+  const md = el("textarea", "vn-ta");
+  md.rows = 3; md.placeholder = "Objetivo en markdown"; md.setAttribute("aria-label", "Objetivo markdown del LOOP");
+  const perfil = el("select"); perfil.setAttribute("aria-label", "Perfil");
+  ["document", "code", "frontend", "api"].forEach((v) => perfil.append(new Option(v, v)));
+  const ruta = el("input"); ruta.placeholder = "archivo.txt"; ruta.setAttribute("aria-label", "Ruta de aceptación");
+  const nct = vivo(el("div", "cv-est"));
+  let proc = "", poll = 0;
+  const modeloChat = () => {
+    const q = window.RIU_SELECTOR_QWEN, s = q && q.seleccion;
+    if (!s) return "qwen3.8-max";
+    const hit = (q.modelos || []).find((m) => m.modelo_id_slug === s.modelo_id_slug);
+    return (hit && hit.model_id) || s.model_id || "qwen3.8-max";
+  };
+  const pararPoll = () => { if (poll) { clearInterval(poll); poll = 0; } };
+  const leerEstado = async () => {
+    if (!proc) return;
+    try {
+      const r = await window.RIU_PLUGIN("nct_loop", "estado", { proceso_id: proc });
+      const st = String(r.estado || r.status || "");
+      nct.textContent = proc + " · " + (st || "sin estado");
+      if (/DONE_VERIFICADO|BLOCKED|FAIL/.test(st)) pararPoll();
+    } catch (e) { nct.textContent = e.message; pararPoll(); }
+  };
+  const ejecutar = btn("EJECUTAR", "action", async () => {
+    if (!md.value.trim()) { nct.textContent = "falta el objetivo"; return; }
+    ejecutar.disabled = true; pararPoll();
+    try {
+      const r = await window.RIU_PLUGIN("nct_loop", "ejecutar", {
+        objetivo: md.value, modelo: modeloChat(), profile: perfil.value, motor: "coda",
+        acceptance: ruta.value.trim() ? [{ op: "verify_exists", path: ruta.value.trim() }] : [],
+      });
+      proc = r.proceso_id || "";
+      nct.textContent = proc ? proc + " · " + modeloChat() : JSON.stringify(r).slice(0, 160);
+      if (proc) poll = setInterval(leerEstado, 3000);
+    } catch (e) { nct.textContent = e.message; }
+    ejecutar.disabled = false;
+  });
+  const cancelarN = btn("CANCELAR", "secondary", async () => {
+    if (!proc) { nct.textContent = "no hay proceso"; return; }
+    try { await window.RIU_PLUGIN("nct_loop", "cancelar", { proceso_id: proc }); pararPoll(); nct.textContent = proc + " · cancelado"; }
+    catch (e) { nct.textContent = e.message; }
+  });
+  const salud = btn("Health", "secondary", async () => {
+    try { const r = await window.RIU_PLUGIN("nct_loop", "status", {}); nct.textContent = JSON.stringify(r).slice(0, 180); }
+    catch (e) { nct.textContent = e.message; }
+  });
+  const nctFila = el("div", "cv-form"); nctFila.append(perfil, ejecutar, cancelarN, salud);
+  cuerpo.replaceChildren(el("div", "cv-sec", "nct_loop"), md, ruta, nctFila, nct, el("div", "cv-sec", "LOOP"), partes, mando, fila, centro, objetivo, plan, tareas, aviso);
   pintar();
 }
 

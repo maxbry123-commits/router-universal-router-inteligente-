@@ -145,9 +145,27 @@ function pintar(cuerpo) {
     add.disabled = false; ver();
   });
   texto.onkeydown = (ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); add.click(); } };
+  const titulo = el("input"); titulo.placeholder = "Título de la cola"; titulo.setAttribute("aria-label", "Título de la cola");
+  const tipo = el("select"); tipo.setAttribute("aria-label", "Tipo de tarea");
+  ["model", "validation", "ricardo", "handoff", "delay"].forEach((v) => tipo.append(new Option(v, v)));
+  const prompt = el("textarea", "vn-ta"); prompt.rows = 2; prompt.placeholder = "Prompt de t1"; prompt.setAttribute("aria-label", "Prompt de la tarea");
+  const contiene = el("input"); contiene.placeholder = "acceptance contains"; contiene.setAttribute("aria-label", "Texto que debe contener");
+  const qidIn = el("input"); qidIn.placeholder = "qid cit_…"; qidIn.setAttribute("aria-label", "Id de la cola");
+  const plug = vivo(el("div", "cv-est"));
+  const decir = (r) => { plug.textContent = typeof r === "string" ? r : JSON.stringify(r).slice(0, 220); };
+  const llamar = async (action, body) => { try { decir(await window.RIU_PLUGIN("cola50", action, body)); } catch (e) { plug.textContent = e.message; } };
+  const crearQ = btn("Crear", "action", () => llamar("crear", { title: titulo.value.trim() || "cola", tasks: [{ id: "t1", title: titulo.value.trim() || "t1", type: tipo.value, prompt: prompt.value, depends_on: [], acceptance: contiene.value.trim() ? { contains: contiene.value.trim() } : {} }] }));
+  const verQ = btn("Listar", "secondary", () => llamar("listar", {}));
+  const estQ = btn("Estado", "secondary", () => llamar("estado", { qid: qidIn.value.trim() }));
+  const evQ = btn("Eventos", "secondary", () => llamar("eventos", { qid: qidIn.value.trim() }));
+  const ctrl = (sub) => btn(sub, "secondary", () => llamar("accion", { qid: qidIn.value.trim(), sub }));
+  const aprobar = btn("Aprobar", "secondary", () => llamar("aprobar", { qid: qidIn.value.trim(), task_id: "t1" }));
+  const worker = (sub) => btn("worker " + sub, "secondary", () => llamar("worker", { sub }));
+  const qFila = el("div", "cv-form");
+  qFila.append(crearQ, verQ, estQ, evQ, ctrl("start"), ctrl("pause"), ctrl("resume"), ctrl("cancel"), aprobar, worker("start"), worker("stop"), worker("estado"));
   const cabeza = el("div", "cola-cabeza");
   cabeza.append(estado, agente);
-  cuerpo.replaceChildren(cabeza, texto, add, lista, aviso);
+  cuerpo.replaceChildren(el("div", "cv-sec", "cola50"), titulo, tipo, prompt, contiene, qidIn, qFila, plug, cabeza, texto, add, lista, aviso);
   estado.textContent = "cargando";
   refrescar().then(async () => {
     try { await leerAgente(); } catch (e) { agenteVe = null; aviso.textContent = "el agente no respondió"; }

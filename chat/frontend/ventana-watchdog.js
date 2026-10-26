@@ -53,9 +53,9 @@ function pintar(cuerpo) {
       if (!s.ok) return SIN_BACKEND + ": el router no responde";
     } catch (e) { return SIN_BACKEND + ": el router no responde"; }
     try {
-      const p = await fetch(base + "/plugins/loop_wachdog/call/paso", { method: "POST", headers: h, body: "{}" });
-      return p.ok ? "en el harness" : SIN_BACKEND + ": router ok · el plugin loop_wachdog no está";
-    } catch (e) { return SIN_BACKEND + ": router ok · el plugin loop_wachdog no está"; }
+      const p = await window.RIU_PLUGIN("watchdog48", "status", {});
+      return p && (p.estado || p.status) ? "watchdog48 " + (p.estado || p.status) : "watchdog48 respondió";
+    } catch (e) { return SIN_BACKEND + ": " + e.message; }
   };
   const revisar = () => {  // devuelve el motivo por el que el plan no vale, o "" si vale
     tomar();
@@ -95,7 +95,26 @@ function pintar(cuerpo) {
   fila.append(validar, activar, pausar, cancelar);
   const pasos = el("div", "loop-partes");
   ciclo.forEach((n) => pasos.append(el("span", "", n)));
-  cuerpo.replaceChildren(estado, el("div", "fila-desc", "Minutos"), min, pres, obj, pasos, aviso, fila);
+  const nombre = el("input"); nombre.placeholder = "nombre"; nombre.setAttribute("aria-label", "Nombre del watchdog"); nombre.value = "watchdog";
+  const blanco = el("select"); blanco.setAttribute("aria-label", "Tipo de blanco");
+  [["queue", "cola"], ["heartbeat", "heartbeat"]].forEach(([v, t]) => blanco.append(new Option(t, v)));
+  const tid = el("input"); tid.placeholder = "cit_… o proceso"; tid.setAttribute("aria-label", "Id del blanco");
+  const cada = el("input"); cada.type = "number"; cada.min = "5"; cada.max = "3600"; cada.value = "30"; cada.setAttribute("aria-label", "Intervalo en segundos");
+  const viejo = el("input"); viejo.type = "number"; viejo.min = "15"; viejo.max = "172800"; viejo.value = "120"; viejo.setAttribute("aria-label", "Segundos sin señal");
+  const widIn = el("input"); widIn.placeholder = "wid wd_…"; widIn.setAttribute("aria-label", "Id del watchdog");
+  const plug = vivo(el("div", "cv-est"));
+  const decir = (r) => { plug.textContent = typeof r === "string" ? r : JSON.stringify(r).slice(0, 220); if (r && r.wid) widIn.value = r.wid; };
+  const llamar = async (action, body) => { try { decir(await window.RIU_PLUGIN("watchdog48", action, body)); } catch (e) { plug.textContent = e.message; } };
+  const crearW = btn("Crear", "action", () => llamar("crear", { name: nombre.value.trim() || "watchdog", target_type: blanco.value, target_id: tid.value.trim() || "proceso", duration_minutes: Number(min.value) || 10, interval_seconds: Number(cada.value) || 30, stale_seconds: Number(viejo.value) || 120 }));
+  const listarW = btn("Listar", "secondary", () => llamar("listar", {}));
+  const estW = btn("Estado", "secondary", () => llamar("estado", { wid: widIn.value.trim() }));
+  const evW = btn("Eventos", "secondary", () => llamar("eventos", { wid: widIn.value.trim() }));
+  const hb = btn("Heartbeat", "secondary", () => llamar("heartbeat", { wid: widIn.value.trim(), progress_id: "ui" }));
+  const tick = btn("Tick", "secondary", () => llamar("tick", {}));
+  const accW = (sub) => btn(sub, "secondary", () => llamar("accion", { wid: widIn.value.trim(), sub }));
+  const wFila = el("div", "cv-form");
+  wFila.append(crearW, listarW, estW, evW, hb, tick, accW("pause"), accW("resume"), accW("cancel"));
+  cuerpo.replaceChildren(el("div", "cv-sec", "watchdog48"), nombre, blanco, tid, cada, viejo, widIn, wFila, plug, estado, el("div", "fila-desc", "Minutos"), min, pres, obj, pasos, aviso, fila);
   ver();
 }
 
