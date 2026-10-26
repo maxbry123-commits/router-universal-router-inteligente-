@@ -2,6 +2,7 @@
 import json
 import hmac
 import os
+import time
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
@@ -10,6 +11,9 @@ from plugins.router_api_cliente import llamar
 OPCIONES = {"tools", "tool_choice", "temperature", "top_p", "max_tokens",
             "parallel_tool_calls", "response_format", "enable_thinking", "reasoning_effort"}
 app = FastAPI()
+# Sin tope de vueltas de herramientas. Cada /invoke dura como mucho PAUSA_S: al cumplirse devuelve `continuar` con la
+# conversacion y el Router lo vuelve a llamar (hasta RIU_MAX_HORAS, 48 h). Asi un trabajo largo no depende de una sola peticion HTTP.
+PAUSA_S = float(os.environ.get("RIU_HARNESS_PAUSA_S", "90"))
 
 
 def _ok(result):
@@ -76,8 +80,13 @@ def llm(cuerpo):
         "description": t["description"], "parameters": t["inputSchema"]}} for n, t in permitidas.items()]
     opciones["tool_choice"] = "auto"
     mensajes = list(mensajes)
-    acumulado, continuaciones, usadas = "", 0, []  # usadas: herramientas realmente ejecutadas (diagnostico)
-    for paso in range(8):
+    acumulado, continuaciones, usadas = str(cuerpo.get("acumulado") or ""), 0, []  # usadas: herramientas realmente ejecutadas (diagnostico)
+    t0, paso = time.monotonic(), -1
+    while True:
+        paso += 1
+        if paso > 0 and time.monotonic() - t0 > PAUSA_S:  # pausa entre vueltas: el Router reanuda con esta misma conversacion
+            return {"texto": "", "tool_calls": [], "finish_reason": "pausa_herramientas", "continuar": True, "mensajes": mensajes,
+                    "acumulado": acumulado, "herramientas_usadas": usadas, "modelo_solicitado": cuerpo.get("modelo")}
         try:
             salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
                          **{k: cuerpo.get(k, False) for k in ("tools", "agente_tool", "llm_tool")}})
@@ -89,7 +98,7 @@ def llm(cuerpo):
         if not isinstance(salida.get("tool_calls"), list) or not isinstance(salida.get("texto"), str):
             raise RuntimeError("Router respuesta de chat invalida")
         llamadas = salida["tool_calls"]
-        if not llamadas and salida.get("finish_reason") == "length" and salida["texto"] and continuaciones < 2 and paso < 7:
+        if not llamadas and salida.get("finish_reason") == "length" and salida["texto"] and continuaciones < 2:
             acumulado += salida["texto"]
             continuaciones += 1
             mensajes.extend([salida.get("mensaje_asistente") or {"role": "assistant", "content": salida["texto"]},
@@ -101,8 +110,6 @@ def llm(cuerpo):
         if not llamadas or not permitidas:
             return {"texto": acumulado + salida["texto"], "tool_calls": llamadas, "finish_reason": salida.get("finish_reason"), "herramientas_usadas": usadas,
                     "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta")}
-        if paso == 7:
-            raise RuntimeError("Limite de llamadas a herramientas alcanzado; no se ejecutaron las ultimas llamadas")
         mensajes.append(salida.get("mensaje_asistente") or {"role": "assistant", "content": salida["texto"] or None, "tool_calls": llamadas})
         for llamada in llamadas:
             funcion = llamada.get("function") or {}

@@ -116,13 +116,22 @@ async def chat(cuerpo: dict):
     if sum(len(str(m.get("content") or "")) for m in mensajes if isinstance(m, dict)) > MAX_CARACTERES:
         raise HTTPException(status_code=413, detail="el contexto supera %d caracteres; acorta el mensaje o abre un chat nuevo" % MAX_CARACTERES)
     if cuerpo.get("via") == "harness":
-        try:
-            salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"), controles)
-        except (ValueError, RuntimeError) as error:
-            raise HTTPException(status_code=502, detail=str(error)) from None
-        if salida.get("status") == "error":
-            raise HTTPException(status_code=403 if salida.get("status_code") == 403 else 502, detail=str(salida.get("error") or "harness error"))
-        salida = salida.get("result", salida) if isinstance(salida.get("result"), dict) else salida
+        limite, usadas, acumulado = time.time() + float(os.environ.get("RIU_MAX_HORAS", "48")) * 3600, [], ""
+        while True:  # el Harness pausa cada ~90 s y devuelve `continuar`: se reanuda con su conversacion hasta terminar o llegar a 48 h
+            try:
+                salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"), {**controles, "acumulado": acumulado})
+            except (ValueError, RuntimeError) as error:
+                raise HTTPException(status_code=502, detail=str(error)) from None
+            if salida.get("status") == "error":
+                raise HTTPException(status_code=403 if salida.get("status_code") == 403 else 502, detail=str(salida.get("error") or "harness error"))
+            salida = salida.get("result", salida) if isinstance(salida.get("result"), dict) else salida
+            usadas += salida.get("herramientas_usadas") or []
+            if not salida.get("continuar"):
+                break
+            if time.time() > limite:
+                raise HTTPException(status_code=504, detail="GAP: se alcanzaron las 48 h de trabajo; el progreso queda en la conversacion")
+            mensajes, acumulado = salida["mensajes"], salida.get("acumulado") or ""
+        salida = {**salida, "herramientas_usadas": usadas}
         llamadas = salida.get("tool_calls") or []
         _verificar_llamadas(llamadas, controles)
         return {"texto": salida.get("texto") or "", "tool_calls": llamadas, "herramientas_usadas": salida.get("herramientas_usadas") or [],
