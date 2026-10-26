@@ -125,7 +125,7 @@ async def chat(cuerpo: dict):
         raise HTTPException(status_code=413, detail="el contexto supera %d caracteres; acorta el mensaje o abre un chat nuevo" % MAX_CARACTERES)
     if cuerpo.get("via") == "harness":
         pid = _PID.get()
-        limite, usadas, acumulado = cuerpo.get("_limite") or time.time() + float(os.environ.get("RIU_MAX_HORAS", "48")) * 3600, list(cuerpo.get("_usadas") or []), str(cuerpo.get("_acumulado") or "")
+        limite, usadas, acumulado = cuerpo.get("_limite") or (time.time() + float(os.environ["RIU_MAX_HORAS"]) * 3600 if float(os.environ.get("RIU_MAX_HORAS", "0")) > 0 else None), list(cuerpo.get("_usadas") or []), str(cuerpo.get("_acumulado") or "")
         async def guardar_estado():  # historial completo al almacen permanente: si el Space se reinicia, la tarea se retoma de aqui
             await asyncio.to_thread(estado_tarea.guardar, app.state.banco, pid, {"mensajes": mensajes, "acumulado": acumulado, "usadas": usadas, "modelo": modelo,
                                                                                    "opciones": cuerpo.get("opciones"), "controles": controles, "limite": limite})
@@ -143,8 +143,8 @@ async def chat(cuerpo: dict):
                 usadas += salida.get("herramientas_usadas") or []
                 if not salida.get("continuar"):
                     break
-                if time.time() > limite:
-                    raise HTTPException(status_code=504, detail="GAP: se alcanzaron las 48 h de trabajo; el progreso queda en la conversacion")
+                if limite and time.time() > limite:  # sin limite de tiempo salvo que se fije RIU_MAX_HORAS
+                    raise HTTPException(status_code=504, detail="GAP: se alcanzo el tiempo maximo de trabajo; el progreso queda en la conversacion")
                 mensajes, acumulado = salida["mensajes"], salida.get("acumulado") or ""
                 if pid: await guardar_estado()
         except Exception:  # terminada con error (no por reinicio): ya no hay nada que retomar

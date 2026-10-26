@@ -58,7 +58,7 @@ def _carga_bien():
 
 
 ARRANQUE, _DIFERIDO = None, None  # commit que corre este proceso; desde cuando se difiere un reinicio
-DIFERIR_MAX_S = (float(os.environ.get("RIU_MAX_HORAS", "48")) + 1) * 3600  # una tarea trabada no bloquea las actualizaciones para siempre
+DIFERIR_MAX_S = (float(os.environ["RIU_MAX_HORAS"]) + 1) * 3600 if float(os.environ.get("RIU_MAX_HORAS", "0")) > 0 else float("inf")  # sin limite de tiempo salvo que se fije RIU_MAX_HORAS
 
 
 def _tareas_en_curso():

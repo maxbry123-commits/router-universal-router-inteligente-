@@ -52,15 +52,15 @@ class TrabajoLargo(unittest.TestCase):
         self.assertEqual(r["herramientas_usadas"], ["almacen"] * 4)
         self.assertEqual(llamadas[1][-1]["role"], "tool")  # reanuda con lo que devolvio el Harness
 
-    def test_el_limite_es_de_48_horas(self):
+    def test_sin_limite_por_defecto_y_solo_corta_si_se_fija_RIU_MAX_HORAS(self):
         pausa = {"continuar": True, "finish_reason": "pausa_herramientas", "texto": "", "tool_calls": [], "mensajes": [{"role": "user", "content": "x"}]}
         import asyncio, os
         from fastapi import HTTPException
-        with patch.object(servicio.harness_client, "llm", lambda *a, **k: {"result": dict(pausa)}), patch.object(servicio, "clave_harness", lambda: "k"), patch.dict(os.environ, {"RIU_MAX_HORAS": "0"}):
+        with patch.object(servicio.harness_client, "llm", lambda *a, **k: {"result": dict(pausa)}), patch.object(servicio, "clave_harness", lambda: "k"), patch.dict(os.environ, {"RIU_MAX_HORAS": "0.00001"}):
             with self.assertRaises(HTTPException) as e:
                 asyncio.run(servicio.chat({"modelo": "qwen3.8-max", "mensajes": [{"role": "user", "content": "x"}], "via": "harness"}))
         self.assertEqual(e.exception.status_code, 504)
-        self.assertIn("48 h", e.exception.detail)
+        self.assertIn("tiempo maximo", e.exception.detail)
 
 
 if __name__ == "__main__":
@@ -97,3 +97,13 @@ class ContextoAcotado(unittest.TestCase):
             r = h.llm({"messages": [{"role": "user", "content": "x"}], "modelo": "qwen3.8-max"})
         self.assertEqual(r["texto"], "listo")
         self.assertLess(max(vistos), 600_000)   # sin compactar llegaria a ~2.000.000 y el Router daria 413
+
+
+    def test_por_defecto_no_hay_limite_de_tiempo(self):
+        import asyncio, os
+        pausa = {"continuar": True, "finish_reason": "pausa_herramientas", "texto": "", "tool_calls": [], "mensajes": [{"role": "user", "content": "x"}]}
+        salidas = [{"result": dict(pausa)}] * 5 + [{"result": {"texto": "listo", "tool_calls": [], "finish_reason": "stop"}}]
+        env = {k: v for k, v in os.environ.items() if k != "RIU_MAX_HORAS"}
+        with patch.object(servicio.harness_client, "llm", lambda *a, **k: salidas.pop(0)), patch.object(servicio, "clave_harness", lambda: "k"), patch.dict(os.environ, env, clear=True), patch.object(servicio.time, "time", lambda: 9e12):
+            r = asyncio.run(servicio.chat({"modelo": "qwen3.8-max", "mensajes": [{"role": "user", "content": "x"}], "via": "harness"}))
+        self.assertEqual(r["texto"], "listo")

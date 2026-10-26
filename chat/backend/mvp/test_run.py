@@ -77,12 +77,12 @@ class TestAutopull(unittest.TestCase):
                 self.assertTrue(run._actualizar())       # terminaron las tareas: ahora si reinicia
             reiniciar.assert_called_once()
 
-    def test_una_tarea_trabada_no_bloquea_las_actualizaciones_para_siempre(self):
+    def test_con_limite_fijado_una_tarea_trabada_no_bloquea_las_actualizaciones(self):
         antes = run._head()
         (self.writer / "test.txt").write_text("segundo\n")
         git("-C", self.writer, "commit", "-am", "segundo")
         git("-C", self.writer, "push", "origin", "main")
-        with patch.object(run, "ARRANQUE", antes), patch.object(run, "_DIFERIDO", 1.0), patch.object(run, "_tareas_en_curso", return_value=1), patch.object(run.os, "execv") as reiniciar:
+        with patch.object(run, "ARRANQUE", antes), patch.object(run, "_DIFERIDO", 1.0), patch.object(run, "DIFERIR_MAX_S", 3600.0), patch.object(run, "_tareas_en_curso", return_value=1), patch.object(run.os, "execv") as reiniciar:
             self.assertTrue(run._actualizar())
             reiniciar.assert_called_once()
 

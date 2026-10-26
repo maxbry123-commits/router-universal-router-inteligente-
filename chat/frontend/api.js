@@ -9,7 +9,7 @@ let liveRequest = null;
 let PBASE = "";  // base de los plugins (chat_async, /resultado): mismo origen en Vercel (rewrites de vercel.json) o el Space directo
 // fetch con tope: en movil (4G, pestaña en segundo plano) un fetch puede quedar colgado para siempre y el chat se queda en "Pensando" sin que el Router reciba nada
 const vivos = new Set();
-const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const reg = ac ? { ac, t0: Date.now() } : null; if (reg) vivos.add(reg); const t = setTimeout(() => ac && ac.abort(), ms); return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => { clearTimeout(t); if (reg) vivos.delete(reg); }); };
+const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const reg = ac ? { ac, t0: Date.now() } : null; if (reg) vivos.add(reg); const t = ms ? setTimeout(() => ac && ac.abort(), ms) : 0; return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => { clearTimeout(t); if (reg) vivos.delete(reg); }); };
 // al volver a la pestaña: cortar los fetch que quedaron colgados en segundo plano; el polling sigue con el mismo proceso_id y un chat_async sin proceso_id se reintenta
 try { const cortarColgados = () => { for (const r of [...vivos]) if (Date.now() - r.t0 > 2000) { try { r.ac.abort(); } catch (e) {} } }; document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cortarColgados(); }); window.addEventListener('online', cortarColgados); window.addEventListener('pageshow', (e) => { if (e.persisted) cortarColgados(); }); } catch (e) {}  // volver a la pestana, recuperar red o volver del bfcache: los fetch colgados se cortan y el polling reintenta
 const usarProxy = () => { try { return /\.vercel\.app$/.test(location.hostname) && localStorage.getItem('riu_proxy') !== '0' && !/[?&]proxy=0/.test(location.search); } catch (e) { return false; } };
@@ -61,7 +61,7 @@ function remoto(headers) {
 const L4 = { job: null, url: null };
 // ---- procesos en curso: una recarga NO relanza la tarea; se retoma por su proceso_id (sesion, proceso_id, direccion exacta del Router, hora) ----
 const CP = 'riu_proc_v1';
-const TOPE_ESPERA = 48 * 3600 * 1000;
+const TOPE_ESPERA = Infinity;  // sin limite de tiempo del chat: solo cuenta el del modelo
 const esTope48 = (err) => /se alcanzaron las 48 h/.test(String(err || ''));
 const fmtReloj = (ms) => {
   const seg = Math.max(0, Math.floor(ms / 1000));
@@ -131,12 +131,12 @@ async function puenteRouter(base, body, qs, headers) {
   for (let intento = 0; intento < 2; intento++) {
     let r;
     // envio reintentable: request_id fijo => el Router devuelve el mismo proceso_id si el POST anterior si llego (sin duplicar)
-    for (let k = 0; k < 3; k++) {
-      try { r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, k ? 20000 : 15000); break; }
+    for (let k = 0; k < 10000; k++) {  // sin tope de espera: el Router puede estar reiniciando; se reintenta con el mismo request_id (no duplica)
+      try { r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, 0); break; }
       catch (e) {
-        if (k === 2) throw e;
+        if (k === 9999) throw e;
         liveCheckedAt = 0; await liveRouter(); base = baseDe();
-        await new Promise(ok => setTimeout(ok, 800 * (k + 1)));
+        await new Promise(ok => setTimeout(ok, Math.min(800 * (k + 1), 5000)));
       }
     }
     const env = await r.json().catch(() => ({}));
