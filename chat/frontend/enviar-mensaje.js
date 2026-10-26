@@ -138,7 +138,7 @@ export function montarEnviar(ctx) {
     }
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
     const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
-    const fichaQwen = selAct === "team-qwen" && c.selectorQwen ? "qw-" + c.selectorQwen.modelo_id_slug : null;  // Team qwen: su ficha, mismo camino que Nvidia
+    const fichaQwen = selAct === "team-qwen" ? "qw-" + (c.selectorQwen ? c.selectorQwen.modelo_id_slug : "qwen3-8-max") : null;  // Team qwen: su ficha; sin modelo elegido responde el defecto del Router (Qwen 3.8 Max), no se bloquea
     const fichaGroq = selAct === "groq" ? ((window.RIU_GROQ || {}).modelo || "") : null;  // selector Groq: el modelo elegido en su hoja (groq/<id>)
     if (fichaGroq === "") { c.hist.append(node("div", "Groq: " + ((window.RIU_GROQ || {}).aviso || "elige primero un modelo en la hoja Groq ⌄") + ". No se envió a otro modelo.", "item message meta")); abajo(c); return; }
     const fichaMvp = selAct === "team-5-mvp";  // Team 5 MVP: ruta propia -> fichas_qwen ficha_qwen=5 (1 modelo elegido, historial completo y tools)
