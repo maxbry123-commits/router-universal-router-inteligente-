@@ -30,6 +30,9 @@ export function montarDestinos({ root, q, tell }) {
     const bs = el("div", "vn-fila");
     OBJETIVOS.forEach(([id, nom]) => { const on = id === tipo, b = boton(nom, "toggle" + (on ? " on" : ""), () => cambiar(id)); b.setAttribute("aria-pressed", String(on)); bs.append(b); });
     fila.append(bs);
+    const acc = el("div", "vn-fila");
+    acc.append(boton("Yaiwes.md", "toggle", () => { const t = q("#mh-toggle"); if (t) t.click(); else tell("Yaiwes.md está más abajo, en el handoff"); }), boton("Tools", "toggle", () => { const b = document.querySelector("#btn-tools"); const s = q("#ventana-ancla"); if (s) s.hidden = true; if (b) b.click(); else tell("Tools no está"); }));
+    fila.append(acc);
     // encendido/apagado de CADA ancla, siempre visible en la hoja (la Constitución arranca apagada; solo viaja si está encendida)
     const est = el("div", "vn-fila vn-encendidos"); est.append(el("div", "vn-t", "Encendido de cada ancla"));
     const tog = (t, id, etq) => { const o = crearObjetivo(t, id); if (!o) return; const on = !!o.encendido, b = boton(etq + ": " + (on ? "ON" : "OFF"), "toggle" + (on ? " on" : ""), () => { o.encendido = !o.encendido; tell(etq + (o.encendido ? ": ON · viaja con cada mensaje" : ": OFF · no se envía")); pintar(); }); b.dataset.ancla = t + (id ? ":" + id : ""); b.setAttribute("aria-pressed", String(on)); est.append(b); };

@@ -9,7 +9,8 @@
 .ap-cuerpo{overflow-y:auto;min-height:0;flex:1;display:flex;flex-direction:column}
 .ap-a,.ap-b,.ap-c{display:flex;flex-direction:column;gap:8px;border-radius:14px;outline:2px dashed transparent;outline-offset:-2px;transition:outline-color .15s}
 .ap-drop{outline-color:var(--active)!important;background:color-mix(in srgb,var(--active) 8%,transparent)}
-.ap-barra,.ap-card-r{display:flex;gap:6px;align-items:center}
+.ap-barra,.ap-card-r{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ap-barra > .secondary{flex:0 0 auto;width:auto;height:auto;min-height:36px;padding:6px 12px;border-radius:999px;white-space:nowrap}
 .ap-omni,.ap-buscar,.ap-card-in{flex:1;width:100%;min-height:44px;border-radius:999px;padding:0 16px;background:var(--panel);border:1px solid var(--border-strong);font-size:14px}
 .ap-card-in{min-height:38px;font-size:13px}
 .ap-omni:focus,.ap-buscar:focus,.ap-card-in:focus{outline:none;border-color:var(--active)}
