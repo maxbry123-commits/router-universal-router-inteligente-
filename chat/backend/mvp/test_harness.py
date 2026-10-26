@@ -90,6 +90,45 @@ class TestHarness(unittest.TestCase):
         self.assertEqual(Falso.recibidas[-1][1]["action"], "llm")
         directo.assert_not_called()
 
+    def test_cada_modelo_del_selector_llega_al_proveedor_con_el_payload_real_del_chat(self):  # chat_async + plugin fichas_qwen + qwen anidado, por HTTP real hasta el proveedor
+        import socket, time, uvicorn, httpx
+        sock = socket.socket(); sock.bind(("127.0.0.1", 0)); sock.listen()
+        base = f"http://127.0.0.1:{sock.getsockname()[1]}"
+        env = {"RIU_ROUTER_URL": base, "RIU_DEEPSEEK_HARNESS_URL": base + "/plugins/deepseek_harness", "MVP_QWEN_BASE_URL": self.url}
+        modelos_selector = ["qwen3.8-max", "qwen3.8-flash", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-flash", "deepseek-v4-pro", "deepseek-v4-pro-0813", "deepseek-v4-flash-0731", "glm-5.2", "glm-5.3"]
+        with patch.dict(os.environ, env), patch("mvp.app.bank.abrir_desde_env", return_value=SimpleNamespace(leer=lambda nombre: "acceso-test")), patch("mvp.app.hf_store.guardar", return_value={"ok": True}):
+            servidor = uvicorn.Server(uvicorn.Config(servicio.app, log_level="critical"))
+            hilo = threading.Thread(target=servidor.run, kwargs={"sockets": [sock]})
+            cliente = httpx.Client(base_url=base, timeout=20, trust_env=False)
+            hilo.start()
+            try:
+                for _ in range(100):
+                    if servidor.started: break
+                    time.sleep(0.02)
+                self.assertTrue(servidor.started)
+                cab = {"x-api-key": "acceso-test"}
+                for i, modelo in enumerate(modelos_selector):
+                    Falso.recibidas = []
+                    Falso.cola = [(200, {"model": modelo, "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}]})]
+                    previo = [{"role": "user", "content": "Que modelo eres"}, {"role": "assistant", "content": "Soy qwen3.8-flash, de la familia Qwen (Alibaba)."}]
+                    cuerpo = {"message": "Que modelo eres", "ficha": modelo, "model": modelo, "mode": "direct", "fast_reply": True, "request_id": "sel-%02d" % i, "contexto_previo": previo,
+                              "tools": False, "agente_tool": False, "llm_tool": False, "thinking_mode": "off",
+                              "qwen": {"plugin": "fichas_qwen", "ficha_qwen": "1", "modelo": "", "task_type": "chat"}}
+                    r = cliente.post("/plugins/fichas_qwen/call/chat_async", headers=cab, json=cuerpo).json()
+                    pid = r["result"]["proceso_id"]
+                    for _ in range(40):
+                        r = cliente.post("/plugins/fichas_qwen/call/resultado", headers=cab, json={"proceso_id": pid, "espera": 1}).json()["result"]
+                        if r.get("estado") != "procesando": break
+                    self.assertEqual(r.get("estado"), "completado", (modelo, r))
+                    enviados = [c[1] for c in Falso.recibidas if c[0] == "/chat/completions"]
+                    self.assertEqual([e["model"] for e in enviados], [modelo], modelo)
+                    self.assertNotIn("Soy qwen3.8-flash", json.dumps(enviados[0]["messages"], ensure_ascii=False), modelo)
+                    self.assertIn("Modelo activo: " + modelo, json.dumps(enviados[0]["messages"], ensure_ascii=False))
+            finally:
+                servidor.should_exit = True
+                hilo.join(timeout=5)
+                cliente.close()
+
     def test_cadena_http_completa(self):
         import socket, time, uvicorn, httpx
         sock = socket.socket()
