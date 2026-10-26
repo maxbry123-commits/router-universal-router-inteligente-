@@ -33,9 +33,18 @@ export function montarDestinos({ root, q, tell }) {
     const acc = el("div", "vn-fila");
     acc.append(boton("Yaiwes.md", "toggle", () => {
       const s = q("#sh-ancla"), h = q("#ventana-ancla"), ta = q("#mi-handoff");
+      const caja = s && s.querySelector(".va-caja"), head = caja && caja.querySelector(".va-head");
       if (h) h.hidden = true;
       if (s) s.hidden = false;
-      if (ta) ta.focus();
+      if (ta && head) {
+        const nodes = [];
+        let n = ta;
+        for (let i = 0; i < 4 && n; i++) { nodes.push(n); n = n.nextElementSibling; }
+        let ref = head;
+        nodes.forEach((x) => { ref.after(x); ref = x; });
+        ta.scrollIntoView({ block: "nearest" });
+        ta.focus();
+      }
     }), boton("Tools", "toggle", () => {
       const b = document.querySelector("#btn-tools"), s = q("#ventana-ancla");
       if (s) s.hidden = true;
