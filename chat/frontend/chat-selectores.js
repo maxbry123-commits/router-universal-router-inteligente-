@@ -114,7 +114,19 @@ const filas = () => {  // panel Selectores del chat: ⓘ diagrama, ⚡ respuesta
       z.onclick = () => { if (window.__riuFastH) window.__riuFastH(); }; f.append(z);
     }
     const b = el("button", "sel-on"); b.type = "button"; b.setAttribute("aria-label", "ON/OFF " + s.nombre); b.innerHTML = POWER + "<span>OFF</span>";
-    b.onclick = () => { if (act() === s.id) sessionStorage.removeItem(CLAVE); else sessionStorage.setItem(CLAVE, s.id); refrescar(); };
+    b.onclick = () => {
+      if (act() === s.id) sessionStorage.removeItem(CLAVE);
+      else {
+        sessionStorage.setItem(CLAVE, s.id);
+        if ((s.id === "team-qwen" || s.id === "team-5-mvp") && window.RIU_CHAT) {
+          try {
+            const c = window.RIU_CHAT.chat(), sel = (window.RIU_SELECTOR_QWEN || {}).seleccion;
+            if (c && !c.selectorQwen && sel && (sel.model_id || sel.label)) c.selectorQwen = sel;
+          } catch (e) {}
+        }
+      }
+      refrescar();
+    };
     f.append(b, el("p", "sel-resp"));
   });
   window.addEventListener("riu:fast-reply", (e) => lista.querySelectorAll(".sel-fast").forEach((z) => { z.classList.toggle("on", !!e.detail.on); z.setAttribute("aria-pressed", String(!!e.detail.on)); }));

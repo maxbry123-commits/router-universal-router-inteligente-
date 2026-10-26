@@ -7,3 +7,8 @@
 .sel-resp[hidden]{display:none}
 .sel-resp-global{grid-column:1/-1;padding:10px 14px;border-radius:16px;background:var(--surface-alt);border:1px solid var(--border);font-size:14px;line-height:1.4;color:var(--quiet)}
 .sel-resp-global.on{border-color:#0848F7;color:var(--title)}
+#sh-selectores .va-head{top:0;background:var(--surface);z-index:3}
+#sh-selectores #selectores{padding-top:6px}
+#sh-selectores .sel-fila.activa{border-color:#0848F7;box-shadow:inset 0 0 0 1px #0848F7}
+#sh-selectores .sel-fila.activa .sel-resp{color:var(--title);font-weight:700}
+#sh-selectores .sel-on.on{background:#0848F7 !important;border-color:#0848F7 !important;color:#fff !important}
