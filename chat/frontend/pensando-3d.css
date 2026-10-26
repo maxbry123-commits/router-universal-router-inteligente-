@@ -1,35 +1,20 @@
-/* pensando-3d.css — holograma sin tarjeta. La foto sin fondo; el cubo CSS queda si la foto falla. */
-#composer>.p3d,.p3d{position:absolute !important;left:8px !important;right:auto !important;top:auto !important;bottom:calc(100% + 6px) !important;display:flex;align-items:center;gap:8px;padding:0 !important;margin:0 !important;width:auto !important;max-width:calc(100% - 16px) !important;background:transparent !important;border:0 !important;box-shadow:none !important;border-radius:0 !important;z-index:35;pointer-events:none;flex:none !important}
-body:has(#reactivar-tarea) #composer>.p3d{left:76px !important}
+/* pensando-3d.css — fila propia encima de la caja. No es absoluto: no tapa el botón de en curso. */
+.p3d{position:static;display:flex;align-items:center;gap:8px;margin:0 0 6px 8px;padding:0;width:auto;max-width:calc(100% - 16px);background:transparent;border:0;box-shadow:none;z-index:2;pointer-events:none}
 .p3d[hidden]{display:none !important}
-.p3d-escena{position:relative;width:64px;height:64px;perspective:280px;flex:0 0 64px}
-.p3d-vis{position:absolute;inset:-6px;width:76px;height:76px;object-fit:contain;display:none;background:transparent}
+.p3d-escena{position:relative;width:36px;height:36px;flex:0 0 36px}
+.p3d-vis{position:absolute;inset:0;width:36px;height:36px;object-fit:contain;display:none;background:transparent}
 .p3d-foto .p3d-vis{display:block}
-.p3d-foto .p3d-cubo,.p3d-foto .p3d-anillo{display:none}
-.p3d-cubo{position:absolute;inset:16px;transform-style:preserve-3d;animation:p3d-gira 5s linear infinite}
-.p3d-cubo i{position:absolute;inset:0;border:1.5px solid #5ee7ff;background:rgba(0,229,255,.08);box-shadow:0 0 10px rgba(0,229,255,.55)}
-.p3d-cubo .f1{transform:translateZ(12px)}
-.p3d-cubo .f2{transform:rotateY(180deg) translateZ(12px)}
-.p3d-cubo .f3{transform:rotateY(90deg) translateZ(12px)}
-.p3d-cubo .f4{transform:rotateY(-90deg) translateZ(12px)}
-.p3d-cubo .f5{transform:rotateX(90deg) translateZ(12px)}
-.p3d-cubo .f6{transform:rotateX(-90deg) translateZ(12px)}
-.p3d-anillo{position:absolute;inset:1px;border-radius:50%;border:1.5px solid rgba(94,231,255,.75)}
-.p3d-anillo.a1{animation:p3d-a1 3.2s linear infinite}
-.p3d-anillo.a2{inset:6px;border-color:rgba(255,208,96,.8);animation:p3d-a2 5s linear infinite}
-.p3d-anillo.a3{opacity:0}
+.p3d-foto .p3d-cubo{display:none}
+.p3d-cubo{position:absolute;inset:8px;transform-style:preserve-3d;animation:p3d-gira 5s linear infinite}
+.p3d-cubo i{position:absolute;inset:0;border:1.5px solid #5ee7ff;background:rgba(0,229,255,.08)}
+.p3d-cubo .f1{transform:translateZ(8px)}
+.p3d-cubo .f2{transform:rotateY(180deg) translateZ(8px)}
+.p3d-cubo .f3{transform:rotateY(90deg) translateZ(8px)}
+.p3d-cubo .f4{transform:rotateY(-90deg) translateZ(8px)}
+.p3d-cubo .f5{transform:rotateX(90deg) translateZ(8px)}
+.p3d-cubo .f6{transform:rotateX(-90deg) translateZ(8px)}
 .p3d-txt{display:grid;gap:0;min-width:0}
-.p3d-txt strong{font-size:13px;font-weight:600;color:#e8fbff;text-shadow:0 0 10px rgba(0,229,255,.45)}
+.p3d-txt strong{font-size:13px;font-weight:600;color:#e8fbff}
 .p3d-t{font-size:12px;color:#9ec9d4;font-variant-numeric:tabular-nums}
-.p3d-rui{font-size:10px;color:#7aa8b4;letter-spacing:.02em}
-.p3d[data-rui="02"] .p3d-escena{animation:p3d-rebote .5s ease}
-.p3d[data-rui="03"] .p3d-escena::before{content:"";position:absolute;left:-6px;top:8px;bottom:8px;border-left:1px dotted #5ee7ff}
-.p3d[data-rui="07"] .p3d-vis,.p3d[data-rui="20"] .p3d-vis{animation:riu-orb 1.2s ease-in-out infinite}
-.p3d[data-rui="16"] .p3d-vis{animation:ap-revela .4s both}
-.p3d[data-rui="20"] .p3d-escena::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px solid transparent;border-top-color:#5ee7ff;animation:riu-orbe-gira 2.4s linear infinite}
-.p3d[data-rui="22"] .p3d-escena{animation:riu-mic 1.1s ease-in-out infinite}
 @keyframes p3d-gira{from{transform:rotateX(-22deg) rotateY(0)}to{transform:rotateX(-22deg) rotateY(360deg)}}
-@keyframes p3d-a1{from{transform:rotateX(72deg) rotateZ(0)}to{transform:rotateX(72deg) rotateZ(360deg)}}
-@keyframes p3d-a2{from{transform:rotateY(68deg) rotateZ(0)}to{transform:rotateY(68deg) rotateZ(-360deg)}}
-@keyframes p3d-rebote{40%{transform:translateY(-6px)}100%{transform:none}}
-@media(prefers-reduced-motion:reduce){.p3d-cubo,.p3d-anillo,.p3d-escena,.p3d-vis{animation:none}}
+@media(prefers-reduced-motion:reduce){.p3d-cubo{animation:none}}
