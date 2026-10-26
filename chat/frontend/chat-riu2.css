@@ -90,3 +90,4 @@
   #composer > #btn-selector-modelos { min-height: 32px !important; height: 32px; width: auto !important; max-width: 100%; align-self: flex-start; margin: 4px 0 0 !important; border-radius: 999px; }
   #en-curso.en-curso { width: auto; min-height: 36px; height: 36px; margin: 0 0 6px; padding: 0 12px; border-radius: 999px; gap: 6px; align-self: flex-start; justify-content: flex-start; font-size: 14px; }
 }
+.sheet .list button { min-height: 36px !important; padding: 6px 10px; border-radius: 10px; font-size: 14px; }
