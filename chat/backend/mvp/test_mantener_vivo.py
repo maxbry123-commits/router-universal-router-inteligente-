@@ -73,6 +73,7 @@ class SinVercel(Base):
         self.assertAlmostEqual(hasta - time.time(), 24 * 3600, delta=60)
         self.assertEqual(self.client.get("/health", headers=CAB).json()["mantener_hasta"], hasta)
         self.assertEqual(self.client.post("/plugins/puente_chat/call/mantener_encendido", headers=CAB, json={"horas": "x"}).status_code, 400)
+        mv.HASTA["t"] = 0.0
         self.assertEqual(self.client.post("/plugins/puente_chat/call/mantener_encendido", json={"horas": 1}).status_code, 401)
 
     def test_el_latido_sigue_sin_tareas_mientras_dure_el_plazo(self):
@@ -94,3 +95,29 @@ class SinVercel(Base):
         with patch.object(servicio, "_llamar_modelo", modelo):
             r = self.client.post("/chat", headers=CAB, json={"mensajes": enorme})
         self.assertEqual(r.status_code, 200, r.text[:200])
+
+
+class HastaQueLoApague(Base):
+    def setUp(self):
+        super().setUp(); mv._tarea = None; mv.HASTA["t"] = 0.0; mv.SIEMPRE["on"] = False
+
+    def llamar(self, cuerpo):
+        return self.client.post("/plugins/puente_chat/call/mantener_encendido", headers=CAB, json=cuerpo).json()["result"]
+
+    def test_siempre_enciende_y_se_recuerda_y_apagar_lo_quita(self):
+        import time
+        r = self.llamar({"siempre": True})
+        self.assertTrue(r["siempre"])
+        self.assertGreater(r["hasta"] - time.time(), 5 * 365 * 24 * 3600)
+        self.assertTrue(self.client.get("/health", headers=CAB).json()["mantener_siempre"])
+        self.assertIs(mv.leer(servicio.app.state.banco), True)                # sobrevive a un reinicio
+        r = self.llamar({"siempre": False})
+        self.assertFalse(r["siempre"])
+        self.assertEqual(r["hasta"], 0.0)
+        self.assertIs(mv.leer(servicio.app.state.banco), False)               # apagado a proposito: no vuelve el plazo de 24 h
+        self.assertFalse(self.client.get("/health", headers=CAB).json()["mantener_siempre"])
+
+    def test_horas_sigue_funcionando_y_no_cambia_lo_elegido(self):
+        r = self.llamar({"horas": 2})
+        self.assertFalse(r["siempre"])
+        self.assertIsNone(mv.leer(servicio.app.state.banco))

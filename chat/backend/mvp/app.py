@@ -32,7 +32,9 @@ async def inicio(app):
         await asyncio.wait_for(CONTROL.cargar(), 15)  # estado de permisos guardado por /almacen; sin HF sigue en memoria
     except asyncio.TimeoutError:
         pass
-    mantener_vivo.mantener(float(os.environ.get("RIU_MANTENER_HORAS", "24")), _en_curso)  # Space despierto 24 h tras cada arranque (y mientras haya tareas)
+    elegido = await asyncio.to_thread(mantener_vivo.leer, app.state.banco)  # True = hasta que el Director lo apague
+    mantener_vivo.SIEMPRE["on"] = bool(elegido)
+    mantener_vivo.mantener(mantener_vivo.SIEMPRE_H if elegido else 0 if elegido is False else float(os.environ.get("RIU_MANTENER_HORAS", "24")), _en_curso)
     yield
 app = FastAPI(lifespan=inicio)
 app.add_middleware(CORSMiddleware, allow_methods=["*"], allow_headers=["*"],  # el chat (Vercel) llama al Router desde otro origen; la autenticacion es la X-API-Key, no cookies
@@ -85,7 +87,7 @@ def health(authorization: str | None = Header(None),
         return {"status": "ok" if app.state.banco else "degraded", "commit": str(getattr(app.state, "commit", "desconocido"))[:10]}  # el commit no es secreto: sirve para comprobar que version corre
     return {"status": "ok" if app.state.banco else "degraded", "cpu": escalado.cpu_local(),
             "commit": app.state.commit, "banco_abierto": bool(app.state.banco),
-            "tareas_en_curso": _en_curso(), "latido": mantener_vivo.ULTIMO, "mantener_hasta": mantener_vivo.HASTA["t"],
+            "tareas_en_curso": _en_curso(), "latido": mantener_vivo.ULTIMO, "mantener_hasta": mantener_vivo.HASTA["t"], "mantener_siempre": mantener_vivo.SIEMPRE["on"],
             "qwen_base_url_presente": bool(modelos.base_url()),
             "plan": modelos.plan(), "modelo_defecto": modelos.cargar()["modelo_defecto"],
             "clave_qwen_presente": bool(modelos.clave_env() or
@@ -396,10 +398,12 @@ def _lanzar(coro):
     tarea = asyncio.create_task(coro); _TAREAS.add(tarea); tarea.add_done_callback(_TAREAS.discard)
 @app.post("/plugins/{plugin}/call/{accion}", dependencies=[Depends(verificar)])
 async def plugin_call(plugin: str, accion: str, cuerpo: dict):
-    if plugin == "puente_chat" and accion == "mantener_encendido":  # el chat pide mantener el Space despierto N horas
-        try: horas = min(max(float(cuerpo.get("horas") or 24), 0), 720)
+    if plugin == "puente_chat" and accion == "mantener_encendido":  # {siempre: true} = hasta que lo apagues; {siempre: false} = apagar; {horas: n} = n horas
+        siempre = cuerpo.get("siempre")
+        try: horas = mantener_vivo.SIEMPRE_H if siempre is True else 0 if siempre is False else min(max(float(24 if cuerpo.get("horas") is None else cuerpo["horas"]), 0), 720)
         except (TypeError, ValueError): raise HTTPException(status_code=400, detail="horas invalidas") from None
-        return {"status": "ok", "result": {"ok": True, "hasta": mantener_vivo.mantener(horas, _en_curso)}}
+        if siempre is not None: await asyncio.to_thread(mantener_vivo.guardar, app.state.banco, siempre)
+        return {"status": "ok", "result": {"ok": True, "siempre": mantener_vivo.SIEMPRE["on"], "hasta": mantener_vivo.mantener(horas, _en_curso)}}
     if plugin == "puente_chat" and accion in loop_puente.MIRROR:  # selector de mirrors del chat -> instancias de agente de nct_loop
         return {"status": "ok", "result": await loop_puente.llamar("nct_loop", accion, cuerpo)}
     if plugin in loop_puente.PLUGINS:  # LOOP, Cola y Watchdog: Chat -> Harness -> Router -> plugin

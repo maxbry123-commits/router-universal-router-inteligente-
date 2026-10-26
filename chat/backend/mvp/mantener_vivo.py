@@ -1,13 +1,19 @@
 """Mantener encendido el Space mientras haya tareas largas: se pide /health por su URL publica cada LATIDO_S.
 Hugging Face cuenta ese trafico y no lo duerme; sin tareas en curso el latido se detiene solo."""
 import asyncio
+import json
 import os
 import time
 import urllib.request
 
+from mvp import hf_store
+
 LATIDO_S = int(os.environ.get("RIU_LATIDO_S", "300"))
 _tarea = None
 ULTIMO = {"t": 0.0, "ok": None}
+SIEMPRE_H = 24 * 365 * 10  # «hasta que yo lo apague»: 10 anos
+SIEMPRE = {"on": False}
+NOMBRE = "chat_estado/mantener.json"
 HASTA = {"t": 0.0}  # el Space se mantiene despierto hasta esta hora (epoch), haya o no tareas
 
 
@@ -46,3 +52,21 @@ def mantener(horas, contar, ping=_ping):
     except RuntimeError:  # sin bucle de eventos todavia: el arranque lo volvera a pedir con la primera tarea
         pass
     return HASTA["t"]
+
+
+def guardar(banco, siempre):
+    """Recuerda la eleccion del Director (sobrevive a reinicios). Mejor esfuerzo."""
+    SIEMPRE["on"] = bool(siempre)
+    try:
+        hf_store.guardar(banco.leer("HF_TOKEN") if banco else None, NOMBRE, json.dumps({"siempre": bool(siempre)}))
+    except (ValueError, RuntimeError, TypeError):
+        pass
+
+
+def leer(banco):
+    """True/False si el Director ya eligio; None si nunca lo hizo (rige el plazo por defecto)."""
+    try:
+        v = json.loads(hf_store.leer(banco.leer("HF_TOKEN") if banco else None, NOMBRE)["valor"])["siempre"]
+        return bool(v)
+    except (ValueError, RuntimeError, TypeError, KeyError):
+        return None
