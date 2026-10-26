@@ -33,8 +33,8 @@ st.textContent = "@media(max-width:720px){"
   + "#composer .composer-bar>.action{order:6;position:static !important;margin-left:8px !important;flex:0 0 auto !important;width:auto !important;min-width:132px !important;max-width:none !important;height:46px !important;min-height:46px !important;padding:0 22px !important;border-radius:12px !important}"
   + "#composer .composer-bar>.action::after{content:\"Enviar\" !important;display:inline !important;font-size:15px !important}"
   + "#composer .composer-bar>.p3d{flex:1 1 100% !important;order:-1;max-width:100%}"
-  + "#composer .composer-bar>#btn-selector-modelos{order:0 !important;width:34px !important;max-width:34px !important;min-width:34px !important;height:34px !important;min-height:34px !important;margin:0 !important;align-self:center !important;flex:0 0 34px !important;padding:0 !important;border-radius:50% !important;justify-content:center}"
-  + "#composer .composer-bar>#btn-selector-modelos .sel-ind-txt,#composer .composer-bar>#btn-selector-modelos .sel-ind-flecha{display:none !important}"
+  + "#composer>#btn-selector-modelos{order:3 !important;display:flex !important;width:100% !important;max-width:100% !important;min-width:0 !important;height:auto !important;min-height:40px !important;margin:6px 0 0 !important;padding:8px 14px !important;border-radius:999px !important;align-self:stretch !important;flex:0 0 auto !important;font-size:14px !important;justify-content:flex-start !important;gap:8px}"
+  + "#composer>#btn-selector-modelos .sel-ind-txt,#composer>#btn-selector-modelos .sel-ind-flecha{display:inline !important;font-size:14px !important}"
   + "#composer .composer-bar>#mode-selector-mount{order:0;display:flex;align-items:center;margin:0 !important;max-width:none;flex:0 0 auto}"
   + ".riu-hoja .riu-lista{display:flex;flex-direction:column;gap:4px}"
   + ".riu-hoja .riu-lista button{width:100% !important;max-width:100%;height:auto !important;min-height:34px !important;aspect-ratio:auto;border-radius:12px;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;padding:4px 10px !important}"
@@ -186,12 +186,7 @@ function parqueAuto() {
   if (modo.parentNode !== fila || modo.previousSibling !== modelo) modelo.after(modo);
 }
 function modeloChip() {
-  const btn = document.querySelector("#btn-selector-modelos");
-  const fila = bar();
-  if (!btn || !fila) return;
-  if (!btn._casaModelo) btn._casaModelo = btn.parentNode;
-  if (btn.parentNode !== fila) fila.insertBefore(btn, fila.firstChild);
-  parqueAuto();
+  devolverModelo();
 }
 function devolverModelo() {
   const btn = document.querySelector("#btn-selector-modelos");
