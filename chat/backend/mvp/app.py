@@ -465,7 +465,7 @@ async def _reanudar_todas():
 async def _recuperar(pid):
     """Trabajo iniciado o terminado por otro proceso: se lee del almacen; un trabajo local 'procesando' sin latido de 15 min se da por interrumpido."""
     doc = await asyncio.to_thread(trabajos.leer, app.state.banco, pid)
-    if not doc or (doc.get("estado") == "procesando" and time.time() - doc.get("creado", 0) > TRABAJO_VENCE): return False
+    if not doc or (doc.get("estado") == "procesando" and TRABAJO_VENCE and time.time() - doc.get("creado", 0) > TRABAJO_VENCE): return False  # TRABAJO_VENCE=0: nunca se da por interrumpido
     TRABAJOS[pid] = doc
     if doc.get("estado") == "procesando" and doc.get("proceso_remoto"):
         _lanzar(_seguir_adoptado(pid, doc["destino"], doc["proceso_remoto"]))
