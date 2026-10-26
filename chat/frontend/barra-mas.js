@@ -107,7 +107,7 @@ function grupo(id, icono, hoja, etiqueta) {
     b.setAttribute("aria-controls", hoja);
     b.addEventListener("click", () => abrir(hoja, b));
   }
-  b.innerHTML = svg(icono);
+  if (!b.querySelector("svg")) b.innerHTML = svg(icono);
   b.setAttribute("aria-label", etiqueta);
   const env = bar.querySelector(".action");
   if (b.parentNode !== bar) bar.insertBefore(b, env || null);
@@ -228,9 +228,30 @@ function menu() {
   const env = fila.querySelector(".action");
   if (btn.parentNode !== fila) fila.insertBefore(btn, env);
 }
+function tres() {
+  const ctx = panel("ctx-panel", "Archivos");
+  const trab = panel("trab-panel", "LOOP");
+  const cuad = panel("mas-panel", "Ventanas");
+  grupo("btn-grp-ctx", ICO.archivos, "ctx-panel", "Archivos");
+  grupo("btn-grp-trab", ICO.loop, "trab-panel", "LOOP");
+  grupo("btn-grp-cuad", ICO.config, "mas-panel", "Ventanas");
+  CONTEXTO.forEach((id) => meter(id, ctx));
+  TRABAJO.forEach((id) => meter(id, trab));
+  CUADERNO.forEach((id) => meter(id, cuad));
+  atajos(ctx);
+  const mas = document.getElementById("btn-mas");
+  if (mas) mas.remove();
+  const pop = document.getElementById("mas-pop");
+  if (pop) pop.hidden = true;
+}
+let ocupado = false;
 function colocar() {
-  devolver();
-  menu();
+  if (ocupado) return;
+  ocupado = true;
+  try {
+    if (!movil()) { devolver(); menu(); return; }
+    tres();
+  } finally { ocupado = false; }
 }
 
 document.addEventListener("click", (ev) => {
