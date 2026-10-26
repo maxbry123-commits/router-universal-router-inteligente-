@@ -11,7 +11,10 @@ const TRABAJO = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tools", "btn-agent
 const INTERRUPTORES = ["btn-tools", "btn-agentes", "btn-prompt"];
 const VENTANAS = ["btn-tareas", "btn-comandos", "btn-sesion", "btn-reglas", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
 const CUADERNO = VENTANAS;
-const ATAJOS = [["Claves", "#pill-claves"], ["Workflows", "#pill-workflows"]];
+const PILLS_CTX = ["ancla", "btn-proyectos", "pill-claves", "pill-workflows"];
+const PILLS_TRAB = ["btn-llm-tool", "btn-agent-access-lock"];
+const PILLS_CUAD = ["mas", "motor", "btn-motor-on", "pill-constitucion"];
+const PILLS = [...PILLS_CTX, ...PILLS_TRAB, ...PILLS_CUAD];
 const movil = () => matchMedia("(max-width:720px)").matches;
 
 const st = document.createElement("style");
@@ -19,10 +22,12 @@ st.textContent = "@media(max-width:720px){"
   + "#composer{display:flex !important;flex-direction:column !important;max-width:100%;min-width:0;overflow:visible;padding:6px 8px 4px !important;border-radius:16px !important}"
   + "#composer #message{order:1;min-height:36px !important;max-height:64px !important;padding:4px 6px !important;font-size:16px}"
   + "#composer .composer-bar{order:2;display:flex !important;flex-wrap:wrap !important;overflow:visible !important;align-items:center;gap:4px !important;max-width:100%;min-width:0}"
-  + "#composer .composer-bar::after{content:none !important;display:none !important}"
+  + ".ctl-int>.row.fields:not(:has(button:not([hidden]))){display:none !important}"
+  + "#composer .composer-bar::after{content:\"\" !important;display:block !important;flex:1 0 100% !important;height:0 !important;order:4 !important}"
   + "#composer .composer-bar>button.secondary:not(#btn-tools):not(#btn-agentes):not(#btn-prompt){width:34px !important;min-width:34px !important;max-width:34px !important;height:34px !important;min-height:34px !important;flex:0 0 34px !important;padding:0 !important;border-radius:50% !important}"
   + "#composer #btn-tools,#composer #btn-agentes,#composer #btn-prompt{order:4;width:auto !important;max-width:none !important;height:34px !important;min-height:34px !important;flex:0 0 auto !important;aspect-ratio:auto !important;border-radius:999px !important;padding:0 12px !important}"
   + "#composer #btn-detener{order:5;display:inline-flex !important;margin-left:auto !important}"
+  + "#composer #btn-paralelo{order:5 !important}"
   + "#composer .composer-bar>.action{order:6;position:static !important;margin-left:8px !important;flex:0 0 auto !important;width:auto !important;min-width:132px !important;max-width:none !important;height:46px !important;min-height:46px !important;padding:0 22px !important;border-radius:12px !important}"
   + "#composer .composer-bar>.action::after{content:\"Enviar\" !important;display:inline !important;font-size:15px !important}"
   + "#composer .composer-bar>.p3d{flex:1 1 100% !important;order:-1;max-width:100%}"
@@ -131,15 +136,18 @@ function meter(id, hoja) {
   destino.append(b);
 }
 
-function atajos(hoja) {
-  if (hoja.querySelector(".mas-atajo")) return;
-  ATAJOS.forEach(([n, sel]) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "secondary mas-atajo";
-    b.textContent = n;
-    b.addEventListener("click", () => { const x = document.querySelector(sel); if (x) x.click(); });
-    listaDe(hoja).append(b);
+function meterPill(id, hoja) {
+  const b = document.getElementById(id);
+  if (!b) return;
+  if (!b._casa) { b._casa = b.parentNode; b._sig = b.nextSibling; }
+  meter(id, hoja);
+}
+function devolverPills() {
+  PILLS.forEach((id) => {
+    const b = document.getElementById(id);
+    if (!b || !b._casa || !b._casa.isConnected || b.parentNode === b._casa) return;
+    const sig = b._sig && b._sig.parentNode === b._casa ? b._sig : null;
+    b._casa.insertBefore(b, sig);
   });
 }
 
@@ -175,6 +183,7 @@ function devolver() {
   const mirror = document.querySelector("#mirror-selector-mount");
   if (mirror && mirror.parentNode !== fila) fila.insertBefore(mirror, document.querySelector("#btn-detener") || env || null);
   document.querySelectorAll(".mas-atajo").forEach((n) => n.remove());
+  devolverPills();
   ["ctx-panel", "trab-panel", "mas-panel"].forEach((id) => { const p = document.getElementById(id); if (p) p.hidden = true; });
   document.querySelectorAll(".grp").forEach((g) => g.remove());
   devolverAuto();
@@ -238,7 +247,10 @@ function tres() {
   CONTEXTO.forEach((id) => meter(id, ctx));
   TRABAJO.forEach((id) => meter(id, trab));
   CUADERNO.forEach((id) => meter(id, cuad));
-  atajos(ctx);
+  PILLS_CTX.forEach((id) => meterPill(id, ctx));
+  PILLS_TRAB.forEach((id) => meterPill(id, trab));
+  PILLS_CUAD.forEach((id) => meterPill(id, cuad));
+  parqueAuto();
   const mas = document.getElementById("btn-mas");
   if (mas) mas.remove();
   const pop = document.getElementById("mas-pop");
