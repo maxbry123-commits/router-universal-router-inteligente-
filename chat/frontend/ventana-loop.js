@@ -348,11 +348,13 @@ function pintarLoop(cuerpo) {
   anclarGob = async () => {
     if (!md.value.trim()) { nct.textContent = "falta el objetivo"; return; }
     pararGob();
-    const r = await window.RIU_PLUGIN("nct_loop", "gobernar", { objetivo: md.value, modelo: modeloChat(), sesion: sesion() });
-    gob = r.proceso_id || "";
-    const nombres = Array.isArray(r.ciclos) ? r.ciclos.join(" ") : "";
-    nct.textContent = [r.estado || "", gob, nombres].filter(Boolean).join(" · ");
-    if (gob) gobPoll = setInterval(leerGob, 2000);
+    try {
+      const r = await window.RIU_PLUGIN("nct_loop", "gobernar", { objetivo: md.value, modelo: modeloChat(), sesion: sesion() });
+      gob = r.proceso_id || "";
+      const nombres = Array.isArray(r.ciclos) ? r.ciclos.join(" ") : "";
+      nct.textContent = [r.estado || "", gob, nombres].filter(Boolean).join(" · ");
+      if (gob) gobPoll = setInterval(leerGob, 2000);
+    } catch (e) { nct.textContent = e.message; pararGob(); }
   };
   const leerEstado = async () => {
     if (!proc) return;
