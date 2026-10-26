@@ -4,10 +4,11 @@ import base64
 import hmac, logging, re, uuid
 import os, subprocess, sys, time
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import bank, compute, control, externos, frontend_estatico, loop_puente, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
+from mvp import bank, compute, control, externos, estado_tarea, frontend_estatico, loop_puente, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -35,6 +36,7 @@ async def inicio(app):
     elegido = await asyncio.to_thread(mantener_vivo.leer, app.state.banco)  # True = hasta que el Director lo apague
     mantener_vivo.SIEMPRE["on"] = bool(elegido)
     mantener_vivo.mantener(mantener_vivo.SIEMPRE_H if elegido else 0 if elegido is False else float(os.environ.get("RIU_MANTENER_HORAS", "24")), _en_curso)
+    if app.state.banco: _lanzar(_reanudar_todas())  # tareas que quedaron a medias por un reinicio
     yield
 app = FastAPI(lifespan=inicio)
 app.add_middleware(CORSMiddleware, allow_methods=["*"], allow_headers=["*"],  # el chat (Vercel) llama al Router desde otro origen; la autenticacion es la X-API-Key, no cookies
@@ -92,6 +94,7 @@ def health(authorization: str | None = Header(None),
             "plan": modelos.plan(), "modelo_defecto": modelos.cargar()["modelo_defecto"],
             "clave_qwen_presente": bool(modelos.clave_env() or
                                        (app.state.banco and app.state.banco.leer("QWEN_API_KEY")))}
+_PID = ContextVar("pid_tarea", default=None)  # la tarea del chat que esta ejecutando chat(): su estado se guarda en cada pausa
 MAX_CARACTERES = 4_000_000  # ~1 millon de tokens; tope de texto por peticion: error claro en vez de un 502 opaco del proveedor
 async def _llamar_modelo(mensajes, modelo, opciones):
     """Una llamada directa al modelo: Qwen (QWEN_API_KEY) o Groq/NVIDIA (groq/<id>, nvidia/<id>, mvp/externos.py)."""
@@ -120,21 +123,33 @@ async def chat(cuerpo: dict):
     if sum(len(str(m.get("content") or "")) for m in mensajes if isinstance(m, dict)) > MAX_CARACTERES:
         raise HTTPException(status_code=413, detail="el contexto supera %d caracteres; acorta el mensaje o abre un chat nuevo" % MAX_CARACTERES)
     if cuerpo.get("via") == "harness":
-        limite, usadas, acumulado = time.time() + float(os.environ.get("RIU_MAX_HORAS", "48")) * 3600, [], ""
-        while True:  # el Harness pausa cada ~90 s y devuelve `continuar`: se reanuda con su conversacion hasta terminar o llegar a 48 h
-            try:
-                salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"), {**controles, "acumulado": acumulado})
-            except (ValueError, RuntimeError) as error:
-                raise HTTPException(status_code=502, detail=str(error)) from None
-            if salida.get("status") == "error":
-                raise HTTPException(status_code=403 if salida.get("status_code") == 403 else 502, detail=str(salida.get("error") or "harness error"))
-            salida = salida.get("result", salida) if isinstance(salida.get("result"), dict) else salida
-            usadas += salida.get("herramientas_usadas") or []
-            if not salida.get("continuar"):
-                break
-            if time.time() > limite:
-                raise HTTPException(status_code=504, detail="GAP: se alcanzaron las 48 h de trabajo; el progreso queda en la conversacion")
-            mensajes, acumulado = salida["mensajes"], salida.get("acumulado") or ""
+        pid = _PID.get()
+        limite, usadas, acumulado = cuerpo.get("_limite") or time.time() + float(os.environ.get("RIU_MAX_HORAS", "48")) * 3600, list(cuerpo.get("_usadas") or []), str(cuerpo.get("_acumulado") or "")
+        async def guardar_estado():  # historial completo al almacen permanente: si el Space se reinicia, la tarea se retoma de aqui
+            await asyncio.to_thread(estado_tarea.guardar, app.state.banco, pid, {"mensajes": mensajes, "acumulado": acumulado, "usadas": usadas, "modelo": modelo,
+                                                                                   "opciones": cuerpo.get("opciones"), "controles": controles, "limite": limite})
+            await asyncio.to_thread(estado_tarea.marcar, app.state.banco, pid, True)
+        try:
+            if pid: await guardar_estado()
+            while True:  # el Harness pausa cada ~90 s y devuelve `continuar`: se reanuda con su conversacion hasta terminar o llegar a 48 h
+                try:
+                    salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"), {**controles, "acumulado": acumulado})
+                except (ValueError, RuntimeError) as error:
+                    raise HTTPException(status_code=502, detail=str(error)) from None
+                if salida.get("status") == "error":
+                    raise HTTPException(status_code=403 if salida.get("status_code") == 403 else 502, detail=str(salida.get("error") or "harness error"))
+                salida = salida.get("result", salida) if isinstance(salida.get("result"), dict) else salida
+                usadas += salida.get("herramientas_usadas") or []
+                if not salida.get("continuar"):
+                    break
+                if time.time() > limite:
+                    raise HTTPException(status_code=504, detail="GAP: se alcanzaron las 48 h de trabajo; el progreso queda en la conversacion")
+                mensajes, acumulado = salida["mensajes"], salida.get("acumulado") or ""
+                if pid: await guardar_estado()
+        except Exception:  # terminada con error (no por reinicio): ya no hay nada que retomar
+            if pid: await asyncio.to_thread(estado_tarea.marcar, app.state.banco, pid, False)
+            raise
+        if pid: await asyncio.to_thread(estado_tarea.marcar, app.state.banco, pid, False)
         salida = {**salida, "herramientas_usadas": usadas}
         llamadas = salida.get("tool_calls") or []
         _verificar_llamadas(llamadas, controles)
@@ -349,6 +364,7 @@ async def _chat_ficha(cuerpo, progreso=None):
                                     "tool_calls": salida["tool_calls"]},
                          "finish_reason": salida["finish_reason"]}]}
 async def _local(pid, cuerpo):
+    _PID.set(pid)
     try:
         TRABAJOS[pid].update(await _chat_ficha(cuerpo, lambda t: TRABAJOS[pid].update(progreso=t)))
     except HTTPException as error:
@@ -382,6 +398,28 @@ async def _correr(pid, cuerpo):
         finally: escalado.salir(destino)
     except escalado.DestinoError as error: TRABAJOS[pid].update(estado="error", error=str(error))
     TRABAJOS[pid].pop("subestado", None); await _persistir(pid)
+async def _reanudar(pid):
+    """El Space se reinicio con la tarea a medias: se retoma con el historial guardado (pierde, como mucho, la ultima pausa de ~90 s)."""
+    est = await asyncio.to_thread(estado_tarea.leer, app.state.banco, pid)
+    if not est:
+        await asyncio.to_thread(estado_tarea.marcar, app.state.banco, pid, False)
+        return
+    TRABAJOS[pid] = {"estado": "procesando", "proceso_id": pid, "finish_reason": "", "creado": time.time(), "reanudado": True}
+    _PROPIOS.add(pid); _PID.set(pid)
+    try:
+        s = await chat({"modelo": est["modelo"], "mensajes": est["mensajes"], "via": "harness", "opciones": est.get("opciones"), **(est.get("controles") or {}),
+                        "_limite": est.get("limite"), "_usadas": est.get("usadas"), "_acumulado": est.get("acumulado")})
+        TRABAJOS[pid].update(estado="completado", via="harness", finish_reason=s["finish_reason"], reanudado=True, modelo_solicitado=est["modelo"],
+                             modelo_respuesta=s.get("modelo_respuesta"), herramientas_usadas=s.get("herramientas_usadas") or [],
+                             choices=[{"message": {"role": "assistant", "content": s["texto"], "tool_calls": s["tool_calls"]}, "finish_reason": s["finish_reason"]}])
+    except HTTPException as error:
+        TRABAJOS[pid].update(estado="error", error=str(error.detail), status_code=error.status_code)
+    except Exception as error:  # noqa: BLE001
+        TRABAJOS[pid].update(estado="error", error=type(error).__name__)
+    await _persistir(pid)
+async def _reanudar_todas():
+    for pid in list(await asyncio.to_thread(estado_tarea.pendientes, app.state.banco)):
+        _lanzar(_reanudar(pid))
 async def _recuperar(pid):
     """Trabajo iniciado o terminado por otro proceso: se lee del almacen; un trabajo local 'procesando' sin latido de 15 min se da por interrumpido."""
     doc = await asyncio.to_thread(trabajos.leer, app.state.banco, pid)
