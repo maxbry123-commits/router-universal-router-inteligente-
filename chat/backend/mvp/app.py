@@ -8,7 +8,7 @@ from contextvars import ContextVar
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import bank, compute, control, externos, estado_tarea, frontend_estatico, loop_puente, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
+from mvp import bank, compute, control, externos, estado_tarea, frontend_estatico, loop_puente, loop_reanudar, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -37,7 +37,7 @@ async def inicio(app):
     except asyncio.TimeoutError: elegido = None
     mantener_vivo.SIEMPRE["on"] = bool(elegido)
     mantener_vivo.mantener(mantener_vivo.SIEMPRE_H if elegido else 0 if elegido is False else float(os.environ.get("RIU_MANTENER_HORAS", "24")), _en_curso)
-    if app.state.banco: _lanzar(_reanudar_todas())  # tareas que quedaron a medias por un reinicio
+    if app.state.banco: _lanzar(_reanudar_todas()); _lanzar(loop_reanudar.reanudar_todas(app.state.banco))  # tareas del chat y del LOOP que quedaron a medias por un reinicio
     yield
 app = FastAPI(lifespan=inicio)
 app.add_middleware(CORSMiddleware, allow_methods=["*"], allow_headers=["*"],  # el chat (Vercel) llama al Router desde otro origen; la autenticacion es la X-API-Key, no cookies
@@ -446,8 +446,9 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
     if plugin == "puente_chat" and accion in loop_puente.MIRROR:  # selector de mirrors del chat -> instancias de agente de nct_loop
         return {"status": "ok", "result": await loop_puente.llamar("nct_loop", accion, cuerpo)}
     if plugin in loop_puente.PLUGINS:  # LOOP, Cola y Watchdog: Chat -> Harness -> Router -> plugin
-        try: resultado = await loop_puente.llamar(plugin, accion, cuerpo)
+        try: resultado = await loop_puente.llamar(plugin, accion, loop_reanudar.traducir(cuerpo))
         except (OSError, ValueError) as error: raise HTTPException(status_code=503, detail=str(error)) from None
+        await loop_reanudar.registrar(app.state.banco, plugin, accion, cuerpo, resultado)  # si el Space se reinicia, el proceso se vuelve a lanzar solo
         mantener_vivo.asegurar(_en_curso)
         return {"status": "ok", "result": resultado}
     if plugin not in ("fichas_qwen", "puente_chat", "almacen"):
