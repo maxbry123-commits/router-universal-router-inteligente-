@@ -34,7 +34,7 @@ class ParaleloAgentes(unittest.TestCase):
             t = Path(t)
             m._WS_ROOT, m._MEM = t / 'ws', t / 'mem'
             m._PuertoModelo = lambda modelo, sesion: DemoModel(prop)
-            m._chat_modelo = lambda modelo, prompt, sesion: {'reply': '{"status":"PASS"}'}
+            m._chat_modelo = lambda modelo, prompt, sesion: {'reply': '{"status":"PASS","evidencia":"ok"}'}
             objs = [{'objetivo': 'Crear evidencia %d y verificarla en el workspace' % i,
                      'mision': dict(mision, mission_id='PAR_%d' % i)} for i in range(4)]
             g = m.handle('paralelo', {'objetivos': objs})

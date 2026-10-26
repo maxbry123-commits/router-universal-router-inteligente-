@@ -563,6 +563,65 @@ async def _cerrar_ciclos(rep: dict, repetir) -> dict:
     return rep
 
 
+_FASE_RX = re.compile(r'\[ECC (\S+) (s\d+)\]')
+_TOPE_CUERPO, _TOPE_META = 3500, 2000
+_CUERPOS: dict = {}
+
+
+def _secciones(skill_id: str) -> dict:
+    """phase_id -> (ciclo, cuerpo): el texto real de cada seccion del SKILL.md original."""
+    if skill_id in _CUERPOS:
+        return _CUERPOS[skill_id]
+    out, spec = {}, _catalogo_ecc().get(skill_id) or {}
+    md = _ECC_DIR / 'skills' / skill_id / 'SKILL.md'
+    if md.is_file():
+        lineas = md.read_text(encoding='utf-8', errors='replace').splitlines()
+        # source_line no coincide con el archivo: cada seccion se ubica por su encabezado, en orden.
+        titulos, pos, inicios = [f for f in spec.get('phases') or []], 0, []
+        for ph in titulos:
+            alvo = (ph.get('title') or '').strip().lower()
+            hallado = next((i for i in range(pos, len(lineas))
+                            if lineas[i].lstrip().startswith('#') and lineas[i].lstrip('# \t').strip().lower() == alvo), None)
+            inicios.append(hallado)
+            if hallado is not None:
+                pos = hallado + 1
+        for i, ph in enumerate(titulos):
+            if inicios[i] is None:
+                continue
+            fin = next((inicios[j] for j in range(i + 1, len(titulos)) if inicios[j] is not None), len(lineas))
+            out[ph['phase_id']] = (_ciclo_de_fase(ph.get('title')), '\n'.join(lineas[inicios[i]:fin]).strip())
+    _CUERPOS[skill_id] = out
+    return out
+
+
+def _enriquecer(prompt: str) -> str:
+    """A la fase se le entrega su seccion del skill y todo el contexto META del mismo skill."""
+    m = _FASE_RX.search(prompt)
+    sec = _secciones(m.group(1)) if m else {}
+    if not m or m.group(2) not in sec:
+        return prompt
+    meta = '\n\n'.join(c for k, (ciclo, c) in sec.items() if ciclo == 'META' and k != m.group(2))[:_TOPE_META]
+    return (prompt + '\n\n[CONTEXTO DEL SKILL (guias)]\n' + meta +
+            '\n\n[INSTRUCCIONES DE ESTA FASE]\n' + sec[m.group(2)][1][:_TOPE_CUERPO] +
+            '\n\nResponde SOLO JSON: {"status":"PASS|FAIL|BLOCKED","evidencia":"lo verificable que hiciste","resultado":"..."}')
+
+
+def _exigir_evidencia(r: dict) -> dict:
+    """PASS solo si el modelo devuelve JSON con status PASS y evidencia; si no, FAIL (no se acepta cualquier texto)."""
+    if not isinstance(r, dict) or r.get('error'):
+        return r
+    txt = r.get('reply') or r.get('texto') or ''
+    try:
+        d, _ = json.JSONDecoder().raw_decode(txt[txt.index('{'):])
+    except ValueError:
+        d = None
+    if isinstance(d, dict) and str(d.get('status')).upper() in ('FAIL', 'BLOCKED'):
+        return r
+    if isinstance(d, dict) and str(d.get('status')).upper() == 'PASS' and str(d.get('evidencia') or '').strip():
+        return r
+    return {'reply': json.dumps({'status': 'FAIL', 'error': 'respuesta sin JSON con status PASS y evidencia'})}
+
+
 async def _ejecutar_skill_motor(skill_id: str, p: dict) -> dict:
     cat = _catalogo_ecc()
     spec = cat.get(skill_id)
@@ -576,7 +635,7 @@ async def _ejecutar_skill_motor(skill_id: str, p: dict) -> dict:
     mod = _modulo_skill(skill_id)
     if mod is not None and hasattr(mod, 'run'):
         def model_fn(prompt: str) -> dict:
-            return _chat_modelo(modelo, prompt, sesion)
+            return _exigir_evidencia(_chat_modelo(modelo, _enriquecer(prompt), sesion))
         task_id = str(p.get('task_id') or p.get('proceso_id') or 'tarea-' + uuid.uuid4().hex[:8])
         async def _una_vez():
             return await mod.run(dict(p.get('contexto') or p.get('context') or {}),

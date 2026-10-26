@@ -21,7 +21,7 @@ class PluginGobernarTests(unittest.TestCase):
             t = Path(t)
             m._WS_ROOT, m._MEM = t / 'ws', t / 'mem'
             m._PuertoModelo = lambda modelo, sesion: DemoModel(prop)
-            m._chat_modelo = lambda modelo, prompt, sesion: {'reply': '{"status":"PASS"}'}
+            m._chat_modelo = lambda modelo, prompt, sesion: {'reply': '{"status":"PASS","evidencia":"ok"}'}
             r = m.handle('gobernar', {'objetivo': 'Crear evidencia real y verificarla en el workspace',
                                       'mision': mision})
             self.assertEqual(r['estado'], 'procesando')
@@ -67,7 +67,7 @@ class TodosLosMotoresCorren(unittest.TestCase):
         getattr(self, 't', None) and self.t.cleanup()
 
     def test_los_311_motores_se_ejecutan_todos_sin_seleccion(self):
-        m, res = self._correr(lambda modelo, prompt, sesion: {'reply': '{"status":"PASS"}'})
+        m, res = self._correr(lambda modelo, prompt, sesion: {'reply': '{"status":"PASS","evidencia":"ok"}'})
         self.assertEqual(res['status'], 'DONE_VERIFICADO', {c['ciclo']: c.get('motores') for c in res['ciclos']})
         total = sum(c['motores']['total'] for c in res['ciclos'])
         ok = sum(c['motores']['pass'] for c in res['ciclos'])
@@ -76,7 +76,7 @@ class TodosLosMotoresCorren(unittest.TestCase):
 
     def test_un_motor_que_falla_deja_el_ciclo_en_rojo_y_no_hay_done(self):
         def chat(modelo, prompt, sesion):
-            return {'reply': '{"status":"FAIL"}' if '[ECC accessibility ' in prompt else '{"status":"PASS"}'}
+            return {'reply': '{"status":"FAIL"}' if '[ECC accessibility ' in prompt else '{"status":"PASS","evidencia":"ok"}'}
         m, res = self._correr(chat)
         self.assertNotEqual(res['status'], 'DONE_VERIFICADO')
         malo = next(c for c in res['ciclos'] if c.get('motores') and 'accessibility' in c['motores']['fallos'])
