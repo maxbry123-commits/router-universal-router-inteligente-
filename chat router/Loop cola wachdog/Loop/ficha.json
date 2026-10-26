@@ -4,7 +4,7 @@
     "id": "nct_loop",
     "enabled_default": true,
     "health_action": "status",
-    "nota_roja": "LOOP NCT/CODA: mision -> modelo (via puente_chat._chat) -> propuesta meta+ops -> motor_cli confinado -> recibos ECC. Sin scheduler ni memoria nuevos."
+    "nota_roja": "LOOP NCT/CODA: mision -> modelo (puente_chat._chat) -> meta+ops -> motor_cli confinado -> recibos ECC. 311 skills ECC compilados a motores por ciclos MAIN->VERIFY->RECOVERY (CONTINUOUS=triggers, META omitida). Sin scheduler ni memoria nuevos."
   },
   "artifact_id": "riu.plugins.nct_loop",
   "version": "0.1.0",
@@ -20,7 +20,16 @@
     "runtime_type": "compute",
     "entry_point": "plugins.nct_loop.plugin:handle",
     "idempotente": false,
-    "allowed_actions": ["status","health","ejecutar","estado","cancelar"]
+    "allowed_actions": [
+      "status",
+      "health",
+      "ejecutar",
+      "estado",
+      "cancelar",
+      "skills",
+      "skill_fases",
+      "skill_ejecutar"
+    ]
   },
   "seguridad": {
     "sandbox": "workspace-confinado",

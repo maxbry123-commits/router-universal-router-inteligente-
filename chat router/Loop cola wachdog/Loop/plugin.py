@@ -12,6 +12,7 @@ import asyncio
 import hashlib
 import importlib.util
 import json
+import re
 import sys
 import threading
 import uuid
@@ -37,6 +38,60 @@ _ACCIONES_ECC = {'run_approved_red_tests', 'run_approved_green_tests', 'run_test
                  'run_lint', 'check_diff_scope', 'run_security_checks', 'run_regression_suite',
                  'trace_click_path', 'check_accessibility', 'run_ui_e2e',
                  'run_api_contract_tests'}
+
+
+# Carpeta ECC dentro del mismo repo (sin descargas): <repo>/chat-router/.../ECC
+_ECC_DIR = (_DIR.parents[2] / 'chat-router' /
+            'workflow-loop-code-yaiwes/skills/workflow-loop-yaiwes/ECC')
+_CATALOGO_ECC = None
+_CATALOGO_LOCK = threading.Lock()
+
+
+def _catalogo_ecc() -> dict:
+    """Compila los 311 SKILL.md del repo a un registro de fases Python."""
+    global _CATALOGO_ECC
+    with _CATALOGO_LOCK:
+        if _CATALOGO_ECC is None:
+            if not _ECC_DIR.is_dir():
+                raise RuntimeError('ECC skills no presentes en repo: ' + str(_ECC_DIR))
+            from nct_loop.ecc_phase_compiler import compile_directory
+            _CATALOGO_ECC = compile_directory(_ECC_DIR)
+        return _CATALOGO_ECC
+
+
+# Separacion de ciclos del skills: cada fase compilada se clasifica por su
+# titulo de seccion en MAIN (procedimiento), VERIFY (comprobacion),
+# RECOVERY (solo si falla), CONTINUOUS (re-disparo por eventos) y META
+# (guia del documento; no corre como paso de ejecucion).
+_CICLOS = (
+    ('RECOVERY', re.compile(
+        r'(recover|repair|fail|rollback|pitfall|escalat|incident|error|fault|degrad|revert|mitigat|diagnos|debug)',
+        re.I)),
+    ('CONTINUOUS', re.compile(
+        r'(continuous|monitor|watchdog|watch|hook|trigger|schedule|observ|telemetry|alert|poll)',
+        re.I)),
+    ('VERIFY', re.compile(
+        r'(verif|validat|check|test|audit|gate|review|eval|assert|lint|scan|quality|accept|receipt)',
+        re.I)),
+    ('META', re.compile(
+        r'(when to|example|related|reference|see also|resource|overview|concept|principle|introduction|install|setup|config|glossar|faq|anti-?pattern|don.t|output format|quick reference|terminolog)',
+        re.I)),
+)
+
+
+def _ciclo_de_fase(title: str) -> str:
+    t = str(title or '')
+    for ciclo, rx in _CICLOS:
+        if rx.search(t):
+            return ciclo
+    return 'MAIN'
+
+
+def _fases_por_ciclo(spec: dict) -> dict:
+    ciclos: dict = {'MAIN': [], 'VERIFY': [], 'RECOVERY': [], 'CONTINUOUS': [], 'META': []}
+    for ph in spec.get('phases') or []:
+        ciclos.setdefault(_ciclo_de_fase(ph.get('title')), []).append(ph)
+    return ciclos
 
 
 def _mod(nombre: str, ruta: Path):
@@ -222,6 +277,116 @@ async def _correr(pid: str, p: dict) -> dict:
     return await engine.run(mission)
 
 
+# --- Skills ECC compilados a motores ejecutables ---------------------------
+# Un handler por fase: el modelo del chat produce el artefacto de la fase
+# (patron Ricardo: la LLM genera, el recibo verifica). Sin respuesta real ->
+# la fase FALLA y el skill se detiene; nada se marca PASS sin evidencia.
+def _handler_fase(modelo: str, sesion: str):
+    def accion(request: dict) -> dict:
+        prompt = (
+            '[ECC SKILL %(skill)s fase %(fase)s] Ejecuta esta etapa del procedimiento '
+            'sobre la tarea %(tarea)s. Evento: %(evento)s. Contexto: %(ctx)s. '
+            'Devuelve JSON {"status":"PASS","resultado":"<artefacto o decision real>"}.'
+            % {'skill': request['skill_id'], 'fase': request['phase_id'],
+               'tarea': request['task_id'], 'evento': request['event'],
+               'ctx': json.dumps(request.get('context', {}), ensure_ascii=False)[:2000]})
+        r = _chat_modelo(modelo, prompt, sesion)
+        txt = _texto_respuesta(r)
+        if not txt or (isinstance(r, dict) and r.get('error')):
+            return {'status': 'FAIL', 'error': str((r or {}).get('error'))[:200]}
+        data = _json_de(txt)
+        if isinstance(data, dict) and str(data.get('status')).upper() in ('FAIL', 'BLOCKED'):
+            return {'status': 'FAIL', 'error': str(data.get('error') or 'modelo declaro FAIL')[:200]}
+        artefacto = str((data or {}).get('resultado') or txt)
+        return {'status': 'PASS', 'resultado': artefacto[:8000],
+                'evidence_sha256': hashlib.sha256(txt.encode()).hexdigest()}
+    return accion
+
+
+def _recibo_callback(request: dict, proposed: dict) -> dict:
+    evid = str(proposed.get('evidence_sha256') or '')
+    return {'request_id': request['request_id'], 'task_id': request['task_id'],
+            'skill_id': request['skill_id'], 'phase_id': request['phase_id'],
+            'status': 'PASS' if proposed.get('status') == 'PASS' and evid else 'FAIL',
+            'receipt_id': hashlib.sha256(
+                (request['request_id'] + evid).encode()).hexdigest()[:32],
+            'evidence_source': 'approved_tool'}
+
+
+async def _correr_ciclo(*, spec: dict, fases: list, skill_id: str, event: str,
+                        task_id: str, context: dict, modelo: str, sesion: str) -> dict:
+    """Un ciclo = sus fases en orden, cada una con handler + recibo verificado."""
+    from nct_loop.ecc_compiled_executor import execute_compiled_skill
+    if not fases:
+        return {'ok': True, 'status': 'SKIPPED', 'executed': 0, 'receipts': []}
+    handlers = {ph['action_id']: _handler_fase(modelo, sesion) for ph in fases}
+    spec_parcial = dict(spec, phases=list(fases))
+    catalogo = {'skills': {skill_id: spec_parcial}}
+    res = await execute_compiled_skill(
+        catalog=catalogo, skill_id=skill_id,
+        source_sha256=spec['source_sha256'], event=event, task_id=task_id,
+        context=context, approved_handlers=handlers,
+        receipt_callback=_recibo_callback)
+    return res
+
+
+async def _ejecutar_skill_motor(skill_id: str, p: dict) -> dict:
+    cat = _catalogo_ecc()
+    spec = cat.get(skill_id)
+    if not isinstance(spec, dict):
+        return {'ok': False, 'status': 'SKILL_NO_EXISTE', 'skill_id': skill_id,
+                'disponibles': len(cat)}
+    ciclos = _fases_por_ciclo(spec)
+    modelo = str(p.get('modelo') or 'ficha-qwen38flash')
+    sesion = str(p.get('sesion') or ('skill-' + uuid.uuid4().hex[:8]))
+    task_id = str(p.get('task_id') or p.get('proceso_id') or 'tarea-' + uuid.uuid4().hex[:8])
+    event = str(p.get('event') or 'skill.run')
+    context = dict(p.get('contexto') or p.get('context') or {})
+    context.setdefault('objetivo', p.get('objetivo'))
+
+    resultado = {'skill_id': skill_id, 'task_id': task_id,
+                 'ciclos': {k: len(v) for k, v in ciclos.items()},
+                 'meta_omitidas': len(ciclos['META']),
+                 'continuous_triggers': [ph['title'] for ph in ciclos['CONTINUOUS']],
+                 'main': None, 'verify': None, 'recovery': None}
+
+    # Ciclo MAIN
+    main = await _correr_ciclo(spec=spec, fases=ciclos['MAIN'] or ciclos['VERIFY'], skill_id=skill_id,
+                               event=event, task_id=task_id, context=context,
+                               modelo=modelo, sesion=sesion)
+    resultado['main'] = main
+    if not main.get('ok'):
+        # Ciclo RECOVERY solo cuando el principal falla
+        if ciclos['RECOVERY']:
+            resultado['recovery'] = await _correr_ciclo(
+                spec=spec, fases=ciclos['RECOVERY'], skill_id=skill_id,
+                event=event + '.recovery', task_id=task_id, context=context,
+                modelo=modelo, sesion=sesion)
+        resultado['ok'] = False
+        resultado['status'] = 'FAILED_MAIN'
+        return resultado
+
+    # Ciclo VERIFY tras el principal (omitido si ya corrio como principal)
+    if ciclos['VERIFY'] and ciclos['MAIN']:
+        resultado['verify'] = await _correr_ciclo(
+            spec=spec, fases=ciclos['VERIFY'], skill_id=skill_id,
+            event=event + '.verify', task_id=task_id, context=context,
+            modelo=modelo, sesion=sesion)
+        if not resultado['verify'].get('ok'):
+            if ciclos['RECOVERY']:
+                resultado['recovery'] = await _correr_ciclo(
+                    spec=spec, fases=ciclos['RECOVERY'], skill_id=skill_id,
+                    event=event + '.recovery', task_id=task_id, context=context,
+                    modelo=modelo, sesion=sesion)
+            resultado['ok'] = False
+            resultado['status'] = 'FAILED_VERIFY'
+            return resultado
+
+    resultado['ok'] = True
+    resultado['status'] = 'PASS'
+    return resultado
+
+
 def _hilo(pid: str, p: dict) -> dict:
     try:
         return asyncio.run(_correr(pid, p))
@@ -254,6 +419,38 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
         if fut.cancelled():
             return {'estado': 'cancelado', 'proceso_id': pid}
         return {'estado': 'completado', 'proceso_id': pid, 'resultado': fut.result()}
+    if action == 'skills':
+        try:
+            cat = _catalogo_ecc()
+        except Exception as e:  # noqa: BLE001
+            return {'error': str(e)}
+        return {'ok': True, 'compiladas': len(cat),
+                'skills': {k: {'fases': len(v.get('phases') or []),
+                               'ciclos': {c: len(f) for c, f in _fases_por_ciclo(v).items()}}
+                           for k, v in cat.items()}}
+    if action == 'skill_fases':
+        sid = str(p.get('skill_id') or '')
+        spec = _catalogo_ecc().get(sid)
+        if not isinstance(spec, dict):
+            return {'error': 'SKILL_NO_EXISTE', 'skill_id': sid}
+        ciclos = _fases_por_ciclo(spec)
+        return {'ok': True, 'skill_id': sid,
+                'ciclos': {c: [{'phase_id': ph['phase_id'], 'title': ph['title']}
+                              for ph in f] for c, f in ciclos.items()}}
+    if action == 'skill_ejecutar':
+        sid = str(p.get('skill_id') or '')
+        if not _catalogo_ecc().get(sid):
+            return {'error': 'SKILL_NO_EXISTE', 'skill_id': sid,
+                    'disponibles': len(_catalogo_ecc())}
+        pid = 'skl-' + uuid.uuid4().hex[:12]
+        def _run():
+            try:
+                return asyncio.run(_ejecutar_skill_motor(sid, dict(p)))
+            except Exception as e:  # noqa: BLE001
+                return {'ok': False, 'status': 'FAIL',
+                        'error': '%s: %s' % (type(e).__name__, e)}
+        _PROC[pid] = _POOL.submit(_run)
+        return {'estado': 'procesando', 'proceso_id': pid, 'skill_id': sid}
     if action == 'cancelar':
         pid = str(p.get('proceso_id') or '')
         _CANCEL.add(pid)
@@ -264,4 +461,5 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
     return {'error': 'ACCION_DESCONOCIDA', 'allowed': ACCIONES}
 
 
-ACCIONES = ['status', 'health', 'ejecutar', 'estado', 'cancelar']
+ACCIONES = ['status', 'health', 'ejecutar', 'estado', 'cancelar',
+            'skills', 'skill_fases', 'skill_ejecutar']
