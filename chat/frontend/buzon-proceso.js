@@ -17,7 +17,14 @@ export function montarBuzon(ctx) {
   };
   const bar = document.createElement('div');
   bar.id = 'buzon-bar';
+  bar.hidden = true;
   bar.style.cssText = 'display:none;gap:6px;align-items:center;padding:6px 10px;border-top:1px solid var(--borde,#333);font-size:12px;flex-wrap:wrap';
+  if (!document.getElementById('buzon-css')) {
+    const st = document.createElement('style');
+    st.id = 'buzon-css';
+    st.textContent = '#buzon-bar{display:none !important}';
+    document.head.append(st);
+  }
   bar.innerHTML =
     '<span style="opacity:.7">Proceso:</span>' +
     '<select id="buzon-tipo" style="font:inherit"><option value="instruccion">instrucción</option><option value="tarea">tarea</option><option value="prioridad">prioridad</option><option value="nueva">nueva tarea aparte</option></select>' +
