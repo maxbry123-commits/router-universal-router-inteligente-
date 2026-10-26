@@ -137,8 +137,8 @@ export function montarEnviar(ctx) {
       return;
     }
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
-    const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
-    const fichaQwen = selAct === "team-qwen" && c.selectorQwen ? "qw-" + c.selectorQwen.modelo_id_slug : null;  // Team qwen: su ficha, mismo camino que Nvidia
+    const selAct = window.RIU_SELECTORES?.activo;
+    const fichaQwen = (selAct === "team-qwen" || selAct === "team-5-mvp") && c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label || c.selectorQwen.modelo_id_slug) : null;
     const fichaGroq = selAct === "groq" ? ((window.RIU_GROQ || {}).modelo || "") : null;  // selector Groq: el modelo elegido en su hoja (groq/<id>)
     if (fichaGroq === "") { c.hist.append(node("div", "Groq: " + ((window.RIU_GROQ || {}).aviso || "elige primero un modelo en la hoja Groq ⌄") + ". No se envió a otro modelo.", "item message meta")); abajo(c); return; }
     const fichaMvp = selAct === "team-5-mvp";  // Team 5 MVP: ruta propia -> fichas_qwen ficha_qwen=5 (1 modelo elegido, historial completo y tools)
@@ -177,7 +177,7 @@ export function montarEnviar(ctx) {
     try { abajo(c); } catch (e) {}
     const agent = (q("#agent") || {}).value || "";
     const provider = (q("#provider") || {}).value || "";
-    const model = (q("#model") || {}).value || "";
+    const model = fichaQwen || (q("#model") || {}).value || "";
     const max_tokens = undefined; // sin tope artificial del frontend; el proveedor informa finish_reason
     try {
       const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2, 3 y 5 = Team 5 MVP)
@@ -198,7 +198,7 @@ export function montarEnviar(ctx) {
       const _multiSel = fq === "1" && c.paralelo ? (c.selectorQwenMulti || []).slice(0, 6) : [];  // >>> MODOS <<< T6: fan-out paralelo
       const _fanout = async () => {  // una llamada por modelo elegido; cada burbuja lleva su nombre
         const rs = await Promise.allSettled(_multiSel.map((m, i) => window.RIU_HARNESS({
-          model: 'qw-' + (m.modelo_id_slug || 'modelo'), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null,
+          model: m.model_id || m.label || m.modelo_id_slug, message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null,
           contexto_previo: ctxPrev, anclados, sesion: c.sesion + '-' + (m.modelo_id_slug || i), instrucciones_fijas: fijasQwen || undefined,
           ...controlTools, thinking_mode: getModo() === 'think' ? 'on' : 'off',
           mode_request: getModeUI() ? getModeUI().getModeRequest() : undefined, tool_approval: getModeUI() && getModeUI().getApproval ? getModeUI().getApproval() : undefined,

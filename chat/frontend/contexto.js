@@ -88,12 +88,17 @@ export function parsearBloquesRegla(texto) {
   while ((m = re.exec(String(texto))) !== null) { const t = m[1].trim(); if (t) out.push(t.slice(0, 240)); }
   return out;
 }
-function bloqueReglas(tools) {
+export function reglaDeOtroModelo(texto, modelo) {
+  const m = /^(?:el\s+|tu\s+)?modelo\s+activo\s*(?:es\b|:)\s*(qwen[\w.-]*|deepseek[\w.-]*|glm[\w.-]*|kimi[\w.-]*|minimax[\w.-]*)/i.exec(String(texto).trim());
+  const llave = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
+  return !!(modelo && m && llave(m[1]) !== llave(modelo));
+}
+function bloqueReglas(tools, modelo) {
   let v = { idioma: "", reglas: [], topeMsg: 0 };
   try { v = Object.assign(v, leer("riu_reglas_v1", {})); } catch (e) {}
   const partes = [];
   if (IDIOMAS[v.idioma]) partes.push("[IDIOMA] Responde en " + IDIOMAS[v.idioma] + ".");
-  const on = (Array.isArray(v.reglas) ? v.reglas : []).filter((r) => r && r.on !== false && r.texto).slice(0, 8);
+  const on = (Array.isArray(v.reglas) ? v.reglas : []).filter((r) => r && r.on !== false && r.texto && !reglaDeOtroModelo(r.texto, modelo)).slice(0, 8);
   if (on.length) partes.push("[REGLAS]\n" + on.map((r) => "- " + String(r.texto).slice(0, 240)).join("\n"));
   if (tools) partes.push("Idioma: [[IDIOMA:es]], [[IDIOMA:en]] o [[IDIOMA:pt]]. Regla: [[REGLA]]texto[[/REGLA]].");
   return partes.join("\n").slice(0, 1200);
@@ -116,7 +121,7 @@ export function parsearSlashWF(msg, lista) {  // "/wf <nombre> <instrucción>" d
 export const K_PIN = "riu_pin_anclas_v1", K_MUTE = "riu_mute_anclas_v1", K_ALIAS = "riu_alias_anclas_v1";
 const sinMute = (clave, arr) => { const m = leer(K_MUTE, {})[clave]; return Array.isArray(m) ? (arr || []).filter((t) => !m.includes(t)) : (arr || []); };
 const lineas = (arr) => arr.map((t) => "- " + String(t).slice(0, 400)).join("\n");
-export function construirPrefijo(oficial) {
+export function construirPrefijo(oficial, modelo) {
   const partes = [], wfs = dameWF().filter((w) => w.encendido);
   // la Constitucion ya NO viaja como texto del mensaje: va estructurada (gobernanza + constitucion) y el Harness carga la oficial
   wfs.forEach((w) => {
@@ -147,14 +152,14 @@ export function construirPrefijo(oficial) {
       const ses = bloqueSesion(false);
       if (ses) partes.push(ses);
     }
-    const rg = bloqueReglas(!!(f.tools || f.llm_tool || f.agente_tool));
+    const rg = bloqueReglas(!!(f.tools || f.llm_tool || f.agente_tool), modelo);
     if (rg) partes.push(rg);
     const he = bloqueHechas(!!(f.tools || f.llm_tool || f.agente_tool));
     if (he) partes.push(he);
   } catch (e) {}
   return partes.join("\n\n");
 }
-export function aplicarAMensaje(msg, oficial) { const p = construirPrefijo(oficial); return p ? p + "\n\n--- MENSAJE DEL DIRECTOR ---\n" + msg : msg; }
+export function aplicarAMensaje(msg, oficial, modelo) { const p = construirPrefijo(oficial, modelo); return p ? p + "\n\n--- MENSAJE DEL DIRECTOR ---\n" + msg : msg; }
 const nombresConst = (con) => sinMute("constitucion", con.items || []).map((t) => String(t).replace(/^archivo:/, "").trim()).filter((n) => !/^(enlace|raiz|secreto|constitucion):/.test(n) && /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(n));
 export function datosGobernanza() {  // Constitucion encendida -> campos estructurados para el Harness (nunca el JSON oficial: lo carga el Harness)
   const con = dameCon(); if (!con.encendida) return null;
