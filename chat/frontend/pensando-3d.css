@@ -1,5 +1,5 @@
 /* pensando-3d.css — fila: cubo, borrar, detener, inicio. Nada flotando encima de la caja. */
-#composer .composer-bar>#fila-mando{order:-1 !important;flex:1 0 100% !important;width:100%;margin:0 0 4px}
+#composer .composer-bar>#fila-mando{order:3 !important;flex:0 0 auto !important;width:auto;margin:0}
 #fila-mando{display:flex;align-items:center;justify-content:flex-start;gap:8px;min-height:40px}
 #fila-mando .p3d{order:1 !important}
 #fila-mando .p3d{position:static !important;left:auto !important;right:auto !important;top:auto !important;bottom:auto !important;display:flex;align-items:center;gap:8px;padding:0 !important;margin:0 !important;width:auto !important;max-width:none !important;background:transparent !important;border:0 !important;box-shadow:none !important;flex:0 1 auto !important;z-index:1;pointer-events:none}
