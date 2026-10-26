@@ -124,7 +124,7 @@
   },
   "chat/backend": {
    "archivos": 229,
-   "sha256": "8efc19af4e8b73cb4b69e37264ad0e3c24086e49704121ff9692a6788c669ea1"
+   "sha256": "2a19eb182adb3e0f6ff2a3101af6868d3cfedbd17a900156569582afbf5de839"
   },
   "chat/e2e": {
    "archivos": 22,
@@ -135,8 +135,8 @@
    "sha256": "c33e1d72284565e359dddc3828d5b7683c39f97c1de34baf57d54963e9523037"
   },
   "chat/frontend": {
-   "archivos": 540,
-   "sha256": "d52c47d4d5f3ff62303d54a9911da31504288a0722a7b95e60522b7abbe39e74"
+   "archivos": 544,
+   "sha256": "8b0a4d19626aaf7e1cd6e142d8e2053eafffb392369430bf437b04fa9332e108"
   },
   "fichas": {
    "archivos": 220,
