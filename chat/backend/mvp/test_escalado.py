@@ -107,4 +107,5 @@ class Circuito(Base):
 
     def test_trabajo_local_interrumpido_se_reejecuta(self):
         trabajos.guardar(self.banco, "p-viejo", {"estado": "procesando", "proceso_id": "p-viejo", "creado": time.time() - 5000})
-        self.assertFalse(asyncio.run(servicio._recuperar("p-viejo")))
+        with patch.object(servicio, "TRABAJO_VENCE", 900.0):  # vencimiento solo cuando se configura RIU_TRABAJO_VENCE_S
+            self.assertFalse(asyncio.run(servicio._recuperar("p-viejo")))
