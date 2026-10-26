@@ -54,7 +54,7 @@ def _toca_servidor(anterior, nuevo):
 
 
 def _carga_bien():
-    """El codigo nuevo debe poder importarse antes de reiniciar; si no, un commit roto dejaria el servidor caido y el autopull muerto."""
+    """El codigo nuevo debe poder importirse antes de reiniciar; si no, un commit roto dejaria el servidor caido y el autopull muerto."""
     if not (REPO / "router-mvp" / "mvp" / "app.py").exists():
         return True
     try:
@@ -67,7 +67,7 @@ def _carga_bien():
 
 
 ARRANQUE, _DIFERIDO = None, None  # commit que corre este proceso; desde cuando se difiere un reinicio
-DIFERIR_MAX_S = (float(os.environ["RIU_MAX_HORAS"]) + 1) * 3600 if float(os.environ.get("RIU_MAX_HORAS", "0")) > 0 else float(os.environ.get("RIU_DIFERIR_MAX_S", "1800"))  # tope finito por defecto (RIU_DIFERIR_MAX_S, 30 min): un trabajo atascado sin latido ya no difiere el reinicio para siempre
+DIFERIR_MAX_S = (float(os.environ["RIU_MAX_HORAS"]) + 1) * 3600 if float(os.environ.get("RIU_MAX_HORAS", "0")) > 0 else float(os.environ.get("RIU_DEFER_MAX_S", "3600"))  # sin RIU_MAX_HORAS: espera maxima de 1 h (RIU_DEFER_MAX_S); un trabajo procesando atascado no difiere el reinicio para siempre
 
 
 def _tareas_en_curso():
@@ -94,10 +94,10 @@ def _actualizar():
         if en_curso and (_DIFERIDO is None or time.time() - _DIFERIDO < DIFERIR_MAX_S):
             if _DIFERIDO is None:
                 _DIFERIDO = time.time()
-                print("AUTOPULL: hay tareas en curso; el reinicio con %s espera a que terminen (tope %.0f s)" % (nuevo[:10], DIFERIR_MAX_S), flush=True)
+                print("AUTOPULL: hay tareas en curso; el reinicio con %s espera a que terminen" % nuevo[:10], flush=True)
             return False
-        if en_curso:
-            print("AUTOPULL: tareas en curso superaron el tope (%.0f s) sin terminar: posible trabajo atascado sin latido; reinicio forzado con %s" % (DIFERIR_MAX_S, nuevo[:10]), flush=True)
+        if en_curso:  # tope de espera vencido con tareas sin terminar: se reinicia igual y se reanudan al arrancar
+            print("AUTOPULL: tareas en curso tras el tope de espera; reinicio con %s (se reanudan al arrancar)" % nuevo[:10], flush=True)
         if not _carga_bien():
             _git("reset", "--hard", base)  # vuelve a la version que funcionaba
             print("AUTOPULL: deshice %s y sigo con %s" % (nuevo[:10], base[:10]), flush=True)
