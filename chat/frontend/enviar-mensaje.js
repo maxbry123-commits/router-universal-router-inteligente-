@@ -55,6 +55,46 @@ export function montarEnviar(ctx) {
       lista.append(row);
     });
   };
+  const pintarReactivar = (c) => {
+    let aviso = document.getElementById("reactivar-tarea");
+    const parada = c.tareaParada || "";
+    const pid = !c.ocupado && window.RIU_PENDIENTE && window.RIU_PENDIENTE(c.sesion);
+    if (!parada && !pid) { if (aviso) aviso.remove(); return; }
+    if (!aviso) {
+      aviso = document.createElement("div");
+      aviso.id = "reactivar-tarea";
+      aviso.style.cssText = "display:flex;justify-content:flex-start;margin:0 0 6px";
+      q("#composer").before(aviso);
+    }
+    aviso.replaceChildren();
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.setAttribute("aria-label", parada ? "Reactivar la tarea detenida" : "Reactivar la tarea en el Router");
+    pill.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M9 7v10l8-5z"/></svg><span></span>';
+    pill.querySelector("span").textContent = "1";
+    pill.style.cssText = "display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:999px;border:0;background:#2a2a2e;color:#fff;font-size:16px";
+    pill.onclick = () => {
+      if (c.tareaParada) {
+        const txt = c.tareaParada;
+        c.tareaParada = "";
+        pintarReactivar(c);
+        q("#message").value = txt;
+        q("#composer").requestSubmit();
+        return;
+      }
+      if (!window.RIU_RETOMAR || c.ocupado) return;
+      c.ocupado = true; pintarTabs(); pintarReactivar(c);
+      const meta = node("div", "Reactivando la tarea…", "item message meta");
+      c.hist.append(meta); abajo(c);
+      window.RIU_RETOMAR(c.sesion).then((p) => {
+        meta.remove();
+        const t = p && ((p.choices && p.choices[0] && p.choices[0].message && p.choices[0].message.content) || p.reply);
+        if (t) { c.hist.append(burbuja(t)); A.registrar(c.sesion, "bot", t); }
+        else c.hist.append(node("div", (p && (p.detalle || p.error)) || "Sin respuesta al reactivar", "item message meta"));
+      }).finally(() => { c.ocupado = false; pintarTabs(); abajo(c); pintarReactivar(c); });
+    };
+    aviso.append(pill);
+  };
   q("#composer").addEventListener("submit", async event => {
     chat().hist.__sigue = true;  // al enviar vuelves al final
     event.preventDefault();
@@ -165,11 +205,14 @@ export function montarEnviar(ctx) {
       if (answer.job_id) { window.__riuJob = answer.job_id; const ar = q('#apagar-respaldo'); if (ar) ar.hidden = false; }
       abajo(c);
       enviado = true;
+      c.tareaParada = "";
     } catch (error) {
       pending.remove();
       const detalleError = error && error.name === "AbortError" ? "Tiempo de espera agotado" : error.message;
-      A.registrar(c.sesion, "err", (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) ? "proceso detenido por el usuario" : "GAP: " + detalleError);
-      c.hist.append(node("div", (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) ? "proceso detenido por el usuario" : `GAP: ${detalleError}`, "item message" + (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message)) ? " meta" : " error")));
+      const parado = c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message));
+      if (parado && message) c.tareaParada = message;
+      A.registrar(c.sesion, "err", parado ? "proceso detenido por el usuario" : "GAP: " + detalleError);
+      c.hist.append(node("div", parado ? "proceso detenido por el usuario" : `GAP: ${detalleError}`, "item message" + (parado ? " meta" : " error")));
       abajo(c);
       if (!(c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) && !input.value) { input.value = message; input.dispatchEvent(new Event("input", { bubbles: true })); }  // si falla, el mensaje vuelve a la caja
     } finally {
@@ -183,7 +226,16 @@ export function montarEnviar(ctx) {
         return;
       }
       pintarCola(c);
+      pintarReactivar(c);
       if (window.matchMedia("(pointer: fine)").matches) input.focus();
     }
   });
+  const retomar = window.RIU_RETOMAR;
+  if (retomar && !retomar._riuReact) {
+    const envuelto = async (ses) => { try { return await retomar(ses); } finally { if (chat().sesion === ses) pintarReactivar(chat()); } };
+    envuelto._riuReact = 1;
+    window.RIU_RETOMAR = envuelto;
+  }
+  pintarReactivar(chat());
+  window.RIU_REACTIVAR = (txt) => { const c = chat(); if (txt) c.tareaParada = txt; pintarReactivar(c); };
 }
