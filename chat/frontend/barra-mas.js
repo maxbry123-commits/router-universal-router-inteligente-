@@ -16,8 +16,8 @@ const movil = () => matchMedia("(max-width:720px)").matches;
 
 const st = document.createElement("style");
 st.textContent = "@media(max-width:720px){"
-  + "#composer{display:flex !important;flex-direction:column !important;max-width:100%;min-width:0;overflow:hidden;padding:6px 8px 4px !important;border-radius:16px !important}"
-  + "#composer #message{order:1;min-height:40px !important;max-height:72px !important;padding:4px 6px !important;font-size:16px}"
+  + "#composer{display:flex !important;flex-direction:column !important;max-width:100%;min-width:0;overflow:visible;padding:6px 8px 4px !important;border-radius:16px !important}"
+  + "#composer #message{order:1;min-height:36px !important;max-height:64px !important;padding:4px 6px !important;font-size:16px}"
   + "#composer .composer-bar{order:2;display:flex !important;flex-wrap:wrap !important;overflow:visible !important;align-items:center;gap:4px !important;max-width:100%;min-width:0}"
   + "#composer .composer-bar::after{content:none !important;display:none !important}"
   + "#composer .composer-bar>button.secondary:not(#btn-tools):not(#btn-agentes):not(#btn-prompt){width:34px !important;min-width:34px !important;max-width:34px !important;height:34px !important;min-height:34px !important;flex:0 0 34px !important;padding:0 !important;border-radius:50% !important}"
@@ -32,7 +32,10 @@ st.textContent = "@media(max-width:720px){"
   + ".riu-hoja .riu-lista button{width:100% !important;max-width:100%;height:auto !important;min-height:34px !important;aspect-ratio:auto;border-radius:12px;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;padding:4px 10px !important}"
   + ".riu-hoja .mas-nom{font-size:14px}"
   + ".riu-hoja .mas-sec{font-size:11px;letter-spacing:.04em;text-transform:uppercase;opacity:.6;padding:8px 4px 0}"
-  + ".chat-history{min-height:0 !important}"
+  + ".chat-history{min-height:0 !important;flex:1 1 auto}"
+  + "#mas-pop{position:fixed;left:12px;right:12px;z-index:60;display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:46dvh;overflow-y:auto;padding:8px;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-shadow:0 12px 32px rgba(0,0,0,.5)}"
+  + "#mas-pop[hidden]{display:none !important}"
+  + "#mas-pop button{width:100% !important;max-width:none !important;height:auto !important;min-height:40px !important;aspect-ratio:auto !important;border-radius:12px !important;padding:8px 10px !important;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px}"
   + "}";
 document.head.append(st);
 
@@ -165,7 +168,7 @@ function devolver() {
   const env = fila.querySelector(".action");
   [...CONTEXTO, ...TRABAJO, ...CUADERNO].forEach((id) => {
     const b = document.getElementById(id);
-    if (!b || b.parentNode === fila) return;
+    if (!b || b.parentNode === fila || (b.parentNode && b.parentNode.id === "mas-pop")) return;
     quitarRotulo(b);
     fila.insertBefore(b, env || null);
   });
@@ -182,13 +185,59 @@ function firma(hoja) {
   return [...n.children].map((x) => x.classList.contains("mas-sec") ? "s:" + x.textContent : x.id || x.className).join("|");
 }
 
+const FUERA = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tareas", "btn-comandos", "btn-sesion", "btn-reglas", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
+function menu() {
+  const fila = bar();
+  if (!fila) return;
+  let pop = document.getElementById("mas-pop");
+  if (!movil()) {
+    if (!pop) return;
+    const env = fila.querySelector(".action");
+    [...pop.children].forEach((b) => { if (b.id) { quitarRotulo(b); fila.insertBefore(b, env); } });
+    pop.hidden = true;
+    return;
+  }
+  if (!pop) {
+    pop = document.createElement("div");
+    pop.id = "mas-pop";
+    pop.hidden = true;
+    pop.setAttribute("role", "menu");
+    document.body.append(pop);
+    pop.addEventListener("click", (ev) => { if (ev.target.closest("button")) pop.hidden = true; });
+  }
+  FUERA.forEach((id) => { const b = document.getElementById(id); if (!b || b.parentNode === pop) return; rotulo(b); pop.append(b); });
+  let btn = document.getElementById("btn-mas");
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "btn-mas";
+    btn.className = "secondary";
+    btn.setAttribute("aria-label", "Más");
+    btn.setAttribute("aria-expanded", "false");
+    btn.innerHTML = svg('<path d="M4 7h16M4 12h16M4 17h16"/>');
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const p = document.getElementById("mas-pop");
+      const c = document.getElementById("composer");
+      if (!p || !c) return;
+      p.style.bottom = Math.max(8, window.innerHeight - c.getBoundingClientRect().top + 8) + "px";
+      p.hidden = !p.hidden;
+      btn.setAttribute("aria-expanded", String(!p.hidden));
+    });
+  }
+  const env = fila.querySelector(".action");
+  if (btn.parentNode !== fila) fila.insertBefore(btn, env);
+}
 function colocar() {
   devolver();
+  menu();
 }
 
 document.addEventListener("click", (ev) => {
-  if (ev.target.closest(".riu-hoja, .grp")) return;
+  if (ev.target.closest(".riu-hoja, .grp, #mas-pop, #btn-mas")) return;
   document.querySelectorAll(".riu-hoja").forEach((p) => { p.hidden = true; });
+  const mas = document.getElementById("mas-pop");
+  if (mas) mas.hidden = true;
   document.querySelectorAll(".grp").forEach((g) => g.setAttribute("aria-expanded", "false"));
 });
 document.addEventListener("click", (ev) => {
