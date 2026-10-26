@@ -28,7 +28,9 @@
       "cancelar",
       "skills",
       "skill_fases",
-      "skill_ejecutar"
+      "skill_ejecutar",
+      "skills_registro",
+      "skills_seleccionar"
     ]
   },
   "seguridad": {

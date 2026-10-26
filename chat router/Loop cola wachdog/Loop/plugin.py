@@ -87,6 +87,150 @@ def _ciclo_de_fase(title: str) -> str:
     return 'MAIN'
 
 
+# Registro normalizado de skills (metodo de 8 macrociclos del audit):
+# cada skill -> {skill_id, categoria, triggers, macrociclo C0..C7,
+# required_tools, risk_level, evidence_requirements, sha256, ciclos}.
+_MACROCICLOS = (
+    ('C0_admision', re.compile(
+        r'(guard|safety|gate-?guard|admission|permission|authoriz|policy|design-check|loop-design)',
+        re.I)),
+    ('C1_investigacion', re.compile(
+        r'(scan|search|research|impact|analy|inspect|discover|explor|review-?code|audit|repo|debug|introspection)',
+        re.I)),
+    ('C2_decision', re.compile(
+        r'(council|decision|deliberat|vote|consensus|arbitr)', re.I)),
+    ('C3_planificacion', re.compile(
+        r'(plan|dag|pipeline|rfc|decompos|orchestrat|architect|design|roadmap|spec)',
+        re.I)),
+    ('C4_preparacion', re.compile(
+        r'(harness|parallel|schedul|resource|context|isolat|budget|setup|scaffold|bootstrap|provision)',
+        re.I)),
+    ('C5_ejecucion', re.compile(
+        r'(tdd|code|coding|implement|fix|defect|feature|refactor|build|lang|python|typescript|react|rust|go-|sql|api-?connector|generator|writer)',
+        re.I)),
+    ('C6_verificacion', re.compile(
+        r'(verif|valid|eval|test|review|security|santa|proof|lint|coverage|regression|benchmark|quality)',
+        re.I)),
+    ('C7_integracion', re.compile(
+        r'(git|deliver|deploy|release|production|merge|integrat|publish|ship|rollout)',
+        re.I)),
+)
+
+_RIESGO_ALTO = re.compile(
+    r'(deploy|production|payment|financ|health|medical|secur|auth|credential|secret|infra|delete|destruct)',
+    re.I)
+_HERRAMIENTAS = re.compile(
+    r'(docker|kubernetes|git|github|aws|gcp|azure|postgres|redis|kafka|terraform|ansible|jenkins|vercel|supabase|stripe)',
+    re.I)
+
+
+def _triggers_de(markdown_path: Path) -> list:
+    """Disparadores: bullets de 'When to Use'/'When to Activate' del SKILL.md."""
+    try:
+        texto = markdown_path.read_text(encoding='utf-8', errors='replace')[:30000]
+    except OSError:
+        return []
+    out = []
+    lineas = texto.splitlines()
+    cab = None
+    rx_cab = re.compile(r'#{2,4}.*(when to (use|activat|apply)|cuando|triggers?)\s*$', re.I)
+    for i, linea in enumerate(lineas):
+        if rx_cab.search(linea.strip()):
+            cab = i
+            break
+    if cab is None:
+        return out
+    for li in lineas[cab + 1:cab + 40]:
+        li2 = li.strip()
+        if li2.startswith('#'):
+            break
+        li2 = re.sub(r'^[-*\u2022\d.\)\s]+', '', li2).strip()
+        if li2 and len(li2) <= 200:
+            out.append(li2)
+        if len(out) >= 12:
+            break
+    return out
+
+
+_REG = None
+
+
+def _registro_ecc() -> dict:
+    """Registro normalizado de las 311 skills (categoria, triggers, macrociclo...)."""
+    global _REG
+    if _REG is not None:
+        return _REG
+    cat = _catalogo_ecc()
+    reg = {}
+    skills_root = _ECC_DIR / 'skills'
+    for sid, spec in cat.items():
+        texto = sid + ' ' + ' '.join(p.get('title') or '' for p in spec.get('phases') or [])
+        md = skills_root / sid / 'SKILL.md'
+        triggers = _triggers_de(md)
+        mejor = (0, 'C5_ejecucion')
+        for nombre, rx in _MACROCICLOS:
+            n = len(rx.findall(texto))
+            if n > mejor[0]:
+                mejor = (n, nombre)
+        macro = mejor[1]
+        riesgo = 'alto' if _RIESGO_ALTO.search(texto) else 'normal'
+        tools = sorted(set(_HERRAMIENTAS.findall(texto)))
+        ciclos = _fases_por_ciclo(spec)
+        reg[sid] = {'skill_id': sid, 'categoria': macro,
+                    'macrociclo': macro, 'triggers': triggers,
+                    'required_tools': tools, 'risk_level': riesgo,
+                    'source_sha256': spec.get('source_sha256'),
+                    'fases': len(spec.get('phases') or []),
+                    'ciclos': {k: len(v) for k, v in ciclos.items()}}
+    _REG = reg
+    return reg
+
+
+_ES_EN = {
+    'seguridad': 'security', 'codigo': 'code', 'revisar': 'review', 'revisión': 'review',
+    'arreglar': 'fix', 'corregir': 'fix', 'error': 'bug defect', 'bug': 'defect bug',
+    'pruebas': 'test', 'prueba': 'test', 'desplegar': 'deploy', 'produccion': 'production',
+    'producción': 'production', 'diseñar': 'design', 'diseño': 'design',
+    'arquitectura': 'architecture', 'crear': 'create build', 'documentar': 'docs',
+    'documento': 'document', 'memoria': 'memory', 'cola': 'queue', 'tarea': 'task',
+    'verificar': 'verify', 'verificación': 'verify', 'auditar': 'audit',
+    'auditoria': 'audit', 'auditoría': 'audit', 'planear': 'plan', 'ejecutar': 'run',
+    'analizar': 'analyze', 'investigar': 'research', 'integrar': 'integrate',
+    'entregar': 'deliver', 'monitor': 'watch', 'vigilar': 'monitor watchdog',
+}
+
+
+def _palabras_objetivo(objetivo: str) -> set:
+    base = set(re.findall(r'[a-zA-Záéíóúñ][a-zA-Z0-9áéíóúñ_+-]{2,}', str(objetivo).lower()))
+    extra = set()
+    for w in base:
+        if w in _ES_EN:
+            extra.update(_ES_EN[w].split())
+    return base | extra
+
+
+def _seleccionar_skills(objetivo: str, top: int = 8) -> list:
+    """Seleccion contextual: puntua skills por triggers/keywords del objetivo."""
+    reg = _registro_ecc()
+    palabras = _palabras_objetivo(objetivo)
+    scored = []
+    for sid, info in reg.items():
+        puntos = 0
+        for tr in info['triggers']:
+            tw = set(re.findall(r'[a-zA-Z][a-zA-Z0-9_+-]{2,}', tr.lower()))
+            puntos += len(palabras & tw)
+        sid_parts = set(re.split(r'[-_]', sid))
+        puntos += 3 * len(palabras & sid_parts)
+        if not puntos:
+            # fallback: description frontmatter (guardada en triggers vacios)
+            puntos = 0
+        if puntos:
+            scored.append((puntos, sid))
+    scored.sort(reverse=True)
+    return [{'skill_id': sid, 'score': p, 'macrociclo': reg[sid]['macrociclo']}
+            for p, sid in scored[:top]]
+
+
 def _fases_por_ciclo(spec: dict) -> dict:
     ciclos: dict = {'MAIN': [], 'VERIFY': [], 'RECOVERY': [], 'CONTINUOUS': [], 'META': []}
     for ph in spec.get('phases') or []:
@@ -231,6 +375,12 @@ _CANCEL: set = set()
 def _build_mission(p: dict) -> dict:
     m = p.get('mision')
     if isinstance(m, dict) and m.get('units'):
+        if p.get('auto_skills'):
+            for u in m['units']:
+                if not u.get('skills'):
+                    u['skills'] = [x['skill_id'] for x in
+                                   _seleccionar_skills(u.get('goal') or '',
+                                                       int(p.get('top_skills') or 3))]
         return m
     objetivo = str(p.get('objetivo') or p.get('yaiwes_md') or p.get('objetivo_md') or '').strip()
     if not objetivo:
@@ -242,6 +392,9 @@ def _build_mission(p: dict) -> dict:
             'units': [{'id': 'T1', 'goal': objetivo[:8000], 'block': 'executor',
                        'depends_on': [], 'priority': 5, 'allowed_ops': ops,
                        'acceptance': p.get('acceptance') or [], 'scope': p.get('scope') or [],
+                       'skills': [x['skill_id'] for x in
+                                  _seleccionar_skills(objetivo, int(p.get('top_skills') or 3))]
+                               if p.get('auto_skills') else (p.get('skills') or []),
                        'max_retries': int(p.get('max_retries') or 0)}]}
 
 
@@ -274,7 +427,32 @@ async def _correr(pid: str, p: dict) -> dict:
                  max_calls=int(p.get('max_calls') or 60),
                  ecc_action_port=_PuertoECCAcciones(ops_port, acc_map),
                  approved_ecc_actions=_ACCIONES_ECC)
-    return await engine.run(mission)
+    # WorkUnit no acepta la clave 'skills': se retira y se conserva por id.
+    skills_por_unidad = {u['id']: list(u.pop('skills', []) or [])
+                         for u in mission['units']}
+    resultado = await engine.run(mission)
+
+    # Activacion por contexto: skills declaradas en cada unidad corren como
+    # motores compilados (MAIN->VERIFY->RECOVERY) con recibos por fase.
+    corridas = []
+    total = 0
+    for uid, sids in skills_por_unidad.items():
+        for sid in sids[:5]:
+            if total >= 12:
+                break
+            total += 1
+            u = next((x for x in mission['units'] if x['id'] == uid), {})
+            rep = await _ejecutar_skill_motor(sid, {
+                'modelo': modelo, 'sesion': sesion, 'task_id': uid,
+                'objetivo': u.get('goal'), 'event': 'unit.skill'})
+            corridas.append({'unit_id': uid, 'skill_id': sid,
+                             'status': rep.get('status'),
+                             'ciclos': rep.get('ciclos'),
+                             'recibos': sum(len((rep.get(k) or {}).get('receipts', []))
+                                          for k in ('main', 'verify', 'recovery'))})
+    if corridas:
+        resultado['skills_ejecutadas'] = corridas
+    return resultado
 
 
 # --- Skills ECC compilados a motores ejecutables ---------------------------
@@ -428,6 +606,16 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
                 'skills': {k: {'fases': len(v.get('phases') or []),
                                'ciclos': {c: len(f) for c, f in _fases_por_ciclo(v).items()}}
                            for k, v in cat.items()}}
+    if action == 'skills_registro':
+        reg = _registro_ecc()
+        return {'ok': True, 'total': len(reg), 'skills': reg}
+    if action == 'skills_seleccionar':
+        objetivo = str(p.get('objetivo') or p.get('goal') or '')
+        if not objetivo:
+            return {'error': 'objetivo requerido'}
+        sel = _seleccionar_skills(objetivo, int(p.get('top') or 8))
+        macros = sorted({x['macrociclo'] for x in sel})
+        return {'ok': True, 'seleccionadas': sel, 'macrociclos': macros}
     if action == 'skill_fases':
         sid = str(p.get('skill_id') or '')
         spec = _catalogo_ecc().get(sid)
@@ -462,4 +650,5 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
 
 
 ACCIONES = ['status', 'health', 'ejecutar', 'estado', 'cancelar',
-            'skills', 'skill_fases', 'skill_ejecutar']
+            'skills', 'skill_fases', 'skill_ejecutar',
+            'skills_registro', 'skills_seleccionar']
