@@ -28,3 +28,9 @@ async def llamar(plugin, accion, cuerpo):
         raise ValueError("plugin no permitido: " + str(plugin))
     modulo = await asyncio.to_thread(_cargar, plugin)
     return await asyncio.to_thread(modulo.handle, str(accion), dict(cuerpo or {}))
+
+
+def en_curso():
+    """Procesos del LOOP (gobernar, paralelo, motor_ejecutar) que todavia no terminan."""
+    modulo = _CARGADOS.get("nct_loop")
+    return sum(1 for f in getattr(modulo, "_PROC", {}).values() if not f.done())

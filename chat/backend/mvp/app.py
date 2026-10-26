@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import bank, compute, control, externos, loop_puente, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
+from mvp import bank, compute, control, externos, loop_puente, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -84,6 +84,7 @@ def health(authorization: str | None = Header(None),
         return {"status": "ok" if app.state.banco else "degraded", "commit": str(getattr(app.state, "commit", "desconocido"))[:10]}  # el commit no es secreto: sirve para comprobar que version corre
     return {"status": "ok" if app.state.banco else "degraded", "cpu": escalado.cpu_local(),
             "commit": app.state.commit, "banco_abierto": bool(app.state.banco),
+            "tareas_en_curso": _en_curso(), "latido": mantener_vivo.ULTIMO,
             "qwen_base_url_presente": bool(modelos.base_url()),
             "plan": modelos.plan(), "modelo_defecto": modelos.cargar()["modelo_defecto"],
             "clave_qwen_presente": bool(modelos.clave_env() or
@@ -265,6 +266,7 @@ async def _control(accion, cuerpo, actor="director"):
     except ValueError as error: raise HTTPException(status_code=400, detail=str(error)) from None
     except RuntimeError as error: raise HTTPException(status_code=502, detail=str(error)) from None
 TRABAJO_VENCE, MAX_COLA, _PROPIOS = 900, 200, set()
+def _en_curso(): return sum(1 for t in TRABAJOS.values() if t.get("estado") == "procesando") + loop_puente.en_curso()  # trabajos del chat + procesos del LOOP
 TRABAJOS, _TAREAS = {}, set()  # proceso_id -> {estado, proceso_id, choices|error}; en memoria (se pierde al reiniciar)
 FICHAS_QWEN = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "5": "ficha5-mvp"}
 FICHAS_HEREDADAS = ("nv-", "hf-", "ask-consil")  # ids de ficha del chat anterior; no son modelos del MVP
@@ -396,8 +398,10 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
     if plugin == "puente_chat" and accion in loop_puente.MIRROR:  # selector de mirrors del chat -> instancias de agente de nct_loop
         return {"status": "ok", "result": await loop_puente.llamar("nct_loop", accion, cuerpo)}
     if plugin in loop_puente.PLUGINS:  # LOOP, Cola y Watchdog: Chat -> Harness -> Router -> plugin
-        try: return {"status": "ok", "result": await loop_puente.llamar(plugin, accion, cuerpo)}
+        try: resultado = await loop_puente.llamar(plugin, accion, cuerpo)
         except (OSError, ValueError) as error: raise HTTPException(status_code=503, detail=str(error)) from None
+        mantener_vivo.asegurar(_en_curso)
+        return {"status": "ok", "result": resultado}
     if plugin not in ("fichas_qwen", "puente_chat", "almacen"):
         raise HTTPException(status_code=404, detail="plugin no disponible en mvp")
     if accion in ("fichas", "listar_fichas"):
@@ -408,7 +412,7 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
             if sum(1 for t in TRABAJOS.values() if t.get("subestado") == "en_cola") >= MAX_COLA:
                 raise HTTPException(status_code=429, detail="cola llena; reintenta en unos segundos")
             TRABAJOS[pid] = {"estado": "procesando", "proceso_id": pid, "finish_reason": "", "creado": time.time()}
-            _PROPIOS.add(pid); _lanzar(_correr(pid, cuerpo))
+            _PROPIOS.add(pid); _lanzar(_correr(pid, cuerpo)); mantener_vivo.asegurar(_en_curso)
         if TRABAJOS[pid].get("status_code") == 403:
             raise HTTPException(status_code=403, detail=TRABAJOS[pid]["error"])
         return {"status": "ok", "result": dict(TRABAJOS[pid])}

@@ -38,6 +38,7 @@ class TestAutopull(unittest.TestCase):
         self.patcher.start()
 
     def tearDown(self):
+        run.ARRANQUE, run._DIFERIDO = None, None  # main() fija ARRANQUE: que no contamine a otras pruebas
         self.patcher.stop()
         self.temp.cleanup()
 
@@ -59,6 +60,31 @@ class TestAutopull(unittest.TestCase):
             reiniciar.assert_called_once_with(sys.executable, [sys.executable, *sys.argv])
         self.assertNotEqual(antes, nuevo)
         self.assertEqual(run._head(), nuevo)
+
+    def test_con_tareas_en_curso_el_reinicio_espera_y_luego_se_hace(self):
+        antes = run._head()
+        (self.writer / "test.txt").write_text("segundo\n")
+        git("-C", self.writer, "commit", "-am", "segundo")
+        git("-C", self.writer, "push", "origin", "main")
+        nuevo = git("-C", self.writer, "rev-parse", "HEAD")
+        with patch.object(run, "ARRANQUE", antes), patch.object(run, "_DIFERIDO", None), patch.object(run.os, "execv") as reiniciar:
+            with patch.object(run, "_tareas_en_curso", return_value=2):
+                self.assertFalse(run._actualizar())
+                self.assertFalse(run._actualizar())      # el codigo ya se bajo: sigue esperando, no se pierde el reinicio
+            reiniciar.assert_not_called()
+            self.assertEqual(run._head(), nuevo)
+            with patch.object(run, "_tareas_en_curso", return_value=0):
+                self.assertTrue(run._actualizar())       # terminaron las tareas: ahora si reinicia
+            reiniciar.assert_called_once()
+
+    def test_una_tarea_trabada_no_bloquea_las_actualizaciones_para_siempre(self):
+        antes = run._head()
+        (self.writer / "test.txt").write_text("segundo\n")
+        git("-C", self.writer, "commit", "-am", "segundo")
+        git("-C", self.writer, "push", "origin", "main")
+        with patch.object(run, "ARRANQUE", antes), patch.object(run, "_DIFERIDO", 1.0), patch.object(run, "_tareas_en_curso", return_value=1), patch.object(run.os, "execv") as reiniciar:
+            self.assertTrue(run._actualizar())
+            reiniciar.assert_called_once()
 
     def test_cambio_solo_de_frontend_no_reinicia(self):
         (self.writer / "chat" / "frontend").mkdir(parents=True)

@@ -57,7 +57,20 @@ def _carga_bien():
     return r.returncode == 0
 
 
+ARRANQUE, _DIFERIDO = None, None  # commit que corre este proceso; desde cuando se difiere un reinicio
+DIFERIR_MAX_S = (float(os.environ.get("RIU_MAX_HORAS", "48")) + 1) * 3600  # una tarea trabada no bloquea las actualizaciones para siempre
+
+
+def _tareas_en_curso():
+    app = sys.modules.get("mvp.app")
+    try:
+        return int(app._en_curso()) if app is not None and hasattr(app, "_en_curso") else 0
+    except Exception:  # noqa: BLE001 - un fallo al contar nunca debe tumbar el autopull
+        return 0
+
+
 def _actualizar():
+    global _DIFERIDO
     anterior = _head()
     if not anterior:
         return False
@@ -66,10 +79,16 @@ def _actualizar():
         print("AUTOPULL: git pull fallo; sigo con " + anterior[:10], flush=True)
         return False
     nuevo = _head()
-    if nuevo and nuevo != anterior and _toca_servidor(anterior, nuevo):
+    base = ARRANQUE or anterior  # lo que corre hoy: un reinicio diferido se sigue comparando contra el
+    if nuevo and nuevo != base and _toca_servidor(base, nuevo):
+        if _tareas_en_curso() and (_DIFERIDO is None or time.time() - _DIFERIDO < DIFERIR_MAX_S):
+            if _DIFERIDO is None:
+                _DIFERIDO = time.time()
+                print("AUTOPULL: hay tareas en curso; el reinicio con %s espera a que terminen" % nuevo[:10], flush=True)
+            return False
         if not _carga_bien():
-            _git("reset", "--hard", anterior)  # vuelve a la version que funcionaba
-            print("AUTOPULL: deshice %s y sigo con %s" % (nuevo[:10], anterior[:10]), flush=True)
+            _git("reset", "--hard", base)  # vuelve a la version que funcionaba
+            print("AUTOPULL: deshice %s y sigo con %s" % (nuevo[:10], base[:10]), flush=True)
             return False
         print("AUTOPULL: reinicio con %s" % nuevo[:10], flush=True)
         os.execv(sys.executable, [sys.executable, *sys.argv])
@@ -92,7 +111,9 @@ def _iniciar_hilo():
 
 def main():
     sys.path.insert(0, str(REPO))
-    print("MVP commit: " + (_head() or "desconocido"), flush=True)
+    global ARRANQUE
+    ARRANQUE = _head()
+    print("MVP commit: " + (ARRANQUE or "desconocido"), flush=True)
     _iniciar_hilo()
     import uvicorn
     uvicorn.run("mvp.app:app", host="0.0.0.0", port=7860)
