@@ -4,3 +4,6 @@ router inteligente universal/agents-yaiwes/agent-10-model-install/steps/**/resul
 __pycache__/
 *.pyc
 router inteligente universal/plugins/fichas_qwen/riu_data/
+
+# estado de ejecucion de LOOP/Cola/Watchdog (se crea al correr)
+chat router/Loop cola wachdog/*/state/

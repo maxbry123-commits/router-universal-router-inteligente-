@@ -8,14 +8,14 @@ import re
 import time
 import uuid
 
-AGENTE_TOOLS = {"agente", "agent", "groq_agente", "agente_enlazar"}
+AGENTE_TOOLS = {"agente", "agent", "groq_agente", "agente_enlazar", "loop"}
 LLM_TOOLS = {"chat", "llm", "recurso_llm", "nvidia_codigo"}
 NOMBRE = "chat_estado/control.json"
 SERVICIOS = {"github": "GitHub", "hf": "Hugging Face", "correo": "Correo", "mcp": "Servidor MCP", "otros": "Otros"}
 LEGADO = {"github": "GITHUB_TOKEN", "hf": "HF_TOKEN"}  # credencial "defecto" de cada servicio: la que ya trae el banco
 TOOLS = {"github_leer": ("GitHub", "github"), "github_escribir": ("GitHub", "github"), "github_api": ("GitHub", "github"),
          "almacen": ("Hugging Face", "hf"), "memoria": ("Hugging Face", "hf"), "pendientes": ("Chat", None), "sala": ("Chat", None),
-         "agente": ("IA y agentes", None), "llm": ("IA y agentes", None), "yaiwes_md": ("Chat", None)}  # delegar en un agente / en otro modelo
+         "agente": ("IA y agentes", None), "llm": ("IA y agentes", None), "yaiwes_md": ("Chat", None), "loop": ("IA y agentes", None)}  # delegar en un agente / en otro modelo
 NIVELES = {"lectura": 1, "escritura": 2, "admin": 3}
 MCP = re.compile(r"mcp__([0-9a-f]{8})__([A-Za-z0-9_-]{1,49})")
 MAX_CONEXIONES, MAX_PENDIENTES, MAX_SALAS, MAX_MENSAJES = 10, 200, 20, 500

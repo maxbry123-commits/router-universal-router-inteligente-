@@ -1,0 +1,567 @@
+{
+ "version": 1,
+ "total": 60,
+ "agentes": [
+  {
+   "id": "qwen3.8-max",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "qwen3.8-max"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "qwen3.8-flash",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "qwen3.8-flash"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "qwen3.7-max",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "qwen3.7-max"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "qwen3.7-plus",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "qwen3.7-plus"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "qwen3.6-plus",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "qwen3.6-plus"
+   },
+   "estado": "sin_plan"
+  },
+  {
+   "id": "qwen3.6-flash",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "qwen3.6-flash"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "glm-5.3",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "glm-5.3"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "glm-5.2",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "glm-5.2"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "glm-5.1",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "glm-5.1"
+   },
+   "estado": "sin_plan"
+  },
+  {
+   "id": "glm-5",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "glm-5"
+   },
+   "estado": "sin_plan"
+  },
+  {
+   "id": "deepseek-v4-pro",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "deepseek-v4-pro"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "deepseek-v4-pro-0813",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "deepseek-v4-pro-0813"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "deepseek-v4-flash-0731",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "deepseek-v4-flash-0731"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "deepseek-v4.1-flash",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "deepseek-v4.1-flash"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "deepseek-v4.1-flash-1017",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "deepseek-v4.1-flash-1017"
+   },
+   "estado": "llamable"
+  },
+  {
+   "id": "kimi-k2.7-code",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "kimi-k2.7-code"
+   },
+   "estado": "sin_plan"
+  },
+  {
+   "id": "kimi-k2.6",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "kimi-k2.6"
+   },
+   "estado": "sin_plan"
+  },
+  {
+   "id": "kimi-k2.5",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "kimi-k2.5"
+   },
+   "estado": "sin_plan"
+  },
+  {
+   "id": "MiniMax-M2.5",
+   "tipo": "modelo",
+   "ruta": null,
+   "llamada": {
+    "via": "puente_chat",
+    "modelo": "MiniMax-M2.5"
+   },
+   "estado": "sin_plan"
+  },
+  {
+   "id": "Agent-S",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/Agent-S",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "CLI-Anything",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/CLI-Anything",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "OpenHands",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/OpenHands",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "OpenManus",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/OpenManus",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "agent-zero",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/agent-zero",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "artemis",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/artemis",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "browser-use",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/browser-use",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "context7",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/context7",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "openhands-automation",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/openhands-automation",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "openhands-software-agent-sdk",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/openhands-software-agent-sdk",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "rea",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/rea",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "strix",
+   "tipo": "agente_listo",
+   "ruta": "chat-router/agentes/agentes-listos/strix",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "Durable-Task-Python",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/Durable-Task-Python",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "Durable-Workflow-Server",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/Durable-Workflow-Server",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "Prefect",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/Prefect",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "Temporal-Python-SDK",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/Temporal-Python-SDK",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "autogen",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/autogen",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "crewAI",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/crewAI",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "haystack",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/haystack",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "langgraph",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/langgraph",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "microsoft-agent-framework",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/microsoft-agent-framework",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "n8n",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/n8n",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "openai-agents-python",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/openai-agents-python",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "pydantic-ai",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/pydantic-ai",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "rowboat",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/rowboat",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "ruflo",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/ruflo",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "strands-agents-sdk-python",
+   "tipo": "framework",
+   "ruta": "chat-router/agentes/frameworks/strands-agents-sdk-python",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "agents-deep-research",
+   "tipo": "investigacion",
+   "ruta": "chat-router/agentes/investigacion/agents-deep-research",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "dzhng-deep-research",
+   "tipo": "investigacion",
+   "ruta": "chat-router/agentes/investigacion/dzhng-deep-research",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "fuentes-extraidas",
+   "tipo": "investigacion",
+   "ruta": "chat-router/agentes/investigacion/fuentes-extraidas",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "gpt-researcher",
+   "tipo": "investigacion",
+   "ruta": "chat-router/agentes/investigacion/gpt-researcher",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "open_deep_research",
+   "tipo": "investigacion",
+   "ruta": "chat-router/agentes/investigacion/open_deep_research",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "orquestador",
+   "tipo": "orquestacion",
+   "ruta": "chat-router/agentes/orquestacion/orquestador",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "parallel",
+   "tipo": "orquestacion",
+   "ruta": "chat-router/agentes/orquestacion/parallel",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "catalogado_sin_puente"
+  },
+  {
+   "id": "05-AGENTES",
+   "tipo": "agente_yaiwes",
+   "ruta": "chat-router/agentes/agentes-yaiwes/05-AGENTES",
+   "llamada": {
+    "via": "plugin:agentes"
+   },
+   "estado": "plugin_cargable"
+  },
+  {
+   "id": "07-SENTINELAS",
+   "tipo": "agente_yaiwes",
+   "ruta": "chat-router/agentes/agentes-yaiwes/07-SENTINELAS",
+   "llamada": {
+    "via": "plugin:agentes"
+   },
+   "estado": "plugin_cargable"
+  },
+  {
+   "id": "agent-microkernel",
+   "tipo": "agente_yaiwes",
+   "ruta": "chat-router/agentes/agentes-yaiwes/agent-microkernel",
+   "llamada": {
+    "via": "plugin:agentes"
+   },
+   "estado": "plugin_cargable"
+  },
+  {
+   "id": "agents",
+   "tipo": "agente_yaiwes",
+   "ruta": "chat-router/agentes/agentes-yaiwes/agents",
+   "llamada": {
+    "via": "plugin:agentes"
+   },
+   "estado": "plugin_cargable"
+  },
+  {
+   "id": "agents-yaiwes",
+   "tipo": "agente_yaiwes",
+   "ruta": "chat-router/agentes/agentes-yaiwes/agents-yaiwes",
+   "llamada": {
+    "via": "plugin:agentes"
+   },
+   "estado": "plugin_cargable"
+  },
+  {
+   "id": "workflow-agentes",
+   "tipo": "agente_yaiwes",
+   "ruta": "chat-router/agentes/agentes-yaiwes/workflow-agentes",
+   "llamada": {
+    "via": "plugin:agentes"
+   },
+   "estado": "plugin_cargable"
+  },
+  {
+   "id": "claude-code",
+   "tipo": "pasarela",
+   "ruta": "chat-router/agentes/claude-code",
+   "llamada": {
+    "via": "pasarela_local",
+    "puerto": 8082,
+    "requiere": "NVIDIA_API_KEY"
+   },
+   "estado": "requiere_proceso_local"
+  }
+ ]
+}

@@ -69,7 +69,7 @@ def llm(cuerpo):
     if catalogo.get("error"):
         raise RuntimeError("No se pudo obtener el catalogo MCP")
     permitidas = {t["name"]: t for t in catalogo.get("result", {}).get("tools", [])
-                  if t["name"] in ("github_leer", "github_escribir", "almacen", "pendientes", "sala", "agente", "llm", "yaiwes_md") or t["name"].startswith("mcp__")}
+                  if t["name"] in ("github_leer", "github_escribir", "almacen", "pendientes", "sala", "agente", "llm", "yaiwes_md", "loop") or t["name"].startswith("mcp__")}
     if not permitidas:
         raise RuntimeError("Herramientas GitHub no disponibles en MCP")
     opciones["tools"] = [{"type": "function", "function": {"name": n,

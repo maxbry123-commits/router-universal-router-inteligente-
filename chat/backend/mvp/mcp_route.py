@@ -3,7 +3,7 @@ import sys
 import asyncio
 import json
 from fastapi import Depends, HTTPException, Request, Response
-from mvp import control as permisos, externos, mcp_cliente, modelos
+from mvp import control as permisos, externos, loop_puente, mcp_cliente, modelos
 from router import mcp_puente_github as github
 
 # Esquemas de mvp/mcp_route.py y del contrato existente
@@ -84,6 +84,9 @@ HERRAMIENTAS_CONTROL += [
 ]
 HERRAMIENTAS_CONTROL.append({'name': 'yaiwes_md', 'description': 'yaiwes.md: informacion del proyecto compartida entre el Director y los modelos. accion leer o escribir (reemplaza el texto completo).',
      'inputSchema': {'type': 'object', 'properties': {'accion': {'type': 'string', 'enum': ['leer', 'escribir']}, 'texto': {'type': 'string'}}, 'required': ['accion']}})
+HERRAMIENTAS_CONTROL.append({'name': 'loop', 'description': 'LOOP gobernado (C0-C7 + Ricardo), hasta 4 procesos en paralelo, Cola CIT-50 y Watchdog. accion gobernar{objetivo,modelo}, paralelo{objetivos[1-4]}, estado{proceso_id}, estado_paralelo{grupo_id}, cancelar, agentes (espejo de modelos y agentes), status.',
+     'inputSchema': {'type': 'object', 'properties': {'plugin': {'type': 'string', 'enum': list(loop_puente.PLUGINS), 'default': 'nct_loop'},
+                                                     'accion': {'type': 'string'}, 'datos': {'type': 'object'}}, 'required': ['accion']}})
 GITHUB = {'github_leer': github.github_leer, 'github_escribir': github.github_escribir,
           'github_api': github.github_api}
 FICHAS = {'listar_fichas': 'fichas', 'chat': 'chat_async', 'resultado': 'resultado'}
@@ -167,6 +170,9 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
             return _ok(id_, _contenido(salida))
         if nombre in ('agente', 'llm'):
             return _ok(id_, _contenido(await delegar(nombre, args)))
+        if nombre == 'loop':
+            salida = await loop_puente.llamar(args.get('plugin') or 'nct_loop', args['accion'], args.get('datos'))
+            return _ok(id_, _contenido(salida, isinstance(salida, dict) and bool(salida.get('error'))))
         if nombre.startswith('mcp__'):
             con = next(c for c in control.d['conexiones']['mcp'] if c['id'] == nombre[5:13])
             respuesta = await asyncio.to_thread(mcp_cliente.llamar, con['url'], banco.leer(permisos._clave_banco('mcp', con['id'])) if banco else None, nombre[15:], args)

@@ -304,6 +304,10 @@ class _PuertoModelo:
         return out
 
 
+_RECLAMADOS: dict = {}
+_RECL_LOCK = threading.Lock()
+
+
 class _PuertoCola:
     """submit_and_wait sobre el QueueStore CIT-50 existente: encola la unidad
     (tipo ricardo, sin aprobacion: ya viene gated por allowed_ops + ECC), la
@@ -315,8 +319,19 @@ class _PuertoCola:
                                        'prompt': task.goal[:2000]}]})
         qid = q['queue_id']
         _cola().start(qid, seconds=900)
-        claimed = _cola().claim()
-        if not claimed or claimed[0].get('queue_id') != qid:
+        # claim() es global y FIFO: con procesos en paralelo puede devolver la unidad de
+        # otro. Lo reclamado se deja en _RECLAMADOS y cada dueno recoge solo lo suyo.
+        for _ in range(400):
+            with _RECL_LOCK:
+                if qid not in _RECLAMADOS:
+                    c = _cola().claim()
+                    if c:
+                        _RECLAMADOS[c[0].get('queue_id')] = c
+                claimed = _RECLAMADOS.pop(qid, None)
+            if claimed:
+                break
+            await asyncio.sleep(0.05)
+        if not claimed:
             raise RuntimeError('cola CIT-50 no entrego la unidad %s' % task.id)
         try:
             out = await perform()
@@ -369,7 +384,9 @@ class _PuertoECCAcciones:
 
 
 _PROC: dict = {}
-_POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix='nct_loop')
+MAX_PARALELO = 4
+_POOL = ThreadPoolExecutor(max_workers=MAX_PARALELO, thread_name_prefix='nct_loop')
+_GRUPOS: dict = {}
 _CANCEL: set = set()
 
 
@@ -520,6 +537,28 @@ def _modulo_skill(skill_id: str):
     return _mod('eccskill_' + skill_id.replace('-', '_'), ruta)
 
 
+async def _cerrar_ciclos(rep: dict, repetir) -> dict:
+    """Todo skill termina con VERIFY y RECOVERY: si su SKILL.md no los trae, se
+    aplican los universales (deterministas, sin modelo). VERIFY: cada recibo MAIN
+    es PASS y tiene id. RECOVERY: un solo reintento acotado si MAIN fallo."""
+    if not isinstance(rep, dict):
+        return {'ok': False, 'status': 'FAIL', 'error': 'skill sin resultado'}
+    if not rep.get('ok') and not rep.get('recovery'):
+        rep['recovery'] = {'ciclo': 'RECOVERY', 'origen': 'universal', 'intentos': 1}
+        segundo = await repetir()
+        rep['recovery']['ok'] = bool(segundo.get('ok'))
+        if segundo.get('ok'):
+            rep = dict(segundo, recovery=rep['recovery'])
+    if rep.get('ok') and not rep.get('verify'):
+        recibos = (rep.get('main') or {}).get('receipts') or []
+        ok = bool(recibos) and all(r.get('status') == 'PASS' and r.get('receipt_id') for r in recibos)
+        rep['verify'] = {'ciclo': 'VERIFY', 'origen': 'universal', 'ok': ok,
+                         'executed': len(recibos), 'receipts': []}
+        if not ok:
+            rep['ok'], rep['status'] = False, 'FAILED_VERIFY'
+    return rep
+
+
 async def _ejecutar_skill_motor(skill_id: str, p: dict) -> dict:
     cat = _catalogo_ecc()
     spec = cat.get(skill_id)
@@ -535,10 +574,12 @@ async def _ejecutar_skill_motor(skill_id: str, p: dict) -> dict:
         def model_fn(prompt: str) -> dict:
             return _chat_modelo(modelo, prompt, sesion)
         task_id = str(p.get('task_id') or p.get('proceso_id') or 'tarea-' + uuid.uuid4().hex[:8])
-        return await mod.run(dict(p.get('contexto') or p.get('context') or {}),
-                             task_id=task_id,
-                             event=str(p.get('event') or 'skill.run'),
-                             model_fn=model_fn, receipt_fn=None)
+        async def _una_vez():
+            return await mod.run(dict(p.get('contexto') or p.get('context') or {}),
+                                 task_id=task_id,
+                                 event=str(p.get('event') or 'skill.run'),
+                                 model_fn=model_fn, receipt_fn=None)
+        return await _cerrar_ciclos(await _una_vez(), _una_vez)
     ciclos = _fases_por_ciclo(spec)
     modelo = str(p.get('modelo') or 'ficha-qwen38flash')
     sesion = str(p.get('sesion') or ('skill-' + uuid.uuid4().hex[:8]))
@@ -611,7 +652,9 @@ async def _gobernar(pid: str, p: dict) -> dict:
         return await _ejecutar_skill_motor(sid, {'modelo': p.get('modelo'), 'sesion': p.get('sesion'),
                                                  'task_id': tid, 'objetivo': obj, 'event': 'gobernanza.verify'})
 
+    from nct_loop.ricardo_adapter import RicardoOpsDemo
     gob = Gobernanza(
+        ricardo=RicardoOpsDemo(_WS_ROOT / pid, _POLICY),
         ejecutar_mision=ejecutar,
         construir_mision=lambda q, skills: _build_mission(dict(q, auto_skills=False, skills=skills)),
         seleccionar_skills=_seleccionar_skills,
@@ -649,6 +692,37 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
         pid = 'gob-' + uuid.uuid4().hex[:12]
         _PROC[pid] = _POOL.submit(_hilo_gob, pid, dict(p))
         return {'estado': 'procesando', 'proceso_id': pid, 'ciclos': list(__import__('nct_loop.gobernanza', fromlist=['CICLOS']).CICLOS)}
+    if action == 'agentes':
+        f = _CONFIG / 'agentes.json'
+        if not f.is_file():
+            return {'error': 'sin espejo: ejecutar GENERAR_MIRROR_AGENTES.py'}
+        doc = json.loads(f.read_text(encoding='utf-8'))
+        tipo = str(p.get('tipo') or '')
+        lista = [a for a in doc['agentes'] if not tipo or a['tipo'] == tipo]
+        return {'ok': True, 'total': len(lista), 'agentes': lista}
+    if action == 'paralelo':
+        objetivos = p.get('objetivos')
+        if not isinstance(objetivos, list) or not 1 <= len(objetivos) <= MAX_PARALELO:
+            return {'error': 'objetivos: lista de 1 a %d' % MAX_PARALELO}
+        gid, procesos = 'par-' + uuid.uuid4().hex[:10], []
+        for i, o in enumerate(objetivos):
+            q = dict(o) if isinstance(o, dict) else {'objetivo': str(o)}
+            if not str(q.get('objetivo') or q.get('yaiwes_md') or '').strip():
+                return {'error': 'objetivo %d vacio' % i}
+            q.setdefault('modelo', p.get('modelo'))
+            q.setdefault('sesion', '%s-%d' % (gid, i))
+            pid = 'gob-' + uuid.uuid4().hex[:12]
+            _PROC[pid] = _POOL.submit(_hilo_gob, pid, q)
+            procesos.append(pid)
+        _GRUPOS[gid] = procesos
+        return {'estado': 'procesando', 'grupo_id': gid, 'procesos': procesos, 'maximo': MAX_PARALELO}
+    if action == 'estado_paralelo':
+        gid = str(p.get('grupo_id') or '')
+        if gid not in _GRUPOS:
+            return {'error': 'GRUPO_NO_EXISTE'}
+        est = [dict(handle('estado', {'proceso_id': x}), proceso_id=x) for x in _GRUPOS[gid]]
+        hechos = all(e.get('estado') != 'procesando' for e in est)
+        return {'grupo_id': gid, 'estado': 'completado' if hechos else 'procesando', 'procesos': est}
     if action == 'estado':
         pid = str(p.get('proceso_id') or '')
         fut = _PROC.get(pid)
@@ -715,4 +789,4 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
 
 ACCIONES = ['status', 'health', 'ejecutar', 'gobernar', 'estado', 'cancelar',
             'skills', 'skill_fases', 'skill_ejecutar',
-            'skills_registro', 'skills_seleccionar']
+            'skills_registro', 'skills_seleccionar', 'agentes', 'paralelo', 'estado_paralelo']

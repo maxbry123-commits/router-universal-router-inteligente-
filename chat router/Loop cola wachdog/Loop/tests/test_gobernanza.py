@@ -27,7 +27,7 @@ class GobernanzaTests(unittest.IsolatedAsyncioTestCase):
         self.tmp.cleanup()
 
     def gob(self, **kw):
-        base = dict(ejecutar_mision=self.eng.run, construir_mision=lambda p, s: self.mission,
+        base = dict(ejecutar_mision=self.eng.run, ricardo=self.eng.tools, construir_mision=lambda p, s: self.mission,
                     ops_permitidas=OPS, checkpoint_dir=self.tmp.name)
         base.update(kw)
         return Gobernanza(**base)
@@ -50,6 +50,22 @@ class GobernanzaTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(set(pasos), {m[0] for m in MICROCICLO})
         self.assertIs(pasos['IMPLEMENTAR'], True)
         self.assertIs(pasos['EJECUTAR_GREEN'], True)
+
+    async def test_ricardo_participa_en_todos_los_ciclos(self):
+        r = await self.gob().run({'objetivo': 'Crear evidencia real y verificarla en el workspace'})
+        self.assertEqual(r['status'], 'DONE_VERIFICADO', r)
+        for c in r['ciclos']:
+            if c['ciclo'] != 'C2_DECISION':
+                self.assertIsNotNone(c.get('ricardo'), c['ciclo'])
+        c1 = r['ciclos'][1]['ricardo']
+        self.assertEqual(c1['origen'], 'MOTOR_CLI_LOCAL_REAL')
+        self.assertGreaterEqual(r['ciclos'][5]['ricardo']['recibos_motor'], 1)
+
+    async def test_ricardo_rechaza_dag_con_dependencia_inexistente(self):
+        m = json.loads(json.dumps(self.mission))
+        m['units'][0]['depends_on'] = ['NO_EXISTE']
+        r = await self.gob(construir_mision=lambda p, s: m).run({'objetivo': 'Crear evidencia real y verificarla'})
+        self.assertEqual(r['status'], 'BLOQUEADO')
 
     async def test_objetivo_vacio_se_rechaza_en_c0(self):
         r = await self.gob().run({'objetivo': ''})
