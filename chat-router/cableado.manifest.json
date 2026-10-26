@@ -115,23 +115,23 @@
  "protegido": {
   "chat-router/chat/auditoria": {
    "archivos": 4,
-   "sha256": "4675a7fcb83c5d4d0feef5482c03d91e0662d2118e7bb804796fe767999d9efa"
+   "sha256": "65235eb47c6e12bcb3f6a213b2b792684a368af6848addd24905f67edca472bf"
   },
   "chat-router/chat/backend": {
-   "archivos": 105,
-   "sha256": "9ccfd185daf0e076ceaf567d40a456728ca40a0b3f489c17b7691a05293302dd"
+   "archivos": 107,
+   "sha256": "23b0e24ace55579dacfc72d0f2764c4edd495a206f1a146940ff5d82b769824c"
   },
   "chat-router/chat/e2e": {
    "archivos": 22,
-   "sha256": "832a08ca652b3121fd4e082f7bbfa0f9f7325197f02c7d54b0f68f31632ce4b2"
+   "sha256": "43554e8b03de67cf0a70aa9679a962686f11302bdae4c6e226c1e235c5d55024"
   },
   "chat-router/chat/espejo": {
    "archivos": 1,
    "sha256": "fd6578f73ee2acfdc63510750e189086fb025a8c0cabf293be028e5e6f5cb8c0"
   },
   "chat-router/chat/frontend": {
-   "archivos": 544,
-   "sha256": "a80ff2fc0fa082233ad249e9b9459fe581d1d7726c829b6e5c293f7d34c6b1a1"
+   "archivos": 548,
+   "sha256": "53fd1c8230208cb394ebd96185b3828a0c7d991cfe82fbad9502a8104690f673"
   },
   "chat-router/plugins/__init__.py": {
    "archivos": 1,
@@ -143,23 +143,23 @@
   },
   "chat-router/plugins/puente_chat": {
    "archivos": 44,
-   "sha256": "8cc48f442582ac4edc6ac7d2bd9e097b149cfe7ea47767716467ab4fd17c9820"
+   "sha256": "660454e2dfbc65f4b3439da62757afe51563703e935922866814f492a873c9a1"
   },
   "router-mvp/fichas": {
    "archivos": 220,
-   "sha256": "1c50afe1dbbc24187b842a37e4029a856c1cc14fe2523940ffc8287406afe4cf"
+   "sha256": "f8af440dfbb60916ea3b05225e5e6f5fcf8bbab77224d039c88381c30b385181"
   },
   "router-mvp/raiz_fichas_prompt": {
    "archivos": 5,
-   "sha256": "78668951d946e21c3aaa52c66e1a215325840eb65016a1d2c5bf00789b393a0b"
+   "sha256": "14274d1854b93bfd96d10563e660bf31bea4d508e3c308598be6645e1d7492a9"
   },
   "router-mvp/raiz_router": {
    "archivos": 583,
-   "sha256": "8e53c992a5c4f8349618f417891ed07ffcb4845ded797b0a3500415f761d689d"
+   "sha256": "9157e83c7d597d40194f12ecb3aa12bd6575c011a812476c6d420059dee09667"
   },
   "router-mvp/router": {
    "archivos": 176,
-   "sha256": "7335a2327fa5a81dace20b9fdf140d13e95b6e882052216f585b5c42cc02b1c5"
+   "sha256": "25521025abb3b6758849e10d3a6a206ad831c6c2f22d1674b8f36f6270489524"
   }
  }
 }
