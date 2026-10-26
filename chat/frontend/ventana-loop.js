@@ -362,8 +362,8 @@ function pintarLoop(cuerpo) {
       const r = await window.RIU_PLUGIN("nct_loop", "estado", { proceso_id: proc });
       const st = String(r.estado || r.status || "");
       const res = r.resultado || {};
-      const skills = Array.isArray(res.skills_ejecutadas) ? res.skills_ejecutadas.join(",") : "";
-      nct.textContent = [proc, st || "sin estado", res.status || "", skills].filter(Boolean).join(" · ");
+      const motores = Array.isArray(res.skills_ejecutadas) ? res.skills_ejecutadas.filter(Boolean) : [];
+      nct.textContent = [proc, st || "sin estado", res.status || "", motores.length ? "motor code · " + motores.join(", ") : ""].filter(Boolean).join(" · ");
       if (res.trace || res.receipts) gobBox.textContent = JSON.stringify({ trace: res.trace, receipts: res.receipts }).slice(0, 500);
       if (/DONE_VERIFICADO|BLOCKED|FAIL/.test(st + " " + (res.status || ""))) pararPoll();
     } catch (e) { nct.textContent = e.message; pararPoll(); }
