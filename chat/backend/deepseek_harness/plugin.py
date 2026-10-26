@@ -48,7 +48,7 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         headers["X-API-Key"] = key
     req = urllib.request.Request(base + path, data=json.dumps(payload).encode(), headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=25) as resp:  # noqa: S310 (URL fijada por el operador via env)
+        with urllib.request.urlopen(req, timeout=None) as resp:  # sin tope de tiempo por orden del Director  # noqa: S310 (URL fijada por el operador via env)
             raw = resp.read(1_000_000).decode("utf-8", "replace")
             try:
                 body: Any = json.loads(raw)

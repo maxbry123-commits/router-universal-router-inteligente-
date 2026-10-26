@@ -37,7 +37,7 @@ def run_check(chk: dict, workdir: str) -> dict:
         if kind in ("command", "test_suite"):
             args = shlex.split(spec["command"])
             exp = (chk.get("expect") or {}).get("exit_code", 0)
-            p = subprocess.run(args, cwd=workdir, capture_output=True, text=True, timeout=chk.get("timeout_s", 600))
+            p = subprocess.run(args, cwd=workdir, capture_output=True, text=True, timeout=chk.get("timeout_s"))  # sin tope por defecto
             return res(p.returncode == exp, f"exit={p.returncode} esperado={exp} salida=...{_tail(p.stdout + p.stderr)}")
         if kind == "regex_match":
             txt = open(os.path.join(workdir, spec["file"]), encoding="utf-8", errors="ignore").read()
@@ -89,7 +89,7 @@ class LoopController:
             raise LoopError("contrato invalido: " + "; ".join(errs))
         self.c, self.exec, self.workdir, self.now, self.on_event = contract, executor, workdir, now, on_event
         L = contract["loop"]
-        self.limits = {**L["hard_limits"], **(limits or {})}
+        self.limits = dict(limits or {})  # orden del Director: los hard_limits del contrato no aplican; solo overrides explicitos
         self.ladder = L["on_stuck"]["ladder"]
         self.handlers = ladder_handlers or {}
         self.token = L["completion"]["promise_token"]
@@ -146,10 +146,10 @@ class LoopController:
 
     def _limit(self):
         lim = self.limits
-        if self.iteration >= lim["max_iterations"]: return "max_iterations"
-        if self.now() - self.t0 >= lim["max_wall_clock_s"]: return "max_wall_clock_s"
-        if self.cost >= lim["max_cost_usd"]: return "max_cost_usd"
-        if self.no_progress >= lim["max_consecutive_no_progress"]: return "max_consecutive_no_progress"
+        if lim.get("max_iterations") is not None and self.iteration >= lim["max_iterations"]: return "max_iterations"
+        if lim.get("max_wall_clock_s") is not None and self.now() - self.t0 >= lim["max_wall_clock_s"]: return "max_wall_clock_s"
+        if lim.get("max_cost_usd") is not None and self.cost >= lim["max_cost_usd"]: return "max_cost_usd"
+        if lim.get("max_consecutive_no_progress") is not None and self.no_progress >= lim["max_consecutive_no_progress"]: return "max_consecutive_no_progress"
         return None
 
     def _exhausted(self, nid):

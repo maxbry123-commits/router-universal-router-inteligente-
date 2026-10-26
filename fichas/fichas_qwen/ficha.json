@@ -38,10 +38,7 @@
     "sandbox": "egress-allowlist",
     "permisos": [
       "network:http"
-    ],
-    "limites": {
-      "timeout_ms": 120000
-    }
+    ]
   },
   "firma": {
     "gpg_key_id": "PENDIENTE",
