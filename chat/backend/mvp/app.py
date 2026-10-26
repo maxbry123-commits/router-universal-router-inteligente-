@@ -470,7 +470,8 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
         if pid not in TRABAJOS and not await _recuperar(pid):
             if pid in await asyncio.to_thread(estado_tarea.pendientes, app.state.banco):  # Router recien reiniciado: la tarea se esta retomando
                 return {"status": "ok", "result": {"estado": "procesando", "proceso_id": pid, "subestado": "reanudando"}}
-            raise HTTPException(status_code=404, detail="proceso_id desconocido")
+            # 200 con error (no 404): el chat ya desplegado en Vercel toma un 404 por "sin conexion" y reintenta 12 veces; asi muestra "la tarea ya no esta" y termina
+            return {"status": "ok", "result": {"error": "PROCESO_NO_EXISTE", "proceso_id": pid, "detalle": "proceso_id desconocido"}}
         try:
             espera = min(max(float(cuerpo.get("espera") or 0), 0), 8)
         except (TypeError, ValueError):

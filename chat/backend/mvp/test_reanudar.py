@@ -99,7 +99,7 @@ class Reanudar(Base):
         servicio.TRABAJOS.pop("p-arranque", None)
         self.client = TestClient(servicio.app)
 
-    def test_mientras_se_retoma_la_consulta_dice_procesando_y_no_404(self):  # el chat consulta justo despues del reinicio, antes de que la tarea este en memoria
+    def test_mientras_se_retoma_la_consulta_dice_procesando_y_no_error(self):  # el chat consulta justo despues del reinicio, antes de que la tarea este en memoria
         estado_tarea.marcar(self.banco, "p-retomando", True)
         servicio.TRABAJOS.pop("p-retomando", None)
         r = self.client.post("/plugins/puente_chat/call/resultado", headers={"x-api-key": "api-ficticia"}, json={"proceso_id": "p-retomando"})
@@ -107,5 +107,5 @@ class Reanudar(Base):
         self.assertEqual(r.json()["result"]["estado"], "procesando")
         self.assertEqual(r.json()["result"]["subestado"], "reanudando")
         r = self.client.post("/plugins/puente_chat/call/resultado", headers={"x-api-key": "api-ficticia"}, json={"proceso_id": "p-nunca-existio"})
-        self.assertEqual(r.status_code, 404)    # lo que no existe ni se esta retomando sigue siendo 404
+        self.assertEqual((r.status_code, r.json()["result"]["error"]), (200, "PROCESO_NO_EXISTE"))    # lo que no existe ni se esta retomando: error terminal limpio
         estado_tarea.marcar(self.banco, "p-retomando", False)

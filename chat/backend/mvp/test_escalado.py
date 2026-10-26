@@ -94,7 +94,8 @@ class Circuito(Base):
         self.assertEqual(sum(1 for u, _ in llamadas if u.endswith("/chat_async")), 1)
         servicio.TRABAJOS.clear()  # otro proceso: sin memoria local, lo recupera del almacen
         self.assertEqual(self.post("resultado", {"proceso_id": pid})["choices"][0]["message"]["content"], "desde A")
-        self.assertEqual(self.client.post("/plugins/puente_chat/call/resultado", headers=CAB, json={"proceso_id": "p-nunca"}).status_code, 404)
+        r = self.client.post("/plugins/puente_chat/call/resultado", headers=CAB, json={"proceso_id": "p-nunca"})
+        self.assertEqual((r.status_code, r.json()["result"]["error"]), (200, "PROCESO_NO_EXISTE"))  # 200 con error: el chat viejo no lo toma por falta de red
 
     def test_sin_capacidad_el_trabajo_espera_en_cola_y_sigue_vivo(self):
         escalado._caida[A] = time.time()
