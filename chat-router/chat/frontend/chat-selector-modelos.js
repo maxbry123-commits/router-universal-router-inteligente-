@@ -119,6 +119,7 @@ export function conectarSelectorModelos(ctx) {
     const dest = dest0, SEL = SEL0;
     if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender(dest); else if (SEL.activo === dest) SEL.apagar(); }  // elegir un modelo = el selector que abrio la hoja responde
     q("#sh-modelos").hidden = true;
+    pill.setAttribute("aria-expanded", "false"); if (pillMvp) pillMvp.setAttribute("aria-expanded", "false");  // UX: al elegir la hoja se cierra; el botón debe anunciar «colapsado»
   };
   const pintar = () => {
     const s = chat().selectorQwen;
