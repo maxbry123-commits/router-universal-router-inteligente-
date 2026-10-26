@@ -559,7 +559,7 @@ def _verificar(fid, ses, pv, pid, t0):
     rol = ('VERIFICADOR INDEPENDIENTE (SOLO LECTURA): auditoria forense X-Ray de la tarea entregada. VERIFICACION CRUZADA: (1) contra el INPUT BLOCK VERBATIM del Director: cumple cada instruccion, una por una? (2) contra el codigo fuente o la tarea en curso: lee los archivos reales con las herramientas (github_leer, hf_leer); no te fies de lo que dice la salida entregada. SOLO LECTURA: no escribas ni modifiques nada (N4 es el unico escritor). Si detectas un defecto, devuelve una linea CORRECCION_N4: <defecto concreto> | <evidencia real> | <archivo o ruta>. Termina con una linea: VEREDICTO: PASS, o VEREDICTO: FAIL: <defecto concreto que no pudiste resolver>')
     prompt = (rol + nl * 2 + 'INPUT BLOCK VERBATIM DEL DIRECTOR:' + nl + str(pv['input']) + nl * 2 + 'PLAN APROBADO:' + nl + str(pv.get('plan') or '(sin plan)')[:4000] +
               nl * 2 + 'SALIDA ENTREGADA A VERIFICAR:' + nl + str(pv['salida'])[:8000])
-    mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or 99
+    mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or _SIN_LIMITE_INT
 
     base_opts = {'sesion': ses, 'muta': False, 'aprobado': True, 'pid': pid, 'tarea_id': str(pv.get('tarea_id') or ''), 'anclados': list(pv.get('anclados') or []), 'pregunta': str(pv.get('input') or ''), 'reanudar': True,
                  'gobernanza': _gob(ficha) if pv.get('constitucion_hash') else {}, 'constitucion': _const_ref(ficha, {}), 'constitucion_hash': str(pv.get('constitucion_hash') or '')}
@@ -1560,7 +1560,7 @@ def _expandir_cadena(c, lim):
             'id': p['id'], 'modelo': p.get('modelo') or 'selector',
             'rol': p['tarea'] + '\nEntrada: la salida del paso anterior (si existe). Entrega SOLO el resultado de este paso.',
             'depende_de': [prev] if prev else [],
-            'timeout_s': int(p.get('timeout_s') or 120), 'max_output_tokens': int(p.get('max_tokens') or 2000),
+            'timeout_s': int(p.get('timeout_s') or _SIN_LIMITE_S), 'max_output_tokens': (int(p['max_tokens']) if p.get('max_tokens') else None),
             'requiere_tools': p.get('tools') in ('lectura', 'escritura'),
             'escribe': p.get('tools') == 'escritura',
             'requiere_evidencia': bool(p.get('requiere_evidencia')),
@@ -1660,7 +1660,7 @@ def _correr_objetivo(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses
     elegido = _elegido(FICHAS.get('ficha1-modelos') or ficha if _es_f5 else ficha, str(obj.get('modelo') or p.get('modelo') or ''))
     if elegido is None:
         return 'GAP MODELO_SELECTOR_INVALIDO: ' + repr(obj.get('modelo') or p.get('modelo')), []
-    _lim_o = dict({'max_minutos': 240}, **(obj.get('limites') or {}))
+    _lim_o = dict(obj.get('limites') or {})
     if pid:
         _SIN_REAPER.add(pid)  # AUDIT A4: un objetivo sigue aunque se cierre la pestaña (nadie hace polling)
 
@@ -1882,7 +1882,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         except Exception:  # noqa: BLE001
             _tok_regla = None
         nl = chr(10)
-        _tope_ctx = int(opts.get('cadena_ctx_chars') or 6000) if opts.get('cadena') else None  # DSL A04.2: 6000 entre pasos, no cero ni ilimitado
+        _tope_ctx = (int(opts['cadena_ctx_chars']) if opts.get('cadena_ctx_chars') else None)  # DSL A04.2: 6000 entre pasos, no cero ni ilimitado
         ctx = (nl * 2).join('[%s]%s%s' % (d, nl, out[d]) for d in n.get('depende_de', []) if out.get(d))
         if _tope_ctx is not None and len(ctx) > _tope_ctx:
             ctx = '[CONTEXTO PREVIO RECORTADO; VERIFICAR FUENTE REAL]\n' + ctx[-(_tope_ctx - 60):]
@@ -1935,7 +1935,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                     _reint = {}
                 _nc0['sys_prompt'] = _sys_prompt
                 _nc0['per_attempt_s'] = 0  # DSL G6: sin tope fijo por intento; el deadline del nodo ya limita cada llamada
-                _nc0['max_attempts'] = int(_reint.get('max_attempts') or 2)
+                _nc0['max_attempts'] = int(_reint.get('max_attempts') or _SIN_LIMITE_INT)
                 _nid = str(n.get('id'))
                 _h0 = len(opts.setdefault('herr', {}).setdefault(_nid, []))  # DSL G4: la evidencia real es el delta de opts['herr'] de ESTE nodo
                 _tok_nc = _NODO_CALL.set(_nc0)
@@ -2037,7 +2037,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         opts.setdefault('tiempos', {})[i] = int((time.time() - _tn) * 1000)
         return r
 
-    _mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or 99
+    _mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or _SIN_LIMITE_INT
 
     def _dag() -> None:
         _pausa_paso = float(opts.get('cadena_pausa_s') or 0)  # DSL G16b: pausa opcional entre pasos de cadena (no cuenta en el timeout)
@@ -2056,8 +2056,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                         time.sleep(_espera)
                 futs = {i: ex.submit(nodo, i) for i in listos if not (nodos[i].get('escribe') and not opts.get('aprobado') and opts.get('cadena'))}  # DSL A04.1: en cadena, el ejecutor no corre sin aprobacion
                 lp_ = ficha.get('loop') or {}
-                tope_cod = float(lp_.get('max_segundos_codigo') or 1800)
-                ana_max = float(lp_.get('analisis_max_s') or 120)
+                tope_cod = float(lp_.get('max_segundos_codigo') or _SIN_LIMITE_S)
+                ana_max = float(lp_.get('analisis_max_s') or _SIN_LIMITE_S)
                 grupo_ana = len(listos) >= 3 and not any(nodos[j].get('escribe') or j == 'N4' for j in listos)
                 pend_f = dict(futs)
                 while pend_f:
@@ -2111,7 +2111,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             _dag()
     maxc = int((ficha.get('loop') or {}).get('correcciones') or 1)
     ronda = 0
-    tope_s = float((ficha.get('loop') or {}).get('max_segundos') or 600)
+    tope_s = float((ficha.get('loop') or {}).get('max_segundos') or _SIN_LIMITE_S)
     while opts.get('aprobado') and not (pid and pid in _CANCEL) and ronda < maxc and time.time() - _t0 < tope_s and any(_fallo(out.get(k)) for k in ('N6', 'N7', 'N8')):
         ronda += 1  # N6/N7/N8 revisan y refactorizan; si queda un defecto real que no pudieron resolver, N4 corrige y se revisa otra vez
         opts['ronda'] = ronda
@@ -2290,7 +2290,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
                     _o = _o if isinstance(_o, dict) else {'objetivo': str(_o or mensaje)}
                     salida = ('OBJETIVO CON ESCRITURAS: necesita tu aprobación UNA sola vez.' + chr(10) * 2 + 'OBJETIVO:' + chr(10)
                               + str(_o.get('objetivo') or mensaje)[:3000] + chr(10) * 2
-                              + 'Límites: ' + json.dumps(_o.get('limites') or {'max_vueltas': 20, 'max_minutos': 240}, ensure_ascii=False)
+                              + 'Límites: ' + json.dumps(_o.get('limites') or {}, ensure_ascii=False)
                               + chr(10) + 'Escribe /aprobar para que el motor trabaje en bucle hasta terminar sin volver a preguntarte.'
                               + chr(10) * 2 + 'ESPERANDO_APROBACION')
                     traza = []

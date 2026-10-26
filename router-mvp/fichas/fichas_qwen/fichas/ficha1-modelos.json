@@ -292,10 +292,7 @@
   "plantilla": "plantilla/PLANTILLA_XRAY_V2.yaml",
   "mejoras": "plantilla/MEJORAS_FICHAS.yaml",
   "api_yml": "modelos-14/harness-modelos-14.cordis.yml",
-  "loop": {
-    "max_partes_codigo": 40,
-    "max_segundos_codigo": 5400
-  },
+  "loop": {},
   "codigo_largo": {
     "parte_lineas": "500 a 1000 por llamada",
     "marcas": [
@@ -390,8 +387,6 @@
         "entrada",
         "salida"
       ],
-      "timeout_s": 60,
-      "max_output_tokens": 900,
       "no_decide_la_verdad": true,
       "autoridad": "consultiva",
       "puede_bloquear": false,
