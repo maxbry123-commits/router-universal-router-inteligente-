@@ -31,7 +31,7 @@ function montar() {
     btn.type = "button"; btn.id = "btn-selector-modelos"; btn.className = "pill sel-indicador"; btn.setAttribute("aria-haspopup", "dialog"); btn.setAttribute("aria-controls", "sh-selectores");
     btn.innerHTML = ICONO + '<span class="sel-ind-txt"></span><span class="sel-ind-flecha" aria-hidden="true">⌄</span>';
     composer.prepend(btn);
-    btn.addEventListener("click", () => { hoja.hidden = false; btn.setAttribute("aria-expanded", "true"); const f = hoja.querySelector(".sel-on, button"); if (f) f.focus(); });
+    btn.addEventListener("click", () => { hoja.hidden = false; btn.setAttribute("aria-expanded", "true"); const caja = hoja.querySelector(".va-caja"); if (caja) caja.scrollTop = 0; const f = hoja.querySelector(".sel-on, button"); if (f) f.focus(); });
   }
   const txt = btn.querySelector(".sel-ind-txt");
   pintar = () => {

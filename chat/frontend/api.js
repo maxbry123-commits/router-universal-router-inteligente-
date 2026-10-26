@@ -78,7 +78,7 @@ const fmtTools = (p) => {
 };
 const avisoProceso = (ses, pid, t0, p) => {
   const tools = fmtTools(p);
-  const texto = 'Procesando · ' + fmtReloj(Date.now() - (t0 || Date.now())) + (tools ? ' · ' + tools : '') + (p && p.progreso ? ' · ' + p.progreso : '');
+  const texto = 'Pensando · ' + fmtReloj(Date.now() - (t0 || Date.now())) + (tools ? ' · ' + tools : '') + (p && p.progreso ? ' · ' + p.progreso : '');
   try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: ses, proceso_id: pid, texto } })); } catch (e) {}
 };
 const procs = () => { try { return JSON.parse(localStorage.getItem(CP) || '{}'); } catch (e) { return {}; } };
@@ -149,7 +149,7 @@ async function puenteRouter(base, body, qs, headers) {
     if (p.estado === 'procesando' && p.proceso_id) {
       const deadline = Date.now() + TOPE_ESPERA;
       const t0 = Date.now();
-      try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'En cola…' } })); } catch (e) {}  // process_id != modelo corriendo: el backend informa el estado real; sesion+pid aíslan el progreso entre chats
+      try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'Pensando…' } })); } catch (e) {}  // el cubo y la burbuja dicen Pensando, no cola
       if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: t0 });
       let primera = true;  // primera consulta inmediata, luego cada 250 ms; el tope es 48 h
       let fallosRed = 0;  // fix 5: la red caida ya no se oculta para siempre

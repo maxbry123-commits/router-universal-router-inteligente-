@@ -404,7 +404,10 @@ function pintarLoop(cuerpo) {
   perfil.style.gridColumn = "1 / -1";
   ejecutar.style.gridColumn = "1 / -1";
   nctFila.append(perfil, ejecutar, cancelarN, salud, ancla, pend, tools);
-  cuerpo.replaceChildren(el("div", "cv-sec", "Yaiwes.md"), md, filaMod, ruta, nctFila, nct, gobBox, el("div", "cv-sec", "LOOP"), partes, mando, fila, centro, objetivo, plan, tareas, aviso);
+  const fuente = el("div");
+  fuente.id = "loop-fuente-tareas";
+  if (window.RIU_PINTAR_TAREAS) window.RIU_PINTAR_TAREAS(fuente);
+  cuerpo.replaceChildren(el("div", "cv-sec", "Tareas"), fuente, el("div", "cv-sec", "Yaiwes.md"), md, filaMod, ruta, nctFila, nct, gobBox, el("div", "cv-sec", "LOOP"), partes, mando, fila, centro, objetivo, plan, tareas, aviso);
   pintar();
 }
 

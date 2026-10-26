@@ -112,7 +112,13 @@ export async function mount(root, { api, tell }) {
     chats.forEach((c, i) => {
       const b = node("button", "Chat " + (i + 1) + (c.ocupado ? " …" : ""), "chip" + (i === activo ? " on" : ""));
       b.type = "button"; b.title = "Chat " + (i + 1) + " — sesión " + c.sesion;
-      b.addEventListener("click", () => { activo = i; pintarTabs(); });
+      b.addEventListener("click", () => {
+        if (chats[activo]) chats[activo].borrador = editor.value;
+        activo = i;
+        editor.value = chats[i].borrador || "";
+        ajustarAlturaEditor();
+        pintarTabs();
+      });
       tabsEl.append(b);
     });
     if (chats.length < MAX_CHAT) {
@@ -143,6 +149,7 @@ export async function mount(root, { api, tell }) {
     } catch (e) { tell("No se pudo recuperar el historial"); }
   };
   const nuevoChat = (restaurado) => {
+    if (chats[activo] && editor) chats[activo].borrador = editor.value;
     const h = node("div", "", "chat-history");
     h.addEventListener("scroll", () => { h.__sigue = h.scrollHeight - h.scrollTop - h.clientHeight < 90; }, { passive: true });  // si subes, deja de seguir; al volver cerca del fondo sigue otra vez
     h.hidden = true; h.setAttribute("role", "log");
@@ -160,8 +167,11 @@ export async function mount(root, { api, tell }) {
       project_id: (restaurado && restaurado.project_id) || null,
       instrucciones: restaurado?.instrucciones || "",
       ocupado: false,
+      borrador: "",
     });
     activo = chats.length - 1;
+    editor.value = "";
+    ajustarAlturaEditor();
     pintarTabs();
   };
   try {
