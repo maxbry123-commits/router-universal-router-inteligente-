@@ -339,6 +339,7 @@ class _PuertoMemoria:
         return json.loads(f.read_text(encoding='utf-8')) if f.exists() else None
 
     async def checkpoint(self, key: str, value: dict) -> None:
+        _MEM.mkdir(parents=True, exist_ok=True)
         self._ruta(key).write_text(json.dumps(value, ensure_ascii=False, indent=1), encoding='utf-8')
 
 
@@ -596,10 +597,43 @@ def _hilo(pid: str, p: dict) -> dict:
         return {'status': 'FAIL', 'error': '%s: %s' % (type(e).__name__, e)}
 
 
+async def _gobernar(pid: str, p: dict) -> dict:
+    """OBJETIVO -> C0..C7 -> WATCHDOG (nct_loop/gobernanza.py) sobre el engine CODA."""
+    from nct_loop.gobernanza import Gobernanza
+    p = dict(p)
+    p['mission_id'] = str(p.get('mission_id') or 'nct-' + pid[-12:])
+    p['top_skills'] = int(p.get('top_skills') or 3)
+
+    async def ejecutar(_mission):
+        return await _correr(pid, dict(p, auto_skills=False))
+
+    async def skill(sid, tid, obj):
+        return await _ejecutar_skill_motor(sid, {'modelo': p.get('modelo'), 'sesion': p.get('sesion'),
+                                                 'task_id': tid, 'objetivo': obj, 'event': 'gobernanza.verify'})
+
+    gob = Gobernanza(
+        ejecutar_mision=ejecutar,
+        construir_mision=lambda q, skills: _build_mission(dict(q, auto_skills=False, skills=skills)),
+        seleccionar_skills=_seleccionar_skills,
+        correr_skill=skill,
+        cancelado=lambda: pid in _CANCEL,
+        ops_permitidas=_OPS_RICARDO,
+        checkpoint_dir=_WS_ROOT / pid,
+        max_reparaciones=int(p.get('max_reparaciones') or 2))
+    return await gob.run(p)
+
+
+def _hilo_gob(pid: str, p: dict) -> dict:
+    try:
+        return asyncio.run(_gobernar(pid, p))
+    except Exception as e:  # noqa: BLE001
+        return {'status': 'FAIL', 'error': '%s: %s' % (type(e).__name__, e)}
+
+
 def handle(action: str, payload: "dict | None" = None) -> dict:
     p = payload or {}
     if action in ('status', 'health'):
-        return {'ok': True, 'service': 'nct_loop', 'motores': ['coda', 'original'],
+        return {'ok': True, 'service': 'nct_loop', 'motores': ['coda', 'original', 'gobernanza'],
                 'procesos': len(_PROC)}
     if action == 'ejecutar':
         try:
@@ -609,6 +643,12 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
         pid = 'nct-' + uuid.uuid4().hex[:12]
         _PROC[pid] = _POOL.submit(_hilo, pid, dict(p))
         return {'estado': 'procesando', 'proceso_id': pid}
+    if action == 'gobernar':
+        if not str(p.get('objetivo') or p.get('yaiwes_md') or p.get('objetivo_md') or '').strip():
+            return {'error': 'falta objetivo (markdown Yaiwes.md)'}
+        pid = 'gob-' + uuid.uuid4().hex[:12]
+        _PROC[pid] = _POOL.submit(_hilo_gob, pid, dict(p))
+        return {'estado': 'procesando', 'proceso_id': pid, 'ciclos': list(__import__('nct_loop.gobernanza', fromlist=['CICLOS']).CICLOS)}
     if action == 'estado':
         pid = str(p.get('proceso_id') or '')
         fut = _PROC.get(pid)
@@ -673,6 +713,6 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
     return {'error': 'ACCION_DESCONOCIDA', 'allowed': ACCIONES}
 
 
-ACCIONES = ['status', 'health', 'ejecutar', 'estado', 'cancelar',
+ACCIONES = ['status', 'health', 'ejecutar', 'gobernar', 'estado', 'cancelar',
             'skills', 'skill_fases', 'skill_ejecutar',
             'skills_registro', 'skills_seleccionar']

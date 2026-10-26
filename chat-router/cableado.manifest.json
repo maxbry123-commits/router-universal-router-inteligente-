@@ -17,6 +17,11 @@
    "enlace": true,
    "ficha": true
   },
+  "cola50": {
+   "destino": "../chat router/Loop cola wachdog/Cola",
+   "enlace": true,
+   "ficha": true
+  },
   "connectivity": {
    "destino": "",
    "enlace": false,
@@ -67,6 +72,11 @@
    "enlace": true,
    "ficha": false
   },
+  "nct_loop": {
+   "destino": "../chat router/Loop cola wachdog/Loop",
+   "enlace": true,
+   "ficha": true
+  },
   "orquestador": {
    "destino": "../chat-router/agentes/orquestacion/orquestador",
    "enlace": true,
@@ -92,6 +102,11 @@
    "enlace": false,
    "ficha": true
   },
+  "watchdog48": {
+   "destino": "../chat router/Loop cola wachdog/wachdog",
+   "enlace": true,
+   "ficha": true
+  },
   "workflow-loop-yaiwes": {
    "destino": "../chat-router/workflow-loop-code-yaiwes/workflow-loop-yaiwes",
    "enlace": true,
@@ -109,7 +124,7 @@
   },
   "chat/backend": {
    "archivos": 219,
-   "sha256": "3b1f1f20193621b6e69fe79af2f18bb1be48e291cc1622b90554399cdf1ebbf6"
+   "sha256": "6c3b01332fd028e680b049943219819ff0e8387d80bdc53064606c3767672dc9"
   },
   "chat/e2e": {
    "archivos": 22,
@@ -120,8 +135,8 @@
    "sha256": "c33e1d72284565e359dddc3828d5b7683c39f97c1de34baf57d54963e9523037"
   },
   "chat/frontend": {
-   "archivos": 538,
-   "sha256": "c4ddb0522e1f7d460c54ae5ac853d719f93ee1ba5d487bde74ac58193e4d1531"
+   "archivos": 539,
+   "sha256": "9a71eddba07b534ef14e975d54ed473df1ebdf1768eaed14025026a3b9a5590f"
   },
   "fichas": {
    "archivos": 220,
