@@ -85,3 +85,7 @@
 .chat-history .message{animation:riu-entra .22s cubic-bezier(.32,.72,0,1)}
 #composer button:active{transform:scale(.96)}
 @media(prefers-reduced-motion:reduce){.chat-history .message{animation:none}#composer button:active{transform:none}}
+@media (max-width:720px) {
+  #composer #message { min-height: 40px !important; max-height: 64px !important; }
+  #composer > #btn-selector-modelos { min-height: 32px !important; height: 32px; width: auto !important; max-width: 100%; align-self: flex-start; margin: 4px 0 0 !important; border-radius: 999px; }
+}
