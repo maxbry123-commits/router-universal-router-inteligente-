@@ -1,15 +1,17 @@
-/* agregar-al-chat.css — hoja «Agregar al chat». El interruptor enciende el SÍMBOLO (la perilla) en azul eléctrico, sin cuadro de fondo. */
-.ag-cuerpo{display:grid;gap:10px}
-.ag-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.ag-grande{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px 8px;min-height:96px;border-radius:18px;background:var(--panel);border:1px solid var(--border);color:var(--text);font-size:14px;cursor:pointer}
-.ag-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;min-height:56px;width:100%;text-align:left;border-radius:18px;background:var(--panel);border:1px solid var(--border);color:var(--text)}
-.ag-fila strong{display:block;font-size:15px;color:var(--title)}
-.ag-fila small{display:block;color:var(--quiet);font-size:12px}
-.ag-ch{color:var(--quiet);font-size:22px}
-.ag-lista{display:flex;flex-wrap:wrap;gap:8px;padding:0 4px}
+/* agregar-al-chat.css — hoja «Agregar al chat», mismo patrón que p04: tres baldosas y filas planas. */
+.ag-cuerpo{display:grid;gap:2px}
+.ag-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.ag-grande{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;min-height:72px;border-radius:14px;background:var(--panel);border:1px solid var(--border);color:var(--quiet);font-size:12px;cursor:pointer}
+.ag-grande svg{stroke:var(--title)}
+.ag-fila{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 8px;min-height:44px;width:100%;text-align:left;border:0;border-radius:12px;background:transparent;color:var(--text)}
+.ag-fila strong{display:block;font-size:15px;font-weight:500;color:var(--title)}
+.ag-fila small{display:block;color:var(--quiet);font-size:12px;margin-top:2px}
+.ag-ch{color:var(--quiet);font-size:18px}
+.ag-lista{display:flex;flex-wrap:wrap;gap:8px;padding:0 8px 8px}
 .ag-lista[hidden]{display:none}
-.ag-sw{position:relative;flex:0 0 auto;width:52px;height:30px;min-height:0;padding:0;border-radius:15px;background:var(--surface-alt);border:1px solid var(--border-strong);cursor:pointer}
-.ag-sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--quiet);transition:transform .2s,background .2s,box-shadow .2s}
-.ag-sw[aria-checked="true"]::after{transform:translateX(22px);background:var(--azul-electrico,#1F6BFF);box-shadow:0 0 10px var(--azul-electrico-brillo,rgba(31,107,255,.75))}
+.ag-sw{position:relative;flex:0 0 auto;width:42px;height:26px;min-height:0;padding:0;border-radius:13px;background:#333;border:0;cursor:pointer}
+.ag-sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s}
+.ag-sw[aria-checked="true"]{background:var(--azul-electrico,#2f6bff)}
+.ag-sw[aria-checked="true"]::after{transform:translateX(16px)}
 .ag-sw:disabled{opacity:.5;cursor:default}
 @media(prefers-reduced-motion:reduce){.ag-sw::after{transition:none}}
