@@ -15,24 +15,25 @@ const movil = () => matchMedia("(max-width:720px)").matches;
 
 const st = document.createElement("style");
 st.textContent = "@media(max-width:720px){"
-  + "#composer{display:flex !important;flex-direction:column !important;max-width:100%;min-width:0;overflow:hidden}"
-  + "#composer #message{order:1}"
-  + "#composer .composer-bar{order:2;display:flex !important;flex-wrap:wrap !important;overflow:visible !important;align-items:center;gap:6px !important;max-width:100%;min-width:0}"
+  + "#composer{display:flex !important;flex-direction:column !important;max-width:100%;min-width:0;overflow:hidden;padding:6px 8px 4px !important;border-radius:16px !important}"
+  + "#composer #message{order:1;min-height:40px !important;max-height:72px !important;padding:4px 6px !important;font-size:16px}"
+  + "#composer .composer-bar{order:2;display:flex !important;flex-wrap:wrap !important;overflow:visible !important;align-items:center;gap:4px !important;max-width:100%;min-width:0}"
   + "#composer .composer-bar::after{content:none !important;display:none !important}"
-  + "#composer .composer-bar>button.secondary:not(.grp){width:40px !important;min-width:40px !important;max-width:40px !important;height:40px !important;flex:0 0 40px !important}"
+  + "#composer .composer-bar>button.secondary:not(.grp){width:34px !important;min-width:34px !important;max-width:34px !important;height:34px !important;min-height:34px !important;flex:0 0 34px !important}"
   + "#composer #btn-adjunto,#composer #btn-microfono{order:3}"
-  + "#composer .composer-bar>button.grp{order:1;flex:1 1 calc(50% - 8px) !important;width:auto !important;max-width:none !important;min-width:0 !important;min-height:40px !important;height:40px !important;border-radius:999px;padding:0 12px !important;font-size:13px}"
+  + "#composer .composer-bar>button.grp{order:1;flex:1 1 calc(50% - 6px) !important;width:auto !important;max-width:none !important;min-width:0 !important;min-height:32px !important;height:32px !important;border-radius:999px;padding:0 8px !important;font-size:13px}"
   + "#composer #btn-detener{order:4;display:inline-flex !important;margin-left:auto !important}"
-  + "#composer .composer-bar>.action{order:5;position:static !important;margin-left:0 !important;flex:0 0 44px !important;width:44px !important;min-width:44px !important;max-width:44px !important;height:44px !important;min-height:44px !important;padding:0 !important;border-radius:50% !important;overflow:visible !important}"
+  + "#composer .composer-bar>.action{order:5;position:static !important;margin-left:0 !important;flex:0 0 36px !important;width:36px !important;min-width:36px !important;max-width:36px !important;height:36px !important;min-height:36px !important;padding:0 !important;border-radius:50% !important;overflow:visible !important}"
   + "#composer .composer-bar>.action::after,#composer .composer-bar>.action .env-txt{content:none !important;display:none !important}"
   + "#composer .composer-bar>.p3d{flex:1 1 100% !important;order:-1;max-width:100%}"
-  + "#composer #btn-selector-modelos{order:3 !important;margin:6px 0 0 !important;align-self:stretch;width:100%;min-height:44px;box-sizing:border-box}"
-  + "#composer > #mode-selector-mount{order:4;display:flex;align-items:center;margin-top:6px;max-width:100%}"
-  + "#ctx-panel,#mas-panel{position:fixed;z-index:80;left:12px;right:12px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;padding:8px;border-radius:16px;background:var(--surface,#1e1e1e);border:1px solid var(--border);overflow:auto;box-shadow:0 12px 32px rgba(0,0,0,.5)}"
+  + "#composer #btn-selector-modelos{order:3 !important;margin:4px 0 0 !important;align-self:stretch;width:100%;min-height:34px !important;height:34px;box-sizing:border-box;padding:0 10px !important}"
+  + "#composer > #mode-selector-mount{order:4;display:flex;align-items:center;margin-top:4px;max-width:100%}"
+  + "#ctx-panel,#mas-panel{position:fixed;z-index:80;left:8px;right:8px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px;padding:6px;border-radius:12px;background:var(--surface,#1e1e1e);border:1px solid var(--border);overflow:auto;box-shadow:0 8px 24px rgba(0,0,0,.45)}"
   + "#ctx-panel[hidden],#mas-panel[hidden]{display:none !important}"
-  + "#ctx-panel button,#mas-panel button{width:auto !important;max-width:100%;height:auto !important;min-width:0;min-height:44px;aspect-ratio:auto;border-radius:12px;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;padding:6px 10px}"
-  + "#ctx-panel .mas-nom,#mas-panel .mas-nom{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}"
-  + "#mas-panel .mas-sec{grid-column:1 / -1;font-size:11px;letter-spacing:.04em;text-transform:uppercase;opacity:.65;padding:6px 4px 0}"
+  + "#ctx-panel button,#mas-panel button{width:auto !important;max-width:100%;height:auto !important;min-width:0;min-height:32px !important;aspect-ratio:auto;border-radius:10px;display:inline-flex;align-items:center;justify-content:flex-start;gap:6px;padding:2px 8px !important;font-size:13px}"
+  + "#ctx-panel .mas-nom,#mas-panel .mas-nom{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}"
+  + "#mas-panel .mas-sec{grid-column:1 / -1;font-size:10px;letter-spacing:.04em;text-transform:uppercase;opacity:.65;padding:4px 4px 0}"
+  + ".chat-history{min-height:0 !important}"
   + "}";
 document.head.append(st);
 
@@ -95,7 +96,7 @@ function ubicar(hoja) {
   if (!hoja || !comp || hoja.hidden) return;
   const r = comp.getBoundingClientRect();
   hoja.style.bottom = Math.round(window.innerHeight - r.top + 8) + "px";
-  hoja.style.maxHeight = Math.round(Math.max(160, Math.min(window.innerHeight * 0.62, r.top - 16))) + "px";
+  hoja.style.maxHeight = Math.round(Math.max(140, Math.min(window.innerHeight * 0.42, r.top - 12))) + "px";
 }
 
 function meter(id, hoja) {
