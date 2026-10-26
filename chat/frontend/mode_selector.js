@@ -29,8 +29,9 @@ function el(tag, attrs = {}, text) {
 export async function initModeSelector(opts) {
   const { mountEl, registryUrl, conversationId = "default", composerEl = null,
           thinkingToggleEl = null, onChange = () => {} } = opts;
-  if (!mountEl) throw new Error("mode_selector: falta mountEl");
-  mountEl.querySelectorAll(".ms-btn").forEach((b) => b.remove());
+  if (!mountEl || mountEl.dataset.modo === "1") return window.RIU_MODE || null;
+  mountEl.dataset.modo = "1";
+  document.querySelectorAll(".ms-btn, #mode-selector-mount").forEach((n) => { if (n !== mountEl && !mountEl.contains(n)) n.remove(); });
 
   if (!document.getElementById(STYLE_ID)) {
     const s = el("style", { id: STYLE_ID }); s.textContent = CSS; document.head.appendChild(s);

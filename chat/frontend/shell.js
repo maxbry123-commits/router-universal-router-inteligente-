@@ -81,6 +81,8 @@ async function show(view) {
     else button.removeAttribute("aria-current");
   });
   document.querySelector("#view-title").textContent = labels[view];
+  document.querySelectorAll("#mv-title h1, .ms-btn, .ms-sheet, .ms-sheet-bg").forEach((n) => n.remove());
+  document.querySelectorAll("#mode-selector-mount").forEach((n) => { if (!panel.contains(n)) n.remove(); });
   mvToggle.textContent = labels[view] + (mvPanel.hidden ? " v" : " ^");
   tell("");
   try {
