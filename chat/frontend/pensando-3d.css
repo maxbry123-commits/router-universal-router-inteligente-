@@ -1,32 +1,25 @@
-/* pensando-3d.css — fila: cubo, borrar, detener, inicio. Nada flotando encima de la caja. */
-#composer .composer-bar>#fila-mando{order:3 !important;flex:0 0 auto !important;width:auto;margin:0}
-#fila-mando{display:flex;align-items:center;justify-content:flex-start;gap:8px;min-height:40px}
-#fila-mando .p3d{order:1 !important}
-#fila-mando .p3d{position:static !important;left:auto !important;right:auto !important;top:auto !important;bottom:auto !important;display:flex;align-items:center;gap:8px;padding:0 !important;margin:0 !important;width:auto !important;max-width:none !important;background:transparent !important;border:0 !important;box-shadow:none !important;flex:0 1 auto !important;z-index:1;pointer-events:none}
-#fila-mando .p3d[hidden]{display:none !important}
-#composer #fila-mando #btn-borrar-mando,#composer #fila-mando #btn-detener{width:40px;height:40px;min-width:40px;min-height:40px;margin:0 !important;padding:0;border-radius:999px;flex:0 0 auto}
-#composer #fila-mando #btn-borrar-mando{order:2 !important}
-#composer #fila-mando #btn-detener{order:3 !important}
-#composer #fila-mando #reactivar-tarea{order:4 !important}
-#fila-mando #reactivar-tarea{display:flex;margin:0 !important;flex:0 0 auto}
-.p3d-escena{position:relative;width:36px;height:36px;perspective:280px;flex:0 0 36px}
-.p3d-vis{position:absolute;inset:0;width:36px;height:36px;object-fit:contain;display:none;background:transparent}
+/* pensando-3d.css — holograma flotando encima de la caja. No entra en la fila de la cola. */
+#composer>.p3d,.p3d{position:absolute !important;left:8px !important;right:auto !important;top:auto !important;bottom:calc(100% + 6px) !important;display:flex;align-items:center;gap:8px;padding:0 !important;margin:0 !important;width:auto !important;max-width:calc(100% - 16px) !important;background:transparent !important;border:0 !important;box-shadow:none !important;border-radius:0 !important;z-index:35;pointer-events:none;flex:none !important}
+body:has(#reactivar-tarea) #composer>.p3d{left:76px !important}
+.p3d[hidden]{display:none !important}
+.p3d-escena{position:relative;width:64px;height:64px;perspective:280px;flex:0 0 64px}
+.p3d-vis{position:absolute;inset:-6px;width:76px;height:76px;object-fit:contain;display:none;background:transparent}
 .p3d-foto .p3d-vis{display:block}
 .p3d-foto .p3d-cubo,.p3d-foto .p3d-anillo{display:none}
-.p3d-cubo{position:absolute;inset:8px;transform-style:preserve-3d;animation:p3d-gira 5s linear infinite}
+.p3d-cubo{position:absolute;inset:16px;transform-style:preserve-3d;animation:p3d-gira 5s linear infinite}
 .p3d-cubo i{position:absolute;inset:0;border:1.5px solid #5ee7ff;background:rgba(0,229,255,.08);box-shadow:0 0 10px rgba(0,229,255,.55)}
-.p3d-cubo .f1{transform:translateZ(8px)}
-.p3d-cubo .f2{transform:rotateY(180deg) translateZ(8px)}
-.p3d-cubo .f3{transform:rotateY(90deg) translateZ(8px)}
-.p3d-cubo .f4{transform:rotateY(-90deg) translateZ(8px)}
-.p3d-cubo .f5{transform:rotateX(90deg) translateZ(8px)}
-.p3d-cubo .f6{transform:rotateX(-90deg) translateZ(8px)}
-.p3d-anillo{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(94,231,255,.75)}
+.p3d-cubo .f1{transform:translateZ(12px)}
+.p3d-cubo .f2{transform:rotateY(180deg) translateZ(12px)}
+.p3d-cubo .f3{transform:rotateY(90deg) translateZ(12px)}
+.p3d-cubo .f4{transform:rotateY(-90deg) translateZ(12px)}
+.p3d-cubo .f5{transform:rotateX(90deg) translateZ(12px)}
+.p3d-cubo .f6{transform:rotateX(-90deg) translateZ(12px)}
+.p3d-anillo{position:absolute;inset:1px;border-radius:50%;border:1.5px solid rgba(94,231,255,.75)}
 .p3d-anillo.a1{animation:p3d-a1 3.2s linear infinite}
-.p3d-anillo.a2{inset:4px;border-color:rgba(255,208,96,.8);animation:p3d-a2 5s linear infinite}
+.p3d-anillo.a2{inset:6px;border-color:rgba(255,208,96,.8);animation:p3d-a2 5s linear infinite}
 .p3d-anillo.a3{opacity:0}
 .p3d-txt{display:grid;gap:0;min-width:0}
-.p3d-txt strong{font-size:13px;font-weight:600;color:#e8fbff}
+.p3d-txt strong{font-size:13px;font-weight:600;color:#e8fbff;text-shadow:0 0 10px rgba(0,229,255,.45)}
 .p3d-t{font-size:12px;color:#9ec9d4;font-variant-numeric:tabular-nums}
 @keyframes p3d-gira{from{transform:rotateX(-22deg) rotateY(0)}to{transform:rotateX(-22deg) rotateY(360deg)}}
 @keyframes p3d-a1{from{transform:rotateX(72deg) rotateZ(0)}to{transform:rotateX(72deg) rotateZ(360deg)}}
