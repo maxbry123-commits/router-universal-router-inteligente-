@@ -72,6 +72,20 @@ class SesionMCP(Base):
         self.assertEqual(msgs[-1]["role"], "user"); self.assertEqual(msgs[-2]["role"], "system")
         self.assertIn("Modelo activo: qwen3.8-max", msgs[-2]["content"]); self.assertIn("otros modelos", msgs[-2]["content"])
 
+    def test_las_identidades_que_dio_otro_modelo_no_llegan_al_modelo_actual(self):  # BUG: DeepSeek/GLM/Qwen 3.6 respondian «Soy qwen3.8-flash» copiando el historial
+        salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "glm-5.2"}
+        previo = [{"role": "user", "content": "Que modelo eres"}, {"role": "assistant", "content": "Soy qwen3.8-flash, de la familia Qwen (Alibaba), ejecutado en QwenCloud Token Plan."},
+                  {"role": "user", "content": "Escribe un poema largo"}, {"role": "assistant", "content": "Soy el viento que cruza el mar. " * 20}]
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
+            self.banco.datos["RIU_API_KEY"] = "clave-harness"
+            r = self.llamar("chat", {"ficha_qwen": "1", "message": "Que modelo eres", "request_id": "ident-0002", "modelo": "glm-5.2", "contexto_previo": previo})
+            for _ in range(10):
+                if self.llamar("resultado", {"proceso_id": r["proceso_id"], "espera": 1}).get("estado") != "procesando": break
+        enviado = json.dumps(llm.call_args.args[1], ensure_ascii=False)
+        self.assertNotIn("Soy qwen3.8-flash", enviado)
+        self.assertIn("Soy el viento", enviado)  # una respuesta larga que empieza con «Soy» no es una identidad: se conserva
+        self.assertIn("Modelo activo: glm-5.2", enviado)
+
     def test_cada_modelo_recibe_su_identidad(self):
         salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "glm-5.3"}
         with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:

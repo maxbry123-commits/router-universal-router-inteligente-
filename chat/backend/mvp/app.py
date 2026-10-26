@@ -318,6 +318,10 @@ async def _generar_medio(modelo, tipo, mensajes, progreso):
     except RuntimeError as error: raise HTTPException(status_code=502, detail=str(error)) from None
     return {"estado": "completado", "via": "directo", "finish_reason": "stop", "modelo_solicitado": modelo, "modelo_respuesta": modelo,
             "choices": [{"message": {"role": "assistant", "content": salida, "tool_calls": []}, "finish_reason": "stop"}]}
+_IDENTIDAD = re.compile(r"^\W*(soy|yo soy|i am|i'm|me llamo)\b.{0,200}\b(qwen|deepseek|glm|kimi|minimax|claude|gpt|llama|gemini|nemotron|mistral)", re.I | re.S)
+def _sin_identidades(mensajes):
+    """Quita las respuestas cortas donde un modelo anterior dijo quien era: los modelos las copian y contestan con ese nombre en vez del suyo."""
+    return [m for m in mensajes if not (isinstance(m, dict) and m.get("role") == "assistant" and isinstance(m.get("content"), str) and len(m["content"]) < 300 and _IDENTIDAD.search(m["content"]))]
 async def _chat_ficha(cuerpo, progreso=None):
     q = {**cuerpo, **(cuerpo.get("qwen") or {})}  # api.js harness() anida {plugin, ficha_qwen, modelo} en "qwen"
     mensajes = q.get("mensajes") or q.get("messages") or [{"role": "user", "content": str(q.get("message") or "")}]
@@ -365,6 +369,7 @@ async def _chat_ficha(cuerpo, progreso=None):
         modelo = modelos.validar(seleccionado or None)
     except (ValueError, TypeError) as error:
         raise HTTPException(status_code=400, detail=str(error)) from None
+    mensajes = _sin_identidades(mensajes)
     identidad = {"role": "system", "content": "Modelo activo: %s%s, ejecutado en QwenCloud Token Plan. Las respuestas anteriores de esta conversación pudieron venir de otros modelos: no copies su identidad. Si te preguntan quién o qué modelo eres, responde en una línea con ese nombre y su familia." % (modelo, " — " + modelos.marca(modelo) if modelos.marca(modelo) else "")}
     fin = len(mensajes) - 1 if isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user" else len(mensajes)
     mensajes = [*mensajes[:fin], identidad, *mensajes[fin:]]  # justo antes del mensaje actual: el historial de otro modelo no la tapa
