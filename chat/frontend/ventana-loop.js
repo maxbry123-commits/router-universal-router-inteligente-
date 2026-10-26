@@ -280,16 +280,19 @@ function pintarLoop(cuerpo) {
   md.rows = 3; md.placeholder = "Yaiwes.md — pega aquí el objetivo"; md.setAttribute("aria-label", "Yaiwes.md");
   const fases = ["objetivo", "plan", "tarea", "verificar"];
   estado.modelos = estado.modelos || {};
-  const modelos = () => ((window.RIU_SELECTOR_QWEN && window.RIU_SELECTOR_QWEN.modelos) || []).filter((m) => m.model_id);
+  const modelos = () => ((window.RIU_SELECTOR_QWEN && window.RIU_SELECTOR_QWEN.modelos) || []).filter((m) => m.model_id && !/image|tts|asr|wan|realtime/i.test(m.model_id + " " + (m.label || "")));
   const filaMod = el("div", "cv-form");
+  filaMod.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:6px";
   fases.forEach((f) => {
-    const s = el("select"); s.setAttribute("aria-label", "Modelo de " + f);
+    const s = el("select"); s.setAttribute("aria-label", "Modelo de " + f); s.style.width = "100%";
     const opts = modelos();
-    if (!opts.length) s.append(new Option("qwen3.8-max", "qwen3.8-max"));
+    if (!opts.length) s.append(new Option("Qwen 3.8 Max", "qwen3.8-max"));
     opts.forEach((m) => s.append(new Option(m.label, m.model_id)));
     s.value = estado.modelos[f] || "qwen3.8-max";
     s.onchange = () => { estado.modelos[f] = s.value; guardar(); };
-    filaMod.append(s);
+    const lab = el("label"); lab.style.cssText = "display:flex;flex-direction:column;gap:2px;font-size:11px;min-width:0";
+    lab.append(el("span", "", f), s);
+    filaMod.append(lab);
   });
   const perfil = el("select"); perfil.setAttribute("aria-label", "Perfil");
   ["document", "code", "frontend", "api"].forEach((v) => perfil.append(new Option(v, v)));
@@ -338,7 +341,12 @@ function pintarLoop(cuerpo) {
   });
   const ancla = btn("Constitución", "secondary", () => { const x = document.querySelector("#btn-ancla"); if (x) x.click(); });
   const pend = btn("Pendientes", "secondary", () => { const x = document.querySelector("#btn-pendientes"); if (x) x.click(); });
-  const nctFila = el("div", "cv-form"); nctFila.append(perfil, ejecutar, cancelarN, salud, ancla, pend);
+  const tools = btn("Tools", "secondary", () => { const x = document.querySelector("#btn-tools"); if (x) x.click(); });
+  const nctFila = el("div", "cv-form");
+  nctFila.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:6px";
+  perfil.style.gridColumn = "1 / -1";
+  ejecutar.style.gridColumn = "1 / -1";
+  nctFila.append(perfil, ejecutar, cancelarN, salud, ancla, pend, tools);
   cuerpo.replaceChildren(el("div", "cv-sec", "Yaiwes.md"), md, filaMod, ruta, nctFila, nct, el("div", "cv-sec", "LOOP"), partes, mando, fila, centro, objetivo, plan, tareas, aviso);
   pintar();
 }

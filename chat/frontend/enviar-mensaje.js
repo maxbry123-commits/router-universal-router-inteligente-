@@ -12,7 +12,16 @@ export function montarEnviar(ctx) {
     const rawText = input.value;
     const message = rawText.trim();
     if (!message) return;
-    if (c.ocupado) { tell("Este chat ya tiene una tarea en curso"); return; }  // una tarea por chat; los demas chats siguen en paralelo
+    if (c.ocupado) {
+      c.colaMensajes = c.colaMensajes || [];
+      c.colaMensajes.push(rawText);
+      input.value = "";
+      ajustarAlturaEditor();
+      let aviso = document.getElementById("cola-chat");
+      if (!aviso) { aviso = document.createElement("div"); aviso.id = "cola-chat"; aviso.className = "muted"; q("#composer").before(aviso); }
+      aviso.textContent = "Cola del chat: " + c.colaMensajes.length;
+      return;
+    }
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
     const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
     const fichaQwen = selAct === "team-qwen" && c.selectorQwen ? "qw-" + c.selectorQwen.modelo_id_slug : null;  // Team qwen: su ficha, mismo camino que Nvidia
@@ -37,6 +46,7 @@ export function montarEnviar(ctx) {
     A.registrar(c.sesion, "user", rawText);
     input.value = ""; ajustarAlturaEditor();
     c.ocupado = true; pintarTabs();
+    let enviado = false;
     const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta que el Router confirma proceso_id; luego riu-progreso pone Pensando/tools
     c.hist.append(pending);
     const alProgreso = (e) => {
@@ -105,6 +115,7 @@ export function montarEnviar(ctx) {
       if (answer.tools && answer.tools.length) { const meta = node("div", "Herramientas usadas: ", "item message meta"); answer.tools.forEach((t, i) => { const ok = typeof t === "string" || t.ok; const s = document.createElement("span"); s.textContent = (typeof t === "string" ? t : t.nombre) + (ok ? "" : " (fallo)"); if (!ok) s.className = "tool-fail"; if (i) meta.append(", "); meta.append(s); }); c.hist.append(meta); }
       if (answer.job_id) { window.__riuJob = answer.job_id; const ar = q('#apagar-respaldo'); if (ar) ar.hidden = false; }
       abajo(c);
+      enviado = true;
     } catch (error) {
       pending.remove();
       const detalleError = error && error.name === "AbortError" ? "Tiempo de espera agotado" : error.message;
@@ -115,6 +126,16 @@ export function montarEnviar(ctx) {
     } finally {
       window.removeEventListener('riu-progreso', alProgreso);  // listener fuera al terminar/error/cancelar
       c.detenerFn = null; c.ocupado = false; pintarTabs();
+      const aviso = document.getElementById("cola-chat");
+      if (enviado && c.colaMensajes && c.colaMensajes.length) {
+        const sig = c.colaMensajes.shift();
+        if (aviso) aviso.textContent = c.colaMensajes.length ? "Cola del chat: " + c.colaMensajes.length : "";
+        if (!c.colaMensajes.length && aviso) aviso.remove();
+        input.value = sig;
+        q("#composer").requestSubmit();
+        return;
+      }
+      if (aviso && !(c.colaMensajes && c.colaMensajes.length)) aviso.remove();
       if (window.matchMedia("(pointer: fine)").matches) input.focus();
     }
   });

@@ -146,7 +146,10 @@ export function montarPropuestasAncla({ root, q, tell }) {
       if (clasificar(t).length || t.length > 80 || /\n/.test(t)) { e.preventDefault(); filtro = ""; pegarEn(destSel, t); } });
     inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && inp.value.trim()) { e.preventDefault(); const t = inp.value; filtro = ""; pegarEn(destSel, t); } });
     const clip = boton("📎", "ap-ic-b", () => elegir(destSel)); clip.setAttribute("aria-label", "Subir y anclar archivo");
-    barra.append(inp, clip); zonaDrop(w, () => destSel);
+    const yai = boton("Yaiwes.md", "secondary", () => { M.anclar("constitucion", ["archivo:Yaiwes.md"]); decir("Yaiwes.md anclado"); pintar(); });
+    const proy = boton("Proyecto", "secondary", () => { fijarDest("proyecto"); destSel = "proyecto"; pintar(); });
+    const tools = boton("Tools", "secondary", () => { const b = document.querySelector("#btn-tools"); if (b) b.click(); });
+    barra.append(inp, clip, yai, proy, tools); zonaDrop(w, () => destSel);
     const pie = el("div", "ap-pie"); pie.append(el("span", "", "Se ancla en"), selectorDestino(destSel, (k) => { fijarDest(k); pintar(); }), el("span", "ap-hint", "Enter ancla · ✕ quita"));
     w.append(barra, pie); const sg = sugerencias(destSel); if (sg) w.append(sg);
     const lista = el("div", "ap-lista"), fs = M.filas(filtro), c = ctx();
