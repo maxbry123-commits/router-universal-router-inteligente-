@@ -31,13 +31,16 @@ def llamar(plugin: str, accion: str, payload: dict | None = None, timeout: float
         with urllib.request.urlopen(req, timeout=timeout) as r:
             out = json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
+        try:
+            detalle = str(json.loads(exc.read() or b"{}").get("detail") or "")[:160]
+        except (ValueError, OSError):
+            detalle = ""
         causa = ""
         if exc.code == 403:  # inv. 9: solo el codigo; unica excepcion, el nombre del permiso apagado («ia=false», «agentes=false», «herramienta=false») para saber que boton encender
-            try:
-                m = re.search(r"(?<![\w])(?:tools|ia|agentes|agente_tool|llm_tool|herramienta|conexion)=false", str(json.loads(exc.read() or b"{}").get("detail") or ""))
-                causa = ": " + m.group(0) if m else ""
-            except (ValueError, OSError):
-                causa = ""
+            m = re.search(r"(?<![\w])(?:tools|ia|agentes|agente_tool|llm_tool|herramienta|conexion)=false", detalle)
+            causa = ": " + m.group(0) if m else ""
+        elif detalle:
+            causa = ": " + detalle  # p. ej. 404 «no existe X»: el motivo del Router no se pierde en el camino
         return {"error": f"HTTP {exc.code}{causa}", "status": "degraded", "status_code": exc.code}
     except (OSError, ValueError) as exc:
         return {"error": type(exc).__name__, "status": "degraded"}
