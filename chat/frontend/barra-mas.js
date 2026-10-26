@@ -20,12 +20,11 @@ st.textContent = "@media(max-width:720px){"
   + "#composer #message{order:1;min-height:40px !important;max-height:72px !important;padding:4px 6px !important;font-size:16px}"
   + "#composer .composer-bar{order:2;display:flex !important;flex-wrap:wrap !important;overflow:visible !important;align-items:center;gap:4px !important;max-width:100%;min-width:0}"
   + "#composer .composer-bar::after{content:none !important;display:none !important}"
-  + "#composer .composer-bar>button.secondary:not(.grp){width:34px !important;min-width:34px !important;max-width:34px !important;height:34px !important;min-height:34px !important;flex:0 0 34px !important}"
-  + "#composer #btn-adjunto,#composer #btn-microfono{order:3}"
-  + "#composer .composer-bar>button.secondary.grp{order:1 !important;flex:0 0 34px !important;width:34px !important;min-width:34px !important;max-width:34px !important;height:34px !important;min-height:34px !important;padding:0 !important;border-radius:50% !important;overflow:hidden !important}"
-  + "#composer #btn-detener{order:4;display:inline-flex !important;margin-left:auto !important}"
-  + "#composer .composer-bar>.action{order:5;position:static !important;margin-left:0 !important;flex:0 0 36px !important;width:36px !important;min-width:36px !important;max-width:36px !important;height:36px !important;min-height:36px !important;padding:0 !important;border-radius:50% !important;overflow:visible !important}"
-  + "#composer .composer-bar>.action::after,#composer .composer-bar>.action .env-txt{content:none !important;display:none !important}"
+  + "#composer .composer-bar>button.secondary:not(#btn-tools):not(#btn-agentes):not(#btn-prompt){width:34px !important;min-width:34px !important;max-width:34px !important;height:34px !important;min-height:34px !important;flex:0 0 34px !important;padding:0 !important;border-radius:50% !important}"
+  + "#composer #btn-tools,#composer #btn-agentes,#composer #btn-prompt{order:4;width:auto !important;max-width:none !important;height:34px !important;min-height:34px !important;flex:0 0 auto !important;aspect-ratio:auto !important;border-radius:999px !important;padding:0 12px !important}"
+  + "#composer #btn-detener{order:5;display:inline-flex !important;margin-left:auto !important}"
+  + "#composer .composer-bar>.action{order:6;position:static !important;margin-left:8px !important;flex:0 0 auto !important;width:auto !important;min-width:132px !important;max-width:none !important;height:46px !important;min-height:46px !important;padding:0 22px !important;border-radius:12px !important}"
+  + "#composer .composer-bar>.action::after{content:\"Enviar\" !important;display:inline !important;font-size:15px !important}"
   + "#composer .composer-bar>.p3d{flex:1 1 100% !important;order:-1;max-width:100%}"
   + "#composer #btn-selector-modelos{order:3 !important;margin:4px 0 0 !important;align-self:stretch;width:100%;min-height:34px !important;height:34px;box-sizing:border-box;padding:0 10px !important}"
   + "#composer > #mode-selector-mount{order:4;display:flex;align-items:center;margin-top:4px;max-width:100%}"
@@ -184,31 +183,7 @@ function firma(hoja) {
 }
 
 function colocar() {
-  const fila = bar();
-  if (!fila) return;
-  if (!movil()) { devolver(); return; }
-  const ctx = panel("ctx-panel", svg(ICO.archivos));
-  const trab = panel("trab-panel", svg(ICO.loop));
-  const libro = panel("mas-panel", svg(ICO.config));
-  ctx.setAttribute("aria-label", "Archivos");
-  trab.setAttribute("aria-label", "LOOP");
-  libro.setAttribute("aria-label", "Configuración");
-  grupo("btn-contexto", ICO.archivos, "ctx-panel", "Archivos");
-  grupo("btn-trabajo", ICO.loop, "trab-panel", "LOOP");
-  grupo("btn-cuaderno", ICO.config, "mas-panel", "Configuración");
-  CONTEXTO.forEach((id) => meter(id, ctx));
-  atajos(ctx);
-  TRABAJO.forEach((id) => meter(id, trab));
-  const ids = (lista) => lista.filter((id) => document.getElementById(id));
-  const want = ids(VENTANAS).join("|");
-  const libroLista = listaDe(libro);
-  if (firma(libro) !== want) {
-    const poner = (id) => { const b = document.getElementById(id); if (!b) return; rotulo(b); libroLista.append(b); };
-    VENTANAS.forEach(poner);
-  }
-  const mirror = document.querySelector("#mirror-selector-mount");
-  if (mirror && mirror.childElementCount && mirror.parentNode !== libroLista) libroLista.append(mirror);
-  parqueAuto();
+  devolver();
 }
 
 document.addEventListener("click", (ev) => {
