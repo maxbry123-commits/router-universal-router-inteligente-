@@ -211,8 +211,10 @@ export function montarEnviar(ctx) {
       const detalleError = error && error.name === "AbortError" ? "Tiempo de espera agotado" : error.message;
       const parado = c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message));
       if (parado && message) c.tareaParada = message;
-      A.registrar(c.sesion, "err", parado ? "proceso detenido por el usuario" : "GAP: " + detalleError);
-      c.hist.append(node("div", parado ? "proceso detenido por el usuario" : `GAP: ${detalleError}`, "item message" + (parado ? " meta" : " error")));
+      const crudo = String(detalleError || "");
+      const visto = parado ? "proceso detenido por el usuario" : (crudo.startsWith("GAP:") ? crudo : "GAP: " + crudo);
+      A.registrar(c.sesion, "err", visto);
+      c.hist.append(node("div", visto, "item message" + (parado ? " meta" : " error")));
       abajo(c);
       if (!(c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) && !input.value) { input.value = message; input.dispatchEvent(new Event("input", { bubbles: true })); }  // si falla, el mensaje vuelve a la caja
     } finally {
