@@ -150,6 +150,7 @@ async def almacen(cuerpo: dict):
         try:
             return await asyncio.to_thread(getattr(hf_store, accion), clave, *(cuerpo[campo] for campo in campos[accion]))
         except ValueError as error: raise HTTPException(status_code=400, detail=str(error)) from None
+        except hf_store.NoExiste as error: raise HTTPException(status_code=404, detail=str(error)) from None
         except RuntimeError as error: raise HTTPException(status_code=502, detail=str(error)) from None
     try:
         return await asyncio.to_thread(getattr(harness_client, accion), clave_harness(),
