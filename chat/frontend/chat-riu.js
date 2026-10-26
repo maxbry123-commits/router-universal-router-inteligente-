@@ -34,6 +34,7 @@ export function conectarRiu({ q }) {
   bajar.title = "Bajar al final"; bajar.setAttribute("aria-label", "Bajar al final"); bajar.innerHTML = ICO_BAJAR;
   hist.prepend(barra); hist.append(bajar);
   const curso = document.createElement("button"); curso.type = "button"; curso.id = "en-curso"; curso.className = "en-curso"; curso.hidden = true;
+  curso.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M10 8.5v7l6-3.5z"/></svg><span></span>';
   const comp = q("#composer"); if (comp) comp.before(curso);
   curso.addEventListener("click", () => { const p = hist.querySelector(".message.pending"); if (p) p.scrollIntoView({ block: "nearest" }); });
   const subir = document.createElement("button"); subir.type = "button"; subir.className = "riu-bajar riu-subir"; subir.hidden = true; subir.title = "Ir al principio"; subir.setAttribute("aria-label", "Ir al principio"); subir.innerHTML = ICO_BAJAR; hist.append(subir);
@@ -53,7 +54,8 @@ export function conectarRiu({ q }) {
     hist.querySelectorAll(".message:not(.user) .txt").forEach(bloquesDeCodigo);
     const n = hist.querySelectorAll(".message.pending").length;
     curso.hidden = n < 1;
-    curso.textContent = n === 1 ? "1 tarea en ejecución" : n + " tareas en ejecución";
+    curso.querySelector("span").textContent = String(n);
+    curso.setAttribute("aria-label", n === 1 ? "1 tarea en ejecución" : n + " tareas en ejecución");
     medir();
   };
   new MutationObserver(() => { if (!pend) pend = requestAnimationFrame(revisar); })

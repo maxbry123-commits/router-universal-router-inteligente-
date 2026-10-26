@@ -7,25 +7,24 @@
 //   Cuaderno (selector): loop, cola, watchdog, prompt, skills y el resto de ventanas.
 // El modelo sigue en su selector, debajo de la caja. Auto sale de la fila de iconos.
 const CONTEXTO = ["btn-archivos", "btn-ancla", "btn-sandbox", "btn-copiar-input"];
-const TRABAJO = ["btn-loop", "btn-cola", "btn-watchdog"];
+const TRABAJO = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tools", "btn-agentes", "btn-prompt"];
 const INTERRUPTORES = ["btn-tools", "btn-agentes", "btn-prompt"];
 const VENTANAS = ["btn-tareas", "btn-comandos", "btn-sesion", "btn-reglas", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
-const CUADERNO = [...INTERRUPTORES, ...VENTANAS];
+const CUADERNO = VENTANAS;
 const ATAJOS = [["Claves", "#pill-claves"], ["Workflows", "#pill-workflows"]];
 const movil = () => matchMedia("(max-width:720px)").matches;
 
 const st = document.createElement("style");
 st.textContent = "@media(max-width:720px){"
-  + "#composer{display:flex !important;flex-direction:column !important;max-width:100%;min-width:0;overflow:hidden;padding:6px 8px 4px !important;border-radius:16px !important}"
-  + "#composer #message{order:1;min-height:40px !important;max-height:72px !important;padding:4px 6px !important;font-size:16px}"
+  + "#composer{display:flex !important;flex-direction:column !important;max-width:100%;min-width:0;overflow:visible;padding:6px 8px 4px !important;border-radius:16px !important}"
+  + "#composer #message{order:1;min-height:36px !important;max-height:64px !important;padding:4px 6px !important;font-size:16px}"
   + "#composer .composer-bar{order:2;display:flex !important;flex-wrap:wrap !important;overflow:visible !important;align-items:center;gap:4px !important;max-width:100%;min-width:0}"
   + "#composer .composer-bar::after{content:none !important;display:none !important}"
-  + "#composer .composer-bar>button.secondary:not(.grp){width:34px !important;min-width:34px !important;max-width:34px !important;height:34px !important;min-height:34px !important;flex:0 0 34px !important}"
-  + "#composer #btn-adjunto,#composer #btn-microfono{order:3}"
-  + "#composer .composer-bar>button.secondary.grp{order:1 !important;flex:1 1 calc(33.33% - 8px) !important;width:auto !important;max-width:calc(33.33% - 4px) !important;min-width:0 !important;height:34px !important;min-height:34px !important;border-radius:999px !important;padding:0 10px !important;font-size:13px !important;font-weight:600 !important;overflow:hidden !important;white-space:nowrap !important}"
-  + "#composer #btn-detener{order:4;display:inline-flex !important;margin-left:auto !important}"
-  + "#composer .composer-bar>.action{order:5;position:static !important;margin-left:0 !important;flex:0 0 36px !important;width:36px !important;min-width:36px !important;max-width:36px !important;height:36px !important;min-height:36px !important;padding:0 !important;border-radius:50% !important;overflow:visible !important}"
-  + "#composer .composer-bar>.action::after,#composer .composer-bar>.action .env-txt{content:none !important;display:none !important}"
+  + "#composer .composer-bar>button.secondary:not(#btn-tools):not(#btn-agentes):not(#btn-prompt){width:34px !important;min-width:34px !important;max-width:34px !important;height:34px !important;min-height:34px !important;flex:0 0 34px !important;padding:0 !important;border-radius:50% !important}"
+  + "#composer #btn-tools,#composer #btn-agentes,#composer #btn-prompt{order:4;width:auto !important;max-width:none !important;height:34px !important;min-height:34px !important;flex:0 0 auto !important;aspect-ratio:auto !important;border-radius:999px !important;padding:0 12px !important}"
+  + "#composer #btn-detener{order:5;display:inline-flex !important;margin-left:auto !important}"
+  + "#composer .composer-bar>.action{order:6;position:static !important;margin-left:8px !important;flex:0 0 auto !important;width:auto !important;min-width:132px !important;max-width:none !important;height:46px !important;min-height:46px !important;padding:0 22px !important;border-radius:12px !important}"
+  + "#composer .composer-bar>.action::after{content:\"Enviar\" !important;display:inline !important;font-size:15px !important}"
   + "#composer .composer-bar>.p3d{flex:1 1 100% !important;order:-1;max-width:100%}"
   + "#composer #btn-selector-modelos{order:3 !important;margin:4px 0 0 !important;align-self:stretch;width:100%;min-height:34px !important;height:34px;box-sizing:border-box;padding:0 10px !important}"
   + "#composer > #mode-selector-mount{order:4;display:flex;align-items:center;margin-top:4px;max-width:100%}"
@@ -33,7 +32,10 @@ st.textContent = "@media(max-width:720px){"
   + ".riu-hoja .riu-lista button{width:100% !important;max-width:100%;height:auto !important;min-height:34px !important;aspect-ratio:auto;border-radius:12px;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;padding:4px 10px !important}"
   + ".riu-hoja .mas-nom{font-size:14px}"
   + ".riu-hoja .mas-sec{font-size:11px;letter-spacing:.04em;text-transform:uppercase;opacity:.6;padding:8px 4px 0}"
-  + ".chat-history{min-height:0 !important}"
+  + ".chat-history{min-height:0 !important;flex:1 1 auto}"
+  + "#mas-pop{position:fixed;left:12px;right:12px;z-index:60;display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:46dvh;overflow-y:auto;padding:8px;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-shadow:0 12px 32px rgba(0,0,0,.5)}"
+  + "#mas-pop[hidden]{display:none !important}"
+  + "#mas-pop button{width:100% !important;max-width:none !important;height:auto !important;min-height:40px !important;aspect-ratio:auto !important;border-radius:12px !important;padding:8px 10px !important;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px}"
   + "}";
 document.head.append(st);
 
@@ -52,7 +54,7 @@ function panel(id, titulo) {
   const head = document.createElement("div");
   head.className = "row va-head";
   const t = document.createElement("strong");
-  t.textContent = titulo;
+  t.innerHTML = titulo;
   const x = document.createElement("button");
   x.type = "button";
   x.className = "secondary sh-cerrar";
@@ -83,7 +85,15 @@ function quitarRotulo(b) {
   if (n) n.remove();
 }
 
-function grupo(id, texto, hoja) {
+function svg(d) {
+  return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + "</svg>";
+}
+const ICO = {
+  archivos: '<path d="M4 6h6l2 2h8v11H4z"/>',
+  loop: '<path d="M4 12a8 8 0 0 1 13.5-5.5L20 4"/><path d="M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-13.5 5.5L4 20"/><path d="M4 20v-5h5"/>',
+  config: '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>',
+};
+function grupo(id, icono, hoja, etiqueta) {
   const bar = document.querySelector("#composer .composer-bar");
   if (!bar) return null;
   let b = document.getElementById(id);
@@ -92,12 +102,13 @@ function grupo(id, texto, hoja) {
     b.type = "button";
     b.id = id;
     b.className = "secondary grp";
-    b.textContent = texto;
     b.setAttribute("aria-haspopup", "menu");
     b.setAttribute("aria-expanded", "false");
     b.setAttribute("aria-controls", hoja);
     b.addEventListener("click", () => abrir(hoja, b));
   }
+  b.innerHTML = svg(icono);
+  b.setAttribute("aria-label", etiqueta);
   const env = bar.querySelector(".action");
   if (b.parentNode !== bar) bar.insertBefore(b, env || null);
   return b;
@@ -157,7 +168,7 @@ function devolver() {
   const env = fila.querySelector(".action");
   [...CONTEXTO, ...TRABAJO, ...CUADERNO].forEach((id) => {
     const b = document.getElementById(id);
-    if (!b || b.parentNode === fila) return;
+    if (!b || b.parentNode === fila || (b.parentNode && b.parentNode.id === "mas-pop")) return;
     quitarRotulo(b);
     fila.insertBefore(b, env || null);
   });
@@ -174,42 +185,59 @@ function firma(hoja) {
   return [...n.children].map((x) => x.classList.contains("mas-sec") ? "s:" + x.textContent : x.id || x.className).join("|");
 }
 
-function colocar() {
+const FUERA = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tareas", "btn-comandos", "btn-sesion", "btn-reglas", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
+function menu() {
   const fila = bar();
   if (!fila) return;
-  if (!movil()) { devolver(); return; }
-  const ctx = panel("ctx-panel", "Contexto");
-  const trab = panel("trab-panel", "Trabajo");
-  const libro = panel("mas-panel", "Cuaderno");
-  grupo("btn-contexto", "Contexto", "ctx-panel");
-  grupo("btn-trabajo", "Trabajo", "trab-panel");
-  grupo("btn-cuaderno", "Cuaderno", "mas-panel");
-  CONTEXTO.forEach((id) => meter(id, ctx));
-  atajos(ctx);
-  TRABAJO.forEach((id) => meter(id, trab));
-  const ids = (lista) => lista.filter((id) => document.getElementById(id));
-  const want = "s:Interruptores|" + ids(INTERRUPTORES).join("|") + "|s:Ventanas|" + ids(VENTANAS).join("|");
-  const libroLista = listaDe(libro);
-  if (firma(libro) !== want) {
-    const sec = (titulo) => {
-      let s = [...libroLista.querySelectorAll(".mas-sec")].find((n) => n.textContent === titulo);
-      if (!s) { s = document.createElement("div"); s.className = "mas-sec"; s.textContent = titulo; }
-      libroLista.append(s);
-    };
-    const poner = (id) => { const b = document.getElementById(id); if (!b) return; rotulo(b); libroLista.append(b); };
-    sec("Interruptores");
-    INTERRUPTORES.forEach(poner);
-    sec("Ventanas");
-    VENTANAS.forEach(poner);
+  let pop = document.getElementById("mas-pop");
+  if (!movil()) {
+    if (!pop) return;
+    const env = fila.querySelector(".action");
+    [...pop.children].forEach((b) => { if (b.id) { quitarRotulo(b); fila.insertBefore(b, env); } });
+    pop.hidden = true;
+    return;
   }
-  const mirror = document.querySelector("#mirror-selector-mount");
-  if (mirror && mirror.childElementCount && mirror.parentNode !== libroLista) libroLista.append(mirror);
-  parqueAuto();
+  if (!pop) {
+    pop = document.createElement("div");
+    pop.id = "mas-pop";
+    pop.hidden = true;
+    pop.setAttribute("role", "menu");
+    document.body.append(pop);
+    pop.addEventListener("click", (ev) => { if (ev.target.closest("button")) pop.hidden = true; });
+  }
+  FUERA.forEach((id) => { const b = document.getElementById(id); if (!b || b.parentNode === pop) return; rotulo(b); pop.append(b); });
+  let btn = document.getElementById("btn-mas");
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "btn-mas";
+    btn.className = "secondary";
+    btn.setAttribute("aria-label", "Más");
+    btn.setAttribute("aria-expanded", "false");
+    btn.innerHTML = svg('<path d="M4 7h16M4 12h16M4 17h16"/>');
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const p = document.getElementById("mas-pop");
+      const c = document.getElementById("composer");
+      if (!p || !c) return;
+      p.style.bottom = Math.max(8, window.innerHeight - c.getBoundingClientRect().top + 8) + "px";
+      p.hidden = !p.hidden;
+      btn.setAttribute("aria-expanded", String(!p.hidden));
+    });
+  }
+  const env = fila.querySelector(".action");
+  if (btn.parentNode !== fila) fila.insertBefore(btn, env);
+}
+function colocar() {
+  devolver();
+  menu();
 }
 
 document.addEventListener("click", (ev) => {
-  if (ev.target.closest(".riu-hoja, .grp")) return;
+  if (ev.target.closest(".riu-hoja, .grp, #mas-pop, #btn-mas")) return;
   document.querySelectorAll(".riu-hoja").forEach((p) => { p.hidden = true; });
+  const mas = document.getElementById("mas-pop");
+  if (mas) mas.hidden = true;
   document.querySelectorAll(".grp").forEach((g) => g.setAttribute("aria-expanded", "false"));
 });
 document.addEventListener("click", (ev) => {

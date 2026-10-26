@@ -4,6 +4,57 @@ import * as A from "./chat-ancla.js";
 // Extraído de panel-chat.js sin cambiar la lógica: recibe lo que usa por ctx y devuelve lo que otros bloques necesitan.
 export function montarEnviar(ctx) {
   const { q, chat, abajo, burbuja, ajustarAlturaEditor, pintarTabs, getModeUI, releerAnclas, chatTools, FAST_SEL, getModo, previo, api, tell } = ctx;
+  const pintarCola = (c) => {
+    let aviso = document.getElementById("cola-chat");
+    const items = c.colaMensajes || [];
+    if (!items.length) { if (aviso) aviso.remove(); return; }
+    if (!aviso) {
+      aviso = document.createElement("div");
+      aviso.id = "cola-chat";
+      aviso.style.cssText = "display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin:0 0 6px";
+      q("#composer").before(aviso);
+    }
+    const abierto = aviso.dataset.abierto === "1";
+    aviso.replaceChildren();
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.setAttribute("aria-expanded", abierto ? "true" : "false");
+    pill.setAttribute("aria-label", items.length + " mensajes en cola");
+    pill.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg><span></span>';
+    pill.querySelector("span").textContent = String(items.length);
+    pill.style.cssText = "display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:999px;border:1px solid #333;background:#1c1c1e;color:#fff;font-size:14px";
+    pill.onclick = () => { aviso.dataset.abierto = abierto ? "0" : "1"; pintarCola(c); };
+    aviso.append(pill);
+    if (!abierto) return;
+    const lista = document.createElement("div");
+    lista.style.cssText = "display:flex;flex-direction:column;gap:4px;width:100%;max-height:28dvh;overflow:auto";
+    aviso.append(lista);
+    items.forEach((txt, i) => {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;min-height:40px;padding:6px 10px;border-radius:14px;background:#1c1c1e;border:1px solid #333";
+      const t = document.createElement("span");
+      t.textContent = String(txt).replace(/\s+/g, " ").slice(0, 90);
+      t.style.cssText = "flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px";
+      const up = document.createElement("button");
+      up.type = "button"; up.setAttribute("aria-label", "Enviar ahora"); up.textContent = "↑";
+      up.style.cssText = "width:32px;height:32px;border-radius:50%;border:0;background:#2a2a2a;color:#fff";
+      up.onclick = () => {
+        const arr = c.colaMensajes || [];
+        const uno = arr.splice(i, 1)[0];
+        if (!uno) return;
+        if (c.ocupado) { arr.unshift(uno); pintarCola(c); return; }
+        pintarCola(c);
+        q("#message").value = uno;
+        q("#composer").requestSubmit();
+      };
+      const del = document.createElement("button");
+      del.type = "button"; del.setAttribute("aria-label", "Quitar de la cola"); del.textContent = "✕";
+      del.style.cssText = up.style.cssText;
+      del.onclick = () => { (c.colaMensajes || []).splice(i, 1); pintarCola(c); };
+      row.append(t, up, del);
+      lista.append(row);
+    });
+  };
   q("#composer").addEventListener("submit", async event => {
     chat().hist.__sigue = true;  // al enviar vuelves al final
     event.preventDefault();
@@ -17,9 +68,7 @@ export function montarEnviar(ctx) {
       c.colaMensajes.push(rawText);
       input.value = "";
       ajustarAlturaEditor();
-      let aviso = document.getElementById("cola-chat");
-      if (!aviso) { aviso = document.createElement("div"); aviso.id = "cola-chat"; aviso.className = "muted"; q("#composer").before(aviso); }
-      aviso.textContent = "Cola del chat: " + c.colaMensajes.length;
+      pintarCola(c);
       return;
     }
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
@@ -126,16 +175,14 @@ export function montarEnviar(ctx) {
     } finally {
       window.removeEventListener('riu-progreso', alProgreso);  // listener fuera al terminar/error/cancelar
       c.detenerFn = null; c.ocupado = false; pintarTabs();
-      const aviso = document.getElementById("cola-chat");
       if (enviado && c.colaMensajes && c.colaMensajes.length) {
         const sig = c.colaMensajes.shift();
-        if (aviso) aviso.textContent = c.colaMensajes.length ? "Cola del chat: " + c.colaMensajes.length : "";
-        if (!c.colaMensajes.length && aviso) aviso.remove();
+        pintarCola(c);
         input.value = sig;
         q("#composer").requestSubmit();
         return;
       }
-      if (aviso && !(c.colaMensajes && c.colaMensajes.length)) aviso.remove();
+      pintarCola(c);
       if (window.matchMedia("(pointer: fine)").matches) input.focus();
     }
   });
