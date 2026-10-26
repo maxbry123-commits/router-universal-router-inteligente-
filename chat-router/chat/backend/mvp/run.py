@@ -67,7 +67,7 @@ def _carga_bien():
 
 
 ARRANQUE, _DIFERIDO = None, None  # commit que corre este proceso; desde cuando se difiere un reinicio
-DIFERIR_MAX_S = (float(os.environ["RIU_MAX_HORAS"]) + 1) * 3600 if float(os.environ.get("RIU_MAX_HORAS", "0")) > 0 else float("inf")  # sin limite de tiempo salvo que se fije RIU_MAX_HORAS
+DIFERIR_MAX_S = (float(os.environ["RIU_MAX_HORAS"]) + 1) * 3600 if float(os.environ.get("RIU_MAX_HORAS", "0")) > 0 else float(os.environ.get("RIU_DIFERIR_MAX_S", "1800"))  # tope finito por defecto (RIU_DIFERIR_MAX_S, 30 min): un trabajo atascado sin latido ya no difiere el reinicio para siempre
 
 
 def _tareas_en_curso():
@@ -90,11 +90,14 @@ def _actualizar():
     nuevo = _head()
     base = ARRANQUE or anterior  # lo que corre hoy: un reinicio diferido se sigue comparando contra el
     if nuevo and nuevo != base and _toca_servidor(base, nuevo):
-        if _tareas_en_curso() and (_DIFERIDO is None or time.time() - _DIFERIDO < DIFERIR_MAX_S):
+        en_curso = _tareas_en_curso()
+        if en_curso and (_DIFERIDO is None or time.time() - _DIFERIDO < DIFERIR_MAX_S):
             if _DIFERIDO is None:
                 _DIFERIDO = time.time()
-                print("AUTOPULL: hay tareas en curso; el reinicio con %s espera a que terminen" % nuevo[:10], flush=True)
+                print("AUTOPULL: hay tareas en curso; el reinicio con %s espera a que terminen (tope %.0f s)" % (nuevo[:10], DIFERIR_MAX_S), flush=True)
             return False
+        if en_curso:
+            print("AUTOPULL: tareas en curso superaron el tope (%.0f s) sin terminar: posible trabajo atascado sin latido; reinicio forzado con %s" % (DIFERIR_MAX_S, nuevo[:10]), flush=True)
         if not _carga_bien():
             _git("reset", "--hard", base)  # vuelve a la version que funcionaba
             print("AUTOPULL: deshice %s y sigo con %s" % (nuevo[:10], base[:10]), flush=True)
