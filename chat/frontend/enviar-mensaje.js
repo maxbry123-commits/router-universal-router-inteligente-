@@ -74,24 +74,49 @@ export function montarEnviar(ctx) {
     pill.querySelector("span").textContent = "1";
     pill.style.cssText = "display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:999px;border:0;background:#2a2a2e;color:#fff;font-size:16px";
     pill.onclick = () => {
+      const vieja = document.getElementById("reactivar-hoja");
+      if (vieja) { vieja.remove(); return; }
+      const hoja = document.createElement("div");
+      hoja.id = "reactivar-hoja"; hoja.className = "sheet";
+      const caja = document.createElement("div"); caja.className = "va-caja";
+      const head = document.createElement("div"); head.className = "row va-head";
+      const tit = document.createElement("strong"); tit.textContent = "Tarea";
+      const x = document.createElement("button"); x.type = "button"; x.className = "secondary sh-cerrar"; x.textContent = "✕";
+      x.onclick = () => hoja.remove();
+      head.append(tit, x);
+      const desc = document.createElement("div"); desc.className = "fila-desc";
+      const pend = window.RIU_PENDIENTE && window.RIU_PENDIENTE(c.sesion);
+      const go = document.createElement("button"); go.type = "button"; go.className = "mini";
       if (c.tareaParada) {
-        const txt = c.tareaParada;
-        c.tareaParada = "";
-        pintarReactivar(c);
-        q("#message").value = txt;
-        q("#composer").requestSubmit();
-        return;
+        desc.textContent = c.tareaParada;
+        go.textContent = "Reactivar";
+        go.onclick = () => {
+          const txt = c.tareaParada; c.tareaParada = ""; hoja.remove(); pintarReactivar(c);
+          q("#message").value = txt; q("#composer").requestSubmit();
+        };
+      } else if (pend && !c.ocupado) {
+        desc.textContent = "Proceso en el Router: " + (pend.pid || "");
+        go.textContent = "Reactivar";
+        go.onclick = () => {
+          if (!window.RIU_RETOMAR || c.ocupado) return;
+          hoja.remove(); c.ocupado = true; pintarTabs(); pintarReactivar(c);
+          const meta = node("div", "Reactivando la tarea…", "item message meta");
+          c.hist.append(meta); abajo(c);
+          window.RIU_RETOMAR(c.sesion).then((p) => {
+            meta.remove();
+            const t = p && ((p.choices && p.choices[0] && p.choices[0].message && p.choices[0].message.content) || p.reply);
+            if (t) { c.hist.append(burbuja(t)); A.registrar(c.sesion, "bot", t); }
+            else c.hist.append(node("div", (p && (p.detalle || p.error)) || "Sin respuesta al reactivar", "item message meta"));
+          }).finally(() => { c.ocupado = false; pintarTabs(); abajo(c); pintarReactivar(c); });
+        };
+      } else {
+        desc.textContent = "Sigue en curso. Cuando pare, esta píldora la vuelve a lanzar.";
+        go.textContent = "Cerrar";
+        go.onclick = () => hoja.remove();
       }
-      if (!window.RIU_RETOMAR || c.ocupado) return;
-      c.ocupado = true; pintarTabs(); pintarReactivar(c);
-      const meta = node("div", "Reactivando la tarea…", "item message meta");
-      c.hist.append(meta); abajo(c);
-      window.RIU_RETOMAR(c.sesion).then((p) => {
-        meta.remove();
-        const t = p && ((p.choices && p.choices[0] && p.choices[0].message && p.choices[0].message.content) || p.reply);
-        if (t) { c.hist.append(burbuja(t)); A.registrar(c.sesion, "bot", t); }
-        else c.hist.append(node("div", (p && (p.detalle || p.error)) || "Sin respuesta al reactivar", "item message meta"));
-      }).finally(() => { c.ocupado = false; pintarTabs(); abajo(c); pintarReactivar(c); });
+      caja.append(head, desc, go); hoja.append(caja);
+      hoja.addEventListener("click", (ev) => { if (ev.target === hoja) hoja.remove(); });
+      document.body.append(hoja);
     };
     aviso.append(pill);
   };
