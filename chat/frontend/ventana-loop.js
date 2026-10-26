@@ -277,7 +277,20 @@ function pintarLoop(cuerpo) {
   const fila = el("div", "cv-form");
   fila.append(enc, apa, di, auto, re, gy, ep);
   const md = el("textarea", "vn-ta");
-  md.rows = 3; md.placeholder = "Objetivo en markdown"; md.setAttribute("aria-label", "Objetivo markdown del LOOP");
+  md.rows = 3; md.placeholder = "Yaiwes.md — pega aquí el objetivo"; md.setAttribute("aria-label", "Yaiwes.md");
+  const fases = ["objetivo", "plan", "tarea", "verificar"];
+  estado.modelos = estado.modelos || {};
+  const modelos = () => ((window.RIU_SELECTOR_QWEN && window.RIU_SELECTOR_QWEN.modelos) || []).filter((m) => m.model_id);
+  const filaMod = el("div", "cv-form");
+  fases.forEach((f) => {
+    const s = el("select"); s.setAttribute("aria-label", "Modelo de " + f);
+    const opts = modelos();
+    if (!opts.length) s.append(new Option("qwen3.8-max", "qwen3.8-max"));
+    opts.forEach((m) => s.append(new Option(m.label, m.model_id)));
+    s.value = estado.modelos[f] || "qwen3.8-max";
+    s.onchange = () => { estado.modelos[f] = s.value; guardar(); };
+    filaMod.append(s);
+  });
   const perfil = el("select"); perfil.setAttribute("aria-label", "Perfil");
   ["document", "code", "frontend", "api"].forEach((v) => perfil.append(new Option(v, v)));
   const ruta = el("input"); ruta.placeholder = "archivo.txt"; ruta.setAttribute("aria-label", "Ruta de aceptación");
@@ -304,7 +317,8 @@ function pintarLoop(cuerpo) {
     ejecutar.disabled = true; pararPoll();
     try {
       const r = await window.RIU_PLUGIN("nct_loop", "ejecutar", {
-        objetivo: md.value, modelo: modeloChat(), profile: perfil.value, motor: "coda",
+        objetivo: md.value, modelo: (estado.modelos && estado.modelos.tarea) || modeloChat(), profile: perfil.value, motor: "coda",
+        secciones: estado.modelos || {},
         acceptance: ruta.value.trim() ? [{ op: "verify_exists", path: ruta.value.trim() }] : [],
       });
       proc = r.proceso_id || "";
@@ -322,8 +336,10 @@ function pintarLoop(cuerpo) {
     try { const r = await window.RIU_PLUGIN("nct_loop", "status", {}); nct.textContent = JSON.stringify(r).slice(0, 180); }
     catch (e) { nct.textContent = e.message; }
   });
-  const nctFila = el("div", "cv-form"); nctFila.append(perfil, ejecutar, cancelarN, salud);
-  cuerpo.replaceChildren(el("div", "cv-sec", "nct_loop"), md, ruta, nctFila, nct, el("div", "cv-sec", "LOOP"), partes, mando, fila, centro, objetivo, plan, tareas, aviso);
+  const ancla = btn("Constitución", "secondary", () => { const x = document.querySelector("#btn-ancla"); if (x) x.click(); });
+  const pend = btn("Pendientes", "secondary", () => { const x = document.querySelector("#btn-pendientes"); if (x) x.click(); });
+  const nctFila = el("div", "cv-form"); nctFila.append(perfil, ejecutar, cancelarN, salud, ancla, pend);
+  cuerpo.replaceChildren(el("div", "cv-sec", "Yaiwes.md"), md, filaMod, ruta, nctFila, nct, el("div", "cv-sec", "LOOP"), partes, mando, fila, centro, objetivo, plan, tareas, aviso);
   pintar();
 }
 
