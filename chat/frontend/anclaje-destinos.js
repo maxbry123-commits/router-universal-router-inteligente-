@@ -92,7 +92,8 @@ function chipAncla(q) {  // el chip «ancla» del chat (pastilla y botón ⚓ de
   if (ba) { let m = ba.querySelector(".riu-const-chip"); if (!m) { m = document.createElement("span"); m.className = "riu-const-chip"; m.style.cssText = "position:absolute;top:-6px;left:-6px;font-size:11px;line-height:1;pointer-events:none"; ba.style.position = ba.style.position || "relative"; ba.append(m); }
     m.textContent = on ? "📜" : ""; ba.dataset.const = on ? "on" : "off"; ba.title = "Anclaje · Constitución " + (on ? "ON" : "OFF"); }
   const pill = q("#ancla") || document.getElementById("ancla"); if (!pill) return;  // en móvil la pastilla se mueve fuera del panel (#mv-ctl)
-  pill.textContent = "ancla · 📜 " + (on ? "ON" : "OFF") + " ⌄"; pill.classList.toggle("on", on); pill.title = "Constitución " + (on ? "ON: viaja con cada mensaje" : "OFF: no se envía");
+  const enHoja = !!(pill.closest && pill.closest(".riu-lista"));
+  pill.textContent = (enHoja ? "Handoff · Constitución " : "ancla · 📜 ") + (on ? "ON" : "OFF") + (enHoja ? "" : " ⌄"); pill.classList.toggle("on", on); pill.title = "Constitución " + (on ? "ON: viaja con cada mensaje" : "OFF: no se envía");
 }
 function unBotonMiHandoff(q, tell) {  // yaiwes.md: un solo botón ON/OFF en lugar de «Encender/Guardar» + «Apagar» (los originales quedan ocultos y siguen funcionando)
   const g = q("#mh-guardar"), a = q("#mh-apagar"), est = q("#mh-estado"), enl = q("#ancla-enlace-on");

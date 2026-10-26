@@ -26,8 +26,8 @@ st.textContent = "@media(max-width:720px){"
   + "#composer .composer-bar::after{content:\"\" !important;display:block !important;flex:1 0 100% !important;height:0 !important;order:4 !important}"
   + "#composer .composer-bar>button.secondary:not(#btn-tools):not(#btn-agentes):not(#btn-prompt){width:34px !important;min-width:34px !important;max-width:34px !important;height:34px !important;min-height:34px !important;flex:0 0 34px !important;padding:0 !important;border-radius:50% !important}"
   + "#composer #btn-tools,#composer #btn-agentes,#composer #btn-prompt{order:4;width:auto !important;max-width:none !important;height:34px !important;min-height:34px !important;flex:0 0 auto !important;aspect-ratio:auto !important;border-radius:999px !important;padding:0 12px !important}"
-  + "#composer #btn-detener{order:5;display:inline-flex !important;margin-left:auto !important}"
-  + "#composer #btn-paralelo{order:5 !important}"
+  + "#composer #btn-detener{order:5;display:inline-flex !important;margin-left:8px !important}"
+  + "#composer #btn-paralelo{order:5 !important;margin-left:auto !important;height:34px !important;min-height:34px !important;width:auto !important;max-width:none !important;flex:0 0 auto !important;border-radius:999px !important;padding:0 12px !important}"
   + "#composer .composer-bar>.action{order:6;position:static !important;margin-left:8px !important;flex:0 0 auto !important;width:auto !important;min-width:132px !important;max-width:none !important;height:46px !important;min-height:46px !important;padding:0 22px !important;border-radius:12px !important}"
   + "#composer .composer-bar>.action::after{content:\"Enviar\" !important;display:inline !important;font-size:15px !important}"
   + "#composer .composer-bar>.p3d{flex:1 1 100% !important;order:-1;max-width:100%}"
@@ -35,7 +35,7 @@ st.textContent = "@media(max-width:720px){"
   + "#composer > #mode-selector-mount{order:4;display:flex;align-items:center;margin-top:4px;max-width:100%}"
   + ".riu-hoja .riu-lista{display:flex;flex-direction:column;gap:4px}"
   + ".riu-hoja .riu-lista button{width:100% !important;max-width:100%;height:auto !important;min-height:34px !important;aspect-ratio:auto;border-radius:12px;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;padding:4px 10px !important}"
-  + ".riu-hoja .mas-nom{font-size:14px}"
+  + ".riu-hoja .riu-lista .pill{max-width:none !important;width:100% !important;flex:1 1 auto !important}"
   + ".riu-hoja .mas-sec{font-size:11px;letter-spacing:.04em;text-transform:uppercase;opacity:.6;padding:8px 4px 0}"
   + ".chat-history{min-height:0 !important;flex:1 1 auto}"
   + "#mas-pop{position:fixed;left:12px;right:12px;z-index:60;display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:46dvh;overflow-y:auto;padding:8px;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-shadow:0 12px 32px rgba(0,0,0,.5)}"
@@ -136,16 +136,25 @@ function meter(id, hoja) {
   destino.append(b);
 }
 
+const NOMBRE = { mas: "Más opciones", motor: "Panel del motor", "pill-claves": "Claves", "pill-workflows": "Workflows", "pill-constitucion": "Constitución" };
 function meterPill(id, hoja) {
   const b = document.getElementById(id);
   if (!b) return;
   if (!b._casa) { b._casa = b.parentNode; b._sig = b.nextSibling; }
+  if (b.dataset.orig == null) b.dataset.orig = b.textContent;
   meter(id, hoja);
+  let sig = NOMBRE[id] || "";
+  if (id === "ancla") {
+    const fuente = b.textContent.includes("Constitución") ? b.textContent : (b.dataset.orig || "");
+    sig = "Handoff · Constitución " + (fuente.includes(" ON") ? "ON" : "OFF");
+  }
+  if (sig && b.textContent !== sig) b.textContent = sig;
 }
 function devolverPills() {
   PILLS.forEach((id) => {
     const b = document.getElementById(id);
     if (!b || !b._casa || !b._casa.isConnected || b.parentNode === b._casa) return;
+    if (b.dataset.orig != null) b.textContent = b.dataset.orig;
     const sig = b._sig && b._sig.parentNode === b._casa ? b._sig : null;
     b._casa.insertBefore(b, sig);
   });
