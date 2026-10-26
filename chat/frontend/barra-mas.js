@@ -31,8 +31,9 @@ st.textContent = "@media(max-width:720px){"
   + "#composer .composer-bar>.action{order:6;position:static !important;margin-left:8px !important;flex:0 0 auto !important;width:auto !important;min-width:132px !important;max-width:none !important;height:46px !important;min-height:46px !important;padding:0 22px !important;border-radius:12px !important}"
   + "#composer .composer-bar>.action::after{content:\"Enviar\" !important;display:inline !important;font-size:15px !important}"
   + "#composer .composer-bar>.p3d{flex:1 1 100% !important;order:-1;max-width:100%}"
-  + "#composer #btn-selector-modelos{order:3 !important;margin:4px 0 0 !important;align-self:stretch;width:100%;min-height:34px !important;height:34px;box-sizing:border-box;padding:0 10px !important}"
-  + "#composer > #mode-selector-mount{order:4;display:flex;align-items:center;margin-top:4px;max-width:100%}"
+  + "#composer .composer-bar>#btn-selector-modelos{order:0 !important;width:34px !important;max-width:34px !important;min-width:34px !important;height:34px !important;min-height:34px !important;margin:0 !important;align-self:center !important;flex:0 0 34px !important;padding:0 !important;border-radius:50% !important;justify-content:center}"
+  + "#composer .composer-bar>#btn-selector-modelos .sel-ind-txt,#composer .composer-bar>#btn-selector-modelos .sel-ind-flecha{display:none !important}"
+  + "#composer .composer-bar>#mode-selector-mount{order:0;display:flex;align-items:center;margin:0 !important;max-width:none;flex:0 0 auto}"
   + ".riu-hoja .riu-lista{display:flex;flex-direction:column;gap:4px}"
   + ".riu-hoja .riu-lista button{width:100% !important;max-width:100%;height:auto !important;min-height:34px !important;aspect-ratio:auto;border-radius:12px;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;padding:4px 10px !important}"
   + ".riu-hoja .riu-lista .pill{max-width:none !important;width:100% !important;flex:1 1 auto !important}"
@@ -177,11 +178,24 @@ function devolverPills() {
 
 function parqueAuto() {
   const modo = document.querySelector("#mode-selector-mount");
-  const comp = document.querySelector("#composer");
   const modelo = document.querySelector("#btn-selector-modelos");
-  if (!modo || !comp) return;
-  if (modelo && modo.previousSibling !== modelo) modelo.after(modo);
-  else if (!modelo && modo.parentNode !== comp) comp.append(modo);
+  const fila = bar();
+  if (!modo || !modelo || !fila) return;
+  if (modo.parentNode !== fila || modo.previousSibling !== modelo) modelo.after(modo);
+}
+function modeloChip() {
+  const btn = document.querySelector("#btn-selector-modelos");
+  const fila = bar();
+  if (!btn || !fila) return;
+  if (!btn._casaModelo) btn._casaModelo = btn.parentNode;
+  if (btn.parentNode !== fila) fila.insertBefore(btn, fila.firstChild);
+  parqueAuto();
+}
+function devolverModelo() {
+  const btn = document.querySelector("#btn-selector-modelos");
+  const comp = document.querySelector("#composer");
+  if (!btn || !comp || btn.parentNode === comp) return;
+  comp.prepend(btn);
 }
 
 function devolverAuto() {
@@ -208,6 +222,7 @@ function devolver() {
   if (mirror && mirror.parentNode !== fila) fila.insertBefore(mirror, document.querySelector("#btn-detener") || env || null);
   document.querySelectorAll(".mas-atajo").forEach((n) => n.remove());
   devolverPills();
+  devolverModelo();
   ["ctx-panel", "trab-panel", "mas-panel"].forEach((id) => { const p = document.getElementById(id); if (p) p.hidden = true; });
   document.querySelectorAll(".grp").forEach((g) => g.remove());
   devolverAuto();
@@ -276,7 +291,7 @@ function tres() {
   PILLS_CUAD.forEach((id) => meterPill(id, cuad));
   filaUna(trab, "btn-ir-yaiwes", "Yaiwes.md", () => { const b = document.querySelector("#btn-loop"); if (b) b.click(); });
   filaUna(trab, "btn-ir-tools", "Tools", abrirTools);
-  parqueAuto();
+  modeloChip();
   const mas = document.getElementById("btn-mas");
   if (mas) mas.remove();
   const pop = document.getElementById("mas-pop");
