@@ -218,8 +218,6 @@ export function montarEnviar(ctx) {
       c.detenerFn = null;
       if (c.detenerFlag) throw new Error("PROCESO_DETENIDO");  // detenido mientras la respuesta llegaba: no pintar respuesta tardia
       pending.remove();
-      if (answer.modelo_solicitado) c.hist.append(node("div", "Modelo solicitado: " + answer.modelo_solicitado + " · API: " + (answer.modelo_respuesta || "sin identificar"), "item message meta"));
-      if (answer.aviso) c.hist.append(node("div", "Aviso: " + answer.aviso, "item message meta"));  // p. ej. modo Objetivo: un turno (sin bucle autónomo en el MVP)
       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
       if (answer.finish_reason === "length") { const aviso = node("div", "La respuesta se cortó por el límite de salida del proveedor. ", "item message meta"), seguir = node("button", "Continuar", "mx-continuar"); seguir.type = "button"; seguir.onclick = () => { seguir.disabled = true; const m = q("#message"); m.value = "Continúa exactamente donde se cortó la respuesta anterior, sin repetir texto."; q("#composer").requestSubmit(); }; aviso.append(seguir); c.hist.append(aviso); }  // un clic y sigue desde el corte

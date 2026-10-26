@@ -53,7 +53,7 @@ class Base(unittest.TestCase):
             if nombre not in self.nube: raise hf_store.NoExiste("fallo de lectura HF")
             return {"ok": True, "valor": self.nube[nombre]}
         self.parches = [patch("mvp.app.hf_store.guardar", guardar), patch("mvp.app.hf_store.leer", leer),
-                        patch.dict(os.environ, {"RIU_API_KEY": "api-ficticia", "MVP_MCP_LOCAL": "1", "RIU_MANTENER_HORAS": "0"})]
+                        patch.dict(os.environ, {"RIU_API_KEY": "api-ficticia", "MVP_MCP_LOCAL": "1", "RIU_MANTENER_HORAS": "0", "RIU_REINTENTOS_MAX": "2"})]
         for p in self.parches: p.start()
         self.banco = Banco(HF_TOKEN="hf-ficticio", GITHUB_TOKEN="gh-principal", QWEN_API_KEY="qwen-ficticia")
         self.antes = getattr(servicio.app.state, "banco", None)
@@ -546,7 +546,7 @@ class TestGapsChat(Base):
             r, msgs = self.enviar_con_modo(mode_request={"mode_id": modo, "source": "button"})
             self.assertEqual(r.status_code, 200, r.text)
             self.assertIn(modo, msgs[1]["content"])
-            self.assertIn("un turno", r.json().get("aviso_modo", ""))
+            self.assertNotIn("aviso_modo", r.json())  # sin mensajes extra en la salida
         r, _ = self.enviar_con_modo(mode_request={"mode_id": "m01_plan", "source": "auto"})
         self.assertEqual(r.status_code, 400)
         r, _ = self.enviar_con_modo(mode_request={"mode_id": "m99", "source": "button"})

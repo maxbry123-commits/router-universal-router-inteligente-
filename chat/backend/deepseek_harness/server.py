@@ -138,7 +138,7 @@ def llm(cuerpo):
     while True:
         paso += 1
         try:
-            mensajes = compactar(mensajes)
+            mensajes = compactar(mensajes, int(cuerpo.get("contexto_max") or 0) or None)
             salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
                          **{k: cuerpo.get(k, False) for k in ("tools", "agente_tool", "llm_tool")}})
         except RuntimeError:
@@ -165,10 +165,11 @@ def llm(cuerpo):
         for llamada in llamadas:
             funcion = llamada.get("function") or {}
             nombre = funcion.get("name")
-            if nombre not in permitidas:
-                raise HTTPException(status_code=403, detail="Herramienta no autorizada en Harness")
             if not llamada.get("id"):
-                raise RuntimeError("tool_call sin id; no se ejecuto")
+                continue  # sin id no se puede responder; el modelo vuelve a pedirla en la ronda siguiente
+            if nombre not in permitidas:  # no corta la tarea: el modelo recibe el error y elige otra herramienta
+                mensajes.append({"role": "tool", "tool_call_id": llamada["id"], "content": json.dumps({"error": "Herramienta no autorizada: " + str(nombre)}, ensure_ascii=False)})
+                continue
             usadas.append(nombre)
             try:
                 args = json.loads(funcion.get("arguments") or "{}")
@@ -184,7 +185,8 @@ def llm(cuerpo):
             elif nombre.startswith("github_"):
                 args.setdefault("rama", "main")
             if nombre == "github_escribir" and args["rama"] != "main":
-                raise HTTPException(status_code=403, detail="Escritura GitHub permitida solo en main")
+                mensajes.append({"role": "tool", "tool_call_id": llamada["id"], "content": json.dumps({"error": "Escritura GitHub permitida solo en main"}, ensure_ascii=False)})
+                continue
             llave = _llave(nombre, args) if tarea and con_efectos(nombre, args) else None
             if llave and llave in diario:  # ya se hizo en esta tarea (antes de un reinicio o corte): se devuelve lo que paso, no se repite
                 resultado = {"ya_ejecutada_en_esta_tarea": True, "resultado": diario[llave]}

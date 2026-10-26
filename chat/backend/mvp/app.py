@@ -95,6 +95,11 @@ def health(authorization: str | None = Header(None),
             "plan": modelos.plan(), "modelo_defecto": modelos.cargar()["modelo_defecto"],
             "clave_qwen_presente": bool(modelos.clave_env() or
                                        (app.state.banco and app.state.banco.leer("QWEN_API_KEY")))}
+_TEXTO_PASAJERO = re.compile(r"error de red|no disponible|timed out|timeout|temporar|reset|refused", re.I)
+def _codigo(detalle):  # el error llega envuelto ("Router HTTP 502: Qwen HTTP 429"): cuenta el codigo MAS INTERNO, el del proveedor
+    c = re.findall(r"HTTP (\d{3})", str(detalle)); return int(c[-1]) if c else None
+def _pasajero(detalle): return _codigo(detalle) in (408, 425, 429, 500, 502, 503, 504, 529) or (_codigo(detalle) is None and bool(_TEXTO_PASAJERO.search(str(detalle))))
+def _contexto_grande(detalle): return _codigo(detalle) in (400, 413)
 _SES = ContextVar("sesion_tarea", default="")  # sesion del chat de la tarea: donde se deja la respuesta si nadie la recoge
 _PID = ContextVar("pid_tarea", default=None)  # la tarea del chat que esta ejecutando chat(): su estado se guarda en cada pausa
 MAX_CARACTERES = 4_000_000  # ~1 millon de tokens; tope de texto por peticion: error claro en vez de un 502 opaco del proveedor
@@ -133,13 +138,26 @@ async def chat(cuerpo: dict):
             await asyncio.to_thread(estado_tarea.marcar, app.state.banco, pid, True)
         try:
             if pid: await guardar_estado()
-            while True:  # el Harness pausa cada ~90 s y devuelve `continuar`: se reanuda con su conversacion hasta terminar o llegar a 48 h
+            reintentos, tope = 0, cuerpo.get("_contexto_max")
+            while True:  # el Harness devuelve la conversacion tras cada ronda de herramientas; se reanuda hasta terminar. Solo un servidor caido corta la tarea
                 try:
-                    salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"), {**controles, "acumulado": acumulado, "tarea_id": pid or ""})
+                    salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"),
+                                                     {**controles, "acumulado": acumulado, "tarea_id": pid or "", **({"contexto_max": tope} if tope else {})})
+                    if salida.get("status") == "error" and salida.get("status_code") != 403:
+                        raise RuntimeError(str(salida.get("error") or "harness error"))
                 except (ValueError, RuntimeError) as error:
-                    raise HTTPException(status_code=502, detail=str(error)) from None
+                    detalle, tam = str(error), sum(len(str(m.get("content") or "")) for m in mensajes if isinstance(m, dict))
+                    if _contexto_grande(detalle) and tam > 20_000:  # el modelo no admite tanto contexto: se reduce a la mitad y se reintenta
+                        tope = max(20_000, tam // 2); continue
+                    if not _pasajero(detalle): raise HTTPException(status_code=502, detail=detalle) from None
+                    reintentos += 1
+                    if int(os.environ.get("RIU_REINTENTOS_MAX", "0") or 0) and reintentos > int(os.environ["RIU_REINTENTOS_MAX"]): raise HTTPException(status_code=502, detail=detalle) from None  # 0 = sin tope: solo un servidor caido corta la tarea  # falla pasajera (proveedor saturado, red, Harness reiniciando): se espera y se reintenta, nunca se corta la tarea
+                    if pid in TRABAJOS: TRABAJOS[pid].update(subestado="reintentando", progreso="Reintentando (%d): %s" % (reintentos, detalle[:80]))
+                    await asyncio.sleep(min(2 ** min(reintentos, 6), 60)); continue
+                if reintentos and pid in TRABAJOS: TRABAJOS[pid].pop("subestado", None)
+                reintentos = 0
                 if salida.get("status") == "error":
-                    raise HTTPException(status_code=403 if salida.get("status_code") == 403 else 502, detail=str(salida.get("error") or "harness error"))
+                    raise HTTPException(status_code=403, detail=str(salida.get("error") or "harness error"))
                 salida = salida.get("result", salida) if isinstance(salida.get("result"), dict) else salida
                 usadas += salida.get("herramientas_usadas") or []
                 if not salida.get("continuar"):
@@ -360,8 +378,6 @@ async def _chat_ficha(cuerpo, progreso=None):
                          "opciones": opciones or None, **_controles(q)})
     return {"estado": "completado", "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": modelo, "modelo_respuesta": salida.get("modelo_respuesta"), "herramientas_usadas": salida.get("herramientas_usadas") or [],
-            **({"aviso_modelo": "sin selector de modelo encendido: respondió el modelo por defecto " + modelo} if heredada else {}),
-            **({"aviso_modo": aviso_modo} if aviso_modo else {}),
             "choices": [{"message": {"role": "assistant", "content": salida["texto"],
                                     "tool_calls": salida["tool_calls"]},
                          "finish_reason": salida["finish_reason"]}]}
@@ -559,7 +575,7 @@ async def chat_send(cuerpo: dict):
     return {"reply": msg["content"], "execution_path": "HARNESS", "ms": int((time.monotonic() - t0) * 1000),
             "tools": tools, "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": salida.get("modelo_solicitado"), "modelo_respuesta": salida.get("modelo_respuesta"),
-            **{k: salida[k] for k in ("aviso_modo", "aviso_modelo") if salida.get(k)}}
+            }
 async def _delegar(nombre, args):
     """Herramientas agente/llm del modelo: una llamada nueva (sin herramientas, sin historial) al modelo del agente o al elegido."""
     if nombre == "agente":
