@@ -11,7 +11,7 @@ import { montarConstitucion } from "./ventana-constitucion.js";
 import { montarClaves } from "./ventana-claves.js";
 import { montarMejorasAncla } from "./anclaje-mejoras.js";
 import { montarAgregarAlChat } from "./agregar-al-chat.js";
-import { montarPensando3D } from "./pensando-3d.js";
+import { montarPensando3D } from "./pensando-3d.js?v=676bf2";
 import { montarNotas } from "./notas-ventana.js";
 import { instalarAuth, montarAcceso } from "./acceso-clave.js";
 import { montarPropuestasAncla } from "./anclaje-propuestas.js";  // ⚓ abre la propuesta A (barra única); ?panel=b|c abre B o C; clásico detrás de un botón

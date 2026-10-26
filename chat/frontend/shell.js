@@ -1,5 +1,5 @@
 import { api } from "./api.js";
-import { mount as chat } from "./panel-chat.js";
+import { mount as chat } from "./panel-chat.js?v=676bf2";
 import { mount as archivos } from "./panel-archivos.js";
 import { mount as seguimiento } from "./panel-seguimiento.js";
 import { mount as canvas } from "./panel-canvas.js";
