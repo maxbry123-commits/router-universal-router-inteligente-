@@ -105,7 +105,7 @@ function pintarTareas(cuerpo) {
   avisoEl = aviso;
   const buscar = el("input");
   buscar.type = "search"; buscar.placeholder = "Buscar"; buscar.value = q; buscar.setAttribute("aria-label", "Buscar tarea");
-  buscar.oninput = () => { q = buscar.value; const pos = buscar.selectionStart; pintar(); const b2 = document.querySelector("#ventana-tareas input[type=search]"); if (b2) { b2.focus(); try { b2.setSelectionRange(pos, pos); } catch (e) {} } };
+  buscar.oninput = () => { q = buscar.value; const pos = buscar.selectionStart; pintar(); const b2 = document.querySelector("#loop-fuente-tareas input[type=search], #ventana-tareas input[type=search]"); if (b2) { b2.focus(); try { b2.setSelectionRange(pos, pos); } catch (e) {} } };
   const chips = el("div", "loop-partes");
   [["tareas", "Programadas"], ["hechas", "Hechas"], ["archivos", "Artefactos"]].forEach(([id, nom]) => {
     const s = el("button", vista === id ? "on" : "", nom);
@@ -286,8 +286,17 @@ window.RIU_TAREAS = {
   quitar: (id) => { const v = caja(); v.tareas = v.tareas.filter((t) => t.id !== id); guardar(v); return true; },
 };
 
+window.RIU_PINTAR_TAREAS = (nodo) => { pintar = () => pintarTareas(nodo); pintar(); };
+
 const montar = () => {
   ventana("tareas", "Tareas", (cuerpo) => { pintar = () => pintarTareas(cuerpo); pintar(); });
+  const b = document.querySelector("#btn-tareas");
+  if (b) b.onclick = () => {
+    const s = document.getElementById("ventana-tareas");
+    if (s) s.hidden = true;
+    const loop = document.querySelector("#btn-loop");
+    if (loop) loop.click();
+  };
   instalarTool();
   marcar();
 };
