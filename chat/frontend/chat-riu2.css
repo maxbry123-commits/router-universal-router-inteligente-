@@ -91,3 +91,5 @@
   #en-curso.en-curso { width: auto; min-height: 36px; height: 36px; margin: 0 0 6px; padding: 0 12px; border-radius: 999px; gap: 6px; align-self: flex-start; justify-content: flex-start; font-size: 14px; }
 }
 .sheet .list button { min-height: 36px !important; padding: 6px 10px; border-radius: 10px; font-size: 14px; }
+.ctl-int > .row.fields { display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px; flex-wrap: wrap !important; overflow: visible !important; }
+.ctl-int > .row.fields .pill { width: 100%; max-width: none; justify-content: center; }

@@ -43,7 +43,9 @@ function aplicarMovil() {
     // topbar ya no va a mv-top: la tarjeta Chat/Reintentar/Router repetido salió del chat; campana en #campana-slot
     if (ctlInt) document.querySelector("#mv-ctl").appendChild(ctlInt);  // Controles entero: h1, chats, pills, selectores
     const h1 = document.querySelector("#panel h1");  // h1 de otras vistas (el del chat viaja dentro de ctl-int)
-    if (h1) { h1._mvHome = h1.parentNode; h1._mvNext = h1.nextSibling; document.querySelector("#mv-title").appendChild(h1); }
+    const titulo = document.querySelector("#mv-title");
+    if (titulo) [...titulo.querySelectorAll("h1")].forEach((n) => { if (n !== h1) n.remove(); });
+    if (h1 && titulo) { h1._mvHome = h1.parentNode; h1._mvNext = h1.nextSibling; titulo.appendChild(h1); }
   } else {
     mvBar.hidden = true; mvPanel.hidden = true;
     if (nav && navSlot) navSlot.after(nav);
