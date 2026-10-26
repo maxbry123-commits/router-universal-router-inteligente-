@@ -78,11 +78,10 @@ function selectorDestino(val, fn) {
   s.value = destinos().some((d) => d.k === val) ? val : "chat"; s.addEventListener("change", () => fn(s.value)); return s;
 }
 export function montarPropuestasAncla({ root, q, tell }) {
-  // ⚓ abre la propuesta A (barra única) por defecto; ?panel=b|c abre B o C; el panel clásico queda detrás del botón «Clásico».
+  // El ancla abre el panel completo (Chat, Constitución, Workflows, Proyecto, Sandbox). La propuesta A/B/C solo entra por ?panel=a|b|c.
   const vUrl = (new URLSearchParams(location.search).get("panel") || "").toLowerCase(), v0 = VARS[vUrl] ? vUrl : "a";
   let clasico = false;  // true = este clic va al panel clásico (botón «Clásico» o RIU_ANCLA_ABRIR de workflow/constitución)
   const abrirClasico = () => { const b = q("#btn-ancla"), s = q("#ventana-ancla"); if (!b || !s) return; clasico = true; try { if (s.hidden) b.click(); else if (window.RIU_ANCLA_REFRESCAR) window.RIU_ANCLA_REFRESCAR(); } finally { clasico = false; } };
-  const ba = q("#btn-ancla"); if (ba) ba.addEventListener("click", (e) => { if (clasico) return; e.stopImmediatePropagation(); e.preventDefault(); if (sheet && !sheet.hidden) cerrar(); else abrir(); }, true);
   const abrirObj = window.RIU_ANCLA_ABRIR; if (typeof abrirObj === "function") window.RIU_ANCLA_ABRIR = (...a) => { clasico = true; try { return abrirObj(...a); } finally { clasico = false; } };
   window.RIU_ANCLA_PROP = (v) => abrir(v);
   if (VARS[vUrl]) setTimeout(() => abrir(vUrl), 0);  // ?panel=a|b|c abre el panel al cargar (enlace directo)
