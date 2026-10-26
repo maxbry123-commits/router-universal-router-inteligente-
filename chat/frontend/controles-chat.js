@@ -3,8 +3,8 @@
 export function montarControlesChat(ctx) {
   const { q, chat, guardar, chatTools, pintarMotor, tell } = ctx;
   // >>> MODOS <<< T6: boton paralelo — multi-select de hasta 6 modelos Team qwen; el envio sale a cada uno
-  const pintarParalelo = () => { const b = q("#btn-paralelo"); if (b) { b.classList.toggle("sel-on", !!chat().paralelo); b.setAttribute("aria-pressed", String(!!chat().paralelo)); } };
-  const bpar = q("#btn-paralelo"); if (bpar) bpar.addEventListener("click", () => { chat().paralelo = !chat().paralelo; pintarParalelo(); guardar(); tell(chat().paralelo ? "⧉ Paralelo ON: marca hasta 6 modelos en Team qwen ⌄" : "⧉ Paralelo OFF"); });
+  const pintarParalelo = () => { const b = q("#btn-paralelo"); if (b) { b.classList.toggle("sel-on", !!chat().paralelo); b.setAttribute("aria-pressed", String(!!chat().paralelo)); b.textContent = "Paralelo " + (chat().paralelo ? "ON" : "OFF"); } };
+  const bpar = q("#btn-paralelo"); if (bpar) { const det = q("#btn-detener"); if (det && det.parentNode) det.parentNode.insertBefore(bpar, det); bpar.addEventListener("click", () => { chat().paralelo = !chat().paralelo; pintarParalelo(); guardar(); }); }
   pintarParalelo();
   // Controles: «Agente tool» y «LLM tool» son los mismos permisos del servidor que los chips Agentes e IA (un solo estado, sin copias locales)
   const bLock = q('#btn-agent-access-lock'), bLlm = q("#btn-llm-tool");
