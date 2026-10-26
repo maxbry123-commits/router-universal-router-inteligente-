@@ -80,6 +80,12 @@ def voz(b, clave, texto):
 
 def asr(b, clave, url_audio):
     doc = _json(b + RUTAS["asr"], clave, sdk_qwen.cuerpo_asr(url_audio))
+    for ruta in (("output", "text"), ("output", "output", "sentence", "text")):
+        texto = doc
+        for campo in ruta:
+            texto = texto.get(campo) if isinstance(texto, dict) else None
+        if isinstance(texto, str):
+            return texto.strip() or "(sin texto reconocido)"
     return "".join(c.get("text", "") for c in _contenido(doc)).strip() or "(sin texto reconocido)"
 
 

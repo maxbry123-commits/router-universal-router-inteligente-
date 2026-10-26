@@ -303,7 +303,7 @@ async def _control(accion, cuerpo, actor="director"):
     except PermissionError as error: raise HTTPException(status_code=403, detail=str(error)) from None
     except ValueError as error: raise HTTPException(status_code=400, detail=str(error)) from None
     except RuntimeError as error: raise HTTPException(status_code=502, detail=str(error)) from None
-TRABAJO_VENCE, MAX_COLA, _PROPIOS = 900, 200, set()
+TRABAJO_VENCE, MAX_COLA, _PROPIOS = float(os.environ.get("RIU_TRABAJO_VENCE_S", "0")), 200, set()  # sin latido de interrupcion por defecto
 def _en_curso(): return sum(1 for t in TRABAJOS.values() if t.get("estado") == "procesando") + loop_puente.en_curso()  # trabajos del chat + procesos del LOOP
 TRABAJOS, _TAREAS = {}, set()  # proceso_id -> {estado, proceso_id, choices|error}; en memoria (se pierde al reiniciar)
 FICHAS_QWEN = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "5": "ficha5-mvp"}
