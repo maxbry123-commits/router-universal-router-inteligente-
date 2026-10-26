@@ -1,16 +1,16 @@
-// pensando-3d.js — holograma en su fila, sin tapar botones y sin rótulo RUI.
+// pensando-3d.js — holograma encima de la caja, como antes. Dice Pensando, no cola.
 import { el, cargarCss } from "./ventanas-comun.js";
 const ESC = [
-  ["orbe", "Voz local…", "orbe.png"],
   ["cubo", "Pensando…", "cubo.png"],
+  ["orbe", "Voz local…", "orbe.png"],
   ["red", "Red…", "red.png"],
   ["anillos", "Principios…", "anillos.png"],
 ];
 export function montarPensando3D({ root, q }) {
   const f = q("#composer"); if (!f || f.dataset.p3d) return; f.dataset.p3d = "1"; cargarCss("pensando-3d");
-  const w = el("div", "p3d"); w.hidden = true; w.dataset.esc = "orbe"; w.setAttribute("role", "status"); w.setAttribute("aria-live", "polite");
-  w.innerHTML = '<div class="p3d-escena" aria-hidden="true"><img class="p3d-vis" alt=""><div class="p3d-cubo"><i class="f1"></i><i class="f2"></i><i class="f3"></i><i class="f4"></i><i class="f5"></i><i class="f6"></i></div></div><div class="p3d-txt"><strong>Voz local…</strong><span class="p3d-t">0 s</span></div>';
-  f.before(w);
+  const w = el("div", "p3d"); w.hidden = true; w.dataset.esc = "cubo"; w.setAttribute("role", "status"); w.setAttribute("aria-live", "polite");
+  w.innerHTML = '<div class="p3d-escena" aria-hidden="true"><img class="p3d-vis" alt=""><div class="p3d-cubo"><i class="f1"></i><i class="f2"></i><i class="f3"></i><i class="f4"></i><i class="f5"></i><i class="f6"></i></div><div class="p3d-anillo a1"></div><div class="p3d-anillo a2"></div><div class="p3d-anillo a3"></div></div><div class="p3d-txt"><strong>Pensando…</strong><span class="p3d-t">0 s</span></div>';
+  f.append(w);
   const t = w.querySelector(".p3d-t"), nom = w.querySelector("strong"), img = w.querySelector(".p3d-vis");
   const base = new URL("./p3d/", import.meta.url);
   img.addEventListener("load", () => w.classList.add("p3d-foto"));
