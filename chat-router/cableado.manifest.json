@@ -115,8 +115,8 @@
  },
  "protegido": {
   "CLAUDE.md": {
-   "archivos": 1,
-   "sha256": "6e3578da3fd5e7bb7ecfe02c12eae4e4db465b42372dd4d6b6f869b87685d12a"
+   "archivos": 0,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   "chat/auditoria": {
    "archivos": 4,
