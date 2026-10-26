@@ -10,7 +10,7 @@ export function instalarContexto() {
       if (oficial && a.instrucciones_fijas) a.instrucciones_fijas = oficial + "\n" + a.instrucciones_fijas;
       else if (oficial) a.instrucciones_fijas = oficial;
     } else {
-      a.message = aplicarAMensaje(String(a.message || ""), oficial);
+      a.message = aplicarAMensaje(String(a.message || ""), oficial, a.qwen?.modelo || a.model);
     }
     a.anclados = ampliarAnclados(Array.isArray(a.anclados) ? a.anclados : []);
     const g = datosGobernanza(); if (g) Object.assign(a, g);
