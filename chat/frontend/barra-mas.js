@@ -137,6 +137,21 @@ function meter(id, hoja) {
 }
 
 const NOMBRE = { mas: "Más opciones", motor: "Panel del motor", "pill-claves": "Claves", "pill-workflows": "Workflows", "pill-constitucion": "Constitución" };
+function abrirTools() {
+  const x = document.querySelector("#btn-tools");
+  if (x) x.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+}
+function filaUna(hoja, id, nombre, fn) {
+  const lista = listaDe(hoja);
+  if (lista.querySelector("#" + id)) return;
+  const b = document.createElement("button");
+  b.type = "button";
+  b.id = id;
+  b.className = "secondary";
+  b.textContent = nombre;
+  b.addEventListener("click", fn);
+  lista.append(b);
+}
 function meterPill(id, hoja) {
   const b = document.getElementById(id);
   if (!b) return;
@@ -259,6 +274,8 @@ function tres() {
   PILLS_CTX.forEach((id) => meterPill(id, ctx));
   PILLS_TRAB.forEach((id) => meterPill(id, trab));
   PILLS_CUAD.forEach((id) => meterPill(id, cuad));
+  filaUna(trab, "btn-ir-yaiwes", "Yaiwes.md", () => { const b = document.querySelector("#btn-loop"); if (b) b.click(); });
+  filaUna(trab, "btn-ir-tools", "Tools", abrirTools);
   parqueAuto();
   const mas = document.getElementById("btn-mas");
   if (mas) mas.remove();

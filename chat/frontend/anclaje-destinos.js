@@ -31,7 +31,17 @@ export function montarDestinos({ root, q, tell }) {
     OBJETIVOS.forEach(([id, nom]) => { const on = id === tipo, b = boton(nom, "toggle" + (on ? " on" : ""), () => cambiar(id)); b.setAttribute("aria-pressed", String(on)); bs.append(b); });
     fila.append(bs);
     const acc = el("div", "vn-fila");
-    acc.append(boton("Yaiwes.md", "toggle", () => { const t = q("#mh-toggle"); if (t) t.click(); else tell("Yaiwes.md está más abajo, en el handoff"); }), boton("Tools", "toggle", () => { const b = document.querySelector("#btn-tools"); const s = q("#ventana-ancla"); if (s) s.hidden = true; if (b) b.click(); else tell("Tools no está"); }));
+    acc.append(boton("Yaiwes.md", "toggle", () => {
+      const s = q("#sh-ancla"), h = q("#ventana-ancla"), ta = q("#mi-handoff");
+      if (h) h.hidden = true;
+      if (s) s.hidden = false;
+      if (ta) ta.focus();
+    }), boton("Tools", "toggle", () => {
+      const b = document.querySelector("#btn-tools"), s = q("#ventana-ancla");
+      if (s) s.hidden = true;
+      if (b) b.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+      else tell("Tools no está");
+    }));
     fila.append(acc);
     // encendido/apagado de CADA ancla, siempre visible en la hoja (la Constitución arranca apagada; solo viaja si está encendida)
     const est = el("div", "vn-fila vn-encendidos"); est.append(el("div", "vn-t", "Encendido de cada ancla"));
