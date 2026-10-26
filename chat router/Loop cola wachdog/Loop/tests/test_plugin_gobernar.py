@@ -21,6 +21,7 @@ class PluginGobernarTests(unittest.TestCase):
             t = Path(t)
             m._WS_ROOT, m._MEM = t / 'ws', t / 'mem'
             m._PuertoModelo = lambda modelo, sesion: DemoModel(prop)
+            m._chat_modelo = lambda modelo, prompt, sesion: {'reply': '{"status":"PASS"}'}
             r = m.handle('gobernar', {'objetivo': 'Crear evidencia real y verificarla en el workspace',
                                       'mision': mision})
             self.assertEqual(r['estado'], 'procesando')
@@ -42,30 +43,42 @@ if __name__ == '__main__':
     unittest.main()
 
 
-class SkillsDeC1LlegaAEjecucion(unittest.TestCase):
-    def test_los_skills_elegidos_en_c1_se_ejecutan_con_verify(self):
+class TodosLosMotoresCorren(unittest.TestCase):
+    def _correr(self, chat):
         import json as _j
         from nct_loop.ports import DemoModel
         m = _cargar()
         prop = _j.loads((ROOT / 'examples/mock_proposals.json').read_text())
         mision = _j.loads((ROOT / 'examples/mission_smoke.json').read_text())
-        with tempfile.TemporaryDirectory() as t:
-            t = Path(t)
-            m._WS_ROOT, m._MEM = t / 'ws', t / 'mem'
-            m._PuertoModelo = lambda modelo, sesion: DemoModel(prop)
-            m._chat_modelo = lambda modelo, prompt, sesion: {'reply': '{"status":"PASS"}'}
-            r = m.handle('gobernar', {'objetivo': 'Verificar la interfaz web y las pruebas de regresion del frontend',
-                                      'mision': mision})
-            for _ in range(200):
-                e = m.handle('estado', {'proceso_id': r['proceso_id']})
-                if e['estado'] != 'procesando':
-                    break
-                time.sleep(0.1)
-            res = e['resultado']
-            self.assertEqual(res['status'], 'DONE_VERIFICADO', res)
-            c1 = next(c for c in res['ciclos'] if c['ciclo'] == 'C1_INVESTIGACION')
-            c5 = next(c for c in res['ciclos'] if c['ciclo'] == 'C5_EJECUCION')
-            ejecutadas = c5.get('skills_ejecutadas') or []
-            self.assertTrue(c1['skills'])
-            self.assertEqual({x['skill_id'] for x in ejecutadas}, set(c1['skills'][:len(ejecutadas)]))
-            self.assertTrue(ejecutadas and all(x['status'] == 'PASS' for x in ejecutadas), ejecutadas)
+        self.t = tempfile.TemporaryDirectory()
+        t = Path(self.t.name)
+        m._WS_ROOT, m._MEM = t / 'ws', t / 'mem'
+        m._PuertoModelo = lambda modelo, sesion: DemoModel(prop)
+        m._chat_modelo = chat
+        r = m.handle('gobernar', {'objetivo': 'Cualquier objetivo que no menciona ningun skill en particular', 'mision': mision})
+        for _ in range(600):
+            e = m.handle('estado', {'proceso_id': r['proceso_id']})
+            if e['estado'] != 'procesando':
+                break
+            time.sleep(0.1)
+        return m, e['resultado']
+
+    def tearDown(self):
+        getattr(self, 't', None) and self.t.cleanup()
+
+    def test_los_311_motores_se_ejecutan_todos_sin_seleccion(self):
+        m, res = self._correr(lambda modelo, prompt, sesion: {'reply': '{"status":"PASS"}'})
+        self.assertEqual(res['status'], 'DONE_VERIFICADO', {c['ciclo']: c.get('motores') for c in res['ciclos']})
+        total = sum(c['motores']['total'] for c in res['ciclos'])
+        ok = sum(c['motores']['pass'] for c in res['ciclos'])
+        self.assertEqual((total, ok), (311, 311))
+        self.assertEqual(total, len(m._registro_ecc()))
+
+    def test_un_motor_que_falla_deja_el_ciclo_en_rojo_y_no_hay_done(self):
+        def chat(modelo, prompt, sesion):
+            return {'reply': '{"status":"FAIL"}' if '[ECC accessibility ' in prompt else '{"status":"PASS"}'}
+        m, res = self._correr(chat)
+        self.assertNotEqual(res['status'], 'DONE_VERIFICADO')
+        malo = next(c for c in res['ciclos'] if c.get('motores') and 'accessibility' in c['motores']['fallos'])
+        self.assertFalse(malo['ok'])
+        self.assertEqual(res['watchdog']['estado'], 'ALERTA')

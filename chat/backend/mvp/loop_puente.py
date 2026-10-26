@@ -6,6 +6,7 @@ import importlib.util
 from pathlib import Path
 
 PLUGINS = ("nct_loop", "cola50", "watchdog48")
+MIRROR = ("mirror_listar", "mirror_configurar", "mirror_agregar", "mirror_quitar")  # el selector del chat los pide a puente_chat
 _RAIZ = Path(__file__).resolve().parents[3]
 _CARGADOS = {}
 

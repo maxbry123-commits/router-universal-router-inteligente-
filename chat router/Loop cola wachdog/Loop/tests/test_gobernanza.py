@@ -100,13 +100,21 @@ class GobernanzaTests(unittest.IsolatedAsyncioTestCase):
         c5 = next(c for c in r['ciclos'] if c['ciclo'] == 'C5_EJECUCION')
         self.assertEqual(c5['intentos'], 2)
 
-    async def test_regresion_fallida_impide_done(self):
-        async def skill(sid, tid, obj):
-            return {'status': 'FAIL'}
-        sel = lambda o, n: [{'skill_id': 'ai-regression-testing', 'macrociclo': 'MAIN'}]
-        r = await self.gob(correr_skill=skill, seleccionar_skills=sel).run(
-            {'objetivo': 'Crear evidencia real y verificarla'})
+    async def test_motores_de_cada_ciclo_corren_todos_y_uno_roto_impide_done(self):
+        llamados = []
+
+        async def motores(ciclo, objetivo):
+            llamados.append(ciclo)
+            return {'total': 3, 'pass': 3, 'fallos': []}
+        r = await self.gob(motores=motores).run({'objetivo': 'Crear evidencia real y verificarla'})
+        self.assertEqual(r['status'], 'DONE_VERIFICADO', r)
+        self.assertEqual(llamados, list(CICLOS))
+
+        async def roto(ciclo, objetivo):
+            return {'total': 3, 'pass': 2 if ciclo == 'C4_PREPARACION' else 3, 'fallos': ['x']}
+        r = await self.gob(motores=roto).run({'objetivo': 'Crear evidencia real y verificarla'})
         self.assertEqual(r['status'], 'FALLO_VERIFICACION')
+        self.assertFalse(next(c for c in r['ciclos'] if c['ciclo'] == 'C4_PREPARACION')['ok'])
 
 
 if __name__ == '__main__':

@@ -642,33 +642,49 @@ def _hilo(pid: str, p: dict) -> dict:
         return {'status': 'FAIL', 'error': '%s: %s' % (type(e).__name__, e)}
 
 
+MOTORES_PARALELOS = 8
+
+
+async def _motores_de_ciclo(ciclo: str, objetivo: str, p: dict, pid: str) -> dict:
+    """Ejecuta TODOS los motores code (ex skills) del ciclo, sin seleccion. Varios a la vez
+    (MOTORES_PARALELOS); cada uno corre MAIN -> VERIFY -> RECOVERY con recibos."""
+    ids = sorted(s for s, v in _registro_ecc().items() if v['macrociclo'].upper() == ciclo)
+    sem = asyncio.Semaphore(MOTORES_PARALELOS)
+
+    async def uno(sid):
+        async with sem:
+            if pid in _CANCEL:
+                return sid, 'CANCELADO'
+            r = await _ejecutar_skill_motor(sid, {'modelo': p.get('modelo'), 'sesion': p.get('sesion'),
+                                                  'task_id': ciclo + '-' + sid, 'objetivo': objetivo,
+                                                  'event': 'gobernanza.' + ciclo})
+            return sid, str(r.get('status'))
+
+    hechos = await asyncio.gather(*(uno(x) for x in ids))
+    fallos = sorted(sid for sid, st in hechos if st != 'PASS')
+    return {'total': len(ids), 'pass': len(ids) - len(fallos), 'fallos': fallos}
+
+
 async def _gobernar(pid: str, p: dict) -> dict:
-    """OBJETIVO -> C0..C7 -> WATCHDOG (nct_loop/gobernanza.py) sobre el engine CODA."""
+    """OBJETIVO -> C0..C7 -> WATCHDOG (nct_loop/gobernanza.py) sobre el engine CODA.
+    Los 311 motores code corren todos, cada uno en su ciclo."""
     from nct_loop.gobernanza import Gobernanza
-    p = dict(p)
+    p = _resolver_mirror(dict(p))
     p['mission_id'] = str(p.get('mission_id') or 'nct-' + pid[-12:])
-    p['top_skills'] = int(p.get('top_skills') or 3)
-
-    elegidos = {'skills': []}
-
-    def construir(q, skills):
-        elegidos['skills'] = list(skills)  # lo que C1 selecciono llega a la ejecucion
-        return _build_mission(dict(q, auto_skills=False, skills=skills))
+    activar = p.get('motores', True) is not False
 
     async def ejecutar(_mission):
-        return await _correr(pid, dict(p, auto_skills=False, skills=elegidos['skills']))
+        return await _correr(pid, dict(p, auto_skills=False, skills=[]))
 
-    async def skill(sid, tid, obj):
-        return await _ejecutar_skill_motor(sid, {'modelo': p.get('modelo'), 'sesion': p.get('sesion'),
-                                                 'task_id': tid, 'objetivo': obj, 'event': 'gobernanza.verify'})
+    async def motores(ciclo, objetivo):
+        return await _motores_de_ciclo(ciclo, objetivo, p, pid)
 
     from nct_loop.ricardo_adapter import RicardoOpsDemo
     gob = Gobernanza(
         ricardo=RicardoOpsDemo(_WS_ROOT / pid, _POLICY),
         ejecutar_mision=ejecutar,
-        construir_mision=construir,
-        seleccionar_skills=_seleccionar_skills,
-        correr_skill=skill,
+        construir_mision=lambda q, _s: _build_mission(dict(q, auto_skills=False, skills=[])),
+        motores=motores if activar else None,
         cancelado=lambda: pid in _CANCEL,
         ops_permitidas=_OPS_RICARDO,
         checkpoint_dir=_WS_ROOT / pid,
@@ -707,17 +723,17 @@ def _guardar_extras(d: dict) -> None:
 
 
 def _espejo() -> dict:
-    """Espejo generado + los espejos que se agregaron en caliente (mirror_agregar)."""
+    """Espejo generado + los espejos que se agregaron en caliente (fuente_agregar)."""
     doc, extra = _espejo_base(), _extras()
     for a in doc['agentes']:
         a['mirrors'] = list(a.get('mirrors') or []) + list(extra.get(a['id'], []))
     return doc
 
 
-def _mirror(action: str, p: dict) -> dict:
+def _fuente(action: str, p: dict) -> dict:
     ids = {a['id'] for a in _espejo_base()['agentes']}
     aid = str(p.get('agente') or '')
-    if action == 'mirror_listar':
+    if action == 'fuente_listar':
         doc = _espejo()
         lista = [a for a in doc['agentes'] if not aid or a['id'] == aid]
         return {'ok': True, 'agentes': len(lista), 'mirrors': sum(len(a['mirrors']) for a in lista),
@@ -725,7 +741,7 @@ def _mirror(action: str, p: dict) -> dict:
     if aid not in ids:
         return {'error': 'AGENTE_NO_EXISTE', 'agente': aid}
     extra = _extras()
-    if action == 'mirror_agregar':
+    if action == 'fuente_agregar':
         url = str(p.get('url') or '')
         if not _URL_GH.match(url):
             return {'error': 'url debe ser https://github.com/<dueno>/<repo>'}
@@ -739,7 +755,7 @@ def _mirror(action: str, p: dict) -> dict:
         extra.setdefault(aid, []).append(m)
         _guardar_extras(extra)
         return {'ok': True, 'agente': aid, 'mirror': m, 'total': len(actuales) + 1}
-    if action == 'mirror_quitar':
+    if action == 'fuente_quitar':
         mid = str(p.get('mirror_id') or '')
         antes = len(extra.get(aid, []))
         extra[aid] = [m for m in extra.get(aid, []) if m.get('id') != mid]
@@ -755,7 +771,7 @@ def _sha_remoto(url: str, rama: str) -> str:
     return r.stdout.split()[0] if r.returncode == 0 and r.stdout.strip() else ''
 
 
-def _mirror_sync(p: dict) -> dict:
+def _fuente_sync(p: dict) -> dict:
     """Refresca el sha de cada espejo remoto con git ls-remote (sin clonar). Los de
     config/ se informan; los agregados en caliente se actualizan en state/."""
     aid, extra, vistos = str(p.get('agente') or ''), _extras(), []
@@ -778,6 +794,99 @@ def _mirror_sync(p: dict) -> dict:
     return {'ok': True, 'revisados': len(vistos), 'espejos': vistos}
 
 
+# --- Mirrors = instancias de agente (hermes-01..10, openclaw-01..10, ...) con su modelo ---------------
+_TIPOS_MIRROR = {'hermes': 'hermes-agent', 'openclaw': 'openclaw', 'claudecode': 'claude-code', 'codex': None}
+_MAX_POR_TIPO = 10
+
+
+def _cfg_mirror(sesion: str) -> tuple:
+    f = _STATE / 'mirror_cfg.json'
+    todo = json.loads(f.read_text(encoding='utf-8')) if f.is_file() else {}
+    cfg = todo.setdefault(sesion, {})
+    cfg.setdefault('modelo', {})
+    cfg.setdefault('extra', [])
+    return todo, cfg
+
+
+def _guardar_cfg_mirror(todo: dict) -> None:
+    _STATE.mkdir(exist_ok=True)
+    tmp = _STATE / 'mirror_cfg.tmp'
+    tmp.write_text(json.dumps(todo, ensure_ascii=False, indent=1), encoding='utf-8')
+    tmp.replace(_STATE / 'mirror_cfg.json')
+
+
+def _llamables() -> list:
+    return [{'id': a['id'], 'grupo': a['id'].split('-')[0].split('.')[0].upper(), 'nombre': a['id']}
+            for a in _espejo_base()['agentes'] if a['tipo'] == 'modelo' and a['estado'] == 'llamable']
+
+
+def _slots(extra: list) -> list:
+    base = [{'id': '%s-%02d' % (t, i), 'tipo': t, 'nombre': '%s %02d' % (t.title(), i)}
+            for t in _TIPOS_MIRROR for i in range(1, _MAX_POR_TIPO + 1)]
+    return base + [dict(x) for x in extra]
+
+
+def _mirror_inst(action: str, p: dict) -> dict:
+    sesion = str(p.get('sesion') or 'general')[:60]
+    todo, cfg = _cfg_mirror(sesion)
+    slots = _slots(cfg.get('extra') or [])
+    ids = {x['id'] for x in slots}
+    if action == 'mirror_listar':
+        reg = {a['id']: a for a in _espejo()['agentes']}
+        for x in slots:
+            x['modelo'] = cfg['modelo'].get(x['id'])
+            fuente = reg.get(_TIPOS_MIRROR.get(x['tipo']) or x['tipo'])
+            x['fuentes'] = [m['url'] for m in (fuente or {}).get('mirrors', []) if m.get('url')]
+        return {'ok': True, 'agentes': slots, 'modelos': _llamables(), 'sesion': sesion}
+    if action == 'mirror_configurar':
+        aid, mod = str(p.get('agente') or '')[:60], str(p.get('modelo') or '')[:120]
+        if not aid:
+            return {'error': 'GAP_MIRROR_AGENTE_VACIO'}
+        if aid not in ids:
+            return {'error': 'MIRROR_NO_EXISTE', 'agente': aid}
+        if mod and mod not in {m['id'] for m in _llamables()}:
+            return {'error': 'MODELO_NO_LLAMABLE', 'modelo': mod}
+        if mod:
+            cfg['modelo'][aid] = mod
+        else:
+            cfg['modelo'].pop(aid, None)
+        _guardar_cfg_mirror(todo)
+        return {'ok': True, 'agente': aid, 'modelo': mod or None}
+    if action == 'mirror_agregar':
+        tipo, nombre = str(p.get('tipo') or 'custom')[:30], str(p.get('nombre') or '')[:60]
+        if not nombre:
+            return {'error': 'GAP_MIRROR_NOMBRE_VACIO'}
+        if tipo != 'custom' and tipo not in _TIPOS_MIRROR and tipo not in {a['id'] for a in _espejo_base()['agentes']}:
+            return {'error': 'TIPO_NO_EXISTE', 'tipo': tipo}
+        if sum(1 for x in slots if x['tipo'] == tipo) >= _MAX_POR_TIPO:
+            return {'error': 'GAP_MIRROR_MAX', 'tipo': tipo, 'max': _MAX_POR_TIPO}
+        nid = '%s-%02d' % (tipo, 1 + sum(1 for x in slots if x['tipo'] == tipo))
+        while nid in ids:
+            nid += 'x'
+        cfg.setdefault('extra', []).append({'id': nid, 'tipo': tipo, 'nombre': nombre})
+        _guardar_cfg_mirror(todo)
+        return {'ok': True, 'id': nid}
+    if action == 'mirror_quitar':
+        aid = str(p.get('agente') or '')[:60]
+        if aid not in {x['id'] for x in cfg.get('extra') or []}:
+            return {'error': 'solo se quitan los mirrors agregados', 'agente': aid}
+        cfg['extra'] = [x for x in cfg['extra'] if x['id'] != aid]
+        cfg['modelo'].pop(aid, None)
+        _guardar_cfg_mirror(todo)
+        return {'ok': True, 'agente': aid}
+    return {'error': 'ACCION_DESCONOCIDA'}
+
+
+def _resolver_mirror(p: dict) -> dict:
+    """Si el pedido trae `agente` (un mirror, p. ej. hermes-03), su modelo configurado manda."""
+    aid = str(p.get('agente') or '')
+    if aid:
+        _t, cfg = _cfg_mirror(str(p.get('sesion') or 'general')[:60])
+        if cfg['modelo'].get(aid):
+            p['modelo'] = cfg['modelo'][aid]
+    return p
+
+
 def handle(action: str, payload: "dict | None" = None) -> dict:
     p = payload or {}
     if action in ('status', 'health'):
@@ -797,14 +906,19 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
         pid = 'gob-' + uuid.uuid4().hex[:12]
         _PROC[pid] = _POOL.submit(_hilo_gob, pid, dict(p))
         return {'estado': 'procesando', 'proceso_id': pid, 'ciclos': list(__import__('nct_loop.gobernanza', fromlist=['CICLOS']).CICLOS)}
-    if action in ('mirror_listar', 'mirror_agregar', 'mirror_quitar'):
+    if action in ('mirror_listar', 'mirror_configurar', 'mirror_agregar', 'mirror_quitar'):
         try:
-            return _mirror(action, p)
+            return _mirror_inst(action, p)
         except ValueError as e:
             return {'error': str(e)}
-    if action == 'mirror_sync':
+    if action in ('fuente_listar', 'fuente_agregar', 'fuente_quitar'):
         try:
-            return _mirror_sync(p)
+            return _fuente(action, p)
+        except ValueError as e:
+            return {'error': str(e)}
+    if action == 'fuente_sync':
+        try:
+            return _fuente_sync(p)
         except ValueError as e:
             return {'error': str(e)}
     if action == 'agentes':
@@ -825,6 +939,7 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
             if not str(q.get('objetivo') or q.get('yaiwes_md') or '').strip():
                 return {'error': 'objetivo %d vacio' % i}
             q.setdefault('modelo', p.get('modelo'))
+            q.setdefault('agente', p.get('agente'))
             q.setdefault('sesion', '%s-%d' % (gid, i))
             pid = 'gob-' + uuid.uuid4().hex[:12]
             _PROC[pid] = _POOL.submit(_hilo_gob, pid, q)
@@ -904,5 +1019,5 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
 
 ACCIONES = ['status', 'health', 'ejecutar', 'gobernar', 'estado', 'cancelar',
             'skills', 'skill_fases', 'skill_ejecutar',
-            'skills_registro', 'skills_seleccionar', 'agentes', 'mirror_listar', 'mirror_agregar', 'mirror_quitar', 'mirror_sync',
+            'skills_registro', 'skills_seleccionar', 'agentes', 'fuente_listar', 'fuente_agregar', 'fuente_quitar', 'fuente_sync',
             'paralelo', 'estado_paralelo']

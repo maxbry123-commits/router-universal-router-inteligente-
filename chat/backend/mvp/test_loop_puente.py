@@ -39,9 +39,16 @@ class LoopPuente(Base):
         r = self.http("nct_loop", "agentes", {"tipo": "modelo"}).json()["result"]
         self.assertTrue({"qwen3.8-max", "glm-5.3", "deepseek-v4-pro"} <= {a["id"] for a in r["agentes"]})
 
-    def test_mirrors_de_hermes_y_openclaw_por_http(self):
+    def test_selector_de_mirrors_del_chat_ya_no_es_simulado(self):  # la ruta que usa chat/frontend/agentes-mirror.js
+        r = self.http("puente_chat", "mirror_listar", {"sesion": "t1"}).json()["result"]
+        self.assertEqual(len(r["agentes"]), 40)
+        self.assertIn("qwen3.8-max", {m["id"] for m in r["modelos"]})
+        c = self.http("puente_chat", "mirror_configurar", {"sesion": "t1", "agente": "openclaw-01", "modelo": "glm-5.3"}).json()["result"]
+        self.assertEqual(c["modelo"], "glm-5.3")
+
+    def test_fuentes_de_hermes_y_openclaw_por_http(self):
         for aid in ("hermes-agent", "openclaw"):
-            r = self.http("nct_loop", "mirror_listar", {"agente": aid}).json()["result"]
+            r = self.http("nct_loop", "fuente_listar", {"agente": aid}).json()["result"]
             self.assertEqual({m["tipo"] for m in r["detalle"][aid]}, {"fork", "upstream"})
 
     def test_paralelo_rechaza_mas_de_cuatro(self):

@@ -384,6 +384,8 @@ def _lanzar(coro):
     tarea = asyncio.create_task(coro); _TAREAS.add(tarea); tarea.add_done_callback(_TAREAS.discard)
 @app.post("/plugins/{plugin}/call/{accion}", dependencies=[Depends(verificar)])
 async def plugin_call(plugin: str, accion: str, cuerpo: dict):
+    if plugin == "puente_chat" and accion in loop_puente.MIRROR:  # selector de mirrors del chat -> instancias de agente de nct_loop
+        return {"status": "ok", "result": await loop_puente.llamar("nct_loop", accion, cuerpo)}
     if plugin in loop_puente.PLUGINS:  # LOOP, Cola y Watchdog: Chat -> Harness -> Router -> plugin
         try: return {"status": "ok", "result": await loop_puente.llamar(plugin, accion, cuerpo)}
         except (OSError, ValueError) as error: raise HTTPException(status_code=503, detail=str(error)) from None

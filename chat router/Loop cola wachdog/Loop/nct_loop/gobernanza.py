@@ -33,13 +33,12 @@ MICROCICLO = (
     ('IMPLEMENTAR', 'etapa', 'IMPLEMENT'),
     ('EJECUTAR_GREEN', 'etapa', 'TEST_GREEN'),
     ('REFACTORIZAR', 'etapa', 'REVIEW'),
-    ('PRUEBAS_REGRESION', 'skill', 'ai-regression-testing'),
+    ('PRUEBAS_REGRESION', 'motor', 'M4_VERIFICACION'),
     ('VERIFICADOR_INDEPENDIENTE', 'motor', 'M4_VERIFICACION'),
     ('REPARACION_ACOTADA', 'motor', 'M3_EJECUCION'),
     ('CHECKPOINT', 'motor', 'M5_OPERACIONES'),
 )
 
-SKILLS_REGRESION = ('ai-regression-testing', 'verification-loop', 'module-regression')
 
 
 class Gobernanza:
@@ -47,21 +46,19 @@ class Gobernanza:
 
     ejecutar_mision(mission) -> awaitable dict   engine.run
     construir_mision(p, skills) -> dict          misión con units/DAG
-    seleccionar_skills(objetivo, top) -> list    registro ECC
-    correr_skill(skill_id, task_id, objetivo) -> awaitable dict
+    motores(ciclo, objetivo) -> awaitable dict   ejecuta TODOS los motores code (ex skills) del ciclo
+                                                 {'total','pass','fallos':[ids]}; ninguno se elige
     council(contexto) -> awaitable dict          solo si C2 lo pide
     cancelado() -> bool                          Sheriff/Guardian: bloqueo externo
     ricardo                                      ejecutor Ricardo (Motor confinado) usado en C0..C7
     """
 
-    def __init__(self, *, ejecutar_mision, construir_mision, seleccionar_skills=None,
-                 correr_skill=None, council=None, cancelado=None,
+    def __init__(self, *, ejecutar_mision, construir_mision, motores=None, council=None, cancelado=None,
                  ops_permitidas=None, checkpoint_dir=None, max_reparaciones=2, ricardo=None):
         self.ricardo = ricardo  # RicardoOpsDemo / ejecutor Motor: participa en cada ciclo
         self.ejecutar_mision = ejecutar_mision
         self.construir_mision = construir_mision
-        self.seleccionar_skills = seleccionar_skills or (lambda o, n: [])
-        self.correr_skill = correr_skill
+        self.motores = motores
         self.council = council
         self.cancelado = cancelado or (lambda: False)
         self.ops_permitidas = set(ops_permitidas or [])
@@ -101,6 +98,17 @@ class Gobernanza:
         f.write_text(json.dumps(datos, ensure_ascii=False, indent=1, default=str), encoding='utf8')
         return str(f)
 
+    async def _motores(self, ciclo, objetivo):
+        """Los motores code del ciclo corren todos, sin seleccion; un solo fallo cierra el ciclo en rojo."""
+        if self.motores is None:
+            return None
+        try:
+            r = dict(await self.motores(ciclo, objetivo))
+        except Exception as e:  # noqa: BLE001
+            return {'total': 0, 'pass': 0, 'fallos': [], 'ok': False, 'error': '%s: %s' % (type(e).__name__, e)}
+        r['ok'] = r.get('pass') == r.get('total')
+        return r
+
     async def _ricardo_inspeccionar(self):
         """C1: inspect_workspace por el Motor Ricardo (lectura real del workspace)."""
         if self.ricardo is None:
@@ -136,42 +144,43 @@ class Gobernanza:
         motivo = ('objetivo_vacio' if len(objetivo) < 8 else
                   'bloqueado_por_guardian' if self.cancelado() else
                   'ops_fuera_de_politica' if fuera else None)
-        self._cerrar('C0_ADMISION', motivo is None, motivo=motivo, ops_fuera=fuera,
-                     ricardo={'catalogo_allowed_ops': sorted(self.ops_permitidas)})
+        m0 = await self._motores('C0_ADMISION', objetivo) if motivo is None else None
+        self._cerrar('C0_ADMISION', motivo is None and (m0 is None or m0['ok']), motivo=motivo, ops_fuera=fuera,
+                     motores=m0, ricardo={'catalogo_allowed_ops': sorted(self.ops_permitidas)})
         if motivo:
             return self._salida('RECHAZADO', p, motivo=motivo)
 
-        # C1 INVESTIGACION (M2): skills y macrociclos que aplican al objetivo.
-        skills = list(self.seleccionar_skills(objetivo, int(p.get('top_skills') or 8)) or [])
-        ids = [s['skill_id'] if isinstance(s, dict) else str(s) for s in skills]
+        # C1 INVESTIGACION (M2): Ricardo inspecciona el workspace y corren los motores de C1.
         inspeccion = await self._ricardo_inspeccionar()
-        self._cerrar('C1_INVESTIGACION', True, skills=ids, ricardo=inspeccion,
-                     macrociclos=sorted({s.get('macrociclo') for s in skills
-                                         if isinstance(s, dict) and s.get('macrociclo')}))
+        m1 = await self._motores('C1_INVESTIGACION', objetivo)
+        self._cerrar('C1_INVESTIGACION', m1 is None or m1['ok'], motores=m1, ricardo=inspeccion)
 
-        # C2 DECISION (M2): Council solo si hay ambiguedad (sin skills o objetivo complejo).
+        # C2 DECISION (M2): Council solo si el objetivo es complejo.
         clas = classify(objetivo, [])
         ruta = choose_route(clas)
-        pide_council = (not ids) or clas['intent'] == 'compleja'
+        pide_council = clas['intent'] == 'compleja'
         decision = {'ruta': ruta['route'], 'council': 'NO_REQUERIDO'}
         if pide_council:
             if self.council is None:
                 decision['council'] = 'REQUERIDO_NO_CONECTADO'
             else:
-                r = await self.council({'objetivo': objetivo, 'ruta': ruta, 'skills': ids})
+                r = await self.council({'objetivo': objetivo, 'ruta': ruta})
                 decision['council'] = 'CONSULTADO'
                 decision['veredicto'] = r.get('veredicto') if isinstance(r, dict) else None
         decision['ricardo'] = {'tipado': 'pendiente_C4'}
-        self._cerrar('C2_DECISION', True, **decision)
+        m2 = await self._motores('C2_DECISION', objetivo)
+        self._cerrar('C2_DECISION', m2 is None or m2['ok'], motores=m2, **decision)
 
         # C3 PLANIFICACION (M2): DAG de unidades, sin ciclos ni dependencias rotas.
-        mission = self.construir_mision(p, ids)
+        mission = self.construir_mision(p, [])
         units = mission.get('units') or []
         orden, err = _orden_topologico(units)
         dag = self._ricardo_dag(units) if not err else None
         if dag is not None and not dag['ok']:
             err = 'dag_rechazado_por_ricardo: ' + dag['error']
-        self._cerrar('C3_PLANIFICACION', not err, error=err, unidades=orden, ricardo=dag)
+        m3 = await self._motores('C3_PLANIFICACION', objetivo) if not err else None
+        self._cerrar('C3_PLANIFICACION', not err and (m3 is None or m3['ok']), error=err, unidades=orden,
+                     motores=m3, ricardo=dag)
         if err:
             return self._salida('BLOQUEADO', p, motivo=err)
 
@@ -179,8 +188,9 @@ class Gobernanza:
         permisos = {u['id']: sorted(u.get('allowed_ops') or []) for u in units}
         sin = [k for k, v in permisos.items() if not v]
         fuera_cat = sorted({o for v in permisos.values() for o in v} - self.ops_permitidas) if self.ops_permitidas else []
-        self._cerrar('C4_PREPARACION', not sin and not fuera_cat, permisos=permisos, unidades_sin_permiso=sin,
-                     ricardo={'ops_fuera_de_catalogo': fuera_cat})
+        m4 = await self._motores('C4_PREPARACION', objetivo) if not sin and not fuera_cat else None
+        self._cerrar('C4_PREPARACION', not sin and not fuera_cat and (m4 is None or m4['ok']), permisos=permisos,
+                     unidades_sin_permiso=sin, motores=m4, ricardo={'ops_fuera_de_catalogo': fuera_cat})
         if fuera_cat:
             return self._salida('BLOQUEADO', p, motivo='ops_fuera_de_catalogo_ricardo')
         if sin:
@@ -195,10 +205,11 @@ class Gobernanza:
                or intentos > self.max_reparaciones or self.cancelado():
                 break
         micro = _microciclo(resultado, units)
-        self._cerrar('C5_EJECUCION', resultado.get('status') in ('DONE_VERIFICADO', 'ALREADY_COMPLETED'),
+        m5 = await self._motores('C5_EJECUCION', objetivo)
+        self._cerrar('C5_EJECUCION', resultado.get('status') in ('DONE_VERIFICADO', 'ALREADY_COMPLETED')
+                     and (m5 is None or m5['ok']), motores=m5,
                      ricardo={'recibos_motor': sum(1 for r in resultado.get('receipts') or []
                                                   if (r.get('evidence') or {}).get('report_origin') == 'MOTOR_CLI_LOCAL_REAL')},
-                     skills_ejecutadas=resultado.get('skills_ejecutadas'),
                      intentos=intentos, estado_engine=resultado.get('status'),
                      error=resultado.get('error'), microciclo=micro)
 
@@ -206,15 +217,8 @@ class Gobernanza:
         # (tres capas + gate de evidencia) y corre skills de regresion como motores.
         triple = (resultado.get('triple_gate') or {})
         evidencia_ok = bool(triple.get('ok')) or resultado.get('status') == 'ALREADY_COMPLETED'
-        regresion = []
-        if self.correr_skill and evidencia_ok:
-            disponibles = [s for s in SKILLS_REGRESION if s in ids] or []
-            for sid in disponibles[:2]:
-                r = await self.correr_skill(sid, units[0]['id'], objetivo)
-                regresion.append({'skill_id': sid, 'status': (r or {}).get('status')})
-        regresion_ok = all(x['status'] == 'PASS' for x in regresion)
-        self._cerrar('C6_VERIFICACION', evidencia_ok and regresion_ok,
-                     evidencia=evidencia_ok, regresion=regresion,
+        m6 = await self._motores('C6_VERIFICACION', objetivo)
+        self._cerrar('C6_VERIFICACION', evidencia_ok and (m6 is None or m6['ok']), evidencia=evidencia_ok, motores=m6,
                      ricardo={'tres_capas_por_unidad': [x.get('ok') for x in triple.get('per_task') or []]})
 
         # C7 INTEGRACION (M5): checkpoint y cierre. DONE solo con C6 en PASS.
@@ -222,7 +226,9 @@ class Gobernanza:
         ruta_cp = self._checkpoint(mission.get('mission_id', 'sin-id'),
                                    {'ciclos': self.ciclos, 'status_engine': resultado.get('status'),
                                     'mission_sha': stable_hash(mission)})
-        self._cerrar('C7_INTEGRACION', todo_ok, checkpoint=ruta_cp,
+        m7 = await self._motores('C7_INTEGRACION', objetivo)
+        todo_ok = todo_ok and (m7 is None or m7['ok'])
+        self._cerrar('C7_INTEGRACION', todo_ok, checkpoint=ruta_cp, motores=m7,
                      ricardo={'ciclos_con_ricardo': [c['ciclo'] for c in self.ciclos if c.get('ricardo') is not None]})
         return self._salida('DONE_VERIFICADO' if todo_ok else 'FALLO_VERIFICACION', p,
                             mission_id=mission.get('mission_id'), engine=resultado.get('status'),
