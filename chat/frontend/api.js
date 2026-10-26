@@ -61,6 +61,26 @@ function remoto(headers) {
 const L4 = { job: null, url: null };
 // ---- procesos en curso: una recarga NO relanza la tarea; se retoma por su proceso_id (sesion, proceso_id, direccion exacta del Router, hora) ----
 const CP = 'riu_proc_v1';
+const TOPE_ESPERA = 48 * 3600 * 1000;
+const esTope48 = (err) => /se alcanzaron las 48 h/.test(String(err || ''));
+const fmtReloj = (ms) => {
+  const seg = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(seg / 3600), m = Math.floor((seg % 3600) / 60), s = seg % 60;
+  if (h) return h + ' h ' + m + ' min ' + String(s).padStart(2, '0') + ' s';
+  if (m) return m + ' min ' + String(s).padStart(2, '0') + ' s';
+  return s + ' s';
+};
+const fmtTools = (p) => {
+  const u = p && p.herramientas_usadas;
+  if (!u) return '';
+  const arr = Array.isArray(u) ? u : [u];
+  return arr.map((x) => typeof x === 'string' ? x : (x && (x.nombre || x.herramienta || '')) || '').filter(Boolean).join(', ');
+};
+const avisoProceso = (ses, pid, t0, p) => {
+  const tools = fmtTools(p);
+  const texto = 'Procesando · ' + fmtReloj(Date.now() - (t0 || Date.now())) + (tools ? ' · ' + tools : '') + (p && p.progreso ? ' · ' + p.progreso : '');
+  try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: ses, proceso_id: pid, texto } })); } catch (e) {}
+};
 const procs = () => { try { return JSON.parse(localStorage.getItem(CP) || '{}'); } catch (e) { return {}; } };
 const guardaProc = (ses, v) => { try { const t = procs(); if (v) t[ses] = v; else delete t[ses]; localStorage.setItem(CP, JSON.stringify(t)); } catch (e) {} };
 const hdrs = () => { const k = sessionStorage.getItem('riu_clave'); const h = { 'Content-Type': 'application/json' }; if (k) { h['X-API-Key'] = k; h.Authorization = 'Bearer ' + k; } return h; };
@@ -71,7 +91,7 @@ window.RIU_CANCELAR = async (ses) => {  // Detener: en cola se cancela antes de 
   return true;
 };
 window.RIU_RETOMAR = async (ses) => {
-  const v = procs()[ses]; if (!v) return null; const fin = Date.now() + 560000; let malos = 0;
+  const v = procs()[ses]; if (!v) return null; const fin = Date.now() + TOPE_ESPERA; let malos = 0;
   while (Date.now() < fin) {
     if (!procs()[ses]) return { error: 'PROCESO_DETENIDO' };  // Detener sobre una tarea retomada: RIU_CANCELAR ya borro el registro y aviso al Router
 
@@ -79,10 +99,11 @@ window.RIU_RETOMAR = async (ses) => {
       const r = await fetchT(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid, espera: 8 }) }, 16000);
       const e = await r.json().catch(() => ({})); const p = e.result || {};
       if (!r.ok || e.status !== 'ok') { if (++malos >= 8) return { estado: 'reanudable', proceso_id: v.pid, error: 'GAP_ROUTER_ESTADO_NO_CONFIRMADO', detalle: e.reason || e.detail || ('HTTP ' + r.status) }; } // sin estado terminal verificable conservar el PID
+      else if (esTope48(p.error)) { guardaProc(ses, null); return p; }
       else if (p.error) { guardaProc(ses, null); return p; }  // error real del proceso (PROCESO_NO_EXISTE tras reinicio): borrar PID y devolver ya
       else if (p.estado && p.estado !== 'procesando') { guardaProc(ses, null); return p; }
       else if (!p.estado) { if (++malos >= 8) return { estado: 'reanudable', proceso_id: v.pid, error: 'GAP_RESULTADO_TEMPORALMENTE_VACIO', detalle: 'Reconsultar el mismo PID; no relanzar el trabajo' }; }
-      else malos = 0;
+      else { malos = 0; if (p.estado === 'procesando') avisoProceso(ses, v.pid, v.ts || Date.now(), p); }
     } catch (x) { if (++malos >= 12) { return { estado: 'reanudable', proceso_id: v.pid, error: 'ROUTER_SIN_RESPUESTA' }; } }  // red caida: mismo PID sigue siendo recuperable
     await new Promise((ok) => setTimeout(ok, 500));
   }
@@ -125,10 +146,11 @@ async function puenteRouter(base, body, qs, headers) {
     let cortado = false;
     let proceso = p.proceso_id || null;
     if (p.estado === 'procesando' && p.proceso_id) {
-      const deadline = Date.now() + 48 * 3600 * 1000;  // tareas largas: el Router trabaja hasta 48 h; el chat espera igual y retoma el mismo proceso
+      const deadline = Date.now() + TOPE_ESPERA;
+      const t0 = Date.now();
       try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'En cola…' } })); } catch (e) {}  // process_id != modelo corriendo: el backend informa el estado real; sesion+pid aíslan el progreso entre chats
-      if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: Date.now() });
-      let primera = true;  // primera consulta inmediata, luego cada 250 ms (tope total sigue en deadline 48 h)
+      if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: t0 });
+      let primera = true;  // primera consulta inmediata, luego cada 250 ms; el tope es 48 h
       let fallosRed = 0;  // fix 5: la red caida ya no se oculta para siempre
       let vaciosEstado = 0; // respuesta temporal sin estado no significa DONE; conservar PID
       while (p.estado === 'procesando' || !p.estado) {
@@ -138,15 +160,20 @@ async function puenteRouter(base, body, qs, headers) {
           const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 8 }) }, 16000);  // long-poll: el Router responde apenas hay resultado/progreso (max 8 s, max 3 a la vez por plugin: host limita 8 llamadas)
           const envelope = await poll.json().catch(() => ({}));
           if (poll.status === 401 || poll.status === 403) return { status: poll.status, ok: false, p: { error: 'HTTP ' + poll.status + ': ' + (envelope.reason || envelope.detail || envelope.error || 'Acceso rechazado') } };
-          if (!poll.ok || envelope.status !== 'ok') throw new Error(envelope.reason || envelope.detail || ('HTTP ' + poll.status));  // /resultado fallido (cupo del host, 5xx): contar y reintentar, no cortar el chat
+          const motivo = envelope.reason || envelope.detail || envelope.error || ('HTTP ' + poll.status);
+          if (esTope48(motivo)) { if (payload && payload.sesion) guardaProc(payload.sesion, null); return { status: 502, ok: false, p: { error: String(motivo), proceso_id: proceso } }; }
+          if (!poll.ok || envelope.status !== 'ok') throw new Error(motivo);  // /resultado fallido (cupo del host, 5xx): contar y reintentar, no cortar el chat
           p = envelope.result || {}; fallosRed = 0;
+          if (esTope48(p.error)) { if (payload && payload.sesion) guardaProc(payload.sesion, null); return { status: 502, ok: false, p }; }
           if (!p.estado && !p.error && ++vaciosEstado >= 8) {
             return { status: 503, ok: false, p: { estado: 'reanudable', error: 'GAP_RESULTADO_TEMPORALMENTE_VACIO', detalle: 'El trabajo sigue asociado al mismo PID; usar Retomar', proceso_id: proceso } };
           }
           if (p.estado) vaciosEstado = 0;
           if (p.error && !p.estado) break; // error terminal explicito, sin confundirlo con transporte vacio
-          if (p.progreso || p.parcial) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso || '', parcial: p.parcial || '' } })); } catch (e) {} }
-        } catch (e) {  // red/job en cambio: seguir esperando, pero avisar y cortar tras 80 fallos seguidos (~20 s a 250 ms)
+          if (p.estado === 'procesando') avisoProceso(payload.sesion, proceso, t0, p);
+          if (p.parcial) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso || '', parcial: p.parcial || '' } })); } catch (e) {} }
+        } catch (e) {  // red/job en cambio: seguir esperando, pero avisar y cortar tras 12 fallos seguidos
+          if (esTope48(e && e.message)) { if (payload && payload.sesion) guardaProc(payload.sesion, null); return { status: 502, ok: false, p: { error: String(e.message), proceso_id: proceso } }; }
           fallosRed++;
           try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'Sin conexión con el Router (' + fallosRed + ')…' } })); } catch (x) {}
           if (fallosRed >= 12) return { status: 503, ok: false, p: { error: 'ROUTER_SIN_RESPUESTA', detalle: String(e && e.message || e).slice(0, 200), proceso_id: proceso } };
