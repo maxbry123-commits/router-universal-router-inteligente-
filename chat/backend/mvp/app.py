@@ -33,7 +33,8 @@ async def inicio(app):
         await asyncio.wait_for(CONTROL.cargar(), 15)  # estado de permisos guardado por /almacen; sin HF sigue en memoria
     except asyncio.TimeoutError:
         pass
-    elegido = await asyncio.to_thread(mantener_vivo.leer, app.state.banco)  # True = hasta que el Director lo apague
+    try: elegido = await asyncio.wait_for(asyncio.to_thread(mantener_vivo.leer, app.state.banco), 8)  # True = hasta que el Director lo apague; un HF lento no puede dejar al Router sin responder
+    except asyncio.TimeoutError: elegido = None
     mantener_vivo.SIEMPRE["on"] = bool(elegido)
     mantener_vivo.mantener(mantener_vivo.SIEMPRE_H if elegido else 0 if elegido is False else float(os.environ.get("RIU_MANTENER_HORAS", "24")), _en_curso)
     if app.state.banco: _lanzar(_reanudar_todas())  # tareas que quedaron a medias por un reinicio

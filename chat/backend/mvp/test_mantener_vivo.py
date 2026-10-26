@@ -121,3 +121,19 @@ class HastaQueLoApague(Base):
         r = self.llamar({"horas": 2})
         self.assertFalse(r["siempre"])
         self.assertIsNone(mv.leer(servicio.app.state.banco))
+
+
+class ArranqueRapido(Base):
+    def test_un_hf_lento_no_retrasa_el_arranque_del_router(self):
+        import time
+        from fastapi.testclient import TestClient
+        self.client.close()
+        def lento(banco):
+            time.sleep(11)
+            return True
+        t0, listo = time.time(), []
+        with patch.object(mv, "leer", lento):
+            with TestClient(servicio.app):
+                listo.append(time.time() - t0)   # el servidor ya acepto peticiones (cerrar espera al hilo lento, pero eso no afecta a un servidor en marcha)
+        self.assertLess(listo[0], 10.5)   # espera 8 s como maximo y sigue
+        self.client = TestClient(servicio.app)
