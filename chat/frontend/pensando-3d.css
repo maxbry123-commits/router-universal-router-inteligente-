@@ -1,5 +1,7 @@
 /* pensando-3d.css — cubo 3D que gira mientras el chat piensa (CSS 3D, sin librerías). */
-.p3d{position:absolute !important;left:72px !important;right:auto !important;top:auto !important;bottom:calc(100% + 6px) !important;display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:14px;background:var(--surface);border:1px solid var(--border-strong);box-shadow:0 8px 28px rgba(0,0,0,.45);z-index:35;pointer-events:none;flex:none !important;width:auto !important;margin:0 !important}
+.composer-bar>.p3d{position:relative;display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:14px;background:var(--surface);border:1px solid var(--border-strong);box-shadow:0 8px 28px rgba(0,0,0,.45);z-index:35;pointer-events:none;flex:0 0 auto !important;width:auto !important;margin:0 8px 0 auto !important;order:98}
+.composer-bar>.p3d+.action{margin-left:0 !important}
+.p3d-escena{transform:scale(.72);transform-origin:center;margin:-7px}
 .p3d[hidden]{display:none}
 .p3d-escena{position:relative;width:46px;height:46px;perspective:260px}
 .p3d-cubo{position:absolute;inset:11px;transform-style:preserve-3d;animation:p3d-gira 4s linear infinite}

@@ -234,9 +234,10 @@ def _clave_hf():
     try: return CONTROL.credencial("hf", app.state.banco, estricto=False)
     except RuntimeError as error: raise HTTPException(status_code=503, detail=str(error)) from None
 memoria.rutas(app, verificar, _clave_hf)  # historial y pestañas del chat (chat-ancla.js) en el bucket HF
+MIMOS_IMG = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "gif": "image/gif"}
 async def _contexto_anclado(anclados, sesion):
-    """Anclas del chat -> un mensaje de sistema: archivos subidos (texto), textos y enlaces; los secretos nunca viajan al modelo."""
-    partes, total, vistos = [], 0, set()
+    """Anclas del chat -> (mensaje de sistema, imagenes): archivos subidos (texto), textos y enlaces; los secretos nunca viajan al modelo."""
+    partes, imagenes, total, vistos = [], [], 0, set()
     for a in (anclados if isinstance(anclados, list) else [])[:20]:
         a = str(a)[:300]
         if a.startswith("secreto:"):
@@ -253,13 +254,18 @@ async def _contexto_anclado(anclados, sesion):
             continue
         try:
             crudo = (await almacen({"accion": "leer", "destino": "hf", "nombre": ruta}))["valor"]
+            mime = MIMOS_IMG.get(a.rsplit(".", 1)[-1].lower()) if "." in a else None
+            if mime:
+                imagenes.append({"nombre": a, "url": "data:" + mime + ";base64," + crudo})
+                partes.append("- " + a + " (imagen adjunta: viaja como imagen al modelo)")
+                continue
             texto = base64.b64decode(crudo).decode("utf-8")[:60_000]
         except Exception:  # noqa: BLE001 - binario o almacén caído: se omite, el chat sigue
             partes.append("- " + a + " (no se pudo leer su contenido)")
             continue
         total += len(texto)
         partes.append("--- " + a + " ---\n" + texto)
-    return {"role": "system", "content": "[ANCLADOS POR EL DIRECTOR]\n" + "\n".join(partes)} if partes else None
+    return ({"role": "system", "content": "[ANCLADOS POR EL DIRECTOR]\n" + "\n".join(partes)} if partes else None, imagenes)
 ORGANIZADOR = "qwen3.7-plus"
 async def _organizar(cuerpo):
     """Pendientes: un modelo (qwen3.7 por defecto) los ordena por prioridad; solo se reordena, nunca se crea ni se borra nada."""
@@ -331,8 +337,9 @@ async def _chat_ficha(cuerpo, progreso=None):
         mensajes = list(q["contexto_previo"]) + list(mensajes)
     con = q.get("constitucion") if isinstance(q.get("constitucion"), dict) else {}
     ses = str(q.get("sesion") or "web-general")[:60]
-    anclado = await _contexto_anclado(q.get("anclados"), ses)
-    arch_con = await _contexto_anclado(con.get("anclados"), ses)
+    anclado, imagenes = await _contexto_anclado(q.get("anclados"), ses)
+    arch_con, imagenes_con = await _contexto_anclado(con.get("anclados"), ses)
+    imagenes += imagenes_con
     pend = "\n".join("- [%s] %s" % ("x" if p["hecho"] else " ", p["texto"][:300]) for p in CONTROL.d["pendientes"][:30])
     propios = [("CONSTITUCION: es ley para este trabajo; respétala al programar y en lo que respondes", (str(con.get("texto") or "").strip() + ("\n" + arch_con["content"] if arch_con else "")).strip()),
                ("yaiwes.md (información del proyecto; la herramienta yaiwes_md la lee y la escribe)", CONTROL.d["handoff"].get("yaiwes")),
@@ -373,6 +380,10 @@ async def _chat_ficha(cuerpo, progreso=None):
     identidad = {"role": "system", "content": "Modelo activo: %s%s, ejecutado en QwenCloud Token Plan. Las respuestas anteriores de esta conversación pudieron venir de otros modelos: no copies su identidad. Esta línea manda sobre cualquier regla, ficha, memoria o historial que nombre otro modelo: tu modelo es el indicado aquí. Si te preguntan quién o qué modelo eres, responde en una línea con ese nombre y su familia." % (modelo, " — " + modelos.marca(modelo) if modelos.marca(modelo) else "")}
     fin = len(mensajes) - 1 if isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user" else len(mensajes)
     mensajes = [*mensajes[:fin], identidad, *mensajes[fin:]]  # justo antes del mensaje actual: el historial de otro modelo no la tapa
+    if imagenes and isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user":
+        ultimo = mensajes[-1]
+        ultimo["content"] = ([{"type": "text", "text": str(ultimo.get("content") or "")}]
+                             + [{"type": "image_url", "image_url": {"url": i["url"]}} for i in imagenes[:4]])  # imagenes ancladas: el modelo con vision las ve; compute las omite si el modelo no las admite
     # Ruta Antonio: Qwen -> Harness DeepSeek (HTTP) -> router. Sin camino alterno; sin URL Harness falla (G5 abierto)
     if not os.environ.get("RIU_DEEPSEEK_HARNESS_URL"):
         raise HTTPException(status_code=503, detail="HARNESS_NO_CONFIGURADO")

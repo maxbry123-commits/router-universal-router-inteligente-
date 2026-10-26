@@ -89,6 +89,8 @@ def github_leer(a):
     q = urllib.parse.quote(ruta.strip('/'), safe='/')  # las barras de la ruta no se codifican: %2F da 404 en la API de contenidos
     url = '%s/repos/%s/%s/contents/%s?ref=%s' % (API, OWNER, repo, q, urllib.parse.quote(rama))
     st, d = _peticion('GET', url)
+    if st == 404:
+        return 'ERROR 404: no existe "%s%s" en la cuenta %s o sin acceso (el repo del proyecto es "router-universal-router-inteligente-")' % (repo, ('/' + ruta.strip('/')) if ruta else '', OWNER)
     if st >= 400:
         return 'ERROR %s: %s' % (st, json.dumps(d)[:400])
     if isinstance(d, list):

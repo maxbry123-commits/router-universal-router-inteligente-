@@ -48,7 +48,7 @@ HERRAMIENTAS = [
     {'name': 'resultado', 'description': 'Consulta el estado de un proceso de chat asincrono.',
      'inputSchema': {'type': 'object', 'properties': {
          'proceso_id': {'type': 'string'}, 'espera': {'type': 'number'}}, 'required': ['proceso_id']}},
-    {'name': 'github_leer', 'description': 'Lee un archivo o lista una carpeta en GitHub.',
+    {'name': 'github_leer', 'description': 'Lee un archivo o lista una carpeta en GitHub (repo del proyecto: "router-universal-router-inteligente-").',
      'inputSchema': {'type': 'object', 'properties': {
          'repo': {'type': 'string'}, 'ruta': {'type': 'string'},
          'rama': {'type': 'string'}, 'lineas': {'type': 'string'}}, 'required': ['repo']}},

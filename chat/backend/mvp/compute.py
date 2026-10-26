@@ -60,6 +60,11 @@ def _intentar(url, payload, clave, modelo):
                     "uso": bruto.get("usage") or {}, "bruto": bruto, "mensaje_asistente": mensaje,
                     "modelo_solicitado": modelo, "modelo_respuesta": bruto.get("model")}
         except error.HTTPError as exc:
+            if exc.code == 400 and any(isinstance(m.get("content"), list) for m in payload["messages"]):
+                payload = {**payload, "messages": [  # el modelo no admite imagen: se reintenta con solo el texto
+                    ({**m, "content": "\n".join(p.get("text", "") for p in m["content"] if p.get("type") == "text") + "\n[imagenes adjuntas omitidas: este modelo no admite imagen]"}
+                     if isinstance(m.get("content"), list) else m) for m in payload["messages"]]}
+                continue
             if exc.code in (401, 403, 404):
                 raise _Alterna("Qwen HTTP " + str(exc.code)) from None
             if exc.code not in REINTENTABLES or intento == 2:
