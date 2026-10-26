@@ -47,7 +47,7 @@ export function montarBuzon(ctx) {
   // selector del input: si hay proceso en curso y el tipo no es "nueva", el mensaje va al buzon sin reiniciar
   if (comp) comp.addEventListener('submit', async (ev) => {
     const pid = pidActivo();
-    if (!pid || !sel || sel.value === 'nueva') return;  // sin proceso o "nueva tarea aparte": envio normal
+    if (!pid || bar.hidden || !sel || sel.value === 'nueva') return;  // la franja no se muestra: un chat normal no se desvía al buzón
     ev.preventDefault(); ev.stopImmediatePropagation();  // al buzon: NO lanza otro chat_async
     const input = q('#message'); const texto = (input.value || '').trim();
     if (!texto) return;
@@ -57,10 +57,10 @@ export function montarBuzon(ctx) {
     chat().hist.append(burbuja(texto, 'user')); chat().hist.append(node('div', ack, 'item message meta')); abajo(chat());
   }, true);  // capture: corre antes del handler normal de envio
   // panel "Cola": estado_objetivo cada 3 s mientras haya proceso (tareas con estado + preguntas del modelo)
+  bar.hidden = true;
   setInterval(async () => {
     const pid = pidActivo();
-    bar.style.display = pid ? 'flex' : 'none';
-    if (!pid) return;
+    if (!pid || bar.hidden) return;
     const est = await fqCall('estado_objetivo', { proceso_id: pid });
     const e = est && (est.result || est);
     if (!e || !colaTxt || !bar.querySelector('#buzon-cola').open) return;

@@ -4,7 +4,8 @@
 .sel-indicador .sel-ind-flecha{flex:0 0 auto;opacity:.75}
 .sel-indicador.on{border-color:var(--accent,#2f6bff);box-shadow:inset 0 0 0 1px var(--accent,#2f6bff)}
 #sh-selectores .va-caja{width:min(560px,100%)}
-#sh-selectores #selectores{margin:0;padding:0;border:0;background:none;box-shadow:none}
+#panel #selectores, #mv-ctl #selectores { display: none !important; }
+#sh-selectores #selectores { display: block !important; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; }
 #sh-selectores #selectores>h2{display:none}
 /* salida ×4 (salida-ampliada.js mide el alto normal y lo multiplica); la caja de escritura queda fija abajo */
 .salida-x4 section:has(> #histories){height:auto;min-height:0}

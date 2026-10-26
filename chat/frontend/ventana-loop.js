@@ -398,7 +398,7 @@ function pintarLoop(cuerpo) {
   });
   const ancla = btn("Constitución", "secondary", () => { const x = document.querySelector("#btn-ancla"); if (x) x.click(); });
   const pend = btn("Pendientes", "secondary", () => { const x = document.querySelector("#btn-pendientes"); if (x) x.click(); });
-  const tools = btn("Tools", "secondary", () => { const x = document.querySelector("#btn-tools"); if (x) x.click(); });
+  const tools = btn("Tools", "secondary", () => { const x = document.querySelector("#btn-tools"); if (x) x.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })); });
   const nctFila = el("div", "cv-form");
   nctFila.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:6px";
   perfil.style.gridColumn = "1 / -1";

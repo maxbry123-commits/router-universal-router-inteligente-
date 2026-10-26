@@ -31,7 +31,27 @@ export function montarDestinos({ root, q, tell }) {
     OBJETIVOS.forEach(([id, nom]) => { const on = id === tipo, b = boton(nom, "toggle" + (on ? " on" : ""), () => cambiar(id)); b.setAttribute("aria-pressed", String(on)); bs.append(b); });
     fila.append(bs);
     const acc = el("div", "vn-fila");
-    acc.append(boton("Yaiwes.md", "toggle", () => { const t = q("#mh-toggle"); if (t) t.click(); else tell("Yaiwes.md está más abajo, en el handoff"); }), boton("Tools", "toggle", () => { const b = document.querySelector("#btn-tools"); const s = q("#ventana-ancla"); if (s) s.hidden = true; if (b) b.click(); else tell("Tools no está"); }));
+    acc.append(boton("Yaiwes.md", "toggle", () => {
+      const s = q("#sh-ancla"), h = q("#ventana-ancla"), ta = q("#mi-handoff");
+      const caja = s && s.querySelector(".va-caja"), head = caja && caja.querySelector(".va-head");
+      if (h) h.hidden = true;
+      if (s) s.hidden = false;
+      if (ta && head) {
+        const nodes = [];
+        let n = ta;
+        for (let i = 0; i < 3 && n; i++) { nodes.push(n); n = n.nextElementSibling; }
+        let ref = head;
+        nodes.forEach((x) => { ref.after(x); ref = x; });
+        const viejo = q("#ancla-enlace");
+        if (viejo && viejo.parentElement) viejo.parentElement.hidden = true;
+        ta.focus();
+      }
+    }), boton("Tools", "toggle", () => {
+      const b = document.querySelector("#btn-tools"), s = q("#ventana-ancla");
+      if (s) s.hidden = true;
+      if (b) b.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+      else tell("Tools no está");
+    }));
     fila.append(acc);
     // encendido/apagado de CADA ancla, siempre visible en la hoja (la Constitución arranca apagada; solo viaja si está encendida)
     const est = el("div", "vn-fila vn-encendidos"); est.append(el("div", "vn-t", "Encendido de cada ancla"));
@@ -92,7 +112,8 @@ function chipAncla(q) {  // el chip «ancla» del chat (pastilla y botón ⚓ de
   if (ba) { let m = ba.querySelector(".riu-const-chip"); if (!m) { m = document.createElement("span"); m.className = "riu-const-chip"; m.style.cssText = "position:absolute;top:-6px;left:-6px;font-size:11px;line-height:1;pointer-events:none"; ba.style.position = ba.style.position || "relative"; ba.append(m); }
     m.textContent = on ? "📜" : ""; ba.dataset.const = on ? "on" : "off"; ba.title = "Anclaje · Constitución " + (on ? "ON" : "OFF"); }
   const pill = q("#ancla") || document.getElementById("ancla"); if (!pill) return;  // en móvil la pastilla se mueve fuera del panel (#mv-ctl)
-  pill.textContent = "ancla · 📜 " + (on ? "ON" : "OFF") + " ⌄"; pill.classList.toggle("on", on); pill.title = "Constitución " + (on ? "ON: viaja con cada mensaje" : "OFF: no se envía");
+  const enHoja = !!(pill.closest && pill.closest(".riu-lista"));
+  pill.textContent = (enHoja ? "Handoff · Constitución " : "ancla · 📜 ") + (on ? "ON" : "OFF") + (enHoja ? "" : " ⌄"); pill.classList.toggle("on", on); pill.title = "Constitución " + (on ? "ON: viaja con cada mensaje" : "OFF: no se envía");
 }
 function unBotonMiHandoff(q, tell) {  // yaiwes.md: un solo botón ON/OFF en lugar de «Encender/Guardar» + «Apagar» (los originales quedan ocultos y siguen funcionando)
   const g = q("#mh-guardar"), a = q("#mh-apagar"), est = q("#mh-estado"), enl = q("#ancla-enlace-on");

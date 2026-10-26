@@ -91,6 +91,10 @@
   #en-curso.en-curso { width: auto; min-height: 36px; height: 36px; margin: 0 0 6px; padding: 0 12px; border-radius: 999px; gap: 6px; align-self: flex-start; justify-content: flex-start; font-size: 14px; }
 }
 .sheet .list button { min-height: 36px !important; padding: 6px 10px; border-radius: 10px; font-size: 14px; }
-.ctl-int > .row.fields { display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px; flex-wrap: wrap !important; overflow: visible !important; }
-.ctl-int > .row.fields .pill { width: 100%; max-width: none; justify-content: center; }
-#composer #btn-paralelo { order: 5; width: auto; max-width: none; flex: 0 0 auto; height: 34px; min-height: 34px; border-radius: 999px; padding: 0 12px; white-space: nowrap; }
+.ctl-int > .row.fields { display: flex !important; flex-wrap: wrap !important; overflow: visible !important; gap: 6px; }
+.ctl-int > .row.fields > .pill { width: auto !important; max-width: none !important; flex: 0 0 auto !important; }
+#modo[hidden] { display: none !important; }
+@media (max-width: 720px) {
+  #composer .composer-bar { flex-wrap: wrap !important; overflow: visible !important; }
+  #composer #btn-paralelo { order: 5; }
+}
