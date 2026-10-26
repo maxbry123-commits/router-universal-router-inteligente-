@@ -28,7 +28,7 @@ def main():
     else: details={'root':str(root),'downloaded_skills':None}
     registry=compile_directory(root)
     write_compiled_catalog(registry,a.output/'ecc_compilado.json')
-    generated=make_python_wrappers(registry,a.output/'python_skills')
+    generated=make_python_wrappers(registry,a.output/'motores_code')
     print(json.dumps({**details,'source_skills_compiled':len(registry),
                       'python_wrappers_generated':generated,
                       'functional_actions_authorized':0,

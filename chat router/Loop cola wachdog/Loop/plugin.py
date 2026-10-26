@@ -49,18 +49,18 @@ _CATALOGO_LOCK = threading.Lock()
 
 
 def _catalogo_ecc() -> dict:
-    """Compila los 311 SKILL.md del repo a un registro de fases Python."""
+    """Compila los 311 motores desde el repo ECC a un registro de fases Python."""
     global _CATALOGO_ECC
     with _CATALOGO_LOCK:
         if _CATALOGO_ECC is None:
             if not _ECC_DIR.is_dir():
-                raise RuntimeError('ECC skills no presentes en repo: ' + str(_ECC_DIR))
+                raise RuntimeError('ECC fuente no presente en repo: ' + str(_ECC_DIR))
             from nct_loop.ecc_phase_compiler import compile_directory
             _CATALOGO_ECC = compile_directory(_ECC_DIR)
         return _CATALOGO_ECC
 
 
-# Separacion de ciclos del skills: cada fase compilada se clasifica por su
+# Separacion de ciclos del motor: cada fase compilada se clasifica por su
 # titulo de seccion en MAIN (procedimiento), VERIFY (comprobacion),
 # RECOVERY (solo si falla), CONTINUOUS (re-disparo por eventos) y META
 # (guia del documento; no corre como paso de ejecucion).
@@ -88,8 +88,8 @@ def _ciclo_de_fase(title: str) -> str:
     return 'MAIN'
 
 
-# Registro normalizado de skills (metodo de 8 macrociclos del audit):
-# cada skill -> {skill_id, categoria, triggers, macrociclo C0..C7,
+# Registro normalizado de motores (metodo de 8 macrociclos del audit):
+# cada motor -> {motor_id, categoria, triggers, macrociclo C0..C7,
 # required_tools, risk_level, evidence_requirements, sha256, ciclos}.
 _MACROCICLOS = (
     ('C0_admision', re.compile(
@@ -156,8 +156,8 @@ def _triggers_de(markdown_path: Path) -> list:
 _REG = None
 
 
-def _registro_ecc() -> dict:
-    """Registro normalizado de las 311 skills (categoria, triggers, macrociclo...)."""
+def _registro_motores() -> dict:
+    """Registro normalizado de los 311 motores (categoria, triggers, macrociclo...)."""
     global _REG
     if _REG is not None:
         return _REG
@@ -177,7 +177,7 @@ def _registro_ecc() -> dict:
         riesgo = 'alto' if _RIESGO_ALTO.search(texto) else 'normal'
         tools = sorted(set(_HERRAMIENTAS.findall(texto)))
         ciclos = _fases_por_ciclo(spec)
-        reg[sid] = {'skill_id': sid, 'categoria': macro,
+        reg[sid] = {'motor_id': sid, 'categoria': macro,
                     'macrociclo': macro, 'triggers': triggers,
                     'required_tools': tools, 'risk_level': riesgo,
                     'source_sha256': spec.get('source_sha256'),
@@ -185,51 +185,6 @@ def _registro_ecc() -> dict:
                     'ciclos': {k: len(v) for k, v in ciclos.items()}}
     _REG = reg
     return reg
-
-
-_ES_EN = {
-    'seguridad': 'security', 'codigo': 'code', 'revisar': 'review', 'revisión': 'review',
-    'arreglar': 'fix', 'corregir': 'fix', 'error': 'bug defect', 'bug': 'defect bug',
-    'pruebas': 'test', 'prueba': 'test', 'desplegar': 'deploy', 'produccion': 'production',
-    'producción': 'production', 'diseñar': 'design', 'diseño': 'design',
-    'arquitectura': 'architecture', 'crear': 'create build', 'documentar': 'docs',
-    'documento': 'document', 'memoria': 'memory', 'cola': 'queue', 'tarea': 'task',
-    'verificar': 'verify', 'verificación': 'verify', 'auditar': 'audit',
-    'auditoria': 'audit', 'auditoría': 'audit', 'planear': 'plan', 'ejecutar': 'run',
-    'analizar': 'analyze', 'investigar': 'research', 'integrar': 'integrate',
-    'entregar': 'deliver', 'monitor': 'watch', 'vigilar': 'monitor watchdog',
-}
-
-
-def _palabras_objetivo(objetivo: str) -> set:
-    base = set(re.findall(r'[a-zA-Záéíóúñ][a-zA-Z0-9áéíóúñ_+-]{2,}', str(objetivo).lower()))
-    extra = set()
-    for w in base:
-        if w in _ES_EN:
-            extra.update(_ES_EN[w].split())
-    return base | extra
-
-
-def _seleccionar_skills(objetivo: str, top: int = 8) -> list:
-    """Seleccion contextual: puntua skills por triggers/keywords del objetivo."""
-    reg = _registro_ecc()
-    palabras = _palabras_objetivo(objetivo)
-    scored = []
-    for sid, info in reg.items():
-        puntos = 0
-        for tr in info['triggers']:
-            tw = set(re.findall(r'[a-zA-Z][a-zA-Z0-9_+-]{2,}', tr.lower()))
-            puntos += len(palabras & tw)
-        sid_parts = set(re.split(r'[-_]', sid))
-        puntos += 3 * len(palabras & sid_parts)
-        if not puntos:
-            # fallback: description frontmatter (guardada en triggers vacios)
-            puntos = 0
-        if puntos:
-            scored.append((puntos, sid))
-    scored.sort(reverse=True)
-    return [{'skill_id': sid, 'score': p, 'macrociclo': reg[sid]['macrociclo']}
-            for p, sid in scored[:top]]
 
 
 def _fases_por_ciclo(spec: dict) -> dict:
@@ -394,15 +349,6 @@ _CANCEL: set = set()
 def _build_mission(p: dict) -> dict:
     m = p.get('mision')
     if isinstance(m, dict) and m.get('units'):
-        if p.get('skills') and not p.get('auto_skills'):
-            for u in m['units']:
-                u.setdefault('skills', list(p['skills'])[:int(p.get('top_skills') or 3)])
-        if p.get('auto_skills'):
-            for u in m['units']:
-                if not u.get('skills'):
-                    u['skills'] = [x['skill_id'] for x in
-                                   _seleccionar_skills(u.get('goal') or '',
-                                                       int(p.get('top_skills') or 3))]
         return m
     objetivo = str(p.get('objetivo') or p.get('yaiwes_md') or p.get('objetivo_md') or '').strip()
     if not objetivo:
@@ -414,9 +360,6 @@ def _build_mission(p: dict) -> dict:
             'units': [{'id': 'T1', 'goal': objetivo[:8000], 'block': 'executor',
                        'depends_on': [], 'priority': 5, 'allowed_ops': ops,
                        'acceptance': p.get('acceptance') or [], 'scope': p.get('scope') or [],
-                       'skills': [x['skill_id'] for x in
-                                  _seleccionar_skills(objetivo, int(p.get('top_skills') or 3))]
-                               if p.get('auto_skills') else (p.get('skills') or []),
                        'max_retries': int(p.get('max_retries') or 0)}]}
 
 
@@ -449,42 +392,18 @@ async def _correr(pid: str, p: dict) -> dict:
                  max_calls=int(p.get('max_calls') or 60),
                  ecc_action_port=_PuertoECCAcciones(ops_port, acc_map),
                  approved_ecc_actions=_ACCIONES_ECC)
-    # WorkUnit no acepta la clave 'skills': se retira y se conserva por id.
-    skills_por_unidad = {u['id']: list(u.pop('skills', []) or [])
-                         for u in mission['units']}
     resultado = await engine.run(mission)
-
-    # Activacion por contexto: skills declaradas en cada unidad corren como
-    # motores compilados (MAIN->VERIFY->RECOVERY) con recibos por fase.
-    corridas = []
-    total = 0
-    for uid, sids in skills_por_unidad.items():
-        for sid in sids[:5]:
-            if total >= 12:
-                break
-            total += 1
-            u = next((x for x in mission['units'] if x['id'] == uid), {})
-            rep = await _ejecutar_skill_motor(sid, {
-                'modelo': modelo, 'sesion': sesion, 'task_id': uid,
-                'objetivo': u.get('goal'), 'event': 'unit.skill'})
-            corridas.append({'unit_id': uid, 'skill_id': sid,
-                             'status': rep.get('status'),
-                             'ciclos': rep.get('ciclos'),
-                             'recibos': sum(len((rep.get(k) or {}).get('receipts', []))
-                                          for k in ('main', 'verify', 'recovery'))})
-    if corridas:
-        resultado['skills_ejecutadas'] = corridas
     return resultado
 
 
-# --- Skills ECC compilados a motores ejecutables ---------------------------
+# --- Motores code ECC (compilados desde el repo ECC)  ---------------------------
 # Un handler por fase: el modelo del chat produce el artefacto de la fase
 # (patron Ricardo: la LLM genera, el recibo verifica). Sin respuesta real ->
-# la fase FALLA y el skill se detiene; nada se marca PASS sin evidencia.
+# la fase FALLA y el motor se detiene; nada se marca PASS sin evidencia.
 def _handler_fase(modelo: str, sesion: str):
     def accion(request: dict) -> dict:
         prompt = (
-            '[ECC SKILL %(skill)s fase %(fase)s] Ejecuta esta etapa del procedimiento '
+            '[ECC MOTOR %(skill)s fase %(fase)s] Ejecuta esta etapa del procedimiento '
             'sobre la tarea %(tarea)s. Evento: %(evento)s. Contexto: %(ctx)s. '
             'Devuelve JSON {"status":"PASS","resultado":"<artefacto o decision real>"}.'
             % {'skill': request['skill_id'], 'fase': request['phase_id'],
@@ -516,13 +435,13 @@ def _recibo_callback(request: dict, proposed: dict) -> dict:
 async def _correr_ciclo(*, spec: dict, fases: list, skill_id: str, event: str,
                         task_id: str, context: dict, modelo: str, sesion: str) -> dict:
     """Un ciclo = sus fases en orden, cada una con handler + recibo verificado."""
-    from nct_loop.ecc_compiled_executor import execute_compiled_skill
+    from nct_loop.ecc_compiled_executor import execute_compiled_motor
     if not fases:
         return {'ok': True, 'status': 'SKIPPED', 'executed': 0, 'receipts': []}
     handlers = {ph['action_id']: _handler_fase(modelo, sesion) for ph in fases}
     spec_parcial = dict(spec, phases=list(fases))
     catalogo = {'skills': {skill_id: spec_parcial}}
-    res = await execute_compiled_skill(
+    res = await execute_compiled_motor(
         catalog=catalogo, skill_id=skill_id,
         source_sha256=spec['source_sha256'], event=event, task_id=task_id,
         context=context, approved_handlers=handlers,
@@ -530,23 +449,23 @@ async def _correr_ciclo(*, spec: dict, fases: list, skill_id: str, event: str,
     return res
 
 
-_PY_SKILLS = _DIR / 'python_skills'
+_MOTORES_CODE = _DIR / 'motores_code'
 
 
-def _modulo_skill(skill_id: str):
-    """Carga el motor .py ejecutable del skill (python_skills/ecc_<id>.py)."""
-    ruta = _PY_SKILLS / ('ecc_' + skill_id.replace('-', '_') + '.py')
+def _modulo_motor(motor_id: str):
+    """Carga el motor code ejecutable (motores_code/ecc_<id>.py)."""
+    ruta = _MOTORES_CODE / ('ecc_' + motor_id.replace('-', '_') + '.py')
     if not ruta.is_file():
         return None
-    return _mod('eccskill_' + skill_id.replace('-', '_'), ruta)
+    return _mod('eccskill_' + motor_id.replace('-', '_'), ruta)
 
 
 async def _cerrar_ciclos(rep: dict, repetir) -> dict:
-    """Todo skill termina con VERIFY y RECOVERY: si su SKILL.md no los trae, se
+    """Todo motor termina con VERIFY y RECOVERY: si su fuente ECC no los trae, se
     aplican los universales (deterministas, sin modelo). VERIFY: cada recibo MAIN
     es PASS y tiene id. RECOVERY: un solo reintento acotado si MAIN fallo."""
     if not isinstance(rep, dict):
-        return {'ok': False, 'status': 'FAIL', 'error': 'skill sin resultado'}
+        return {'ok': False, 'status': 'FAIL', 'error': 'motor sin resultado'}
     if not rep.get('ok') and not rep.get('recovery'):
         rep['recovery'] = {'ciclo': 'RECOVERY', 'origen': 'universal', 'intentos': 1}
         segundo = await repetir()
@@ -568,12 +487,12 @@ _TOPE_CUERPO, _TOPE_META = 3500, 2000
 _CUERPOS: dict = {}
 
 
-def _secciones(skill_id: str) -> dict:
+def _secciones(motor_id: str) -> dict:
     """phase_id -> (ciclo, cuerpo): el texto real de cada seccion del SKILL.md original."""
-    if skill_id in _CUERPOS:
-        return _CUERPOS[skill_id]
-    out, spec = {}, _catalogo_ecc().get(skill_id) or {}
-    md = _ECC_DIR / 'skills' / skill_id / 'SKILL.md'
+    if motor_id in _CUERPOS:
+        return _CUERPOS[motor_id]
+    out, spec = {}, _catalogo_ecc().get(motor_id) or {}
+    md = _ECC_DIR / 'skills' / motor_id / 'SKILL.md'
     if md.is_file():
         lineas = md.read_text(encoding='utf-8', errors='replace').splitlines()
         # source_line no coincide con el archivo: cada seccion se ubica por su encabezado, en orden.
@@ -590,18 +509,18 @@ def _secciones(skill_id: str) -> dict:
                 continue
             fin = next((inicios[j] for j in range(i + 1, len(titulos)) if inicios[j] is not None), len(lineas))
             out[ph['phase_id']] = (_ciclo_de_fase(ph.get('title')), '\n'.join(lineas[inicios[i]:fin]).strip())
-    _CUERPOS[skill_id] = out
+    _CUERPOS[motor_id] = out
     return out
 
 
 def _enriquecer(prompt: str) -> str:
-    """A la fase se le entrega su seccion del skill y todo el contexto META del mismo skill."""
+    """A la fase se le entrega su seccion del motor y todo el contexto META del mismo motor."""
     m = _FASE_RX.search(prompt)
     sec = _secciones(m.group(1)) if m else {}
     if not m or m.group(2) not in sec:
         return prompt
     meta = '\n\n'.join(c for k, (ciclo, c) in sec.items() if ciclo == 'META' and k != m.group(2))[:_TOPE_META]
-    return (prompt + '\n\n[CONTEXTO DEL SKILL (guias)]\n' + meta +
+    return (prompt + '\n\n[CONTEXTO DEL MOTOR (guias)]\n' + meta +
             '\n\n[INSTRUCCIONES DE ESTA FASE]\n' + sec[m.group(2)][1][:_TOPE_CUERPO] +
             '\n\nResponde SOLO JSON: {"status":"PASS|FAIL|BLOCKED","evidencia":"lo verificable que hiciste","resultado":"..."}')
 
@@ -622,17 +541,17 @@ def _exigir_evidencia(r: dict) -> dict:
     return {'reply': json.dumps({'status': 'FAIL', 'error': 'respuesta sin JSON con status PASS y evidencia'})}
 
 
-async def _ejecutar_skill_motor(skill_id: str, p: dict) -> dict:
+async def _ejecutar_motor(motor_id: str, p: dict) -> dict:
     cat = _catalogo_ecc()
-    spec = cat.get(skill_id)
+    spec = cat.get(motor_id)
     if not isinstance(spec, dict):
-        return {'ok': False, 'status': 'SKILL_NO_EXISTE', 'skill_id': skill_id,
+        return {'ok': False, 'status': 'MOTOR_NO_EXISTE', 'motor_id': motor_id,
                 'disponibles': len(cat)}
     modelo = str(p.get('modelo') or 'ficha-qwen38flash')
-    sesion = str(p.get('sesion') or ('skill-' + uuid.uuid4().hex[:8]))
+    sesion = str(p.get('sesion') or ('motor-' + uuid.uuid4().hex[:8]))
 
-    # Si existe el motor .py generado, el skill corre como codigo ejecutable.
-    mod = _modulo_skill(skill_id)
+    # Si existe el motor .py generado, el motor corre como codigo ejecutable.
+    mod = _modulo_motor(motor_id)
     if mod is not None and hasattr(mod, 'run'):
         def model_fn(prompt: str) -> dict:
             return _exigir_evidencia(_chat_modelo(modelo, _enriquecer(prompt), sesion))
@@ -640,25 +559,25 @@ async def _ejecutar_skill_motor(skill_id: str, p: dict) -> dict:
         async def _una_vez():
             return await mod.run(dict(p.get('contexto') or p.get('context') or {}),
                                  task_id=task_id,
-                                 event=str(p.get('event') or 'skill.run'),
+                                 event=str(p.get('event') or 'motor.run'),
                                  model_fn=model_fn, receipt_fn=None)
         return await _cerrar_ciclos(await _una_vez(), _una_vez)
     ciclos = _fases_por_ciclo(spec)
     modelo = str(p.get('modelo') or 'ficha-qwen38flash')
-    sesion = str(p.get('sesion') or ('skill-' + uuid.uuid4().hex[:8]))
+    sesion = str(p.get('sesion') or ('motor-' + uuid.uuid4().hex[:8]))
     task_id = str(p.get('task_id') or p.get('proceso_id') or 'tarea-' + uuid.uuid4().hex[:8])
-    event = str(p.get('event') or 'skill.run')
+    event = str(p.get('event') or 'motor.run')
     context = dict(p.get('contexto') or p.get('context') or {})
     context.setdefault('objetivo', p.get('objetivo'))
 
-    resultado = {'skill_id': skill_id, 'task_id': task_id,
+    resultado = {'motor_id': motor_id, 'task_id': task_id,
                  'ciclos': {k: len(v) for k, v in ciclos.items()},
                  'meta_omitidas': len(ciclos['META']),
                  'continuous_triggers': [ph['title'] for ph in ciclos['CONTINUOUS']],
                  'main': None, 'verify': None, 'recovery': None}
 
     # Ciclo MAIN
-    main = await _correr_ciclo(spec=spec, fases=ciclos['MAIN'] or ciclos['VERIFY'], skill_id=skill_id,
+    main = await _correr_ciclo(spec=spec, fases=ciclos['MAIN'] or ciclos['VERIFY'], skill_id=motor_id,
                                event=event, task_id=task_id, context=context,
                                modelo=modelo, sesion=sesion)
     resultado['main'] = main
@@ -666,7 +585,7 @@ async def _ejecutar_skill_motor(skill_id: str, p: dict) -> dict:
         # Ciclo RECOVERY solo cuando el principal falla
         if ciclos['RECOVERY']:
             resultado['recovery'] = await _correr_ciclo(
-                spec=spec, fases=ciclos['RECOVERY'], skill_id=skill_id,
+                spec=spec, fases=ciclos['RECOVERY'], skill_id=motor_id,
                 event=event + '.recovery', task_id=task_id, context=context,
                 modelo=modelo, sesion=sesion)
         resultado['ok'] = False
@@ -676,13 +595,13 @@ async def _ejecutar_skill_motor(skill_id: str, p: dict) -> dict:
     # Ciclo VERIFY tras el principal (omitido si ya corrio como principal)
     if ciclos['VERIFY'] and ciclos['MAIN']:
         resultado['verify'] = await _correr_ciclo(
-            spec=spec, fases=ciclos['VERIFY'], skill_id=skill_id,
+            spec=spec, fases=ciclos['VERIFY'], skill_id=motor_id,
             event=event + '.verify', task_id=task_id, context=context,
             modelo=modelo, sesion=sesion)
         if not resultado['verify'].get('ok'):
             if ciclos['RECOVERY']:
                 resultado['recovery'] = await _correr_ciclo(
-                    spec=spec, fases=ciclos['RECOVERY'], skill_id=skill_id,
+                    spec=spec, fases=ciclos['RECOVERY'], skill_id=motor_id,
                     event=event + '.recovery', task_id=task_id, context=context,
                     modelo=modelo, sesion=sesion)
             resultado['ok'] = False
@@ -705,16 +624,16 @@ MOTORES_PARALELOS = 8
 
 
 async def _motores_de_ciclo(ciclo: str, objetivo: str, p: dict, pid: str) -> dict:
-    """Ejecuta TODOS los motores code (ex skills) del ciclo, sin seleccion. Varios a la vez
+    """Ejecuta TODOS los motores code del ciclo, sin seleccion. Varios a la vez
     (MOTORES_PARALELOS); cada uno corre MAIN -> VERIFY -> RECOVERY con recibos."""
-    ids = sorted(s for s, v in _registro_ecc().items() if v['macrociclo'].upper() == ciclo)
+    ids = sorted(s for s, v in _registro_motores().items() if v['macrociclo'].upper() == ciclo)
     sem = asyncio.Semaphore(MOTORES_PARALELOS)
 
     async def uno(sid):
         async with sem:
             if pid in _CANCEL:
                 return sid, 'CANCELADO'
-            r = await _ejecutar_skill_motor(sid, {'modelo': p.get('modelo'), 'sesion': p.get('sesion'),
+            r = await _ejecutar_motor(sid, {'modelo': p.get('modelo'), 'sesion': p.get('sesion'),
                                                   'task_id': ciclo + '-' + sid, 'objetivo': objetivo,
                                                   'event': 'gobernanza.' + ciclo})
             return sid, str(r.get('status'))
@@ -733,7 +652,7 @@ async def _gobernar(pid: str, p: dict) -> dict:
     activar = p.get('motores', True) is not False
 
     async def ejecutar(_mission):
-        return await _correr(pid, dict(p, auto_skills=False, skills=[]))
+        return await _correr(pid, dict(p))
 
     async def motores(ciclo, objetivo):
         return await _motores_de_ciclo(ciclo, objetivo, p, pid)
@@ -742,7 +661,7 @@ async def _gobernar(pid: str, p: dict) -> dict:
     gob = Gobernanza(
         ricardo=RicardoOpsDemo(_WS_ROOT / pid, _POLICY),
         ejecutar_mision=ejecutar,
-        construir_mision=lambda q, _s: _build_mission(dict(q, auto_skills=False, skills=[])),
+        construir_mision=lambda q, _s: _build_mission(dict(q)),
         motores=motores if activar else None,
         cancelado=lambda: pid in _CANCEL,
         ops_permitidas=_OPS_RICARDO,
@@ -951,15 +870,7 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
     if action in ('status', 'health'):
         return {'ok': True, 'service': 'nct_loop', 'motores': ['coda', 'original', 'gobernanza'],
                 'procesos': len(_PROC)}
-    if action == 'ejecutar':
-        try:
-            _build_mission(p)  # validar antes de lanzar
-        except ValueError as e:
-            return {'error': str(e)}
-        pid = 'nct-' + uuid.uuid4().hex[:12]
-        _PROC[pid] = _POOL.submit(_hilo, pid, dict(p))
-        return {'estado': 'procesando', 'proceso_id': pid}
-    if action == 'gobernar':
+    if action in ('gobernar', 'ejecutar'):  # ejecutar es un alias: un solo camino, con los 311 motores
         if not str(p.get('objetivo') or p.get('yaiwes_md') or p.get('objetivo_md') or '').strip():
             return {'error': 'falta objetivo (markdown Yaiwes.md)'}
         pid = 'gob-' + uuid.uuid4().hex[:12]
@@ -1024,48 +935,41 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
         if fut.cancelled():
             return {'estado': 'cancelado', 'proceso_id': pid}
         return {'estado': 'completado', 'proceso_id': pid, 'resultado': fut.result()}
-    if action == 'skills':
+    if action == 'motores':
         try:
             cat = _catalogo_ecc()
         except Exception as e:  # noqa: BLE001
             return {'error': str(e)}
-        return {'ok': True, 'compiladas': len(cat),
-                'skills': {k: {'fases': len(v.get('phases') or []),
-                               'ciclos': {c: len(f) for c, f in _fases_por_ciclo(v).items()}}
-                           for k, v in cat.items()}}
-    if action == 'skills_registro':
-        reg = _registro_ecc()
-        return {'ok': True, 'total': len(reg), 'skills': reg}
-    if action == 'skills_seleccionar':
-        objetivo = str(p.get('objetivo') or p.get('goal') or '')
-        if not objetivo:
-            return {'error': 'objetivo requerido'}
-        sel = _seleccionar_skills(objetivo, int(p.get('top') or 8))
-        macros = sorted({x['macrociclo'] for x in sel})
-        return {'ok': True, 'seleccionadas': sel, 'macrociclos': macros}
-    if action == 'skill_fases':
-        sid = str(p.get('skill_id') or '')
-        spec = _catalogo_ecc().get(sid)
+        return {'ok': True, 'total': len(cat),
+                'motores': {k: {'fases': len(v.get('phases') or []),
+                                'ciclos': {c: len(f) for c, f in _fases_por_ciclo(v).items()}}
+                            for k, v in cat.items()}}
+    if action == 'motores_registro':
+        reg = _registro_motores()
+        return {'ok': True, 'total': len(reg), 'motores': reg}
+    if action == 'motor_fases':
+        mid = str(p.get('motor_id') or '')
+        spec = _catalogo_ecc().get(mid)
         if not isinstance(spec, dict):
-            return {'error': 'SKILL_NO_EXISTE', 'skill_id': sid}
+            return {'error': 'MOTOR_NO_EXISTE', 'motor_id': mid}
         ciclos = _fases_por_ciclo(spec)
-        return {'ok': True, 'skill_id': sid,
+        return {'ok': True, 'motor_id': mid,
                 'ciclos': {c: [{'phase_id': ph['phase_id'], 'title': ph['title']}
                               for ph in f] for c, f in ciclos.items()}}
-    if action == 'skill_ejecutar':
-        sid = str(p.get('skill_id') or '')
-        if not _catalogo_ecc().get(sid):
-            return {'error': 'SKILL_NO_EXISTE', 'skill_id': sid,
+    if action == 'motor_ejecutar':
+        mid = str(p.get('motor_id') or '')
+        if not _catalogo_ecc().get(mid):
+            return {'error': 'MOTOR_NO_EXISTE', 'motor_id': mid,
                     'disponibles': len(_catalogo_ecc())}
-        pid = 'skl-' + uuid.uuid4().hex[:12]
+        pid = 'mot-' + uuid.uuid4().hex[:12]
         def _run():
             try:
-                return asyncio.run(_ejecutar_skill_motor(sid, dict(p)))
+                return asyncio.run(_ejecutar_motor(mid, dict(p)))
             except Exception as e:  # noqa: BLE001
                 return {'ok': False, 'status': 'FAIL',
                         'error': '%s: %s' % (type(e).__name__, e)}
         _PROC[pid] = _POOL.submit(_run)
-        return {'estado': 'procesando', 'proceso_id': pid, 'skill_id': sid}
+        return {'estado': 'procesando', 'proceso_id': pid, 'motor_id': mid}
     if action == 'cancelar':
         pid = str(p.get('proceso_id') or '')
         _CANCEL.add(pid)
@@ -1077,6 +981,5 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
 
 
 ACCIONES = ['status', 'health', 'ejecutar', 'gobernar', 'estado', 'cancelar',
-            'skills', 'skill_fases', 'skill_ejecutar',
-            'skills_registro', 'skills_seleccionar', 'agentes', 'fuente_listar', 'fuente_agregar', 'fuente_quitar', 'fuente_sync',
+            'motores', 'motor_fases', 'motor_ejecutar', 'motores_registro', 'agentes', 'fuente_listar', 'fuente_agregar', 'fuente_quitar', 'fuente_sync',
             'paralelo', 'estado_paralelo']

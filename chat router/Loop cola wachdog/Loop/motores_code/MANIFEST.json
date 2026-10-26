@@ -1,0 +1,12 @@
+{
+  "total": 311,
+  "fuente": "repo ECC (fuente)",
+  "formato": "motor-code-ejecutable",
+  "ciclos": [
+    "MAIN",
+    "VERIFY",
+    "RECOVERY",
+    "CONTINUOUS",
+    "META"
+  ]
+}

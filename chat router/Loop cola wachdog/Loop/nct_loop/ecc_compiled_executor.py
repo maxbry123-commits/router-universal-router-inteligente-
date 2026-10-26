@@ -27,7 +27,7 @@ def _verified_receipt(receipt:dict, request:dict) -> bool:
             and receipt.get('evidence_source') in ('approved_tool','independent_checker'))
 
 
-async def execute_compiled_skill(*, catalog:dict, skill_id:str, source_sha256:str,
+async def execute_compiled_motor(*, catalog:dict, skill_id:str, source_sha256:str,
                                   event:str, task_id:str, context:dict,
                                   approved_handlers:Mapping[str,Callable],
                                   receipt_callback:Callable) -> dict:

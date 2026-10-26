@@ -125,13 +125,13 @@ def make_python_wrappers(registry:dict, output_dir:Path) -> int:
         if not mod.isidentifier():raise ECCCompilationError('slug no es módulo Python')
         lines=[
             '"""Generated ECC phase adapter, no untrusted code execution."""',
-            'from nct_loop.ecc_compiled_executor import execute_compiled_skill',
-            f'SKILL_ID = {slug!r}',
+            'from nct_loop.ecc_compiled_executor import execute_compiled_motor',
+            f'MOTOR_ID = {slug!r}',
             f'SOURCE_SHA256 = {registry[slug]["source_sha256"]!r}',
             '',
             'async def run(*, catalog, event, task_id, context, approved_handlers, receipt_callback):',
-            '    return await execute_compiled_skill(',
-            '        catalog=catalog, skill_id=SKILL_ID, source_sha256=SOURCE_SHA256,',
+            '    return await execute_compiled_motor(',
+            '        catalog=catalog, motor_id=MOTOR_ID, source_sha256=SOURCE_SHA256,',
             '        event=event, task_id=task_id, context=context,',
             '        approved_handlers=approved_handlers, receipt_callback=receipt_callback)',
             '',

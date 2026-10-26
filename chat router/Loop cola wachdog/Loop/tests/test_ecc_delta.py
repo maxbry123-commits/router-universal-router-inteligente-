@@ -8,7 +8,7 @@ from pathlib import Path
 
 from nct_loop.ecc_phase_compiler import (compile_skill,compile_directory,make_python_wrappers,
                                          write_compiled_catalog,ECCCompilationError)
-from nct_loop.ecc_compiled_executor import execute_compiled_skill,PhaseBlocked
+from nct_loop.ecc_compiled_executor import execute_compiled_motor,PhaseBlocked
 from nct_loop.ecc_operational_rules import (
     loop_design,dag_rfc,tdd_red_green,verification_loop,module_regression,
     ui_path_audit,accessibility,quality_gate,benchmark_reliability,stall_guard)
@@ -67,7 +67,7 @@ class ExecutorTests(unittest.IsolatedAsyncioTestCase):
                     event='code.changed',task_id='T001',context={'goal':'test'},
                     approved_handlers=handlers,receipt_callback=callback)
     async def test_missing_handler_fail_closed(self):
-        result=await execute_compiled_skill(**self.arguments({},None))
+        result=await execute_compiled_motor(**self.arguments({},None))
         self.assertFalse(result['ok']);self.assertEqual(result['status'],'NOT_IMPLEMENTED')
         self.assertEqual(result['executed'],0)
     async def test_valid_handlers_execute_all_phases(self):
@@ -78,22 +78,22 @@ class ExecutorTests(unittest.IsolatedAsyncioTestCase):
                         phase_id=req['phase_id'],receipt_id='tool-'+req['request_id'],
                         status='PASS',evidence_source='approved_tool')
         handlers={x['action_id']:action for x in phases}
-        res=await execute_compiled_skill(**self.arguments(handlers,trusted))
+        res=await execute_compiled_motor(**self.arguments(handlers,trusted))
         self.assertTrue(res['ok']);self.assertEqual(res['executed'],len(phases))
     async def test_fake_receipt_rejected(self):
         phases=self.catalog['skills']['tdd-workflow']['phases']
         async def action(req):return {'status':'PASS'}
         handlers={x['action_id']:action for x in phases}
-        res=await execute_compiled_skill(**self.arguments(handlers,lambda req,r:{'status':'PASS','receipt_id':'fake'}))
+        res=await execute_compiled_motor(**self.arguments(handlers,lambda req,r:{'status':'PASS','receipt_id':'fake'}))
         self.assertEqual(res['status'],'BAD_RECEIPT')
     async def test_source_hash_mismatch_rejected(self):
         args=self.arguments({},None);args['source_sha256']='0'*64
-        with self.assertRaises(PhaseBlocked):await execute_compiled_skill(**args)
+        with self.assertRaises(PhaseBlocked):await execute_compiled_motor(**args)
     async def test_failure_does_not_continue(self):
         phases=self.catalog['skills']['tdd-workflow']['phases']
         async def action(req):return {'status':'FAIL'}
         handlers={x['action_id']:action for x in phases}
-        res=await execute_compiled_skill(**self.arguments(handlers,lambda req,r:{}))
+        res=await execute_compiled_motor(**self.arguments(handlers,lambda req,r:{}))
         self.assertEqual(res['status'],'FAILED')
 
 class PolicyTests(unittest.TestCase):

@@ -55,7 +55,7 @@ class TodosLosMotoresCorren(unittest.TestCase):
         m._WS_ROOT, m._MEM = t / 'ws', t / 'mem'
         m._PuertoModelo = lambda modelo, sesion: DemoModel(prop)
         m._chat_modelo = chat
-        r = m.handle('gobernar', {'objetivo': 'Cualquier objetivo que no menciona ningun skill en particular', 'mision': mision})
+        r = m.handle('gobernar', {'objetivo': 'Cualquier objetivo que no menciona ningun motor en particular', 'mision': mision})
         for _ in range(600):
             e = m.handle('estado', {'proceso_id': r['proceso_id']})
             if e['estado'] != 'procesando':
@@ -72,7 +72,7 @@ class TodosLosMotoresCorren(unittest.TestCase):
         total = sum(c['motores']['total'] for c in res['ciclos'])
         ok = sum(c['motores']['pass'] for c in res['ciclos'])
         self.assertEqual((total, ok), (311, 311))
-        self.assertEqual(total, len(m._registro_ecc()))
+        self.assertEqual(total, len(m._registro_motores()))
 
     def test_un_motor_que_falla_deja_el_ciclo_en_rojo_y_no_hay_done(self):
         def chat(modelo, prompt, sesion):
