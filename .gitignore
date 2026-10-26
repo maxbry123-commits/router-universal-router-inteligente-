@@ -6,4 +6,4 @@ __pycache__/
 router inteligente universal/plugins/fichas_qwen/riu_data/
 
 # estado de ejecucion de LOOP/Cola/Watchdog (se crea al correr)
-chat router/Loop cola wachdog/*/state/
+chat-router/Loop cola wachdog/*/state/

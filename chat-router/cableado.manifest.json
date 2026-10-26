@@ -3,22 +3,22 @@
   "chat-router/chat": "../chat",
   "chat-router/harness": "../chat/backend/deepseek_harness",
   "mvp": "chat/backend/mvp",
-  "plugins/deepseek_harness": "../chat/backend/deepseek_harness",
-  "plugins/router_api_cliente.py": "../chat/backend/router_api_cliente.py"
+  "plugins/deepseek_harness": "../../chat/backend/deepseek_harness",
+  "plugins/router_api_cliente.py": "../../chat/backend/router_api_cliente.py"
  },
  "plugins": {
   "agentes": {
-   "destino": "../chat-router/agentes/agentes-yaiwes",
+   "destino": "../agentes/agentes-yaiwes",
    "enlace": true,
    "ficha": false
   },
   "chat": {
-   "destino": "../chat-router/otros/chat",
+   "destino": "../otros/chat",
    "enlace": true,
    "ficha": true
   },
   "cola50": {
-   "destino": "../chat router/Loop cola wachdog/Cola",
+   "destino": "../Loop cola wachdog/Cola",
    "enlace": true,
    "ficha": true
   },
@@ -28,7 +28,7 @@
    "ficha": true
   },
   "deepseek_harness": {
-   "destino": "../chat/backend/deepseek_harness",
+   "destino": "../../chat/backend/deepseek_harness",
    "enlace": true,
    "ficha": true
   },
@@ -38,12 +38,12 @@
    "ficha": true
   },
   "hf_datasets": {
-   "destino": "../chat-router/memoria/hf_datasets",
+   "destino": "../memoria/hf_datasets",
    "enlace": true,
    "ficha": true
   },
   "hf_skills": {
-   "destino": "../chat-router/workflow-loop-code-yaiwes/hf_skills",
+   "destino": "../workflow-loop-code-yaiwes/hf_skills",
    "enlace": true,
    "ficha": true
   },
@@ -58,32 +58,32 @@
    "ficha": true
   },
   "memoria": {
-   "destino": "../chat-router/memoria/memoria-yaiwes",
+   "destino": "../memoria/memoria-yaiwes",
    "enlace": true,
    "ficha": false
   },
   "motores": {
-   "destino": "../chat-router/motores/motores",
+   "destino": "../motores/motores",
    "enlace": true,
    "ficha": false
   },
   "motores-descarga": {
-   "destino": "../chat-router/motores/motores-descarga",
+   "destino": "../motores/motores-descarga",
    "enlace": true,
    "ficha": false
   },
   "nct_loop": {
-   "destino": "../chat router/Loop cola wachdog/Loop",
+   "destino": "../Loop cola wachdog/Loop",
    "enlace": true,
    "ficha": true
   },
   "orquestador": {
-   "destino": "../chat-router/agentes/orquestacion/orquestador",
+   "destino": "../agentes/orquestacion/orquestador",
    "enlace": true,
    "ficha": true
   },
   "parallel": {
-   "destino": "../chat-router/agentes/orquestacion/parallel",
+   "destino": "../agentes/orquestacion/parallel",
    "enlace": true,
    "ficha": true
   },
@@ -93,7 +93,7 @@
    "ficha": true
   },
   "router_api_cliente.py": {
-   "destino": "../chat/backend/router_api_cliente.py",
+   "destino": "../../chat/backend/router_api_cliente.py",
    "enlace": true,
    "ficha": false
   },
@@ -103,12 +103,12 @@
    "ficha": true
   },
   "watchdog48": {
-   "destino": "../chat router/Loop cola wachdog/wachdog",
+   "destino": "../Loop cola wachdog/wachdog",
    "enlace": true,
    "ficha": true
   },
   "workflow-loop-yaiwes": {
-   "destino": "../chat-router/workflow-loop-code-yaiwes/workflow-loop-yaiwes",
+   "destino": "../workflow-loop-code-yaiwes/workflow-loop-yaiwes",
    "enlace": true,
    "ficha": false
   }
@@ -143,16 +143,16 @@
    "sha256": "25e15c534230889e3ee09e9a143efdd2936ed22385a12d985c054cde0cf0b394"
   },
   "plugins/__init__.py": {
-   "archivos": 1,
-   "sha256": "b1d3463ef6a950402f3a836f71542f3f7629106bb4a0a8532bd1ef16d7ae64c6"
+   "archivos": 0,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   "plugins/hf_storage": {
-   "archivos": 3,
-   "sha256": "51919686ec4a78df26704c9eaabf6824f73a0c0b70eca728608e9cb7031dd371"
+   "archivos": 0,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   "plugins/puente_chat": {
-   "archivos": 44,
-   "sha256": "0ac4e8486b1805251fc6209d7c699bcfb1b86b9254f83f0f43fc8cb8aeaac1d0"
+   "archivos": 0,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   "raiz_fichas_prompt": {
    "archivos": 5,
