@@ -7,7 +7,9 @@
 //   Cuaderno (selector): loop, cola, watchdog, prompt, skills y el resto de ventanas.
 // El modelo sigue en su selector, debajo de la caja. Auto sale de la fila de iconos.
 const CONTEXTO = ["btn-archivos", "btn-ancla", "btn-sandbox", "btn-copiar-input"];
-const CUADERNO = ["btn-tools", "btn-agentes", "btn-prompt", "btn-loop", "btn-cola", "btn-tareas", "btn-comandos", "btn-sesion", "btn-reglas", "btn-watchdog", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
+const INTERRUPTORES = ["btn-tools", "btn-agentes", "btn-prompt"];
+const VENTANAS = ["btn-loop", "btn-cola", "btn-tareas", "btn-comandos", "btn-sesion", "btn-reglas", "btn-watchdog", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
+const CUADERNO = [...INTERRUPTORES, ...VENTANAS];
 const ATAJOS = [["Claves", "#pill-claves"], ["Workflows", "#pill-workflows"]];
 const movil = () => matchMedia("(max-width:720px)").matches;
 
@@ -18,10 +20,10 @@ st.textContent = "@media(max-width:720px){"
   + "#composer .composer-bar{order:2;display:flex !important;flex-wrap:wrap !important;overflow:visible !important;align-items:center;gap:6px !important;max-width:100%;min-width:0}"
   + "#composer .composer-bar::after{content:none !important;display:none !important}"
   + "#composer .composer-bar>button.secondary:not(.grp){width:40px !important;min-width:40px !important;max-width:40px !important;height:40px !important;flex:0 0 40px !important}"
-  + "#composer #btn-adjunto,#composer #btn-microfono{order:1}"
-  + "#composer .composer-bar>button.grp{order:2;flex:1 1 108px !important;width:auto !important;max-width:none !important;min-width:108px !important;min-height:40px !important;height:40px !important;border-radius:999px;padding:0 12px !important;font-size:13px}"
-  + "#composer #btn-detener{order:8;display:inline-flex !important}"
-  + "#composer .composer-bar>.action{order:9;position:static !important;margin-left:auto !important;flex:0 0 44px !important;width:44px !important;min-width:44px !important;max-width:44px !important;height:44px !important;min-height:44px !important;padding:0 !important;border-radius:50% !important;overflow:visible !important}"
+  + "#composer #btn-adjunto,#composer #btn-microfono{order:3}"
+  + "#composer .composer-bar>button.grp{order:1;flex:1 1 calc(50% - 8px) !important;width:auto !important;max-width:none !important;min-width:0 !important;min-height:40px !important;height:40px !important;border-radius:999px;padding:0 12px !important;font-size:13px}"
+  + "#composer #btn-detener{order:4;display:inline-flex !important;margin-left:auto !important}"
+  + "#composer .composer-bar>.action{order:5;position:static !important;margin-left:0 !important;flex:0 0 44px !important;width:44px !important;min-width:44px !important;max-width:44px !important;height:44px !important;min-height:44px !important;padding:0 !important;border-radius:50% !important;overflow:visible !important}"
   + "#composer .composer-bar>.action::after,#composer .composer-bar>.action .env-txt{content:none !important;display:none !important}"
   + "#composer .composer-bar>.p3d{flex:1 1 100% !important;order:-1;max-width:100%}"
   + "#composer #btn-selector-modelos{order:3 !important;margin:6px 0 0 !important;align-self:stretch;width:100%;min-height:44px;box-sizing:border-box}"
@@ -30,6 +32,7 @@ st.textContent = "@media(max-width:720px){"
   + "#ctx-panel[hidden],#mas-panel[hidden]{display:none !important}"
   + "#ctx-panel button,#mas-panel button{width:auto !important;max-width:100%;height:auto !important;min-width:0;min-height:44px;aspect-ratio:auto;border-radius:12px;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;padding:6px 10px}"
   + "#ctx-panel .mas-nom,#mas-panel .mas-nom{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}"
+  + "#mas-panel .mas-sec{grid-column:1 / -1;font-size:11px;letter-spacing:.04em;text-transform:uppercase;opacity:.65;padding:6px 4px 0}"
   + "}";
 document.head.append(st);
 
@@ -151,6 +154,10 @@ function devolver() {
   devolverAuto();
 }
 
+function firma(hoja) {
+  return [...hoja.children].map((n) => n.classList.contains("mas-sec") ? "s:" + n.textContent : n.id || n.className).join("|");
+}
+
 function colocar() {
   const fila = bar();
   if (!fila) return;
@@ -160,8 +167,21 @@ function colocar() {
   grupo("btn-contexto", "Contexto", "ctx-panel");
   grupo("btn-cuaderno", "Cuaderno", "mas-panel");
   CONTEXTO.forEach((id) => meter(id, ctx));
-  CUADERNO.forEach((id) => meter(id, libro));
   atajos(ctx);
+  const ids = (lista) => lista.filter((id) => document.getElementById(id));
+  const want = "s:Interruptores|" + ids(INTERRUPTORES).join("|") + "|s:Ventanas|" + ids(VENTANAS).join("|");
+  if (firma(libro) !== want) {
+    const sec = (titulo) => {
+      let s = [...libro.querySelectorAll(".mas-sec")].find((n) => n.textContent === titulo);
+      if (!s) { s = document.createElement("div"); s.className = "mas-sec"; s.textContent = titulo; }
+      libro.append(s);
+    };
+    const poner = (id) => { const b = document.getElementById(id); if (!b) return; rotulo(b); libro.append(b); };
+    sec("Interruptores");
+    INTERRUPTORES.forEach(poner);
+    sec("Ventanas");
+    VENTANAS.forEach(poner);
+  }
   const mirror = document.querySelector("#mirror-selector-mount");
   if (mirror && mirror.childElementCount && mirror.parentNode !== libro) libro.append(mirror);
   parqueAuto();
