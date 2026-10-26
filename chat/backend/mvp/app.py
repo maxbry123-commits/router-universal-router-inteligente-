@@ -95,6 +95,7 @@ def health(authorization: str | None = Header(None),
             "plan": modelos.plan(), "modelo_defecto": modelos.cargar()["modelo_defecto"],
             "clave_qwen_presente": bool(modelos.clave_env() or
                                        (app.state.banco and app.state.banco.leer("QWEN_API_KEY")))}
+_SES = ContextVar("sesion_tarea", default="")  # sesion del chat de la tarea: donde se deja la respuesta si nadie la recoge
 _PID = ContextVar("pid_tarea", default=None)  # la tarea del chat que esta ejecutando chat(): su estado se guarda en cada pausa
 MAX_CARACTERES = 4_000_000  # ~1 millon de tokens; tope de texto por peticion: error claro en vez de un 502 opaco del proveedor
 async def _llamar_modelo(mensajes, modelo, opciones):
@@ -128,7 +129,7 @@ async def chat(cuerpo: dict):
         limite, usadas, acumulado = cuerpo.get("_limite") or (time.time() + float(os.environ["RIU_MAX_HORAS"]) * 3600 if float(os.environ.get("RIU_MAX_HORAS", "0")) > 0 else None), list(cuerpo.get("_usadas") or []), str(cuerpo.get("_acumulado") or "")
         async def guardar_estado():  # historial completo al almacen permanente: si el Space se reinicia, la tarea se retoma de aqui
             await asyncio.to_thread(estado_tarea.guardar, app.state.banco, pid, {"mensajes": mensajes, "acumulado": acumulado, "usadas": usadas, "modelo": modelo,
-                                                                                   "opciones": cuerpo.get("opciones"), "controles": controles, "limite": limite})
+                                                                                   "opciones": cuerpo.get("opciones"), "controles": controles, "limite": limite, "sesion": _SES.get()})
             await asyncio.to_thread(estado_tarea.marcar, app.state.banco, pid, True)
         try:
             if pid: await guardar_estado()
@@ -365,7 +366,7 @@ async def _chat_ficha(cuerpo, progreso=None):
                                     "tool_calls": salida["tool_calls"]},
                          "finish_reason": salida["finish_reason"]}]}
 async def _local(pid, cuerpo):
-    _PID.set(pid)
+    _PID.set(pid); _SES.set(str(cuerpo.get("sesion") or (cuerpo.get("qwen") or {}).get("sesion") or "")[:60])
     try:
         TRABAJOS[pid].update(await _chat_ficha(cuerpo, lambda t: TRABAJOS[pid].update(progreso=t)))
     except HTTPException as error:
@@ -399,6 +400,24 @@ async def _correr(pid, cuerpo):
         finally: escalado.salir(destino)
     except escalado.DestinoError as error: TRABAJOS[pid].update(estado="error", error=str(error))
     TRABAJOS[pid].pop("subestado", None); await _persistir(pid)
+    _lanzar(_entregar_si_nadie(pid, cuerpo))
+ENTREGA_S = float(os.environ.get("RIU_ENTREGA_S", "90"))
+async def _entregar_si_nadie(pid, cuerpo):
+    """Si nadie recogio la respuesta (telefono apagado, sin senal, pestana cerrada), el Router la deja en el historial del chat (/memoria): al volver, ya esta ahi."""
+    await asyncio.sleep(ENTREGA_S)
+    t = TRABAJOS.get(pid) or {}
+    sesion = str((cuerpo or {}).get("sesion") or (((cuerpo or {}).get("qwen")) or {}).get("sesion") or "")[:60]
+    try: texto = t["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError): texto = ""
+    if t.get("estado") != "completado" or t.get("entregado") or not texto or not sesion: return
+    ts = int(time.time() * 1000)
+    from mvp import memoria as _memoria
+    try:
+        await _memoria.aplicar("save", {"scope": ("chat-ui:hist:" + sesion)[:80], "key": "m-%d-bot" % ts, "data": {"rol": "bot", "texto": texto, "ts": ts, "pid": pid}},
+                               lambda: CONTROL.credencial("hf", app.state.banco, estricto=False))
+        t["entregado"] = "servidor"
+    except Exception:  # noqa: BLE001 - mejor esfuerzo: la respuesta sigue en trabajos/<pid>.json
+        pass
 async def _reanudar(pid):
     """El Space se reinicio con la tarea a medias: se retoma con el historial guardado (pierde, como mucho, la ultima pausa de ~90 s)."""
     est = await asyncio.to_thread(estado_tarea.leer, app.state.banco, pid)
@@ -406,7 +425,7 @@ async def _reanudar(pid):
         await asyncio.to_thread(estado_tarea.marcar, app.state.banco, pid, False)
         return
     TRABAJOS[pid] = {"estado": "procesando", "proceso_id": pid, "finish_reason": "", "creado": time.time(), "reanudado": True}
-    _PROPIOS.add(pid); _PID.set(pid)
+    _PROPIOS.add(pid); _PID.set(pid); _SES.set(est.get("sesion") or "")
     try:
         s = await chat({"modelo": est["modelo"], "mensajes": est["mensajes"], "via": "harness", "opciones": est.get("opciones"), **(est.get("controles") or {}),
                         "_limite": est.get("limite"), "_usadas": est.get("usadas"), "_acumulado": est.get("acumulado")})
@@ -418,6 +437,7 @@ async def _reanudar(pid):
     except Exception as error:  # noqa: BLE001
         TRABAJOS[pid].update(estado="error", error=type(error).__name__)
     await _persistir(pid)
+    _lanzar(_entregar_si_nadie(pid, {"sesion": est.get("sesion")}))
 async def _reanudar_todas():
     for pid in list(await asyncio.to_thread(estado_tarea.pendientes, app.state.banco)):
         _lanzar(_reanudar(pid))
@@ -481,6 +501,7 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
                 break
             await asyncio.sleep(0.25)
             if pid not in _PROPIOS and i % 8 == 7: await _recuperar(pid)  # lo ejecuta otro proceso: se relee del almacen
+        if TRABAJOS[pid].get("estado") not in (None, "procesando"): TRABAJOS[pid]["entregado"] = True  # un cliente ya recibio la respuesta final
         if TRABAJOS[pid].get("status_code") == 403:
             raise HTTPException(status_code=403, detail=TRABAJOS[pid]["error"])
         return {"status": "ok", "result": dict(TRABAJOS[pid])}

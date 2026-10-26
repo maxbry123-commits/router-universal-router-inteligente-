@@ -109,3 +109,36 @@ class Reanudar(Base):
         r = self.client.post("/plugins/puente_chat/call/resultado", headers={"x-api-key": "api-ficticia"}, json={"proceso_id": "p-nunca-existio"})
         self.assertEqual((r.status_code, r.json()["result"]["error"]), (200, "PROCESO_NO_EXISTE"))    # lo que no existe ni se esta retomando: error terminal limpio
         estado_tarea.marcar(self.banco, "p-retomando", False)
+
+
+class Entrega(Base):
+    def _doc(self, pid="p-ent"):
+        servicio.TRABAJOS[pid] = {"estado": "completado", "proceso_id": pid, "choices": [{"message": {"role": "assistant", "content": "respuesta final"}}]}
+
+    def test_si_nadie_recoge_la_respuesta_queda_en_el_historial_del_chat(self):
+        self._doc()
+        with patch.object(servicio, "ENTREGA_S", 0):
+            asyncio.run(servicio._entregar_si_nadie("p-ent", {"sesion": "web-abc"}))
+        guardado = json.loads(self.nube["memoria/chat-ui_hist_web-abc.json"])
+        self.assertEqual(guardado[-1]["data"]["texto"], "respuesta final")
+        self.assertEqual(guardado[-1]["data"]["rol"], "bot")
+        self.assertEqual(servicio.TRABAJOS["p-ent"]["entregado"], "servidor")
+        servicio.TRABAJOS.pop("p-ent", None)
+
+    def test_si_un_cliente_ya_la_recibio_no_se_duplica(self):
+        self._doc("p-ent2")
+        r = self.client.post("/plugins/puente_chat/call/resultado", headers={"x-api-key": "api-ficticia"}, json={"proceso_id": "p-ent2"})
+        self.assertEqual(r.json()["result"]["estado"], "completado")
+        with patch.object(servicio, "ENTREGA_S", 0):
+            asyncio.run(servicio._entregar_si_nadie("p-ent2", {"sesion": "web-xyz"}))
+        self.assertNotIn("memoria/chat-ui_hist_web-xyz.json", self.nube)
+        servicio.TRABAJOS.pop("p-ent2", None)
+
+    def test_no_entrega_si_sigue_en_curso_o_sin_sesion(self):
+        servicio.TRABAJOS["p-ent3"] = {"estado": "procesando"}
+        self._doc("p-ent4")
+        with patch.object(servicio, "ENTREGA_S", 0):
+            asyncio.run(servicio._entregar_si_nadie("p-ent3", {"sesion": "web-1"}))
+            asyncio.run(servicio._entregar_si_nadie("p-ent4", {}))
+        self.assertEqual([k for k in self.nube if k.startswith("memoria/")], [])
+        for p in ("p-ent3", "p-ent4"): servicio.TRABAJOS.pop(p, None)
