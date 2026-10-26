@@ -7,9 +7,9 @@
 //   Cuaderno (selector): loop, cola, watchdog, prompt, skills y el resto de ventanas.
 // El modelo sigue en su selector, debajo de la caja. Auto sale de la fila de iconos.
 const CONTEXTO = ["btn-archivos", "btn-ancla", "btn-sandbox", "btn-copiar-input"];
-const TRABAJO = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tools", "btn-agentes", "btn-prompt"];
+const TRABAJO = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tareas", "btn-tools", "btn-agentes", "btn-prompt"];
 const INTERRUPTORES = ["btn-tools", "btn-agentes", "btn-prompt"];
-const VENTANAS = ["btn-tareas", "btn-comandos", "btn-sesion", "btn-reglas", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
+const VENTANAS = ["btn-comandos", "btn-sesion", "btn-reglas", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
 const CUADERNO = VENTANAS;
 const PILLS_CTX = ["ancla", "btn-proyectos", "pill-claves", "pill-workflows"];
 const PILLS_TRAB = ["btn-llm-tool", "btn-agent-access-lock"];
