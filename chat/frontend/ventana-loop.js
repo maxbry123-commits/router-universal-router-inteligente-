@@ -262,7 +262,7 @@ function pintarLoop(cuerpo) {
     if (auto) { auto.textContent = reloj ? "Pausa" : "Seguir"; auto.setAttribute("aria-pressed", reloj ? "true" : "false"); }
     if (enc) enc.setAttribute("aria-pressed", estado.on ? "true" : "false");
   };
-  let auto = null, enc = null;
+  let auto = null, enc = null, anclarGob = null;
   [objetivo, plan, tareas].forEach((x) => x.addEventListener("input", () => { leerCampos(); pintar(); }));
   window.__riuLoopPintar = pintar;
   enc = btn(etiqueta("encender", "Encender"), "secondary", async () => { enc.disabled = true; try { await pedir("encender"); pintar(); } finally { enc.disabled = false; } });
@@ -270,7 +270,7 @@ function pintarLoop(cuerpo) {
   const di = btn(etiqueta("disparar", "Disparar"), "secondary", async () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } di.disabled = true; try { await pedir("paso"); pintar(); } finally { di.disabled = false; } });
   auto = btn(etiqueta("seguir", "Seguir"), "secondary", () => { if (!estado.on) { aviso.textContent = "enciéndelo primero"; return; } if (reloj) parar(); else latido(); pintar(); });
   const re = btn(etiqueta("reiniciar", "Reiniciar"), "secondary", async () => { parar(); re.disabled = true; try { await pedir("reiniciar"); pintar(); } finally { re.disabled = false; } });
-  const gy = btn(etiqueta("yaiwes", "Yaiwes"), "secondary", async () => { if (gy.disabled) return; gy.disabled = true; try { await guardarYaiwes(aviso); } finally { gy.disabled = false; } });
+  const gy = btn(etiqueta("yaiwes", "Yaiwes"), "secondary", async () => { if (gy.disabled) return; gy.disabled = true; try { await guardarYaiwes(aviso); if (anclarGob) await anclarGob(); } finally { gy.disabled = false; } });
   gy.title = "Guardar en yaiwes.md";
   const ep = btn(etiqueta("proyecto", "Proyecto"), "secondary", async () => { if (ep.disabled) return; ep.disabled = true; try { await enlazarProyecto(aviso); } finally { ep.disabled = false; } });
   ep.title = "Enlazar al proyecto";
@@ -298,7 +298,8 @@ function pintarLoop(cuerpo) {
   ["document", "code", "frontend", "api"].forEach((v) => perfil.append(new Option(v, v)));
   const ruta = el("input"); ruta.placeholder = "archivo.txt"; ruta.setAttribute("aria-label", "Ruta de aceptación");
   const nct = vivo(el("div", "cv-est"));
-  let proc = "", poll = 0;
+  const gobBox = el("div", "cv-est");
+  let proc = "", poll = 0, gob = "", gobPoll = 0;
   const modeloChat = () => {
     const q = window.RIU_SELECTOR_QWEN, s = q && q.seleccion;
     if (!s) return "qwen3.8-max";
@@ -306,6 +307,50 @@ function pintarLoop(cuerpo) {
     return (hit && hit.model_id) || s.model_id || "qwen3.8-max";
   };
   const pararPoll = () => { if (poll) { clearInterval(poll); poll = 0; } };
+  const pararGob = () => { if (gobPoll) { clearInterval(gobPoll); gobPoll = 0; } };
+  const pintarGob = (r) => {
+    const res = r.resultado || {};
+    const lista = Array.isArray(res.ciclos) ? res.ciclos : [];
+    const wd = res.watchdog || {};
+    const trozos = [r.estado || "", res.status || ""];
+    if (wd.estado) trozos.push("watchdog " + wd.estado);
+    nct.textContent = trozos.filter(Boolean).join(" · ");
+    gobBox.replaceChildren();
+    lista.forEach((c) => {
+      if (!c || typeof c !== "object") { gobBox.append(el("div", "", String(c))); return; }
+      const row = el("div", "", [c.ciclo, c.motor, c.recibo].filter((x) => x != null && x !== "").join(" · "));
+      if (c.ok === true) row.style.color = "#3dd68c";
+      if (c.ok === false) row.style.color = "#ff5d5d";
+      gobBox.append(row);
+    });
+    (Array.isArray(wd.fallos) ? wd.fallos : []).forEach((f) => gobBox.append(el("div", "", "fallo · " + (typeof f === "string" ? f : JSON.stringify(f)))));
+    const c5 = lista[5];
+    const pasos = c5 && c5.microciclo && c5.microciclo[0] && c5.microciclo[0].pasos;
+    if (pasos && typeof pasos === "object") Object.keys(pasos).forEach((k) => {
+      const v = pasos[k];
+      const row = el("div", "", k + " · " + String(v));
+      if (v === true) row.style.color = "#3dd68c";
+      if (v === false) row.style.color = "#ff5d5d";
+      gobBox.append(row);
+    });
+  };
+  const leerGob = async () => {
+    if (!gob) return;
+    try {
+      const r = await window.RIU_PLUGIN("nct_loop", "estado", { proceso_id: gob });
+      pintarGob(r);
+      if (String(r.estado || "") !== "procesando") pararGob();
+    } catch (e) { nct.textContent = e.message; pararGob(); }
+  };
+  anclarGob = async () => {
+    if (!md.value.trim()) { nct.textContent = "falta el objetivo"; return; }
+    pararGob();
+    const r = await window.RIU_PLUGIN("nct_loop", "gobernar", { objetivo: md.value, modelo: modeloChat(), sesion: sesion() });
+    gob = r.proceso_id || "";
+    const nombres = Array.isArray(r.ciclos) ? r.ciclos.join(" ") : "";
+    nct.textContent = [r.estado || "", gob, nombres].filter(Boolean).join(" · ");
+    if (gob) gobPoll = setInterval(leerGob, 2000);
+  };
   const leerEstado = async () => {
     if (!proc) return;
     try {
@@ -331,9 +376,12 @@ function pintarLoop(cuerpo) {
     ejecutar.disabled = false;
   });
   const cancelarN = btn("CANCELAR", "secondary", async () => {
-    if (!proc) { nct.textContent = "no hay proceso"; return; }
-    try { await window.RIU_PLUGIN("nct_loop", "cancelar", { proceso_id: proc }); pararPoll(); nct.textContent = proc + " · cancelado"; }
-    catch (e) { nct.textContent = e.message; }
+    if (!proc && !gob) { nct.textContent = "no hay proceso"; return; }
+    try {
+      if (proc) { await window.RIU_PLUGIN("nct_loop", "cancelar", { proceso_id: proc }); pararPoll(); }
+      if (gob) { await window.RIU_PLUGIN("nct_loop", "cancelar", { proceso_id: gob }); pararGob(); gob = ""; }
+      nct.textContent = (proc || "") + " · cancelado";
+    } catch (e) { nct.textContent = e.message; }
   });
   const salud = btn("Health", "secondary", async () => {
     try { const r = await window.RIU_PLUGIN("nct_loop", "status", {}); nct.textContent = JSON.stringify(r).slice(0, 180); }
@@ -347,7 +395,7 @@ function pintarLoop(cuerpo) {
   perfil.style.gridColumn = "1 / -1";
   ejecutar.style.gridColumn = "1 / -1";
   nctFila.append(perfil, ejecutar, cancelarN, salud, ancla, pend, tools);
-  cuerpo.replaceChildren(el("div", "cv-sec", "Yaiwes.md"), md, filaMod, ruta, nctFila, nct, el("div", "cv-sec", "LOOP"), partes, mando, fila, centro, objetivo, plan, tareas, aviso);
+  cuerpo.replaceChildren(el("div", "cv-sec", "Yaiwes.md"), md, filaMod, ruta, nctFila, nct, gobBox, el("div", "cv-sec", "LOOP"), partes, mando, fila, centro, objetivo, plan, tareas, aviso);
   pintar();
 }
 
