@@ -3,7 +3,7 @@ Estado: **Fase 1 hecha** (carpetas, mapa, enlaces). Nada se movió. Cada fila se
 
 | Pieza (hoy) | Destino | Fase | Riesgo | Enlace de compatibilidad |
 |---|---|---|---|---|
-| `mvp/`, `chat/`, `router/`, `fichas/`, `raiz_router/`, `raiz_fichas_prompt/` | se quedan | — | — | — |
+| `chat-router/chat/` (con `mvp/`), `router-mvp/{mvp,router,fichas,raiz_router,raiz_fichas_prompt}` | se quedan | — | — | — |
 | `plugins/puente_chat` | se queda (lo usa fichas_qwen) | — | alto | — |
 | `plugins/agentes` | `chat-router/agentes/` | 2 | bajo | no |
 | `plugins/chat-router/09-CLAUDE-CODE` | `chat-router/agentes/claude-code/` | 2 | bajo | no |

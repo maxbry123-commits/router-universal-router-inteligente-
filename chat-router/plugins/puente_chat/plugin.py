@@ -617,7 +617,7 @@ _POL_MODELO = {'qwen3.8-flash': 'ficha-qwen38flash', 'qwen3.6-flash': 'ficha-qwe
 _POL_CACHE = {}
 
 
-_POL_DIR = Path(__file__).resolve().parent.parent.parent / 'fichas' / 'fichas_qwen' / 'fichas'
+_POL_DIR = Path(__file__).resolve().parent.parent.parent.parent / 'router-mvp' / 'fichas' / 'fichas_qwen' / 'fichas'
 
 
 def _politicas_fuente():
@@ -648,7 +648,7 @@ _PROMPT_LIB = {}
 
 
 def _prompt_dir():
-    return Path(__file__).resolve().parent.parent.parent / 'fichas' / 'system-prompt'
+    return Path(__file__).resolve().parent.parent.parent.parent / 'router-mvp' / 'fichas' / 'system-prompt'
 
 
 def _prompt_lib(nombre):

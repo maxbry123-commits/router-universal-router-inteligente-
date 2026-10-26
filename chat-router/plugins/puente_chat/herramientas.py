@@ -438,7 +438,7 @@ def _motor_json():  # >>> PARCHE_E2E <<< modulo del motor JSON/Python (yaiwes_mo
     from pathlib import Path as _P
     if 'yaiwes_motor' in _sy.modules:
         return _sy.modules['yaiwes_motor']
-    p = _P(__file__).resolve().parent.parent.parent / 'fichas' / 'fichas_qwen' / 'motor_json' / 'yaiwes_motor.py'
+    p = _P(__file__).resolve().parent.parent.parent.parent / 'router-mvp' / 'fichas' / 'fichas_qwen' / 'motor_json' / 'yaiwes_motor.py'
     sp = _iu.spec_from_file_location('yaiwes_motor', str(p))
     m = _iu.module_from_spec(sp)
     _sy.modules['yaiwes_motor'] = m
@@ -584,7 +584,7 @@ NV_TOPE = {'deepseek-ai/deepseek-v4.1-flash': 30}  # DeepSeek V4.1 Flash dio tim
 
 
 def _ficha4_texto():
-    ruta = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'fichas', 'fichas_qwen', 'fichas', 'ficha4-workflow-yaiwes.json')
+    ruta = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'router-mvp', 'fichas', 'fichas_qwen', 'fichas', 'ficha4-workflow-yaiwes.json')
     try:
         with open(ruta, encoding='utf-8') as f:
             sel = json.load(f).get('selector') or []
