@@ -14,14 +14,6 @@ function haceMin(t) {
   if (n < 1e12) n *= 1000;
   return Math.max(0, Math.round((Date.now() - n) / 60000));
 }
-async function mantener(siempre) {
-  const r = await fetch("/plugins/puente_chat/call/mantener_encendido", { method: "POST", headers: { "Content-Type": "application/json", "X-API-Key": sessionStorage.getItem("riu_clave") || "" }, body: JSON.stringify({ siempre: !!siempre }) });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(d.detail || d.error || d.reason || ("HTTP " + r.status));
-  const res = d.result && typeof d.result === "object" ? d.result : d;
-  if (res.ok === false) throw new Error(res.detail || res.error || "no se pudo dejar encendido");
-  return res;
-}
 async function salud() {
   const base = String((window.RIU_CONFIG && window.RIU_CONFIG.proxyDestino) || "").replace(/\/$/, "");
   const r = await fetch((base || "") + "/health", { headers: { "X-API-Key": sessionStorage.getItem("riu_clave") || "" } });
@@ -31,7 +23,7 @@ async function salud() {
 async function pintarPower(cuerpo) {
   const est = el("div", "cv-est"), chip = el("span", "tag-status pending", "…"), hw = el("div", "muted");
   const tareasEl = el("div", "muted", "Tareas en curso: …"), latidoEl = el("div", "muted", "Último latido: …");
-  let espera = 0, enCurso = 0, pendiente = "", siempreOn = false, tocando = false;
+  let espera = 0, enCurso = 0, pendiente = "";
   const ver = (d) => { chip.className = "tag-status " + (/ERROR/.test(d.stage || "") ? "warning" : ESTILO[d.stage] || "pending"); chip.textContent = d.stage || "sin estado"; hw.textContent = d.hardware ? "Hardware: " + d.hardware + (d.hardware === "cpu-basic" ? " (gratis)" : " · el hardware de pago consume créditos") : ""; return d; };
   const leer = async () => {
     let d = null;
@@ -45,7 +37,6 @@ async function pintarPower(cuerpo) {
       const min = s && s.latido ? haceMin(s.latido.t) : null;
       const aviso = !!(s && s.latido && s.latido.ok === false);
       latidoEl.textContent = (aviso ? "⚠️ " : "") + "Último latido: " + (min === null ? "sin dato" : "hace " + min + " min");
-      if (!tocando && s && typeof s.mantener_siempre === "boolean") { siempreOn = s.mantener_siempre; pintarSw(); }
     } catch (e) { enCurso = 0; tareasEl.textContent = "Tareas en curso: —"; latidoEl.textContent = "Último latido: sin dato"; }
     return d;
   };
@@ -66,20 +57,7 @@ async function pintarPower(cuerpo) {
     if (paso === 1) { paso = 2; forzar.textContent = "Confirmar otra vez"; clearTimeout(tf); tf = setTimeout(resetF, 5000); return; }
     clearTimeout(tf); const accion = pendiente; resetF(); lanzar(forzar, "Forzar de todos modos", accion, true);
   };
-  const sw = btn("Dejar encendido hasta que yo lo apague", "secondary");
-  sw.setAttribute("aria-pressed", "false");
-  const pintarSw = () => sw.setAttribute("aria-pressed", siempreOn ? "true" : "false");
-  sw.onclick = async () => {
-    const antes = siempreOn, quiere = !antes;
-    tocando = true; sw.disabled = true;
-    try {
-      const res = await mantener(quiere);
-      siempreOn = !!res.siempre; pintarSw();
-      est.textContent = siempreOn ? "Encendido fijo: el servidor no se duerme hasta que lo apagues" : "Encendido fijo desactivado";
-    } catch (e) { siempreOn = antes; pintarSw(); est.textContent = "⚠️ " + e.message; }
-    finally { tocando = false; sw.disabled = false; }
-  };
-  const fila = el("div", "cv-form"); fila.append(boton("Encender", "encender", false), boton("Apagar", "apagar", true), boton("Reiniciar", "reiniciar", true), btn("Actualizar", "secondary", leer), forzar, sw);
+  const fila = el("div", "cv-form"); fila.append(boton("Encender", "encender", false), boton("Apagar", "apagar", true), boton("Reiniciar", "reiniciar", true), btn("Actualizar", "secondary", leer), forzar);
   cuerpo.replaceChildren(el("div", "cv-sec", "Servidor del Router"), el("div", "cv-fila", ""), hw, tareasEl, latidoEl, fila, est); cuerpo.children[1].append(chip);
   await leer();
 }

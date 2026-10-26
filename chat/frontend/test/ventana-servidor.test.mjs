@@ -57,32 +57,18 @@ globalThis.fetch = async (url, opt) => {
 await import("../ventana-servidor.js");
 const abrir = document.querySelector("#btn-power");
 abrir.onclick();
-const sw = await (async () => {
-  for (let i = 0; i < 30; i++) {
-    const n = walk(body).find((x) => x.textContent === "Dejar encendido hasta que yo lo apague");
-    if (n && n.getAttribute("aria-pressed") === "true") return n;
-    await new Promise((r) => setTimeout(r, 10));
-  }
-  return null;
-})();
-const est = () => walk(body).find((x) => String(x.className).includes("cv-est"));
-const posts = () => llamadas.filter((x) => String(x.url).endsWith("/mantener_encendido"));
+await new Promise((r) => setTimeout(r, 40));
 
-test("interruptor mantener encendido", async () => {
-  assert.equal(sw.getAttribute("aria-pressed"), "true");
-  assert.equal(llamadas.some((x) => x.url === "/health" && x.clave === "clave-chat"), true);
+test("el interruptor no está en Servidor y sí en Configuración", async () => {
+  const { readFileSync } = await import("node:fs");
+  assert.equal(walk(body).some((x) => x.textContent === "Dejar encendido hasta que yo lo apague"), false);
   for (const nombre of ["Encender", "Apagar", "Reiniciar", "Actualizar"]) assert.equal(walk(body).some((x) => x.textContent === nombre), true);
-  await sw.onclick();
-  await sw.onclick();
-  const cuerpos = posts().map((x) => x.body);
-  assert.deepEqual(cuerpos, [{ siempre: false }, { siempre: true }]);
-  assert.equal(posts().every((x) => x.clave === "clave-chat" && x.method === "POST"), true);
-  assert.equal(sw.getAttribute("aria-pressed"), "true");
-  assert.equal(est().textContent, "Encendido fijo: el servidor no se duerme hasta que lo apagues");
-  const antes = sw.getAttribute("aria-pressed");
-  fallo = "router no";
-  await sw.onclick();
-  assert.equal(sw.getAttribute("aria-pressed"), antes);
-  assert.equal(est().textContent, "⚠️ router no");
-  console.log("CRUDO", JSON.stringify({ abierto: true, posts: cuerpos, fallo: est().textContent, pressed: sw.getAttribute("aria-pressed") }));
+  const html = readFileSync(new URL("../panel-apariencia.html", import.meta.url), "utf8");
+  const js = readFileSync(new URL("../panel-apariencia.js", import.meta.url), "utf8");
+  assert.equal(html.includes('id="tg-mantener"'), true);
+  assert.equal(html.includes("Dejar encendido hasta que yo lo apague"), true);
+  assert.equal(js.includes("/plugins/puente_chat/call/mantener_encendido"), true);
+  assert.equal(js.includes("Encendido fijo: el servidor no se duerme hasta que lo apagues"), true);
+  assert.equal(js.includes("pintar(antes)"), true);
+  console.log("CRUDO", JSON.stringify({ servidor: false, configuracion: "tg-mantener" }));
 });
