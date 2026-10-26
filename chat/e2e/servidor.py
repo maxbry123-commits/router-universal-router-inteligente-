@@ -51,11 +51,13 @@ servicio.compute._solicitar = _sol_falso
 async def vida(app): yield
 servicio.app.router.lifespan_context = vida
 from fastapi.responses import FileResponse
-@servicio.app.get("/chat/ui/{ruta:path}")
-def ui(ruta: str):
+from starlette.routing import Route
+def ui(request):
+    ruta = request.path_params["ruta"]
     p = os.path.join(DST, ruta or "shell.html")
     if not os.path.isfile(p): p = os.path.join(DST, "shell.html")
     return FileResponse(p)
+servicio.app.router.routes.insert(0, Route("/chat/ui/{ruta:path}", ui, methods=["GET"]))  # al frente: frontend_estatico.montar ya registro /chat/ui y ganaria por orden
 POWER = {"stage": "RUNNING"}  # mismo contrato que api/power.js (la función real se prueba con node --test)
 from fastapi import Request
 from fastapi.responses import JSONResponse
