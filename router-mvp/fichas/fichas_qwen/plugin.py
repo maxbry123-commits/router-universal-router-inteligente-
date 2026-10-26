@@ -120,7 +120,7 @@ def _modos_emit(ev: str, data: dict) -> None:
 def _presupuesto_salida(max_nodo: Any, cap_proveedor: Any, task_budget: Any, usado: Any) -> dict[str, Any]:
     # >>> PARCHE_BACK_G06 <<< max_output_tokens efectivo = min(nodo/fast_lane ya aplicado, tope del proveedor, presupuesto de TAREA restante); nunca infinito
     try:
-        c = [('nodo', int(max_nodo))]
+        c = [('nodo', int(max_nodo))] if max_nodo not in (None, '', 0) else []
         if cap_proveedor:
             c.append(('proveedor', int(cap_proveedor)))
         if task_budget not in (None, '', 0):
@@ -130,6 +130,8 @@ def _presupuesto_salida(max_nodo: Any, cap_proveedor: Any, task_budget: Any, usa
             c.append(('presupuesto_tarea', rest))
     except (TypeError, ValueError):
         return {'error': 'GAP_TOKENS_INVALIDOS'}
+    if not c:
+        return {'max_tokens': None, 'limitado_por': None}
     por, val = min(c, key=lambda x: x[1])
     if val < 1:
         return {'error': 'GAP_TOKENS_INVALIDOS'}
@@ -201,14 +203,23 @@ def _modelos() -> dict[str, dict[str, Any]]:
     return _MODELOS
 
 
-def _cfg(ficha: dict[str, Any]) -> tuple[int, int, int, int]:
-    # lee de la ficha activa: timeout API (s), intentos, tokens de salida, limite de chars por llamada
+_SIN_LIMITE_S = 10 ** 7  # orden del Director: sin limite de tiempo; ~116 dias por llamada
+_SIN_LIMITE_INT = 10 ** 9  # idem intentos/pasos
+
+
+def _cfg(ficha: dict[str, Any]) -> tuple[int, int, Any, Any]:
+    # lee de la ficha activa: timeout API (s), intentos, tokens de salida, limite de chars por llamada;
+    # clave ausente = sin limite (los limites de ficha fueron eliminados por orden del Director)
     d = ficha.get('dsl') or {}
-    try:
-        return (int(d['timeouts']['api_seconds']), int(d['retry']['max_attempts']),
-                int(d['tokens']['max_output_tokens']), int(ficha['motor']['limite_llamada_chars']))
-    except (KeyError, TypeError, ValueError) as x:
-        raise RuntimeError('FICHA_SIN_CONFIG:' + repr(x))
+    def _i(v, defecto):
+        try:
+            return defecto if v in (None, '', 0) else int(v)
+        except (TypeError, ValueError):
+            return defecto
+    return (_i((d.get('timeouts') or {}).get('api_seconds'), _SIN_LIMITE_S),
+            _i((d.get('retry') or {}).get('max_attempts'), _SIN_LIMITE_INT),
+            _i((d.get('tokens') or {}).get('max_output_tokens'), None),
+            _i((ficha.get('motor') or {}).get('limite_llamada_chars'), None))
 
 
 def _timeout_nodo(modelo: str, ficha: dict[str, Any], n: dict[str, Any]) -> int:
@@ -229,8 +240,8 @@ def _llamar(modelo: str, prompt: str, ficha: dict[str, Any], *, timeout_override
     if attempts_override is not None:
         intentos = min(intentos, int(attempts_override))
     if max_tokens_override is not None:
-        max_tokens = min(max_tokens, int(max_tokens_override))
-    if len(prompt) > limite:
+        max_tokens = int(max_tokens_override) if max_tokens is None else min(max_tokens, int(max_tokens_override))
+    if limite is not None and len(prompt) > limite:
         raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
     fin = time.time() + api_s  # 90 s TOTAL por nodo; los reintentos van dentro de ese tiempo
     ultimo = ''
@@ -239,7 +250,9 @@ def _llamar(modelo: str, prompt: str, ficha: dict[str, Any], *, timeout_override
         if resto < 1:
             break
         clave = m['claves'][n % len(m['claves'])]
-        _c = {'model': m['modelo'], 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tokens}
+        _c = {'model': m['modelo'], 'messages': [{'role': 'user', 'content': prompt}]}
+        if max_tokens is not None:
+            _c['max_tokens'] = max_tokens  # tope solo si la ficha lo declara
         if m['modelo'] in ESFUERZO_MODELO:
             _c['reasoning_effort'] = ESFUERZO_MODELO[m['modelo']]  # llamada directa sin tools: perfil comun de los 9 modelos (Ficha 4 / fast_lane)
         _c['stream'] = True  # siempre en stream (Token Plan Qwen)
@@ -368,7 +381,7 @@ def _diagrama(ficha, nodos, orden, out, opts, actual=''):
     linea = 'INPUT ──▶ ' + ' ──▶ '.join(tramos) + ' ──▶ SALIDA'
     if 'N6' in nodos and 'N4' in nodos:
         lp = ficha.get('loop') or {}
-        linea += chr(10) + '↺ si N6/N7/N8 dan FAIL ──▶ N4 corrige (vuelta %d/%d, tope %d s)' % (int(opts.get('ronda') or 0), int(lp.get('correcciones') or 1), int(lp.get('max_segundos') or 600))
+        linea += chr(10) + '↺ si N6/N7/N8 dan FAIL ──▶ N4 corrige (vuelta %d/%d, tope %d s)' % (int(opts.get('ronda') or 0), int(lp.get('correcciones') or 1), int(lp.get('max_segundos') or _SIN_LIMITE_S))
     return linea
 
 
@@ -558,7 +571,7 @@ def _verificar(fid, ses, pv, pid, t0):
         k, mod = a
         vid = 'V%d' % (k + 1)
         _meta(pid, vid, mod, _tarea_visor({}, vid))
-        nodo_v = {'id': vid, 'timeout_s': 180, 'max_output_tokens': 3000, 'requiere_tools': True, 'escribe': False}
+        nodo_v = {'id': vid, 'requiere_tools': True, 'escribe': False}
         o = dict(base_opts)
         o['gov_ctx'] = dict(gc)
         try:
@@ -575,7 +588,7 @@ def _verificar(fid, ses, pv, pid, t0):
         return r
     ex = _cf.ThreadPoolExecutor(max_workers=max(1, min(len(modelos), mp)))
     try:
-        tope_v = float((ficha.get('loop') or {}).get('max_segundos_codigo') or 1800) + 60
+        tope_v = float((ficha.get('loop') or {}).get('max_segundos_codigo') or _SIN_LIMITE_S) + 60
         fs_ = [ex.submit(miembro, a) for a in enumerate(modelos)]
         t_ini = time.time()
         res = []
@@ -726,7 +739,7 @@ def _anexo(ficha, fase, texto, opts):
         simple = _es_simple(texto, opts, {'N4': {}})
     if simple:
         return ''  # fix B: pregunta simple -> sin anexos de memoria (ahorra 2 llamadas flash de 60 s)
-    n = {'id': 'S-' + fase.upper(), 'timeout_s': int(ax.get('timeout_s') or 60), 'max_output_tokens': int(ax.get('max_output_tokens') or 900), 'requiere_tools': False, 'escribe': False}
+    n = {'id': 'S-' + fase.upper(), 'timeout_s': int(ax['timeout_s']) if ax.get('timeout_s') else None, 'max_output_tokens': int(ax['max_output_tokens']) if ax.get('max_output_tokens') else None, 'requiere_tools': False, 'escribe': False}
     prompt = (_P_ENTRADA if fase == 'entrada' else _P_SALIDA) + str(texto)[:12000]
     try:
         with _SEM:
@@ -794,8 +807,8 @@ _NOMBRES = {'ficha-qwen38max': 'Qwen 3.8 Max', 'ficha-qwen38flash': 'Qwen 3.8 Fl
 
 def _fast_cfg(ficha: dict[str, Any]) -> dict[str, Any]:
     c = dict(ficha.get('fast_lane') or {})
-    return {'enabled': bool(c.get('enabled')), 'timeout_s': int(c.get('timeout_s') or 25), 'max_output_tokens': int(c.get('max_output_tokens') or 600),
-            'context_chars': int(c.get('context_chars') or 12000), 'max_steps': int(c.get('max_steps') or 1), 'button_override': bool(c.get('button_override', True)), 'blocked_task_types': {str(x).lower() for x in (c.get('blocked_task_types') or _FAST_TASKS_BLOQUEADOS)},
+    return {'enabled': bool(c.get('enabled')), 'timeout_s': int(c.get('timeout_s') or _SIN_LIMITE_S), 'max_output_tokens': int(c['max_output_tokens']) if c.get('max_output_tokens') else None,
+            'context_chars': int(c['context_chars']) if c.get('context_chars') else None, 'max_steps': int(c['max_steps']) if c.get('max_steps') else None, 'button_override': bool(c.get('button_override', True)), 'blocked_task_types': {str(x).lower() for x in (c.get('blocked_task_types') or _FAST_TASKS_BLOQUEADOS)},
             'task_types': {str(x).lower() for x in (c.get('task_types') or ['small', 'simple', 'lookup', 'question', 'qa', 'chat'])}}
 
 
@@ -829,14 +842,15 @@ def _fast_llm_ok(p: dict[str, Any], ficha: dict[str, Any]) -> bool:
 
 def _fast_consult_cfg(ficha: dict[str, Any]) -> dict[str, Any]:
     c = dict(ficha.get('fast_consult') or {})
-    return {'enabled': bool(c.get('enabled')), 'opinion_timeout_s': int(c.get('opinion_timeout_s') or 90), 'opinion_max_tokens': int(c.get('opinion_max_tokens') or 350),
-            'decision_timeout_s': int(c.get('decision_timeout_s') or 90), 'decision_max_tokens': int(c.get('decision_max_tokens') or 900)}
+    return {'enabled': bool(c.get('enabled')), 'opinion_timeout_s': int(c.get('opinion_timeout_s') or _SIN_LIMITE_S), 'opinion_max_tokens': int(c['opinion_max_tokens']) if c.get('opinion_max_tokens') else None,
+            'decision_timeout_s': int(c.get('decision_timeout_s') or _SIN_LIMITE_S), 'decision_max_tokens': int(c['decision_max_tokens']) if c.get('decision_max_tokens') else None}
 
 
 def _fast_consult_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], nodos: dict[str, Any]) -> bool:
     # Ficha 2/3: SOLO consulta (sin ordenar nada) -> Ask Consil (4 opiniones en paralelo) + 1 decision; sin tools, revisores ni loops
     if opts.get('thinking_mode') in (True, 'on'): return False
-    if len(str(mensaje or '')) > _fast_cfg(ficha)['context_chars']: return False  # no truncado silencioso en consulta rapida
+    _cc = _fast_cfg(ficha)['context_chars']
+    if _cc is not None and len(str(mensaje or '')) > _cc: return False  # no truncado silencioso en consulta rapida
     if not _fast_consult_cfg(ficha)['enabled'] or not all(k in nodos for k in ('N1', 'N2', 'N3', 'N3B')):
         return False
     if 'N3D' not in nodos and 'N4' not in nodos:
@@ -947,7 +961,7 @@ def _fast_qa(ficha: dict[str, Any], mensaje: str, elegido: str, pid: str, opts: 
     # FAST_QA unico para las 4 fichas: UNA llamada, sin DAG, sin tools, sin anexo de memoria, sin formato largo
     fc = _fast_cfg(ficha)
     fid = str(ficha.get('ficha') or '')
-    if len(str(mensaje or '')) > fc['context_chars']:
+    if fc['context_chars'] is not None and len(str(mensaje or '')) > fc['context_chars']:
         return 'GAP_FAST_INPUT_TOO_LARGE: continuar por flujo completo sin recortar el input', []
     if fid.startswith('ficha2') or fid.startswith('ficha3'):
         # Ask consil (equipo fijo): SIEMPRE el fast_model de su ficha; el selector de Team qwen no aplica aqui
@@ -1057,25 +1071,27 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         api_s = min(api_s, int(_nc['per_attempt_s']))
     if _nc.get('deadline'):
         api_s = int(min(api_s, max(5, _nc['deadline'] - time.monotonic() - 5)))
-    max_tok = int(n.get('max_output_tokens') or max_tok)
+    _mt = n.get('max_output_tokens') or max_tok
+    max_tok = int(_mt) if _mt is not None else None
     fast = bool(opts.get('fast_lane'))
     if fast and not opts.get('fast_consult'):
         _fc = _fast_cfg(ficha)
         api_s = min(api_s, _fc['timeout_s'])
-        max_tok = min(max_tok, _fc['max_output_tokens'])
+        if _fc['max_output_tokens'] is not None:
+            max_tok = int(_fc['max_output_tokens']) if max_tok is None else min(max_tok, _fc['max_output_tokens'])
     _pb = _presupuesto_salida(max_tok, ((ficha.get('dsl') or {}).get('tokens') or {}).get('max_output_tokens_proveedor'), opts.get('task_token_budget'), opts.get('tokens_usados'))  # >>> PARCHE_BACK_G06 <<<
     if _pb.get('error'):
         raise RuntimeError(_pb['error'])
     max_tok = _pb['max_tokens']
     if str(ficha.get('ficha') or '') in ('ficha2-dag-codigo', 'ficha3-frontend'):
         _chars_todos = len(prompt)
-        if _chars_todos > limite:
+        if limite is not None and _chars_todos > limite:
             raise RuntimeError(
                 'GAP_CONTEXT_TOTAL_REQUIERE_PARTICION:'
                 f' system+user={_chars_todos} caracteres > umbral_configurado={limite}; '
                 'ninguna instruccion fue recortada'
             )
-    elif len(prompt) > limite:
+    elif limite is not None and len(prompt) > limite:
         raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
     escribe = _escribe_nodo(n, opts)  # DSL A02: escritura por declaracion del nodo, no por id fijo
     if fast:
@@ -1134,7 +1150,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         if not _tmr['ok']:
             raise RuntimeError(_tmr['error'] + ':' + str(_tmr.get('detalle') or '')[:120])
     print('[cap] ficha=%s nodo=%s cap_tools=%s escribe=%s' % (opts.get('fid'), n.get('id'), cap_nodo, bool(escribe)), file=sys.stderr, flush=True)  # >>> PARCHE_VERIF <<< el diagnostico no depende de inferencias
-    r = pc._chat({'model': qw, 'messages': ([{'role': 'system', 'content': _sp}] if _sp else []) + [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,  # >>> MODOS <<< FIX gobernanza: system aparte (S1)
+    r = pc._chat({'model': qw, 'messages': ([{'role': 'system', 'content': _sp}] if _sp else []) + [{'role': 'user', 'content': prompt}],
+                  **({'max_tokens': max_tok} if max_tok is not None else {}),  # tope solo si la ficha lo declara  # >>> MODOS <<< FIX gobernanza: system aparte (S1)
                   'ficha_id': str(ficha.get('ficha') or ''), 'active_anchors_v1': bool(opts.get('active_anchors_v1')),
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
                   'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo, 'motor': bool(escribe and cap_nodo == 'write'),  # >>> PARCHE_N4 <<< motor_* solo para el escritor con CAP_WRITE
@@ -1259,7 +1276,7 @@ def _llamar_con_partes(modelo, prompt, ficha, n, opts):
     nid = str(n.get('id'))
     lp = ficha.get('loop') or {}
     max_partes = max(1, min(int(lp.get('max_partes_codigo') or 12), 50))
-    max_s = float(lp.get('max_segundos_codigo') or 1800)
+    max_s = float(lp.get('max_segundos_codigo') or _SIN_LIMITE_S)
     inicio = time.monotonic()
     import hashlib as _hl
     input_sha = _hl.sha256(prompt.encode('utf-8')).hexdigest()

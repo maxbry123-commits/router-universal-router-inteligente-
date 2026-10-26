@@ -1,14 +1,11 @@
-// chat-selector-modelos.js — "Selector Qwen": selector NUEVO, solo frontend, separado del selector de ficha "modelo ▾".
-// NO llama al Router ni envía nada. Al elegir un modelo guarda la elección en el chat activo y emite el evento
-// 'riu:selector-qwen' { modelo_id_slug, label, grupo, sesion }. La ficha/plugin (pendiente, ver SELECTOR-QWEN-PENDIENTES.md)
-// rellenará window.RIU_SELECTOR_QWEN.enviar; mientras siga en null el chat funciona exactamente como antes.
+// Team qwen y Team 5 MVP comparten el catálogo del Router y guardan el id de proveedor en cada chat.
 import { node, api } from "./api.js";
 import { conectarSelectores } from "./chat-selectores.js";  // interruptor ON/OFF de los 5 selectores (solo frontend)
 
 window.RIU_SELECTOR_QWEN = window.RIU_SELECTOR_QWEN || {
   enviar: null,      // gancho para la ficha/plugin: async ({ modelo_id_slug, mensaje, sesion }) => respuesta. null = sin cablear
   seleccion: null,   // última elección { modelo_id_slug, label, grupo }
-  modelos: [],       // catálogo visible (slugs de interfaz, NO son ids de proveedor)
+  modelos: [],
 };
 
 const GRUPOS = [
@@ -35,25 +32,49 @@ const GRUPOS = [
 const CATALOGO_CLAVE = "riu_catalogo_qwen";  // ultima lista que dio el Router (localStorage)
 const CATALOGO_RESPALDO = ["qwen3.8-max", "qwen3.8-flash", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-flash", "glm-5.3", "glm-5.2", "deepseek-v4-pro", "deepseek-v4-pro-0813", "deepseek-v4-flash-0731", "deepseek-v4.1-flash", "deepseek-v4.1-flash-1017", "qwen-image-3.0-pro", "wan2.7-image", "wan2.7-image-pro", "qwen-audio-3.0-tts-plus", "qwen-audio-3.0-realtime-plus", "qwen-audio-3.0-asr-flash", "wan3.0-video", "happyhorse-1.1-t2v", "happyhorse-1.1-i2v", "happyhorse-1.1-r2v"];  // plan Personal (mvp/modelos.json, p=1)
 
+const etiqueta = (id) => id.replace(/^(qwen|deepseek|glm|kimi|minimax|wan|happyhorse)/i, (s) => ({ qwen: "Qwen ", deepseek: "DeepSeek", glm: "GLM", kimi: "Kimi", minimax: "MiniMax", wan: "Wan ", happyhorse: "HappyHorse" })[s.toLowerCase()]).replace(/-/g, " ").replace(/\b(max|flash|plus|pro|image|video|code)\b/g, (s) => s[0].toUpperCase() + s.slice(1)).replace(/\b[vkm](?=\d)/g, (s) => s.toUpperCase());
+export function gruposModelos(modelos) {
+  const grupos = new Map(), vistos = new Set();
+  for (const entrada of modelos) {
+    const id = typeof entrada === "string" ? entrada : entrada?.model_id;
+    if (typeof id !== "string" || !id || vistos.has(id)) continue;
+    vistos.add(id);
+    const conocido = GRUPOS.find((g) => g.modelos.some((m) => m[3] === id));
+    const tipo = entrada?.tipo || (/audio/.test(id) ? "audio" : /video|[tir]2v$/.test(id) ? "video" : /image/.test(id) ? "imagen" : "texto");
+    const familia = /^(qwen|deepseek|glm|kimi|minimax)/i.exec(id)?.[1];
+    const titulo = conocido?.titulo || ({ imagen: "Imágenes", audio: "Modo recepción", video: "Video" })[tipo] || (familia ? etiqueta(familia).trim() : "Otros");
+    const modelo = conocido?.modelos.find((m) => m[3] === id) || [tipo === "texto" ? "pensar" : tipo === "audio" ? "voz" : "imagen", etiqueta(id), tipo, id];
+    if (!grupos.has(titulo)) grupos.set(titulo, { titulo, modelos: [] });
+    grupos.get(titulo).modelos.push(modelo);
+  }
+  return [...grupos.values()];
+}
+let catalogo = CATALOGO_RESPALDO;
+try { const guardado = JSON.parse(localStorage.getItem(CATALOGO_CLAVE)); if (Array.isArray(guardado) && guardado.length) catalogo = guardado; } catch (e) {}
+let grupos = gruposModelos(catalogo);
+
 const ICO = {  // iconos de línea monocromos (currentColor), skill Maxbry UI: sin emojis de color
   pensar: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>', rayo: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
   rapido: '<path d="M4 6l7 6-7 6zM13 6l7 6-7 6z"/>', imagen: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
   voz: '<path d="M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>', micro: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', texto: '<path d="M4 6h16M4 12h16M4 18h10"/>' };
 const slug = (t) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-window.RIU_SELECTOR_QWEN.modelos = GRUPOS.flatMap((g) => g.modelos.map((m) => ({ model_id: m[3], modelo_id_slug: slug(m[1]), label: m[1], grupo: g.titulo })));
+const publicarCatalogo = () => { window.RIU_SELECTOR_QWEN.modelos = grupos.flatMap((g) => g.modelos.map((m) => ({ model_id: m[3], modelo_id_slug: slug(m[1]), label: m[1], grupo: g.titulo }))); };
+publicarCatalogo();
 
 export function conectarSelectorModelos(ctx) {
   const { q, chat, tell, guardar } = ctx;
   let cargando = false;
-  // La lista cableada de GRUPOS no se sustituye por ids crudos. El Router solo se consulta; si no responde, la lista sigue.
+  // El servidor decide el plan; si no responde se conserva su último catálogo.
   const cargarCatalogo = (intento = 1) => {
     if (cargando) return;
     if (!sessionStorage.getItem("riu_clave")) { pintar(); return; }
     cargando = true;
     api('/chat/providers/qwen/models').then((r) => {
       if (!Array.isArray(r.models) || !r.models.length) throw new Error('Catalogo vacio');
-      const ids = r.models.map((m) => m.model_id);
-      try { localStorage.setItem(CATALOGO_CLAVE, JSON.stringify(ids)); } catch (e) {}
+      const nuevos = gruposModelos(r.models);
+      if (!nuevos.length) throw new Error('Catalogo vacio');
+      grupos = nuevos; publicarCatalogo();
+      try { localStorage.setItem(CATALOGO_CLAVE, JSON.stringify(r.models)); } catch (e) {}
       pintar();
     }).catch(() => {
       cargando = false;
@@ -72,7 +93,7 @@ export function conectarSelectorModelos(ctx) {
     pill.classList.toggle("on", !!s || !!((chat().selectorQwenMulti || []).length));
     if (pillMvp) { if (!pillMvp.classList.contains("bloq")) pillMvp.title = s ? "Team 5 MVP · " + s.label : "Team 5 MVP"; pillMvp.classList.toggle("on", !!s); }
     if (window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar) window.RIU_SELECTORES.refrescar();
-    window.RIU_SELECTOR_QWEN.seleccion = s ? { modelo_id_slug: s.modelo_id_slug, label: s.label, grupo: s.grupo, sesion: chat().sesion } : null;
+    window.RIU_SELECTOR_QWEN.seleccion = s ? { model_id: s.model_id, modelo_id_slug: s.modelo_id_slug, label: s.label, grupo: s.grupo, sesion: chat().sesion } : null;
   };
   const elegir = (m, g) => {
     const c = chat();
@@ -86,20 +107,23 @@ export function conectarSelectorModelos(ctx) {
       const SEL = window.RIU_SELECTORES; if (SEL && SEL.encender && c.selectorQwenMulti.length) SEL.encender("team-qwen");
       return;
     }
+    const dest0 = hojaOrigen === "team-5-mvp" ? "team-5-mvp" : "team-qwen";
+    const SEL0 = window.RIU_SELECTORES;
     const ya = c.selectorQwen && c.selectorQwen.label === m[1];
-    c.selectorQwen = ya ? null : { icono: m[0], model_id: m[3], modelo_id_slug: slug(m[1]), label: m[1], grupo: g.titulo };
-    const det = c.selectorQwen ? { modelo_id_slug: c.selectorQwen.modelo_id_slug, label: m[1], grupo: g.titulo, sesion: c.sesion } : null;
+    const delOtro = ya && SEL0 && SEL0.activo && SEL0.activo !== dest0;  // mismo modelo elegido por el otro selector: un clic lo mueve, no lo apaga
+    c.selectorQwen = (ya && !delOtro) ? null : { icono: m[0], model_id: m[3], modelo_id_slug: slug(m[1]), label: m[1], grupo: g.titulo };
+    const det = c.selectorQwen ? { model_id: c.selectorQwen.model_id, modelo_id_slug: c.selectorQwen.modelo_id_slug, label: m[1], grupo: g.titulo, sesion: c.sesion } : null;
     window.RIU_SELECTOR_QWEN.seleccion = det;
     window.dispatchEvent(new CustomEvent("riu:selector-qwen", { detail: det }));
     pintarPill(); pintar(); guardar(); if (typeof actualizarMIA === "function") actualizarMIA();  // la pildora de abajo refleja el modelo elegido
-    const dest = hojaOrigen === "team-5-mvp" ? "team-5-mvp" : "team-qwen";
-    const SEL = window.RIU_SELECTORES; if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender(dest); else if (SEL.activo === dest) SEL.apagar(); }  // elegir un modelo = el selector que abrio la hoja responde
+    const dest = dest0, SEL = SEL0;
+    if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender(dest); else if (SEL.activo === dest) SEL.apagar(); }  // elegir un modelo = el selector que abrio la hoja responde
     q("#sh-modelos").hidden = true;
   };
   const pintar = () => {
     const s = chat().selectorQwen;
     lista.replaceChildren();
-    for (const g of GRUPOS) {
+    for (const g of grupos) {
       lista.append(node("h4", g.titulo, "mod-grupo-t"));
       const caja = node("div", "", "mod-grupo");
       for (const m of g.modelos) {
@@ -117,8 +141,13 @@ export function conectarSelectorModelos(ctx) {
     }
   };
   const SEL_GLOBAL = () => window.RIU_SELECTORES;
-  pill.addEventListener("click", () => { hojaOrigen = "team-qwen"; pill.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); cargarCatalogo(); });
-  if (pillMvp) pillMvp.addEventListener("click", () => { hojaOrigen = "team-5-mvp"; pillMvp.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
+  const abrir = (origen, boton) => {
+    hojaOrigen = origen;
+    q("#sh-modelos .va-head strong").textContent = origen === "team-5-mvp" ? "Team 5 MVP" : "Team qwen";
+    boton.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); cargarCatalogo();
+  };
+  pill.addEventListener("click", () => abrir("team-qwen", pill));
+  if (pillMvp) pillMvp.addEventListener("click", () => abrir("team-5-mvp", pillMvp));
   new MutationObserver(pintarPill).observe(q("#chat-tabs"), { childList: true, subtree: true, attributes: true });
   pintarPill();
   conectarSelectores(ctx);
