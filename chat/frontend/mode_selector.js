@@ -30,6 +30,7 @@ export async function initModeSelector(opts) {
   const { mountEl, registryUrl, conversationId = "default", composerEl = null,
           thinkingToggleEl = null, onChange = () => {} } = opts;
   if (!mountEl) throw new Error("mode_selector: falta mountEl");
+  mountEl.querySelectorAll(".ms-btn").forEach((b) => b.remove());
 
   if (!document.getElementById(STYLE_ID)) {
     const s = el("style", { id: STYLE_ID }); s.textContent = CSS; document.head.appendChild(s);
@@ -77,6 +78,12 @@ export async function initModeSelector(opts) {
     for (const m of rows) {
       sheet.append(fila(m.icon, m.label, (m.slash ? m.slash + " · " : "") + m.summary, m.id === lock, () => { setLock(m.id); close(); }));
     }
+    sheet.append(el("div", { class: "ms-sec" }, "Extensión"));
+    const pensar = window.RIU_MODO_PENSAR;
+    const actual = typeof pensar === "function" ? pensar() : "balanced";
+    [["fast", "Rápido", "512 tok"], ["balanced", "Equilibrado", "1024 tok"], ["think", "Pensar", "2048 tok"]].forEach(([id, nom, det]) => {
+      sheet.append(fila("·", nom, det, id === actual, () => { if (typeof pensar === "function") pensar(id); close(); }));
+    });
     sheet.append(el("div", { class: "ms-sec" }, "Aprobación de tools"));
     sheet.append(fila("✋", "Manual", "Pregunta antes de usar una herramienta nueva", approval === "manual", () => { setApproval("manual"); close(); }));
     sheet.append(fila("▶", "Automática", "Actúa y se detiene si algo parece inseguro", approval === "auto", () => { setApproval("auto"); close(); }));

@@ -298,6 +298,8 @@ export async function mount(root, { api, tell }) {
     }
   };
   pintarModos();
+  const pillModo = q("#modo"); if (pillModo) pillModo.hidden = true;
+  window.RIU_MODO_PENSAR = (k) => { if (!k) return modo; modo = k; if (pillModo) pillModo.textContent = MODOS[k] + " ⌄"; return modo; };
 
   const { pintarAnclas, cargarMiHandoff } = montarSelectorAncla({ q, filaEncender, chat, burbuja, abajo, fila, cerrarHojas, chatA, pintarAnclados, guardar, tell });  // selector de ancla: handoffs con botón de encender + pegar enlace/handoff propio → selector-ancla.js
   // ---- adjuntar y ventana de archivos (boton encender = anclar al chat + x-ray) ----
