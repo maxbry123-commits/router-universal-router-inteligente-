@@ -39,6 +39,20 @@ def _recortar(registros):
 def rutas(app, verificar, credencial):
     @app.post("/memoria/save", dependencies=[Depends(verificar)])
     async def guardar(cuerpo: dict):
+        return await aplicar("save", cuerpo, credencial)
+
+    @app.get("/memoria/load", dependencies=[Depends(verificar)])
+    async def cargar(scope: str = Query(""), key: str = Query("")):
+        return await aplicar("load", {"scope": scope, "key": key}, credencial)
+
+    @app.get("/memoria/search", dependencies=[Depends(verificar)])
+    async def buscar(scope: str = Query(""), query: str = Query(""), k: int = Query(500)):
+        return await aplicar("search", {"scope": scope, "query": query, "k": k}, credencial)
+
+
+async def aplicar(accion, cuerpo, credencial):
+    """Misma memoria del chat, usable desde /memoria, el plugin almacen y la tool MCP."""
+    if accion == "save":
         scope, key = cuerpo.get("scope"), cuerpo.get("key")
         nombre = _nombre(scope)
         if not isinstance(key, str) or not key or len(key) > 200:
@@ -51,14 +65,16 @@ def rutas(app, verificar, credencial):
             try: await asyncio.to_thread(hf_store.guardar, clave, nombre, json.dumps(registros, ensure_ascii=False))
             except (ValueError, RuntimeError) as error: CACHE.pop(scope, None); raise HTTPException(status_code=502, detail=str(error)) from None
         return {"ok": True, "id": nuevo["id"]}
-
-    @app.get("/memoria/load", dependencies=[Depends(verificar)])
-    async def cargar(scope: str = Query(""), key: str = Query("")):
+    if accion == "load":
+        scope, key = cuerpo.get("scope") or "", cuerpo.get("key") or ""
         _nombre(scope)
         return {"records": [r for r in await _cargar(credencial(), scope) if r["key"] == key]}
-
-    @app.get("/memoria/search", dependencies=[Depends(verificar)])
-    async def buscar(scope: str = Query(""), query: str = Query(""), k: int = Query(500)):
+    if accion == "search":
+        scope = cuerpo.get("scope") or ""
+        query = cuerpo.get("query") or ""
+        try: k = int(cuerpo.get("k") or 500)
+        except (TypeError, ValueError): k = 500
         _nombre(scope)
         rs = [r for r in await _cargar(credencial(), scope) if not query or query.lower() in json.dumps(r["data"], ensure_ascii=False).lower()]
         return {"results": {"sqlite": rs[-max(1, min(k, 100000)):]}}
+    raise HTTPException(status_code=400, detail="accion de memoria no soportada")

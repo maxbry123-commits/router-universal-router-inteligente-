@@ -36,6 +36,11 @@ HERRAMIENTAS = [
          'destino': {'type': 'string', 'enum': ['hf', 'harness']},
          'nombre': {'type': 'string'}, 'valor': {'type': 'string'},
          'tarea': {'type': 'object'}}, 'required': ['accion']}},
+    {'name': 'memoria', 'description': 'Memoria del chat en el bucket HF: save, load o search por scope.',
+     'inputSchema': {'type': 'object', 'properties': {
+         'accion': {'type': 'string', 'enum': ['save', 'load', 'search']},
+         'scope': {'type': 'string'}, 'key': {'type': 'string'}, 'data': {},
+         'query': {'type': 'string'}, 'k': {'type': 'integer'}}, 'required': ['accion', 'scope']}},
     {'name': 'salud', 'description': 'Estado del Router: commit que corre, plan, modelos aceptados en chat (id del catalogo) y herramientas visibles.',
      'inputSchema': {'type': 'object', 'properties': {}}},
     {'name': 'listar_fichas', 'description': 'Lista las fichas disponibles de fichas_qwen (n, id, nombre).',
@@ -153,6 +158,12 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
                                         'proveedores_externos': {p: len(externos.claves(p, getattr(estado, 'banco', None))) for p in externos.PROVEEDORES}}))
         if nombre in ('pendientes', 'sala', 'yaiwes_md'):
             salida = await control.aplicar({'pendientes': 'checklist', 'sala': 'salas', 'yaiwes_md': 'handoff_texto'}[nombre], args, banco, 'modelo')
+            return _ok(id_, _contenido(salida))
+        if nombre == 'memoria':
+            from mvp import memoria as _memoria
+            if control is None or banco is None:
+                return _error(id_, -32602, 'memoria no disponible')
+            salida = await _memoria.aplicar(args.get('accion'), args, lambda: control.credencial('hf', banco, estricto=False))
             return _ok(id_, _contenido(salida))
         if nombre in ('agente', 'llm'):
             return _ok(id_, _contenido(await delegar(nombre, args)))

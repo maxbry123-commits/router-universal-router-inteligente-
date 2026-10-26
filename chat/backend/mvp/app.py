@@ -384,7 +384,7 @@ def _lanzar(coro):
     tarea = asyncio.create_task(coro); _TAREAS.add(tarea); tarea.add_done_callback(_TAREAS.discard)
 @app.post("/plugins/{plugin}/call/{accion}", dependencies=[Depends(verificar)])
 async def plugin_call(plugin: str, accion: str, cuerpo: dict):
-    if plugin not in ("fichas_qwen", "puente_chat"):
+    if plugin not in ("fichas_qwen", "puente_chat", "almacen"):
         raise HTTPException(status_code=404, detail="plugin no disponible en mvp")
     if accion in ("fichas", "listar_fichas"):
         return {"status": "ok", "result": {"fichas": [{"n": n, "id": i, "nombre": i} for n, i in FICHAS_QWEN.items()]}}
@@ -436,6 +436,14 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
             return {"status": "ok", "result": {"ok": True, "ms": int((time.monotonic() - t0) * 1000), "respuesta": r["texto"]}}
         except HTTPException as error:
             return {"status": "ok", "result": {"ok": False, "ms": int((time.monotonic() - t0) * 1000), "respuesta": str(error.detail)}}
+    if plugin == "almacen":
+        from mvp import memoria as _memoria
+        if accion in ("guardar", "leer", "status"):
+            return {"status": "ok", "result": await almacen({**cuerpo, "accion": accion, "destino": "hf" if accion != "status" else cuerpo.get("destino", "harness")})}
+        if accion in ("memoria_save", "memoria_load", "memoria_search"):
+            op = accion.split("_", 1)[1]
+            return {"status": "ok", "result": await _memoria.aplicar(op, cuerpo, lambda: CONTROL.credencial("hf", app.state.banco, estricto=False))}
+        raise HTTPException(status_code=400, detail="accion no soportada en mvp")
     if accion in control.ACCIONES:  # IA/agentes ON/OFF (agent_access_lock, G15), herramientas, conexiones, pendientes y salas: estado del servidor, bloqueado por defecto
         return {"status": "ok", "result": await _control(accion, cuerpo)}
     raise HTTPException(status_code=400, detail="accion no soportada en mvp")

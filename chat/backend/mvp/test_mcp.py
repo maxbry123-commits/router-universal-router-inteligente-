@@ -58,7 +58,7 @@ class TestMCP(unittest.TestCase):
 
     def test_tools_list_contratos_reales(self):
         tools = self.enviar('tools/list').json()['result']['tools']
-        self.assertEqual({x['name'] for x in tools}, {'chat', 'almacen', 'listar_fichas', 'resultado', 'salud',
+        self.assertEqual({x['name'] for x in tools}, {'chat', 'almacen', 'memoria', 'listar_fichas', 'resultado', 'salud',
                                                        'github_leer', 'github_escribir', 'github_api'})
         self.assertTrue(all(x['inputSchema']['type'] == 'object' for x in tools))
 
