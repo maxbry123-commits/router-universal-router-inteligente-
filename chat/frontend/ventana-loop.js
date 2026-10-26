@@ -316,13 +316,16 @@ function pintarLoop(cuerpo) {
     if (wd.estado) trozos.push("watchdog " + wd.estado);
     nct.textContent = trozos.filter(Boolean).join(" · ");
     gobBox.replaceChildren();
+    const tareas = el("ul", "riu-tareas");
     lista.forEach((c) => {
-      if (!c || typeof c !== "object") { gobBox.append(el("div", "", String(c))); return; }
-      const row = el("div", "", [c.ciclo, c.motor, c.recibo].filter((x) => x != null && x !== "").join(" · "));
-      if (c.ok === true) row.style.color = "#3dd68c";
-      if (c.ok === false) row.style.color = "#ff5d5d";
-      gobBox.append(row);
+      if (!c || typeof c !== "object") { const li = el("li"); li.append(el("span", "riu-tilde"), el("span", "riu-tarea-t", String(c))); tareas.append(li); return; }
+      const li = el("li", c.ok === true ? "hecha" : "");
+      const tilde = el("span", "riu-tilde", c.ok === true ? "✓" : c.ok === false ? "✕" : "");
+      if (c.ok === false) { li.style.borderColor = "#ff5d5d"; tilde.style.background = "#ff5d5d"; tilde.style.color = "#fff"; tilde.style.borderColor = "#ff5d5d"; }
+      li.append(tilde, el("span", "riu-tarea-t", [c.ciclo, c.motor, c.recibo].filter((x) => x != null && x !== "").join(" · ")));
+      tareas.append(li);
     });
+    if (tareas.childElementCount) gobBox.append(tareas);
     (Array.isArray(wd.fallos) ? wd.fallos : []).forEach((f) => gobBox.append(el("div", "", "fallo · " + (typeof f === "string" ? f : JSON.stringify(f)))));
     const c5 = lista[5];
     const pasos = c5 && c5.microciclo && c5.microciclo[0] && c5.microciclo[0].pasos;
