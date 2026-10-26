@@ -198,6 +198,7 @@ class Gobernanza:
         self._cerrar('C5_EJECUCION', resultado.get('status') in ('DONE_VERIFICADO', 'ALREADY_COMPLETED'),
                      ricardo={'recibos_motor': sum(1 for r in resultado.get('receipts') or []
                                                   if (r.get('evidence') or {}).get('report_origin') == 'MOTOR_CLI_LOCAL_REAL')},
+                     skills_ejecutadas=resultado.get('skills_ejecutadas'),
                      intentos=intentos, estado_engine=resultado.get('status'),
                      error=resultado.get('error'), microciclo=micro)
 

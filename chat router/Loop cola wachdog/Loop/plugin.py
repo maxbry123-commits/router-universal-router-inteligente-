@@ -393,6 +393,9 @@ _CANCEL: set = set()
 def _build_mission(p: dict) -> dict:
     m = p.get('mision')
     if isinstance(m, dict) and m.get('units'):
+        if p.get('skills') and not p.get('auto_skills'):
+            for u in m['units']:
+                u.setdefault('skills', list(p['skills'])[:int(p.get('top_skills') or 3)])
         if p.get('auto_skills'):
             for u in m['units']:
                 if not u.get('skills'):
@@ -645,8 +648,14 @@ async def _gobernar(pid: str, p: dict) -> dict:
     p['mission_id'] = str(p.get('mission_id') or 'nct-' + pid[-12:])
     p['top_skills'] = int(p.get('top_skills') or 3)
 
+    elegidos = {'skills': []}
+
+    def construir(q, skills):
+        elegidos['skills'] = list(skills)  # lo que C1 selecciono llega a la ejecucion
+        return _build_mission(dict(q, auto_skills=False, skills=skills))
+
     async def ejecutar(_mission):
-        return await _correr(pid, dict(p, auto_skills=False))
+        return await _correr(pid, dict(p, auto_skills=False, skills=elegidos['skills']))
 
     async def skill(sid, tid, obj):
         return await _ejecutar_skill_motor(sid, {'modelo': p.get('modelo'), 'sesion': p.get('sesion'),
@@ -656,7 +665,7 @@ async def _gobernar(pid: str, p: dict) -> dict:
     gob = Gobernanza(
         ricardo=RicardoOpsDemo(_WS_ROOT / pid, _POLICY),
         ejecutar_mision=ejecutar,
-        construir_mision=lambda q, skills: _build_mission(dict(q, auto_skills=False, skills=skills)),
+        construir_mision=construir,
         seleccionar_skills=_seleccionar_skills,
         correr_skill=skill,
         cancelado=lambda: pid in _CANCEL,

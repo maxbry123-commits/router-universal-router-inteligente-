@@ -40,3 +40,32 @@ class PluginGobernarTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class SkillsDeC1LlegaAEjecucion(unittest.TestCase):
+    def test_los_skills_elegidos_en_c1_se_ejecutan_con_verify(self):
+        import json as _j
+        from nct_loop.ports import DemoModel
+        m = _cargar()
+        prop = _j.loads((ROOT / 'examples/mock_proposals.json').read_text())
+        mision = _j.loads((ROOT / 'examples/mission_smoke.json').read_text())
+        with tempfile.TemporaryDirectory() as t:
+            t = Path(t)
+            m._WS_ROOT, m._MEM = t / 'ws', t / 'mem'
+            m._PuertoModelo = lambda modelo, sesion: DemoModel(prop)
+            m._chat_modelo = lambda modelo, prompt, sesion: {'reply': '{"status":"PASS"}'}
+            r = m.handle('gobernar', {'objetivo': 'Verificar la interfaz web y las pruebas de regresion del frontend',
+                                      'mision': mision})
+            for _ in range(200):
+                e = m.handle('estado', {'proceso_id': r['proceso_id']})
+                if e['estado'] != 'procesando':
+                    break
+                time.sleep(0.1)
+            res = e['resultado']
+            self.assertEqual(res['status'], 'DONE_VERIFICADO', res)
+            c1 = next(c for c in res['ciclos'] if c['ciclo'] == 'C1_INVESTIGACION')
+            c5 = next(c for c in res['ciclos'] if c['ciclo'] == 'C5_EJECUCION')
+            ejecutadas = c5.get('skills_ejecutadas') or []
+            self.assertTrue(c1['skills'])
+            self.assertEqual({x['skill_id'] for x in ejecutadas}, set(c1['skills'][:len(ejecutadas)]))
+            self.assertTrue(ejecutadas and all(x['status'] == 'PASS' for x in ejecutadas), ejecutadas)
