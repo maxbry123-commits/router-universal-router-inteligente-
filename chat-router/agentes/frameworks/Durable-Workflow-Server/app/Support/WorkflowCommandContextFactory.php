@@ -1,0 +1,298 @@
+<?php
+
+namespace App\Support;
+
+use App\Auth\Principal;
+use App\Http\Middleware\Authenticate;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Workflow\V2\CommandContext;
+
+final class WorkflowCommandContextFactory
+{
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    public function make(
+        Request $request,
+        string $workflowId,
+        string $commandName,
+        array $metadata = [],
+    ): CommandContext {
+        [$defaultAuthStatus, $defaultAuthMethod] = $this->defaultAuthMetadata();
+
+        $principal = Authenticate::principal($request);
+
+        $context = CommandContext::controlPlane()->with([
+            'caller' => $this->callerMetadata($request),
+            'auth' => $this->authMetadata($principal, $request, $defaultAuthStatus, $defaultAuthMethod),
+            'request' => $this->requestMetadata($request),
+            'server' => [
+                'operation_id' => (string) Str::ulid(),
+                'namespace' => $request->attributes->get('namespace'),
+                'workflow_id' => $workflowId,
+                'command' => $commandName,
+                'metadata' => $metadata,
+            ],
+        ]);
+
+        // The `principal` block is server-derived from the request's
+        // authenticated Principal and is never read from request input or
+        // forwarded headers. It is the non-spoofable identity recorded on
+        // every workflow history event for audit and incident review.
+        $serverDerivedPrincipal = $this->principalForRequest($request);
+
+        if ($serverDerivedPrincipal !== null) {
+            $context = $context->withPrincipal(
+                $serverDerivedPrincipal['type'],
+                $serverDerivedPrincipal['id'],
+                $serverDerivedPrincipal['label'] ?? null,
+            );
+        }
+
+        return $context;
+    }
+
+    /**
+     * Return the non-spoofable principal derived by server authentication.
+     *
+     * @return array{type: string, id: string, label?: string}|null
+     */
+    public function principalForRequest(Request $request): ?array
+    {
+        return $this->serverDerivedPrincipal(Authenticate::principal($request));
+    }
+
+    /**
+     * @return array{type: string, id: string, label?: string}|null
+     */
+    private function serverDerivedPrincipal(?Principal $principal): ?array
+    {
+        if ($principal === null) {
+            return null;
+        }
+
+        $subject = trim($principal->subject());
+
+        if ($subject === '') {
+            return null;
+        }
+
+        $method = trim($principal->method());
+        $type = $method === '' || $method === 'none'
+            ? 'server'
+            : 'auth:'.$method;
+
+        $label = $this->principalLabel($principal);
+
+        return array_filter([
+            'type' => $type,
+            'id' => $subject,
+            'label' => $label,
+        ], static fn (mixed $value): bool => is_string($value) && $value !== '');
+    }
+
+    private function principalLabel(Principal $principal): ?string
+    {
+        $claims = $principal->claims();
+
+        foreach (['display_name', 'name', 'email'] as $claim) {
+            $value = $claims[$claim] ?? null;
+
+            if (is_string($value) && trim($value) !== '') {
+                return trim($value);
+            }
+        }
+
+        $role = $principal->primaryRole();
+
+        if (is_string($role) && trim($role) !== '') {
+            return ucfirst(trim($role));
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function defaultAuthMetadata(): array
+    {
+        $authDriver = (string) config('server.auth.driver', 'none');
+        $authConfigured = match ($authDriver) {
+            'token' => $this->hasConfiguredCredential('server.auth.token')
+                || $this->hasConfiguredCredential('server.auth.role_tokens'),
+            'signature' => $this->hasConfiguredCredential('server.auth.signature_key')
+                || $this->hasConfiguredCredential('server.auth.role_signature_keys'),
+            default => false,
+        };
+
+        return [
+            $authConfigured ? 'authorized' : 'not_configured',
+            $authConfigured ? $authDriver : 'none',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function callerMetadata(Request $request): array
+    {
+        return array_filter([
+            'type' => $this->forwardedAttributionValue($request, 'caller_type') ?? 'server',
+            'label' => $this->forwardedAttributionValue($request, 'caller_label') ?? 'Standalone Server',
+        ], static fn (mixed $value): bool => $value !== null && $value !== '');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function authMetadata(
+        ?Principal $principal,
+        Request $request,
+        string $defaultStatus,
+        string $defaultMethod,
+    ): array {
+        $principalContext = $principal?->toAuditContext() ?? [];
+
+        return array_filter([
+            'status' => $this->forwardedAttributionValue($request, 'auth_status')
+                ?? $this->principalAuthStatus($principal)
+                ?? $defaultStatus,
+            'method' => $this->forwardedAttributionValue($request, 'auth_method')
+                ?? $principal?->method()
+                ?? $defaultMethod,
+            'role' => $principal?->primaryRole(),
+            'roles' => $principal?->roles(),
+            'principal' => $principalContext === [] ? null : $principalContext,
+        ], static fn (mixed $value): bool => $value !== null && $value !== '');
+    }
+
+    private function principalAuthStatus(?Principal $principal): ?string
+    {
+        if ($principal === null) {
+            return null;
+        }
+
+        return $principal->method() === 'none'
+            ? 'not_configured'
+            : 'authorized';
+    }
+
+    private function hasConfiguredCredential(string $key): bool
+    {
+        $value = config($key);
+
+        if (is_string($value)) {
+            return $value !== '';
+        }
+
+        if (! is_array($value)) {
+            return false;
+        }
+
+        foreach ($value as $item) {
+            if (is_string($item) && $item !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function requestMetadata(Request $request): array
+    {
+        $path = '/'.ltrim($request->path(), '/');
+        $headers = array_filter([
+            'x_request_id' => $this->headerValue($request, 'X-Request-Id'),
+            'x_correlation_id' => $this->headerValue($request, 'X-Correlation-Id'),
+        ], static fn (mixed $value): bool => is_string($value) && $value !== '');
+
+        $fingerprintPayload = [
+            'method' => $request->method(),
+            'path' => $path,
+            'payload' => $this->normalize($request->all()),
+            'headers' => $headers,
+        ];
+
+        $encodedFingerprintPayload = json_encode(
+            $fingerprintPayload,
+            JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+        );
+
+        $requestId = $headers['x_request_id'] ?? $this->bodyRequestId($request);
+
+        return array_filter([
+            'method' => $request->method(),
+            'path' => $path,
+            'route_name' => $request->route()?->getName(),
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'request_id' => $requestId,
+            'correlation_id' => $headers['x_correlation_id'] ?? null,
+            'fingerprint' => $encodedFingerprintPayload === false
+                ? null
+                : 'sha256:'.hash('sha256', $encodedFingerprintPayload),
+            'headers' => $headers === [] ? null : $headers,
+        ], static fn (mixed $value): bool => $value !== null && $value !== '' && $value !== []);
+    }
+
+    private function bodyRequestId(Request $request): ?string
+    {
+        $value = $request->input('request_id');
+
+        return is_string($value) && trim($value) !== ''
+            ? trim($value)
+            : null;
+    }
+
+    private function headerValue(Request $request, string $name): ?string
+    {
+        $value = $request->headers->get($name);
+
+        return is_string($value) && $value !== ''
+            ? $value
+            : null;
+    }
+
+    private function forwardedAttributionValue(Request $request, string $field): ?string
+    {
+        if (! config('server.command_attribution.trust_forwarded_headers', false)) {
+            return null;
+        }
+
+        $header = config("server.command_attribution.headers.{$field}");
+
+        if (! is_string($header) || trim($header) === '') {
+            return null;
+        }
+
+        $value = $this->headerValue($request, $header);
+
+        return $value !== null
+            ? trim($value)
+            : null;
+    }
+
+    private function normalize(mixed $value): mixed
+    {
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        if (array_is_list($value)) {
+            return array_map(fn (mixed $item): mixed => $this->normalize($item), $value);
+        }
+
+        ksort($value);
+
+        foreach ($value as $key => $item) {
+            $value[$key] = $this->normalize($item);
+        }
+
+        return $value;
+    }
+}

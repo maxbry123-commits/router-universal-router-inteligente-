@@ -1,0 +1,35 @@
+{
+  "bundle_bytes": 1933730,
+  "bundle_sha256": "9c17ea29bdcda1dbf1839cb750fb448821ec1a74ca0a75496bf3b98cf7e95b97",
+  "extracted_tree": {
+    "bytes": 3394850,
+    "files": 518,
+    "sha256": "bc1fe1230bc3f3584b2df63b9078832844e283d77e6385fa235e66adb1a2a318"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 1933730,
+      "name": "OpenBot-ashhart.bundle.zip.part-0001",
+      "sha256": "9c17ea29bdcda1dbf1839cb750fb448821ec1a74ca0a75496bf3b98cf7e95b97"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "OpenBot-ashhart",
+  "source_bytes": 3394850,
+  "source_commit": "b544cb743986193fdc3d234ae66c8e44ef68fc00",
+  "source_files": 518,
+  "source_ref": "HEAD",
+  "source_repo": "ashhart/OpenBot",
+  "source_tree": {
+    "bytes": 3394850,
+    "files": 518,
+    "sha256": "bc1fe1230bc3f3584b2df63b9078832844e283d77e6385fa235e66adb1a2a318"
+  }
+}

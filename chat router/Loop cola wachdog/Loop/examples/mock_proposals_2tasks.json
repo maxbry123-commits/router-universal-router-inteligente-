@@ -1,0 +1,82 @@
+{
+  "S_UNIT": {
+    "meta": {
+      "name": "smoke-test"
+    },
+    "ops": [
+      {
+        "id": "S1",
+        "op": "inspect_workspace"
+      },
+      {
+        "id": "S2",
+        "op": "create_directory",
+        "path": "evidencia",
+        "depends_on": [
+          "S1"
+        ]
+      },
+      {
+        "id": "S3",
+        "op": "write_text",
+        "path": "evidencia/smoke.txt",
+        "text": "PASS: salida real\n",
+        "depends_on": [
+          "S2"
+        ]
+      },
+      {
+        "id": "S4",
+        "op": "verify_exists",
+        "path": "evidencia/smoke.txt",
+        "depends_on": [
+          "S3"
+        ]
+      },
+      {
+        "id": "S5",
+        "op": "verify_contains",
+        "path": "evidencia/smoke.txt",
+        "text": "PASS: salida real",
+        "depends_on": [
+          "S4"
+        ]
+      },
+      {
+        "id": "S6",
+        "op": "finish",
+        "depends_on": [
+          "S5"
+        ]
+      }
+    ]
+  },
+  "V_UNIT": {
+    "meta": {
+      "name": "verify-second-unit"
+    },
+    "ops": [
+      {
+        "id": "V1",
+        "op": "verify_exists",
+        "path": "evidencia/smoke.txt"
+      },
+      {
+        "id": "V2",
+        "op": "verify_contains",
+        "path": "evidencia/smoke.txt",
+        "text": "PASS: salida real",
+        "depends_on": [
+          "V1"
+        ]
+      },
+      {
+        "id": "V3",
+        "op": "finish",
+        "depends_on": [
+          "V2"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,880 @@
+{
+  "schema": "durable-workflow.v2.platform-conformance.runtime-scenarios",
+  "version": 2,
+  "category": "migration_runtime_contract",
+  "suite_schema": "durable-workflow.v2.platform-conformance.suite",
+  "suite_version": 15,
+  "description": "Public scenario manifest for v1 to v2 migration conformance. Harnesses use these scenario ids and criteria when evaluating published Durable Workflow artifacts.",
+  "fixture_type": "published_artifact_runtime_scenario_manifest",
+  "result_schema": "durable-workflow.v2.migration-runtime.result",
+  "result_version": 2,
+  "result_statuses": [
+    "pass",
+    "fail",
+    "unsupported",
+    "not_applicable",
+    "not_covered",
+    "runner_blocked"
+  ],
+  "artifact_policy": {
+    "published_artifacts_only": true,
+    "requires_published_artifact_versions": true,
+    "requires_resolved_artifact_versions": true,
+    "requires_resolved_versions": true,
+    "requires_downloadable_release_assets": true,
+    "rejects_placeholder_versions": true,
+    "placeholder_version_examples": [
+      "latest",
+      "current",
+      "head",
+      "unresolved",
+      "placeholder",
+      "<latest>",
+      "1.x",
+      "2.0.0-alpha.<latest>",
+      "${VERSION}",
+      "{{ version }}"
+    ],
+    "implementation_tests_are_not_sources": true,
+    "requires_artifact_sources_for_each_required_artifact": true,
+    "requires_local_product_source_checkouts_used_false": true,
+    "forbidden_sources": [
+      "local_product_source_checkout",
+      "workspace_repo_as_artifact_under_test",
+      "release_tag_without_required_assets",
+      "rolling_server_image_tag",
+      "not_exercised",
+      "unverified_artifact_source"
+    ],
+    "required_artifacts": [
+      "server-v1",
+      "server-v2",
+      "cli-v1",
+      "cli-v2",
+      "workflow-php-v1",
+      "workflow-php-v2",
+      "sdk-python",
+      "waterline-v1",
+      "waterline-v2",
+      "sample-app-v1"
+    ],
+    "release_artifact_aliases": {
+      "cli-v2": [
+        "cli"
+      ],
+      "workflow-php-v1": [
+        "workflow-v1"
+      ],
+      "workflow-php-v2": [
+        "workflow",
+        "workflow-php"
+      ],
+      "waterline-v2": [
+        "waterline"
+      ]
+    }
+  },
+  "source_capability_policy": {
+    "inventory_field": "source_capabilities",
+    "inventory_schema": "durable-workflow.v2.migration-runtime.source-capabilities",
+    "allowed_statuses": [
+      "supported",
+      "unsupported"
+    ],
+    "required_capabilities": {
+      "completed_history": {
+        "continuity": "required",
+        "state_kind": "completed_history"
+      },
+      "in_flight_workflow": {
+        "continuity": "required",
+        "state_kind": "in_flight_workflow"
+      },
+      "retrying_activity": {
+        "continuity": "required",
+        "state_kind": "retrying_activity"
+      },
+      "queue_state": {
+        "continuity": "required",
+        "state_kind": "queue_state"
+      },
+      "schedule": {
+        "continuity": "when_source_supported",
+        "state_kind": "schedule",
+        "absent_reason_code": "v1_embedded_runtime_no_durable_schedule_surface"
+      },
+      "worker_registration": {
+        "continuity": "when_source_supported",
+        "state_kind": "worker_registration",
+        "absent_reason_code": "v1_embedded_runtime_no_worker_registration_projection"
+      },
+      "standalone_server_api": {
+        "continuity": "not_a_durable_state_cell",
+        "absent_reason_code": "v1_embedded_runtime_no_standalone_server_api"
+      },
+      "standalone_cli_server_surface": {
+        "continuity": "not_a_durable_state_cell",
+        "absent_reason_code": "v1_embedded_runtime_no_standalone_cli_server_surface"
+      },
+      "remote_worker_endpoint": {
+        "continuity": "not_a_durable_state_cell",
+        "absent_reason_code": "v1_embedded_runtime_no_remote_worker_endpoint"
+      }
+    },
+    "embedded_v1_profile": {
+      "runtime_topology": "embedded_laravel",
+      "detection_source": "server-v1 published artifact runtime metadata",
+      "supported_capabilities": [
+        "completed_history",
+        "in_flight_workflow",
+        "retrying_activity",
+        "queue_state"
+      ],
+      "unsupported_capabilities": [
+        "schedule",
+        "worker_registration",
+        "standalone_server_api",
+        "standalone_cli_server_surface",
+        "remote_worker_endpoint"
+      ]
+    },
+    "not_applicable_scenarios": {
+      "schedule_cross_upgrade_cadence_preserved": "schedule",
+      "worker_registration_projection_preserved": "worker_registration"
+    },
+    "not_applicable_requires": [
+      "status_not_applicable",
+      "source_capability_unsupported",
+      "stable_reason_code",
+      "no_durable_state_mutation_attempted"
+    ]
+  },
+  "common_result_evidence": [
+    "suite_version",
+    "scenario_id",
+    "status",
+    "started_at",
+    "finished_at",
+    "generated_at",
+    "outcome",
+    "runner_blocked",
+    "published_artifact_versions",
+    "resolved_artifact_versions",
+    "artifact_sources",
+    "artifact_prerequisite_failures",
+    "local_product_source_checkouts_used",
+    "implementation_identity",
+    "findings",
+    "finding_links",
+    "source_capabilities",
+    "migration_plan",
+    "preupgrade_state_snapshot",
+    "postupgrade_state_snapshot",
+    "history_dumps",
+    "activity_attempts",
+    "schedule_ticks",
+    "worker_registration_observations",
+    "cli_observations",
+    "waterline_observations",
+    "rollback_observations",
+    "version_skew_observations",
+    "storage_connection_smoke",
+    "observed_outputs",
+    "linked_findings"
+  ],
+  "required_matrix": {
+    "source_release_set": [
+      "server-v1",
+      "cli-v1",
+      "workflow-php-v1",
+      "waterline-v1",
+      "sample-app-v1"
+    ],
+    "target_release_set": [
+      "server-v2",
+      "cli-v2",
+      "workflow-php-v2",
+      "sdk-python",
+      "waterline-v2"
+    ],
+    "client_paths": [
+      "cli-v1",
+      "cli-v2",
+      "sdk-php",
+      "sdk-python"
+    ],
+    "operator_visibility_paths": [
+      "dw workflow:describe <workflow-id>",
+      "dw workflow:show-run <workflow-id> <run-id>",
+      "dw workflow:history <workflow-id> <run-id>",
+      "dw workflow:history-export <workflow-id> <run-id>",
+      "dw schedule:list",
+      "dw worker:list --task-queue=<unique-task-queue> --output=json",
+      "dw worker:describe <worker-id> --output=json",
+      "GET /api/workflows/{workflowId}",
+      "GET /api/workflows/{workflowId}/runs/{runId}",
+      "GET /api/workflows/{workflowId}/runs/{runId}/history",
+      "GET /api/schedules",
+      "GET /api/workers/{workerId}",
+      "GET /waterline/api/instances/{instanceId}",
+      "GET /waterline/api/instances/{instanceId}/runs/{runId}"
+    ],
+    "state_kinds": [
+      "completed_history",
+      "in_flight_workflow",
+      "retrying_activity",
+      "queue_state",
+      "schedule",
+      "worker_registration"
+    ],
+    "skew_cells": [
+      {
+        "server": "server-v1",
+        "client": "cli-v2",
+        "scenario": "version_skew_refusal",
+        "requires_source_capabilities": [
+          "standalone_server_api"
+        ]
+      },
+      {
+        "server": "server-v2",
+        "client": "cli-v1",
+        "scenario": "version_skew_refusal",
+        "requires_source_capabilities": [
+          "standalone_cli_server_surface"
+        ]
+      },
+      {
+        "server": "server-v1",
+        "worker": "workflow-php-v2",
+        "scenario": "version_skew_refusal",
+        "requires_source_capabilities": [
+          "standalone_server_api",
+          "remote_worker_endpoint"
+        ]
+      },
+      {
+        "server": "server-v2",
+        "worker": "workflow-php-v1",
+        "scenario": "version_skew_refusal",
+        "requires_source_capabilities": [
+          "remote_worker_endpoint"
+        ]
+      }
+    ]
+  },
+  "scenario_requirements": {
+    "published_artifact_install_only": {
+      "required_fields": [
+        "resolved_artifact_versions",
+        "artifact_sources",
+        "local_product_source_checkouts_used"
+      ]
+    },
+    "latest_supported_v1_state_setup": {
+      "required_fields": [
+        "source_release_versions",
+        "source_capabilities",
+        "seeded_workflows",
+        "seeded_schedules",
+        "seeded_worker_registrations",
+        "seeded_queue_state",
+        "queryable_history"
+      ]
+    },
+    "documented_migration_steps_execute": {
+      "required_fields": [
+        "migration_guide_revision",
+        "guide_command_executability",
+        "commands_executed",
+        "exit_codes",
+        "command_timings",
+        "schema_or_storage_migration_output"
+      ]
+    },
+    "completed_history_preservation_and_replay": {
+      "required_fields": [
+        "preupgrade_history_export",
+        "postupgrade_history_export",
+        "replay_result",
+        "query_result"
+      ]
+    },
+    "in_flight_workflow_progress_preserved": {
+      "required_fields": [
+        "preupgrade_progress_marker",
+        "postupgrade_progress_marker",
+        "completion_result",
+        "history_dumps"
+      ]
+    },
+    "mid_activity_retry_preserved": {
+      "required_fields": [
+        "preupgrade_activity_attempt",
+        "postupgrade_activity_attempt",
+        "retry_policy",
+        "final_activity_result"
+      ]
+    },
+    "queue_state_preserved": {
+      "required_fields": [
+        "preupgrade_queue_state",
+        "postupgrade_queue_state",
+        "pending_task_identity",
+        "dequeue_or_completion_result"
+      ]
+    },
+    "schedule_cross_upgrade_cadence_preserved": {
+      "required_fields": [
+        "preupgrade_schedule_spec",
+        "last_tick_before_upgrade",
+        "first_tick_after_upgrade",
+        "missed_or_duplicate_ticks"
+      ]
+    },
+    "worker_registration_projection_preserved": {
+      "required_fields": [
+        "preupgrade_worker_list",
+        "postupgrade_worker_list",
+        "task_queue_projection",
+        "polling_continuity"
+      ]
+    },
+    "waterline_operator_visibility_preserved": {
+      "required_fields": [
+        "preupgrade_waterline_snapshot",
+        "postupgrade_waterline_snapshot",
+        "run_detail_visibility",
+        "history_visibility"
+      ]
+    },
+    "cli_access_to_preupgrade_state": {
+      "required_fields": [
+        "workflow_describe_json",
+        "workflow_history_json",
+        "operator_api_responses",
+        "typed_response_contracts",
+        "exit_codes"
+      ]
+    },
+    "new_v2_workflow_start_after_upgrade": {
+      "required_fields": [
+        "start_request",
+        "run_id",
+        "completion_result",
+        "history_dumps"
+      ]
+    },
+    "new_v2_schedule_after_upgrade": {
+      "required_fields": [
+        "create_request",
+        "schedule_id",
+        "schedule_list_json",
+        "operator_api_response",
+        "typed_response_contracts",
+        "observed_ticks"
+      ]
+    },
+    "new_v2_worker_registration_after_upgrade": {
+      "required_fields": [
+        "registration_request",
+        "registration_response",
+        "worker_id",
+        "namespace",
+        "task_queue",
+        "unique_task_queue",
+        "task_queue_projection",
+        "operator_api_response",
+        "cli_worker_projection",
+        "typed_response_contracts",
+        "protocol_metadata",
+        "freshness",
+        "poll_request",
+        "polling_result",
+        "request_response_evidence",
+        "exit_codes",
+        "timestamps"
+      ]
+    },
+    "rollback_contract_verified": {
+      "required_fields": [
+        "rollback_steps",
+        "rollback_supported_state",
+        "public_operator_signal",
+        "postrollback_visibility",
+        "postrollback_execution_result"
+      ]
+    },
+    "version_skew_refusal": {
+      "required_fields": [
+        "skew_matrix",
+        "cli_skew_observations",
+        "worker_skew_observations",
+        "refusal_errors",
+        "operator_visible_reason",
+        "request_response_evidence",
+        "no_partial_mutation_evidence",
+        "applicability_evidence"
+      ]
+    }
+  },
+  "scenarios": [
+    {
+      "id": "published_artifact_install_only",
+      "title": "Published artifact install only",
+      "claim_targets": [
+        "standalone_server",
+        "official_sdk",
+        "worker_protocol_implementation",
+        "cli_json_client",
+        "waterline_contract_surface"
+      ],
+      "actors": [
+        "server-v1",
+        "server-v2",
+        "cli",
+        "workflow_php_v1_runtime",
+        "workflow_php_v2_runtime",
+        "python_sdk_runtime",
+        "waterline"
+      ],
+      "operations": [
+        "install the source v1 server, target v2 server, CLI, PHP workflow runtimes, Python SDK, and Waterline from published channels",
+        "record the resolved artifact name, version, and install source for every actor",
+        "run no product code from a local checkout"
+      ],
+      "pass_criteria": [
+        "the result document records every resolved artifact version",
+        "artifact_sources records one source for every required install channel",
+        "all actors under test came from published install channels",
+        "local product source checkouts are not used as artifacts under test"
+      ]
+    },
+    {
+      "id": "latest_supported_v1_state_setup",
+      "title": "Latest supported v1 state setup",
+      "claim_targets": [
+        "standalone_server",
+        "official_sdk",
+        "worker_protocol_implementation"
+      ],
+      "actors": [
+        "server-v1",
+        "workflow_php_v1_runtime",
+        "cli"
+      ],
+      "operations": [
+        "start from the documented latest supported v1 release set",
+        "inventory the selected v1 artifact capabilities before evaluating continuity",
+        "seed completed, running, waiting, retrying, and queued workflow state through public v1 surfaces",
+        "record source-absent schedules and worker-registration projections with their stable capability reason codes",
+        "capture preupgrade state snapshots without reading private storage internals"
+      ],
+      "pass_criteria": [
+        "the source release versions are resolved and recorded",
+        "every durable state kind supported by the source exists before the upgrade begins",
+        "source-absent control-plane state is classified as not applicable instead of lost",
+        "preupgrade observations are captured through supported CLI, SDK, or HTTP surfaces"
+      ]
+    },
+    {
+      "id": "documented_migration_steps_execute",
+      "title": "Documented migration steps execute",
+      "claim_targets": [
+        "standalone_server",
+        "cli_json_client"
+      ],
+      "actors": [
+        "server-v1",
+        "server-v2",
+        "cli"
+      ],
+      "operations": [
+        "follow the published v1 to v2 migration guide in order",
+        "record every command, configuration change, migration output, and process restart",
+        "start the v2 server against the migrated state"
+      ],
+      "pass_criteria": [
+        "every documented migration step exits successfully or reports an explicitly documented no-op",
+        "the v2 server reports healthy and ready after migration",
+        "the result links the migration guide revision used for the run"
+      ]
+    },
+    {
+      "id": "completed_history_preservation_and_replay",
+      "title": "Completed history preservation and replay",
+      "claim_targets": [
+        "standalone_server",
+        "official_sdk",
+        "worker_protocol_implementation"
+      ],
+      "actors": [
+        "server-v1",
+        "server-v2",
+        "workflow_php_v2_runtime",
+        "python_sdk_runtime",
+        "cli"
+      ],
+      "operations": [
+        "export a completed v1 run history before migration",
+        "export the same run history after migration",
+        "replay or query the migrated completed run through every claimed v2 runtime surface"
+      ],
+      "pass_criteria": [
+        "postupgrade history preserves the ordered durable events and payloads needed for replay",
+        "v2 replay or query returns the same durable result observed before migration",
+        "the migrated completed run remains visible through CLI and HTTP history surfaces"
+      ]
+    },
+    {
+      "id": "in_flight_workflow_progress_preserved",
+      "title": "In-flight workflow progress is preserved",
+      "claim_targets": [
+        "standalone_server",
+        "official_sdk",
+        "worker_protocol_implementation",
+        "waterline_contract_surface"
+      ],
+      "actors": [
+        "server-v1",
+        "server-v2",
+        "workflow_php_v2_runtime",
+        "python_sdk_runtime",
+        "cli",
+        "waterline"
+      ],
+      "operations": [
+        "pause a v1 workflow after a durable progress marker and before completion",
+        "migrate while the workflow is still open",
+        "resume workers on v2 and observe the run through CLI, HTTP, and Waterline surfaces"
+      ],
+      "pass_criteria": [
+        "the run resumes from the preupgrade progress marker instead of restarting",
+        "no completed step is repeated after migration",
+        "the workflow reaches the documented terminal result under v2 workers"
+      ]
+    },
+    {
+      "id": "mid_activity_retry_preserved",
+      "title": "Mid-activity retry state is preserved",
+      "claim_targets": [
+        "standalone_server",
+        "official_sdk",
+        "worker_protocol_implementation"
+      ],
+      "actors": [
+        "server-v1",
+        "server-v2",
+        "workflow_php_v2_runtime",
+        "python_sdk_runtime",
+        "cli"
+      ],
+      "operations": [
+        "seed a v1 activity that has failed at least once and is waiting for retry",
+        "migrate before the next retry fires",
+        "resume workers on v2 and record the next attempt and final activity result"
+      ],
+      "pass_criteria": [
+        "the retry attempt count and retry policy survive migration",
+        "v2 does not execute an extra duplicate attempt before the scheduled retry",
+        "the activity completes or fails according to the original durable retry policy"
+      ]
+    },
+    {
+      "id": "queue_state_preserved",
+      "title": "Durable queue state is preserved",
+      "claim_targets": [
+        "standalone_server",
+        "official_sdk",
+        "worker_protocol_implementation"
+      ],
+      "actors": [
+        "workflow_php_v1_runtime",
+        "server-v2",
+        "workflow_php_v2_runtime"
+      ],
+      "operations": [
+        "capture a queued v1 workflow or activity task before migration",
+        "migrate without draining or replacing the durable task identity",
+        "observe the same task and its deterministic disposition after the v2 runtime starts"
+      ],
+      "pass_criteria": [
+        "the pending task identity, workflow or activity relationship, and durable pre-upgrade queue placement are observed",
+        "the task is not duplicated or silently dropped",
+        "the migrated task remains claimable or is completed, deliberately recovered, or explicitly refused with operator-visible evidence"
+      ]
+    },
+    {
+      "id": "schedule_cross_upgrade_cadence_preserved",
+      "title": "Schedule cadence survives upgrade",
+      "claim_targets": [
+        "standalone_server",
+        "cli_json_client",
+        "waterline_contract_surface"
+      ],
+      "actors": [
+        "server-v1",
+        "server-v2",
+        "cli",
+        "waterline"
+      ],
+      "operations": [
+        "create an active v1 schedule with a cadence short enough to observe before and after migration",
+        "migrate across at least one expected tick boundary",
+        "compare scheduled run creation times and operator-visible schedule state"
+      ],
+      "pass_criteria": [
+        "the schedule remains enabled with the same durable spec after migration",
+        "no scheduled tick is silently skipped or duplicated across the upgrade window",
+        "CLI and Waterline surfaces expose the migrated schedule state",
+        "when the selected v1 release has no schedule surface, the cell is not applicable with the published stable reason code"
+      ]
+    },
+    {
+      "id": "worker_registration_projection_preserved",
+      "title": "Worker registration projection is preserved",
+      "claim_targets": [
+        "standalone_server",
+        "worker_protocol_implementation",
+        "waterline_contract_surface"
+      ],
+      "actors": [
+        "server-v1",
+        "server-v2",
+        "workflow_php_v1_runtime",
+        "workflow_php_v2_runtime",
+        "python_sdk_runtime",
+        "cli",
+        "waterline"
+      ],
+      "operations": [
+        "register v1 workers on at least two task queues before migration",
+        "migrate and register compatible v2 workers on the same task queues",
+        "capture worker-list, task-queue, and Waterline visibility after migration"
+      ],
+      "pass_criteria": [
+        "preupgrade worker registrations are projected into the documented v2 visibility model",
+        "new v2 workers can poll the migrated task queues without losing task-queue identity",
+        "operator surfaces distinguish stale preupgrade workers from live postupgrade workers",
+        "when the selected v1 release has no worker-registration projection, the preservation cell is not applicable with the published stable reason code"
+      ]
+    },
+    {
+      "id": "waterline_operator_visibility_preserved",
+      "title": "Waterline operator visibility is preserved",
+      "claim_targets": [
+        "waterline_contract_surface",
+        "standalone_server"
+      ],
+      "actors": [
+        "server-v1",
+        "server-v2",
+        "waterline"
+      ],
+      "operations": [
+        "capture Waterline list, detail, run, and history views before migration",
+        "migrate and refresh the same views after migration",
+        "compare visible statuses, timestamps, task queues, schedule links, and history links"
+      ],
+      "pass_criteria": [
+        "Waterline continues to show preupgrade runs after migration",
+        "status, run identity, and history navigation remain stable for migrated runs",
+        "missing fields are recorded as focused visibility findings against the owning surface"
+      ]
+    },
+    {
+      "id": "cli_access_to_preupgrade_state",
+      "title": "CLI can inspect preupgrade state after migration",
+      "claim_targets": [
+        "cli_json_client",
+        "standalone_server"
+      ],
+      "actors": [
+        "server-v2",
+        "cli"
+      ],
+      "operations": [
+        "use the v2 CLI to describe migrated v1-origin workflows",
+        "export migrated histories and query run details in JSON mode",
+        "query the corresponding v2 operator APIs and record typed response envelopes"
+      ],
+      "pass_criteria": [
+        "the CLI can inspect migrated v1-origin workflow state without private storage access",
+        "CLI and operator API JSON envelopes remain typed for migrated objects",
+        "errors for unsupported migrated fields are typed and actionable"
+      ]
+    },
+    {
+      "id": "new_v2_workflow_start_after_upgrade",
+      "title": "New v2 workflow starts after upgrade",
+      "claim_targets": [
+        "standalone_server",
+        "official_sdk",
+        "worker_protocol_implementation",
+        "cli_json_client"
+      ],
+      "actors": [
+        "server-v2",
+        "workflow_php_v2_runtime",
+        "python_sdk_runtime",
+        "cli"
+      ],
+      "operations": [
+        "start a new v2 workflow after migrated state is available",
+        "run it beside migrated v1-origin runs on the same server",
+        "capture completion, history, and operator visibility for both cohorts"
+      ],
+      "pass_criteria": [
+        "new v2 starts succeed after migration",
+        "new v2 run identity and history do not collide with migrated v1-origin runs",
+        "operator and CLI surfaces can distinguish new v2 starts from migrated runs when the product exposes that distinction"
+      ]
+    },
+    {
+      "id": "new_v2_schedule_after_upgrade",
+      "title": "New v2 schedule runs after upgrade",
+      "claim_targets": [
+        "standalone_server",
+        "cli_json_client"
+      ],
+      "actors": [
+        "server-v2",
+        "cli"
+      ],
+      "operations": [
+        "create a net-new v2 schedule after migrated v1-origin workflow state is readable",
+        "inspect it through the v2 CLI and operator API",
+        "observe at least one scheduled tick"
+      ],
+      "pass_criteria": [
+        "v2 schedule creation succeeds regardless of source schedule capability",
+        "CLI and operator API responses are typed",
+        "the schedule produces the expected v2 run"
+      ]
+    },
+    {
+      "id": "new_v2_worker_registration_after_upgrade",
+      "title": "New v2 worker registration is visible after upgrade",
+      "claim_targets": [
+        "standalone_server",
+        "worker_protocol_implementation",
+        "cli_json_client"
+      ],
+      "actors": [
+        "server-v2",
+        "workflow_php_v2_runtime",
+        "python_sdk_runtime",
+        "cli"
+      ],
+      "operations": [
+        "register a net-new v2 worker after migration through the public worker protocol on a unique task queue",
+        "inspect the worker through typed v2 operator API and CLI projections",
+        "capture worker identity, namespace, task queue, freshness and status, task slots, and protocol metadata",
+        "poll the unique task queue through the public worker protocol and retain the request, response, exit code, and timestamps"
+      ],
+      "pass_criteria": [
+        "v2 worker registration succeeds regardless of source projection capability",
+        "the operator API and CLI return matching typed worker and task-queue projections",
+        "the projections identify a fresh worker with task-slot and protocol metadata",
+        "the registered worker polls successfully with exact request-response and process evidence",
+        "transport or host failures are runner-blocked while HTTP, CLI, projection, or poll contract failures are routed to the owning public surface with the exact artifact tuple"
+      ]
+    },
+    {
+      "id": "rollback_contract_verified",
+      "title": "Rollback contract is verified",
+      "claim_targets": [
+        "standalone_server",
+        "cli_json_client",
+        "waterline_contract_surface"
+      ],
+      "actors": [
+        "server-v1",
+        "server-v2",
+        "cli",
+        "waterline"
+      ],
+      "operations": [
+        "follow the published rollback procedure from the migration guide",
+        "record which migrated state is documented as rollback-safe or rollback-refused",
+        "capture the exact public operator signal that classifies rollback as supported, refused, or irreversible",
+        "inspect postrollback workflow, schedule, CLI, and Waterline surfaces"
+      ],
+      "pass_criteria": [
+        "supported rollback state remains executable and inspectable after rollback",
+        "irreversible or unsupported rollback state is refused with a documented typed error",
+        "the result records the exact public operator-visible rollback signal",
+        "rollback does not silently mutate migrated state into an undocumented partial form"
+      ]
+    },
+    {
+      "id": "version_skew_refusal",
+      "title": "Version skew refuses loudly",
+      "claim_targets": [
+        "standalone_server",
+        "official_sdk",
+        "worker_protocol_implementation",
+        "cli_json_client",
+        "waterline_contract_surface"
+      ],
+      "actors": [
+        "server-v1",
+        "server-v2",
+        "workflow_php_v1_runtime",
+        "workflow_php_v2_runtime",
+        "python_sdk_runtime",
+        "cli",
+        "waterline"
+      ],
+      "operations": [
+        "inventory the endpoint capabilities required by every skew cell before sending a request",
+        "attempt documented unsupported v1 server with v2 worker and v2 server with v1 worker combinations only where both artifacts expose the endpoint",
+        "record inapplicable combinations as preflight refusals with stable source-capability reasons and no mutation attempt",
+        "capture refusal errors and operator-visible diagnostics"
+      ],
+      "pass_criteria": [
+        "unsupported version-skew combinations refuse before partially mutating durable state",
+        "skew cells with a nonexistent source endpoint are not executed and carry explicit not-applicable reasons",
+        "refusal errors name the incompatible component and expected version range",
+        "CLI and worker refusal cells include request and response evidence",
+        "CLI, SDK, or Waterline diagnostics expose enough context for an operator to correct the mismatch"
+      ]
+    }
+  ],
+  "coverage_gate": {
+    "passing_outcome_requires": [
+      "all_required_scenarios_reported",
+      "all_required_artifacts_resolved_from_published_channels",
+      "latest_supported_v1_state_seeded_with_realistic_workflows",
+      "public_migration_guide_steps_executed_verbatim",
+      "completed_history_preservation_and_replay_reported",
+      "in_flight_progress_mid_activity_retry_schedule_and_worker_cells_reported",
+      "source_capability_inventory_recorded_before_continuity_evaluation",
+      "v1_durable_queue_state_preservation_reported",
+      "source_absent_control_plane_cells_are_explicitly_not_applicable",
+      "cli_and_waterline_preupgrade_state_visibility_reported",
+      "new_v2_workflow_start_reported",
+      "new_v2_schedule_and_worker_registration_reported",
+      "rollback_or_documented_no_rollback_reported",
+      "rollback_public_operator_signal_recorded",
+      "cli_and_worker_skew_request_response_evidence_recorded",
+      "version_skew_refusal_reported",
+      "storage_connection_smoke_is_recorded_but_not_counted_as_complete",
+      "run_timestamps_outcome_and_findings_are_recorded",
+      "declared_outcome_matches_evaluated_status",
+      "artifact_source_recorded_for_each_install_channel",
+      "artifact_prerequisite_failures_are_linked_when_artifacts_are_missing",
+      "realistic_preupgrade_state_cells_are_recorded",
+      "migration_guide_command_timings_are_recorded",
+      "local_product_source_checkouts_used_explicitly_false",
+      "runner_blocked_false_for_product_evidence",
+      "findings_linked_for_non_pass_scenarios"
+    ],
+    "uncovered_required_scenario_outcome": "non_passing",
+    "smoke_subset_outcome": "non_passing",
+    "storage_connection_smoke_only_outcome": "non_passing",
+    "unsupported_public_surface_outcome": "non_passing_with_root_cause_finding",
+    "source_absent_control_plane_cell_outcome": "passing_not_applicable_with_stable_reason",
+    "runner_blocked_outcome": "non_passing_runner_blocked"
+  }
+}

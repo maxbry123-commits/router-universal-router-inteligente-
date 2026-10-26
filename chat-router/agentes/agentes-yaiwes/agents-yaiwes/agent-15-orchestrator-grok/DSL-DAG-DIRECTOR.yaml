@@ -1,0 +1,70 @@
+schema: yaiwes.orchestrator-director/v1
+agent_id: agent-15-orchestrator-grok
+display_name: AGENTE ORQUESTADOR GROK BUILD
+role: ORCHESTRATOR_EXECUTOR
+authority:
+  primary_input: README-DIRECTOR.md
+  mode: VERBATIM
+  immutable: true
+  write_response_to_same_file: true
+  require_colombia_time: true
+  reject_unbound_instruction: true
+watchdog:
+  contract: WATCHDOG-5MIN.json
+  interval_seconds: 300
+  runtime_required: true
+  false_active_forbidden: true
+managed_agents:
+  - agent-4-router-smol
+  - agent-8-router-local
+  - agent-11-download-extraction
+  - agent-12-yaiwes-router
+  - agent-16-chat-space-oauth
+  - agent-17-chat-backend-32gb
+  - agent-18-chat-final-auditor
+  - agent-19-chat-components-motors
+fsm:
+  states: [IDLE, READ_DIRECTOR, BIND_VERBATIM, PLAN, ASSIGN_OR_EXECUTE, TEST, READ_BACK, RESPOND_DIRECTOR, GAP, FIX, BLOCKED]
+  start: IDLE
+  transitions:
+    - IDLE -> READ_DIRECTOR
+    - READ_DIRECTOR -> BIND_VERBATIM
+    - BIND_VERBATIM -> PLAN
+    - PLAN -> ASSIGN_OR_EXECUTE
+    - ASSIGN_OR_EXECUTE -> TEST
+    - TEST -> READ_BACK
+    - READ_BACK -> RESPOND_DIRECTOR
+    - TEST -> GAP
+    - GAP -> FIX
+    - FIX -> TEST
+    - GAP -> BLOCKED
+dag:
+  - READ README-DIRECTOR.md
+  - BIND latest Director instruction VERBATIM
+  - CHECK ownership/dependencies
+  - PLAN minimum execution
+  - EXECUTE Grok Build runtime work OR DELEGATE specialty work
+  - TEST real
+  - READ-BACK evidence
+  - APPEND response to README-DIRECTOR.md
+gates:
+  director_file_read: REQUIRED
+  verbatim_match: REQUIRED
+  authorized_pool_only: REQUIRED
+  one_node_one_owner: REQUIRED
+  real_test: REQUIRED
+  observable_evidence: REQUIRED
+  read_back: REQUIRED
+  secrets_in_output: FORBIDDEN
+  github_actions: FORBIDDEN
+  canonical_motor_modification: FORBIDDEN
+on_verbatim_violation:
+  state: BLOCKED
+  action: TERMINATED_FOR_EXECUTION
+  resume_requires: DIRECTOR_EXPLICIT_AUTHORIZATION
+router_contract:
+  entry_file: README-DIRECTOR.md
+  control_file: DSL-DAG-DIRECTOR.yaml
+  runtime_chain: chain.yaml
+  watchdog_file: WATCHDOG-5MIN.json
+  state_file: crazy_wall.state.json

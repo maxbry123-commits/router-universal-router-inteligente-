@@ -1,0 +1,109 @@
+import { api } from "./api.js";
+import { mount as chat } from "./panel-chat.js";
+import { mount as archivos } from "./panel-archivos.js";
+import { mount as seguimiento } from "./panel-seguimiento.js";
+import { mount as canvas } from "./panel-canvas.js";
+import { mount as organization } from "./panel-org.js";
+import { mount as apariencia } from "./panel-apariencia.js";
+import "./apariencia-aplicar.js";
+import "./tools-ventana.js";  // MVP tools: ventana en el chat + bloque en Configuración  // aplica la apariencia guardada en todo el chat
+import "./ventana-conexiones.js";  // Conexiones (credenciales por servicio, ON/OFF en el servidor)
+import "./ventana-room.js";  // ROOM CONFERENCIAS (salas compartidas + turno de los agentes)
+import "./ventana-servidor.js";  // Servidor del Router (encender/apagar/reiniciar vía /api/power de Vercel)
+import "./ventana-loop.js";  // LOOP del chat: encender, un paso, verificar, repetir, apagar
+import "./ventana-mcp.js";  // pruebas HTTP y MCP del Router
+import "./ventana-watchdog.js";  // ficha del Watchdog: de 10 minutos a 48 horas, sin correrlas aquí
+import "./ventana-cola.js";  // cola de trabajo: hasta 50 tareas, sin enviarlas al modelo
+import "./ventana-tareas.js";  // tareas programadas y artefactos reales de este chat
+import "./ventana-comandos.js";  // atajos /nombre, a mano y por el modelo
+import "./ventana-sesion.js";  // memoria, tope y revisión de este chat
+import "./barra-mas.js";  // en el celular, los controles de más van en un solo botón
+import "./salida-ampliada.js";  // la respuesta se lee en el hueco de encima, sin estirar la página
+import "./fichas-externas.js";  // modelos reales de Groq/NVIDIA en el selector NVIDIA (antes de montar el chat)
+import "./chat-medios.js";  // medios [[imagen:]] [[video:]] [[audio:]] dentro de la burbuja
+import "./selector-modelos.js";  // un solo selector guarda todos los selectores de modelo; fuera queda el indicador
+import "./pendientes-panel.js";  // t175u: panel 📋 Pendientes (bloc de notas verbatim + DSL DAG con la LLM + prompt JSON editable)
+
+const panels = { chat, archivos, seguimiento, canvas, connectors: organization, templates: organization, engineering: organization, apariencia };
+const labels = { chat: "Chat", archivos: "Archivos", seguimiento: "Seguimiento", canvas: "Canvas",
+  connectors: "Conectores", templates: "Plantillas", engineering: "Ingeniería", apariencia: "Configuración" };
+const panel = document.querySelector("#panel");
+const mmMovil = window.matchMedia("(max-width: 720px)");
+const mvBar = document.querySelector("#movil-bar"), mvPanel = document.querySelector("#movil-panel"),
+      mvToggle = document.querySelector("#movil-toggle"), mvStatus = document.querySelector("#movil-status");
+function aplicarMovil() {
+  const nav = document.querySelector("#navigation"), topbar = document.querySelector(".topbar"),
+        navSlot = document.querySelector("#nav-slot"), topSlot = document.querySelector("#topbar-slot"),
+        ctlInt = document.querySelector(".ctl-int"), ctlPanel = document.querySelector("#ctl-panel");
+  if (mmMovil.matches) {  // reubicar los nodos EXISTENTES (no clonarlos): listeners y show(view) siguen intactos
+    mvBar.hidden = false;
+    if (nav) document.querySelector("#mv-nav").appendChild(nav);
+    // topbar ya no va a mv-top: la tarjeta Chat/Reintentar/Router repetido salió del chat; campana en #campana-slot
+    if (ctlInt) document.querySelector("#mv-ctl").appendChild(ctlInt);  // Controles entero: h1, chats, pills, selectores
+    const h1 = document.querySelector("#panel h1");  // h1 de otras vistas (el del chat viaja dentro de ctl-int)
+    if (h1) { h1._mvHome = h1.parentNode; h1._mvNext = h1.nextSibling; document.querySelector("#mv-title").appendChild(h1); }
+  } else {
+    mvBar.hidden = true; mvPanel.hidden = true;
+    if (nav && navSlot) navSlot.after(nav);
+    if (topbar && topSlot) topSlot.after(topbar);
+    if (ctlInt && ctlPanel) ctlPanel.appendChild(ctlInt);
+    const h1 = document.querySelector("#mv-title h1");
+    if (h1 && h1._mvHome) h1._mvHome.insertBefore(h1, h1._mvNext);
+  }
+}
+mvToggle.addEventListener("click", () => {
+  mvPanel.hidden = !mvPanel.hidden;
+  mvToggle.setAttribute("aria-expanded", String(!mvPanel.hidden));
+  mvToggle.textContent = mvToggle.textContent.replace(/.$/, mvPanel.hidden ? "v" : "^");
+});
+mmMovil.addEventListener("change", aplicarMovil);
+const notice = document.querySelector("#notice");
+const tell = message => { notice.textContent = message || ""; };
+let cleanup;
+const connection = document.querySelector("#connection");
+const connectBtn = document.querySelector("#connect"); if (connectBtn) connectBtn.addEventListener("click", () => window.location.reload());
+window.addEventListener("router-connection", event => {
+  connection.textContent = event.detail;
+  mvStatus.textContent = "· " + (event.detail || "Router");
+});
+
+async function show(view) {
+  if (!panels[view]) return;
+  if (cleanup) cleanup();
+  cleanup = undefined;
+  document.querySelectorAll("#mv-ctl .ctl-int").forEach((n) => n.remove());  // móvil: los controles de la vista anterior no se quedan en la pestaña
+  document.querySelectorAll("[data-view]").forEach(button => {
+    if (button.dataset.view === view) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+  document.querySelector("#view-title").textContent = labels[view];
+  mvToggle.textContent = labels[view] + (mvPanel.hidden ? " v" : " ^");
+  tell("");
+  try {
+    const response = await fetch(`/chat/ui/panel-${["connectors", "templates", "engineering"].includes(view) ? "org" : view}.html`, { cache: "no-store" });
+    if (!response.ok) throw new Error("PANEL_UNAVAILABLE");
+    panel.innerHTML = await response.text();
+    cleanup = await panels[view](panel, { api, tell, view });
+    aplicarMovil();  // cada vista montada se reubica en la pestana si es movil
+  } catch (error) { tell(error.message); }
+}
+document.querySelector("#navigation").addEventListener("click", event => {
+  const button = event.target.closest("[data-view]");
+  if (button) show(button.dataset.view);
+});
+aplicarMovil();
+show("chat");
+const TEMAS = ["gris", "little", "matte", "blanco", "crystal", "orange", "blue"];
+function aplicarTema(valor) {
+  const tema = TEMAS.includes(valor) ? valor : "gris";
+  document.documentElement.dataset.theme = tema;
+  try { localStorage.setItem("riu_tema", tema); } catch (error) { /* sin almacenamiento: vale solo en esta sesion */ }
+  return tema;
+}
+let temaGuardado = "gris";
+try { temaGuardado = localStorage.getItem("riu_tema") || "gris"; } catch (error) { /* sin almacenamiento */ }
+const selectorTema = document.querySelector("#theme");
+if (selectorTema) {
+  selectorTema.value = aplicarTema(temaGuardado);
+  selectorTema.addEventListener("change", () => { selectorTema.value = aplicarTema(selectorTema.value); });
+}

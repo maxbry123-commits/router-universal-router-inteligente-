@@ -1,0 +1,11 @@
+{
+  "buildCommand": "sh build.sh",
+  "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/", "destination": "/shell.html" },
+    { "source": "/chat/ui/:path*", "destination": "/:path*" },
+    { "source": "/plugins/:path*", "destination": "https://comand-center-1-riu-router.hf.space/plugins/:path*" },
+    { "source": "/vault/:path*", "destination": "https://comand-center-1-riu-router.hf.space/vault/:path*" },
+    { "source": "/health", "destination": "https://comand-center-1-riu-router.hf.space/health" }
+  ]
+}

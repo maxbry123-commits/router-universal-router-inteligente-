@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Estado offline y recuperacion</title>
+<style>
+  :root { --azul:#1b5fd9; --azul-oscuro:#134197; --gris:#5b6472; --borde:#e3e6eb; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#fff; color:#101317; font:16px/1.5 system-ui,Segoe UI,Roboto,sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:20px 16px 48px; }
+  h1 { font-size:1.35rem; margin:0 0 4px; }
+  .sutil { color:var(--gris); font-size:.9rem; margin:0 0 20px; }
+  .tarjeta { border:1px solid var(--borde); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .estado { display:flex; align-items:center; gap:10px; font-weight:600; margin:0; }
+  .punto { width:10px; height:10px; border-radius:50%; background:#c9cdd4; flex:0 0 auto; }
+  .punto.offline { background:#b3261e; }
+  .punto.recuperando { background:var(--azul); }
+  .punto.detenido { background:#8a8f98; }
+  .punto.online { background:#1a7f37; }
+  dl { display:grid; grid-template-columns:auto 1fr; gap:4px 14px; margin:14px 0 0; font-size:.92rem; }
+  dt { color:var(--gris); }
+  dd { margin:0; font-variant-numeric:tabular-nums; }
+  .acciones { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+  button { min-height:44px; padding:10px 18px; border-radius:10px; border:1px solid var(--borde);
+           background:#fff; color:#101317; font:inherit; font-weight:600; cursor:pointer; }
+  button:hover { border-color:var(--azul); }
+  button.primario, button.usado { background:var(--azul); border-color:var(--azul); color:#fff; }
+  button.primario:hover, button.usado:hover { background:var(--azul-oscuro); border-color:var(--azul-oscuro); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  button:focus-visible, [tabindex]:focus-visible { outline:3px solid var(--azul); outline-offset:2px; }
+  #registro { margin:14px 0 0; padding:0; list-style:none; max-height:180px; overflow:auto; font-size:.88rem; }
+  #registro li { border-top:1px solid var(--borde); padding:6px 0; color:var(--gris); }
+  #registro li:first-child { border-top:0; }
+  @media (max-width:430px) { h1 { font-size:1.15rem; } .acciones button { flex:1 1 100%; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Estado offline y recuperacion</h1>
+  <p class="sutil" id="pista">Vista local. No abre conexiones de red ni habla con el chat.</p>
+
+  <section class="tarjeta" aria-labelledby="t-estado">
+    <h2 id="t-estado" class="sutil">Estado actual</h2>
+    <p class="estado" role="status" aria-live="polite">
+      <span class="punto offline" id="punto" aria-hidden="true"></span>
+      <span id="texto-estado">Offline, esperando reintento</span>
+    </p>
+    <dl>
+      <dt>Intentos</dt><dd id="intentos">0</dd>
+      <dt>Ultimo error</dt><dd id="error">ninguno</dd>
+      <dt>Polling</dt><dd id="polling">detenido</dd>
+    </dl>
+    <div class="acciones">
+      <button type="button" id="reintentar" class="primario" aria-keyshortcuts="R">Reintentar</button>
+      <button type="button" id="detener" aria-keyshortcuts="S">Detener</button>
+      <button type="button" id="limpiar">Limpiar registro</button>
+    </div>
+  </section>
+
+  <section class="tarjeta" aria-labelledby="t-registro">
+    <h2 id="t-registro" class="sutil">Registro de eventos</h2>
+    <ul id="registro" tabindex="0" aria-label="Registro de eventos de recuperacion"></ul>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var MAX_INTENTOS = 3;
+  var estado = { fase: "offline", intentos: 0, error: "ninguno", polling: "detenido", timer: null };
+  var el = {
+    punto: document.getElementById("punto"),
+    texto: document.getElementById("texto-estado"),
+    intentos: document.getElementById("intentos"),
+    error: document.getElementById("error"),
+    polling: document.getElementById("polling"),
+    registro: document.getElementById("registro"),
+    reintentar: document.getElementById("reintentar"),
+    detener: document.getElementById("detener"),
+    limpiar: document.getElementById("limpiar")
+  };
+
+  function marca(boton) {
+    boton.classList.add("usado");
+    window.setTimeout(function () { boton.classList.remove("usado"); }, 900);
+  }
+
+  function anota(mensaje) {
+    var li = document.createElement("li");
+    li.textContent = new Date().toLocaleTimeString() + " - " + mensaje;
+    el.registro.insertBefore(li, el.registro.firstChild);
+  }
+
+  function pinta() {
+    el.punto.className = "punto " + estado.fase;
+    el.texto.textContent = estado.fase === "online" ? "Recuperado"
+      : estado.fase === "recuperando" ? "Reintentando..."
+      : estado.fase === "detenido" ? "Detenido por el usuario" : "Offline, esperando reintento";
+    el.intentos.textContent = String(estado.intentos) + " / " + MAX_INTENTOS;
+    el.error.textContent = estado.error;
+    el.polling.textContent = estado.polling;
+    el.detener.disabled = estado.fase === "online" || estado.fase === "detenido";
+  }
+
+  function pararPolling() {
+    if (estado.timer) { window.clearInterval(estado.timer); estado.timer = null; }
+    estado.polling = "detenido";
+  }
+
+  function reintentar() {
+    pararPolling();
+    estado.intentos += 1;
+    estado.fase = "recuperando";
+    estado.error = Math.random() < 0.4 ? "timeout de herramienta" : "ninguno";
+    anota("intento " + estado.intentos + " con error: " + estado.error);
+    if (estado.error === "ninguno") { estado.fase = "online"; anota("recuperacion completada"); pinta(); return; }
+    if (estado.intentos >= MAX_INTENTOS) {
+      estado.fase = "offline";
+      anota("maximo de intentos alcanzado, se corta el polling infinito");
+      pinta(); return;
+    }
+    estado.polling = "activo";
+    estado.timer = window.setInterval(function () { reintentar(); }, 1500);
+    pinta();
+  }
+
+  function detener() {
+    pararPolling();
+    estado.fase = "detenido";
+    anota("detenido por el usuario");
+    pinta();
+  }
+
+  function limpiar() {
+    el.registro.textContent = "";
+    anota("registro limpiado");
+  }
+
+  el.reintentar.addEventListener("click", function () { marca(el.reintentar); reintentar(); });
+  el.detener.addEventListener("click", function () { marca(el.detener); detener(); });
+  el.limpiar.addEventListener("click", function () { marca(el.limpiar); limpiar(); });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.target.tagName === "BUTTON") { return; }
+    if (ev.key === "r" || ev.key === "R") { marca(el.reintentar); reintentar(); }
+    if (ev.key === "s" || ev.key === "S") { marca(el.detener); detener(); }
+  });
+  pinta();
+})();
+</script>
+</body>
+</html>

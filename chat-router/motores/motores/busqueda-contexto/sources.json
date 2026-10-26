@@ -1,0 +1,78 @@
+{
+  "schema": "yaiwes.router.research.sources/v1",
+  "description": "10 fuentes web preestablecidas + GitHub + Hugging Face",
+  "sources": [
+    {
+      "id": "stackoverflow",
+      "kind": "web",
+      "site_query": "stackoverflow.com",
+      "priority": 90
+    },
+    {
+      "id": "devto",
+      "kind": "web",
+      "site_query": "dev.to",
+      "priority": 72
+    },
+    {
+      "id": "mdn",
+      "kind": "web",
+      "site_query": "developer.mozilla.org",
+      "priority": 90
+    },
+    {
+      "id": "python_docs",
+      "kind": "web",
+      "site_query": "docs.python.org",
+      "priority": 88
+    },
+    {
+      "id": "pypi",
+      "kind": "web",
+      "site_query": "pypi.org",
+      "priority": 82
+    },
+    {
+      "id": "npm",
+      "kind": "web",
+      "site_query": "npmjs.com",
+      "priority": 82
+    },
+    {
+      "id": "node_docs",
+      "kind": "web",
+      "site_query": "nodejs.org/docs",
+      "priority": 84
+    },
+    {
+      "id": "docs_rs",
+      "kind": "web",
+      "site_query": "docs.rs",
+      "priority": 84
+    },
+    {
+      "id": "rust_docs",
+      "kind": "web",
+      "site_query": "doc.rust-lang.org",
+      "priority": 86
+    },
+    {
+      "id": "docker_docs",
+      "kind": "web",
+      "site_query": "docs.docker.com",
+      "priority": 82
+    },
+    {
+      "id": "github",
+      "kind": "github",
+      "site_query": "github.com",
+      "priority": 100
+    },
+    {
+      "id": "huggingface",
+      "kind": "huggingface",
+      "site_query": "huggingface.co",
+      "priority": 96
+    }
+  ]
+}

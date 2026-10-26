@@ -1,0 +1,12 @@
+{
+  "id": "RUN-01",
+  "step": "S6",
+  "clicks": [
+    {"n": 1, "action": "open CASCADE", "expect": "4 nodos + input + dest", "result": "pass-code"},
+    {"n": 2, "action": "+ slot insert IA", "expect": "nodes+1 panel node", "result": "pass-code"},
+    {"n": 3, "action": "change model select", "expect": "emit NODE_IO", "result": "pass-code"},
+    {"n": 4, "action": "Run then Parar", "expect": "status running/done + BACKEND_PACKET", "result": "pass-code"},
+    {"n": 5, "action": "Factory + Cargar/Descargar", "expect": "naranja only those two; factory hidden default", "result": "pass-code"}
+  ],
+  "note": "Parser/static. Director abre el HTML y confirma visual. Sin OK no hay 02-fromted."
+}

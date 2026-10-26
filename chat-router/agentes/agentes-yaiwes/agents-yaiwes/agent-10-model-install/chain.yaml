@@ -1,0 +1,57 @@
+schema: yaiwes.chain/v1
+
+# agent-10 — GOLDEN wrapper → common/own_server_launch.py. Cero regeneración.
+input_block: |
+  NO regeneres código. Copia bytes de GOLDEN/install_launch_test.py a results/.
+  Fuente de verdad: common/own_server_launch.py (Qwen3.5-0.8B, 32 GB, --8080.hf.jobs).
+  Meta: RUNNING_HEALTHY + /health 200.
+
+agent:
+  id: agent-10-model-install
+  framework: pocketflow
+  group: hf-install
+  route: [deepseek_flash, minimax_m3, groq, nvidia]
+  fallback: []
+  max_tokens: 400
+
+context:
+  text: |
+    Copia GOLDEN/install_launch_test.py verbatim a results/install_launch_test.py.
+    El wrapper llama own_server_launch.main(). Solo máquina 32 GB RAM.
+
+steps:
+  - id: install_launch_test
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-10-model-install/GOLDEN/install_launch_test.py
+      - router inteligente universal/agents-yaiwes/common/own_server_launch.py
+    task: |
+      Copia verbatim GOLDEN/install_launch_test.py a results/install_launch_test.py.
+      Un solo bloque python idéntico al GOLDEN. No inventes código.
+    checks:
+      - kind: python_ast
+      - kind: contains
+        values: ["own_server_launch", "own_server_main", "assert_machine_32gb_ram", "cpu-upgrade"]
+      - kind: python_exec
+        timeout: 1800
+        module: install_launch_test.py
+        test: |
+          import os
+          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN"
+          import install_launch_test as m
+          src = open(m.__file__).read()
+          assert "own_server_launch" in src
+          assert "own_server_main" in src
+          from install_launch_test import run_all, launch_and_verify
+          raised = False
+          try:
+              launch_and_verify(flavor="cpu-basic")
+          except ValueError:
+              raised = True
+          assert raised, "debía rechazar 16GB"
+          results = run_all()
+          assert len(results) == 1
+          assert results[0]["status"] == "RUNNING_HEALTHY", results[0].get("detail")
+          print(results[0])
+      - kind: no_secrets
+
+edges: []

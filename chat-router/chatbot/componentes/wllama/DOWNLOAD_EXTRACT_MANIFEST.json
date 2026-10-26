@@ -1,0 +1,35 @@
+{
+  "bundle_bytes": 798926,
+  "bundle_sha256": "18279d1016c1e18cf7df57ed5fee4fc98bc595f8a6b217f6dd8beb1a13e351b5",
+  "extracted_tree": {
+    "bytes": 1904278,
+    "files": 123,
+    "sha256": "2ded3d4436d04e03cbc0ac3f9fc385ce3fb1e2d2ac4398baf24317cc79fc0435"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 798926,
+      "name": "wllama.bundle.zip.part-0001",
+      "sha256": "18279d1016c1e18cf7df57ed5fee4fc98bc595f8a6b217f6dd8beb1a13e351b5"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "wllama",
+  "source_bytes": 1904278,
+  "source_commit": "3bb2a46f0dab0b924e8cd992b85e8881c3d3a859",
+  "source_files": 123,
+  "source_ref": "HEAD",
+  "source_repo": "ngxson/wllama",
+  "source_tree": {
+    "bytes": 1904278,
+    "files": 123,
+    "sha256": "2ded3d4436d04e03cbc0ac3f9fc385ce3fb1e2d2ac4398baf24317cc79fc0435"
+  }
+}

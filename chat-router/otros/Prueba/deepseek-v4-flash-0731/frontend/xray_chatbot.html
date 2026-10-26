@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xray Chatbot - Prototipo aislado deepseek-v4-flash-0731</title>
+<style>
+:root{--azul:#1d4ed8;--azul-claro:#dbeafe;--gris:#f5f5f5;--texto:#1f2937;--borde:#e5e7eb;--ok:#16a34a;--err:#dc2626;--busy:#d97706}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--texto);background:#fff;max-width:760px;margin:0 auto;padding:1rem}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+h1{font-size:1.25rem}
+.badge{background:var(--azul);color:#fff;padding:.15rem .6rem;border-radius:1rem;font-size:.75rem}
+nav[role=tablist]{display:flex;gap:.25rem;border-bottom:2px solid var(--borde);margin-bottom:1rem;overflow-x:auto}
+.tab{background:none;border:none;padding:.6rem 1rem;cursor:pointer;font-weight:600;color:#6b7280;border-bottom:3px solid transparent}
+.tab[aria-selected=true]{color:var(--azul);border-bottom-color:var(--azul)}
+.panel{display:none}
+.panel.activo{display:block}
+#chat{background:var(--gris);border:1px solid var(--borde);border-radius:.5rem;min-height:12rem;max-height:18rem;overflow-y:auto;padding:.75rem;margin-bottom:.75rem}
+.msg{margin-bottom:.5rem}
+.msg b{color:var(--azul)}
+.mia{background:var(--azul-claro);border-radius:.5rem;padding:.35rem .6rem;display:inline-block;max-width:90%}
+form#form-msg{display:flex;gap:.5rem}
+input[type=text]{flex:1;padding:.6rem;border:1px solid var(--borde);border-radius:.5rem}
+button.primario{background:var(--azul);color:#fff;border:none;padding:.6rem 1.1rem;border-radius:.5rem;cursor:pointer}
+button.primario:hover{filter:brightness(1.1)}
+section h2{font-size:1rem;margin-bottom:.6rem}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+.chip{border:1px solid var(--borde);background:#fff;border-radius:1rem;padding:.35rem .8rem;cursor:pointer;font-size:.85rem}
+.chip[aria-pressed=true]{background:var(--azul);border-color:var(--azul);color:#fff}
+.lista{list-style:none}
+.lista li{display:flex;align-items:center;gap:.5rem;padding:.35rem 0;border-bottom:1px dashed var(--borde)}
+.tog-tres{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;padding:.4rem 0}
+.estado{font-weight:700;padding:.15rem .6rem;border-radius:.4rem;font-size:.8rem;color:#fff}
+.estado.idle{background:#9ca3af}.estado.busy{background:var(--busy)}.estado.ok{background:var(--ok)}.estado.error{background:var(--err)}
+textarea{width:100%;min-height:6rem;font-family:monospace;font-size:.8rem;border:1px solid var(--borde);border-radius:.5rem;padding:.5rem}
+#stats{font-size:.8rem;color:#6b7280;border-top:1px solid var(--borde);margin-top:.75rem;padding-top:.5rem;display:flex;gap:1rem;flex-wrap:wrap}
+@media(max-width:480px){h1{font-size:1rem}.tab{padding:.5rem}.chip{font-size:.75rem}}
+</style>
+</head>
+<body>
+<header>
+<h1>Xray Chatbot <span class="badge">prototipo aislado</span></h1>
+<button id="reset" class="primario" type="button">Reiniciar</button>
+</header>
+<nav role="tablist" aria-label="Secciones">
+<button id="tab-chat" class="tab" role="tab" aria-selected="true" aria-controls="panel-chat">Chat</button>
+<button id="tab-hist" class="tab" role="tab" aria-selected="false" aria-controls="panel-hist">Historial</button>
+<button id="tab-anclas" class="tab" role="tab" aria-selected="false" aria-controls="panel-anclas">Anclas</button>
+<button id="tab-tareas" class="tab" role="tab" aria-selected="false" aria-controls="panel-tareas">Checklist</button>
+<button id="tab-tools" class="tab" role="tab" aria-selected="false" aria-controls="panel-tools">Herramientas</button>
+</nav>
+<main>
+<section id="panel-chat" class="panel activo" role="tabpanel">
+<div id="chat" role="log" aria-live="polite" aria-label="Mensajes del chat"></div>
+<form id="form-msg" aria-label="Enviar mensaje">
+<input id="input-msg" type="text" placeholder="Escribe un mensaje..." aria-label="Texto del mensaje">
+<button class="primario" type="submit">Enviar</button>
+</form>
+</section>
+<section id="panel-hist" class="panel" role="tabpanel">
+<ul id="lista-hist" class="lista" aria-label="Historial de mensajes"></ul>
+</section>
+<section id="panel-anclas" class="panel" role="tabpanel">
+<p id="ancla-nueva" style="margin-bottom:.5rem">
+<input id="input-ancla" type="text" placeholder="Nueva ancla (nombre)" aria-label="Nombre de ancla">
+<button id="btn-ancla" class="primario" type="button">Fijar</button>
+</p>
+<div id="chips" class="chips" aria-label="Anclas activas e inactivas"></div>
+</section>
+<section id="panel-tareas" class="panel" role="tabpanel">
+<p style="margin-bottom:.5rem">
+<input id="input-tarea" type="text" placeholder="Nueva tarea" aria-label="Nueva tarea">
+<button id="btn-tarea" class="primario" type="button">Agregar</button>
+</p>
+<ul id="lista-tareas" class="lista" aria-label="Checklist de tareas"></ul>
+</section>
+<section id="panel-tools" class="panel" role="tabpanel">
+<p id="leyenda-tools" style="font-size:.8rem;color:#6b7280;margin-bottom:.5rem">Cada herramienta cicla: idle → busy → ok → error.</p>
+<div id="lista-tools" aria-label="Estados de herramientas"></div>
+<textarea id="payload" readonly aria-label="Payload de salida sin anclas inactivas"></textarea>
+</section>
+</main>
+<footer id="stats" aria-live="polite"></footer>
+<script>
+"use strict";
+const NS="xray_deepseek-v4-flash-0731";
+const ESTADOS=["idle","busy","ok","error"];
+let estado={mensajes:[],anclas:{},tareas:[],tools:{tool:"idle",agent_tool:"idle",llm_tool:"idle"}};
+function guardar(){localStorage.setItem(NS,JSON.stringify(estado));}
+function cargar(){const raw=localStorage.getItem(NS);if(raw){try{estado=JSON.parse(raw);}catch(e){estado={mensajes:[],anclas:{},tareas:[],tools:{tool:"idle",agent_tool:"idle",llm_tool:"idle"}};}}}
+function ith(x){return document.getElementById(x);}
+function esc(t){return t.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function renderMsgs(){const c=ith("chat");c.innerHTML=estado.mensajes.map(m=>`<div class="msg"><b>${esc(m.rol)}:</b> ${esc(m.texto)}</div>`).join("")||"<div class='msg'>Sin mensajes aun.</div>";c.scrollTop=c.scrollHeight;}
+function renderHist(){ith("lista-hist").innerHTML=estado.mensajes.map(m=>`<li><b>${esc(m.rol)}</b> · ${esc(m.texto)}</li>`).join("")||"<li>Historial vacio (se conserva todo).</li>";}
+function renderChips(){ith("chips").innerHTML=Object.entries(estado.anclas).map(([k,v])=>`<button class="chip" aria-pressed="${v.activa}" data-ancla="${esc(k)}">${esc(k)} ${v.activa?"ON":"OFF"}</button>`).join("")||"<p>Sin anclas. Fija una arriba.</p>";}
+function renderTareas(){ith("lista-tareas").innerHTML=estado.tareas.map((t,i)=>`<li><button class="chip" aria-pressed="${t.hecha}" data-tarea="${i}">${t.hecha?"✔":"☐"}</button> <span>${esc(t.texto)}</span></li>`).join("")||"<li>Checklist vacia.</li>";}
+function renderTools(){ith("lista-tools").innerHTML=Object.entries(estado.tools).map(([k,v])=>`<div class="tog-tres"><span>${esc(k)}</span><button class="chip" data-tool="${esc(k)}" aria-label="Cambiar estado de ${esc(k)}">cambiar</button><span class="estado ${v}">${v}</span></div>`).join("");}
+function renderPayload(){const p={mensajes:estado.mensajes,anclas_activas:Object.fromEntries(Object.entries(estado.anclas).filter(([,v])=>v.activa).map(([k,v])=>[k,{texto:v.texto}])),tareas:estado.tareas,tools:estado.tools};ith("payload").value=JSON.stringify(p,null,2);}
+function renderStats(){const activas=Object.values(estado.anclas).filter(v=>v.activa).length;ith("stats").textContent=`Mensajes: ${estado.mensajes.length} · Tareas: ${estado.tareas.length} · Anclas activas: ${activas}`;}
+function render(){renderMsgs();renderHist();renderChips();renderTareas();renderTools();renderPayload();renderStats();}
+function enviar(e){e.preventDefault();const txt=ith("input-msg").value.trim();if(!txt)return;estado.mensajes.push({rol:"usuario",texto:txt,ts:new Date().toISOString()});estado.mensajes.push({rol:"bot",texto:"Respuesta local de prueba: recibido \""+txt+"\".",ts:new Date().toISOString()});ith("input-msg").value="";guardar();render();}
+function fijarAncla(){const n=ith("input-ancla").value.trim();if(!n)return;estado.anclas[n]=estado.anclas[n]||{texto:n,activa:true};if(estado.anclas[n].activa)estado.anclas[n].activa=false;else{estado.anclas[n].activa=true;}ith("input-ancla").value="";guardar();render();}
+function addTarea(){const t=ith("input-tarea").value.trim();if(!t)return;estado.tareas.push({texto:t,hecha:false});ith("input-tarea").value="";guardar();render();}
+function toggleTool(k){estado.tools[k]=ESTADOS[(ESTADOS.indexOf(estado.tools[k])+1)%ESTADOS.length];guardar();render();}
+function cambiarTab(id){document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",String(t.id===id)));document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("activo",p.id==="panel-"+id.replace("tab-","")));}
+ith("form-msg").addEventListener("submit",enviar);
+ith("btn-ancla").addEventListener("click",fijarAncla);
+ith("btn-tarea").addEventListener("click",addTarea);
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>cambiarTab(t.id)));
+document.addEventListener("click",e=>{if(e.target.dataset.ancla!==undefined){estado.anclas[e.target.dataset.ancla].activa=!estado.anclas[e.target.dataset.ancla].activa;guardar();render();}if(e.target.dataset.tool){toggleTool(e.target.dataset.tool);}if(e.target.dataset.tarea!==undefined){estado.tareas[+e.target.dataset.tarea].hecha=!estado.tareas[+e.target.dataset.tarea].hecha;guardar();render();}});
+ith("reset").addEventListener("click",()=>{if(confirm("Reiniciar el prototipo local?")){localStorage.removeItem(NS);estado={mensajes:[],anclas:{},tareas:[],tools:{tool:"idle",agent_tool:"idle",llm_tool:"idle"}};render();}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")ith("input-msg").blur();if(e.altKey&&e.key==="h")cambiarTab("tab-hist");});
+cargar();render();
+</script>
+</body>
+</html>

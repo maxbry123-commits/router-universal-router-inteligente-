@@ -1,0 +1,23 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-19-chat-components-motors",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T08:18:43Z",
+ "group": "chat",
+ "chain": [
+  "acquire_rowboat",
+  "acquire_msaf"
+ ],
+ "completed": [
+  "acquire_rowboat",
+  "acquire_msaf"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ],
+ "router_connected": false
+}

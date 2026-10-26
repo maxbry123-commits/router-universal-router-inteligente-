@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel Chat · Prototipo</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#111111; --muted:#6b7280; --line:#e5e7eb;
+    --accent:#2563eb; --accent-soft:#dbeafe; --ok:#16a34a;
+    --warn:#f59e0b; --err:#dc2626; --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header{padding:14px 18px;border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  header h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.2px}
+  .stats{font-size:12px;color:var(--muted)}
+  main{display:grid;grid-template-columns:1fr;gap:0}
+  @media(min-width:760px){main{grid-template-columns:320px 1fr}}
+  .panel{border-right:1px solid var(--line);min-height:70vh}
+  .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;
+    margin:14px 16px;color:var(--muted);font-weight:600}
+  .lista{list-style:none;margin:0;padding:0;max-height:60vh;overflow:auto}
+  .item{padding:10px 16px;border-bottom:1px solid var(--line);cursor:pointer;
+    display:flex;flex-direction:column;gap:2px}
+  .item:focus{outline:2px solid var(--accent);outline-offset:-2px}
+  .item[aria-selected="true"]{background:var(--accent-soft)}
+  .item .titulo{font-size:14px;font-weight:500}
+  .item .meta{font-size:11px;color:var(--muted)}
+  .detalle{padding:18px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;
+    font-size:11px;font-weight:600;letter-spacing:.04em}
+  .b-nuevo{background:#eef2ff;color:#3730a3}
+  .b-enviado{background:#fef3c7;color:#92400e}
+  .b-entregado{background:#dcfce7;color:#166534}
+  .b-fallido{background:#fee2e2;color:#991b1b}
+  .b-reintentando{background:#fed7aa;color:#9a3412}
+  .b-cancelado{background:#f3f4f6;color:#374151}
+  .vacio{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px}
+  .campo{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  label{font-size:12px;color:var(--muted)}
+  input,textarea,button{font:inherit;border-radius:var(--radius);
+    border:1px solid var(--line);padding:8px 10px;background:#fff}
+  textarea{resize:vertical;min-height:70px}
+  button{cursor:pointer;background:#fff;color:var(--fg);transition:.15s}
+  button:hover{border-color:var(--accent);color:var(--accent)}
+  button.primario{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button.primario:hover{filter:brightness(1.05);color:#fff}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .form-envio{border-top:1px solid var(--line);padding:14px 16px;
+    background:#fafafa}
+  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+    background:#111;color:#fff;padding:8px 14px;border-radius:8px;
+    font-size:13px;opacity:0;pointer-events:none;transition:.25s}
+  .toast.visible{opacity:.95}
+  .kv{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:13px}
+  .kv div:nth-child(odd){color:var(--muted)}
+  a.skip{position:absolute;left:-9999px}
+  a.skip:focus{left:8px;top:8px;background:#fff;padding:6px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<a href="#contenido" class="skip">Saltar al contenido</a>
+<header>
+  <h1>Panel de historial · chatbot</h1>
+  <div class="stats" id="stats" aria-live="polite">—</div>
+</header>
+<main id="contenido">
+  <section class="panel" aria-label="Lista de mensajes">
+    <h2>Mensajes</h2>
+    <ul class="lista" id="lista" role="listbox" aria-label="Mensajes"></ul>
+    <div class="vacio" id="vacio">Sin mensajes todavía. Envía el primero abajo.</div>
+  </section>
+  <section class="detalle" aria-live="polite" aria-label="Detalle del mensaje">
+    <div id="detalle">
+      <div class="vacio">Selecciona un mensaje para ver su estado y acciones.</div>
+    </div>
+    <div class="form-envio">
+      <div class="campo">
+        <label for="remitente">Remitente</label>
+        <input id="remitente" type="text" maxlength="40" value="demo">
+      </div>
+      <div class="campo">
+        <label for="contenido">Contenido</label>
+        <textarea id="contenido" maxlength="500" placeholder="Escribe un mensaje..."></textarea>
+      </div>
+      <div class="acciones">
+        <button class="primario" id="btn-enviar">Enviar</button>
+        <button id="btn-limpiar">Limpiar historial</button>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+  "use strict";
+  const ESTADOS = {
+    nuevo:{cls:"b-nuevo",label:"Nuevo"},
+    enviado:{cls:"b-enviado",label:"Enviado"},
+    entregado:{cls:"b-entregado",label:"Entregado"},
+    fallido:{cls:"b-fallido",label:"Fallido"},
+    reintentando:{cls:"b-reintentando",label:"Reintentando"},
+    cancelado:{cls:"b-cancelado",label:"Cancelado"}
+  };
+  const TRANSICIONES = {
+    nuevo:["enviado","cancelado"], enviado:["entregado","fallido","cancelado"],
+    entregado:[], fallido:["reintentando","cancelado"],
+    reintentando:["enviado","fallido","cancelado"], cancelado:[]
+  };
+  const MAX_INTENTOS = 3;
+  const store = { mensajes:[], seleccionado:null, simuladorFallo:m=>Math.random()<0.35 };
+
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+  function now(){ return Date.now(); }
+
+  function crearMensaje(contenido, remitente){
+    if(!contenido || !contenido.trim()) throw new Error("contenido vacío");
+    if(!remitente || !remitente.trim()) throw new Error("remitente vacío");
+    return {
+      id:uid(), contenido:contenido.trim(), remitente:remitente.trim(),
+      estado:"nuevo", intentos:0, maxIntentos:MAX_INTENTOS,
+      timestamps:{nuevo:now()}, error:null
+    };
+  }
+
+  function transicionar(m, nuevo, error){
+    const permitidas = TRANSICIONES[m.estado]||[];
+    if(!permitidas.includes(nuevo)){
+      throw new Error(`transición inválida ${m.estado}->${nuevo}`);
+    }
+    m.estado = nuevo; m.timestamps[nuevo]=now();
+    if(nuevo==="reintentando") m.intentos+=1;
+    if(error) m.error = error; else if(nuevo==="entregado") m.error=null;
+  }
+
+  function intentarEnvio(m){
+    if(m.estado==="nuevo") transicionar(m,"enviado");
+    else if(m.estado==="fallido") transicionar(m,"reintentando");
+    try{
+      if(store.simuladorFallo(m)) throw new Error("fallo de transporte simulado");
+      transicionar(m,"entregado");
+    }catch(e){
+      transicionar(m,"fallido", e.message);
+    }
+  }
+
+  function enviar(){
+    const c = document.getElementById("contenido").value;
+    const r = document.getElementById("remitente").value;
+    try{
+      const m = crearMensaje(c,r);
+      store.mensajes.push(m);
+      intentarEnvio(m);
+      store.seleccionado = m.id;
+      document.getElementById("contenido").value="";
+      toast("Mensaje procesado");
+    }catch(e){ toast("Error: "+e.message, true); }
+    render();
+  }
+
+  function reintentar(id){
+    const m = store.mensajes.find(x=>x.id===id);
+    if(!m) return;
+    if(m.estado!=="fallido"||m.intentos>=m.maxIntentos){
+      toast("No reintentable", true); return;
+    }
+    intentarEnvio(m); render();
+  }
+
+  function cancelar(id){
+    const m = store.mensajes.find(x=>x.id===id);
+    if(!m) return;
+    try{ transicionar(m,"cancelado"); }
+    catch(e){ toast(e.message,true); }
+    render();
+  }
+
+  function limpiar(){
+    if(!confirm("¿Borrar historial local?")) return;
+    store.mensajes = []; store.seleccionado=null; render();
+  }
+
+  function seleccionar(id){ store.seleccionado = id; render(); }
+
+  function render(){
+    const lista = document.getElementById("lista");
+    const vacio = document.getElementById("vacio");
+    const detalle = document.getElementById("detalle");
+    lista.innerHTML = "";
+    if(store.mensajes.length===0){
+      vacio.style.display="block";
+      detalle.innerHTML = '<div class="vacio">Sin mensajes. Envía uno abajo.</div>';
+    }else{
+      vacio.style.display="none";
+      store.mensajes.slice().reverse().forEach(m=>{
+        const li = document.createElement("li");
+        li.className="item"; li.tabIndex=0; li.setAttribute("role","option");
+        if(m.id===store.seleccionado) li.setAttribute("aria-selected","true");
+        const st = ESTADOS[m.estado]||ESTADOS.nuevo;
+        li.innerHTML = `<div class="titulo">${escapeHtml(m.remitente)}: ${escapeHtml(m.contenido.slice(0,60))}${m.contenido.length>60?"…":""}</div>
+          <div class="meta"><span class="badge ${st.cls}">${st.label}</span> · intentos ${m.intentos}/${m.maxIntentos}</div>`;
+        li.onclick = ()=>seleccionar(m.id);
+        li.onkeydown = ev=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); seleccionar(m.id);} };
+        lista.appendChild(li);
+      });
+      renderDetalle(detalle);
+    }
+    renderStats();
+  }
+
+  function renderDetalle(el){
+    const m = store.mensajes.find(x=>x.id===store.seleccionado);
+    if(!m){ el.innerHTML='<div class="vacio">Selecciona un mensaje.</div>'; return; }
+    const st = ESTADOS[m.estado]||ESTADOS.nuevo;
+    const puedeReintentar = m.estado==="fallido" && m.intentos<m.maxIntentos;
+    const puedeCancelar = (TRANSICIONES[m.estado]||[]).includes("cancelado");
+    el.innerHTML = `
+      <h2 style="margin:0 0 8px">Detalle</h2>
+      <div class="kv">
+        <div>ID</div><div>${m.id}</div>
+        <div>Remitente</div><div>${escapeHtml(m.remitente)}</div>
+        <div>Estado</div><div><span class="badge ${st.cls}">${st.label}</span></div>
+        <div>Intentos</div><div>${m.intentos} / ${m.maxIntentos}</div>
+        <div>Error</div><div>${m.error?escapeHtml(m.error):"—"}</div>
+        <div>Contenido</div><div>${escapeHtml(m.contenido)}</div>
+      </div>
+      <div class="acciones">
+        <button id="btn-reintentar" ${puedeReintentar?"":"disabled"}>Reintentar envío</button>
+        <button id="btn-cancelar" ${puedeCancelar?"":"disabled"}>Cancelar</button>
+      </div>`;
+    const rb = document.getElementById("btn-reintentar");
+    const cb = document.getElementById("btn-cancelar");
+    if(rb) rb.onclick = ()=>reintentar(m.id);
+    if(cb) cb.onclick = ()=>cancelar(m.id);
+  }
+
+  function renderStats(){
+    const c = {nuevo:0,enviado:0,entregado:0,fallido:0,reintentando:0,cancelado:0};
+    store.mensajes.forEach(m=>{ c[m.estado]=(c[m.estado]||0)+1; });
+    const total = store.mensajes.length;
+    document.getElementById("stats").textContent =
+      `Total ${total} · entregados ${c.entregado} · fallidos ${c.fallido} · cancelados ${c.cancelado}`;
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, ch=>({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[ch]));
+  }
+
+  let toastTimer;
+  function toast(msg, error){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.background = error?"#b91c1c":"#111";
+    t.classList.add("visible");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove("visible"), 2200);
+  }
+
+  document.getElementById("btn-enviar").onclick = enviar;
+  document.getElementById("btn-limpiar").onclick = limpiar;
+  document.getElementById("contenido").addEventListener("keydown", ev=>{
+    if((ev.ctrlKey||ev.metaKey) && ev.key==="Enter"){ ev.preventDefault(); enviar(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

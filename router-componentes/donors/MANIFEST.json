@@ -1,0 +1,68 @@
+{
+ "muse-code-sdk": {
+  "url": "https://github.com/meta-models/muse-code-sdk",
+  "status": "OK",
+  "commit": "4dc252c1a31b02ff676dce0358d297ffbc5d8784",
+  "files": 167,
+  "bytes": 1999844,
+  "skipped_big": 108,
+  "sparse": null
+ },
+ "meta-oss-cookbook-agentic-fundamentals": {
+  "url": "https://github.com/meta-models/meta-oss-cookbook",
+  "status": "OK",
+  "commit": "3d33cb1eae658cf92b134ec20530aeb1b32c31f1",
+  "files": 4,
+  "bytes": 30976,
+  "skipped_big": 0,
+  "sparse": [
+   "agentic-fundamentals"
+  ]
+ },
+ "meta-model-cookbook-12-computer-use": {
+  "url": "https://github.com/meta-models/meta-model-cookbook",
+  "status": "OK",
+  "commit": "c5a9882b4c7f3900e9c93122249d37317c8abff4",
+  "files": 2,
+  "bytes": 14933,
+  "skipped_big": 0,
+  "sparse": [
+   "03_use_cases/12_computer_use"
+  ]
+ },
+ "meta-model-cookbook-13-macos-cua": {
+  "url": "https://github.com/meta-models/meta-model-cookbook",
+  "status": "OK",
+  "commit": "c5a9882b4c7f3900e9c93122249d37317c8abff4",
+  "files": 47,
+  "bytes": 285865,
+  "skipped_big": 0,
+  "sparse": [
+   "03_use_cases/13_macos_cua"
+  ]
+ },
+ "smolagents": {
+  "url": "https://github.com/huggingface/smolagents",
+  "status": "OK",
+  "commit": "30bb1161095dbae2271e6bc3cc4c219cc3897a57",
+  "files": 27,
+  "bytes": 590353,
+  "skipped_big": 0,
+  "sparse": [
+   "src/smolagents",
+   "README.md"
+  ]
+ },
+ "pocketflow": {
+  "url": "https://github.com/The-Pocket/PocketFlow",
+  "status": "OK",
+  "commit": "f74d023f93607b8c3268133339a5e532a949898c",
+  "files": 60,
+  "bytes": 238200,
+  "skipped_big": 0,
+  "sparse": [
+   "pocketflow",
+   "README.md"
+  ]
+ }
+}

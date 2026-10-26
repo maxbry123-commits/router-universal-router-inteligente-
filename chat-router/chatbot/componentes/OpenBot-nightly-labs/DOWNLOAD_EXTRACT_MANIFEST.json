@@ -1,0 +1,57 @@
+{
+  "bundle_bytes": 55064807,
+  "bundle_sha256": "12de4ce6c48e7e89f98e25f4aa94c9cf764f74bce41a2dda4b1fd00821b3165b",
+  "extracted_tree": {
+    "bytes": 88831503,
+    "files": 5885,
+    "sha256": "ac6d70c9ab7c32cf2c0ede091d70df4207b4920f885e650aa32e3a97080b6624"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "OpenBot-nightly-labs.bundle.zip.part-0001",
+      "sha256": "a018f860885840a0841802f3b32cb9d73736f4ca187ab63b27a5769ad075a2bd"
+    },
+    {
+      "bytes": 12582912,
+      "name": "OpenBot-nightly-labs.bundle.zip.part-0002",
+      "sha256": "58a288d6c37fc1cf92bd11b1ef0307c8a4309605ae1401057ba5d7b98d4fb25a"
+    },
+    {
+      "bytes": 12582912,
+      "name": "OpenBot-nightly-labs.bundle.zip.part-0003",
+      "sha256": "aa57c66367fe620adc282a93c6aad525854f45f02180d8912f370e4a2f3debe6"
+    },
+    {
+      "bytes": 12582912,
+      "name": "OpenBot-nightly-labs.bundle.zip.part-0004",
+      "sha256": "b02026da43da3504d079bf9d2e11d3b9ea8d4f06116c0f79c5c2a9ce05317f5d"
+    },
+    {
+      "bytes": 4733159,
+      "name": "OpenBot-nightly-labs.bundle.zip.part-0005",
+      "sha256": "bc98df1599949a6ca26dd7bfcc5faed1f70cc24c468dfcba5b8c1f47cd32a91b"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [
+    ".claude/skills"
+  ],
+  "skipped_special_count": 1,
+  "slug": "OpenBot-nightly-labs",
+  "source_bytes": 88831503,
+  "source_commit": "54ee532f46ab1b6545c39508e9e3d2bb53f2a307",
+  "source_files": 5885,
+  "source_ref": "HEAD",
+  "source_repo": "nightly-labs/openbot",
+  "source_tree": {
+    "bytes": 88831503,
+    "files": 5885,
+    "sha256": "ac6d70c9ab7c32cf2c0ede091d70df4207b4920f885e650aa32e3a97080b6624"
+  }
+}

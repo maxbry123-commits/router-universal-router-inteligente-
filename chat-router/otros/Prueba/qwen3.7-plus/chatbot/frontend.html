@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist de Pendientes - Prototipo Aislado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #ffffff;
+            color: #333333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px 0;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666666;
+            font-size: 0.9rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            background-color: #ffffff;
+            color: #333333;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: #2196F3;
+            color: #2196F3;
+        }
+
+        .filter-btn:focus {
+            outline: 2px solid #2196F3;
+            outline-offset: 2px;
+        }
+
+        .filter-btn.active {
+            background-color: #2196F3;
+            border-color: #2196F3;
+            color: #ffffff;
+        }
+
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .task-item:hover {
+            border-color: #2196F3;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+        }
+
+        .task-item:focus-within {
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+            background-color: #f5f5f5;
+        }
+
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+            accent-color: #2196F3;
+        }
+
+        .task-checkbox:focus {
+            outline: 2px solid #2196F3;
+            outline-offset: 2px;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-title {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            color: #999999;
+        }
+
+        .task-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            color: #666666;
+        }
+
+        .priority-badge {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .priority-alta {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .priority-media {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .priority-baja {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999999;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .empty-state-text {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2196F3;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666666;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .filter-btn {
+                width: 100%;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .task-meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Checklist de Pendientes</h1>
+            <p class="subtitle">Prototipo aislado para auditoría X-Ray</p>
+        </header>
+
+        <div class="stats" role="region" aria-label="Estadísticas de tareas">
+            <div class="stat-item">
+                <div class="stat-number" id="total-tasks">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="completed-tasks">0</div>
+                <div class="stat-label">Completadas</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="pending-tasks">0</div>
+                <div class="stat-label">Pendientes</div>
+            </div>
+        </div>
+
+        <div class="controls" role="toolbar" aria-label="Filtros de tareas">
+            <button class="filter-btn active" data-filter="all" aria-pressed="true">
+                Todas
+            </button>
+            <button class="filter-btn" data-filter="pending" aria-pressed="false">
+                Pendientes
+            </button>
+            <button class="filter-btn" data-filter="completed" aria-pressed="false">
+                Completadas
+            </button>
+        </div>
+
+        <ul class="task-list" id="task-list" role="list" aria-label="Lista de tareas">
+        </ul>
+
+        <div class="empty-state" id="empty-state" style="display: none;">
+            <div class="empty-state-icon">✓</div>
+            <div class="empty-state-text">No hay tareas para mostrar</div>
+            <p>Ajusta los filtros o agrega nuevas tareas</p>
+        </div>
+    </div>
+
+    <script>
+        'use strict';
+
+        const tareasIniciales = [
+            {
+                id: '1',
+                titulo: 'Configurar entorno de desarrollo',
+                prioridad: 'alta',
+                completada: true,
+                fecha: '2024-01-15'
+            },
+            {
+                id: '2',
+                titulo: 'Implementar sistema de cola de tareas',
+                prioridad: 'alta',
+                completada: false,
+                fecha: '2024-01-16'
+            },
+            {
+                id: '3',
+                titulo: 'Crear interfaz de usuario responsiva',
+                prioridad: 'media',
+                completada: false,
+                fecha: '2024-01-17'
+            },
+            {
+                id: '4',
+                titulo: 'Agregar validación de inputs',
+                prioridad: 'media',
+                completada: false,
+                fecha: '2024-01-18'
+            },
+            {
+                id: '5',
+                titulo: 'Documentar API REST',
+                prioridad: 'baja',
+                completada: false,
+                fecha: '2024-01-19'
+            },
+            {
+                id: '6',
+                titulo: 'Escribir pruebas unitarias',
+                prioridad: 'alta',
+                completada: true,
+                fecha: '2024-01-20'
+            },
+            {
+                id: '7',
+                titulo: 'Optimizar rendimiento',
+                prioridad: 'baja',
+                completada: false,
+                fecha: '2024-01-21'
+            }
+        ];
+
+        let tareas = [...tareasIniciales];
+        let filtroActual = 'all';
+
+        function actualizarEstadisticas() {
+            const total = tareas.length;
+            const completadas = tareas.filter(t => t.completada).length;
+            const pendientes = total - completadas;
+
+            document.getElementById('total-tasks').textContent = total;
+            document.getElementById('completed-tasks').textContent = completadas;
+            document.getElementById('pending-tasks').textContent = pendientes;
+        }
+
+        function crearElementoTarea(tarea) {
+            const li = document.createElement('li');
+            li.className = `task-item ${tarea.completada ? 'completed' : ''}`;
+            li.setAttribute('role', 'listitem');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'task-checkbox';
+            checkbox.checked = tarea.completada;
+            checkbox.setAttribute('aria-label', `Marcar ${tarea.titulo} como ${tarea.completada ? 'pendiente' : 'completada'}`);
+            checkbox.addEventListener('change', () => toggleTarea(tarea.id));
+
+            const content = document.createElement('div');
+            content.className = 'task-content';
+
+            const title = document.createElement('div');
+            title.className = 'task-title';
+            title.textContent = tarea.titulo;
+
+            const meta = document.createElement('div');
+            meta.className = 'task-meta';
+
+            const priority = document.createElement('span');
+            priority.className = `priority-badge priority-${tarea.prioridad}`;
+            priority.textContent = tarea.prioridad;
+
+            const date = document.createElement('span');
+            date.textContent = tarea.fecha;
+
+            meta.appendChild(priority);
+            meta.appendChild(date);
+            content.appendChild(title);
+            content.appendChild(meta);
+
+            li.appendChild(checkbox);
+            li.appendChild(content);
+
+            return li;
+        }
+
+        function renderizarTareas() {
+            const lista = document.getElementById('task-list');
+            const emptyState = document.getElementById('empty-state');
+
+            lista.innerHTML = '';
+
+            let tareasFiltradas = tareas;
+
+            if (filtroActual === 'pending') {
+                tareasFiltradas = tareas.filter(t => !t.completada);
+            } else if (filtroActual === 'completed') {
+                tareasFiltradas = tareas.filter(t => t.completada);
+            }
+
+            if (tareasFiltradas.length === 0) {
+                emptyState.style.display = 'block';
+                lista.style.display = 'none';
+            } else {
+                emptyState.style.display = 'none';
+                lista.style.display = 'block';
+
+                tareasFiltradas.forEach(tarea => {
+                    const elemento = crearElementoTarea(tarea);
+                    lista.appendChild(elemento);
+                });
+            }
+
+            actualizarEstadisticas();
+        }
+
+        function toggleTarea(id) {
+            const tarea = tareas.find(t => t.id === id);
+            if (tarea) {
+                tarea.completada = !tarea.completada;
+                renderizarTareas();
+            }
+        }
+
+        function configurarFiltros() {
+            const botones = document.querySelectorAll('.filter-btn');
+
+            botones.forEach(boton => {
+                boton.addEventListener('click', () => {
+                    botones.forEach(b => {
+                        b.classList.remove('active');
+                        b.setAttribute('aria-pressed', 'false');
+                    });
+
+                    boton.classList.add('active');
+                    boton.setAttribute('aria-pressed', 'true');
+
+                    filtroActual = boton.dataset.filter;
+                    renderizarTareas();
+                });
+
+                boton.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        boton.click();
+                    }
+                });
+            });
+        }
+
+        function inicializar() {
+            configurarFiltros();
+            renderizarTareas();
+        }
+
+        document.addEventListener('DOMContentLoaded', inicializar);
+    </script>
+</body>
+</html>

@@ -86,7 +86,7 @@ def github_leer(a):
     lineas = a.get('lineas')
     if not ruta:
         ruta = ''
-    q = urllib.parse.quote(ruta.strip('/'), safe='')
+    q = urllib.parse.quote(ruta.strip('/'), safe='/')  # las barras de la ruta no se codifican: %2F da 404 en la API de contenidos
     url = '%s/repos/%s/%s/contents/%s?ref=%s' % (API, OWNER, repo, q, urllib.parse.quote(rama))
     st, d = _peticion('GET', url)
     if st >= 400:
@@ -115,7 +115,7 @@ def github_escribir(a):
     repo, ruta = a.get('repo'), a.get('ruta')
     contenido, mensaje = a.get('contenido'), a.get('mensaje') or 'mcp puente: update'
     rama = a.get('rama') or os.environ.get('RIU_GH_RAMA', 'reorganizacion')
-    q = urllib.parse.quote(str(ruta).strip('/'), safe='')
+    q = urllib.parse.quote(str(ruta).strip('/'), safe='/')  # las barras de la ruta no se codifican: %2F da 404 en la API de contenidos
     base = '%s/repos/%s/%s/contents/%s' % (API, OWNER, repo, q)
     st, prev = _peticion('GET', base + '?ref=' + urllib.parse.quote(rama))
     sha = prev.get('sha') if st == 200 and isinstance(prev, dict) else None

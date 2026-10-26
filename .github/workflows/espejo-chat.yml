@@ -1,0 +1,61 @@
+name: Espejo del chat (navegador real)
+# Abre el chat REAL (Vercel + Router) en un navegador de GitHub, entra con la clave, pulsa cada botón y prueba cada modelo.
+# Resultado: capturas y reporte en la rama `espejo-capturas` (carpeta ultima/) y como artefacto de la ejecución.
+# Clave: secreto del repositorio RIU_QA_KEY (Settings > Secrets and variables > Actions). Sin el secreto solo captura la pantalla de acceso.
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "URL del chat"
+        default: "https://riu-jev-bridge.vercel.app/"
+      con_modelos:
+        description: "Probar modelos (gasta unos pocos tokens)"
+        default: "1"
+  push:
+    branches: [main]
+    paths: ["chat/espejo/**", ".github/workflows/espejo-chat.yml"]
+permissions:
+  contents: write
+concurrency:
+  group: espejo-chat
+  cancel-in-progress: true
+jobs:
+  espejo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Instalar Playwright y Chromium
+        run: |
+          mkdir -p /tmp/pw && cd /tmp/pw && npm init -y >/dev/null && npm i playwright@1.49.1 >/dev/null
+          npx playwright install --with-deps chromium
+      - name: Correr el espejo
+        env:
+          RIU_QA_KEY: ${{ secrets.RIU_QA_KEY }}
+          BASE: ${{ github.event.inputs.base || 'https://riu-jev-bridge.vercel.app/' }}
+          CON_MODELOS: ${{ github.event.inputs.con_modelos || '1' }}
+          OUT: espejo-salida
+          NODE_PATH: /tmp/pw/node_modules
+        run: node chat/espejo/espejo_prod.js
+      - name: Subir artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: espejo-chat
+          path: espejo-salida
+          retention-days: 7
+      - name: Publicar capturas en la rama espejo-capturas
+        if: always()
+        run: |
+          set -e
+          git config user.name "espejo-chat"; git config user.email "espejo-chat@users.noreply.github.com"
+          rm -rf /tmp/pub && mkdir -p /tmp/pub && cp -r espejo-salida /tmp/pub/ultima
+          cd /tmp/pub && git init -q && git checkout -q -b espejo-capturas
+          echo "Capturas de la última ejecución: ${{ github.run_id }} ($(date -u +%FT%TZ))" > LEEME.md
+          git add -A && git commit -qm "Espejo del chat: ejecución ${{ github.run_id }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" espejo-capturas

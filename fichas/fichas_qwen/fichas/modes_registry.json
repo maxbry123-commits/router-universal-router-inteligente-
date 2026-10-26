@@ -82,7 +82,7 @@
     "plugins/puente_chat/"
    ],
    "frontend": [
-    "plugins/chat-router/frontend/"
+    "chat/frontend/"
    ]
   }
  },

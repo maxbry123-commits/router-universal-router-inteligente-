@@ -1,0 +1,378 @@
+{
+ "dsl": "DAG_PRUEBAS_ROUTER_v1",
+ "para": "Sol",
+ "regla": "PASS solo con la salida cruda (JSON de la respuesta) pegada en el informe; sin salida real = NO VERIFICADO. Nunca imprimir ni guardar la clave. No usar Actions, Jobs, SSH ni LFS.",
+ "conexion": {
+  "url": "https://comand-center-1-riu-router.hf.space/mcp?key=<CLAVE>",
+  "protocolo": "JSON-RPC 2.0 por POST, Content-Type application/json",
+  "si_401": "clave mala o variable de acceso distinta en el Space",
+  "si_503_o_timeout": "Space pausado: avisar a Antonio (reanudar y reiniciar)"
+ },
+ "sustituir": {
+  "<PID>": "proceso_id devuelto por chat",
+  "<MODELO>": "cada id de modelos.texto",
+  "<HOY>": "fecha ISO"
+ },
+ "esperar_chat": "repetir resultado(proceso_id, espera=8) hasta estado=completado o error; maximo 20 vueltas (video: 70)",
+ "nodos": [
+  {
+   "id": "N0",
+   "depende": [],
+   "paso": "initialize",
+   "llamada": {
+    "method": "initialize"
+   },
+   "pass": "result.serverInfo.name=riu-mvp"
+  },
+  {
+   "id": "N1",
+   "depende": [
+    "N0"
+   ],
+   "paso": "catalogo",
+   "llamada": {
+    "method": "tools/list"
+   },
+   "pass": "salen chat, resultado, listar_fichas, almacen, github_leer, github_escribir, github_api (+ pendientes, sala, agente, llm, yaiwes_md si estan ON)"
+  },
+  {
+   "id": "N2",
+   "depende": [
+    "N1"
+   ],
+   "paso": "fichas",
+   "llamada": {
+    "method": "tools/call",
+    "params": {
+     "name": "listar_fichas",
+     "arguments": {}
+    }
+   },
+   "pass": "lista con n,id,nombre"
+  },
+  {
+   "id": "N3",
+   "depende": [
+    "N2"
+   ],
+   "paso": "texto: cada modelo responde",
+   "por_cada": {
+    "MODELO": [
+     "qwen3.8-max",
+     "qwen3.8-flash",
+     "qwen3.7-max",
+     "qwen3.7-plus",
+     "qwen3.6-flash",
+     "glm-5.3",
+     "glm-5.2",
+     "deepseek-v4-pro",
+     "deepseek-v4-pro-0813",
+     "deepseek-v4-flash-0731",
+     "deepseek-v4.1-flash",
+     "deepseek-v4.1-flash-1017"
+    ]
+   },
+   "llamada": {
+    "method": "tools/call",
+    "params": {
+     "name": "chat",
+     "arguments": {
+      "ficha_qwen": "1",
+      "modelo": "<MODELO>",
+      "message": "Responde solo la palabra OK y el nombre de tu modelo.",
+      "sesion": "sol-<MODELO>",
+      "request_id": "sol-<MODELO>-<HOY>"
+     }
+    }
+   },
+   "luego": "esperar_chat",
+   "pass": "estado=completado, texto no vacio, finish_reason=stop, modelo_respuesta presente",
+   "idempotencia": "repetir la misma llamada con el mismo request_id devuelve el mismo proceso_id"
+  },
+  {
+   "id": "N4",
+   "depende": [
+    "N2"
+   ],
+   "paso": "imagen",
+   "por_cada": {
+    "MODELO": [
+     "qwen-image-3.0-pro",
+     "wan2.7-image",
+     "wan2.7-image-pro"
+    ]
+   },
+   "llamada": {
+    "method": "tools/call",
+    "params": {
+     "name": "chat",
+     "arguments": {
+      "ficha_qwen": "1",
+      "modelo": "<MODELO>",
+      "message": "Un gato naranja en una ventana, estilo acuarela",
+      "request_id": "sol-img-<MODELO>"
+     }
+    }
+   },
+   "luego": "esperar_chat",
+   "pass": "el texto trae [[imagen:URL]]"
+  },
+  {
+   "id": "N5",
+   "depende": [
+    "N2"
+   ],
+   "paso": "audio tts y asr",
+   "por_cada": {
+    "MODELO": [
+     "qwen-audio-3.0-tts-plus",
+     "qwen-audio-3.0-asr-flash"
+    ]
+   },
+   "llamada": {
+    "method": "tools/call",
+    "params": {
+     "name": "chat",
+     "arguments": {
+      "ficha_qwen": "1",
+      "modelo": "<MODELO>",
+      "message": "Hola, esto es una prueba. (asr: pegar aqui una URL https de un audio wav)",
+      "request_id": "sol-aud-<MODELO>"
+     }
+    }
+   },
+   "luego": "esperar_chat",
+   "pass": "tts: [[audio:...]]; asr: texto reconocido",
+   "nota": "qwen-audio-3.0-realtime-plus usa WebSocket: debe devolver error claro, eso es PASS del rechazo"
+  },
+  {
+   "id": "N6",
+   "depende": [
+    "N2"
+   ],
+   "paso": "video (lento)",
+   "por_cada": {
+    "MODELO": [
+     "wan3.0-video",
+     "happyhorse-1.1-t2v"
+    ]
+   },
+   "llamada": {
+    "method": "tools/call",
+    "params": {
+     "name": "chat",
+     "arguments": {
+      "ficha_qwen": "1",
+      "modelo": "<MODELO>",
+      "message": "Una ola rompiendo en una playa",
+      "request_id": "sol-vid-<MODELO>"
+     }
+    }
+   },
+   "luego": "esperar_chat (70 vueltas)",
+   "pass": "[[video:URL]]; i2v/r2v exigen URL de imagen en el mensaje: sin URL deben dar error claro"
+  },
+  {
+   "id": "N7",
+   "depende": [
+    "N1"
+   ],
+   "paso": "herramientas del chat",
+   "llamadas": [
+    {
+     "method": "tools/call",
+     "params": {
+      "name": "yaiwes_md",
+      "arguments": {
+       "accion": "escribir",
+       "texto": "proyecto de prueba Sol <HOY>"
+      }
+     }
+    },
+    {
+     "method": "tools/call",
+     "params": {
+      "name": "yaiwes_md",
+      "arguments": {
+       "accion": "leer"
+      }
+     }
+    },
+    {
+     "method": "tools/call",
+     "params": {
+      "name": "pendientes",
+      "arguments": {
+       "accion": "agregar",
+       "texto": "pendiente Sol"
+      }
+     }
+    },
+    {
+     "method": "tools/call",
+     "params": {
+      "name": "pendientes",
+      "arguments": {
+       "accion": "listar"
+      }
+     }
+    },
+    {
+     "method": "tools/call",
+     "params": {
+      "name": "sala",
+      "arguments": {
+       "accion": "crear",
+       "nombre": "sala-sol"
+      }
+     }
+    },
+    {
+     "method": "tools/call",
+     "params": {
+      "name": "llm",
+      "arguments": {
+       "modelo": "qwen3.8-flash",
+       "mensaje": "Di OK"
+      }
+     }
+    },
+    {
+     "method": "tools/call",
+     "params": {
+      "name": "agente",
+      "arguments": {
+       "nombre": "<AGENTE_EXISTENTE>",
+       "mensaje": "Di OK"
+      }
+     }
+    }
+   ],
+   "pass": "cada eco coincide con lo escrito; llm/agente devuelven texto del modelo",
+   "si_bloqueada": "error -32000 'Herramienta bloqueada' = el servidor niega porque esta OFF o la IA/Agentes estan OFF: es correcto; pedir a Antonio encenderla en el chat y repetir"
+  },
+  {
+   "id": "N8",
+   "depende": [
+    "N1"
+   ],
+   "paso": "GitHub: el modelo escribe y lee",
+   "llamadas": [
+    {
+     "method": "tools/call",
+     "params": {
+      "name": "github_escribir",
+      "arguments": {
+       "repo": "maxbry123-commits/router-universal-router-inteligente-",
+       "ruta": "Prueba/sol-<HOY>.txt",
+       "contenido": "prueba Sol <HOY>",
+       "mensaje": "prueba Sol",
+       "rama": "prueba-sol"
+      }
+     }
+    },
+    {
+     "method": "tools/call",
+     "params": {
+      "name": "github_leer",
+      "arguments": {
+       "repo": "maxbry123-commits/router-universal-router-inteligente-",
+       "ruta": "Prueba/sol-<HOY>.txt",
+       "rama": "prueba-sol"
+      }
+     }
+    }
+   ],
+   "pass": "leer devuelve el mismo contenido",
+   "limpieza": "avisar a Antonio para borrar la rama prueba-sol; nunca escribir en main"
+  },
+  {
+   "id": "N9",
+   "depende": [
+    "N1"
+   ],
+   "paso": "Hugging Face: almacen",
+   "llamadas": [
+    {
+     "method": "tools/call",
+     "params": {
+      "name": "almacen",
+      "arguments": {
+       "accion": "guardar",
+       "destino": "hf",
+       "nombre": "chat_estado/sol.txt",
+       "valor": "hola <HOY>"
+      }
+     }
+    },
+    {
+     "method": "tools/call",
+     "params": {
+      "name": "almacen",
+      "arguments": {
+       "accion": "leer",
+       "destino": "hf",
+       "nombre": "chat_estado/sol.txt"
+      }
+     }
+    }
+   ],
+   "pass": "leer devuelve el valor guardado"
+  },
+  {
+   "id": "N10",
+   "depende": [
+    "N3",
+    "N7"
+   ],
+   "paso": "chat usa herramientas solo (modelo con tools)",
+   "llamada": {
+    "method": "tools/call",
+    "params": {
+     "name": "chat",
+     "arguments": {
+      "ficha_qwen": "1",
+      "modelo": "qwen3.8-max",
+      "tools": true,
+      "message": "Agrega el pendiente 'revisar Sol' con la herramienta pendientes y confirma",
+      "request_id": "sol-tools-<HOY>"
+     }
+    }
+   },
+   "luego": "esperar_chat",
+   "pass": "tool_calls ejecutados y el pendiente aparece en N7 listar"
+  },
+  {
+   "id": "N11",
+   "depende": [
+    "N3"
+   ],
+   "paso": "formato y negativas",
+   "llamadas": [
+    "chat con message de 1.100.000 caracteres => debe fallar 413",
+    "chat con modelo inexistente 'zzz' => error -32602",
+    "tools/list con clave mala => 401"
+   ],
+   "pass": "los tres rechazos"
+  },
+  {
+   "id": "N12",
+   "depende": [
+    "N0",
+    "N1",
+    "N2",
+    "N3",
+    "N4",
+    "N5",
+    "N6",
+    "N7",
+    "N8",
+    "N9",
+    "N10",
+    "N11"
+   ],
+   "paso": "informe",
+   "salida": "tabla nodo | PASS/FAIL/NO VERIFICADO | salida cruda recortada a 300 caracteres | tiempo; lista de modelos que fallaron con su error exacto"
+  }
+ ]
+}

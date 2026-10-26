@@ -1,0 +1,38 @@
+{
+  "bundle_bytes": 1151283,
+  "bundle_sha256": "4202f063f0d8a87226860a9f6b7ae6f97e37ac5a6d45ad826f9d03088e2afaab",
+  "extracted_tree": {
+    "bytes": 3660093,
+    "files": 750,
+    "sha256": "48a02d2fcd3786c7aad7c28290872bf4343ed884f3f5245772cf56be924ff7c5"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 1151283,
+      "name": "transformers.js.bundle.zip.part-0001",
+      "sha256": "4202f063f0d8a87226860a9f6b7ae6f97e37ac5a6d45ad826f9d03088e2afaab"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [
+    "AGENTS.md",
+    "CLAUDE.md"
+  ],
+  "skipped_special_count": 2,
+  "slug": "transformers.js",
+  "source_bytes": 3660093,
+  "source_commit": "910090a23309a06541fe85189e1c9d910d817939",
+  "source_files": 750,
+  "source_ref": "HEAD",
+  "source_repo": "huggingface/transformers.js",
+  "source_tree": {
+    "bytes": 3660093,
+    "files": 750,
+    "sha256": "48a02d2fcd3786c7aad7c28290872bf4343ed884f3f5245772cf56be924ff7c5"
+  }
+}

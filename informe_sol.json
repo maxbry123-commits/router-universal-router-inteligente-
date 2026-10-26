@@ -1,0 +1,9 @@
+[
+ {
+  "modelo": "glm-5.3",
+  "prueba": "tarea1 codigo en GitHub",
+  "estado": "PASS",
+  "evidencia": "chat=completado  | usadas=None | respuesta=hecho | comprobacion=suma(2,3)=5 resta(5,2)=3",
+  "segundos": 0.0
+ }
+]

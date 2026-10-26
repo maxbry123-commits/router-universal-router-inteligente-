@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FROMTED p02 — Docs móvil (Apple Files dark)</title>
+<style>
+:root{--bg:#0d0d0d;--sheet:#1c1c1c;--elev:#252525;--border:#2e2e2e;--white:#f0f0f0;--dim:#9b9b9b;--orange:#ff6b1a;--blue:#2f6bff;--green:#22c55e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#000;color:var(--white);display:flex;justify-content:center;min-height:100dvh}
+.phone{width:100%;max-width:390px;min-height:100dvh;background:var(--bg);display:flex;flex-direction:column}
+.top{display:flex;align-items:center;padding:12px 14px;gap:8px}
+.top button{border:0;background:transparent;color:var(--dim);width:36px;height:36px}
+.top button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6}
+.top h1{flex:1;font-size:20px;font-weight:600}
+.seg{display:flex;margin:0 14px 12px;background:var(--sheet);border-radius:10px;padding:3px;border:1px solid var(--border)}
+.seg button{flex:1;border:0;background:transparent;color:var(--dim);padding:8px;font-size:13px;border-radius:8px}
+.seg button.on{background:var(--elev);color:var(--blue)}
+.search{margin:0 14px 14px;display:flex;gap:8px;align-items:center;background:var(--sheet);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.search:focus-within{border-color:var(--blue)}
+.search svg{width:16px;height:16px;stroke:var(--dim);fill:none;stroke-width:1.6}
+.search input{flex:1;border:0;background:transparent;color:var(--white);font-size:14px;outline:0}
+.grid{padding:0 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1;align-content:start}
+.card{background:var(--sheet);border:1px solid var(--border);border-radius:14px;padding:14px;min-height:110px;display:flex;flex-direction:column}
+.card .ico{width:40px;height:40px;border-radius:10px;background:var(--elev);display:grid;place-items:center;margin-bottom:10px;color:var(--dim)}
+.card .ico svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.5}
+.card .n{font-size:14px;font-weight:500}
+.card .s{font-size:11px;color:var(--dim);margin-top:4px}
+.card.sel{box-shadow:inset 0 0 0 1px var(--blue)}
+.bar{display:flex;gap:8px;padding:14px;border-top:1px solid var(--border)}
+.bar button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--sheet);color:var(--white);font-size:13px}
+.bar .orange-text{border:0;background:transparent;color:var(--orange);font-weight:600}
+.foot{text-align:center;font-size:11px;color:var(--green);padding-bottom:12px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="top">
+    <button aria-label="atrás"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <h1>Archivos</h1>
+    <button aria-label="más"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+  </div>
+  <div class="seg">
+    <button class="on" type="button">Íconos</button>
+    <button type="button">Lista</button>
+    <button type="button">Columnas</button>
+  </div>
+  <div class="search">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input placeholder="Buscar"/>
+  </div>
+  <div class="grid">
+    <div class="card sel"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 7h5l2 2h11v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></div><div class="n">Proyectos</div><div class="s">12 elementos</div></div>
+    <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="n">plan.md</div><div class="s">Documento</div></div>
+    <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div class="n">mock.png</div><div class="s">Imagen</div></div>
+    <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="n">spec.pdf</div><div class="s">PDF</div></div>
+  </div>
+  <div class="bar">
+    <button type="button">Seleccionar</button>
+    <button class="orange-text" type="button">Descargar</button>
+  </div>
+  <p class="foot">● Solo en tu dispositivo</p>
+</div>
+</body>
+</html>

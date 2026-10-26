@@ -1,0 +1,14 @@
+{
+ "mission_id":"NCT_SMOKE_001",
+ "goal":"Crear una evidencia de ejecución real, leer y verificar un archivo de prueba dentro del workspace autorizado",
+ "profile":"document",
+ "acceptance":[{"type":"file_exists","path":"evidencia/smoke.txt"}],
+ "units":[
+   {"id":"S_UNIT","goal":"Crear un archivo de prueba y verificarlo mediante el motor JSON Ricardo original aportado",
+    "block":"executor","depends_on":[],"priority":5,
+    "allowed_ops":["inspect_workspace","create_directory","write_text","read_text","verify_exists","verify_contains","finish"],
+    "acceptance":[{"op":"verify_exists","path":"evidencia/smoke.txt"},
+                  {"op":"verify_contains","path":"evidencia/smoke.txt","text":"PASS: salida real"}],
+    "scope":[],"max_retries":0}
+ ]
+}

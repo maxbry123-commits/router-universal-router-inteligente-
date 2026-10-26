@@ -1,0 +1,15 @@
+54c8815ea0 Chip System prompt junto a IA y Agentes (antes quedaba deformado en la fila de acciones)
+
+diff --git a/plugins/chat-router/frontend/maxbry-ui.js b/plugins/chat-router/frontend/maxbry-ui.js
+index 2363f5d5e1..9c299388fb 100644
+--- a/plugins/chat-router/frontend/maxbry-ui.js
++++ b/plugins/chat-router/frontend/maxbry-ui.js
+@@ -52,7 +52,7 @@ function montar(comp) {
+   const colocar = () => {  // mueve cada botón nuevo (aparecen por módulos que cargan tarde) a su sitio, sin clonar
+     const modos = document.querySelector("#mode-selector-mount"); if (modos && modos.parentElement !== chips) chips.append(modos);
+     if (pensar.parentElement !== chips) chips.append(pensar);
+-    ["#btn-tools", "#btn-agentes"].forEach((id) => { const b = document.querySelector(id); if (b && b.parentElement !== chips) chips.append(b); });
++    ["#btn-tools", "#btn-agentes", "#btn-prompt"].forEach((id) => { const b = document.querySelector(id); if (b && b.parentElement !== chips) chips.append(b); });
+     bar.querySelectorAll(":scope > button.secondary").forEach((b) => {
+       if (FIJOS.has(b.id) || b.classList.contains("sh-cerrar")) return;
+       b.dataset.mx = TEXTO[b.id] || (b.title || b.getAttribute("aria-label") || "").split(/[·:(]/)[0].trim().slice(0, 16);

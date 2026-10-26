@@ -1,0 +1,155 @@
+{
+ "enlaces": {
+  "chat-router/chat": "../chat",
+  "chat-router/harness": "../chat/backend/deepseek_harness",
+  "mvp": "chat/backend/mvp",
+  "plugins/deepseek_harness": "../chat/backend/deepseek_harness",
+  "plugins/router_api_cliente.py": "../chat/backend/router_api_cliente.py"
+ },
+ "plugins": {
+  "agentes": {
+   "destino": "../chat-router/agentes/agentes-yaiwes",
+   "enlace": true,
+   "ficha": false
+  },
+  "chat": {
+   "destino": "../chat-router/otros/chat",
+   "enlace": true,
+   "ficha": true
+  },
+  "connectivity": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "deepseek_harness": {
+   "destino": "../chat/backend/deepseek_harness",
+   "enlace": true,
+   "ficha": true
+  },
+  "hf_compute": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "hf_datasets": {
+   "destino": "../chat-router/memoria/hf_datasets",
+   "enlace": true,
+   "ficha": true
+  },
+  "hf_skills": {
+   "destino": "../chat-router/workflow-loop-code-yaiwes/hf_skills",
+   "enlace": true,
+   "ficha": true
+  },
+  "hf_storage": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "lifeguard": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "memoria": {
+   "destino": "../chat-router/memoria/memoria-yaiwes",
+   "enlace": true,
+   "ficha": false
+  },
+  "motores": {
+   "destino": "../chat-router/motores/motores",
+   "enlace": true,
+   "ficha": false
+  },
+  "motores-descarga": {
+   "destino": "../chat-router/motores/motores-descarga",
+   "enlace": true,
+   "ficha": false
+  },
+  "orquestador": {
+   "destino": "../chat-router/agentes/orquestacion/orquestador",
+   "enlace": true,
+   "ficha": true
+  },
+  "parallel": {
+   "destino": "../chat-router/agentes/orquestacion/parallel",
+   "enlace": true,
+   "ficha": true
+  },
+  "puente_chat": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "router_api_cliente.py": {
+   "destino": "../chat/backend/router_api_cliente.py",
+   "enlace": true,
+   "ficha": false
+  },
+  "ssh_bridge": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "workflow-loop-yaiwes": {
+   "destino": "../chat-router/workflow-loop-code-yaiwes/workflow-loop-yaiwes",
+   "enlace": true,
+   "ficha": false
+  }
+ },
+ "protegido": {
+  "CLAUDE.md": {
+   "archivos": 1,
+   "sha256": "6e3578da3fd5e7bb7ecfe02c12eae4e4db465b42372dd4d6b6f869b87685d12a"
+  },
+  "chat/auditoria": {
+   "archivos": 4,
+   "sha256": "aaa2c1ee480e477fa1f8931044b03b654dac39c94b63bf6bd0bf17cc0af77cd0"
+  },
+  "chat/backend": {
+   "archivos": 219,
+   "sha256": "4af2dcd4dcf63c676e8907e805290e7132e778419a6b7c75db957f806f9ea874"
+  },
+  "chat/e2e": {
+   "archivos": 21,
+   "sha256": "6b507bf3a4af1675bca379e7932d7d6b5afef5c49d61748d0e0897c891e3d374"
+  },
+  "chat/espejo": {
+   "archivos": 1,
+   "sha256": "c33e1d72284565e359dddc3828d5b7683c39f97c1de34baf57d54963e9523037"
+  },
+  "chat/frontend": {
+   "archivos": 534,
+   "sha256": "b98b80802e40dc8633ef1041d5f8b62561b912061ff9172f1f105d23dca711e9"
+  },
+  "fichas": {
+   "archivos": 220,
+   "sha256": "25e15c534230889e3ee09e9a143efdd2936ed22385a12d985c054cde0cf0b394"
+  },
+  "plugins/__init__.py": {
+   "archivos": 1,
+   "sha256": "b1d3463ef6a950402f3a836f71542f3f7629106bb4a0a8532bd1ef16d7ae64c6"
+  },
+  "plugins/hf_storage": {
+   "archivos": 3,
+   "sha256": "51919686ec4a78df26704c9eaabf6824f73a0c0b70eca728608e9cb7031dd371"
+  },
+  "plugins/puente_chat": {
+   "archivos": 44,
+   "sha256": "64a7186e413524b1ceec2c9df9433a342db70dd6faa395eb879c8bf4ccf8c9ef"
+  },
+  "raiz_fichas_prompt": {
+   "archivos": 5,
+   "sha256": "540856465e2fd7f1ef456d827fcdeefcc24efcd676aa663d7283c664d6e25c48"
+  },
+  "raiz_router": {
+   "archivos": 583,
+   "sha256": "714ef5aeaac7775243c0a5b99e31125cbc50d8fd27556cf369704dc8fe7f479a"
+  },
+  "router": {
+   "archivos": 176,
+   "sha256": "54e17300bf1ab5768818d3464959023123d14e0e7b80b1fa4775e3ef5335fb8e"
+  }
+ }
+}

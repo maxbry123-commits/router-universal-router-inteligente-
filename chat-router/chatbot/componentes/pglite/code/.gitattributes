@@ -1,0 +1,3 @@
+postgres/** linguist-vendored
+packages/benchmark/** linguist-vendored
+docs/** linguist-documentation

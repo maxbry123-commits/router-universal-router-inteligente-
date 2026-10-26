@@ -1,0 +1,226 @@
+{
+  "proveedor": "Token Plan (Bailian / QwenCloud)",
+  "plan_personal": {
+    "nombre": "Personal Standard",
+    "precio_usd_mes": 18,
+    "creditos_mes": 45000,
+    "agentes_simultaneos": "3-4",
+    "region": "Singapur"
+  },
+  "region": "global",
+  "base_url": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+  "base_url_alterna_qwencloud": "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1",
+  "anthropic_url_qwencloud": "https://token-plan.maas.qwencloudapi.com/apps/anthropic",
+  "variable_clave": "BAILIAN_TOKEN_PLAN_API_KEY",
+  "variables_alternas": ["QWENCLOUD_API_KEY", "QWEN_API_KEY", "DASHSCOPE_API_KEY", "QWENCLOUD_TOKEN_PLAN_API_KEY"],
+  "formato_clave": "sk-sp-",
+  "modelo_defecto": "qwen3.8-max",
+  "texto": [
+    {
+      "id": "qwen3.8-max",
+      "p": 1,
+      "t": 1,
+      "th": true
+    },
+    {
+      "id": "qwen3.8-flash",
+      "p": 1,
+      "t": 1,
+      "th": true
+    },
+    {
+      "id": "qwen3.7-max",
+      "p": 1,
+      "t": 1,
+      "th": true
+    },
+    {
+      "id": "qwen3.7-plus",
+      "p": 1,
+      "t": 1,
+      "th": true
+    },
+    {
+      "id": "qwen3.6-plus",
+      "p": 0,
+      "t": 1,
+      "th": true
+    },
+    {
+      "id": "qwen3.6-flash",
+      "p": 1,
+      "t": 1,
+      "th": true
+    },
+    {
+      "id": "glm-5.3",
+      "p": 1,
+      "t": 1,
+      "th": "team"
+    },
+    {
+      "id": "glm-5.2",
+      "p": 1,
+      "t": 1,
+      "th": "team"
+    },
+    {
+      "id": "glm-5.1",
+      "p": 0,
+      "t": 1,
+      "th": "team"
+    },
+    {
+      "id": "glm-5",
+      "p": 0,
+      "t": 1,
+      "th": "team"
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "p": 1,
+      "t": 1,
+      "th": null
+    },
+    {
+      "id": "deepseek-v4-pro-0813",
+      "p": 1,
+      "t": 1,
+      "th": null
+    },
+    {
+      "id": "deepseek-v4-flash-0731",
+      "p": 1,
+      "t": 1,
+      "th": null
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "p": 1,
+      "t": 1,
+      "th": null
+    },
+    {
+      "id": "deepseek-v4.1-flash-1017",
+      "p": 1,
+      "t": 1,
+      "th": null
+    },
+    {
+      "id": "kimi-k2.7-code",
+      "p": 0,
+      "t": 1,
+      "th": true
+    },
+    {
+      "id": "kimi-k2.6",
+      "p": 0,
+      "t": 1,
+      "th": true
+    },
+    {
+      "id": "kimi-k2.5",
+      "p": 0,
+      "t": 1,
+      "th": true
+    },
+    {
+      "id": "MiniMax-M2.5",
+      "p": 0,
+      "t": 1,
+      "th": null
+    }
+  ],
+  "razonamiento_qwen3.8-max": {
+    "enable_thinking": [
+      true,
+      false
+    ],
+    "reasoning_effort": [
+      "low",
+      "medium",
+      "xhigh"
+    ],
+    "reasoning_effort_defecto": "xhigh",
+    "temperature_defecto": 0.6
+  },
+  "imagen": [
+    {
+      "id": "qwen-image-3.0-pro",
+      "p": 1,
+      "t": 1
+    },
+    {
+      "id": "qwen-image-2.0",
+      "p": 0,
+      "t": 1
+    },
+    {
+      "id": "qwen-image-2.0-pro",
+      "p": 0,
+      "t": 1
+    },
+    {
+      "id": "wan2.7-image",
+      "p": 1,
+      "t": 1
+    },
+    {
+      "id": "wan2.7-image-pro",
+      "p": 1,
+      "t": 1
+    }
+  ],
+  "audio": [
+    {
+      "id": "qwen-audio-3.0-tts-plus",
+      "p": 1,
+      "t": 1
+    },
+    {
+      "id": "qwen-audio-3.0-realtime-plus",
+      "p": 1,
+      "t": 1
+    },
+    {
+      "id": "qwen-audio-3.0-asr-flash",
+      "p": 1,
+      "t": 1
+    }
+  ],
+  "video": [
+    {
+      "id": "wan3.0-video",
+      "p": 1,
+      "t": 1
+    },
+    {
+      "id": "happyhorse-1.1-t2v",
+      "p": 1,
+      "t": 1
+    },
+    {
+      "id": "happyhorse-1.1-i2v",
+      "p": 1,
+      "t": 1
+    },
+    {
+      "id": "happyhorse-1.1-r2v",
+      "p": 1,
+      "t": 1
+    }
+  ],
+  "rutas_multimodal_qwencloud_no_usadas_en_MVP": {
+    "imagen": "/api/v1/services/aigc/multimodal-generation/generation",
+    "video": "/api/v1/services/aigc/video-generation/video-synthesis",
+    "tarea_video": "/api/v1/tasks/{task_id}",
+    "tts": "/api/v1/services/audio/tts/SpeechSynthesizer"
+  },
+  "herramientas_harness": [
+    "web_search",
+    "web_search_image",
+    "image_search",
+    "web_extractor",
+    "code_interpreter"
+  ]
+}

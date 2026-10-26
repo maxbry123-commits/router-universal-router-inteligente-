@@ -1,0 +1,162 @@
+# APPLY — decision procedures for following `.design`
+
+Encode process, not vibes. Walk these trees the same way every run.
+
+## Component reuse
+
+```
+Need a control?
+├── Exact components.* match for the interaction?
+│   └── Yes → use it (respect import path if present)
+└── Partial match (same role, missing variant)?
+    ├── policy.reuse.prefer_existing_components?
+    │   └── Yes → extend via proposal (new variant), do not fork a second Button
+    └── if_missing
+        ├── ask → stop and ask
+        ├── nearest → closest component + note in PR/summary
+        └── invent_with_note → one-off + update .design catalog
+```
+
+## Button (and similar CTA) selection
+
+If `decisions.button` exists, walk it first. Otherwise default tree:
+
+```
+Is the action destructive (delete, revoke, irreversible)?
+├── Yes → danger / destructive variant
+└── No
+    ├── Is it the single primary action of the view?
+    │   ├── Yes → filled / primary (constraints: one per view)
+    │   └── No
+    │       ├── Secondary alternative (cancel, back)?
+    │       │   └── outlined / secondary / ghost per catalog
+    │       └── Tertiary / inline → ghost or link style per catalog
+```
+
+## Token binding
+
+```
+Need a color / space / radius / type style?
+├── Semantic token exists?
+│   └── Yes → use {tokens.*} or the project's CSS var mapped from it
+└── No
+    └── fallback_order
+        ├── semantic_token → fail closed / ask
+        ├── nearest_approved_token → closest scale step + note
+        └── ask → ask user
+```
+
+Never introduce raw hex/rgb when a token exists (`constraints.always`).
+
+## Component property bags (DESIGN.md)
+
+```
+Implementing a catalog / flat component?
+├── Read tokens.<variant> OR flat property bag
+├── For each of backgroundColor, textColor, typography, rounded,
+│   padding, size, height, width (and extensions): apply exactly
+├── Apply *-hover / *-active / *-focus sibling entries when present
+├── Read rationale.components for craft rules tokens omit
+└── Do NOT drop unknown properties — preserve on UPDATE
+```
+
+Aliases: `background`≡`backgroundColor`, `foreground`≡`textColor`, `radius`≡`rounded`.
+
+## Spacing
+
+```
+Spacing decision?
+├── tokens.spacing.unit defined?
+│   └── Yes → snap to multiples of unit (and named sm/md/lg when listed)
+└── Prefer gap on parents over per-child margins
+```
+
+If `policy.responsive.if_mobile` says `reduce_padding_before_font_size`, shrink spacing tokens before reducing body font size.
+
+## Hierarchy tradeoffs
+
+Apply `policy.hierarchy` in order (default: typography → spacing → contrast → color). When two rules conflict, preserve earlier items first.
+
+## Craft gates (when `.design` is silent)
+
+Before finishing UI generation, apply [CRAFT.md](CRAFT.md):
+
+```
+After binding tokens + components
+├── One clear primary CTA?
+├── States covered (hover/focus/disabled/loading/empty/error)?
+├── Nested radii computed (inner = outer − padding)?
+├── Motion: transform/opacity only, <300ms, reduced-motion honored?
+├── Tap targets ≥ 44×44; focus visible; inputs ≥ 16px on mobile?
+├── Body measure ~65ch; gap on parents; no hover-only core actions?
+└── Marketing hero restrained unless patterns.* say otherwise?
+```
+
+If a CRAFT rule conflicts with tokens / constraints / rationale / when / when_not → **`.design` wins**.
+
+## Component API (invent path)
+
+When `policy.if_missing` allows inventing:
+
+- Prefer composition (slots/children) over boolean-prop piles
+- Prefer existing catalog / shadcn primitives over a new parallel Button
+- After user accepts the control, UPDATE `.design` `components` in the same task when asked to persist design progress
+
+## Pattern surfaces
+
+```
+Building a named surface (hero, dashboard, settings)?
+├── patterns.<name> exists?
+│   ├── Use only allowed parts
+│   ├── Omit forbidden parts
+│   └── Honor prioritize hints (e.g. table over cards when dense)
+└── No pattern → compose from components + constraints only
+```
+
+## Sound
+
+```
+Someone wants a sound?
+├── tokens.sound absent (or omitted lists it)?
+│   └── Yes → no sound; say so — silence is the contract's decision
+└── tokens.sound present
+    ├── Trigger is hover / focus / scroll / keystroke? → none (constraints.never)
+    ├── decisions.sound exists? → walk it, first match wins
+    ├── Daily moment (send / save / complete)?
+    │   └── one family member, tokens.sound.duration.<role>, fired on the settle of the
+    │       confirming animation, only when the user's toggle is on
+    ├── Rare milestone? → two- or three-note figure in tokens.sound.material, ≤ 800ms
+    └── Need the file? → assets.sounds.<role>; missing → generate with the material as the
+        prompt prefix (companion skill), add the path, keep enabled: false
+```
+
+Video target (`targets[].name: video`): skip the toggle logic — every contact frame gets a transient, holds get silence, master to the target's `loudness`. Emit `exports.frame_md` so the video tool inherits `motion` and `sound` with the brand.
+
+## Styling system
+
+Detect the project's approach (Tailwind, CSS modules, vanilla-extract, etc.). Map `.design` values into that system. Never switch the stack mid-task.
+
+## shadcn/ui
+
+```
+integrations.shadcn.enabled?
+├── No → styling system path above
+└── Yes
+    ├── Detect project context first (shadcn info / MCP) — style, base, installed components
+    ├── Match the project's primitive base (base | radix | react-aria); never mix bases
+    ├── Prefer components under aliases.ui
+    │   └── Missing? search → docs → add --dry-run → add (from declared registries only;
+    │       never guess a registry namespace; verify import aliases after third-party adds)
+    ├── Ensure components.json has cssVariables: true (immutable after init — never re-init)
+    ├── Resolve theme:
+    │   ├── css_vars.theme / .light / .dark present? → use them
+    │   └── else derive from map_from_tokens → tokens.* (a|b|c = first path that resolves)
+    ├── Write :root and .dark variables into integrations.shadcn.css — the FULL var set
+    │   (incl. chart-1…5, sidebar-*); custom vars also registered under @theme inline (Tailwind v4)
+    ├── Set --radius from integrations.shadcn.radius (or tokens.radius)
+    └── If tokens disagree with css_vars → tokens win; update css_vars + CSS
+```
+
+Still obey `components.*` when/when_not and `constraints` — shadcn is the implementation vehicle, not a free pass to ignore the catalog.
+
+Docs: [docs/shadcn.md](../../../docs/shadcn.md) · Spec: [SPEC.md §7.1](../../../SPEC.md).

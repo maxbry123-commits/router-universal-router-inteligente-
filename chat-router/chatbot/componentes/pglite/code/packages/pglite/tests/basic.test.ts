@@ -1,0 +1,967 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { expectToThrowAsync, testEsmCjsAndDTC } from './test-utils.ts'
+import { identifier } from '../dist/templating.js'
+import { PGlite, type Transaction } from '../dist/index.js'
+
+await testEsmCjsAndDTC(async (importType) => {
+  const { PGlite } =
+    importType === 'esm'
+      ? await import('../dist/index.js')
+      : ((await import(
+          '../dist/index.cjs'
+        )) as unknown as typeof import('../dist/index.js'))
+
+  describe(`basic`, () => {
+    let db: PGlite
+    let dataDirArchive: File | Blob
+
+    beforeEach(async () => {
+      if (!dataDirArchive) {
+        db = await PGlite.create()
+        dataDirArchive = await db.dumpDataDir('gzip')
+      } else {
+        db = await PGlite.create({
+          loadDataDir: dataDirArchive,
+        })
+      }
+    })
+
+    afterEach(async () => {
+      if (!db.closed) {
+        await db.close()
+      }
+    })
+
+    it('exec', async () => {
+      await db.exec(`
+      CREATE TABLE IF NOT EXISTS test (
+        id SERIAL PRIMARY KEY,
+        name TEXT
+      );
+    `)
+
+      const multiStatementResult = await db.exec(`
+      INSERT INTO test (name) VALUES ('test');
+      UPDATE test SET name = 'test2';
+      SELECT * FROM test;
+    `)
+
+      expect(multiStatementResult).toEqual([
+        {
+          affectedRows: 1,
+          command: 'INSERT',
+          rowCount: 1,
+          rows: [],
+          fields: [],
+        },
+        {
+          affectedRows: 2,
+          command: 'UPDATE',
+          rowCount: 1,
+          rows: [],
+          fields: [],
+        },
+        {
+          rows: [{ id: 1, name: 'test2' }],
+          fields: [
+            { name: 'id', dataTypeID: 23 },
+            { name: 'name', dataTypeID: 25 },
+          ],
+          affectedRows: 2,
+          command: 'SELECT',
+          rowCount: 1,
+        },
+      ])
+    })
+
+    it('query', async () => {
+      await db.query(`
+    CREATE TABLE IF NOT EXISTS test (
+      id SERIAL PRIMARY KEY,
+      name TEXT
+    );
+  `)
+      await db.query("INSERT INTO test (name) VALUES ('test');")
+      const selectResult = await db.query(`
+    SELECT * FROM test;
+  `)
+
+      expect(selectResult).toEqual({
+        rows: [
+          {
+            id: 1,
+            name: 'test',
+          },
+        ],
+        fields: [
+          {
+            name: 'id',
+            dataTypeID: 23,
+          },
+          {
+            name: 'name',
+            dataTypeID: 25,
+          },
+        ],
+        affectedRows: 0,
+        command: 'SELECT',
+        rowCount: 1,
+      })
+
+      const updateResult = await db.query("UPDATE test SET name = 'test2';")
+      expect(updateResult).toEqual({
+        rows: [],
+        fields: [],
+        affectedRows: 1,
+        command: 'UPDATE',
+        rowCount: 1,
+      })
+    })
+
+    it('query templated', async () => {
+      const tableName = identifier`test`
+      await db.sql`
+    CREATE TABLE IF NOT EXISTS ${tableName} (
+      id SERIAL PRIMARY KEY,
+      name TEXT
+    );
+  `
+      await db.sql`INSERT INTO ${tableName} (name) VALUES (${'test'});`
+      const selectResult = await db.sql`SELECT * FROM ${tableName};`
+
+      expect(selectResult).toEqual({
+        rows: [
+          {
+            id: 1,
+            name: 'test',
+          },
+        ],
+        fields: [
+          {
+            name: 'id',
+            dataTypeID: 23,
+          },
+          {
+            name: 'name',
+            dataTypeID: 25,
+          },
+        ],
+        affectedRows: 0,
+        command: 'SELECT',
+        rowCount: 1,
+      })
+
+      const updateResult =
+        await db.sql`UPDATE ${tableName} SET name = ${'test2'};`
+      expect(updateResult).toEqual({
+        rows: [],
+        fields: [],
+        affectedRows: 1,
+        command: 'UPDATE',
+        rowCount: 1,
+      })
+    })
+
+    it('types', async () => {
+      await db.query(`
+    CREATE TABLE IF NOT EXISTS test (
+      id SERIAL PRIMARY KEY,
+      text TEXT,
+      number INT,
+      float FLOAT,
+      bigint BIGINT,
+      bool BOOLEAN,
+      date DATE,
+      timestamp TIMESTAMP,
+      json JSONB,
+      blob BYTEA,
+      array_text TEXT[],
+      array_number INT[],
+      nested_array_float FLOAT[][],
+      test_null INT,
+      test_undefined INT
+    );
+  `)
+
+      await db.query(
+        `
+    INSERT INTO test (text, number, float, bigint, bool, date, timestamp, json, blob, array_text, array_number, nested_array_float, test_null, test_undefined)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
+  `,
+        [
+          'test',
+          1,
+          1.5,
+          9223372036854775807n,
+          true,
+          new Date('2021-01-01'),
+          new Date('2021-01-01T12:00:00'),
+          { test: 'test' },
+          Uint8Array.from([1, 2, 3]),
+          ['test1', 'test2', 'test,3'],
+          [1, 2, 3],
+          [
+            [1.1, 2.2],
+            [3.3, 4.4],
+          ],
+          null,
+          undefined,
+        ],
+      )
+
+      const res = await db.query<{
+        id: number
+        text: string
+        number: number
+        float: number
+        bigint: bigint
+        bool: boolean
+        date: Date
+        timestamp: Date
+        json: Record<string, unknown>
+        blob: Uint8Array
+        array_text: string[]
+        array_number: number[]
+        nested_array_float: number[][]
+        test_null: null
+        test_undefined: null
+      }>(`
+    SELECT * FROM test;
+  `)
+
+      expect(res).toMatchObject({
+        rows: [
+          {
+            id: 1,
+            text: 'test',
+            number: 1,
+            float: 1.5,
+            bigint: 9223372036854775807n,
+            bool: true,
+            date: new Date('2021-01-01T00:00:00.000Z'),
+            json: { test: 'test' },
+            blob: Uint8Array.from([1, 2, 3]),
+            array_text: ['test1', 'test2', 'test,3'],
+            array_number: [1, 2, 3],
+            nested_array_float: [
+              [1.1, 2.2],
+              [3.3, 4.4],
+            ],
+            test_null: null,
+            test_undefined: null,
+          },
+        ],
+        fields: [
+          {
+            name: 'id',
+            dataTypeID: 23,
+          },
+          {
+            name: 'text',
+            dataTypeID: 25,
+          },
+          {
+            name: 'number',
+            dataTypeID: 23,
+          },
+          {
+            name: 'float',
+            dataTypeID: 701,
+          },
+          {
+            name: 'bigint',
+            dataTypeID: 20,
+          },
+          {
+            name: 'bool',
+            dataTypeID: 16,
+          },
+          {
+            name: 'date',
+            dataTypeID: 1082,
+          },
+          {
+            name: 'timestamp',
+            dataTypeID: 1114,
+          },
+          {
+            name: 'json',
+            dataTypeID: 3802,
+          },
+          {
+            name: 'blob',
+            dataTypeID: 17,
+          },
+          {
+            name: 'array_text',
+            dataTypeID: 1009,
+          },
+          {
+            name: 'array_number',
+            dataTypeID: 1007,
+          },
+          {
+            name: 'nested_array_float',
+            dataTypeID: 1022,
+          },
+          {
+            name: 'test_null',
+            dataTypeID: 23,
+          },
+          {
+            name: 'test_undefined',
+            dataTypeID: 23,
+          },
+        ],
+        affectedRows: 0,
+      })
+
+      // standardize timestamp comparison to UTC milliseconds to ensure predictable test runs on machines in different timezones.
+      expect(res.rows[0].timestamp.getUTCMilliseconds()).toBe(
+        new Date('2021-01-01T12:00:00.000Z').getUTCMilliseconds(),
+      )
+    })
+
+    it('custom parser and serializer', async () => {
+      const db = new PGlite({
+        loadDataDir: dataDirArchive,
+        serializers: { 1700: (x) => x.toString() },
+        parsers: { 1700: (x) => BigInt(x) },
+      })
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS test (
+          id SERIAL PRIMARY KEY,
+          numeric NUMERIC
+        );
+      `)
+      await db.query('INSERT INTO test (numeric) VALUES ($1);', [100n])
+      const res = await db.query(`
+        SELECT * FROM test;
+      `)
+
+      expect(res).toEqual({
+        rows: [
+          {
+            id: 1,
+            numeric: 100n,
+          },
+        ],
+        fields: [
+          {
+            name: 'id',
+            dataTypeID: 23,
+          },
+          {
+            name: 'numeric',
+            dataTypeID: 1700,
+          },
+        ],
+        affectedRows: 0,
+        command: 'SELECT',
+        rowCount: 1,
+      })
+    })
+
+    it('params', async () => {
+      await db.query(`
+    CREATE TABLE IF NOT EXISTS test (
+      id SERIAL PRIMARY KEY,
+      name TEXT
+    );
+  `)
+      await db.query('INSERT INTO test (name) VALUES ($1);', ['test2'])
+      const res = await db.query(`
+    SELECT * FROM test;
+  `)
+
+      expect(res).toEqual({
+        rows: [
+          {
+            id: 1,
+            name: 'test2',
+          },
+        ],
+        fields: [
+          {
+            name: 'id',
+            dataTypeID: 23,
+          },
+          {
+            name: 'name',
+            dataTypeID: 25,
+          },
+        ],
+        affectedRows: 0,
+        command: 'SELECT',
+        rowCount: 1,
+      })
+    })
+
+    it('array params', async () => {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS test (
+          id SERIAL PRIMARY KEY,
+          json JSONB,
+          array_text TEXT[]
+        );
+      `)
+
+      await db.query(
+        `
+        INSERT INTO test (json, array_text) VALUES ($1, $2);
+      `,
+        [
+          ['hello', 'world'],
+          ['yolo', 'fam'],
+        ],
+      )
+
+      const res = await db.query(
+        `
+        SELECT * FROM test WHERE id = ANY($1);
+      `,
+        [[0, 1, 2, 3]],
+      )
+
+      expect(res).toEqual({
+        rows: [
+          {
+            id: 1,
+            json: ['hello', 'world'],
+            array_text: ['yolo', 'fam'],
+          },
+        ],
+        fields: [
+          {
+            name: 'id',
+            dataTypeID: 23,
+          },
+          {
+            name: 'json',
+            dataTypeID: 3802,
+          },
+          {
+            name: 'array_text',
+            dataTypeID: 1009,
+          },
+        ],
+        affectedRows: 0,
+        command: 'SELECT',
+        rowCount: 1,
+      })
+    })
+
+    it('error', async () => {
+      await expectToThrowAsync(async () => {
+        await db.query('SELECT * FROM test;')
+      }, 'relation "test" does not exist')
+    })
+
+    it('transaction', async () => {
+      await db.query(`
+    CREATE TABLE IF NOT EXISTS test (
+      id SERIAL PRIMARY KEY,
+      name TEXT
+    );
+  `)
+      await db.query("INSERT INTO test (name) VALUES ('test');")
+      await db.transaction(async (tx) => {
+        await tx.query("INSERT INTO test (name) VALUES ('test2');")
+        const res = await tx.query(`
+      SELECT * FROM test;
+    `)
+        expect(res).toEqual({
+          rows: [
+            {
+              id: 1,
+              name: 'test',
+            },
+            {
+              id: 2,
+              name: 'test2',
+            },
+          ],
+          fields: [
+            {
+              name: 'id',
+              dataTypeID: 23,
+            },
+            {
+              name: 'name',
+              dataTypeID: 25,
+            },
+          ],
+          affectedRows: 0,
+          command: 'SELECT',
+          rowCount: 2,
+        })
+        await tx.rollback()
+      })
+      const res = await db.query(`
+    SELECT * FROM test;
+  `)
+      expect(res).toEqual({
+        rows: [
+          {
+            id: 1,
+            name: 'test',
+          },
+        ],
+        fields: [
+          {
+            name: 'id',
+            dataTypeID: 23,
+          },
+          {
+            name: 'name',
+            dataTypeID: 25,
+          },
+        ],
+        affectedRows: 0,
+        command: 'SELECT',
+        rowCount: 1,
+      })
+    })
+
+    it('rejects sql on closed transaction handles', async () => {
+      await db.exec('CREATE TABLE closed_transaction_test (id INT PRIMARY KEY)')
+
+      let committedTx: Transaction | undefined
+      await db.transaction(async (tx) => {
+        committedTx = tx
+      })
+
+      expect(committedTx?.closed).toBe(true)
+      await expect(
+        committedTx!.sql`INSERT INTO closed_transaction_test VALUES (1)`,
+      ).rejects.toThrow('Transaction is closed')
+
+      let rolledBackTx: Transaction | undefined
+      await db.transaction(async (tx) => {
+        rolledBackTx = tx
+        await tx.rollback()
+      })
+
+      expect(rolledBackTx?.closed).toBe(true)
+      await expect(
+        rolledBackTx!.sql`INSERT INTO closed_transaction_test VALUES (2)`,
+      ).rejects.toThrow('Transaction is closed')
+
+      const result = await db.query('SELECT id FROM closed_transaction_test')
+      expect(result.rows).toEqual([])
+    })
+
+    it('closes the transaction handle when the callback rejects', async () => {
+      await db.exec('CREATE TABLE closed_transaction_test (id INT PRIMARY KEY)')
+
+      let failedTx: Transaction | undefined
+      await expect(
+        db.transaction(async (tx) => {
+          failedTx = tx
+          throw new Error('boom')
+        }),
+      ).rejects.toThrow('boom')
+
+      expect(failedTx?.closed).toBe(true)
+      await expect(
+        failedTx!.query('INSERT INTO closed_transaction_test VALUES (1)'),
+      ).rejects.toThrow('Transaction is closed')
+      await expect(
+        failedTx!.exec('INSERT INTO closed_transaction_test VALUES (2)'),
+      ).rejects.toThrow('Transaction is closed')
+      await expect(
+        failedTx!.sql`INSERT INTO closed_transaction_test VALUES (3)`,
+      ).rejects.toThrow('Transaction is closed')
+
+      const result = await db.query('SELECT id FROM closed_transaction_test')
+      expect(result.rows).toEqual([])
+    })
+
+    it('merge delete', async () => {
+      await db.exec(`
+      CREATE TABLE employees (
+      id SERIAL PRIMARY KEY,
+      name TEXT,
+      department TEXT,
+      salary NUMERIC);`)
+
+      await db.exec(`INSERT INTO employees (id, name, department, salary) VALUES
+        (1, 'Alice', 'Engineering', 75000),
+        (2, 'Bob', 'Sales', 50000),
+        (3, 'Charlie', 'Engineering', 80000);`)
+
+      await db.exec(`CREATE TEMP TABLE employees_updates (
+        id INT,
+        name TEXT,
+        department TEXT,
+        salary NUMERIC);`)
+
+      await db.exec(`INSERT INTO employees_updates VALUES
+        (2, 'Bob', 'Sales', 55000),       -- Update salary
+        (3, 'Charlie', 'Product', 80000), -- Update department
+        (4, 'Diana', 'Engineering', 70000); -- New employee`)
+
+      const res = await db.exec(`MERGE INTO employees AS target
+      USING employees_updates AS source
+      ON target.id = source.id
+      WHEN MATCHED THEN DELETE`)
+
+      expect(res[0].affectedRows).toEqual(2)
+    })
+
+    it('copy to/from blob', async () => {
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS test (
+          id SERIAL PRIMARY KEY,
+          test TEXT
+        );
+        INSERT INTO test (test) VALUES ('test'), ('test2');
+      `)
+
+      // copy to
+      const copyToRet = await db.query(
+        "COPY test TO '/dev/blob' WITH (FORMAT csv);",
+      )
+
+      // Check that the copy command returns the number of rows affected
+      expect(copyToRet.affectedRows).toBe(2)
+
+      const csv = await copyToRet.blob?.text()
+      expect(csv).toBe('1,test\n2,test2\n')
+
+      // copy from
+      const blob2 = new Blob([csv!])
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS test2 (
+          id SERIAL PRIMARY KEY,
+          test TEXT
+        );
+      `)
+      const copyFromRet = await db.query(
+        "COPY test2 FROM '/dev/blob' WITH (FORMAT csv);",
+        [],
+        {
+          blob: blob2,
+        },
+      )
+
+      // Check that the copy command returns the number of rows affected
+      expect(copyFromRet.affectedRows).toBe(2)
+
+      const res = await db.query(`
+        SELECT * FROM test2;
+      `)
+      expect(res).toEqual({
+        rows: [
+          {
+            id: 1,
+            test: 'test',
+          },
+          {
+            id: 2,
+            test: 'test2',
+          },
+        ],
+        fields: [
+          {
+            name: 'id',
+            dataTypeID: 23,
+          },
+          {
+            name: 'test',
+            dataTypeID: 25,
+          },
+        ],
+        affectedRows: 0,
+        command: 'SELECT',
+        rowCount: 2,
+      })
+    })
+
+    it('close', async () => {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS test (
+          id SERIAL PRIMARY KEY,
+          name TEXT
+        );
+      `)
+      await db.query("INSERT INTO test (name) VALUES ('test');")
+      await db.close()
+      await expectToThrowAsync(async () => {
+        await db.query('SELECT * FROM test;')
+      }, 'PGlite is closed')
+    })
+
+    it('use same param multiple times', async () => {
+      await db.exec(`
+      CREATE TABLE IF NOT EXISTS test (
+        id SERIAL PRIMARY KEY,
+        first_name TEXT,
+        last_name TEXT
+      );
+      `)
+      await db.query(
+        'INSERT INTO test (first_name, last_name) VALUES ($1, $1);',
+        ['Duck'],
+      )
+      const result = await db.query(
+        'SELECT first_name, last_name FROM test WHERE first_name = $1 AND last_name = $1',
+        ['Duck'],
+      )
+      expect(result).toEqual({
+        rows: [{ first_name: 'Duck', last_name: 'Duck' }],
+        fields: [
+          { name: 'first_name', dataTypeID: 25 },
+          { name: 'last_name', dataTypeID: 25 },
+        ],
+        affectedRows: 0,
+        command: 'SELECT',
+        rowCount: 1,
+      })
+    })
+    it('timezone', async () => {
+      const res = await db.query(
+        `SELECT now(),* FROM pg_timezone_names WHERE name = current_setting('TIMEZONE')`,
+      )
+      expect(res.rows.length).toEqual(1)
+    })
+
+    it('default database, user and role should be "postgres"', async () => {
+      const databaseAndRole = await db.exec(
+        `SELECT current_database(), current_user, current_role;`,
+      )
+      expect(databaseAndRole[0].rows[0]).toEqual({
+        current_database: 'postgres',
+        current_user: 'postgres',
+        current_role: 'postgres',
+      })
+    })
+
+    it('initialMemory works', async () => {
+      const wantedMemSize = 512 * 1024 * 1024
+      const db = await PGlite.create({
+        initialMemory: wantedMemSize,
+      })
+
+      const instanceMemSize = db.Module.HEAPU8.buffer.byteLength
+
+      expect(instanceMemSize).toEqual(wantedMemSize)
+    })
+
+    // this tests the parameter 'max_parallel_workers_per_gather=0',
+    it('it shouldnt use parallel workers on gather', async () => {
+      const ROWS = 400_000
+
+      await db.exec(`
+        CREATE TABLE t (id SERIAL PRIMARY KEY, val TEXT);
+        INSERT INTO t (val)
+          SELECT md5(i::text) FROM generate_series(1, ${ROWS}) AS i;
+      `)
+
+      // when using workers for GATHER, the query plans contains Gather
+      const plan = await db.query('EXPLAIN SELECT COUNT(*) FROM t')
+
+      const hasGather = plan.rows.some((r: any) =>
+        r['QUERY PLAN'].includes('Gather'),
+      )
+      expect(hasGather).toBeFalsy()
+
+      const result = await db.query<any>('SELECT COUNT(*) FROM t')
+      expect(result.rows[0].count).toEqual(ROWS)
+    })
+
+    it('altering startParams should work"', async () => {
+      const dateTime = Date.now().toString()
+      const db = await PGlite.create({
+        startParams: [
+          ...PGlite.defaultStartParams,
+          '-c',
+          `application_name=${dateTime}`,
+        ],
+      })
+
+      const databaseAndRole = await db.exec(
+        `SELECT setting FROM pg_settings WHERE name='application_name'`,
+      )
+      expect(databaseAndRole[0].rows[0].setting).toEqual(dateTime)
+    })
+
+    it('restores process.exitCode', async () => {
+      const origExitCode = process.exitCode
+
+      expect(process.exitCode).toEqual(origExitCode)
+
+      await db.exec(`
+      CREATE TABLE IF NOT EXISTS test (
+        id SERIAL PRIMARY KEY,
+        name TEXT
+      );`)
+
+      expect(process.exitCode).toEqual(origExitCode)
+    })
+
+    it('restores undefined process.exitCode on close', async () => {
+      expect(process.exitCode).toBeUndefined()
+      await db.close()
+      expect(process.exitCode).toBeUndefined()
+    })
+
+    it('restores process.exitCode on close', async () => {
+      const origExitCode = process.exitCode
+      process.exitCode = 42
+
+      try {
+        await db.close()
+        expect(process.exitCode).toEqual(42)
+      } finally {
+        process.exitCode = origExitCode
+      }
+    })
+
+    it("arrays with NULL elements should return null, not string 'NULL'", async () => {
+      const pg = await PGlite.create()
+
+      await pg.exec('CREATE TEMP TABLE t (str_val text, arr_val text[])')
+
+      await pg.query('INSERT INTO t (str_val, arr_val) VALUES ($1, $2)', [
+        null,
+        [null, 'hello', 'NULL'],
+      ])
+      await pg.query('INSERT INTO t (str_val, arr_val) VALUES ($1, $2)', [
+        null,
+        ['NULL', null, 'NULL'],
+      ])
+      await pg.query('INSERT INTO t (str_val, arr_val) VALUES ($1, $2)', [
+        null,
+        ['NULL', 'hello', null],
+      ])
+      await pg.query('INSERT INTO t (str_val, arr_val) VALUES ($1, $2)', [
+        null,
+        [null, null, null],
+      ])
+
+      const res = await pg.query('SELECT str_val, arr_val FROM t')
+      expect(res.rows[0].str_val).toEqual(null)
+      expect(res.rows[0].arr_val).toEqual([null, 'hello', 'NULL'])
+      expect(res.rows[1].arr_val).toEqual(['NULL', null, 'NULL'])
+      expect(res.rows[2].arr_val).toEqual(['NULL', 'hello', null])
+      expect(res.rows[3].arr_val).toEqual([null, null, null])
+
+      await pg.exec('CREATE TEMP TABLE v (arr_int int[])')
+      await pg.query('INSERT INTO v (arr_int) VALUES ($1)', [[null, 123, 0]])
+      const resInt = await pg.query('SELECT arr_int FROM v')
+      expect(resInt.rows[0].arr_int).toEqual([null, 123, 0])
+    })
+
+    it('postgresqlconf', async () => {
+      const pg = await PGlite.create({
+        postgresqlconf: [`application_name = 'my awesome app'`],
+      })
+
+      const conf = await pg.query(`SHOW application_name;`)
+      expect(conf.rows).toEqual([
+        {
+          application_name: 'my awesome app',
+        },
+      ])
+    })
+
+    it('PGlite version', async () => {
+      const version = await db.query<{ version: string }>(`select version();`)
+      const re = /\PGlite \d+\.\d+\.\d+\b/
+      expect(re.test(version.rows[0].version)).toBeTruthy()
+    })
+
+    it('serialize and parse Array<int> and Array<bigint>', async () => {
+      const myint = [{ id: 1 }, { id: 2 }]
+      const mybigint = [{ id: 9007199254740992n }, { id: 9007199254740993n }]
+      await db.exec(`CREATE TABLE IF NOT EXISTS "myint" ("id" int NOT NULL);`)
+      await db.exec(
+        `CREATE TABLE IF NOT EXISTS "mybigint" ("id" bigint NOT NULL);`,
+      )
+      await db.query(
+        `INSERT INTO myint (id) SELECT x.* from json_to_recordset($1) as x(id int); `,
+        [myint],
+      )
+      await db.query(
+        `INSERT INTO mybigint (id) SELECT x.* from json_to_recordset($1) as x(id bigint); `,
+        [mybigint],
+      )
+      const result2 = await db.query('SELECT * FROM mybigint')
+      expect(result2.rows).toEqual(mybigint)
+    })
+
+    it('serialize with no concrete type', async () => {
+      const theDate = '2024-01-15T12:34:56.000Z'
+      const date = new Date(theDate)
+      const res1 = await db.query(
+        'select $1 as number, $2 as date, $3 as bool',
+        [42, date, true],
+      )
+
+      expect(res1).toEqual({
+        rows: [
+          {
+            number: '42',
+            date: theDate,
+            bool: 'true',
+          },
+        ],
+        fields: [
+          {
+            name: 'number',
+            dataTypeID: 25,
+          },
+          {
+            name: 'date',
+            dataTypeID: 25,
+          },
+          {
+            name: 'bool',
+            dataTypeID: 25,
+          },
+        ],
+        affectedRows: 0,
+        command: 'SELECT',
+        rowCount: 1,
+      })
+    })
+    it('serialize with no concrete type', async () => {
+      const res0 = await db.exec(`SELECT 1`)
+
+      const res1 = await db.exec(`SELECT convert_to('abc', 'LATIN1')`)
+
+      expect(res1).toEqual([
+        {
+          rows: [
+            {
+              convert_to: new Uint8Array([97, 98, 99]),
+            },
+          ],
+          fields: [
+            {
+              name: 'convert_to',
+              dataTypeID: 17,
+            },
+          ],
+          command: 'SELECT',
+          affectedRows: 0,
+          rowCount: 1,
+        },
+      ])
+
+      const res2 = await db.exec(`SELECT 1`)
+
+      expect(res2).toEqual(res0)
+    })
+
+    it('failed statements do not leak shadow stack', async () => {
+      const base = db.Module.stackSave()
+      for (let i = 0; i < 100; i++) {
+        await db.query('SELECT 1/0').catch(() => {})
+        expect(db.Module.stackSave()).toBe(base)
+      }
+      await db.query('SELECT 1')
+    })
+  })
+})

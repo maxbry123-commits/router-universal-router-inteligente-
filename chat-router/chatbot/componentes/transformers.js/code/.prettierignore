@@ -1,0 +1,17 @@
+# Ignore artifacts and non-source files
+.github
+*.py
+*.md
+
+# Build outputs & caches
+**/dist
+**/types
+**/node_modules
+**/coverage
+**/.cache
+**/docs/build
+*.tsbuildinfo
+
+# Lock files
+pnpm-lock.yaml
+
