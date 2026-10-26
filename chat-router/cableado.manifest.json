@@ -123,8 +123,8 @@
    "sha256": "aaa2c1ee480e477fa1f8931044b03b654dac39c94b63bf6bd0bf17cc0af77cd0"
   },
   "chat/backend": {
-   "archivos": 219,
-   "sha256": "6c3b01332fd028e680b049943219819ff0e8387d80bdc53064606c3767672dc9"
+   "archivos": 221,
+   "sha256": "7f5b86cd7382f92bfb60ca6e1e2c9de10f565d12420cb8638d9475a51da1ad18"
   },
   "chat/e2e": {
    "archivos": 22,
