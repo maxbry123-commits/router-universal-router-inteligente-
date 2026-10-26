@@ -356,8 +356,11 @@ function pintarLoop(cuerpo) {
     try {
       const r = await window.RIU_PLUGIN("nct_loop", "estado", { proceso_id: proc });
       const st = String(r.estado || r.status || "");
-      nct.textContent = proc + " · " + (st || "sin estado");
-      if (/DONE_VERIFICADO|BLOCKED|FAIL/.test(st)) pararPoll();
+      const res = r.resultado || {};
+      const skills = Array.isArray(res.skills_ejecutadas) ? res.skills_ejecutadas.join(",") : "";
+      nct.textContent = [proc, st || "sin estado", res.status || "", skills].filter(Boolean).join(" · ");
+      if (res.trace || res.receipts) gobBox.textContent = JSON.stringify({ trace: res.trace, receipts: res.receipts }).slice(0, 500);
+      if (/DONE_VERIFICADO|BLOCKED|FAIL/.test(st + " " + (res.status || ""))) pararPoll();
     } catch (e) { nct.textContent = e.message; pararPoll(); }
   };
   const ejecutar = btn("EJECUTAR", "action", async () => {
@@ -366,6 +369,7 @@ function pintarLoop(cuerpo) {
     try {
       const r = await window.RIU_PLUGIN("nct_loop", "ejecutar", {
         objetivo: md.value, modelo: (estado.modelos && estado.modelos.tarea) || modeloChat(), profile: perfil.value, motor: "coda",
+        auto_skills: true, top_skills: 3, skills: ["verification-loop"],
         secciones: estado.modelos || {},
         acceptance: ruta.value.trim() ? [{ op: "verify_exists", path: ruta.value.trim() }] : [],
       });
