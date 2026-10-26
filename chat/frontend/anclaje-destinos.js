@@ -39,10 +39,11 @@ export function montarDestinos({ root, q, tell }) {
       if (ta && head) {
         const nodes = [];
         let n = ta;
-        for (let i = 0; i < 4 && n; i++) { nodes.push(n); n = n.nextElementSibling; }
+        for (let i = 0; i < 3 && n; i++) { nodes.push(n); n = n.nextElementSibling; }
         let ref = head;
         nodes.forEach((x) => { ref.after(x); ref = x; });
-        ta.scrollIntoView({ block: "nearest" });
+        const viejo = q("#ancla-enlace");
+        if (viejo && viejo.parentElement) viejo.parentElement.hidden = true;
         ta.focus();
       }
     }), boton("Tools", "toggle", () => {
