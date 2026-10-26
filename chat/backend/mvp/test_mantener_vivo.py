@@ -16,7 +16,7 @@ class Latido(Base):
             quedan[0] -= 1
             return quedan[0] >= 0
         async def correr():
-            with patch.object(mv, "LATIDO_S", 0), patch.dict(os.environ, {"SPACE_HOST": "demo.hf.space"}):
+            with patch.object(mv, "LATIDO_S", 0), patch.object(mv, "GRACIA_S", 0), patch.dict(os.environ, {"SPACE_HOST": "demo.hf.space"}):
                 self.assertTrue(mv.asegurar(contar, lambda url: pings.append(url) or True))
                 await mv._tarea
         asyncio.run(correr())
@@ -80,7 +80,7 @@ class SinVercel(Base):
         import time
         pings = []
         async def correr():
-            with patch.object(mv, "LATIDO_S", 0), patch.dict(os.environ, {"SPACE_HOST": "demo.hf.space"}):
+            with patch.object(mv, "LATIDO_S", 0), patch.object(mv, "GRACIA_S", 0), patch.dict(os.environ, {"SPACE_HOST": "demo.hf.space"}):
                 mv.HASTA["t"] = time.time() + 0.05
                 mv.asegurar(lambda: 0, lambda url: pings.append(url) or True)
                 await mv._tarea
@@ -137,3 +137,25 @@ class ArranqueRapido(Base):
                 listo.append(time.time() - t0)   # el servidor ya acepto peticiones (cerrar espera al hilo lento, pero eso no afecta a un servidor en marcha)
         self.assertLess(listo[0], 10.5)   # espera 8 s como maximo y sigue
         self.client = TestClient(servicio.app)
+
+
+class Gracia(Base):
+    def setUp(self):
+        super().setUp(); mv._tarea = None; mv.HASTA["t"] = 0.0
+
+    def test_tras_la_ultima_tarea_sigue_despierto_la_gracia_y_luego_para(self):
+        import time
+        pings, vivo = [], [True]
+        def contar():
+            return 1 if vivo[0] else 0
+        def ping(url):
+            pings.append(time.time()); vivo[0] = False   # la tarea termina tras el primer latido
+            return True
+        async def correr():
+            with patch.object(mv, "LATIDO_S", 0.02), patch.object(mv, "GRACIA_S", 0.1), patch.dict(os.environ, {"SPACE_HOST": "demo.hf.space"}):
+                t0 = time.time(); mv.asegurar(contar, ping); await mv._tarea
+                return time.time() - t0
+        dur = asyncio.run(correr())
+        self.assertGreaterEqual(dur, 0.1)        # siguio despierto la gracia despues de terminar
+        self.assertGreater(len(pings), 1)        # y siguio latiendo en ese tiempo
+        self.assertLess(dur, 2)                  # pero se detuvo

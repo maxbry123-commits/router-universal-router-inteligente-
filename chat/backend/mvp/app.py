@@ -134,7 +134,7 @@ async def chat(cuerpo: dict):
             if pid: await guardar_estado()
             while True:  # el Harness pausa cada ~90 s y devuelve `continuar`: se reanuda con su conversacion hasta terminar o llegar a 48 h
                 try:
-                    salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"), {**controles, "acumulado": acumulado})
+                    salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"), {**controles, "acumulado": acumulado, "tarea_id": pid or ""})
                 except (ValueError, RuntimeError) as error:
                     raise HTTPException(status_code=502, detail=str(error)) from None
                 if salida.get("status") == "error":

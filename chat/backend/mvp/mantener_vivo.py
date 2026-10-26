@@ -9,6 +9,7 @@ import urllib.request
 from mvp import hf_store
 
 LATIDO_S = int(os.environ.get("RIU_LATIDO_S", "300"))
+GRACIA_S = int(os.environ.get("RIU_GRACIA_S", "300"))  # tras la ultima tarea el Space sigue despierto 5 min: da tiempo a que el chat se reconecte y recoja la respuesta
 _tarea = None
 ULTIMO = {"t": 0.0, "ok": None}
 SIEMPRE_H = 24 * 365 * 10  # «hasta que yo lo apague»: 10 anos
@@ -27,7 +28,13 @@ def _ping(url):
 
 async def _bucle(contar, ping):
     host = os.environ.get("SPACE_HOST", "")
-    while contar() or time.time() < HASTA["t"]:
+    gracia = 0.0
+    while True:
+        activo = contar()
+        if activo:
+            gracia = time.time() + GRACIA_S
+        if not (activo or gracia > time.time() or time.time() < HASTA["t"]):
+            break
         if host:
             ULTIMO.update(t=time.time(), ok=await asyncio.to_thread(ping, "https://%s/health" % host))
         await asyncio.sleep(LATIDO_S)

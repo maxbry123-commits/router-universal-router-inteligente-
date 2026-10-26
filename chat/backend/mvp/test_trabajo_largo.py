@@ -1,4 +1,5 @@
 """Sin tope de vueltas de herramientas: 20 vueltas seguidas, pausas del Harness y reanudacion del Router hasta 48 h."""
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -107,3 +108,68 @@ class ContextoAcotado(unittest.TestCase):
         with patch.object(servicio.harness_client, "llm", lambda *a, **k: salidas.pop(0)), patch.object(servicio, "clave_harness", lambda: "k"), patch.dict(os.environ, env, clear=True), patch.object(servicio.time, "time", lambda: 9e12):
             r = asyncio.run(servicio.chat({"modelo": "qwen3.8-max", "mensajes": [{"role": "user", "content": "x"}], "via": "harness"}))
         self.assertEqual(r["texto"], "listo")
+
+
+class DiarioYRondas(unittest.TestCase):
+    def _correr(self, tarea, ya_hechas=None, vueltas=None):
+        """Una invocacion del Harness (como cada retoma). `ejecutadas` cuenta lo que realmente se ejecuta."""
+        ejecutadas, diario = [], dict(ya_hechas or {})
+        cola = list(vueltas)
+        def llamar(plugin, accion, datos, timeout=None):
+            if datos.get("method") == "tools/list":
+                return {"result": {"tools": [{"name": n, "description": "d", "inputSchema": {"type": "object"}} for n in ("github_escribir", "github_leer")]}}
+            ejecutadas.append((datos["params"]["name"], datos["params"]["arguments"]))
+            return {"result": {"content": [{"type": "text", "text": "hecho"}]}}
+        guardados = {}
+        def leer(args):
+            if args["nombre"] not in guardados and not diario:
+                raise RuntimeError("no existe")
+            return {"valor": json.dumps(diario)}
+        def guardar(args):
+            guardados[args["nombre"]] = args["valor"]; diario.update(json.loads(args["valor"]))
+            return {"nombre": args["nombre"]}
+        with patch.object(h, "llamar", llamar), patch.object(h, "_router", lambda a, d: cola.pop(0)), patch.object(h, "leer", leer), patch.object(h, "guardar", guardar), patch.object(h, "PAUSA_S", 3600):
+            r = h.llm({"messages": [{"role": "user", "content": "x"}], "modelo": "qwen3.8-max", "tarea_id": tarea})
+        return r, ejecutadas, diario
+
+    @staticmethod
+    def _tool(i, nombre, args):
+        return {"texto": "", "finish_reason": "tool_calls", "tool_calls": [{"id": "c%d" % i, "function": {"name": nombre, "arguments": json.dumps(args)}}]}
+
+    def test_una_escritura_ya_hecha_no_se_repite_al_retomar(self):
+        fin = {"texto": "listo", "finish_reason": "stop", "tool_calls": []}
+        args = {"repo": "r", "ruta": "a.txt", "contenido": "x"}
+        r1, ej1, diario = self._correr("p-1", vueltas=[self._tool(1, "github_escribir", args), fin])
+        self.assertEqual(len(ej1), 1)                       # primera vez: se ejecuta y queda en el diario
+        self.assertTrue(diario)
+        r2, ej2, _ = self._correr("p-1", ya_hechas=diario, vueltas=[self._tool(2, "github_escribir", args), fin])  # el modelo la vuelve a pedir tras el reinicio
+        self.assertEqual(ej2, [])                           # NO se ejecuta otra vez
+        self.assertEqual(r2["texto"], "listo")
+
+    def test_las_lecturas_siempre_se_ejecutan_y_otra_escritura_distinta_tambien(self):
+        fin = {"texto": "listo", "finish_reason": "stop", "tool_calls": []}
+        _, ej, diario = self._correr("p-2", vueltas=[self._tool(1, "github_leer", {"repo": "r"}), self._tool(2, "github_leer", {"repo": "r"}), fin])
+        self.assertEqual(len(ej), 2)
+        _, ej, _ = self._correr("p-2", ya_hechas={"otra": "x"}, vueltas=[self._tool(3, "github_escribir", {"repo": "r", "ruta": "b", "contenido": "y"}), fin])
+        self.assertEqual(len(ej), 1)
+
+    def test_sin_tarea_id_no_hay_diario(self):
+        fin = {"texto": "listo", "finish_reason": "stop", "tool_calls": []}
+        args = {"repo": "r", "ruta": "a", "contenido": "x"}
+        _, ej, diario = self._correr("", vueltas=[self._tool(1, "github_escribir", args), self._tool(2, "github_escribir", args), fin])
+        self.assertEqual(len(ej), 2)
+        self.assertFalse(diario)
+
+    def test_el_diario_no_guarda_credenciales(self):
+        self.assertNotIn("ghp_", h._SECRETO.sub("[REDACTADO]", "token ghp_ABCDEFGHIJKLMNOPQRSTUV fin"))
+
+    def test_por_defecto_el_harness_devuelve_la_conversacion_tras_cada_ronda(self):
+        cola = [self._tool(1, "github_leer", {"repo": "r"}), self._tool(2, "github_leer", {"repo": "r"}),
+                {"texto": "listo", "finish_reason": "stop", "tool_calls": []}]
+        def llamar(plugin, accion, datos, timeout=None):
+            return ({"result": {"tools": [{"name": "github_leer", "description": "d", "inputSchema": {"type": "object"}}]}} if datos.get("method") == "tools/list"
+                    else {"result": {"content": [{"type": "text", "text": "ok"}]}})
+        with patch.object(h, "llamar", llamar), patch.object(h, "_router", lambda a, d: cola.pop(0)):
+            r = h.llm({"messages": [{"role": "user", "content": "x"}], "modelo": "qwen3.8-max"})
+        self.assertTrue(r["continuar"])                      # PAUSA_S=0: tras la primera ronda ya devuelve para que el Router guarde
+        self.assertEqual(len(r["herramientas_usadas"]), 1)

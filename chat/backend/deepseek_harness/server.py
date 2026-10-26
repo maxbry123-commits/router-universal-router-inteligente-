@@ -1,7 +1,9 @@
 """Harness HTTP: /invoke -> Router MVP por HTTP. Sin modelos, claves HF ni datos GitHub."""
+import hashlib
 import json
 import hmac
 import os
+import re
 import time
 
 from fastapi import FastAPI, Header, HTTPException
@@ -13,9 +15,39 @@ OPCIONES = {"tools", "tool_choice", "temperature", "top_p", "max_tokens",
 app = FastAPI()
 # Sin tope de vueltas de herramientas. Cada /invoke dura como mucho PAUSA_S: al cumplirse devuelve `continuar` con la
 # conversacion y el Router lo vuelve a llamar (hasta RIU_MAX_HORAS, 48 h). Asi un trabajo largo no depende de una sola peticion HTTP.
-PAUSA_S = float(os.environ.get("RIU_HARNESS_PAUSA_S", "90"))
+PAUSA_S = float(os.environ.get("RIU_HARNESS_PAUSA_S", "0"))  # 0 = el Router recibe la conversacion tras CADA ronda de herramientas y la guarda en el almacen
 CONTEXTO_MAX = int(os.environ.get("RIU_CONTEXTO_MAX_CHARS", "3600000"))  # el contexto no crece sin fin en trabajos de horas: sirve para cualquier modelo
 RECIENTES, STUB = 6, 300
+_SECRETO = re.compile(r"(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]{12,}|gh[pousr]_[A-Za-z0-9]{12,}|hf_[A-Za-z0-9]{20,})")
+
+
+def con_efectos(nombre, args):
+    """Herramientas que cambian algo fuera del chat (escribir, enviar, delegar): se registran en el diario de la tarea."""
+    a = args.get("accion")
+    if nombre in ("github_escribir", "agente", "llm"):
+        return True
+    return ((nombre == "github_api" and str(args.get("metodo", "GET")).upper() != "GET") or (nombre == "almacen" and a == "guardar")
+            or (nombre == "memoria" and a == "save") or (nombre == "yaiwes_md" and a == "escribir")
+            or (nombre == "pendientes" and a in ("agregar", "marcar", "ordenar", "quitar")) or (nombre == "sala" and a in ("crear", "enviar", "permiso"))
+            or (nombre == "loop" and a in ("gobernar", "paralelo", "ejecutar")))
+
+
+def _llave(nombre, args):
+    return hashlib.sha256((nombre + json.dumps(args, sort_keys=True, ensure_ascii=False)).encode("utf-8")).hexdigest()[:24]
+
+
+def _diario(tarea):
+    try:
+        return json.loads(leer({"nombre": "tareas/%s/diario.json" % tarea})["valor"])
+    except Exception:  # noqa: BLE001 - sin diario todavia (o almacen caido): se sigue sin el
+        return {}
+
+
+def _anotar(tarea, diario):
+    try:
+        guardar({"nombre": "tareas/%s/diario.json" % tarea, "valor": _SECRETO.sub("[REDACTADO]", json.dumps(diario, ensure_ascii=False))})
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _tam(mensajes):
@@ -100,12 +132,11 @@ def llm(cuerpo):
     opciones["tool_choice"] = "auto"
     mensajes = list(mensajes)
     acumulado, continuaciones, usadas = str(cuerpo.get("acumulado") or ""), 0, []  # usadas: herramientas realmente ejecutadas (diagnostico)
+    tarea = re.sub(r"[^A-Za-z0-9_-]", "", str(cuerpo.get("tarea_id") or ""))[:64]  # con tarea_id, lo que ya se ejecuto no se repite si la tarea se retoma
+    diario = _diario(tarea) if tarea else {}
     t0, paso = time.monotonic(), -1
     while True:
         paso += 1
-        if paso > 0 and time.monotonic() - t0 > PAUSA_S:  # pausa entre vueltas: el Router reanuda con esta misma conversacion
-            return {"texto": "", "tool_calls": [], "finish_reason": "pausa_herramientas", "continuar": True, "mensajes": mensajes,
-                    "acumulado": acumulado, "herramientas_usadas": usadas, "modelo_solicitado": cuerpo.get("modelo")}
         try:
             mensajes = compactar(mensajes)
             salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
@@ -154,10 +185,20 @@ def llm(cuerpo):
                 args.setdefault("rama", "main")
             if nombre == "github_escribir" and args["rama"] != "main":
                 raise HTTPException(status_code=403, detail="Escritura GitHub permitida solo en main")
-            resultado = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": llamada["id"],
-                "method": "tools/call", "params": {"name": nombre, "arguments": args}})
+            llave = _llave(nombre, args) if tarea and con_efectos(nombre, args) else None
+            if llave and llave in diario:  # ya se hizo en esta tarea (antes de un reinicio o corte): se devuelve lo que paso, no se repite
+                resultado = {"ya_ejecutada_en_esta_tarea": True, "resultado": diario[llave]}
+            else:
+                resultado = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": llamada["id"],
+                    "method": "tools/call", "params": {"name": nombre, "arguments": args}})
+                if llave:
+                    diario[llave] = json.dumps(resultado, ensure_ascii=False)[:2000]
+                    _anotar(tarea, diario)
             mensajes.append({"role": "tool", "tool_call_id": llamada["id"],
                              "content": json.dumps(resultado, ensure_ascii=False)})
+        if time.monotonic() - t0 > PAUSA_S:  # fin de una ronda de herramientas: el Router recibe la conversacion, la guarda y reanuda
+            return {"texto": "", "tool_calls": [], "finish_reason": "pausa_herramientas", "continuar": True, "mensajes": mensajes,
+                    "acumulado": acumulado, "herramientas_usadas": usadas, "modelo_solicitado": cuerpo.get("modelo")}
 
 
 
