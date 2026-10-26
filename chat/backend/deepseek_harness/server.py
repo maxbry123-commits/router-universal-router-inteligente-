@@ -14,6 +14,25 @@ app = FastAPI()
 # Sin tope de vueltas de herramientas. Cada /invoke dura como mucho PAUSA_S: al cumplirse devuelve `continuar` con la
 # conversacion y el Router lo vuelve a llamar (hasta RIU_MAX_HORAS, 48 h). Asi un trabajo largo no depende de una sola peticion HTTP.
 PAUSA_S = float(os.environ.get("RIU_HARNESS_PAUSA_S", "90"))
+CONTEXTO_MAX = int(os.environ.get("RIU_CONTEXTO_MAX_CHARS", "300000"))  # el contexto no crece sin fin en trabajos de horas: sirve para cualquier modelo
+RECIENTES, STUB = 6, 300
+
+
+def _tam(mensajes):
+    return sum(len(str(m.get("content") or "")) for m in mensajes if isinstance(m, dict))
+
+
+def compactar(mensajes, tope=None):
+    """Si la conversacion pasa del tope, los resultados de herramientas MAS VIEJOS se recortan (no se tocan system, user ni las ultimas vueltas)."""
+    tope = tope or CONTEXTO_MAX
+    out = list(mensajes)
+    for i in range(max(len(out) - RECIENTES, 0)):
+        if _tam(out) <= tope:
+            break
+        m = out[i]
+        if isinstance(m, dict) and m.get("role") == "tool" and len(str(m.get("content") or "")) > STUB:
+            out[i] = {**m, "content": str(m["content"])[:STUB] + " ...[recortado por tamano; ya se uso]"}
+    return out
 
 
 def _ok(result):
@@ -88,6 +107,7 @@ def llm(cuerpo):
             return {"texto": "", "tool_calls": [], "finish_reason": "pausa_herramientas", "continuar": True, "mensajes": mensajes,
                     "acumulado": acumulado, "herramientas_usadas": usadas, "modelo_solicitado": cuerpo.get("modelo")}
         try:
+            mensajes = compactar(mensajes)
             salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
                          **{k: cuerpo.get(k, False) for k in ("tools", "agente_tool", "llm_tool")}})
         except RuntimeError:
