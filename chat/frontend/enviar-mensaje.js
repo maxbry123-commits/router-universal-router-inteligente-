@@ -138,9 +138,12 @@ export function montarEnviar(ctx) {
     }
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
     const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
-    if ((selAct === "team-qwen" || selAct === "team-5-mvp") && !c.selectorQwen) {
-      const s = (window.RIU_SELECTOR_QWEN || {}).seleccion;
-      if (s && (s.model_id || s.label)) c.selectorQwen = s;  // la fila ya muestra un modelo: ese es el que responde
+    if (selAct === "team-qwen" || selAct === "team-5-mvp") {
+      const s = (window.RIU_SELECTOR_QWEN || {}).seleccion;  // lo que muestra la píldora manda: el chat puede traer un modelo viejo guardado
+      if (s && s.modelo_id_slug && (!c.selectorQwen || c.selectorQwen.modelo_id_slug !== s.modelo_id_slug)) {
+        const m = ((window.RIU_SELECTOR_QWEN || {}).modelos || []).find((x) => x.modelo_id_slug === s.modelo_id_slug);
+        c.selectorQwen = m ? { model_id: m.model_id, modelo_id_slug: m.modelo_id_slug, label: m.label, grupo: m.grupo } : (s.model_id || s.label ? s : c.selectorQwen);
+      }
     }
     const fichaQwen = selAct === "team-qwen" ? (c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label) : "qwen3.8-max") : null;  // id del catálogo, no la ficha nv- (esa cae en Qwen 3.8 Max)
     const fichaGroq = selAct === "groq" ? ((window.RIU_GROQ || {}).modelo || "") : null;  // selector Groq: el modelo elegido en su hoja (groq/<id>)
