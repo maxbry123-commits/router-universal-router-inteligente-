@@ -3,10 +3,16 @@
 import { el, cargarCss } from "./ventanas-comun.js";
 export function montarPensando3D({ root, q }) {
   const f = q("#composer"); if (!f || f.dataset.p3d) return; f.dataset.p3d = "1"; cargarCss("pensando-3d");
+  const css = document.getElementById("css-pensando-3d"); if (css) css.href = "/chat/ui/pensando-3d.css?v=87311";
   const w = el("div", "p3d"); w.hidden = true; w.setAttribute("role", "status"); w.setAttribute("aria-live", "polite");
+  w.style.setProperty("position", "absolute", "important");
+  w.style.setProperty("left", "72px", "important");
+  w.style.setProperty("right", "auto", "important");
+  w.style.setProperty("top", "auto", "important");
+  w.style.setProperty("bottom", "calc(100% + 6px)", "important");
+  w.style.setProperty("z-index", "35", "important");
   w.innerHTML = '<div class="p3d-escena" aria-hidden="true"><div class="p3d-cubo"><i class="f1"></i><i class="f2"></i><i class="f3"></i><i class="f4"></i><i class="f5"></i><i class="f6"></i></div><div class="p3d-anillo a1"></div><div class="p3d-anillo a2"></div></div><div class="p3d-txt"><strong>Pensando…</strong><span class="p3d-t">0 s</span></div>';
-  { const bar = f.querySelector(".composer-bar"), act = bar && bar.querySelector(".action"); if (bar && act) bar.insertBefore(w, act); else f.append(w); }  // junto a Enviar, en la misma fila de acciones
-  const t = w.querySelector(".p3d-t"); let ini = 0;
+  f.append(w); const t = w.querySelector(".p3d-t"); let ini = 0;
   const ocupado = () => { try { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); return !!(c && c.ocupado); } catch (e) { return false; } };
   const id = setInterval(() => {
     if (!root.isConnected) { clearInterval(id); return; }
