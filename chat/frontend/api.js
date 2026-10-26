@@ -98,14 +98,15 @@ window.RIU_RETOMAR = async (ses) => {
     try {
       const r = await fetchT(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid, espera: 8 }) }, 16000);
       const e = await r.json().catch(() => ({})); const p = e.result || {};
-      if (!r.ok || e.status !== 'ok') { if (++malos >= 8) return { estado: 'reanudable', proceso_id: v.pid, error: 'GAP_ROUTER_ESTADO_NO_CONFIRMADO', detalle: e.reason || e.detail || ('HTTP ' + r.status) }; } // sin estado terminal verificable conservar el PID
+      if (r.status === 404) { guardaProc(ses, null); return { error: 'PROCESO_NO_EXISTE', proceso_id: v.pid }; }  // el Router ya no conoce esa tarea (ni la tiene pendiente de retomar)
+      if (!r.ok || e.status !== 'ok') { malos++; } // 5xx o proxy caido: se sigue esperando con el mismo PID, sin rendirse
       else if (esTope48(p.error)) { guardaProc(ses, null); return p; }
       else if (p.error) { guardaProc(ses, null); return p; }  // error real del proceso (PROCESO_NO_EXISTE tras reinicio): borrar PID y devolver ya
       else if (p.estado && p.estado !== 'procesando') { guardaProc(ses, null); return p; }
-      else if (!p.estado) { if (++malos >= 8) return { estado: 'reanudable', proceso_id: v.pid, error: 'GAP_RESULTADO_TEMPORALMENTE_VACIO', detalle: 'Reconsultar el mismo PID; no relanzar el trabajo' }; }
+      else if (!p.estado) { malos++; }  // respuesta vacia temporal: se vuelve a preguntar por el mismo PID
       else { malos = 0; if (p.estado === 'procesando') avisoProceso(ses, v.pid, v.ts || Date.now(), p); }
-    } catch (x) { if (++malos >= 12) { return { estado: 'reanudable', proceso_id: v.pid, error: 'ROUTER_SIN_RESPUESTA' }; } }  // red caida: mismo PID sigue siendo recuperable
-    await new Promise((ok) => setTimeout(ok, 500));
+    } catch (x) { malos++; }  // red caida o Router reiniciando: no se rinde nunca; el mismo PID se retoma cuando vuelva
+    await new Promise((ok) => setTimeout(ok, Math.min(500 * Math.max(malos, 1), 5000)));
   }
   return { estado: 'reanudable', proceso_id: v.pid, error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'sigue en el Router' };
 };
@@ -162,12 +163,11 @@ async function puenteRouter(base, body, qs, headers) {
           if (poll.status === 401 || poll.status === 403) return { status: poll.status, ok: false, p: { error: 'HTTP ' + poll.status + ': ' + (envelope.reason || envelope.detail || envelope.error || 'Acceso rechazado') } };
           const motivo = envelope.reason || envelope.detail || envelope.error || ('HTTP ' + poll.status);
           if (esTope48(motivo)) { if (payload && payload.sesion) guardaProc(payload.sesion, null); return { status: 502, ok: false, p: { error: String(motivo), proceso_id: proceso } }; }
+          if (poll.status === 404) { if (payload && payload.sesion) guardaProc(payload.sesion, null); return { status: 404, ok: false, p: { error: 'PROCESO_NO_EXISTE', proceso_id: proceso } }; }
           if (!poll.ok || envelope.status !== 'ok') throw new Error(motivo);  // /resultado fallido (cupo del host, 5xx): contar y reintentar, no cortar el chat
           p = envelope.result || {}; fallosRed = 0;
           if (esTope48(p.error)) { if (payload && payload.sesion) guardaProc(payload.sesion, null); return { status: 502, ok: false, p }; }
-          if (!p.estado && !p.error && ++vaciosEstado >= 8) {
-            return { status: 503, ok: false, p: { estado: 'reanudable', error: 'GAP_RESULTADO_TEMPORALMENTE_VACIO', detalle: 'El trabajo sigue asociado al mismo PID; usar Retomar', proceso_id: proceso } };
-          }
+          if (!p.estado && !p.error) vaciosEstado++;  // vacio temporal: se vuelve a preguntar, no se rinde
           if (p.estado) vaciosEstado = 0;
           if (p.error && !p.estado) break; // error terminal explicito, sin confundirlo con transporte vacio
           if (p.estado === 'procesando') avisoProceso(payload.sesion, proceso, t0, p);
@@ -176,7 +176,7 @@ async function puenteRouter(base, body, qs, headers) {
           if (esTope48(e && e.message)) { if (payload && payload.sesion) guardaProc(payload.sesion, null); return { status: 502, ok: false, p: { error: String(e.message), proceso_id: proceso } }; }
           fallosRed++;
           try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'Sin conexión con el Router (' + fallosRed + ')…' } })); } catch (x) {}
-          if (fallosRed >= 12) return { status: 503, ok: false, p: { error: 'ROUTER_SIN_RESPUESTA', detalle: String(e && e.message || e).slice(0, 200), proceso_id: proceso } };
+          await new Promise((ok) => setTimeout(ok, Math.min(500 * fallosRed, 5000)));  // sin tope de fallos: el Router puede estar reiniciando; el computo sigue y se retoma al volver
           continue;
         }
       }

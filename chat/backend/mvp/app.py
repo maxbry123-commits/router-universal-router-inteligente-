@@ -467,6 +467,8 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
     if accion == "resultado":
         pid = str(cuerpo.get("proceso_id") or "")
         if pid not in TRABAJOS and not await _recuperar(pid):
+            if pid in await asyncio.to_thread(estado_tarea.pendientes, app.state.banco):  # Router recien reiniciado: la tarea se esta retomando
+                return {"status": "ok", "result": {"estado": "procesando", "proceso_id": pid, "subestado": "reanudando"}}
             raise HTTPException(status_code=404, detail="proceso_id desconocido")
         try:
             espera = min(max(float(cuerpo.get("espera") or 0), 0), 8)
