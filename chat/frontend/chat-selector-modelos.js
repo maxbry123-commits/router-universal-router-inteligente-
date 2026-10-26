@@ -107,14 +107,17 @@ export function conectarSelectorModelos(ctx) {
       const SEL = window.RIU_SELECTORES; if (SEL && SEL.encender && c.selectorQwenMulti.length) SEL.encender("team-qwen");
       return;
     }
+    const dest0 = hojaOrigen === "team-5-mvp" ? "team-5-mvp" : "team-qwen";
+    const SEL0 = window.RIU_SELECTORES;
     const ya = c.selectorQwen && c.selectorQwen.label === m[1];
-    c.selectorQwen = ya ? null : { icono: m[0], model_id: m[3], modelo_id_slug: slug(m[1]), label: m[1], grupo: g.titulo };
+    const delOtro = ya && SEL0 && SEL0.activo && SEL0.activo !== dest0;  // mismo modelo elegido por el otro selector: un clic lo mueve, no lo apaga
+    c.selectorQwen = (ya && !delOtro) ? null : { icono: m[0], model_id: m[3], modelo_id_slug: slug(m[1]), label: m[1], grupo: g.titulo };
     const det = c.selectorQwen ? { model_id: c.selectorQwen.model_id, modelo_id_slug: c.selectorQwen.modelo_id_slug, label: m[1], grupo: g.titulo, sesion: c.sesion } : null;
     window.RIU_SELECTOR_QWEN.seleccion = det;
     window.dispatchEvent(new CustomEvent("riu:selector-qwen", { detail: det }));
     pintarPill(); pintar(); guardar(); if (typeof actualizarMIA === "function") actualizarMIA();  // la pildora de abajo refleja el modelo elegido
-    const dest = hojaOrigen === "team-5-mvp" ? "team-5-mvp" : "team-qwen";
-    const SEL = window.RIU_SELECTORES; if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender(dest); else if (SEL.activo === dest) SEL.apagar(); }  // elegir un modelo = el selector que abrio la hoja responde
+    const dest = dest0, SEL = SEL0;
+    if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender(dest); else if (SEL.activo === dest) SEL.apagar(); }  // elegir un modelo = el selector que abrio la hoja responde
     q("#sh-modelos").hidden = true;
   };
   const pintar = () => {
