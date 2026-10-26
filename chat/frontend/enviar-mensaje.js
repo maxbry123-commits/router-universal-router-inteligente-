@@ -63,8 +63,9 @@ export function montarEnviar(ctx) {
     if (!aviso) {
       aviso = document.createElement("div");
       aviso.id = "reactivar-tarea";
-      aviso.style.cssText = "display:flex;justify-content:flex-start;margin:0 0 6px";
-      q("#composer").before(aviso);
+      aviso.style.cssText = "display:flex;margin:0";
+      const fila = document.getElementById("fila-mando");
+      if (fila) fila.append(aviso); else q("#composer").before(aviso);
     }
     aviso.replaceChildren();
     const pill = document.createElement("button");
