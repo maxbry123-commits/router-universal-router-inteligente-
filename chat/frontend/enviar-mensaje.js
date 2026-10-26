@@ -11,13 +11,27 @@ export function montarEnviar(ctx) {
     if (!aviso) {
       aviso = document.createElement("div");
       aviso.id = "cola-chat";
-      aviso.style.cssText = "display:flex;flex-direction:column;gap:4px;margin:0 0 6px;max-height:28dvh;overflow:auto";
+      aviso.style.cssText = "display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin:0 0 6px";
       q("#composer").before(aviso);
     }
+    const abierto = aviso.dataset.abierto === "1";
     aviso.replaceChildren();
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.setAttribute("aria-expanded", abierto ? "true" : "false");
+    pill.setAttribute("aria-label", items.length + " mensajes en cola");
+    pill.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg><span></span>';
+    pill.querySelector("span").textContent = String(items.length);
+    pill.style.cssText = "display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:999px;border:1px solid #333;background:#1c1c1e;color:#fff;font-size:14px";
+    pill.onclick = () => { aviso.dataset.abierto = abierto ? "0" : "1"; pintarCola(c); };
+    aviso.append(pill);
+    if (!abierto) return;
+    const lista = document.createElement("div");
+    lista.style.cssText = "display:flex;flex-direction:column;gap:4px;width:100%;max-height:28dvh;overflow:auto";
+    aviso.append(lista);
     items.forEach((txt, i) => {
       const row = document.createElement("div");
-      row.style.cssText = "display:flex;align-items:center;gap:8px;min-height:40px;padding:6px 10px;border-radius:14px;background:#1c1c1e;border:1px solid #333";
+      row.style.cssText = "display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;min-height:40px;padding:6px 10px;border-radius:14px;background:#1c1c1e;border:1px solid #333";
       const t = document.createElement("span");
       t.textContent = String(txt).replace(/\s+/g, " ").slice(0, 90);
       t.style.cssText = "flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px";
@@ -38,7 +52,7 @@ export function montarEnviar(ctx) {
       del.style.cssText = up.style.cssText;
       del.onclick = () => { (c.colaMensajes || []).splice(i, 1); pintarCola(c); };
       row.append(t, up, del);
-      aviso.append(row);
+      lista.append(row);
     });
   };
   q("#composer").addEventListener("submit", async event => {
