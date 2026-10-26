@@ -8,6 +8,7 @@ import urllib.request
 LATIDO_S = int(os.environ.get("RIU_LATIDO_S", "300"))
 _tarea = None
 ULTIMO = {"t": 0.0, "ok": None}
+HASTA = {"t": 0.0}  # el Space se mantiene despierto hasta esta hora (epoch), haya o no tareas
 
 
 def _ping(url):
@@ -20,7 +21,7 @@ def _ping(url):
 
 async def _bucle(contar, ping):
     host = os.environ.get("SPACE_HOST", "")
-    while contar():
+    while contar() or time.time() < HASTA["t"]:
         if host:
             ULTIMO.update(t=time.time(), ok=await asyncio.to_thread(ping, "https://%s/health" % host))
         await asyncio.sleep(LATIDO_S)
@@ -33,3 +34,15 @@ def asegurar(contar, ping=_ping):
         return False
     _tarea = asyncio.get_running_loop().create_task(_bucle(contar, ping))
     return True
+
+
+def mantener(horas, contar, ping=_ping):
+    """Mantiene el Space despierto `horas` desde ahora (aunque no haya tareas). Devuelve la hora limite (epoch)."""
+    HASTA["t"] = time.time() + horas * 3600 if horas > 0 else 0.0
+    if horas <= 0:
+        return HASTA["t"]
+    try:
+        asegurar(contar, ping)
+    except RuntimeError:  # sin bucle de eventos todavia: el arranque lo volvera a pedir con la primera tarea
+        pass
+    return HASTA["t"]

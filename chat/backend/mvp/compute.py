@@ -22,7 +22,7 @@ def _solicitar(url, payload, clave):
         headers["Authorization"] = "Bearer " + clave
     req = request.Request(url, data=json.dumps(payload).encode("utf-8"),
                           headers=headers, method="POST")
-    with request.urlopen(req, timeout=120) as resp:
+    with request.urlopen(req, timeout=600) as resp:
         return json.load(resp)
 
 

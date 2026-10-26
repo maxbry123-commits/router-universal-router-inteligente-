@@ -14,7 +14,7 @@ app = FastAPI()
 # Sin tope de vueltas de herramientas. Cada /invoke dura como mucho PAUSA_S: al cumplirse devuelve `continuar` con la
 # conversacion y el Router lo vuelve a llamar (hasta RIU_MAX_HORAS, 48 h). Asi un trabajo largo no depende de una sola peticion HTTP.
 PAUSA_S = float(os.environ.get("RIU_HARNESS_PAUSA_S", "90"))
-CONTEXTO_MAX = int(os.environ.get("RIU_CONTEXTO_MAX_CHARS", "300000"))  # el contexto no crece sin fin en trabajos de horas: sirve para cualquier modelo
+CONTEXTO_MAX = int(os.environ.get("RIU_CONTEXTO_MAX_CHARS", "3600000"))  # el contexto no crece sin fin en trabajos de horas: sirve para cualquier modelo
 RECIENTES, STUB = 6, 300
 
 
@@ -47,7 +47,7 @@ def _router(accion, datos):
     base = os.environ.get("RIU_ROUTER_URL", "").strip()
     if not (base.startswith("https://") or base.startswith("http://127.0.0.1:")):
         raise RuntimeError("RIU_ROUTER_URL no configurada")
-    resultado = llamar("fichas_qwen" if accion == "chat" else "router_mvp", "llm" if accion == "chat" else accion, datos, timeout=390)
+    resultado = llamar("fichas_qwen" if accion == "chat" else "router_mvp", "llm" if accion == "chat" else accion, datos, timeout=900)
     if isinstance(resultado, dict) and resultado.get("status_code") == 403:
         causa = str(resultado.get("error") or "").split("(HTTP 403)")[-1].lstrip(": ").strip()  # p. ej. «ia=false»: quien llama debe saber qué botón encender
         raise HTTPException(status_code=403, detail="Herramienta bloqueada por Router (HTTP 403)" + (": " + causa if causa else ""))

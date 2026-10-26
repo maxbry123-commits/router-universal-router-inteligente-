@@ -27,7 +27,7 @@ def _enviar(accion, datos, clave):
     solicitud = request.Request(url, data=cuerpo, headers=headers, method="POST")
     for intento in range(3):
         try:
-            with request.urlopen(solicitud, timeout=420) as respuesta:
+            with request.urlopen(solicitud, timeout=900) as respuesta:
                 return json.load(respuesta)
         except error.HTTPError as exc:
             if exc.code == 403:

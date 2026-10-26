@@ -125,10 +125,10 @@ async function puenteRouter(base, body, qs, headers) {
     let cortado = false;
     let proceso = p.proceso_id || null;
     if (p.estado === 'procesando' && p.proceso_id) {
-      const deadline = Date.now() + 560000;
+      const deadline = Date.now() + 48 * 3600 * 1000;  // tareas largas: el Router trabaja hasta 48 h; el chat espera igual y retoma el mismo proceso
       try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'En cola…' } })); } catch (e) {}  // process_id != modelo corriendo: el backend informa el estado real; sesion+pid aíslan el progreso entre chats
       if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: Date.now() });
-      let primera = true;  // primera consulta inmediata, luego cada 250 ms (tope total sigue en deadline 560 s)
+      let primera = true;  // primera consulta inmediata, luego cada 250 ms (tope total sigue en deadline 48 h)
       let fallosRed = 0;  // fix 5: la red caida ya no se oculta para siempre
       let vaciosEstado = 0; // respuesta temporal sin estado no significa DONE; conservar PID
       while (p.estado === 'procesando' || !p.estado) {

@@ -53,7 +53,7 @@ class Base(unittest.TestCase):
             if nombre not in self.nube: raise hf_store.NoExiste("fallo de lectura HF")
             return {"ok": True, "valor": self.nube[nombre]}
         self.parches = [patch("mvp.app.hf_store.guardar", guardar), patch("mvp.app.hf_store.leer", leer),
-                        patch.dict(os.environ, {"RIU_API_KEY": "api-ficticia", "MVP_MCP_LOCAL": "1"})]
+                        patch.dict(os.environ, {"RIU_API_KEY": "api-ficticia", "MVP_MCP_LOCAL": "1", "RIU_MANTENER_HORAS": "0"})]
         for p in self.parches: p.start()
         self.banco = Banco(HF_TOKEN="hf-ficticio", GITHUB_TOKEN="gh-principal", QWEN_API_KEY="qwen-ficticia")
         self.antes = getattr(servicio.app.state, "banco", None)
@@ -493,7 +493,7 @@ class TestGapsChat(Base):
             self.assertEqual(self.client.post("/chat", headers=CAB, json={"modelo": "qwen3.6-plus", "mensajes": [{"role": "user", "content": "x"}]}).status_code, 400)
 
     def test_limite_de_texto_y_finish_reason(self):
-        enorme = [{"role": "user", "content": "a" * 1_000_001}]
+        enorme = [{"role": "user", "content": "a" * (servicio.MAX_CARACTERES + 1)}]
         r = self.client.post("/chat", headers=CAB, json={"mensajes": enorme})
         self.assertEqual(r.status_code, 413)
         self.assertIn("caracteres", r.json()["detail"])

@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import bank, compute, control, externos, loop_puente, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
+from mvp import bank, compute, control, externos, frontend_estatico, loop_puente, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -32,6 +32,7 @@ async def inicio(app):
         await asyncio.wait_for(CONTROL.cargar(), 15)  # estado de permisos guardado por /almacen; sin HF sigue en memoria
     except asyncio.TimeoutError:
         pass
+    mantener_vivo.mantener(float(os.environ.get("RIU_MANTENER_HORAS", "24")), _en_curso)  # Space despierto 24 h tras cada arranque (y mientras haya tareas)
     yield
 app = FastAPI(lifespan=inicio)
 app.add_middleware(CORSMiddleware, allow_methods=["*"], allow_headers=["*"],  # el chat (Vercel) llama al Router desde otro origen; la autenticacion es la X-API-Key, no cookies
@@ -84,12 +85,12 @@ def health(authorization: str | None = Header(None),
         return {"status": "ok" if app.state.banco else "degraded", "commit": str(getattr(app.state, "commit", "desconocido"))[:10]}  # el commit no es secreto: sirve para comprobar que version corre
     return {"status": "ok" if app.state.banco else "degraded", "cpu": escalado.cpu_local(),
             "commit": app.state.commit, "banco_abierto": bool(app.state.banco),
-            "tareas_en_curso": _en_curso(), "latido": mantener_vivo.ULTIMO,
+            "tareas_en_curso": _en_curso(), "latido": mantener_vivo.ULTIMO, "mantener_hasta": mantener_vivo.HASTA["t"],
             "qwen_base_url_presente": bool(modelos.base_url()),
             "plan": modelos.plan(), "modelo_defecto": modelos.cargar()["modelo_defecto"],
             "clave_qwen_presente": bool(modelos.clave_env() or
                                        (app.state.banco and app.state.banco.leer("QWEN_API_KEY")))}
-MAX_CARACTERES = 1_000_000  # tope de texto por peticion: error claro en vez de un 502 opaco del proveedor
+MAX_CARACTERES = 4_000_000  # ~1 millon de tokens; tope de texto por peticion: error claro en vez de un 502 opaco del proveedor
 async def _llamar_modelo(mensajes, modelo, opciones):
     """Una llamada directa al modelo: Qwen (QWEN_API_KEY) o Groq/NVIDIA (groq/<id>, nvidia/<id>, mvp/externos.py)."""
     banco = app.state.banco
@@ -395,6 +396,10 @@ def _lanzar(coro):
     tarea = asyncio.create_task(coro); _TAREAS.add(tarea); tarea.add_done_callback(_TAREAS.discard)
 @app.post("/plugins/{plugin}/call/{accion}", dependencies=[Depends(verificar)])
 async def plugin_call(plugin: str, accion: str, cuerpo: dict):
+    if plugin == "puente_chat" and accion == "mantener_encendido":  # el chat pide mantener el Space despierto N horas
+        try: horas = min(max(float(cuerpo.get("horas") or 24), 0), 720)
+        except (TypeError, ValueError): raise HTTPException(status_code=400, detail="horas invalidas") from None
+        return {"status": "ok", "result": {"ok": True, "hasta": mantener_vivo.mantener(horas, _en_curso)}}
     if plugin == "puente_chat" and accion in loop_puente.MIRROR:  # selector de mirrors del chat -> instancias de agente de nct_loop
         return {"status": "ok", "result": await loop_puente.llamar("nct_loop", accion, cuerpo)}
     if plugin in loop_puente.PLUGINS:  # LOOP, Cola y Watchdog: Chat -> Harness -> Router -> plugin
@@ -503,3 +508,4 @@ mcp_route.montar(app, verificar, chat, almacen, CONTROL, _delegar)
 # --- G5b: Harness /invoke montado en este mismo Space (HF pide PRO para un Space nuevo). Ruta: chat -> Harness -> HTTP -> router ---
 from plugins.deepseek_harness.server import app as harness_app  # noqa: E402 - el Harness no importa mvp/; llm sigue por HTTP a fichas_qwen/call/llm
 app.mount("/plugins/deepseek_harness", harness_app)  # RIU_DEEPSEEK_HARNESS_URL = https://<space>/plugins/deepseek_harness
+frontend_estatico.montar(app)  # el chat tambien sale del Router: Vercel puede estar sin cupo de despliegues
