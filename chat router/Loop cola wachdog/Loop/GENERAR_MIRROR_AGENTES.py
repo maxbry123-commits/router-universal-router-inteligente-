@@ -31,7 +31,22 @@ def generar(repo: Path) -> dict:
         out.append({'id': 'claude-code', 'tipo': 'pasarela', 'ruta': str(cc.relative_to(repo)),
                     'llamada': {'via': 'pasarela_local', 'puerto': 8082, 'requiere': 'NVIDIA_API_KEY'},
                     'estado': 'requiere_proceso_local'})
-    return {'version': 1, 'total': len(out), 'agentes': out}
+    for a in out:  # todo agente lleva su lista de espejos; el local es el primero
+        a['mirrors'] = [{'id': 'local', 'tipo': 'local', 'ruta': a['ruta']}] if a.get('ruta') else []
+    fuentes = AQUI / 'config' / 'mirrors_fuentes.json'
+    if fuentes.is_file():
+        por_id = {a['id']: a for a in out}
+        for f in json.loads(fuentes.read_text(encoding='utf8'))['agentes']:
+            a = por_id.get(f['id'])
+            if a is None:
+                a = {'id': f['id'], 'tipo': f.get('tipo', 'agente_externo'), 'ruta': None,
+                     'descripcion': f.get('descripcion', ''), 'llamada': {'via': 'catalogo'},
+                     'estado': 'espejado_sin_puente', 'mirrors': []}
+                out.append(a)
+                por_id[a['id']] = a
+            for i, m in enumerate(f.get('mirrors', [])):
+                a['mirrors'].append({'id': '%s-%d' % (m.get('tipo', 'extra'), i), **m})
+    return {'version': 2, 'total': len(out), 'agentes': out}
 
 
 if __name__ == '__main__':

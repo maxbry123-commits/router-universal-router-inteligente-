@@ -39,6 +39,11 @@ class LoopPuente(Base):
         r = self.http("nct_loop", "agentes", {"tipo": "modelo"}).json()["result"]
         self.assertTrue({"qwen3.8-max", "glm-5.3", "deepseek-v4-pro"} <= {a["id"] for a in r["agentes"]})
 
+    def test_mirrors_de_hermes_y_openclaw_por_http(self):
+        for aid in ("hermes-agent", "openclaw"):
+            r = self.http("nct_loop", "mirror_listar", {"agente": aid}).json()["result"]
+            self.assertEqual({m["tipo"] for m in r["detalle"][aid]}, {"fork", "upstream"})
+
     def test_paralelo_rechaza_mas_de_cuatro(self):
         r = self.http("nct_loop", "paralelo", {"objetivos": ["a"] * 5}).json()["result"]
         self.assertIn("error", r)

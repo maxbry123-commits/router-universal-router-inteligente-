@@ -34,7 +34,11 @@
       "skill_fases",
       "skill_ejecutar",
       "skills_registro",
-      "skills_seleccionar"
+      "skills_seleccionar",
+      "mirror_listar",
+      "mirror_agregar",
+      "mirror_quitar",
+      "mirror_sync"
     ]
   },
   "seguridad": {

@@ -1,6 +1,6 @@
 {
- "version": 1,
- "total": 60,
+ "version": 2,
+ "total": 62,
  "agentes": [
   {
    "id": "qwen3.8-max",
@@ -10,7 +10,8 @@
     "via": "puente_chat",
     "modelo": "qwen3.8-max"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "qwen3.8-flash",
@@ -20,7 +21,8 @@
     "via": "puente_chat",
     "modelo": "qwen3.8-flash"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "qwen3.7-max",
@@ -30,7 +32,8 @@
     "via": "puente_chat",
     "modelo": "qwen3.7-max"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "qwen3.7-plus",
@@ -40,7 +43,8 @@
     "via": "puente_chat",
     "modelo": "qwen3.7-plus"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "qwen3.6-plus",
@@ -50,7 +54,8 @@
     "via": "puente_chat",
     "modelo": "qwen3.6-plus"
    },
-   "estado": "sin_plan"
+   "estado": "sin_plan",
+   "mirrors": []
   },
   {
    "id": "qwen3.6-flash",
@@ -60,7 +65,8 @@
     "via": "puente_chat",
     "modelo": "qwen3.6-flash"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "glm-5.3",
@@ -70,7 +76,8 @@
     "via": "puente_chat",
     "modelo": "glm-5.3"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "glm-5.2",
@@ -80,7 +87,8 @@
     "via": "puente_chat",
     "modelo": "glm-5.2"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "glm-5.1",
@@ -90,7 +98,8 @@
     "via": "puente_chat",
     "modelo": "glm-5.1"
    },
-   "estado": "sin_plan"
+   "estado": "sin_plan",
+   "mirrors": []
   },
   {
    "id": "glm-5",
@@ -100,7 +109,8 @@
     "via": "puente_chat",
     "modelo": "glm-5"
    },
-   "estado": "sin_plan"
+   "estado": "sin_plan",
+   "mirrors": []
   },
   {
    "id": "deepseek-v4-pro",
@@ -110,7 +120,8 @@
     "via": "puente_chat",
     "modelo": "deepseek-v4-pro"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "deepseek-v4-pro-0813",
@@ -120,7 +131,8 @@
     "via": "puente_chat",
     "modelo": "deepseek-v4-pro-0813"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "deepseek-v4-flash-0731",
@@ -130,7 +142,8 @@
     "via": "puente_chat",
     "modelo": "deepseek-v4-flash-0731"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "deepseek-v4.1-flash",
@@ -140,7 +153,8 @@
     "via": "puente_chat",
     "modelo": "deepseek-v4.1-flash"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "deepseek-v4.1-flash-1017",
@@ -150,7 +164,8 @@
     "via": "puente_chat",
     "modelo": "deepseek-v4.1-flash-1017"
    },
-   "estado": "llamable"
+   "estado": "llamable",
+   "mirrors": []
   },
   {
    "id": "kimi-k2.7-code",
@@ -160,7 +175,8 @@
     "via": "puente_chat",
     "modelo": "kimi-k2.7-code"
    },
-   "estado": "sin_plan"
+   "estado": "sin_plan",
+   "mirrors": []
   },
   {
    "id": "kimi-k2.6",
@@ -170,7 +186,8 @@
     "via": "puente_chat",
     "modelo": "kimi-k2.6"
    },
-   "estado": "sin_plan"
+   "estado": "sin_plan",
+   "mirrors": []
   },
   {
    "id": "kimi-k2.5",
@@ -180,7 +197,8 @@
     "via": "puente_chat",
     "modelo": "kimi-k2.5"
    },
-   "estado": "sin_plan"
+   "estado": "sin_plan",
+   "mirrors": []
   },
   {
    "id": "MiniMax-M2.5",
@@ -190,7 +208,8 @@
     "via": "puente_chat",
     "modelo": "MiniMax-M2.5"
    },
-   "estado": "sin_plan"
+   "estado": "sin_plan",
+   "mirrors": []
   },
   {
    "id": "Agent-S",
@@ -199,7 +218,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/Agent-S"
+    }
+   ]
   },
   {
    "id": "CLI-Anything",
@@ -208,7 +234,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/CLI-Anything"
+    }
+   ]
   },
   {
    "id": "OpenHands",
@@ -217,7 +250,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/OpenHands"
+    }
+   ]
   },
   {
    "id": "OpenManus",
@@ -226,7 +266,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/OpenManus"
+    }
+   ]
   },
   {
    "id": "agent-zero",
@@ -235,7 +282,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/agent-zero"
+    }
+   ]
   },
   {
    "id": "artemis",
@@ -244,7 +298,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/artemis"
+    }
+   ]
   },
   {
    "id": "browser-use",
@@ -253,7 +314,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/browser-use"
+    }
+   ]
   },
   {
    "id": "context7",
@@ -262,7 +330,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/context7"
+    }
+   ]
   },
   {
    "id": "openhands-automation",
@@ -271,7 +346,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/openhands-automation"
+    }
+   ]
   },
   {
    "id": "openhands-software-agent-sdk",
@@ -280,7 +362,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/openhands-software-agent-sdk"
+    }
+   ]
   },
   {
    "id": "rea",
@@ -289,7 +378,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/rea"
+    }
+   ]
   },
   {
    "id": "strix",
@@ -298,7 +394,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-listos/strix"
+    }
+   ]
   },
   {
    "id": "Durable-Task-Python",
@@ -307,7 +410,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/Durable-Task-Python"
+    }
+   ]
   },
   {
    "id": "Durable-Workflow-Server",
@@ -316,7 +426,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/Durable-Workflow-Server"
+    }
+   ]
   },
   {
    "id": "Prefect",
@@ -325,7 +442,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/Prefect"
+    }
+   ]
   },
   {
    "id": "Temporal-Python-SDK",
@@ -334,7 +458,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/Temporal-Python-SDK"
+    }
+   ]
   },
   {
    "id": "autogen",
@@ -343,7 +474,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/autogen"
+    }
+   ]
   },
   {
    "id": "crewAI",
@@ -352,7 +490,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/crewAI"
+    }
+   ]
   },
   {
    "id": "haystack",
@@ -361,7 +506,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/haystack"
+    }
+   ]
   },
   {
    "id": "langgraph",
@@ -370,7 +522,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/langgraph"
+    }
+   ]
   },
   {
    "id": "microsoft-agent-framework",
@@ -379,7 +538,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/microsoft-agent-framework"
+    }
+   ]
   },
   {
    "id": "n8n",
@@ -388,7 +554,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/n8n"
+    }
+   ]
   },
   {
    "id": "openai-agents-python",
@@ -397,7 +570,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/openai-agents-python"
+    }
+   ]
   },
   {
    "id": "pydantic-ai",
@@ -406,7 +586,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/pydantic-ai"
+    }
+   ]
   },
   {
    "id": "rowboat",
@@ -415,7 +602,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/rowboat"
+    }
+   ]
   },
   {
    "id": "ruflo",
@@ -424,7 +618,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/ruflo"
+    }
+   ]
   },
   {
    "id": "strands-agents-sdk-python",
@@ -433,7 +634,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/frameworks/strands-agents-sdk-python"
+    }
+   ]
   },
   {
    "id": "agents-deep-research",
@@ -442,7 +650,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/investigacion/agents-deep-research"
+    }
+   ]
   },
   {
    "id": "dzhng-deep-research",
@@ -451,7 +666,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/investigacion/dzhng-deep-research"
+    }
+   ]
   },
   {
    "id": "fuentes-extraidas",
@@ -460,7 +682,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/investigacion/fuentes-extraidas"
+    }
+   ]
   },
   {
    "id": "gpt-researcher",
@@ -469,7 +698,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/investigacion/gpt-researcher"
+    }
+   ]
   },
   {
    "id": "open_deep_research",
@@ -478,7 +714,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/investigacion/open_deep_research"
+    }
+   ]
   },
   {
    "id": "orquestador",
@@ -487,7 +730,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/orquestacion/orquestador"
+    }
+   ]
   },
   {
    "id": "parallel",
@@ -496,7 +746,14 @@
    "llamada": {
     "via": "catalogo"
    },
-   "estado": "catalogado_sin_puente"
+   "estado": "catalogado_sin_puente",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/orquestacion/parallel"
+    }
+   ]
   },
   {
    "id": "05-AGENTES",
@@ -505,7 +762,14 @@
    "llamada": {
     "via": "plugin:agentes"
    },
-   "estado": "plugin_cargable"
+   "estado": "plugin_cargable",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-yaiwes/05-AGENTES"
+    }
+   ]
   },
   {
    "id": "07-SENTINELAS",
@@ -514,7 +778,14 @@
    "llamada": {
     "via": "plugin:agentes"
    },
-   "estado": "plugin_cargable"
+   "estado": "plugin_cargable",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-yaiwes/07-SENTINELAS"
+    }
+   ]
   },
   {
    "id": "agent-microkernel",
@@ -523,7 +794,14 @@
    "llamada": {
     "via": "plugin:agentes"
    },
-   "estado": "plugin_cargable"
+   "estado": "plugin_cargable",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-yaiwes/agent-microkernel"
+    }
+   ]
   },
   {
    "id": "agents",
@@ -532,7 +810,14 @@
    "llamada": {
     "via": "plugin:agentes"
    },
-   "estado": "plugin_cargable"
+   "estado": "plugin_cargable",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-yaiwes/agents"
+    }
+   ]
   },
   {
    "id": "agents-yaiwes",
@@ -541,7 +826,14 @@
    "llamada": {
     "via": "plugin:agentes"
    },
-   "estado": "plugin_cargable"
+   "estado": "plugin_cargable",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-yaiwes/agents-yaiwes"
+    }
+   ]
   },
   {
    "id": "workflow-agentes",
@@ -550,7 +842,14 @@
    "llamada": {
     "via": "plugin:agentes"
    },
-   "estado": "plugin_cargable"
+   "estado": "plugin_cargable",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/agentes-yaiwes/workflow-agentes"
+    }
+   ]
   },
   {
    "id": "claude-code",
@@ -561,7 +860,66 @@
     "puerto": 8082,
     "requiere": "NVIDIA_API_KEY"
    },
-   "estado": "requiere_proceso_local"
+   "estado": "requiere_proceso_local",
+   "mirrors": [
+    {
+     "id": "local",
+     "tipo": "local",
+     "ruta": "chat-router/agentes/claude-code"
+    }
+   ]
+  },
+  {
+   "id": "hermes-agent",
+   "tipo": "agente_externo",
+   "ruta": null,
+   "descripcion": "Hermes Agent (Nous Research)",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "espejado_sin_puente",
+   "mirrors": [
+    {
+     "id": "fork-0",
+     "tipo": "fork",
+     "url": "https://github.com/maxbry123-commits/hermes-agent",
+     "rama": "HEAD",
+     "sha": "d923a5eb487a17c0a68801bba9ef0f56c81040a8"
+    },
+    {
+     "id": "upstream-1",
+     "tipo": "upstream",
+     "url": "https://github.com/NousResearch/hermes-agent",
+     "rama": "HEAD",
+     "sha": ""
+    }
+   ]
+  },
+  {
+   "id": "openclaw",
+   "tipo": "agente_externo",
+   "ruta": null,
+   "descripcion": "OpenClaw",
+   "llamada": {
+    "via": "catalogo"
+   },
+   "estado": "espejado_sin_puente",
+   "mirrors": [
+    {
+     "id": "fork-0",
+     "tipo": "fork",
+     "url": "https://github.com/maxbry123-commits/openclaw",
+     "rama": "HEAD",
+     "sha": "383c124cc32ffee3f8e56f549b88da94d269a4af"
+    },
+    {
+     "id": "upstream-1",
+     "tipo": "upstream",
+     "url": "https://github.com/openclaw/openclaw",
+     "rama": "HEAD",
+     "sha": ""
+    }
+   ]
   }
  ]
 }

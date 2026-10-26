@@ -9,6 +9,7 @@ ejecutar -> complete con recibos) y la memoria son checkpoints en state/.
 from __future__ import annotations
 
 import asyncio
+import subprocess
 import hashlib
 import importlib.util
 import json
@@ -682,6 +683,101 @@ def _hilo_gob(pid: str, p: dict) -> dict:
         return {'status': 'FAIL', 'error': '%s: %s' % (type(e).__name__, e)}
 
 
+_URL_GH = re.compile(r'^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')
+_MAX_MIRRORS = 10
+
+
+def _espejo_base() -> dict:
+    f = _CONFIG / 'agentes.json'
+    if not f.is_file():
+        raise ValueError('sin espejo: ejecutar GENERAR_MIRROR_AGENTES.py')
+    return json.loads(f.read_text(encoding='utf-8'))
+
+
+def _extras() -> dict:
+    f = _STATE / 'mirrors_extra.json'
+    return json.loads(f.read_text(encoding='utf-8')) if f.is_file() else {}
+
+
+def _guardar_extras(d: dict) -> None:
+    _STATE.mkdir(exist_ok=True)
+    tmp = _STATE / 'mirrors_extra.tmp'
+    tmp.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding='utf-8')
+    tmp.replace(_STATE / 'mirrors_extra.json')
+
+
+def _espejo() -> dict:
+    """Espejo generado + los espejos que se agregaron en caliente (mirror_agregar)."""
+    doc, extra = _espejo_base(), _extras()
+    for a in doc['agentes']:
+        a['mirrors'] = list(a.get('mirrors') or []) + list(extra.get(a['id'], []))
+    return doc
+
+
+def _mirror(action: str, p: dict) -> dict:
+    ids = {a['id'] for a in _espejo_base()['agentes']}
+    aid = str(p.get('agente') or '')
+    if action == 'mirror_listar':
+        doc = _espejo()
+        lista = [a for a in doc['agentes'] if not aid or a['id'] == aid]
+        return {'ok': True, 'agentes': len(lista), 'mirrors': sum(len(a['mirrors']) for a in lista),
+                'detalle': {a['id']: a['mirrors'] for a in lista if a['mirrors']}}
+    if aid not in ids:
+        return {'error': 'AGENTE_NO_EXISTE', 'agente': aid}
+    extra = _extras()
+    if action == 'mirror_agregar':
+        url = str(p.get('url') or '')
+        if not _URL_GH.match(url):
+            return {'error': 'url debe ser https://github.com/<dueno>/<repo>'}
+        actuales = next(a for a in _espejo()['agentes'] if a['id'] == aid)['mirrors']
+        if len(actuales) >= _MAX_MIRRORS:
+            return {'error': 'maximo %d espejos por agente' % _MAX_MIRRORS}
+        if any(m.get('url') == url for m in actuales):
+            return {'error': 'ESPEJO_REPETIDO', 'url': url}
+        m = {'id': 'extra-' + uuid.uuid4().hex[:6], 'tipo': str(p.get('tipo') or 'extra')[:12],
+             'url': url, 'rama': str(p.get('rama') or 'HEAD')[:60], 'sha': ''}
+        extra.setdefault(aid, []).append(m)
+        _guardar_extras(extra)
+        return {'ok': True, 'agente': aid, 'mirror': m, 'total': len(actuales) + 1}
+    if action == 'mirror_quitar':
+        mid = str(p.get('mirror_id') or '')
+        antes = len(extra.get(aid, []))
+        extra[aid] = [m for m in extra.get(aid, []) if m.get('id') != mid]
+        if len(extra[aid]) == antes:
+            return {'error': 'solo se quitan espejos agregados (extra-...)', 'mirror_id': mid}
+        _guardar_extras(extra)
+        return {'ok': True, 'agente': aid, 'quitado': mid}
+    return {'error': 'ACCION_DESCONOCIDA'}
+
+
+def _sha_remoto(url: str, rama: str) -> str:
+    r = subprocess.run(['git', 'ls-remote', url, rama or 'HEAD'], capture_output=True, text=True, timeout=30, check=False)
+    return r.stdout.split()[0] if r.returncode == 0 and r.stdout.strip() else ''
+
+
+def _mirror_sync(p: dict) -> dict:
+    """Refresca el sha de cada espejo remoto con git ls-remote (sin clonar). Los de
+    config/ se informan; los agregados en caliente se actualizan en state/."""
+    aid, extra, vistos = str(p.get('agente') or ''), _extras(), []
+    for a in _espejo()['agentes']:
+        if aid and a['id'] != aid:
+            continue
+        for m in a['mirrors']:
+            if not _URL_GH.match(str(m.get('url') or '')):
+                continue
+            try:
+                sha = _sha_remoto(m['url'], m.get('rama', 'HEAD'))
+            except (OSError, subprocess.SubprocessError) as e:
+                sha = ''
+                m['error'] = type(e).__name__
+            vistos.append({'agente': a['id'], 'mirror': m['id'], 'sha': sha, 'cambio': bool(m.get('sha')) and sha != m.get('sha')})
+            for e in extra.get(a['id'], []):
+                if e.get('id') == m['id'] and sha:
+                    e['sha'] = sha
+    _guardar_extras(extra)
+    return {'ok': True, 'revisados': len(vistos), 'espejos': vistos}
+
+
 def handle(action: str, payload: "dict | None" = None) -> dict:
     p = payload or {}
     if action in ('status', 'health'):
@@ -701,11 +797,21 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
         pid = 'gob-' + uuid.uuid4().hex[:12]
         _PROC[pid] = _POOL.submit(_hilo_gob, pid, dict(p))
         return {'estado': 'procesando', 'proceso_id': pid, 'ciclos': list(__import__('nct_loop.gobernanza', fromlist=['CICLOS']).CICLOS)}
+    if action in ('mirror_listar', 'mirror_agregar', 'mirror_quitar'):
+        try:
+            return _mirror(action, p)
+        except ValueError as e:
+            return {'error': str(e)}
+    if action == 'mirror_sync':
+        try:
+            return _mirror_sync(p)
+        except ValueError as e:
+            return {'error': str(e)}
     if action == 'agentes':
-        f = _CONFIG / 'agentes.json'
-        if not f.is_file():
-            return {'error': 'sin espejo: ejecutar GENERAR_MIRROR_AGENTES.py'}
-        doc = json.loads(f.read_text(encoding='utf-8'))
+        try:
+            doc = _espejo()
+        except ValueError as e:
+            return {'error': str(e)}
         tipo = str(p.get('tipo') or '')
         lista = [a for a in doc['agentes'] if not tipo or a['tipo'] == tipo]
         return {'ok': True, 'total': len(lista), 'agentes': lista}
@@ -798,4 +904,5 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
 
 ACCIONES = ['status', 'health', 'ejecutar', 'gobernar', 'estado', 'cancelar',
             'skills', 'skill_fases', 'skill_ejecutar',
-            'skills_registro', 'skills_seleccionar', 'agentes', 'paralelo', 'estado_paralelo']
+            'skills_registro', 'skills_seleccionar', 'agentes', 'mirror_listar', 'mirror_agregar', 'mirror_quitar', 'mirror_sync',
+            'paralelo', 'estado_paralelo']
