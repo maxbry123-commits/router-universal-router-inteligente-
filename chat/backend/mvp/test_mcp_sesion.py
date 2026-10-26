@@ -71,6 +71,7 @@ class SesionMCP(Base):
         msgs = llm.call_args.args[1]
         self.assertEqual(msgs[-1]["role"], "user"); self.assertEqual(msgs[-2]["role"], "system")
         self.assertIn("Modelo activo: qwen3.8-max", msgs[-2]["content"]); self.assertIn("otros modelos", msgs[-2]["content"])
+        self.assertIn("manda sobre cualquier regla", msgs[-2]["content"])  # una regla o ficha que nombre otro modelo (p. ej. [REGLAS] «qwen3.8-flash») no cambia quién eres
 
     def test_las_identidades_que_dio_otro_modelo_no_llegan_al_modelo_actual(self):  # BUG: DeepSeek/GLM/Qwen 3.6 respondian «Soy qwen3.8-flash» copiando el historial
         salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "glm-5.2"}
