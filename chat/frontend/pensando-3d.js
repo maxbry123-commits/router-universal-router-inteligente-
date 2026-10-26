@@ -8,8 +8,10 @@ const ESC = [
 ];
 const fila = () => {
   let f = document.getElementById("fila-mando");
-  const comp = document.querySelector("#composer");
-  if (!f && comp) { f = document.createElement("div"); f.id = "fila-mando"; comp.before(f); }
+  const bar = document.querySelector("#composer .composer-bar");
+  if (!bar) return f;
+  if (!f) { f = document.createElement("div"); f.id = "fila-mando"; }
+  if (f.parentNode !== bar) bar.prepend(f);
   return f;
 };
 const borrar = () => {
