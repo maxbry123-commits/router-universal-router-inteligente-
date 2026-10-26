@@ -7,10 +7,10 @@
 //   Cuaderno (selector): loop, cola, watchdog, prompt, skills y el resto de ventanas.
 // El modelo sigue en su selector, debajo de la caja. Auto sale de la fila de iconos.
 const CONTEXTO = ["btn-archivos", "btn-ancla", "btn-sandbox", "btn-copiar-input"];
-const TRABAJO = ["btn-loop", "btn-cola", "btn-watchdog"];
+const TRABAJO = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tools", "btn-agentes", "btn-prompt"];
 const INTERRUPTORES = ["btn-tools", "btn-agentes", "btn-prompt"];
 const VENTANAS = ["btn-tareas", "btn-comandos", "btn-sesion", "btn-reglas", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
-const CUADERNO = [...INTERRUPTORES, ...VENTANAS];
+const CUADERNO = VENTANAS;
 const ATAJOS = [["Claves", "#pill-claves"], ["Workflows", "#pill-workflows"]];
 const movil = () => matchMedia("(max-width:720px)").matches;
 
@@ -22,7 +22,7 @@ st.textContent = "@media(max-width:720px){"
   + "#composer .composer-bar::after{content:none !important;display:none !important}"
   + "#composer .composer-bar>button.secondary:not(.grp){width:34px !important;min-width:34px !important;max-width:34px !important;height:34px !important;min-height:34px !important;flex:0 0 34px !important}"
   + "#composer #btn-adjunto,#composer #btn-microfono{order:3}"
-  + "#composer .composer-bar>button.secondary.grp{order:1 !important;flex:1 1 calc(33.33% - 8px) !important;width:auto !important;max-width:calc(33.33% - 4px) !important;min-width:0 !important;height:34px !important;min-height:34px !important;border-radius:999px !important;padding:0 10px !important;font-size:13px !important;font-weight:600 !important;overflow:hidden !important;white-space:nowrap !important}"
+  + "#composer .composer-bar>button.secondary.grp{order:1 !important;flex:0 0 34px !important;width:34px !important;min-width:34px !important;max-width:34px !important;height:34px !important;min-height:34px !important;padding:0 !important;border-radius:50% !important;overflow:hidden !important}"
   + "#composer #btn-detener{order:4;display:inline-flex !important;margin-left:auto !important}"
   + "#composer .composer-bar>.action{order:5;position:static !important;margin-left:0 !important;flex:0 0 36px !important;width:36px !important;min-width:36px !important;max-width:36px !important;height:36px !important;min-height:36px !important;padding:0 !important;border-radius:50% !important;overflow:visible !important}"
   + "#composer .composer-bar>.action::after,#composer .composer-bar>.action .env-txt{content:none !important;display:none !important}"
@@ -52,7 +52,7 @@ function panel(id, titulo) {
   const head = document.createElement("div");
   head.className = "row va-head";
   const t = document.createElement("strong");
-  t.textContent = titulo;
+  t.innerHTML = titulo;
   const x = document.createElement("button");
   x.type = "button";
   x.className = "secondary sh-cerrar";
@@ -83,7 +83,15 @@ function quitarRotulo(b) {
   if (n) n.remove();
 }
 
-function grupo(id, texto, hoja) {
+function svg(d) {
+  return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + "</svg>";
+}
+const ICO = {
+  archivos: '<path d="M4 6h6l2 2h8v11H4z"/>',
+  loop: '<path d="M4 12a8 8 0 0 1 13.5-5.5L20 4"/><path d="M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-13.5 5.5L4 20"/><path d="M4 20v-5h5"/>',
+  config: '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>',
+};
+function grupo(id, icono, hoja, etiqueta) {
   const bar = document.querySelector("#composer .composer-bar");
   if (!bar) return null;
   let b = document.getElementById(id);
@@ -92,12 +100,13 @@ function grupo(id, texto, hoja) {
     b.type = "button";
     b.id = id;
     b.className = "secondary grp";
-    b.textContent = texto;
     b.setAttribute("aria-haspopup", "menu");
     b.setAttribute("aria-expanded", "false");
     b.setAttribute("aria-controls", hoja);
     b.addEventListener("click", () => abrir(hoja, b));
   }
+  b.innerHTML = svg(icono);
+  b.setAttribute("aria-label", etiqueta);
   const env = bar.querySelector(".action");
   if (b.parentNode !== bar) bar.insertBefore(b, env || null);
   return b;
@@ -178,28 +187,23 @@ function colocar() {
   const fila = bar();
   if (!fila) return;
   if (!movil()) { devolver(); return; }
-  const ctx = panel("ctx-panel", "Contexto");
-  const trab = panel("trab-panel", "Trabajo");
-  const libro = panel("mas-panel", "Cuaderno");
-  grupo("btn-contexto", "Contexto", "ctx-panel");
-  grupo("btn-trabajo", "Trabajo", "trab-panel");
-  grupo("btn-cuaderno", "Cuaderno", "mas-panel");
+  const ctx = panel("ctx-panel", svg(ICO.archivos));
+  const trab = panel("trab-panel", svg(ICO.loop));
+  const libro = panel("mas-panel", svg(ICO.config));
+  ctx.setAttribute("aria-label", "Archivos");
+  trab.setAttribute("aria-label", "LOOP");
+  libro.setAttribute("aria-label", "Configuración");
+  grupo("btn-contexto", ICO.archivos, "ctx-panel", "Archivos");
+  grupo("btn-trabajo", ICO.loop, "trab-panel", "LOOP");
+  grupo("btn-cuaderno", ICO.config, "mas-panel", "Configuración");
   CONTEXTO.forEach((id) => meter(id, ctx));
   atajos(ctx);
   TRABAJO.forEach((id) => meter(id, trab));
   const ids = (lista) => lista.filter((id) => document.getElementById(id));
-  const want = "s:Interruptores|" + ids(INTERRUPTORES).join("|") + "|s:Ventanas|" + ids(VENTANAS).join("|");
+  const want = ids(VENTANAS).join("|");
   const libroLista = listaDe(libro);
   if (firma(libro) !== want) {
-    const sec = (titulo) => {
-      let s = [...libroLista.querySelectorAll(".mas-sec")].find((n) => n.textContent === titulo);
-      if (!s) { s = document.createElement("div"); s.className = "mas-sec"; s.textContent = titulo; }
-      libroLista.append(s);
-    };
     const poner = (id) => { const b = document.getElementById(id); if (!b) return; rotulo(b); libroLista.append(b); };
-    sec("Interruptores");
-    INTERRUPTORES.forEach(poner);
-    sec("Ventanas");
     VENTANAS.forEach(poner);
   }
   const mirror = document.querySelector("#mirror-selector-mount");
