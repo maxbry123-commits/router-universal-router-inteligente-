@@ -1,0 +1,12 @@
+{
+  "total": 311,
+  "fuente": "repo ECC skills",
+  "formato": "motor-python-ejecutable-por-skill",
+  "ciclos": [
+    "MAIN",
+    "VERIFY",
+    "RECOVERY",
+    "CONTINUOUS",
+    "META"
+  ]
+}

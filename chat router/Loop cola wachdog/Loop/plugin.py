@@ -508,12 +508,36 @@ async def _correr_ciclo(*, spec: dict, fases: list, skill_id: str, event: str,
     return res
 
 
+_PY_SKILLS = _DIR / 'python_skills'
+
+
+def _modulo_skill(skill_id: str):
+    """Carga el motor .py ejecutable del skill (python_skills/ecc_<id>.py)."""
+    ruta = _PY_SKILLS / ('ecc_' + skill_id.replace('-', '_') + '.py')
+    if not ruta.is_file():
+        return None
+    return _mod('eccskill_' + skill_id.replace('-', '_'), ruta)
+
+
 async def _ejecutar_skill_motor(skill_id: str, p: dict) -> dict:
     cat = _catalogo_ecc()
     spec = cat.get(skill_id)
     if not isinstance(spec, dict):
         return {'ok': False, 'status': 'SKILL_NO_EXISTE', 'skill_id': skill_id,
                 'disponibles': len(cat)}
+    modelo = str(p.get('modelo') or 'ficha-qwen38flash')
+    sesion = str(p.get('sesion') or ('skill-' + uuid.uuid4().hex[:8]))
+
+    # Si existe el motor .py generado, el skill corre como codigo ejecutable.
+    mod = _modulo_skill(skill_id)
+    if mod is not None and hasattr(mod, 'run'):
+        def model_fn(prompt: str) -> dict:
+            return _chat_modelo(modelo, prompt, sesion)
+        task_id = str(p.get('task_id') or p.get('proceso_id') or 'tarea-' + uuid.uuid4().hex[:8])
+        return await mod.run(dict(p.get('contexto') or p.get('context') or {}),
+                             task_id=task_id,
+                             event=str(p.get('event') or 'skill.run'),
+                             model_fn=model_fn, receipt_fn=None)
     ciclos = _fases_por_ciclo(spec)
     modelo = str(p.get('modelo') or 'ficha-qwen38flash')
     sesion = str(p.get('sesion') or ('skill-' + uuid.uuid4().hex[:8]))
