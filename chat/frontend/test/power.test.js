@@ -4,7 +4,10 @@ const handler = require("../api/power.js");
 const CLAVE = "clave-prueba", TOKEN = "hf_token_secreto_de_prueba";
 process.env.RIU_ROUTER_API_KEY = CLAVE; process.env.HF_POWER_TOKEN = TOKEN; process.env.HF_SPACE_ID = "dueno/space";
 const llamar = async (req, hf) => {
-  const vistas = []; globalThis.fetch = async (url, opt) => { vistas.push([url, opt.method, opt.headers.Authorization]); return hf; };
+  const vistas = []; globalThis.fetch = async (url, opt) => {
+    if (String(url).endsWith("/health")) return { ok: true, status: 200, text: async () => JSON.stringify({ tareas_en_curso: 0, latido: { t: 0, ok: true } }) };
+    vistas.push([url, opt.method, opt.headers.Authorization]); return hf;
+  };
   let codigo, cuerpo; const res = { setHeader() {}, status(c) { codigo = c; return this; }, json(b) { cuerpo = b; return this; } };
   await handler({ headers: { "x-api-key": CLAVE, ...(req.headers || {}) }, method: "GET", ...req }, res);
   return { codigo, cuerpo, vistas };
@@ -40,4 +43,24 @@ test("Hugging Face caido: 502 claro", async () => {
   globalThis.fetch = async () => { throw new Error("red"); };
   let c, b; await handler({ headers: { "x-api-key": CLAVE }, method: "GET" }, { setHeader() {}, status(x) { c = x; return this; }, json(x) { b = x; return this; } });
   assert.equal(c, 502); assert.ok(!JSON.stringify(b).includes(TOKEN));
+});
+const pedir = async (fetchFn, body) => {
+  globalThis.fetch = fetchFn;
+  let codigo, cuerpo; const res = { setHeader() {}, status(c) { codigo = c; return this; }, json(b) { cuerpo = b; return this; } };
+  await handler({ headers: { "x-api-key": CLAVE }, method: "POST", body }, res);
+  return { codigo, cuerpo };
+};
+test("N>0 bloquea apagar y reiniciar; forzar pasa; N=0 pasa; Router dormido pasa", async () => {
+  const hfOk = () => ({ ok: true, status: 200, text: async () => JSON.stringify({ stage: "PAUSED" }) });
+  const health = (n) => ({ ok: true, status: 200, text: async () => JSON.stringify({ tareas_en_curso: n, latido: { t: 1, ok: true } }) });
+  for (const accion of ["apagar", "reiniciar"]) {
+    const r = await pedir(async (url) => String(url).endsWith("/health") ? health(3) : hfOk(), { accion });
+    assert.deepEqual([r.codigo, r.cuerpo.detail], [409, "hay 3 tareas en curso"]);
+    const ok = await pedir(async (url) => String(url).endsWith("/health") ? health(3) : hfOk(), { accion, forzar: true });
+    assert.equal(ok.codigo, 200);
+    const cero = await pedir(async (url) => String(url).endsWith("/health") ? health(0) : hfOk(), { accion });
+    assert.equal(cero.codigo, 200);
+    const dormido = await pedir(async (url) => { if (String(url).endsWith("/health")) throw new Error("dormido"); return hfOk(); }, { accion });
+    assert.equal(dormido.codigo, 200);
+  }
 });
