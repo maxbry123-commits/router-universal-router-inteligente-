@@ -167,5 +167,25 @@ export async function mount(root, { api, tell } = {}) {
         if (r.ok) window.__riuJob = null;
       } catch (error) { avisa(error.message); }
     });
+    const tgM = q("#tg-mantener");
+    if (tgM) {
+      const pintar = (on) => { tgM.classList.toggle("on", !!on); tgM.setAttribute("aria-pressed", on ? "true" : "false"); };
+      const base = String((window.RIU_CONFIG && window.RIU_CONFIG.proxyDestino) || "").replace(/\/$/, "");
+      fetch((base || "") + "/health", { headers: { "X-API-Key": sessionStorage.getItem("riu_clave") || "" } }).then((r) => r.ok ? r.json() : null).then((s) => { if (s && typeof s.mantener_siempre === "boolean") pintar(s.mantener_siempre); }).catch(() => {});
+      tgM.addEventListener("click", async () => {
+        const antes = tgM.classList.contains("on"), quiere = !antes;
+        tgM.disabled = true;
+        try {
+          const r = await fetch("/plugins/puente_chat/call/mantener_encendido", { method: "POST", headers: { "Content-Type": "application/json", "X-API-Key": sessionStorage.getItem("riu_clave") || "" }, body: JSON.stringify({ siempre: quiere }) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(d.detail || d.error || d.reason || ("HTTP " + r.status));
+          const res = d.result && typeof d.result === "object" ? d.result : d;
+          if (res.ok === false) throw new Error(res.detail || res.error || "no se pudo dejar encendido");
+          pintar(!!res.siempre);
+          avisa(res.siempre ? "Encendido fijo: el servidor no se duerme hasta que lo apagues" : "Encendido fijo desactivado");
+        } catch (e) { pintar(antes); avisa(e.message); }
+        finally { tgM.disabled = false; }
+      });
+    }
   }
 }
