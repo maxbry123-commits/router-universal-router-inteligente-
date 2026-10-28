@@ -131,6 +131,45 @@ class TestHarness(unittest.TestCase):
                 hilo.join(timeout=5)
                 cliente.close()
 
+    def test_el_modelo_ve_archivos_como_tool_y_la_ejecuta_por_el_harness(self):  # el proveedor recibe la tool `archivos` con su descripcion y, cuando el modelo la llama, el motor copia de verdad
+        import socket, tempfile, time, uvicorn, httpx
+        from pathlib import Path
+        raiz = tempfile.mkdtemp(); (Path(raiz) / "origen").mkdir(); (Path(raiz) / "origen" / "dato.txt").write_text("contenido")
+        sock = socket.socket(); sock.bind(("127.0.0.1", 0)); sock.listen()
+        base = f"http://127.0.0.1:{sock.getsockname()[1]}"
+        env = {"RIU_ROUTER_URL": base, "RIU_DEEPSEEK_HARNESS_URL": base + "/plugins/deepseek_harness", "MVP_QWEN_BASE_URL": self.url, "RIU_MOTOR_RAIZ": raiz}
+        with patch.dict(os.environ, env), patch("mvp.app.bank.abrir_desde_env", return_value=SimpleNamespace(leer=lambda nombre: "acceso-test")), patch("mvp.app.hf_store.guardar", return_value={"ok": True}):
+            servidor = uvicorn.Server(uvicorn.Config(servicio.app, log_level="critical"))
+            hilo = threading.Thread(target=servidor.run, kwargs={"sockets": [sock]})
+            cliente = httpx.Client(base_url=base, timeout=20, trust_env=False)
+            hilo.start()
+            try:
+                for _ in range(100):
+                    if servidor.started: break
+                    time.sleep(0.02)
+                self.assertTrue(servidor.started)
+                llamada = {"id": "call-motor", "type": "function", "function": {"name": "archivos", "arguments": json.dumps({"accion": "ejecutar", "cola": [{"accion": "copiar", "origen": "origen", "destino": "destino/copia"}]})}}
+                Falso.cola = [(200, {"choices": [{"message": {"role": "assistant", "content": None, "tool_calls": [llamada]}, "finish_reason": "tool_calls"}]}),
+                              (200, {"choices": [{"message": {"content": "Cola lanzada"}, "finish_reason": "stop"}]})]
+                cuerpo = {"message": "copia origen a destino/copia", "modelo": "qwen3.8-max", "tools": False, "agente_tool": False, "llm_tool": False}
+                r = cliente.post("/chat/send", json=cuerpo, headers={"x-api-key": "acceso-test"})
+                self.assertEqual(r.status_code, 200, r.text)
+                pedidas = [p for p in Falso.recibidas if p[0] == "/chat/completions"]
+                herramientas = {t["function"]["name"]: t["function"] for t in pedidas[0][1].get("tools", [])}
+                self.assertIn("archivos", herramientas)
+                self.assertIn("Motor de archivos", herramientas["archivos"]["description"])
+                self.assertIn("cola", herramientas["archivos"]["parameters"]["properties"])
+                resultado_tool = json.dumps(pedidas[1][1]["messages"][-1], ensure_ascii=False)
+                self.assertIn("q-", resultado_tool)  # el modelo recibio el id de la cola
+                for _ in range(50):
+                    if (Path(raiz) / "destino" / "copia" / "dato.txt").exists(): break
+                    time.sleep(0.1)
+                self.assertEqual((Path(raiz) / "destino" / "copia" / "dato.txt").read_text(), "contenido")
+            finally:
+                servidor.should_exit = True
+                hilo.join(timeout=5)
+                cliente.close()
+
     def test_cadena_http_completa(self):
         import socket, time, uvicorn, httpx
         sock = socket.socket()
