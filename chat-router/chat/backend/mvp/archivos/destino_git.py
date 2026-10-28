@@ -53,12 +53,14 @@ def publicar(fuente, destino, mensaje, token_fn=None, sobrescribir=False, cancel
     import tempfile
     with tempfile.TemporaryDirectory(prefix="motor-git-") as tmp:
         clon = Path(tmp) / "repo"
-        git(["clone", "--depth", "1", *(["--branch", rama] if rama else []), url_remota(owner, repo), str(clon)], env=env)
+        git(["clone", "--depth", "1", "--filter=blob:none", "--no-checkout", *(["--branch", rama] if rama else []), url_remota(owner, repo), str(clon)], env=env)
         rama = rama or git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=clon, env=env)
+        git(["read-tree", "HEAD"], cwd=clon, env=env)  # indice del ultimo commit, sin bajar el contenido del repo
         fuente = Path(fuente)
         base = fuente if fuente.is_dir() else fuente.parent
         rels = archivos_de(fuente)
-        previos = [r for r in rels if (clon / carpeta / r).exists()]
+        existentes = set(git(["ls-tree", "-r", "--name-only", "HEAD", "--", *([carpeta] if carpeta else [])], cwd=clon, env=env).splitlines())
+        previos = [r for r in rels if ((Path(carpeta) / r).as_posix() if carpeta else r.as_posix()) in existentes]
         if previos and not sobrescribir:
             raise MotorError("DESTINO_YA_EXISTE: %s/%s (usa sobrescribir)" % (carpeta, previos[0]))
         total = 0
@@ -67,13 +69,13 @@ def publicar(fuente, destino, mensaje, token_fn=None, sobrescribir=False, cancel
                 raise MotorError("CANCELADO")
             entradas = []
             for r in lote:
-                destino_r = clon / carpeta / r
-                destino_r.parent.mkdir(parents=True, exist_ok=True)
-                destino_r.write_bytes((base / r).read_bytes())
                 rel_repo = (Path(carpeta) / r).as_posix() if carpeta else r.as_posix()
-                entradas.append("100644 %s\t%s" % (_oid(clon, destino_r, env), rel_repo))
+                entradas.append("100644 %s\t%s" % (_oid(clon, base / r, env), rel_repo))
             subprocess.run(["git", "update-index", "--add", "--index-info"], cwd=clon, env=env, input="\n".join(entradas) + "\n", text=True, check=True, capture_output=True)
-            git(["commit", "-q", "-m", "%s (lote %d)" % (mensaje, n)], cwd=clon, env=env)
+            arbol = git(["write-tree"], cwd=clon, env=env)
+            padre = git(["rev-parse", "HEAD"], cwd=clon, env=env)
+            nuevo = git(["commit-tree", arbol, "-p", padre, "-m", "%s (lote %d)" % (mensaje, n)], cwd=clon, env=env)
+            git(["update-ref", "HEAD", nuevo], cwd=clon, env=env)
             git(["push", "-q", "origin", "HEAD:" + rama], cwd=clon, env=env)
             total += len(lote)
         cabeza = git(["rev-parse", "HEAD"], cwd=clon, env=env)
