@@ -9,7 +9,7 @@
 const CONTEXTO = ["btn-archivos", "btn-ancla", "btn-sandbox", "btn-copiar-input"];
 const TRABAJO = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tareas", "btn-tools", "btn-agentes", "btn-prompt"];
 const INTERRUPTORES = ["btn-tools", "btn-agentes", "btn-prompt"];
-const VENTANAS = ["btn-comandos", "btn-sesion", "btn-reglas", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
+const VENTANAS = ["btn-comandos", "btn-sesion", "btn-reglas", "btn-motor-archivos", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
 const CUADERNO = VENTANAS;
 const PILLS_CTX = ["ancla", "btn-proyectos", "pill-claves", "pill-workflows"];
 const PILLS_TRAB = ["btn-llm-tool", "btn-agent-access-lock"];
@@ -233,7 +233,7 @@ function firma(hoja) {
   return [...n.children].map((x) => x.classList.contains("mas-sec") ? "s:" + x.textContent : x.id || x.className).join("|");
 }
 
-const FUERA = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tareas", "btn-comandos", "btn-sesion", "btn-reglas", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
+const FUERA = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tareas", "btn-comandos", "btn-sesion", "btn-reglas", "btn-motor-archivos", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
 function menu() {
   const fila = bar();
   if (!fila) return;

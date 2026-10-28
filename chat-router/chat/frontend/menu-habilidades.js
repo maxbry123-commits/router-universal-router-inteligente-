@@ -21,6 +21,7 @@ export function montarHabilidades({ root, q, tell }) {
     { cmd: "/claves", nombre: "Banco de claves", desc: "Abrir la ventana", abre: "#pill-claves" },
     { cmd: "/anclaje", nombre: "Anclaje", desc: "Enlaces, archivos y handoffs", abre: "#btn-ancla" },
     { cmd: "/archivos", nombre: "Archivos", desc: "La carpeta compartida", abre: "#btn-archivos" },
+    { cmd: "/motor", nombre: "Archivos (motor)", desc: "Descargar, extraer, copiar y mover", abre: "#btn-motor-archivos" },
     { cmd: "/sandbox", nombre: "Sandbox", desc: "Instrucciones de código", abre: "#btn-sandbox" },
     { cmd: "/watchdog", nombre: "Watchdog", desc: "Ficha de vigilancia", abre: "#btn-watchdog" },
     { cmd: "/mcp", nombre: "MCP", desc: "Pruebas del router", abre: "#btn-mcp" },

@@ -26,6 +26,24 @@ class SesionMCP(Base):
         nombres = {t["name"] for t in self.rpc("tools/list").json()["result"]["tools"]}
         self.assertTrue({"chat", "resultado", "listar_fichas", "github_leer", "github_escribir", "github_api", "almacen"} <= nombres)
 
+    def test_motor_de_archivos_por_mcp_y_por_plugin_http(self):  # cola: 2 origenes locales -> 2 destinos, por la herramienta `archivos` y por /plugins/motor_archivos
+        import tempfile, time, zipfile
+        from pathlib import Path
+        raiz = tempfile.mkdtemp(); (Path(raiz) / "fuente").mkdir(); (Path(raiz) / "fuente" / "a.txt").write_text("hola")
+        with patch.dict(os.environ, {"RIU_MOTOR_RAIZ": raiz}):
+            self.assertIn("archivos", {t["name"] for t in self.rpc("tools/list").json()["result"]["tools"]})
+            r = self.llamar("archivos", {"accion": "ejecutar", "cola": [{"accion": "copiar", "origen": "fuente", "destino": "d1"}, {"accion": "copiar", "origen": "fuente", "destino": "d2"}]})
+            self.assertIn("id", r, r)
+            for _ in range(50):
+                e = self.llamar("archivos", {"accion": "estado", "id": r["id"]})
+                if e["estado"] not in ("en_cola", "corriendo"): break
+                time.sleep(0.1)
+            self.assertEqual([t["estado"] for t in e["trabajos"]], ["ok", "ok"], e)
+            self.assertEqual((Path(raiz) / "d2" / "a.txt").read_text(), "hola")
+            h = self.client.post("/plugins/motor_archivos/call/raiz", headers={"x-api-key": "api-ficticia"}, json={})
+            self.assertEqual(h.json()["result"]["raiz"], str(Path(raiz).resolve()))
+            self.assertIn("RUTA_FUERA_DE_RAIZ", self.client.post("/plugins/motor_archivos/call/listar_raiz", headers={"x-api-key": "api-ficticia"}, json={"ruta": "../.."}).json()["result"]["error"])
+
     def test_conversacion_completa_listar_chat_resultado(self):
         self.assertIn("ficha1-modelos", json.dumps(self.llamar("listar_fichas", {})))
         salida = {"texto": "Si te oigo", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "qwen3.8-max"}

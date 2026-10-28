@@ -8,7 +8,7 @@ from contextvars import ContextVar
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import bank, compute, control, externos, estado_tarea, frontend_estatico, loop_puente, loop_reanudar, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
+from mvp import archivos, bank, compute, control, externos, estado_tarea, frontend_estatico, loop_puente, loop_reanudar, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -497,6 +497,9 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
         return {"status": "ok", "result": {"ok": True, "siempre": mantener_vivo.SIEMPRE["on"], "hasta": mantener_vivo.mantener(horas, _en_curso)}}
     if plugin == "puente_chat" and accion in loop_puente.MIRROR:  # selector de mirrors del chat -> instancias de agente de nct_loop
         return {"status": "ok", "result": await loop_puente.llamar("nct_loop", accion, cuerpo)}
+    if plugin == "motor_archivos":  # ventana Archivos (motor): POST /plugins/motor_archivos/call/<ejecutar|estado|cancelar|raiz|listar_raiz>
+        resultado = await asyncio.to_thread(archivos.llamar, accion, cuerpo, lambda: CONTROL.credencial("github", app.state.banco))
+        return {"status": "ok", "result": resultado}
     if plugin in loop_puente.PLUGINS:  # LOOP, Cola y Watchdog: Chat -> Harness -> Router -> plugin
         try: resultado = await loop_puente.llamar(plugin, accion, loop_reanudar.traducir(cuerpo))
         except (OSError, ValueError) as error: raise HTTPException(status_code=503, detail=str(error)) from None

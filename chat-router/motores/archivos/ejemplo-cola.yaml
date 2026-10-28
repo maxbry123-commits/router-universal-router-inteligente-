@@ -1,0 +1,15 @@
+# Pegar en la ventana "Archivos (motor)" (/motor) o dar al modelo: "ejecuta esta cola con la herramienta archivos".
+- accion: descargar
+  origen: https://example.com/componentes.zip
+  destino: componentes/zip
+- accion: descargar
+  origen: github.com/owner/repo/tree/main/docs
+  destino: componentes/repo-docs
+- accion: listar
+  origen: componentes/zip
+- accion: buscar
+  origen: componentes
+  patron: LICENSE
+- accion: copiar
+  origen: componentes/zip
+  destino: git:maxbry123-commits/Maxbry-AGI/componentes/zip
