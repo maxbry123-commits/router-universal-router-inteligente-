@@ -119,6 +119,7 @@ export function conectarSelectorModelos(ctx) {
     const dest = dest0, SEL = SEL0;
     if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender(dest); else if (SEL.activo === dest) SEL.apagar(); }  // elegir un modelo = el selector que abrio la hoja responde
     q("#sh-modelos").hidden = true;
+    pill.setAttribute("aria-expanded", "false"); if (pillMvp) pillMvp.setAttribute("aria-expanded", "false");  // UX: al elegir la hoja se cierra; el botón debe anunciar «colapsado»
   };
   const pintar = () => {
     const s = chat().selectorQwen;
@@ -132,7 +133,7 @@ export function conectarSelectorModelos(ctx) {
         b.type = "button"; b.setAttribute("aria-pressed", String(sel));
         const txt = node("span", "", "mod-txt");
         txt.append(node("b", m[1]), node("small", m[2]));
-        const ico = node("span", "", "mod-ico"); ico.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICO[m[0]] || "") + "</svg>";
+        const ico = node("span", "", "mod-ico"); ico.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICO[m[0]] || '<circle cx="12" cy="12" r="10"/>') + "</svg>";
         b.append(ico, txt, node("span", sel ? "✓" : "", "mod-ck"));
         b.addEventListener("click", () => elegir(m, g));
         caja.append(b);
