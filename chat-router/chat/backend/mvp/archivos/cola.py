@@ -19,7 +19,12 @@ def _archivo(qid):
 
 
 def _publico(q):
-    return {k: v for k, v in q.items() if not k.startswith("_")}
+    q = {k: v for k, v in q.items() if not k.startswith("_")}
+    hechos = sum(1 for t in q["trabajos"] if t["estado"] in ("ok", "error", "cancelado"))
+    actual = next((t for t in q["trabajos"] if t["estado"] == "corriendo"), None)
+    q["progreso"] = "%d/%d" % (hechos, len(q["trabajos"]))
+    q["paso_actual"] = ("%d %s %s" % (actual["n"], actual["accion"], actual["origen"])) if actual else None
+    return q
 
 
 def _vista(q):
@@ -85,7 +90,7 @@ def estado(qid):
         for t in d["trabajos"]:
             if t["estado"] in ("pendiente", "corriendo"):
                 t.update(estado="error", error="INTERRUMPIDO_POR_REINICIO")
-    return {k: v for k, v in d.items() if not k.startswith("_")} | {"trabajos": [{k: v for k, v in t.items() if k != "_job"} for t in d["trabajos"]]}
+    return _publico(d | {"trabajos": [{k: v for k, v in t.items() if k != "_job"} for t in d["trabajos"]]})
 
 
 def cancelar(qid):

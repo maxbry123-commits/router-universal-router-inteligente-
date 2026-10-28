@@ -7,11 +7,15 @@
     "plugin_http": "POST /plugins/motor_archivos/call/<accion>  (lo usa la ventana del chat)",
     "ventana": "chat-router/chat/frontend/ventana-archivos.js  (abrir con /motor)",
     "harness": "chat-router/chat/backend/deepseek_harness/server.py (lista `permitidas`)",
-    "pruebas": ["chat-router/chat/backend/mvp/test_archivos.py", "chat-router/chat/backend/mvp/test_mcp_sesion.py::test_motor_de_archivos_por_mcp_y_por_plugin_http"]
+    "pruebas": [
+      "chat-router/chat/backend/mvp/test_archivos.py",
+      "chat-router/chat/backend/mvp/test_mcp_sesion.py::test_motor_de_archivos_por_mcp_y_por_plugin_http"
+    ]
   },
   "acciones": {
+    "transferir": "{origen, destino[, extraer, readme, sobrescribir]} -> UNA llamada: arma listar origen -> copiar/descargar al destino (README + MANIFEST sha256) -> listar destino; devuelve {id, pasos:[...]}",
     "ejecutar": "{cola:[trabajo,...]} o {yaml:\"...\"}  -> {id, estado:\"en_cola\", trabajos:N}  (responde al instante; corre en segundo plano)",
-    "estado": "{id} -> {estado: en_cola|corriendo|terminado|error|cancelado, trabajos:[{n,accion,origen,destino,estado,archivos,bytes,resumen,muestra,error}]}",
+    "estado": "{id} -> {estado: en_cola|corriendo|terminado|error|cancelado, progreso:\"2/3\", paso_actual:\"2 copiar origen\", trabajos:[{n,accion,origen,destino,estado,archivos,bytes,resumen,muestra,error}]}",
     "cancelar": "{id}",
     "raiz": "{} -> {raiz, libre_bytes}",
     "listar_raiz": "{ruta?} -> {ruta, entradas:[{nombre,tipo,bytes}]}"
@@ -35,8 +39,24 @@
     "Un trabajo roto no tumba la cola: queda en error con su motivo y sigue el siguiente.",
     "El destino lo pone el Director en cada cola; la IA no reutiliza destinos anteriores."
   ],
-  "ejemplo_json": {"accion": "ejecutar", "cola": [
-    {"accion": "descargar", "origen": "https://example.com/paquete.zip", "destino": "mis/paquete"},
-    {"accion": "copiar", "origen": "mis/paquete", "destino": "git:maxbry123-commits/Maxbry-AGI/paquete"}
-  ]}
+  "ejemplo_json": {
+    "accion": "ejecutar",
+    "cola": [
+      {
+        "accion": "descargar",
+        "origen": "https://example.com/paquete.zip",
+        "destino": "mis/paquete"
+      },
+      {
+        "accion": "copiar",
+        "origen": "mis/paquete",
+        "destino": "git:maxbry123-commits/Maxbry-AGI/paquete"
+      }
+    ]
+  },
+  "ejemplo_una_llamada": {
+    "accion": "transferir",
+    "origen": "https://example.com/paquete.zip",
+    "destino": "git:maxbry123-commits/Maxbry-AGI/paquete"
+  }
 }

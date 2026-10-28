@@ -132,6 +132,29 @@ class Cola(Base):
         self.assertIn("RUTA_FUERA_DE_RAIZ", archivos.llamar("listar_raiz", {"ruta": "../.."})["error"])
 
 
+class Transferir(Base):
+    def test_una_llamada_arma_los_pasos_y_el_estado_dice_en_cual_va(self):
+        (Path(self.raiz) / "mio").mkdir()
+        (Path(self.raiz) / "mio" / "a.txt").write_text("x")
+        r = archivos.llamar("transferir", {"origen": "mio", "destino": "salida/mio"})
+        self.assertNotIn("error", r, r)
+        self.assertEqual([p["accion"] for p in r["pasos"]], ["listar", "copiar", "listar"])
+        for _ in range(100):
+            e = archivos.llamar("estado", {"id": r["id"]})
+            if e["estado"] not in ("en_cola", "corriendo"):
+                break
+            time.sleep(0.1)
+        self.assertEqual((e["estado"], e["progreso"]), ("terminado", "3/3"), e)
+        self.assertTrue((Path(self.raiz) / "salida" / "mio" / "a.txt").exists())
+        self.assertIn("README.md", [x["nombre"] for x in archivos.llamar("listar_raiz", {"ruta": "salida/mio"})["entradas"]])
+
+    def test_transferir_desde_url_usa_descargar_y_exige_origen_y_destino(self):
+        r = archivos.llamar("transferir", {"origen": self.url + "/demo.zip", "destino": "desde_url"})
+        self.assertEqual([p["accion"] for p in r["pasos"]], ["listar", "descargar", "listar"])
+        self.assertIn("ORIGEN_VACIO", archivos.llamar("transferir", {"destino": "x"})["error"])
+        self.assertIn("DESTINO_VACIO", archivos.llamar("transferir", {"origen": "mio"})["error"])
+
+
 class OrigenGit(Base):
     def test_clona_un_repo_y_copia_una_subcarpeta_sin_dot_git(self):
         repo = Path(tempfile.mkdtemp())
@@ -185,6 +208,19 @@ class DestinoGit(Base):
         self.assertEqual((ver / "importado" / "b.txt").read_bytes(), b"linea\r\n")
         self.assertEqual((ver / "LEEME.md").read_text(), "base")
         self.assertGreaterEqual(int(sub("rev-list", "--count", "HEAD", cwd=ver).stdout), 3)  # lotes pequenos: varios commits
+
+    def test_credencial_externa_permite_publicar_sin_token_del_banco(self):  # el entorno (proxy o credencial del servidor) ya autentica git
+        base, bare, sub = self.remoto_local()
+        (Path(self.raiz) / "fuente").mkdir()
+        (Path(self.raiz) / "fuente" / "n.txt").write_text("nuevo")
+        with patch.dict(os.environ, {"RIU_MOTOR_GIT_BASE": str(base), "RIU_MOTOR_CREDENCIAL_EXTERNA": "1"}):
+            r = archivos.llamar("ejecutar", {"cola": [{"accion": "copiar", "origen": "fuente", "destino": "git:maxbry123-commits/Dest/ext", "readme": False}]})
+            for _ in range(100):
+                e = archivos.llamar("estado", {"id": r["id"]})
+                if e["estado"] not in ("en_cola", "corriendo"):
+                    break
+                time.sleep(0.1)
+        self.assertEqual(e["trabajos"][0]["estado"], "ok", e)
 
     def test_no_pisa_lo_que_ya_existe_en_el_repo(self):
         base, bare, sub = self.remoto_local()

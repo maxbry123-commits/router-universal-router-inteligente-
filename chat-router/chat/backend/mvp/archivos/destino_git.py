@@ -48,7 +48,7 @@ def _oid(clon, ruta, env):
 def publicar(fuente, destino, mensaje, token_fn=None, sobrescribir=False, cancelado=lambda: False):
     owner, repo, rama, carpeta = parsear(destino)
     env = {**entorno_git(token_fn, owner), **_ID}
-    if "MOTOR_TOKEN" not in env:
+    if "MOTOR_TOKEN" not in env and not os.environ.get("RIU_MOTOR_CREDENCIAL_EXTERNA"):  # esa variable la pone el operador cuando git ya se autentica por fuera (proxy o credencial del servidor)
         raise MotorError("GITHUB_TOKEN_NO_DISPONIBLE")
     import tempfile
     with tempfile.TemporaryDirectory(prefix="motor-git-") as tmp:

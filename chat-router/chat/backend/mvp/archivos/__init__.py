@@ -4,10 +4,10 @@ import json
 import shutil
 from pathlib import Path
 
-from . import cola
+from . import cola, origen as org
 from .seguridad import MotorError, raiz, ruta_segura
 
-ACCIONES = ("ejecutar", "estado", "cancelar", "raiz", "listar_raiz")
+ACCIONES = ("transferir", "ejecutar", "estado", "cancelar", "raiz", "listar_raiz")
 
 
 def leer_cola(datos):
@@ -36,6 +36,21 @@ def leer_cola(datos):
     return doc
 
 
+def armar_transferencia(c):
+    """Una sola orden -> pasos: listar origen, traerlo al destino (README + sha256) y listar el destino para comprobar."""
+    origen, destino = str(c.get("origen") or "").strip(), str(c.get("destino") or "").strip()
+    if not origen:
+        raise MotorError("ORIGEN_VACIO")
+    if not destino:
+        raise MotorError("DESTINO_VACIO")
+    accion = "copiar" if org.clasificar(origen) == "local" else "descargar"
+    extra = {k: c[k] for k in ("extraer", "readme", "sobrescribir") if k in c}
+    pasos = [{"accion": "listar", "origen": origen}, {"accion": accion, "origen": origen, "destino": destino, **extra}]
+    if not destino.startswith("git:"):
+        pasos.append({"accion": "listar", "origen": destino})
+    return pasos
+
+
 def info_raiz():
     r = raiz()
     return {"raiz": str(r), "libre_bytes": shutil.disk_usage(r).free}
@@ -54,6 +69,9 @@ def llamar(accion, cuerpo=None, token=None):
     """Punto de entrada unico (plugin HTTP y herramienta del modelo). Devuelve siempre un dict."""
     c = cuerpo or {}
     try:
+        if accion == "transferir":
+            pasos = armar_transferencia(c)
+            return {**cola.ejecutar(pasos, token), "pasos": pasos}
         if accion == "ejecutar":
             return cola.ejecutar(leer_cola(c.get("cola") or c.get("yaml") or c.get("json") or ([c] if c.get("origen") or c.get("source") else None)), token)
         if accion == "estado":

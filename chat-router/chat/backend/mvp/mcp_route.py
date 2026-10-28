@@ -89,16 +89,17 @@ HERRAMIENTAS_CONTROL.append({'name': 'loop', 'description': 'LOOP gobernado (C0-
                                                      'accion': {'type': 'string'}, 'datos': {'type': 'object'}}, 'required': ['accion']}})
 HERRAMIENTAS_CONTROL.append({'name': 'archivos', 'description': (
     'Motor de archivos: descargar, extraer, copiar, mover, listar y buscar, en COLA, con origen y destino que da el Director. Sin Hugging Face ni LFS. '
-    'Uso: accion=ejecutar con cola=[{accion,origen,destino}] (accion: descargar|extraer|copiar|mover|listar|buscar). '
+    'ATAJO de una llamada: accion=transferir con origen y destino (arma solo: listar origen -> traer/copiar al destino con README+sha256 -> listar destino) y devuelve el id; luego accion=estado muestra progreso ("2/3") y paso_actual. '
+    'Uso avanzado: accion=ejecutar con cola=[{accion,origen,destino}] (accion: descargar|extraer|copiar|mover|listar|buscar). '
     'origen: URL http(s) (zip/tar), GitHub (github.com/owner/repo[/tree/rama/ruta]) o ruta dentro de la raiz del motor. '
     'destino: carpeta dentro de la raiz del motor, o git:maxbry123-commits/REPO[@rama]/carpeta (copia fiel con sha256, push sin force). '
     'Extras por trabajo: extraer(true), readme(true: escribe README.md y MANIFEST.json), sobrescribir(false), patron (buscar), max. '
     'Si el Director no da destino se usa la carpeta <nombre-del-origen> dentro de la raiz y se le dice. '
     'Luego accion=estado con id para ver el avance (en_cola|corriendo|terminado|error|cancelado); accion=cancelar; accion=raiz; accion=listar_raiz{ruta}. '
     'Ejemplo: {"accion":"ejecutar","cola":[{"accion":"descargar","origen":"https://host/x.zip","destino":"mis/x"},{"accion":"copiar","origen":"mis/x","destino":"git:maxbry123-commits/Maxbry-AGI/x"}]}'),
-     'inputSchema': {'type': 'object', 'properties': {'accion': {'type': 'string', 'enum': list(archivos.ACCIONES), 'default': 'ejecutar'},
+     'inputSchema': {'type': 'object', 'properties': {'accion': {'type': 'string', 'enum': list(archivos.ACCIONES), 'default': 'transferir'},
                                                      'cola': {'type': 'array', 'items': {'type': 'object'}}, 'yaml': {'type': 'string'},
-                                                     'id': {'type': 'string'}, 'ruta': {'type': 'string'}}}})
+                                                     'id': {'type': 'string'}, 'ruta': {'type': 'string'}, 'origen': {'type': 'string'}, 'destino': {'type': 'string'}}}})
 GITHUB = {'github_leer': github.github_leer, 'github_escribir': github.github_escribir,
           'github_api': github.github_api}
 FICHAS = {'listar_fichas': 'fichas', 'chat': 'chat_async', 'resultado': 'resultado'}
@@ -183,7 +184,7 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
         if nombre in ('agente', 'llm'):
             return _ok(id_, _contenido(await delegar(nombre, args)))
         if nombre == 'archivos':
-            salida = await asyncio.to_thread(archivos.llamar, args.get('accion') or 'ejecutar', args, github._token)
+            salida = await asyncio.to_thread(archivos.llamar, args.get('accion') or ('transferir' if args.get('origen') and not args.get('cola') else 'ejecutar'), args, github._token)
             return _ok(id_, _contenido(salida, bool(salida.get('error'))))
         if nombre == 'loop':
             salida = await loop_puente.llamar(args.get('plugin') or 'nct_loop', args['accion'], args.get('datos'))
