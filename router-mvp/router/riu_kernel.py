@@ -38,16 +38,24 @@ def hydrate():
         os.environ["HF_TOKEN"]=_hf_token_vivo(v)  # sin hardcode: la primera credencial habilitada de huggingface que valide 200
     except Exception as e:
         print('VAULT_SECRETO_FALLO ref=huggingface tipo='+type(e).__name__,flush=True)
+    # PARCHE_VAULT_VACIO: solo sobreescribir si el valor NO es vacio;
+    # un fallo/vacio del vault NO debe tumbar los secrets ya cargados del Space
     try:
-        os.environ["GITHUB_PERSONAL_ACCESS_TOKEN"]=v.get_secret("github/director-full")
+        _k=v.get_secret("github/director-full")
+        if _k:os.environ["GITHUB_PERSONAL_ACCESS_TOKEN"]=_k
+        else:print('VAULT_SECRETO_VACIO ref=github/director-full',flush=True)
     except Exception as e:
         print('VAULT_SECRETO_FALLO ref=github/director-full tipo='+type(e).__name__,flush=True)
     try:
-        os.environ["RIU_ROUTER_API_KEY"]=v.get_secret("router/runtime-admin-32gb")
+        _k=v.get_secret("router/runtime-admin-32gb")
+        if _k:os.environ["RIU_ROUTER_API_KEY"]=_k
+        else:print('VAULT_SECRETO_VACIO ref=router/runtime-admin-32gb',flush=True)
     except Exception as e:
         print('VAULT_SECRETO_FALLO ref=router/runtime-admin-32gb tipo='+type(e).__name__,flush=True)
     try:
-        os.environ["RIU_DIRECTOR_KEY_HASH"]=v.get_secret("router/runtime-director-hash")
+        _k=v.get_secret("router/runtime-director-hash")
+        if _k:os.environ["RIU_DIRECTOR_KEY_HASH"]=_k
+        else:print('VAULT_SECRETO_VACIO ref=router/runtime-director-hash',flush=True)
     except Exception as e:
         print('VAULT_SECRETO_FALLO ref=router/runtime-director-hash tipo='+type(e).__name__,flush=True)
     keys={}
@@ -58,10 +66,13 @@ def hydrate():
                 except Exception:pass
     except Exception as e:
         print('VAULT_LIST_FALLO tipo='+type(e).__name__,flush=True)
-    os.environ["RIU_AGENT_API_KEYS"]=json.dumps(keys)
+    if keys:os.environ["RIU_AGENT_API_KEYS"]=json.dumps(keys)
+    else:print('VAULT_SECRETO_VACIO ref=RIU_AGENT_API_KEYS',flush=True)
     os.environ["RIU_AGENT_API_KEYS_2"]="{}"
     try:
-        os.environ["RIU_PUBLIC_CHAT_KEY"]=v.get_secret("router/chat-ui-director")
+        _k=v.get_secret("router/chat-ui-director")
+        if _k:os.environ["RIU_PUBLIC_CHAT_KEY"]=_k
+        else:print('VAULT_SECRETO_VACIO ref=router/chat-ui-director',flush=True)
     except Exception as e:
         print('VAULT_SECRETO_FALLO ref=router/chat-ui-director tipo='+type(e).__name__,flush=True)
 if __name__=="__main__":
