@@ -1,0 +1,23 @@
+[
+ {
+  "modelo": "glm-5.3",
+  "prueba": "tarea1 codigo en GitHub",
+  "estado": "PASS",
+  "evidencia": "chat=completado  | usadas=None | respuesta=hecho | comprobacion=suma(2,3)=5 resta(5,2)=3",
+  "segundos": 0.0
+ },
+ {
+  "modelo": "glm-5.3",
+  "prueba": "tarea2 datos en HF",
+  "estado": "PASS",
+  "evidencia": "chat=completado  | usadas=None | respuesta=hecho | comprobacion={'modelo': 'glm-5.3', 'tarea': 'hf', 'numeros': [1, 2, 3], 'suma': 6}",
+  "segundos": 0.0
+ },
+ {
+  "modelo": "glm-5.3",
+  "prueba": "tarea3 GitHub+HF+pendientes",
+  "estado": "PASS",
+  "evidencia": "chat=completado  | usadas=None | respuesta=hecho | comprobacion=resumen=El Router decide y guarda claves; el Harness ejecuta el trabajo con plugins y herramientas. | pendiente=True",
+  "segundos": 0.0
+ }
+]

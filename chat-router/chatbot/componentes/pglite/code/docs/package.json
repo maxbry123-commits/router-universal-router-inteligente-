@@ -1,0 +1,40 @@
+{
+  "name": "docs",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview",
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "stylecheck": "pnpm lint && prettier --check ."
+  },
+  "devDependencies": {
+    "vitepress": "^1.3.1"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "workspace:*",
+    "@electric-sql/pglite-repl": "workspace:*",
+    "@electric-sql/pglite-postgis": "workspace:*",
+    "@electric-sql/pglite-pgvector": "workspace:*",
+    "@electric-sql/pglite-age": "workspace:*",
+    "@electric-sql/pglite-pg_hashids": "workspace:*",
+    "@electric-sql/pglite-pg_ivm": "workspace:*",
+    "@electric-sql/pglite-pg_textsearch": "workspace:*",
+    "@electric-sql/pglite-pg_uuidv7": "workspace:*",
+    "@electric-sql/pglite-pgtap": "workspace:*",
+    "@electric-sql/pglite-pgmq": "workspace:*",
+    "@electric-sql/pglite-pg_partman": "workspace:*",
+    "@electric-sql/pglite-pgaudit": "workspace:*",
+    "@electric-sql/pglite-hypopg": "workspace:*",
+    "@electric-sql/pglite-pg_repack": "workspace:*",
+    "@electric-sql/pglite-plpgsql-check": "workspace:*",
+    "@uiw/codemirror-theme-github": "^4.23.0",
+    "dedent": "^1.5.3"
+  }
+}

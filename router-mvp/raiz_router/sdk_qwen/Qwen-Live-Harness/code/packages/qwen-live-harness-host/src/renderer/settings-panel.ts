@@ -1,0 +1,819 @@
+import { isVoiceId } from '../shared/protocol.ts';
+import type { HostPublicState, LiveHostApi } from '../shared/host-api.ts';
+import { OVERLAY_GEOMETRY } from '../shared/overlay-geometry.ts';
+import { uiIcon, setIcon } from './ui-icons.ts';
+import { MemoryPanel } from './memory-panel.ts';
+import { VoiceCreationPanel } from './voice-creation.ts';
+import {
+  liveText,
+  displayLiveMessage,
+  displayLiveError,
+  type LiveMessageKey,
+} from 'qwen-live-harness/i18n';
+import { uiText, uiLabel, localizeUi } from './ui-text.ts';
+import { makeOverlayDraggable } from './overlay-drag.ts';
+import { LIVE_THEME_COLORS, type LiveThemeColor } from '../shared/theme.ts';
+
+const PALETTE_LABELS: Record<LiveThemeColor, LiveMessageKey> = {
+  iris: 'theme.color.iris',
+  clay: 'theme.color.clay',
+  sage: 'theme.color.sage',
+  tide: 'theme.color.tide',
+  graphite: 'theme.color.graphite',
+  rose: 'theme.color.rose',
+  berry: 'theme.color.berry',
+};
+
+function button(label: LiveMessageKey, action: () => void): HTMLButtonElement {
+  const element = document.createElement('button');
+  element.type = 'button';
+  uiText(element, label);
+  element.addEventListener('click', action);
+  return element;
+}
+
+function field(label: LiveMessageKey, ...controls: HTMLElement[]): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'settings-field';
+  const title = document.createElement('strong');
+  title.append(uiText(document.createElement('span'), label));
+  const group = document.createElement('div');
+  group.className = 'settings-options';
+  group.setAttribute('role', 'group');
+  uiLabel(group, label);
+  group.append(...controls);
+  row.append(title, group);
+  return row;
+}
+
+export class SettingsPanel {
+  readonly element = document.createElement('div');
+  private readonly panel = document.createElement('section');
+  private readonly sourceScreen = button(
+    'ui.screen',
+    () => void this.run(() => this.api.setVisualSource('screen')),
+  );
+  private readonly sourceCamera = button(
+    'ui.camera',
+    () => void this.run(() => this.api.setVisualSource('camera')),
+  );
+  private readonly modeDemand = button(
+    'ui.onDemand',
+    () => void this.run(() => this.api.setVisualMode('on-demand')),
+  );
+  private readonly modeFeed = button(
+    'ui.liveFeed',
+    () => void this.run(() => this.api.setVisualMode('live-feed')),
+  );
+  private readonly device = document.createElement('select');
+  private readonly display = document.createElement('select');
+  private readonly displayField = field('ui.display', this.display);
+  private readonly displayHint = document.createElement('p');
+  private displayKey = '';
+  private readonly refresh = button(
+    'ui.refresh',
+    () => void this.loadDevices(),
+  );
+  private readonly status = document.createElement('p');
+  private readonly modeDescription = document.createElement('p');
+  private readonly memory: MemoryPanel;
+  private readonly close = button('ui.close', () => this.hide());
+  private readonly openConfig = button(
+    'ui.openConfig',
+    () => void this.openConfigFile(),
+  );
+  private readonly configStatus = document.createElement('p');
+  private openingConfig = false;
+  private configError: unknown = '';
+  private readonly voice = document.createElement('select');
+  private readonly customVoice = document.createElement('input');
+  private readonly saveVoice = button('voice.save', () => {
+    if (!this.api.setVoice || this.saveVoice.disabled) return;
+    const value = this.customVoice.value.trim();
+    void this.run(() => this.api.setVoice!(value));
+  });
+  private readonly voiceHint = document.createElement('p');
+  private readonly createVoice = button('voice.cloneTitle', () =>
+    this.voiceCreation.show(),
+  );
+  private readonly voiceCreation: VoiceCreationPanel;
+  private readonly voiceField = field(
+    'voice.label',
+    this.voice,
+    this.customVoice,
+    this.saveVoice,
+  );
+  private voiceOptionsKey = '';
+  private voiceSavedKey = '';
+  private readonly language = document.createElement('select');
+  private readonly permissionMode = document.createElement('select');
+  private readonly permissionModeHint = document.createElement('p');
+  private readonly systemTheme = button(
+    'theme.system',
+    () => void this.run(() => this.api.setTheme('system')),
+  );
+  private readonly lightTheme = button(
+    'ui.light',
+    () => void this.run(() => this.api.setTheme('light')),
+  );
+  private readonly darkTheme = button(
+    'ui.dark',
+    () => void this.run(() => this.api.setTheme('dark')),
+  );
+  private readonly paletteOptions = new Map<
+    LiveThemeColor,
+    HTMLButtonElement
+  >();
+  private state?: HostPublicState;
+  private busy = false;
+  private loadingDevices = false;
+  private deviceGeneration = 0;
+  private deviceKey = '';
+  private deviceLabels = new Map<HTMLOptionElement, string>();
+  private selectedDeviceId = '';
+  private error: unknown = '';
+  private errorKey: LiveMessageKey = 'ui.actionFailed';
+  private returnFocus?: HTMLElement;
+  private opening = false;
+  private openingGeneration = 0;
+  private disposed = false;
+  private readonly removeDrag: () => void;
+  private readonly dismissPending = (event: KeyboardEvent) => {
+    if (this.isOpen && event.key === 'Escape') {
+      event.preventDefault();
+      this.hide();
+    }
+  };
+
+  private readonly outsideClick = (event: MouseEvent) => {
+    const target = event.target as Node | null;
+    if (
+      this.isOpen &&
+      target &&
+      !this.panel.contains(target) &&
+      !this.returnFocus?.contains(target)
+    )
+      this.hide();
+  };
+
+  constructor(
+    private readonly api: LiveHostApi,
+    private readonly visibilityChanged: (open: boolean) => void,
+    private readonly reportError: (error: unknown) => void = () => {},
+  ) {
+    this.voiceCreation = new VoiceCreationPanel(api);
+    this.element.className = 'settings-layer';
+    this.element.hidden = true;
+    this.panel.dataset.liveInteractive = '';
+    const { x, y, width, height } = OVERLAY_GEOMETRY.settings;
+    Object.assign(this.panel.style, {
+      left: `${x}px`,
+      top: `${y}px`,
+      width: `${width}px`,
+      height: `${height}px`,
+    });
+    this.panel.className = 'settings-panel';
+    this.panel.setAttribute('role', 'dialog');
+    this.panel.setAttribute('aria-labelledby', 'settings-title');
+    const header = document.createElement('header');
+    const title = document.createElement('strong');
+    title.id = 'settings-title';
+    uiText(title, 'ui.settings');
+    uiLabel(this.close, 'ui.closeSettings');
+    delete this.close.dataset.liveText;
+    setIcon(this.close, 'x');
+    this.close.className = 'settings-close';
+    header.append(uiIcon('settings'), title, this.close);
+    this.removeDrag = makeOverlayDraggable(header, api);
+    const body = document.createElement('div');
+    body.className = 'settings-body';
+    const config = document.createElement('footer');
+    config.className = 'settings-config';
+    uiLabel(this.openConfig, 'ui.openConfig');
+    delete this.openConfig.dataset.liveText;
+    this.openConfig.replaceChildren(
+      uiIcon('code'),
+      uiText(document.createElement('span'), 'ui.configFile'),
+      uiIcon('external'),
+    );
+    this.configStatus.className = 'settings-hint settings-config-status';
+    this.configStatus.id = 'settings-config-status';
+    this.configStatus.setAttribute('role', 'status');
+    this.openConfig.setAttribute('aria-describedby', this.configStatus.id);
+    config.append(this.openConfig, this.configStatus);
+    this.voiceField.classList.add('settings-row', 'settings-voice');
+    uiLabel(this.voice, 'voice.label');
+    uiLabel(this.customVoice, 'voice.customId');
+    this.customVoice.type = 'text';
+    this.customVoice.maxLength = 256;
+    this.customVoice.autocomplete = 'off';
+    this.customVoice.spellcheck = false;
+    this.voiceHint.className = 'settings-hint';
+    this.voiceHint.id = 'voice-settings-hint';
+    this.voice.setAttribute('aria-describedby', this.voiceHint.id);
+    this.customVoice.setAttribute('aria-describedby', this.voiceHint.id);
+    this.voiceField.append(
+      this.voiceHint,
+      this.createVoice,
+      this.voiceCreation.element,
+    );
+    this.customVoice.addEventListener('input', () => this.render());
+    this.voice.addEventListener('change', () => {
+      if (this.voice.value === '__custom__') {
+        this.render();
+        this.customVoice.focus();
+        return;
+      }
+      const value = this.voice.value;
+      this.voiceSavedKey = '';
+      if (this.api.setVoice) void this.run(() => this.api.setVoice!(value));
+    });
+    uiLabel(this.device, 'ui.audioSource');
+    this.device.addEventListener('change', () => {
+      const id = this.device.value || undefined;
+      this.device.value = this.selectedDeviceId;
+      void this.run(async () => {
+        await this.api.setInputDevice(id);
+        await this.loadDevices();
+      });
+    });
+    uiLabel(this.refresh, 'ui.refreshAudio');
+    delete this.refresh.dataset.liveText;
+    setIcon(this.refresh, 'refresh');
+    this.refresh.className = 'settings-refresh';
+    uiLabel(this.display, 'ui.display');
+    this.displayHint.className = 'settings-hint';
+    this.displayHint.id = 'display-capture-hint';
+    this.display.setAttribute('aria-describedby', this.displayHint.id);
+    this.display.addEventListener('change', () => {
+      const id = this.display.value;
+      this.display.value =
+        this.state?.visualInput?.screenDisplayId ?? 'primary';
+      void this.run(() => this.api.setScreenDisplay(id));
+    });
+    this.modeDescription.className = 'settings-hint capture-mode-description';
+    this.modeDescription.id = 'capture-mode-description';
+    this.modeDemand.setAttribute('aria-describedby', this.modeDescription.id);
+    this.modeFeed.setAttribute('aria-describedby', this.modeDescription.id);
+    this.memory = new MemoryPanel(api);
+    this.status.className = 'settings-status';
+    this.status.setAttribute('role', 'status');
+    this.status.setAttribute('aria-live', 'polite');
+    const audio = field('ui.microphone', this.device, this.refresh);
+    audio.classList.add('settings-row');
+    audio.querySelector('strong')!.prepend(uiIcon('mic'));
+    const source = field(
+      'ui.videoSource',
+      this.sourceScreen,
+      this.sourceCamera,
+    );
+    source.querySelector('strong')!.prepend(uiIcon('camera'));
+    this.displayField.classList.add('settings-row');
+    this.displayField.querySelector('strong')!.prepend(uiIcon('screen'));
+    const capture = field('ui.captureMode', this.modeDemand, this.modeFeed);
+    capture.querySelector('strong')!.prepend(uiIcon('eye'));
+    capture.append(this.modeDescription);
+    this.displayField.append(this.displayHint);
+    const languageField = field('language.label', this.language);
+    languageField.classList.add('settings-row');
+    const chinese = uiText(
+      document.createElement('option'),
+      'language.chinese',
+    );
+    chinese.value = 'zh-CN';
+    const english = uiText(
+      document.createElement('option'),
+      'language.english',
+    );
+    english.value = 'en';
+    this.language.append(chinese, english);
+    uiLabel(this.language, 'language.label');
+    this.language.addEventListener('change', () => {
+      const next = this.language.value;
+      this.language.value = this.state?.language ?? 'en';
+      if (next === 'en' || next === 'zh-CN')
+        void this.run(() => this.api.setLanguage(next));
+    });
+    const permissionModeField = field(
+      'permissionMode.label',
+      this.permissionMode,
+    );
+    permissionModeField.classList.add(
+      'settings-row',
+      'settings-permission-mode',
+    );
+    this.permissionModeHint.className = 'settings-hint';
+    permissionModeField.append(this.permissionModeHint);
+    for (const [mode, key] of [
+      ['ask', 'permissionMode.ask'],
+      ['allow-all', 'permissionMode.allowAll'],
+    ] as const) {
+      const option = uiText(document.createElement('option'), key);
+      option.value = mode;
+      this.permissionMode.append(option);
+    }
+    uiLabel(this.permissionMode, 'permissionMode.label');
+    this.permissionMode.setAttribute(
+      'aria-describedby',
+      'permission-mode-hint',
+    );
+    this.permissionModeHint.id = 'permission-mode-hint';
+    this.permissionMode.addEventListener('change', () => {
+      const next = this.permissionMode.value;
+      this.permissionMode.value = this.state?.permissionModeV1?.mode ?? 'ask';
+      if (
+        !this.permissionMode.disabled &&
+        (next === 'ask' || next === 'allow-all') &&
+        this.api.setPermissionMode
+      )
+        void this.run(() => this.api.setPermissionMode!(next));
+    });
+    const appearance = field(
+      'ui.appearance',
+      this.systemTheme,
+      this.lightTheme,
+      this.darkTheme,
+    );
+    appearance.classList.add('settings-appearance');
+    const palette = field('theme.colorLabel');
+    palette.classList.add('settings-palette');
+    const paletteGroup =
+      palette.querySelector<HTMLElement>('.settings-options')!;
+    paletteGroup.classList.add('theme-palette-options');
+    for (const color of LIVE_THEME_COLORS) {
+      const option = button(PALETTE_LABELS[color], () => {
+        if (
+          (this.state?.themeColor ?? 'iris') === color ||
+          !this.state?.canSetThemeColor ||
+          this.state.quitState
+        )
+          return;
+        void this.run(() => this.api.setThemeColor(color));
+      });
+      option.className = 'theme-palette-option';
+      option.dataset.color = color;
+      delete option.dataset.liveText;
+      uiLabel(option, PALETTE_LABELS[color]);
+      const swatch = document.createElement('span');
+      swatch.className = 'theme-palette-swatch';
+      swatch.setAttribute('aria-hidden', 'true');
+      const check = uiIcon('check');
+      check.classList.add('theme-palette-check');
+      swatch.append(check);
+      const name = uiText(
+        document.createElement('span'),
+        PALETTE_LABELS[color],
+      );
+      name.className = 'theme-palette-name';
+      option.replaceChildren(swatch, name);
+      option.addEventListener('keydown', (event) => {
+        const colors = [...this.paletteOptions.values()].filter(
+          (item) => !item.disabled,
+        );
+        const index = colors.indexOf(option);
+        if (
+          index < 0 ||
+          !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)
+        )
+          return;
+        event.preventDefault();
+        const next =
+          event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? colors.length - 1
+              : (index +
+                  (event.key === 'ArrowRight' ? 1 : -1) +
+                  colors.length) %
+                colors.length;
+        colors[next]?.focus();
+      });
+      this.paletteOptions.set(color, option);
+      paletteGroup.append(option);
+    }
+    for (const [name, children] of [
+      ['ui.sound', [audio, this.voiceField]],
+      ['ui.visual', [source, this.displayField, capture]],
+      [
+        'ui.personalization',
+        [
+          this.memory.element,
+          permissionModeField,
+          languageField,
+          appearance,
+          palette,
+        ],
+      ],
+    ] as const) {
+      const group = document.createElement('div');
+      group.className = 'settings-group';
+      group.append(...children);
+      const heading = uiText(document.createElement('p'), name);
+      heading.className = 'settings-group-label';
+      body.append(heading, group);
+    }
+    body.append(this.status);
+    this.systemTheme.dataset.theme = 'system';
+    this.lightTheme.dataset.theme = 'light';
+    this.darkTheme.dataset.theme = 'dark';
+    this.panel.append(header, body, config);
+    this.element.append(this.panel);
+    this.element.ownerDocument.addEventListener('keydown', this.dismissPending);
+    this.element.ownerDocument.addEventListener('click', this.outsideClick);
+  }
+
+  get isOpen(): boolean {
+    return this.opening || !this.element.hidden;
+  }
+
+  show(trigger?: HTMLElement): void {
+    if (this.disposed || this.isOpen || this.state?.connection !== 'ready')
+      return;
+    this.returnFocus = trigger;
+    const generation = ++this.openingGeneration;
+    this.opening = true;
+    this.visibilityChanged(true);
+    void (async () => {
+      try {
+        await this.api.setSettingsOpen(true);
+        if (
+          this.disposed ||
+          generation !== this.openingGeneration ||
+          this.state?.connection !== 'ready'
+        )
+          return;
+        this.opening = false;
+        this.element.hidden = false;
+        this.close.focus();
+        void this.loadDevices();
+      } catch (error) {
+        if (this.disposed || generation !== this.openingGeneration) return;
+        this.hide();
+        this.reportError(error);
+      }
+    })();
+  }
+
+  hide(): void {
+    if (!this.isOpen) return;
+    this.voiceCreation.dismiss();
+    const generation = ++this.openingGeneration;
+    this.opening = false;
+    this.element.hidden = true;
+    void this.api.setSettingsOpen(false).catch((error: unknown) => {
+      if (!this.disposed && generation === this.openingGeneration)
+        this.reportError(error);
+    });
+    this.visibilityChanged(false);
+    this.returnFocus?.focus();
+  }
+
+  dispose(): void {
+    this.voiceCreation.dispose();
+    this.removeDrag();
+    this.hide();
+    this.disposed = true;
+    this.openingGeneration++;
+    this.deviceGeneration++;
+    this.element.ownerDocument.removeEventListener('click', this.outsideClick);
+    this.element.ownerDocument.removeEventListener(
+      'keydown',
+      this.dismissPending,
+    );
+  }
+
+  update(state: HostPublicState): void {
+    const microphoneGranted =
+      this.state?.permissions.microphone !== 'granted' &&
+      state.permissions.microphone === 'granted';
+    this.state = state;
+    this.memory.update(state);
+    if (state.connection !== 'ready') {
+      this.deviceGeneration++;
+      this.loadingDevices = false;
+      this.hide();
+    }
+    this.render();
+    if (microphoneGranted && this.isOpen) void this.loadDevices();
+  }
+
+  private render(): void {
+    const state = this.state;
+    if (this.disposed || !state) return;
+    const unavailable = state.connection !== 'ready';
+    const language = state.language ?? 'en';
+    localizeUi(this.element, language);
+    this.renderVoice(state);
+    this.voiceCreation.update(state);
+    this.permissionMode.value = state.permissionModeV1?.mode ?? 'ask';
+    this.permissionMode.disabled =
+      this.busy ||
+      unavailable ||
+      !state.permissionModeV1 ||
+      !this.api.setPermissionMode ||
+      Boolean(state.quitState);
+    this.permissionModeHint.textContent = liveText(
+      language,
+      !state.permissionModeV1 || !this.api.setPermissionMode
+        ? 'permissionMode.unavailable'
+        : state.permissionModeV1.mode === 'allow-all'
+          ? 'permissionMode.allowAllHint'
+          : 'permissionMode.askHint',
+    );
+    this.openConfig.disabled =
+      this.openingConfig ||
+      this.busy ||
+      unavailable ||
+      !state.canOpenConfig ||
+      Boolean(state.quitState);
+    this.configStatus.textContent = this.configError
+      ? displayLiveError(language, this.configError, 'host.config.openFailed')
+      : liveText(
+          language,
+          this.openingConfig
+            ? 'ui.openingConfig'
+            : state.canOpenConfig
+              ? 'ui.openConfigHint'
+              : 'host.config.unavailable',
+        );
+    this.configStatus.classList.toggle('error', Boolean(this.configError));
+    this.openConfig.title = this.configStatus.textContent;
+    this.configStatus.hidden =
+      !this.configError && !this.openingConfig && Boolean(state.canOpenConfig);
+    for (const [option, value] of this.deviceLabels) {
+      option.textContent = displayLiveMessage(language, value);
+    }
+    this.modeDescription.textContent =
+      state.visualInput?.mode === 'live-feed'
+        ? liveText(language, 'ui.modeFeedHint')
+        : state.visualInput?.mode === 'on-demand'
+          ? liveText(language, 'ui.modeDemandHint')
+          : liveText(language, 'ui.modeUnavailable');
+    const visualDisabled =
+      this.busy ||
+      unavailable ||
+      !state.visualInput ||
+      state.live.state === 'stopping';
+    this.displayField.hidden = this.displayHint.hidden =
+      state.visualInput?.source !== 'screen';
+    this.display.disabled =
+      visualDisabled ||
+      !state.canSelectScreenDisplay ||
+      Boolean(state.quitState);
+    const selectedDisplay = state.visualInput?.screenDisplayId ?? 'primary';
+    const displays = state.screenDisplays ?? [];
+    const displayKey = JSON.stringify([language, selectedDisplay, displays]);
+    if (displayKey !== this.displayKey) {
+      this.displayKey = displayKey;
+      const primary = document.createElement('option');
+      primary.value = 'primary';
+      primary.textContent = liveText(language, 'ui.primaryDisplay');
+      const options = [primary];
+      for (const item of displays) {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = liveText(language, 'ui.displayOption', {
+          name: displayLiveMessage(language, item.name),
+          width: item.width,
+          height: item.height,
+        });
+        options.push(option);
+      }
+      if (
+        selectedDisplay !== 'primary' &&
+        !displays.some((item) => item.id === selectedDisplay)
+      ) {
+        const missing = document.createElement('option');
+        missing.value = selectedDisplay;
+        missing.textContent = liveText(language, 'ui.displayMissing', {
+          id: selectedDisplay,
+        });
+        missing.disabled = true;
+        options.push(missing);
+      }
+      this.display.replaceChildren(...options);
+      this.display.value = selectedDisplay;
+    }
+    this.displayHint.textContent = state.screenDisplaysError
+      ? displayLiveError(
+          language,
+          state.screenDisplaysError,
+          'host.error.displayUnavailable',
+        )
+      : liveText(
+          language,
+          state.canSelectScreenDisplay
+            ? 'ui.displayCaptureHint'
+            : 'ui.displayCaptureUnavailable',
+        );
+    this.display.title = this.display.selectedOptions[0]?.textContent ?? '';
+    this.device.title = this.device.selectedOptions[0]?.textContent ?? '';
+    for (const [control, selected] of [
+      [this.sourceScreen, state.visualInput?.source === 'screen'],
+      [this.sourceCamera, state.visualInput?.source === 'camera'],
+      [this.modeDemand, state.visualInput?.mode === 'on-demand'],
+      [this.modeFeed, state.visualInput?.mode === 'live-feed'],
+    ] as const) {
+      control.disabled = visualDisabled;
+      control.classList.toggle('selected', selected);
+      control.setAttribute('aria-pressed', String(selected));
+    }
+    this.device.disabled = this.refresh.disabled =
+      this.busy ||
+      this.loadingDevices ||
+      unavailable ||
+      state.permissions.microphone !== 'granted';
+    this.language.value = language;
+    this.language.disabled = this.busy || unavailable;
+    for (const control of [this.systemTheme, this.lightTheme, this.darkTheme]) {
+      const selected = control.dataset.theme === (state.theme ?? 'system');
+      control.classList.toggle('selected', selected);
+      control.setAttribute('aria-pressed', String(selected));
+      control.disabled = this.busy || unavailable;
+    }
+    for (const [color, control] of this.paletteOptions) {
+      const selected = color === (state.themeColor ?? 'iris');
+      control.classList.toggle('selected', selected);
+      control.setAttribute('aria-pressed', String(selected));
+      control.disabled =
+        this.busy ||
+        unavailable ||
+        !state.canSetThemeColor ||
+        Boolean(state.quitState);
+    }
+    const error = this.error || state.visualSettingsError;
+    this.status.textContent = error
+      ? displayLiveError(
+          language,
+          error,
+          this.error ? this.errorKey : 'host.error.visualSettingsFailed',
+        )
+      : this.busy
+        ? liveText(language, 'ui.applying')
+        : this.loadingDevices
+          ? liveText(language, 'ui.loadingDevices')
+          : '';
+    this.status.classList.toggle(
+      'error',
+      Boolean(this.error || state.visualSettingsError),
+    );
+    this.status.hidden = !this.status.textContent;
+  }
+
+  private async openConfigFile(): Promise<void> {
+    if (this.disposed || this.openConfig.disabled) return;
+    this.openingConfig = true;
+    this.configError = '';
+    this.render();
+    try {
+      await this.api.openConfig();
+    } catch (error) {
+      this.configError = error;
+    } finally {
+      this.openingConfig = false;
+      this.render();
+    }
+  }
+
+  private async run(action: () => Promise<void>): Promise<void> {
+    if (this.disposed || this.busy || this.state?.connection !== 'ready')
+      return;
+    this.busy = true;
+    this.error = '';
+    this.errorKey = 'ui.actionFailed';
+    this.render();
+    try {
+      await action();
+    } catch (error) {
+      this.error = error;
+    } finally {
+      this.busy = false;
+      this.render();
+    }
+  }
+
+  private renderVoice(state: HostPublicState): void {
+    const value = state.voiceSettingsV1;
+    const language = state.language ?? 'en';
+    this.voiceField.hidden = !value || !this.api.setVoice;
+    if (!value) return;
+    const key = JSON.stringify([
+      value.model,
+      value.presets,
+      value.custom,
+      value.voice,
+      language,
+    ]);
+    const savedKey = JSON.stringify([value.model, value.voice]);
+    if (key !== this.voiceOptionsKey) {
+      const selection = this.voice.value;
+      this.voiceOptionsKey = key;
+      const values = [...value.presets];
+      const preset = values.includes(value.voice);
+      if (!preset && value.custom === 'unsupported')
+        values.unshift(value.voice);
+      const options = values.map((id) => {
+        const option = document.createElement('option');
+        option.value = option.textContent = id;
+        return option;
+      });
+      if (value.custom !== 'unsupported') {
+        const option = document.createElement('option');
+        option.value = '__custom__';
+        option.textContent = liveText(language, 'voice.custom');
+        options.push(option);
+      }
+      this.voice.replaceChildren(...options);
+      this.voice.value = selection;
+    }
+    if (savedKey !== this.voiceSavedKey) {
+      this.voiceSavedKey = savedKey;
+      this.voice.value =
+        value.presets.includes(value.voice) || value.custom === 'unsupported'
+          ? value.voice
+          : '__custom__';
+      this.customVoice.value = value.presets.includes(value.voice)
+        ? ''
+        : value.voice;
+    }
+    const custom = this.voice.value === '__custom__';
+    const disabled =
+      this.busy ||
+      state.connection !== 'ready' ||
+      Boolean(state.quitState) ||
+      Boolean(value.creating) ||
+      value.overridden;
+    this.voice.disabled = disabled;
+    this.createVoice.hidden =
+      !value.cloningV1 ||
+      !this.api.createVoice ||
+      value.custom === 'unsupported';
+    this.createVoice.disabled = disabled;
+    this.customVoice.hidden = this.saveVoice.hidden = !custom;
+    this.customVoice.disabled = disabled;
+    this.saveVoice.disabled =
+      disabled ||
+      !isVoiceId(this.customVoice.value.trim()) ||
+      this.customVoice.value.trim() === value.voice;
+    const hint = value.overridden
+      ? 'voice.overridden'
+      : value.availability === 'unsupported'
+        ? 'voice.unsupported'
+        : custom && value.custom === 'unverified'
+          ? 'voice.unverified'
+          : custom
+            ? 'voice.customHint'
+            : 'voice.nextCall';
+    this.voiceHint.textContent = liveText(language, hint);
+  }
+
+  private async loadDevices(): Promise<void> {
+    if (
+      this.disposed ||
+      this.state?.connection !== 'ready' ||
+      this.state.permissions.microphone !== 'granted'
+    )
+      return;
+    const generation = ++this.deviceGeneration;
+    this.loadingDevices = true;
+    this.render();
+    try {
+      const devices = await this.api.listInputDevices();
+      if (generation !== this.deviceGeneration) return;
+      const key = JSON.stringify(devices);
+      if (key !== this.deviceKey) {
+        this.deviceKey = key;
+        const systemDefault = document.createElement('option');
+        uiText(systemDefault, 'ui.systemDefault');
+        systemDefault.value = '';
+        const options = [systemDefault];
+        this.deviceLabels.clear();
+        for (const item of devices) {
+          const option = document.createElement('option');
+          this.deviceLabels.set(option, item.label);
+          option.textContent = displayLiveMessage(
+            this.state?.language ?? 'en',
+            item.label,
+          );
+          option.value = item.deviceId;
+          options.push(option);
+        }
+        this.selectedDeviceId =
+          devices.find((item) => item.selected)?.deviceId ?? '';
+        this.device.replaceChildren(...options);
+        this.device.value = this.selectedDeviceId;
+        localizeUi(this.element, this.state?.language ?? 'en');
+      }
+    } catch (error) {
+      if (generation === this.deviceGeneration) {
+        this.error = error;
+        this.errorKey = 'ui.devicesFailed';
+      }
+    } finally {
+      if (generation === this.deviceGeneration) {
+        this.loadingDevices = false;
+        this.render();
+      }
+    }
+  }
+}

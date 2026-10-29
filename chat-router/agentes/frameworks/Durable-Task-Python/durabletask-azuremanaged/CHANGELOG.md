@@ -1,0 +1,184 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project
+adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## Unreleased
+
+## v1.10.0
+
+ADDED
+
+- Added a `logger` parameter to `DurableTaskSchedulerClient`,
+`AsyncDurableTaskSchedulerClient`, and `DurableTaskSchedulerWorker`.
+Applications can now provide fully configured loggers without the SDK modifying
+them.
+- Added `exception_properties_provider` to `DurableTaskSchedulerWorker` for
+attaching portable custom properties to activity, entity, and orchestration
+failures.
+- Added an optional timeout to filtered orchestration purges through
+`DurableTaskSchedulerClient` and `AsyncDurableTaskSchedulerClient`.
+- Added inherited `OrchestrationQuery.instance_id_prefix` support to retrieve
+orchestration instances whose IDs begin with a specified prefix.
+- Added optional `reason` parameters to suspend and resume operations inherited
+from `TaskHubGrpcClient` and `AsyncTaskHubGrpcClient`.
+
+CHANGED
+
+- Updated the base dependency to `durabletask` v1.10.0.
+- Deprecated the `log_handler` and `log_formatter` parameters on
+`DurableTaskSchedulerClient`, `AsyncDurableTaskSchedulerClient`, and
+`DurableTaskSchedulerWorker`. Configure and pass a `logger` instead. These
+parameters will be removed in a future major release.
+
+## v1.9.0
+
+CHANGED
+
+- Updated the base dependency to `durabletask` v1.9.0.
+- `DurableTaskSchedulerClient` and `DurableTaskSchedulerWorker` no longer block on an Azure
+  credential round trip while being constructed. The access token is now acquired on the first
+  request instead, so constructing a client or worker that is never used costs nothing. As a
+  result, credential failures (for example an unavailable managed identity or a misconfigured
+  `DefaultAzureCredential`) now surface from the first request rather than from the constructor.
+  The exception type and message are unchanged; only the timing differs.
+- Importing `durabletask.azuremanaged.preview.sandboxes` no longer loads the sandbox worker
+  runtime or `azure-identity` up front. The package's public names are now resolved on first
+  use, which roughly halves import cost for callers that only declare sandbox worker profiles
+  or use the sandbox client. Exported names, `__all__`, and import paths are unchanged.
+- `FailureDetails.error_type` now carries the fully-qualified type name (e.g. `durabletask.task.TaskFailedError`) instead of the bare class name, and the new `FailureDetails.is_caused_by()` helper is available (both inherited from durabletask). See the core `durabletask` changelog for details, including the breaking-change notes.
+- Improved async access token refresh concurrency handling to avoid duplicate
+  refresh operations under concurrent access, matching the existing sync
+  behavior.
+- Improved sandbox worker startup and recovery performance by indexing activity
+  overlap validation, caching SDK version metadata, and reusing the registration
+  transport across transient failures.
+
+FIXED
+
+- Fixed `AsyncDurableTaskSchedulerClient` failing during construction when no
+  current event loop was set. Its async gRPC channel is now created on first
+  use and bound to the event loop performing the request.
+
+## v1.8.0
+
+- Updates base dependency to durabletask v1.8.0.
+- Added `rewind_orchestration()` to `DurableTaskSchedulerClient` and `AsyncDurableTaskSchedulerClient` (inherited from the base clients) to rewind a failed orchestration instance to its last known good state.
+- Fixed Durable Task Scheduler workers stopping permanently when the service reset
+  the `GetWorkItems` stream.
+
+## v1.7.2
+
+- Updates base dependency to durabletask v1.7.2.
+
+## v1.7.1
+
+- Updates base dependency to durabletask v1.7.1
+
+## v1.7.0
+
+- Updates base dependency to durabletask v1.7.0.
+
+ADDED
+
+- `DurableTaskSchedulerWorker`, `DurableTaskSchedulerClient`, and the async
+  client now accept a `data_converter` argument and forward it to the base
+  worker/client, so a custom `durabletask.serialization.DataConverter` (for
+  example a pydantic-backed one) can be used with the Durable Task Scheduler.
+
+## v1.6.0
+
+- Updates base dependency to durabletask v1.6.0.
+- Added preview support for Durable Task Scheduler on-demand sandbox
+  activities under `durabletask.azuremanaged.preview.sandboxes`. Applications
+  can declare sandbox activities (with optional per-activity versions),
+  register sandbox worker profiles, and run a sandbox activity worker that
+  establishes a live worker session and dispatches only the activities it
+  has registered.
+
+## v1.5.0
+
+- Updates base dependency to durabletask v1.5.0
+- Improved type coverage benefits Azure Managed users: `create_timer` now
+  returns the specific `TimerTask` type and `when_any` is generic so the
+  completing child task is type-checked through `DurableTaskSchedulerClient`,
+  `AsyncDurableTaskSchedulerClient`, and `DurableTaskSchedulerWorker` derived
+  orchestrations.
+- gRPC client interceptors in the core SDK now use the public
+  `grpc.ClientCallDetails` / `grpc.aio.ClientCallDetails` types instead of
+  private internal namedtuples. Any custom DTS auth interceptor built on the
+  same pattern as `DTSDefaultClientInterceptorImpl` should retype its
+  `_intercept_call` override parameter accordingly. This is a type-level change
+  only and does not alter runtime behavior.
+- Added optional `interceptors`, `channel`, and `channel_options` parameters to
+  `DurableTaskSchedulerClient`, `AsyncDurableTaskSchedulerClient`, and
+  `DurableTaskSchedulerWorker` to allow combining custom gRPC interceptors with
+  DTS defaults and to support pre-configured/customized gRPC channels.
+- Added pass-through `resiliency_options` support on
+  `DurableTaskSchedulerClient`, `AsyncDurableTaskSchedulerClient`, and
+  `DurableTaskSchedulerWorker` so Azure Managed applications can use the core
+  SDK's gRPC resiliency option types through their constructors.
+- Added `workerid` gRPC metadata on Durable Task Scheduler worker calls for
+  improved worker identity and observability.
+- Improved sync access token refresh concurrency handling to avoid duplicate
+  refresh operations under concurrent access.
+
+## v1.4.0
+
+- Updates base dependency to durabletask v1.4.0
+  - Includes restart support, batch actions, work item filtering, timer improvements,
+    distributed tracing improvements, and entity bug fixes
+- Added `AsyncDurableTaskSchedulerClient` for async/await usage with `grpc.aio`
+- Added `DTSAsyncDefaultClientInterceptorImpl` async gRPC interceptor for DTS authentication
+- Added `payload_store` parameter to `DurableTaskSchedulerWorker`,
+  `DurableTaskSchedulerClient`, and `AsyncDurableTaskSchedulerClient`
+  for large payload externalization support
+- Added `azure-blob-payloads` optional dependency that installs
+  `durabletask[azure-blob-payloads]` — install with
+  `pip install durabletask.azuremanaged[azure-blob-payloads]`
+- Improved worker timer handling to align with durabletask timer updates
+
+## v1.3.0
+
+- Updates base dependency to durabletask v1.3.0
+  - See durabletask changelog for more details
+
+## v1.2.0
+
+- Updates base dependency to durabletask v1.2.0
+  - See durabletask changelog for more details
+
+## v1.1.0
+
+CHANGED:
+
+- Updates base dependency to durabletask v1.1.0
+  - See durabletask changelog for more details
+
+## v1.0.0
+
+CHANGED:
+
+- Supported Python versions are now 3.10- 3.14. Python 3.9 is end of life and has been removed.
+- Updates base dependency to durabletask v1.0.0
+  - See durabletask changelog for more details
+- Allow logging configuration for DurableTaskSchedulerClient
+
+## v0.4.0
+
+- Updates base dependency to durabletask v0.5.0
+  - Adds support for Durable Entities
+
+## v0.3.1
+
+- Updates base dependency to durabletask v0.4.1
+  - Fixed an issue where orchestrations would still throw non-determinism errors,
+    even when versioning logic should have prevented it
+
+## v0.3.0
+
+- Updates base dependency to durabletask v0.4.0
+  - Added support for orchestration and activity tags
+  - Added support for orchestration versioning and versioning logic in the worker

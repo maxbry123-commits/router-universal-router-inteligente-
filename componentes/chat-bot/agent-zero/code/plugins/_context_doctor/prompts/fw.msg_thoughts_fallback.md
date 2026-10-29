@@ -1,1 +1,0 @@
-Your reply was plain text instead of a tool call. Respond with a single valid JSON tool call; use the `response` tool with `text` to reply to the user.

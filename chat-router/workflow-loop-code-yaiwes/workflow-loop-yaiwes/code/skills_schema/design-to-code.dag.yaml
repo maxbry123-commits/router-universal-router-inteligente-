@@ -1,0 +1,29 @@
+schema_id: skills_schema/design-to-code.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Figma/screenshot -> tokens -> componentes -> responsive -> WCAG -> React/Vue/Svelte
+  + visual regression
+work_surface: FRONTEND
+acceptance:
+- 6 nodos encadenados
+- visual regression reportada
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/design-to-code.json
+  sha256: pending
+oracle: dag:6_nodes_chain
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

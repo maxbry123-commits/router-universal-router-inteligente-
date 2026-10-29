@@ -1,0 +1,42 @@
+{
+  "bundle_bytes": 17692808,
+  "bundle_sha256": "350cc7f4396f63d644b954c4ef2ee1f0ed0c2c7839f5d697200fd1489e6c3454",
+  "extracted_tree": {
+    "bytes": 29901273,
+    "files": 640,
+    "sha256": "878f85d5e85051019bd1abd839405e2103afffeb82045562eb97312b31fcceb6"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "pglite.bundle.zip.part-0001",
+      "sha256": "ed0cb982098bcfeff0c819f1f2245b186c92c9509caaa60eecc160b52f9d6950"
+    },
+    {
+      "bytes": 5109896,
+      "name": "pglite.bundle.zip.part-0002",
+      "sha256": "48094c4aa3ecfafd38ba823b88cbce6909121131dad34b163752d3ce9913c383"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [
+    "packages/pglite/examples/pglite-tools"
+  ],
+  "skipped_special_count": 1,
+  "slug": "pglite",
+  "source_bytes": 29901273,
+  "source_commit": "e752dbe0a550ee74e5e175ae799e556758201682",
+  "source_files": 640,
+  "source_ref": "HEAD",
+  "source_repo": "electric-sql/pglite",
+  "source_tree": {
+    "bytes": 29901273,
+    "files": 640,
+    "sha256": "878f85d5e85051019bd1abd839405e2103afffeb82045562eb97312b31fcceb6"
+  }
+}

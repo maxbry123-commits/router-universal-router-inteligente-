@@ -1,0 +1,37 @@
+{
+  "bundle_bytes": 8113432,
+  "bundle_sha256": "aac4c1598d4e63cb953b4a37be22546eeb64e5b879601c63af02643de370360f",
+  "extracted_tree": {
+    "bytes": 26901714,
+    "files": 1685,
+    "sha256": "e829119b2a2cbda21c21ee5b4a01c23c7abb9bf2e9d1881f966b5b7692caef51"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 8113432,
+      "name": "openai-agents-python.bundle.zip.part-0001",
+      "sha256": "aac4c1598d4e63cb953b4a37be22546eeb64e5b879601c63af02643de370360f"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [
+    "CLAUDE.md"
+  ],
+  "skipped_special_count": 1,
+  "slug": "openai-agents-python",
+  "source_bytes": 26901714,
+  "source_commit": "0dc4cf152bff1f50bdc0e41f28808563406545b2",
+  "source_files": 1685,
+  "source_ref": "HEAD",
+  "source_repo": "openai/openai-agents-python",
+  "source_tree": {
+    "bytes": 26901714,
+    "files": 1685,
+    "sha256": "e829119b2a2cbda21c21ee5b4a01c23c7abb9bf2e9d1881f966b5b7692caef51"
+  }
+}

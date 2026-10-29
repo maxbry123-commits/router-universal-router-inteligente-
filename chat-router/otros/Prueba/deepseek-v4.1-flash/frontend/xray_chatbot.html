@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Xray Chatbot - prototipo aislado</title>
+<style>
+  :root{--blanco:#ffffff;--tinta:#1b1d21;--gris:#e6e8eb;--azul:#1a56db;--azul-suave:#eaf0ff;--radio:10px}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--blanco);color:var(--tinta);font:15px/1.5 system-ui,"Segoe UI",Roboto,sans-serif}
+  header{padding:14px 16px;border-bottom:1px solid var(--gris)}
+  h1{font-size:16px;margin:0 0 2px}
+  .meta{font-size:12px;color:#5b6470;margin:10px 0 6px;font-weight:600}
+  main{padding:12px 16px 110px;max-width:760px;margin:0 auto}
+  [role="tablist"]{display:flex;gap:6px;border-bottom:1px solid var(--gris);margin-bottom:12px}
+  [role="tab"]{background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;font:inherit;color:#5b6470;cursor:pointer}
+  [role="tab"][aria-selected="true"]{color:var(--azul);border-bottom-color:var(--azul);font-weight:600}
+  [role="tabpanel"][hidden]{display:none}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+  .chip{border:1px solid var(--gris);border-radius:999px;padding:6px 12px;background:var(--blanco);font:inherit;cursor:pointer}
+  .chip[aria-pressed="true"]{border-color:var(--azul);background:var(--azul-suave);color:var(--azul)}
+  .lista{list-style:none;padding:0;margin:8px 0}
+  .lista li{border:1px solid var(--gris);border-radius:var(--radio);padding:8px 10px;margin-bottom:8px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+  .toggles{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
+  .toggle{border:1px solid var(--gris);border-radius:var(--radio);padding:6px 10px;background:var(--blanco);font:inherit;cursor:pointer}
+  .toggle[aria-pressed="true"]{border-color:var(--azul);color:var(--azul);background:var(--azul-suave)}
+  .burbuja{border:1px solid var(--gris);border-left:3px solid var(--tinta);border-radius:var(--radio);padding:8px 10px;margin-bottom:8px}
+  .burbuja[data-rol="asistente"]{border-left-color:var(--azul)}
+  form{display:flex;gap:8px;align-items:flex-start;margin:8px 0}
+  input[type="text"],textarea{width:100%;border:1px solid var(--gris);border-radius:var(--radio);padding:8px;font:inherit}
+  button.primario{background:var(--azul);color:#fff;border:0;border-radius:var(--radio);padding:10px 16px;font:inherit;cursor:pointer;white-space:nowrap}
+  :focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+  .composer{position:fixed;left:0;right:0;bottom:0;background:var(--blanco);border-top:1px solid var(--gris);padding:10px 16px}
+  .hecho{text-decoration:line-through;color:#5b6470}
+  @media(max-width:560px){main{padding-bottom:20px}.composer{position:static;border-top:0;padding:10px 0}form{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Xray Chatbot</h1>
+  <p class="meta" id="meta">Prototipo aislado - namespace xray_deepseek-v4.1-flash</p>
+</header>
+<main>
+  <div role="tablist" aria-label="Vistas del chatbot">
+    <button role="tab" id="tab-chat" aria-controls="panel-chat" aria-selected="true" tabindex="0">Chat</button>
+    <button role="tab" id="tab-hist" aria-controls="panel-hist" aria-selected="false" tabindex="-1">Historial</button>
+  </div>
+
+  <section role="tabpanel" id="panel-chat" aria-labelledby="tab-chat" tabindex="0">
+    <h2 class="meta">Anclas (chips ON / OFF)</h2>
+    <div class="chips" id="anclas" role="group" aria-label="Anclas de la sesion"></div>
+    <form id="form-ancla">
+      <input type="text" id="nueva-ancla" aria-label="Nombre de la nueva ancla" placeholder="Nueva ancla" />
+      <button class="primario" type="submit">Anclar</button>
+    </form>
+    <h2 class="meta">Conversacion aislada</h2>
+    <div id="mensajes" aria-live="polite"></div>
+    <form id="form-mensaje" class="composer">
+      <textarea id="texto" rows="2" aria-label="Mensaje aislado" placeholder="Escribe un mensaje (no se envia a ninguna red)"></textarea>
+      <button class="primario" type="submit">Enviar</button>
+    </form>
+  </section>
+
+  <section role="tabpanel" id="panel-hist" aria-labelledby="tab-hist" hidden tabindex="0">
+    <h2 class="meta">Checklist de tareas</h2>
+    <form id="form-tarea">
+      <input type="text" id="nueva-tarea" aria-label="Descripcion de la nueva tarea" placeholder="Nueva tarea" />
+      <button class="primario" type="submit">Agregar</button>
+    </form>
+    <ul class="lista" id="tareas" aria-label="Tareas del prototipo"></ul>
+    <h2 class="meta">Estados independientes (tool / agente_tool / llm_tool)</h2>
+    <div class="toggles" id="toggles" role="group" aria-label="Estados de herramientas"></div>
+    <h2 class="meta">Historial conservado</h2>
+    <ol class="lista" id="historial" aria-label="Historial de eventos"></ol>
+    <button class="primario" id="exportar" type="button">Exportar JSON local</button>
+  </section>
+</main>
+<script>
+(function () {
+  "use strict";
+  const NS = "xray_deepseek-v4.1-flash";
+  const CLAVE = NS + ":estado";
+  const ESTADOS = ["tool", "agente_tool", "llm_tool"];
+  const estado = cargar();
+
+  function cargar() {
+    try {
+      const crudo = localStorage.getItem(CLAVE);
+      if (crudo) {
+        const datos = JSON.parse(crudo);
+        if (datos && datos.namespace === NS) { return datos; }
+      }
+    } catch (e) { /* almacenamiento no disponible: se sigue en memoria */ }
+    return { namespace: NS, anclas: {}, mensajes: [], tareas: [], historial: [], contador: 0 };
+  }
+  function guardar() {
+    try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (e) { /* ignorado */ }
+  }
+  function nuevoId(prefijo) { estado.contador += 1; return prefijo + "-" + estado.contador; }
+  function registrar(evento, extra) {
+    estado.historial.push(Object.assign({ evento: evento, hora: new Date().toISOString() }, extra || {}));
+  }
+  function nodo(etiqueta, clase, texto) {
+    const el = document.createElement(etiqueta);
+    if (clase) { el.className = clase; }
+    if (texto) { el.textContent = texto; }
+    return el;
+  }
+  function activas() { return Object.keys(estado.anclas).filter(function (k) { return estado.anclas[k]; }).sort(); }
+  function inactivas() { return Object.keys(estado.anclas).filter(function (k) { return !estado.anclas[k]; }).sort(); }
+
+  function pintarAnclas() {
+    const cont = document.getElementById("anclas");
+    cont.textContent = "";
+    const nombres = Object.keys(estado.anclas).sort();
+    if (!nombres.length) { cont.appendChild(nodo("span", "meta", "Sin anclas definidas")); return; }
+    nombres.forEach(function (nombre) {
+      const activa = estado.anclas[nombre];
+      const boton = nodo("button", "chip", (activa ? "ON - " : "OFF - ") + nombre);
+      boton.type = "button";
+      boton.setAttribute("aria-pressed", activa ? "true" : "false");
+      boton.setAttribute("aria-label", "Ancla " + nombre + (activa ? " activa" : " inactiva"));
+      boton.addEventListener("click", function () { alternarAncla(nombre); });
+      cont.appendChild(boton);
+    });
+  }
+  function alternarAncla(nombre) {
+    estado.anclas[nombre] = !estado.anclas[nombre];
+    registrar("ancla", { ancla: nombre, activa: estado.anclas[nombre] });
+    guardar(); pintarAnclas(); pintarHistorial();
+  }
+  function pintarMensajes() {
+    const cont = document.getElementById("mensajes");
+    cont.textContent = "";
+    if (!estado.mensajes.length) { cont.appendChild(nodo("p", "meta", "Sin mensajes todavia")); return; }
+    estado.mensajes.forEach(function (m) {
+      const caja = nodo("div", "burbuja", m.texto);
+      caja.dataset.rol = m.rol;
+      caja.setAttribute("aria-label", "Mensaje de " + m.rol);
+      cont.appendChild(caja);
+    });
+  }
+  function enviarMensaje(texto) {
+    const limpio = String(texto || "").trim();
+    if (!limpio) { return; }
+    estado.mensajes.push({ id: nuevoId("msg"), rol: "usuario", texto: limpio });
+    estado.mensajes.push({ id: nuevoId("msg"), rol: "asistente", texto: "Respuesta local simulada: " + limpio });
+    registrar("mensaje", { rol: "usuario" });
+    guardar(); pintarMensajes(); pintarHistorial();
+  }
+  function pintarTareas() {
+    const cont = document.getElementById("tareas");
+    cont.textContent = "";
+    if (!estado.tareas.length) {
+      const li = nodo("li", "", "Sin tareas");
+      li.setAttribute("aria-label", "Sin tareas pendientes");
+      cont.appendChild(li); return;
+    }
+    estado.tareas.forEach(function (t) {
+      const li = nodo("li", "");
+      const boton = nodo("button", "chip", (t.hecha ? "HECHA - " : "PENDIENTE - ") + t.texto);
+      boton.type = "button";
+      boton.setAttribute("aria-pressed", t.hecha ? "true" : "false");
+      boton.addEventListener("click", function () { cambiarTarea(t.id); });
+      li.appendChild(boton);
+      cont.appendChild(li);
+    });
+  }
+  function agregarTarea(texto) {
+    const limpio = String(texto || "").trim();
+    if (!limpio) { return; }
+    estado.tareas.push({ id: nuevoId("tar"), texto: limpio, hecha: false });
+    registrar("tarea_alta", {});
+    guardar(); pintarTareas(); pintarHistorial();
+  }
+  function cambiarTarea(id) {
+    estado.tareas.forEach(function (t) { if (t.id === id) { t.hecha = !t.hecha; } });
+    registrar("tarea_estado", { id: id });
+    guardar(); pintarTareas(); pintarHistorial();
+  }
+  function pintarToggles() {
+    const cont = document.getElementById("toggles");
+    cont.textContent = "";
+    ESTADOS.forEach(function (nombre) {
+      const activo = estado.estados[nombre] !== false;
+      const boton = nodo("button", "toggle", nombre + ": " + (activo ? "ON" : "OFF"));
+      boton.type = "button";
+      boton.setAttribute("aria-pressed", activo ? "true" : "false");
+      boton.addEventListener("click", function () { alternarEstado(nombre); });
+      cont.appendChild(boton);
+    });
+  }
+  function alternarEstado(nombre) {
+    estado.estados[nombre] = estado.estados[nombre] === false;
+    registrar("estado", { nombre: nombre, activo: estado.estados[nombre] });
+    guardar(); pintarToggles(); pintarHistorial();
+  }
+  function pintarHistorial() {
+    const cont = document.getElementById("historial");
+    cont.textContent = "";
+    estado.historial.slice(-30).forEach(function (ev) {
+      cont.appendChild(nodo("li", "", ev.evento + " - " + ev.hora));
+    });
+  }
+  function construirPayload() {
+    return {
+      namespace: NS,
+      anclas: activas(),
+      anclas_omitidas: inactivas(),
+      tareas: estado.tareas.map(function (t) { return { texto: t.texto, hecha: t.hecha }; }),
+      estados: Object.assign({}, estado.estados),
+      mensajes: estado.mensajes.map(function (m) { return { rol: m.rol, texto: m.texto }; }),
+      historial_total: estado.historial.length
+    };
+  }
+  function exportar() {
+    const payload = construirPayload();
+    if (activas().some(function (n) { return inactivas().indexOf(n) !== -1; })) { return; }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement("a");
+    enlace.href = url;
+    enlace.download = NS + "-payload.json";
+    enlace.click();
+    URL.revokeObjectURL(url);
+  }
+  function activarTab(indice) {
+    const tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+    tabs.forEach(function (tab, i) {
+      const sel = i === indice;
+      tab.setAttribute("aria-selected", sel ? "true" : "false");
+      tab.tabIndex = sel ? 0 : -1;
+      document.getElementById(tab.getAttribute("aria-controls")).hidden = !sel;
+    });
+    tabs[indice].focus();
+  }
+  document.querySelectorAll('[role="tab"]').forEach(function (tab, i) {
+    tab.addEventListener("click", function () { activarTab(i); });
+    tab.addEventListener("keydown", function (ev) {
+      if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
+        ev.preventDefault();
+        const total = document.querySelectorAll('[role="tab"]').length;
+        activarTab(ev.key === "ArrowRight" ? (i + 1) % total : (i - 1 + total) % total);
+      }
+    });
+  });
+  document.getElementById("form-ancla").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    const campo = document.getElementById("nueva-ancla");
+    const valor = campo.value.trim();
+    if (valor) { estado.anclas[valor] = true; registrar("ancla", { ancla: valor, activa: true }); }
+    campo.value = "";
+    guardar(); pintarAnclas(); pintarHistorial();
+  });
+  document.getElementById("form-mensaje").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    const campo = document.getElementById("texto");
+    enviarMensaje(campo.value);
+    campo.value = "";
+    campo.focus();
+  });
+  document.getElementById("form-tarea").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    const campo = document.getElementById("nueva-tarea");
+    agregarTarea(campo.value);
+    campo.value = "";
+  });
+  document.getElementById("exportar").addEventListener("click", exportar);
+  pintarAnclas(); pintarMensajes(); pintarTareas(); pintarToggles(); pintarHistorial();
+})();
+</script>
+</body>
+</html>

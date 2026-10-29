@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "yaiwes.router.context-packet/v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "input_sha256",
+    "query",
+    "sources",
+    "results",
+    "result_count",
+    "verdict"
+  ],
+  "properties": {
+    "schema": {
+      "const": "yaiwes.router.context-packet/v1"
+    },
+    "input_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "input_path": {
+      "type": "string"
+    },
+    "query": {
+      "type": "string",
+      "minLength": 1
+    },
+    "queries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "source",
+          "url",
+          "title",
+          "score"
+        ],
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "snippet": {
+            "type": "string"
+          },
+          "score": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "result_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "context_chars": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "verdict": {
+      "enum": [
+        "CONTEXT_READY",
+        "NO_NEW_EVIDENCE",
+        "PARTIAL_CONTEXT"
+      ]
+    }
+  }
+}

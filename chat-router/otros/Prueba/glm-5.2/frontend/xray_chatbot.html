@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X-Ray Chatbot — glm-5.2</title>
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--muted:#6b7280;--border:#e5e7eb;--accent:#2563eb;
+--accent-light:#dbeafe;--radius:8px;--gap:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f9fafb;color:var(--fg);
+min-height:100vh;display:flex;justify-content:center;padding:20px}
+.xray-app{width:100%;max-width:720px;background:var(--bg);border:1px solid var(--border);
+border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden;
+box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.tabs-bar{display:flex;gap:4px;padding:8px;border-bottom:1px solid var(--border);
+background:#fafafa;overflow-x:auto;align-items:center}
+.tab{padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--bg);
+cursor:pointer;font-size:13px;color:var(--muted);white-space:nowrap;transition:all .15s;
+display:flex;align-items:center;gap:4px}
+.tab.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.tab-close{border:none;background:none;cursor:pointer;font-size:14px;color:var(--muted);
+padding:0;line-height:1}
+.tab-close:hover{color:#ef4444}
+.chat-area{flex:1;overflow-y:auto;padding:var(--gap);min-height:280px;max-height:45vh}
+.msg{margin-bottom:8px;padding:8px 12px;border-radius:var(--radius);font-size:14px;
+line-height:1.5;max-width:85%}
+.msg-usuario{background:var(--accent-light);margin-left:auto;text-align:right}
+.msg-asistente{background:#f3f4f6}
+.msg-rol{font-size:11px;color:var(--muted);margin-bottom:2px}
+.anchors-bar{display:flex;flex-wrap:wrap;gap:6px;padding:8px var(--gap);
+border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.chip{padding:4px 10px;border:1px solid var(--border);border-radius:16px;font-size:12px;
+cursor:pointer;background:var(--bg);color:var(--muted);transition:all .15s;user-select:none}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chip-label{font-weight:600}
+.toggles-bar{display:flex;gap:var(--gap);padding:8px var(--gap);
+border-bottom:1px solid var(--border)}
+.toggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer}
+.toggle input{display:none}
+.toggle .switch{width:34px;height:18px;border-radius:9px;background:var(--border);
+position:relative;transition:background .2s}
+.toggle .switch::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;
+background:#fff;top:2px;left:2px;transition:transform .2s}
+.toggle input:checked+.switch{background:var(--accent)}
+.toggle input:checked+.switch::after{transform:translateX(16px)}
+.checklist{padding:8px var(--gap);border-bottom:1px solid var(--border);max-height:130px;overflow-y:auto}
+.checklist-item{display:flex;align-items:center;gap:6px;font-size:13px;padding:3px 0}
+.checklist-item.done span{text-decoration:line-through;color:var(--muted)}
+.checklist-add{display:flex;gap:4px;margin-top:4px}
+.checklist-add input{flex:1;border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:12px}
+.input-bar{display:flex;gap:8px;padding:var(--gap);border-top:1px solid var(--border)}
+.input-bar textarea{flex:1;border:1px solid var(--border);border-radius:var(--radius);
+padding:8px 12px;font-size:14px;resize:none;height:40px;font-family:inherit}
+.input-bar textarea:focus{outline:none;border-color:var(--accent)}
+.btn{padding:8px 16px;border:none;border-radius:var(--radius);background:var(--accent);
+color:#fff;cursor:pointer;font-size:14px;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-new{background:var(--bg);border:1px solid var(--border);color:var(--muted);
+font-size:13px;padding:6px 10px;border-radius:6px;cursor:pointer}
+.btn-new:hover{border-color:var(--accent);color:var(--accent)}
+@media(max-width:500px){.toggles-bar{flex-direction:column;gap:4px}.msg{max-width:95%}}
+</style>
+</head>
+<body>
+<div class="xray-app" id="app">
+  <div class="tabs-bar" id="tabsBar"></div>
+  <div class="chat-area" id="chatArea"></div>
+  <div class="anchors-bar" id="anchorsBar"></div>
+  <div class="toggles-bar">
+    <label class="toggle"><input type="checkbox" id="tg-tools"><span class="switch"></span>tools</label>
+    <label class="toggle"><input type="checkbox" id="tg-agente"><span class="switch"></span>agente_tool</label>
+    <label class="toggle"><input type="checkbox" id="tg-llm"><span class="switch"></span>llm_tool</label>
+  </div>
+  <div class="checklist" id="checklist"></div>
+  <div class="input-bar">
+    <textarea id="msgInput" placeholder="Escribe... (Enter=enviar, Shift+Enter=salto)"></textarea>
+    <button class="btn" id="btnSend">Enviar</button>
+  </div>
+</div>
+<script>
+"use strict";
+/* X-Ray Chatbot — glm-5.2 | Solo memoria + localStorage | Sin red */
+var NS = "xray_glm-5.2";
+var ANCLAS = ["contexto","resumen","instrucciones","memoria"];
+var state = { chats:{}, activeChat:null, flags:{tools:false,agente_tool:false,llm_tool:false}, checklist:[] };
+
+function save(){ localStorage.setItem(NS, JSON.stringify(state)); }
+function load(){
+  var raw = localStorage.getItem(NS);
+  if(raw){ try{ state = JSON.parse(raw); }catch(e){} }
+  if(!state.chats || Object.keys(state.chats).length===0){ createChat(); }
+  if(!state.checklist) state.checklist = [];
+  if(!state.flags) state.flags = {tools:false,agente_tool:false,llm_tool:false};
+}
+function uid(p){ return p + Math.random().toString(36).slice(2,10); }
+function escapeHtml(s){ var d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+
+/* --- Chats / Tabs --- */
+function createChat(){
+  var id = uid("chat_");
+  state.chats[id] = { id:id, titulo:"Chat "+(Object.keys(state.chats).length+1), mensajes:[], anclas:{} };
+  ANCLAS.forEach(function(a){ state.chats[id].anclas[a] = {texto:a, activa:true}; });
+  state.activeChat = id;
+  save(); renderAll();
+}
+function switchChat(id){ state.activeChat=id; save(); renderAll(); }
+function closeChat(id){
+  delete state.chats[id];
+  if(state.activeChat===id){
+    var keys = Object.keys(state.chats);
+    state.activeChat = keys.length ? keys[0] : null;
+  }
+  if(!state.activeChat){ createChat(); } else { save(); renderAll(); }
+}
+
+/* --- Mensajes (simulados localmente, sin conexion) --- */
+function addMessage(rol, contenido){
+  var chat = state.chats[state.activeChat]; if(!chat) return;
+  chat.mensajes.push({ id:uid("m_"), rol:rol, contenido:contenido, ts:new Date().toISOString() });
+  save(); renderChat();
+}
+function sendInput(){
+  var ta = document.getElementById("msgInput");
+  var txt = ta.value.trim(); if(!txt) return;
+  addMessage("usuario", txt);
+  ta.value = "";
+  setTimeout(function(){
+    addMessage("asistente", "[xray] Payload: "+txt.slice(0,40)+"...");
+    logPayload();
+  },80);
+}
+
+/* --- Anclas ON/OFF --- */
+function toggleAncla(name){
+  var chat = state.chats[state.activeChat]; if(!chat||!chat.anclas[name]) return;
+  chat.anclas[name].activa = !chat.anclas[name].activa;
+  save(); renderAnclas(); logPayload();
+}
+
+/* --- Toggles independientes --- */
+function syncToggles(){
+  [["tools","tg-tools"],["agente_tool","tg-agente"],["llm_tool","tg-llm"]].forEach(function(pair){
+    var f = pair[0], elId = pair[1];
+    var el = document.getElementById(elId);
+    el.checked = !!state.flags[f];
+    el.onchange = function(){ state.flags[f] = el.checked; save(); logPayload(); };
+  });
+}
+
+/* --- Checklist --- */
+function addChecklist(texto){
+  texto = (texto||"").trim(); if(!texto) return;
+  state.checklist.push({ id:uid("ck_"), texto:texto, hecho:false });
+  save(); renderChecklist();
+}
+function toggleChecklist(id){
+  state.checklist.forEach(function(c){ if(c.id===id) c.hecho = !c.hecho; });
+  save(); renderChecklist();
+}
+
+/* --- construir_payload: excluye anclas OFF --- */
+function construirPayload(){
+  var chat = state.chats[state.activeChat]; if(!chat) return null;
+  var anclasOn = [];
+  Object.keys(chat.anclas).forEach(function(k){
+    if(chat.anclas[k].activa) anclasOn.push({id:k, texto:chat.anclas[k].texto});
+  });
+  return {
+    sesion: chat.id,
+    anclas: anclasOn,
+    flags: Object.assign({}, state.flags),
+    mensajes: chat.mensajes.map(function(m){ return {rol:m.rol, contenido:m.contenido}; }),
+    total_mensajes: chat.mensajes.length,
+    anclas_activas: anclasOn.length
+  };
+}
+function logPayload(){
+  var p = construirPayload();
+  if(p) console.log("[xray-glm-5.2] payload:", JSON.stringify(p));
+}
+
+/* --- Render --- */
+function renderTabs(){
+  var bar = document.getElementById("tabsBar");
+  bar.innerHTML = "";
+  var btnNew = document.createElement("button");
+  btnNew.className = "btn-new"; btnNew.textContent = "+ Chat";
+  btnNew.onclick = createChat;
+  bar.appendChild(btnNew);
+  Object.keys(state.chats).forEach(function(cid){
+    var c = state.chats[cid];
+    var el = document.createElement("div");
+    el.className = "tab" + (cid===state.activeChat ? " active" : "");
+    var span = document.createElement("span"); span.textContent = c.titulo;
+    var close = document.createElement("button");
+    close.className = "tab-close"; close.textContent = "x";
+    close.onclick = function(e){ e.stopPropagation(); closeChat(cid); };
+    el.appendChild(span); el.appendChild(close);
+    el.onclick = function(){ switchChat(cid); };
+    bar.appendChild(el);
+  });
+}
+function renderChat(){
+  var area = document.getElementById("chatArea");
+  area.innerHTML = "";
+  var chat = state.chats[state.activeChat];
+  if(!chat){ area.innerHTML='<p style="color:#6b7280;text-align:center">Sin chat activo</p>'; return; }
+  chat.mensajes.forEach(function(m){
+    var div = document.createElement("div");
+    div.className = "msg msg-"+m.rol;
+    var rol = document.createElement("div"); rol.className="msg-rol"; rol.textContent=m.rol;
+    var cnt = document.createElement("div"); cnt.innerHTML = escapeHtml(m.contenido);
+    div.appendChild(rol); div.appendChild(cnt);
+    area.appendChild(div);
+  });
+  area.scrollTop = area.scrollHeight;
+}
+function renderAnclas(){
+  var bar = document.getElementById("anchorsBar");
+  bar.innerHTML = "";
+  var chat = state.chats[state.activeChat]; if(!chat) return;
+  ANCLAS.forEach(function(name){
+    var a = chat.anclas[name];
+    var chip = document.createElement("div");
+    chip.className = "chip" + (a && a.activa ? " on" : "");
+    var lbl = document.createElement("span"); lbl.className="chip-label"; lbl.textContent=name;
+    chip.appendChild(lbl);
+    chip.appendChild(document.createTextNode(" " + (a&&a.activa ? "ON" : "OFF")));
+    chip.onclick = function(){ toggleAncla(name); };
+    bar.appendChild(chip);
+  });
+}
+function renderChecklist(){
+  var box = document.getElementById("checklist");
+  box.innerHTML = "";
+  state.checklist.forEach(function(item){
+    var div = document.createElement("div");
+    div.className = "checklist-item" + (item.hecho ? " done" : "");
+    var cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = item.hecho;
+    cb.onchange = function(){ toggleChecklist(item.id); };
+    var sp = document.createElement("span"); sp.innerHTML = escapeHtml(item.texto);
+    div.appendChild(cb); div.appendChild(sp);
+    box.appendChild(div);
+  });
+  var addRow = document.createElement("div"); addRow.className="checklist-add";
+  var inp = document.createElement("input"); inp.type="text"; inp.placeholder="Nueva tarea...";
+  inp.id = "ckInput";
+  inp.onkeydown = function(e){ if(e.key==="Enter"){ addChecklist(inp.value); inp.value=""; } };
+  var btn = document.createElement("button"); btn.className="btn-new"; btn.textContent="+";
+  btn.onclick = function(){ addChecklist(inp.value); inp.value=""; };
+  addRow.appendChild(inp); addRow.appendChild(btn);
+  box.appendChild(addRow);
+}
+function renderAll(){ renderTabs(); renderChat(); renderAnclas(); syncToggles(); renderChecklist(); }
+
+/* --- Teclado --- */
+document.getElementById("msgInput").addEventListener("keydown", function(e){
+  if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendInput(); }
+});
+document.getElementById("btnSend").onclick = sendInput;
+
+/* --- Init --- */
+load();
+renderAll();
+</script>
+</body>
+</html>

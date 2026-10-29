@@ -1,0 +1,67 @@
+{
+  "tts": {
+    "default_model": "qwen-audio-3.0-tts-plus",
+    "default_voice": "Cherry",
+    "ws_models": [
+      "qwen-audio-3.0-tts-plus",
+      "qwen-audio-3.0-tts-flash"
+    ],
+    "ws_default_voices": {
+      "qwen-audio-3.0-tts-plus": "longanlingxin",
+      "qwen-audio-3.0-tts-flash": "longanfengyue"
+    }
+  },
+  "cosyvoice": {
+    "default_model": "cosyvoice-v3-flash",
+    "default_voice": "longanyang",
+    "model_voices": {
+      "cosyvoice-v3-plus": [
+        "longanyang",
+        "longanhuan"
+      ],
+      "cosyvoice-v3-flash": [
+        "longanyang",
+        "longanhuan",
+        "longhuhu_v3",
+        "longjielidou_v3",
+        "longshanshan_v3",
+        "longniuniu_v3",
+        "longanyue_v3",
+        "longshange_v3",
+        "longanmin_v3",
+        "longyingxiao_v3",
+        "longyingxun_v3",
+        "longyingtao_v3",
+        "longanyun_v3",
+        "longanwen_v3",
+        "longanli_v3",
+        "longanlang_v3",
+        "longyingmu_v3",
+        "longhua_v3",
+        "longwan_v3",
+        "longanzhi_v3",
+        "longanya_v3",
+        "longanqin_v3",
+        "longwanjun_v3",
+        "longyichen_v3",
+        "longlaobo_v3",
+        "longlaoyi_v3",
+        "longjiqi_v3",
+        "longhouge_v3",
+        "longdaiyu_v3",
+        "longanxuan_v3"
+      ]
+    },
+    "instruction_voices": {
+      "cosyvoice-v3-plus": [
+        "longanyang",
+        "longanhuan"
+      ],
+      "cosyvoice-v3-flash": [
+        "longanyang",
+        "longanhuan",
+        "longhuhu_v3"
+      ]
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# https://github.com/evilmartians/lefthook
+
+output: false
+
+pre-commit:
+  commands:
+    oxfmt:
+      stage_fixed: true
+      run: npx oxfmt .

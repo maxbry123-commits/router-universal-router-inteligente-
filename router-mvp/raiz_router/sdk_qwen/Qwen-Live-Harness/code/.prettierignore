@@ -1,0 +1,14 @@
+node_modules
+dist
+release
+coverage
+package-lock.json
+packages/qwen-live-harness-host/package-lock.json
+*.tsbuildinfo
+LICENSE
+# Preserve the reviewed landing pages verbatim.
+/README.md
+/README_ZH.md
+packages/qwen-live-harness-host/resources
+.qwen
+packages/qwen-live-harness/src/vendor/qwen-code-peer/*.ts

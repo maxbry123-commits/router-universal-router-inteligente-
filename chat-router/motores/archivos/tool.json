@@ -1,0 +1,62 @@
+{
+  "name": "archivos",
+  "descripcion": "Motor de archivos del chat: descargar, extraer, copiar, mover, listar y buscar en COLA. El Director da origen y destino; sin Hugging Face, sin LFS, sin GitHub Actions.",
+  "donde_vive": {
+    "codigo": "chat-router/chat/backend/mvp/archivos/",
+    "herramienta_mcp": "chat-router/chat/backend/mvp/mcp_route.py (tool `archivos`)",
+    "plugin_http": "POST /plugins/motor_archivos/call/<accion>  (lo usa la ventana del chat)",
+    "ventana": "chat-router/chat/frontend/ventana-archivos.js  (abrir con /motor)",
+    "harness": "chat-router/chat/backend/deepseek_harness/server.py (lista `permitidas`)",
+    "pruebas": [
+      "chat-router/chat/backend/mvp/test_archivos.py",
+      "chat-router/chat/backend/mvp/test_mcp_sesion.py::test_motor_de_archivos_por_mcp_y_por_plugin_http"
+    ]
+  },
+  "acciones": {
+    "transferir": "{origen, destino[, extraer, readme, sobrescribir]} -> UNA llamada: arma listar origen -> copiar/descargar al destino (README + MANIFEST sha256) -> listar destino; devuelve {id, pasos:[...]}",
+    "ejecutar": "{cola:[trabajo,...]} o {yaml:\"...\"}  -> {id, estado:\"en_cola\", trabajos:N}  (responde al instante; corre en segundo plano)",
+    "estado": "{id} -> {estado: en_cola|corriendo|terminado|error|cancelado, progreso:\"2/3\", paso_actual:\"2 copiar origen\", trabajos:[{n,accion,origen,destino,estado,archivos,bytes,resumen,muestra,error}]}",
+    "cancelar": "{id}",
+    "raiz": "{} -> {raiz, libre_bytes}",
+    "listar_raiz": "{ruta?} -> {ruta, entradas:[{nombre,tipo,bytes}]}"
+  },
+  "trabajo": {
+    "accion": "descargar | extraer | copiar | mover | listar | buscar",
+    "origen": "URL http(s) (zip/tar/archivo) | github.com/owner/repo[/tree/rama/ruta] | git:owner/repo[@rama][/ruta] | ruta dentro de la raiz del motor",
+    "destino": "ruta dentro de la raiz del motor | git:maxbry123-commits/REPO[@rama]/carpeta  (omitido: <nombre-del-origen> dentro de la raiz)",
+    "extraer": "true por defecto: descomprime zip/tar descargados",
+    "readme": "true por defecto: escribe README.md (o LEEME-MOTOR.md si ya hay uno) y MANIFEST.json con sha256",
+    "sobrescribir": "false por defecto: si el destino existe falla con DESTINO_YA_EXISTE",
+    "patron": "texto para accion=buscar (nombres y contenido, archivos de hasta 1 MB)",
+    "max": "tope de filas en listar/buscar (200)"
+  },
+  "reglas": [
+    "Todo ocurre bajo la raiz del motor (RIU_MOTOR_RAIZ, por defecto /tmp/riu-motor); salir de ella = RUTA_FUERA_DE_RAIZ.",
+    "Las URL a la red interna (localhost, IP privadas, metadatos) se bloquean, tambien en cada redireccion.",
+    "Zip/tar: sin salirse de la carpeta (ZIP_SLIP_BLOQUEADO); los enlaces simbolicos se omiten.",
+    "Copiar y mover verifican sha256 de cada archivo; mover borra el origen solo despues de verificar.",
+    "Destino git: solo la cuenta del Router (maxbry123-commits), copia fiel (blobs sin filtros), lotes de ~200 MB, push sin force, lectura de vuelta del commit remoto.",
+    "Un trabajo roto no tumba la cola: queda en error con su motivo y sigue el siguiente.",
+    "El destino lo pone el Director en cada cola; la IA no reutiliza destinos anteriores."
+  ],
+  "ejemplo_json": {
+    "accion": "ejecutar",
+    "cola": [
+      {
+        "accion": "descargar",
+        "origen": "https://example.com/paquete.zip",
+        "destino": "mis/paquete"
+      },
+      {
+        "accion": "copiar",
+        "origen": "mis/paquete",
+        "destino": "git:maxbry123-commits/Maxbry-AGI/paquete"
+      }
+    ]
+  },
+  "ejemplo_una_llamada": {
+    "accion": "transferir",
+    "origen": "https://example.com/paquete.zip",
+    "destino": "git:maxbry123-commits/Maxbry-AGI/paquete"
+  }
+}

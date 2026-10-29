@@ -1,0 +1,35 @@
+{
+  "bundle_bytes": 1242797,
+  "bundle_sha256": "337dcf5d8b3765a735dbdcfd238c69d99cf55035e773887c3fc06964dfda7e25",
+  "extracted_tree": {
+    "bytes": 3940987,
+    "files": 86,
+    "sha256": "36cd850af30f6b1701b39fb8d828074d8fc1b1898114e1694200cfdcea7071fd"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 1242797,
+      "name": "sqlite-wasm.bundle.zip.part-0001",
+      "sha256": "337dcf5d8b3765a735dbdcfd238c69d99cf55035e773887c3fc06964dfda7e25"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "sqlite-wasm",
+  "source_bytes": 3940987,
+  "source_commit": "566ade995d2ce943638e5a595a2bf99760c928f0",
+  "source_files": 86,
+  "source_ref": "HEAD",
+  "source_repo": "sqlite/sqlite-wasm",
+  "source_tree": {
+    "bytes": 3940987,
+    "files": 86,
+    "sha256": "36cd850af30f6b1701b39fb8d828074d8fc1b1898114e1694200cfdcea7071fd"
+  }
+}

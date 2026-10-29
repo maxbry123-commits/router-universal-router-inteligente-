@@ -1,0 +1,14 @@
+{
+ "version": 1,
+ "nota": "Agentes que viven fuera de este repo y sus espejos (fork, upstream u otros). El generador los une al espejo local; la rama y el sha se refrescan con la accion mirror_sync.",
+ "agentes": [
+  {"id": "hermes-agent", "tipo": "agente_externo", "descripcion": "Hermes Agent (Nous Research)",
+   "mirrors": [
+    {"tipo": "fork", "url": "https://github.com/maxbry123-commits/hermes-agent", "rama": "HEAD", "sha": "d923a5eb487a17c0a68801bba9ef0f56c81040a8"},
+    {"tipo": "upstream", "url": "https://github.com/NousResearch/hermes-agent", "rama": "HEAD", "sha": ""}]},
+  {"id": "openclaw", "tipo": "agente_externo", "descripcion": "OpenClaw",
+   "mirrors": [
+    {"tipo": "fork", "url": "https://github.com/maxbry123-commits/openclaw", "rama": "HEAD", "sha": "383c124cc32ffee3f8e56f549b88da94d269a4af"},
+    {"tipo": "upstream", "url": "https://github.com/openclaw/openclaw", "rama": "HEAD", "sha": ""}]}
+ ]
+}

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>X-ray chatbot · prototipo aislado</title>
+<style>
+  :root { --azul:#1a56db; --azul-suave:#e8efff; --borde:#e3e6ec; --texto:#16181d; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+         background:#fff; color:var(--texto); font-size:15px; line-height:1.45; }
+  header { padding:14px 16px; border-bottom:1px solid var(--borde); display:flex;
+           flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; }
+  h1 { font-size:16px; font-weight:600; margin:0; }
+  .pista { font-size:12px; color:#6b7280; }
+  nav { display:flex; gap:6px; padding:10px 16px; border-bottom:1px solid var(--borde);
+        overflow-x:auto; }
+  nav button { border:1px solid var(--borde); background:#fff; color:var(--texto);
+               padding:7px 12px; border-radius:999px; font-size:13px; cursor:pointer; }
+  nav button[aria-selected="true"] { background:var(--azul); border-color:var(--azul);
+               color:#fff; font-weight:600; }
+  nav button:focus-visible, .chip:focus-visible, .tool button:focus-visible,
+  #enviar:focus-visible, ul.tareas button:focus-visible {
+    outline:2px solid var(--azul); outline-offset:2px; }
+  main { max-width:760px; margin:0 auto; padding:16px; }
+  section[hidden] { display:none; }
+  .lista { display:flex; flex-direction:column; gap:8px; min-height:120px; }
+  .msg { border:1px solid var(--borde); border-radius:10px; padding:8px 10px; max-width:88%;
+         overflow-wrap:anywhere; }
+  .msg.user { align-self:flex-end; background:var(--azul-suave); border-color:#c9d9ff; }
+  .msg small { display:block; font-size:11px; color:#6b7280; margin-bottom:2px; }
+  form.fila { display:flex; gap:8px; margin-top:12px; }
+  textarea { flex:1; resize:vertical; min-height:46px; padding:9px; border-radius:10px;
+             border:1px solid var(--borde); font:inherit; }
+  #enviar { background:var(--azul); color:#fff; border:0; border-radius:10px; padding:0 16px;
+            font:inherit; font-weight:600; cursor:pointer; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .chip { border:1px solid var(--borde); background:#fff; border-radius:999px; padding:6px 12px;
+          font-size:13px; cursor:pointer; }
+  .chip[aria-pressed="true"] { background:var(--azul); border-color:var(--azul); color:#fff; }
+  .tool { display:flex; align-items:center; justify-content:space-between; gap:10px;
+          border:1px solid var(--borde); border-radius:10px; padding:8px 10px; margin-top:8px; }
+  .tool b { font-size:13px; font-weight:600; }
+  .tool .estado { font-size:12px; color:var(--azul); font-weight:600; }
+  .tool .estado[data-e="inactivo"] { color:#9ca3af; }
+  ul.tareas { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  ul.tareas li { display:flex; align-items:center; gap:8px; border-bottom:1px dashed var(--borde);
+                 padding:6px 0; }
+  ul.tareas li.hecho span { text-decoration:line-through; color:#9ca3af; }
+  ul.tareas button { border:1px solid var(--borde); background:#fff; border-radius:6px;
+                     cursor:pointer; padding:2px 8px; font-size:12px; }
+  .vacio { color:#9ca3af; font-size:13px; }
+  @media (max-width:480px) {
+    main { padding:12px; }
+    .msg { max-width:100%; }
+    form.fila { flex-direction:column; }
+    #enviar { padding:10px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>X-ray chatbot · prototipo aislado</h1>
+  <span class="pista">local · sin red · sin conexión al sistema</span>
+</header>
+<nav role="tablist" aria-label="Secciones del prototipo">
+  <button role="tab" id="tab-chat" aria-controls="p-chat" aria-selected="true" tabindex="0">Chat</button>
+  <button role="tab" id="tab-historial" aria-controls="p-historial" aria-selected="false" tabindex="-1">Historial</button>
+  <button role="tab" id="tab-anclas" aria-controls="p-anclas" aria-selected="false" tabindex="-1">Anclas</button>
+  <button role="tab" id="tab-tareas" aria-controls="p-tareas" aria-selected="false" tabindex="-1">Checklist</button>
+</nav>
+<main>
+  <section id="p-chat" role="tabpanel" aria-labelledby="tab-chat">
+    <div class="lista" id="mensajes" aria-live="polite"></div>
+    <form class="fila" id="form-mensaje">
+      <textarea id="texto" aria-label="Escribe un mensaje" placeholder="Mensaje de prueba…" required></textarea>
+      <button id="enviar" type="submit">Enviar</button>
+    </form>
+    <div class="chips" id="chips"></div>
+  </section>
+  <section id="p-historial" role="tabpanel" aria-labelledby="tab-historial" hidden>
+    <ol id="historial"></ol>
+  </section>
+  <section id="p-anclas" role="tabpanel" aria-labelledby="tab-anclas" hidden>
+    <p class="pista">Anclas activas entran al payload; las inactivas se excluyen.</p>
+    <div class="chips" id="anclas"></div>
+    <div id="tools"></div>
+  </section>
+  <section id="p-tareas" role="tabpanel" aria-labelledby="tab-tareas" hidden>
+    <form class="fila" id="form-tarea">
+      <textarea id="tarea-texto" aria-label="Nueva tarea" placeholder="Nueva tarea…" required></textarea>
+      <button type="submit" class="chip">Añadir tarea</button>
+    </form>
+    <ul class="tareas" id="tareas"></ul>
+  </section>
+</main>
+<script>
+"use strict";
+const NS = "xray_deepseek-v4.1-flash-1017";
+const CLAVE = NS + ":estado";
+const TOOLS = ["tools", "agente_tool", "llm_tool"];
+const CICLO = { inactivo: "activo", activo: "pendiente", pendiente: "inactivo" };
+const estado = cargar();
+const $ = (id) => document.getElementById(id);
+
+function cargar() {
+  try {
+    const crudo = localStorage.getItem(CLAVE);
+    if (crudo) return JSON.parse(crudo);
+  } catch (e) { }
+  return { mensajes: [], anclas: [], tareas: [],
+           tools: { tools: "inactivo", agente_tool: "inactivo", llm_tool: "inactivo" } };
+}
+function guardar() {
+  try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (e) { }
+}
+function cambiarTab(destino) {
+  document.querySelectorAll('[role="tab"]').forEach((tab) => {
+    const activo = tab === destino;
+    tab.setAttribute("aria-selected", String(activo));
+    tab.tabIndex = activo ? 0 : -1;
+    $(tab.getAttribute("aria-controls")).hidden = !activo;
+  });
+  destino.focus();
+}
+function pintarMensajes() {
+  const caja = $("mensajes");
+  caja.textContent = "";
+  if (!estado.mensajes.length) {
+    const p = document.createElement("p");
+    p.className = "vacio";
+    p.textContent = "Sin mensajes todavía.";
+    caja.appendChild(p);
+  }
+  estado.mensajes.forEach((m) => {
+    const d = document.createElement("div");
+    d.className = "msg " + m.rol;
+    const s = document.createElement("small");
+    s.textContent = m.rol + " · " + m.ts;
+    d.appendChild(s);
+    d.appendChild(document.createTextNode(m.texto));
+    caja.appendChild(d);
+  });
+  const hist = $("historial");
+  hist.textContent = "";
+  estado.mensajes.slice().reverse().forEach((m) => {
+    const li = document.createElement("li");
+    li.textContent = "[" + m.ts + "] " + m.rol + ": " + m.texto;
+    hist.appendChild(li);
+  });
+}
+function pintarChips() {
+  const caja = $("chips");
+  caja.textContent = "";
+  estado.anclas.forEach((a) => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(a.activa));
+    b.textContent = (a.activa ? "ON · " : "OFF · ") + a.etiqueta;
+    b.onclick = () => { a.activa = !a.activa; guardar(); pintarTodo(); };
+    b.addEventListener("keydown", (ev) => {
+      if (ev.key === " " || ev.key === "Enter") { ev.preventDefault(); b.click(); }
+    });
+    caja.appendChild(b);
+  });
+  const form = document.createElement("form");
+  form.className = "fila";
+  const campo = document.createElement("textarea");
+  campo.setAttribute("aria-label", "Nueva ancla");
+  campo.placeholder = "etiqueta de ancla";
+  campo.required = true;
+  const enviar = document.createElement("button");
+  enviar.type = "submit";
+  enviar.className = "chip";
+  enviar.textContent = "Añadir ancla";
+  form.append(campo, enviar);
+  form.onsubmit = (ev) => {
+    ev.preventDefault();
+    const v = campo.value.trim();
+    if (v) { estado.anclas.push({ etiqueta: v, activa: true }); guardar(); pintarTodo(); }
+  };
+  caja.appendChild(form);
+}
+function pintarAnclas() {
+  const caja = $("anclas");
+  caja.textContent = "";
+  const activas = estado.anclas.filter((a) => a.activa);
+  const linea = document.createElement("p");
+  linea.className = "pista";
+  linea.textContent = "ON: " + activas.length + " · OFF: " +
+    (estado.anclas.length - activas.length) + " · payload: " +
+    (activas.map((a) => a.etiqueta).join(", ") || "sin anclas activas");
+  caja.appendChild(linea);
+}
+function pintarTools() {
+  const caja = $("tools");
+  caja.textContent = "";
+  TOOLS.forEach((clave) => {
+    const fila = document.createElement("div");
+    fila.className = "tool";
+    const b = document.createElement("b");
+    b.textContent = clave;
+    const est = document.createElement("span");
+    est.className = "estado";
+    est.dataset.e = estado.tools[clave];
+    est.textContent = estado.tools[clave];
+    const btn = document.createElement("button");
+    btn.className = "chip";
+    btn.type = "button";
+    btn.textContent = "Cambiar estado";
+    btn.setAttribute("aria-label", "Cambiar estado de " + clave + ", actual " + estado.tools[clave]);
+    btn.onclick = () => {
+      estado.tools[clave] = CICLO[estado.tools[clave]] || "inactivo";
+      guardar();
+      pintarTodo();
+    };
+    fila.append(b, est, btn);
+    caja.appendChild(fila);
+  });
+}
+function pintarTareas() {
+  const lista = $("tareas");
+  lista.textContent = "";
+  if (!estado.tareas.length) {
+    const li = document.createElement("li");
+    li.className = "vacio";
+    li.textContent = "Checklist vacía.";
+    lista.appendChild(li);
+    return;
+  }
+  estado.tareas.forEach((t) => {
+    const li = document.createElement("li");
+    if (t.hecho) li.className = "hecho";
+    const span = document.createElement("span");
+    span.textContent = t.texto;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = t.hecho ? "Reabrir" : "Hecho";
+    btn.setAttribute("aria-pressed", String(t.hecho));
+    btn.onclick = () => { t.hecho = !t.hecho; guardar(); pintarTodo(); };
+    li.append(span, btn);
+    lista.appendChild(li);
+  });
+}
+function pintarTodo() {
+  pintarMensajes(); pintarChips(); pintarAnclas(); pintarTools(); pintarTareas();
+}
+function marca() { return new Date().toISOString().slice(0, 19); }
+
+$("form-mensaje").onsubmit = (ev) => {
+  ev.preventDefault();
+  const campo = $("texto");
+  const valor = campo.value.trim();
+  if (!valor) return;
+  estado.mensajes.push({ rol: "user", texto: valor, ts: marca() });
+  estado.mensajes.push({ rol: "assistant", ts: marca(),
+                         texto: "Respuesta local del prototipo aislado: " + valor.slice(0, 40) });
+  campo.value = "";
+  guardar();
+  pintarTodo();
+};
+$("form-tarea").onsubmit = (ev) => {
+  ev.preventDefault();
+  const campo = $("tarea-texto");
+  const valor = campo.value.trim();
+  if (valor) {
+    estado.tareas.push({ texto: valor, hecho: false });
+    campo.value = "";
+    guardar();
+    pintarTodo();
+  }
+};
+document.querySelectorAll('[role="tab"]').forEach((tab) => {
+  tab.addEventListener("click", () => cambiarTab(tab));
+  tab.addEventListener("keydown", (ev) => {
+    const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+    const i = tabs.indexOf(tab);
+    if (ev.key === "ArrowRight") { ev.preventDefault(); cambiarTab(tabs[(i + 1) % tabs.length]); }
+    if (ev.key === "ArrowLeft") { ev.preventDefault(); cambiarTab(tabs[(i - 1 + tabs.length) % tabs.length]); }
+  });
+});
+pintarTodo();
+</script>
+</body>
+</html>

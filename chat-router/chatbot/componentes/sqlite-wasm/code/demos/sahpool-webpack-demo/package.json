@@ -1,0 +1,16 @@
+{
+  "name": "@sqlite.org/sahpool-webpack-demo",
+  "type": "module",
+  "scripts": {
+    "dev": "webpack serve --config webpack.config.js --mode development",
+    "build": "webpack --config webpack.config.js --mode production"
+  },
+  "dependencies": {
+    "@sqlite.org/sqlite-wasm": "file:../.."
+  },
+  "devDependencies": {
+    "webpack": "^5.112.0",
+    "webpack-cli": "^7.2.3",
+    "webpack-dev-server": "^6.0.0"
+  }
+}

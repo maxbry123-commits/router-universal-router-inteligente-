@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X-Ray Chat v1.0</title>
+<style>
+/* Aislamiento UI / Minimalismo Blanco */
+.xr-wrap { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; background: #fff; border: 1px solid #eee; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+.xr-hdr { padding: 1rem; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+.xr-tab-bar { display: flex; border-bottom: 1px solid #eee; }
+.xr-tab { flex: 1; padding: 0.75rem; text-align: center; cursor: pointer; background: #fafafa; transition: all 0.2s; color: #555; font-weight: 500; }
+.xr-tab.act { background: #fff; color: #0056b3; border-bottom: 2px solid #0056b3; }
+.xr-main { padding: 1rem; min-height: 300px; max-height: 60vh; overflow-y: auto; background: #fff; }
+.xr-ftr { padding: 0.75rem; border-top: 1px solid #eee; display: flex; gap: 0.5rem; }
+.xr-inp { flex: 1; padding: 0.6rem; border: 1px solid #ddd; border-radius: 4px; outline: none; }
+.xr-inp:focus { border-color: #0056b3; box-shadow: 0 0 0 2px rgba(0,86,179,0.1); }
+.xr-btn { padding: 0 1rem; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+.xr-btn:hover { background: #e9ecef; }
+.xr-msgs div { padding: 0.5rem 0; border-bottom: 1px dashed #f5f5f5; font-size: 0.95rem; }
+.xr-msgs .u { color: #333; } .xr-msgs .s { color: #0056b3; font-style: italic; }
+.xr-tog-row { display: flex; gap: 0.8rem; align-items: center; font-size: 0.85rem; }
+.xr-cip { padding: 0.3rem 0.6rem; border: 1px solid #ddd; border-radius: 12px; font-size: 0.8rem; cursor: pointer; user-select: none; }
+.xr-cip.on { background: #e6f2ff; color: #0056b3; border-color: #0056b3; }
+.xr-chk li { list-style: none; padding: 0.4rem 0; border-bottom: 1px solid #f9f9f9; display: flex; gap: 0.5rem; align-items: center; }
+.xr-chk input[type="checkbox"] { accent-color: #0056b3; }
+@media (max-width: 480px) { .xr-hdr { flex-direction: column; align-items: flex-start; } .xr-tog-row { flex-wrap: wrap; } .xr-tab { font-size: 0.9rem; } }
+</style>
+</head>
+<body>
+<div class="xr-wrap" id="xrApp">
+  <div class="xr-hdr">
+    <strong>X-RAY MODE</strong>
+    <div class="xr-tog-row" id="togglesBox"></div>
+    <div style="margin-top:0.4rem">
+      <span>Anclas:</span>
+      <span class="xr-cip on" data-id="a1" onclick="toggleAncla(this,'A1')">ON</span>
+      <span class="xr-cip" data-id="a2" onclick="toggleAncla(this,'A2')">OFF</span>
+    </div>
+  </div>
+  <nav class="xr-tab-bar">
+    <div class="xr-tab act" data-t="chat">Chats</div>
+    <div class="xr-tab" data-t="anc">Anclas</div>
+    <div class="xr-tab" data-t="chk">Checklist</div>
+  </nav>
+  <main class="xr-main" id="viewMain"></main>
+  <footer class="xr-ftr">
+    <input type="text" class="xr-inp" id="txtInp" placeholder="Escribe mensaje o tarea...">
+    <button class="xr-btn" id="btnEnv" onclick="enviar()">Enviar</button>
+  </footer>
+</div>
+<script>
+// --- State & LocalStorage Namespace ---
+const NS = "xray_qwen3.6-flash";
+let state = JSON.parse(localStorage.getItem(NS) || '{"msgs":[],"ancla":{"A1":true,"A2":false},"tog":{"tools":false,"agente_tool":false,"llm_tool":false},"chk":[]}');
+
+// --- Toggles ---
+const togIds = ["tools","agente_tool","llm_tool"];
+const togBox = document.getElementById("togglesBox");
+togIds.forEach(k => {
+  const lbl = document.createElement("label");
+  lbl.style.cssText = "display:flex;align-items:center;gap:4px;font-size:0.8rem";
+  lbl.innerHTML = `<input type="checkbox" ${state.tog[k]?"checked":""} onchange="setTog('${k}',this.checked)"> ${k.replace("_"," ")} `;
+  togBox.appendChild(lbl);
+});
+
+function setTog(k,v){ state.tog[k]=v; save(); }
+function toggleAncla(el,id){ 
+  state.ancla[id] = !state.ancla[id]; 
+  el.classList.toggle("on", state.ancla[id]);
+  el.textContent = state.ancla[id] ? "ON" : "OFF";
+  save(); renderView();
+}
+
+// --- Tabs & Render ---
+document.querySelectorAll(".xr-tab").forEach(t => t.addEventListener("click", e => {
+  document.querySelectorAll(".xr-tab").forEach(x=>x.classList.remove("act"));
+  e.target.classList.add("act");
+  renderView();
+}));
+
+function save(){ localStorage.setItem(NS, JSON.stringify(state)); }
+
+function renderView(){
+  const main = document.getElementById("viewMain");
+  const tab = document.querySelector(".xr-tab.act")?.dataset.t || "chat";
+  if(tab==="chat"){
+    let h="<div class='xr-msgs'>";
+    state.msgs.forEach(m => h+=`<div class="${m.s?'s':'u'}">${m.t}</div>`);
+    main.innerHTML = h+"</div>";
+  } else if(tab==="anc"){
+    let h=`<ul class='xr-chk'>`;
+    Object.entries(state.ancla).forEach(([k,v]) => h+=`<li><b>${k}</b>: ${v?"Activado":"Desactivado"}</li>`);
+    main.innerHTML = h+"</ul>";
+  } else {
+    let h=`<ul class='xr-chk'>`;
+    state.chk.forEach(i => h+=`<li><input type="checkbox" ${i.d?"checked":""} onchange="togChk('${i.i}',this.checked)"> <span>${i.t}</span></li>`);
+    main.innerHTML = h+(state.chk.length? "</ul>" : "<p>No hay tareas.</p>");
+  }
+}
+
+// --- Checkpoint Logic ---
+function togChk(i,v){ 
+  const item = state.chk.find(x=>x.i===i); 
+  if(item) item.d=v; 
+  save(); 
+}
+
+// --- Input / Send ---
+const inp = document.getElementById("txtInp");
+inp.addEventListener("keydown", e => { if(e.key==="Enter") enviar(); });
+
+function enviar(){
+  const txt = inp.value.trim();
+  if(!txt) return;
+  state.msgs.push({t:txt,s:false,ts:Date.now()});
+  inp.value="";
+  
+  // Auto-task detection for demo
+  if(txt.toLowerCase().includes("tarea")){
+    state.chk.push({i:"t_"+Date.now(),t:txt,d:false});
+  }
+  
+  save(); renderView();
+}
+
+// Init
+renderView();
+</script>
+</body>
+</html>

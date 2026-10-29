@@ -1,0 +1,38 @@
+<link rel="stylesheet" href="/chat/ui/panel-apariencia.css">
+<h1>Configuración de la UI</h1>
+<p class="muted ap-intro">Lo que cambies aquí se aplica al instante en todo el chat y se guarda en este navegador.</p>
+<section class="ap-sec" aria-labelledby="ap-h-ctl"><h2 id="ap-h-ctl">Control</h2><p class="muted">Agentes, router/emergencia y servidores de respaldo.</p><div class="row"><button type="button" id="tg-agentes" class="toggle" title="Encender = reanudar, apagar = pausar">Agentes</button><button type="button" id="tg-router" class="toggle" title="Encender = router activo; apagar = paro de emergencia">Router / Emergencia</button><button type="button" id="tg-mantener" class="toggle" aria-pressed="false" title="El servidor no se duerme hasta que lo apagues">Dejar encendido hasta que yo lo apague</button><button type="button" id="apagar-respaldo" class="toggle rojo" title="Apagar todos los servidores de respaldo">Respaldo</button></div></section>
+<section class="ap-sec" aria-labelledby="ap-h1"><h2 id="ap-h1">1 · Tema</h2><div id="ap-temas" class="ap-chips" role="radiogroup" aria-label="Tema"></div></section>
+<section class="ap-sec" aria-labelledby="ap-h2"><h2 id="ap-h2">2 · Color de señal</h2><p class="muted">El color del componente activo: botón de enviar, mensajes tuyos, indicador de la barra.</p><div id="ap-senal" class="ap-paleta"></div><div class="ap-fila"><label class="ap-inline">Color propio <input type="color" id="ap-senal-custom" aria-label="Color de señal propio"></label><button type="button" class="mini" id="ap-senal-reset">Restablecer señal</button></div></section>
+<section class="ap-sec" aria-labelledby="ap-h3"><h2 id="ap-h3">3 · Estilos listos</h2><div id="ap-presets" class="ap-chips"></div></section>
+<section class="ap-sec" aria-labelledby="ap-h4"><h2 id="ap-h4">4 · Estudio de letras</h2>
+  <p class="muted">¿Qué letra quieres cambiar?</p><div id="ap-roles" class="ap-chips" role="tablist" aria-label="Tipo de letra"></div>
+  <div class="ap-estudio">
+    <div class="ap-ctrl">
+      <h3>Color de letra <small id="ap-hex"></small></h3>
+      <div id="ap-colores" class="ap-paleta"></div>
+      <div class="ap-fila"><input type="color" id="ap-color-custom" aria-label="Color de letra propio"><span id="ap-contraste" class="ap-contraste"></span></div>
+      <label>Familia de fuente <select id="ap-fuente"></select></label>
+      <label>Tamaño <output id="ap-v-tam"></output><input type="range" id="ap-tam" min="10" max="48" step="1"></label>
+      <label>Grosor <output id="ap-v-peso"></output><input type="range" id="ap-peso" min="300" max="900" step="50"></label>
+      <label>Espaciado <output id="ap-v-esp"></output><input type="range" id="ap-esp" min="-1" max="4" step="0.1"></label>
+      <label>Interlineado <output id="ap-v-alto"></output><input type="range" id="ap-alto" min="1" max="2.3" step="0.05"></label>
+      <div class="ap-fila" id="ap-flags"></div>
+      <div class="ap-fila" id="ap-alinear"></div>
+    </div>
+    <div class="ap-ctrl"><h3>Texto real de ejemplo</h3><textarea id="ap-muestra-txt" rows="2" aria-label="Texto de ejemplo"></textarea><div id="ap-muestra" class="ap-muestra"></div></div>
+  </div>
+  <div class="ap-fila"><button type="button" class="mini" id="ap-rol-reset">Reiniciar esta letra</button><button type="button" class="mini" id="ap-letras-reset">Restablecer todas</button><button type="button" class="mini" id="ap-css-bajar">Descargar CSS</button><button type="button" class="mini" id="ap-css-copiar">Copiar CSS</button></div>
+</section>
+<section class="ap-sec" aria-labelledby="ap-h5"><h2 id="ap-h5">5 · Iconos de los botones</h2><p class="muted">Elige un botón y luego su icono.</p><div id="ap-destinos" class="ap-chips" role="tablist" aria-label="Botón"></div><input type="search" id="ap-icono-buscar" class="ap-buscar" placeholder="Buscar icono…" aria-label="Buscar icono" autocomplete="off"><div id="ap-iconos" class="ap-iconos"></div><div class="ap-fila"><button type="button" class="mini" id="ap-iconos-reset">Restablecer iconos</button></div></section>
+<section class="ap-sec" aria-labelledby="ap-h6"><h2 id="ap-h6">6 · Avisos y tamaño</h2>
+  <div class="ap-fila"><span class="ap-inline">Duración del aviso</span><div class="ap-paso" role="group" aria-label="Duración del aviso"><button type="button" class="mini" id="ap-aviso-menos" aria-label="Menos tiempo">−</button><output id="ap-aviso-v"></output><button type="button" class="mini" id="ap-aviso-mas" aria-label="Más tiempo">+</button></div><button type="button" class="mini" id="ap-aviso-probar">Probar aviso</button></div>
+  <label>Tamaño de la interfaz <output id="ap-v-escala"></output><input type="range" id="ap-escala" min="90" max="115" step="5"></label>
+</section>
+<section class="ap-sec" aria-labelledby="ap-h7"><h2 id="ap-h7">7 · Guardar y recuperar</h2><div class="ap-fila"><button type="button" class="mini" id="ap-exportar">Exportar mi apariencia</button><label class="mini ap-importar">Importar<input type="file" id="ap-importar" accept="application/json,.json" hidden></label><button type="button" class="mini rojo" id="ap-todo-reset">Restablecer todo</button></div></section>
+<section class="ap-sec" aria-labelledby="ap-h8"><h2 id="ap-h8">8 · Orden del menú</h2><p class="muted">Mantén pulsado el control de seis puntos y arrastra, o usa las flechas.</p><ol id="ap-orden" class="ap-orden"></ol><div class="ap-fila"><button type="button" class="mini" id="ap-orden-reset">Restablecer orden</button></div></section>
+<section class="ap-sec" aria-labelledby="ap-h9"><h2 id="ap-h9">9 · Bloqueo con PIN</h2><p class="muted">Tapa el chat en este navegador con un PIN de 4 dígitos. Es un bloqueo de privacidad local, no seguridad del servidor.</p><div id="ap-pin"></div></section>
+<section class="ap-sec" aria-labelledby="ap-h10"><h2 id="ap-h10">10 · Componentes RUI en el chat</h2><ol id="ap-rui" class="ap-rui"></ol></section>
+<section class="ap-sec" aria-labelledby="ap-h11"><h2 id="ap-h11">11 · Documentación del frontend</h2><p class="muted">El README (mapa, cableado, GAP y registro de cambios) y el handoff. Puedes anclarlos al chat para que la IA los lea.</p><div id="ap-docs"></div></section>
+<section class="ap-sec" aria-labelledby="ap-h12"><h2 id="ap-h12">12 · Acceso al servidor</h2><p class="muted">La clave que el servidor pide para responder. Si el chat no responde, escríbela aquí y pulsa «Probar conexión».</p><div id="ap-acceso"></div></section>
+<section class="ap-sec" aria-labelledby="ap-h13"><h2 id="ap-h13">13 · YAIWES</h2><p class="muted">Paneles YAIWES (PANEL-01, HOST, RUN, WALL, GBOT-01, FOTO 1-14, fábrica UI) y chequeos de seguridad, QA y empaque.</p><p><a id="ap-yaiwes" href="/yaiwes/" target="_blank" rel="noopener">Abrir paneles YAIWES</a> · <button type="button" class="secondary" id="ap-proyectos">Proyectos</button></p><details><summary>SKILLS-REGISTRY</summary><pre id="ap-skills" class="muted">…</pre></details><details><summary>PLAN-DAG</summary><pre id="ap-dag" class="muted">…</pre></details></section>

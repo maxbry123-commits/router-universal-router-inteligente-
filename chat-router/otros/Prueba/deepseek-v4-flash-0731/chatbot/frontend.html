@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel educativo de claves ficticias</title>
+<style>
+:root{--azul:#2563eb;--azul-act:#1d4ed8;--borde:#e5e7eb;--gris:#6b7280;--fondo:#ffffff;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fondo);color:#111827;}
+.cabecera{max-width:960px;margin:0 auto;padding:28px 16px 8px;}
+h1{font-size:1.45rem;margin:0 0 4px;}
+.sub{color:var(--gris);font-size:.9rem;margin:0 0 18px;}
+main{max-width:960px;margin:0 auto;padding:0 16px 48px;}
+.fila-proveedor{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px;}
+.fila-proveedor label{font-size:.9rem;font-weight:600;}
+.fila-proveedor select{padding:8px 10px;border:1px solid var(--borde);border-radius:8px;font-size:.9rem;background:#fff;}
+.fila-proveedor .chip-proveedor{padding:4px 10px;border-radius:999px;background:#eff6ff;color:var(--azul);font-size:.8rem;font-weight:600;}
+.boton{padding:8px 14px;border:1px solid var(--borde);border-radius:8px;background:#fff;color:#111827;font-size:.85rem;cursor:pointer;transition:border-color .15s,background .15s;}
+.boton:hover{border-color:var(--azul);}
+.boton.primario{background:var(--azul);border-color:var(--azul);color:#fff;}
+.boton.primario:hover{background:var(--azul-act);border-color:var(--azul-act);}
+.boton:focus-visible,.fila-proveedor select:focus-visible{outline:2px solid var(--azul);outline-offset:2px;}
+.lista-claves{display:grid;gap:12px;}
+.tarjeta-clave{border:1px solid var(--borde);border-radius:12px;padding:14px 16px;background:#fff;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;}
+.tarjeta-clave .info{min-width:200px;flex:1;}
+.tarjeta-clave .nombre{font-weight:700;margin:0 0 4px;}
+.tarjeta-clave .valor{font-family:ui-monospace,Consolas,monospace;font-size:.82rem;color:var(--gris);word-break:break-all;margin:0;}
+.tarjeta-clave .etiqueta{font-size:.72rem;color:var(--gris);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;}
+.grupo-botones{display:flex;gap:8px;flex-wrap:wrap;}
+.mensaje{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:8px;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .25s;}
+.mensaje.visible{opacity:1;}
+@media(max-width:560px){.tarjeta-clave{flex-direction:column;align-items:stretch;}.boton{flex:1;text-align:center;}}
+</style>
+</head>
+<body>
+<header class="cabecera">
+  <h1>Panel educativo de claves ficticias</h1>
+  <p class="sub">Prototipo local: ninguna clave es real. Sin conexion, sin servidores, sin modelos.</p>
+</header>
+<main>
+  <div class="fila-proveedor">
+    <label for="proveedor">Proveedor:</label>
+    <select id="proveedor" aria-label="Selector de proveedor ficticio">
+      <option value="demo">Proveedor Demo</option>
+      <option value="nebula">Nebula API</option>
+      <option value="orbit">Orbit Cloud</option>
+      <option value="flux">Flux Labs</option>
+    </select>
+    <span class="chip-proveedor" id="chipProveedor">demo</span>
+    <button type="button" class="boton primario" id="btnNueva" aria-label="Agregar una clave ficticia nueva">+ Nueva clave ficticia</button>
+  </div>
+  <div class="lista-claves" id="listaClaves" role="list" aria-label="Lista de claves ficticias"></div>
+</main>
+<div class="mensaje" id="mensaje" role="status" aria-live="polite"></div>
+<script>
+(function () {
+  'use strict';
+  var proveedores = { 'demo': 'Proveedor Demo', 'nebula': 'Nebula API', 'orbit': 'Orbit Cloud', 'flux': 'Flux Labs' };
+  var claves = [
+    { id: 'k1', nombre: 'Acceso Prueba', valor: 'sk-demo-8a3f1c9e42bd71', visible: false },
+    { id: 'k2', nombre: 'Clave de Lectura', valor: 'pk-demo-05f2a7c81d39', visible: false },
+    { id: 'k3', nombre: 'Clave de Escritura', valor: 'wk-demo-c4d0b6e97a1f', visible: false }
+  ];
+  var selectProveedor = document.getElementById('proveedor');
+  var chipProveedor = document.getElementById('chipProveedor');
+  var lista = document.getElementById('listaClaves');
+  var mensaje = document.getElementById('mensaje');
+  var ocultador = null;
+
+  function enmascarar(valor) {
+    if (valor.length <= 8) return '••••••••';
+    return valor.slice(0, 4) + '••••••••' + valor.slice(-4);
+  }
+
+  function avisar(texto) {
+    mensaje.textContent = texto;
+    mensaje.classList.add('visible');
+    if (ocultador) window.clearTimeout(ocultador);
+    ocultador = window.setTimeout(function () { mensaje.classList.remove('visible'); }, 2200);
+  }
+
+  function copiarTexto(texto) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(function () { avisar('Copiada al portapapeles (ficticia).'); });
+    } else {
+      avisar('Portapapeles no disponible en este contexto educativo.');
+    }
+  }
+
+  function filtrarPorProveedor() {
+    var seleccion = selectProveedor.value;
+    var seleccionable = Object.keys(claves);
+    seleccionable.forEach(function () {});
+    return seleccion === 'demo' ? claves : claves.filter(function (c) { return c.nombre.length > 0; });
+  }
+
+  function renderizar() {
+    var html = '';
+    var visibles = filtrarPorProveedor();
+    visibles.forEach(function (c) {
+      var texto = c.visible ? c.valor : enmascarar(c.valor);
+      var etiqueta = c.visible ? 'Ocultar clave ' + c.nombre : 'Mostrar clave ' + c.nombre;
+      html += '<article class="tarjeta-clave" role="listitem">'
+        + '<div class="info">'
+        + '<p class="nombre">' + c.nombre + '</p>'
+        + '<p class="etiqueta">' + proveedores[selectProveedor.value] + '</p>'
+        + '<p class="valor">' + texto + '</p>'
+        + '</div>'
+        + '<div class="grupo-botones">'
+        + '<button type="button" class="boton" data-accion="copiar" data-id="' + c.id + '" aria-label="Copiar ' + c.nombre + '">Copiar</button>'
+        + '<button type="button" class="boton" data-accion="alternar" data-id="' + c.id + '" aria-label="' + etiqueta + '">' + (c.visible ? 'Ocultar' : 'Mostrar') + '</button>'
+        + '<button type="button" class="boton" data-accion="regenerar" data-id="' + c.id + '" aria-label="Regenerar ' + c.nombre + '">Regenerar</button>'
+        + '<button type="button" class="boton" data-accion="eliminar" data-id="' + c.id + '" aria-label="Eliminar ' + c.nombre + '">Eliminar</button>'
+        + '</div></article>';
+    });
+    lista.innerHTML = html || '<p class="sub">No hay claves ficticias para este proveedor.</p>';
+  }
+
+  function generarFicticia() {
+    var abecedario = 'abcdef0123456789';
+    var salida = '';
+    for (var i = 0; i < 12; i++) { salida += abecedario[Math.floor(Math.random() * abecedario.length)]; }
+    return salida;
+  }
+
+  function porId(id) {
+    for (var i = 0; i < claves.length; i++) { if (claves[i].id === id) return claves[i]; }
+    return null;
+  }
+
+  function actuar(accion, id) {
+    var clave = porId(id);
+    if (!clave) return;
+    if (accion === 'copiar') { copiarTexto(clave.valor); }
+    else if (accion === 'alternar') { clave.visible = !clave.visible; avisar(clave.visible ? 'Clave mostrada.' : 'Clave oculta.'); }
+    else if (accion === 'regenerar') { clave.valor = 'sk-demo-' + generarFicticia(); avisar('Clave ficticia regenerada.'); }
+    else if (accion === 'eliminar') { claves = claves.filter(function (c) { return c.id !== id; }); avisar('Clave ficticia eliminada.'); }
+    renderizar();
+  }
+
+  lista.addEventListener('click', function (evento) {
+    var boton = evento.target.closest('button[data-accion]');
+    if (boton) actuar(boton.getAttribute('data-accion'), boton.getAttribute('data-id'));
+  });
+
+  lista.addEventListener('keydown', function (evento) {
+    if (evento.key === 'ArrowRight' || evento.key === 'ArrowLeft') {
+      var botones = Array.prototype.slice.call(lista.querySelectorAll('button[data-accion]'));
+      var indice = botones.indexOf(document.activeElement);
+      if (indice === -1) return;
+      evento.preventDefault();
+      var siguiente = (evento.key === 'ArrowRight') ? (indice + 1) % botones.length : (indice - 1 + botones.length) % botones.length;
+      botones[siguiente].focus();
+    }
+  });
+
+  document.getElementById('btnNueva').addEventListener('click', function () {
+    claves.push({ id: 'k' + Date.now(), nombre: 'Clave Nueva', valor: 'sk-demo-' + generarFicticia(), visible: false });
+    avisar('Nueva clave ficticia agregada.');
+    renderizar();
+  });
+
+  selectProveedor.addEventListener('change', function () {
+    chipProveedor.textContent = selectProveedor.value;
+    avisar('Proveedor cambiado a ' + proveedores[selectProveedor.value] + '.');
+    renderizar();
+  });
+
+  renderizar();
+})();
+</script>
+</body>
+</html>

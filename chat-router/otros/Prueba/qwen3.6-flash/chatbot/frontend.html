@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP Proto UI</title>
+<style>
+:root { --bg: #ffffff; --text: #111; --blue: #0055ff; --gray: #eee; }
+body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 2rem; display: flex; justify-content: center; }
+.container { width: 100%; max-width: 600px; }
+h1 { font-size: 1.4rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--blue); padding-bottom: 0.5rem; }
+select, input, button { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid var(--gray); border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
+select:focus, input:focus, button:focus { outline: 2px solid var(--blue); outline-offset: 2px; }
+.btn-primary { background: var(--blue); color: white; border: none; cursor: pointer; }
+.btn-primary:hover { opacity: 0.9; }
+.grid { display: grid; gap: 1rem; margin-bottom: 1rem; }
+.col { display: flex; flex-direction: column; }
+.output { background: #f9f9f9; padding: 1rem; border-radius: 4px; min-height: 100px; white-space: pre-wrap; }
+.empty { color: #888; text-align: center; padding: 2rem 0; }
+.hidden { display: none; }
+@media (max-width: 480px) { body { padding: 1rem; } h1 { font-size: 1.2rem; } }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Prototipo Selector MCP</h1>
+<label for="toolSelect">Herramienta:</label>
+<select id="toolSelect" aria-label="Seleccionar herramienta">
+  <option value="">-- Selecciona --</option>
+  <option value="calc_sum">Calc Sum</option>
+  <option value="weather_fetch">Weather Fetch</option>
+</select>
+
+<div id="paramsContainer" class="grid hidden" aria-live="polite"></div>
+
+<button id="execBtn" class="btn-primary" disabled>Ejecutar Simulación</button>
+
+<label for="outputArea">Resultado / Logs:</label>
+<div id="outputArea" class="output" tabindex="-1"><p class="empty">Esperando selección...</p></div>
+</div>
+
+<script>
+const toolsMeta = { calc_sum: [{k:"a",type:"number"},{k:"b",type:"number"}], weather_fetch: [{k:"city",type:"string"}] };
+const toolSelect = document.getElementById('toolSelect');
+const paramsBox = document.getElementById('paramsContainer');
+const execBtn = document.getElementById('execBtn');
+const output = document.getElementById('outputArea');
+
+function renderInputs() {
+  const sel = toolSelect.value;
+  paramsBox.innerHTML = '';
+  paramsBox.classList.add('hidden');
+  execBtn.disabled = !sel;
+  if (!sel || !toolsMeta[sel]) return;
+  paramsBox.classList.remove('hidden');
+  toolsMeta[sel].forEach((f, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'col';
+    const label = document.createElement('label');
+    label.textContent = f.k + ' (' + f.type + ')';
+    const inp = document.createElement('input');
+    inp.setAttribute('type', f.type === 'number' ? 'number' : 'text');
+    inp.id = 'inp_' + i;
+    inp.dataset.key = f.k;
+    inp.placeholder = f.type;
+    wrap.appendChild(label);
+    wrap.appendChild(inp);
+    paramsBox.appendChild(wrap);
+  });
+}
+
+function validate() {
+  let valid = true;
+  let data = {};
+  const inputs = paramsBox.querySelectorAll('input');
+  inputs.forEach(inp => {
+    const val = inp.value.trim();
+    if (!val) { alert('Falta argumento: ' + inp.dataset.key); valid = false; return; }
+    if (inp.type === 'number' && isNaN(val)) { alert('Valor numérico inválido'); valid = false; return; }
+    data[inp.dataset.key] = inp.type === 'number' ? Number(val) : val;
+  });
+  return valid ? data : null;
+}
+
+execBtn.addEventListener('click', () => {
+  const d = validate();
+  if (!d) return;
+  output.textContent = `[SIMULACIÓN] Método: ${toolSelect.value}\nArgs: ${JSON.stringify(d)}`;
+  console.log('Payload simulado:', JSON.stringify({jsonrpc:"2.0", id:Date.now(), method:toolSelect.value, params:d}));
+});
+
+toolSelect.addEventListener('change', renderInputs);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.activeElement === toolSelect) {
+    renderInputs();
+    setTimeout(() => execBtn.focus(), 50);
+  }
+});
+renderInputs();
+</script>
+</body>
+</html>

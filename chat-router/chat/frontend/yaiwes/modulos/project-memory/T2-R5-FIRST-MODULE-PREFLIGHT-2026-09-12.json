@@ -1,0 +1,64 @@
+{
+  "schema": "yaiwes.t2.first-module-preflight.v1",
+  "identity": "➡️ Astra plan fábrica UI YAIWES",
+  "task": "T2-R5_PREFLIGHT_FIRST_FACTORY_MODULE_NO_IMPLEMENTATION",
+  "status": "PREFLIGHT_COMPLETE_IMPLEMENTATION_NOT_STARTED",
+  "selected_module": "M_RUNTIME_ORCHESTRATION",
+  "reason": "Highest direct reuse of verified RUN windows and narrow OSS adapter surface while preserving backend ownership.",
+  "source_windows": [
+    {"id":"RUN-01","capability":"workflow/cascade execution view"},
+    {"id":"RUN-02","capability":"pipeline/train execution view"},
+    {"id":"RUN-05","capability":"orchestration control surface"},
+    {"id":"RUN-07","capability":"declarative YAML/code editing"},
+    {"id":"RUN-08","capability":"node input/output inspector"}
+  ],
+  "factory_instrument": {
+    "source_sha":"8d5a7ed86f9af517b0d42f5aad9e2f7359edd7f0",
+    "status":"VERIFIED_CLOSED",
+    "canonical_preview":"https://comand-center-1-yaiwes-ui-factory.static.hf.space/",
+    "rule":"If Factory source changes, re-run logic/E2E/deploy/readback/reviewer before using changed build."
+  },
+  "frontend_reuse": [
+    {"component":"CodeMirror 6","capability":"YAML/code editor for RUN-07/RUN-08","policy":"ADAPT_MINIMUM_CAPABILITY","required_before_use":["source_ref","license","adapter","unit_test","E2E"]},
+    {"component":"Lucide","capability":"icons/actions","policy":"REUSE_PROVEN_FACTORY_DONOR_THROUGH_T2_ADAPTER","required_before_use":["T2_adapter_test"]},
+    {"component":"Chart.js","capability":"optional runtime metrics/evidence panel","policy":"DEFER_UNTIL_PRIMARY_FLOW_PASS","required_before_use":["source_ref","license","adapter_test"]}
+  ],
+  "backend_boundary": {
+    "path":"window→ABS_ActionBus→HOST_postMessage→kernel→RIU→API/MCP provider adapter",
+    "productive_sol_backend_write":"DENY_WITHOUT_EXPLICIT_HANDOFF",
+    "secret_policy":"secret_ref/runtime only; no raw secret in frontend",
+    "backend_root":"UI YAIWES interface/Backend/",
+    "backend_policy":"DONOR_STAGING_ONLY"
+  },
+  "first_vertical_slice": {
+    "name":"RUN_ORCHESTRATION_EDITOR_INSPECTOR",
+    "ui":"RUN-05 orchestration control + RUN-07 YAML editor + RUN-08 node I/O inspector",
+    "actions":["RUN-05.run","RUN-07.run","RUN-08.toggle","io.ping"],
+    "data_contract":"structured state/events only; provider-agnostic UI",
+    "non_goals":["production orchestration backend","secret handling in window","whole-repo donor copy","T2 backend mutation outside staging"]
+  },
+  "acceptance_gates": [
+    "G1 Factory-produced visual scene has deterministic source/version evidence",
+    "G2 CodeMirror minimum adapter compiles and passes isolated test",
+    "G3 ActionBus unknown action fails closed",
+    "G4 HOST postMessage contract passes valid/invalid message tests",
+    "G5 mock kernel adapter returns structured ok/reason without provider secret",
+    "G6 desktop/mobile E2E covers edit→dispatch→inspect flow",
+    "G7 responsive/no-horizontal-overflow gate passes",
+    "G8 source/ref/license/destination/evidence recorded for each donor",
+    "G9 independent reviewer verifies read-back",
+    "G10 no write occurred to Sol productive backend"
+  ],
+  "sol_dependencies": {
+    "sol_A":"Useful before backend-facing contract promotion; currently READY_TO_CLAIM, not executed by Astra.",
+    "sol_B":"Dagu donor review is parallel evidence; currently READY_TO_CLAIM, not executed by Astra.",
+    "implementation_blocked_by_sol":"No for frontend mock vertical slice; yes before claiming Sol backend compatibility/promotion."
+  },
+  "verification": {
+    "module_code_written": false,
+    "donor_runtime_pass_claimed": false,
+    "factory_source_changed": false,
+    "ownership_collision": false
+  },
+  "next_node": "T2-R5A_ADAPT_CODEMIRROR_MINIMUM_CAPABILITY_IN_FACTORY_WORKFLOW"
+}

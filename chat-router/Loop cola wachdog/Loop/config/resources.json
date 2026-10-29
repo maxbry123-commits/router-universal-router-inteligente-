@@ -1,0 +1,4 @@
+{"resources":[
+ {"name":"shadcn/ui","type":"repo","url":"https://ui.shadcn.com/","license_claim":"revisar upstream","tags":["frontend"],"keywords":["ui","componente","react"],"coverage_estimate_pct":70,"estimated_minutes_saved":null},
+ {"name":"Qwen-Agent","type":"repo","url":"https://github.com/QwenLM/Qwen-Agent","license_claim":"revisar upstream","tags":["general"],"keywords":["agente","tools","modelo"],"coverage_estimate_pct":50,"estimated_minutes_saved":null}
+]}

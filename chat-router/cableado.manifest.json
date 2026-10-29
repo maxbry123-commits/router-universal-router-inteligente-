@@ -1,0 +1,165 @@
+{
+ "enlaces": {
+  "chat-router/harness": "chat/backend/deepseek_harness",
+  "chat-router/plugins/deepseek_harness": "../chat/backend/deepseek_harness",
+  "chat-router/plugins/router_api_cliente.py": "../chat/backend/router_api_cliente.py",
+  "router-mvp/mvp": "../chat-router/chat/backend/mvp"
+ },
+ "plugins": {
+  "agentes": {
+   "destino": "../agentes/agentes-yaiwes",
+   "enlace": true,
+   "ficha": false
+  },
+  "chat": {
+   "destino": "../otros/chat",
+   "enlace": true,
+   "ficha": true
+  },
+  "cola50": {
+   "destino": "../Loop cola wachdog/Cola",
+   "enlace": true,
+   "ficha": true
+  },
+  "connectivity": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "deepseek_harness": {
+   "destino": "../chat/backend/deepseek_harness",
+   "enlace": true,
+   "ficha": true
+  },
+  "hf_compute": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "hf_datasets": {
+   "destino": "../memoria/hf_datasets",
+   "enlace": true,
+   "ficha": true
+  },
+  "hf_skills": {
+   "destino": "../workflow-loop-code-yaiwes/hf_skills",
+   "enlace": true,
+   "ficha": true
+  },
+  "hf_storage": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "lifeguard": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "memoria": {
+   "destino": "../memoria/memoria-yaiwes",
+   "enlace": true,
+   "ficha": false
+  },
+  "motores": {
+   "destino": "../motores/motores",
+   "enlace": true,
+   "ficha": false
+  },
+  "motores-descarga": {
+   "destino": "../motores/motores-descarga",
+   "enlace": true,
+   "ficha": false
+  },
+  "nct_loop": {
+   "destino": "../Loop cola wachdog/Loop",
+   "enlace": true,
+   "ficha": true
+  },
+  "orquestador": {
+   "destino": "../agentes/orquestacion/orquestador",
+   "enlace": true,
+   "ficha": true
+  },
+  "parallel": {
+   "destino": "../agentes/orquestacion/parallel",
+   "enlace": true,
+   "ficha": true
+  },
+  "puente_chat": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "router_api_cliente.py": {
+   "destino": "../chat/backend/router_api_cliente.py",
+   "enlace": true,
+   "ficha": false
+  },
+  "ssh_bridge": {
+   "destino": "",
+   "enlace": false,
+   "ficha": true
+  },
+  "watchdog48": {
+   "destino": "../Loop cola wachdog/wachdog",
+   "enlace": true,
+   "ficha": true
+  },
+  "workflow-loop-yaiwes": {
+   "destino": "../workflow-loop-code-yaiwes/workflow-loop-yaiwes",
+   "enlace": true,
+   "ficha": false
+  }
+ },
+ "protegido": {
+  "chat-router/chat/auditoria": {
+   "archivos": 4,
+   "sha256": "65235eb47c6e12bcb3f6a213b2b792684a368af6848addd24905f67edca472bf"
+  },
+  "chat-router/chat/backend": {
+   "archivos": 117,
+   "sha256": "f898799e665066e2fb908a28fdf0ee5e3aa144c720e71d06f9f837938213df0d"
+  },
+  "chat-router/chat/e2e": {
+   "archivos": 22,
+   "sha256": "43554e8b03de67cf0a70aa9679a962686f11302bdae4c6e226c1e235c5d55024"
+  },
+  "chat-router/chat/espejo": {
+   "archivos": 1,
+   "sha256": "fd6578f73ee2acfdc63510750e189086fb025a8c0cabf293be028e5e6f5cb8c0"
+  },
+  "chat-router/chat/frontend": {
+   "archivos": 550,
+   "sha256": "e1c806029f6fa50fb203882e87e112c51ee8d5fe5a588aee126b9a3daaca3061"
+  },
+  "chat-router/plugins/__init__.py": {
+   "archivos": 1,
+   "sha256": "0c48ab8e0ab68fe4477e565769c22c023f71a49c84e4c53e1bff6b4d1d07610f"
+  },
+  "chat-router/plugins/hf_storage": {
+   "archivos": 3,
+   "sha256": "892aab1ec3da8cb03e5438ad83e42573fa3b4df65a81fafc05fdb98c4c098503"
+  },
+  "chat-router/plugins/puente_chat": {
+   "archivos": 44,
+   "sha256": "660454e2dfbc65f4b3439da62757afe51563703e935922866814f492a873c9a1"
+  },
+  "router-mvp/fichas": {
+   "archivos": 220,
+   "sha256": "65aa8987b11bd7a2e6a048c83fce0750843f4b30051ee9598d95362bfc34f223"
+  },
+  "router-mvp/raiz_fichas_prompt": {
+   "archivos": 5,
+   "sha256": "14274d1854b93bfd96d10563e660bf31bea4d508e3c308598be6645e1d7492a9"
+  },
+  "router-mvp/raiz_router": {
+   "archivos": 583,
+   "sha256": "9157e83c7d597d40194f12ecb3aa12bd6575c011a812476c6d420059dee09667"
+  },
+  "router-mvp/router": {
+   "archivos": 176,
+   "sha256": "25521025abb3b6758849e10d3a6a206ad831c6c2f22d1674b8f36f6270489524"
+  }
+ }
+}

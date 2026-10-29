@@ -1,0 +1,60 @@
+schema: yaiwes.chain/v1
+input_block: |
+  ORDEN DIRECTOR 2026-10-02: PRUEBA OPENAI SDK SIN GITHUB ACTIONS Y SIN CREAR/ESCALAR HF JOBS.
+  Usa exclusivamente el cómputo YA ENCENDIDO y el banco cifrado que boot.py abre en memoria.
+  No imprimir, guardar ni devolver ninguna clave/token.
+  Probar las 14 credenciales OpenAI del banco con 3 pruebas mínimas por credencial:
+  1) GET https://api.openai.com/v1/me
+  2) GET https://api.openai.com/v1/models
+  3) POST https://api.openai.com/v1/responses con una entrada mínima y un modelo visible en /v1/models.
+  Resultado: 42 checks. Solo refs lógicas openai/01..openai/14, HTTP status, error code/tipo y PASS/FAIL.
+  Prohibido GitHub Actions. Prohibido lanzar Jobs HF. Prohibido autoscaling. Prohibido imprimir secretos.
+
+agent:
+  id: agent-30-openai-sdk-smoke
+  framework: pocketflow
+  group: sdk
+  route: [nvidia, groq]
+  fallback: []
+  max_tokens: 1800
+
+context:
+  text: |
+    El runner PocketFlow llama boot.open_bank() ANTES de ejecutar este paso.
+    Las claves OpenAI ya abiertas deben leerse solo en memoria con:
+      from integration.chat_mvp import vault_hook
+      keys = vault_hook.provider_keys("openai")
+    No leer secretos de archivos ni variables nuevas.
+    Usa solo biblioteca estándar para HTTP (urllib.request) para que la prueba no dependa de instalar paquetes.
+    /v1/responses: cuerpo mínimo {"model": MODEL, "input": "Reply exactly: SDK_OK"}.
+    Selección de modelo: preferir gpt-4.1-mini si aparece en /v1/models; si no, primer id que empiece por gpt-; si no existe, registrar NO_MODEL.
+    Cada respuesta debe cerrarse; timeout 25 s. Nunca incluir Authorization ni secretos en excepciones/salida.
+
+steps:
+  - id: openai_42_checks
+    task: |
+      Entrega SOLO código Python de un módulo llamado openai_sdk_smoke.py.
+      Debe exponer probe_all() -> list[dict].
+      probe_all() obtiene las claves con vault_hook.provider_keys("openai"), exige exactamente 14, y para cada clave ejecuta las 3 pruebas.
+      Cada fila final debe contener solamente:
+      ref, me, models, responses, model, ok
+      donde me/models/responses son objetos sanitizados con http_status y, si existe, error_code/error_type.
+      No debe contener key, token, Authorization, request headers ni cuerpos que puedan incluir secretos.
+      Al ejecutar como script imprime JSON del reporte sanitizado.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        timeout: 900
+        module: openai_sdk_smoke.py
+        test: |
+          import json
+          import openai_sdk_smoke as m
+          rows = m.probe_all()
+          assert len(rows) == 14, {"count": len(rows)}
+          assert all(set(r) <= {"ref","me","models","responses","model","ok"} for r in rows)
+          assert all(r["ref"].startswith("openai/") for r in rows)
+          print(json.dumps(rows, ensure_ascii=False))
+          failed = [r for r in rows if not r.get("ok")]
+          assert not failed, json.dumps(failed, ensure_ascii=False)
+      - kind: no_secrets
+edges: []

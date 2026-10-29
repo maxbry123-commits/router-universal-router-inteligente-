@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src 'self' blob:;">
+<title>RUN-03 · AUDITOR</title>
+<link rel="stylesheet" href="_shared/fromted.css">
+<script>window.FROMTED_LOCK={"id": "RUN-03", "name": "AUDITOR", "view": "auditor"};window.FROMTED_MANIFEST={"id": "RUN-03", "in": ["FROMTED_THEME", "FROMTED_BACKEND_WIRE"], "out": ["RUN-03.EVENT"]};</script>
+<script src="_shared/abs.js"></script>
+<script src="_shared/security.js"></script>
+<script src="_shared/connectors.js"></script>
+<link rel="stylesheet" href="_shared/run-orig.css">
+<style> :root{ --bg:#0a0a0d !important;} .tabs button.on,.btn.primary{background:#2563eb;color:#fff;border-color:#2563eb} </style>
+</head>
+<body data-id="RUN-03">
+<header class="top">
+  <div class="brand"><b>YAIWES</b><small>RUN-03 · AUDITOR</small></div>
+  <button type="button" data-abs="theme">Tema</button>
+  <button type="button" data-abs="ping">Ping IO</button>
+  <button type="button" class="cargar" data-abs="cargar">Cargar</button>
+  <button type="button" class="descargar" data-abs="descargar">Descargar</button>
+</header>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <b>UI YAIWES</b>
+      <small>Run · equipo IA</small>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button type="button" class="on" data-view="cascade">CASCADE</button>
+      <button type="button" data-view="tren">TREN</button>
+      <button type="button" data-view="auditor">AUDITOR</button>
+      <button type="button" data-view="ventanas">VENTANAS</button>
+      <button type="button" data-view="orquesta">ORQUESTA</button>
+    </nav>
+    <div class="flex">
+      <button class="btn ghost" type="button" id="btnAdd">+ IA</button>
+      <button class="btn ghost" type="button" id="btnSand">Sandbox</button>
+      <button class="btn ghost" type="button" id="btnCode">Codigo</button>
+      <button class="btn primary" type="button" id="btnRun">Run</button>
+    </div>
+  </header>
+  <div class="stage">
+    <div class="canvas" id="canvas"><p class="boot">Cargando UI YAIWES…</p></div>
+    <aside class="side" id="side" hidden></aside>
+  </div>
+  <footer class="foot"><span id="fl">—</span><span id="fr">—</span></footer>
+</div>
+<div class="err" id="err"></div>
+<noscript><p class="boot">Activa JavaScript para usar UI YAIWES.</p></noscript>
+
+<footer class="foot"><span>RUN-03</span><span id="st">ABS listo</span></footer>
+<script>
+ABS.register('RUN-03.run', function(p){ return {ok:true, id:'RUN-03'}; });
+ABS.register('theme', function(){ document.body.classList.toggle('blanco'); return {theme:document.body.className}; });
+ABS.register('ping', async function(){ const r=await FROMTED_IO.ping(); document.getElementById('st').textContent=JSON.stringify(r); return r; });
+ABS.register('cargar', function(){ document.getElementById('st').textContent='Cargar · ABS'; return {op:'cargar'}; });
+ABS.register('descargar', function(){
+  const blob=new Blob([JSON.stringify({id:'RUN-03', at:Date.now()},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='RUN-03.json'; a.click();
+  return {op:'descargar'};
+});
+document.querySelectorAll('[data-abs]').forEach(function(b){ b.addEventListener('click', function(){ ABS.dispatch(b.getAttribute('data-abs')); }); });
+/* engine below */
+</script>
+<script src="_shared/run-engine.js"></script>
+</body></html>

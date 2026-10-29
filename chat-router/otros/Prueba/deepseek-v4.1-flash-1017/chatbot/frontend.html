@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Prueba deepseek-v4.1-flash-1017 · Interruptores</title>
+<style>
+  :root {
+    --azul: #1d4ed8;
+    --azul-tenue: #eef3ff;
+    --texto: #111827;
+    --gris: #6b7280;
+    --borde: #e5e7eb;
+    --fondo: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px 48px;
+    background: #fafafa;
+    color: var(--texto);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .panel { max-width: 640px; margin: 0 auto; background: var(--fondo); border: 1px solid var(--borde); border-radius: 14px; padding: 20px; }
+  h1 { font-size: 1.15rem; margin: 0 0 4px; font-weight: 600; }
+  h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gris); margin: 22px 0 10px; font-weight: 600; }
+  .nota { margin: 0; color: var(--gris); font-size: 0.82rem; }
+  .fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--borde); border-radius: 10px; margin-bottom: 10px; background: #fff; }
+  .fila p { margin: 0; font-size: 0.86rem; }
+  .fila small { display: block; color: var(--gris); font-size: 0.75rem; }
+  .sw { flex: 0 0 auto; font: inherit; font-size: 0.8rem; font-weight: 600; padding: 8px 14px; min-width: 92px; border-radius: 999px; border: 1px solid var(--borde); background: #fff; color: var(--gris); cursor: pointer; transition: background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  .sw:hover { border-color: var(--azul); }
+  .sw:focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; }
+  .sw[aria-checked="true"] { background: var(--azul); border-color: var(--azul); color: #fff; }
+  .resumen { margin-top: 18px; padding: 12px 14px; border-radius: 10px; background: var(--azul-tenue); font-size: 0.82rem; }
+  .resumen code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; }
+  .acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .btn { font: inherit; font-size: 0.82rem; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--borde); background: #fff; color: var(--texto); cursor: pointer; }
+  .btn:focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; }
+  .btn:active { background: var(--azul); border-color: var(--azul); color: #fff; }
+  @media (max-width: 480px) {
+    .fila { flex-direction: column; align-items: stretch; }
+    .sw { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<main class="panel" aria-labelledby="titulo">
+  <h1 id="titulo">Interruptores de herramientas</h1>
+  <p class="nota">Estado solo local: sin red, sin secretos y sin conexión con el backend.</p>
+
+  <h2 id="g-principal">Controles por separado</h2>
+  <div role="group" aria-labelledby="g-principal">
+    <div class="fila">
+      <p>tools<small>Habilita el catálogo de herramientas</small></p>
+      <button class="sw" type="button" role="switch" aria-checked="false" data-clave="tools" aria-describedby="d-tools">
+        tools · OFF<span id="d-tools" hidden>apagado</span>
+      </button>
+    </div>
+    <div class="fila">
+      <p>agente_tool<small>Permite que el agente invoque herramientas</small></p>
+      <button class="sw" type="button" role="switch" aria-checked="false" data-clave="agente_tool">agente_tool · OFF</button>
+    </div>
+    <div class="fila">
+      <p>llm_tool<small>Permite que el modelo invoque herramientas</small></p>
+      <button class="sw" type="button" role="switch" aria-checked="false" data-clave="llm_tool">llm_tool · OFF</button>
+    </div>
+    <div class="fila">
+      <p>auto<small>Selección automática de herramienta</small></p>
+      <button class="sw" type="button" role="switch" aria-checked="false" data-clave="auto">auto · OFF</button>
+    </div>
+  </div>
+
+  <div class="resumen" aria-live="polite" id="resumen"></div>
+  <div class="acciones">
+    <button class="btn" type="button" id="todo-off">Apagar todo</button>
+    <button class="btn" type="button" id="leer">Releer estado</button>
+  </div>
+</main>
+<script>
+  "use strict";
+  const CLAVES = ["tools", "agente_tool", "llm_tool", "auto"];
+  const estado = { tools: false, agente_tool: false, llm_tool: false, auto: false };
+
+  function formatear(clave) {
+    return clave + " · " + (estado[clave] ? "ON" : "OFF");
+  }
+  function pintar(boton) {
+    const clave = boton.dataset.clave;
+    const activo = estado[clave] === true;
+    boton.setAttribute("aria-checked", activo ? "true" : "false");
+    boton.textContent = formatear(clave);
+  }
+  function resumen() {
+    const partes = CLAVES.map((clave) => clave + "=" + (estado[clave] ? "on" : "off"));
+    const activos = CLAVES.filter((clave) => estado[clave]).length;
+    const destino = document.getElementById("resumen");
+    destino.innerHTML = "<code>" + partes.join(" | ") + "</code><br>activos: " + activos + "/" + CLAVES.length;
+  }
+  function alternar(boton) {
+    const clave = boton.dataset.clave;
+    if (!Object.prototype.hasOwnProperty.call(estado, clave)) { return; }
+    estado[clave] = !estado[clave];
+    pintar(boton);
+    resumen();
+  }
+  function apagarTodo() {
+    CLAVES.forEach((clave) => { estado[clave] = false; });
+    document.querySelectorAll(".sw").forEach(pintar);
+    resumen();
+  }
+  document.querySelectorAll(".sw").forEach((boton) => {
+    boton.addEventListener("click", () => alternar(boton));
+    boton.addEventListener("keydown", (evento) => {
+      if (evento.key === " " || evento.key === "Enter") {
+        evento.preventDefault();
+        alternar(boton);
+      }
+    });
+  });
+  document.getElementById("todo-off").addEventListener("click", apagarTodo);
+  document.getElementById("leer").addEventListener("click", () => {
+    document.querySelectorAll(".sw").forEach(pintar);
+    resumen();
+  });
+  document.querySelectorAll(".sw").forEach(pintar);
+  resumen();
+</script>
+</body>
+</html>

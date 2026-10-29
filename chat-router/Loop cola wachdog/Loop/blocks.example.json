@@ -1,0 +1,12 @@
+{
+ "status":"TEMPLATE_NOT_CONNECTED",
+ "warning":"Ejemplo de registro. Los 25 bloques reales deben inspeccionarse; NO se asume que estos nombres existen en YAIWES.",
+ "blocks": [
+ "arquitectura","rag","escritor","ejecutor","validacion","reparacion","test","deploy",
+ "block_09_UNMAPPED","block_10_UNMAPPED","block_11_UNMAPPED","block_12_UNMAPPED",
+ "block_13_UNMAPPED","block_14_UNMAPPED","block_15_UNMAPPED","block_16_UNMAPPED",
+ "block_17_UNMAPPED","block_18_UNMAPPED","block_19_UNMAPPED","block_20_UNMAPPED",
+ "block_21_UNMAPPED","block_22_UNMAPPED","block_23_UNMAPPED","block_24_UNMAPPED","block_25_UNMAPPED"
+ ],
+ "required_to_activate":{"identifier":"nombre real","transport":"HTTP|CLI|function","endpoint":"ruta real verificada","auth":"vault existente","schema_input":"JSON schema real","schema_output":"JSON schema real"}
+}

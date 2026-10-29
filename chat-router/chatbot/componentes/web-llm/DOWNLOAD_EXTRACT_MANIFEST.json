@@ -1,0 +1,35 @@
+{
+  "bundle_bytes": 10800745,
+  "bundle_sha256": "a8174420e2e6714ef74f9b955fa2970dbd6b5d5b84d0359a5e26f36734426a3b",
+  "extracted_tree": {
+    "bytes": 13201160,
+    "files": 326,
+    "sha256": "a5cfd99f5408a147f8e8a5d30a4f451c14bd71e34dbd7a31642f6bc1f65a8626"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 10800745,
+      "name": "web-llm.bundle.zip.part-0001",
+      "sha256": "a8174420e2e6714ef74f9b955fa2970dbd6b5d5b84d0359a5e26f36734426a3b"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "web-llm",
+  "source_bytes": 13201160,
+  "source_commit": "c42c36670cfc426c75e53ee297443882f1ae8d84",
+  "source_files": 326,
+  "source_ref": "HEAD",
+  "source_repo": "mlc-ai/web-llm",
+  "source_tree": {
+    "bytes": 13201160,
+    "files": 326,
+    "sha256": "a5cfd99f5408a147f8e8a5d30a4f451c14bd71e34dbd7a31642f6bc1f65a8626"
+  }
+}

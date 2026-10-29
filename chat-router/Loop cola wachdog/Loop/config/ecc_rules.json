@@ -1,0 +1,101 @@
+{
+  "source_repository": "affaan-m/ECC",
+  "source_tree_sha": "90606c8315ee09cafc303515c5f33024db6b9882",
+  "sources": {
+    "continuous-agent-loop": "skills/continuous-agent-loop/SKILL.md",
+    "loop-design-check": "skills/loop-design-check/SKILL.md",
+    "ralphinho-rfc-pipeline": "skills/ralphinho-rfc-pipeline/SKILL.md",
+    "agent-harness-construction": "skills/agent-harness-construction/SKILL.md",
+    "context-budget": "skills/context-budget/SKILL.md",
+    "plankton-code-quality": "skills/plankton-code-quality/SKILL.md",
+    "tdd-workflow": "skills/tdd-workflow/SKILL.md",
+    "verification-loop": "skills/verification-loop/SKILL.md",
+    "eval-harness": "skills/eval-harness/SKILL.md",
+    "ai-regression-testing": "skills/ai-regression-testing/SKILL.md",
+    "click-path-audit": "skills/click-path-audit/SKILL.md",
+    "accessibility": "skills/accessibility/SKILL.md",
+    "module-regression": "skills/module-regression/SKILL.md",
+    "security-review": "skills/security-review/SKILL.md",
+    "iterative-retrieval": "skills/iterative-retrieval/SKILL.md"
+  },
+  "triggers": [
+    {
+      "id": "ecc-gate-goal",
+      "event": "phase.0",
+      "ecc_source": "loop-design-check",
+      "action": "goal_is_decidable"
+    },
+    {
+      "id": "ecc-gate-dag",
+      "event": "phase.2",
+      "ecc_source": "ralphinho-rfc-pipeline",
+      "action": "dag_contract"
+    },
+    {
+      "id": "ecc-gate-schema",
+      "event": "phase.2",
+      "ecc_source": "agent-harness-construction",
+      "action": "tools_are_typed"
+    },
+    {
+      "id": "ecc-gate-context",
+      "event": "phase.3",
+      "ecc_source": "context-budget",
+      "action": "context_budget"
+    },
+    {
+      "id": "ecc-gate-receipt",
+      "event": "phase.4.receipt",
+      "ecc_source": "agent-harness-construction",
+      "action": "receipts_bound"
+    },
+    {
+      "id": "ecc-gate-progress",
+      "event": "phase.5",
+      "ecc_source": "continuous-agent-loop",
+      "action": "progress_guard"
+    },
+    {
+      "id": "ecc-gate-retry",
+      "event": "phase.8",
+      "ecc_source": "loop-design-check",
+      "action": "retry_budget"
+    },
+    {
+      "id": "ecc-gate-verified",
+      "event": "phase.9",
+      "ecc_source": "verification-loop",
+      "action": "verify_evidence"
+    },
+    {
+      "id": "ecc-route",
+      "event": "phase.1",
+      "ecc_source": "continuous-agent-loop",
+      "action": "route_is_bounded"
+    },
+    {
+      "id": "ecc-context-isolation",
+      "event": "phase.3",
+      "ecc_source": "agent-harness-construction",
+      "action": "context_is_isolated"
+    },
+    {
+      "id": "ecc-pre-call",
+      "event": "phase.4.pre",
+      "ecc_source": "agent-harness-construction",
+      "action": "context_budget"
+    },
+    {
+      "id": "ecc-checker",
+      "event": "phase.6",
+      "ecc_source": "eval-harness",
+      "action": "verify_evidence"
+    },
+    {
+      "id": "ecc-summary",
+      "event": "phase.7",
+      "ecc_source": "agent-harness-construction",
+      "action": "summary_is_grounded"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+schema: yaiwes.chain/v1
+run_id: CHAT-100-AGENT4-SUPPORT
+input_block: |
+  ORDEN DE AGENT 14 / DIRECTOR:
+  Eres apoyo funcional del frontend Chat YAIWES.
+  No sustituyes a Agent 16 y no creas otra UI.
+  Reutiliza Open WebUI y el código existente.
+  No GitHub Actions. No motores. No descargas.
+
+agent:
+  id: agent-4-router-smol
+  framework: smolagents
+  group: chat
+  route: [deepseek_flash, minimax_m3, nvidia, groq]
+  fallback: []
+  max_tokens: 3200
+
+context:
+  text: |
+    Open WebUI ya existe.
+    Agent 16 hace el cableado principal.
+    Tu trabajo es cerrar capacidades funcionales que Agent 16 deje pendientes y probarlas sin pisar sus archivos mientras estén en edición.
+    Fuente de verdad: ➡️ ➡️ 📂 osquestador comand Center.md
+
+steps:
+  - id: chat_frontend_support
+    task: |
+      REUTILIZA/ADAPTA -> CABLEA -> PRUEBA.
+      Apoya a Agent 16 únicamente en:
+      - selector de modelos
+      - selector de agente
+      - modo con agente / sin agente
+      - documentos/archivos
+      - visibilidad de Router/Jobs
+      - navegación funcional del chat
+      - prueba de interfaz integrada en Open WebUI
+
+      Antes de tocar un archivo, verifica que Agent 16 no lo tenga como objetivo activo.
+      No construyas UI nueva.
+      Devuelve HANDOFF con:
+      ARCHIVOS TOCADOS, PRUEBAS, RESULTADO, GAP, FIX.
+    checks:
+      - kind: contains
+        values: [selector, agente, documentos, Router, Jobs, PRUEBA, GAP, FIX]
+      - kind: no_secrets

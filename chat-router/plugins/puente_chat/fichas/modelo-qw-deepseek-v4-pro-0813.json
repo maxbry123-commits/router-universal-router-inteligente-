@@ -1,0 +1,15 @@
+{
+  "id": "qw-deepseek-v4-pro-0813",
+  "nombre": "DeepSeek V4 Pro 0813",
+  "proveedor": "qwencloud",
+  "modelo": "deepseek-v4-pro",
+  "timeout_s": 90,
+  "tipo": "api",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true,
+  "per_attempt_s": 75,
+  "max_attempts": 2,
+  "nota": "AUDIT: variante 0813 no esta en Token Plan Individual (404); apunta a deepseek-v4-pro conservando id"
+}

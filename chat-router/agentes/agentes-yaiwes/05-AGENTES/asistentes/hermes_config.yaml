@@ -1,0 +1,14 @@
+schema: yaiwes.assistant/v1
+name: hermes
+role: planner_supervisor
+provider: openai_compatible
+base_url_env: RIU_ROUTER_URL   # se usa <RIU_ROUTER_URL>/v1/router
+model_default: assistants   # grupo del Router (o auto)
+api_key_env: RIU_ROUTER_API_KEY
+capabilities:
+  - plan
+  - critique
+  - review
+  - debate
+  - delegate
+state_policy: emit_only

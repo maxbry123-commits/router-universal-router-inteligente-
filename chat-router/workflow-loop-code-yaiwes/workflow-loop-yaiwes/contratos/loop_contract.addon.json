@@ -1,0 +1,324 @@
+{
+  "addon_id": "AUTONOMY_ADDON_v1_1",
+  "adds_schema_version": "1.1.0",
+  "required_additions": ["autonomy_policy", "anti_repeat_guard", "instruction_adherence", "reasoning_policy", "tool_policy"],
+  "properties": {
+    "model_params": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "protocol": { "enum": ["openai_chat_completions", "anthropic_messages"] },
+        "defaults": { "$ref": "#/$defs/sampling" },
+        "by_phase": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "plan": { "$ref": "#/$defs/sampling" },
+            "execute": { "$ref": "#/$defs/sampling" },
+            "verify": { "$ref": "#/$defs/sampling" }
+          }
+        }
+      }
+    },
+    "autonomy_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ask_user", "on_missing_info", "assumptions_file", "must_act_each_turn", "max_consecutive_reads", "allowed_pause_points"],
+      "properties": {
+        "ask_user": { "const": "forbidden" },
+        "on_missing_info": {
+          "type": "array", "minItems": 1,
+          "items": { "enum": ["discover_by_tool", "read_state_files", "search_web", "assume_and_log"] }
+        },
+        "assumptions_file": { "type": "string" },
+        "must_act_each_turn": { "const": true },
+        "max_consecutive_reads": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "allowed_pause_points": { "type": "array", "items": { "enum": ["frontend_approval", "results_review", "destructive_action"] }, "uniqueItems": true },
+        "pause_is_nonblocking": { "type": "boolean", "default": true }
+      }
+    },
+    "anti_repeat_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["loop_detection_basis", "dedupe_tool_calls", "read_cache", "repeated_question"],
+      "properties": {
+        "loop_detection_basis": { "const": "tool_call_signature" },
+        "dedupe_tool_calls": {
+          "type": "object", "additionalProperties": false,
+          "required": ["window", "max_identical", "on_exceed"],
+          "properties": {
+            "window": { "type": "integer", "minimum": 2 },
+            "max_identical": { "type": "integer", "minimum": 1 },
+            "on_exceed": { "enum": ["use_cache", "force_different_action", "run_stuck_ladder"] }
+          }
+        },
+        "read_cache": {
+          "type": "object", "additionalProperties": false,
+          "required": ["enabled", "key"],
+          "properties": { "enabled": { "type": "boolean" }, "key": { "const": "path+mtime+range" } }
+        },
+        "repeated_question": {
+          "type": "object", "additionalProperties": false,
+          "required": ["max_same_question", "on_detect"],
+          "properties": { "max_same_question": { "const": 1 }, "on_detect": { "enum": ["answer_from_state", "assume_and_log"] } }
+        }
+      }
+    },
+    "instruction_adherence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pin_instructions", "requirement_checklist", "drift_guard"],
+      "properties": {
+        "pin_instructions": {
+          "type": "object", "additionalProperties": false,
+          "required": ["inject_every_iteration", "sections"],
+          "properties": {
+            "inject_every_iteration": { "const": true },
+            "sections": { "type": "array", "minItems": 1, "items": { "enum": ["goal", "constraints", "forbidden_paths", "acceptance", "autonomy_rules"] }, "uniqueItems": true }
+          }
+        },
+        "requirement_checklist": {
+          "type": "object", "additionalProperties": false,
+          "required": ["file", "each_item_needs_evidence"],
+          "properties": { "file": { "type": "string" }, "each_item_needs_evidence": { "const": true } }
+        },
+        "drift_guard": {
+          "type": "object", "additionalProperties": false,
+          "required": ["check_every", "checks", "allowed_globs", "on_drift"],
+          "properties": {
+            "check_every": { "enum": ["iteration", "node_passed"] },
+            "checks": { "type": "array", "minItems": 1, "items": { "enum": ["diff_scope", "forbidden_paths", "no_unrequested_files", "no_scope_creep", "requirements_not_regressed"] }, "uniqueItems": true },
+            "allowed_globs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            "on_drift": { "enum": ["revert_and_retry", "rollback_to_checkpoint"] }
+          }
+        }
+      }
+    },
+    "reasoning_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["by_phase", "tool_choice_by_phase", "replay_history"],
+      "properties": {
+        "by_phase": {
+          "type": "object", "additionalProperties": false,
+          "required": ["plan", "execute", "verify"],
+          "properties": {
+            "plan": { "enum": ["none", "low", "medium", "high", "xhigh"] },
+            "execute": { "enum": ["none", "low", "medium", "high", "xhigh"] },
+            "verify": { "enum": ["none", "low", "medium", "high", "xhigh"] }
+          }
+        },
+        "tool_choice_by_phase": {
+          "type": "object", "additionalProperties": false,
+          "required": ["plan", "execute", "verify"],
+          "properties": {
+            "plan": { "enum": ["auto", "required", "none"] },
+            "execute": { "enum": ["auto", "required", "none"] },
+            "verify": { "enum": ["auto", "required", "none"] }
+          }
+        },
+        "thinking_budget_tokens": { "type": "integer", "minimum": 0 },
+        "replay_history": {
+          "type": "object", "additionalProperties": false,
+          "required": ["strip_thinking_blocks", "keep_tool_results"],
+          "properties": { "strip_thinking_blocks": { "type": "boolean" }, "keep_tool_results": { "const": true } }
+        }
+      }
+    },
+    "tool_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tools", "results_must_return_to_model"],
+      "properties": {
+        "results_must_return_to_model": { "const": true },
+        "parallel_tool_calls": { "type": "boolean", "default": true },
+        "max_tool_result_chars": { "type": "integer", "minimum": 500 },
+        "on_result_truncated": { "enum": ["read_next_range", "summarize_and_store"] },
+        "tools": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["name", "kind"],
+            "properties": {
+              "name": { "type": "string" },
+              "kind": { "enum": ["read", "write", "exec", "search", "fetch", "mcp"] },
+              "idempotent": { "type": "boolean" },
+              "max_calls_per_node": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
+    "research_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "triggers": { "type": "array", "items": { "enum": ["unknown_error", "missing_api_info", "stuck_ladder_step", "dependency_question"] } },
+        "max_searches_per_node": { "type": "integer", "minimum": 1 },
+        "prefer_sources": { "type": "array", "items": { "enum": ["official_docs", "repo_issues", "changelog", "community"] } },
+        "record_to": { "type": "string" },
+        "must_log_source_in_state": { "type": "boolean" }
+      }
+    },
+    "context_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state_injection": {
+          "type": "object", "additionalProperties": false,
+          "required": ["files", "max_tokens"],
+          "properties": { "files": { "type": "array", "items": { "type": "string" } }, "max_tokens": { "type": "integer", "minimum": 200 } }
+        },
+        "compaction": {
+          "type": "object", "additionalProperties": false,
+          "required": ["trigger_ratio", "keep"],
+          "properties": {
+            "trigger_ratio": { "type": "number", "minimum": 0.3, "maximum": 0.95 },
+            "keep": { "type": "array", "items": { "enum": ["pinned_instructions", "progress_state", "last_tool_results", "open_errors"] } }
+          }
+        }
+      }
+    },
+    "review_points": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "after_node", "kind", "blocking"],
+        "properties": {
+          "id": { "type": "string" },
+          "after_node": { "type": "string" },
+          "kind": { "enum": ["frontend_approval", "results_review"] },
+          "artifact": { "type": "string" },
+          "blocking": { "const": false },
+          "on_timeout": { "const": "continue_independent_nodes" }
+        }
+      }
+    },
+    "harness_selftest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "run_before_loop", "on_fail", "cases"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "run_before_loop": { "type": "boolean" },
+        "on_fail": { "const": "REJECT_START" },
+        "cases": {
+          "type": "array", "minItems": 3,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "description", "assert"],
+            "properties": {
+              "id": { "type": "string" },
+              "description": { "type": "string" },
+              "assert": {
+                "type": "object", "additionalProperties": false,
+                "required": ["kind"],
+                "properties": {
+                  "kind": { "enum": ["tool_result_visible_next_turn", "no_repeated_question", "acts_within_n_turns", "thinking_blocks_not_replayed", "forced_tool_call_executes"] },
+                  "n": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "defs": {
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+        "top_p": { "type": "number", "minimum": 0, "maximum": 1 },
+        "max_tokens": { "type": "integer", "minimum": 1 },
+        "stream": { "type": "boolean" }
+      }
+    }
+  },
+  "example_values": {
+    "model_params": {
+      "protocol": "openai_chat_completions",
+      "defaults": { "stream": true, "max_tokens": 16000 },
+      "by_phase": {
+        "plan": { "temperature": 0.6, "max_tokens": 32000 },
+        "execute": { "temperature": 0.2, "max_tokens": 16000 },
+        "verify": { "temperature": 0.0, "max_tokens": 8000 }
+      }
+    },
+    "autonomy_policy": {
+      "ask_user": "forbidden",
+      "on_missing_info": ["read_state_files", "discover_by_tool", "search_web", "assume_and_log"],
+      "assumptions_file": "state/assumptions.md",
+      "must_act_each_turn": true,
+      "max_consecutive_reads": 3,
+      "allowed_pause_points": ["frontend_approval", "results_review"],
+      "pause_is_nonblocking": true
+    },
+    "anti_repeat_guard": {
+      "loop_detection_basis": "tool_call_signature",
+      "dedupe_tool_calls": { "window": 12, "max_identical": 2, "on_exceed": "use_cache" },
+      "read_cache": { "enabled": true, "key": "path+mtime+range" },
+      "repeated_question": { "max_same_question": 1, "on_detect": "answer_from_state" }
+    },
+    "instruction_adherence": {
+      "pin_instructions": { "inject_every_iteration": true, "sections": ["goal", "constraints", "forbidden_paths", "acceptance", "autonomy_rules"] },
+      "requirement_checklist": { "file": "state/requirements.json", "each_item_needs_evidence": true },
+      "drift_guard": {
+        "check_every": "node_passed",
+        "checks": ["diff_scope", "forbidden_paths", "no_unrequested_files", "no_scope_creep", "requirements_not_regressed"],
+        "allowed_globs": ["src/**", "tests/**", "state/**", "package.json"],
+        "on_drift": "revert_and_retry"
+      }
+    },
+    "reasoning_policy": {
+      "by_phase": { "plan": "high", "execute": "none", "verify": "low" },
+      "tool_choice_by_phase": { "plan": "auto", "execute": "auto", "verify": "auto" },
+      "thinking_budget_tokens": 8000,
+      "replay_history": { "strip_thinking_blocks": true, "keep_tool_results": true }
+    },
+    "tool_policy": {
+      "results_must_return_to_model": true,
+      "parallel_tool_calls": true,
+      "max_tool_result_chars": 20000,
+      "on_result_truncated": "read_next_range",
+      "tools": [
+        { "name": "read_file", "kind": "read", "idempotent": true },
+        { "name": "grep", "kind": "read", "idempotent": true },
+        { "name": "edit_file", "kind": "write", "idempotent": false },
+        { "name": "bash", "kind": "exec", "idempotent": false },
+        { "name": "web_search", "kind": "search", "idempotent": true, "max_calls_per_node": 5 },
+        { "name": "web_fetch", "kind": "fetch", "idempotent": true, "max_calls_per_node": 5 }
+      ]
+    },
+    "research_policy": {
+      "enabled": true,
+      "triggers": ["unknown_error", "missing_api_info", "stuck_ladder_step"],
+      "max_searches_per_node": 5,
+      "prefer_sources": ["official_docs", "repo_issues", "changelog"],
+      "record_to": "state/research.md",
+      "must_log_source_in_state": true
+    },
+    "context_policy": {
+      "state_injection": { "files": ["state/progress.json", "state/requirements.json", "state/assumptions.md"], "max_tokens": 3000 },
+      "compaction": { "trigger_ratio": 0.7, "keep": ["pinned_instructions", "progress_state", "last_tool_results", "open_errors"] }
+    },
+    "review_points": [
+      { "id": "rp01_front", "after_node": "n05_join", "kind": "frontend_approval", "artifact": "state/preview.md", "blocking": false, "on_timeout": "continue_independent_nodes" }
+    ],
+    "harness_selftest": {
+      "enabled": true,
+      "run_before_loop": true,
+      "on_fail": "REJECT_START",
+      "cases": [
+        { "id": "t01", "description": "Pedir leer un archivo y luego usar su contenido SIN volver a leerlo", "assert": { "kind": "tool_result_visible_next_turn" } },
+        { "id": "t02", "description": "Tarea con dato faltante: debe asumir y registrar, no preguntar", "assert": { "kind": "no_repeated_question" } },
+        { "id": "t03", "description": "Tarea simple de edicion: debe ejecutar una accion en N turnos", "assert": { "kind": "acts_within_n_turns", "n": 3 } },
+        { "id": "t04", "description": "El historial reenviado no contiene bloques de thinking", "assert": { "kind": "thinking_blocks_not_replayed" } },
+        { "id": "t05", "description": "Llamada de herramienta forzada se ejecuta realmente", "assert": { "kind": "forced_tool_call_executes" } }
+      ]
+    }
+  }
+}

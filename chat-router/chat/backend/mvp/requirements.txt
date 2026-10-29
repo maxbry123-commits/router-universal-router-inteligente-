@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+cryptography
+psutil
+huggingface_hub
+pyyaml

@@ -1,0 +1,35 @@
+{
+  "bundle_bytes": 5350325,
+  "bundle_sha256": "25d12505784317be144f3c1b71e992fccc2b907dfbeaa6b8fab2f934d584a8b5",
+  "extracted_tree": {
+    "bytes": 15530028,
+    "files": 1726,
+    "sha256": "0a45e9fb12a40dd5372d7e35239bfc9c8005d3db40d072a41da55daaf770e399"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 5350325,
+      "name": "mcp-python-sdk.bundle.zip.part-0001",
+      "sha256": "25d12505784317be144f3c1b71e992fccc2b907dfbeaa6b8fab2f934d584a8b5"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "mcp-python-sdk",
+  "source_bytes": 15530028,
+  "source_commit": "a525a3d9bece967d91534b746a6c842931b7b4ec",
+  "source_files": 1726,
+  "source_ref": "HEAD",
+  "source_repo": "modelcontextprotocol/python-sdk",
+  "source_tree": {
+    "bytes": 15530028,
+    "files": 1726,
+    "sha256": "0a45e9fb12a40dd5372d7e35239bfc9c8005d3db40d072a41da55daaf770e399"
+  }
+}

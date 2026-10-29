@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FROMTED p03 — Docs iPad split</title>
+<style>
+:root{--bg:#0d0d0d;--sheet:#1c1c1c;--elev:#252525;--border:#2e2e2e;--white:#f0f0f0;--dim:#9b9b9b;--orange:#ff6b1a;--blue:#2f6bff;--green:#22c55e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#111;color:var(--white);min-height:100vh;padding:16px}
+.ipad{max-width:960px;margin:0 auto;background:var(--bg);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:grid;grid-template-columns:220px 1fr;min-height:560px}
+.side{background:var(--sheet);border-right:1px solid var(--border);padding:14px 10px;font-size:13px}
+.side .lbl{font-size:11px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;padding:8px 10px}
+.side .item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;color:var(--dim)}
+.side .item.on{background:var(--elev);color:var(--blue)}
+.side .item svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.6}
+.main{display:flex;flex-direction:column}
+.toolbar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.toolbar button{border:0;background:transparent;color:var(--dim);width:32px;height:32px}
+.toolbar button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.6}
+.toolbar .path{flex:1;font-size:13px;color:var(--dim)}
+.toolbar .sel{padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--white);font-size:12px;width:auto}
+.toolbar .dl{color:var(--orange);font-weight:600;font-size:12px;border:0;background:transparent;width:auto;padding:0 8px}
+.grid{padding:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.f{text-align:center}
+.f .ico{width:56px;height:56px;margin:0 auto 8px;border-radius:12px;background:var(--elev);display:grid;place-items:center;color:var(--dim)}
+.f .ico svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.4}
+.f .n{font-size:12px}
+.f .s{font-size:10px;color:var(--dim)}
+.f.on .ico{box-shadow:inset 0 0 0 1px var(--blue)}
+.f.on .n{color:var(--blue)}
+.status{padding:8px 14px;font-size:11px;color:var(--green);border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="ipad">
+  <aside class="side">
+    <div class="lbl">Ubicaciones</div>
+    <div class="item on"><svg viewBox="0 0 24 24"><path d="M3 7h5l2 2h11v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg> En dispositivo</div>
+    <div class="item"><svg viewBox="0 0 24 24"><path d="M12 3l9 6v12H3V9l9-6z"/></svg> Proyectos</div>
+    <div class="item"><svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg> Recientes</div>
+    <div class="item"><svg viewBox="0 0 24 24"><path d="M12 17.3l6.2 3.7-1.6-7 5.4-4.7-7.1-.6L12 2 9.1 8.7l-7.1.6 5.4 4.7-1.6 7z"/></svg> Anclados</div>
+    <div class="lbl">Etiquetas</div>
+    <div class="item"><span style="width:8px;height:8px;border-radius:50%;background:var(--orange)"></span> Trabajo</div>
+    <div class="item"><span style="width:8px;height:8px;border-radius:50%;background:var(--blue)"></span> Diseño</div>
+  </aside>
+  <section class="main">
+    <div class="toolbar">
+      <button><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+      <span class="path">FROMTED / Archivos</span>
+      <button class="sel" type="button">Seleccionar</button>
+      <button type="button"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+      <button type="button"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+      <button class="dl" type="button">Descargar</button>
+    </div>
+    <div class="grid">
+      <div class="f on"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 7h5l2 2h11v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></div><div class="n">Documentos</div><div class="s">8</div></div>
+      <div class="f"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 7h5l2 2h11v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></div><div class="n">Imágenes</div><div class="s">14</div></div>
+      <div class="f"><div class="ico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="n">plan.md</div><div class="s">MD</div></div>
+      <div class="f"><div class="ico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="n">spec.pdf</div><div class="s">PDF</div></div>
+    </div>
+    <div class="status">● 10 elementos · sincronización local</div>
+  </section>
+</div>
+</body>
+</html>

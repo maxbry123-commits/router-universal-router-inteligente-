@@ -1,0 +1,193 @@
+name: PHPUnit Feature
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      corpus_base_ref:
+        description: Full Git commit SHA to classify regression-corpus changes against
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  action-policy:
+    name: Central action policy preflight
+    if: ${{ github.server_url == 'https://github.com' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out candidate source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          persist-credentials: false
+      - name: Check out central action policy
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          repository: durable-workflow/.github
+          ref: main
+          path: .central-action-policy
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6
+        with:
+          python-version: "3.13"
+      - name: Install policy dependencies
+        run: python -m pip install PyYAML==6.0.2
+      - name: Require centrally approved immutable action commits
+        run: >-
+          python .central-action-policy/scripts/qualification_policy.py validate
+          --policy .central-action-policy/qualification/policy.json
+          --target server
+          --workflow-directory .github/workflows
+
+  preflight:
+    name: Repository contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout server
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate release metadata and CI scripts
+        run: |
+          node --check scripts/ci/sync-source-release.mjs
+          node scripts/ci/sync-source-release.mjs --check
+          node --test scripts/ci/test-source-release.mjs
+
+      - name: Validate embedded Workflow package authority
+        run: php scripts/ci/test-workflow-package-authority.php
+
+      - name: Install worker OpenAPI validation dependencies
+        run: >-
+          composer install
+          --no-dev
+          --no-scripts
+          --no-interaction
+          --no-progress
+          --prefer-dist
+
+      - name: Require versioned worker OpenAPI evolution
+        env:
+          OPENAPI_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'push' && github.event.before || inputs.corpus_base_ref }}
+        run: php scripts/ci/check-worker-openapi-evolution.php "$OPENAPI_BASE_REF"
+
+      - name: Require durable codec evidence
+        env:
+          CORPUS_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'push' && github.event.before || inputs.corpus_base_ref }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$CORPUS_BASE_REF" =~ ^[0-9a-f]{40}$ ]] || [[ "$CORPUS_BASE_REF" =~ ^0+$ ]]; then
+            echo "Invalid regression corpus base revision: $CORPUS_BASE_REF" >&2
+            exit 1
+          fi
+          git rev-parse --verify "$CORPUS_BASE_REF^{commit}"
+          python scripts/ci/validate-regression-corpus.py --base-ref "$CORPUS_BASE_REF"
+
+      - name: Prove corpus policy guards cannot be weakened
+        run: python scripts/ci/test-regression-corpus-policy.py
+
+  feature:
+    name: PHPUnit feature suite
+    needs: action-policy
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Require central action policy preflight
+        if: ${{ github.server_url == 'https://github.com' }}
+        env:
+          ACTION_POLICY_RESULT: ${{ needs.action-policy.result }}
+        run: test "$ACTION_POLICY_RESULT" = success
+
+      - name: Checkout server
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve locked workflow package authority
+        id: workflow
+        run: php scripts/ci/resolve-workflow-package-authority.php
+
+      - name: Checkout workflow package from GitHub
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          repository: durable-workflow/workflow
+          ref: ${{ steps.workflow.outputs.commit }}
+          path: workflow-package
+          persist-credentials: false
+
+      - name: Verify workflow package source provenance
+        shell: bash
+        env:
+          WORKFLOW_PACKAGE_SOURCE: ${{ steps.workflow.outputs.source }}
+          WORKFLOW_PACKAGE_REF: ${{ steps.workflow.outputs.ref }}
+          WORKFLOW_PACKAGE_COMMIT: ${{ steps.workflow.outputs.commit }}
+        run: |
+          set -euo pipefail
+          resolved_commit="$(git -C workflow-package rev-parse HEAD)"
+          if [[ "$resolved_commit" != "$WORKFLOW_PACKAGE_COMMIT" ]]; then
+            echo "Resolved Workflow commit $resolved_commit does not match $WORKFLOW_PACKAGE_COMMIT" >&2
+            exit 1
+          fi
+          printf '%s\n' \
+            "$WORKFLOW_PACKAGE_SOURCE" \
+            "$WORKFLOW_PACKAGE_REF" \
+            "$resolved_commit" \
+            > workflow-package/.package-provenance
+          rm -rf workflow-package/.git
+
+      - name: Run feature, Nexus, and regression corpus suites
+        shell: bash
+        env:
+          CORPUS_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'push' && github.event.before || inputs.corpus_base_ref }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$CORPUS_BASE_REF" =~ ^[0-9a-f]{40}$ ]] || [[ "$CORPUS_BASE_REF" =~ ^0+$ ]]; then
+            echo "Invalid regression corpus base revision: $CORPUS_BASE_REF" >&2
+            exit 1
+          fi
+          docker build --target base -t durable-workflow-server-phpunit-base .
+          docker build -t durable-workflow-server-corpus-validator - <<'DOCKERFILE'
+          FROM durable-workflow-server-phpunit-base
+          RUN apt-get update \
+              && apt-get install -y --no-install-recommends git \
+              && rm -rf /var/lib/apt/lists/*
+          DOCKERFILE
+          tar \
+            --exclude=vendor \
+            --exclude='*/vendor' \
+            --exclude=build \
+            --exclude='*/build' \
+            -cf - . \
+            | docker run --rm -i -e CORPUS_BASE_REF -w /app --entrypoint sh durable-workflow-server-corpus-validator \
+                -lc 'set -eu; tar --no-same-owner -xf - -C /app; cp -a /app/workflow-package /workflow; php scripts/ci/prepare-release-workflow-composer-metadata.php; composer update durable-workflow/workflow --with-dependencies --minimal-changes --no-install --no-scripts --no-autoloader --no-interaction --no-progress --prefer-dist; composer install --no-interaction --no-progress --prefer-dist; git --version; vendor/bin/phpunit --version; git rev-parse --verify "$CORPUS_BASE_REF^{commit}"; php scripts/ci/check-worker-openapi-evolution.php "$CORPUS_BASE_REF"; vendor/bin/phpunit tests/Feature tests/Unit/NexusContractTest.php tests/Unit/CodecRegressionCorpusTest.php tests/Unit/PhpunitFeatureWorkflowContractTest.php tests/Unit/OpenApiDocumentEvolutionTest.php --no-progress --colors=never; python3 scripts/ci/validate-regression-corpus.py --base-ref "$CORPUS_BASE_REF" --verify-counterfactual'
+
+  qualification:
+    name: Feature source qualification
+    needs: [preflight, feature]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Require repository contracts and feature tests
+        env:
+          PREFLIGHT_RESULT: ${{ needs.preflight.result }}
+          FEATURE_RESULT: ${{ needs.feature.result }}
+        run: |
+          set -euo pipefail
+          test "$PREFLIGHT_RESULT" = success
+          test "$FEATURE_RESULT" = success
+          echo "Server repository contracts and feature tests succeeded."
