@@ -3,7 +3,9 @@
   "chat-router/harness": "chat/backend/deepseek_harness",
   "chat-router/plugins/deepseek_harness": "../chat/backend/deepseek_harness",
   "chat-router/plugins/router_api_cliente.py": "../chat/backend/router_api_cliente.py",
-  "router-mvp/mvp": "../chat-router/chat/backend/mvp"
+  "router-mvp/mvp": "../chat-router/chat/backend/mvp",
+  "chat-router/plugins/swe_code": "../SWE CODE",
+  "chat-router/plugins/swen_code_free": "../SWEN CODE free"
  },
  "plugins": {
   "agentes": {
@@ -108,6 +110,16 @@
   },
   "workflow-loop-yaiwes": {
    "destino": "../workflow-loop-code-yaiwes/workflow-loop-yaiwes",
+   "enlace": true,
+   "ficha": false
+  },
+  "swe_code": {
+   "destino": "../SWE CODE",
+   "enlace": true,
+   "ficha": false
+  },
+  "swen_code_free": {
+   "destino": "../SWEN CODE free",
    "enlace": true,
    "ficha": false
   }
