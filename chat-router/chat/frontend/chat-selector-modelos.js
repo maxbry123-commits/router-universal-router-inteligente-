@@ -8,16 +8,26 @@ window.RIU_SELECTOR_QWEN = window.RIU_SELECTOR_QWEN || {
   modelos: [],
 };
 
-// Regla (Antonio): el selector solo muestra modelos de SWE CODE y SWEN CODE free.
-const SOLO_SWE = new Set([
-  // SWE CODE (local, HF S1-S3)
-  "hf-liquid-lfm25", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b",
-  // SWEN CODE free (web via bridge + modos swecode)
-  "web-qwen38max", "web-qwen37max", "web-dsv4-flash",
-  "swecode-consulta", "swecode-revision", "swecode-solucion", "swecode-arquitectura", "swecode-archivos", "swecode-prompt_code", "swecode-despliega",
-  // ids alias del bridge
-  "lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"]);
 const GRUPOS = [
+  { titulo: "Qwen", modelos: [
+    ["pensar", "Qwen 3.8 Max", "Código complejo", "qwen3.8-max"],
+    ["rayo", "Qwen 3.8 Flash", "Código rápido", "qwen3.8-flash"],
+    ["pensar", "Qwen 3.7 Max", "Razonamiento", "qwen3.7-max"],
+    ["rayo", "Qwen 3.7 Plus", "Código + visión", "qwen3.7-plus"],
+    ["rapido", "Qwen 3.6 Flash", "Rápido / económico", "qwen3.6-flash"]] },
+  { titulo: "DeepSeek", modelos: [
+    ["pensar", "DeepSeek V4 Pro", "Código complejo", "deepseek-v4-pro"],
+    ["pensar", "DeepSeek V4 Pro 0813", "Máxima profundidad", "deepseek-v4-pro-0813"],
+    ["rayo", "DeepSeek V4 Flash", "Código rápido", "deepseek-v4-flash-0731"]] },
+  { titulo: "GLM", modelos: [
+    ["pensar", "GLM 5.2", "Código + agentes", "glm-5.2"]] },
+  { titulo: "SWE CODE (local HF)", modelos: [
+    ["rapido", "Liquid AI (HF)", "LFM2.5-350M · respondedor principal", "hf-liquid-lfm25"],
+    ["pensar", "SWE · Codex escribe", "Qwen2.5-Coder-1.5B", "swe-codex-qwen25-15b"],
+    ["pensar", "SWE · OpenCode revisa", "Qwen3.5-0.8B", "swe-opencode-qwen35-08b"],
+    ["rayo", "SWE · Agent ejecuta", "LFM2.5-350M · tool/agentic", "swe-agent-lfm25"],
+    ["rayo", "SWE · OpenHands verifica", "LFM2.5-350M", "swe-openhands-lfm25"],
+    ["pensar", "Qwen Code (HF)", "Qwen2.5-Coder-1.5B local", "hf-qwen25-coder-15b"]] },
   { titulo: "SWEN CODE free (web)", modelos: [
     ["pensar", "Qwen 3.8 Max (web)", "Código complejo · via bridge", "web-qwen38max"],
     ["pensar", "Qwen 3.7 Max (web)", "Razonamiento · via bridge", "web-qwen37max"],
@@ -29,23 +39,23 @@ const GRUPOS = [
     ["pensar", "SWE · archivos", "modo archivos", "swecode-archivos"],
     ["pensar", "SWE · prompt_code", "modo prompt_code", "swecode-prompt_code"],
     ["rayo", "SWE · despliega", "modo despliega", "swecode-despliega"]] },
-  { titulo: "SWE CODE (local HF)", modelos: [
-    ["rapido", "Liquid AI (HF)", "LFM2.5-350M · respondedor principal", "hf-liquid-lfm25"],
-    ["pensar", "SWE · Codex escribe", "Qwen2.5-Coder-1.5B", "swe-codex-qwen25-15b"],
-    ["pensar", "SWE · OpenCode revisa", "Qwen3.5-0.8B", "swe-opencode-qwen35-08b"],
-    ["rayo", "SWE · Agent ejecuta", "LFM2.5-350M · tool/agentic", "swe-agent-lfm25"],
-    ["rayo", "SWE · OpenHands verifica", "LFM2.5-350M", "swe-openhands-lfm25"],
-    ["pensar", "Qwen Code (HF)", "Qwen2.5-Coder-1.5B local", "hf-qwen25-coder-15b"]] },
+  { titulo: "Imágenes", modelos: [
+    ["imagen", "Qwen Image 3.0 Pro", "Imágenes", "qwen-image-3.0-pro"],
+    ["imagen", "Wan 2.7 Image", "Imágenes", "wan2.7-image"]] },
+  { titulo: "Modo recepción", modelos: [
+    ["voz", "Qwen TTS", "Texto a voz", "qwen-audio-3.0-tts-plus"],
+    ["micro", "Qwen Realtime", "Voz en vivo", "qwen-audio-3.0-realtime-plus"],
+    ["texto", "Qwen ASR", "Voz a texto", "qwen-audio-3.0-asr-flash"]] },
 ];
 const CATALOGO_CLAVE = "riu_catalogo_qwen";  // ultima lista que dio el Router (localStorage)
-const CATALOGO_RESPALDO = ["web-qwen38max", "web-qwen37max", "web-dsv4-flash", "swecode-consulta", "swecode-revision", "swecode-solucion", "swecode-arquitectura", "swecode-archivos", "swecode-prompt_code", "swecode-despliega", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b", "hf-liquid-lfm25"];  // solo SWE CODE + SWEN CODE free
+const CATALOGO_RESPALDO = ["qwen3.8-max", "qwen3.8-flash", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-flash", "glm-5.3", "glm-5.2", "deepseek-v4-pro", "deepseek-v4-pro-0813", "deepseek-v4-flash-0731", "deepseek-v4.1-flash", "deepseek-v4.1-flash-1017", "qwen-image-3.0-pro", "wan2.7-image", "wan2.7-image-pro", "qwen-audio-3.0-tts-plus", "qwen-audio-3.0-realtime-plus", "qwen-audio-3.0-asr-flash", "wan3.0-video", "happyhorse-1.1-t2v", "happyhorse-1.1-i2v", "happyhorse-1.1-r2v", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b", "hf-liquid-lfm25", "web-qwen38max", "web-qwen37max", "web-dsv4-flash", "swecode-consulta", "swecode-revision", "swecode-solucion", "swecode-arquitectura", "swecode-archivos", "swecode-prompt_code", "swecode-despliega"];  // plan Personal (mvp/modelos.json, p=1) + SWE CODE local
 
 const etiqueta = (id) => id.replace(/^(qwen|deepseek|glm|kimi|minimax|wan|happyhorse)/i, (s) => ({ qwen: "Qwen ", deepseek: "DeepSeek", glm: "GLM", kimi: "Kimi", minimax: "MiniMax", wan: "Wan ", happyhorse: "HappyHorse" })[s.toLowerCase()]).replace(/-/g, " ").replace(/\b(max|flash|plus|pro|image|video|code)\b/g, (s) => s[0].toUpperCase() + s.slice(1)).replace(/\b[vkm](?=\d)/g, (s) => s.toUpperCase());
 export function gruposModelos(modelos) {
   const grupos = new Map(), vistos = new Set();
   for (const entrada of modelos) {
     const id = typeof entrada === "string" ? entrada : entrada?.model_id;
-    if (typeof id !== "string" || !id || vistos.has(id) || !SOLO_SWE.has(id)) continue;  // solo SWE CODE + SWEN CODE free
+    if (typeof id !== "string" || !id || vistos.has(id)) continue;
     vistos.add(id);
     const conocido = GRUPOS.find((g) => g.modelos.some((m) => m[3] === id));
     const tipo = entrada?.tipo || (/audio/.test(id) ? "audio" : /video|[tir]2v$/.test(id) ? "video" : /image/.test(id) ? "imagen" : "texto");
@@ -82,7 +92,7 @@ export function conectarSelectorModelos(ctx) {
       const nuevos = gruposModelos(r.models);
       if (!nuevos.length) throw new Error('Catalogo vacio');
       grupos = nuevos; publicarCatalogo();
-      try { localStorage.setItem(CATALOGO_CLAVE, JSON.stringify(r.models.filter((m) => SOLO_SWE.has(typeof m === "string" ? m : m?.model_id)))); } catch (e) {}
+      try { localStorage.setItem(CATALOGO_CLAVE, JSON.stringify(r.models)); } catch (e) {}
       pintar();
     }).catch(() => {
       cargando = false;

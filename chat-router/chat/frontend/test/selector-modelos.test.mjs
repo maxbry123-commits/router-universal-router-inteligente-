@@ -54,3 +54,10 @@ test("ambas hojas refrescan la caché y eligen el id canónico en su selector", 
   assert.equal(c.selectorQwen.model_id, "kimi-k2.7-code"); assert.equal(RIU_SELECTORES.activo, "team-5-mvp");
   assert.deepEqual(JSON.parse(localStorage.getItem("riu_catalogo_qwen")), respuesta);
 });
+
+test("el selector conserva los modelos de Qwen/DeepSeek/GLM y suma los grupos SWE CODE y SWEN CODE free", () => {
+  const todos = ["qwen3.8-max", "deepseek-v4-pro", "glm-5.2", "hf-liquid-lfm25", "web-qwen38max", "swecode-despliega"];
+  const grupos = gruposModelos(todos);
+  assert.deepEqual(ids(grupos).sort(), [...todos].sort());
+  assert.ok(grupos.some((g) => /SWE CODE/.test(g.titulo)) && grupos.some((g) => /SWEN CODE free/.test(g.titulo)));
+});
