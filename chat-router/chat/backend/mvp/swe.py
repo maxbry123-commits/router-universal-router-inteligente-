@@ -28,6 +28,11 @@ def proveedor(modelo):
     return "local" if m in LOCALES else None
 
 
+def plataforma(modelo):
+    """Donde corre el modelo, para la linea de identidad que recibe: SWEN CODE free (web/bridge) o SWE CODE (cola HF)."""
+    return {"web": "SWEN CODE free (cuentas web via bridge)", "local": "SWE CODE (Space de HF, cola S1-S3)"}.get(proveedor(modelo))
+
+
 def _base(url):
     if not isinstance(url, str) or not (url.startswith("https://") or url.startswith(("http://127.0.0.1", "http://localhost"))):
         raise ValueError("la URL del bridge/Space debe ser HTTPS o loopback")

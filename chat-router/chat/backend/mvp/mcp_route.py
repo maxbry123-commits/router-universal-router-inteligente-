@@ -3,7 +3,7 @@ import sys
 import asyncio
 import json
 from fastapi import Depends, HTTPException, Request, Response
-from mvp import archivos, control as permisos, externos, loop_puente, mcp_cliente, modelos
+from mvp import archivos, control as permisos, externos, swe, loop_puente, mcp_cliente, modelos
 from router import mcp_puente_github as github
 
 # Esquemas de mvp/mcp_route.py y del contrato existente
@@ -153,7 +153,7 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
         if args.get('ficha_qwen'):
             if args.get('modelo'):
                 args = {**args, 'modelo': modelos.canonico(args['modelo'])}  # nombres antiguos (ficha-qwen38max, qw-glm-5-3) -> id del catálogo
-            if args.get('modelo') and args['modelo'] not in dict(modelos.catalogo()) and not externos.proveedor(args['modelo']):  # groq/<id> y nvidia/<id> los valida su API  # texto, imagen, voz y video del plan (la ficha genera los medios)
+            if args.get('modelo') and args['modelo'] not in dict(modelos.catalogo()) and not externos.proveedor(args['modelo']) and not swe.proveedor(args['modelo']):  # groq/<id> y nvidia/<id> los valida su API; SWE CODE / SWEN CODE free: swe.py  # texto, imagen, voz y video del plan (la ficha genera los medios)
                 return _error(id_, -32602, 'modelo no permitido en el plan %s; permitidos: %s' % (modelos.plan(), ', '.join(i for i, _ in modelos.catalogo())))
             if not isinstance(args['ficha_qwen'], str):
                 return _error(id_, -32602, 'ficha_qwen invalida')
