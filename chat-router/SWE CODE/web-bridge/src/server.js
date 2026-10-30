@@ -21,6 +21,14 @@ const OBJETIVO_UNICO = process.env.SWECODE_OBJETIVO || 'qwen38max';
 // fallback dentro de la web antes de escalar a modelos locales
 const WEB_FALLBACK = (process.env.WEB_FALLBACK || 'qwen38max,qwen37max,dsv4-flash').split(',');
 
+// deadline duro por request: nunca colgar >120s (proxy/cliente). Devuelve 504 JSON.
+const DEADLINE_MS = parseInt(process.env.BRIDGE_DEADLINE_MS || '100000', 10);
+function conDeadline(p, ms) {
+  let t;
+  const to = new Promise((_, rej) => { t = setTimeout(() => rej(Object.assign(new Error(`sin respuesta en ${ms}ms`), { code: 'UPSTREAM_TIMEOUT' })), ms); });
+  return Promise.race([p, to]).finally(() => clearTimeout(t));
+}
+
 async function conFallback(modelo, prompt, opts) {
   const orden = [modelo, ...WEB_FALLBACK.filter(m => m !== modelo)];
   let ultimo;
@@ -84,6 +92,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     }
 
+    const ejecutar = async () => {
     if (modeloWeb) {
       const r = await conFallback(modeloWeb, prompt, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
@@ -95,6 +104,9 @@ app.post('/v1/chat/completions', async (req, res) => {
       const r = await conFallback(OBJETIVO_UNICO, prompt, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
     }
+    };
+    await conDeadline(ejecutar(), DEADLINE_MS);
+    if (!salida || !String(salida).trim()) throw Object.assign(new Error('respuesta vacia del modelo web'), { code: 'EMPTY_RESPONSE' });
     res.setHeader('x-modelo-usado', usado);
 
     res.json({
@@ -105,7 +117,9 @@ app.post('/v1/chat/completions', async (req, res) => {
     });
   } catch (e) {
     const code = e.code || 'BRIDGE_ERROR';
-    res.status(code === 'SESSION_EXPIRED' ? 503 : 500).json({ error: { code, message: e.message, detail: e.detail } });
+    if (res.headersSent) return;
+    const st = code === 'SESSION_EXPIRED' ? 503 : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : 500;
+    res.status(st).json({ error: { code, message: e.message, detail: e.detail } });
   }
 });
 

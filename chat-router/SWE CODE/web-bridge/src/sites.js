@@ -82,7 +82,7 @@ export async function enviar(page, cfg) {
 }
 
 // espera a que termine de generar: texto del ultimo bloque estable 2 polls
-export async function leerRespuesta(page, cfg, { timeoutMs = 180000 } = {}) {
+export async function leerRespuesta(page, cfg, { timeoutMs = 60000 } = {}) {
   const sel = cfg.respuesta.join(',');
   const t0 = Date.now();
   let ultimo = '', estable = 0;
