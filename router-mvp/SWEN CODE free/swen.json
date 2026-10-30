@@ -1,0 +1,24 @@
+{
+  "sistema": "SWEN CODE free",
+  "activacion": "SWEN CODE free",
+  "descripcion": "Capa libre de SWE CODE: modos + puente web (cuentas Qwen/DeepSeek) + puente móvil (APK). Solo responde cuando el mensaje empieza con 'SWEN CODE free'.",
+  "modos": ["revision", "solucion", "arquitectura", "archivos", "prompt_code", "consulta"],
+  "cadena_respaldo": [
+    "web-bridge (Space swe-code-web, cuentas web Qwen/DeepSeek, metodos 1+4 / respaldo 2+3)",
+    "rotacion cuentas 5-9 correos dentro del web-bridge",
+    "modelos locales cola S1/S2/S3 via model=",
+    "apk-movil (ultimo eslabon: Chrome del movil via puente-movil MCP-HTTP)"
+  ],
+  "endpoints_env": {
+    "WEB_BRIDGE_URL": "URL del Space swe-code-web (Express /v1/chat/completions)",
+    "PUENTE_MOVIL_URL": "URL del puente-movil (POST /mcp, WS /agente)",
+    "SWECODE_URL_S1": "Space swe-code-s1",
+    "SWECODE_URL_S2": "Space swe-code-s2",
+    "SWECODE_URL_S3": "Space swe-code-s3"
+  },
+  "puente_movil": {
+    "canal": "APK abre WSS saliente a PUENTE_MOVIL_URL/agente (el movil esta tras NAT: el Space no llega, el movil sale)",
+    "api_modelos": "MCP-HTTP JSON-RPC en POST /mcp: initialize, tools/list, tools/call",
+    "herramientas": ["abrir_url", "leer_pantalla", "escribir", "tap", "atras"]
+  }
+}
