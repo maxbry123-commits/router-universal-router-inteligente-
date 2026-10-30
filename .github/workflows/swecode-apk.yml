@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'chat-router/SWEN CODE free/apk-movil/**'
+      - 'chat-router/plugins/swen_code_free/apk-movil/**'
 
 jobs:
   build:
@@ -20,9 +20,9 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: assembleDebug
-        working-directory: chat-router/SWEN CODE free/apk-movil
+        working-directory: chat-router/plugins/swen_code_free/apk-movil
         run: gradle assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: swecode-agente-apk
-          path: chat-router/SWEN CODE free/apk-movil/app/build/outputs/apk/debug/app-debug.apk
+          path: chat-router/plugins/swen_code_free/apk-movil/app/build/outputs/apk/debug/app-debug.apk

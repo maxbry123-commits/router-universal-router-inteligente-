@@ -10,7 +10,7 @@ Sistema libre del router: modos + cuentas web (Qwen/DeepSeek) + móvil como últ
 | `activar.js` | Parser: `SWEN CODE free modo <modo> <texto>` → `{modo, prompt}` |
 | `swen.json` | Config: modos, cadena de respaldo, endpoints por env |
 | `agente.md` | Las 4 cosas que el agente sabe hacer solo (modos, re-sesión, .md, deploy) |
-| `../SWE CODE/web-bridge/` | Puente web ya montado: métodos 1+4 / respaldo 2+3, bloques+checkpoint, consenso 3-modelos+síntesis, rotación 5-9 correos |
+| `../swe_code/web-bridge/` | Puente web ya montado: métodos 1+4 / respaldo 2+3, bloques+checkpoint, consenso 3-modelos+síntesis, rotación 5-9 correos |
 | `puente-movil/` | MCP-HTTP ↔ WSS: los modelos llaman `tools/call`, la APK ejecuta en el móvil |
 | `apk-movil/` | APK mínima: servicio foreground + WSS saliente + accesibilidad sobre Chrome |
 
