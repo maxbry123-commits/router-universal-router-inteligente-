@@ -1,5 +1,5 @@
 // motor.js — el canal cableado: escribe bloques, lee salida, checkpoint, reintento
-import { SITES, MODELOS_WEB, escribe, enviar, leerRespuesta, sesionMuerta } from './sites.js';
+import { SITES, MODELOS_WEB, escribe, enviar, leerRespuesta, sesionMuerta, elegirModelo } from './sites.js';
 import { asegurar } from './browser.js';
 import { partir, cabecera, checkpointLeer, checkpointGuardar, resumeCard } from './bloques.js';
 import { preambulo } from './modos.js';
@@ -11,6 +11,8 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
   const site = cfg.site;
   const { page } = await asegurar(site);
   const siteCfg = SITES[site];
+  // elige el modelo pedido en el picker de la web (qwen: Select Model)
+  await elegirModelo(page, siteCfg, cfg.modelo_regex).catch(() => false);
 
   convId = convId || `${site}-${modelo}-${Date.now()}`;
   const bloques = partir(`${preambulo(modo)}\n${texto}`);
