@@ -8,10 +8,10 @@ import express from 'express';
 import { consultarWeb, salud } from './motor.js';
 import { consenso } from './consenso.js';
 import { modoValido } from './modos.js';
-import { estadoCuentas, estadoTabs, snapshotTab } from './browser.js';
+import { estadoCuentas, estadoTabs, snapshotTab, cerrarPagina } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
-import { respaldo, externo, local, esExterno, esLocal, idsRespaldo } from './respaldo.js';
+import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo } from './respaldo.js';
 import { listarCheckpoints } from './bloques.js';
 
 const app = express();
@@ -48,7 +48,7 @@ app.get('/health', async (_req, res) => {
     let idx = null; try { idx = cuentaActual().index; } catch {}
     poolInfo = { total: n, loaded: true, indices: [...Array(n).keys()], actual: idx };
   } catch { poolInfo = { total: 0, loaded: false, error: 'WEB_ACCOUNTS_VACIO' }; }
-  res.json({ ok: true, pool: poolInfo, cuentas: estadoCuentas() });
+  res.json({ ok: true, pool: poolInfo, cuentas: estadoCuentas(), respaldo: estadoRespaldo(), state_dir: process.env.BRIDGE_STATE_DIR || './state' });
 });
 
 app.get('/v1/queue', (_req, res) => {
@@ -96,7 +96,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (!esExterno(model) && !esLocal(model)) {
       return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     }
-    let via = null;
+    let via = null, aviso = null;
 
     const ejecutar = async () => {
     if (esExterno(model)) {
@@ -120,13 +120,14 @@ app.post('/v1/chat/completions', async (req, res) => {
       if (!salida || !String(salida).trim()) throw Object.assign(new Error('respuesta vacia del modelo web'), { code: 'EMPTY_RESPONSE' });
     } catch (e) {
       if (e.code === 'MODO_INVALIDO') throw e;
+      if (e.code === 'UPSTREAM_TIMEOUT' && conv_id) await cerrarPagina(conv_id).catch(() => {});  // la tab colgada liberaba su slot solo al cerrarse
       // auto-reparacion: sesion caida -> re-login/rotacion de correo y UN reintento; si sigue mal, respaldo Groq -> NVIDIA -> HF local
       if (e.code === 'SESSION_EXPIRED') {
         try { await salud(); salida = null; await conDeadline(ejecutar(), 50000); } catch { /* sigue al respaldo */ }
       }
       if (!salida || !String(salida).trim()) {
         const r = await respaldo(messages);
-        salida = r.salida; usado = r.usado; via = r.via;
+        salida = r.salida; usado = r.usado; via = r.via; aviso = e.code || null;  // p. ej. CUENTAS_FALTAN: OpenClaw sabe que debe reenviar cuentas y clave
       }
     }
     res.setHeader('x-modelo-usado', usado);
@@ -134,7 +135,7 @@ app.post('/v1/chat/completions', async (req, res) => {
 
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via,
+      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, aviso,
       choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: salida || '' } }],
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     });

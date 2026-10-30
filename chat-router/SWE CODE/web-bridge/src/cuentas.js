@@ -20,14 +20,14 @@ export function setCuentas(mails, pass) {
 export function pool() {
   if (inyectadas) return inyectadas.mails;
   const mails = (process.env.WEB_ACCOUNTS || '').split(',').map(s => s.trim()).filter(Boolean);
-  if (!mails.length) throw new Error('WEB_ACCOUNTS vacio');
+  if (!mails.length) throw Object.assign(new Error('WEB_ACCOUNTS vacio: OpenClaw debe enviar cuentas y clave en el POST'), { code: 'CUENTAS_FALTAN' });
   return mails;
 }
 
 export function clave() {
   if (inyectadas) return inyectadas.pass;
   const p = process.env.WEB_PASS;
-  if (!p) throw new Error('WEB_PASS no definido');
+  if (!p) throw Object.assign(new Error('WEB_PASS no definido: OpenClaw debe enviar la clave en el POST'), { code: 'CUENTAS_FALTAN' });
   return p;
 }
 

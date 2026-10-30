@@ -56,3 +56,8 @@ export async function respaldo(mensajes, { env = process.env } = {}) {
   try { return await local(LOCALES[0], mensajes, { env }); } catch (e) { fallos.push(e.message); }
   throw Object.assign(new Error('RESPALDO_AGOTADO: ' + fallos.join(' | ')), { code: 'RESPALDO_AGOTADO' });
 }
+
+// que respaldos hay configurados (conteos, nunca valores): para /health y el auto-diagnostico
+export function estadoRespaldo(env = process.env) {
+  return { groq: claves('GROQ_API_KEY', env).length, nvidia: claves('NVIDIA_API_KEY', env).length, hf_local: [1, 2, 3].filter(n => env[`SWECODE_URL_S${n}`]).length };
+}
