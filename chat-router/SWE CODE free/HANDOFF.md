@@ -18,12 +18,13 @@ Leer en este orden: `README.md` ➡️ `ARQUITECTURA.md` ➡️ `INSTRUCCIONES.m
 
 ## Cómo recuperar una sección o arreglar algo
 1. `GET /health` y `GET /v1/queue`: cuentas cargadas, respaldos configurados (`respaldo: {groq, nvidia, hf_local}`), `state_dir`, tabs vivas.
-2. `GET /v1/secciones`: qué `conv_id` están a medias. Reenviar el mismo `conv_id` y texto.
-3. `content` vacío con cuentas OK ➡️ `GET /debug/tab?conv_id=` (url, título, captura). Gate «Confirma tu edad» ya se maneja.
-4. `cuentas:{}` o `aviso: CUENTAS_FALTAN` en la respuesta ➡️ OpenClaw no las envió: reenviar `cuentas` y `clave` en el POST (mientras tanto responde el respaldo).
-5. `SESSION_EXPIRED` ➡️ el bridge ya reintenta; si persiste, `POST /refresh_session`.
-6. `/health.commit` distinto de `main` ➡️ rebuild del Space (el Space clona `main` al arrancar).
-7. Tras arreglar algo, registrarlo: `python3 "SWE CODE free/evolucion.py" registrar '{"codigo":"...","accion":"...","resultado":"PASS"}'`.
+2. `GET /v1/proyectos` y `GET /v1/proyectos/<proyecto>`: asesorías guardadas (`ASESORIA.md` por proyecto); leerlas antes de ejecutar.
+3. `GET /v1/secciones`: qué `conv_id` están a medias. Reenviar el mismo `conv_id` y texto.
+4. `content` vacío con cuentas OK ➡️ `GET /debug/tab?conv_id=` (url, título, captura). Gate «Confirma tu edad» ya se maneja.
+5. `cuentas:{}` o `aviso: CUENTAS_FALTAN` en la respuesta ➡️ OpenClaw no las envió: reenviar `cuentas` y `clave` en el POST (mientras tanto responde el respaldo).
+6. `SESSION_EXPIRED` ➡️ el bridge ya reintenta; si persiste, `POST /refresh_session`.
+7. `/health.commit` distinto de `main` ➡️ rebuild del Space (el Space clona `main` al arrancar).
+8. Tras arreglar algo, registrarlo: `python3 "SWE CODE free/evolucion.py" registrar '{"codigo":"...","accion":"...","resultado":"PASS"}'`.
 
 ## Reglas
 Dos raíces (`router-mvp/`, `chat-router/`). No se toca el Router MVP. Lo protegido por `cableado.manifest.json` no se toca sin regenerar la guarda. Credenciales solo en el banco o el entorno. Sin PASS sin evidencia.

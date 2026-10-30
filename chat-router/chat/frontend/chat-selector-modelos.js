@@ -38,7 +38,8 @@ const GRUPOS = [
     ["pensar", "SWE · arquitectura", "modo arquitectura", "swecode-arquitectura"],
     ["pensar", "SWE · archivos", "modo archivos", "swecode-archivos"],
     ["pensar", "SWE · prompt_code", "modo prompt_code", "swecode-prompt_code"],
-    ["rayo", "SWE · despliega", "modo despliega", "swecode-despliega"]] },
+    ["rayo", "SWE · despliega", "modo despliega", "swecode-despliega"],
+    ["pensar", "SWE · asesoria", "plan antes de ejecutar", "swecode-asesoria"]] },
   { titulo: "Imágenes", modelos: [
     ["imagen", "Qwen Image 3.0 Pro", "Imágenes", "qwen-image-3.0-pro"],
     ["imagen", "Wan 2.7 Image", "Imágenes", "wan2.7-image"]] },
