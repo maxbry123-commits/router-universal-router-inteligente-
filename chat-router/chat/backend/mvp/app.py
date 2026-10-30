@@ -474,7 +474,7 @@ async def _reanudar(pid):
     _lanzar(_entregar_si_nadie(pid, {"sesion": est.get("sesion")}))
 async def _reanudar_todas():
     for pid in list(await asyncio.to_thread(estado_tarea.pendientes, app.state.banco)):
-        _lanzar(_reanudar(pid))
+        _lanzar(_reanudar(pid), pid)
 async def _recuperar(pid):
     """Trabajo iniciado o terminado por otro proceso: se lee del almacen; un trabajo local 'procesando' sin latido de 15 min se da por interrumpido."""
     doc = await asyncio.to_thread(trabajos.leer, app.state.banco, pid)
@@ -487,8 +487,21 @@ async def _seguir_adoptado(pid, url, remoto):
     try: await _seguir_remoto(pid, url, remoto)
     except escalado.DestinoError as error: TRABAJOS[pid].update(estado="error", error=str(error))
     TRABAJOS[pid].pop("subestado", None); await _persistir(pid)
-def _lanzar(coro):
+_POR_PID = {}  # proceso_id -> tarea asyncio que lo ejecuta aqui (para poder cortarla con «Detener»)
+def _lanzar(coro, pid=None):
     tarea = asyncio.create_task(coro); _TAREAS.add(tarea); tarea.add_done_callback(_TAREAS.discard)
+    if pid:
+        _POR_PID[pid] = tarea; tarea.add_done_callback(lambda t: _POR_PID.pop(pid, None) if _POR_PID.get(pid) is t else None)
+async def _cancelar(pid):
+    """Boton Detener del chat: corta la tarea de este Router, la saca de pendientes (no se retoma al reiniciar) y deja el trabajo como detenido."""
+    tarea, t = _POR_PID.pop(pid, None), TRABAJOS.get(pid)
+    if tarea and not tarea.done(): tarea.cancel()
+    activo = bool(t and t.get("estado") == "procesando")
+    if activo:
+        t.update(estado="error", error="PROCESO_DETENIDO"); t.pop("subestado", None); await _persistir(pid)
+    pendiente = pid in await asyncio.to_thread(estado_tarea.pendientes, app.state.banco)
+    if pendiente: await asyncio.to_thread(estado_tarea.marcar, app.state.banco, pid, False)
+    return {"cancelado": activo or pendiente or bool(tarea), "proceso_id": pid}
 @app.post("/plugins/{plugin}/call/{accion}", dependencies=[Depends(verificar)])
 async def plugin_call(plugin: str, accion: str, cuerpo: dict):
     if plugin == "puente_chat" and accion == "mantener_encendido":  # {siempre: true} = hasta que lo apagues; {siempre: false} = apagar; {horas: n} = n horas
@@ -518,10 +531,12 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
             if sum(1 for t in TRABAJOS.values() if t.get("subestado") == "en_cola") >= MAX_COLA:
                 raise HTTPException(status_code=429, detail="cola llena; reintenta en unos segundos")
             TRABAJOS[pid] = {"estado": "procesando", "proceso_id": pid, "finish_reason": "", "creado": time.time()}
-            _PROPIOS.add(pid); _lanzar(_correr(pid, cuerpo)); mantener_vivo.asegurar(_en_curso)
+            _PROPIOS.add(pid); _lanzar(_correr(pid, cuerpo), pid); mantener_vivo.asegurar(_en_curso)
         if TRABAJOS[pid].get("status_code") == 403:
             raise HTTPException(status_code=403, detail=TRABAJOS[pid]["error"])
         return {"status": "ok", "result": dict(TRABAJOS[pid])}
+    if accion == "cancelar":  # el boton Detener del chat llama a .../plugins/puente_chat/call/cancelar {proceso_id}
+        return {"status": "ok", "result": await _cancelar(str(cuerpo.get("proceso_id") or ""))}
     if accion == "resultado":
         pid = str(cuerpo.get("proceso_id") or "")
         if pid not in TRABAJOS and not await _recuperar(pid):
