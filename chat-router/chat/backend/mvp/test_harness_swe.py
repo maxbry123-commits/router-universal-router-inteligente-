@@ -45,6 +45,13 @@ class HarnessSwe(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 h.llm({"modelo": "qwen3.8-max", "messages": MSGS})
 
+    def test_sin_variable_el_bridge_es_el_del_space_y_vacia_lo_desactiva(self):
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("RIU_SWE_BRIDGE_URL", None)
+            self.assertEqual(h._bridge_url(), "http://127.0.0.1:7870")
+        with patch.dict(os.environ, {"RIU_SWE_BRIDGE_URL": ""}):
+            self.assertEqual(h._bridge_url(), "")
+
     def test_ids_swe(self):
         for m in ("web-qwen38max", "swecode-despliega", "hf-liquid-lfm25", "lfm2.5-350m"):
             self.assertTrue(h.es_swe(m), m)

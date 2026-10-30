@@ -107,7 +107,7 @@ def es_swe(modelo):
 
 
 def _bridge_url():
-    u = os.environ.get("RIU_SWE_BRIDGE_URL", "").strip().rstrip("/")
+    u = os.environ.get("RIU_SWE_BRIDGE_URL", "http://127.0.0.1:7870").strip().rstrip("/")  # el Space arranca el bridge en :7870; RIU_SWE_BRIDGE_URL="" lo desactiva
     return u if u.startswith(("https://", "http://127.0.0.1", "http://localhost")) else ""
 
 
