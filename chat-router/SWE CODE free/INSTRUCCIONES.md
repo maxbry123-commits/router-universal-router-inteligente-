@@ -78,6 +78,13 @@ chat → plugins → deepseek_harness → HTTP router → plugins → harness �
 | Todo web cae | Cadena → modelos locales S1/S2/S3 (`model=`) → APK móvil |
 | `INPUT_NO_ENCONTRADO`/`SELECTOR_BROKEN` | Marcar SELECTOR_BROKEN + sitio; no reintentar a ciegas |
 
+## 7b. Auditar en GitHub (guía XRAY)
+
+- `GUIA_AUDITORIA_XRAY.md` = guía v1 verbatim del usuario.
+- `GUIA_AUDITORIA_XRAY_V2.md` = versión 10×: evidencia con commit SHA, protegido,
+  códigos de fallo, auditoría en paralelo por conv_id, formato de respuesta en
+  el chat (VEREDICTO/EVIDENCIA/GAP/SIGUIENTE), presupuesto por tamaño de modelo.
+
 ## 8. Reparar cableado
 
 Señal de pieza desconectada (chat no responde / modo no existe):
