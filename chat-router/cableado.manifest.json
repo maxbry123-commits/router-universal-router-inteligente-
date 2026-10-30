@@ -128,8 +128,8 @@
    "sha256": "65235eb47c6e12bcb3f6a213b2b792684a368af6848addd24905f67edca472bf"
   },
   "chat-router/chat/backend": {
-   "archivos": 118,
-   "sha256": "6c61f6038d110c6ccb1662129de4503a234d19ddee5a650c1e9c496fc578fa01"
+   "archivos": 119,
+   "sha256": "aac125c65a6e77a25c3628e797d64f1c2d4960ab1a7ab42894100a78d6511cde"
   },
   "chat-router/chat/e2e": {
    "archivos": 22,
