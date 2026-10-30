@@ -11,6 +11,8 @@ El Harness (`chat/backend/deepseek_harness/server.py`) lee `RIU_SWE_BRIDGE_URL`:
 - Modos: revisión, solución, arquitectura, archivos, prompt_code, consulta y despliega. Son preámbulos que se inyectan en el bloque 1.
 - Credenciales: son de OpenClaw y viajan en cada POST (`cuentas`, `clave`). Nunca en secrets del Space.
 
+- Formato de salida: el bridge antepone el `FORMATO_SALIDA.md` del chat Yaiwes (una sola copia en `chat/backend/mvp/prompts/`) a todo lo que pasa por él, salvo que el Router MVP ya lo haya puesto. Así Liquid y OpenClaw responden con el mismo formato.
+
 ## Respaldo (en este orden)
 1. Web: `qwen38max ➡️ qwen37max ➡️ dsv4-flash`; login con la cuenta actual y rotación de correo si cae.
 2. Groq ➡️ NVIDIA (mismas claves del chat: `GROQ_API_KEY`, `NVIDIA_API_KEY`, `*_1..N`).

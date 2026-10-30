@@ -13,6 +13,7 @@ import { MODELOS_WEB } from './sites.js';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion } from './bloques.js';
+import { conFormato } from './formato.js';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -72,7 +73,8 @@ app.post('/refresh_session', async (_req, res) => {
 
 app.post('/v1/chat/completions', async (req, res) => {
   try {
-    const { model = 'swecode-consulta', messages = [], modo, conv_id, documentos, cuentas, clave: claveReq } = req.body;
+    const { model = 'swecode-consulta', messages: mensajesIn = [], modo, conv_id, documentos, cuentas, clave: claveReq } = req.body;
+    const messages = conFormato(mensajesIn);  // formato de salida del chat Yaiwes tambien para OpenClaw
     // credenciales vienen de OpenClaw por llamada (vía plugins->harness); env solo respaldo
     if (cuentas) setCuentas(cuentas, claveReq);
     const ultimo = [...messages].reverse().find(m => m.role === 'user')?.content || '';
