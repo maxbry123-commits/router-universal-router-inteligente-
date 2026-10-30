@@ -73,9 +73,9 @@ chat → plugins → deepseek_harness → HTTP router → plugins → harness �
 | Fallo | Acción |
 |---|---|
 | `SESSION_EXPIRED` | `POST {WEB_BRIDGE_URL}/refresh_session` (re-login solo; rota correo si la cuenta murió) |
-| Página reiniciada a media tarea | Reenviar el MISMO `conv_id` — `checkpoint.json` retoma solo |
+| Página reiniciada a media tarea | Reenviar el MISMO `conv_id` y el mismo texto; `GET /v1/secciones` lista las que están a medias (una completa o de otra tarea empieza de cero) |
 | Space dormido | Reintentar: scale-to-zero despierta solo (~1-3 min) |
-| Todo web cae | Cadena → modelos locales S1/S2/S3 (`model=`) → APK móvil |
+| Todo web cae | El bridge responde solo: Groq → NVIDIA → HF local S1-S3 → APK móvil (ver `via_respaldo`) |
 | `INPUT_NO_ENCONTRADO`/`SELECTOR_BROKEN` | Marcar SELECTOR_BROKEN + sitio; no reintentar a ciegas |
 
 ### 7a. Runbook de auto-diagnóstico (el agente lo hace SOLO, sin prompts)

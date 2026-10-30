@@ -11,6 +11,8 @@ import { modoValido } from './modos.js';
 import { estadoCuentas, estadoTabs, snapshotTab } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
+import { respaldo, externo, local, esExterno, esLocal, idsRespaldo } from './respaldo.js';
+import { listarCheckpoints } from './bloques.js';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -53,10 +55,13 @@ app.get('/v1/queue', (_req, res) => {
   res.json({ ok: true, ...estadoTabs(), cuentas: estadoCuentas() });
 });
 
+// secciones (conv_id) con checkpoint: OpenClaw ve cuales retomar reenviando el mismo conv_id
+app.get('/v1/secciones', (_req, res) => res.json({ ok: true, secciones: listarCheckpoints() }));
+
 app.get('/v1/models', (_req, res) => {
   const base = Object.keys(MODELOS_WEB).map(m => `web-${m}`);
   const modos = ['revision','solucion','arquitectura','archivos','prompt_code','consulta','despliega'].map(m => `swecode-${m}`);
-  res.json({ object: 'list', data: [...base, ...modos].map(id => ({ id, object: 'model' })) });
+  res.json({ object: 'list', data: [...base, ...modos, ...idsRespaldo()].map(id => ({ id, object: 'model' })) });
 });
 
 // herramienta nativa: el agente la llama cuando ve SESSION_EXPIRED
@@ -88,12 +93,17 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (model.startsWith('swecode-')) {
       modoUso = model.slice(8);
       if (!modoValido(modoUso)) return res.status(400).json({ error: { code: 'MODO_INVALIDO', modo: modoUso } });
-    } else {
+    } else if (!esExterno(model) && !esLocal(model)) {
       return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     }
+    let via = null;
 
     const ejecutar = async () => {
-    if (modeloWeb) {
+    if (esExterno(model)) {
+      const r = await externo(model, messages); salida = r.salida; usado = r.usado; via = r.via;
+    } else if (esLocal(model)) {
+      const r = await local(model, messages); salida = r.salida; usado = r.usado; via = r.via;
+    } else if (modeloWeb) {
       const r = await conFallback(modeloWeb, prompt, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
     } else if (esConsenso(modoUso)) {
@@ -105,13 +115,26 @@ app.post('/v1/chat/completions', async (req, res) => {
       salida = r.salida; usado = r.usado;
     }
     };
-    await conDeadline(ejecutar(), DEADLINE_MS);
-    if (!salida || !String(salida).trim()) throw Object.assign(new Error('respuesta vacia del modelo web'), { code: 'EMPTY_RESPONSE' });
+    try {
+      await conDeadline(ejecutar(), DEADLINE_MS);
+      if (!salida || !String(salida).trim()) throw Object.assign(new Error('respuesta vacia del modelo web'), { code: 'EMPTY_RESPONSE' });
+    } catch (e) {
+      if (e.code === 'MODO_INVALIDO') throw e;
+      // auto-reparacion: sesion caida -> re-login/rotacion de correo y UN reintento; si sigue mal, respaldo Groq -> NVIDIA -> HF local
+      if (e.code === 'SESSION_EXPIRED') {
+        try { await salud(); salida = null; await conDeadline(ejecutar(), 50000); } catch { /* sigue al respaldo */ }
+      }
+      if (!salida || !String(salida).trim()) {
+        const r = await respaldo(messages);
+        salida = r.salida; usado = r.usado; via = r.via;
+      }
+    }
     res.setHeader('x-modelo-usado', usado);
+    if (via) res.setHeader('x-via-respaldo', via);
 
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`, modelo_usado: usado,
+      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via,
       choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: salida || '' } }],
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     });

@@ -4,6 +4,7 @@
 // desde el ultimo bloque confirmado, no desde cero.
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 
 const DIR = process.env.BRIDGE_STATE_DIR || './state';
 const CK_DIR = path.join(DIR, 'checkpoints');
@@ -21,8 +22,25 @@ export function cabecera(n, total, modo) {
 
 function ruta(convId) { return path.join(CK_DIR, `${convId}.json`); }
 
-export function checkpointLeer(convId) {
-  try { return JSON.parse(fs.readFileSync(ruta(convId), 'utf8')); } catch { return null; }
+// huella de la tarea: un checkpoint solo se retoma si es de ESTA tarea y quedo a medias
+// (antes un checkpoint completo con el mismo conv_id devolvia la respuesta vieja)
+export function huella(texto) { return crypto.createHash('sha256').update(String(texto)).digest('hex').slice(0, 16); }
+
+export function checkpointLeer(convId, h) {
+  try {
+    const ck = JSON.parse(fs.readFileSync(ruta(convId), 'utf8'));
+    return ck.completo || ck.huella !== h ? null : ck;
+  } catch { return null; }
+}
+
+// secciones conocidas (para que OpenClaw sepa cuales retomar): sin volcar contenido
+export function listarCheckpoints() {
+  try {
+    return fs.readdirSync(CK_DIR).filter(f => f.endsWith('.json')).map(f => {
+      const ck = JSON.parse(fs.readFileSync(path.join(CK_DIR, f), 'utf8'));
+      return { conv_id: f.slice(0, -5), modo: ck.modo, enviados: ck.enviados, total: ck.total, completo: !!ck.completo, ts: ck.ts };
+    });
+  } catch { return []; }
 }
 
 export function checkpointGuardar(convId, data) {
