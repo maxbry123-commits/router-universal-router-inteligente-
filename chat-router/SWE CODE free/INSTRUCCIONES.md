@@ -82,11 +82,14 @@ chat → plugins → deepseek_harness → HTTP router → plugins → harness �
 
 El agente-modelo ejecuta esta secuencia él mismo — no espera órdenes:
 
-1. **`cuentas:{}` en `/web/health` o `/v1/queue`** = el proceso del bridge no
-   recibió `WEB_ACCOUNTS`. Acción: verificar que el boot exporta el secret
-   ANTES de `node src/server.js`; reiniciar el proceso; re-probar `/web/health`
-   hasta que liste las cuentas (count/ids, nunca valores). Sin sesión no hay
-   respuesta del modelo — este fallo explica el `content` vacío.
+1. **`cuentas:{}` en `/web/health` o `/v1/queue`** = el bridge no recibió
+   las cuentas. **Las credenciales son de OpenClaw** (swen.json → credenciales):
+   el agente las entrega por la vía plugins→harness en cada POST
+   (`cuentas`/`clave` del body) o las inyecta él al arrancar el proceso —
+   NUNCA en secrets del Space, ni prompts, ni código. Acción: comprobar que
+   OpenClaw las está pasando; re-probar `/web/health` hasta que liste las
+   cuentas (count/ids, nunca valores). Sin sesión no hay respuesta del modelo
+   — este fallo explica el `content` vacío.
 2. **`content` vacío con cuentas OK** = `GET /debug/tab` (url+title+screenshot):
    - Gate "Confirma tu edad" → manejo AGE_GATE del código lo resuelve.
    - Pantalla de login → relogin con la cuenta.

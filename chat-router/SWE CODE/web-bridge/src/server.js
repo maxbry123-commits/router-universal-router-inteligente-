@@ -10,7 +10,7 @@ import { consenso } from './consenso.js';
 import { modoValido } from './modos.js';
 import { estadoCuentas, estadoTabs, snapshotTab } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
-import { pool, cuentaActual } from './cuentas.js';
+import { pool, cuentaActual, setCuentas } from './cuentas.js';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -59,7 +59,9 @@ app.post('/refresh_session', async (_req, res) => {
 
 app.post('/v1/chat/completions', async (req, res) => {
   try {
-    const { model = 'swecode-consulta', messages = [], modo, conv_id, documentos } = req.body;
+    const { model = 'swecode-consulta', messages = [], modo, conv_id, documentos, cuentas, clave: claveReq } = req.body;
+    // credenciales vienen de OpenClaw por llamada (vía plugins->harness); env solo respaldo
+    if (cuentas) setCuentas(cuentas, claveReq);
     const ultimo = [...messages].reverse().find(m => m.role === 'user')?.content || '';
     const anterior = messages.filter(m => m.role !== 'user' || m !== messages[messages.length-1])
       .map(m => `${m.role}: ${m.content}`).join('\n');

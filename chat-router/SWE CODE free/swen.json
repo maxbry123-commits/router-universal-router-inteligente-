@@ -76,5 +76,17 @@
       "tap",
       "atras"
     ]
+  },
+  "credenciales": {
+    "dueno": "openclaw",
+    "regla": "los correos y la clave los tiene OpenClaw (su vault/config); nunca en secrets del Space, ni en prompts, ni en codigo. El bridge los recibe por la via plugins->deepseek_harness en cada llamada (campos credenciales/cuentas del POST) o por envs que inyecta OpenClaw al arrancar el proceso.",
+    "campos_post": {
+      "cuentas": "array de correos",
+      "clave": "string una por cuenta o clave universal"
+    },
+    "prohibido": [
+      "WEB_ACCOUNTS en Space Settings",
+      "clave en chat/logs/codigo"
+    ]
   }
 }
