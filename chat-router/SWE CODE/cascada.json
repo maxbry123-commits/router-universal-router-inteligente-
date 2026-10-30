@@ -82,10 +82,10 @@
   "pipelines": {
     "code": [
       {
-        "agente": "liquid1",
         "modelo": "lfm2.5-350m",
         "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
         "nodo": "recibe_delega",
+        "agente": "liquid1",
         "entrada": "objetivo",
         "salida": "delegacion"
       },
@@ -99,20 +99,30 @@
         "salida": "code_refactor"
       },
       {
-        "agente": "liquid2",
         "modelo": "lfm2.5-350m",
         "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
         "nodo": "despliega",
+        "agente": "liquid2",
         "entrada": "delegacion",
-        "salida": "deploy_result"
+        "salida": "deploy_result",
+        "paralelo": true
+      },
+      {
+        "modelo": "lfm2.5-350m",
+        "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
+        "nodo": "sigue",
+        "agente": "liquid1",
+        "entrada": "delegacion",
+        "salida": "trabajo_continuo",
+        "paralelo": true
       }
     ],
     "free": [
       {
-        "agente": "liquid1",
         "modelo": "lfm2.5-350m",
         "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
         "nodo": "recibe_delega",
+        "agente": "liquid1",
         "entrada": "objetivo",
         "salida": "delegacion"
       },
@@ -126,12 +136,22 @@
         "salida": "code_refactor"
       },
       {
-        "agente": "liquid2",
         "modelo": "lfm2.5-350m",
         "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
         "nodo": "despliega",
+        "agente": "liquid2",
         "entrada": "delegacion",
-        "salida": "deploy_result"
+        "salida": "deploy_result",
+        "paralelo": true
+      },
+      {
+        "modelo": "lfm2.5-350m",
+        "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
+        "nodo": "sigue",
+        "agente": "liquid1",
+        "entrada": "delegacion",
+        "salida": "trabajo_continuo",
+        "paralelo": true
       }
     ]
   }

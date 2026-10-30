@@ -32,7 +32,7 @@
 ## 3b. Pipeline ejecutable
 
 `SWEN CODE free pipeline [code|free|auto] <tarea>`:
-- `code`/`free` → liquid 1 **recibe y delega** → liquid 2 **despliega** (2 nodos, espejo).
+- `code`/`free` → liquid 1 **recibe y delega** → liquid 2 **despliega** — y liquid 1 **sigue trabajando en paralelo, no para** (espejo).
 - **qwen-coder NO actúa por defecto** (costo/token): solo entra si la salida trae `[GAP]` y hace falta refactoría — paso `condicional` en cascada.json.
 - Ejecutor: `mini_router.py --pipeline code|free "<tarea>"`.
 

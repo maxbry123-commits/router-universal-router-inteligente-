@@ -49,8 +49,8 @@
     "secciones": 2,
     "como": "cada chat/seccion = conv_id propio -> tab web propia (BRIDGE_MAX_TABS=4 por sitio) + modelo propio; 2 secciones trabajan por separado al mismo tiempo",
     "espejo": "un modelo se clona a otro conv_id/slot (mismo modelo, contexto aparte) para dividir el trabajo — igual que el mirror de agentes",
-    "pipeline_code": "liquid1 recibe y delega -> liquid2 despliega (espejo; qwen-coder solo si [GAP] pide refactoria)",
-    "pipeline_free": "liquid1 recibe y delega -> liquid2 despliega (espejo; sin refactor)"
+    "pipeline_code": "liquid1 recibe y delega -> liquid2 despliega + liquid1 sigue trabajando en paralelo (no para)",
+    "pipeline_free": "liquid1 recibe y delega -> liquid2 despliega + liquid1 sigue trabajando en paralelo (no para)"
   },
   "cadena_respaldo": [
     "web-bridge (proceso en riu-router :7870, cuentas web Qwen/DeepSeek, metodos 1+4 / respaldo 2+3)",
