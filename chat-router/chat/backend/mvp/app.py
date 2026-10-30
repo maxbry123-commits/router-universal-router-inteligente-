@@ -333,6 +333,17 @@ def _sin_identidades(mensajes):
 async def _chat_ficha(cuerpo, progreso=None):
     q = {**cuerpo, **(cuerpo.get("qwen") or {})}  # api.js harness() anida {plugin, ficha_qwen, modelo} en "qwen"
     mensajes = q.get("mensajes") or q.get("messages") or [{"role": "user", "content": str(q.get("message") or "")}]
+    act = swe.activar(str(mensajes[-1].get("content") or "")) if isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user" and isinstance(mensajes[-1].get("content"), str) else None
+    if act and act.get("error"):
+        raise HTTPException(status_code=400, detail=act["error"])
+    if act:  # «SWEN CODE free ...»: el mensaje elige modelo, modo y seccion; el resto del chat (herramientas, memoria, formato) sigue igual
+        if act["pipeline"]:  # pipeline code|free|auto: corre la cascada del mini_router (con respaldo Groq -> NVIDIA) y devuelve el resultado con recibos
+            try: r = await asyncio.to_thread(swe.correr_pipeline, act["pipeline"], act["prompt"])
+            except ValueError as error: raise HTTPException(status_code=400, detail=str(error)) from None
+            return {"estado": "completado", "via": "swe-pipeline", "finish_reason": "stop", "modelo_solicitado": "pipeline " + act["pipeline"], "modelo_respuesta": "pipeline " + act["pipeline"],
+                    "choices": [{"message": {"role": "assistant", "content": swe.resumen_pipeline(act["pipeline"], r), "tool_calls": []}, "finish_reason": "stop"}]}
+        q = {**q, "modelo": swe.modelo_de(act)}
+        mensajes = [*mensajes[:-1], {**mensajes[-1], "content": swe.marcar(act)}]
     if q.get("contexto_previo"):
         if not isinstance(q["contexto_previo"], list):
             raise HTTPException(status_code=400, detail="contexto_previo debe ser una lista")

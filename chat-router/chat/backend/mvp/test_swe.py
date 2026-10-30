@@ -92,3 +92,62 @@ class TestSwe(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestActivacion(Base):
+    def setUp(self):
+        super().setUp(); self.client.__enter__()  # un solo bucle de eventos, como uvicorn: la tarea del chat sobrevive entre peticiones
+
+    def tearDown(self):
+        self.client.__exit__(None, None, None); super().tearDown()
+
+    def llamar(self, nombre, args):
+        r = self.client.post("/mcp?key=api-ficticia", json={"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": nombre, "arguments": args}}).json()
+        return r if "error" in r else json.loads(r["result"]["content"][0]["text"])
+
+    def test_activar_porta_la_gramatica_de_activar_js(self):
+        a = swe.activar("SWEN CODE free modo solucion solo deepseek v4 arregla el login")
+        self.assertEqual((a["modo"], a["modelo"], a["prompt"]), ("solucion", "web-dsv4-flash", "arregla el login"))
+        self.assertIsNone(swe.activar("hola, SWEN CODE free no al inicio"))
+        self.assertEqual(swe.activar("SWEN CODE free concilio que hacemos")["modelo"], "consenso")
+        self.assertEqual(swe.activar("SWEN CODE free consulta compara X")["modelo"], "consenso")  # consulta sin modelo = concilio
+        a = swe.activar("SWEN CODE free chat 2 modo revision liquid mira esto")
+        self.assertEqual((a["conv_id"], a["modo"], a["modelo"], a["prompt"]), ("chat-2", "revision", "lfm2.5-350m", "mira esto"))
+        self.assertEqual(swe.activar("SWEN CODE free pipeline code haz X")["pipeline"], "code")
+        self.assertIn("modo desconocido", swe.activar("SWEN CODE free modo raro x")["error"])
+
+    def test_el_mensaje_activado_viaja_con_marca_y_el_bridge_recibe_modo_y_conv_id(self):
+        s, url, vistos = servidor({"web-qwen38max": (200, "listo")})
+        salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "x"}
+        with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1", "WEB_BRIDGE_URL": url}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
+            self.banco.datos["RIU_API_KEY"] = "clave-harness"
+            r = self.llamar("chat", {"ficha_qwen": "1", "message": "SWEN CODE free chat 2 modo solucion arregla api.js", "request_id": "swen-act-01", "modelo": "qwen3.8-max"})
+            for _ in range(20):
+                if self.llamar("resultado", {"proceso_id": r["proceso_id"], "espera": 1}).get("estado") != "procesando": break
+        self.assertEqual(llm.call_args.args[2], "web-qwen38max")  # modelo elegido por la activacion, no el del selector
+        ultimo = llm.call_args.args[1][-1]["content"]
+        self.assertIn("arregla api.js", ultimo); self.assertNotIn("SWEN CODE free", ultimo)
+        # la llamada al bridge: la marca se convierte en campos y el texto sale limpio
+        mensajes = [{"role": "user", "content": ultimo}]
+        with patch.dict(os.environ, {"WEB_BRIDGE_URL": url}):
+            swe.llamar(mensajes, "web-qwen38max")
+        s.shutdown()
+        self.assertEqual((vistos[0]["modo"], vistos[0]["conv_id"]), ("solucion", "chat-2"))
+        self.assertEqual(vistos[0]["messages"][-1]["content"], "arregla api.js")
+
+
+class TestPipeline(Base):
+    def test_pipeline_ejecuta_la_cascada_y_devuelve_resultado_con_recibos(self):
+        llamadas = []
+        def falso(modelo, mensajes, servidor="S1"):
+            llamadas.append(modelo); return "salida de " + modelo
+        with patch.object(swe._mini_router(), "llamar", falso):
+            r = swe.correr_pipeline("free", "arregla el login")
+        self.assertEqual(r["estado"], "DONE"); self.assertGreaterEqual(len(llamadas), 2)
+        self.assertIn("lfm2.5-350m", llamadas)
+        texto = swe.resumen_pipeline("free", r)
+        self.assertIn("DONE", texto); self.assertIn(r["pid"], texto)
+
+    def test_pipeline_desconocido_da_error_claro(self):
+        with self.assertRaises(ValueError):
+            swe.correr_pipeline("inventado", "x")
