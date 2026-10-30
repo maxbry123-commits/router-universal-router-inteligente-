@@ -10,6 +10,7 @@ import { consenso } from './consenso.js';
 import { modoValido } from './modos.js';
 import { estadoCuentas, estadoTabs, snapshotTab } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
+import { pool, cuentaActual } from './cuentas.js';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -31,7 +32,13 @@ async function conFallback(modelo, prompt, opts) {
 }
 
 app.get('/health', async (_req, res) => {
-  res.json({ ok: true, cuentas: estadoCuentas() });
+  let poolInfo;
+  try {
+    const n = pool().length;
+    let idx = null; try { idx = cuentaActual().index; } catch {}
+    poolInfo = { total: n, loaded: true, indices: [...Array(n).keys()], actual: idx };
+  } catch { poolInfo = { total: 0, loaded: false, error: 'WEB_ACCOUNTS_VACIO' }; }
+  res.json({ ok: true, pool: poolInfo, cuentas: estadoCuentas() });
 });
 
 app.get('/v1/queue', (_req, res) => {
