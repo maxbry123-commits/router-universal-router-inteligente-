@@ -13,6 +13,7 @@
       "base_url_env": "SWECODE_URL_S1",
       "t_s_aprox": 40,
       "costo_m_usd": 0.21,
+      "bench": {"t_s_mediana": 36.4, "costo_m_real": 0.23, "code_valido": false, "nota": "salida corrupta en crudo; decide por tool-call via motor"},
       "entrada": "objetivo",
       "salida": "code"
     },
@@ -25,6 +26,7 @@
       "base_url_env": "SWECODE_URL_S2",
       "t_s_aprox": 27,
       "costo_m_usd": 0.31,
+      "bench": {"t_s_mediana": 34.8, "costo_m_real": 0.24, "code_valido": "python_ok_en_sample", "nota": "validator marcó false pero el sample trae Python válido"},
       "entrada": "code",
       "salida": "code_refactor"
     },
@@ -37,18 +39,20 @@
       "base_url_env": "SWECODE_URL_S3",
       "t_s_aprox": 40,
       "costo_m_usd": 0.21,
+      "bench": {"t_s_mediana": 72.5, "costo_m_real": 0.11, "code_valido": false, "nota": "rol = tool calls via swe-agent, no texto libre"},
       "entrada": "code_refactor",
       "salida": "deploy_result"
     },
     {
       "nodo": "verifica",
       "agente": "openhands",
-      "modelo": "deepseek-coder-1.3b",
-      "modelo_id_hf": "deepseek-ai/DeepSeek-Coder-1.3B-instruct (GGUF community)",
+      "modelo": "lfm2-350m",
+      "modelo_id_hf": "LiquidAI/LFM2-350M-GGUF",
       "servidor": "S2",
       "base_url_env": "SWECODE_URL_S2",
-      "t_s_aprox": 45,
-      "costo_m_usd": 0.19,
+      "t_s_aprox": 124,
+      "costo_m_usd": 0.07,
+      "bench": {"t_s_mediana": 124.3, "costo_m_real": 0.07, "code_valido": true, "nota": "reemplaza a deepseek-coder-1.3b ($0.74/M inestable 2.6-45.7 t/s, sobre el tope)"},
       "entrada": "deploy_result",
       "salida": "veredicto_final"
     }
