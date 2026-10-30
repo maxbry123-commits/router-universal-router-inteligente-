@@ -8,7 +8,7 @@ from contextvars import ContextVar
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import archivos, bank, compute, control, externos, estado_tarea, frontend_estatico, loop_puente, loop_reanudar, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
+from mvp import archivos, swe, bank, compute, control, externos, estado_tarea, frontend_estatico, loop_puente, loop_reanudar, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -109,6 +109,8 @@ async def _llamar_modelo(mensajes, modelo, opciones):
     try:
         if externos.proveedor(modelo):
             return await asyncio.to_thread(externos.llamar, mensajes, modelo, banco, opciones)
+        if swe.proveedor(modelo):  # SWE CODE / SWEN CODE free: bridge web o cola HF, con respaldo Groq -> NVIDIA -> HF local
+            return await asyncio.to_thread(swe.llamar, mensajes, modelo, banco, opciones)
         clave = banco.leer("QWEN_API_KEY") if banco else None
         if not clave:
             raise HTTPException(status_code=503, detail="QWEN_API_KEY no disponible en banco")
@@ -180,7 +182,7 @@ async def chat(cuerpo: dict):
     _verificar_llamadas(salida["tool_calls"], controles)
     return {"texto": salida["texto"], "tool_calls": salida["tool_calls"],
             "finish_reason": salida.get("finish_reason"),
-                **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}
+                **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta", "via_respaldo") if k in salida}}
 @app.post("/almacen", dependencies=[Depends(verificar)])
 async def almacen(cuerpo: dict):
     accion = cuerpo.get("accion")
@@ -216,7 +218,7 @@ def chat_provider_models(proveedor: str):
         except (RuntimeError, OSError, ValueError) as error: raise HTTPException(status_code=503, detail=str(error)[:200]) from None
     if proveedor != "qwen":
         raise HTTPException(status_code=404, detail="proveedor no disponible en mvp")
-    return {"models": [{"model_id": m, "label": m, "tipo": t} for m, t in modelos.catalogo()]}
+    return {"models": [{"model_id": m, "label": m, "tipo": t} for m, t in modelos.catalogo()] + [{"model_id": m, "label": m, "tipo": "texto"} for m in swe.catalogo()]}
 # --- G16: panel-chat.js:542 lee {agents:[{id,name}]} y :543-544 {accounts:[{account}]}; mvp no tiene fuente de agentes ni de cuentas GitHub -> listas vacias (sin inventar) ---
 @app.get("/chat/agents", dependencies=[Depends(verificar)])
 def chat_agents():
