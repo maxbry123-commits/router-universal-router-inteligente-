@@ -7,15 +7,21 @@ RAIZ = os.path.dirname(os.path.abspath(__file__))
 CASCADA = json.load(open(os.path.join(RAIZ, "cascada.json")))
 MOTORES = json.load(open(os.path.join(RAIZ, "motores.json")))["motores"]
 BASE_URL = os.getenv(CASCADA["base_url_env"], CASCADA["base_url_default"]).rstrip("/")
-# Entrada única S1; S2/S3 son réplicas que saltan cuando S1 satura (mismos modelos).
-URLS = [u for u in (os.getenv(f"SWECODE_URL_{s}") for s in ("S1", "S2", "S3")) if u] or [BASE_URL]
-URLS = [u.rstrip("/") for u in URLS]
+# Cada Space sirve su(s) modelo(s); el salto a otra URL es solo respaldo.
+URLS = {s: os.getenv(f"SWECODE_URL_{s}").rstrip("/") for s in ("S1", "S2", "S3")
+        if os.getenv(f"SWECODE_URL_{s}")}
+if not URLS:
+    URLS = {"S1": BASE_URL}
 
 
-def llamar(modelo: str, mensajes: list) -> str:
+def llamar(modelo: str, mensajes: list, servidor: str = "S1") -> str:
     body = json.dumps({"model": modelo, "messages": mensajes, "temperature": 0.2}).encode()
+    orden = [servidor] + [s for s in URLS if s != servidor]
     ultimo = None
-    for base_url in URLS:
+    for s in orden:
+        base_url = URLS.get(s)
+        if not base_url:
+            continue
         try:
             req = urllib.request.Request(f"{base_url}/chat/completions", data=body,
                                          headers={"Content-Type": "application/json"})
@@ -42,8 +48,10 @@ def correr(objetivo: str) -> dict:
                   f"Entrada del paso anterior ({paso['entrada']}):\n{entrada}\n"
                   f"Entrega SOLO: {paso['salida']}.")
         try:
-            salida = llamar(modelo, [{"role": "user", "content": prompt}])
-            recibos.append(recibo(pid, nodo, "OK", {"modelo": modelo, "chars": len(salida)}))
+            salida = llamar(modelo, [{"role": "user", "content": prompt}],
+                            paso.get("servidor", "S1"))
+            recibos.append(recibo(pid, nodo, "OK", {"modelo": modelo, "chars": len(salida),
+                                                  "servidor": paso.get("servidor")}))
             entrada = salida
         except Exception as e:
             recibos.append(recibo(pid, nodo, "FAIL", {"modelo": modelo, "error": str(e)[:300]}))
