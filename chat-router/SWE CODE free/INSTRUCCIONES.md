@@ -29,6 +29,12 @@
 `revision` · `solucion` · `arquitectura` · `archivos` · `prompt_code` · `consulta` · `despliega`
 (`despliega`: aplica lo que te entregan y verifica; en FREE no refactorizas.)
 
+## 3a. Subir documentos a los modelos
+
+- `doc <ruta>` / `adjunto <ruta>` (repetible): `SWEN CODE free doc manual.md doc plan.md resume esto` → el contenido viaja incrustado al prompt.
+- OpenClaw/chat puede mandar `documentos:[{nombre,contenido}]` en el POST a `/v1/chat/completions` — el bridge los incrusta (máx ~100k chars/doc).
+- Local: `mini_router.py --pipeline free --doc manual.md "tarea"`.
+
 ## 3b. Pipeline ejecutable
 
 `SWEN CODE free pipeline [code|free|auto] <tarea>`:

@@ -37,4 +37,6 @@ Forma: `SWEN CODE free modo <modo> [con|solo|modelo <nombre>] [chat <id>] <texto
 La salida larga/archivos se materializa en `salidas/` del bridge (o del repo): un `.md` por entregable, nombre `AAAAMMDD-<modo>-<tema>.md`.
 
 ## 5. Desoligar, escribir, transcribir el code y desplegar en GitHub
+Documentos: `doc <ruta>`/campo `documentos` en el POST -> se incrustan al prompt (máx 100k chars c/u).
+
 El modelo: lee la salida web, la transcribe a código limpio, la organiza en archivos del repo, commit + push a `main` (mensaje con prefijo del modo). El agente nunca deja el resultado solo en el chat web.

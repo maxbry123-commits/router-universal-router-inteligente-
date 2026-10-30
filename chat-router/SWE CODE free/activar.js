@@ -51,6 +51,13 @@ function sacaChat(resto) {
   return { conv_id: `chat-${m[2]}`, resto: resto.slice(m[0].length).trim() };
 }
 
+// doc|documento|adjunto|archivo|file <ruta>  — se puede repetir para varios
+function sacaAdjunto(resto) {
+  const m = resto.match(/^(doc|documento|adjunto|archivo|file)\s+([^\s]+)/i);
+  if (!m) return null;
+  return { archivo: m[2], resto: resto.slice(m[0].length).trim() };
+}
+
 function activar(texto) {
   if (!CLAVE.test(texto || "")) return null;
   let resto = texto.replace(CLAVE, "").trim();
@@ -58,6 +65,7 @@ function activar(texto) {
   let modelo = null;
   let conv_id = null;
   let pipeline = null;
+  let adjuntos = [];
 
   // keywords en cualquier orden: se consumen prefijos hasta que nada cambie
   let cambio = true;
@@ -86,12 +94,14 @@ function activar(texto) {
     if (ch) { conv_id = ch.conv_id; resto = ch.resto; cambio = true; }
     const pl = sacaPipeline(resto);
     if (pl) { pipeline = pl.pipeline; resto = pl.resto; cambio = true; }
+    const ad = sacaAdjunto(resto);
+    if (ad) { adjuntos.push(ad.archivo); resto = ad.resto; cambio = true; }
   }
 
   // consulta sin modelo nombrado = concilio (los 3); el resto = objetivo unico
   if (!modelo) modelo = modo === "consulta" ? "consenso" : "web-qwen38max";
 
-  return { sistema: "SWEN CODE free", modo, modelo, conv_id, pipeline, prompt: resto };
+  return { sistema: "SWEN CODE free", modo, modelo, conv_id, pipeline, adjuntos, prompt: resto };
 }
 
 module.exports = { activar, MODOS, CLAVE, MODELOS_ALIAS, PIPELINES };

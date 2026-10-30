@@ -52,11 +52,18 @@ app.post('/refresh_session', async (_req, res) => {
 
 app.post('/v1/chat/completions', async (req, res) => {
   try {
-    const { model = 'swecode-consulta', messages = [], modo, conv_id } = req.body;
+    const { model = 'swecode-consulta', messages = [], modo, conv_id, documentos } = req.body;
     const ultimo = [...messages].reverse().find(m => m.role === 'user')?.content || '';
     const anterior = messages.filter(m => m.role !== 'user' || m !== messages[messages.length-1])
       .map(m => `${m.role}: ${m.content}`).join('\n');
-    const prompt = anterior ? `${anterior}\nuser: ${ultimo}` : ultimo;
+    let prompt = anterior ? `${anterior}\nuser: ${ultimo}` : ultimo;
+    // documentos: [{nombre, contenido}] o strings — se incrustan al prompt del modelo
+    const docs = (Array.isArray(documentos) ? documentos : [])
+      .map(d => typeof d === 'string' ? { nombre: 'doc', contenido: d } : d)
+      .filter(d => d && d.contenido)
+      .map(d => `[DOCUMENTO: ${d.nombre || 'doc'}]\n${String(d.contenido).slice(0, 100000)}`)
+      .join('\n\n');
+    if (docs) prompt = `${prompt}\n\n${docs}`;
 
     let modeloWeb, modoUso = modo || 'consulta', salida, usado = model;
     if (model.startsWith('web-')) {

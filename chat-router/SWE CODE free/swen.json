@@ -43,7 +43,8 @@
         "qwen2.5"
       ]
     },
-    "locales": "lfm2.5-350m y qwen2.5-coder-1.5b salen por cola HF S1/S2/S3 con model= (no por web-bridge)"
+    "locales": "lfm2.5-350m y qwen2.5-coder-1.5b salen por cola HF S1/S2/S3 con model= (no por web-bridge)",
+    "documentos": "doc/adjunto <ruta> repetible -> campo documentos del POST; contenido incrustado al prompt (max 100k chars/doc)"
   },
   "paralelo": {
     "secciones": 2,

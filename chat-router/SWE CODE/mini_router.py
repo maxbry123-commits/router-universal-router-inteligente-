@@ -74,9 +74,21 @@ def main():
             print(json.dumps({"verdict": "INPUT_GAP", "detail": f"pipeline desconocido: {nombre}",
                               "pipelines": list(CASCADA.get("pipelines", {}))})); sys.exit(1)
         args = args[2:]
+    docs = []
+    while args[:1] == ["--doc"]:
+        args = args[1:]
+        if not args: break
+        try:
+            with open(args[0], encoding="utf-8") as f:
+                docs.append((os.path.basename(args[0]), f.read()[:100000]))
+        except OSError as e:
+            print(json.dumps({"verdict": "INPUT_GAP", "detail": f"doc ilegible: {args[0]} ({e})"})); sys.exit(1)
+        args = args[1:]
     objetivo = args[0] if args else sys.stdin.read().strip()
     if not objetivo:
         print(json.dumps({"verdict": "INPUT_GAP", "detail": "objetivo requerido"})); sys.exit(1)
+    if docs:
+        objetivo += "\n\n" + "\n\n".join(f"[DOCUMENTO: {n}]\n{c}" for n, c in docs)
     print(json.dumps(correr(objetivo, pasos), ensure_ascii=False, indent=2))
 
 
