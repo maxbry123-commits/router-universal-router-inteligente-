@@ -32,9 +32,10 @@
 ## 3b. Pipeline ejecutable
 
 `SWEN CODE free pipeline [code|free|auto] <tarea>`:
-- `code` → anota lfm2.5 → qwen-coder organiza+refactor → otro lfm2.5 despliega.
-- `free` (default) → qwen instruye → swe-agente → otro lfm2.5 despliega. Sin refactor.
-- Ejecutor: `mini_router.py --pipeline code|free "<tarea>"` (cascada.json → pipelines).
+- `code` → liquid anota → liquid organiza → liquid despliega.
+- `free` (default) → liquid instruye → liquid despliega.
+- **qwen-coder NO actúa por defecto** (costo/token): solo entra si la salida trae `[GAP]` y hace falta refactoría — paso `condicional` en cascada.json.
+- Ejecutor: `mini_router.py --pipeline code|free "<tarea>"`.
 
 ## 4. Trabajo en paralelo
 

@@ -91,29 +91,47 @@
       },
       {
         "nodo": "organiza",
+        "agente": "notas",
+        "modelo": "lfm2.5-350m",
+        "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
+        "entrada": "notas",
+        "salida": "plan"
+      },
+      {
+        "nodo": "refactor",
         "agente": "qwen-code",
         "modelo": "qwen2.5-coder-1.5b",
         "modelo_id_hf": "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF",
-        "entrada": "notas",
-        "salida": "code_refactor"
+        "entrada": "plan",
+        "salida": "code_refactor",
+        "condicional": "solo_si_gap_o_refactoria"
       },
       {
         "nodo": "despliega",
         "agente": "swe-agent",
         "modelo": "lfm2.5-350m",
         "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
-        "entrada": "code_refactor",
+        "entrada": "plan",
         "salida": "deploy_result"
       }
     ],
     "free": [
       {
         "nodo": "instruye",
-        "agente": "qwen",
-        "modelo": "qwen2.5-coder-1.5b",
-        "modelo_id_hf": "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF",
+        "agente": "notas",
+        "modelo": "lfm2.5-350m",
+        "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
         "entrada": "objetivo",
         "salida": "instrucciones"
+      },
+      {
+        "nodo": "refactor",
+        "agente": "qwen-code",
+        "modelo": "qwen2.5-coder-1.5b",
+        "modelo_id_hf": "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF",
+        "entrada": "instrucciones",
+        "salida": "code_refactor",
+        "condicional": "solo_si_gap_o_refactoria"
       },
       {
         "nodo": "despliega",

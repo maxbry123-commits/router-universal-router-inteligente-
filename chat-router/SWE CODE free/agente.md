@@ -29,7 +29,7 @@ Forma: `SWEN CODE free modo <modo> [con|solo|modelo <nombre>] [chat <id>] <texto
 
 ## 3. Trabajo en paralelo y espejo
 - 2 secciones: `chat 1` y `chat 2` corren por separado al mismo tiempo (tab web propia cada una).
-- Pipeline CODE: lfm2.5 anota (rápido) → qwen-coder organiza/refactoriza → otro lfm2.5 despliega.
+- Pipeline CODE: lfm2.5 anota → otro lfm2.5 organiza → otro lfm2.5 despliega. qwen-coder solo entra si aparece `[GAP]` y hay refactoría que hacer (costo/token).
 - Pipeline FREE: qwen da instrucciones → swe-agente → otro lfm2.5 despliega (sin refactor).
 - Espejo: clonarte a otro conv_id para dividir el trabajo — mismo modelo, contexto aparte.
 

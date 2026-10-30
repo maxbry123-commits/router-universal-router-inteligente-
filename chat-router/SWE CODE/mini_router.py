@@ -46,6 +46,8 @@ def correr(objetivo: str, pasos=None) -> dict:
     recibos = [recibo(pid, "inicio", "OK", {"objetivo": objetivo[:200]})]
     entrada = objetivo
     for paso in pasos:
+        if paso.get("condicional") and "[GAP]" not in entrada:
+            continue
         modelo, nodo, agente = paso["modelo"], paso["nodo"], paso["agente"]
         prompt = (f"AGENTE={agente}. Tarea: {objetivo}\n"
                   f"Entrada del paso anterior ({paso['entrada']}):\n{entrada}\n"
