@@ -19,8 +19,27 @@ def _degraded(reason: str) -> dict[str, Any]:
     return {"status": "degraded", "reason": reason}
 
 
+# Manual canonico (Riu + OpenClaw): chat-router/SWE CODE free/INSTRUCCIONES.md -> system.
+_MANUAL = os.path.join(os.path.dirname(__file__), "..", "..", "chat-router", "SWE CODE free", "INSTRUCCIONES.md")
+
+
+def _with_manual(payload: dict[str, Any]) -> dict[str, Any]:
+    path = os.getenv("RIU_INSTRUCCIONES_PATH") or _MANUAL
+    try:
+        with open(path, encoding="utf-8") as fh:
+            manual = fh.read()
+    except OSError:
+        return payload
+    p = dict(payload)
+    p.setdefault("system", manual)
+    msgs = p.get("messages")
+    if isinstance(msgs, list) and not any(isinstance(m, dict) and m.get("role") == "system" for m in msgs):
+        p["messages"] = [{"role": "system", "content": manual}] + msgs
+    return p
+
+
 def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
-    payload = payload or {}
+    payload = _with_manual(payload or {})
     base = _url()
     if action == "status":
         if not base:
