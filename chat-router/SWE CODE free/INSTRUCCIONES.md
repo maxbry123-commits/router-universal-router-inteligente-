@@ -78,6 +78,32 @@ chat → plugins → deepseek_harness → HTTP router → plugins → harness �
 | Todo web cae | Cadena → modelos locales S1/S2/S3 (`model=`) → APK móvil |
 | `INPUT_NO_ENCONTRADO`/`SELECTOR_BROKEN` | Marcar SELECTOR_BROKEN + sitio; no reintentar a ciegas |
 
+### 7a. Runbook de auto-diagnóstico (el agente lo hace SOLO, sin prompts)
+
+El agente-modelo ejecuta esta secuencia él mismo — no espera órdenes:
+
+1. **`cuentas:{}` en `/web/health` o `/v1/queue`** = el proceso del bridge no
+   recibió `WEB_ACCOUNTS`. Acción: verificar que el boot exporta el secret
+   ANTES de `node src/server.js`; reiniciar el proceso; re-probar `/web/health`
+   hasta que liste las cuentas (count/ids, nunca valores). Sin sesión no hay
+   respuesta del modelo — este fallo explica el `content` vacío.
+2. **`content` vacío con cuentas OK** = `GET /debug/tab` (url+title+screenshot):
+   - Gate "Confirma tu edad" → manejo AGE_GATE del código lo resuelve.
+   - Pantalla de login → relogin con la cuenta.
+   - Captcha/2FA → documentar pantalla + índice de cuenta, sin bypass.
+3. **`/v1/queue` 404** = proxy no reenvía la ruta al bridge → añadir ruta
+   `GET /v1/queue → :7870` en el proxy del Space.
+4. **`/movil/health` → `movil:false`** = puente vivo, esperando la app:
+   entregar Host+puerto+PUENTE_TOKEN → "Probar conexión" en la app.
+5. **Gateway OpenClaw**: proceso en el Space (mismo boot); el código QR/config
+   se genera desde el gateway y se entrega al usuario por el canal seguro.
+6. **`/health.commit` ≠ main HEAD** = `DEPLOY_STALE` → rebuild/restart
+   (el Space clona main al boot); re-verificar `/v1/models` (swecode-*)
+   y `/v1/queue` antes de reportar.
+
+Regla: el agente diagnostica con evidencia (logs, /debug/tab, healths) y solo
+toca `sites.js` cuando el screenshot/código dice exactamente qué selector falla.
+
 ## 7b. Auditar en GitHub (guía XRAY)
 
 - `GUIA_AUDITORIA_XRAY.md` = guía v1 verbatim del usuario.
