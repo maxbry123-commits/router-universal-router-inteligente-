@@ -1,0 +1,26 @@
+{
+  "provider": "swecode",
+  "nombre": "SWE CODE / SWEN CODE free",
+  "tipo": "openai-compatible",
+  "base_url": "http://localhost:7870/v1",
+  "api_key": "no-requerida",
+  "nota": "El bridge solo sirve estos modelos: el selector muestra EXACTAMENTE esta lista y nada mas. base_url ajustable al host real del bridge (:7870 proceso del Space).",
+  "modelos": [
+    {"id": "web-qwen38max",   "nombre": "Qwen 3.8 Max (web)"},
+    {"id": "web-qwen37max",   "nombre": "Qwen 3.7 Max (web)"},
+    {"id": "web-dsv4-flash",  "nombre": "DeepSeek V4 Flash (web)"},
+    {"id": "swecode-consulta",      "nombre": "Concilio — los 3 web"},
+    {"id": "swecode-revision",      "nombre": "SWE · revision"},
+    {"id": "swecode-solucion",      "nombre": "SWE · solucion"},
+    {"id": "swecode-arquitectura",  "nombre": "SWE · arquitectura"},
+    {"id": "swecode-archivos",      "nombre": "SWE · archivos"},
+    {"id": "swecode-prompt_code",   "nombre": "SWE · prompt_code"},
+    {"id": "swecode-despliega",     "nombre": "SWE · despliega"},
+    {"id": "lfm2.5-350m",           "nombre": "Liquid LFM2.5-350M (HF S1-S3)"},
+    {"id": "qwen2.5-coder-1.5b",    "nombre": "Qwen Coder 1.5B (HF S1-S3)"},
+    {"id": "qwen3.5-0.8b",          "nombre": "Qwen3.5 0.8B (HF S1-S3)"},
+    {"id": "qwen3-0.6b",            "nombre": "Qwen3 0.6B (HF S1-S3)"}
+  ],
+  "gramatica": "SWEN CODE free [modo <m>] [con|solo|modelo <m>] [chat <id>] [pipeline code|free] [doc <ruta>] <texto> — ver INSTRUCCIONES.md",
+  "via": "app openclaw -> gateway -> plugins -> deepseek_harness -> bridge :7870"
+}

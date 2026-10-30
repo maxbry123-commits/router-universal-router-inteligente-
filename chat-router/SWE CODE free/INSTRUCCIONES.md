@@ -114,6 +114,12 @@ toca `sites.js` cuando el screenshot/código dice exactamente qué selector fall
   códigos de fallo, auditoría en paralelo por conv_id, formato de respuesta en
   el chat (VEREDICTO/EVIDENCIA/GAP/SIGUIENTE), presupuesto por tamaño de modelo.
 
+## 7c. Selector de modelos en la app OpenClaw
+
+`provider-openclaw.json`: el Gateway lo registra como provider (tipo
+openai-compatible, `base_url` = bridge :7870). El bridge solo sirve los
+modelos SWE CODE/SWEN CODE free → el selector muestra SOLO esa lista.
+
 ## 8. Reparar cableado
 
 Señal de pieza desconectada (chat no responde / modo no existe):
