@@ -29,10 +29,10 @@ python3 mini_router.py "arregla el bug de login en app.py"
 
 | Pieza | Ubicación |
 |---|---|
-| Ficha de la cascada (DSL) | `chat-router/plugins/swe_code/cascada.json` |
-| Config de motores | `chat-router/plugins/swe_code/motores.json` |
+| Ficha de la cascada (DSL) | `chat-router/swen code/cascada.json` |
+| Config de motores | `chat-router/swen code/motores.json` |
 | Agentes descargados | `chat-router/agentes/agentes-listos/` (codex, opencode, SWE-agent, openhands-software-agent-sdk) |
 | Motor descarga/extracción | `chat-router/motores/motores-descarga/` |
-| Inputs verbatim | `chat-router/plugins/swe_code/INPUTS_VERBATIM.md` |
+| Inputs verbatim | `chat-router/swen code/INPUTS_VERBATIM.md` |
 | Modelos en HF | jobs de grockbot → llama-server (OpenAI-compatible) |
 | Cara del chat | OpenClaw → provider OpenAI-compatible → este mini-router |

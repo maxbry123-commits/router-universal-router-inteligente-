@@ -3,7 +3,9 @@
   "chat-router/harness": "chat/backend/deepseek_harness",
   "chat-router/plugins/deepseek_harness": "../chat/backend/deepseek_harness",
   "chat-router/plugins/router_api_cliente.py": "../chat/backend/router_api_cliente.py",
-  "router-mvp/mvp": "../chat-router/chat/backend/mvp"
+  "router-mvp/mvp": "../chat-router/chat/backend/mvp",
+  "chat-router/plugins/swen_code": "../swen code",
+  "chat-router/plugins/swen_code_free": "../swen code free"
  },
  "plugins": {
   "agentes": {
@@ -117,8 +119,13 @@
    "ficha": true
   },
   "swen_code_free": {
-   "destino": "",
-   "enlace": false,
+   "destino": "../swen code free",
+   "enlace": true,
+   "ficha": true
+  },
+  "swen_code": {
+   "destino": "../swen code",
+   "enlace": true,
    "ficha": true
   }
  },
