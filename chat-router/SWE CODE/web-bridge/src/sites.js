@@ -18,7 +18,9 @@ export const SITES = {
     stop_gen: ['button[aria-label*="top" i]'],
     login_email: ['input[name="email"]', 'input[type="email"]'],
     login_pass: ['input[type="password"]', 'input[name="password"]'],
-    login_btn: ['button:has-text("Continue")', 'button[type="submit"]'],
+    login_btn: ['button:has-text("Continue")', 'button:has-text("Continuar")', 'button[type="submit"]'],
+    login_visible: ['button:has-text("Iniciar sesión")', 'a:has-text("Iniciar sesión")', 'button:has-text("Log in")', 'a:has-text("Log in")', 'button:has-text("Sign in")'],
+    age_gate_continue: ['button:has-text("Continuar")', 'button:has-text("Continue")'],
     // qwen muestra "Login with verification code" por defecto:
     // hay que clicar "Log in with a password" ANTES de llenar el pass
     login_switch_pass: ['button:has-text("Log in with a password")', 'a:has-text("password")'],
@@ -122,30 +124,44 @@ export async function elegirModelo(page, cfg, modelo_regex) {
 
 
 // AGE_GATE qwen: modal "Confirma tu edad" — Antonio orden año 2000
-export async function pasarAgeGate(page, year = '2000') {
-  const modal = page.locator('text=/Confirma tu edad|Confirm your age|naciste|year were you born/i').first();
+// pasarAgeGate(page, cfg) ; compat: segundo arg string = year
+export async function pasarAgeGate(page, cfg, year = '2000') {
   try {
-    await modal.waitFor({ state: 'visible', timeout: 5000 });
-  } catch {
-    return false;
-  }
-  // año: combobox / select / listbox
-  const combo = page.locator('button:has-text("2000"), [role="combobox"], select, [class*="select"]').first();
-  try {
-    if (await combo.count()) {
-      await combo.click({ timeout: 2000 }).catch(() => {});
-      const opt = page.locator(`[role="option"]:has-text("${year}"), option[value="${year}"], text="${year}"`).first();
-      if (await opt.count()) await opt.click({ timeout: 2000 }).catch(() => {});
+    if (typeof cfg === 'string') { year = cfg; cfg = null; }
+    const modal = page.getByText(/Confirma tu edad|Confirm your age|naciste|year were you born/i).first();
+    try { await modal.waitFor({ state: 'visible', timeout: 5000 }); } catch { return false; }
+    // año: combobox / select / listbox
+    try {
+      const combo = page.locator('button:has-text("2000"), [role="combobox"], select, [class*="select"]').first();
+      if (await combo.count()) {
+        await combo.click({ timeout: 2000 }).catch(() => {});
+        const opt = page.locator(`[role="option"]:has-text("${year}"), option[value="${year}"], text="${year}"`).first();
+        if (await opt.count()) await opt.click({ timeout: 2000 }).catch(() => {});
+      }
+    } catch {}
+    const sels = cfg?.age_gate_continue?.length
+      ? cfg.age_gate_continue
+      : ['button:has-text("Continuar")', 'button:has-text("Continue")', 'button:has-text("Confirm")'];
+    for (const sel of sels) {
+      const el = page.locator(sel).first();
+      if (await el.count() && await el.isVisible().catch(() => false)) {
+        await el.click({ timeout: 3000 });
+        await page.waitForTimeout(1200);
+        return true;
+      }
     }
   } catch {}
-  // Continuar
-  for (const sel of [
-    'button:has-text("Continuar")',
-    'button:has-text("Continue")',
-    'button:has-text("Confirm")',
-  ]) {
-    const el = await page.$(sel);
-    if (el) { await el.click(); await page.waitForTimeout(800); return true; }
+  return false;
+}
+
+// login necesario: URL de auth O boton "Iniciar sesión"/"Log in" visible (URL puede seguir en /)
+export async function necesitaLogin(page, cfg) {
+  try { if (cfg.sesion_muerta(page.url())) return true; } catch {}
+  for (const sel of cfg.login_visible || []) {
+    try {
+      const el = page.locator(sel).first();
+      if (await el.count() && await el.isVisible().catch(() => false)) return true;
+    } catch {}
   }
   return false;
 }
@@ -153,6 +169,7 @@ export async function pasarAgeGate(page, year = '2000') {
 export async function login(page, cfg, email, pass) {
   await page.goto(cfg.login_url, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1500);
+  await pasarAgeGate(page, cfg);
   // qwen: por defecto pide codigo -> cambiar a password primero
   if (cfg.login_switch_pass) {
     for (const sel of cfg.login_switch_pass) {
