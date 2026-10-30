@@ -69,8 +69,6 @@ Espejo: un modelo se clona a otro conv_id/slot para dividir trabajo.
 
 | Pieza | Ubicación |
 |---|---|
-| Arquitectura detallada | `chat-router/SWE CODE free/ARQUITECTURA.md` |
-| Handoff (todo el mapa) | `chat-router/SWE CODE free/HANDOFF.md` |
 | Auto-evolución | `chat-router/SWE CODE free/evolucion.py` |
 | Parser/activación | `chat-router/SWE CODE free/activar.js` |
 | Config + selección modelo + paralelo/espejo | `chat-router/SWE CODE free/swen.json` |

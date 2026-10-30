@@ -105,17 +105,6 @@ class SesionMCP(Base):
         self.assertIn("Soy el viento", enviado)  # una respuesta larga que empieza con «Soy» no es una identidad: se conserva
         self.assertIn("Modelo activo: glm-5.2", enviado)
 
-    def test_un_modelo_swe_o_externo_no_dice_que_corre_en_qwencloud(self):  # el selector SWE CODE / Groq / NVIDIA mandaba la misma linea «ejecutado en QwenCloud Token Plan»
-        salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "x"}
-        for modelo, lugar in (("hf-liquid-lfm25", "SWE CODE"), ("web-qwen38max", "SWEN CODE free"), ("groq/llama-3.3-70b-versatile", "Groq")):
-            with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:
-                self.banco.datos["RIU_API_KEY"] = "clave-harness"
-                r = self.llamar("chat", {"ficha_qwen": "1", "message": "hola", "request_id": "swe-" + modelo[:4] + "-01", "modelo": modelo})
-                for _ in range(10):
-                    if self.llamar("resultado", {"proceso_id": r["proceso_id"], "espera": 1}).get("estado") != "procesando": break
-            enviado = json.dumps(llm.call_args.args[1], ensure_ascii=False)
-            self.assertIn("Modelo activo: " + modelo, enviado); self.assertIn(lugar, enviado); self.assertNotIn("QwenCloud Token Plan.", enviado.split("Modelo activo")[1][:200])
-
     def test_cada_modelo_recibe_su_identidad(self):
         salida = {"texto": "ok", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "glm-5.3"}
         with patch.dict(os.environ, {"RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:1"}), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": salida}) as llm:

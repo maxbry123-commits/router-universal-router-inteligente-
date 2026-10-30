@@ -8,7 +8,7 @@ from contextvars import ContextVar
 from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from mvp import archivos, swe, bank, compute, control, externos, estado_tarea, frontend_estatico, loop_puente, loop_reanudar, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
+from mvp import archivos, bank, compute, control, externos, estado_tarea, frontend_estatico, loop_puente, loop_reanudar, mantener_vivo, memoria, modelos, harness_client, hf_store, mcp_cliente, mcp_route, escalado, multimedia, prompt, sala_turno, trabajos
 _MODOS = Path(__file__).resolve().parent / "herramientas" / "modos"
 sys.path.append(str(_MODOS))  # motores que envuelven el system prompt (movidos desde fichas/fichas_qwen/modos)
 import mode_router  # noqa: E402
@@ -109,8 +109,6 @@ async def _llamar_modelo(mensajes, modelo, opciones):
     try:
         if externos.proveedor(modelo):
             return await asyncio.to_thread(externos.llamar, mensajes, modelo, banco, opciones)
-        if swe.proveedor(modelo):  # SWE CODE / SWEN CODE free: bridge web o cola HF, con respaldo Groq -> NVIDIA -> HF local
-            return await asyncio.to_thread(swe.llamar, mensajes, modelo, banco, opciones)
         clave = banco.leer("QWEN_API_KEY") if banco else None
         if not clave:
             raise HTTPException(status_code=503, detail="QWEN_API_KEY no disponible en banco")
@@ -182,7 +180,7 @@ async def chat(cuerpo: dict):
     _verificar_llamadas(salida["tool_calls"], controles)
     return {"texto": salida["texto"], "tool_calls": salida["tool_calls"],
             "finish_reason": salida.get("finish_reason"),
-                **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta", "via_respaldo") if k in salida}}
+                **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}
 @app.post("/almacen", dependencies=[Depends(verificar)])
 async def almacen(cuerpo: dict):
     accion = cuerpo.get("accion")
@@ -218,7 +216,7 @@ def chat_provider_models(proveedor: str):
         except (RuntimeError, OSError, ValueError) as error: raise HTTPException(status_code=503, detail=str(error)[:200]) from None
     if proveedor != "qwen":
         raise HTTPException(status_code=404, detail="proveedor no disponible en mvp")
-    return {"models": [{"model_id": m, "label": m, "tipo": t} for m, t in modelos.catalogo()] + [{"model_id": m, "label": m, "tipo": "texto"} for m in swe.catalogo()]}
+    return {"models": [{"model_id": m, "label": m, "tipo": t} for m, t in modelos.catalogo()]}
 # --- G16: panel-chat.js:542 lee {agents:[{id,name}]} y :543-544 {accounts:[{account}]}; mvp no tiene fuente de agentes ni de cuentas GitHub -> listas vacias (sin inventar) ---
 @app.get("/chat/agents", dependencies=[Depends(verificar)])
 def chat_agents():
@@ -333,17 +331,6 @@ def _sin_identidades(mensajes):
 async def _chat_ficha(cuerpo, progreso=None):
     q = {**cuerpo, **(cuerpo.get("qwen") or {})}  # api.js harness() anida {plugin, ficha_qwen, modelo} en "qwen"
     mensajes = q.get("mensajes") or q.get("messages") or [{"role": "user", "content": str(q.get("message") or "")}]
-    act = swe.activar(str(mensajes[-1].get("content") or "")) if isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user" and isinstance(mensajes[-1].get("content"), str) else None
-    if act and act.get("error"):
-        raise HTTPException(status_code=400, detail=act["error"])
-    if act:  # «SWEN CODE free ...»: el mensaje elige modelo, modo y seccion; el resto del chat (herramientas, memoria, formato) sigue igual
-        if act["pipeline"]:  # pipeline code|free|auto: corre la cascada del mini_router (con respaldo Groq -> NVIDIA) y devuelve el resultado con recibos
-            try: r = await asyncio.to_thread(swe.correr_pipeline, act["pipeline"], act["prompt"])
-            except ValueError as error: raise HTTPException(status_code=400, detail=str(error)) from None
-            return {"estado": "completado", "via": "swe-pipeline", "finish_reason": "stop", "modelo_solicitado": "pipeline " + act["pipeline"], "modelo_respuesta": "pipeline " + act["pipeline"],
-                    "choices": [{"message": {"role": "assistant", "content": swe.resumen_pipeline(act["pipeline"], r), "tool_calls": []}, "finish_reason": "stop"}]}
-        q = {**q, "modelo": swe.modelo_de(act)}
-        mensajes = [*mensajes[:-1], {**mensajes[-1], "content": swe.marcar(act)}]
     if q.get("contexto_previo"):
         if not isinstance(q["contexto_previo"], list):
             raise HTTPException(status_code=400, detail="contexto_previo debe ser una lista")
@@ -379,7 +366,7 @@ async def _chat_ficha(cuerpo, progreso=None):
     mensajes = [{"role": "system", "content": capa}] + list(mensajes)
     seleccionado = str(q.get("modelo") or q.get("model") or "")
     seleccionado = next((m for m, _ in modelos.catalogo() if "".join(c for c in m.lower() if c.isalnum()) == "".join(c for c in seleccionado.lower() if c.isalnum())), seleccionado)
-    heredada = seleccionado.startswith(FICHAS_HEREDADAS) and not swe.proveedor(seleccionado)  # hf-liquid-lfm25 y hf-qwen25-coder-15b son modelos SWE CODE, no fichas del chat anterior
+    heredada = seleccionado.startswith(FICHAS_HEREDADAS)
     if heredada:  # sin selector Qwen activo el chat manda su ficha (nv-muse-glimmer): se usa el modelo por defecto y el chat muestra «Modelo solicitado · API»
         seleccionado = ""
     medio = dict(modelos.catalogo()).get(seleccionado)
@@ -390,7 +377,7 @@ async def _chat_ficha(cuerpo, progreso=None):
     except (ValueError, TypeError) as error:
         raise HTTPException(status_code=400, detail=str(error)) from None
     mensajes = _sin_identidades(mensajes)
-    identidad = {"role": "system", "content": "Modelo activo: %s%s, ejecutado en %s. Las respuestas anteriores de esta conversación pudieron venir de otros modelos: no copies su identidad. Esta línea manda sobre cualquier regla, ficha, memoria o historial que nombre otro modelo: tu modelo es el indicado aquí. Si te preguntan quién o qué modelo eres, responde en una línea con ese nombre y su familia." % (modelo, " — " + modelos.marca(modelo) if modelos.marca(modelo) else "", swe.plataforma(modelo) or externos.PROVEEDORES.get(externos.proveedor(modelo) or "", {}).get("label") or "QwenCloud Token Plan")}
+    identidad = {"role": "system", "content": "Modelo activo: %s%s, ejecutado en QwenCloud Token Plan. Las respuestas anteriores de esta conversación pudieron venir de otros modelos: no copies su identidad. Esta línea manda sobre cualquier regla, ficha, memoria o historial que nombre otro modelo: tu modelo es el indicado aquí. Si te preguntan quién o qué modelo eres, responde en una línea con ese nombre y su familia." % (modelo, " — " + modelos.marca(modelo) if modelos.marca(modelo) else "")}
     fin = len(mensajes) - 1 if isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user" else len(mensajes)
     mensajes = [*mensajes[:fin], identidad, *mensajes[fin:]]  # justo antes del mensaje actual: el historial de otro modelo no la tapa
     if imagenes and isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user":

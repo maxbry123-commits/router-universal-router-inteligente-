@@ -41,8 +41,8 @@ def canonico(nombre, plan_=None):
 
 
 def validar(modelo, plan_=None):
-    from mvp import externos, swe
-    if externos.proveedor(modelo) or swe.proveedor(modelo):  # groq/<id> o nvidia/<id>: lo valida su API; SWE CODE / SWEN CODE free: ids de swe.py
+    from mvp import externos
+    if externos.proveedor(modelo):  # groq/<id> o nvidia/<id>: lo valida su API
         return modelo
     d = cargar()
     modelo = canonico(modelo, plan_) or d['modelo_defecto']
