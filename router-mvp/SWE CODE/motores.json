@@ -1,0 +1,29 @@
+{
+  "schema": "swe-code.motores.v1",
+  "motores": {
+    "codex": {
+      "fuente": "chat-router/agentes/agentes-listos/codex",
+      "invocacion": "cli",
+      "cmd": "codex exec --model {modelo} --base-url {base_url} \"{prompt}\"",
+      "config": "env OPENAI_BASE_URL={base_url} OPENAI_API_KEY=local"
+    },
+    "opencode": {
+      "fuente": "chat-router/agentes/agentes-listos/opencode",
+      "invocacion": "cli",
+      "cmd": "opencode run --model openai/{modelo} \"{prompt}\"",
+      "config": "opencode.json provider openai baseURL {base_url}"
+    },
+    "swe-agent": {
+      "fuente": "chat-router/agentes/agentes-listos/SWE-agent",
+      "invocacion": "cli",
+      "cmd": "sweagent run --agent.model.name={modelo} --env.repo.path={repo} \"{prompt}\"",
+      "config": "model host {base_url} api-key local"
+    },
+    "openhands": {
+      "fuente": "chat-router/agentes/agentes-listos/openhands-software-agent-sdk",
+      "invocacion": "cli",
+      "cmd": "openhands --model {modelo} --task \"{prompt}\"",
+      "config": "env LLM_BASE_URL={base_url} LLM_API_KEY=local"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "schema": "swe-code.cascada.v1",
+  "nombre": "SWE CODE",
+  "base_url_env": "SWECODE_BASE_URL",
+  "base_url_default": "http://localhost:8080/v1",
+  "pasos": [
+    {
+      "nodo": "escribe",
+      "agente": "codex",
+      "modelo": "qwen2.5-coder-1.5b",
+      "modelo_id_hf": "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF",
+      "t_s_aprox": 40,
+      "costo_m_usd": 0.21,
+      "entrada": "objetivo",
+      "salida": "code"
+    },
+    {
+      "nodo": "revisa",
+      "agente": "opencode",
+      "modelo": "qwen3.5-0.8b",
+      "modelo_id_hf": "Qwen/Qwen3.5-0.8B-GGUF",
+      "t_s_aprox": 27,
+      "costo_m_usd": 0.31,
+      "entrada": "code",
+      "salida": "code_refactor"
+    },
+    {
+      "nodo": "ejecuta",
+      "agente": "swe-agent",
+      "modelo": "qwen3-0.6b",
+      "modelo_id_hf": "Qwen/Qwen3-0.6B-GGUF",
+      "t_s_aprox": 40,
+      "costo_m_usd": 0.21,
+      "entrada": "code_refactor",
+      "salida": "deploy_result"
+    },
+    {
+      "nodo": "verifica",
+      "agente": "openhands",
+      "modelo": "deepseek-coder-1.3b",
+      "modelo_id_hf": "deepseek-ai/DeepSeek-Coder-1.3B-instruct (GGUF community)",
+      "t_s_aprox": 45,
+      "costo_m_usd": 0.19,
+      "entrada": "deploy_result",
+      "salida": "veredicto_final"
+    }
+  ],
+  "motores": "motores.json",
+  "regla_fallo": "un paso FAIL detiene la cascada y devuelve recibo del paso fallido"
+}
