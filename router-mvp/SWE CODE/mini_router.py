@@ -7,7 +7,9 @@ RAIZ = os.path.dirname(os.path.abspath(__file__))
 CASCADA = json.load(open(os.path.join(RAIZ, "cascada.json")))
 MOTORES = json.load(open(os.path.join(RAIZ, "motores.json")))["motores"]
 BASE_URL = os.getenv(CASCADA["base_url_env"], CASCADA["base_url_default"]).rstrip("/")
-# Cada Space sirve su(s) modelo(s); el salto a otra URL es solo respaldo.
+# Cola HF: S1/S2/S3 son slots intercambiables (cualquier Space sirve cualquier
+# modelo via model=, 1 vivo por Space, carga bajo demanda, encola al libre).
+# El orden del paso = preferencia; el salto a otra URL = slot libre/respaldo.
 URLS = {s: os.getenv(f"SWECODE_URL_{s}").rstrip("/") for s in ("S1", "S2", "S3")
         if os.getenv(f"SWECODE_URL_{s}")}
 if not URLS:

@@ -22,11 +22,11 @@ const GRUPOS = [
   { titulo: "GLM", modelos: [
     ["pensar", "GLM 5.2", "Código + agentes", "glm-5.2"]] },
   { titulo: "SWE CODE (local HF)", modelos: [
-    ["rapido", "Liquid AI (HF)", "LFM2-350M · respondedor principal", "hf-liquid-lfm2"],
+    ["rapido", "Liquid AI (HF)", "LFM2.5-350M · respondedor principal", "hf-liquid-lfm25"],
     ["pensar", "SWE · Codex escribe", "Qwen2.5-Coder-1.5B", "swe-codex-qwen25-15b"],
     ["pensar", "SWE · OpenCode revisa", "Qwen3.5-0.8B", "swe-opencode-qwen35-08b"],
-    ["rayo", "SWE · Agent ejecuta", "LFM2-350M", "swe-agent-lfm2"],
-    ["rayo", "SWE · OpenHands verifica", "LFM2-350M", "swe-openhands-lfm2"],
+    ["rayo", "SWE · Agent ejecuta", "LFM2.5-350M · tool/agentic", "swe-agent-lfm25"],
+    ["rayo", "SWE · OpenHands verifica", "LFM2.5-350M", "swe-openhands-lfm25"],
     ["pensar", "Qwen Code (HF)", "Qwen2.5-Coder-1.5B local", "hf-qwen25-coder-15b"]] },
   { titulo: "Imágenes", modelos: [
     ["imagen", "Qwen Image 3.0 Pro", "Imágenes", "qwen-image-3.0-pro"],
@@ -37,7 +37,7 @@ const GRUPOS = [
     ["texto", "Qwen ASR", "Voz a texto", "qwen-audio-3.0-asr-flash"]] },
 ];
 const CATALOGO_CLAVE = "riu_catalogo_qwen";  // ultima lista que dio el Router (localStorage)
-const CATALOGO_RESPALDO = ["qwen3.8-max", "qwen3.8-flash", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-flash", "glm-5.3", "glm-5.2", "deepseek-v4-pro", "deepseek-v4-pro-0813", "deepseek-v4-flash-0731", "deepseek-v4.1-flash", "deepseek-v4.1-flash-1017", "qwen-image-3.0-pro", "wan2.7-image", "wan2.7-image-pro", "qwen-audio-3.0-tts-plus", "qwen-audio-3.0-realtime-plus", "qwen-audio-3.0-asr-flash", "wan3.0-video", "happyhorse-1.1-t2v", "happyhorse-1.1-i2v", "happyhorse-1.1-r2v", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm2", "swe-openhands-lfm2", "hf-qwen25-coder-15b", "hf-liquid-lfm2"];  // plan Personal (mvp/modelos.json, p=1) + SWE CODE local
+const CATALOGO_RESPALDO = ["qwen3.8-max", "qwen3.8-flash", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-flash", "glm-5.3", "glm-5.2", "deepseek-v4-pro", "deepseek-v4-pro-0813", "deepseek-v4-flash-0731", "deepseek-v4.1-flash", "deepseek-v4.1-flash-1017", "qwen-image-3.0-pro", "wan2.7-image", "wan2.7-image-pro", "qwen-audio-3.0-tts-plus", "qwen-audio-3.0-realtime-plus", "qwen-audio-3.0-asr-flash", "wan3.0-video", "happyhorse-1.1-t2v", "happyhorse-1.1-i2v", "happyhorse-1.1-r2v", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b", "hf-liquid-lfm25"];  // plan Personal (mvp/modelos.json, p=1) + SWE CODE local
 
 const etiqueta = (id) => id.replace(/^(qwen|deepseek|glm|kimi|minimax|wan|happyhorse)/i, (s) => ({ qwen: "Qwen ", deepseek: "DeepSeek", glm: "GLM", kimi: "Kimi", minimax: "MiniMax", wan: "Wan ", happyhorse: "HappyHorse" })[s.toLowerCase()]).replace(/-/g, " ").replace(/\b(max|flash|plus|pro|image|video|code)\b/g, (s) => s[0].toUpperCase() + s.slice(1)).replace(/\b[vkm](?=\d)/g, (s) => s.toUpperCase());
 export function gruposModelos(modelos) {

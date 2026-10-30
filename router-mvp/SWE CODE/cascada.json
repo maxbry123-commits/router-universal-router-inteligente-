@@ -33,30 +33,31 @@
     {
       "nodo": "ejecuta",
       "agente": "swe-agent",
-      "modelo": "lfm2-350m",
-      "modelo_id_hf": "LiquidAI/LFM2-350M-GGUF",
+      "modelo": "lfm2.5-350m",
+      "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
       "servidor": "S2",
       "base_url_env": "SWECODE_URL_S2",
       "t_s_aprox": 124,
       "costo_m_usd": 0.07,
-      "bench": {"t_s_mediana": 124.3, "costo_m_real": 0.07, "code_valido": true, "nota": "respondedor principal; tool/agentic via comandos texto de swe-agent (no tool_calls nativo)"},
+      "bench": {"card_hf": "313 t/s AMD CPU, <1GB, tool calling nativo (tokens Pythonic)", "nota": "gen nueva: reemplaza lfm2-350m (no tool_calls); bench t/s y tool_calls PENDIENTE medir en vivo en S2"},
       "entrada": "code_refactor",
       "salida": "deploy_result"
     },
     {
       "nodo": "verifica",
       "agente": "openhands",
-      "modelo": "lfm2-350m",
-      "modelo_id_hf": "LiquidAI/LFM2-350M-GGUF",
+      "modelo": "lfm2.5-350m",
+      "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
       "servidor": "S2",
       "base_url_env": "SWECODE_URL_S2",
       "t_s_aprox": 124,
       "costo_m_usd": 0.07,
-      "bench": {"t_s_mediana": 124.3, "costo_m_real": 0.07, "code_valido": true, "nota": "reemplaza a deepseek-coder-1.3b ($0.74/M inestable 2.6-45.7 t/s, sobre el tope)"},
+      "bench": {"card_hf": "313 t/s AMD CPU, <1GB, tool calling nativo", "nota": "gen nueva; bench pendiente en vivo. Sustituye lfm2-350m (124.3 t/s, $0.07, sin tool_calls)"},
       "entrada": "deploy_result",
       "salida": "veredicto_final"
     }
   ],
   "motores": "motores.json",
+  "cola_hf": "S1/S2/S3 = slots intercambiables: cualquier Space sirve cualquier modelo via model=, carga bajo demanda desde swe-code-hf-gguf, 1 vivo por Space, unload tras 5min idle, encola al siguiente libre (max 3 vivos)",
   "regla_fallo": "un paso FAIL detiene la cascada y devuelve recibo del paso fallido"
 }
