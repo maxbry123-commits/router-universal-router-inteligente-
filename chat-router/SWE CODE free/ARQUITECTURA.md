@@ -23,6 +23,9 @@ Primero Groq (las claves del chat Yaiwes); si no responde, la web de SWE CODE fr
 4. APK móvil (Chrome del teléfono): último recurso.
 La respuesta trae `modelo_usado` y `via_respaldo` (también en los headers `x-modelo-usado` y `x-via-respaldo`).
 
+## Memoria compartida con el chat Yaiwes
+Con `conv_id` o `proyecto` en el POST, el bridge guarda cada turno (usuario y respuesta) en la memoria del chat: bucket HF `yaiwes-memoria-storage`, scope `chat-ui:hist:openclaw-<id>`, con la forma que usa el chat (`rol`, `texto`, `ts`). Lo hace `SWE CODE/web-bridge/memoria_hf.py`, que reutiliza `mvp.memoria` (no hay almacén nuevo) y necesita `HF_TOKEN` en el entorno; si falta, no guarda y no rompe nada. No usa el Router MVP en marcha, solo su código de memoria.
+
 ## Auto-reparación
 - `SESSION_EXPIRED`: el bridge ejecuta `salud()` (re-login o rotación de correo) y reintenta una vez; si sigue mal, pasa al respaldo. No espera órdenes.
 - Respuesta vacía o `UPSTREAM_TIMEOUT` (100 s): pasa al respaldo.

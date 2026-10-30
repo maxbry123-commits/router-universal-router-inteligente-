@@ -14,6 +14,7 @@ import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion } from './bloques.js';
 import { conFormato } from './formato.js';
+import { guardarTurno } from './memoria.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
 
@@ -153,6 +154,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
     let archivo = null;
     if (modoUso === 'asesoria') { try { archivo = guardarAsesoria(proyecto || conv_id, { texto: salida, via: via || 'web', modelo: usado }); } catch { /* guardar es mejor esfuerzo */ } }
+    if (proyecto || conv_id) guardarTurno(proyecto || conv_id, ultimo, salida, usado).catch(() => {});  // misma memoria del chat Yaiwes (mejor esfuerzo)
     res.setHeader('x-modelo-usado', usado);
     if (via) res.setHeader('x-via-respaldo', via);
 
