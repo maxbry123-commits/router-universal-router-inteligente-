@@ -1,0 +1,23 @@
+{
+  "plugin_host": {
+    "schema": "plugin_host/v1",
+    "id": "swe_code",
+    "enabled_default": true,
+    "nota_roja": "Edificio 1: router temporal HF — cascada, motores, fichas, prompts, modelos locales (cola S1/S2/S3) y web-bridge. Conecta via plugins -> deepseek_harness -> HTTP router. Removible."
+  },
+  "artifact_id": "riu.plugins.swe_code",
+  "version": "0.1.0",
+  "estado": "testing",
+  "categoria": "pipeline",
+  "ejecucion": {
+    "kind": "api",
+    "transport": "http",
+    "runtime_type": "compute",
+    "idempotente": false,
+    "allowed_actions": ["llamar", "escribe", "revisa", "ejecuta", "verifica", "web"]
+  },
+  "seguridad": {
+    "sandbox": "egress-allowlist",
+    "secrets_env": ["WEB_ACCOUNTS", "WEB_PASS", "BRIDGE_PROXY", "SWECODE_URL_S1", "SWECODE_URL_S2", "SWECODE_URL_S3"]
+  }
+}
