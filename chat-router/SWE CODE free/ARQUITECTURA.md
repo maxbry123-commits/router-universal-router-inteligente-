@@ -13,6 +13,9 @@ El Harness (`chat/backend/deepseek_harness/server.py`) lee `RIU_SWE_BRIDGE_URL`:
 
 - Formato de salida: el bridge antepone el `FORMATO_SALIDA.md` del chat Yaiwes (una sola copia en `chat/backend/mvp/prompts/`) a todo lo que pasa por él, salvo que el Router MVP ya lo haya puesto. Así Liquid y OpenClaw responden con el mismo formato.
 
+## Asesoría antes de ejecutar (`swecode-asesoria` / `SWEN CODE free modo asesoria`)
+Primero Groq (las claves del chat Yaiwes); si no responde, la web de SWE CODE free. Devuelve objetivo, plan de acción, mapa mental en texto, estructura a ejecutar y cómo resolver los problemas probables. No ejecuta nada. Cada asesoría se agrega a `BRIDGE_STATE_DIR/proyectos/<proyecto>/ASESORIA.md` (campo `proyecto` del POST; sin él usa el `conv_id`). OpenClaw la relee con `GET /v1/proyectos` y `GET /v1/proyectos/<proyecto>`.
+
 ## Respaldo (en este orden)
 1. Web: `qwen38max ➡️ qwen37max ➡️ dsv4-flash`; login con la cuenta actual y rotación de correo si cae.
 2. Groq ➡️ NVIDIA (mismas claves del chat: `GROQ_API_KEY`, `NVIDIA_API_KEY`, `*_1..N`).

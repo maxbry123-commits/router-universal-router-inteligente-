@@ -15,6 +15,7 @@ Todo mensaje del sistema empieza con `SWEN CODE free`. Elegir modo:
 | pedir un prompt de código completo | `prompt_code` |
 | preguntar/consultar un plan (concilio de 3 + síntesis) | `consulta` |
 | aplicar y verificar lo que te entregan | `despliega` |
+| planear antes de ejecutar (plan, mapa mental, estructura, cómo resolver problemas) | `asesoria` |
 
 Modelo: `concilio` = los 3 web; nombre (`deepseek v4`, `qwen 3.7`, `qwen 3.8`, `liquid`, `qwen code`) = UN solo modelo; sin nombre → consulta=concilio, resto=qwen38max.
 Paralelo: `chat <id>`/`seccion <id>` = conv_id propio (tab aparte, hilo separado). Un modelo puede clonarse a otro conv_id/slot (espejo).

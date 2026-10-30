@@ -7,7 +7,7 @@
 //   - "SWEN CODE free chat 2 modo solucion bug en api.js" → seccion paralela (conv_id propio)
 // Devuelve null si no está activado.
 
-const MODOS = ["revision", "solucion", "arquitectura", "archivos", "prompt_code", "consulta", "despliega"];
+const MODOS = ["revision", "solucion", "arquitectura", "archivos", "prompt_code", "consulta", "despliega", "asesoria"];
 const CLAVE = /^swen\s+code\s+free\b/i;
 const PIPELINES = ["code", "free", "auto"];
 

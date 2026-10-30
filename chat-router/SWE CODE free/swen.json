@@ -9,7 +9,8 @@
     "archivos",
     "prompt_code",
     "consulta",
-    "despliega"
+    "despliega",
+    "asesoria"
   ],
   "manual": "INSTRUCCIONES.md — la misma instrucción para los 2 chats (Riu + OpenClaw); viaja por plugins -> deepseek_harness",
   "seleccion_modelo": {

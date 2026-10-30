@@ -14,6 +14,8 @@ import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion } from './bloques.js';
 import { conFormato } from './formato.js';
+import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
+import { preambulo } from './modos.js';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -59,9 +61,16 @@ app.get('/v1/queue', (_req, res) => {
 // secciones (conv_id) con checkpoint: OpenClaw ve cuales retomar reenviando el mismo conv_id
 app.get('/v1/secciones', (_req, res) => res.json({ ok: true, secciones: listarCheckpoints() }));
 
+// asesorias guardadas por proyecto (un ASESORIA.md cada uno): OpenClaw las lee antes de ejecutar
+app.get('/v1/proyectos', (_req, res) => res.json({ ok: true, proyectos: listarProyectos() }));
+app.get('/v1/proyectos/:nombre', (req, res) => {
+  const p = leerProyecto(req.params.nombre);
+  p ? res.json({ ok: true, ...p }) : res.status(404).json({ ok: false, error: 'PROYECTO_NO_ENCONTRADO' });
+});
+
 app.get('/v1/models', (_req, res) => {
   const base = Object.keys(MODELOS_WEB).map(m => `web-${m}`);
-  const modos = ['revision','solucion','arquitectura','archivos','prompt_code','consulta','despliega'].map(m => `swecode-${m}`);
+  const modos = ['revision','solucion','arquitectura','archivos','prompt_code','consulta','despliega','asesoria'].map(m => `swecode-${m}`);
   res.json({ object: 'list', data: [...base, ...modos, ...idsRespaldo()].map(id => ({ id, object: 'model' })) });
 });
 
@@ -73,7 +82,7 @@ app.post('/refresh_session', async (_req, res) => {
 
 app.post('/v1/chat/completions', async (req, res) => {
   try {
-    const { model = 'swecode-consulta', messages: mensajesIn = [], modo, conv_id, documentos, cuentas, clave: claveReq } = req.body;
+    const { model = 'swecode-consulta', messages: mensajesIn = [], modo, conv_id, proyecto, documentos, cuentas, clave: claveReq } = req.body;
     const messages = conFormato(mensajesIn);  // formato de salida del chat Yaiwes tambien para OpenClaw
     // credenciales vienen de OpenClaw por llamada (vía plugins->harness); env solo respaldo
     if (cuentas) setCuentas(cuentas, claveReq);
@@ -108,6 +117,15 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (modeloWeb) {
       const r = await conFallback(modeloWeb, prompt, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
+    } else if (modoUso === 'asesoria') {
+      // asesoria previa a ejecutar: primero Groq (las claves del chat Yaiwes), si no responde la web de SWE CODE free
+      try {
+        const r = await externo(`groq/${process.env.RIU_SWE_GROQ_MODELO || 'llama-3.3-70b-versatile'}`, [{ role: 'system', content: preambulo('asesoria') }, ...messages]);
+        salida = r.salida; usado = r.usado; via = 'groq';
+      } catch {
+        const r = await conFallback(OBJETIVO_UNICO, prompt, { modo: modoUso, convId: conv_id });
+        salida = r.salida; usado = r.usado;
+      }
     } else if (esConsenso(modoUso)) {
       const r = await consenso(prompt, { modo: modoUso, convId: conv_id });
       salida = r.final; usado = 'consenso';
@@ -133,12 +151,14 @@ app.post('/v1/chat/completions', async (req, res) => {
         registrarLeccion({ codigo: e.code || 'WEB_FALLO', accion: 'respaldo ' + r.via, resultado: 'PASS', modelo: model });  // p. ej. CUENTAS_FALTAN: OpenClaw sabe que debe reenviar cuentas y clave
       }
     }
+    let archivo = null;
+    if (modoUso === 'asesoria') { try { archivo = guardarAsesoria(proyecto || conv_id, { texto: salida, via: via || 'web', modelo: usado }); } catch { /* guardar es mejor esfuerzo */ } }
     res.setHeader('x-modelo-usado', usado);
     if (via) res.setHeader('x-via-respaldo', via);
 
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, aviso,
+      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, aviso, archivo,
       choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: salida || '' } }],
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     });

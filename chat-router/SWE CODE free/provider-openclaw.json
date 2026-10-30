@@ -69,6 +69,10 @@
     {
       "id": "nvidia/meta/llama-3.3-70b-instruct",
       "nombre": "NVIDIA · Llama 3.3 70B (respaldo 2)"
+    },
+    {
+      "id": "swecode-asesoria",
+      "nombre": "SWE · asesoria (plan antes de ejecutar)"
     }
   ],
   "gramatica": "SWEN CODE free [modo <m>] [con|solo|modelo <m>] [chat <id>] [pipeline code|free] [doc <ruta>] <texto> — ver INSTRUCCIONES.md",

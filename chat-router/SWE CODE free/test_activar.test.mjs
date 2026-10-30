@@ -14,3 +14,8 @@ test("lo anterior sigue igual", () => {
   assert.deepEqual([a.conv_id, a.modo, a.modelo, a.prompt], ["chat-2", "solucion", "web-dsv4-flash", "arregla api.js"]);
   assert.equal(activar("hola"), null);
 });
+
+test("el modo asesoria existe y se activa por el prefijo", () => {
+  const a = activar("SWEN CODE free modo asesoria proyecto nuevo de pagos");
+  assert.deepEqual([a.modo, a.prompt], ["asesoria", "proyecto nuevo de pagos"]);
+});

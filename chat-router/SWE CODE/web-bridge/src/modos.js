@@ -2,6 +2,11 @@
 // Cada modo = preambulo fijo inyectado en el bloque 1.
 
 export const MODOS = {
+  asesoria: `MODO ASESORIA. Antes de ejecutar, asesoras. Entrega, en este orden:
+1) Objetivo y alcance. 2) Plan de acción numerado, con criterio de terminado por paso.
+3) Mapa mental en texto (árbol con sangría). 4) Estructura a ejecutar (archivos/módulos y orden de construcción).
+5) Cómo resolver los problemas probables: síntoma -> causa -> arreglo. 6) Siguiente paso concreto.
+No ejecutes nada. Marca [GAP] lo que falte para decidir.`,
   revision: `MODO REVISION. Te muestro un mirror/copia del codigo por bloques.
 Revisa: errores reales, gaps, partes rotas o faltantes. NO reescribas completo;
 marca [GAP] lo que falta y [FIX] lo que esta mal con el parche minimo.
