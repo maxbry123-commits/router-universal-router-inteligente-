@@ -9,6 +9,9 @@ const STATE = process.env.BRIDGE_STATE_DIR || './state';
 const PROXY = process.env.BRIDGE_PROXY || null; // http://user:pass@host:port (residencial opcional)
 
 const contextos = new Map(); // site -> {ctx, page, cuenta}
+const paginas = new Map();   // convId -> {page, site}
+const cola = [];             // espera de slot de tab
+const MAX_TABS = parseInt(process.env.BRIDGE_MAX_TABS || '4', 10);
 
 async function lanzar(site) {
   const dir = path.join(STATE, 'perfiles', site);
@@ -56,13 +59,45 @@ export async function asegurar(site) {
   throw e;
 }
 
+async function esperarSlot(site) {
+  const vivos = [...paginas.values()].filter(p => p.site === site && !p.page.isClosed()).length;
+  if (vivos < MAX_TABS) return;
+  await new Promise(r => cola.push(r));
+}
+
+// cada conversacion = su propio tab + chat nuevo en la web
+export async function nuevaPagina(site, convId) {
+  const viejo = paginas.get(convId);
+  if (viejo && !viejo.page.isClosed()) return viejo.page;
+  const { ctx, page: master } = await asegurar(site);
+  const cfg = SITES[site];
+  await esperarSlot(site);
+  const page = await ctx.newPage();
+  await page.goto(cfg.url, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+  // "New Chat" para que el hilo no se mezcle con el anterior
+  for (const sel of cfg.nuevo_chat || []) {
+    const el = await page.$(sel);
+    if (el) { await el.click().catch(() => {}); await page.waitForTimeout(700); break; }
+  }
+  const entry = { page, site };
+  paginas.set(convId, entry);
+  page.on('close', () => { paginas.delete(convId); const w = cola.shift(); if (w) w(); });
+  return page;
+}
+
 export function estadoCuentas() {
   const out = {};
   for (const [site, e] of contextos) out[site] = e.cuenta || null;
   return out;
 }
 
+export async function cerrarPagina(convId) {
+  const e = paginas.get(convId);
+  if (e) { await e.page.close().catch(() => {}); paginas.delete(convId); }
+}
+
 export async function cerrarTodo() {
   for (const [, e] of contextos) await e.ctx.close().catch(() => {});
   contextos.clear();
+  paginas.clear();
 }

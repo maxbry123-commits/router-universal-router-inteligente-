@@ -23,6 +23,7 @@ export const SITES = {
     // hay que clicar "Log in with a password" ANTES de llenar el pass
     login_switch_pass: ['button:has-text("Log in with a password")', 'a:has-text("password")'],
     model_selector: ['div[aria-label="Select Model"]'],
+    nuevo_chat: ['div[aria-label="New Chat"]', 'button[aria-label*="New" i]'],
     model_option_text: /qwen3\.8|3\.8.?max/i,   // se sobrescribe por modelo logico
     sesion_muerta: (url) => /\/auth|login|signin/i.test(url),
     sse_match: /chat|completion|conversation/i,
@@ -39,6 +40,7 @@ export const SITES = {
     login_pass: ['input[type="password"]', 'input[name="password"]'],
     login_btn: ['div[role="button"]:has-text("Log in")', 'button:has-text("Log in")', 'button[type="submit"]'],
     model_selector: [],
+    nuevo_chat: ['[class*="new" i][class*="chat" i]', 'button:has-text("New chat")', 'div[role="button"]:has-text("New")'],
     sesion_muerta: (url) => /sign_in|login/i.test(url),
     sse_match: /chat|completion|session/i,
   },
