@@ -16,6 +16,27 @@ if not URLS:
     URLS = {"S1": BASE_URL}
 
 
+# Respaldo cuando ningun slot HF responde: Groq y luego NVIDIA, con las mismas claves del chat (variables GROQ_API_KEY / NVIDIA_API_KEY).
+EXTERNOS = {"groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY", os.getenv("RIU_SWE_GROQ_MODELO", "llama-3.3-70b-versatile")),
+            "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY", os.getenv("RIU_SWE_NVIDIA_MODELO", "meta/llama-3.3-70b-instruct"))}
+
+
+def _externo(mensajes: list, ultimo):
+    for base, var, modelo in EXTERNOS.values():
+        clave = os.getenv(var)
+        if not clave:
+            continue
+        try:
+            req = urllib.request.Request(f"{base.rstrip('/')}/chat/completions", method="POST",
+                                         data=json.dumps({"model": modelo, "messages": mensajes, "temperature": 0.2}).encode(),
+                                         headers={"Content-Type": "application/json", "Authorization": "Bearer " + clave, "User-Agent": "riu-swe-code"})
+            with urllib.request.urlopen(req, timeout=120) as r:
+                return json.load(r)["choices"][0]["message"]["content"]
+        except Exception as e:
+            ultimo = e
+    raise ultimo
+
+
 def llamar(modelo: str, mensajes: list, servidor: str = "S1") -> str:
     body = json.dumps({"model": modelo, "messages": mensajes, "temperature": 0.2}).encode()
     orden = [servidor] + [s for s in URLS if s != servidor]
@@ -31,7 +52,7 @@ def llamar(modelo: str, mensajes: list, servidor: str = "S1") -> str:
                 return json.load(r)["choices"][0]["message"]["content"]
         except Exception as e:
             ultimo = e
-    raise ultimo
+    return _externo(mensajes, ultimo)
 
 
 def recibo(pid, nodo, estado, extra=None):

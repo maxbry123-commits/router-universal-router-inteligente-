@@ -120,6 +120,15 @@ toca `sites.js` cuando el screenshot/código dice exactamente qué selector fall
 openai-compatible, `base_url` = bridge :7870). El bridge solo sirve los
 modelos SWE CODE/SWEN CODE free → el selector muestra SOLO esa lista.
 
+## 7d. Acceso, memoria y respaldo (mismo sistema del chat Yaiwes)
+
+- Por el Harness cada modelo tiene las herramientas del chat: `github_leer/escribir/api`, `archivos` (descargar, extraer, copiar, mover, buscar), `memoria`, `almacen` (HF), `pendientes`, `sala`, `agente`, `llm`.
+- Memoria e historial: los mismos del chat (`memoria`, scope `chat-ui:hist:<sesion>`, bucket HF `yaiwes-memoria-storage/riu-chat/`). OpenClaw no tiene almacén propio.
+- Cambiar de modelo en el selector mantiene el historial de la sesión.
+- Si un modelo SWE no responde: Groq ➡️ NVIDIA ➡️ HF local; la respuesta trae `via_respaldo`.
+- Auto-evolución: tras cada arreglo, `python3 "SWE CODE free/evolucion.py" registrar '{"codigo":"...","accion":"...","resultado":"PASS|FAIL"}'`; `proponer` / `md` listan lo repetido. Solo dentro de SWE CODE / SWE CODE free.
+- Arquitectura completa: `ARQUITECTURA.md`; enlaces y estado: `HANDOFF.md`.
+
 ## 8. Reparar cableado
 
 Señal de pieza desconectada (chat no responde / modo no existe):
