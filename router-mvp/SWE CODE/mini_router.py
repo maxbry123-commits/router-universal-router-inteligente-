@@ -9,9 +9,16 @@ MOTORES = json.load(open(os.path.join(RAIZ, "motores.json")))["motores"]
 BASE_URL = os.getenv(CASCADA["base_url_env"], CASCADA["base_url_default"]).rstrip("/")
 
 
-def llamar(modelo: str, mensajes: list) -> str:
+def base_url_de(paso: dict) -> str:
+    env = paso.get("base_url_env")
+    if env and os.getenv(env):
+        return os.getenv(env).rstrip("/")
+    return BASE_URL
+
+
+def llamar(modelo: str, mensajes: list, base_url: str = BASE_URL) -> str:
     body = json.dumps({"model": modelo, "messages": mensajes, "temperature": 0.2}).encode()
-    req = urllib.request.Request(f"{BASE_URL}/chat/completions", data=body,
+    req = urllib.request.Request(f"{base_url}/chat/completions", data=body,
                                  headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=600) as r:
         return json.load(r)["choices"][0]["message"]["content"]
@@ -33,8 +40,10 @@ def correr(objetivo: str) -> dict:
                   f"Entrada del paso anterior ({paso['entrada']}):\n{entrada}\n"
                   f"Entrega SOLO: {paso['salida']}.")
         try:
-            salida = llamar(modelo, [{"role": "user", "content": prompt}])
-            recibos.append(recibo(pid, nodo, "OK", {"modelo": modelo, "chars": len(salida)}))
+            url = base_url_de(paso)
+            salida = llamar(modelo, [{"role": "user", "content": prompt}], url)
+            recibos.append(recibo(pid, nodo, "OK", {"modelo": modelo, "chars": len(salida),
+                                                  "servidor": paso.get("servidor")}))
             entrada = salida
         except Exception as e:
             recibos.append(recibo(pid, nodo, "FAIL", {"modelo": modelo, "error": str(e)[:300]}))

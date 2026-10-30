@@ -17,7 +17,11 @@ Un paso FAIL → cascada para y devuelve recibo del paso que cayó.
 ## Uso
 
 ```bash
-export SWECODE_BASE_URL="http://<tu-space>.hf.space/v1"   # llama-server
+# URLs de los 3 servidores existentes (llama-server mirror del storage HF):
+export SWECODE_URL_S1="http://<s1>:8080/v1"   # codex escribe
+export SWECODE_URL_S2="http://<s2>:8080/v1"   # opencode + openhands
+export SWECODE_URL_S3="http://<s3>:8080/v1"   # swe-agent ejecuta
+# o una sola para todo: export SWECODE_BASE_URL="http://<server>/v1"
 python3 mini_router.py "arregla el bug de login en app.py"
 ```
 
