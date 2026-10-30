@@ -91,6 +91,15 @@ export function estadoCuentas() {
   return out;
 }
 
+export function estadoTabs() {
+  const porSite = {};
+  for (const [convId, e] of paginas) {
+    if (e.page.isClosed()) continue;
+    (porSite[e.site] ||= []).push(convId);
+  }
+  return { tabs: porSite, en_cola: cola.length, max_tabs: MAX_TABS };
+}
+
 export async function cerrarPagina(convId) {
   const e = paginas.get(convId);
   if (e) { await e.page.close().catch(() => {}); paginas.delete(convId); }

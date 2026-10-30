@@ -9,6 +9,15 @@
 
 const MODOS = ["revision", "solucion", "arquitectura", "archivos", "prompt_code", "consulta", "despliega"];
 const CLAVE = /^swen\s+code\s+free\b/i;
+const PIPELINES = ["code", "free", "auto"];
+
+// "pipeline [code|free|auto]": code = anota->organiza+refactor->despliega;
+// free = instruye->despliega (sin refactor). Default free (esta capa no refactoriza).
+function sacaPipeline(resto) {
+  const m = resto.match(/^pipeline\b(?:\s+(code|free|auto)\b)?/i);
+  if (!m) return null;
+  return { pipeline: (m[1] || "free").toLowerCase(), resto: resto.slice(m[0].length).trim() };
+}
 
 // nombre hablado -> id de modelo ("consenso" = concilio de los 3 web)
 const MODELOS_ALIAS = [
@@ -48,6 +57,7 @@ function activar(texto) {
   let modo = "consulta";
   let modelo = null;
   let conv_id = null;
+  let pipeline = null;
 
   // keywords en cualquier orden: se consumen prefijos hasta que nada cambie
   let cambio = true;
@@ -74,12 +84,14 @@ function activar(texto) {
     }
     const ch = sacaChat(resto);
     if (ch) { conv_id = ch.conv_id; resto = ch.resto; cambio = true; }
+    const pl = sacaPipeline(resto);
+    if (pl) { pipeline = pl.pipeline; resto = pl.resto; cambio = true; }
   }
 
   // consulta sin modelo nombrado = concilio (los 3); el resto = objetivo unico
   if (!modelo) modelo = modo === "consulta" ? "consenso" : "web-qwen38max";
 
-  return { sistema: "SWEN CODE free", modo, modelo, conv_id, prompt: resto };
+  return { sistema: "SWEN CODE free", modo, modelo, conv_id, pipeline, prompt: resto };
 }
 
-module.exports = { activar, MODOS, CLAVE, MODELOS_ALIAS };
+module.exports = { activar, MODOS, CLAVE, MODELOS_ALIAS, PIPELINES };

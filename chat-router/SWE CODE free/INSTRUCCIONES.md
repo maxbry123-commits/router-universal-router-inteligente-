@@ -29,6 +29,13 @@
 `revision` · `solucion` · `arquitectura` · `archivos` · `prompt_code` · `consulta` · `despliega`
 (`despliega`: aplica lo que te entregan y verifica; en FREE no refactorizas.)
 
+## 3b. Pipeline ejecutable
+
+`SWEN CODE free pipeline [code|free|auto] <tarea>`:
+- `code` → anota lfm2.5 → qwen-coder organiza+refactor → otro lfm2.5 despliega.
+- `free` (default) → qwen instruye → swe-agente → otro lfm2.5 despliega. Sin refactor.
+- Ejecutor: `mini_router.py --pipeline code|free "<tarea>"` (cascada.json → pipelines).
+
 ## 4. Trabajo en paralelo
 
 - `chat <id>` / `seccion <id>` / `conv <id>` → `conv_id` propio: web/tab aparte, hilo separado.
@@ -50,6 +57,9 @@ chat → plugins → deepseek_harness → HTTP router → plugins → harness �
 - Nada habla directo al router ni al chat: todo pasa por el harness.
 - Modelos locales: `POST {SWECODE_URL_S1..S3}/v1/chat/completions` con `model=` (slots intercambiables, GGUF bajo demanda desde dataset swe-code-hf-gguf, 1 vivo por Space, unload 5 min idle).
 - Modelos web: `POST {WEB_BRIDGE_URL}/v1/chat/completions` con `model=web-*` o `swecode-<modo>`.
+  - Fallback automático dentro de la web: modelo pedido cae → `qwen38max→qwen37max→dsv4-flash` antes de escalar.
+  - Respuesta trae `modelo_usado` (body + header `x-modelo-usado`) = el que respondió de verdad.
+  - `GET {WEB_BRIDGE_URL}/v1/queue` = tabs abiertas por sitio + conv_ids + cola + cuentas.
 - Móvil: `POST {PUENTE_MOVIL_URL}/mcp` → tools sobre Chrome del teléfono.
 
 ## 7. Recuperar

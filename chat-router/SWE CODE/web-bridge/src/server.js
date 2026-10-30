@@ -8,7 +8,7 @@ import express from 'express';
 import { consultarWeb, salud } from './motor.js';
 import { consenso } from './consenso.js';
 import { modoValido } from './modos.js';
-import { estadoCuentas } from './browser.js';
+import { estadoCuentas, estadoTabs } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
 
 const app = express();
@@ -17,9 +17,25 @@ const PORT = process.env.BRIDGE_PORT || 7860;
 
 const esConsenso = (modo) => ['consulta', 'plan'].includes(modo);
 const OBJETIVO_UNICO = process.env.SWECODE_OBJETIVO || 'qwen38max';
+// fallback dentro de la web antes de escalar a modelos locales
+const WEB_FALLBACK = (process.env.WEB_FALLBACK || 'qwen38max,qwen37max,dsv4-flash').split(',');
+
+async function conFallback(modelo, prompt, opts) {
+  const orden = [modelo, ...WEB_FALLBACK.filter(m => m !== modelo)];
+  let ultimo;
+  for (const m of orden) {
+    try { return { salida: await consultarWeb(m, prompt, opts), usado: m }; }
+    catch (e) { ultimo = e; }
+  }
+  throw ultimo;
+}
 
 app.get('/health', async (_req, res) => {
   res.json({ ok: true, cuentas: estadoCuentas() });
+});
+
+app.get('/v1/queue', (_req, res) => {
+  res.json({ ok: true, ...estadoTabs(), cuentas: estadoCuentas() });
 });
 
 app.get('/v1/models', (_req, res) => {
@@ -42,7 +58,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       .map(m => `${m.role}: ${m.content}`).join('\n');
     const prompt = anterior ? `${anterior}\nuser: ${ultimo}` : ultimo;
 
-    let modeloWeb, modoUso = modo || 'consulta', salida;
+    let modeloWeb, modoUso = modo || 'consulta', salida, usado = model;
     if (model.startsWith('web-')) {
       modeloWeb = model.slice(4);
     } else if (model.startsWith('swecode-')) {
@@ -53,18 +69,21 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
 
     if (modeloWeb) {
-      salida = await consultarWeb(modeloWeb, prompt, { modo: modoUso, convId: conv_id });
+      const r = await conFallback(modeloWeb, prompt, { modo: modoUso, convId: conv_id });
+      salida = r.salida; usado = r.usado;
     } else if (esConsenso(modoUso)) {
       const r = await consenso(prompt, { modo: modoUso, convId: conv_id });
-      salida = r.final;
+      salida = r.final; usado = 'consenso';
       res.setHeader('x-consenso-detalle', Buffer.from(JSON.stringify(r.por_modelo)).toString('base64').slice(0, 4000));
     } else {
-      salida = await consultarWeb(OBJETIVO_UNICO, prompt, { modo: modoUso, convId: conv_id });
+      const r = await conFallback(OBJETIVO_UNICO, prompt, { modo: modoUso, convId: conv_id });
+      salida = r.salida; usado = r.usado;
     }
+    res.setHeader('x-modelo-usado', usado);
 
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`,
+      model: `swecode:${model}`, modelo_usado: usado,
       choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: salida || '' } }],
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     });

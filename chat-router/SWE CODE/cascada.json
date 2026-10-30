@@ -78,5 +78,51 @@
   "regla_fallo": "un paso FAIL detiene la cascada y devuelve recibo del paso fallido",
   "paralelo": "2+ secciones por conv_id (web tabs separadas o slots S1/S2/S3): pipeline_code anota lfm2.5-350m -> qwen2.5-coder-1.5b organiza+refactoriza -> otro lfm2.5-350m despliega; pipeline_free qwen instruye -> swe-agente -> otro lfm2.5-350m despliega (sin refactor)",
   "espejo": "cualquier modelo se clona en otro conv_id/slot para dividir trabajo: mismo modelo, contexto propio — como el mirror de agentes",
-  "manual": "../SWE CODE free/INSTRUCCIONES.md"
+  "manual": "../SWE CODE free/INSTRUCCIONES.md",
+  "pipelines": {
+    "code": [
+      {
+        "nodo": "anota",
+        "agente": "notas",
+        "modelo": "lfm2.5-350m",
+        "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
+        "entrada": "objetivo",
+        "salida": "notas"
+      },
+      {
+        "nodo": "organiza",
+        "agente": "qwen-code",
+        "modelo": "qwen2.5-coder-1.5b",
+        "modelo_id_hf": "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF",
+        "entrada": "notas",
+        "salida": "code_refactor"
+      },
+      {
+        "nodo": "despliega",
+        "agente": "swe-agent",
+        "modelo": "lfm2.5-350m",
+        "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
+        "entrada": "code_refactor",
+        "salida": "deploy_result"
+      }
+    ],
+    "free": [
+      {
+        "nodo": "instruye",
+        "agente": "qwen",
+        "modelo": "qwen2.5-coder-1.5b",
+        "modelo_id_hf": "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF",
+        "entrada": "objetivo",
+        "salida": "instrucciones"
+      },
+      {
+        "nodo": "despliega",
+        "agente": "swe-agent",
+        "modelo": "lfm2.5-350m",
+        "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
+        "entrada": "instrucciones",
+        "salida": "deploy_result"
+      }
+    ]
+  }
 }

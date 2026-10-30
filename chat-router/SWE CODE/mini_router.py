@@ -40,11 +40,12 @@ def recibo(pid, nodo, estado, extra=None):
     return r
 
 
-def correr(objetivo: str) -> dict:
+def correr(objetivo: str, pasos=None) -> dict:
+    pasos = pasos or CASCADA["pasos"]
     pid = f"swecode-{uuid.uuid4().hex[:8]}"
     recibos = [recibo(pid, "inicio", "OK", {"objetivo": objetivo[:200]})]
     entrada = objetivo
-    for paso in CASCADA["pasos"]:
+    for paso in pasos:
         modelo, nodo, agente = paso["modelo"], paso["nodo"], paso["agente"]
         prompt = (f"AGENTE={agente}. Tarea: {objetivo}\n"
                   f"Entrada del paso anterior ({paso['entrada']}):\n{entrada}\n"
@@ -62,10 +63,19 @@ def correr(objetivo: str) -> dict:
 
 
 def main():
-    objetivo = sys.argv[1] if len(sys.argv) > 1 else sys.stdin.read().strip()
+    args = sys.argv[1:]
+    pasos = None
+    if args[:1] == ["--pipeline"]:
+        nombre = args[1] if len(args) > 1 else "code"
+        pasos = CASCADA.get("pipelines", {}).get(nombre)
+        if not pasos:
+            print(json.dumps({"verdict": "INPUT_GAP", "detail": f"pipeline desconocido: {nombre}",
+                              "pipelines": list(CASCADA.get("pipelines", {}))})); sys.exit(1)
+        args = args[2:]
+    objetivo = args[0] if args else sys.stdin.read().strip()
     if not objetivo:
         print(json.dumps({"verdict": "INPUT_GAP", "detail": "objetivo requerido"})); sys.exit(1)
-    print(json.dumps(correr(objetivo), ensure_ascii=False, indent=2))
+    print(json.dumps(correr(objetivo, pasos), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
