@@ -21,6 +21,11 @@ const GRUPOS = [
     ["rayo", "DeepSeek V4 Flash", "Código rápido", "deepseek-v4-flash-0731"]] },
   { titulo: "GLM", modelos: [
     ["pensar", "GLM 5.2", "Código + agentes", "glm-5.2"]] },
+  { titulo: "SWE CODE (local HF)", modelos: [
+    ["pensar", "SWE · Codex escribe", "Qwen2.5-Coder-1.5B", "swe-codex-qwen25-15b"],
+    ["pensar", "SWE · OpenCode revisa", "Qwen3.5-0.8B", "swe-opencode-qwen35-08b"],
+    ["rayo", "SWE · Agent ejecuta", "Qwen3-0.6B", "swe-agent-qwen3-06b"],
+    ["rayo", "SWE · OpenHands verifica", "DeepSeek-Coder-1.3B", "swe-openhands-ds13b"]] },
   { titulo: "Imágenes", modelos: [
     ["imagen", "Qwen Image 3.0 Pro", "Imágenes", "qwen-image-3.0-pro"],
     ["imagen", "Wan 2.7 Image", "Imágenes", "wan2.7-image"]] },
