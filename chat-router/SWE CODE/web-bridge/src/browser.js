@@ -100,6 +100,26 @@ export function estadoTabs() {
   return { tabs: porSite, en_cola: cola.length, max_tabs: MAX_TABS };
 }
 
+
+// Diagnóstico: url + title + screenshot PNG base64 de un tab (o lista sin shot).
+export async function snapshotTab(convId = null, { shot = true } = {}) {
+  const list = [];
+  for (const [id, e] of paginas) {
+    if (e.page.isClosed()) continue;
+    if (convId && id !== convId) continue;
+    const url = e.page.url();
+    const title = await e.page.title().catch(() => '');
+    const item = { conv_id: id, site: e.site, url, title };
+    if (shot) {
+      const buf = await e.page.screenshot({ fullPage: false, type: 'png' }).catch(() => null);
+      item.screenshot_png_base64 = buf ? buf.toString('base64') : null;
+    }
+    list.push(item);
+  }
+  if (convId && !list.length) return { ok: false, error: 'TAB_NOT_FOUND', conv_id: convId };
+  return { ok: true, tabs: list };
+}
+
 export async function cerrarPagina(convId) {
   const e = paginas.get(convId);
   if (e) { await e.page.close().catch(() => {}); paginas.delete(convId); }

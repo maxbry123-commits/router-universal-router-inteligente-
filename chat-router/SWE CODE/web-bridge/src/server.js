@@ -8,7 +8,7 @@ import express from 'express';
 import { consultarWeb, salud } from './motor.js';
 import { consenso } from './consenso.js';
 import { modoValido } from './modos.js';
-import { estadoCuentas, estadoTabs } from './browser.js';
+import { estadoCuentas, estadoTabs, snapshotTab } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
 
 const app = express();
@@ -90,6 +90,21 @@ app.post('/v1/chat/completions', async (req, res) => {
   } catch (e) {
     const code = e.code || 'BRIDGE_ERROR';
     res.status(code === 'SESSION_EXPIRED' ? 503 : 500).json({ error: { code, message: e.message, detail: e.detail } });
+  }
+});
+
+
+// Diagnóstico (Centinela): GET /debug/tab?conv_id=&shot=0|1 → url, title, screenshot_png_base64
+// Acceso vía proxy: GET /web/debug/tab (sin cambiar proxy.py)
+app.get('/debug/tab', async (req, res) => {
+  try {
+    const convId = req.query.conv_id || null;
+    const shot = String(req.query.shot ?? '1') !== '0';
+    const out = await snapshotTab(convId, { shot });
+    if (out.ok === false) return res.status(404).json(out);
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 
