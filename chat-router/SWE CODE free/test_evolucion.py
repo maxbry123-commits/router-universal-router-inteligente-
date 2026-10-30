@@ -35,6 +35,13 @@ class TestEvolucion(unittest.TestCase):
         for ruta in ("chat/backend/mvp/app.py", "chat/frontend/shell.js", "../router-mvp/router/x.py", "SWE CODE/../chat/backend/a.py"):
             self.assertFalse(evolucion.permitido(ruta), ruta)
 
+    def test_sin_variable_propia_lee_lo_que_registra_el_bridge(self):
+        os.environ.pop("SWE_EVOLUCION_DIR", None); os.environ["BRIDGE_STATE_DIR"] = self.dir
+        try:
+            self.assertEqual(evolucion._dir(), os.path.join(self.dir, "evolucion"))
+        finally:
+            os.environ.pop("BRIDGE_STATE_DIR", None)
+
     def test_escribir_md_deja_lecciones_y_propuestas_legibles(self):
         for _ in range(3): self.lec()
         evolucion.escribir_md()

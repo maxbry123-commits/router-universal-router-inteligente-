@@ -30,3 +30,13 @@ test("listarCheckpoints dice a OpenClaw que secciones hay, en que bloque van y c
   assert.equal(por["chat-2"].completo, true);
   assert.ok(!("ultima_salida" in por["chat-4"]));  // la lista no vuelca contenido
 });
+
+test("el bridge registra solo lo que repara (leccion) en el mismo formato que lee evolucion.py", async () => {
+  const { registrarLeccion } = await import("../src/bloques.js");
+  registrarLeccion({ codigo: "SESSION_EXPIRED", accion: "salud() + reintento", resultado: "PASS", modelo: "web-qwen38max" });
+  const f = path.join(process.env.BRIDGE_STATE_DIR, "evolucion", "lecciones.jsonl");
+  const l = JSON.parse(fs.readFileSync(f, "utf8").trim().split("\n").pop());
+  assert.equal(l.codigo, "SESSION_EXPIRED"); assert.equal(l.resultado, "PASS"); assert.ok(l.ts > 1e9);
+  registrarLeccion({ accion: "sin codigo" });  // sin codigo no escribe ni lanza
+  assert.equal(fs.readFileSync(f, "utf8").trim().split("\n").length, 1);
+});

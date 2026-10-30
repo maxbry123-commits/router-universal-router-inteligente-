@@ -30,4 +30,4 @@ La respuesta trae `modelo_usado` y `via_respaldo` (también en los headers `x-mo
 - `BRIDGE_STATE_DIR` debe estar en almacenamiento permanente, o el checkpoint se pierde al reiniciar.
 
 ## Auto-evolución
-`evolucion.py`: registra cada arreglo; lo que se repite 3 veces se propone como mejora (`PROPUESTAS.md`). Solo dentro de `SWE CODE/` y `SWE CODE free/`.
+El bridge anota solo cada arreglo propio (re-login, respaldo usado) en `BRIDGE_STATE_DIR/evolucion/lecciones.jsonl`, y `evolucion.py` lee de ahí. También registra a mano (`registrar`); lo que se repite 3 veces se propone como mejora (`PROPUESTAS.md`). Solo dentro de `SWE CODE/` y `SWE CODE free/`.

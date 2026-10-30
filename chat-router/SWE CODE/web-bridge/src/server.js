@@ -12,7 +12,7 @@ import { estadoCuentas, estadoTabs, snapshotTab, cerrarPagina } from './browser.
 import { MODELOS_WEB } from './sites.js';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo } from './respaldo.js';
-import { listarCheckpoints } from './bloques.js';
+import { listarCheckpoints, registrarLeccion } from './bloques.js';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -123,11 +123,12 @@ app.post('/v1/chat/completions', async (req, res) => {
       if (e.code === 'UPSTREAM_TIMEOUT' && conv_id) await cerrarPagina(conv_id).catch(() => {});  // la tab colgada liberaba su slot solo al cerrarse
       // auto-reparacion: sesion caida -> re-login/rotacion de correo y UN reintento; si sigue mal, respaldo Groq -> NVIDIA -> HF local
       if (e.code === 'SESSION_EXPIRED') {
-        try { await salud(); salida = null; await conDeadline(ejecutar(), 50000); } catch { /* sigue al respaldo */ }
+        try { await salud(); salida = null; await conDeadline(ejecutar(), 50000); registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'PASS', modelo: model }); } catch { registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'FAIL', modelo: model }); }
       }
       if (!salida || !String(salida).trim()) {
         const r = await respaldo(messages);
-        salida = r.salida; usado = r.usado; via = r.via; aviso = e.code || null;  // p. ej. CUENTAS_FALTAN: OpenClaw sabe que debe reenviar cuentas y clave
+        salida = r.salida; usado = r.usado; via = r.via; aviso = e.code || null;
+        registrarLeccion({ codigo: e.code || 'WEB_FALLO', accion: 'respaldo ' + r.via, resultado: 'PASS', modelo: model });  // p. ej. CUENTAS_FALTAN: OpenClaw sabe que debe reenviar cuentas y clave
       }
     }
     res.setHeader('x-modelo-usado', usado);

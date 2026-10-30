@@ -53,3 +53,14 @@ export function resumeCard(ck) {
   return `[RETOMO] modo=${ck.modo} bloques_enviados=${ck.enviados}/${ck.total} ` +
     `ultima_salida=${(ck.ultima_salida || '').slice(0, 400)}`;
 }
+
+// auto-evolucion: el bridge anota cada arreglo propio (formato de SWE CODE free/evolucion.py); mejor esfuerzo, nunca rompe la peticion
+export function registrarLeccion(l) {
+  try {
+    if (!l || !l.codigo || !l.accion) return false;
+    const dir = path.join(DIR, 'evolucion');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.appendFileSync(path.join(dir, 'lecciones.jsonl'), JSON.stringify({ ts: Math.floor(Date.now() / 1000), ...l }) + '\n');
+    return true;
+  } catch { return false; }
+}

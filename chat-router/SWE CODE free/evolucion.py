@@ -10,7 +10,8 @@ POR_TIPO = {"promover_a_runbook": "SWE CODE free/INSTRUCCIONES.md", "cambiar_est
 
 
 def _dir():
-    d = os.environ.get("SWE_EVOLUCION_DIR") or os.path.join(RAIZ, "salidas", "evolucion")
+    bridge = os.environ.get("BRIDGE_STATE_DIR")  # el bridge registra aqui lo que repara solo
+    d = os.environ.get("SWE_EVOLUCION_DIR") or (os.path.join(bridge, "evolucion") if bridge else os.path.join(RAIZ, "salidas", "evolucion"))
     os.makedirs(d, exist_ok=True)
     return d
 

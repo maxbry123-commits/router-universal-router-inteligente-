@@ -27,6 +27,8 @@ const MODELOS_ALIAS = [
   [/^(qwen[- ]?3\.?8[- ]?max|qwen[- ]?3\.?8|qwen38[- ]?max|qwen38)\b/i, "web-qwen38max"],
   [/^(lfm2\.?5|liquid|lfm)\b/i, "lfm2.5-350m"],
   [/^(qwen[- ]?code|qwen2\.?5|coder)\b/i, "qwen2.5-coder-1.5b"],
+  [/^groq\b/i, "groq/llama-3.3-70b-versatile"],
+  [/^nvidia\b/i, "nvidia/meta/llama-3.3-70b-instruct"],
 ];
 
 function sacaModelo(resto) {
