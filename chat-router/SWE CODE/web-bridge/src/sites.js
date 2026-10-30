@@ -120,6 +120,36 @@ export async function elegirModelo(page, cfg, modelo_regex) {
   return false;
 }
 
+
+// AGE_GATE qwen: modal "Confirma tu edad" — Antonio orden año 2000
+export async function pasarAgeGate(page, year = '2000') {
+  const modal = page.locator('text=/Confirma tu edad|Confirm your age|naciste|year were you born/i').first();
+  try {
+    await modal.waitFor({ state: 'visible', timeout: 5000 });
+  } catch {
+    return false;
+  }
+  // año: combobox / select / listbox
+  const combo = page.locator('button:has-text("2000"), [role="combobox"], select, [class*="select"]').first();
+  try {
+    if (await combo.count()) {
+      await combo.click({ timeout: 2000 }).catch(() => {});
+      const opt = page.locator(`[role="option"]:has-text("${year}"), option[value="${year}"], text="${year}"`).first();
+      if (await opt.count()) await opt.click({ timeout: 2000 }).catch(() => {});
+    }
+  } catch {}
+  // Continuar
+  for (const sel of [
+    'button:has-text("Continuar")',
+    'button:has-text("Continue")',
+    'button:has-text("Confirm")',
+  ]) {
+    const el = await page.$(sel);
+    if (el) { await el.click(); await page.waitForTimeout(800); return true; }
+  }
+  return false;
+}
+
 export async function login(page, cfg, email, pass) {
   await page.goto(cfg.login_url, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1500);
