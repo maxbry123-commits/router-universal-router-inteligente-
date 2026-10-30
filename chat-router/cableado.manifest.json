@@ -140,8 +140,8 @@
    "sha256": "fd6578f73ee2acfdc63510750e189086fb025a8c0cabf293be028e5e6f5cb8c0"
   },
   "chat-router/chat/frontend": {
-   "archivos": 550,
-   "sha256": "c32dc08228162cdad79b56eb9509116c7777ab3eff81073abd569b98ab8bc41f"
+   "archivos": 551,
+   "sha256": "06600086fdff5e2a158f5e0bbd96a2cf4f167744c623a3ee8c209cd3e34a2676"
   },
   "chat-router/plugins/__init__.py": {
    "archivos": 1,
