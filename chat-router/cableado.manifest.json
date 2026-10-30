@@ -3,9 +3,7 @@
   "chat-router/harness": "chat/backend/deepseek_harness",
   "chat-router/plugins/deepseek_harness": "../chat/backend/deepseek_harness",
   "chat-router/plugins/router_api_cliente.py": "../chat/backend/router_api_cliente.py",
-  "router-mvp/mvp": "../chat-router/chat/backend/mvp",
-  "chat-router/plugins/swen_code_free": "../SWE CODE free",
-  "chat-router/plugins/swe_code": "../SWE CODE"
+  "router-mvp/mvp": "../chat-router/chat/backend/mvp"
  },
  "plugins": {
   "agentes": {
@@ -103,16 +101,6 @@
    "enlace": false,
    "ficha": true
   },
-  "watchdog48": {
-   "destino": "../Loop cola wachdog/wachdog",
-   "enlace": true,
-   "ficha": true
-  },
-  "workflow-loop-yaiwes": {
-   "destino": "../workflow-loop-code-yaiwes/workflow-loop-yaiwes",
-   "enlace": true,
-   "ficha": false
-  },
   "swe_code": {
    "destino": "../SWE CODE",
    "enlace": true,
@@ -122,6 +110,16 @@
    "destino": "../SWE CODE free",
    "enlace": true,
    "ficha": true
+  },
+  "watchdog48": {
+   "destino": "../Loop cola wachdog/wachdog",
+   "enlace": true,
+   "ficha": true
+  },
+  "workflow-loop-yaiwes": {
+   "destino": "../workflow-loop-code-yaiwes/workflow-loop-yaiwes",
+   "enlace": true,
+   "ficha": false
   }
  },
  "protegido": {
@@ -143,7 +141,7 @@
   },
   "chat-router/chat/frontend": {
    "archivos": 550,
-   "sha256": "e1c806029f6fa50fb203882e87e112c51ee8d5fe5a588aee126b9a3daaca3061"
+   "sha256": "c32dc08228162cdad79b56eb9509116c7777ab3eff81073abd569b98ab8bc41f"
   },
   "chat-router/plugins/__init__.py": {
    "archivos": 1,
@@ -171,7 +169,7 @@
   },
   "router-mvp/router": {
    "archivos": 176,
-   "sha256": "25521025abb3b6758849e10d3a6a206ad831c6c2f22d1674b8f36f6270489524"
+   "sha256": "587e7ee9690ecb6abfc14c1b0dc3b65932a7aa7d662130da85306f3511d4b138"
   }
  }
 }
