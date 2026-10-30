@@ -82,63 +82,55 @@
   "pipelines": {
     "code": [
       {
-        "nodo": "anota",
-        "agente": "notas",
+        "agente": "liquid1",
         "modelo": "lfm2.5-350m",
         "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
+        "nodo": "recibe_delega",
         "entrada": "objetivo",
-        "salida": "notas"
-      },
-      {
-        "nodo": "organiza",
-        "agente": "notas",
-        "modelo": "lfm2.5-350m",
-        "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
-        "entrada": "notas",
-        "salida": "plan"
+        "salida": "delegacion"
       },
       {
         "nodo": "refactor",
         "agente": "qwen-code",
         "modelo": "qwen2.5-coder-1.5b",
         "modelo_id_hf": "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF",
-        "entrada": "plan",
-        "salida": "code_refactor",
-        "condicional": "solo_si_gap_o_refactoria"
+        "condicional": "solo_si_gap_o_refactoria",
+        "entrada": "delegacion",
+        "salida": "code_refactor"
       },
       {
-        "nodo": "despliega",
-        "agente": "swe-agent",
+        "agente": "liquid2",
         "modelo": "lfm2.5-350m",
         "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
-        "entrada": "plan",
+        "nodo": "despliega",
+        "entrada": "delegacion",
         "salida": "deploy_result"
       }
     ],
     "free": [
       {
-        "nodo": "instruye",
-        "agente": "notas",
+        "agente": "liquid1",
         "modelo": "lfm2.5-350m",
         "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
+        "nodo": "recibe_delega",
         "entrada": "objetivo",
-        "salida": "instrucciones"
+        "salida": "delegacion"
       },
       {
         "nodo": "refactor",
         "agente": "qwen-code",
         "modelo": "qwen2.5-coder-1.5b",
         "modelo_id_hf": "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF",
-        "entrada": "instrucciones",
-        "salida": "code_refactor",
-        "condicional": "solo_si_gap_o_refactoria"
+        "condicional": "solo_si_gap_o_refactoria",
+        "entrada": "delegacion",
+        "salida": "code_refactor"
       },
       {
-        "nodo": "despliega",
-        "agente": "swe-agent",
+        "agente": "liquid2",
         "modelo": "lfm2.5-350m",
         "modelo_id_hf": "LiquidAI/LFM2.5-350M-GGUF",
-        "entrada": "instrucciones",
+        "nodo": "despliega",
+        "entrada": "delegacion",
         "salida": "deploy_result"
       }
     ]
