@@ -47,6 +47,7 @@ const GRUPOS = [
     ["micro", "Qwen Realtime", "Voz en vivo", "qwen-audio-3.0-realtime-plus"],
     ["texto", "Qwen ASR", "Voz a texto", "qwen-audio-3.0-asr-flash"]] },
 ];
+export const SWE_IDS = GRUPOS.filter((g) => /SWE/.test(g.titulo)).flatMap((g) => g.modelos.map((m) => m[3]));
 const CATALOGO_CLAVE = "riu_catalogo_qwen";  // ultima lista que dio el Router (localStorage)
 const CATALOGO_RESPALDO = ["qwen3.8-max", "qwen3.8-flash", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-flash", "glm-5.3", "glm-5.2", "deepseek-v4-pro", "deepseek-v4-pro-0813", "deepseek-v4-flash-0731", "deepseek-v4.1-flash", "deepseek-v4.1-flash-1017", "qwen-image-3.0-pro", "wan2.7-image", "wan2.7-image-pro", "qwen-audio-3.0-tts-plus", "qwen-audio-3.0-realtime-plus", "qwen-audio-3.0-asr-flash", "wan3.0-video", "happyhorse-1.1-t2v", "happyhorse-1.1-i2v", "happyhorse-1.1-r2v", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b", "hf-liquid-lfm25", "web-qwen38max", "web-qwen37max", "web-dsv4-flash", "swecode-consulta", "swecode-revision", "swecode-solucion", "swecode-arquitectura", "swecode-archivos", "swecode-prompt_code", "swecode-despliega"];  // plan Personal (mvp/modelos.json, p=1) + SWE CODE local
 
@@ -89,7 +90,7 @@ export function conectarSelectorModelos(ctx) {
     cargando = true;
     api('/chat/providers/qwen/models').then((r) => {
       if (!Array.isArray(r.models) || !r.models.length) throw new Error('Catalogo vacio');
-      const nuevos = gruposModelos(r.models);
+      const nuevos = gruposModelos([...r.models, ...SWE_IDS]);  // los grupos SWE CODE / SWEN CODE free viven en el router propio de cada raíz: el catálogo del Router MVP no los trae
       if (!nuevos.length) throw new Error('Catalogo vacio');
       grupos = nuevos; publicarCatalogo();
       try { localStorage.setItem(CATALOGO_CLAVE, JSON.stringify(r.models)); } catch (e) {}
