@@ -13,6 +13,7 @@ Leer en este orden: `README.md` ➡️ `ARQUITECTURA.md` ➡️ `INSTRUCCIONES.m
 | Auto-evolución | `SWE CODE free/evolucion.py` |
 | Puente móvil / APK | `SWE CODE free/puente-movil/`, `apk-movil/` |
 | Descarga APK | chat ➡️ Configuración ➡️ «Agente móvil (APK)» (`chat/frontend/panel-apariencia.html`), `GET /apk` del Space |
+| Harness con salida por el bridge | `chat/backend/deepseek_harness/server.py` (`RIU_SWE_BRIDGE_URL`) |
 | Enlaces de plugins | `plugins/swe_code`, `plugins/swen_code_free`, `plugins/deepseek_harness` |
 
 ## Cómo recuperar una sección o arreglar algo
@@ -28,4 +29,4 @@ Leer en este orden: `README.md` ➡️ `ARQUITECTURA.md` ➡️ `INSTRUCCIONES.m
 Dos raíces (`router-mvp/`, `chat-router/`). No se toca el Router MVP. Lo protegido por `cableado.manifest.json` no se toca sin regenerar la guarda. Credenciales solo en el banco o el entorno. Sin PASS sin evidencia.
 
 ## Pendiente fuera del código (HF / Grok)
-Redeploy del Space al último `main`; ruta `GET /v1/queue` en el proxy `:7860`; `puente-movil` como proceso; `BRIDGE_STATE_DIR` en almacenamiento permanente; cuentas web entregadas por OpenClaw; saldo de HF.
+`RIU_SWE_BRIDGE_URL` en el entorno del Harness (apunta al bridge, p. ej. `http://127.0.0.1:7870`); Redeploy del Space al último `main`; ruta `GET /v1/queue` en el proxy `:7860`; `puente-movil` como proceso; `BRIDGE_STATE_DIR` en almacenamiento permanente; cuentas web entregadas por OpenClaw; saldo de HF.

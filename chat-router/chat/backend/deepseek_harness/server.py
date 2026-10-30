@@ -5,6 +5,8 @@ import hmac
 import os
 import re
 import time
+import urllib.error
+import urllib.request
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
@@ -91,6 +93,39 @@ def _router(accion, datos):
     return resultado
 
 
+# --- SWE CODE free / SWEN CODE: su router propio es el web-bridge (RIU_SWE_BRIDGE_URL). El Harness le manda sus ids y, si el Router MVP cae, sigue con modelos locales ---
+SWE_PREFIJOS = ("web-", "swecode-")
+SWE_IDS = {"hf-liquid-lfm25", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b",
+           "lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"}
+SWE_ALIAS = {"hf-liquid-lfm25": "lfm2.5-350m", "swe-agent-lfm25": "lfm2.5-350m", "swe-openhands-lfm25": "lfm2.5-350m",
+             "swe-codex-qwen25-15b": "qwen2.5-coder-1.5b", "hf-qwen25-coder-15b": "qwen2.5-coder-1.5b", "swe-opencode-qwen35-08b": "qwen3.5-0.8b"}
+
+
+def es_swe(modelo):
+    m = str(modelo or "")
+    return m in SWE_IDS or m.startswith(SWE_PREFIJOS)
+
+
+def _bridge_url():
+    u = os.environ.get("RIU_SWE_BRIDGE_URL", "").strip().rstrip("/")
+    return u if u.startswith(("https://", "http://127.0.0.1", "http://localhost")) else ""
+
+
+def _bridge_chat(mensajes, modelo):
+    """Una vuelta de chat por el bridge (OpenAI-compatible): mismo formato que _router('chat')."""
+    modelo = SWE_ALIAS.get(modelo, modelo)
+    req = urllib.request.Request(_bridge_url() + "/v1/chat/completions", method="POST", headers={"Content-Type": "application/json"},
+                                 data=json.dumps({"model": modelo, "messages": mensajes}).encode())
+    try:
+        with urllib.request.urlopen(req, timeout=float(os.environ.get("RIU_SWE_TIMEOUT_S", "130"))) as r:
+            bruto = json.load(r)
+        msg = bruto["choices"][0]["message"]
+    except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+        raise RuntimeError("Bridge " + type(exc).__name__ + ": " + str(exc)[:80]) from None
+    return {"texto": msg.get("content") or "", "tool_calls": [], "finish_reason": bruto["choices"][0].get("finish_reason") or "stop",
+            "mensaje_asistente": msg, "modelo_respuesta": bruto.get("modelo_usado") or modelo}
+
+
 def guardar(args):
     nombre = args.get("nombre")
     salida = _router("almacen", {"accion": "guardar", "destino": "hf", "nombre": nombre, "valor": args.get("valor")})
@@ -121,11 +156,12 @@ def llm(cuerpo):
     permitidas = {}
     # GitHub/HF no dependen del permiso de delegacion a otras IA.
     catalogo = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": "catalogo", "method": "tools/list"})
-    if catalogo.get("error"):
+    sin_router = bool(catalogo.get("error")) and bool(_bridge_url())  # Router MVP caido: el Harness sigue solo con el bridge, sin herramientas
+    if catalogo.get("error") and not sin_router:
         raise RuntimeError("No se pudo obtener el catalogo MCP")
-    permitidas = {t["name"]: t for t in catalogo.get("result", {}).get("tools", [])
+    permitidas = {t["name"]: t for t in ({} if sin_router else catalogo).get("result", {}).get("tools", [])
                   if t["name"] in ("github_leer", "github_escribir", "almacen", "pendientes", "sala", "agente", "llm", "yaiwes_md", "loop", "archivos") or t["name"].startswith("mcp__")}
-    if not permitidas:
+    if not permitidas and not sin_router and not (es_swe(cuerpo.get("modelo")) and _bridge_url()):
         raise RuntimeError("Herramientas GitHub no disponibles en MCP")
     opciones["tools"] = [{"type": "function", "function": {"name": n,
         "description": t["description"], "parameters": t["inputSchema"]}} for n, t in permitidas.items()]
@@ -139,8 +175,16 @@ def llm(cuerpo):
         paso += 1
         try:
             mensajes = compactar(mensajes, int(cuerpo.get("contexto_max") or 0) or None)
-            salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
-                         **{k: cuerpo.get(k, False) for k in ("tools", "agente_tool", "llm_tool")}})
+            if _bridge_url() and es_swe(cuerpo.get("modelo")):
+                salida = _bridge_chat(mensajes, cuerpo.get("modelo"))
+            else:
+                try:
+                    salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
+                                 **{k: cuerpo.get(k, False) for k in ("tools", "agente_tool", "llm_tool")}})
+                except RuntimeError:
+                    if not _bridge_url():
+                        raise
+                    salida = _bridge_chat(mensajes, os.environ.get("RIU_SWE_LOCAL_MODELO", "lfm2.5-350m"))  # Router MVP caido: modelos locales
         except RuntimeError:
             if not acumulado:
                 raise

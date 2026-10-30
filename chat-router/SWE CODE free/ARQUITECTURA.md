@@ -3,6 +3,7 @@
 ## Camino de una petición
 `chat / OpenClaw ➡️ plugins ➡️ Harness DeepSeek ➡️ web-bridge :7870 (POST /v1/chat/completions) ➡️ Qwen/DeepSeek web`.
 Nada habla directo con el chat ni con el Router MVP. OpenClaw puede llamar al bridge sin pasar por el Router MVP.
+El Harness (`chat/backend/deepseek_harness/server.py`) lee `RIU_SWE_BRIDGE_URL`: los ids SWE (`web-*`, `swecode-*`, locales y los `hf-*` del selector) van al bridge. **Si el Router MVP cae**, el Harness no se detiene: responde por el bridge con un modelo local (`RIU_SWE_LOCAL_MODELO`, por defecto `lfm2.5-350m`), **sin herramientas** (GitHub, HF, motor de archivos y memoria del chat viven en el Router MVP y vuelven cuando él vuelve).
 
 ## El router propio (web-bridge)
 - `model`: `web-qwen38max | web-qwen37max | web-dsv4-flash`, `swecode-<modo>`, `groq/<id>`, `nvidia/<id>` o un local (`lfm2.5-350m`, `qwen2.5-coder-1.5b`, `qwen3.5-0.8b`, `qwen3-0.6b`). `GET /v1/models` los lista; ese es el selector de OpenClaw.
