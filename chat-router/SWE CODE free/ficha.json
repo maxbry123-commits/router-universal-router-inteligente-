@@ -14,10 +14,37 @@
     "transport": "http",
     "runtime_type": "compute",
     "idempotente": false,
-    "allowed_actions": ["activar", "revision", "solucion", "arquitectura", "archivos", "prompt_code", "consulta", "abrir_url", "leer_pantalla", "escribir", "tap", "atras"]
+    "allowed_actions": [
+      "activar",
+      "revision",
+      "solucion",
+      "arquitectura",
+      "archivos",
+      "prompt_code",
+      "consulta",
+      "despliega",
+      "concilio",
+      "espejo",
+      "paralelo",
+      "chat",
+      "abrir_url",
+      "leer_pantalla",
+      "escribir",
+      "tap",
+      "atras"
+    ]
   },
   "seguridad": {
     "sandbox": "egress-allowlist",
-    "secrets_env": ["PUENTE_TOKEN", "WEB_ACCOUNTS", "WEB_PASS"]
-  }
+    "secrets_env": [
+      "PUENTE_TOKEN",
+      "WEB_ACCOUNTS",
+      "WEB_PASS"
+    ]
+  },
+  "instrucciones": "INSTRUCCIONES.md",
+  "chats": [
+    "chat-riu",
+    "openclaw"
+  ]
 }

@@ -2,22 +2,43 @@
   "sistema": "SWEN CODE free",
   "activacion": "SWEN CODE free",
   "descripcion": "Capa libre de SWE CODE: modos + puente web (cuentas Qwen/DeepSeek) + puente móvil (APK). Solo responde cuando el mensaje empieza con 'SWEN CODE free'.",
-  "modos": ["revision", "solucion", "arquitectura", "archivos", "prompt_code", "consulta"],
+  "modos": ["revision", "solucion", "arquitectura", "archivos", "prompt_code", "consulta", "despliega"],
+  "manual": "INSTRUCCIONES.md — la misma instrucción para los 2 chats (Riu + OpenClaw); viaja por plugins -> deepseek_harness",
+  "seleccion_modelo": {
+    "gramatica": "[con|solo|modelo <nombre>] o <nombre> como primera palabra; [chat|seccion <id>] = conv_id propio",
+    "concilio": "consulta sin modelo = concilio: fan-out dsv4-flash + qwen37max + qwen38max, sintesis qwen38max",
+    "defecto": "otros modos sin modelo = web-qwen38max unico",
+    "aliases": {
+      "web-dsv4-flash": ["deepseek", "dsv4", "deepseek v4"],
+      "web-qwen37max": ["qwen 3.7", "qwen 3.7 max", "qwen37"],
+      "web-qwen38max": ["qwen 3.8", "qwen 3.8 max", "qwen38"],
+      "lfm2.5-350m": ["liquid", "lfm", "lfm2.5"],
+      "qwen2.5-coder-1.5b": ["coder", "qwen code", "qwen2.5"]
+    },
+    "locales": "lfm2.5-350m y qwen2.5-coder-1.5b salen por cola HF S1/S2/S3 con model= (no por web-bridge)"
+  },
+  "paralelo": {
+    "secciones": 2,
+    "como": "cada chat/seccion = conv_id propio -> tab web propia (BRIDGE_MAX_TABS=4 por sitio) + modelo propio; 2 secciones trabajan por separado al mismo tiempo",
+    "espejo": "un modelo se clona a otro conv_id/slot (mismo modelo, contexto aparte) para dividir el trabajo — igual que el mirror de agentes",
+    "pipeline_code": "anota lfm2.5-350m (rapido) -> pasa info a qwen2.5-coder-1.5b (organiza + refactoriza) -> otro lfm2.5-350m despliega",
+    "pipeline_free": "qwen da las instrucciones -> swe-agente -> otro lfm2.5-350m despliega (sin refactor: FREE no refactoriza, solo despliega)"
+  },
   "cadena_respaldo": [
-    "web-bridge (Space swe-code-web, cuentas web Qwen/DeepSeek, metodos 1+4 / respaldo 2+3)",
+    "web-bridge (proceso en riu-router :7870, cuentas web Qwen/DeepSeek, metodos 1+4 / respaldo 2+3)",
     "rotacion cuentas 5-9 correos dentro del web-bridge",
     "modelos locales cola S1/S2/S3 via model=",
     "apk-movil (ultimo eslabon: Chrome del movil via puente-movil MCP-HTTP)"
   ],
   "endpoints_env": {
-    "WEB_BRIDGE_URL": "URL del Space swe-code-web (Express /v1/chat/completions)",
+    "WEB_BRIDGE_URL": "web-bridge en el servidor Riu (Express /v1/chat/completions)",
     "PUENTE_MOVIL_URL": "URL del puente-movil (POST /mcp, WS /agente)",
     "SWECODE_URL_S1": "Space swe-code-s1",
     "SWECODE_URL_S2": "Space swe-code-s2",
     "SWECODE_URL_S3": "Space swe-code-s3"
   },
   "puente_movil": {
-    "canal": "APK abre WSS saliente a PUENTE_MOVIL_URL/agente (el movil esta tras NAT: el Space no llega, el movil sale)",
+    "canal": "APK abre WSS saliente a PUENTE_MOVIL_URL/agente (el movil esta tras NAT: el servidor no llega, el movil sale)",
     "api_modelos": "MCP-HTTP JSON-RPC en POST /mcp: initialize, tools/list, tools/call",
     "herramientas": ["abrir_url", "leer_pantalla", "escribir", "tap", "atras"]
   }

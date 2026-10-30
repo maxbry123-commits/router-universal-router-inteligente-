@@ -24,7 +24,7 @@ app.get('/health', async (_req, res) => {
 
 app.get('/v1/models', (_req, res) => {
   const base = Object.keys(MODELOS_WEB).map(m => `web-${m}`);
-  const modos = ['revision','solucion','arquitectura','archivos','prompt_code','consulta'].map(m => `swecode-${m}`);
+  const modos = ['revision','solucion','arquitectura','archivos','prompt_code','consulta','despliega'].map(m => `swecode-${m}`);
   res.json({ object: 'list', data: [...base, ...modos].map(id => ({ id, object: 'model' })) });
 });
 

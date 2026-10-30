@@ -13,7 +13,12 @@
       "base_url_env": "SWECODE_URL_S1",
       "t_s_aprox": 40,
       "costo_m_usd": 0.21,
-      "bench": {"t_s_mediana": 36.4, "costo_m_real": 0.23, "code_valido": false, "nota": "salida corrupta en crudo; decide por tool-call via motor"},
+      "bench": {
+        "t_s_mediana": 36.4,
+        "costo_m_real": 0.23,
+        "code_valido": false,
+        "nota": "salida corrupta en crudo; decide por tool-call via motor"
+      },
       "entrada": "objetivo",
       "salida": "code"
     },
@@ -26,7 +31,12 @@
       "base_url_env": "SWECODE_URL_S2",
       "t_s_aprox": 27,
       "costo_m_usd": 0.31,
-      "bench": {"t_s_mediana": 34.8, "costo_m_real": 0.24, "code_valido": "python_ok_en_sample", "nota": "validator marcó false pero el sample trae Python válido"},
+      "bench": {
+        "t_s_mediana": 34.8,
+        "costo_m_real": 0.24,
+        "code_valido": "python_ok_en_sample",
+        "nota": "validator marcó false pero el sample trae Python válido"
+      },
       "entrada": "code",
       "salida": "code_refactor"
     },
@@ -39,7 +49,10 @@
       "base_url_env": "SWECODE_URL_S2",
       "t_s_aprox": 124,
       "costo_m_usd": 0.07,
-      "bench": {"card_hf": "313 t/s AMD CPU, <1GB, tool calling nativo (tokens Pythonic)", "nota": "gen nueva: reemplaza lfm2-350m (no tool_calls); bench t/s y tool_calls PENDIENTE medir en vivo en S2"},
+      "bench": {
+        "card_hf": "313 t/s AMD CPU, <1GB, tool calling nativo (tokens Pythonic)",
+        "nota": "gen nueva: reemplaza lfm2-350m (no tool_calls); bench t/s y tool_calls PENDIENTE medir en vivo en S2"
+      },
       "entrada": "code_refactor",
       "salida": "deploy_result"
     },
@@ -52,12 +65,18 @@
       "base_url_env": "SWECODE_URL_S2",
       "t_s_aprox": 124,
       "costo_m_usd": 0.07,
-      "bench": {"card_hf": "313 t/s AMD CPU, <1GB, tool calling nativo", "nota": "gen nueva; bench pendiente en vivo. Sustituye lfm2-350m (124.3 t/s, $0.07, sin tool_calls)"},
+      "bench": {
+        "card_hf": "313 t/s AMD CPU, <1GB, tool calling nativo",
+        "nota": "gen nueva; bench pendiente en vivo. Sustituye lfm2-350m (124.3 t/s, $0.07, sin tool_calls)"
+      },
       "entrada": "deploy_result",
       "salida": "veredicto_final"
     }
   ],
   "motores": "motores.json",
   "cola_hf": "S1/S2/S3 = slots intercambiables: cualquier Space sirve cualquier modelo via model=, carga bajo demanda desde swe-code-hf-gguf, 1 vivo por Space, unload tras 5min idle, encola al siguiente libre (max 3 vivos)",
-  "regla_fallo": "un paso FAIL detiene la cascada y devuelve recibo del paso fallido"
+  "regla_fallo": "un paso FAIL detiene la cascada y devuelve recibo del paso fallido",
+  "paralelo": "2+ secciones por conv_id (web tabs separadas o slots S1/S2/S3): pipeline_code anota lfm2.5-350m -> qwen2.5-coder-1.5b organiza+refactoriza -> otro lfm2.5-350m despliega; pipeline_free qwen instruye -> swe-agente -> otro lfm2.5-350m despliega (sin refactor)",
+  "espejo": "cualquier modelo se clona en otro conv_id/slot para dividir trabajo: mismo modelo, contexto propio — como el mirror de agentes",
+  "manual": "../SWE CODE free/INSTRUCCIONES.md"
 }

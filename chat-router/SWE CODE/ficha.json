@@ -14,10 +14,27 @@
     "transport": "http",
     "runtime_type": "compute",
     "idempotente": false,
-    "allowed_actions": ["llamar", "escribe", "revisa", "ejecuta", "verifica", "web"]
+    "allowed_actions": [
+      "llamar",
+      "escribe",
+      "revisa",
+      "ejecuta",
+      "verifica",
+      "web",
+      "espejo",
+      "paralelo",
+      "despliega"
+    ]
   },
   "seguridad": {
     "sandbox": "egress-allowlist",
-    "secrets_env": ["WEB_ACCOUNTS", "WEB_PASS", "BRIDGE_PROXY", "SWECODE_URL_S1", "SWECODE_URL_S2", "SWECODE_URL_S3"]
+    "secrets_env": [
+      "WEB_ACCOUNTS",
+      "WEB_PASS",
+      "BRIDGE_PROXY",
+      "SWECODE_URL_S1",
+      "SWECODE_URL_S2",
+      "SWECODE_URL_S3"
+    ]
   }
 }

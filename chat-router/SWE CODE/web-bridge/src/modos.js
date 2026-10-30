@@ -21,6 +21,10 @@ pide el bloque siguiente explicitamente.`,
   consulta: `MODO CONSULTA/PLAN. Analiza la pregunta y el contexto por bloques.
 Entrega plan de accion: pasos ordenados, riesgos, decision abierta si falta
 informacion. Responde preguntas del orquestador con evidencia.`,
+  despliega: `MODO DESPLIEGA. Recibiras instrucciones/artefactos por bloques
+(de qwen-code o del orquestador). En SWE CODE free NO refactorizas:
+solo despliegas lo que te entregan — aplica el cambio, verifica que
+responde, entrega recibo con URL/commit. Si falta algo marca [GAP] exacto.`,
 };
 
 export function modoValido(m) { return Object.hasOwn(MODOS, m); }
