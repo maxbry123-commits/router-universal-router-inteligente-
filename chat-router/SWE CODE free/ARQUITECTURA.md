@@ -31,6 +31,11 @@ Primero Groq (claves del chat; modelo `RIU_SWE_GROQ_MODELO`, por defecto `llama-
 - **Evolución:** `GET /v1/evolucion` lista las mejoras propuestas por lo que el bridge reparó solo (3 repeticiones); OpenClaw las aplica con su propio commit.
 - **Retoma:** el checkpoint guarda la URL de la conversación web; al retomar se reabre esa misma conversación y, si no abre, sigue en un chat nuevo con la tarjeta [RETOMO].
 
+## Sin tocar Hugging Face: encender el Router, claves y actualizaciones
+- **Encender el Router:** la función de Vercel `/api/power` (en `chat/frontend/api/power.js`, ventana «Servidor» del chat) enciende, apaga o reinicia el Space. Necesita en Vercel `RIU_ROUTER_API_KEY` (la clave del chat) y `HF_POWER_TOKEN` o `HF_TOKEN_1`. Un Space dormido también se despierta solo con cualquier petición.
+- **Banco de claves:** el bridge lee las claves de Groq/NVIDIA del banco del Router MVP (solo lectura) y de su banco propio cifrado (`BRIDGE_STATE_DIR/banco-swe.bin`), cada 60 s. Lo que pegas en Configuración se guarda ahí y se publica cifrado en la rama `banco-claves` del repo privado de GitHub (nunca en `main`, así no dispara reinicios). Un Space nuevo lo trae de GitHub al arrancar. Usa `GITHUB_TOKEN`, que el Space ya tiene.
+- **Código al día:** el Router MVP, el bridge y el puente móvil se actualizan solos desde `main` cada 60 s.
+
 ## Respaldo (en este orden)
 1. **Web**: el modelo pedido y luego `qwen38max → qwen37max → dsv4-flash`. Si la sesión cae, `salud()` hace re-login y rota al siguiente correo (misma clave).
 2. **Groq → NVIDIA** (`GROQ_API_KEY`, `NVIDIA_API_KEY` y `*_1..20`; modelos `RIU_SWE_GROQ_MODELO` / `RIU_SWE_NVIDIA_MODELO`, por defecto `meta/llama-3.3-70b-instruct`).
