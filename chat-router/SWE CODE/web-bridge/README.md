@@ -6,9 +6,9 @@ Puente OpenAI-compatible que conduce las cuentas WEB de Qwen y DeepSeek
 ## Flujo
 - `POST /v1/chat/completions` con `model`:
   - `web-dsv4-flash` | `web-qwen37max` | `web-qwen38max` → objetivo directo
-  - `swecode-consulta` / `swecode-plan` → fan-out a los 3 + síntesis Qwen3.8Max
-  - `swecode-revision|solucion|arquitectura|archivos|prompt_code` → objetivo único
-- Entrada grande → bloques `[BLOQUE n/N · MODO X]` (~2500 chars) + `checkpoint.json`
+  - `swecode-consulta` → fan-out a los 3 + síntesis Qwen3.8Max
+  - `swecode-revision|solucion|arquitectura|archivos|prompt_code|despliega|asesoria` → objetivo único
+- Entrada grande → bloques `[BLOQUE n/N · MODO X]` (~2500 chars) + `checkpoints/<conv_id>.json`
   en `BRIDGE_STATE_DIR` (montar dataset permanente) → retoma tras reinicio.
 - Sesión caída → login con cuenta actual; falla → rota al siguiente correo
   (`WEB_ACCOUNTS`, misma `WEB_PASS`). Errores tipados: `SESSION_EXPIRED`,

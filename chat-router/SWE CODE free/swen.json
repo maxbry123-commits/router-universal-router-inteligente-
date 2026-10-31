@@ -44,21 +44,22 @@
         "qwen2.5"
       ]
     },
-    "locales": "lfm2.5-350m y qwen2.5-coder-1.5b salen por cola HF S1/S2/S3 con model= (no por web-bridge)",
+    "locales": "lfm2.5-350m, qwen2.5-coder-1.5b, qwen3.5-0.8b y qwen3-0.6b salen por el bridge a la cola HF (SWECODE_URL_S1..S3, entra por S1 y salta a S2/S3)",
     "documentos": "doc/adjunto <ruta> repetible -> campo documentos del POST; contenido incrustado al prompt (max 100k chars/doc)"
   },
   "paralelo": {
     "secciones": 2,
     "como": "cada chat/seccion = conv_id propio -> tab web propia (BRIDGE_MAX_TABS=4 por sitio) + modelo propio; 2 secciones trabajan por separado al mismo tiempo",
     "espejo": "un modelo se clona a otro conv_id/slot (mismo modelo, contexto aparte) para dividir el trabajo — igual que el mirror de agentes",
-    "pipeline_code": "liquid1 recibe y delega -> liquid2 despliega + liquid1 sigue trabajando en paralelo (no para)",
-    "pipeline_free": "liquid1 recibe y delega -> liquid2 despliega + liquid1 sigue trabajando en paralelo (no para)"
+    "nota_pipelines": "los pipelines CODE/FREE son de SWE CODE (SWE CODE/mini_router.py); el bridge no los ejecuta"
   },
   "cadena_respaldo": [
-    "web-bridge (proceso en riu-router :7870, cuentas web Qwen/DeepSeek, metodos 1+4 / respaldo 2+3)",
-    "rotacion cuentas 5-9 correos dentro del web-bridge",
-    "modelos locales cola S1/S2/S3 via model=",
-    "apk-movil (ultimo eslabon: Chrome del movil via puente-movil MCP-HTTP)"
+    "web-bridge (:7870, cuentas web Qwen/DeepSeek; dentro de la web: modelo pedido, luego qwen38max, qwen37max, dsv4-flash)",
+    "rotacion de correos dentro del bridge (SESSION_EXPIRED: re-login y un reintento)",
+    "Groq (claves del chat Yaiwes)",
+    "NVIDIA (claves del chat Yaiwes)",
+    "modelos locales HF S1/S2/S3 (lfm2.5-350m) via SWECODE_URL_S1..S3",
+    "APK movil: ultimo recurso MANUAL por POST /mcp del puente-movil (el bridge no lo invoca solo)"
   ],
   "endpoints_env": {
     "WEB_BRIDGE_URL": "web-bridge en el servidor Riu (Express /v1/chat/completions)",

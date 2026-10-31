@@ -3,7 +3,7 @@
     "schema": "plugin_host/v1",
     "id": "swen_code_free",
     "enabled_default": true,
-    "nota_roja": "Edificio 2: OpenClaw mirror + apk-movil + puente-movil + activar/6 modos. Solo se activa con 'SWEN CODE free'. Conecta via plugins -> deepseek_harness -> HTTP router. Removible."
+    "nota_roja": "Edificio 2: OpenClaw mirror + apk-movil + puente-movil + activar/8 modos. Solo se activa con 'SWEN CODE free'. Conecta via plugins -> deepseek_harness -> HTTP router. Removible."
   },
   "artifact_id": "riu.plugins.swen_code_free",
   "version": "0.1.0",
@@ -23,6 +23,7 @@
       "prompt_code",
       "consulta",
       "despliega",
+      "asesoria",
       "concilio",
       "espejo",
       "paralelo",
