@@ -20,16 +20,29 @@ function sacaPipeline(resto) {
 }
 
 // nombre hablado -> id de modelo ("consenso" = concilio de los 3 web)
+// El id puede ser un texto fijo o una funcion (coincidencia) -> id, para ids completos escritos tal cual.
+// Orden importa: primero los ids completos (nada de recortar "nvidia" de "nvidia/z-ai/glm-5.3"),
+// luego los alias cortos.
+const idLiteral = (a) => a[0].toLowerCase();
 const MODELOS_ALIAS = [
+  [/^(groq|nvidia)\/[\w.\/-]*\w/i, idLiteral],
+  [/^(lfm2\.5-350m|qwen2\.5-coder-1\.5b|qwen3\.5-0\.8b|qwen3-0\.6b)(?![\w-]|\.\w)/i, idLiteral],
   [/^(concilio|c[oó]ncil|consenso|todos|los\s*3)\b/i, "consenso"],
   [/^(deepseek[- ]?v4[- ]?flash|deepseek[- ]?v4|dsv4[- ]?flash|dsv4|deepseek)\b/i, "web-dsv4-flash"],
   [/^(qwen[- ]?3\.?7[- ]?max|qwen[- ]?3\.?7|qwen37[- ]?max|qwen37)\b/i, "web-qwen37max"],
   [/^(qwen[- ]?3\.?8[- ]?max|qwen[- ]?3\.?8|qwen38[- ]?max|qwen38)\b/i, "web-qwen38max"],
   [/^(lfm2\.?5|liquid|lfm)\b/i, "lfm2.5-350m"],
   [/^(qwen[- ]?code|qwen2\.?5|coder)\b/i, "qwen2.5-coder-1.5b"],
+  [/^qwen[- ]?3\.?5(?![\w.]*\d)\b/i, "qwen3.5-0.8b"],
+  [/^qwen[- ]?3(?![\d.])\b/i, "qwen3-0.6b"],
   [/^groq\b/i, "groq/qwen/qwen3.8-27b"],
+  [/^(muse|glimmer)\b/i, "nvidia/meta/muse-glimmer-30b"],
+  [/^nemotron\b/i, "nvidia/nvidia/nemotron-3-ultra-550b-a55b"],
+  [/^glm(?:[- ]?5\.?3)?\b(?![-.]?\d)/i, "nvidia/z-ai/glm-5.3"],
+  [/^minimax\b/i, "nvidia/minimaxai/minimax-m3.1-flash"],
   [/^nvidia\b/i, "nvidia/minimaxai/minimax-m3.1-flash"],
 ];
+const idDe = (id, a) => (typeof id === "function" ? id(a) : id);
 
 // Quita tildes SIN cambiar la longitud (char a char), para casar contra la version
 // normalizada y cortar el texto original con los mismos indices ("revisión" -> "revision").
@@ -54,7 +67,7 @@ function distancia(a, b) {
 }
 
 // Nombres base de alias, solo para decidir si un "modelo <palabra>" es un alias mal escrito.
-const BASES_ALIAS = ["concilio", "consenso", "deepseek", "nvidia", "liquid", "coder", "qwen", "groq", "lfm"];
+const BASES_ALIAS = ["concilio", "consenso", "deepseek", "nvidia", "liquid", "coder", "qwen", "groq", "lfm", "glimmer", "nemotron", "minimax", "muse", "glm"];
 const parecido = (w, bases, tol) => bases.some((b) => distancia(w, b) <= tol(b));
 
 // Criterio de error (simple): la palabra tras con/solo/modelo que NO es alias se deja en el prompt
@@ -75,7 +88,7 @@ function sacaModelo(resto, yaHayModelo) {
     const cola = sin.slice(m[0].length - m[2].length);
     for (const [re, id] of MODELOS_ALIAS) {
       const a = cola.match(re);
-      if (a) return { modelo: id, resto: resto.slice(m[0].length - m[2].length + a[0].length).trim() };
+      if (a) return { modelo: idDe(id, a), resto: resto.slice(m[0].length - m[2].length + a[0].length).trim() };
     }
     const solo = sin.trim().match(/^modelo\s+(\S+)$/i);
     if (solo && parecido(solo[1].toLowerCase(), BASES_ALIAS, (b) => (b.length >= 6 ? 2 : 1))) return { modelo: null, error: solo[1] };
@@ -89,7 +102,7 @@ function sacaModelo(resto, yaHayModelo) {
     const despues = resto.slice(a[0].length).trim();
     const sig = sin.slice(a[0].length).trim().split(/\s+/)[0].toLowerCase();
     if (!despues || NO_SELECCION.has(sig)) return null;
-    return { modelo: id, resto: despues };
+    return { modelo: idDe(id, a), resto: despues };
   }
   return null;
 }
@@ -136,7 +149,7 @@ function activar(texto) {
     const mod = sacaModelo(resto, !!modelo);
     if (mod) {
       if (mod.error) {
-        return { error: `modelo desconocido: ${mod.error}`, modelos: MODELOS_ALIAS.map(a => a[1]) };
+        return { error: `modelo desconocido: ${mod.error}`, modelos: MODELOS_ALIAS.map(a => a[1]).filter((id) => typeof id === "string") };
       }
       modelo = mod.modelo;
       resto = mod.resto;

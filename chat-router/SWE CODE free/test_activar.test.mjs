@@ -70,3 +70,50 @@ test("API intacta y entradas raras no revientan", () => {
   assert.equal(activar(undefined), null);
   assert.equal(activar(42), null);
 });
+
+test("id completo groq/ nvidia/ se consume entero del prompt, sin elegir otro modelo en silencio", () => {
+  let a = activar(F + "solo nvidia/z-ai/glm-5.3 deploy");
+  assert.deepEqual([a.modelo, a.prompt], ["nvidia/z-ai/glm-5.3", "deploy"]);
+  a = activar(F + "con groq/qwen/qwen3.8-27b arregla api.js");
+  assert.deepEqual([a.modelo, a.prompt], ["groq/qwen/qwen3.8-27b", "arregla api.js"]);
+  a = activar(F + "nvidia/nvidia/nemotron-3-ultra-550b-a55b revisa esto");
+  assert.deepEqual([a.modelo, a.prompt], ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "revisa esto"]);
+  a = activar(F + "modelo nvidia/minimaxai/minimax-m3.1-flash deploy");
+  assert.deepEqual([a.modelo, a.prompt], ["nvidia/minimaxai/minimax-m3.1-flash", "deploy"]);
+  a = activar(F + "solo nvidia/z-ai/glm-5.3");  // sin prompt: el id se consume igual
+  assert.deepEqual([a.modelo, a.prompt], ["nvidia/z-ai/glm-5.3", ""]);
+});
+
+test("id completo de modelo local se consume entero", () => {
+  for (const id of ["lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"]) {
+    const a = activar(F + `solo ${id} deploy`);
+    assert.deepEqual([a.modelo, a.prompt], [id, "deploy"], id);
+  }
+  assert.deepEqual(resumen(F + "lfm2.5-350m revisa esto"), ["consulta", "lfm2.5-350m", "revisa esto"]);
+});
+
+test("alias nuevos: muse/glimmer, nemotron, glm, minimax, qwen3.5, qwen3", () => {
+  const casos = [
+    ["solo muse revisa", "nvidia/meta/muse-glimmer-30b"], ["con glimmer revisa", "nvidia/meta/muse-glimmer-30b"],
+    ["solo nemotron revisa", "nvidia/nvidia/nemotron-3-ultra-550b-a55b"], ["solo glm revisa", "nvidia/z-ai/glm-5.3"],
+    ["solo glm 5.3 revisa", "nvidia/z-ai/glm-5.3"], ["solo minimax revisa", "nvidia/minimaxai/minimax-m3.1-flash"],
+    ["solo qwen3.5 revisa", "qwen3.5-0.8b"], ["solo qwen3 revisa", "qwen3-0.6b"],
+    ["nemotron revisa", "nvidia/nvidia/nemotron-3-ultra-550b-a55b"], ["glm revisa", "nvidia/z-ai/glm-5.3"],
+  ];
+  for (const [t, id] of casos) { const a = activar(F + t); assert.deepEqual([a.modelo, a.prompt], [id, "revisa"], t); }
+  // los alias existentes de qwen no cambian
+  assert.equal(activar(F + "solo qwen3.8 revisa").modelo, "web-qwen38max");
+  assert.equal(activar(F + "solo qwen3.7 revisa").modelo, "web-qwen37max");
+});
+
+test("alias nuevos sin keyword no se comen la frase", () => {
+  assert.equal(activar(F + "glm no responde").prompt, "glm no responde");
+  assert.equal(activar(F + "nemotron falla").prompt, "nemotron falla");
+  assert.equal(activar(F + "nemotron falla").modelo, "consenso");
+});
+
+test("version de glm no registrada no elige glm-5.3 en silencio", () => {
+  const a = activar(F + "solo glm-5.2 deploy");
+  assert.equal(a.modelo, "consenso");
+  assert.equal(a.prompt, "solo glm-5.2 deploy");
+});

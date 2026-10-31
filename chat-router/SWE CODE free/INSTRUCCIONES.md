@@ -18,9 +18,13 @@
 | `qwen 3.8`, `qwen 3.8 max` | `web-qwen38max` |
 | `liquid`, `lfm`, `lfm2.5` | `lfm2.5-350m` (HF local S1..S3, vía bridge) |
 | `coder`, `qwen code`, `qwen2.5` | `qwen2.5-coder-1.5b` (HF local) |
-| `groq` / `nvidia` | `groq/qwen/qwen3.8-27b` / `nvidia/minimaxai/minimax-m3.1-flash` |
+| `groq` / `nvidia` / `minimax` | `groq/qwen/qwen3.8-27b` / `nvidia/minimaxai/minimax-m3.1-flash` (ambos) |
+| `muse`, `glimmer` | `nvidia/meta/muse-glimmer-30b` |
+| `nemotron` | `nvidia/nvidia/nemotron-3-ultra-550b-a55b` |
+| `glm` (`glm 5.3`) | `nvidia/z-ai/glm-5.3` |
+| `qwen3.5` / `qwen3` | `qwen3.5-0.8b` / `qwen3-0.6b` (HF local) |
 
-- También existen `qwen3.5-0.8b` y `qwen3-0.6b` (HF local) como ids directos.
+- Un id completo (`groq/...`, `nvidia/...`, `lfm2.5-350m`, `qwen2.5-coder-1.5b`, `qwen3.5-0.8b`, `qwen3-0.6b`) tiene prioridad sobre los alias y se consume entero del prompt (`solo nvidia/z-ai/glm-5.3 deploy` → modelo `nvidia/z-ai/glm-5.3`, prompt `deploy`).
 - Prefijos aceptados: `con`, `solo`, `modelo`, o el nombre como primera palabra.
 - Sin nombre: `consulta` → concilio; los demás modos → `qwen38max` único. Modo + modelo único: `SWEN CODE free modo solucion solo deepseek v4 <tarea>` → POST con `model: web-dsv4-flash` y `modo: solucion`.
 - Sin modelo, el modo va en el id: `swecode-<modo>`.
