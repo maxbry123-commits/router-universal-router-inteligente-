@@ -18,6 +18,7 @@ import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespal
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo } from './bloques.js';
 import { conFormato } from './formato.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
+import { vigilarActualizacion } from './autoactualizar.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
 
@@ -273,5 +274,8 @@ if (process.env.BRIDGE_AUTORETOMAR === '1') {
 
 // auto-reparacion de cableado de OpenClaw: openclaw.sh borra su home en cada arranque y no recrea el workspace del agente
 if (process.env.OPENCLAW_ENABLE === '1' || process.env.BRIDGE_REPARAR_OPENCLAW === '1') vigilarWorkspace();
+
+// el bridge se actualiza solo cuando llega codigo nuevo de SWE CODE / SWE CODE free (sin reiniciar el Space); BRIDGE_AUTOACTUALIZAR=0 lo apaga
+vigilarActualizacion();
 
 app.listen(PORT, () => console.log(`web-bridge escuchando :${PORT}`));
