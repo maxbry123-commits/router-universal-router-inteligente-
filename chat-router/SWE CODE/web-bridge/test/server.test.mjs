@@ -723,3 +723,31 @@ test('entorno: informa si se uso express real o stub', () => {
   console.log(`# express ${expressReal ? 'real (npm install)' : 'stub'} en ${APP}`);
   assert.ok(servidores.length >= 2);
 });
+
+// ---------- (S) stream:true (OpenClaw/openai-completions pide SSE): sin esto el selector muestra respuesta vacia ----------
+const chatSse = async (srv, body) => {
+  const r = await fetch(srv.base + '/v1/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: 'hola mundo' }], stream: true, ...body }) });
+  const texto = await r.text();
+  const eventos = texto.split('\n\n').map((b) => b.trim()).filter(Boolean).map((b) => b.replace(/^data: /, ''));
+  return { status: r.status, tipo: r.headers.get('content-type') || '', texto, eventos, chunks: eventos.filter((e) => e !== '[DONE]').map((e) => JSON.parse(e)) };
+};
+
+test('S1. stream:true con modelo local devuelve SSE (chat.completion.chunk + [DONE]) con el mismo texto; sin stream sigue el JSON de siempre', async () => {
+  hf.hits.length = 0; hf.status = 200; hf.texto = 'local-en-stream';
+  const r = await chatSse(A, { model: 'qwen2.5-coder-1.5b' });
+  assert.equal(r.status, 200); assert.match(r.tipo, /text\/event-stream/);
+  assert.equal(r.eventos.at(-1), '[DONE]');
+  assert.ok(r.chunks.every((c) => c.object === 'chat.completion.chunk'));
+  assert.equal(r.chunks.map((c) => c.choices[0].delta?.content || '').join(''), 'local-en-stream');
+  assert.equal(r.chunks.at(-1).choices[0].finish_reason, 'stop');
+  assert.equal(r.chunks[0].choices[0].delta.role, 'assistant');
+  assert.equal(hf.hits[0].body.model, 'qwen2.5-coder-1.5b'); assert.ok(!('stream' in hf.hits[0].body), 'el bridge no reenvia stream a la cola HF');
+  const j = await chat(A, { model: 'qwen2.5-coder-1.5b' });
+  assert.match(j.headers.get('content-type'), /application\/json/); assert.equal(j.json.choices[0].message.content, 'local-en-stream');
+});
+
+test('S2. stream:true con un error (400 modelo invalido) sigue siendo JSON de error, no un SSE vacio', async () => {
+  const r = await fetch(A.base + '/v1/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: 'no-existe', stream: true, messages: [{ role: 'user', content: 'x' }] }) });
+  assert.equal(r.status, 400); assert.match(r.headers.get('content-type'), /application\/json/);
+  assert.equal((await r.json()).error.code, 'MODELO_INVALIDO');
+});

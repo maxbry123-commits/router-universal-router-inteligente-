@@ -273,6 +273,15 @@ app.post('/v1/chat/completions', async (req, res) => {
     res.setHeader('x-modelo-usado', usado);
     if (via) res.setHeader('x-via-respaldo', via);
 
+    if (req.body.stream === true) {  // OpenClaw (openai-completions) pide SSE: la respuesta ya esta completa, se emite como chunks estandar + [DONE]
+      const id = `webchat-${Date.now()}`, created = Math.floor(Date.now() / 1000), mod = `swecode:${model}`;
+      const trozo = (delta, finish_reason = null) => `data: ${JSON.stringify({ id, object: 'chat.completion.chunk', created, model: mod, modelo_usado: usado, via_respaldo: via, choices: [{ index: 0, delta, finish_reason }] })}\n\n`;
+      res.status(200).set({ 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-cache', connection: 'keep-alive' });
+      res.write(trozo({ role: 'assistant', content: salida || '' }));
+      if (llamadas.length) res.write(trozo({ tool_calls: llamadas.map((t, i) => ({ index: i, ...t })) }));
+      res.write(trozo({}, fin));
+      return res.end('data: [DONE]\n\n');
+    }
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
       model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo,
