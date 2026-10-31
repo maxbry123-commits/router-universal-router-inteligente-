@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { asegurarWorkspace, vigilarWorkspace, leerConfig, configVigente, vigilarConfig } from "../src/openclaw.js";
+import { asegurarWorkspace, vigilarWorkspace, leerConfig, configVigente, vigilarConfig, espejo, normalizarEjecutor, EJECUTORES_TOOLS } from "../src/openclaw.js";
+import { fileURLToPath } from "node:url";
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "oc-test-"));
 
@@ -117,4 +118,68 @@ test("vigilarConfig: toma la config al arrancar y la mantiene al dia en cada vue
     assert.equal(configVigente({ dir }).provider.modelos[0].id, "nuevo-modelo", "el vigilante la actualizo");
     assert.equal(t.hasRef(), false);
   } finally { clearInterval(t); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ---------- ESPEJO de emergencia: OpenClaw usa las mismas funciones del chat Yaiwes (Router MVP) si la UI de Vercel/Space cae ----------
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");  // chat-router/
+
+test("espejo: sin env usa el Router local 7861 y lista mcp, plugins, almacen, memoria, constitucion y tools", () => {
+  const e = espejo({ env: {} });
+  assert.equal(e.router_url, "http://127.0.0.1:7861"); assert.equal(e.router_url_origen, "defecto");
+  assert.deepEqual(Object.keys(e.endpoints).sort(), ["almacen", "chat", "constitucion", "health", "mcp", "memoria", "plugins", "tools", "ui"]);
+  assert.deepEqual([e.endpoints.mcp.metodo, e.endpoints.mcp.ruta], ["POST", "/mcp"]);
+  assert.equal(e.endpoints.plugins.ruta, "/plugins/{plugin}/call/{accion}");
+  assert.equal(e.endpoints.almacen.ruta, "/almacen");
+  assert.deepEqual(Object.values(e.endpoints.memoria).map((x) => x.ruta).sort(), ["/memoria/load", "/memoria/save", "/memoria/search"]);
+  assert.equal(e.endpoints.constitucion.campo, "constitucion"); assert.equal(e.endpoints.constitucion.ruta, "/chat/send");
+  assert.ok(e.plugins.includes("motor_archivos") && e.plugins.includes("nct_loop") && e.plugins.includes("deepseek_harness"));
+});
+
+test("espejo: RIU_ROUTER_URL manda (sin barra final) y marca el origen env", () => {
+  const e = espejo({ env: { RIU_ROUTER_URL: "https://mi-router.hf.space/" } });
+  assert.equal(e.router_url, "https://mi-router.hf.space"); assert.equal(e.router_url_origen, "env");
+  assert.equal(espejo({ env: { RIU_ROUTER_URL: "   " } }).router_url, "http://127.0.0.1:7861");
+});
+
+test("espejo: auth solo con NOMBRES de cabecera/variables; ningun valor de clave sale jamas", () => {
+  const env = { RIU_API_KEY: "SECRETO-API", RIU_MCP_KEY: "SECRETO-MCP", RIU_ROUTER_API_KEY: "SECRETO-ROUTER", HF_TOKEN: "hf_SECRETO" };
+  const e = espejo({ env }), txt = JSON.stringify(e);
+  assert.equal(e.auth.cabecera, "X-API-Key"); assert.equal(e.auth.alternativa, "Authorization: Bearer"); assert.equal(e.auth.query, "key");
+  assert.ok(e.auth.variables.includes("RIU_API_KEY"));
+  assert.ok(!/SECRETO/.test(txt), "sin valores");
+  assert.deepEqual(e.auth.configuradas, ["RIU_API_KEY", "RIU_MCP_KEY", "RIU_ROUTER_API_KEY"], "solo los nombres de las variables presentes");
+});
+
+test("espejo: el catalogo de tools MCP coincide con las herramientas reales de mcp_route.py (sin deriva)", () => {
+  const src = fs.readFileSync(path.join(REPO, "chat/backend/mvp/mcp_route.py"), "utf8");
+  const reales = [...src.matchAll(/'name': '([a-z_]+)'/g)].map((m) => m[1]);
+  assert.ok(reales.length >= 10);
+  assert.deepEqual([...espejo({ env: {} }).tools.mcp].sort(), [...new Set(reales)].sort());
+});
+
+test("espejo: las rutas declaradas existen en el Router MVP (app.py / memoria.py / mcp_route.py)", () => {
+  const leer = (f) => fs.readFileSync(path.join(REPO, "chat/backend/mvp", f), "utf8");
+  const todo = leer("app.py") + leer("memoria.py") + leer("mcp_route.py");
+  const e = espejo({ env: {} });
+  for (const r of ["/mcp", "/plugins/{plugin}/call/{accion}", "/almacen", "/chat/send", "/health", "/memoria/save", "/memoria/load", "/memoria/search"]) assert.ok(todo.includes(r), r);
+  assert.ok(e.endpoints.ui.ruta.includes("/chat/ui/") && leer("frontend_estatico.py").includes("/chat/ui/{ruta:path}"));
+});
+
+test("ejecutor_tools: solo 'swe' u 'openclaw'; todo lo demas cae a 'swe' (defecto)", () => {
+  assert.deepEqual(EJECUTORES_TOOLS, ["swe", "openclaw"]);
+  assert.equal(normalizarEjecutor("openclaw"), "openclaw"); assert.equal(normalizarEjecutor(" OpenClaw "), "openclaw");
+  for (const v of ["swe", "", undefined, null, 5, "otro", "constructor"]) assert.equal(normalizarEjecutor(v), "swe", String(v));
+  const c = espejo({ env: {} }).ejecutor_tools;
+  assert.deepEqual([c.campo, c.defecto, c.valores], ["ejecutor_tools", "swe", ["swe", "openclaw"]]);
+  assert.equal(c.openclaw.estado, "WAIT_TOOLS");
+});
+
+test("provider-openclaw.json (repo): trae la entrada MCP del Router para OpenClaw, sin valor de clave", () => {
+  const c = leerConfig();  // dir por defecto = SWE CODE free del repo
+  assert.ok(c && c.provider.mcp, "falta provider.mcp");
+  const m = c.provider.mcp;
+  assert.match(m.url, /\/mcp$/); assert.equal(m.cabecera_auth, "X-API-Key"); assert.equal(m.valor_desde_env, "RIU_API_KEY");
+  assert.ok(m.url.includes("${RIU_ROUTER_URL"), "la URL se resuelve con RIU_ROUTER_URL");
+  assert.deepEqual(Object.keys(m).filter((k) => /^(api_key|token|clave|valor)$/.test(k)), []);
+  assert.equal(c.provider.ejecutor_tools.defecto, "swe");
 });
