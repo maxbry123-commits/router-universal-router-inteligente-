@@ -7,7 +7,7 @@ const servidor = (codigo, texto) => new Promise((ok) => {
   const vistos = [];
   const s = http.createServer((req, res) => {
     let d = ""; req.on("data", (c) => d += c); req.on("end", () => {
-      vistos.push({ url: req.url, auth: req.headers.authorization, body: JSON.parse(d) });
+      vistos.push({ url: req.url, auth: req.headers.authorization, body: d ? JSON.parse(d) : null });
       res.writeHead(codigo, { "content-type": "application/json" }); res.end(JSON.stringify({ model: "m", choices: [{ message: { role: "assistant", content: texto } }] }));
     });
   }).listen(0, "127.0.0.1", () => ok({ s, vistos, url: `http://127.0.0.1:${s.address().port}` }));

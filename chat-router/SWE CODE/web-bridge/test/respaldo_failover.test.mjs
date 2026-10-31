@@ -18,6 +18,7 @@ const fake = (handler) => new Promise((listo) => {
       vistos.push(v);
       if (v.url.endsWith("/chat/completions")) { chat.push(v); n++; }
       const r = handler({ ...v, n }) || { status: 404, json: {} };
+      if (r.colgar) return;  // simula timeout: no contesta
       res.writeHead(r.status, { "content-type": "application/json", ...(r.headers || {}) }); res.end(JSON.stringify(r.json ?? {}));
     });
   }).listen(0, "127.0.0.1", () => listo({ s, vistos, chat, url: `http://127.0.0.1:${s.address().port}`, cerrar: () => { s.closeAllConnections?.(); s.close(); } }));
@@ -150,14 +151,12 @@ test("rota entre hasta 20 claves por proveedor ante 402/408/5xx", async () => {
 });
 
 test("timeout por llamada: pasa a la siguiente clave", async () => {
-  const g = await fake(({ n }) => n === 1 ? null : ok("ok2"));
-  // n===1: el servidor responde 404 rapido; para timeout real usamos un servidor que no contesta
-  g.cerrar();
-  const colgado = await new Promise((listo) => { const sockets = new Set(); const s = http.createServer(() => {}); s.on("connection", (k) => sockets.add(k)); s.listen(0, "127.0.0.1", () => listo({ s, url: `http://127.0.0.1:${s.address().port}`, cerrar: () => { sockets.forEach((k) => k.destroy()); s.close(); } })); });
-  Object.assign(BASES, { groq: colgado.url });
+  const g = await fake(({ auth }) => auth === "Bearer gsk-FAKE-1" ? { colgar: true } : ok("ok2"));
+  Object.assign(BASES, { groq: g.url });
   try {
-    await assert.rejects(() => externo("groq/m", msgs, { env: { GROQ_API_KEY: "gsk-FAKE-1", GROQ_API_KEY_2: "gsk-FAKE-2" }, opts: rapido({ timeoutMs: 80 }) }), /EXTERNO_GROQ/);
-  } finally { colgado.cerrar(); }
+    const r = await externo("groq/m", msgs, { env: { GROQ_API_KEY: "gsk-FAKE-1", GROQ_API_KEY_2: "gsk-FAKE-2" }, opts: rapido({ timeoutMs: 80 }) });
+    assert.equal(r.salida, "ok2"); assert.equal(g.chat.length, 2);
+  } finally { g.cerrar(); }
 });
 
 // ---------- failover por proveedor ----------
