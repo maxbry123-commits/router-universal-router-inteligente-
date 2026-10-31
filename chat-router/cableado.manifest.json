@@ -133,7 +133,7 @@
   },
   "chat-router/chat/e2e": {
    "archivos": 23,
-   "sha256": "488dc7421acee538446da56c3c3abc72e3e7ac3f28b9383149787f7e02c92271"
+   "sha256": "e92ad9a29b5ccef92b96f24d3a7e79f808be422857497f4282b211d5e450028f"
   },
   "chat-router/chat/espejo": {
    "archivos": 1,
@@ -141,7 +141,7 @@
   },
   "chat-router/chat/frontend": {
    "archivos": 553,
-   "sha256": "8fc3154724bf7d76bb66bf13b1a59c9ec10e9d0954cc09350e8d21b23cf05d25"
+   "sha256": "7b852d182983e668370de914fcf34a0bb8c4dcce66ecea16d572166ac5c3800a"
   },
   "chat-router/plugins/__init__.py": {
    "archivos": 1,
