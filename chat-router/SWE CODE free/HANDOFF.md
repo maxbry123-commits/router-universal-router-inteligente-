@@ -45,6 +45,8 @@ Dos raíces (`router-mvp/`, `chat-router/`). No se toca el Router MVP. Lo proteg
 - Vercel necesita `RIU_ROUTER_API_KEY` y `HF_POWER_TOKEN` para `/api/power` (encender el Router desde el chat).
 
 ## Pendiente fuera del código (HF / Grok)
+- Doble vía de OpenClaw (config en `GET /v1/openclaw`): el proxy del Space debe reenviar `/web/*` al bridge (el repo no tiene ese proxy; `app.py` del Router MVP no lo hace) y `openclaw.sh` del Space (que borra `$OPENCLAW_HOME`) tampoco está aquí: OpenClaw debe leer `provider-openclaw.json`/`/v1/openclaw` al arrancar, o el `openclaw.sh` hacerlo.
+- El `boot.sh` del Space (copia vieja en `chat/backend/mvp/respaldo_space/`) hace `test -f mvp/run.py` y `python -m mvp.run` desde la raíz del clon; desde que la raíz solo tiene `router-mvp/` y `chat-router/` ese `mvp/` ya no existe ahí (hoy es `router-mvp/mvp`). Confirmar en el Space real que arranca desde `router-mvp/`.
 - Confirmar que el Space lanza el bridge en `:7870` (el código usa `BRIDGE_PORT`, por defecto 7860; el arranque del Space no está en este repo).
 - Ruta `GET /v1/queue` (y las de `/v1/*` que usa el chat) en el proxy del Space; el proxy tampoco está en este repo.
 - Redeploy del Space al último `main`; `BRIDGE_STATE_DIR` en almacenamiento permanente; `HF_TOKEN` y `mvp` importable para la memoria; `puente-movil` como proceso; cuentas web entregadas por OpenClaw; saldo de HF.
