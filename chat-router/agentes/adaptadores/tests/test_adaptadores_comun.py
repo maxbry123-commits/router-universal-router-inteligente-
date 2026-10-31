@@ -99,3 +99,24 @@ def test_recibo_es_hash_de_la_ejecucion_real():
 def test_redactar_oculta_claves():
     assert "[REDACTADO]" in _comun.redactar("token sk-abcdefghijklmnop1234 fin")
     assert "ghp_abcdefghijklm" not in _comun.redactar("x ghp_abcdefghijklmnop y")
+
+
+def test_redactar_cubre_por_valor_las_variables_sensibles_del_entorno(monkeypatch):
+    monkeypatch.setenv("RIU_API_KEY", "valor-secreto-sin-forma-conocida-1")
+    monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "otro-valor-secreto-2")
+    monkeypatch.setenv("GROQ_API_KEY_3", "tercera-clave-groq-ficticia")
+    monkeypatch.setenv("CORTA_KEY", "abc")  # demasiado corta: no se redacta (no destrozar texto normal)
+    monkeypatch.setenv("NO_ES_CREDENCIAL", "valor-normal-largo-123")
+    t = _comun.redactar("salida: valor-secreto-sin-forma-conocida-1 y otro-valor-secreto-2; tercera-clave-groq-ficticia abc valor-normal-largo-123")
+    assert "valor-secreto-sin-forma-conocida-1" not in t and "otro-valor-secreto-2" not in t and "tercera-clave-groq-ficticia" not in t
+    assert t.count("[REDACTADO]") == 3 and "abc" in t and "valor-normal-largo-123" in t
+    assert "[REDACTADO]" in _comun.redactar("gsk_abcdefghijklmnop")  # la forma sigue funcionando
+
+
+def test_error_y_resultado_ok_redactan_por_valor(monkeypatch):
+    monkeypatch.setenv("RIU_API_KEY", "valor-secreto-sin-forma-conocida-1")
+    e = _comun.error("codex", "t-1", "X", "fallo con valor-secreto-sin-forma-conocida-1 dentro")
+    assert "valor-secreto" not in e["error"]
+    proc = {"exit_code": 0, "stdout": "", "stderr": "", "duracion_s": 0, "truncado": False}
+    r = _comun.resultado_ok("codex", "t-1", proc, "texto valor-secreto-sin-forma-conocida-1", [], [], "2026-01-01T00:00:00Z")
+    assert "valor-secreto" not in r["resultado"]

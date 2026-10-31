@@ -9,6 +9,13 @@ from . import _comun
 from .modelos import validar_modelo
 
 AGENTE = "claude-code"
+# Bash NUNCA va sin patron (shell libre): solo comandos acotados de pruebas/lectura. El operador puede ampliar con RIU_CLAUDE_BASH_PERMITIDOS="make test, npm run lint".
+BASH_DEFECTO = ("git status", "git diff", "git log", "git show", "ls", "cat", "pytest", "python -m pytest", "python3 -m pytest", "npm test", "npm run test", "node --test")
+
+
+def _bash_permitidos():
+    extra = [x.strip() for x in os.environ.get("RIU_CLAUDE_BASH_PERMITIDOS", "").split(",") if x.strip() and not x.strip().endswith("*")]
+    return ["Bash(%s:*)" % c for c in list(BASH_DEFECTO) + extra]
 
 
 def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
@@ -26,7 +33,9 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
             return _comun.error(AGENTE, tarea_id, "AGENTE_NO_CONFIGURADO", "falta RIU_CLAUDE_PASARELA_URL y/o RIU_CLAUDE_PASARELA_MODELO (arranca agentes/claude-code/iniciar_claude_code.sh)")
     except _comun.ErrorPrevio as e:
         return e.resultado
-    herramientas = ["Read", "Glob", "Grep"] + (["Edit", "Write"] if p["escritura"] else []) + (["Bash"] if p["ejecucion"] else [])
+    if p["ejecucion"] and not (isinstance(permisos.get("aprobado_por"), str) and permisos["aprobado_por"].strip()):
+        return _comun.error(AGENTE, tarea_id, "APROBACION_REQUERIDA", "ejecutar comandos con Claude Code exige la aprobacion de un operador (permisos.aprobado_por)", False)
+    herramientas = ["Read", "Glob", "Grep"] + (["Edit", "Write"] if p["escritura"] else []) + (_bash_permitidos() if p["ejecucion"] else [])
     modo = "acceptEdits" if p["escritura"] else "plan"
     argv = [exe, "-p", "--output-format", "json", "--no-session-persistence", "--permission-mode", modo, "--allowedTools", ",".join(herramientas)]
     env = _comun.entorno_base({"ANTHROPIC_BASE_URL": url, "ANTHROPIC_AUTH_TOKEN": os.environ.get("RIU_CLAUDE_AUTH_TOKEN", "pasarela-local")})

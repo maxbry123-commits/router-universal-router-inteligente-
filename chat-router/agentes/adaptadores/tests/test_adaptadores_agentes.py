@@ -3,6 +3,7 @@ Cubre camino feliz, argumentos exactos (lista, sin shell), permisos, claves fuer
 AGENTE_NO_INSTALADO (nunca ok:true), salida != 0, timeout, entradas invalidas."""
 import json
 import os
+import re
 import stat
 import sys
 import threading
@@ -264,10 +265,13 @@ def test_claude_code_permisos(monkeypatch, tmp_path):
     cfg_claude(monkeypatch, tmp_path)
     m = {**BASE, "modelo": "nvidia/z-ai/glm-5.3"}
     claude_code.run(permisos=permisos(tmp_path, escritura=True), **m)
-    claude_code.run(permisos=permisos(tmp_path, escritura=True, ejecucion=True), **m)
+    claude_code.run(permisos=permisos(tmp_path, escritura=True, ejecucion=True, aprobado_por="ana"), **m)
     a1, a2 = (c["argv"] for c in llamadas(tmp_path, "claude"))
     assert a1[a1.index("--permission-mode") + 1] == "acceptEdits" and a1[a1.index("--allowedTools") + 1] == "Read,Glob,Grep,Edit,Write"
-    assert a2[a2.index("--allowedTools") + 1] == "Read,Glob,Grep,Edit,Write,Bash"
+    t2 = a2[a2.index("--allowedTools") + 1].split(",")
+    assert t2[:5] == ["Read", "Glob", "Grep", "Edit", "Write"] and "Bash" not in t2, "Bash sin patron = shell libre: no se concede"
+    assert all(x.startswith("Bash(") and x.endswith(")") for x in t2[5:]) and "Bash(git status:*)" in t2 and "Bash(pytest:*)" in t2
+    assert not any(re.search(r"git push|rm |curl|wget|sudo|git:\*|sh:\*|bash:\*", x) for x in t2)
 
 
 def test_claude_code_modelo_incompatible_con_la_pasarela(monkeypatch, tmp_path):
@@ -372,3 +376,72 @@ def test_los_seis_sin_software_devuelven_ok_false(tmp_path):
     for m in mods:
         r = m.run(permisos=permisos(tmp_path), **BASE)
         assert r["ok"] is False and r["recibo"] is None and r["codigo"] in ("AGENTE_NO_INSTALADO", "AGENTE_NO_CONFIGURADO", "MODELO_INCOMPATIBLE"), (m.__name__, r)
+
+
+# ---------------- hallazgos de auditoria: politicas de los adaptadores ----------------
+def test_opencode_deniega_external_directory_siempre(monkeypatch, tmp_path):
+    monkeypatch.setenv("RIU_OPENCODE_BIN", fake(tmp_path, "opencode", OPENCODE_OK))
+    for kw in ({}, {"escritura": True}, {"escritura": True, "ejecucion": True}):
+        opencode.run(permisos=permisos(tmp_path, **kw), **BASE)
+    for c in llamadas(tmp_path, "opencode"):
+        assert json.loads(c["env"]["OPENCODE_CONFIG_CONTENT"])["permission"]["external_directory"] == "deny"
+
+
+def test_claude_code_ejecucion_exige_aprobacion_de_un_operador(monkeypatch, tmp_path):
+    cfg_claude(monkeypatch, tmp_path)
+    m = {**BASE, "modelo": "nvidia/z-ai/glm-5.3"}
+    r = claude_code.run(permisos=permisos(tmp_path, escritura=True, ejecucion=True), **m)
+    assert r["ok"] is False and r["codigo"] == "APROBACION_REQUERIDA" and r["efectos_posibles"] is False and not (tmp_path / "claude.log").exists()
+    r = claude_code.run(permisos=permisos(tmp_path, ejecucion=True, aprobado_por=""), **m)
+    assert r["ok"] is False and r["codigo"] == "APROBACION_REQUERIDA"
+
+
+def test_claude_code_bash_ampliable_solo_por_el_operador_del_entorno(monkeypatch, tmp_path):
+    cfg_claude(monkeypatch, tmp_path)
+    monkeypatch.setenv("RIU_CLAUDE_BASH_PERMITIDOS", "make test, npm run lint")
+    claude_code.run(permisos=permisos(tmp_path, ejecucion=True, aprobado_por="ana"), **{**BASE, "modelo": "nvidia/z-ai/glm-5.3"})
+    a = llamadas(tmp_path, "claude")[0]["argv"]
+    t = a[a.index("--allowedTools") + 1].split(",")
+    assert "Bash(make test:*)" in t and "Bash(npm run lint:*)" in t and "Bash" not in t
+
+
+def test_openclaw_tarea_de_solo_lectura_no_se_ejecuta_porque_el_gateway_no_lo_garantiza(monkeypatch, tmp_path, gateway):
+    monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", CLAVE_FICTICIA)
+    r = openclaw.run(permisos=permisos(tmp_path), **BASE)
+    assert r["ok"] is False and r["codigo"] == "POLITICA_NO_GARANTIZADA" and r["efectos_posibles"] is False and r["recibo"] is None
+    assert Gateway.visto == [], "el Gateway no recibio nada"
+    r = openclaw.run(permisos=permisos(tmp_path, escritura=True), **BASE)  # con escritura/ejecucion aprobadas si corre (las politicas son las del Gateway)
+    assert r["ok"] is True and len(Gateway.visto) == 1
+    r = openclaw.run(permisos=permisos(tmp_path, ejecucion=True), **BASE)
+    assert r["ok"] is True
+
+
+def test_openclaw_solo_lectura_si_el_operador_declara_el_gateway_en_solo_lectura(monkeypatch, tmp_path, gateway):
+    monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", CLAVE_FICTICIA)
+    monkeypatch.setenv("RIU_OPENCLAW_GATEWAY_SOLO_LECTURA", "1")
+    assert openclaw.run(permisos=permisos(tmp_path), **BASE)["ok"] is True
+
+
+def test_openclaw_no_sigue_redirecciones(monkeypatch, tmp_path):
+    monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", CLAVE_FICTICIA)
+    destino_visto = []
+    class Destino(BaseHTTPRequestHandler):
+        def do_POST(self):
+            destino_visto.append(dict(self.headers)); self.send_response(200); self.end_headers(); self.wfile.write(b"{}")
+        def log_message(self, *a): pass
+    d = HTTPServer(("127.0.0.1", 0), Destino)
+    class Redir(BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers["Content-Length"]))
+            self.send_response(307); self.send_header("Location", "http://127.0.0.1:%d/robo" % d.server_port); self.end_headers()
+        def log_message(self, *a): pass
+    o = HTTPServer(("127.0.0.1", 0), Redir)
+    for s in (d, o): threading.Thread(target=s.serve_forever, daemon=True).start()
+    monkeypatch.setenv("RIU_OPENCLAW_URL", "http://127.0.0.1:%d" % o.server_port)
+    try:
+        r = openclaw.run(permisos=permisos(tmp_path, escritura=True), **BASE)
+    finally:
+        for s in (d, o): s.shutdown(); s.server_close()
+    assert r["ok"] is False and r["codigo"] == "REDIRECCION_NO_PERMITIDA" and r["efectos_posibles"] is False
+    assert destino_visto == [], "el token no viajo al destino de la redireccion"
+    assert CLAVE_FICTICIA not in json.dumps(r)

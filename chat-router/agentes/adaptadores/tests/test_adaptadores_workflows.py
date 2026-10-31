@@ -528,3 +528,94 @@ def test_llamar_servidor_url_insegura(monkeypatch):
     monkeypatch.setenv("SWECODE_URL_S3", "https://s3.example.test/v1")
     with pytest.raises(ValueError, match="LIQUID_URL_INVALIDA"):
         wf.llamar_servidor("S2", "lfm2.5-350m", [{"role": "user", "content": "x"}])
+
+
+# ---------- Liquid Mirror: finish_reason=length (handoff truncado NO se confirma) ----------
+def srv_length(mundo, secuencia):
+    """Respuestas del servidor Liquid por llamada: lista de (texto, finish_reason) por servidor."""
+    cuentas = {"S2": 0, "S3": 0}
+    def f(servidor):
+        i = cuentas[servidor]; cuentas[servidor] += 1
+        texto, fin = secuencia[servidor][min(i, len(secuencia[servidor]) - 1)]
+        return {"texto": texto, "servidor": servidor, "url": "https://%s.example.test/v1" % servidor.lower(), "host": "%s.example.test" % servidor.lower(),
+                "modelo_respuesta": "lfm2.5-350m", "finish_reason": fin}
+    mundo.respuesta_servidor = f
+
+
+def test_liquid1_cortado_por_length_pide_continuacion_y_se_une(mundo):
+    c = mundo.ctx(); srv_length(mundo, {"S2": [("parte uno, ", "length"), ("parte dos.", "stop")], "S3": [("plan", "stop")]})
+    wf.swe_iniciar(lm(), c)
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert [s[0] for s in mundo.servidores] == ["S2", "S2"]
+    cont = mundo.servidores[1][2]  # la continuacion lleva lo ya dicho y pide seguir donde se corto
+    assert cont[-2] == {"role": "assistant", "content": "parte uno, "} and "Continua exactamente" in cont[-1]["content"]
+    assert r["pasos_terminados"][0]["resultado"] == "parte uno, parte dos." and not r["pasos_terminados"][0].get("parcial")
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert r["handoff"]["confirmado"] is True and not r["handoff"].get("parcial")
+
+
+def test_liquid1_sigue_cortado_tras_las_continuaciones_handoff_parcial_y_liquid2_no_corre(mundo):
+    c = mundo.ctx(); srv_length(mundo, {"S2": [("corta", "length")], "S3": [("plan", "stop")]})
+    wf.swe_iniciar(lm(), c)
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert 1 < len(mundo.servidores) <= 3 and r["pasos_terminados"][0]["parcial"] is True  # solo 2 continuaciones maximo
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)  # handoff
+    assert r["estado"] == "GAP" and r["error"]["codigo"] == "HANDOFF_PARCIAL"
+    assert r["handoff"]["confirmado"] is False and r["handoff"]["parcial"] is True
+    n = len(mundo.servidores)
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c); r = wf.swe_reanudar({"task_id": "openclaw-001"}, c)
+    assert r["estado"] == "GAP" and r["error"]["codigo"] == "HANDOFF_PARCIAL" and len(mundo.servidores) == n, "ni avanzar ni reanudar ejecutan Liquid 2"
+    assert all(s[0] == "S2" for s in mundo.servidores) and mundo.agentes == []
+    assert estado_guardado(mundo, "openclaw-001")["handoff"]["confirmado"] is False
+
+
+def test_handoff_mas_largo_que_el_tope_tambien_es_parcial_no_se_recorta_en_silencio(mundo):
+    c = mundo.ctx(); srv_length(mundo, {"S2": [("x" * (wf.MAX_TEXTO + 500), "stop")], "S3": [("plan", "stop")]})
+    wf.swe_iniciar(lm(), c)
+    wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert r["estado"] == "GAP" and r["error"]["codigo"] == "HANDOFF_PARCIAL" and r["handoff"]["confirmado"] is False
+    assert [s[0] for s in mundo.servidores] == ["S2"]
+
+
+def test_liquid2_cortado_por_length_no_alimenta_al_agente(mundo):
+    c = mundo.ctx(); srv_length(mundo, {"S2": [("analisis", "stop")], "S3": [("plan a medias", "length")]})
+    wf.swe_iniciar(lm(), c)
+    wf.swe_avanzar({"task_id": "openclaw-001"}, c); wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert r["estado"] == "GAP" and r["error"]["codigo"] == "LIQUID_RESPUESTA_PARCIAL" and r["paso_actual"] == 2 and mundo.agentes == []
+
+
+def test_servidor_sin_finish_reason_se_trata_como_completo(mundo):
+    c = mundo.ctx(); wf.swe_iniciar(lm(), c)  # el doble por defecto no trae finish_reason
+    wf.swe_avanzar({"task_id": "openclaw-001"}, c); r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert r["handoff"]["confirmado"] is True and len(mundo.servidores) == 1
+
+
+def test_llamar_servidor_devuelve_finish_reason(servidores):
+    assert wf.llamar_servidor("S2", "lfm2.5-350m", [{"role": "user", "content": "hola"}])["finish_reason"] == "stop"
+
+
+def test_llamar_servidor_no_sigue_redirecciones(monkeypatch):
+    destino, visto = HTTPServer(("127.0.0.1", 0), Falso), []
+    Falso.visto = visto
+    class Redir(BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers["Content-Length"]))
+            self.send_response(307); self.send_header("Location", "http://127.0.0.1:%d/robo" % destino.server_port); self.end_headers()
+        def log_message(self, *a): pass
+    origen = HTTPServer(("127.0.0.1", 0), Redir)
+    for s in (destino, origen): threading.Thread(target=s.serve_forever, daemon=True).start()
+    monkeypatch.setenv("SWECODE_URL_S2", "http://127.0.0.1:%d/v1" % origen.server_port); monkeypatch.setenv("SWECODE_URL_S3", "https://s3.example.test/v1")
+    try:
+        with pytest.raises(RuntimeError, match="LIQUID_LLAMADA_FALLIDA"):
+            wf.llamar_servidor("S2", "lfm2.5-350m", [{"role": "user", "content": "x"}])
+    finally:
+        for s in (destino, origen): s.shutdown(); s.server_close()
+    assert visto == [], "el destino de la redireccion no recibio la peticion"
+
+
+def test_el_estado_guardado_tambien_se_redacta_por_valor_de_variable_sensible(mundo, monkeypatch):
+    monkeypatch.setenv("RIU_API_KEY", "valor-largo-de-la-clave-del-harness")
+    c = mundo.ctx(); wf.swe_iniciar(contrato(workflow="individual", task_id="ind-9", modo_agentico=False, mensaje="usa valor-largo-de-la-clave-del-harness aqui"), c)
+    assert "valor-largo-de-la-clave-del-harness" not in json.dumps(mundo.almacen)

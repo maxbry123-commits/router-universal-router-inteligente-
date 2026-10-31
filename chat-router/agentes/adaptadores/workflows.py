@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Optional
 from urllib.parse import urlparse
 
-from . import dispatcher
+from . import _comun, dispatcher
 from .contrato import TareaSWE
 from .modelos import validar_modelo
 
@@ -44,6 +44,7 @@ SOLO_LECTURA_GARANTIZADA = {"codex": True, "opencode": True, "claude-code": True
 _TASK_ID = re.compile(r"[A-Za-z0-9_-]{1,64}")
 _OPERADOR = re.compile(r"[A-Za-z0-9_.@-]{2,64}")
 MAX_TEXTO = 8000
+MAX_CONTINUACIONES = 2  # Liquid cortado por finish_reason=length: cuantas veces se le pide seguir antes de marcar el resultado como parcial
 _LOCKS, _LOCKS_G = {}, threading.Lock()
 
 
@@ -85,7 +86,7 @@ def _sha(*partes):
 
 
 def _limpio(ctx, texto, tope=MAX_TEXTO):
-    return ctx.secreto.sub("[REDACTADO]", texto if isinstance(texto, str) else str(texto))[:tope]
+    return _comun.redactar(ctx.secreto.sub("[REDACTADO]", texto if isinstance(texto, str) else str(texto)))[:tope]
 
 
 def _seg(s):
@@ -113,7 +114,7 @@ def _lock(task_id):
 # ---------------- persistencia (siempre por las funciones del Harness) ----------------
 def _guardar(ctx, nombre, texto):
     try:
-        ctx.guardar({"nombre": nombre, "valor": ctx.secreto.sub("[REDACTADO]", texto)})
+        ctx.guardar({"nombre": nombre, "valor": _comun.redactar(ctx.secreto.sub("[REDACTADO]", texto))})
     except Exception as exc:  # noqa: BLE001 - cualquier fallo significa "no quedo guardado"
         raise _Persistencia("PERSISTENCIA_FALLIDA: no se guardo %s (%s)" % (nombre, type(exc).__name__)) from None
 
@@ -186,7 +187,7 @@ def _entrada_agente(reg, paso):
                 "verifica": "Verifica con evidencia real (pruebas, estado del repositorio) que se cumplio la solicitud. Solicitud original: " + m}[paso]
     previos = [p for p in reg["pasos_terminados"] if p.get("resultado")]
     partes = []
-    if reg.get("handoff"):
+    if reg.get("handoff") and reg["handoff"].get("confirmado") is True:  # un handoff parcial/no confirmado nunca llega a un agente
         partes.append("Handoff de Liquid 1 (%s): %s" % (reg["handoff"]["servidor_origen"], reg["handoff"].get("resumen", "")))
     if previos:
         partes.append("Resultado confirmado de '%s': %s" % (previos[-1]["paso"], previos[-1]["resultado"]))
@@ -502,8 +503,25 @@ def _paso_liquid(reg, ctx, idx, p):
     texto = r.get("texto") if isinstance(r, dict) else None
     if not isinstance(texto, str) or not texto.strip() or r.get("servidor") != p["servidor"]:
         return _fallar(ctx, reg, idx, "LIQUID_SIN_RESPUESTA", "el servidor %s no devolvio texto valido" % p["servidor"], True)
+    fin, cont = r.get("finish_reason"), 0
+    while fin == "length" and cont < MAX_CONTINUACIONES:  # cortado por el limite de salida: se pide seguir donde se corto (mismo servidor, nunca otro)
+        cont += 1
+        try:
+            r2 = ctx.servidor_llm(p["servidor"], _id_bridge(p["modelo"]), mensajes + [
+                {"role": "assistant", "content": texto},
+                {"role": "user", "content": "Continua exactamente donde se corto la respuesta anterior, sin repetir texto."}])
+        except Exception:  # noqa: BLE001 - sin efectos: se queda con lo que hay y se marca parcial
+            break
+        t2 = r2.get("texto") if isinstance(r2, dict) else None
+        if not isinstance(t2, str) or not t2.strip() or r2.get("servidor") != p["servidor"]:
+            break
+        texto, fin = texto + t2, r2.get("finish_reason")
+    parcial = fin == "length" or len(texto) > MAX_TEXTO  # truncado por el proveedor o por el tope de almacenamiento: NO es un resultado completo
+    if parcial and p["paso"] == "liquid2":
+        return _fallar(ctx, reg, idx, "LIQUID_RESPUESTA_PARCIAL", "la respuesta de Liquid 2 quedo truncada (finish_reason=length o mas de %d caracteres): no se pasa a ningun agente" % MAX_TEXTO, True)
     recibo = "liquid:%s:%s:%s" % (p["servidor"], r.get("host"), _sha(texto)[:16])
-    _cerrar_paso(ctx, reg, idx, texto, recibo, [], ["servidor:%s" % p["servidor"], "host:%s" % r.get("host"), "modelo_respuesta:%s" % r.get("modelo_respuesta")])
+    _cerrar_paso(ctx, reg, idx, texto, recibo, [], ["servidor:%s" % p["servidor"], "host:%s" % r.get("host"), "modelo_respuesta:%s" % r.get("modelo_respuesta")],
+                 **({"parcial": True} if parcial else {}))
     _guardar_estado(ctx, reg)
     return True
 
@@ -516,6 +534,11 @@ def _paso_handoff(reg, ctx, idx, p):
     sha = _sha(resumen, l1["recibo"])
     h = {"de": "liquid1", "servidor_origen": "S2", "servidor_destino": "S3", "recibo_origen": l1["recibo"], "resumen": resumen, "sha256": sha, "fecha": _ahora(), "confirmado": False}
     ruta = _ruta_handoff(reg["ruta"])
+    if l1.get("parcial"):  # Liquid 1 quedo cortado: el handoff se guarda como PARCIAL, nunca se confirma y Liquid 2 no corre con el
+        h["parcial"] = True
+        _guardar(ctx, ruta, json.dumps(h, ensure_ascii=False))
+        reg["handoff"] = h
+        return _fallar(ctx, reg, idx, "HANDOFF_PARCIAL", "el resultado de Liquid 1 quedo truncado (finish_reason=length o mas de %d caracteres): el handoff es parcial y no se confirma; acorta la solicitud y crea una tarea nueva" % MAX_TEXTO, True)
     _guardar(ctx, ruta, json.dumps(h, ensure_ascii=False))
     releido = json.loads(_leer(ctx, ruta))  # confirmado = guardado Y releido con el mismo contenido
     if _sha(releido.get("resumen"), releido.get("recibo_origen")) != sha:
@@ -545,9 +568,10 @@ def llamar_servidor(servidor, modelo, mensajes, timeout=None):
     req = urllib.request.Request(url + "/chat/completions", method="POST", headers={"Content-Type": "application/json"},
                                  data=json.dumps({"model": modelo, "messages": mensajes, "temperature": 0.2}).encode())
     try:
-        with urllib.request.urlopen(req, timeout=timeout or float(os.environ.get("RIU_SWE_TIMEOUT_S", "130"))) as r:  # noqa: S310 (URL validada arriba)
+        with _comun.abrir(req, timeout or float(os.environ.get("RIU_SWE_TIMEOUT_S", "130"))) as r:  # noqa: S310 (URL validada arriba; sin seguir redirecciones)
             bruto = json.loads(r.read(5_000_000).decode("utf-8", "replace"))
         texto = bruto["choices"][0]["message"]["content"] or ""
+        fin = bruto["choices"][0].get("finish_reason")
     except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
         raise RuntimeError("LIQUID_LLAMADA_FALLIDA %s: %s" % (servidor, type(exc).__name__)) from None
-    return {"texto": texto, "servidor": servidor, "url": url, "host": urlparse(url).netloc, "modelo_respuesta": bruto.get("model") or modelo}
+    return {"texto": texto, "servidor": servidor, "url": url, "host": urlparse(url).netloc, "modelo_respuesta": bruto.get("model") or modelo, "finish_reason": fin}

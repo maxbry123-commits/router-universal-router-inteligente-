@@ -1,7 +1,7 @@
 """Adaptador OpenClaw: Gateway existente (por defecto http://127.0.0.1:18789), API OpenAI-compatible POST /v1/chat/completions con
 Authorization: Bearer <OPENCLAW_GATEWAY_TOKEN> (docs.openclaw.ai/gateway/openai-http-api; hay que habilitar el endpoint en el Gateway).
 Modelo: model "openclaw/default" y cabecera x-openclaw-model "swecode/<id>" (proveedor swecode de SWE CODE free/provider-openclaw.json).
-Gateway inaccesible -> AGENTE_NO_INSTALADO (no hay nada que ejecutar). Las politicas de permisos son las del Gateway."""
+Gateway inaccesible -> AGENTE_NO_INSTALADO (no hay nada que ejecutar). Las politicas de permisos son las del Gateway; una tarea de solo lectura se rechaza (POLITICA_NO_GARANTIZADA) salvo que el operador declare el Gateway en solo lectura. Sin seguir redirecciones."""
 import hashlib
 import json
 import os
@@ -36,6 +36,10 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     token = os.environ.get("OPENCLAW_GATEWAY_TOKEN", "").strip()
     if not token:
         return _comun.error(AGENTE, tarea_id, "AGENTE_NO_CONFIGURADO", "falta OPENCLAW_GATEWAY_TOKEN en el entorno del Harness")
+    if not (p["escritura"] or p["ejecucion"]) and os.environ.get("RIU_OPENCLAW_GATEWAY_SOLO_LECTURA", "").strip() != "1":
+        # El Gateway aplica SUS politicas y este adaptador no puede imponerle solo-lectura: una tarea de lectura no se ejecuta a ciegas.
+        # El operador puede declarar (RIU_OPENCLAW_GATEWAY_SOLO_LECTURA=1) que su Gateway esta configurado sin herramientas de escritura/ejecucion.
+        return _comun.error(AGENTE, tarea_id, "POLITICA_NO_GARANTIZADA", "el Gateway OpenClaw no puede garantizar solo-lectura: la tarea no se ejecuta (usa otro agente, o declara el Gateway en solo lectura con RIU_OPENCLAW_GATEWAY_SOLO_LECTURA=1)", False)
     cfg = validar_modelo(modelo)
     id_bridge = cfg["model"] if cfg["provider"] == "hf" else modelo
     cuerpo = json.dumps({"model": "openclaw/default", "user": "conv:" + tarea_id, "messages": [{"role": "user", "content": p["prompt"]}]}).encode()
@@ -43,10 +47,12 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
         "Content-Type": "application/json", "Authorization": "Bearer " + token, "x-openclaw-model": "swecode/" + id_bridge})
     inicio = _comun.ahora()
     try:
-        with urllib.request.urlopen(req, timeout=_comun.TIMEOUT_S) as r:  # noqa: S310 (URL validada arriba)
+        with _comun.abrir(req, _comun.TIMEOUT_S) as r:  # noqa: S310 (URL validada arriba; sin seguir redirecciones)
             bruto = r.read(_comun.MAX_SALIDA + 1)
             estado = r.status
     except urllib.error.HTTPError as exc:
+        if 300 <= exc.code < 400:
+            return _comun.error(AGENTE, tarea_id, "REDIRECCION_NO_PERMITIDA", "el Gateway respondio una redireccion HTTP %d: no se sigue (el token solo va al host configurado)" % exc.code, False)
         if exc.code in (401, 403, 404):
             return _comun.error(AGENTE, tarea_id, "AGENTE_NO_CONFIGURADO", "el Gateway respondio HTTP %d (token o endpoint chatCompletions no habilitado)" % exc.code)
         return _comun.error(AGENTE, tarea_id, "AGENTE_SALIO_CON_ERROR", "el Gateway respondio HTTP %d" % exc.code, True)

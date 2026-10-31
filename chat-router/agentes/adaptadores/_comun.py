@@ -9,6 +9,7 @@ import signal
 import subprocess
 import tempfile
 import time
+import urllib.request
 from datetime import datetime, timezone
 
 from .modelos import validar_modelo
@@ -35,8 +36,35 @@ class ErrorPrevio(Exception):
         self.resultado = resultado
 
 
+_NOMBRE_SENSIBLE = re.compile(r"(?:KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL)S?(?:_\d+)?$", re.I)
+
+
+def valores_sensibles():
+    """Valores (>= 8 caracteres) de las variables de entorno con nombre de credencial (RIU_API_KEY, *_TOKEN, GROQ_API_KEY_3...), mas largos primero."""
+    vals = {v.strip() for n, v in os.environ.items() if _NOMBRE_SENSIBLE.search(n) and isinstance(v, str) and len(v.strip()) >= 8}
+    return sorted(vals, key=len, reverse=True)
+
+
 def redactar(texto):
-    return _SECRETO.sub("[REDACTADO]", texto if isinstance(texto, str) else str(texto))
+    """Quita credenciales por FORMA (sk-, gsk_, nvapi-...) y por VALOR de las variables sensibles del entorno."""
+    t = _SECRETO.sub("[REDACTADO]", texto if isinstance(texto, str) else str(texto))
+    for v in valores_sensibles():
+        if v in t:
+            t = t.replace(v, "[REDACTADO]")
+    return t
+
+
+class _SinRedireccion(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None  # un 3xx llega como HTTPError: ni la clave ni el cuerpo viajan a otro destino
+
+
+_ABRIDOR = urllib.request.build_opener(_SinRedireccion)
+
+
+def abrir(req, timeout):
+    """urlopen que NO sigue redirecciones (la cabecera Authorization y el cuerpo solo van al host validado)."""
+    return _ABRIDOR.open(req, timeout=timeout)
 
 
 def ahora():

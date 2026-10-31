@@ -26,6 +26,7 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
            "provider": {"riu": {"npm": "@ai-sdk/openai-compatible", "name": "RIU", "options": {"baseURL": ep["base_url"], "apiKey": "{env:RIU_AGENTE_LLM_KEY}"},
                                 "models": {ep["modelo"]: {"name": ep["modelo"]}}}},
            "permission": {"*": "deny", "read": "allow", "glob": "allow", "grep": "allow", "list": "allow",
+                          "external_directory": "deny",  # read/glob/grep/list no salen del directorio de la tarea (permissions.mdx: external_directory)
                           "edit": "allow" if p["escritura"] else "deny", "bash": "allow" if p["ejecucion"] else "deny", "webfetch": "deny"}}
     argv = [exe, "run", "--format", "json", "--dir", p["directorio"], "-m", "riu/" + ep["modelo"], p["prompt"]]
     env = _comun.entorno_base({"RIU_AGENTE_LLM_KEY": ep["api_key"], "OPENCODE_CONFIG_CONTENT": json.dumps(cfg)})
