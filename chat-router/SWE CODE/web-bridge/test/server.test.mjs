@@ -658,7 +658,7 @@ test('CL-4. POST guarda: groq/xxx usa esa clave contra el mock de Groq aunque el
   const sec = 'gsk-PEGADA-DESDE-EL-PANEL';
   groq.hits.length = 0; groq.status = 200; groq.texto = 'con-clave-del-panel';
   const antes = await chat(K, { model: 'groq/xxx' });
-  assert.equal(antes.status, 500, 'sin clave no hay groq'); assert.equal(groq.hits.length, 0);
+  assert.equal(antes.json.via_respaldo, 'hf-local', 'sin clave no hay groq'); assert.equal(groq.hits.length, 0);
   const p = await claves(K, 'POST', { groq: [sec, 'gsk-SEGUNDA-DEL-PANEL'], nvidia: 'nv-PEGADA-DEL-PANEL' });
   assert.equal(p.status, 200); assert.deepEqual(p.json, { ok: true, groq: 2, nvidia: 1, persistido: true });
   const r = await chat(K, { model: 'groq/xxx' });
@@ -675,7 +675,7 @@ test('CL-4. POST guarda: groq/xxx usa esa clave contra el mock de Groq aunque el
   assert.ok(!/PEGADA|SEGUNDA/.test(d.texto));
   assert.ok(fs.readFileSync(path.join(TMP, 'banco-calls.log'), 'utf8').split('\n').includes('borrar'), 'DELETE llama a borrar del banco propio');
   groq.hits.length = 0;
-  assert.equal((await chat(K, { model: 'groq/xxx' })).status, 500, 'tras borrar ya no hay clave');
+  assert.equal((await chat(K, { model: 'groq/xxx' })).json.via_respaldo, 'hf-local', 'tras borrar ya no hay clave');
   assert.equal(groq.hits.length, 0);
   assert.deepEqual((await claves(K, 'GET')).json, { ok: true, groq: 0, nvidia: 0 });
 });

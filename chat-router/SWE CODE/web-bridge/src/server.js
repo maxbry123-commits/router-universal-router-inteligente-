@@ -14,12 +14,12 @@ import { MODELOS_WEB } from './sites.js';
 import crypto from 'node:crypto';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import { vigilarWorkspace } from './openclaw.js';
-import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, setClaves } from './respaldo.js';
+import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, setClaves, limpiarClaves } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo } from './bloques.js';
 import { conFormato } from './formato.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
 import { vigilarActualizacion } from './autoactualizar.js';
-import { cargarDelBanco, guardarEnBanco, vigilarBanco } from './clavesbanco.js';
+import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco } from './clavesbanco.js';
 import { publicarEnGithub, traerDeGithub } from './bancogithub.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
@@ -44,6 +44,15 @@ app.use((req, res, next) => {
   if (!TOKEN || req.path === '/health') return next();
   const h = req.headers, t = String(h.authorization || '').replace(/^Bearer\s+/i, '') || String(h['x-bridge-key'] || '');
   return t && iguales(t, TOKEN) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalido el token del bridge' } });
+});
+// panel de claves del chat (el proxy del Space reenvia /web/* aqui): ademas del BRIDGE_TOKEN exige la clave de acceso del chat en x-api-key
+const ACCESO_VARS = ['RIU_API_KEY', 'RIU_PUBLIC_CHAT_KEY', 'RIU_MCP_KEY', 'RIU_ROUTER_API_KEY'];
+app.use((req, res, next) => {
+  if (req.path !== '/v1/claves') return next();
+  const validas = ACCESO_VARS.map(v => process.env[v]).filter(Boolean);
+  if (!validas.length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (RIU_API_KEY)' } });
+  const k = String(req.headers['x-api-key'] || '');
+  return k && validas.some(v => iguales(k, v)) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key)' } });
 });
 app.use(express.json({ limit: '10mb' }));
 const PORT = process.env.BRIDGE_PORT || 7860;
@@ -118,6 +127,31 @@ app.get('/v1/evolucion', (_req, res) => res.json({ ok: true, propuestas: propone
 app.get('/v1/memoria/:sesion', async (req, res) => {
   if (!process.env.HF_TOKEN) return res.status(503).json({ ok: false, error: { code: 'HF_TOKEN_FALTA', message: 'la memoria compartida necesita HF_TOKEN en el entorno del bridge' } });
   res.json({ ok: true, turnos: await leerTurnos(req.params.sesion) });
+});
+
+// claves de Groq/NVIDIA desde el panel del chat: SOLO conteos en las respuestas, jamas valores
+const conteo = () => { const { groq, nvidia } = estadoRespaldo(); return { groq, nvidia }; };
+const claveOk = (k) => typeof k === 'string' && k.length >= 8 && k.length <= 300 && !/\s/.test(k);
+app.get('/v1/claves', (_req, res) => res.json({ ok: true, ...conteo() }));
+app.post('/v1/claves', async (req, res) => {
+  const b = req.body && typeof req.body === 'object' ? req.body : {}, nuevas = {};
+  for (const prov of ['groq', 'nvidia']) {
+    if (b[prov] === undefined) continue;
+    const lista = Array.isArray(b[prov]) ? b[prov] : [b[prov]];
+    if (lista.length > 20 || !lista.every(claveOk)) return res.status(400).json({ error: { code: 'CLAVE_INVALIDA', message: `${prov}: maximo 20 claves, cada una de 8 a 300 caracteres sin espacios ni saltos de linea` } });
+    nuevas[prov] = b[prov];
+  }
+  if (!Object.keys(nuevas).length) return res.status(400).json({ error: { code: 'CLAVE_INVALIDA', message: 'envia groq y/o nvidia (string o lista de strings)' } });
+  setClaves(nuevas);
+  const persistido = await guardarEnBanco(nuevas).catch(() => false);
+  if (persistido) await publicarEnGithub().catch(() => false);
+  res.json({ ok: true, ...conteo(), persistido });
+});
+app.delete('/v1/claves', async (_req, res) => {
+  limpiarClaves();
+  const persistido = await borrarDelBanco().catch(() => false);
+  if (persistido) await publicarEnGithub().catch(() => false);  // se publica el banco ya vacio
+  res.json({ ok: true, ...conteo(), persistido });
 });
 
 app.get('/v1/models', (_req, res) => {
