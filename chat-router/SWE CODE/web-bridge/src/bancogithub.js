@@ -38,11 +38,12 @@ export async function traerDeGithub({ api = API(), token = process.env.GITHUB_TO
     if (!token || (!forzar && fs.existsSync(local()))) return false;
     const r = await gh(api, token, `/repos/${repo}/contents/${ARCHIVO}?ref=${RAMA}`);
     diagTraer.http = r.status; diagTraer.ts = new Date().toISOString();
+    diagTraer.api = { repo, rama: RAMA, size: r.json.size, sha8: String(r.json.sha || '').slice(0, 8), encoding: r.json.encoding, content_len: String(r.json.content || '').length };  // solo metadatos del archivo remoto, nunca su contenido
     if (!r.ok || !r.json.content) return false;
     fs.mkdirSync(path.dirname(local()), { recursive: true });
     const tmp = `${local()}.tmp-${process.pid}`;  // temporal + rename: sustituye el archivo aunque el existente sea de otro usuario o de solo lectura (copia restaurada de /data)
     try { fs.writeFileSync(tmp, Buffer.from(r.json.content, 'base64'), { mode: 0o600 }); fs.renameSync(tmp, local()); } catch (e) { try { fs.unlinkSync(tmp); } catch { /* ya no esta */ } throw e; }
-    diagTraer.escrito = true; diagTraer.error = null;
+    diagTraer.escrito = true; diagTraer.error = null; try { diagTraer.escrito_bytes = fs.statSync(local()).size; diagTraer.marca = fs.readFileSync(local()).subarray(0, 5).toString('latin1').replace(/[^\x20-\x7e]/g, '?'); } catch { /* solo diagnostico */ }
     return true;
   } catch (e) { diagTraer.escrito = false; diagTraer.error = String(e && (e.code || e.name) || 'x').slice(0, 40); return false; }
 }
