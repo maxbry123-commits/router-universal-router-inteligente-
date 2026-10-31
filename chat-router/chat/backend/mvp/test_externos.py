@@ -60,13 +60,13 @@ class TestExternos(Base):
 
     def _swe(self, d, **claves):  # banco compartido temporal (como el del web-bridge) y entorno aislado de claves
         from mvp import bank
-        b = bank.abrir(d + "/banco-swe.bin", "acceso-swe")
+        b = bank.abrir(d + "/banco-swe.bin", "api-ficticia")
         for n, v in claves.items():
             b.guardar(n, v)
         externos._SWE.clear()
         return d + "/banco-swe.bin"
 
-    def _entorno(self, ruta, acceso="acceso-swe"):
+    def _entorno(self, ruta, acceso="api-ficticia"):
         limpio = {k: "" for k in os.environ if k.startswith(("GROQ_API_KEY", "NVIDIA_API_KEY"))}
         acc = {k: "" for k in ("RIU_API_KEY", "RIU_PUBLIC_CHAT_KEY", "RIU_MCP_KEY", "RIU_ROUTER_API_KEY")}
         return patch.dict(os.environ, {**limpio, **acc, "RIU_BANCO_SWE": ruta, **({"RIU_API_KEY": acceso} if acceso else {})})
@@ -120,7 +120,7 @@ class TestExternos(Base):
                 for _ in range(3):
                     self.assertEqual(externos.claves("groq", None), ["gsk-1"])
                 self.assertEqual(ab.call_count, 1)  # no cambio: no se reabre
-                b = real(ruta, "acceso-swe"); b.guardar("GROQ_API_KEY_1", "gsk-2")  # cambia el archivo
+                b = real(ruta, "api-ficticia"); b.guardar("GROQ_API_KEY_1", "gsk-2")  # cambia el archivo
                 self.assertEqual(externos.claves("groq", None), ["gsk-1", "gsk-2"])
                 self.assertEqual(ab.call_count, 2)
 

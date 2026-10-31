@@ -42,12 +42,18 @@ def proveedor(modelo):
 
 
 def claves(prov, banco=None):
-    """Todas las claves del proveedor, en orden: banco (GROQ_API_KEY, GROQ_API_KEY_1..n) y luego el entorno; sin repetir."""
-    var, out, swe = PROVEEDORES[prov]["var"], [], _banco_compartido()
-    for n in [var] + [var + "_" + str(i) for i in range(1, 21)]:
-        for v in ((banco.leer(n) if banco else None), os.environ.get(n), (swe.leer(n) if swe else None)):
+    """Todas las claves del proveedor, en orden: banco (GROQ_API_KEY, GROQ_API_KEY_1..n) y luego el entorno; al final el banco compartido del web-bridge; sin repetir."""
+    var, out = PROVEEDORES[prov]["var"], []
+    nombres = [var] + [var + "_" + str(i) for i in range(1, 21)]
+    for n in nombres:
+        for v in ((banco.leer(n) if banco else None), os.environ.get(n)):
             if v and v not in out:
                 out.append(v)
+    swe = _banco_compartido()  # al final: las claves que el usuario pego en el chat del web-bridge
+    for n in nombres if swe else ():
+        v = swe.leer(n)
+        if v and v not in out:
+            out.append(v)
     return out
 
 

@@ -75,7 +75,7 @@ function express() {
     res.statusCode = 404; res.end('not found');
   };
   app.use = (fn) => mws.push(fn);
-  for (const m of ['get', 'post']) app[m] = (ruta, fn) => rutas.push({ metodo: m.toUpperCase(), ruta, fn });
+  for (const m of ['get', 'post', 'delete']) app[m] = (ruta, fn) => rutas.push({ metodo: m.toUpperCase(), ruta, fn });
   app.listen = (port, cb) => { const s = http.createServer(app).listen(port, cb); return s; };
   return app;
 }
@@ -168,7 +168,8 @@ const lecciones = (srv) => { try { return fs.readFileSync(path.join(srv.state, '
 const esperar = async (fn, ms = 4000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 50)); } return null; };
 
 // ---------- fixtures ----------
-let groq, nvidia, hf, A, C, T, expressReal;
+let groq, nvidia, hf, A, C, T, K, expressReal;
+const ACCESO = 'clave-de-acceso-del-chat';
 const FORMATO = 'FORMATO-DE-SALIDA-DE-PRUEBA: usa listas cortas y bloques de codigo con lenguaje.';
 
 before(async () => {
@@ -186,6 +187,11 @@ before(async () => {
   // C: sin cuentas (WEB_ACCOUNTS/WEB_PASS ausentes)
   C = await arrancar('C', comun);
   // T: con token de acceso (BRIDGE_TOKEN)
+  // K: panel de claves del chat: sin claves de Groq/NVIDIA en el entorno, con clave de acceso y un helper de banco falso
+  const bancoLog = path.join(TMP, 'banco-calls.log');
+  fs.writeFileSync(path.join(TMP, 'fake-banco.sh'), `#!/bin/sh\necho "$1" >> "${bancoLog}"\nif [ "$1" = "leer" ]; then echo '{"groq": [], "nvidia": []}'; elif [ "$1" = "guardar" ]; then cat > "${path.join(TMP, 'banco-guardado.json')}"; echo '{"ok": true}'; else echo '{"ok": true}'; fi\n`, { mode: 0o755 });
+  const { GROQ_API_KEY: _g, GROQ_API_KEY_2: _g2, NVIDIA_API_KEY: _n, ...sinClaves } = comun;
+  K = await arrancar('K', { ...sinClaves, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', RIU_API_KEY: ACCESO, RIU_CLAVES_CMD: path.join(TMP, 'fake-banco.sh') });
   T = await arrancar('T', { ...comun, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', BRIDGE_TOKEN: 'tok-prueba' });
 });
 
@@ -614,6 +620,79 @@ test('A1-F1b. BRIDGE_AUTORETOMAR=1: al arrancar retoma solo las secciones a medi
   let les = '';
   for (let i = 0; i < 20 && !/REINICIO/.test(les); i++) { await new Promise((ok) => setTimeout(ok, 200)); try { les = fs.readFileSync(path.join(estado, 'evolucion', 'lecciones.jsonl'), 'utf8'); } catch { /* aun no */ } }
   assert.match(les, /"codigo":"REINICIO"[^\n]*"resultado":"PASS"/); void R;
+});
+
+// ---------- panel de claves del chat: /v1/claves ----------
+const claves = async (srv, metodo, body, clave = ACCESO) => {
+  const r = await fetch(srv.base + '/v1/claves', { method: metodo, headers: { 'content-type': 'application/json', ...(clave ? { 'x-api-key': clave } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
+  return { status: r.status, texto: await r.clone().text(), json: await r.json().catch(() => null) };
+};
+
+test('CL-1. sin ninguna clave de acceso configurada en el bridge -> 503 SIN_CLAVE_DE_ACCESO (tambien con BRIDGE_TOKEN valido)', async () => {
+  for (const m of ['GET', 'POST', 'DELETE']) {
+    const r = await claves(C, m, m === 'POST' ? { groq: 'gsk-abcdefgh' } : undefined);
+    assert.equal(r.status, 503); assert.equal(r.json.error.code, 'SIN_CLAVE_DE_ACCESO');
+  }
+  const t = await fetch(T.base + '/v1/claves', { headers: { authorization: 'Bearer tok-prueba', 'x-api-key': 'lo-que-sea' } });
+  assert.equal(t.status, 503);
+  assert.equal((await fetch(T.base + '/v1/claves', { headers: { 'x-api-key': 'lo-que-sea' } })).status, 401, 'BRIDGE_TOKEN sigue mandando primero');
+});
+
+test('CL-2. sin x-api-key o incorrecta -> 401 NO_AUTORIZADO y no cambia nada', async () => {
+  for (const m of ['GET', 'POST', 'DELETE']) {
+    for (const k of ['', 'incorrecta', ACCESO + 'x', ACCESO.slice(1)]) {
+      const r = await claves(K, m, m === 'POST' ? { groq: 'gsk-no-debe-entrar' } : undefined, k);
+      assert.equal(r.status, 401, `${m} con "${k}"`); assert.equal(r.json.error.code, 'NO_AUTORIZADO');
+    }
+  }
+  assert.deepEqual((await claves(K, 'GET')).json, { ok: true, groq: 0, nvidia: 0 });
+});
+
+test('CL-3. se aceptan tambien RIU_PUBLIC_CHAT_KEY / RIU_MCP_KEY / RIU_ROUTER_API_KEY', async () => {
+  const P = await arrancar('P', { WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', RIU_PUBLIC_CHAT_KEY: 'publica-1234', RIU_MCP_KEY: 'mcp-1234', RIU_ROUTER_API_KEY: 'router-1234', RIU_CLAVES_CMD: path.join(TMP, 'fake-banco.sh') });
+  for (const k of ['publica-1234', 'mcp-1234', 'router-1234']) assert.equal((await claves(P, 'GET', undefined, k)).status, 200, k);
+  assert.equal((await claves(P, 'GET', undefined, 'otra-cosa')).status, 401);
+});
+
+test('CL-4. POST guarda: groq/xxx usa esa clave contra el mock de Groq aunque el entorno no tenga ninguna; GET/POST/DELETE solo devuelven conteos', async () => {
+  const sec = 'gsk-PEGADA-DESDE-EL-PANEL';
+  groq.hits.length = 0; groq.status = 200; groq.texto = 'con-clave-del-panel';
+  const antes = await chat(K, { model: 'groq/xxx' });
+  assert.equal(antes.status, 500, 'sin clave no hay groq'); assert.equal(groq.hits.length, 0);
+  const p = await claves(K, 'POST', { groq: [sec, 'gsk-SEGUNDA-DEL-PANEL'], nvidia: 'nv-PEGADA-DEL-PANEL' });
+  assert.equal(p.status, 200); assert.deepEqual(p.json, { ok: true, groq: 2, nvidia: 1, persistido: true });
+  const r = await chat(K, { model: 'groq/xxx' });
+  assert.equal(r.status, 200); assert.equal(r.json.choices[0].message.content, 'con-clave-del-panel');
+  assert.equal(groq.hits[0].auth, 'Bearer ' + sec);
+  const g = await claves(K, 'GET'); assert.deepEqual(g.json, { ok: true, groq: 2, nvidia: 1 });
+  const guardado = await esperar(() => { try { return fs.readFileSync(path.join(TMP, 'banco-guardado.json'), 'utf8'); } catch { return null; } });
+  assert.deepEqual(JSON.parse(guardado), { groq: [sec, 'gsk-SEGUNDA-DEL-PANEL'], nvidia: 'nv-PEGADA-DEL-PANEL' }, 'se guarda en el banco propio via el helper');
+  const h = await get(K, '/health'); assert.equal(h.json.respaldo.groq, 2);
+  for (const t of [p.texto, g.texto]) { assert.ok(!/PEGADA|SEGUNDA/.test(t), 'jamas valores'); }
+  assert.ok(!/PEGADA|SEGUNDA/.test(K.log()), 'no se loguean valores');
+  const d = await claves(K, 'DELETE');
+  assert.equal(d.status, 200); assert.deepEqual(d.json, { ok: true, groq: 0, nvidia: 0, persistido: true });
+  assert.ok(!/PEGADA|SEGUNDA/.test(d.texto));
+  assert.ok(fs.readFileSync(path.join(TMP, 'banco-calls.log'), 'utf8').split('\n').includes('borrar'), 'DELETE llama a borrar del banco propio');
+  groq.hits.length = 0;
+  assert.equal((await chat(K, { model: 'groq/xxx' })).status, 500, 'tras borrar ya no hay clave');
+  assert.equal(groq.hits.length, 0);
+  assert.deepEqual((await claves(K, 'GET')).json, { ok: true, groq: 0, nvidia: 0 });
+});
+
+test('CL-5. POST valida: maximo 20 por proveedor, string de 8 a 300 sin espacios ni saltos -> 400 CLAVE_INVALIDA sin repetir el valor', async () => {
+  const malos = [
+    { groq: 'corta' }, { groq: ['bien-larga-1', 'con espacio dentro'] }, { nvidia: 'con\nsalto-de-linea' }, { groq: 'x'.repeat(301) },
+    { groq: Array.from({ length: 21 }, (_, i) => `gsk-valida-${i}`) }, { groq: [123456789] }, { groq: { a: 'b' } }, {}, { groq: 'tab\tdentro-1234' },
+  ];
+  for (const b of malos) {
+    const r = await claves(K, 'POST', b);
+    assert.equal(r.status, 400, JSON.stringify(b).slice(0, 60)); assert.equal(r.json.error.code, 'CLAVE_INVALIDA');
+    assert.ok(!/con espacio dentro|salto-de-linea|tab/.test(r.texto), 'no repite el valor');
+  }
+  assert.equal((await claves(K, 'POST', { groq: Array.from({ length: 20 }, (_, i) => `gsk-valida-${i}`) })).json.groq, 20, '20 es el maximo valido');
+  assert.equal((await claves(K, 'POST', { groq: 'x'.repeat(300), nvidia: 'y'.repeat(8) })).status, 200);
+  await claves(K, 'DELETE');
 });
 
 test('entorno: informa si se uso express real o stub', () => {

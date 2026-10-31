@@ -33,7 +33,7 @@ function servirFrontend() {
 
 // ---- Router simulado (se engancha con page.route sobre el origen del Router) ----
 function routerFalso(estado) {
-  const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'GET,POST,OPTIONS' };
+  const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS' };
   const json = (route, obj, status = 200) => route.fulfill({ status, headers: { ...CORS, 'content-type': 'application/json' }, body: JSON.stringify(obj) });
   return async (route) => {
     const req = route.request(); const u = new URL(req.url()); const p = u.pathname;
@@ -44,6 +44,14 @@ function routerFalso(estado) {
       if (estado.catalogoFalla) return json(route, { detail: 'caido' }, 500);
       // catalogo del Router MVP: SIN ningun modelo SWE; 'zz-modelo-mock' prueba que se cargo este catalogo y no el de respaldo
       return json(route, { models: [{ model_id: 'qwen3.8-max', tipo: 'texto' }, { model_id: 'glm-5.2', tipo: 'texto' }, { model_id: 'deepseek-v4-pro', tipo: 'texto' }, { model_id: 'zz-modelo-mock', tipo: 'texto' }] });
+    }
+    if (p === '/web/v1/claves') {  // banco de claves del bridge (simulado): solo devuelve conteos
+      const cnt = (v) => (Array.isArray(v) ? v.length : v ? 1 : 0); const b = estado.banco || (estado.banco = { groq: 0, nvidia: 0 });
+      if (estado.bancoCaido) return json(route, { detail: 'caido' }, 502);
+      if (req.headers()['x-api-key'] !== 'api-e2e') return json(route, { error: { code: 'NO_AUTORIZADO' } }, 401);
+      if (req.method() === 'POST') { if (body && body.groq) b.groq = cnt(body.groq); if (body && body.nvidia) b.nvidia = cnt(body.nvidia); }
+      if (req.method() === 'DELETE') { b.groq = 0; b.nvidia = 0; }
+      return json(route, { ok: true, groq: b.groq, nvidia: b.nvidia });
     }
     if (p === '/chat/providers') return json(route, { providers: [{ id: 'qwen', nombre: 'Qwen', estado: 'ok' }] });
     if (p === '/v1/chat/completions' && req.method() === 'POST') {
@@ -162,23 +170,49 @@ async function enviar(p, texto) {
     ok('C4 sin claves guardadas el POST no incluye `claves`', rSin === 'respuesta SWE de prueba' && cSin && !('claves' in cSin.body), JSON.stringify(cSin && cSin.body).slice(0, 200));
     await p.$eval('[data-view="apariencia"]', (e) => e.click());
     await p.waitForSelector('#ap-clave-groq', { state: 'attached', timeout: 10000 });
+    const estTxt = (re) => p.waitForFunction((src) => new RegExp(src).test((document.querySelector('#ap-clave-estado') || {}).textContent || ''), re.source, { timeout: 10000 });
+    await estTxt(/Sin claves guardadas en el servidor/);
+    const gets = estA.llamadas.filter((l) => l.ruta === '/web/v1/claves' && l.metodo === 'GET');
+    ok('C4 al abrir Configuracion se hace GET /web/v1/claves con X-API-Key y se muestra el estado', gets.length >= 1 && gets[0].clave === 'api-e2e');
     await p.fill('#ap-clave-groq', '  ' + KEY + '  ');
     await p.$eval('#ap-clave-guardar', (e) => e.click());
+    await estTxt(/Groq: 1 guardada/);
     const tras = await p.evaluate(() => ({ g: document.querySelector('#ap-clave-groq').value, n: document.querySelector('#ap-clave-nvidia').value, est: document.querySelector('#ap-clave-estado').textContent, ls: localStorage.getItem('riu_swe_claves') }));
-    ok('C4 tras guardar los inputs quedan vacios y dice "Groq: guardada" sin mostrar el valor', tras.g === '' && tras.n === '' && /Groq: guardada/.test(tras.est) && !tras.est.includes(KEY), JSON.stringify(tras.est));
-    ok('C4 localStorage riu_swe_claves guarda la clave recortada', JSON.parse(tras.ls || '{}').groq === KEY, tras.ls);
+    const post = estA.llamadas.filter((l) => l.ruta === '/web/v1/claves' && l.metodo === 'POST');
+    ok('C4 Guardar hace POST /web/v1/claves con la clave recortada y X-API-Key', post.length === 1 && post[0].body.groq === KEY && post[0].clave === 'api-e2e', JSON.stringify(post.map((l) => l.body)).replace(KEY, '***'));
+    ok('C4 tras guardar los inputs quedan vacios y dice "Groq: 1 guardada" sin mostrar el valor', tras.g === '' && tras.n === '' && /Groq: 1 guardada/.test(tras.est) && !tras.est.includes(KEY), JSON.stringify(tras.est));
+    ok('C4 con el banco del servidor NO queda copia en localStorage', tras.ls === null, 'ls presente');
     await p.$eval('[data-view="chat"]', (e) => e.click()); await p.waitForTimeout(300);
     estA.llamadas.length = 0;
-    const rCon = await enviar(p, 'con claves');
+    const rCon = await enviar(p, 'con banco');
     const cCon = estA.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
-    ok('C4 el siguiente envio SWE incluye claves.groq en el POST a /v1/chat/completions', rCon === 'respuesta SWE de prueba' && cCon && cCon.body.claves && cCon.body.claves.groq === KEY && !('nvidia' in cCon.body.claves), JSON.stringify(cCon && cCon.body.claves));
-    const dom = await p.evaluate(() => document.documentElement.innerText + '\n' + [...document.querySelectorAll('input,textarea')].map((e) => e.value).join('\n') + '\n' + [...document.querySelectorAll('.chat-history *')].map((e) => e.outerHTML).slice(0, 1).join(''));
+    ok('C4 el envio SWE no lleva `claves` en el cuerpo (las pone el servidor)', rCon === 'respuesta SWE de prueba' && cCon && !('claves' in cCon.body), JSON.stringify(cCon && Object.keys(cCon.body)));
+    const dom = await p.evaluate(() => document.documentElement.innerText + '\n' + [...document.querySelectorAll('input,textarea')].map((e) => e.value).join('\n'));
     const histHtml = await p.evaluate(() => (document.querySelector('.chat-history') || {}).innerHTML || '');
     ok('C4 el valor de la clave NO aparece en el DOM del chat', !dom.includes(KEY) && !histHtml.includes(KEY));
     await p.$eval('[data-view="apariencia"]', (e) => e.click());
     await p.waitForSelector('#ap-clave-borrar', { state: 'attached', timeout: 10000 });
     await p.$eval('#ap-clave-borrar', (e) => e.click());
-    ok('C4 Borrar elimina las claves de localStorage', await p.evaluate(() => localStorage.getItem('riu_swe_claves') === null));
+    await estTxt(/Claves borradas/);
+    ok('C4 Borrar hace DELETE /web/v1/claves', estA.llamadas.some((l) => l.ruta === '/web/v1/claves' && l.metodo === 'DELETE') && estA.banco.groq === 0);
+    // servidor del banco caido (502): respaldo en localStorage, lo dice, y entonces el envio SWE si lleva `claves`
+    estA.bancoCaido = true;
+    await p.fill('#ap-clave-groq', KEY);
+    await p.$eval('#ap-clave-guardar', (e) => e.click());
+    await estTxt(/guardada solo en este navegador/);
+    const resp = await p.evaluate(() => ({ est: document.querySelector('#ap-clave-estado').textContent, ls: localStorage.getItem('riu_swe_claves') }));
+    ok('C4 banco caido: respaldo en localStorage y el estado lo dice sin mostrar el valor', JSON.parse(resp.ls || '{}').groq === KEY && !resp.est.includes(KEY), resp.est);
+    await p.$eval('[data-view="chat"]', (e) => e.click()); await p.waitForTimeout(300);
+    estA.llamadas.length = 0;
+    await enviar(p, 'con respaldo');
+    const cRes = estA.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
+    ok('C4 con el respaldo local el envio SWE incluye claves.groq', cRes && cRes.body.claves && cRes.body.claves.groq === KEY);
+    await p.$eval('[data-view="apariencia"]', (e) => e.click());
+    await p.waitForSelector('#ap-clave-borrar', { state: 'attached', timeout: 10000 });
+    await p.$eval('#ap-clave-borrar', (e) => e.click());
+    await estTxt(/Claves borradas/);
+    ok('C4 Borrar elimina el respaldo de localStorage', await p.evaluate(() => localStorage.getItem('riu_swe_claves') === null));
+    estA.bancoCaido = false;
     ok('A-C sin errores JS en la pagina', p.errs.length === 0, p.errs.join(' | '));
     await p.context().close();
 
