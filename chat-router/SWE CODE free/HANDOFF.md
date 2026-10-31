@@ -91,3 +91,9 @@ Dos raíces (`router-mvp/`, `chat-router/`). No se toca el Router MVP. Lo proteg
 - Ruta `GET /v1/queue` (y las de `/v1/*` que usa el chat) en el proxy del Space; el proxy tampoco está en este repo.
 - Redeploy del Space al último `main`; `BRIDGE_STATE_DIR` en almacenamiento permanente; `HF_TOKEN` y `mvp` importable para la memoria; `puente-movil` como proceso; cuentas web entregadas por OpenClaw; saldo de HF.
 - Desde el chat Yaiwes (`swe-directo.js`) y el Harness no viajan `cuentas`/`clave`: los modelos `web-*` desde ahí solo funcionan si OpenClaw ya las inyectó en el proceso o están en el entorno; si no, responde el respaldo.
+
+## Banco de claves: cómo llega al Space (verificado en vivo)
+- El banco cifrado vive en la rama `banco-claves` (archivo `banco-swe.bin`, marca `MVPB1`). El bridge lo trae al arrancar y cada 60 s si el local no existe o no abre.
+- La API de contenidos de GitHub, vista desde el Space, devolvía el binario recodificado (1357 → 2036 bytes) tanto en JSON/base64 como en crudo; por eso `bancogithub.js` valida `MVPB1` y el tamaño y, si no coincide, lo toma por `git fetch` (binario intacto).
+- Diagnóstico sin valores: `GET /web/health` (con `x-api-key` da el detalle `banco.*`): `respaldo.groq/nvidia` son los conteos cargados.
+- La clave de acceso con la que se cifra debe ser una de `RIU_API_KEY`, `RIU_PUBLIC_CHAT_KEY`, `RIU_MCP_KEY`, `RIU_ROUTER_API_KEY` (el bridge y el Router prueban todas).
