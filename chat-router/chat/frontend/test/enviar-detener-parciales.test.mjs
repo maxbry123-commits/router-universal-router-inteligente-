@@ -38,7 +38,7 @@ const textos = () => c.hist.children.map((x) => x.textContent || "").join("\n");
 test.beforeEach(() => { S.olvidarCapacidades(); datos.clear(); });
 
 test("Detener a mitad de una tarea SWE: no se llama a avanzar hasta 24 veces; la senal de la peticion queda abortada", async () => {
-  S.guardarSeleccion({ workflow: "swe_code" });
+  S.guardarSeleccion({ workflow: "swe_code", modo_agentico: true });
   alAvanzar = (n) => { if (n === 2) { c.detenerFlag = true; c.detenerFn(); } };  // lo mismo que hace el boton Detener (panel-chat.js)
   await enviar("Revisar proyecto");
   const avances = llamadas.filter((l) => l.ruta === "/chat/swe/avanzar");

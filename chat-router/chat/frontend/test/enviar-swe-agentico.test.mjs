@@ -43,7 +43,7 @@ test("individual + agentico OFF: camino de hoy (bridge), sin tocar /chat/swe/*",
 });
 
 test("workflow SWE CODE: el contrato TareaSWE va a /chat/swe/iniciar y avanza; el resultado y la evidencia vuelven al mismo chat; no pasa por el bridge", async () => {
-  S.guardarSeleccion({ workflow: "swe_code" });
+  S.guardarSeleccion({ workflow: "swe_code", modo_agentico: true });
   await enviar("Revisar proyecto");
   const rutas = llamadas.map((l) => l.ruta);
   assert.deepEqual(rutas, ["/chat/swe/capacidades", "/chat/swe/iniciar", "/chat/swe/avanzar"]);

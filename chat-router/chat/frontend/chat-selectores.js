@@ -4,7 +4,7 @@
 // window.RIU_SELECTORES { activo, selectores, consil, encender(id), apagar() } + evento 'riu:selector-activo' { activo, anterior, nombre }.
 const CLAVE = "riu_selector_activo";  // sessionStorage: sobrevive a recargas en esta pestaña
 const SELECTORES = [  // nombres exactos de Antonio
-  { id: "nvidia-groq-team", nombre: "NVIDIA", pills: ["#sel-ngt", "#ficha"] },  // ficha NVIDIA: Glimmer / Nemotron 3 Super (Groq y NVIDIA codigo van como tools)
+  { id: "nvidia-groq-team", nombre: "NVIDIA", pills: ["#sel-ngt", "#ficha"] },  // ficha NVIDIA: modelos reales del catalogo NVIDIA (hoja «NVIDIA · modelos»); Groq y NVIDIA codigo van como tools
   { id: "groq", nombre: "Groq", pills: ["#sel-groq"] },  // modelos reales de Groq (fichas-externas.js); sin GROQ_API_KEY en el Space lo dice
   { id: "swe-code", nombre: "SWE CODE", pills: ["#sel-swe"] },  // modelos locales de HF por el router propio de SWE CODE (swe-selectores.js)
   { id: "swen-code-free", nombre: "SWEN CODE free", pills: ["#sel-swen"] },  // cuentas web Qwen/DeepSeek + modos por el bridge (swe-selectores.js)

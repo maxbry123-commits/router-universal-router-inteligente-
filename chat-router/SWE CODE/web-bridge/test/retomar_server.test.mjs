@@ -60,7 +60,7 @@ test("con tarea_id: usa retomarLocal, guarda en el Harness y en local, y el 2º 
   const a = await chat(B, { tarea_id: "tarea-1" });
   assert.equal(a.status, 200); assert.equal(a.json.choices[0].message.content, "RESP-1"); assert.equal(a.json.tarea.id, "tarea-1"); assert.equal(a.json.tarea.estado, "DONE");
   assert.equal(JSON.parse(fs.readFileSync(arch(dir, "tarea-1"), "utf8")).estado, "DONE");
-  assert.ok(h.almacen.has("tareas/swe/tarea-1/checkpoint.json")); assert.ok(h.crudos.every((c) => c.clave === KH));
+  assert.ok(h.almacen.has("tareas/swe/bridge/tarea-1/checkpoint.json")); assert.ok(h.crudos.every((c) => c.clave === KH));
   const b = await chat(B, { tarea_id: "tarea-1" }, {});
   assert.equal(b.json.choices[0].message.content, "RESP-1"); assert.equal(b.json.tarea.desde_checkpoint, true); assert.equal(s1.chat.length, 1);
 });

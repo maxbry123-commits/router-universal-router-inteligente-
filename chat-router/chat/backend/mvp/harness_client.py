@@ -6,6 +6,27 @@ import time
 from urllib import error, request
 
 REINTENTABLES = {429, 502, 503, 504}
+TIMEOUT_CORTO_S = 30.0  # status, guardar, leer, swe_iniciar/estado/aprobar: respuestas rapidas
+TIMEOUT_LLM_S = 600.0  # llm y computar: un modelo puede tardar (RIU_HARNESS_TIMEOUT_S)
+TIMEOUT_AVANZAR_S = 1800.0  # swe_avanzar / swe_reanudar ejecutan el flujo entero (RIU_SWE_AVANZAR_TIMEOUT_MS, en milisegundos)
+
+
+def _positivo(valor, defecto):
+    try:
+        return float(valor) if valor not in (None, "") and float(valor) > 0 else defecto
+    except ValueError:
+        return defecto
+
+
+def _timeout(accion, datos):
+    """Siempre finito: 30 s por defecto; llm/computar y avanzar/reanudar son largos y configurables."""
+    herramienta = datos.get("tool") if isinstance(datos, dict) else None
+    if herramienta in ("swe_avanzar", "swe_reanudar"):
+        ms = _positivo(os.environ.get("RIU_SWE_AVANZAR_TIMEOUT_MS"), None)
+        return ms / 1000.0 if ms else TIMEOUT_AVANZAR_S
+    if accion == "llm" or herramienta == "computar":
+        return _positivo(os.environ.get("RIU_HARNESS_TIMEOUT_S"), TIMEOUT_LLM_S)
+    return TIMEOUT_CORTO_S
 
 
 def _endpoint():
@@ -26,9 +47,10 @@ def _enviar(accion, datos, clave):
     headers = {"Content-Type": "application/json", "X-API-Key": clave}
     cuerpo = json.dumps({"action": accion, **datos}).encode("utf-8")
     solicitud = request.Request(url, data=cuerpo, headers=headers, method="POST")
+    plazo = _timeout(accion, datos)
     for intento in range(3):
         try:
-            with request.urlopen(solicitud, timeout=None) as respuesta:
+            with request.urlopen(solicitud, timeout=plazo) as respuesta:
                 return json.load(respuesta)
         except error.HTTPError as exc:
             if exc.code == 403:
@@ -40,7 +62,7 @@ def _enviar(accion, datos, clave):
             if exc.code not in REINTENTABLES or intento == 2:
                 raise RuntimeError("Harness HTTP " + str(exc.code)) from None
         except (error.URLError, TimeoutError, OSError):
-            raise RuntimeError("Harness no disponible") from None
+            raise RuntimeError("Harness no disponible") from None  # incluye el timeout: finito, no cuelga
         time.sleep(min(2 ** intento, 2))
 
 

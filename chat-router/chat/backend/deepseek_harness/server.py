@@ -21,7 +21,7 @@ app = FastAPI()
 PAUSA_S = float(os.environ.get("RIU_HARNESS_PAUSA_S", "0"))  # 0 = el Router recibe la conversacion tras CADA ronda de herramientas y la guarda en el almacen
 CONTEXTO_MAX = int(os.environ.get("RIU_CONTEXTO_MAX_CHARS", "3600000"))  # el contexto no crece sin fin en trabajos de horas: sirve para cualquier modelo
 RECIENTES, STUB = 6, 300
-_SECRETO = re.compile(r"(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]{12,}|gh[pousr]_[A-Za-z0-9]{12,}|hf_[A-Za-z0-9]{20,})")
+_SECRETO = re.compile(r"(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]{12,}|gh[pousr]_[A-Za-z0-9]{12,}|hf_[A-Za-z0-9]{20,}|gsk_[A-Za-z0-9]{12,}|nvapi-[A-Za-z0-9_-]{12,})")
 
 
 def con_efectos(nombre, args):
@@ -146,11 +146,20 @@ def _cabeceras_bridge():
     return h
 
 
+def _tarea_id_bridge(conv_id, modelo, mensajes):
+    """tarea_id explicito para el checkpoint del bridge (modelos locales/Groq/NVIDIA): <tarea>-<sha256([modelo, mensajes]) 12>. El mismo envio reintentado reanuda;
+    otra vuelta de la misma tarea (mensajes distintos) es otra tarea del bridge y no choca (CHECKPOINT_OTRA_TAREA). Solo [A-Za-z0-9_-], <= 64."""
+    base = re.sub(r"[^A-Za-z0-9_-]", "", str(conv_id))[:51]
+    huella = hashlib.sha256(json.dumps([modelo, mensajes], sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")).hexdigest()[:12]
+    return (base + "-" + huella) if base else ""
+
+
 def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
-    """Una vuelta de chat por el bridge (OpenAI-compatible): mismo formato que _router('chat')."""
+    """Una vuelta de chat por el bridge (OpenAI-compatible): mismo formato que _router('chat'). Con tarea (conv_id) y un modelo local/Groq/NVIDIA manda ademas tarea_id explicito."""
     modelo = SWE_ALIAS.get(modelo, modelo)
+    tarea_id = _tarea_id_bridge(conv_id, modelo, mensajes) if conv_id and not str(modelo).startswith(SWE_PREFIJOS) else ""
     req = urllib.request.Request(_bridge_url() + "/v1/chat/completions", method="POST", headers=_cabeceras_bridge(),
-                                 data=json.dumps({"model": modelo, "messages": mensajes, **({"conv_id": conv_id} if conv_id else {}),
+                                 data=json.dumps({"model": modelo, "messages": mensajes, **({"conv_id": conv_id} if conv_id else {}), **({"tarea_id": tarea_id} if tarea_id else {}),
                                                 **{k: v for k, v in (opciones or {}).items() if k in ("tools", "tool_choice")}}).encode())
     try:
         from agentes.adaptadores import _comun as _c  # opener sin redireccion (chat-router va en PYTHONPATH)
@@ -302,14 +311,21 @@ def llm(cuerpo):
 
 # --- SWE: agentes reales (chat-router/agentes/adaptadores). Solo se invocan por la accion `invoke` autenticada (clave del backend); NO estan en el catalogo
 # MCP, asi que ningun modelo puede llamarlas desde el bucle de herramientas de llm() (en particular, ningun modelo puede aprobar). ---
-from agentes.adaptadores import workflows as _swe  # noqa: E402  (chat-router va en PYTHONPATH, igual que `plugins`)
-from agentes.adaptadores.contrato import TareaSWE  # noqa: E402,F401  (contrato comun YAIWES/OpenClaw)
-from agentes.adaptadores.dispatcher import ejecutar_agente  # noqa: E402
-from agentes.adaptadores import disponibilidad as _disponibilidad  # noqa: E402
+try:
+    from agentes.adaptadores import workflows as _swe  # noqa: E402  (chat-router va en PYTHONPATH, igual que `plugins`)
+    from agentes.adaptadores.contrato import TareaSWE  # noqa: E402,F401  (contrato comun YAIWES/OpenClaw)
+    from agentes.adaptadores.dispatcher import ejecutar_agente  # noqa: E402
+    from agentes.adaptadores import disponibilidad as _disponibilidad  # noqa: E402
+    _SWE_OK = True
+except ImportError:  # sin agentes.adaptadores solo faltan los swe_*: status, invoke (guardar/leer/computar) y llm siguen vivos
+    _swe = _disponibilidad = ejecutar_agente = TareaSWE = None
+    _SWE_OK = False
 
 
 def _swe_status():
     """result.swe del status: disponibilidad REAL (instalado/configurado) de agentes, workflows y modelos; solo lectura, sin claves. Si falla no se inventa nada."""
+    if not _SWE_OK:
+        return {"error": "ADAPTADORES_NO_DISPONIBLES"}
     try:
         return _disponibilidad.capacidades()
     except Exception:  # noqa: BLE001 - un fallo de la comprobacion no debe tumbar el status del Harness
@@ -342,7 +358,8 @@ def swe_reanudar(args):
     return _swe.swe_reanudar(args, _ctx_swe())
 
 
-HERRAMIENTAS.update({"swe_iniciar": swe_iniciar, "swe_avanzar": swe_avanzar, "swe_estado": swe_estado, "swe_aprobar": swe_aprobar, "swe_reanudar": swe_reanudar})
+if _SWE_OK:
+    HERRAMIENTAS.update({"swe_iniciar": swe_iniciar, "swe_avanzar": swe_avanzar, "swe_estado": swe_estado, "swe_aprobar": swe_aprobar, "swe_reanudar": swe_reanudar})
 
 
 @app.post("/invoke")

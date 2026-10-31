@@ -10,7 +10,7 @@ class NoExiste(RuntimeError):
     """El archivo no existe en el bucket (distinto de un fallo de red o de permisos)."""
 
 
-PATRON_CLAVE = re.compile(r"(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]{12,}|gh[pousr]_[A-Za-z0-9]{12,}|hf_[A-Za-z0-9]{20,})")
+PATRON_CLAVE = re.compile(r"(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]{12,}|gh[pousr]_[A-Za-z0-9]{12,}|hf_[A-Za-z0-9]{20,}|gsk_[A-Za-z0-9]{12,}|nvapi-[A-Za-z0-9_-]{12,})")
 
 
 def _ruta(identificador):

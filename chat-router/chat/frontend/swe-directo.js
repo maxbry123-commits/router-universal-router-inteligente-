@@ -82,9 +82,12 @@ export function leerSeleccion() { try { return normSeleccion(JSON.parse(localSto
 function escribirSeleccion(sel) { try { localStorage.setItem(K_SEL, JSON.stringify(sel)); } catch (e) {} return sel; }
 export function guardarSeleccion(parcial) {
   const sel = escribirSeleccion(normSeleccion(parcial, leerSeleccion()));  // un valor invalido no pisa el anterior
-  if (parcial && Object.hasOwn(parcial, "agente_tool") && (sel.agente_tool === "openclaw" || sel.agente_tool === "swe-agent")) escribirEjecutor(sel.agente_tool === "openclaw" ? "openclaw" : "swe");
+  // ejecutor_tools (lo que viaja) sigue a AGENTE QUE EJECUTA: openclaw -> 'openclaw'; swe-agent u otro agente (Codex, OpenCode...) -> 'swe' (lo ejecuta el Harness)
+  if (parcial && Object.hasOwn(parcial, "agente_tool")) escribirEjecutor(sel.agente_tool === "openclaw" ? "openclaw" : "swe");
   return sel;
 }
+// Boton de salida marcado: SWE-agent u OpenClaw segun AGENTE QUE EJECUTA; con cualquier otro agente ejecutor no se marca ninguno (null)
+export const salidaActiva = (sel) => (sel && sel.agente_tool === "openclaw" ? "openclaw" : sel && sel.agente_tool === "swe-agent" ? "swe" : null);
 export const requiereHarness = (sel) => !!sel && (sel.workflow !== "individual" || sel.modo_agentico === true);
 // modelo del selector clasico (alias hf-*, ids locales, groq/, nvidia/) -> id del catalogo; null si no esta registrado (p. ej. web-*, swecode-*)
 export function idCatalogo(id) {
@@ -101,6 +104,32 @@ export function entradaParaCatalogo(lista, cat, actual) {
   if (actual && l.modelos.some((m) => m[0] === actual) && idCatalogo(actual) === cat) return actual;
   const m = l.modelos.find((x) => idCatalogo(x[0]) === cat);
   return m ? m[0] : null;
+}
+// Modelo que la hoja de `lista` envia cuando se elige `cat` (id del catalogo) en el desplegable «Responde»: la entrada de la lista si la hay;
+// si la lista no lo trae, el id del bridge (hf/x -> x; groq/ y nvidia/ tal cual) con su etiqueta. Lo que muestra el desplegable es lo que se envia. null = fuera del catalogo.
+export function modeloParaLista(lista, cat, actual) {
+  const mid = entradaParaCatalogo(lista, cat, actual);
+  if (mid) return { model_id: mid, label: SWE_LISTAS[lista].modelos.find((m) => m[0] === mid)[1] };
+  if (!SWE_LISTAS[lista] || !en(MODELOS_SWE, cat)) return null;
+  return { model_id: cat.startsWith("hf/") ? cat.slice(3) : cat, label: nombreDe(MODELOS_SWE, cat) };
+}
+// Lo guardado en localStorage (id de la lista o id del bridge elegido desde el desplegable) -> {model_id, label}; lo desconocido, la primera entrada
+export function modeloGuardado(lista, guardado) {
+  const l = SWE_LISTAS[lista], ent = l.modelos.find((x) => x[0] === guardado);
+  if (ent) return { model_id: ent[0], label: ent[1] };
+  const cat = typeof guardado === "string" ? idCatalogo(guardado) : null;
+  return (cat && modeloParaLista(lista, cat, "")) || { model_id: l.modelos[0][0], label: l.modelos[0][1] };
+}
+// F4: «SWE · Codex escribe / OpenCode revisa / Agent ejecuta / OpenHands verifica» son modelo + agente. Con el agente conectado (y compatible con el modelo) elegirlas fija tambien
+// agente_responde y agente_tool; si no, la fila sale «solo modelo» y se envia solo el modelo. fila = null si la entrada no es de agente.
+export const AGENTE_DE_ENTRADA = { "swe-codex-qwen25-15b": "codex", "swe-opencode-qwen35-08b": "opencode", "swe-agent-lfm25": "swe-agent", "swe-openhands-lfm25": "openhands" };
+export const AGENTE_CORTO = { codex: "Codex", opencode: "OpenCode", "swe-agent": "SWE-agent", openhands: "OpenHands", openclaw: "OpenClaw", "claude-code": "Claude Code" };
+export function seleccionDeEntrada(mid, cap) {
+  const cat = idCatalogo(mid), parcial = cat ? { modelo_responde: cat } : {}, agente = Object.hasOwn(AGENTE_DE_ENTRADA, mid) ? AGENTE_DE_ENTRADA[mid] : null;
+  if (!agente) return { fila: null, parcial };
+  const st = estadoOpcion(cap || normalizarCapacidades(null), "agente", agente, cat);
+  if (!st.ok) return { fila: { agente, rotulo: "solo modelo", soloModelo: true, motivo: st.motivo }, parcial };
+  return { fila: { agente, rotulo: AGENTE_CORTO[agente], soloModelo: false, motivo: "" }, parcial: { ...parcial, agente_responde: agente, agente_tool: agente } };
 }
 const ident = (v, defecto) => { const t = String(v == null ? "" : v).replace(/[^A-Za-z0-9_-]/g, "-").slice(0, 64); return t || defecto; };
 export function nuevoTaskId() { return "yaiwes-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
@@ -153,9 +182,11 @@ const nombreDe = (lista, id) => (lista.find((x) => x[0] === id) || [id, id])[1];
 export function validarSeleccion(sel, cap) {
   if (!requiereHarness(sel)) return { ok: true, problemas: [] };
   const problemas = [], plano = (m) => String(m).replace(/\s*\(([^()]*)\)/g, ": $1").replace(/[()]/g, ""), mal = (etq, r) => { if (!r.ok) problemas.push(etq + ": " + (/^incompatible/.test(r.motivo) ? "" : "NO DISPONIBLE, ") + plano(r.motivo)); };
+  // SWE CODE cuatro pasos corre agentes (escribe/revisa/ejecuta/verifica) que solo se activan con el modo agentico (workflows.py: MODO_AGENTICO_APAGADO): se dice ANTES de crear la tarea
+  if (sel.workflow === "swe_code" && !sel.modo_agentico) problemas.push("WORKFLOW " + nombreDe(WORKFLOWS_SWE, sel.workflow) + " exige MODO AGÉNTICO ON");
   mal("WORKFLOW " + nombreDe(WORKFLOWS_SWE, sel.workflow), estadoOpcion(cap, "workflow", sel.workflow));
-  mal("MODELO QUE RESPONDE " + nombreDe(MODELOS_SWE, sel.modelo_responde), estadoOpcion(cap, "modelo", sel.modelo_responde));
-  mal("AGENTE QUE RESPONDE " + nombreDe(AGENTES_SWE, sel.agente_responde), estadoOpcion(cap, "agente", sel.agente_responde, sel.modelo_responde));
+  // agente_responde no lo usa ningun workflow del backend (plan_de: «responde» es un LLM sin agente) y modelo_responde solo cuenta en Individual (camposFijos): no se validan
+  if (!camposFijos(sel.workflow).has("modelo_responde")) mal("MODELO QUE RESPONDE " + nombreDe(MODELOS_SWE, sel.modelo_responde), estadoOpcion(cap, "modelo", sel.modelo_responde));
   if (sel.modo_agentico) {
     const tool = sel.workflow === "liquid_mirror" ? LIQUID : sel.modelo_tool;
     mal("MODELO PARA TOOL " + nombreDe(MODELOS_SWE, tool), estadoOpcion(cap, "modelo", tool));
@@ -180,6 +211,7 @@ export async function cargarCapacidades(api, { forzar = false } = {}) {
 const TERMINALES = ["DONE", "GAP", "REQUIERE_APROBACION", "RECONCILIAR"];
 export const MAX_AVANCES = 24;
 const PARA_CHATEAR = "Para chatear: abre SWE CODE/SWEN → Agentes → Modo agéntico OFF y Workflow Individual";
+const PARA_AGENTICO = "Enciende SWE CODE/SWEN → Agentes → Modo agéntico ON, o elige Workflow Individual";
 const TASK_RE = /^[A-Za-z0-9_-]{1,64}$/, OP_RE = /^[A-Za-z0-9_-]{1,80}$/;
 const resultadoDe = (r, op) => {
   const x = r && r.ok === true ? r.resultado : null;
@@ -237,7 +269,7 @@ export async function enviarTareaSwe(api, { mensaje, sesion, proyecto, task_id, 
   const sel = leerSeleccion(), enCache = capVigente();
   let v = validarSeleccion(sel, await cargarCapacidades(api));
   if (!v.ok && enCache) v = validarSeleccion(sel, await cargarCapacidades(api, { forzar: true }));  // un "no disponible" viejo no se queda pegado: se vuelve a preguntar al Harness
-  if (!v.ok) throw new Error("GAP: SELECCION_NO_DISPONIBLE · " + v.problemas.join(" · ") + ". " + PARA_CHATEAR);  // no se cambia en silencio a otro modelo ni agente
+  if (!v.ok) throw new Error("GAP: SELECCION_NO_DISPONIBLE · " + v.problemas.join(" · ") + ". " + (v.problemas.some((p) => /exige MODO AGÉNTICO ON/.test(p)) ? PARA_AGENTICO : PARA_CHATEAR));  // no se cambia en silencio a otro modelo ni agente
   const tarea = armarTarea({ sel, mensaje, sesion, proyecto, task_id });
   alto(ctl);
   return conducir(api, await operacion(api, "iniciar", tarea, signal), tarea, alPaso, ctl);

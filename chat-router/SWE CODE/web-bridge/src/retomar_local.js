@@ -8,11 +8,11 @@
 //     (extra.verificarHerramienta) o se corta con VERIFICAR_HERRAMIENTAS_PENDIENTES. Sin extra.ejecutarHerramienta (las corre el Harness) se devuelven tal cual (WAIT_TOOLS).
 //   - contexto separado por modelo: contextos[<modelo que respondio>] = secciones que dio; al cambiar de API el nuevo modelo recibe el texto ya generado, no el estado del otro
 // Estados (vocabulario de bloques.js): CONTINUAR | WAIT_TOOLS | DONE | ERROR. Nunca se guardan claves.
-// extra: { env, tools, tool_choice, opts (red de respaldo.js), ejecutarHerramienta(t), verificarHerramienta(t), hasta (epoch ms), maxVueltas, fetch, timeoutCheckpointMs }
+// extra: { env, tools, tool_choice, origen (yaiwes|openclaw|bridge), sinRespaldo (true: el fallo del modelo pedido NO cae a otro modelo), opts (red de respaldo.js), ejecutarHerramienta(t), verificarHerramienta(t), hasta (epoch ms), maxVueltas, fetch, timeoutCheckpointMs }
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { local, externo, respaldo, esLocal, esExterno, claves } from './respaldo.js';
-import { guardarCheckpoint, leerCheckpoint, sanear, idValido } from './checkpoint_hf.js';
+import { guardarCheckpoint, leerCheckpoint, sanear, idValido, origenValido } from './checkpoint_hf.js';
 import { estadoDir, herramientaEjecutada, herramientaResultado, herramientaConfirmar } from './bloques.js';
 
 export const TIPO = 'retomar_local';
@@ -45,7 +45,7 @@ export async function retomarLocal(tareaId, modelo, mensajes, extra = {}) {
 
 async function ejecutar(tareaId, modelo, mensajes, extra) {
   const env = extra.env || process.env, secretos = secretosDe(env);
-  const ck = { env, fetch: extra.fetch, timeoutMs: extra.timeoutCheckpointMs, secretos };
+  const ck = { env, fetch: extra.fetch, timeoutMs: extra.timeoutCheckpointMs, secretos, origen: extra.origen };
   const limite = Math.min(extra.maxVueltas || MAX_VUELTAS, MAX_VUELTAS);
   // los ayudantes de herramientas de bloques.js leen BRIDGE_STATE_DIR del proceso: solo se usan si es el mismo directorio que el de este checkpoint
   const usaBloques = path.resolve(env.BRIDGE_STATE_DIR || estadoDir()) === estadoDir();
@@ -54,12 +54,13 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
   let st = await leerCheckpoint(tareaId, ck);
   const reanudado = !!st;
   if (st && (st.tipo !== TIPO || st.huella !== huella)) throw falla('CHECKPOINT_OTRA_TAREA', `el checkpoint ${tareaId} es de otra tarea (otros mensajes o modelo): usa otro tarea_id`);
-  if (!st) st = { tipo: TIPO, version: 1, tarea_id: tareaId, huella, modelo, mensajes: sanear(mensajes, secretos), estado: 'CONTINUAR', completo: false, conversacion: [], parcial: '', secciones: [], contextos: {}, herramientas: {}, lote: null, resultado: null, creado: new Date().toISOString() };
+  if (!st) st = { tipo: TIPO, version: 1, tarea_id: tareaId, huella, modelo, mensajes: sanear(mensajes, secretos), origen: origenValido(extra.origen) || 'bridge', estado: 'CONTINUAR', completo: false, conversacion: [], parcial: '', secciones: [], contextos: {}, herramientas: {}, lote: null, resultado: null, creado: new Date().toISOString() };
   st.herramientas = st.herramientas || {}; st.conversacion = st.conversacion || []; st.secciones = st.secciones || []; st.contextos = st.contextos || {}; st.parcial = st.parcial || '';
 
+  const uso = { visto: false, p: 0, c: 0, t: 0 };  // usage de las llamadas de ESTA ejecucion (no se persiste)
   const guardar = () => guardarCheckpoint(tareaId, st, ck);
   const ultima = () => st.secciones[st.secciones.length - 1] || {};
-  const salida = (o) => ({ salida: st.parcial, tool_calls: [], finish_reason: 'stop', via: ultima().via || null, usado: ultima().usado || null, tarea_id: tareaId, estado: st.estado, secciones: st.secciones.length, reanudado, desde_checkpoint: false, ...o });
+  const salida = (o) => ({ salida: st.parcial, tool_calls: [], finish_reason: 'stop', via: ultima().via || null, usado: ultima().usado || null, servidor: ultima().servidor || null, ...(uso.visto ? { metricas: { prompt_tokens: uso.p, completion_tokens: uso.c, total_tokens: uso.t } } : {}), tarea_id: tareaId, estado: st.estado, secciones: st.secciones.length, reanudado, desde_checkpoint: false, ...o });
   const entregaLote = (o) => salida({ salida: st.lote.assistant.content || '', tool_calls: st.lote.assistant.tool_calls, finish_reason: 'tool_calls', ...o });
 
   if (st.estado === 'DONE' && st.resultado) return salida({ ...st.resultado, salida: st.resultado.salida, desde_checkpoint: true });
@@ -67,9 +68,11 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
 
   const llamar = async (msgs) => {
     const ex = { tools: extra.tools, tool_choice: extra.tool_choice };
-    try { return await (esExterno(modelo) ? externo(modelo, msgs, { env, extra: ex, opts: extra.opts }) : local(modelo, msgs, { env, extra: ex, opts: extra.opts })); }
+    const opts = { ...extra.opts, continuaciones: 0 };  // una respuesta por vuelta: este bucle ya continua (finish_reason length) y guarda el checkpoint entre vueltas
+    try { return await (esExterno(modelo) ? externo(modelo, msgs, { env, extra: ex, opts }) : local(modelo, msgs, { env, extra: ex, opts })); }
     catch (e1) {
-      try { return await respaldo(msgs, { env, extra: ex, opts: extra.opts }); }
+      if (extra.sinRespaldo) throw Object.assign(falla(e1.code || 'MODELO_FALLO', sanear(String(e1.message), secretos)), Number.isInteger(e1.status) ? { status: e1.status } : {});  // el modelo pedido manda: no se cambia de modelo en silencio
+      try { return await respaldo(msgs, { env, extra: ex, opts }); }
       catch (e2) { throw falla(e2.code || 'RESPALDO_AGOTADO', sanear(`${e1.message} -> ${e2.message}`, secretos)); }
     }
   };
@@ -129,7 +132,9 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
     delete st.ultimo_error;
 
     const usado = r.usado || modelo, n = st.secciones.length + 1, texto = r.salida || '';
-    st.secciones.push({ n, vuelta: vueltas, pedido: modelo, usado, via: r.via, finish_reason: r.finish_reason, caracteres: texto.length, ts: new Date().toISOString() });
+    const m = r.metricas;
+    if (m && Number.isFinite(m.total_tokens)) { uso.visto = true; uso.p += m.prompt_tokens || 0; uso.c += m.completion_tokens || 0; uso.t += m.total_tokens; }
+    st.secciones.push({ n, vuelta: vueltas, pedido: modelo, usado, via: r.via, ...(r.servidor ? { servidor: r.servidor } : {}), finish_reason: r.finish_reason, caracteres: texto.length, ts: new Date().toISOString() });
     const cx = st.contextos[usado] || { secciones: [], caracteres: 0 };
     st.contextos[usado] = { secciones: [...cx.secciones, n], caracteres: cx.caracteres + texto.length };
     st.parcial += texto;

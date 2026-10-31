@@ -129,33 +129,33 @@ const apiTarea = (log, { avanzar } = {}) => async (ruta, op) => {
   throw new Error("ruta inesperada " + ruta);
 };
 test("enviarTareaSwe con parar(): tras Detener no vuelve a llamar a avanzar (antes seguia hasta MAX_AVANCES) y lanza PROCESO_DETENIDO", async () => {
-  S.guardarSeleccion({ workflow: "swe_code" }); S.olvidarCapacidades();
+  S.guardarSeleccion({ workflow: "swe_code", modo_agentico: true }); S.olvidarCapacidades();
   const log = []; let detenido = false;
   const api2 = apiTarea(log, { avanzar: (op) => { detenido = true; return { ok: true, resultado: { task_id: op.body.task_id, estado: "EJECUTANDO" } }; } });
   await assert.rejects(() => S.enviarTareaSwe(api2, { mensaje: "x", sesion: "s", parar: () => detenido }), /PROCESO_DETENIDO/);
   assert.equal(log.filter((l) => l.ruta === "/chat/swe/avanzar").length, 1);
 });
 test("enviarTareaSwe sin parar sigue avanzando hasta MAX_AVANCES (comportamiento previo)", async () => {
-  S.guardarSeleccion({ workflow: "swe_code" }); S.olvidarCapacidades();
+  S.guardarSeleccion({ workflow: "swe_code", modo_agentico: true }); S.olvidarCapacidades();
   const log = [];
   await assert.rejects(() => S.enviarTareaSwe(apiTarea(log), { mensaje: "x", sesion: "s" }), /SWE_SIN_PROGRESO/);
   assert.equal(log.filter((l) => l.ruta === "/chat/swe/avanzar").length, S.MAX_AVANCES);
 });
 test("parar() ya activo antes de iniciar: no se crea la tarea", async () => {
-  S.guardarSeleccion({ workflow: "swe_code" }); S.olvidarCapacidades();
+  S.guardarSeleccion({ workflow: "swe_code", modo_agentico: true }); S.olvidarCapacidades();
   const log = [];
   await assert.rejects(() => S.enviarTareaSwe(apiTarea(log), { mensaje: "x", sesion: "s", parar: () => true }), /PROCESO_DETENIDO/);
   assert.ok(!log.some((l) => l.ruta === "/chat/swe/iniciar"));
 });
 test("la senal se pasa a cada operacion /chat/swe/* y un PROCESO_DETENIDO no se disfraza de SWE_HARNESS_ERROR", async () => {
-  S.guardarSeleccion({ workflow: "swe_code" }); S.olvidarCapacidades();
+  S.guardarSeleccion({ workflow: "swe_code", modo_agentico: true }); S.olvidarCapacidades();
   const log = [], ac = new AbortController();
   const api2 = apiTarea(log, { avanzar: () => { ac.abort(); throw new Error("PROCESO_DETENIDO"); } });
   await assert.rejects(() => S.enviarTareaSwe(api2, { mensaje: "x", sesion: "s", signal: ac.signal }), (e) => e.message === "PROCESO_DETENIDO");
   assert.ok(log.filter((l) => l.ruta !== "/chat/swe/capacidades").every((l) => l.signal === ac.signal));
 });
 test("aprobarYContinuarSwe tambien respeta parar()", async () => {
-  S.guardarSeleccion({ workflow: "swe_code" });
+  S.guardarSeleccion({ workflow: "swe_code", modo_agentico: true });
   const log = []; let n = 0;
   const api2 = async (ruta, op) => { log.push(ruta); return { ok: true, resultado: { task_id: op.body.task_id, estado: "EJECUTANDO" } }; };
   await assert.rejects(() => S.aprobarYContinuarSwe(api2, { task_id: "t1", op_id: "0123456789abcdef", sesion: "s", parar: () => ++n > 1 }), /PROCESO_DETENIDO/);

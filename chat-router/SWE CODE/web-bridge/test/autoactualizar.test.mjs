@@ -44,21 +44,26 @@ test("vigila las rutas del bridge, de SWE CODE free y el formato de salida", () 
   for (const r of ["chat-router/SWE CODE/", "chat-router/SWE CODE free/", "chat-router/chat/backend/mvp/prompts/"]) assert.ok(RUTAS.includes(r), r);
 });
 
-// ---- verificacion previa al relanzamiento: node --check de los .js tocados (copia a .mjs) y npm install; si falla, git reset --hard y NO se relanza ----
+// ---- verificacion previa al relanzamiento: node --check de los .js tocados (copia a .mjs) y npm install; si falla NO se relanza (sin git reset) ----
 const conLog = async (fn) => { const lineas = []; const w = console.warn; console.warn = (...a) => lineas.push(a.join(" ")); try { return { r: await fn(), lineas }; } finally { console.warn = w; } };
 
-test("un .js roto en el codigo nuevo: NO se relanza, el repo vuelve a la cabeza previa (git reset --hard) y el log es corto", async () => {
+test("un .js roto en el codigo nuevo: NO se relanza, NO se toca el repo (sin git reset --hard: no hay flapping con el autopull) y el log es corto", async () => {
   const d = repo(); const previa = git(d, "rev-parse", "HEAD"); const estado = { cabeza: previa }; let relanzado = 0;
   commit(d, "chat-router/SWE CODE/web-bridge/a.js", "const = ;;; esto no compila");
-  assert.notEqual(git(d, "rev-parse", "HEAD"), previa);
+  const rota = git(d, "rev-parse", "HEAD");
   const { r, lineas } = await conLog(() => revisar({ repo: d, estado, relanzar: async () => { relanzado++; } }));
   assert.equal(relanzado, 0, "no se relanza con codigo roto"); assert.equal(r, false);
-  assert.equal(git(d, "rev-parse", "HEAD"), previa, "reset --hard a la cabeza previa");
-  assert.equal(fs.readFileSync(path.join(d, "chat-router", "SWE CODE", "web-bridge", "a.js"), "utf8"), "1", "el archivo roto ya no esta en el disco");
-  assert.equal(estado.cabeza, previa);
+  assert.equal(git(d, "rev-parse", "HEAD"), rota, "el repo queda donde esta: ningun reset");
+  assert.equal(fs.readFileSync(path.join(d, "chat-router", "SWE CODE", "web-bridge", "a.js"), "utf8"), "const = ;;; esto no compila", "el archivo no se revierte");
   assert.ok(lineas.length <= 2 && lineas.join("").length < 300, "log corto: " + lineas.join(" | "));
+  assert.ok(lineas.join("").includes("rechazado"), "deja la linea de log"); assert.ok(!lineas.join("").includes("reset"), "no menciona reset");
   assert.ok(!lineas.join("").includes("esto no compila"), "no vuelca el codigo");
-  // un siguiente commit BUENO si se relanza
+  // la misma cabeza rota no vuelve a registrar el log ni a relanzar
+  const otra = await conLog(() => revisar({ repo: d, estado, relanzar: async () => { relanzado++; } })); assert.equal(otra.lineas.length, 0);
+  // un commit que NO toca el archivo roto tampoco relanza (sigue roto en el disco)
+  commit(d, "chat-router/SWE CODE/web-bridge/otro.js", "export const y = 1;");
+  await conLog(() => revisar({ repo: d, estado, relanzar: async () => { relanzado++; } })); assert.equal(relanzado, 0, "el .js roto sigue en el arbol: no se relanza");
+  // un commit que lo ARREGLA si se relanza
   commit(d, "chat-router/SWE CODE/web-bridge/a.js", "3");
   await revisar({ repo: d, estado, relanzar: async () => { relanzado++; } });
   assert.equal(relanzado, 1);
@@ -76,11 +81,12 @@ test("se revisan solo los .js tocados dentro de las rutas del bridge; un .js rot
   assert.equal(relanzado, 2);
 });
 
-test("si cambia package.json se ejecuta npm install ANTES de relanzar; si falla: reset --hard y no se relanza; si pasa se relanza con deps", async () => {
+test("si cambia package.json se ejecuta npm install ANTES de relanzar; si falla: no se relanza ni se hace reset; si pasa se relanza con deps", async () => {
   const d = repo(); const previa = git(d, "rev-parse", "HEAD"); const estado = { cabeza: previa }; const rel = []; const inst = [];
   commit(d, "chat-router/SWE CODE/web-bridge/package.json", "{}");
+  const mala = git(d, "rev-parse", "HEAD");
   await conLog(() => revisar({ repo: d, estado, relanzar: async (o) => { rel.push(o); }, instalar: async () => { inst.push(1); return false; } }));
-  assert.equal(inst.length, 1); assert.equal(rel.length, 0); assert.equal(git(d, "rev-parse", "HEAD"), previa);
+  assert.equal(inst.length, 1); assert.equal(rel.length, 0); assert.equal(git(d, "rev-parse", "HEAD"), mala, "sin reset");
   commit(d, "chat-router/SWE CODE/web-bridge/package.json", '{"name":"x"}');
   await revisar({ repo: d, estado, relanzar: async (o) => { rel.push(o); }, instalar: async () => { inst.push(1); return true; } });
   assert.equal(inst.length, 2); assert.deepEqual(rel, [{ deps: true }]);

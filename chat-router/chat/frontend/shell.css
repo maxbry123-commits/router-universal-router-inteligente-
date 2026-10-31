@@ -238,3 +238,7 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 .swe-hoja .swe-fijo{margin:0;font-size:12px;color:var(--quiet-2);line-height:1.35}
 .swe-hoja .swe-fijo[hidden]{display:none}
 .swe-hoja select.fijo{opacity:.55;font-style:italic}
+.swe-hoja .swe-sel{display:flex;flex-direction:column;gap:2px;min-width:0}
+.swe-hoja .swe-micro{font-size:10px;line-height:1.1;letter-spacing:.3px;text-transform:uppercase;color:var(--quiet-2)}
+.swe-hoja .list .fila-ag{flex:0 0 auto;font-size:10px;line-height:1.5;padding:0 6px;border:1px solid var(--border);border-radius:10px;color:var(--quiet-2);background:var(--surface-alt)}
+.swe-hoja .list .fila-ag.solo{font-style:italic;opacity:.85}

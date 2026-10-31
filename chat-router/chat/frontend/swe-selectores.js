@@ -2,16 +2,13 @@
 // la pastilla abre una hoja con sus modelos; el elegido queda en window.RIU_SWE[<selector>] = {model_id, label}.
 // Al encender el selector, enviar-mensaje.js manda por swe-directo.js (router propio: el bridge), sin pasar por el Router MVP.
 import { api } from "./api.js";
-import { camposFijos, entradaParaCatalogo, SWE_LISTAS, EJECUTORES_TOOLS, ETIQUETA_SALIDA, leerEjecutorTools, guardarEjecutorTools, MODELOS_SWE, AGENTES_SWE, WORKFLOWS_SWE, LIQUID_MIRROR, leerSeleccion, guardarSeleccion, requiereHarness, cargarCapacidades, olvidarCapacidades, normalizarCapacidades, estadoOpcion, idCatalogo, agruparOpciones, lineaNoInstalados, leerSecciones, guardarSeccion } from "./swe-directo.js";
+import { camposFijos, modeloParaLista, modeloGuardado, seleccionDeEntrada, salidaActiva, SWE_LISTAS, EJECUTORES_TOOLS, ETIQUETA_SALIDA, guardarEjecutorTools, MODELOS_SWE, AGENTES_SWE, WORKFLOWS_SWE, LIQUID_MIRROR, leerSeleccion, guardarSeleccion, requiereHarness, cargarCapacidades, olvidarCapacidades, normalizarCapacidades, estadoOpcion, idCatalogo, agruparOpciones, lineaNoInstalados, leerSecciones, guardarSeccion } from "./swe-directo.js";
 const K = "riu_swe_modelo";
 const leer = () => { try { return JSON.parse(localStorage.getItem(K) || "{}") || {}; } catch (e) { return {}; } };
 const refrescar = () => { try { window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar(); } catch (e) {} };
 const S = (window.RIU_SWE = window.RIU_SWE || {});
 const guardado = leer();
-for (const [id, l] of Object.entries(SWE_LISTAS)) {
-  const m = l.modelos.find((x) => x[0] === guardado[id]) || l.modelos[0];
-  S[id] = { model_id: m[0], label: m[1] };
-}
+for (const id of Object.keys(SWE_LISTAS)) S[id] = modeloGuardado(id, guardado[id]);  // lo guardado puede ser una entrada de la lista o el id del bridge elegido en el desplegable «Responde»
 const PILLS = { "sel-swe": "swe-code", "sel-swen": "swen-code-free" };
 // Hoja unica y compacta de SWE CODE / SWEN CODE free: cabecera fija (titulo + X), cuerpo con scroll propio y tres secciones plegables
 // (Modelo | Agentes | Workflow y salida). Los controles de agente/ejecutor/workflow/modo agentico/salida existen UNA sola vez en el documento
@@ -20,7 +17,7 @@ const nombreDe = (lista, id) => (lista.find((x) => x[0] === id) || [id, id])[1];
 const SALIDA_CORTA = { swe: "SWE-agent", openclaw: "OpenClaw" };
 // Salida de las tools (SWE | OpenClaw): mismo estado en el panel Selectores y en la hoja; se guarda en localStorage y viaja como `ejecutor_tools` (swe-directo.js).
 function pintarSalida() {
-  const v = leerEjecutorTools();
+  const v = salidaActiva(leerSeleccion());  // sigue a AGENTE QUE EJECUTA; con otro agente (Codex...) no marca ninguno
   document.querySelectorAll("[data-salida]").forEach((b) => { const on = b.dataset.salida === v; b.setAttribute("aria-pressed", String(on)); b.classList.toggle("on", on); });
 }
 function filaSalida() {  // una sola fila: «Salida: [SWE-agent | OpenClaw]» como control segmentado
@@ -52,7 +49,8 @@ function controles() {
   const ag = seccion("agentes", "Agentes"), a = ag.querySelector(".sh-sec-cuerpo");
   const rej = el("div", "swe-rej");
   [["Responde", "agente_responde", "modelo_responde"], ["Ejecuta", "agente_tool", "modelo_tool"]].forEach(([t, a1, m1]) => {
-    const r = el("div", "swe-rej-fila"); r.append(el("span", "swe-rej-t", t), selector(a1), selector(m1)); rej.append(r);
+    const caja = (micro, k) => { const w = el("span", "swe-sel"), m = el("span", "swe-micro", micro); m.setAttribute("aria-hidden", "true"); w.append(m, selector(k)); return w; };  // micro-etiqueta visible; el aria-label del select sigue siendo el rotulo completo
+    const r = el("div", "swe-rej-fila"); r.append(el("span", "swe-rej-t", t), caja("Agente", a1), caja("Modelo", m1)); rej.append(r);
   });
   const mo = el("div", "sel-salida"); mo.setAttribute("role", "group"); mo.setAttribute("aria-label", "Modo agéntico");
   const b = el("button", "pill salida-op"); b.type = "button"; b.dataset.sweAgentico = "1"; b.setAttribute("aria-label", "MODO AGÉNTICO");
@@ -98,7 +96,7 @@ function pintarControles() {
     }
     const ni = c.querySelector(".swe-noinst"); ni.textContent = CAP_LISTA ? lineaNoInstalados(agruparOpciones(CAP, "agente", AGENTES_SWE)) : "Consultando qué agentes están conectados…"; ni.hidden = !ni.textContent;
     c.querySelector('[data-sec="agentes"] .sh-res').textContent = `${nombreDe(AGENTES_SWE, sel.agente_responde)} → ${nombreDe(AGENTES_SWE, sel.agente_tool)} · ${sel.modo_agentico ? "ON" : "OFF"}`;
-    c.querySelector('[data-sec="workflow"] .sh-res').textContent = `${nombreDe(WORKFLOWS_SWE, sel.workflow)} · ${SALIDA_CORTA[leerEjecutorTools()]}`;
+    c.querySelector('[data-sec="workflow"] .sh-res').textContent = `${nombreDe(WORKFLOWS_SWE, sel.workflow)} · ${SALIDA_CORTA[salidaActiva(sel)] || nombreDe(AGENTES_SWE, sel.agente_tool)}`;
     const fj = c.querySelector(".swe-fijo"); if (fj) { const f = camposFijos(sel.workflow); fj.hidden = !f.size; fj.textContent = f.size ? `Fijo por el workflow ${nombreDe(WORKFLOWS_SWE, sel.workflow)}: agente y modelo que responden, y modelo de Ejecuta (no influyen; cada paso usa su modelo).` : ""; }
     const e = c.querySelector(".swe-estado");
     e.textContent = requiereHarness(sel)
@@ -109,6 +107,7 @@ function pintarControles() {
 async function refrescarCapacidades(forzar) {
   if (forzar) olvidarCapacidades();
   CAP = await cargarCapacidades(api); CAP_LISTA = true; pintarControles();
+  if (abierta) pintarLista(abierta);  // los rotulos de agente («Codex» | «solo modelo») dependen de lo que el Harness reporta conectado
 }
 let abierta = null;  // selector (swe-code | swen-code-free) cuya hoja esta abierta
 function elegirModelo(id, mid, etiqueta) {  // misma eleccion para la lista de la hoja y el desplegable «Responde»
@@ -119,8 +118,8 @@ document.addEventListener("change", (e) => {
   const s = e.target.closest && e.target.closest("select[data-swe-ctl]"); if (!s) return;
   guardarSeleccion({ [s.dataset.sweCtl]: s.value });
   if (s.dataset.sweCtl === "modelo_responde" && abierta) {  // el desplegable «Responde» y la lista de modelos de la hoja no pueden contradecirse: lo enviado es lo que dice
-    const mid = entradaParaCatalogo(abierta, s.value, S[abierta].model_id);
-    if (mid) { elegirModelo(abierta, mid, SWE_LISTAS[abierta].modelos.find((m) => m[0] === mid)[1]); refrescar(); marcarLista(abierta); }
+    const m = modeloParaLista(abierta, s.value, S[abierta].model_id);  // la entrada de la lista, o el id del bridge si la lista no lo trae: nunca queda un modelo distinto del que dice el desplegable
+    if (m) { elegirModelo(abierta, m.model_id, m.label); refrescar(); marcarLista(abierta); }
   }
   pintarSalida(); pintarControles();
 });
@@ -130,7 +129,38 @@ function marcarLista(id) {  // repinta la marca ✓ de la lista de la hoja abier
   const r = document.querySelector("#sh-" + id + ' [data-sec="modelo"] .sh-res'); if (r) r.textContent = S[id].label;
 }
 document.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest("[data-swe-agentico]"); if (b) { guardarSeleccion({ modo_agentico: !leerSeleccion().modo_agentico }); pintarControles(); } });
-function hoja(id) {
+// ---- Foco de la hoja: al abrir va a la X; al cerrar vuelve al boton que la abrio; Tab no sale de la hoja ----
+let opener = null, openerId = "";
+const enfocables = (s) => [...s.querySelectorAll("button, select, summary, input, textarea, a[href], [tabindex]")].filter((n) => !n.disabled && n.tabIndex >= 0 && n.getClientRects().length > 0);
+function cerrarHoja(s) {
+  if (s.hidden) return;
+  s.hidden = true; abierta = null;
+  const o = opener && opener.isConnected ? opener : document.getElementById(openerId);  // el pill puede haberse vuelto a pintar al elegir modelo
+  opener = null; if (o && typeof o.focus === "function") o.focus();
+}
+function pintarLista(id) {  // filas de la lista de la hoja; las de «SWE · X» llevan el rotulo corto del agente (o «solo modelo» si no esta conectado)
+  const lista = document.getElementById("sh-" + id + "-lista"), s = document.getElementById("sh-" + id); if (!lista) return;
+  const foco = document.activeElement && lista.contains(document.activeElement) ? document.activeElement.dataset.id : null;  // el repintado no le quita el foco a quien navega por teclado
+  lista.replaceChildren();
+  SWE_LISTAS[id].modelos.forEach(([mid, etiqueta, desc]) => {
+    const on = S[id].model_id === mid, fila = seleccionDeEntrada(mid, CAP).fila;
+    const b = el("button", "fila" + (on ? " on" : "")); b.type = "button"; b.dataset.id = mid; b.setAttribute("aria-pressed", String(on));
+    const nom = el("span", "fila-nom"); nom.append(el("span", null, etiqueta)); if (desc) nom.append(el("span", "fila-desc", desc));
+    if (fila) { const ag = el("span", "fila-ag" + (fila.soloModelo ? " solo" : ""), fila.rotulo); ag.dataset.agente = fila.agente; if (fila.soloModelo) ag.title = AGENTES_ROT(fila.agente) + ": " + fila.motivo; nom.append(ag); }
+    b.append(nom); if (on) b.append(el("span", "fila-ck", "✓"));
+    b.onclick = () => {
+      elegirModelo(id, mid, etiqueta);
+      guardarSeleccion(seleccionDeEntrada(mid, CAP).parcial);  // el modelo de la lista es MODELO QUE RESPONDE del contrato; las entradas «SWE · X» fijan tambien su agente si esta conectado
+      try { window.RIU_SELECTORES && window.RIU_SELECTORES.encender(id); } catch (e) {}  // elegir un modelo enciende ESTE selector: el mensaje sale a este modelo y no a otro ficha activa
+      const otra = document.getElementById("sh-modelos"); if (otra) otra.hidden = true;  // la hoja «Selector de modelos» no se queda tapando el composer
+      refrescar(); pintarSalida(); pintarControles(); cerrarHoja(s);
+    };
+    lista.append(b);
+  });
+  if (foco) { const f = [...lista.children].find((n) => n.dataset.id === foco); if (f) f.focus(); }
+}
+const AGENTES_ROT = (a) => nombreDe(AGENTES_SWE, a);
+function hoja(id, desde) {
   const l = SWE_LISTAS[id];
   let s = document.getElementById("sh-" + id);
   if (!s) {
@@ -142,28 +172,25 @@ function hoja(id) {
     const cuerpo = el("div", "swe-cuerpo"), mod = seccion("modelo", "Modelo");
     const lista = el("div", "list"); lista.id = "sh-" + id + "-lista"; mod.querySelector(".sh-sec-cuerpo").append(lista);
     cuerpo.append(mod); caja.append(cab, cuerpo); s.append(caja);
-    s.addEventListener("click", (e) => { if (e.target === s || e.target.closest(".sh-cerrar")) { s.hidden = true; abierta = null; } });
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { s.hidden = true; abierta = null; } });
+    s.addEventListener("click", (e) => { if (e.target === s || e.target.closest(".sh-cerrar")) cerrarHoja(s); });
+    document.addEventListener("keydown", (e) => {  // en captura: con la hoja abierta es la de arriba; Escape la cierra a ella sola (la ventana «Selector de modelos» de debajo se queda) y el foco vuelve a su boton
+      if (s.hidden) return;
+      if (e.key === "Escape") { e.stopPropagation(); cerrarHoja(s); return; }
+      if (e.key !== "Tab") return;  // trampa de foco simple: Tab / Mays+Tab dan la vuelta dentro de la hoja
+      const f = enfocables(s); if (!f.length) return;
+      const i = f.indexOf(document.activeElement);
+      if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && (i < 0 || i === f.length - 1)) { e.preventDefault(); f[0].focus(); }
+    }, true);
     document.body.append(s);
   }
-  const cuerpo = s.querySelector(".swe-cuerpo"), lista = s.querySelector("#sh-" + id + "-lista"); lista.replaceChildren();
+  const cuerpo = s.querySelector(".swe-cuerpo");
   cuerpo.append(CTL || (CTL = controles()));  // el unico juego de controles pasa a esta hoja (sale de la otra)
   const est = leerSecciones(); s.querySelectorAll("details.sh-sec").forEach((d) => { d.open = est[d.dataset.sec]; });
   s.querySelector('[data-sec="modelo"] .sh-res').textContent = S[id].label;
-  l.modelos.forEach(([mid, etiqueta, desc]) => {
-    const on = S[id].model_id === mid;
-    const b = el("button", "fila" + (on ? " on" : "")); b.type = "button"; b.dataset.id = mid; b.setAttribute("aria-pressed", String(on));
-    const nom = el("span", "fila-nom"); nom.append(el("span", null, etiqueta)); if (desc) nom.append(el("span", "fila-desc", desc));
-    b.append(nom); if (on) b.append(el("span", "fila-ck", "✓"));
-    b.onclick = () => {
-      elegirModelo(id, mid, etiqueta);
-      const cat = idCatalogo(mid); if (cat) guardarSeleccion({ modelo_responde: cat }); // el modelo que se elige en la lista tambien es MODELO QUE RESPONDE del contrato
-      try { window.RIU_SELECTORES && window.RIU_SELECTORES.encender(id); } catch (e) {}  // elegir un modelo enciende ESTE selector: el mensaje sale a este modelo y no a otro ficha activa
-      const otra = document.getElementById("sh-modelos"); if (otra) otra.hidden = true;  // la hoja «Selector de modelos» no se queda tapando el composer
-      s.hidden = true; abierta = null; refrescar();
-    };
-    lista.append(b);
-  });
-  abierta = id; pintarSalida(); pintarControles(); s.hidden = false; cuerpo.scrollTop = 0; refrescarCapacidades(true);
+  abierta = id; pintarLista(id); pintarSalida(); pintarControles();
+  opener = desde || null; openerId = desde && desde.id ? desde.id : "";
+  s.hidden = false; cuerpo.scrollTop = 0; refrescarCapacidades(true);
+  const x = s.querySelector(".sh-cerrar"); if (x) x.focus();
 }
-document.addEventListener("click", (e) => { const p = e.target.closest("#sel-swe, #sel-swen"); if (p) hoja(PILLS[p.id]); });
+document.addEventListener("click", (e) => { const p = e.target.closest("#sel-swe, #sel-swen"); if (p) hoja(PILLS[p.id], p); });

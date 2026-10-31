@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """SWE CODE mini-router: ejecuta la cascada de cascada.json contra llama-server(s).
 HTTP OpenAI-compatible only. ~90 lineas, cero dependencias extra (solo requests)."""
-import hashlib, json, os, re, sys, tempfile, time, uuid, urllib.error, urllib.request
+import hashlib, json, os, re, socket, sys, tempfile, time, uuid, urllib.error, urllib.request
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 CASCADA = json.load(open(os.path.join(RAIZ, "cascada.json")))
@@ -24,6 +24,9 @@ MODELOS_DEFECTO = {"groq": "qwen/qwen3.8-27b", "nvidia": "minimaxai/minimax-m3.1
 MODELOS_RESPALDO = {"groq": [], "nvidia": ["meta/muse-glimmer-30b", "nvidia/nemotron-3-ultra-550b-a55b", "z-ai/glm-5.3"]}   # solo con el modelo por defecto
 EXTERNOS = {"groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY", os.getenv("RIU_SWE_GROQ_MODELO", MODELOS_DEFECTO["groq"])),
             "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY", os.getenv("RIU_SWE_NVIDIA_MODELO", MODELOS_DEFECTO["nvidia"]))}
+TIMEOUTS_EXTERNOS = {"groq": 60, "nvidia": 120}   # segundos por peticion (Groq 60 s)
+COOLDOWN_TIMEOUT_S = 60.0                          # tras un timeout el proveedor entero se aparta este tiempo (sus demas claves/modelos no se prueban)
+_ENFRIADOS = {}                                    # via -> instante (monotonic) hasta el que no se intenta
 MAX_CONTINUACIONES = 8   # veces que se pide "continua" si finish_reason == 'length' (sumado entre proveedores)
 _CONTINUA = "Continua exactamente donde te quedaste, sin repetir lo ya escrito."
 _ULTIMO = {}             # via/modelo de la ultima llamada exitosa (para anotarlos en el estado de la etapa)
@@ -82,22 +85,50 @@ def _clase(e) -> str:
     return "modelo" if isinstance(e, urllib.error.HTTPError) and e.code in (400, 404, 422) else "clave"
 
 
+def _es_timeout(e) -> bool:
+    """Timeout de lectura/conexion o HTTP 408: el proveedor esta lento o caido, no la clave."""
+    if isinstance(e, urllib.error.HTTPError):
+        return e.code == 408
+    causa = e.reason if isinstance(e, urllib.error.URLError) else e
+    return isinstance(causa, (TimeoutError, socket.timeout))
+
+
+def _plazo_s() -> float:
+    """Plazo del tramo externo: el mismo BRIDGE_DEADLINE_MS del bridge (100 s por defecto)."""
+    try:
+        v = float(os.getenv("BRIDGE_DEADLINE_MS") or 100000)
+        return (v if v > 0 else 100000.0) / 1000.0
+    except ValueError:
+        return 100.0
+
+
 def _externo(mensajes: list, ultimo, parcial: str = ""):
-    """Devuelve (texto, via) con via = 'groq' | 'nvidia' (la primera clave/modelo que responda). Rota claves y modelos; conserva lo parcial."""
+    """Devuelve (texto, via) con via = 'groq' | 'nvidia' (la primera clave/modelo que responda). Rota claves y modelos; conserva lo parcial.
+    El primer timeout de un proveedor lo corta (y lo enfria 60 s: sus demas claves/modelos no se prueban); todo el tramo cabe en el plazo y cada peticion se acorta a lo que queda."""
     presupuesto = {"cont": 0}
+    fin = time.monotonic() + _plazo_s()
     for via, (base, var, modelo) in EXTERNOS.items():
-        claves = _claves(var)
+        if _ENFRIADOS.get(via, 0) > time.monotonic():
+            ultimo = RuntimeError(f"{via}: enfriado por un timeout reciente"); continue
+        caido = False
         for m in _modelos(via, modelo):
-            for clave in claves:
+            if caido:
+                break
+            for clave in _claves(var):
+                resto = fin - time.monotonic()
+                if resto <= 0:
+                    raise TimeoutError("plazo del tramo externo agotado" + (f" (ultimo: {ultimo})" if ultimo else ""))
                 try:
                     cab = {"Content-Type": "application/json", "Authorization": "Bearer " + clave, "User-Agent": "riu-swe-code"}
-                    texto = _completar(base.rstrip("/"), cab, m, mensajes, 120, parcial, presupuesto)
+                    texto = _completar(base.rstrip("/"), cab, m, mensajes, min(TIMEOUTS_EXTERNOS.get(via, 120), resto), parcial, presupuesto)
                     _ULTIMO.update(via=via, modelo=m)
                     return texto, via
                 except Exception as e:
                     if isinstance(e, _Parcial):
                         parcial, e = e.parcial, e.causa
                     ultimo = e
+                    if _es_timeout(e):
+                        _ENFRIADOS[via] = time.monotonic() + COOLDOWN_TIMEOUT_S; caido = True; break
                     if _clase(e) == "modelo":
                         break
     raise ultimo or RuntimeError('sin servidores')

@@ -147,6 +147,7 @@ class SweYaiwes(unittest.TestCase):
 
     # ---- avanzar / estado / reanudar / aprobar ----
     def test_avanzar_estado_reanudar_solo_pasan_las_claves_permitidas(self):
+        servicio.CONTROL.d["agentes_on"] = True  # avanzar/reanudar/aprobar exigen Agentes ON en el servidor (auditoria); setUp lo restaura
         ref = {"task_id": "yaiwes-001", "origen": "yaiwes", "sesion": "chat-001", "proyecto": "yaiwes"}
         sucio = {**ref, "aprobacion": True, "operador": "intruso", "op_id": "x", "reconciliacion": {"resultado": "confirmada"}, "tool": "guardar", "estado": "DONE", "max_pasos": 99}
         for op, tool in (("avanzar", "swe_avanzar"), ("estado", "swe_estado"), ("reanudar", "swe_reanudar")):
@@ -157,6 +158,7 @@ class SweYaiwes(unittest.TestCase):
         self.assertEqual(self.post("estado", {**ref, "origen": "openclaw"}).status_code, 400)
 
     def test_aprobar_lo_identifica_el_servidor_no_el_cuerpo_ni_el_modelo(self):
+        servicio.CONTROL.d["agentes_on"] = True  # avanzar/reanudar/aprobar exigen Agentes ON en el servidor (auditoria); setUp lo restaura
         ref = {"task_id": "yaiwes-001", "origen": "yaiwes", "sesion": "chat-001", "proyecto": "yaiwes", "op_id": "op-abc123"}
         with patch.dict(os.environ, {"RIU_SWE_OPERADOR": "antonio.director"}):
             r = self.post("aprobar", {**ref, "aprobacion": True, "operador": "intruso", "aprobado_por": "intruso", "estado": "CONTINUAR"})
@@ -176,6 +178,7 @@ class SweYaiwes(unittest.TestCase):
 
     # ---- errores del Harness ----
     def test_errores_del_harness_se_traducen_sin_filtrar_detalles(self):
+        servicio.CONTROL.d["agentes_on"] = True  # avanzar/reanudar/aprobar exigen Agentes ON en el servidor (auditoria); setUp lo restaura
         Falso.cola = [(200, {"status": "error", "error": "TASK_ID_INVALIDO"})]
         r = self.post("estado", {"task_id": "yaiwes-001"})
         self.assertEqual(r.status_code, 400); self.assertIn("TASK_ID_INVALIDO", r.text)

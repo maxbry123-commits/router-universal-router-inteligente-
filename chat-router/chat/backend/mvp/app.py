@@ -241,13 +241,23 @@ async def swe_capacidades():  # que agentes/workflows/modelos reporta CONECTADOS
     except (ValueError, RuntimeError) as error: return {"harness": "no_configurado" if "no configurado" in str(error) else "no_disponible", **vacio}
     if not isinstance(estado, dict) or estado.get("status") != "ok": return {"harness": "no_disponible", **vacio}
     return {"harness": "ok", **harness_client.swe_capacidades(estado)}
+def _exigir_aprobador(token):
+    """swe_aprobar pide ADEMAS RIU_SWE_APROBADOR_TOKEN (cabecera x-operator-token) si esta definido; debe ser distinto de las claves de acceso. Como en el bridge: 503 mal configurado, 401 falta o no coincide."""
+    esperado = os.environ.get("RIU_SWE_APROBADOR_TOKEN", "")
+    if not esperado:
+        return
+    if any(esperado == os.environ[n] for n in bank.ACCESO if os.environ.get(n)):
+        raise HTTPException(status_code=503, detail="APROBADOR_TOKEN_NO_CONFIGURADO")
+    if not isinstance(token, str) or not token or not _igual(token, esperado):
+        raise HTTPException(status_code=401, detail="OPERADOR_NO_AUTORIZADO")
 @app.post("/chat/swe/{operacion}", dependencies=[Depends(verificar)])
-async def swe_operacion(operacion: str, cuerpo: dict):
+async def swe_operacion(operacion: str, cuerpo: dict, x_operator_token: str | None = Header(None)):
     herramienta = SWE_RUTAS.get(operacion)
     if not herramienta: raise HTTPException(status_code=404, detail="OPERACION_SWE_NO_AUTORIZADA")
     try: args = harness_client.swe_argumentos(herramienta, cuerpo, os.environ.get("RIU_SWE_OPERADOR", "director"))  # el operador que aprueba es quien tiene la clave de acceso del chat; el Harness lo valida contra RIU_SWE_OPERADORES
     except ValueError as error: raise HTTPException(status_code=503 if str(error) == "OPERADOR_NO_CONFIGURADO" else 400, detail=str(error)) from None
-    if herramienta == "swe_iniciar" and args["modo_agentico"]: _verificar_herramienta("agente", None)  # delegar en agentes externos: lo decide el servidor (Agentes ON/OFF), no el cliente
+    if herramienta == "swe_aprobar": _exigir_aprobador(x_operator_token)
+    if (herramienta == "swe_iniciar" and args["modo_agentico"]) or herramienta in ("swe_avanzar", "swe_reanudar", "swe_aprobar"): _verificar_herramienta("agente", None)  # delegar en agentes externos: lo decide el servidor (Agentes ON/OFF), no el cliente; avanzar/reanudar/aprobar son las que los ejecutan (el servidor no ve el modo de la tarea: se exige siempre)
     try: salida = await asyncio.to_thread(harness_client.swe_invoke, clave_harness(), herramienta, args)
     except (ValueError, RuntimeError) as error: _swe_falla(error)
     if isinstance(salida, dict) and salida.get("status") == "ok" and isinstance(salida.get("result"), dict):

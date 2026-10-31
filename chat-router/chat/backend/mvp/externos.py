@@ -1,5 +1,6 @@
 """Modelos de Groq y NVIDIA (APIs compatibles OpenAI) para el chat: id «groq/<modelo>» o «nvidia/<modelo>».
 La clave sale del banco (GROQ_API_KEY / NVIDIA_API_KEY) o de las variables del Space (GROQ_API_KEY_2..7, NVIDIA_API_KEY_1..9)."""
+import hashlib
 import json
 import logging
 import os
@@ -181,7 +182,31 @@ def _compactar(mensajes, pol):
 
 # ---------- transporte: conexion persistente (httpx) o urllib; normaliza los fallos en ErrorHTTP / ErrorRed ----------
 TRANSITORIOS = compute.REINTENTABLES | {408, 500, 529}
-_dormir, _azar = time.sleep, random.random  # costuras de las pruebas
+_dormir, _azar, _reloj = time.sleep, random.random, time.monotonic  # costuras de las pruebas
+_ENFRIADAS = {}  # (proveedor, huella de la clave) -> instante (_reloj) hasta el que la clave NO se prueba primero tras un 429. Nunca guarda la clave en claro.
+
+
+def limpiar_enfriadas():
+    _ENFRIADAS.clear()
+
+
+def _huella_clave(prov, k):
+    return (prov, hashlib.sha256(k.encode("utf-8", "surrogatepass")).hexdigest()[:16])
+
+
+def _enfriar(prov, k, pol, retry_after):
+    """429 en una clave: se aparta COOLDOWN_429_S (60 s, o el Retry-After del proveedor hasta 10 min) para las llamadas siguientes."""
+    base = float((pol.get("reintentos") or {}).get("cooldown_429_s", 60.0))
+    _ENFRIADAS[_huella_clave(prov, k)] = _reloj() + max(base, min(float(retry_after or 0), 600.0))
+
+
+def _ordenar(prov, pool):
+    """Claves libres primero (orden original); las enfriadas por 429 al final, la que antes caduca primero. Si todas estan enfriadas se intentan igual (no se inventa un fallo)."""
+    ahora = _reloj()
+    for h in [h for h, hasta in _ENFRIADAS.items() if hasta <= ahora]:
+        del _ENFRIADAS[h]
+    libres = [k for k in pool if _huella_clave(prov, k) not in _ENFRIADAS]
+    return libres + sorted((k for k in pool if k not in libres), key=lambda k: _ENFRIADAS[_huella_clave(prov, k)])
 
 
 class ErrorHTTP(Exception):
@@ -290,9 +315,10 @@ def _sin_imagenes(mensajes):
              if isinstance(m.get("content"), list) else m) for m in mensajes]
 
 
-def _con_reintentos(accion, pol, payload, ultima_clave):
+def _con_reintentos(accion, pol, payload, ultima_clave, al_429=None):
     """Una clave: backoff exponencial con jitter, Retry-After del proveedor y tope de intentos de la politica.
-    401/403/404 -> _Alterna (siguiente clave); 429 con otra clave disponible -> _Alterna sin esperar (el limite es por clave)."""
+    401/402/403/404 -> _Alterna (siguiente clave); 429 con otra clave disponible -> _Alterna sin esperar (el limite es por clave).
+    al_429(retry_after): aviso para enfriar esa clave entre llamadas. Siempre devuelve la respuesta o LANZA (nunca None)."""
     r = pol["reintentos"]
     maximo = max(int(r.get("max") or 1), 1)
     for n in range(maximo):
@@ -300,7 +326,9 @@ def _con_reintentos(accion, pol, payload, ultima_clave):
         try:
             return accion()
         except ErrorHTTP as exc:
-            if exc.codigo in (401, 403, 404):
+            if exc.codigo == 429 and al_429:
+                al_429(exc.retry_after)
+            if exc.codigo in (401, 402, 403, 404):  # clave invalida, sin credito o sin acceso al modelo: otra clave puede servir
                 raise compute._Alterna("HTTP %d" % exc.codigo) from None
             if exc.codigo == 429 and not ultima_clave and r.get("rotar_clave_en_429", True):
                 raise compute._Alterna("HTTP 429") from None
@@ -314,6 +342,7 @@ def _con_reintentos(accion, pol, payload, ultima_clave):
             if exc.con_datos or n == maximo - 1:
                 raise RuntimeError("error de red: " + str(exc)) from None
         _dormir(espera)
+    raise RuntimeError("sin respuesta del proveedor tras %d intentos" % maximo)  # p. ej. el ultimo intento fue el reintento sin imagenes: nunca se devuelve None
 
 
 def _seguro(cb):
@@ -334,6 +363,7 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
     if modelo in PROVEEDORES_NUEVOS and disponible(modelo) is False:
         raise RuntimeError("%s: NO DISPONIBLE: %s no aparece en GET /models del proveedor; no se cambió de modelo" % (PROVEEDORES[prov]["label"], modelo))
     pol = politica(modelo)
+    pool = _ordenar(prov, pool)  # las claves enfriadas por un 429 reciente van al final
     payload = {"model": modelo.split("/", 1)[1], "messages": _compactar(mensajes, pol)}
     for n, v in (opciones or {}).items():
         if n in compute.OPCIONES and n not in ("enable_thinking", "reasoning_effort"):
@@ -364,7 +394,7 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
             r["metricas"] = {"stream": False, "ttft_s": None, "duracion_s": round(dur, 4), "tokens": tok, "tokens_estimados": False, "tokens_por_s": round(tok / dur, 2) if tok and dur > 0 else None}
             return r
         try:
-            r = _con_reintentos(accion, pol, payload, i == len(pool) - 1)
+            r = _con_reintentos(accion, pol, payload, i == len(pool) - 1, lambda ra, k=k: _enfriar(prov, k, pol, ra))
             logging.getLogger(__name__).info("%s ttft=%s tokens/s=%s dur=%s", modelo, r["metricas"].get("ttft_s"), r["metricas"].get("tokens_por_s"), r["metricas"].get("duracion_s"))
             return {**r, "modelo_solicitado": modelo}
         except compute._Alterna as exc:

@@ -7,6 +7,7 @@ import { iguales } from './iguales.js';
 export const OPERACIONES_SWE = { iniciar: 'swe_iniciar', avanzar: 'swe_avanzar', estado: 'swe_estado', aprobar: 'swe_aprobar', reanudar: 'swe_reanudar' };
 const PERMITIDAS = new Set(Object.values(OPERACIONES_SWE));
 export const TIMEOUT_HARNESS_MS = 60000;
+export const TIMEOUT_AVANZAR_MS = 1800000;  // swe_avanzar / swe_reanudar corren el flujo entero en el Harness (minutos): RIU_SWE_AVANZAR_TIMEOUT_MS
 const ORIGEN = 'openclaw';
 const TASK_ID = /^[A-Za-z0-9_-]{1,64}$/, SEGMENTO = /^[A-Za-z0-9_-]{0,64}$/, OP_ID = /^[A-Za-z0-9_-]{1,80}$/, OPERADOR = /^[A-Za-z0-9_.@-]{2,64}$/, CODIGO = /^[A-Z][A-Z0-9_]{2,63}$/;
 const CAMPOS = ['task_id', 'origen', 'mensaje', 'workflow', 'modelo_responde', 'modelo_lector', 'modelo_tool', 'modelo_revisor', 'agente_responde', 'agente_tool', 'agente_verificador', 'modo_agentico', 'aprobacion', 'sesion', 'proyecto'];
@@ -15,9 +16,11 @@ const MAX_MENSAJE = 200000;
 
 // POST {RIU_DEEPSEEK_HARNESS_URL}/invoke con el cuerpo dado; devuelve cuerpo.result. Los mensajes de error son codigos fijos: jamas llevan la URL ni la clave.
 async function postHarness(payload, { env, fetchFn }) {
+  const largo = payload.action === 'invoke' && (payload.tool === 'swe_avanzar' || payload.tool === 'swe_reanudar');
   const base = String(env.RIU_DEEPSEEK_HARNESS_URL || '').trim().replace(/\/+$/, ''), clave = env.RIU_API_KEY;
   if (!base || !clave) throw new Error('HARNESS_NO_CONFIGURADO');
-  const ms = Number.parseInt(env.RIU_SWE_HARNESS_TIMEOUT_MS, 10) > 0 ? Number.parseInt(env.RIU_SWE_HARNESS_TIMEOUT_MS, 10) : TIMEOUT_HARNESS_MS;
+  const pos = (v) => (Number.parseInt(v, 10) > 0 ? Number.parseInt(v, 10) : 0);
+  const ms = largo ? pos(env.RIU_SWE_AVANZAR_TIMEOUT_MS) || TIMEOUT_AVANZAR_MS : pos(env.RIU_SWE_HARNESS_TIMEOUT_MS) || TIMEOUT_HARNESS_MS;
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
   let r;
   try {

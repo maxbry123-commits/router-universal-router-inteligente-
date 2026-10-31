@@ -3,7 +3,8 @@
 // Contrato REAL del Harness: POST {RIU_DEEPSEEK_HARNESS_URL}{RIU_DEEPSEEK_HARNESS_PATH||/invoke}, cabecera X-API-Key
 // (RIU_DEEPSEEK_HARNESS_API_KEY || RIU_API_KEY, igual que plugins deepseek_harness/plugin.py), cuerpo
 // {action:"invoke", tool:"guardar"|"leer", args:{nombre, valor}} -> {status:"ok", result:{...}} | {status:"error", error}.
-// Ruta del dato: tareas/swe/<id>/checkpoint.json (misma convencion que tareas/<id>/diario.json del Harness); `valor` es un string JSON.
+// Ruta del dato: tareas/swe/<origen>/<id>/checkpoint.json con origen = yaiwes | openclaw (el del contrato de la tarea) o 'bridge'; los checkpoints previos sin origen
+// (tareas/swe/<id>/checkpoint.json) se siguen leyendo. `valor` es un string JSON.
 // Sin Harness configurado (o caido) el checkpoint se guarda igual en BRIDGE_STATE_DIR/checkpoints/<id>.json (escritura atomica);
 // con Harness se guarda en ambos. Nunca se guardan claves ni cabeceras.
 import fs from 'node:fs';
@@ -93,8 +94,13 @@ async function invocar(herramienta, args, { env, fetch: f, timeoutMs, secretos }
   }
 }
 
-const nombreHarness = (id) => `tareas/swe/${id}/checkpoint.json`;
-const opciones = (o = {}) => ({ env: o.env || process.env, fetch: o.fetch || globalThis.fetch, timeoutMs: o.timeoutMs ?? TIMEOUT_MS, secretos: Array.isArray(o.secretos) ? o.secretos : [] });
+export const ORIGEN_RE = /^[A-Za-z0-9_-]{1,32}$/;
+export const ORIGENES = ['bridge', 'openclaw', 'yaiwes'];
+export const origenValido = (o) => (typeof o === 'string' && ORIGEN_RE.test(o) ? o : null);
+const nombreHarness = (id, origen) => (origen ? `tareas/swe/${origen}/${id}/checkpoint.json` : `tareas/swe/${id}/checkpoint.json`);  // sin origen = ruta previa (solo lectura)
+const opciones = (o = {}) => ({ origen: origenValido(o.origen), env: o.env || process.env, fetch: o.fetch || globalThis.fetch, timeoutMs: o.timeoutMs ?? TIMEOUT_MS, secretos: Array.isArray(o.secretos) ? o.secretos : [] });
+
+const origenDe = (estado, op) => origenValido(estado?.origen) || op.origen || 'bridge';
 
 // Guarda el checkpoint: SIEMPRE en local (no se pierde) y, con Harness configurado, tambien en el Harness.
 // Devuelve {local, harness, ts, harness_error?}. Solo lanza si no se pudo guardar en ningun sitio.
@@ -105,23 +111,31 @@ export async function guardarCheckpoint(id, estado, o = {}) {
   const r = { local: false, harness: false, ts };
   try { guardarLocal(id, limpio, op.env); r.local = true; } catch (e) { r.local_error = e.code || 'ESCRITURA'; }
   if (urlHarness(op.env)) {
-    try { await invocar('guardar', { nombre: nombreHarness(id), valor: JSON.stringify(limpio) }, op); r.harness = true; } catch (e) { r.harness_error = e.message; }
+    try { await invocar('guardar', { nombre: nombreHarness(id, origenDe(estado, op)), valor: JSON.stringify(limpio) }, op); r.harness = true; } catch (e) { r.harness_error = e.message; }
   } else r.harness_error = 'HARNESS_NO_CONFIGURADO';
   if (!r.local && !r.harness) throw falla('CHECKPOINT_NO_GUARDADO', `no se pudo guardar el checkpoint ${id} (${r.local_error}; ${r.harness_error})`);
   return r;
 }
 
 // Lee el checkpoint mas reciente entre el local y el del Harness (tras un reinicio el disco local puede haberse perdido). null si no hay.
+// En el Harness busca en tareas/swe/<origen>/<id> (origen = el pedido, el del checkpoint local o 'bridge') y en la ruta previa sin origen; si no hay nada y el origen no se
+// conoce, prueba los demas origenes. Entre varios gana el de `ts` mas reciente.
 export async function leerCheckpoint(id, o = {}) {
   if (!idValido(id)) throw falla('CHECKPOINT_ID_INVALIDO', 'id: letras, numeros, - y _ (1 a 64)');
   const op = opciones(o), local = leerLocal(id, op.env);
+  const origen = op.origen || origenValido(local?.origen) || 'bridge', conocido = !!(op.origen || origenValido(local?.origen));
   let remoto = null;
   if (urlHarness(op.env)) {
-    try {
-      const res = await invocar('leer', { nombre: nombreHarness(id) }, op), v = res?.valor;
-      const ck = typeof v === 'string' ? JSON.parse(v) : v;
-      remoto = ck && typeof ck === 'object' ? ck : null;
-    } catch { remoto = null; }  // sin checkpoint en el Harness (o Harness caido): vale el local
+    const leer = async (nombre) => {
+      try {
+        const res = await invocar('leer', { nombre }, op), v = res?.valor;
+        const ck = typeof v === 'string' ? JSON.parse(v) : v;
+        return ck && typeof ck === 'object' ? ck : null;
+      } catch { return null; }  // sin checkpoint en esa ruta (o Harness caido)
+    };
+    const masNuevo = (a, b) => (a && b ? (String(b.ts || '') > String(a.ts || '') ? b : a) : a || b);
+    for (const nombre of [nombreHarness(id, origen), nombreHarness(id)]) remoto = masNuevo(remoto, await leer(nombre));
+    if (!remoto && !conocido) for (const otro of ORIGENES.filter((x) => x !== origen)) { remoto = await leer(nombreHarness(id, otro)); if (remoto) break; }
   }
   if (local && remoto) return String(remoto.ts || '') > String(local.ts || '') ? remoto : local;
   return remoto || local || null;

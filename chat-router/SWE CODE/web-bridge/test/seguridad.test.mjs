@@ -48,6 +48,7 @@ test('S1. /v1/claves y /v1/openclaw: las variantes con barra final, mayusculas o
   const variantes = ['/v1/claves', '/v1/claves/', '/V1/CLAVES', '/v1/Claves', '/v1/claves//', '//v1/claves', '/v1/openclaw', '/v1/openclaw/', '/V1/OPENCLAW', '/v1/OpenClaw/', '/v1/claves/.', '/v1/claves/?x=1'];
   const n0 = llamadasBanco().length;
   for (const cab of [sin, bearer]) for (const metodo of ['GET', 'POST', 'DELETE']) for (const v of variantes) {
+    if (cab === bearer && metodo === 'GET' && v === '/v1/openclaw') continue;  // GET /v1/openclaw exacto SI acepta BRIDGE_TOKEN (solo lectura): ver auditoria_server
     const r = await jpost(G, v, metodo === 'POST' ? { groq: 'gsk-no-debe-entrar' } : undefined, cab, metodo);
     assert.equal(r.status, 401, `${metodo} ${v} ${JSON.stringify(cab)} -> ${r.status} ${r.texto.slice(0, 80)}`);
   }

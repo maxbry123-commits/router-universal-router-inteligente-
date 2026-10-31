@@ -6,6 +6,13 @@ from urllib import error, request
 from mvp import modelos
 
 REINTENTABLES = {429, 502, 503, 504}
+def _segundos(nombre, defecto):
+    try:
+        v = float(os.environ.get(nombre) or defecto)
+        return v if v > 0 else float(defecto)
+    except ValueError:
+        return float(defecto)
+QWEN_TIMEOUT_S = _segundos("RIU_QWEN_TIMEOUT_S", 180)  # solo la ruta no-SSE de Qwen; Groq/NVIDIA usan timeout_s() mas abajo
 OPCIONES = {"tools", "tool_choice", "temperature", "top_p", "max_tokens",
             "parallel_tool_calls", "response_format", "enable_thinking", "reasoning_effort"}
 
@@ -23,7 +30,7 @@ def _solicitar(url, payload, clave):
         headers["Authorization"] = "Bearer " + clave
     req = request.Request(url, data=json.dumps(payload).encode("utf-8"),
                           headers=headers, method="POST")
-    with request.urlopen(req, timeout=None) as resp:
+    with request.urlopen(req, timeout=QWEN_TIMEOUT_S) as resp:  # finito: un servidor que no contesta no cuelga el hilo para siempre (RIU_QWEN_TIMEOUT_S lo ajusta)
         return json.load(resp)
 
 

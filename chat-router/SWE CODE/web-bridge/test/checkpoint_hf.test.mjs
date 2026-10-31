@@ -76,7 +76,7 @@ test("con Harness: usa la ruta, cabecera y formato REALES de /invoke y guarda ta
     const p = h.peticiones[0];
     assert.equal(p.method, "POST"); assert.equal(p.url, "/invoke"); assert.equal(p.clave, CLAVE_HARNESS);
     assert.equal(p.cuerpo.action, "invoke"); assert.equal(p.cuerpo.tool, "guardar");
-    assert.equal(p.cuerpo.args.nombre, "tareas/swe/tarea-9/checkpoint.json");
+    assert.equal(p.cuerpo.args.nombre, "tareas/swe/bridge/tarea-9/checkpoint.json", "origen por defecto: bridge");
     assert.equal(typeof p.cuerpo.args.valor, "string");
     assert.equal(JSON.parse(p.cuerpo.args.valor).parcial, "AAA");
     assert.ok(fs.existsSync(path.join(dir, "checkpoints", "tarea-9.json")), "ambos");
@@ -84,7 +84,7 @@ test("con Harness: usa la ruta, cabecera y formato REALES de /invoke y guarda ta
     fs.rmSync(path.join(dir, "checkpoints"), { recursive: true });
     const ck = await leerCheckpoint("tarea-9", { env });
     assert.equal(ck.parcial, "AAA");
-    const l = h.peticiones.at(-1).cuerpo; assert.equal(l.tool, "leer"); assert.deepEqual(l.args, { nombre: "tareas/swe/tarea-9/checkpoint.json" });
+    const lecturas = h.peticiones.filter((x) => x.cuerpo.tool === "leer").map((x) => x.cuerpo.args.nombre); assert.deepEqual(lecturas, ["tareas/swe/bridge/tarea-9/checkpoint.json", "tareas/swe/tarea-9/checkpoint.json"], "ruta nueva y ruta previa");
   } finally { h.cerrar(); }
 });
 
@@ -179,4 +179,45 @@ test("el fetch al Harness lleva redirect:'error' (una redireccion no arrastra la
   const f = async (url, init) => { vistos.push(init); return { ok: true, status: 200, json: async () => ({ status: "ok", result: {} }) }; };
   await guardarCheckpoint("redir-1", { texto: "x" }, { env: envCon(dir, { RIU_DEEPSEEK_HARNESS_URL: "https://harness.example", RIU_API_KEY: CLAVE_HARNESS }), fetch: f });
   assert.ok(vistos.length >= 1); assert.ok(vistos.every((i) => i.redirect === "error"));
+});
+
+// ---- auditoria 13: el recurso incluye el origen (yaiwes|openclaw|bridge) y los checkpoints previos (sin origen) se siguen leyendo ----
+test("13: el nombre del recurso lleva el origen del contrato (openclaw/yaiwes) o 'bridge'; un origen raro cae a 'bridge'", async () => {
+  const h = await harnessFalso(); const dir = tmp();
+  try {
+    const env = envCon(dir, { RIU_DEEPSEEK_HARNESS_URL: h.url, RIU_API_KEY: CLAVE_HARNESS });
+    await guardarCheckpoint("t-oc", { origen: "openclaw", v: 1 }, { env });
+    await guardarCheckpoint("t-ya", { v: 1 }, { env, origen: "yaiwes" });
+    await guardarCheckpoint("t-raro", { origen: "../x/y", v: 1 }, { env });
+    await guardarCheckpoint("t-nada", { v: 1 }, { env });
+    assert.deepEqual(h.peticiones.map((p) => p.cuerpo.args.nombre), ["tareas/swe/openclaw/t-oc/checkpoint.json", "tareas/swe/yaiwes/t-ya/checkpoint.json", "tareas/swe/bridge/t-raro/checkpoint.json", "tareas/swe/bridge/t-nada/checkpoint.json"]);
+  } finally { h.cerrar(); }
+});
+
+test("13: lee el checkpoint previo SIN origen (tareas/swe/<id>/checkpoint.json) si no hay uno nuevo; entre ambos gana el mas reciente", async () => {
+  const h = await harnessFalso(); const dir = tmp();
+  try {
+    const env = envCon(dir, { RIU_DEEPSEEK_HARNESS_URL: h.url, RIU_API_KEY: CLAVE_HARNESS });
+    h.almacen.set("tareas/swe/viejo/checkpoint.json", JSON.stringify({ v: "legado", ts: "2020-01-01T00:00:00.000Z" }));
+    assert.equal((await leerCheckpoint("viejo", { env })).v, "legado");
+    h.almacen.set("tareas/swe/bridge/viejo/checkpoint.json", JSON.stringify({ v: "nuevo", ts: "2024-01-01T00:00:00.000Z" }));
+    assert.equal((await leerCheckpoint("viejo", { env })).v, "nuevo");
+    h.almacen.set("tareas/swe/viejo/checkpoint.json", JSON.stringify({ v: "legado-reciente", ts: "2025-01-01T00:00:00.000Z" }));
+    assert.equal((await leerCheckpoint("viejo", { env })).v, "legado-reciente");
+  } finally { h.cerrar(); }
+});
+
+test("13: sin disco local y sin origen conocido, lee de openclaw/yaiwes; con el origen en el checkpoint local usa ese", async () => {
+  const h = await harnessFalso(); const dir = tmp();
+  try {
+    const env = envCon(dir, { RIU_DEEPSEEK_HARNESS_URL: h.url, RIU_API_KEY: CLAVE_HARNESS });
+    h.almacen.set("tareas/swe/yaiwes/solo-remoto/checkpoint.json", JSON.stringify({ v: "ya", origen: "yaiwes", ts: "2024-01-01T00:00:00.000Z" }));
+    assert.equal((await leerCheckpoint("solo-remoto", { env })).v, "ya");
+    assert.equal((await leerCheckpoint("solo-remoto", { env, origen: "yaiwes" })).v, "ya");
+    h.peticiones.length = 0;
+    await guardarCheckpoint("loc", { origen: "openclaw", v: 1 }, { env });
+    h.peticiones.length = 0;
+    await leerCheckpoint("loc", { env });
+    assert.equal(h.peticiones[0].cuerpo.args.nombre, "tareas/swe/openclaw/loc/checkpoint.json", "el origen sale del checkpoint local");
+  } finally { h.cerrar(); }
 });

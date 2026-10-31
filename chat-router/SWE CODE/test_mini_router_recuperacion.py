@@ -29,8 +29,9 @@ class Base(unittest.TestCase):
     def setUp(self):
         self.s, self.tmp = [], tempfile.TemporaryDirectory()
         self.env = patch.dict(os.environ, {"RIU_MINI_STATE": self.tmp.name}); self.env.start()
+        mini_router._ENFRIADOS.clear()  # el enfriamiento por timeout es estado del modulo: no se filtra entre pruebas
     def tearDown(self):
-        self.env.stop(); self.tmp.cleanup(); [s.shutdown() for s in self.s]
+        self.env.stop(); self.tmp.cleanup(); [s.shutdown() for s in self.s]; mini_router._ENFRIADOS.clear()
     def externos(self, **kw):  # kw: via=(url, var, modelo)
         return patch.dict(mini_router.EXTERNOS, kw, clear=True), patch.dict(mini_router.URLS, {"S1": "http://127.0.0.1:9"}, clear=True)
     def srv(self, *r):

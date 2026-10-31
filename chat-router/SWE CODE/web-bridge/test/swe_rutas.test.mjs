@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { montarRutasSwe, llamarHarness, consultarCapacidades, OPERACIONES_SWE, TIMEOUT_HARNESS_MS } from '../src/swe_rutas.js';
+import { montarRutasSwe, llamarHarness, consultarCapacidades, OPERACIONES_SWE, TIMEOUT_HARNESS_MS, TIMEOUT_AVANZAR_MS } from '../src/swe_rutas.js';
 import { prepararApp, arrancar, limpiar, registrarMock } from './helpers/bridge_app.mjs';
 import './helpers/acceso.mjs';
 
@@ -288,4 +288,21 @@ test('server.js: GET /v1/swe/capacidades por HTTP real (Bearer o x-bridge-key); 
   assert.equal(vistos.length, n, 'sin autenticacion no se llama al Harness');
   const post = await fetch(A.base + '/v1/swe/capacidades', { method: 'POST', headers: { 'content-type': 'application/json', ...AUTH }, body: '{}' });
   assert.ok(post.status === 404 || post.status === 405, 'solo GET (status ' + post.status + ')');
+});
+
+// ---- auditoria 9: avanzar/reanudar ejecutan el flujo entero en el Harness (minutos): timeout largo propio; el resto 60 s ----
+test('9: swe_avanzar y swe_reanudar usan RIU_SWE_AVANZAR_TIMEOUT_MS (defecto 1800000); iniciar/estado/aprobar y capacidades siguen en 60 s', async () => {
+  assert.equal(TIMEOUT_AVANZAR_MS, 1800000);
+  const plazos = []; const real = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms, ...r) => { if (typeof ms === 'number' && ms >= 1000) plazos.push(ms); return real(fn, ms, ...r); };
+  try {
+    const f = harnessOk([]);
+    const medir = async (op, env = ENV) => { plazos.length = 0; await llamarHarness(op, { task_id: 'a-1', origen: 'openclaw' }, { env, fetchFn: f }); return plazos[0]; };
+    assert.equal(await medir('swe_avanzar'), 1800000); assert.equal(await medir('swe_reanudar'), 1800000);
+    for (const op of ['swe_iniciar', 'swe_estado', 'swe_aprobar']) assert.equal(await medir(op), 60000, op);
+    assert.equal(await medir('swe_avanzar', { ...ENV, RIU_SWE_AVANZAR_TIMEOUT_MS: '900000' }), 900000);
+    assert.equal(await medir('swe_reanudar', { ...ENV, RIU_SWE_AVANZAR_TIMEOUT_MS: 'x' }), 1800000, 'valor invalido: defecto');
+    assert.equal(await medir('swe_estado', { ...ENV, RIU_SWE_HARNESS_TIMEOUT_MS: '45000' }), 45000, 'RIU_SWE_HARNESS_TIMEOUT_MS sigue mandando en las cortas');
+    plazos.length = 0; await consultarCapacidades({ env: ENV, fetchFn: f }); assert.equal(plazos[0], 60000);
+  } finally { globalThis.setTimeout = real; }
 });

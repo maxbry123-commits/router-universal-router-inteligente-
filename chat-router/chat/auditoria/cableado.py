@@ -2,7 +2,7 @@
 Raiz FRONTEND: chat/frontend   Raiz BACKEND: chat/backend (mvp + deepseek_harness + router_api_cliente.py)
 Comprueba: imports resueltos, modulos huerfanos, sintaxis, endpoints del frontend contra rutas del backend,
 rutas/herramientas MCP del backend contra pruebas, ids del DOM usados por el JS."""
-import re, subprocess, sys, json, pathlib
+import os, re, subprocess, sys, json, pathlib
 
 R = pathlib.Path(__file__).resolve().parents[3]
 FE = R / "chat-router/chat/frontend"
@@ -105,7 +105,9 @@ for p in sorted(BE.glob("*.py")):
         continue
     if not (BE / f"test_{p.stem}.py").exists() and p.stem not in tests.replace("from mvp import ", ""):
         f("AVISO", f"Modulo backend sin prueba: {p.name}")
-r = subprocess.run([sys.executable, "-c", "import mvp.app, plugins.router_api_cliente, plugins.deepseek_harness.server, mvp.mcp_route, mvp.memoria, mvp.externos, mvp.control, mvp.bank, mvp.hf_store"], capture_output=True, text=True, cwd=R)
+# PYTHONPATH propio (chat-router -> plugins/agentes, router-mvp -> mvp): no depende del entorno de quien lo lance
+ENV = {**os.environ, "PYTHONPATH": os.pathsep.join([str(R / "chat-router"), str(R / "router-mvp"), *([os.environ["PYTHONPATH"]] if os.environ.get("PYTHONPATH") else [])])}
+r = subprocess.run([sys.executable, "-c", "import mvp.app, plugins.router_api_cliente, plugins.deepseek_harness.server, mvp.mcp_route, mvp.memoria, mvp.externos, mvp.control, mvp.bank, mvp.hf_store"], capture_output=True, text=True, cwd=R, env=ENV)
 f("OK" if r.returncode == 0 else "FAIL", "BE importa app/harness/cliente/mcp/memoria/externos/control/bank/hf_store (tambien por los enlaces mvp/ y plugins/)" if r.returncode == 0 else "BE import: " + r.stderr[-300:])
 
 # ids del DOM usados por JS

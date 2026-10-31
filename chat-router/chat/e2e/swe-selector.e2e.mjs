@@ -85,7 +85,16 @@ async function nuevaPagina(browser, estado, { catalogoLocal } = {}) {
   return page;
 }
 
-const volverAlChat = async (p) => { await p.$eval('[data-view="chat"]', (e) => e.click()); await p.waitForSelector('#composer #message', { state: 'attached', timeout: 10000 }); await p.waitForTimeout(900); };  // el panel se vuelve a montar: con la maquina cargada 300 ms no bastaban
+// el panel se vuelve a montar al volver: se espera a la CONDICION (composer + pills montados y el DOM quieto 300 ms), no a un plazo fijo
+const volverAlChat = async (p) => {
+  await p.$eval('[data-view="chat"]', (e) => e.click());
+  await p.waitForSelector('#composer #message', { state: 'attached', timeout: 20000 });
+  await p.waitForFunction(() => {
+    const listo = ['#composer #message', '#sel-swe', '#sel-swen', '#sel-nuevo'].every((q) => document.querySelector(q));
+    if (!window.__quietoObs) { window.__quietoT = Date.now(); window.__quietoObs = new MutationObserver(() => { window.__quietoT = Date.now(); }); window.__quietoObs.observe(document.documentElement, { childList: true, subtree: true }); }
+    return listo && Date.now() - window.__quietoT >= 300;
+  }, null, { timeout: 30000, polling: 100 });
+};
 const abrirChat = async (p, base) => { await p.goto(base + '/chat/ui/shell.html'); await p.waitForSelector('#sel-nuevo', { state: 'attached', timeout: 20000 }); await p.waitForTimeout(1500); };
 const abrirHojaModelos = async (p) => { await p.$eval('#sel-nuevo', (e) => e.click()); await p.waitForSelector('#sh-modelos-lista button', { state: 'attached', timeout: 10000 }); };
 const grupos = (p) => p.evaluate(() => [...document.querySelectorAll('#sh-modelos-lista h4.mod-grupo-t')].map((h) => h.textContent.trim()));
@@ -94,7 +103,7 @@ const burbujasBot = (p) => p.locator('.chat-history .message:not(.user):not(.pen
 async function enviar(p, texto) {
   const n = await burbujasBot(p).count();
   await p.fill('#message', texto); await p.$eval('#composer .action', (e) => e.click());
-  await p.waitForFunction((k) => document.querySelectorAll('.chat-history .message:not(.user):not(.pending):not(.meta) .txt').length > k, n, { timeout: 15000 });
+  await p.waitForFunction((k) => document.querySelectorAll('.chat-history .message:not(.user):not(.pending):not(.meta) .txt').length > k, n, { timeout: 30000 });
   return (await burbujasBot(p).last().innerText()).trim();
 }
 
@@ -503,7 +512,7 @@ async function enviar(p, texto) {
     const estadoVentanas = () => pj.evaluate(() => ['claves', 'workflows', 'constitucion'].map((n) => [n, !!document.querySelector('#pill-' + n), document.querySelectorAll('#ventana-' + n).length]));
     const antes = await estadoVentanas();
     await pj.$eval('[data-view="apariencia"]', (e) => e.click()); await pj.waitForSelector('#ap-apk', { state: 'attached', timeout: 10000 });
-    await volverAlChat(pj); await pj.waitForTimeout(600);
+    await volverAlChat(pj); await pj.waitForFunction(() => ['claves', 'workflows', 'constitucion'].every((n) => document.querySelector('#pill-' + n) && document.querySelector('#ventana-' + n)), null, { timeout: 20000 });
     const despues = await estadoVentanas();
     ok('A tras ir a Configuracion y volver, siguen las pills y las ventanas de Banco de claves, Workflows y Constitucion (una sola cada una)', JSON.stringify(despues.map((x) => [x[0], x[1], x[2]])) === JSON.stringify([['claves', true, 1], ['workflows', true, 1], ['constitucion', true, 1]]), JSON.stringify({ antes, despues }));
     for (const n of ['claves', 'workflows', 'constitucion']) {
@@ -515,6 +524,72 @@ async function enviar(p, texto) {
     // vuelta repetida: sin duplicar
     await pj.$eval('[data-view="apariencia"]', (e) => e.click()); await pj.waitForSelector('#ap-apk', { state: 'attached', timeout: 10000 }); await volverAlChat(pj);
     ok('A dos vueltas seguidas no duplican pills ni ventanas', await pj.evaluate(() => ['claves', 'workflows', 'constitucion'].every((n) => document.querySelectorAll('#pill-' + n).length === 1 && document.querySelectorAll('#ventana-' + n).length === 1)));
+    // ======== K) hallazgos de revision: F1 modelo enviado = desplegable, F2 salida, F3 validacion, F4 entradas «SWE · X», F6 foco, F7 micro-etiquetas ========
+    const abrirK = async (sel, id) => { await pj.$eval(sel, (e) => e.click()); await pj.waitForSelector('#' + 'sh-' + id + ' .swe-cuerpo', { state: 'visible', timeout: 8000 }); await pj.evaluate((i) => document.querySelectorAll('#sh-' + i + ' details.sh-sec').forEach((d) => { d.open = true; }), id); await pj.waitForFunction((i) => !document.querySelector('#sh-' + i + ' .swe-estado').textContent.startsWith('Consultando'), id, { timeout: 8000 }); };
+    const cerrarK = (id) => pj.evaluate((i) => document.querySelector('#sh-' + i + ' .sh-cerrar').click(), id);
+    const BODY = (m) => (estJ.llamadas.filter((l) => l.ruta === '/web/v1/chat/completions').pop() || { body: {} }).body[m];
+    estJ.capacidades = { harness: 'ok', agentes: { codex: { disponible: true }, 'swe-agent': { disponible: true }, openclaw: { disponible: true } }, workflows: { swe_code: { disponible: true } }, modelos: {} };
+    // K1 (F1) SWE CODE con el desplegable en Groq (no esta en la lista de la hoja): lo mostrado es lo enviado
+    await pj.evaluate(() => localStorage.setItem('riu_swe_seleccion', JSON.stringify({ modelo_responde: 'hf/lfm2.5-350m', modelo_tool: 'hf/qwen2.5-coder-1.5b', agente_responde: 'openclaw', agente_tool: 'swe-agent', modo_agentico: false, workflow: 'individual' })));
+    await abrirK('#sel-swe', 'swe-code');
+    await pj.selectOption('#sh-swe-code select[data-swe-ctl="modelo_responde"]', 'groq/qwen/qwen3.8-27b');
+    ok('K1 F1 SWE CODE: el desplegable en Groq fija el modelo enviado (la lista no lo trae) y la etiqueta', await pj.evaluate(() => window.RIU_SWE['swe-code'].model_id === 'groq/qwen/qwen3.8-27b' && /Groq/.test(window.RIU_SWE['swe-code'].label) && JSON.parse(localStorage.getItem('riu_swe_modelo'))['swe-code'] === 'groq/qwen/qwen3.8-27b'));
+    await cerrarK('swe-code'); estJ.llamadas.length = 0; await enviar(pj, 'por groq');
+    ok('K1 F1 y el POST sale con model groq/qwen/qwen3.8-27b (no lfm2.5-350m)', BODY('model') === 'groq/qwen/qwen3.8-27b', JSON.stringify(estJ.llamadas.map((l) => l.ruta + ':' + (l.body && l.body.model))));
+    // K2 (F1) SWEN CODE con hf/qwen3-0.6b (la lista de SWEN no trae los locales)
+    await abrirK('#sel-swen', 'swen-code-free');
+    await pj.evaluate(() => document.querySelector('#sh-swen-code-free-lista button[data-id="web-qwen38max"]').click());
+    await abrirK('#sel-swen', 'swen-code-free');
+    await pj.selectOption('#sh-swen-code-free select[data-swe-ctl="modelo_responde"]', 'hf/qwen3-0.6b');
+    await cerrarK('swen-code-free'); estJ.llamadas.length = 0; await enviar(pj, 'por qwen3 local');
+    ok('K2 F1 SWEN: el desplegable en hf/qwen3-0.6b se envia como qwen3-0.6b (no swecode-consulta/web-qwen38max)', BODY('model') === 'qwen3-0.6b', JSON.stringify(estJ.llamadas.map((l) => l.ruta + ':' + (l.body && l.body.model))));
+    await pj.reload(); await pj.waitForSelector('#sel-swen', { state: 'attached', timeout: 20000 });
+    ok('K2 F1 lo elegido sobrevive a recargar (no vuelve a la primera entrada de la lista)', await pj.evaluate(() => window.RIU_SWE['swen-code-free'].model_id === 'qwen3-0.6b' && window.RIU_SWE['swe-code'].model_id === 'groq/qwen/qwen3.8-27b'), await pj.evaluate(() => JSON.stringify(window.RIU_SWE)));
+    // K3 (F2) AGENTE QUE EJECUTA = Codex: el boton de salida no marca ninguno y se envia ejecutor_tools:'swe'
+    await abrirK('#sel-swe', 'swe-code');
+    await pj.selectOption('#sh-swe-code select[data-swe-ctl="agente_tool"]', 'codex');
+    ok('K3 F2 con Codex como ejecutor ningun boton de salida queda marcado y ejecutor_tools vuelve a swe', await pj.evaluate(() => [...document.querySelectorAll('#sh-swe-code [data-salida]')].every((b) => b.getAttribute('aria-pressed') === 'false') && localStorage.getItem('riu_swe_ejecutor_tools') === 'swe'));
+    await pj.$eval('#sh-swe-code [data-salida="openclaw"]', (e) => e.click());
+    ok('K3 F2 elegir OpenClaw en la salida marca ese boton y AGENTE QUE EJECUTA', await pj.evaluate(() => document.querySelector('#sh-swe-code [data-salida="openclaw"]').getAttribute('aria-pressed') === 'true' && document.querySelector('#sh-swe-code select[data-swe-ctl="agente_tool"]').value === 'openclaw'));
+    await pj.$eval('#sh-swe-code [data-salida="swe"]', (e) => e.click()); await cerrarK('swe-code');
+    // K4 (F4) entradas «SWE · X»: rotulo corto del agente conectado / «solo modelo» y seleccion de agente
+    await abrirK('#sel-swe', 'swe-code');
+    const rot = await pj.evaluate(() => Object.fromEntries([...document.querySelectorAll('#sh-swe-code-lista button')].map((b) => [b.dataset.id, (b.querySelector('.fila-ag') || {}).textContent || null])));
+    ok('K4 F4 la fila «Codex escribe» lleva «Codex»; «OpenCode revisa» (no conectado) «solo modelo»; Liquid no lleva rotulo de agente', rot['swe-codex-qwen25-15b'] === 'Codex' && rot['swe-opencode-qwen35-08b'] === 'solo modelo' && rot['swe-agent-lfm25'] === 'SWE-agent' && rot['swe-openhands-lfm25'] === 'solo modelo' && rot['hf-liquid-lfm25'] === null, JSON.stringify(rot));
+    await pj.evaluate(() => document.querySelector('#sh-swe-code-lista button[data-id="swe-codex-qwen25-15b"]').click());
+    const sCodex = await pj.evaluate(() => JSON.parse(localStorage.getItem('riu_swe_seleccion')));
+    ok('K4 F4 elegir «SWE · Codex escribe» fija modelo + agente_responde y agente_tool = codex', sCodex.agente_tool === 'codex' && sCodex.agente_responde === 'codex' && sCodex.modelo_responde === 'hf/qwen2.5-coder-1.5b', JSON.stringify(sCodex));
+    await abrirK('#sel-swe', 'swe-code');
+    await pj.evaluate(() => document.querySelector('#sh-swe-code-lista button[data-id="swe-opencode-qwen35-08b"]').click());
+    const sOpen = await pj.evaluate(() => JSON.parse(localStorage.getItem('riu_swe_seleccion')));
+    ok('K4 F4 «SWE · OpenCode revisa» sin OpenCode conectado: solo cambia el modelo (los agentes quedan en codex)', sOpen.modelo_responde === 'hf/qwen3.5-0.8b' && sOpen.agente_tool === 'codex' && sOpen.agente_responde === 'codex', JSON.stringify(sOpen));
+    // K5 (F7) micro-etiquetas visibles Agente / Modelo en las filas Responde y Ejecuta
+    await abrirK('#sel-swe', 'swe-code');
+    const mic = await pj.evaluate(() => [...document.querySelectorAll('#sh-swe-code .swe-rej .swe-rej-fila')].map((f) => [...f.querySelectorAll('.swe-micro')].map((m) => [m.textContent, m.getClientRects().length > 0, m.parentElement.querySelector('select') && m.parentElement.querySelector('select').dataset.sweCtl])));
+    ok('K5 F7 filas Responde y Ejecuta con micro-etiquetas visibles «Agente» y «Modelo» junto a su desplegable', JSON.stringify(mic) === JSON.stringify([[['Agente', true, 'agente_responde'], ['Modelo', true, 'modelo_responde']], [['Agente', true, 'agente_tool'], ['Modelo', true, 'modelo_tool']]]), JSON.stringify(mic));
+    await cerrarK('swe-code');
+    // K6 (F6) foco: al abrir en la X, Tab no sale de la hoja, al cerrar vuelve al boton que la abrio
+    await pj.$eval('#btn-selector-modelos', (e) => e.click()); await pj.waitForSelector('#sh-selectores:not([hidden]) #sel-swe', { state: 'visible', timeout: 8000 });  // los pills viven en la ventana «Selector de modelos»
+    await pj.focus('#sel-swe'); await pj.keyboard.press('Enter');
+    await pj.waitForSelector('#sh-swe-code .swe-cuerpo', { state: 'visible', timeout: 8000 });
+    ok('K6 F6 al abrir con teclado el foco esta en la X de la hoja', await pj.evaluate(() => document.activeElement === document.querySelector('#sh-swe-code .sh-cerrar')), await pj.evaluate(() => document.activeElement.outerHTML.slice(0, 80)));
+    let fuera = 0; const vistos = new Set();
+    for (let i = 0; i < 60; i++) { await pj.keyboard.press('Tab'); const d = await pj.evaluate(() => { const a = document.activeElement; return { dentro: !!a.closest('#sh-swe-code'), k: (a.dataset && (a.dataset.sweCtl || a.dataset.id || a.dataset.salida)) || a.className || a.tagName }; }); if (!d.dentro) fuera++; vistos.add(d.k); }
+    ok('K6 F6 60 Tab seguidos: el foco nunca sale de la hoja y recorre mas de un control', fuera === 0 && vistos.size > 3, fuera + ' fuera; ' + [...vistos].slice(0, 8).join(','));
+    await pj.focus('#sh-swe-code .sh-cerrar'); await pj.keyboard.press('Shift+Tab');
+    ok('K6 F6 Shift+Tab desde la X da la vuelta al ultimo control de la hoja (no sale)', await pj.evaluate(() => !!document.activeElement.closest('#sh-swe-code') && document.activeElement !== document.querySelector('#sh-swe-code .sh-cerrar')));
+    await pj.keyboard.press('Escape');
+    ok('K6 F6 al cerrar con Escape el foco vuelve al boton SWE CODE que abrio la hoja (y la ventana Selector de modelos de debajo sigue abierta)', await pj.evaluate(() => document.getElementById('sh-swe-code').hidden && document.activeElement === document.getElementById('sel-swe') && !document.getElementById('sh-selectores').hidden), await pj.evaluate(() => document.activeElement.id || document.activeElement.tagName));
+    await pj.focus('#sel-swen'); await pj.keyboard.press('Enter'); await pj.waitForSelector('#sh-swen-code-free .swe-cuerpo', { state: 'visible', timeout: 8000 });
+    await pj.evaluate(() => document.querySelector('#sh-swen-code-free .sh-cerrar').click());
+    ok('K6 F6 la X devuelve el foco al boton SWEN CODE free', await pj.evaluate(() => document.activeElement === document.getElementById('sel-swen')), await pj.evaluate(() => document.activeElement.id || document.activeElement.tagName));
+    // K7 (F3) workflow SWE CODE con modo agentico OFF: GAP claro y NO se crea la tarea
+    await pj.evaluate(() => localStorage.setItem('riu_swe_seleccion', JSON.stringify({ modelo_responde: 'hf/lfm2.5-350m', modelo_tool: 'hf/qwen2.5-coder-1.5b', agente_responde: 'openclaw', agente_tool: 'swe-agent', modo_agentico: false, workflow: 'swe_code' })));
+    estJ.llamadas.length = 0;
+    await pj.fill('#message', 'cuatro pasos sin agentico'); await pj.$eval('#composer .action', (e) => e.click());
+    await pj.waitForFunction(() => /exige MODO AGÉNTICO ON/.test(document.querySelector('.chat-history').innerText), null, { timeout: 8000 });
+    ok('K7 F3 swe_code con modo agentico OFF: GAP «exige MODO AGÉNTICO ON» y no se llama a /chat/swe/iniciar', !estJ.llamadas.some((l) => /^\/chat\/swe\/(iniciar|avanzar)/.test(l.ruta)), JSON.stringify(estJ.llamadas.map((l) => l.ruta)));
+    await pj.evaluate(() => localStorage.removeItem('riu_swe_seleccion'));
     ok('J sin errores JS en la pagina', pj.errs.length === 0, pj.errs.join(' | '));
     await pj.context().close();
   } finally {

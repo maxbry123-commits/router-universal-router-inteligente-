@@ -139,8 +139,8 @@ test("401/403 descarta esa clave y sigue con la siguiente (incluidas las inyecta
   } finally { g.cerrar(); }
 });
 
-test("rota entre hasta 20 claves por proveedor ante 402/408/5xx", async () => {
-  const codigos = [402, 408, 500, 502, 503, 504];
+test("rota entre hasta 20 claves por proveedor ante 402/5xx (el 408 ya no rota: enfria el proveedor, ver auditoria_respaldo)", async () => {
+  const codigos = [402, 500, 502, 503, 504];
   const g = await fake(({ n }) => n < 20 ? { status: codigos[n % codigos.length], json: {} } : ok("la 20"));
   Object.assign(BASES, { groq: g.url });
   setClaves({ groq: Array.from({ length: 30 }, (_, i) => `gsk-FAKE-I${i}`) });
@@ -150,12 +150,12 @@ test("rota entre hasta 20 claves por proveedor ante 402/408/5xx", async () => {
   } finally { g.cerrar(); }
 });
 
-test("timeout por llamada: pasa a la siguiente clave", async () => {
+test("timeout por llamada: corta el proveedor al primer timeout (no prueba la clave 2) y lo deja enfriado", async () => {
   const g = await fake(({ auth }) => auth === "Bearer gsk-FAKE-1" ? { colgar: true } : ok("ok2"));
   Object.assign(BASES, { groq: g.url });
   try {
-    const r = await externo("groq/m", msgs, { env: { GROQ_API_KEY: "gsk-FAKE-1", GROQ_API_KEY_2: "gsk-FAKE-2" }, opts: rapido({ timeoutMs: 80 }) });
-    assert.equal(r.salida, "ok2"); assert.equal(g.chat.length, 2);
+    await assert.rejects(() => externo("groq/m", msgs, { env: { GROQ_API_KEY: "gsk-FAKE-1", GROQ_API_KEY_2: "gsk-FAKE-2" }, opts: rapido({ timeoutMs: 80 }) }), (e) => e.code === "EXTERNO_FALLO");
+    assert.equal(g.chat.length, 1);
   } finally { g.cerrar(); }
 });
 
@@ -202,12 +202,12 @@ test("ninguna clave aparece en errores ni en logs (aunque el servidor las devuel
 
 // ---------- descubrimiento de modelos ----------
 test("Groq: descubre el id Qwen 3.8 con GET /models, lo cachea (una sola consulta) y lo usa", async () => {
-  const g = await fake(({ url }) => url.endsWith("/models") ? modelos(["llama-3.3-70b-versatile", "qwen/qwen3-8b-instruct", "qwen-3.8-x"]) : ok("hola"));
+  const g = await fake(({ url }) => url.endsWith("/models") ? modelos(["llama-3.3-70b-versatile", "qwen/qwen3-8b-instruct", "qwen/qwen3.8-x"]) : ok("hola"));
   Object.assign(BASES, { groq: g.url });
   const env = { GROQ_API_KEY: "gsk-FAKE-1" };
   try {
     await respaldo(msgs, { env, opts: rapido() }); await respaldo(msgs, { env, opts: rapido() });
-    assert.equal(g.chat[0].body.model, "qwen/qwen3-8b-instruct");
+    assert.equal(g.chat[0].body.model, "qwen/qwen3.8-x");
     assert.equal(g.vistos.filter((v) => v.url.endsWith("/models")).length, 1);
     assert.equal(g.vistos.find((v) => v.url.endsWith("/models")).auth, "Bearer gsk-FAKE-1");
     assert.equal(g.vistos.find((v) => v.url.endsWith("/models")).method, "GET");

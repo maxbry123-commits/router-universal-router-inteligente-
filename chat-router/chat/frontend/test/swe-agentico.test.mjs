@@ -47,7 +47,20 @@ test("el boton de salida (ejecutor_tools) es SWE-agent | OpenClaw y queda sincro
   S.guardarEjecutorTools("openclaw"); assert.equal(S.leerSeleccion().agente_tool, "openclaw");
   S.guardarEjecutorTools("swe"); assert.equal(S.leerSeleccion().agente_tool, "swe-agent");
   S.guardarSeleccion({ agente_tool: "openclaw" }); assert.equal(S.leerEjecutorTools(), "openclaw");
-  S.guardarSeleccion({ agente_tool: "codex" }); assert.equal(S.leerEjecutorTools(), "openclaw", "un tercer agente no cambia el boton");
+  S.guardarSeleccion({ agente_tool: "codex" });
+  assert.equal(S.leerEjecutorTools(), "swe", "F2: con un tercer agente ejecutor_tools vuelve a 'swe' (es lo que se envia)");
+  assert.equal(S.salidaActiva(S.leerSeleccion()), null, "F2: y el boton de salida no marca ninguno (ejecuta Codex, no SWE-agent ni OpenClaw)");
+  delete globalThis.localStorage;
+});
+
+test("F2 salidaActiva: el boton de salida refleja AGENTE QUE EJECUTA (openclaw | swe-agent) y ningun otro; armar() envia 'swe' con un tercer agente", () => {
+  assert.equal(S.salidaActiva({ ...S.SEL_DEFECTO, agente_tool: "openclaw" }), "openclaw");
+  assert.equal(S.salidaActiva({ ...S.SEL_DEFECTO, agente_tool: "swe-agent" }), "swe");
+  for (const a of ["codex", "opencode", "openhands", "claude-code"]) assert.equal(S.salidaActiva({ ...S.SEL_DEFECTO, agente_tool: a }), null, a);
+  conStorage();
+  S.guardarEjecutorTools("openclaw"); S.guardarSeleccion({ agente_tool: "opencode" });
+  assert.equal(S.leerEjecutorTools(), "swe"); assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "swe");
+  S.guardarSeleccion({ agente_tool: "openclaw" }); assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "openclaw");
   delete globalThis.localStorage;
 });
 
@@ -102,7 +115,7 @@ test("capacidades: lo que el Harness no reporta es NO DISPONIBLE; un modelo solo
 test("validarSeleccion: sin modo agentico ni workflow no se valida nada; con ellos NO se envia lo que no esta conectado", () => {
   assert.equal(S.validarSeleccion({ ...S.SEL_DEFECTO }, S.normalizarCapacidades({})).ok, true);
   const v = S.validarSeleccion({ ...S.SEL_DEFECTO, modo_agentico: true }, S.normalizarCapacidades({}));
-  assert.equal(v.ok, false); assert.ok(v.problemas.length >= 2); assert.ok(v.problemas.every((p) => /NO DISPONIBLE|incompatible/i.test(p)));
+  assert.equal(v.ok, false); assert.ok(v.problemas.length >= 1); assert.ok(v.problemas.every((p) => /NO DISPONIBLE|incompatible/i.test(p)));
   assert.equal(S.validarSeleccion({ ...S.SEL_DEFECTO, modo_agentico: true }, S.normalizarCapacidades(TODOS_OK)).ok, true);
   const w = S.validarSeleccion({ ...S.SEL_DEFECTO, workflow: "liquid_mirror" }, S.normalizarCapacidades({ agentes: TODOS_OK.agentes }));
   assert.equal(w.ok, false); assert.ok(w.problemas.some((p) => /Liquid Mirror/.test(p)));
@@ -173,7 +186,7 @@ test("enviarTareaSwe: RECONCILIAR (operacion iniciada sin confirmar) es un error
 });
 
 test("enviarTareaSwe: estado GAP o error del backend es un error visible, no una respuesta del modelo", async () => {
-  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code" }) });
+  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: true }) });
   const gap = async (ruta, op) => (ruta === "/chat/swe/capacidades" ? TODOS_OK : respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "GAP", error: { codigo: "AGENTE_NO_INSTALADO", mensaje: "Codex no esta instalado", paso: "escribe" } }));
   await assert.rejects(() => S.enviarTareaSwe(gap, { mensaje: "x", sesion: "s" }), /GAP: AGENTE_NO_INSTALADO.*Codex no esta instalado/);
   const caido = async (ruta) => { if (ruta === "/chat/swe/capacidades") return TODOS_OK; throw new Error("SWE_HARNESS_ERROR"); };
@@ -182,7 +195,7 @@ test("enviarTareaSwe: estado GAP o error del backend es un error visible, no una
 });
 
 test("enviarTareaSwe: el avance esta acotado (no gira para siempre) y no pasa claves por el cuerpo", async () => {
-  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code" }), riu_swe_claves: JSON.stringify({ groq: "gsk_SECRETA" }) });
+  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: true }), riu_swe_claves: JSON.stringify({ groq: "gsk_SECRETA" }) });
   const cuerpos = [];
   const api = async (ruta, op) => { if (ruta === "/chat/swe/capacidades") return TODOS_OK; cuerpos.push(JSON.stringify(op.body)); return respuestaHarness({ task_id: op.body.task_id, estado: "EJECUTANDO" }); };
   await assert.rejects(() => S.enviarTareaSwe(api, { mensaje: "x", sesion: "s" }), /GAP: SWE_SIN_PROGRESO/);
@@ -236,7 +249,7 @@ test("Liquid Mirror: la nota dice que S2 y S3 corren en secuencia (no se afirma 
 });
 
 test("enviarTareaSwe avisa de cada paso (alPaso) para pintar el progreso real en la burbuja: iniciar, cada avanzar, con estado y paso", async () => {
-  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code" }) });
+  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: true }) });
   let n = 0;
   const api = async (ruta, op) => { if (ruta === "/chat/swe/capacidades") return TODOS_OK; n++; return respuestaHarness({ task_id: op.body.task_id, estado: n < 3 ? "EJECUTANDO" : "DONE", paso_actual: n, plan: [{ paso: "escribe" }, { paso: "revisa" }, { paso: "ejecuta" }], resultado_tool: "ok" }); };
   const vistos = [];
@@ -244,4 +257,30 @@ test("enviarTareaSwe avisa de cada paso (alPaso) para pintar el progreso real en
   assert.equal(vistos.length, 3); assert.ok(vistos.every((t) => /SWE/.test(t)));
   assert.match(vistos[0], /EJECUTANDO/); assert.match(vistos[2], /DONE/);
   delete globalThis.localStorage;
+});
+
+test("F3 workflow SWE CODE cuatro pasos con modo agentico OFF: problema «exige MODO AGÉNTICO ON» (el primero) antes de crear la tarea", () => {
+  const v = S.validarSeleccion({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: false }, S.normalizarCapacidades(TODOS_OK));
+  assert.equal(v.ok, false); assert.equal(v.problemas[0], "WORKFLOW SWE CODE cuatro pasos exige MODO AGÉNTICO ON");
+  assert.equal(S.validarSeleccion({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: true }, S.normalizarCapacidades(TODOS_OK)).ok, true);
+  assert.equal(S.validarSeleccion({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: false }, S.normalizarCapacidades({})).problemas[0], "WORKFLOW SWE CODE cuatro pasos exige MODO AGÉNTICO ON");
+});
+
+test("F3 enviarTareaSwe: swe_code con modo agentico OFF falla con GAP SELECCION_NO_DISPONIBLE y NO llama a /chat/swe/iniciar", async () => {
+  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: false }) });
+  const rutas = [];
+  const api = async (ruta) => { rutas.push(ruta); if (ruta === "/chat/swe/capacidades") return TODOS_OK; throw new Error("no deberia llamarse " + ruta); };
+  await assert.rejects(() => S.enviarTareaSwe(api, { mensaje: "x", sesion: "s" }), /SELECCION_NO_DISPONIBLE.*exige MODO AGÉNTICO ON/);
+  assert.ok(!rutas.some((r) => /iniciar|avanzar/.test(r)), JSON.stringify(rutas));
+  delete globalThis.localStorage;
+});
+
+test("F3 no se valida agente_responde (el backend no lo usa) ni modelo_responde cuando el workflow lo fija: individual agentico ON sin OpenClaw no falla por eso", () => {
+  const sinOpenclaw = { ...TODOS_OK, agentes: { ...TODOS_OK.agentes, openclaw: { disponible: false, motivo: "Gateway no configurado" } }, modelos: { "hf/lfm2.5-350m": { disponible: false, motivo: "caido" } } };
+  const ind = S.validarSeleccion({ ...S.SEL_DEFECTO, modo_agentico: true, agente_responde: "openclaw", agente_tool: "swe-agent", modelo_responde: "hf/qwen3-0.6b" }, S.normalizarCapacidades(sinOpenclaw));
+  assert.equal(ind.ok, true, JSON.stringify(ind.problemas));
+  const fijo = S.validarSeleccion({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: true, modelo_responde: "hf/lfm2.5-350m", agente_tool: "swe-agent" }, S.normalizarCapacidades(sinOpenclaw));
+  assert.ok(!fijo.problemas.some((p) => /QUE RESPONDE/.test(p)), JSON.stringify(fijo.problemas));
+  const noFijo = S.validarSeleccion({ ...S.SEL_DEFECTO, modo_agentico: true, modelo_responde: "hf/lfm2.5-350m" }, S.normalizarCapacidades(sinOpenclaw));
+  assert.ok(noFijo.problemas.some((p) => /MODELO QUE RESPONDE/.test(p)), "en Individual el modelo que responde SI se usa y se valida");
 });

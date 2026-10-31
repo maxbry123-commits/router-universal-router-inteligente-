@@ -28,26 +28,28 @@ async function rotos(repo, archivos) {
 const instalarNpm = () => new Promise(ok => execFile('npm', ['install', '--omit=dev', '--no-audit', '--no-fund'], { cwd: path.resolve(AQUI, '..'), timeout: 300000 }, e => ok(!e)));
 
 // una vuelta: compara la cabeza del repo con la que ya vio; si cambio algo del bridge, VERIFICA el codigo nuevo (node --check de los .js tocados y, si cambio
-// package.json, npm install) y solo entonces relanza. Si la verificacion falla: git reset --hard a la cabeza previa y NO se relanza (queda el bridge sano que ya corre). Nunca lanza.
+// package.json, npm install) y solo entonces relanza. Si la verificacion falla: NO se relanza (sigue el bridge sano que ya corre) y NO se toca el repo
+// (nada de git reset --hard: peleaba con el autopull del Router y provocaba flapping); queda una linea de log. estado.base = ultima cabeza cuyo codigo
+// corre o se verifico: la siguiente vuelta compara contra ella, asi un archivo roto no se "da por bueno" porque llegue otro commit. Nunca lanza.
 export async function revisar({ repo, estado, relanzar, instalar = instalarNpm }) {
   try {
     const ahora = await git(repo, ['rev-parse', 'HEAD']);
-    if (!estado.cabeza) { estado.cabeza = ahora; return false; }
+    if (!estado.cabeza) { estado.cabeza = estado.base = ahora; return false; }
     if (ahora === estado.cabeza) return false;
-    const archivos = (await git(repo, ['diff', '--name-only', estado.cabeza, ahora])).split('\n').filter(Boolean);
-    const antes = estado.cabeza; estado.cabeza = ahora;
-    if (!archivos.some(f => RUTAS.some(r => f.startsWith(r)))) return false;
+    const base = estado.base = estado.base || estado.cabeza;
+    const archivos = (await git(repo, ['diff', '--name-only', base, ahora])).split('\n').filter(Boolean);
+    estado.cabeza = ahora;
+    if (!archivos.some(f => RUTAS.some(r => f.startsWith(r)))) { estado.base = ahora; return false; }
     const deps = archivos.some(f => f.endsWith('web-bridge/package.json'));
     const malos = await rotos(repo, archivos);
     const fallo = malos.length ? `no compila ${malos.slice(0, 3).join(', ')}` : deps && !(await instalar()) ? 'npm install fallo' : null;
     if (fallo) {
-      if (estado.rota !== ahora) console.warn(`[bridge] codigo nuevo ${ahora.slice(0, 7)} rechazado (${fallo}): se vuelve a ${antes.slice(0, 7)}, sin relanzar`);
+      if (estado.rota !== ahora) console.warn(`[bridge] codigo nuevo ${ahora.slice(0, 7)} rechazado (${fallo}): no se relanza (sigue el que corre)`);
       estado.rota = ahora;
-      await git(repo, ['reset', '--hard', antes]).catch(() => {});
-      estado.cabeza = antes;
       return false;
     }
-    console.warn(`[bridge] codigo nuevo (${antes.slice(0, 7)} -> ${ahora.slice(0, 7)}): se relanza solo`);
+    console.warn(`[bridge] codigo nuevo (${base.slice(0, 7)} -> ${ahora.slice(0, 7)}): se relanza solo`);
+    estado.base = ahora;
     await relanzar({ deps });
     return true;
   } catch { return false; }

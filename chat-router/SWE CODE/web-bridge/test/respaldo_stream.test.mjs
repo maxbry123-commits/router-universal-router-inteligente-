@@ -194,13 +194,13 @@ test("429 antes de abrir el stream: Retry-After respetado (tope), clave enfriada
   } finally { g.cerrar(); }
 });
 
-test("timeout de inactividad en el stream: si el proveedor se calla tras emitir, rota y continua", async () => {
+test("timeout de inactividad en el stream: si el proveedor se calla tras emitir, NO rota de clave: enfria el proveedor y el texto emitido queda en parcial/flujo", async () => {
   const g = await srv(({ res, auth }) => { if (auth === "Bearer gsk-FAKE-1") { sseHead(res); res.write(ev(delta("AA"))); return; } sseCompleto(res, [delta("BB"), fin("stop")]); });
   Object.assign(BASES, { groq: g.url });
   const rc = recolector();
   try {
-    const r = await externo("groq/m", msgs, { env: { ...env1, GROQ_API_KEY_2: "gsk-FAKE-2" }, opts: rapido({ timeoutMs: 120 }), onDelta: rc.onDelta });
-    assert.equal(r.salida, "AABB"); assert.equal(rc.texto(), "AABB");
+    await assert.rejects(() => externo("groq/m", msgs, { env: { ...env1, GROQ_API_KEY_2: "gsk-FAKE-2" }, opts: rapido({ timeoutMs: 120 }), onDelta: rc.onDelta }), (e) => e.code === "EXTERNO_FALLO" && e.parcial === "AA");
+    assert.equal(rc.texto(), "AA"); assert.equal(g.chat.length, 1, "la clave 2 no se prueba");
   } finally { g.cerrar(); }
 });
 

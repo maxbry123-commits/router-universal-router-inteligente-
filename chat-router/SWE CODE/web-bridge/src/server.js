@@ -12,6 +12,7 @@ import { modoValido } from './modos.js';
 import { estadoCuentas, estadoTabs, snapshotTab, cerrarPagina, cerrarTodo } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { iguales } from './iguales.js';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import nodeFs from 'node:fs';
@@ -65,14 +66,19 @@ const PROTEGIDAS = ['/v1/claves', '/v1/openclaw'];
 app.use((req, res, next) => {
   const r = rutaNorm(req.path);
   if (!PROTEGIDAS.some(p => r === p || r.startsWith(p + '/'))) return next();
+  if (req.method === 'GET' && req.path === '/v1/openclaw' && conToken(req)) return next();  // config de OpenClaw (solo lectura, sin secretos): tambien con BRIDGE_TOKEN. /v1/claves sigue exigiendo la clave de acceso
   if (!clavesAcceso().length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (RIU_API_KEY)' } });
   return conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key)' } });
 });
 app.use(express.json({ limit: '10mb' }));
-const PORT = process.env.BRIDGE_PORT || 7860;
+const PORT = process.env.BRIDGE_PORT || 7870;
 montarResponses(app);  // POST /v1/responses (Codex): traduce a /v1/chat/completions
 montarRutasSwe(app);  // /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar} -> Harness DeepSeek; exigen BRIDGE_TOKEN
 
+// tarea_id derivado: <conv_id (max 51)>-<sha256([modelo, modo, mensajes]) 12 hex> -> <= 64 y solo [A-Za-z0-9_-]
+const tareaDerivada = (conv, modelo, modo, mensajes) => `${String(conv).slice(0, 51)}-${crypto.createHash('sha256').update(JSON.stringify([modelo, modo ?? null, mensajes])).digest('hex').slice(0, 12)}`;
+// usage OpenAI desde result.metricas (prompt/completion/total tokens reales del proveedor); sin ellos, ceros como siempre
+const usageDe = (m) => { const n = (v) => (Number.isFinite(Number(v)) && v !== null ? Number(v) : 0); const p = n(m?.prompt_tokens), c = n(m?.completion_tokens); return { prompt_tokens: p, completion_tokens: c, total_tokens: m && Number.isFinite(Number(m.total_tokens)) && m.total_tokens !== null ? Number(m.total_tokens) : p + c }; };
 const esConsenso = (modo) => ['consulta', 'plan'].includes(modo);
 const OBJETIVO_UNICO = process.env.SWECODE_OBJETIVO || 'qwen38max';
 // fallback dentro de la web antes de escalar a modelos locales
@@ -123,10 +129,10 @@ app.get('/v1/proyectos/:nombre', (req, res) => {
 });
 
 // retomar una seccion a medias SIN que el cliente reenvie el texto: usa el texto y el modelo guardados en el checkpoint
-async function retomarSeccion(id) {
+async function retomarSeccion(id, { respaldo: conRespaldo = false } = {}) {
   const ck = checkpointCrudo(id);
   if (!ck || ck.tipo === TIPO_LOCAL) {  // checkpoint de un modelo local HF / Groq / NVIDIA (retomar_local.js): puede estar solo en el Harness si el disco se perdio
-    const l = await conDeadline(retomarPorId(id, { hasta: Date.now() + DEADLINE_MS * 0.8 }), DEADLINE_MS);
+    const l = await conDeadline(retomarPorId(id, { hasta: Date.now() + DEADLINE_MS * 0.8, sinRespaldo: !conRespaldo }), DEADLINE_MS);  // el modelo del checkpoint manda: sin respaldo salvo que el cliente lo pida
     if (l && l.yaCompleto) return { status: 409, error: { code: 'SECCION_YA_COMPLETA' } };
     if (l) return { status: 200, salida: l.salida, modelo: l.usado, local: l };
   }
@@ -138,10 +144,10 @@ async function retomarSeccion(id) {
 app.post('/v1/secciones/:id/retomar', async (req, res) => {
   if (!/^[\w-]{1,80}$/.test(req.params.id)) return res.status(400).json({ error: { code: 'CONV_ID_INVALIDO' } });
   try {
-    const r = await retomarSeccion(req.params.id);
+    const r = await retomarSeccion(req.params.id, { respaldo: !!(req.body && req.body.respaldo === true) });
     if (r.error) return res.status(r.status).json({ error: r.error });
     const l = r.local;
-    res.json({ id: `retoma-${Date.now()}`, object: 'chat.completion', modelo_usado: r.modelo, ...(l ? { via_respaldo: l.via, tarea: { id: l.tarea_id, estado: l.estado, secciones: l.secciones } } : {}), choices: [{ index: 0, finish_reason: l ? l.finish_reason : 'stop', message: { role: 'assistant', content: r.salida || '', ...(l && l.tool_calls.length ? { tool_calls: l.tool_calls } : {}) } }] });
+    res.json({ id: `retoma-${Date.now()}`, object: 'chat.completion', modelo_usado: r.modelo, ...(l ? { via_respaldo: l.via, ...(l.servidor ? { servidor: l.servidor } : {}), tarea: { id: l.tarea_id, estado: l.estado, secciones: l.secciones } } : {}), choices: [{ index: 0, finish_reason: l ? l.finish_reason : 'stop', message: { role: 'assistant', content: r.salida || '', ...(l && l.tool_calls.length ? { tool_calls: l.tool_calls } : {}) } }] });
   } catch (e) { res.status(e.code === 'UPSTREAM_TIMEOUT' ? 504 : 502).json({ error: { code: e.code || 'BRIDGE_ERROR', message: String(e.message).slice(0, 200) } }); }
 });
 
@@ -286,10 +292,14 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (!esExterno(model) && !esLocal(model)) {
       return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     }
-    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop', tarea = null, metricas = null;
-    // tarea_id (cuerpo o cabecera x-tarea-id): modelos locales/Groq/NVIDIA con checkpoint universal (retomar_local.js); sin tarea_id nada cambia
-    const tareaId = req.body.tarea_id != null ? req.body.tarea_id : req.headers['x-tarea-id'];
-    const usaTarea = tareaId != null && tareaId !== '' && (esExterno(model) || esLocal(model));
+    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop', tarea = null, metricas = null, servidor = null;
+    // tarea_id (cuerpo o cabecera x-tarea-id): modelos locales/Groq/NVIDIA con checkpoint universal (retomar_local.js).
+    // Sin tarea_id pero con conv_id se DERIVA <conv_id>-<sha256 de [modelo, modo, mensajes] (12)>: el mismo envio reintentado reanuda, uno distinto es tarea nueva. Sin conv_id nada cambia.
+    const explicito = esExterno(model) || esLocal(model), pideRespaldo = req.body.respaldo === true;
+    let tareaId = req.body.tarea_id != null ? req.body.tarea_id : req.headers['x-tarea-id'];
+    if ((tareaId == null || tareaId === '') && explicito && conv_id != null && conv_id !== '') tareaId = tareaDerivada(conv_id, model, modo, mensajesM);
+    const origen = ['yaiwes', 'openclaw'].includes(req.body.origen) ? req.body.origen : undefined;  // origen del contrato: ruta del checkpoint en el Harness
+    const usaTarea = tareaId != null && tareaId !== '' && explicito;
     if (usaTarea && !tareaIdValido(String(tareaId))) return res.status(400).json({ error: { code: 'TAREA_ID_INVALIDO', message: 'tarea_id: letras, numeros, - y _ (max 64)' } });
     const extra = { tools: Array.isArray(req.body.tools) ? req.body.tools : undefined, tool_choice: req.body.tool_choice };  // groq/nvidia/locales ejecutan tools: el Harness las corre
     // streaming real (stream:true): Groq/NVIDIA entregan fragmentos por onDelta -> sse.delta; flujo = lo ya entregado al cliente (el failover continua desde ahi, sin repetir)
@@ -299,12 +309,12 @@ app.post('/v1/chat/completions', async (req, res) => {
 
     const ejecutar = async () => {
     if (usaTarea) {
-      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo), { ...extra, hasta: Date.now() + DEADLINE_MS * 0.8 }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
+      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo), { ...extra, origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + DEADLINE_MS * 0.8 }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
       tarea = { id: r.tarea_id, estado: r.estado, secciones: r.secciones, reanudado: r.reanudado, desde_checkpoint: r.desde_checkpoint };
     } else if (esExterno(model)) {
       const r = await externo(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
     } else if (esLocal(model)) {
-      const r = await local(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts() }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
+      const r = await local(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts() }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
     } else if (modeloWeb) {
       const r = await conFallback(modeloWeb, prompt, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
@@ -334,6 +344,8 @@ app.post('/v1/chat/completions', async (req, res) => {
       if (e.code === 'MODO_INVALIDO' || usaTarea || sse.signal.aborted) throw e;  // cliente desconectado: no se gasta mas respaldo. Con tarea_id retomarLocal ya probo local/Groq/NVIDIA y guardo el checkpoint: el cliente reintenta con el mismo tarea_id
       if (e.code === 'UPSTREAM_TIMEOUT') ac1.abort();  // el intento colgado no puede seguir escribiendo en el stream mientras responde el respaldo
       if (e.code === 'UPSTREAM_TIMEOUT' && conv_id) await cerrarPagina(conv_id).catch(() => {});  // la tab colgada liberaba su slot solo al cerrarse
+      // modelo EXPLICITO (groq/, nvidia/, HF local): si falla NO se cambia de modelo en silencio; error claro con el motivo. El respaldo solo con respaldo:true (o modelos web-*/swecode-*)
+      if (explicito && !pideRespaldo) throw e.code === 'EXTERNO_FALLO' && e.status === 404 ? Object.assign(e, { code: 'NO_DISPONIBLE', message: `modelo ${model} no disponible en el proveedor (HTTP 404); ${e.message}` }) : e;
       // auto-reparacion: sesion caida -> re-login/rotacion de correo y UN reintento; si sigue mal, respaldo Groq -> NVIDIA -> HF local
       if (e.code === 'SESSION_EXPIRED') {
         try { await salud(); salida = null; await conDeadline(ejecutar(), 50000); registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'PASS', modelo: model }); } catch { registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'FAIL', modelo: model }); }
@@ -341,7 +353,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       if ((!salida || !String(salida).trim()) && !llamadas.length) {
         const ac2 = new AbortController();  // si vence el plazo del respaldo se cancela antes de responder el error
         const r = await conDeadline(respaldo(conPreambulo(mensajesM, model.startsWith('swecode-') ? modoUso : modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac2.signal])) }), DEADLINE_MS, sse.pide ? sse.latido : null).catch((e2) => { if (e2.code === 'UPSTREAM_TIMEOUT') ac2.abort(); throw e2; });  // con texto ya entregado, el respaldo CONTINUA desde ahi (sse.flujo), no repite
-        llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
+        llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
         salida = r.salida; usado = r.usado; via = r.via; aviso = e.code || null;
         registrarLeccion({ codigo: e.code || 'WEB_FALLO', accion: 'respaldo ' + r.via, resultado: 'PASS', modelo: model });  // p. ej. CUENTAS_FALTAN: OpenClaw sabe que debe reenviar cuentas y clave
       }
@@ -361,19 +373,19 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (!res.headersSent) { res.setHeader('x-modelo-usado', usado); if (via) res.setHeader('x-via-respaldo', via); }
 
     if (sse.pide) {  // OpenClaw (openai-completions) pide SSE: lo que llego por streaming real ya se entrego; se emite SOLO lo que falte + tool_calls + finish_reason + [DONE]
-      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}) };
+      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}) };
       sse.abrir(); sse.rolInicial();
       const yaEntregado = sse.flujo.texto, completo = String(salida || '');
       for (const t of trozosDe(completo.startsWith(yaEntregado) ? completo.slice(yaEntregado.length) : '')) sse.chunk({ content: t });
       if (llamadas.length) sse.chunk({ tool_calls: llamadas.map((t, i) => ({ index: i, ...t })) });
-      sse.chunk({}, fin);
+      sse.chunk({}, fin, { usage: usageDe(metricas) });
       return res.end('data: [DONE]\n\n');
     }
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}),
+      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}),
       choices: [{ index: 0, finish_reason: fin, message: { role: 'assistant', content: salida || '', ...(llamadas.length ? { tool_calls: llamadas } : {}) } }],
-      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+      usage: usageDe(metricas),
     });
   } catch (e) {
     const code = e.code || 'BRIDGE_ERROR';
@@ -381,7 +393,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (sse.pide && sse.signal.aborted) return;  // el cliente ya no esta
     if (sse.activo) return res.writableEnded ? undefined : sse.error(code, e.message, e.detail);  // error tras abrir el stream: chunk con el error + [DONE]
     if (res.headersSent) return;
-    const st = code === 'SESSION_EXPIRED' ? 503 : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : ['CHECKPOINT_OTRA_TAREA', 'VERIFICAR_HERRAMIENTAS_PENDIENTES'].includes(code) ? 409 : 500;
+    const st = code === 'SESSION_EXPIRED' ? 503 : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : ['CHECKPOINT_OTRA_TAREA', 'VERIFICAR_HERRAMIENTAS_PENDIENTES'].includes(code) ? 409 : ['EXTERNO_FALLO', 'HF_LOCAL_FALLO', 'NO_DISPONIBLE'].includes(code) ? 502 : 500;
     res.status(st).json({ error: { code, message: e.message, detail: e.detail } });
   }
 });

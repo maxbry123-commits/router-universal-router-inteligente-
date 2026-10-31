@@ -106,6 +106,7 @@ class Entorno(unittest.TestCase):
         for nombre, valor in (("_dormir", self.esperas.append), ("_azar", lambda: 0.0)):
             q = patch.object(externos, nombre, valor); q.start(); self.addCleanup(q.stop)
         externos.CACHE.clear(); externos._SWE.clear(); self.addCleanup(externos.CACHE.clear)
+        externos.limpiar_enfriadas(); self.addCleanup(externos.limpiar_enfriadas)  # el cooldown de claves por 429 no se filtra entre pruebas
         self.srv = []
         self.addCleanup(lambda: [s.cerrar() for s in self.srv])
 

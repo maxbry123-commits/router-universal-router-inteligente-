@@ -18,7 +18,7 @@ Paralelo: 2+ secciones por conv_id — tabs web separadas o slots S1/S2/S3.
 Espejo: cualquier modelo se clona a otro conv_id/slot para dividir trabajo.
 ```
 
-- **Cola HF**: S1/S2/S3 = slots intercambiables — cualquier Space sirve cualquier modelo vía `model=`, GGUF bajo demanda desde dataset `swe-code-hf-gguf`, 1 vivo por Space, unload tras 5 min idle, encola al siguiente libre (máx 3).
+- **Cola HF** (`SWECODE_URL_S1..S3` = `https://comand-center-1-swe-code-s1.hf.space/v1`, `...-s2...`, `...-s3...`; dataset `COMAND-CENTER-1/swe-code-hf-gguf`): S1/S2/S3 = slots intercambiables — cualquier Space sirve cualquier modelo vía `model=`, GGUF bajo demanda desde dataset `swe-code-hf-gguf`, 1 vivo por Space, unload tras 5 min idle, encola al siguiente libre (máx 3).
 - Un paso FAIL → cascada para y devuelve recibo del paso que cayó.
 - En HF solo vive el código mínimo (serving); lógica, manuales y fichas están en GitHub.
 
@@ -39,7 +39,8 @@ python3 mini_router.py "arregla el bug de login en app.py"
 |---|---|
 | Ficha de la cascada (DSL) | `chat-router/SWE CODE/cascada.json` |
 | Config de motores | `chat-router/SWE CODE/motores.json` |
-| Puente web (cuentas Qwen/DeepSeek) | `chat-router/SWE CODE/web-bridge/` |
+| Puente web (cuentas Qwen/DeepSeek, respaldo Groq/NVIDIA/HF, SSE, checkpoints) | `chat-router/SWE CODE/web-bridge/` (README propio; arquitectura en `chat-router/SWE CODE free/ARQUITECTURA.md`) |
+| Agentes reales y workflows (`swe_code`, `liquid_mirror`) | `chat-router/agentes/adaptadores/` (`chat-router/agentes/LEEME.md`) |
 | Manual compartido (2 chats) | `chat-router/SWE CODE free/INSTRUCCIONES.md` |
 | Agentes descargados | `chat-router/agentes/agentes-listos/` (codex, opencode, SWE-agent, openhands-software-agent-sdk) |
 | Motor descarga/extracción | `chat-router/motores/motores-descarga/` |

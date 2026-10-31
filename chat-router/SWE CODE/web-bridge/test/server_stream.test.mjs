@@ -97,7 +97,7 @@ test("ST2. tool_calls en streaming: texto al instante, tool_calls completos (con
 test("ST3. failover tras emitir texto: lo emitido NO se repite; el siguiente proveedor continua con [assistant parcial, 'Continua...'] y el cliente recibe todo una sola vez", async () => {
   comportamiento.groq = ({ res }) => { if (g.chat.length > 1) return jsonRes(res, {}, 503); sseHead(res); res.write(ev(delta("Parte uno. "))); setTimeout(() => res.destroy(), 30); };
   comportamiento.nvidia = ({ res }) => { sseHead(res); res.write(ev(delta("Parte dos."))); res.write(ev(fin("stop"))); res.end(ev("[DONE]")); };
-  const r = await leerSse({ model: "groq/qwen/qwen3.8-27b" });
+  const r = await leerSse({ model: "groq/qwen/qwen3.8-27b", respaldo: true });
   assert.equal(contenido(r.chunks), "Parte uno. Parte dos.");
   assert.equal(r.chunks.at(-1).choices[0].finish_reason, "stop"); assert.equal(r.datos.at(-1), "[DONE]");
   assert.equal(r.chunks.at(-1).via_respaldo, "nvidia"); assert.equal(r.chunks.at(-1).modelo_usado, "nvidia/minimaxai/minimax-m3.1-flash");
@@ -106,10 +106,19 @@ test("ST3. failover tras emitir texto: lo emitido NO se repite; el siguiente pro
   assert.equal(r.chunks.filter((c) => c.choices?.[0]?.finish_reason).length, 1);
 });
 
+test("ST3b. sin respaldo:true el modelo explicito NO salta a otro proveedor tras el texto parcial: el cliente conserva lo recibido y obtiene un chunk de error EXTERNO_FALLO + [DONE]", async () => {
+  comportamiento.groq = ({ res }) => { if (g.chat.length > 1) return jsonRes(res, {}, 503); sseHead(res); res.write(ev(delta("Parte uno. "))); setTimeout(() => res.destroy(), 30); };
+  comportamiento.nvidia = ({ res }) => { sseHead(res); res.write(ev(delta("Parte dos."))); res.write(ev(fin("stop"))); res.end(ev("[DONE]")); };
+  const antes = nv.chat.length;
+  const r = await leerSse({ model: "groq/qwen/qwen3.8-27b" });
+  assert.equal(contenido(r.chunks), "Parte uno. "); assert.equal(nv.chat.length, antes, "NVIDIA no se toca");
+  const err = r.chunks.find((c) => c.error); assert.ok(err); assert.equal(err.error.code, "EXTERNO_FALLO"); assert.equal(r.datos.at(-1), "[DONE]");
+});
+
 test("ST4. todo cae tras texto parcial: el cliente conserva lo recibido y obtiene un chunk de error + [DONE] (sin claves)", async () => {
   comportamiento.groq = ({ res }) => { if (g.chat.length > 1) return jsonRes(res, {}, 503); sseHead(res); res.write(ev(delta("Solo esto. "))); setTimeout(() => res.destroy(), 30); };
   comportamiento.nvidia = ({ res }) => jsonRes(res, {}, 503);
-  const r = await leerSse({ model: "groq/qwen/qwen3.8-27b" });
+  const r = await leerSse({ model: "groq/qwen/qwen3.8-27b", respaldo: true });
   assert.equal(r.status, 200); assert.equal(contenido(r.chunks), "Solo esto. ");
   const err = r.chunks.find((c) => c.error);
   assert.ok(err); assert.equal(err.error.code, "RESPALDO_AGOTADO"); assert.equal(r.datos.at(-1), "[DONE]");

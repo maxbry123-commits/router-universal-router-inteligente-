@@ -80,7 +80,7 @@ export function aEventos(resp) {
 }
 
 // app.post('/v1/responses'): pasa por /v1/chat/completions del propio bridge con las mismas credenciales de la peticion
-export function montarResponses(app, { puerto = () => process.env.BRIDGE_PORT || 7860, plazoMs = 130000 } = {}) {
+export function montarResponses(app, { puerto = () => process.env.BRIDGE_PORT || 7870, plazoMs = 130000 } = {}) {
   app.post('/v1/responses', async (req, res) => {
     const error = (st, code, message) => res.status(st).json({ error: { code, message } });
     let chat;

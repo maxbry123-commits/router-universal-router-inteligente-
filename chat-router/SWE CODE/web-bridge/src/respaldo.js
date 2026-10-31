@@ -24,7 +24,7 @@ export const AJUSTES = {
   'z-ai/glm-5.3': { temperature: 0.5, top_p: 1.0, max_tokens: 4096 },
 };
 // descubrimiento de modelos (GET {base}/models): nada de ids inventados
-const RE_GROQ = /qwen.*3[.-]?8/i;
+const RE_GROQ = /qwen[-_]?3\.8/i;  // Qwen 3.8 (qwen3.8 / qwen-3.8); qwen3-8b NO es 3.8
 const RE_NVIDIA_1 = /minimax|kimi|deepseek.?v4/i, RE_NVIDIA_2A = /muse|glimmer/i, RE_NVIDIA_2B = /nemotron.*3.*super|nemotron-3-super/i;
 const PICK = {
   groq: (ids) => ids.find(i => RE_GROQ.test(i)),
@@ -99,9 +99,22 @@ function interpretar(j, r) {
   const c = j?.choices?.[0];
   const t = c?.message?.content, tc = c?.message?.tool_calls;
   if ((!t || !String(t).trim()) && !(Array.isArray(tc) && tc.length)) throw new Error('vacio');
-  const tools = Array.isArray(tc) ? tc : [];
+  const tools = conIds(Array.isArray(tc) ? tc : []);
   const cortada = !tools.length && (c.finish_reason === 'length' || (!c.finish_reason && Number(j?.usage?.completion_tokens) >= r.cortePorTokens));
-  return { texto: t ? String(t) : '', tool_calls: tools, finish_reason: c.finish_reason || (tools.length ? 'tool_calls' : cortada ? 'length' : 'stop'), cortada };
+  return { texto: t ? String(t) : '', tool_calls: tools, finish_reason: c.finish_reason || (tools.length ? 'tool_calls' : cortada ? 'length' : 'stop'), cortada, usage: usoDe(j?.usage) };
+}
+// tool_calls sin id (algunos proveedores/locales lo omiten) -> call_<n>_<index>; n = contador de respuestas del proceso. Los que traen id lo conservan.
+let secLlamadas = 0;
+function conIds(tools) {
+  const n = ++secLlamadas;
+  return tools.map((t, i) => (t && typeof t === 'object' && !(typeof t.id === 'string' && t.id.trim()) ? { ...t, id: `call_${n}_${i}` } : t));
+}
+// usage del proveedor -> { p, c, t } (numeros) o null
+function usoDe(u) {
+  if (!u || typeof u !== 'object') return null;
+  const p = Number(u.prompt_tokens), c = Number(u.completion_tokens), t = Number(u.total_tokens);
+  if (!Number.isFinite(p) && !Number.isFinite(c) && !Number.isFinite(t)) return null;
+  return { p: Number.isFinite(p) ? p : 0, c: Number.isFinite(c) ? c : 0, t: Number.isFinite(t) ? t : (Number.isFinite(p) ? p : 0) + (Number.isFinite(c) ? c : 0) };
 }
 
 async function pedir(base, modelo, mensajes, clave, extra = {}, r = red()) {
@@ -165,7 +178,7 @@ function peticionStream(url, headers, body, r, h) {
 // una peticion stream:true: cada fragmento de texto va a ctx.emitir al llegar; los tool_calls se reconstruyen por indice y se devuelven completos
 async function pedirStream(base, modelo, mensajes, clave, extra, r, ctx, metr) {
   const t0 = ahoraMs();
-  let tPrimero = null, texto = '', fr = null, hecho = false, usoTokens = null, fragmentos = 0;
+  let tPrimero = null, texto = '', fr = null, hecho = false, usoTokens = null, fragmentos = 0, usoCompleto = null;
   const acc = new Map();  // indice -> tool_call
   const primero = () => { if (tPrimero === null) { tPrimero = ahoraMs(); if (metr.ttft_ms === null) metr.ttft_ms = tPrimero - t0; } };
   const emitir = (t) => { if (!t) return; primero(); fragmentos++; texto += t; ctx.emitir(t); };
@@ -186,6 +199,7 @@ async function pedirStream(base, modelo, mensajes, clave, extra, r, ctx, metr) {
     if (j?.error) { const c = Number(j.error.code ?? j.error.status); throw Object.assign(new Error('STREAM_ERROR'), { status: c >= 400 && c < 600 ? c : undefined }); }
     const u = j?.usage || j?.x_groq?.usage;
     if (u && Number.isFinite(Number(u.completion_tokens))) usoTokens = Number(u.completion_tokens);
+    if (u) usoCompleto = usoDe(u) || usoCompleto;
     const c = j?.choices?.[0]; if (!c) return;
     const d = c.delta || {};
     if (typeof d.content === 'string') emitir(d.content);
@@ -212,13 +226,13 @@ async function pedirStream(base, modelo, mensajes, clave, extra, r, ctx, metr) {
     return x;
   }
   if (!hecho && !fr) throw Object.assign(new Error('STREAM_CORTADO'), { code: 'STREAM_CORTADO' });
-  const tools = [...acc.entries()].sort((a, b) => a[0] - b[0]).map(([, t]) => t).filter(t => t.function.name).map(t => ({ ...t, function: { ...t.function, arguments: t.function.arguments || '{}' } }));
+  const tools = conIds([...acc.entries()].sort((a, b) => a[0] - b[0]).map(([, t]) => t).filter(t => t.function.name).map(t => ({ ...t, function: { ...t.function, arguments: t.function.arguments || '{}' } })));
   if (!texto && !tools.length) throw new Error('vacio');
   metr.peticiones++; metr.total_ms += tFin - t0;
   if (usoTokens !== null) metr.tokens += usoTokens; else { metr.tokens += fragmentos; metr.tokens_estimado = true; }
   if (tPrimero !== null) metr.gen_ms += tFin - tPrimero;
   const cortada = !tools.length && (fr === 'length' || (!fr && usoTokens !== null && usoTokens >= r.cortePorTokens));
-  return { texto, tool_calls: tools, finish_reason: tools.length ? 'tool_calls' : fr || (cortada ? 'length' : 'stop'), cortada };
+  return { texto, tool_calls: tools, finish_reason: tools.length ? 'tool_calls' : fr || (cortada ? 'length' : 'stop'), cortada, usage: usoCompleto };
 }
 
 // una peticion + continuacion automatica si la salida se corto por longitud (nunca con tool_calls).
@@ -231,7 +245,12 @@ async function completar(base, modelo, mensajes, clave, extra, r, ctx = {}) {
   const ctxS = stream ? { emitir: (t) => { flujo.texto += t; try { ctx.onDelta(t); } catch { /* un fallo del consumidor no corta al modelo */ } } } : null;
   const t0 = ahoraMs();
   let texto = flujo ? flujo.texto : '';
-  const una = (t) => (stream ? pedirStream(base, modelo, con(t), clave, extra, r, ctxS, metr) : pedir(base, modelo, con(t), clave, extra, r));
+  const uso = { visto: false, p: 0, c: 0, t: 0 };  // usage del proveedor sumado entre continuaciones
+  const una = async (t) => {
+    const x = await (stream ? pedirStream(base, modelo, con(t), clave, extra, r, ctxS, metr) : pedir(base, modelo, con(t), clave, extra, r));
+    if (x.usage) { uso.visto = true; uso.p += x.usage.p; uso.c += x.usage.c; uso.t += x.usage.t; }
+    return x;
+  };
   let ultimo;
   try { ultimo = await una(texto); } catch (e) { if (texto && e.message === 'vacio') ultimo = { texto: '', tool_calls: [], finish_reason: 'stop', cortada: false }; else throw e; }
   texto += ultimo.texto;
@@ -241,9 +260,10 @@ async function completar(base, modelo, mensajes, clave, extra, r, ctx = {}) {
     texto += sig.texto; ultimo = sig;
   }
   const total = ahoraMs() - t0, tps = metr.tokens > 0 && metr.gen_ms > 0 ? Math.round((metr.tokens / (metr.gen_ms / 1000)) * 10) / 10 : null;
+  const tokensUso = uso.visto ? { prompt_tokens: uso.p, completion_tokens: uso.c, total_tokens: uso.t } : {};
   const metricas = stream
-    ? { stream: true, ttft_ms: metr.ttft_ms === null ? null : Math.round(metr.ttft_ms), tokens: metr.tokens || null, tokens_estimado: metr.tokens_estimado, tokens_s: tps, total_ms: Math.round(total), peticiones: metr.peticiones }
-    : { stream: false, ttft_ms: null, tokens: null, tokens_s: null, total_ms: Math.round(total) };
+    ? { stream: true, ttft_ms: metr.ttft_ms === null ? null : Math.round(metr.ttft_ms), tokens: metr.tokens || null, tokens_estimado: metr.tokens_estimado, tokens_s: tps, total_ms: Math.round(total), peticiones: metr.peticiones, ...tokensUso }
+    : { stream: false, ttft_ms: null, tokens: null, tokens_s: null, total_ms: Math.round(total), ...tokensUso };
   return { texto, tool_calls: ultimo.tool_calls, finish_reason: ultimo.cortada && !ultimo.tool_calls.length ? 'length' : ultimo.finish_reason, metricas };
 }
 
@@ -302,6 +322,8 @@ export async function disponibilidad({ env = process.env, opts } = {}) {
   });
 }
 
+// timeout (fetch TimeoutError, inactividad del stream o HTTP 408): el proveedor entero esta lento/caido -> no se prueban sus demas claves
+const esTimeout = (e) => e?.name === 'TimeoutError' || e?.code === 'TIMEOUT' || e?.status === 408;
 const esperaCorta = (e, r) => Math.min(e.retryAfterMs ?? r.esperaDefecto, r.esperaMax);
 
 // modelo concreto groq/<id> o nvidia/<id>: va directo a su API; rota por todas las claves (429/402/408/5xx/timeout/red) y descarta las 401/403.
@@ -321,13 +343,14 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
     } catch (e) {
       ultimo = e;
       if (e.code === 'ABORTADO') break;  // el cliente se fue: no gastar mas claves
+      if (esTimeout(e)) { for (const x of todas) enfriadas.set(`${prov}\0${x}`, r.ahora() + r.cooldownMs); break; }  // primer timeout: se enfria el proveedor (todas sus claves) y se corta; respaldo() no reentra
       if (e.status === 429) { enfriadas.set(`${prov}\0${k}`, r.ahora() + Math.max(r.cooldownMs, Math.min(e.retryAfterMs || 0, 600000))); await r.esperar(esperaCorta(e, r)); continue; }
       if (e.status === 401 || e.status === 403) continue;  // clave descartada
-      if (e.status >= 400 && e.status < 500 && e.status !== 402 && e.status !== 408) break;  // 400/404/422...: no depende de la clave
-      if (i < ks.length - 1) await r.esperar(backoff(fallos++, r));  // 402/408/5xx/timeout/red: backoff exponencial con jitter antes de la siguiente clave
+      if (e.status >= 400 && e.status < 500 && e.status !== 402) break;  // 400/404/422...: no depende de la clave
+      if (i < ks.length - 1) await r.esperar(backoff(fallos++, r));  // 402/5xx/red: backoff exponencial con jitter antes de la siguiente clave
     }
   }
-  throw Object.assign(new Error(limpiar(`EXTERNO_${prov.toUpperCase()}: ${ultimo.message}`, todas)), { code: 'EXTERNO_FALLO', ...(ctx.flujo?.texto ? { parcial: ctx.flujo.texto } : {}) });
+  throw Object.assign(new Error(limpiar(`EXTERNO_${prov.toUpperCase()}: ${ultimo.message}`, todas)), { code: 'EXTERNO_FALLO', ...(Number.isInteger(ultimo.status) ? { status: ultimo.status } : {}), ...(ctx.flujo?.texto ? { parcial: ctx.flujo.texto } : {}) });
 }
 
 // modelo local de la cola HF: entra por S1 y salta a S2/S3 si no responde (sin stream: la cola HF no lo recibe; con flujo previo continua sin repetirlo)
@@ -336,7 +359,7 @@ export async function local(id, mensajes, { env = process.env, extra = {}, opts,
   if (onInicio) { try { onInicio({ via: 'hf-local', usado: id }); } catch { /* informativo */ } }
   for (const n of [1, 2, 3]) {
     const u = env[`SWECODE_URL_S${n}`]; if (!u) continue;
-    try { const x = await completar(u, id, mensajes, null, extra, r, { flujo }); anotarMetricas(`hf-local/${id}`, x.metricas); return { salida: x.texto, tool_calls: x.tool_calls, finish_reason: x.finish_reason, via: 'hf-local', usado: id, metricas: x.metricas }; } catch (e) { fallos.push(`S${n}: ${e.message}`); }
+    try { const x = await completar(u, id, mensajes, null, extra, r, { flujo }); anotarMetricas(`hf-local/${id}`, x.metricas); return { salida: x.texto, tool_calls: x.tool_calls, finish_reason: x.finish_reason, via: 'hf-local', usado: id, servidor: `S${n}`, metricas: x.metricas }; } catch (e) { fallos.push(`S${n}: ${e.message}`); }
   }
   throw Object.assign(new Error('HF_LOCAL: ' + (fallos.join(' | ') || 'sin SWECODE_URL_S1..S3')), { code: 'HF_LOCAL_FALLO' });
 }
@@ -346,6 +369,7 @@ export async function respaldo(mensajes, { env = process.env, extra = {}, opts, 
   for (const prov of ['groq', 'nvidia']) {
     const todas = claves(prov.toUpperCase() + '_API_KEY', env);
     if (!todas.length) { fallos.push(`${prov}: sin clave`); continue; }
+    if (!libres(prov, env, r).length) { fallos.push(`${prov}: enfriado (timeout/429 reciente)`); continue; }  // no se reentra en un proveedor ya enfriado
     try { return await externo(`${prov}/${await modeloDe(prov, env, r)}`, mensajes, { env, extra, opts, onDelta, onInicio, flujo: f }); } catch (e) { fallos.push(limpiar(`${prov}: ${e.message}`, todas)); }
   }
   try { return await local(LOCALES[0], mensajes, { env, extra, opts, onInicio, flujo: f }); } catch (e) { fallos.push(e.message); }

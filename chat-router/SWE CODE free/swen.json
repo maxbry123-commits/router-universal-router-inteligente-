@@ -62,11 +62,12 @@
     "APK movil: ultimo recurso MANUAL por POST /mcp del puente-movil (el bridge no lo invoca solo)"
   ],
   "endpoints_env": {
-    "WEB_BRIDGE_URL": "web-bridge en el servidor Riu (Express /v1/chat/completions)",
+    "WEB_BRIDGE_URL": "web-bridge en el servidor Riu (Express /v1/chat/completions, puerto 7870; toda ruta salvo /health exige x-api-key de acceso o BRIDGE_TOKEN)",
     "PUENTE_MOVIL_URL": "URL del puente-movil (POST /mcp, WS /agente)",
-    "SWECODE_URL_S1": "Space swe-code-s1",
-    "SWECODE_URL_S2": "Space swe-code-s2",
-    "SWECODE_URL_S3": "Space swe-code-s3"
+    "SWECODE_URL_S1": "https://comand-center-1-swe-code-s1.hf.space/v1",
+    "SWECODE_URL_S2": "https://comand-center-1-swe-code-s2.hf.space/v1",
+    "SWECODE_URL_S3": "https://comand-center-1-swe-code-s3.hf.space/v1",
+    "SWECODE_DATASET_GGUF": "COMAND-CENTER-1/swe-code-hf-gguf (dataset HF con los GGUF; los Spaces S1..S3 los cargan bajo demanda)"
   },
   "puente_movil": {
     "canal": "APK abre WSS saliente a PUENTE_MOVIL_URL/agente (el movil esta tras NAT: el servidor no llega, el movil sale)",
