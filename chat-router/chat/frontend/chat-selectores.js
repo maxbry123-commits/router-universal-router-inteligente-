@@ -6,6 +6,8 @@ const CLAVE = "riu_selector_activo";  // sessionStorage: sobrevive a recargas en
 const SELECTORES = [  // nombres exactos de Antonio
   { id: "nvidia-groq-team", nombre: "NVIDIA", pills: ["#sel-ngt", "#ficha"] },  // ficha NVIDIA: Glimmer / Nemotron 3 Super (Groq y NVIDIA codigo van como tools)
   { id: "groq", nombre: "Groq", pills: ["#sel-groq"] },  // modelos reales de Groq (fichas-externas.js); sin GROQ_API_KEY en el Space lo dice
+  { id: "swe-code", nombre: "SWE CODE", pills: ["#sel-swe"] },  // modelos locales de HF por el router propio de SWE CODE (swe-selectores.js)
+  { id: "swen-code-free", nombre: "SWEN CODE free", pills: ["#sel-swen"] },  // cuentas web Qwen/DeepSeek + modos por el bridge (swe-selectores.js)
   { id: "team-qwen", nombre: "Team qwen", pills: ["#sel-nuevo"] },  // los 14 modelos QwenCloud
   { id: "ask-consil-code-qwen-team", nombre: "Ask cónsil code qwen team", pills: ["#sel-cc"] },
   { id: "ask-consil-fromtend-qwen-team", nombre: "Ask consil fromtend qwen team", pills: ["#sel-cf"] },
@@ -90,7 +92,7 @@ const filas = () => {  // panel Selectores del chat: ⓘ diagrama, ⚡ respuesta
   const global = el("div", "sel-resp-global"), act = () => sessionStorage.getItem(CLAVE) || "";
   lista.before(global);
   const fichaEt = () => { try { const f = window.RIU_CHAT.chat().ficha, m = (window.RIU_CONFIG.modelos || []).find((x) => x.id === f); return m ? m.etiqueta : f || "NVIDIA"; } catch (e) { return "NVIDIA"; } };  // modelo Groq/NVIDIA elegido en la hoja de fichas
-  const modelo = (s) => s.id === "groq" ? ((window.RIU_GROQ || {}).modelo || (window.RIU_GROQ || {}).aviso || "elige un modelo") : s.id === "nvidia-groq-team" ? fichaEt() : s.id === "team-qwen" || s.id === "team-5-mvp" ? ((window.RIU_SELECTOR_QWEN || {}).seleccion || {}).label || "Qwen 3.8 Max" : (CONSIL_MODELOS[s.id] || []).map((m) => m[0]).join(" · ") || s.nombre;
+  const modelo = (s) => s.id === "swe-code" || s.id === "swen-code-free" ? (((window.RIU_SWE || {})[s.id] || {}).label || "elige un modelo") : s.id === "groq" ? ((window.RIU_GROQ || {}).modelo || (window.RIU_GROQ || {}).aviso || "elige un modelo") : s.id === "nvidia-groq-team" ? fichaEt() : s.id === "team-qwen" || s.id === "team-5-mvp" ? ((window.RIU_SELECTOR_QWEN || {}).seleccion || {}).label || "Qwen 3.8 Max" : (CONSIL_MODELOS[s.id] || []).map((m) => m[0]).join(" · ") || s.nombre;
   const fila = (s) => lista.querySelector('.sel-fila[data-selector="' + s.id + '"]');
   const refrescar = () => {
     SELECTORES.forEach((s) => {

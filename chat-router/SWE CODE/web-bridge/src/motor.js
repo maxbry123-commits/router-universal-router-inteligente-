@@ -2,6 +2,7 @@
 import { SITES, MODELOS_WEB, escribe, enviar, leerRespuesta, sesionMuerta, elegirModelo } from './sites.js';
 import { asegurar, nuevaPagina, cerrarPagina } from './browser.js';
 import { partir, cabecera, checkpointLeer, checkpointGuardar, resumeCard, huella } from './bloques.js';
+import { cuentaActual } from './cuentas.js';
 import { preambulo } from './modos.js';
 
 // consultarWeb(modelo_web, texto, {modo, convId}) -> respuesta del sitio
@@ -22,9 +23,11 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
     ck = checkpointLeer(convId, h);
     if (ck && ck.total !== bloques.length) ck = null;  // el checkpoint no es de este texto/modo
     ck = ck || { modo, total: bloques.length, enviados: 0, ultima_salida: '', huella: h };
+    const cuenta = (() => { try { return cuentaActual().index; } catch { return null; } })();
+    ck = { ...ck, modelo, texto: String(texto).slice(0, 200000) };  // lo necesario para retomar sola, sin que el cliente reenvie nada
 
     // retomo: reabre la MISMA conversacion web (url del checkpoint) en vez de un chat nuevo; si no abre, sigue con el chat nuevo + tarjeta
-    if (ck.enviados > 0 && ck.enviados < ck.total && ck.url) {
+    if (ck.enviados > 0 && ck.enviados < ck.total && ck.url && ck.cuenta === cuenta) {  // la URL de otra cuenta no abre
       await page.goto(ck.url, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
     }
     // retomo: si habia checkpoint, aviso al modelo donde ibamos
@@ -40,7 +43,7 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
       await enviar(page, siteCfg);
       const salida = await leerRespuesta(page, siteCfg);
       if (sesionMuerta(page, siteCfg)) throw Object.assign(new Error('SESION_MUERTA'), { code: 'SESSION_EXPIRED', site });
-      ck = { ...ck, enviados: i + 1, ultima_salida: salida || '', url: (() => { try { return page.url(); } catch { return ck.url; } })() };
+      ck = { ...ck, enviados: i + 1, ultima_salida: salida || '', cuenta, url: (() => { try { return page.url(); } catch { return ck.url; } })() };
       checkpointGuardar(convId, ck);
     }
   } finally {

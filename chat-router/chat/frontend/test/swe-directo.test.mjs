@@ -21,7 +21,30 @@ test("enviarSwe usa /v1/chat/completions y devuelve la forma que pinta el chat",
   assert.equal(r.reply, "listo"); assert.equal(r.finish_reason, "stop"); assert.match(r.nota, /groq/);
 });
 
-test("si la respuesta no trae texto lo dice en vez de quedarse en silencio", async () => {
-  const r = await enviarSwe(async () => ({ error: { code: "RESPALDO_AGOTADO", message: "nada responde" } }), { model: "web-qwen38max", historial: [], mensaje: "x", sesion: "s" });
-  assert.match(r.reply, /GAP: .*RESPALDO_AGOTADO/);
+test("si la respuesta no trae texto lanza el error con su codigo (no se pinta como respuesta del modelo)", async () => {
+  await assert.rejects(() => enviarSwe(async () => ({ error: { code: "RESPALDO_AGOTADO", message: "nada responde" } }), { model: "web-qwen38max", historial: [], mensaje: "x", sesion: "s" }), /GAP: RESPALDO_AGOTADO/);
+});
+
+import { SWE_LISTAS, esSelectorSwe } from "../swe-directo.js";
+
+test("hay dos selectores propios, SWE CODE y SWEN CODE free, cada uno con sus modelos y todos pasan por esSwe", () => {
+  assert.deepEqual(Object.keys(SWE_LISTAS).sort(), ["swe-code", "swen-code-free"]);
+  assert.ok(esSelectorSwe("swe-code") && esSelectorSwe("swen-code-free") && !esSelectorSwe("groq") && !esSelectorSwe("constructor"));
+  for (const [id, l] of Object.entries(SWE_LISTAS)) {
+    assert.ok(l.modelos.length >= 4, id);
+    for (const [mid] of l.modelos) assert.ok(esSwe(mid), mid + " debe enrutarse por el bridge");
+  }
+  assert.ok(SWE_LISTAS["swen-code-free"].modelos.some(([m]) => m === "swecode-asesoria"));
+  assert.ok(SWE_LISTAS["swe-code"].modelos.some(([m]) => m === "hf-liquid-lfm25"));
+});
+
+test("esSwe no se deja engañar por propiedades heredadas y un GAP del bridge es un error, no una respuesta", async () => {
+  assert.ok(!esSwe("constructor") && !esSwe("__proto__") && !esSwe("toString"));
+  await assert.rejects(() => enviarSwe(async () => ({ error: { code: "RESPALDO_AGOTADO", message: "nada responde" } }), { model: "web-qwen38max", historial: [], mensaje: "x", sesion: "s" }), /RESPALDO_AGOTADO/);
+});
+
+test("el historial que viaja al modelo SWE se acota (no se manda todo el chat a un modelo de 350M)", () => {
+  const h = Array.from({ length: 50 }, (_, i) => ({ role: i % 2 ? "assistant" : "user", content: "m" + i }));
+  const b = armar({ model: "lfm2.5-350m", historial: h, mensaje: "ultimo", sesion: "s" });
+  assert.ok(b.messages.length <= 21); assert.equal(b.messages.at(-1).content, "ultimo");
 });

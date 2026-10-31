@@ -76,6 +76,48 @@ class HarnessSwe(unittest.TestCase):
         self.assertEqual(vistos[0]["tools"], tools); self.assertEqual(r["tool_calls"][0]["function"]["name"], "github_leer")
         self.assertEqual(r["finish_reason"], "tool_calls")
 
+    def test_el_fallback_local_solo_si_el_router_esta_caido_no_por_cuota_ni_errores_del_modelo(self):
+        s, url, vistos = bridge("respuesta local")
+        def router(codigo):
+            def f(plugin, accion, datos=None, timeout=0):
+                if accion == "mcp": return {"result": {"tools": [{"name": "github_leer", "description": "d", "inputSchema": {"type": "object"}}]}}
+                return {"error": codigo, "status": "degraded"}
+            return f
+        with patch.dict(os.environ, {"RIU_SWE_BRIDGE_URL": url, "RIU_ROUTER_URL": "http://127.0.0.1:1"}):
+            with patch.object(h, "llamar", router("HTTP 429")):
+                with self.assertRaises(RuntimeError):
+                    h.llm({"modelo": "qwen3.8-max", "messages": MSGS})
+            self.assertEqual(vistos, [], "una cuota agotada no se disfraza de respuesta de un modelo local")
+            with patch.object(h, "llamar", router("URLError")):
+                r = h.llm({"modelo": "qwen3.8-max", "messages": MSGS})
+        s.shutdown()
+        self.assertEqual(r["texto"], "respuesta local"); self.assertEqual(r["modelo_respuesta"], "web-qwen38max")
+
+    def test_reanudar_con_acumulado_y_fallo_no_revienta_con_unbound(self):
+        with patch.dict(os.environ, {"RIU_SWE_BRIDGE_URL": ""}), patch.object(h, "llamar", lambda *a, **k: {"error": "URLError", "status": "degraded", "result": {"tools": []}}):
+            with self.assertRaises(RuntimeError):
+                h.llm({"modelo": "qwen3.8-max", "messages": MSGS, "acumulado": "previo"})
+
+    def test_la_url_del_bridge_se_valida_por_host_no_por_prefijo(self):
+        for mala in ("http://127.0.0.1.evil.com:80", "http://localhost.evil.com", "http://127.0.0.1@evil.com", "http://ejemplo.com", "ftp://127.0.0.1"):
+            with patch.dict(os.environ, {"RIU_SWE_BRIDGE_URL": mala}):
+                self.assertEqual(h._bridge_url(), "", mala)
+        for buena in ("http://127.0.0.1:7870", "http://localhost:7870", "https://bridge.ejemplo.com"):
+            with patch.dict(os.environ, {"RIU_SWE_BRIDGE_URL": buena}):
+                self.assertEqual(h._bridge_url(), buena)
+
+    def test_respuesta_del_bridge_con_message_null_es_error_controlado(self):
+        class H2(BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.rfile.read(int(self.headers["Content-Length"])); self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers()
+                self.wfile.write(json.dumps({"choices": [{"message": None}]}).encode())
+            def log_message(self, *a): pass
+        s = HTTPServer(("127.0.0.1", 0), H2); threading.Thread(target=s.serve_forever, daemon=True).start()
+        with patch.dict(os.environ, {"RIU_SWE_BRIDGE_URL": "http://127.0.0.1:%d" % s.server_port}):
+            with self.assertRaises(RuntimeError):
+                h._bridge_chat(MSGS, "web-qwen38max")
+        s.shutdown()
+
     def test_ids_swe(self):
         for m in ("web-qwen38max", "swecode-despliega", "hf-liquid-lfm25", "lfm2.5-350m"):
             self.assertTrue(h.es_swe(m), m)

@@ -9,7 +9,7 @@ let liveRequest = null;
 let PBASE = "";  // base de los plugins (chat_async, /resultado): mismo origen en Vercel (rewrites de vercel.json) o el Space directo
 // fetch con tope: en movil (4G, pestaña en segundo plano) un fetch puede quedar colgado para siempre y el chat se queda en "Pensando" sin que el Router reciba nada
 const vivos = new Set();
-const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const reg = ac ? { ac, t0: Date.now() } : null; if (reg) vivos.add(reg); const t = ms ? setTimeout(() => ac && ac.abort(), ms) : 0; return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => { clearTimeout(t); if (reg) vivos.delete(reg); }); };
+const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const reg = ac ? { ac, t0: Date.now() } : null; if (reg && !(ms >= 120000)) vivos.add(reg); /* las peticiones largas (SWE por el bridge) no se cortan al volver a la pestana */ const t = ms ? setTimeout(() => ac && ac.abort(), ms) : 0; return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => { clearTimeout(t); if (reg) vivos.delete(reg); }); };
 // al volver a la pestaña: cortar los fetch que quedaron colgados en segundo plano; el polling sigue con el mismo proceso_id y un chat_async sin proceso_id se reintenta
 try { const cortarColgados = () => { for (const r of [...vivos]) if (Date.now() - r.t0 > 2000) { try { r.ac.abort(); } catch (e) {} } }; document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cortarColgados(); }); window.addEventListener('online', cortarColgados); window.addEventListener('pageshow', (e) => { if (e.persisted) cortarColgados(); }); } catch (e) {}  // volver a la pestana, recuperar red o volver del bfcache: los fetch colgados se cortan y el polling reintenta
 const usarProxy = () => { try { return /\.vercel\.app$/.test(location.hostname) && localStorage.getItem('riu_proxy') !== '0' && !/[?&]proxy=0/.test(location.search); } catch (e) { return false; } };
@@ -304,7 +304,7 @@ export async function api(path, options = {}) {
   if (status) window.dispatchEvent(new CustomEvent("router-connection", { detail: status }));
   const payload = response.headers.get("content-type")?.includes("application/json")
     ? await response.json() : { detail: `HTTP ${response.status}` };
-  if (!response.ok) throw new Error((response.status === 403 ? "HTTP 403: " : "") + (typeof payload.detail === "string" ? payload.detail : typeof payload.reason === "string" ? payload.reason : `HTTP ${response.status}`));
+  if (!response.ok) throw new Error((response.status === 403 ? "HTTP 403: " : "") + (typeof payload.detail === "string" ? payload.detail : typeof payload.reason === "string" ? payload.reason : (payload.error && typeof payload.error.message === "string") ? ((payload.error.code ? payload.error.code + ": " : "") + payload.error.message) : `HTTP ${response.status}`));
   return payload;
 }
 export async function media(id) {

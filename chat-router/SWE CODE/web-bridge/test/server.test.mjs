@@ -572,6 +572,34 @@ test('A1-17. model con caracteres raros se rechaza (no entra a cabeceras ni lecc
   const r = await chat(A, { model: 'groq/ñ\nX-Inyectado: 1' }); assert.equal(r.status, 400);
 });
 
+test('A1-F1. POST /v1/secciones/:id/retomar retoma una seccion a medias con el texto guardado, sin que el cliente reenvie nada', async () => {
+  modoWeb(A, 'ok');
+  fs.mkdirSync(path.join(A.state, 'checkpoints'), { recursive: true });
+  fs.writeFileSync(path.join(A.state, 'checkpoints', 'media.json'), JSON.stringify({ modo: 'solucion', modelo: 'qwen38max', texto: 'TEXTO-GUARDADO-DE-LA-SECCION', total: 3, enviados: 1, huella: 'x' }));
+  const n0 = llamadasWeb(A).length;
+  const r = await fetch(A.base + '/v1/secciones/media/retomar', { method: 'POST' });
+  const j = await r.json();
+  assert.equal(r.status, 200); assert.equal(j.choices[0].message.content, 'WEB[qwen38max]');
+  const c = llamadasWeb(A).slice(n0)[0];
+  assert.equal(c.texto, 'TEXTO-GUARDADO-DE-LA-SECCION'); assert.equal(c.opts.convId, 'media'); assert.equal(c.opts.modo, 'solucion');
+  const no = await fetch(A.base + '/v1/secciones/no-hay/retomar', { method: 'POST' }); assert.equal(no.status, 404);
+  fs.writeFileSync(path.join(A.state, 'checkpoints', 'lista.json'), JSON.stringify({ modo: 'x', modelo: 'qwen38max', texto: 't', total: 1, enviados: 1, completo: true }));
+  assert.equal((await fetch(A.base + '/v1/secciones/lista/retomar', { method: 'POST' })).status, 409);
+});
+
+test('A1-F1b. BRIDGE_AUTORETOMAR=1: al arrancar retoma solo las secciones a medias y deja una leccion', async () => {
+  const estado = fs.mkdtempSync(path.join(TMP, 'auto-'));
+  fs.mkdirSync(path.join(estado, 'checkpoints'), { recursive: true });
+  fs.writeFileSync(path.join(estado, 'checkpoints', 'huerfana.json'), JSON.stringify({ modo: 'revision', modelo: 'dsv4-flash', texto: 'TEXTO-HUERFANO', total: 2, enviados: 1 }));
+  const R = await arrancar('R', { WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', BRIDGE_STATE_DIR: estado, BRIDGE_AUTORETOMAR: '1' });
+  let hecho = false;
+  for (let i = 0; i < 40 && !hecho; i++) { await new Promise((ok) => setTimeout(ok, 250)); try { hecho = fs.readFileSync(path.join(estado, 'web-calls.jsonl'), 'utf8').includes('TEXTO-HUERFANO'); } catch { /* aun no */ } }
+  assert.ok(hecho, 'debio retomar la seccion sola');
+  let les = '';
+  for (let i = 0; i < 20 && !/REINICIO/.test(les); i++) { await new Promise((ok) => setTimeout(ok, 200)); try { les = fs.readFileSync(path.join(estado, 'evolucion', 'lecciones.jsonl'), 'utf8'); } catch { /* aun no */ } }
+  assert.match(les, /"codigo":"REINICIO"[^\n]*"resultado":"PASS"/); void R;
+});
+
 test('entorno: informa si se uso express real o stub', () => {
   console.log(`# express ${expressReal ? 'real (npm install)' : 'stub'} en ${APP}`);
   assert.ok(servidores.length >= 2);

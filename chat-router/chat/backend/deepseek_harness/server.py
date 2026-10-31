@@ -7,6 +7,7 @@ import re
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
@@ -108,7 +109,18 @@ def es_swe(modelo):
 
 def _bridge_url():
     u = os.environ.get("RIU_SWE_BRIDGE_URL", "http://127.0.0.1:7870").strip().rstrip("/")  # el Space arranca el bridge en :7870; RIU_SWE_BRIDGE_URL="" lo desactiva
-    return u if u.startswith(("https://", "http://127.0.0.1", "http://localhost")) else ""
+    try:
+        p = urlparse(u)
+        ok = (p.scheme == "https" and p.hostname) or (p.scheme == "http" and p.hostname in ("127.0.0.1", "localhost") and not p.username)
+    except ValueError:
+        ok = False
+    return u if ok else ""
+
+
+def _router_caido(exc):
+    """Caida real del Router MVP (red, timeout, 502/503/504); una cuota (429), un 4xx o un error del modelo NO cuentan."""
+    m = str(exc)
+    return bool(re.match(r"Router (?!HTTP )\w+", m) or re.match(r"Router HTTP 50[234]", m))
 
 
 def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
@@ -121,7 +133,8 @@ def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
         with urllib.request.urlopen(req, timeout=float(os.environ.get("RIU_SWE_TIMEOUT_S", "130"))) as r:
             bruto = json.load(r)
         msg = bruto["choices"][0]["message"]
-    except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+        msg.get  # message null -> AttributeError controlado abajo
+    except (OSError, ValueError, KeyError, IndexError, TypeError, AttributeError) as exc:
         raise RuntimeError("Bridge " + type(exc).__name__ + ": " + str(exc)[:80]) from None
     return {"texto": msg.get("content") or "", "tool_calls": msg.get("tool_calls") or [], "finish_reason": bruto["choices"][0].get("finish_reason") or "stop",
             "mensaje_asistente": msg, "modelo_respuesta": bruto.get("modelo_usado") or modelo}
@@ -171,7 +184,7 @@ def llm(cuerpo):
     acumulado, continuaciones, usadas = str(cuerpo.get("acumulado") or ""), 0, []  # usadas: herramientas realmente ejecutadas (diagnostico)
     tarea = re.sub(r"[^A-Za-z0-9_-]", "", str(cuerpo.get("tarea_id") or ""))[:64]  # con tarea_id, lo que ya se ejecuto no se repite si la tarea se retoma
     diario = _diario(tarea) if tarea else {}
-    t0, paso = time.monotonic(), -1
+    t0, paso, salida = time.monotonic(), -1, {}
     while True:
         paso += 1
         try:
@@ -182,8 +195,8 @@ def llm(cuerpo):
                 try:
                     salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
                                  **{k: cuerpo.get(k, False) for k in ("tools", "agente_tool", "llm_tool")}})
-                except RuntimeError:
-                    if not _bridge_url():
+                except RuntimeError as exc:
+                    if not _bridge_url() or not (sin_router or _router_caido(exc)):
                         raise
                     salida = _bridge_chat(mensajes, os.environ.get("RIU_SWE_LOCAL_MODELO", "lfm2.5-350m"))  # Router MVP caido: modelos locales
         except RuntimeError:

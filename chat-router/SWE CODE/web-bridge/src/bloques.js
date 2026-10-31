@@ -35,6 +35,11 @@ export function checkpointLeer(convId, h) {
   } catch { return null; }
 }
 
+// checkpoint tal cual (sin comprobar huella): para retomar una seccion sola, con el texto y el modelo guardados
+export function checkpointCrudo(convId) {
+  try { return JSON.parse(fs.readFileSync(ruta(convId), 'utf8')); } catch { return null; }
+}
+
 // secciones conocidas (para que OpenClaw sepa cuales retomar): sin volcar contenido
 export function listarCheckpoints() {
   let archivos = [];
@@ -43,7 +48,7 @@ export function listarCheckpoints() {
   for (const f of archivos) {  // un archivo corrupto no esconde a los demas
     try {
       const ck = JSON.parse(fs.readFileSync(path.join(CK_DIR, f), 'utf8'));
-      out.push({ conv_id: f.slice(0, -5), modo: ck.modo, enviados: ck.enviados, total: ck.total, completo: !!ck.completo, ts: ck.ts });
+      out.push({ conv_id: f.slice(0, -5), modo: ck.modo, modelo: ck.modelo, cuenta: ck.cuenta, url: ck.url, enviados: ck.enviados, total: ck.total, completo: !!ck.completo, ts: ck.ts });
     } catch { /* ignorado */ }
   }
   return out;

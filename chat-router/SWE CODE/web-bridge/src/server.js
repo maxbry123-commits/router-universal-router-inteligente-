@@ -14,7 +14,7 @@ import { MODELOS_WEB } from './sites.js';
 import crypto from 'node:crypto';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo } from './respaldo.js';
-import { listarCheckpoints, registrarLeccion, proponerMejoras } from './bloques.js';
+import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo } from './bloques.js';
 import { conFormato } from './formato.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
@@ -89,6 +89,23 @@ app.get('/v1/proyectos', (_req, res) => res.json({ ok: true, proyectos: listarPr
 app.get('/v1/proyectos/:nombre', (req, res) => {
   const p = leerProyecto(req.params.nombre);
   p ? res.json({ ok: true, ...p }) : res.status(404).json({ ok: false, error: 'PROYECTO_NO_ENCONTRADO' });
+});
+
+// retomar una seccion a medias SIN que el cliente reenvie el texto: usa el texto y el modelo guardados en el checkpoint
+async function retomarSeccion(id) {
+  const ck = checkpointCrudo(id);
+  if (!ck || !ck.texto || !ck.modelo) return { status: 404, error: { code: 'SECCION_NO_ENCONTRADA' } };
+  if (ck.completo || (ck.enviados >= ck.total)) return { status: 409, error: { code: 'SECCION_YA_COMPLETA' } };
+  const salida = await conDeadline(consultarWeb(ck.modelo, ck.texto, { modo: ck.modo, convId: id }), DEADLINE_MS);
+  return { status: 200, salida, modelo: ck.modelo };
+}
+app.post('/v1/secciones/:id/retomar', async (req, res) => {
+  if (!/^[\w-]{1,80}$/.test(req.params.id)) return res.status(400).json({ error: { code: 'CONV_ID_INVALIDO' } });
+  try {
+    const r = await retomarSeccion(req.params.id);
+    if (r.error) return res.status(r.status).json({ error: r.error });
+    res.json({ id: `retoma-${Date.now()}`, object: 'chat.completion', modelo_usado: r.modelo, choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: r.salida || '' } }] });
+  } catch (e) { res.status(e.code === 'UPSTREAM_TIMEOUT' ? 504 : 502).json({ error: { code: e.code || 'BRIDGE_ERROR', message: String(e.message).slice(0, 200) } }); }
 });
 
 // auto-evolucion: mejoras propuestas por lo que el bridge reparo solo (OpenClaw las aplica con su commit)
@@ -241,5 +258,15 @@ app.use((err, _req, res, _next) => res.status(err.status || 400).json({ error: {
 
 // cierre limpio: sin esto un reinicio del Space deja el perfil de Chromium bloqueado
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, async () => { try { await cerrarTodo(); } catch { /* sigue */ } process.exit(0); });
+
+// BRIDGE_AUTORETOMAR=1: al arrancar, retoma una a una las secciones que quedaron a medias (si hay cuentas en el entorno)
+if (process.env.BRIDGE_AUTORETOMAR === '1') {
+  setTimeout(async () => {
+    for (const sec of listarCheckpoints().filter(c => !c.completo)) {
+      try { await retomarSeccion(sec.conv_id); registrarLeccion({ codigo: 'REINICIO', accion: 'retoma automatica ' + sec.conv_id, resultado: 'PASS' }); }
+      catch { registrarLeccion({ codigo: 'REINICIO', accion: 'retoma automatica ' + sec.conv_id, resultado: 'FAIL' }); }
+    }
+  }, 3000);
+}
 
 app.listen(PORT, () => console.log(`web-bridge escuchando :${PORT}`));

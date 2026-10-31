@@ -169,6 +169,44 @@ async function enviar(p, texto) {
     const ge = await grupos(pe);
     ok('E1 Router caido + catalogo guardado sin SWE: siguen los grupos SWE', ge.includes('SWE CODE (local HF)') && ge.includes('SWEN CODE free (web)'), JSON.stringify(ge));
     await pe.context().close();
+
+    // ======== F) tarjetas propias SWE CODE y SWEN CODE free en el panel "Selector de modelos": hoja de modelos, ON/OFF y envio por el bridge ========
+    const estF = { llamadas: [], catalogoFalla: false };
+    const pf = await nuevaPagina(browser, estF);
+    await abrirChat(pf, base);
+    const filasSel = await pf.evaluate(() => [...document.querySelectorAll('#sel-power .sel-fila')].map((f) => f.dataset.selector));
+    ok('F1 el panel Selectores tiene las tarjetas swe-code y swen-code-free', filasSel.includes('swe-code') && filasSel.includes('swen-code-free'), JSON.stringify(filasSel));
+    const pildoras = await pf.evaluate(() => ['#sel-swe', '#sel-swen'].map((q) => (document.querySelector(q) || {}).textContent || '').join(' | '));
+    ok('F1 sus pastillas dicen SWE CODE y SWEN CODE free', /SWE CODE/.test(pildoras) && /SWEN CODE free/.test(pildoras), pildoras);
+    const botonesOn = await pf.evaluate(() => ['swe-code', 'swen-code-free'].map((id) => !!document.querySelector('#sel-power .sel-fila[data-selector="' + id + '"] .sel-on')));
+    ok('F2 cada tarjeta tiene su boton ON/OFF', botonesOn.every(Boolean), JSON.stringify(botonesOn));
+    // hoja de SWEN CODE free: lista sus modelos y elegir uno
+    await pf.$eval('#sel-swen', (e) => e.click());
+    await pf.waitForSelector('#sh-swen-code-free-lista button', { state: 'attached', timeout: 8000 });
+    const modelosSwen = await pf.evaluate(() => [...document.querySelectorAll('#sh-swen-code-free-lista button')].map((b) => b.dataset.id));
+    ok('F3 la hoja de SWEN CODE free lista concilio, web-* y modos (incl. asesoria)', ['swecode-consulta', 'web-qwen38max', 'web-dsv4-flash', 'swecode-asesoria'].every((m) => modelosSwen.includes(m)), JSON.stringify(modelosSwen));
+    await pf.$eval('#sh-swen-code-free-lista button[data-id="web-dsv4-flash"]', (e) => e.click());
+    ok('F3 elegir DeepSeek V4 Flash (web) queda en RIU_SWE', await pf.evaluate(() => window.RIU_SWE['swen-code-free'].model_id === 'web-dsv4-flash'));
+    // encender la tarjeta y enviar: va por /v1/chat/completions con el modelo elegido y NO por el plugin del Router
+    await pf.evaluate(() => document.querySelector('#sel-power .sel-fila[data-selector="swen-code-free"] .sel-on').click());
+    ok('F4 SWEN CODE free queda encendido', await pf.evaluate(() => window.RIU_SELECTORES.activo === 'swen-code-free'));
+    estF.llamadas.length = 0;
+    const rf = await enviar(pf, 'hola desde swen');
+    const cf = estF.llamadas.filter((l) => l.ruta === '/v1/chat/completions');
+    ok('F5 respuesta pintada y UNA llamada a /v1/chat/completions con model web-dsv4-flash', rf === 'respuesta SWE de prueba' && cf.length === 1 && cf[0].body.model === 'web-dsv4-flash', JSON.stringify(estF.llamadas.map((l) => l.ruta)) + ' ' + rf);
+    ok('F5 sin llamadas al plugin del Router', !estF.llamadas.some((l) => /^\/plugins\//.test(l.ruta)));
+    // SWE CODE (local HF): Liquid
+    await pf.evaluate(() => document.querySelector('#sel-power .sel-fila[data-selector="swe-code"] .sel-on').click());
+    await pf.$eval('#sel-swe', (e) => e.click());
+    await pf.waitForSelector('#sh-swe-code-lista button', { state: 'attached', timeout: 8000 });
+    await pf.$eval('#sh-swe-code-lista button[data-id="hf-liquid-lfm25"]', (e) => e.click());
+    estF.llamadas.length = 0;
+    const rl = await enviar(pf, 'hola liquid');
+    const cl = estF.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
+    ok('F6 SWE CODE + Liquid: model lfm2.5-350m y el historial previo viaja', rl === 'respuesta SWE de prueba' && cl && cl.body.model === 'lfm2.5-350m' && cl.body.messages.length >= 3, JSON.stringify(cl && cl.body));
+    ok('F6 la etiqueta del panel refleja el modelo elegido', await pf.evaluate(() => /Liquid/.test(document.querySelector('#sel-power .sel-fila[data-selector="swe-code"] .sel-resp').textContent)));
+    ok('F sin errores JS en la pagina', pf.errs.length === 0, pf.errs.join(' | '));
+    await pf.context().close();
   } finally {
     await browser.close().catch(() => {});
     await new Promise((r) => srv.close(() => r())); srv.closeAllConnections && srv.closeAllConnections();

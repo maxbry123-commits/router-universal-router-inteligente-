@@ -68,3 +68,13 @@ test("auditoria 1 #14: un checkpoint de otro modo o de otro tamano no se retoma;
   const l = listarCheckpoints();
   assert.ok(l.some((s) => s.conv_id === "modo-a"), "el corrupto no debe esconder a los buenos");
 });
+
+test("auditoria 1 F1: el checkpoint guarda lo necesario para retomar solo (texto, modelo) y checkpointCrudo lo devuelve", async () => {
+  const { checkpointGuardar, checkpointCrudo, listarCheckpoints } = await import("../src/bloques.js");
+  checkpointGuardar("ret-1", { modo: "solucion", modelo: "qwen38max", texto: "TEXTO ORIGINAL", total: 3, enviados: 1, cuenta: 0, url: "https://x/c/1" });
+  const c = checkpointCrudo("ret-1");
+  assert.equal(c.texto, "TEXTO ORIGINAL"); assert.equal(c.modelo, "qwen38max");
+  assert.equal(checkpointCrudo("../no-existe"), null);
+  const l = listarCheckpoints().find((s) => s.conv_id === "ret-1");
+  assert.equal(l.modelo, "qwen38max"); assert.equal(l.cuenta, 0); assert.ok(l.url); assert.ok(!("texto" in l), "la lista no vuelca el texto");
+});

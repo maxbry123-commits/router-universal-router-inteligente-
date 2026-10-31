@@ -142,6 +142,7 @@ export function montarEnviar(ctx) {
     const fichaQwen = (selAct === "team-qwen" || selAct === "team-5-mvp") && c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label || c.selectorQwen.modelo_id_slug) : null;
     const fichaGroq = selAct === "groq" ? ((window.RIU_GROQ || {}).modelo || "") : null;  // selector Groq: el modelo elegido en su hoja (groq/<id>)
     if (fichaGroq === "") { c.hist.append(node("div", "Groq: " + ((window.RIU_GROQ || {}).aviso || "elige primero un modelo en la hoja Groq ⌄") + ". No se envió a otro modelo.", "item message meta")); abajo(c); return; }
+    const fichaSwe = (selAct === "swe-code" || selAct === "swen-code-free") ? ((window.RIU_SWE || {})[selAct] || null) : null;  // selectores SWE CODE / SWEN CODE free: modelo elegido en su hoja
     const fichaMvp = selAct === "team-5-mvp";  // Team 5 MVP: ruta propia -> fichas_qwen ficha_qwen=5 (1 modelo elegido, historial completo y tools)
     if (fichaMvp && !c.selectorQwen) {
       c.hist.append(node("div", "Team 5 MVP: elige primero un modelo en la hoja Team 5 MVP ⌄ (el mismo catalogo de la Ficha 1 / Team qwen). No se envio a otro modelo.", "item message meta"));
@@ -149,7 +150,7 @@ export function montarEnviar(ctx) {
       return;
     }
     const CONSIL_LISTO = /^(ask-consil-code-qwen-team|ask-consil-fromtend-qwen-team|ask-consil-nvidia-groq)$/;  // Ask Consil cableados al Router; nvidia-groq va como CONSULTA a la ficha ask-consil-factory
-    if (selAct && selAct !== "nvidia-groq-team" && selAct !== "groq" && !fichaQwen && !CONSIL_LISTO.test(selAct) && !fichaMvp) {
+    if (selAct && selAct !== "nvidia-groq-team" && selAct !== "groq" && !fichaQwen && !CONSIL_LISTO.test(selAct) && !fichaMvp && !fichaSwe) {
       const nomSel = (window.RIU_SELECTORES.selectores.find((x) => x.id === selAct) || {}).nombre || selAct;
       const det = selAct === "team-qwen" ? (c.selectorQwen ? " · " + c.selectorQwen.label : " · sin modelo elegido") : "";
       c.hist.append(node("div", nomSel + det + ": sin IA conectada en el Router (no hay proveedor ni clave para estos modelos). No se envió a otro modelo. Enciende Nvidia groq team o apaga el selector.", "item message meta"));
@@ -194,7 +195,7 @@ export function montarEnviar(ctx) {
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });  // Detener ya vale desde aqui: tambien mientras se restaura el historial o se arma el contexto
-      const ctxPrev = (fq || mvp) ? previo(c, rawText) : undefined;
+      const ctxPrev = (fq || mvp || fichaSwe) ? previo(c, rawText) : undefined;
       body.contexto_previo = ctxPrev;  // historial completo de esta sesion; el input actual viaja una sola vez
       const _multiSel = fq === "1" && c.paralelo ? (c.selectorQwenMulti || []).slice(0, 6) : [];  // >>> MODOS <<< T6: fan-out paralelo
       const _fanout = async () => {  // una llamada por modelo elegido; cada burbuja lleva su nombre
@@ -210,9 +211,10 @@ export function montarEnviar(ctx) {
         });
         return { reply: partes.join('\n\n'), tools: [], ms: 0, finish_reason: rs.some((r) => r.status === 'fulfilled' && r.value.finish_reason === 'length') ? 'length' : null };
       };
-      const _swe = fq === "1" && c.selectorQwen && esSwe(c.selectorQwen.model_id) && _multiSel.length <= 1;  // SWE CODE / SWEN CODE free: su router propio (el bridge), sin pasar por el Router MVP
+      const _modeloSwe = fichaSwe ? fichaSwe.model_id : ((fq === "1" || fichaMvp) && c.selectorQwen && esSwe(c.selectorQwen.model_id) ? c.selectorQwen.model_id : null);  // SWE CODE / SWEN CODE free: router propio (el bridge), sin pasar por el Router MVP
+      const _swe = !!_modeloSwe && _multiSel.length <= 1;
       const answer = _swe
-        ? await Promise.race([enviarSwe(api, { model: c.selectorQwen.model_id, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined }), raceDetener])
+        ? await Promise.race([enviarSwe(api, { model: _modeloSwe, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined }), raceDetener])
         : window.RIU_CONFIG?.harnessUrl
         ? (_multiSel.length > 1
             ? await Promise.race([_fanout(), raceDetener])  // >>> MODOS <<< T6: misma tarea a cada modelo; un proceso por modelo en el backend
