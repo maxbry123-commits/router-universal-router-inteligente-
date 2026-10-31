@@ -2,6 +2,8 @@
 // `banco-claves` del repo (nunca en main: no dispara autopull ni reinicios). Un Space nuevo lo trae al arrancar. El repo es privado y el archivo va cifrado.
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
+import os from 'node:os';
 
 const REPO = () => process.env.RIU_REPO || 'maxbry123-commits/router-universal-router-inteligente-';
 const API = () => process.env.RIU_GITHUB_API || 'https://api.github.com';
@@ -37,6 +39,24 @@ export async function publicarEnGithub({ api = API(), token = process.env.GITHUB
 
 const MARCA = 'MVPB1';
 const valido = (b, size) => Buffer.isBuffer(b) && b.length > 21 && b.subarray(0, 5).toString('latin1') === MARCA && (size == null || b.length === size);
+// ultimo recurso: la rama por git (transporte binario intacto). Token por variables de entorno del proceso hijo (nunca en argv/ps).
+function descargarGit(api, token, repo) {
+  const url = process.env.RIU_GIT_URL || (api === 'https://api.github.com' ? `https://github.com/${repo}.git` : null);
+  if (!url) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    let dir; try { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bcl-')); } catch { return resolve(null); }
+    const limpiar = () => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* ya no esta */ } };
+    const env = { PATH: process.env.PATH, HOME: process.env.HOME || dir, GIT_TERMINAL_PROMPT: '0', GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'http.extraheader', GIT_CONFIG_VALUE_0: `Authorization: Basic ${Buffer.from('x-access-token:' + token).toString('base64')}` };
+    execFile('git', ['init', '-q', dir], { env, timeout: 15000 }, (e1) => {
+      if (e1) { limpiar(); return resolve(null); }
+      execFile('git', ['-C', dir, 'fetch', '-q', '--depth', '1', url, RAMA], { env, timeout: 30000 }, (e2) => {
+        if (e2) { limpiar(); return resolve(null); }
+        execFile('git', ['-C', dir, 'show', `FETCH_HEAD:${ARCHIVO}`], { env, timeout: 15000, encoding: 'buffer', maxBuffer: 1 << 20 }, (e3, out) => { limpiar(); resolve(e3 ? null : Buffer.from(out)); });
+      });
+    });
+  });
+}
+
 // El banco es binario: se pide en crudo (media type raw). Si llega recodificado a UTF-8 (cada byte >= 0x80 en 2 bytes; pasaba en el Space: 1357 -> 2036) se repara y, si aun no es un banco valido, se descarta.
 async function descargar(api, token, repo, meta) {
   const size = typeof meta.size === 'number' ? meta.size : null;
@@ -46,7 +66,11 @@ async function descargar(api, token, repo, meta) {
     if (r.ok) candidatos.push(Buffer.from(await r.arrayBuffer()));
   } catch { /* se prueba el base64 */ }
   if (meta.content) candidatos.push(Buffer.from(meta.content, 'base64'));
+  diagTraer.candidatos = candidatos.map((b) => ({ bytes: b.length, cabecera: b.subarray(0, 6).toString('hex') }));  // solo largo y 6 bytes de cabecera, para diagnosticar
   for (const c of [...candidatos, ...candidatos.map((b) => Buffer.from(b.toString('utf8'), 'latin1'))]) if (valido(c, size)) return c;
+  const porGit = await descargarGit(api, token, repo);
+  diagTraer.git = porGit ? { bytes: porGit.length, valido: valido(porGit, size) } : { bytes: null, valido: false };
+  if (porGit && valido(porGit, size)) return porGit;
   return null;
 }
 

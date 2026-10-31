@@ -144,3 +144,23 @@ test("el banco remoto se descarga en crudo y, si el JSON/base64 llega recodifica
   g2.s.closeAllConnections?.(); g2.s.close();
   assert.equal(fs.readFileSync(path.join(estado, "banco-swe.bin"), "utf8"), "LOCAL-OK");
 });
+
+test("si ni el crudo ni el JSON dan un banco valido, lo toma por git (fetch de la rama banco-claves, binario intacto)", async () => {
+  const { execFileSync } = await import("node:child_process");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bgit-"));
+  const original = Buffer.concat([Buffer.from("MVPB1"), Buffer.from(Array.from({ length: 400 }, (_, i) => (i * 53 + 131) % 256))]);
+  const origen = path.join(dir, "origen"); fs.mkdirSync(origen);
+  const git = (...a) => execFileSync("git", ["-C", origen, "-c", "user.name=t", "-c", "user.email=t@t", ...a], { stdio: "pipe" });
+  git("init", "-q", "-b", "banco-claves"); fs.writeFileSync(path.join(origen, "banco-swe.bin"), original); git("add", "."); git("commit", "-qm", "b");
+  const basura = Buffer.from("X".repeat(2036));
+  const g = await new Promise((ok) => {
+    const s = http.createServer((req, res) => { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify({ size: original.length, sha: "abcd1234", encoding: "base64", content: basura.toString("base64") })); });
+    s.listen(0, "127.0.0.1", () => ok({ s, url: `http://127.0.0.1:${s.address().port}` }));
+  });
+  process.env.RIU_GIT_URL = origen;
+  fs.writeFileSync(path.join(estado, "banco-swe.bin"), Buffer.from("INVALIDO"));
+  const ok = await traerDeGithub({ api: g.url, token: "t", repo: "o/r", forzar: true });
+  delete process.env.RIU_GIT_URL; g.s.closeAllConnections?.(); g.s.close();
+  assert.equal(ok, true);
+  assert.deepEqual(fs.readFileSync(path.join(estado, "banco-swe.bin")), original);
+});
