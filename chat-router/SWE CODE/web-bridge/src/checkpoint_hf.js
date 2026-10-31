@@ -8,6 +8,7 @@
 // con Harness se guarda en ambos. Nunca se guardan claves ni cabeceras.
 import fs from 'node:fs';
 import path from 'node:path';
+import { sanear as saneaBloques, estadoDir } from './bloques.js';
 
 export const ID_RE = /^[a-zA-Z0-9_-]{1,64}$/;
 export const TIMEOUT_MS = 30000;
@@ -35,21 +36,25 @@ function limpiarTexto(s, secretos) {
 }
 
 // copia profunda sin campos-clave y con los valores-clave tachados. `secretos`: claves literales conocidas (las del entorno). Idempotente.
-export function sanear(valor, secretos = [], prof = 0) {
-  const lits = secretos.filter((s) => typeof s === 'string' && s.length >= 4);
+function saneaPropio(valor, lits, prof = 0) {
   if (prof > 60) return null;
   if (typeof valor === 'string') return limpiarTexto(valor, lits);
-  if (Array.isArray(valor)) return valor.map((v) => sanear(v, lits, prof + 1));
+  if (Array.isArray(valor)) return valor.map((v) => saneaPropio(v, lits, prof + 1));
   if (valor && typeof valor === 'object') {
     const out = {};
-    for (const [k, v] of Object.entries(valor)) { if (CAMPO_SECRETO.test(k) || v === undefined || typeof v === 'function') continue; out[k] = sanear(v, lits, prof + 1); }
+    for (const [k, v] of Object.entries(valor)) { if (CAMPO_SECRETO.test(k) || v === undefined || typeof v === 'function') continue; out[k] = saneaPropio(v, lits, prof + 1); }
     return out;
   }
   return valor;
 }
+// primero el sanear() de bloques.js (claves de objeto, cabeceras, patrones de secretos) y despues este (claves literales del entorno, JSON dentro de textos)
+export function sanear(valor, secretos = []) {
+  const lits = secretos.filter((s) => typeof s === 'string' && s.length >= 4);
+  return saneaPropio(saneaBloques(valor), lits);
+}
 
 // ---------- almacenamiento local ----------
-const dirLocal = (env) => path.join(env.BRIDGE_STATE_DIR || './state', 'checkpoints');
+const dirLocal = (env) => path.join(env.BRIDGE_STATE_DIR ? path.resolve(env.BRIDGE_STATE_DIR) : estadoDir(), 'checkpoints');  // absoluta, igual que bloques.js
 const rutaLocal = (id, env) => path.join(dirLocal(env), `${id}.json`);
 
 function guardarLocal(id, estado, env) {

@@ -155,8 +155,8 @@ test("sanear: elimina campos con pinta de clave (authorization, api_key, claves,
   }, ["literal-secreto-xyz"]);
   const j = JSON.stringify(limpio);
   for (const mal of ["gsk_FALSA", "nvapi-FALSA", "sk-FALSA", "hf_FALSA", "valor-secreto", "k-falsa"]) assert.ok(!j.includes(mal), mal + " -> " + j);
-  assert.ok(!("api_key" in limpio) && !("claves" in limpio) && !("token" in limpio) && !("headers" in limpio && "Authorization" in limpio.headers));
-  assert.equal(limpio.max_tokens, 100); assert.equal(limpio.modelo, "m"); assert.equal(limpio.headers["Content-Type"], "json");
+  assert.ok(!("api_key" in limpio) && !("claves" in limpio) && !("token" in limpio) && !("headers" in limpio), "las cabeceras no se guardan");
+  assert.equal(limpio.max_tokens, 100); assert.equal(limpio.modelo, "m");
   assert.deepEqual(limpio.lista, [{ ok: 1 }]);
   assert.ok(!JSON.stringify(sanear({ t: "tiene literal-secreto-xyz dentro" }, ["literal-secreto-xyz"])).includes("literal-secreto-xyz"));
   assert.deepEqual(sanear(sanear(limpio)), limpio, "idempotente");
