@@ -5,7 +5,7 @@ Cómo funciona, cómo se recupera y cómo trabaja OpenClaw con el web-bridge. La
 ## Camino de una petición
 - **OpenClaw** → `POST /v1/chat/completions` del web-bridge (`http://localhost:7870/v1`, ver `provider-openclaw.json`).
 - **Chat Yaiwes** → `chat/frontend/swe-directo.js` hace `POST /v1/chat/completions` del mismo origen con `{model, messages, conv_id, proyecto?}` (los ids `hf-*`/`swe-*` del selector se traducen al modelo local real). No pasa por el Router MVP. Que el proxy del Space reenvíe esa ruta al bridge no está en este repo.
-- **Vía Harness DeepSeek** (`chat/backend/deepseek_harness/server.py`, `RIU_SWE_BRIDGE_URL`, por defecto `http://127.0.0.1:7870`; vacío = desactivado): los ids `web-*`, `swecode-*` y los locales van al bridge enviando solo `{model, messages}` (con `conv_id` = la tarea del chat cuando existe, así hay checkpoint y memoria). Si el Router MVP cae, el Harness sigue por el bridge con un modelo local (`RIU_SWE_LOCAL_MODELO`), sin herramientas.
+- **Vía Harness DeepSeek** (`chat/backend/deepseek_harness/server.py`, `RIU_SWE_BRIDGE_URL`, por defecto `http://127.0.0.1:7870`; vacío = desactivado): los ids `web-*`, `swecode-*` y los locales van al bridge enviando `{model, messages, conv_id}` (`conv_id` = la tarea del chat cuando existe, así hay checkpoint y memoria). Si el Router MVP cae, el Harness sigue por el bridge con un modelo local (`RIU_SWE_LOCAL_MODELO`), sin herramientas.
 
 El puerto: el código arranca en `BRIDGE_PORT` (por defecto 7860, también en el `Dockerfile`); el Space lo lanza en 7870, que es lo que esperan Harness y OpenClaw.
 
