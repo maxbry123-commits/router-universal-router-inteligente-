@@ -52,6 +52,13 @@ class HarnessSwe(unittest.TestCase):
         with patch.dict(os.environ, {"RIU_SWE_BRIDGE_URL": ""}):
             self.assertEqual(h._bridge_url(), "")
 
+    def test_la_tarea_del_chat_viaja_al_bridge_como_conv_id_para_retomar_y_guardar_memoria(self):
+        s, url, vistos = bridge()
+        with patch.dict(os.environ, {"RIU_SWE_BRIDGE_URL": url}), patch.object(h, "llamar", lambda *a, **k: {"result": {"tools": []}}):
+            h.llm({"modelo": "web-qwen38max", "messages": MSGS, "tarea_id": "p-rq-abc123"})
+        s.shutdown()
+        self.assertEqual(vistos[0]["conv_id"], "p-rq-abc123")
+
     def test_ids_swe(self):
         for m in ("web-qwen38max", "swecode-despliega", "hf-liquid-lfm25", "lfm2.5-350m"):
             self.assertTrue(h.es_swe(m), m)

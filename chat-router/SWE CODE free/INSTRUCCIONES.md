@@ -50,7 +50,7 @@ Respuesta: `modelo_usado`, `via_respaldo`, `aviso`, `archivo`; headers `x-modelo
 
 - `chat <id>` / `seccion <id>` / `conv <id>` → `conv_id` propio: tab web aparte, hilo separado. Divide la tarea en 2 mensajes con `chat 1` y `chat 2`: trabajan a la vez.
 - Capacidad: `BRIDGE_MAX_TABS=4` tabs por sitio; si se llena, encola.
-- Espejo: mismo modelo en otro `conv_id` (contexto aparte) para repartir el trabajo. No uses el mismo `conv_id` en dos tareas a la vez, ni en el concilio (sus 3 modelos comparten la tab).
+- Espejo: mismo modelo en otro `conv_id` (contexto aparte) para repartir el trabajo. No uses el mismo `conv_id` en dos tareas a la vez. En el concilio cada modelo usa su propia tab (`<conv_id>-<modelo>`).
 
 ## 6. Conectividad
 

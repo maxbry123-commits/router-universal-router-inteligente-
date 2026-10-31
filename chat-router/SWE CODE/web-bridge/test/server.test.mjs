@@ -141,6 +141,7 @@ async function arrancar(nombre, envExtra = {}) {
   const env = {
     PATH: process.env.PATH, HOME: TMP, TMPDIR: TMP,
     BRIDGE_PORT: String(port), BRIDGE_STATE_DIR: state,
+    RIU_ACTIVAR_PATH: fileURLToPath(new URL('../../../SWE CODE free/activar.js', import.meta.url)),
     ...envExtra,
   };
   const p = spawn(process.execPath, ['--import', './preload.mjs', 'src/server.js'], { cwd: APP, env, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -460,6 +461,39 @@ test('11. documentos se incrustan en el prompt de la web; /v1/queue, /refresh_se
   assert.equal(rs.status, 200); assert.deepEqual(j.sitios, { qwen: 'vivo', deepseek: 'vivo' });
   assert.equal((await get(A, '/debug/tab?shot=0')).status, 200);
   assert.equal((await get(A, '/debug/tab?conv_id=nada')).status, 404);
+});
+
+test('12. concilio con conv_id: cada modelo y el arbitro usan su propia tab/checkpoint (no comparten)', async () => {
+  modoWeb(A, 'ok');
+  const n0 = llamadasWeb(A).length;
+  const r = await chat(A, { model: 'swecode-consulta', conv_id: 'chat-9' });
+  assert.equal(r.status, 200);
+  const ids = llamadasWeb(A).slice(n0).map((c) => c.opts.convId);
+  assert.equal(ids.length, 4); assert.equal(new Set(ids).size, 4, 'convIds distintos: ' + ids.join(','));
+  assert.ok(ids.every((i) => i.startsWith('chat-9')));
+});
+
+test('13. Groq/NVIDIA directos con modo despliega reciben el preambulo del agente que despliega', async () => {
+  groq.hits.length = 0; groq.status = 200; groq.texto = 'ok';
+  const r = await chat(A, { model: 'groq/xxx', modo: 'despliega' });
+  assert.equal(r.status, 200);
+  const sys = groq.hits.at(-1).body.messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n');
+  assert.match(sys, /MODO DESPLIEGA/);
+  groq.hits.length = 0;
+  await chat(A, { model: 'groq/xxx' });  // sin modo: no se agrega ningun preambulo de modo
+  assert.ok(!groq.hits.at(-1).body.messages.some((m) => /MODO DESPLIEGA/.test(m.content)));
+});
+
+test('14. el prefijo "SWEN CODE free ..." elige modelo, modo y seccion en el bridge', async () => {
+  modoWeb(A, 'ok');
+  const n0 = llamadasWeb(A).length;
+  const r = await chat(A, { messages: [{ role: 'user', content: 'SWEN CODE free chat 3 modo solucion solo deepseek v4 arregla api.js' }] });
+  assert.equal(r.status, 200);
+  const c = llamadasWeb(A).slice(n0)[0];
+  assert.equal(c.modelo, 'dsv4-flash'); assert.equal(c.opts.convId, 'chat-3'); assert.equal(c.opts.modo, 'solucion');
+  assert.ok(c.texto.includes('arregla api.js') && !c.texto.includes('SWEN CODE free'));
+  const mala = await chat(A, { messages: [{ role: 'user', content: 'SWEN CODE free modo inventado hola' }] });
+  assert.equal(mala.status, 400); assert.equal(mala.json.error.code, 'ACTIVACION_INVALIDA');
 });
 
 test('entorno: informa si se uso express real o stub', () => {

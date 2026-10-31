@@ -18,10 +18,13 @@ TAREA: redacta la respuesta FINAL sintetizando lo mejor de las tres.
 Reglas: corrige lo erroneo, conserva lo mas completo, no menciones A/B/C ni que eres arbitro.
 Si algo falta en las tres, marca [GAP] y dilo.`;
 
+// con conv_id cada modelo (y el arbitro) lleva su propia tab y checkpoint: antes los 3 compartian el mismo
+const opcionesDe = (opts, quien) => (opts.convId ? { ...opts, convId: `${opts.convId}-${quien}` } : opts);
+
 // consulta de consenso: retorna {final, por_modelo}
 export async function consenso(pregunta, opts = {}) {
   const resultados = await Promise.allSettled(
-    MODELOS.map(m => consultarWeb(m, pregunta, opts))
+    MODELOS.map(m => consultarWeb(m, pregunta, opcionesDe(opts, m)))
   );
   const por_modelo = {};
   const validas = [];
@@ -37,6 +40,6 @@ export async function consenso(pregunta, opts = {}) {
   }
   const final = validas.length === 1
     ? validas[0]
-    : await consultarWeb(ARBITRO, PROMPT_ARBITRO(pregunta, validas), opts);
+    : await consultarWeb(ARBITRO, PROMPT_ARBITRO(pregunta, validas), opcionesDe(opts, 'arbitro'));
   return { final, por_modelo };
 }

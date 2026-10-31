@@ -5,6 +5,7 @@
 //   otros modos -> objetivo unico (qwen38max por defecto)
 // Errores tipados: SESSION_EXPIRED | SELECTOR_BROKEN | CF_CHALLENGE | RATE_LIMITED
 import express from 'express';
+import { createRequire } from 'node:module';
 import { consultarWeb, salud } from './motor.js';
 import { consenso } from './consenso.js';
 import { modoValido } from './modos.js';
@@ -17,6 +18,14 @@ import { conFormato } from './formato.js';
 import { guardarTurno } from './memoria.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
+
+// gramatica "SWEN CODE free ..." (SWE CODE free/activar.js): elige modelo, modo y seccion desde el propio mensaje
+let activar = null;
+try { activar = createRequire(import.meta.url)(process.env.RIU_ACTIVAR_PATH || '../../../SWE CODE free/activar.js').activar; } catch { /* sin activar.js: el bridge sigue sin la gramatica */ }
+const IDS_DIRECTOS = (id) => /^(groq\/|nvidia\/|lfm2\.5|qwen2\.5-coder|qwen3\.5|qwen3-0\.6b|web-|swecode-)/.test(id);
+
+// Groq/NVIDIA/locales con un modo (p. ej. despliega): reciben el preambulo de ese modo, como el agente que despliega
+const conPreambulo = (msgs, m) => (m && modoValido(m) ? [{ role: 'system', content: preambulo(m) }, ...msgs] : msgs);
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -83,7 +92,15 @@ app.post('/refresh_session', async (_req, res) => {
 
 app.post('/v1/chat/completions', async (req, res) => {
   try {
-    const { model = 'swecode-consulta', messages: mensajesIn = [], modo, conv_id, proyecto, documentos, cuentas, clave: claveReq } = req.body;
+    let { model = 'swecode-consulta', messages: mensajesIn = [], modo, conv_id, proyecto, documentos, cuentas, clave: claveReq } = req.body;
+    const iUlt = mensajesIn.map(m => m && m.role).lastIndexOf('user');
+    const act = activar && iUlt >= 0 && typeof mensajesIn[iUlt].content === 'string' ? activar(mensajesIn[iUlt].content) : null;
+    if (act && act.error) return res.status(400).json({ error: { code: 'ACTIVACION_INVALIDA', message: act.error } });
+    if (act) {  // "SWEN CODE free [modo m] [solo modelo] [chat n] texto": el mensaje manda sobre el modelo/modo/seccion del POST
+      model = act.modelo === 'consenso' ? `swecode-${act.modo}` : (IDS_DIRECTOS(act.modelo) ? act.modelo : model);
+      modo = act.modo; conv_id = act.conv_id || conv_id;
+      mensajesIn = mensajesIn.map((m, i) => (i === iUlt ? { ...m, content: act.prompt } : m));
+    }
     const messages = conFormato(mensajesIn);  // formato de salida del chat Yaiwes tambien para OpenClaw
     // credenciales vienen de OpenClaw por llamada (vía plugins->harness); env solo respaldo
     if (cuentas) setCuentas(cuentas, claveReq);
@@ -112,9 +129,9 @@ app.post('/v1/chat/completions', async (req, res) => {
 
     const ejecutar = async () => {
     if (esExterno(model)) {
-      const r = await externo(model, messages); salida = r.salida; usado = r.usado; via = r.via;
+      const r = await externo(model, conPreambulo(messages, modo)); salida = r.salida; usado = r.usado; via = r.via;
     } else if (esLocal(model)) {
-      const r = await local(model, messages); salida = r.salida; usado = r.usado; via = r.via;
+      const r = await local(model, conPreambulo(messages, modo)); salida = r.salida; usado = r.usado; via = r.via;
     } else if (modeloWeb) {
       const r = await conFallback(modeloWeb, prompt, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;

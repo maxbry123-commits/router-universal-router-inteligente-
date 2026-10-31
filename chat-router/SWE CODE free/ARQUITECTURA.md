@@ -5,7 +5,7 @@ Cómo funciona, cómo se recupera y cómo trabaja OpenClaw con el web-bridge. La
 ## Camino de una petición
 - **OpenClaw** → `POST /v1/chat/completions` del web-bridge (`http://localhost:7870/v1`, ver `provider-openclaw.json`).
 - **Chat Yaiwes** → `chat/frontend/swe-directo.js` hace `POST /v1/chat/completions` del mismo origen con `{model, messages, conv_id, proyecto?}` (los ids `hf-*`/`swe-*` del selector se traducen al modelo local real). No pasa por el Router MVP. Que el proxy del Space reenvíe esa ruta al bridge no está en este repo.
-- **Vía Harness DeepSeek** (`chat/backend/deepseek_harness/server.py`, `RIU_SWE_BRIDGE_URL`, por defecto `http://127.0.0.1:7870`; vacío = desactivado): los ids `web-*`, `swecode-*` y los locales van al bridge enviando solo `{model, messages}` (sin `conv_id`, así que sin checkpoint ni memoria). Si el Router MVP cae, el Harness sigue por el bridge con un modelo local (`RIU_SWE_LOCAL_MODELO`), sin herramientas.
+- **Vía Harness DeepSeek** (`chat/backend/deepseek_harness/server.py`, `RIU_SWE_BRIDGE_URL`, por defecto `http://127.0.0.1:7870`; vacío = desactivado): los ids `web-*`, `swecode-*` y los locales van al bridge enviando solo `{model, messages}` (con `conv_id` = la tarea del chat cuando existe, así hay checkpoint y memoria). Si el Router MVP cae, el Harness sigue por el bridge con un modelo local (`RIU_SWE_LOCAL_MODELO`), sin herramientas.
 
 El puerto: el código arranca en `BRIDGE_PORT` (por defecto 7860, también en el `Dockerfile`); el Space lo lanza en 7870, que es lo que esperan Harness y OpenClaw.
 
@@ -43,7 +43,9 @@ Deadline por petición 100 s (`BRIDGE_DEADLINE_MS`); cada proveedor de respaldo 
 - Solo se retoma un checkpoint **a medias y de la misma tarea**; uno completo o de otra tarea empieza de cero. Al retomar con tab nueva, el bridge envía una tarjeta `[RETOMO]` (bloques enviados y últimos 400 caracteres de salida) y sigue desde el primer bloque no confirmado.
 - `GET /v1/secciones` lista `conv_id`, `modo`, `enviados`, `total`, `completo`, `ts` sin volcar contenido. OpenClaw retoma reenviando el **mismo `conv_id` y el mismo texto**.
 - `BRIDGE_STATE_DIR` debe ser almacenamiento permanente (el `Dockerfile` usa `/data/state`).
-- Cuidado: en el concilio los 3 modelos comparten el `conv_id` dado (misma tab y checkpoint); para trabajo paralelo usa un `conv_id` distinto por sección.
+- Concilio con `conv_id`: cada modelo y el árbitro usan su propia tab y checkpoint (`<conv_id>-<modelo>`, `<conv_id>-arbitro`); no se mezclan.
+- Gramática: si el último mensaje empieza con `SWEN CODE free [modo m] [solo modelo] [chat n] texto`, el bridge la interpreta (`activar.js`) y elige modelo, modo y sección; un modo o modelo inválido da 400 `ACTIVACION_INVALIDA`. `pipeline` se parsea pero lo ejecuta `SWE CODE/mini_router.py`, no el bridge.
+- Con `groq/…`, `nvidia/…` o un local más `modo` (p. ej. `despliega`), el modelo recibe el preámbulo de ese modo.
 
 ## Memoria compartida con el chat Yaiwes
 Con `proyecto` o `conv_id`, cada turno (usuario y respuesta) se guarda en el bucket HF `COMAND-CENTER-1/yaiwes-memoria-storage`, scope `chat-ui:hist:openclaw-<slug>`, forma `{rol, texto, ts}` (`rol` = `user`|`bot`). Lo hace `memoria.js` llamando a `memoria_hf.py`, que reutiliza `mvp.memoria` (no hay almacén nuevo). Necesita `HF_TOKEN` y `mvp` importable por Python; si falta algo no guarda y no rompe la respuesta.

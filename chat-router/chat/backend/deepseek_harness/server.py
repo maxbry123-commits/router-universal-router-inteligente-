@@ -111,11 +111,11 @@ def _bridge_url():
     return u if u.startswith(("https://", "http://127.0.0.1", "http://localhost")) else ""
 
 
-def _bridge_chat(mensajes, modelo):
+def _bridge_chat(mensajes, modelo, conv_id=""):
     """Una vuelta de chat por el bridge (OpenAI-compatible): mismo formato que _router('chat')."""
     modelo = SWE_ALIAS.get(modelo, modelo)
     req = urllib.request.Request(_bridge_url() + "/v1/chat/completions", method="POST", headers={"Content-Type": "application/json"},
-                                 data=json.dumps({"model": modelo, "messages": mensajes}).encode())
+                                 data=json.dumps({"model": modelo, "messages": mensajes, **({"conv_id": conv_id} if conv_id else {})}).encode())
     try:
         with urllib.request.urlopen(req, timeout=float(os.environ.get("RIU_SWE_TIMEOUT_S", "130"))) as r:
             bruto = json.load(r)
@@ -176,7 +176,7 @@ def llm(cuerpo):
         try:
             mensajes = compactar(mensajes, int(cuerpo.get("contexto_max") or 0) or None)
             if _bridge_url() and es_swe(cuerpo.get("modelo")):
-                salida = _bridge_chat(mensajes, cuerpo.get("modelo"))
+                salida = _bridge_chat(mensajes, cuerpo.get("modelo"), tarea)
             else:
                 try:
                     salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
