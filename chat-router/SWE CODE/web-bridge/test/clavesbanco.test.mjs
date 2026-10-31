@@ -82,3 +82,11 @@ test("vigilarBanco: si el banco local no aporta ninguna clave (vacio o ilegible)
   assert.ok(llamadas.includes("traer-forzado"), llamadas.join(","));
   assert.ok(cargas >= 3);
 });
+
+test("diagnosticoBanco: solo estado (bytes del archivo, ultimo http de GitHub, ultimo error del helper, numero de accesos), nunca valores", async () => {
+  const { diagnosticoBanco } = await import("../src/clavesbanco.js");
+  const d = diagnosticoBanco({ BRIDGE_STATE_DIR: dir, RIU_API_KEY: "x", RIU_MCP_KEY: "y" });
+  assert.equal(d.accesos, 2);
+  assert.ok("local_bytes" in d && "github" in d && "python" in d);
+  assert.ok(!JSON.stringify(d).includes("gsk-"));
+});

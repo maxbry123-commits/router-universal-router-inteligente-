@@ -28,11 +28,16 @@ export async function publicarEnGithub({ api = API(), token = process.env.GITHUB
   } catch { return false; }
 }
 
+// ultimo intento de traer el banco (solo datos de estado, nunca valores): lo muestra /health para diagnosticar sin logs
+export const diagTraer = { token: false, http: null, ts: null };
+
 // Space nuevo: si no hay banco local, trae el de GitHub; nunca pisa uno local
 export async function traerDeGithub({ api = API(), token = process.env.GITHUB_TOKEN, repo = REPO(), forzar = false } = {}) {
   try {
+    diagTraer.token = !!token;
     if (!token || (!forzar && fs.existsSync(local()))) return false;
     const r = await gh(api, token, `/repos/${repo}/contents/${ARCHIVO}?ref=${RAMA}`);
+    diagTraer.http = r.status; diagTraer.ts = new Date().toISOString();
     if (!r.ok || !r.json.content) return false;
     fs.mkdirSync(path.dirname(local()), { recursive: true });
     fs.writeFileSync(local(), Buffer.from(r.json.content, 'base64'), { mode: 0o600 });

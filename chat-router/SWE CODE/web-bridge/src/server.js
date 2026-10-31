@@ -22,7 +22,7 @@ import { idValido as tareaIdValido } from './checkpoint_hf.js';
 import { conFormato } from './formato.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
 import { vigilarActualizacion } from './autoactualizar.js';
-import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco } from './clavesbanco.js';
+import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco, diagnosticoBanco } from './clavesbanco.js';
 import { publicarEnGithub, traerDeGithub } from './bancogithub.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
@@ -93,7 +93,7 @@ app.get('/health', async (_req, res) => {
     let idx = null; try { idx = cuentaActual().index; } catch {}
     poolInfo = { total: n, loaded: true, indices: [...Array(n).keys()], actual: idx };
   } catch { poolInfo = { total: 0, loaded: false, error: 'WEB_ACCOUNTS_VACIO' }; }
-  res.json({ ok: true, pool: poolInfo, cuentas: sinCorreos(estadoCuentas()), respaldo: estadoRespaldo(), metricas: estadoMetricas(), state_dir: process.env.BRIDGE_STATE_DIR || './state' });
+  res.json({ ok: true, pool: poolInfo, cuentas: sinCorreos(estadoCuentas()), respaldo: estadoRespaldo(), banco: diagnosticoBanco(), metricas: estadoMetricas(), state_dir: process.env.BRIDGE_STATE_DIR || './state' });
 });
 
 app.get('/v1/queue', (_req, res) => {

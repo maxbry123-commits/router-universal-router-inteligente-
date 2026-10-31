@@ -4,17 +4,30 @@ import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setClaves } from './respaldo.js';
-import { traerDeGithub } from './bancogithub.js';
+import fs from 'node:fs';
+import { traerDeGithub, diagTraer } from './bancogithub.js';
 
 const SCRIPT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../claves_banco.py');
 const entorno = () => Object.fromEntries(['PATH', 'HOME', 'PYTHONPATH', 'LANG', 'BRIDGE_STATE_DIR', 'RIU_API_KEY', 'RIU_PUBLIC_CHAT_KEY', 'RIU_MCP_KEY', 'RIU_ROUTER_API_KEY', 'RIU_BANCO_ROUTER']
   .filter(k => process.env[k] !== undefined).map(k => [k, process.env[k]]));
 
+// estado para diagnosticar (nunca valores): ultima llamada al helper python y si el banco local existe
+const diagPy = { accion: null, ok: null, err: null };
+export function diagnosticoBanco(env = process.env) {
+  const ruta = require_ruta(env); let local = null;
+  try { local = fs.statSync(ruta).size; } catch { /* no existe */ }
+  return { local_bytes: local, github: { ...diagTraer }, python: { ...diagPy }, accesos: ['RIU_API_KEY', 'RIU_PUBLIC_CHAT_KEY', 'RIU_MCP_KEY', 'RIU_ROUTER_API_KEY'].filter((k) => env[k]).length };
+}
+const require_ruta = (env) => path.join(env.BRIDGE_STATE_DIR || './state', 'banco-swe.bin');
+
 function correr(args, stdin) {
   return new Promise((resolve) => {
     const cmd = process.env.RIU_CLAVES_CMD;
     const [bin, argv] = cmd ? [cmd, args] : [process.env.RIU_PYTHON || 'python3', [SCRIPT, ...args]];
-    const p = execFile(bin, argv, { timeout: 15000, env: cmd ? process.env : entorno() }, (err, out) => resolve(err ? null : String(out)));
+    const p = execFile(bin, argv, { timeout: 15000, env: cmd ? process.env : entorno() }, (err, out, errout) => {
+      diagPy.accion = args[0]; diagPy.ok = !err; diagPy.err = err ? String(errout || err.message || err.code || '').trim().split('\n').slice(-1)[0].slice(0, 160) : null;
+      resolve(err ? null : String(out));
+    });
     p.stdin.on('error', () => {}); p.stdin.end(stdin || '');
   });
 }
