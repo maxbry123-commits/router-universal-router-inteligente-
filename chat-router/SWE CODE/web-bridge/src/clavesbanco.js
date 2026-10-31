@@ -18,6 +18,11 @@ export function diagnosticoBanco(env = process.env) {
   try { local = fs.statSync(ruta).size; } catch { /* no existe */ }
   return { local_bytes: local, github: { ...diagTraer }, python: { ...diagPy }, accesos: ['RIU_API_KEY', 'RIU_PUBLIC_CHAT_KEY', 'RIU_MCP_KEY', 'RIU_ROUTER_API_KEY'].filter((k) => env[k]).length };
 }
+// version publica de diagnosticoBanco (GET /health sin clave): solo contadores y booleanos; nada de stderr, codigos http, errores ni rutas
+export function resumenBanco(d) {
+  const x = d && typeof d === 'object' ? d : {};
+  return { local_bytes: typeof x.local_bytes === 'number' ? x.local_bytes : null, github: { token: !!(x.github && x.github.token), escrito: x.github && typeof x.github.escrito === 'boolean' ? x.github.escrito : null }, python: { ok: x.python && typeof x.python.ok === 'boolean' ? x.python.ok : null }, accesos: Number.isFinite(x.accesos) ? x.accesos : 0 };
+}
 const require_ruta = (env) => path.join(env.BRIDGE_STATE_DIR || './state', 'banco-swe.bin');
 
 function correr(args, stdin) {

@@ -204,33 +204,33 @@ after(async () => {
   fs.rmSync(TMP, { recursive: true, force: true });
 });
 
-// ---------- (1) groq/xxx directo a Groq ----------
-test('1. groq/xxx va directo a Groq (sin tocar la web), con clave y formato del chat', async () => {
+// ---------- (1) groq/qwen/qwen3.8-27b directo a Groq ----------
+test('1. groq/qwen/qwen3.8-27b va directo a Groq (sin tocar la web), con clave y formato del chat', async () => {
   groq.hits.length = 0; groq.status = 200; groq.texto = 'respuesta-groq-directa';
   const n0 = llamadasWeb(A).length;
-  const r = await chat(A, { model: 'groq/xxx' });
+  const r = await chat(A, { model: 'groq/qwen/qwen3.8-27b' });
   assert.equal(r.status, 200);
   assert.equal(r.json.choices[0].message.content, 'respuesta-groq-directa');
   assert.equal(r.json.via_respaldo, 'groq');
-  assert.equal(r.json.modelo_usado, 'groq/xxx');
-  assert.equal(r.json.model, 'swecode:groq/xxx');
-  assert.equal(r.headers.get('x-modelo-usado'), 'groq/xxx');
+  assert.equal(r.json.modelo_usado, 'groq/qwen/qwen3.8-27b');
+  assert.equal(r.json.model, 'swecode:groq/qwen/qwen3.8-27b');
+  assert.equal(r.headers.get('x-modelo-usado'), 'groq/qwen/qwen3.8-27b');
   assert.equal(llamadasWeb(A).length, n0, 'no debe consultar la web');
   assert.equal(groq.hits.length, 1);
   assert.equal(groq.hits[0].url, '/chat/completions');
   assert.equal(groq.hits[0].auth, 'Bearer gsk-SECRETO-1');
-  assert.equal(groq.hits[0].body.model, 'xxx');
+  assert.equal(groq.hits[0].body.model, 'qwen/qwen3.8-27b');
   const sys = groq.hits[0].body.messages[0];
   assert.equal(sys.role, 'system'); assert.ok(sys.content.includes(FORMATO.slice(0, 60)), 'formato.js antepone el formato de salida');
   assert.equal(groq.hits[0].body.messages.at(-1).content, 'hola mundo');
 });
 
-test('1b. groq/xxx con la primera clave rota usa la segunda', async () => {
+test('1b. groq/qwen/qwen3.8-27b con la primera clave rota usa la segunda', async () => {
   groq.hits.length = 0; groq.texto = 'segunda-clave';
   const orig = groq.status;
   groq.status = 500;
   const watcher = setInterval(() => { if (groq.hits.length >= 1) groq.status = 200; }, 1);  // la 1a peticion falla, las siguientes OK
-  const r = await chat(A, { model: 'groq/xxx' });
+  const r = await chat(A, { model: 'groq/qwen/qwen3.8-27b' });
   clearInterval(watcher); groq.status = orig;
   assert.equal(r.status, 200);
   assert.equal(groq.hits[0].auth, 'Bearer gsk-SECRETO-1');
@@ -377,7 +377,7 @@ test('4c. asesoria sin proyecto ni conv_id guarda en "general"', async () => {
 test('4d. guardarTurno: con proyecto/conv_id pasa por la memoria (scope chat-ui:hist:openclaw-<slug>)', async () => {
   const log = path.join(TMP, 'memoria.log');
   groq.texto = 'respuesta-memoria';
-  await chat(A, { model: 'groq/xxx', proyecto: 'Proy Memoria' });
+  await chat(A, { model: 'groq/qwen/qwen3.8-27b', proyecto: 'Proy Memoria' });
   const txt = await esperar(() => { try { const t = fs.readFileSync(log, 'utf8'); return t.includes('respuesta-memoria') ? t : null; } catch { return null; } });
   assert.ok(txt, 'la memoria recibio el turno');
   assert.match(txt, /ARGS save chat-ui:hist:openclaw-proy-memoria m-\d+-user/);
@@ -427,7 +427,7 @@ test('6c. POST con claves {groq,nvidia} inyecta las claves por llamada (sin clav
   const K = await arrancar('K', { TEST_GROQ_URL: groq.url, TEST_NVIDIA_URL: nvidia.url, RIU_FORMATO_PATH: path.join(TMP, 'FORMATO.md'), BRIDGE_RESPALDO_MS: '5000' });
   assert.deepEqual((await get(K, '/health')).json.respaldo, { groq: 0, nvidia: 0, hf_local: 0 });
   groq.hits.length = 0; groq.status = 200; groq.texto = 'con-clave-inyectada';
-  const r = await chat(K, { model: 'groq/xxx', claves: { groq: ['gsk-INYECTADA-1', 'gsk-INYECTADA-2'], nvidia: 'nv-INYECTADA' } });
+  const r = await chat(K, { model: 'groq/qwen/qwen3.8-27b', claves: { groq: ['gsk-INYECTADA-1', 'gsk-INYECTADA-2'], nvidia: 'nv-INYECTADA' } });
   assert.equal(r.status, 200);
   assert.equal(r.json.choices[0].message.content, 'con-clave-inyectada');
   assert.equal(groq.hits[0].auth, 'Bearer gsk-INYECTADA-1');
@@ -455,14 +455,14 @@ test('8. validacion: modelo desconocido -> 400 MODELO_INVALIDO; modo desconocido
   assert.equal(r.status, 400); assert.equal(r.json.error.code, 'MODO_INVALIDO');
 });
 
-test('9. modelo local lfm2.5-350m va directo a HF local; nvidia/xxx directo a NVIDIA', async () => {
+test('9. modelo local lfm2.5-350m va directo a HF local; nvidia/minimaxai/minimax-m3.1-flash directo a NVIDIA', async () => {
   hf.hits.length = 0; hf.status = 200; hf.texto = 'local-directo';
   let r = await chat(A, { model: 'lfm2.5-350m' });
   assert.equal(r.json.via_respaldo, 'hf-local'); assert.equal(r.json.choices[0].message.content, 'local-directo');
   assert.equal(hf.hits[0].body.model, 'lfm2.5-350m');
   nvidia.hits.length = 0; nvidia.status = 200; nvidia.texto = 'nv-directo';
-  r = await chat(A, { model: 'nvidia/meta/otro' });
-  assert.equal(r.json.via_respaldo, 'nvidia'); assert.equal(nvidia.hits[0].body.model, 'meta/otro');
+  r = await chat(A, { model: 'nvidia/meta/muse-glimmer-30b' });
+  assert.equal(r.json.via_respaldo, 'nvidia'); assert.equal(nvidia.hits[0].body.model, 'meta/muse-glimmer-30b');
 });
 
 test('10. swecode-consulta usa consenso (3 modelos + arbitro) y devuelve x-consenso-detalle', async () => {
@@ -501,12 +501,12 @@ test('12. concilio con conv_id: cada modelo y el arbitro usan su propia tab/chec
 
 test('13. Groq/NVIDIA directos con modo despliega reciben el preambulo del agente que despliega', async () => {
   groq.hits.length = 0; groq.status = 200; groq.texto = 'ok';
-  const r = await chat(A, { model: 'groq/xxx', modo: 'despliega' });
+  const r = await chat(A, { model: 'groq/qwen/qwen3.8-27b', modo: 'despliega' });
   assert.equal(r.status, 200);
   const sys = groq.hits.at(-1).body.messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n');
   assert.match(sys, /MODO DESPLIEGA/);
   groq.hits.length = 0;
-  await chat(A, { model: 'groq/xxx' });  // sin modo: no se agrega ningun preambulo de modo
+  await chat(A, { model: 'groq/qwen/qwen3.8-27b' });  // sin modo: no se agrega ningun preambulo de modo
   assert.ok(!groq.hits.at(-1).body.messages.some((m) => /MODO DESPLIEGA/.test(m.content)));
 });
 
@@ -528,7 +528,7 @@ test('15. tools: groq/nvidia/locales reciben las tools del POST y sus tool_calls
   const tools = [{ type: 'function', function: { name: 'github_leer', parameters: { type: 'object' } } }];
   groq.hits.length = 0; groq.status = 200;
   groq.tool_calls = [{ id: 'c1', type: 'function', function: { name: 'github_leer', arguments: '{"ruta":"README.md"}' } }];
-  const r = await chat(A, { model: 'groq/xxx', tools, tool_choice: 'auto' });
+  const r = await chat(A, { model: 'groq/qwen/qwen3.8-27b', tools, tool_choice: 'auto' });
   delete groq.tool_calls;
   assert.equal(r.status, 200);
   assert.deepEqual(groq.hits.at(-1).body.tools, tools); assert.equal(groq.hits.at(-1).body.tool_choice, 'auto');
@@ -541,7 +541,7 @@ test('EX-1. ejecutor_tools=openclaw: devuelve los tool_calls tal cual y el check
   const tools = [{ type: 'function', function: { name: 'github_leer', parameters: { type: 'object' } } }];
   groq.hits.length = 0; groq.status = 200;
   groq.tool_calls = [{ id: 'cx1', type: 'function', function: { name: 'github_leer', arguments: '{}' } }];
-  const r = await chat(A, { model: 'groq/xxx', tools, conv_id: 'ex-conv-1', ejecutor_tools: 'openclaw' });
+  const r = await chat(A, { model: 'groq/qwen/qwen3.8-27b', tools, conv_id: 'ex-conv-1', ejecutor_tools: 'openclaw' });
   assert.equal(r.status, 200);
   assert.equal(r.json.ejecutor_tools, 'openclaw');
   assert.equal(r.json.choices[0].finish_reason, 'tool_calls');
@@ -549,12 +549,12 @@ test('EX-1. ejecutor_tools=openclaw: devuelve los tool_calls tal cual y el check
   let sec = (await get(A, '/v1/secciones')).json.secciones.find((x) => x.conv_id === 'ex-conv-1');
   assert.ok(sec, 'la seccion existe'); assert.equal(sec.estado, 'WAIT_TOOLS');
   delete groq.tool_calls; groq.texto = 'listo';
-  const r2 = await chat(A, { model: 'groq/xxx', conv_id: 'ex-conv-1', ejecutor_tools: 'openclaw', messages: [{ role: 'user', content: 'x' }, { role: 'tool', tool_call_id: 'cx1', content: 'ok' }] });
+  const r2 = await chat(A, { model: 'groq/qwen/qwen3.8-27b', conv_id: 'ex-conv-1', ejecutor_tools: 'openclaw', messages: [{ role: 'user', content: 'x' }, { role: 'tool', tool_call_id: 'cx1', content: 'ok' }] });
   assert.equal(r2.status, 200);
   sec = (await get(A, '/v1/secciones')).json.secciones.find((x) => x.conv_id === 'ex-conv-1');
   assert.equal(sec.estado, 'CONTINUAR');
   groq.tool_calls = [{ id: 'cx2', type: 'function', function: { name: 'github_leer', arguments: '{}' } }];
-  const r3 = await chat(A, { model: 'groq/xxx', tools, conv_id: 'ex-conv-2' });
+  const r3 = await chat(A, { model: 'groq/qwen/qwen3.8-27b', tools, conv_id: 'ex-conv-2' });
   delete groq.tool_calls;
   assert.equal(r3.json.ejecutor_tools, undefined);
   assert.equal((await get(A, '/v1/secciones')).json.secciones.find((x) => x.conv_id === 'ex-conv-2'), undefined);
@@ -584,7 +584,7 @@ test('A1-12. modelo web desconocido -> 400; SESSION_EXPIRED no se disfraza con e
 
 test('A1-8. documentos tambien llegan a Groq/NVIDIA/locales, no solo a la web', async () => {
   groq.hits.length = 0; groq.status = 200; groq.texto = 'ok';
-  await chat(A, { model: 'groq/xxx', documentos: [{ nombre: 'plan.md', contenido: 'CONTENIDO-DOC-GROQ' }] });
+  await chat(A, { model: 'groq/qwen/qwen3.8-27b', documentos: [{ nombre: 'plan.md', contenido: 'CONTENIDO-DOC-GROQ' }] });
   assert.ok(JSON.stringify(groq.hits.at(-1).body.messages).includes('CONTENIDO-DOC-GROQ'));
 });
 
@@ -682,14 +682,14 @@ test('CL-3. se aceptan tambien RIU_PUBLIC_CHAT_KEY / RIU_MCP_KEY / RIU_ROUTER_AP
   assert.equal((await claves(P, 'GET', undefined, 'otra-cosa')).status, 401);
 });
 
-test('CL-4. POST guarda: groq/xxx usa esa clave contra el mock de Groq aunque el entorno no tenga ninguna; GET/POST/DELETE solo devuelven conteos', async () => {
+test('CL-4. POST guarda: groq/qwen/qwen3.8-27b usa esa clave contra el mock de Groq aunque el entorno no tenga ninguna; GET/POST/DELETE solo devuelven conteos', async () => {
   const sec = 'gsk-PEGADA-DESDE-EL-PANEL';
   groq.hits.length = 0; groq.status = 200; groq.texto = 'con-clave-del-panel';
-  const antes = await chat(K, { model: 'groq/xxx' });
+  const antes = await chat(K, { model: 'groq/qwen/qwen3.8-27b' });
   assert.equal(antes.json.via_respaldo, 'hf-local', 'sin clave no hay groq'); assert.equal(groq.hits.length, 0);
   const p = await claves(K, 'POST', { groq: [sec, 'gsk-SEGUNDA-DEL-PANEL'], nvidia: 'nv-PEGADA-DEL-PANEL' });
-  assert.equal(p.status, 200); assert.deepEqual(p.json, { ok: true, groq: 2, nvidia: 1, persistido: true });
-  const r = await chat(K, { model: 'groq/xxx' });
+  assert.equal(p.status, 200); assert.deepEqual(p.json, { ok: true, groq: 2, nvidia: 1, local: true, persistido: false });
+  const r = await chat(K, { model: 'groq/qwen/qwen3.8-27b' });
   assert.equal(r.status, 200); assert.equal(r.json.choices[0].message.content, 'con-clave-del-panel');
   assert.equal(groq.hits[0].auth, 'Bearer ' + sec);
   const g = await claves(K, 'GET'); assert.deepEqual(g.json, { ok: true, groq: 2, nvidia: 1 });
@@ -699,11 +699,11 @@ test('CL-4. POST guarda: groq/xxx usa esa clave contra el mock de Groq aunque el
   for (const t of [p.texto, g.texto]) { assert.ok(!/PEGADA|SEGUNDA/.test(t), 'jamas valores'); }
   assert.ok(!/PEGADA|SEGUNDA/.test(K.log()), 'no se loguean valores');
   const d = await claves(K, 'DELETE');
-  assert.equal(d.status, 200); assert.deepEqual(d.json, { ok: true, groq: 0, nvidia: 0, persistido: true });
+  assert.equal(d.status, 200); assert.deepEqual(d.json, { ok: true, groq: 0, nvidia: 0, local: true, persistido: false });
   assert.ok(!/PEGADA|SEGUNDA/.test(d.texto));
   assert.ok(fs.readFileSync(path.join(TMP, 'banco-calls.log'), 'utf8').split('\n').includes('borrar'), 'DELETE llama a borrar del banco propio');
   groq.hits.length = 0;
-  assert.equal((await chat(K, { model: 'groq/xxx' })).json.via_respaldo, 'hf-local', 'tras borrar ya no hay clave');
+  assert.equal((await chat(K, { model: 'groq/qwen/qwen3.8-27b' })).json.via_respaldo, 'hf-local', 'tras borrar ya no hay clave');
   assert.equal(groq.hits.length, 0);
   assert.deepEqual((await claves(K, 'GET')).json, { ok: true, groq: 0, nvidia: 0 });
 });
@@ -818,7 +818,7 @@ test('SSE-1. modelo web stub: role -> content en trozos de <=200 -> finish_reaso
 test('SSE-2. respuesta larga: se parte en trozos de ~200 caracteres y se reensambla identica', async () => {
   const largo = 'abcdefghij'.repeat(55) + 'ñ😀fin';  // 550+ caracteres, con multibyte
   groq.hits.length = 0; groq.status = 200; groq.texto = largo;
-  const r = await sseCrudo(A, { model: 'groq/xxx' });
+  const r = await sseCrudo(A, { model: 'groq/qwen/qwen3.8-27b' });
   const medio = r.chunks.slice(1, -1).map((c) => c.choices[0].delta.content);
   assert.ok(medio.length >= 3, `se esperaban >=3 trozos, hubo ${medio.length}`);
   assert.ok(medio.every((t) => t.length <= 200 && t.length > 0));
@@ -838,14 +838,14 @@ test('SSE-3. respaldo (web falla -> Groq): stream con el texto del respaldo, via
   assert.ok(coherentes(r.chunks)); assert.equal(r.datos.at(-1), '[DONE]');
 });
 
-test('SSE-4. groq/xxx directo con tool_calls: role -> tool_calls (con index) -> finish_reason tool_calls -> [DONE]', async () => {
+test('SSE-4. groq/qwen/qwen3.8-27b directo con tool_calls: role -> tool_calls (con index) -> finish_reason tool_calls -> [DONE]', async () => {
   const tools = [{ type: 'function', function: { name: 'github_leer', parameters: { type: 'object' } } }];
   groq.status = 200;
   groq.tool_calls = [
     { id: 'c1', type: 'function', function: { name: 'github_leer', arguments: '{"ruta":"README.md"}' } },
     { id: 'c2', type: 'function', function: { name: 'github_leer', arguments: '{"ruta":"a.js"}' } },
   ];
-  const r = await sseCrudo(A, { model: 'groq/xxx', tools });
+  const r = await sseCrudo(A, { model: 'groq/qwen/qwen3.8-27b', tools });
   delete groq.tool_calls;
   assert.equal(r.status, 200); assert.ok(coherentes(r.chunks));
   assert.equal(r.chunks[0].choices[0].delta.role, 'assistant');

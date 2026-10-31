@@ -27,7 +27,8 @@ const GRUPOS = [
     ["pensar", "SWE · OpenCode revisa", "Qwen3.5-0.8B", "swe-opencode-qwen35-08b"],
     ["rayo", "SWE · Agent ejecuta", "LFM2.5-350M · tool/agentic", "swe-agent-lfm25"],
     ["rayo", "SWE · OpenHands verifica", "LFM2.5-350M", "swe-openhands-lfm25"],
-    ["pensar", "Qwen Code (HF)", "Qwen2.5-Coder-1.5B local", "hf-qwen25-coder-15b"]] },
+    ["pensar", "Qwen Code (HF)", "Qwen2.5-Coder-1.5B local", "hf-qwen25-coder-15b"],
+    ["rapido", "Qwen3 0.6B (HF)", "Qwen3-0.6B", "hf-qwen3-06b"]] },
   { titulo: "SWEN CODE free (web)", modelos: [
     ["pensar", "Qwen 3.8 Max (web)", "Código complejo · via bridge", "web-qwen38max"],
     ["pensar", "Qwen 3.7 Max (web)", "Razonamiento · via bridge", "web-qwen37max"],

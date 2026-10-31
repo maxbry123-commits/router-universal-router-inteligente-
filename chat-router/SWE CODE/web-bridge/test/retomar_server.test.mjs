@@ -106,10 +106,10 @@ test("retomar sigue funcionando para secciones web y 404 si no existe en ningun 
   assert.equal((await post(B, "/v1/secciones/no-hay/retomar")).status, 404);
 });
 
-test("modelo groq/xxx con tarea_id: va por Groq con la clave, guarda el checkpoint SIN la clave y retomar lo ve", async () => {
+test("modelo groq/qwen/qwen3.8-27b con tarea_id: va por Groq con la clave, guarda el checkpoint SIN la clave y retomar lo ve", async () => {
   const g = await mock(({ url }) => url.endsWith("/models") ? { status: 200, json: { data: [] } } : ok("DE-GROQ")), dir = disco("f");
   const B = await arrancar("groq", { BRIDGE_STATE_DIR: dir, TEST_GROQ_URL: g.url, GROQ_API_KEY: KGROQ });
-  const r = await chat(B, { model: "groq/modelo-x", tarea_id: "tarea-g" });
+  const r = await chat(B, { model: "groq/qwen/qwen3.8-27b", tarea_id: "tarea-g" });
   assert.equal(r.status, 200); assert.equal(r.json.choices[0].message.content, "DE-GROQ"); assert.equal(r.json.via_respaldo, "groq");
   assert.equal(g.chat[0].auth, "Bearer " + KGROQ);
   assert.ok(!fs.readFileSync(arch(dir, "tarea-g"), "utf8").includes("FAKEKEYNOREAL"));

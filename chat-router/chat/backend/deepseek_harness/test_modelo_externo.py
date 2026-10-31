@@ -99,3 +99,23 @@ class ClaveNoAscii(unittest.TestCase):
             c = TestClient(h.app)
             self.assertEqual(h.invoke({"action": "status"}, x_api_key="clavé-esperada")["status"], "ok")  # llamada directa: el TestClient reinterpreta los bytes de la cabecera
             self.assertEqual(h.invoke({"action": "status"}, x_api_key="clavé-otra").status_code, 401)
+
+
+class SinRedireccion(unittest.TestCase):
+    def test_el_bridge_no_sigue_redirecciones(self):
+        robado = []
+        class D(BaseHTTPRequestHandler):
+            def do_POST(self): robado.append(1); self.send_response(200); self.end_headers(); self.wfile.write(b"{}")
+            def log_message(self, *a): pass
+        d = HTTPServer(("127.0.0.1", 0), D)
+        class R(BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.rfile.read(int(self.headers["Content-Length"])); self.send_response(307); self.send_header("Location", "http://127.0.0.1:%d/x" % d.server_port); self.end_headers()
+            def log_message(self, *a): pass
+        o = HTTPServer(("127.0.0.1", 0), R)
+        for x in (d, o): threading.Thread(target=x.serve_forever, daemon=True).start()
+        with patch.dict(os.environ, {"RIU_SWE_BRIDGE_URL": "http://127.0.0.1:%d" % o.server_port}):
+            with self.assertRaises(RuntimeError):
+                h._bridge_chat(MSGS, "web-qwen38max")
+        for x in (d, o): x.shutdown()
+        self.assertEqual(robado, [])

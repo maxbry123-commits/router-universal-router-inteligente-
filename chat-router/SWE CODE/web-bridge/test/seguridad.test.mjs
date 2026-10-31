@@ -13,8 +13,9 @@ const sin = { 'x-api-key': '' };            // "sin clave de acceso" (el wrapper
 const bearer = { 'x-api-key': '', authorization: 'Bearer ' + TOK };
 let G, N, H, grq, hang, bancoLog;
 const llamadasBanco = () => { try { return fs.readFileSync(bancoLog, 'utf8').split('\n').filter(Boolean); } catch { return []; } };
-const jget = async (srv, ruta, headers = {}) => { const r = await fetch(srv.base + ruta, { headers }); return { status: r.status, json: await r.json().catch(() => null), texto: await r.clone().text().catch(() => '') }; };
-const jpost = async (srv, ruta, body, headers = {}, metodo = 'POST') => { const r = await fetch(srv.base + ruta, { method: metodo, headers: { 'content-type': 'application/json', ...headers }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }); return { status: r.status, json: await r.json().catch(() => null), texto: await r.clone().text().catch(() => '') }; };
+const leer = async (r) => { const texto = await r.text(); let json = null; try { json = JSON.parse(texto); } catch { /* no JSON */ } return { status: r.status, json, texto }; };
+const jget = async (srv, ruta, headers = {}) => leer(await fetch(srv.base + ruta, { headers }));
+const jpost = async (srv, ruta, body, headers = {}, metodo = 'POST') => leer(await fetch(srv.base + ruta, { method: metodo, headers: { 'content-type': 'application/json', ...headers }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }));
 const chat = (srv, body, headers = {}) => jpost(srv, '/v1/chat/completions', { messages: [{ role: 'user', content: 'hola mundo' }], ...body }, headers);
 const esperar = async (fn, ms = 6000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 100)); } return null; };
 
@@ -97,8 +98,7 @@ test('S2c. /health publico recorta banco.* a contadores y booleanos (sin stderr,
   const c = priv.json.banco;
   assert.ok('http' in c.github && 'error' in c.github && 'accion' in c.python, 'con clave: detalle completo');
   assert.ok('state_dir' in priv.json);
-  const conBearer = await jget(G, '/health', bearer);
-  assert.ok(!('state_dir' in conBearer.json) === false || true);
+  assert.ok('state_dir' in (await jget(G, '/health', bearer)).json, 'el BRIDGE_TOKEN valido tambien ve el detalle');
 });
 
 // ---- (3) claves / cuentas por llamada ----
@@ -163,4 +163,37 @@ test('S11c. BRIDGE_AUTORETOMAR activo por defecto (sin la variable retoma solo);
   await arrancar('AR-off', { BRIDGE_STATE_DIR: e0, BRIDGE_AUTORETOMAR: '0' });
   assert.ok(await esperar(() => /"codigo":"REINICIO"[^\n]*"resultado":"PASS"/.test(leccion(e1)), 9000), 'por defecto retoma la seccion a medias');
   assert.ok(!/REINICIO/.test(leccion(e0)), 'con "0" no retoma');
+});
+
+// ---- (8) `persistido` = GitHub publicado ----
+test('S8. POST/DELETE /v1/claves: `persistido` indica si GitHub se publico (local aparte); si GitHub falla, persistido:false pero local:true', async () => {
+  const gh = { puts: 0, putStatus: 200 };
+  const s = http.createServer((req, res) => {
+    let d = ''; req.on('data', (c) => d += c); req.on('end', () => {
+      const json = (c, o) => { res.writeHead(c, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
+      if (req.method === 'GET' && /heads\/banco-claves$/.test(req.url)) return json(200, { object: { sha: 'r1' } });
+      if (req.method === 'GET' && /contents\/banco-swe\.bin/.test(req.url)) return json(404, {});
+      if (req.method === 'PUT') { gh.puts++; return json(gh.putStatus, { content: { sha: 's1' } }); }
+      json(404, {});
+    });
+  }).listen(0, '127.0.0.1'); registrarMock(s); await new Promise((r) => s.on('listening', r));
+  const estado = fs.mkdtempSync(path.join(TMP, 'gh-'));
+  fs.writeFileSync(path.join(TMP, 'fake-banco-gh.sh'), `#!/bin/sh\nif [ "$1" = "leer" ]; then echo '{"groq": [], "nvidia": []}'; elif [ "$1" = "diagnostico" ]; then echo '{}'; else cat > /dev/null; printf 'MVPB1-banco-de-prueba-con-relleno' > "$BRIDGE_STATE_DIR/banco-swe.bin"; echo '{"ok": true}'; fi\n`, { mode: 0o755 });
+  const B = await arrancar('GH', { __sinAcceso: true, RIU_API_KEY: ACCESO_TEST, BRIDGE_STATE_DIR: estado, RIU_CLAVES_CMD: path.join(TMP, 'fake-banco-gh.sh'), GITHUB_TOKEN: 'gh-falso', RIU_GITHUB_API: `http://127.0.0.1:${s.address().port}`, RIU_REPO: 'o/r' });
+  const k = { 'x-api-key': ACCESO_TEST };
+  let r = await jpost(B, '/v1/claves', { groq: 'gsk-publicada-1234' }, k);
+  assert.equal(r.status, 200); assert.equal(r.json.persistido, true); assert.equal(r.json.local, true); assert.equal(gh.puts, 1);
+  gh.putStatus = 500;
+  r = await jpost(B, '/v1/claves', { groq: 'gsk-publicada-5678' }, k);
+  assert.equal(r.json.persistido, false); assert.equal(r.json.local, true);
+  r = await jpost(B, '/v1/claves', undefined, k, 'DELETE');
+  assert.equal(r.json.persistido, false); assert.equal(r.json.local, true);
+  gh.putStatus = 200;
+  r = await jpost(B, '/v1/claves', undefined, k, 'DELETE');
+  assert.equal(r.json.persistido, true);
+  assert.ok(!/gsk-publicada/.test(r.texto));
+  // sin GITHUB_TOKEN: nada que publicar
+  const S = await arrancar('GH0', { __sinAcceso: true, RIU_API_KEY: ACCESO_TEST, RIU_CLAVES_CMD: path.join(TMP, 'fake-banco-gh.sh') });
+  r = await jpost(S, '/v1/claves', { groq: 'gsk-publicada-1234' }, k);
+  assert.equal(r.json.persistido, false); assert.equal(r.json.local, true);
 });

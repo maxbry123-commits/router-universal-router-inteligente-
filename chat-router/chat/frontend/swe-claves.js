@@ -5,11 +5,14 @@ export const CLAVE_LS = "riu_swe_claves";
 const PROVEEDORES = ["groq", "nvidia"];
 const ETIQUETA = { groq: "Groq", nvidia: "NVIDIA" };
 
-const limpia = (v) => {
-  if (typeof v === "string") return v.trim();
-  if (Array.isArray(v)) return v.filter((x) => typeof x === "string").map((x) => x.trim()).filter(Boolean);
-  return "";
-};
+export const MAX_CLAVES = 20;  // por proveedor (el banco del bridge admite GROQ_API_KEY_1..20)
+// Varias claves por proveedor: texto separado por coma, punto y coma, espacios o saltos de linea, o un array. Sin vacias ni repetidas; tope 20.
+export function separarClaves(v) {
+  const trozos = typeof v === "string" ? [v] : Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+  return [...new Set(trozos.flatMap((t) => t.split(/[\s,;]+/)).filter(Boolean))].slice(0, MAX_CLAVES);
+}
+const limpia = (v) => { const l = separarClaves(v); return l.length > 1 ? l : l[0] || ""; };  // una sola -> texto (como siempre); varias -> array
+const cuantas = (v) => (Array.isArray(v) ? v.length : v ? 1 : 0);
 const leerCrudo = () => { try { const o = JSON.parse(localStorage.getItem(CLAVE_LS)); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } };
 
 export function leerClaves() {
@@ -64,26 +67,27 @@ export function textoConteos(n) {
 }
 export function textoError(e) {
   if (e && e.status === 401) return "Clave del chat incorrecta: no se guardó nada";
-  if (e && e.status === 400) return "Clave con formato inválido: no se guardó nada";
+  if (e && e.status === 400) return "Clave con formato inválido (8–300 caracteres, sin espacios; separa varias con coma o salto de línea): no se guardó nada";
   if (e && e.status === 503) return "El servidor no tiene clave de acceso configurada: no se guardó nada";
   return "";
 }
 const sinBanco = (e) => !e || e.status === 0 || e.status === 404 || e.status >= 500 && e.status !== 503;
 
-// Guardar: al banco; si el servidor no esta, respaldo local (y se dice). Devuelve el texto de estado (nunca un valor).
-export async function guardar(valores) {
+// Guardar: al banco; si el servidor no esta, respaldo local (y se dice). Devuelve {ok, texto}: ok = quedo guardada (banco o respaldo); nunca incluye valores.
+export async function guardarConEstado(valores) {
   const v = {}; for (const p of PROVEEDORES) { const x = limpia(valores && valores[p]); if (x && x.length) v[p] = x; }
-  if (!Object.keys(v).length) return "Nada que guardar";
+  if (!Object.keys(v).length) return { ok: false, texto: "Nada que guardar" };
   try {
     const n = await guardarEnBanco(v);
     for (const p of Object.keys(v)) quitarLocal(p);  // ya viven en el banco: no se mandan en el cuerpo de cada peticion
-    return textoConteos(n);
+    return { ok: true, texto: textoConteos(n) };
   } catch (e) {
-    if (!sinBanco(e)) return textoError(e) || "No se pudo guardar";
+    if (!sinBanco(e)) return { ok: false, texto: textoError(e) || "No se pudo guardar" };
     for (const p of Object.keys(v)) guardarClave(p, v[p]);
-    return Object.keys(v).map((p) => ETIQUETA[p] + ": guardada solo en este navegador").join(" · ") + " (el servidor no respondió)";
+    return { ok: true, texto: Object.keys(v).map((p) => { const k = cuantas(v[p]); return ETIQUETA[p] + ": " + (k === 1 ? "guardada" : k + " guardadas") + " solo en este navegador"; }).join(" · ") + " (el servidor no respondió)" };
   }
 }
+export const guardar = async (valores) => (await guardarConEstado(valores)).texto;
 export async function borrar() {
   let aviso = "";
   try { await borrarBanco(); } catch (e) { aviso = sinBanco(e) ? " (el servidor no respondió: solo se borró este navegador)" : " · " + (textoError(e) || "no se pudo borrar en el servidor"); }
@@ -92,7 +96,7 @@ export async function borrar() {
 }
 export async function estado() {
   try { return textoConteos(await estadoBanco()); } catch (e) {
-    const err = textoError(e); const l = leerClaves(); const loc = PROVEEDORES.filter((p) => l[p]).map((p) => ETIQUETA[p] + ": guardada solo en este navegador").join(" · ");
+    const err = textoError(e); const l = leerClaves(); const loc = PROVEEDORES.filter((p) => l[p]).map((p) => { const k = cuantas(l[p]); return ETIQUETA[p] + ": " + (k === 1 ? "guardada" : k + " guardadas") + " solo en este navegador"; }).join(" · ");
     return loc || (e && e.status === 401 ? err.replace(": no se guardó nada", "") : "");
   }
 }
@@ -105,9 +109,13 @@ function alClic(ev) {
   const vaciar = () => { for (const p of PROVEEDORES) { const i = document.getElementById("ap-clave-" + p); if (i) i.value = ""; } };
   if (t.id === "ap-clave-guardar") {
     const v = {}; for (const p of PROVEEDORES) { const i = document.getElementById("ap-clave-" + p); if (i) v[p] = i.value; }
-    vaciar();  // el valor sale del DOM de inmediato
-    poner(guardar(v));
-  } else { vaciar(); poner(borrar()); }
+    const est = document.getElementById("ap-clave-estado"); if (est) est.textContent = "…";
+    guardarConEstado(v).then((r) => { if (r.ok) vaciar(); /* solo tras exito: si falla (401/400) el usuario no pierde lo que escribio */ const e2 = document.getElementById("ap-clave-estado"); if (e2) e2.textContent = r.texto; });
+  } else {
+    const seguro = typeof window !== "undefined" && typeof window.confirm === "function" ? window.confirm("¿Borrar las claves de Groq y NVIDIA guardadas? Esta acción no se puede deshacer.") : true;
+    if (!seguro) return;
+    vaciar(); poner(borrar());
+  }
 }
 if (typeof document !== "undefined" && document.addEventListener) {
   document.addEventListener("click", alClic);

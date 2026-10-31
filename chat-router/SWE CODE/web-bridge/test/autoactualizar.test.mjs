@@ -43,3 +43,52 @@ test("si el directorio no es un repo git no hace nada ni lanza", async () => {
 test("vigila las rutas del bridge, de SWE CODE free y el formato de salida", () => {
   for (const r of ["chat-router/SWE CODE/", "chat-router/SWE CODE free/", "chat-router/chat/backend/mvp/prompts/"]) assert.ok(RUTAS.includes(r), r);
 });
+
+// ---- verificacion previa al relanzamiento: node --check de los .js tocados (copia a .mjs) y npm install; si falla, git reset --hard y NO se relanza ----
+const conLog = async (fn) => { const lineas = []; const w = console.warn; console.warn = (...a) => lineas.push(a.join(" ")); try { return { r: await fn(), lineas }; } finally { console.warn = w; } };
+
+test("un .js roto en el codigo nuevo: NO se relanza, el repo vuelve a la cabeza previa (git reset --hard) y el log es corto", async () => {
+  const d = repo(); const previa = git(d, "rev-parse", "HEAD"); const estado = { cabeza: previa }; let relanzado = 0;
+  commit(d, "chat-router/SWE CODE/web-bridge/a.js", "const = ;;; esto no compila");
+  assert.notEqual(git(d, "rev-parse", "HEAD"), previa);
+  const { r, lineas } = await conLog(() => revisar({ repo: d, estado, relanzar: async () => { relanzado++; } }));
+  assert.equal(relanzado, 0, "no se relanza con codigo roto"); assert.equal(r, false);
+  assert.equal(git(d, "rev-parse", "HEAD"), previa, "reset --hard a la cabeza previa");
+  assert.equal(fs.readFileSync(path.join(d, "chat-router", "SWE CODE", "web-bridge", "a.js"), "utf8"), "1", "el archivo roto ya no esta en el disco");
+  assert.equal(estado.cabeza, previa);
+  assert.ok(lineas.length <= 2 && lineas.join("").length < 300, "log corto: " + lineas.join(" | "));
+  assert.ok(!lineas.join("").includes("esto no compila"), "no vuelca el codigo");
+  // un siguiente commit BUENO si se relanza
+  commit(d, "chat-router/SWE CODE/web-bridge/a.js", "3");
+  await revisar({ repo: d, estado, relanzar: async () => { relanzado++; } });
+  assert.equal(relanzado, 1);
+});
+
+test("se revisan solo los .js tocados dentro de las rutas del bridge; un .js roto fuera (frontend) no impide el relanzamiento; los borrados se ignoran", async () => {
+  const d = repo(); const estado = { cabeza: git(d, "rev-parse", "HEAD") }; let relanzado = 0;
+  fs.writeFileSync(path.join(d, "chat-router", "chat", "frontend", "roto.js"), "const = ;");
+  fs.writeFileSync(path.join(d, "chat-router", "SWE CODE", "web-bridge", "b.js"), "export const x = 1;");
+  git(d, "add", "-A"); git(d, "commit", "-qm", "dos");
+  await revisar({ repo: d, estado, relanzar: async () => { relanzado++; } });
+  assert.equal(relanzado, 1);
+  fs.rmSync(path.join(d, "chat-router", "SWE CODE", "web-bridge", "b.js")); git(d, "add", "-A"); git(d, "commit", "-qm", "borra");
+  await revisar({ repo: d, estado, relanzar: async () => { relanzado++; } });
+  assert.equal(relanzado, 2);
+});
+
+test("si cambia package.json se ejecuta npm install ANTES de relanzar; si falla: reset --hard y no se relanza; si pasa se relanza con deps", async () => {
+  const d = repo(); const previa = git(d, "rev-parse", "HEAD"); const estado = { cabeza: previa }; const rel = []; const inst = [];
+  commit(d, "chat-router/SWE CODE/web-bridge/package.json", "{}");
+  await conLog(() => revisar({ repo: d, estado, relanzar: async (o) => { rel.push(o); }, instalar: async () => { inst.push(1); return false; } }));
+  assert.equal(inst.length, 1); assert.equal(rel.length, 0); assert.equal(git(d, "rev-parse", "HEAD"), previa);
+  commit(d, "chat-router/SWE CODE/web-bridge/package.json", '{"name":"x"}');
+  await revisar({ repo: d, estado, relanzar: async (o) => { rel.push(o); }, instalar: async () => { inst.push(1); return true; } });
+  assert.equal(inst.length, 2); assert.deepEqual(rel, [{ deps: true }]);
+});
+
+test("sin cambios de package.json no se ejecuta npm install", async () => {
+  const d = repo(); const estado = { cabeza: git(d, "rev-parse", "HEAD") }; let inst = 0, rel = 0;
+  commit(d, "chat-router/SWE CODE/web-bridge/a.js", "4");
+  await revisar({ repo: d, estado, relanzar: async () => { rel++; }, instalar: async () => { inst++; return true; } });
+  assert.equal(inst, 0); assert.equal(rel, 1);
+});

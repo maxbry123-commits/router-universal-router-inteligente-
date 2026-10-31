@@ -96,10 +96,10 @@ def _router(accion, datos):
 
 # --- SWE CODE free / SWEN CODE: su router propio es el web-bridge (RIU_SWE_BRIDGE_URL). El Harness le manda sus ids y, si el Router MVP cae, sigue con modelos locales ---
 SWE_PREFIJOS = ("web-", "swecode-")
-SWE_IDS = {"hf-liquid-lfm25", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b",
+SWE_IDS = {"hf-liquid-lfm25", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b", "hf-qwen3-06b",
            "lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"}
 SWE_ALIAS = {"hf-liquid-lfm25": "lfm2.5-350m", "swe-agent-lfm25": "lfm2.5-350m", "swe-openhands-lfm25": "lfm2.5-350m",
-             "swe-codex-qwen25-15b": "qwen2.5-coder-1.5b", "hf-qwen25-coder-15b": "qwen2.5-coder-1.5b", "swe-opencode-qwen35-08b": "qwen3.5-0.8b"}
+             "swe-codex-qwen25-15b": "qwen2.5-coder-1.5b", "hf-qwen25-coder-15b": "qwen2.5-coder-1.5b", "swe-opencode-qwen35-08b": "qwen3.5-0.8b", "hf-qwen3-06b": "qwen3-0.6b"}
 
 
 def es_swe(modelo):
@@ -138,7 +138,8 @@ def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
                                  data=json.dumps({"model": modelo, "messages": mensajes, **({"conv_id": conv_id} if conv_id else {}),
                                                 **{k: v for k, v in (opciones or {}).items() if k in ("tools", "tool_choice")}}).encode())
     try:
-        with urllib.request.urlopen(req, timeout=float(os.environ.get("RIU_SWE_TIMEOUT_S", "130"))) as r:
+        from agentes.adaptadores import _comun as _c  # opener sin redireccion (chat-router va en PYTHONPATH)
+        with _c.abrir(req, float(os.environ.get("RIU_SWE_TIMEOUT_S", "130"))) as r:
             bruto = json.load(r)
         msg = bruto["choices"][0]["message"]
         msg.get  # message null -> AttributeError controlado abajo

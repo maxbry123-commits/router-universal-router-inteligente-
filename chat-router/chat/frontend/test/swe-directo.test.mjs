@@ -127,6 +127,6 @@ test("enviarSwe con tool_calls (passthrough a OpenClaw) no es un GAP: devuelve l
   const tc = [{ id: "c1", type: "function", function: { name: "github_leer", arguments: "{}" } }];
   const api = async (_r, op) => { assert.equal(op.body.ejecutor_tools, "openclaw"); return { modelo_usado: "groq/x", choices: [{ message: { content: "", tool_calls: tc }, finish_reason: "tool_calls" }] }; };
   const r = await enviarSwe(api, { model: "groq/qwen/qwen3.8-27b", historial: [], mensaje: "x", sesion: "s", ejecutor_tools: "openclaw" });
-  assert.deepEqual(r.tools, ["github_leer"]); assert.equal(r.finish_reason, "tool_calls"); assert.match(r.nota, /OpenClaw/);
+  assert.deepEqual(r.tools, []); assert.deepEqual(r.pedidas, ["github_leer"]); assert.equal(r.finish_reason, "tool_calls"); assert.match(r.nota, /OpenClaw/);  // pedidas, no usadas
   assert.match(r.reply, /github_leer/);
 });

@@ -147,11 +147,11 @@ test("cambio de API: el local se cae a mitad de tarea y sigue por Groq con el te
   } finally { s1.cerrar(); groq.cerrar(); }
 });
 
-test("modelo groq/xxx va directo por Groq con la clave; si falla, respaldo", async () => {
+test("modelo groq/qwen/qwen3.8-27b va directo por Groq con la clave; si falla, respaldo", async () => {
   const groq = await fake(() => ok("DIRECTO")); const dir = tmp(); BASES.groq = groq.url;
   try {
-    const r = await retomarLocal("t-groq", "groq/modelo-x", msgs, extra(env(dir, { GROQ_API_KEY: KGROQ })));
-    assert.equal(r.salida, "DIRECTO"); assert.equal(r.via, "groq"); assert.equal(r.usado, "groq/modelo-x"); assert.equal(groq.chat[0].body.model, "modelo-x");
+    const r = await retomarLocal("t-groq", "groq/qwen/qwen3.8-27b", msgs, extra(env(dir, { GROQ_API_KEY: KGROQ })));
+    assert.equal(r.salida, "DIRECTO"); assert.equal(r.via, "groq"); assert.equal(r.usado, "groq/qwen/qwen3.8-27b"); assert.equal(groq.chat[0].body.model, "qwen/qwen3.8-27b");
   } finally { groq.cerrar(); }
 });
 

@@ -11,7 +11,8 @@ import { consenso } from './consenso.js';
 import { modoValido } from './modos.js';
 import { estadoCuentas, estadoTabs, snapshotTab, cerrarPagina, cerrarTodo } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
-import crypto from 'node:crypto';
+import path from 'node:path';
+import { iguales } from './iguales.js';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import nodeFs from 'node:fs';
 import { vigilarWorkspace, rutaWorkspace, configVigente, vigilarConfig, espejo, normalizarEjecutor } from './openclaw.js';
@@ -22,7 +23,7 @@ import { idValido as tareaIdValido } from './checkpoint_hf.js';
 import { conFormato } from './formato.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
 import { vigilarActualizacion } from './autoactualizar.js';
-import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco, diagnosticoBanco } from './clavesbanco.js';
+import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco, diagnosticoBanco, resumenBanco } from './clavesbanco.js';
 import { publicarEnGithub, traerDeGithub } from './bancogithub.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
@@ -36,27 +37,35 @@ const IDS_DIRECTOS = (id) => /^(groq\/|nvidia\/|lfm2\.5|qwen2\.5-coder|qwen3\.5|
 // Groq/NVIDIA/locales con un modo (p. ej. despliega): reciben el preambulo de ese modo, como el agente que despliega
 const conPreambulo = (msgs, m) => (m && modoValido(m) ? [{ role: 'system', content: preambulo(m) }, ...msgs] : msgs);
 
-// acceso: con BRIDGE_TOKEN todas las rutas (salvo /health) piden Authorization: Bearer <token> o x-bridge-key
+// acceso: TODAS las rutas (salvo /health) exigen BRIDGE_TOKEN (Authorization: Bearer / x-bridge-key / x-api-key) o una de las 4 claves de acceso del chat en x-api-key;
+// sin ninguna configurada el bridge responde 503 (ya no queda abierto)
 const TOKEN = process.env.BRIDGE_TOKEN || '';
-const iguales = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
+const ACCESO_VARS = ['RIU_API_KEY', 'RIU_PUBLIC_CHAT_KEY', 'RIU_MCP_KEY', 'RIU_ROUTER_API_KEY'];
+const clavesAcceso = () => ACCESO_VARS.map(v => process.env[v]).filter(Boolean);
+const cab = (req, n) => String((req.headers && req.headers[n]) || '');
+const conAcceso = (req) => { const k = cab(req, 'x-api-key'); return !!k && clavesAcceso().map(v => iguales(k, v)).some(Boolean); };  // clave de acceso del chat en x-api-key
+const conToken = (req) => { if (!TOKEN) return false; const t = cab(req, 'authorization').replace(/^Bearer\s+/i, '') || cab(req, 'x-bridge-key') || cab(req, 'x-api-key'); return !!t && iguales(t, TOKEN); };
 const sinCorreos = (o) => JSON.parse(JSON.stringify(o ?? null, (k, v) => (k === 'email' ? undefined : v)));
 const textoDe = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map(p => (typeof p === 'string' ? p : p && typeof p.text === 'string' ? p.text : '')).filter(Boolean).join('\n') : '');
 const MAX_PROMPT = parseInt(process.env.BRIDGE_MAX_PROMPT || '400000', 10), MAX_DOCS = 10;
 
 const app = express();
+app.set('strict routing', true);          // '/v1/claves/' ya no es '/v1/claves'
+app.set('case sensitive routing', true);  // '/V1/CLAVES' tampoco
 app.use((req, res, next) => {
-  if (!TOKEN || req.path === '/health') return next();
-  const h = req.headers, t = String(h.authorization || '').replace(/^Bearer\s+/i, '') || String(h['x-bridge-key'] || '');
-  return t && iguales(t, TOKEN) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalido el token del bridge' } });
+  if (req.path === '/health') return next();
+  if (!TOKEN && !clavesAcceso().length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (BRIDGE_TOKEN o RIU_API_KEY)' } });
+  return conToken(req) || conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key) o el token del bridge' } });
 });
-// panel de claves del chat (el proxy del Space reenvia /web/* aqui): ademas del BRIDGE_TOKEN exige la clave de acceso del chat en x-api-key
-const ACCESO_VARS = ['RIU_API_KEY', 'RIU_PUBLIC_CHAT_KEY', 'RIU_MCP_KEY', 'RIU_ROUTER_API_KEY'];
+// panel de claves del chat (el proxy del Space reenvia /web/* aqui): ademas exige la clave de acceso del chat en x-api-key. La ruta se normaliza (minusculas, sin barras
+// dobles ni finales, sin /./) para que ninguna variante salte la puerta, aunque el enrutado ya sea estricto
+const rutaNorm = (p) => { let x = String(p || ''); try { x = decodeURIComponent(x); } catch { /* tal cual */ } return path.posix.normalize(x).toLowerCase().replace(/\/+$/, ''); };
+const PROTEGIDAS = ['/v1/claves', '/v1/openclaw'];
 app.use((req, res, next) => {
-  if (req.path !== '/v1/claves' && req.path !== '/v1/openclaw') return next();
-  const validas = ACCESO_VARS.map(v => process.env[v]).filter(Boolean);
-  if (!validas.length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (RIU_API_KEY)' } });
-  const k = String(req.headers['x-api-key'] || '');
-  return k && validas.some(v => iguales(k, v)) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key)' } });
+  const r = rutaNorm(req.path);
+  if (!PROTEGIDAS.some(p => r === p || r.startsWith(p + '/'))) return next();
+  if (!clavesAcceso().length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (RIU_API_KEY)' } });
+  return conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key)' } });
 });
 app.use(express.json({ limit: '10mb' }));
 const PORT = process.env.BRIDGE_PORT || 7860;
@@ -86,14 +95,15 @@ async function conFallback(modelo, prompt, opts) {
   throw ultimo;
 }
 
-app.get('/health', async (_req, res) => {
+app.get('/health', async (req, res) => {
   let poolInfo;
   try {
     const n = pool().length;
     let idx = null; try { idx = cuentaActual().index; } catch {}
     poolInfo = { total: n, loaded: true, indices: [...Array(n).keys()], actual: idx };
   } catch { poolInfo = { total: 0, loaded: false, error: 'WEB_ACCOUNTS_VACIO' }; }
-  res.json({ ok: true, pool: poolInfo, cuentas: sinCorreos(estadoCuentas()), respaldo: estadoRespaldo(), banco: diagnosticoBanco(), metricas: estadoMetricas(), state_dir: process.env.BRIDGE_STATE_DIR || './state' });
+  const completo = conToken(req) || conAcceso(req);  // sin credencial valida: banco recortado a contadores y booleanos, sin rutas del disco
+  res.json({ ok: true, pool: poolInfo, cuentas: sinCorreos(estadoCuentas()), respaldo: estadoRespaldo(), banco: completo ? diagnosticoBanco() : resumenBanco(diagnosticoBanco()), metricas: estadoMetricas(), ...(completo ? { state_dir: process.env.BRIDGE_STATE_DIR || './state' } : {}) });
 });
 
 app.get('/v1/queue', (_req, res) => {
@@ -144,26 +154,31 @@ app.get('/v1/memoria/:sesion', async (req, res) => {
 // claves de Groq/NVIDIA desde el panel del chat: SOLO conteos en las respuestas, jamas valores
 const conteo = () => { const { groq, nvidia } = estadoRespaldo(); return { groq, nvidia }; };
 const claveOk = (k) => typeof k === 'string' && k.length >= 8 && k.length <= 300 && !/\s/.test(k);
-app.get('/v1/claves', (_req, res) => res.json({ ok: true, ...conteo() }));
-app.post('/v1/claves', async (req, res) => {
-  const b = req.body && typeof req.body === 'object' ? req.body : {}, nuevas = {};
+// {groq, nvidia} (string o lista) -> solo los proveedores presentes, o null si algo no vale (maximo 20 por proveedor, cada una con claveOk)
+function validarClaves(b) {
+  if (!b || typeof b !== 'object' || Array.isArray(b)) return null;
+  const nuevas = {};
   for (const prov of ['groq', 'nvidia']) {
     if (b[prov] === undefined) continue;
     const lista = Array.isArray(b[prov]) ? b[prov] : [b[prov]];
-    if (lista.length > 20 || !lista.every(claveOk)) return res.status(400).json({ error: { code: 'CLAVE_INVALIDA', message: `${prov}: maximo 20 claves, cada una de 8 a 300 caracteres sin espacios ni saltos de linea` } });
+    if (lista.length > 20 || !lista.every(claveOk)) return null;
     nuevas[prov] = b[prov];
   }
-  if (!Object.keys(nuevas).length) return res.status(400).json({ error: { code: 'CLAVE_INVALIDA', message: 'envia groq y/o nvidia (string o lista de strings)' } });
+  return Object.keys(nuevas).length ? nuevas : null;
+}
+const MSG_CLAVE = 'maximo 20 claves por proveedor, cada una de 8 a 300 caracteres sin espacios ni saltos de linea; envia groq y/o nvidia (string o lista de strings)';
+// persistido = GitHub publico el banco (el guardado local va aparte en `local`)
+async function persistir(local) { return { local, persistido: local ? await publicarEnGithub().catch(() => false) : false }; }
+app.get('/v1/claves', (_req, res) => res.json({ ok: true, ...conteo() }));
+app.post('/v1/claves', async (req, res) => {
+  const nuevas = validarClaves(req.body);
+  if (!nuevas) return res.status(400).json({ error: { code: 'CLAVE_INVALIDA', message: MSG_CLAVE } });
   setClaves(nuevas);
-  const persistido = await guardarEnBanco(nuevas).catch(() => false);
-  if (persistido) await publicarEnGithub().catch(() => false);
-  res.json({ ok: true, ...conteo(), persistido });
+  res.json({ ok: true, ...conteo(), ...(await persistir(await guardarEnBanco(nuevas).catch(() => false))) });
 });
 app.delete('/v1/claves', async (_req, res) => {
   limpiarClaves();
-  const persistido = await borrarDelBanco().catch(() => false);
-  if (persistido) await publicarEnGithub().catch(() => false);  // se publica el banco ya vacio
-  res.json({ ok: true, ...conteo(), persistido });
+  res.json({ ok: true, ...conteo(), ...(await persistir(await borrarDelBanco().catch(() => false))) });  // se publica el banco ya vacio
 });
 
 const idsModelos = () => {
@@ -235,13 +250,17 @@ app.post('/v1/chat/completions', async (req, res) => {
       modo = act.modo; conv_id = act.conv_id || conv_id;
       mensajesIn = mensajesIn.map((m, i) => (i === iUlt ? { ...m, content: act.prompt } : m));
     }
+    // claves/cuentas por llamada: solo con la clave de acceso del chat (BRIDGE_TOKEN solo no basta) y validadas igual que el panel
+    const clavesValidas = clavesReq === undefined || clavesReq === null ? null : validarClaves(clavesReq);
+    if ((clavesReq != null || cuentas) && !conAcceso(req)) return res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'claves/cuentas por llamada exigen la clave de acceso (x-api-key)' } });
+    if (clavesReq != null && !clavesValidas) return res.status(400).json({ error: { code: 'CLAVE_INVALIDA', message: MSG_CLAVE } });
     if (conv_id != null && !/^[\w-]{1,80}$/.test(String(conv_id))) return res.status(400).json({ error: { code: 'CONV_ID_INVALIDO', message: 'conv_id: letras, numeros, - y _ (max 80)' } });
     if (model.startsWith('web-') && !MODELOS_WEB[model.slice(4)]) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     if (Array.isArray(documentos) && documentos.length > MAX_DOCS) return res.status(413).json({ error: { code: 'DEMASIADOS_DOCUMENTOS', max: MAX_DOCS } });
     const messages = conFormato(mensajesIn);  // formato de salida del chat Yaiwes tambien para OpenClaw
     // credenciales vienen de OpenClaw por llamada (vía plugins->harness); env solo respaldo
     if (cuentas) setCuentas(cuentas, claveReq);
-    if (clavesReq && typeof clavesReq === 'object') { setClaves(clavesReq); guardarEnBanco(clavesReq).then((ok) => ok && publicarEnGithub()).catch(() => {}); }  // claves de Groq/NVIDIA por llamada: en memoria y en el banco propio cifrado (sobreviven reinicios)
+    if (clavesValidas) { setClaves(clavesValidas); guardarEnBanco(clavesValidas).then((ok) => ok && publicarEnGithub()).catch(() => {}); }  // solo autenticadas (arriba)  // claves de Groq/NVIDIA por llamada: en memoria y en el banco propio cifrado (sobreviven reinicios)
     const iU = messages.map(m => m.role).lastIndexOf('user');
     const ultimo = iU >= 0 ? messages[iU].content : '';
     const anterior = messages.filter((m, i) => i !== iU).map(m => `${m.role}: ${m.content}`).join('\n');
@@ -318,7 +337,8 @@ app.post('/v1/chat/completions', async (req, res) => {
         try { await salud(); salida = null; await conDeadline(ejecutar(), 50000); registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'PASS', modelo: model }); } catch { registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'FAIL', modelo: model }); }
       }
       if ((!salida || !String(salida).trim()) && !llamadas.length) {
-        const r = await respaldo(conPreambulo(mensajesM, model.startsWith('swecode-') ? modoUso : modo), { extra, ...streamOpts(sse.signal) });  // con texto ya entregado, el respaldo CONTINUA desde ahi (sse.flujo), no repite
+        const ac2 = new AbortController();  // si vence el plazo del respaldo se cancela antes de responder el error
+        const r = await conDeadline(respaldo(conPreambulo(mensajesM, model.startsWith('swecode-') ? modoUso : modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac2.signal])) }), DEADLINE_MS, sse.pide ? sse.latido : null).catch((e2) => { if (e2.code === 'UPSTREAM_TIMEOUT') ac2.abort(); throw e2; });  // con texto ya entregado, el respaldo CONTINUA desde ahi (sse.flujo), no repite
         llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
         salida = r.salida; usado = r.usado; via = r.via; aviso = e.code || null;
         registrarLeccion({ codigo: e.code || 'WEB_FALLO', accion: 'respaldo ' + r.via, resultado: 'PASS', modelo: model });  // p. ej. CUENTAS_FALTAN: OpenClaw sabe que debe reenviar cuentas y clave
@@ -385,8 +405,8 @@ app.use((err, _req, res, _next) => res.status(err.status || 400).json({ error: {
 // cierre limpio: sin esto un reinicio del Space deja el perfil de Chromium bloqueado
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, async () => { try { await cerrarTodo(); } catch { /* sigue */ } process.exit(0); });
 
-// BRIDGE_AUTORETOMAR=1: al arrancar, retoma una a una las secciones que quedaron a medias (si hay cuentas en el entorno)
-if (process.env.BRIDGE_AUTORETOMAR === '1') {
+// BRIDGE_AUTORETOMAR (activo por defecto; '0' lo apaga): al arrancar, retoma una a una las secciones que quedaron a medias (si hay cuentas en el entorno)
+if (process.env.BRIDGE_AUTORETOMAR !== '0') {
   setTimeout(async () => {
     for (const sec of listarCheckpoints().filter(c => !c.completo)) {
       try { await retomarSeccion(sec.conv_id); registrarLeccion({ codigo: 'REINICIO', accion: 'retoma automatica ' + sec.conv_id, resultado: 'PASS' }); }

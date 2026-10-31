@@ -2,7 +2,7 @@
 // El chat llama POST /v1/chat/completions del mismo origen (el proxy del Space manda web-* y swecode-* al bridge); mismo historial, misma sesion.
 import { leerClaves } from "./swe-claves.js";
 const REAL = { "hf-liquid-lfm25": "lfm2.5-350m", "swe-agent-lfm25": "lfm2.5-350m", "swe-openhands-lfm25": "lfm2.5-350m",
-  "swe-codex-qwen25-15b": "qwen2.5-coder-1.5b", "hf-qwen25-coder-15b": "qwen2.5-coder-1.5b", "swe-opencode-qwen35-08b": "qwen3.5-0.8b" };
+  "swe-codex-qwen25-15b": "qwen2.5-coder-1.5b", "hf-qwen25-coder-15b": "qwen2.5-coder-1.5b", "swe-opencode-qwen35-08b": "qwen3.5-0.8b", "hf-qwen3-06b": "qwen3-0.6b" };
 const LOCALES = ["lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"];
 const MAX_HISTORIAL = 20;  // mensajes previos: un modelo de 350M-1.5B o una UI web se desbordan con el chat entero
 
@@ -14,7 +14,8 @@ export const SWE_LISTAS = {
     ["swe-opencode-qwen35-08b", "SWE · OpenCode revisa", "Qwen3.5-0.8B"],
     ["swe-agent-lfm25", "SWE · Agent ejecuta", "LFM2.5-350M · tool/agentic"],
     ["swe-openhands-lfm25", "SWE · OpenHands verifica", "LFM2.5-350M"],
-    ["hf-qwen25-coder-15b", "Qwen Code (HF)", "Qwen2.5-Coder-1.5B local"]] },
+    ["hf-qwen25-coder-15b", "Qwen Code (HF)", "Qwen2.5-Coder-1.5B local"],
+    ["hf-qwen3-06b", "Qwen3 0.6B (HF)", "Qwen3-0.6B"]] },
   "swen-code-free": { nombre: "SWEN CODE free", titulo: "SWEN CODE free · cuentas web", modelos: [
     ["swecode-consulta", "Concilio · los 3 web", "los 3 modelos web a la vez + síntesis"],
     ["web-qwen38max", "Qwen 3.8 Max (web)", "Código complejo · via bridge"],
@@ -91,6 +92,16 @@ export function idCatalogo(id) {
   if (LOCALES.includes(real)) return "hf/" + real;
   return en(MODELOS_SWE, id) ? id : null;
 }
+// Lo que el workflow elegido ya fija solo (workflows.py): SWE CODE usa modelos fijos por paso (el contrato modelo_responde/modelo_tool no influye) y su agente que responde no se usa;
+// Liquid Mirror igual (el tool es siempre LIQUID 2). En Individual todo aplica. La hoja deshabilita y rotula «fijo por el workflow» estos controles.
+export const camposFijos = (workflow) => new Set(workflow === "swe_code" || workflow === "liquid_mirror" ? ["modelo_responde", "agente_responde", "modelo_tool"] : []);
+// id de la lista de la hoja (selector `lista`) equivalente al modelo del catalogo `cat` (desplegable «Responde»); conserva la entrada actual si ya equivale; null si la lista no lo tiene
+export function entradaParaCatalogo(lista, cat, actual) {
+  const l = SWE_LISTAS[lista]; if (!l) return null;
+  if (actual && l.modelos.some((m) => m[0] === actual) && idCatalogo(actual) === cat) return actual;
+  const m = l.modelos.find((x) => idCatalogo(x[0]) === cat);
+  return m ? m[0] : null;
+}
 const ident = (v, defecto) => { const t = String(v == null ? "" : v).replace(/[^A-Za-z0-9_-]/g, "-").slice(0, 64); return t || defecto; };
 export function nuevoTaskId() { return "yaiwes-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 export function armarTarea({ sel, mensaje, sesion, proyecto, task_id }) {
@@ -141,7 +152,7 @@ export function guardarSeccion(id, abierta) {
 const nombreDe = (lista, id) => (lista.find((x) => x[0] === id) || [id, id])[1];
 export function validarSeleccion(sel, cap) {
   if (!requiereHarness(sel)) return { ok: true, problemas: [] };
-  const problemas = [], mal = (etq, r) => { if (!r.ok) problemas.push(etq + ": " + (/^incompatible/.test(r.motivo) ? "" : "NO DISPONIBLE ") + "(" + r.motivo + ")"); };
+  const problemas = [], plano = (m) => String(m).replace(/\s*\(([^()]*)\)/g, ": $1").replace(/[()]/g, ""), mal = (etq, r) => { if (!r.ok) problemas.push(etq + ": " + (/^incompatible/.test(r.motivo) ? "" : "NO DISPONIBLE, ") + plano(r.motivo)); };
   mal("WORKFLOW " + nombreDe(WORKFLOWS_SWE, sel.workflow), estadoOpcion(cap, "workflow", sel.workflow));
   mal("MODELO QUE RESPONDE " + nombreDe(MODELOS_SWE, sel.modelo_responde), estadoOpcion(cap, "modelo", sel.modelo_responde));
   mal("AGENTE QUE RESPONDE " + nombreDe(AGENTES_SWE, sel.agente_responde), estadoOpcion(cap, "agente", sel.agente_responde, sel.modelo_responde));
@@ -168,6 +179,7 @@ export async function cargarCapacidades(api, { forzar = false } = {}) {
 // Parar de avanzar: DONE (hecho), GAP (fallo sin efectos), REQUIERE_APROBACION (espera al operador) y RECONCILIAR (operacion iniciada sin confirmar: la verifica un operador).
 const TERMINALES = ["DONE", "GAP", "REQUIERE_APROBACION", "RECONCILIAR"];
 export const MAX_AVANCES = 24;
+const PARA_CHATEAR = "Para chatear: abre SWE CODE/SWEN → Agentes → Modo agéntico OFF y Workflow Individual";
 const TASK_RE = /^[A-Za-z0-9_-]{1,64}$/, OP_RE = /^[A-Za-z0-9_-]{1,80}$/;
 const resultadoDe = (r, op) => {
   const x = r && r.ok === true ? r.resultado : null;
@@ -225,7 +237,7 @@ export async function enviarTareaSwe(api, { mensaje, sesion, proyecto, task_id, 
   const sel = leerSeleccion(), enCache = capVigente();
   let v = validarSeleccion(sel, await cargarCapacidades(api));
   if (!v.ok && enCache) v = validarSeleccion(sel, await cargarCapacidades(api, { forzar: true }));  // un "no disponible" viejo no se queda pegado: se vuelve a preguntar al Harness
-  if (!v.ok) throw new Error("GAP: SELECCION_NO_DISPONIBLE · " + v.problemas.join(" · "));  // no se cambia en silencio a otro modelo ni agente
+  if (!v.ok) throw new Error("GAP: SELECCION_NO_DISPONIBLE · " + v.problemas.join(" · ") + ". " + PARA_CHATEAR);  // no se cambia en silencio a otro modelo ni agente
   const tarea = armarTarea({ sel, mensaje, sesion, proyecto, task_id });
   alto(ctl);
   return conducir(api, await operacion(api, "iniciar", tarea, signal), tarea, alPaso, ctl);
@@ -325,7 +337,8 @@ export async function enviarSwe(api, datos) {
   const llamadas = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
   if (!msg.content && llamadas.length) {  // passthrough: las tools las ejecuta el cliente (OpenClaw) o el Harness; no es un fallo
     const nombres = llamadas.map((t) => (t && t.function && t.function.name) || "tool");
-    return { reply: "Tools pedidas: " + nombres.join(", "), tools: nombres, finish_reason: r.choices[0].finish_reason || "tool_calls", nota: `SWE · ${r.modelo_usado || datos.model} · tools → ${cuerpo.ejecutor_tools === "openclaw" ? "OpenClaw" : "SWE"}` };
+    const quien = cuerpo.ejecutor_tools === "openclaw" ? "OpenClaw" : "SWE-agent";  // pedidas, no usadas: las ejecuta el cliente (OpenClaw) o el SWE-agent
+    return { reply: "Tools pedidas: " + nombres.join(", "), tools: [], pedidas: nombres, ejecutor: quien, finish_reason: r.choices[0].finish_reason || "tool_calls", nota: `SWE · ${r.modelo_usado || datos.model} · tools → ${quien}` };
   }
   const texto = msg.content;
   if (!texto) {  // un fallo no se pinta como respuesta del modelo (entraria al historial del turno siguiente)

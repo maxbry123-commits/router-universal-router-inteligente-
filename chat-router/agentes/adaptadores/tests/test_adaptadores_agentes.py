@@ -324,7 +324,7 @@ def gateway(monkeypatch):
 
 def test_openclaw_camino_feliz(monkeypatch, tmp_path, gateway):
     monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", CLAVE_FICTICIA)
-    r = openclaw.run(permisos=permisos(tmp_path), **{**BASE, "modelo": "hf/lfm2.5-350m"})
+    r = openclaw.run(permisos=permisos(tmp_path, escritura=True), **{**BASE, "modelo": "hf/lfm2.5-350m"})
     comunes_ok(r, "openclaw")
     assert r["resultado"] == "orquestado" and CLAVE_FICTICIA not in json.dumps(r)
     ruta, cab, cuerpo = Gateway.visto[0]
@@ -336,12 +336,12 @@ def test_openclaw_camino_feliz(monkeypatch, tmp_path, gateway):
 def test_openclaw_gateway_caido_es_no_instalado(monkeypatch, tmp_path):
     monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", CLAVE_FICTICIA)
     monkeypatch.setenv("RIU_OPENCLAW_URL", "http://127.0.0.1:9")
-    r = openclaw.run(permisos=permisos(tmp_path), **BASE)
+    r = openclaw.run(permisos=permisos(tmp_path, escritura=True), **BASE)
     assert r["ok"] is False and r["codigo"] == "AGENTE_NO_INSTALADO" and r["efectos_posibles"] is False and r["recibo"] is None
 
 
 def test_openclaw_sin_token_no_llama(monkeypatch, tmp_path, gateway):
-    r = openclaw.run(permisos=permisos(tmp_path), **BASE)
+    r = openclaw.run(permisos=permisos(tmp_path, escritura=True), **BASE)
     assert r["ok"] is False and r["codigo"] == "AGENTE_NO_CONFIGURADO" and Gateway.visto == []
 
 
@@ -349,14 +349,14 @@ def test_openclaw_sin_token_no_llama(monkeypatch, tmp_path, gateway):
 def test_openclaw_errores_http(monkeypatch, tmp_path, gateway, estado, codigo, efectos):
     monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", CLAVE_FICTICIA)
     Gateway.estado = estado
-    r = openclaw.run(permisos=permisos(tmp_path), **BASE)
+    r = openclaw.run(permisos=permisos(tmp_path, escritura=True), **BASE)
     assert r["ok"] is False and r["codigo"] == codigo and r["efectos_posibles"] is efectos
 
 
 def test_openclaw_rechaza_url_remota_sin_https(monkeypatch, tmp_path):
     monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", CLAVE_FICTICIA)
     monkeypatch.setenv("RIU_OPENCLAW_URL", "http://ejemplo.invalid:18789")
-    r = openclaw.run(permisos=permisos(tmp_path), **BASE)
+    r = openclaw.run(permisos=permisos(tmp_path, escritura=True), **BASE)
     assert r["ok"] is False and r["codigo"] == "OPENCLAW_URL_INVALIDA"
 
 
@@ -364,7 +364,7 @@ def test_openclaw_respuesta_sin_contenido_no_es_exito(monkeypatch, tmp_path, gat
     monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", CLAVE_FICTICIA)
     Gateway.cuerpo = {"choices": []}
     try:
-        r = openclaw.run(permisos=permisos(tmp_path), **BASE)
+        r = openclaw.run(permisos=permisos(tmp_path, escritura=True), **BASE)
     finally:
         Gateway.cuerpo = {"id": "chatcmpl-1", "model": "openclaw/default", "choices": [{"message": {"role": "assistant", "content": "orquestado"}, "finish_reason": "stop"}]}
     assert r["ok"] is False and r["codigo"] == "AGENTE_SIN_RESULTADO"
@@ -374,7 +374,7 @@ def test_openclaw_respuesta_sin_contenido_no_es_exito(monkeypatch, tmp_path, gat
 def test_los_seis_sin_software_devuelven_ok_false(tmp_path):
     mods = [codex, opencode, swe_agent, openhands, claude_code, openclaw]
     for m in mods:
-        r = m.run(permisos=permisos(tmp_path), **BASE)
+        r = m.run(permisos=permisos(tmp_path, escritura=True), **BASE)
         assert r["ok"] is False and r["recibo"] is None and r["codigo"] in ("AGENTE_NO_INSTALADO", "AGENTE_NO_CONFIGURADO", "MODELO_INCOMPATIBLE"), (m.__name__, r)
 
 
