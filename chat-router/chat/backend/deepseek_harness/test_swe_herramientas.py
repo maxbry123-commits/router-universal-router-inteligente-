@@ -213,3 +213,19 @@ def test_el_selector_deja_de_marcar_no_disponible_lo_conectado_y_lo_sigue_marcan
     assert r.returncode == 0, r.stderr
     vista = json.loads(r.stdout)
     assert vista == {"opencode": True, "codex": False, "claude": False, "openclaw": False, "individual": True, "swe_code": False, "liquid": False, "hf": True, "groq": False}
+
+
+def test_el_harness_reenvia_tarea_id_al_router_para_el_parcial_en_streaming():
+    """Chat -> Harness -> Router: el Router fija _TAREA_PARCIAL con el tarea_id de la peticion; sin el, el texto parcial no llega al chat."""
+    vistos = []
+    def llamar(plugin, accion, datos=None, timeout=0):
+        return {"result": {"tools": [{"name": "github_leer", "description": "d", "inputSchema": {"type": "object"}}]}}
+    def router(accion, datos):
+        vistos.append((accion, datos))
+        return {"texto": "listo", "tool_calls": [], "finish_reason": "stop"}
+    with patch.object(h, "llamar", llamar), patch.object(h, "_router", router):
+        h.llm({"messages": [{"role": "user", "content": "hola"}], "modelo": "x", "tarea_id": "chat-tarea_1/../x"})
+        h.llm({"messages": [{"role": "user", "content": "hola"}], "modelo": "x"})
+    chats = [d for a, d in vistos if a == "chat"]
+    assert chats[0]["tarea_id"] == "chat-tarea_1x"  # el mismo identificador saneado que usa el diario de la tarea
+    assert chats[1]["tarea_id"] == ""  # sin tarea no se inventa una

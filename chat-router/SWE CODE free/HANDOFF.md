@@ -34,6 +34,31 @@ Estado del bridge en disco (`BRIDGE_STATE_DIR`, por defecto `./state`): `checkpo
 6. `GET /v1/evolucion`: mejoras propuestas por lo que el bridge reparó solo (3 repeticiones); aplicarlas con un commit propio y registrar el resultado.
 7. Tras arreglar algo: `python3 "SWE CODE free/evolucion.py" registrar '{"codigo":"...","accion":"...","resultado":"PASS"}'`.
 
+## Operacion del Harness DeepSeek (agentes reales SWE)
+El Harness (`chat/backend/deepseek_harness/server.py`) es quien lanza los agentes (`agentes/adaptadores/`); estas variables van en **su** entorno (nunca en el frontend ni en el repo) y `PYTHONPATH` debe incluir `chat-router` y `router-mvp`. Comprobar lo conectado: `POST /invoke {"action":"status"}` con `X-API-Key` -> `result.swe` (formato en `ARQUITECTURA.md`); el chat YAIWES lo ve en `GET /chat/swe/capacidades` y OpenClaw en `GET /v1/swe/capacidades`.
+
+| Variable | Para qué | Dónde |
+|---|---|---|
+| `RIU_API_KEY` | clave de acceso del Harness (la misma que usan sus clientes) | Harness, backend YAIWES (banco) y bridge |
+| `RIU_DEEPSEEK_HARNESS_URL` | URL del Harness | backend YAIWES y bridge |
+| `RIU_SWE_WORKSPACE_RAIZ` | raíz donde viven los proyectos; cada tarea trabaja en `<raíz>/<proyecto>` y nada fuera de ella | Harness |
+| `RIU_SWE_OPERADORES` | lista (coma) de operadores que pueden aprobar un paso con efectos; sin ella `swe_aprobar` responde `APROBADORES_NO_CONFIGURADOS`. Debe incluir **`director`** (operador por defecto de YAIWES) y el operador del bridge | Harness |
+| `RIU_SWE_OPERADOR` | quién aprueba en nombre de ese backend: YAIWES por defecto `director`; en el bridge es el respaldo de la cabecera `x-operador` (si falta ambos, `OPERADOR_REQUERIDO`) | backend YAIWES / bridge |
+| `BRIDGE_TOKEN` | autenticación obligatoria de `/v1/swe/*` (incluida `capacidades`) | bridge |
+| `SWECODE_URL_S1`, `SWECODE_URL_S2`, `SWECODE_URL_S3` | servidores HF de los modelos locales; S2 = LIQUID 1 (lector), S3 = LIQUID 2 (ejecutor), distintos entre sí; sin ninguno los 4 modelos `hf/*` salen NO DISPONIBLE | Harness (y bridge para el respaldo local) |
+| `GROQ_API_KEY[_1..20]`, `NVIDIA_API_KEY[_1..20]` | claves de los modelos `groq/qwen/qwen3.8-27b` y `nvidia/*`; la fuente es el banco (ver «Banco de claves»), pero `space/boot.sh` NO las exporta: hay que definirlas como secretos del servicio del Harness con los mismos valores del banco. Sin ellas el `status` marca esos modelos NO DISPONIBLE para los agentes (el chat directo por el Router sigue usando el banco). `status` solo informa si hay clave, nunca el valor | Harness (entorno, vía banco) |
+| `RIU_SWE_SONDA_MODELOS` | `0` desactiva el `GET /models` de Groq/NVIDIA que comprueba que el id existe (defecto activo) | Harness |
+| `RIU_CODEX_BIN`, `RIU_CODEX_BASE_URL` | Codex: binario y endpoint compatible con la API **Responses** (obligatorio: sin él Codex sale NO DISPONIBLE) | Harness |
+| `RIU_OPENCODE_BIN` | OpenCode (`opencode`) | Harness |
+| `RIU_SWEAGENT_BIN`, `RIU_DOCKER_BIN`, `RIU_SWEAGENT_IMAGE` | SWE-agent (`sweagent`) **y** Docker (corre en contenedor) | Harness |
+| `RIU_OPENHANDS_PYTHON` | Python que importa el SDK (`openhands.sdk` y `openhands.tools`, de `agentes/agentes-listos/openhands-software-agent-sdk`); por defecto el del Harness | Harness |
+| `RIU_CLAUDE_BIN`, `RIU_CLAUDE_PASARELA_URL`, `RIU_CLAUDE_PASARELA_MODELO` | Claude Code: CLI `claude` + pasarela Anthropic->NVIDIA (`agentes/claude-code/iniciar_claude_code.sh`); solo admite el modelo NVIDIA que sirve la pasarela. Opcional `RIU_CLAUDE_AUTH_TOKEN` | Harness |
+| `OPENCLAW_GATEWAY_TOKEN`, `RIU_OPENCLAW_URL` | Gateway OpenClaw (defecto `http://127.0.0.1:18789`, con `gateway.http.endpoints.chatCompletions` habilitado) | Harness |
+| `RIU_SWE_BRIDGE_URL`, `RIU_AGENTES_LLM_BASE_URL` | por dónde llegan los modelos `hf/*` a los agentes (defecto el bridge, `http://127.0.0.1:7870`) | Harness |
+| `RIU_AGENTE_TIMEOUT_S`, `RIU_SWE_TIMEOUT_S`, `RIU_SWE_HARNESS_TIMEOUT_MS` | tiempos (agente 1800 s, Liquid 130 s, bridge->Harness 60 s) | Harness / bridge |
+
+**Qué agente está instalado hoy:** solo la **CLI de Claude Code** (`claude`), y aun así `claude-code` sale NO DISPONIBLE hasta definir `RIU_CLAUDE_PASARELA_URL` y `RIU_CLAUDE_PASARELA_MODELO` (instalado, sin configurar). `codex`, `opencode`, `sweagent` (aunque `docker` sí existe en la sesión de preparación), el SDK de OpenHands y el Gateway OpenClaw **no están instalados** en el entorno donde se preparó el repo: sus adaptadores devuelven `AGENTE_NO_INSTALADO` y el selector los marca NO DISPONIBLE hasta que se instalen y se definan las variables de arriba. Ninguna prueba de este repo afirma que un agente real corra: las pruebas usan binarios falsos y servidores de prueba.
+
 ## Reglas
 Dos raíces (`router-mvp/`, `chat-router/`). No se toca el Router MVP. Lo protegido por `cableado.manifest.json` no se toca sin regenerar la guarda. Credenciales solo en el banco/vault de OpenClaw o el entorno. Sin PASS sin evidencia.
 

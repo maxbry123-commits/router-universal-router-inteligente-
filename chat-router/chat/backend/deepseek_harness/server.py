@@ -193,7 +193,7 @@ def llm(cuerpo):
                 salida = _bridge_chat(mensajes, cuerpo.get("modelo"), tarea, opciones)
             else:
                 try:
-                    salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,
+                    salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones, "tarea_id": tarea,  # el Router entrega el texto parcial a esa tarea
                                  **{k: cuerpo.get(k, False) for k in ("tools", "agente_tool", "llm_tool")}})
                 except RuntimeError as exc:
                     if not _bridge_url() or not (sin_router or _router_caido(exc)):
