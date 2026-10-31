@@ -17,10 +17,11 @@ if not URLS:
 
 
 # Respaldo cuando ningun slot HF responde: Groq y luego NVIDIA, con las mismas claves del chat (variables GROQ_API_KEY / NVIDIA_API_KEY, y _1.._20).
-# Modelos objetivo (ids ya investigados; no se inventan mas). Mas ids por env: RIU_SWE_GROQ_MODELOS / RIU_SWE_NVIDIA_MODELOS (coma),
-# p.ej. minimaxai/minimax-m3.1-flash, deepseek-ai/deepseek-v4.1-flash (kimi-k3 sin confirmar gratis: solo si el operador lo anade).
-MODELOS_DEFECTO = {"groq": "qwen/qwen3.8-27b", "nvidia": "meta/muse-glimmer-30b"}
-MODELOS_RESPALDO = {"groq": [], "nvidia": ["nvidia/nemotron-3-super-120b-a12b"]}   # solo con el modelo por defecto
+# Modelos autorizados por el Director (Llama 3.3 retirados): Groq qwen/qwen3.8-27b; NVIDIA minimaxai/minimax-m3.1-flash, meta/muse-glimmer-30b,
+# nvidia/nemotron-3-ultra-550b-a55b, z-ai/glm-5.3. Mas ids por env: RIU_SWE_GROQ_MODELOS / RIU_SWE_NVIDIA_MODELOS (coma).
+# Un 400/404/422 del modelo pasa al siguiente id autorizado y el realmente usado queda anotado (_ULTIMO / estado / recibo): no hay cambio silencioso.
+MODELOS_DEFECTO = {"groq": "qwen/qwen3.8-27b", "nvidia": "minimaxai/minimax-m3.1-flash"}
+MODELOS_RESPALDO = {"groq": [], "nvidia": ["meta/muse-glimmer-30b", "nvidia/nemotron-3-ultra-550b-a55b", "z-ai/glm-5.3"]}   # solo con el modelo por defecto
 EXTERNOS = {"groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY", os.getenv("RIU_SWE_GROQ_MODELO", MODELOS_DEFECTO["groq"])),
             "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY", os.getenv("RIU_SWE_NVIDIA_MODELO", MODELOS_DEFECTO["nvidia"]))}
 MAX_CONTINUACIONES = 8   # veces que se pide "continua" si finish_reason == 'length' (sumado entre proveedores)
@@ -219,7 +220,7 @@ def correr(objetivo: str, pasos=None, tarea_id=None) -> dict:
             salida, via = llamar_via(modelo, [{"role": "user", "content": prompt}],
                                      paso.get("servidor", "S1"))
             recibos.append(recibo(pid, nodo, "OK", {"modelo": modelo, "chars": len(salida),
-                                                  "servidor": paso.get("servidor"), "via": via}))
+                                                  "servidor": paso.get("servidor"), "via": via, "usado": _ULTIMO.get("modelo", modelo)}))
             entrada = salida
             est["pasos"][clave_paso] = {"nodo": nodo, "estado": "DONE", "salida": _redactar(salida), "proveedor": via,
                                         "modelo": _ULTIMO.get("modelo", modelo), "ts": int(time.time())}

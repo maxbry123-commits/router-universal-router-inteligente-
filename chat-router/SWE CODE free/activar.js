@@ -27,8 +27,8 @@ const MODELOS_ALIAS = [
   [/^(qwen[- ]?3\.?8[- ]?max|qwen[- ]?3\.?8|qwen38[- ]?max|qwen38)\b/i, "web-qwen38max"],
   [/^(lfm2\.?5|liquid|lfm)\b/i, "lfm2.5-350m"],
   [/^(qwen[- ]?code|qwen2\.?5|coder)\b/i, "qwen2.5-coder-1.5b"],
-  [/^groq\b/i, "groq/llama-3.3-70b-versatile"],
-  [/^nvidia\b/i, "nvidia/meta/llama-3.3-70b-instruct"],
+  [/^groq\b/i, "groq/qwen/qwen3.8-27b"],
+  [/^nvidia\b/i, "nvidia/minimaxai/minimax-m3.1-flash"],
 ];
 
 // Quita tildes SIN cambiar la longitud (char a char), para casar contra la version

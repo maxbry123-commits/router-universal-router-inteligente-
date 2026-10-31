@@ -387,9 +387,10 @@ test('5. GET /v1/models lista swecode-asesoria, groq/..., nvidia/..., locales y 
   const r = await get(A, '/v1/models');
   assert.equal(r.status, 200); assert.equal(r.json.object, 'list');
   const ids = r.json.data.map((m) => m.id);
-  for (const id of ['swecode-asesoria', 'swecode-consulta', 'swecode-revision', 'groq/llama-3.3-70b-versatile', 'nvidia/meta/llama-3.3-70b-instruct',
+  for (const id of ['swecode-asesoria', 'swecode-consulta', 'swecode-revision', 'groq/qwen/qwen3.8-27b', 'nvidia/minimaxai/minimax-m3.1-flash', 'nvidia/meta/muse-glimmer-30b', 'nvidia/nvidia/nemotron-3-ultra-550b-a55b', 'nvidia/z-ai/glm-5.3',
     'lfm2.5-350m', 'qwen2.5-coder-1.5b', 'qwen3.5-0.8b', 'qwen3-0.6b', 'web-qwen38max', 'web-qwen37max', 'web-dsv4-flash']) assert.ok(ids.includes(id), `falta ${id}`);
   assert.equal(new Set(ids).size, ids.length, 'sin ids duplicados');
+  assert.ok(!ids.some((i) => /llama/i.test(i)), 'los dos Llama retirados del selector');
 });
 
 // ---------- (6) health ----------

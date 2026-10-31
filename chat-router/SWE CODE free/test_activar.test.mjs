@@ -4,8 +4,8 @@ import { createRequire } from "node:module";
 const { activar } = createRequire(import.meta.url)("./activar.js");
 
 test("groq y nvidia se eligen por nombre, igual que los demas modelos", () => {
-  assert.equal(activar("SWEN CODE free solo groq arregla el login").modelo, "groq/llama-3.3-70b-versatile");
-  assert.equal(activar("SWEN CODE free con nvidia revisa esto").modelo, "nvidia/meta/llama-3.3-70b-instruct");
+  assert.equal(activar("SWEN CODE free solo groq arregla el login").modelo, "groq/qwen/qwen3.8-27b");
+  assert.equal(activar("SWEN CODE free con nvidia revisa esto").modelo, "nvidia/minimaxai/minimax-m3.1-flash");
   assert.equal(activar("SWEN CODE free nvidia revisa esto").prompt, "revisa esto");
 });
 

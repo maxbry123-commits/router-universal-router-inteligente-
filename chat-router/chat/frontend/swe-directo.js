@@ -27,20 +27,173 @@ export const SWE_LISTAS = {
     ["swecode-archivos", "SWE · archivos", "modo archivos"],
     ["swecode-prompt_code", "SWE · prompt_code", "modo prompt_code"],
     ["swecode-despliega", "SWE · despliega", "modo despliega"],
-    ["groq/llama-3.3-70b-versatile", "Groq · Llama 3.3 70B", "respaldo 1 · usa la clave de Configuración"],
-    ["nvidia/meta/llama-3.3-70b-instruct", "NVIDIA · Llama 3.3 70B", "respaldo 2 · usa la clave de Configuración"]] },
+    ["groq/qwen/qwen3.8-27b", "Qwen 3.8 Groq", "API Groq"],
+    ["nvidia/minimaxai/minimax-m3.1-flash", "MiniMax M3.1 Flash", "API NVIDIA"],
+    ["nvidia/meta/muse-glimmer-30b", "Muse Glimmer 30B", "API NVIDIA"],
+    ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "Nemotron 3 Ultra", "API NVIDIA"],
+    ["nvidia/z-ai/glm-5.3", "GLM 5.3", "API NVIDIA"]] },
 };
 export const esSelectorSwe = (id) => typeof id === "string" && Object.hasOwn(SWE_LISTAS, id);
 
 export const esSwe = (id) => typeof id === "string" && (/^(web-|swecode-|groq\/|nvidia\/)/.test(id) || Object.hasOwn(REAL, id) || LOCALES.includes(id));
 
-// Salida de las tools: quien ejecuta los tool_calls. 'swe' (defecto) = el bridge/Harness como hoy; 'openclaw' = el bridge los devuelve tal cual a OpenClaw (seccion WAIT_TOOLS).
+// Salida de las tools: quien ejecuta los tool_calls. 'swe' (defecto) = el SWE-agent via bridge/Harness como hoy; 'openclaw' = el bridge los devuelve tal cual a OpenClaw (seccion WAIT_TOOLS).
 // Contrato en SWE CODE free/ARQUITECTURA.md. Se guarda en localStorage y viaja en cada peticion como `ejecutor_tools`.
 export const EJECUTORES_TOOLS = ["swe", "openclaw"];
+export const ETIQUETA_SALIDA = { swe: "Salida: SWE-agent", openclaw: "Salida: OpenClaw" };
 const K_EJECUTOR = "riu_swe_ejecutor_tools";
 const normEjecutor = (v) => (EJECUTORES_TOOLS.includes(v) ? v : "swe");
 export function leerEjecutorTools() { try { return normEjecutor(localStorage.getItem(K_EJECUTOR)); } catch (e) { return "swe"; } }
-export function guardarEjecutorTools(v) { const x = normEjecutor(v); try { localStorage.setItem(K_EJECUTOR, x); } catch (e) {} return x; }
+const escribirEjecutor = (x) => { try { localStorage.setItem(K_EJECUTOR, x); } catch (e) {} return x; };
+export function guardarEjecutorTools(v) {
+  const x = escribirEjecutor(normEjecutor(v));
+  escribirSeleccion({ ...leerSeleccion(), agente_tool: x === "openclaw" ? "openclaw" : "swe-agent" });  // el boton de salida y AGENTE QUE EJECUTA son el mismo dato
+  return x;
+}
+
+// ---- Selectores de agente/modelo/workflow (contrato TareaSWE de chat-router/agentes/adaptadores/contrato.py) ----
+// Catalogo unico de agentes/adaptadores/modelos.py: el frontend solo lo refleja; el servidor valida y la disponibilidad real la reporta el Harness.
+export const MODELOS_SWE = [
+  ["hf/lfm2.5-350m", "Liquid LFM2.5 350M", "HF local"], ["hf/qwen2.5-coder-1.5b", "Qwen2.5 Coder 1.5B", "HF local"],
+  ["hf/qwen3.5-0.8b", "Qwen3.5 0.8B", "HF local"], ["hf/qwen3-0.6b", "Qwen3 0.6B", "HF local"],
+  ["groq/qwen/qwen3.8-27b", "Qwen 3.8 Groq", "API Groq"], ["nvidia/minimaxai/minimax-m3.1-flash", "MiniMax M3.1 Flash", "API NVIDIA"],
+  ["nvidia/meta/muse-glimmer-30b", "Muse Glimmer 30B", "API NVIDIA"], ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "Nemotron 3 Ultra", "API NVIDIA"],
+  ["nvidia/z-ai/glm-5.3", "GLM 5.3", "API NVIDIA"]];
+export const AGENTES_SWE = [["openclaw", "OpenClaw"], ["swe-agent", "SWE-agent"], ["openhands", "OpenHands"], ["opencode", "OpenCode"], ["codex", "Codex"], ["claude-code", "Claude Code"]];
+export const WORKFLOWS_SWE = [["individual", "Individual"], ["swe_code", "SWE CODE cuatro pasos"], ["liquid_mirror", "Liquid Mirror"]];
+// Liquid Mirror: dos participantes propios (mismo modelo, servidores HF independientes), sin mezclar con los modelos web.
+export const LIQUID_MIRROR = [{ id: "liquid1", etiqueta: "LIQUID 1 — LECTOR", servidor: "S2", modelo: "hf/lfm2.5-350m" }, { id: "liquid2", etiqueta: "LIQUID 2 — EJECUTOR", servidor: "S3", modelo: "hf/lfm2.5-350m" }];
+const LIQUID = "hf/lfm2.5-350m", REVISOR = "hf/qwen3.5-0.8b", VERIFICADOR = "openhands";  // fijos del workflow SWE CODE (workflows.py)
+export const SEL_DEFECTO = { modelo_responde: LIQUID, modelo_tool: "hf/qwen2.5-coder-1.5b", agente_responde: "openclaw", agente_tool: "swe-agent", modo_agentico: false, workflow: "individual" };
+const K_SEL = "riu_swe_seleccion";
+const en = (lista, v) => typeof v === "string" && lista.some((x) => x[0] === v);
+function normSeleccion(x, base) {
+  const o = x && typeof x === "object" ? x : {};
+  return {
+    modelo_responde: en(MODELOS_SWE, o.modelo_responde) ? o.modelo_responde : base.modelo_responde,
+    modelo_tool: en(MODELOS_SWE, o.modelo_tool) ? o.modelo_tool : base.modelo_tool,
+    agente_responde: en(AGENTES_SWE, o.agente_responde) ? o.agente_responde : base.agente_responde,
+    agente_tool: en(AGENTES_SWE, o.agente_tool) ? o.agente_tool : base.agente_tool,
+    modo_agentico: typeof o.modo_agentico === "boolean" ? o.modo_agentico : base.modo_agentico,
+    workflow: en(WORKFLOWS_SWE, o.workflow) ? o.workflow : base.workflow };
+}
+export function leerSeleccion() { try { return normSeleccion(JSON.parse(localStorage.getItem(K_SEL) || "{}"), SEL_DEFECTO); } catch (e) { return { ...SEL_DEFECTO }; } }
+function escribirSeleccion(sel) { try { localStorage.setItem(K_SEL, JSON.stringify(sel)); } catch (e) {} return sel; }
+export function guardarSeleccion(parcial) {
+  const sel = escribirSeleccion(normSeleccion(parcial, leerSeleccion()));  // un valor invalido no pisa el anterior
+  if (parcial && Object.hasOwn(parcial, "agente_tool") && (sel.agente_tool === "openclaw" || sel.agente_tool === "swe-agent")) escribirEjecutor(sel.agente_tool === "openclaw" ? "openclaw" : "swe");
+  return sel;
+}
+export const requiereHarness = (sel) => !!sel && (sel.workflow !== "individual" || sel.modo_agentico === true);
+// modelo del selector clasico (alias hf-*, ids locales, groq/, nvidia/) -> id del catalogo; null si no esta registrado (p. ej. web-*, swecode-*)
+export function idCatalogo(id) {
+  const real = Object.hasOwn(REAL, id) ? REAL[id] : id;
+  if (LOCALES.includes(real)) return "hf/" + real;
+  return en(MODELOS_SWE, id) ? id : null;
+}
+const ident = (v, defecto) => { const t = String(v == null ? "" : v).replace(/[^A-Za-z0-9_-]/g, "-").slice(0, 64); return t || defecto; };
+export function nuevoTaskId() { return "yaiwes-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+export function armarTarea({ sel, mensaje, sesion, proyecto, task_id }) {
+  const s = normSeleccion(sel, SEL_DEFECTO), lm = s.workflow === "liquid_mirror";
+  return { task_id: task_id || nuevoTaskId(), origen: "yaiwes", workflow: s.workflow, mensaje: String(mensaje == null ? "" : mensaje),
+    modelo_responde: s.modelo_responde, modelo_lector: LIQUID, modelo_tool: lm ? LIQUID : s.modelo_tool, modelo_revisor: REVISOR,
+    agente_responde: s.agente_responde, agente_tool: s.agente_tool, agente_verificador: VERIFICADOR,
+    modo_agentico: s.modo_agentico, aprobacion: false,  // la aprobacion NUNCA sale del cliente: la da el operador por /chat/swe/aprobar
+    sesion: ident(sesion, ""), proyecto: ident(proyecto, "yaiwes") };
+}
+
+// Disponibilidad real: la reporta el Harness (GET /chat/swe/capacidades). Lo que no reporta NO se presenta como funcional.
+export function normalizarCapacidades(p) {
+  const o = p && typeof p === "object" ? p : {};
+  const m = (x) => (x && typeof x === "object" ? x : {});
+  return { harness: typeof o.harness === "string" ? o.harness : "desconocido", agentes: m(o.agentes), workflows: m(o.workflows), modelos: m(o.modelos) };
+}
+export function estadoOpcion(cap, tipo, id, modelo) {
+  const e = (tipo === "agente" ? cap.agentes : tipo === "workflow" ? cap.workflows : cap.modelos)[id];
+  const motivo = e && typeof e.motivo === "string" && e.motivo ? e.motivo : "";
+  if (tipo === "workflow" && id === "individual") return { ok: true, motivo: "" };
+  if (tipo === "modelo") return e && e.disponible === false ? { ok: false, motivo: motivo || "no esta en el catalogo del proveedor" } : { ok: true, motivo: "" };
+  if (!e || e.disponible !== true) return { ok: false, motivo: motivo || (tipo === "agente" ? "sin adaptador conectado (el Harness no lo reporta)" : "el Harness no lo reporta conectado") };
+  if (tipo === "agente" && modelo && Array.isArray(e.modelos) && !e.modelos.includes(modelo)) return { ok: false, motivo: "incompatible con " + modelo };
+  return { ok: true, motivo: "" };
+}
+const nombreDe = (lista, id) => (lista.find((x) => x[0] === id) || [id, id])[1];
+export function validarSeleccion(sel, cap) {
+  if (!requiereHarness(sel)) return { ok: true, problemas: [] };
+  const problemas = [], mal = (etq, r) => { if (!r.ok) problemas.push(etq + ": " + (/^incompatible/.test(r.motivo) ? "" : "NO DISPONIBLE ") + "(" + r.motivo + ")"); };
+  mal("WORKFLOW " + nombreDe(WORKFLOWS_SWE, sel.workflow), estadoOpcion(cap, "workflow", sel.workflow));
+  mal("MODELO QUE RESPONDE " + nombreDe(MODELOS_SWE, sel.modelo_responde), estadoOpcion(cap, "modelo", sel.modelo_responde));
+  mal("AGENTE QUE RESPONDE " + nombreDe(AGENTES_SWE, sel.agente_responde), estadoOpcion(cap, "agente", sel.agente_responde, sel.modelo_responde));
+  if (sel.modo_agentico) {
+    const tool = sel.workflow === "liquid_mirror" ? LIQUID : sel.modelo_tool;
+    mal("MODELO PARA TOOL " + nombreDe(MODELOS_SWE, tool), estadoOpcion(cap, "modelo", tool));
+    mal("AGENTE QUE EJECUTA " + nombreDe(AGENTES_SWE, sel.agente_tool), estadoOpcion(cap, "agente", sel.agente_tool, tool));
+    if (sel.workflow !== "individual") mal("AGENTE VERIFICADOR " + nombreDe(AGENTES_SWE, VERIFICADOR), estadoOpcion(cap, "agente", VERIFICADOR, LIQUID));
+  }
+  return { ok: problemas.length === 0, problemas };
+}
+let _cap = { t: 0, v: null };
+const capVigente = () => !!_cap.v && Date.now() - _cap.t < 30000;
+export const olvidarCapacidades = () => { _cap = { t: 0, v: null }; };
+export async function cargarCapacidades(api, { forzar = false } = {}) {
+  if (!forzar && capVigente()) return _cap.v;
+  let v;
+  try { v = normalizarCapacidades(await api("/chat/swe/capacidades")); } catch (e) { v = normalizarCapacidades(null); v.harness = "sin_respuesta"; }
+  _cap = { t: Date.now(), v };
+  return v;
+}
+
+// ---- Tarea SWE: el frontend manda el contrato al backend YAIWES (/chat/swe/*), este al Harness, este a los adaptadores. Nunca llama a una herramienta directo. ----
+const TERMINALES = ["DONE", "GAP", "REQUIERE_APROBACION"];
+export const MAX_AVANCES = 24;
+const TASK_RE = /^[A-Za-z0-9_-]{1,64}$/;
+const resultadoDe = (r, op) => {
+  const x = r && r.ok === true ? r.resultado : null;
+  if (!x || typeof x !== "object") throw new Error("GAP: SWE_HARNESS_ERROR · " + op + " sin resultado");
+  return x;
+};
+async function operacion(api, op, cuerpo) {
+  let r;
+  try { r = await api("/chat/swe/" + op, { method: "POST", body: cuerpo }); } catch (e) { const m = String((e && e.message) || e); throw new Error(m.startsWith("GAP:") ? m : "GAP: " + (/^[A-Z][A-Z0-9_]+\b/.test(m) ? m : "SWE_HARNESS_ERROR · " + m)); }
+  return resultadoDe(r, op);
+}
+const base = ({ task_id, sesion, proyecto }) => {
+  if (!TASK_RE.test(String(task_id))) throw new Error("GAP: TASK_ID_INVALIDO");
+  return { task_id, origen: "yaiwes", sesion: ident(sesion, ""), proyecto: ident(proyecto, "yaiwes") };
+};
+export const estadoTareaSwe = async (api, d) => operacion(api, "estado", base(d));
+export const reanudarTareaSwe = async (api, d) => operacion(api, "reanudar", base(d));
+export const aprobarTareaSwe = async (api, d) => operacion(api, "aprobar", base(d));  // quien aprueba es el operador autenticado en el servidor, no un campo del cuerpo
+const lineaEvidencia = (e) => (typeof e === "string" ? e : JSON.stringify(e)).slice(0, 300);
+function aRespuesta(x, tarea) {
+  const estado = String(x.estado || "");
+  if (estado === "GAP") throw new Error("GAP: " + (x.codigo || "GAP") + (x.error ? " · " + x.error : ""));
+  const evid = [...(Array.isArray(x.evidencias) ? x.evidencias : []), ...(Array.isArray(x.evidencia) ? x.evidencia : [])];
+  const texto = x.texto || x.resultado || x.reply || "";
+  const pide = estado === "REQUIERE_APROBACION";
+  const reply = (pide ? "Requiere aprobación del operador antes de continuar. " : "") + (typeof texto === "string" ? texto : JSON.stringify(texto)) + (evid.length ? "\n\nEvidencias:\n" + evid.map((e) => "- " + lineaEvidencia(e)).join("\n") : "");
+  const tools = (Array.isArray(x.herramientas) ? x.herramientas : []).map((h) => (typeof h === "string" ? h : (h && h.nombre) || "tool"));
+  return { reply: reply.trim(), tools, finish_reason: estado === "DONE" ? "stop" : null, estado, task_id: x.task_id || tarea.task_id, requiere_aprobacion: pide, nota: `SWE · ${tarea.workflow} · ${tarea.agente_responde}→${tarea.agente_tool} · tarea ${x.task_id || tarea.task_id} · ${estado || "?"}` };
+}
+async function conducir(api, x, tarea) {  // avanza paso a paso (el estado se guarda en el Harness en cada paso) hasta un estado terminal o de aprobacion
+  const ref = { task_id: tarea.task_id, origen: "yaiwes", sesion: tarea.sesion, proyecto: tarea.proyecto };
+  for (let i = 0; i < MAX_AVANCES && !TERMINALES.includes(String(x.estado)); i++) x = await operacion(api, "avanzar", ref);
+  if (!TERMINALES.includes(String(x.estado))) throw new Error("GAP: SWE_SIN_PROGRESO · la tarea " + tarea.task_id + " sigue en " + (x.estado || "?") + "; reanúdala con el mismo task_id");
+  return aRespuesta(x, tarea);
+}
+export async function enviarTareaSwe(api, { mensaje, sesion, proyecto, task_id }) {
+  const sel = leerSeleccion(), enCache = capVigente();
+  let v = validarSeleccion(sel, await cargarCapacidades(api));
+  if (!v.ok && enCache) v = validarSeleccion(sel, await cargarCapacidades(api, { forzar: true }));  // un "no disponible" viejo no se queda pegado: se vuelve a preguntar al Harness
+  if (!v.ok) throw new Error("GAP: SELECCION_NO_DISPONIBLE · " + v.problemas.join(" · "));  // no se cambia en silencio a otro modelo ni agente
+  const tarea = armarTarea({ sel, mensaje, sesion, proyecto, task_id });
+  return conducir(api, await operacion(api, "iniciar", tarea), tarea);
+}
+// el operador pulsa Aprobar: el servidor lo identifica; despues la tarea sigue desde su ultimo checkpoint (mismo task_id)
+export async function aprobarYContinuarSwe(api, d) {
+  const ref = base(d), tarea = armarTarea({ sel: leerSeleccion(), mensaje: "(continuación)", sesion: d.sesion, proyecto: d.proyecto, task_id: ref.task_id });
+  return conducir(api, await operacion(api, "aprobar", ref), tarea);
+}
 
 export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecutor_tools }) {
   const h = historial.slice(-MAX_HISTORIAL);

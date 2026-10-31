@@ -18,7 +18,7 @@
 | `qwen 3.8`, `qwen 3.8 max` | `web-qwen38max` |
 | `liquid`, `lfm`, `lfm2.5` | `lfm2.5-350m` (HF local S1..S3, vía bridge) |
 | `coder`, `qwen code`, `qwen2.5` | `qwen2.5-coder-1.5b` (HF local) |
-| `groq` / `nvidia` | `groq/llama-3.3-70b-versatile` / `nvidia/meta/llama-3.3-70b-instruct` |
+| `groq` / `nvidia` | `groq/qwen/qwen3.8-27b` / `nvidia/minimaxai/minimax-m3.1-flash` |
 
 - También existen `qwen3.5-0.8b` y `qwen3-0.6b` (HF local) como ids directos.
 - Prefijos aceptados: `con`, `solo`, `modelo`, o el nombre como primera palabra.

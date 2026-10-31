@@ -23,7 +23,7 @@ El puerto: el código arranca en `BRIDGE_PORT` (por defecto 7860, también en el
 - Formato de salida: el bridge antepone `chat/backend/mvp/prompts/FORMATO_SALIDA.md` (una sola copia, ruta cambiable con `RIU_FORMATO_PATH`) salvo que ya venga en un mensaje `system`. Así Liquid, el chat y OpenClaw responden igual.
 
 ## Asesoría antes de ejecutar (`swecode-asesoria`)
-Primero Groq (claves del chat; modelo `RIU_SWE_GROQ_MODELO`, por defecto `llama-3.3-70b-versatile`); si falla, la web con `qwen38max`; si todo falla, el respaldo general. Devuelve objetivo, plan numerado, mapa mental en texto, estructura a ejecutar y cómo resolver problemas probables, sin ejecutar nada. Cada asesoría se **agrega** a `BRIDGE_STATE_DIR/proyectos/<proyecto>/ASESORIA.md` (`proyecto` del POST; sin él, el `conv_id`; sin ninguno, `general`). OpenClaw la relee con `GET /v1/proyectos` y `GET /v1/proyectos/<proyecto>`.
+Primero Groq (claves del chat; modelo `RIU_SWE_GROQ_MODELO`, por defecto `qwen/qwen3.8-27b`); si falla, la web con `qwen38max`; si todo falla, el respaldo general. Devuelve objetivo, plan numerado, mapa mental en texto, estructura a ejecutar y cómo resolver problemas probables, sin ejecutar nada. Cada asesoría se **agrega** a `BRIDGE_STATE_DIR/proyectos/<proyecto>/ASESORIA.md` (`proyecto` del POST; sin él, el `conv_id`; sin ninguno, `general`). OpenClaw la relee con `GET /v1/proyectos` y `GET /v1/proyectos/<proyecto>`.
 
 ## Herramientas, memoria y mejora continua
 - **Tools:** Groq, NVIDIA y los locales reciben las `tools` del POST y devuelven sus `tool_calls`; el Harness las ejecuta (GitHub, HF, motor de archivos, memoria) mientras el Router MVP esté vivo. Los modelos web (Qwen/DeepSeek) no producen tool_calls.
@@ -39,7 +39,7 @@ Primero Groq (claves del chat; modelo `RIU_SWE_GROQ_MODELO`, por defecto `llama-
 
 ## Respaldo (en este orden)
 1. **Web**: el modelo pedido y luego `qwen38max → qwen37max → dsv4-flash`. Si la sesión cae, `salud()` hace re-login y rota al siguiente correo (misma clave).
-2. **Groq → NVIDIA** (`GROQ_API_KEY`, `NVIDIA_API_KEY` y `*_1..20`; modelos `RIU_SWE_GROQ_MODELO` / `RIU_SWE_NVIDIA_MODELO`, por defecto `meta/llama-3.3-70b-instruct`).
+2. **Groq → NVIDIA** (`GROQ_API_KEY`, `NVIDIA_API_KEY` y `*_1..20`; modelos `RIU_SWE_GROQ_MODELO` / `RIU_SWE_NVIDIA_MODELO`, por defecto `minimaxai/minimax-m3.1-flash`).
 3. **HF local** `lfm2.5-350m`: entra por `SWECODE_URL_S1` y salta a S2/S3.
 4. Si todo falla: 500 `RESPALDO_AGOTADO`. El **APK móvil** (`puente-movil`, `POST /mcp`) es el último recurso **manual**: el bridge no lo llama.
 

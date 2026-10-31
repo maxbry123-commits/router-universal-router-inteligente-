@@ -215,5 +215,228 @@
     ]
    }
   }
+ },
+ "politicas_externos": {
+  "nota": "Politicas de los modelos Groq/NVIDIA del chat YAIWES (cliente: chat-router/chat/backend/mvp/externos.py; motor SSE: compute.py). Clave = id completo del proveedor. Solo parametros, streaming, reintentos, timeout y contexto: no cambian rutas, DAG, nodos ni el modelo elegido (si el id no existe en GET /models se muestra NO DISPONIBLE; nunca se sustituye). No tocan politicas_modelo (Qwen). Los valores de timeout_s/reintentos son punto de partida, sin medicion en vivo. Orden del Director 2026-10-31.",
+  "_defecto": {
+   "streaming": {
+    "activable": true,
+    "con_tools": true,
+    "stream_options_usage": true
+   },
+   "reintentos": {
+    "max": 3,
+    "base_s": 0.5,
+    "tope_s": 30,
+    "retry_after_max_s": 60,
+    "rotar_clave_en_429": true
+   },
+   "timeout_s": 180,
+   "contexto": {
+    "max_caracteres": 400000,
+    "resultado_tool_max": 4000,
+    "recientes": 6
+   },
+   "preservar": [
+    "tool_calls",
+    "finish_reason",
+    "usage",
+    "reasoning_content"
+   ]
+  },
+  "groq/qwen/qwen3.8-27b": {
+   "proveedor": "groq",
+   "nombre": "Qwen 3.8 27B",
+   "parametros": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 2048,
+    "reasoning_effort": "medium",
+    "reasoning_format": "hidden"
+   },
+   "parametros_compatibles": [
+    "temperature",
+    "top_p",
+    "max_tokens",
+    "reasoning_effort",
+    "reasoning_format"
+   ],
+   "streaming": {
+    "activable": true,
+    "con_tools": true,
+    "stream_options_usage": true
+   },
+   "reintentos": {
+    "max": 3,
+    "base_s": 0.5,
+    "tope_s": 30,
+    "retry_after_max_s": 60,
+    "rotar_clave_en_429": true
+   },
+   "timeout_s": 90,
+   "contexto": {
+    "max_caracteres": 400000,
+    "resultado_tool_max": 4000,
+    "recientes": 6
+   },
+   "preservar": [
+    "tool_calls",
+    "finish_reason",
+    "usage",
+    "reasoning_content"
+   ]
+  },
+  "nvidia/minimaxai/minimax-m3.1-flash": {
+   "proveedor": "nvidia",
+   "nombre": "MiniMax M3.1 Flash",
+   "parametros": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 4096
+   },
+   "parametros_compatibles": [
+    "temperature",
+    "top_p",
+    "max_tokens"
+   ],
+   "streaming": {
+    "activable": true,
+    "con_tools": true,
+    "stream_options_usage": true
+   },
+   "reintentos": {
+    "max": 3,
+    "base_s": 0.5,
+    "tope_s": 30,
+    "retry_after_max_s": 60,
+    "rotar_clave_en_429": true
+   },
+   "timeout_s": 90,
+   "contexto": {
+    "max_caracteres": 400000,
+    "resultado_tool_max": 4000,
+    "recientes": 6
+   },
+   "preservar": [
+    "tool_calls",
+    "finish_reason",
+    "usage",
+    "reasoning_content"
+   ]
+  },
+  "nvidia/meta/muse-glimmer-30b": {
+   "proveedor": "nvidia",
+   "nombre": "Muse Glimmer 30B",
+   "parametros": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 4096
+   },
+   "parametros_compatibles": [
+    "temperature",
+    "top_p",
+    "max_tokens"
+   ],
+   "streaming": {
+    "activable": true,
+    "con_tools": true,
+    "stream_options_usage": true
+   },
+   "reintentos": {
+    "max": 3,
+    "base_s": 0.5,
+    "tope_s": 30,
+    "retry_after_max_s": 60,
+    "rotar_clave_en_429": true
+   },
+   "timeout_s": 180,
+   "contexto": {
+    "max_caracteres": 400000,
+    "resultado_tool_max": 4000,
+    "recientes": 6
+   },
+   "preservar": [
+    "tool_calls",
+    "finish_reason",
+    "usage",
+    "reasoning_content"
+   ]
+  },
+  "nvidia/nvidia/nemotron-3-ultra-550b-a55b": {
+   "proveedor": "nvidia",
+   "nombre": "Nemotron 3 Ultra 550B",
+   "parametros": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 4096
+   },
+   "parametros_compatibles": [
+    "temperature",
+    "top_p",
+    "max_tokens"
+   ],
+   "streaming": {
+    "activable": true,
+    "con_tools": true,
+    "stream_options_usage": true
+   },
+   "reintentos": {
+    "max": 3,
+    "base_s": 0.5,
+    "tope_s": 30,
+    "retry_after_max_s": 60,
+    "rotar_clave_en_429": true
+   },
+   "timeout_s": 300,
+   "contexto": {
+    "max_caracteres": 400000,
+    "resultado_tool_max": 4000,
+    "recientes": 6
+   },
+   "preservar": [
+    "tool_calls",
+    "finish_reason",
+    "usage",
+    "reasoning_content"
+   ]
+  },
+  "nvidia/z-ai/glm-5.3": {
+   "proveedor": "nvidia",
+   "nombre": "GLM 5.3",
+   "parametros": {
+    "temperature": 0.5,
+    "top_p": 1.0,
+    "max_tokens": 4096
+   },
+   "parametros_compatibles": [
+    "temperature",
+    "top_p",
+    "max_tokens"
+   ],
+   "streaming": {
+    "activable": true,
+    "con_tools": true,
+    "stream_options_usage": true
+   },
+   "reintentos": {
+    "max": 3,
+    "base_s": 0.5,
+    "tope_s": 30,
+    "retry_after_max_s": 60,
+    "rotar_clave_en_429": true
+   },
+   "timeout_s": 180,
+   "contexto": {
+    "max_caracteres": 400000,
+    "resultado_tool_max": 4000,
+    "recientes": 6
+   },
+   "preservar": [
+    "tool_calls",
+    "finish_reason",
+    "usage",
+    "reasoning_content"
+   ]
+  }
  }
 }

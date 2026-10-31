@@ -103,12 +103,23 @@ def _contexto_grande(detalle): return _codigo(detalle) in (400, 413)
 _SES = ContextVar("sesion_tarea", default="")  # sesion del chat de la tarea: donde se deja la respuesta si nadie la recoge
 _PID = ContextVar("pid_tarea", default=None)  # la tarea del chat que esta ejecutando chat(): su estado se guarda en cada pausa
 MAX_CARACTERES = 4_000_000  # ~1 millon de tokens; tope de texto por peticion: error claro en vez de un 502 opaco del proveedor
-async def _llamar_modelo(mensajes, modelo, opciones):
+def _parcial(pid):
+    """Texto progresivo del modelo hacia el chat con el mecanismo existente de resultados parciales: TRABAJOS[pid]['parcial'] (lo entrega /resultado y api.js lo pinta). None si no hay tarea a la que entregar."""
+    if not pid or pid not in TRABAJOS: return None
+    ultimo = [0.0]
+    def entregar(total, fragmento):
+        if time.monotonic() - ultimo[0] >= 0.15 and pid in TRABAJOS:  # a lo mas ~7 actualizaciones por segundo; el texto final lo deja _llamar_modelo
+            ultimo[0] = time.monotonic(); TRABAJOS[pid]["parcial"] = total
+    return entregar
+async def _llamar_modelo(mensajes, modelo, opciones, pid=None):
     """Una llamada directa al modelo: Qwen (QWEN_API_KEY) o Groq/NVIDIA (groq/<id>, nvidia/<id>, mvp/externos.py)."""
     banco = app.state.banco
     try:
         if externos.proveedor(modelo):
-            return await asyncio.to_thread(externos.llamar, mensajes, modelo, banco, opciones)
+            pid = pid or _PID.get()
+            salida = await asyncio.to_thread(externos.llamar, mensajes, modelo, banco, opciones, _parcial(pid))
+            if pid in TRABAJOS and salida.get("metricas", {}).get("stream") and salida.get("texto"): TRABAJOS[pid]["parcial"] = salida["texto"]
+            return salida
         clave = banco.leer("QWEN_API_KEY") if banco else None
         if not clave:
             raise HTTPException(status_code=503, detail="QWEN_API_KEY no disponible en banco")
@@ -176,7 +187,7 @@ async def chat(cuerpo: dict):
         return {"texto": salida.get("texto") or "", "tool_calls": llamadas, "herramientas_usadas": salida.get("herramientas_usadas") or [],
                 "finish_reason": salida.get("finish_reason"),
                 **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}
-    salida = await _llamar_modelo(mensajes, modelo, cuerpo.get("opciones"))
+    salida = await _llamar_modelo(mensajes, modelo, cuerpo.get("opciones"), cuerpo.get("tarea_id"))
     _verificar_llamadas(salida["tool_calls"], controles)
     return {"texto": salida["texto"], "tool_calls": salida["tool_calls"],
             "finish_reason": salida.get("finish_reason"),
@@ -401,6 +412,7 @@ async def _local(pid, cuerpo):
     _PID.set(pid); _SES.set(str(cuerpo.get("sesion") or (cuerpo.get("qwen") or {}).get("sesion") or "")[:60])
     try:
         TRABAJOS[pid].update(await _chat_ficha(cuerpo, lambda t: TRABAJOS[pid].update(progreso=t)))
+        TRABAJOS[pid].pop("parcial", None)  # la respuesta final reemplaza al texto parcial
     except HTTPException as error:
         TRABAJOS[pid].update(estado="error", error=str(error.detail), status_code=error.status_code)
     except Exception as error:  # noqa: BLE001 - el proceso debe terminar siempre
@@ -546,8 +558,9 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
             espera = min(max(float(cuerpo.get("espera") or 0), 0), 8)
         except (TypeError, ValueError):
             espera = 0
-        for i in range(int(espera * 4)):  # long-poll: responde apenas termina (max 8 s)
-            if TRABAJOS[pid]["estado"] != "procesando":
+        parcial0 = TRABAJOS[pid].get("parcial")
+        for i in range(int(espera * 4)):  # long-poll: responde apenas termina o apenas hay texto parcial nuevo (max 8 s)
+            if TRABAJOS[pid]["estado"] != "procesando" or TRABAJOS[pid].get("parcial") != parcial0:
                 break
             await asyncio.sleep(0.25)
             if pid not in _PROPIOS and i % 8 == 7: await _recuperar(pid)  # lo ejecuta otro proceso: se relee del almacen
@@ -564,7 +577,7 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
         if cuerpo.get("max_tokens"):
             opciones["max_tokens"] = cuerpo["max_tokens"]
         try:
-            salida = await chat({"modelo": modelo, "mensajes": cuerpo.get("messages") or cuerpo.get("mensajes"), "opciones": opciones, **_controles(cuerpo)})
+            salida = await chat({"modelo": modelo, "mensajes": cuerpo.get("messages") or cuerpo.get("mensajes"), "opciones": opciones, "tarea_id": cuerpo.get("tarea_id"), **_controles(cuerpo)})
         except HTTPException:
             raise
         return {"status": "ok", "result": {"reply": salida["texto"], "texto": salida["texto"], "tool_calls": salida["tool_calls"], "finish_reason": salida.get("finish_reason"), "modelo": modelo,

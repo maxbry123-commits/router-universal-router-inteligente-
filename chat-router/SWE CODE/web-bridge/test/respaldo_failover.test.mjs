@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
-import { respaldo, externo, local, BASES, idsRespaldo, setClaves, limpiarClaves, limpiarEstado } from "../src/respaldo.js";
+import { respaldo, externo, local, BASES, idsRespaldo, MODELOS_API, setClaves, limpiarClaves, limpiarEstado } from "../src/respaldo.js";
 
 const msgs = [{ role: "user", content: "hola" }];
 const CONT = "Continúa exactamente donde terminó, sin repetir";
@@ -222,7 +222,7 @@ test("Groq sin Qwen 3.8: usa RIU_SWE_GROQ_MODELO, y si no, el id por defecto", a
     assert.equal(g.chat.at(-1).body.model, "mi-modelo");
     limpiarEstado();
     await respaldo(msgs, { env: { GROQ_API_KEY: "gsk-FAKE-1" }, opts: rapido() });
-    assert.equal(g.chat.at(-1).body.model, "llama-3.3-70b-versatile");
+    assert.equal(g.chat.at(-1).body.model, "qwen/qwen3.8-27b");
   } finally { g.cerrar(); }
 });
 
@@ -231,7 +231,7 @@ test("Groq: si /models falla (caido) usa el id por defecto sin romper", async ()
   Object.assign(BASES, { groq: g.url });
   try {
     const r = await respaldo(msgs, { env: { GROQ_API_KEY: "gsk-FAKE-1" }, opts: rapido() });
-    assert.equal(r.salida, "hola"); assert.equal(g.chat[0].body.model, "llama-3.3-70b-versatile");
+    assert.equal(r.salida, "hola"); assert.equal(g.chat[0].body.model, "qwen/qwen3.8-27b");
   } finally { g.cerrar(); }
 });
 
@@ -253,7 +253,7 @@ test("NVIDIA: primero minimax/kimi/deepseek-v4 (el primero de la lista)", async 
 test("NVIDIA sin MiniMax/Kimi/DeepSeek: muse/glimmer + nemotron-3-super; si no, el por defecto", async () => {
   assert.equal((await nvidiaCon(["meta/llama-3.3-70b-instruct", "nvidia/nemotron-3-super-120b", "nvidia/glimmer-nemotron-3-super"])).modelo, "nvidia/glimmer-nemotron-3-super");
   limpiarEstado();
-  assert.equal((await nvidiaCon(["meta/llama-3.3-70b-instruct", "nvidia/nemotron-3-super-120b"])).modelo, "meta/llama-3.3-70b-instruct");
+  assert.equal((await nvidiaCon(["meta/llama-3.3-70b-instruct", "nvidia/nemotron-3-super-120b"])).modelo, "minimaxai/minimax-m3.1-flash");
 });
 
 test("NVIDIA: RIU_SWE_NVIDIA_MODELO manda y ni siquiera consulta /models", async () => {
@@ -261,13 +261,15 @@ test("NVIDIA: RIU_SWE_NVIDIA_MODELO manda y ni siquiera consulta /models", async
   assert.equal(r.modelo, "forzado/m"); assert.equal(r.consultas, 0);
 });
 
-test("idsRespaldo sigue sin red: ids estaticos de reserva (o los del entorno)", async () => {
+test("idsRespaldo sigue sin red: MODELOS_API + locales, sin los dos Llama", async () => {
   const g = await fake(() => ok("x"));
   Object.assign(BASES, { groq: g.url, nvidia: g.url });
   try {
     const ids = idsRespaldo({ GROQ_API_KEY: "gsk-FAKE-1" });
-    assert.ok(ids.includes("groq/llama-3.3-70b-versatile") && ids.includes("nvidia/meta/llama-3.3-70b-instruct") && ids.includes("lfm2.5-350m"));
-    assert.deepEqual(idsRespaldo({ RIU_SWE_GROQ_MODELO: "a", RIU_SWE_NVIDIA_MODELO: "b/c" }).slice(0, 2), ["groq/a", "nvidia/b/c"]);
+    assert.deepEqual(ids, [...MODELOS_API.map((m) => m.id), "lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"]);
+    assert.deepEqual(MODELOS_API.map((m) => m.id), ["groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"]);
+    assert.ok(!ids.some((i) => /llama/i.test(i)), "los dos Llama fueron retirados");
+    assert.equal(ids.filter((i) => /muse-glimmer/.test(i)).length, 1, "Muse Glimmer aparece una sola vez");
     assert.equal(g.vistos.length, 0);
   } finally { g.cerrar(); }
 });

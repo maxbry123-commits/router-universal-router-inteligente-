@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { esSwe, armar, enviarSwe } from "../swe-directo.js";
 
 test("reconoce los ids SWE del selector y deja pasar a los demas modelos por el Router", () => {
-  for (const m of ["web-qwen38max", "swecode-asesoria", "hf-liquid-lfm25", "swe-agent-lfm25", "lfm2.5-350m", "groq/llama-3.3-70b-versatile", "nvidia/meta/llama-3.3-70b-instruct"]) assert.ok(esSwe(m), m);
+  for (const m of ["web-qwen38max", "swecode-asesoria", "hf-liquid-lfm25", "swe-agent-lfm25", "lfm2.5-350m", "groq/qwen/qwen3.8-27b", "nvidia/z-ai/glm-5.3"]) assert.ok(esSwe(m), m);
   for (const m of ["qwen3.8-max", "glm-5.3", "deepseek-v4-pro", "", null]) assert.ok(!esSwe(m), String(m));
 });
 
@@ -66,16 +66,21 @@ test("armar incluye claves SOLO si hay alguna guardada; nunca van en el texto de
   assert.ok(!("claves" in armar(base)), "sin localStorage -> sin claves");
 });
 
-test("SWEN CODE free incluye Groq y NVIDIA (usan las claves de Configuracion por el bridge)", () => {
+test("SWEN CODE free incluye los 5 modelos de Groq y NVIDIA autorizados y ya no trae los dos Llama", () => {
   const ids = SWE_LISTAS["swen-code-free"].modelos.map(([m]) => m);
-  assert.ok(ids.includes("groq/llama-3.3-70b-versatile") && ids.includes("nvidia/meta/llama-3.3-70b-instruct"));
+  for (const m of ["groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"]) assert.equal(ids.filter((x) => x === m).length, 1, m + " exactamente una vez");
+  assert.ok(!ids.some((m) => /llama/i.test(m)), "sin Llama en el selector");
+  const todo = JSON.stringify(SWE_LISTAS);
+  assert.ok(!/llama/i.test(todo), "ninguna etiqueta/descripcion menciona Llama");
+  const fila = SWE_LISTAS["swen-code-free"].modelos.find(([m]) => m === "nvidia/meta/muse-glimmer-30b");
+  assert.deepEqual(fila.slice(1), ["Muse Glimmer 30B", "API NVIDIA"]);
 });
 
 import { rutaSwe } from "../swe-directo.js";
 
 test("los modelos locales y groq/nvidia viajan por /web/v1 (el proxy del Space manda /web/* al bridge); web-* y swecode-* siguen por /v1", async () => {
   // el proxy del Space solo reenvia /v1/* al bridge si el modelo empieza por web-/swecode-: un id local por /v1 cae en el Router (400 MODEL_NOT_IN_CERTIFIED_REGISTRY)
-  for (const m of ["hf-liquid-lfm25", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b", "lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b", "groq/llama-3.3-70b-versatile", "nvidia/meta/llama-3.3-70b-instruct"])
+  for (const m of ["hf-liquid-lfm25", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b", "lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b", "groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"])
     assert.equal(rutaSwe(m), "/web/v1/chat/completions", m);
   for (const m of ["web-qwen38max", "web-dsv4-flash", "swecode-consulta", "swecode-asesoria"]) assert.equal(rutaSwe(m), "/v1/chat/completions", m);
   for (const [id, real] of [["hf-liquid-lfm25", "lfm2.5-350m"], ["swe-codex-qwen25-15b", "qwen2.5-coder-1.5b"], ["swe-opencode-qwen35-08b", "qwen3.5-0.8b"], ["swe-agent-lfm25", "lfm2.5-350m"], ["swe-openhands-lfm25", "lfm2.5-350m"], ["hf-qwen25-coder-15b", "qwen2.5-coder-1.5b"]]) {
@@ -121,7 +126,7 @@ test("enviarSwe con tool_calls (passthrough a OpenClaw) no es un GAP: devuelve l
   delete globalThis.localStorage;
   const tc = [{ id: "c1", type: "function", function: { name: "github_leer", arguments: "{}" } }];
   const api = async (_r, op) => { assert.equal(op.body.ejecutor_tools, "openclaw"); return { modelo_usado: "groq/x", choices: [{ message: { content: "", tool_calls: tc }, finish_reason: "tool_calls" }] }; };
-  const r = await enviarSwe(api, { model: "groq/llama-3.3-70b-versatile", historial: [], mensaje: "x", sesion: "s", ejecutor_tools: "openclaw" });
+  const r = await enviarSwe(api, { model: "groq/qwen/qwen3.8-27b", historial: [], mensaje: "x", sesion: "s", ejecutor_tools: "openclaw" });
   assert.deepEqual(r.tools, ["github_leer"]); assert.equal(r.finish_reason, "tool_calls"); assert.match(r.nota, /OpenClaw/);
   assert.match(r.reply, /github_leer/);
 });

@@ -1,6 +1,6 @@
 import { node } from "./api.js";
 import * as A from "./chat-ancla.js";
-import { esSwe, enviarSwe } from "./swe-directo.js";
+import { esSwe, enviarSwe, enviarTareaSwe, aprobarYContinuarSwe, leerSeleccion, requiereHarness } from "./swe-directo.js";
 // enviar-mensaje.js — envío del mensaje: cada chat corre su tarea con su sesión, ficha, anclas, modos y herramientas
 // Extraído de panel-chat.js sin cambiar la lógica: recibe lo que usa por ctx y devuelve lo que otros bloques necesitan.
 export function montarEnviar(ctx) {
@@ -213,7 +213,10 @@ export function montarEnviar(ctx) {
       };
       const _modeloSwe = fichaSwe ? fichaSwe.model_id : ((fq === "1" || fichaMvp) && c.selectorQwen && esSwe(c.selectorQwen.model_id) ? c.selectorQwen.model_id : null);  // SWE CODE / SWEN CODE free: router propio (el bridge), sin pasar por el Router MVP
       const _swe = !!_modeloSwe && _multiSel.length <= 1;
-      const answer = _swe
+      const _tareaSwe = !!fichaSwe && requiereHarness(leerSeleccion());  // workflow != individual o modo agentico ON: contrato TareaSWE al backend YAIWES -> Harness -> adaptadores (nunca herramientas desde el navegador)
+      const answer = _tareaSwe
+        ? await Promise.race([enviarTareaSwe(api, { mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined }), raceDetener])
+        : _swe
         ? await Promise.race([enviarSwe(api, { model: _modeloSwe, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined }), raceDetener])
         : window.RIU_CONFIG?.harnessUrl
         ? (_multiSel.length > 1
@@ -228,6 +231,11 @@ export function montarEnviar(ctx) {
       if (answer.nota) c.hist.append(node("div", answer.nota, "item meta"));
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
       if (answer.finish_reason === "length") { const aviso = node("div", "La respuesta se cortó por el límite de salida del proveedor. ", "item message meta"), seguir = node("button", "Continuar", "mx-continuar"); seguir.type = "button"; seguir.onclick = () => { seguir.disabled = true; const m = q("#message"); m.value = "Continúa exactamente donde se cortó la respuesta anterior, sin repetir texto."; q("#composer").requestSubmit(); }; aviso.append(seguir); c.hist.append(aviso); }  // un clic y sigue desde el corte
+      if (answer.requiere_aprobacion && answer.task_id) {  // el operador aprueba con este boton; el servidor lo identifica y la tarea sigue desde su checkpoint
+        const aviso = node("div", "La tarea " + answer.task_id + " espera tu aprobación. ", "item message meta"), ap = node("button", "Aprobar y continuar", "mx-continuar mx-aprobar"); ap.type = "button";
+        ap.onclick = async () => { ap.disabled = true; try { const r = await aprobarYContinuarSwe(api, { task_id: answer.task_id, sesion: c.sesion, proyecto: c.project_id || undefined }); c.hist.append(burbuja(r.reply || "Sin respuesta")); A.registrar(c.sesion, "bot", r.reply || ""); if (r.nota) c.hist.append(node("div", r.nota, "item meta")); } catch (e) { c.hist.append(node("div", String((e && e.message) || e).startsWith("GAP:") ? e.message : "GAP: " + e.message, "item message error")); } abajo(c); };
+        aviso.append(ap); c.hist.append(aviso);
+      }
       if (answer.execution_path === "FAST_QA") c.hist.append(node("div", "⚡ respuesta rápida · " + answer.ms + " ms", "item meta"));
       else if (answer.execution_path === "FAST_CONSULT") c.hist.append(node("div", "⚡ cónsil rápido · " + answer.ms + " ms", "item meta"));
       else if (c.fastReply && FAST_SEL() && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));

@@ -63,12 +63,24 @@
       "nombre": "Qwen3 0.6B (HF S1-S3)"
     },
     {
-      "id": "groq/llama-3.3-70b-versatile",
-      "nombre": "Groq · Llama 3.3 70B (respaldo 1)"
+      "id": "groq/qwen/qwen3.8-27b",
+      "nombre": "Groq Qwen 3.8"
     },
     {
-      "id": "nvidia/meta/llama-3.3-70b-instruct",
-      "nombre": "NVIDIA · Llama 3.3 70B (respaldo 2)"
+      "id": "nvidia/minimaxai/minimax-m3.1-flash",
+      "nombre": "MiniMax M3.1 Flash"
+    },
+    {
+      "id": "nvidia/meta/muse-glimmer-30b",
+      "nombre": "Muse Glimmer 30B"
+    },
+    {
+      "id": "nvidia/nvidia/nemotron-3-ultra-550b-a55b",
+      "nombre": "Nemotron 3 Ultra"
+    },
+    {
+      "id": "nvidia/z-ai/glm-5.3",
+      "nombre": "GLM 5.3"
     },
     {
       "id": "swecode-asesoria",

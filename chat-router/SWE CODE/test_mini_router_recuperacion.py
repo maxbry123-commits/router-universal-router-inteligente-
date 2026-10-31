@@ -134,17 +134,20 @@ class TestRotacion(Base):
 
     def test_modelos_objetivo_por_defecto_y_lista_por_env(self):
         self.assertEqual(mini_router.MODELOS_DEFECTO["groq"], "qwen/qwen3.8-27b")
+        self.assertEqual(mini_router.MODELOS_DEFECTO["nvidia"], "minimaxai/minimax-m3.1-flash")
         self.assertEqual(mini_router._modelos("nvidia", mini_router.MODELOS_DEFECTO["nvidia"]),
-                         ["meta/muse-glimmer-30b", "nvidia/nemotron-3-super-120b-a12b"])
+                         ["minimaxai/minimax-m3.1-flash", "meta/muse-glimmer-30b", "nvidia/nemotron-3-ultra-550b-a55b", "z-ai/glm-5.3"])
+        self.assertEqual(mini_router._modelos("groq", mini_router.MODELOS_DEFECTO["groq"]), ["qwen/qwen3.8-27b"])
         with patch.dict(os.environ, {"RIU_SWE_NVIDIA_MODELOS": "minimaxai/minimax-m3.1-flash, deepseek-ai/deepseek-v4.1-flash"}):
             self.assertEqual(mini_router._modelos("nvidia", "x"), ["x", "minimaxai/minimax-m3.1-flash", "deepseek-ai/deepseek-v4.1-flash"])
 
     def test_modelo_rechazado_404_prueba_el_siguiente_modelo(self):
         un, vn = self.srv((404, "no existe"), (200, "con el segundo"))
-        g, h = self.externos(nvidia=(un, "NVIDIA_API_KEY", "meta/muse-glimmer-30b"))
+        g, h = self.externos(nvidia=(un, "NVIDIA_API_KEY", mini_router.MODELOS_DEFECTO["nvidia"]))
         with g, h, patch.dict(os.environ, {"NVIDIA_API_KEY": "n1", "NVIDIA_API_KEY_2": "n2"}):
             self.assertEqual(mini_router.llamar_via("m", [])[0], "con el segundo")
-        self.assertEqual([x[1]["model"] for x in vn], ["meta/muse-glimmer-30b", "nvidia/nemotron-3-super-120b-a12b"])
+            self.assertEqual(mini_router._ULTIMO["modelo"], "meta/muse-glimmer-30b", "el modelo realmente usado queda anotado: nada de cambio silencioso")
+        self.assertEqual([x[1]["model"] for x in vn], ["minimaxai/minimax-m3.1-flash", "meta/muse-glimmer-30b"])
         self.assertEqual(len(vn), 2, "un 404 no gasta la otra clave en el mismo modelo")
 
 
@@ -178,3 +181,30 @@ class TestLength(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestExternosSWE(unittest.TestCase):
+    """EXTERNOS segun el input del Director: ids y variables de entorno; Llama retirados."""
+    def recargar(self, **env):
+        base = {k: v for k, v in os.environ.items() if not k.startswith("RIU_SWE_")}
+        base.update(env)
+        with patch.dict(os.environ, base, clear=True):
+            return importlib.reload(mini_router).EXTERNOS
+
+    def tearDown(self):
+        with patch.dict(os.environ, {k: v for k, v in os.environ.items() if not k.startswith("RIU_SWE_")}, clear=True):
+            importlib.reload(mini_router)
+
+    def test_ids_por_defecto_y_bases(self):
+        e = self.recargar()
+        self.assertEqual(e["groq"], ("https://api.groq.com/openai/v1", "GROQ_API_KEY", "qwen/qwen3.8-27b"))
+        self.assertEqual(e["nvidia"], ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY", "minimaxai/minimax-m3.1-flash"))
+
+    def test_env_RIU_SWE_GROQ_MODELO_y_NVIDIA_MODELO_mandan(self):
+        e = self.recargar(RIU_SWE_GROQ_MODELO="otro/groq", RIU_SWE_NVIDIA_MODELO="z-ai/glm-5.3")
+        self.assertEqual(e["groq"][2], "otro/groq"); self.assertEqual(e["nvidia"][2], "z-ai/glm-5.3")
+
+    def test_sin_llama_en_el_router(self):
+        with open(mini_router.__file__, encoding="utf-8") as f:
+            self.assertNotIn("llama-3.3", f.read().lower().replace("llama-server", ""))
+        self.assertNotIn("llama", " ".join(mini_router._modelos("nvidia", mini_router.MODELOS_DEFECTO["nvidia"]) + mini_router._modelos("groq", mini_router.MODELOS_DEFECTO["groq"])).lower())

@@ -44,7 +44,7 @@ test("sin nada configurado devuelve error claro", async () => {
 });
 
 test("ids groq/ y nvidia/ del selector son externos y se listan para OpenClaw", () => {
-  assert.ok(esExterno("groq/llama-3.3-70b-versatile")); assert.ok(esExterno("nvidia/meta/llama-3.3-70b-instruct")); assert.ok(!esExterno("web-qwen38max"));
+  assert.ok(esExterno("groq/qwen/qwen3.8-27b")); assert.ok(esExterno("nvidia/minimaxai/minimax-m3.1-flash")); assert.ok(!esExterno("web-qwen38max"));
   const ids = idsRespaldo({}); assert.ok(ids.some((i) => i.startsWith("groq/")) && ids.some((i) => i.startsWith("nvidia/")) && ids.includes("lfm2.5-350m"));
 });
 
