@@ -103,6 +103,7 @@ def _contexto_grande(detalle): return _codigo(detalle) in (400, 413)
 _SES = ContextVar("sesion_tarea", default="")  # sesion del chat de la tarea: donde se deja la respuesta si nadie la recoge
 _PID = ContextVar("pid_tarea", default=None)  # la tarea del chat que esta ejecutando chat(): su estado se guarda en cada pausa
 MAX_CARACTERES = 4_000_000  # ~1 millon de tokens; tope de texto por peticion: error claro en vez de un 502 opaco del proveedor
+_TAREA_PARCIAL = ContextVar("tarea_parcial", default=None)  # tarea del chat a la que _llamar_modelo entrega el texto parcial (la fija chat() con el tarea_id de la peticion)
 def _parcial(pid):
     """Texto progresivo del modelo hacia el chat con el mecanismo existente de resultados parciales: TRABAJOS[pid]['parcial'] (lo entrega /resultado y api.js lo pinta). None si no hay tarea a la que entregar."""
     if not pid or pid not in TRABAJOS: return None
@@ -111,13 +112,14 @@ def _parcial(pid):
         if time.monotonic() - ultimo[0] >= 0.15 and pid in TRABAJOS:  # a lo mas ~7 actualizaciones por segundo; el texto final lo deja _llamar_modelo
             ultimo[0] = time.monotonic(); TRABAJOS[pid]["parcial"] = total
     return entregar
-async def _llamar_modelo(mensajes, modelo, opciones, pid=None):
+async def _llamar_modelo(mensajes, modelo, opciones):
     """Una llamada directa al modelo: Qwen (QWEN_API_KEY) o Groq/NVIDIA (groq/<id>, nvidia/<id>, mvp/externos.py)."""
     banco = app.state.banco
     try:
         if externos.proveedor(modelo):
-            pid = pid or _PID.get()
-            salida = await asyncio.to_thread(externos.llamar, mensajes, modelo, banco, opciones, _parcial(pid))
+            pid = _TAREA_PARCIAL.get()
+            parcial = _parcial(pid)
+            salida = await asyncio.to_thread(externos.llamar, mensajes, modelo, banco, opciones, *((parcial,) if parcial else ()))
             if pid in TRABAJOS and salida.get("metricas", {}).get("stream") and salida.get("texto"): TRABAJOS[pid]["parcial"] = salida["texto"]
             return salida
         clave = banco.leer("QWEN_API_KEY") if banco else None
@@ -187,7 +189,9 @@ async def chat(cuerpo: dict):
         return {"texto": salida.get("texto") or "", "tool_calls": llamadas, "herramientas_usadas": salida.get("herramientas_usadas") or [],
                 "finish_reason": salida.get("finish_reason"),
                 **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta", "metricas") if k in salida}}
-    salida = await _llamar_modelo(mensajes, modelo, cuerpo.get("opciones"), cuerpo.get("tarea_id"))
+    ficha_pid = _TAREA_PARCIAL.set(str(cuerpo.get("tarea_id") or "") or None)
+    try: salida = await _llamar_modelo(mensajes, modelo, cuerpo.get("opciones"))
+    finally: _TAREA_PARCIAL.reset(ficha_pid)
     _verificar_llamadas(salida["tool_calls"], controles)
     return {"texto": salida["texto"], "tool_calls": salida["tool_calls"],
             "finish_reason": salida.get("finish_reason"),

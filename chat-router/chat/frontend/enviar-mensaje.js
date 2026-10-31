@@ -215,7 +215,7 @@ export function montarEnviar(ctx) {
       const _swe = !!_modeloSwe && _multiSel.length <= 1;
       const _tareaSwe = !!fichaSwe && requiereHarness(leerSeleccion());  // workflow != individual o modo agentico ON: contrato TareaSWE al backend YAIWES -> Harness -> adaptadores (nunca herramientas desde el navegador)
       const answer = _tareaSwe
-        ? await Promise.race([enviarTareaSwe(api, { mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined }), raceDetener])
+        ? await Promise.race([enviarTareaSwe(api, { mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined, alPaso: (t) => window.dispatchEvent(new CustomEvent("riu-progreso", { detail: { sesion: c.sesion, texto: t } })) }), raceDetener])
         : _swe
         ? await Promise.race([enviarSwe(api, { model: _modeloSwe, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined }), raceDetener])
         : window.RIU_CONFIG?.harnessUrl

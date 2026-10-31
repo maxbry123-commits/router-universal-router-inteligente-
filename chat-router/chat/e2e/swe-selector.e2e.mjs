@@ -54,7 +54,10 @@ function routerFalso(estado) {
       return json(route, { ok: true, groq: b.groq, nvidia: b.nvidia });
     }
     if (p === '/chat/swe/capacidades') return json(route, estado.capacidades || {});  // el Harness no reporta nada -> todo NO DISPONIBLE salvo Individual
-    if (/^\/chat\/swe\/(iniciar|avanzar|estado|aprobar|reanudar)$/.test(p) && req.method() === 'POST') return json(route, { ok: true, resultado: { task_id: body && body.task_id, estado: estado.estadoSwe || 'DONE', paso_actual: 'verifica', resultado: 'resultado del agente real de prueba', evidencias: ['recibo:e2e-123'], herramientas: ['swe-agent'] } });
+    if (/^\/chat\/swe\/(iniciar|avanzar|estado|aprobar|reanudar)$/.test(p) && req.method() === 'POST') {  // la "vista" de la tarea que devuelve el Harness
+      const op = p.split('/').pop(), pide = op === 'iniciar' && estado.estadoSwe === 'REQUIERE_APROBACION';
+      return json(route, { ok: true, resultado: { ok: true, task_id: body && body.task_id, estado: pide ? 'REQUIERE_APROBACION' : op === 'aprobar' ? 'CONTINUAR' : 'DONE', paso_actual: 1, resultado_tool: 'resultado del agente real de prueba', evidencia: ['recibo:e2e-123'], pasos_terminados: [{ paso: 'ejecuta', agente: 'swe-agent', recibo: 'r-e2e', herramientas: ['swe-agent'], resultado: 'ok' }], ...(pide ? { pendiente_aprobacion: { op_id: '0123456789abcdef', paso: 'ejecuta', agente: 'codex', modelo: 'hf/qwen2.5-coder-1.5b', permisos: { escritura: true }, objetivo: 'editar el repo' } } : {}) } });
+    }
     if (p === '/chat/providers') return json(route, { providers: [{ id: 'qwen', nombre: 'Qwen', estado: 'ok' }] });
     if ((p === '/v1/chat/completions' || p === '/web/v1/chat/completions') && req.method() === 'POST') {  // /web/* siempre llega al bridge (proxy del Space); /v1/* solo con web-/swecode-
       return json(route, { modelo_usado: (body && body.model) || 'swe', via_respaldo: 'groq', choices: [{ message: { role: 'assistant', content: 'respuesta SWE de prueba' }, finish_reason: 'stop' }] });
@@ -374,7 +377,7 @@ async function enviar(p, texto) {
     await ph.$eval('.mx-aprobar', (e) => e.click());
     await ph.waitForFunction(() => /resultado del agente real de prueba/.test([...document.querySelectorAll('.chat-history .message')].slice(-3).map((x) => x.innerText).join('\n')), null, { timeout: 8000 });
     const ap = estH.llamadas.find((l) => l.ruta === '/chat/swe/aprobar');
-    ok('H12 Aprobar llama a /chat/swe/aprobar con el task_id y sin campo aprobacion', !!ap && !!ap.body.task_id && !('aprobacion' in ap.body), JSON.stringify(ap && ap.body));
+    ok('H12 Aprobar llama a /chat/swe/aprobar con el task_id y el op_id pendiente, sin campo aprobacion ni operador', !!ap && !!ap.body.task_id && ap.body.op_id === '0123456789abcdef' && !('aprobacion' in ap.body) && !('operador' in ap.body), JSON.stringify(ap && ap.body));
     ok('H sin errores JS en la pagina', ph.errs.length === 0, ph.errs.join(' | '));
     await ph.context().close();
   } finally {

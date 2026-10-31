@@ -234,3 +234,14 @@ test("Liquid Mirror: la nota dice que S2 y S3 corren en secuencia (no se afirma 
   assert.match(r.reply, /ejecucion lista/); assert.match(r.reply, /liquid1.*S2.*s2-1/); assert.match(r.reply, /liquid2.*S3.*s3-1/); assert.match(r.nota, /secuencial/);
   delete globalThis.localStorage;
 });
+
+test("enviarTareaSwe avisa de cada paso (alPaso) para pintar el progreso real en la burbuja: iniciar, cada avanzar, con estado y paso", async () => {
+  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code" }) });
+  let n = 0;
+  const api = async (ruta, op) => { if (ruta === "/chat/swe/capacidades") return TODOS_OK; n++; return respuestaHarness({ task_id: op.body.task_id, estado: n < 3 ? "EJECUTANDO" : "DONE", paso_actual: n, plan: [{ paso: "escribe" }, { paso: "revisa" }, { paso: "ejecuta" }], resultado_tool: "ok" }); };
+  const vistos = [];
+  await S.enviarTareaSwe(api, { mensaje: "x", sesion: "s", alPaso: (t) => vistos.push(t) });
+  assert.equal(vistos.length, 3); assert.ok(vistos.every((t) => /SWE/.test(t)));
+  assert.match(vistos[0], /EJECUTANDO/); assert.match(vistos[2], /DONE/);
+  delete globalThis.localStorage;
+});

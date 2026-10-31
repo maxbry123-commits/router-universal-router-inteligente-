@@ -187,24 +187,26 @@ function aRespuesta(x, tarea) {
   return { reply, tools, finish_reason: estado === "DONE" ? "stop" : null, estado, task_id: idTarea, requiere_aprobacion: pide, pendiente: pend,
     nota: `SWE · ${tarea.workflow} · ${tarea.agente_responde}→${tarea.agente_tool} · tarea ${idTarea} · ${estado || "?"}${x.ejecucion_s2_s3 ? " · S2/S3 " + x.ejecucion_s2_s3 : ""}` };
 }
-async function conducir(api, x, tarea) {  // avanza paso a paso (el estado se guarda en el Harness en cada paso) hasta un estado terminal o de aprobacion
-  const ref = { task_id: tarea.task_id, origen: "yaiwes", sesion: tarea.sesion, proyecto: tarea.proyecto };
-  for (let i = 0; i < MAX_AVANCES && !TERMINALES.includes(String(x.estado)); i++) x = await operacion(api, "avanzar", ref);
+const textoPaso = (x) => { const plan = Array.isArray(x.plan) ? x.plan : [], p = plan[x.paso_actual] || plan[plan.length - 1]; return "SWE · " + (x.estado || "?") + (p && p.paso ? " · " + p.paso : "") + (Number.isInteger(x.paso_actual) && plan.length ? " (" + Math.min(x.paso_actual + 1, plan.length) + "/" + plan.length + ")" : ""); };
+async function conducir(api, x, tarea, alPaso) {  // avanza paso a paso (el estado se guarda en el Harness en cada paso) hasta un estado terminal o de aprobacion
+  const ref = { task_id: tarea.task_id, origen: "yaiwes", sesion: tarea.sesion, proyecto: tarea.proyecto }, avisa = (v) => { try { if (alPaso) alPaso(textoPaso(v), v); } catch (e) {} };
+  avisa(x);
+  for (let i = 0; i < MAX_AVANCES && !TERMINALES.includes(String(x.estado)); i++) { x = await operacion(api, "avanzar", ref); avisa(x); }
   if (!TERMINALES.includes(String(x.estado))) throw new Error("GAP: SWE_SIN_PROGRESO · la tarea " + tarea.task_id + " sigue en " + (x.estado || "?") + "; reanúdala con el mismo task_id");
   return aRespuesta(x, tarea);
 }
-export async function enviarTareaSwe(api, { mensaje, sesion, proyecto, task_id }) {
+export async function enviarTareaSwe(api, { mensaje, sesion, proyecto, task_id, alPaso }) {
   const sel = leerSeleccion(), enCache = capVigente();
   let v = validarSeleccion(sel, await cargarCapacidades(api));
   if (!v.ok && enCache) v = validarSeleccion(sel, await cargarCapacidades(api, { forzar: true }));  // un "no disponible" viejo no se queda pegado: se vuelve a preguntar al Harness
   if (!v.ok) throw new Error("GAP: SELECCION_NO_DISPONIBLE · " + v.problemas.join(" · "));  // no se cambia en silencio a otro modelo ni agente
   const tarea = armarTarea({ sel, mensaje, sesion, proyecto, task_id });
-  return conducir(api, await operacion(api, "iniciar", tarea), tarea);
+  return conducir(api, await operacion(api, "iniciar", tarea), tarea, alPaso);
 }
 // el operador pulsa Aprobar: el servidor lo identifica; despues la tarea sigue desde su ultimo checkpoint (mismo task_id)
-export async function aprobarYContinuarSwe(api, d) {
+export async function aprobarYContinuarSwe(api, d, alPaso) {
   const tarea = armarTarea({ sel: leerSeleccion(), mensaje: "(continuación)", sesion: d.sesion, proyecto: d.proyecto, task_id: base(d).task_id });
-  return conducir(api, await aprobarTareaSwe(api, d), tarea);
+  return conducir(api, await aprobarTareaSwe(api, d), tarea, alPaso);
 }
 
 export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecutor_tools }) {
