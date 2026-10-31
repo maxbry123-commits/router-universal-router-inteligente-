@@ -60,3 +60,12 @@ test("vigilarBanco recarga cada 60 s sin mantener vivo el proceso", async () => 
   const t = vigilarBanco(60000);
   assert.ok(t && typeof t.unref === "function"); clearInterval(t);
 });
+
+test("vigilarBanco: si aun no hay banco local, cada vuelta intenta traerlo de GitHub y luego lo carga", async () => {
+  const { vigilarBanco } = await import("../src/clavesbanco.js");
+  const orden = [];
+  const t = vigilarBanco(10, { traer: async () => { orden.push("traer"); return true; }, cargar: async () => { orden.push("cargar"); return 0; } });
+  await new Promise((r) => setTimeout(r, 60));
+  clearInterval(t);
+  assert.ok(orden.length >= 2 && orden[0] === "traer" && orden[1] === "cargar", orden.join(","));
+});

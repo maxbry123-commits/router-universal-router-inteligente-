@@ -4,6 +4,7 @@ import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setClaves } from './respaldo.js';
+import { traerDeGithub } from './bancogithub.js';
 
 const SCRIPT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../claves_banco.py');
 const entorno = () => Object.fromEntries(['PATH', 'HOME', 'PYTHONPATH', 'LANG', 'BRIDGE_STATE_DIR', 'RIU_API_KEY', 'RIU_PUBLIC_CHAT_KEY', 'RIU_MCP_KEY', 'RIU_ROUTER_API_KEY', 'RIU_BANCO_ROUTER']
@@ -43,7 +44,8 @@ export async function borrarDelBanco() {
 }
 
 // el banco se vuelve a leer cada 60 s: una clave que entre al banco del Router MVP llega al bridge sin reiniciar nada
-export function vigilarBanco(intervaloMs = 60000) {
-  const t = setInterval(() => { cargarDelBanco().catch(() => {}); }, intervaloMs); t.unref();
+// y si el banco local aun no existe, lo trae de GitHub (rama banco-claves; sin red cuando ya existe) antes de leerlo
+export function vigilarBanco(intervaloMs = 60000, { traer = traerDeGithub, cargar = cargarDelBanco } = {}) {
+  const t = setInterval(() => { traer().catch(() => false).then(() => cargar()).catch(() => {}); }, intervaloMs); t.unref();
   return t;
 }
