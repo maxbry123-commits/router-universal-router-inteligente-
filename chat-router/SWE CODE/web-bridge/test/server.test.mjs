@@ -191,7 +191,7 @@ before(async () => {
   const bancoLog = path.join(TMP, 'banco-calls.log');
   fs.writeFileSync(path.join(TMP, 'fake-banco.sh'), `#!/bin/sh\necho "$1" >> "${bancoLog}"\nif [ "$1" = "leer" ]; then echo '{"groq": [], "nvidia": []}'; elif [ "$1" = "guardar" ]; then cat > "${path.join(TMP, 'banco-guardado.json')}"; echo '{"ok": true}'; else echo '{"ok": true}'; fi\n`, { mode: 0o755 });
   const { GROQ_API_KEY: _g, GROQ_API_KEY_2: _g2, NVIDIA_API_KEY: _n, ...sinClaves } = comun;
-  K = await arrancar('K', { ...sinClaves, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', RIU_API_KEY: ACCESO, RIU_CLAVES_CMD: path.join(TMP, 'fake-banco.sh') });
+  K = await arrancar('K', { ...sinClaves, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', RIU_API_KEY: ACCESO, RIU_CLAVES_CMD: path.join(TMP, 'fake-banco.sh'), RIU_OPENCLAW_DIR: fileURLToPath(new URL('../../../SWE CODE free', import.meta.url)), OPENCLAW_WORKSPACE_DIR: path.join(TMP, 'ws-oc') });
   T = await arrancar('T', { ...comun, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', BRIDGE_TOKEN: 'tok-prueba' });
 });
 
@@ -693,6 +693,30 @@ test('CL-5. POST valida: maximo 20 por proveedor, string de 8 a 300 sin espacios
   assert.equal((await claves(K, 'POST', { groq: Array.from({ length: 20 }, (_, i) => `gsk-valida-${i}`) })).json.groq, 20, '20 es el maximo valido');
   assert.equal((await claves(K, 'POST', { groq: 'x'.repeat(300), nvidia: 'y'.repeat(8) })).status, 200);
   await claves(K, 'DELETE');
+});
+
+// ---------- configuracion vigente de OpenClaw: GET /v1/openclaw (Vercel la lee por /web/v1/openclaw, el Space por el proxy) ----------
+test('OC-1. GET /v1/openclaw exige la clave de acceso del chat; sin ella o con otra -> 401; sin clave configurada -> 503', async () => {
+  for (const k of ['', 'incorrecta']) {
+    const r = await fetch(K.base + '/v1/openclaw', { headers: k ? { 'x-api-key': k } : {} });
+    assert.equal(r.status, 401, `"${k}"`);
+  }
+  assert.equal((await fetch(C.base + '/v1/openclaw')).status, 503);
+});
+
+test('OC-2. devuelve provider/modelos/modos del repo + ids vivos + conteos + workspace; jamas api_key ni valores de claves', async () => {
+  const r = await fetch(K.base + '/v1/openclaw', { headers: { 'x-api-key': ACCESO } });
+  assert.equal(r.status, 200);
+  const txt = await r.text(), j = JSON.parse(txt);
+  assert.equal(j.ok, true); assert.equal(j.provider.provider, 'swecode'); assert.match(j.version, /^[0-9a-f]{12}$/);
+  assert.ok(j.provider.modelos.some(m => m.id === 'web-qwen38max'));
+  assert.ok(j.modos.includes('asesoria'));
+  assert.ok(j.vivo.modelos.includes('swecode-revision') && j.vivo.modelos.some(id => id.startsWith('groq/')), 'ids vivos como GET /v1/models');
+  assert.deepEqual([j.vivo.groq, j.vivo.nvidia], [0, 0]);
+  assert.equal(j.workspace.ruta, path.join(TMP, 'ws-oc'));
+  assert.equal(typeof j.workspace.existe, 'boolean');
+  assert.ok(!('api_key' in j.provider) && !/no-requerida/.test(txt), 'sin api_key');
+  assert.ok(!/gsk-|nv-SECRETO/.test(txt), 'sin claves');
 });
 
 test('entorno: informa si se uso express real o stub', () => {

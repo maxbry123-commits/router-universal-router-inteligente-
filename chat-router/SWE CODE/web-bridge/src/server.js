@@ -13,7 +13,8 @@ import { estadoCuentas, estadoTabs, snapshotTab, cerrarPagina, cerrarTodo } from
 import { MODELOS_WEB } from './sites.js';
 import crypto from 'node:crypto';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
-import { vigilarWorkspace } from './openclaw.js';
+import nodeFs from 'node:fs';
+import { vigilarWorkspace, rutaWorkspace, configVigente, vigilarConfig } from './openclaw.js';
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, setClaves, limpiarClaves } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo } from './bloques.js';
 import { conFormato } from './formato.js';
@@ -48,7 +49,7 @@ app.use((req, res, next) => {
 // panel de claves del chat (el proxy del Space reenvia /web/* aqui): ademas del BRIDGE_TOKEN exige la clave de acceso del chat en x-api-key
 const ACCESO_VARS = ['RIU_API_KEY', 'RIU_PUBLIC_CHAT_KEY', 'RIU_MCP_KEY', 'RIU_ROUTER_API_KEY'];
 app.use((req, res, next) => {
-  if (req.path !== '/v1/claves') return next();
+  if (req.path !== '/v1/claves' && req.path !== '/v1/openclaw') return next();
   const validas = ACCESO_VARS.map(v => process.env[v]).filter(Boolean);
   if (!validas.length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (RIU_API_KEY)' } });
   const k = String(req.headers['x-api-key'] || '');
@@ -154,10 +155,19 @@ app.delete('/v1/claves', async (_req, res) => {
   res.json({ ok: true, ...conteo(), persistido });
 });
 
-app.get('/v1/models', (_req, res) => {
+const idsModelos = () => {
   const base = Object.keys(MODELOS_WEB).map(m => `web-${m}`);
   const modos = ['revision','solucion','arquitectura','archivos','prompt_code','consulta','despliega','asesoria'].map(m => `swecode-${m}`);
-  res.json({ object: 'list', data: [...base, ...modos, ...idsRespaldo()].map(id => ({ id, object: 'model' })) });
+  return [...base, ...modos, ...idsRespaldo()];
+};
+app.get('/v1/models', (_req, res) => res.json({ object: 'list', data: idsModelos().map(id => ({ id, object: 'model' })) }));
+
+// configuracion vigente de OpenClaw (providers, modelos, modos, workspace): solo lectura, sin secretos (conteos de claves, jamas valores)
+app.get('/v1/openclaw', (_req, res) => {
+  const c = configVigente();
+  if (!c) return res.status(404).json({ ok: false, error: { code: 'CONFIG_NO_ENCONTRADA', message: 'falta SWE CODE free/provider-openclaw.json (RIU_OPENCLAW_DIR)' } });
+  const ruta = rutaWorkspace();
+  res.json({ ok: true, ...c, vivo: { modelos: idsModelos(), ...conteo() }, workspace: { ruta, existe: nodeFs.existsSync(ruta) } });
 });
 
 // herramienta nativa: el agente la llama cuando ve SESSION_EXPIRED
@@ -314,6 +324,7 @@ if (process.env.OPENCLAW_ENABLE === '1' || process.env.BRIDGE_REPARAR_OPENCLAW =
 // el bridge se actualiza solo cuando llega codigo nuevo de SWE CODE / SWE CODE free (sin reiniciar el Space); BRIDGE_AUTOACTUALIZAR=0 lo apaga
 vigilarActualizacion();
 vigilarBanco();  // y cada 60 s
+vigilarConfig();  // config de OpenClaw (GET /v1/openclaw) al dia cada 60 s
 traerDeGithub().catch(() => false).then(() => cargarDelBanco()).then((n) => { if (n) console.warn(`[bridge] ${n} clave(s) de Groq/NVIDIA cargadas del banco`); }).catch(() => {});  // puente al banco: Router MVP (solo lectura) + banco propio
 
 app.listen(PORT, () => console.log(`web-bridge escuchando :${PORT}`));
