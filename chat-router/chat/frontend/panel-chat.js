@@ -5,7 +5,7 @@ import { conectarMicrofono } from "./chat-microfono.js";
 import { conectarVentanas } from "./chat-ventanas.js";
 import { conectarRiu } from "./chat-riu.js";
 import { conectarRiu2 } from "./chat-riu2.js";
-import { conectarVentanasNuevas } from "./ventanas-nuevas.js?v=676bf2";
+import { conectarVentanasNuevas } from "./ventanas-nuevas.js";
 import { proyId } from "./objetivos-ancla.js";
 import { montarProyectos } from "./ventana-proyectos.js";
 // >>> MODOS BEGIN
