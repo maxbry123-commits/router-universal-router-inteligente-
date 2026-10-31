@@ -231,6 +231,18 @@
     "sin_instrucciones": "no se ejecuta ni gasta API"
   },
   "politicas_modelo_ref": "politicas_modelo.json",
+  "modelos_externos": {
+    "nota": "Groq y NVIDIA se conectan por el cliente existente chat-router/chat/backend/mvp/externos.py (PROVEEDORES_NUEVOS); la ficha usa el ID COMPLETO del proveedor y la ruta de llamadas del Router MVP. No duplican modelos Qwen ni crean otra ficha, otro router ni otro PluginHost. Disponibilidad real por GET /models: si un id no existe se muestra NO DISPONIBLE y no se cambia de modelo.",
+    "ids": [
+      "groq/qwen/qwen3.8-27b",
+      "nvidia/minimaxai/minimax-m3.1-flash",
+      "nvidia/meta/muse-glimmer-30b",
+      "nvidia/nvidia/nemotron-3-ultra-550b-a55b",
+      "nvidia/z-ai/glm-5.3"
+    ],
+    "politicas_ref": "politicas_modelo.json#politicas_externos",
+    "credenciales": "banco del Router y variables del Space (GROQ_API_KEY*, NVIDIA_API_KEY*); nunca en esta ficha"
+  },
   "formato_salida": {
     "secciones": [
       "RESUMEN CORTO",

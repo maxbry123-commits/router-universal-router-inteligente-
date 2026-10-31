@@ -1,0 +1,97 @@
+// swe_rutas.js — rutas /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar} del bridge (backend de OpenClaw).
+// OpenClaw UI -> (aqui) -> Harness DeepSeek (POST {RIU_DEEPSEEK_HARNESS_URL}/invoke) -> agentes/adaptadores. El bridge NO ejecuta herramientas ni adaptadores Python:
+// solo valida y reenvia. RIU_API_KEY vive solo en este backend. Contrato de tarea: el mismo de YAIWES (chat-router/agentes/adaptadores/contrato.py, origen "openclaw").
+// Autenticacion OBLIGATORIA: sin BRIDGE_TOKEN configurado estas rutas se rechazan (503); no heredan el acceso libre de las rutas publicas con el token vacio.
+import crypto from 'node:crypto';
+
+export const OPERACIONES_SWE = { iniciar: 'swe_iniciar', avanzar: 'swe_avanzar', estado: 'swe_estado', aprobar: 'swe_aprobar', reanudar: 'swe_reanudar' };
+const PERMITIDAS = new Set(Object.values(OPERACIONES_SWE));
+export const TIMEOUT_HARNESS_MS = 60000;
+const ORIGEN = 'openclaw';
+const TASK_ID = /^[A-Za-z0-9_-]{1,64}$/, SEGMENTO = /^[A-Za-z0-9_-]{0,64}$/, OP_ID = /^[A-Za-z0-9_-]{1,80}$/, OPERADOR = /^[A-Za-z0-9_.@-]{2,64}$/, CODIGO = /^[A-Z][A-Z0-9_]{2,63}$/;
+const CAMPOS = ['task_id', 'origen', 'mensaje', 'workflow', 'modelo_responde', 'modelo_lector', 'modelo_tool', 'modelo_revisor', 'agente_responde', 'agente_tool', 'agente_verificador', 'modo_agentico', 'aprobacion', 'sesion', 'proyecto'];
+const OBLIGATORIOS = CAMPOS.slice(0, 11);
+const MAX_MENSAJE = 200000;
+
+// Llama a una operacion SWE del Harness. Los mensajes de error son codigos fijos: jamas llevan la URL ni la clave.
+export async function llamarHarness(operacion, datos, { env = process.env, fetchFn = fetch } = {}) {
+  if (typeof operacion !== 'string' || !PERMITIDAS.has(operacion)) throw new Error('OPERACION_NO_PERMITIDA');
+  const base = String(env.RIU_DEEPSEEK_HARNESS_URL || '').trim().replace(/\/+$/, ''), clave = env.RIU_API_KEY;
+  if (!base || !clave) throw new Error('HARNESS_NO_CONFIGURADO');
+  const ms = Number.parseInt(env.RIU_SWE_HARNESS_TIMEOUT_MS, 10) > 0 ? Number.parseInt(env.RIU_SWE_HARNESS_TIMEOUT_MS, 10) : TIMEOUT_HARNESS_MS;
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+  let r;
+  try {
+    r = await fetchFn(`${base}/invoke`, { method: 'POST', headers: { 'content-type': 'application/json', 'X-API-Key': clave }, body: JSON.stringify({ action: 'invoke', tool: operacion, args: datos }), signal: ctl.signal });
+    if (!r.ok) throw new Error(`HARNESS_HTTP_${r.status}`);
+    let cuerpo = null;
+    try { cuerpo = await r.json(); } catch { /* cuerpo no JSON: fallo de ejecucion */ }
+    if (!cuerpo || cuerpo.status !== 'ok' || !cuerpo.result || typeof cuerpo.result !== 'object') {
+      throw Object.assign(new Error('HARNESS_EJECUCION_FALLIDA'), typeof (cuerpo && cuerpo.error) === 'string' && CODIGO.test(cuerpo.error) ? { codigo: cuerpo.error } : {});  // solo un codigo estable; texto libre (rutas, trazas) se descarta
+    }
+    return cuerpo.result;
+  } catch (e) {
+    if (/^HARNESS_(HTTP_\d+|EJECUCION_FALLIDA)$/.test(e && e.message)) throw e;
+    throw new Error(e && (e.name === 'AbortError' || e.name === 'TimeoutError') ? 'HARNESS_TIMEOUT' : 'HARNESS_NO_DISPONIBLE');
+  } finally { clearTimeout(t); }
+}
+
+const invalido = (code) => Object.assign(new Error(code), { http: 400 });
+const simple = (o) => !!o && typeof o === 'object' && !Array.isArray(o);
+
+// iniciar = el contrato TareaSWE exacto (la validacion de catalogo —modelos, agentes, workflow— la hace el contrato Python en el Harness, aqui no se copia el catalogo)
+function argsIniciar(b) {
+  if (!simple(b)) throw invalido('CONTRATO_INVALIDO');
+  if (Object.keys(b).some((k) => !CAMPOS.includes(k))) throw invalido('CAMPOS_DESCONOCIDOS');
+  if (typeof b.task_id !== 'string' || !TASK_ID.test(b.task_id)) throw invalido('TASK_ID_INVALIDO');
+  if (b.origen !== ORIGEN) throw invalido('ORIGEN_INVALIDO');
+  if (OBLIGATORIOS.some((k) => !(k in b))) throw invalido('CAMPOS_FALTANTES');
+  if (OBLIGATORIOS.some((k) => typeof b[k] !== 'string')) throw invalido('CONTRATO_INVALIDO');
+  if (!b.mensaje.trim()) throw invalido('MENSAJE_VACIO');
+  if (b.mensaje.length > MAX_MENSAJE) throw invalido('MENSAJE_DEMASIADO_LARGO');
+  if (['modo_agentico', 'aprobacion'].some((k) => k in b && typeof b[k] !== 'boolean')) throw invalido('CONTRATO_INVALIDO');
+  if (['sesion', 'proyecto'].some((k) => k in b && (typeof b[k] !== 'string' || !SEGMENTO.test(b[k])))) throw invalido('CONTRATO_INVALIDO');
+  const args = {}; for (const k of CAMPOS) if (k in b) args[k] = b[k];
+  args.aprobacion = false;  // la aprobacion NO es un campo del cliente ni del modelo: solo swe_aprobar con operador identificado
+  return args;
+}
+// avanzar/estado/reanudar/aprobar: solo la referencia de la tarea; el resto del cuerpo se descarta
+function argsReferencia(b) {
+  const x = simple(b) ? b : {};
+  if (typeof x.task_id !== 'string' || !TASK_ID.test(x.task_id)) throw invalido('TASK_ID_INVALIDO');
+  if (x.origen !== undefined && x.origen !== ORIGEN) throw invalido('ORIGEN_INVALIDO');
+  const args = { task_id: x.task_id, origen: ORIGEN };
+  for (const k of ['sesion', 'proyecto']) if (x[k] !== undefined && x[k] !== '') { if (typeof x[k] !== 'string' || !SEGMENTO.test(x[k])) throw invalido('CONTRATO_INVALIDO'); args[k] = x[k]; }
+  return args;
+}
+function operadorDe(req, env) {
+  const h = req.headers && req.headers['x-operador'];
+  const op = h !== undefined ? String(h) : String(env.RIU_SWE_OPERADOR || '');
+  if (!OPERADOR.test(op)) throw invalido('OPERADOR_REQUERIDO');  // aprobar exige un operador identificado
+  return op;
+}
+
+const iguales = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
+const respuesta = (res, codigo, error) => res.status(codigo).json({ ok: false, error });
+
+export function montarRutasSwe(app, { env = process.env, fetchFn = fetch } = {}) {
+  for (const [ruta, operacion] of Object.entries(OPERACIONES_SWE)) {
+    app.post(`/v1/swe/${ruta}`, async (req, res) => {
+      const token = env.BRIDGE_TOKEN || '';
+      if (!token) return respuesta(res, 503, { code: 'BRIDGE_TOKEN_NO_CONFIGURADO', message: 'las rutas /v1/swe/* exigen BRIDGE_TOKEN en el bridge' });
+      const h = req.headers || {}, bearer = /^Bearer\s+(.+)$/i.exec(String(h.authorization || '')), t = (bearer && bearer[1]) || String(h['x-bridge-key'] || '');
+      if (!t || !iguales(t, token)) return respuesta(res, 401, { code: 'NO_AUTORIZADO' });
+      let args;
+      try {
+        args = operacion === 'swe_iniciar' ? argsIniciar(req.body) : argsReferencia(req.body);
+        if (operacion === 'swe_aprobar') {
+          const op_id = simple(req.body) ? req.body.op_id : undefined;
+          if (typeof op_id !== 'string' || !OP_ID.test(op_id)) throw invalido('OP_ID_INVALIDO');
+          args = { ...args, op_id, operador: operadorDe(req, env) };  // operador = quien aprueba segun el servidor; `aprobacion`/`operador` del cuerpo no cuentan
+        }
+      } catch (e) { return respuesta(res, e.http || 400, { code: e.message }); }
+      try { return res.json({ ok: true, resultado: await llamarHarness(operacion, args, { env, fetchFn }) }); }
+      catch (e) { return respuesta(res, 502, { code: 'SWE_HARNESS_ERROR', causa: String(e.message).slice(0, 60), ...(e.codigo ? { codigo_harness: e.codigo } : {}) }); }
+    });
+  }
+}

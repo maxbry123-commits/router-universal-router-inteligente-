@@ -22,8 +22,8 @@ let capacidades = OK, estadoFinal = "DONE";
 const api = async (ruta, op) => {
   llamadas.push({ ruta, body: op && op.body });
   if (ruta === "/chat/swe/capacidades") return capacidades;
-  if (ruta === "/chat/swe/iniciar") return { ok: true, resultado: { task_id: op.body.task_id, estado: estadoFinal === "DONE" ? "EJECUTANDO" : estadoFinal } };
-  if (ruta === "/chat/swe/avanzar") return { ok: true, resultado: { task_id: op.body.task_id, estado: "DONE", resultado: "listo desde el agente", evidencias: ["recibo:z9"] } };
+  if (ruta === "/chat/swe/iniciar") return { ok: true, resultado: { task_id: op.body.task_id, estado: estadoFinal === "DONE" ? "EJECUTANDO" : estadoFinal, ...(estadoFinal === "REQUIERE_APROBACION" ? { pendiente_aprobacion: { op_id: "0123456789abcdef", paso: "escribe", agente: "codex", modelo: "hf/qwen2.5-coder-1.5b", permisos: { escritura: true } } } : {}) } };
+  if (ruta === "/chat/swe/avanzar") return { ok: true, resultado: { task_id: op.body.task_id, estado: "DONE", resultado_tool: "listo desde el agente", evidencia: ["recibo:z9"] } };
   if (ruta === "/chat/swe/aprobar") return { ok: true, resultado: { task_id: op.body.task_id, estado: "CONTINUAR" } };
   return { modelo_usado: op.body.model, choices: [{ message: { content: "del-bridge" }, finish_reason: "stop" }] };
 };
@@ -79,6 +79,6 @@ test("REQUIERE_APROBACION: boton Aprobar que llama a /chat/swe/aprobar con el ta
   llamadas.length = 0; pintado.length = 0;
   await boton.onclick();
   assert.deepEqual(llamadas.map((l) => l.ruta), ["/chat/swe/aprobar", "/chat/swe/avanzar"]);
-  assert.equal(llamadas[0].body.task_id, id); assert.ok(!("aprobacion" in llamadas[0].body));
+  assert.equal(llamadas[0].body.task_id, id); assert.equal(llamadas[0].body.op_id, "0123456789abcdef"); assert.ok(!("aprobacion" in llamadas[0].body) && !("operador" in llamadas[0].body));
   assert.ok(pintado.some((t) => /listo desde el agente/.test(t)));
 });

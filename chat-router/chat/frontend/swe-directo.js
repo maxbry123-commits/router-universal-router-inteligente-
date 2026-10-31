@@ -144,9 +144,10 @@ export async function cargarCapacidades(api, { forzar = false } = {}) {
 }
 
 // ---- Tarea SWE: el frontend manda el contrato al backend YAIWES (/chat/swe/*), este al Harness, este a los adaptadores. Nunca llama a una herramienta directo. ----
-const TERMINALES = ["DONE", "GAP", "REQUIERE_APROBACION"];
+// Parar de avanzar: DONE (hecho), GAP (fallo sin efectos), REQUIERE_APROBACION (espera al operador) y RECONCILIAR (operacion iniciada sin confirmar: la verifica un operador).
+const TERMINALES = ["DONE", "GAP", "REQUIERE_APROBACION", "RECONCILIAR"];
 export const MAX_AVANCES = 24;
-const TASK_RE = /^[A-Za-z0-9_-]{1,64}$/;
+const TASK_RE = /^[A-Za-z0-9_-]{1,64}$/, OP_RE = /^[A-Za-z0-9_-]{1,80}$/;
 const resultadoDe = (r, op) => {
   const x = r && r.ok === true ? r.resultado : null;
   if (!x || typeof x !== "object") throw new Error("GAP: SWE_HARNESS_ERROR · " + op + " sin resultado");
@@ -163,17 +164,28 @@ const base = ({ task_id, sesion, proyecto }) => {
 };
 export const estadoTareaSwe = async (api, d) => operacion(api, "estado", base(d));
 export const reanudarTareaSwe = async (api, d) => operacion(api, "reanudar", base(d));
-export const aprobarTareaSwe = async (api, d) => operacion(api, "aprobar", base(d));  // quien aprueba es el operador autenticado en el servidor, no un campo del cuerpo
+export const aprobarTareaSwe = async (api, d) => {  // quien aprueba es el operador autenticado en el servidor, no un campo del cuerpo; op_id = la operacion que el Harness dejo pendiente
+  if (typeof d.op_id !== "string" || !OP_RE.test(d.op_id)) throw new Error("GAP: OP_ID_INVALIDO");
+  return operacion(api, "aprobar", { ...base(d), op_id: d.op_id });
+};
 const lineaEvidencia = (e) => (typeof e === "string" ? e : JSON.stringify(e)).slice(0, 300);
+const texto = (v) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v));
+// El Harness devuelve la "vista" de la tarea: estado, paso_actual, plan, pasos_terminados[{paso,agente,servidor,recibo,resultado,herramientas,evidencias}], resultado_tool, evidencia[], pendiente_aprobacion, error{codigo,mensaje}.
 function aRespuesta(x, tarea) {
-  const estado = String(x.estado || "");
-  if (estado === "GAP") throw new Error("GAP: " + (x.codigo || "GAP") + (x.error ? " · " + x.error : ""));
-  const evid = [...(Array.isArray(x.evidencias) ? x.evidencias : []), ...(Array.isArray(x.evidencia) ? x.evidencia : [])];
-  const texto = x.texto || x.resultado || x.reply || "";
-  const pide = estado === "REQUIERE_APROBACION";
-  const reply = (pide ? "Requiere aprobación del operador antes de continuar. " : "") + (typeof texto === "string" ? texto : JSON.stringify(texto)) + (evid.length ? "\n\nEvidencias:\n" + evid.map((e) => "- " + lineaEvidencia(e)).join("\n") : "");
-  const tools = (Array.isArray(x.herramientas) ? x.herramientas : []).map((h) => (typeof h === "string" ? h : (h && h.nombre) || "tool"));
-  return { reply: reply.trim(), tools, finish_reason: estado === "DONE" ? "stop" : null, estado, task_id: x.task_id || tarea.task_id, requiere_aprobacion: pide, nota: `SWE · ${tarea.workflow} · ${tarea.agente_responde}→${tarea.agente_tool} · tarea ${x.task_id || tarea.task_id} · ${estado || "?"}` };
+  const estado = String(x.estado || ""), pasos = Array.isArray(x.pasos_terminados) ? x.pasos_terminados.filter((p) => p && typeof p === "object") : [];
+  const idTarea = x.task_id || tarea.task_id;
+  if (estado === "GAP") { const e = x.error && typeof x.error === "object" ? x.error : { codigo: x.codigo, mensaje: x.error }; throw new Error("GAP: " + (e.codigo || "GAP") + (e.mensaje ? " · " + texto(e.mensaje) : "")); }
+  if (estado === "RECONCILIAR") { const r = x.pendiente_reconciliacion || {}; throw new Error("GAP: RECONCILIAR · la operación " + (r.op_id || "?") + " (" + (r.paso || "?") + ") quedó iniciada sin confirmar" + (r.motivo ? " (" + r.motivo + ")" : "") + ": un operador debe verificar su estado real antes de reanudar la tarea " + idTarea); }
+  const pide = estado === "REQUIERE_APROBACION", pend = pide && x.pendiente_aprobacion && typeof x.pendiente_aprobacion === "object" ? x.pendiente_aprobacion : null;
+  const final = x.resultado_tool || x.texto || x.resultado || x.reply || (pasos.length ? pasos[pasos.length - 1].resultado : "");
+  const evid = [...(Array.isArray(x.evidencia) ? x.evidencia : []), ...(Array.isArray(x.evidencias) ? x.evidencias : [])].map(lineaEvidencia);
+  pasos.filter((p) => p.recibo).forEach((p) => evid.push("recibo " + p.paso + " (" + (p.servidor || p.agente || "?") + "): " + p.recibo));
+  const permisos = pend && pend.permisos ? Object.keys(pend.permisos).filter((k) => pend.permisos[k]).join(" y ") : "";
+  const cabecera = pend ? "Requiere aprobación del operador: paso " + pend.paso + " con " + pend.agente + " (" + pend.modelo + ")" + (permisos ? " · " + permisos : "") + (pend.objetivo ? "\n" + texto(pend.objetivo) : "") : pide ? "Requiere aprobación del operador antes de continuar." : "";
+  const reply = [cabecera, texto(final), evid.length ? "Evidencias:\n" + evid.map((e) => "- " + e).join("\n") : ""].filter(Boolean).join("\n\n");
+  const tools = [...new Set(pasos.flatMap((p) => (Array.isArray(p.herramientas) ? p.herramientas : []).map((h) => (typeof h === "string" ? h : (h && h.nombre) || "tool"))))];
+  return { reply, tools, finish_reason: estado === "DONE" ? "stop" : null, estado, task_id: idTarea, requiere_aprobacion: pide, pendiente: pend,
+    nota: `SWE · ${tarea.workflow} · ${tarea.agente_responde}→${tarea.agente_tool} · tarea ${idTarea} · ${estado || "?"}${x.ejecucion_s2_s3 ? " · S2/S3 " + x.ejecucion_s2_s3 : ""}` };
 }
 async function conducir(api, x, tarea) {  // avanza paso a paso (el estado se guarda en el Harness en cada paso) hasta un estado terminal o de aprobacion
   const ref = { task_id: tarea.task_id, origen: "yaiwes", sesion: tarea.sesion, proyecto: tarea.proyecto };
@@ -191,8 +203,8 @@ export async function enviarTareaSwe(api, { mensaje, sesion, proyecto, task_id }
 }
 // el operador pulsa Aprobar: el servidor lo identifica; despues la tarea sigue desde su ultimo checkpoint (mismo task_id)
 export async function aprobarYContinuarSwe(api, d) {
-  const ref = base(d), tarea = armarTarea({ sel: leerSeleccion(), mensaje: "(continuación)", sesion: d.sesion, proyecto: d.proyecto, task_id: ref.task_id });
-  return conducir(api, await operacion(api, "aprobar", ref), tarea);
+  const tarea = armarTarea({ sel: leerSeleccion(), mensaje: "(continuación)", sesion: d.sesion, proyecto: d.proyecto, task_id: base(d).task_id });
+  return conducir(api, await aprobarTareaSwe(api, d), tarea);
 }
 
 export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecutor_tools }) {

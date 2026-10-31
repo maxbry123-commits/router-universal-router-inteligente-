@@ -83,3 +83,9 @@ def test_desde_dict_estricto():
 def test_contrato_identico_para_ambos_origenes():
     a = tarea(origen="yaiwes").validar(); b = tarea(origen="openclaw").validar()
     assert a.keys() == b.keys()
+
+
+@pytest.mark.parametrize("campo,valor", [("modo_agentico", "false"), ("modo_agentico", 1), ("aprobacion", "true"), ("sesion", 5), ("proyecto", None)])
+def test_tipos_del_contrato(campo, valor):
+    with pytest.raises(ValueError, match="CAMPO_TIPO_INVALIDO"):
+        tarea(**{campo: valor}).validar()

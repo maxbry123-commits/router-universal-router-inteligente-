@@ -4,3 +4,4 @@ cryptography
 psutil
 huggingface_hub
 pyyaml
+httpx

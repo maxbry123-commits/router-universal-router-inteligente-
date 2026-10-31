@@ -27,7 +27,7 @@ _SECRETO = re.compile(r"(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]
 def con_efectos(nombre, args):
     """Herramientas que cambian algo fuera del chat (escribir, enviar, delegar): se registran en el diario de la tarea."""
     a = args.get("accion")
-    if nombre in ("github_escribir", "agente", "llm"):
+    if nombre in ("github_escribir", "agente", "llm", "swe_agente"):  # swe_agente: un agente real lanzado por swe_avanzar
         return True
     return ((nombre == "github_api" and str(args.get("metodo", "GET")).upper() != "GET") or (nombre == "almacen" and a == "guardar")
             or (nombre == "memoria" and a == "save") or (nombre == "yaiwes_md" and a == "escribir")
@@ -260,6 +260,41 @@ def llm(cuerpo):
             return {"texto": "", "tool_calls": [], "finish_reason": "pausa_herramientas", "continuar": True, "mensajes": mensajes,
                     "acumulado": acumulado, "herramientas_usadas": usadas, "modelo_solicitado": cuerpo.get("modelo")}
 
+
+# --- SWE: agentes reales (chat-router/agentes/adaptadores). Solo se invocan por la accion `invoke` autenticada (clave del backend); NO estan en el catalogo
+# MCP, asi que ningun modelo puede llamarlas desde el bucle de herramientas de llm() (en particular, ningun modelo puede aprobar). ---
+from agentes.adaptadores import workflows as _swe  # noqa: E402  (chat-router va en PYTHONPATH, igual que `plugins`)
+from agentes.adaptadores.contrato import TareaSWE  # noqa: E402,F401  (contrato comun YAIWES/OpenClaw)
+from agentes.adaptadores.dispatcher import ejecutar_agente  # noqa: E402
+
+
+def _ctx_swe():
+    """Las funciones del Harness se pasan en cada llamada (no se copian): guardar/leer/_router/llm/con_efectos/_diario/_anotar/_llave."""
+    return _swe.Contexto(guardar=guardar, leer=leer, llm=llm, router=_router, con_efectos=con_efectos, diario=_diario, anotar=_anotar, llave=_llave, secreto=_SECRETO,
+                         ejecutar_agente=lambda *a, **k: ejecutar_agente(*a, **k))
+
+
+def swe_iniciar(args):
+    return _swe.swe_iniciar(args, _ctx_swe())
+
+
+def swe_avanzar(args):
+    return _swe.swe_avanzar(args, _ctx_swe())
+
+
+def swe_estado(args):
+    return _swe.swe_estado(args, _ctx_swe())
+
+
+def swe_aprobar(args):
+    return _swe.swe_aprobar(args, _ctx_swe())
+
+
+def swe_reanudar(args):
+    return _swe.swe_reanudar(args, _ctx_swe())
+
+
+HERRAMIENTAS.update({"swe_iniciar": swe_iniciar, "swe_avanzar": swe_avanzar, "swe_estado": swe_estado, "swe_aprobar": swe_aprobar, "swe_reanudar": swe_reanudar})
 
 
 @app.post("/invoke")

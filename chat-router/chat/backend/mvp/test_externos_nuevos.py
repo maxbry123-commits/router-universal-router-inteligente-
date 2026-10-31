@@ -445,11 +445,12 @@ class TestAppParciales(Base):
         self.assertEqual(antes, "Hola ")
         self.assertEqual(r.status_code, 200, r.text); self.assertEqual((r.json()["texto"], r.json()["finish_reason"]), ("Hola mundo", "stop"))
         self.assertEqual(servicio.TRABAJOS["p-parcial"]["parcial"], "Hola mundo")
+        self.assertTrue(r.json()["metricas"]["stream"]); self.assertIsNotNone(r.json()["metricas"]["ttft_s"])  # TTFT y tokens/s llegan al cliente del Router
         self.assertEqual(srv.peticiones[0]["cuerpo"]["model"], "z-ai/glm-5.3")
 
     def test_llm_de_la_ficha_tambien_entrega_parciales(self):
         antes, r, _ = self._correr("/plugins/fichas_qwen/call/llm", {"modelo": "nvidia/z-ai/glm-5.3", "messages": MSG, "tarea_id": "p-parcial"})
-        self.assertEqual(antes, "Hola "); self.assertEqual(r.json()["result"]["texto"], "Hola mundo")
+        self.assertEqual(antes, "Hola "); self.assertEqual(r.json()["result"]["texto"], "Hola mundo"); self.assertTrue(r.json()["result"]["metricas"]["stream"])
 
     def test_resultado_expone_el_parcial_con_el_mecanismo_existente(self):
         servicio.TRABAJOS["p-x"] = {"estado": "procesando", "proceso_id": "p-x", "parcial": "Hola "}

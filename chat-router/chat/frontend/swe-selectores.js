@@ -37,7 +37,7 @@ function controles() {
   CAMPOS_SEL.forEach(([k, etq]) => { const l = document.createElement("label"); l.textContent = etq; const sel = document.createElement("select"); sel.dataset.sweCtl = k; sel.setAttribute("aria-label", etq); l.append(sel); f.append(l); });
   const ag = document.createElement("div"); ag.className = "sel-salida"; ag.setAttribute("role", "group"); ag.setAttribute("aria-label", "Modo agéntico");
   const t = document.createElement("span"); t.className = "sel-salida-t"; t.textContent = "MODO AGÉNTICO:";
-  const b = document.createElement("button"); b.type = "button"; b.className = "pill salida-op"; b.dataset.sweAgentico = "1"; ag.append(t, b);
+  const b = document.createElement("button"); b.type = "button"; b.className = "pill salida-op"; b.dataset.sweAgentico = "1"; b.setAttribute("aria-label", "MODO AGÉNTICO"); ag.append(t, b);
   const lq = document.createElement("div"); lq.className = "consil-diagrama lleno swe-liquid"; lq.hidden = true; lq.setAttribute("aria-label", "Liquid Mirror: dos participantes");
   const est = document.createElement("div"); est.className = "fila-desc swe-estado";
   c.append(f, ag, lq, est); return c;
@@ -56,7 +56,7 @@ function pintarControles() {
       s.replaceChildren(...lista.map(([v, etq, desc]) => opcion(v, etq + (tipo === "modelo" && desc ? " · " + desc : ""), estadoOpcion(CAP, tipo, v, modelo), sel[k] === v)));
       s.value = sel[k]; s.disabled = k === "modelo_tool" && sel.workflow === "liquid_mirror";  // Liquid Mirror: el tool es siempre LIQUID 2 — EJECUTOR
     });
-    const b = c.querySelector("[data-swe-agentico]"); if (b) { b.textContent = "MODO AGÉNTICO: " + (sel.modo_agentico ? "ON" : "OFF"); b.setAttribute("aria-pressed", String(sel.modo_agentico)); b.classList.toggle("on", sel.modo_agentico); }
+    const b = c.querySelector("[data-swe-agentico]"); if (b) { b.textContent = sel.modo_agentico ? "ON" : "OFF"; b.setAttribute("aria-pressed", String(sel.modo_agentico)); b.classList.toggle("on", sel.modo_agentico); }
     const lq = c.querySelector(".swe-liquid"); lq.hidden = sel.workflow !== "liquid_mirror";
     if (!lq.hidden) {
       const lm = estadoOpcion(CAP, "workflow", "liquid_mirror"); lq.replaceChildren();

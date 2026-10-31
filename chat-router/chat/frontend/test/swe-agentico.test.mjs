@@ -119,7 +119,7 @@ test("enviarTareaSwe: iniciar y avanzar hasta DONE por /chat/swe/*; muestra evid
     visto.push({ ruta, op });
     if (ruta === "/chat/swe/capacidades") return TODOS_OK;
     if (ruta === "/chat/swe/iniciar") return respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "EJECUTANDO", paso_actual: "escribe" });
-    if (ruta === "/chat/swe/avanzar") return respuestaHarness(visto.filter((x) => x.ruta === "/chat/swe/avanzar").length < 2 ? { task_id: cuerpoDe(op).task_id, estado: "VERIFICANDO", paso_actual: "verifica" } : { task_id: cuerpoDe(op).task_id, estado: "DONE", resultado: "Proyecto revisado", evidencias: ["recibo:abc123", "git diff: 2 archivos"], herramientas: ["swe-agent"], recibo: "r-1" });
+    if (ruta === "/chat/swe/avanzar") return respuestaHarness(visto.filter((x) => x.ruta === "/chat/swe/avanzar").length < 2 ? { task_id: cuerpoDe(op).task_id, estado: "VERIFICANDO", paso_actual: 3 } : { task_id: cuerpoDe(op).task_id, estado: "DONE", paso_actual: 4, resultado_tool: "Proyecto revisado", evidencia: ["git diff: 2 archivos"], pasos_terminados: [{ paso: "ejecuta", agente: "swe-agent", recibo: "r-1", herramientas: ["swe-agent"], resultado: "ok" }, { paso: "verifica", agente: "openhands", recibo: "r-2", herramientas: [], resultado: "verificado" }] });
     throw new Error("ruta inesperada " + ruta);
   };
   const r = await S.enviarTareaSwe(api, { mensaje: "Revisar proyecto", sesion: "chat-001", proyecto: "yaiwes" });
@@ -130,7 +130,7 @@ test("enviarTareaSwe: iniciar y avanzar hasta DONE por /chat/swe/*; muestra evid
   const av = visto.filter((x) => x.ruta === "/chat/swe/avanzar");
   assert.equal(av.length, 2); assert.equal(av[0].op.body.task_id, ini.op.body.task_id);
   assert.deepEqual(Object.keys(av[0].op.body).sort(), ["origen", "proyecto", "sesion", "task_id"]);
-  assert.match(r.reply, /Proyecto revisado/); assert.match(r.reply, /recibo:abc123/); assert.match(r.reply, /git diff: 2 archivos/);
+  assert.match(r.reply, /Proyecto revisado/); assert.match(r.reply, /git diff: 2 archivos/); assert.match(r.reply, /recibo ejecuta \(swe-agent\): r-1/); assert.match(r.reply, /recibo verifica \(openhands\): r-2/);
   assert.equal(r.estado, "DONE"); assert.equal(r.task_id, ini.op.body.task_id); assert.deepEqual(r.tools, ["swe-agent"]);
   assert.match(r.nota, /swe_code/); assert.match(r.nota, new RegExp(r.task_id));
   delete globalThis.localStorage;
@@ -152,19 +152,29 @@ test("enviarTareaSwe: si no se pueden leer las capacidades tampoco se presenta c
   delete globalThis.localStorage;
 });
 
-test("enviarTareaSwe: REQUIERE_APROBACION se detiene (no avanza ni aprueba solo) y devuelve el task_id para aprobar", async () => {
+test("enviarTareaSwe: REQUIERE_APROBACION se detiene (no avanza ni aprueba solo), dice que se aprueba y devuelve task_id y op_id", async () => {
   conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: true }) });
   const rutas = [];
-  const api = async (ruta, op) => { rutas.push(ruta); if (ruta === "/chat/swe/capacidades") return TODOS_OK; return respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "REQUIERE_APROBACION", paso_actual: "ejecuta", resultado: "Voy a desplegar" }); };
+  const pendiente = { op_id: "0123456789abcdef", paso: "escribe", agente: "codex", modelo: "hf/qwen2.5-coder-1.5b", permisos: { escritura: true, ejecucion: false }, objetivo: "Voy a editar el repo" };
+  const api = async (ruta, op) => { rutas.push(ruta); if (ruta === "/chat/swe/capacidades") return TODOS_OK; return respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "REQUIERE_APROBACION", paso_actual: 0, pendiente_aprobacion: pendiente }); };
   const r = await S.enviarTareaSwe(api, { mensaje: "Revisar y desplegar", sesion: "s" });
   assert.deepEqual(rutas, ["/chat/swe/capacidades", "/chat/swe/iniciar"]);
-  assert.equal(r.estado, "REQUIERE_APROBACION"); assert.equal(r.requiere_aprobacion, true); assert.match(r.reply, /aprobaci/i); assert.ok(r.task_id);
+  assert.equal(r.estado, "REQUIERE_APROBACION"); assert.equal(r.requiere_aprobacion, true); assert.ok(r.task_id);
+  assert.equal(r.pendiente.op_id, "0123456789abcdef");
+  assert.match(r.reply, /aprobaci/i); assert.match(r.reply, /escribe/); assert.match(r.reply, /codex/); assert.match(r.reply, /escritura/); assert.match(r.reply, /Voy a editar el repo/);
+  delete globalThis.localStorage;
+});
+
+test("enviarTareaSwe: RECONCILIAR (operacion iniciada sin confirmar) es un error visible; no se reintenta ni se da por hecha", async () => {
+  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: true }) });
+  const api = async (ruta, op) => (ruta === "/chat/swe/capacidades" ? TODOS_OK : respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "RECONCILIAR", pendiente_reconciliacion: { op_id: "aaaabbbbccccdddd", paso: "ejecuta", motivo: "OPERACION_SIN_CONFIRMAR" }, error: { codigo: "OPERACION_SIN_CONFIRMAR", mensaje: "quedo iniciada" } }));
+  await assert.rejects(() => S.enviarTareaSwe(api, { mensaje: "x", sesion: "s" }), /GAP: RECONCILIAR.*aaaabbbbccccdddd.*OPERACION_SIN_CONFIRMAR/);
   delete globalThis.localStorage;
 });
 
 test("enviarTareaSwe: estado GAP o error del backend es un error visible, no una respuesta del modelo", async () => {
   conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code" }) });
-  const gap = async (ruta, op) => (ruta === "/chat/swe/capacidades" ? TODOS_OK : respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "GAP", codigo: "AGENTE_NO_INSTALADO", error: "Codex no esta instalado" }));
+  const gap = async (ruta, op) => (ruta === "/chat/swe/capacidades" ? TODOS_OK : respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "GAP", error: { codigo: "AGENTE_NO_INSTALADO", mensaje: "Codex no esta instalado", paso: "escribe" } }));
   await assert.rejects(() => S.enviarTareaSwe(gap, { mensaje: "x", sesion: "s" }), /GAP: AGENTE_NO_INSTALADO.*Codex no esta instalado/);
   const caido = async (ruta) => { if (ruta === "/chat/swe/capacidades") return TODOS_OK; throw new Error("SWE_HARNESS_ERROR"); };
   await assert.rejects(() => S.enviarTareaSwe(caido, { mensaje: "x", sesion: "s" }), /GAP: SWE_HARNESS_ERROR/);
@@ -181,17 +191,19 @@ test("enviarTareaSwe: el avance esta acotado (no gira para siempre) y no pasa cl
   delete globalThis.localStorage;
 });
 
-test("aprobarTareaSwe / reanudarTareaSwe / estadoTareaSwe: operaciones por task_id; aprobar NO manda el campo aprobacion", async () => {
+test("aprobarTareaSwe / reanudarTareaSwe / estadoTareaSwe: operaciones por task_id; aprobar manda op_id y NO el campo aprobacion ni un operador", async () => {
   conStorage();
   const visto = [];
   const api = async (ruta, op) => { visto.push({ ruta, body: op.body }); return respuestaHarness({ task_id: op.body.task_id, estado: "CONTINUAR" }); };
-  await S.aprobarTareaSwe(api, { task_id: "yaiwes-001", sesion: "s", proyecto: "p" });
+  await S.aprobarTareaSwe(api, { task_id: "yaiwes-001", op_id: "op-1", sesion: "s", proyecto: "p" });
   await S.reanudarTareaSwe(api, { task_id: "yaiwes-001", sesion: "s", proyecto: "p" });
   const e = await S.estadoTareaSwe(api, { task_id: "yaiwes-001", sesion: "s", proyecto: "p" });
   assert.deepEqual(visto.map((v) => v.ruta), ["/chat/swe/aprobar", "/chat/swe/reanudar", "/chat/swe/estado"]);
-  assert.ok(visto.every((v) => !("aprobacion" in v.body) && v.body.origen === "yaiwes" && v.body.task_id === "yaiwes-001"));
+  assert.ok(visto.every((v) => !("aprobacion" in v.body) && !("operador" in v.body) && v.body.origen === "yaiwes" && v.body.task_id === "yaiwes-001"));
+  assert.equal(visto[0].body.op_id, "op-1"); assert.ok(!("op_id" in visto[1].body));
   assert.equal(e.estado, "CONTINUAR");
   await assert.rejects(() => S.estadoTareaSwe(api, { task_id: "../x", sesion: "s" }), /TASK_ID_INVALIDO/);
+  await assert.rejects(() => S.aprobarTareaSwe(api, { task_id: "yaiwes-001", sesion: "s" }), /OP_ID_INVALIDO/);
   delete globalThis.localStorage;
 });
 
@@ -207,10 +219,18 @@ test("idCatalogo: el modelo del selector clasico se traduce al id del catalogo (
 test("aprobarYContinuarSwe: aprueba (el servidor identifica al operador) y sigue avanzando con el mismo task_id hasta DONE", async () => {
   conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: true }) });
   const rutas = [];
-  const api = async (ruta, op) => { rutas.push(ruta); return respuestaHarness(ruta === "/chat/swe/avanzar" ? { task_id: op.body.task_id, estado: "DONE", resultado: "desplegado", evidencias: ["recibo:r2"] } : { task_id: op.body.task_id, estado: "CONTINUAR" }); };
-  const r = await S.aprobarYContinuarSwe(api, { task_id: "yaiwes-009", sesion: "s", proyecto: "p" });
+  const api = async (ruta, op) => { rutas.push(ruta); return respuestaHarness(ruta === "/chat/swe/avanzar" ? { task_id: op.body.task_id, estado: "DONE", resultado_tool: "desplegado", evidencia: ["recibo:r2"] } : { task_id: op.body.task_id, estado: "CONTINUAR" }); };
+  const r = await S.aprobarYContinuarSwe(api, { task_id: "yaiwes-009", op_id: "op-9", sesion: "s", proyecto: "p" });
   assert.deepEqual(rutas, ["/chat/swe/aprobar", "/chat/swe/avanzar"]);
   assert.equal(r.estado, "DONE"); assert.match(r.reply, /desplegado/); assert.match(r.nota, /yaiwes-009/);
-  await assert.rejects(() => S.aprobarYContinuarSwe(api, { task_id: "mal id", sesion: "s" }), /TASK_ID_INVALIDO/);
+  await assert.rejects(() => S.aprobarYContinuarSwe(api, { task_id: "mal id", op_id: "op-9", sesion: "s" }), /TASK_ID_INVALIDO/);
+  delete globalThis.localStorage;
+});
+
+test("Liquid Mirror: la nota dice que S2 y S3 corren en secuencia (no se afirma paralelismo) y nombra los servidores reales de cada paso", async () => {
+  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "liquid_mirror" }) });
+  const api = async (ruta, op) => (ruta === "/chat/swe/capacidades" ? TODOS_OK : respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "DONE", ejecucion_s2_s3: "secuencial", resultado_tool: "", pasos_terminados: [{ paso: "liquid1", servidor: "S2", recibo: "s2-1", resultado: "lectura" }, { paso: "liquid2", servidor: "S3", recibo: "s3-1", resultado: "ejecucion lista" }] }));
+  const r = await S.enviarTareaSwe(api, { mensaje: "x", sesion: "s" });
+  assert.match(r.reply, /ejecucion lista/); assert.match(r.reply, /liquid1.*S2.*s2-1/); assert.match(r.reply, /liquid2.*S3.*s3-1/); assert.match(r.nota, /secuencial/);
   delete globalThis.localStorage;
 });

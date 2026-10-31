@@ -38,6 +38,8 @@ class TareaSWE:
             validar_modelo(m)
         for a in (self.agente_responde, self.agente_tool, self.agente_verificador):
             validar_agente(a)
+        if not isinstance(self.modo_agentico, bool) or not isinstance(self.aprobacion, bool) or not isinstance(self.sesion, str) or not isinstance(self.proyecto, str):
+            raise ValueError("CAMPO_TIPO_INVALIDO")
         return asdict(self)
 
     @classmethod

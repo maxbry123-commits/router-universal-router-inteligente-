@@ -26,3 +26,16 @@ test("los POST de chat SWE (/v1 y /web/v1) esperan la respuesta completa (450 s)
     }
   } finally { globalThis.setTimeout = st; }
 });
+
+test("las operaciones de tarea SWE (/chat/swe/iniciar|avanzar|estado|aprobar|reanudar) esperan lo que tarda un agente real (450 s); capacidades, 15 s", async () => {
+  const esperas = [];
+  const st = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms, ...a) => { esperas.push(ms); return st(fn, ms, ...a); };
+  try {
+    for (const ruta of ["/chat/swe/iniciar", "/chat/swe/avanzar", "/chat/swe/estado", "/chat/swe/aprobar", "/chat/swe/reanudar", "/chat/swe/capacidades"]) {
+      esperas.length = 0;
+      await api(ruta, { method: ruta.endsWith("capacidades") ? "GET" : "POST", body: ruta.endsWith("capacidades") ? undefined : {} });
+      assert.ok(esperas.includes(ruta.endsWith("capacidades") ? 15000 : 450000) && !(ruta.endsWith("capacidades") && esperas.includes(450000)), ruta + " -> " + JSON.stringify(esperas));
+    }
+  } finally { globalThis.setTimeout = st; }
+});

@@ -186,12 +186,12 @@ async def chat(cuerpo: dict):
         _verificar_llamadas(llamadas, controles)
         return {"texto": salida.get("texto") or "", "tool_calls": llamadas, "herramientas_usadas": salida.get("herramientas_usadas") or [],
                 "finish_reason": salida.get("finish_reason"),
-                **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}
+                **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta", "metricas") if k in salida}}
     salida = await _llamar_modelo(mensajes, modelo, cuerpo.get("opciones"), cuerpo.get("tarea_id"))
     _verificar_llamadas(salida["tool_calls"], controles)
     return {"texto": salida["texto"], "tool_calls": salida["tool_calls"],
             "finish_reason": salida.get("finish_reason"),
-                **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}
+                **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta", "metricas") if k in salida}}
 @app.post("/almacen", dependencies=[Depends(verificar)])
 async def almacen(cuerpo: dict):
     accion = cuerpo.get("accion")
@@ -216,6 +216,36 @@ async def almacen(cuerpo: dict):
                                        *(cuerpo[campo] for campo in campos[accion]))
     except (ValueError, RuntimeError) as error:
         raise HTTPException(status_code=502, detail=str(error)) from None
+# --- SWE (YAIWES): el chat manda el contrato TareaSWE; este backend lo valida, comprueba permisos y llama al Harness con swe_invoke. La clave del Harness no sale de aqui. ---
+SWE_RUTAS = {"iniciar": "swe_iniciar", "avanzar": "swe_avanzar", "estado": "swe_estado", "aprobar": "swe_aprobar", "reanudar": "swe_reanudar"}
+SWE_HTTP = {"TAREA_NO_ENCONTRADA": 404, "TASK_ID_EN_USO": 409, "TAREA_NO_COINCIDE": 409, "ESTADO_NO_APROBABLE": 409, "OP_NO_PENDIENTE": 409,
+            "OPERADOR_REQUERIDO": 403, "OPERADOR_NO_AUTORIZADO": 403, "APROBADORES_NO_CONFIGURADOS": 503, "PERSISTENCIA_FALLIDA": 502}  # el resto de codigos del contrato: 400
+def _swe_falla(exc):
+    raise HTTPException(status_code=503 if "no configurado" in str(exc) else 502, detail="HARNESS_NO_CONFIGURADO" if "no configurado" in str(exc) else "SWE_HARNESS_ERROR") from None
+@app.get("/chat/swe/capacidades", dependencies=[Depends(verificar)])
+async def swe_capacidades():  # que agentes/workflows/modelos reporta CONECTADOS el Harness; lo que no reporta el selector lo muestra NO DISPONIBLE
+    vacio = {"agentes": {}, "workflows": {}, "modelos": {}}
+    try: clave = clave_harness()
+    except HTTPException: return {"harness": "sin_credencial", **vacio}
+    try: estado = await asyncio.to_thread(harness_client.status, clave)
+    except (ValueError, RuntimeError) as error: return {"harness": "no_configurado" if "no configurado" in str(error) else "no_disponible", **vacio}
+    if not isinstance(estado, dict) or estado.get("status") != "ok": return {"harness": "no_disponible", **vacio}
+    return {"harness": "ok", **harness_client.swe_capacidades(estado)}
+@app.post("/chat/swe/{operacion}", dependencies=[Depends(verificar)])
+async def swe_operacion(operacion: str, cuerpo: dict):
+    herramienta = SWE_RUTAS.get(operacion)
+    if not herramienta: raise HTTPException(status_code=404, detail="OPERACION_SWE_NO_AUTORIZADA")
+    try: args = harness_client.swe_argumentos(herramienta, cuerpo, os.environ.get("RIU_SWE_OPERADOR", "director"))  # el operador que aprueba es quien tiene la clave de acceso del chat; el Harness lo valida contra RIU_SWE_OPERADORES
+    except ValueError as error: raise HTTPException(status_code=503 if str(error) == "OPERADOR_NO_CONFIGURADO" else 400, detail=str(error)) from None
+    if herramienta == "swe_iniciar" and args["modo_agentico"]: _verificar_herramienta("agente", None)  # delegar en agentes externos: lo decide el servidor (Agentes ON/OFF), no el cliente
+    try: salida = await asyncio.to_thread(harness_client.swe_invoke, clave_harness(), herramienta, args)
+    except (ValueError, RuntimeError) as error: _swe_falla(error)
+    if isinstance(salida, dict) and salida.get("status") == "ok" and isinstance(salida.get("result"), dict):
+        return {"ok": True, "resultado": salida["result"]}
+    codigo = harness_client.swe_error(salida)
+    if isinstance(salida, dict) and salida.get("status_code") == 403: raise HTTPException(status_code=403, detail="Herramienta bloqueada por el Router")
+    if codigo: raise HTTPException(status_code=SWE_HTTP.get(codigo, 400), detail=codigo if SWE_HTTP.get(codigo, 400) < 500 else "SWE_HARNESS_ERROR: " + codigo)
+    raise HTTPException(status_code=502, detail="SWE_HARNESS_ERROR")
 # --- G14: panel-chat.js lee {providers:[{id,label}]} y {models:[{model_id,label}]}; datos solo de mvp/modelos.json ---
 @app.get("/chat/providers", dependencies=[Depends(verificar)])
 def chat_providers():  # Groq y NVIDIA solo si hay clave: el selector no ofrece lo que no puede responder
@@ -582,7 +612,7 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
             raise
         return {"status": "ok", "result": {"reply": salida["texto"], "texto": salida["texto"], "tool_calls": salida["tool_calls"], "finish_reason": salida.get("finish_reason"), "modelo": modelo,
                                            "ficha": str(cuerpo.get("ficha_qwen") or "ficha4-workflow-yaiwes"),
-                                           **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta") if k in salida}}}
+                                           **{k: salida[k] for k in ("mensaje_asistente", "modelo_solicitado", "modelo_respuesta", "metricas") if k in salida}}}
     if accion == "recurso_probar":  # probar un modelo o un agente del panel: una llamada real, con el tiempo que tarda
         t0 = time.monotonic()
         try:

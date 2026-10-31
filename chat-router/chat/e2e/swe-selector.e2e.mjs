@@ -53,6 +53,8 @@ function routerFalso(estado) {
       if (req.method() === 'DELETE') { b.groq = 0; b.nvidia = 0; }
       return json(route, { ok: true, groq: b.groq, nvidia: b.nvidia });
     }
+    if (p === '/chat/swe/capacidades') return json(route, estado.capacidades || {});  // el Harness no reporta nada -> todo NO DISPONIBLE salvo Individual
+    if (/^\/chat\/swe\/(iniciar|avanzar|estado|aprobar|reanudar)$/.test(p) && req.method() === 'POST') return json(route, { ok: true, resultado: { task_id: body && body.task_id, estado: estado.estadoSwe || 'DONE', paso_actual: 'verifica', resultado: 'resultado del agente real de prueba', evidencias: ['recibo:e2e-123'], herramientas: ['swe-agent'] } });
     if (p === '/chat/providers') return json(route, { providers: [{ id: 'qwen', nombre: 'Qwen', estado: 'ok' }] });
     if ((p === '/v1/chat/completions' || p === '/web/v1/chat/completions') && req.method() === 'POST') {  // /web/* siempre llega al bridge (proxy del Space); /v1/* solo con web-/swecode-
       return json(route, { modelo_usado: (body && body.model) || 'swe', via_respaldo: 'groq', choices: [{ message: { role: 'assistant', content: 'respuesta SWE de prueba' }, finish_reason: 'stop' }] });
@@ -80,6 +82,7 @@ async function nuevaPagina(browser, estado, { catalogoLocal } = {}) {
   return page;
 }
 
+const volverAlChat = async (p) => { await p.$eval('[data-view="chat"]', (e) => e.click()); await p.waitForSelector('#composer #message', { state: 'attached', timeout: 10000 }); await p.waitForTimeout(900); };  // el panel se vuelve a montar: con la maquina cargada 300 ms no bastaban
 const abrirChat = async (p, base) => { await p.goto(base + '/chat/ui/shell.html'); await p.waitForSelector('#sel-nuevo', { state: 'attached', timeout: 20000 }); await p.waitForTimeout(1500); };
 const abrirHojaModelos = async (p) => { await p.$eval('#sel-nuevo', (e) => e.click()); await p.waitForSelector('#sh-modelos-lista button', { state: 'attached', timeout: 10000 }); };
 const grupos = (p) => p.evaluate(() => [...document.querySelectorAll('#sh-modelos-lista h4.mod-grupo-t')].map((h) => h.textContent.trim()));
@@ -163,7 +166,7 @@ async function enviar(p, texto) {
     ok('C4 Configuracion tiene la seccion de claves SWE justo tras el APK', /Claves para SWE CODE/.test(clv.titulo || '') && clv.idx === 2, JSON.stringify(clv));
     ok('C4 inputs password autocomplete=off y botones Guardar/Borrar', clv.tipoG === 'password' && clv.tipoN === 'password' && clv.acG === 'off' && clv.acN === 'off' && clv.guardar && clv.borrar, JSON.stringify(clv));
     estA.llamadas.length = 0;
-    await p.$eval('[data-view="chat"]', (e) => e.click()); await p.waitForTimeout(300);
+    await volverAlChat(p);
     await abrirHojaModelos(p); await elegir(p, 'Qwen 3.8 Max (web)');  // sin claves guardadas: el POST no lleva `claves`
     const rSin = await enviar(p, 'sin claves');
     const cSin = estA.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
@@ -182,7 +185,7 @@ async function enviar(p, texto) {
     ok('C4 Guardar hace POST /web/v1/claves con la clave recortada y X-API-Key', post.length === 1 && post[0].body.groq === KEY && post[0].clave === 'api-e2e', JSON.stringify(post.map((l) => l.body)).replace(KEY, '***'));
     ok('C4 tras guardar los inputs quedan vacios y dice "Groq: 1 guardada" sin mostrar el valor', tras.g === '' && tras.n === '' && /Groq: 1 guardada/.test(tras.est) && !tras.est.includes(KEY), JSON.stringify(tras.est));
     ok('C4 con el banco del servidor NO queda copia en localStorage', tras.ls === null, 'ls presente');
-    await p.$eval('[data-view="chat"]', (e) => e.click()); await p.waitForTimeout(300);
+    await volverAlChat(p);
     estA.llamadas.length = 0;
     const rCon = await enviar(p, 'con banco');
     const cCon = estA.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
@@ -202,7 +205,7 @@ async function enviar(p, texto) {
     await estTxt(/guardada solo en este navegador/);
     const resp = await p.evaluate(() => ({ est: document.querySelector('#ap-clave-estado').textContent, ls: localStorage.getItem('riu_swe_claves') }));
     ok('C4 banco caido: respaldo en localStorage y el estado lo dice sin mostrar el valor', JSON.parse(resp.ls || '{}').groq === KEY && !resp.est.includes(KEY), resp.est);
-    await p.$eval('[data-view="chat"]', (e) => e.click()); await p.waitForTimeout(300);
+    await volverAlChat(p);
     estA.llamadas.length = 0;
     await enviar(p, 'con respaldo');
     const cRes = estA.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
@@ -300,6 +303,80 @@ async function enviar(p, texto) {
     ok('G7 la eleccion sobrevive a recargar la pagina', (await presionado('#sel-salida-openclaw')) === 'true');
     ok('G sin errores JS en la pagina', pg.errs.length === 0, pg.errs.join(' | '));
     await pg.context().close();
+
+    // ======== H) Agentes/modelos/workflow dentro de la ventana existente de SWE CODE y SWEN CODE free; contrato TareaSWE a /chat/swe/* ========
+    const TODOS = { harness: 'ok', agentes: Object.fromEntries(['openclaw', 'swe-agent', 'openhands', 'opencode', 'codex', 'claude-code'].map((a) => [a, { disponible: true }])), workflows: { swe_code: { disponible: true }, liquid_mirror: { disponible: true } }, modelos: {} };
+    const estH = { llamadas: [], catalogoFalla: false, capacidades: {} };
+    const ph = await nuevaPagina(browser, estH);
+    await abrirChat(ph, base);
+    const abrirHoja = async (sel, id) => { await ph.$eval(sel, (e) => e.click()); await ph.waitForSelector('#sh-' + id + ' select[data-swe-ctl]', { state: 'attached', timeout: 8000 }); await ph.waitForTimeout(400); };
+    await abrirHoja('#sel-swen', 'swen-code-free');
+    const ctl = await ph.evaluate(() => ({ etiquetas: [...document.querySelectorAll('#sh-swen-code-free .swe-ctl label')].map((l) => l.firstChild.textContent.trim()), agentico: (document.querySelector('#sh-swen-code-free [data-swe-agentico]') || {}).textContent, salida: [...document.querySelectorAll('#sh-swen-code-free [data-salida]')].map((b) => b.textContent) }));
+    ok('H1 la hoja de SWEN CODE free (ya existente) trae los 5 selectores con su rotulo exacto y MODO AGENTICO', JSON.stringify(ctl.etiquetas) === JSON.stringify(['MODELO QUE RESPONDE', 'MODELO PARA TOOL', 'AGENTE QUE RESPONDE', 'AGENTE QUE EJECUTA', 'WORKFLOW']) && ctl.agentico === 'OFF', JSON.stringify(ctl));
+    ok('H1 el boton de salida dice SWE-agent | OpenClaw', JSON.stringify(ctl.salida) === JSON.stringify(['Salida: SWE-agent', 'Salida: OpenClaw']), JSON.stringify(ctl.salida));
+    const opts = await ph.evaluate(() => ({ modelos: [...document.querySelectorAll('#sh-swen-code-free select[data-swe-ctl="modelo_responde"] option')].map((o) => o.value), agentes: [...document.querySelectorAll('#sh-swen-code-free select[data-swe-ctl="agente_tool"] option')].map((o) => o.value), wf: [...document.querySelectorAll('#sh-swen-code-free select[data-swe-ctl="workflow"] option')].map((o) => o.textContent.replace(/ — .*/, '')) }));
+    ok('H2 modelos con el id exacto del catalogo (hf/..., groq/..., nvidia/...)', JSON.stringify(opts.modelos) === JSON.stringify(['hf/lfm2.5-350m', 'hf/qwen2.5-coder-1.5b', 'hf/qwen3.5-0.8b', 'hf/qwen3-0.6b', 'groq/qwen/qwen3.8-27b', 'nvidia/minimaxai/minimax-m3.1-flash', 'nvidia/meta/muse-glimmer-30b', 'nvidia/nvidia/nemotron-3-ultra-550b-a55b', 'nvidia/z-ai/glm-5.3']), JSON.stringify(opts.modelos));
+    ok('H2 seis agentes y tres workflows', opts.agentes.length === 6 && JSON.stringify(opts.wf) === JSON.stringify(['Individual', 'SWE CODE cuatro pasos', 'Liquid Mirror']), JSON.stringify(opts));
+    const lista = await ph.evaluate(() => [...document.querySelectorAll('#sh-swen-code-free-lista button')].map((b) => b.dataset.id));
+    ok('H3 la lista de SWEN CODE free ya no trae los dos Llama y trae los 5 modelos', !lista.some((m) => /llama/i.test(m)) && ['groq/qwen/qwen3.8-27b', 'nvidia/minimaxai/minimax-m3.1-flash', 'nvidia/meta/muse-glimmer-30b', 'nvidia/nvidia/nemotron-3-ultra-550b-a55b', 'nvidia/z-ai/glm-5.3'].every((m) => lista.includes(m)) && lista.filter((m) => m === 'nvidia/meta/muse-glimmer-30b').length === 1, JSON.stringify(lista));
+    const nd = await ph.evaluate(() => { const o = (k, v) => { const e = document.querySelector('#sh-swen-code-free select[data-swe-ctl="' + k + '"] option[value="' + v + '"]'); return e ? { t: e.textContent, d: e.disabled } : null; }; return { codex: o('agente_tool', 'codex'), swe: o('workflow', 'swe_code'), ind: o('workflow', 'individual') }; });
+    ok('H4 sin adaptador reportado: Codex y el workflow SWE CODE salen NO DISPONIBLE y deshabilitados (no se presentan como funcionales); Individual sigue disponible', !!nd.codex && /NO DISPONIBLE/.test(nd.codex.t) && nd.codex.d === true && !!nd.swe && /NO DISPONIBLE/.test(nd.swe.t) && nd.swe.d === true && nd.ind && nd.ind.d === false, JSON.stringify(nd));
+    // Individual + agentico OFF: el camino de siempre (bridge), sin contrato
+    await ph.evaluate(() => document.querySelector('#sh-swen-code-free .sh-cerrar').click());
+    await ph.evaluate(() => document.querySelector('#sel-power .sel-fila[data-selector="swen-code-free"] .sel-on').click());
+    estH.llamadas.length = 0;
+    const h5 = await enviar(ph, 'individual de siempre');
+    ok('H5 Individual con agentico OFF: va por el bridge como antes y NO por /chat/swe/*', h5 === 'respuesta SWE de prueba' && estH.llamadas.some((l) => /chat\/completions$/.test(l.ruta)) && !estH.llamadas.some((l) => /^\/chat\/swe\/(iniciar|avanzar)/.test(l.ruta)), JSON.stringify(estH.llamadas.map((l) => l.ruta)));
+    // Agentico ON sin adaptadores: error visible, nada se envia
+    await abrirHoja('#sel-swen', 'swen-code-free');
+    await ph.$eval('#sh-swen-code-free [data-swe-agentico]', (e) => e.click());
+    await ph.evaluate(() => document.querySelector('#sh-swen-code-free .sh-cerrar').click());
+    estH.llamadas.length = 0;
+    await ph.fill('#message', 'con agentico sin adaptadores'); await ph.$eval('#composer .action', (e) => e.click());
+    await ph.waitForFunction(() => /SELECCION_NO_DISPONIBLE/.test(document.querySelector('.chat-history').innerText), null, { timeout: 8000 });
+    ok('H6 agentico ON sin adaptadores conectados: GAP visible y no se llama a /chat/swe/iniciar ni al bridge', !estH.llamadas.some((l) => /^\/chat\/swe\/iniciar/.test(l.ruta) || /chat\/completions$/.test(l.ruta)), JSON.stringify(estH.llamadas.map((l) => l.ruta)));
+    // Harness reporta todo conectado: workflow SWE CODE con Codex como ejecutor
+    estH.capacidades = TODOS;
+    await abrirHoja('#sel-swen', 'swen-code-free');
+    await ph.selectOption('#sh-swen-code-free select[data-swe-ctl="workflow"]', 'swe_code');
+    await ph.selectOption('#sh-swen-code-free select[data-swe-ctl="agente_tool"]', 'codex');
+    await ph.selectOption('#sh-swen-code-free select[data-swe-ctl="modelo_tool"]', 'hf/qwen2.5-coder-1.5b');
+    ok('H7 la seleccion persiste en localStorage', await ph.evaluate(() => { const s = JSON.parse(localStorage.getItem('riu_swe_seleccion')); return s.workflow === 'swe_code' && s.agente_tool === 'codex' && s.modo_agentico === true; }));
+    ok('H7 la misma seleccion aparece en la hoja de SWE CODE (ambos selectores comparten controles)', await (async () => { await ph.evaluate(() => document.querySelector('#sh-swen-code-free .sh-cerrar').click()); await abrirHoja('#sel-swe', 'swe-code'); return ph.evaluate(() => document.querySelector('#sh-swe-code select[data-swe-ctl="workflow"]').value === 'swe_code' && document.querySelector('#sh-swe-code select[data-swe-ctl="agente_tool"]').value === 'codex'); })());
+    await ph.evaluate(() => document.querySelector('#sh-swe-code .sh-cerrar').click());
+    estH.llamadas.length = 0;
+    const h8 = await enviar(ph, 'Revisar proyecto');
+    const ini = estH.llamadas.find((l) => l.ruta === '/chat/swe/iniciar');
+    const campos = ['task_id', 'origen', 'mensaje', 'workflow', 'modelo_responde', 'modelo_lector', 'modelo_tool', 'modelo_revisor', 'agente_responde', 'agente_tool', 'agente_verificador', 'modo_agentico', 'aprobacion', 'sesion', 'proyecto'];
+    ok('H8 el contrato TareaSWE exacto llega a POST /chat/swe/iniciar con X-API-Key', !!ini && JSON.stringify(Object.keys(ini.body).sort()) === JSON.stringify([...campos].sort()) && ini.clave === CLAVE, JSON.stringify(ini && ini.body));
+    ok('H8 valores: origen yaiwes, workflow swe_code, agente_tool codex, modelo_tool hf/qwen2.5-coder-1.5b, aprobacion false', ini && ini.body.origen === 'yaiwes' && ini.body.workflow === 'swe_code' && ini.body.agente_tool === 'codex' && ini.body.modelo_tool === 'hf/qwen2.5-coder-1.5b' && ini.body.aprobacion === false && ini.body.modo_agentico === true && /^yaiwes-[A-Za-z0-9_-]+$/.test(ini.body.task_id), JSON.stringify(ini && ini.body));
+    ok('H8 el resultado y la evidencia del agente vuelven al chat y no hubo llamada al bridge ni al plugin del Router', /resultado del agente real de prueba/.test(h8) && /recibo:e2e-123/.test(h8) && !estH.llamadas.some((l) => /chat\/completions$/.test(l.ruta) || /^\/plugins\//.test(l.ruta)), h8);
+    // Liquid Mirror: dos participantes
+    await abrirHoja('#sel-swen', 'swen-code-free');
+    await ph.selectOption('#sh-swen-code-free select[data-swe-ctl="workflow"]', 'liquid_mirror');
+    const lq = await ph.evaluate(() => ({ chips: [...document.querySelectorAll('#sh-swen-code-free .swe-liquid .dg-paso')].map((x) => x.textContent), visible: !!document.querySelector('#sh-swen-code-free .swe-liquid').getClientRects().length, toolOff: document.querySelector('#sh-swen-code-free select[data-swe-ctl="modelo_tool"]').disabled }));
+    ok('H9 Liquid Mirror: LIQUID 1 — LECTOR (S2) y LIQUID 2 — EJECUTOR (S3), tool bloqueado, sin modelos web', lq.visible && lq.chips.length === 2 && /LIQUID 1 — LECTOR · S2 · lfm2\.5-350m/.test(lq.chips[0]) && /LIQUID 2 — EJECUTOR · S3 · lfm2\.5-350m/.test(lq.chips[1]) && lq.toolOff && !lq.chips.join().includes('web-'), JSON.stringify(lq));
+    // salida SWE-agent | OpenClaw sincroniza AGENTE QUE EJECUTA
+    await ph.$eval('#sh-swen-code-free [data-salida="openclaw"]', (e) => e.click());
+    ok('H10 elegir Salida: OpenClaw pone AGENTE QUE EJECUTA = OpenClaw', await ph.evaluate(() => document.querySelector('#sh-swen-code-free select[data-swe-ctl="agente_tool"]').value === 'openclaw'));
+    await ph.$eval('#sh-swen-code-free [data-salida="swe"]', (e) => e.click());
+    ok('H10 elegir Salida: SWE-agent pone AGENTE QUE EJECUTA = SWE-agent', await ph.evaluate(() => document.querySelector('#sh-swen-code-free select[data-swe-ctl="agente_tool"]').value === 'swe-agent'));
+    await ph.evaluate(() => document.querySelector('#sh-swen-code-free .sh-cerrar').click());
+    estH.llamadas.length = 0;
+    await enviar(ph, 'liquid mirror');
+    const lmIni = estH.llamadas.find((l) => l.ruta === '/chat/swe/iniciar');
+    ok('H11 Liquid Mirror: modelo_lector y modelo_tool = hf/lfm2.5-350m, workflow liquid_mirror', lmIni && lmIni.body.workflow === 'liquid_mirror' && lmIni.body.modelo_lector === 'hf/lfm2.5-350m' && lmIni.body.modelo_tool === 'hf/lfm2.5-350m', JSON.stringify(lmIni && lmIni.body));
+    // REQUIERE_APROBACION: boton Aprobar -> /chat/swe/aprobar (sin campo aprobacion)
+    estH.estadoSwe = 'REQUIERE_APROBACION';
+    await ph.fill('#message', 'desplegar'); await ph.$eval('#composer .action', (e) => e.click());
+    await ph.waitForSelector('.mx-aprobar', { state: 'attached', timeout: 8000 });
+    estH.llamadas.length = 0; estH.estadoSwe = 'DONE';
+    await ph.$eval('.mx-aprobar', (e) => e.click());
+    await ph.waitForFunction(() => /resultado del agente real de prueba/.test([...document.querySelectorAll('.chat-history .message')].slice(-3).map((x) => x.innerText).join('\n')), null, { timeout: 8000 });
+    const ap = estH.llamadas.find((l) => l.ruta === '/chat/swe/aprobar');
+    ok('H12 Aprobar llama a /chat/swe/aprobar con el task_id y sin campo aprobacion', !!ap && !!ap.body.task_id && !('aprobacion' in ap.body), JSON.stringify(ap && ap.body));
+    ok('H sin errores JS en la pagina', ph.errs.length === 0, ph.errs.join(' | '));
+    await ph.context().close();
   } finally {
     await browser.close().catch(() => {});
     await new Promise((r) => srv.close(() => r())); srv.closeAllConnections && srv.closeAllConnections();

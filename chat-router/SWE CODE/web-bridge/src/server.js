@@ -26,6 +26,7 @@ import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco } from './
 import { publicarEnGithub, traerDeGithub } from './bancogithub.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
+import { montarRutasSwe } from './swe_rutas.js';
 
 // gramatica "SWEN CODE free ..." (SWE CODE free/activar.js): elige modelo, modo y seccion desde el propio mensaje
 let activar = null;
@@ -59,6 +60,7 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: '10mb' }));
 const PORT = process.env.BRIDGE_PORT || 7860;
+montarRutasSwe(app);  // /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar} -> Harness DeepSeek; exigen BRIDGE_TOKEN
 
 const esConsenso = (modo) => ['consulta', 'plan'].includes(modo);
 const OBJETIVO_UNICO = process.env.SWECODE_OBJETIVO || 'qwen38max';
