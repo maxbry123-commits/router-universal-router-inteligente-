@@ -23,7 +23,7 @@ Estado del bridge en disco (`BRIDGE_STATE_DIR`, por defecto `./state`): `checkpo
 1. `GET /v1/secciones` ➡️ `conv_id` con `enviados/total` y `completo`. Los que tienen `completo:false` están a medias.
 2. Reenviar `POST /v1/chat/completions` con el **mismo `conv_id` y el mismo texto** (y `cuentas`/`clave` si el bridge se reinició). Retoma desde el primer bloque no confirmado; si la tarea cambió o ya estaba completa, empieza de cero.
 3. Antes de ejecutar, leer el plan: `GET /v1/proyectos` y `GET /v1/proyectos/<proyecto>` (`ASESORIA.md`). Para generarlo: `model: "swecode-asesoria"` con `proyecto`.
-4. El historial de turnos con `conv_id`/`proyecto` queda en la memoria del chat (scope `chat-ui:hist:openclaw-<slug>`).
+4. Leer el historial guardado: `GET /v1/memoria/<sesion>`. El historial de turnos con `conv_id`/`proyecto` queda en la memoria del chat (scope `chat-ui:hist:openclaw-<slug>`).
 
 ## Cómo diagnosticar o arreglar
 1. `GET /health` y `GET /v1/queue`: cuentas cargadas, `respaldo: {groq, nvidia, hf_local}` (conteos), `state_dir`, tabs vivas.
@@ -31,7 +31,8 @@ Estado del bridge en disco (`BRIDGE_STATE_DIR`, por defecto `./state`): `checkpo
 3. `aviso: CUENTAS_FALTAN` (o `/health` con `WEB_ACCOUNTS_VACIO`) ➡️ OpenClaw no envió `cuentas` y `clave`: reenviarlas en el POST (mientras tanto responde el respaldo).
 4. `SESSION_EXPIRED` ➡️ el bridge ya reintenta una vez; si persiste, `POST /refresh_session`.
 5. Código desactualizado en el Space (el `commit` de `/health` lo da el proxy del Space; el `/health` del bridge no lo devuelve) ➡️ rebuild del Space (clona `main` al arrancar).
-6. Tras arreglar algo: `python3 "SWE CODE free/evolucion.py" registrar '{"codigo":"...","accion":"...","resultado":"PASS"}'`.
+6. `GET /v1/evolucion`: mejoras propuestas por lo que el bridge reparó solo (3 repeticiones); aplicarlas con un commit propio y registrar el resultado.
+7. Tras arreglar algo: `python3 "SWE CODE free/evolucion.py" registrar '{"codigo":"...","accion":"...","resultado":"PASS"}'`.
 
 ## Reglas
 Dos raíces (`router-mvp/`, `chat-router/`). No se toca el Router MVP. Lo protegido por `cableado.manifest.json` no se toca sin regenerar la guarda. Credenciales solo en el banco/vault de OpenClaw o el entorno. Sin PASS sin evidencia.
