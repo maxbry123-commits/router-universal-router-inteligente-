@@ -35,9 +35,9 @@ test("MODELOS_SELECCIONADOS tiene exactamente los 5 ids del Director, Muse Glimm
 });
 
 test("seleccionar muestra solo los elegidos del catalogo real; el resto del catalogo antiguo desaparece", () => {
-  const groq = seleccionar("groq", ["groq/llama-3.3-70b-versatile", GROQ, "groq/gemma2-9b-it"]);
+  const groq = seleccionar("groq", ["groq/openai/gpt-oss-120b", GROQ, "groq/gemma2-9b-it"]);
   assert.deepEqual(groq.map((m) => [m.id, m.disponible, m.etiqueta]), [[GROQ, true, "Groq · Qwen 3.8 27B"]]);
-  const nv = seleccionar("nvidia", ["nvidia/meta/llama-3.1-8b-instruct", NV[3], NV[0], NV[0], "nvidia/z-ai/glm-4.7"]);
+  const nv = seleccionar("nvidia", ["nvidia/deepseek-ai/deepseek-v4.1-flash", NV[3], NV[0], NV[0], "nvidia/z-ai/glm-4.7"]);
   assert.deepEqual(nv.filter((m) => m.disponible).map((m) => m.id), [NV[0], NV[3]]);  // el duplicado del catalogo sale una vez
 });
 
@@ -51,7 +51,7 @@ test("un id elegido que el proveedor no publica se muestra NO DISPONIBLE (no se 
 
 test("cargar: Groq y NVIDIA quedan solo con los modelos elegidos y el primero disponible es el defecto", async () => {
   reiniciar();
-  catalogos = { groq: ["groq/llama-3.3-70b-versatile", GROQ], nvidia: ["nvidia/meta/llama-3.1-8b-instruct", ...NV] };
+  catalogos = { groq: ["groq/openai/gpt-oss-120b", GROQ], nvidia: ["nvidia/deepseek-ai/deepseek-v4.1-flash", ...NV] };
   await cargar();
   assert.deepEqual(window.RIU_GROQ.lista.map((m) => m.id), [GROQ]);
   assert.equal(window.RIU_GROQ.modelo, GROQ); assert.equal(window.RIU_GROQ.aviso, "");
@@ -64,7 +64,7 @@ test("cargar: Groq y NVIDIA quedan solo con los modelos elegidos y el primero di
 
 test("cargar: si Groq no publica qwen3.8-27b NO se cambia a otro modelo del catalogo", async () => {
   reiniciar();
-  catalogos = { groq: ["groq/llama-3.3-70b-versatile", "groq/gemma2-9b-it"], nvidia: NV };
+  catalogos = { groq: ["groq/openai/gpt-oss-120b", "groq/gemma2-9b-it"], nvidia: NV };
   await cargar();
   assert.deepEqual(window.RIU_GROQ.lista.map((m) => [m.id, m.disponible]), [[GROQ, false]]);
   assert.equal(window.RIU_GROQ.modelo, "");  // enviar-mensaje.js no envia nada con modelo vacio y dice el aviso

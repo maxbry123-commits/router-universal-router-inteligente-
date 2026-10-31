@@ -105,7 +105,7 @@ class Entorno(unittest.TestCase):
         self.esperas = []
         for nombre, valor in (("_dormir", self.esperas.append), ("_azar", lambda: 0.0)):
             q = patch.object(externos, nombre, valor); q.start(); self.addCleanup(q.stop)
-        externos.CACHE.clear(); externos._SWE.clear()
+        externos.CACHE.clear(); externos._SWE.clear(); self.addCleanup(externos.CACHE.clear)
         self.srv = []
         self.addCleanup(lambda: [s.cerrar() for s in self.srv])
 
@@ -416,11 +416,11 @@ class TestPoliticasYContexto(Entorno):
 class TestAppParciales(Base):
     """El chat recibe el texto progresivo por el mecanismo existente: TRABAJOS[pid]['parcial'] (lo lee /resultado y api.js)."""
     def setUp(self):
-        super().setUp()
         limpio = {k: "" for k in os.environ if k.startswith(("GROQ_API_KEY", "NVIDIA_API_KEY"))}
         p = patch.dict(os.environ, {**limpio, "NVIDIA_API_KEY": "nv-ficticia", "RIU_BANCO_SWE": "/no/existe.bin", "RIU_EXTERNOS_TIMEOUT_S": "", "RIU_STREAM_EXTERNOS": ""})
-        p.start(); self.addCleanup(p.stop)
-        externos.CACHE.clear()
+        p.start(); self.addCleanup(p.stop)  # antes que Base.setUp: su cleanup corre DESPUES del tearDown de Base y devuelve el entorno original
+        super().setUp()
+        externos.CACHE.clear(); self.addCleanup(externos.CACHE.clear)
         self.banco.datos.pop("NVIDIA_API_KEY", None)
 
     def _correr(self, ruta, cuerpo):

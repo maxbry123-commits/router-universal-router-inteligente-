@@ -2,6 +2,7 @@
 Almacen = _router falso en memoria; agentes y servidores Liquid falsos. Ninguna clave real."""
 import json
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -15,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from plugins.deepseek_harness import server as h
 
 RAIZ_CHAT_ROUTER = Path(__file__).resolve().parents[3]
+NODE = shutil.which("node")
 CLAVE = "clave-http-solo-prueba"
 CONTRATO = {"task_id": "yaiwes-001", "origen": "yaiwes", "mensaje": "Revisar proyecto", "workflow": "swe_code", "modelo_responde": "hf/lfm2.5-350m",
             "modelo_lector": "hf/lfm2.5-350m", "modelo_tool": "hf/qwen2.5-coder-1.5b", "modelo_revisor": "hf/qwen3.5-0.8b", "agente_responde": "openclaw",
@@ -78,7 +80,9 @@ def test_registro_de_herramientas_amplia_sin_quitar():
 
 def test_status_sigue_igual(entorno):
     _, _, c = entorno
-    assert c.post("/invoke", json={"action": "status"}, headers={"X-API-Key": CLAVE}).json() == {"status": "ok", "result": {"servicio": "deepseek_harness", "acciones": ["status", "invoke", "llm"]}}
+    r = c.post("/invoke", json={"action": "status"}, headers={"X-API-Key": CLAVE}).json()
+    assert r["status"] == "ok" and r["result"]["servicio"] == "deepseek_harness" and r["result"]["acciones"] == ["status", "invoke", "llm"]  # lo de siempre, mas `swe` (ver test_status_emite_swe_*)
+    assert set(r["result"]) == {"servicio", "acciones", "swe"}
     assert c.post("/invoke", json={"action": "invoke", "tool": "swe_iniciar", "args": CONTRATO}, headers={"X-API-Key": "mala"}).status_code == 401
     assert invocar(c, "no_existe", {})["error"] == "tool no permitida"
 
@@ -145,3 +149,67 @@ def test_el_modelo_no_puede_invocar_swe_desde_el_bucle_de_herramientas():
         r = h.llm({"messages": [{"role": "user", "content": "hola"}], "modelo": "x"})
     assert r["texto"] == "listo" and pedidas == []
     assert "Herramienta no autorizada: swe_aprobar" in json.dumps(mensajes_vistos[-1])
+
+
+# ---------- status: result.swe (disponibilidad real que consume el selector) ----------
+def _status(c, clave=CLAVE):
+    return c.post("/invoke", json={"action": "status"}, headers={"X-API-Key": clave})
+
+
+def test_status_emite_swe_con_el_formato_del_contrato(entorno, monkeypatch, tmp_path):
+    _, _, c = entorno
+    for v in ("RIU_CODEX_BIN", "RIU_CODEX_BASE_URL", "RIU_OPENCODE_BIN", "RIU_SWEAGENT_BIN", "RIU_DOCKER_BIN", "RIU_CLAUDE_BIN", "RIU_CLAUDE_PASARELA_URL", "RIU_CLAUDE_PASARELA_MODELO",
+              "OPENCLAW_GATEWAY_TOKEN", "SWECODE_URL_S1", "SWECODE_URL_S2", "SWECODE_URL_S3", "GROQ_API_KEY", "NVIDIA_API_KEY"):
+        monkeypatch.delenv(v, raising=False)
+    monkeypatch.setenv("PATH", str(tmp_path / "sin-binarios"))
+    monkeypatch.setenv("RIU_SWE_SONDA_MODELOS", "0")
+    opencode = tmp_path / "opencode"; opencode.write_text("#!/bin/sh\nexit 0\n"); opencode.chmod(0o755)
+    monkeypatch.setenv("RIU_OPENCODE_BIN", str(opencode))
+    monkeypatch.setenv("SWECODE_URL_S1", "http://127.0.0.1:9101/v1")
+    swe = _status(c).json()["result"]["swe"]
+    assert set(swe) == {"agentes", "workflows", "modelos"}
+    assert swe["agentes"]["opencode"] == {"disponible": True, "motivo": ""}
+    assert swe["agentes"]["codex"]["disponible"] is False and swe["agentes"]["codex"]["motivo"]
+    assert swe["workflows"]["individual"]["disponible"] is True and swe["workflows"]["liquid_mirror"]["disponible"] is False
+    assert swe["modelos"]["hf/lfm2.5-350m"]["disponible"] is True and swe["modelos"]["groq/qwen/qwen3.8-27b"]["disponible"] is False
+    assert not (tmp_path / "opencode.lanzado").exists()
+
+
+def test_status_sigue_exigiendo_clave_y_no_revela_claves(entorno, monkeypatch):
+    _, _, c = entorno
+    assert _status(c, "mala").status_code == 401
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_clave-falsa-de-prueba-1234567890"); monkeypatch.setenv("NVIDIA_API_KEY_2", "nvapi-clave-falsa-de-prueba-1234567890")
+    monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "token-gateway-falso"); monkeypatch.setenv("RIU_SWE_SONDA_MODELOS", "0")
+    cuerpo = _status(c).text
+    assert "gsk_" not in cuerpo and "nvapi-" not in cuerpo and "token-gateway-falso" not in cuerpo and CLAVE not in cuerpo
+    assert json.loads(cuerpo)["result"]["swe"]["modelos"]["groq/qwen/qwen3.8-27b"]["disponible"] is True
+
+
+def test_si_la_disponibilidad_falla_el_status_responde_igual_sin_swe_inventado(entorno):
+    _, _, c = entorno
+    def rota(**k): raise RuntimeError("boom")
+    with patch("agentes.adaptadores.disponibilidad.capacidades", rota):
+        r = _status(c).json()
+    assert r["status"] == "ok" and r["result"]["servicio"] == "deepseek_harness" and r["result"]["swe"] == {"error": "DISPONIBILIDAD_NO_COMPROBADA"}
+
+
+def test_el_selector_deja_de_marcar_no_disponible_lo_conectado_y_lo_sigue_marcando_si_no_esta(entorno, monkeypatch, tmp_path):
+    """Cadena real: status del Harness -> harness_client.swe_capacidades (saneo del backend YAIWES) -> estadoOpcion de swe-directo.js (el selector)."""
+    _, _, c = entorno
+    for v in ("RIU_CODEX_BIN", "RIU_CODEX_BASE_URL", "RIU_OPENCODE_BIN", "RIU_SWEAGENT_BIN", "RIU_DOCKER_BIN", "RIU_CLAUDE_BIN", "RIU_CLAUDE_PASARELA_URL", "RIU_CLAUDE_PASARELA_MODELO",
+              "OPENCLAW_GATEWAY_TOKEN", "SWECODE_URL_S1", "SWECODE_URL_S2", "SWECODE_URL_S3", "GROQ_API_KEY", "NVIDIA_API_KEY"):
+        monkeypatch.delenv(v, raising=False)
+    monkeypatch.setenv("PATH", str(tmp_path / "sin-binarios")); monkeypatch.setenv("RIU_SWE_SONDA_MODELOS", "0")
+    exe = tmp_path / "opencode"; exe.write_text("#!/bin/sh\nexit 0\n"); exe.chmod(0o755)
+    monkeypatch.setenv("RIU_OPENCODE_BIN", str(exe)); monkeypatch.setenv("SWECODE_URL_S1", "http://127.0.0.1:9101/v1")
+    from mvp import harness_client
+    cap = harness_client.swe_capacidades(_status(c).json())
+    cap["harness"] = "ok"
+    js = """import * as S from %r; const cap = S.normalizarCapacidades(JSON.parse(process.argv[1]));
+      const e = (t, id, m) => S.estadoOpcion(cap, t, id, m).ok;
+      console.log(JSON.stringify({opencode: e('agente','opencode','hf/qwen3.5-0.8b'), codex: e('agente','codex'), claude: e('agente','claude-code'), openclaw: e('agente','openclaw'),
+        individual: e('workflow','individual'), swe_code: e('workflow','swe_code'), liquid: e('workflow','liquid_mirror'), hf: e('modelo','hf/lfm2.5-350m'), groq: e('modelo','groq/qwen/qwen3.8-27b')}));""" % str(RAIZ_CHAT_ROUTER / "chat" / "frontend" / "swe-directo.js")
+    r = subprocess.run([NODE, "--input-type=module", "-e", js, json.dumps(cap)], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr
+    vista = json.loads(r.stdout)
+    assert vista == {"opencode": True, "codex": False, "claude": False, "openclaw": False, "individual": True, "swe_code": False, "liquid": False, "hf": True, "groq": False}

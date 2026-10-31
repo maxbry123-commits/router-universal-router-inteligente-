@@ -29,15 +29,15 @@ const ok = (n, c, x) => console.log((c ? 'PASS ' : 'FAIL ') + n + (x ? ' :: ' + 
   await apagarTodo(); await p.waitForTimeout(300);
   await p.$eval('#sel-groq', e => e.click()); await p.waitForTimeout(600);
   const fichas = await p.evaluate(() => [...document.querySelectorAll('#sh-groq-lista button')].map(x => x.textContent.trim()));
-  ok('3 la hoja Groq lista sus modelos (sin whisper)', fichas.some(t => /Groq · llama-3\.3-70b-versatile/.test(t)) && !fichas.some(t => /whisper/.test(t)), JSON.stringify(fichas).slice(0, 200));
-  await p.evaluate(() => [...document.querySelectorAll('#sh-groq-lista button')].find(e => /gpt-oss-120b/.test(e.textContent)).click()); await p.waitForTimeout(400);
-  ok('3 la fila Groq muestra el modelo elegido', /gpt-oss-120b/.test(await p.evaluate(() => (document.querySelector('.sel-fila[data-selector="groq"] .sel-resp') || {}).textContent || '')));
+  ok('3 la hoja Groq lista sus modelos (sin whisper)', fichas.some(t => /Groq · Qwen 3\.8 27B/.test(t)) && !fichas.some(t => /whisper/.test(t)), JSON.stringify(fichas).slice(0, 200));
+  await p.evaluate(() => [...document.querySelectorAll('#sh-groq-lista button')].find(e => /Qwen 3\.8 27B/.test(e.textContent)).click()); await p.waitForTimeout(400);
+  ok('3 la fila Groq muestra el modelo elegido', /Qwen 3\.8 27B|qwen3\.8-27b/.test(await p.evaluate(() => (document.querySelector('.sel-fila[data-selector="groq"] .sel-resp') || {}).textContent || '')));
   await encender('groq');
-  ok('3 el panel Selectores muestra el modelo que responde', /gpt-oss-120b/.test(await p.evaluate(() => document.querySelector('.sel-resp-global').textContent)));
-  r = await pregunta(); ok('3 responde Groq gpt-oss-120b', /Soy openai\/gpt-oss-120b en Groq/.test(r.t) && /groq\/openai\/gpt-oss-120b/.test(r.meta), r.t + ' | ' + r.meta);
+  ok('3 el panel Selectores muestra el modelo que responde', /Qwen 3\.8 27B|qwen3\.8-27b/.test(await p.evaluate(() => document.querySelector('.sel-resp-global').textContent)));
+  r = await pregunta(); ok('3 responde Groq qwen3.8-27b', /Soy qwen\/qwen3\.8-27b en Groq/.test(r.t) && /groq\/qwen\/qwen3\.8-27b/.test(r.meta), r.t + ' | ' + r.meta);
   // 4) recargar: la elección se conserva y sigue respondiendo el mismo
   await p.reload(); await p.waitForSelector('#btn-prompt', { state: 'attached' }); await p.waitForTimeout(2500);
-  r = await pregunta(); ok('4 tras recargar sigue el mismo modelo', /gpt-oss-120b/.test(r.t), r.t + ' | ' + r.meta);
+  r = await pregunta(); ok('4 tras recargar sigue el mismo modelo', /qwen3\.8-27b/.test(r.t), r.t + ' | ' + r.meta);
   ok('sin errores JS', errs.length === 0, errs.join(' | '));
   await b.close();
 })().catch(e => { console.log('ERROR', e.message.split('\n')[0]); process.exit(1); });

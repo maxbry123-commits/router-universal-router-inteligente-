@@ -65,8 +65,7 @@ const MODELOS_FALLBACK = [
   { id: "nvcode:stepfun-ai/step-5-preview", grupo: "NVIDIA", nombre: "Step 5 Preview" },
   { id: "nvcode:deepseek-ai/deepseek-v4.1-flash", grupo: "NVIDIA", nombre: "DeepSeek V4.1 Flash" },
   { id: "groq:openai/gpt-oss-120b", grupo: "Groq", nombre: "GPT OSS 120B" },
-  { id: "groq:llama-3.3-70b-versatile", grupo: "Groq", nombre: "Llama 3.3 70B" },
-  { id: "groq:llama-3.1-8b-instant", grupo: "Groq", nombre: "Llama 3.1 8B" },
+  { id: "groq:qwen/qwen3.8-27b", grupo: "Groq", nombre: "Qwen 3.8 27B" },
 ];
 
 const el = (tag, cls, txt) => {

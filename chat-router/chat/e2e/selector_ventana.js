@@ -35,8 +35,8 @@ const FILAS = ['#sel-ngt', '#sel-groq', '#sel-nuevo', '#sel-mvp', '#sel-cc', '#s
     // la lista de cada selector abre encima (se cierra la ventana de selectores)
     await p.click('#btn-selector-modelos'); await p.waitForTimeout(300); await p.locator('#sel-groq').click(); await p.waitForTimeout(500);
     ok(t + '1 la lista Groq se abre al tocar Groq ⌄', await p.evaluate(() => { const s = document.getElementById('sh-groq'); return !!s && !s.hidden; }) && await p.evaluate(() => document.getElementById('sh-selectores').hidden));
-    await p.evaluate(() => { const x = [...document.querySelectorAll('#sh-groq-lista button')].find(e => /gpt-oss-120b/.test(e.textContent)); if (x) x.click(); }); await p.waitForTimeout(400);
-    ok(t + '2 el indicador muestra el modelo Groq elegido', /gpt-oss-120b/.test(await p.textContent('#btn-selector-modelos')), (await p.textContent('#btn-selector-modelos')).trim());
+    await p.evaluate(() => { const x = [...document.querySelectorAll('#sh-groq-lista button')].find(e => /Qwen 3\.8 27B/.test(e.textContent)); if (x) x.click(); }); await p.waitForTimeout(400);
+    ok(t + '2 el indicador muestra el modelo Groq elegido', /Qwen 3\.8 27B|qwen3\.8-27b/.test(await p.textContent('#btn-selector-modelos')), (await p.textContent('#btn-selector-modelos')).trim());
     ok(t + 'sin errores JS', errs.length === 0, errs.join('|'));
     await ctx.close();
   }

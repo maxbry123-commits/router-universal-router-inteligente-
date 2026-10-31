@@ -1,4 +1,4 @@
-// swe_rutas.js — rutas /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar} del bridge (backend de OpenClaw).
+// swe_rutas.js — rutas /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar} y GET /v1/swe/capacidades del bridge (backend de OpenClaw).
 // OpenClaw UI -> (aqui) -> Harness DeepSeek (POST {RIU_DEEPSEEK_HARNESS_URL}/invoke) -> agentes/adaptadores. El bridge NO ejecuta herramientas ni adaptadores Python:
 // solo valida y reenvia. RIU_API_KEY vive solo en este backend. Contrato de tarea: el mismo de YAIWES (chat-router/agentes/adaptadores/contrato.py, origen "openclaw").
 // Autenticacion OBLIGATORIA: sin BRIDGE_TOKEN configurado estas rutas se rechazan (503); no heredan el acceso libre de las rutas publicas con el token vacio.
@@ -13,16 +13,15 @@ const CAMPOS = ['task_id', 'origen', 'mensaje', 'workflow', 'modelo_responde', '
 const OBLIGATORIOS = CAMPOS.slice(0, 11);
 const MAX_MENSAJE = 200000;
 
-// Llama a una operacion SWE del Harness. Los mensajes de error son codigos fijos: jamas llevan la URL ni la clave.
-export async function llamarHarness(operacion, datos, { env = process.env, fetchFn = fetch } = {}) {
-  if (typeof operacion !== 'string' || !PERMITIDAS.has(operacion)) throw new Error('OPERACION_NO_PERMITIDA');
+// POST {RIU_DEEPSEEK_HARNESS_URL}/invoke con el cuerpo dado; devuelve cuerpo.result. Los mensajes de error son codigos fijos: jamas llevan la URL ni la clave.
+async function postHarness(payload, { env, fetchFn }) {
   const base = String(env.RIU_DEEPSEEK_HARNESS_URL || '').trim().replace(/\/+$/, ''), clave = env.RIU_API_KEY;
   if (!base || !clave) throw new Error('HARNESS_NO_CONFIGURADO');
   const ms = Number.parseInt(env.RIU_SWE_HARNESS_TIMEOUT_MS, 10) > 0 ? Number.parseInt(env.RIU_SWE_HARNESS_TIMEOUT_MS, 10) : TIMEOUT_HARNESS_MS;
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
   let r;
   try {
-    r = await fetchFn(`${base}/invoke`, { method: 'POST', headers: { 'content-type': 'application/json', 'X-API-Key': clave }, body: JSON.stringify({ action: 'invoke', tool: operacion, args: datos }), signal: ctl.signal });
+    r = await fetchFn(`${base}/invoke`, { method: 'POST', headers: { 'content-type': 'application/json', 'X-API-Key': clave }, body: JSON.stringify(payload), signal: ctl.signal });
     if (!r.ok) throw new Error(`HARNESS_HTTP_${r.status}`);
     let cuerpo = null;
     try { cuerpo = await r.json(); } catch { /* cuerpo no JSON: fallo de ejecucion */ }
@@ -34,6 +33,40 @@ export async function llamarHarness(operacion, datos, { env = process.env, fetch
     if (/^HARNESS_(HTTP_\d+|EJECUCION_FALLIDA)$/.test(e && e.message)) throw e;
     throw new Error(e && (e.name === 'AbortError' || e.name === 'TimeoutError') ? 'HARNESS_TIMEOUT' : 'HARNESS_NO_DISPONIBLE');
   } finally { clearTimeout(t); }
+}
+
+// Llama a una operacion SWE del Harness (solo las cinco permitidas).
+export async function llamarHarness(operacion, datos, { env = process.env, fetchFn = fetch } = {}) {
+  if (typeof operacion !== 'string' || !PERMITIDAS.has(operacion)) throw new Error('OPERACION_NO_PERMITIDA');
+  return postHarness({ action: 'invoke', tool: operacion, args: datos }, { env, fetchFn });
+}
+
+// ---- capacidades (solo lectura): el `status` del Harness -> result.swe.{agentes,workflows,modelos}, saneado igual que GET /chat/swe/capacidades de YAIWES ----
+// El catalogo vive en agentes/adaptadores/modelos.py y el Harness solo emite ids de ese catalogo; aqui no se copia: se descarta lo que no tenga la forma esperada.
+const ID_CAP = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,79}$/;
+const SECRETO = /(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]{12,}|gh[pousr]_[A-Za-z0-9]{12,}|hf_[A-Za-z0-9]{20,}|gsk_[A-Za-z0-9]{12,}|nvapi-[A-Za-z0-9_-]{12,})/g;
+const GRUPOS = ['agentes', 'workflows', 'modelos'];
+export function sanearCapacidades(result) {
+  const swe = simple(result) && simple(result.swe) ? result.swe : {}, salida = {};
+  for (const g of GRUPOS) {
+    salida[g] = {};
+    const entradas = simple(swe[g]) ? swe[g] : {};
+    for (const [k, v] of Object.entries(entradas)) {
+      if (!ID_CAP.test(k) || k.includes('..') || !simple(v) || typeof v.disponible !== 'boolean') continue;
+      const e = { disponible: v.disponible };
+      if (typeof v.motivo === 'string' && v.motivo) e.motivo = v.motivo.replace(SECRETO, '[REDACTADO]').slice(0, 200);
+      if (g === 'agentes' && Array.isArray(v.modelos)) e.modelos = v.modelos.filter((m) => typeof m === 'string' && ID_CAP.test(m) && !m.includes('..'));
+      salida[g][k] = e;
+    }
+  }
+  return salida;
+}
+export async function consultarCapacidades({ env = process.env, fetchFn = fetch } = {}) {
+  const vacio = { agentes: {}, workflows: {}, modelos: {} };
+  if (!String(env.RIU_DEEPSEEK_HARNESS_URL || '').trim()) return { harness: 'no_configurado', ...vacio };
+  if (!env.RIU_API_KEY) return { harness: 'sin_credencial', ...vacio };
+  try { return { harness: 'ok', ...sanearCapacidades(await postHarness({ action: 'status' }, { env, fetchFn })) }; }
+  catch { return { harness: 'no_disponible', ...vacio }; }
 }
 
 const invalido = (code) => Object.assign(new Error(code), { http: 400 });
@@ -74,13 +107,21 @@ function operadorDe(req, env) {
 const iguales = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 const respuesta = (res, codigo, error) => res.status(codigo).json({ ok: false, error });
 
+// Autenticacion obligatoria compartida por todas las rutas /v1/swe/*: devuelve null si pasa, o la respuesta de rechazo ya enviada.
+function exigirToken(req, res, env) {
+  const token = env.BRIDGE_TOKEN || '';
+  if (!token) return respuesta(res, 503, { code: 'BRIDGE_TOKEN_NO_CONFIGURADO', message: 'las rutas /v1/swe/* exigen BRIDGE_TOKEN en el bridge' });
+  const h = req.headers || {}, bearer = /^Bearer\s+(.+)$/i.exec(String(h.authorization || '')), t = (bearer && bearer[1]) || String(h['x-bridge-key'] || '');
+  if (!t || !iguales(t, token)) return respuesta(res, 401, { code: 'NO_AUTORIZADO' });
+  return null;
+}
+
 export function montarRutasSwe(app, { env = process.env, fetchFn = fetch } = {}) {
+  // GET /v1/swe/capacidades: solo lectura, sin secretos, misma autenticacion obligatoria. La UI de OpenClaw marca NO DISPONIBLE lo que no figura conectado.
+  app.get('/v1/swe/capacidades', async (req, res) => exigirToken(req, res, env) || res.json(await consultarCapacidades({ env, fetchFn })));
   for (const [ruta, operacion] of Object.entries(OPERACIONES_SWE)) {
     app.post(`/v1/swe/${ruta}`, async (req, res) => {
-      const token = env.BRIDGE_TOKEN || '';
-      if (!token) return respuesta(res, 503, { code: 'BRIDGE_TOKEN_NO_CONFIGURADO', message: 'las rutas /v1/swe/* exigen BRIDGE_TOKEN en el bridge' });
-      const h = req.headers || {}, bearer = /^Bearer\s+(.+)$/i.exec(String(h.authorization || '')), t = (bearer && bearer[1]) || String(h['x-bridge-key'] || '');
-      if (!t || !iguales(t, token)) return respuesta(res, 401, { code: 'NO_AUTORIZADO' });
+      const rechazo = exigirToken(req, res, env); if (rechazo) return rechazo;
       let args;
       try {
         args = operacion === 'swe_iniciar' ? argsIniciar(req.body) : argsReferencia(req.body);

@@ -266,6 +266,15 @@ def llm(cuerpo):
 from agentes.adaptadores import workflows as _swe  # noqa: E402  (chat-router va en PYTHONPATH, igual que `plugins`)
 from agentes.adaptadores.contrato import TareaSWE  # noqa: E402,F401  (contrato comun YAIWES/OpenClaw)
 from agentes.adaptadores.dispatcher import ejecutar_agente  # noqa: E402
+from agentes.adaptadores import disponibilidad as _disponibilidad  # noqa: E402
+
+
+def _swe_status():
+    """result.swe del status: disponibilidad REAL (instalado/configurado) de agentes, workflows y modelos; solo lectura, sin claves. Si falla no se inventa nada."""
+    try:
+        return _disponibilidad.capacidades()
+    except Exception:  # noqa: BLE001 - un fallo de la comprobacion no debe tumbar el status del Harness
+        return {"error": "DISPONIBILIDAD_NO_COMPROBADA"}
 
 
 def _ctx_swe():
@@ -305,7 +314,7 @@ def invoke(cuerpo: dict, x_api_key: str | None = Header(None)):
     accion = cuerpo.get("action")
     try:
         if accion == "status":
-            return _ok({"servicio": "deepseek_harness", "acciones": ["status", "invoke", "llm"]})
+            return _ok({"servicio": "deepseek_harness", "acciones": ["status", "invoke", "llm"], "swe": _swe_status()})
         if accion == "invoke":
             herramienta = HERRAMIENTAS.get(cuerpo.get("tool"))
             if herramienta is None:

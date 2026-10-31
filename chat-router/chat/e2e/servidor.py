@@ -39,7 +39,7 @@ def falso(mensajes, modelo, base, clave, opciones=None):
     return {"texto": LARGO[:600] if corto else LARGO, "tool_calls": [], "finish_reason": "length" if corto else "stop", "modelo_respuesta": modelo, "modelo_solicitado": modelo}
 servicio.compute.llamar = falso
 os.environ["GROQ_API_KEY"] = "gsk-e2e"
-servicio.externos._get = lambda url, k: {"data": [{"id": "llama-3.3-70b-versatile"}, {"id": "openai/gpt-oss-120b"}, {"id": "whisper-large-v3"}]}
+servicio.externos._get = lambda url, k: {"data": [{"id": "qwen/qwen3.8-27b"}, {"id": "openai/gpt-oss-120b"}, {"id": "whisper-large-v3"}]}
 _sol = servicio.compute._solicitar
 def _sol_falso(url, payload, clave):
     if "groq.com" in url:
