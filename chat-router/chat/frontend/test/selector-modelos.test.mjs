@@ -37,7 +37,7 @@ test("ambas hojas refrescan la caché y eligen el id canónico en su selector", 
   const elementos = Object.fromEntries(["#sel-nuevo", "#sel-mvp", "#sh-modelos-lista", "#sh-modelos", "#chat-tabs", "#sh-modelos .va-head strong"].map((k) => [k, nodo("div")]));
   const c = { sesion: "prueba", selectorQwen: null };
   globalThis.RIU_SELECTORES = { encender(id) { this.activo = id; }, apagar() { this.activo = null; } };
-  assert.deepEqual(RIU_SELECTOR_QWEN.modelos.map((m) => m.model_id), ["glm-5.2"]);
+  assert.deepEqual(RIU_SELECTOR_QWEN.modelos.map((m) => m.model_id).sort(), ["glm-5.2", ...SWE_IDS].sort());  // catalogo guardado + grupos SWE
   conectarSelectorModelos({ q: (k) => elementos[k], chat: () => c, guardar() {}, tell() {} });
   await new Promise(setImmediate);
   const filas = () => elementos["#sh-modelos-lista"].children.flatMap((n) => n.children).filter((n) => n.tagName === "button");

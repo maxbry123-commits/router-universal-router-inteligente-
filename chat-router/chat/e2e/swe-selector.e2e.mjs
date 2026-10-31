@@ -49,7 +49,7 @@ function routerFalso(estado) {
     if (p === '/v1/chat/completions' && req.method() === 'POST') {
       return json(route, { modelo_usado: (body && body.model) || 'swe', via_respaldo: 'groq', choices: [{ message: { role: 'assistant', content: 'respuesta SWE de prueba' }, finish_reason: 'stop' }] });
     }
-    if (p === '/plugins/puente_chat/call/chat_async') {  // ruta normal del Router (control: un modelo NO SWE debe usar esta)
+    if (/^\/plugins\/[a-z_]+\/call\/chat_async$/.test(p)) {  // ruta normal del Router (puente_chat o fichas_qwen para Team qwen); control: un modelo NO SWE debe usar esta
       return json(route, { status: 'ok', result: { choices: [{ message: { content: 'respuesta del Router (plugin)' }, finish_reason: 'stop' }], modelo_solicitado: 'qwen3.8-max', modelo_respuesta: 'qwen3.8-max' } });
     }
     if (p === '/health') return json(route, { status: 'ok' });
@@ -114,7 +114,7 @@ async function enviar(p, texto) {
     ok('B2 se pinta "respuesta SWE de prueba"', r1 === 'respuesta SWE de prueba', JSON.stringify(r1));
     const comp = estA.llamadas.filter((l) => l.ruta === '/v1/chat/completions');
     ok('B3 una llamada POST /v1/chat/completions', comp.length === 1, JSON.stringify(estA.llamadas.map((l) => l.metodo + ' ' + l.ruta)));
-    ok('B3 NO se llamo a /plugins/puente_chat/...', !estA.llamadas.some((l) => l.ruta.startsWith('/plugins/puente_chat')), JSON.stringify(estA.llamadas.map((l) => l.ruta)));
+    ok('B3 NO se llamo a /plugins/puente_chat/... ni a ningun /plugins/*/chat_async', !estA.llamadas.some((l) => l.ruta.startsWith('/plugins/puente_chat') || /^\/plugins\/.*chat_async$/.test(l.ruta)), JSON.stringify(estA.llamadas.map((l) => l.ruta)));
     const b1 = comp[0] && comp[0].body || {};
     ok('B4 cuerpo: model web-qwen38max, mensaje del usuario al final, conv_id', b1.model === 'web-qwen38max' && Array.isArray(b1.messages) && /hola swe/.test(String(b1.messages[b1.messages.length - 1].content)) && b1.messages[b1.messages.length - 1].role === 'user' && !!b1.conv_id, JSON.stringify(b1).slice(0, 300));
     ok('B4 la llamada lleva X-API-Key', comp[0] && comp[0].clave === CLAVE);
@@ -135,7 +135,7 @@ async function enviar(p, texto) {
     ok('B7 elegir "Qwen 3.8 Max" (no SWE)', (await abrirHojaModelos(p), await elegir(p, 'Qwen 3.8 Max')));
     estA.llamadas.length = 0;
     const r3 = await enviar(p, 'control router');
-    ok('B7 modelo no SWE: va por /plugins/puente_chat/call/chat_async y NO por /v1/chat/completions', r3 === 'respuesta del Router (plugin)' && estA.llamadas.some((l) => l.ruta === '/plugins/puente_chat/call/chat_async') && !estA.llamadas.some((l) => l.ruta === '/v1/chat/completions'), JSON.stringify(r3) + ' ' + JSON.stringify(estA.llamadas.map((l) => l.ruta)));
+    ok('B7 modelo no SWE: va por el plugin del Router (/plugins/*/call/chat_async) y NO por /v1/chat/completions', r3 === 'respuesta del Router (plugin)' && estA.llamadas.some((l) => /^\/plugins\/[a-z_]+\/call\/chat_async$/.test(l.ruta)) && !estA.llamadas.some((l) => l.ruta === '/v1/chat/completions'), JSON.stringify(r3) + ' ' + JSON.stringify(estA.llamadas.map((l) => l.ruta)));
 
     // ======== C) Configuracion: seccion "Agente movil (APK)" justo tras "Control" (segunda seccion) con enlace #ap-apk -> /apk ========
     await p.$eval('[data-view="apariencia"]', (e) => e.click());

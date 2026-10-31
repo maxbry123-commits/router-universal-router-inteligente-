@@ -324,7 +324,8 @@ test('4. swecode-asesoria con Groq OK guarda ASESORIA.md y GET /v1/proyectos lo 
   const n0 = llamadasWeb(A).length;
   const r = await chat(A, { model: 'swecode-asesoria', proyecto: 'Mi Proyecto Ñandú' });
   assert.equal(r.status, 200);
-  assert.equal(r.json.via_respaldo, 'groq');
+  assert.equal(r.json.via_respaldo, null, 'Groq es la via primaria de la asesoria, no un respaldo');
+  assert.equal(r.json.via_primaria, 'groq'); assert.equal(r.headers.get('x-via-respaldo'), null);
   assert.equal(r.json.choices[0].message.content, groq.texto);
   assert.equal(llamadasWeb(A).length, n0, 'asesoria va primero a Groq, no a la web');
   assert.match(groq.hits[0].body.messages[0].content, /MODO ASESORIA/);  // preambulo

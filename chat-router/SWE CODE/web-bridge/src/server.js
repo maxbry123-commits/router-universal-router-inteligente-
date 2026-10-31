@@ -108,7 +108,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (!esExterno(model) && !esLocal(model)) {
       return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     }
-    let via = null, aviso = null;
+    let via = null, aviso = null, viaPrimaria = null;
 
     const ejecutar = async () => {
     if (esExterno(model)) {
@@ -122,7 +122,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       // asesoria previa a ejecutar: primero Groq (las claves del chat Yaiwes), si no responde la web de SWE CODE free
       try {
         const r = await externo(`groq/${process.env.RIU_SWE_GROQ_MODELO || 'llama-3.3-70b-versatile'}`, [{ role: 'system', content: preambulo('asesoria') }, ...messages]);
-        salida = r.salida; usado = r.usado; via = 'groq';
+        salida = r.salida; usado = r.usado; viaPrimaria = 'groq';
       } catch {
         const r = await conFallback(OBJETIVO_UNICO, prompt, { modo: modoUso, convId: conv_id });
         salida = r.salida; usado = r.usado;
@@ -153,14 +153,14 @@ app.post('/v1/chat/completions', async (req, res) => {
       }
     }
     let archivo = null;
-    if (modoUso === 'asesoria') { try { archivo = guardarAsesoria(proyecto || conv_id, { texto: salida, via: via || 'web', modelo: usado }); } catch { /* guardar es mejor esfuerzo */ } }
+    if (modoUso === 'asesoria') { try { archivo = guardarAsesoria(proyecto || conv_id, { texto: salida, via: via || viaPrimaria || 'web', modelo: usado }); } catch { /* guardar es mejor esfuerzo */ } }
     if (proyecto || conv_id) guardarTurno(proyecto || conv_id, ultimo, salida, usado).catch(() => {});  // misma memoria del chat Yaiwes (mejor esfuerzo)
     res.setHeader('x-modelo-usado', usado);
     if (via) res.setHeader('x-via-respaldo', via);
 
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, aviso, archivo,
+      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo,
       choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: salida || '' } }],
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     });

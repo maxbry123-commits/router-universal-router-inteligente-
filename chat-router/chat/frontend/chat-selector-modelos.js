@@ -71,7 +71,7 @@ export function gruposModelos(modelos) {
 }
 let catalogo = CATALOGO_RESPALDO;
 try { const guardado = JSON.parse(localStorage.getItem(CATALOGO_CLAVE)); if (Array.isArray(guardado) && guardado.length) catalogo = guardado; } catch (e) {}
-let grupos = gruposModelos(catalogo);
+let grupos = gruposModelos([...catalogo, ...SWE_IDS]);  // Router caido o catalogo guardado: los grupos SWE se muestran igual
 
 const ICO = {  // iconos de línea monocromos (currentColor), skill Maxbry UI: sin emojis de color
   pensar: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>', rayo: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
