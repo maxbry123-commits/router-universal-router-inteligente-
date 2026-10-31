@@ -37,6 +37,13 @@ Estado del bridge en disco (`BRIDGE_STATE_DIR`, por defecto `./state`): `checkpo
 ## Reglas
 Dos raíces (`router-mvp/`, `chat-router/`). No se toca el Router MVP. Lo protegido por `cableado.manifest.json` no se toca sin regenerar la guarda. Credenciales solo en el banco/vault de OpenClaw o el entorno. Sin PASS sin evidencia.
 
+## Banco de claves (Groq/NVIDIA) sin tocar Hugging Face
+- Chat ➡️ `GET/POST/DELETE /web/v1/claves` con `X-API-Key` (clave del chat). Vercel reenvía `/web/*` al Space (`vercel.json`); el proxy del Space lo manda al bridge. Solo devuelve conteos, nunca valores.
+- El bridge exige `RIU_API_KEY` (o `RIU_PUBLIC_CHAT_KEY`/`RIU_MCP_KEY`/`RIU_ROUTER_API_KEY`) en su entorno; sin ella responde 503. Guarda cifrado en `BRIDGE_STATE_DIR/banco-swe.bin` y lo publica en la rama `banco-claves` (necesita `GITHUB_TOKEN`; un Space nuevo lo trae solo).
+- El Router MVP lee ese banco en solo lectura (`externos.claves`), con la misma clave de acceso. Con ella, los selectores Groq y NVIDIA del chat usan las claves pegadas en Configuración o en la ventana «Banco de claves» (grupo `groq/…` o `nvidia/…`; reemplaza las de ese proveedor).
+- `DELETE` solo vacía el banco propio; las claves del entorno o del Router siguen.
+- Vercel necesita `RIU_ROUTER_API_KEY` y `HF_POWER_TOKEN` para `/api/power` (encender el Router desde el chat).
+
 ## Pendiente fuera del código (HF / Grok)
 - Confirmar que el Space lanza el bridge en `:7870` (el código usa `BRIDGE_PORT`, por defecto 7860; el arranque del Space no está en este repo).
 - Ruta `GET /v1/queue` (y las de `/v1/*` que usa el chat) en el proxy del Space; el proxy tampoco está en este repo.
