@@ -70,6 +70,14 @@ class TestExternos(Base):
         acc = {k: "" for k in ("RIU_API_KEY", "RIU_PUBLIC_CHAT_KEY", "RIU_MCP_KEY", "RIU_ROUTER_API_KEY")}
         return patch.dict(os.environ, {**limpio, **acc, "RIU_BANCO_SWE": ruta, **({"RIU_API_KEY": acceso} if acceso else {})})
 
+    def test_banco_compartido_prueba_todas_las_variables_de_acceso(self):
+        """El banco del bridge puede estar cifrado con RIU_PUBLIC_CHAT_KEY aunque RIU_API_KEY este definida y sea otra."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            ruta = self._swe(d, GROQ_API_KEY="gsk-swe-otra-var")  # cifrado con "api-ficticia"
+            with self._entorno(ruta, acceso="otra-distinta"), patch.dict(os.environ, {"RIU_PUBLIC_CHAT_KEY": "api-ficticia"}):
+                self.assertEqual(externos.claves("groq", None), ["gsk-swe-otra-var"])
+
     def test_banco_compartido_aporta_claves_al_final_sin_repetir(self):
         import tempfile
         with tempfile.TemporaryDirectory() as d:

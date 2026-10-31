@@ -40,17 +40,20 @@ def _banco_compartido():
     try:
         from mvp import bank
         ruta = os.environ.get("RIU_BANCO_SWE") or os.path.join(os.environ.get("BRIDGE_STATE_DIR") or "/tmp/state", "banco-swe.bin")
-        acceso = next((os.environ[v] for v in bank.ACCESO if os.environ.get(v)), None)
-        if not acceso or not os.path.isfile(ruta):  # no existe: no se abre (abrir() crearia el archivo)
+        accesos = tuple(dict.fromkeys(os.environ[v] for v in bank.ACCESO if os.environ.get(v)))  # el banco puede estar cifrado con cualquiera de las variables de acceso
+        if not accesos or not os.path.isfile(ruta):  # no existe: no se abre (abrir() crearia el archivo)
             return None
         st = os.stat(ruta)
-        llave = (ruta, st.st_mtime_ns, st.st_size, acceso)
+        llave = (ruta, st.st_mtime_ns, st.st_size, accesos)
         if llave not in _SWE:
             _SWE.clear()
-            try:
-                _SWE[llave] = bank.abrir(ruta, acceso)
-            except Exception:
-                _SWE[llave] = None
+            _SWE[llave] = None
+            for acceso in accesos:
+                try:
+                    _SWE[llave] = bank.abrir(ruta, acceso)
+                    break
+                except Exception:
+                    continue
         return _SWE[llave]
     except Exception:
         return None

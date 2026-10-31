@@ -23,14 +23,21 @@ def _ruta_propia():
     return os.path.join(os.environ.get("BRIDGE_STATE_DIR") or "./state", "banco-swe.bin")
 
 
+def _candidatas():
+    """Todas las variables de acceso definidas, sin repetir y en el orden de bank.ACCESO (el banco puede estar cifrado con cualquiera de ellas)."""
+    return list(dict.fromkeys(os.environ[v] for v in bank.ACCESO if os.environ.get(v)))
+
+
 def _abrir(ruta, crear=False):
-    clave = _acceso()
-    if not clave or not (crear or os.path.exists(ruta)):
+    candidatas = _candidatas()
+    if not candidatas or not (crear or os.path.exists(ruta)):
         return None
-    try:
-        return bank.abrir(ruta, clave)
-    except (ValueError, OSError):
-        return None  # banco ilegible o clave distinta: no se rompe, simplemente no aporta
+    for clave in candidatas:
+        try:
+            return bank.abrir(ruta, clave)
+        except (ValueError, OSError):
+            continue  # banco ilegible o clave distinta: se prueba la siguiente; si ninguna sirve, simplemente no aporta
+    return None
 
 
 def leer():

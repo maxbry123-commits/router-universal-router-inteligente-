@@ -34,6 +34,12 @@ class TestClavesBanco(unittest.TestCase):
         claves_banco.guardar({"groq": ["gsk-a", "gsk-b"]})
         self.assertEqual(claves_banco.leer()["groq"], ["gsk-a", "gsk-b"])
 
+    def test_prueba_todas_las_variables_de_acceso_no_solo_la_primera(self):
+        """El banco puede estar cifrado con RIU_PUBLIC_CHAT_KEY aunque RIU_API_KEY este definida y sea otra."""
+        b = bank.abrir(self.propio, "clave-publica-del-chat"); b.guardar("GROQ_API_KEY", "gsk-con-otra-var")
+        with patch.dict(os.environ, {"RIU_API_KEY": "otra-distinta", "RIU_PUBLIC_CHAT_KEY": "clave-publica-del-chat"}):
+            self.assertEqual(claves_banco.leer()["groq"], ["gsk-con-otra-var"])
+
     def test_sin_clave_de_acceso_o_banco_inexistente_no_revienta(self):
         with patch.dict(os.environ, {"RIU_API_KEY": ""}):
             self.assertEqual(claves_banco.leer(), {"groq": [], "nvidia": []})

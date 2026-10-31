@@ -54,3 +54,14 @@ test("sin GITHUB_TOKEN o con GitHub caido no rompe", async () => {
   assert.equal(await publicarEnGithub({ api: "http://127.0.0.1:9", token: "", repo: "o/r" }), false);
   assert.equal(await traerDeGithub({ api: "http://127.0.0.1:9", token: "t", repo: "o/r" }), false);
 });
+
+test("forzar: si el banco local no sirve, el de GitHub lo sustituye; sin forzar nunca pisa el local", async () => {
+  const g = await github();
+  g.est.rama = true; g.est.archivo = Buffer.from("DE-GITHUB").toString("base64"); g.est.sha = "s9";
+  fs.writeFileSync(path.join(estado, "banco-swe.bin"), Buffer.from("LOCAL-VACIO"));
+  assert.equal(await traerDeGithub({ api: g.url, token: "t", repo: "o/r" }), false, "sin forzar no pisa");
+  assert.equal(fs.readFileSync(path.join(estado, "banco-swe.bin"), "utf8"), "LOCAL-VACIO");
+  assert.equal(await traerDeGithub({ api: g.url, token: "t", repo: "o/r", forzar: true }), true);
+  g.s.closeAllConnections?.(); g.s.close();
+  assert.equal(fs.readFileSync(path.join(estado, "banco-swe.bin"), "utf8"), "DE-GITHUB");
+});

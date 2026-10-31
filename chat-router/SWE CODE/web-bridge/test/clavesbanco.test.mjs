@@ -69,3 +69,16 @@ test("vigilarBanco: si aun no hay banco local, cada vuelta intenta traerlo de Gi
   clearInterval(t);
   assert.ok(orden.length >= 2 && orden[0] === "traer" && orden[1] === "cargar", orden.join(","));
 });
+
+test("vigilarBanco: si el banco local no aporta ninguna clave (vacio o ilegible), trae el de GitHub aunque exista el archivo y recarga", async () => {
+  const { vigilarBanco } = await import("../src/clavesbanco.js");
+  const llamadas = [];
+  const traer = async (o = {}) => { llamadas.push(o.forzar ? "traer-forzado" : "traer"); return !!o.forzar; };
+  let cargas = 0;
+  const cargar = async () => { cargas++; return cargas >= 3 ? 11 : 0; };  // 1a y 2a lectura: vacio; tras traer el forzado: 11 claves
+  const t = vigilarBanco(10, { traer, cargar });
+  await new Promise((r) => setTimeout(r, 80));
+  clearInterval(t);
+  assert.ok(llamadas.includes("traer-forzado"), llamadas.join(","));
+  assert.ok(cargas >= 3);
+});

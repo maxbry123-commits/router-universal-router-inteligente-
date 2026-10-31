@@ -29,9 +29,9 @@ export async function publicarEnGithub({ api = API(), token = process.env.GITHUB
 }
 
 // Space nuevo: si no hay banco local, trae el de GitHub; nunca pisa uno local
-export async function traerDeGithub({ api = API(), token = process.env.GITHUB_TOKEN, repo = REPO() } = {}) {
+export async function traerDeGithub({ api = API(), token = process.env.GITHUB_TOKEN, repo = REPO(), forzar = false } = {}) {
   try {
-    if (!token || fs.existsSync(local())) return false;
+    if (!token || (!forzar && fs.existsSync(local()))) return false;
     const r = await gh(api, token, `/repos/${repo}/contents/${ARCHIVO}?ref=${RAMA}`);
     if (!r.ok || !r.json.content) return false;
     fs.mkdirSync(path.dirname(local()), { recursive: true });
