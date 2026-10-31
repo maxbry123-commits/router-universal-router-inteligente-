@@ -50,3 +50,5 @@
 @media (max-width:720px){
   .workspace > .topbar.topbar-slim{display:none}
 }
+/* con una ventana abierta el aviso baja: no tapa el titulo ni la ✕ de la hoja */
+body:has(.sheet:not([hidden])) #notice:not(:empty){top:auto;bottom:24px}

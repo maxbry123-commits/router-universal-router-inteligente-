@@ -105,6 +105,7 @@ async function enviar(p, texto) {
     // ======== A) catalogo del Router SIN modelos SWE: el selector igual lista los dos grupos SWE ========
     const estA = { llamadas: [], catalogoFalla: false };
     const p = await nuevaPagina(browser, estA);
+    const dialogos = []; let aceptar = true; p.on('dialog', (d) => { dialogos.push(d.message()); return aceptar ? d.accept() : d.dismiss(); });  // Borrar claves pide confirmacion
     await abrirChat(p, base);
     await abrirHojaModelos(p);
     await p.waitForSelector('#sh-modelos-lista button:has(b:text-is("Zz modelo mock"))', { state: 'attached', timeout: 12000 }).catch(() => {});
@@ -198,6 +199,8 @@ async function enviar(p, texto) {
     ok('C4 el valor de la clave NO aparece en el DOM del chat', !dom.includes(KEY) && !histHtml.includes(KEY));
     await p.$eval('[data-view="apariencia"]', (e) => e.click());
     await p.waitForSelector('#ap-clave-borrar', { state: 'attached', timeout: 10000 });
+    aceptar = false; estA.llamadas.length = 0; await p.$eval('#ap-clave-borrar', (e) => e.click()); await p.waitForTimeout(500); aceptar = true;
+    ok('F Borrar pide confirmacion y, si se cancela, no borra nada', dialogos.length === 1 && /Borrar las claves/.test(dialogos[0]) && !estA.llamadas.some((l) => l.metodo === 'DELETE') && estA.banco.groq === 1, JSON.stringify([dialogos, estA.banco]));
     await p.$eval('#ap-clave-borrar', (e) => e.click());
     await estTxt(/Claves borradas/);
     ok('C4 Borrar hace DELETE /web/v1/claves', estA.llamadas.some((l) => l.ruta === '/web/v1/claves' && l.metodo === 'DELETE') && estA.banco.groq === 0);
@@ -257,8 +260,7 @@ async function enviar(p, texto) {
     ok('F3 la hoja de SWEN CODE free lista concilio, web-* y modos (incl. asesoria)', ['swecode-consulta', 'web-qwen38max', 'web-dsv4-flash', 'swecode-asesoria'].every((m) => modelosSwen.includes(m)), JSON.stringify(modelosSwen));
     await pf.$eval('#sh-swen-code-free-lista button[data-id="web-dsv4-flash"]', (e) => e.click());
     ok('F3 elegir DeepSeek V4 Flash (web) queda en RIU_SWE', await pf.evaluate(() => window.RIU_SWE['swen-code-free'].model_id === 'web-dsv4-flash'));
-    // encender la tarjeta y enviar: va por /v1/chat/completions con el modelo elegido y NO por el plugin del Router
-    await pf.evaluate(() => document.querySelector('#sel-power .sel-fila[data-selector="swen-code-free"] .sel-on').click());
+    // elegir el modelo ya enciende el selector (sin pulsar ON a mano); enviar: va por /v1/chat/completions con el modelo elegido y NO por el plugin del Router
     ok('F4 SWEN CODE free queda encendido', await pf.evaluate(() => window.RIU_SELECTORES.activo === 'swen-code-free'));
     estF.llamadas.length = 0;
     const rf = await enviar(pf, 'hola desde swen');
@@ -341,9 +343,11 @@ async function enviar(p, texto) {
     // Harness reporta todo conectado: workflow SWE CODE con Codex como ejecutor
     estH.capacidades = TODOS;
     await abrirHoja('#sel-swen', 'swen-code-free');
+    await ph.selectOption('#sh-swen-code-free select[data-swe-ctl="modelo_tool"]', 'hf/qwen2.5-coder-1.5b');  // antes de elegir el workflow: en SWE CODE este control queda fijo
     await ph.selectOption('#sh-swen-code-free select[data-swe-ctl="workflow"]', 'swe_code');
     await ph.selectOption('#sh-swen-code-free select[data-swe-ctl="agente_tool"]', 'codex');
-    await ph.selectOption('#sh-swen-code-free select[data-swe-ctl="modelo_tool"]', 'hf/qwen2.5-coder-1.5b');
+    const fij = await ph.evaluate(() => { const g = (k) => document.querySelector('#sh-swen-code-free select[data-swe-ctl="' + k + '"]'); const r = {}; for (const k of ['modelo_responde', 'agente_responde', 'modelo_tool']) r[k] = [g(k).disabled, g(k).dataset.fijo, g(k).selectedOptions[0].textContent, g(k).title]; r.libres = ['agente_tool', 'workflow'].map((k) => g(k).disabled); const n = document.querySelector('#sh-swen-code-free .swe-fijo'); r.nota = [!n.hidden, n.textContent]; return r; });
+    ok('8 workflow SWE CODE: modelo/agente que responden y modelo de Ejecuta quedan deshabilitados y rotulados «fijo por el workflow»; agente que ejecuta y workflow siguen libres', ['modelo_responde', 'agente_responde', 'modelo_tool'].every((k) => fij[k][0] && fij[k][1] === '1' && /fijo por el workflow/.test(fij[k][2]) && /no influye/.test(fij[k][3])) && fij.libres.every((d) => !d) && fij.nota[0] && /Fijo por el workflow/.test(fij.nota[1]), JSON.stringify(fij));
     ok('H7 la seleccion persiste en localStorage', await ph.evaluate(() => { const s = JSON.parse(localStorage.getItem('riu_swe_seleccion')); return s.workflow === 'swe_code' && s.agente_tool === 'codex' && s.modo_agentico === true; }));
     ok('H7 la misma seleccion aparece en la hoja de SWE CODE (ambos selectores comparten controles)', await (async () => { await ph.evaluate(() => document.querySelector('#sh-swen-code-free .sh-cerrar').click()); await abrirHoja('#sel-swe', 'swe-code'); return ph.evaluate(() => document.querySelector('#sh-swe-code select[data-swe-ctl="workflow"]').value === 'swe_code' && document.querySelector('#sh-swe-code select[data-swe-ctl="agente_tool"]').value === 'codex'); })());
     await ph.evaluate(() => document.querySelector('#sh-swe-code .sh-cerrar').click());
@@ -359,6 +363,7 @@ async function enviar(p, texto) {
     await ph.selectOption('#sh-swen-code-free select[data-swe-ctl="workflow"]', 'liquid_mirror');
     const lq = await ph.evaluate(() => ({ chips: [...document.querySelectorAll('#sh-swen-code-free .swe-liquid .dg-paso')].map((x) => x.textContent), visible: !!document.querySelector('#sh-swen-code-free .swe-liquid').getClientRects().length, toolOff: document.querySelector('#sh-swen-code-free select[data-swe-ctl="modelo_tool"]').disabled }));
     ok('H9 Liquid Mirror: LIQUID 1 — LECTOR (S2) y LIQUID 2 — EJECUTOR (S3), tool bloqueado, sin modelos web', lq.visible && lq.chips.length === 2 && /LIQUID 1 — LECTOR · S2 · lfm2\.5-350m/.test(lq.chips[0]) && /LIQUID 2 — EJECUTOR · S3 · lfm2\.5-350m/.test(lq.chips[1]) && lq.toolOff && !lq.chips.join().includes('web-'), JSON.stringify(lq));
+    ok('8 Liquid Mirror: tambien fijos los tres controles', await ph.evaluate(() => ['modelo_responde', 'agente_responde', 'modelo_tool'].every((k) => document.querySelector('#sh-swen-code-free select[data-swe-ctl="' + k + '"]').disabled)));
     // salida SWE-agent | OpenClaw sincroniza AGENTE QUE EJECUTA
     await ph.$eval('#sh-swen-code-free [data-salida="openclaw"]', (e) => e.click());
     ok('H10 elegir Salida: OpenClaw pone AGENTE QUE EJECUTA = OpenClaw', await ph.evaluate(() => document.querySelector('#sh-swen-code-free select[data-swe-ctl="agente_tool"]').value === 'openclaw'));
@@ -457,6 +462,61 @@ async function enviar(p, texto) {
     if (process.env.SHOT_DIR) await pi.screenshot({ path: path.join(process.env.SHOT_DIR, 'swe-hoja-390.png') });  // revision visual opcional (SHOT_DIR=/tmp/x)
     ok('I sin errores JS en la pagina', pi.errs.length === 0, pi.errs.join(' | '));
     await pi.context().close();
+
+    // ======== J) hallazgos de auditoria 3: elegir en la hoja enciende el selector; Qwen3 0.6B; Configuracion y vuelta conserva las ventanas; Individual libera los controles ========
+    const estJ = { llamadas: [], catalogoFalla: false, capacidades: { harness: 'ok', agentes: {}, workflows: {}, modelos: {} } };
+    const pj = await nuevaPagina(browser, estJ);
+    await abrirChat(pj, base);
+    ok('J0 de inicio ningun selector esta encendido (nada se pulsa a mano)', await pj.evaluate(() => !window.RIU_SELECTORES.activo || !['swe-code', 'swen-code-free'].includes(window.RIU_SELECTORES.activo)));
+    await pj.$eval('#sel-swe', (e) => e.click()); await pj.waitForSelector('#sh-swe-code .swe-cuerpo', { state: 'visible', timeout: 8000 }); await pj.waitForTimeout(400);
+    const lj = await pj.evaluate(() => [...document.querySelectorAll('#sh-swe-code-lista button')].map((b) => b.dataset.id));
+    ok('J1 la lista de SWE CODE incluye Qwen3 0.6B (HF) como cuarto modelo local', lj.includes('hf-qwen3-06b'), JSON.stringify(lj));
+    await pj.evaluate(() => document.querySelector('#sh-swe-code-lista button[data-id="hf-qwen3-06b"]').click());
+    await pj.waitForTimeout(300);
+    const enc = await pj.evaluate(() => ({ activo: window.RIU_SELECTORES.activo, hojaSwe: document.getElementById('sh-swe-code').hidden, hojaModelos: (document.getElementById('sh-modelos') || {}).hidden, resp: JSON.parse(localStorage.getItem('riu_swe_seleccion')).modelo_responde }));
+    ok('J2 elegir un modelo en la hoja SWE CODE enciende ese selector (sin pulsar ON) y no deja hojas abiertas tapando el composer', enc.activo === 'swe-code' && enc.hojaSwe === true && enc.hojaModelos !== false && enc.resp === 'hf/qwen3-0.6b', JSON.stringify(enc));
+    estJ.llamadas.length = 0;
+    const rJ = await enviar(pj, 'hola qwen3');
+    const cJ = estJ.llamadas.filter((l) => l.ruta === '/web/v1/chat/completions')[0];
+    ok('J3 el mensaje sale por SWE al modelo elegido (qwen3-0.6b), no a otra ficha', rJ === 'respuesta SWE de prueba' && cJ && cJ.body.model === 'qwen3-0.6b' && !estJ.llamadas.some((l) => /^\/plugins\//.test(l.ruta)), JSON.stringify(estJ.llamadas.map((l) => l.ruta + ':' + (l.body && l.body.model))));
+    ok('J3 el selector sigue encendido tras enviar y la hoja de modelos no tapa el composer', await pj.evaluate(() => { const c = document.querySelector('#composer').getBoundingClientRect(); const e = document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2); return window.RIU_SELECTORES.activo === 'swe-code' && !!e && !!e.closest('#composer'); }));
+    // desplegable «Responde» y lista de la hoja: la misma eleccion
+    await pj.$eval('#sel-swe', (e) => e.click()); await pj.waitForSelector('#sh-swe-code .swe-cuerpo', { state: 'visible', timeout: 8000 }); await pj.waitForTimeout(300);
+    await pj.evaluate(() => document.querySelector('#sh-swe-code details[data-sec="agentes"]').open = true);
+    await pj.selectOption('#sh-swe-code select[data-swe-ctl="modelo_responde"]', 'hf/qwen2.5-coder-1.5b');
+    ok('J4 el desplegable «Responde» sincroniza la lista: queda marcado SWE · Codex escribe (Qwen2.5-Coder) y no Qwen3 0.6B', await pj.evaluate(() => { const on = [...document.querySelectorAll('#sh-swe-code-lista button.on')].map((b) => b.dataset.id); return on.length === 1 && on[0] === 'swe-codex-qwen25-15b' && window.RIU_SWE['swe-code'].model_id === 'swe-codex-qwen25-15b'; }));
+    await pj.evaluate(() => document.querySelector('#sh-swe-code .sh-cerrar').click());
+    estJ.llamadas.length = 0; await enviar(pj, 'ahora coder');
+    ok('J4 y lo enviado es qwen2.5-coder-1.5b', (estJ.llamadas.filter((l) => l.ruta === '/web/v1/chat/completions')[0] || { body: {} }).body.model === 'qwen2.5-coder-1.5b');
+    // Individual: todos los controles libres
+    await pj.$eval('#sel-swe', (e) => e.click()); await pj.waitForSelector('#sh-swe-code .swe-cuerpo', { state: 'visible', timeout: 8000 });
+    await pj.evaluate(() => document.querySelector('#sh-swe-code details[data-sec="agentes"]').open = true);
+    ok('J5 Individual: modelo/agente que responden y modelo de Ejecuta libres (no fijos)', await pj.evaluate(() => ['modelo_responde', 'agente_responde', 'modelo_tool'].every((k) => { const e = document.querySelector('#sh-swe-code select[data-swe-ctl="' + k + '"]'); return !e.disabled && !e.dataset.fijo; })));
+    estJ.capacidades = {};  // el Harness responde 200 con {}: no reporta agentes (no es que no responda)
+    await pj.$eval('#sh-swe-code [data-swe-agentico]', (e) => e.click());
+    await pj.evaluate(() => document.querySelector('#sh-swe-code .sh-cerrar').click()); await pj.$eval('#sel-swe', (e) => e.click()); await pj.waitForSelector('#sh-swe-code .swe-cuerpo', { state: 'visible', timeout: 8000 }); await pj.waitForTimeout(700);
+    const tJ6 = await pj.evaluate(() => document.querySelector('#sh-swe-code .swe-estado').textContent);
+    ok('J6 con /chat/swe/capacidades = {} el mensaje dice «no reporta agentes», no «no responde»', /no reporta agentes/.test(tJ6) && !/no responde/.test(tJ6), tJ6);
+    await pj.$eval('#sh-swe-code [data-swe-agentico]', (e) => e.click());
+    await pj.evaluate(() => document.querySelector('#sh-swe-code .sh-cerrar').click());
+    // A) Configuracion y vuelta: las tres ventanas (pills y hojas) siguen y abren
+    const estadoVentanas = () => pj.evaluate(() => ['claves', 'workflows', 'constitucion'].map((n) => [n, !!document.querySelector('#pill-' + n), document.querySelectorAll('#ventana-' + n).length]));
+    const antes = await estadoVentanas();
+    await pj.$eval('[data-view="apariencia"]', (e) => e.click()); await pj.waitForSelector('#ap-apk', { state: 'attached', timeout: 10000 });
+    await volverAlChat(pj); await pj.waitForTimeout(600);
+    const despues = await estadoVentanas();
+    ok('A tras ir a Configuracion y volver, siguen las pills y las ventanas de Banco de claves, Workflows y Constitucion (una sola cada una)', JSON.stringify(despues.map((x) => [x[0], x[1], x[2]])) === JSON.stringify([['claves', true, 1], ['workflows', true, 1], ['constitucion', true, 1]]), JSON.stringify({ antes, despues }));
+    for (const n of ['claves', 'workflows', 'constitucion']) {
+      await pj.evaluate((k) => document.querySelector('#pill-' + k).click(), n); await pj.waitForTimeout(250);
+      const abierta = await pj.evaluate((k) => { const v = document.getElementById('ventana-' + k); return !!v && !v.hidden && v.getClientRects().length > 0 && v.querySelectorAll('[class$="-cuerpo"]').length === 1; }, n);
+      ok('A la ventana ' + n + ' abre tras volver de Configuracion (un solo cuerpo, sin duplicados)', abierta);
+      await pj.evaluate((k) => { document.getElementById('ventana-' + k).hidden = true; }, n);
+    }
+    // vuelta repetida: sin duplicar
+    await pj.$eval('[data-view="apariencia"]', (e) => e.click()); await pj.waitForSelector('#ap-apk', { state: 'attached', timeout: 10000 }); await volverAlChat(pj);
+    ok('A dos vueltas seguidas no duplican pills ni ventanas', await pj.evaluate(() => ['claves', 'workflows', 'constitucion'].every((n) => document.querySelectorAll('#pill-' + n).length === 1 && document.querySelectorAll('#ventana-' + n).length === 1)));
+    ok('J sin errores JS en la pagina', pj.errs.length === 0, pj.errs.join(' | '));
+    await pj.context().close();
   } finally {
     await browser.close().catch(() => {});
     await new Promise((r) => srv.close(() => r())); srv.closeAllConnections && srv.closeAllConnections();

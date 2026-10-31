@@ -25,8 +25,9 @@ const nuevoWF = (nombre) => ({ id: uid(), nombre, systemPrompt: "", encendido: f
 const hora = (t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 export function montarWorkflows({ root, q, tell }) {
-  if (root.dataset.wf) return; root.dataset.wf = "1";
+  if (q("#pill-workflows") && root.querySelector("#ventana-workflows")) return;  // ya montada en ESTE DOM; al volver de Configuracion se vuelve a montar la pill
   const { sheet, caja } = crearVentana(root, { id: "ventana-workflows", titulo: "Workflow Loops code Yaiwes", css: "ventana-workflows" });
+  caja.querySelectorAll(".wf-cuerpo").forEach((n) => n.remove());
   const pill = agregarPill(q, "pill-workflows", "workflow ⌄", () => { pintar(); abrirVentana(root, sheet); });
   pill.style.display = "none";  // la entrada visible es la fila «workflow Loops code Yaiwes» del panel Selectores (selector-workflows.js)
   const cuerpo = el("div", "wf-cuerpo"); caja.append(cuerpo);

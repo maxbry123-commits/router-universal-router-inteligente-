@@ -5,8 +5,9 @@ import { dameCon, refsCompartidas } from "./contexto.js";
 import { el, boton, crearVentana, abrirVentana, agregarPill } from "./ventanas-comun.js";
 const URL_OFICIAL = "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/reorganizacion/plugins/puente_chat/constitucion/CONSTITUCION-YAIWES.json";
 export function montarConstitucion({ root, q, tell }) {
-  if (root.dataset.con) return; root.dataset.con = "1";
+  if (q("#pill-constitucion") && root.querySelector("#ventana-constitucion")) return;  // ya montada en ESTE DOM; al volver de Configuracion se vuelve a montar la pill
   const { sheet, caja } = crearVentana(root, { id: "ventana-constitucion", titulo: "Constitución sentinela", css: "ventana-constitucion" });
+  caja.querySelectorAll(".con-cuerpo").forEach((n) => n.remove());
   const pill = agregarPill(q, "pill-constitucion", "constitución ⌄", () => { pintar(); abrirVentana(root, sheet); });
   const cuerpo = el("div", "con-cuerpo"); caja.append(cuerpo);
   const poner = (fn) => { const c = dameCon(); fn(c); escribir(KEYS.constitucion, c); };
