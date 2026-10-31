@@ -1,7 +1,6 @@
 # Agente SWEN CODE free — instrucciones nativas
 
-El agente/modelo que usa este sistema sabe hacer esto sin depender del usuario.
-Manual completo compartido por los 2 chats: `INSTRUCCIONES.md`.
+Resumen de `INSTRUCCIONES.md` (manual completo para los 2 chats). Todo va por el web-bridge `:7870`, `POST /v1/chat/completions`.
 
 ## 1. Activar modo y modelo
 Todo mensaje del sistema empieza con `SWEN CODE free`. Elegir modo:
@@ -15,29 +14,29 @@ Todo mensaje del sistema empieza con `SWEN CODE free`. Elegir modo:
 | pedir un prompt de código completo | `prompt_code` |
 | preguntar/consultar un plan (concilio de 3 + síntesis) | `consulta` |
 | aplicar y verificar lo que te entregan | `despliega` |
-| planear antes de ejecutar (plan, mapa mental, estructura, cómo resolver problemas) | `asesoria` |
+| planear antes de ejecutar (plan, mapa mental, estructura, cómo resolver problemas; no ejecuta) | `asesoria` |
 
-Modelo: `concilio` = los 3 web; nombre (`deepseek v4`, `qwen 3.7`, `qwen 3.8`, `liquid`, `qwen code`) = UN solo modelo; sin nombre → consulta=concilio, resto=qwen38max.
-Paralelo: `chat <id>`/`seccion <id>` = conv_id propio (tab aparte, hilo separado). Un modelo puede clonarse a otro conv_id/slot (espejo).
+Modelo: `concilio` = los 3 web (`swecode-consulta`); nombre (`deepseek v4` → `web-dsv4-flash`, `qwen 3.7` → `web-qwen37max`, `qwen 3.8` → `web-qwen38max`, `liquid` → `lfm2.5-350m`, `qwen code` → `qwen2.5-coder-1.5b`, `groq`, `nvidia`) = UN solo modelo; sin nombre → consulta=concilio, resto=`qwen38max`.
 
-Forma: `SWEN CODE free modo <modo> [con|solo|modelo <nombre>] [chat <id>] <texto>`.
+Forma: `SWEN CODE free modo <modo> [con|solo|modelo <nombre>] [chat <id>] [doc <ruta>] <texto>`.
+POST: `model`, `messages`, `conv_id`, `proyecto`, `cuentas`, `clave`, `documentos` (+ `modo` solo con `web-*`; con `swecode-<modo>` el modo va en el id).
 
 ## 2. Reiniciar y recuperar la sesión
-- `SESSION_EXPIRED` → `POST {WEB_BRIDGE_URL}/refresh_session` (re-login solo; rota correo si la cuenta murió).
-- Página reiniciada a media tarea → reenviar el MISMO `conv_id` (`checkpoint.json` retoma).
-- Space dormido → reintentar (scale-to-zero despierta solo, ~1-3 min).
-- Todo el puente cae → cadena → modelos locales `model=` en S1/S2/S3 → puente-movil (APK último).
+- `SESSION_EXPIRED` → el bridge ya reintenta una vez; si persiste `POST {WEB_BRIDGE_URL}/refresh_session`.
+- Página reiniciada a media tarea → reenviar el MISMO `conv_id` y el mismo texto (`checkpoints/<conv_id>.json` retoma); `GET /v1/secciones` lista las que están a medias.
+- Space dormido → reintentar (despierta solo, ~1-3 min).
+- La web cae → el bridge responde con el respaldo, en este orden: Groq → NVIDIA → HF local (S1/S2/S3). Mira `via_respaldo` y `aviso`. El APK móvil (`puente-movil`) es último recurso manual: el bridge no lo llama.
+- `aviso: CUENTAS_FALTAN` → reenviar `cuentas` y `clave` en el POST.
 
-## 3. Trabajo en paralelo y espejo
-- 2 secciones: `chat 1` y `chat 2` corren por separado al mismo tiempo (tab web propia cada una).
-- Pipeline CODE: liquid 1 recibe y delega → liquid 2 despliega; liquid 1 sigue trabajando en paralelo, no para (espejo). qwen-coder solo entra si aparece `[GAP]` y hay refactoría que hacer (costo/token).
-- Pipeline FREE: qwen da instrucciones → swe-agente → otro lfm2.5 despliega (sin refactor).
-- Espejo: clonarte a otro conv_id para dividir el trabajo — mismo modelo, contexto aparte.
+## 3. Asesoría y trabajo en paralelo
+- Antes de ejecutar un proyecto: `swecode-asesoria` con `proyecto`. Queda en `ASESORIA.md`; léela con `GET /v1/proyectos` y `GET /v1/proyectos/<proyecto>`.
+- 2 secciones: `chat 1` y `chat 2` (conv_id `chat-1`, `chat-2`) corren por separado a la vez, cada una con su tab web.
+- Espejo: mismo modelo en otro `conv_id` (contexto aparte) para dividir el trabajo.
 
 ## 4. Crear archivos markdown cuando haga falta
-La salida larga/archivos se materializa en `salidas/` del bridge (o del repo): un `.md` por entregable, nombre `AAAAMMDD-<modo>-<tema>.md`.
+La salida larga se materializa en `salidas/` del repo: un `.md` por entregable, nombre `AAAAMMDD-<modo>-<tema>.md`.
 
 ## 5. Desoligar, escribir, transcribir el code y desplegar en GitHub
-Documentos: `doc <ruta>`/campo `documentos` en el POST -> se incrustan al prompt (máx 100k chars c/u).
+Documentos: `doc <ruta>` / campo `documentos` del POST → se incrustan al prompt (máx 100 000 caracteres c/u).
 
-El modelo: lee la salida web, la transcribe a código limpio, la organiza en archivos del repo, commit + push a `main` (mensaje con prefijo del modo). El agente nunca deja el resultado solo en el chat web.
+El modelo lee la salida web, la transcribe a código limpio, la organiza en archivos del repo, commit + push a `main` (mensaje con prefijo del modo). El agente nunca deja el resultado solo en el chat web.
