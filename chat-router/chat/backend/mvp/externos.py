@@ -12,6 +12,28 @@ PROVEEDORES = {
 }
 NO_CHAT = ("whisper", "tts", "guard", "embed", "rerank", "vision-", "distil-whisper", "playai", "orpheus", "parse", "clip", "nv-embed", "reward")
 CACHE = {}  # proveedor -> (instante, lista de ids)
+_SWE = {}  # (ruta, mtime_ns, tamano, clave de acceso) -> banco compartido abierto (o None si no se pudo abrir); evita repetir PBKDF2
+
+
+def _banco_compartido():
+    """Banco cifrado del web-bridge (solo lectura): RIU_BANCO_SWE o <BRIDGE_STATE_DIR|/tmp/state>/banco-swe.bin. Nunca lanza; None si no aporta."""
+    try:
+        from mvp import bank
+        ruta = os.environ.get("RIU_BANCO_SWE") or os.path.join(os.environ.get("BRIDGE_STATE_DIR") or "/tmp/state", "banco-swe.bin")
+        acceso = next((os.environ[v] for v in bank.ACCESO if os.environ.get(v)), None)
+        if not acceso or not os.path.isfile(ruta):  # no existe: no se abre (abrir() crearia el archivo)
+            return None
+        st = os.stat(ruta)
+        llave = (ruta, st.st_mtime_ns, st.st_size, acceso)
+        if llave not in _SWE:
+            _SWE.clear()
+            try:
+                _SWE[llave] = bank.abrir(ruta, acceso)
+            except Exception:
+                _SWE[llave] = None
+        return _SWE[llave]
+    except Exception:
+        return None
 
 
 def proveedor(modelo):
@@ -21,9 +43,9 @@ def proveedor(modelo):
 
 def claves(prov, banco=None):
     """Todas las claves del proveedor, en orden: banco (GROQ_API_KEY, GROQ_API_KEY_1..n) y luego el entorno; sin repetir."""
-    var, out = PROVEEDORES[prov]["var"], []
+    var, out, swe = PROVEEDORES[prov]["var"], [], _banco_compartido()
     for n in [var] + [var + "_" + str(i) for i in range(1, 21)]:
-        for v in ((banco.leer(n) if banco else None), os.environ.get(n)):
+        for v in ((banco.leer(n) if banco else None), os.environ.get(n), (swe.leer(n) if swe else None)):
             if v and v not in out:
                 out.append(v)
     return out

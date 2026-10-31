@@ -2,7 +2,7 @@
 """Puente al banco de claves de Groq/NVIDIA, sin variables de Hugging Face y sin tocar el Router MVP.
 - LEE (solo lectura) el banco del Router (chat/backend/mvp/data/banco.bin, o RIU_BANCO_ROUTER) con la clave de acceso RIU_API_KEY.
 - GUARDA las claves que le pegan al bridge en un banco PROPIO cifrado igual (BRIDGE_STATE_DIR/banco-swe.bin; esa carpeta ya se respalda en /data).
-Reutiliza mvp.bank (misma cifra Fernet). Uso: claves_banco.py leer  |  claves_banco.py guardar  (JSON por stdin {groq, nvidia})."""
+Reutiliza mvp.bank (misma cifra Fernet). Uso: claves_banco.py leer  |  claves_banco.py guardar  (JSON por stdin {groq, nvidia})  |  claves_banco.py borrar  (vacia el banco PROPIO; el del Router no se toca)."""
 import json, os, re, sys
 from pathlib import Path
 from mvp import bank
@@ -61,13 +61,25 @@ def guardar(claves):
     return True
 
 
+def borrar():
+    """Vacia el banco PROPIO (lo deja cifrado y vacio, para poder publicarlo asi); el banco del Router MVP nunca se toca."""
+    ruta = _ruta_propia()
+    if not _acceso():
+        raise RuntimeError("sin clave de acceso (RIU_API_KEY): no se puede cifrar el banco propio")
+    if os.path.lexists(ruta):
+        os.unlink(ruta)
+    return _abrir(ruta, crear=True) is not None
+
+
 if __name__ == "__main__":
     try:
         if sys.argv[1:2] == ["leer"]:
             print(json.dumps(leer()))
         elif sys.argv[1:2] == ["guardar"]:
             guardar(json.loads(sys.stdin.read() or "{}")); print(json.dumps({"ok": True}))
+        elif sys.argv[1:2] == ["borrar"]:
+            borrar(); print(json.dumps({"ok": True}))
         else:
-            sys.exit("uso: claves_banco.py leer | guardar")
+            sys.exit("uso: claves_banco.py leer | guardar | borrar")
     except Exception as exc:  # noqa: BLE001 - salida corta, sin valores
         print(json.dumps({"ok": False, "error": type(exc).__name__})); sys.exit(1)

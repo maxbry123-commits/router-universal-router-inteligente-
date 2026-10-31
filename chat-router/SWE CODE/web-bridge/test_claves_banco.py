@@ -39,6 +39,22 @@ class TestClavesBanco(unittest.TestCase):
             self.assertEqual(claves_banco.leer(), {"groq": [], "nvidia": []})
         self.assertEqual(claves_banco.leer(), {"groq": [], "nvidia": []})
 
+    def test_borrar_vacia_el_banco_propio_y_no_toca_el_del_router(self):
+        b = bank.abrir(self.router, "acceso-prueba"); b.guardar("GROQ_API_KEY", "gsk-router")
+        antes = open(self.router, "rb").read()
+        claves_banco.guardar({"groq": ["gsk-pegada"], "nvidia": ["nv-pegada"]})
+        self.assertTrue(claves_banco.borrar())
+        self.assertTrue(os.path.exists(self.propio), "queda un banco propio cifrado y vacio (se puede publicar)")
+        self.assertEqual(bank.abrir(self.propio, "acceso-prueba").nombres(), [])
+        self.assertEqual(claves_banco.leer(), {"groq": ["gsk-router"], "nvidia": []})
+        self.assertEqual(open(self.router, "rb").read(), antes, "el banco del Router no se toca")
+
+    def test_borrar_sin_banco_previo_funciona_y_sin_clave_de_acceso_falla(self):
+        self.assertTrue(claves_banco.borrar())
+        with patch.dict(os.environ, {"RIU_API_KEY": ""}):
+            with self.assertRaises(RuntimeError):
+                claves_banco.borrar()
+
 
 if __name__ == "__main__":
     unittest.main()

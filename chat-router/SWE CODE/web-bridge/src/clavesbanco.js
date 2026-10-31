@@ -36,6 +36,12 @@ export async function guardarEnBanco(claves) {
   return /"ok":\s*true/.test(String(out || ''));
 }
 
+// vacia el banco PROPIO (el del Router MVP nunca se toca)
+export async function borrarDelBanco() {
+  const out = await correr(['borrar']);
+  return /"ok":\s*true/.test(String(out || ''));
+}
+
 // el banco se vuelve a leer cada 60 s: una clave que entre al banco del Router MVP llega al bridge sin reiniciar nada
 export function vigilarBanco(intervaloMs = 60000) {
   const t = setInterval(() => { cargarDelBanco().catch(() => {}); }, intervaloMs); t.unref();

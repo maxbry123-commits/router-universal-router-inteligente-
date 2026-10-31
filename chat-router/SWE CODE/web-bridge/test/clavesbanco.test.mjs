@@ -9,7 +9,7 @@ fs.writeFileSync(path.join(dir, "fake.sh"), `#!/bin/sh
 if [ "$1" = "leer" ]; then echo '{"groq": ["gsk-del-banco"], "nvidia": []}'; else cat > "${dir}/guardado.json"; echo '{"ok": true}'; fi
 `, { mode: 0o755 });
 process.env.RIU_CLAVES_CMD = path.join(dir, "fake.sh");
-const { cargarDelBanco, guardarEnBanco } = await import("../src/clavesbanco.js");
+const { cargarDelBanco, guardarEnBanco, borrarDelBanco } = await import("../src/clavesbanco.js");
 const { claves, estadoRespaldo } = await import("../src/respaldo.js");
 
 test("al arrancar carga al bridge las claves del banco (Router + propio) sin variables de entorno", async () => {
@@ -24,6 +24,21 @@ test("las claves pegadas se guardan en el banco propio (cifrado por el helper) y
   assert.ok(ok);
   const g = JSON.parse(fs.readFileSync(path.join(dir, "guardado.json"), "utf8"));
   assert.deepEqual(g, { groq: ["gsk-nueva"], nvidia: "nv-nueva" });
+});
+
+test("borrarDelBanco llama a la accion borrar del helper y limpiarClaves vacia la memoria", async () => {
+  fs.writeFileSync(path.join(dir, "fake-borrar.sh"), `#!/bin/sh\necho "$1" > "${dir}/accion.txt"; echo '{"ok": true}'\n`, { mode: 0o755 });
+  const previo = process.env.RIU_CLAVES_CMD;
+  process.env.RIU_CLAVES_CMD = path.join(dir, "fake-borrar.sh");
+  assert.equal(await borrarDelBanco(), true);
+  assert.equal(fs.readFileSync(path.join(dir, "accion.txt"), "utf8").trim(), "borrar");
+  process.env.RIU_CLAVES_CMD = "/no/existe";
+  assert.equal(await borrarDelBanco(), false);
+  process.env.RIU_CLAVES_CMD = previo;
+  const { setClaves, limpiarClaves } = await import("../src/respaldo.js");
+  setClaves({ groq: ["gsk-1-larga"], nvidia: ["nv-1-larga"] });
+  limpiarClaves();
+  assert.deepEqual(claves("GROQ_API_KEY", {}), []); assert.deepEqual(claves("NVIDIA_API_KEY", {}), []);
 });
 
 test("si el helper falla, no rompe ni devuelve claves", async () => {
