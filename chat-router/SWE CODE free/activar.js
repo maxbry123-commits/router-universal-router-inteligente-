@@ -8,7 +8,7 @@
 // Devuelve null si no está activado.
 
 const MODOS = ["revision", "solucion", "arquitectura", "archivos", "prompt_code", "consulta", "despliega", "asesoria"];
-const CLAVE = /^swen\s+code\s+free\b/i;
+const CLAVE = /^\s*swen\s+code\s+free\b/i; // tolera espacios iniciales
 const PIPELINES = ["code", "free", "auto"];
 
 // "pipeline [code|free|auto]": code = anota->organiza+refactor->despliega;
@@ -31,18 +31,65 @@ const MODELOS_ALIAS = [
   [/^nvidia\b/i, "nvidia/meta/llama-3.3-70b-instruct"],
 ];
 
-function sacaModelo(resto) {
-  // "con|solo|modelo <nombre...>": el alias puede ser de varias palabras
-  const m = resto.match(/^(?:con|solo|modelo)\s+(.+)/i);
-  if (m) {
-    for (const [re, id] of MODELOS_ALIAS) {
-      if (re.test(m[1])) return { modelo: id, resto: m[1].replace(re, "").trim() };
+// Quita tildes SIN cambiar la longitud (char a char), para casar contra la version
+// normalizada y cortar el texto original con los mismos indices ("revisión" -> "revision").
+function sinTildes(s) {
+  return Array.from(s, (c) => {
+    const b = c.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return b.length === c.length ? b : c;
+  }).join("");
+}
+
+// Distancia de edicion (Levenshtein) para detectar nombres mal escritos.
+function distancia(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
     }
-    return { modelo: null, error: m[1].split(/\s+/)[0] };
+    prev = cur;
   }
+  return prev[b.length];
+}
+
+// Nombres base de alias, solo para decidir si un "modelo <palabra>" es un alias mal escrito.
+const BASES_ALIAS = ["concilio", "consenso", "deepseek", "nvidia", "liquid", "coder", "qwen", "groq", "lfm"];
+const parecido = (w, bases, tol) => bases.some((b) => distancia(w, b) <= tol(b));
+
+// Criterio de error (simple): la palabra tras con/solo/modelo que NO es alias se deja en el prompt
+// (es parte de la frase: "solo necesito...", "con el codigo..."). Solo es error si TODO el texto
+// restante es exactamente "modelo <palabra>" y la palabra se parece a un alias (<=2 ediciones en
+// nombres de 6+ letras, <=1 en los cortos): ahi es casi seguro un alias mal escrito.
+// Alias sin keyword: solo si es la PRIMERA palabra, va seguido de mas texto y la palabra siguiente
+// no es de las que muestran que el alias es el sujeto de la frase ("deepseek no responde",
+// "todos los tests fallan"). Con keyword explicita (con/solo/modelo) siempre manda el alias.
+const NO_SELECCION = new Set(["no", "nunca", "tampoco", "ya", "es", "esta", "estan", "son", "se", "me", "te", "de", "del", "en",
+  "los", "las", "el", "la", "mis", "tus", "sus", "falla", "fallan", "responde", "funciona", "funcionan", "tarda", "tiene", "tienen", "da", "dan", "devuelve"]);
+
+function sacaModelo(resto, yaHayModelo) {
+  const sin = sinTildes(resto);
+  // "con|solo|modelo <nombre...>": el alias puede ser de varias palabras
+  const m = sin.match(/^(con|solo|modelo)\s+([\s\S]+)/i);
+  if (m) {
+    const cola = sin.slice(m[0].length - m[2].length);
+    for (const [re, id] of MODELOS_ALIAS) {
+      const a = cola.match(re);
+      if (a) return { modelo: id, resto: resto.slice(m[0].length - m[2].length + a[0].length).trim() };
+    }
+    const solo = sin.trim().match(/^modelo\s+(\S+)$/i);
+    if (solo && parecido(solo[1].toLowerCase(), BASES_ALIAS, (b) => (b.length >= 6 ? 2 : 1))) return { modelo: null, error: solo[1] };
+    return null; // no es alias: la palabra es parte del prompt
+  }
+  if (yaHayModelo) return null;
   // nombre del modelo como primera palabra, sin keyword
   for (const [re, id] of MODELOS_ALIAS) {
-    if (re.test(resto)) return { modelo: id, resto: resto.replace(re, "").trim() };
+    const a = sin.match(re);
+    if (!a) continue;
+    const despues = resto.slice(a[0].length).trim();
+    const sig = sin.slice(a[0].length).trim().split(/\s+/)[0].toLowerCase();
+    if (!despues || NO_SELECCION.has(sig)) return null;
+    return { modelo: id, resto: despues };
   }
   return null;
 }
@@ -61,7 +108,7 @@ function sacaAdjunto(resto) {
 }
 
 function activar(texto) {
-  if (!CLAVE.test(texto || "")) return null;
+  if (typeof texto !== "string" || !CLAVE.test(texto)) return null;
   let resto = texto.replace(CLAVE, "").trim();
   let modo = "consulta";
   let modelo = null;
@@ -73,17 +120,20 @@ function activar(texto) {
   let cambio = true;
   while (cambio) {
     cambio = false;
-    const m = resto.match(/^modo\s+(\w+)\s*:?\s*/i);
+    // normalizado sin tildes ("revisión" -> "revision"); misma longitud que resto
+    const m = sinTildes(resto).match(/^modo\s+([a-z0-9_]+)(?![\w])\s*:?\s*/i);
     if (m) {
       const pedido = m[1].toLowerCase();
-      if (!MODOS.includes(pedido)) {
+      if (MODOS.includes(pedido)) {
+        modo = pedido;
+        resto = resto.slice(m[0].length).trim();
+        cambio = true;
+      } else if (parecido(pedido, MODOS, () => 2)) {
+        // nombre de modo mal escrito (<=2 ediciones): error; si no, "modo" es parte de la frase
         return { error: `modo desconocido: ${pedido}`, modos: MODOS };
       }
-      modo = pedido;
-      resto = resto.slice(m[0].length).trim();
-      cambio = true;
     }
-    const mod = sacaModelo(resto);
+    const mod = sacaModelo(resto, !!modelo);
     if (mod) {
       if (mod.error) {
         return { error: `modelo desconocido: ${mod.error}`, modelos: MODELOS_ALIAS.map(a => a[1]) };

@@ -149,6 +149,36 @@ async function enviar(p, texto) {
     ok('C2 #ap-apk apunta a /apk', /\/apk$/.test(cfg.href || ''), cfg.href);
     ok('C3 #ap-apk es visible y dice Descargar APK', cfg.visible && /Descargar APK/.test(cfg.texto), JSON.stringify(cfg));
     ok('C3 #ap-apk es descarga (atributo download)', !!cfg.download, cfg.download);
+    // ---- C4) seccion de claves SWE: existe, guardar una clave de prueba, el siguiente envio SWE la lleva y el valor no aparece en el DOM del chat ----
+    const KEY = 'gsk_E2E_PRUEBA_123';
+    const clv = await p.evaluate(() => { const h = document.querySelector('#ap-h-claves'); const g = document.querySelector('#ap-clave-groq'), n = document.querySelector('#ap-clave-nvidia'); const secs = [...document.querySelectorAll('#panel section.ap-sec')]; return { titulo: h && h.textContent, idx: secs.findIndex((s) => s.contains(h)), tipoG: g && g.type, tipoN: n && n.type, acG: g && g.getAttribute('autocomplete'), acN: n && n.getAttribute('autocomplete'), guardar: !!document.querySelector('#ap-clave-guardar'), borrar: !!document.querySelector('#ap-clave-borrar') }; });
+    ok('C4 Configuracion tiene la seccion de claves SWE justo tras el APK', /Claves para SWE CODE/.test(clv.titulo || '') && clv.idx === 2, JSON.stringify(clv));
+    ok('C4 inputs password autocomplete=off y botones Guardar/Borrar', clv.tipoG === 'password' && clv.tipoN === 'password' && clv.acG === 'off' && clv.acN === 'off' && clv.guardar && clv.borrar, JSON.stringify(clv));
+    estA.llamadas.length = 0;
+    await p.$eval('[data-view="chat"]', (e) => e.click()); await p.waitForTimeout(300);
+    await abrirHojaModelos(p); await elegir(p, 'Qwen 3.8 Max (web)');  // sin claves guardadas: el POST no lleva `claves`
+    const rSin = await enviar(p, 'sin claves');
+    const cSin = estA.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
+    ok('C4 sin claves guardadas el POST no incluye `claves`', rSin === 'respuesta SWE de prueba' && cSin && !('claves' in cSin.body), JSON.stringify(cSin && cSin.body).slice(0, 200));
+    await p.$eval('[data-view="apariencia"]', (e) => e.click());
+    await p.waitForSelector('#ap-clave-groq', { state: 'attached', timeout: 10000 });
+    await p.fill('#ap-clave-groq', '  ' + KEY + '  ');
+    await p.$eval('#ap-clave-guardar', (e) => e.click());
+    const tras = await p.evaluate(() => ({ g: document.querySelector('#ap-clave-groq').value, n: document.querySelector('#ap-clave-nvidia').value, est: document.querySelector('#ap-clave-estado').textContent, ls: localStorage.getItem('riu_swe_claves') }));
+    ok('C4 tras guardar los inputs quedan vacios y dice "Groq: guardada" sin mostrar el valor', tras.g === '' && tras.n === '' && /Groq: guardada/.test(tras.est) && !tras.est.includes(KEY), JSON.stringify(tras.est));
+    ok('C4 localStorage riu_swe_claves guarda la clave recortada', JSON.parse(tras.ls || '{}').groq === KEY, tras.ls);
+    await p.$eval('[data-view="chat"]', (e) => e.click()); await p.waitForTimeout(300);
+    estA.llamadas.length = 0;
+    const rCon = await enviar(p, 'con claves');
+    const cCon = estA.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
+    ok('C4 el siguiente envio SWE incluye claves.groq en el POST a /v1/chat/completions', rCon === 'respuesta SWE de prueba' && cCon && cCon.body.claves && cCon.body.claves.groq === KEY && !('nvidia' in cCon.body.claves), JSON.stringify(cCon && cCon.body.claves));
+    const dom = await p.evaluate(() => document.documentElement.innerText + '\n' + [...document.querySelectorAll('input,textarea')].map((e) => e.value).join('\n') + '\n' + [...document.querySelectorAll('.chat-history *')].map((e) => e.outerHTML).slice(0, 1).join(''));
+    const histHtml = await p.evaluate(() => (document.querySelector('.chat-history') || {}).innerHTML || '');
+    ok('C4 el valor de la clave NO aparece en el DOM del chat', !dom.includes(KEY) && !histHtml.includes(KEY));
+    await p.$eval('[data-view="apariencia"]', (e) => e.click());
+    await p.waitForSelector('#ap-clave-borrar', { state: 'attached', timeout: 10000 });
+    await p.$eval('#ap-clave-borrar', (e) => e.click());
+    ok('C4 Borrar elimina las claves de localStorage', await p.evaluate(() => localStorage.getItem('riu_swe_claves') === null));
     ok('A-C sin errores JS en la pagina', p.errs.length === 0, p.errs.join(' | '));
     await p.context().close();
 

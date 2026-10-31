@@ -13,7 +13,8 @@ import { estadoCuentas, estadoTabs, snapshotTab, cerrarPagina, cerrarTodo } from
 import { MODELOS_WEB } from './sites.js';
 import crypto from 'node:crypto';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
-import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo } from './respaldo.js';
+import { vigilarWorkspace } from './openclaw.js';
+import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, setClaves } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo } from './bloques.js';
 import { conFormato } from './formato.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
@@ -130,7 +131,7 @@ app.post('/refresh_session', async (_req, res) => {
 
 app.post('/v1/chat/completions', async (req, res) => {
   try {
-    let { model = 'swecode-consulta', messages: mensajesIn = [], modo, conv_id, proyecto, documentos, cuentas, clave: claveReq } = req.body;
+    let { model = 'swecode-consulta', messages: mensajesIn = [], modo, conv_id, proyecto, documentos, cuentas, clave: claveReq, claves: clavesReq } = req.body;
     if (typeof model !== 'string' || !/^[\w.\/:-]{1,100}$/.test(model)) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model: String(model).slice(0, 50) } });
     if (!Array.isArray(mensajesIn)) return res.status(400).json({ error: { code: 'MENSAJES_INVALIDOS', message: 'messages debe ser una lista' } });
     mensajesIn = mensajesIn.filter(m => m && typeof m === 'object').map(m => ({ ...m, content: textoDe(m.content) }));
@@ -149,6 +150,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     const messages = conFormato(mensajesIn);  // formato de salida del chat Yaiwes tambien para OpenClaw
     // credenciales vienen de OpenClaw por llamada (vía plugins->harness); env solo respaldo
     if (cuentas) setCuentas(cuentas, claveReq);
+    if (clavesReq && typeof clavesReq === 'object') setClaves(clavesReq);  // claves de Groq/NVIDIA por llamada (solo memoria)
     const iU = messages.map(m => m.role).lastIndexOf('user');
     const ultimo = iU >= 0 ? messages[iU].content : '';
     const anterior = messages.filter((m, i) => i !== iU).map(m => `${m.role}: ${m.content}`).join('\n');
@@ -268,5 +270,8 @@ if (process.env.BRIDGE_AUTORETOMAR === '1') {
     }
   }, 3000);
 }
+
+// auto-reparacion de cableado de OpenClaw: openclaw.sh borra su home en cada arranque y no recrea el workspace del agente
+if (process.env.OPENCLAW_ENABLE === '1' || process.env.BRIDGE_REPARAR_OPENCLAW === '1') vigilarWorkspace();
 
 app.listen(PORT, () => console.log(`web-bridge escuchando :${PORT}`));

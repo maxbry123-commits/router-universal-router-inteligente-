@@ -413,6 +413,20 @@ test('6b. /health sin cuentas y sin respaldo: pool WEB_ACCOUNTS_VACIO y conteos 
   assert.match(c.json.error.message, /groq: sin clave/); assert.match(c.json.error.message, /sin SWECODE_URL/);
 });
 
+test('6c. POST con claves {groq,nvidia} inyecta las claves por llamada (sin claves en el entorno) y /health solo cuenta', async () => {
+  const K = await arrancar('K', { TEST_GROQ_URL: groq.url, TEST_NVIDIA_URL: nvidia.url, RIU_FORMATO_PATH: path.join(TMP, 'FORMATO.md'), BRIDGE_RESPALDO_MS: '5000' });
+  assert.deepEqual((await get(K, '/health')).json.respaldo, { groq: 0, nvidia: 0, hf_local: 0 });
+  groq.hits.length = 0; groq.status = 200; groq.texto = 'con-clave-inyectada';
+  const r = await chat(K, { model: 'groq/xxx', claves: { groq: ['gsk-INYECTADA-1', 'gsk-INYECTADA-2'], nvidia: 'nv-INYECTADA' } });
+  assert.equal(r.status, 200);
+  assert.equal(r.json.choices[0].message.content, 'con-clave-inyectada');
+  assert.equal(groq.hits[0].auth, 'Bearer gsk-INYECTADA-1');
+  const h = await get(K, '/health');
+  assert.deepEqual(h.json.respaldo, { groq: 2, nvidia: 1, hf_local: 0 });
+  const crudo = JSON.stringify(h.json) + K.log();
+  assert.ok(!crudo.includes('INYECTADA'), 'no filtra ni loguea valores de claves');
+});
+
 // ---------- (7) secciones y resto de rutas ----------
 test('7. GET /v1/secciones responde 200 (y lista los checkpoints existentes)', async () => {
   let r = await get(A, '/v1/secciones');
@@ -494,8 +508,10 @@ test('14. el prefijo "SWEN CODE free ..." elige modelo, modo y seccion en el bri
   const c = llamadasWeb(A).slice(n0)[0];
   assert.equal(c.modelo, 'dsv4-flash'); assert.equal(c.opts.convId, 'chat-3'); assert.equal(c.opts.modo, 'solucion');
   assert.ok(c.texto.includes('arregla api.js') && !c.texto.includes('SWEN CODE free'));
-  const mala = await chat(A, { messages: [{ role: 'user', content: 'SWEN CODE free modo inventado hola' }] });
+  const mala = await chat(A, { messages: [{ role: 'user', content: 'SWEN CODE free modo revisoin hola' }] });  // un modo mal escrito (cerca de uno valido) da 400; una frase natural ('modo oscuro...') se respeta
   assert.equal(mala.status, 400); assert.equal(mala.json.error.code, 'ACTIVACION_INVALIDA');
+  const nat = await chat(A, { messages: [{ role: 'user', content: 'SWEN CODE free modo oscuro no funciona en el login' }] });
+  assert.equal(nat.status, 200, 'una frase natural no es un error de activacion');
 });
 
 test('15. tools: groq/nvidia/locales reciben las tools del POST y sus tool_calls vuelven al cliente (el Harness las ejecuta)', async () => {

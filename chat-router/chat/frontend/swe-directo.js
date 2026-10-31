@@ -1,5 +1,6 @@
 // swe-directo.js — los modelos de SWE CODE / SWEN CODE free del selector responden por su router propio (el bridge), sin pasar por el Router MVP.
 // El chat llama POST /v1/chat/completions del mismo origen (el proxy del Space manda web-* y swecode-* al bridge); mismo historial, misma sesion.
+import { leerClaves } from "./swe-claves.js";
 const REAL = { "hf-liquid-lfm25": "lfm2.5-350m", "swe-agent-lfm25": "lfm2.5-350m", "swe-openhands-lfm25": "lfm2.5-350m",
   "swe-codex-qwen25-15b": "qwen2.5-coder-1.5b", "hf-qwen25-coder-15b": "qwen2.5-coder-1.5b", "swe-opencode-qwen35-08b": "qwen3.5-0.8b" };
 const LOCALES = ["lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"];
@@ -25,15 +26,18 @@ export const SWE_LISTAS = {
     ["swecode-arquitectura", "SWE · arquitectura", "modo arquitectura"],
     ["swecode-archivos", "SWE · archivos", "modo archivos"],
     ["swecode-prompt_code", "SWE · prompt_code", "modo prompt_code"],
-    ["swecode-despliega", "SWE · despliega", "modo despliega"]] },
+    ["swecode-despliega", "SWE · despliega", "modo despliega"],
+    ["groq/llama-3.3-70b-versatile", "Groq · Llama 3.3 70B", "respaldo 1 · usa la clave de Configuración"],
+    ["nvidia/meta/llama-3.3-70b-instruct", "NVIDIA · Llama 3.3 70B", "respaldo 2 · usa la clave de Configuración"]] },
 };
 export const esSelectorSwe = (id) => typeof id === "string" && Object.hasOwn(SWE_LISTAS, id);
 
-export const esSwe = (id) => typeof id === "string" && (/^(web-|swecode-)/.test(id) || Object.hasOwn(REAL, id) || LOCALES.includes(id));
+export const esSwe = (id) => typeof id === "string" && (/^(web-|swecode-|groq\/|nvidia\/)/.test(id) || Object.hasOwn(REAL, id) || LOCALES.includes(id));
 
 export function armar({ model, historial = [], mensaje, sesion, proyecto }) {
   const h = historial.slice(-MAX_HISTORIAL);
-  return { model: Object.hasOwn(REAL, model) ? REAL[model] : model, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, ...(proyecto ? { proyecto } : {}) };
+  let claves = {}; try { claves = leerClaves(); } catch (e) {}  // las claves viajan solo en el cuerpo; nunca en errores ni en la nota
+  return { model: Object.hasOwn(REAL, model) ? REAL[model] : model, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, ...(proyecto ? { proyecto } : {}), ...(Object.keys(claves).length ? { claves } : {}) };
 }
 
 export async function enviarSwe(api, datos) {

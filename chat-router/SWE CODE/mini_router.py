@@ -21,23 +21,33 @@ EXTERNOS = {"groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY", os.getenv
             "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY", os.getenv("RIU_SWE_NVIDIA_MODELO", "meta/llama-3.3-70b-instruct"))}
 
 
+def _claves(var: str) -> list:
+    """VAR, VAR_1 .. VAR_20 (las que existan), sin repetir valores."""
+    vistas, out = set(), []
+    for nombre in [var] + [f"{var}_{i}" for i in range(1, 21)]:
+        v = (os.getenv(nombre) or "").strip()
+        if v and v not in vistas:
+            vistas.add(v); out.append(v)
+    return out
+
+
 def _externo(mensajes: list, ultimo):
-    for base, var, modelo in EXTERNOS.values():
-        clave = os.getenv(var)
-        if not clave:
-            continue
-        try:
-            req = urllib.request.Request(f"{base.rstrip('/')}/chat/completions", method="POST",
-                                         data=json.dumps({"model": modelo, "messages": mensajes, "temperature": 0.2}).encode(),
-                                         headers={"Content-Type": "application/json", "Authorization": "Bearer " + clave, "User-Agent": "riu-swe-code"})
-            with urllib.request.urlopen(req, timeout=120) as r:
-                return json.load(r)["choices"][0]["message"]["content"]
-        except Exception as e:
-            ultimo = e
-    raise ultimo
+    """Devuelve (texto, via) con via = 'groq' | 'nvidia' (la primera clave que responda)."""
+    for via, (base, var, modelo) in EXTERNOS.items():
+        for clave in _claves(var):
+            try:
+                req = urllib.request.Request(f"{base.rstrip('/')}/chat/completions", method="POST",
+                                             data=json.dumps({"model": modelo, "messages": mensajes, "temperature": 0.2}).encode(),
+                                             headers={"Content-Type": "application/json", "Authorization": "Bearer " + clave, "User-Agent": "riu-swe-code"})
+                with urllib.request.urlopen(req, timeout=120) as r:
+                    return json.load(r)["choices"][0]["message"]["content"], via
+            except Exception as e:
+                ultimo = e
+    raise ultimo or RuntimeError('sin servidores')
 
 
-def llamar(modelo: str, mensajes: list, servidor: str = "S1") -> str:
+def llamar_via(modelo: str, mensajes: list, servidor: str = "S1"):
+    """Como llamar() pero devuelve (texto, via): 'hf-slot', 'groq' o 'nvidia'."""
     body = json.dumps({"model": modelo, "messages": mensajes, "temperature": 0.2}).encode()
     orden = [servidor] + [s for s in URLS if s != servidor]
     ultimo = None
@@ -49,10 +59,14 @@ def llamar(modelo: str, mensajes: list, servidor: str = "S1") -> str:
             req = urllib.request.Request(f"{base_url}/chat/completions", data=body,
                                          headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=600) as r:
-                return json.load(r)["choices"][0]["message"]["content"]
+                return json.load(r)["choices"][0]["message"]["content"], "hf-slot"
         except Exception as e:
             ultimo = e
     return _externo(mensajes, ultimo)
+
+
+def llamar(modelo: str, mensajes: list, servidor: str = "S1") -> str:
+    return llamar_via(modelo, mensajes, servidor)[0]
 
 
 def recibo(pid, nodo, estado, extra=None):
@@ -74,10 +88,10 @@ def correr(objetivo: str, pasos=None) -> dict:
                   f"Entrada del paso anterior ({paso['entrada']}):\n{entrada}\n"
                   f"Entrega SOLO: {paso['salida']}.")
         try:
-            salida = llamar(modelo, [{"role": "user", "content": prompt}],
-                            paso.get("servidor", "S1"))
+            salida, via = llamar_via(modelo, [{"role": "user", "content": prompt}],
+                                     paso.get("servidor", "S1"))
             recibos.append(recibo(pid, nodo, "OK", {"modelo": modelo, "chars": len(salida),
-                                                  "servidor": paso.get("servidor")}))
+                                                  "servidor": paso.get("servidor"), "via": via}))
             entrada = salida
         except Exception as e:
             recibos.append(recibo(pid, nodo, "FAIL", {"modelo": modelo, "error": str(e)[:300]}))

@@ -30,11 +30,17 @@ public class AccesibilidadAgente extends AccessibilityService {
     public static Object ejecutar(Context ctx, String accion, JSONObject args) throws Exception {
         switch (accion) {
             case "abrir_url": {
-                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(args.getString("url")));
+                String url = args == null ? "" : args.optString("url", "").trim();
+                Uri uri = Uri.parse(url);
+                String esq = uri.getScheme();
+                if (esq == null || !(esq.equalsIgnoreCase("http") || esq.equalsIgnoreCase("https"))) {
+                    return "ERROR:esquema no permitido";   // nada de intent:, file:, tel:, etc.
+                }
+                Intent i = new Intent(Intent.ACTION_VIEW, uri);
                 i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.setPackage("com.android.chrome");   // solo Chrome de Google
+                i.setPackage("com.android.chrome");   // solo Chrome de Google, sin reintento con otra app
                 try { ctx.startActivity(i); }
-                catch (Exception e) { i.setPackage(null); ctx.startActivity(i); }
+                catch (Exception e) { return "ERROR:Chrome no disponible"; }
                 return "OK";
             }
             case "leer_pantalla": {

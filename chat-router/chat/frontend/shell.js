@@ -22,6 +22,7 @@ import "./ventana-reglas.js";  // idioma, reglas y tope de lo que escribes
 import "./ventana-archivos.js";  // Archivos (motor): cola de descargar, extraer, copiar, mover, listar y buscar
 import "./barra-mas.js";  // en el celular, los controles de más van en un solo botón
 import "./salida-ampliada.js";  // la respuesta se lee en el hueco de encima, sin estirar la página
+import "./swe-claves.js";  // claves de Groq/NVIDIA para SWE (Configuración)
 import "./swe-selectores.js";  // selectores SWE CODE y SWEN CODE free (router propio: el bridge)
 import "./fichas-externas.js";  // modelos reales de Groq/NVIDIA en el selector NVIDIA (antes de montar el chat)
 import "./chat-medios.js";  // medios [[imagen:]] [[video:]] [[audio:]] dentro de la burbuja

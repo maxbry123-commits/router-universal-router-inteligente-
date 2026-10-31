@@ -59,3 +59,30 @@ test("las herramientas (tools) pasan a Groq/NVIDIA/locales y sus tool_calls vuel
   assert.deepEqual(vistos[0].tools, tools); assert.equal(vistos[0].tool_choice, "auto");
   assert.equal(r.tool_calls[0].function.name, "github_leer"); assert.equal(r.finish_reason, "tool_calls");
 });
+
+test("setClaves: claves inyectadas se suman al entorno sin duplicar, max 20, ignora vacias, y estadoRespaldo solo cuenta", async () => {
+  const { setClaves, estadoRespaldo } = await import("../src/respaldo.js");
+  const g = await servidor(500, ""), g2 = await servidor(200, "ok-inyectada");
+  try {
+    assert.deepEqual(estadoRespaldo({}), { groq: 0, nvidia: 0, hf_local: 0 });
+    setClaves({ groq: ["gsk-INY-1", "", "  ", "gsk-ENV"], nvidia: "nv-INY-1" });
+    // entorno + inyectadas sin duplicar (gsk-ENV esta en ambos)
+    assert.deepEqual(estadoRespaldo({ GROQ_API_KEY: "gsk-ENV" }), { groq: 2, nvidia: 1, hf_local: 0 });
+    const crudo = JSON.stringify(estadoRespaldo({ GROQ_API_KEY: "gsk-ENV" }));
+    assert.ok(!/gsk-|nv-/.test(crudo), "estadoRespaldo no filtra valores");
+    // se usan de verdad, tras las del entorno
+    Object.assign(BASES, { groq: g2.url });
+    const r = await respaldo(msgs, { env: {} });
+    assert.equal(r.salida, "ok-inyectada"); assert.equal(g2.vistos[0].auth, "Bearer gsk-INY-1");
+    // max 20 por proveedor
+    setClaves({ groq: Array.from({ length: 30 }, (_, i) => `k${i}`) });
+    assert.equal(estadoRespaldo({}).groq, 20);
+    // un proveedor ausente no se toca
+    assert.equal(estadoRespaldo({}).nvidia, 1);
+    // lista vacia limpia
+    setClaves({ groq: [], nvidia: "" });
+    assert.deepEqual(estadoRespaldo({}), { groq: 0, nvidia: 0, hf_local: 0 });
+    // entrada invalida no revienta
+    assert.doesNotThrow(() => { setClaves(); setClaves(null); setClaves({ groq: 5 }); });
+  } finally { setClaves({ groq: [], nvidia: [] }); g.s.close(); g2.s.close(); }
+});

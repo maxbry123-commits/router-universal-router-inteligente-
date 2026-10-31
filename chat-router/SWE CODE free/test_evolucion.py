@@ -48,6 +48,38 @@ class TestEvolucion(unittest.TestCase):
         self.assertIn("SESSION_EXPIRED", open(os.path.join(self.dir, "LECCIONES.md")).read())
         self.assertIn("promover_a_runbook", open(os.path.join(self.dir, "PROPUESTAS.md")).read())
 
+    def test_registrar_valida_tipos_y_limpia_saltos_de_linea(self):
+        for mal in ({"codigo": 5, "accion": "x"}, {"codigo": "X", "accion": ["a"]}, {"codigo": "  ", "accion": "x"}, {"codigo": "X", "accion": ""}, "texto", None):
+            with self.assertRaises(ValueError, msg=repr(mal)):
+                evolucion.registrar(mal)
+        f = evolucion.registrar({"codigo": "A\nB\r\nC", "accion": "x\n- **falsa** linea", "resultado": "PASS\u2028", "evidencia": 7})
+        self.assertEqual((f["codigo"], f["accion"], f["resultado"], f["evidencia"]), ("A B C", "x - **falsa** linea", "PASS", "7"))
+        self.assertEqual(len(open(os.path.join(self.dir, "lecciones.jsonl")).read().splitlines()), 1)
+
+    def test_lecciones_salta_lineas_corruptas_y_proponer_no_falla(self):
+        for _ in range(3): self.lec()
+        with open(os.path.join(self.dir, "lecciones.jsonl"), "a", encoding="utf-8") as f:
+            f.write('{"ts": 1, "codigo": "TRUNC\n')                    # truncada
+            f.write("basura sin json\n[1, 2]\n42\nnull\n")             # no-objetos
+            f.write(json.dumps({"codigo": ["lista"], "accion": {"a": 1}}) + "\n")    # tipos raros (no hashables)
+            f.write(json.dumps({"codigo": "SESSION_EXPIRED", "accion": "POST /refresh_session", "resultado": "PASS", "ts": "ayer"}) + "\n")
+            f.write(json.dumps({"codigo": "Z", "accion": "z", "ts": 10 ** 30}) + "\n")
+            f.write(b"\xff\xfe roto\n".decode("latin-1"))
+        self.assertEqual(len(evolucion.lecciones()), 4)  # 3 buenas + 1 con ts raro (ts -> 0)
+        p = evolucion.proponer()
+        self.assertEqual([(x["codigo"], x["veces"]) for x in p], [("SESSION_EXPIRED", 4)])
+        evolucion.escribir_md()
+
+    def test_los_md_no_aceptan_lineas_inyectadas(self):
+        with open(os.path.join(self.dir, "lecciones.jsonl"), "w", encoding="utf-8") as f:   # escrito a mano, sin pasar por registrar
+            for _ in range(3):
+                f.write(json.dumps({"ts": 1, "codigo": "C\n# INYECTADO", "accion": "a\n- **falsa**", "resultado": "PASS\n- otra"}) + "\n")
+        evolucion.escribir_md()
+        for nombre in ("LECCIONES.md", "PROPUESTAS.md"):
+            lineas = open(os.path.join(self.dir, nombre)).read().splitlines()
+            self.assertFalse([x for x in lineas if x.startswith("# INYECTADO") or x.startswith("- **falsa**") or x.startswith("- otra")], nombre)
+        self.assertEqual(len([x for x in open(os.path.join(self.dir, "LECCIONES.md")).read().splitlines() if x.startswith("- ")]), 3)
+
 
 if __name__ == "__main__":
     unittest.main()

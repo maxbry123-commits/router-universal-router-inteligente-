@@ -12,7 +12,18 @@ export function idsRespaldo(env = process.env) {
   return [...['groq', 'nvidia'].map(p => `${p}/${env[MODELO[p][0]] || MODELO[p][1]}`), ...LOCALES];
 }
 
-const claves = (var_, env) => [var_, ...Array.from({ length: 20 }, (_, i) => `${var_}_${i + 1}`)].map(n => env[n]).filter((v, i, a) => v && a.indexOf(v) === i);
+// claves inyectadas por llamada (POST /v1/chat/completions): solo en memoria del proceso, nunca se loguean
+const inyectadas = { groq: [], nvidia: [] };
+export function setClaves(c) {
+  const { groq, nvidia } = c && typeof c === 'object' ? c : {};
+  for (const [prov, v] of [['groq', groq], ['nvidia', nvidia]]) {
+    if (v === undefined) continue;  // proveedor ausente: no se toca
+    const lista = Array.isArray(v) ? v : typeof v === 'string' ? [v] : [];
+    inyectadas[prov] = lista.filter(k => typeof k === 'string').map(k => k.trim()).filter(Boolean).filter((k, i, a) => a.indexOf(k) === i).slice(0, 20);
+  }
+}
+
+const claves = (var_, env) => [...[var_, ...Array.from({ length: 20 }, (_, i) => `${var_}_${i + 1}`)].map(n => env[n]), ...(inyectadas[var_.split('_')[0].toLowerCase()] || [])].filter((v, i, a) => v && a.indexOf(v) === i);
 
 async function pedir(base, modelo, mensajes, clave, extra = {}) {
   const r = await fetch(`${base.replace(/\/$/, '')}/chat/completions`, {

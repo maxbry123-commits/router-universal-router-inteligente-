@@ -69,6 +69,7 @@ public class AgenteService extends Service {
     }
 
     private void conectar() {
+        if (!vivo) return;
         Request.Builder rb = new Request.Builder().url(URL);
         if (!TOKEN.isEmpty()) rb.header("Sec-WebSocket-Protocol", "token-" + TOKEN);
         ws = http.newWebSocket(rb.build(), new WebSocketListener() {
@@ -106,6 +107,7 @@ public class AgenteService extends Service {
     public void onDestroy() {
         vivo = false;
         conectado = false;
+        h.removeCallbacksAndMessages(null);   // cancela reintentos pendientes
         if (ws != null) ws.close(1000, "stop");
         super.onDestroy();
     }

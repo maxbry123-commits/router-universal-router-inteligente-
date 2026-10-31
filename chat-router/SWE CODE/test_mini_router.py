@@ -42,5 +42,39 @@ class TestRespaldoExterno(unittest.TestCase):
                 self.probar((200, "x"), (200, "y"), {"GROQ_API_KEY": "", "NVIDIA_API_KEY": ""})
 
 
+    def test_sin_servidores_ni_claves_lanza_error_claro_no_typeerror(self):
+        with patch.dict(mini_router.URLS, {}, clear=True), patch.dict(os.environ, {"GROQ_API_KEY": "", "NVIDIA_API_KEY": ""}):
+            with self.assertRaisesRegex(RuntimeError, "sin servidores"):
+                mini_router.llamar("m", [{"role": "user", "content": "x"}])
+
+    def test_claves_numeradas_se_iteran_sin_repetir(self):
+        env = {"GROQ_API_KEY": "gsk-a", "GROQ_API_KEY_1": "gsk-a", "GROQ_API_KEY_2": "gsk-b", "GROQ_API_KEY_20": "gsk-c", "GROQ_API_KEY_21": "no", "NVIDIA_API_KEY": ""}
+        with patch.dict(os.environ, env):
+            self.assertEqual(mini_router._claves("GROQ_API_KEY"), ["gsk-a", "gsk-b", "gsk-c"])
+        sg, ug, vg = servidor(500, ""); sn, un, vn = servidor(200, "de nvidia"); self.s = [sg, sn]
+        env = {"GROQ_API_KEY": "gsk-a", "GROQ_API_KEY_1": "gsk-a", "GROQ_API_KEY_2": "gsk-b", "NVIDIA_API_KEY": "", "NVIDIA_API_KEY_3": "nv-3"}
+        with patch.dict(mini_router.URLS, {"S1": "http://127.0.0.1:9"}, clear=True), \
+             patch.dict(mini_router.EXTERNOS, {"groq": (ug, "GROQ_API_KEY", "m-groq"), "nvidia": (un, "NVIDIA_API_KEY", "m-nv")}), \
+             patch.dict(os.environ, env):
+            self.assertEqual(mini_router.llamar("m", [{"role": "user", "content": "x"}]), "de nvidia")
+        self.assertEqual([v[1] for v in vg], ["Bearer gsk-a", "Bearer gsk-b"])   # probo cada clave una vez
+        self.assertEqual(vn[0][1], "Bearer nv-3")
+
+    def test_el_recibo_indica_la_via(self):
+        s1, u1, v1 = servidor(200, "del slot"); self.s = [s1]
+        with patch.dict(mini_router.URLS, {"S1": u1}, clear=True):
+            self.assertEqual(mini_router.llamar_via("m", []), ("del slot", "hf-slot"))
+            r = mini_router.correr("hola", [{"modelo": "m", "nodo": "n1", "agente": "a", "entrada": "x", "salida": "y"}])
+        rec = r["recibos"][-1]
+        self.assertEqual((rec["via"], rec["modelo"], rec["chars"], rec["estado"]), ("hf-slot", "m", 8, "OK"))
+        self.assertIn("servidor", rec)
+        sg, ug, vg = servidor(200, "de groq"); self.s.append(sg)
+        with patch.dict(mini_router.URLS, {"S1": "http://127.0.0.1:9"}, clear=True), \
+             patch.dict(mini_router.EXTERNOS, {"groq": (ug, "GROQ_API_KEY", "m-groq")}, clear=True), \
+             patch.dict(os.environ, {"GROQ_API_KEY": "gsk-1"}):
+            r = mini_router.correr("hola", [{"modelo": "m", "nodo": "n1", "agente": "a", "entrada": "x", "salida": "y"}])
+        self.assertEqual(r["recibos"][-1]["via"], "groq")
+
+
 if __name__ == "__main__":
     unittest.main()

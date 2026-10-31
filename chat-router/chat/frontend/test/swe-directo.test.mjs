@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { esSwe, armar, enviarSwe } from "../swe-directo.js";
 
 test("reconoce los ids SWE del selector y deja pasar a los demas modelos por el Router", () => {
-  for (const m of ["web-qwen38max", "swecode-asesoria", "hf-liquid-lfm25", "swe-agent-lfm25", "lfm2.5-350m"]) assert.ok(esSwe(m), m);
-  for (const m of ["qwen3.8-max", "glm-5.3", "deepseek-v4-pro", "groq/llama-3.3-70b-versatile", "", null]) assert.ok(!esSwe(m), String(m));
+  for (const m of ["web-qwen38max", "swecode-asesoria", "hf-liquid-lfm25", "swe-agent-lfm25", "lfm2.5-350m", "groq/llama-3.3-70b-versatile", "nvidia/meta/llama-3.3-70b-instruct"]) assert.ok(esSwe(m), m);
+  for (const m of ["qwen3.8-max", "glm-5.3", "deepseek-v4-pro", "", null]) assert.ok(!esSwe(m), String(m));
 });
 
 test("arma el POST OpenAI con el historial, la sesion y el proyecto; los alias hf-* se traducen al id real", () => {
@@ -47,4 +47,26 @@ test("el historial que viaja al modelo SWE se acota (no se manda todo el chat a 
   const h = Array.from({ length: 50 }, (_, i) => ({ role: i % 2 ? "assistant" : "user", content: "m" + i }));
   const b = armar({ model: "lfm2.5-350m", historial: h, mensaje: "ultimo", sesion: "s" });
   assert.ok(b.messages.length <= 21); assert.equal(b.messages.at(-1).content, "ultimo");
+});
+
+test("armar incluye claves SOLO si hay alguna guardada; nunca van en el texto de error ni en la nota", async () => {
+  const m = new Map();
+  globalThis.localStorage = { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { m.set(k, String(v)); }, removeItem: (k) => { m.delete(k); } };
+  const base = { model: "web-qwen38max", historial: [], mensaje: "x", sesion: "s" };
+  assert.ok(!("claves" in armar(base)), "sin claves guardadas no hay campo claves");
+  m.set("riu_swe_claves", JSON.stringify({ groq: " gsk_SECRETA ", nvidia: "nvapi-OTRA" }));
+  assert.deepEqual(armar(base).claves, { groq: "gsk_SECRETA", nvidia: "nvapi-OTRA" });
+  m.set("riu_swe_claves", "{corrupto");
+  assert.ok(!("claves" in armar(base)));
+  m.set("riu_swe_claves", JSON.stringify({ groq: "gsk_SECRETA" }));
+  const r1 = await enviarSwe(async (_r, op) => { assert.equal(op.body.claves.groq, "gsk_SECRETA"); return { choices: [{ message: { content: "ok" } }] }; }, base);
+  assert.ok(!JSON.stringify(r1).includes("gsk_SECRETA"), "la nota no lleva la clave");
+  await assert.rejects(() => enviarSwe(async () => ({ error: { code: "X", message: "rechazo" } }), base), (e) => !/gsk_SECRETA/.test(e.message));
+  delete globalThis.localStorage;
+  assert.ok(!("claves" in armar(base)), "sin localStorage -> sin claves");
+});
+
+test("SWEN CODE free incluye Groq y NVIDIA (usan las claves de Configuracion por el bridge)", () => {
+  const ids = SWE_LISTAS["swen-code-free"].modelos.map(([m]) => m);
+  assert.ok(ids.includes("groq/llama-3.3-70b-versatile") && ids.includes("nvidia/meta/llama-3.3-70b-instruct"));
 });
