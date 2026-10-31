@@ -4,7 +4,9 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -23,8 +25,10 @@ import okhttp3.WebSocketListener;
 // Recibe {id, accion, args} y responde {id, resultado}.
 // Reintenta solo — cero fricción tras la primera conexión.
 public class AgenteService extends Service {
-    public static String URL = "wss://comand-center-1-puente-movil.hf.space/agente";
-    public static String TOKEN = "";              // si el puente exige token: "token-<PUENTE_TOKEN>"
+    // El puente-movil corre dentro del Space riu-router y el proxy lo expone en /agente. URL y token se escriben en la app y quedan guardados.
+    public static final String URL_DEFECTO = "wss://comand-center-1-riu-router.hf.space/agente";
+    public static String URL = URL_DEFECTO;
+    public static String TOKEN = "";              // el PUENTE_TOKEN del servidor (la app agrega el prefijo "token-")
     public static volatile boolean conectado = false;
 
     private OkHttpClient http;
@@ -32,9 +36,21 @@ public class AgenteService extends Service {
     private Handler h;
     private boolean vivo = true;
 
+    public static SharedPreferences prefs(Context c) {
+        return c.getSharedPreferences("puente", Context.MODE_PRIVATE);
+    }
+
+    public static void cargar(Context c) {
+        SharedPreferences p = prefs(c);
+        String u = p.getString("url", URL_DEFECTO).trim();
+        URL = u.isEmpty() ? URL_DEFECTO : u;
+        TOKEN = p.getString("token", "").trim();
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
+        cargar(this);
         http = new OkHttpClient.Builder()
             .pingInterval(20, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
