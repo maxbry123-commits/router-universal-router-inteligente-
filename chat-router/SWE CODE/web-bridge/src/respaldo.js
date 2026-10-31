@@ -28,7 +28,7 @@ const RE_GROQ = /qwen.*3[.-]?8/i;
 const RE_NVIDIA_1 = /minimax|kimi|deepseek.?v4/i, RE_NVIDIA_2A = /muse|glimmer/i, RE_NVIDIA_2B = /nemotron.*3.*super|nemotron-3-super/i;
 const PICK = {
   groq: (ids) => ids.find(i => RE_GROQ.test(i)),
-  nvidia: (ids) => ids.find(i => RE_NVIDIA_1.test(i)) || ids.find(i => RE_NVIDIA_2A.test(i) && RE_NVIDIA_2B.test(i)),
+  nvidia: (ids) => ids.find(i => RE_NVIDIA_1.test(i)) || ids.find(i => RE_NVIDIA_2A.test(i)) || ids.find(i => RE_NVIDIA_2B.test(i)),  // Muse/Glimmer (2A) y Nemotron-3-Super (2B) por separado
 };
 const autorizados = (prov) => MODELOS_API.filter(m => m.id.startsWith(prov + '/')).map(m => m.id.slice(prov.length + 1));
 // del listado real del proveedor: el id exacto (env o defecto) > la regla de descubrimiento > otro id autorizado presente; null si nada sirve
@@ -40,13 +40,16 @@ const CONTINUAR = 'Continúa exactamente donde terminó, sin repetir';
 const RED = { continuaciones: 8, cooldownMs: 60000, esperaMax: 2000, esperaDefecto: 500, backoffMs: 200, descubrirMs: 10000, cacheMs: 30 * 60000, cacheFalloMs: 60000, cortePorTokens: 15000 };
 // parametros inyectables en tests: opts = { timeoutMs, timeoutsModelo, continuaciones, cooldownMs, esperaMax, backoffMs, jitter(), esperar(ms), ahora(), descubrirMs, cacheMs, signal }
 const red = (o = {}) => ({ ...RED, timeoutMs: TIMEOUT_MS, esperar: (ms) => new Promise(r => setTimeout(r, ms)), ahora: Date.now, jitter: Math.random, ...o });
-// timeout por modelo: opts.timeoutsModelo[<id>] > env RIU_SWE_TIMEOUTS ('{"<id>": ms}') > global
-function conTimeout(r, modelo, env) {
+// timeout por modelo: opts.timeoutsModelo[<id>] > env RIU_SWE_TIMEOUTS ('{"<id>": ms}') > TIMEOUTS_DEFECTO (Groq 60 s) > global
+export const TIMEOUTS_DEFECTO = { 'qwen/qwen3.8-27b': 60000 };
+export function timeoutDe(modelo, env, r) {
   let t = r.timeoutsModelo?.[modelo];
-  if (t == null && env?.RIU_SWE_TIMEOUTS) { try { const o = JSON.parse(env.RIU_SWE_TIMEOUTS); if (o && typeof o === 'object') t = o[modelo]; } catch { /* env invalido: manda el global */ } }
+  if (t == null && env?.RIU_SWE_TIMEOUTS) { try { const o = JSON.parse(env.RIU_SWE_TIMEOUTS); if (o && typeof o === 'object') t = o[modelo]; } catch { /* env invalido: sigue el defecto */ } }
+  if (t == null) t = TIMEOUTS_DEFECTO[modelo];
   t = Number(t);
-  return Number.isFinite(t) && t > 0 ? { ...r, timeoutMs: t } : r;
+  return Number.isFinite(t) && t > 0 ? t : r.timeoutMs;
 }
+const conTimeout = (r, modelo, env) => ({ ...r, timeoutMs: timeoutDe(modelo, env, r) });
 const backoff = (n, r) => Math.round(Math.min(r.esperaMax, r.backoffMs * 2 ** n) * (0.5 + 0.5 * r.jitter()));  // exponencial con jitter (mitad a 100 % del valor)
 
 // estado en memoria (nunca persiste ni se loguea): claves enfriadas por 429 y modelos descubiertos
@@ -57,7 +60,8 @@ export function limpiarEstado() { enfriadas.clear(); cacheModelos.clear(); metri
 
 
 export const esLocal = (m) => LOCALES.includes(String(m || ''));
-export const esExterno = (m) => /^(groq|nvidia)\/.+/.test(String(m || ''));
+// solo ids del selector (MODELOS_API) o el que el operador fija por entorno (RIU_SWE_GROQ_MODELO / RIU_SWE_NVIDIA_MODELO): groq/llama-3.3-70b-versatile y demas ids inventados no entran
+export const esExterno = (m, env = process.env) => typeof m === 'string' && (MODELOS_API.some(x => x.id === m) || ['groq', 'nvidia'].some(p => env[MODELO[p][0]] && m === `${p}/${env[MODELO[p][0]]}`));
 
 // ids que el selector de OpenClaw ve ademas de los web-*: externos y locales
 export function idsRespaldo() { return [...MODELOS_API.map(m => m.id), ...LOCALES]; }

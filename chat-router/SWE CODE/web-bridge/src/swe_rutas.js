@@ -2,7 +2,7 @@
 // OpenClaw UI -> (aqui) -> Harness DeepSeek (POST {RIU_DEEPSEEK_HARNESS_URL}/invoke) -> agentes/adaptadores. El bridge NO ejecuta herramientas ni adaptadores Python:
 // solo valida y reenvia. RIU_API_KEY vive solo en este backend. Contrato de tarea: el mismo de YAIWES (chat-router/agentes/adaptadores/contrato.py, origen "openclaw").
 // Autenticacion OBLIGATORIA: sin BRIDGE_TOKEN configurado estas rutas se rechazan (503); no heredan el acceso libre de las rutas publicas con el token vacio.
-import crypto from 'node:crypto';
+import { iguales } from './iguales.js';
 
 export const OPERACIONES_SWE = { iniciar: 'swe_iniciar', avanzar: 'swe_avanzar', estado: 'swe_estado', aprobar: 'swe_aprobar', reanudar: 'swe_reanudar' };
 const PERMITIDAS = new Set(Object.values(OPERACIONES_SWE));
@@ -21,7 +21,7 @@ async function postHarness(payload, { env, fetchFn }) {
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
   let r;
   try {
-    r = await fetchFn(`${base}/invoke`, { method: 'POST', headers: { 'content-type': 'application/json', 'X-API-Key': clave }, body: JSON.stringify(payload), signal: ctl.signal });
+    r = await fetchFn(`${base}/invoke`, { method: 'POST', headers: { 'content-type': 'application/json', 'X-API-Key': clave }, body: JSON.stringify(payload), signal: ctl.signal, redirect: 'error' });
     if (!r.ok) throw new Error(`HARNESS_HTTP_${r.status}`);
     let cuerpo = null;
     try { cuerpo = await r.json(); } catch { /* cuerpo no JSON: fallo de ejecucion */ }
@@ -97,15 +97,24 @@ function argsReferencia(b) {
   for (const k of ['sesion', 'proyecto']) if (x[k] !== undefined && x[k] !== '') { if (typeof x[k] !== 'string' || !SEGMENTO.test(x[k])) throw invalido('CONTRATO_INVALIDO'); args[k] = x[k]; }
   return args;
 }
-function operadorDe(req, env) {
+// quien aprueba: SOLO la cabecera x-operador (ya no hay operador por defecto en el entorno); el Harness lo valida contra RIU_SWE_OPERADORES
+function operadorDe(req) {
   const h = req.headers && req.headers['x-operador'];
-  const op = h !== undefined ? String(h) : String(env.RIU_SWE_OPERADOR || '');
+  const op = h !== undefined ? String(h) : '';
   if (!OPERADOR.test(op)) throw invalido('OPERADOR_REQUERIDO');  // aprobar exige un operador identificado
   return op;
 }
 
-const iguales = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 const respuesta = (res, codigo, error) => res.status(codigo).json({ ok: false, error });
+
+// aprobar pide ADEMAS un token propio (BRIDGE_OPERATOR_TOKEN, cabecera x-operator-token), distinto del BRIDGE_TOKEN que usa todo el que habla con el bridge.
+function exigirOperador(req, res, env) {
+  const op = env.BRIDGE_OPERATOR_TOKEN || '';
+  if (!op || op === (env.BRIDGE_TOKEN || '')) return respuesta(res, 503, { code: 'OPERATOR_TOKEN_NO_CONFIGURADO', message: 'aprobar exige BRIDGE_OPERATOR_TOKEN (distinto de BRIDGE_TOKEN)' });
+  const t = String((req.headers || {})['x-operator-token'] || '');
+  if (!t || !iguales(t, op)) return respuesta(res, 401, { code: 'OPERADOR_NO_AUTORIZADO' });
+  return null;
+}
 
 // Autenticacion obligatoria compartida por todas las rutas /v1/swe/*: devuelve null si pasa, o la respuesta de rechazo ya enviada.
 function exigirToken(req, res, env) {
@@ -121,14 +130,14 @@ export function montarRutasSwe(app, { env = process.env, fetchFn = fetch } = {})
   app.get('/v1/swe/capacidades', async (req, res) => exigirToken(req, res, env) || res.json(await consultarCapacidades({ env, fetchFn })));
   for (const [ruta, operacion] of Object.entries(OPERACIONES_SWE)) {
     app.post(`/v1/swe/${ruta}`, async (req, res) => {
-      const rechazo = exigirToken(req, res, env); if (rechazo) return rechazo;
+      const rechazo = exigirToken(req, res, env) || (operacion === 'swe_aprobar' ? exigirOperador(req, res, env) : null); if (rechazo) return rechazo;
       let args;
       try {
         args = operacion === 'swe_iniciar' ? argsIniciar(req.body) : argsReferencia(req.body);
         if (operacion === 'swe_aprobar') {
           const op_id = simple(req.body) ? req.body.op_id : undefined;
           if (typeof op_id !== 'string' || !OP_ID.test(op_id)) throw invalido('OP_ID_INVALIDO');
-          args = { ...args, op_id, operador: operadorDe(req, env) };  // operador = quien aprueba segun el servidor; `aprobacion`/`operador` del cuerpo no cuentan
+          args = { ...args, op_id, operador: operadorDe(req) };  // operador = quien aprueba segun el servidor; `aprobacion`/`operador` del cuerpo no cuentan
         }
       } catch (e) { return respuesta(res, e.http || 400, { code: e.message }); }
       try { return res.json({ ok: true, resultado: await llamarHarness(operacion, args, { env, fetchFn }) }); }

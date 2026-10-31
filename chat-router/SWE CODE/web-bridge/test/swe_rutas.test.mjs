@@ -22,8 +22,10 @@ const resFalsa = () => { const r = { codigo: 200, cuerpo: null, status(c) { r.co
 const harnessOk = (log, result = { ok: true, estado: 'PENDIENTE' }) => async (url, init) => { log.push({ url, init }); return { ok: true, status: 200, json: async () => ({ status: 'ok', result }) }; };
 const montar = (env, fetchFn) => { const app = appFalsa(); montarRutasSwe(app, { env, fetchFn }); return app; };
 const llamar = async (app, ruta, { body = {}, headers = {} } = {}) => { const res = resFalsa(); await app.rutas['/v1/swe/' + ruta]({ headers, body, path: '/v1/swe/' + ruta }, res); return res; };
-const ENV = { BRIDGE_TOKEN: TOKEN, RIU_DEEPSEEK_HARNESS_URL: URL_HARNESS, RIU_API_KEY: CLAVE_HARNESS };
+const OP_TOKEN = 'token-de-operador-de-prueba';
+const ENV = { BRIDGE_TOKEN: TOKEN, BRIDGE_OPERATOR_TOKEN: OP_TOKEN, RIU_DEEPSEEK_HARNESS_URL: URL_HARNESS, RIU_API_KEY: CLAVE_HARNESS };
 const AUTH = { authorization: 'Bearer ' + TOKEN };
+const AUTH_OP = { ...AUTH, 'x-operator-token': OP_TOKEN };
 
 test('llamarHarness: solo las cinco operaciones; sin base/clave HARNESS_NO_CONFIGURADO; POST /invoke con X-API-Key y {action:"invoke",tool,args}; devuelve result', async () => {
   assert.deepEqual([...Object.entries(OPERACIONES_SWE)], [['iniciar', 'swe_iniciar'], ['avanzar', 'swe_avanzar'], ['estado', 'swe_estado'], ['aprobar', 'swe_aprobar'], ['reanudar', 'swe_reanudar']]);
@@ -109,18 +111,48 @@ test('avanzar/estado/reanudar: solo task_id, origen, sesion y proyecto cruzan; a
 test('aprobar identifica al operador (cabecera x-operador) y NO confia en el campo aprobacion ni en un operador del cuerpo', async () => {
   let log = [], app = montar(ENV, harnessOk(log));
   const cuerpo = { task_id: 'openclaw-001', origen: 'openclaw', op_id: 'op-0123abcd', aprobacion: true, operador: 'intruso', aprobado_por: 'intruso' };
-  let r = await llamar(app, 'aprobar', { body: cuerpo, headers: AUTH });
+  let r = await llamar(app, 'aprobar', { body: cuerpo, headers: AUTH_OP });
   assert.equal(r.codigo, 400); assert.equal(r.cuerpo.error.code, 'OPERADOR_REQUERIDO'); assert.equal(log.length, 0, 'sin operador identificado no se aprueba');
-  r = await llamar(app, 'aprobar', { body: cuerpo, headers: { ...AUTH, 'x-operador': 'mal operador!' } });
+  r = await llamar(app, 'aprobar', { body: cuerpo, headers: { ...AUTH_OP, 'x-operador': 'mal operador!' } });
   assert.equal(r.codigo, 400); assert.equal(r.cuerpo.error.code, 'OPERADOR_REQUERIDO');
-  r = await llamar(app, 'aprobar', { body: { ...cuerpo, op_id: undefined }, headers: { ...AUTH, 'x-operador': 'antonio.director' } });
+  r = await llamar(app, 'aprobar', { body: { ...cuerpo, op_id: undefined }, headers: { ...AUTH_OP, 'x-operador': 'antonio.director' } });
   assert.equal(r.codigo, 400); assert.equal(r.cuerpo.error.code, 'OP_ID_INVALIDO');
-  r = await llamar(app, 'aprobar', { body: cuerpo, headers: { ...AUTH, 'x-operador': 'antonio.director' } });
+  r = await llamar(app, 'aprobar', { body: cuerpo, headers: { ...AUTH_OP, 'x-operador': 'antonio.director' } });
   assert.equal(r.codigo, 200);
   const e = JSON.parse(log[0].init.body);
   assert.equal(e.tool, 'swe_aprobar'); assert.deepEqual(e.args, { task_id: 'openclaw-001', origen: 'openclaw', op_id: 'op-0123abcd', operador: 'antonio.director' });
-  const app2 = montar({ ...ENV, RIU_SWE_OPERADOR: 'director-env' }, harnessOk(log = []));
-  r = await llamar(app2, 'aprobar', { body: cuerpo, headers: AUTH }); assert.equal(r.codigo, 200, 'el operador puede venir del entorno del bridge');
+});
+
+test('aprobar exige BRIDGE_OPERATOR_TOKEN distinto del token del bridge (x-operator-token): sin el, 401; sin configurarlo, 503; el BRIDGE_TOKEN no vale como token de operador', async () => {
+  const cuerpo = { task_id: 'openclaw-001', origen: 'openclaw', op_id: 'op-0123abcd' }, log = [];
+  const app = montar(ENV, harnessOk(log));
+  const cab = { ...AUTH, 'x-operador': 'antonio.director' };
+  for (const h of [cab, { ...cab, 'x-operator-token': 'otro' }, { ...cab, 'x-operator-token': TOKEN }, { ...cab, 'x-operator-token': OP_TOKEN + 'x' }, { ...cab, 'x-operator-token': '' }]) {
+    const r = await llamar(app, 'aprobar', { body: cuerpo, headers: h });
+    assert.equal(r.codigo, 401, JSON.stringify(h)); assert.equal(r.cuerpo.error.code, 'OPERADOR_NO_AUTORIZADO');
+  }
+  assert.equal(log.length, 0, 'sin token de operador no se llega al Harness');
+  const sin = montar({ ...ENV, BRIDGE_OPERATOR_TOKEN: undefined }, harnessOk(log));
+  const r503 = await llamar(sin, 'aprobar', { body: cuerpo, headers: { ...cab, 'x-operator-token': OP_TOKEN } });
+  assert.equal(r503.codigo, 503); assert.equal(r503.cuerpo.error.code, 'OPERATOR_TOKEN_NO_CONFIGURADO');
+  const igual = montar({ ...ENV, BRIDGE_OPERATOR_TOKEN: TOKEN }, harnessOk(log));
+  assert.equal((await llamar(igual, 'aprobar', { body: cuerpo, headers: { ...cab, 'x-operator-token': TOKEN } })).codigo, 503, 'un token de operador igual al del bridge se considera no configurado');
+  assert.equal(log.length, 0);
+  assert.equal((await llamar(app, 'aprobar', { body: cuerpo, headers: { ...cab, 'x-operator-token': OP_TOKEN } })).codigo, 200);
+  // las demas operaciones NO piden el token de operador
+  assert.equal((await llamar(app, 'estado', { body: { task_id: 'a-1' }, headers: AUTH })).codigo, 200);
+});
+
+test('aprobar: ya NO hay operador por defecto desde RIU_SWE_OPERADOR; sin cabecera x-operador -> OPERADOR_REQUERIDO aunque el entorno lo traiga', async () => {
+  const log = [], app = montar({ ...ENV, RIU_SWE_OPERADOR: 'director-env' }, harnessOk(log));
+  const r = await llamar(app, 'aprobar', { body: { task_id: 'openclaw-001', origen: 'openclaw', op_id: 'op-0123abcd' }, headers: AUTH_OP });
+  assert.equal(r.codigo, 400); assert.equal(r.cuerpo.error.code, 'OPERADOR_REQUERIDO'); assert.equal(log.length, 0);
+});
+
+test('llamarHarness: fetch con redirect:"error" (una redireccion del Harness no arrastra la X-API-Key a otro host)', async () => {
+  const log = [];
+  await llamarHarness('swe_estado', { task_id: 'a-1' }, { env: ENV, fetchFn: harnessOk(log) });
+  assert.equal(log[0].init.redirect, 'error');
 });
 
 test('un fallo del Harness es 502 SWE_HARNESS_ERROR con la causa tecnica (sin URL ni credenciales) y NUNCA se registran credenciales', async () => {
@@ -205,7 +237,7 @@ before(async () => {
   });
   await new Promise((ok) => harnessFalso.listen(0, '127.0.0.1', ok)); registrarMock(harnessFalso);
   const url = `http://127.0.0.1:${harnessFalso.address().port}`;
-  A = await arrancar('swe-A', { BRIDGE_TOKEN: TOKEN, RIU_DEEPSEEK_HARNESS_URL: url, RIU_API_KEY: CLAVE_HARNESS });
+  A = await arrancar('swe-A', { BRIDGE_TOKEN: TOKEN, BRIDGE_OPERATOR_TOKEN: OP_TOKEN, RIU_DEEPSEEK_HARNESS_URL: url, RIU_API_KEY: CLAVE_HARNESS });
   B = await arrancar('swe-B', { RIU_DEEPSEEK_HARNESS_URL: url, RIU_API_KEY: CLAVE_HARNESS });  // sin BRIDGE_TOKEN
 });
 after(() => limpiar());
@@ -219,7 +251,7 @@ test('server.js: con BRIDGE_TOKEN las 5 rutas llegan al Harness (X-API-Key solo 
   for (const [ruta, tool] of [['avanzar', 'swe_avanzar'], ['estado', 'swe_estado'], ['reanudar', 'swe_reanudar']]) {
     const x = await post(A, ruta, { task_id: 'openclaw-001' }, { 'x-bridge-key': TOKEN }); assert.equal(x.status, 200, ruta); assert.equal(vistos.at(-1).body.tool, tool);
   }
-  const ap = await post(A, 'aprobar', { task_id: 'openclaw-001', op_id: 'op-1', aprobacion: true }, { ...AUTH, 'x-operador': 'antonio.director' });
+  const ap = await post(A, 'aprobar', { task_id: 'openclaw-001', op_id: 'op-1', aprobacion: true }, { ...AUTH_OP, 'x-operador': 'antonio.director' });
   assert.equal(ap.status, 200); assert.equal(vistos.at(-1).body.args.operador, 'antonio.director'); assert.ok(!('aprobacion' in vistos.at(-1).body.args));
   assert.ok(!JSON.stringify(r.json).includes(CLAVE_HARNESS));
 });

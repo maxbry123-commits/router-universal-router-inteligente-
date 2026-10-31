@@ -332,7 +332,7 @@ HERRAMIENTAS.update({"swe_iniciar": swe_iniciar, "swe_avanzar": swe_avanzar, "sw
 @app.post("/invoke")
 def invoke(cuerpo: dict, x_api_key: str | None = Header(None)):
     esperado = os.environ.get("RIU_API_KEY")
-    if not esperado or not isinstance(x_api_key, str) or not hmac.compare_digest(x_api_key, esperado):
+    if not esperado or not isinstance(x_api_key, str) or not hmac.compare_digest(x_api_key.encode("utf-8", "surrogatepass"), esperado.encode("utf-8", "surrogatepass")):  # bytes: con str no ASCII compare_digest lanza TypeError (500)
         return _err("clave de acceso invalida", 401)
     accion = cuerpo.get("action")
     try:

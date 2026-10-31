@@ -83,3 +83,19 @@ class ModeloExterno(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ClaveNoAscii(unittest.TestCase):
+    """/invoke: una clave no ASCII (cabecera o esperada) es 401 sin revelar nada, nunca 500."""
+    def test_clave_no_ascii_es_401(self):
+        from fastapi.testclient import TestClient
+        with patch.dict(os.environ, {"RIU_API_KEY": "clave-http-solo-prueba"}):
+            c = TestClient(h.app)
+            for cab in (b"cl\xe9ve", b"\xc3\xb1", "mala"):
+                r = c.post("/invoke", json={"action": "status"}, headers={"X-API-Key": cab})
+                self.assertEqual(r.status_code, 401, cab); self.assertEqual(r.json(), {"status": "error", "error": "clave de acceso invalida"})
+            self.assertEqual(c.post("/invoke", json={"action": "status"}).status_code, 401)
+        with patch.dict(os.environ, {"RIU_API_KEY": "clavé-esperada"}):
+            c = TestClient(h.app)
+            self.assertEqual(h.invoke({"action": "status"}, x_api_key="clavé-esperada")["status"], "ok")  # llamada directa: el TestClient reinterpreta los bytes de la cabecera
+            self.assertEqual(h.invoke({"action": "status"}, x_api_key="clavé-otra").status_code, 401)

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
-import { respaldo, BASES, esExterno, idsRespaldo } from "../src/respaldo.js";
+import { respaldo, BASES, esExterno, idsRespaldo, timeoutDe, TIMEOUT_DEFECTO_MS } from "../src/respaldo.js";
 
 const servidor = (codigo, texto) => new Promise((ok) => {
   const vistos = [];
@@ -85,4 +85,20 @@ test("setClaves: claves inyectadas se suman al entorno sin duplicar, max 20, ign
     // entrada invalida no revienta
     assert.doesNotThrow(() => { setClaves(); setClaves(null); setClaves({ groq: 5 }); });
   } finally { setClaves({ groq: [], nvidia: [] }); g.s.close(); g2.s.close(); }
+});
+
+test("esExterno valida contra MODELOS_API: ids autorizados si, groq/llama-3.3-70b-versatile y similares no; el modelo fijado por entorno tambien vale", () => {
+  for (const ok of ["groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"]) assert.ok(esExterno(ok), ok);
+  for (const mal of ["groq/llama-3.3-70b-versatile", "groq/xxx", "nvidia/meta/llama-3.3-70b-instruct", "groq/", "groq", "openai/gpt-4", "", null, undefined, "groq/qwen/qwen3.8-27b-otro", "GROQ/qwen/qwen3.8-27b"]) assert.ok(!esExterno(mal), String(mal));
+  assert.ok(esExterno("nvidia/forzado/m", { RIU_SWE_NVIDIA_MODELO: "forzado/m" }), "el id fijado por el operador en el entorno es autorizado");
+  assert.ok(!esExterno("nvidia/forzado/m", {}));
+});
+
+test("timeout por defecto de Groq 60000 ms (por modelo); NVIDIA y el resto usan el global; RIU_SWE_TIMEOUTS y opts.timeoutsModelo mandan sobre el defecto", () => {
+  const r = { timeoutMs: TIMEOUT_DEFECTO_MS };
+  assert.equal(timeoutDe("qwen/qwen3.8-27b", {}, r), 60000);
+  assert.equal(timeoutDe("minimaxai/minimax-m3.1-flash", {}, r), TIMEOUT_DEFECTO_MS);
+  assert.equal(timeoutDe("qwen/qwen3.8-27b", { RIU_SWE_TIMEOUTS: JSON.stringify({ "qwen/qwen3.8-27b": 15000 }) }, r), 15000);
+  assert.equal(timeoutDe("qwen/qwen3.8-27b", {}, { ...r, timeoutsModelo: { "qwen/qwen3.8-27b": 7000 } }), 7000);
+  assert.equal(timeoutDe("qwen/qwen3.8-27b", { RIU_SWE_TIMEOUTS: "no-json" }, r), 60000);
 });

@@ -81,7 +81,7 @@ async function invocar(herramienta, args, { env, fetch: f, timeoutMs, secretos }
   const ruta = String(env.RIU_DEEPSEEK_HARNESS_PATH || '/invoke'), clave = env.RIU_DEEPSEEK_HARNESS_API_KEY || env.RIU_API_KEY;
   try {
     const resp = await f(base + (ruta.startsWith('/') ? ruta : '/invoke'), {
-      method: 'POST', signal: AbortSignal.timeout(timeoutMs),
+      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(timeoutMs),
       headers: { 'content-type': 'application/json', ...(clave ? { 'x-api-key': clave } : {}) },
       body: JSON.stringify({ action: 'invoke', tool: herramienta, args }),
     });

@@ -250,10 +250,14 @@ test("NVIDIA: primero minimax/kimi/deepseek-v4 (el primero de la lista)", async 
   assert.equal((await nvidiaCon(["a/b", "deepseek-ai/deepseek-v4-pro"])).modelo, "deepseek-ai/deepseek-v4-pro");
 });
 
-test("NVIDIA sin MiniMax/Kimi/DeepSeek: muse/glimmer + nemotron-3-super; si no, el por defecto", async () => {
-  assert.equal((await nvidiaCon(["meta/llama-3.3-70b-instruct", "nvidia/nemotron-3-super-120b", "nvidia/glimmer-nemotron-3-super"])).modelo, "nvidia/glimmer-nemotron-3-super");
+test("NVIDIA sin MiniMax/Kimi/DeepSeek: las reglas Muse/Glimmer (2A) y Nemotron-3-Super (2B) se prueban POR SEPARADO: find(2A) || find(2B); si ninguna, el por defecto", async () => {
+  assert.equal((await nvidiaCon(["meta/llama-3.3-70b-instruct", "nvidia/nemotron-3-super-120b", "nvidia/glimmer-nemotron-3-super"])).modelo, "nvidia/glimmer-nemotron-3-super", "2A manda sobre 2B");
   limpiarEstado();
-  assert.equal((await nvidiaCon(["meta/llama-3.3-70b-instruct", "nvidia/nemotron-3-super-120b"])).modelo, "minimaxai/minimax-m3.1-flash");
+  assert.equal((await nvidiaCon(["meta/llama-3.3-70b-instruct", "acme/muse-experimental"])).modelo, "acme/muse-experimental", "solo 2A basta");
+  limpiarEstado();
+  assert.equal((await nvidiaCon(["meta/llama-3.3-70b-instruct", "nvidia/nemotron-3-super-120b"])).modelo, "nvidia/nemotron-3-super-120b", "solo 2B basta");
+  limpiarEstado();
+  assert.equal((await nvidiaCon(["meta/llama-3.3-70b-instruct", "otra/cosa"])).modelo, "minimaxai/minimax-m3.1-flash", "ninguna: el por defecto");
 });
 
 test("NVIDIA: RIU_SWE_NVIDIA_MODELO manda y ni siquiera consulta /models", async () => {

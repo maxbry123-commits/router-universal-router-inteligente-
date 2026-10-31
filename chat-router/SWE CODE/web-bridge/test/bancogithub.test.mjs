@@ -44,7 +44,7 @@ test("trae el banco de GitHub al arrancar si aqui no existe (Space nuevo) y no p
   const g = await github(); g.est.rama = true; g.est.archivo = Buffer.from("MVPB1DESDE-GITHUB-relleno-de-mas-de-16-bytes").toString("base64"); g.est.sha = "x";
   fs.rmSync(path.join(estado, "banco-swe.bin"), { force: true });
   assert.equal(await traerDeGithub({ api: g.url, token: "t", repo: "o/r" }), true);
-  assert.equal(fs.readFileSync(path.join(estado, "banco-swe.bin"), "utf8"), "DESDE-GITHUB");
+  assert.equal(fs.readFileSync(path.join(estado, "banco-swe.bin"), "utf8"), "MVPB1DESDE-GITHUB-relleno-de-mas-de-16-bytes");
   fs.writeFileSync(path.join(estado, "banco-swe.bin"), "LOCAL");
   assert.equal(await traerDeGithub({ api: g.url, token: "t", repo: "o/r" }), false, "no pisa el local");
   assert.equal(fs.readFileSync(path.join(estado, "banco-swe.bin"), "utf8"), "LOCAL");

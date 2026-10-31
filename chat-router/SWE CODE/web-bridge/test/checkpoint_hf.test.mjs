@@ -173,3 +173,10 @@ test("lo guardado (local y Harness) nunca lleva claves ni cabeceras", async () =
     assert.equal(JSON.parse(local).estado, "RUNNING");
   } finally { h.cerrar(); }
 });
+
+test("el fetch al Harness lleva redirect:'error' (una redireccion no arrastra la X-API-Key a otro host)", async () => {
+  const dir = tmp(), vistos = [];
+  const f = async (url, init) => { vistos.push(init); return { ok: true, status: 200, json: async () => ({ status: "ok", result: {} }) }; };
+  await guardarCheckpoint("redir-1", { texto: "x" }, { env: envCon(dir, { RIU_DEEPSEEK_HARNESS_URL: "https://harness.example", RIU_API_KEY: CLAVE_HARNESS }), fetch: f });
+  assert.ok(vistos.length >= 1); assert.ok(vistos.every((i) => i.redirect === "error"));
+});

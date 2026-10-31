@@ -70,17 +70,37 @@ test("vigilarBanco: si aun no hay banco local, cada vuelta intenta traerlo de Gi
   assert.ok(orden.length >= 2 && orden[0] === "traer" && orden[1] === "cargar", orden.join(","));
 });
 
-test("vigilarBanco: si el banco local no aporta ninguna clave (vacio o ilegible), trae el de GitHub aunque exista el archivo y recarga", async () => {
+// vigilarBanco(intervalo, { traer, cargar, diagnosticar, existe }): el traer forzado solo cuando el banco local no existe o NO abre
+const vuelta = async (diag, { existe = true, cargaN = 0 } = {}) => {
   const { vigilarBanco } = await import("../src/clavesbanco.js");
-  const llamadas = [];
+  const llamadas = []; let cargas = 0;
   const traer = async (o = {}) => { llamadas.push(o.forzar ? "traer-forzado" : "traer"); return !!o.forzar; };
-  let cargas = 0;
-  const cargar = async () => { cargas++; return cargas >= 3 ? 11 : 0; };  // 1a y 2a lectura: vacio; tras traer el forzado: 11 claves
-  const t = vigilarBanco(10, { traer, cargar });
+  const cargar = async () => { cargas++; return llamadas.includes("traer-forzado") ? 11 : cargaN; };
+  const t = vigilarBanco(10, { traer, cargar, diagnosticar: async () => diag, existe: () => existe });
   await new Promise((r) => setTimeout(r, 80));
   clearInterval(t);
-  assert.ok(llamadas.includes("traer-forzado"), llamadas.join(","));
-  assert.ok(cargas >= 3);
+  return { llamadas, cargas };
+};
+
+test("vigilarBanco: si el banco local EXISTE pero NO abre (ilegible / otra clave), trae el de GitHub forzado y recarga", async () => {
+  const r = await vuelta({ propio: { existe: true, abre_con: null } });
+  assert.ok(r.llamadas.includes("traer-forzado"), r.llamadas.join(","));
+  assert.ok(r.cargas >= 2);
+});
+
+test("vigilarBanco: si el banco local no existe, tambien se fuerza el traer", async () => {
+  const r = await vuelta({ propio: { existe: false } }, { existe: false });
+  assert.ok(r.llamadas.includes("traer-forzado"), r.llamadas.join(","));
+});
+
+test("vigilarBanco: DELETE persistente — un banco local que ABRE y esta vacio (borrado a proposito) NO se sustituye por el de GitHub", async () => {
+  const r = await vuelta({ propio: { existe: true, abre_con: 0, groq: 0, nvidia: 0 } });
+  assert.ok(!r.llamadas.includes("traer-forzado"), r.llamadas.join(","));
+});
+
+test("vigilarBanco: sin diagnostico fiable y con el archivo presente no se fuerza nada", async () => {
+  const r = await vuelta(null);
+  assert.ok(!r.llamadas.includes("traer-forzado"), r.llamadas.join(","));
 });
 
 test("diagnosticoBanco: solo estado (bytes del archivo, ultimo http de GitHub, ultimo error del helper, numero de accesos), nunca valores", async () => {

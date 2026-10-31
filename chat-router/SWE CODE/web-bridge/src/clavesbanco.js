@@ -56,14 +56,20 @@ export async function borrarDelBanco() {
   return /"ok":\s*true/.test(String(out || ''));
 }
 
-// el banco se vuelve a leer cada 60 s: una clave que entre al banco del Router MVP llega al bridge sin reiniciar nada
-// y si el banco local aun no existe, lo trae de GitHub (rama banco-claves; sin red cuando ya existe) antes de leerlo
-export function vigilarBanco(intervaloMs = 60000, { traer = traerDeGithub, cargar = cargarDelBanco } = {}) {
+// el banco se vuelve a leer cada 60 s: una clave que entre al banco del Router MVP llega al bridge sin reiniciar nada.
+// Si el banco local aun no existe, lo trae de GitHub (rama banco-claves). El traer FORZADO (pisa el local) solo si el local no existe o NO abre
+// (diagnostico propio.existe && abre_con === null); un local que abre y esta vacio (DELETE a proposito) se respeta: el borrado es persistente.
+export function vigilarBanco(intervaloMs = 60000, { traer = traerDeGithub, cargar = cargarDelBanco, diagnosticar = diagnosticarPython, existe = () => fs.existsSync(require_ruta(process.env)) } = {}) {
   const vuelta = async () => {
     await traer().catch(() => false);
-    if ((await cargar()) === 0 && await traer({ forzar: true }).catch(() => false)) await cargar();  // banco local vacio o ilegible: el de GitHub manda
-    try { diagPy.detalle = JSON.parse(await correr(['diagnostico'])); } catch { /* solo diagnostico */ }
+    if ((await cargar()) === 0) {
+      const d = await diagnosticar().catch(() => null), propio = d && d.propio;
+      const inservible = !existe() || !!(propio && propio.existe && propio.abre_con === null);
+      if (inservible && await traer({ forzar: true }).catch(() => false)) await cargar();
+    }
+    try { diagPy.detalle = await diagnosticar(); } catch { /* solo diagnostico */ }
   };
   const t = setInterval(() => { vuelta().catch(() => {}); }, intervaloMs); t.unref();
   return t;
 }
+async function diagnosticarPython() { return JSON.parse(await correr(['diagnostico'])); }
