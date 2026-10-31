@@ -1,5 +1,6 @@
 import { node } from "./api.js";
 import * as A from "./chat-ancla.js";
+import { esSwe, enviarSwe } from "./swe-directo.js";
 // enviar-mensaje.js — envío del mensaje: cada chat corre su tarea con su sesión, ficha, anclas, modos y herramientas
 // Extraído de panel-chat.js sin cambiar la lógica: recibe lo que usa por ctx y devuelve lo que otros bloques necesitan.
 export function montarEnviar(ctx) {
@@ -209,7 +210,10 @@ export function montarEnviar(ctx) {
         });
         return { reply: partes.join('\n\n'), tools: [], ms: 0, finish_reason: rs.some((r) => r.status === 'fulfilled' && r.value.finish_reason === 'length') ? 'length' : null };
       };
-      const answer = window.RIU_CONFIG?.harnessUrl
+      const _swe = fq === "1" && c.selectorQwen && esSwe(c.selectorQwen.model_id) && _multiSel.length <= 1;  // SWE CODE / SWEN CODE free: su router propio (el bridge), sin pasar por el Router MVP
+      const answer = _swe
+        ? await Promise.race([enviarSwe(api, { model: c.selectorQwen.model_id, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined }), raceDetener])
+        : window.RIU_CONFIG?.harnessUrl
         ? (_multiSel.length > 1
             ? await Promise.race([_fanout(), raceDetener])  // >>> MODOS <<< T6: misma tarea a cada modelo; un proceso por modelo en el backend
             : await Promise.race([window.RIU_HARNESS({ model: fichaQwen || fichaGroq || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados, sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, ...controlTools, thinking_mode: (fq || mvp) ? (getModo() === 'think' ? 'on' : 'off') : undefined, mode_request: getModeUI() ? getModeUI().getModeRequest() : undefined,  // >>> MODOS <<<
@@ -219,6 +223,7 @@ export function montarEnviar(ctx) {
       if (c.detenerFlag) throw new Error("PROCESO_DETENIDO");  // detenido mientras la respuesta llegaba: no pintar respuesta tardia
       pending.remove();
       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
+      if (answer.nota) c.hist.append(node("div", answer.nota, "item meta"));
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
       if (answer.finish_reason === "length") { const aviso = node("div", "La respuesta se cortó por el límite de salida del proveedor. ", "item message meta"), seguir = node("button", "Continuar", "mx-continuar"); seguir.type = "button"; seguir.onclick = () => { seguir.disabled = true; const m = q("#message"); m.value = "Continúa exactamente donde se cortó la respuesta anterior, sin repetir texto."; q("#composer").requestSubmit(); }; aviso.append(seguir); c.hist.append(aviso); }  // un clic y sigue desde el corte
       if (answer.execution_path === "FAST_QA") c.hist.append(node("div", "⚡ respuesta rápida · " + answer.ms + " ms", "item meta"));

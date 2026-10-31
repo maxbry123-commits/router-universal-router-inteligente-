@@ -5,6 +5,8 @@
 Nada habla directo con el chat ni con el Router MVP. OpenClaw puede llamar al bridge sin pasar por el Router MVP.
 El Harness (`chat/backend/deepseek_harness/server.py`) lee `RIU_SWE_BRIDGE_URL`: los ids SWE (`web-*`, `swecode-*`, locales y los `hf-*` del selector) van al bridge. **Si el Router MVP cae**, el Harness no se detiene: responde por el bridge con un modelo local (`RIU_SWE_LOCAL_MODELO`, por defecto `lfm2.5-350m`), **sin herramientas** (GitHub, HF, motor de archivos y memoria del chat viven en el Router MVP y vuelven cuando él vuelve).
 
+**Desde el chat Yaiwes:** los modelos SWE del selector (`web-*`, `swecode-*`, `hf-*`, locales) no pasan por el Router MVP. El frontend (`chat/frontend/swe-directo.js`) llama `POST /v1/chat/completions` del mismo origen con el historial de la sesión; el proxy del Space manda `web-*` y `swecode-*` al bridge. Los ids locales (`lfm2.5-350m`…) llegan al bridge solo cuando el proxy los reconoce (hoy `proxy.py` solo reconoce `web-` y `swecode-`).
+
 ## El router propio (web-bridge)
 - `model`: `web-qwen38max | web-qwen37max | web-dsv4-flash`, `swecode-<modo>`, `groq/<id>`, `nvidia/<id>` o un local (`lfm2.5-350m`, `qwen2.5-coder-1.5b`, `qwen3.5-0.8b`, `qwen3-0.6b`). `GET /v1/models` los lista; ese es el selector de OpenClaw.
 - Cada `conv_id` = una sección = tab propia y chat nuevo en la web (`BRIDGE_MAX_TABS=4`). `consulta` sin modelo = concilio de los 3 + síntesis Qwen 3.8.

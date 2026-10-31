@@ -292,7 +292,7 @@ export async function api(path, options = {}) {
   try {
     const credentials = remoto(headers);
     response = await fetchT(BASE + path, { method: options.method || "GET", headers, credentials,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body) }, path === "/chat/send" ? 450000 : 15000);  // /chat/send (sin harness) espera la respuesta completa
+      body: options.body === undefined ? undefined : JSON.stringify(options.body) }, (path === "/chat/send" || path === "/v1/chat/completions") ? 450000 : 15000);  // /chat/send (sin harness) espera la respuesta completa
   } catch (error) {
     window.dispatchEvent(new CustomEvent("router-connection", { detail: "Sin conexión" }));
     if (error && error.name === "AbortError") throw new Error("El Router no respondió a tiempo (puede estar despertando); reintenta en unos segundos");
