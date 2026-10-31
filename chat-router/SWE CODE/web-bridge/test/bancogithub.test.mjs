@@ -64,4 +64,7 @@ test("forzar: si el banco local no sirve, el de GitHub lo sustituye; sin forzar 
   assert.equal(await traerDeGithub({ api: g.url, token: "t", repo: "o/r", forzar: true }), true);
   g.s.closeAllConnections?.(); g.s.close();
   assert.equal(fs.readFileSync(path.join(estado, "banco-swe.bin"), "utf8"), "DE-GITHUB");
+  assert.deepEqual(fs.readdirSync(estado).filter((f) => f.includes(".tmp-")), [], "sin temporales");
+  const { diagTraer } = await import("../src/bancogithub.js");
+  assert.equal(diagTraer.escrito, true);
 });

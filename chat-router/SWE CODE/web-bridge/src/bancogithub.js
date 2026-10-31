@@ -29,7 +29,7 @@ export async function publicarEnGithub({ api = API(), token = process.env.GITHUB
 }
 
 // ultimo intento de traer el banco (solo datos de estado, nunca valores): lo muestra /health para diagnosticar sin logs
-export const diagTraer = { token: false, http: null, ts: null };
+export const diagTraer = { token: false, http: null, ts: null, escrito: null, error: null };
 
 // Space nuevo: si no hay banco local, trae el de GitHub; nunca pisa uno local
 export async function traerDeGithub({ api = API(), token = process.env.GITHUB_TOKEN, repo = REPO(), forzar = false } = {}) {
@@ -40,7 +40,9 @@ export async function traerDeGithub({ api = API(), token = process.env.GITHUB_TO
     diagTraer.http = r.status; diagTraer.ts = new Date().toISOString();
     if (!r.ok || !r.json.content) return false;
     fs.mkdirSync(path.dirname(local()), { recursive: true });
-    fs.writeFileSync(local(), Buffer.from(r.json.content, 'base64'), { mode: 0o600 });
+    const tmp = `${local()}.tmp-${process.pid}`;  // temporal + rename: sustituye el archivo aunque el existente sea de otro usuario o de solo lectura (copia restaurada de /data)
+    try { fs.writeFileSync(tmp, Buffer.from(r.json.content, 'base64'), { mode: 0o600 }); fs.renameSync(tmp, local()); } catch (e) { try { fs.unlinkSync(tmp); } catch { /* ya no esta */ } throw e; }
+    diagTraer.escrito = true; diagTraer.error = null;
     return true;
-  } catch { return false; }
+  } catch (e) { diagTraer.escrito = false; diagTraer.error = String(e && (e.code || e.name) || 'x').slice(0, 40); return false; }
 }
