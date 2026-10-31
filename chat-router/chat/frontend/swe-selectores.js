@@ -25,6 +25,8 @@ function filaSalida() {
 }
 document.addEventListener("click", (e) => { const b = e.target.closest("[data-salida]"); if (b) { guardarEjecutorTools(b.dataset.salida); pintarSalida(); } });
 pintarSalida();
+// el panel (panel-chat.html) se inyecta despues de cargar este modulo: al aparecer sus botones se repinta el estado guardado
+try { const ob = new MutationObserver((ms) => { if (ms.some((m) => [...m.addedNodes].some((n) => n.nodeType === 1 && (n.matches("[data-salida]") || n.querySelector("[data-salida]"))))) pintarSalida(); }); ob.observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
 function hoja(id) {
   const l = SWE_LISTAS[id];
   let s = document.getElementById("sh-" + id);

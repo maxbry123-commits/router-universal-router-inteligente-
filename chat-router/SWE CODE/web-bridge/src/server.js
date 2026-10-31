@@ -14,9 +14,9 @@ import { MODELOS_WEB } from './sites.js';
 import crypto from 'node:crypto';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import nodeFs from 'node:fs';
-import { vigilarWorkspace, rutaWorkspace, configVigente, vigilarConfig, espejo } from './openclaw.js';
+import { vigilarWorkspace, rutaWorkspace, configVigente, vigilarConfig, espejo, normalizarEjecutor } from './openclaw.js';
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, setClaves, limpiarClaves } from './respaldo.js';
-import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo } from './bloques.js';
+import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo, checkpointGuardar } from './bloques.js';
 import { retomarLocal, retomarPorId, TIPO as TIPO_LOCAL } from './retomar_local.js';
 import { idValido as tareaIdValido } from './checkpoint_hf.js';
 import { conFormato } from './formato.js';
@@ -311,10 +311,19 @@ app.post('/v1/chat/completions', async (req, res) => {
     let archivo = null;
     if (modoUso === 'asesoria') { try { archivo = guardarAsesoria(proyecto || conv_id, { texto: salida, via: via || viaPrimaria || 'web', modelo: usado }); } catch { /* guardar es mejor esfuerzo */ } }
     if (proyecto || conv_id) guardarTurno(proyecto || conv_id, ultimo, salida, usado).catch(() => {});  // misma memoria del chat Yaiwes (mejor esfuerzo)
+    // ejecutor_tools: 'openclaw' = las tools las ejecuta OpenClaw (se devuelven tal cual y la seccion queda WAIT_TOOLS); 'swe' (defecto) no cambia nada
+    const ejecutor = normalizarEjecutor(req.body.ejecutor_tools), esOc = ejecutor === 'openclaw' && conv_id != null;
+    if (esOc) {
+      try {
+        const previo = checkpointCrudo(conv_id) || {};
+        if (llamadas.length) checkpointGuardar(conv_id, { ...previo, modo: previo.modo || modoUso, estado: 'WAIT_TOOLS', modelo: usado, proveedor: via || viaPrimaria || null });
+        else if (previo.estado === 'WAIT_TOOLS' && mensajesM.at(-1)?.role === 'tool') checkpointGuardar(conv_id, { ...previo, estado: 'CONTINUAR' });
+      } catch { /* el checkpoint es mejor esfuerzo */ }
+    }
     if (!res.headersSent) { res.setHeader('x-modelo-usado', usado); if (via) res.setHeader('x-via-respaldo', via); }
 
     if (sse.pide) {  // OpenClaw (openai-completions) pide SSE: la respuesta ya esta completa, se emite como chunks estandar + [DONE]
-      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(tarea ? { tarea } : {}) };
+      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(tarea ? { tarea } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}) };
       sse.abrir();
       sse.chunk({ role: 'assistant', content: '' });
       for (const t of trozosDe(salida)) sse.chunk({ content: t });
@@ -324,7 +333,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(tarea ? { tarea } : {}),
+      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(tarea ? { tarea } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}),
       choices: [{ index: 0, finish_reason: fin, message: { role: 'assistant', content: salida || '', ...(llamadas.length ? { tool_calls: llamadas } : {}) } }],
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     });

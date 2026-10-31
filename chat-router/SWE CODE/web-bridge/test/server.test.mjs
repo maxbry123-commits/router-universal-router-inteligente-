@@ -532,6 +532,30 @@ test('15. tools: groq/nvidia/locales reciben las tools del POST y sus tool_calls
   assert.equal(r.json.choices[0].message.tool_calls[0].function.name, 'github_leer');
 });
 
+// ---------- ejecutor_tools: 'openclaw' deja las tools a OpenClaw y marca WAIT_TOOLS ----------
+test('EX-1. ejecutor_tools=openclaw: devuelve los tool_calls tal cual y el checkpoint queda WAIT_TOOLS; role:tool lo pasa a CONTINUAR; swe no marca nada', async () => {
+  const tools = [{ type: 'function', function: { name: 'github_leer', parameters: { type: 'object' } } }];
+  groq.hits.length = 0; groq.status = 200;
+  groq.tool_calls = [{ id: 'cx1', type: 'function', function: { name: 'github_leer', arguments: '{}' } }];
+  const r = await chat(A, { model: 'groq/xxx', tools, conv_id: 'ex-conv-1', ejecutor_tools: 'openclaw' });
+  assert.equal(r.status, 200);
+  assert.equal(r.json.ejecutor_tools, 'openclaw');
+  assert.equal(r.json.choices[0].finish_reason, 'tool_calls');
+  assert.equal(r.json.choices[0].message.tool_calls[0].id, 'cx1');
+  let sec = (await get(A, '/v1/secciones')).json.secciones.find((x) => x.conv_id === 'ex-conv-1');
+  assert.ok(sec, 'la seccion existe'); assert.equal(sec.estado, 'WAIT_TOOLS');
+  delete groq.tool_calls; groq.texto = 'listo';
+  const r2 = await chat(A, { model: 'groq/xxx', conv_id: 'ex-conv-1', ejecutor_tools: 'openclaw', messages: [{ role: 'user', content: 'x' }, { role: 'tool', tool_call_id: 'cx1', content: 'ok' }] });
+  assert.equal(r2.status, 200);
+  sec = (await get(A, '/v1/secciones')).json.secciones.find((x) => x.conv_id === 'ex-conv-1');
+  assert.equal(sec.estado, 'CONTINUAR');
+  groq.tool_calls = [{ id: 'cx2', type: 'function', function: { name: 'github_leer', arguments: '{}' } }];
+  const r3 = await chat(A, { model: 'groq/xxx', tools, conv_id: 'ex-conv-2' });
+  delete groq.tool_calls;
+  assert.equal(r3.json.ejecutor_tools, undefined);
+  assert.equal((await get(A, '/v1/secciones')).json.secciones.find((x) => x.conv_id === 'ex-conv-2'), undefined);
+});
+
 // ---------- auditoria 1: correcciones ----------
 test('A1-1. conv_id con ../ se rechaza (400) y no escribe fuera de checkpoints/', async () => {
   const r = await chat(A, { model: 'web-qwen38max', conv_id: '../../evil' });
