@@ -14,9 +14,11 @@ import { MODELOS_WEB } from './sites.js';
 import crypto from 'node:crypto';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import nodeFs from 'node:fs';
-import { vigilarWorkspace, rutaWorkspace, configVigente, vigilarConfig } from './openclaw.js';
+import { vigilarWorkspace, rutaWorkspace, configVigente, vigilarConfig, espejo } from './openclaw.js';
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, setClaves, limpiarClaves } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo } from './bloques.js';
+import { retomarLocal, retomarPorId, TIPO as TIPO_LOCAL } from './retomar_local.js';
+import { idValido as tareaIdValido } from './checkpoint_hf.js';
 import { conFormato } from './formato.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
 import { vigilarActualizacion } from './autoactualizar.js';
@@ -108,6 +110,11 @@ app.get('/v1/proyectos/:nombre', (req, res) => {
 // retomar una seccion a medias SIN que el cliente reenvie el texto: usa el texto y el modelo guardados en el checkpoint
 async function retomarSeccion(id) {
   const ck = checkpointCrudo(id);
+  if (!ck || ck.tipo === TIPO_LOCAL) {  // checkpoint de un modelo local HF / Groq / NVIDIA (retomar_local.js): puede estar solo en el Harness si el disco se perdio
+    const l = await conDeadline(retomarPorId(id, { hasta: Date.now() + DEADLINE_MS * 0.8 }), DEADLINE_MS);
+    if (l && l.yaCompleto) return { status: 409, error: { code: 'SECCION_YA_COMPLETA' } };
+    if (l) return { status: 200, salida: l.salida, modelo: l.usado, local: l };
+  }
   if (!ck || !ck.texto || !ck.modelo) return { status: 404, error: { code: 'SECCION_NO_ENCONTRADA' } };
   if (ck.completo || (ck.enviados >= ck.total)) return { status: 409, error: { code: 'SECCION_YA_COMPLETA' } };
   const salida = await conDeadline(consultarWeb(ck.modelo, ck.texto, { modo: ck.modo, convId: id }), DEADLINE_MS);
@@ -118,7 +125,8 @@ app.post('/v1/secciones/:id/retomar', async (req, res) => {
   try {
     const r = await retomarSeccion(req.params.id);
     if (r.error) return res.status(r.status).json({ error: r.error });
-    res.json({ id: `retoma-${Date.now()}`, object: 'chat.completion', modelo_usado: r.modelo, choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: r.salida || '' } }] });
+    const l = r.local;
+    res.json({ id: `retoma-${Date.now()}`, object: 'chat.completion', modelo_usado: r.modelo, ...(l ? { via_respaldo: l.via, tarea: { id: l.tarea_id, estado: l.estado, secciones: l.secciones } } : {}), choices: [{ index: 0, finish_reason: l ? l.finish_reason : 'stop', message: { role: 'assistant', content: r.salida || '', ...(l && l.tool_calls.length ? { tool_calls: l.tool_calls } : {}) } }] });
   } catch (e) { res.status(e.code === 'UPSTREAM_TIMEOUT' ? 504 : 502).json({ error: { code: e.code || 'BRIDGE_ERROR', message: String(e.message).slice(0, 200) } }); }
 });
 
@@ -167,7 +175,7 @@ app.get('/v1/openclaw', (_req, res) => {
   const c = configVigente();
   if (!c) return res.status(404).json({ ok: false, error: { code: 'CONFIG_NO_ENCONTRADA', message: 'falta SWE CODE free/provider-openclaw.json (RIU_OPENCLAW_DIR)' } });
   const ruta = rutaWorkspace();
-  res.json({ ok: true, ...c, vivo: { modelos: idsModelos(), ...conteo() }, workspace: { ruta, existe: nodeFs.existsSync(ruta) } });
+  res.json({ ok: true, ...c, vivo: { modelos: idsModelos(), ...conteo() }, workspace: { ruta, existe: nodeFs.existsSync(ruta) }, espejo: espejo() });  // espejo de emergencia: catalogo del Router para OpenClaw (solo nombres)
 });
 
 // herramienta nativa: el agente la llama cuando ve SESSION_EXPIRED
@@ -246,11 +254,18 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (!esExterno(model) && !esLocal(model)) {
       return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     }
-    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop';
+    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop', tarea = null;
+    // tarea_id (cuerpo o cabecera x-tarea-id): modelos locales/Groq/NVIDIA con checkpoint universal (retomar_local.js); sin tarea_id nada cambia
+    const tareaId = req.body.tarea_id != null ? req.body.tarea_id : req.headers['x-tarea-id'];
+    const usaTarea = tareaId != null && tareaId !== '' && (esExterno(model) || esLocal(model));
+    if (usaTarea && !tareaIdValido(String(tareaId))) return res.status(400).json({ error: { code: 'TAREA_ID_INVALIDO', message: 'tarea_id: letras, numeros, - y _ (max 64)' } });
     const extra = { tools: Array.isArray(req.body.tools) ? req.body.tools : undefined, tool_choice: req.body.tool_choice };  // groq/nvidia/locales ejecutan tools: el Harness las corre
 
     const ejecutar = async () => {
-    if (esExterno(model)) {
+    if (usaTarea) {
+      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo), { ...extra, hasta: Date.now() + DEADLINE_MS * 0.8 }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
+      tarea = { id: r.tarea_id, estado: r.estado, secciones: r.secciones, reanudado: r.reanudado, desde_checkpoint: r.desde_checkpoint };
+    } else if (esExterno(model)) {
       const r = await externo(model, conPreambulo(mensajesM, modo), { extra }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
     } else if (esLocal(model)) {
       const r = await local(model, conPreambulo(mensajesM, modo), { extra }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
@@ -280,7 +295,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       await conDeadline(ejecutar(), DEADLINE_MS);
       if ((!salida || !String(salida).trim()) && !llamadas.length) throw Object.assign(new Error('respuesta vacia del modelo web'), { code: 'EMPTY_RESPONSE' });
     } catch (e) {
-      if (e.code === 'MODO_INVALIDO') throw e;
+      if (e.code === 'MODO_INVALIDO' || usaTarea) throw e;  // con tarea_id retomarLocal ya probo local/Groq/NVIDIA y guardo el checkpoint: el cliente reintenta con el mismo tarea_id
       if (e.code === 'UPSTREAM_TIMEOUT' && conv_id) await cerrarPagina(conv_id).catch(() => {});  // la tab colgada liberaba su slot solo al cerrarse
       // auto-reparacion: sesion caida -> re-login/rotacion de correo y UN reintento; si sigue mal, respaldo Groq -> NVIDIA -> HF local
       if (e.code === 'SESSION_EXPIRED') {
@@ -299,7 +314,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (!res.headersSent) { res.setHeader('x-modelo-usado', usado); if (via) res.setHeader('x-via-respaldo', via); }
 
     if (sse.pide) {  // OpenClaw (openai-completions) pide SSE: la respuesta ya esta completa, se emite como chunks estandar + [DONE]
-      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via };
+      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(tarea ? { tarea } : {}) };
       sse.abrir();
       sse.chunk({ role: 'assistant', content: '' });
       for (const t of trozosDe(salida)) sse.chunk({ content: t });
@@ -309,7 +324,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo,
+      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(tarea ? { tarea } : {}),
       choices: [{ index: 0, finish_reason: fin, message: { role: 'assistant', content: salida || '', ...(llamadas.length ? { tool_calls: llamadas } : {}) } }],
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     });
@@ -318,7 +333,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     sse.parar();
     if (sse.activo) return res.writableEnded ? undefined : sse.error(code, e.message, e.detail);  // error tras abrir el stream: chunk con el error + [DONE]
     if (res.headersSent) return;
-    const st = code === 'SESSION_EXPIRED' ? 503 : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : 500;
+    const st = code === 'SESSION_EXPIRED' ? 503 : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : ['CHECKPOINT_OTRA_TAREA', 'VERIFICAR_HERRAMIENTAS_PENDIENTES'].includes(code) ? 409 : 500;
     res.status(st).json({ error: { code, message: e.message, detail: e.detail } });
   }
 });

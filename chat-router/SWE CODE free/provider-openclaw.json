@@ -76,5 +76,22 @@
     }
   ],
   "gramatica": "SWEN CODE free [modo <m>] [con|solo|modelo <m>] [chat <id>] [pipeline code|free] [doc <ruta>] <texto> — ver INSTRUCCIONES.md",
-  "via": "app openclaw -> bridge :7870 (router propio de SWE CODE free). Tambien accesible por plugins -> deepseek_harness desde el chat Yaiwes"
+  "via": "app openclaw -> bridge :7870 (router propio de SWE CODE free). Tambien accesible por plugins -> deepseek_harness desde el chat Yaiwes",
+  "mcp": {
+    "nombre": "yaiwes-router",
+    "tipo": "streamable-http",
+    "url": "${RIU_ROUTER_URL:-http://127.0.0.1:7861}/mcp",
+    "cabecera_auth": "X-API-Key",
+    "valor_desde_env": "RIU_API_KEY",
+    "nota": "Tools MCP del Router MVP (espejo de emergencia del chat Yaiwes). El valor de la clave vive en el entorno de OpenClaw, nunca en este archivo. Catalogo en GET /v1/openclaw -> espejo."
+  },
+  "ejecutor_tools": {
+    "campo": "ejecutor_tools",
+    "defecto": "swe",
+    "valores": [
+      "swe",
+      "openclaw"
+    ],
+    "nota": "Quien ejecuta los tool_calls: 'swe' (bridge/Harness) u 'openclaw' (passthrough, seccion WAIT_TOOLS). Lo elige el selector de salida del chat."
+  }
 }

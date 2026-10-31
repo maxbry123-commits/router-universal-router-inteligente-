@@ -79,20 +79,16 @@ test("terminado: el segundo llamado devuelve lo guardado SIN llamar al modelo", 
 
 test("reinicio simulado: el 2º llamado con el mismo tarea_id continua desde el checkpoint (Harness) y no repite la seccion", async () => {
   const h = await harness(); const dir1 = tmp(), dir2 = tmp();
-  let caido = false;
-  const s1 = await fake(({ body }) => caido ? { status: 500, json: {} } : body.messages.at(-1).content === CONT ? ok("-BBB", "stop") : ok("AAA", "length"));
+  let fase = 1;  // fase 1: solo la 1ª peticion responde (length) y despues el modelo se cae; fase 2: el modelo vuelve
+  const s1 = await fake(({ body, n }) => fase === 1 ? (n === 1 ? ok("AAA", "length") : { status: 500, json: {} }) : body.messages.at(-1).content === CONT ? ok("-BBB", "stop") : ok("AAA", "length"));
   try {
     const hv = { RIU_DEEPSEEK_HARNESS_URL: h.url, RIU_API_KEY: KHARNESS };
     // 1ª ejecucion: la seccion 1 sale, la 2 se cae el modelo y no hay respaldo -> error, pero el checkpoint de la seccion 1 ya esta guardado
-    s1.chat.length = 0;
-    const primero = retomarLocal("t-reinicio", MODELO, msgs, extra(env(dir1, { SWECODE_URL_S1: s1.url, ...hv }), { hasta: undefined }));
-    // la respuesta 1 es 'length'; antes de la 2ª peticion el servidor "se cae"
-    const iv = setInterval(() => { if (s1.chat.length >= 1) caido = true; }, 1);
-    await assert.rejects(primero, { code: "RESPALDO_AGOTADO" }); clearInterval(iv);
+    await assert.rejects(retomarLocal("t-reinicio", MODELO, msgs, extra(env(dir1, { SWECODE_URL_S1: s1.url, ...hv }))), { code: "RESPALDO_AGOTADO" });
     const ck1 = await leerCheckpoint("t-reinicio", { env: env(dir1, hv) });
     assert.equal(ck1.parcial, "AAA"); assert.equal(ck1.secciones.length, 1); assert.equal(ck1.estado, "ERROR");
     // reinicio: disco nuevo (dir2) -> solo el Harness conserva el checkpoint; el modelo vuelve
-    caido = false; s1.chat.length = 0;
+    fase = 2; s1.chat.length = 0;
     const r = await retomarLocal("t-reinicio", MODELO, msgs, extra(env(dir2, { SWECODE_URL_S1: s1.url, ...hv })));
     assert.equal(r.salida, "AAA-BBB"); assert.equal(r.estado, "DONE"); assert.equal(r.reanudado, true);
     assert.equal(s1.chat.length, 1, "una sola peticion: la seccion 1 no se repite");
@@ -135,14 +131,12 @@ test("tope de 12 vueltas; al agotarlo devuelve lo parcial (length) y el siguient
 });
 
 test("cambio de API: el local se cae a mitad de tarea y sigue por Groq con el texto ya generado; contexto separado por modelo; sin claves", async () => {
-  let localVivo = true;
-  const s1 = await fake(({ n }) => localVivo ? ok("AAA", "length") : { status: 500, json: {} });
+  const s1 = await fake(({ n }) => n === 1 ? ok("AAA", "length") : { status: 500, json: {} });
   const groq = await fake(({ url }) => url.endsWith("/models") ? { status: 200, json: { data: [] } } : ok("-DESDE-GROQ", "stop"));
   const dir = tmp(); BASES.groq = groq.url;
   try {
     const e = extra(env(dir, { SWECODE_URL_S1: s1.url, GROQ_API_KEY: KGROQ }));
-    const iv = setInterval(() => { if (s1.chat.length >= 1) localVivo = false; }, 1);
-    const r = await retomarLocal("t-api", MODELO, msgs, e); clearInterval(iv);
+    const r = await retomarLocal("t-api", MODELO, msgs, e);
     assert.equal(r.salida, "AAA-DESDE-GROQ"); assert.equal(r.via, "groq");
     assert.deepEqual(groq.chat[0].body.messages, [...msgs, { role: "assistant", content: "AAA" }, { role: "user", content: CONT }]);
     assert.equal(groq.chat[0].auth, "Bearer " + KGROQ);

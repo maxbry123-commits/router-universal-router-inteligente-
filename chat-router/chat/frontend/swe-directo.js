@@ -34,10 +34,18 @@ export const esSelectorSwe = (id) => typeof id === "string" && Object.hasOwn(SWE
 
 export const esSwe = (id) => typeof id === "string" && (/^(web-|swecode-|groq\/|nvidia\/)/.test(id) || Object.hasOwn(REAL, id) || LOCALES.includes(id));
 
-export function armar({ model, historial = [], mensaje, sesion, proyecto }) {
+// Salida de las tools: quien ejecuta los tool_calls. 'swe' (defecto) = el bridge/Harness como hoy; 'openclaw' = el bridge los devuelve tal cual a OpenClaw (seccion WAIT_TOOLS).
+// Contrato en SWE CODE free/ARQUITECTURA.md. Se guarda en localStorage y viaja en cada peticion como `ejecutor_tools`.
+export const EJECUTORES_TOOLS = ["swe", "openclaw"];
+const K_EJECUTOR = "riu_swe_ejecutor_tools";
+const normEjecutor = (v) => (EJECUTORES_TOOLS.includes(v) ? v : "swe");
+export function leerEjecutorTools() { try { return normEjecutor(localStorage.getItem(K_EJECUTOR)); } catch (e) { return "swe"; } }
+export function guardarEjecutorTools(v) { const x = normEjecutor(v); try { localStorage.setItem(K_EJECUTOR, x); } catch (e) {} return x; }
+
+export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecutor_tools }) {
   const h = historial.slice(-MAX_HISTORIAL);
   let claves = {}; try { claves = leerClaves(); } catch (e) {}  // las claves viajan solo en el cuerpo; nunca en errores ni en la nota
-  return { model: Object.hasOwn(REAL, model) ? REAL[model] : model, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, ...(proyecto ? { proyecto } : {}), ...(Object.keys(claves).length ? { claves } : {}) };
+  return { model: Object.hasOwn(REAL, model) ? REAL[model] : model, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(proyecto ? { proyecto } : {}), ...(Object.keys(claves).length ? { claves } : {}) };
 }
 
 // El proxy del Space solo manda /v1/* al bridge si el modelo empieza por web-/swecode-; el resto (locales HF, groq/, nvidia/) caeria en el Router
@@ -46,7 +54,13 @@ export const rutaSwe = (id) => (/^(web-|swecode-)/.test(Object.hasOwn(REAL, id) 
 
 export async function enviarSwe(api, datos) {
   const r = await api(rutaSwe(datos.model), { method: "POST", body: armar(datos) });
-  const texto = r && r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content;
+  const msg = (r && r.choices && r.choices[0] && r.choices[0].message) || {};
+  const llamadas = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
+  if (!msg.content && llamadas.length) {  // passthrough: las tools las ejecuta el cliente (OpenClaw) o el Harness; no es un fallo
+    const nombres = llamadas.map((t) => (t && t.function && t.function.name) || "tool");
+    return { reply: "Tools pedidas: " + nombres.join(", "), tools: nombres, finish_reason: r.choices[0].finish_reason || "tool_calls", nota: `SWE · ${r.modelo_usado || datos.model} · tools → ${armar(datos).ejecutor_tools === "openclaw" ? "OpenClaw" : "SWE"}` };
+  }
+  const texto = msg.content;
   if (!texto) {  // un fallo no se pinta como respuesta del modelo (entraria al historial del turno siguiente)
     const e = (r && r.error) || {};
     throw new Error("GAP: " + (e.code || "SIN_RESPUESTA") + (e.message ? " · " + e.message : ""));

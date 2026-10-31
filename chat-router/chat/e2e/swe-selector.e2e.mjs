@@ -271,6 +271,35 @@ async function enviar(p, texto) {
     ok('F6 la etiqueta del panel refleja el modelo elegido', await pf.evaluate(() => /Liquid/.test(document.querySelector('#sel-power .sel-fila[data-selector="swe-code"] .sel-resp').textContent)));
     ok('F sin errores JS en la pagina', pf.errs.length === 0, pf.errs.join(' | '));
     await pf.context().close();
+
+    // ======== G) Salida de las tools: SWE | OpenClaw (panel + hojas), persistida y enviada como `ejecutor_tools` ========
+    const estG = { llamadas: [], catalogoFalla: false };
+    const pg = await nuevaPagina(browser, estG);
+    await abrirChat(pg, base);
+    const presionado = (q) => pg.evaluate((s) => (document.querySelector(s) || {}).getAttribute && document.querySelector(s).getAttribute('aria-pressed'), q);
+    ok('G1 el panel Selectores tiene los dos botones de Salida (SWE | OpenClaw)', await pg.evaluate(() => !!document.querySelector('#sel-salida-swe') && !!document.querySelector('#sel-salida-openclaw') && /OpenClaw/.test(document.querySelector('#sel-salida-openclaw').textContent)));
+    ok('G1 por defecto Salida = SWE', (await presionado('#sel-salida-swe')) === 'true' && (await presionado('#sel-salida-openclaw')) === 'false');
+    await pg.evaluate(() => document.querySelector('#sel-power .sel-fila[data-selector="swen-code-free"] .sel-on').click());
+    estG.llamadas.length = 0;
+    await enviar(pg, 'salida por defecto');
+    const g1 = estG.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
+    ok('G2 el POST lleva ejecutor_tools:"swe" por defecto', g1 && g1.body.ejecutor_tools === 'swe', JSON.stringify(g1 && g1.body.ejecutor_tools));
+    await pg.$eval('#sel-salida-openclaw', (e) => e.click());
+    ok('G3 elegir OpenClaw lo persiste en localStorage y marca el boton', await pg.evaluate(() => localStorage.getItem('riu_swe_ejecutor_tools') === 'openclaw') && (await presionado('#sel-salida-openclaw')) === 'true' && (await presionado('#sel-salida-swe')) === 'false');
+    estG.llamadas.length = 0;
+    await enviar(pg, 'salida openclaw');
+    const g2 = estG.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
+    ok('G4 el POST lleva ejecutor_tools:"openclaw"', g2 && g2.body.ejecutor_tools === 'openclaw', JSON.stringify(g2 && g2.body.ejecutor_tools));
+    await pg.$eval('#sel-swen', (e) => e.click());
+    await pg.waitForSelector('#sh-swen-code-free [data-salida]', { state: 'attached', timeout: 8000 });
+    ok('G5 la hoja de SWEN CODE free muestra los dos botones de Salida con OpenClaw activo', await pg.evaluate(() => { const b = [...document.querySelectorAll('#sh-swen-code-free [data-salida]')]; return b.length === 2 && b.find((x) => x.dataset.salida === 'openclaw').getAttribute('aria-pressed') === 'true'; }));
+    await pg.$eval('#sh-swen-code-free [data-salida="swe"]', (e) => e.click());
+    ok('G6 elegir SWE desde la hoja sincroniza el panel y localStorage', await pg.evaluate(() => localStorage.getItem('riu_swe_ejecutor_tools') === 'swe') && (await presionado('#sel-salida-swe')) === 'true');
+    await pg.reload(); await pg.waitForSelector('#sel-salida-swe', { state: 'attached', timeout: 20000 });
+    await pg.$eval('#sel-salida-openclaw', (e) => e.click()); await pg.reload(); await pg.waitForSelector('#sel-salida-swe', { state: 'attached', timeout: 20000 }); await pg.waitForTimeout(800);
+    ok('G7 la eleccion sobrevive a recargar la pagina', (await presionado('#sel-salida-openclaw')) === 'true');
+    ok('G sin errores JS en la pagina', pg.errs.length === 0, pg.errs.join(' | '));
+    await pg.context().close();
   } finally {
     await browser.close().catch(() => {});
     await new Promise((r) => srv.close(() => r())); srv.closeAllConnections && srv.closeAllConnections();

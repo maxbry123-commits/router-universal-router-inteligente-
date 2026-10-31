@@ -719,6 +719,15 @@ test('OC-2. devuelve provider/modelos/modos del repo + ids vivos + conteos + wor
   assert.ok(!/gsk-|nv-SECRETO/.test(txt), 'sin claves');
 });
 
+test('OC-3. GET /v1/openclaw incluye `espejo` (catalogo del Router para OpenClaw) y `ejecutor_tools`; solo nombres de cabecera, jamas valores', async () => {
+  const r = await fetch(K.base + '/v1/openclaw', { headers: { 'x-api-key': ACCESO } });
+  const txt = await r.text(), j = JSON.parse(txt);
+  assert.equal(j.espejo.router_url, 'http://127.0.0.1:7861'); assert.equal(j.espejo.auth.cabecera, 'X-API-Key');
+  assert.equal(j.espejo.endpoints.mcp.ruta, '/mcp'); assert.ok(j.espejo.tools.mcp.includes('memoria'));
+  assert.equal(j.espejo.ejecutor_tools.defecto, 'swe'); assert.ok(j.provider.mcp && j.provider.mcp.url.endsWith('/mcp'));
+  assert.ok(!txt.includes(ACCESO), 'la clave de acceso no sale en la respuesta');
+});
+
 test('entorno: informa si se uso express real o stub', () => {
   console.log(`# express ${expressReal ? 'real (npm install)' : 'stub'} en ${APP}`);
   assert.ok(servidores.length >= 2);
