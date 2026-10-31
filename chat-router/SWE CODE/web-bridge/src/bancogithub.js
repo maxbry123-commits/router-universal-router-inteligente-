@@ -28,6 +28,21 @@ export async function publicarEnGithub({ api = API(), token = process.env.GITHUB
   } catch { return false; }
 }
 
+const MARCA = 'MVPB1';
+const valido = (b, size) => Buffer.isBuffer(b) && b.length > 21 && b.subarray(0, 5).toString('latin1') === MARCA && (size == null || b.length === size);
+// El banco es binario: se pide en crudo (media type raw). Si llega recodificado a UTF-8 (cada byte >= 0x80 en 2 bytes; pasaba en el Space: 1357 -> 2036) se repara y, si aun no es un banco valido, se descarta.
+async function descargar(api, token, repo, meta) {
+  const size = typeof meta.size === 'number' ? meta.size : null;
+  const candidatos = [];
+  try {
+    const r = await fetch(`${api.replace(/\/$/, '')}/repos/${repo}/contents/${ARCHIVO}?ref=${RAMA}`, { signal: AbortSignal.timeout(15000), redirect: 'error', headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github.raw+json', 'user-agent': 'riu-bridge' } });
+    if (r.ok) candidatos.push(Buffer.from(await r.arrayBuffer()));
+  } catch { /* se prueba el base64 */ }
+  if (meta.content) candidatos.push(Buffer.from(meta.content, 'base64'));
+  for (const c of [...candidatos, ...candidatos.map((b) => Buffer.from(b.toString('utf8'), 'latin1'))]) if (valido(c, size)) return c;
+  return null;
+}
+
 // ultimo intento de traer el banco (solo datos de estado, nunca valores): lo muestra /health para diagnosticar sin logs
 export const diagTraer = { token: false, http: null, ts: null, escrito: null, error: null };
 
@@ -41,8 +56,10 @@ export async function traerDeGithub({ api = API(), token = process.env.GITHUB_TO
     diagTraer.api = { repo, rama: RAMA, size: r.json.size, sha8: String(r.json.sha || '').slice(0, 8), encoding: r.json.encoding, content_len: String(r.json.content || '').length };  // solo metadatos del archivo remoto, nunca su contenido
     if (!r.ok || !r.json.content) return false;
     fs.mkdirSync(path.dirname(local()), { recursive: true });
+    const datos = await descargar(api, token, repo, r.json);
+    if (!datos) { diagTraer.escrito = false; diagTraer.error = 'BANCO_REMOTO_INVALIDO'; return false; }  // no es un banco (marca MVPB1) ni tiene el tamaño declarado: no sustituye al local
     const tmp = `${local()}.tmp-${process.pid}`;  // temporal + rename: sustituye el archivo aunque el existente sea de otro usuario o de solo lectura (copia restaurada de /data)
-    try { fs.writeFileSync(tmp, Buffer.from(r.json.content, 'base64'), { mode: 0o600 }); fs.renameSync(tmp, local()); } catch (e) { try { fs.unlinkSync(tmp); } catch { /* ya no esta */ } throw e; }
+    try { fs.writeFileSync(tmp, datos, { mode: 0o600 }); fs.renameSync(tmp, local()); } catch (e) { try { fs.unlinkSync(tmp); } catch { /* ya no esta */ } throw e; }
     diagTraer.escrito = true; diagTraer.error = null; try { diagTraer.escrito_bytes = fs.statSync(local()).size; diagTraer.marca = fs.readFileSync(local()).subarray(0, 5).toString('latin1').replace(/[^\x20-\x7e]/g, '?'); } catch { /* solo diagnostico */ }
     return true;
   } catch (e) { diagTraer.escrito = false; diagTraer.error = String(e && (e.code || e.name) || 'x').slice(0, 40); return false; }
