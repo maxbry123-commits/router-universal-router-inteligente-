@@ -128,8 +128,8 @@
    "sha256": "65235eb47c6e12bcb3f6a213b2b792684a368af6848addd24905f67edca472bf"
   },
   "chat-router/chat/backend": {
-   "archivos": 119,
-   "sha256": "92e82d8a448cf8df9cbbc57dadc3dfc17c8befeb0d17523f341fb95b7e3f42fa"
+   "archivos": 120,
+   "sha256": "f472c2f09a39716d66a4c2a1842e8b84e1209d7c10fda71e5084127f5ac2d8cc"
   },
   "chat-router/chat/e2e": {
    "archivos": 23,
@@ -140,8 +140,8 @@
    "sha256": "fd6578f73ee2acfdc63510750e189086fb025a8c0cabf293be028e5e6f5cb8c0"
   },
   "chat-router/chat/frontend": {
-   "archivos": 556,
-   "sha256": "a0c12fcb02dfdf18a6df4b22b82b8e2f3d683733faaff5089492159b76dde68e"
+   "archivos": 557,
+   "sha256": "12fa4977954345e5ecf33c1506d6b693b8cffb545e1059e2e881778de3f77c0a"
   },
   "chat-router/plugins/__init__.py": {
    "archivos": 1,
