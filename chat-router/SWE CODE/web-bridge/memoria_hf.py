@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """OpenClaw usa la MISMA memoria del chat Yaiwes (bucket HF, memoria/<scope>.json): reutiliza mvp.memoria, sin sistema nuevo.
-Uso: memoria_hf.py save <scope> <key>  (JSON por stdin)  |  memoria_hf.py load <scope> <key>. El token sale de HF_TOKEN del entorno."""
+Uso: memoria_hf.py save <scope> <key>  (JSON por stdin)  |  load <scope> <key>  |  search <scope> [query] [k]. El token sale de HF_TOKEN del entorno."""
 import asyncio, json, os, sys
 from mvp import memoria
 
@@ -14,6 +14,8 @@ def main(argv, stdin_texto=""):
     cuerpo = {"scope": scope, "key": key}
     if accion == "save":
         cuerpo["data"] = json.loads(stdin_texto or "{}")
+    elif accion == "search":  # search <scope> [query] [k]: devuelve los registros del scope (historial)
+        cuerpo = {"scope": scope, "query": argv[2] if len(argv) > 2 else "", "k": argv[3] if len(argv) > 3 else 200}
     elif accion != "load":
         raise ValueError("accion no soportada")
     return asyncio.run(memoria.aplicar(accion, cuerpo, lambda: token))

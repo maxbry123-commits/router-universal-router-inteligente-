@@ -13,9 +13,9 @@ import { estadoCuentas, estadoTabs, snapshotTab, cerrarPagina } from './browser.
 import { MODELOS_WEB } from './sites.js';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo } from './respaldo.js';
-import { listarCheckpoints, registrarLeccion } from './bloques.js';
+import { listarCheckpoints, registrarLeccion, proponerMejoras } from './bloques.js';
 import { conFormato } from './formato.js';
-import { guardarTurno } from './memoria.js';
+import { guardarTurno, leerTurnos } from './memoria.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
 
@@ -78,6 +78,11 @@ app.get('/v1/proyectos/:nombre', (req, res) => {
   p ? res.json({ ok: true, ...p }) : res.status(404).json({ ok: false, error: 'PROYECTO_NO_ENCONTRADO' });
 });
 
+// auto-evolucion: mejoras propuestas por lo que el bridge reparo solo (OpenClaw las aplica con su commit)
+app.get('/v1/evolucion', (_req, res) => res.json({ ok: true, propuestas: proponerMejoras() }));
+// historial de una sesion/proyecto de OpenClaw, de la misma memoria del chat Yaiwes
+app.get('/v1/memoria/:sesion', async (req, res) => res.json({ ok: true, turnos: await leerTurnos(req.params.sesion) }));
+
 app.get('/v1/models', (_req, res) => {
   const base = Object.keys(MODELOS_WEB).map(m => `web-${m}`);
   const modos = ['revision','solucion','arquitectura','archivos','prompt_code','consulta','despliega','asesoria'].map(m => `swecode-${m}`);
@@ -125,13 +130,14 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (!esExterno(model) && !esLocal(model)) {
       return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     }
-    let via = null, aviso = null, viaPrimaria = null;
+    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop';
+    const extra = { tools: Array.isArray(req.body.tools) ? req.body.tools : undefined, tool_choice: req.body.tool_choice };  // groq/nvidia/locales ejecutan tools: el Harness las corre
 
     const ejecutar = async () => {
     if (esExterno(model)) {
-      const r = await externo(model, conPreambulo(messages, modo)); salida = r.salida; usado = r.usado; via = r.via;
+      const r = await externo(model, conPreambulo(messages, modo), { extra }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
     } else if (esLocal(model)) {
-      const r = await local(model, conPreambulo(messages, modo)); salida = r.salida; usado = r.usado; via = r.via;
+      const r = await local(model, conPreambulo(messages, modo), { extra }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
     } else if (modeloWeb) {
       const r = await conFallback(modeloWeb, prompt, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
@@ -155,7 +161,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     };
     try {
       await conDeadline(ejecutar(), DEADLINE_MS);
-      if (!salida || !String(salida).trim()) throw Object.assign(new Error('respuesta vacia del modelo web'), { code: 'EMPTY_RESPONSE' });
+      if ((!salida || !String(salida).trim()) && !llamadas.length) throw Object.assign(new Error('respuesta vacia del modelo web'), { code: 'EMPTY_RESPONSE' });
     } catch (e) {
       if (e.code === 'MODO_INVALIDO') throw e;
       if (e.code === 'UPSTREAM_TIMEOUT' && conv_id) await cerrarPagina(conv_id).catch(() => {});  // la tab colgada liberaba su slot solo al cerrarse
@@ -163,8 +169,9 @@ app.post('/v1/chat/completions', async (req, res) => {
       if (e.code === 'SESSION_EXPIRED') {
         try { await salud(); salida = null; await conDeadline(ejecutar(), 50000); registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'PASS', modelo: model }); } catch { registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'FAIL', modelo: model }); }
       }
-      if (!salida || !String(salida).trim()) {
-        const r = await respaldo(messages);
+      if ((!salida || !String(salida).trim()) && !llamadas.length) {
+        const r = await respaldo(messages, { extra });
+        llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
         salida = r.salida; usado = r.usado; via = r.via; aviso = e.code || null;
         registrarLeccion({ codigo: e.code || 'WEB_FALLO', accion: 'respaldo ' + r.via, resultado: 'PASS', modelo: model });  // p. ej. CUENTAS_FALTAN: OpenClaw sabe que debe reenviar cuentas y clave
       }
@@ -178,7 +185,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
       model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo,
-      choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: salida || '' } }],
+      choices: [{ index: 0, finish_reason: fin, message: { role: 'assistant', content: salida || '', ...(llamadas.length ? { tool_calls: llamadas } : {}) } }],
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     });
   } catch (e) {

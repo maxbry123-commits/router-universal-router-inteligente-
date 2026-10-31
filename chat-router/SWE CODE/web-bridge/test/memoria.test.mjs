@@ -31,3 +31,14 @@ test("sin sesion o sin HF_TOKEN no hace nada ni lanza", async () => {
   assert.equal(await guardarTurno("x", "a", "b", "m"), false);
   process.env.HF_TOKEN = t;
 });
+
+test("leerTurnos trae el historial de la sesion desde la misma memoria (search)", async () => {
+  const { leerTurnos } = await import("../src/memoria.js");
+  const dir2 = fs.mkdtempSync(path.join(os.tmpdir(), "memo2-"));
+  fs.writeFileSync(path.join(dir2, "fake.sh"), '#!/bin/sh\necho \'{"results": {"sqlite": [{"id": 1, "key": "m-1-user", "data": {"rol": "user", "texto": "hola"}}]}}\'\n', { mode: 0o755 });
+  const cmd = process.env.RIU_MEMORIA_CMD; process.env.RIU_MEMORIA_CMD = path.join(dir2, "fake.sh");
+  const t = await leerTurnos("chat-2");
+  process.env.RIU_MEMORIA_CMD = cmd;
+  assert.equal(t.length, 1); assert.equal(t[0].data.texto, "hola");
+  assert.deepEqual(await leerTurnos(null), []);
+});

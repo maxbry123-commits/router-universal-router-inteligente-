@@ -64,3 +64,16 @@ export function registrarLeccion(l) {
     return true;
   } catch { return false; }
 }
+
+// mejoras propuestas a partir de las lecciones (misma regla que evolucion.py: 3 repeticiones); OpenClaw las lee y las aplica con su propio commit
+const DESTINO = { promover_a_runbook: 'SWE CODE free/INSTRUCCIONES.md', cambiar_estrategia: 'SWE CODE/web-bridge/src/sites.js' };
+export function proponerMejoras(minimo = 3) {
+  let ls = [];
+  try { ls = fs.readFileSync(path.join(DIR, 'evolucion', 'lecciones.jsonl'), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l)); } catch { return []; }
+  const cuenta = new Map();
+  for (const l of ls) { const k = JSON.stringify([l.codigo, l.accion, l.resultado === 'PASS']); cuenta.set(k, (cuenta.get(k) || 0) + 1); }
+  return [...cuenta].filter(([, n]) => n >= minimo).map(([k, n]) => {
+    const [codigo, accion, ok] = JSON.parse(k); const tipo = ok ? 'promover_a_runbook' : 'cambiar_estrategia';
+    return { tipo, codigo, accion, veces: n, archivo: DESTINO[tipo] };
+  });
+}

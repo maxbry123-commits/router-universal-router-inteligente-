@@ -111,18 +111,19 @@ def _bridge_url():
     return u if u.startswith(("https://", "http://127.0.0.1", "http://localhost")) else ""
 
 
-def _bridge_chat(mensajes, modelo, conv_id=""):
+def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
     """Una vuelta de chat por el bridge (OpenAI-compatible): mismo formato que _router('chat')."""
     modelo = SWE_ALIAS.get(modelo, modelo)
     req = urllib.request.Request(_bridge_url() + "/v1/chat/completions", method="POST", headers={"Content-Type": "application/json"},
-                                 data=json.dumps({"model": modelo, "messages": mensajes, **({"conv_id": conv_id} if conv_id else {})}).encode())
+                                 data=json.dumps({"model": modelo, "messages": mensajes, **({"conv_id": conv_id} if conv_id else {}),
+                                                **{k: v for k, v in (opciones or {}).items() if k in ("tools", "tool_choice")}}).encode())
     try:
         with urllib.request.urlopen(req, timeout=float(os.environ.get("RIU_SWE_TIMEOUT_S", "130"))) as r:
             bruto = json.load(r)
         msg = bruto["choices"][0]["message"]
     except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
         raise RuntimeError("Bridge " + type(exc).__name__ + ": " + str(exc)[:80]) from None
-    return {"texto": msg.get("content") or "", "tool_calls": [], "finish_reason": bruto["choices"][0].get("finish_reason") or "stop",
+    return {"texto": msg.get("content") or "", "tool_calls": msg.get("tool_calls") or [], "finish_reason": bruto["choices"][0].get("finish_reason") or "stop",
             "mensaje_asistente": msg, "modelo_respuesta": bruto.get("modelo_usado") or modelo}
 
 
@@ -176,7 +177,7 @@ def llm(cuerpo):
         try:
             mensajes = compactar(mensajes, int(cuerpo.get("contexto_max") or 0) or None)
             if _bridge_url() and es_swe(cuerpo.get("modelo")):
-                salida = _bridge_chat(mensajes, cuerpo.get("modelo"), tarea)
+                salida = _bridge_chat(mensajes, cuerpo.get("modelo"), tarea, opciones)
             else:
                 try:
                     salida = _router("chat", {"mensajes": mensajes, "modelo": cuerpo.get("modelo"), "opciones": opciones,

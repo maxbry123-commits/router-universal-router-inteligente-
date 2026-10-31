@@ -47,3 +47,15 @@ test("ids groq/ y nvidia/ del selector son externos y se listan para OpenClaw", 
   assert.ok(esExterno("groq/llama-3.3-70b-versatile")); assert.ok(esExterno("nvidia/meta/llama-3.3-70b-instruct")); assert.ok(!esExterno("web-qwen38max"));
   const ids = idsRespaldo({}); assert.ok(ids.some((i) => i.startsWith("groq/")) && ids.some((i) => i.startsWith("nvidia/")) && ids.includes("lfm2.5-350m"));
 });
+
+test("las herramientas (tools) pasan a Groq/NVIDIA/locales y sus tool_calls vuelven (el Harness las ejecuta)", async () => {
+  const vistos = [];
+  const s = await new Promise((ok) => { const sv = http.createServer((req, res) => { let d = ""; req.on("data", (c) => d += c); req.on("end", () => { vistos.push(JSON.parse(d)); res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify({ choices: [{ finish_reason: "tool_calls", message: { role: "assistant", content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "github_leer", arguments: "{}" } }] } }] })); }); }).listen(0, "127.0.0.1", () => ok(sv)); });
+  Object.assign(BASES, { groq: `http://127.0.0.1:${s.address().port}` });
+  const tools = [{ type: "function", function: { name: "github_leer", parameters: { type: "object" } } }];
+  const { externo } = await import("../src/respaldo.js");
+  const r = await externo("groq/m", msgs, { env: { GROQ_API_KEY: "k" }, extra: { tools, tool_choice: "auto" } });
+  s.closeAllConnections?.(); s.close();
+  assert.deepEqual(vistos[0].tools, tools); assert.equal(vistos[0].tool_choice, "auto");
+  assert.equal(r.tool_calls[0].function.name, "github_leer"); assert.equal(r.finish_reason, "tool_calls");
+});

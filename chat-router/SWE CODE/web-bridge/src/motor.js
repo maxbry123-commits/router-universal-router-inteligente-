@@ -19,6 +19,10 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
   const h = huella(texto);
   let ck = checkpointLeer(convId, h) || { modo, total: bloques.length, enviados: 0, ultima_salida: '', huella: h };
 
+  // retomo: reabre la MISMA conversacion web (url del checkpoint) en vez de un chat nuevo; si no abre, sigue con el chat nuevo + tarjeta
+  if (ck.enviados > 0 && ck.enviados < ck.total && ck.url) {
+    await page.goto(ck.url, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
+  }
   // retomo: si habia checkpoint, aviso al modelo donde ibamos
   if (ck.enviados > 0 && ck.enviados < ck.total) {
     await escribe(page, siteCfg, resumeCard(ck));
@@ -32,7 +36,7 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
     await enviar(page, siteCfg);
     const salida = await leerRespuesta(page, siteCfg);
     if (sesionMuerta(page, siteCfg)) throw Object.assign(new Error('SESION_MUERTA'), { code: 'SESSION_EXPIRED', site });
-    ck = { ...ck, enviados: i + 1, ultima_salida: salida || '' };
+    ck = { ...ck, enviados: i + 1, ultima_salida: salida || '', url: (() => { try { return page.url(); } catch { return ck.url; } })() };
     checkpointGuardar(convId, ck);
   }
 

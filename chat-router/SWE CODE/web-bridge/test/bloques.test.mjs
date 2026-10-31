@@ -40,3 +40,14 @@ test("el bridge registra solo lo que repara (leccion) en el mismo formato que le
   registrarLeccion({ accion: "sin codigo" });  // sin codigo no escribe ni lanza
   assert.equal(fs.readFileSync(f, "utf8").trim().split("\n").length, 1);
 });
+
+test("proponerMejoras: lo que se repite 3 veces con exito se promueve al runbook y lo que falla 3 veces cambia de estrategia", async () => {
+  const { registrarLeccion, proponerMejoras } = await import("../src/bloques.js");
+  for (let i = 0; i < 3; i++) registrarLeccion({ codigo: "AGE_GATE", accion: "click Continuar", resultado: "PASS" });
+  for (let i = 0; i < 3; i++) registrarLeccion({ codigo: "SELECTOR_BROKEN", accion: "reintento", resultado: "FAIL" });
+  registrarLeccion({ codigo: "RARO", accion: "una vez", resultado: "PASS" });
+  const p = proponerMejoras();
+  assert.ok(p.some((x) => x.codigo === "AGE_GATE" && x.tipo === "promover_a_runbook" && x.veces >= 3));
+  assert.ok(p.some((x) => x.codigo === "SELECTOR_BROKEN" && x.tipo === "cambiar_estrategia"));
+  assert.ok(!p.some((x) => x.codigo === "RARO"));
+});

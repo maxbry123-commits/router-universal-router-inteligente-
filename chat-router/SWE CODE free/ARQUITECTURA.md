@@ -25,6 +25,12 @@ El puerto: el código arranca en `BRIDGE_PORT` (por defecto 7860, también en el
 ## Asesoría antes de ejecutar (`swecode-asesoria`)
 Primero Groq (claves del chat; modelo `RIU_SWE_GROQ_MODELO`, por defecto `llama-3.3-70b-versatile`); si falla, la web con `qwen38max`; si todo falla, el respaldo general. Devuelve objetivo, plan numerado, mapa mental en texto, estructura a ejecutar y cómo resolver problemas probables, sin ejecutar nada. Cada asesoría se **agrega** a `BRIDGE_STATE_DIR/proyectos/<proyecto>/ASESORIA.md` (`proyecto` del POST; sin él, el `conv_id`; sin ninguno, `general`). OpenClaw la relee con `GET /v1/proyectos` y `GET /v1/proyectos/<proyecto>`.
 
+## Herramientas, memoria y mejora continua
+- **Tools:** Groq, NVIDIA y los locales reciben las `tools` del POST y devuelven sus `tool_calls`; el Harness las ejecuta (GitHub, HF, motor de archivos, memoria) mientras el Router MVP esté vivo. Los modelos web (Qwen/DeepSeek) no producen tool_calls.
+- **Memoria:** `GET /v1/memoria/<sesion>` lee el historial de OpenClaw de la misma memoria del chat (scope `chat-ui:hist:openclaw-<sesion>`).
+- **Evolución:** `GET /v1/evolucion` lista las mejoras propuestas por lo que el bridge reparó solo (3 repeticiones); OpenClaw las aplica con su propio commit.
+- **Retoma:** el checkpoint guarda la URL de la conversación web; al retomar se reabre esa misma conversación y, si no abre, sigue en un chat nuevo con la tarjeta [RETOMO].
+
 ## Respaldo (en este orden)
 1. **Web**: el modelo pedido y luego `qwen38max → qwen37max → dsv4-flash`. Si la sesión cae, `salud()` hace re-login y rota al siguiente correo (misma clave).
 2. **Groq → NVIDIA** (`GROQ_API_KEY`, `NVIDIA_API_KEY` y `*_1..20`; modelos `RIU_SWE_GROQ_MODELO` / `RIU_SWE_NVIDIA_MODELO`, por defecto `meta/llama-3.3-70b-instruct`).

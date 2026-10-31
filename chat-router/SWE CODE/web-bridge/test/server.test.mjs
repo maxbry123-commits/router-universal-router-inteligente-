@@ -125,7 +125,7 @@ async function mockApi(nombre) {
       let body = null; try { body = JSON.parse(d); } catch { /* ignore */ }
       cfg.hits.push({ url: req.url, auth: req.headers.authorization, body });
       res.writeHead(cfg.status, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ choices: [{ message: { role: 'assistant', content: cfg.texto } }] }));
+      res.end(JSON.stringify({ choices: [{ finish_reason: cfg.tool_calls ? 'tool_calls' : 'stop', message: { role: 'assistant', content: cfg.tool_calls ? null : cfg.texto, ...(cfg.tool_calls ? { tool_calls: cfg.tool_calls } : {}) } }] }));
     });
   });
   await new Promise((ok) => s.listen(0, '127.0.0.1', ok));
@@ -494,6 +494,18 @@ test('14. el prefijo "SWEN CODE free ..." elige modelo, modo y seccion en el bri
   assert.ok(c.texto.includes('arregla api.js') && !c.texto.includes('SWEN CODE free'));
   const mala = await chat(A, { messages: [{ role: 'user', content: 'SWEN CODE free modo inventado hola' }] });
   assert.equal(mala.status, 400); assert.equal(mala.json.error.code, 'ACTIVACION_INVALIDA');
+});
+
+test('15. tools: groq/nvidia/locales reciben las tools del POST y sus tool_calls vuelven al cliente (el Harness las ejecuta)', async () => {
+  const tools = [{ type: 'function', function: { name: 'github_leer', parameters: { type: 'object' } } }];
+  groq.hits.length = 0; groq.status = 200;
+  groq.tool_calls = [{ id: 'c1', type: 'function', function: { name: 'github_leer', arguments: '{"ruta":"README.md"}' } }];
+  const r = await chat(A, { model: 'groq/xxx', tools, tool_choice: 'auto' });
+  delete groq.tool_calls;
+  assert.equal(r.status, 200);
+  assert.deepEqual(groq.hits.at(-1).body.tools, tools); assert.equal(groq.hits.at(-1).body.tool_choice, 'auto');
+  assert.equal(r.json.choices[0].finish_reason, 'tool_calls');
+  assert.equal(r.json.choices[0].message.tool_calls[0].function.name, 'github_leer');
 });
 
 test('entorno: informa si se uso express real o stub', () => {

@@ -33,6 +33,12 @@ class TestMemoriaHF(unittest.TestCase):
         memoria.CACHE.clear()
         self.assertEqual(memoria_hf.main(["load", "openclaw:p", "k1"], "")["records"][0]["data"], {"x": 1})
 
+    def test_search_devuelve_el_historial_de_la_sesion(self):
+        memoria_hf.main(["save", "openclaw:p", "m-1-user"], json.dumps({"rol": "user", "texto": "hola"}))
+        memoria.CACHE.clear()
+        r = memoria_hf.main(["search", "openclaw:p", "", "50"], "")
+        self.assertEqual(r["results"]["sqlite"][0]["data"]["texto"], "hola")
+
     def test_las_credenciales_no_se_guardan(self):
         memoria_hf.main(["save", "openclaw:p", "k"], json.dumps({"t": "clave sk-abcdefghijklmnopqr"}))
         self.assertNotIn("sk-abcdefghijklmnopqr", self.b.d["memoria/openclaw_p.json"])

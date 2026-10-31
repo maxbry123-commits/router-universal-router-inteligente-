@@ -59,6 +59,23 @@ class HarnessSwe(unittest.TestCase):
         s.shutdown()
         self.assertEqual(vistos[0]["conv_id"], "p-rq-abc123")
 
+    def test_las_tools_llegan_al_modelo_local_y_sus_tool_calls_vuelven_al_bucle_del_harness(self):
+        tools = [{"type": "function", "function": {"name": "github_leer", "parameters": {"type": "object"}}}]
+        llamada = {"id": "c1", "type": "function", "function": {"name": "github_leer", "arguments": "{}"}}
+        vistos = []
+        class H(BaseHTTPRequestHandler):
+            def do_POST(self):
+                vistos.append(json.loads(self.rfile.read(int(self.headers["Content-Length"]))))
+                self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers()
+                self.wfile.write(json.dumps({"choices": [{"finish_reason": "tool_calls", "message": {"role": "assistant", "content": None, "tool_calls": [llamada]}}]}).encode())
+            def log_message(self, *a): pass
+        s = HTTPServer(("127.0.0.1", 0), H); threading.Thread(target=s.serve_forever, daemon=True).start()
+        with patch.dict(os.environ, {"RIU_SWE_BRIDGE_URL": "http://127.0.0.1:%d" % s.server_port}):
+            r = h._bridge_chat(MSGS, "lfm2.5-350m", "t1", {"tools": tools, "tool_choice": "auto"})
+        s.shutdown()
+        self.assertEqual(vistos[0]["tools"], tools); self.assertEqual(r["tool_calls"][0]["function"]["name"], "github_leer")
+        self.assertEqual(r["finish_reason"], "tool_calls")
+
     def test_ids_swe(self):
         for m in ("web-qwen38max", "swecode-despliega", "hf-liquid-lfm25", "lfm2.5-350m"):
             self.assertTrue(h.es_swe(m), m)
