@@ -32,7 +32,15 @@ async function lanzar(site) {
 
 // asegura sesion viva en el sitio; si cayo -> login con cuenta actual,
 // si el login falla -> rota al siguiente correo y reintenta
-export async function asegurar(site) {
+// un solo asegurar por sitio a la vez: dos modelos del mismo sitio en paralelo (concilio) no lanzan dos Chromium sobre el mismo perfil
+const candados = new Map();
+export function asegurar(site) {
+  const corrida = (candados.get(site) || Promise.resolve()).catch(() => {}).then(() => asegurarSitio(site));
+  candados.set(site, corrida.catch(() => {}));
+  return corrida;
+}
+
+async function asegurarSitio(site) {
   const cfg = SITES[site];
   if (!cfg) throw new Error(`sitio desconocido: ${site}`);
   let entry = contextos.get(site);
@@ -41,7 +49,7 @@ export async function asegurar(site) {
     contextos.set(site, entry);
   }
   const { page } = entry;
-  if (page.isClosed()) { contextos.delete(site); return asegurar(site); }
+  if (page.isClosed()) { contextos.delete(site); return asegurarSitio(site); }
 
   await page.goto(cfg.url, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
   await pasarAgeGate(page, cfg).catch(() => {});

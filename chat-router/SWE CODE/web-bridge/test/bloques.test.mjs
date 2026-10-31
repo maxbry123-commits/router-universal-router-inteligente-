@@ -51,3 +51,20 @@ test("proponerMejoras: lo que se repite 3 veces con exito se promueve al runbook
   assert.ok(p.some((x) => x.codigo === "SELECTOR_BROKEN" && x.tipo === "cambiar_estrategia"));
   assert.ok(!p.some((x) => x.codigo === "RARO"));
 });
+
+test("auditoria 1 #1: un conv_id con ../ no escapa de checkpoints/ y no pisa otros archivos", async () => {
+  const { checkpointGuardar, checkpointLeer, huella } = await import("../src/bloques.js");
+  checkpointGuardar("../../x", { modo: "m", total: 2, enviados: 1, huella: huella("t") });
+  assert.ok(!fs.existsSync(path.join(process.env.BRIDGE_STATE_DIR, "x.json")), "no debe escribir fuera de checkpoints/");
+  assert.ok(!fs.existsSync(path.join(path.dirname(process.env.BRIDGE_STATE_DIR), "x.json")));
+  assert.equal(checkpointLeer("../../x", huella("t")).enviados, 1);  // se lee por el mismo nombre saneado
+});
+
+test("auditoria 1 #14: un checkpoint de otro modo o de otro tamano no se retoma; un archivo corrupto no oculta a los demas", async () => {
+  const { checkpointGuardar, checkpointLeer, huella, listarCheckpoints } = await import("../src/bloques.js");
+  checkpointGuardar("modo-a", { modo: "solucion", total: 3, enviados: 1, huella: huella("T", "solucion") });
+  assert.equal(checkpointLeer("modo-a", huella("T", "revision")), null, "otro modo = otra huella");
+  fs.writeFileSync(path.join(process.env.BRIDGE_STATE_DIR, "checkpoints", "roto.json"), "{no es json");
+  const l = listarCheckpoints();
+  assert.ok(l.some((s) => s.conv_id === "modo-a"), "el corrupto no debe esconder a los buenos");
+});

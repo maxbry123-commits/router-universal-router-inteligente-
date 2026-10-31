@@ -9,8 +9,9 @@ import { createRequire } from 'node:module';
 import { consultarWeb, salud } from './motor.js';
 import { consenso } from './consenso.js';
 import { modoValido } from './modos.js';
-import { estadoCuentas, estadoTabs, snapshotTab, cerrarPagina } from './browser.js';
+import { estadoCuentas, estadoTabs, snapshotTab, cerrarPagina, cerrarTodo } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
+import crypto from 'node:crypto';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras } from './bloques.js';
@@ -21,13 +22,25 @@ import { preambulo } from './modos.js';
 
 // gramatica "SWEN CODE free ..." (SWE CODE free/activar.js): elige modelo, modo y seccion desde el propio mensaje
 let activar = null;
-try { activar = createRequire(import.meta.url)(process.env.RIU_ACTIVAR_PATH || '../../../SWE CODE free/activar.js').activar; } catch { /* sin activar.js: el bridge sigue sin la gramatica */ }
+try { activar = createRequire(import.meta.url)(process.env.RIU_ACTIVAR_PATH || '../../../SWE CODE free/activar.js').activar; } catch { console.warn('[bridge] sin activar.js: la gramatica SWEN CODE free queda desactivada (ruta o RIU_ACTIVAR_PATH)'); }
 const IDS_DIRECTOS = (id) => /^(groq\/|nvidia\/|lfm2\.5|qwen2\.5-coder|qwen3\.5|qwen3-0\.6b|web-|swecode-)/.test(id);
 
 // Groq/NVIDIA/locales con un modo (p. ej. despliega): reciben el preambulo de ese modo, como el agente que despliega
 const conPreambulo = (msgs, m) => (m && modoValido(m) ? [{ role: 'system', content: preambulo(m) }, ...msgs] : msgs);
 
+// acceso: con BRIDGE_TOKEN todas las rutas (salvo /health) piden Authorization: Bearer <token> o x-bridge-key
+const TOKEN = process.env.BRIDGE_TOKEN || '';
+const iguales = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
+const sinCorreos = (o) => JSON.parse(JSON.stringify(o ?? null, (k, v) => (k === 'email' ? undefined : v)));
+const textoDe = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map(p => (typeof p === 'string' ? p : p && typeof p.text === 'string' ? p.text : '')).filter(Boolean).join('\n') : '');
+const MAX_PROMPT = parseInt(process.env.BRIDGE_MAX_PROMPT || '400000', 10), MAX_DOCS = 10;
+
 const app = express();
+app.use((req, res, next) => {
+  if (!TOKEN || req.path === '/health') return next();
+  const h = req.headers, t = String(h.authorization || '').replace(/^Bearer\s+/i, '') || String(h['x-bridge-key'] || '');
+  return t && iguales(t, TOKEN) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalido el token del bridge' } });
+});
 app.use(express.json({ limit: '10mb' }));
 const PORT = process.env.BRIDGE_PORT || 7860;
 
@@ -49,7 +62,7 @@ async function conFallback(modelo, prompt, opts) {
   let ultimo;
   for (const m of orden) {
     try { return { salida: await consultarWeb(m, prompt, opts), usado: m }; }
-    catch (e) { ultimo = e; }
+    catch (e) { if (e.code === 'SESSION_EXPIRED' || e.code === 'CUENTAS_FALTAN') throw e; ultimo = e; }  // un fallo de sesion/cuentas no se disfraza con el error del ultimo modelo
   }
   throw ultimo;
 }
@@ -61,11 +74,11 @@ app.get('/health', async (_req, res) => {
     let idx = null; try { idx = cuentaActual().index; } catch {}
     poolInfo = { total: n, loaded: true, indices: [...Array(n).keys()], actual: idx };
   } catch { poolInfo = { total: 0, loaded: false, error: 'WEB_ACCOUNTS_VACIO' }; }
-  res.json({ ok: true, pool: poolInfo, cuentas: estadoCuentas(), respaldo: estadoRespaldo(), state_dir: process.env.BRIDGE_STATE_DIR || './state' });
+  res.json({ ok: true, pool: poolInfo, cuentas: sinCorreos(estadoCuentas()), respaldo: estadoRespaldo(), state_dir: process.env.BRIDGE_STATE_DIR || './state' });
 });
 
 app.get('/v1/queue', (_req, res) => {
-  res.json({ ok: true, ...estadoTabs(), cuentas: estadoCuentas() });
+  res.json({ ok: true, ...estadoTabs(), cuentas: sinCorreos(estadoCuentas()) });
 });
 
 // secciones (conv_id) con checkpoint: OpenClaw ve cuales retomar reenviando el mismo conv_id
@@ -81,7 +94,10 @@ app.get('/v1/proyectos/:nombre', (req, res) => {
 // auto-evolucion: mejoras propuestas por lo que el bridge reparo solo (OpenClaw las aplica con su commit)
 app.get('/v1/evolucion', (_req, res) => res.json({ ok: true, propuestas: proponerMejoras() }));
 // historial de una sesion/proyecto de OpenClaw, de la misma memoria del chat Yaiwes
-app.get('/v1/memoria/:sesion', async (req, res) => res.json({ ok: true, turnos: await leerTurnos(req.params.sesion) }));
+app.get('/v1/memoria/:sesion', async (req, res) => {
+  if (!process.env.HF_TOKEN) return res.status(503).json({ ok: false, error: { code: 'HF_TOKEN_FALTA', message: 'la memoria compartida necesita HF_TOKEN en el entorno del bridge' } });
+  res.json({ ok: true, turnos: await leerTurnos(req.params.sesion) });
+});
 
 app.get('/v1/models', (_req, res) => {
   const base = Object.keys(MODELOS_WEB).map(m => `web-${m}`);
@@ -98,28 +114,37 @@ app.post('/refresh_session', async (_req, res) => {
 app.post('/v1/chat/completions', async (req, res) => {
   try {
     let { model = 'swecode-consulta', messages: mensajesIn = [], modo, conv_id, proyecto, documentos, cuentas, clave: claveReq } = req.body;
-    const iUlt = mensajesIn.map(m => m && m.role).lastIndexOf('user');
-    const act = activar && iUlt >= 0 && typeof mensajesIn[iUlt].content === 'string' ? activar(mensajesIn[iUlt].content) : null;
+    if (typeof model !== 'string' || !/^[\w.\/:-]{1,100}$/.test(model)) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model: String(model).slice(0, 50) } });
+    if (!Array.isArray(mensajesIn)) return res.status(400).json({ error: { code: 'MENSAJES_INVALIDOS', message: 'messages debe ser una lista' } });
+    mensajesIn = mensajesIn.filter(m => m && typeof m === 'object').map(m => ({ ...m, content: textoDe(m.content) }));
+    const iUlt = mensajesIn.map(m => m.role).lastIndexOf('user');
+    const act = activar && iUlt >= 0 ? activar(mensajesIn[iUlt].content) : null;
     if (act && act.error) return res.status(400).json({ error: { code: 'ACTIVACION_INVALIDA', message: act.error } });
     if (act) {  // "SWEN CODE free [modo m] [solo modelo] [chat n] texto": el mensaje manda sobre el modelo/modo/seccion del POST
       model = act.modelo === 'consenso' ? `swecode-${act.modo}` : (IDS_DIRECTOS(act.modelo) ? act.modelo : model);
+      if (act.modo === 'asesoria') model = 'swecode-asesoria';  // la asesoria por gramatica tambien va primero a Groq
       modo = act.modo; conv_id = act.conv_id || conv_id;
       mensajesIn = mensajesIn.map((m, i) => (i === iUlt ? { ...m, content: act.prompt } : m));
     }
+    if (conv_id != null && !/^[\w-]{1,80}$/.test(String(conv_id))) return res.status(400).json({ error: { code: 'CONV_ID_INVALIDO', message: 'conv_id: letras, numeros, - y _ (max 80)' } });
+    if (model.startsWith('web-') && !MODELOS_WEB[model.slice(4)]) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
+    if (Array.isArray(documentos) && documentos.length > MAX_DOCS) return res.status(413).json({ error: { code: 'DEMASIADOS_DOCUMENTOS', max: MAX_DOCS } });
     const messages = conFormato(mensajesIn);  // formato de salida del chat Yaiwes tambien para OpenClaw
     // credenciales vienen de OpenClaw por llamada (vía plugins->harness); env solo respaldo
     if (cuentas) setCuentas(cuentas, claveReq);
-    const ultimo = [...messages].reverse().find(m => m.role === 'user')?.content || '';
-    const anterior = messages.filter(m => m.role !== 'user' || m !== messages[messages.length-1])
-      .map(m => `${m.role}: ${m.content}`).join('\n');
+    const iU = messages.map(m => m.role).lastIndexOf('user');
+    const ultimo = iU >= 0 ? messages[iU].content : '';
+    const anterior = messages.filter((m, i) => i !== iU).map(m => `${m.role}: ${m.content}`).join('\n');
     let prompt = anterior ? `${anterior}\nuser: ${ultimo}` : ultimo;
-    // documentos: [{nombre, contenido}] o strings — se incrustan al prompt del modelo
+    // documentos: [{nombre, contenido}] o strings — se incrustan al prompt y tambien llegan a Groq/NVIDIA/locales como mensaje
     const docs = (Array.isArray(documentos) ? documentos : [])
       .map(d => typeof d === 'string' ? { nombre: 'doc', contenido: d } : d)
       .filter(d => d && d.contenido)
       .map(d => `[DOCUMENTO: ${d.nombre || 'doc'}]\n${String(d.contenido).slice(0, 100000)}`)
       .join('\n\n');
     if (docs) prompt = `${prompt}\n\n${docs}`;
+    if (prompt.length > MAX_PROMPT) return res.status(413).json({ error: { code: 'PROMPT_DEMASIADO_GRANDE', max: MAX_PROMPT } });
+    const mensajesM = docs ? [...messages, { role: 'user', content: docs }] : messages;
 
     let modeloWeb, modoUso = modo || 'consulta', salida, usado = model;
     if (model.startsWith('web-')) {
@@ -135,16 +160,16 @@ app.post('/v1/chat/completions', async (req, res) => {
 
     const ejecutar = async () => {
     if (esExterno(model)) {
-      const r = await externo(model, conPreambulo(messages, modo), { extra }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
+      const r = await externo(model, conPreambulo(mensajesM, modo), { extra }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
     } else if (esLocal(model)) {
-      const r = await local(model, conPreambulo(messages, modo), { extra }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
+      const r = await local(model, conPreambulo(mensajesM, modo), { extra }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
     } else if (modeloWeb) {
       const r = await conFallback(modeloWeb, prompt, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
     } else if (modoUso === 'asesoria') {
       // asesoria previa a ejecutar: primero Groq (las claves del chat Yaiwes), si no responde la web de SWE CODE free
       try {
-        const r = await externo(`groq/${process.env.RIU_SWE_GROQ_MODELO || 'llama-3.3-70b-versatile'}`, [{ role: 'system', content: preambulo('asesoria') }, ...messages]);
+        const r = await externo(`groq/${process.env.RIU_SWE_GROQ_MODELO || 'llama-3.3-70b-versatile'}`, [{ role: 'system', content: preambulo('asesoria') }, ...mensajesM]);
         salida = r.salida; usado = r.usado; viaPrimaria = 'groq';
       } catch {
         const r = await conFallback(OBJETIVO_UNICO, prompt, { modo: modoUso, convId: conv_id });
@@ -170,7 +195,7 @@ app.post('/v1/chat/completions', async (req, res) => {
         try { await salud(); salida = null; await conDeadline(ejecutar(), 50000); registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'PASS', modelo: model }); } catch { registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'FAIL', modelo: model }); }
       }
       if ((!salida || !String(salida).trim()) && !llamadas.length) {
-        const r = await respaldo(messages, { extra });
+        const r = await respaldo(conPreambulo(mensajesM, model.startsWith('swecode-') ? modoUso : modo), { extra });
         llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop';
         salida = r.salida; usado = r.usado; via = r.via; aviso = e.code || null;
         registrarLeccion({ codigo: e.code || 'WEB_FALLO', accion: 'respaldo ' + r.via, resultado: 'PASS', modelo: model });  // p. ej. CUENTAS_FALTAN: OpenClaw sabe que debe reenviar cuentas y clave
@@ -210,5 +235,11 @@ app.get('/debug/tab', async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
+
+// errores de express (JSON malformado, body enorme): siempre JSON tipado
+app.use((err, _req, res, _next) => res.status(err.status || 400).json({ error: { code: err.type === 'entity.too.large' ? 'BODY_DEMASIADO_GRANDE' : 'BAD_REQUEST', message: String(err.message || err).slice(0, 200) } }));
+
+// cierre limpio: sin esto un reinicio del Space deja el perfil de Chromium bloqueado
+for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, async () => { try { await cerrarTodo(); } catch { /* sigue */ } process.exit(0); });
 
 app.listen(PORT, () => console.log(`web-bridge escuchando :${PORT}`));

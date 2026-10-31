@@ -9,7 +9,7 @@ let cache = null, rutaCache = null;
 export function textoFormato() {
   const ruta = process.env.RIU_FORMATO_PATH || path.resolve(AQUI, '../../../chat/backend/mvp/prompts/FORMATO_SALIDA.md');
   if (cache === null || rutaCache !== ruta) {
-    try { cache = fs.readFileSync(ruta, 'utf8').trim(); } catch { cache = ''; }
+    try { cache = fs.readFileSync(ruta, 'utf8').trim(); } catch { cache = ''; console.warn('[bridge] sin FORMATO_SALIDA.md: el formato de salida queda desactivado (ruta o RIU_FORMATO_PATH)'); }
     rutaCache = ruta;
   }
   return cache;

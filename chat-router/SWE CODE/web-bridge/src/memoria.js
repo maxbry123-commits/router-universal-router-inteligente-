@@ -9,11 +9,14 @@ const SCRIPT = path.resolve(AQUI, '../memoria_hf.py');
 
 export const scopeDe = (sesion) => (sesion ? `chat-ui:hist:openclaw-${slug(sesion)}` : null);
 
+// al hijo python solo le llega lo que necesita (no las claves de Groq/NVIDIA ni las cuentas web)
+const entornoMinimo = () => Object.fromEntries(['PATH', 'HOME', 'HF_TOKEN', 'PYTHONPATH', 'LANG'].filter(k => process.env[k] !== undefined).map(k => [k, process.env[k]]));
+
 function correr(args, stdin) {
   return new Promise((resolve) => {
     const cmd = process.env.RIU_MEMORIA_CMD;
     const [bin, argv] = cmd ? [cmd, args] : [process.env.RIU_PYTHON || 'python3', [SCRIPT, ...args]];
-    const p = execFile(bin, argv, { timeout: 20000, env: process.env }, (err, out) => resolve(err ? null : String(out)));
+    const p = execFile(bin, argv, { timeout: 20000, env: cmd ? process.env : entornoMinimo() }, (err, out) => { if (err) console.warn('[bridge] memoria:', err.code || err.signal || 'fallo'); resolve(err ? null : String(out)); });
     p.stdin.on('error', () => {}); p.stdin.end(stdin || '');
   });
 }

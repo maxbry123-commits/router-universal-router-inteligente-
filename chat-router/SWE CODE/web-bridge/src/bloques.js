@@ -20,11 +20,13 @@ export function cabecera(n, total, modo) {
   return `[BLOQUE ${n}/${total} · MODO ${modo.toUpperCase()}]\n`;
 }
 
-function ruta(convId) { return path.join(CK_DIR, `${convId}.json`); }
+// el conv_id viene del cliente: se sanea para no salir de checkpoints/ (../ y similares)
+const limpio = (c) => String(c).replace(/[^\w.-]/g, '_').replace(/\.{2,}/g, '_').slice(0, 100) || 'sin-id';
+function ruta(convId) { return path.join(CK_DIR, `${limpio(convId)}.json`); }
 
 // huella de la tarea: un checkpoint solo se retoma si es de ESTA tarea y quedo a medias
 // (antes un checkpoint completo con el mismo conv_id devolvia la respuesta vieja)
-export function huella(texto) { return crypto.createHash('sha256').update(String(texto)).digest('hex').slice(0, 16); }
+export function huella(texto, modo = '') { return crypto.createHash('sha256').update(String(modo) + '\u0000' + String(texto)).digest('hex').slice(0, 16); }
 
 export function checkpointLeer(convId, h) {
   try {
@@ -35,17 +37,23 @@ export function checkpointLeer(convId, h) {
 
 // secciones conocidas (para que OpenClaw sepa cuales retomar): sin volcar contenido
 export function listarCheckpoints() {
-  try {
-    return fs.readdirSync(CK_DIR).filter(f => f.endsWith('.json')).map(f => {
+  let archivos = [];
+  try { archivos = fs.readdirSync(CK_DIR).filter(f => f.endsWith('.json')); } catch { return []; }
+  const out = [];
+  for (const f of archivos) {  // un archivo corrupto no esconde a los demas
+    try {
       const ck = JSON.parse(fs.readFileSync(path.join(CK_DIR, f), 'utf8'));
-      return { conv_id: f.slice(0, -5), modo: ck.modo, enviados: ck.enviados, total: ck.total, completo: !!ck.completo, ts: ck.ts };
-    });
-  } catch { return []; }
+      out.push({ conv_id: f.slice(0, -5), modo: ck.modo, enviados: ck.enviados, total: ck.total, completo: !!ck.completo, ts: ck.ts });
+    } catch { /* ignorado */ }
+  }
+  return out;
 }
 
 export function checkpointGuardar(convId, data) {
   fs.mkdirSync(CK_DIR, { recursive: true });
-  fs.writeFileSync(ruta(convId), JSON.stringify({ ...data, ts: new Date().toISOString() }, null, 1));
+  const destino = ruta(convId), tmp = destino + '.tmp';  // escritura atomica: un corte no deja un JSON a medias
+  fs.writeFileSync(tmp, JSON.stringify({ ...data, ts: new Date().toISOString() }, null, 1));
+  fs.renameSync(tmp, destino);
 }
 
 // resume-card: contexto minimo para que el modelo retome sin releer todo
@@ -69,7 +77,7 @@ export function registrarLeccion(l) {
 const DESTINO = { promover_a_runbook: 'SWE CODE free/INSTRUCCIONES.md', cambiar_estrategia: 'SWE CODE/web-bridge/src/sites.js' };
 export function proponerMejoras(minimo = 3) {
   let ls = [];
-  try { ls = fs.readFileSync(path.join(DIR, 'evolucion', 'lecciones.jsonl'), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l)); } catch { return []; }
+  try { ls = fs.readFileSync(path.join(DIR, 'evolucion', 'lecciones.jsonl'), 'utf8').split('\n').filter(Boolean).slice(-5000).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean); } catch { return []; }
   const cuenta = new Map();
   for (const l of ls) { const k = JSON.stringify([l.codigo, l.accion, l.resultado === 'PASS']); cuenta.set(k, (cuenta.get(k) || 0) + 1); }
   return [...cuenta].filter(([, n]) => n >= minimo).map(([k, n]) => {

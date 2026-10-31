@@ -168,7 +168,7 @@ const lecciones = (srv) => { try { return fs.readFileSync(path.join(srv.state, '
 const esperar = async (fn, ms = 4000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 50)); } return null; };
 
 // ---------- fixtures ----------
-let groq, nvidia, hf, A, C, expressReal;
+let groq, nvidia, hf, A, C, T, expressReal;
 const FORMATO = 'FORMATO-DE-SALIDA-DE-PRUEBA: usa listas cortas y bloques de codigo con lenguaje.';
 
 before(async () => {
@@ -185,6 +185,8 @@ before(async () => {
   A = await arrancar('A', { ...comun, WEB_ACCOUNTS: 'a@x.com,b@x.com', WEB_PASS: 'pw', HF_TOKEN: 'hf-falso', RIU_MEMORIA_CMD: path.join(TMP, 'fake-mem.sh'), BRIDGE_DEADLINE_MS: '1500' });
   // C: sin cuentas (WEB_ACCOUNTS/WEB_PASS ausentes)
   C = await arrancar('C', comun);
+  // T: con token de acceso (BRIDGE_TOKEN)
+  T = await arrancar('T', { ...comun, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', BRIDGE_TOKEN: 'tok-prueba' });
 });
 
 after(async () => {
@@ -506,6 +508,68 @@ test('15. tools: groq/nvidia/locales reciben las tools del POST y sus tool_calls
   assert.deepEqual(groq.hits.at(-1).body.tools, tools); assert.equal(groq.hits.at(-1).body.tool_choice, 'auto');
   assert.equal(r.json.choices[0].finish_reason, 'tool_calls');
   assert.equal(r.json.choices[0].message.tool_calls[0].function.name, 'github_leer');
+});
+
+// ---------- auditoria 1: correcciones ----------
+test('A1-1. conv_id con ../ se rechaza (400) y no escribe fuera de checkpoints/', async () => {
+  const r = await chat(A, { model: 'web-qwen38max', conv_id: '../../evil' });
+  assert.equal(r.status, 400); assert.equal(r.json.error.code, 'CONV_ID_INVALIDO');
+  assert.ok(!fs.existsSync(path.join(A.state, '..', 'evil.json')));
+});
+
+test('A1-11. mensajes: content como array de partes, model no string, messages no array, ultimo mensaje no-user', async () => {
+  modoWeb(A, 'ok'); const n0 = llamadasWeb(A).length;
+  const a = await chat(A, { model: 'web-qwen38max', messages: [{ role: 'user', content: [{ type: 'text', text: 'parte-uno' }, { type: 'text', text: 'parte-dos' }] }] });
+  assert.equal(a.status, 200);
+  const t = llamadasWeb(A).slice(n0)[0].texto; assert.ok(t.includes('parte-uno') && t.includes('parte-dos') && !t.includes('[object Object]'));
+  assert.equal((await chat(A, { model: 123 })).status, 400);
+  assert.equal((await chat(A, { model: 'web-qwen38max', messages: 'hola' })).status, 400);
+  assert.equal((await chat(A, { model: 'web-qwen38max', messages: [{ role: 'user', content: 'U1' }, { role: 'assistant', content: 'A1' }] })).status, 200);
+  const u = llamadasWeb(A).at(-1).texto; assert.equal((u.match(/U1/g) || []).length, 1, 'el mensaje de usuario no se duplica');
+});
+
+test('A1-12. modelo web desconocido -> 400; SESSION_EXPIRED no se disfraza con el error del ultimo modelo', async () => {
+  const r = await chat(A, { model: 'web-foo' }); assert.equal(r.status, 400); assert.equal(r.json.error.code, 'MODELO_INVALIDO');
+});
+
+test('A1-8. documentos tambien llegan a Groq/NVIDIA/locales, no solo a la web', async () => {
+  groq.hits.length = 0; groq.status = 200; groq.texto = 'ok';
+  await chat(A, { model: 'groq/xxx', documentos: [{ nombre: 'plan.md', contenido: 'CONTENIDO-DOC-GROQ' }] });
+  assert.ok(JSON.stringify(groq.hits.at(-1).body.messages).includes('CONTENIDO-DOC-GROQ'));
+});
+
+test('A1-9. el respaldo conserva el preambulo del modo y la gramatica con modo asesoria usa Groq primero', async () => {
+  modoWeb(A, 'fail'); groq.hits.length = 0; groq.status = 200; groq.texto = 'resp';
+  await chat(A, { model: 'web-qwen38max', modo: 'despliega' });
+  assert.match(JSON.stringify(groq.hits.at(-1).body.messages), /MODO DESPLIEGA/);
+  modoWeb(A, 'ok'); groq.hits.length = 0; const n0 = llamadasWeb(A).length;
+  const r = await chat(A, { messages: [{ role: 'user', content: 'SWEN CODE free modo asesoria planear el modulo de pagos' }] });
+  assert.equal(r.status, 200); assert.equal(llamadasWeb(A).length, n0, 'asesoria por gramatica va primero a Groq'); assert.equal(groq.hits.length, 1);
+});
+
+test('A1-7. prompt gigante -> 413 antes de tocar la web', async () => {
+  const n0 = llamadasWeb(A).length;
+  const r = await chat(A, { model: 'web-qwen38max', messages: [{ role: 'user', content: 'x'.repeat(450000) }] });
+  assert.equal(r.status, 413); assert.equal(r.json.error.code, 'PROMPT_DEMASIADO_GRANDE'); assert.equal(llamadasWeb(A).length, n0);
+});
+
+test('A1-16. JSON malformado responde JSON tipado, no HTML', async () => {
+  const r = await fetch(A.base + '/v1/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{roto' });
+  assert.equal(r.status, 400); const j = await r.json(); assert.equal(j.error.code, 'BAD_REQUEST');
+});
+
+test('A1-4. con BRIDGE_TOKEN: sin token 401, con token 200; /health no expone correos', async () => {
+  assert.equal((await fetch(T.base + '/v1/models')).status, 401);
+  assert.equal((await fetch(T.base + '/v1/proyectos')).status, 401);
+  const ok = await fetch(T.base + '/v1/models', { headers: { authorization: 'Bearer tok-prueba' } }); assert.equal(ok.status, 200);
+  const x = await fetch(T.base + '/v1/models', { headers: { 'x-bridge-key': 'tok-prueba' } }); assert.equal(x.status, 200);
+  const h = await (await fetch(T.base + '/health')).text(); assert.ok(!h.includes('@x.com'), 'no debe mostrar correos');
+  const q = await (await fetch(T.base + '/v1/queue', { headers: { authorization: 'Bearer tok-prueba' } })).text(); assert.ok(!q.includes('@x.com'));
+  assert.equal((await fetch(A.base + '/v1/models')).status, 200, 'sin BRIDGE_TOKEN todo sigue abierto como antes');
+});
+
+test('A1-17. model con caracteres raros se rechaza (no entra a cabeceras ni lecciones)', async () => {
+  const r = await chat(A, { model: 'groq/ñ\nX-Inyectado: 1' }); assert.equal(r.status, 400);
 });
 
 test('entorno: informa si se uso express real o stub', () => {
