@@ -176,7 +176,32 @@ app.post('/refresh_session', async (_req, res) => {
   catch (e) { res.status(503).json({ ok: false, error: e.code || e.message }); }
 });
 
+// SSE (stream:true): la respuesta se calcula completa y se emite como chat.completion.chunk (role -> content en trozos -> tool_calls -> finish_reason -> [DONE]).
+// Mientras se espera, cada SSE_KEEPALIVE_MS se abre el stream y se envia ": keepalive" para que ningun proxy corte la conexion; antes de abrirlo los errores siguen siendo JSON.
+const SSE_KEEPALIVE_MS = parseInt(process.env.BRIDGE_SSE_KEEPALIVE_MS || '15000', 10), SSE_TROZO = 200;
+function trozosDe(texto, max = SSE_TROZO) {
+  const t = String(texto || ''), out = [];
+  for (let i = 0; i < t.length;) {
+    let f = Math.min(i + max, t.length);
+    const c = t.charCodeAt(f - 1);
+    if (f < t.length && c >= 0xD800 && c <= 0xDBFF) f--;  // no partir un par sustituto (emoji)
+    out.push(t.slice(i, f)); i = f;
+  }
+  return out;
+}
+function crearSse(req, res) {
+  const pide = !!req.body && req.body.stream === true;
+  const s = { pide, activo: false, id: `webchat-${Date.now()}`, created: Math.floor(Date.now() / 1000), model: `swecode:${pide ? req.body.model : ''}`, extra: {}, timer: null };
+  s.abrir = () => { if (!s.activo && !res.headersSent) { s.activo = true; res.writeHead(200, { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-cache', connection: 'keep-alive' }); } };
+  s.vigilar = () => { if (pide && !s.timer) { s.timer = setInterval(() => { s.abrir(); if (s.activo) res.write(': keepalive\n\n'); }, SSE_KEEPALIVE_MS); res.on('close', s.parar); } };
+  s.parar = () => { clearInterval(s.timer); s.timer = null; };
+  s.chunk = (delta, finish_reason = null, extra = {}) => res.write(`data: ${JSON.stringify({ id: s.id, object: 'chat.completion.chunk', created: s.created, model: s.model, ...s.extra, choices: [{ index: 0, delta, finish_reason }], ...extra })}\n\n`);
+  s.error = (code, message, detail) => { s.abrir(); s.chunk({}, 'error', { error: { code, message, detail } }); res.end('data: [DONE]\n\n'); };
+  return s;
+}
+
 app.post('/v1/chat/completions', async (req, res) => {
+  const sse = crearSse(req, res);
   try {
     let { model = 'swecode-consulta', messages: mensajesIn = [], modo, conv_id, proyecto, documentos, cuentas, clave: claveReq, claves: clavesReq } = req.body;
     if (typeof model !== 'string' || !/^[\w.\/:-]{1,100}$/.test(model)) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model: String(model).slice(0, 50) } });
@@ -244,12 +269,13 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (esConsenso(modoUso)) {
       const r = await consenso(prompt, { modo: modoUso, convId: conv_id });
       salida = r.final; usado = 'consenso';
-      res.setHeader('x-consenso-detalle', Buffer.from(JSON.stringify(r.por_modelo)).toString('base64').slice(0, 4000));
+      if (!res.headersSent) res.setHeader('x-consenso-detalle', Buffer.from(JSON.stringify(r.por_modelo)).toString('base64').slice(0, 4000));
     } else {
       const r = await conFallback(OBJETIVO_UNICO, prompt, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
     }
     };
+    sse.vigilar();
     try {
       await conDeadline(ejecutar(), DEADLINE_MS);
       if ((!salida || !String(salida).trim()) && !llamadas.length) throw Object.assign(new Error('respuesta vacia del modelo web'), { code: 'EMPTY_RESPONSE' });
@@ -270,16 +296,15 @@ app.post('/v1/chat/completions', async (req, res) => {
     let archivo = null;
     if (modoUso === 'asesoria') { try { archivo = guardarAsesoria(proyecto || conv_id, { texto: salida, via: via || viaPrimaria || 'web', modelo: usado }); } catch { /* guardar es mejor esfuerzo */ } }
     if (proyecto || conv_id) guardarTurno(proyecto || conv_id, ultimo, salida, usado).catch(() => {});  // misma memoria del chat Yaiwes (mejor esfuerzo)
-    res.setHeader('x-modelo-usado', usado);
-    if (via) res.setHeader('x-via-respaldo', via);
+    if (!res.headersSent) { res.setHeader('x-modelo-usado', usado); if (via) res.setHeader('x-via-respaldo', via); }
 
-    if (req.body.stream === true) {  // OpenClaw (openai-completions) pide SSE: la respuesta ya esta completa, se emite como chunks estandar + [DONE]
-      const id = `webchat-${Date.now()}`, created = Math.floor(Date.now() / 1000), mod = `swecode:${model}`;
-      const trozo = (delta, finish_reason = null) => `data: ${JSON.stringify({ id, object: 'chat.completion.chunk', created, model: mod, modelo_usado: usado, via_respaldo: via, choices: [{ index: 0, delta, finish_reason }] })}\n\n`;
-      res.status(200).set({ 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-cache', connection: 'keep-alive' });
-      res.write(trozo({ role: 'assistant', content: salida || '' }));
-      if (llamadas.length) res.write(trozo({ tool_calls: llamadas.map((t, i) => ({ index: i, ...t })) }));
-      res.write(trozo({}, fin));
+    if (sse.pide) {  // OpenClaw (openai-completions) pide SSE: la respuesta ya esta completa, se emite como chunks estandar + [DONE]
+      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via };
+      sse.abrir();
+      sse.chunk({ role: 'assistant', content: '' });
+      for (const t of trozosDe(salida)) sse.chunk({ content: t });
+      if (llamadas.length) sse.chunk({ tool_calls: llamadas.map((t, i) => ({ index: i, ...t })) });
+      sse.chunk({}, fin);
       return res.end('data: [DONE]\n\n');
     }
     res.json({
@@ -290,6 +315,8 @@ app.post('/v1/chat/completions', async (req, res) => {
     });
   } catch (e) {
     const code = e.code || 'BRIDGE_ERROR';
+    sse.parar();
+    if (sse.activo) return res.writableEnded ? undefined : sse.error(code, e.message, e.detail);  // error tras abrir el stream: chunk con el error + [DONE]
     if (res.headersSent) return;
     const st = code === 'SESSION_EXPIRED' ? 503 : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : 500;
     res.status(st).json({ error: { code, message: e.message, detail: e.detail } });

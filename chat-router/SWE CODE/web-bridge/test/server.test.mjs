@@ -751,3 +751,115 @@ test('S2. stream:true con un error (400 modelo invalido) sigue siendo JSON de er
   assert.equal(r.status, 400); assert.match(r.headers.get('content-type'), /application\/json/);
   assert.equal((await r.json()).error.code, 'MODELO_INVALIDO');
 });
+
+// ---------- (SSE) bloque propio: forma completa del stream (role -> content en trozos -> tool_calls -> finish -> [DONE]) ----------
+const sseCrudo = async (srv, body) => {
+  const r = await fetch(srv.base + '/v1/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: 'hola mundo' }], stream: true, ...body }) });
+  const texto = await r.text();
+  const bloques = texto.split('\n\n').map((b) => b.trim()).filter(Boolean);
+  const datos = bloques.filter((b) => b.startsWith('data: ')).map((b) => b.slice(6));
+  return { status: r.status, tipo: r.headers.get('content-type') || '', headers: r.headers, texto, bloques, datos, chunks: datos.filter((e) => e !== '[DONE]').map((e) => JSON.parse(e)) };
+};
+const coherentes = (chunks) => chunks.every((c) => c.id === chunks[0].id && c.created === chunks[0].created && c.model === chunks[0].model && c.object === 'chat.completion.chunk');
+
+test('SSE-1. modelo web stub: role -> content en trozos de <=200 -> finish_reason stop -> [DONE], mismos id/model/created', async () => {
+  modoWeb(A, 'ok');
+  const r = await sseCrudo(A, { model: 'web-dsv4-flash' });
+  assert.equal(r.status, 200); assert.match(r.tipo, /text\/event-stream/);
+  assert.match(r.headers.get('cache-control') || '', /no-cache/); assert.match(r.headers.get('connection') || '', /keep-alive/i);
+  assert.equal(r.datos.at(-1), '[DONE]');
+  assert.equal(r.chunks[0].choices[0].delta.role, 'assistant');
+  assert.ok(coherentes(r.chunks)); assert.equal(r.chunks[0].model, 'swecode:web-dsv4-flash');
+  const medio = r.chunks.slice(1, -1);
+  assert.ok(medio.length >= 1 && medio.every((c) => typeof c.choices[0].delta.content === 'string' && c.choices[0].finish_reason === null));
+  assert.equal(medio.map((c) => c.choices[0].delta.content).join(''), 'WEB[dsv4-flash]');
+  assert.equal(r.chunks.at(-1).choices[0].finish_reason, 'stop'); assert.deepEqual(r.chunks.at(-1).choices[0].delta, {});
+  assert.equal(r.chunks.filter((c) => c.choices[0].finish_reason).length, 1, 'solo el ultimo chunk lleva finish_reason');
+  assert.equal(r.headers.get('x-modelo-usado'), 'dsv4-flash');
+});
+
+test('SSE-2. respuesta larga: se parte en trozos de ~200 caracteres y se reensambla identica', async () => {
+  const largo = 'abcdefghij'.repeat(55) + 'ñ😀fin';  // 550+ caracteres, con multibyte
+  groq.hits.length = 0; groq.status = 200; groq.texto = largo;
+  const r = await sseCrudo(A, { model: 'groq/xxx' });
+  const medio = r.chunks.slice(1, -1).map((c) => c.choices[0].delta.content);
+  assert.ok(medio.length >= 3, `se esperaban >=3 trozos, hubo ${medio.length}`);
+  assert.ok(medio.every((t) => t.length <= 200 && t.length > 0));
+  assert.equal(medio.join(''), largo); assert.ok(coherentes(r.chunks));
+  assert.equal(r.chunks.at(-1).choices[0].finish_reason, 'stop'); assert.equal(r.datos.at(-1), '[DONE]');
+  groq.texto = 'de-groq';
+});
+
+test('SSE-3. respaldo (web falla -> Groq): stream con el texto del respaldo, via_respaldo y header x-via-respaldo', async () => {
+  groq.hits.length = 0; groq.status = 200; groq.texto = 'texto-de-respaldo';
+  modoWeb(A, 'fail');
+  const r = await sseCrudo(A, { model: 'web-qwen38max' });
+  modoWeb(A, 'ok'); groq.texto = 'de-groq';
+  assert.equal(r.status, 200);
+  assert.equal(r.chunks.slice(1, -1).map((c) => c.choices[0].delta.content).join(''), 'texto-de-respaldo');
+  assert.equal(r.headers.get('x-via-respaldo'), 'groq'); assert.equal(r.chunks.at(-1).choices[0].finish_reason, 'stop');
+  assert.ok(coherentes(r.chunks)); assert.equal(r.datos.at(-1), '[DONE]');
+});
+
+test('SSE-4. groq/xxx directo con tool_calls: role -> tool_calls (con index) -> finish_reason tool_calls -> [DONE]', async () => {
+  const tools = [{ type: 'function', function: { name: 'github_leer', parameters: { type: 'object' } } }];
+  groq.status = 200;
+  groq.tool_calls = [
+    { id: 'c1', type: 'function', function: { name: 'github_leer', arguments: '{"ruta":"README.md"}' } },
+    { id: 'c2', type: 'function', function: { name: 'github_leer', arguments: '{"ruta":"a.js"}' } },
+  ];
+  const r = await sseCrudo(A, { model: 'groq/xxx', tools });
+  delete groq.tool_calls;
+  assert.equal(r.status, 200); assert.ok(coherentes(r.chunks));
+  assert.equal(r.chunks[0].choices[0].delta.role, 'assistant');
+  const conTools = r.chunks.filter((c) => c.choices[0].delta.tool_calls);
+  assert.equal(conTools.length, 1);
+  const tc = conTools[0].choices[0].delta.tool_calls;
+  assert.deepEqual(tc.map((t) => t.index), [0, 1]); assert.equal(tc[0].id, 'c1'); assert.equal(tc[1].function.arguments, '{"ruta":"a.js"}');
+  assert.ok(r.chunks.indexOf(conTools[0]) > 0 && r.chunks.indexOf(conTools[0]) < r.chunks.length - 1, 'tool_calls entre el role y el final');
+  assert.equal(r.chunks.at(-1).choices[0].finish_reason, 'tool_calls'); assert.equal(r.datos.at(-1), '[DONE]');
+  assert.ok(!r.chunks.some((c) => (c.choices[0].delta.content || '').length), 'sin texto: no se emite content');
+});
+
+test('SSE-5. local stub (lfm2.5-350m): stream OK y finish_reason heredado; stream ausente o false no activan SSE', async () => {
+  hf.status = 200; hf.texto = 'hola-local';
+  const r = await sseCrudo(A, { model: 'lfm2.5-350m' });
+  assert.equal(r.chunks.slice(1, -1).map((c) => c.choices[0].delta.content).join(''), 'hola-local');
+  assert.equal(r.chunks.at(-1).choices[0].finish_reason, 'stop'); assert.equal(r.datos.at(-1), '[DONE]');
+  for (const stream of [undefined, false]) {
+    const j = await chat(A, { model: 'lfm2.5-350m', stream });
+    assert.match(j.headers.get('content-type'), /application\/json/);
+    assert.equal(j.json.object, 'chat.completion'); assert.equal(j.json.choices[0].message.content, 'hola-local');
+  }
+});
+
+test('SSE-6. error ANTES de empezar el stream (400/413/502) sigue siendo JSON normal', async () => {
+  const p = await fetch(A.base + '/v1/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: 'web-dsv4-flash', stream: true, messages: [{ role: 'user', content: 'x'.repeat(500000) }] }) });
+  assert.equal(p.status, 413); assert.match(p.headers.get('content-type'), /application\/json/); assert.equal((await p.json()).error.code, 'PROMPT_DEMASIADO_GRANDE');
+  const c = await fetch(A.base + '/v1/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: 'web-dsv4-flash', stream: true, conv_id: '../x', messages: [{ role: 'user', content: 'x' }] }) });
+  assert.equal(c.status, 400); assert.match(c.headers.get('content-type'), /application\/json/);
+});
+
+test('SSE-7. keepalive: mientras la web tarda se emite ": keepalive" y luego la respuesta (via respaldo) sin cortar', async () => {
+  const S = await arrancar('SSE7', { TEST_GROQ_URL: groq.url, TEST_NVIDIA_URL: nvidia.url, GROQ_API_KEY: 'gsk-SECRETO-1', WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', BRIDGE_DEADLINE_MS: '900', BRIDGE_RESPALDO_MS: '5000', BRIDGE_SSE_KEEPALIVE_MS: '150' });
+  modoWeb(S, 'slow'); groq.status = 200; groq.texto = 'tras-la-espera';
+  const r = await sseCrudo(S, { model: 'web-dsv4-flash' });
+  groq.texto = 'de-groq';
+  assert.equal(r.status, 200); assert.match(r.tipo, /text\/event-stream/);
+  assert.ok(r.bloques.filter((b) => b === ': keepalive').length >= 2, 'varios keepalive mientras espera');
+  const primerDato = r.texto.indexOf('data: '), primerKa = r.texto.indexOf(': keepalive');
+  assert.ok(primerKa >= 0 && primerKa < primerDato, 'los keepalive van antes del primer chunk');
+  assert.equal(r.chunks.slice(1, -1).map((c) => c.choices[0].delta.content).join(''), 'tras-la-espera');
+  assert.equal(r.chunks.at(-1).choices[0].finish_reason, 'stop'); assert.equal(r.datos.at(-1), '[DONE]'); assert.ok(coherentes(r.chunks));
+});
+
+test('SSE-8. error DESPUES de iniciar el stream (keepalive ya enviado, respaldo agotado): chunk con error y [DONE]', async () => {
+  const S = await arrancar('SSE8', { TEST_GROQ_URL: groq.url, TEST_NVIDIA_URL: nvidia.url, GROQ_API_KEY: 'gsk-SECRETO-1', NVIDIA_API_KEY: 'nv-SECRETO-1', SWECODE_URL_S1: hf.url, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', BRIDGE_DEADLINE_MS: '700', BRIDGE_RESPALDO_MS: '3000', BRIDGE_SSE_KEEPALIVE_MS: '100' });
+  modoWeb(S, 'slow'); const antes = [groq.status, nvidia.status, hf.status]; groq.status = nvidia.status = hf.status = 500;
+  let r; try { r = await sseCrudo(S, { model: 'web-dsv4-flash' }); } finally { [groq.status, nvidia.status, hf.status] = antes; }
+  assert.equal(r.status, 200); assert.match(r.tipo, /text\/event-stream/);
+  assert.equal(r.datos.at(-1), '[DONE]');
+  const err = r.chunks.find((c) => c.error);
+  assert.ok(err, 'hay un chunk con error'); assert.equal(err.error.code, 'RESPALDO_AGOTADO'); assert.equal(err.object, 'chat.completion.chunk');
+  assert.ok(!r.texto.includes('gsk-SECRETO') && !r.texto.includes('nv-SECRETO'));
+});
