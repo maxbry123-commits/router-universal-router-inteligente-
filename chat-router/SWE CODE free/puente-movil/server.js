@@ -153,6 +153,11 @@ function main() {
   const server = crearServidor({ token });
   adjuntarWs(server, token);
   server.listen(PORT, () => console.log("puente-movil :" + PORT));
+  // se actualiza solo cuando llega codigo nuevo (mismo vigilante del bridge): sin reiniciar el Space
+  try {
+    const ruta = require("path").resolve(__dirname, "../../SWE CODE/web-bridge/src/autoactualizar.js");
+    import(require("url").pathToFileURL(ruta).href).then((m) => m.vigilarActualizacion()).catch(() => {});
+  } catch { /* sin el vigilante, sigue funcionando */ }
 }
 
 if (require.main === module) main();

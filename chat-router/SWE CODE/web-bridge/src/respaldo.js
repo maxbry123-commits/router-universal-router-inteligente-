@@ -23,7 +23,7 @@ export function setClaves(c) {
   }
 }
 
-const claves = (var_, env) => [...[var_, ...Array.from({ length: 20 }, (_, i) => `${var_}_${i + 1}`)].map(n => env[n]), ...(inyectadas[var_.split('_')[0].toLowerCase()] || [])].filter((v, i, a) => v && a.indexOf(v) === i);
+export const claves = (var_, env) => [...[var_, ...Array.from({ length: 20 }, (_, i) => `${var_}_${i + 1}`)].map(n => env[n]), ...(inyectadas[var_.split('_')[0].toLowerCase()] || [])].filter((v, i, a) => v && a.indexOf(v) === i);
 
 async function pedir(base, modelo, mensajes, clave, extra = {}) {
   const r = await fetch(`${base.replace(/\/$/, '')}/chat/completions`, {

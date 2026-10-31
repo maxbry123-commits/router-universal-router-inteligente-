@@ -19,6 +19,7 @@ import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo }
 import { conFormato } from './formato.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
 import { vigilarActualizacion } from './autoactualizar.js';
+import { cargarDelBanco, guardarEnBanco, vigilarBanco } from './clavesbanco.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
 
@@ -151,7 +152,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     const messages = conFormato(mensajesIn);  // formato de salida del chat Yaiwes tambien para OpenClaw
     // credenciales vienen de OpenClaw por llamada (vía plugins->harness); env solo respaldo
     if (cuentas) setCuentas(cuentas, claveReq);
-    if (clavesReq && typeof clavesReq === 'object') setClaves(clavesReq);  // claves de Groq/NVIDIA por llamada (solo memoria)
+    if (clavesReq && typeof clavesReq === 'object') { setClaves(clavesReq); guardarEnBanco(clavesReq).catch(() => {}); }  // claves de Groq/NVIDIA por llamada: en memoria y en el banco propio cifrado (sobreviven reinicios)
     const iU = messages.map(m => m.role).lastIndexOf('user');
     const ultimo = iU >= 0 ? messages[iU].content : '';
     const anterior = messages.filter((m, i) => i !== iU).map(m => `${m.role}: ${m.content}`).join('\n');
@@ -277,5 +278,7 @@ if (process.env.OPENCLAW_ENABLE === '1' || process.env.BRIDGE_REPARAR_OPENCLAW =
 
 // el bridge se actualiza solo cuando llega codigo nuevo de SWE CODE / SWE CODE free (sin reiniciar el Space); BRIDGE_AUTOACTUALIZAR=0 lo apaga
 vigilarActualizacion();
+vigilarBanco();  // y cada 60 s
+cargarDelBanco().then((n) => { if (n) console.warn(`[bridge] ${n} clave(s) de Groq/NVIDIA cargadas del banco`); }).catch(() => {});  // puente al banco: Router MVP (solo lectura) + banco propio
 
 app.listen(PORT, () => console.log(`web-bridge escuchando :${PORT}`));
