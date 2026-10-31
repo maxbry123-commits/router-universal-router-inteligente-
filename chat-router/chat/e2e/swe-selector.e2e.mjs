@@ -54,7 +54,7 @@ function routerFalso(estado) {
       return json(route, { ok: true, groq: b.groq, nvidia: b.nvidia });
     }
     if (p === '/chat/providers') return json(route, { providers: [{ id: 'qwen', nombre: 'Qwen', estado: 'ok' }] });
-    if (p === '/v1/chat/completions' && req.method() === 'POST') {
+    if ((p === '/v1/chat/completions' || p === '/web/v1/chat/completions') && req.method() === 'POST') {  // /web/* siempre llega al bridge (proxy del Space); /v1/* solo con web-/swecode-
       return json(route, { modelo_usado: (body && body.model) || 'swe', via_respaldo: 'groq', choices: [{ message: { role: 'assistant', content: 'respuesta SWE de prueba' }, finish_reason: 'stop' }] });
     }
     if (/^\/plugins\/[a-z_]+\/call\/chat_async$/.test(p)) {  // ruta normal del Router (puente_chat o fichas_qwen para Team qwen); control: un modelo NO SWE debe usar esta
@@ -133,7 +133,7 @@ async function enviar(p, texto) {
     ok('B6 elegir "Liquid AI (HF)"', (await abrirHojaModelos(p), await elegir(p, 'Liquid AI (HF)')));
     estA.llamadas.length = 0;
     const r2 = await enviar(p, 'segundo mensaje');
-    const c2 = estA.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
+    const c2 = estA.llamadas.filter((l) => l.ruta === '/web/v1/chat/completions')[0];  // modelo local: por /web/v1 (el proxy lo manda al bridge; por /v1 caeria en el Router)
     const m2 = c2 && c2.body && c2.body.messages || [];
     ok('B6 segundo envio tambien SWE directo y pinta la respuesta', r2 === 'respuesta SWE de prueba' && !!c2 && !estA.llamadas.some((l) => l.ruta.startsWith('/plugins/puente_chat')), JSON.stringify(estA.llamadas.map((l) => l.ruta)));
     ok('B6 hf-liquid-lfm25 -> model lfm2.5-350m', c2 && c2.body.model === 'lfm2.5-350m', c2 && c2.body.model);
@@ -266,7 +266,7 @@ async function enviar(p, texto) {
     await pf.$eval('#sh-swe-code-lista button[data-id="hf-liquid-lfm25"]', (e) => e.click());
     estF.llamadas.length = 0;
     const rl = await enviar(pf, 'hola liquid');
-    const cl = estF.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
+    const cl = estF.llamadas.filter((l) => l.ruta === '/web/v1/chat/completions')[0];  // idem: local por /web/v1
     ok('F6 SWE CODE + Liquid: model lfm2.5-350m y el historial previo viaja', rl === 'respuesta SWE de prueba' && cl && cl.body.model === 'lfm2.5-350m' && cl.body.messages.length >= 3, JSON.stringify(cl && cl.body));
     ok('F6 la etiqueta del panel refleja el modelo elegido', await pf.evaluate(() => /Liquid/.test(document.querySelector('#sel-power .sel-fila[data-selector="swe-code"] .sel-resp').textContent)));
     ok('F sin errores JS en la pagina', pf.errs.length === 0, pf.errs.join(' | '));
