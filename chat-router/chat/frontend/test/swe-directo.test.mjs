@@ -70,3 +70,17 @@ test("SWEN CODE free incluye Groq y NVIDIA (usan las claves de Configuracion por
   const ids = SWE_LISTAS["swen-code-free"].modelos.map(([m]) => m);
   assert.ok(ids.includes("groq/llama-3.3-70b-versatile") && ids.includes("nvidia/meta/llama-3.3-70b-instruct"));
 });
+
+import { rutaSwe } from "../swe-directo.js";
+
+test("los modelos locales y groq/nvidia viajan por /web/v1 (el proxy del Space manda /web/* al bridge); web-* y swecode-* siguen por /v1", async () => {
+  // el proxy del Space solo reenvia /v1/* al bridge si el modelo empieza por web-/swecode-: un id local por /v1 cae en el Router (400 MODEL_NOT_IN_CERTIFIED_REGISTRY)
+  for (const m of ["hf-liquid-lfm25", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b", "lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b", "groq/llama-3.3-70b-versatile", "nvidia/meta/llama-3.3-70b-instruct"])
+    assert.equal(rutaSwe(m), "/web/v1/chat/completions", m);
+  for (const m of ["web-qwen38max", "web-dsv4-flash", "swecode-consulta", "swecode-asesoria"]) assert.equal(rutaSwe(m), "/v1/chat/completions", m);
+  for (const [id, real] of [["hf-liquid-lfm25", "lfm2.5-350m"], ["swe-codex-qwen25-15b", "qwen2.5-coder-1.5b"], ["swe-opencode-qwen35-08b", "qwen3.5-0.8b"], ["swe-agent-lfm25", "lfm2.5-350m"], ["swe-openhands-lfm25", "lfm2.5-350m"], ["hf-qwen25-coder-15b", "qwen2.5-coder-1.5b"]]) {
+    let visto;
+    const r = await enviarSwe(async (ruta, op) => { visto = { ruta, op }; return { modelo_usado: real, choices: [{ message: { content: "hola" }, finish_reason: "stop" }] }; }, { model: id, historial: [], mensaje: "x", sesion: "s" });
+    assert.equal(visto.ruta, "/web/v1/chat/completions", id); assert.equal(visto.op.body.model, real, id); assert.equal(r.reply, "hola");
+  }
+});

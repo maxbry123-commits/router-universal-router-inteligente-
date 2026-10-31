@@ -40,8 +40,12 @@ export function armar({ model, historial = [], mensaje, sesion, proyecto }) {
   return { model: Object.hasOwn(REAL, model) ? REAL[model] : model, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, ...(proyecto ? { proyecto } : {}), ...(Object.keys(claves).length ? { claves } : {}) };
 }
 
+// El proxy del Space solo manda /v1/* al bridge si el modelo empieza por web-/swecode-; el resto (locales HF, groq/, nvidia/) caeria en el Router
+// (400 MODEL_NOT_IN_CERTIFIED_REGISTRY). /web/* va SIEMPRE al bridge (igual que /web/v1/claves): por ahi viajan los demas ids.
+export const rutaSwe = (id) => (/^(web-|swecode-)/.test(Object.hasOwn(REAL, id) ? REAL[id] : String(id)) ? "/v1/chat/completions" : "/web/v1/chat/completions");
+
 export async function enviarSwe(api, datos) {
-  const r = await api("/v1/chat/completions", { method: "POST", body: armar(datos) });
+  const r = await api(rutaSwe(datos.model), { method: "POST", body: armar(datos) });
   const texto = r && r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content;
   if (!texto) {  // un fallo no se pinta como respuesta del modelo (entraria al historial del turno siguiente)
     const e = (r && r.error) || {};
