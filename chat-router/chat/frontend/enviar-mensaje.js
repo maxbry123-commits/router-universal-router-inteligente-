@@ -199,7 +199,7 @@ export function montarEnviar(ctx) {
       body.contexto_previo = ctxPrev;  // historial completo de esta sesion; el input actual viaja una sola vez
       const _multiSel = fq === "1" && c.paralelo ? (c.selectorQwenMulti || []).slice(0, 6) : [];  // >>> MODOS <<< T6: fan-out paralelo
       const _fanout = async () => {  // una llamada por modelo elegido; cada burbuja lleva su nombre
-        const rs = await Promise.allSettled(_multiSel.map((m, i) => window.RIU_HARNESS({
+        const rs = await Promise.allSettled(_multiSel.map((m, i) => esSwe(m.model_id) ? enviarSwe(api, { model: m.model_id, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion + '-' + (m.modelo_id_slug || i), proyecto: c.project_id || undefined }) : window.RIU_HARNESS({
           model: m.model_id || m.label || m.modelo_id_slug, message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null,
           contexto_previo: ctxPrev, anclados, sesion: c.sesion + '-' + (m.modelo_id_slug || i), instrucciones_fijas: fijasQwen || undefined,
           ...controlTools, thinking_mode: getModo() === 'think' ? 'on' : 'off',
