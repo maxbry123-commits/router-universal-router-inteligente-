@@ -167,6 +167,12 @@ def _clave(var):
     return ""
 
 
+def _credencial_bridge():
+    """Los agentes (clientes OpenAI-compatibles) mandan esto como Bearer al bridge, que exige credencial: RIU_AGENTES_LLM_API_KEY o, si no, BRIDGE_TOKEN.
+    Sin ninguna queda el marcador «no-requerida» y el bridge respondera 401 (se ve en el error del agente)."""
+    return os.environ.get("RIU_AGENTES_LLM_API_KEY", "").strip() or os.environ.get("BRIDGE_TOKEN", "").strip() or "no-requerida"
+
+
 def endpoint_modelo(modelo_id, agente="", tarea_id=""):
     """Endpoint OpenAI-compatible del modelo. hf -> bridge (RIU_SWE_BRIDGE_URL); groq/nvidia -> proveedor, con la clave del entorno."""
     cfg = validar_modelo(modelo_id)
@@ -175,7 +181,7 @@ def endpoint_modelo(modelo_id, agente="", tarea_id=""):
         base = (os.environ.get("RIU_AGENTES_LLM_BASE_URL") or os.environ.get("RIU_SWE_BRIDGE_URL") or "http://127.0.0.1:7870").strip().rstrip("/")
         if not base.endswith("/v1"):
             base += "/v1"
-        return {"proveedor": prov, "base_url": base, "modelo": cfg["model"], "api_key": os.environ.get("RIU_AGENTES_LLM_API_KEY", "no-requerida") or "no-requerida"}
+        return {"proveedor": prov, "base_url": base, "modelo": cfg["model"], "api_key": _credencial_bridge()}
     base = {"groq": "https://api.groq.com/openai/v1", "nvidia": "https://integrate.api.nvidia.com/v1"}[prov]
     clave = _clave(prov.upper() + "_API_KEY")
     if not clave:

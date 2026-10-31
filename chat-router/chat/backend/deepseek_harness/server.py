@@ -131,10 +131,25 @@ def _router_caido(exc):
     return bool(re.match(r"Router (?!HTTP )\w+", m) or re.match(r"Router HTTP 50[234]", m))
 
 
+ACCESO_BRIDGE = ("RIU_API_KEY", "RIU_PUBLIC_CHAT_KEY", "RIU_MCP_KEY", "RIU_ROUTER_API_KEY")  # las 4 claves de acceso que el bridge acepta en x-api-key
+
+
+def _cabeceras_bridge():
+    """El bridge exige credencial en toda ruta salvo /health: el Harness manda SU clave de acceso (x-api-key) y, si existe, BRIDGE_TOKEN (x-bridge-key). Nunca se registra."""
+    h = {"Content-Type": "application/json"}
+    clave = next((os.environ[v].strip() for v in ACCESO_BRIDGE if os.environ.get(v, "").strip()), "")
+    if clave:
+        h["X-API-Key"] = clave
+    token = os.environ.get("BRIDGE_TOKEN", "").strip()
+    if token:
+        h["x-bridge-key"] = token
+    return h
+
+
 def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
     """Una vuelta de chat por el bridge (OpenAI-compatible): mismo formato que _router('chat')."""
     modelo = SWE_ALIAS.get(modelo, modelo)
-    req = urllib.request.Request(_bridge_url() + "/v1/chat/completions", method="POST", headers={"Content-Type": "application/json"},
+    req = urllib.request.Request(_bridge_url() + "/v1/chat/completions", method="POST", headers=_cabeceras_bridge(),
                                  data=json.dumps({"model": modelo, "messages": mensajes, **({"conv_id": conv_id} if conv_id else {}),
                                                 **{k: v for k, v in (opciones or {}).items() if k in ("tools", "tool_choice")}}).encode())
     try:

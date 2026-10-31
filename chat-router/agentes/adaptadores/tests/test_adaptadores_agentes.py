@@ -36,7 +36,7 @@ def llamadas(tmp_path, nombre):
 def entorno(monkeypatch, tmp_path):
     for v in ("RIU_CODEX_BIN", "RIU_OPENCODE_BIN", "RIU_SWEAGENT_BIN", "RIU_OPENHANDS_PYTHON", "RIU_CLAUDE_BIN", "RIU_DOCKER_BIN",
               "OPENCLAW_GATEWAY_TOKEN", "RIU_OPENCLAW_URL", "RIU_CLAUDE_PASARELA_URL", "RIU_CLAUDE_PASARELA_MODELO", "RIU_CODEX_BASE_URL",
-              "GROQ_API_KEY", "NVIDIA_API_KEY", "RIU_AGENTES_LLM_API_KEY"):
+              "GROQ_API_KEY", "NVIDIA_API_KEY", "RIU_AGENTES_LLM_API_KEY", "BRIDGE_TOKEN"):
         monkeypatch.delenv(v, raising=False)
     monkeypatch.setenv("RIU_SWE_BRIDGE_URL", "http://127.0.0.1:7870")
     monkeypatch.setenv("PATH", str(tmp_path / "vacio"))  # sin binarios reales en PATH
@@ -445,3 +445,15 @@ def test_openclaw_no_sigue_redirecciones(monkeypatch, tmp_path):
     assert r["ok"] is False and r["codigo"] == "REDIRECCION_NO_PERMITIDA" and r["efectos_posibles"] is False
     assert destino_visto == [], "el token no viajo al destino de la redireccion"
     assert CLAVE_FICTICIA not in json.dumps(r)
+
+
+def test_los_agentes_reciben_credencial_para_el_bridge(monkeypatch, tmp_path):
+    """El bridge exige credencial en toda ruta salvo /health: el agente recibe RIU_AGENTES_LLM_API_KEY, o si no BRIDGE_TOKEN (ficticios), por la variable que ya usa; nunca en argv."""
+    monkeypatch.setenv("RIU_OPENCODE_BIN", fake(tmp_path, "opencode", OPENCODE_OK))
+    monkeypatch.setenv("BRIDGE_TOKEN", "token-bridge-ficticio-0001")
+    opencode.run(permisos=permisos(tmp_path), **BASE)
+    monkeypatch.setenv("RIU_AGENTES_LLM_API_KEY", "clave-llm-ficticia-0002")
+    opencode.run(permisos=permisos(tmp_path), **BASE)
+    c1, c2 = llamadas(tmp_path, "opencode")
+    assert c1["env"]["RIU_AGENTE_LLM_KEY"] == "token-bridge-ficticio-0001" and c2["env"]["RIU_AGENTE_LLM_KEY"] == "clave-llm-ficticia-0002"
+    assert "token-bridge-ficticio" not in " ".join(c1["argv"]) and "BRIDGE_TOKEN" not in c1["env"]

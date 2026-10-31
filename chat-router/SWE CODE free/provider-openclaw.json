@@ -3,7 +3,8 @@
   "nombre": "SWE CODE / SWEN CODE free",
   "tipo": "openai-compatible",
   "base_url": "http://localhost:7870/v1",
-  "api_key": "no-requerida",
+  "api_key": "${BRIDGE_TOKEN}",
+  "token_nota": "Marcador: OpenClaw debe sustituir ${BRIDGE_TOKEN} por el BRIDGE_TOKEN real del bridge (variable de entorno, nunca escrito en este archivo). Sin el, toda llamada al bridge da 401.",
   "nota": "El selector de OpenClaw lee GET /v1/models del bridge (web, modos, Groq, NVIDIA y locales HF); esta lista es el respaldo si no responde. El bridge es el router propio: no depende del Router MVP.",
   "modelos": [
     {

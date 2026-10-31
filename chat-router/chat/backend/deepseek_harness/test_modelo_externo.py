@@ -119,3 +119,41 @@ class SinRedireccion(unittest.TestCase):
                 h._bridge_chat(MSGS, "web-qwen38max")
         for x in (d, o): x.shutdown()
         self.assertEqual(robado, [])
+
+
+class CredencialAlBridge(unittest.TestCase):
+    """El bridge exige credencial en toda ruta salvo /health: el Harness manda su clave de acceso en X-API-Key en cada llamada (claves ficticias)."""
+    def _cabeceras(self, entorno):
+        vistas = []
+        class H(BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.rfile.read(int(self.headers["Content-Length"])); vistas.append({k.lower(): v for k, v in self.headers.items()})
+                self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers()
+                self.wfile.write(json.dumps({"choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}]}).encode())
+            def log_message(self, *a): pass
+        s = HTTPServer(("127.0.0.1", 0), H); threading.Thread(target=s.serve_forever, daemon=True).start()
+        limpio = {k: "" for k in h.ACCESO_BRIDGE + ("BRIDGE_TOKEN",)}
+        with patch.dict(os.environ, {**limpio, "RIU_SWE_BRIDGE_URL": "http://127.0.0.1:%d" % s.server_port, **entorno}):
+            h._bridge_chat(MSGS, "web-qwen38max")
+        s.shutdown(); return vistas[0]
+
+    def test_manda_x_api_key_con_la_clave_de_acceso_del_harness(self):
+        self.assertEqual(self._cabeceras({"RIU_API_KEY": "clave-harness-ficticia"})["x-api-key"], "clave-harness-ficticia")
+
+    def test_usa_otra_clave_de_acceso_si_no_hay_riu_api_key_y_bridge_token_va_aparte(self):
+        c = self._cabeceras({"RIU_MCP_KEY": "clave-mcp-ficticia", "BRIDGE_TOKEN": "token-ficticio"})
+        self.assertEqual(c["x-api-key"], "clave-mcp-ficticia"); self.assertEqual(c["x-bridge-key"], "token-ficticio")
+
+    def test_sin_ninguna_credencial_no_inventa_cabeceras(self):
+        c = self._cabeceras({}); self.assertNotIn("x-api-key", c); self.assertNotIn("x-bridge-key", c)
+
+    def test_la_clave_no_aparece_en_los_errores(self):
+        class R(BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.rfile.read(int(self.headers["Content-Length"])); self.send_response(401); self.end_headers()
+            def log_message(self, *a): pass
+        s = HTTPServer(("127.0.0.1", 0), R); threading.Thread(target=s.serve_forever, daemon=True).start()
+        with patch.dict(os.environ, {"RIU_API_KEY": "clave-harness-ficticia-secreta", "RIU_SWE_BRIDGE_URL": "http://127.0.0.1:%d" % s.server_port}):
+            with self.assertRaises(RuntimeError) as cm:
+                h._bridge_chat(MSGS, "web-qwen38max")
+        s.shutdown(); self.assertNotIn("ficticia-secreta", str(cm.exception))

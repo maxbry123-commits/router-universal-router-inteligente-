@@ -82,7 +82,7 @@ test("SSE con tool_calls: devuelve los nombres como hoy (Tools pedidas), con los
     res.write(ch({}, "tool_calls")); res.end("data: [DONE]\n\n");
   };
   const r = await S.enviarSwe(api, { ...base, model: "groq/qwen/qwen3.8-27b", ejecutor_tools: "openclaw" });
-  assert.deepEqual(r.tools, ["github_leer", "ls"]); assert.equal(r.finish_reason, "tool_calls"); assert.match(r.reply, /Tools pedidas: github_leer, ls/); assert.match(r.nota, /OpenClaw/);
+  assert.deepEqual(r.tools, []); assert.deepEqual(r.pedidas, ["github_leer", "ls"]); assert.equal(r.finish_reason, "tool_calls"); assert.match(r.reply, /Tools pedidas: github_leer, ls/); assert.match(r.nota, /OpenClaw/);
   assert.equal(peticiones[0].url, "/web/v1/chat/completions");
 });
 
