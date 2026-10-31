@@ -3,8 +3,23 @@
 - LEE (solo lectura) el banco del Router (chat/backend/mvp/data/banco.bin, o RIU_BANCO_ROUTER) con la clave de acceso RIU_API_KEY.
 - GUARDA las claves que le pegan al bridge en un banco PROPIO cifrado igual (BRIDGE_STATE_DIR/banco-swe.bin; esa carpeta ya se respalda en /data).
 Reutiliza mvp.bank (misma cifra Fernet). Uso: claves_banco.py leer  |  claves_banco.py guardar  (JSON por stdin {groq, nvidia})  |  claves_banco.py borrar  (vacia el banco PROPIO; el del Router no se toca)."""
-import json, os, re, sys
+import json, re
+import os, sys
 from pathlib import Path
+
+
+def _preparar_rutas():
+    """El script se basta solo (no depende de PYTHONPATH): ubica `mvp` en router-mvp y en chat-router/chat/backend subiendo desde __file__ (o desde RIU_REPO_ROOT)."""
+    aqui = Path(__file__).resolve()
+    raices = [Path(os.environ["RIU_REPO_ROOT"])] if os.environ.get("RIU_REPO_ROOT") else [p for p in aqui.parents[:5]]
+    for raiz in raices:
+        for rel in (("router-mvp",), ("chat-router", "chat", "backend")):
+            ruta = raiz.joinpath(*rel)
+            if ruta.is_dir() and str(ruta) not in sys.path:
+                sys.path.append(str(ruta))
+
+
+_preparar_rutas()
 from mvp import bank
 
 PATRON = re.compile(r"(GROQ|NVIDIA)_API_KEY(_\d{1,2})?")
@@ -28,16 +43,21 @@ def _candidatas():
     return list(dict.fromkeys(os.environ[v] for v in bank.ACCESO if os.environ.get(v)))
 
 
-def _abrir(ruta, crear=False):
+def _abrir_con(ruta, crear=False):
+    """(banco, clave con la que abrio) | (None, None). Cada candidata se prueba; si ninguna sirve, simplemente no aporta."""
     candidatas = _candidatas()
     if not candidatas or not (crear or os.path.exists(ruta)):
-        return None
+        return None, None
     for clave in candidatas:
         try:
-            return bank.abrir(ruta, clave)
+            return bank.abrir(ruta, clave), clave
         except (ValueError, OSError):
-            continue  # banco ilegible o clave distinta: se prueba la siguiente; si ninguna sirve, simplemente no aporta
-    return None
+            continue  # banco ilegible o clave distinta: se prueba la siguiente
+    return None, None
+
+
+def _abrir(ruta, crear=False):
+    return _abrir_con(ruta, crear)[0]
 
 
 def leer():
@@ -78,14 +98,37 @@ def diagnostico():
 
 
 def guardar(claves):
-    b = _abrir(_ruta_propia(), crear=True)
+    """Deja en el banco propio EXACTAMENTE las claves recibidas de cada proveedor presente en `claves`: las que ya no vienen se borran (no reaparecen).
+    Un proveedor ausente no se toca; una lista vacia borra todas las de ese proveedor. Si hay algo que quitar, el banco se reescribe entero
+    (archivo nuevo + os.replace, con la MISMA clave de acceso que lo cifro): bank.Banco no tiene borrar."""
+    b, clave = _abrir_con(_ruta_propia(), crear=True)
     if not b:
         raise RuntimeError("sin clave de acceso (RIU_API_KEY): no se puede cifrar el banco propio")
+    actual = {n: b.leer(n) for n in b.nombres()}
+    queda = dict(actual)
     for prov, var in (("groq", "GROQ_API_KEY"), ("nvidia", "NVIDIA_API_KEY")):
-        v = (claves or {}).get(prov)
+        if prov not in (claves or {}):
+            continue
+        v = claves.get(prov)
         lista = [x.strip() for x in ([v] if isinstance(v, str) else v or []) if isinstance(x, str) and x.strip()][:MAX]
+        for n in [n for n in queda if (m := PATRON.fullmatch(n)) and m.group(1) == prov.upper()]:
+            del queda[n]
         for i, k in enumerate(lista):
-            b.guardar(var if i == 0 else "%s_%d" % (var, i), k)
+            queda[var if i == 0 else "%s_%d" % (var, i)] = k
+    if any(n not in queda for n in actual):  # algo se quita: reescritura completa
+        nuevo = _ruta_propia() + ".nuevo-%d" % os.getpid()
+        try:
+            nb = bank.abrir(nuevo, clave)
+            for n, v in queda.items():
+                nb.guardar(n, v)
+            os.replace(nuevo, _ruta_propia())
+        finally:
+            if os.path.lexists(nuevo):
+                os.unlink(nuevo)
+        return True
+    for n, v in queda.items():
+        if actual.get(n) != v:
+            b.guardar(n, v)
     return True
 
 

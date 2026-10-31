@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { montarRutasSwe, llamarHarness, consultarCapacidades, OPERACIONES_SWE, TIMEOUT_HARNESS_MS } from '../src/swe_rutas.js';
 import { prepararApp, arrancar, limpiar, registrarMock } from './helpers/bridge_app.mjs';
+import './helpers/acceso.mjs';
 
 const QUI = path.dirname(fileURLToPath(import.meta.url));
 const CLAVE_HARNESS = 'clave-harness-de-prueba-xyz';

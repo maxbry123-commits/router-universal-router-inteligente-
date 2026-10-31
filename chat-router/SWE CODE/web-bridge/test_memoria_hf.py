@@ -1,5 +1,5 @@
 """OpenClaw guarda y lee en la MISMA memoria del chat Yaiwes (bucket HF, carpeta memoria/): sin sistema nuevo, via mvp.memoria."""
-import json, os, sys, unittest
+import json, os, subprocess, sys, unittest
 from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -47,6 +47,14 @@ class TestMemoriaHF(unittest.TestCase):
         with patch.dict(os.environ, {"HF_TOKEN": ""}):
             with self.assertRaises(RuntimeError):
                 memoria_hf.main(["save", "openclaw:p", "k"], "{}")
+
+    def test_el_script_se_basta_solo_sin_pythonpath(self):
+        """memoria_hf.py como lo lanza el bridge (sin PYTHONPATH): ubica solo router-mvp y chat-router/chat/backend; sin token responde error JSON corto, no ImportError."""
+        env = {"PATH": os.environ["PATH"], "HOME": "/tmp"}
+        r = subprocess.run([sys.executable, str(Path(memoria_hf.__file__).resolve()), "load", "openclaw:p", "k"], env=env, capture_output=True, text=True, timeout=60)
+        self.assertEqual(json.loads(r.stdout)["ok"], False)
+        self.assertIn("HF_TOKEN", json.loads(r.stdout)["error"])
+        self.assertNotIn("ModuleNotFoundError", r.stderr)
 
 
 if __name__ == "__main__":

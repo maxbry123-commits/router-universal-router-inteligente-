@@ -9,7 +9,7 @@ let liveRequest = null;
 let PBASE = "";  // base de los plugins (chat_async, /resultado): mismo origen en Vercel (rewrites de vercel.json) o el Space directo
 // fetch con tope: en movil (4G, pestaña en segundo plano) un fetch puede quedar colgado para siempre y el chat se queda en "Pensando" sin que el Router reciba nada
 const vivos = new Set();
-const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const reg = ac ? { ac, t0: Date.now() } : null; if (reg && !(ms >= 120000)) vivos.add(reg); /* las peticiones largas (SWE por el bridge) no se cortan al volver a la pestana */ const t = ms ? setTimeout(() => ac && ac.abort(), ms) : 0; return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => { clearTimeout(t); if (reg) vivos.delete(reg); }); };
+const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const reg = ac ? { ac, t0: Date.now() } : null; if (reg && !(ms >= 120000)) vivos.add(reg); /* las peticiones largas (SWE por el bridge) no se cortan al volver a la pestana */ const t = ms ? setTimeout(() => ac && ac.abort(), ms) : 0; if (ac && opts && opts.signal) { if (opts.signal.aborted) ac.abort(); else opts.signal.addEventListener('abort', () => ac.abort(), { once: true }); } /* senal externa (Detener): corta tambien la lectura del stream */ return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => { clearTimeout(t); if (reg) vivos.delete(reg); }); };
 // al volver a la pestaña: cortar los fetch que quedaron colgados en segundo plano; el polling sigue con el mismo proceso_id y un chat_async sin proceso_id se reintenta
 try { const cortarColgados = () => { for (const r of [...vivos]) if (Date.now() - r.t0 > 2000) { try { r.ac.abort(); } catch (e) {} } }; document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cortarColgados(); }); window.addEventListener('online', cortarColgados); window.addEventListener('pageshow', (e) => { if (e.persisted) cortarColgados(); }); } catch (e) {}  // volver a la pestana, recuperar red o volver del bfcache: los fetch colgados se cortan y el polling reintenta
 const usarProxy = () => { try { return /\.vercel\.app$/.test(location.hostname) && localStorage.getItem('riu_proxy') !== '0' && !/[?&]proxy=0/.test(location.search); } catch (e) { return false; } };
@@ -292,8 +292,9 @@ export async function api(path, options = {}) {
   try {
     const credentials = remoto(headers);
     response = await fetchT(BASE + path, { method: options.method || "GET", headers, credentials,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body) }, (path === "/chat/send" || path === "/v1/chat/completions" || path === "/web/v1/chat/completions" || (path.startsWith("/chat/swe/") && path !== "/chat/swe/capacidades")) ? 450000 : 15000);  // /chat/swe/*: cada paso espera a un agente real  // /chat/send (sin harness) espera la respuesta completa
+      body: options.body === undefined ? undefined : JSON.stringify(options.body), signal: options.signal }, (path === "/chat/send" || path === "/v1/chat/completions" || path === "/web/v1/chat/completions" || (path.startsWith("/chat/swe/") && path !== "/chat/swe/capacidades")) ? 450000 : 15000);  // /chat/swe/*: cada paso espera a un agente real  // /chat/send (sin harness) espera la respuesta completa
   } catch (error) {
+    if (error && error.name === "AbortError" && options.signal && options.signal.aborted) throw new Error("PROCESO_DETENIDO");  // Detener del usuario: no es un fallo de conexion
     window.dispatchEvent(new CustomEvent("router-connection", { detail: "Sin conexión" }));
     if (error && error.name === "AbortError") throw new Error("El Router no respondió a tiempo (puede estar despertando); reintenta en unos segundos");
     throw error;
@@ -302,6 +303,7 @@ export async function api(path, options = {}) {
     ? (envioClave ? "Acceso requerido" : "")
     : response.status >= 500 ? "Error de Router" : "Router disponible";
   if (status) window.dispatchEvent(new CustomEvent("router-connection", { detail: status }));
+  if (options.sse && response.ok && /text\/event-stream/i.test(response.headers.get("content-type") || "")) return { __sse: response };  // streaming SSE: lo lee quien lo pidio (swe-directo.js); si el servidor responde JSON, sigue el camino de siempre
   const payload = response.headers.get("content-type")?.includes("application/json")
     ? await response.json() : { detail: `HTTP ${response.status}` };
   if (!response.ok) throw new Error((response.status === 403 ? "HTTP 403: " : "") + (typeof payload.detail === "string" ? payload.detail : typeof payload.reason === "string" ? payload.reason : (payload.error && typeof payload.error.message === "string") ? ((payload.error.code ? payload.error.code + ": " : "") + payload.error.message) : `HTTP ${response.status}`));

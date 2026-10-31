@@ -7,6 +7,7 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { prepararApp, arrancar, limpiar, registrarMock, TMP } from "./helpers/bridge_app.mjs";
+import './helpers/acceso.mjs';
 
 const CONT = "Continúa exactamente donde terminó, sin repetir";
 const KH = "acceso-falso-harness-123", KGROQ = "gsk_FAKEKEYNOREAL1234567890";

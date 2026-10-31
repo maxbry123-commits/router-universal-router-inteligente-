@@ -6,6 +6,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { envConAcceso } from './acceso.mjs';
 
 const ORIGEN = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'bridge-ret-'));
@@ -37,6 +38,7 @@ function express() {
     res.statusCode = 404; res.end('not found');
   };
   app.use = (fn) => mws.push(fn);
+  app.set = () => app;
   for (const m of ['get', 'post', 'delete']) app[m] = (ruta, fn) => rutas.push({ metodo: m.toUpperCase(), ruta, fn });
   app.listen = (port, cb) => { const s = http.createServer(app).listen(port, cb); return s; };
   return app;
@@ -79,7 +81,7 @@ export async function arrancar(nombre, envExtra = {}) {
   const port = await puertoLibre();
   const state = envExtra.BRIDGE_STATE_DIR || path.join(TMP, `state-${nombre}`);
   fs.mkdirSync(state, { recursive: true });
-  const env = { PATH: process.env.PATH, HOME: TMP, TMPDIR: TMP, BRIDGE_PORT: String(port), BRIDGE_STATE_DIR: state, BRIDGE_AUTOACTUALIZAR: '0', ...envExtra };
+  const env = { PATH: process.env.PATH, HOME: TMP, TMPDIR: TMP, BRIDGE_PORT: String(port), BRIDGE_STATE_DIR: state, BRIDGE_AUTOACTUALIZAR: '0', ...envConAcceso(envExtra) };
   const p = spawn(process.execPath, ['--import', './preload.mjs', 'src/server.js'], { cwd: APP, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = '';
   p.stdout.on('data', (c) => log += c); p.stderr.on('data', (c) => log += c);

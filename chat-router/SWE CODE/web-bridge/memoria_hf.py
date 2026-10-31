@@ -1,7 +1,23 @@
 #!/usr/bin/env python3
 """OpenClaw usa la MISMA memoria del chat Yaiwes (bucket HF, memoria/<scope>.json): reutiliza mvp.memoria, sin sistema nuevo.
 Uso: memoria_hf.py save <scope> <key>  (JSON por stdin)  |  load <scope> <key>  |  search <scope> [query] [k]. El token sale de HF_TOKEN del entorno."""
-import asyncio, json, os, sys
+import asyncio, json
+import os, sys
+from pathlib import Path
+
+
+def _preparar_rutas():
+    """El script se basta solo (no depende de PYTHONPATH): ubica `mvp` en router-mvp y en chat-router/chat/backend subiendo desde __file__ (o desde RIU_REPO_ROOT)."""
+    aqui = Path(__file__).resolve()
+    raices = [Path(os.environ["RIU_REPO_ROOT"])] if os.environ.get("RIU_REPO_ROOT") else [p for p in aqui.parents[:5]]
+    for raiz in raices:
+        for rel in (("router-mvp",), ("chat-router", "chat", "backend")):
+            ruta = raiz.joinpath(*rel)
+            if ruta.is_dir() and str(ruta) not in sys.path:
+                sys.path.append(str(ruta))
+
+
+_preparar_rutas()
 from mvp import memoria
 
 

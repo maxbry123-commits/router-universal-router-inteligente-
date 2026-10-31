@@ -174,20 +174,21 @@ const resultadoDe = (r, op) => {
   if (!x || typeof x !== "object") throw new Error("GAP: SWE_HARNESS_ERROR · " + op + " sin resultado");
   return x;
 };
-async function operacion(api, op, cuerpo) {
+const DETENIDO = "PROCESO_DETENIDO";
+async function operacion(api, op, cuerpo, signal) {
   let r;
-  try { r = await api("/chat/swe/" + op, { method: "POST", body: cuerpo }); } catch (e) { const m = String((e && e.message) || e); throw new Error(m.startsWith("GAP:") ? m : "GAP: " + (/^[A-Z][A-Z0-9_]+\b/.test(m) ? m : "SWE_HARNESS_ERROR · " + m)); }
+  try { r = await api("/chat/swe/" + op, signal ? { method: "POST", body: cuerpo, signal } : { method: "POST", body: cuerpo }); } catch (e) { const m = String((e && e.message) || e); if (m === DETENIDO) throw new Error(DETENIDO); throw new Error(m.startsWith("GAP:") ? m : "GAP: " + (/^[A-Z][A-Z0-9_]+\b/.test(m) ? m : "SWE_HARNESS_ERROR · " + m)); }
   return resultadoDe(r, op);
 }
 const base = ({ task_id, sesion, proyecto }) => {
   if (!TASK_RE.test(String(task_id))) throw new Error("GAP: TASK_ID_INVALIDO");
   return { task_id, origen: "yaiwes", sesion: ident(sesion, ""), proyecto: ident(proyecto, "yaiwes") };
 };
-export const estadoTareaSwe = async (api, d) => operacion(api, "estado", base(d));
-export const reanudarTareaSwe = async (api, d) => operacion(api, "reanudar", base(d));
+export const estadoTareaSwe = async (api, d) => operacion(api, "estado", base(d), d.signal);
+export const reanudarTareaSwe = async (api, d) => operacion(api, "reanudar", base(d), d.signal);
 export const aprobarTareaSwe = async (api, d) => {  // quien aprueba es el operador autenticado en el servidor, no un campo del cuerpo; op_id = la operacion que el Harness dejo pendiente
   if (typeof d.op_id !== "string" || !OP_RE.test(d.op_id)) throw new Error("GAP: OP_ID_INVALIDO");
-  return operacion(api, "aprobar", { ...base(d), op_id: d.op_id });
+  return operacion(api, "aprobar", { ...base(d), op_id: d.op_id }, d.signal);
 };
 const lineaEvidencia = (e) => (typeof e === "string" ? e : JSON.stringify(e)).slice(0, 300);
 const texto = (v) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v));
@@ -209,44 +210,122 @@ function aRespuesta(x, tarea) {
     nota: `SWE · ${tarea.workflow} · ${tarea.agente_responde}→${tarea.agente_tool} · tarea ${idTarea} · ${estado || "?"}${x.ejecucion_s2_s3 ? " · S2/S3 " + x.ejecucion_s2_s3 : ""}` };
 }
 const textoPaso = (x) => { const plan = Array.isArray(x.plan) ? x.plan : [], p = plan[x.paso_actual] || plan[plan.length - 1]; return "SWE · " + (x.estado || "?") + (p && p.paso ? " · " + p.paso : "") + (Number.isInteger(x.paso_actual) && plan.length ? " (" + Math.min(x.paso_actual + 1, plan.length) + "/" + plan.length + ")" : ""); };
-async function conducir(api, x, tarea, alPaso) {  // avanza paso a paso (el estado se guarda en el Harness en cada paso) hasta un estado terminal o de aprobacion
+// ctl = { parar, signal }: Detener = parar y esperar. parar() se consulta antes de cada paso (no se llama a avanzar tras Detener) y signal aborta la peticion en vuelo.
+const alto = (ctl) => { if (ctl && ((typeof ctl.parar === "function" && ctl.parar()) || (ctl.signal && ctl.signal.aborted))) throw new Error(DETENIDO); };
+async function conducir(api, x, tarea, alPaso, ctl = {}) {  // avanza paso a paso (el estado se guarda en el Harness en cada paso) hasta un estado terminal o de aprobacion
   const ref = { task_id: tarea.task_id, origen: "yaiwes", sesion: tarea.sesion, proyecto: tarea.proyecto }, avisa = (v) => { try { if (alPaso) alPaso(textoPaso(v), v); } catch (e) {} };
   avisa(x);
-  for (let i = 0; i < MAX_AVANCES && !TERMINALES.includes(String(x.estado)); i++) { x = await operacion(api, "avanzar", ref); avisa(x); }
+  for (let i = 0; i < MAX_AVANCES && !TERMINALES.includes(String(x.estado)); i++) { alto(ctl); x = await operacion(api, "avanzar", ref, ctl.signal); avisa(x); }
   if (!TERMINALES.includes(String(x.estado))) throw new Error("GAP: SWE_SIN_PROGRESO · la tarea " + tarea.task_id + " sigue en " + (x.estado || "?") + "; reanúdala con el mismo task_id");
   return aRespuesta(x, tarea);
 }
-export async function enviarTareaSwe(api, { mensaje, sesion, proyecto, task_id, alPaso }) {
+export async function enviarTareaSwe(api, { mensaje, sesion, proyecto, task_id, alPaso, parar, signal }) {
+  const ctl = { parar, signal };
+  alto(ctl);
   const sel = leerSeleccion(), enCache = capVigente();
   let v = validarSeleccion(sel, await cargarCapacidades(api));
   if (!v.ok && enCache) v = validarSeleccion(sel, await cargarCapacidades(api, { forzar: true }));  // un "no disponible" viejo no se queda pegado: se vuelve a preguntar al Harness
   if (!v.ok) throw new Error("GAP: SELECCION_NO_DISPONIBLE · " + v.problemas.join(" · "));  // no se cambia en silencio a otro modelo ni agente
   const tarea = armarTarea({ sel, mensaje, sesion, proyecto, task_id });
-  return conducir(api, await operacion(api, "iniciar", tarea), tarea, alPaso);
+  alto(ctl);
+  return conducir(api, await operacion(api, "iniciar", tarea, signal), tarea, alPaso, ctl);
 }
 // el operador pulsa Aprobar: el servidor lo identifica; despues la tarea sigue desde su ultimo checkpoint (mismo task_id)
 export async function aprobarYContinuarSwe(api, d, alPaso) {
   const tarea = armarTarea({ sel: leerSeleccion(), mensaje: "(continuación)", sesion: d.sesion, proyecto: d.proyecto, task_id: base(d).task_id });
-  return conducir(api, await aprobarTareaSwe(api, d), tarea, alPaso);
+  return conducir(api, await aprobarTareaSwe(api, d), tarea, alPaso, { parar: d.parar, signal: d.signal });
 }
 
 export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecutor_tools }) {
   const h = historial.slice(-MAX_HISTORIAL);
   let claves = {}; try { claves = leerClaves(); } catch (e) {}  // las claves viajan solo en el cuerpo; nunca en errores ni en la nota
-  return { model: Object.hasOwn(REAL, model) ? REAL[model] : model, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(proyecto ? { proyecto } : {}), ...(Object.keys(claves).length ? { claves } : {}) };
+  return { model: Object.hasOwn(REAL, model) ? REAL[model] : model, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, stream: true, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(proyecto ? { proyecto } : {}), ...(Object.keys(claves).length ? { claves } : {}) };
 }
 
 // El proxy del Space solo manda /v1/* al bridge si el modelo empieza por web-/swecode-; el resto (locales HF, groq/, nvidia/) caeria en el Router
 // (400 MODEL_NOT_IN_CERTIFIED_REGISTRY). /web/* va SIEMPRE al bridge (igual que /web/v1/claves): por ahi viajan los demas ids.
 export const rutaSwe = (id) => (/^(web-|swecode-)/.test(Object.hasOwn(REAL, id) ? REAL[id] : String(id)) ? "/v1/chat/completions" : "/web/v1/chat/completions");
 
+// ---- Streaming SSE (bridge): lector tolerante a CRLF, comentarios (": keepalive"), eventos partidos entre chunks y lineas data: multiples ----
+export async function leerSSE(response, alEvento, signal) {
+  const detenido = () => !!(signal && signal.aborted);
+  const rd = response.body && typeof response.body.getReader === "function" ? response.body.getReader() : null;
+  const dec = new TextDecoder("utf-8");
+  let buf = "", pend = "", fin = false;
+  const evento = (bloque) => {
+    const datos = [];
+    for (const linea of bloque.split("\n")) {
+      if (!linea || linea[0] === ":") continue;  // comentario / keepalive
+      const m = linea.match(/^data:?(.*)$/);
+      if (m) datos.push(m[1].startsWith(" ") ? m[1].slice(1) : m[1]);
+    }
+    if (!datos.length) return;
+    const t = datos.join("\n");
+    if (t.trim() === "[DONE]") { fin = true; return; }
+    let o; try { o = JSON.parse(t); } catch (e) { return; }  // un evento roto no tumba el resto
+    alEvento(o);
+  };
+  const consumir = (texto, final) => {
+    texto = pend + texto; pend = "";
+    if (!final && texto.endsWith("\r")) { pend = "\r"; texto = texto.slice(0, -1); }  // un \r\n partido entre chunks no se cuenta como dos saltos
+    buf += texto.replace(/\r\n?/g, "\n");
+    let i;
+    while ((i = buf.indexOf("\n\n")) >= 0) { const b = buf.slice(0, i); buf = buf.slice(i + 2); evento(b); }
+    if (final && buf.trim()) { const b = buf; buf = ""; evento(b); }
+  };
+  if (!rd) { consumir(await response.text(), true); return { fin }; }
+  const cortar = () => { try { rd.cancel().catch(() => {}); } catch (e) {} };
+  if (signal) { if (signal.aborted) cortar(); else signal.addEventListener("abort", cortar, { once: true }); }
+  try {
+    for (;;) {
+      if (detenido()) throw new Error(DETENIDO);
+      let r;
+      try { r = await rd.read(); } catch (e) { if (detenido()) throw new Error(DETENIDO); throw e; }
+      if (r.done) break;
+      consumir(dec.decode(r.value, { stream: true }), false);
+      if (detenido()) throw new Error(DETENIDO);
+    }
+    consumir(dec.decode(), true);
+  } finally { if (signal) signal.removeEventListener("abort", cortar); }
+  if (detenido()) throw new Error(DETENIDO);
+  return { fin };
+}
+// junta los chat.completion.chunk en la misma forma que el JSON de /v1/chat/completions
+async function respuestaDeSSE(response, datos) {
+  const a = { texto: "", llamadas: [], fin: null, error: null, extra: {} };
+  const { fin: hecho } = await leerSSE(response, (o) => {
+    if (!o || typeof o !== "object") return;
+    for (const k of ["modelo_usado", "via_respaldo", "via_primaria"]) if (typeof o[k] === "string") a.extra[k] = o[k];
+    if (o.error && typeof o.error === "object") a.error = o.error;
+    const c = Array.isArray(o.choices) ? o.choices[0] : null;
+    if (!c || typeof c !== "object") return;
+    const d = c.delta && typeof c.delta === "object" ? c.delta : {};
+    if (typeof d.content === "string" && d.content) { a.texto += d.content; if (typeof datos.alParcial === "function") { try { datos.alParcial(a.texto); } catch (e) {} } }
+    for (const tc of Array.isArray(d.tool_calls) ? d.tool_calls : []) {
+      if (!tc || typeof tc !== "object") continue;
+      const idx = Number.isInteger(tc.index) ? tc.index : a.llamadas.length;
+      const slot = (a.llamadas[idx] = a.llamadas[idx] || { id: tc.id, type: "function", function: { name: "", arguments: "" } });
+      if (tc.id && !slot.id) slot.id = tc.id;
+      if (tc.function && typeof tc.function.name === "string" && tc.function.name) slot.function.name = tc.function.name;
+      if (tc.function && typeof tc.function.arguments === "string") slot.function.arguments += tc.function.arguments;
+    }
+    if (c.finish_reason) a.fin = c.finish_reason;
+  }, datos.signal);
+  if (a.fin === "error" && !a.error) a.error = { code: "STREAM_ERROR", message: "el servidor cerró el stream con error" };
+  if (!a.error && !a.fin && !hecho && (a.texto || a.llamadas.length)) a.error = { code: "STREAM_CORTADO", message: "el stream terminó sin finish_reason" };
+  return { ...a.extra, ...(a.error ? { error: a.error } : {}), choices: [{ message: { content: a.texto, ...(a.llamadas.length ? { tool_calls: a.llamadas.filter(Boolean) } : {}) }, finish_reason: a.error ? "error" : a.fin }] };
+}
+
 export async function enviarSwe(api, datos) {
-  const r = await api(rutaSwe(datos.model), { method: "POST", body: armar(datos) });
+  const cuerpo = armar(datos), opc = { method: "POST", body: cuerpo, sse: true };
+  if (datos.signal) opc.signal = datos.signal;
+  let r = await api(rutaSwe(datos.model), opc);
+  if (r && r.__sse) r = await respuestaDeSSE(r.__sse, datos);  // si el servidor respondio JSON normal, r ya es el JSON: camino de siempre
   const msg = (r && r.choices && r.choices[0] && r.choices[0].message) || {};
   const llamadas = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
   if (!msg.content && llamadas.length) {  // passthrough: las tools las ejecuta el cliente (OpenClaw) o el Harness; no es un fallo
     const nombres = llamadas.map((t) => (t && t.function && t.function.name) || "tool");
-    return { reply: "Tools pedidas: " + nombres.join(", "), tools: nombres, finish_reason: r.choices[0].finish_reason || "tool_calls", nota: `SWE · ${r.modelo_usado || datos.model} · tools → ${armar(datos).ejecutor_tools === "openclaw" ? "OpenClaw" : "SWE"}` };
+    return { reply: "Tools pedidas: " + nombres.join(", "), tools: nombres, finish_reason: r.choices[0].finish_reason || "tool_calls", nota: `SWE · ${r.modelo_usado || datos.model} · tools → ${cuerpo.ejecutor_tools === "openclaw" ? "OpenClaw" : "SWE"}` };
   }
   const texto = msg.content;
   if (!texto) {  // un fallo no se pinta como respuesta del modelo (entraria al historial del turno siguiente)
@@ -254,5 +333,8 @@ export async function enviarSwe(api, datos) {
     throw new Error("GAP: " + (e.code || "SIN_RESPUESTA") + (e.message ? " · " + e.message : ""));
   }
   const via = r.via_respaldo ? ` · respondió ${r.via_respaldo}` : r.via_primaria ? ` · vía ${r.via_primaria}` : "";
+  if (r.error && r.choices[0].finish_reason === "error") {  // stream cortado con texto ya entregado: se conserva lo recibido y el corte se dice en la nota (no se da por completo)
+    return { reply: texto, tools: [], finish_reason: "error", nota: `SWE · ${r.modelo_usado || datos.model}${via} · GAP: ${r.error.code || "STREAM_ERROR"}${r.error.message ? " · " + r.error.message : ""} (respuesta parcial)` };
+  }
   return { reply: texto, tools: [], finish_reason: r.choices[0].finish_reason || null, nota: `SWE · ${r.modelo_usado || datos.model}${via}` };
 }

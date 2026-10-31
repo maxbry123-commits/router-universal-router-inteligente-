@@ -9,8 +9,15 @@ const RAMA = 'banco-claves', ARCHIVO = 'banco-swe.bin';
 const local = () => path.join(process.env.BRIDGE_STATE_DIR || './state', ARCHIVO);
 
 async function gh(api, token, ruta, op = {}) {
-  const r = await fetch(api + ruta, { ...op, signal: AbortSignal.timeout(15000), headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'user-agent': 'riu-bridge', 'content-type': 'application/json' } });
+  const r = await fetch(api + ruta, { ...op, redirect: 'error', signal: AbortSignal.timeout(15000), headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'user-agent': 'riu-bridge', 'content-type': 'application/json' } });
   return { ok: r.ok, status: r.status, json: await r.json().catch(() => ({})) };
+}
+
+// una publicacion: lee el sha vigente y hace PUT (un sha desfasado da 409)
+async function subir(api, token, base) {
+  const actual = await gh(api, token, `${base}/contents/${ARCHIVO}?ref=${RAMA}`);
+  const cuerpo = { message: 'banco de claves (cifrado)', branch: RAMA, content: fs.readFileSync(local()).toString('base64'), ...(actual.ok ? { sha: actual.json.sha } : {}) };
+  return gh(api, token, `${base}/contents/${ARCHIVO}`, { method: 'PUT', body: JSON.stringify(cuerpo) });
 }
 
 export async function publicarEnGithub({ api = API(), token = process.env.GITHUB_TOKEN, repo = REPO() } = {}) {
@@ -22,9 +29,9 @@ export async function publicarEnGithub({ api = API(), token = process.env.GITHUB
       if (!m.ok) return false;
       if (!(await gh(api, token, `${base}/git/refs`, { method: 'POST', body: JSON.stringify({ ref: `refs/heads/${RAMA}`, sha: m.json.object.sha }) })).ok) return false;
     }
-    const actual = await gh(api, token, `${base}/contents/${ARCHIVO}?ref=${RAMA}`);
-    const cuerpo = { message: 'banco de claves (cifrado)', branch: RAMA, content: fs.readFileSync(local()).toString('base64'), ...(actual.ok ? { sha: actual.json.sha } : {}) };
-    return (await gh(api, token, `${base}/contents/${ARCHIVO}`, { method: 'PUT', body: JSON.stringify(cuerpo) })).ok;
+    let r = await subir(api, token, base);
+    if (!r.ok && (r.status === 409 || r.status === 422)) r = await subir(api, token, base);  // sha desfasado (otra publicacion en medio): se relee el sha y se reintenta UNA vez
+    return r.ok;
   } catch { return false; }
 }
 

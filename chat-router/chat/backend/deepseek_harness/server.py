@@ -107,6 +107,14 @@ def es_swe(modelo):
     return m in SWE_IDS or m.startswith(SWE_PREFIJOS)
 
 
+EXTERNO_PREFIJOS = ("groq/", "nvidia/")
+
+
+def es_externo(modelo):
+    """Modelo servido por un proveedor externo (Groq/NVIDIA) que el bridge sabe pedir por su id completo."""
+    return isinstance(modelo, str) and modelo.startswith(EXTERNO_PREFIJOS)
+
+
 def _bridge_url():
     u = os.environ.get("RIU_SWE_BRIDGE_URL", "http://127.0.0.1:7870").strip().rstrip("/")  # el Space arranca el bridge en :7870; RIU_SWE_BRIDGE_URL="" lo desactiva
     try:
@@ -138,6 +146,20 @@ def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
         raise RuntimeError("Bridge " + type(exc).__name__ + ": " + str(exc)[:80]) from None
     return {"texto": msg.get("content") or "", "tool_calls": msg.get("tool_calls") or [], "finish_reason": bruto["choices"][0].get("finish_reason") or "stop",
             "mensaje_asistente": msg, "modelo_respuesta": bruto.get("modelo_usado") or modelo}
+
+
+def _bridge_sin_router(mensajes, modelo):
+    """Router MVP caido: un modelo externo pedido se intenta primero por el bridge con ESE id; solo si eso falla se degrada a local, y se dice (aviso_modelo)."""
+    pedido = str(modelo or "")
+    if es_externo(pedido):
+        try:
+            return _bridge_chat(mensajes, pedido)
+        except RuntimeError:
+            pass
+    local = os.environ.get("RIU_SWE_LOCAL_MODELO", "lfm2.5-350m")
+    salida = _bridge_chat(mensajes, local)
+    salida["aviso_modelo"] = "Se pidio %s y no respondio (Router MVP caido); respondio el modelo local %s." % (pedido or "(sin modelo)", salida.get("modelo_respuesta") or local)
+    return salida
 
 
 def guardar(args):
@@ -184,7 +206,7 @@ def llm(cuerpo):
     acumulado, continuaciones, usadas = str(cuerpo.get("acumulado") or ""), 0, []  # usadas: herramientas realmente ejecutadas (diagnostico)
     tarea = re.sub(r"[^A-Za-z0-9_-]", "", str(cuerpo.get("tarea_id") or ""))[:64]  # con tarea_id, lo que ya se ejecuto no se repite si la tarea se retoma
     diario = _diario(tarea) if tarea else {}
-    t0, paso, salida = time.monotonic(), -1, {}
+    t0, paso, salida, aviso = time.monotonic(), -1, {}, {}
     while True:
         paso += 1
         try:
@@ -198,12 +220,13 @@ def llm(cuerpo):
                 except RuntimeError as exc:
                     if not _bridge_url() or not (sin_router or _router_caido(exc)):
                         raise
-                    salida = _bridge_chat(mensajes, os.environ.get("RIU_SWE_LOCAL_MODELO", "lfm2.5-350m"))  # Router MVP caido: modelos locales
+                    salida = _bridge_sin_router(mensajes, cuerpo.get("modelo"))  # Router MVP caido: el modelo pedido por el bridge si es externo; si no, modelos locales (con aviso)
         except RuntimeError:
             if not acumulado:
                 raise
             return {"texto": acumulado, "tool_calls": [], "finish_reason": "length", "herramientas_usadas": usadas,
-                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta")}
+                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta"), **aviso}
+        aviso = {"aviso_modelo": salida["aviso_modelo"]} if salida.get("aviso_modelo") else {}
         if not isinstance(salida.get("tool_calls"), list) or not isinstance(salida.get("texto"), str):
             raise RuntimeError("Router respuesta de chat invalida")
         llamadas = salida["tool_calls"]
@@ -218,7 +241,7 @@ def llm(cuerpo):
             continue
         if not llamadas or not permitidas:
             return {"texto": acumulado + salida["texto"], "tool_calls": llamadas, "finish_reason": salida.get("finish_reason"), "herramientas_usadas": usadas,
-                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta")}
+                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta"), **aviso}
         mensajes.append(salida.get("mensaje_asistente") or {"role": "assistant", "content": salida["texto"] or None, "tool_calls": llamadas})
         for llamada in llamadas:
             funcion = llamada.get("function") or {}

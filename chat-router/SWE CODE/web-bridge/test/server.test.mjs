@@ -14,6 +14,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ACCESO_TEST, envConAcceso } from './helpers/acceso.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const ORIGEN = path.resolve(AQUI, '..');
@@ -75,6 +76,7 @@ function express() {
     res.statusCode = 404; res.end('not found');
   };
   app.use = (fn) => mws.push(fn);
+  app.set = () => app;
   for (const m of ['get', 'post', 'delete']) app[m] = (ruta, fn) => rutas.push({ metodo: m.toUpperCase(), ruta, fn });
   app.listen = (port, cb) => { const s = http.createServer(app).listen(port, cb); return s; };
   return app;
@@ -142,7 +144,7 @@ async function arrancar(nombre, envExtra = {}) {
     PATH: process.env.PATH, HOME: TMP, TMPDIR: TMP,
     BRIDGE_PORT: String(port), BRIDGE_STATE_DIR: state,
     RIU_ACTIVAR_PATH: fileURLToPath(new URL('../../../SWE CODE free/activar.js', import.meta.url)),
-    ...envExtra,
+    ...envConAcceso(envExtra),
   };
   const p = spawn(process.execPath, ['--import', './preload.mjs', 'src/server.js'], { cwd: APP, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = '';
@@ -168,8 +170,8 @@ const lecciones = (srv) => { try { return fs.readFileSync(path.join(srv.state, '
 const esperar = async (fn, ms = 4000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 50)); } return null; };
 
 // ---------- fixtures ----------
-let groq, nvidia, hf, A, C, T, K, expressReal;
-const ACCESO = 'clave-de-acceso-del-chat';
+let groq, nvidia, hf, A, C, T, K, N, expressReal;
+const ACCESO = ACCESO_TEST;
 const FORMATO = 'FORMATO-DE-SALIDA-DE-PRUEBA: usa listas cortas y bloques de codigo con lenguaje.';
 
 before(async () => {
@@ -192,7 +194,8 @@ before(async () => {
   fs.writeFileSync(path.join(TMP, 'fake-banco.sh'), `#!/bin/sh\necho "$1" >> "${bancoLog}"\nif [ "$1" = "leer" ]; then echo '{"groq": [], "nvidia": []}'; elif [ "$1" = "guardar" ]; then cat > "${path.join(TMP, 'banco-guardado.json')}"; echo '{"ok": true}'; else echo '{"ok": true}'; fi\n`, { mode: 0o755 });
   const { GROQ_API_KEY: _g, GROQ_API_KEY_2: _g2, NVIDIA_API_KEY: _n, ...sinClaves } = comun;
   K = await arrancar('K', { ...sinClaves, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', RIU_API_KEY: ACCESO, RIU_CLAVES_CMD: path.join(TMP, 'fake-banco.sh'), RIU_OPENCLAW_DIR: fileURLToPath(new URL('../../../SWE CODE free', import.meta.url)), OPENCLAW_WORKSPACE_DIR: path.join(TMP, 'ws-oc') });
-  T = await arrancar('T', { ...comun, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', BRIDGE_TOKEN: 'tok-prueba' });
+  T = await arrancar('T', { ...comun, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', BRIDGE_TOKEN: 'tok-prueba', __sinAcceso: true });
+  N = await arrancar('N', { ...comun, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', __sinAcceso: true });  // sin BRIDGE_TOKEN ni claves de acceso
 });
 
 after(async () => {
@@ -612,7 +615,7 @@ test('A1-4. con BRIDGE_TOKEN: sin token 401, con token 200; /health no expone co
   const x = await fetch(T.base + '/v1/models', { headers: { 'x-bridge-key': 'tok-prueba' } }); assert.equal(x.status, 200);
   const h = await (await fetch(T.base + '/health')).text(); assert.ok(!h.includes('@x.com'), 'no debe mostrar correos');
   const q = await (await fetch(T.base + '/v1/queue', { headers: { authorization: 'Bearer tok-prueba' } })).text(); assert.ok(!q.includes('@x.com'));
-  assert.equal((await fetch(A.base + '/v1/models')).status, 200, 'sin BRIDGE_TOKEN todo sigue abierto como antes');
+  assert.equal((await fetch(A.base + '/v1/models', { headers: { 'x-api-key': '' } })).status, 401, 'sin BRIDGE_TOKEN tampoco queda abierto: pide la clave de acceso');
 });
 
 test('A1-17. model con caracteres raros se rechaza (no entra a cabeceras ni lecciones)', async () => {
@@ -649,13 +652,13 @@ test('A1-F1b. BRIDGE_AUTORETOMAR=1: al arrancar retoma solo las secciones a medi
 
 // ---------- panel de claves del chat: /v1/claves ----------
 const claves = async (srv, metodo, body, clave = ACCESO) => {
-  const r = await fetch(srv.base + '/v1/claves', { method: metodo, headers: { 'content-type': 'application/json', ...(clave ? { 'x-api-key': clave } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
+  const r = await fetch(srv.base + '/v1/claves', { method: metodo, headers: { 'content-type': 'application/json', 'x-api-key': clave }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
   return { status: r.status, texto: await r.clone().text(), json: await r.json().catch(() => null) };
 };
 
 test('CL-1. sin ninguna clave de acceso configurada en el bridge -> 503 SIN_CLAVE_DE_ACCESO (tambien con BRIDGE_TOKEN valido)', async () => {
   for (const m of ['GET', 'POST', 'DELETE']) {
-    const r = await claves(C, m, m === 'POST' ? { groq: 'gsk-abcdefgh' } : undefined);
+    const r = await claves(N, m, m === 'POST' ? { groq: 'gsk-abcdefgh' } : undefined);
     assert.equal(r.status, 503); assert.equal(r.json.error.code, 'SIN_CLAVE_DE_ACCESO');
   }
   const t = await fetch(T.base + '/v1/claves', { headers: { authorization: 'Bearer tok-prueba', 'x-api-key': 'lo-que-sea' } });
@@ -674,7 +677,7 @@ test('CL-2. sin x-api-key o incorrecta -> 401 NO_AUTORIZADO y no cambia nada', a
 });
 
 test('CL-3. se aceptan tambien RIU_PUBLIC_CHAT_KEY / RIU_MCP_KEY / RIU_ROUTER_API_KEY', async () => {
-  const P = await arrancar('P', { WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', RIU_PUBLIC_CHAT_KEY: 'publica-1234', RIU_MCP_KEY: 'mcp-1234', RIU_ROUTER_API_KEY: 'router-1234', RIU_CLAVES_CMD: path.join(TMP, 'fake-banco.sh') });
+  const P = await arrancar('P', { __sinAcceso: true, WEB_ACCOUNTS: 'a@x.com', WEB_PASS: 'pw', RIU_PUBLIC_CHAT_KEY: 'publica-1234', RIU_MCP_KEY: 'mcp-1234', RIU_ROUTER_API_KEY: 'router-1234', RIU_CLAVES_CMD: path.join(TMP, 'fake-banco.sh') });
   for (const k of ['publica-1234', 'mcp-1234', 'router-1234']) assert.equal((await claves(P, 'GET', undefined, k)).status, 200, k);
   assert.equal((await claves(P, 'GET', undefined, 'otra-cosa')).status, 401);
 });
@@ -723,10 +726,10 @@ test('CL-5. POST valida: maximo 20 por proveedor, string de 8 a 300 sin espacios
 // ---------- configuracion vigente de OpenClaw: GET /v1/openclaw (Vercel la lee por /web/v1/openclaw, el Space por el proxy) ----------
 test('OC-1. GET /v1/openclaw exige la clave de acceso del chat; sin ella o con otra -> 401; sin clave configurada -> 503', async () => {
   for (const k of ['', 'incorrecta']) {
-    const r = await fetch(K.base + '/v1/openclaw', { headers: k ? { 'x-api-key': k } : {} });
+    const r = await fetch(K.base + '/v1/openclaw', { headers: { 'x-api-key': k } });
     assert.equal(r.status, 401, `"${k}"`);
   }
-  assert.equal((await fetch(C.base + '/v1/openclaw')).status, 503);
+  assert.equal((await fetch(N.base + '/v1/openclaw')).status, 503);
 });
 
 test('OC-2. devuelve provider/modelos/modos del repo + ids vivos + conteos + workspace; jamas api_key ni valores de claves', async () => {

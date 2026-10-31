@@ -68,15 +68,21 @@ def _verificar_opciones(opciones, controles):
     if isinstance(opciones, dict):
         _verificar_llamadas(opciones.get("tools") or [], controles)
 
+def _igual(a, b):
+    """Comparacion en tiempo constante sobre BYTES: hmac.compare_digest con str no ASCII lanza TypeError (500); asi cualquier clave rara es simplemente invalida."""
+    return hmac.compare_digest(a.encode("utf-8", "surrogatepass"), b.encode("utf-8", "surrogatepass"))
 def autorizado(authorization=None, x_api_key=None):
     esperadas = [os.environ[n] for n in bank.ACCESO if os.environ.get(n)]  # cualquiera de las variables de acceso configuradas abre la puerta (p. ej. RIU_MCP_KEY para pruebas)
     bearer = authorization[7:] if authorization and authorization.lower().startswith("bearer ") else None
-    return any(hmac.compare_digest(v, e) for e in esperadas for v in (bearer, x_api_key) if isinstance(v, str))
-def verificar(authorization: str | None = Header(None),
-              x_api_key: str | None = Header(None), key: str | None = Query(None)):  # ?key= para clientes MCP que solo aceptan una URL
-    if not autorizado(authorization, x_api_key or key):
-        recibida = "recibido: X-API-Key %d car., Bearer %d car." % (len(x_api_key or key or ""), len(authorization[7:]) if authorization else 0)  # solo longitudes de lo que envio el cliente: ayuda a ver si el navegador manda la clave completa
-        raise HTTPException(status_code=401, detail="clave de acceso invalida (" + recibida + ")")
+    return any(_igual(v, e) for e in esperadas for v in (bearer, x_api_key) if isinstance(v, str))
+def _rechazar():
+    raise HTTPException(status_code=401, detail="clave de acceso invalida")  # sin longitudes ni pistas de lo recibido
+def verificar(authorization: str | None = Header(None), x_api_key: str | None = Header(None)):
+    if not autorizado(authorization, x_api_key):
+        _rechazar()
+def verificar_mcp(authorization: str | None = Header(None), x_api_key: str | None = Header(None), key: str | None = Query(None)):
+    if not autorizado(authorization, x_api_key or key):  # ?key= SOLO aqui (clientes MCP que solo aceptan una URL); una clave en la URL acaba en logs y referers, no se acepta en el resto
+        _rechazar()
 def clave_harness():
     banco = app.state.banco
     clave = banco.leer("RIU_API_KEY") if banco else None
@@ -669,7 +675,7 @@ async def _delegar(nombre, args):
     msgs = ([{"role": "system", "content": sistema}] if sistema else []) + [{"role": "user", "content": str(args.get("mensaje"))[:20000]}]
     salida = await _llamar_modelo(msgs, modelo, None)
     return {"agente": args.get("nombre"), "modelo": modelo, "texto": salida["texto"]}
-mcp_route.montar(app, verificar, chat, almacen, CONTROL, _delegar)
+mcp_route.montar(app, verificar_mcp, chat, almacen, CONTROL, _delegar)
 # --- G5b: Harness /invoke montado en este mismo Space (HF pide PRO para un Space nuevo). Ruta: chat -> Harness -> HTTP -> router ---
 from plugins.deepseek_harness.server import app as harness_app  # noqa: E402 - el Harness no importa mvp/; llm sigue por HTTP a fichas_qwen/call/llm
 app.mount("/plugins/deepseek_harness", harness_app)  # RIU_DEEPSEEK_HARNESS_URL = https://<space>/plugins/deepseek_harness

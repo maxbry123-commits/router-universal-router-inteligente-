@@ -7,6 +7,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { prepararApp, arrancar, limpiar, registrarMock, TMP } from "./helpers/bridge_app.mjs";
+import './helpers/acceso.mjs';
 
 const CONT = "Continúa exactamente donde terminó, sin repetir";
 const ev = (o) => `data: ${typeof o === "string" ? o : JSON.stringify(o)}\n\n`;
