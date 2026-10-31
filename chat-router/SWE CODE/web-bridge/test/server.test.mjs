@@ -244,7 +244,7 @@ test('2. web falla -> responde respaldo (Groq) con via_respaldo, aviso y header 
   assert.equal(r.json.via_respaldo, 'groq');
   assert.equal(r.headers.get('x-via-respaldo'), 'groq');
   assert.equal(r.json.aviso, 'SELECTOR_BROKEN');
-  assert.equal(groq.hits.length, 1);
+  assert.equal(groq.hits.filter((h) => h.url === '/chat/completions').length, 1);
   assert.ok(lecciones(A).some((l) => l.codigo === 'SELECTOR_BROKEN' && l.resultado === 'PASS' && /groq/.test(l.accion)));
   // fallback dentro de la web: probo los 3 modelos antes de escalar
   const modelos = llamadasWeb(A).slice(-3).map((c) => c.modelo);
