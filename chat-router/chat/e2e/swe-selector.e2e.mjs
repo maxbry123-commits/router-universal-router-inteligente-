@@ -380,6 +380,82 @@ async function enviar(p, texto) {
     ok('H12 Aprobar llama a /chat/swe/aprobar con el task_id y el op_id pendiente, sin campo aprobacion ni operador', !!ap && !!ap.body.task_id && ap.body.op_id === '0123456789abcdef' && !('aprobacion' in ap.body) && !('operador' in ap.body), JSON.stringify(ap && ap.body));
     ok('H sin errores JS en la pagina', ph.errs.length === 0, ph.errs.join(' | '));
     await ph.context().close();
+
+    // ======== I) hoja compacta: un solo juego de controles de agente, X siempre visible, cuerpo con scroll, secciones plegables, no instalados agrupados ========
+    const estI = { llamadas: [], catalogoFalla: false, capacidades: { harness: 'ok', agentes: { 'swe-agent': { disponible: true }, codex: { disponible: true } }, workflows: {}, modelos: {} } };
+    const pi = await nuevaPagina(browser, estI);
+    await abrirChat(pi, base);
+    const SEL_AGENTE = '[data-swe-ctl], [data-salida], [data-swe-agentico], .swe-ctl, .sh-salida';
+    const dentro = (id) => pi.evaluate(([i, q]) => { const s = document.getElementById(i); return s ? s.querySelectorAll(q).length : -1; }, [id, SEL_AGENTE]);
+    const abrirI = async (sel, id) => { await pi.$eval(sel, (e) => e.click()); await pi.waitForSelector('#sh-' + id + ' .swe-cuerpo', { state: 'visible', timeout: 8000 }); await pi.waitForTimeout(500); };
+    const cerrarI = () => pi.evaluate(() => document.querySelectorAll('.sheet').forEach((s) => { s.hidden = true; }));
+    // I1) Groq y NVIDIA solo eligen modelo: ni un control de agente/ejecutor/workflow/modo agentico/salida
+    await pi.$eval('#sel-groq', (e) => e.click()); await pi.waitForSelector('#sh-groq:not([hidden])', { timeout: 8000 }); await pi.waitForTimeout(400);
+    ok('I1 la hoja de Groq no trae controles de agente/ejecutor/workflow/agentico/salida', (await dentro('sh-groq')) === 0, String(await dentro('sh-groq')));
+    ok('I1 la hoja de Groq tampoco menciona AGENTE QUE RESPONDE/EJECUTA ni «Salida:»', await pi.evaluate(() => !/AGENTE QUE|WORKFLOW|Salida:|MODO AG/i.test(document.getElementById('sh-groq').innerText)));
+    await cerrarI();
+    await pi.$eval('#sel-ngt', (e) => e.click()); await pi.waitForSelector('#sh-ficha:not([hidden])', { timeout: 8000 }); await pi.waitForTimeout(400);
+    ok('I1 la hoja de NVIDIA (ficha) no trae controles de agente/ejecutor/workflow/agentico/salida', (await dentro('sh-ficha')) === 0 && await pi.evaluate(() => !/AGENTE QUE|WORKFLOW|Salida:|MODO AG/i.test(document.getElementById('sh-ficha').innerText)), String(await dentro('sh-ficha')));
+    await cerrarI();
+    // I2) un solo juego en todo el documento (SWE CODE y SWEN CODE free comparten el mismo bloque), y solo dentro de la hoja abierta
+    await abrirI('#sel-swen', 'swen-code-free');
+    const uno = await pi.evaluate(() => ({ ctl: document.querySelectorAll('.swe-ctl').length, ag: document.querySelectorAll('[data-swe-ctl="agente_responde"]').length, ej: document.querySelectorAll('[data-swe-ctl="agente_tool"]').length, wf: document.querySelectorAll('[data-swe-ctl="workflow"]').length, agentico: document.querySelectorAll('[data-swe-agentico]').length, enHoja: document.querySelectorAll('#sh-swen-code-free .swe-ctl').length, salidaHoja: document.querySelectorAll('#sh-swen-code-free [data-salida]').length }));
+    ok('I2 SWEN CODE free: un solo bloque de agente/ejecutor/workflow/agentico, con UNA fila de Salida (2 botones)', uno.ctl === 1 && uno.ag === 1 && uno.ej === 1 && uno.wf === 1 && uno.agentico === 1 && uno.enHoja === 1 && uno.salidaHoja === 2, JSON.stringify(uno));
+    await cerrarI(); await abrirI('#sel-swe', 'swe-code');
+    const uno2 = await pi.evaluate(() => ({ ctl: document.querySelectorAll('.swe-ctl').length, enSwe: document.querySelectorAll('#sh-swe-code .swe-ctl').length, enSwen: document.querySelectorAll('#sh-swen-code-free .swe-ctl').length, rojo: document.querySelectorAll('.sh-salida').length }));
+    ok('I2 SWE CODE: el mismo (unico) bloque se muestra ahora aqui y ya no en SWEN CODE free', uno2.ctl === 1 && uno2.enSwe === 1 && uno2.enSwen === 0 && uno2.rojo === 0, JSON.stringify(uno2));
+    await cerrarI();
+    // I3) cabecera pegajosa con X visible y tocable en 390x844 y 1280x800, con la hoja desplazada; Escape y fondo cierran
+    for (const [w, h] of [[390, 844], [1280, 800], [390, 600]]) {
+      await pi.setViewportSize({ width: w, height: h });
+      for (const [sel, id] of [['#sel-swen', 'swen-code-free'], ['#sel-swe', 'swe-code']]) {
+        await abrirI(sel, id);
+        await pi.evaluate((i) => document.querySelectorAll('#sh-' + i + ' details.sh-sec').forEach((d) => { d.open = true; }), id);  // todo desplegado: el peor caso de altura
+        await pi.waitForTimeout(250);
+        const med = () => pi.evaluate((i) => { const s = document.getElementById('sh-' + i), x = s.querySelector('.sh-cerrar'), c = s.querySelector('.va-caja'), cab = s.querySelector('.va-head'), cu = s.querySelector('.swe-cuerpo'); const r = x.getBoundingClientRect(), cr = c.getBoundingClientRect(); return { x: [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)], enVista: r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth, tocable: document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === x, cajaDentro: cr.top >= 0 && cr.bottom <= innerHeight + 1, pos: getComputedStyle(cab).position, top: getComputedStyle(cab).top, scroll: cu.scrollHeight > cu.clientHeight, st: cu.scrollTop, titulo: s.querySelector('.va-head strong').textContent }; }, id);
+        const m0 = await med();
+        ok(`I3 ${w}x${h} ${id}: X dentro del viewport, tocable (>=44px) y la caja no desborda`, m0.enVista && m0.tocable && m0.x[2] >= 44 && m0.x[3] >= 44 && m0.cajaDentro, JSON.stringify(m0));
+        ok(`I3 ${w}x${h} ${id}: cabecera position:sticky; top:0 con titulo`, m0.pos === 'sticky' && m0.top === '0px' && /SWE/.test(m0.titulo), JSON.stringify(m0));
+        ok(`I4 ${w}x${h} ${id}: el cuerpo scrollea dentro de la hoja (todo desplegado)`, m0.scroll || h >= 800 && w >= 1280, JSON.stringify(m0));
+        if (m0.scroll) {
+          await pi.evaluate((i) => { const cu = document.querySelector('#sh-' + i + ' .swe-cuerpo'); cu.scrollTop = cu.scrollHeight; }, id); await pi.waitForTimeout(150);
+          const m1 = await med();
+          ok(`I4 ${w}x${h} ${id}: tras scroll al final el cuerpo se movio y la X sigue visible y tocable`, m1.st > 0 && m1.enVista && m1.tocable && m1.x.join() === m0.x.join(), JSON.stringify([m0.x, m1]));
+        }
+        await pi.mouse.click(m0.x[0] + m0.x[2] / 2, m0.x[1] + m0.x[3] / 2);
+        ok(`I3 ${w}x${h} ${id}: pulsar la X cierra la hoja`, await pi.evaluate((i) => document.getElementById('sh-' + i).hidden, id));
+      }
+    }
+    await pi.setViewportSize({ width: 390, height: 844 });
+    await abrirI('#sel-swen', 'swen-code-free'); await pi.keyboard.press('Escape');
+    ok('I3 Escape cierra la hoja', await pi.evaluate(() => document.getElementById('sh-swen-code-free').hidden));
+    await abrirI('#sel-swen', 'swen-code-free'); await pi.mouse.click(195, 8);
+    ok('I3 clic en el fondo cierra la hoja', await pi.evaluate(() => document.getElementById('sh-swen-code-free').hidden));
+    // I5) secciones plegables Modelo | Agentes | Workflow y salida, estado persistido en localStorage y recordado tras recargar
+    await abrirI('#sel-swen', 'swen-code-free');
+    const secs = () => pi.evaluate(() => [...document.querySelectorAll('#sh-swen-code-free details.sh-sec')].map((d) => [d.dataset.sec, d.open, d.querySelector('summary').firstElementChild ? d.querySelector('summary').firstElementChild.textContent.trim() : '']));
+    let s0 = await secs();
+    ok('I5 tres secciones plegables Modelo | Agentes | Workflow y salida; por defecto solo Modelo abierta', JSON.stringify(s0.map((x) => [x[0], x[1]])) === JSON.stringify([['modelo', true], ['agentes', false], ['workflow', false]]) && /Modelo/.test(s0[0][2]) && /Agentes/.test(s0[1][2]) && /Workflow y salida/.test(s0[2][2]), JSON.stringify(s0));
+    await pi.click('#sh-swen-code-free details[data-sec="agentes"] > summary'); await pi.click('#sh-swen-code-free details[data-sec="modelo"] > summary'); await pi.waitForTimeout(300);
+    ok('I5 plegar/desplegar con el dedo cambia el estado y se guarda en localStorage', await pi.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('riu_swe_secciones'))) === JSON.stringify({ modelo: false, agentes: true, workflow: false })), await pi.evaluate(() => localStorage.getItem('riu_swe_secciones')));
+    ok('I5 el contenido de una seccion plegada no se ve (la lista de modelos) y el de la desplegada si', await pi.evaluate(() => !document.querySelector('#sh-swen-code-free-lista').getClientRects().length && !!document.querySelector('#sh-swen-code-free [data-swe-ctl="agente_responde"]').getClientRects().length));
+    await pi.reload(); await pi.waitForSelector('#sel-swen', { state: 'attached', timeout: 20000 }); await pi.waitForTimeout(1200);
+    await abrirI('#sel-swen', 'swen-code-free');
+    s0 = await secs();
+    ok('I5 tras recargar las secciones recuerdan su estado', JSON.stringify(s0.map((x) => [x[0], x[1]])) === JSON.stringify([['modelo', false], ['agentes', true], ['workflow', false]]), JSON.stringify(s0));
+    // I6) agentes: disponibles arriba, no instalados agrupados al final (select deshabilitado) y UNA linea gris «No instalados: …»
+    const ag = await pi.evaluate(() => { const s = document.querySelector('#sh-swen-code-free select[data-swe-ctl="agente_responde"]'); const li = document.querySelector('#sh-swen-code-free .swe-noinst'); const og = [...s.querySelectorAll('optgroup')].map((g) => [g.label, [...g.querySelectorAll('option')].map((o) => [o.value, o.disabled])]); const libres = [...s.children].filter((n) => n.tagName === 'OPTION').map((o) => [o.value, o.disabled]); const radios = document.querySelectorAll('#sh-swen-code-free input[type=radio]').length; return { libres, og, radios, linea: li && li.textContent, lineas: document.querySelectorAll('#sh-swen-code-free .swe-noinst').length, alto: li && Math.round(li.getBoundingClientRect().height), color: li && getComputedStyle(li).color, todoDeshab: [...s.querySelectorAll('option')].filter((o) => !/swe-agent|codex/.test(o.value)).every((o) => o.disabled) }; });
+    ok('I6 disponibles arriba (SWE-agent, Codex) habilitados; los 4 no instalados en un grupo al final y deshabilitados', JSON.stringify(ag.libres) === JSON.stringify([['swe-agent', false], ['codex', false]]) && ag.og.length === 1 && /No instalados/.test(ag.og[0][0]) && JSON.stringify(ag.og[0][1]) === JSON.stringify([['openclaw', true], ['openhands', true], ['opencode', true], ['claude-code', true]]) && ag.todoDeshab, JSON.stringify(ag));
+    ok('I6 una sola linea gris «No instalados: OpenClaw, OpenHands, OpenCode, Claude Code» (sin radios ni «— NO DISPONIBLE»)', ag.lineas === 1 && ag.linea === 'No instalados: OpenClaw, OpenHands, OpenCode, Claude Code' && ag.radios === 0 && ag.alto <= 40 && !(await pi.evaluate(() => /— NO DISPONIBLE/.test(document.getElementById('sh-swen-code-free').innerText))), JSON.stringify(ag));
+    // I7) Salida: una sola fila segmentada «Salida: SWE-agent | OpenClaw» en Workflow y salida
+    await pi.click('#sh-swen-code-free details[data-sec="workflow"] > summary'); await pi.waitForTimeout(250);
+    const sg = await pi.evaluate(() => { const f = document.querySelector('#sh-swen-code-free .swe-seg'); const b = f ? [...f.querySelectorAll('[data-salida]')] : []; const r = b.map((x) => x.getBoundingClientRect()); return { n: b.length, textos: b.map((x) => x.textContent.trim()), aria: b.map((x) => x.getAttribute('aria-label')), mismaFila: r.length === 2 && Math.abs(r[0].top - r[1].top) < 2, alto: r.map((x) => Math.round(x.height)), grupo: f && f.getAttribute('aria-label'), fila: f && f.parentElement.textContent.replace(/\s+/g, ' ').trim().slice(0, 40) }; });
+    ok('I7 control segmentado de Salida en una sola fila con SWE-agent | OpenClaw y area tactil >= 44px', sg.n === 2 && JSON.stringify(sg.textos) === JSON.stringify(['SWE-agent', 'OpenClaw']) && JSON.stringify(sg.aria) === JSON.stringify(['Salida: SWE-agent', 'Salida: OpenClaw']) && sg.mismaFila && sg.alto.every((a) => a >= 44), JSON.stringify(sg));
+    await pi.click('#sh-swen-code-free .swe-seg [data-salida="openclaw"]');
+    ok('I7 el segmentado conserva el contrato: localStorage ejecutor_tools=openclaw y AGENTE QUE EJECUTA=OpenClaw', await pi.evaluate(() => localStorage.getItem('riu_swe_ejecutor_tools') === 'openclaw' && JSON.parse(localStorage.getItem('riu_swe_seleccion')).agente_tool === 'openclaw' && document.querySelector('#sh-swen-code-free .swe-seg [data-salida="openclaw"]').getAttribute('aria-pressed') === 'true'));
+    if (process.env.SHOT_DIR) await pi.screenshot({ path: path.join(process.env.SHOT_DIR, 'swe-hoja-390.png') });  // revision visual opcional (SHOT_DIR=/tmp/x)
+    ok('I sin errores JS en la pagina', pi.errs.length === 0, pi.errs.join(' | '));
+    await pi.context().close();
   } finally {
     await browser.close().catch(() => {});
     await new Promise((r) => srv.close(() => r())); srv.closeAllConnections && srv.closeAllConnections();

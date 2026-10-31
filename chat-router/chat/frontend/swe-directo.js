@@ -117,6 +117,27 @@ export function estadoOpcion(cap, tipo, id, modelo) {
   if (tipo === "agente" && modelo && Array.isArray(e.modelos) && !e.modelos.includes(modelo)) return { ok: false, motivo: "incompatible con " + modelo };
   return { ok: true, motivo: "" };
 }
+// Hoja compacta: disponibles arriba; lo que no esta conectado se agrupa aparte (no instalado / incompatible con el modelo) y se muestra en UNA linea, no como filas largas.
+export function agruparOpciones(cap, tipo, lista, modelo) {
+  const g = { ok: [], noInstalado: [], incompatible: [] };
+  for (const [id, etq] of lista) {
+    const st = estadoOpcion(cap, tipo, id, modelo), x = { id, etq, motivo: st.motivo };
+    (st.ok ? g.ok : /^incompatible/.test(st.motivo) ? g.incompatible : g.noInstalado).push(x);
+  }
+  return g;
+}
+export const lineaNoInstalados = (g) => (g.noInstalado.length ? "No instalados: " + g.noInstalado.map((x) => x.etq).join(", ") : "");
+// Secciones plegables de la hoja (Modelo | Agentes | Workflow y salida): el estado abierto/cerrado se guarda en localStorage.
+export const SECCIONES_DEFECTO = { modelo: true, agentes: false, workflow: false };
+const K_SECC = "riu_swe_secciones";
+export function leerSecciones() {
+  let o = {}; try { o = JSON.parse(localStorage.getItem(K_SECC) || "{}") || {}; } catch (e) {}
+  return Object.fromEntries(Object.entries(SECCIONES_DEFECTO).map(([k, v]) => [k, typeof o[k] === "boolean" ? o[k] : v]));
+}
+export function guardarSeccion(id, abierta) {
+  const s = leerSecciones(); if (!Object.hasOwn(SECCIONES_DEFECTO, id)) return s;
+  s[id] = !!abierta; try { localStorage.setItem(K_SECC, JSON.stringify(s)); } catch (e) {} return s;
+}
 const nombreDe = (lista, id) => (lista.find((x) => x[0] === id) || [id, id])[1];
 export function validarSeleccion(sel, cap) {
   if (!requiereHarness(sel)) return { ok: true, problemas: [] };
