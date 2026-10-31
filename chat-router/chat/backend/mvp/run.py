@@ -129,7 +129,7 @@ def main():
     print("MVP commit: " + (ARRANQUE or "desconocido"), flush=True)
     _iniciar_hilo()
     import uvicorn
-    uvicorn.run("mvp.app:app", host="0.0.0.0", port=7860)
+    uvicorn.run("mvp.app:app", host="0.0.0.0", port=int(os.environ.get("PORT") or 7860))  # el Space lo lanza con PORT=7861 (detras de su proxy); boot.sh detecta esta linea
 
 
 if __name__ == "__main__":

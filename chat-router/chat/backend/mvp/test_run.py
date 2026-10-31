@@ -140,6 +140,15 @@ class TestAutopull(unittest.TestCase):
                 run._vigilar()
         dormir.assert_called_once_with(60)
 
+    def test_puerto_sale_de_PORT_para_correr_detras_del_proxy_del_space(self):
+        """boot.sh solo lanza `python -m mvp.run` (con autopull) si run.py lee PORT; si no, arranca uvicorn pelado y el Space nunca se actualiza."""
+        import re
+        self.assertTrue(re.search(r"environ.*PORT", Path(run.__file__).read_text()), "boot.sh no detecta PORT en run.py")
+        with patch.dict(os.environ, {"PORT": "7861"}), patch.object(run, "_head", return_value="abc123"), \
+             patch.object(run, "_iniciar_hilo"), patch.dict(sys.modules, {"uvicorn": Mock()}), patch("builtins.print"):
+            run.main()
+            sys.modules["uvicorn"].run.assert_called_once_with("mvp.app:app", host="0.0.0.0", port=7861)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
