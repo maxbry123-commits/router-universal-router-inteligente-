@@ -12,7 +12,7 @@ const entorno = () => Object.fromEntries(['PATH', 'HOME', 'PYTHONPATH', 'LANG', 
   .filter(k => process.env[k] !== undefined).map(k => [k, process.env[k]]));
 
 // estado para diagnosticar (nunca valores): ultima llamada al helper python y si el banco local existe
-const diagPy = { accion: null, ok: null, err: null };
+const diagPy = { accion: null, ok: null, err: null, detalle: null };
 export function diagnosticoBanco(env = process.env) {
   const ruta = require_ruta(env); let local = null;
   try { local = fs.statSync(ruta).size; } catch { /* no existe */ }
@@ -25,7 +25,7 @@ function correr(args, stdin) {
     const cmd = process.env.RIU_CLAVES_CMD;
     const [bin, argv] = cmd ? [cmd, args] : [process.env.RIU_PYTHON || 'python3', [SCRIPT, ...args]];
     const p = execFile(bin, argv, { timeout: 15000, env: cmd ? process.env : entorno() }, (err, out, errout) => {
-      diagPy.accion = args[0]; diagPy.ok = !err; diagPy.err = err ? String(errout || err.message || err.code || '').trim().split('\n').slice(-1)[0].slice(0, 160) : null;
+      if (args[0] !== 'diagnostico') diagPy.accion = args[0]; if (args[0] !== 'diagnostico') diagPy.ok = !err; if (args[0] !== 'diagnostico') diagPy.err = err ? String(errout || err.message || err.code || '').trim().split('\n').slice(-1)[0].slice(0, 160) : null;
       resolve(err ? null : String(out));
     });
     p.stdin.on('error', () => {}); p.stdin.end(stdin || '');
@@ -62,6 +62,7 @@ export function vigilarBanco(intervaloMs = 60000, { traer = traerDeGithub, carga
   const vuelta = async () => {
     await traer().catch(() => false);
     if ((await cargar()) === 0 && await traer({ forzar: true }).catch(() => false)) await cargar();  // banco local vacio o ilegible: el de GitHub manda
+    try { diagPy.detalle = JSON.parse(await correr(['diagnostico'])); } catch { /* solo diagnostico */ }
   };
   const t = setInterval(() => { vuelta().catch(() => {}); }, intervaloMs); t.unref();
   return t;

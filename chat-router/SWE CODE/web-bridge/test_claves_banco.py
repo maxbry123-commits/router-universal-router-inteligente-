@@ -40,6 +40,16 @@ class TestClavesBanco(unittest.TestCase):
         with patch.dict(os.environ, {"RIU_API_KEY": "otra-distinta", "RIU_PUBLIC_CHAT_KEY": "clave-publica-del-chat"}):
             self.assertEqual(claves_banco.leer()["groq"], ["gsk-con-otra-var"])
 
+    def test_diagnostico_solo_cuenta_nunca_valores(self):
+        b = bank.abrir(self.propio, "acceso-prueba"); b.guardar("GROQ_API_KEY", "gsk-secreta-1"); b.guardar("NVIDIA_API_KEY", "nv-secreta-1")
+        d = claves_banco.diagnostico()
+        self.assertEqual((d["propio"]["existe"], d["propio"]["abre_con"], d["propio"]["groq"], d["propio"]["nvidia"]), (True, 0, 1, 1))
+        self.assertFalse(d["router"]["existe"])
+        self.assertNotIn("secreta", json.dumps(d))
+        bank.abrir(self.router, "otra-clave")  # banco del Router cifrado con otra clave: no abre, y no revienta
+        d = claves_banco.diagnostico()
+        self.assertTrue(d["router"]["existe"]); self.assertIsNone(d["router"]["abre_con"]); self.assertIn("error", d["router"])
+
     def test_sin_clave_de_acceso_o_banco_inexistente_no_revienta(self):
         with patch.dict(os.environ, {"RIU_API_KEY": ""}):
             self.assertEqual(claves_banco.leer(), {"groq": [], "nvidia": []})

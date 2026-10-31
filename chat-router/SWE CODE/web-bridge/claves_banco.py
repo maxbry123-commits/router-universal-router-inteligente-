@@ -56,6 +56,27 @@ def leer():
     return out
 
 
+def diagnostico():
+    """Solo estado (existe, bytes, con que variable de acceso abre, cuantas claves): sirve para saber por que un banco no aporta, nunca devuelve valores."""
+    out = {}
+    for etiqueta, ruta in (("router", _ruta_router()), ("propio", _ruta_propia())):
+        d = {"existe": os.path.exists(ruta), "bytes": os.path.getsize(ruta) if os.path.exists(ruta) else 0, "abre_con": None}
+        if d["existe"]:
+            for i, clave in enumerate(_candidatas()):
+                try:
+                    b = bank.abrir(ruta, clave)
+                except (ValueError, OSError) as exc:
+                    d["error"] = str(exc)[:60]
+                    continue
+                d["abre_con"] = i; d.pop("error", None)
+                d["groq"] = sum(1 for n in b.nombres() if (m := PATRON.fullmatch(n)) and m.group(1) == "GROQ")
+                d["nvidia"] = sum(1 for n in b.nombres() if (m := PATRON.fullmatch(n)) and m.group(1) == "NVIDIA")
+                break
+        out[etiqueta] = d
+    out["accesos"] = len(_candidatas())
+    return out
+
+
 def guardar(claves):
     b = _abrir(_ruta_propia(), crear=True)
     if not b:
@@ -84,6 +105,8 @@ if __name__ == "__main__":
             print(json.dumps(leer()))
         elif sys.argv[1:2] == ["guardar"]:
             guardar(json.loads(sys.stdin.read() or "{}")); print(json.dumps({"ok": True}))
+        elif sys.argv[1:2] == ["diagnostico"]:
+            print(json.dumps(diagnostico()))
         elif sys.argv[1:2] == ["borrar"]:
             borrar(); print(json.dumps({"ok": True}))
         else:
