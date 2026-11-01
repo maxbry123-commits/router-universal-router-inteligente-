@@ -235,9 +235,10 @@ async function ejecutarTool({ t, args, accion }, { env, fetchFn }) {
   // ok=false o un resultado con error. No anunciar ok:true a OpenClaw ante fallos.
   if (!j || typeof j !== 'object') throw Object.assign(new Error('ROUTER_RESPUESTA_INVALIDA'), { http: 502 });
   const resultado = j.status === 'ok' && Object.prototype.hasOwnProperty.call(j, 'result') ? j.result : j;
-  const fallo = j.error || j.ok === false || j.status === 'degraded' || j.status === 'error'
-    || (resultado && typeof resultado === 'object' && (resultado.ok === false || resultado.status === 'degraded'
-        || resultado.status === 'error' || resultado.error));
+  const esError = (x) => x && typeof x === 'object' && (x.ok === false || x.status === 'degraded'
+    || x.status === 'error' || x.error);
+  const fallo = esError(j) || esError(resultado)
+    || (resultado && typeof resultado === 'object' && esError(resultado.result));
   if (fallo) throw Object.assign(new Error('ROUTER_PLUGIN_ERROR'), { http: 502 });
   if (j.status === 'ok' && !Object.prototype.hasOwnProperty.call(j, 'result'))
     throw Object.assign(new Error('ROUTER_RESPUESTA_INVALIDA'), { http: 502 });
