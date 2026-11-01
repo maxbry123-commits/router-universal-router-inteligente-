@@ -40,7 +40,7 @@ aplicarDefectos(process.env);
 // gramatica "SWEN CODE free ..." (SWE CODE free/activar.js): elige modelo, modo y seccion desde el propio mensaje
 let activar = null;
 try { activar = createRequire(import.meta.url)(process.env.RIU_ACTIVAR_PATH || '../../../SWE CODE free/activar.js').activar; } catch { console.warn('[bridge] sin activar.js: la gramatica SWEN CODE free queda desactivada (ruta o RIU_ACTIVAR_PATH)'); }
-const IDS_DIRECTOS = (id) => /^(groq\/|nvidia\/|lfm2\.5|qwen2\.5-coder|qwen3\.5|qwen3-0\.6b|web-|swecode-)/.test(id);
+const IDS_DIRECTOS = (id) => /^(groq\/|nvidia\/|deepseek\/|minimax\/|openai\/|lfm2\.5|qwen2\.5-coder|qwen3\.5|qwen3-0\.6b|web-|swecode-)/.test(id);
 
 // Groq/NVIDIA/locales con un modo (p. ej. despliega): reciben el preambulo de ese modo, como el agente que despliega
 // system-prompt-on (toggle ON/OFF via /v1/system-prompt-on, defecto ON): si esta ON y la ficha del Router MVP tiene contenido, se fusiona/antepone (systemprompt.js)
@@ -256,7 +256,7 @@ app.get('/v1/modelos/disponibilidad', async (_req, res) => {
     // no usar ese contador para decidir falsamente que un modelo esta NO CONFIGURADO.
     const cuentas = estadoRespaldo();
     res.json({ ok: true, modelos: await disponibilidad(), locales,
-      configurados: { groq: cuentas.groq > 0, nvidia: cuentas.nvidia > 0, hf_local: cuentas.hf_local > 0 } });
+      configurados: Object.fromEntries(Object.entries(cuentas).map(([k, n]) => [k, n > 0])) });
   } catch (e) {
     res.status(502).json({ ok: false, error: { code: 'DISPONIBILIDAD_FALLO', message: 'No se pudo consultar el catálogo' } });
   }

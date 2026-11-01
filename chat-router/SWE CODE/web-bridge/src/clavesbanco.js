@@ -43,10 +43,9 @@ export async function cargarDelBanco() {
   try {
     const c = JSON.parse(out);
     const nuevas = {};  // un banco vacio no borra lo que ya estaba en memoria
-    if ((c.groq || []).length) nuevas.groq = c.groq;
-    if ((c.nvidia || []).length) nuevas.nvidia = c.nvidia;
+    for (const p of ['groq', 'nvidia', 'deepseek', 'minimax', 'openai']) if (Array.isArray(c[p]) && c[p].length) nuevas[p] = c[p];
     if (Object.keys(nuevas).length) setClaves(nuevas);
-    return (c.groq || []).length + (c.nvidia || []).length;
+    return Object.values(nuevas).reduce((n, v) => n + v.length, 0);
   } catch { return 0; }
 }
 

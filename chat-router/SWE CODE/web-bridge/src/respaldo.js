@@ -4,7 +4,9 @@
 import http from 'node:http';
 import https from 'node:https';
 
-export const BASES = { groq: 'https://api.groq.com/openai/v1', nvidia: 'https://integrate.api.nvidia.com/v1' };
+// Proveedores OFICIALES existentes en OpenClaw: origenes fijos, nunca URLs introducidas por el chat.
+export const BASES = { groq: 'https://api.groq.com/openai/v1', nvidia: 'https://integrate.api.nvidia.com/v1',
+  deepseek: 'https://api.deepseek.com', minimax: 'https://api.minimax.io/v1', openai: 'https://api.openai.com/v1' };
 // modelos autorizados del selector (Llama 3.3 de Groq y NVIDIA retirados). Muse Glimmer aparece una sola vez.
 export const MODELOS_API = [
   { id: 'groq/qwen/qwen3.8-27b', nombre: 'Groq Qwen 3.8 27B' },
@@ -12,8 +14,15 @@ export const MODELOS_API = [
   { id: 'nvidia/meta/muse-glimmer-30b', nombre: 'NVIDIA Muse Glimmer 30B' },
   { id: 'nvidia/nvidia/nemotron-3-ultra-550b-a55b', nombre: 'NVIDIA Nemotron 3 Ultra' },
   { id: 'nvidia/z-ai/glm-5.3', nombre: 'NVIDIA GLM 5.3' },
+  { id: 'deepseek/deepseek-v4-pro', nombre: 'DeepSeek V4 Pro (API)' },
+  { id: 'deepseek/deepseek-flash', nombre: 'DeepSeek Flash (API)' },
+  { id: 'minimax/MiniMax-M3', nombre: 'MiniMax M3 (API)' },
+  { id: 'minimax/MiniMax-M2.7', nombre: 'MiniMax M2.7 (API)' },
+  { id: 'openai/gpt-5.6', nombre: 'OpenAI GPT-5.6 (API)' },
+  { id: 'openai/gpt-5.5', nombre: 'OpenAI GPT-5.5 (API)' },
 ];
-const MODELO = { groq: ['RIU_SWE_GROQ_MODELO', 'qwen/qwen3.8-27b'], nvidia: ['RIU_SWE_NVIDIA_MODELO', 'minimaxai/minimax-m3.1-flash'] };
+const MODELO = { groq: ['RIU_SWE_GROQ_MODELO', 'qwen/qwen3.8-27b'], nvidia: ['RIU_SWE_NVIDIA_MODELO', 'minimaxai/minimax-m3.1-flash'],
+  deepseek: ['RIU_SWE_DEEPSEEK_MODELO', 'deepseek-v4-pro'], minimax: ['RIU_SWE_MINIMAX_MODELO', 'MiniMax-M3'], openai: ['RIU_SWE_OPENAI_MODELO', 'gpt-5.6'] };
 export const modeloDefecto = (prov, env = process.env) => env[MODELO[prov][0]] || MODELO[prov][1];
 // parametros de inferencia por modelo (id sin el prefijo del proveedor); los modelos locales y los no listados no mandan ninguno
 export const AJUSTES = {
@@ -29,6 +38,9 @@ const RE_NVIDIA_1 = /minimax|kimi|deepseek.?v4/i, RE_NVIDIA_2A = /muse|glimmer/i
 const PICK = {
   groq: (ids) => ids.find(i => RE_GROQ.test(i)),
   nvidia: (ids) => ids.find(i => RE_NVIDIA_1.test(i)) || ids.find(i => RE_NVIDIA_2A.test(i)) || ids.find(i => RE_NVIDIA_2B.test(i)),  // Muse/Glimmer (2A) y Nemotron-3-Super (2B) por separado
+  deepseek: (ids) => ids.find(i => i === 'deepseek-v4-pro') || ids.find(i => i === 'deepseek-flash'),
+  minimax: (ids) => ids.find(i => i === 'MiniMax-M3') || ids.find(i => i === 'MiniMax-M2.7'),
+  openai: (ids) => ids.find(i => i === 'gpt-5.6') || ids.find(i => i === 'gpt-5.5'),
 };
 const autorizados = (prov) => MODELOS_API.filter(m => m.id.startsWith(prov + '/')).map(m => m.id.slice(prov.length + 1));
 // del listado real del proveedor: el id exacto (env o defecto) > la regla de descubrimiento > otro id autorizado presente; null si nada sirve
@@ -68,23 +80,24 @@ export function limpiarEstado() { enfriadas.clear(); cacheModelos.clear(); metri
 
 export const esLocal = (m) => LOCALES.includes(String(m || ''));
 // solo ids del selector (MODELOS_API) o el que el operador fija por entorno (RIU_SWE_GROQ_MODELO / RIU_SWE_NVIDIA_MODELO): groq/llama-3.3-70b-versatile y demas ids inventados no entran
-export const esExterno = (m, env = process.env) => typeof m === 'string' && (MODELOS_API.some(x => x.id === m) || ['groq', 'nvidia'].some(p => env[MODELO[p][0]] && m === `${p}/${env[MODELO[p][0]]}`));
+export const esExterno = (m, env = process.env) => typeof m === 'string' && (MODELOS_API.some(x => x.id === m) || Object.keys(MODELO).some(p => env[MODELO[p][0]] && m === `${p}/${env[MODELO[p][0]]}`));
 
 // ids que el selector de OpenClaw ve ademas de los web-*: externos y locales
 export function idsRespaldo() { return [...MODELOS_API.map(m => m.id), ...LOCALES]; }
 
 // claves inyectadas por llamada (POST /v1/chat/completions): solo en memoria del proceso, nunca se loguean
-const inyectadas = { groq: [], nvidia: [] };
+const inyectadas = { groq: [], nvidia: [], deepseek: [], minimax: [], openai: [] };
 export function setClaves(c) {
-  const { groq, nvidia } = c && typeof c === 'object' ? c : {};
-  for (const [prov, v] of [['groq', groq], ['nvidia', nvidia]]) {
+  const obj = c && typeof c === 'object' ? c : {};
+  for (const prov of Object.keys(inyectadas)) {
+    const v = obj[prov];
     if (v === undefined) continue;  // proveedor ausente: no se toca
     const lista = Array.isArray(v) ? v : typeof v === 'string' ? [v] : [];
     inyectadas[prov] = lista.filter(k => typeof k === 'string').map(k => k.trim()).filter(Boolean).filter((k, i, a) => a.indexOf(k) === i).slice(0, 20);
   }
 }
 
-export function limpiarClaves() { inyectadas.groq = []; inyectadas.nvidia = []; }  // DELETE /v1/claves: solo las inyectadas; las del entorno no se tocan
+export function limpiarClaves() { for (const prov of Object.keys(inyectadas)) inyectadas[prov] = []; }  // DELETE /v1/claves: solo las inyectadas; las del entorno no se tocan
 
 export const claves = (var_, env) => [...[var_, ...Array.from({ length: 20 }, (_, i) => `${var_}_${i + 1}`)].map(n => env[n]), ...(inyectadas[var_.split('_')[0].toLowerCase()] || [])].filter((v, i, a) => v && a.indexOf(v) === i);
 
@@ -393,7 +406,7 @@ async function modeloDe(prov, env, r) {
 // disponibilidad real de cada id de MODELOS_API segun GET /models de su proveedor. Sin clave o con el proveedor sin listar: SIN VERIFICAR (no se afirma nada).
 // NO DISPONIBLE solo si el proveedor listo sus modelos y el id no esta: nunca se sustituye por otro en silencio.
 export async function disponibilidad({ env = process.env, opts } = {}) {
-  const r = red(opts), listas = Object.fromEntries(await Promise.all(['groq', 'nvidia'].map(async prov => {
+  const r = red(opts), listas = Object.fromEntries(await Promise.all(Object.keys(BASES).map(async prov => {
     const ks = libres(prov, env, r);
     return [prov, ks.length ? await listarIds(prov, BASES[prov], ks, r) : null];
   })));
@@ -485,5 +498,6 @@ export async function respaldo(mensajes, { env = process.env, extra = {}, opts, 
 
 // que respaldos hay configurados (conteos, nunca valores): para /health y el auto-diagnostico
 export function estadoRespaldo(env = process.env) {
-  return { groq: claves('GROQ_API_KEY', env).length, nvidia: claves('NVIDIA_API_KEY', env).length, hf_local: [1, 2, 3].filter(n => env[`SWECODE_URL_S${n}`]).length };
+  return { ...Object.fromEntries(Object.keys(BASES).map(p => [p, claves(p.toUpperCase() + '_API_KEY', env).length])),
+    hf_local: [1, 2, 3].filter(n => env[`SWECODE_URL_S${n}`]).length };
 }

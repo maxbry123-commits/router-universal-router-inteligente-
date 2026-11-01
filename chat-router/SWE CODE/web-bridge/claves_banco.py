@@ -22,7 +22,8 @@ def _preparar_rutas():
 _preparar_rutas()
 from mvp import bank
 
-PATRON = re.compile(r"(GROQ|NVIDIA)_API_KEY(_\d{1,2})?")
+PROVEEDORES = ("groq", "nvidia", "deepseek", "minimax", "openai")
+PATRON = re.compile(r"(GROQ|NVIDIA|DEEPSEEK|MINIMAX|OPENAI)_API_KEY(_\d{1,2})?")
 MAX = 20
 
 
@@ -61,7 +62,7 @@ def _abrir(ruta, crear=False):
 
 
 def leer():
-    out = {"groq": [], "nvidia": []}
+    out = {p: [] for p in PROVEEDORES}
     for ruta in (_ruta_router(), _ruta_propia()):
         b = _abrir(ruta)
         if not b:
@@ -173,7 +174,7 @@ def anadir(registro):
     if not b:
         raise RuntimeError("BANCO_NO_DISPONIBLE")
     datos = {k: b.leer(k) for k in b.nombres()}
-    prefijo = (prov.upper() + "_API_KEY") if prov in ("groq", "nvidia") else ("SDK_" + prov.replace("-", "_").upper() + "_KEY")
+    prefijo = (prov.upper() + "_API_KEY") if prov in PROVEEDORES else ("SDK_" + prov.replace("-", "_").upper() + "_KEY")
     candidatos = [prefijo] + [prefijo + "_" + str(i) for i in range(1, MAX + 1)]
     actuales = [datos[n] for n in candidatos if n in datos]
     if secreto not in actuales:
@@ -183,14 +184,14 @@ def anadir(registro):
         datos[libre] = secreto
         _reconstruir(datos, cifrado)
     return {"ok": True, "proveedor": prov, "tipo": tipo, "cantidad": len(set(actuales + [secreto])),
-            "compatible": prov in ("groq", "nvidia")}
+            "compatible": prov in PROVEEDORES}
 
 
 def catalogo():
     propios = _abrir(_ruta_propia())
     router = _abrir(_ruta_router())
     bancos = [b for b in (router, propios) if b]
-    provs = {"groq": set(), "nvidia": set()}
+    provs = {p: set() for p in PROVEEDORES}
     for b in bancos:
         for n in b.nombres():
             m = PATRON.fullmatch(n)
@@ -201,7 +202,7 @@ def catalogo():
                 if k and b.leer(n):
                     provs.setdefault(k.group(1).lower(), set()).add(b.leer(n))
     return {"ok": True, "proveedores": [
-        {"id": k, "cantidad": len(v), "compatible": k in ("groq", "nvidia"),
+        {"id": k, "cantidad": len(v), "compatible": k in PROVEEDORES,
          "estado": "CONFIGURADO" if v else "SIN_CLAVES"}
         for k, v in sorted(provs.items())]}
 
