@@ -234,7 +234,7 @@ test("checkpoint remoto exigido rechaza un Harness caido aunque guarde en local"
 });
 
 test("checkpoint remoto exigido se relee para confirmar el manifiesto", async () => {
-  const dir = tmp(), h = await harness();
+  const dir = tmp(), h = await harnessFalso();
   try {
     const e = envCon(dir, { RIU_DEEPSEEK_HARNESS_URL: h.url, RIU_API_KEY: CLAVE_HARNESS });
     const r = await guardarCheckpoint("seguro-2", { estado: 'OPERACION_INICIADA' }, { env: e, exigirRemoto: true });
