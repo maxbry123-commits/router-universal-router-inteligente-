@@ -288,6 +288,7 @@ export async function api(path, options = {}) {
   if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Ruta inválida");
   const headers = {};
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
+  if (options.headers && typeof options.headers === "object") for (const [k, v] of Object.entries(options.headers)) if (typeof v === "string" && !/^(content-type|x-api-key)$/i.test(k)) headers[k] = v;  // cabeceras extra SOLO de esta peticion (p. ej. x-operador / x-operator-token al aprobar); nunca se guardan
   const envioClave = !!clave();
   let response;
   try {

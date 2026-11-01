@@ -1,10 +1,11 @@
 import { node } from "./api.js";
 import * as A from "./chat-ancla.js";
+import { pedirOperadorYToken, mensajeAprobacion, mensajeExito } from "./aprobar-operador.js";
 import { esSwe, enviarSwe, enviarTareaSwe, aprobarYContinuarSwe, leerSeleccion, requiereHarness } from "./swe-directo.js";
 // enviar-mensaje.js — envío del mensaje: cada chat corre su tarea con su sesión, ficha, anclas, modos y herramientas
 // Extraído de panel-chat.js sin cambiar la lógica: recibe lo que usa por ctx y devuelve lo que otros bloques necesitan.
 export function montarEnviar(ctx) {
-  const { q, chat, abajo, burbuja, ajustarAlturaEditor, pintarTabs, getModeUI, releerAnclas, chatTools, FAST_SEL, getModo, previo, api, tell } = ctx;
+  const { q, chat, abajo, burbuja, ajustarAlturaEditor, pintarTabs, getModeUI, releerAnclas, chatTools, FAST_SEL, getModo, previo, api, tell } = ctx, pedirAprobador = ctx.pedirAprobador || (() => pedirOperadorYToken());  // pedirAprobador: dialogo operador+token (inyectable en pruebas)
   const pintarCola = (c) => {
     let aviso = document.getElementById("cola-chat");
     const items = c.colaMensajes || [];
@@ -238,7 +239,16 @@ export function montarEnviar(ctx) {
       if (answer.finish_reason === "length") { const aviso = node("div", "La respuesta se cortó por el límite de salida del proveedor. ", "item message meta"), seguir = node("button", "Continuar", "mx-continuar"); seguir.type = "button"; seguir.onclick = () => { seguir.disabled = true; const m = q("#message"); m.value = "Continúa exactamente donde se cortó la respuesta anterior, sin repetir texto."; q("#composer").requestSubmit(); }; aviso.append(seguir); c.hist.append(aviso); }  // un clic y sigue desde el corte
       if (answer.requiere_aprobacion && answer.task_id) {  // el operador aprueba con este boton; el servidor lo identifica y la tarea sigue desde su checkpoint
         const aviso = node("div", "La tarea " + answer.task_id + " espera tu aprobación. ", "item message meta"), ap = node("button", "Aprobar y continuar", "mx-continuar mx-aprobar"); ap.type = "button";
-        ap.onclick = async () => { ap.disabled = true; try { const r = await aprobarYContinuarSwe(api, { task_id: answer.task_id, op_id: answer.pendiente && answer.pendiente.op_id, sesion: c.sesion, proyecto: c.project_id || undefined }); c.hist.append(burbuja(r.reply || "Sin respuesta")); A.registrar(c.sesion, "bot", r.reply || ""); if (r.nota) c.hist.append(node("div", r.nota, "item meta")); } catch (e) { c.hist.append(node("div", String((e && e.message) || e).startsWith("GAP:") ? e.message : "GAP: " + e.message, "item message error")); } abajo(c); };
+        ap.onclick = async () => {  // pide operador y token en un dialogo; viajan SOLO como cabeceras de esta peticion y se descartan (ni storage, ni cuerpo, ni registro)
+          ap.disabled = true;
+          const cred = await pedirAprobador();
+          if (!cred) { ap.disabled = false; c.hist.append(node("div", "Aprobación cancelada: no se envió nada.", "item meta")); abajo(c); return; }
+          const cabeceras = { "x-operador": cred.operador, "x-operator-token": cred.token }; let ok = false;
+          try { const r = await aprobarYContinuarSwe(api, { task_id: answer.task_id, op_id: answer.pendiente && answer.pendiente.op_id, sesion: c.sesion, proyecto: c.project_id || undefined, headers: cabeceras }); ok = true; c.hist.append(node("div", mensajeExito(cred.operador), "item meta")); c.hist.append(burbuja(r.reply || "Sin respuesta")); A.registrar(c.sesion, "bot", r.reply || ""); if (r.nota) c.hist.append(node("div", r.nota, "item meta")); }
+          catch (e) { const m = mensajeAprobacion(e); c.hist.append(node("div", m || (String((e && e.message) || e).startsWith("GAP:") ? e.message : "GAP: " + e.message), "item message error")); }
+          finally { for (const k of Object.keys(cabeceras)) delete cabeceras[k]; cred.token = ""; cred.operador = ""; if (!ok) ap.disabled = false; }
+          abajo(c);
+        };
         aviso.append(ap); c.hist.append(aviso);
       }
       if (answer.execution_path === "FAST_QA") c.hist.append(node("div", "⚡ respuesta rápida · " + answer.ms + " ms", "item meta"));

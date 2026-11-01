@@ -237,9 +237,9 @@ const resultadoDe = (r, op) => {
   return x;
 };
 const DETENIDO = "PROCESO_DETENIDO";
-async function operacion(api, op, cuerpo, signal) {
+async function operacion(api, op, cuerpo, signal, headers) {
   let r;
-  try { r = await api("/chat/swe/" + op, signal ? { method: "POST", body: cuerpo, signal } : { method: "POST", body: cuerpo }); } catch (e) { const m = String((e && e.message) || e); if (m === DETENIDO) throw new Error(DETENIDO); throw new Error(m.startsWith("GAP:") ? m : "GAP: " + (/^[A-Z][A-Z0-9_]+\b/.test(m) ? m : "SWE_HARNESS_ERROR · " + m)); }
+  try { r = await api("/chat/swe/" + op, { method: "POST", body: cuerpo, ...(signal ? { signal } : {}), ...(headers ? { headers } : {}) }); } catch (e) { const m = String((e && e.message) || e); if (m === DETENIDO) throw new Error(DETENIDO); const g = new Error(m.startsWith("GAP:") ? m : "GAP: " + (/^[A-Z][A-Z0-9_]+\b/.test(m) ? m : "SWE_HARNESS_ERROR · " + m)); if (e && e.status) g.status = e.status; throw g; }
   return resultadoDe(r, op);
 }
 const base = ({ task_id, sesion, proyecto }) => {
@@ -250,7 +250,7 @@ export const estadoTareaSwe = async (api, d) => operacion(api, "estado", base(d)
 export const reanudarTareaSwe = async (api, d) => operacion(api, "reanudar", base(d), d.signal);
 export const aprobarTareaSwe = async (api, d) => {  // quien aprueba es el operador autenticado en el servidor, no un campo del cuerpo; op_id = la operacion que el Harness dejo pendiente
   if (typeof d.op_id !== "string" || !OP_RE.test(d.op_id)) throw new Error("GAP: OP_ID_INVALIDO");
-  return operacion(api, "aprobar", { ...base(d), op_id: d.op_id }, d.signal);
+  return operacion(api, "aprobar", { ...base(d), op_id: d.op_id }, d.signal, d.headers);  // d.headers = x-operador / x-operator-token de quien aprueba: solo cabeceras de ESTA peticion
 };
 const lineaEvidencia = (e) => (typeof e === "string" ? e : JSON.stringify(e)).slice(0, 300);
 const texto = (v) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v));

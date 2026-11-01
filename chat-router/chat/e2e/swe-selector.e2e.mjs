@@ -39,7 +39,7 @@ function routerFalso(estado) {
     const req = route.request(); const u = new URL(req.url()); const p = u.pathname;
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
     let body = null; try { body = req.postDataJSON(); } catch (e) {}
-    estado.llamadas.push({ metodo: req.method(), ruta: p, body, clave: req.headers()['x-api-key'] || '' });
+    estado.llamadas.push({ metodo: req.method(), ruta: p, body, clave: req.headers()['x-api-key'] || '', operador: req.headers()['x-operador'], token: req.headers()['x-operator-token'] });
     if (p === '/chat/providers/qwen/models') {
       if (estado.catalogoFalla) return json(route, { detail: 'caido' }, 500);
       // catalogo del Router MVP: SIN ningun modelo SWE; 'zz-modelo-mock' prueba que se cargo este catalogo y no el de respaldo
@@ -54,6 +54,10 @@ function routerFalso(estado) {
       return json(route, { ok: true, groq: b.groq, nvidia: b.nvidia });
     }
     if (p === '/chat/swe/capacidades') return json(route, estado.capacidades || {});  // el Harness no reporta nada -> todo NO DISPONIBLE salvo Individual
+    if (p === '/chat/swe/aprobar' && req.method() === 'POST') {  // contrato de app.py (_identificar_operador): 503 sin aprobadores, 403 operador/token incorrectos (token de PRUEBA, no una clave)
+      if (estado.sinAprobadores) return json(route, { detail: 'APROBADORES_NO_CONFIGURADOS' }, 503);
+      if (req.headers()['x-operador'] !== 'luna' || req.headers()['x-operator-token'] !== 'tok-e2e-no-es-clave') return json(route, { detail: 'OPERADOR_NO_AUTORIZADO' }, 403);
+    }
     if (/^\/chat\/swe\/(iniciar|avanzar|estado|aprobar|reanudar)$/.test(p) && req.method() === 'POST') {  // la "vista" de la tarea que devuelve el Harness
       const op = p.split('/').pop(), pide = op === 'iniciar' && estado.estadoSwe === 'REQUIERE_APROBACION';
       return json(route, { ok: true, resultado: { ok: true, task_id: body && body.task_id, estado: pide ? 'REQUIERE_APROBACION' : op === 'aprobar' ? 'CONTINUAR' : 'DONE', paso_actual: 1, resultado_tool: 'resultado del agente real de prueba', evidencia: ['recibo:e2e-123'], pasos_terminados: [{ paso: 'ejecuta', agente: 'swe-agent', recibo: 'r-e2e', herramientas: ['swe-agent'], resultado: 'ok' }], ...(pide ? { pendiente_aprobacion: { op_id: '0123456789abcdef', paso: 'ejecuta', agente: 'codex', modelo: 'hf/qwen2.5-coder-1.5b', permisos: { escritura: true }, objetivo: 'editar el repo' } } : {}) } });
@@ -434,10 +438,31 @@ async function enviar(p, texto) {
     await ph.fill('#message', 'desplegar'); await ph.$eval('#composer .action', (e) => e.click());
     await ph.waitForSelector('.mx-aprobar', { state: 'attached', timeout: 8000 });
     estH.llamadas.length = 0; estH.estadoSwe = 'DONE';
+    // AP1: el boton abre un dialogo accesible (operador texto + token password + Cancelar); sin credenciales no hay peticion
     await ph.$eval('.mx-aprobar', (e) => e.click());
+    await ph.waitForSelector('.ap-operador[role="dialog"]', { state: 'visible', timeout: 8000 });
+    const dlg = await ph.evaluate(() => { const d = document.querySelector('.ap-operador'), o = d.querySelector('input[type=text]'), t = d.querySelector('input[type=password]'); return { modal: d.getAttribute('aria-modal'), op: !!o && !!o.getAttribute('aria-label'), tk: !!t && !!t.getAttribute('aria-label') && t.autocomplete === 'off', cancelar: [...d.querySelectorAll('button')].some((b) => /Cancelar/.test(b.textContent)), foco: document.activeElement === o, visible: d.getBoundingClientRect().width > 0 }; });
+    ok('AP1 Aprobar y continuar abre un dialogo role=dialog aria-modal con operador (texto), token (password), Cancelar y el foco en operador', dlg.modal === 'true' && dlg.op && dlg.tk && dlg.cancelar && dlg.foco && dlg.visible, JSON.stringify(dlg));
+    await ph.$eval('.ap-operador button:last-child', (e) => e.click());
+    await ph.waitForFunction(() => !document.querySelector('.ap-operador'), null, { timeout: 4000 });
+    ok('AP1 Cancelar cierra el dialogo y NO llama a /chat/swe/aprobar', !estH.llamadas.some((l) => l.ruta === '/chat/swe/aprobar'), JSON.stringify(estH.llamadas.map((l) => l.ruta)));
+    const rellenar = async (op, tk) => { await ph.$eval('.mx-aprobar', (e) => e.click()); await ph.waitForSelector('.ap-operador', { state: 'visible', timeout: 8000 }); await ph.fill('.ap-operador input[type=text]', op); await ph.fill('.ap-operador input[type=password]', tk); await ph.$eval('.ap-operador button', (e) => e.click()); await ph.waitForFunction(() => !document.querySelector('.ap-operador'), null, { timeout: 4000 }); };
+    await rellenar('luna', 'token-malo-e2e');
+    await ph.waitForFunction(() => /operador o token incorrecto/.test(document.querySelector('.chat-history').innerText), null, { timeout: 8000 });
+    ok('AP1 403: mensaje claro «operador o token incorrecto» y el token escrito no aparece en pantalla', await ph.evaluate(() => !document.body.innerText.includes('token-malo-e2e')));
+    estH.sinAprobadores = true; await rellenar('luna', 'tok-e2e-no-es-clave');
+    await ph.waitForFunction(() => /RIU_SWE_APROBADORES/.test(document.querySelector('.chat-history').innerText), null, { timeout: 8000 });
+    ok('AP1 503: el mensaje indica RIU_SWE_APROBADORES', true);
+    estH.sinAprobadores = false; estH.llamadas.length = 0;
+    await rellenar('luna', 'tok-e2e-no-es-clave');
     await ph.waitForFunction(() => /resultado del agente real de prueba/.test([...document.querySelectorAll('.chat-history .message')].slice(-3).map((x) => x.innerText).join('\n')), null, { timeout: 8000 });
     const ap = estH.llamadas.find((l) => l.ruta === '/chat/swe/aprobar');
     ok('H12 Aprobar llama a /chat/swe/aprobar con el task_id y el op_id pendiente, sin campo aprobacion ni operador', !!ap && !!ap.body.task_id && ap.body.op_id === '0123456789abcdef' && !('aprobacion' in ap.body) && !('operador' in ap.body), JSON.stringify(ap && ap.body));
+    ok('AP1 la peticion lleva las cabeceras x-operador y x-operator-token, y el cuerpo no las lleva', !!ap && ap.operador === 'luna' && ap.token === 'tok-e2e-no-es-clave' && !JSON.stringify(ap.body).includes('tok-e2e') && !JSON.stringify(ap.body).includes('luna'), JSON.stringify({ o: ap && ap.operador, t: !!(ap && ap.token) }));
+    ok('AP1 solo /chat/swe/aprobar lleva el token (ninguna otra peticion)', !estH.llamadas.some((l) => l.ruta !== '/chat/swe/aprobar' && (l.token || l.operador)));
+    ok('AP1 exito: mensaje «Aprobación registrada» en el chat', await ph.evaluate(() => /Aprobación registrada/.test(document.querySelector('.chat-history').innerText)));
+    const rastro = await ph.evaluate(() => { const v = []; for (const st of [localStorage, sessionStorage]) for (let i = 0; i < st.length; i++) v.push(st.key(i) + '=' + st.getItem(st.key(i))); return { storage: v.some((x) => /tok-e2e|token-malo-e2e/.test(x)), claveOperador: v.some((x) => /x-operator|operador/i.test(x.split('=')[0])), campos: [...document.querySelectorAll('input')].some((i) => /tok-e2e|token-malo-e2e/.test(i.value)) }; });
+    ok('AP1 nada de operador/token en localStorage, sessionStorage ni en campos del DOM tras enviar', !rastro.storage && !rastro.claveOperador && !rastro.campos, JSON.stringify(rastro));
     ok('H sin errores JS en la pagina', ph.errs.length === 0, ph.errs.join(' | '));
     await ph.context().close();
 
