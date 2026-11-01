@@ -331,7 +331,9 @@ def llm(cuerpo):
     mensajes = list(mensajes)
     acumulado, continuaciones, usadas = str(cuerpo.get("acumulado") or ""), 0, []  # usadas: herramientas realmente ejecutadas (diagnostico)
     tarea = re.sub(r"[^A-Za-z0-9_-]", "", str(cuerpo.get("tarea_id") or ""))[:64]  # con tarea_id, lo que ya se ejecuto no se repite si la tarea se retoma
-    diario = _diario(tarea) if tarea else {}
+    # Solo consultar el diario al llegar una operacion con efectos. Un chat sin herramientas
+    # no debe fallar si HF esta temporalmente caido; una escritura sigue fallando cerrado.
+    diario = None
     t0, paso, salida, aviso = time.monotonic(), -1, {}, {}
     while True:
         paso += 1
@@ -398,6 +400,8 @@ def llm(cuerpo):
                 mensajes.append({"role": "tool", "tool_call_id": llamada["id"], "content": json.dumps({"error": "Escritura GitHub permitida solo en main"}, ensure_ascii=False)})
                 continue
             llave = _llave(nombre, args) if tarea and con_efectos(nombre, args) else None
+            if llave and diario is None:
+                diario = _diario(tarea)  # HF caido o corrupto: error ANTES de cualquier efecto.
             if llave and llave in diario:  # se reusa SOLO una operación confirmada: INICIADA puede haber tenido efectos
                 previa = diario[llave]
                 if isinstance(previa, dict) and previa.get("estado") == "INICIADA":
