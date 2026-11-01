@@ -218,6 +218,25 @@ test("tool_calls con ejecutor: cada herramienta se ejecuta UNA sola vez, su resu
 const sembrar = async (dir, id, estado, hv = {}) => guardarCheckpoint(id, { tipo: TIPO, version: 1, tarea_id: id, huella: huellaDe(MODELO, msgs), modelo: MODELO, mensajes: msgs, completo: false, conversacion: [], parcial: "", secciones: [{ n: 1 }], contextos: {}, herramientas: {}, ...estado }, { env: env(dir, hv) });
 const lote = (...ts) => ({ assistant: { role: "assistant", content: null, tool_calls: ts.map((x) => tc(x)) }, herramientas: ts.map((x) => ({ id: x, nombre: "escribir", argumentos: '{"x":1}', estado: "pendiente" })) });
 
+test("X-Ray 7B: checkpoint legado con argumentos invalidos bloquea el lote ANTES del primer efecto", async () => {
+  const dir = tmp(), servidor = await fake(() => ok("NO_DEBE_LLEGAR")), vistas = [];
+  try {
+    const l = lote("c1", "c2");
+    l.herramientas[1].argumentos = '{"incompleto":';
+    await sembrar(dir, "xray7-lote", { estado: "WAIT_TOOLS", lote: l });
+    await assert.rejects(retomarLocal("xray7-lote", MODELO, msgs,
+      extra(env(dir, { SWECODE_URL_S1: servidor.url }), {
+        ejecutarHerramienta: async (t) => { vistas.push(t.id); return "MAL"; },
+      })), e => e.code === 'TOOL_CALL_INVALIDA');
+    assert.deepEqual(vistas, [], "no puede ejecutarse ni la primera tool valida");
+    const ck = leerArch(dir, "xray7-lote");
+    assert.equal(ck.fase, "RECONCILIAR");
+    assert.equal(ck.ultimo_error, "TOOL_CALL_INVALIDA");
+    assert.equal(ck.lote.herramientas[0].estado, "pendiente");
+    assert.equal(servidor.chat.length, 0);
+  } finally { servidor.cerrar(); }
+});
+
 test("WAIT_TOOLS tras un corte: la herramienta ya hecha NO se repite, solo se ejecuta la pendiente", async () => {
   const s1 = await fake(() => ok("FIN")); const dir = tmp(); const vistas = [];
   try {

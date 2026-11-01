@@ -157,6 +157,20 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
   };
   const resolverLote = async () => {
     const lote = st.lote;
+    // Checkpoints creados antes de validar tools pueden contener argumentos corruptos.
+    // Inspeccionar TODO el lote antes del primer efecto para no ejecutar el elemento sano y fallar luego.
+    const invalidas = lote.herramientas.filter((t) => {
+      if (typeof t.nombre !== 'string' || !t.nombre.trim()) return true;
+      const a = t.argumentos === '' || t.argumentos == null ? '{}' : t.argumentos;
+      if (typeof a !== 'string') return true;
+      try { const v = JSON.parse(a); return !v || typeof v !== 'object' || Array.isArray(v); }
+      catch { return true; }
+    });
+    if (invalidas.length) {
+      poner('WAIT_TOOLS', 'RECONCILIAR'); st.ultimo_error = 'TOOL_CALL_INVALIDA';
+      await guardar();
+      throw falla('TOOL_CALL_INVALIDA', 'Checkpoint contiene llamadas de herramientas invalidas; bloquear efectos hasta reconciliar');
+    }
     const sinConfirmar = lote.herramientas.filter((t) => !yaHecha(t) && t.estado === 'iniciada');
     if (sinConfirmar.length && !extra.verificarHerramienta) { poner('WAIT_TOOLS', 'RECONCILIAR'); await guardar(); throw falla('VERIFICAR_HERRAMIENTAS_PENDIENTES', `herramientas iniciadas sin confirmar (${sinConfirmar.map((t) => t.id).join(', ')}): verificar si se hicieron antes de reintentar`, { ids: sinConfirmar.map((t) => t.id) }); }
     for (const t of lote.herramientas) {

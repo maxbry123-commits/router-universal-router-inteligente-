@@ -83,3 +83,7 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - `SWE CODE/web-bridge/src/server.js`: tool_calls inválidas no se entregan a OpenClaw ni al Harness, tampoco tras fallback. Error tipado `TOOL_CALL_INVALIDA`; sin ejecutar herramientas.
 - Prueba añadida en `SWE CODE/web-bridge/test/retomar_local.test.mjs` con argumentos JSON incompletos y verificación de cero efectos. No ejecutada; pendiente runner Node real.
 - Nada de frontend, Hugging Face, OpenClaw independiente ni nuevas raíces. Guardado GitHub main; mirror externo NO certificado.
+
+### X-Ray 7B — checkpoint legado
+- Se detectó que un `WAIT_TOOLS` previamente guardado podía pasar directamente a `resolverLote` sin volver a validar los argumentos JSON. El preflight del lote ahora bloquea `TOOL_CALL_INVALIDA` ANTES de cualquier efecto, anota `RECONCILIAR` y evita ejecución parcial.
+- Prueba `X-Ray 7B` añadida en `test/retomar_local.test.mjs` con dos tools (primera válida, segunda corrupta): exige **cero** efectos. Prueba sin ejecutar en entorno Node.
