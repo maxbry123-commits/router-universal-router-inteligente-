@@ -42,8 +42,13 @@ async function llamar(metodo, cuerpo) {
     r = await fetch(String(base).replace(/\/$/, "") + RUTA, { method: metodo, headers: h, credentials: base ? "omit" : "same-origin", body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo), signal: ac ? ac.signal : undefined });
   } catch (e) { throw { status: 0, code: "RED" }; } finally { if (t) clearTimeout(t); }
   let p = {}; try { p = await r.json(); } catch (e) {}
-  if (!r.ok || p.ok === false || ((metodo === "POST" || metodo === "DELETE") && p.local !== true)) {
-    throw { status: r.ok ? 503 : r.status, code: (p && p.error && p.error.code) || "BANCO_NO_GUARDADO" };
+  // un status HTTP real (401/400/503...) manda su propio mensaje especifico en textoError(); el codigo BANCO_NO_GUARDADO/BANCO_NO_BORRADO
+  // (generico, "no se guardo pese a responder 200") solo aplica cuando la respuesta fue 200 pero el cuerpo dice que no se persistio.
+  if (!r.ok) {
+    throw { status: r.status, code: (p && p.error && p.error.code) || "" };
+  }
+  if (p.ok === false || ((metodo === "POST" || metodo === "DELETE") && p.local !== true)) {
+    throw { status: 503, code: (p && p.error && p.error.code) || (metodo === "DELETE" ? "BANCO_NO_BORRADO" : "BANCO_NO_GUARDADO") };
   }
   return { groq: Number(p.groq) || 0, nvidia: Number(p.nvidia) || 0,
     ...(metodo === "POST" || metodo === "DELETE" ? { local: p.local, persistido: p.persistido === true } : {}) };
