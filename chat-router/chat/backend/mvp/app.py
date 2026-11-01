@@ -769,9 +769,7 @@ async def _delegar(nombre, args):
     salida = await _llamar_modelo(msgs, modelo, None)
     return {"agente": args.get("nombre"), "modelo": modelo, "texto": salida["texto"]}
 mcp_route.montar(app, verificar_mcp, chat, almacen, CONTROL, _delegar)
-# --- G5b: Harness /invoke montado en este mismo Space (HF pide PRO para un Space nuevo). Ruta: chat -> Harness -> HTTP -> router ---
-from plugins.deepseek_harness.server import app as harness_app  # noqa: E402 - el Harness no importa mvp/; llm sigue por HTTP a fichas_qwen/call/llm
-app.mount("/plugins/deepseek_harness", harness_app)  # RIU_DEEPSEEK_HARNESS_URL = https://<space>/plugins/deepseek_harness
+# El Harness ya se monta una sola vez arriba, antes del middleware del Router.
 # Mismo Space y MISMO repo: el bridge Node escucha solo en 127.0.0.1:7870.
 # /web/* no existia en esta aplicacion ASGI; Vercel y YAIWES lo usan para Groq/NVIDIA/HF.
 from mvp import bridge_proxy  # noqa: E402
