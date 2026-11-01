@@ -31,7 +31,7 @@ export function montarClaves({ root, q, tell }) {
     msgSwe.textContent = await estadoSwe().catch(() => "Sin verificar");
     msgSwe.hidden = !msgSwe.textContent;
     try {
-      const s = await api("/plugins/banco_proveedores/call/catalogo", { method:"POST", body:{} });
+      const s = await api("/plugins/deepseek_harness/credenciales/catalogo", { method:"POST", body:{} });
       const lista = s?.result?.proveedores || [];
       msg.textContent = "Banco cifrado compartido: " + lista.map(x => x.id + " · " + x.cantidad).join(" | ");
     } catch { msg.textContent = "Banco compartido sin verificar. Puedes intentar añadir una clave."; }
@@ -39,7 +39,7 @@ export function montarClaves({ root, q, tell }) {
   function pintar() {
     cuerpo.replaceChildren(); cuerpo.append(msgSwe, msg);
     // Alta aditiva: no reemplaza las claves ya guardadas del proveedor.
-    // Router MVP autenticado -> plugin banco_proveedores -> HTTP bridge SWE -> banco cifrado existente.
+    // Harness HTTP autenticado -> plugin banco_proveedores Router MVP -> bridge SWE -> banco cifrado existente.
     const filaApi = el("div", "cl-api-plus"), grupo = el("select", "vn-in");
     for (const [v, t] of [["auto", "Detectar por prefijo"], ["groq", "Groq"], ["nvidia", "NVIDIA"], ["sdk", "Otro proveedor / SDK"]]) {
       const opt = el("option", "", t); opt.value = v; grupo.append(opt);
@@ -59,7 +59,7 @@ export function montarClaves({ root, q, tell }) {
       }
       guardarNueva.disabled = true; aviso.textContent = "Guardando en el banco cifrado…";
       try {
-        const r = await api("/plugins/banco_proveedores/call/anadir", { method: "POST",
+        const r = await api("/plugins/deepseek_harness/credenciales/anadir", { method: "POST",
           body: { proveedor: prov, tipo: grupo.value === "sdk" ? "sdk" : "api_key", secret: secreta.value } });
         if (r?.status !== "ok" || r.result?.ok !== true) throw new Error("No se confirmó la escritura.");
         secreta.value = ""; aviso.textContent = r.result.proveedor + ": " + r.result.cantidad +

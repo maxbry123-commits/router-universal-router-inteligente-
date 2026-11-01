@@ -530,6 +530,35 @@ if _SWE_OK:
     HERRAMIENTAS.update({"swe_iniciar": swe_iniciar, "swe_avanzar": swe_avanzar, "swe_estado": swe_estado, "swe_aprobar": swe_aprobar, "swe_reanudar": swe_reanudar})
 
 
+@app.post("/credenciales/{accion}")
+def credenciales(accion: str, cuerpo: dict, x_api_key: str | None = Header(None)):
+    """Relay ADMINISTRATIVO: Chat -> Harness -> plugin HTTP Router MVP -> SWE CODE -> banco.
+    Los secretos no entran en prompts, historial del modelo, tools ni logs.
+    """
+    esperado = os.environ.get("RIU_API_KEY")
+    if not esperado or not isinstance(x_api_key, str) or not hmac.compare_digest(
+        x_api_key.encode("utf-8", "surrogatepass"), esperado.encode("utf-8", "surrogatepass")
+    ):
+        return _err("clave de acceso invalida", 401)
+    if accion not in ("anadir", "catalogo"):
+        return _err("accion no permitida", 404)
+    if not isinstance(cuerpo, dict):
+        return _err("cuerpo invalido", 400)
+    if accion == "anadir":
+        secreto = cuerpo.get("secret")
+        provider = cuerpo.get("proveedor", "auto")
+        tipo = cuerpo.get("tipo", "api_key")
+        if (not isinstance(secreto, str) or not 8 <= len(secreto) <= 300
+                or any(ch.isspace() for ch in secreto)
+                or not isinstance(provider, str) or not re.fullmatch(r"auto|[a-z][a-z0-9_-]{1,31}", provider)
+                or tipo not in ("api_key", "sdk")):
+            return _err("registro invalido", 400)
+    respuesta = llamar("banco_proveedores", accion, cuerpo, timeout=30)
+    if not isinstance(respuesta, dict) or respuesta.get("error") or respuesta.get("ok") is not True:
+        return _err("banco no disponible", 503)  # no reflejar detalle del banco ni el secreto
+    return _ok(respuesta)
+
+
 @app.post("/invoke")
 def invoke(cuerpo: dict, x_api_key: str | None = Header(None)):
     esperado = os.environ.get("RIU_API_KEY")
