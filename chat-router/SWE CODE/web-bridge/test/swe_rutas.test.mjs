@@ -364,6 +364,37 @@ test('tools: errores del Router sin filtrar URL ni clave; 403 del Router (Agente
   assert.equal(r.codigo, 503); assert.equal(r.cuerpo.error.code, 'ROUTER_URL_INVALIDA');
 });
 
+test('X-Ray 6: ROOM contexto modifica estado y exige operador antes de tocar el Router', async () => {
+  const log = [], app = montar(ENV_T, routerFalso(log));
+  const sin = await llamarTool(app, 'sala', { body: { accion: 'contexto', args: { id: 'sala-1', texto: 'actualizar' } } });
+  assert.equal(sin.codigo, 403); assert.equal(sin.cuerpo.error.code, 'OPERADOR_REQUERIDO');
+  assert.equal(log.length, 0, 'no se permite modificar contexto ROOM con solo BRIDGE_TOKEN');
+  const lectura = await llamarTool(app, 'sala', { body: { accion: 'leer', args: { id: 'sala-1' } } });
+  assert.equal(lectura.codigo, 200, 'la lectura no requiere operador');
+  const con = await llamarTool(app, 'sala', { body: { accion: 'contexto', args: { id: 'sala-1', texto: 'nuevo' } }, headers: AUTH_OP });
+  assert.equal(con.codigo, 200, JSON.stringify(con.cuerpo));
+  assert.equal(log.at(-1).body.params.name, 'sala');
+  assert.deepEqual(log.at(-1).body.params.arguments, { id: 'sala-1', texto: 'nuevo', accion: 'contexto' });
+});
+
+test('X-Ray 6: plugin 200 con status=degraded/error o ok=false NO se anuncia como exitoso', async () => {
+  for (const cuerpo of [
+    { status: 'degraded', reason: 'caido' },
+    { status: 'error', error: 'fallo' },
+    { ok: false, error: { code: 'NO_DISPONIBLE' } },
+    { status: 'ok', result: { ok: false, error: 'FALLO' } },
+    { status: 'ok', result: { status: 'error' } },
+  ]) {
+    const log = [], app = montar(ENV_T, routerFalso(log, { cuerpo }));
+    // fake del Router envuelve cuerpo en status:ok; nuestra respuesta de plugin debe detectar el error interno.
+    const r = await llamarTool(app, 'loop', { body: { accion: 'estado', args: { proceso_id: 'p-1' } } });
+    assert.equal(r.codigo, 502, JSON.stringify(cuerpo));
+    assert.equal(r.cuerpo.ok, false);
+    assert.equal(r.cuerpo.error.code, 'ROUTER_PLUGIN_ERROR');
+    assert.equal(log.length, 1);
+  }
+});
+
 // ---------- integracion: server.js real (express o su stub), Harness falso por HTTP ----------
 let harnessFalso, A, B, vistos = [];
 before(async () => {

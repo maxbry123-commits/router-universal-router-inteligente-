@@ -105,7 +105,7 @@ const TOOLS_OPENCLAW = [
   mcp('github_escribir', 'github_escribir', 'github', 'Escribir archivo con commit en GitHub', 'efectos'),
   mcp('github_api', 'github_api', 'github', 'API de GitHub con el token configurado', 'efectos'),
   mcp('pendientes', 'pendientes', 'chat', 'Checklist de pendientes', 'por_accion', { acciones: ['listar', 'agregar', 'marcar', 'ordenar', 'quitar'], lectura: ['listar'] }),
-  mcp('sala', 'sala', 'chat', 'ROOM CONFERENCIAS', 'por_accion', { acciones: ['crear', 'listar', 'leer', 'enviar', 'contexto', 'permiso'], lectura: ['listar', 'leer', 'contexto'] }),
+  mcp('sala', 'sala', 'chat', 'ROOM CONFERENCIAS', 'por_accion', { acciones: ['crear', 'listar', 'leer', 'enviar', 'contexto', 'permiso'], lectura: ['listar', 'leer'] }), // contexto ES escritura: Control._salas actualiza s['contexto']; requiere operador
   mcp('agente', 'agente', 'agentes', 'Delegar en un agente conectado (exige Agentes ON en el Router)', 'efectos'),
   mcp('llm', 'llm', 'agentes', 'Preguntar a otro modelo (exige IA ON en el Router)', 'efectos'),
   mcp('yaiwes_md', 'yaiwes_md', 'chat', 'yaiwes.md (informacion compartida del proyecto)', 'por_accion', { acciones: ['leer', 'escribir'], lectura: ['leer'] }),

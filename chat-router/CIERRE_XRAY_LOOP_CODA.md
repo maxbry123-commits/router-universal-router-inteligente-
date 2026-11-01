@@ -70,3 +70,9 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - `SWE CODE/web-bridge/src/retomar_local.js`: no inicia/reanuda checkpoint de una petición cancelada, incluida la espera de cerrojo y otra vuelta.
 - Pruebas añadidas: `SWE CODE/web-bridge/test/xray5_backend.test.mjs`; no se han ejecutado (Node y servicios reales pendientes).
 - ALCANCE: solo GitHub `chat-router/`; FRONTEND NO TOCADO, Hugging Face NO TOCADO (mirror existente).
+
+## Segmento 6 — OpenClaw BACKEND exclusivamente; frontend reservado para Claude Code
+- X-Ray detectó bypass de autorización del operador en `sala:contexto`: estaba declarada como lectura, pero `mvp/control.py` escribe el contexto de ROOM. Eliminada de `lectura` en `SWE CODE/web-bridge/src/openclaw.js`; el operador individual es obligatorio para cambiarlo.
+- `SWE CODE/web-bridge/src/swe_rutas.js`: respuestas HTTP 200 con `status=degraded/error`, `ok=false` o error en resultado ahora devuelven `ROUTER_PLUGIN_ERROR`, sin suponer éxito ni reflejar secretos.
+- Pruebas de regresión incorporadas en `SWE CODE/web-bridge/test/swe_rutas.test.mjs`: operador para sala.contexto, lectura permitida y error de plugin detrás de HTTP 200. No ejecutadas en servidor vivo.
+- No se tocó frontend, Hugging Face ni OpenClaw independiente. Cierre de UI YAIWES/OpenClaw queda explícitamente reservado hasta terminar Claude Code.

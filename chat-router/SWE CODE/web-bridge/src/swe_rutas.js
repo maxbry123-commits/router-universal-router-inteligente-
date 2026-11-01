@@ -231,7 +231,17 @@ async function ejecutarTool({ t, args, accion }, { env, fetchFn }) {
     return r.structuredContent !== undefined ? r.structuredContent : r;
   }
   const j = t.via === 'plugin' ? await postRouter(`/plugins/${t.destino.plugin}/call/${accion}`, args, cfg, op) : await postRouter(t.destino.ruta, args, cfg, op);
-  return j && typeof j === 'object' && j.status === 'ok' && 'result' in j ? j.result : j;
+  // El HTTP 200 no demuestra exito: plugin host puede devolver status=degraded/error,
+  // ok=false o un resultado con error. No anunciar ok:true a OpenClaw ante fallos.
+  if (!j || typeof j !== 'object') throw Object.assign(new Error('ROUTER_RESPUESTA_INVALIDA'), { http: 502 });
+  const resultado = j.status === 'ok' && Object.prototype.hasOwnProperty.call(j, 'result') ? j.result : j;
+  const fallo = j.error || j.ok === false || j.status === 'degraded' || j.status === 'error'
+    || (resultado && typeof resultado === 'object' && (resultado.ok === false || resultado.status === 'degraded'
+        || resultado.status === 'error' || resultado.error));
+  if (fallo) throw Object.assign(new Error('ROUTER_PLUGIN_ERROR'), { http: 502 });
+  if (j.status === 'ok' && !Object.prototype.hasOwnProperty.call(j, 'result'))
+    throw Object.assign(new Error('ROUTER_RESPUESTA_INVALIDA'), { http: 502 });
+  return resultado;
 }
 
 export function montarRutasSwe(app, { env = process.env, fetchFn = fetch } = {}) {
