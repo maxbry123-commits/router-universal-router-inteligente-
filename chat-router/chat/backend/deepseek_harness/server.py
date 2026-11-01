@@ -421,7 +421,10 @@ def llm(cuerpo):
                     raise RuntimeError("OPERACION_SIN_CONFIRMAR")
                 if llave:
                     texto_resultado = json.dumps(resultado, ensure_ascii=False)
-                    diario[llave] = {"estado": "CONFIRMADA", "resultado": texto_resultado[:2000],
+                    # Guardar el resultado estructurado completo. Truncarlo a 2000 caracteres
+                    # rompe la reanudacion; si el almacenamiento excede su limite, debe
+                    # permanecer INICIADA y exigir reconciliacion, nunca fingir CONFIRMADA.
+                    diario[llave] = {"estado": "CONFIRMADA", "resultado": resultado,
                                     "recibo": hashlib.sha256(texto_resultado.encode("utf-8")).hexdigest()[:24]}
                     _anotar(tarea, diario)  # si falla queda INICIADA: reconciliar, NUNCA ejecutar de nuevo
             mensajes.append({"role": "tool", "tool_call_id": llamada["id"],

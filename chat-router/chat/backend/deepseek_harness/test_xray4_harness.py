@@ -118,6 +118,34 @@ class TestRecibos(unittest.TestCase):
                        "modelo": "x", "tarea_id": "conversacion-uno"})
         self.assertEqual(llamadas, ["tools/list"])
 
+    def test_resultado_grande_de_tool_no_se_trunca_y_se_reutiliza(self):
+        import copy
+        estado, llamadas_mcp = {}, []
+        texto = "evidencia-verificada-" * 300
+        solicitud = llamada("github_escribir", {"repo": "o/r", "ruta": "a", "contenido": "b"}, "c1")
+        def mcp(plugin, accion, datos, timeout=None):
+            llamadas_mcp.append(datos["method"])
+            if datos["method"] == "tools/list":
+                return CAT
+            return {"result": {"ok": True, "contenido": texto}}
+        def router(accion, datos):
+            return {"texto": "", "tool_calls": [solicitud], "finish_reason": "tool_calls"}
+        def guardar(tarea, diario):
+            estado.clear()
+            estado.update(copy.deepcopy(diario))
+        with patch.object(h, "llamar", mcp), patch.object(h, "_router", router), \
+             patch.object(h, "_diario", lambda tarea: copy.deepcopy(estado)), \
+             patch.object(h, "_anotar", guardar), patch.object(h, "PAUSA_S", -1):
+            primera = h.llm({"messages": [{"role": "user", "content": "escribe"}],
+                             "modelo": "x", "tarea_id": "tarea-x"})
+            segundo = h.llm({"messages": [{"role": "user", "content": "escribe"}],
+                             "modelo": "x", "tarea_id": "tarea-x"})
+        self.assertEqual(llamadas_mcp, ["tools/list", "tools/call", "tools/list"])
+        self.assertEqual(next(iter(estado.values()))["resultado"]["result"]["contenido"], texto)
+        self.assertIn(texto, primera["mensajes"][-1]["content"])
+        self.assertIn(texto, segundo["mensajes"][-1]["content"])
+        self.assertIn("ya_ejecutada_en_esta_tarea", segundo["mensajes"][-1]["content"])
+
     def test_error_de_tool_efectiva_deja_diario_iniciada_y_para(self):
         diario, anotadas, llamadas = {}, [], []
         turnos = iter([{"texto": "", "tool_calls": [
