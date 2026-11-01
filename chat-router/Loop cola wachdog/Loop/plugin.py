@@ -865,8 +865,17 @@ def _resolver_mirror(p: dict) -> dict:
     return p
 
 
-def handle(action: str, payload: "dict | None" = None) -> dict:
+def handle(action: str, payload: "dict | None" = None, server_context=None) -> dict:
     p = payload or {}
+    if action in ('dsl_config','dsl_control','dsl_estado'):
+        from nct_loop.trigger_bridge import TriggerBridge
+        from nct_loop.trigger_host import build_ports
+        from nct_loop.trigger_contract import ContractError
+        try:
+            return asyncio.run(TriggerBridge(build_ports(server_context)).handle(
+                action, dict(p), server_context=server_context))
+        except ContractError as error:
+            return {'ok':False,'status':'BLOCKED','error':error.code,'detail':error.detail}
     if action in ('status', 'health'):
         return {'ok': True, 'service': 'nct_loop', 'motores': ['coda', 'original', 'gobernanza'],
                 'procesos': len(_PROC)}
@@ -980,6 +989,6 @@ def handle(action: str, payload: "dict | None" = None) -> dict:
     return {'error': 'ACCION_DESCONOCIDA', 'allowed': ACCIONES}
 
 
-ACCIONES = ['status', 'health', 'ejecutar', 'gobernar', 'estado', 'cancelar',
+ACCIONES = ['status', 'health', 'dsl_config', 'dsl_control', 'dsl_estado', 'ejecutar', 'gobernar', 'estado', 'cancelar',
             'motores', 'motor_fases', 'motor_ejecutar', 'motores_registro', 'agentes', 'fuente_listar', 'fuente_agregar', 'fuente_quitar', 'fuente_sync',
             'paralelo', 'estado_paralelo']

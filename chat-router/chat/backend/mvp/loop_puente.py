@@ -23,10 +23,14 @@ def _cargar(plugin):
     return _CARGADOS[plugin]
 
 
-async def llamar(plugin, accion, cuerpo):
+async def llamar(plugin, accion, cuerpo, *, server_context=None):
     if plugin not in PLUGINS:
         raise ValueError("plugin no permitido: " + str(plugin))
     modulo = await asyncio.to_thread(_cargar, plugin)
+    if server_context is not None:
+        if plugin != 'nct_loop' or accion not in ('dsl_config','dsl_control','dsl_estado'):
+            raise ValueError('trusted context no permitido')
+        return await asyncio.to_thread(modulo.handle, str(accion), dict(cuerpo or {}), server_context)
     return await asyncio.to_thread(modulo.handle, str(accion), dict(cuerpo or {}))
 
 

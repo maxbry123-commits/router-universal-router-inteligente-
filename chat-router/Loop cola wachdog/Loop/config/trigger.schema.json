@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:yaiwes:trigger:v1",
+  "title": "YAIWES trigger contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "loop_id",
+    "name",
+    "category",
+    "enabled",
+    "role",
+    "source",
+    "input_block_verbatim",
+    "execution",
+    "steps",
+    "outputs"
+  ],
+  "properties": {
+    "schema": {
+      "const": "yaiwes.trigger.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,80}$"
+    },
+    "loop_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,80}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 150
+    },
+    "category": {
+      "enum": [
+        "constitucion",
+        "auditoria",
+        "investigacion",
+        "arquitectura",
+        "componentes",
+        "backend",
+        "frontend",
+        "canvas",
+        "verificacion",
+        "refactoria",
+        "github",
+        "continuidad"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 1200
+    },
+    "role": {
+      "enum": [
+        "arquitecto",
+        "auditor",
+        "ejecutor_codigo",
+        "frontend",
+        "refactor_revision"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "document_ref",
+        "section_id",
+        "sha256"
+      ],
+      "properties": {
+        "document_ref": {
+          "type": "string",
+          "pattern": "^source:.+"
+        },
+        "section_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,80}$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "original_document_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source_anchor_ref": {
+          "type": "string",
+          "pattern": "^ancla:[A-Za-z0-9_.-]{1,120}$"
+        }
+      }
+    },
+    "input_block_verbatim": {
+      "type": "string",
+      "minLength": 1
+    },
+    "attachments": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^ancla:[A-Za-z0-9_.-]{1,120}$"
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,80}$"
+      }
+    },
+    "when": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "predicate",
+        "args"
+      ],
+      "properties": {
+        "predicate": {
+          "enum": [
+            "always",
+            "source_exists",
+            "file_type_is",
+            "requires_frontend",
+            "requires_backend",
+            "component_present",
+            "prior_status",
+            "approved_scope"
+          ]
+        },
+        "args": {
+          "type": "object"
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "tool_profile",
+        "max_model_calls",
+        "write_paths"
+      ],
+      "properties": {
+        "operation": {
+          "enum": [
+            "analyze",
+            "inspect_source",
+            "apply_approved_patch",
+            "run_approved_test",
+            "verify_artifacts"
+          ]
+        },
+        "tool_profile": {
+          "enum": [
+            "read_only",
+            "writer_n4",
+            "verify_only"
+          ]
+        },
+        "max_model_calls": {
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "write_paths": {
+          "type": "array",
+          "maxItems": 30,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "timeout_s": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 900
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "depends_on"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,80}$"
+          },
+          "kind": {
+            "enum": [
+              "MODEL",
+              "TOOL",
+              "CHECK"
+            ]
+          },
+          "depends_on": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,80}$"
+            }
+          },
+          "tool": {
+            "enum": [
+              "inspect_workspace",
+              "create_directory",
+              "write_text",
+              "read_text",
+              "verify_exists",
+              "verify_contains",
+              "finish"
+            ]
+          },
+          "args": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_fields",
+        "acceptance",
+        "require_tool_receipt",
+        "require_readback"
+      ],
+      "properties": {
+        "required_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "acceptance": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "require_tool_receipt": {
+          "type": "boolean"
+        },
+        "require_readback": {
+          "type": "boolean"
+        }
+      }
+    },
+    "on_pass": {
+      "const": "NEXT"
+    },
+    "on_not_applicable": {
+      "const": "RECORD_AND_NEXT"
+    },
+    "on_blocked": {
+      "const": "FLAG_AND_STOP_DEPENDENTS"
+    }
+  }
+}

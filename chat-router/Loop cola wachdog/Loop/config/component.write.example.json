@@ -1,0 +1,70 @@
+{
+  "schema": "yaiwes.trigger.v1",
+  "id": "T024",
+  "loop_id": "LOOP-002",
+  "name": "Adaptación acotada en workspace",
+  "category": "backend",
+  "enabled": false,
+  "note": "EJEMPLO DESACTIVADO: ajustar anclas y texto original antes de ejecutar.",
+  "role": "ejecutor_codigo",
+  "source": {
+    "document_ref": "source:demo_documento",
+    "section_id": "T024-INPUT",
+    "sha256": "6e2c8bbd4d7ee36026d8afe92fc139dee11f1cd4add22a131aa941acd413de69"
+  },
+  "input_block_verbatim": "Adaptar solo el archivo autorizado y conservar la prueba anterior y posterior.\n",
+  "attachments": [],
+  "depends_on": [],
+  "when": {
+    "predicate": "always",
+    "args": {}
+  },
+  "execution": {
+    "operation": "apply_approved_patch",
+    "tool_profile": "writer_n4",
+    "max_model_calls": 1,
+    "write_paths": [
+      "src/"
+    ],
+    "timeout_s": 120
+  },
+  "steps": [
+    {
+      "id": "S01",
+      "kind": "MODEL",
+      "depends_on": []
+    },
+    {
+      "id": "S02",
+      "kind": "TOOL",
+      "depends_on": [
+        "S01"
+      ],
+      "tool": "write_text",
+      "args": {
+        "path": "src/modulo.py",
+        "text_from_model": "generated_code"
+      }
+    },
+    {
+      "id": "S03",
+      "kind": "CHECK",
+      "depends_on": [
+        "S02"
+      ]
+    }
+  ],
+  "outputs": {
+    "required_fields": [
+      "generated_code"
+    ],
+    "acceptance": [
+      "actual_tool_evidence"
+    ],
+    "require_tool_receipt": true,
+    "require_readback": true
+  },
+  "on_pass": "NEXT",
+  "on_not_applicable": "RECORD_AND_NEXT",
+  "on_blocked": "FLAG_AND_STOP_DEPENDENTS"
+}

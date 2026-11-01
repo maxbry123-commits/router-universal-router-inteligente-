@@ -588,7 +588,8 @@ async def _cancelar(pid):
     if pendiente: await asyncio.to_thread(estado_tarea.marcar, app.state.banco, pid, False)
     return {"cancelado": activo or pendiente or bool(tarea), "proceso_id": pid}
 @app.post("/plugins/{plugin}/call/{accion}", dependencies=[Depends(verificar)])
-async def plugin_call(plugin: str, accion: str, cuerpo: dict):
+async def plugin_call(plugin: str, accion: str, cuerpo: dict,
+                      x_operator_token: str | None = Header(None), x_operador: str | None = Header(None)):
     if plugin == "puente_chat" and accion == "mantener_encendido":  # {siempre: true} = hasta que lo apagues; {siempre: false} = apagar; {horas: n} = n horas
         siempre = cuerpo.get("siempre")
         try: horas = mantener_vivo.SIEMPRE_H if siempre is True else 0 if siempre is False else min(max(float(24 if cuerpo.get("horas") is None else cuerpo["horas"]), 0), 720)
@@ -600,6 +601,36 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
     if plugin == "motor_archivos":  # ventana Archivos (motor): POST /plugins/motor_archivos/call/<ejecutar|estado|cancelar|raiz|listar_raiz>
         resultado = await asyncio.to_thread(archivos.llamar, accion, cuerpo, lambda: CONTROL.credencial("github", app.state.banco))
         return {"status": "ok", "result": resultado}
+    if plugin == 'nct_loop' and accion in ('dsl_config','dsl_control','dsl_estado'):
+        pid = str(cuerpo.get('project_id') or '')
+        project = CONTROL.d.get('proyectos', {}).get(pid)
+        if not isinstance(project, dict):
+            raise HTTPException(status_code=403, detail='PROJECT_NOT_REGISTERED')
+        sesion = str(cuerpo.get('sesion') or 'web-general')[:60]
+        if project.get('chats') and sesion not in project['chats']:
+            raise HTTPException(status_code=403, detail='PROJECT_SESSION_SCOPE')
+        operator_id, director_confirmed = None, False
+        if accion == 'dsl_control' and cuerpo.get('op') == 'approve':
+            operator_id = _identificar_operador(x_operador, x_operator_token)
+            director_confirmed = bool(os.environ.get('RIU_DSL_DIRECTOR') and operator_id == os.environ.get('RIU_DSL_DIRECTOR'))
+            if not director_confirmed:
+                raise HTTPException(status_code=403, detail='DIRECTOR_NOT_VERIFIED')
+        services = await asyncio.to_thread(lambda: (
+            loop_puente._cargar('cola50')._store(),
+            loop_puente._cargar('watchdog48')._store()))
+        trusted = {'trusted_host':True,'authenticated':True,'project_id':pid,
+                   'sesion':sesion,'loop_id':cuerpo.get('loop_id'),
+                   'banco':app.state.banco,'control':CONTROL,
+                   'queue_store':services[0],'watch_store':services[1],
+                   'root':Path(__file__).resolve().parents[3], 'write_paths':[],
+                   'operator_id':operator_id,'director_confirmed':director_confirmed}
+        resultado = await loop_puente.llamar('nct_loop', accion, cuerpo, server_context=trusted)
+        if accion == 'dsl_control' and cuerpo.get('op') == 'start' and resultado.get('ok'):
+            observer = await loop_puente.llamar('watchdog48','worker',{'sub':'start'})
+            resultado['watchdog_worker'] = bool(observer.get('ok') and observer.get('activo'))
+            if not resultado['watchdog_worker']:
+                resultado['warning']='WATCHDOG_WORKER_NOT_STARTED'
+        return {'status':'ok','result':resultado}
     if plugin in loop_puente.PLUGINS:  # LOOP, Cola y Watchdog: Chat -> Harness -> Router -> plugin
         try: resultado = await loop_puente.llamar(plugin, accion, loop_reanudar.traducir(cuerpo))
         except (OSError, ValueError) as error: raise HTTPException(status_code=503, detail=str(error)) from None

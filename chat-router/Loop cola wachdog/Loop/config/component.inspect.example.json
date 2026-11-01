@@ -1,0 +1,66 @@
+{
+  "schema": "yaiwes.trigger.v1",
+  "id": "T020",
+  "loop_id": "LOOP-002",
+  "name": "Inspeccionar componentes antes de integrar",
+  "category": "componentes",
+  "enabled": false,
+  "note": "EJEMPLO DESACTIVADO: ajustar anclas y texto original antes de ejecutar.",
+  "role": "arquitecto",
+  "source": {
+    "document_ref": "source:demo_documento",
+    "section_id": "T020-INPUT",
+    "sha256": "2c811f32bcb288de5d1789e24292e408e10a59c57b0ee4b83217d184ec064c9c"
+  },
+  "input_block_verbatim": "Localizar primero el código del componente y auditar sus contratos y dependencias.\n",
+  "attachments": [],
+  "depends_on": [],
+  "when": {
+    "predicate": "always",
+    "args": {}
+  },
+  "execution": {
+    "operation": "inspect_source",
+    "tool_profile": "read_only",
+    "max_model_calls": 1,
+    "write_paths": [],
+    "timeout_s": 120
+  },
+  "steps": [
+    {
+      "id": "S01",
+      "kind": "MODEL",
+      "depends_on": []
+    },
+    {
+      "id": "S02",
+      "kind": "TOOL",
+      "depends_on": [
+        "S01"
+      ],
+      "tool": "inspect_workspace",
+      "args": {}
+    },
+    {
+      "id": "S03",
+      "kind": "CHECK",
+      "depends_on": [
+        "S02"
+      ]
+    }
+  ],
+  "outputs": {
+    "required_fields": [
+      "inventory",
+      "findings"
+    ],
+    "acceptance": [
+      "actual_tool_evidence"
+    ],
+    "require_tool_receipt": true,
+    "require_readback": false
+  },
+  "on_pass": "NEXT",
+  "on_not_applicable": "RECORD_AND_NEXT",
+  "on_blocked": "FLAG_AND_STOP_DEPENDENTS"
+}

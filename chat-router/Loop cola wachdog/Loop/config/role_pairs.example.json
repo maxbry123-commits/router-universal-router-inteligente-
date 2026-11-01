@@ -1,0 +1,32 @@
+{
+  "schema": "yaiwes.role_pairs.v1",
+  "roles": {
+    "arquitecto": {
+      "model_id": "CONFIGURAR_EN_UI",
+      "agent_id": "CONFIGURAR_EN_UI",
+      "available": false
+    },
+    "auditor": {
+      "model_id": "CONFIGURAR_EN_UI",
+      "agent_id": "CONFIGURAR_EN_UI",
+      "available": false
+    },
+    "ejecutor_codigo": {
+      "model_id": "CONFIGURAR_EN_UI",
+      "agent_id": "CONFIGURAR_EN_UI",
+      "available": false
+    },
+    "frontend": {
+      "model_id": "CONFIGURAR_EN_UI",
+      "agent_id": "CONFIGURAR_EN_UI",
+      "available": false
+    },
+    "refactor_revision": {
+      "model_id": "CONFIGURAR_EN_UI",
+      "agent_id": "CONFIGURAR_EN_UI",
+      "available": false
+    }
+  },
+  "executable": false,
+  "note": "Disponibilidad real validada por Harness."
+}
