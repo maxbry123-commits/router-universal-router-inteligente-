@@ -135,8 +135,9 @@ def build_ports(host: dict) -> HostPorts:
             raise ContractError("QUEUE_COMPLETION_FAILED")
         row = store.get(qid)
         task = next((t for t in row["tasks"] if t["id"] == tid), None)
-        if not task or not task.get("receipt_id"):
-            raise ContractError("QUEUE_RECEIPT_MISSING")
+        expected = "succeeded" if receipt.get("verification") == "PASS" else "failed"
+        if not task or task.get("status") != expected or not task.get("receipt_id"):
+            raise ContractError("QUEUE_COMPLETION_STATE_MISMATCH")
         return {"ok": True, "evidence_ref": "cit:" + qid + ":" + task["receipt_id"]}
 
     def roles_resolve(roles):

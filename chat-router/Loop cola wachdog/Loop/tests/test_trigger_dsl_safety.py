@@ -1,0 +1,89 @@
+"""YAIWES DSL safety regressions: deadlines, exclusive claims, uncertain leases and cancel races.
+Only existing QueueStore / HostPorts; no network, HF, model or secret calls.
+"""
+import importlib.util
+import sys
+import tempfile
+import time
+import types
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+LOOP = Path(__file__).resolve().parents[1]
+COLA_CORE = LOOP.parent / "Cola" / "nct_addons" / "cola50" / "core.py"
+if str(LOOP) not in sys.path:
+    sys.path.insert(0, str(LOOP))
+
+spec = importlib.util.spec_from_file_location("cola50_dsl_safety", COLA_CORE)
+core = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(core)
+from nct_loop.trigger_contract import ContractError
+from nct_loop.trigger_host import build_ports
+
+
+class QueueSafety(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.store = core.QueueStore(self.root / "cola.db")
+
+    def queue(self):
+        q = self.store.create({"chat_id": "test", "title": "DSL",
+            "mode": "dsl", "tasks": [
+                {"id": "a", "title": "a", "type": "handoff"},
+                {"id": "b", "title": "b", "type": "handoff"}]})
+        return self.store.start(q["queue_id"], seconds=600)["queue_id"]
+
+    def test_one_writer_per_dsl_queue(self):
+        qid = self.queue()
+        self.assertTrue(self.store.claim_dsl_for(qid, "a")["claimed"])
+        self.assertEqual("QUEUE_BUSY", self.store.claim_dsl_for(qid, "b")["error"])
+        self.assertTrue(self.store.complete(qid, "a", {"verification": "PASS"}))
+        self.assertTrue(self.store.claim_dsl_for(qid, "b")["claimed"])
+
+    def test_deadline_prevents_new_model_call(self):
+        qid = self.queue()
+        with self.store.db() as con:
+            con.execute("UPDATE queues SET deadline=? WHERE id=?", (time.time()-1, qid))
+        self.assertEqual("QUEUE_EXPIRED", self.store.claim_dsl_for(qid, "a")["error"])
+        self.assertEqual("expired", self.store.get(qid)["status"])
+
+    def test_expired_running_lease_fail_closed(self):
+        qid = self.queue()
+        self.store.claim_dsl_for(qid, "a")
+        with self.store.db() as con:
+            con.execute("UPDATE tasks SET lease=? WHERE queue_id=? AND id=?",
+                        (time.time()-1,qid,"a"))
+        self.assertEqual("NEEDS_RECONCILIATION", self.store.claim_dsl_for(qid, "b")["error"])
+        q = self.store.get(qid)
+        self.assertEqual("failed", q["status"])
+        self.assertEqual("needs_reconciliation", next(t for t in q["tasks"] if t["id"]=="a")["status"])
+
+    def test_cancelled_task_never_reported_as_pass(self):
+        qid = self.queue()
+        self.store.claim_dsl_for(qid, "a")
+        self.store.control(qid, "cancel")
+        control = types.SimpleNamespace(d={"proyectos":{"test":{"anclas":[]}},"agentes":{},"agentes_on":False},
+                                        credencial=lambda *args,**kwargs:"fake")
+        fake_mvp = types.ModuleType("mvp")
+        fake_mvp.hf_store = types.ModuleType("hf_store")
+        fake_plugins = types.ModuleType("plugins")
+        fake_bridge = types.ModuleType("plugins.puente_chat")
+        fake_bridge.plugin = types.SimpleNamespace(FICHAS={},RESPALDO={})
+        fake_plugins.puente_chat = fake_bridge
+        with patch.dict(sys.modules, {"mvp":fake_mvp,"plugins":fake_plugins,
+                                      "plugins.puente_chat":fake_bridge}):
+            ports = build_ports({"authenticated":True,"trusted_host":True,
+                 "control":control,"banco":object(),"queue_store":self.store,
+                 "watch_store":None,"root":self.root,"project_id":"test",
+                 "loop_id":"x","sesion":"web-general"})
+            with self.assertRaises(ContractError) as raised:
+                ports.queue_complete("cit:"+qid+":a", {"verification":"PASS"})
+        self.assertEqual("QUEUE_COMPLETION_STATE_MISMATCH",raised.exception.code)
+        self.assertEqual("cancelled",next(t for t in self.store.get(qid)["tasks"] if t["id"]=="a")["status"])
+
+
+if __name__ == "__main__":
+    unittest.main()

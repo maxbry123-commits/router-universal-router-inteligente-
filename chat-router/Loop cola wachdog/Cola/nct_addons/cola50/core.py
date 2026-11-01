@@ -326,10 +326,25 @@ class QueueStore:
         valid_id(qid);valid_id(tid)
         with self.db() as c:
             c.execute('BEGIN IMMEDIATE')
-            q=c.execute('SELECT state,mode FROM queues WHERE id=?',(qid,)).fetchone()
+            q=c.execute('SELECT state,mode,deadline FROM queues WHERE id=?',(qid,)).fetchone()
             if not q or q['mode']!='dsl' or q['state']!='running':
                 c.execute('ROLLBACK');return {'claimed':False,'error':'QUEUE_NOT_RUNNING'}
-            rows=c.execute('SELECT id,state,details FROM tasks WHERE queue_id=?',(qid,)).fetchall()
+            now=time.time()
+            if q['deadline'] is not None and q['deadline'] < now:
+                c.execute("UPDATE queues SET state='expired' WHERE id=?",(qid,))
+                self.ev(c,qid,'queue.expired',{'reason':'dsl.deadline'})
+                c.execute('COMMIT');return {'claimed':False,'error':'QUEUE_EXPIRED'}
+            rows=c.execute('SELECT id,state,details,lease FROM tasks WHERE queue_id=?',(qid,)).fetchall()
+            expired=[r for r in rows if r['state']=='running' and r['lease'] is not None and r['lease']<now]
+            if expired:
+                for r in expired:
+                    c.execute("UPDATE tasks SET state='needs_reconciliation',lease=NULL WHERE queue_id=? AND id=?",(qid,r['id']))
+                    self.ev(c,qid,'dsl.task.lease_expired',{'side_effect_may_have_occurred':True},r['id'])
+                c.execute("UPDATE queues SET state='failed' WHERE id=?",(qid,))
+                self.ev(c,qid,'queue.failed',{'reason':'dsl.reconciliation_required'})
+                c.execute('COMMIT');return {'claimed':False,'error':'NEEDS_RECONCILIATION'}
+            if any(r['state']=='running' for r in rows):
+                c.execute('ROLLBACK');return {'claimed':False,'error':'QUEUE_BUSY'}
             task=next((row for row in rows if row['id']==tid),None)
             if not task or task['state']!='pending':
                 c.execute('ROLLBACK');return {'claimed':False,'error':'TASK_NOT_PENDING'}
