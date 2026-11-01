@@ -34,7 +34,7 @@ class TestClaveDobleRouter(unittest.TestCase):
         self.assertEqual([a["proveedor"], b["proveedor"], c["cantidad"]], ["groq", "nvidia", 2])
         self.assertEqual(len(mod.leer()["groq"]), 2)
         self.assertEqual(len(mod.leer()["nvidia"]), 1)
-        self.assertEqual(mod.catalogo()["proveedores"][0]["cantidad"], 2)
+        self.assertEqual(next(x["cantidad"] for x in mod.catalogo()["proveedores"] if x["id"] == "groq"), 2)
 
     def test_otro_sdk_almacena_metadatos_sin_anunciar_inferencia(self):
         r = mod.anadir({"proveedor": "otro-sdk", "secret": "fake-sdk-token-long", "tipo": "sdk"})
