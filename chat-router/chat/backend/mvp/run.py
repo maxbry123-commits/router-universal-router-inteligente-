@@ -3,6 +3,8 @@ import os
 import subprocess
 import sys
 import threading
+import shutil
+import atexit
 import time
 from pathlib import Path
 
@@ -19,6 +21,44 @@ def _raiz():
 
 
 REPO = _raiz()
+BRIDGE_DIR = REPO / "chat-router" / "SWE CODE" / "web-bridge"
+_BRIDGE = None
+
+
+def _parar_bridge():
+    global _BRIDGE
+    proc, _BRIDGE = _BRIDGE, None
+    if not proc or proc.poll() is not None:
+        return
+    proc.terminate()
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait(timeout=3)
+
+
+def _iniciar_bridge():
+    """Bridge EXISTENTE en el MISMO Space, no otro servicio externo ni nueva raiz."""
+    global _BRIDGE
+    if _BRIDGE and _BRIDGE.poll() is None:
+        return True
+    node = shutil.which("node")
+    if not node or not (BRIDGE_DIR / "node_modules" / "express").is_dir():
+        print("BRIDGE_SIN_NODE_O_DEPENDENCIAS: no se anuncia conexion, verifique imagen y npm", flush=True)
+        return False
+    env = _entorno()
+    env["BRIDGE_PORT"] = str(os.getenv("BRIDGE_PORT") or "7870")
+    try:
+        _BRIDGE = subprocess.Popen([node, "src/server.js"], cwd=str(BRIDGE_DIR), env=env)
+        print("BRIDGE_INICIADO: puerto " + env["BRIDGE_PORT"], flush=True)
+        return True
+    except OSError:
+        print("BRIDGE_NO_INICIADO", flush=True)
+        return False
+
+
+atexit.register(_parar_bridge)
 
 
 def _rutas():
@@ -103,6 +143,7 @@ def _actualizar():
             print("AUTOPULL: deshice %s y sigo con %s" % (nuevo[:10], base[:10]), flush=True)
             return False
         print("AUTOPULL: reinicio con %s" % nuevo[:10], flush=True)
+        _parar_bridge()  # liberar 7870 antes de ejecutar el nuevo codigo
         os.execv(sys.executable, [sys.executable, *sys.argv])
         return True
     return False
@@ -112,6 +153,8 @@ def _vigilar():
     while True:
         time.sleep(60)
         _actualizar()
+        if _BRIDGE is None or _BRIDGE.poll() is not None:
+            _iniciar_bridge()  # reinicio simple si el proceso Node salio; sin crear jobs
 
 
 def _iniciar_hilo():
@@ -127,6 +170,7 @@ def main():
     global ARRANQUE
     ARRANQUE = _head()
     print("MVP commit: " + (ARRANQUE or "desconocido"), flush=True)
+    _iniciar_bridge()
     _iniciar_hilo()
     import uvicorn
     uvicorn.run("mvp.app:app", host="0.0.0.0", port=int(os.environ.get("PORT") or 7860))  # el Space lo lanza con PORT=7861 (detras de su proxy); boot.sh detecta esta linea

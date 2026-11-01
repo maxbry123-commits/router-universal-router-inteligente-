@@ -30,10 +30,15 @@ cd "$REPO"
 echo "MVP_BRANCH=$(git branch --show-current)"
 echo "MVP_COMMIT=$(git rev-parse HEAD)"
 
-# Verificar archivos requeridos.
-test -f mvp/run.py
-test -f mvp/app.py
-test -f mvp/requirements.txt
+# Las dos raices del repo son router-mvp/ y chat-router/; NO existe mvp/ en la raiz.
+export PYTHONPATH="$REPO/router-mvp:$REPO/chat-router${PYTHONPATH:+:$PYTHONPATH}"
+test -f router-mvp/mvp/run.py
+test -f router-mvp/mvp/app.py
+test -f router-mvp/mvp/requirements.txt
+test -f "chat-router/SWE CODE/web-bridge/src/server.js"
 
-# Ejecutar exclusivamente el MVP.
+# Bridge existente dentro del MISMO contenedor: dependencias npm, sin otro despliegue.
+npm install --omit=dev --no-audit --no-fund --prefix "chat-router/SWE CODE/web-bridge"
+
+# El Runner MVP inicia/vigila el bridge Node y expone /web/* desde FastAPI.
 exec python -m mvp.run
