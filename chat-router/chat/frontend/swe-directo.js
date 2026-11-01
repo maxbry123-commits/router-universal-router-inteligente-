@@ -34,7 +34,7 @@ export const MODELOS_WEB = [["swecode-consulta", "Concilio · los 3 web"], ["web
 export const MODOS_TRABAJO = [["asesoria", "Asesoría"], ["revision", "Revisión"], ["solucion", "Solución"], ["arquitectura", "Arquitectura"], ["archivos", "Archivos"], ["prompt_code", "Prompt code"], ["despliega", "Despliega"]];
 export const esSelectorSwe = (id) => typeof id === "string" && Object.hasOwn(SWE_LISTAS, id);
 
-export const esSwe = (id) => typeof id === "string" && (/^(web-|swecode-|groq\/|nvidia\/)/.test(id) || Object.hasOwn(REAL, id) || LOCALES.includes(id));
+export const esSwe = (id) => typeof id === "string" && (/^(web-|swecode-|groq\/|nvidia\/)/.test(id) || Object.hasOwn(REAL, id) || LOCALES.includes(id) || (id.startsWith("hf/") && LOCALES.includes(id.slice(3))));
 
 // Salida de las tools (contrato externo `ejecutor_tools`): quien ejecuta los tool_calls. NO es un segundo control: se DERIVA de AGENTE QUE EJECUTA (agente_tool).
 // 'openclaw' = el bridge devuelve los tool_calls tal cual a OpenClaw (seccion WAIT_TOOLS); cualquier otro agente = 'swe' (el SWE-agent via bridge/Harness, como hoy).
@@ -191,6 +191,11 @@ export function opcionesModeloVentana(ventana, cap, proveedor = {}, { web = vent
     else if (pv === "NO_CONFIGURADO") st = { ok: false, elegible: false, estado: "NO_CONFIGURADO", motivo: id.startsWith("hf/") ? "ningún servidor local está configurado en el bridge" : "el banco del bridge no tiene clave para este proveedor" };
     else if (pv === true) st = { ok: true, elegible: true, estado: "DISPONIBLE", motivo: "" };  // GET /models del mismo bridge que hace inferencia, no del Harness de agentes
     else if (pv === "SIN_VERIFICAR") st = { ok: true, elegible: true, estado: "SIN_VERIFICAR", motivo: "el bridge no pudo verificar el catálogo; puedes intentar este modelo" };
+    else if (pv === undefined && /^(groq\/|nvidia\/|hf\/)/.test(id)) {
+      // El Harness enumera agentes, NO es autoridad sobre modelos del bridge.
+      // Sin respuesta del bridge, habilitar solo intento directo, sin certificarlo como DISPONIBLE.
+      st = { ok: true, elegible: true, estado: "SIN_VERIFICAR", motivo: "sin catálogo del bridge; modelo seleccionable para probar su conexión" };
+    }
     const nom = st.nombre || etq;  // A5: el NOMBRE sale del catalogo del Harness cuando lo reporta (163)
     return { id, etq: nom + (st.estado === "DISPONIBLE" ? "" : " — " + ETIQUETA_ESTADO[st.estado]), nombre: nom, ok: st.ok, elegible: st.elegible !== false && (st.ok || st.elegible === true), estado: st.estado, motivo: st.motivo };
   });
@@ -303,7 +308,8 @@ export async function aprobarYContinuarSwe(api, d, alPaso) {
 export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecutor_tools, modo }) {
   const h = historial.slice(-MAX_HISTORIAL);
   const m = modo === undefined ? leerSeleccion().modo_trabajo : modo, mt = en(MODOS_TRABAJO, m) ? m : "";  // MODO DE TRABAJO: `modo` junto al modelo; Concilio lleva el modo en el id (swecode-<modo>)
-  const real = Object.hasOwn(REAL, model) ? REAL[model] : model;
+  const real = Object.hasOwn(REAL, model) ? REAL[model]
+    : typeof model === "string" && model.startsWith("hf/") && LOCALES.includes(model.slice(3)) ? model.slice(3) : model;
   // R1: el navegador NUNCA guarda ni reenvia claves de API: el banco cifrado del servidor es la unica fuente (swe-claves.js solo informa su estado)
   return { model: mt && real === "swecode-consulta" ? "swecode-" + mt : real, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, stream: true, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(mt && real !== "swecode-consulta" ? { modo: mt } : {}), ...(proyecto ? { proyecto } : {}) };
 }

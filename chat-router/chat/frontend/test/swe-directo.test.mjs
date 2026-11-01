@@ -126,3 +126,29 @@ test("enviarSwe con tool_calls (passthrough a OpenClaw) no es un GAP: devuelve l
   assert.deepEqual(r.tools, []); assert.deepEqual(r.pedidas, ["github_leer"]); assert.equal(r.finish_reason, "tool_calls"); assert.match(r.nota, /OpenClaw/);  // pedidas, no usadas
   assert.match(r.reply, /github_leer/);
 });
+
+test("X-Ray modelos locales: el id hf/ del selector se traduce a modelo real del bridge y NO al router MVP", async () => {
+  for (const m of ["lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"]) {
+    assert.ok(esSwe("hf/" + m));
+    let visto;
+    const out = await enviarSwe(async (ruta, opts) => {
+      visto = { ruta, body: opts.body };
+      return { modelo_usado: m, choices: [{ message: { content: "OK" }, finish_reason: "stop" }] };
+    }, { model: "hf/" + m, mensaje: "hola", sesion: "prueba", historial: [] });
+    assert.equal(visto.ruta, "/web/v1/chat/completions");
+    assert.equal(visto.body.model, m);
+    assert.equal(out.reply, "OK");
+  }
+  assert.equal(esSwe("hf/modelo-inventado"), false);
+});
+
+test("X-Ray selector: la ausencia del Harness NO bloquea modelos de chat directo del bridge", async () => {
+  const { opcionesModeloVentana } = await import("../swe-directo.js");
+  const cap = { harness: "sin_respuesta", agentes: {}, modelos: {}, workflows: {} };
+  for (const [ventana, modelo] of [["swe-code", "hf/qwen3-0.6b"], ["groq", "groq/qwen/qwen3.8-27b"], ["nvidia", "nvidia/z-ai/glm-5.3"]]) {
+    const op = opcionesModeloVentana(ventana, cap, {}).find(x => x.id === modelo);
+    assert.ok(op, modelo);
+    assert.equal(op.estado, "SIN_VERIFICAR");
+    assert.ok(op.elegible, "seleccionable sin declarar falsamente DISPONIBLE");
+  }
+});
