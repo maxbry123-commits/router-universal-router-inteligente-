@@ -39,12 +39,12 @@ function leerCandidato(p) {
     if (!st.isDirectory()) return null; // la unica fuente autorizada es la ficha completa
     let core = fs.readFileSync(path.join(p, 'system_core.md'), 'utf8');
     for (const [k, v] of Object.entries(VARIABLES)) core = core.split(k).join(v);
-    core = core.replace('[MODO]\\n(ver bloque_1.md)\\n', '').replace('\\nEmpieza ahora.\\n', '\\n');
-    core = core.replace(/\\n=+ FIN INPUT BLOCK MAESTRO UNIFICADO =+\\n/g, '\\n');
+    core = core.replace('[MODO]\n(ver bloque_1.md)\n', '').replace('\nEmpieza ahora.\n', '\n');
+    core = core.replace(/\n=+ FIN INPUT BLOCK MAESTRO UNIFICADO =+\n/g, '\n');
     const bloque3 = fs.readFileSync(path.join(p, 'bloques', 'bloque_3.md'), 'utf8').trim();
     const bloque4 = fs.readFileSync(path.join(p, 'bloques', 'bloque_4.md'), 'utf8').trim();
     if (!core.trim() || !bloque3 || !bloque4) return null;
-    return [core.trim(), bloque3, bloque4].join('\\n\\n');
+    return [core.trim(), bloque3, bloque4].join('\n\n');
   } catch { /* candidato ausente o incompleto: siguiente */ }
   return null;
 }
