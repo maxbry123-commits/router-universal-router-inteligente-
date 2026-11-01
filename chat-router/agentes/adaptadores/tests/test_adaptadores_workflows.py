@@ -156,6 +156,40 @@ def test_iniciar_es_idempotente_y_no_pisa_otra_identidad(mundo):
         wf.swe_iniciar(contrato(sesion="chat-002"), c)
 
 
+def test_iniciar_rechaza_mismo_id_con_otro_objetivo_o_modelo(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    ruta = "swe/yaiwes/yaiwes/chat-001/yaiwes-001.json"
+    anterior = mundo.almacen[ruta]
+    for cambio in ({"mensaje": "otra tarea"}, {"modelo_tool": "hf/qwen3-0.6b"}, {"workflow": "individual"}):
+        with pytest.raises(ValueError, match="TASK_ID_EN_USO"):
+            wf.swe_iniciar(contrato(**cambio), c)
+        assert mundo.almacen[ruta] == anterior
+
+
+def test_iniciar_restaura_indice_faltante_sin_reejecutar(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    indice = "swe/indice/yaiwes-001.json"
+    ruta = "swe/yaiwes/yaiwes/chat-001/yaiwes-001.json"
+    estado = mundo.almacen[ruta]
+    del mundo.almacen[indice]
+    r = wf.swe_iniciar(contrato(), c)
+    assert r["ya_existia"] is True and mundo.almacen[ruta] == estado
+    assert json.loads(mundo.almacen[indice])["ruta"] == ruta
+    assert mundo.agentes == []
+
+
+def test_iniciar_no_recrea_estado_perdido_si_hay_indice(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    ruta = "swe/yaiwes/yaiwes/chat-001/yaiwes-001.json"
+    del mundo.almacen[ruta]
+    with pytest.raises(ValueError, match="TAREA_ESTADO_FALTANTE"):
+        wf.swe_iniciar(contrato(), c)
+    assert ruta not in mundo.almacen
+
+
 def test_iniciar_con_fallo_de_guardado_devuelve_error_de_persistencia(mundo):
     mundo.falla_guardar = lambda n: True
     with pytest.raises(RuntimeError, match="PERSISTENCIA_FALLIDA"):
