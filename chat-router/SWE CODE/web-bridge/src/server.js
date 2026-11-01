@@ -26,7 +26,7 @@ import { idValido as tareaIdValido } from './checkpoint_hf.js';
 import { conFormato } from './formato.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
 import { vigilarActualizacion } from './autoactualizar.js';
-import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco, diagnosticoBanco, resumenBanco } from './clavesbanco.js';
+import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco, diagnosticoBanco, resumenBanco, catalogoProveedores, anadirProveedor } from './clavesbanco.js';
 import { publicarEnGithub, traerDeGithub } from './bancogithub.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
@@ -72,7 +72,7 @@ app.use((req, res, next) => {
 // panel de claves del chat (el proxy del Space reenvia /web/* aqui): ademas exige la clave de acceso del chat en x-api-key. La ruta se normaliza (minusculas, sin barras
 // dobles ni finales, sin /./) para que ninguna variante salte la puerta, aunque el enrutado ya sea estricto
 const rutaNorm = (p) => { let x = String(p || ''); try { x = decodeURIComponent(x); } catch { /* tal cual */ } return path.posix.normalize(x).toLowerCase().replace(/\/+$/, ''); };
-const PROTEGIDAS = ['/v1/claves', '/v1/openclaw'];
+const PROTEGIDAS = ['/v1/claves', '/v1/credenciales', '/v1/openclaw'];
 app.use((req, res, next) => {
   const r = rutaNorm(req.path);
   if (!PROTEGIDAS.some(p => r === p || r.startsWith(p + '/'))) return next();
@@ -190,6 +190,24 @@ function validarClaves(b) {
 const MSG_CLAVE = 'maximo 20 claves por proveedor, cada una de 8 a 300 caracteres sin espacios ni saltos de linea; envia groq y/o nvidia (string o lista de strings)';
 // persistido = GitHub publico el banco (el guardado local va aparte en `local`)
 async function persistir(local) { return { local, persistido: local ? await publicarEnGithub().catch(() => false) : false }; }
+// Misma fuente cifrada para chat YAIWES, Router MVP y SWE CODE/OpenClaw.
+app.get('/v1/credenciales', async (_req, res) => {
+  try { res.json(await catalogoProveedores()); }
+  catch { res.status(503).json({ ok:false, error:{ code:'BANCO_NO_DISPONIBLE' } }); }
+});
+app.post('/v1/credenciales', async (req, res) => {
+  const x = req.body || {};
+  if (!x || typeof x !== 'object' || typeof x.secret !== 'string' ||
+      x.secret.length < 8 || x.secret.length > 300 || /\s/.test(x.secret) ||
+      !/^(auto|[a-z][a-z0-9_-]{1,31})$/.test(String(x.proveedor || 'auto')) ||
+      !['api_key','sdk'].includes(x.tipo || 'api_key')) {
+    return res.status(400).json({ ok:false, error:{ code:'REGISTRO_INVALIDO' } });
+  }
+  try {
+    const guardado = await anadirProveedor(x);
+    res.json({ ...guardado, ...(await persistir(true)) });
+  } catch { res.status(503).json({ ok:false, error:{ code:'BANCO_NO_GUARDADO' } }); }
+});
 app.get('/v1/claves', (_req, res) => res.json({ ok: true, ...conteo() }));
 app.post('/v1/claves', async (req, res) => {
   const nuevas = validarClaves(req.body);

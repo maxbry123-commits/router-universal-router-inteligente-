@@ -55,6 +55,19 @@ export async function guardarEnBanco(claves) {
   return /"ok":\s*true/.test(String(out || ''));
 }
 
+// Registro adicional por proveedor (no expone ningun secreto al frontend ni a los logs).
+export async function catalogoProveedores() {
+  const j = JSON.parse(await correr(['catalogo']) || 'null');
+  if (!j?.ok || !Array.isArray(j.proveedores)) throw new Error('BANCO_NO_DISPONIBLE');
+  return j;
+}
+export async function anadirProveedor(registro) {
+  const j = JSON.parse(await correr(['anadir'], JSON.stringify(registro)) || 'null');
+  if (!j?.ok) throw new Error('BANCO_NO_GUARDADO');
+  await cargarDelBanco(); // clave nueva utilizable en el bridge inmediatamente, sin esperar 60 s
+  return j;
+}
+
 // vacia el banco PROPIO (el del Router MVP nunca se toca)
 export async function borrarDelBanco() {
   const out = await correr(['borrar']);

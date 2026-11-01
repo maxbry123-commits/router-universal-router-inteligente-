@@ -597,6 +597,11 @@ async def _cancelar(pid):
 @app.post("/plugins/{plugin}/call/{accion}", dependencies=[Depends(verificar)])
 async def plugin_call(plugin: str, accion: str, cuerpo: dict,
                       x_operator_token: str | None = Header(None), x_operador: str | None = Header(None)):
+    if plugin == "banco_proveedores":
+        # Control HTTP autenticado, sin pasar secretos por mensajes de IA/LLM.
+        # Router MVP -> bridge SWE CODE :7870 -> banco cifrado existente / GitHub mirror.
+        from mvp import proveedor_claves
+        return {"status": "ok", "result": await proveedor_claves.llamar(accion, cuerpo)}
     if plugin == "puente_chat" and accion == "mantener_encendido":  # {siempre: true} = hasta que lo apagues; {siempre: false} = apagar; {horas: n} = n horas
         siempre = cuerpo.get("siempre")
         try: horas = mantener_vivo.SIEMPRE_H if siempre is True else 0 if siempre is False else min(max(float(24 if cuerpo.get("horas") is None else cuerpo["horas"]), 0), 720)

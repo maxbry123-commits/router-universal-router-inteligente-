@@ -132,6 +132,80 @@ def guardar(claves):
     return True
 
 
+# Registro extensible de claves para los DOS routers. El usuario solo agrega credenciales;
+# usar un proveedor desconocido para inferencia requiere un adaptador, nunca se inventa.
+_ID = re.compile(r"^[a-z][a-z0-9_-]{1,31}$")
+
+
+def _resolver_proveedor(proveedor, secreto):
+    p = str(proveedor or "auto").strip().lower()
+    if p == "auto":
+        p = "groq" if secreto.startswith("gsk_") else "nvidia" if secreto.startswith("nvapi-") else ""
+    if not _ID.fullmatch(p):
+        raise ValueError("PROVEEDOR_REQUERIDO")
+    return p
+
+
+def _reconstruir(queda, clave):
+    """Actualizar de forma atomica el banco propio cifrado (sin tocar el Router ni HF)."""
+    ruta = _ruta_propia()
+    os.makedirs(os.path.dirname(os.path.abspath(ruta)), exist_ok=True)
+    temporal = ruta + ".nuevo-%d" % os.getpid()
+    try:
+        nb = bank.abrir(temporal, clave)
+        for n, v in queda.items():
+            nb.guardar(n, v)
+        os.replace(temporal, ruta)
+    finally:
+        if os.path.lexists(temporal):
+            os.unlink(temporal)
+
+
+def anadir(registro):
+    secreto = registro.get("secret")
+    if not isinstance(secreto, str) or not 8 <= len(secreto) <= 300 or any(x.isspace() for x in secreto):
+        raise ValueError("CLAVE_INVALIDA")
+    prov = _resolver_proveedor(registro.get("proveedor"), secreto)
+    tipo = str(registro.get("tipo") or "api_key").lower()
+    if tipo not in ("api_key", "sdk"):
+        raise ValueError("TIPO_INVALIDO")
+    b, cifrado = _abrir_con(_ruta_propia(), crear=True)
+    if not b:
+        raise RuntimeError("BANCO_NO_DISPONIBLE")
+    datos = {k: b.leer(k) for k in b.nombres()}
+    prefijo = (prov.upper() + "_API_KEY") if prov in ("groq", "nvidia") else ("SDK_" + prov.replace("-", "_").upper() + "_KEY")
+    candidatos = [prefijo] + [prefijo + "_" + str(i) for i in range(1, MAX + 1)]
+    actuales = [datos[n] for n in candidatos if n in datos]
+    if secreto not in actuales:
+        libre = next((n for n in candidatos if n not in datos), None)
+        if libre is None:
+            raise ValueError("MAXIMO_CLAVES")
+        datos[libre] = secreto
+        _reconstruir(datos, cifrado)
+    return {"ok": True, "proveedor": prov, "tipo": tipo, "cantidad": len(set(actuales + [secreto])),
+            "compatible": prov in ("groq", "nvidia")}
+
+
+def catalogo():
+    propios = _abrir(_ruta_propia())
+    router = _abrir(_ruta_router())
+    bancos = [b for b in (router, propios) if b]
+    provs = {"groq": set(), "nvidia": set()}
+    for b in bancos:
+        for n in b.nombres():
+            m = PATRON.fullmatch(n)
+            if m and b.leer(n):
+                provs[m.group(1).lower()].add(b.leer(n))
+            elif n.startswith("SDK_") and "_KEY" in n:
+                k = re.fullmatch(r"SDK_([A-Z][A-Z0-9_]*)_KEY(?:_\d{1,2})?", n)
+                if k and b.leer(n):
+                    provs.setdefault(k.group(1).lower(), set()).add(b.leer(n))
+    return {"ok": True, "proveedores": [
+        {"id": k, "cantidad": len(v), "compatible": k in ("groq", "nvidia"),
+         "estado": "CONFIGURADO" if v else "SIN_CLAVES"}
+        for k, v in sorted(provs.items())]}
+
+
 def borrar():
     """Vacia el banco PROPIO (lo deja cifrado y vacio, para poder publicarlo asi); el banco del Router MVP nunca se toca."""
     ruta = _ruta_propia()
@@ -150,6 +224,10 @@ if __name__ == "__main__":
             guardar(json.loads(sys.stdin.read() or "{}")); print(json.dumps({"ok": True}))
         elif sys.argv[1:2] == ["diagnostico"]:
             print(json.dumps(diagnostico()))
+        elif sys.argv[1:2] == ["catalogo"]:
+            print(json.dumps(catalogo()))
+        elif sys.argv[1:2] == ["anadir"]:
+            print(json.dumps(anadir(json.loads(sys.stdin.read() or "{}"))))
         elif sys.argv[1:2] == ["borrar"]:
             borrar(); print(json.dumps({"ok": True}))
         else:
