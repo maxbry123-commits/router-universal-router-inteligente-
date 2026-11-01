@@ -25,3 +25,16 @@ test("la ventana de claves usa plugin del Router MVP, no almacena el secreto loc
   assert.match(s, /secreta\.value = ""/);
   assert.doesNotMatch(s, /localStorage\.setItem\([^)]*secreta/);
 });
+
+test("DeepSeek MiniMax y OpenAI aparecen en el selector y sus claves se eligen desde Configuracion", () => {
+  const s = src("selector-modelos.js"), banco = src("ventana-claves.js"), router = src("swe-directo.js");
+  for (const id of ["deepseek/deepseek-v4-pro", "deepseek/deepseek-flash", "minimax/MiniMax-M3",
+    "minimax/MiniMax-M2.7", "openai/gpt-5.6", "openai/gpt-5.5"]) {
+    assert.ok(s.includes(id), id);
+    assert.ok(router.includes(id), id);
+  }
+  assert.match(s, /api\("\/web\/v1\/modelos\/disponibilidad"\)/);
+  assert.match(s, /encender\?\.\("swen-code-free"\)/);
+  for (const p of ["deepseek", "minimax", "openai"]) assert.ok(banco.includes('["' + p + '",'), p);
+  assert.doesNotMatch(s, /API_KEY\s*=/);
+});
