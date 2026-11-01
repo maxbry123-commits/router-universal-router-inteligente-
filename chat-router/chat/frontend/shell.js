@@ -1,4 +1,5 @@
 import { api } from "./api.js";
+import { iniciarIndicadorServidor } from "./inicio-servidor.js";
 import { mount as chat } from "./panel-chat.js";
 import { mount as archivos } from "./panel-archivos.js";
 import { mount as seguimiento } from "./panel-seguimiento.js";
@@ -102,6 +103,7 @@ document.querySelector("#navigation").addEventListener("click", event => {
 });
 aplicarMovil();
 show("chat");
+iniciarIndicadorServidor(); // estado real de /health y reintentos sin reiniciar las tareas
 const TEMAS = ["gris", "little", "matte", "blanco", "crystal", "orange", "blue"];
 function aplicarTema(valor) {
   const tema = TEMAS.includes(valor) ? valor : "gris";
