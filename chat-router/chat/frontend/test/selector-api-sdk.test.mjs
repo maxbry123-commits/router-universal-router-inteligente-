@@ -20,8 +20,8 @@ test("selector unico: modelos HF, Groq, NVIDIA y + API/SDK usan la ventana exist
 });
 test("la ventana de claves usa plugin del Router MVP, no almacena el secreto localmente", () => {
   const s = src("ventana-claves.js");
-  assert.match(s, /\/plugins\/banco_proveedores\/call\/anadir/);
-  assert.match(s, /\/plugins\/banco_proveedores\/call\/catalogo/);
+  assert.match(s, /\/plugins\/deepseek_harness\/credenciales\/anadir/);
+  assert.match(s, /\/plugins\/deepseek_harness\/credenciales\/catalogo/);
   assert.match(s, /secreta\.value = ""/);
   assert.doesNotMatch(s, /localStorage\.setItem\([^)]*secreta/);
 });
