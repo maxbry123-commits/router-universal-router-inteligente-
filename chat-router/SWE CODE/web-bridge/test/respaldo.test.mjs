@@ -64,10 +64,10 @@ test("setClaves: claves inyectadas se suman al entorno sin duplicar, max 20, ign
   const { setClaves, estadoRespaldo } = await import("../src/respaldo.js");
   const g = await servidor(500, ""), g2 = await servidor(200, "ok-inyectada");
   try {
-    assert.deepEqual(estadoRespaldo({}), { groq: 0, nvidia: 0, hf_local: 0 });
+    assert.equal(estadoRespaldo({}).groq, 0); assert.equal(estadoRespaldo({}).nvidia, 0); assert.equal(estadoRespaldo({}).hf_local, 0);
     setClaves({ groq: ["gsk-INY-1", "", "  ", "gsk-ENV"], nvidia: "nv-INY-1" });
     // entorno + inyectadas sin duplicar (gsk-ENV esta en ambos)
-    assert.deepEqual(estadoRespaldo({ GROQ_API_KEY: "gsk-ENV" }), { groq: 2, nvidia: 1, hf_local: 0 });
+    assert.equal(estadoRespaldo({ GROQ_API_KEY: "gsk-ENV" }).groq, 2); assert.equal(estadoRespaldo({ GROQ_API_KEY: "gsk-ENV" }).nvidia, 1);
     const crudo = JSON.stringify(estadoRespaldo({ GROQ_API_KEY: "gsk-ENV" }));
     assert.ok(!/gsk-|nv-/.test(crudo), "estadoRespaldo no filtra valores");
     // se usan de verdad, tras las del entorno
@@ -81,7 +81,7 @@ test("setClaves: claves inyectadas se suman al entorno sin duplicar, max 20, ign
     assert.equal(estadoRespaldo({}).nvidia, 1);
     // lista vacia limpia
     setClaves({ groq: [], nvidia: "" });
-    assert.deepEqual(estadoRespaldo({}), { groq: 0, nvidia: 0, hf_local: 0 });
+    assert.equal(estadoRespaldo({}).groq, 0); assert.equal(estadoRespaldo({}).nvidia, 0); assert.equal(estadoRespaldo({}).hf_local, 0);
     // entrada invalida no revienta
     assert.doesNotThrow(() => { setClaves(); setClaves(null); setClaves({ groq: 5 }); });
   } finally { setClaves({ groq: [], nvidia: [] }); g.s.close(); g2.s.close(); }

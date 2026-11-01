@@ -5,7 +5,7 @@
   "base_url": "http://localhost:7870/openclaw/v1",
   "api_key": "${RIU_API_KEY}",
   "token_nota": "Marcador: OpenClaw debe sustituir ${RIU_API_KEY} por la clave de acceso real (RIU_API_KEY) desde su entorno, nunca escrita en este archivo; el bridge la acepta como Authorization: Bearer y BRIDGE_TOKEN es opcional. Sin ella, toda llamada al bridge da 401.",
-  "nota": "El selector de OpenClaw lee GET /v1/models del bridge (web, modos, Groq, NVIDIA y locales HF); esta lista es el respaldo si no responde. El bridge es el router propio: no depende del Router MVP.",
+  "nota": "El catálogo /v1/models sirve DeepSeek, MiniMax, OpenAI, Groq, NVIDIA y locales HF mediante el bridge OpenAI-compatible ya incorporado en OpenClaw. Verificar disponibilidad real con /v1/modelos/disponibilidad.",
   "modelos": [
     {
       "id": "web-qwen38max",
@@ -86,6 +86,30 @@
     {
       "id": "swecode-asesoria",
       "nombre": "SWE · asesoria (plan antes de ejecutar)"
+    },
+    {
+      "id": "deepseek/deepseek-v4-pro",
+      "nombre": "DeepSeek V4 Pro API"
+    },
+    {
+      "id": "deepseek/deepseek-flash",
+      "nombre": "DeepSeek Flash API"
+    },
+    {
+      "id": "minimax/MiniMax-M3",
+      "nombre": "MiniMax M3 API"
+    },
+    {
+      "id": "minimax/MiniMax-M2.7",
+      "nombre": "MiniMax M2.7 API"
+    },
+    {
+      "id": "openai/gpt-5.6",
+      "nombre": "OpenAI GPT-5.6 API"
+    },
+    {
+      "id": "openai/gpt-5.5",
+      "nombre": "OpenAI GPT-5.5 API"
     }
   ],
   "gramatica": "SWEN CODE free [modo <m>] [con|solo|modelo <m>] [chat <id>] [pipeline code|free] [doc <ruta>] <texto> — ver INSTRUCCIONES.md",

@@ -11,9 +11,9 @@ const yaiwesIds = new Set(MODELOS_SWE.map(m => m[0]));
 const api = MODELOS_API.map(m => m.id);
 const locales = idsRespaldo().filter(id => !id.includes('/'));
 
-test('ambos chats usan los 5 ids de proveedor sin sustitucion de modelo', () => {
-  assert.equal(api.length, 5);
-  assert.equal(new Set(api).size, 5);
+test('ambos chats usan los 11 ids de proveedor sin sustitucion de modelo', () => {
+  assert.equal(api.length, 11);
+  assert.equal(new Set(api).size, 11);
   for (const id of api) {
     assert.ok(openclawIds.has(id), 'falta en provider OpenClaw: ' + id);
     assert.ok(yaiwesIds.has(id), 'falta en YAIWES: ' + id);
