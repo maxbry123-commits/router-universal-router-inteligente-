@@ -115,3 +115,9 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 ### X-Ray V — contrato cruzado entre dos chats
 - Prueba `SWE CODE/web-bridge/test/xray_modelos_ambos_chats.test.mjs`: OpenClaw y YAIWES comparten los 5 identificadores Groq/NVIDIA y los 4 locales HF; la ruta YAIWES llega al mismo bridge OpenAI-compatible con el modelo exacto.
 - La verificación dinámica aislada anterior mostró 3/3 rutas UI correctas (Groq, NVIDIA, HF local) y 2/2 casos de banco simulado. **No** equivale a respuestas API en producción ni prueba que el Gateway haya instalado el provider.
+
+### X-Ray VI — Selector de modelos OpenClaw nativo (sin agentes)
+- El backend del plugin OpenClaw `SWE CODE free/openclaw-ui/src/bridge.ts` ahora fusiona (en paralelo) las capacidades del Harness (solo agentes/workflows) con `/v1/modelos/disponibilidad` y `/v1/claves` del mismo bridge que hace inferencia. Corrige falsos NO CONFIGURADO por tener las claves en el banco del bridge y no en el Harness.
+- El catálogo del bridge declara los 5 modelos de API y 4 locales HF: disponible real, sin clave, no publicado, o sin verificar; los locales con URL NO se declaran disponibles sin responder. Sin exponer claves al navegador.
+- Prueba de fusion con Harness caído, bridge antiguo, banco sin claves y modelos de 2 proveedores en `SWE CODE free/openclaw-ui/test/plugin-sdk.test.mjs`. Sin tocar la lógica de agentes, workflow, ni su instalación.
+- Ejecución plugin del Gateway y respuestas API reales: PENDIENTE DE E2E con configuración del usuario.

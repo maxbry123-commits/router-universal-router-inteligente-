@@ -11,6 +11,39 @@ type Fetch = (url: string, init: Record<string, unknown>) => Promise<{ ok: boole
 
 const simple = (o: unknown): o is Record<string, unknown> => !!o && typeof o === 'object' && !Array.isArray(o);
 const SEGMENTO = /^[A-Za-z0-9_-]{1,64}$/, OPERADOR = /^[A-Za-z0-9_.@-]{2,64}$/;
+// Disponibilidad de MODELOS procede del MISMO bridge/credenciales que realizan la inferencia.
+// Los AGENTES y WORKFLOWS permanecen exclusivamente bajo el Harness del otro equipo.
+export function fusionarCapacidades(harness: Respuesta, catalogo: Respuesta, banco: Respuesta): Respuesta {
+  if (!catalogo.ok && !harness.ok) return harness;
+  const base = harness.ok && simple(harness.datos) ? harness.datos : {};
+  const modelos: Record<string, unknown> = simple(base.modelos) ? { ...base.modelos } : {};
+  const cat = catalogo.ok && simple(catalogo.datos) ? catalogo.datos : {};
+  const claves = banco.ok && simple(banco.datos) ? banco.datos : {};
+  const externas = Array.isArray(cat.modelos) ? cat.modelos : [];
+  for (const dato of externas) {
+    if (!simple(dato) || typeof dato.id !== 'string' || !/^(groq|nvidia)\/[a-zA-Z0-9._/-]{1,90}$/.test(dato.id)) continue;
+    const proveedor = dato.id.startsWith('groq/') ? 'groq' : 'nvidia';
+    const n = claves[proveedor];
+    const tieneClave = typeof n === 'number' && Number.isInteger(n) && n > 0;
+    const noTieneClave = typeof n === 'number' && n === 0;
+    const estado = noTieneClave ? 'NO CONFIGURADO' : tieneClave && dato.disponible === true ? 'DISPONIBLE'
+      : tieneClave && dato.disponible === false ? 'NO DISPONIBLE EN PROVEEDOR' : 'SIN VERIFICAR';
+    modelos[dato.id] = { disponible: estado === 'DISPONIBLE', estado, intentable: estado === 'DISPONIBLE' || estado === 'SIN VERIFICAR',
+      motivo: estado === 'NO CONFIGURADO' ? 'sin clave en el banco cifrado del bridge' : estado === 'SIN VERIFICAR' ? 'no se pudo verificar el proveedor' : '',
+      ...(typeof dato.nombre === 'string' ? { nombre: dato.nombre.slice(0, 80) } : {}) };
+  }
+  const locales = Array.isArray(cat.locales) ? cat.locales : [];
+  for (const dato of locales) {
+    if (!simple(dato) || typeof dato.id !== 'string' || !/^hf\/[a-zA-Z0-9._-]{1,70}$/.test(dato.id)) continue;
+    const configurado = dato.estado !== 'NO CONFIGURADO';
+    modelos[dato.id] = { disponible: false, estado: configurado ? 'SIN VERIFICAR' : 'NO CONFIGURADO',
+      intentable: configurado, motivo: configurado ? 'servidor local configurado; inferencia pendiente de verificar' : 'ningun servidor HF local configurado en el bridge' };
+  }
+  return { ok: true, http: harness.ok ? harness.http : catalogo.http, datos: {
+    ...base, harness: harness.ok ? (typeof base.harness === 'string' ? base.harness : 'desconocido') : 'no_disponible',
+    agentes: simple(base.agentes) ? base.agentes : {}, workflows: simple(base.workflows) ? base.workflows : {}, modelos,
+  } };
+}
 
 export function urlValida(u: string): boolean {
   try { const x = new URL(u); return (x.protocol === 'https:' && !!x.hostname && !x.username) || (x.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(x.hostname) && !x.username); }
@@ -48,7 +81,16 @@ export function crearCliente(cfg: { url: string; token: string }, opciones: { fe
   }
   const ref = (r: { task_id: string; sesion?: string; proyecto?: string }) => ({ task_id: r.task_id, origen: 'openclaw', ...(r.sesion ? { sesion: r.sesion } : {}), ...(r.proyecto ? { proyecto: r.proyecto } : {}) });
   return {
-    capacidades: () => llamar('GET', '/v1/swe/capacidades'),
+    capacidades: async () => {
+      // Consultas independientes, paralelas. Una version antigua del bridge sin catalogo
+      // sigue permitiendo ver capacidades Harness: no rompe el plugin de OpenClaw.
+      const [h, modelos, claves] = await Promise.all([
+        llamar('GET', '/v1/swe/capacidades'),
+        llamar('GET', '/v1/modelos/disponibilidad'),
+        llamar('GET', '/v1/claves'),
+      ]);
+      return fusionarCapacidades(h, modelos, claves);
+    },
     tools: () => llamar('GET', '/v1/swe/tools'),
     iniciar: (tarea: Record<string, unknown>) => llamar('POST', '/v1/swe/iniciar', tarea),
     avanzar: (r: { task_id: string; sesion?: string; proyecto?: string }) => llamar('POST', '/v1/swe/avanzar', ref(r), undefined, true),

@@ -89,6 +89,39 @@ function handlers(env) {
   };
   return { llamar, tools, restaurar: () => { for (const k of Object.keys(env)) delete process.env[k]; Object.assign(process.env, guardado); } };
 }
+test('X-Ray: el panel OpenClaw ve modelos del mismo banco Groq/NVIDIA/HF, sin cambiar los agentes del Harness', async () => {
+  const { fusionarCapacidades } = await import('../dist/bridge.js');
+  const harness = { ok: true, http: 200, datos: { harness: 'ok',
+    agentes: { codex: { disponible: false, estado: 'NO INSTALADO' } },
+    workflows: { individual: { disponible: true } },
+    modelos: { 'groq/qwen/qwen3.8-27b': { disponible: false, estado: 'NO CONFIGURADO' } } } };
+  const catalogo = { ok: true, http: 200, datos: { ok: true, modelos: [
+    { id: 'groq/qwen/qwen3.8-27b', proveedor: 'groq', disponible: true },
+    { id: 'nvidia/z-ai/glm-5.3', proveedor: 'nvidia', disponible: false },
+  ], locales: [
+    { id: 'hf/qwen3-0.6b', estado: 'SIN VERIFICAR' },
+    { id: 'hf/lfm2.5-350m', estado: 'NO CONFIGURADO' },
+  ] } };
+  const banco = { ok: true, http: 200, datos: { ok: true, groq: 1, nvidia: 1 } };
+  const r = fusionarCapacidades(harness, catalogo, banco);
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.datos.agentes, harness.datos.agentes);
+  assert.deepEqual(r.datos.workflows, harness.datos.workflows);
+  assert.equal(r.datos.modelos['groq/qwen/qwen3.8-27b'].estado, 'DISPONIBLE');
+  assert.equal(r.datos.modelos['nvidia/z-ai/glm-5.3'].estado, 'NO DISPONIBLE EN PROVEEDOR');
+  assert.deepEqual([r.datos.modelos['hf/qwen3-0.6b'].estado, r.datos.modelos['hf/qwen3-0.6b'].intentable], ['SIN VERIFICAR', true]);
+  assert.equal(r.datos.modelos['hf/lfm2.5-350m'].estado, 'NO CONFIGURADO');
+  const sinClaves = fusionarCapacidades(harness, catalogo, { ok: true, http: 200, datos: { groq: 0, nvidia: 0 } });
+  assert.equal(sinClaves.datos.modelos['groq/qwen/qwen3.8-27b'].estado, 'NO CONFIGURADO');
+  assert.equal(sinClaves.datos.modelos['nvidia/z-ai/glm-5.3'].intentable, false);
+  const soloBridge = fusionarCapacidades({ ok: false, http: 503 }, catalogo, banco);
+  assert.equal(soloBridge.datos.harness, 'no_disponible');
+  assert.deepEqual(soloBridge.datos.agentes, {});
+  assert.equal(soloBridge.datos.modelos['groq/qwen/qwen3.8-27b'].disponible, true);
+  const soloHarness = fusionarCapacidades(harness, { ok: false, http: 404 }, { ok: false, http: 404 });
+  assert.deepEqual(soloHarness.datos, harness.datos, 'bridge anterior: sin alterar capacidades existentes');
+});
+
 test('E2E: capacidades e iniciar llegan al Harness por las rutas reales del bridge con origen openclaw y aprobacion false; la clave nunca vuelve en la respuesta', async () => {
   const h = handlers({ RIU_SWE_BRIDGE_URL: base, BRIDGE_TOKEN: TOKEN });
   try {
