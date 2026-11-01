@@ -21,26 +21,16 @@ const GRUPOS = [
     ["rayo", "DeepSeek V4 Flash", "Código rápido", "deepseek-v4-flash-0731"]] },
   { titulo: "GLM", modelos: [
     ["pensar", "GLM 5.2", "Código + agentes", "glm-5.2"]] },
-  { titulo: "SWE CODE (local HF)", modelos: [
-    ["rapido", "Liquid AI (HF)", "LFM2.5-350M · respondedor principal", "hf-liquid-lfm25"],
-    ["pensar", "SWE · Codex escribe", "Qwen2.5-Coder-1.5B", "swe-codex-qwen25-15b"],
-    ["pensar", "SWE · OpenCode revisa", "Qwen3.5-0.8B", "swe-opencode-qwen35-08b"],
-    ["rayo", "SWE · Agent ejecuta", "LFM2.5-350M · tool/agentic", "swe-agent-lfm25"],
-    ["rayo", "SWE · OpenHands verifica", "LFM2.5-350M", "swe-openhands-lfm25"],
-    ["pensar", "Qwen Code (HF)", "Qwen2.5-Coder-1.5B local", "hf-qwen25-coder-15b"],
-    ["rapido", "Qwen3 0.6B (HF)", "Qwen3-0.6B", "hf-qwen3-06b"]] },
-  { titulo: "SWEN CODE free (web)", modelos: [
+  { titulo: "SWE CODE (local HF)", modelos: [  // UI4: SOLO el nombre del modelo; el agente (Codex, OpenCode…) se elige en el selector central
+    ["rapido", "Liquid LFM2.5 350M", "HF local", "hf-liquid-lfm25"],
+    ["pensar", "Qwen2.5 Coder 1.5B", "HF local", "hf-qwen25-coder-15b"],
+    ["pensar", "Qwen3.5 0.8B", "HF local", "hf-qwen35-08b"],
+    ["rapido", "Qwen3 0.6B", "HF local", "hf-qwen3-06b"]] },
+  { titulo: "SWEN CODE free (web)", modelos: [  // los modos (asesoría, revisión…) son MODO DE TRABAJO del selector central, no modelos
     ["pensar", "Qwen 3.8 Max (web)", "Código complejo · via bridge", "web-qwen38max"],
     ["pensar", "Qwen 3.7 Max (web)", "Razonamiento · via bridge", "web-qwen37max"],
     ["rayo", "DeepSeek V4 Flash (web)", "Código rápido · via bridge", "web-dsv4-flash"],
-    ["pensar", "Concilio", "los 3 web a la vez", "swecode-consulta"],
-    ["pensar", "SWE · revision", "modo revision", "swecode-revision"],
-    ["pensar", "SWE · solucion", "modo solucion", "swecode-solucion"],
-    ["pensar", "SWE · arquitectura", "modo arquitectura", "swecode-arquitectura"],
-    ["pensar", "SWE · archivos", "modo archivos", "swecode-archivos"],
-    ["pensar", "SWE · prompt_code", "modo prompt_code", "swecode-prompt_code"],
-    ["rayo", "SWE · despliega", "modo despliega", "swecode-despliega"],
-    ["pensar", "SWE · asesoria", "plan antes de ejecutar", "swecode-asesoria"]] },
+    ["pensar", "Concilio", "los 3 web a la vez", "swecode-consulta"]] },
   { titulo: "Imágenes", modelos: [
     ["imagen", "Qwen Image 3.0 Pro", "Imágenes", "qwen-image-3.0-pro"],
     ["imagen", "Wan 2.7 Image", "Imágenes", "wan2.7-image"]] },
@@ -51,7 +41,7 @@ const GRUPOS = [
 ];
 export const SWE_IDS = GRUPOS.filter((g) => /SWE/.test(g.titulo)).flatMap((g) => g.modelos.map((m) => m[3]));
 const CATALOGO_CLAVE = "riu_catalogo_qwen";  // ultima lista que dio el Router (localStorage)
-const CATALOGO_RESPALDO = ["qwen3.8-max", "qwen3.8-flash", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-flash", "glm-5.3", "glm-5.2", "deepseek-v4-pro", "deepseek-v4-pro-0813", "deepseek-v4-flash-0731", "deepseek-v4.1-flash", "deepseek-v4.1-flash-1017", "qwen-image-3.0-pro", "wan2.7-image", "wan2.7-image-pro", "qwen-audio-3.0-tts-plus", "qwen-audio-3.0-realtime-plus", "qwen-audio-3.0-asr-flash", "wan3.0-video", "happyhorse-1.1-t2v", "happyhorse-1.1-i2v", "happyhorse-1.1-r2v", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b", "hf-liquid-lfm25", "web-qwen38max", "web-qwen37max", "web-dsv4-flash", "swecode-consulta", "swecode-revision", "swecode-solucion", "swecode-arquitectura", "swecode-archivos", "swecode-prompt_code", "swecode-despliega"];  // plan Personal (mvp/modelos.json, p=1) + SWE CODE local
+const CATALOGO_RESPALDO = ["qwen3.8-max", "qwen3.8-flash", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-flash", "glm-5.3", "glm-5.2", "deepseek-v4-pro", "deepseek-v4-pro-0813", "deepseek-v4-flash-0731", "deepseek-v4.1-flash", "deepseek-v4.1-flash-1017", "qwen-image-3.0-pro", "wan2.7-image", "wan2.7-image-pro", "qwen-audio-3.0-tts-plus", "qwen-audio-3.0-realtime-plus", "qwen-audio-3.0-asr-flash", "wan3.0-video", "happyhorse-1.1-t2v", "happyhorse-1.1-i2v", "happyhorse-1.1-r2v", "hf-liquid-lfm25", "hf-qwen25-coder-15b", "hf-qwen35-08b", "hf-qwen3-06b", "web-qwen38max", "web-qwen37max", "web-dsv4-flash", "swecode-consulta"];  // plan Personal (mvp/modelos.json, p=1) + SWE CODE local
 
 const etiqueta = (id) => id.replace(/^(qwen|deepseek|glm|kimi|minimax|wan|happyhorse)/i, (s) => ({ qwen: "Qwen ", deepseek: "DeepSeek", glm: "GLM", kimi: "Kimi", minimax: "MiniMax", wan: "Wan ", happyhorse: "HappyHorse" })[s.toLowerCase()]).replace(/-/g, " ").replace(/\b(max|flash|plus|pro|image|video|code)\b/g, (s) => s[0].toUpperCase() + s.slice(1)).replace(/\b[vkm](?=\d)/g, (s) => s.toUpperCase());
 export function gruposModelos(modelos) {

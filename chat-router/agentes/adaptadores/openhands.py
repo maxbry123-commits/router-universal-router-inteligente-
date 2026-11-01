@@ -22,13 +22,13 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     except _comun.ErrorPrevio as e:
         return e.resultado
     env = _comun.entorno_base()
-    previa = _comun.ejecutar_proceso([py, "-c", COMPROBACION], p["directorio"], env, timeout=60)
+    previa = _comun.ejecutar_proceso([py, "-I", "-c", COMPROBACION], p["directorio"], env, timeout=60)
     if previa["exit_code"] != 0:
         return _comun.no_instalado(AGENTE, tarea_id, "El Python %s no importa openhands.sdk/openhands.tools." % py)
     entrada = {"modelo": "openai/" + ep["modelo"], "base_url": ep["base_url"], "prompt": p["prompt"], "directorio": p["directorio"],
                "escritura": p["escritura"], "ejecucion": p["ejecucion"]}
     inicio = _comun.ahora()
-    proc = _comun.ejecutar_proceso([py, RUNNER], p["directorio"], _comun.entorno_base({"RIU_AGENTE_LLM_KEY": ep["api_key"]}), entrada=json.dumps(entrada))
+    proc = _comun.ejecutar_proceso([py, "-I", RUNNER], p["directorio"], _comun.entorno_base({"RIU_AGENTE_LLM_KEY": ep["api_key"]}), entrada=json.dumps(entrada))
     if proc["timeout"] or proc["exit_code"] != 0:
         return _comun.fallo_de_proceso(AGENTE, tarea_id, proc)
     datos = None
@@ -41,4 +41,4 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     if datos.get("ok") is not True:
         return _comun.error(AGENTE, tarea_id, str(datos.get("codigo") or "OPENHANDS_FALLO"), str(datos.get("error") or "fallo"), True, proc["exit_code"], estado=datos.get("estado"))
     return _comun.resultado_ok(AGENTE, tarea_id, proc, str(datos.get("resultado") or ""), [str(h) for h in datos.get("herramientas") or []],
-                               [py, "estado:" + str(datos.get("estado")), "eventos:%s" % datos.get("eventos")], inicio)
+                               [py, "estado:" + str(datos.get("estado")), "eventos:%s" % datos.get("eventos")], inicio, ep["modelo"])

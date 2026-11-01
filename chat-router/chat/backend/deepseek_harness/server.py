@@ -78,11 +78,15 @@ def _err(mensaje, codigo=200):
     return JSONResponse({"status": "error", "error": mensaje}, status_code=codigo)
 
 
+ACCIONES_CONTROL = ("tools_lock",)  # solo lectura cuando no llevan `tool`: estado de los botones del chat (agentes_on, ia)
+
+
 def _router(accion, datos):
     base = os.environ.get("RIU_ROUTER_URL", "").strip()
     if not (base.startswith("https://") or base.startswith("http://127.0.0.1:")):
         raise RuntimeError("RIU_ROUTER_URL no configurada")
-    resultado = llamar("fichas_qwen" if accion == "chat" else "router_mvp", "llm" if accion == "chat" else accion, datos, timeout=None)
+    plugin = "fichas_qwen" if accion == "chat" else "puente_chat" if accion in ACCIONES_CONTROL else "router_mvp"  # el Router sirve las acciones de control (tools_lock...) por /plugins/puente_chat/call/<accion>; con router_mvp responde 404
+    resultado = llamar(plugin, "llm" if accion == "chat" else accion, datos, timeout=None)
     if isinstance(resultado, dict) and resultado.get("status_code") == 403:
         causa = str(resultado.get("error") or "").split("(HTTP 403)")[-1].lstrip(": ").strip()  # p. ej. «ia=false»: quien llama debe saber qué botón encender
         raise HTTPException(status_code=403, detail="Herramienta bloqueada por Router (HTTP 403)" + (": " + causa if causa else ""))
@@ -338,11 +342,27 @@ def _ctx_swe():
                          ejecutar_agente=lambda *a, **k: ejecutar_agente(*a, **k))
 
 
+def _exigir_agentes_on():
+    """Agentes ON/OFF lo decide el SERVIDOR (estado del Router, `tools_lock` sin cambios = solo lectura), tambien para quien llega por el bridge de OpenClaw y no por mvp/app.py.
+    Si no se puede comprobar, la operacion con efectos NO se ejecuta."""
+    try:
+        r = _router("tools_lock", {})
+    except HTTPException:
+        raise
+    except Exception:  # noqa: BLE001 - Router caido o sin URL: no se asume permiso
+        raise ValueError("AGENTES_ESTADO_NO_COMPROBADO") from None
+    if not isinstance(r, dict) or r.get("agentes_on") is not True:  # _router devuelve el `result` de tools_lock
+        raise ValueError("AGENTES_APAGADOS")
+
+
 def swe_iniciar(args):
+    if args.get("modo_agentico") is True:  # modo agentico OFF = solo el modelo que responde: no pide permiso de agentes
+        _exigir_agentes_on()
     return _swe.swe_iniciar(args, _ctx_swe())
 
 
 def swe_avanzar(args):
+    _exigir_agentes_on()  # avanzar/reanudar/aprobar son las que lanzan los agentes: se exige siempre (el Harness no sabe el modo hasta cargar la tarea)
     return _swe.swe_avanzar(args, _ctx_swe())
 
 
@@ -351,10 +371,12 @@ def swe_estado(args):
 
 
 def swe_aprobar(args):
+    _exigir_agentes_on()
     return _swe.swe_aprobar(args, _ctx_swe())
 
 
 def swe_reanudar(args):
+    _exigir_agentes_on()
     return _swe.swe_reanudar(args, _ctx_swe())
 
 

@@ -19,7 +19,7 @@ test("camposFijos: swe_code y liquid_mirror fijan modelo_responde, agente_respon
 // ---- E) Qwen3 0.6B ----
 test("Qwen3 0.6B (HF) esta en la lista de SWE CODE y se envia como qwen3-0.6b", () => {
   const e = S.SWE_LISTAS["swe-code"].modelos.find((m) => m[0] === "hf-qwen3-06b");
-  assert.deepEqual(e, ["hf-qwen3-06b", "Qwen3 0.6B (HF)", "Qwen3-0.6B"]);
+  assert.deepEqual(e, ["hf-qwen3-06b", "Qwen3 0.6B", "HF local"]);  // UI4: solo el nombre del modelo
   assert.ok(S.esSwe("hf-qwen3-06b"));
   assert.equal(S.armar({ model: "hf-qwen3-06b", mensaje: "x", sesion: "s" }).model, "qwen3-0.6b");
   assert.equal(S.rutaSwe("hf-qwen3-06b"), "/web/v1/chat/completions");
@@ -28,10 +28,10 @@ test("Qwen3 0.6B (HF) esta en la lista de SWE CODE y se envia como qwen3-0.6b", 
 
 test("entradaParaCatalogo: el desplegable «Responde» y la lista de la hoja eligen el mismo modelo", () => {
   assert.equal(S.entradaParaCatalogo("swe-code", "hf/qwen3-0.6b", "hf-qwen25-coder-15b"), "hf-qwen3-06b");
-  assert.equal(S.entradaParaCatalogo("swe-code", "hf/lfm2.5-350m", "swe-agent-lfm25"), "swe-agent-lfm25", "si la seleccion ya equivale, se conserva");
+  assert.equal(S.entradaParaCatalogo("swe-code", "hf/lfm2.5-350m", "hf-liquid-lfm25"), "hf-liquid-lfm25", "si la seleccion ya equivale, se conserva");
   assert.equal(S.entradaParaCatalogo("swe-code", "hf/lfm2.5-350m", "hf-qwen3-06b"), "hf-liquid-lfm25");
   assert.equal(S.entradaParaCatalogo("swen-code-free", "nvidia/z-ai/glm-5.3", "web-qwen38max"), "nvidia/z-ai/glm-5.3");
-  assert.equal(S.entradaParaCatalogo("swen-code-free", "hf/qwen3-0.6b", "web-qwen38max"), null, "sin entrada equivalente no se inventa");
+  assert.equal(S.entradaParaCatalogo("swe-code", "groq/qwen/qwen3.8-27b", "hf-liquid-lfm25"), null, "sin entrada equivalente no se inventa");
   assert.equal(S.entradaParaCatalogo("nada", "hf/qwen3-0.6b", "x"), null);
 });
 
@@ -52,7 +52,7 @@ test("SELECCION_NO_DISPONIBLE: sin parentesis anidados y termina con la salida p
   const api = async () => ({ harness: "ok", agentes: {}, workflows: {} });
   await assert.rejects(() => S.enviarTareaSwe(api, { mensaje: "x", sesion: "s" }), (e) => {
     assert.match(e.message, /^GAP: SELECCION_NO_DISPONIBLE · /);
-    assert.match(e.message, /SWE-agent.*NO DISPONIBLE/);
+    assert.match(e.message, /SWE-agent.*SIN VERIFICAR/, "el Harness no reporta el agente: SIN VERIFICAR, no «no instalado»");
     assert.ok(!/\([^)]*\(/.test(e.message), "sin parentesis anidados: " + e.message);
     assert.ok(e.message.endsWith("Para chatear: abre SWE CODE/SWEN → Agentes → Modo agéntico OFF y Workflow Individual"), e.message);
     return true;
@@ -67,10 +67,6 @@ test("varias claves por proveedor: se separan por coma, punto y coma, espacio o 
   const muchas = Array.from({ length: 30 }, (_, i) => "clave-numero-" + i).join(",");
   assert.equal(C.separarClaves(muchas).length, 20);
   assert.deepEqual(C.separarClaves(""), []); assert.deepEqual(C.separarClaves(null), []);
-  C.guardarClave("groq", "g1234567, g7654321");
-  assert.deepEqual(C.leerClaves(), { groq: ["g1234567", "g7654321"] });
-  C.guardarClave("nvidia", " solo-una-clave ");
-  assert.deepEqual(C.leerClaves().nvidia, "solo-una-clave");
 });
 
 function banco(respuestas) {
@@ -80,21 +76,21 @@ function banco(respuestas) {
   globalThis.fetch = async (url, op) => { llamadas.push({ metodo: op.method, body: op.body ? JSON.parse(op.body) : undefined }); const r = respuestas.shift() || { status: 200, json: { groq: 0, nvidia: 0 } }; if (r.red) throw new TypeError("x"); return { ok: r.status < 300, status: r.status, json: async () => r.json || {} }; };
   return llamadas;
 }
-test("guardar manda arrays al banco y cuenta bien; el respaldo local dice cuantas", async () => {
+test("guardar manda arrays al banco y cuenta bien; sin banco no se guarda nada en el navegador (R1)", async () => {
   let ll = banco([{ status: 200, json: { groq: 3, nvidia: 0 } }]);
   assert.equal(await C.guardar({ groq: "g1234567 g2234567,g3234567" }), "Groq: 3 guardadas");
   assert.deepEqual(ll[0].body.groq, ["g1234567", "g2234567", "g3234567"]);
   ll = banco([{ red: true }]);
-  assert.match(await C.guardar({ groq: "g1234567 g2234567" }), /Groq: 2 guardadas solo en este navegador/);
-  assert.deepEqual(C.leerClaves().groq, ["g1234567", "g2234567"]);
+  assert.match(await C.guardar({ groq: "g1234567 g2234567" }), /No se guardó nada.*servidor/);
+  assert.equal(datos.size, 0, "localStorage vacio");
 });
 test("el 400 explica la regla", async () => {
   banco([{ status: 400, json: { error: { code: "CLAVE_INVALIDA" } } }]);
   assert.match(await C.guardar({ groq: "corta" }), /8.300 caracteres, sin espacios/);
 });
-test("guardarConEstado: ok solo si se guardo (banco o respaldo); un 401/400 no es exito (los inputs no se vacian)", async () => {
+test("guardarConEstado: ok solo si se guardo en el banco; sin servidor, 401 y 400 no son exito (los inputs no se vacian)", async () => {
   banco([{ status: 200, json: { groq: 1, nvidia: 0 } }]); assert.equal((await C.guardarConEstado({ groq: "g1234567" })).ok, true);
-  banco([{ red: true }]); assert.equal((await C.guardarConEstado({ groq: "g1234567" })).ok, true);
+  banco([{ red: true }]); assert.equal((await C.guardarConEstado({ groq: "g1234567" })).ok, false);
   banco([{ status: 401 }]); assert.equal((await C.guardarConEstado({ groq: "g1234567" })).ok, false);
   banco([{ status: 400 }]); assert.equal((await C.guardarConEstado({ groq: "g1234567" })).ok, false);
   assert.equal((await C.guardarConEstado({ groq: "  " })).ok, false);

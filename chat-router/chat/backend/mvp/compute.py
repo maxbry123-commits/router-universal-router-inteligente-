@@ -86,6 +86,26 @@ def _intentar(url, payload, clave, modelo):
 # --- Groq/NVIDIA (externos.py): lectura incremental SSE, timeout configurable y metricas. Qwen no pasa por aqui. ---
 TIMEOUT_DEFECTO_S = 180.0
 
+# ---- R8: TABLA UNICA DE TIMEOUTS (segundos). Regla: peticion al modelo < plazo del bridge (100 s, recorta cada peticion) y presupuesto TOTAL de reintentos == timeout del cliente del Harness. ----
+# Misma tabla (mismos numeros) en chat-router/SWE CODE/web-bridge/src/respaldo.js (TIMEOUTS_DEFECTO, recortada por BRIDGE_DEADLINE_MS) y en
+# router-mvp/fichas/fichas_qwen/fichas/politicas_modelo.json (politicas_externos[*].timeout_s); test_externos_a5.py y respaldo_a5.test.mjs verifican que no se contradigan.
+TIMEOUTS_MODELO_S = {  # por peticion; en stream es de INACTIVIDAD entre fragmentos (no total)
+    "groq/qwen/qwen3.8-27b": 60,                      # Groq: ~450 t/s y 16,384 tokens de salida maximo -> 36 s de generacion como mucho (console.groq.com/docs/models)
+    "nvidia/minimaxai/minimax-m3.1-flash": 90,
+    "nvidia/meta/muse-glimmer-30b": 180,
+    "nvidia/nvidia/nemotron-3-ultra-550b-a55b": 300,  # modelo de 550B con razonamiento: arranque lento
+    "nvidia/z-ai/glm-5.3": 180,
+}
+PRESUPUESTO_TOTAL_S = 600.0  # = harness_client.TIMEOUT_LLM_S (RIU_HARNESS_TIMEOUT_S): suma de intentos + esperas de UNA llamada; un reintento que ya no cabe no empieza
+TABLA_TIMEOUTS = (  # capa, donde se aplica, variable que lo cambia, segundos por defecto
+    {"capa": "modelo", "donde": "externos.py / compute.timeout_s (Groq, NVIDIA)", "variable": "RIU_EXTERNOS_TIMEOUT_S o politicas_externos[modelo].timeout_s", "segundos": 180},
+    {"capa": "modelo", "donde": "respaldo.js (bridge SWE CODE)", "variable": "RIU_SWE_TIMEOUTS / BRIDGE_RESPALDO_MS", "segundos": 90},
+    {"capa": "bridge", "donde": "server.js conDeadline (tope de TODA la respuesta del bridge)", "variable": "BRIDGE_DEADLINE_MS", "segundos": 100},
+    {"capa": "harness", "donde": "harness_client.py (llm / computar) y presupuesto de reintentos de externos.py", "variable": "RIU_HARNESS_TIMEOUT_S", "segundos": 600},
+    {"capa": "harness", "donde": "harness_client.py swe_avanzar / swe_reanudar", "variable": "RIU_SWE_AVANZAR_TIMEOUT_MS", "segundos": 1800},
+    {"capa": "proxy", "donde": "proxy HTTPS del Space/Vercel: mantiene viva la conexion con latidos SSE; no se confia en su limite", "variable": "(plataforma)", "segundos": 100},
+)
+
 
 def timeout_s(politica_s=None, defecto=TIMEOUT_DEFECTO_S):
     """Timeout en segundos: RIU_EXTERNOS_TIMEOUT_S manda; luego el de la politica del modelo; luego 180 s."""
@@ -98,13 +118,36 @@ def timeout_s(politica_s=None, defecto=TIMEOUT_DEFECTO_S):
     return float(defecto)
 
 
+def nombre_de_trozos(trozos):
+    """Nombre completo de una herramienta que el proveedor emite fragmentado. Tres formas reales: una sola vez; repetido entero en cada delta;
+    acumulativo (git, github, github_leer) o en trozos disjuntos (github_ + leer). Solo se concatena en el ultimo caso."""
+    if not trozos:
+        return ""
+    if len(set(trozos)) == 1:
+        return trozos[0]  # repetido entero
+    if all(b.startswith(a) for a, b in zip(trozos, trozos[1:])):
+        return trozos[-1]  # cada delta contiene al anterior
+    return "".join(trozos)
+
+
+def argumentos_json_validos(texto):
+    """True si los argumentos acumulados son un objeto JSON completo (vacio = sin argumentos)."""
+    if not (texto or "").strip():
+        return True
+    try:
+        return isinstance(json.loads(texto), dict)
+    except ValueError:
+        return False
+
+
 class AcumuladorSSE:
     """Reconstruye una respuesta chat.completions a partir de sus lineas SSE (data: {...} / [DONE]).
     texto, razonamiento aparte, tool_calls por indice (id/name: ultimo valor no vacio; arguments: concatenados en orden),
     finish_reason, usage (tambien x_groq.usage) y metricas TTFT / tokens por segundo. Devuelve la misma forma que _intentar."""
 
-    def __init__(self, al_texto=None, reloj=time.monotonic):
+    def __init__(self, al_texto=None, reloj=time.monotonic, herramientas=None):
         self._reloj, self._al_texto = reloj, al_texto
+        self._declaradas = frozenset(n for n in (herramientas or ()) if isinstance(n, str) and n)  # nombres de tools declarados en la peticion (vacio: no se valida el nombre)
         self._t0, self._t1 = reloj(), None
         self.texto, self.razonamiento, self.finish_reason, self.uso, self.modelo = "", "", None, {}, None
         self._tools, self._orden, self._ultimo_id, self.invalidas, self.fragmentos = {}, [], None, 0, 0
@@ -118,12 +161,12 @@ class AcumuladorSSE:
         if i is None:  # proveedor sin index: un id nuevo abre otra llamada; sin id continua la ultima
             i = tc.get("id") if tc.get("id") and tc.get("id") != self._ultimo_id else (self._orden[-1] if self._orden else 0)
         if i not in self._tools:
-            self._tools[i] = {"id": "", "name": "", "arguments": ""}; self._orden.append(i)
+            self._tools[i] = {"id": "", "name": "", "arguments": "", "trozos": []}; self._orden.append(i)
         t = self._tools[i]
         if tc.get("id"):
             t["id"] = self._ultimo_id = tc["id"]
-        if f.get("name"):
-            t["name"] = f["name"]
+        if isinstance(f.get("name"), str) and f["name"]:
+            t["trozos"].append(f["name"]); t["name"] = nombre_de_trozos(t["trozos"])  # R3: el nombre se RECONSTRUYE (github_ + leer = github_leer), nunca se reemplaza por el ultimo trozo
         t["arguments"] += f.get("arguments") or ""
 
     def linea(self, linea):
@@ -171,6 +214,12 @@ class AcumuladorSSE:
         fin = self._reloj()
         orden = sorted(self._orden) if all(isinstance(i, int) for i in self._orden) else self._orden
         llamadas = [{"id": self._tools[i]["id"], "type": "function", "function": {"name": self._tools[i]["name"], "arguments": self._tools[i]["arguments"]}} for i in orden]
+        invalidas = []  # se MARCAN, no se descartan: ninguna llamada pendiente se pierde; quien las ejecute decide (no ejecutar incompletas)
+        for ll in llamadas:
+            if self._declaradas and ll["function"]["name"] not in self._declaradas:
+                invalidas.append({"id": ll["id"], "nombre": ll["function"]["name"], "motivo": "nombre_no_declarado"})
+            elif not argumentos_json_validos(ll["function"]["arguments"]):
+                invalidas.append({"id": ll["id"], "nombre": ll["function"]["name"], "motivo": "argumentos_json_incompletos"})
         mensaje = {"role": "assistant", "content": self.texto or (None if llamadas else "")}
         if llamadas:
             mensaje["tool_calls"] = llamadas
@@ -178,11 +227,13 @@ class AcumuladorSSE:
             mensaje["reasoning_content"] = self.razonamiento
         tokens = self.uso.get("completion_tokens") if isinstance(self.uso.get("completion_tokens"), int) else None
         estimados = tokens is None and self.fragmentos > 0
+        origen = None if tokens is None and not estimados else "estimado" if estimados else "proveedor"
         tokens = self.fragmentos if estimados else tokens
         ttft = None if self._t1 is None else round(self._t1 - self._t0, 4)
         generando = None if self._t1 is None else fin - self._t1
-        metricas = {"stream": True, "ttft_s": ttft, "duracion_s": round(fin - self._t0, 4), "tokens": tokens, "tokens_estimados": estimados,
-                    "tokens_por_s": round(tokens / generando, 2) if tokens and generando and generando > 0 else None, "lineas_invalidas": self.invalidas}
+        metricas = {"stream": True, "ttft_s": ttft, "duracion_s": round(fin - self._t0, 4), "tokens": tokens, "tokens_estimados": estimados, "origen_tokens": origen,
+                    "tokens_por_s": round(tokens / generando, 2) if tokens and generando and generando > 0 else None, "lineas_invalidas": self.invalidas,
+                    "tools_invalidas": len(invalidas)}
         bruto = {"object": "chat.completion", "model": self.modelo, "choices": [{"index": 0, "message": mensaje, "finish_reason": self.finish_reason}], "usage": self.uso}
         return {"texto": self.texto, "tool_calls": llamadas, "finish_reason": self.finish_reason, "uso": self.uso, "bruto": bruto,
-                "mensaje_asistente": mensaje, "modelo_solicitado": modelo_solicitado, "modelo_respuesta": self.modelo, "metricas": metricas}
+                "mensaje_asistente": mensaje, "modelo_solicitado": modelo_solicitado, "modelo_respuesta": self.modelo, "metricas": metricas, "tools_invalidas": invalidas}

@@ -19,7 +19,7 @@ export function estadoEfimero() {
 }
 const ckDir = () => path.join(estadoDir(), 'checkpoints');
 const TAM = 2500;
-const ESTADOS = ['CONTINUAR', 'WAIT_TOOLS', 'DONE', 'ERROR'];
+const ESTADOS = ['CONTINUAR', 'WAIT_TOOLS', 'DONE', 'ERROR', 'RESPUESTA_COMPLETA'];  // RESPUESTA_COMPLETA: el modelo termino (stop) pero la tarea no esta confirmada
 
 export function partir(texto) {
   const out = [];
@@ -52,7 +52,8 @@ export function checkpointCrudo(convId) {
 }
 
 // secciones conocidas (para que OpenClaw sepa cuales retomar): sin volcar contenido
-export function listarCheckpoints() {
+const pendientesDe = (ck) => ck.pendientes?.tool_calls?.length || (ck.estado === 'WAIT_TOOLS' ? ck.lote?.assistant?.tool_calls?.length || 0 : 0);  // tool_calls entregados al cliente y aun sin resultado
+export function listarCheckpoints(propietario) {  // con `propietario` (hash) se omiten las tareas de OTRO propietario; las sin dueño (web, previas) se listan
   const CK_DIR = ckDir();
   let archivos = [];
   try { archivos = fs.readdirSync(CK_DIR).filter(f => f.endsWith('.json')); } catch { return []; }
@@ -60,7 +61,8 @@ export function listarCheckpoints() {
   for (const f of archivos) {  // un archivo corrupto no esconde a los demas
     try {
       const ck = JSON.parse(fs.readFileSync(path.join(CK_DIR, f), 'utf8'));
-      out.push({ conv_id: f.slice(0, -5), modo: ck.modo, modelo: ck.modelo, cuenta: ck.cuenta, url: ck.url, estado: ck.estado, paso: ck.paso, proveedor: ck.proveedor, enviados: ck.enviados, total: ck.total, completo: !!ck.completo || ck.estado === 'DONE', ts: ck.ts });
+      if (ck.vinculo && ck.vinculo.propietario && ck.vinculo.propietario !== propietario) continue;  // tarea ajena: ni siquiera se lista su id
+      out.push({ conv_id: f.slice(0, -5), modo: ck.modo, modelo: ck.modelo, cuenta: ck.cuenta, url: ck.url, estado: ck.estado, paso: ck.paso, proveedor: ck.proveedor, enviados: ck.enviados, total: ck.total, completo: !!ck.completo || ck.estado === 'DONE', ts: ck.ts, ...(ck.fase ? { fase: ck.fase } : {}), ...(pendientesDe(ck) ? { herramientas_pendientes: pendientesDe(ck) } : {}) });
     } catch { /* ignorado */ }
   }
   return out;
@@ -106,6 +108,7 @@ function escribirAtomico(destino, obj) {
 export function checkpointGuardar(convId, data) {
   const limpioData = sanear(data || {});
   const previo = leerCrudo(convId);
+  if (previo && previo.integridad) return;  // checkpoint de tarea (checkpoint_hf.js: integridad SHA256 / fragmentos): lo gestiona retomar_local, aqui no se reescribe
   const mismaTarea = previo && (previo.huella === limpioData.huella || !previo.huella || !limpioData.huella);
   if (mismaTarea && previo.herramientas) limpioData.herramientas = { ...previo.herramientas, ...(limpioData.herramientas || {}) };
   const estado = String(limpioData.estado || '').toUpperCase();

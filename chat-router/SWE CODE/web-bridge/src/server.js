@@ -47,6 +47,11 @@ const clavesAcceso = () => ACCESO_VARS.map(v => process.env[v]).filter(Boolean);
 const cab = (req, n) => String((req.headers && req.headers[n]) || '');
 const conAcceso = (req) => { const k = cab(req, 'x-api-key'); return !!k && clavesAcceso().map(v => iguales(k, v)).some(Boolean); };  // clave de acceso del chat en x-api-key
 const conToken = (req) => { if (!TOKEN) return false; const t = cab(req, 'authorization').replace(/^Bearer\s+/i, '') || cab(req, 'x-bridge-key') || cab(req, 'x-api-key'); return !!t && iguales(t, TOKEN); };
+// propietario autenticado (128-130): hash (nunca la clave) de la clave de acceso del chat o del BRIDGE_TOKEN con que se hizo la peticion. Otra clave = otro propietario.
+const propietarioDe = (req) => {
+  const k = conAcceso(req) ? cab(req, 'x-api-key') : conToken(req) ? TOKEN : '';
+  return k ? `p-${crypto.createHash('sha256').update('riu-propietario\u0000' + k).digest('hex').slice(0, 24)}` : null;
+};
 const sinCorreos = (o) => JSON.parse(JSON.stringify(o ?? null, (k, v) => (k === 'email' ? undefined : v)));
 const textoDe = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map(p => (typeof p === 'string' ? p : p && typeof p.text === 'string' ? p.text : '')).filter(Boolean).join('\n') : '');
 const MAX_PROMPT = parseInt(process.env.BRIDGE_MAX_PROMPT || '400000', 10), MAX_DOCS = 10;
@@ -76,7 +81,10 @@ montarResponses(app);  // POST /v1/responses (Codex): traduce a /v1/chat/complet
 montarRutasSwe(app);  // /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar} -> Harness DeepSeek; exigen BRIDGE_TOKEN
 
 // tarea_id derivado: <conv_id (max 51)>-<sha256([modelo, modo, mensajes]) 12 hex> -> <= 64 y solo [A-Za-z0-9_-]
-const tareaDerivada = (conv, modelo, modo, mensajes) => `${String(conv).slice(0, 51)}-${crypto.createHash('sha256').update(JSON.stringify([modelo, modo ?? null, mensajes])).digest('hex').slice(0, 12)}`;
+// con propietario el hash lo incluye: dos usuarios con el mismo conv_id y los mismos mensajes obtienen tareas distintas
+const tareaDerivada = (conv, modelo, modo, mensajes, propietario = null) => `${String(conv).slice(0, 51)}-${crypto.createHash('sha256').update(JSON.stringify(propietario ? [modelo, modo ?? null, mensajes, propietario] : [modelo, modo ?? null, mensajes])).digest('hex').slice(0, 12)}`;
+// codigo de error -> HTTP (tareas): ajena 403, contexto/otra tarea/corrupta/plan 409
+const HTTP_TAREA = { TAREA_AJENA: 403, TAREA_OTRO_CONTEXTO: 409, CHECKPOINT_OTRA_TAREA: 409, VERIFICAR_HERRAMIENTAS_PENDIENTES: 409, CHECKPOINT_CORRUPTO: 409, PLAN_REQUERIDO: 409, OPERACION_NO_PREVISTA: 409 };
 // usage OpenAI desde result.metricas (prompt/completion/total tokens reales del proveedor); sin ellos, ceros como siempre
 const usageDe = (m) => { const n = (v) => (Number.isFinite(Number(v)) && v !== null ? Number(v) : 0); const p = n(m?.prompt_tokens), c = n(m?.completion_tokens); return { prompt_tokens: p, completion_tokens: c, total_tokens: m && Number.isFinite(Number(m.total_tokens)) && m.total_tokens !== null ? Number(m.total_tokens) : p + c }; };
 const esConsenso = (modo) => ['consulta', 'plan'].includes(modo);
@@ -119,7 +127,7 @@ app.get('/v1/queue', (_req, res) => {
 });
 
 // secciones (conv_id) con checkpoint: OpenClaw ve cuales retomar reenviando el mismo conv_id
-app.get('/v1/secciones', (_req, res) => res.json({ ok: true, secciones: listarCheckpoints() }));
+app.get('/v1/secciones', (req, res) => res.json({ ok: true, secciones: listarCheckpoints(propietarioDe(req)) }));  // solo las del propietario (o sin dueño)
 
 // asesorias guardadas por proyecto (un ASESORIA.md cada uno): OpenClaw las lee antes de ejecutar
 app.get('/v1/proyectos', (_req, res) => res.json({ ok: true, proyectos: listarProyectos() }));
@@ -129,10 +137,10 @@ app.get('/v1/proyectos/:nombre', (req, res) => {
 });
 
 // retomar una seccion a medias SIN que el cliente reenvie el texto: usa el texto y el modelo guardados en el checkpoint
-async function retomarSeccion(id, { respaldo: conRespaldo = false } = {}) {
+async function retomarSeccion(id, { respaldo: conRespaldo = false, propietario = null, interno = false, confirmarCompleta = false } = {}) {
   const ck = checkpointCrudo(id);
   if (!ck || ck.tipo === TIPO_LOCAL) {  // checkpoint de un modelo local HF / Groq / NVIDIA (retomar_local.js): puede estar solo en el Harness si el disco se perdio
-    const l = await conDeadline(retomarPorId(id, { hasta: Date.now() + DEADLINE_MS * 0.8, sinRespaldo: !conRespaldo }), DEADLINE_MS);  // el modelo del checkpoint manda: sin respaldo salvo que el cliente lo pida
+    const l = await conDeadline(retomarPorId(id, { hasta: Date.now() + DEADLINE_MS * 0.8, sinRespaldo: !conRespaldo, propietario, interno, confirmarCompleta }), DEADLINE_MS);  // el modelo del checkpoint manda: sin respaldo salvo que el cliente lo pida
     if (l && l.yaCompleto) return { status: 409, error: { code: 'SECCION_YA_COMPLETA' } };
     if (l) return { status: 200, salida: l.salida, modelo: l.usado, local: l };
   }
@@ -144,11 +152,11 @@ async function retomarSeccion(id, { respaldo: conRespaldo = false } = {}) {
 app.post('/v1/secciones/:id/retomar', async (req, res) => {
   if (!/^[\w-]{1,80}$/.test(req.params.id)) return res.status(400).json({ error: { code: 'CONV_ID_INVALIDO' } });
   try {
-    const r = await retomarSeccion(req.params.id, { respaldo: !!(req.body && req.body.respaldo === true) });
+    const r = await retomarSeccion(req.params.id, { respaldo: !!(req.body && req.body.respaldo === true), propietario: propietarioDe(req), confirmarCompleta: !!(req.body && req.body.tarea_completa === true) });
     if (r.error) return res.status(r.status).json({ error: r.error });
     const l = r.local;
     res.json({ id: `retoma-${Date.now()}`, object: 'chat.completion', modelo_usado: r.modelo, ...(l ? { via_respaldo: l.via, ...(l.servidor ? { servidor: l.servidor } : {}), tarea: { id: l.tarea_id, estado: l.estado, secciones: l.secciones } } : {}), choices: [{ index: 0, finish_reason: l ? l.finish_reason : 'stop', message: { role: 'assistant', content: r.salida || '', ...(l && l.tool_calls.length ? { tool_calls: l.tool_calls } : {}) } }] });
-  } catch (e) { res.status(e.code === 'UPSTREAM_TIMEOUT' ? 504 : 502).json({ error: { code: e.code || 'BRIDGE_ERROR', message: String(e.message).slice(0, 200) } }); }
+  } catch (e) { res.status(HTTP_TAREA[e.code] || (e.code === 'UPSTREAM_TIMEOUT' ? 504 : 502)).json({ error: { code: e.code || 'BRIDGE_ERROR', message: String(e.message).slice(0, 200) } }); }
 });
 
 // auto-evolucion: mejoras propuestas por lo que el bridge reparo solo (OpenClaw las aplica con su commit)
@@ -297,10 +305,11 @@ app.post('/v1/chat/completions', async (req, res) => {
     // Sin tarea_id pero con conv_id se DERIVA <conv_id>-<sha256 de [modelo, modo, mensajes] (12)>: el mismo envio reintentado reanuda, uno distinto es tarea nueva. Sin conv_id nada cambia.
     const explicito = esExterno(model) || esLocal(model), pideRespaldo = req.body.respaldo === true;
     let tareaId = req.body.tarea_id != null ? req.body.tarea_id : req.headers['x-tarea-id'];
-    if ((tareaId == null || tareaId === '') && explicito && conv_id != null && conv_id !== '') tareaId = tareaDerivada(conv_id, model, modo, mensajesM);
+    if ((tareaId == null || tareaId === '') && explicito && conv_id != null && conv_id !== '') tareaId = tareaDerivada(conv_id, model, modo, mensajesM, propietarioDe(req));
     const origen = ['yaiwes', 'openclaw'].includes(req.body.origen) ? req.body.origen : undefined;  // origen del contrato: ruta del checkpoint en el Harness
     const usaTarea = tareaId != null && tareaId !== '' && explicito;
     if (usaTarea && !tareaIdValido(String(tareaId))) return res.status(400).json({ error: { code: 'TAREA_ID_INVALIDO', message: 'tarea_id: letras, numeros, - y _ (max 64)' } });
+    if (usaTarea && !res.headersSent) res.setHeader('x-tarea-id', String(tareaId));  // 128: el id de la tarea viaja siempre; se reenvia tal cual para reanudar
     const extra = { tools: Array.isArray(req.body.tools) ? req.body.tools : undefined, tool_choice: req.body.tool_choice };  // groq/nvidia/locales ejecutan tools: el Harness las corre
     // streaming real (stream:true): Groq/NVIDIA entregan fragmentos por onDelta -> sse.delta; flujo = lo ya entregado al cliente (el failover continua desde ahi, sin repetir)
     sse.model = `swecode:${model}`;
@@ -309,8 +318,13 @@ app.post('/v1/chat/completions', async (req, res) => {
 
     const ejecutar = async () => {
     if (usaTarea) {
-      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo), { ...extra, origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + DEADLINE_MS * 0.8 }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
-      tarea = { id: r.tarea_id, estado: r.estado, secciones: r.secciones, reanudado: r.reanudado, desde_checkpoint: r.desde_checkpoint };
+      // 129: propietario (hash de la clave usada), proyecto, sesion (conv_id), workflow y operacion quedan vinculados al tarea_id. 140: la tarea solo es DONE si el cliente/workflow lo confirma
+      // (tarea_completa:true | x-tarea-completa:1). 141: objetivo + operaciones_previstas (exigidos con tools si exigir_confirmacion:true o BRIDGE_EXIGIR_CONFIRMACION=1)
+      const b = req.body, str = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+      const vinculo = { propietario: propietarioDe(req), proyecto: str(proyecto), sesion: conv_id != null ? String(conv_id) : null, workflow: str(b.workflow), operacion: str(b.operacion) };
+      const plan = b.objetivo !== undefined || b.operaciones_previstas !== undefined ? { objetivo: b.objetivo, operaciones: b.operaciones_previstas } : undefined;
+      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo), { ...extra, ...vinculo, plan, exigirPlan: b.exigir_confirmacion === true || process.env.BRIDGE_EXIGIR_CONFIRMACION === '1', confirmarCompleta: b.tarea_completa === true || req.headers['x-tarea-completa'] === '1', origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + DEADLINE_MS * 0.8, flushChars: parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_CHARS, 10) || undefined, flushMs: Number.isFinite(parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10)) ? parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10) : undefined, ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: AbortSignal.any([sse.signal, ac1.signal]) } } : {}) }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
+      tarea = { id: r.tarea_id, estado: r.estado, fase: r.fase, secciones: r.secciones, reanudado: r.reanudado, desde_checkpoint: r.desde_checkpoint };
     } else if (esExterno(model)) {
       const r = await externo(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
     } else if (esLocal(model)) {
@@ -341,6 +355,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       await conDeadline(ejecutar(), DEADLINE_MS, sse.pide ? sse.latido : null);
       if ((!salida || !String(salida).trim()) && !llamadas.length) throw Object.assign(new Error('respuesta vacia del modelo web'), { code: 'EMPTY_RESPONSE' });
     } catch (e) {
+      if (e.code === 'UPSTREAM_TIMEOUT') ac1.abort();  // el intento colgado (tambien el de una tarea con checkpoint) no puede seguir escribiendo en el stream
       if (e.code === 'MODO_INVALIDO' || usaTarea || sse.signal.aborted) throw e;  // cliente desconectado: no se gasta mas respaldo. Con tarea_id retomarLocal ya probo local/Groq/NVIDIA y guardo el checkpoint: el cliente reintenta con el mismo tarea_id
       if (e.code === 'UPSTREAM_TIMEOUT') ac1.abort();  // el intento colgado no puede seguir escribiendo en el stream mientras responde el respaldo
       if (e.code === 'UPSTREAM_TIMEOUT' && conv_id) await cerrarPagina(conv_id).catch(() => {});  // la tab colgada liberaba su slot solo al cerrarse
@@ -358,6 +373,7 @@ app.post('/v1/chat/completions', async (req, res) => {
         registrarLeccion({ codigo: e.code || 'WEB_FALLO', accion: 'respaldo ' + r.via, resultado: 'PASS', modelo: model });  // p. ej. CUENTAS_FALTAN: OpenClaw sabe que debe reenviar cuentas y clave
       }
     }
+    if (llamadas.length && fin !== 'tool_calls') fin = 'tool_calls';  // R4: con tool_calls el finish_reason SIEMPRE lo dice (un 'stop' haria que el cliente ignore las llamadas); texto y tool_calls viajan juntos
     let archivo = null;
     if (modoUso === 'asesoria') { try { archivo = guardarAsesoria(proyecto || conv_id, { texto: salida, via: via || viaPrimaria || 'web', modelo: usado }); } catch { /* guardar es mejor esfuerzo */ } }
     if (proyecto || conv_id) guardarTurno(proyecto || conv_id, ultimo, salida, usado).catch(() => {});  // misma memoria del chat Yaiwes (mejor esfuerzo)
@@ -366,8 +382,9 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (esOc) {
       try {
         const previo = checkpointCrudo(conv_id) || {};
-        if (llamadas.length) checkpointGuardar(conv_id, { ...previo, modo: previo.modo || modoUso, estado: 'WAIT_TOOLS', modelo: usado, proveedor: via || viaPrimaria || null });
-        else if (previo.estado === 'WAIT_TOOLS' && mensajesM.at(-1)?.role === 'tool') checkpointGuardar(conv_id, { ...previo, estado: 'CONTINUAR' });
+        if (previo.tipo === TIPO_LOCAL) { /* el checkpoint de la tarea (retomar_local) ya guarda el lote ESPERANDO_TOOLS con sus tool_calls */ }
+        else if (llamadas.length) checkpointGuardar(conv_id, { ...previo, modo: previo.modo || modoUso, estado: 'WAIT_TOOLS', modelo: usado, proveedor: via || viaPrimaria || null, pendientes: { texto: salida || '', tool_calls: llamadas } });  // R4: las llamadas pendientes quedan guardadas, no solo el estado
+        else if (previo.estado === 'WAIT_TOOLS' && mensajesM.at(-1)?.role === 'tool') checkpointGuardar(conv_id, { ...previo, estado: 'CONTINUAR', pendientes: null });
       } catch { /* el checkpoint es mejor esfuerzo */ }
     }
     if (!res.headersSent) { res.setHeader('x-modelo-usado', usado); if (via) res.setHeader('x-via-respaldo', via); }
@@ -393,7 +410,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (sse.pide && sse.signal.aborted) return;  // el cliente ya no esta
     if (sse.activo) return res.writableEnded ? undefined : sse.error(code, e.message, e.detail);  // error tras abrir el stream: chunk con el error + [DONE]
     if (res.headersSent) return;
-    const st = code === 'SESSION_EXPIRED' ? 503 : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : ['CHECKPOINT_OTRA_TAREA', 'VERIFICAR_HERRAMIENTAS_PENDIENTES'].includes(code) ? 409 : ['EXTERNO_FALLO', 'HF_LOCAL_FALLO', 'NO_DISPONIBLE'].includes(code) ? 502 : 500;
+    const st = code === 'SESSION_EXPIRED' ? 503 : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : HTTP_TAREA[code] ? HTTP_TAREA[code] : ['EXTERNO_FALLO', 'HF_LOCAL_FALLO', 'NO_DISPONIBLE'].includes(code) ? 502 : 500;
     res.status(st).json({ error: { code, message: e.message, detail: e.detail } });
   }
 });
@@ -422,8 +439,8 @@ for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, async () => { try { awa
 // BRIDGE_AUTORETOMAR (activo por defecto; '0' lo apaga): al arrancar, retoma una a una las secciones que quedaron a medias (si hay cuentas en el entorno)
 if (process.env.BRIDGE_AUTORETOMAR !== '0') {
   setTimeout(async () => {
-    for (const sec of listarCheckpoints().filter(c => !c.completo)) {
-      try { await retomarSeccion(sec.conv_id); registrarLeccion({ codigo: 'REINICIO', accion: 'retoma automatica ' + sec.conv_id, resultado: 'PASS' }); }
+    for (const sec of listarCheckpoints().filter(c => !c.completo && c.estado !== 'RESPUESTA_COMPLETA')) {  // RESPUESTA_COMPLETA: ya respondio, solo espera la confirmacion del cliente
+      try { await retomarSeccion(sec.conv_id, { interno: true }); registrarLeccion({ codigo: 'REINICIO', accion: 'retoma automatica ' + sec.conv_id, resultado: 'PASS' }); }
       catch { registrarLeccion({ codigo: 'REINICIO', accion: 'retoma automatica ' + sec.conv_id, resultado: 'FAIL' }); }
     }
   }, 3000);

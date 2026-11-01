@@ -24,7 +24,10 @@ MODELOS_DEFECTO = {"groq": "qwen/qwen3.8-27b", "nvidia": "minimaxai/minimax-m3.1
 MODELOS_RESPALDO = {"groq": [], "nvidia": ["meta/muse-glimmer-30b", "nvidia/nemotron-3-ultra-550b-a55b", "z-ai/glm-5.3"]}   # solo con el modelo por defecto
 EXTERNOS = {"groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY", os.getenv("RIU_SWE_GROQ_MODELO", MODELOS_DEFECTO["groq"])),
             "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY", os.getenv("RIU_SWE_NVIDIA_MODELO", MODELOS_DEFECTO["nvidia"]))}
-TIMEOUTS_EXTERNOS = {"groq": 60, "nvidia": 120}   # segundos por peticion (Groq 60 s)
+# R8: TABLA UNICA de timeouts (segundos por peticion): la MISMA que compute.TIMEOUTS_MODELO_S (backend YAIWES), respaldo.js (bridge) y politicas_modelo.json (verificada en test_mini_router_a5.py).
+# El valor por via es el defecto de los modelos que no estan en la tabla; todo se recorta al plazo del tramo (BRIDGE_DEADLINE_MS, 100 s): ningun limite por defecto lo supera.
+TIMEOUTS_EXTERNOS = {"groq": 60, "nvidia": 90}
+TIMEOUTS_MODELO_S = {"qwen/qwen3.8-27b": 60, "minimaxai/minimax-m3.1-flash": 90, "meta/muse-glimmer-30b": 180, "nvidia/nemotron-3-ultra-550b-a55b": 300, "z-ai/glm-5.3": 180}
 COOLDOWN_TIMEOUT_S = 60.0                          # tras un timeout el proveedor entero se aparta este tiempo (sus demas claves/modelos no se prueban)
 _ENFRIADOS = {}                                    # via -> instante (monotonic) hasta el que no se intenta
 MAX_CONTINUACIONES = 8   # veces que se pide "continua" si finish_reason == 'length' (sumado entre proveedores)
@@ -80,6 +83,17 @@ def _completar(url, headers, modelo, mensajes, timeout, previo="", presupuesto=N
         presupuesto["cont"] += 1
 
 
+def _leer_doc(ruta, limite=100000):
+    """(texto, aviso): un documento mas largo que `limite` se corta CON marca visible en el texto y un aviso {documento, caracteres_originales, caracteres_enviados}; nunca en silencio."""
+    with open(ruta, encoding="utf-8") as f:
+        t = f.read()
+    if len(t) <= limite:
+        return t, None
+    nombre = os.path.basename(ruta)
+    return (t[:limite] + f"\n[DOCUMENTO TRUNCADO: {nombre} tiene {len(t)} caracteres; solo se enviaron los primeros {limite}]",
+            {"documento": nombre, "caracteres_originales": len(t), "caracteres_enviados": limite})
+
+
 def _clase(e) -> str:
     """'modelo': el modelo no sirve (400/404/422) -> siguiente modelo; resto (429/402/401/5xx/timeout/red) -> siguiente clave."""
     return "modelo" if isinstance(e, urllib.error.HTTPError) and e.code in (400, 404, 422) else "clave"
@@ -120,7 +134,7 @@ def _externo(mensajes: list, ultimo, parcial: str = ""):
                     raise TimeoutError("plazo del tramo externo agotado" + (f" (ultimo: {ultimo})" if ultimo else ""))
                 try:
                     cab = {"Content-Type": "application/json", "Authorization": "Bearer " + clave, "User-Agent": "riu-swe-code"}
-                    texto = _completar(base.rstrip("/"), cab, m, mensajes, min(TIMEOUTS_EXTERNOS.get(via, 120), resto), parcial, presupuesto)
+                    texto = _completar(base.rstrip("/"), cab, m, mensajes, min(TIMEOUTS_MODELO_S.get(m, TIMEOUTS_EXTERNOS.get(via, 90)), resto), parcial, presupuesto)
                     _ULTIMO.update(via=via, modelo=m)
                     return texto, via
                 except Exception as e:
@@ -276,13 +290,15 @@ def main():
             print(json.dumps({"verdict": "INPUT_GAP", "detail": f"pipeline desconocido: {nombre}",
                               "pipelines": list(CASCADA.get("pipelines", {}))})); sys.exit(1)
         args = args[2:]
-    docs = []
+    docs, avisos = [], []
     while args[:1] == ["--doc"]:
         args = args[1:]
         if not args: break
         try:
-            with open(args[0], encoding="utf-8") as f:
-                docs.append((os.path.basename(args[0]), f.read()[:100000]))
+            texto_doc, aviso = _leer_doc(args[0])
+            docs.append((os.path.basename(args[0]), texto_doc))
+            if aviso:
+                avisos.append(aviso)
         except OSError as e:
             print(json.dumps({"verdict": "INPUT_GAP", "detail": f"doc ilegible: {args[0]} ({e})"})); sys.exit(1)
         args = args[1:]
@@ -291,7 +307,10 @@ def main():
         print(json.dumps({"verdict": "INPUT_GAP", "detail": "objetivo requerido"})); sys.exit(1)
     if docs:
         objetivo += "\n\n" + "\n\n".join(f"[DOCUMENTO: {n}]\n{c}" for n, c in docs)
-    print(json.dumps(correr(objetivo, pasos, tarea_id=tarea_id), ensure_ascii=False, indent=2))
+    salida = correr(objetivo, pasos, tarea_id=tarea_id)
+    if avisos:
+        salida = {**salida, "avisos": avisos}  # el recorte de un documento se dice en la respuesta
+    print(json.dumps(salida, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

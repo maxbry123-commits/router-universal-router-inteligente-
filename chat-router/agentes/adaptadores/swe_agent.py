@@ -43,6 +43,6 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
                 texto += f.read(_comun.MAX_SALIDA)
         texto = texto.strip() or "sweagent termino sin parche (ver trayectoria)"
         rel = [os.path.relpath(r, salida) for r in parches + trayectorias]
-        return _comun.resultado_ok(AGENTE, tarea_id, proc, texto, ["sweagent run"], [exe] + rel, inicio)
+        return _comun.resultado_ok(AGENTE, tarea_id, proc, texto, ["sweagent run"], [exe] + rel, inicio, ep["modelo"])
     finally:
         shutil.rmtree(salida, ignore_errors=True)

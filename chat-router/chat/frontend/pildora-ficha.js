@@ -18,5 +18,7 @@ export function montarPildoraFicha(ctx) {
     }
   };
   pintarFichas();
+  // gancho del SELECTOR CENTRAL (swe-selectores.js): su MODELO QUE RESPONDE en la ventana NVIDIA elige la ficha igual que esta lista (que ya no se muestra duplicada)
+  window.RIU_FICHA = { elegir: (id) => { const m = (window.RIU_CONFIG?.modelos || []).find((x) => x.id === id); if (!m || m.disponible === false) return false; chat().ficha = id; try { window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar(); } catch (e) {} pintarFichaPill(); pintarFichas(); guardar(); return true; } };
   window.addEventListener("riu:fichas", () => { if (root.isConnected) { pintarFichas(); pintarFichaPill(); } });  // llegan los modelos de Groq/NVIDIA (fichas-externas.js)
 }

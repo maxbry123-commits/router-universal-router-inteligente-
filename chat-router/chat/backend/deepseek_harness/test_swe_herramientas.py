@@ -25,9 +25,14 @@ CONTRATO = {"task_id": "yaiwes-001", "origen": "yaiwes", "mensaje": "Revisar pro
 
 class Almacen:
     def __init__(self):
-        self.datos, self.caido = {}, False
+        self.datos, self.caido, self.agentes_on, self.control_caido, self.consultas = {}, False, True, False, 0
 
     def router(self, accion, datos):
+        if accion == "tools_lock":  # estado Agentes ON/OFF del Router (solo lectura)
+            self.consultas += 1
+            if self.control_caido:
+                raise RuntimeError("Router error de red")
+            return {"tools": [], "ia": True, "agentes_on": self.agentes_on}  # el `result` de /plugins/puente_chat/call/tools_lock
         assert accion == "almacen"
         if self.caido:
             raise RuntimeError("Router HTTP 502: caido")
@@ -50,7 +55,9 @@ def entorno(monkeypatch, tmp_path):
     def agente(agente, tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
         llamadas.append((agente, modelo, permisos))
         return {"ok": True, "agente": agente, "task_id": tarea_id, "resultado": "hecho", "herramientas": [], "evidencias": ["e"], "recibo": "%s:%s:%d" % (agente, tarea_id, len(llamadas)), "exit_code": 0}
-    with patch.object(h, "_router", a.router), patch.object(h, "ejecutar_agente", agente):
+    from agentes.adaptadores import workflows as wf
+    todos = {x: {"disponible": True, "motivo": ""} for x in ("openclaw", "swe-agent", "openhands", "opencode", "codex", "claude-code")}  # el preflight (workflows.py) consulta la disponibilidad REAL: aqui se simulan los seis instalados
+    with patch.object(h, "_router", a.router), patch.object(h, "ejecutar_agente", agente), patch.object(wf, "_disponibilidad_real", lambda: todos):
         yield a, llamadas, TestClient(h.app)
 
 
@@ -168,10 +175,11 @@ def test_status_emite_swe_con_el_formato_del_contrato(entorno, monkeypatch, tmp_
     monkeypatch.setenv("SWECODE_URL_S1", "http://127.0.0.1:9101/v1")
     swe = _status(c).json()["result"]["swe"]
     assert set(swe) == {"agentes", "workflows", "modelos"}
-    assert swe["agentes"]["opencode"] == {"disponible": True, "motivo": ""}
+    assert {k: swe["agentes"]["opencode"][k] for k in ("disponible", "motivo")} == {"disponible": True, "motivo": ""} and swe["agentes"]["opencode"]["estado"] == "DISPONIBLE"  # R6: campos nuevos (estado, veredicto...) ademas del contrato antiguo
     assert swe["agentes"]["codex"]["disponible"] is False and swe["agentes"]["codex"]["motivo"]
     assert swe["workflows"]["individual"]["disponible"] is True and swe["workflows"]["liquid_mirror"]["disponible"] is False
-    assert swe["modelos"]["hf/lfm2.5-350m"]["disponible"] is True and swe["modelos"]["groq/qwen/qwen3.8-27b"]["disponible"] is False
+    assert swe["modelos"]["hf/lfm2.5-350m"]["disponible"] is False and swe["modelos"]["hf/lfm2.5-350m"]["estado"] == "SIN VERIFICAR"  # R6: URL configurada pero sin sonda = SIN VERIFICAR, no DISPONIBLE
+    assert swe["modelos"]["groq/qwen/qwen3.8-27b"]["disponible"] is False and swe["modelos"]["groq/qwen/qwen3.8-27b"]["estado"] == "NO CONFIGURADO"
     assert not (tmp_path / "opencode.lanzado").exists()
 
 
@@ -182,7 +190,8 @@ def test_status_sigue_exigiendo_clave_y_no_revela_claves(entorno, monkeypatch):
     monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", "token-gateway-falso"); monkeypatch.setenv("RIU_SWE_SONDA_MODELOS", "0")
     cuerpo = _status(c).text
     assert "gsk_" not in cuerpo and "nvapi-" not in cuerpo and "token-gateway-falso" not in cuerpo and CLAVE not in cuerpo
-    assert json.loads(cuerpo)["result"]["swe"]["modelos"]["groq/qwen/qwen3.8-27b"]["disponible"] is True
+    m = json.loads(cuerpo)["result"]["swe"]["modelos"]["groq/qwen/qwen3.8-27b"]
+    assert m["disponible"] is False and m["estado"] == "SIN VERIFICAR" and m["intentable"] is True  # R6: clave presente sin verificar GET /models no es DISPONIBLE
 
 
 def test_si_la_disponibilidad_falla_el_status_responde_igual_sin_swe_inventado(entorno):
@@ -212,7 +221,7 @@ def test_el_selector_deja_de_marcar_no_disponible_lo_conectado_y_lo_sigue_marcan
     r = subprocess.run([NODE, "--input-type=module", "-e", js, json.dumps(cap)], capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, r.stderr
     vista = json.loads(r.stdout)
-    assert vista == {"opencode": True, "codex": False, "claude": False, "openclaw": False, "individual": True, "swe_code": False, "liquid": False, "hf": True, "groq": False}
+    assert vista == {"opencode": True, "codex": False, "claude": False, "openclaw": False, "individual": True, "swe_code": False, "liquid": False, "hf": False, "groq": False}  # R6: hf con URL pero sin sonda = SIN VERIFICAR -> disponible False (el frontend debe usar `estado`/`intentable` cuando harness_client los reenvie)
 
 
 def test_el_harness_reenvia_tarea_id_al_router_para_el_parcial_en_streaming():
@@ -229,3 +238,38 @@ def test_el_harness_reenvia_tarea_id_al_router_para_el_parcial_en_streaming():
     chats = [d for a, d in vistos if a == "chat"]
     assert chats[0]["tarea_id"] == "chat-tarea_1x"  # el mismo identificador saneado que usa el diario de la tarea
     assert chats[1]["tarea_id"] == ""  # sin tarea no se inventa una
+
+
+# ---- Agentes ON/OFF decidido en el servidor TAMBIEN para quien llega por el bridge de OpenClaw (no solo por mvp/app.py) ----
+def test_agentes_off_bloquea_avanzar_reanudar_aprobar_e_iniciar_agentico_antes_de_tocar_nada(entorno):
+    almacen, llamadas, c = entorno
+    assert invocar(c, "swe_iniciar", CONTRATO)["status"] == "ok"  # con Agentes ON todo sigue igual
+    almacen.agentes_on = False
+    antes = dict(almacen.datos)
+    for tool, args in (("swe_avanzar", {"task_id": "yaiwes-001"}), ("swe_reanudar", {"task_id": "yaiwes-001"}),
+                       ("swe_aprobar", {"task_id": "yaiwes-001", "op_id": "op-1", "operador": "ana"}),
+                       ("swe_iniciar", {**CONTRATO, "task_id": "yaiwes-002"})):
+        r = invocar(c, tool, args)
+        assert r["status"] == "error" and r["error"] == "AGENTES_APAGADOS", tool
+    assert llamadas == [] and almacen.datos == antes, "con Agentes OFF no se ejecuta ni se guarda nada"
+    assert invocar(c, "swe_estado", {"task_id": "yaiwes-001"})["status"] == "ok", "estado es solo lectura"
+    assert invocar(c, "swe_iniciar", {**CONTRATO, "task_id": "yaiwes-003", "modo_agentico": False})["status"] == "ok", "modo agentico OFF no pide agentes"
+
+
+def test_si_no_se_puede_comprobar_agentes_on_la_operacion_con_efectos_no_se_ejecuta(entorno):
+    almacen, llamadas, c = entorno
+    invocar(c, "swe_iniciar", CONTRATO)
+    almacen.control_caido = True
+    r = invocar(c, "swe_avanzar", {"task_id": "yaiwes-001"})
+    assert r["status"] == "error" and r["error"] == "AGENTES_ESTADO_NO_COMPROBADO" and llamadas == []
+    almacen.control_caido, almacen.agentes_on = False, "true"  # solo el booleano True cuenta
+    assert invocar(c, "swe_avanzar", {"task_id": "yaiwes-001"})["error"] == "AGENTES_APAGADOS"
+
+
+def test_tools_lock_viaja_por_puente_chat_porque_router_mvp_responde_404(monkeypatch):
+    """El Router sirve las acciones de control por /plugins/puente_chat/call/<accion>; /plugins/router_mvp/... es 404 (comprobado contra mvp/app.py)."""
+    vistos = []
+    monkeypatch.setenv("RIU_ROUTER_URL", "http://127.0.0.1:9")
+    monkeypatch.setattr(h, "llamar", lambda plugin, accion, datos, timeout=None: vistos.append((plugin, accion)) or {"tools": [], "ia": True, "agentes_on": True})
+    h._exigir_agentes_on()
+    assert vistos == [("puente_chat", "tools_lock")]

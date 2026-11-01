@@ -1,7 +1,7 @@
 """Chat MVP: autenticacion, banco de credenciales y cliente Token Plan."""
 import asyncio
 import base64
-import hmac, logging, re, uuid
+import hashlib, hmac, logging, re, uuid
 import os, subprocess, sys, time
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
@@ -229,7 +229,7 @@ async def almacen(cuerpo: dict):
 # --- SWE (YAIWES): el chat manda el contrato TareaSWE; este backend lo valida, comprueba permisos y llama al Harness con swe_invoke. La clave del Harness no sale de aqui. ---
 SWE_RUTAS = {"iniciar": "swe_iniciar", "avanzar": "swe_avanzar", "estado": "swe_estado", "aprobar": "swe_aprobar", "reanudar": "swe_reanudar"}
 SWE_HTTP = {"TAREA_NO_ENCONTRADA": 404, "TASK_ID_EN_USO": 409, "TAREA_NO_COINCIDE": 409, "ESTADO_NO_APROBABLE": 409, "OP_NO_PENDIENTE": 409,
-            "OPERADOR_REQUERIDO": 403, "OPERADOR_NO_AUTORIZADO": 403, "APROBADORES_NO_CONFIGURADOS": 503, "PERSISTENCIA_FALLIDA": 502}  # el resto de codigos del contrato: 400
+            "OPERADOR_REQUERIDO": 403, "OPERADOR_NO_AUTORIZADO": 403, "APROBADORES_NO_CONFIGURADOS": 503, "PERSISTENCIA_FALLIDA": 502, "AGENTES_APAGADOS": 403, "AGENTES_ESTADO_NO_COMPROBADO": 503}  # el resto de codigos del contrato: 400
 def _swe_falla(exc):
     raise HTTPException(status_code=503 if "no configurado" in str(exc) else 502, detail="HARNESS_NO_CONFIGURADO" if "no configurado" in str(exc) else "SWE_HARNESS_ERROR") from None
 @app.get("/chat/swe/capacidades", dependencies=[Depends(verificar)])
@@ -241,22 +241,32 @@ async def swe_capacidades():  # que agentes/workflows/modelos reporta CONECTADOS
     except (ValueError, RuntimeError) as error: return {"harness": "no_configurado" if "no configurado" in str(error) else "no_disponible", **vacio}
     if not isinstance(estado, dict) or estado.get("status") != "ok": return {"harness": "no_disponible", **vacio}
     return {"harness": "ok", **harness_client.swe_capacidades(estado)}
-def _exigir_aprobador(token):
-    """swe_aprobar pide ADEMAS RIU_SWE_APROBADOR_TOKEN (cabecera x-operator-token) si esta definido; debe ser distinto de las claves de acceso. Como en el bridge: 503 mal configurado, 401 falta o no coincide."""
-    esperado = os.environ.get("RIU_SWE_APROBADOR_TOKEN", "")
-    if not esperado:
-        return
-    if any(esperado == os.environ[n] for n in bank.ACCESO if os.environ.get(n)):
-        raise HTTPException(status_code=503, detail="APROBADOR_TOKEN_NO_CONFIGURADO")
-    if not isinstance(token, str) or not token or not _igual(token, esperado):
+_APROBADOR = re.compile(r"[A-Za-z0-9_.@-]{2,64}")
+def _aprobadores():
+    """RIU_SWE_APROBADORES = «operador:sha256(token)» separados por coma: un token PROPIO por persona (solo su hash en el entorno). Entradas mal formadas se ignoran."""
+    salida = {}
+    for par in os.environ.get("RIU_SWE_APROBADORES", "").split(","):
+        nombre, _, huella = par.strip().partition(":")
+        if _APROBADOR.fullmatch(nombre) and re.fullmatch(r"[0-9a-f]{64}", huella.lower()): salida[nombre] = huella.lower()
+    return salida
+def _identificar_operador(operador, token):
+    """Quien aprueba (swe_aprobar): un operador real = cabecera x-operador + su token individual (x-operator-token). La clave de acceso del chat la comparten todos y NO identifica a nadie:
+    sin aprobadores configurados 503; sin operador 403; operador no registrado 403; token ausente o de otro 401. Devuelve el operador verificado."""
+    aprobadores = _aprobadores()
+    if not aprobadores or any(h == hashlib.sha256(os.environ[n].encode("utf-8")).hexdigest() for h in aprobadores.values() for n in bank.ACCESO if os.environ.get(n)):
+        raise HTTPException(status_code=503, detail="APROBADORES_NO_CONFIGURADOS")  # nada configurado, o un «token de operador» que es la clave de acceso compartida
+    if not isinstance(operador, str) or not _APROBADOR.fullmatch(operador): raise HTTPException(status_code=403, detail="OPERADOR_REQUERIDO")
+    if operador not in aprobadores: raise HTTPException(status_code=403, detail="OPERADOR_NO_AUTORIZADO")
+    if not isinstance(token, str) or not token or not _igual(hashlib.sha256(token.encode("utf-8", "surrogatepass")).hexdigest(), aprobadores[operador]):
         raise HTTPException(status_code=401, detail="OPERADOR_NO_AUTORIZADO")
+    return operador
 @app.post("/chat/swe/{operacion}", dependencies=[Depends(verificar)])
-async def swe_operacion(operacion: str, cuerpo: dict, x_operator_token: str | None = Header(None)):
+async def swe_operacion(operacion: str, cuerpo: dict, x_operator_token: str | None = Header(None), x_operador: str | None = Header(None)):
     herramienta = SWE_RUTAS.get(operacion)
     if not herramienta: raise HTTPException(status_code=404, detail="OPERACION_SWE_NO_AUTORIZADA")
-    try: args = harness_client.swe_argumentos(herramienta, cuerpo, os.environ.get("RIU_SWE_OPERADOR", "director"))  # el operador que aprueba es quien tiene la clave de acceso del chat; el Harness lo valida contra RIU_SWE_OPERADORES
+    operador = _identificar_operador(x_operador, x_operator_token) if herramienta == "swe_aprobar" else None  # primero QUIEN es (identidad individual); despues el permiso de agentes; solo entonces se toca el Harness
+    try: args = harness_client.swe_argumentos(herramienta, cuerpo, operador)  # el operador que aprueba lo fija el servidor tras identificarlo; el Harness lo valida ademas contra RIU_SWE_OPERADORES
     except ValueError as error: raise HTTPException(status_code=503 if str(error) == "OPERADOR_NO_CONFIGURADO" else 400, detail=str(error)) from None
-    if herramienta == "swe_aprobar": _exigir_aprobador(x_operator_token)
     if (herramienta == "swe_iniciar" and args["modo_agentico"]) or herramienta in ("swe_avanzar", "swe_reanudar", "swe_aprobar"): _verificar_herramienta("agente", None)  # delegar en agentes externos: lo decide el servidor (Agentes ON/OFF), no el cliente; avanzar/reanudar/aprobar son las que los ejecutan (el servidor no ve el modo de la tarea: se exige siempre)
     try: salida = await asyncio.to_thread(harness_client.swe_invoke, clave_harness(), herramienta, args)
     except (ValueError, RuntimeError) as error: _swe_falla(error)

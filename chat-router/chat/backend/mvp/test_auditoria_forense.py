@@ -1,6 +1,7 @@
 """Auditoria forense (puntos 14-17, 19, 20): rotacion/cooldown de claves, redactor de claves, timeouts finitos, agentes y aprobador en YAIWES.
 Servidores falsos en 127.0.0.1; claves inventadas; sin red real."""
 import json
+import hashlib
 import os
 import pathlib
 import subprocess
@@ -121,18 +122,22 @@ class TestTimeoutsFinitos(unittest.TestCase):
 
 
 class TestSweAgentesYAprobador(unittest.TestCase):
-    """swe_avanzar/swe_reanudar/swe_aprobar pasan por el permiso «agente» del servidor; swe_aprobar exige RIU_SWE_APROBADOR_TOKEN si esta definido."""
+    """swe_avanzar/swe_reanudar/swe_aprobar pasan por el permiso «agente» del servidor; swe_aprobar identifica a un OPERADOR REAL (cabecera x-operador + token propio
+    cuyo sha256 figura en RIU_SWE_APROBADORES): la clave de acceso compartida del chat nunca basta para aprobar."""
     CLAVE = "acceso-test"
     CAB = {"x-api-key": CLAVE}
+    TOK_ANA, TOK_BETO = "token-individual-ana-prueba", "token-individual-beto-prueba"
+    APROBADORES = ",".join("%s:%s" % (n, hashlib.sha256(t.encode()).hexdigest()) for n, t in (("ana", TOK_ANA), ("beto", TOK_BETO)))
+    ANA = {**CAB, "x-operador": "ana", "x-operator-token": TOK_ANA}
 
     def setUp(self):
-        self.llamadas = []
+        self.llamadas, self.args = [], []
         def invoke(clave, operacion, datos):
-            self.llamadas.append(operacion); return {"status": "ok", "result": {"ok": True}}
-        self.parches = [patch.dict(os.environ, {"RIU_API_KEY": self.CLAVE, "RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:9", "MVP_PLAN": "personal"}),
+            self.llamadas.append(operacion); self.args.append(datos); return {"status": "ok", "result": {"ok": True}}
+        self.parches = [patch.dict(os.environ, {"RIU_API_KEY": self.CLAVE, "RIU_DEEPSEEK_HARNESS_URL": "http://127.0.0.1:9", "MVP_PLAN": "personal", "RIU_SWE_APROBADORES": self.APROBADORES}),
                         patch("mvp.app.harness_client.swe_invoke", invoke), patch("mvp.app.clave_harness", lambda: "harness-ficticia")]
         for p in self.parches: p.start()
-        os.environ.pop("RIU_SWE_APROBADOR_TOKEN", None)
+        for v in ("RIU_SWE_APROBADOR_TOKEN", "RIU_SWE_OPERADOR"): os.environ.pop(v, None)
         self.banco = getattr(servicio.app.state, "banco", None)
         servicio.app.state.banco = SimpleNamespace(leer=lambda n: None)
         self.agentes_on = servicio.CONTROL.d["agentes_on"]
@@ -143,7 +148,7 @@ class TestSweAgentesYAprobador(unittest.TestCase):
         for p in self.parches: p.stop()
 
     def post(self, op, cuerpo=None, headers=None):
-        return self.cliente.post("/chat/swe/" + op, json=cuerpo or {"task_id": "t-1", **({"op_id": "op-1"} if op == "aprobar" else {})}, headers=headers or self.CAB)
+        return self.cliente.post("/chat/swe/" + op, json=cuerpo or {"task_id": "t-1", **({"op_id": "op-1"} if op == "aprobar" else {})}, headers=headers or (self.ANA if op == "aprobar" else self.CAB))
 
     def test_avanzar_reanudar_y_aprobar_exigen_agentes_on_igual_que_iniciar_agentico(self):
         servicio.CONTROL.d["agentes_on"] = False
@@ -158,21 +163,37 @@ class TestSweAgentesYAprobador(unittest.TestCase):
         servicio.CONTROL.d["agentes_on"] = False
         self.assertEqual(self.post("estado").status_code, 200, "estado es solo lectura: no pide agentes")
 
-    def test_aprobar_con_token_de_aprobador_definido_exige_la_cabecera(self):
+    def test_aprobar_identifica_al_operador_real_y_la_clave_compartida_no_basta(self):
         servicio.CONTROL.d["agentes_on"] = True
-        with patch.dict(os.environ, {"RIU_SWE_APROBADOR_TOKEN": "token-aprobador-de-prueba"}):
-            self.assertEqual(self.post("aprobar").status_code, 401)
-            self.assertEqual(self.post("aprobar", headers={**self.CAB, "x-operator-token": "otro"}).status_code, 401)
-            self.assertEqual(self.llamadas, [])
-            self.assertEqual(self.post("aprobar", headers={**self.CAB, "x-operator-token": "token-aprobador-de-prueba"}).status_code, 200)
-            for op in ("avanzar", "reanudar", "estado"):
-                self.assertEqual(self.post(op).status_code, 200, op + ": el token solo afecta a aprobar")
-        self.assertEqual(self.post("aprobar").status_code, 200, "sin la variable definida no se pide")
+        r = self.post("aprobar", headers=self.CAB)  # solo la clave de acceso del chat (identidad compartida)
+        self.assertEqual(r.status_code, 403); self.assertIn("OPERADOR_REQUERIDO", r.text)
+        self.assertEqual(self.post("aprobar", headers={**self.CAB, "x-operador": "ana"}).status_code, 401, "operador sin su token")
+        self.assertEqual(self.post("aprobar", headers={**self.CAB, "x-operador": "ana", "x-operator-token": "otro"}).status_code, 401)
+        self.assertEqual(self.post("aprobar", headers={**self.CAB, "x-operador": "ana", "x-operator-token": self.TOK_BETO}).status_code, 401, "el token de otro operador no vale")
+        self.assertEqual(self.post("aprobar", headers={**self.CAB, "x-operador": "ana", "x-operator-token": self.CLAVE}).status_code, 401, "la clave de acceso no es un token de operador")
+        self.assertEqual(self.post("aprobar", headers={**self.CAB, "x-operador": "intruso", "x-operator-token": self.TOK_ANA}).status_code, 403, "operador no registrado")
+        self.assertEqual(self.post("aprobar", headers={**self.CAB, "x-operador": "mal operador!", "x-operator-token": self.TOK_ANA}).status_code, 403)
+        self.assertEqual(self.llamadas, [], "nada llega al Harness sin un operador identificado")
+        r = self.post("aprobar", {"task_id": "t-1", "op_id": "op-1", "operador": "intruso", "aprobacion": True})
+        self.assertEqual(r.status_code, 200, r.text)
+        self.assertEqual(self.args[-1]["operador"], "ana", "el operador sale de la identificacion del servidor, no del cuerpo")
+        self.assertEqual(self.post("aprobar", headers={**self.CAB, "x-operador": "beto", "x-operator-token": self.TOK_BETO}).status_code, 200)
+        self.assertEqual(self.args[-1]["operador"], "beto")
+        for op in ("avanzar", "reanudar", "estado"):
+            self.assertEqual(self.post(op).status_code, 200, op + ": la identificacion de operador solo afecta a aprobar")
 
-    def test_un_token_de_aprobador_igual_a_la_clave_de_acceso_es_503(self):
+    def test_aprobar_sin_aprobadores_configurados_es_503_y_no_hay_operador_por_defecto(self):
         servicio.CONTROL.d["agentes_on"] = True
-        with patch.dict(os.environ, {"RIU_SWE_APROBADOR_TOKEN": self.CLAVE}):
-            r = self.post("aprobar", headers={**self.CAB, "x-operator-token": self.CLAVE})
+        for valor in ("", "ana:no-es-un-hash", "ana"):
+            with patch.dict(os.environ, {"RIU_SWE_APROBADORES": valor, "RIU_SWE_OPERADOR": "director"}):
+                r = self.post("aprobar")
+            self.assertEqual(r.status_code, 503, valor); self.assertIn("APROBADORES_NO_CONFIGURADOS", r.text)
+        self.assertEqual(self.llamadas, [])
+
+    def test_un_hash_de_aprobador_igual_a_la_clave_de_acceso_es_503(self):
+        servicio.CONTROL.d["agentes_on"] = True
+        with patch.dict(os.environ, {"RIU_SWE_APROBADORES": "ana:" + hashlib.sha256(self.CLAVE.encode()).hexdigest()}):
+            r = self.post("aprobar", headers={**self.CAB, "x-operador": "ana", "x-operator-token": self.CLAVE})
         self.assertEqual(r.status_code, 503); self.assertEqual(self.llamadas, []); self.assertNotIn(self.CLAVE, r.text.replace("x-api-key", ""))
 
 

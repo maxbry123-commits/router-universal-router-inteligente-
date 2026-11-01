@@ -53,10 +53,10 @@ const base0 = { groq: BASES.groq, nvidia: BASES.nvidia };
 test.beforeEach(() => { limpiarEstado(); limpiarClaves(); });
 test.afterEach(() => Object.assign(BASES, base0));
 
-test("una tarea simple: responde, guarda el checkpoint DONE y no lleva claves", async () => {
+test("una tarea simple: responde, guarda el checkpoint (RESPUESTA_COMPLETA hasta confirmar -> DONE) y no lleva claves", async () => {
   const s1 = await fake(() => ok("LISTO")); const dir = tmp();
   try {
-    const r = await retomarLocal("t-simple", MODELO, msgs, extra(env(dir, { SWECODE_URL_S1: s1.url })));
+    const r = await retomarLocal("t-simple", MODELO, msgs, extra(env(dir, { SWECODE_URL_S1: s1.url }), { confirmarCompleta: true }));
     assert.equal(r.salida, "LISTO"); assert.equal(r.finish_reason, "stop"); assert.equal(r.via, "hf-local"); assert.equal(r.usado, MODELO);
     assert.equal(r.estado, "DONE"); assert.equal(r.desde_checkpoint, false);
     const ck = leerArch(dir, "t-simple");
@@ -69,7 +69,7 @@ test("una tarea simple: responde, guarda el checkpoint DONE y no lleva claves", 
 test("terminado: el segundo llamado devuelve lo guardado SIN llamar al modelo", async () => {
   const s1 = await fake(({ n }) => ok("RESPUESTA-" + n)); const dir = tmp();
   try {
-    const e = extra(env(dir, { SWECODE_URL_S1: s1.url }));
+    const e = extra(env(dir, { SWECODE_URL_S1: s1.url }), { confirmarCompleta: true });
     const a = await retomarLocal("t-fin", MODELO, msgs, e);
     const b = await retomarLocal("t-fin", MODELO, msgs, e);
     assert.equal(s1.chat.length, 1);
@@ -89,7 +89,7 @@ test("reinicio simulado: el 2º llamado con el mismo tarea_id continua desde el 
     assert.equal(ck1.parcial, "AAA"); assert.equal(ck1.secciones.length, 1); assert.equal(ck1.estado, "ERROR");
     // reinicio: disco nuevo (dir2) -> solo el Harness conserva el checkpoint; el modelo vuelve
     fase = 2; s1.chat.length = 0;
-    const r = await retomarLocal("t-reinicio", MODELO, msgs, extra(env(dir2, { SWECODE_URL_S1: s1.url, ...hv })));
+    const r = await retomarLocal("t-reinicio", MODELO, msgs, extra(env(dir2, { SWECODE_URL_S1: s1.url, ...hv }), { confirmarCompleta: true }));
     assert.equal(r.salida, "AAA-BBB"); assert.equal(r.estado, "DONE"); assert.equal(r.reanudado, true);
     assert.equal(s1.chat.length, 1, "una sola peticion: la seccion 1 no se repite");
     assert.deepEqual(s1.chat[0].body.messages, [...msgs, { role: "assistant", content: "AAA" }, { role: "user", content: CONT }]);
@@ -183,7 +183,7 @@ test("tool_calls con ejecutor: cada herramienta se ejecuta UNA sola vez, su resu
   const dir = tmp(); const vistas = [];
   const ejecutarHerramienta = async (t) => { vistas.push(t.id); return { ok: t.id }; };
   try {
-    const e = extra(env(dir, { SWECODE_URL_S1: s1.url }), { ejecutarHerramienta, tools: [{ type: "function", function: { name: "escribir" } }] });
+    const e = extra(env(dir, { SWECODE_URL_S1: s1.url }), { ejecutarHerramienta, confirmarCompleta: true, tools: [{ type: "function", function: { name: "escribir" } }] });
     const r = await retomarLocal("t-tool", MODELO, msgs, e);
     assert.deepEqual(vistas, ["c1", "c2"]); assert.equal(r.salida, "HECHO"); assert.equal(r.estado, "DONE");
     const m2 = s1.chat[1].body.messages;
@@ -287,7 +287,7 @@ test("retomarPorId: retoma con el modelo y mensajes guardados; null si no es de 
     const e = extra(env(dir, { SWECODE_URL_S1: s1.url }), { hasta: Date.now() - 1 });  // fuera de plazo: solo hace la 1ª seccion
     const p = await retomarLocal("t-id", MODELO, msgs, e);
     assert.equal(p.estado, "CONTINUAR"); assert.equal(p.salida, "INI");
-    const r = await retomarPorId("t-id", extra(env(dir, { SWECODE_URL_S1: s1.url })));
+    const r = await retomarPorId("t-id", extra(env(dir, { SWECODE_URL_S1: s1.url }), { confirmarCompleta: true }));
     assert.equal(r.salida, "INI-FIN"); assert.equal(r.estado, "DONE");
     assert.deepEqual(await retomarPorId("t-id", extra(env(dir, { SWECODE_URL_S1: s1.url }))), { yaCompleto: true });
     assert.equal(await retomarPorId("no-hay", extra(env(dir))), null);

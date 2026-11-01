@@ -23,6 +23,8 @@ class Mundo:
         self.respuesta_agente = None
         self.respuesta_servidor = None
         self.llm_llamadas = []
+        self.respuesta_llm = None
+        self.caps = None  # None = todos los agentes disponibles; dict agente -> {"disponible": bool, "motivo": str}
 
     def guardar(self, args):
         if self.falla_guardar(args["nombre"]):
@@ -46,7 +48,7 @@ class Mundo:
             if r is not None:
                 return r
         return {"ok": True, "agente": agente, "task_id": tarea_id, "resultado": "hecho por " + agente, "herramientas": ["t"], "evidencias": ["e:" + agente],
-                "recibo": "%s:%s:r%d" % (agente, tarea_id, len(self.agentes)), "exit_code": 0}
+                "recibo": "%s:%s:r%d" % (agente, tarea_id, len(self.agentes)), "exit_code": 0, "modelo_usado": modelo}
 
     def servidor(self, servidor, modelo, mensajes):
         self.servidores.append((servidor, modelo, mensajes))
@@ -56,10 +58,12 @@ class Mundo:
                 raise r
             return r
         return {"texto": "texto de %s" % servidor, "servidor": servidor, "url": "https://%s.example.test/v1" % servidor.lower(), "host": "%s.example.test" % servidor.lower(),
-                "modelo_respuesta": modelo}
+                "modelo_respuesta": modelo, "finish_reason": "stop"}
 
     def llm(self, cuerpo):
         self.llm_llamadas.append(cuerpo)
+        if self.respuesta_llm:
+            return self.respuesta_llm(len(self.llm_llamadas), cuerpo)
         return {"texto": "respuesta individual", "tool_calls": [], "finish_reason": "stop", "herramientas_usadas": [], "modelo_respuesta": "lfm2.5-350m"}
 
     def ctx(self):
@@ -73,13 +77,17 @@ class Mundo:
             diario=lambda t: json.loads(self.diarios.get(t, "{}")),
             anotar=lambda t, d: self.diarios.__setitem__(t, json.dumps(d)),
             llave=lambda nombre, args: nombre + ":" + json.dumps(args, sort_keys=True),
-            secreto=SECRETO, ejecutar_agente=self.agente, servidor_llm=self.servidor, operadores=lambda: {"ana", "luis"})
+            secreto=SECRETO, ejecutar_agente=self.agente, servidor_llm=self.servidor, operadores=lambda: {"ana", "luis"},
+            disponibilidad=lambda: self.caps if self.caps is not None else {a: {"disponible": True, "motivo": ""} for a in ("codex", "opencode", "swe-agent", "openhands", "claude-code", "openclaw")})
 
 
 @pytest.fixture
 def mundo(monkeypatch, tmp_path):
     (tmp_path / "ws" / "yaiwes").mkdir(parents=True)
     monkeypatch.setenv("RIU_SWE_WORKSPACE_RAIZ", str(tmp_path / "ws"))
+    monkeypatch.setenv("SWECODE_URL_S2", "https://s2.example.test/v1")  # dos servidores Liquid distintos por defecto (los dobles no hacen HTTP)
+    monkeypatch.setenv("SWECODE_URL_S3", "https://s3.example.test/v1")
+    wf._LOCKS.clear()
     return Mundo()
 
 
@@ -138,9 +146,10 @@ def test_iniciar_acepta_el_contrato_dentro_de_tarea_y_valida(mundo):
 def test_iniciar_es_idempotente_y_no_pisa_otra_identidad(mundo):
     c = mundo.ctx()
     wf.swe_iniciar(contrato(), c)
-    n = len(mundo.guardados)
+    sin_candado = lambda: [x for x in mundo.guardados if "/locks/" not in x]  # noqa: E731
+    n = len(sin_candado())
     r = wf.swe_iniciar(contrato(), c)
-    assert r["estado"] == "PENDIENTE" and r["ya_existia"] is True and len(mundo.guardados) == n
+    assert r["estado"] == "PENDIENTE" and r["ya_existia"] is True and len(sin_candado()) == n
     with pytest.raises(ValueError, match="TASK_ID_EN_USO"):
         wf.swe_iniciar(contrato(origen="openclaw"), c)
     with pytest.raises(ValueError, match="TASK_ID_EN_USO"):
@@ -182,7 +191,7 @@ def test_swe_code_cuatro_pasos_hasta_done(mundo):
         r = aprobar_y_avanzar(mundo, c)
         assert mundo.agentes[-1]["agente"] == esperado, (esperado, r)
     assert r["estado"] == "DONE" and [a["agente"] for a in mundo.agentes] == ["codex", "opencode", "swe-agent", "openhands"]
-    assert [a["modelo"] for a in mundo.agentes] == ["hf/qwen2.5-coder-1.5b", "hf/qwen3.5-0.8b", "hf/lfm2.5-350m", "hf/lfm2.5-350m"]
+    assert [a["modelo"] for a in mundo.agentes] == ["hf/qwen2.5-coder-1.5b", "hf/qwen3.5-0.8b", "hf/qwen2.5-coder-1.5b", "hf/qwen3.5-0.8b"]  # ejecuta=modelo_tool, verifica=modelo_revisor del contrato
     # cada etapa recibe el resultado confirmado de la anterior
     assert "hecho por codex" in mundo.agentes[1]["contexto"] and "hecho por opencode" in mundo.agentes[2]["contexto"]
     e = estado_guardado(mundo)
@@ -287,7 +296,7 @@ def test_si_falla_guardar_la_confirmacion_se_detiene_y_luego_reconcilia(mundo):
     estado_antes = mundo.almacen[json.loads(mundo.almacen["swe/indice/yaiwes-001.json"])["ruta"]]
     cuenta = {"n": 0}
     def falla_segunda(nombre):
-        if nombre.endswith("yaiwes-001.json") and "indice" not in nombre:
+        if nombre.endswith("yaiwes-001.json") and "indice" not in nombre and "locks" not in nombre:
             cuenta["n"] += 1
             return cuenta["n"] == 2  # 1: INICIADA ok; 2: confirmacion falla
         return False
@@ -586,10 +595,12 @@ def test_liquid2_cortado_por_length_no_alimenta_al_agente(mundo):
     assert r["estado"] == "GAP" and r["error"]["codigo"] == "LIQUID_RESPUESTA_PARCIAL" and r["paso_actual"] == 2 and mundo.agentes == []
 
 
-def test_servidor_sin_finish_reason_se_trata_como_completo(mundo):
-    c = mundo.ctx(); wf.swe_iniciar(lm(), c)  # el doble por defecto no trae finish_reason
-    wf.swe_avanzar({"task_id": "openclaw-001"}, c); r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
-    assert r["handoff"]["confirmado"] is True and len(mundo.servidores) == 1
+def test_servidor_sin_finish_reason_no_se_asume_completo(mundo):
+    c = mundo.ctx(); srv_length(mundo, {"S2": [("texto sin motivo de fin", None)], "S3": [("plan", "stop")]}); wf.swe_iniciar(lm(), c)  # el servidor no informa finish_reason
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert r["pasos_terminados"][0]["parcial"] is True and r["pasos_terminados"][0]["finish_reason"] is None
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert r["estado"] == "GAP" and r["error"]["codigo"] == "HANDOFF_PARCIAL" and r["handoff"]["confirmado"] is False and len(mundo.servidores) == 1
 
 
 def test_llamar_servidor_devuelve_finish_reason(servidores):
@@ -619,3 +630,410 @@ def test_el_estado_guardado_tambien_se_redacta_por_valor_de_variable_sensible(mu
     monkeypatch.setenv("RIU_API_KEY", "valor-largo-de-la-clave-del-harness")
     c = mundo.ctx(); wf.swe_iniciar(contrato(workflow="individual", task_id="ind-9", modo_agentico=False, mensaje="usa valor-largo-de-la-clave-del-harness aqui"), c)
     assert "valor-largo-de-la-clave-del-harness" not in json.dumps(mundo.almacen)
+
+
+
+# =====================================================================================================
+# AUDITORIA 3 / A2 (checklist 80-107, 131-146): Individual, NO_DISPONIBLE, DONE verificado, estados finos, candado entre procesos, finish_reason
+# =====================================================================================================
+import time
+
+
+def ind(**kw):
+    return contrato(workflow="individual", task_id="ind-1", **kw)
+
+
+def test_individual_apagado_solo_el_modelo_que_responde_sin_agentes_ni_herramientas(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(ind(modo_agentico=False, modelo_responde="groq/qwen/qwen3.8-27b", agente_tool="codex", modelo_tool="hf/qwen3-0.6b"), c)
+    r = wf.swe_avanzar({"task_id": "ind-1"}, c)
+    assert r["estado"] == "DONE" and mundo.agentes == [] and len(mundo.llm_llamadas) == 1
+    b = mundo.llm_llamadas[0]
+    assert b["modelo"] == "groq/qwen/qwen3.8-27b" and b["agente_tool"] is False and b["llm_tool"] is False and b["tools"] is False
+    assert [p["paso"] for p in r["plan"]] == ["responde"] and r["plan"][0]["agente"] is None
+    assert "hf/qwen3-0.6b" not in json.dumps(b)  # modelo_tool no se usa con el modo apagado
+
+
+def test_individual_encendido_usa_el_agente_seleccionado_y_luego_responde_el_modelo(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(ind(modo_agentico=True, agente_tool="opencode", modelo_tool="hf/qwen3-0.6b", modelo_responde="groq/qwen/qwen3.8-27b"), c)
+    r = wf.swe_avanzar({"task_id": "ind-1"}, c)
+    assert [(p["paso"], p["agente"], p["modelo"]) for p in r["plan"]] == [("ejecuta", "opencode", "hf/qwen3-0.6b"), ("responde", None, "groq/qwen/qwen3.8-27b")]
+    assert r["estado"] == "REQUIERE_APROBACION" and mundo.agentes == [] and mundo.llm_llamadas == []  # ni agente ni LLM sin operador
+    r = aprobar_y_avanzar(mundo, c, "ind-1")
+    assert mundo.agentes[0]["agente"] == "opencode" and mundo.agentes[0]["modelo"] == "hf/qwen3-0.6b"
+    r = wf.swe_avanzar({"task_id": "ind-1"}, c)
+    assert r["estado"] == "DONE" and len(mundo.llm_llamadas) == 1
+    cuerpo = json.dumps(mundo.llm_llamadas[0])
+    assert mundo.llm_llamadas[0]["modelo"] == "groq/qwen/qwen3.8-27b" and "hecho por opencode" in cuerpo and "opencode:ind-1:r1" in cuerpo  # responde con el resultado y recibo reales
+    e = estado_guardado(mundo, "ind-1")
+    assert e["pasos_terminados"][0]["agente_ejecutado"] == "opencode" and e["pasos_terminados"][0]["modelo_usado"] == "hf/qwen3-0.6b"
+
+
+def test_uso_del_contrato_es_honesto_por_workflow(mundo):
+    c = mundo.ctx()
+    r = wf.swe_iniciar(ind(modo_agentico=False), c)
+    u = r["uso_contrato"]
+    assert u["modelo_responde"]["usado"] is True and u["agente_responde"]["usado"] is False and "no ejecuta" in u["agente_responde"]["nota"]
+    assert u["agente_tool"]["usado"] is False and u["modelo_tool"]["usado"] is False
+    r = wf.swe_iniciar(contrato(task_id="sc-1"), c)
+    u = r["uso_contrato"]
+    assert u["agente_tool"]["usado"] and u["modelo_tool"]["usado"] and u["agente_verificador"]["usado"] and u["modelo_revisor"]["usado"]
+    assert u["modelo_responde"]["usado"] is False and u["agente_responde"]["usado"] is False and u["modelo_lector"]["usado"] is False
+    r = wf.swe_iniciar(lm(), c)
+    assert r["uso_contrato"]["modelo_lector"]["usado"] is False and "hf/lfm2.5-350m" in r["uso_contrato"]["modelo_lector"]["nota"]
+
+
+def test_swe_code_ejecuta_y_verifica_usan_modelo_tool_y_modelo_revisor_sin_confundir_con_modelo_responde(mundo):
+    c = mundo.ctx()
+    r = wf.swe_iniciar(contrato(modelo_tool="hf/qwen3-0.6b", modelo_revisor="hf/lfm2.5-350m", modelo_responde="hf/qwen3.5-0.8b"), c)
+    assert [(p["paso"], p["agente"], p["modelo"]) for p in r["plan"]] == [("escribe", "codex", "hf/qwen2.5-coder-1.5b"), ("revisa", "opencode", "hf/qwen3.5-0.8b"),
+                                                                       ("ejecuta", "swe-agent", "hf/qwen3-0.6b"), ("verifica", "openhands", "hf/lfm2.5-350m")]
+
+
+# ---------- NO DISPONIBLE ----------
+def test_swe_code_con_un_agente_necesario_ausente_es_no_disponible_sin_pedir_aprobacion_ni_ejecutar(mundo):
+    mundo.caps = {a: {"disponible": True, "motivo": ""} for a in ("codex", "swe-agent", "openhands")}
+    mundo.caps["opencode"] = {"disponible": False, "motivo": "opencode no esta instalado"}
+    c = mundo.ctx()
+    r = wf.swe_iniciar(contrato(), c)
+    assert r["estado"] == "NO_DISPONIBLE" and r["error"]["codigo"] == "WORKFLOW_NO_DISPONIBLE" and "opencode" in r["error"]["mensaje"]
+    r = wf.swe_avanzar({"task_id": "yaiwes-001"}, c)
+    assert r["estado"] == "NO_DISPONIBLE" and r["pendiente_aprobacion"] is None and mundo.agentes == []
+    mundo.caps["opencode"] = {"disponible": True, "motivo": ""}
+    r = wf.swe_avanzar({"task_id": "yaiwes-001"}, c)  # ya instalado: la tarea sigue sola
+    assert r["estado"] == "REQUIERE_APROBACION"
+
+
+def test_agente_seleccionado_ausente_no_se_sustituye_por_otro(mundo):
+    mundo.caps = {a: {"disponible": a != "swe-agent", "motivo": "swe-agent no esta instalado"} for a in ("codex", "opencode", "swe-agent", "openhands")}
+    c = mundo.ctx()
+    r = wf.swe_iniciar(contrato(agente_tool="swe-agent"), c)
+    assert r["estado"] == "NO_DISPONIBLE" and "swe-agent" in r["error"]["mensaje"] and mundo.agentes == []
+
+
+def test_comprobacion_de_disponibilidad_rota_no_se_presenta_como_no_instalado(mundo):
+    c = mundo.ctx()
+    def rota():
+        raise OSError("sin red")
+    c.disponibilidad = rota
+    r = wf.swe_iniciar(contrato(), c)
+    assert r["estado"] == "PENDIENTE" and r["error"] is None
+
+
+def test_liquid_mirror_sin_s2_s3_independientes_es_no_disponible(mundo, monkeypatch):
+    monkeypatch.setenv("SWECODE_URL_S2", "http://127.0.0.1:9001/v1"); monkeypatch.setenv("SWECODE_URL_S3", "http://localhost:9001/v1")  # mismo host:puerto con otro nombre
+    c = mundo.ctx()
+    r = wf.swe_iniciar(lm(), c)
+    assert r["estado"] == "NO_DISPONIBLE" and "independientes" in r["error"]["mensaje"]
+    with pytest.raises(ValueError, match="LIQUID_SERVIDORES_NO_INDEPENDIENTES"):
+        wf.llamar_servidor("S2", "lfm2.5-350m", [{"role": "user", "content": "x"}])
+    monkeypatch.setenv("SWECODE_URL_S3", "http://127.0.0.1:9002/v1")
+    assert wf.swe_avanzar({"task_id": "openclaw-001"}, c)["estado"] == "CONTINUAR"
+
+
+def test_liquid_mirror_tiene_exactamente_dos_participantes(mundo, monkeypatch):
+    monkeypatch.setenv("SWECODE_URL_S2", "http://127.0.0.1:9001/v1"); monkeypatch.setenv("SWECODE_URL_S3", "http://127.0.0.1:9002/v1")
+    r = wf.swe_iniciar(lm(), mundo.ctx())
+    part = [(p["participante"], p["servidor"]) for p in r["plan"] if p.get("participante")]
+    assert part == [("LIQUID 1 - LECTOR", "S2"), ("LIQUID 2 - EJECUTOR", "S3")]
+
+
+# ---------- DONE solo con operaciones verificadas ----------
+def test_done_exige_todas_las_etapas_con_recibo_y_operaciones_confirmadas(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    for _ in range(4):
+        aprobar_y_avanzar(mundo, c)
+    e = estado_guardado(mundo)
+    assert e["estado"] == "DONE" and all(p["recibo"] for p in e["pasos_terminados"])
+    # un DONE manipulado/incompleto no se acepta: falta una operacion confirmada
+    ruta = json.loads(mundo.almacen["swe/indice/yaiwes-001.json"])["ruta"]
+    wf.swe_iniciar(contrato(task_id="yaiwes-002"), c)
+    assert wf.verificado(estado_guardado(mundo, "yaiwes-002")) is False
+    assert wf.verificado(e) is True
+    e["operaciones"][next(iter(e["operaciones"]))]["estado"] = "INICIADA"
+    assert wf.verificado(e) is False
+
+
+def test_ultimo_paso_sin_recibo_no_marca_done(mundo):
+    mundo.respuesta_agente = lambda a, n: {"ok": True, "agente": a, "task_id": "yaiwes-001", "resultado": "x", "recibo": "", "exit_code": 0} if n == 4 else None
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    for _ in range(3):
+        aprobar_y_avanzar(mundo, c)
+    r = aprobar_y_avanzar(mundo, c)
+    assert r["estado"] != "DONE"  # el dispatcher real tambien rechaza AGENTE_SIN_RECIBO; aqui el doble lo deja pasar y el workflow lo detecta
+
+
+# ---------- agente y modelo realmente usados, errores verificables ----------
+def test_se_registra_agente_y_modelo_realmente_usados_y_el_error_con_su_contexto(mundo):
+    mundo.respuesta_agente = lambda a, n: {"ok": True, "agente": a, "task_id": "yaiwes-001", "resultado": "ok", "recibo": "r1", "exit_code": 0, "modelo_usado": "qwen2.5-coder-1.5b"} if n == 1 else None
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    r = aprobar_y_avanzar(mundo, c)
+    p = r["pasos_terminados"][0]
+    assert p["agente_ejecutado"] == "codex" and p["modelo_usado"] == "qwen2.5-coder-1.5b" and p["modelo"] == "hf/qwen2.5-coder-1.5b"
+    mal = {"ok": False, "agente": "opencode", "codigo": "AGENTE_SALIO_CON_ERROR", "error": "codigo de salida 2", "efectos_posibles": True, "exit_code": 2}
+    mundo.respuesta_agente = lambda a, n: AgenteError("EJECUCION_AGENTE_FALLIDA", mal)
+    r = aprobar_y_avanzar(mundo, c)
+    er = r["error"]
+    assert er["agente"] == "opencode" and er["modelo"] == "hf/qwen3.5-0.8b" and er["exit_code"] == 2 and er["efectos_posibles"] is True and er["codigo"] == "AGENTE_SALIO_CON_ERROR"
+
+
+def test_agente_distinto_del_planeado_no_se_acepta(mundo):
+    mundo.respuesta_agente = lambda a, n: {"ok": True, "agente": "claude-code", "task_id": "yaiwes-001", "resultado": "x", "recibo": "r", "exit_code": 0}
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    r = aprobar_y_avanzar(mundo, c)
+    assert r["estado"] == "RECONCILIAR" and r["error"]["codigo"] == "AGENTE_DISTINTO"
+
+
+def test_el_agente_recibe_el_op_id_como_clave_de_idempotencia(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    r = aprobar_y_avanzar(mundo, c)
+    assert mundo.agentes[0]["checkpoint"]["op_id"] in estado_guardado(mundo)["operaciones"]
+
+
+# ---------- estados finos ----------
+def test_estado_detallado_distingue_los_seis_estados(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    ruta = json.loads(mundo.almacen["swe/indice/yaiwes-001.json"])["ruta"]
+    base = estado_guardado(mundo)
+    assert wf.estado_detallado(base) is None
+    e = json.loads(json.dumps(base)); e["estado"] = "EJECUTANDO"; e["operaciones"] = {"x": {"estado": "INICIADA"}}
+    assert wf.estado_detallado(e) == "OPERACION_INICIADA"
+    e = json.loads(json.dumps(base)); e["pasos_terminados"] = [{"paso": "escribe", "recibo": "r", "agente": "codex"}]; e["operaciones"] = {"x": {"estado": "CONFIRMADA"}}
+    assert wf.estado_detallado(e) == "OPERACION_CONFIRMADA"
+    e = json.loads(json.dumps(base)); e["parcial"] = {"paso": "responde", "texto": "a medias"}
+    assert wf.estado_detallado(e) == "RESPUESTA_PARCIAL"
+    e = json.loads(json.dumps(base)); e["llm_pendiente"] = {"tool_calls": ["a"]}
+    assert wf.estado_detallado(e) == "ESPERANDO_TOOLS"
+    e = json.loads(json.dumps(base)); e["estado"] = "RECONCILIAR"
+    assert wf.estado_detallado(e) == "RECONCILIAR"
+    e = json.loads(json.dumps(base)); e["estado"] = "DONE"
+    assert wf.estado_detallado(e) == "DONE"
+
+
+def test_individual_respuesta_cortada_se_guarda_parcial_no_done_y_se_completa_al_reanudar(mundo):
+    c = mundo.ctx()
+    secuencia = [{"texto": "primera mitad ", "tool_calls": [], "finish_reason": "length", "herramientas_usadas": [], "modelo_respuesta": "lfm2.5-350m"},
+                 {"texto": "primera mitad segunda mitad", "tool_calls": [], "finish_reason": "stop", "herramientas_usadas": [], "modelo_respuesta": "lfm2.5-350m"}]
+    mundo.respuesta_llm = lambda n, cuerpo: secuencia[n - 1]
+    wf.swe_iniciar(ind(modo_agentico=False), c)
+    r = wf.swe_avanzar({"task_id": "ind-1"}, c)
+    assert r["estado"] == "GAP" and r["estado_detallado"] == "RESPUESTA_PARCIAL" and r["error"]["codigo"] == "LLM_RESPUESTA_PARCIAL" and r["pasos_terminados"] == []
+    assert estado_guardado(mundo, "ind-1")["parcial"]["texto"] == "primera mitad "  # el parcial queda guardado, no se pierde
+    r = wf.swe_reanudar({"task_id": "ind-1"}, c)
+    cuerpo = mundo.llm_llamadas[1]
+    assert cuerpo["acumulado"] == "primera mitad " and cuerpo["messages"][-2] == {"role": "assistant", "content": "primera mitad "}
+    assert r["estado"] == "DONE" and r["pasos_terminados"][0]["resultado"] == "primera mitad segunda mitad" and r["parcial"] is None
+
+
+def test_individual_sin_finish_reason_no_se_asume_terminado(mundo):
+    c = mundo.ctx()
+    mundo.respuesta_llm = lambda n, cuerpo: {"texto": "algo", "tool_calls": [], "herramientas_usadas": [], "modelo_respuesta": "lfm2.5-350m"}
+    wf.swe_iniciar(ind(modo_agentico=False), c)
+    r = wf.swe_avanzar({"task_id": "ind-1"}, c)
+    assert r["estado"] == "GAP" and r["estado_detallado"] == "RESPUESTA_PARCIAL" and r["error"]["codigo"] == "LLM_RESPUESTA_PARCIAL"
+
+
+def test_individual_pausa_de_herramientas_es_esperando_tools_y_se_reanuda_sin_repetir(mundo):
+    c = mundo.ctx()
+    pausa = {"texto": "", "tool_calls": [], "finish_reason": "pausa_herramientas", "continuar": True, "mensajes": [{"role": "user", "content": "Revisar proyecto"}, {"role": "tool", "content": "ya leido"}],
+             "acumulado": "", "herramientas_usadas": ["github_leer"], "modelo_solicitado": "x"}
+    fin = {"texto": "listo", "tool_calls": [], "finish_reason": "stop", "herramientas_usadas": [], "modelo_respuesta": "lfm2.5-350m"}
+    mundo.respuesta_llm = lambda n, cuerpo: pausa if n == 1 else fin
+    wf.swe_iniciar(ind(modo_agentico=False), c)
+    r = wf.swe_avanzar({"task_id": "ind-1"}, c)
+    assert r["estado"] == "CONTINUAR" and r["estado_detallado"] == "ESPERANDO_TOOLS" and r["pasos_terminados"] == []
+    r = wf.swe_avanzar({"task_id": "ind-1"}, c)
+    assert mundo.llm_llamadas[1]["messages"][-1]["content"] == "ya leido"  # retoma la conversacion guardada, no empieza de cero
+    assert r["estado"] == "DONE" and r["estado_detallado"] == "DONE" and "github_leer" in r["pasos_terminados"][0]["herramientas"]
+
+
+def test_individual_cambio_de_modelo_no_se_oculta(mundo):
+    c = mundo.ctx()
+    mundo.respuesta_llm = lambda n, cuerpo: {"texto": "hola", "tool_calls": [], "finish_reason": "stop", "herramientas_usadas": [], "modelo_respuesta": "lfm2.5-350m", "aviso_modelo": "Se pidio otro"}
+    wf.swe_iniciar(ind(modo_agentico=False, modelo_responde="groq/qwen/qwen3.8-27b"), c)
+    p = wf.swe_avanzar({"task_id": "ind-1"}, c)["pasos_terminados"][0]
+    assert p["cambio_modelo"] is True and p["modelo_usado"] == "lfm2.5-350m" and p["modelo"] == "groq/qwen/qwen3.8-27b"
+
+
+# ---------- persistencia confirmada, checkpoints por etapa, reconciliar ----------
+def test_checkpoint_por_etapa_y_participante_se_guarda_antes_de_avanzar(mundo, monkeypatch):
+    monkeypatch.setenv("SWECODE_URL_S2", "http://127.0.0.1:9001/v1"); monkeypatch.setenv("SWECODE_URL_S3", "http://127.0.0.1:9002/v1")
+    c = mundo.ctx()
+    wf.swe_iniciar(lm(), c)
+    wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    n1 = "swe/openclaw/yaiwes/openclaw-001/openclaw-001.etapa-liquid1.json"
+    d = json.loads(mundo.almacen[n1])
+    assert d["participante"] == "LIQUID 1 - LECTOR" and d["servidor"] == "S2" and d["recibo"].startswith("liquid:S2:") and len(d["sha256"]) == 64
+    assert mundo.guardados.index(n1) < len(mundo.guardados) - 1 and mundo.guardados[-1].endswith("openclaw-001.json")  # etapa antes del estado que avanza
+    wf.swe_avanzar({"task_id": "openclaw-001"}, c); wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    d2 = json.loads(mundo.almacen["swe/openclaw/yaiwes/openclaw-001/openclaw-001.etapa-liquid2.json"])
+    assert d2["participante"] == "LIQUID 2 - EJECUTOR" and d2["servidor"] == "S3"
+    assert n1 != "swe/openclaw/yaiwes/openclaw-001/openclaw-001.etapa-liquid2.json"
+
+
+def test_si_falla_el_checkpoint_de_etapa_no_arranca_el_siguiente_paso(mundo, monkeypatch):
+    monkeypatch.setenv("SWECODE_URL_S2", "http://127.0.0.1:9001/v1"); monkeypatch.setenv("SWECODE_URL_S3", "http://127.0.0.1:9002/v1")
+    c = mundo.ctx()
+    wf.swe_iniciar(lm(), c)
+    mundo.falla_guardar = lambda n: ".etapa-" in n
+    with pytest.raises(RuntimeError, match="PERSISTENCIA_FALLIDA"):
+        wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert estado_guardado(mundo, "openclaw-001")["paso_actual"] == 0
+
+
+def test_guardado_no_remoto_o_distinto_no_cuenta_como_confirmado(mundo):
+    c = mundo.ctx()
+    c.guardar = lambda a: {"nombre": a["nombre"], "destino": "local"}  # solo local: no es persistencia garantizada
+    with pytest.raises(RuntimeError, match="PERSISTENCIA_FALLIDA"):
+        wf.swe_iniciar(contrato(), c)
+    c2 = mundo.ctx()
+    orig = mundo.guardar
+    c2.guardar = lambda a: (orig(a), mundo.almacen.__setitem__(a["nombre"], "otra cosa"))[0]  # el relectura no coincide
+    wf.swe_iniciar(contrato(task_id="yaiwes-009"), c2) if False else None
+    c3 = mundo.ctx(); c3.guardar = c2.guardar
+    c3.guardar({"nombre": "x", "valor": "v"})
+    with pytest.raises(RuntimeError, match="PERSISTENCIA_FALLIDA"):
+        wf._guardar_confirmado(c3, "y", "contenido")
+
+
+def test_el_diario_local_no_sustituye_a_la_persistencia_remota(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    op = wf.swe_avanzar({"task_id": "yaiwes-001"}, c)["pendiente_aprobacion"]["op_id"]
+    wf.swe_aprobar({"task_id": "yaiwes-001", "op_id": op, "operador": "ana"}, c)
+    mundo.diarios["yaiwes-001"] = json.dumps({"cualquiera": {"estado": "CONFIRMADA", "recibo": "falso"}})  # el respaldo local existe...
+    mundo.falla_guardar = lambda n: True  # ...pero el remoto cae
+    with pytest.raises(RuntimeError, match="PERSISTENCIA_FALLIDA"):
+        wf.swe_avanzar({"task_id": "yaiwes-001"}, c)
+    assert mundo.agentes == []
+
+
+def test_fallo_al_guardar_tras_ejecutar_deja_reconciliar_o_adoptable(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    op = wf.swe_avanzar({"task_id": "yaiwes-001"}, c)["pendiente_aprobacion"]["op_id"]
+    wf.swe_aprobar({"task_id": "yaiwes-001", "op_id": op, "operador": "ana"}, c)
+    mundo.diarios.clear()
+    c.con_efectos = lambda n, a: False  # sin diario: la confirmacion solo existia en memoria
+    cuenta = {"n": 0}
+    def f(n):
+        if n.endswith("yaiwes-001.json") and "indice" not in n and "locks" not in n:
+            cuenta["n"] += 1
+            return cuenta["n"] >= 2
+        return False
+    mundo.falla_guardar = f
+    with pytest.raises(RuntimeError, match="PERSISTENCIA_FALLIDA"):
+        wf.swe_avanzar({"task_id": "yaiwes-001"}, c)
+    mundo.falla_guardar = lambda n: False
+    r = wf.swe_avanzar({"task_id": "yaiwes-001"}, c)
+    assert r["estado"] == "RECONCILIAR" and len(mundo.agentes) == 1 and r["estado_detallado"] == "RECONCILIAR"
+
+
+# ---------- candado entre procesos / servidores (en el almacen, con TTL y propietario) ----------
+def test_candado_en_el_almacen_bloquea_a_otro_propietario_vigente(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    mundo.almacen["swe/locks/yaiwes-001.json"] = json.dumps({"propietario": "otro-servidor:123:abc", "token": "t", "expira": time.time() + 60})  # otro servidor lo tiene
+    with pytest.raises(ValueError, match="TAREA_BLOQUEADA"):
+        wf.swe_avanzar({"task_id": "yaiwes-001"}, c)
+    with pytest.raises(ValueError, match="TAREA_BLOQUEADA"):
+        wf.swe_aprobar({"task_id": "yaiwes-001", "op_id": "x", "operador": "ana"}, c)
+    assert mundo.agentes == []
+
+
+def test_candado_vencido_se_toma_y_se_libera_al_terminar(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    mundo.almacen["swe/locks/yaiwes-001.json"] = json.dumps({"propietario": "muerto:1:z", "token": "t", "expira": time.time() - 5})  # TTL vencido: el dueno murio
+    assert wf.swe_avanzar({"task_id": "yaiwes-001"}, c)["estado"] == "REQUIERE_APROBACION"
+    assert json.loads(mundo.almacen["swe/locks/yaiwes-001.json"])["expira"] == 0  # liberado
+
+
+def test_candado_se_libera_aunque_falle_la_operacion(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    mundo.falla_guardar = lambda n: n.endswith("yaiwes-001.json") and "indice" not in n and "locks" not in n
+    with pytest.raises(RuntimeError, match="PERSISTENCIA_FALLIDA"):
+        wf.swe_avanzar({"task_id": "yaiwes-001"}, c)
+    assert json.loads(mundo.almacen["swe/locks/yaiwes-001.json"])["expira"] == 0
+
+
+def test_la_operacion_con_efectos_no_arranca_si_se_perdio_el_candado(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    op = wf.swe_avanzar({"task_id": "yaiwes-001"}, c)["pendiente_aprobacion"]["op_id"]
+    wf.swe_aprobar({"task_id": "yaiwes-001", "op_id": op, "operador": "ana"}, c)
+    orig = mundo.guardar
+    def roba(args):  # otro servidor toma el candado justo mientras guardamos INICIADA
+        r = orig(args)
+        if args["nombre"].endswith("yaiwes-001.json") and "indice" not in args["nombre"] and "INICIADA" in args["valor"]:
+            mundo.almacen["swe/locks/yaiwes-001.json"] = json.dumps({"propietario": "intruso:9:q", "token": "q", "expira": time.time() + 60})
+        return r
+    c.guardar = roba
+    with pytest.raises(ValueError, match="TAREA_BLOQUEADA"):
+        wf.swe_avanzar({"task_id": "yaiwes-001"}, c)
+    assert mundo.agentes == []
+
+
+def test_candado_con_task_id_invalido_no_toca_el_almacen(mundo):
+    c = mundo.ctx()
+    with pytest.raises(ValueError, match="TASK_ID_INVALIDO"):
+        wf.swe_avanzar({"task_id": "../x"}, c)
+    assert mundo.almacen == {}
+
+
+# ---------- Liquid: S2/S3 reales, handoff, recuperacion ----------
+def test_liquid_mirror_con_dos_servidores_http_reales_independientes(mundo, servidores):
+    c = mundo.ctx(); c.servidor_llm = wf.llamar_servidor  # HTTP real contra dos puertos distintos
+    wf.swe_iniciar(lm(), c)
+    wf.swe_avanzar({"task_id": "openclaw-001"}, c); wf.swe_avanzar({"task_id": "openclaw-001"}, c); r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    puertos = [v[0] for v in Falso.visto]
+    assert len(puertos) == 2 and puertos[0] != puertos[1] and puertos == [servidores[0].server_port, servidores[1].server_port]
+    assert r["pasos_terminados"][0]["resultado"] == "puerto %d" % servidores[0].server_port and r["pasos_terminados"][2]["resultado"] == "puerto %d" % servidores[1].server_port
+    assert "puerto %d" % servidores[0].server_port in json.dumps(Falso.visto[1][2]["messages"])  # S3 solo recibe el handoff de S2
+    assert r["pasos_terminados"][0]["finish_reason"] == "stop" and r["pasos_terminados"][2]["finish_reason"] == "stop"
+
+
+def test_recuperacion_tras_reinicio_desde_el_ultimo_handoff_sin_repetir_liquid1(mundo, monkeypatch):
+    monkeypatch.setenv("SWECODE_URL_S2", "http://127.0.0.1:9001/v1"); monkeypatch.setenv("SWECODE_URL_S3", "http://127.0.0.1:9002/v1")
+    c = mundo.ctx()
+    wf.swe_iniciar(lm(), c)
+    wf.swe_avanzar({"task_id": "openclaw-001"}, c); wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    llamadas_antes = list(mundo.servidores)
+    c2 = mundo.ctx()  # "reinicio": otro Contexto, nada en memoria; solo el almacen
+    wf._LOCKS.clear()
+    r = wf.swe_reanudar({"task_id": "openclaw-001"}, c2)
+    assert [s[0] for s in mundo.servidores] == [s[0] for s in llamadas_antes] + ["S3"] and r["handoff"]["confirmado"] is True and r["paso_actual"] == 3
+
+
+def test_handoff_ya_guardado_y_valido_se_adopta_tras_caida_entre_guardar_handoff_y_estado(mundo, monkeypatch):
+    monkeypatch.setenv("SWECODE_URL_S2", "http://127.0.0.1:9001/v1"); monkeypatch.setenv("SWECODE_URL_S3", "http://127.0.0.1:9002/v1")
+    c = mundo.ctx()
+    wf.swe_iniciar(lm(), c)
+    wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    mundo.falla_guardar = lambda n: n.endswith("openclaw-001.json") and "indice" not in n and "locks" not in n and mundo.almacen.get("swe/openclaw/yaiwes/openclaw-001/openclaw-001.handoff.json") is not None and "etapa" not in n
+    with pytest.raises(RuntimeError, match="PERSISTENCIA_FALLIDA"):
+        wf.swe_avanzar({"task_id": "openclaw-001"}, c)  # handoff escrito, estado no
+    assert estado_guardado(mundo, "openclaw-001")["handoff"] is None
+    mundo.falla_guardar = lambda n: False
+    antes = mundo.guardados.count("swe/openclaw/yaiwes/openclaw-001/openclaw-001.handoff.json")
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert r["handoff"]["confirmado"] is True and mundo.guardados.count("swe/openclaw/yaiwes/openclaw-001/openclaw-001.handoff.json") == antes  # se adopto, no se reescribio
+
+
+def test_liquid2_cortado_guarda_el_parcial_y_no_activa_al_agente(mundo):
+    c = mundo.ctx(); srv_length(mundo, {"S2": [("analisis", "stop")], "S3": [("plan a medias", "length")]})
+    wf.swe_iniciar(lm(), c)
+    for _ in range(2): wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert r["estado"] == "GAP" and r["estado_detallado"] == "RESPUESTA_PARCIAL" and r["parcial"]["texto"].startswith("plan a medias") and r["parcial"]["finish_reason"] == "length" and mundo.agentes == []
+    srv_length(mundo, {"S2": [("analisis", "stop")], "S3": [("plan completo", "stop")]})
+    r = wf.swe_reanudar({"task_id": "openclaw-001"}, c)  # reintenta SOLO Liquid 2 con el handoff ya guardado
+    assert r["paso_actual"] == 3 and r["parcial"] is None and [s[0] for s in mundo.servidores][-1] == "S3"

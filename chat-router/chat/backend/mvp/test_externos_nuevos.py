@@ -153,11 +153,45 @@ class TestCatalogoYParametros(Entorno):
         self.assertEqual((c["model"], c["temperature"], c["top_p"], c["max_tokens"]), ("z-ai/glm-5.3", 0.5, 1.0, 4096))
         self.assertNotIn("reasoning_effort", c)
 
-    def test_los_parametros_del_modelo_van_despues_de_las_opciones_del_llamador(self):  # payload.update(PARAMETROS_MODELO...) tal cual lo pide el Director
+    def test_los_parametros_explicitos_del_llamador_van_despues_de_los_del_modelo(self):
+        """R7 (auditoria GPT, mas reciente que el payload.update literal del Director): defecto del modelo primero y despues los explicitos VALIDOS del llamador."""
         s = self.servidor("nvidia", ok())
-        externos.llamar(MSG, "nvidia/meta/muse-glimmer-30b", opciones={"max_tokens": 10, "tool_choice": "auto"})
+        externos.llamar(MSG, "nvidia/meta/muse-glimmer-30b", opciones={"max_tokens": 10, "temperature": 0.2, "tool_choice": "auto"})
         c = s.peticiones[0]["cuerpo"]
-        self.assertEqual((c["max_tokens"], c["tool_choice"]), (4096, "auto"))
+        self.assertEqual((c["max_tokens"], c["temperature"], c["top_p"], c["tool_choice"]), (10, 0.2, 0.95, "auto"))  # top_p: no lo pidio el llamador, queda el del modelo
+
+    def test_sin_opciones_manda_los_valores_por_defecto_del_modelo(self):
+        s = self.servidor("nvidia", ok())
+        externos.llamar(MSG, "nvidia/meta/muse-glimmer-30b")
+        c = s.peticiones[0]["cuerpo"]
+        self.assertEqual((c["max_tokens"], c["temperature"], c["top_p"]), (4096, 1.0, 0.95))
+
+    def test_limite_real_de_groq_qwen38_16384_tokens_de_salida(self):
+        """Fuente oficial: console.groq.com/docs/models y /docs/model/qwen/qwen3.8-27b -> MAX OUTPUT/COMPLETION TOKENS 16,384 (contexto 131,072)."""
+        self.assertEqual(externos.LIMITES_MODELO[ID_GROQ]["max_tokens"], 16384)
+        s = self.servidor("groq", ok())
+        r = externos.llamar(MSG, ID_GROQ, opciones={"max_tokens": 99999})
+        self.assertEqual(s.peticiones[0]["cuerpo"]["max_tokens"], 16384)
+        self.assertEqual(r["metricas"]["parametros"]["recortados"], {"max_tokens": {"pedido": 99999, "aplicado": 16384}})  # el recorte NO es silencioso
+        externos.llamar(MSG, ID_GROQ, opciones={"max_tokens": 16384})
+        self.assertEqual(s.peticiones[1]["cuerpo"]["max_tokens"], 16384)
+
+    def test_valores_invalidos_se_ignoran_y_se_avisa(self):
+        s = self.servidor("groq", ok())
+        r = externos.llamar(MSG, ID_GROQ, opciones={"temperature": "caliente", "max_tokens": -5, "top_p": 7, "reasoning_effort": "extremo"})
+        c = s.peticiones[0]["cuerpo"]
+        self.assertEqual((c["temperature"], c["max_tokens"], c["top_p"], c["reasoning_effort"]), (1.0, 2048, 0.95, "medium"))
+        self.assertEqual(sorted(r["metricas"]["parametros"]["ignorados"]), ["max_tokens", "reasoning_effort", "temperature", "top_p"])
+
+    def test_reasoning_explicito_valido_se_respeta_solo_donde_el_modelo_lo_admite(self):
+        s = self.servidor("groq", ok())
+        externos.llamar(MSG, ID_GROQ, opciones={"reasoning_effort": "high", "reasoning_format": "parsed"})
+        c = s.peticiones[0]["cuerpo"]
+        self.assertEqual((c["reasoning_effort"], c["reasoning_format"]), ("high", "parsed"))
+        n = self.servidor("nvidia", ok())
+        r = externos.llamar(MSG, "nvidia/z-ai/glm-5.3", opciones={"reasoning_effort": "high", "enable_thinking": True})
+        self.assertNotIn("reasoning_effort", n.peticiones[0]["cuerpo"]); self.assertNotIn("enable_thinking", n.peticiones[0]["cuerpo"])
+        self.assertIn("reasoning_effort", r["metricas"]["parametros"]["ignorados"])
 
     def test_modelo_ajeno_al_catalogo_sigue_funcionando_sin_parametros_extra(self):
         s = self.servidor("groq", ok())

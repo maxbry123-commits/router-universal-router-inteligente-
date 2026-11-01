@@ -55,4 +55,4 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     texto = str(final.get("result") or "").strip()
     if not texto:
         return _comun.error(AGENTE, tarea_id, "AGENTE_SIN_RESULTADO", "claude devolvio resultado vacio", True, proc["exit_code"])
-    return _comun.resultado_ok(AGENTE, tarea_id, proc, texto, herramientas, [exe, "modo:" + modo, "turnos:%s" % final.get("num_turns"), "modelo:" + cfg["model"]], inicio)
+    return _comun.resultado_ok(AGENTE, tarea_id, proc, texto, herramientas, [exe, "modo:" + modo, "turnos:%s" % final.get("num_turns"), "modelo:" + cfg["model"]], inicio, cfg["model"])

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { asegurarWorkspace, vigilarWorkspace, leerConfig, configVigente, vigilarConfig, espejo, normalizarEjecutor, EJECUTORES_TOOLS } from "../src/openclaw.js";
+import { asegurarWorkspace, vigilarWorkspace, leerConfig, configVigente, vigilarConfig, espejo, normalizarEjecutor, EJECUTORES_TOOLS, catalogoTools } from "../src/openclaw.js";
 import { fileURLToPath } from "node:url";
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "oc-test-"));
@@ -182,4 +182,63 @@ test("provider-openclaw.json (repo): trae la entrada MCP del Router para OpenCla
   assert.ok(m.url.includes("${RIU_ROUTER_URL"), "la URL se resuelve con RIU_ROUTER_URL");
   assert.deepEqual(Object.keys(m).filter((k) => /^(api_key|token|clave|valor)$/.test(k)), []);
   assert.equal(c.provider.ejecutor_tools.defecto, "swe");
+});
+
+// ---------- UI3: catalogo de TOOLS de OpenClaw = las funciones del chat Yaiwes que el Router YA expone por MCP/HTTP (sin deriva respecto al codigo del Router) ----------
+const MVP = (f) => fs.readFileSync(path.join(REPO, "chat/backend/mvp", f), "utf8");
+
+test("catalogoTools: cada tool MCP del Router (mcp_route.py) esta cubierta por una tool MCP o por su plugin HTTP equivalente", () => {
+  const reales = [...new Set([...MVP("mcp_route.py").matchAll(/'name': '([a-z_]+)'/g)].map((m) => m[1]))];
+  const c = catalogoTools();
+  const mcp = c.tools.filter((t) => t.via === "mcp").map((t) => t.destino.tool);
+  const equivalentes = c.tools.map((t) => t.mcp_equivalente).filter(Boolean);
+  for (const r of reales) assert.ok(mcp.includes(r) || equivalentes.includes(r), `tool MCP sin cubrir: ${r}`);
+  for (const t of mcp) assert.ok(reales.includes(t), `el catalogo inventa la tool MCP ${t}`);
+});
+
+test("catalogoTools: plugins HTTP e acciones declaradas existen de verdad (loop_puente.PLUGINS, archivos.ACCIONES, plugin.py ACCIONES)", () => {
+  const c = catalogoTools(), por = Object.fromEntries(c.tools.map((t) => [t.id, t]));
+  const plugins = /PLUGINS = \(([^)]*)\)/.exec(MVP("loop_puente.py"))[1].match(/"(\w+)"/g).map((x) => x.slice(1, -1));
+  for (const [id, plugin] of [["loop", "nct_loop"], ["cola", "cola50"], ["watchdog", "watchdog48"]]) {
+    assert.ok(plugins.includes(plugin)); assert.equal(por[id].via, "plugin"); assert.equal(por[id].destino.plugin, plugin);
+    const src = fs.readFileSync(path.join(REPO, "plugins", plugin, "plugin.py"), "utf8");
+    const reales = [...src.matchAll(/^ACCIONES = \[([^\]]*)\]/gm)].flatMap((m) => m[1].match(/'(\w+)'/g).map((x) => x.slice(1, -1)));
+    assert.deepEqual([...por[id].acciones].sort(), [...new Set(reales)].sort(), id);
+  }
+  const arch = /^ACCIONES = \(([^)]*)\)/m.exec(MVP("archivos/__init__.py"))[1].match(/"(\w+)"/g).map((x) => x.slice(1, -1));
+  assert.deepEqual([...por.motor_archivos.acciones].sort(), [...arch].sort());
+  assert.equal(por.motor_archivos.destino.plugin, "motor_archivos");
+  assert.ok(MVP("app.py").includes('plugin == "motor_archivos"'));
+});
+
+test("catalogoTools: toda carpeta de chat-router/plugins esta como tool, como cubierta o como GAP honesto (nada se pierde en silencio)", () => {
+  const c = catalogoTools();
+  const nombres = fs.readdirSync(path.join(REPO, "plugins"), { withFileTypes: true }).filter((d) => d.name !== "__pycache__" && d.name !== "__init__.py").map((d) => d.name);
+  const conocidos = new Set([...c.tools.map((t) => t.destino?.plugin), ...c.tools.map((t) => t.plugin_repo), ...c.cubiertos.map((x) => x.plugin), ...c.gaps.map((g) => g.id)]);
+  for (const n of nombres) assert.ok(conocidos.has(n), `plugin sin clasificar: ${n}`);
+  for (const g of c.gaps) { assert.ok(g.motivo.length > 20, g.id); assert.ok(!c.tools.some((t) => t.id === g.id), "un GAP no es tool"); }
+  const ids = c.gaps.map((g) => g.id);
+  for (const esperado of ["anclaje", "constitucion", "workflow-loop-yaiwes"]) assert.ok(ids.includes(esperado), esperado);
+  const ruteados = /if plugin not in \(([^)]*)\)/.exec(MVP("app.py"))[1];
+  for (const g of c.gaps.filter((x) => x.plugin_repo === true)) assert.ok(!ruteados.includes(`"${g.id}"`), `${g.id} figura como ruteado por el Router: ya no es GAP`);
+});
+
+test("catalogoTools: anclaje y constitucion son CAMPOS de /chat/send (tool chat_send), y chat_send existe con esos campos", () => {
+  const c = catalogoTools(), t = c.tools.find((x) => x.id === "chat_send");
+  assert.deepEqual([t.via, t.destino.metodo, t.destino.ruta], ["http", "POST", "/chat/send"]);
+  assert.ok(t.campos.includes("anclados") && t.campos.includes("constitucion"));
+  const app = MVP("app.py"); assert.ok(app.includes('q.get("anclados")') && app.includes('q.get("constitucion")'));
+  assert.equal(c.gaps.find((g) => g.id === "anclaje").usar_con, "chat_send");
+});
+
+test("catalogoTools: cada tool declara si tiene efectos; sin efectos = lectura; con efectos exigen operador identificado en el bridge; JSON sin secretos", () => {
+  const c = catalogoTools();
+  for (const t of c.tools) {
+    assert.match(t.id, /^[a-z][a-z0-9_]{1,40}$/); assert.ok(["mcp", "plugin", "http", "harness"].includes(t.via), t.id);
+    assert.ok(["lectura", "efectos", "por_accion"].includes(t.efectos), t.id);
+    if (t.efectos === "por_accion") assert.ok(Array.isArray(t.lectura) && t.lectura.every((a) => t.acciones.includes(a)), t.id);
+  }
+  const por = Object.fromEntries(c.tools.map((t) => [t.id, t]));
+  assert.equal(por.github_escribir.efectos, "efectos"); assert.equal(por.salud.efectos, "lectura"); assert.equal(por.almacen.efectos, "por_accion"); assert.ok(por.almacen.lectura.includes("leer"));
+  assert.ok(!/Bearer|X-API-Key:|sk-|hf_[A-Za-z0-9]{10}/.test(JSON.stringify(c)));
 });

@@ -39,7 +39,13 @@ def nunca_lanzado(tmp_path):
 def cap(**k):
     k.setdefault("sonda_openhands", lambda py: False)
     k.setdefault("sonda_gateway", lambda url: False)
+    k.setdefault("sonda_hf", lambda url: True)
     return disponibilidad.capacidades(**k)
+
+
+def viejo(e):
+    """El contrato antiguo ({disponible, motivo}) sigue intacto; los campos nuevos (estado, veredicto, ...) se prueban en test_adaptadores_disponibilidad_estados.py."""
+    return {"disponible": e["disponible"], "motivo": e["motivo"]}
 
 
 def test_formato_exacto_y_claves_del_catalogo(vacio):
@@ -55,7 +61,7 @@ def test_formato_exacto_y_claves_del_catalogo(vacio):
 def test_entorno_vacio_nada_conectado_salvo_individual(vacio):
     c = cap()
     assert all(e["disponible"] is False and e["motivo"] for e in c["agentes"].values())
-    assert c["workflows"]["individual"] == {"disponible": True, "motivo": ""}
+    assert viejo(c["workflows"]["individual"]) == {"disponible": True, "motivo": ""}
     assert c["workflows"]["swe_code"]["disponible"] is False and c["workflows"]["liquid_mirror"]["disponible"] is False
     assert all(e["disponible"] is False and e["motivo"] for e in c["modelos"].values())
 
@@ -65,7 +71,7 @@ def test_codex_exige_binario_y_endpoint_responses(vacio, monkeypatch):
     e = cap()["agentes"]["codex"]
     assert e["disponible"] is False and "RIU_CODEX_BASE_URL" in e["motivo"]
     monkeypatch.setenv("RIU_CODEX_BASE_URL", "http://127.0.0.1:9999/v1")
-    assert cap()["agentes"]["codex"] == {"disponible": True, "motivo": ""}
+    assert viejo(cap()["agentes"]["codex"]) == {"disponible": True, "motivo": ""}
     monkeypatch.setenv("RIU_CODEX_BIN", str(vacio / "no-existe"))
     e = cap()["agentes"]["codex"]
     assert e["disponible"] is False and "no esta instalado" in e["motivo"]
@@ -89,7 +95,7 @@ def test_openhands_solo_si_el_python_importa_el_sdk(vacio, monkeypatch):
     sonda = lambda py: visto.append(py) or False
     e = cap(sonda_openhands=sonda)["agentes"]["openhands"]
     assert e["disponible"] is False and "openhands.sdk" in e["motivo"] and visto == [sys.executable]
-    assert cap(sonda_openhands=lambda py: True)["agentes"]["openhands"] == {"disponible": True, "motivo": ""}
+    assert viejo(cap(sonda_openhands=lambda py: True)["agentes"]["openhands"]) == {"disponible": True, "motivo": ""}
     monkeypatch.setenv("RIU_OPENHANDS_PYTHON", str(vacio / "no-existe"))
     assert cap(sonda_openhands=lambda py: pytest.fail("no se sondea un Python inexistente"))["agentes"]["openhands"]["disponible"] is False
 
@@ -119,7 +125,7 @@ def test_openclaw_exige_token_url_valida_y_gateway_vivo(vacio, monkeypatch):
     vistas = []
     e = cap(sonda_gateway=lambda u: vistas.append(u) or False)["agentes"]["openclaw"]
     assert e["disponible"] is False and "Gateway" in e["motivo"] and vistas == ["http://127.0.0.1:18789"]
-    assert cap(sonda_gateway=lambda u: True)["agentes"]["openclaw"] == {"disponible": True, "motivo": ""}
+    assert viejo(cap(sonda_gateway=lambda u: True)["agentes"]["openclaw"]) == {"disponible": True, "motivo": ""}
     monkeypatch.setenv("RIU_OPENCLAW_URL", "http://servidor-publico.example")  # http solo en loopback
     e = cap(sonda_gateway=lambda u: pytest.fail("URL invalida: no se sondea"))["agentes"]["openclaw"]
     assert e["disponible"] is False and "RIU_OPENCLAW_URL" in e["motivo"]
@@ -130,8 +136,8 @@ def test_modelos_hf_segun_los_servidores_configurados(vacio, monkeypatch):
     hf = [m for m in modelos.MODELOS if m.startswith("hf/")]
     assert len(hf) == 4 and all("SWECODE_URL_S1..S3" in cap()["modelos"][m]["motivo"] for m in hf)
     monkeypatch.setenv("SWECODE_URL_S1", "http://127.0.0.1:9101/v1")
-    c = cap()
-    assert all(c["modelos"][m] == {"disponible": True, "motivo": ""} for m in hf)
+    c = cap(sonda_modelos=lambda p, k: set())  # con la verificacion activa y el servidor HF alcanzable (sonda_hf=True)
+    assert all(viejo(c["modelos"][m]) == {"disponible": True, "motivo": ""} for m in hf)
     assert c["workflows"]["liquid_mirror"]["disponible"] is False and "S2" in c["workflows"]["liquid_mirror"]["motivo"]  # Liquid Mirror necesita S2 y S3 propios
 
 
@@ -144,7 +150,7 @@ def test_liquid_mirror_exige_s2_y_s3_distintos_validos_y_el_verificador(vacio, m
     w = cap(sonda_openhands=lambda py: False)["workflows"]["liquid_mirror"]
     assert w["disponible"] is False and "openhands" in w["motivo"]  # el verificador es OpenHands
     monkeypatch.setenv("RIU_OPENHANDS_PYTHON", sys.executable)
-    assert cap(sonda_openhands=lambda py: True)["workflows"]["liquid_mirror"] == {"disponible": True, "motivo": ""}
+    assert viejo(cap(sonda_openhands=lambda py: True)["workflows"]["liquid_mirror"]) == {"disponible": True, "motivo": ""}
     monkeypatch.setenv("SWECODE_URL_S3", "http://publico.example/v1")
     assert cap(sonda_openhands=lambda py: True)["workflows"]["liquid_mirror"]["disponible"] is False
 
@@ -155,7 +161,7 @@ def test_swe_code_exige_codex_opencode_openhands_y_los_hf(vacio, monkeypatch):
     w = cap(sonda_openhands=lambda py: True)["workflows"]["swe_code"]
     assert w["disponible"] is False and "SWECODE_URL_S1..S3" in w["motivo"]
     monkeypatch.setenv("SWECODE_URL_S1", "http://127.0.0.1:9101/v1")
-    assert cap(sonda_openhands=lambda py: True)["workflows"]["swe_code"] == {"disponible": True, "motivo": ""}
+    assert viejo(cap(sonda_openhands=lambda py: True)["workflows"]["swe_code"]) == {"disponible": True, "motivo": ""}
     w = cap(sonda_openhands=lambda py: False)["workflows"]["swe_code"]
     assert w["disponible"] is False and "openhands" in w["motivo"]
     assert nunca_lanzado(vacio)
@@ -167,7 +173,9 @@ def test_groq_y_nvidia_segun_claves_sin_revelarlas(vacio, monkeypatch):
     assert "GROQ_API_KEY" in cap()["modelos"]["groq/qwen/qwen3.8-27b"]["motivo"] and "NVIDIA_API_KEY" in cap()["modelos"]["nvidia/z-ai/glm-5.3"]["motivo"]
     monkeypatch.setenv("GROQ_API_KEY_3", CLAVE_GROQ)
     monkeypatch.setenv("NVIDIA_API_KEY", CLAVE_NVIDIA)
-    c = cap()
+    c = cap()  # R6: clave presente + verificacion desactivada = SIN VERIFICAR, NO disponible (38)
+    assert all(c["modelos"][m]["disponible"] is False and c["modelos"][m]["estado"] == "SIN VERIFICAR" for m in ext)
+    c = cap(sonda_modelos=lambda p, k: {m["model"] for m in modelos.MODELOS.values() if m["provider"] == p})
     assert all(c["modelos"][m]["disponible"] is True for m in ext)
     volcado = json.dumps(c)
     assert CLAVE_GROQ not in volcado and CLAVE_NVIDIA not in volcado and "gsk_" not in volcado and "nvapi-" not in volcado
@@ -192,7 +200,7 @@ def test_si_el_proveedor_no_responde_no_se_inventa_ni_se_marca_caido(vacio, monk
     def sonda(proveedor, clave):
         raise OSError("sin red " + clave)
     e = cap(sonda_modelos=sonda)["modelos"]["groq/qwen/qwen3.8-27b"]
-    assert e["disponible"] is True and "sin verificar" in e["motivo"] and CLAVE_GROQ not in json.dumps(e)  # clave presente: el selector lo deja usar; el motivo dice que no se verifico
+    assert e["disponible"] is False and e["estado"] == "SIN VERIFICAR" and "sin verificar" in e["motivo"] and CLAVE_GROQ not in json.dumps(e)  # R6: un error del proveedor NUNCA es DISPONIBLE
 
 
 def test_la_sonda_real_pide_get_models_con_la_clave_y_no_la_devuelve(vacio, monkeypatch):

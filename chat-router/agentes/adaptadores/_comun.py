@@ -195,11 +195,11 @@ def recibo(agente, tarea_id, exit_code, salida, inicio):
     return "%s:%s:%s" % (agente, tarea_id, h)
 
 
-def resultado_ok(agente, tarea_id, proc, texto, herramientas, evidencias, inicio):
+def resultado_ok(agente, tarea_id, proc, texto, herramientas, evidencias, inicio, modelo_usado=None):
     texto = redactar(texto or "")
     return {"ok": True, "agente": agente, "task_id": tarea_id, "resultado": texto[:100000], "herramientas": herramientas, "evidencias": evidencias,
             "recibo": recibo(agente, tarea_id, proc["exit_code"], proc["stdout"] + "\n" + proc["stderr"], inicio), "exit_code": proc["exit_code"],
-            "inicio": inicio, "duracion_s": proc["duracion_s"], "truncado": proc["truncado"]}
+            "inicio": inicio, "duracion_s": proc["duracion_s"], "truncado": proc["truncado"], "modelo_usado": modelo_usado}
 
 
 def fallo_de_proceso(agente, tarea_id, proc):

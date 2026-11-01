@@ -40,6 +40,6 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
         if not texto:
             return _comun.error(AGENTE, tarea_id, "AGENTE_SIN_RESULTADO", "codex termino sin mensaje final", True, proc["exit_code"])
         return _comun.resultado_ok(AGENTE, tarea_id, proc, texto, _comun.tipos_de_evento(_comun.jsonl(proc["stdout"])),
-                                   [exe, "sandbox:" + sandbox, "modelo:" + ep["modelo"]], inicio)
+                                   [exe, "sandbox:" + sandbox, "modelo:" + ep["modelo"]], inicio, ep["modelo"])
     finally:
         shutil.rmtree(tmp, ignore_errors=True)

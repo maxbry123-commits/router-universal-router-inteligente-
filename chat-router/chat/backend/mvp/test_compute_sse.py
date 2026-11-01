@@ -120,6 +120,48 @@ class TestAcumuladorSSE(unittest.TestCase):
         self.assertEqual((b["choices"][0]["message"]["content"], b["choices"][0]["finish_reason"], b["usage"], b["model"]), ("hi", "length", {"completion_tokens": 1}, "modelo-x"))
 
 
+class TestNombresFragmentados(unittest.TestCase):
+    """R3 (auditoria GPT): el nombre de la herramienta llega en trozos (github_ + leer) y NO debe reemplazarse por el ultimo trozo."""
+    def _tc(self, a, i, **fn):
+        a.linea(chunk({"tool_calls": [{"index": i, "id": "c%d" % i if fn.get("id") else None, "function": {k: v for k, v in fn.items() if k != "id"}}]}))
+
+    def test_nombre_en_trozos_se_concatena(self):
+        a = compute.AcumuladorSSE()
+        a.linea(chunk({"tool_calls": [{"index": 0, "id": "c0", "function": {"name": "github_", "arguments": ""}}]}))
+        a.linea(chunk({"tool_calls": [{"index": 0, "function": {"name": "leer", "arguments": '{"ruta"'}}]}))
+        a.linea(chunk({"tool_calls": [{"index": 0, "function": {"arguments": ':"a"}'}}]}, "tool_calls"))
+        t = a.resultado("m")["tool_calls"][0]["function"]
+        self.assertEqual((t["name"], t["arguments"]), ("github_leer", '{"ruta":"a"}'))
+
+    def test_nombre_acumulativo_o_repetido_no_se_duplica(self):
+        for trozos, esperado in ((["git", "github", "github_leer"], "github_leer"), (["leer", "leer", "leer"], "leer"), (["github_leer", "", ""], "github_leer")):
+            a = compute.AcumuladorSSE()
+            for n in trozos:
+                a.linea(chunk({"tool_calls": [{"index": 0, "id": "c0", "function": {"name": n, "arguments": ""}}]}))
+            self.assertEqual(a.resultado("m")["tool_calls"][0]["function"]["name"], esperado, trozos)
+
+    def test_dos_llamadas_fragmentadas_a_la_vez_no_se_mezclan(self):
+        a = compute.AcumuladorSSE()
+        for i, parte in ((0, "github_"), (1, "disco_"), (0, "leer"), (1, "escribir")):
+            a.linea(chunk({"tool_calls": [{"index": i, "id": "c%d" % i, "function": {"name": parte}}]}))
+        self.assertEqual([t["function"]["name"] for t in a.resultado("m")["tool_calls"]], ["github_leer", "disco_escribir"])
+
+    def test_nombre_se_valida_contra_las_herramientas_declaradas(self):
+        a = compute.AcumuladorSSE(herramientas=["github_leer", "disco_escribir"])
+        a.linea(chunk({"tool_calls": [{"index": 0, "id": "c0", "function": {"name": "github_", "arguments": "{}"}}]}))
+        a.linea(chunk({"tool_calls": [{"index": 1, "id": "c1", "function": {"name": "disco_escribir", "arguments": "{"}}]}))
+        r = a.resultado("m")
+        self.assertEqual(len(r["tool_calls"]), 2)  # no se pierde ninguna llamada pendiente: se marca, no se descarta
+        inv = {x["id"]: x["motivo"] for x in r["tools_invalidas"]}
+        self.assertEqual(inv, {"c0": "nombre_no_declarado", "c1": "argumentos_json_incompletos"})
+        self.assertEqual(r["metricas"]["tools_invalidas"], 2)
+
+    def test_sin_herramientas_declaradas_solo_se_valida_el_json(self):
+        a = compute.AcumuladorSSE()
+        a.linea(chunk({"tool_calls": [{"index": 0, "id": "c0", "function": {"name": "x", "arguments": '{"a":1}'}}]}))
+        self.assertEqual(a.resultado("m")["tools_invalidas"], [])
+
+
 class TestTimeoutConfigurable(unittest.TestCase):
     def test_prioridad_entorno_politica_defecto(self):
         with patch.dict(os.environ, {"RIU_EXTERNOS_TIMEOUT_S": ""}):

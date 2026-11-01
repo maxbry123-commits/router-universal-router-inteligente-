@@ -2,7 +2,9 @@
 // OpenClaw UI -> (aqui) -> Harness DeepSeek (POST {RIU_DEEPSEEK_HARNESS_URL}/invoke) -> agentes/adaptadores. El bridge NO ejecuta herramientas ni adaptadores Python:
 // solo valida y reenvia. RIU_API_KEY vive solo en este backend. Contrato de tarea: el mismo de YAIWES (chat-router/agentes/adaptadores/contrato.py, origen "openclaw").
 // Autenticacion OBLIGATORIA: sin BRIDGE_TOKEN configurado estas rutas se rechazan (503); no heredan el acceso libre de las rutas publicas con el token vacio.
+import crypto from 'node:crypto';
 import { iguales } from './iguales.js';
+import { catalogoTools, ACCESO_ROUTER, ROUTER_LOCAL } from './openclaw.js';
 
 export const OPERACIONES_SWE = { iniciar: 'swe_iniciar', avanzar: 'swe_avanzar', estado: 'swe_estado', aprobar: 'swe_aprobar', reanudar: 'swe_reanudar' };
 const PERMITIDAS = new Set(Object.values(OPERACIONES_SWE));
@@ -49,6 +51,17 @@ export async function llamarHarness(operacion, datos, { env = process.env, fetch
 const ID_CAP = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,79}$/;
 const SECRETO = /(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]{12,}|gh[pousr]_[A-Za-z0-9]{12,}|hf_[A-Za-z0-9]{20,}|gsk_[A-Za-z0-9]{12,}|nvapi-[A-Za-z0-9_-]{12,})/g;
 const GRUPOS = ['agentes', 'workflows', 'modelos'];
+// Los seis estados de la instruccion 37: los emite el Harness (agentes/adaptadores/disponibilidad.py ESTADOS); aqui solo se validan (test/swe_rutas.test.mjs comprueba que no hay deriva).
+export const ESTADOS_DISPONIBILIDAD = ['DISPONIBLE', 'NO INSTALADO', 'NO CONFIGURADO', 'NO COMPATIBLE', 'NO DISPONIBLE EN PROVEEDOR', 'SIN VERIFICAR'];
+const VEREDICTOS = ['DISPONIBLE', 'NO DISPONIBLE', 'SIN VERIFICAR'], CAUSA = /^[a-z][a-z0-9_]{1,63}$/;
+function estadoSaneado(v, e, g) {
+  if (typeof v.estado === 'string' && ESTADOS_DISPONIBILIDAD.includes(v.estado)) { e.estado = v.estado; if (v.estado !== 'DISPONIBLE') e.disponible = false; }  // desconocido jamas se presenta como verificado
+  else if (v.estado !== undefined) e.disponible = false;  // estado fuera de los seis: no se da por verificado
+  if (VEREDICTOS.includes(v.veredicto)) e.veredicto = v.veredicto;
+  for (const k of ['verificado', 'intentable']) if (typeof v[k] === 'boolean') e[k] = v[k];
+  if (typeof v.causa === 'string' && CAUSA.test(v.causa)) e.causa = v.causa;
+  if (g === 'modelos') for (const [k, tope] of [['nombre', 80], ['proveedor', 40], ['nota', 200]]) if (typeof v[k] === 'string' && v[k]) e[k] = v[k].replace(SECRETO, '[REDACTADO]').slice(0, tope);
+}
 export function sanearCapacidades(result) {
   const swe = simple(result) && simple(result.swe) ? result.swe : {}, salida = {};
   for (const g of GRUPOS) {
@@ -59,6 +72,7 @@ export function sanearCapacidades(result) {
       const e = { disponible: v.disponible };
       if (typeof v.motivo === 'string' && v.motivo) e.motivo = v.motivo.replace(SECRETO, '[REDACTADO]').slice(0, 200);
       if (g === 'agentes' && Array.isArray(v.modelos)) e.modelos = v.modelos.filter((m) => typeof m === 'string' && ID_CAP.test(m) && !m.includes('..'));
+      estadoSaneado(v, e, g);
       salida[g][k] = e;
     }
   }
@@ -100,23 +114,29 @@ function argsReferencia(b) {
   for (const k of ['sesion', 'proyecto']) if (x[k] !== undefined && x[k] !== '') { if (typeof x[k] !== 'string' || !SEGMENTO.test(x[k])) throw invalido('CONTRATO_INVALIDO'); args[k] = x[k]; }
   return args;
 }
-// quien aprueba: SOLO la cabecera x-operador (ya no hay operador por defecto en el entorno); el Harness lo valida contra RIU_SWE_OPERADORES
-function operadorDe(req) {
-  const h = req.headers && req.headers['x-operador'];
-  const op = h !== undefined ? String(h) : '';
-  if (!OPERADOR.test(op)) throw invalido('OPERADOR_REQUERIDO');  // aprobar exige un operador identificado
-  return op;
-}
-
 const respuesta = (res, codigo, error) => res.status(codigo).json({ ok: false, error });
 
-// aprobar pide ADEMAS un token propio (BRIDGE_OPERATOR_TOKEN, cabecera x-operator-token), distinto del BRIDGE_TOKEN que usa todo el que habla con el bridge.
-function exigirOperador(req, res, env) {
-  const op = env.BRIDGE_OPERATOR_TOKEN || '';
-  if (!op || op === (env.BRIDGE_TOKEN || '')) return respuesta(res, 503, { code: 'OPERATOR_TOKEN_NO_CONFIGURADO', message: 'aprobar exige BRIDGE_OPERATOR_TOKEN (distinto de BRIDGE_TOKEN)' });
-  const t = String((req.headers || {})['x-operator-token'] || '');
-  if (!t || !iguales(t, op)) return respuesta(res, 401, { code: 'OPERADOR_NO_AUTORIZADO' });
-  return null;
+// BRIDGE_APROBADORES = "operador:sha256(token)" separados por coma: cada persona tiene SU token (en el entorno solo viaja el hash). Entradas mal formadas se ignoran.
+const sha256 = (t) => crypto.createHash('sha256').update(String(t), 'utf8').digest('hex');
+function aprobadores(env) {
+  const salida = new Map();
+  for (const par of String(env.BRIDGE_APROBADORES || '').split(',')) {
+    const i = par.indexOf(':'), nombre = par.slice(0, i).trim(), huella = par.slice(i + 1).trim().toLowerCase();
+    if (i > 0 && OPERADOR.test(nombre) && /^[0-9a-f]{64}$/.test(huella)) salida.set(nombre, huella);
+  }
+  return salida;
+}
+// Identifica al OPERADOR REAL (x-operador + su token individual en x-operator-token). El BRIDGE_TOKEN lo comparte todo el que habla con el bridge y NO identifica a nadie:
+// sin aprobadores configurados 503; sin operador 403; operador no registrado 403; token ausente, de otro operador o el del bridge 401. Devuelve {operador} o {rechazo} ya enviado.
+function identificarOperador(req, res, env) {
+  const reg = aprobadores(env), h = req.headers || {};
+  if (!reg.size || [...reg.values()].some((x) => iguales(x, sha256(env.BRIDGE_TOKEN || '')))) return { rechazo: respuesta(res, 503, { code: 'APROBADORES_NO_CONFIGURADOS', message: 'esta operacion exige BRIDGE_APROBADORES (operador:sha256(token), token distinto de BRIDGE_TOKEN)' }) };
+  const op = h['x-operador'] !== undefined ? String(h['x-operador']) : '';
+  if (!OPERADOR.test(op)) return { rechazo: respuesta(res, 403, { code: 'OPERADOR_REQUERIDO' }) };
+  if (!reg.has(op)) return { rechazo: respuesta(res, 403, { code: 'OPERADOR_NO_AUTORIZADO' }) };
+  const t = String(h['x-operator-token'] || '');
+  if (!t || !iguales(sha256(t), reg.get(op))) return { rechazo: respuesta(res, 401, { code: 'OPERADOR_NO_AUTORIZADO' }) };
+  return { operador: op };
 }
 
 // Autenticacion obligatoria compartida por todas las rutas /v1/swe/*: devuelve null si pasa, o la respuesta de rechazo ya enviada.
@@ -128,19 +148,118 @@ function exigirToken(req, res, env) {
   return null;
 }
 
+// ---- TOOLS de OpenClaw (UI3): reenvio al Router MVP por MCP/HTTP con la clave de acceso del ENTORNO del bridge (jamas del navegador) ----
+const TIMEOUT_TOOLS_MS = 120000, TIMEOUT_LISTA_MS = 15000, MAX_ARGS = 1000000;
+const redactar = (texto, env) => {
+  let t = String(texto == null ? '' : texto).replace(SECRETO, '[REDACTADO]');
+  for (const v of ACCESO_ROUTER) { const k = String(env[v] || '').trim(); if (k.length >= 6) t = t.split(k).join('[REDACTADO]'); }
+  return t.slice(0, 200);
+};
+function configRouter(env) {
+  const base = String(env.RIU_ROUTER_URL || '').trim().replace(/\/+$/, '') || ROUTER_LOCAL;
+  const clave = ACCESO_ROUTER.map((v) => String(env[v] || '').trim()).find(Boolean);
+  if (!clave) return { error: 'ROUTER_NO_CONFIGURADO', estado: 'sin_credencial' };
+  let ok = false; try { const u = new URL(base); ok = (u.protocol === 'https:' && !!u.hostname) || (u.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(u.hostname) && !u.username); } catch { ok = false; }
+  return ok ? { base, clave } : { error: 'ROUTER_URL_INVALIDA', estado: 'no_configurado' };
+}
+// POST al Router; devuelve el cuerpo JSON. Errores = codigos fijos (nunca URL ni clave): ROUTER_BLOQUEADO (403, con el permiso apagado), ROUTER_HTTP_<n>, ROUTER_TIMEOUT, ROUTER_NO_DISPONIBLE.
+async function postRouter(ruta, cuerpo, cfg, { env, fetchFn, ms }) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+  try {
+    const r = await fetchFn(cfg.base + ruta, { method: 'POST', headers: { 'content-type': 'application/json', 'X-API-Key': cfg.clave }, body: JSON.stringify(cuerpo), signal: ctl.signal, redirect: 'error' });
+    if (r.status === 403) {
+      let d = ''; try { d = String((await r.json()).detail || ''); } catch { /* sin detalle */ }
+      const m = /(?<![\w])(?:tools|ia|agentes|agente_tool|llm_tool|herramienta|conexion)=false/.exec(d);
+      throw Object.assign(new Error('ROUTER_BLOQUEADO'), { http: 403, permiso: m ? m[0] : undefined });
+    }
+    if (!r.ok) throw Object.assign(new Error(`ROUTER_HTTP_${r.status}`), { http: 502 });
+    try { return await r.json(); } catch { throw Object.assign(new Error('ROUTER_RESPUESTA_INVALIDA'), { http: 502 }); }
+  } catch (e) {
+    if (/^ROUTER_(BLOQUEADO|HTTP_\d+|RESPUESTA_INVALIDA)$/.test(e && e.message)) throw e;
+    throw Object.assign(new Error(e && (e.name === 'AbortError' || e.name === 'TimeoutError') ? 'ROUTER_TIMEOUT' : 'ROUTER_NO_DISPONIBLE'), { http: 502 });
+  } finally { clearTimeout(t); }
+}
+async function visiblesDelRouter(env, fetchFn) {
+  const cfg = configRouter(env); if (cfg.error) return { router: cfg.estado, visibles: null };
+  try {
+    const j = await postRouter('/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/list' }, cfg, { env, fetchFn, ms: TIMEOUT_LISTA_MS });
+    const lista = j && j.result && Array.isArray(j.result.tools) ? j.result.tools : null;
+    return lista ? { router: 'ok', visibles: new Set(lista.map((x) => x && x.name).filter((n) => typeof n === 'string')) } : { router: 'no_disponible', visibles: null };
+  } catch { return { router: 'no_disponible', visibles: null }; }
+}
+// Estado de cada tool segun lo que el Router DICE: el `tools/list` del Router solo trae las visibles (Agentes/IA/Tools ON y conexion activa).
+function estadoTool(t, vivo, harness) {
+  if (t.via === 'harness') return harness === 'ok' ? 'DISPONIBLE' : 'HARNESS_NO_DISPONIBLE';
+  if (!vivo.visibles) return 'ROUTER_NO_DISPONIBLE';
+  const mcp = t.via === 'mcp' ? t.destino.tool : t.mcp_equivalente;
+  if (mcp) return vivo.visibles.has(mcp) ? 'DISPONIBLE' : 'BLOQUEADA_POR_ROUTER';
+  return 'SIN_VERIFICAR';  // plugin/ruta HTTP sin tool MCP equivalente: existe en el codigo del Router pero no hay forma de listarla sin ejecutarla
+}
+const hayHarness = (env) => !!(String(env.RIU_DEEPSEEK_HARNESS_URL || '').trim() && env.RIU_API_KEY);
+export async function listarTools({ env = process.env, fetchFn = fetch } = {}) {
+  const vivo = await visiblesDelRouter(env, fetchFn), cat = catalogoTools();
+  const tools = cat.tools.map((t) => ({ ...t, estado: estadoTool(t, vivo, hayHarness(env) ? 'ok' : 'no') }));
+  return { ok: true, vivo: { router: vivo.router }, tools, gaps: cat.gaps, cubiertos: cat.cubiertos, nota: cat.nota };
+}
+const sinEfectos = (t, accion) => t.efectos === 'lectura' || (t.efectos === 'por_accion' && Array.isArray(t.lectura) && t.lectura.includes(accion));
+export async function planificarTool(id, cuerpo, { env = process.env, fetchFn = fetch } = {}) {
+  const t = catalogoTools().tools.find((x) => x.id === id);
+  if (!t) throw Object.assign(new Error('TOOL_DESCONOCIDA'), { http: 404 });
+  const x = simple(cuerpo) ? cuerpo : {}, args = x.args === undefined ? {} : x.args;
+  if (!simple(args)) throw invalido('CONTRATO_INVALIDO');
+  if (JSON.stringify(args).length > MAX_ARGS) throw invalido('ARGS_DEMASIADO_GRANDES');
+  let accion;
+  if (t.acciones) {
+    accion = x.accion;
+    if (typeof accion !== 'string' || !accion) throw invalido('ACCION_REQUERIDA');
+    if (!t.acciones.includes(accion)) throw invalido('ACCION_NO_PERMITIDA');
+  }
+  if (t.via === 'http' && Object.keys(args).some((k) => !t.campos.includes(k))) throw invalido('CAMPOS_DESCONOCIDOS');
+  return { t, args, accion, efectos: !sinEfectos(t, accion) };
+}
+async function ejecutarTool({ t, args, accion }, { env, fetchFn }) {
+  if (t.via === 'harness') return consultarCapacidades({ env, fetchFn });
+  const cfg = configRouter(env);
+  if (cfg.error) throw Object.assign(new Error(cfg.error), { http: 503 });
+  const ms = Number.parseInt(env.RIU_SWE_TOOLS_TIMEOUT_MS, 10) > 0 ? Number.parseInt(env.RIU_SWE_TOOLS_TIMEOUT_MS, 10) : TIMEOUT_TOOLS_MS, op = { env, fetchFn, ms };
+  if (t.via === 'mcp') {
+    const j = await postRouter('/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: t.destino.tool, arguments: accion ? { ...args, accion } : args } }, cfg, op);
+    if (j && j.error) throw Object.assign(new Error('ROUTER_RPC_ERROR'), { http: 502, mensaje: redactar(j.error.message, env) });
+    const r = j && j.result;
+    if (!r) throw Object.assign(new Error('ROUTER_RESPUESTA_INVALIDA'), { http: 502 });
+    if (r.isError) throw Object.assign(new Error('ROUTER_TOOL_ERROR'), { http: 502, mensaje: redactar((r.content && r.content[0] && r.content[0].text) || '', env) });
+    return r.structuredContent !== undefined ? r.structuredContent : r;
+  }
+  const j = t.via === 'plugin' ? await postRouter(`/plugins/${t.destino.plugin}/call/${accion}`, args, cfg, op) : await postRouter(t.destino.ruta, args, cfg, op);
+  return j && typeof j === 'object' && j.status === 'ok' && 'result' in j ? j.result : j;
+}
+
 export function montarRutasSwe(app, { env = process.env, fetchFn = fetch } = {}) {
   // GET /v1/swe/capacidades: solo lectura, sin secretos, misma autenticacion obligatoria. La UI de OpenClaw marca NO DISPONIBLE lo que no figura conectado.
   app.get('/v1/swe/capacidades', async (req, res) => exigirToken(req, res, env) || res.json(await consultarCapacidades({ env, fetchFn })));
+  // TOOLS de OpenClaw: catalogo (con el estado real que da el Router) y reenvio al Router. Misma autenticacion obligatoria; lo que tiene efectos pide ademas un operador identificado.
+  app.get('/v1/swe/tools', async (req, res) => exigirToken(req, res, env) || res.json(await listarTools({ env, fetchFn })));
+  app.post('/v1/swe/tools/:id', async (req, res) => {
+    const rechazo = exigirToken(req, res, env); if (rechazo) return rechazo;
+    let plan;
+    try { plan = await planificarTool(String((req.params || {}).id || ''), req.body, { env, fetchFn }); }
+    catch (e) { return respuesta(res, e.http || 400, { code: e.message }); }
+    if (plan.efectos) { const id = identificarOperador(req, res, env); if (id.rechazo) return id.rechazo; }
+    try { return res.json({ ok: true, tool: plan.t.id, resultado: await ejecutarTool(plan, { env, fetchFn }) }); }
+    catch (e) { return respuesta(res, e.http || 502, { code: e.message, ...(e.permiso ? { permiso: e.permiso } : {}), ...(e.mensaje ? { message: e.mensaje } : {}) }); }
+  });
   for (const [ruta, operacion] of Object.entries(OPERACIONES_SWE)) {
     app.post(`/v1/swe/${ruta}`, async (req, res) => {
-      const rechazo = exigirToken(req, res, env) || (operacion === 'swe_aprobar' ? exigirOperador(req, res, env) : null); if (rechazo) return rechazo;
+      const rechazo = exigirToken(req, res, env); if (rechazo) return rechazo;
+      let operador = null;
+      if (operacion === 'swe_aprobar') { const id = identificarOperador(req, res, env); if (id.rechazo) return id.rechazo; operador = id.operador; }  // primero QUIEN es; solo entonces se mira el resto
       let args;
       try {
         args = operacion === 'swe_iniciar' ? argsIniciar(req.body) : argsReferencia(req.body);
         if (operacion === 'swe_aprobar') {
           const op_id = simple(req.body) ? req.body.op_id : undefined;
           if (typeof op_id !== 'string' || !OP_ID.test(op_id)) throw invalido('OP_ID_INVALIDO');
-          args = { ...args, op_id, operador: operadorDe(req) };  // operador = quien aprueba segun el servidor; `aprobacion`/`operador` del cuerpo no cuentan
+          args = { ...args, op_id, operador };  // operador = el identificado por el servidor con su token individual; `aprobacion`/`operador` del cuerpo no cuentan
         }
       } catch (e) { return respuesta(res, e.http || 400, { code: e.message }); }
       try { return res.json({ ok: true, resultado: await llamarHarness(operacion, args, { env, fetchFn }) }); }

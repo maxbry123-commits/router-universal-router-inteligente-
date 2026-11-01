@@ -63,10 +63,10 @@ test("modo agentico ON con workflow individual tambien va por el contrato; liqui
 
 test("un agente NO DISPONIBLE se dice en el chat y no se manda a otro (ni al bridge ni al Router)", async () => {
   S.guardarSeleccion({ modo_agentico: true });
-  capacidades = { harness: "ok", agentes: { openclaw: { disponible: true } } };
+  capacidades = { harness: "ok", agentes: { openclaw: { disponible: true }, "swe-agent": { disponible: false, motivo: "swe-agent no esta instalado (CLI `sweagent` ausente del PATH)" } } };
   await enviar();
   assert.deepEqual(llamadas.map((l) => l.ruta), ["/chat/swe/capacidades"]);
-  assert.match(textos(), /GAP: SELECCION_NO_DISPONIBLE.*SWE-agent.*NO DISPONIBLE/);
+  assert.match(textos(), /GAP: SELECCION_NO_DISPONIBLE.*SWE-agent.*NO INSTALADO/);
 });
 
 test("REQUIERE_APROBACION: boton Aprobar que llama a /chat/swe/aprobar con el task_id (sin campo aprobacion) y pinta el resultado", async () => {

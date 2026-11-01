@@ -1,11 +1,12 @@
 // swe_rutas.test.mjs — rutas /v1/swe/* del bridge (OpenClaw -> bridge -> Harness DeepSeek). Servidor Harness falso local; sin red real ni claves reales.
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { montarRutasSwe, llamarHarness, consultarCapacidades, OPERACIONES_SWE, TIMEOUT_HARNESS_MS, TIMEOUT_AVANZAR_MS } from '../src/swe_rutas.js';
+import { montarRutasSwe, llamarHarness, consultarCapacidades, sanearCapacidades, ESTADOS_DISPONIBILIDAD, OPERACIONES_SWE, TIMEOUT_HARNESS_MS, TIMEOUT_AVANZAR_MS } from '../src/swe_rutas.js';
 import { prepararApp, arrancar, limpiar, registrarMock } from './helpers/bridge_app.mjs';
 import './helpers/acceso.mjs';
 
@@ -22,10 +23,12 @@ const resFalsa = () => { const r = { codigo: 200, cuerpo: null, status(c) { r.co
 const harnessOk = (log, result = { ok: true, estado: 'PENDIENTE' }) => async (url, init) => { log.push({ url, init }); return { ok: true, status: 200, json: async () => ({ status: 'ok', result }) }; };
 const montar = (env, fetchFn) => { const app = appFalsa(); montarRutasSwe(app, { env, fetchFn }); return app; };
 const llamar = async (app, ruta, { body = {}, headers = {} } = {}) => { const res = resFalsa(); await app.rutas['/v1/swe/' + ruta]({ headers, body, path: '/v1/swe/' + ruta }, res); return res; };
-const OP_TOKEN = 'token-de-operador-de-prueba';
-const ENV = { BRIDGE_TOKEN: TOKEN, BRIDGE_OPERATOR_TOKEN: OP_TOKEN, RIU_DEEPSEEK_HARNESS_URL: URL_HARNESS, RIU_API_KEY: CLAVE_HARNESS };
+const OP_TOKEN = 'token-individual-antonio-prueba', OP_BETO = 'token-individual-beto-prueba';
+const sha = (t) => crypto.createHash('sha256').update(t).digest('hex');
+const APROBADORES = `antonio.director:${sha(OP_TOKEN)},beto:${sha(OP_BETO)}`;  // solo hashes: cada persona tiene su token
+const ENV = { BRIDGE_TOKEN: TOKEN, BRIDGE_APROBADORES: APROBADORES, RIU_DEEPSEEK_HARNESS_URL: URL_HARNESS, RIU_API_KEY: CLAVE_HARNESS };
 const AUTH = { authorization: 'Bearer ' + TOKEN };
-const AUTH_OP = { ...AUTH, 'x-operator-token': OP_TOKEN };
+const AUTH_OP = { ...AUTH, 'x-operator-token': OP_TOKEN, 'x-operador': 'antonio.director' };
 
 test('llamarHarness: solo las cinco operaciones; sin base/clave HARNESS_NO_CONFIGURADO; POST /invoke con X-API-Key y {action:"invoke",tool,args}; devuelve result', async () => {
   assert.deepEqual([...Object.entries(OPERACIONES_SWE)], [['iniciar', 'swe_iniciar'], ['avanzar', 'swe_avanzar'], ['estado', 'swe_estado'], ['aprobar', 'swe_aprobar'], ['reanudar', 'swe_reanudar']]);
@@ -54,7 +57,7 @@ test('llamarHarness: HARNESS_HTTP_<status>, HARNESS_EJECUCION_FALLIDA, no dispon
 
 test('autenticacion OBLIGATORIA: sin BRIDGE_TOKEN las 5 rutas responden 503 y no llaman al Harness (no heredan el acceso libre de las rutas publicas)', async () => {
   const log = [], app = montar({ RIU_DEEPSEEK_HARNESS_URL: URL_HARNESS, RIU_API_KEY: CLAVE_HARNESS }, harnessOk(log));
-  assert.deepEqual(Object.keys(app.rutas).sort(), ['/v1/swe/aprobar', '/v1/swe/avanzar', '/v1/swe/estado', '/v1/swe/iniciar', '/v1/swe/reanudar', 'GET /v1/swe/capacidades']);
+  assert.deepEqual(Object.keys(app.rutas).sort(), ['/v1/swe/aprobar', '/v1/swe/avanzar', '/v1/swe/estado', '/v1/swe/iniciar', '/v1/swe/reanudar', '/v1/swe/tools/:id', 'GET /v1/swe/capacidades', 'GET /v1/swe/tools']);
   for (const ruta of Object.keys(OPERACIONES_SWE)) {
     const r = await llamar(app, ruta, { body: TAREA, headers: AUTH });
     assert.equal(r.codigo, 503, ruta); assert.equal(r.cuerpo.ok, false); assert.equal(r.cuerpo.error.code, 'BRIDGE_TOKEN_NO_CONFIGURADO');
@@ -108,45 +111,51 @@ test('avanzar/estado/reanudar: solo task_id, origen, sesion y proyecto cruzan; a
   assert.equal(log.length, 1);
 });
 
-test('aprobar identifica al operador (cabecera x-operador) y NO confia en el campo aprobacion ni en un operador del cuerpo', async () => {
+test('aprobar identifica a un OPERADOR REAL (x-operador + su token individual) y NO confia en aprobacion ni en un operador del cuerpo', async () => {
   let log = [], app = montar(ENV, harnessOk(log));
   const cuerpo = { task_id: 'openclaw-001', origen: 'openclaw', op_id: 'op-0123abcd', aprobacion: true, operador: 'intruso', aprobado_por: 'intruso' };
-  let r = await llamar(app, 'aprobar', { body: cuerpo, headers: AUTH_OP });
-  assert.equal(r.codigo, 400); assert.equal(r.cuerpo.error.code, 'OPERADOR_REQUERIDO'); assert.equal(log.length, 0, 'sin operador identificado no se aprueba');
-  r = await llamar(app, 'aprobar', { body: cuerpo, headers: { ...AUTH_OP, 'x-operador': 'mal operador!' } });
-  assert.equal(r.codigo, 400); assert.equal(r.cuerpo.error.code, 'OPERADOR_REQUERIDO');
-  r = await llamar(app, 'aprobar', { body: { ...cuerpo, op_id: undefined }, headers: { ...AUTH_OP, 'x-operador': 'antonio.director' } });
+  const sinNombre = { ...AUTH, 'x-operator-token': OP_TOKEN };
+  let r = await llamar(app, 'aprobar', { body: cuerpo, headers: sinNombre });
+  assert.equal(r.codigo, 403); assert.equal(r.cuerpo.error.code, 'OPERADOR_REQUERIDO'); assert.equal(log.length, 0, 'sin operador identificado no se aprueba');
+  r = await llamar(app, 'aprobar', { body: cuerpo, headers: { ...sinNombre, 'x-operador': 'mal operador!' } });
+  assert.equal(r.codigo, 403); assert.equal(r.cuerpo.error.code, 'OPERADOR_REQUERIDO');
+  r = await llamar(app, 'aprobar', { body: cuerpo, headers: { ...sinNombre, 'x-operador': 'intruso' } });
+  assert.equal(r.codigo, 403); assert.equal(r.cuerpo.error.code, 'OPERADOR_NO_AUTORIZADO', 'operador no registrado');
+  r = await llamar(app, 'aprobar', { body: { ...cuerpo, op_id: undefined }, headers: AUTH_OP });
   assert.equal(r.codigo, 400); assert.equal(r.cuerpo.error.code, 'OP_ID_INVALIDO');
-  r = await llamar(app, 'aprobar', { body: cuerpo, headers: { ...AUTH_OP, 'x-operador': 'antonio.director' } });
+  r = await llamar(app, 'aprobar', { body: cuerpo, headers: AUTH_OP });
   assert.equal(r.codigo, 200);
   const e = JSON.parse(log[0].init.body);
   assert.equal(e.tool, 'swe_aprobar'); assert.deepEqual(e.args, { task_id: 'openclaw-001', origen: 'openclaw', op_id: 'op-0123abcd', operador: 'antonio.director' });
+  r = await llamar(app, 'aprobar', { body: cuerpo, headers: { ...AUTH, 'x-operador': 'beto', 'x-operator-token': OP_BETO } });
+  assert.equal(r.codigo, 200); assert.equal(JSON.parse(log[1].init.body).args.operador, 'beto');
 });
 
-test('aprobar exige BRIDGE_OPERATOR_TOKEN distinto del token del bridge (x-operator-token): sin el, 401; sin configurarlo, 503; el BRIDGE_TOKEN no vale como token de operador', async () => {
+test('aprobar: el token de OTRO operador, el BRIDGE_TOKEN o uno vacio no identifican a nadie (401); sin aprobadores configurados 503; las demas rutas no lo piden', async () => {
   const cuerpo = { task_id: 'openclaw-001', origen: 'openclaw', op_id: 'op-0123abcd' }, log = [];
   const app = montar(ENV, harnessOk(log));
   const cab = { ...AUTH, 'x-operador': 'antonio.director' };
-  for (const h of [cab, { ...cab, 'x-operator-token': 'otro' }, { ...cab, 'x-operator-token': TOKEN }, { ...cab, 'x-operator-token': OP_TOKEN + 'x' }, { ...cab, 'x-operator-token': '' }]) {
+  for (const h of [cab, { ...cab, 'x-operator-token': 'otro' }, { ...cab, 'x-operator-token': TOKEN }, { ...cab, 'x-operator-token': OP_BETO }, { ...cab, 'x-operator-token': OP_TOKEN + 'x' }, { ...cab, 'x-operator-token': '' }]) {
     const r = await llamar(app, 'aprobar', { body: cuerpo, headers: h });
     assert.equal(r.codigo, 401, JSON.stringify(h)); assert.equal(r.cuerpo.error.code, 'OPERADOR_NO_AUTORIZADO');
   }
-  assert.equal(log.length, 0, 'sin token de operador no se llega al Harness');
-  const sin = montar({ ...ENV, BRIDGE_OPERATOR_TOKEN: undefined }, harnessOk(log));
-  const r503 = await llamar(sin, 'aprobar', { body: cuerpo, headers: { ...cab, 'x-operator-token': OP_TOKEN } });
-  assert.equal(r503.codigo, 503); assert.equal(r503.cuerpo.error.code, 'OPERATOR_TOKEN_NO_CONFIGURADO');
-  const igual = montar({ ...ENV, BRIDGE_OPERATOR_TOKEN: TOKEN }, harnessOk(log));
+  assert.equal(log.length, 0, 'sin token propio no se llega al Harness');
+  for (const valor of [undefined, '', 'antonio.director', 'antonio.director:no-es-hash']) {
+    const sin = montar({ ...ENV, BRIDGE_APROBADORES: valor, BRIDGE_OPERATOR_TOKEN: OP_TOKEN }, harnessOk(log));  // el antiguo token compartido ya no cuenta
+    const r503 = await llamar(sin, 'aprobar', { body: cuerpo, headers: { ...cab, 'x-operator-token': OP_TOKEN } });
+    assert.equal(r503.codigo, 503, String(valor)); assert.equal(r503.cuerpo.error.code, 'APROBADORES_NO_CONFIGURADOS');
+  }
+  const igual = montar({ ...ENV, BRIDGE_APROBADORES: 'antonio.director:' + sha(TOKEN) }, harnessOk(log));
   assert.equal((await llamar(igual, 'aprobar', { body: cuerpo, headers: { ...cab, 'x-operator-token': TOKEN } })).codigo, 503, 'un token de operador igual al del bridge se considera no configurado');
   assert.equal(log.length, 0);
   assert.equal((await llamar(app, 'aprobar', { body: cuerpo, headers: { ...cab, 'x-operator-token': OP_TOKEN } })).codigo, 200);
-  // las demas operaciones NO piden el token de operador
   assert.equal((await llamar(app, 'estado', { body: { task_id: 'a-1' }, headers: AUTH })).codigo, 200);
 });
 
-test('aprobar: ya NO hay operador por defecto desde RIU_SWE_OPERADOR; sin cabecera x-operador -> OPERADOR_REQUERIDO aunque el entorno lo traiga', async () => {
+test('aprobar: no hay operador por defecto (RIU_SWE_OPERADOR no se usa); sin x-operador -> OPERADOR_REQUERIDO aunque el entorno lo traiga', async () => {
   const log = [], app = montar({ ...ENV, RIU_SWE_OPERADOR: 'director-env' }, harnessOk(log));
-  const r = await llamar(app, 'aprobar', { body: { task_id: 'openclaw-001', origen: 'openclaw', op_id: 'op-0123abcd' }, headers: AUTH_OP });
-  assert.equal(r.codigo, 400); assert.equal(r.cuerpo.error.code, 'OPERADOR_REQUERIDO'); assert.equal(log.length, 0);
+  const r = await llamar(app, 'aprobar', { body: { task_id: 'openclaw-001', origen: 'openclaw', op_id: 'op-0123abcd' }, headers: { ...AUTH, 'x-operator-token': OP_TOKEN } });
+  assert.equal(r.codigo, 403); assert.equal(r.cuerpo.error.code, 'OPERADOR_REQUERIDO'); assert.equal(log.length, 0);
 });
 
 test('llamarHarness: fetch con redirect:"error" (una redireccion del Harness no arrastra la X-API-Key a otro host)', async () => {
@@ -222,6 +231,139 @@ test('consultarCapacidades exportada: respeta RIU_SWE_HARNESS_TIMEOUT_MS (HARNES
   assert.equal(r.harness, 'no_disponible');
 });
 
+test('164/37: la disponibilidad del Harness conserva los SEIS estados; la lista es la de disponibilidad.py; desconocido o incoherente nunca es DISPONIBLE', () => {
+  const py = fs.readFileSync(path.join(QUI, '..', '..', '..', 'agentes', 'adaptadores', 'disponibilidad.py'), 'utf8');
+  const reales = [...(/^ESTADOS = \(([^)]*)\)/m.exec(py)[1]).matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual([...ESTADOS_DISPONIBILIDAD], reales, 'sin deriva con disponibilidad.py');
+  assert.equal(reales.length, 6);
+  const r = sanearCapacidades({ swe: {
+    agentes: { codex: { disponible: false, estado: 'NO INSTALADO', veredicto: 'NO DISPONIBLE', verificado: true, causa: 'binario_ausente', intentable: false, motivo: 'no instalado' },
+      openhands: { disponible: false, estado: 'SIN VERIFICAR', veredicto: 'SIN VERIFICAR', verificado: false, causa: 'comprobacion_fallida' },
+      opencode: { disponible: true, estado: 'SIN VERIFICAR' }, 'claude-code': { disponible: true, estado: 'INVENTADO' },
+      'swe-agent': { disponible: false, estado: 'NO CONFIGURADO', causa: '../mal', intentable: 'si' }, openclaw: { disponible: true } },
+    workflows: { liquid_mirror: { disponible: false, estado: 'NO COMPATIBLE', causa: 'dependencias' } },
+    modelos: { 'groq/qwen/qwen3.8-27b': { disponible: false, estado: 'NO DISPONIBLE EN PROVEEDOR', causa: 'ausente_en_get_models', nombre: 'Qwen3.8 27B', proveedor: 'groq', nota: 'x'.repeat(400) },
+      'nvidia/z-ai/glm-5.3': { disponible: false, estado: 'SIN VERIFICAR', intentable: true, verificado: false } } } });
+  assert.deepEqual([r.agentes.codex.estado, r.agentes.codex.veredicto, r.agentes.codex.causa, r.agentes.codex.intentable, r.agentes.codex.verificado], ['NO INSTALADO', 'NO DISPONIBLE', 'binario_ausente', false, true]);
+  assert.deepEqual([r.agentes.openhands.estado, r.agentes.openhands.verificado], ['SIN VERIFICAR', false], 'comprobacion fallida != NO INSTALADO');
+  assert.equal(r.agentes.opencode.disponible, false, 'disponible + SIN VERIFICAR es incoherente');
+  assert.equal(r.agentes['claude-code'].disponible, false); assert.ok(!('estado' in r.agentes['claude-code']));
+  assert.ok(!('causa' in r.agentes['swe-agent']) && !('intentable' in r.agentes['swe-agent']));
+  assert.deepEqual(r.agentes.openclaw, { disponible: true }, 'sin estado en el Harness no se inventa uno');
+  assert.equal(r.workflows.liquid_mirror.estado, 'NO COMPATIBLE');
+  assert.equal(r.modelos['groq/qwen/qwen3.8-27b'].nombre, 'Qwen3.8 27B'); assert.ok(r.modelos['groq/qwen/qwen3.8-27b'].nota.length <= 200);
+  assert.deepEqual([r.modelos['nvidia/z-ai/glm-5.3'].estado, r.modelos['nvidia/z-ai/glm-5.3'].intentable], ['SIN VERIFICAR', true]);
+});
+
+// ---------- UI3: tools de OpenClaw = funciones del chat Yaiwes por MCP/HTTP al Router (clave del entorno del bridge, nunca en el navegador) ----------
+const RUTA_ROUTER = 'http://127.0.0.1:7861', CLAVE_ROUTER = 'clave-router-de-prueba-xyz';
+const ENV_T = { ...ENV, RIU_ROUTER_URL: RUTA_ROUTER, RIU_API_KEY: CLAVE_ROUTER };
+const routerFalso = (log, { visibles = ['salud', 'github_escribir', 'almacen', 'agente'], http = 200, cuerpo, rpcError } = {}) => async (url, init) => {
+  const body = init && init.body ? JSON.parse(init.body) : null;
+  log.push({ url, init, body });
+  if (http !== 200) return { ok: false, status: http, json: async () => ({ detail: 'Herramienta bloqueada: agentes=false' }) };
+  if (url === RUTA_ROUTER + '/mcp' && body.method === 'tools/list') return { ok: true, status: 200, json: async () => ({ jsonrpc: '2.0', id: body.id, result: { tools: visibles.map((name) => ({ name })) } }) };
+  if (url === RUTA_ROUTER + '/mcp') return { ok: true, status: 200, json: async () => (rpcError ? { jsonrpc: '2.0', id: body.id, error: { code: -32000, message: rpcError } } : { jsonrpc: '2.0', id: body.id, result: { content: [{ type: 'text', text: '{"ok":true}' }], structuredContent: cuerpo || { ok: true }, isError: false } }) };
+  return { ok: true, status: 200, json: async () => ({ status: 'ok', result: cuerpo || { ok: true } }) };
+};
+const llamarTool = async (app, id, { body = {}, headers = AUTH } = {}) => { const res = resFalsa(); await app.rutas['/v1/swe/tools/:id']({ headers, body, params: { id }, path: '/v1/swe/tools/' + id }, res); return res; };
+const listarTools = async (app, headers = AUTH) => { const res = resFalsa(); await app.rutas['GET /v1/swe/tools']({ headers, path: '/v1/swe/tools' }, res); return res; };
+
+test('tools: GET /v1/swe/tools exige BRIDGE_TOKEN y devuelve el catalogo con el estado REAL que el Router da a cada tool (Agentes OFF = no visible)', async () => {
+  const log = [];
+  const app = montar(ENV_T, routerFalso(log, { visibles: ['salud', 'github_escribir'] }));
+  assert.equal((await listarTools(app, {})).codigo, 401);
+  assert.equal((await listarTools(montar({ ...ENV_T, BRIDGE_TOKEN: '' }, routerFalso(log)))).codigo, 503);
+  assert.equal(log.length, 0);
+  const r = await listarTools(app);
+  assert.equal(r.codigo, 200); assert.equal(r.cuerpo.ok, true); assert.equal(r.cuerpo.vivo.router, 'ok');
+  const por = Object.fromEntries(r.cuerpo.tools.map((t) => [t.id, t]));
+  assert.equal(por.salud.estado, 'DISPONIBLE'); assert.equal(por.agente.estado, 'BLOQUEADA_POR_ROUTER', 'el Router no la lista: Agentes OFF o conexion apagada');
+  assert.ok(r.cuerpo.gaps.some((g) => g.id === 'anclaje') && r.cuerpo.gaps.some((g) => g.id === 'workflow-loop-yaiwes'));
+  const txt = JSON.stringify(r.cuerpo); assert.ok(!txt.includes(CLAVE_ROUTER) && !txt.includes(TOKEN) && !txt.includes('127.0.0.1:7861'));
+  assert.equal(log[0].init.headers['X-API-Key'], CLAVE_ROUTER); assert.equal(log[0].body.method, 'tools/list'); assert.equal(log[0].init.redirect, 'error');
+});
+
+test('tools: sin clave del Router o con el Router caido el catalogo sale igual y marca ROUTER_NO_DISPONIBLE (nada se inventa como disponible)', async () => {
+  let r = await listarTools(montar({ ...ENV, RIU_API_KEY: undefined, RIU_ROUTER_URL: RUTA_ROUTER }, routerFalso([])));
+  assert.equal(r.cuerpo.vivo.router, 'sin_credencial'); assert.ok(r.cuerpo.tools.filter((t) => t.id !== 'harness_status').every((t) => t.estado === 'ROUTER_NO_DISPONIBLE'));
+  assert.equal(r.cuerpo.tools.find((t) => t.id === 'harness_status').estado, 'HARNESS_NO_DISPONIBLE', 'depende del Harness, no del Router');
+  r = await listarTools(montar(ENV_T, async () => { throw new TypeError('fetch failed ' + CLAVE_ROUTER); }));
+  assert.equal(r.cuerpo.vivo.router, 'no_disponible'); assert.ok(!JSON.stringify(r.cuerpo).includes(CLAVE_ROUTER));
+});
+
+test('tools: una tool MCP de solo lectura se reenvia por JSON-RPC tools/call al Router con la clave del entorno; el cuerpo del cliente no puede cambiar tool ni ruta', async () => {
+  const log = [], app = montar(ENV_T, routerFalso(log));
+  const r = await llamarTool(app, 'salud', { body: { args: { x: 1 }, tool: 'github_escribir', ruta: '/otra', url: 'http://malo' } });
+  assert.equal(r.codigo, 200, JSON.stringify(r.cuerpo)); assert.equal(r.cuerpo.ok, true);
+  assert.equal(log.length, 1); assert.equal(log[0].url, RUTA_ROUTER + '/mcp'); assert.equal(log[0].init.method, 'POST');
+  assert.equal(log[0].init.headers['X-API-Key'], CLAVE_ROUTER);
+  assert.deepEqual([log[0].body.jsonrpc, log[0].body.method, log[0].body.params.name, log[0].body.params.arguments], ['2.0', 'tools/call', 'salud', { x: 1 }]);
+  assert.ok(!JSON.stringify(r.cuerpo).includes(CLAVE_ROUTER));
+  assert.equal((await llamarTool(app, 'no_existe')).codigo, 404);
+  assert.equal((await llamarTool(app, '__proto__')).codigo, 404);
+  assert.equal((await llamarTool(app, 'salud', { headers: {} })).codigo, 401);
+  assert.equal((await llamarTool(app, 'salud', { body: { args: 'no-objeto' } })).codigo, 400);
+});
+
+test('tools: lo que tiene EFECTOS exige operador identificado (x-operador + su token) ANTES de llegar al Router; por_accion solo para las acciones con efectos', async () => {
+  const log = [], app = montar(ENV_T, routerFalso(log));
+  let r = await llamarTool(app, 'github_escribir', { body: { args: { repo: 'r', ruta: 'a', contenido: 'c' } } });
+  assert.equal(r.codigo, 403); assert.equal(r.cuerpo.error.code, 'OPERADOR_REQUERIDO');
+  r = await llamarTool(app, 'github_escribir', { body: { args: {} }, headers: { ...AUTH, 'x-operador': 'antonio.director', 'x-operator-token': OP_BETO } });
+  assert.equal(r.codigo, 401); assert.equal(log.length, 0, 'sin operador verificado no se toca el Router');
+  r = await llamarTool(app, 'github_escribir', { body: { args: { repo: 'r', ruta: 'a', contenido: 'c' } }, headers: AUTH_OP });
+  assert.equal(r.codigo, 200); assert.equal(log[0].body.params.name, 'github_escribir');
+  log.length = 0;
+  assert.equal((await llamarTool(app, 'almacen', { body: { accion: 'leer', args: { nombre: 'x' } } })).codigo, 200, 'leer no tiene efectos');
+  assert.deepEqual(log[0].body.params.arguments, { nombre: 'x', accion: 'leer' });
+  assert.equal((await llamarTool(app, 'almacen', { body: { accion: 'guardar', args: { nombre: 'x', valor: 'y' } } })).codigo, 403);
+  assert.equal((await llamarTool(app, 'almacen', { body: { accion: 'borrar_todo' } })).codigo, 400, 'accion fuera del catalogo');
+  assert.equal(log.length, 1);
+  assert.equal((await llamarTool(app, 'almacen', { body: { accion: 'guardar', args: { nombre: 'x', valor: 'y' } }, headers: AUTH_OP })).codigo, 200);
+});
+
+test('tools: plugins HTTP (loop, cola, watchdog, motor_archivos) van por /plugins/{plugin}/call/{accion} con accion validada contra el catalogo', async () => {
+  const log = [], app = montar(ENV_T, routerFalso(log, { cuerpo: { estado: 'corriendo' } }));
+  let r = await llamarTool(app, 'loop', { body: { accion: 'estado', args: { proceso_id: 'p-1' } } });
+  assert.equal(r.codigo, 200); assert.deepEqual(r.cuerpo.resultado, { estado: 'corriendo' });
+  assert.equal(log[0].url, RUTA_ROUTER + '/plugins/nct_loop/call/estado'); assert.deepEqual(log[0].body, { proceso_id: 'p-1' });
+  assert.equal((await llamarTool(app, 'loop', { body: { accion: 'gobernar', args: { objetivo: 'x' } } })).codigo, 403, 'gobernar lanza procesos: operador');
+  assert.equal((await llamarTool(app, 'loop', { body: { accion: '../x' } })).codigo, 400);
+  assert.equal((await llamarTool(app, 'loop', { body: {} })).codigo, 400, 'plugin sin accion');
+  assert.equal((await llamarTool(app, 'cola', { body: { accion: 'listar' } })).codigo, 200); assert.equal(log.at(-1).url, RUTA_ROUTER + '/plugins/cola50/call/listar');
+  assert.equal((await llamarTool(app, 'watchdog', { body: { accion: 'estado' } })).codigo, 200); assert.equal(log.at(-1).url, RUTA_ROUTER + '/plugins/watchdog48/call/estado');
+  assert.equal((await llamarTool(app, 'motor_archivos', { body: { accion: 'raiz' } })).codigo, 200); assert.equal(log.at(-1).url, RUTA_ROUTER + '/plugins/motor_archivos/call/raiz');
+  assert.equal((await llamarTool(app, 'motor_archivos', { body: { accion: 'transferir', args: { origen: 'a', destino: 'b' } } })).codigo, 403);
+});
+
+test('tools: chat_send solo reenvia campos declarados (anclados, constitucion...) a POST /chat/send; harness_status devuelve capacidades saneadas', async () => {
+  const log = [], app = montar(ENV_T, routerFalso(log, { cuerpo: { reply: 'hola' } }));
+  let r = await llamarTool(app, 'chat_send', { body: { args: { message: 'x', anclados: ['archivo:a'], constitucion: { texto: 'ley' }, tool: 'malo' } }, headers: AUTH_OP });
+  assert.equal(r.codigo, 400); assert.equal(r.cuerpo.error.code, 'CAMPOS_DESCONOCIDOS');
+  r = await llamarTool(app, 'chat_send', { body: { args: { message: 'x', anclados: ['archivo:a'], constitucion: { texto: 'ley' } } }, headers: AUTH_OP });
+  assert.equal(r.codigo, 200); assert.equal(log.at(-1).url, RUTA_ROUTER + '/chat/send'); assert.deepEqual(log.at(-1).body.constitucion, { texto: 'ley' });
+  const h = montar(ENV_T, async (url, init) => ({ ok: true, status: 200, json: async () => ({ status: 'ok', result: { swe: { agentes: { codex: { disponible: false, motivo: 'no instalado' } } } } }) }));
+  r = await llamarTool(h, 'harness_status');
+  assert.equal(r.codigo, 200); assert.equal(r.cuerpo.resultado.agentes.codex.disponible, false);
+});
+
+test('tools: errores del Router sin filtrar URL ni clave; 403 del Router (Agentes OFF) se traduce con el nombre del permiso; JSON-RPC error visible; sin clave 503', async () => {
+  let app = montar(ENV_T, routerFalso([], { http: 403 }));
+  let r = await llamarTool(app, 'salud');
+  assert.equal(r.codigo, 403); assert.equal(r.cuerpo.error.code, 'ROUTER_BLOQUEADO'); assert.equal(r.cuerpo.error.permiso, 'agentes=false');
+  r = await llamarTool(montar(ENV_T, routerFalso([], { http: 500 })), 'salud');
+  assert.equal(r.codigo, 502); assert.equal(r.cuerpo.error.code, 'ROUTER_HTTP_500');
+  r = await llamarTool(montar(ENV_T, routerFalso([], { rpcError: 'Herramienta bloqueada: agentes=false ' + CLAVE_ROUTER })), 'salud');
+  assert.equal(r.codigo, 502); assert.equal(r.cuerpo.error.code, 'ROUTER_RPC_ERROR'); assert.ok(!JSON.stringify(r.cuerpo).includes(CLAVE_ROUTER), 'el mensaje del Router no arrastra la clave'); assert.match(r.cuerpo.error.message, /agentes=false/);
+  r = await llamarTool(montar(ENV_T, async () => { throw new TypeError('connect ECONNREFUSED 127.0.0.1:7861 ' + CLAVE_ROUTER); }), 'salud');
+  assert.equal(r.codigo, 502); assert.equal(r.cuerpo.error.code, 'ROUTER_NO_DISPONIBLE'); assert.ok(!JSON.stringify(r.cuerpo).includes('7861') && !JSON.stringify(r.cuerpo).includes(CLAVE_ROUTER));
+  r = await llamarTool(montar({ ...ENV, RIU_API_KEY: undefined, RIU_ROUTER_URL: RUTA_ROUTER }, routerFalso([])), 'salud');
+  assert.equal(r.codigo, 503); assert.equal(r.cuerpo.error.code, 'ROUTER_NO_CONFIGURADO');
+  r = await llamarTool(montar({ ...ENV_T, RIU_ROUTER_URL: 'http://evil.example.com' }, routerFalso([])), 'salud');
+  assert.equal(r.codigo, 503); assert.equal(r.cuerpo.error.code, 'ROUTER_URL_INVALIDA');
+});
+
 // ---------- integracion: server.js real (express o su stub), Harness falso por HTTP ----------
 let harnessFalso, A, B, vistos = [];
 before(async () => {
@@ -237,7 +379,7 @@ before(async () => {
   });
   await new Promise((ok) => harnessFalso.listen(0, '127.0.0.1', ok)); registrarMock(harnessFalso);
   const url = `http://127.0.0.1:${harnessFalso.address().port}`;
-  A = await arrancar('swe-A', { BRIDGE_TOKEN: TOKEN, BRIDGE_OPERATOR_TOKEN: OP_TOKEN, RIU_DEEPSEEK_HARNESS_URL: url, RIU_API_KEY: CLAVE_HARNESS });
+  A = await arrancar('swe-A', { BRIDGE_TOKEN: TOKEN, BRIDGE_APROBADORES: APROBADORES, RIU_DEEPSEEK_HARNESS_URL: url, RIU_API_KEY: CLAVE_HARNESS });
   B = await arrancar('swe-B', { RIU_DEEPSEEK_HARNESS_URL: url, RIU_API_KEY: CLAVE_HARNESS });  // sin BRIDGE_TOKEN
 });
 after(() => limpiar());
@@ -251,7 +393,7 @@ test('server.js: con BRIDGE_TOKEN las 5 rutas llegan al Harness (X-API-Key solo 
   for (const [ruta, tool] of [['avanzar', 'swe_avanzar'], ['estado', 'swe_estado'], ['reanudar', 'swe_reanudar']]) {
     const x = await post(A, ruta, { task_id: 'openclaw-001' }, { 'x-bridge-key': TOKEN }); assert.equal(x.status, 200, ruta); assert.equal(vistos.at(-1).body.tool, tool);
   }
-  const ap = await post(A, 'aprobar', { task_id: 'openclaw-001', op_id: 'op-1', aprobacion: true }, { ...AUTH_OP, 'x-operador': 'antonio.director' });
+  const ap = await post(A, 'aprobar', { task_id: 'openclaw-001', op_id: 'op-1', aprobacion: true }, AUTH_OP);
   assert.equal(ap.status, 200); assert.equal(vistos.at(-1).body.args.operador, 'antonio.director'); assert.ok(!('aprobacion' in vistos.at(-1).body.args));
   assert.ok(!JSON.stringify(r.json).includes(CLAVE_HARNESS));
 });

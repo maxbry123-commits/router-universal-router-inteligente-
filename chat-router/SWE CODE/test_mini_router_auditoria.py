@@ -24,8 +24,8 @@ class TestTimeoutExterno(rec.Base):
             return real(req, timeout=timeout)
         return patch.object(mini_router.urllib.request, "urlopen", f)
 
-    def test_groq_60_s_nvidia_120_s(self):
-        self.assertEqual((mini_router.TIMEOUTS_EXTERNOS["groq"], mini_router.TIMEOUTS_EXTERNOS["nvidia"]), (60, 120))
+    def test_groq_60_s_nvidia_90_s(self):
+        self.assertEqual((mini_router.TIMEOUTS_EXTERNOS["groq"], mini_router.TIMEOUTS_EXTERNOS["nvidia"]), (60, 90))
         vistos = []
         def completar(base, cab, modelo, mensajes, timeout, previo="", presupuesto=None):
             vistos.append((base, timeout)); return "ok"
@@ -34,7 +34,7 @@ class TestTimeoutExterno(rec.Base):
             mini_router._externo([], None)
             mini_router._ENFRIADOS.clear()
             os.environ.pop("GROQ_API_KEY"); mini_router._externo([], None)
-        self.assertEqual(vistos, [("http://g/v1", 60), ("http://n/v1", 120)])
+        self.assertEqual(vistos, [("http://g/v1", 60), ("http://n/v1", 90)])
 
     def test_el_primer_timeout_corta_el_proveedor_aunque_haya_mas_claves_y_modelos(self):
         ug, vg, un, vn = self.servidores(); lentos = []

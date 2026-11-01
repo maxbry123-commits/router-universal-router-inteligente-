@@ -34,20 +34,27 @@ const autorizados = (prov) => MODELOS_API.filter(m => m.id.startsWith(prov + '/'
 // del listado real del proveedor: el id exacto (env o defecto) > la regla de descubrimiento > otro id autorizado presente; null si nada sirve
 const elegir = (prov, ids, env) => [env[MODELO[prov][0]], MODELO[prov][1]].filter(Boolean).find(x => ids.includes(x)) || PICK[prov](ids) || autorizados(prov).find(x => ids.includes(x)) || null;
 const LOCALES = ['lfm2.5-350m', 'qwen2.5-coder-1.5b', 'qwen3.5-0.8b', 'qwen3-0.6b'];
-export const TIMEOUT_DEFECTO_MS = 120000;
-const TIMEOUT_MS = parseInt(process.env.BRIDGE_RESPALDO_MS || String(TIMEOUT_DEFECTO_MS), 10) || TIMEOUT_DEFECTO_MS;
+// ---- R8: TABLA UNICA DE TIMEOUTS (la misma de compute.TIMEOUTS_MODELO_S en Python y de politicas_modelo.json; respaldo_a5.test.mjs las compara) ----
+// Capas, de dentro a fuera: peticion al modelo (TIMEOUTS_DEFECTO, en stream = inactividad) < BRIDGE_RESPALDO_MS global (90 s) < plazo del bridge BRIDGE_DEADLINE_MS (100 s, server.js conDeadline: tope de TODA la respuesta)
+// < proxy del Space (~100 s, se mantiene vivo con latidos SSE). Ningun valor POR DEFECTO supera el plazo del bridge (timeoutDe lo recorta); un valor explicito del operador
+// (BRIDGE_RESPALDO_MS, RIU_SWE_TIMEOUTS, opts.timeoutsModelo) se respeta y el plazo del servidor sigue mandando por fuera. Harness: 600 s (RIU_HARNESS_TIMEOUT_S) en harness_client.py.
+export const PLAZO_BRIDGE_MS = parseInt(process.env.BRIDGE_DEADLINE_MS || '100000', 10) || 100000;
+export const TIMEOUT_DEFECTO_MS = 90000;
+const TIMEOUT_MS = parseInt(process.env.BRIDGE_RESPALDO_MS || String(TIMEOUT_DEFECTO_MS), 10) || TIMEOUT_DEFECTO_MS;  // explicito = lo que el operador fije
 const CONTINUAR = 'Continúa exactamente donde terminó, sin repetir';
 const RED = { continuaciones: 8, cooldownMs: 60000, esperaMax: 2000, esperaDefecto: 500, backoffMs: 200, descubrirMs: 10000, cacheMs: 30 * 60000, cacheFalloMs: 60000, cortePorTokens: 15000 };
 // parametros inyectables en tests: opts = { timeoutMs, timeoutsModelo, continuaciones, cooldownMs, esperaMax, backoffMs, jitter(), esperar(ms), ahora(), descubrirMs, cacheMs, signal }
 const red = (o = {}) => ({ ...RED, timeoutMs: TIMEOUT_MS, esperar: (ms) => new Promise(r => setTimeout(r, ms)), ahora: Date.now, jitter: Math.random, ...o });
-// timeout por modelo: opts.timeoutsModelo[<id>] > env RIU_SWE_TIMEOUTS ('{"<id>": ms}') > TIMEOUTS_DEFECTO (Groq 60 s) > global
-export const TIMEOUTS_DEFECTO = { 'qwen/qwen3.8-27b': 60000 };
+// timeout por modelo: opts.timeoutsModelo[<id>] > env RIU_SWE_TIMEOUTS ('{"<id>": ms}') > TIMEOUTS_DEFECTO (tabla, recortada al plazo del bridge) > global
+export const TIMEOUTS_DEFECTO = { 'qwen/qwen3.8-27b': 60000, 'minimaxai/minimax-m3.1-flash': 90000, 'meta/muse-glimmer-30b': 180000, 'nvidia/nemotron-3-ultra-550b-a55b': 300000, 'z-ai/glm-5.3': 180000 };
 export function timeoutDe(modelo, env, r) {
-  let t = r.timeoutsModelo?.[modelo];
+  let t = r.timeoutsModelo?.[modelo], defecto = false;
   if (t == null && env?.RIU_SWE_TIMEOUTS) { try { const o = JSON.parse(env.RIU_SWE_TIMEOUTS); if (o && typeof o === 'object') t = o[modelo]; } catch { /* env invalido: sigue el defecto */ } }
-  if (t == null) t = TIMEOUTS_DEFECTO[modelo];
+  if (t == null) { t = TIMEOUTS_DEFECTO[modelo]; defecto = t != null; }
   t = Number(t);
-  return Number.isFinite(t) && t > 0 ? t : r.timeoutMs;
+  if (!(Number.isFinite(t) && t > 0)) return r.timeoutMs;
+  const tope = parseInt(env?.BRIDGE_DEADLINE_MS || PLAZO_BRIDGE_MS, 10) || PLAZO_BRIDGE_MS;
+  return defecto ? Math.min(t, tope) : t;  // la tabla nunca supera el plazo del bridge; lo explicito del operador se respeta
 }
 const conTimeout = (r, modelo, env) => ({ ...r, timeoutMs: timeoutDe(modelo, env, r) });
 const backoff = (n, r) => Math.round(Math.min(r.esperaMax, r.backoffMs * 2 ** n) * (0.5 + 0.5 * r.jitter()));  // exponencial con jitter (mitad a 100 % del valor)
@@ -91,17 +98,57 @@ function parseRetryAfter(v) {
   const t = Date.parse(v); return Number.isFinite(t) ? Math.max(0, t - Date.now()) : null;
 }
 
-const cuerpo = (modelo, mensajes, extra, stream) => JSON.stringify({ model: modelo, messages: mensajes, ...(AJUSTES[modelo] || {}), ...(extra.tools && extra.tools.length ? { tools: extra.tools, tool_choice: extra.tool_choice || 'auto' } : {}), ...(stream ? { stream: true } : {}) });
+// R7: parametros = defecto del modelo (AJUSTES) y DESPUES los explicitos validos del llamador (extra.params); limites REALES por proveedor en LIMITES.
+// Fuente oficial (Firecrawl 2026-11-01): console.groq.com/docs/models y /docs/model/qwen/qwen3.8-27b -> MAX COMPLETION TOKENS 16,384; reasoning_effort default|none|low|medium|high; reasoning_format hidden|parsed.
+// NVIDIA no publica un tope de max_tokens (solo ejemplos 8192/16384): sin tope local.
+export const LIMITES = { 'qwen/qwen3.8-27b': { max_tokens: 16384, reasoning_effort: ['default', 'none', 'low', 'medium', 'high'], reasoning_format: ['hidden', 'parsed'] } };
+const NUM = (v, lo, hi, abiertoLo) => typeof v === 'number' && Number.isFinite(v) && (abiertoLo ? v > lo : v >= lo) && v <= hi;
+export function ajustesFinales(modelo, extra) {
+  const ajustes = { ...(AJUSTES[modelo] || {}) }, lim = LIMITES[modelo] || {}, info = { ignorados: [], recortados: {} };
+  const comp = AJUSTES[modelo] ? Object.keys(AJUSTES[modelo]) : null;  // con ajustes conocidos solo se admiten esos parametros
+  for (const [n, v] of Object.entries(extra?.params && typeof extra.params === 'object' ? extra.params : {})) {
+    if (!['temperature', 'top_p', 'max_tokens', 'reasoning_effort', 'reasoning_format'].includes(n)) continue;
+    if (comp && !comp.includes(n)) { info.ignorados.push(n); continue; }
+    const bien = n === 'temperature' ? NUM(v, 0, 2) : n === 'top_p' ? NUM(v, 0, 1, true) : n === 'max_tokens' ? Number.isInteger(v) && v > 0 : typeof v === 'string' && (!lim[n] || lim[n].includes(v));
+    if (!bien) { info.ignorados.push(n); continue; }
+    if (n === 'max_tokens' && lim.max_tokens && v > lim.max_tokens) { info.recortados.max_tokens = { pedido: v, aplicado: lim.max_tokens }; ajustes[n] = lim.max_tokens; continue; }
+    ajustes[n] = v;
+  }
+  return { ajustes, info: info.ignorados.length || Object.keys(info.recortados).length ? Object.fromEntries(Object.entries(info).filter(([, x]) => (Array.isArray(x) ? x.length : Object.keys(x).length))) : null };
+}
+const cuerpo = (modelo, mensajes, extra, stream) => JSON.stringify({ model: modelo, messages: mensajes, ...ajustesFinales(modelo, extra).ajustes, ...(extra.tools && extra.tools.length ? { tools: extra.tools, tool_choice: extra.tool_choice || 'auto' } : {}), ...(stream ? { stream: true } : {}) });
 const cabeceras = (clave) => ({ 'content-type': 'application/json', 'user-agent': 'riu-swe-code', ...(clave ? { authorization: `Bearer ${clave}` } : {}) });
 
+// R3: nombre completo de una herramienta que llega fragmentada. Tres formas reales: una vez; repetido entero en cada delta; acumulativo (git, github, github_leer)
+// o en trozos disjuntos (github_ + leer). Solo en el ultimo caso se concatena. (Misma regla que compute.nombre_de_trozos del backend YAIWES.)
+export function nombreDeTrozos(trozos) {
+  const t = (trozos || []).filter(x => typeof x === 'string' && x);
+  if (!t.length) return '';
+  if (new Set(t).size === 1) return t[0];
+  if (t.every((x, i) => i === 0 || x.startsWith(t[i - 1]))) return t[t.length - 1];
+  return t.join('');
+}
+// nombres de herramientas declarados en la peticion (vacio: el nombre no se valida)
+const declaradas = (extra) => new Set((extra?.tools || []).map(t => t?.function?.name).filter(n => typeof n === 'string' && n));
+// llamadas que NO deben ejecutarse tal cual: nombre fuera de lo declarado o argumentos JSON incompletos. Se marcan, nunca se descartan (no se pierden llamadas pendientes).
+export function validarTools(tools, nombres) {
+  const malas = [];
+  for (const t of tools) {
+    const n = t?.function?.name, a = t?.function?.arguments;
+    if (nombres?.size && !nombres.has(n)) { malas.push({ id: t.id, nombre: n, motivo: 'nombre_no_declarado' }); continue; }
+    if (typeof a === 'string' && a.trim()) { let ok = false; try { const v = JSON.parse(a); ok = !!v && typeof v === 'object' && !Array.isArray(v); } catch { /* incompleto */ } if (!ok) malas.push({ id: t.id, nombre: n, motivo: 'argumentos_json_incompletos' }); }
+  }
+  return malas;
+}
+
 // respuesta completa (JSON de chat.completion) -> { texto, tool_calls, finish_reason, cortada }
-function interpretar(j, r) {
+function interpretar(j, r, nombres) {
   const c = j?.choices?.[0];
   const t = c?.message?.content, tc = c?.message?.tool_calls;
   if ((!t || !String(t).trim()) && !(Array.isArray(tc) && tc.length)) throw new Error('vacio');
   const tools = conIds(Array.isArray(tc) ? tc : []);
   const cortada = !tools.length && (c.finish_reason === 'length' || (!c.finish_reason && Number(j?.usage?.completion_tokens) >= r.cortePorTokens));
-  return { texto: t ? String(t) : '', tool_calls: tools, finish_reason: c.finish_reason || (tools.length ? 'tool_calls' : cortada ? 'length' : 'stop'), cortada, usage: usoDe(j?.usage) };
+  return { texto: t ? String(t) : '', tool_calls: tools, tools_invalidas: validarTools(tools, nombres), finish_reason: c.finish_reason || (tools.length ? 'tool_calls' : cortada ? 'length' : 'stop'), cortada, usage: usoDe(j?.usage) };
 }
 // tool_calls sin id (algunos proveedores/locales lo omiten) -> call_<n>_<index>; n = contador de respuestas del proceso. Los que traen id lo conservan.
 let secLlamadas = 0;
@@ -122,7 +169,7 @@ async function pedir(base, modelo, mensajes, clave, extra = {}, r = red()) {
     method: 'POST', signal: AbortSignal.timeout(r.timeoutMs), headers: cabeceras(clave), body: cuerpo(modelo, mensajes, extra, false),
   });
   if (!resp.ok) throw errHttp(resp.status, resp.headers.get('retry-after'));
-  return interpretar(await resp.json(), r);
+  return interpretar(await resp.json(), r, declaradas(extra));
 }
 
 // ---- streaming real: node:http(s) con Agent keep-alive (las conexiones se reutilizan entre peticiones) ----
@@ -186,11 +233,11 @@ async function pedirStream(base, modelo, mensajes, clave, extra, r, ctx, metr) {
     for (const [pos, f] of (Array.isArray(d) ? d : []).entries()) {
       if (!f || typeof f !== 'object') continue;
       const k = Number.isInteger(f.index) ? f.index : pos;
-      const t = acc.get(k) || { id: '', type: 'function', function: { name: '', arguments: '' } };
+      const t = acc.get(k) || { id: '', type: 'function', function: { name: '', arguments: '' }, trozos: [] };
       if (typeof f.id === 'string' && f.id) t.id = f.id;
       if (typeof f.type === 'string' && f.type) t.type = f.type;
       const n = f.function?.name, a = f.function?.arguments;
-      if (typeof n === 'string' && n && n !== t.function.name) t.function.name += n;  // algunos proveedores repiten el nombre entero en cada fragmento
+      if (typeof n === 'string' && n) { t.trozos.push(n); t.function.name = nombreDeTrozos(t.trozos); }  // R3: github_ + leer = github_leer; repetido o acumulativo no se duplica
       if (typeof a === 'string' && a) t.function.arguments += a;
       acc.set(k, t); primero(); fragmentos++;
     }
@@ -218,7 +265,7 @@ async function pedirStream(base, modelo, mensajes, clave, extra, r, ctx, metr) {
   });
   const tFin = ahoraMs();
   if (json) {  // el proveedor ignoro stream y contesto JSON completo: se entrega entero
-    const x = interpretar(json, r);
+    const x = interpretar(json, r, declaradas(extra));
     if (x.texto) emitir(x.texto);
     const n = Number(json?.usage?.completion_tokens);
     metr.total_ms += tFin - t0; metr.peticiones++;
@@ -226,13 +273,13 @@ async function pedirStream(base, modelo, mensajes, clave, extra, r, ctx, metr) {
     return x;
   }
   if (!hecho && !fr) throw Object.assign(new Error('STREAM_CORTADO'), { code: 'STREAM_CORTADO' });
-  const tools = conIds([...acc.entries()].sort((a, b) => a[0] - b[0]).map(([, t]) => t).filter(t => t.function.name).map(t => ({ ...t, function: { ...t.function, arguments: t.function.arguments || '{}' } })));
+  const tools = conIds([...acc.entries()].sort((a, b) => a[0] - b[0]).map(([, t]) => t).filter(t => t.function.name).map(({ trozos, ...t }) => ({ ...t, function: { ...t.function, arguments: t.function.arguments || '{}' } })));
   if (!texto && !tools.length) throw new Error('vacio');
   metr.peticiones++; metr.total_ms += tFin - t0;
   if (usoTokens !== null) metr.tokens += usoTokens; else { metr.tokens += fragmentos; metr.tokens_estimado = true; }
   if (tPrimero !== null) metr.gen_ms += tFin - tPrimero;
   const cortada = !tools.length && (fr === 'length' || (!fr && usoTokens !== null && usoTokens >= r.cortePorTokens));
-  return { texto, tool_calls: tools, finish_reason: tools.length ? 'tool_calls' : fr || (cortada ? 'length' : 'stop'), cortada, usage: usoCompleto };
+  return { texto, tool_calls: tools, tools_invalidas: validarTools(tools, declaradas(extra)), finish_reason: tools.length ? 'tool_calls' : fr || (cortada ? 'length' : 'stop'), cortada, usage: usoCompleto };
 }
 
 // una peticion + continuacion automatica si la salida se corto por longitud (nunca con tool_calls).
@@ -259,12 +306,18 @@ async function completar(base, modelo, mensajes, clave, extra, r, ctx = {}) {
     try { sig = await una(texto); } catch (e) { if (stream) throw e; break; }  // sin stream se conserva lo ya recibido; en stream la siguiente clave/proveedor continua
     texto += sig.texto; ultimo = sig;
   }
-  const total = ahoraMs() - t0, tps = metr.tokens > 0 && metr.gen_ms > 0 ? Math.round((metr.tokens / (metr.gen_ms / 1000)) * 10) / 10 : null;
+  const total = ahoraMs() - t0;
+  const tokNS = uso.visto && uso.c > 0 ? uso.c : null;  // sin stream: los tokens son SOLO los que informa el proveedor (usage); sin usage no se inventan
+  const tps = stream ? (metr.tokens > 0 && metr.gen_ms > 0 ? Math.round((metr.tokens / (metr.gen_ms / 1000)) * 10) / 10 : null) : (tokNS && total > 0 ? Math.round((tokNS / (total / 1000)) * 10) / 10 : null);
   const tokensUso = uso.visto ? { prompt_tokens: uso.p, completion_tokens: uso.c, total_tokens: uso.t } : {};
   const metricas = stream
-    ? { stream: true, ttft_ms: metr.ttft_ms === null ? null : Math.round(metr.ttft_ms), tokens: metr.tokens || null, tokens_estimado: metr.tokens_estimado, tokens_s: tps, total_ms: Math.round(total), peticiones: metr.peticiones, ...tokensUso }
-    : { stream: false, ttft_ms: null, tokens: null, tokens_s: null, total_ms: Math.round(total), ...tokensUso };
-  return { texto, tool_calls: ultimo.tool_calls, finish_reason: ultimo.cortada && !ultimo.tool_calls.length ? 'length' : ultimo.finish_reason, metricas };
+    ? { stream: true, ttft_ms: metr.ttft_ms === null ? null : Math.round(metr.ttft_ms), tokens: metr.tokens || null, tokens_estimado: metr.tokens_estimado, origen_tokens: metr.tokens ? (metr.tokens_estimado ? 'estimado' : 'proveedor') : null, tokens_s: tps, total_ms: Math.round(total), peticiones: metr.peticiones, ...tokensUso }
+    : { stream: false, ttft_ms: null, tokens: tokNS, tokens_estimado: false, origen_tokens: tokNS ? 'proveedor' : null, tokens_s: tps, total_ms: Math.round(total), ...tokensUso };
+  const invalidas = ultimo.tools_invalidas || [];
+  if (invalidas.length) metricas.tools_invalidas = invalidas.length;
+  const infoP = ajustesFinales(modelo, extra).info;
+  if (infoP) metricas.parametros = infoP;
+  return { texto, tool_calls: ultimo.tool_calls, tools_invalidas: invalidas, finish_reason: ultimo.cortada && !ultimo.tool_calls.length ? 'length' : ultimo.finish_reason, metricas };
 }
 
 // metricas internas por modelo (solo numeros): ultimo y promedio de TTFT y tokens/s
@@ -322,6 +375,24 @@ export async function disponibilidad({ env = process.env, opts } = {}) {
   });
 }
 
+// ---- 152: tabla de errores. Una politica DISTINTA por familia (misma que TABLA_ERRORES de externos.py) ----
+export const TABLA_ERRORES = {
+  limite_temporal:    { codigos: [429], reintentar: true,  rotarClave: true,  respetaRetryAfter: true,  enfriarClave: true,  texto: '429: limite de peticiones/tokens; se espera Retry-After (con tope) y se rota de clave' },
+  credito_cuota:      { codigos: [402], reintentar: false, rotarClave: true,  respetaRetryAfter: false, enfriarClave: true,  texto: '402: sin credito/cuota en esa clave; se rota y la clave no se prueba primero durante 10 min' },
+  credencial_permiso: { codigos: [401, 403], reintentar: false, rotarClave: true, respetaRetryAfter: false, enfriarClave: false, texto: '401/403: credencial invalida o sin permiso; se descarta esa clave' },
+  timeout_red:        { codigos: [408], reintentar: true,  rotarClave: false, respetaRetryAfter: false, enfriarClave: false, texto: 'timeout/red: el proveedor entero se enfria y se pasa al siguiente (no se prueban sus demas claves)' },
+  servidor_temporal:  { codigos: [500, 502, 503, 504, 529], reintentar: true, rotarClave: false, respetaRetryAfter: true, enfriarClave: false, texto: '5xx: backoff exponencial con jitter (o Retry-After) y siguiente clave; tope = numero de claves' },
+  peticion_invalida:  { codigos: [400, 404, 422], reintentar: false, rotarClave: false, respetaRetryAfter: false, enfriarClave: false, texto: '400/404/422: modelo o peticion invalida; no se reintenta ni se cambia de modelo' },
+};
+export function clasificarError(status, { red = false } = {}) {
+  if (red) return { tipo: 'timeout_red', ...TABLA_ERRORES.timeout_red };
+  for (const [tipo, e] of Object.entries(TABLA_ERRORES)) if (e.codigos.includes(status)) return { tipo, ...e };
+  const t = Number.isInteger(status) && status >= 400 && status < 500 ? 'peticion_invalida' : Number.isInteger(status) ? 'servidor_temporal' : 'timeout_red';
+  return { tipo: t, ...TABLA_ERRORES[t] };
+}
+const tipoDe = (e) => clasificarError(Number.isInteger(e?.status) ? e.status : null, { red: !Number.isInteger(e?.status) }).tipo;
+const COOLDOWN_CREDITO_MS = 10 * 60000;
+
 // timeout (fetch TimeoutError, inactividad del stream o HTTP 408): el proveedor entero esta lento/caido -> no se prueban sus demas claves
 const esTimeout = (e) => e?.name === 'TimeoutError' || e?.code === 'TIMEOUT' || e?.status === 408;
 const esperaCorta = (e, r) => Math.min(e.retryAfterMs ?? r.esperaDefecto, r.esperaMax);
@@ -339,18 +410,19 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
     try {
       const x = await completar(BASES[prov], modelo, mensajes, k, extra, r, ctx);
       anotarMetricas(`${prov}/${modelo}`, x.metricas);
-      return { salida: x.texto, tool_calls: x.tool_calls, finish_reason: x.finish_reason, via: prov, usado: id, metricas: x.metricas };
+      return { salida: x.texto, tool_calls: x.tool_calls, tools_invalidas: x.tools_invalidas, finish_reason: x.finish_reason, via: prov, usado: id, metricas: x.metricas };
     } catch (e) {
       ultimo = e;
       if (e.code === 'ABORTADO') break;  // el cliente se fue: no gastar mas claves
       if (esTimeout(e)) { for (const x of todas) enfriadas.set(`${prov}\0${x}`, r.ahora() + r.cooldownMs); break; }  // primer timeout: se enfria el proveedor (todas sus claves) y se corta; respaldo() no reentra
       if (e.status === 429) { enfriadas.set(`${prov}\0${k}`, r.ahora() + Math.max(r.cooldownMs, Math.min(e.retryAfterMs || 0, 600000))); await r.esperar(esperaCorta(e, r)); continue; }
+      if (e.status === 402) { enfriadas.set(`${prov}\0${k}`, r.ahora() + COOLDOWN_CREDITO_MS); continue; }  // sin credito/cuota: otra clave puede servir; esta no se repite ni se prueba primero 10 min
       if (e.status === 401 || e.status === 403) continue;  // clave descartada
-      if (e.status >= 400 && e.status < 500 && e.status !== 402) break;  // 400/404/422...: no depende de la clave
-      if (i < ks.length - 1) await r.esperar(backoff(fallos++, r));  // 402/5xx/red: backoff exponencial con jitter antes de la siguiente clave
+      if (e.status >= 400 && e.status < 500) break;  // 400/404/422...: no depende de la clave
+      if (i < ks.length - 1) await r.esperar(Number.isFinite(e.retryAfterMs) && e.status >= 500 ? esperaCorta(e, r) : backoff(fallos++, r));  // 5xx/red: Retry-After (con tope) o backoff exponencial con jitter antes de la siguiente clave
     }
   }
-  throw Object.assign(new Error(limpiar(`EXTERNO_${prov.toUpperCase()}: ${ultimo.message}`, todas)), { code: 'EXTERNO_FALLO', ...(Number.isInteger(ultimo.status) ? { status: ultimo.status } : {}), ...(ctx.flujo?.texto ? { parcial: ctx.flujo.texto } : {}) });
+  throw Object.assign(new Error(limpiar(`EXTERNO_${prov.toUpperCase()}: ${ultimo.message}`, todas)), { code: 'EXTERNO_FALLO', tipo: tipoDe(ultimo), ...(Number.isInteger(ultimo.status) ? { status: ultimo.status } : {}), ...(ctx.flujo?.texto ? { parcial: ctx.flujo.texto } : {}) });
 }
 
 // modelo local de la cola HF: entra por S1 y salta a S2/S3 si no responde (sin stream: la cola HF no lo recibe; con flujo previo continua sin repetirlo)
@@ -359,21 +431,25 @@ export async function local(id, mensajes, { env = process.env, extra = {}, opts,
   if (onInicio) { try { onInicio({ via: 'hf-local', usado: id }); } catch { /* informativo */ } }
   for (const n of [1, 2, 3]) {
     const u = env[`SWECODE_URL_S${n}`]; if (!u) continue;
-    try { const x = await completar(u, id, mensajes, null, extra, r, { flujo }); anotarMetricas(`hf-local/${id}`, x.metricas); return { salida: x.texto, tool_calls: x.tool_calls, finish_reason: x.finish_reason, via: 'hf-local', usado: id, servidor: `S${n}`, metricas: x.metricas }; } catch (e) { fallos.push(`S${n}: ${e.message}`); }
+    try { const x = await completar(u, id, mensajes, null, extra, r, { flujo }); anotarMetricas(`hf-local/${id}`, x.metricas); return { salida: x.texto, tool_calls: x.tool_calls, tools_invalidas: x.tools_invalidas, finish_reason: x.finish_reason, via: 'hf-local', usado: id, servidor: `S${n}`, metricas: x.metricas }; } catch (e) { fallos.push(`S${n}: ${e.message}`); }
   }
   throw Object.assign(new Error('HF_LOCAL: ' + (fallos.join(' | ') || 'sin SWECODE_URL_S1..S3')), { code: 'HF_LOCAL_FALLO' });
 }
 
 export async function respaldo(mensajes, { env = process.env, extra = {}, opts, onDelta, onInicio, flujo } = {}) {
   const fallos = [], r = red(opts), f = onDelta ? (flujo || { texto: '' }) : flujo;
+  const intentos = [];  // 156-161: rastro (sin credenciales) de cada proveedor intentado; el cambio de proveedor/modelo NUNCA se oculta
   for (const prov of ['groq', 'nvidia']) {
     const todas = claves(prov.toUpperCase() + '_API_KEY', env);
     if (!todas.length) { fallos.push(`${prov}: sin clave`); continue; }
     if (!libres(prov, env, r).length) { fallos.push(`${prov}: enfriado (timeout/429 reciente)`); continue; }  // no se reentra en un proveedor ya enfriado
-    try { return await externo(`${prov}/${await modeloDe(prov, env, r)}`, mensajes, { env, extra, opts, onDelta, onInicio, flujo: f }); } catch (e) { fallos.push(limpiar(`${prov}: ${e.message}`, todas)); }
+    let id = `${prov}/${modeloDefecto(prov, env)}`;
+    try { id = `${prov}/${await modeloDe(prov, env, r)}`; const x = await externo(id, mensajes, { env, extra, opts, onDelta, onInicio, flujo: f }); intentos.push({ via: prov, usado: id, ok: true }); return { ...x, intentos }; }
+    catch (e) { intentos.push({ via: prov, usado: id, ok: false, tipo: e.tipo || tipoDe(e), ...(Number.isInteger(e.status) ? { status: e.status } : {}) }); fallos.push(limpiar(`${prov}: ${e.message}`, todas)); }
   }
-  try { return await local(LOCALES[0], mensajes, { env, extra, opts, onInicio, flujo: f }); } catch (e) { fallos.push(e.message); }
-  throw Object.assign(new Error('RESPALDO_AGOTADO: ' + fallos.join(' | ')), { code: 'RESPALDO_AGOTADO', ...(f?.texto ? { parcial: f.texto } : {}) });
+  try { const x = await local(LOCALES[0], mensajes, { env, extra, opts, onInicio, flujo: f }); intentos.push({ via: 'hf-local', usado: LOCALES[0], ok: true }); return { ...x, intentos }; }
+  catch (e) { intentos.push({ via: 'hf-local', usado: LOCALES[0], ok: false, tipo: 'timeout_red' }); fallos.push(e.message); }
+  throw Object.assign(new Error('RESPALDO_AGOTADO: ' + fallos.join(' | ')), { code: 'RESPALDO_AGOTADO', intentos, ...(f?.texto ? { parcial: f.texto } : {}) });
 }
 
 // que respaldos hay configurados (conteos, nunca valores): para /health y el auto-diagnostico

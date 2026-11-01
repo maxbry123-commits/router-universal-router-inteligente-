@@ -1,6 +1,7 @@
-// swe-claves.js — claves de Groq y NVIDIA. Se guardan en el BANCO CIFRADO DEL SERVIDOR (POST/GET/DELETE {BASE}/web/v1/claves con la clave del chat en X-API-Key);
-// las usan SWE CODE, SWEN CODE y los selectores Groq/NVIDIA. Solo si el servidor no responde (404/5xx/sin red) queda un respaldo en este navegador
-// (localStorage 'riu_swe_claves', que swe-directo.js manda en el cuerpo SWE como `claves`). Los valores jamas se muestran ni se escriben en el chat.
+// swe-claves.js — claves de Groq y NVIDIA. Se guardan SOLO en el BANCO CIFRADO DEL SERVIDOR (POST/GET/DELETE {BASE}/web/v1/claves con la clave del chat en X-API-Key);
+// las usan SWE CODE, SWEN CODE y los selectores Groq/NVIDIA. R1 (auditoria 3): el navegador NO guarda claves (ni respaldo en localStorage) ni las reenvia en las
+// peticiones de inferencia: si el banco no responde solo se informa el estado y no se guarda nada. Los valores jamas se muestran ni se escriben en el chat.
+// CLAVE_LS es la entrada VIEJA de versiones anteriores: purgarLocal() la borra al cargar.
 export const CLAVE_LS = "riu_swe_claves";
 const PROVEEDORES = ["groq", "nvidia"];
 const ETIQUETA = { groq: "Groq", nvidia: "NVIDIA" };
@@ -13,25 +14,12 @@ export function separarClaves(v) {
 }
 const limpia = (v) => { const l = separarClaves(v); return l.length > 1 ? l : l[0] || ""; };  // una sola -> texto (como siempre); varias -> array
 const cuantas = (v) => (Array.isArray(v) ? v.length : v ? 1 : 0);
-const leerCrudo = () => { try { const o = JSON.parse(localStorage.getItem(CLAVE_LS)); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } };
-
-export function leerClaves() {
-  const o = leerCrudo(), r = {};
-  for (const p of PROVEEDORES) { const v = limpia(o[p]); if (v && v.length) r[p] = v; }
-  return r;
-}
-export function guardarClave(proveedor, valor) {
-  if (!PROVEEDORES.includes(proveedor)) return;
-  const v = limpia(valor); if (!v) return;
-  try { localStorage.setItem(CLAVE_LS, JSON.stringify({ ...leerClaves(), [proveedor]: v })); } catch (e) {}
-}
-export function borrarClaves() { try { localStorage.removeItem(CLAVE_LS); } catch (e) {} }
-
+export function purgarLocal() { try { localStorage.removeItem(CLAVE_LS); } catch (e) {} }
+purgarLocal();  // una clave que quedo en el navegador por versiones anteriores se borra
 
 // ---- banco del servidor ----
 const RUTA = "/web/v1/claves";
 const TOPE_MS = 20000;
-const quitarLocal = (proveedor) => { try { const o = leerClaves(); delete o[proveedor]; if (Object.keys(o).length) localStorage.setItem(CLAVE_LS, JSON.stringify(o)); else localStorage.removeItem(CLAVE_LS); } catch (e) {} };
 const cfg = () => (typeof window !== "undefined" && window.RIU_CONFIG) || {};
 const valida = (u) => /^https:\/\/[a-z0-9-]+\.hf\.space$/.test(u || "");
 
@@ -73,31 +61,26 @@ export function textoError(e) {
 }
 const sinBanco = (e) => !e || e.status === 0 || e.status === 404 || e.status >= 500 && e.status !== 503;
 
-// Guardar: al banco; si el servidor no esta, respaldo local (y se dice). Devuelve {ok, texto}: ok = quedo guardada (banco o respaldo); nunca incluye valores.
+const SIN_SERVIDOR = "el servidor no respondió; el banco del servidor es la única fuente y las claves no se guardan en este navegador";
+// Guardar: SOLO al banco del servidor. Devuelve {ok, texto}: ok = quedo guardada en el banco; nunca incluye valores.
 export async function guardarConEstado(valores) {
   const v = {}; for (const p of PROVEEDORES) { const x = limpia(valores && valores[p]); if (x && x.length) v[p] = x; }
   if (!Object.keys(v).length) return { ok: false, texto: "Nada que guardar" };
   try {
-    const n = await guardarEnBanco(v);
-    for (const p of Object.keys(v)) quitarLocal(p);  // ya viven en el banco: no se mandan en el cuerpo de cada peticion
-    return { ok: true, texto: textoConteos(n) };
+    return { ok: true, texto: textoConteos(await guardarEnBanco(v)) };
   } catch (e) {
     if (!sinBanco(e)) return { ok: false, texto: textoError(e) || "No se pudo guardar" };
-    for (const p of Object.keys(v)) guardarClave(p, v[p]);
-    return { ok: true, texto: Object.keys(v).map((p) => { const k = cuantas(v[p]); return ETIQUETA[p] + ": " + (k === 1 ? "guardada" : k + " guardadas") + " solo en este navegador"; }).join(" · ") + " (el servidor no respondió)" };
+    return { ok: false, texto: "No se guardó nada: " + SIN_SERVIDOR };
   }
 }
 export const guardar = async (valores) => (await guardarConEstado(valores)).texto;
 export async function borrar() {
-  let aviso = "";
-  try { await borrarBanco(); } catch (e) { aviso = sinBanco(e) ? " (el servidor no respondió: solo se borró este navegador)" : " · " + (textoError(e) || "no se pudo borrar en el servidor"); }
-  borrarClaves();
-  return "Claves borradas" + aviso;
+  try { await borrarBanco(); return "Claves borradas del servidor"; } catch (e) { return sinBanco(e) ? "No se borró nada: " + SIN_SERVIDOR : "No se pudo borrar en el servidor" + (textoError(e) ? " · " + textoError(e) : ""); }
 }
-export async function estado() {
+export async function estado() {  // sin banco solo se informa el estado
   try { return textoConteos(await estadoBanco()); } catch (e) {
-    const err = textoError(e); const l = leerClaves(); const loc = PROVEEDORES.filter((p) => l[p]).map((p) => { const k = cuantas(l[p]); return ETIQUETA[p] + ": " + (k === 1 ? "guardada" : k + " guardadas") + " solo en este navegador"; }).join(" · ");
-    return loc || (e && e.status === 401 ? err.replace(": no se guardó nada", "") : "");
+    const err = textoError(e);
+    return e && e.status === 401 ? err.replace(": no se guardó nada", "") : "Sin verificar: " + SIN_SERVIDOR;
   }
 }
 

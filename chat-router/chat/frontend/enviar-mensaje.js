@@ -143,6 +143,9 @@ export function montarEnviar(ctx) {
     const fichaGroq = selAct === "groq" ? ((window.RIU_GROQ || {}).modelo || "") : null;  // selector Groq: el modelo elegido en su hoja (groq/<id>)
     if (fichaGroq === "") { c.hist.append(node("div", "Groq: " + ((window.RIU_GROQ || {}).aviso || "elige primero un modelo en la hoja Groq ⌄") + ". No se envió a otro modelo.", "item message meta")); abajo(c); return; }
     const fichaSwe = (selAct === "swe-code" || selAct === "swen-code-free") ? ((window.RIU_SWE || {})[selAct] || null) : null;  // selectores SWE CODE / SWEN CODE free: modelo elegido en su hoja
+    const ventanaCentral = { "swe-code": "swe-code", "swen-code-free": "swen-code-free", groq: "groq", "nvidia-groq-team": "nvidia" }[selAct] || "";  // las 4 ventanas con el selector central unico
+    const bloqueoCentral = ventanaCentral && window.RIU_SWE_CENTRAL ? window.RIU_SWE_CENTRAL.bloqueo(ventanaCentral) : "";  // eleccion NO DISPONIBLE: se queda visible con su error y NO se envia (ni se cambia a otro modelo)
+    if (bloqueoCentral) { c.hist.append(node("div", bloqueoCentral + ". No se envió a otro modelo.", "item message error")); abajo(c); return; }
     const fichaMvp = selAct === "team-5-mvp";  // Team 5 MVP: ruta propia -> fichas_qwen ficha_qwen=5 (1 modelo elegido, historial completo y tools)
     if (fichaMvp && !c.selectorQwen) {
       c.hist.append(node("div", "Team 5 MVP: elige primero un modelo en la hoja Team 5 MVP ⌄ (el mismo catalogo de la Ficha 1 / Team qwen). No se envio a otro modelo.", "item message meta"));
@@ -215,7 +218,7 @@ export function montarEnviar(ctx) {
       };
       const _modeloSwe = fichaSwe ? fichaSwe.model_id : ((fq === "1" || fichaMvp) && c.selectorQwen && esSwe(c.selectorQwen.model_id) ? c.selectorQwen.model_id : null);  // SWE CODE / SWEN CODE free: router propio (el bridge), sin pasar por el Router MVP
       const _swe = !!_modeloSwe && _multiSel.length <= 1;
-      const _tareaSwe = !!fichaSwe && requiereHarness(leerSeleccion());  // workflow != individual o modo agentico ON: contrato TareaSWE al backend YAIWES -> Harness -> adaptadores (nunca herramientas desde el navegador)
+      const _tareaSwe = !!ventanaCentral && requiereHarness(leerSeleccion());  // workflow != individual o modo agentico ON: contrato TareaSWE al backend YAIWES -> Harness -> adaptadores (nunca herramientas desde el navegador)
       const answer = _tareaSwe
         ? await Promise.race([enviarTareaSwe(api, { mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined, parar, signal: ctlDetener ? ctlDetener.signal : undefined, alPaso: (t) => window.dispatchEvent(new CustomEvent("riu-progreso", { detail: { sesion: c.sesion, texto: t } })) }), raceDetener])
         : _swe
@@ -241,7 +244,10 @@ export function montarEnviar(ctx) {
       if (answer.execution_path === "FAST_QA") c.hist.append(node("div", "⚡ respuesta rápida · " + answer.ms + " ms", "item meta"));
       else if (answer.execution_path === "FAST_CONSULT") c.hist.append(node("div", "⚡ cónsil rápido · " + answer.ms + " ms", "item meta"));
       else if (c.fastReply && FAST_SEL() && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));
-      if (answer.pedidas && answer.pedidas.length) c.hist.append(node("div", "Pedidas (las ejecuta " + (answer.ejecutor || "el agente") + "): " + answer.pedidas.join(", "), "item message meta"));  // tool_calls devueltos tal cual: no se usaron aqui
+      if (answer.pedidas && answer.pedidas.length) {  // R4: tool_calls devueltos tal cual (con o sin texto): no se usaron aqui y NO se pierden; quedan en el chat hasta que el ejecutor los tome
+        c.toolCallsPendientes = [...(c.toolCallsPendientes || []), ...(Array.isArray(answer.tool_calls) ? answer.tool_calls : [])];
+        c.hist.append(node("div", "Pedidas (las ejecuta " + (answer.ejecutor || "el agente") + "): " + answer.pedidas.join(", ") + " · pendientes: " + (c.toolCallsPendientes.length || answer.pedidas.length), "item message meta"));
+      }
       if (answer.tools && answer.tools.length) { const meta = node("div", "Herramientas usadas: ", "item message meta"); answer.tools.forEach((t, i) => { const ok = typeof t === "string" || t.ok; const s = document.createElement("span"); s.textContent = (typeof t === "string" ? t : t.nombre) + (ok ? "" : " (fallo)"); if (!ok) s.className = "tool-fail"; if (i) meta.append(", "); meta.append(s); }); c.hist.append(meta); }
       if (answer.job_id) { window.__riuJob = answer.job_id; const ar = q('#apagar-respaldo'); if (ar) ar.hidden = false; }
       abajo(c);

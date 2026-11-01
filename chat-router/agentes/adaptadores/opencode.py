@@ -39,4 +39,4 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     if not texto:
         return _comun.error(AGENTE, tarea_id, "AGENTE_SIN_RESULTADO", "opencode termino sin texto de respuesta", True, proc["exit_code"])
     herramientas = _comun.tipos_de_evento([{"tool": (e.get("part") or {}).get("tool")} for e in eventos if e.get("type") == "tool_use"], "tool")
-    return _comun.resultado_ok(AGENTE, tarea_id, proc, texto, herramientas, [exe, "modelo:riu/" + ep["modelo"], "permisos:" + json.dumps(cfg["permission"], sort_keys=True)], inicio)
+    return _comun.resultado_ok(AGENTE, tarea_id, proc, texto, herramientas, [exe, "modelo:riu/" + ep["modelo"], "permisos:" + json.dumps(cfg["permission"], sort_keys=True)], inicio, ep["modelo"])

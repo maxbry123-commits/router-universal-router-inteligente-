@@ -6,6 +6,7 @@ import logging
 import os
 import pathlib
 import random
+import re
 import threading
 import time
 from email.utils import parsedate_to_datetime
@@ -32,6 +33,12 @@ PROVEEDORES_NUEVOS = {
 }
 PARAMETROS_MODELO = {mid: {k: v for k, v in cfg.items() if k in ("temperature", "top_p", "max_tokens", "reasoning_effort", "reasoning_format")} for mid, cfg in PROVEEDORES_NUEVOS.items()}
 _PARAMS = ("temperature", "top_p", "max_tokens", "reasoning_effort", "reasoning_format")
+# Limites REALES por proveedor/modelo (se aplican a los valores explicitos del llamador; el recorte se informa, nunca es silencioso).
+# Fuente OFICIAL (Firecrawl, 2026-11-01): console.groq.com/docs/models y console.groq.com/docs/model/qwen/qwen3.8-27b -> qwen/qwen3.8-27b: contexto 131,072, MAX COMPLETION/OUTPUT TOKENS 16,384,
+# reasoning_effort in {default, none, low, medium, high}, reasoning_format in {hidden, parsed}. NVIDIA (build.nvidia.com/<org>/<modelo>) solo publica max_tokens en ejemplos (8192/16384), no un tope: sin tope local, el 400 del proveedor se trata como peticion invalida.
+LIMITES_MODELO = {"groq/qwen/qwen3.8-27b": {"max_tokens": 16384, "reasoning_effort": ("default", "none", "low", "medium", "high"), "reasoning_format": ("hidden", "parsed")}}
+_OPCIONES_EXT = compute.OPCIONES | {"reasoning_format"}  # Groq/NVIDIA admiten ademas reasoning_format (el cliente Qwen de compute.py no cambia)
+_PASAN = ("tools", "tool_choice", "parallel_tool_calls", "response_format")  # contrato de herramientas: el llamador manda tal cual
 CACHE = {}  # proveedor -> (instante, lista de ids)
 _SWE = {}  # (ruta, mtime_ns, tamano, clave de acceso) -> banco compartido abierto (o None si no se pudo abrir); evita repetir PBKDF2
 
@@ -114,7 +121,7 @@ def modelos(prov, banco=None):
 # ---------- politicas por modelo (router-mvp/fichas/fichas_qwen/fichas/politicas_modelo.json -> «politicas_externos») ----------
 POLITICA_DEFECTO = {
     "streaming": {"activable": True, "con_tools": True, "stream_options_usage": True},
-    "reintentos": {"max": 3, "base_s": 0.5, "tope_s": 30.0, "retry_after_max_s": 60.0, "rotar_clave_en_429": True},
+    "reintentos": {"max": 3, "base_s": 0.5, "tope_s": 30.0, "retry_after_max_s": 60.0, "rotar_clave_en_429": True, "presupuesto_s": compute.PRESUPUESTO_TOTAL_S},
     "timeout_s": compute.TIMEOUT_DEFECTO_S,
     "parametros_compatibles": None,  # None: sin filtro
     "contexto": {"max_caracteres": 400_000, "resultado_tool_max": 4000, "recientes": 6},
@@ -161,23 +168,64 @@ def disponible(modelo):
     return None if not c or time.time() - c[0] >= 600 else modelo in c[1]
 
 
+def _numero(v, bajo, alto, abierto_bajo=False):
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and (bajo < v if abierto_bajo else bajo <= v) and v <= alto
+
+
+def parametros(modelo, opciones, pol=None):
+    """Parametros de inferencia: PRIMERO los valores por defecto del modelo y DESPUES los explicitos validos del llamador (R7).
+    Un explicito invalido o que el modelo no admite se ignora (queda el del modelo) y se lista en `ignorados`; max_tokens y demas se recortan al limite real y se informa en `recortados`.
+    Devuelve (payload_parcial, info)."""
+    pol = pol if pol is not None else politica(modelo)
+    comp, lim = pol.get("parametros_compatibles"), LIMITES_MODELO.get(modelo, {})
+    out, info = dict(PARAMETROS_MODELO.get(modelo, {})), {"ignorados": [], "recortados": {}}
+    for n, v in (opciones or {}).items():
+        if n not in _OPCIONES_EXT or n == "enable_thinking":
+            if n == "enable_thinking": info["ignorados"].append(n)  # solo Qwen/DashScope; Groq y NVIDIA lo usan por otro camino
+            continue
+        if n in _PASAN:
+            out[n] = v; continue
+        if comp is not None and n not in comp:
+            info["ignorados"].append(n); continue
+        if n == "temperature": bien = _numero(v, 0, 2)
+        elif n == "top_p": bien = _numero(v, 0, 1, True)
+        elif n == "max_tokens": bien = isinstance(v, int) and not isinstance(v, bool) and v > 0
+        else: bien = isinstance(v, str) and (n not in lim or v in lim[n])
+        if not bien:
+            info["ignorados"].append(n); continue
+        if n == "max_tokens" and lim.get("max_tokens") and v > lim["max_tokens"]:
+            info["recortados"][n] = {"pedido": v, "aplicado": lim["max_tokens"]}; v = lim["max_tokens"]
+        out[n] = v
+    if comp is not None:  # los defectos del modelo tambien respetan la lista de compatibles
+        for n in _PARAMS:
+            if n not in comp:
+                out.pop(n, None)
+    return out, {k: v for k, v in info.items() if v}
+
+
 def _tam(mensajes):
     return sum(len(str(m.get("content") or "")) for m in mensajes if isinstance(m, dict))
 
 
-def _compactar(mensajes, pol):
-    """Solo sobre el tope: recorta los resultados de herramientas MAS VIEJOS (no system, no user, no lo reciente). No muta el original."""
+def _compactar_info(mensajes, pol):
+    """(mensajes, info): solo sobre el tope recorta los resultados de herramientas MAS VIEJOS (no system, no user, no lo reciente). No muta el original.
+    info = None si no se toco nada; si se recorto, {resultados_recortados, caracteres_antes, caracteres_despues}: la respuesta lo AVISA (nunca un recorte silencioso)."""
     c = pol.get("contexto") or {}
-    if not c.get("max_caracteres") or _tam(mensajes) <= c["max_caracteres"]:
-        return mensajes
-    out, maxr = list(mensajes), int(c.get("resultado_tool_max") or 4000)
+    antes = _tam(mensajes)
+    if not c.get("max_caracteres") or antes <= c["max_caracteres"]:
+        return mensajes, None
+    out, maxr, n = list(mensajes), int(c.get("resultado_tool_max") or 4000), 0
     for i in range(max(len(out) - int(c.get("recientes") or 6), 0)):
         m = out[i]
         if isinstance(m, dict) and m.get("role") == "tool" and len(str(m.get("content") or "")) > maxr:
-            out[i] = {**m, "content": str(m["content"])[:maxr] + " ...[recortado por tamano; ya se uso]"}
+            out[i] = {**m, "content": str(m["content"])[:maxr] + " ...[recortado por tamano; ya se uso]"}; n += 1
             if _tam(out) <= c["max_caracteres"]:
                 break
-    return out
+    return out, ({"resultados_recortados": n, "caracteres_antes": antes, "caracteres_despues": _tam(out)} if n else None)
+
+
+def _compactar(mensajes, pol):
+    return _compactar_info(mensajes, pol)[0]
 
 
 # ---------- transporte: conexion persistente (httpx) o urllib; normaliza los fallos en ErrorHTTP / ErrorRed ----------
@@ -194,9 +242,10 @@ def _huella_clave(prov, k):
     return (prov, hashlib.sha256(k.encode("utf-8", "surrogatepass")).hexdigest()[:16])
 
 
-def _enfriar(prov, k, pol, retry_after):
-    """429 en una clave: se aparta COOLDOWN_429_S (60 s, o el Retry-After del proveedor hasta 10 min) para las llamadas siguientes."""
-    base = float((pol.get("reintentos") or {}).get("cooldown_429_s", 60.0))
+def _enfriar(prov, k, pol, retry_after, codigo=429):
+    """429 en una clave: se aparta cooldown_429_s (60 s, o el Retry-After del proveedor hasta 10 min). 402 (sin credito/cuota): cooldown_402_s (10 min): no se vuelve a probar primero."""
+    r = pol.get("reintentos") or {}
+    base = float(r.get("cooldown_402_s", 600.0)) if codigo == 402 else float(r.get("cooldown_429_s", 60.0))
     _ENFRIADAS[_huella_clave(prov, k)] = _reloj() + max(base, min(float(retry_after or 0), 600.0))
 
 
@@ -207,6 +256,41 @@ def _ordenar(prov, pool):
         del _ENFRIADAS[h]
     libres = [k for k in pool if _huella_clave(prov, k) not in _ENFRIADAS]
     return libres + sorted((k for k in pool if k not in libres), key=lambda k: _ENFRIADAS[_huella_clave(prov, k)])
+
+
+# ---------- 152: tabla de errores. Una politica DISTINTA por familia (reintentar / rotar de clave / respetar Retry-After / enfriar la clave) ----------
+TABLA_ERRORES = {
+    "limite_temporal":    {"codigos": (429,), "reintentar": True, "rotar_clave": True, "respeta_retry_after": True, "enfriar_clave": True,
+                           "texto": "429: limite de peticiones/tokens; se espera Retry-After o se rota de clave"},
+    "credito_cuota":      {"codigos": (402,), "reintentar": False, "rotar_clave": True, "respeta_retry_after": False, "enfriar_clave": True,
+                           "texto": "402: sin credito o cuota agotada en esa clave; otra clave puede servir, repetir con la misma no"},
+    "credencial_permiso": {"codigos": (401, 403), "reintentar": False, "rotar_clave": True, "respeta_retry_after": False, "enfriar_clave": False,
+                           "texto": "401/403: credencial invalida o sin permiso para el modelo; se descarta esa clave"},
+    "timeout_red":        {"codigos": (408,), "reintentar": True, "rotar_clave": False, "respeta_retry_after": False, "enfriar_clave": False,
+                           "texto": "timeout/red: backoff con jitter; si ya llegaron datos del stream NO se repite (duplicaria texto)"},
+    "servidor_temporal":  {"codigos": (500, 502, 503, 504, 529), "reintentar": True, "rotar_clave": False, "respeta_retry_after": True, "enfriar_clave": False,
+                           "texto": "5xx: fallo temporal del proveedor; backoff exponencial con jitter y tope de intentos"},
+    "peticion_invalida":  {"codigos": (400, 404, 422), "reintentar": False, "rotar_clave": False, "respeta_retry_after": False, "enfriar_clave": False,
+                           "texto": "400/404/422: modelo o peticion invalida; no se reintenta ni se cambia de modelo"},
+}
+
+
+def clasificar_error(codigo, red=False):
+    """Politica de la familia del error: {tipo, reintentar, rotar_clave, respeta_retry_after, enfriar_clave, texto}. `red=True` = timeout/conexion sin codigo HTTP."""
+    if red:
+        return {"tipo": "timeout_red", **TABLA_ERRORES["timeout_red"]}
+    for tipo, e in TABLA_ERRORES.items():
+        if codigo in e["codigos"]:
+            return {"tipo": tipo, **e}
+    return {"tipo": "peticion_invalida" if codigo is not None and 400 <= codigo < 500 else "servidor_temporal", **TABLA_ERRORES["peticion_invalida" if codigo is not None and 400 <= codigo < 500 else "servidor_temporal"]}
+
+
+class ErrorProveedor(RuntimeError):
+    """Error final de una llamada, con su familia (`tipo`), el codigo HTTP (`codigo`, None si fue de red) y si valia la pena reintentarlo (`reintentable`). Mensaje sin credenciales."""
+    def __init__(self, mensaje, codigo=None, red=False):
+        super().__init__(mensaje)
+        pol = clasificar_error(codigo, red)
+        self.codigo, self.tipo, self.reintentable = codigo, pol["tipo"], pol["reintentar"]
 
 
 class ErrorHTTP(Exception):
@@ -316,18 +400,20 @@ def _sin_imagenes(mensajes):
 
 
 def _con_reintentos(accion, pol, payload, ultima_clave, al_429=None):
-    """Una clave: backoff exponencial con jitter, Retry-After del proveedor y tope de intentos de la politica.
-    401/402/403/404 -> _Alterna (siguiente clave); 429 con otra clave disponible -> _Alterna sin esperar (el limite es por clave).
-    al_429(retry_after): aviso para enfriar esa clave entre llamadas. Siempre devuelve la respuesta o LANZA (nunca None)."""
+    """Una clave: backoff exponencial con jitter, Retry-After del proveedor, tope de intentos y PRESUPUESTO total de tiempo (R8) de la politica.
+    Cada familia de error (TABLA_ERRORES) tiene su politica: 401/402/403/404 -> _Alterna (siguiente clave); 429 con otra clave disponible -> _Alterna sin esperar (el limite es por clave).
+    al_429(retry_after): aviso para enfriar esa clave entre llamadas. Siempre devuelve la respuesta o LANZA (nunca None); el error final es ErrorProveedor (con `tipo`)."""
     r = pol["reintentos"]
     maximo = max(int(r.get("max") or 1), 1)
+    presupuesto, plazo, t0 = float(r.get("presupuesto_s") or compute.PRESUPUESTO_TOTAL_S), compute.timeout_s(pol.get("timeout_s")), _reloj()
+    ultimo = [None]  # codigo HTTP del ultimo fallo transitorio (None = red)
     for n in range(maximo):
         espera = min(float(r.get("tope_s", 30.0)), float(r.get("base_s", 0.5)) * 2 ** n) * (0.5 + _azar() / 2)  # jitter: entre la mitad y el valor completo
         try:
             return accion()
         except ErrorHTTP as exc:
-            if exc.codigo == 429 and al_429:
-                al_429(exc.retry_after)
+            if exc.codigo in (429, 402) and al_429:
+                al_429(exc.retry_after, exc.codigo)
             if exc.codigo in (401, 402, 403, 404):  # clave invalida, sin credito o sin acceso al modelo: otra clave puede servir
                 raise compute._Alterna("HTTP %d" % exc.codigo) from None
             if exc.codigo == 429 and not ultima_clave and r.get("rotar_clave_en_429", True):
@@ -335,14 +421,18 @@ def _con_reintentos(accion, pol, payload, ultima_clave, al_429=None):
             if exc.codigo == 400 and any(isinstance(m.get("content"), list) for m in payload["messages"] if isinstance(m, dict)):
                 payload["messages"] = _sin_imagenes(payload["messages"]); continue  # el modelo no admite imagen: se repite con solo el texto
             if exc.codigo not in TRANSITORIOS or n == maximo - 1:
-                raise RuntimeError("HTTP %d" % exc.codigo) from None
+                raise ErrorProveedor("HTTP %d" % exc.codigo, exc.codigo) from None
+            ultimo[0] = exc.codigo
             if exc.retry_after is not None:
                 espera = min(exc.retry_after, float(r.get("retry_after_max_s", 60.0)))
         except ErrorRed as exc:
             if exc.con_datos or n == maximo - 1:
-                raise RuntimeError("error de red: " + str(exc)) from None
+                raise ErrorProveedor("error de red: " + str(exc), None, True) from None
+            ultimo[0] = None
+        if (_reloj() - t0) + espera + plazo > presupuesto:  # R8: otro intento ya no cabe en el plazo del Harness -> se informa el ultimo fallo en vez de colgar
+            raise ErrorProveedor("%s (reintentos detenidos: no caben en el presupuesto de %g s)" % (("HTTP %d" % ultimo[0]) if ultimo[0] else "error de red", presupuesto), ultimo[0], ultimo[0] is None) from None
         _dormir(espera)
-    raise RuntimeError("sin respuesta del proveedor tras %d intentos" % maximo)  # p. ej. el ultimo intento fue el reintento sin imagenes: nunca se devuelve None
+    raise ErrorProveedor("sin respuesta del proveedor tras %d intentos" % maximo)  # p. ej. el ultimo intento fue el reintento sin imagenes: nunca se devuelve None
 
 
 def _seguro(cb):
@@ -364,24 +454,20 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
         raise RuntimeError("%s: NO DISPONIBLE: %s no aparece en GET /models del proveedor; no se cambió de modelo" % (PROVEEDORES[prov]["label"], modelo))
     pol = politica(modelo)
     pool = _ordenar(prov, pool)  # las claves enfriadas por un 429 reciente van al final
-    payload = {"model": modelo.split("/", 1)[1], "messages": _compactar(mensajes, pol)}
-    for n, v in (opciones or {}).items():
-        if n in compute.OPCIONES and n not in ("enable_thinking", "reasoning_effort"):
-            payload[n] = v
-    payload.update(PARAMETROS_MODELO.get(modelo, {}))
-    if pol.get("parametros_compatibles") is not None:
-        for n in _PARAMS:
-            if n not in pol["parametros_compatibles"]:
-                payload.pop(n, None)
+    mensajes_ok, info_ctx = _compactar_info(mensajes, pol)
+    payload = {"model": modelo.split("/", 1)[1], "messages": mensajes_ok}
+    extra, info_param = parametros(modelo, opciones, pol)
+    payload.update(extra)
     st, tm = pol.get("streaming") or {}, compute.timeout_s(pol.get("timeout_s"))
     stream = (al_parcial is not None and st.get("activable", True) and os.environ.get("RIU_STREAM_EXTERNOS", "") != "0"
               and (st.get("con_tools", True) or not payload.get("tools")))
+    nombres_tools = [t.get("function", {}).get("name") for t in (payload.get("tools") or []) if isinstance(t, dict)]
     url, estado, ultimo, codigos = compute._endpoint(PROVEEDORES[prov]["base"]), {"stream": stream}, None, []
     for i, k in enumerate(pool):  # una clave inválida o agotada (401/403/404) pasa a la siguiente del pool
         def accion():
             t0 = time.monotonic()
             if estado["stream"]:
-                acumulador = compute.AcumuladorSSE(al_texto=_seguro(al_parcial))
+                acumulador = compute.AcumuladorSSE(al_texto=_seguro(al_parcial), herramientas=nombres_tools)
                 try:
                     _solicitar_stream(url, {**payload, "stream": True, **({"stream_options": {"include_usage": True}} if st.get("stream_options_usage", True) else {})}, k, tm, acumulador)
                     return acumulador.resultado(modelo)
@@ -391,14 +477,20 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
                     estado["stream"] = False  # el proveedor no admite stream con esta peticion: misma peticion sin stream, mismo modelo
             r = _parsear(_solicitar(url, payload, k, tm), modelo)
             dur, tok = time.monotonic() - t0, (r["uso"] or {}).get("completion_tokens")
-            r["metricas"] = {"stream": False, "ttft_s": None, "duracion_s": round(dur, 4), "tokens": tok, "tokens_estimados": False, "tokens_por_s": round(tok / dur, 2) if tok and dur > 0 else None}
+            r["metricas"] = {"stream": False, "ttft_s": None, "ttft_origen": "no_aplica_sin_stream", "duracion_s": round(dur, 4), "tokens": tok, "tokens_estimados": False,
+                             "origen_tokens": "proveedor" if tok is not None else None, "tokens_por_s": round(tok / dur, 2) if tok and dur > 0 else None}  # sin usage no se inventan tokens
             return r
         try:
-            r = _con_reintentos(accion, pol, payload, i == len(pool) - 1, lambda ra, k=k: _enfriar(prov, k, pol, ra))
+            r = _con_reintentos(accion, pol, payload, i == len(pool) - 1, lambda ra, cod, k=k: _enfriar(prov, k, pol, ra, cod))
+            if info_param:
+                r["metricas"]["parametros"] = info_param
+            if info_ctx:
+                r["metricas"]["contexto_compactado"] = info_ctx  # el recorte NO es silencioso: va en la respuesta
             logging.getLogger(__name__).info("%s ttft=%s tokens/s=%s dur=%s", modelo, r["metricas"].get("ttft_s"), r["metricas"].get("tokens_por_s"), r["metricas"].get("duracion_s"))
             return {**r, "modelo_solicitado": modelo}
         except compute._Alterna as exc:
             ultimo = exc; codigos.append(str(exc))
     if codigos and all(c.endswith("HTTP 404") for c in codigos):
-        raise RuntimeError("%s: HTTP 404 para el modelo %s (no existe o la clave no lo tiene habilitado); no se cambió de modelo" % (PROVEEDORES[prov]["label"], payload["model"]))
-    raise RuntimeError(PROVEEDORES[prov]["label"] + ": ninguna de las %d claves fue aceptada (%s)" % (len(pool), str(ultimo).replace("Qwen ", "")))
+        raise ErrorProveedor("%s: HTTP 404 para el modelo %s (no existe o la clave no lo tiene habilitado); no se cambió de modelo" % (PROVEEDORES[prov]["label"], payload["model"]), 404)
+    cod = re.search(r"HTTP (\d{3})", str(ultimo))
+    raise ErrorProveedor(PROVEEDORES[prov]["label"] + ": ninguna de las %d claves fue aceptada (%s)" % (len(pool), str(ultimo).replace("Qwen ", "")), int(cod.group(1)) if cod else None, not cod)

@@ -58,8 +58,9 @@ test("con tarea_id: usa retomarLocal, guarda en el Harness y en local, y el 2º 
   const s1 = await mock(({ n }) => ok("RESP-" + n)), h = await harness(), dir = disco("b");
   const B = await arrancar("con-tarea", { BRIDGE_STATE_DIR: dir, SWECODE_URL_S1: s1.url, RIU_DEEPSEEK_HARNESS_URL: h.url, RIU_API_KEY: KH });
   const a = await chat(B, { tarea_id: "tarea-1" });
-  assert.equal(a.status, 200); assert.equal(a.json.choices[0].message.content, "RESP-1"); assert.equal(a.json.tarea.id, "tarea-1"); assert.equal(a.json.tarea.estado, "DONE");
-  assert.equal(JSON.parse(fs.readFileSync(arch(dir, "tarea-1"), "utf8")).estado, "DONE");
+  // 140: finish_reason=stop NO cierra la tarea: queda RESPUESTA_COMPLETA hasta que el cliente confirme
+  assert.equal(a.status, 200); assert.equal(a.json.choices[0].message.content, "RESP-1"); assert.equal(a.json.tarea.id, "tarea-1"); assert.equal(a.json.tarea.estado, "RESPUESTA_COMPLETA");
+  assert.equal(JSON.parse(fs.readFileSync(arch(dir, "tarea-1"), "utf8")).estado, "RESPUESTA_COMPLETA");
   assert.ok(h.almacen.has("tareas/swe/bridge/tarea-1/checkpoint.json")); assert.ok(h.crudos.every((c) => c.clave === KH));
   const b = await chat(B, { tarea_id: "tarea-1" }, {});
   assert.equal(b.json.choices[0].message.content, "RESP-1"); assert.equal(b.json.tarea.desde_checkpoint, true); assert.equal(s1.chat.length, 1);
@@ -88,7 +89,7 @@ test("reinicio: el bridge cae a mitad (length), arranca otro con OTRO disco y PO
   await B1.matar();
   fase = 2; s1.chat.length = 0;
   const B2 = await arrancar("rei-2", { BRIDGE_STATE_DIR: disco("d2"), ...env });
-  const r2 = await post(B2, "/v1/secciones/tarea-r/retomar");
+  const r2 = await post(B2, "/v1/secciones/tarea-r/retomar", { tarea_completa: true });
   assert.equal(r2.status, 200, JSON.stringify(r2.json));
   assert.equal(r2.json.choices[0].message.content, "AAA-BBB"); assert.equal(s1.chat.length, 1, "no repite la seccion 1");
   assert.deepEqual(s1.chat[0].body.messages.slice(-2), [{ role: "assistant", content: "AAA" }, { role: "user", content: CONT }]);
@@ -113,6 +114,8 @@ test("modelo groq/qwen/qwen3.8-27b con tarea_id: va por Groq con la clave, guard
   assert.equal(r.status, 200); assert.equal(r.json.choices[0].message.content, "DE-GROQ"); assert.equal(r.json.via_respaldo, "groq");
   assert.equal(g.chat[0].auth, "Bearer " + KGROQ);
   assert.ok(!fs.readFileSync(arch(dir, "tarea-g"), "utf8").includes("FAKEKEYNOREAL"));
+  assert.equal((await post(B, "/v1/secciones/tarea-g/retomar", { tarea_completa: true })).status, 200, "sin confirmar devuelve lo guardado y la confirma");
+  assert.equal(g.chat.length, 1, "no vuelve a llamar al modelo");
   assert.equal((await post(B, "/v1/secciones/tarea-g/retomar")).status, 409);
 });
 

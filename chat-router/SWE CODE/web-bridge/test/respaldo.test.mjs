@@ -94,10 +94,11 @@ test("esExterno valida contra MODELOS_API: ids autorizados si, groq/llama-3.3-70
   assert.ok(!esExterno("nvidia/forzado/m", {}));
 });
 
-test("timeout por defecto de Groq 60000 ms (por modelo); NVIDIA y el resto usan el global; RIU_SWE_TIMEOUTS y opts.timeoutsModelo mandan sobre el defecto", () => {
+test("timeout por defecto de Groq 60000 ms (por modelo, tabla unica R8); los no listados usan el global; RIU_SWE_TIMEOUTS y opts.timeoutsModelo mandan sobre el defecto", () => {
   const r = { timeoutMs: TIMEOUT_DEFECTO_MS };
   assert.equal(timeoutDe("qwen/qwen3.8-27b", {}, r), 60000);
-  assert.equal(timeoutDe("minimaxai/minimax-m3.1-flash", {}, r), TIMEOUT_DEFECTO_MS);
+  assert.equal(timeoutDe("minimaxai/minimax-m3.1-flash", {}, r), 90000);  // R8: tabla unica (antes: el global)
+  assert.equal(timeoutDe("modelo-que-no-esta-en-la-tabla", {}, r), TIMEOUT_DEFECTO_MS);
   assert.equal(timeoutDe("qwen/qwen3.8-27b", { RIU_SWE_TIMEOUTS: JSON.stringify({ "qwen/qwen3.8-27b": 15000 }) }, r), 15000);
   assert.equal(timeoutDe("qwen/qwen3.8-27b", {}, { ...r, timeoutsModelo: { "qwen/qwen3.8-27b": 7000 } }), 7000);
   assert.equal(timeoutDe("qwen/qwen3.8-27b", { RIU_SWE_TIMEOUTS: "no-json" }, r), 60000);

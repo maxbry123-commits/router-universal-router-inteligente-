@@ -1,5 +1,6 @@
 """Rutas autenticadas de YAIWES para las tareas SWE (/chat/swe/*): contrato -> swe_invoke -> Harness (HTTP real, servidor falso local).
 Sin claves reales: las credenciales de prueba son cadenas inventadas; ninguna sale en una respuesta."""
+import hashlib
 import json
 import os
 import sys
@@ -160,20 +161,21 @@ class SweYaiwes(unittest.TestCase):
     def test_aprobar_lo_identifica_el_servidor_no_el_cuerpo_ni_el_modelo(self):
         servicio.CONTROL.d["agentes_on"] = True  # avanzar/reanudar/aprobar exigen Agentes ON en el servidor (auditoria); setUp lo restaura
         ref = {"task_id": "yaiwes-001", "origen": "yaiwes", "sesion": "chat-001", "proyecto": "yaiwes", "op_id": "op-abc123"}
-        with patch.dict(os.environ, {"RIU_SWE_OPERADOR": "antonio.director"}):
-            r = self.post("aprobar", {**ref, "aprobacion": True, "operador": "intruso", "aprobado_por": "intruso", "estado": "CONTINUAR"})
-        self.assertEqual(r.status_code, 200, r.text)
-        args = Falso.recibidas[-1][1]["args"]
-        self.assertEqual(Falso.recibidas[-1][1]["tool"], "swe_aprobar")
-        self.assertEqual(args, {**ref, "operador": "antonio.director"})
-        self.assertNotIn("aprobacion", args)
-        self.post("aprobar", ref)
-        self.assertEqual(Falso.recibidas[-1][1]["args"]["operador"], "director", "sin variable el operador por defecto es 'director'")
-        Falso.recibidas.clear()
-        self.assertEqual(self.post("aprobar", {k: v for k, v in ref.items() if k != "op_id"}).status_code, 400, "sin op_id no se aprueba nada a ciegas")
-        self.assertEqual(self.post("aprobar", {**ref, "op_id": "mal id!"}).status_code, 400)
-        with patch.dict(os.environ, {"RIU_SWE_OPERADOR": "mal operador!"}):
-            self.assertEqual(self.post("aprobar", ref).status_code, 503)
+        token = "token-individual-antonio-prueba"
+        ident = {**CAB, "x-operador": "antonio.director", "x-operator-token": token}
+        with patch.dict(os.environ, {"RIU_SWE_APROBADORES": "antonio.director:" + hashlib.sha256(token.encode()).hexdigest()}):
+            r = self.post("aprobar", {**ref, "aprobacion": True, "operador": "intruso", "aprobado_por": "intruso", "estado": "CONTINUAR"}, headers=ident)
+            self.assertEqual(r.status_code, 200, r.text)
+            args = Falso.recibidas[-1][1]["args"]
+            self.assertEqual(Falso.recibidas[-1][1]["tool"], "swe_aprobar")
+            self.assertEqual(args, {**ref, "operador": "antonio.director"})
+            self.assertNotIn("aprobacion", args)
+            Falso.recibidas.clear()
+            self.assertEqual(self.post("aprobar", ref).status_code, 403, "la clave compartida sin operador identificado no aprueba (no hay operador por defecto)")
+            self.assertEqual(self.post("aprobar", {k: v for k, v in ref.items() if k != "op_id"}, headers=ident).status_code, 400, "sin op_id no se aprueba nada a ciegas")
+            self.assertEqual(self.post("aprobar", {**ref, "op_id": "mal id!"}, headers=ident).status_code, 400)
+        with patch.dict(os.environ, {"RIU_SWE_APROBADORES": ""}):
+            self.assertEqual(self.post("aprobar", ref, headers=ident).status_code, 503)
         self.assertEqual(Falso.recibidas, [])
 
     # ---- errores del Harness ----
@@ -185,7 +187,9 @@ class SweYaiwes(unittest.TestCase):
         Falso.cola = [(200, {"status": "error", "error": "TAREA_NO_ENCONTRADA"})]
         self.assertEqual(self.post("estado", {"task_id": "yaiwes-001"}).status_code, 404)
         Falso.cola = [(200, {"status": "error", "error": "OPERADOR_NO_AUTORIZADO"})]
-        self.assertEqual(self.post("aprobar", {"task_id": "yaiwes-001", "op_id": "op-1"}).status_code, 403)
+        token = "token-individual-ana-prueba"
+        with patch.dict(os.environ, {"RIU_SWE_APROBADORES": "ana:" + hashlib.sha256(token.encode()).hexdigest()}):
+            self.assertEqual(self.post("aprobar", {"task_id": "yaiwes-001", "op_id": "op-1"}, headers={**CAB, "x-operador": "ana", "x-operator-token": token}).status_code, 403)
         Falso.cola = [(200, {"status": "error", "error": "Traceback: token=" + CLAVE_HARNESS + " en /srv/x.py"})]
         r = self.post("estado", {"task_id": "yaiwes-001"})
         self.assertEqual(r.status_code, 502); self.assertIn("SWE_HARNESS_ERROR", r.text); self.assertNotIn(CLAVE_HARNESS, r.text); self.assertNotIn("Traceback", r.text)
@@ -214,6 +218,32 @@ class SweYaiwes(unittest.TestCase):
         self.assertEqual(j["workflows"], {"liquid_mirror": {"disponible": True}}); self.assertIs(j["modelos"]["groq/qwen/qwen3.8-27b"]["disponible"], False)
         self.assertEqual(Falso.recibidas[-1][1]["action"], "status")
         self.assertNotIn(CLAVE_HARNESS, r.text)
+
+    def test_capacidades_conservan_los_seis_estados_del_harness_y_desconocido_nunca_es_disponible(self):
+        """164/37: el estado lo emite el Harness (disponibilidad.py); aqui solo se sanea. SIN VERIFICAR no es NO INSTALADO ni DISPONIBLE; un estado raro o incoherente se descarta."""
+        from agentes.adaptadores import disponibilidad as disp
+        self.assertEqual(disp.ESTADOS, ("DISPONIBLE", "NO INSTALADO", "NO CONFIGURADO", "NO COMPATIBLE", "NO DISPONIBLE EN PROVEEDOR", "SIN VERIFICAR"))
+        self.assertEqual(hc.ESTADOS_DISPONIBILIDAD, disp.ESTADOS, "una sola lista de estados: la de disponibilidad.py")
+        agentes = {"codex": {"disponible": False, "estado": "NO INSTALADO", "veredicto": "NO DISPONIBLE", "verificado": True, "causa": "binario_ausente", "intentable": False, "motivo": "codex no esta instalado"},
+                   "openhands": {"disponible": False, "estado": "SIN VERIFICAR", "veredicto": "SIN VERIFICAR", "verificado": False, "causa": "comprobacion_fallida", "intentable": False, "motivo": "no se pudo comprobar"},
+                   "opencode": {"disponible": True, "estado": "SIN VERIFICAR", "motivo": "incoherente: disponible con estado SIN VERIFICAR"},
+                   "claude-code": {"disponible": True, "estado": "INVENTADO", "motivo": "estado fuera de los seis"},
+                   "swe-agent": {"disponible": False, "estado": "NO CONFIGURADO", "causa": "../mal codigo", "intentable": "si"},
+                   "openclaw": {"disponible": True}}  # contrato antiguo: sin estado
+        modelos = {"groq/qwen/qwen3.8-27b": {"disponible": False, "estado": "NO DISPONIBLE EN PROVEEDOR", "veredicto": "NO DISPONIBLE", "verificado": True, "causa": "ausente_en_get_models", "intentable": False, "nombre": "Qwen3.8 27B", "proveedor": "groq", "nota": "x" * 400},
+                   "nvidia/z-ai/glm-5.3": {"disponible": False, "estado": "SIN VERIFICAR", "veredicto": "SIN VERIFICAR", "verificado": False, "causa": "get_models_fallo", "intentable": True}}
+        Falso.cola = [(200, {"status": "ok", "result": {"swe": {"agentes": agentes, "workflows": {"liquid_mirror": {"disponible": False, "estado": "NO CONFIGURADO", "causa": "falta_S2_S3"}}, "modelos": modelos}}})]
+        j = self.cliente.get("/chat/swe/capacidades", headers=CAB).json()
+        self.assertEqual((j["agentes"]["codex"]["estado"], j["agentes"]["codex"]["veredicto"], j["agentes"]["codex"]["causa"], j["agentes"]["codex"]["intentable"], j["agentes"]["codex"]["verificado"]), ("NO INSTALADO", "NO DISPONIBLE", "binario_ausente", False, True))
+        self.assertEqual((j["agentes"]["openhands"]["estado"], j["agentes"]["openhands"]["verificado"]), ("SIN VERIFICAR", False), "fallo de la comprobacion != NO INSTALADO")
+        self.assertIs(j["agentes"]["opencode"]["disponible"], False, "disponible con SIN VERIFICAR es incoherente: nunca se presenta como verificado")
+        self.assertNotIn("estado", j["agentes"]["claude-code"]); self.assertIs(j["agentes"]["claude-code"]["disponible"], False, "estado fuera de los seis: se descarta y no se da por disponible")
+        self.assertEqual(j["agentes"]["swe-agent"]["estado"], "NO CONFIGURADO"); self.assertNotIn("causa", j["agentes"]["swe-agent"]); self.assertNotIn("intentable", j["agentes"]["swe-agent"])
+        self.assertEqual(j["agentes"]["openclaw"], {"disponible": True}, "sin estado en el Harness no se inventa uno")
+        g = j["modelos"]["groq/qwen/qwen3.8-27b"]
+        self.assertEqual((g["estado"], g["nombre"], g["proveedor"]), ("NO DISPONIBLE EN PROVEEDOR", "Qwen3.8 27B", "groq")); self.assertLessEqual(len(g["nota"]), 200)
+        self.assertEqual((j["modelos"]["nvidia/z-ai/glm-5.3"]["estado"], j["modelos"]["nvidia/z-ai/glm-5.3"]["intentable"]), ("SIN VERIFICAR", True))
+        self.assertEqual(j["workflows"]["liquid_mirror"]["estado"], "NO CONFIGURADO")
 
     def test_capacidades_sin_informe_del_harness_no_inventa_nada(self):
         r = self.cliente.get("/chat/swe/capacidades", headers=CAB)  # el status por defecto del servidor falso no trae `swe`

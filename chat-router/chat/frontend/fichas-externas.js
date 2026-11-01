@@ -31,6 +31,7 @@ export function aplicar(d) {  // d: {groq:[{id,etiqueta,disponible}], nvidia:[�
     cfg().modelos = d.nvidia; cfg().defecto = (buenosNv[0] || d.nvidia[0]).id;
     try { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); if (c && VIEJAS.test(c.ficha || "")) c.ficha = cfg().defecto; } catch (e) {}
   } else (cfg().modelos || []).forEach((m) => { if (VIEJAS.test(m.id) && !/responde Qwen/.test(m.etiqueta)) m.etiqueta += " (" + (d.avisoNvidia || "sin NVIDIA en el Router") + ": responde Qwen)"; });
+  window.RIU_NVIDIA = { aviso: (d.nvidia || []).length ? "" : (d.avisoNvidia || "sin NVIDIA en el Router"), lista: d.nvidia || [] };
   window.dispatchEvent(new CustomEvent("riu:fichas", { detail: { groq: G.lista.length, nvidia: (d.nvidia || []).length } }));
   refrescar();
 }
@@ -49,25 +50,7 @@ export async function cargar() {
   aplicar(d);
 }
 setTimeout(cargar, 800);
-// hoja del selector Groq
-function hojaGroq() {
-  let s = document.getElementById("sh-groq");
-  if (!s) {
-    s = document.createElement("div"); s.id = "sh-groq"; s.className = "sheet"; s.hidden = true; s.setAttribute("role", "dialog"); s.setAttribute("aria-label", "Modelos de Groq");
-    s.innerHTML = '<div class="va-caja"><div class="row va-head"><strong>Groq · modelos</strong><button type="button" class="secondary sh-cerrar" aria-label="Cerrar">✕</button></div><div class="list" id="sh-groq-lista"></div></div>';
-    s.addEventListener("click", (e) => { if (e.target === s || e.target.closest(".sh-cerrar")) s.hidden = true; });
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") s.hidden = true; });
-    document.body.append(s);
-  }
-  const l = s.querySelector("#sh-groq-lista"); l.replaceChildren();
-  if (!G.lista.length) { const p = document.createElement("p"); p.className = "muted"; p.textContent = "Groq: " + G.aviso + ". Pide al Director que ponga GROQ_API_KEY en el Space."; l.append(p); }
-  G.lista.forEach((m) => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "fila" + (m.id === G.modelo ? " on" : ""); b.setAttribute("aria-pressed", String(m.id === G.modelo));
-    b.textContent = m.etiqueta + (m.id === G.modelo ? "  ✓" : "");
-    if (m.disponible === false) { b.disabled = true; b.title = "El catálogo de Groq no publica este modelo; no se sustituye por otro"; return l.append(b); }
-    b.onclick = () => { G.modelo = m.id; try { localStorage.setItem(KG, m.id); } catch (e) {} s.hidden = true; refrescar(); };
-    l.append(b);
-  });
-  s.hidden = false;
-}
-document.addEventListener("click", (e) => { if (e.target.closest("#sel-groq")) hojaGroq(); });
+// El selector Groq ya no tiene hoja propia con lista de modelos (era el duplicado): su ventana es el SELECTOR CENTRAL unico (swe-selectores.js), cuyo
+// MODELO QUE RESPONDE lista estos mismos modelos. Aqui solo queda el estado y los ganchos que ese selector usa.
+G.elegir = (id) => { const m = G.lista.find((x) => x.id === id); if (!m || m.disponible === false) return false; G.modelo = id; G.aviso = ""; try { localStorage.setItem(KG, id); } catch (e) {} refrescar(); return true; };  // un modelo que el proveedor no publica no se elige
+window.RIU_FICHAS = { recargar: cargar };  // «Actualizar disponibilidad» vuelve a pedir los catalogos sin recargar el chat

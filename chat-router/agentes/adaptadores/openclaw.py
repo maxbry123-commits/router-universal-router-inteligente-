@@ -71,4 +71,4 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     if not texto:
         return _comun.error(AGENTE, tarea_id, "AGENTE_SIN_RESULTADO", "el Gateway no devolvio contenido", True)
     proc = {"exit_code": 0, "stdout": hashlib.sha256(bruto).hexdigest(), "stderr": str(datos.get("id") or ""), "duracion_s": 0.0, "truncado": len(bruto) > _comun.MAX_SALIDA}
-    return _comun.resultado_ok(AGENTE, tarea_id, proc, texto, [], ["gateway:" + base, "http:%d" % estado, "id:%s" % datos.get("id"), "modelo:%s" % datos.get("model")], inicio)
+    return _comun.resultado_ok(AGENTE, tarea_id, proc, texto, [], ["gateway:" + base, "http:%d" % estado, "id:%s" % datos.get("id"), "modelo:%s" % datos.get("model")], inicio, str(datos.get("model") or id_bridge))

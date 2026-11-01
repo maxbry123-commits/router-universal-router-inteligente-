@@ -171,6 +171,7 @@ def test_swe_agent_camino_feliz(monkeypatch, tmp_path):
     monkeypatch.setenv("RIU_DOCKER_BIN", fake(tmp_path, "docker", "pass"))
     r = swe_agent.run(permisos=permisos(tmp_path), **BASE)
     comunes_ok(r, "swe-agent")
+    assert r["modelo_usado"] == "qwen2.5-coder-1.5b"
     assert "diff --git" in r["resultado"] and any(e.endswith(".patch") for e in r["evidencias"] if isinstance(e, str))
     c = llamadas(tmp_path, "sweagent")[0]
     a = c["argv"]
@@ -206,10 +207,11 @@ def test_openhands_camino_feliz_via_sdk_en_subproceso(monkeypatch, tmp_path):
     monkeypatch.setenv("RIU_OPENHANDS_PYTHON", fake(tmp_path, "oh", OH_OK))
     r = openhands.run(permisos=permisos(tmp_path, escritura=True, ejecucion=True), **{**BASE, "modelo": "hf/lfm2.5-350m"})
     comunes_ok(r, "openhands")
+    assert r["modelo_usado"] == "lfm2.5-350m"
     assert r["resultado"] == "tests verdes" and r["herramientas"] == ["terminal"]
     previa, ejec = llamadas(tmp_path, "oh")
-    assert previa["argv"][0] == "-c" and "openhands.sdk" in previa["argv"][1]
-    assert ejec["argv"][0].endswith("_openhands_runner.py")
+    assert previa["argv"][:2] == ["-I", "-c"] and "openhands.sdk" in previa["argv"][2]
+    assert ejec["argv"][0] == "-I" and ejec["argv"][1].endswith("_openhands_runner.py")  # -I: el directorio del runner (con nuestro openhands.py) NO va en sys.path y no oculta al SDK real
     entrada = json.loads(ejec["stdin"])
     assert entrada["modelo"] == "openai/lfm2.5-350m" and entrada["base_url"] == "http://127.0.0.1:7870/v1" and entrada["ejecucion"] is True
     assert entrada["directorio"] == os.path.realpath(str(tmp_path / "ws")) and "corrige el bug" in entrada["prompt"] and "api_key" not in json.dumps(entrada)
@@ -251,6 +253,7 @@ def test_claude_code_camino_feliz_lectura(monkeypatch, tmp_path):
     cfg_claude(monkeypatch, tmp_path)
     r = claude_code.run(permisos=permisos(tmp_path), **{**BASE, "modelo": "nvidia/z-ai/glm-5.3"})
     comunes_ok(r, "claude-code")
+    assert r["modelo_usado"] == "z-ai/glm-5.3"
     assert r["resultado"] == "plan revisado"
     c = llamadas(tmp_path, "claude")[0]
     a = c["argv"]
@@ -326,6 +329,7 @@ def test_openclaw_camino_feliz(monkeypatch, tmp_path, gateway):
     monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", CLAVE_FICTICIA)
     r = openclaw.run(permisos=permisos(tmp_path, escritura=True), **{**BASE, "modelo": "hf/lfm2.5-350m"})
     comunes_ok(r, "openclaw")
+    assert r["modelo_usado"]  # lo que el Gateway informa (o el id pedido)
     assert r["resultado"] == "orquestado" and CLAVE_FICTICIA not in json.dumps(r)
     ruta, cab, cuerpo = Gateway.visto[0]
     cab = {k.lower(): v for k, v in cab.items()}
@@ -457,3 +461,11 @@ def test_los_agentes_reciben_credencial_para_el_bridge(monkeypatch, tmp_path):
     c1, c2 = llamadas(tmp_path, "opencode")
     assert c1["env"]["RIU_AGENTE_LLM_KEY"] == "token-bridge-ficticio-0001" and c2["env"]["RIU_AGENTE_LLM_KEY"] == "clave-llm-ficticia-0002"
     assert "token-bridge-ficticio" not in " ".join(c1["argv"]) and "BRIDGE_TOKEN" not in c1["env"]
+
+
+# ---------------- A2/auditoria 3: el modelo realmente utilizado queda en el resultado ----------------
+def test_codex_y_opencode_informan_el_modelo_realmente_usado(monkeypatch, tmp_path):
+    monkeypatch.setenv("RIU_CODEX_BIN", fake(tmp_path, "codex", CODEX_OK))
+    assert codex.run(permisos=permisos(tmp_path), **BASE)["modelo_usado"] == "qwen2.5-coder-1.5b"
+    monkeypatch.setenv("RIU_OPENCODE_BIN", fake(tmp_path, "opencode", "print(json.dumps({'type': 'text', 'part': {'text': 'hecho'}}))"))
+    assert opencode.run(permisos=permisos(tmp_path), **BASE)["modelo_usado"] == "qwen2.5-coder-1.5b"

@@ -154,6 +154,36 @@ def swe_error(salida):
     return e if isinstance(e, str) and _CODIGO.fullmatch(e) else None
 
 
+_CAUSA = re.compile(r"[a-z][a-z0-9_]{1,63}")
+_VEREDICTOS = ("DISPONIBLE", "NO DISPONIBLE", "SIN VERIFICAR")
+try:
+    from agentes.adaptadores.disponibilidad import ESTADOS as ESTADOS_DISPONIBILIDAD  # los seis estados (instruccion 37) viven en UN sitio: disponibilidad.py
+except ImportError:  # sin agentes.adaptadores el Harness tampoco emite swe: la lista no se usa
+    ESTADOS_DISPONIBILIDAD = ()
+
+
+def _estado_saneado(v, e, grupo, cat):
+    """Pasa lo que el Harness DICE sobre el estado, validado: estado entre los seis, veredicto entre los tres, causa estable, bools. `disponible` solo queda True si el estado es DISPONIBLE (o no hay estado: contrato antiguo)."""
+    estado = v.get("estado")
+    if isinstance(estado, str) and estado in ESTADOS_DISPONIBILIDAD:
+        e["estado"] = estado
+        if estado != "DISPONIBLE":
+            e["disponible"] = False  # SIN VERIFICAR / NO INSTALADO...: desconocido jamas se presenta como verificado
+    elif estado is not None:
+        e["disponible"] = False  # un estado fuera de los seis no se puede dar por verificado
+    if v.get("veredicto") in _VEREDICTOS:
+        e["veredicto"] = v["veredicto"]
+    for k in ("verificado", "intentable"):
+        if type(v.get(k)) is bool:
+            e[k] = v[k]
+    if isinstance(v.get("causa"), str) and _CAUSA.fullmatch(v["causa"]):
+        e["causa"] = v["causa"]
+    if grupo == "modelos":
+        for k, tope in (("nombre", 80), ("proveedor", 40), ("nota", 200)):
+            if isinstance(v.get(k), str) and v[k]:
+                e[k] = v[k][:tope]
+
+
 def swe_capacidades(status):
     """Lo que el Harness reporta conectado en su `status` (result.swe.{agentes,workflows,modelos}), saneado contra el catalogo unico. Lo que no reporta no se inventa."""
     from agentes.adaptadores import modelos as cat
@@ -172,5 +202,6 @@ def swe_capacidades(status):
                 e["motivo"] = v["motivo"][:200]
             if grupo == "agentes" and isinstance(v.get("modelos"), list):
                 e["modelos"] = [m for m in v["modelos"] if isinstance(m, str) and m in cat.MODELOS]
+            _estado_saneado(v, e, grupo, cat)
             salida[grupo][k] = e
     return salida

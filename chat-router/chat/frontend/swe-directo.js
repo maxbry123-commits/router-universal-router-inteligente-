@@ -1,39 +1,37 @@
 // swe-directo.js — los modelos de SWE CODE / SWEN CODE free del selector responden por su router propio (el bridge), sin pasar por el Router MVP.
 // El chat llama POST /v1/chat/completions del mismo origen (el proxy del Space manda web-* y swecode-* al bridge); mismo historial, misma sesion.
-import { leerClaves } from "./swe-claves.js";
 const REAL = { "hf-liquid-lfm25": "lfm2.5-350m", "swe-agent-lfm25": "lfm2.5-350m", "swe-openhands-lfm25": "lfm2.5-350m",
-  "swe-codex-qwen25-15b": "qwen2.5-coder-1.5b", "hf-qwen25-coder-15b": "qwen2.5-coder-1.5b", "swe-opencode-qwen35-08b": "qwen3.5-0.8b", "hf-qwen3-06b": "qwen3-0.6b" };
+  "swe-codex-qwen25-15b": "qwen2.5-coder-1.5b", "hf-qwen25-coder-15b": "qwen2.5-coder-1.5b", "swe-opencode-qwen35-08b": "qwen3.5-0.8b", "hf-qwen35-08b": "qwen3.5-0.8b", "hf-qwen3-06b": "qwen3-0.6b" };  // los alias swe-* son ids viejos (solo para lo ya guardado): la lista ya no mezcla agentes con modelos
 const LOCALES = ["lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"];
 const MAX_HISTORIAL = 20;  // mensajes previos: un modelo de 350M-1.5B o una UI web se desbordan con el chat entero
 
-// dos selectores propios del panel Selectores: [id del modelo, etiqueta, descripcion]
+// Ventanas con el selector central: [id del modelo, etiqueta, descripcion]. SOLO nombres de modelo: el agente se elige en el selector central y
+// los modos de SWEN (asesoria, revision...) son MODO DE TRABAJO (MODOS_TRABAJO), no modelos.
 export const SWE_LISTAS = {
   "swe-code": { nombre: "SWE CODE", titulo: "SWE CODE · modelos locales (HF)", modelos: [
-    ["hf-liquid-lfm25", "Liquid AI (HF)", "LFM2.5-350M · respondedor principal"],
-    ["swe-codex-qwen25-15b", "SWE · Codex escribe", "Qwen2.5-Coder-1.5B"],
-    ["swe-opencode-qwen35-08b", "SWE · OpenCode revisa", "Qwen3.5-0.8B"],
-    ["swe-agent-lfm25", "SWE · Agent ejecuta", "LFM2.5-350M · tool/agentic"],
-    ["swe-openhands-lfm25", "SWE · OpenHands verifica", "LFM2.5-350M"],
-    ["hf-qwen25-coder-15b", "Qwen Code (HF)", "Qwen2.5-Coder-1.5B local"],
-    ["hf-qwen3-06b", "Qwen3 0.6B (HF)", "Qwen3-0.6B"]] },
+    ["hf-liquid-lfm25", "Liquid LFM2.5 350M", "HF local"],
+    ["hf-qwen25-coder-15b", "Qwen2.5 Coder 1.5B", "HF local"],
+    ["hf-qwen35-08b", "Qwen3.5 0.8B", "HF local"],
+    ["hf-qwen3-06b", "Qwen3 0.6B", "HF local"]] },
   "swen-code-free": { nombre: "SWEN CODE free", titulo: "SWEN CODE free · cuentas web", modelos: [
     ["swecode-consulta", "Concilio · los 3 web", "los 3 modelos web a la vez + síntesis"],
     ["web-qwen38max", "Qwen 3.8 Max (web)", "Código complejo · via bridge"],
     ["web-qwen37max", "Qwen 3.7 Max (web)", "Razonamiento · via bridge"],
     ["web-dsv4-flash", "DeepSeek V4 Flash (web)", "Código rápido · via bridge"],
-    ["swecode-asesoria", "SWE · asesoría", "plan antes de ejecutar"],
-    ["swecode-revision", "SWE · revisión", "modo revisión"],
-    ["swecode-solucion", "SWE · solución", "modo solución"],
-    ["swecode-arquitectura", "SWE · arquitectura", "modo arquitectura"],
-    ["swecode-archivos", "SWE · archivos", "modo archivos"],
-    ["swecode-prompt_code", "SWE · prompt_code", "modo prompt_code"],
-    ["swecode-despliega", "SWE · despliega", "modo despliega"],
+    ["hf-liquid-lfm25", "Liquid LFM2.5 350M", "HF local"],
+    ["hf-qwen25-coder-15b", "Qwen2.5 Coder 1.5B", "HF local"],
+    ["hf-qwen35-08b", "Qwen3.5 0.8B", "HF local"],
+    ["hf-qwen3-06b", "Qwen3 0.6B", "HF local"],
     ["groq/qwen/qwen3.8-27b", "Qwen 3.8 Groq", "API Groq"],
     ["nvidia/minimaxai/minimax-m3.1-flash", "MiniMax M3.1 Flash", "API NVIDIA"],
     ["nvidia/meta/muse-glimmer-30b", "Muse Glimmer 30B", "API NVIDIA"],
     ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "Nemotron 3 Ultra", "API NVIDIA"],
     ["nvidia/z-ai/glm-5.3", "GLM 5.3", "API NVIDIA"]] },
 };
+// Modelos web de SWEN CODE free (cuentas web del bridge): no estan en el catalogo del Harness, solo sirven para el chat directo por el bridge.
+export const MODELOS_WEB = [["swecode-consulta", "Concilio · los 3 web"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"]];
+// MODO DE TRABAJO (antes «modelos» swecode-<modo>): el bridge ya acepta `modo` junto a cualquier modelo (server.js: conPreambulo). Vacio = sin modo.
+export const MODOS_TRABAJO = [["asesoria", "Asesoría"], ["revision", "Revisión"], ["solucion", "Solución"], ["arquitectura", "Arquitectura"], ["archivos", "Archivos"], ["prompt_code", "Prompt code"], ["despliega", "Despliega"]];
 export const esSelectorSwe = (id) => typeof id === "string" && Object.hasOwn(SWE_LISTAS, id);
 
 export const esSwe = (id) => typeof id === "string" && (/^(web-|swecode-|groq\/|nvidia\/)/.test(id) || Object.hasOwn(REAL, id) || LOCALES.includes(id));
@@ -46,11 +44,7 @@ const K_EJECUTOR = "riu_swe_ejecutor_tools";
 const normEjecutor = (v) => (EJECUTORES_TOOLS.includes(v) ? v : "swe");
 export function leerEjecutorTools() { try { return normEjecutor(localStorage.getItem(K_EJECUTOR)); } catch (e) { return "swe"; } }
 const escribirEjecutor = (x) => { try { localStorage.setItem(K_EJECUTOR, x); } catch (e) {} return x; };
-export function guardarEjecutorTools(v) {
-  const x = escribirEjecutor(normEjecutor(v));
-  escribirSeleccion({ ...leerSeleccion(), agente_tool: x === "openclaw" ? "openclaw" : "swe-agent" });  // el boton de salida y AGENTE QUE EJECUTA son el mismo dato
-  return x;
-}
+export function guardarEjecutorTools(v) { return escribirEjecutor(normEjecutor(v)); }  // la salida es SU PROPIO dato: no toca agente_tool (ni al reves)
 
 // ---- Selectores de agente/modelo/workflow (contrato TareaSWE de chat-router/agentes/adaptadores/contrato.py) ----
 // Catalogo unico de agentes/adaptadores/modelos.py: el frontend solo lo refleja; el servidor valida y la disponibilidad real la reporta el Harness.
@@ -65,29 +59,27 @@ export const WORKFLOWS_SWE = [["individual", "Individual"], ["swe_code", "SWE CO
 // Liquid Mirror: dos participantes propios (mismo modelo, servidores HF independientes), sin mezclar con los modelos web.
 export const LIQUID_MIRROR = [{ id: "liquid1", etiqueta: "LIQUID 1 — LECTOR", servidor: "S2", modelo: "hf/lfm2.5-350m" }, { id: "liquid2", etiqueta: "LIQUID 2 — EJECUTOR", servidor: "S3", modelo: "hf/lfm2.5-350m" }];
 const LIQUID = "hf/lfm2.5-350m", REVISOR = "hf/qwen3.5-0.8b", VERIFICADOR = "openhands";  // fijos del workflow SWE CODE (workflows.py)
-export const SEL_DEFECTO = { modelo_responde: LIQUID, modelo_tool: "hf/qwen2.5-coder-1.5b", agente_responde: "openclaw", agente_tool: "swe-agent", modo_agentico: false, workflow: "individual" };
+export const SEL_DEFECTO = { modelo_responde: LIQUID, modelo_tool: "hf/qwen2.5-coder-1.5b", agente_responde: "openclaw", agente_tool: "swe-agent", modo_agentico: false, workflow: "individual", modo_trabajo: "" };
 const K_SEL = "riu_swe_seleccion";
 const en = (lista, v) => typeof v === "string" && lista.some((x) => x[0] === v);
 function normSeleccion(x, base) {
   const o = x && typeof x === "object" ? x : {};
   return {
-    modelo_responde: en(MODELOS_SWE, o.modelo_responde) ? o.modelo_responde : base.modelo_responde,
+    modelo_responde: en(MODELOS_SWE, o.modelo_responde) || en(MODELOS_WEB, o.modelo_responde) ? o.modelo_responde : base.modelo_responde,  // los web-* solo sirven para el chat directo (validarSeleccion)
     modelo_tool: en(MODELOS_SWE, o.modelo_tool) ? o.modelo_tool : base.modelo_tool,
     agente_responde: en(AGENTES_SWE, o.agente_responde) ? o.agente_responde : base.agente_responde,
     agente_tool: en(AGENTES_SWE, o.agente_tool) ? o.agente_tool : base.agente_tool,
     modo_agentico: typeof o.modo_agentico === "boolean" ? o.modo_agentico : base.modo_agentico,
-    workflow: en(WORKFLOWS_SWE, o.workflow) ? o.workflow : base.workflow };
+    workflow: en(WORKFLOWS_SWE, o.workflow) ? o.workflow : base.workflow,
+    modo_trabajo: o.modo_trabajo === "" || en(MODOS_TRABAJO, o.modo_trabajo) ? o.modo_trabajo : base.modo_trabajo || "" };
 }
 export function leerSeleccion() { try { return normSeleccion(JSON.parse(localStorage.getItem(K_SEL) || "{}"), SEL_DEFECTO); } catch (e) { return { ...SEL_DEFECTO }; } }
 function escribirSeleccion(sel) { try { localStorage.setItem(K_SEL, JSON.stringify(sel)); } catch (e) {} return sel; }
 export function guardarSeleccion(parcial) {
-  const sel = escribirSeleccion(normSeleccion(parcial, leerSeleccion()));  // un valor invalido no pisa el anterior
-  // ejecutor_tools (lo que viaja) sigue a AGENTE QUE EJECUTA: openclaw -> 'openclaw'; swe-agent u otro agente (Codex, OpenCode...) -> 'swe' (lo ejecuta el Harness)
-  if (parcial && Object.hasOwn(parcial, "agente_tool")) escribirEjecutor(sel.agente_tool === "openclaw" ? "openclaw" : "swe");
-  return sel;
+  return escribirSeleccion(normSeleccion({ ...leerSeleccion(), ...(parcial && typeof parcial === "object" ? parcial : {}) }, leerSeleccion()));  // un valor invalido no pisa el anterior; cada campo es independiente (salida, agente_tool, modelo_tool, modelo_responde)
 }
-// Boton de salida marcado: SWE-agent u OpenClaw segun AGENTE QUE EJECUTA; con cualquier otro agente ejecutor no se marca ninguno (null)
-export const salidaActiva = (sel) => (sel && sel.agente_tool === "openclaw" ? "openclaw" : sel && sel.agente_tool === "swe-agent" ? "swe" : null);
+// Salida de los tool_calls (swe | openclaw): contrato externo ejecutor_tools; independiente de AGENTE QUE EJECUTA (agente_tool)
+export const salidaActiva = () => leerEjecutorTools();
 export const requiereHarness = (sel) => !!sel && (sel.workflow !== "individual" || sel.modo_agentico === true);
 // modelo del selector clasico (alias hf-*, ids locales, groq/, nvidia/) -> id del catalogo; null si no esta registrado (p. ej. web-*, swecode-*)
 export function idCatalogo(id) {
@@ -120,17 +112,7 @@ export function modeloGuardado(lista, guardado) {
   const cat = typeof guardado === "string" ? idCatalogo(guardado) : null;
   return (cat && modeloParaLista(lista, cat, "")) || { model_id: l.modelos[0][0], label: l.modelos[0][1] };
 }
-// F4: «SWE · Codex escribe / OpenCode revisa / Agent ejecuta / OpenHands verifica» son modelo + agente. Con el agente conectado (y compatible con el modelo) elegirlas fija tambien
-// agente_responde y agente_tool; si no, la fila sale «solo modelo» y se envia solo el modelo. fila = null si la entrada no es de agente.
-export const AGENTE_DE_ENTRADA = { "swe-codex-qwen25-15b": "codex", "swe-opencode-qwen35-08b": "opencode", "swe-agent-lfm25": "swe-agent", "swe-openhands-lfm25": "openhands" };
 export const AGENTE_CORTO = { codex: "Codex", opencode: "OpenCode", "swe-agent": "SWE-agent", openhands: "OpenHands", openclaw: "OpenClaw", "claude-code": "Claude Code" };
-export function seleccionDeEntrada(mid, cap) {
-  const cat = idCatalogo(mid), parcial = cat ? { modelo_responde: cat } : {}, agente = Object.hasOwn(AGENTE_DE_ENTRADA, mid) ? AGENTE_DE_ENTRADA[mid] : null;
-  if (!agente) return { fila: null, parcial };
-  const st = estadoOpcion(cap || normalizarCapacidades(null), "agente", agente, cat);
-  if (!st.ok) return { fila: { agente, rotulo: "solo modelo", soloModelo: true, motivo: st.motivo }, parcial };
-  return { fila: { agente, rotulo: AGENTE_CORTO[agente], soloModelo: false, motivo: "" }, parcial: { ...parcial, agente_responde: agente, agente_tool: agente } };
-}
 const ident = (v, defecto) => { const t = String(v == null ? "" : v).replace(/[^A-Za-z0-9_-]/g, "-").slice(0, 64); return t || defecto; };
 export function nuevoTaskId() { return "yaiwes-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 export function armarTarea({ sel, mensaje, sesion, proyecto, task_id }) {
@@ -148,45 +130,71 @@ export function normalizarCapacidades(p) {
   const m = (x) => (x && typeof x === "object" ? x : {});
   return { harness: typeof o.harness === "string" ? o.harness : "desconocido", agentes: m(o.agentes), workflows: m(o.workflows), modelos: m(o.modelos) };
 }
+// Estados reales (instruccion 37). SIN VERIFICAR = la comprobacion no se pudo hacer o no dio un resultado firme: NUNCA se muestra como NO INSTALADO ni como DISPONIBLE.
+export const ETIQUETA_ESTADO = { DISPONIBLE: "DISPONIBLE", NO_INSTALADO: "NO INSTALADO", NO_CONFIGURADO: "NO CONFIGURADO", NO_COMPATIBLE: "NO COMPATIBLE", NO_DISPONIBLE_PROVEEDOR: "NO DISPONIBLE EN PROVEEDOR", SIN_VERIFICAR: "SIN VERIFICAR" };
+// el Harness puede decir el estado explicito (`estado`); si solo da {disponible, motivo} se deduce del motivo (disponibilidad.py nombra la causa)
+const estadoDeMotivo = (tipo, motivo) => {
+  if (/sin verificar|no se pudo comprobar|cache\)/i.test(motivo) && !/no esta instalado|ausente del PATH/i.test(motivo)) return "SIN_VERIFICAR";
+  if (/no esta instalado|ausente del PATH|no instalad/i.test(motivo)) return "NO_INSTALADO";
+  if (/incompatible|no compatible/i.test(motivo)) return "NO_COMPATIBLE";
+  if (tipo === "modelo" && /no figura en GET \/models|no esta en el catalogo del proveedor|no publica|404/i.test(motivo)) return "NO_DISPONIBLE_PROVEEDOR";
+  if (/sin configurar|instalado pero|\bfalta[n]?\b|invalida|no es un ejecutable|API_KEY|_URL|TOKEN|no responde en la URL/i.test(motivo)) return "NO_CONFIGURADO";
+  return tipo === "modelo" ? "NO_DISPONIBLE_PROVEEDOR" : "SIN_VERIFICAR";
+};
+const sinHarness = (cap) => cap.harness !== "ok";
+const motivoSinHarness = { sin_respuesta: "el Harness no respondió", sin_credencial: "falta la clave de acceso del chat", no_configurado: "el Harness no está configurado en el servidor", no_disponible: "el Harness no está disponible", desconocido: "el Harness no ha reportado" };
 export function estadoOpcion(cap, tipo, id, modelo) {
   const e = (tipo === "agente" ? cap.agentes : tipo === "workflow" ? cap.workflows : cap.modelos)[id];
   const motivo = e && typeof e.motivo === "string" && e.motivo ? e.motivo : "";
-  if (tipo === "workflow" && id === "individual") return { ok: true, motivo: "" };
-  if (tipo === "modelo") return e && e.disponible === false ? { ok: false, motivo: motivo || "no esta en el catalogo del proveedor" } : { ok: true, motivo: "" };
-  if (!e || e.disponible !== true) return { ok: false, motivo: motivo || (tipo === "agente" ? "sin adaptador conectado (el Harness no lo reporta)" : "el Harness no lo reporta conectado") };
-  if (tipo === "agente" && modelo && Array.isArray(e.modelos) && !e.modelos.includes(modelo)) return { ok: false, motivo: "incompatible con " + modelo };
-  return { ok: true, motivo: "" };
+  const r = (estado, m, ok = estado === "DISPONIBLE") => ({ ok, estado, motivo: m });
+  if (tipo === "workflow" && id === "individual") return r("DISPONIBLE", "");
+  if (!e && sinHarness(cap)) return r("SIN_VERIFICAR", "sin verificar: " + (motivoSinHarness[cap.harness] || motivoSinHarness.desconocido) + (tipo === "agente" ? " (sin adaptador conectado que lo confirme)" : ""), tipo === "modelo");  // un modelo sin verificar no bloquea el chat normal; un agente/workflow si
+  if (!e) return r("SIN_VERIFICAR", "sin verificar: el Harness no lo reporta", tipo === "modelo");
+  const explicito = typeof e.estado === "string" ? e.estado.toUpperCase().replace(/[\s-]+/g, "_") : "";
+  if (e.disponible === false) { const est = Object.hasOwn(ETIQUETA_ESTADO, explicito) && explicito !== "DISPONIBLE" ? explicito : estadoDeMotivo(tipo, motivo); return r(est, motivo || (tipo === "modelo" ? "no esta en el catalogo del proveedor" : "el Harness no lo reporta conectado")); }
+  if (e.disponible !== true) return r("SIN_VERIFICAR", motivo || "sin verificar: el Harness no dio un estado firme", tipo === "modelo");
+  if (explicito === "SIN_VERIFICAR" || /sin verificar/i.test(motivo)) return r("SIN_VERIFICAR", motivo || "sin verificar", true);
+  if (tipo === "agente" && modelo && Array.isArray(e.modelos) && !e.modelos.includes(modelo)) return r("NO_COMPATIBLE", "incompatible con " + modelo);
+  return r("DISPONIBLE", "");
 }
-// Hoja compacta: disponibles arriba; lo que no esta conectado se agrupa aparte (no instalado / incompatible con el modelo) y se muestra en UNA linea, no como filas largas.
+// Hoja compacta: disponibles arriba; lo que no esta disponible se agrupa por su estado real y se muestra en UNA linea cada grupo, no como filas largas.
 export function agruparOpciones(cap, tipo, lista, modelo) {
-  const g = { ok: [], noInstalado: [], incompatible: [] };
+  const g = { ok: [], noInstalado: [], incompatible: [], sinVerificar: [], otros: [] };
   for (const [id, etq] of lista) {
-    const st = estadoOpcion(cap, tipo, id, modelo), x = { id, etq, motivo: st.motivo };
-    (st.ok ? g.ok : /^incompatible/.test(st.motivo) ? g.incompatible : g.noInstalado).push(x);
+    const st = estadoOpcion(cap, tipo, id, modelo), x = { id, etq, motivo: st.motivo, estado: st.estado };
+    (st.ok ? g.ok : st.estado === "NO_INSTALADO" ? g.noInstalado : st.estado === "NO_COMPATIBLE" ? g.incompatible : st.estado === "SIN_VERIFICAR" ? g.sinVerificar : g.otros).push(x);
   }
   return g;
 }
 export const lineaNoInstalados = (g) => (g.noInstalado.length ? "No instalados: " + g.noInstalado.map((x) => x.etq).join(", ") : "");
-// Secciones plegables de la hoja (Modelo | Agentes | Workflow y salida): el estado abierto/cerrado se guarda en localStorage.
-export const SECCIONES_DEFECTO = { modelo: true, agentes: false, workflow: false };
-const K_SECC = "riu_swe_secciones";
-export function leerSecciones() {
-  let o = {}; try { o = JSON.parse(localStorage.getItem(K_SECC) || "{}") || {}; } catch (e) {}
-  return Object.fromEntries(Object.entries(SECCIONES_DEFECTO).map(([k, v]) => [k, typeof o[k] === "boolean" ? o[k] : v]));
-}
-export function guardarSeccion(id, abierta) {
-  const s = leerSecciones(); if (!Object.hasOwn(SECCIONES_DEFECTO, id)) return s;
-  s[id] = !!abierta; try { localStorage.setItem(K_SECC, JSON.stringify(s)); } catch (e) {} return s;
+export const lineaSinVerificar = (g) => (g.sinVerificar.length ? "Sin verificar: " + g.sinVerificar.map((x) => x.etq).join(", ") : "");
+export const lineaOtros = (g) => (g.otros.length ? "No configurados / no disponibles: " + g.otros.map((x) => x.etq + " (" + ETIQUETA_ESTADO[x.estado].toLowerCase() + ")").join(", ") : "");
+// MODELO QUE RESPONDE / PARA TOOL por ventana (25, 26): cada ventana muestra SOLO sus modelos; `proveedor` = {id: bool} del catalogo del Router (false = el proveedor no lo publica)
+const SOLO = { "swe-code": (id) => id.startsWith("hf/"), groq: (id) => id.startsWith("groq/"), nvidia: (id) => id.startsWith("nvidia/"), "swen-code-free": () => true };
+export const VENTANAS_CENTRAL = ["swe-code", "swen-code-free", "groq", "nvidia"];
+export function opcionesModeloVentana(ventana, cap, proveedor = {}, { web = ventana === "swen-code-free" } = {}) {
+  const lista = [...(web ? MODELOS_WEB : []), ...MODELOS_SWE.filter((m) => (SOLO[ventana] || SOLO["swen-code-free"])(m[0]))];
+  return lista.map(([id, etq]) => {
+    let st = estadoOpcion(cap, "modelo", id);
+    const pv = proveedor ? proveedor[id] : undefined;  // false = el proveedor no lo publica; "NO_CONFIGURADO" / "SIN_VERIFICAR" = su catalogo no se pudo leer
+    if (pv === false) st = { ok: false, estado: "NO_DISPONIBLE_PROVEEDOR", motivo: "el catálogo del proveedor no publica este modelo; no se sustituye por otro" };
+    else if (pv === "NO_CONFIGURADO") st = { ok: false, estado: "NO_CONFIGURADO", motivo: "el Router no tiene la clave de este proveedor (banco de claves del servidor)" };
+    else if (pv === "SIN_VERIFICAR" && st.estado === "DISPONIBLE") st = { ok: true, estado: "SIN_VERIFICAR", motivo: "sin verificar: no se pudo leer el catálogo del proveedor" };
+    return { id, etq: etq + (st.estado === "DISPONIBLE" ? "" : " — " + ETIQUETA_ESTADO[st.estado]), nombre: etq, ok: st.ok, estado: st.estado, motivo: st.motivo };
+  });
 }
 const nombreDe = (lista, id) => (lista.find((x) => x[0] === id) || [id, id])[1];
 export function validarSeleccion(sel, cap) {
   if (!requiereHarness(sel)) return { ok: true, problemas: [] };
-  const problemas = [], plano = (m) => String(m).replace(/\s*\(([^()]*)\)/g, ": $1").replace(/[()]/g, ""), mal = (etq, r) => { if (!r.ok) problemas.push(etq + ": " + (/^incompatible/.test(r.motivo) ? "" : "NO DISPONIBLE, ") + plano(r.motivo)); };
+  const problemas = [], plano = (m) => String(m).replace(/\s*\(([^()]*)\)/g, ": $1").replace(/[()]/g, ""), mal = (etq, r) => { if (!r.ok) problemas.push(etq + ": " + ETIQUETA_ESTADO[r.estado] + (r.motivo ? ", " + plano(r.motivo) : "")); };
   // SWE CODE cuatro pasos corre agentes (escribe/revisa/ejecuta/verifica) que solo se activan con el modo agentico (workflows.py: MODO_AGENTICO_APAGADO): se dice ANTES de crear la tarea
   if (sel.workflow === "swe_code" && !sel.modo_agentico) problemas.push("WORKFLOW " + nombreDe(WORKFLOWS_SWE, sel.workflow) + " exige MODO AGÉNTICO ON");
   mal("WORKFLOW " + nombreDe(WORKFLOWS_SWE, sel.workflow), estadoOpcion(cap, "workflow", sel.workflow));
   // agente_responde no lo usa ningun workflow del backend (plan_de: «responde» es un LLM sin agente) y modelo_responde solo cuenta en Individual (camposFijos): no se validan
-  if (!camposFijos(sel.workflow).has("modelo_responde")) mal("MODELO QUE RESPONDE " + nombreDe(MODELOS_SWE, sel.modelo_responde), estadoOpcion(cap, "modelo", sel.modelo_responde));
+  if (!camposFijos(sel.workflow).has("modelo_responde")) {
+    if (en(MODELOS_WEB, sel.modelo_responde)) problemas.push("MODELO QUE RESPONDE " + nombreDe(MODELOS_WEB, sel.modelo_responde) + ": " + ETIQUETA_ESTADO.NO_COMPATIBLE + ", el contrato del Harness solo admite modelos del catálogo (elige uno HF, Groq o NVIDIA)");
+    else mal("MODELO QUE RESPONDE " + nombreDe(MODELOS_SWE, sel.modelo_responde), estadoOpcion(cap, "modelo", sel.modelo_responde));
+  }
   if (sel.modo_agentico) {
     const tool = sel.workflow === "liquid_mirror" ? LIQUID : sel.modelo_tool;
     mal("MODELO PARA TOOL " + nombreDe(MODELOS_SWE, tool), estadoOpcion(cap, "modelo", tool));
@@ -280,10 +288,12 @@ export async function aprobarYContinuarSwe(api, d, alPaso) {
   return conducir(api, await aprobarTareaSwe(api, d), tarea, alPaso, { parar: d.parar, signal: d.signal });
 }
 
-export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecutor_tools }) {
+export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecutor_tools, modo }) {
   const h = historial.slice(-MAX_HISTORIAL);
-  let claves = {}; try { claves = leerClaves(); } catch (e) {}  // las claves viajan solo en el cuerpo; nunca en errores ni en la nota
-  return { model: Object.hasOwn(REAL, model) ? REAL[model] : model, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, stream: true, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(proyecto ? { proyecto } : {}), ...(Object.keys(claves).length ? { claves } : {}) };
+  const m = modo === undefined ? leerSeleccion().modo_trabajo : modo, mt = en(MODOS_TRABAJO, m) ? m : "";  // MODO DE TRABAJO: `modo` junto al modelo; Concilio lleva el modo en el id (swecode-<modo>)
+  const real = Object.hasOwn(REAL, model) ? REAL[model] : model;
+  // R1: el navegador NUNCA guarda ni reenvia claves de API: el banco cifrado del servidor es la unica fuente (swe-claves.js solo informa su estado)
+  return { model: mt && real === "swecode-consulta" ? "swecode-" + mt : real, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, stream: true, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(mt && real !== "swecode-consulta" ? { modo: mt } : {}), ...(proyecto ? { proyecto } : {}) };
 }
 
 // El proxy del Space solo manda /v1/* al bridge si el modelo empieza por web-/swecode-; el resto (locales HF, groq/, nvidia/) caeria en el Router
@@ -366,12 +376,10 @@ export async function enviarSwe(api, datos) {
   let r = await api(rutaSwe(datos.model), opc);
   if (r && r.__sse) r = await respuestaDeSSE(r.__sse, datos);  // si el servidor respondio JSON normal, r ya es el JSON: camino de siempre
   const msg = (r && r.choices && r.choices[0] && r.choices[0].message) || {};
-  const llamadas = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
-  if (!msg.content && llamadas.length) {  // passthrough: las tools las ejecuta el cliente (OpenClaw) o el Harness; no es un fallo
-    const nombres = llamadas.map((t) => (t && t.function && t.function.name) || "tool");
-    const quien = cuerpo.ejecutor_tools === "openclaw" ? "OpenClaw" : "SWE-agent";  // pedidas, no usadas: las ejecuta el cliente (OpenClaw) o el SWE-agent
-    return { reply: "Tools pedidas: " + nombres.join(", "), tools: [], pedidas: nombres, ejecutor: quien, finish_reason: r.choices[0].finish_reason || "tool_calls", nota: `SWE · ${r.modelo_usado || datos.model} · tools → ${quien}` };
-  }
+  const llamadas = Array.isArray(msg.tool_calls) ? msg.tool_calls.filter(Boolean) : [];
+  // R4: una respuesta con tool_calls (con o sin texto) NUNCA pierde las llamadas pendientes: las ejecuta el cliente (OpenClaw) o el SWE-agent, no es un fallo
+  const nombres = llamadas.map((t) => (t && t.function && t.function.name) || "tool"), quien = cuerpo.ejecutor_tools === "openclaw" ? "OpenClaw" : "SWE-agent";
+  if (!msg.content && llamadas.length) return { reply: "Tools pedidas: " + nombres.join(", "), tools: [], pedidas: nombres, tool_calls: llamadas, ejecutor: quien, finish_reason: r.choices[0].finish_reason || "tool_calls", nota: `SWE · ${r.modelo_usado || datos.model} · tools → ${quien}` };
   const texto = msg.content;
   if (!texto) {  // un fallo no se pinta como respuesta del modelo (entraria al historial del turno siguiente)
     const e = (r && r.error) || {};
@@ -379,7 +387,7 @@ export async function enviarSwe(api, datos) {
   }
   const via = r.via_respaldo ? ` · respondió ${r.via_respaldo}` : r.via_primaria ? ` · vía ${r.via_primaria}` : "";
   if (r.error && r.choices[0].finish_reason === "error") {  // stream cortado con texto ya entregado: se conserva lo recibido y el corte se dice en la nota (no se da por completo)
-    return { reply: texto, tools: [], finish_reason: "error", nota: `SWE · ${r.modelo_usado || datos.model}${via} · GAP: ${r.error.code || "STREAM_ERROR"}${r.error.message ? " · " + r.error.message : ""} (respuesta parcial)` };
+    return { reply: texto, tools: [], ...(llamadas.length ? { pedidas: nombres, tool_calls: llamadas, ejecutor: quien } : {}), finish_reason: "error", nota: `SWE · ${r.modelo_usado || datos.model}${via} · GAP: ${r.error.code || "STREAM_ERROR"}${r.error.message ? " · " + r.error.message : ""} (respuesta parcial)` };
   }
-  return { reply: texto, tools: [], finish_reason: r.choices[0].finish_reason || null, nota: `SWE · ${r.modelo_usado || datos.model}${via}` };
+  return { reply: texto, tools: [], ...(llamadas.length ? { pedidas: nombres, tool_calls: llamadas, ejecutor: quien } : {}), finish_reason: r.choices[0].finish_reason || (llamadas.length ? "tool_calls" : null), nota: `SWE · ${r.modelo_usado || datos.model}${via}${llamadas.length ? " · tools → " + quien : ""}` };
 }

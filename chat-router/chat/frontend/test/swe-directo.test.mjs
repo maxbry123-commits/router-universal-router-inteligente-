@@ -34,7 +34,7 @@ test("hay dos selectores propios, SWE CODE y SWEN CODE free, cada uno con sus mo
     assert.ok(l.modelos.length >= 4, id);
     for (const [mid] of l.modelos) assert.ok(esSwe(mid), mid + " debe enrutarse por el bridge");
   }
-  assert.ok(SWE_LISTAS["swen-code-free"].modelos.some(([m]) => m === "swecode-asesoria"));
+  assert.ok(!SWE_LISTAS["swen-code-free"].modelos.some(([m]) => /^swecode-(asesoria|revision|solucion)/.test(m)), "los modos son MODO DE TRABAJO, no modelos");
   assert.ok(SWE_LISTAS["swe-code"].modelos.some(([m]) => m === "hf-liquid-lfm25"));
 });
 
@@ -49,21 +49,15 @@ test("el historial que viaja al modelo SWE se acota (no se manda todo el chat a 
   assert.ok(b.messages.length <= 21); assert.equal(b.messages.at(-1).content, "ultimo");
 });
 
-test("armar incluye claves SOLO si hay alguna guardada; nunca van en el texto de error ni en la nota", async () => {
-  const m = new Map();
+test("R1 armar NO incluye claves (ni de localStorage); nunca van en el texto de error ni en la nota", async () => {
+  const m = new Map([["riu_swe_claves", JSON.stringify({ groq: "MARCADOR-PRUEBA-1" })]]);
   globalThis.localStorage = { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { m.set(k, String(v)); }, removeItem: (k) => { m.delete(k); } };
   const base = { model: "web-qwen38max", historial: [], mensaje: "x", sesion: "s" };
-  assert.ok(!("claves" in armar(base)), "sin claves guardadas no hay campo claves");
-  m.set("riu_swe_claves", JSON.stringify({ groq: " gsk_SECRETA ", nvidia: "nvapi-OTRA" }));
-  assert.deepEqual(armar(base).claves, { groq: "gsk_SECRETA", nvidia: "nvapi-OTRA" });
-  m.set("riu_swe_claves", "{corrupto");
   assert.ok(!("claves" in armar(base)));
-  m.set("riu_swe_claves", JSON.stringify({ groq: "gsk_SECRETA" }));
-  const r1 = await enviarSwe(async (_r, op) => { assert.equal(op.body.claves.groq, "gsk_SECRETA"); return { choices: [{ message: { content: "ok" } }] }; }, base);
-  assert.ok(!JSON.stringify(r1).includes("gsk_SECRETA"), "la nota no lleva la clave");
-  await assert.rejects(() => enviarSwe(async () => ({ error: { code: "X", message: "rechazo" } }), base), (e) => !/gsk_SECRETA/.test(e.message));
+  const r1 = await enviarSwe(async (_r, op) => { assert.ok(!("claves" in op.body)); return { choices: [{ message: { content: "ok" } }] }; }, base);
+  assert.ok(!JSON.stringify(r1).includes("MARCADOR-PRUEBA"));
+  await assert.rejects(() => enviarSwe(async () => ({ error: { code: "X", message: "rechazo" } }), base), (e) => !/MARCADOR-PRUEBA/.test(e.message));
   delete globalThis.localStorage;
-  assert.ok(!("claves" in armar(base)), "sin localStorage -> sin claves");
 });
 
 test("SWEN CODE free incluye los 5 modelos de Groq y NVIDIA autorizados y ya no trae los dos Llama", () => {

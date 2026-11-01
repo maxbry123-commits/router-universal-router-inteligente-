@@ -1,0 +1,15 @@
+/* Espacio de nombres swe-*: el CSS del plugin no choca con el de otros plugins ni con el Control UI. Variables del tema del host (--text, --bg, --border, --accent). */
+.swe-selector, .swe-tareas, .swe-tools { display: grid; gap: 12px; padding: 16px; color: var(--text); }
+.swe-fila { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.swe-fila-t { min-width: 88px; letter-spacing: .04em; }
+.swe-campo { display: grid; gap: 4px; min-width: 180px; }
+.swe-campo-t { font-size: .85em; opacity: .8; }
+.swe-btn { padding: 8px 14px; border-radius: 6px; color: var(--accent-foreground, var(--text)); background: var(--accent); border: 0; font: inherit; cursor: pointer; }
+.swe-btn[aria-pressed="true"] { outline: 2px solid var(--text); }
+.swe-btn:disabled { opacity: .5; cursor: default; }
+.swe-mensaje, .swe-tools-args { min-height: 96px; padding: 10px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+.swe-problemas, .swe-selector-problemas, .swe-gaps { margin: 0; padding-left: 18px; }
+.swe-problema { color: var(--warn, #d9a441); }
+.swe-gap { opacity: .75; font-size: .9em; }
+.swe-salida, .swe-selector-estado { white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: .85em; }
+.swe-aprobar input, .swe-tools input { padding: 6px 8px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font: inherit; }

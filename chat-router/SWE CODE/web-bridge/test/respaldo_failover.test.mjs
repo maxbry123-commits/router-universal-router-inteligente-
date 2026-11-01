@@ -278,7 +278,8 @@ test("idsRespaldo sigue sin red: MODELOS_API + locales, sin los dos Llama", asyn
   } finally { g.cerrar(); }
 });
 
-test("el timeout por defecto sube a 120000 ms", async () => {
-  const { TIMEOUT_DEFECTO_MS } = await import("../src/respaldo.js");
-  assert.equal(TIMEOUT_DEFECTO_MS, 120000);
+test("el timeout global por defecto es 90000 ms: menor que el plazo del bridge (100 s), sin limites contradictorios (R8)", async () => {
+  const { TIMEOUT_DEFECTO_MS, PLAZO_BRIDGE_MS } = await import("../src/respaldo.js");
+  assert.equal(TIMEOUT_DEFECTO_MS, 90000);
+  assert.ok(TIMEOUT_DEFECTO_MS < PLAZO_BRIDGE_MS);
 });

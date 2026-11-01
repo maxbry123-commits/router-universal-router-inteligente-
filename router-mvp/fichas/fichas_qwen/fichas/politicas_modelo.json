@@ -273,7 +273,7 @@
     "retry_after_max_s": 60,
     "rotar_clave_en_429": true
    },
-   "timeout_s": 90,
+   "timeout_s": 60,
    "contexto": {
     "max_caracteres": 400000,
     "resultado_tool_max": 4000,

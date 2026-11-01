@@ -40,27 +40,23 @@ test("seleccion: defectos, persistencia en localStorage y valores invalidos vuel
   delete globalThis.localStorage;
 });
 
-test("el boton de salida (ejecutor_tools) es SWE-agent | OpenClaw y queda sincronizado con AGENTE QUE EJECUTA", () => {
+test("el boton de salida (ejecutor_tools) es SWE-agent | OpenClaw y es INDEPENDIENTE de AGENTE QUE EJECUTA", () => {
   assert.deepEqual(S.EJECUTORES_TOOLS, ["swe", "openclaw"]);
   assert.deepEqual(S.ETIQUETA_SALIDA, { swe: "Salida: SWE-agent", openclaw: "Salida: OpenClaw" });
   conStorage();
-  S.guardarEjecutorTools("openclaw"); assert.equal(S.leerSeleccion().agente_tool, "openclaw");
+  S.guardarEjecutorTools("openclaw"); assert.equal(S.leerSeleccion().agente_tool, "swe-agent"); assert.equal(S.leerEjecutorTools(), "openclaw");
   S.guardarEjecutorTools("swe"); assert.equal(S.leerSeleccion().agente_tool, "swe-agent");
-  S.guardarSeleccion({ agente_tool: "openclaw" }); assert.equal(S.leerEjecutorTools(), "openclaw");
-  S.guardarSeleccion({ agente_tool: "codex" });
-  assert.equal(S.leerEjecutorTools(), "swe", "F2: con un tercer agente ejecutor_tools vuelve a 'swe' (es lo que se envia)");
-  assert.equal(S.salidaActiva(S.leerSeleccion()), null, "F2: y el boton de salida no marca ninguno (ejecuta Codex, no SWE-agent ni OpenClaw)");
+  S.guardarSeleccion({ agente_tool: "openclaw" }); assert.equal(S.leerEjecutorTools(), "swe", "elegir el agente OpenClaw no cambia la salida");
+  S.guardarSeleccion({ agente_tool: "codex" }); assert.equal(S.leerEjecutorTools(), "swe");
+  assert.equal(S.salidaActiva(), "swe");
   delete globalThis.localStorage;
 });
 
-test("F2 salidaActiva: el boton de salida refleja AGENTE QUE EJECUTA (openclaw | swe-agent) y ningun otro; armar() envia 'swe' con un tercer agente", () => {
-  assert.equal(S.salidaActiva({ ...S.SEL_DEFECTO, agente_tool: "openclaw" }), "openclaw");
-  assert.equal(S.salidaActiva({ ...S.SEL_DEFECTO, agente_tool: "swe-agent" }), "swe");
-  for (const a of ["codex", "opencode", "openhands", "claude-code"]) assert.equal(S.salidaActiva({ ...S.SEL_DEFECTO, agente_tool: a }), null, a);
+test("armar() envia la SALIDA elegida (ejecutor_tools) con cualquier agente ejecutor", () => {
   conStorage();
   S.guardarEjecutorTools("openclaw"); S.guardarSeleccion({ agente_tool: "opencode" });
-  assert.equal(S.leerEjecutorTools(), "swe"); assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "swe");
-  S.guardarSeleccion({ agente_tool: "openclaw" }); assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "openclaw");
+  assert.equal(S.leerEjecutorTools(), "openclaw"); assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "openclaw");
+  S.guardarEjecutorTools("swe"); assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "swe");
   delete globalThis.localStorage;
 });
 
@@ -115,7 +111,7 @@ test("capacidades: lo que el Harness no reporta es NO DISPONIBLE; un modelo solo
 test("validarSeleccion: sin modo agentico ni workflow no se valida nada; con ellos NO se envia lo que no esta conectado", () => {
   assert.equal(S.validarSeleccion({ ...S.SEL_DEFECTO }, S.normalizarCapacidades({})).ok, true);
   const v = S.validarSeleccion({ ...S.SEL_DEFECTO, modo_agentico: true }, S.normalizarCapacidades({}));
-  assert.equal(v.ok, false); assert.ok(v.problemas.length >= 1); assert.ok(v.problemas.every((p) => /NO DISPONIBLE|incompatible/i.test(p)));
+  assert.equal(v.ok, false); assert.ok(v.problemas.length >= 1); assert.ok(v.problemas.every((p) => /NO DISPONIBLE|SIN VERIFICAR|NO INSTALADO|NO CONFIGURADO|NO COMPATIBLE|incompatible/i.test(p)));
   assert.equal(S.validarSeleccion({ ...S.SEL_DEFECTO, modo_agentico: true }, S.normalizarCapacidades(TODOS_OK)).ok, true);
   const w = S.validarSeleccion({ ...S.SEL_DEFECTO, workflow: "liquid_mirror" }, S.normalizarCapacidades({ agentes: TODOS_OK.agentes }));
   assert.equal(w.ok, false); assert.ok(w.problemas.some((p) => /Liquid Mirror/.test(p)));
@@ -152,8 +148,8 @@ test("enviarTareaSwe: iniciar y avanzar hasta DONE por /chat/swe/*; muestra evid
 test("enviarTareaSwe: con un agente NO DISPONIBLE no llama a iniciar y lo dice (sin cambiar a otro modelo ni agente)", async () => {
   conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, modo_agentico: true }) });
   const rutas = [];
-  const api = async (ruta) => { rutas.push(ruta); if (ruta === "/chat/swe/capacidades") return { harness: "ok", agentes: { openclaw: { disponible: true }, "swe-agent": { disponible: false, motivo: "SWE-agent no instalado" } } }; throw new Error("no debia llamarse " + ruta); };
-  await assert.rejects(() => S.enviarTareaSwe(api, { mensaje: "x", sesion: "s" }), /GAP: SELECCION_NO_DISPONIBLE.*SWE-agent.*NO DISPONIBLE/);
+  const api = async (ruta) => { rutas.push(ruta); if (ruta === "/chat/swe/capacidades") return { harness: "ok", agentes: { openclaw: { disponible: true }, "swe-agent": { disponible: false, motivo: "swe-agent no esta instalado (CLI ausente del PATH)" } } }; throw new Error("no debia llamarse " + ruta); };
+  await assert.rejects(() => S.enviarTareaSwe(api, { mensaje: "x", sesion: "s" }), /GAP: SELECCION_NO_DISPONIBLE.*SWE-agent.*NO INSTALADO/);
   assert.deepEqual(rutas, ["/chat/swe/capacidades"]);
   delete globalThis.localStorage;
 });

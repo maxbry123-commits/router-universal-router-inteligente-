@@ -87,3 +87,56 @@ export function espejo({ env = process.env } = {}) {
       openclaw: { descripcion: 'passthrough: tool_calls tal cual al cliente OpenClaw; la seccion queda en WAIT_TOOLS', estado: 'WAIT_TOOLS' } },
   };
 }
+
+// ---- TOOLS de OpenClaw (UI3): las funciones del chat Yaiwes que el Router MVP YA expone por MCP/HTTP ----
+// Una sola implementacion: el bridge NO ejecuta nada de esto, solo reenvia al Router (swe_rutas.js: GET /v1/swe/tools y POST /v1/swe/tools/:id) con la clave de acceso del ENTORNO del bridge;
+// el navegador nunca la ve. El Router decide los permisos (Agentes/IA/Tools ON/OFF) igual que para el chat Yaiwes. Los ids, acciones y rutas se comprueban contra el codigo del Router en test/openclaw.test.mjs.
+// `efectos`: lectura | efectos | por_accion (con `lectura` = acciones sin efectos). Lo que tiene efectos exige un operador identificado en el bridge.
+const mcp = (id, tool, grupo, titulo, efectos, extra = {}) => ({ id, grupo, titulo, via: 'mcp', destino: { tool }, efectos, ...extra });
+const plugin = (id, plugin_, grupo, titulo, acciones, lectura, extra = {}) => ({ id, grupo, titulo, via: 'plugin', destino: { plugin: plugin_, ruta: '/plugins/{plugin}/call/{accion}', metodo: 'POST' }, acciones, efectos: 'por_accion', lectura, ...extra });
+const TOOLS_OPENCLAW = [
+  mcp('chat_router', 'chat', 'chat', 'Chat del Router (modelo + herramientas)', 'efectos'),
+  mcp('almacen', 'almacen', 'almacen', 'Almacen autorizado (guardar/leer)', 'por_accion', { acciones: ['guardar', 'leer', 'computar', 'status'], lectura: ['leer', 'status'] }),
+  mcp('memoria', 'memoria', 'almacen', 'Memoria del chat (save/load/search)', 'por_accion', { acciones: ['save', 'load', 'search'], lectura: ['load', 'search'] }),
+  mcp('salud', 'salud', 'chat', 'Estado del Router, version y permisos (IA/Agentes)', 'lectura'),
+  mcp('listar_fichas', 'listar_fichas', 'chat', 'Fichas disponibles', 'lectura'),
+  mcp('resultado', 'resultado', 'chat', 'Resultado de un proceso de chat asincrono', 'lectura'),
+  mcp('github_leer', 'github_leer', 'github', 'Leer archivo o carpeta de GitHub', 'lectura'),
+  mcp('github_escribir', 'github_escribir', 'github', 'Escribir archivo con commit en GitHub', 'efectos'),
+  mcp('github_api', 'github_api', 'github', 'API de GitHub con el token configurado', 'efectos'),
+  mcp('pendientes', 'pendientes', 'chat', 'Checklist de pendientes', 'por_accion', { acciones: ['listar', 'agregar', 'marcar', 'ordenar', 'quitar'], lectura: ['listar'] }),
+  mcp('sala', 'sala', 'chat', 'ROOM CONFERENCIAS', 'por_accion', { acciones: ['crear', 'listar', 'leer', 'enviar', 'contexto', 'permiso'], lectura: ['listar', 'leer', 'contexto'] }),
+  mcp('agente', 'agente', 'agentes', 'Delegar en un agente conectado (exige Agentes ON en el Router)', 'efectos'),
+  mcp('llm', 'llm', 'agentes', 'Preguntar a otro modelo (exige IA ON en el Router)', 'efectos'),
+  mcp('yaiwes_md', 'yaiwes_md', 'chat', 'yaiwes.md (informacion compartida del proyecto)', 'por_accion', { acciones: ['leer', 'escribir'], lectura: ['leer'] }),
+  plugin('motor_archivos', 'motor_archivos', 'motores', 'Motor de descarga, extraccion, copia y busqueda de archivos (cola)', ['transferir', 'ejecutar', 'estado', 'cancelar', 'raiz', 'listar_raiz'], ['estado', 'raiz', 'listar_raiz'], { mcp_equivalente: 'archivos' }),
+  plugin('loop', 'nct_loop', 'loop', 'LOOP gobernado (C0-C7, hasta 4 procesos en paralelo)', ['status', 'health', 'ejecutar', 'gobernar', 'estado', 'cancelar', 'motores', 'motor_fases', 'motor_ejecutar', 'motores_registro', 'agentes', 'fuente_listar', 'fuente_agregar', 'fuente_quitar', 'fuente_sync', 'paralelo', 'estado_paralelo'],
+    ['status', 'health', 'estado', 'motores', 'motor_fases', 'motores_registro', 'agentes', 'fuente_listar', 'estado_paralelo'], { mcp_equivalente: 'loop', plugin_repo: 'nct_loop' }),
+  plugin('cola', 'cola50', 'loop', 'Cola CIT-50', ['status', 'health', 'crear', 'listar', 'estado', 'eventos', 'tarea', 'orden', 'draft', 'aprobar', 'accion', 'worker'], ['status', 'health', 'listar', 'estado', 'eventos', 'tarea'], { plugin_repo: 'cola50' }),
+  plugin('watchdog', 'watchdog48', 'loop', 'Watchdog 10 min - 48 h', ['status', 'health', 'crear', 'listar', 'estado', 'eventos', 'heartbeat', 'accion', 'tick', 'worker'], ['status', 'health', 'listar', 'estado', 'eventos'], { plugin_repo: 'watchdog48' }),
+  plugin('puente_chat', 'puente_chat', 'chat', 'Puente del chat: procesos asincronos, cancelar, mantener encendido, mirrors', ['chat_async', 'resultado', 'cancelar', 'mantener_encendido', 'mirror_listar', 'mirror_configurar', 'mirror_agregar', 'mirror_quitar'], ['resultado', 'mirror_listar']),
+  { id: 'chat_send', grupo: 'chat', titulo: 'Motor del chat (Harness + tools + constitucion + anclas + yaiwes.md)', via: 'http', destino: { metodo: 'POST', ruta: '/chat/send' }, efectos: 'efectos',
+    campos: ['mensajes', 'messages', 'message', 'modelo', 'sesion', 'anclados', 'constitucion', 'tools', 'agente_tool', 'llm_tool', 'contexto_previo'] },
+  { id: 'harness_status', grupo: 'agentes', titulo: 'Disponibilidad real de agentes, workflows y modelos (status del Harness)', via: 'harness', destino: { accion: 'status' }, efectos: 'lectura' },
+];
+// Lo que existe en chat-router/plugins pero el Router no sirve por HTTP: GAP honesto (no se inventa un endpoint).
+const NO_RUTEADO = 'el Router MVP no lo sirve: /plugins/{plugin}/call/{accion} responde 404 "plugin no disponible en mvp" para este plugin (solo puente_chat, fichas_qwen, almacen, motor_archivos, nct_loop, cola50 y watchdog48)';
+const GAPS_TOOLS = [
+  { id: 'anclaje', motivo: 'el anclaje de archivos/textos es el campo `anclados` de POST /chat/send; no existe un endpoint propio solo para anclar, asi que se usa con la tool chat_send', usar_con: 'chat_send' },
+  { id: 'constitucion', motivo: 'la constitucion es el campo `constitucion` {texto, anclados} de POST /chat/send; sus archivos se suben con motor_archivos (destino constitucion); sin endpoint propio', usar_con: 'chat_send' },
+  { id: 'workflow-loop-yaiwes', plugin_repo: true, motivo: NO_RUTEADO },
+  ...['agentes', 'chat', 'chat-router', 'connectivity', 'hf_compute', 'hf_datasets', 'hf_skills', 'hf_storage', 'lifeguard', 'orquestador', 'parallel', 'ssh_bridge'].map((id) => ({ id, plugin_repo: true, motivo: NO_RUTEADO })),
+  ...['motores', 'motores-descarga'].map((id) => ({ id, plugin_repo: true, usar_con: 'motor_archivos', motivo: 'son los scripts fuente de los motores (HF/extraccion) sin endpoint HTTP; el motor servido por el Router es motor_archivos (mvp/archivos)' })),
+];
+const CUBIERTOS_TOOLS = [
+  { plugin: 'memoria', por: 'memoria', nota: 'plugins/memoria es el almacen detras de la tool MCP memoria' },
+  { plugin: 'deepseek_harness', por: 'harness_status', nota: 'el Harness montado en /plugins/deepseek_harness; el bridge lo usa por /v1/swe/*' },
+  { plugin: 'swe_code', por: '/v1/swe/*', nota: 'SWE CODE ES este bridge: iniciar, avanzar, estado, aprobar, reanudar y capacidades' },
+  { plugin: 'swen_code_free', por: '/v1/openclaw', nota: 'configuracion y modos de SWEN CODE free (solo lectura)' },
+  { plugin: 'router_api_cliente.py', por: 'cliente interno', nota: 'cliente HTTP del Harness hacia el Router; no es una funcion para el usuario' },
+];
+export function catalogoTools() {
+  return { version: 1, tools: TOOLS_OPENCLAW.map((t) => structuredClone(t)), gaps: structuredClone(GAPS_TOOLS), cubiertos: structuredClone(CUBIERTOS_TOOLS),
+    nota: 'El Router decide que tools estan visibles (Agentes/IA/Tools ON/OFF); este catalogo solo enumera lo que existe en su codigo' };
+}
+export { ACCESO_ROUTER, ROUTER_LOCAL };
