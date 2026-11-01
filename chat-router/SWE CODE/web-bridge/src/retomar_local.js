@@ -90,7 +90,10 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
   const uso = { visto: false, p: 0, c: 0, t: 0 };  // usage de las llamadas de ESTA ejecucion (no se persiste)
   // todos los guardados en cola (un volcado incremental no pisa a uno posterior); un fallo de un volcado incremental no rompe la generacion
   let cola = Promise.resolve();
-  const guardar = () => { const p = cola.then(() => guardarCheckpoint(tareaId, st, ck)); cola = p.catch(() => {}); return p; };
+  const guardar = (exigirRemoto = false) => {
+    const p = cola.then(() => guardarCheckpoint(tareaId, st, exigirRemoto ? { ...ck, exigirRemoto: true } : ck));
+    cola = p.catch(() => {}); return p;
+  };
   const poner = (estado, fase = FASE[estado]) => { st.estado = estado; st.fase = fase; };
   const ultima = () => st.secciones[st.secciones.length - 1] || {};
   const salida = (o) => ({ salida: st.parcial, tool_calls: [], finish_reason: 'stop', via: ultima().via || null, usado: ultima().usado || null, servidor: ultima().servidor || null, ...(uso.visto ? { metricas: { prompt_tokens: uso.p, completion_tokens: uso.c, total_tokens: uso.t } } : {}), tarea_id: tareaId, estado: st.estado, fase: st.fase, secciones: st.secciones.length, reanudado, desde_checkpoint: false, ...o });
@@ -163,7 +166,10 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
         const v = await extra.verificarHerramienta({ ...t });
         if (v && v.hecha) { await registrar(t, v.resultado); continue; }
       }
-      t.estado = 'iniciada'; st.fase = 'OPERACION_INICIADA'; await guardar();  // marca ANTES de ejecutar: si el proceso muere aqui, el reintento sabe que hay que verificar
+      t.estado = 'iniciada'; st.fase = 'OPERACION_INICIADA';
+      // Si hay Harness configurado, una escritura SOLO local no autoriza efectos.
+      // Guardar + releer remoto antes de invocar el ejecutor; nunca asumir exito por disco efimero.
+      await guardar(!!env.RIU_DEEPSEEK_HARNESS_URL);
       await registrar(t, await extra.ejecutarHerramienta({ ...t }));
     }
     st.conversacion.push(lote.assistant, ...lote.herramientas.map((t) => ({ role: 'tool', tool_call_id: t.id, content: JSON.stringify(st.herramientas[t.id].resultado) })));

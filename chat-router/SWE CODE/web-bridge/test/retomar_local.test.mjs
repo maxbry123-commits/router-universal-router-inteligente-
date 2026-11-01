@@ -178,6 +178,24 @@ test("ids y modelos invalidos", async () => {
 // ---------- herramientas ----------
 const tc = (id, name = "escribir", args = '{"x":1}') => ({ id, type: "function", function: { name, arguments: args } });
 
+test("no ejecuta herramientas si el Harness configurado no confirma checkpoint remoto", async () => {
+  const modelo = await fake(() => ok("", "tool_calls", { content: null, tool_calls: [
+    { id: "x1", type: "function", function: { name: "escribir", arguments: '{}' } }
+  ] }));
+  const dir = tmp(), llamadas = [];
+  try {
+    const e = extra(env(dir, { SWECODE_URL_S1: modelo.url,
+      RIU_DEEPSEEK_HARNESS_URL: "http://127.0.0.1:9", RIU_API_KEY: KHARNESS }), {
+      sinRespaldo: true, ejecutarHerramienta: async (t) => { llamadas.push(t.id); return "MAL"; },
+      tools: [{ type: "function", function: { name: "escribir" } }], timeoutCheckpointMs: 200,
+    });
+    await assert.rejects(retomarLocal("t-sin-remoto", MODELO, msgs, e), { code: "CHECKPOINT_REMOTO_REQUERIDO" });
+    assert.deepEqual(llamadas, []);
+    const st = await leerCheckpoint("t-sin-remoto", { env: e.env });
+    assert.equal(st.lote.herramientas[0].estado, "iniciada");
+  } finally { modelo.cerrar(); }
+});
+
 test("tool_calls con ejecutor: cada herramienta se ejecuta UNA sola vez, su resultado se guarda y el 2º llamado no la repite", async () => {
   const s1 = await fake(({ n }) => n === 1 ? ok("", "tool_calls", { content: null, tool_calls: [tc("c1"), tc("c2", "leer", "{}")] }) : ok("HECHO"));
   const dir = tmp(); const vistas = [];

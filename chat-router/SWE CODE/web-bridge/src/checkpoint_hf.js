@@ -185,9 +185,17 @@ export async function guardarCheckpoint(id, estado, o = {}) {
       const nombre = nombreHarness(id, origenDe(estado, op)), base = nombre.replace(/\.json$/, '');
       const rem = empaquetar(limpio, max, base);
       for (const p of rem.partes) await invocar('guardar', { nombre: p.nombre, valor: p.texto }, op);  // fragmentos antes que el manifiesto
-      await invocar('guardar', { nombre, valor: JSON.stringify(rem.doc) }, op); r.harness = true;
+      const manifiesto = JSON.stringify(rem.doc);
+      await invocar('guardar', { nombre, valor: manifiesto }, op);
+      if (o.exigirRemoto === true) {
+        const confirmacion = await invocar('leer', { nombre }, op);
+        if (confirmacion?.valor !== manifiesto) throw falla('CHECKPOINT_REMOTO_NO_CONFIRMADO', 'el manifiesto remoto no coincide');
+      }
+      r.harness = true;
     } catch (e) { r.harness_error = e.message; }
   } else r.harness_error = 'HARNESS_NO_CONFIGURADO';
+  if (o.exigirRemoto === true && !r.harness)
+    throw falla('CHECKPOINT_REMOTO_REQUERIDO', 'no se confirmo el checkpoint remoto antes de una operacion con efectos');
   if (!r.local && !r.harness) throw falla('CHECKPOINT_NO_GUARDADO', `no se pudo guardar el checkpoint ${id} (${r.local_error}; ${r.harness_error})`);
   return r;
 }
