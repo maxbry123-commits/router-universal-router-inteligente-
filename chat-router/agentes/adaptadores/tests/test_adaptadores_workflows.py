@@ -756,6 +756,18 @@ def test_done_exige_todas_las_etapas_con_recibo_y_operaciones_confirmadas(mundo)
     assert wf.verificado(e) is False
 
 
+def test_cursor_al_final_no_fabrica_done(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    reg = estado_guardado(mundo)
+    reg["paso_actual"] = len(reg["plan"])
+    reg["estado"] = "CONTINUAR"
+    mundo.almacen[reg["ruta"]] = json.dumps(reg)
+    r = wf.swe_avanzar({"task_id": "yaiwes-001"}, c)
+    assert r["estado"] == "GAP" and r["error"]["codigo"] == "DONE_NO_VERIFICADO"
+    assert mundo.agentes == []
+
+
 def test_ultimo_paso_sin_recibo_no_marca_done(mundo):
     mundo.respuesta_agente = lambda a, n: {"ok": True, "agente": a, "task_id": "yaiwes-001", "resultado": "x", "recibo": "", "exit_code": 0} if n == 4 else None
     c = mundo.ctx()

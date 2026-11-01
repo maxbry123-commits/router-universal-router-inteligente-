@@ -602,7 +602,13 @@ def _una(reg, ctx):
         return False
     idx = reg["paso_actual"]
     if idx >= len(reg["plan"]):
-        reg["estado"] = "DONE"
+        # El cursor no certifica que todas las etapas hayan terminado.
+        completo = idx == len(reg["plan"]) and verificado(reg)
+        reg["estado"] = "DONE" if completo else "GAP"
+        if not completo:
+            reg["error"] = {"codigo": "DONE_NO_VERIFICADO",
+                            "mensaje": "cursor final sin etapas y operaciones confirmadas",
+                            "paso": None, "fecha": _ahora()}
         _guardar_estado(ctx, reg)
         return False
     p = reg["plan"][idx]
