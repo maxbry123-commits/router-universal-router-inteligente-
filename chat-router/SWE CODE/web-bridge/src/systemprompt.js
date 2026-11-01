@@ -78,7 +78,7 @@ export async function consultarPromptRouter(on = null, { env = process.env, fetc
   const clave = String(env.RIU_API_KEY || '').trim();
   if (!clave) throw new Error('ROUTER_SIN_CREDENCIAL');
   const puerto = Number(env.PORT);
-  const base = String(env.RIU_ROUTER_URL || `http://127.0.0.1:${Number.isInteger(puerto) && puerto > 0 && puerto < 65536 ? puerto : 7861}`).replace(/\\/+$/, '');
+  const base = String(env.RIU_ROUTER_URL || `http://127.0.0.1:${Number.isInteger(puerto) && puerto > 0 && puerto < 65536 ? puerto : 7861}`).replace(/\/+$/, '');
   const url = new URL(base);
   if (!(url.protocol === 'https:' || (url.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(url.hostname))) || url.username || url.password)
     throw new Error('ROUTER_URL_INVALIDA');
