@@ -82,8 +82,8 @@ test('canal OpenClaw no confunde el origen con el selector YAIWES', () => {
   const provider=JSON.parse(fs.readFileSync(path.join(RAIZ,'chat-router','SWE CODE free','provider-openclaw.json'),'utf8'));
   const base=new URL(provider.base_url);
   assert.equal(base.pathname,'/openclaw/v1');
-  assert.match(fsCode, /app\\.post\\('\/openclaw\/v1\/chat\/completions'/);
-  assert.match(fsCode, /origen:\s*'openclaw'/);
-  assert.match(fsCode, /app\\.get\\('\/openclaw\/v1\/models'/);
-  assert.match(fsCode, /const forzarPromptOpenClaw = req\\.body\\.origen === 'openclaw'/);
+  assert.ok(fsCode.includes("app.post('/openclaw/v1/chat/completions'"));
+  assert.ok(fsCode.includes("origen: 'openclaw'"));
+  assert.ok(fsCode.includes("app.get('/openclaw/v1/models'"));
+  assert.ok(fsCode.includes("const forzarPromptOpenClaw = req.body.origen === 'openclaw'"));
 });
