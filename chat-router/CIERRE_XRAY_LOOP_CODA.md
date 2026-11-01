@@ -48,3 +48,10 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - `chat/frontend/swe-claves.js`: exige `local:true` para confirmar escritura; distingue banco local de respaldo externo `persistido:true`, evitando prometer persistencia tras reinicios del Space.
 - Pruebas ampliadas: `SWE CODE/web-bridge/test/seguridad.test.mjs` y `chat/frontend/test/swe-claves.test.mjs`. Aún no ejecutadas en entorno Node real.
 - Pendiente: verificar servidor real, caja de claves HF persistente, publicación cifrada en rama exclusiva y permisos del operador. No hay nuevo router ni terceros.
+
+## Segmento 3 — Router MVP, fichas y aceleradores (parche X-Ray)
+- Fichas existentes: `router-mvp/fichas/fichas_qwen/fichas/politicas_modelo.json` verificada en lectura; sin mover la ficha ni cambiar las políticas Qwen.
+- `chat/backend/mvp/compute.py`: conservar los IDs reales de tool_calls; si NVIDIA/Groq omiten uno, generar un identificador único para que el Harness pueda contestar el resultado. Argumentos vacíos normalizados a `{}`.
+- `chat/backend/mvp/externos.py`: no declarar éxito si el stream terminó sin texto ni herramientas; el catálogo `GET /models` de una clave no bloquea automáticamente un modelo permitido para otras claves con permisos distintos. Nunca se cambia el modelo solicitado.
+- Prueba nueva: `chat/backend/mvp/test_xray3_aceleradores.py` (sin credenciales reales; simulación).
+- Verificado estáticamente: contratos de `politicas_modelo.json`, `compute.py`, `externos.py`, `app.py` y pruebas anteriores. Pendiente: ejecución de las pruebas y test real de proveedor/Space.
