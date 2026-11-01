@@ -16,18 +16,18 @@
     "navigation",
     "panel"
   ],
+  "controlUi": {
+    "entry": "dist/control-ui/e36c15b9ec2a86f7c57955b96cc6681b633fd6ae0a795e683b4a222147ac82d9/index.js",
+    "styles": [
+      "dist/control-ui/e36c15b9ec2a86f7c57955b96cc6681b633fd6ae0a795e683b4a222147ac82d9/index.css"
+    ]
+  },
   "contracts": {
     "tools": [
       "swe_capacidades",
       "swe_estado",
       "swe_tool_llamar",
       "swe_tools_catalogo"
-    ]
-  },
-  "controlUi": {
-    "entry": "dist/control-ui/e36c15b9ec2a86f7c57955b96cc6681b633fd6ae0a795e683b4a222147ac82d9/index.js",
-    "styles": [
-      "dist/control-ui/e36c15b9ec2a86f7c57955b96cc6681b633fd6ae0a795e683b4a222147ac82d9/index.css"
     ]
   }
 }

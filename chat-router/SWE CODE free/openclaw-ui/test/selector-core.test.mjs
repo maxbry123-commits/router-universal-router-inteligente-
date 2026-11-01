@@ -16,6 +16,15 @@ test('los seis estados de la instruccion 37 estan en el mismo orden que en dispo
   assert.deepEqual([...ESTADOS], reales);
 });
 
+test('los 15 campos del contrato son los de la dataclass TareaSWE de agentes/adaptadores/contrato.py (contrato unico, sin deriva)', async () => {
+  const fs = await import('node:fs'), path = await import('node:path'), { fileURLToPath } = await import('node:url');
+  const py = fs.readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../agentes/adaptadores/contrato.py'), 'utf8');
+  const cuerpo = /class TareaSWE:\n([\s\S]*?)\n    def validar/.exec(py)[1];
+  const reales = [...cuerpo.matchAll(/^    (\w+): /gm)].map((m) => m[1]);
+  assert.deepEqual(Object.keys(armarTarea({ sel: SELECCION_DEFECTO, mensaje: 'x' })), reales);
+  assert.equal(reales.length, 15);
+});
+
 test('contrato TareaSWE: 15 campos exactos, origen openclaw, aprobacion siempre false, task_id valido', () => {
   const t = armarTarea({ sel: { ...SELECCION_DEFECTO, modo_agentico: true }, mensaje: 'hola', sesion: 'ses ion/1', proyecto: '' });
   assert.deepEqual(Object.keys(t).sort(), [...CAMPOS].sort());

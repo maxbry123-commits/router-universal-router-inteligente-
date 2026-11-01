@@ -10,7 +10,7 @@ Documentación completa (arquitectura, recuperación, operación): `chat-router/
 Toda ruta salvo `GET /health` exige `x-api-key` con una de las 4 claves de acceso del chat
 (`RIU_API_KEY`, `RIU_PUBLIC_CHAT_KEY`, `RIU_MCP_KEY`, `RIU_ROUTER_API_KEY`) o `BRIDGE_TOKEN`
 (`Authorization: Bearer` / `x-bridge-key`). Sin ninguna configurada: 503; clave mala: 401.
-`/v1/swe/*` exige `BRIDGE_TOKEN` (y `aprobar`, además `BRIDGE_OPERATOR_TOKEN` en `x-operator-token` y `x-operador`).
+`/v1/swe/*` exige `BRIDGE_TOKEN` (y `aprobar` y las tools con efectos, además un operador real: `x-operador` + su token individual en `x-operator-token`, verificado contra `BRIDGE_APROBADORES`).
 
 ## Flujo
 - `POST /v1/chat/completions` con `model`:

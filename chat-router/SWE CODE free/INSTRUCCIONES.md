@@ -117,7 +117,7 @@ Regla: diagnosticar con evidencia (logs, `/debug/tab`, healths) y tocar `sites.j
 | `GET /v1/proyectos[/<proyecto>]` · `GET /v1/memoria/<sesion>` · `GET /v1/evolucion` | asesorías, historial compartido, mejoras propuestas |
 | `GET/POST/DELETE /v1/claves` | banco de claves Groq/NVIDIA (solo conteos); además exige la clave de acceso en `x-api-key` |
 | `GET /v1/openclaw` | configuración vigente y espejo para OpenClaw (sin secretos) |
-| `POST /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar}` · `GET /v1/swe/capacidades` | tareas con agentes reales (contrato `TareaSWE`) vía el Harness; exigen `BRIDGE_TOKEN`; `aprobar` además `BRIDGE_OPERATOR_TOKEN` en `x-operator-token` y el operador en `x-operador` (sin valor por defecto). Ver `ARQUITECTURA.md` y `openclaw-ui/README.md` |
+| `POST /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar}` · `GET /v1/swe/capacidades` | tareas con agentes reales (contrato `TareaSWE`) vía el Harness; exigen `BRIDGE_TOKEN`; `aprobar` además un operador real (`x-operador` + su token individual en `x-operator-token`, verificado contra `BRIDGE_APROBADORES`; sin valor por defecto); `GET /v1/swe/tools` y `POST /v1/swe/tools/:id` dan a OpenClaw las tools del Router Yaiwes. Ver `ARQUITECTURA.md` y `openclaw-ui/README.md` |
 | `POST /v1/responses` | API Responses mínima para Codex (traduce a `/v1/chat/completions`; el stream es en trozos sobre la respuesta completa, sin herramientas alojadas) |
 | `GET /health` · `GET /v1/queue` · `POST /refresh_session` · `GET /debug/tab` | diagnóstico: cuentas, respaldo (conteos), banco, **métricas por modelo (TTFT, tokens/s)**, tabs |
 
