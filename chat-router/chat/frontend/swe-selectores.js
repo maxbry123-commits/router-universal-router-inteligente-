@@ -5,6 +5,7 @@
 // una sola consulta disponibilidad (cargarCapacidades) y una sola serializa el contrato (swe-directo.js leerSeleccion/armarTarea). Abrir una ventana MUEVE el nodo; no clona.
 // Cada ventana solo aporta lo suyo: su lista de MODELO QUE RESPONDE (swe-directo.js opcionesModeloVentana), su nota de conexion y su titulo.
 import { api } from "./api.js";
+import { systemPromptOnCache, cargarSystemPromptOn, alternarSystemPromptOn } from "./swe-systemprompt.js";
 import { camposFijos, modeloParaLista, modeloGuardado, SWE_LISTAS, MODELOS_SWE, MODELOS_WEB, MODOS_TRABAJO, AGENTES_SWE, WORKFLOWS_SWE, LIQUID_MIRROR, leerSeleccion, guardarSeleccion, requiereHarness, cargarCapacidades, olvidarCapacidades, normalizarCapacidades, estadoOpcion, idCatalogo, agruparOpciones, lineaNoInstalados, lineaSinVerificar, lineaOtros, opcionesModeloVentana, ETIQUETA_ESTADO, VENTANAS_CENTRAL } from "./swe-directo.js";
 const K = "riu_swe_modelo";
 const leer = () => { try { return JSON.parse(localStorage.getItem(K) || "{}") || {}; } catch (e) { return {}; } };
@@ -84,10 +85,15 @@ function controles() {
   const mo = el("div", "sel-salida swe-bloque"); mo.setAttribute("role", "group"); mo.setAttribute("aria-label", "Modo agéntico");
   const b = el("button", "pill salida-op"); b.type = "button"; b.dataset.sweAgentico = "1"; b.setAttribute("aria-label", "MODO AGÉNTICO");
   mo.append(el("span", "sel-salida-t", "Modo agéntico:"), b);
+  // System prompt de la ficha del Router MVP: ON/OFF, aplica a TODOS los modelos (chat Yaiwes y OpenClaw, mismo bridge). Defecto ON.
+  const sp = el("div", "sel-salida swe-bloque"); sp.setAttribute("role", "group"); sp.setAttribute("aria-label", "System prompt de la ficha");
+  const spB = el("button", "pill salida-op"); spB.type = "button"; spB.dataset.sweSystemprompt = "1"; spB.setAttribute("aria-label", "SYSTEM PROMPT");
+  sp.append(el("span", "sel-salida-t", "System prompt:"), spB);
   const fw = el("div", "swe-rej-fila swe-wf swe-bloque"); fw.append(el("span", "swe-rej-t", "Workflow"), selector("workflow"));
   const lq = el("div", "consil-diagrama lleno swe-liquid"); lq.hidden = true; lq.setAttribute("aria-label", "Liquid Mirror: dos participantes");
   const act = el("div", "swe-actualizar"), bt = el("button", "secondary swe-refrescar", "Actualizar disponibilidad"); bt.type = "button"; bt.setAttribute("aria-label", "Actualizar disponibilidad de agentes y modelos"); act.append(bt, el("span", "swe-hora"));
-  c.append(nota, rej, lm, mo, fw, lq, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
+  c.append(nota, rej, lm, mo, sp, fw, lq, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
+  cargarSystemPromptOn().then(pintarControles);  // estado real del bridge en segundo plano; el boton ya nace pintado en ON (defecto) mientras llega
   return c;
 }
 function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al final y deshabilitado, con su estado real; la eleccion actual se queda visible aunque no este disponible
@@ -137,6 +143,7 @@ function pintarControles() {
     const sm = c.querySelector('select[data-swe-ctl="modo_trabajo"]');
     if (sm) { sm.replaceChildren(...[["", "Sin modo (conversación normal)"], ...MODOS_TRABAJO].map(([v, t]) => { const o = el("option", null, t); o.value = v; return o; })); sm.value = sel.modo_trabajo; sm.title = VENTANA === "groq" || VENTANA === "nvidia" ? "El modo de trabajo se envía en los chats por el bridge (SWE CODE / SWEN CODE free); Groq y NVIDIA por el Router no lo usan todavía." : ""; }
     const b = c.querySelector("[data-swe-agentico]"); if (b) { b.textContent = sel.modo_agentico ? "ON" : "OFF"; b.setAttribute("aria-pressed", String(sel.modo_agentico)); b.classList.toggle("on", sel.modo_agentico); }
+    const spB = c.querySelector("[data-swe-systemprompt]"); if (spB) { const on = systemPromptOnCache(); spB.textContent = on ? "ON" : "OFF"; spB.setAttribute("aria-pressed", String(on)); spB.classList.toggle("on", on); }
     const lq = c.querySelector(".swe-liquid"); lq.hidden = sel.workflow !== "liquid_mirror";
     if (!lq.hidden) {
       const lm = estadoOpcion(CAP, "workflow", "liquid_mirror"); lq.replaceChildren();
@@ -168,6 +175,7 @@ async function refrescarCapacidades(forzar, conFichas = false) {
 // ---- Eventos: registrados UNA vez (delegados en document); abrir una ventana no vuelve a registrar nada ----
 document.addEventListener("click", (e) => {
   const b = e.target.closest && e.target.closest("[data-swe-agentico]"); if (b) { guardarSeleccion({ modo_agentico: !leerSeleccion().modo_agentico }); pintarControles(); return; }
+  const spB = e.target.closest && e.target.closest("[data-swe-systemprompt]"); if (spB) { alternarSystemPromptOn().then(pintarControles); return; }
   if (e.target.closest && e.target.closest(".swe-refrescar")) refrescarCapacidades(true, true);
 });
 document.addEventListener("change", (e) => {
