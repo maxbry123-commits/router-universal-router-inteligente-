@@ -24,6 +24,7 @@ def montar(app):
         if len(ruta) > 256 or ".." in ruta or "\\" in ruta:
             return JSONResponse(status_code=400, content={"error": {"code": "RUTA_BRIDGE_INVALIDA"}})
         headers = {k: v for k, v in request.headers.items() if k.lower() in _ENTRADA}
+        headers["accept-encoding"] = "identity"  # SSE se reenvia crudo, sin comprimir ni corromper el navegador
         client = httpx.AsyncClient(timeout=httpx.Timeout(connect=4, read=None, write=20, pool=4), trust_env=False)
         try:
             req = client.build_request(request.method, _BRIDGE + "/" + ruta,
