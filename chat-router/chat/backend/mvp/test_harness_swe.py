@@ -125,5 +125,33 @@ class HarnessSwe(unittest.TestCase):
             self.assertFalse(h.es_swe(m), m)
 
 
+
+class MontajeHarness(unittest.TestCase):
+    def test_harness_montado_en_mismo_router_y_reutiliza_sus_adaptadores(self):
+        from mvp import app as router
+        from fastapi.routing import Mount
+        puntos = [ruta for ruta in router.app.routes
+                  if isinstance(ruta, Mount) and ruta.path == "/plugins/deepseek_harness"]
+        self.assertEqual(len(puntos), 1)
+        from plugins.deepseek_harness import server
+        self.assertIs(puntos[0].app, server.app)
+        rutas = {r.path for r in server.app.routes}
+        self.assertIn("/invoke", rutas)
+
+    def test_status_harness_integrado_sin_servidor_adicional(self):
+        from fastapi.testclient import TestClient
+        from mvp import app as router
+        with patch.dict(os.environ, {"RIU_API_KEY": "acceso-prueba-local"}):
+            with TestClient(router.app) as cli:
+                r = cli.post("/plugins/deepseek_harness/invoke",
+                             headers={"x-api-key": "acceso-prueba-local"},
+                             json={"action": "status"})
+        self.assertEqual(r.status_code, 200)
+        body = r.json()
+        self.assertEqual(body["status"], "ok")
+        self.assertIn("swe", body["result"])
+        self.assertIn("agentes", body["result"]["swe"])
+
+
 if __name__ == "__main__":
     unittest.main()

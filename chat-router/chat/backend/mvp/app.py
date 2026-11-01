@@ -40,6 +40,11 @@ async def inicio(app):
     if app.state.banco: _lanzar(_reanudar_todas()); _lanzar(loop_reanudar.reanudar_todas(app.state.banco))  # tareas del chat y del LOOP que quedaron a medias por un reinicio
     yield
 app = FastAPI(lifespan=inicio)
+# El cliente del Router y el bridge ya apuntan por defecto a esta ruta del MISMO
+# Space. Montar el Harness existente en ASGI: sin otro router, Space ni infraestructura.
+# Si RIU_DEEPSEEK_HARNESS_URL apunta a un Harness separado, el cliente lo respeta.
+from plugins.deepseek_harness.server import app as harness_app  # noqa: E402
+app.mount("/plugins/deepseek_harness", harness_app)
 app.add_middleware(CORSMiddleware, allow_methods=["*"], allow_headers=["*"],  # el chat (Vercel) llama al Router desde otro origen; la autenticacion es la X-API-Key, no cookies
                    allow_origin_regex=os.environ.get("RIU_CORS_REGEX", r"https://riu-jev-bridge[a-z0-9-]*\.vercel\.app|http://127\.0\.0\.1:\d+"))
 CONTROL = control.Control()
