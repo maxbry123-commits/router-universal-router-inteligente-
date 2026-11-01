@@ -20,7 +20,7 @@ No crear otra raíz, otro router, GitHub Actions, LFS ni desplegar fuera del rep
 | 1 | Reconstruir diff e instrucciones y descartar GAPS obsoletos | EN PROGRESO | diff por SHA y archivos trazados |
 | 2 | Banco, autenticación, secretos y roles | CÓDIGO CORREGIDO PARCIAL; PRUEBAS AÚN SIN EJECUTAR | no secretos en logs/LS; 401/403; operador individual |
 | 3 | Fichas y Router MVP, Groq/NVIDIA, SSE, contexto, latencia | CÓDIGO CORREGIDO; PRUEBAS SIN EJECUTAR | pruebas unitarias y llamada real por id |
-| 4 | Harness, permisos Tools ON/OFF, tools, MCP, checkpoint | CÓDIGO CORREGIDO PARCIAL | llamada de herramienta y reanudación con recibo |
+| 4 | Harness, permisos Tools ON/OFF, tools, MCP, checkpoint | CÓDIGO CORREGIDO PARCIAL; PRUEBAS PENDIENTES | llamada de herramienta y reanudación con recibo |
 | 5 | Router SWE, SSE, cancelación, fallback y métricas | CÓDIGO CORREGIDO PARCIAL | pruebas de cancelación y SSE reales |
 | 6 | Frontend YAIWES, modelos vs ejecutores y progreso | PENDIENTE DE E2E | browser: selector, controles, respuesta parcial |
 | 7 | Plugin de OpenClaw UI y contrato bidireccional | PENDIENTE DE E2E REAL | Control UI del Gateway ejecutando plugin instalado |
@@ -55,3 +55,11 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - `chat/backend/mvp/externos.py`: no declarar éxito si el stream terminó sin texto ni herramientas; el catálogo `GET /models` de una clave no bloquea automáticamente un modelo permitido para otras claves con permisos distintos. Nunca se cambia el modelo solicitado.
 - Prueba nueva: `chat/backend/mvp/test_xray3_aceleradores.py` (sin credenciales reales; simulación).
 - Verificado estáticamente: contratos de `politicas_modelo.json`, `compute.py`, `externos.py`, `app.py` y pruebas anteriores. Pendiente: ejecución de las pruebas y test real de proveedor/Space.
+
+## Segmento 4 — Harness DeepSeek / Tools ON-OFF / MCP / Checkpoint
+- Cambio solo en GitHub dentro de `chat-router/`; Hugging Face no se tocó, el mirror existente debe sincronizar desde GitHub.
+- `chat/backend/deepseek_harness/server.py`: el catálogo ofrecido al modelo excluye `agente`/`loop` sin Tools ON + Agente ON y excluye `llm` sin Tools ON + LLM ON; las herramientas MCP internas conservan su comportamiento y el Router vuelve a comprobar sus permisos.
+- Normaliza IDs de tool_calls no streaming, rechaza IDs duplicados antes de efectos y mantiene idéntico ID en assistant/result.
+- El diario ahora clasifica como potencialmente mutantes las herramientas MCP externas, acciones de archivos y operaciones LOOP no explícitamente de lectura; antes de ejecutarlas registra INICIADA.
+- Si el Router devuelve `error` JSON-RPC o `result.isError`, NO sella CONFIRMADA una operación potencialmente mutante: requiere reconciliación humana para evitar ejecución duplicada.
+- Pruebas añadidas `chat/backend/deepseek_harness/test_xray4_harness.py`. E2E, HF y pruebas de agentes reales pendientes, no declarar PASS operativo.

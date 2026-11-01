@@ -7,6 +7,7 @@ import re
 import time
 import urllib.error
 import urllib.request
+import uuid
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, Header, HTTPException
@@ -27,12 +28,17 @@ _SECRETO = re.compile(r"(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]
 def con_efectos(nombre, args):
     """Herramientas que cambian algo fuera del chat (escribir, enviar, delegar): se registran en el diario de la tarea."""
     a = args.get("accion")
-    if nombre in ("github_escribir", "agente", "llm", "swe_agente"):  # swe_agente: un agente real lanzado por swe_avanzar
+    if nombre in ("github_escribir", "agente", "llm", "swe_agente") or str(nombre).startswith("mcp__"):
+        # Una tool MCP externa no certifica que sea solo lectura; tratarla como potencialmente mutante.
         return True
-    return ((nombre == "github_api" and str(args.get("metodo", "GET")).upper() != "GET") or (nombre == "almacen" and a == "guardar")
+    if nombre == "archivos":
+        return a not in ("estado", "raiz", "listar_raiz", "buscar", "listar")
+    if nombre == "loop":
+        # FAIL CLOSED: nuevas operaciones del LOOP se registran hasta clasificarse expresamente.
+        return a not in ("status", "health", "estado", "estado_paralelo", "motores", "motor_fases", "motores_registro", "agentes", "fuente_listar")
+    return ((nombre == "github_api" and str(args.get("metodo", args.get("method", "GET"))).upper() != "GET") or (nombre == "almacen" and a == "guardar")
             or (nombre == "memoria" and a == "save") or (nombre == "yaiwes_md" and a == "escribir")
-            or (nombre == "pendientes" and a in ("agregar", "marcar", "ordenar", "quitar")) or (nombre == "sala" and a in ("crear", "enviar", "permiso"))
-            or (nombre == "loop" and a in ("gobernar", "paralelo", "ejecutar")))
+            or (nombre == "pendientes" and a in ("agregar", "marcar", "ordenar", "quitar")) or (nombre == "sala" and a not in ("listar", "leer")))
 
 
 def _llave(nombre, args):
@@ -265,6 +271,41 @@ def _metricas(salida):
     return {"metricas": {k: (_SECRETO.sub("[REDACTADO]", v) if isinstance(v, str) else v) for k, v in out.items()}} if out else {}
 
 
+def _delegacion_permitida(nombre, cuerpo):
+    """Tools OFF no desactiva el MCP interno, pero nunca autoriza delegar a otras IA/agentes."""
+    if nombre in ("agente", "loop"):
+        return cuerpo.get("tools") is True and cuerpo.get("agente_tool") is True
+    if nombre == "llm":
+        return cuerpo.get("tools") is True and cuerpo.get("llm_tool") is True
+    return True
+
+
+def _normalizar_tool_calls(llamadas):
+    """Una tool sin id recibe uno unico; ids duplicados se rechazan ANTES de cualquier efecto."""
+    if not isinstance(llamadas, list):
+        raise RuntimeError("TOOL_CALLS_INVALIDAS")
+    resultado, ids = [], set()
+    for llamada in llamadas:
+        if not isinstance(llamada, dict) or not isinstance(llamada.get("function"), dict):
+            raise RuntimeError("TOOL_CALL_INVALIDA")
+        ident = llamada.get("id") or "call_" + uuid.uuid4().hex[:24]
+        if not isinstance(ident, str) or not ident or ident in ids:
+            raise RuntimeError("TOOL_CALL_ID_INVALIDO_O_DUPLICADO")
+        ids.add(ident)
+        resultado.append({**llamada, "id": ident})
+    return resultado
+
+
+def _respuesta_mcp_fallida(resultado):
+    """Ni un error JSON-RPC ni result.isError certifican una operacion con efectos."""
+    if not isinstance(resultado, dict):
+        return True
+    if resultado.get("error"):
+        return True
+    sub = resultado.get("result")
+    return isinstance(sub, dict) and sub.get("isError") is True
+
+
 def llm(cuerpo):
     mensajes = cuerpo.get("messages", cuerpo.get("mensajes"))
     if not isinstance(mensajes, list) or not mensajes:
@@ -280,7 +321,8 @@ def llm(cuerpo):
     if catalogo.get("error") and not sin_router:
         raise RuntimeError("No se pudo obtener el catalogo MCP")
     permitidas = {t["name"]: t for t in ({} if sin_router else catalogo).get("result", {}).get("tools", [])
-                  if t["name"] in ("github_leer", "github_escribir", "almacen", "pendientes", "sala", "agente", "llm", "yaiwes_md", "loop", "archivos") or t["name"].startswith("mcp__")}
+                  if (t["name"] in ("github_leer", "github_escribir", "almacen", "pendientes", "sala", "agente", "llm", "yaiwes_md", "loop", "archivos") or t["name"].startswith("mcp__"))
+                  and _delegacion_permitida(t["name"], cuerpo)}
     if not permitidas and not sin_router and not (es_swe(cuerpo.get("modelo")) and _bridge_url()):
         raise RuntimeError("Herramientas GitHub no disponibles en MCP")
     opciones["tools"] = [{"type": "function", "function": {"name": n,
@@ -313,7 +355,7 @@ def llm(cuerpo):
         aviso = {"aviso_modelo": salida["aviso_modelo"]} if salida.get("aviso_modelo") else {}
         if not isinstance(salida.get("tool_calls"), list) or not isinstance(salida.get("texto"), str):
             raise RuntimeError("Router respuesta de chat invalida")
-        llamadas = salida["tool_calls"]
+        llamadas = _normalizar_tool_calls(salida["tool_calls"])
         if not llamadas and salida.get("finish_reason") == "length" and salida["texto"] and continuaciones < 2:
             acumulado += salida["texto"]
             continuaciones += 1
@@ -326,12 +368,15 @@ def llm(cuerpo):
         if not llamadas or not permitidas:
             return {"texto": acumulado + salida["texto"], "tool_calls": llamadas, "finish_reason": salida.get("finish_reason"), "herramientas_usadas": usadas,
                     "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta"), **aviso, **_metricas(salida)}
-        mensajes.append(salida.get("mensaje_asistente") or {"role": "assistant", "content": salida["texto"] or None, "tool_calls": llamadas})
+        asistente = salida.get("mensaje_asistente")
+        if isinstance(asistente, dict):
+            asistente = {**asistente, "tool_calls": llamadas}  # mantener id normalizado en ambos lados del protocolo
+        else:
+            asistente = {"role": "assistant", "content": salida["texto"] or None, "tool_calls": llamadas}
+        mensajes.append(asistente)
         for llamada in llamadas:
             funcion = llamada.get("function") or {}
             nombre = funcion.get("name")
-            if not llamada.get("id"):
-                continue  # sin id no se puede responder; el modelo vuelve a pedirla en la ronda siguiente
             if nombre not in permitidas:  # no corta la tarea: el modelo recibe el error y elige otra herramienta
                 mensajes.append({"role": "tool", "tool_call_id": llamada["id"], "content": json.dumps({"error": "Herramienta no autorizada: " + str(nombre)}, ensure_ascii=False)})
                 continue
@@ -367,6 +412,9 @@ def llm(cuerpo):
                     _anotar(tarea, diario)  # persistencia ANTES de tocar sistemas externos
                 resultado = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": llamada["id"],
                     "method": "tools/call", "params": {"name": nombre, "arguments": args}})
+                if llave and _respuesta_mcp_fallida(resultado):
+                    # La operacion pudo ejecutarse antes del error: guardar INICIADA y exigir conciliacion.
+                    raise RuntimeError("OPERACION_SIN_CONFIRMAR")
                 if llave:
                     texto_resultado = json.dumps(resultado, ensure_ascii=False)
                     diario[llave] = {"estado": "CONFIRMADA", "resultado": texto_resultado[:2000],
