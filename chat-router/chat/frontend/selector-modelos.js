@@ -10,8 +10,19 @@ function modelosDisponibles() {
     ...((window.RIU_GROQ || {}).lista || []),
     ...((window.RIU_CONFIG || {}).modelos || []).filter(m => String(m.id || "").startsWith("nvidia/")),
   ];
+  // Si aun no existe catalogo accesible, conservar las fichas solicitadas como SIN VERIFICAR.
+  const esperados = [
+    ["hf/lfm2.5-350m", "Liquid LFM2.5 350M"], ["hf/qwen2.5-coder-1.5b", "Qwen2.5 Coder 1.5B"],
+    ["hf/qwen3.5-0.8b", "Qwen3.5 0.8B"], ["hf/qwen3-0.6b", "Qwen3 0.6B"],
+    ["groq/qwen/qwen3.8-27b", "Qwen 3.8 Groq"],
+    ["nvidia/minimaxai/minimax-m3.1-flash", "MiniMax M3.1 Flash"],
+    ["nvidia/meta/muse-glimmer-30b", "Muse Glimmer 30B"],
+    ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "Nemotron 3 Ultra"],
+    ["nvidia/z-ai/glm-5.3", "GLM 5.3"],
+  ];
   const vistos = new Set();
-  return f.filter(m => m && /^(hf\/|groq\/|nvidia\/)/.test(m.id) && !vistos.has(m.id) && vistos.add(m.id));
+  return [...f, ...esperados.map(([id, etiqueta]) => ({ id, etiqueta, disponible: null }))]
+    .filter(m => m && /^(hf\/|groq\/|nvidia\/)/.test(m.id) && !vistos.has(m.id) && vistos.add(m.id));
 }
 function pintarCatalogo() {
   if (!hoja) return;
@@ -103,7 +114,7 @@ function asegurarHoja() {
 function montar() {
   const sec = document.getElementById("selectores"), composer = document.getElementById("composer");
   if (!sec || !composer) return false;
-  if (btn && composer.contains(btn) && sec.parentNode && sec.parentNode.classList.contains("va-caja") && sec.parentNode.parentNode && sec.parentNode.parentNode.id === "sh-selectores") { pintarCatalogo(); return true; }
+  if (btn && composer.contains(btn) && sec.parentNode && sec.parentNode.classList.contains("va-caja") && sec.parentNode.parentNode && sec.parentNode.parentNode.id === "sh-selectores") return true; // evitar MutationObserver -> replaceChildren -> MutationObserver infinito
   const caja = asegurarHoja().querySelector(".va-caja");
   [...caja.querySelectorAll("#selectores")].forEach((n) => { if (n !== sec) n.remove(); });
   if (sec.parentNode !== caja) caja.append(sec);

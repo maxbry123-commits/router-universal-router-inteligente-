@@ -28,9 +28,13 @@ export function montarClaves({ root, q, tell }) {
   const cuerpo = el("div", "cl-cuerpo"); caja.append(cuerpo);
   const msg = el("div", "vn-estado"), msgSwe = el("div", "vn-estado"); msg.setAttribute("role", "status"); msgSwe.setAttribute("role", "status");  // dos lineas: banco Groq/NVIDIA del bridge y banco /vault, sin mezclarlos
   async function estado() {
-    msgSwe.textContent = await estadoSwe().catch(() => ""); msgSwe.hidden = !msgSwe.textContent;
-    try { const s = await llamar("GET", "/vault/status"); msg.textContent = "Banco: " + (s.unlocked ? "abierto" : "cerrado") + (s.credentials != null ? " · " + s.credentials + " credenciales" : ""); }
-    catch (e) { msg.textContent = "Banco no disponible: " + e.message + " (GAP si el servidor no expone /vault)"; }
+    msgSwe.textContent = await estadoSwe().catch(() => "Sin verificar");
+    msgSwe.hidden = !msgSwe.textContent;
+    try {
+      const s = await api("/plugins/banco_proveedores/call/catalogo", { method:"POST", body:{} });
+      const lista = s?.result?.proveedores || [];
+      msg.textContent = "Banco cifrado compartido: " + lista.map(x => x.id + " · " + x.cantidad).join(" | ");
+    } catch { msg.textContent = "Banco compartido sin verificar. Puedes intentar añadir una clave."; }
   }
   function pintar() {
     cuerpo.replaceChildren(); cuerpo.append(msgSwe, msg);
