@@ -46,7 +46,7 @@ RIU_SWE_OPERADORES           [H]     YA NO hace falta: el Harness deriva los ope
 
 # ---- Código y persistencia ----
 GITHUB_TOKEN                 [R,B,H] Clonar/leer main, publicar el banco en la rama banco-claves (permiso contents). boot.sh de Router y Harness lo exigen.                  EXISTE (/web/health: banco.github.token=true)
-HF_TOKEN                     [R,B]   Memoria compartida / hf_store / checkpoint HF.                                                                                              VERIFICAR
+HF_TOKEN                     [R,B]   OPCIONAL: memoria compartida / hf_store / checkpoint HF (persistencia entre Spaces). Sin ella el chat y el checkpoint de tareas SWE CAEN a disco local (BRIDGE_STATE_DIR) sin romperse; el catalogo de modelos de OpenClaw/SWE CODE y las tools de GitHub NO dependen de esta variable.   VERIFICAR
 HF_BUCKET_ID, RIU_VAULT_SOURCE, RIU_VAULT_PROVIDERS_SOURCE, RIU_VAULT_PATH, RIU_DATA_DIR, RIU_CORS_ORIGINS   [R]  Variables fijas del Dockerfile del Router (no son secretos).   EXISTE (Dockerfile)
 RIU_VAULT_PASSPHRASE         [R]     Solo si el boot real usa boot_run.py (vault); secreto.                                                                                       VERIFICAR
 BRIDGE_STATE_DIR             [B]     Estado en disco (checkpoints, banco-swe.bin). En el Space: /data/state (almacenamiento permanente).                                         VERIFICAR

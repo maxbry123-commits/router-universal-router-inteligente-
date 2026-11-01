@@ -315,7 +315,7 @@ test("timeout (colgar) en Groq: enfria SOLO las claves de Groq; una NVIDIA valid
   const n = await fake(({ url }) => url.endsWith("/models") ? modelos([]) : ok("de nvidia"));
   Object.assign(BASES, { groq: g.url, nvidia: n.url });
   try {
-    const r = await respaldo(msgs, { env: { GROQ_API_KEY: "gsk-FAKE-1", GROQ_API_KEY_2: "gsk-FAKE-2", NVIDIA_API_KEY: "nv-FAKE-1" }, opts: rapido({ timeoutMs: 80 }) });
+    const r = await respaldo(msgs, { env: { GROQ_API_KEY: "gsk-FAKE-1", GROQ_API_KEY_2: "gsk-FAKE-2", NVIDIA_API_KEY: "nv-FAKE-1", RIU_SWE_GROQ_MODELO: "m" }, opts: rapido({ timeoutMs: 80 }) });  // "m" no esta en TIMEOUTS_DEFECTO: usa el timeoutMs de la prueba, no la tabla (R8)
     assert.equal(r.via, "nvidia"); assert.equal(r.salida, "de nvidia");
     assert.equal(g.chat.length, 1, "el timeout de Groq corta su propia cadena en la PRIMERA clave: no prueba la clave 2 de Groq");
     assert.deepEqual(r.intentos.map((x) => x.via), ["groq", "nvidia"], "el salto a NVIDIA es un nivel distinto y explicito (intentos), no una clave mas de Groq");
