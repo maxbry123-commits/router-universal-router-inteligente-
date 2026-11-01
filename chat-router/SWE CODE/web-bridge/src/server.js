@@ -233,7 +233,12 @@ app.get('/v1/modelos/disponibilidad', async (_req, res) => {
       .map(id => ({ id: 'hf/' + id, nombre: id, proveedor: 'hf-local', disponible: null,
         estado: URLs ? 'SIN VERIFICAR' : 'NO CONFIGURADO', intentable: !!URLs }));
     // URL configurada no significa modelo cargado: solo el primer chat confirma realmente su inferencia.
-    res.json({ ok: true, modelos: await disponibilidad(), locales });
+    // El selector necesita el estado EFECTIVO de las credenciales (entorno + banco cifrado).
+    // GET /v1/claves informa solo sobre el banco y puede exigir permisos distintos;
+    // no usar ese contador para decidir falsamente que un modelo esta NO CONFIGURADO.
+    const cuentas = estadoRespaldo();
+    res.json({ ok: true, modelos: await disponibilidad(), locales,
+      configurados: { groq: cuentas.groq > 0, nvidia: cuentas.nvidia > 0, hf_local: cuentas.hf_local > 0 } });
   } catch (e) {
     res.status(502).json({ ok: false, error: { code: 'DISPONIBILIDAD_FALLO', message: 'No se pudo consultar el catálogo' } });
   }
