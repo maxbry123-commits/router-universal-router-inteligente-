@@ -52,3 +52,11 @@
 }
 /* con una ventana abierta el aviso baja: no tapa el titulo ni la ✕ de la hoja */
 body:has(.sheet:not([hidden])) #notice:not(:empty){top:auto;bottom:24px}
+
+/* Estado de arranque del Space: aviso discreto en móvil/escritorio */
+#riu-inicio-servidor{margin:8px 12px;padding:9px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.3}
+#riu-inicio-servidor[hidden]{display:none}
+#riu-inicio-servidor .riu-arranque-texto{flex:1;min-width:0}
+.riu-arranque-spinner{width:15px;height:15px;border-radius:50%;border:2px solid var(--border-strong);border-top-color:var(--active);animation:riu-arranque 1s linear infinite;flex-shrink:0}
+@keyframes riu-arranque{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.riu-arranque-spinner{animation:none}}
