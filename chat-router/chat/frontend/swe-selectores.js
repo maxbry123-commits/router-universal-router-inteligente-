@@ -120,7 +120,7 @@ function controles() {
 function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al final y deshabilitado, con su estado real; la eleccion actual se queda visible aunque no este disponible
   const op = (x, ok) => { const o = el("option", null, x.etq); o.value = x.id; o.selected = x.id === actual; o.disabled = !ok && !x.elegible; if (!ok) o.title = x.motivo; return o; }; // estado una sola vez: la agrupacion ya lo declara  // SIN VERIFICAR + intentable: se puede elegir con aviso
   s.replaceChildren(...items.ok.map((x) => op(x, true)));
-  const grupos = [[items.sinVerificar, "Sin verificar"], [items.noInstalado, "No instalados"], [items.incompatible, "Incompatibles con este modelo"], [items.otros, "No configurados / no disponibles"]];
+  const grupos = [[items.sinVerificar, "Sin verificar"], [items.noInstalado, "No instalados"], [items.incompatible, "Incompatibles"], [items.otros, "No disponibles"]];
   grupos.forEach(([l, t]) => { if (!l.length) return; const og = el("optgroup"); og.label = t; og.append(...l.map((x) => op(x, false))); s.append(og); });
   s.value = actual;
 }
@@ -175,7 +175,8 @@ function pintarControles() {
     }
     c.querySelector(".swe-nota").textContent = notaVentana(VENTANA) + (VENTANA === "groq" || VENTANA === "nvidia" ? " El modo de trabajo solo se aplica en los envíos por el bridge." : "");
     const ni = c.querySelector(".swe-noinst"), ga = agruparOpciones(CAP, "agente", AGENTES_SWE);
-    ni.textContent = CAP_LISTA ? [lineaNoInstalados(ga), lineaSinVerificar(ga), lineaOtros(ga)].filter(Boolean).join(" · ") : "Consultando qué agentes están conectados…"; ni.hidden = !ni.textContent;
+    ni.textContent = CAP_LISTA ? [lineaNoInstalados(ga), lineaSinVerificar(ga), lineaOtros(ga)].filter(Boolean).join(" · ") : "Consultando qué agentes están conectados…";
+    ni.hidden = !requiereHarness(sel) || !ni.textContent; // chat normal: agentes no influyen en el modelo
     const fj = c.querySelector(".swe-fijo"); if (fj) { const f = camposFijos(sel.workflow); fj.hidden = !f.size; fj.textContent = f.size ? `Fijo por el workflow ${nombreDe(WORKFLOWS_SWE, sel.workflow)}: agente y modelo que responden, y modelo de Ejecuta (no influyen; cada paso usa su modelo).` : ""; }
     const es = c.querySelector(".swe-estado-sel"); es.textContent = problemas.join(" · "); es.hidden = !problemas.length;
     const e = c.querySelector(".swe-estado");

@@ -158,3 +158,16 @@ test("X-Ray: si ambos catálogos están inaccesibles se mantienen los cinco IDs,
   assert.deepEqual(window.RIU_CONFIG.modelos.map(m => m.id), NV);
   assert.ok(window.RIU_CONFIG.modelos.every(m => m.disponible === null));
 });
+
+test("X-Ray: NVIDIA conserva el modelo anterior no disponible sin cambiarlo por MiniMax", async () => {
+  reiniciar();
+  puente = { configurados: { groq: true, nvidia: true }, modelos: [
+    { id: GROQ, proveedor: "groq", disponible: true },
+    ...NV.map(id => ({ id, proveedor: "nvidia", disponible: id !== NV[3] })),
+  ] };
+  localStorage.setItem("riu_nvidia_modelo", NV[3]);
+  await cargar();
+  assert.equal(window.RIU_NVIDIA.modelo, NV[3]);
+  assert.equal(window.RIU_CONFIG.defecto, NV[0]);
+  assert.equal(window.RIU_CONFIG.modelos.at(-1).disponible, false);
+});

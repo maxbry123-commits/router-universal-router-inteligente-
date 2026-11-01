@@ -31,7 +31,9 @@ export function aplicar(d) {  // d: {groq:[{id,etiqueta,disponible}], nvidia:[â€
     const buenosNv = d.nvidia.filter((m) => m.disponible !== false), previoNv = (window.RIU_NVIDIA || {}).modelo || localStorage.getItem("riu_nvidia_modelo") || "";
     cfg().modelos = d.nvidia;
     cfg().defecto = buenosNv[0]?.id || "";
-    const actualNv = buenosNv.some(m => m.id === previoNv) ? previoNv : cfg().defecto;
+    // Nunca cambiar en silencio un modelo NVIDIA elegido por otro.
+    const previoPerdido = d.nvidia.some(m => m.id === previoNv && m.disponible === false);
+    const actualNv = previoPerdido ? previoNv : buenosNv.some(m => m.id === previoNv) ? previoNv : cfg().defecto;
     window.RIU_NVIDIA = { aviso: actualNv ? "" : (d.avisoNvidia || "elige un modelo NVIDIA configurado"), lista: d.nvidia, modelo: actualNv };
     try { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); if (c && (VIEJAS.test(c.ficha || "") || !c.ficha)) c.ficha = actualNv || c.ficha; } catch (e) {}
   } else {
