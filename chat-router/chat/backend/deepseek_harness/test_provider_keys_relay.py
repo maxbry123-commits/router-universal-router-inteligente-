@@ -22,6 +22,16 @@ class TestRelay(unittest.TestCase):
             r = h.credenciales("anadir", {"secret": "gsk_FAKE_1234"}, x_api_key="OTRO")
         self.assertEqual(r.status_code, 401)
 
+    def test_public_chat_key_is_accepted_as_access_control_not_model_key(self):
+        visto = []
+        def api(plugin, accion, cuerpo, timeout=None):
+            visto.append((plugin, accion))
+            return {"ok": True, "proveedores": [{"id": "openai", "cantidad": 1, "compatible": True}]}
+        with patch.dict("os.environ", {"RIU_API_KEY": "FAKE-INTERNAL", "RIU_PUBLIC_CHAT_KEY": "FAKE-USER"}), patch.object(h, "llamar", api):
+            r = h.credenciales("catalogo", {}, x_api_key="FAKE-USER")
+        self.assertEqual(r["status"], "ok")
+        self.assertEqual(visto, [("banco_proveedores", "catalogo")])
+
 
 if __name__ == "__main__":
     unittest.main()

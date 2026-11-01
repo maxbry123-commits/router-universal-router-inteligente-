@@ -56,7 +56,11 @@ def _banco_compartido():
     """Banco cifrado del web-bridge (solo lectura): RIU_BANCO_SWE o <BRIDGE_STATE_DIR|/tmp/state>/banco-swe.bin. Nunca lanza; None si no aporta."""
     try:
         from mvp import bank
-        ruta = os.environ.get("RIU_BANCO_SWE") or os.path.join(os.environ.get("BRIDGE_STATE_DIR") or "/tmp/state", "banco-swe.bin")
+        # La carpeta del bridge es una UNICA fuente: el mismo banco cifrado se ve desde
+        # el Router MVP, el Harness y OpenClaw aunque BRIDGE_STATE_DIR no este exportado.
+        bridge_root = pathlib.Path(__file__).resolve().parents[3] / "SWE CODE" / "web-bridge"
+        ruta = os.environ.get("RIU_BANCO_SWE") or os.path.join(
+            os.environ.get("BRIDGE_STATE_DIR") or str(bridge_root / "state"), "banco-swe.bin")
         accesos = tuple(dict.fromkeys(os.environ[v] for v in bank.ACCESO if os.environ.get(v)))  # el banco puede estar cifrado con cualquiera de las variables de acceso
         if not accesos or not os.path.isfile(ruta):  # no existe: no se abre (abrir() crearia el archivo)
             return None

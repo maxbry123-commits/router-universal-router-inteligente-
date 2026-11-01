@@ -533,10 +533,11 @@ def credenciales(accion: str, cuerpo: dict, x_api_key: str | None = Header(None)
     """Relay ADMINISTRATIVO: Chat -> Harness -> plugin HTTP Router MVP -> SWE CODE -> banco.
     Los secretos no entran en prompts, historial del modelo, tools ni logs.
     """
-    esperado = os.environ.get("RIU_API_KEY")
-    if not esperado or not isinstance(x_api_key, str) or not hmac.compare_digest(
-        x_api_key.encode("utf-8", "surrogatepass"), esperado.encode("utf-8", "surrogatepass")
-    ):
+    # Aceptar las MISMAS credenciales de acceso que el Router MVP; NO confundir
+    # API_KEY de DeepSeek/MiniMax/OpenAI con una clave autorizada para administrar el banco.
+    esperadas = [os.environ[v] for v in ("RIU_API_KEY", "RIU_PUBLIC_CHAT_KEY", "RIU_MCP_KEY", "RIU_ROUTER_API_KEY") if os.environ.get(v)]
+    if not isinstance(x_api_key, str) or not any(hmac.compare_digest(
+        x_api_key.encode("utf-8", "surrogatepass"), e.encode("utf-8", "surrogatepass")) for e in esperadas):
         return _err("clave de acceso invalida", 401)
     if accion not in ("anadir", "catalogo"):
         return _err("accion no permitida", 404)
