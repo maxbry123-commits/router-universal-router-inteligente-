@@ -158,6 +158,29 @@ def _tarea_id_bridge(conv_id, modelo, mensajes):
     return (base + "-" + huella) if base else ""
 
 
+def _metricas_bridge(m):
+    """Traduce unidades del bridge SWE a las claves del Router MVP; nunca inventa mediciones."""
+    if not isinstance(m, dict):
+        return {}
+    out = {}
+    if type(m.get("stream")) is bool:
+        out["stream"] = m["stream"]
+    for origen, destino, factor in (("ttft_ms", "ttft_s", 0.001),
+                                    ("total_ms", "duracion_s", 0.001),
+                                    ("tokens_s", "tokens_por_s", 1.0)):
+        v = m.get(origen)
+        if isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v < 1e10:
+            out[destino] = round(v * factor, 4)
+    v = m.get("tokens")
+    if isinstance(v, int) and not isinstance(v, bool) and v >= 0:
+        out["tokens"] = v
+    if type(m.get("tokens_estimado")) is bool:
+        out["tokens_estimados"] = m["tokens_estimado"]
+    if m.get("origen_tokens") in ("proveedor", "estimado"):
+        out["origen_tokens"] = m["origen_tokens"]
+    return out
+
+
 def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
     """Una vuelta de chat por el bridge (OpenAI-compatible): mismo formato que _router('chat'). Con tarea (conv_id) y un modelo local/Groq/NVIDIA manda ademas tarea_id explicito."""
     modelo = SWE_ALIAS.get(modelo, modelo)
@@ -174,7 +197,8 @@ def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
     except (OSError, ValueError, KeyError, IndexError, TypeError, AttributeError) as exc:
         raise RuntimeError("Bridge " + type(exc).__name__ + ": " + str(exc)[:80]) from None
     return {"texto": msg.get("content") or "", "tool_calls": msg.get("tool_calls") or [], "finish_reason": bruto["choices"][0].get("finish_reason") or "stop",
-            "mensaje_asistente": msg, "modelo_respuesta": bruto.get("modelo_usado") or modelo}
+            "mensaje_asistente": msg, "modelo_respuesta": bruto.get("modelo_usado") or modelo,
+            **({"metricas": _metricas_bridge(bruto["metricas"])} if isinstance(bruto.get("metricas"), dict) else {})}
 
 
 def _bridge_sin_router(mensajes, modelo):
@@ -271,7 +295,7 @@ def llm(cuerpo):
             if not acumulado:
                 raise
             return {"texto": acumulado, "tool_calls": [], "finish_reason": "length", "herramientas_usadas": usadas,
-                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta"), **aviso}
+                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta"), **aviso, **_metricas(salida)}
         aviso = {"aviso_modelo": salida["aviso_modelo"]} if salida.get("aviso_modelo") else {}
         if not isinstance(salida.get("tool_calls"), list) or not isinstance(salida.get("texto"), str):
             raise RuntimeError("Router respuesta de chat invalida")

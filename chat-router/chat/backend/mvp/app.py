@@ -399,6 +399,19 @@ _IDENTIDAD = re.compile(r"^\W*(soy|yo soy|i am|i'm|me llamo)\b.{0,200}\b(qwen|de
 def _sin_identidades(mensajes):
     """Quita las respuestas cortas donde un modelo anterior dijo quien era: los modelos las copian y contestan con ese nombre en vez del suyo."""
     return [m for m in mensajes if not (isinstance(m, dict) and m.get("role") == "assistant" and isinstance(m.get("content"), str) and len(m["content"]) < 300 and _IDENTIDAD.search(m["content"]))]
+def _identidad_modelo(modelo):
+    """Identidad fiel al proveedor elegido: un modelo externo NO se anuncia como QwenCloud."""
+    prov = externos.proveedor(modelo)
+    origen = externos.PROVEEDORES[prov]["label"] if prov else "QwenCloud Token Plan"
+    marca = modelos.marca(modelo) if not prov else None
+    nombre = modelo + (" — " + marca if marca else "")
+    return {"role": "system", "content": (
+        "Modelo activo: %s, ejecutado mediante %s. Las respuestas anteriores de esta conversación pudieron venir de otros modelos: "
+        "no copies su identidad. Esta línea manda sobre cualquier regla, ficha, memoria o historial que nombre otro modelo: "
+        "tu modelo es el indicado aquí. Si te preguntan quién o qué modelo eres, responde en una línea con ese nombre y su familia."
+    ) % (nombre, origen)}
+
+
 async def _chat_ficha(cuerpo, progreso=None):
     q = {**cuerpo, **(cuerpo.get("qwen") or {})}  # api.js harness() anida {plugin, ficha_qwen, modelo} en "qwen"
     mensajes = q.get("mensajes") or q.get("messages") or [{"role": "user", "content": str(q.get("message") or "")}]
@@ -448,7 +461,7 @@ async def _chat_ficha(cuerpo, progreso=None):
     except (ValueError, TypeError) as error:
         raise HTTPException(status_code=400, detail=str(error)) from None
     mensajes = _sin_identidades(mensajes)
-    identidad = {"role": "system", "content": "Modelo activo: %s%s, ejecutado en QwenCloud Token Plan. Las respuestas anteriores de esta conversación pudieron venir de otros modelos: no copies su identidad. Esta línea manda sobre cualquier regla, ficha, memoria o historial que nombre otro modelo: tu modelo es el indicado aquí. Si te preguntan quién o qué modelo eres, responde en una línea con ese nombre y su familia." % (modelo, " — " + modelos.marca(modelo) if modelos.marca(modelo) else "")}
+    identidad = _identidad_modelo(modelo)
     fin = len(mensajes) - 1 if isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user" else len(mensajes)
     mensajes = [*mensajes[:fin], identidad, *mensajes[fin:]]  # justo antes del mensaje actual: el historial de otro modelo no la tapa
     if imagenes and isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user":
@@ -465,6 +478,7 @@ async def _chat_ficha(cuerpo, progreso=None):
                          "opciones": opciones or None, **_controles(q)})
     return {"estado": "completado", "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": modelo, "modelo_respuesta": salida.get("modelo_respuesta"), "herramientas_usadas": salida.get("herramientas_usadas") or [],
+            **({"metricas": salida["metricas"]} if isinstance(salida.get("metricas"), dict) else {}),
             "choices": [{"message": {"role": "assistant", "content": salida["texto"],
                                     "tool_calls": salida["tool_calls"]},
                          "finish_reason": salida["finish_reason"]}]}
@@ -535,6 +549,7 @@ async def _reanudar(pid):
                         "_limite": est.get("limite"), "_usadas": est.get("usadas"), "_acumulado": est.get("acumulado")})
         TRABAJOS[pid].update(estado="completado", via="harness", finish_reason=s["finish_reason"], reanudado=True, modelo_solicitado=est["modelo"],
                              modelo_respuesta=s.get("modelo_respuesta"), herramientas_usadas=s.get("herramientas_usadas") or [],
+                             **({"metricas": s["metricas"]} if isinstance(s.get("metricas"), dict) else {}),
                              choices=[{"message": {"role": "assistant", "content": s["texto"], "tool_calls": s["tool_calls"]}, "finish_reason": s["finish_reason"]}])
     except HTTPException as error:
         TRABAJOS[pid].update(estado="error", error=str(error.detail), status_code=error.status_code)
@@ -682,6 +697,7 @@ async def chat_send(cuerpo: dict):
     return {"reply": msg["content"], "execution_path": "HARNESS", "ms": int((time.monotonic() - t0) * 1000),
             "tools": tools, "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": salida.get("modelo_solicitado"), "modelo_respuesta": salida.get("modelo_respuesta"),
+            **({"metricas": salida["metricas"]} if isinstance(salida.get("metricas"), dict) else {}),
             }
 async def _delegar(nombre, args):
     """Herramientas agente/llm del modelo: una llamada nueva (sin herramientas, sin historial) al modelo del agente o al elegido."""
