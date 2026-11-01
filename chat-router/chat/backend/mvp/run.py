@@ -25,6 +25,15 @@ BRIDGE_DIR = REPO / "chat-router" / "SWE CODE" / "web-bridge"
 _BRIDGE = None
 
 
+def _bridge_externo():
+    """El Space existente ejecuta /proxy.py y su propio boot.sh lanza :7870.
+
+    No iniciar un segundo bridge desde el Runner (EADDRINUSE / respuestas intermitentes).
+    En contenedores que arrancan solo con el Dockerfile del repo, /proxy.py no existe.
+    """
+    return Path("/proxy.py").is_file()
+
+
 def _parar_bridge():
     global _BRIDGE
     proc, _BRIDGE = _BRIDGE, None
@@ -41,6 +50,8 @@ def _parar_bridge():
 def _iniciar_bridge():
     """Bridge EXISTENTE en el MISMO Space, no otro servicio externo ni nueva raiz."""
     global _BRIDGE
+    if _bridge_externo():
+        return True  # HF boot.sh administra el Node y el proxy; no duplicar el puerto 7870.
     if _BRIDGE and _BRIDGE.poll() is None:
         return True
     node = shutil.which("node")
@@ -153,8 +164,8 @@ def _vigilar():
     while True:
         time.sleep(60)
         _actualizar()
-        if _BRIDGE is None or _BRIDGE.poll() is not None:
-            _iniciar_bridge()  # reinicio simple si el proceso Node salio; sin crear jobs
+        if not _bridge_externo() and (_BRIDGE is None or _BRIDGE.poll() is not None):
+            _iniciar_bridge()  # solo si el Runner es dueno del bridge; HF boot ya lo vigila
 
 
 def _iniciar_hilo():

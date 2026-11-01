@@ -121,3 +121,8 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - El catálogo del bridge declara los 5 modelos de API y 4 locales HF: disponible real, sin clave, no publicado, o sin verificar; los locales con URL NO se declaran disponibles sin responder. Sin exponer claves al navegador.
 - Prueba de fusion con Harness caído, bridge antiguo, banco sin claves y modelos de 2 proveedores en `SWE CODE free/openclaw-ui/test/plugin-sdk.test.mjs`. Sin tocar la lógica de agentes, workflow, ni su instalación.
 - Ejecución plugin del Gateway y respuestas API reales: PENDIENTE DE E2E con configuración del usuario.
+
+## Cierre de compatibilidad Space (solo lectura HF)
+- El Dockerfile y boot.sh **existentes en HF** ya instalan Node.js y arrancan el bridge :7870 en background, con proxy.py :7860. Son distintos de los archivos `respaldo_space/` del clon GitHub; no asumir que ese Dockerfile de GitHub se despliega automaticamente.
+- `chat/backend/mvp/run.py` reconoce `/proxy.py` del Space existente y no inicia un segundo bridge, para evitar `EADDRINUSE` y fallos intermitentes. En un contenedor independiente sin `/proxy.py` mantiene el arranque propio.
+- No se escribió nada en Hugging Face. Prueba `test_xray_boot_bridge.py` añadida; prueba real/estado HF pendientes.
