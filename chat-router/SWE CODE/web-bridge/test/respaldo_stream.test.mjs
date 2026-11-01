@@ -405,7 +405,7 @@ test("local() con flujo previo continua sin repetir y sin stream; setClaves sigu
 });
 
 test("X-Ray: Groq y NVIDIA consultan /models en paralelo para no vencer el timeout 15 s del chat", async () => {
-  let solicitudes = 0, soltar;
+  let solicitudes = 0, soltar, pasoElTimeout = false;
   const ambas = new Promise(ok => soltar = ok);
   const callback = ({ res, url }) => {
     if (!url.endsWith("/models")) return json(res, 404, {});
@@ -416,9 +416,10 @@ test("X-Ray: Groq y NVIDIA consultan /models en paralelo para no vencer el timeo
   const g = await srv(callback), n = await srv(callback);
   Object.assign(BASES, { groq: g.url, nvidia: n.url });
   try {
-    const t = setTimeout(() => soltar(), 1500);
+    const t = setTimeout(() => { pasoElTimeout = true; soltar(); }, 1500);
     try {
       const data = await disponibilidad({ env: { ...env1, NVIDIA_API_KEY: "nv-FAKE-1" }, opts: rapido() });
+      assert.equal(pasoElTimeout, false, "un proveedor no debe esperar el timeout de otro");
       assert.equal(solicitudes, 2, "no se esperó a que Groq terminara para preguntar a NVIDIA");
       assert.equal(data.length, MODELOS_API.length);
     } finally { clearTimeout(t); }

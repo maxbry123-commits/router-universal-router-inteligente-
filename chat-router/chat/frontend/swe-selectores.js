@@ -82,7 +82,9 @@ function notaVentana(w) {
   if (w === "groq" || w === "nvidia") {
     const prov = w === "groq" ? "Groq" : "NVIDIA", lista = w === "groq" ? G().lista || [] : (window.RIU_CONFIG && window.RIU_CONFIG.modelos || []).filter((m) => String(m.id).startsWith("nvidia/"));
     const aviso = w === "groq" ? G().aviso || "" : (window.RIU_NVIDIA || {}).aviso || "";
-    return lista.length ? `${prov}: ${lista.filter((m) => m.disponible !== false).length} de ${lista.length} modelos autorizados publicados por el proveedor.` : `${prov}: ${aviso || "sin modelos cargados"}.`;
+    const confirmados = lista.filter(m => m.disponible === true).length;
+    const desconocidos = lista.filter(m => m.disponible == null).length;
+    return lista.length ? `${prov}: ${confirmados} de ${lista.length} modelos verificados disponibles${desconocidos ? "; " + desconocidos + " sin verificar" : ""}.` : `${prov}: ${aviso || "sin modelos cargados"}.`;
   }
   return w === "swe-code" ? "Modelos locales HF del Harness (el agente se elige abajo)." : "Cuentas web del bridge + modelos del catálogo. El modo de trabajo elige asesoría, revisión, solución…";
 }

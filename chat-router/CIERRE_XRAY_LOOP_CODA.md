@@ -107,3 +107,7 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - `SWE CODE/web-bridge/test/respaldo_stream.test.mjs`: prueba que Groq + NVIDIA se consultan simultáneamente, sin demorar ambas sondas secuencialmente.
 - NVIDIA conserva `riu_nvidia_modelo` en almacenamiento del navegador (solo ID, nunca credenciales), restaurando la selección tras recarga.
 - No se ejecutaron aún las pruebas completas ni se certificó respuesta real de proveedor; todo el código va por GitHub y el mirror existente, sin cambios en HF.
+
+### X-Ray IV — precisión de estados
+- El selector ahora diferencia **verificado disponible** frente a **sin verificar**; no declara «publicado» un modelo cuyo catálogo no se pudo consultar. La prueba de paralelo falla si NVIDIA debe esperar el timeout de Groq.
+- Verificación local aislada con funciones reales de `enviar-mensaje.js` y `fichas-externas.js` evaluadas sobre dobles: 3/3 rutas de chat (Groq, NVIDIA, HF local) enviaron ID exacto al puente, 2/2 estados de banco correctos. **No es un E2E con proveedores**.
