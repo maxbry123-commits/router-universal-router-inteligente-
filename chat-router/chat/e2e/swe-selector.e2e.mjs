@@ -307,7 +307,7 @@ async function enviar(p, texto) {
     await pf.context().close();
 
     // ======== G) Salida SWE | OpenClaw: SIN control propio; se DERIVA de AGENTE QUE EJECUTA (contrato ejecutor_tools al bridge) ========
-    const estG = { llamadas: [], catalogoFalla: false };
+    const estG = { llamadas: [], catalogoFalla: false, capacidades: { harness: 'ok', agentes: Object.fromEntries(['openclaw', 'swe-agent', 'openhands', 'opencode', 'codex', 'claude-code'].map((a) => [a, { disponible: true }])), workflows: {}, modelos: {} } };
     const pg = await nuevaPagina(browser, estG);
     await abrirChat(pg, base);
     ok('G1 no existe ningun control de salida propio: ni fila global ni [data-salida] en todo el documento (F1: una sola definicion, AGENTE QUE EJECUTA)', await pg.evaluate(() => !document.querySelector('#sel-salida-swe') && !document.querySelector('#sel-power .sel-salida') && document.querySelectorAll('[data-salida]').length === 0 && document.querySelectorAll('.swe-fila-salida').length === 0));
@@ -642,7 +642,7 @@ async function enviar(p, texto) {
     await pj.context().close();
 
     // ======== L) R4: respuesta con texto Y tool_calls conserva y muestra las llamadas pendientes ========
-    const estL = { llamadas: [], catalogoFalla: false, conTools: true };
+    const estL = { llamadas: [], catalogoFalla: false, conTools: true, capacidades: { harness: 'ok', agentes: { openclaw: { disponible: true }, 'swe-agent': { disponible: true } }, workflows: {}, modelos: {} } };
     const pl = await nuevaPagina(browser, estL);
     await abrirChat(pl, base);
     await abrirV(pl, 'swe-code'); await pl.selectOption(ctlSel('swe-code', 'modelo_responde'), 'hf/qwen3-0.6b'); await pl.selectOption(ctlSel('swe-code', 'agente_tool'), 'openclaw'); await cerrarV(pl, 'swe-code');
