@@ -26,7 +26,13 @@ export const SWE_LISTAS = {
     ["nvidia/minimaxai/minimax-m3.1-flash", "MiniMax M3.1 Flash", "API NVIDIA"],
     ["nvidia/meta/muse-glimmer-30b", "Muse Glimmer 30B", "API NVIDIA"],
     ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "Nemotron 3 Ultra", "API NVIDIA"],
-    ["nvidia/z-ai/glm-5.3", "GLM 5.3", "API NVIDIA"]] },
+    ["nvidia/z-ai/glm-5.3", "GLM 5.3", "API NVIDIA"],
+    ["deepseek/deepseek-v4-pro", "DeepSeek V4 Pro", "API DeepSeek"],
+    ["deepseek/deepseek-flash", "DeepSeek Flash", "API DeepSeek"],
+    ["minimax/MiniMax-M3", "MiniMax M3", "API MiniMax"],
+    ["minimax/MiniMax-M2.7", "MiniMax M2.7", "API MiniMax"],
+    ["openai/gpt-5.6", "OpenAI GPT-5.6", "API OpenAI"],
+    ["openai/gpt-5.5", "OpenAI GPT-5.5", "API OpenAI"]] },
 };
 // Modelos web de SWEN CODE free (cuentas web del bridge): no estan en el catalogo del Harness, solo sirven para el chat directo por el bridge.
 export const MODELOS_WEB = [["swecode-consulta", "Concilio · los 3 web"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"]];
@@ -34,7 +40,7 @@ export const MODELOS_WEB = [["swecode-consulta", "Concilio · los 3 web"], ["web
 export const MODOS_TRABAJO = [["asesoria", "Asesoría"], ["revision", "Revisión"], ["solucion", "Solución"], ["arquitectura", "Arquitectura"], ["archivos", "Archivos"], ["prompt_code", "Prompt code"], ["despliega", "Despliega"]];
 export const esSelectorSwe = (id) => typeof id === "string" && Object.hasOwn(SWE_LISTAS, id);
 
-export const esSwe = (id) => typeof id === "string" && (/^(web-|swecode-|groq\/|nvidia\/)/.test(id) || Object.hasOwn(REAL, id) || LOCALES.includes(id) || (id.startsWith("hf/") && LOCALES.includes(id.slice(3))));
+export const esSwe = (id) => typeof id === "string" && (/^(web-|swecode-|groq\/|nvidia\/|deepseek\/|minimax\/|openai\/)/.test(id) || Object.hasOwn(REAL, id) || LOCALES.includes(id) || (id.startsWith("hf/") && LOCALES.includes(id.slice(3))));
 
 // Salida de las tools (contrato externo `ejecutor_tools`): quien ejecuta los tool_calls. NO es un segundo control: se DERIVA de AGENTE QUE EJECUTA (agente_tool).
 // 'openclaw' = el bridge devuelve los tool_calls tal cual a OpenClaw (seccion WAIT_TOOLS); cualquier otro agente = 'swe' (el SWE-agent via bridge/Harness, como hoy).
@@ -51,7 +57,13 @@ export const MODELOS_SWE = [
   ["hf/qwen3.5-0.8b", "Qwen3.5 0.8B", "HF local"], ["hf/qwen3-0.6b", "Qwen3 0.6B", "HF local"],
   ["groq/qwen/qwen3.8-27b", "Qwen 3.8 Groq", "API Groq"], ["nvidia/minimaxai/minimax-m3.1-flash", "MiniMax M3.1 Flash", "API NVIDIA"],
   ["nvidia/meta/muse-glimmer-30b", "Muse Glimmer 30B", "API NVIDIA"], ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "Nemotron 3 Ultra", "API NVIDIA"],
-  ["nvidia/z-ai/glm-5.3", "GLM 5.3", "API NVIDIA"]];
+  ["nvidia/z-ai/glm-5.3", "GLM 5.3", "API NVIDIA"],
+  ["deepseek/deepseek-v4-pro", "DeepSeek V4 Pro", "API DeepSeek"],
+  ["deepseek/deepseek-flash", "DeepSeek Flash", "API DeepSeek"],
+  ["minimax/MiniMax-M3", "MiniMax M3", "API MiniMax"],
+  ["minimax/MiniMax-M2.7", "MiniMax M2.7", "API MiniMax"],
+  ["openai/gpt-5.6", "OpenAI GPT-5.6", "API OpenAI"],
+  ["openai/gpt-5.5", "OpenAI GPT-5.5", "API OpenAI"]];
 export const AGENTES_SWE = [["openclaw", "OpenClaw"], ["swe-agent", "SWE-agent"], ["openhands", "OpenHands"], ["opencode", "OpenCode"], ["codex", "Codex"], ["claude-code", "Claude Code"]];
 export const WORKFLOWS_SWE = [["individual", "Individual"], ["swe_code", "SWE CODE cuatro pasos"], ["liquid_mirror", "Liquid Mirror"]];
 // Liquid Mirror: dos participantes propios (mismo modelo, servidores HF independientes), sin mezclar con los modelos web.

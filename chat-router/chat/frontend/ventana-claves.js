@@ -41,7 +41,7 @@ export function montarClaves({ root, q, tell }) {
     // Alta aditiva: no reemplaza las claves ya guardadas del proveedor.
     // Harness HTTP autenticado -> plugin banco_proveedores Router MVP -> bridge SWE -> banco cifrado existente.
     const filaApi = el("div", "cl-api-plus"), grupo = el("select", "vn-in");
-    for (const [v, t] of [["auto", "Detectar por prefijo"], ["groq", "Groq"], ["nvidia", "NVIDIA"], ["sdk", "Otro proveedor / SDK"]]) {
+    for (const [v, t] of [["auto", "Detectar por prefijo"], ["groq", "Groq"], ["nvidia", "NVIDIA"], ["deepseek", "DeepSeek (API / SDK)"], ["minimax", "MiniMax (API / SDK)"], ["openai", "OpenAI (API / SDK)"], ["sdk", "Otro proveedor / SDK"]]) {
       const opt = el("option", "", t); opt.value = v; grupo.append(opt);
     }
     grupo.setAttribute("aria-label", "Proveedor de API key o SDK");
@@ -70,7 +70,7 @@ export function montarClaves({ root, q, tell }) {
       finally { guardarNueva.disabled = false; }
     });
     filaApi.append(el("div", "vn-t", "Conectar proveedor · API key / SDK"), grupo, personalizado,
-      secreta, guardarNueva, aviso, el("div", "fila-desc", "Prefijos Groq y NVIDIA se reconocen automáticamente. Otros SDK quedan registrados con nombre: necesitan un adaptador compatible para ejecutar modelos. No se guardan claves en el navegador."));
+      secreta, guardarNueva, aviso, el("div", "fila-desc", "Groq y NVIDIA se reconocen por prefijo. Para DeepSeek, MiniMax y OpenAI selecciona el proveedor (sus claves no se distinguen de forma fiable). APIs compatibles se usan desde ambos chats; otros SDK necesitan adaptador."));
     cuerpo.append(filaApi);
     const ph = el("input", "vn-in"); ph.type = "password"; ph.autocomplete = "off"; ph.placeholder = "Contraseña maestra (solo abre el banco en el servidor)"; ph.setAttribute("aria-label", "Contraseña maestra");
     const fa = el("div", "vn-fila");

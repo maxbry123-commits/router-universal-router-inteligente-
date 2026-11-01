@@ -1,14 +1,28 @@
 // selector-modelos.js — un solo selector guarda TODOS los selectores de modelo (NVIDIA, Groq, Team qwen, Team 5 MVP, Ask cónsil…) en una ventana.
 // Fuera queda el indicador con el selector encendido y el modelo que responde (texto de .sel-resp-global, lo escribe chat-selectores.js).
 // No cambia el cableado: los botones ON/OFF, ⓘ y las hojas de cada selector siguen siendo los mismos nodos, solo se mudan a la ventana.
+import { api } from "./api.js";
 const ICONO = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/></svg>';
 let hoja, btn, obs, pintar = () => {};
+let modelosApi = [], catalogoCargando = false;
+async function cargarModelosApi() {
+  if (catalogoCargando) return;
+  catalogoCargando = true;
+  try {
+    const res = await api("/web/v1/modelos/disponibilidad");
+    if (!res?.ok || !Array.isArray(res.modelos)) return;
+    modelosApi = res.modelos.filter(m => m && /^(deepseek|openai|minimax)\//.test(m.id));
+    pintarCatalogo();
+  } catch { /* sin catalogo: quedan como SIN VERIFICAR; no fingir DISPONIBLE */ }
+  finally { catalogoCargando = false; }
+}
 // Catálogo unificado de MODELOS (no de agentes). Lee los estados del mismo bridge que responde.
 function modelosDisponibles() {
   const f = [
     ...((window.RIU_LOCAL || {}).lista || []),
     ...((window.RIU_GROQ || {}).lista || []),
     ...((window.RIU_CONFIG || {}).modelos || []).filter(m => String(m.id || "").startsWith("nvidia/")),
+    ...modelosApi,
   ];
   // Si aun no existe catalogo accesible, conservar las fichas solicitadas como SIN VERIFICAR.
   const esperados = [
@@ -19,10 +33,16 @@ function modelosDisponibles() {
     ["nvidia/meta/muse-glimmer-30b", "Muse Glimmer 30B"],
     ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "Nemotron 3 Ultra"],
     ["nvidia/z-ai/glm-5.3", "GLM 5.3"],
+    ["deepseek/deepseek-v4-pro", "DeepSeek V4 Pro"],
+    ["deepseek/deepseek-flash", "DeepSeek Flash"],
+    ["minimax/MiniMax-M3", "MiniMax M3"],
+    ["minimax/MiniMax-M2.7", "MiniMax M2.7"],
+    ["openai/gpt-5.6", "OpenAI GPT-5.6"],
+    ["openai/gpt-5.5", "OpenAI GPT-5.5"],
   ];
   const vistos = new Set();
   return [...f, ...esperados.map(([id, etiqueta]) => ({ id, etiqueta, disponible: null }))]
-    .filter(m => m && /^(hf\/|groq\/|nvidia\/)/.test(m.id) && !vistos.has(m.id) && vistos.add(m.id));
+    .filter(m => m && /^(hf\/|groq\/|nvidia\/|deepseek\/|minimax\/|openai\/)/.test(m.id) && !vistos.has(m.id) && vistos.add(m.id));
 }
 function pintarCatalogo() {
   if (!hoja) return;
@@ -41,7 +61,8 @@ function pintarCatalogo() {
   const activo = window.RIU_SELECTORES?.activo || "";
   const elegido = activo === "groq" ? window.RIU_GROQ?.modelo
     : activo === "nvidia-groq-team" ? window.RIU_NVIDIA?.modelo
-    : activo === "swe-code" ? ("hf/" + (window.RIU_SWE?.["swe-code"]?.model_id || "")) : "";
+    : activo === "swe-code" ? ("hf/" + (window.RIU_SWE?.["swe-code"]?.model_id || ""))
+    : activo === "swen-code-free" ? window.RIU_SWE?.["swen-code-free"]?.model_id : "";
   if (opciones.some(x => x.value === elegido)) select.value = elegido;
   else select.selectedIndex = -1; // no asumir un modelo por defecto que el Director no eligio
 }
@@ -57,6 +78,12 @@ function elegirUnificado(id) {
     try { localStorage.setItem("riu_nvidia_modelo", id); } catch {}
     if (c) c.ficha = id;
     selec?.encender?.("nvidia-groq-team");
+  } else if (/^(deepseek|openai|minimax)\//.test(id)) {
+    const s = window.RIU_SWE || (window.RIU_SWE = {});
+    s["swen-code-free"] = { model_id: id, label: modelosDisponibles().find(m => m.id === id)?.nombre || id };
+    try { const g = JSON.parse(localStorage.getItem("riu_swe_modelo") || "{}") || {};
+      g["swen-code-free"] = id; localStorage.setItem("riu_swe_modelo", JSON.stringify(g)); } catch {}
+    selec?.encender?.("swen-code-free"); // misma ruta de chat, sin activar agentes
   } else if (id.startsWith("hf/")) {
     const previo = window.RIU_SWE || (window.RIU_SWE = {});
     const real = id.slice(3), label = modelosDisponibles().find(m => m.id === id)?.etiqueta || real;
@@ -108,7 +135,7 @@ function asegurarHoja() {
     if (pill && (pill.dataset.sheet || pill.id === "sel-groq")) { hoja.hidden = true; if (btn) btn.setAttribute("aria-expanded", "false"); }
   });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrar(); });
-  window.RIU_SELECTOR_MODELOS = { abrir: () => btn && btn.click(), cerrar, pintar: () => pintar() };
+  window.RIU_SELECTOR_MODELOS = { abrir: () => btn && btn.click(), cerrar, pintar: () => pintar(), get modelosApi() { return modelosApi; } };
   return hoja;
 }
 function montar() {
@@ -123,7 +150,7 @@ function montar() {
     btn.type = "button"; btn.id = "btn-selector-modelos"; btn.className = "pill sel-indicador"; btn.setAttribute("aria-haspopup", "dialog"); btn.setAttribute("aria-controls", "sh-selectores");
     btn.innerHTML = ICONO + '<span class="sel-ind-txt"></span><span class="sel-ind-flecha" aria-hidden="true">⌄</span>';
     composer.prepend(btn);
-    btn.addEventListener("click", () => { pintarCatalogo(); hoja.hidden = false; btn.setAttribute("aria-expanded", "true"); const f = hoja.querySelector(".sel-on, button"); if (f) f.focus(); });
+    btn.addEventListener("click", () => { pintarCatalogo(); cargarModelosApi(); hoja.hidden = false; btn.setAttribute("aria-expanded", "true"); const f = hoja.querySelector(".sel-on, button"); if (f) f.focus(); });
   }
   const txt = btn.querySelector(".sel-ind-txt");
   pintar = () => {

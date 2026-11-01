@@ -60,7 +60,8 @@ function mapaProveedor(w) {
   if (!prov) {
     // SWE CODE = locales; SWEN CODE free = locales + APIs. No depender del estado de agentes del Harness.
     if (w !== "swe-code" && w !== "swen-code-free") return {};
-    const datos = [...(window.RIU_LOCAL?.lista || []), ...(w === "swen-code-free" ? [...G().lista, ...(window.RIU_CONFIG?.modelos || []).filter(m => String(m.id).startsWith("nvidia/"))] : [])];
+    const datos = [...(window.RIU_LOCAL?.lista || []), ...(w === "swen-code-free" ? [...G().lista, ...(window.RIU_CONFIG?.modelos || []).filter(m => String(m.id).startsWith("nvidia/")),
+      ...((window.RIU_SELECTOR_MODELOS?.modelosApi || []))] : [])];
     const o = {};
     for (const m of datos) o[m.id] = m.estado === "NO CONFIGURADO" ? "NO_CONFIGURADO"
       : m.disponible === true ? true : m.disponible === false ? false : "SIN_VERIFICAR";
