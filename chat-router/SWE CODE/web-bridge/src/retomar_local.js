@@ -229,6 +229,10 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
     if (transmite && !r.tool_calls?.length) sincronizar();  // lo que no llego por streaming (p. ej. modelo local HF) se entrega ahora
 
     const llamadas = Array.isArray(r.tool_calls) ? r.tool_calls : [];
+    if (Array.isArray(r.tools_invalidas) && r.tools_invalidas.length) {
+      poner('ERROR'); st.ultimo_error = 'TOOL_CALL_INVALIDA'; await guardar();
+      throw falla('TOOL_CALL_INVALIDA', 'Tool calls invalidas: checkpoint guardado sin ejecutar efectos');
+    }
     if (llamadas.length) {
       const tcs = unicas(llamadas);
       try { verificarPlan(tcs); } catch (e) { poner('ERROR'); st.ultimo_error = String(e.message).slice(0, 500); await guardar(); throw e; }

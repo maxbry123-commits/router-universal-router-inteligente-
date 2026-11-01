@@ -251,6 +251,24 @@ test("herramienta sin confirmar (iniciada y sin resultado): VERIFICAR_HERRAMIENT
   } finally { s1.cerrar(); }
 });
 
+test("X-Ray 7: los argumentos JSON invalidos de tool_calls no se ejecutan ni se declaran WAIT_TOOLS", async () => {
+  const s1 = await fake(() => ok("", "tool_calls", { content: null, tool_calls: [tc("invalida-1", "guardar", '{"incompleto":')] }));
+  const dir = tmp(), realizadas = [];
+  try {
+    const e = extra(env(dir, { SWECODE_URL_S1: s1.url }), {
+      tools: [{ type: "function", function: { name: "guardar", parameters: { type: "object" } } }],
+      ejecutarHerramienta: async (t) => { realizadas.push(t); return { ok: true }; },
+      sinRespaldo: true,
+    });
+    await assert.rejects(retomarLocal("xray7-invalida", MODELO, msgs, e), (err) => err.code === "TOOL_CALL_INVALIDA");
+    assert.equal(realizadas.length, 0);
+    const estado = leerArch(dir, "xray7-invalida");
+    assert.equal(estado.estado, "ERROR");
+    assert.equal(estado.ultimo_error, "TOOL_CALL_INVALIDA");
+    assert.equal(estado.lote, null, "ninguna tool invalida se entrega al ejecutor");
+  } finally { s1.cerrar(); }
+});
+
 test("tool_calls sin ejecutor (el Harness las corre): se devuelven con ids estables y el reintento NO vuelve a llamar al modelo", async () => {
   const s1 = await fake(() => ok("", "tool_calls", { content: null, tool_calls: [tc("w1")] })); const dir = tmp();
   try {

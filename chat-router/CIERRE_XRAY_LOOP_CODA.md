@@ -76,3 +76,10 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - `SWE CODE/web-bridge/src/swe_rutas.js`: respuestas HTTP 200 con `status=degraded/error`, `ok=false` o error en resultado ahora devuelven `ROUTER_PLUGIN_ERROR`, sin suponer éxito ni reflejar secretos.
 - Pruebas de regresión incorporadas en `SWE CODE/web-bridge/test/swe_rutas.test.mjs`: operador para sala.contexto, lectura permitida y error de plugin detrás de HTTP 200. No ejecutadas en servidor vivo.
 - No se tocó frontend, Hugging Face ni OpenClaw independiente. Cierre de UI YAIWES/OpenClaw queda explícitamente reservado hasta terminar Claude Code.
+
+## Segmento 7 — X-Ray de tool_calls inválidas (backend; frontend no tocar)
+- Claude Code incorporó en paralelo el control de idempotencia de `swe_iniciar` (contrato completo, índice huérfano); se auditó y no se duplicó.
+- `SWE CODE/web-bridge/src/retomar_local.js`: los `tools_invalidas` del proveedor bloquean ejecución, dejan error tipado en el checkpoint y no generan `WAIT_TOOLS` ejecutable.
+- `SWE CODE/web-bridge/src/server.js`: tool_calls inválidas no se entregan a OpenClaw ni al Harness, tampoco tras fallback. Error tipado `TOOL_CALL_INVALIDA`; sin ejecutar herramientas.
+- Prueba añadida en `SWE CODE/web-bridge/test/retomar_local.test.mjs` con argumentos JSON incompletos y verificación de cero efectos. No ejecutada; pendiente runner Node real.
+- Nada de frontend, Hugging Face, OpenClaw independiente ni nuevas raíces. Guardado GitHub main; mirror externo NO certificado.
