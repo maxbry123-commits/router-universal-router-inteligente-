@@ -865,8 +865,19 @@ def _resolver_mirror(p: dict) -> dict:
     return p
 
 
+_CANVAS = frozenset(('canvas_validate', 'canvas_from_dag', 'canvas_save', 'canvas_load'))
+
+
+async def handle_canvas_action(action: str, payload: dict, *, load_cb=None, save_cb=None):
+    from nct_loop.canvas_bridge import handle_canvas
+    return await handle_canvas(action, payload, load_cb=load_cb, save_cb=save_cb)
+
+
 def handle(action: str, payload: "dict | None" = None, server_context=None) -> dict:
     p = payload or {}
+    if action in _CANVAS:
+        # Sin callbacks: SAVE/LOAD fallan cerrado.
+        return asyncio.run(handle_canvas_action(action, p))
     if action in ('dsl_config','dsl_control','dsl_estado'):
         from nct_loop.trigger_bridge import TriggerBridge
         from nct_loop.trigger_host import build_ports
@@ -991,4 +1002,5 @@ def handle(action: str, payload: "dict | None" = None, server_context=None) -> d
 
 ACCIONES = ['status', 'health', 'dsl_config', 'dsl_control', 'dsl_estado', 'ejecutar', 'gobernar', 'estado', 'cancelar',
             'motores', 'motor_fases', 'motor_ejecutar', 'motores_registro', 'agentes', 'fuente_listar', 'fuente_agregar', 'fuente_quitar', 'fuente_sync',
-            'paralelo', 'estado_paralelo']
+            'paralelo', 'estado_paralelo',
+            'canvas_validate', 'canvas_from_dag', 'canvas_save', 'canvas_load']

@@ -631,6 +631,25 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict,
             if not resultado['watchdog_worker']:
                 resultado['warning']='WATCHDOG_WORKER_NOT_STARTED'
         return {'status':'ok','result':resultado}
+    if plugin == "nct_loop" and accion in loop_puente.CANVAS:
+        # Canvas usa el mismo endpoint autenticado y la memoria HF del chat.
+        async def _canvas_load(scope, key):
+            import json
+            try:
+                raw = await asyncio.to_thread(hf_store.leer, _clave_hf(), memoria._nombre(scope))
+            except hf_store.NoExiste:
+                return {"records": []}
+            registros = json.loads(raw["valor"])
+            if not isinstance(registros, list):
+                raise ValueError("CANVAS_STORAGE_INVALID")
+            return {"records": [r for r in registros if isinstance(r, dict) and r.get("key") == key]}
+
+        async def _canvas_save(scope, key, value):
+            return await memoria.aplicar("save", {"scope": scope, "key": key, "data": value}, _clave_hf)
+
+        resultado = await loop_puente.llamar_canvas(
+            accion, cuerpo, load_cb=_canvas_load, save_cb=_canvas_save)
+        return {"status": "ok", "result": resultado}
     if plugin in loop_puente.PLUGINS:  # LOOP, Cola y Watchdog: Chat -> Harness -> Router -> plugin
         try: resultado = await loop_puente.llamar(plugin, accion, loop_reanudar.traducir(cuerpo))
         except (OSError, ValueError) as error: raise HTTPException(status_code=503, detail=str(error)) from None
