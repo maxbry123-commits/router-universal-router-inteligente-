@@ -347,18 +347,21 @@ export function estadoMetricas() {
 
 // GET {base}/models con la primera clave valida; cachea la lista de ids (o su ausencia)
 async function listarIds(prov, base, ks, r) {
+  if (r.signal?.aborted) throw cancelada();  // Detener antes de consultar /models
   const k = `${prov}\0${base}`, hit = cacheModelos.get(k);
   if (hit && hit.hasta > r.ahora()) return hit.ids;
   let ids = null;
   for (const clave of ks) {
     try {
-      const resp = await fetch(`${base.replace(/\/$/, '')}/models`, { signal: AbortSignal.timeout(Math.min(r.descubrirMs, r.timeoutMs)), headers: { 'user-agent': 'riu-swe-code', authorization: `Bearer ${clave}` } });
+      const limite = AbortSignal.timeout(Math.min(r.descubrirMs, r.timeoutMs));
+      const signal = r.signal ? AbortSignal.any([r.signal, limite]) : limite;
+      const resp = await fetch(`${base.replace(/\/$/, '')}/models`, { signal, headers: { 'user-agent': 'riu-swe-code', authorization: `Bearer ${clave}` } });
       if (resp.status === 401 || resp.status === 403) continue;  // clave invalida: prueba la siguiente
       if (!resp.ok) break;
       const j = await resp.json(), lista = Array.isArray(j?.data) ? j.data : Array.isArray(j?.models) ? j.models : [];
       ids = lista.map(m => typeof m === 'string' ? m : m?.id).filter(i => typeof i === 'string' && i);
       break;
-    } catch { break; }  // proveedor caido: no insistir con cada clave
+    } catch { if (r.signal?.aborted) throw cancelada(); break; }  // proveedor caido: no insistir con cada clave
   }
   cacheModelos.set(k, { ids, hasta: r.ahora() + (ids ? r.cacheMs : r.cacheFalloMs) });
   return ids;
@@ -450,6 +453,7 @@ export async function respaldo(mensajes, { env = process.env, extra = {}, opts, 
   const fallos = [], r = red(opts), f = onDelta ? (flujo || { texto: '' }) : flujo;
   const intentos = [];  // 156-161: rastro (sin credenciales) de cada proveedor intentado; el cambio de proveedor/modelo NUNCA se oculta
   for (const prov of ['groq', 'nvidia']) {
+    if (r.signal?.aborted) throw cancelada();
     const todas = claves(prov.toUpperCase() + '_API_KEY', env);
     if (!todas.length) { fallos.push(`${prov}: sin clave`); continue; }
     if (!libres(prov, env, r).length) { fallos.push(`${prov}: enfriado (timeout/429 reciente)`); continue; }  // no se reentra en un proveedor ya enfriado
