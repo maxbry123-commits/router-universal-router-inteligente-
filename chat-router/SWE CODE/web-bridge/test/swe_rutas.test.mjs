@@ -55,8 +55,9 @@ test('llamarHarness: HARNESS_HTTP_<status>, HARNESS_EJECUCION_FALLIDA, no dispon
   await assert.rejects(() => llamarHarness('swe_estado', {}, { env: { ...ENV, RIU_SWE_HARNESS_TIMEOUT_MS: '40' }, fetchFn: (_u, init) => new Promise((_, ko) => init.signal.addEventListener('abort', () => ko(Object.assign(new Error('aborted'), { name: 'TimeoutError' })))) }), (e) => e.message === 'HARNESS_TIMEOUT');
 });
 
-test('autenticacion OBLIGATORIA: sin BRIDGE_TOKEN las 5 rutas responden 503 y no llaman al Harness (no heredan el acceso libre de las rutas publicas)', async () => {
-  const log = [], app = montar({ RIU_DEEPSEEK_HARNESS_URL: URL_HARNESS, RIU_API_KEY: CLAVE_HARNESS }, harnessOk(log));
+test('autenticacion OBLIGATORIA: sin NINGUNA credencial (ni BRIDGE_TOKEN ni clave de acceso) las 5 rutas responden 503 y no llaman al Harness (no heredan el acceso libre de las rutas publicas)', async () => {
+  // BRIDGE_TOKEN es opcional: con una clave de acceso configurada (RIU_API_KEY...) ya no es 503 sino 401/200 segun el Bearer (ver sin_variables.test.mjs); 503 = no hay credencial alguna
+  const log = [], app = montar({ RIU_DEEPSEEK_HARNESS_URL: URL_HARNESS }, harnessOk(log));
   assert.deepEqual(Object.keys(app.rutas).sort(), ['/v1/swe/aprobar', '/v1/swe/avanzar', '/v1/swe/estado', '/v1/swe/iniciar', '/v1/swe/reanudar', '/v1/swe/tools/:id', 'GET /v1/swe/capacidades', 'GET /v1/swe/tools']);
   for (const ruta of Object.keys(OPERACIONES_SWE)) {
     const r = await llamar(app, ruta, { body: TAREA, headers: AUTH });
@@ -191,7 +192,7 @@ const leer = async (app, { headers = {} } = {}) => { const res = resFalsa(); awa
 
 test('capacidades: autenticacion OBLIGATORIA igual que /v1/swe/* (503 sin BRIDGE_TOKEN, 401 con token malo) y sin tocar el Harness', async () => {
   const log = [];
-  const sin = montar({ RIU_DEEPSEEK_HARNESS_URL: URL_HARNESS, RIU_API_KEY: CLAVE_HARNESS }, harnessOk(log));
+  const sin = montar({ RIU_DEEPSEEK_HARNESS_URL: URL_HARNESS }, harnessOk(log));  // sin credencial alguna (BRIDGE_TOKEN es opcional: con una clave de acceso ya no es 503)
   for (const h of [AUTH, {}]) { const r = await leer(sin, { headers: h }); assert.equal(r.codigo, 503); assert.equal(r.cuerpo.error.code, 'BRIDGE_TOKEN_NO_CONFIGURADO'); }
   const con = montar(ENV, harnessOk(log));
   for (const h of [{}, { authorization: 'Bearer otro' }, { 'x-bridge-key': TOKEN + 'x' }]) { const r = await leer(con, { headers: h }); assert.equal(r.codigo, 401, JSON.stringify(h)); assert.equal(r.cuerpo.error.code, 'NO_AUTORIZADO'); }
@@ -273,21 +274,22 @@ test('tools: GET /v1/swe/tools exige BRIDGE_TOKEN y devuelve el catalogo con el 
   const log = [];
   const app = montar(ENV_T, routerFalso(log, { visibles: ['salud', 'github_escribir'] }));
   assert.equal((await listarTools(app, {})).codigo, 401);
-  assert.equal((await listarTools(montar({ ...ENV_T, BRIDGE_TOKEN: '' }, routerFalso(log)))).codigo, 503);
+  assert.equal((await listarTools(montar({ ...ENV_T, BRIDGE_TOKEN: '', RIU_API_KEY: undefined, RIU_ROUTER_API_KEY: CLAVE_ROUTER }, routerFalso(log)))).codigo, 401, 'con una clave de acceso configurada y sin BRIDGE_TOKEN, un Bearer ajeno es 401');
+  assert.equal((await listarTools(montar({ ...ENV_T, BRIDGE_TOKEN: '', RIU_API_KEY: undefined }, routerFalso(log)))).codigo, 503, 'sin ninguna credencial 503');
   assert.equal(log.length, 0);
   const r = await listarTools(app);
   assert.equal(r.codigo, 200); assert.equal(r.cuerpo.ok, true); assert.equal(r.cuerpo.vivo.router, 'ok');
   const por = Object.fromEntries(r.cuerpo.tools.map((t) => [t.id, t]));
   assert.equal(por.salud.estado, 'DISPONIBLE'); assert.equal(por.agente.estado, 'BLOQUEADA_POR_ROUTER', 'el Router no la lista: Agentes OFF o conexion apagada');
-  assert.ok(r.cuerpo.gaps.some((g) => g.id === 'anclaje') && r.cuerpo.gaps.some((g) => g.id === 'workflow-loop-yaiwes'));
+  assert.ok(r.cuerpo.gaps.some((g) => g.id === 'anclados-navegador') && r.cuerpo.gaps.some((g) => g.id === 'workflow-loop-yaiwes'));
   const txt = JSON.stringify(r.cuerpo); assert.ok(!txt.includes(CLAVE_ROUTER) && !txt.includes(TOKEN) && !txt.includes('127.0.0.1:7861'));
   assert.equal(log[0].init.headers['X-API-Key'], CLAVE_ROUTER); assert.equal(log[0].body.method, 'tools/list'); assert.equal(log[0].init.redirect, 'error');
 });
 
 test('tools: sin clave del Router o con el Router caido el catalogo sale igual y marca ROUTER_NO_DISPONIBLE (nada se inventa como disponible)', async () => {
   let r = await listarTools(montar({ ...ENV, RIU_API_KEY: undefined, RIU_ROUTER_URL: RUTA_ROUTER }, routerFalso([])));
-  assert.equal(r.cuerpo.vivo.router, 'sin_credencial'); assert.ok(r.cuerpo.tools.filter((t) => t.id !== 'harness_status').every((t) => t.estado === 'ROUTER_NO_DISPONIBLE'));
-  assert.equal(r.cuerpo.tools.find((t) => t.id === 'harness_status').estado, 'HARNESS_NO_DISPONIBLE', 'depende del Harness, no del Router');
+  assert.equal(r.cuerpo.vivo.router, 'sin_credencial'); assert.ok(r.cuerpo.tools.filter((t) => t.via !== 'harness').every((t) => t.estado === 'ROUTER_NO_DISPONIBLE'));
+  for (const id of ['harness_status', 'workflows']) assert.equal(r.cuerpo.tools.find((t) => t.id === id).estado, 'HARNESS_NO_DISPONIBLE', 'depende del Harness, no del Router');
   r = await listarTools(montar(ENV_T, async () => { throw new TypeError('fetch failed ' + CLAVE_ROUTER); }));
   assert.equal(r.cuerpo.vivo.router, 'no_disponible'); assert.ok(!JSON.stringify(r.cuerpo).includes(CLAVE_ROUTER));
 });
@@ -380,7 +382,7 @@ before(async () => {
   await new Promise((ok) => harnessFalso.listen(0, '127.0.0.1', ok)); registrarMock(harnessFalso);
   const url = `http://127.0.0.1:${harnessFalso.address().port}`;
   A = await arrancar('swe-A', { BRIDGE_TOKEN: TOKEN, BRIDGE_APROBADORES: APROBADORES, RIU_DEEPSEEK_HARNESS_URL: url, RIU_API_KEY: CLAVE_HARNESS });
-  B = await arrancar('swe-B', { RIU_DEEPSEEK_HARNESS_URL: url, RIU_API_KEY: CLAVE_HARNESS });  // sin BRIDGE_TOKEN
+  B = await arrancar('swe-B', { RIU_DEEPSEEK_HARNESS_URL: url, RIU_API_KEY: CLAVE_HARNESS });  // sin BRIDGE_TOKEN (opcional): la clave de acceso RIU_API_KEY vale como Bearer
 });
 after(() => limpiar());
 const post = async (srv, ruta, body, headers = {}) => { const r = await fetch(srv.base + '/v1/swe/' + ruta, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) }); return { status: r.status, json: await r.json().catch(() => null) }; };
@@ -398,13 +400,15 @@ test('server.js: con BRIDGE_TOKEN las 5 rutas llegan al Harness (X-API-Key solo 
   assert.ok(!JSON.stringify(r.json).includes(CLAVE_HARNESS));
 });
 
-test('server.js: sin token 401 con BRIDGE_TOKEN; SIN BRIDGE_TOKEN las rutas SWE se rechazan (503) aunque las demas rutas sigan abiertas', async () => {
+test('server.js: sin token 401 con BRIDGE_TOKEN; SIN BRIDGE_TOKEN (opcional) las rutas SWE piden Bearer = clave de acceso: sin Bearer o con el token ajeno 401, con RIU_API_KEY 200', async () => {
   vistos.length = 0;
   assert.equal((await post(A, 'estado', { task_id: 'a-1' })).status, 401);
   const rB = await post(B, 'estado', { task_id: 'a-1' });
-  assert.equal(rB.status, 503, JSON.stringify(rB.json)); assert.equal(rB.json.error.code, 'BRIDGE_TOKEN_NO_CONFIGURADO');
-  assert.equal((await post(B, 'iniciar', TAREA, AUTH)).status, 503);
+  assert.equal(rB.status, 401, JSON.stringify(rB.json)); assert.equal(rB.json.error.code, 'NO_AUTORIZADO');
+  assert.equal((await post(B, 'iniciar', TAREA, AUTH)).status, 401);
   assert.equal(vistos.length, 0);
+  const okB = await post(B, 'estado', { task_id: 'a-1' }, { authorization: 'Bearer ' + CLAVE_HARNESS });
+  assert.equal(okB.status, 200, JSON.stringify(okB.json)); assert.equal(vistos.at(-1).body.tool, 'swe_estado'); vistos.length = 0;
   assert.equal((await fetch(B.base + '/health')).status, 200);
 });
 
@@ -415,7 +419,7 @@ test('server.js: el montaje es UNA linea de import y UNA de montaje (B edita el 
   assert.ok(src.indexOf('montarRutasSwe(') > src.indexOf('express.json('), 'se monta despues del parser JSON');
 });
 
-test('server.js: GET /v1/swe/capacidades por HTTP real (Bearer o x-bridge-key); sin token 401; sin BRIDGE_TOKEN 503; no es una ruta POST', async () => {
+test('server.js: GET /v1/swe/capacidades por HTTP real (Bearer o x-bridge-key); sin token 401; sin BRIDGE_TOKEN solo vale Bearer = clave de acceso; no es una ruta POST', async () => {
   vistos.length = 0;
   const get = async (srv, headers = {}) => { const r = await fetch(srv.base + '/v1/swe/capacidades', { headers }); return { status: r.status, json: await r.json().catch(() => null) }; };
   const ok = await get(A, AUTH);
@@ -426,8 +430,9 @@ test('server.js: GET /v1/swe/capacidades por HTTP real (Bearer o x-bridge-key); 
   assert.equal((await get(A, { 'x-bridge-key': TOKEN })).status, 200);
   const n = vistos.length;
   assert.equal((await get(A)).status, 401); assert.equal((await get(A, { authorization: 'Bearer mal' })).status, 401);
-  const b = await get(B, AUTH); assert.equal(b.status, 503); assert.equal(b.json.error.code, 'BRIDGE_TOKEN_NO_CONFIGURADO');
+  const b = await get(B, AUTH); assert.equal(b.status, 401); assert.equal(b.json.error.code, 'NO_AUTORIZADO');
   assert.equal(vistos.length, n, 'sin autenticacion no se llama al Harness');
+  assert.equal((await get(B, { authorization: 'Bearer ' + CLAVE_HARNESS })).status, 200, 'sin BRIDGE_TOKEN, la clave de acceso en Bearer abre capacidades');
   const post = await fetch(A.base + '/v1/swe/capacidades', { method: 'POST', headers: { 'content-type': 'application/json', ...AUTH }, body: '{}' });
   assert.ok(post.status === 404 || post.status === 405, 'solo GET (status ' + post.status + ')');
 });
@@ -447,4 +452,97 @@ test('9: swe_avanzar y swe_reanudar usan RIU_SWE_AVANZAR_TIMEOUT_MS (defecto 180
     assert.equal(await medir('swe_estado', { ...ENV, RIU_SWE_HARNESS_TIMEOUT_MS: '45000' }), 45000, 'RIU_SWE_HARNESS_TIMEOUT_MS sigue mandando en las cortas');
     plazos.length = 0; await consultarCapacidades({ env: ENV, fetchFn: f }); assert.equal(plazos[0], 60000);
   } finally { globalThis.setTimeout = real; }
+});
+
+// ---------- REPLICAS de lectura (anclaje, constitucion, contexto) y tool workflows: el Router se simula; el bridge arma el resultado con su calculo propio ----------
+const routerChat = (log, { archivos = ['nota.txt', 'bin.dat'], contenido = { 'nota.txt': 'hola mundo', 'bin.dat': Buffer.from([1, 0, 2]) }, caidos = [] } = {}) => async (url, init) => {
+  const body = JSON.parse(init.body), ruta = url.slice(RUTA_ROUTER.length);
+  log.push({ ruta, body, clave: init.headers['X-API-Key'] });
+  const ok = (x) => ({ ok: true, status: 200, json: async () => x });
+  if (caidos.includes(ruta) || (ruta === '/mcp' && caidos.includes(body.params.name))) return { ok: false, status: 500, json: async () => ({}) };
+  if (ruta === '/plugins/puente_chat/call/archivos') return ok({ status: 'ok', result: { archivos, persistente: true } });
+  if (ruta === '/plugins/puente_chat/call/proyecto') return ok({ status: 'ok', result: body.op === 'list' ? { proyectos: [{ project_id: 'p1', anclas: ['enlace:x'] }] } : { ok: true, proyecto: { project_id: body.project_id, items: ['archivo:nota.txt'] } } });
+  if (ruta === '/plugins/puente_chat/call/sandbox') return ok({ status: 'ok', result: { sandbox: 'sandbox de ' + body.sesion, encendido: true } });
+  if (ruta === '/almacen') { const n = Object.keys(contenido).find((k) => body.nombre.endsWith('/' + k)); return ok({ valor: Buffer.from(contenido[n] ?? '').toString('base64') }); }
+  if (ruta === '/mcp' && body.params.name === 'yaiwes_md') return ok({ jsonrpc: '2.0', id: 1, result: { structuredContent: { texto: 'info del proyecto', encendido: true }, isError: false } });
+  if (ruta === '/mcp' && body.params.name === 'pendientes') return ok({ jsonrpc: '2.0', id: 1, result: { structuredContent: { pendientes: [{ texto: 'tarea A', hecho: false }, { texto: 'tarea B', hecho: true }] }, isError: false } });
+  return ok({ status: 'ok', result: {} });
+};
+
+test('replica anclaje: archivos, proyectos (solo list|get) y leer_archivo con la ruta del Router; solo lectura, sin operador, clave del entorno', async () => {
+  const log = [], app = montar(ENV_T, routerChat(log));
+  let r = await llamarTool(app, 'anclaje', { body: { accion: 'archivos', args: { destino: 'proyecto', project_id: 'p1' } } });
+  assert.equal(r.codigo, 200, JSON.stringify(r.cuerpo)); assert.deepEqual(r.cuerpo.resultado, { destino: 'proyecto', project_id: 'p1', archivos: ['nota.txt', 'bin.dat'] });
+  assert.deepEqual(log[0].body, { destino: 'proyecto', project_id: 'p1' }); assert.equal(log[0].clave, CLAVE_ROUTER);
+  r = await llamarTool(app, 'anclaje', { body: { accion: 'proyectos', args: {} } });
+  assert.equal(r.cuerpo.resultado.proyectos[0].project_id, 'p1'); assert.deepEqual(log.at(-1).body, { op: 'list' });
+  r = await llamarTool(app, 'anclaje', { body: { accion: 'proyectos', args: { project_id: 'p1', op: 'delete' } } });
+  assert.deepEqual(log.at(-1).body, { op: 'get', project_id: 'p1' }, 'el cuerpo del cliente no cambia la op: nunca upsert/delete');
+  r = await llamarTool(app, 'anclaje', { body: { accion: 'leer_archivo', args: { nombre: 'nota.txt', destino: 'constitucion' } } });
+  assert.equal(r.codigo, 200, JSON.stringify(r.cuerpo)); assert.deepEqual(r.cuerpo.resultado, { nombre: 'nota.txt', destino: 'constitucion', binario: false, bytes: 10, texto: 'hola mundo', truncado: false });
+  assert.equal(log.at(-1).ruta, '/almacen'); assert.deepEqual(log.at(-1).body, { accion: 'leer', destino: 'hf', nombre: 'chat_archivos/509e21d6a3cc/nota.txt' });
+  r = await llamarTool(app, 'anclaje', { body: { accion: 'leer_archivo', args: { nombre: 'bin.dat' } } });
+  assert.deepEqual([r.cuerpo.resultado.binario, r.cuerpo.resultado.bytes, 'texto' in r.cuerpo.resultado], [true, 3, false]);
+  assert.ok(!JSON.stringify(log.map((x) => x.body)).includes(TOKEN));
+});
+
+test('replica anclaje: nombre fuera del indice del Router, con ruta o espacio invalido se rechaza ANTES de leer el almacen; accion desconocida, 400', async () => {
+  const log = [], app = montar(ENV_T, routerChat(log));
+  for (const [args, codigo, http] of [[{ nombre: 'otro.txt' }, 'ARCHIVO_NO_ENCONTRADO', 404], [{ nombre: '../secreto' }, 'NOMBRE_INVALIDO', 400], [{ nombre: 'a/b.txt' }, 'NOMBRE_INVALIDO', 400], [{ nombre: 'nota.txt', destino: 'raiz' }, 'ESPACIO_INVALIDO', 400], [{ nombre: 'nota.txt', sesion: '../x' }, 'ESPACIO_INVALIDO', 400]]) {
+    const r = await llamarTool(app, 'anclaje', { body: { accion: 'leer_archivo', args } });
+    assert.deepEqual([r.codigo, r.cuerpo.error.code], [http, codigo], JSON.stringify(args));
+  }
+  assert.ok(!log.some((x) => x.ruta === '/almacen'), 'nada llego al almacen');
+  assert.equal((await llamarTool(app, 'anclaje', { body: { accion: 'borrar', args: {} } })).cuerpo.error.code, 'ACCION_NO_PERMITIDA');
+  assert.equal((await llamarTool(app, 'anclaje', { body: { args: {} } })).cuerpo.error.code, 'ACCION_REQUERIDA');
+  assert.equal((await llamarTool(app, 'anclaje', { body: { accion: 'proyectos', args: { project_id: '../x' } } })).cuerpo.error.code, 'PROYECTO_INVALIDO');
+});
+
+test('replica constitucion: la oficial sale del archivo local aunque el Router este caido; los archivos de constitucion usan destino constitucion y sesion "constitucion" por defecto', async () => {
+  const log = [], app = montar(ENV_T, routerChat(log));
+  let r = await llamarTool(app, 'constitucion', { body: { accion: 'oficial' } });
+  assert.equal(r.codigo, 200); assert.equal(r.cuerpo.resultado.id, 'CONSTITUCION-YAIWES'); assert.match(r.cuerpo.resultado.sha256, /^[0-9a-f]{64}$/); assert.ok(r.cuerpo.resultado.texto.includes('FAIL_CLOSED'));
+  assert.equal(log.length, 0, 'la oficial es una lectura local');
+  r = await llamarTool(montar({ ...ENV_T, RIU_API_KEY: undefined }, routerChat([])), 'constitucion', { body: { accion: 'oficial' } });
+  assert.equal(r.codigo, 200, 'sin clave del Router tambien funciona');
+  r = await llamarTool(montar({ ...ENV_T, RIU_CONSTITUCION_PATH: '/no/existe.json' }, routerChat([])), 'constitucion', { body: { accion: 'oficial' } });
+  assert.deepEqual([r.codigo, r.cuerpo.error.code], [404, 'CONSTITUCION_NO_ENCONTRADA']); assert.ok(!JSON.stringify(r.cuerpo).includes('/no/existe'));
+  r = await llamarTool(app, 'constitucion', { body: { accion: 'archivos', args: { destino: 'chat', sesion: 'x' } } });
+  assert.deepEqual(log.at(-1).body, { destino: 'constitucion', sesion: 'x' }, 'el destino queda fijado a constitucion');
+  r = await llamarTool(app, 'constitucion', { body: { accion: 'archivos', args: {} } });
+  assert.deepEqual(r.cuerpo.resultado, { destino: 'constitucion', sesion: 'constitucion', archivos: ['nota.txt', 'bin.dat'] });
+});
+
+test('replica contexto: arma las capas CONSTITUCION + yaiwes.md + SANDBOX + PENDIENTES; una capa caida queda ausente sin tirar las demas', async () => {
+  const log = [], app = montar(ENV_T, routerChat(log));
+  let r = await llamarTool(app, 'contexto', { body: { accion: 'fijo', args: { sesion: 's1' } } });
+  assert.equal(r.codigo, 200, JSON.stringify(r.cuerpo)); const c = r.cuerpo.resultado;
+  assert.deepEqual(c.capas.map((x) => x.presente), [true, true, true, true]);
+  assert.ok(c.texto.includes('info del proyecto') && c.texto.includes('sandbox de s1') && c.texto.includes('- [ ] tarea A') && c.texto.includes('- [x] tarea B') && c.texto.includes('FAIL_CLOSED'));
+  assert.equal(c.constitucion.version, '1.1.0'); assert.ok(!('texto' in c.constitucion));
+  assert.deepEqual(log.find((x) => x.ruta === '/plugins/puente_chat/call/sandbox').body, { sesion: 's1' }, 'sin `texto`: solo lectura');
+  assert.deepEqual(log.filter((x) => x.ruta === '/mcp').map((x) => [x.body.params.name, x.body.params.arguments]).sort(), [['pendientes', { accion: 'listar' }], ['yaiwes_md', { accion: 'leer' }]]);
+  r = await llamarTool(montar(ENV_T, routerChat([], { caidos: ['yaiwes_md', '/plugins/puente_chat/call/sandbox'] })), 'contexto', { body: { accion: 'fijo' } });
+  assert.deepEqual(r.cuerpo.resultado.capas.map((x) => x.presente), [true, false, false, true]);
+  assert.equal((await llamarTool(app, 'contexto', { body: { accion: 'fijo', args: { sesion: 'a/b' } } })).cuerpo.error.code, 'ESPACIO_INVALIDO');
+});
+
+test('tool workflows: devuelve solo los workflows del Harness (con su estado) y no los agentes ni los modelos; sin Harness, "no_configurado" y vacio', async () => {
+  const fetchFn = async (url, init) => ({ ok: true, status: 200, json: async () => ({ status: 'ok', result: { swe: { agentes: { codex: { disponible: true } }, workflows: { individual: { disponible: true }, liquid_mirror: { disponible: false, motivo: 'falta SWECODE_URL_S2' } }, modelos: { 'hf/lfm2.5-350m': { disponible: true } } } } }) });
+  let r = await llamarTool(montar(ENV, fetchFn), 'workflows');
+  assert.equal(r.codigo, 200, JSON.stringify(r.cuerpo)); assert.deepEqual(Object.keys(r.cuerpo.resultado).sort(), ['harness', 'workflows']);
+  assert.equal(r.cuerpo.resultado.workflows.liquid_mirror.disponible, false); assert.equal(r.cuerpo.resultado.workflows.individual.disponible, true);
+  r = await llamarTool(montar({ BRIDGE_TOKEN: TOKEN }, fetchFn), 'workflows');
+  assert.deepEqual(r.cuerpo.resultado, { harness: 'no_configurado', workflows: {} });
+});
+
+test('catalogo: las replicas aparecen con su estado (anclaje/contexto dependen de la tool MCP que el Router lista; constitucion, del archivo local) y ninguna pide operador', async () => {
+  const log = [], app = montar(ENV_T, routerFalso(log, { visibles: ['almacen', 'yaiwes_md'] }));
+  const por = Object.fromEntries((await listarTools(app)).cuerpo.tools.map((t) => [t.id, t]));
+  assert.equal(por.anclaje.estado, 'DISPONIBLE'); assert.equal(por.contexto.estado, 'DISPONIBLE'); assert.equal(por.constitucion.estado, 'SIN_VERIFICAR');
+  const sin = Object.fromEntries((await listarTools(montar(ENV_T, routerFalso([], { visibles: ['salud'] })))).cuerpo.tools.map((t) => [t.id, t]));
+  assert.equal(sin.anclaje.estado, 'BLOQUEADA_POR_ROUTER');
+  const falta = Object.fromEntries((await listarTools(montar({ ...ENV_T, RIU_CONSTITUCION_PATH: '/no/existe.json' }, routerFalso([])))).cuerpo.tools.map((t) => [t.id, t]));
+  assert.equal(falta.constitucion.estado, 'CONSTITUCION_NO_ENCONTRADA');
+  for (const id of ['anclaje', 'constitucion', 'contexto']) assert.equal(por[id].efectos, 'lectura');
 });

@@ -1,0 +1,3 @@
+# Dependencias fijadas que complementan a SWE-agent (se instala EDITABLE desde agentes-listos/SWE-agent/SWE-agent-main = 1.1.0, venv runtime/venv/sweagent).
+# swe-rex tambien debe estar en la imagen Docker (agentes-listos/SWE-agent/Dockerfile.riu): misma version.
+swe-rex==1.4.0

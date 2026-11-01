@@ -1,9 +1,10 @@
 // bridge.ts — cliente del bridge SWE CODE (backend de OpenClaw): /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar,capacidades,tools}. Corre en el BACKEND del plugin (Gateway), nunca en el navegador:
-// la clave del bridge (BRIDGE_TOKEN) sale del ENTORNO del Gateway y no llega al navegador, a los logs ni a las respuestas. No hay otro backend: todo lo ejecuta el Harness DeepSeek y sus adaptadores.
+// la clave de acceso (RIU_API_KEY; BRIDGE_TOKEN solo como respaldo) sale del ENTORNO del Gateway y no llega al navegador, a los logs ni a las respuestas. No hay otro backend: todo lo ejecuta el Harness DeepSeek y sus adaptadores.
 declare const process: { env: Record<string, string | undefined> };
 
 export const URL_DEFECTO = 'http://127.0.0.1:7870';
-export const ENV_TOKEN_DEFECTO = 'BRIDGE_TOKEN';
+export const ENV_TOKEN_DEFECTO = 'RIU_API_KEY';  // clave de acceso: el bridge la acepta por Authorization: Bearer
+export const ENV_TOKEN_RESPALDO = 'BRIDGE_TOKEN';  // opcional en el bridge; solo si no hay RIU_API_KEY
 export type Respuesta = { ok: boolean; http: number; codigo?: string; datos?: unknown };
 export type Operador = { operador: string; token_operador: string };
 type Fetch = (url: string, init: Record<string, unknown>) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>;
@@ -16,11 +17,11 @@ export function urlValida(u: string): boolean {
   catch { return false; }
 }
 // Configuracion SOLO por entorno del Gateway (el manifiesto no declara config: `plugins build` regenera configSchema desde defineFeaturePlugin, que no admite config propia):
-// RIU_SWE_BRIDGE_URL (defecto http://127.0.0.1:7870, la misma variable que usa el Harness) y BRIDGE_TOKEN. El valor del token nunca va en ningun archivo.
+// RIU_SWE_BRIDGE_URL (defecto http://127.0.0.1:7870, la misma variable que usa el Harness) y RIU_API_KEY (o, en su defecto, BRIDGE_TOKEN). El valor del token nunca va en ningun archivo.
 export function leerConfig(env: Record<string, string | undefined> = process.env): { url: string; token: string } | { error: string } {
   const url = (env.RIU_SWE_BRIDGE_URL ?? '').trim().replace(/\/+$/, '') || URL_DEFECTO;
   if (!urlValida(url)) return { error: 'BRIDGE_URL_INVALIDA' };
-  const token = (env[ENV_TOKEN_DEFECTO] ?? '').trim();
+  const token = (env[ENV_TOKEN_DEFECTO] ?? '').trim() || (env[ENV_TOKEN_RESPALDO] ?? '').trim();
   return token ? { url, token } : { error: 'BRIDGE_TOKEN_NO_CONFIGURADO' };
 }
 

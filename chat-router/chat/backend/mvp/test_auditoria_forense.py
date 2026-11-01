@@ -188,6 +188,8 @@ class TestSweAgentesYAprobador(unittest.TestCase):
             with patch.dict(os.environ, {"RIU_SWE_APROBADORES": valor, "RIU_SWE_OPERADOR": "director"}):
                 r = self.post("aprobar")
             self.assertEqual(r.status_code, 503, valor); self.assertIn("APROBADORES_NO_CONFIGURADOS", r.text)
+            self.assertIn("RIU_SWE_APROBADORES", r.text, "dice que variable falta"); self.assertIn("chat-router/DEPLOY/generar-aprobadores.sh", r.text, "y como generarla")
+            self.assertNotIn(self.CLAVE, r.text.replace("x-api-key", ""))
         self.assertEqual(self.llamadas, [])
 
     def test_un_hash_de_aprobador_igual_a_la_clave_de_acceso_es_503(self):
@@ -195,6 +197,7 @@ class TestSweAgentesYAprobador(unittest.TestCase):
         with patch.dict(os.environ, {"RIU_SWE_APROBADORES": "ana:" + hashlib.sha256(self.CLAVE.encode()).hexdigest()}):
             r = self.post("aprobar", headers={**self.CAB, "x-operador": "ana", "x-operator-token": self.CLAVE})
         self.assertEqual(r.status_code, 503); self.assertEqual(self.llamadas, []); self.assertNotIn(self.CLAVE, r.text.replace("x-api-key", ""))
+        self.assertIn("RIU_SWE_APROBADORES", r.text); self.assertIn("generar-aprobadores.sh", r.text)
 
 
 class TestCableadoPythonpath(unittest.TestCase):

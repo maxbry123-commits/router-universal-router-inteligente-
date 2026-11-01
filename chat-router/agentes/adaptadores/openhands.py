@@ -15,7 +15,7 @@ COMPROBACION = "import importlib.util, sys; sys.exit(0 if importlib.util.find_sp
 def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     try:
         p = _comun.preparar(AGENTE, tarea_id, modelo, objetivo, contexto, permisos, checkpoint)
-        py = os.environ.get("RIU_OPENHANDS_PYTHON", "").strip() or sys.executable
+        py = _comun.python_openhands()
         if not (os.path.isfile(py) and os.access(py, os.X_OK)):
             return _comun.no_instalado(AGENTE, tarea_id, "RIU_OPENHANDS_PYTHON no es un ejecutable.")
         ep = _comun.endpoint_modelo(modelo, AGENTE, tarea_id)

@@ -258,5 +258,40 @@ class SweYaiwes(unittest.TestCase):
         self.assertEqual(self.cliente.get("/chat/swe/capacidades", headers=CAB).json()["harness"], "sin_credencial")
 
 
+class UrlHarnessPorDefecto(unittest.TestCase):
+    """Sin RIU_DEEPSEEK_HARNESS_URL el chat usa el Harness montado en el MISMO Space (http://127.0.0.1:$PORT/plugins/deepseek_harness); la variable explicita manda (vacia = desactivado)."""
+    def _env(self, **extra):
+        limpio = {k: v for k, v in os.environ.items() if k not in ("RIU_DEEPSEEK_HARNESS_URL", "PORT")}
+        limpio.update(extra)
+        return patch.dict(os.environ, limpio, clear=True)
+
+    def test_sin_variable_usa_el_puerto_del_router_o_7861(self):
+        with self._env():
+            self.assertEqual(hc.url_harness(), "http://127.0.0.1:7861/plugins/deepseek_harness")
+            self.assertEqual(hc._endpoint(), "http://127.0.0.1:7861/plugins/deepseek_harness/invoke")
+        with self._env(PORT="7860"):
+            self.assertEqual(hc.url_harness(), "http://127.0.0.1:7860/plugins/deepseek_harness")
+        for malo in ("", "abc", "0", "70000", "7860/x", "-1", "1.5"):
+            with self._env(PORT=malo):
+                self.assertEqual(hc.url_harness(), "http://127.0.0.1:7861/plugins/deepseek_harness", malo)
+
+    def test_la_variable_explicita_manda_y_vacia_desactiva(self):
+        with self._env(RIU_DEEPSEEK_HARNESS_URL="https://otro.example/plugins/deepseek_harness/", PORT="7860"):
+            self.assertEqual(hc.url_harness(), "https://otro.example/plugins/deepseek_harness")
+        with self._env(RIU_DEEPSEEK_HARNESS_URL=""):
+            self.assertEqual(hc.url_harness(), "")
+            with self.assertRaises(RuntimeError): hc._endpoint()
+        with self._env(RIU_DEEPSEEK_HARNESS_URL="http://evil.example/x"):
+            with self.assertRaises(ValueError): hc._endpoint()  # el default local no relaja la validacion de una URL explicita
+
+    def test_el_chat_no_da_503_harness_no_configurado_con_el_default(self):
+        with self._env(RIU_API_KEY="acceso-test", MVP_PLAN="personal"), patch("mvp.app.harness_client.llm", return_value={"status": "ok", "result": {"texto": "hola", "tool_calls": [], "finish_reason": "stop"}}):
+            r = TestClient(servicio.app).post("/chat/send", headers=CAB, json={"mensajes": [{"role": "user", "content": "hola"}]})
+        self.assertNotIn("HARNESS_NO_CONFIGURADO", r.text)
+        with self._env(RIU_API_KEY="acceso-test", RIU_DEEPSEEK_HARNESS_URL="", MVP_PLAN="personal"):
+            r = TestClient(servicio.app).post("/chat/send", headers=CAB, json={"mensajes": [{"role": "user", "content": "hola"}]})
+        self.assertIn("HARNESS_NO_CONFIGURADO", r.text)
+
+
 if __name__ == "__main__":
     unittest.main()

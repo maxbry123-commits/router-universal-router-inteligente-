@@ -7,6 +7,7 @@ import re
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 import urllib.request
@@ -20,11 +21,11 @@ MAX_OBJETIVO, MAX_CONTEXTO = 20000, 40000
 _TASK_ID = re.compile(r"[A-Za-z0-9_-]{1,64}")
 _SECRETO = re.compile(r"(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]{12,}|gh[pousr]_[A-Za-z0-9]{12,}|hf_[A-Za-z0-9]{20,}|gsk_[A-Za-z0-9]{12,}|nvapi-[A-Za-z0-9_-]{12,})")
 INSTALAR = {
-    "codex": "Instala la CLI de Codex (npm i -g @openai/codex, o compila agentes/agentes-listos/codex/codex-main/codex-rs) y define RIU_CODEX_BIN si no esta en PATH.",
-    "opencode": "Instala OpenCode (npm i -g opencode-ai) o define RIU_OPENCODE_BIN con la ruta del binario.",
-    "swe-agent": "Instala SWE-agent: pip install -e agentes/agentes-listos/SWE-agent/SWE-agent-main (comando `sweagent`) y define RIU_SWEAGENT_BIN si no esta en PATH; requiere Docker.",
-    "openhands": "Instala el SDK: pip install -e agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk y .../openhands-tools; define RIU_OPENHANDS_PYTHON con el Python que lo tiene.",
-    "claude-code": "Instala la CLI de Claude Code (`claude`) y define RIU_CLAUDE_BIN si no esta en PATH.",
+    "codex": "Ejecuta agentes/runtime/instalar-agentes.sh (instala en agentes/runtime/bin; los adaptadores lo buscan ahi primero). Manual: instala la CLI de Codex (npm i -g @openai/codex, o compila agentes/agentes-listos/codex/codex-main/codex-rs) y define RIU_CODEX_BIN si no esta en PATH.",
+    "opencode": "Ejecuta agentes/runtime/instalar-agentes.sh (instala en agentes/runtime/bin; los adaptadores lo buscan ahi primero). Manual: instala OpenCode (npm i -g opencode-ai) o define RIU_OPENCODE_BIN con la ruta del binario.",
+    "swe-agent": "Ejecuta agentes/runtime/instalar-agentes.sh (instala en agentes/runtime/bin; los adaptadores lo buscan ahi primero). Manual: instala SWE-agent: pip install -e agentes/agentes-listos/SWE-agent/SWE-agent-main (comando `sweagent`) y define RIU_SWEAGENT_BIN si no esta en PATH; requiere Docker.",
+    "openhands": "Ejecuta agentes/runtime/instalar-agentes.sh (instala en agentes/runtime/bin; los adaptadores lo buscan ahi primero). Manual: instala el SDK: pip install -e agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk y .../openhands-tools; define RIU_OPENHANDS_PYTHON con el Python que lo tiene.",
+    "claude-code": "Ejecuta agentes/runtime/instalar-agentes.sh (instala en agentes/runtime/bin; los adaptadores lo buscan ahi primero). Manual: instala la CLI de Claude Code (`claude`) y define RIU_CLAUDE_BIN si no esta en PATH.",
     "openclaw": "Arranca el Gateway OpenClaw (127.0.0.1:18789, habilita gateway.http.endpoints.chatCompletions) y define OPENCLAW_GATEWAY_TOKEN; URL por RIU_OPENCLAW_URL.",
 }
 
@@ -67,6 +68,39 @@ def abrir(req, timeout):
     return _ABRIDOR.open(req, timeout=timeout)
 
 
+# ---- defaults SIN variables nuevas en Hugging Face: se usan SOLO si la variable NO esta definida (definida pero vacia = desactivada a proposito) ----
+SWECODE_URLS_PUBLICAS = {"S1": "https://comand-center-1-swe-code-s1.hf.space/v1", "S2": "https://comand-center-1-swe-code-s2.hf.space/v1",
+                         "S3": "https://comand-center-1-swe-code-s3.hf.space/v1"}  # servidores de modelos locales HF (URLs publicas, sin secreto)
+
+
+def url_swecode(servidor):
+    """URL del servidor de modelos locales S1/S2/S3: la variable SWECODE_URL_<S> si esta definida (vacia = sin servidor), si no la URL publica."""
+    if servidor not in SWECODE_URLS_PUBLICAS:
+        raise ValueError("servidor SWECODE desconocido")
+    v = os.environ.get("SWECODE_URL_" + servidor)
+    return SWECODE_URLS_PUBLICAS[servidor] if v is None else v.strip()
+
+
+def raiz_workspace_defecto():
+    """<BRIDGE_STATE_DIR o el tmp del sistema>/swe-workspace: la raiz de proyectos cuando RIU_SWE_WORKSPACE_RAIZ no esta definida."""
+    return os.path.join(os.environ.get("BRIDGE_STATE_DIR", "").strip() or tempfile.gettempdir(), "swe-workspace")
+
+
+def crear_dir_privado(ruta):
+    """Crea (si falta) el directorio con permisos 0700 y comprueba que es NUESTRO y no un enlace simbolico; devuelve True si queda usable.
+    Un directorio existente con permisos mas abiertos se cierra a 0700 (solo si es nuestro); cualquier otra cosa -> False sin tocar nada."""
+    try:
+        os.makedirs(ruta, mode=0o700, exist_ok=True)
+        st = os.lstat(ruta)
+        if not (os.path.isdir(ruta) and not os.path.islink(ruta) and st.st_uid == os.geteuid()):
+            return False
+        if st.st_mode & 0o077:
+            os.chmod(ruta, 0o700)
+        return True
+    except OSError:
+        return False
+
+
 def ahora():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -89,11 +123,34 @@ def entorno_base(extra=None):
     return e
 
 
+def dir_runtime():
+    """Raiz del runtime instalado por runtime/instalar-agentes.sh (bin/, venv/, node/; fuera de git). RIU_AGENTES_RUNTIME la cambia (p. ej. /opt/riu-agentes en el Space)."""
+    v = os.environ.get("RIU_AGENTES_RUNTIME", "").strip()
+    return os.path.normpath(v or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "runtime"))
+
+
+def _ejecutable(ruta):
+    return os.path.isfile(ruta) and os.access(ruta, os.X_OK)
+
+
 def binario(nombre, variable):
+    """Orden: 1) la variable RIU_*_BIN (si esta definida manda y NO se sustituye por otra ruta); 2) <runtime>/bin/<nombre>; 3) PATH."""
     ruta = os.environ.get(variable, "").strip()
     if ruta:
-        return ruta if os.path.isfile(ruta) and os.access(ruta, os.X_OK) else None
+        return ruta if _ejecutable(ruta) else None
+    propio = os.path.join(dir_runtime(), "bin", nombre)
+    if _ejecutable(propio):
+        return propio
     return shutil.which(nombre)
+
+
+def python_openhands():
+    """Python con openhands.sdk/openhands.tools: RIU_OPENHANDS_PYTHON; si no, el venv del runtime (venv/openhands); si no, el del Harness."""
+    v = os.environ.get("RIU_OPENHANDS_PYTHON", "").strip()
+    if v:
+        return v
+    propio = os.path.join(dir_runtime(), "venv", "openhands", "bin", "python")
+    return propio if _ejecutable(propio) else sys.executable
 
 
 def ejecutar_proceso(argv, cwd, env, timeout=None, max_salida=None, entrada=None):

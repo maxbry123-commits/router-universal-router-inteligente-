@@ -22,9 +22,38 @@ Motor usado: `motores/archivos` (`chat/backend/mvp/archivos`: `origen.clonar` cl
 | claude-code | puente propio (pasarela Anthropic->NVIDIA); la CLI es binario npm sin codigo fuente en GitHub | npm `@anthropic-ai/claude-code` | nada que descargar |
 | OpenClaw | sin carpeta en `agentes/` (adaptador `adaptadores/openclaw.py` habla con el Gateway existente) | github.com/openclaw/openclaw | nada |
 
-Pendiente (instalar; fuera del alcance de descargar/extraer): ningun adaptador detecta los archivos descargados, buscan CLI/paquete instalado.
+Pendiente (instalar; fuera del alcance de descargar/extraer; RESUELTO por `runtime/instalar-agentes.sh`, ver «Runtime de agentes»): ningun adaptador detecta los archivos descargados, buscan CLI/paquete instalado.
 - codex: `npm install -g @openai/codex` y `RIU_CODEX_BASE_URL` (endpoint /responses). - opencode: `curl -fsSL https://opencode.ai/v2/install | bash`. - SWE-agent: `pip install -e "agentes/agentes-listos/SWE-agent/SWE-agent-main"` (+ Docker). - OpenHands: `pip install -e agentes-listos/openhands-software-agent-sdk/code/openhands-sdk -e .../openhands-tools` (o `RIU_OPENHANDS_PYTHON`). - claude-code: CLI ya en PATH; faltan `RIU_CLAUDE_PASARELA_URL` y `RIU_CLAUDE_PASARELA_MODELO` (arrancar `claude-code/pasarela.py`). - openclaw: Gateway en 127.0.0.1:18789 + `OPENCLAW_GATEWAY_TOKEN`.
 Para llevar codex/opencode al upstream actual hay que reemplazar la instantanea completa (no mezclar): `archivos {"accion":"transferir","origen":"github.com/openai/codex","destino":"agentes/agentes-listos/codex/codex-main-nuevo"}`.
+
+## Runtime de agentes (instalacion REAL dentro del repo, fuera de git)
+`runtime/` versiona SOLO scripts y lockfiles; lo instalado (`bin/`, `venv/`, `node/`, `src/`, `estado-agentes.json`) esta en `runtime/.gitignore`. Nada de esto estaba instalado: antes los CLIs solo existian en `/tmp/a2-inst`.
+
+| Archivo | Para que |
+|---|---|
+| `runtime/instalar-agentes.sh [codex-opencode claude openclaw sweagent openhands]` | idempotente (marca `.instalado/<comp>` = sha256 del lockfile; si coincide y el binario responde, no hace nada; `flock` contra dos instalaciones a la vez). Instala en `$RIU_AGENTES_RUNTIME` (por defecto `runtime/`). `RIU_INSTALAR_OMITIR="openclaw"` omite; `RIU_INSTALAR_TOLERANTE=1` no falla si un componente falla; `RIU_PYTHON` elige el python |
+| `runtime/verificar-agentes.sh` | ejecuta de verdad `--version`/`--help` (y `import openhands.sdk, openhands.tools`) de cada agente y escribe `runtime/estado-agentes.json` (o `$RIU_ESTADO_JSON`): solo nombre, ruta, ok, primera linea de version y estado de Docker/imagen; nunca claves (redaccion defensiva) |
+| `runtime/entorno.sh` | para `source`: `runtime/bin` al frente del PATH y `RIU_*_BIN`/`RIU_OPENHANDS_PYTHON` (sin pisar los ya definidos). Los adaptadores no lo necesitan: ya buscan ahi por defecto |
+| `runtime/node-agentes/`, `node-claude/`, `node-openclaw/` | `package.json` (versiones EXACTAS) + `package-lock.json` (`npm ci`) |
+| `runtime/requirements-{openhands,sweagent}.txt` | versiones fijadas; `*.freeze.txt` = `pip freeze` completo del venv instalado (informativo; Python 3.13) |
+
+**Versiones fijadas y de donde salen.** codex-cli 0.166.0 y opencode 1.19.5 (npm `@openai/codex`, `opencode-ai`: las carpetas `agentes-listos/codex` y `opencode` son fuentes Rust/Bun de otra version, no se compilan aqui), CLI claude 2.1.316 (npm `@anthropic-ai/claude-code`, binario sin fuente publica), OpenClaw 2026.6.35 (npm `openclaw`, Node >= 22.19), openhands-sdk/tools 1.59.0 (PyPI; la fuente descargada es 1.55.1: `RIU_OPENHANDS_FUENTE=local` instala esa en editable, probado), SWE-agent 1.1.0 + swe-rex 1.4.0 (**fuente descargada**, `pip install -e` sobre una copia en `runtime/src/` para no ensuciar `agentes-listos/`; SWE-agent lee `config/` y `tools/` junto al paquete, por eso editable). Sin la carpeta fuente, SWE-agent se instala de `git+https://github.com/SWE-agent/SWE-agent.git@v1.1.0`.
+
+**Como los encuentran los adaptadores** (`adaptadores/_comun.py`): `binario(nombre, RIU_X_BIN)` = 1) la variable `RIU_*_BIN` si esta definida (manda; una ruta mala NO cae al runtime), 2) `<runtime>/bin/<nombre>`, 3) `PATH`. El Python de OpenHands = `RIU_OPENHANDS_PYTHON` > `<runtime>/venv/openhands/bin/python` > el del Harness. El runtime es `RIU_AGENTES_RUNTIME` o `agentes/runtime`. `disponibilidad.py`: instalado -> DISPONIBLE; ausente -> NO INSTALADO (`tests/test_adaptadores_runtime.py`). `tests/conftest.py` apunta el runtime a un directorio vacio para que las pruebas no dependan de la maquina.
+
+**Uso.** `chat-router/agentes/runtime/instalar-agentes.sh && chat-router/agentes/runtime/verificar-agentes.sh`.
+
+**Imagen Docker de SWE-agent.** `agentes-listos/SWE-agent/Dockerfile.riu` (propio; el upstream no se toca): `python:3.12-slim` + `git` + `swe-rex==1.4.0`. `swe_agent.py` la usa por defecto (`RIU_SWEAGENT_IMAGE`, por defecto `riu-sweagent:latest`). Construir (sin contexto): `docker build -t riu-sweagent:latest - < chat-router/agentes/agentes-listos/SWE-agent/Dockerfile.riu`. `verificar-agentes.sh` informa `docker.estado` (`imagen_presente` / `imagen_ausente` / `daemon_apagado` / `sin_docker`). **[B] en el sandbox donde se preparo:** el `apt-get install git` del build devuelve `Unable to locate package git` porque el egress del sandbox bloquea `deb.debian.org` (403 del proxy); ejecutar el comando en una maquina con red a Debian.
+
+**Space del Harness** (`chat/backend/deepseek_harness/space/`): el `Dockerfile` copia Node 22 de `node:22-slim` y ejecuta `instalar-agentes.sh` en el BUILD (secreto de build `GITHUB_TOKEN`; clona el repo a `/tmp/repo-build`, instala en `/opt/riu-agentes` = `RIU_AGENTES_RUNTIME` y lo borra); sin el secreto el paso se salta. `boot.sh` lo repite en segundo plano (idempotente: solo instala lo que falte, no retrasa el puerto 7860; log `/tmp/instalar-agentes.log`). El Space no tiene daemon Docker: `swe-agent` queda NO CONFIGURADO ahi. `chat-router/cableado.manifest.json` protege `chat/backend`: regenerar con `chat/auditoria/guardia_cableado.py --crear` tras el commit.
+
+**Estado verificado en este sandbox** (`verificar-agentes.sh`, versiones reales ejecutadas):
+```json
+{"codex": "codex-cli 0.166.0", "opencode": "1.19.5", "swe-agent": "SWE-agent 1.1.0 / swe-rex 1.4.0",
+ "openhands": "openhands-sdk 1.59.0 openhands-tools 1.59.0", "claude-code": "2.1.316 (Claude Code)", "openclaw": "OpenClaw 2026.6.35 (c283867)",
+ "swe-agent.docker": {"estado": "daemon_apagado", "imagen": "riu-sweagent:latest"}}
+```
+(cada uno con `instalado: true, ok: true`). Nota del sandbox: el disco `/` tenia <1 GB libre, asi que `runtime/node` y `runtime/venv` son enlaces a `/dev/shm/riu-agentes/` (RAM, se pierde al reiniciar; reinstalar con el script); `bin/` y `src/` estan en disco.
 
 ## Adaptadores de agentes SWE (`adaptadores/`) — lo que ejecuta de verdad
 Código en `chat-router/agentes/adaptadores/`. **No hay almacenamiento propio**: todo estado pasa por las funciones del Harness DeepSeek (`guardar`/`leer`, bucket HF por el Router). El navegador y el bridge nunca ejecutan un agente: validan y reenvían al Harness (`chat/backend/deepseek_harness/server.py`, herramientas `swe_iniciar|avanzar|estado|aprobar|reanudar`).
@@ -46,7 +75,7 @@ Código en `chat-router/agentes/adaptadores/`. **No hay almacenamiento propio**:
 - `liquid_mirror`: `liquid1` (S2, lee/analiza) → `handoff` → `liquid2` (S3, ejecuta) → `ejecuta` (`agente_tool`) → `verifica`; ambos participantes `hf/lfm2.5-350m` en servidores distintos, en secuencia (`ejecucion_s2_s3:"secuencial"`).
 - Trabajan solo dentro de `RIU_SWE_WORKSPACE_RAIZ/<proyecto>`.
 
-**Los 6 adaptadores, qué necesitan y estado en el entorno donde se preparó el repo.** «No instalado» = el adaptador devuelve `AGENTE_NO_INSTALADO` y el selector lo muestra NO DISPONIBLE; ninguna prueba del repo afirma que un agente real corra (usan binarios y servidores falsos: `adaptadores/tests/`, 147 pruebas).
+**Los 6 adaptadores, qué necesitan y estado en el entorno donde se preparó el repo (la columna «Estado» es la de antes de `runtime/`; el instalado real está en «Runtime de agentes»).** «No instalado» = el adaptador devuelve `AGENTE_NO_INSTALADO` y el selector lo muestra NO DISPONIBLE; ninguna prueba del repo afirma que un agente real corra (usan binarios y servidores falsos: `adaptadores/tests/`, 147 pruebas).
 
 | Agente | Adaptador | Necesita | Estado | Instalar / configurar |
 |---|---|---|---|---|

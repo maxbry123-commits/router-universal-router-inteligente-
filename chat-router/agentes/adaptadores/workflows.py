@@ -96,7 +96,17 @@ def _disponibilidad_real():
 
 
 def _operadores_env():
-    return {o.strip() for o in os.environ.get("RIU_SWE_OPERADORES", "").split(",") if _OPERADOR.fullmatch(o.strip())}
+    """RIU_SWE_OPERADORES si esta definida (vacia = ninguno a proposito); si no, los NOMBRES de los aprobadores configurados (RIU_SWE_APROBADORES / BRIDGE_APROBADORES, formato
+    operador:sha256(token)): asi no hace falta una variable mas. Sin ninguna, no hay operadores (jamas se inventan)."""
+    if "RIU_SWE_OPERADORES" in os.environ:
+        return {o.strip() for o in os.environ["RIU_SWE_OPERADORES"].split(",") if _OPERADOR.fullmatch(o.strip())}
+    nombres = set()
+    for var in ("RIU_SWE_APROBADORES", "BRIDGE_APROBADORES"):
+        for par in os.environ.get(var, "").split(","):
+            nombre, _, huella = par.partition(":")
+            if _OPERADOR.fullmatch(nombre.strip()) and re.fullmatch(r"[0-9a-fA-F]{64}", huella.strip()):
+                nombres.add(nombre.strip())
+    return nombres
 
 
 def _ahora():
@@ -358,6 +368,8 @@ def _directorio(reg):
     if not re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_.-]{0,63}", proyecto) or ".." in proyecto:
         return None, ("PROYECTO_INVALIDO", "el proyecto no es un nombre simple de carpeta")
     base, ruta = os.path.realpath(raiz), os.path.realpath(os.path.join(raiz, proyecto))
+    if ruta.startswith(base + os.sep) and not os.path.isdir(ruta) and base == os.path.realpath(_comun.raiz_workspace_defecto()):
+        _comun.crear_dir_privado(ruta)  # solo en la raiz POR DEFECTO (la gestionamos nosotros): la carpeta del proyecto se crea privada; una raiz elegida por el operador exige que exista
     if not ruta.startswith(base + os.sep) or not os.path.isdir(ruta):
         return None, ("WORKSPACE_NO_CONFIGURADO", "no existe la carpeta del proyecto bajo la raiz")
     return ruta, None
@@ -856,7 +868,7 @@ def _punto(u):
 
 def _urls_liquid():
     """{'S2': url, 'S3': url} validadas: ambas configuradas, https o loopback, y servidores INDEPENDIENTES (distinto host:puerto, no solo distinta cadena)."""
-    urls = {s: os.environ.get("SWECODE_URL_" + s, "").strip().rstrip("/") for s in ("S2", "S3")}
+    urls = {s: _comun.url_swecode(s).rstrip("/") for s in ("S2", "S3")}  # sin variable: URLs publicas por defecto
     if not urls["S2"] or not urls["S3"]:
         raise ValueError("LIQUID_SERVIDOR_NO_CONFIGURADO")
     for u in urls.values():
@@ -873,10 +885,10 @@ def llamar_servidor(servidor, modelo, mensajes, timeout=None):
     if servidor not in ("S2", "S3"):
         raise ValueError("LIQUID_SERVIDOR_INVALIDO")
     otro_nombre = "S3" if servidor == "S2" else "S2"
-    propia = os.environ.get("SWECODE_URL_" + servidor, "").strip().rstrip("/")
+    propia = _comun.url_swecode(servidor).rstrip("/")
     if not propia:
         raise ValueError("LIQUID_SERVIDOR_NO_CONFIGURADO")
-    if not os.environ.get("SWECODE_URL_" + otro_nombre, "").strip():
+    if not _comun.url_swecode(otro_nombre):
         raise ValueError("LIQUID_SERVIDOR_NO_CONFIGURADO")  # Liquid Mirror son DOS servidores: con uno solo no hay independencia que verificar
     url = _urls_liquid()[servidor]
     req = urllib.request.Request(url + "/chat/completions", method="POST", headers={"Content-Type": "application/json"},

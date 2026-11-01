@@ -1,0 +1,10 @@
+# Runtime de agentes: en git SOLO scripts y lockfiles. Nada instalado (binarios, venvs, node_modules), estado ni logs.
+/bin
+/venv
+/node
+/src
+/.instalado
+/.instalar.lock
+/estado-agentes.json
+/*.log
+/node-*/node_modules/

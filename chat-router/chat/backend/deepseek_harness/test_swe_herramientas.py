@@ -168,6 +168,8 @@ def test_status_emite_swe_con_el_formato_del_contrato(entorno, monkeypatch, tmp_
     for v in ("RIU_CODEX_BIN", "RIU_CODEX_BASE_URL", "RIU_OPENCODE_BIN", "RIU_SWEAGENT_BIN", "RIU_DOCKER_BIN", "RIU_CLAUDE_BIN", "RIU_CLAUDE_PASARELA_URL", "RIU_CLAUDE_PASARELA_MODELO",
               "OPENCLAW_GATEWAY_TOKEN", "SWECODE_URL_S1", "SWECODE_URL_S2", "SWECODE_URL_S3", "GROQ_API_KEY", "NVIDIA_API_KEY"):
         monkeypatch.delenv(v, raising=False)
+    for s in ("S1", "S2", "S3"):  # sin variable ahora rigen las URLs publicas por defecto: vacia = "sin servidor configurado"
+        monkeypatch.setenv("SWECODE_URL_" + s, "")
     monkeypatch.setenv("PATH", str(tmp_path / "sin-binarios"))
     monkeypatch.setenv("RIU_SWE_SONDA_MODELOS", "0")
     opencode = tmp_path / "opencode"; opencode.write_text("#!/bin/sh\nexit 0\n"); opencode.chmod(0o755)
@@ -208,6 +210,8 @@ def test_el_selector_deja_de_marcar_no_disponible_lo_conectado_y_lo_sigue_marcan
     for v in ("RIU_CODEX_BIN", "RIU_CODEX_BASE_URL", "RIU_OPENCODE_BIN", "RIU_SWEAGENT_BIN", "RIU_DOCKER_BIN", "RIU_CLAUDE_BIN", "RIU_CLAUDE_PASARELA_URL", "RIU_CLAUDE_PASARELA_MODELO",
               "OPENCLAW_GATEWAY_TOKEN", "SWECODE_URL_S1", "SWECODE_URL_S2", "SWECODE_URL_S3", "GROQ_API_KEY", "NVIDIA_API_KEY"):
         monkeypatch.delenv(v, raising=False)
+    for s in ("S1", "S2", "S3"):  # vacia = sin servidor (sin variable rigen las URLs publicas por defecto)
+        monkeypatch.setenv("SWECODE_URL_" + s, "")
     monkeypatch.setenv("PATH", str(tmp_path / "sin-binarios")); monkeypatch.setenv("RIU_SWE_SONDA_MODELOS", "0")
     exe = tmp_path / "opencode"; exe.write_text("#!/bin/sh\nexit 0\n"); exe.chmod(0o755)
     monkeypatch.setenv("RIU_OPENCODE_BIN", str(exe)); monkeypatch.setenv("SWECODE_URL_S1", "http://127.0.0.1:9101/v1")

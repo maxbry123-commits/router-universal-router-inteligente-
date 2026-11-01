@@ -19,6 +19,8 @@ CLAVE_GROQ, CLAVE_NVIDIA = "gsk_clave-falsa-de-prueba-1234567890", "nvapi-clave-
 def vacio(monkeypatch, tmp_path):
     for v in VARS:
         monkeypatch.delenv(v, raising=False)
+    for s in ("S1", "S2", "S3"):  # sin variable ahora rigen las URLs publicas por defecto (_comun.url_swecode): vacia = "sin servidor configurado"
+        monkeypatch.setenv("SWECODE_URL_" + s, "")
     monkeypatch.setenv("PATH", str(tmp_path / "sin-binarios"))  # ni claude ni docker del sistema
     monkeypatch.setenv("RIU_SWE_SONDA_MODELOS", "0")
     return tmp_path

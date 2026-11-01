@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import entry from '../dist/index.js';
 import { build } from 'esbuild';
-import { contract } from '../dist/contract.js';
+import { contract, FUNCIONES_YAIWES } from '../dist/contract.js';
 import { leerConfig, crearCliente } from '../dist/bridge.js';
 import { armarTarea, SELECCION_DEFECTO } from '../dist/selector-core.js';
 import { montarRutasSwe } from '../../../SWE CODE/web-bridge/src/swe_rutas.js';
@@ -27,7 +27,7 @@ test('el id del plugin coincide en manifiesto, contrato, backend y UI; las tools
   assert.equal(manifiesto.id, 'swe-selector'); assert.equal(contract.pluginId, manifiesto.id); assert.equal(entry.id, manifiesto.id); assert.equal(controlUi.id, manifiesto.id);
   const tools = Object.values(contract.operations).filter((o) => o.tool).map((o) => o.tool.name).sort();
   assert.deepEqual(tools, [...manifiesto.contracts.tools].sort());
-  assert.deepEqual(Object.keys(contract.operations).sort(), ['aprobar', 'avanzar', 'capacidades', 'estado', 'iniciar', 'reanudar', 'tool', 'tools']);
+  assert.deepEqual(Object.keys(contract.operations).sort(), ['aprobar', 'avanzar', 'capacidades', 'estado', 'iniciar', 'reanudar', 'tool', 'tools', ...Object.keys(FUNCIONES_YAIWES)].sort());
 });
 
 function apiFalsa() {
@@ -38,7 +38,7 @@ function apiFalsa() {
 test('register(): una session-action por operacion (query=operator.read, action=operator.write) y una tool de agente por operacion con tool', () => {
   const { api, acciones, tools } = apiFalsa();
   entry.register(api);
-  assert.equal(acciones.size, 8);
+  assert.equal(acciones.size, 8 + Object.keys(FUNCIONES_YAIWES).length);
   for (const [id, op] of Object.entries(contract.operations)) assert.deepEqual(acciones.get(id).requiredScopes, [op.kind === 'query' ? 'operator.read' : 'operator.write'], id);
   assert.deepEqual([...tools.keys()].sort(), [...manifiesto.contracts.tools].sort());
 });
@@ -81,7 +81,7 @@ after(() => servidor.close());
 function handlers(env) {
   const { api, acciones, tools } = apiFalsa(); const guardado = { ...process.env };
   Object.assign(process.env, env); entry.register(api);
-  const NOMBRE_TOOL = { capacidades: 'swe_capacidades', tools: 'swe_tools_catalogo', estado: 'swe_estado', tool: 'swe_tool_llamar' };
+  const NOMBRE_TOOL = { capacidades: 'swe_capacidades', tools: 'swe_tools_catalogo', estado: 'swe_estado', tool: 'swe_tool_llamar', ...Object.fromEntries(Object.keys(FUNCIONES_YAIWES).map((k) => [k, k])) };
   const llamar = async (id, payload, source = 'session-action') => {
     Object.assign(process.env, env);
     if (source === 'tool') { const f = tools.get(NOMBRE_TOOL[id]); assert.ok(f, `no hay tool de agente para ${id}`); const r = await f({}).execute('call-1', payload); return r.details ?? JSON.parse(r.content[0].text); }  // como lo llama el modelo
@@ -119,7 +119,7 @@ test('E2E UI3: catalogo de tools y llamada a una tool de lectura por el bridge a
   try {
     const cat = await h.llamar('tools', {});
     assert.equal(cat.ok, true); assert.equal(cat.datos.vivo.router, 'ok'); assert.ok(cat.datos.tools.find((t) => t.id === 'salud').estado === 'DISPONIBLE' && cat.datos.tools.find((t) => t.id === 'agente').estado === 'BLOQUEADA_POR_ROUTER');
-    assert.ok(cat.datos.gaps.some((g) => g.id === 'anclaje'));
+    assert.ok(cat.datos.gaps.some((g) => g.id === 'anclados-navegador')); assert.ok(['anclaje', 'constitucion', 'contexto', 'workflows'].every((id) => cat.datos.tools.some((t) => t.id === id)), 'replicas en el catalogo');
     const s = await h.llamar('tool', { id: 'salud' }, 'tool');
     assert.equal(s.ok, true); assert.equal(vistoRouter.at(-1).clave, CLAVE_ROUTER);
     const ef = await h.llamar('tool', { id: 'github_escribir', args: { repo: 'r', ruta: 'a', contenido: 'c' } }, 'tool');
@@ -130,6 +130,33 @@ test('E2E UI3: catalogo de tools y llamada a una tool de lectura por el bridge a
     assert.equal(humano.ok, true);
   } finally { h.restaurar(); }
 });
+test('E2E tools por funcion (espejo): cada funcion del chat tiene su tool de agente; llegan al Router con la clave del entorno; lo que tiene efectos se rechaza sin operador humano', async () => {
+  const h = handlers({ RIU_SWE_BRIDGE_URL: base, BRIDGE_TOKEN: TOKEN });
+  try {
+    for (const nombre of Object.keys(FUNCIONES_YAIWES)) assert.ok(h.tools.has(nombre), nombre);
+    const ruta = () => vistoRouter.at(-1).url.replace('http://127.0.0.1:7861', '');
+    const lecturas = [['yaiwes_archivos', { accion: 'estado', args: { id: 'x' } }, '/plugins/motor_archivos/call/estado'], ['yaiwes_loop', { accion: 'status' }, '/plugins/nct_loop/call/status'], ['yaiwes_cola', { accion: 'listar' }, '/plugins/cola50/call/listar'],
+      ['yaiwes_watchdog', { accion: 'status' }, '/plugins/watchdog48/call/status'], ['yaiwes_almacen', { accion: 'leer', args: { nombre: 'a' } }, '/mcp'], ['yaiwes_memoria', { accion: 'load', args: { scope: 's', key: 'k' } }, '/mcp'],
+      ['yaiwes_anclaje', { accion: 'archivos' }, '/plugins/puente_chat/call/archivos'], ['yaiwes_anclaje', { accion: 'proyectos' }, '/plugins/puente_chat/call/proyecto'], ['yaiwes_constitucion', { accion: 'archivos' }, '/plugins/puente_chat/call/archivos']];
+    for (const [nombre, payload, esperada] of lecturas) {
+      const r = await h.llamar(nombre, payload, 'tool'); assert.equal(r.ok, true, nombre + ' ' + JSON.stringify(r));
+      assert.equal(ruta(), esperada, nombre); assert.equal(vistoRouter.at(-1).clave, CLAVE_ROUTER, nombre);
+    }
+    const oficial = await h.llamar('yaiwes_constitucion', { accion: 'oficial' }, 'tool');
+    assert.equal(oficial.ok, true); assert.equal(oficial.datos.id, 'CONSTITUCION-YAIWES'); assert.equal(oficial.datos.version, '1.1.0');
+    const ctx = await h.llamar('yaiwes_contexto', { accion: 'fijo' }, 'tool'); assert.equal(ctx.ok, true); assert.equal(ctx.datos.capas.length, 4);
+    const wf = await h.llamar('yaiwes_workflows', {}, 'tool'); assert.equal(wf.ok, true); assert.equal(wf.datos.harness, 'ok'); assert.ok(wf.datos.workflows.individual.disponible && !('agentes' in wf.datos));
+    // con efectos: el modelo no puede (ni poniendo credenciales de operador en la llamada)
+    const antes = vistoRouter.length;
+    for (const [nombre, payload] of [['yaiwes_archivos', { accion: 'transferir', args: { origen: 'https://x/y.zip', destino: 'mis/y' } }], ['yaiwes_loop', { accion: 'gobernar', args: { objetivo: 'x' } }], ['yaiwes_cola', { accion: 'crear', args: {} }],
+      ['yaiwes_almacen', { accion: 'guardar', args: { nombre: 'a', valor: 'b' } }], ['yaiwes_chat', { args: { message: 'hola' } }]]) {
+      const r = await h.llamar(nombre, payload, 'tool'); assert.equal(r.ok, false, nombre); assert.ok(['OPERADOR_REQUERIDO', 'ACCION_REQUERIDA'].includes(r.codigo) || r.http === 400 || r.http === 403 || r.http === 0, nombre + ' ' + r.codigo);
+    }
+    await assert.rejects(() => h.llamar('yaiwes_archivos', { accion: 'transferir', args: { origen: 'a', destino: 'b' }, operador: 'ana', token_operador: TOK_ANA }, 'tool'), /additional properties/, 'el esquema de la tool ni siquiera admite credenciales de operador');
+    assert.equal(vistoRouter.length, antes, 'ninguna accion con efectos llego al Router');
+    assert.ok(!JSON.stringify([oficial, ctx, wf]).includes(CLAVE_ROUTER) && !JSON.stringify([oficial, ctx, wf]).includes(TOKEN));
+  } finally { h.restaurar(); }
+});
 test('sin BRIDGE_TOKEN o con URL invalida: codigo estable, sin llamar a nadie; la URL del bridge solo https o http local', async () => {
   const antes = vistoBridge.length;
   const h = handlers({ RIU_SWE_BRIDGE_URL: base, BRIDGE_TOKEN: '' });
@@ -137,6 +164,9 @@ test('sin BRIDGE_TOKEN o con URL invalida: codigo estable, sin llamar a nadie; l
   assert.equal(vistoBridge.length, antes);
   assert.deepEqual(leerConfig({ RIU_SWE_BRIDGE_URL: 'http://evil.example.com', BRIDGE_TOKEN: 'x' }), { error: 'BRIDGE_URL_INVALIDA' });
   assert.deepEqual(leerConfig({ BRIDGE_TOKEN: 'x' }), { url: 'http://127.0.0.1:7870', token: 'x' });
+  assert.deepEqual(leerConfig({ RIU_API_KEY: 'clave-acceso' }), { url: 'http://127.0.0.1:7870', token: 'clave-acceso' }, 'la clave de acceso (RIU_API_KEY) basta: el bridge la acepta por Bearer y BRIDGE_TOKEN es opcional');
+  assert.deepEqual(leerConfig({ RIU_API_KEY: 'clave-acceso', BRIDGE_TOKEN: 'x' }), { url: 'http://127.0.0.1:7870', token: 'clave-acceso' }, 'RIU_API_KEY manda; BRIDGE_TOKEN queda como respaldo');
+  assert.deepEqual(leerConfig({ RIU_API_KEY: '  ', BRIDGE_TOKEN: '' }), { error: 'BRIDGE_TOKEN_NO_CONFIGURADO' });
   const c = crearCliente({ url: base, token: TOKEN }, { fetchFn: async () => { throw new TypeError('connect ECONNREFUSED ' + TOKEN); } });
   const r = await c.estado({ task_id: 'a' }); assert.deepEqual([r.ok, r.codigo], [false, 'BRIDGE_NO_DISPONIBLE']); assert.ok(!JSON.stringify(r).includes(TOKEN));
 });

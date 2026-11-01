@@ -1,0 +1,9 @@
+{
+  "name": "riu-agentes-node-claude",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Versiones fijadas del runtime de agentes (solo lockfile; node_modules vive en runtime/node/, fuera de git)",
+  "dependencies": {
+    "@anthropic-ai/claude-code": "2.1.316"
+  }
+}

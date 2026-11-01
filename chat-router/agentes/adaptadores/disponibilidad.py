@@ -150,7 +150,7 @@ def _agente_swe_agent(sondas):
 
 
 def _python_openhands():
-    return os.environ.get("RIU_OPENHANDS_PYTHON", "").strip() or sys.executable
+    return _comun.python_openhands()
 
 
 def _agente_openhands(sondas):
@@ -193,7 +193,7 @@ _AGENTES = {"codex": _agente_codex, "opencode": _agente_opencode, "swe-agent": _
 
 # ---------------- modelos ----------------
 def _hf_urls():
-    return [u for u in (os.environ.get("SWECODE_URL_S%d" % n, "").strip() for n in (1, 2, 3)) if u]
+    return [u for u in (_comun.url_swecode("S%d" % n) for n in (1, 2, 3)) if u]  # sin variable: URLs publicas por defecto (_comun.SWECODE_URLS_PUBLICAS)
 
 
 def _hf_configurado():
@@ -262,7 +262,7 @@ def _workflow_swe_code(agentes):
 
 
 def _workflow_liquid_mirror(agentes):
-    urls = {s: os.environ.get("SWECODE_URL_" + s, "").strip().rstrip("/") for s in ("S2", "S3")}
+    urls = {s: _comun.url_swecode(s).rstrip("/") for s in ("S2", "S3")}
     if not urls["S2"] or not urls["S3"]:
         return _no("falta SWECODE_URL_S2 y/o SWECODE_URL_S3: Liquid Mirror usa un servidor distinto para cada participante", "NO CONFIGURADO", "falta_S2_S3")
     if not all(_url_local_o_https(u) for u in urls.values()):

@@ -144,6 +144,7 @@ async function arrancar(nombre, envExtra = {}) {
     PATH: process.env.PATH, HOME: TMP, TMPDIR: TMP,
     BRIDGE_PORT: String(port), BRIDGE_STATE_DIR: state,
     RIU_ACTIVAR_PATH: fileURLToPath(new URL('../../../SWE CODE free/activar.js', import.meta.url)),
+    SWECODE_URL_S1: '', SWECODE_URL_S2: '', SWECODE_URL_S3: '', RIU_DEEPSEEK_HARNESS_URL: '',  // hermetico: el bridge completa estas variables con sus defaults publicos/locales si NO estan definidas (src/defaults.js); vacias = desactivadas
     ...envConAcceso(envExtra),
   };
   const p = spawn(process.execPath, ['--import', './preload.mjs', 'src/server.js'], { cwd: APP, env, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -541,7 +542,8 @@ test('EX-1. ejecutor_tools=openclaw: devuelve los tool_calls tal cual y el check
   const tools = [{ type: 'function', function: { name: 'github_leer', parameters: { type: 'object' } } }];
   groq.hits.length = 0; groq.status = 200;
   groq.tool_calls = [{ id: 'cx1', type: 'function', function: { name: 'github_leer', arguments: '{}' } }];
-  const r = await chat(A, { model: 'groq/qwen/qwen3.8-27b', tools, conv_id: 'ex-conv-1', ejecutor_tools: 'openclaw' });
+  const plan = { objetivo: 'leer el repositorio', operaciones_previstas: ['github_leer'] };  // confirmacion (141) activa por defecto con tools
+  const r = await chat(A, { model: 'groq/qwen/qwen3.8-27b', tools, conv_id: 'ex-conv-1', ejecutor_tools: 'openclaw', ...plan });
   assert.equal(r.status, 200);
   assert.equal(r.json.ejecutor_tools, 'openclaw');
   assert.equal(r.json.choices[0].finish_reason, 'tool_calls');
@@ -554,7 +556,7 @@ test('EX-1. ejecutor_tools=openclaw: devuelve los tool_calls tal cual y el check
   sec = (await get(A, '/v1/secciones')).json.secciones.find((x) => x.conv_id === 'ex-conv-1');
   assert.equal(sec.estado, 'CONTINUAR');
   groq.tool_calls = [{ id: 'cx2', type: 'function', function: { name: 'github_leer', arguments: '{}' } }];
-  const r3 = await chat(A, { model: 'groq/qwen/qwen3.8-27b', tools, conv_id: 'ex-conv-2' });
+  const r3 = await chat(A, { model: 'groq/qwen/qwen3.8-27b', tools, conv_id: 'ex-conv-2', ...plan });
   delete groq.tool_calls;
   assert.equal(r3.json.ejecutor_tools, undefined);
   assert.equal((await get(A, '/v1/secciones')).json.secciones.find((x) => x.conv_id === 'ex-conv-2'), undefined);

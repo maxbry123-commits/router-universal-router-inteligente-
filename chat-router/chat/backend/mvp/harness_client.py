@@ -29,8 +29,22 @@ def _timeout(accion, datos):
     return TIMEOUT_CORTO_S
 
 
+PUERTO_ROUTER, RUTA_HARNESS = 7861, "/plugins/deepseek_harness"
+
+
+def url_harness():
+    """URL base del Harness. La variable RIU_DEEPSEEK_HARNESS_URL manda (definida pero vacia = desactivado a proposito).
+    Si NO esta definida: el plugin montado en el MISMO Space, http://127.0.0.1:$PORT/plugins/deepseek_harness (PORT del Router; 7861 si falta o no es valido). Solo URL local."""
+    explicita = os.environ.get("RIU_DEEPSEEK_HARNESS_URL")
+    if explicita is not None:
+        return explicita.strip().rstrip("/")
+    crudo = os.environ.get("PORT", "").strip()
+    puerto = int(crudo) if re.fullmatch(r"[0-9]{1,5}", crudo) and 1 <= int(crudo) <= 65535 else PUERTO_ROUTER
+    return "http://127.0.0.1:%d%s" % (puerto, RUTA_HARNESS)
+
+
 def _endpoint():
-    base = os.environ.get("RIU_DEEPSEEK_HARNESS_URL", "").rstrip("/")
+    base = url_harness()
     if not base:
         raise RuntimeError("Harness no configurado")
     if not (base.startswith("https://") or base.startswith("http://127.0.0.1:")):

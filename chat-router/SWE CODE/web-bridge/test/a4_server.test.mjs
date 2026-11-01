@@ -109,7 +109,8 @@ test("141: exigir_confirmacion + tools => sin objetivo y operaciones_previstas 4
   const bien = await chat(B, { tarea_id: "p3", tools, exigir_confirmacion: true, objetivo: "crear A", operaciones_previstas: ["escribir"] });
   assert.equal(bien.status, 200); assert.equal(bien.json.tarea.fase, "ESPERANDO_TOOLS"); assert.equal(bien.json.choices[0].message.tool_calls[0].id, "c1");
   assert.equal(JSON.parse(fs.readFileSync(arch(dir, "p3"), "utf8")).plan.objetivo, "crear A");
-  const libre = await chat(B, { tarea_id: "p4", tools }); assert.equal(libre.status, 200, "sin exigir_confirmacion nada cambia para los clientes actuales");
+  const libre = await chat(B, { tarea_id: "p4", tools }); assert.equal(libre.status, 409, "la confirmacion esta activa POR DEFECTO con tools (efectos); se apaga con BRIDGE_EXIGIR_CONFIRMACION=0 (ver sin_variables.test.mjs)"); assert.equal(libre.json.error.code, "PLAN_REQUERIDO");
+  const sinTools = await chat(B, { tarea_id: "p5" }); assert.equal(sinTools.status, 200, "el chat sin tools no pide confirmacion");
 });
 
 test("R5 + 137-138: stream:true con tarea_id entrega el primer fragmento MIENTRAS el proveedor sigue, vuelca el texto al checkpoint antes de terminar y termina sin duplicar", async () => {

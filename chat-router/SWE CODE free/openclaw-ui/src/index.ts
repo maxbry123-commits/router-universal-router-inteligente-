@@ -19,6 +19,7 @@ export default defineFeaturePlugin({
       return 'error' in c ? sinConfig(c.error) : crearCliente(c);
     };
     const con = async (f: (c: Cliente) => Promise<Respuesta>): Promise<Respuesta> => { const c = cliente(); return 'ok' in c ? c : f(c); };
+    const funcion = (id: string, i: { accion?: string; args?: Record<string, unknown> }) => con((c) => c.tool(id, { accion: i.accion, args: i.args }));
     return {
       capacidades: () => con((c) => c.capacidades()),
       tools: () => con((c) => c.tools()),
@@ -28,6 +29,10 @@ export default defineFeaturePlugin({
       reanudar: (r) => con((c) => c.reanudar(r)),
       aprobar: (i, ctx) => con((c) => c.aprobar(i, { operador: i.operador, token_operador: ctx.source === 'session-action' ? i.token_operador : '' })),
       tool: (i, ctx) => con((c) => c.tool(i.id, { accion: i.accion, args: i.args }, operadorDe(ctx.source, i))),
+      // tools por funcion del chat: nunca llevan credenciales de operador (ni del modelo ni de la sesion); las acciones con efectos las rechaza el bridge
+      yaiwes_archivos: (i) => funcion('motor_archivos', i), yaiwes_loop: (i) => funcion('loop', i), yaiwes_cola: (i) => funcion('cola', i), yaiwes_watchdog: (i) => funcion('watchdog', i),
+      yaiwes_almacen: (i) => funcion('almacen', i), yaiwes_memoria: (i) => funcion('memoria', i), yaiwes_chat: (i) => funcion('chat_send', i), yaiwes_anclaje: (i) => funcion('anclaje', i),
+      yaiwes_constitucion: (i) => funcion('constitucion', i), yaiwes_contexto: (i) => funcion('contexto', i), yaiwes_workflows: (i) => funcion('workflows', i),
     };
   },
 });

@@ -14,6 +14,8 @@ import { MODELOS_WEB } from './sites.js';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { iguales } from './iguales.js';
+import { clavesAcceso, claveAccesoDe } from './acceso.js';
+import { aplicarDefectos } from './defaults.js';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import nodeFs from 'node:fs';
 import { vigilarWorkspace, rutaWorkspace, configVigente, vigilarConfig, espejo, normalizarEjecutor } from './openclaw.js';
@@ -31,6 +33,9 @@ import { preambulo } from './modos.js';
 import { montarRutasSwe } from './swe_rutas.js';
 import { montarResponses } from './responses.js';
 
+// sin variables nuevas en Hugging Face: SWECODE_URL_S1..S3 y RIU_DEEPSEEK_HARNESS_URL (Harness local del Space) toman su default SOLO si no estan definidas (src/defaults.js)
+aplicarDefectos(process.env);
+
 // gramatica "SWEN CODE free ..." (SWE CODE free/activar.js): elige modelo, modo y seccion desde el propio mensaje
 let activar = null;
 try { activar = createRequire(import.meta.url)(process.env.RIU_ACTIVAR_PATH || '../../../SWE CODE free/activar.js').activar; } catch { console.warn('[bridge] sin activar.js: la gramatica SWEN CODE free queda desactivada (ruta o RIU_ACTIVAR_PATH)'); }
@@ -39,17 +44,15 @@ const IDS_DIRECTOS = (id) => /^(groq\/|nvidia\/|lfm2\.5|qwen2\.5-coder|qwen3\.5|
 // Groq/NVIDIA/locales con un modo (p. ej. despliega): reciben el preambulo de ese modo, como el agente que despliega
 const conPreambulo = (msgs, m) => (m && modoValido(m) ? [{ role: 'system', content: preambulo(m) }, ...msgs] : msgs);
 
-// acceso: TODAS las rutas (salvo /health) exigen BRIDGE_TOKEN (Authorization: Bearer / x-bridge-key / x-api-key) o una de las 4 claves de acceso del chat en x-api-key;
-// sin ninguna configurada el bridge responde 503 (ya no queda abierto)
+// acceso: TODAS las rutas (salvo /health) exigen una de las 4 claves de acceso del chat (x-api-key o Authorization: Bearer <clave>) o BRIDGE_TOKEN (Authorization: Bearer / x-bridge-key / x-api-key).
+// BRIDGE_TOKEN es OPCIONAL: el provider de OpenClaw puede usar api_key = clave de acceso. Sin ninguna configurada el bridge responde 503 (ya no queda abierto)
 const TOKEN = process.env.BRIDGE_TOKEN || '';
-const ACCESO_VARS = ['RIU_API_KEY', 'RIU_PUBLIC_CHAT_KEY', 'RIU_MCP_KEY', 'RIU_ROUTER_API_KEY'];
-const clavesAcceso = () => ACCESO_VARS.map(v => process.env[v]).filter(Boolean);
 const cab = (req, n) => String((req.headers && req.headers[n]) || '');
-const conAcceso = (req) => { const k = cab(req, 'x-api-key'); return !!k && clavesAcceso().map(v => iguales(k, v)).some(Boolean); };  // clave de acceso del chat en x-api-key
+const conAcceso = (req) => !!claveAccesoDe(req);  // clave de acceso del chat en x-api-key o Bearer (tiempo constante)
 const conToken = (req) => { if (!TOKEN) return false; const t = cab(req, 'authorization').replace(/^Bearer\s+/i, '') || cab(req, 'x-bridge-key') || cab(req, 'x-api-key'); return !!t && iguales(t, TOKEN); };
 // propietario autenticado (128-130): hash (nunca la clave) de la clave de acceso del chat o del BRIDGE_TOKEN con que se hizo la peticion. Otra clave = otro propietario.
 const propietarioDe = (req) => {
-  const k = conAcceso(req) ? cab(req, 'x-api-key') : conToken(req) ? TOKEN : '';
+  const k = claveAccesoDe(req) || (conToken(req) ? TOKEN : '');
   return k ? `p-${crypto.createHash('sha256').update('riu-propietario\u0000' + k).digest('hex').slice(0, 24)}` : null;
 };
 const sinCorreos = (o) => JSON.parse(JSON.stringify(o ?? null, (k, v) => (k === 'email' ? undefined : v)));
@@ -61,8 +64,8 @@ app.set('strict routing', true);          // '/v1/claves/' ya no es '/v1/claves'
 app.set('case sensitive routing', true);  // '/V1/CLAVES' tampoco
 app.use((req, res, next) => {
   if (req.path === '/health') return next();
-  if (!TOKEN && !clavesAcceso().length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (BRIDGE_TOKEN o RIU_API_KEY)' } });
-  return conToken(req) || conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key) o el token del bridge' } });
+  if (!TOKEN && !clavesAcceso().length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (RIU_API_KEY, o BRIDGE_TOKEN)' } });
+  return conToken(req) || conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key o Authorization: Bearer) o el token del bridge' } });
 });
 // panel de claves del chat (el proxy del Space reenvia /web/* aqui): ademas exige la clave de acceso del chat en x-api-key. La ruta se normaliza (minusculas, sin barras
 // dobles ni finales, sin /./) para que ninguna variante salte la puerta, aunque el enrutado ya sea estricto
@@ -73,12 +76,12 @@ app.use((req, res, next) => {
   if (!PROTEGIDAS.some(p => r === p || r.startsWith(p + '/'))) return next();
   if (req.method === 'GET' && req.path === '/v1/openclaw' && conToken(req)) return next();  // config de OpenClaw (solo lectura, sin secretos): tambien con BRIDGE_TOKEN. /v1/claves sigue exigiendo la clave de acceso
   if (!clavesAcceso().length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (RIU_API_KEY)' } });
-  return conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key)' } });
+  return conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key o Authorization: Bearer)' } });
 });
 app.use(express.json({ limit: '10mb' }));
 const PORT = process.env.BRIDGE_PORT || 7870;
 montarResponses(app);  // POST /v1/responses (Codex): traduce a /v1/chat/completions
-montarRutasSwe(app);  // /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar} -> Harness DeepSeek; exigen BRIDGE_TOKEN
+montarRutasSwe(app);  // /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar} -> Harness DeepSeek; exigen una clave de acceso (Bearer) o BRIDGE_TOKEN
 
 // tarea_id derivado: <conv_id (max 51)>-<sha256([modelo, modo, mensajes]) 12 hex> -> <= 64 y solo [A-Za-z0-9_-]
 // con propietario el hash lo incluye: dos usuarios con el mismo conv_id y los mismos mensajes obtienen tareas distintas
@@ -319,11 +322,11 @@ app.post('/v1/chat/completions', async (req, res) => {
     const ejecutar = async () => {
     if (usaTarea) {
       // 129: propietario (hash de la clave usada), proyecto, sesion (conv_id), workflow y operacion quedan vinculados al tarea_id. 140: la tarea solo es DONE si el cliente/workflow lo confirma
-      // (tarea_completa:true | x-tarea-completa:1). 141: objetivo + operaciones_previstas (exigidos con tools si exigir_confirmacion:true o BRIDGE_EXIGIR_CONFIRMACION=1)
+      // (tarea_completa:true | x-tarea-completa:1). 141: objetivo + operaciones_previstas, exigidos POR DEFECTO con tools (efectos); BRIDGE_EXIGIR_CONFIRMACION=0 lo desactiva (el cuerpo no puede apagarlo); sin tools nada cambia
       const b = req.body, str = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
       const vinculo = { propietario: propietarioDe(req), proyecto: str(proyecto), sesion: conv_id != null ? String(conv_id) : null, workflow: str(b.workflow), operacion: str(b.operacion) };
       const plan = b.objetivo !== undefined || b.operaciones_previstas !== undefined ? { objetivo: b.objetivo, operaciones: b.operaciones_previstas } : undefined;
-      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo), { ...extra, ...vinculo, plan, exigirPlan: b.exigir_confirmacion === true || process.env.BRIDGE_EXIGIR_CONFIRMACION === '1', confirmarCompleta: b.tarea_completa === true || req.headers['x-tarea-completa'] === '1', origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + DEADLINE_MS * 0.8, flushChars: parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_CHARS, 10) || undefined, flushMs: Number.isFinite(parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10)) ? parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10) : undefined, ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: AbortSignal.any([sse.signal, ac1.signal]) } } : {}) }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
+      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo), { ...extra, ...vinculo, plan, exigirPlan: b.exigir_confirmacion === true || String(process.env.BRIDGE_EXIGIR_CONFIRMACION ?? '').trim() !== '0', confirmarCompleta: b.tarea_completa === true || req.headers['x-tarea-completa'] === '1', origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + DEADLINE_MS * 0.8, flushChars: parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_CHARS, 10) || undefined, flushMs: Number.isFinite(parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10)) ? parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10) : undefined, ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: AbortSignal.any([sse.signal, ac1.signal]) } } : {}) }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
       tarea = { id: r.tarea_id, estado: r.estado, fase: r.fase, secciones: r.secciones, reanudado: r.reanudado, desde_checkpoint: r.desde_checkpoint };
     } else if (esExterno(model)) {
       const r = await externo(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;

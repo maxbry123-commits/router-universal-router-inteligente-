@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { MODELOS_API, idsRespaldo } from "../src/respaldo.js";
+import { prepararApp, arrancar, limpiar } from "./helpers/bridge_app.mjs";
+import "./helpers/acceso.mjs";
 
 const RUTA = fileURLToPath(new URL("../../../SWE CODE free/provider-openclaw.json", import.meta.url));
 const cfg = JSON.parse(fs.readFileSync(RUTA, "utf8"));
@@ -39,4 +41,23 @@ test("estructura intacta: provider swecode, openai-compatible, puerto 7870, mcp 
 
 test("el archivo no contiene claves", () => {
   assert.ok(!/(gsk_|nvapi-|sk-)[A-Za-z0-9_-]{10,}/.test(fs.readFileSync(RUTA, "utf8")));
+});
+
+// ---------- cableado de modelos con OpenClaw: el provider y el bridge hablan de los mismos ids ----------
+test("provider: baseUrl, api_key por variable de entorno y los 5 modelos API + 4 locales HF con ids exactos", () => {
+  assert.equal(cfg.base_url, "http://localhost:7870/v1"); assert.equal(cfg.api_key, "${RIU_API_KEY}"); assert.ok(!cfg.api_key.includes("BRIDGE_TOKEN"), "BRIDGE_TOKEN es opcional: el provider usa la clave de acceso por Bearer");
+  assert.deepEqual(MODELOS_API.map((m) => m.id), ["groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"]);
+  assert.deepEqual(idsRespaldo().slice(5), ["lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"]);
+  for (const id of idsRespaldo()) assert.ok(porId[id], id);
+});
+
+test("GET /v1/models del bridge REAL devuelve exactamente los mismos ids que provider-openclaw.json (ni uno mas ni uno menos)", async () => {
+  prepararApp();
+  const S = await arrancar("MODELOS", { BRIDGE_TOKEN: "token-prueba-modelos" });
+  try {
+    const r = await fetch(S.base + "/v1/models", { headers: { authorization: "Bearer token-prueba-modelos" } });
+    assert.equal(r.status, 200);
+    const ids = (await r.json()).data.map((m) => m.id);
+    assert.deepEqual([...ids].sort(), cfg.modelos.map((m) => m.id).sort());
+  } finally { limpiar(); }
 });

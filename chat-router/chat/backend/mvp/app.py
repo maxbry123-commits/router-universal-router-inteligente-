@@ -253,8 +253,10 @@ def _identificar_operador(operador, token):
     """Quien aprueba (swe_aprobar): un operador real = cabecera x-operador + su token individual (x-operator-token). La clave de acceso del chat la comparten todos y NO identifica a nadie:
     sin aprobadores configurados 503; sin operador 403; operador no registrado 403; token ausente o de otro 401. Devuelve el operador verificado."""
     aprobadores = _aprobadores()
-    if not aprobadores or any(h == hashlib.sha256(os.environ[n].encode("utf-8")).hexdigest() for h in aprobadores.values() for n in bank.ACCESO if os.environ.get(n)):
-        raise HTTPException(status_code=503, detail="APROBADORES_NO_CONFIGURADOS")  # nada configurado, o un «token de operador» que es la clave de acceso compartida
+    if not aprobadores:
+        raise HTTPException(status_code=503, detail="APROBADORES_NO_CONFIGURADOS: falta la variable RIU_SWE_APROBADORES (operador:sha256(token), separados por coma) en los Secrets del Space; genera la linea con chat-router/DEPLOY/generar-aprobadores.sh")
+    if any(h == hashlib.sha256(os.environ[n].encode("utf-8")).hexdigest() for h in aprobadores.values() for n in bank.ACCESO if os.environ.get(n)):
+        raise HTTPException(status_code=503, detail="APROBADORES_NO_CONFIGURADOS: el token de un operador en RIU_SWE_APROBADORES debe ser SUYO (distinto de la clave de acceso compartida); genera uno nuevo con chat-router/DEPLOY/generar-aprobadores.sh")  # un «token de operador» que es la clave de acceso compartida
     if not isinstance(operador, str) or not _APROBADOR.fullmatch(operador): raise HTTPException(status_code=403, detail="OPERADOR_REQUERIDO")
     if operador not in aprobadores: raise HTTPException(status_code=403, detail="OPERADOR_NO_AUTORIZADO")
     if not isinstance(token, str) or not token or not _igual(hashlib.sha256(token.encode("utf-8", "surrogatepass")).hexdigest(), aprobadores[operador]):
@@ -456,7 +458,7 @@ async def _chat_ficha(cuerpo, progreso=None):
         ultimo["content"] = ([{"type": "text", "text": str(ultimo.get("content") or "")}]
                              + [{"type": "image_url", "image_url": {"url": i["url"]}} for i in imagenes[:4]])  # imagenes ancladas: el modelo con vision las ve; compute las omite si el modelo no las admite
     # Ruta Antonio: Qwen -> Harness DeepSeek (HTTP) -> router. Sin camino alterno; sin URL Harness falla (G5 abierto)
-    if not os.environ.get("RIU_DEEPSEEK_HARNESS_URL"):
+    if not harness_client.url_harness():  # sin variable: el Harness del mismo Space; vacia = desactivado
         raise HTTPException(status_code=503, detail="HARNESS_NO_CONFIGURADO")
     opciones = dict(q.get("opciones") or {})
     if q.get("thinking_mode") in ("on", "off") and modelo == "qwen3.8-max":  # selector Pensar del chat; solo este modelo admite el interruptor (modelos.extra_body)

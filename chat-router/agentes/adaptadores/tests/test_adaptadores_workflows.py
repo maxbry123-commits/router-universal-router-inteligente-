@@ -505,7 +505,7 @@ def servidores(monkeypatch):
     for n in ("S2", "S3"):
         s = HTTPServer(("127.0.0.1", 0), Falso); threading.Thread(target=s.serve_forever, daemon=True).start(); ss.append(s)
         monkeypatch.setenv("SWECODE_URL_" + n, "http://127.0.0.1:%d/v1" % s.server_port)
-    monkeypatch.delenv("SWECODE_URL_S1", raising=False)
+    monkeypatch.setenv("SWECODE_URL_S1", "")  # vacia = sin servidor (sin variable rigen las URLs publicas por defecto)
     yield ss
     for s in ss: s.shutdown(); s.server_close()
 
@@ -519,7 +519,7 @@ def test_llamar_servidor_identifica_el_servidor_real(servidores):
 
 
 def test_llamar_servidor_sin_url_no_usa_otro(monkeypatch, servidores):
-    monkeypatch.delenv("SWECODE_URL_S2")
+    monkeypatch.setenv("SWECODE_URL_S2", "")  # vacia = sin servidor
     monkeypatch.setenv("SWECODE_URL_S1", "http://127.0.0.1:%d/v1" % servidores[1].server_port)
     with pytest.raises(ValueError, match="LIQUID_SERVIDOR_NO_CONFIGURADO"):
         wf.llamar_servidor("S2", "lfm2.5-350m", [{"role": "user", "content": "x"}])

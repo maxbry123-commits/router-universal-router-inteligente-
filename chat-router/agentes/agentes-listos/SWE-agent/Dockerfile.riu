@@ -1,0 +1,13 @@
+# Imagen de ejecucion de SWE-agent para RIU (archivo propio; no forma parte del upstream SWE-agent-main).
+# SWE-agent copia el repo al contenedor con `git` y habla con el con swe-rex: la imagen python:3.12 pelada no trae git
+# (fallo real: "git: executable not found") ni swe-rex. El adaptador agentes/adaptadores/swe_agent.py la usa por defecto
+# (RIU_SWEAGENT_IMAGE, por defecto riu-sweagent:latest).
+# Construir SIN contexto (no hace falta COPY; evita enviar SWE-agent-main al daemon):
+#   docker build -t riu-sweagent:latest - < agentes/agentes-listos/SWE-agent/Dockerfile.riu
+FROM python:3.12-slim
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+# misma version que runtime/requirements-sweagent.txt
+RUN pip install --no-cache-dir "swe-rex==1.4.0" \
+    && git --version && swerex-remote --version

@@ -94,6 +94,7 @@ export function espejo({ env = process.env } = {}) {
 // `efectos`: lectura | efectos | por_accion (con `lectura` = acciones sin efectos). Lo que tiene efectos exige un operador identificado en el bridge.
 const mcp = (id, tool, grupo, titulo, efectos, extra = {}) => ({ id, grupo, titulo, via: 'mcp', destino: { tool }, efectos, ...extra });
 const plugin = (id, plugin_, grupo, titulo, acciones, lectura, extra = {}) => ({ id, grupo, titulo, via: 'plugin', destino: { plugin: plugin_, ruta: '/plugins/{plugin}/call/{accion}', metodo: 'POST' }, acciones, efectos: 'por_accion', lectura, ...extra });
+const replica = (id, grupo, titulo, acciones, extra = {}) => ({ id, grupo, titulo, via: 'replica', destino: { local: true }, acciones, efectos: 'lectura', lectura: acciones, ...extra });
 const TOOLS_OPENCLAW = [
   mcp('chat_router', 'chat', 'chat', 'Chat del Router (modelo + herramientas)', 'efectos'),
   mcp('almacen', 'almacen', 'almacen', 'Almacen autorizado (guardar/leer)', 'por_accion', { acciones: ['guardar', 'leer', 'computar', 'status'], lectura: ['leer', 'status'] }),
@@ -118,12 +119,22 @@ const TOOLS_OPENCLAW = [
   { id: 'chat_send', grupo: 'chat', titulo: 'Motor del chat (Harness + tools + constitucion + anclas + yaiwes.md)', via: 'http', destino: { metodo: 'POST', ruta: '/chat/send' }, efectos: 'efectos',
     campos: ['mensajes', 'messages', 'message', 'modelo', 'sesion', 'anclados', 'constitucion', 'tools', 'agente_tool', 'llm_tool', 'contexto_previo'] },
   { id: 'harness_status', grupo: 'agentes', titulo: 'Disponibilidad real de agentes, workflows y modelos (status del Harness)', via: 'harness', destino: { accion: 'status' }, efectos: 'lectura' },
+  { id: 'workflows', grupo: 'agentes', titulo: 'Workflows SWE que reporta el Harness (individual, swe_code, liquid_mirror) y su disponibilidad', via: 'harness', destino: { accion: 'status', campo: 'workflows' }, efectos: 'lectura' },
+  // REPLICAS (SWE CODE, solo lectura): el Router no sirve estas funciones como endpoint propio, pero SI expone los datos del servidor por HTTP/MCP;
+  // el bridge los lee con la clave del entorno y arma aqui el mismo resultado. Nada de esto toca ni modifica el Router ni el chat.
+  replica('anclaje', 'chat', 'Anclaje (lectura): archivos subidos al chat/constitucion/proyecto, anclas de proyectos y contenido de un archivo anclado', ['archivos', 'proyectos', 'leer_archivo'],
+    { depende_de: 'almacen', usa: ['POST /plugins/puente_chat/call/archivos', 'POST /plugins/puente_chat/call/proyecto (op list|get)', 'POST /almacen (leer, destino hf)'] }),
+  replica('constitucion', 'chat', 'Constitucion (lectura): la oficial YAIWES del repo y los archivos subidos a la constitucion', ['oficial', 'archivos', 'leer_archivo'],
+    { usa: ['archivo local CONSTITUCION-YAIWES.json del repo (RIU_CONSTITUCION_PATH)', 'POST /plugins/puente_chat/call/archivos (destino constitucion)', 'POST /almacen (leer, destino hf)'] }),
+  replica('contexto', 'chat', 'Contexto fijo del chat (lectura): constitucion oficial + yaiwes.md + sandbox + pendientes, como los antepone el Router a cada mensaje', ['fijo'],
+    { depende_de: 'yaiwes_md', usa: ['constitucion oficial (archivo local)', 'MCP yaiwes_md leer', 'POST /plugins/puente_chat/call/sandbox (sin texto = lectura)', 'MCP pendientes listar'] }),
 ];
 // Lo que existe en chat-router/plugins pero el Router no sirve por HTTP: GAP honesto (no se inventa un endpoint).
 const NO_RUTEADO = 'el Router MVP no lo sirve: /plugins/{plugin}/call/{accion} responde 404 "plugin no disponible en mvp" para este plugin (solo puente_chat, fichas_qwen, almacen, motor_archivos, nct_loop, cola50 y watchdog48)';
 const GAPS_TOOLS = [
-  { id: 'anclaje', motivo: 'el anclaje de archivos/textos es el campo `anclados` de POST /chat/send; no existe un endpoint propio solo para anclar, asi que se usa con la tool chat_send', usar_con: 'chat_send' },
-  { id: 'constitucion', motivo: 'la constitucion es el campo `constitucion` {texto, anclados} de POST /chat/send; sus archivos se suben con motor_archivos (destino constitucion); sin endpoint propio', usar_con: 'chat_send' },
+  { id: 'anclados-navegador', motivo: 'los anclados de la pestana del chat actual viven en el navegador del Director (localStorage); el Router solo los recibe en el campo `anclados` de POST /chat/send. Lo que el servidor SI guarda (archivos subidos, anclas de proyectos) lo lee la tool anclaje', usar_con: 'chat_send' },
+  { id: 'constitucion-propia-navegador', motivo: 'el texto propio de la constitucion y su interruptor viven en el navegador (riu_constitucion_v1); el Router solo los recibe como campo `constitucion` {texto, anclados} de POST /chat/send. La oficial y los archivos subidos los lee la tool constitucion', usar_con: 'chat_send' },
+  { id: 'workflows-navegador', motivo: 'las definiciones de la ventana Workflow Loops code Yaiwes viven en el navegador (riu_workflows_v1); no hay endpoint. Los workflows SWE los da la tool workflows (Harness) y la ejecucion gobernada es la tool loop', usar_con: 'workflows' },
   { id: 'workflow-loop-yaiwes', plugin_repo: true, motivo: NO_RUTEADO },
   ...['agentes', 'chat', 'chat-router', 'connectivity', 'hf_compute', 'hf_datasets', 'hf_skills', 'hf_storage', 'lifeguard', 'orquestador', 'parallel', 'ssh_bridge'].map((id) => ({ id, plugin_repo: true, motivo: NO_RUTEADO })),
   ...['motores', 'motores-descarga'].map((id) => ({ id, plugin_repo: true, usar_con: 'motor_archivos', motivo: 'son los scripts fuente de los motores (HF/extraccion) sin endpoint HTTP; el motor servido por el Router es motor_archivos (mvp/archivos)' })),
@@ -138,5 +149,45 @@ const CUBIERTOS_TOOLS = [
 export function catalogoTools() {
   return { version: 1, tools: TOOLS_OPENCLAW.map((t) => structuredClone(t)), gaps: structuredClone(GAPS_TOOLS), cubiertos: structuredClone(CUBIERTOS_TOOLS),
     nota: 'El Router decide que tools estan visibles (Agentes/IA/Tools ON/OFF); este catalogo solo enumera lo que existe en su codigo' };
+}
+
+// ---- REPLICAS de lectura (SWE CODE): calculos propios del bridge para las funciones del chat que el Router no sirve como endpoint ----
+// Constitucion oficial YAIWES: el mismo archivo que carga el Harness (plugins/puente_chat/constitucion). Solo lectura; fail-closed como _gov_base (id, version y modo FAIL_CLOSED).
+export const rutaConstitucion = (env = process.env) => String(env.RIU_CONSTITUCION_PATH || '').trim() || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../plugins/puente_chat/constitucion/CONSTITUCION-YAIWES.json');
+export function constitucionOficial({ env = process.env, fs = nodeFs } = {}) {
+  let texto; try { texto = fs.readFileSync(rutaConstitucion(env), 'utf8'); } catch { return { ok: false, codigo: 'CONSTITUCION_NO_ENCONTRADA' }; }
+  let d; try { d = JSON.parse(texto); } catch { return { ok: false, codigo: 'CONSTITUCION_INVALIDA' }; }
+  if (!d || typeof d !== 'object' || !d.id || !d.version || d.modo !== 'FAIL_CLOSED') return { ok: false, codigo: 'CONSTITUCION_INVALIDA' };
+  return { ok: true, id: String(d.id), version: String(d.version), sha256: crypto.createHash('sha256').update(texto, 'utf8').digest('hex'), texto };
+}
+// Ubicacion de un archivo subido al chat: identica a control.clave_espacio / control.ruta_archivo del Router ("destino|project_id|sesion"[:160]; sha1[:12]).
+export const ESPACIOS = ['chat', 'constitucion', 'proyecto'];
+const SESION_OK = /^[A-Za-z0-9_.:@-]{1,60}$/, PROYECTO_OK = /^[A-Za-z0-9_-]{1,60}$/, NOMBRE_ARCHIVO_OK = /^[\p{L}\p{N}][\p{L}\p{N} ._()-]{0,119}$/u;
+export const claveEspacio = ({ destino, project_id, sesion } = {}) => [destino || 'chat', project_id || '', sesion || 'web-general'].join('|').slice(0, 160);
+export const rutaArchivoChat = (espacio, nombre) => `chat_archivos/${crypto.createHash('sha1').update(claveEspacio(espacio), 'utf8').digest('hex').slice(0, 12)}/${nombre}`;
+// Valida los datos de un espacio (nunca deja pasar rutas ni separadores): {destino, project_id?, sesion?}
+export function espacioDe(args = {}) {
+  const destino = args.destino === undefined ? 'chat' : args.destino, sesion = args.sesion === undefined ? undefined : args.sesion, project_id = args.project_id === undefined ? undefined : args.project_id;
+  if (!ESPACIOS.includes(destino)) return null;
+  if (sesion !== undefined && (typeof sesion !== 'string' || !SESION_OK.test(sesion))) return null;
+  if (project_id !== undefined && (typeof project_id !== 'string' || !PROYECTO_OK.test(project_id))) return null;
+  return { destino, ...(project_id !== undefined ? { project_id } : {}), ...(sesion !== undefined ? { sesion } : {}) };
+}
+export const nombreArchivoValido = (n) => typeof n === 'string' && NOMBRE_ARCHIVO_OK.test(n) && !n.includes('..');
+// base64 del almacen -> texto (si es binario solo se informa del tamano)
+export function textoDeBase64(b64, max = 100000) {
+  const buf = Buffer.from(String(b64 || ''), 'base64');
+  if (buf.includes(0)) return { binario: true, bytes: buf.length };
+  const t = buf.toString('utf8');
+  return { binario: false, bytes: buf.length, texto: t.slice(0, max), truncado: t.length > max };
+}
+// Contexto fijo: las mismas capas que app._chat_ficha antepone como mensaje de sistema (CONSTITUCION, yaiwes.md, SANDBOX, PENDIENTES; "encendidos = con texto").
+// La constitucion PROPIA del Director y los anclados de la pestana viven en el navegador: no entran (GAP anclados-navegador / constitucion-propia-navegador).
+export function armarContextoFijo({ constitucion, yaiwes, sandbox, pendientes }) {
+  const partes = [['CONSTITUCION OFICIAL YAIWES (solo lectura): es ley para este trabajo; respetala al programar y en lo que respondes', constitucion],
+    ['yaiwes.md (informacion del proyecto; la herramienta yaiwes_md la lee y la escribe)', yaiwes], ['SANDBOX (system prompt de code)', sandbox],
+    ['PENDIENTES (lista compartida; la herramienta pendientes la consulta y la actualiza)', pendientes]];
+  const activas = partes.filter(([, t]) => typeof t === 'string' && t.trim());
+  return { texto: activas.map(([n, t]) => `[${n}]\n${t}`).join('\n\n'), capas: partes.map(([n, t]) => ({ capa: n.split(' (')[0].split(':')[0], presente: typeof t === 'string' && !!t.trim() })) };
 }
 export { ACCESO_ROUTER, ROUTER_LOCAL };

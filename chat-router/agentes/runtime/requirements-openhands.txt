@@ -1,0 +1,4 @@
+# Versiones fijadas de OpenHands SDK (venv runtime/venv/openhands). Mismas versiones que las verificadas en la auditoria A2 (68).
+# La fuente descargada en agentes-listos/openhands-software-agent-sdk es 1.55.1 (otra version): solo se usa con RIU_OPENHANDS_FUENTE=local.
+openhands-sdk==1.59.0
+openhands-tools==1.59.0

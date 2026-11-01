@@ -52,3 +52,21 @@ class TestDocumentosSinRecorteSilencioso(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestUrlsPublicasPorDefecto(unittest.TestCase):
+    """SWECODE_URL_S1..S3: si la variable NO esta definida se usa la URL publica de cascada.json; definida (aunque vacia) manda y vacia = sin ese slot."""
+    PUBLICAS = {s: "https://comand-center-1-swe-code-%s.hf.space/v1" % s.lower() for s in ("S1", "S2", "S3")}
+
+    def test_sin_variables_usa_las_tres_urls_publicas(self):
+        self.assertEqual(mini_router.urls_slots({}), self.PUBLICAS)
+
+    def test_la_variable_definida_manda_y_vacia_desactiva_solo_ese_slot(self):
+        env = {"SWECODE_URL_S1": "http://127.0.0.1:9999/v1/", "SWECODE_URL_S2": ""}
+        self.assertEqual(mini_router.urls_slots(env), {"S1": "http://127.0.0.1:9999/v1", "S3": self.PUBLICAS["S3"]})
+
+    def test_cascada_json_declara_el_default_de_cada_paso_y_no_hay_otra_fuente(self):
+        self.assertEqual(mini_router.CASCADA["urls_slots_default"], self.PUBLICAS)
+        for paso in mini_router.CASCADA["pasos"]:
+            self.assertEqual(paso["base_url_env"], "SWECODE_URL_" + paso["servidor"], paso["nodo"])
+            self.assertIn(paso["servidor"], mini_router.CASCADA["urls_slots_default"])

@@ -17,9 +17,9 @@
     "panel"
   ],
   "controlUi": {
-    "entry": "dist/control-ui/e36c15b9ec2a86f7c57955b96cc6681b633fd6ae0a795e683b4a222147ac82d9/index.js",
+    "entry": "dist/control-ui/32e0ea8b9a89a8d5d4f50e7f7c64cbdaa295633e2f9b4c73471c2f5eef7ef4fb/index.js",
     "styles": [
-      "dist/control-ui/e36c15b9ec2a86f7c57955b96cc6681b633fd6ae0a795e683b4a222147ac82d9/index.css"
+      "dist/control-ui/32e0ea8b9a89a8d5d4f50e7f7c64cbdaa295633e2f9b4c73471c2f5eef7ef4fb/index.css"
     ]
   },
   "contracts": {
@@ -27,7 +27,18 @@
       "swe_capacidades",
       "swe_estado",
       "swe_tool_llamar",
-      "swe_tools_catalogo"
+      "swe_tools_catalogo",
+      "yaiwes_almacen",
+      "yaiwes_anclaje",
+      "yaiwes_archivos",
+      "yaiwes_chat",
+      "yaiwes_cola",
+      "yaiwes_constitucion",
+      "yaiwes_contexto",
+      "yaiwes_loop",
+      "yaiwes_memoria",
+      "yaiwes_watchdog",
+      "yaiwes_workflows"
     ]
   }
 }

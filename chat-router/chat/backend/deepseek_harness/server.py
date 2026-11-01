@@ -158,13 +158,26 @@ def _tarea_id_bridge(conv_id, modelo, mensajes):
     return (base + "-" + huella) if base else ""
 
 
+def _plan_bridge(mensajes, tools):
+    """{objetivo, operaciones_previstas} para el bridge: solo con herramientas (efectos). objetivo = ultimo mensaje del usuario (<= 500, sin secretos); operaciones = nombres de las tools ofrecidas."""
+    nombres = [t["function"]["name"] for t in (tools or []) if isinstance(t, dict) and isinstance(t.get("function"), dict) and isinstance(t["function"].get("name"), str) and t["function"]["name"]]
+    if not nombres:
+        return {}
+    ult = next((str(m.get("content") or "") for m in reversed(mensajes) if isinstance(m, dict) and m.get("role") == "user"), "")
+    return {"objetivo": _SECRETO.sub("[REDACTADO]", " ".join(ult.split()))[:500] or "tarea del chat", "operaciones_previstas": nombres[:100]}
+
+
 def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
     """Una vuelta de chat por el bridge (OpenAI-compatible): mismo formato que _router('chat'). Con tarea (conv_id) y un modelo local/Groq/NVIDIA manda ademas tarea_id explicito."""
     modelo = SWE_ALIAS.get(modelo, modelo)
     tarea_id = _tarea_id_bridge(conv_id, modelo, mensajes) if conv_id and not str(modelo).startswith(SWE_PREFIJOS) else ""
+    opc = {k: v for k, v in (opciones or {}).items() if k in ("tools", "tool_choice")}
+    # El bridge pide confirmar el objetivo y las operaciones previstas ANTES de dar herramientas a una tarea (141, activa por defecto). Aqui la confirmacion es la del Router: las herramientas
+    # disponibles ya las dejo encendidas el usuario (Tools ON) y el bucle solo ejecuta las del catalogo. El plan que se registra en el checkpoint = su ultimo mensaje + esas herramientas.
+    plan = _plan_bridge(mensajes, opc.get("tools")) if tarea_id else {}
     req = urllib.request.Request(_bridge_url() + "/v1/chat/completions", method="POST", headers=_cabeceras_bridge(),
                                  data=json.dumps({"model": modelo, "messages": mensajes, **({"conv_id": conv_id} if conv_id else {}), **({"tarea_id": tarea_id} if tarea_id else {}),
-                                                **{k: v for k, v in (opciones or {}).items() if k in ("tools", "tool_choice")}}).encode())
+                                                **opc, **plan}).encode())
     try:
         from agentes.adaptadores import _comun as _c  # opener sin redireccion (chat-router va en PYTHONPATH)
         with _c.abrir(req, float(os.environ.get("RIU_SWE_TIMEOUT_S", "130"))) as r:
@@ -353,8 +366,20 @@ def _swe_status():
         return {"error": "DISPONIBILIDAD_NO_COMPROBADA"}
 
 
+def _defaults_entorno():
+    """Defaults SIN variables nuevas en Hugging Face (solo si la variable NO esta definida; vacia = desactivada a proposito):
+    RIU_SWE_WORKSPACE_RAIZ = <BRIDGE_STATE_DIR o tmp>/swe-workspace, creado con permisos 0700 (nuestro y no un enlace simbolico; si no se puede, queda sin configurar).
+    SWECODE_URL_S1..S3 los resuelve agentes.adaptadores._comun.url_swecode (URLs publicas); aprobadores y operadores nunca se inventan."""
+    if _SWE_OK and "RIU_SWE_WORKSPACE_RAIZ" not in os.environ:
+        from agentes.adaptadores import _comun as _c
+        raiz = _c.raiz_workspace_defecto()
+        if _c.crear_dir_privado(raiz):
+            os.environ["RIU_SWE_WORKSPACE_RAIZ"] = raiz
+
+
 def _ctx_swe():
     """Las funciones del Harness se pasan en cada llamada (no se copian): guardar/leer/_router/llm/con_efectos/_diario/_anotar/_llave."""
+    _defaults_entorno()
     return _swe.Contexto(guardar=guardar, leer=leer, llm=llm, router=_router, con_efectos=con_efectos, diario=_diario, anotar=_anotar, llave=_llave, secreto=_SECRETO,
                          ejecutar_agente=lambda *a, **k: ejecutar_agente(*a, **k))
 

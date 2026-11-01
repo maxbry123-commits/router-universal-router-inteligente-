@@ -81,7 +81,11 @@ export async function arrancar(nombre, envExtra = {}) {
   const port = await puertoLibre();
   const state = envExtra.BRIDGE_STATE_DIR || path.join(TMP, `state-${nombre}`);
   fs.mkdirSync(state, { recursive: true });
-  const env = { PATH: process.env.PATH, HOME: TMP, TMPDIR: TMP, BRIDGE_PORT: String(port), BRIDGE_STATE_DIR: state, BRIDGE_AUTOACTUALIZAR: '0', ...envConAcceso(envExtra) };
+  // El bridge completa SWECODE_URL_S1..S3 / RIU_DEEPSEEK_HARNESS_URL con sus defaults publicos/locales cuando la variable NO esta (src/defaults.js). Las pruebas son herméticas (sin red real):
+  // las dejan VACIAS (= desactivadas a proposito) salvo que la prueba las fije o pida __conDefectos.
+  const { __conDefectos, ...resto } = envExtra;
+  const vacias = __conDefectos ? {} : { SWECODE_URL_S1: '', SWECODE_URL_S2: '', SWECODE_URL_S3: '', RIU_DEEPSEEK_HARNESS_URL: '' };
+  const env = { PATH: process.env.PATH, HOME: TMP, TMPDIR: TMP, BRIDGE_PORT: String(port), BRIDGE_STATE_DIR: state, BRIDGE_AUTOACTUALIZAR: '0', ...vacias, ...envConAcceso(resto) };
   const p = spawn(process.execPath, ['--import', './preload.mjs', 'src/server.js'], { cwd: APP, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = '';
   p.stdout.on('data', (c) => log += c); p.stderr.on('data', (c) => log += c);

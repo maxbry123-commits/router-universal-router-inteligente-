@@ -123,8 +123,9 @@ test("tool_calls con tarea_id: se devuelven al cliente (las corre el Harness) y 
   const tcs = [{ id: "call_9", type: "function", function: { name: "escribir", arguments: "{}" } }];
   const s1 = await mock(() => ({ status: 200, json: { choices: [{ finish_reason: "tool_calls", message: { role: "assistant", content: null, tool_calls: tcs } }] } })), dir = disco("g");
   const B = await arrancar("tools", { BRIDGE_STATE_DIR: dir, SWECODE_URL_S1: s1.url });
-  const a = await chat(B, { tarea_id: "tarea-t", tools: [{ type: "function", function: { name: "escribir" } }] });
+  const plan = { objetivo: "escribir el archivo", operaciones_previstas: ["escribir"] };  // la confirmacion (141) esta activa por defecto con tools
+  const a = await chat(B, { tarea_id: "tarea-t", tools: [{ type: "function", function: { name: "escribir" } }], ...plan });
   assert.equal(a.json.choices[0].finish_reason, "tool_calls"); assert.deepEqual(a.json.choices[0].message.tool_calls.map((t) => t.id), ["call_9"]);
-  const b = await chat(B, { tarea_id: "tarea-t", tools: [{ type: "function", function: { name: "escribir" } }] });
+  const b = await chat(B, { tarea_id: "tarea-t", tools: [{ type: "function", function: { name: "escribir" } }], ...plan });
   assert.deepEqual(b.json.choices[0].message.tool_calls.map((t) => t.id), ["call_9"]); assert.equal(s1.chat.length, 1);
 });

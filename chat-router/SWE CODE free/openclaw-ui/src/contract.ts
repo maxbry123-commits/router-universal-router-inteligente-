@@ -15,6 +15,27 @@ const Referencia = Type.Object({ task_id: Id, sesion: Type.Optional(Segmento), p
 // Respuesta uniforme: ok + http + codigo estable (sin URL ni claves) + datos (el `resultado` del bridge).
 export const Resultado = Type.Object({ ok: Type.Boolean(), http: Type.Integer(), codigo: Type.Optional(Type.String({ maxLength: 64 })), datos: Type.Optional(Type.Any()) }, { additionalProperties: false });
 
+// Una tool de agente por funcion del chat Yaiwes (espejo de emergencia). Todas llaman a POST /v1/swe/tools/{id} del bridge, que reenvia al Router con la clave del ENTORNO del bridge;
+// el chat Yaiwes no se toca. Sin operador humano solo funcionan las acciones sin efectos: lo demas lo rechaza el bridge (OPERADOR_REQUERIDO) y se hace desde la UI nativa (operacion `tool`).
+export const FUNCIONES_YAIWES = {
+  yaiwes_archivos: { id: 'motor_archivos', kind: 'action', label: 'Motor de archivos Yaiwes' },
+  yaiwes_loop: { id: 'loop', kind: 'action', label: 'LOOP gobernado Yaiwes' },
+  yaiwes_cola: { id: 'cola', kind: 'action', label: 'Cola CIT-50 Yaiwes' },
+  yaiwes_watchdog: { id: 'watchdog', kind: 'action', label: 'Watchdog Yaiwes' },
+  yaiwes_almacen: { id: 'almacen', kind: 'action', label: 'Almacen Yaiwes' },
+  yaiwes_memoria: { id: 'memoria', kind: 'action', label: 'Memoria Yaiwes' },
+  yaiwes_chat: { id: 'chat_send', kind: 'action', label: 'Chat del Router (/chat/send)' },
+  yaiwes_anclaje: { id: 'anclaje', kind: 'query', label: 'Anclaje Yaiwes (lectura)' },
+  yaiwes_constitucion: { id: 'constitucion', kind: 'query', label: 'Constitucion Yaiwes (lectura)' },
+  yaiwes_contexto: { id: 'contexto', kind: 'query', label: 'Contexto fijo Yaiwes (lectura)' },
+  yaiwes_workflows: { id: 'workflows', kind: 'query', label: 'Workflows SWE (lectura)' },
+} as const;
+const EntradaFuncion = Type.Object({ accion: Type.Optional(Type.String({ maxLength: 40 })), args: Type.Optional(Type.Record(Type.String(), Type.Any())) }, { additionalProperties: false });
+const funcion = <K extends keyof typeof FUNCIONES_YAIWES>(nombre: K, descripcion: string) => ({
+  kind: FUNCIONES_YAIWES[nombre].kind, description: `${descripcion} (POST /v1/swe/tools/${FUNCIONES_YAIWES[nombre].id}; las acciones con efectos exigen un operador humano).`,
+  input: EntradaFuncion, output: Resultado, tool: { name: nombre as string, label: FUNCIONES_YAIWES[nombre].label },
+});
+
 export const contract = defineFeatureContract({
   pluginId: 'swe-selector',
   operations: {
@@ -41,6 +62,17 @@ export const contract = defineFeatureContract({
         operador: Type.Optional(Type.String({ maxLength: 64 })), token_operador: Type.Optional(Type.String({ maxLength: 256 })) }, { additionalProperties: false }),
       output: Resultado, tool: { name: 'swe_tool_llamar', label: 'Llamar tool Yaiwes' },
     },
+    yaiwes_archivos: funcion('yaiwes_archivos', 'Motor de archivos del chat: descargar, extraer, copiar, mover, listar y buscar en cola (acciones: transferir, ejecutar, estado, cancelar, raiz, listar_raiz)'),
+    yaiwes_loop: funcion('yaiwes_loop', 'LOOP gobernado C0-C7 del chat (acciones: status, health, estado, motores, agentes, gobernar, paralelo, cancelar...)'),
+    yaiwes_cola: funcion('yaiwes_cola', 'Cola CIT-50 del chat (acciones: status, listar, estado, eventos, tarea, crear, orden, aprobar...)'),
+    yaiwes_watchdog: funcion('yaiwes_watchdog', 'Watchdog 10 min - 48 h del chat (acciones: status, listar, estado, eventos, heartbeat, crear, tick...)'),
+    yaiwes_almacen: funcion('yaiwes_almacen', 'Almacen autorizado del chat (acciones: leer, status, guardar, computar)'),
+    yaiwes_memoria: funcion('yaiwes_memoria', 'Memoria del chat en el bucket HF (acciones: load, search, save; args: scope, key, query, k, data)'),
+    yaiwes_chat: funcion('yaiwes_chat', 'Motor del chat del Router: Harness + tools + constitucion + anclas + yaiwes.md (campos en args: mensajes, modelo, sesion, anclados, constitucion...)'),
+    yaiwes_anclaje: funcion('yaiwes_anclaje', 'Anclaje, solo lectura (acciones: archivos, proyectos, leer_archivo)'),
+    yaiwes_constitucion: funcion('yaiwes_constitucion', 'Constitucion, solo lectura (acciones: oficial, archivos, leer_archivo)'),
+    yaiwes_contexto: funcion('yaiwes_contexto', 'Contexto fijo del chat, solo lectura: constitucion oficial + yaiwes.md + sandbox + pendientes (accion: fijo)'),
+    yaiwes_workflows: funcion('yaiwes_workflows', 'Workflows SWE que reporta el Harness, solo lectura'),
   },
   events: {},
 });

@@ -10,6 +10,7 @@ import tempfile
 from . import _comun
 
 AGENTE = "swe-agent"
+IMAGEN_POR_DEFECTO = "riu-sweagent:latest"  # agentes-listos/SWE-agent/Dockerfile.riu: python:3.12-slim + git + swe-rex (la imagen python:3.12 pelada no tiene git)
 
 
 def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
@@ -27,7 +28,7 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     try:
         argv = [exe, "run", "--agent.model.name=openai/" + ep["modelo"], "--agent.model.api_base=" + ep["base_url"],
                 "--agent.model.api_key=$RIU_AGENTE_LLM_KEY", "--agent.model.per_instance_cost_limit=0", "--agent.model.total_cost_limit=0",
-                "--env.repo.path=" + p["directorio"], "--env.deployment.image=" + os.environ.get("RIU_SWEAGENT_IMAGE", "python:3.12"),
+                "--env.repo.path=" + p["directorio"], "--env.deployment.image=" + (os.environ.get("RIU_SWEAGENT_IMAGE", "").strip() or IMAGEN_POR_DEFECTO),
                 "--problem_statement.text=" + p["prompt"], "--output_dir=" + salida]
         inicio = _comun.ahora()
         proc = _comun.ejecutar_proceso(argv, p["directorio"], _comun.entorno_base({"RIU_AGENTE_LLM_KEY": ep["api_key"]}))

@@ -10,8 +10,18 @@ BASE_URL = os.getenv(CASCADA["base_url_env"], CASCADA["base_url_default"]).rstri
 # Cola HF: S1/S2/S3 son slots intercambiables (cualquier Space sirve cualquier
 # modelo via model=, 1 vivo por Space, carga bajo demanda, encola al libre).
 # El orden del paso = preferencia; el salto a otra URL = slot libre/respaldo.
-URLS = {s: os.getenv(f"SWECODE_URL_{s}").rstrip("/") for s in ("S1", "S2", "S3")
-        if os.getenv(f"SWECODE_URL_{s}")}
+def urls_slots(env=os.environ) -> dict:
+    """SWECODE_URL_S1..S3: la variable manda si esta DEFINIDA (vacia = sin ese slot); si NO esta definida se usa la URL publica de cascada.json (urls_slots_default)."""
+    salida = {}
+    for s, publica in CASCADA.get("urls_slots_default", {}).items():
+        v = env.get(f"SWECODE_URL_{s}")
+        v = publica if v is None else v.strip()
+        if v:
+            salida[s] = v.rstrip("/")
+    return salida
+
+
+URLS = urls_slots()
 if not URLS:
     URLS = {"S1": BASE_URL}
 

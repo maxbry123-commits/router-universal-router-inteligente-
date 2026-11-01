@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
-import { asegurarWorkspace, vigilarWorkspace, leerConfig, configVigente, vigilarConfig, espejo, normalizarEjecutor, EJECUTORES_TOOLS, catalogoTools } from "../src/openclaw.js";
+import { asegurarWorkspace, vigilarWorkspace, leerConfig, configVigente, vigilarConfig, espejo, normalizarEjecutor, EJECUTORES_TOOLS, catalogoTools, constitucionOficial, rutaConstitucion, claveEspacio, rutaArchivoChat, espacioDe, nombreArchivoValido, textoDeBase64, armarContextoFijo } from "../src/openclaw.js";
 import { fileURLToPath } from "node:url";
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "oc-test-"));
@@ -218,27 +219,89 @@ test("catalogoTools: toda carpeta de chat-router/plugins esta como tool, como cu
   for (const n of nombres) assert.ok(conocidos.has(n), `plugin sin clasificar: ${n}`);
   for (const g of c.gaps) { assert.ok(g.motivo.length > 20, g.id); assert.ok(!c.tools.some((t) => t.id === g.id), "un GAP no es tool"); }
   const ids = c.gaps.map((g) => g.id);
-  for (const esperado of ["anclaje", "constitucion", "workflow-loop-yaiwes"]) assert.ok(ids.includes(esperado), esperado);
+  for (const esperado of ["anclados-navegador", "constitucion-propia-navegador", "workflows-navegador", "workflow-loop-yaiwes"]) assert.ok(ids.includes(esperado), esperado);
   const ruteados = /if plugin not in \(([^)]*)\)/.exec(MVP("app.py"))[1];
   for (const g of c.gaps.filter((x) => x.plugin_repo === true)) assert.ok(!ruteados.includes(`"${g.id}"`), `${g.id} figura como ruteado por el Router: ya no es GAP`);
 });
 
-test("catalogoTools: anclaje y constitucion son CAMPOS de /chat/send (tool chat_send), y chat_send existe con esos campos", () => {
+test("catalogoTools: lo que el navegador guarda (anclados de la pestana, constitucion propia) llega al Router solo como CAMPOS de /chat/send; el GAP lo dice y apunta a chat_send", () => {
   const c = catalogoTools(), t = c.tools.find((x) => x.id === "chat_send");
   assert.deepEqual([t.via, t.destino.metodo, t.destino.ruta], ["http", "POST", "/chat/send"]);
   assert.ok(t.campos.includes("anclados") && t.campos.includes("constitucion"));
   const app = MVP("app.py"); assert.ok(app.includes('q.get("anclados")') && app.includes('q.get("constitucion")'));
-  assert.equal(c.gaps.find((g) => g.id === "anclaje").usar_con, "chat_send");
+  for (const id of ["anclados-navegador", "constitucion-propia-navegador"]) assert.equal(c.gaps.find((g) => g.id === id).usar_con, "chat_send");
+  assert.equal(c.gaps.find((g) => g.id === "workflows-navegador").usar_con, "workflows");
+});
+
+test("catalogoTools: las REPLICAS (anclaje, constitucion, contexto) solo leen, y las vias que usan existen en el codigo del Router", () => {
+  const c = catalogoTools(), por = Object.fromEntries(c.tools.map((t) => [t.id, t]));
+  for (const id of ["anclaje", "constitucion", "contexto"]) { assert.equal(por[id].via, "replica", id); assert.equal(por[id].efectos, "lectura", id); assert.ok(!c.gaps.some((g) => g.id === id)); }
+  const app = MVP("app.py"), control = MVP("control.py");
+  // las acciones del servidor que la replica pide por /plugins/puente_chat/call/<accion> estan en control.ACCIONES y el Router las deriva a CONTROL
+  const acciones = /^ACCIONES = \{([^}]*)\}/m.exec(control)[1].match(/"(\w+)"/g).map((x) => x.slice(1, -1));
+  for (const a of ["archivos", "proyecto", "sandbox"]) assert.ok(acciones.includes(a), a);
+  assert.ok(app.includes('if plugin not in ("fichas_qwen", "puente_chat", "almacen")') && app.includes("if accion in control.ACCIONES"));
+  // lectura de contenido: /almacen leer destino hf; la ruta del archivo es la de control.ruta_archivo (sha1[:12] de "destino|project_id|sesion")
+  assert.ok(control.includes('hashlib.sha1(clave_espacio(c).encode()).hexdigest()[:12]') && control.includes('"|".join((str(c.get("destino") or "chat"), str(c.get("project_id") or ""), str(c.get("sesion") or "web-general")))[:160]'));
+  assert.ok(app.includes('"accion": "leer", "destino": "hf", "nombre": ruta'));
+  // sandbox sin `texto` = lectura; proyecto op list|get = lectura; yaiwes_md leer y pendientes listar son lectura
+  assert.ok(control.includes('if "texto" in c:') && control.includes('c.get("op") or "list"'));
 });
 
 test("catalogoTools: cada tool declara si tiene efectos; sin efectos = lectura; con efectos exigen operador identificado en el bridge; JSON sin secretos", () => {
   const c = catalogoTools();
   for (const t of c.tools) {
-    assert.match(t.id, /^[a-z][a-z0-9_]{1,40}$/); assert.ok(["mcp", "plugin", "http", "harness"].includes(t.via), t.id);
+    assert.match(t.id, /^[a-z][a-z0-9_]{1,40}$/); assert.ok(["mcp", "plugin", "http", "harness", "replica"].includes(t.via), t.id);
     assert.ok(["lectura", "efectos", "por_accion"].includes(t.efectos), t.id);
     if (t.efectos === "por_accion") assert.ok(Array.isArray(t.lectura) && t.lectura.every((a) => t.acciones.includes(a)), t.id);
   }
   const por = Object.fromEntries(c.tools.map((t) => [t.id, t]));
   assert.equal(por.github_escribir.efectos, "efectos"); assert.equal(por.salud.efectos, "lectura"); assert.equal(por.almacen.efectos, "por_accion"); assert.ok(por.almacen.lectura.includes("leer"));
   assert.ok(!/Bearer|X-API-Key:|sk-|hf_[A-Za-z0-9]{10}/.test(JSON.stringify(c)));
+});
+
+// ---------- REPLICAS de lectura: calculos propios del bridge (no tocan el Router ni el chat) ----------
+test("rutaArchivoChat: misma ruta que control.ruta_archivo del Router (vector calculado con Python: constitucion||web-general -> 509e21d6a3cc)", () => {
+  assert.equal(claveEspacio({ destino: "constitucion" }), "constitucion||web-general");
+  assert.equal(rutaArchivoChat({ destino: "constitucion" }, "a b.txt"), "chat_archivos/509e21d6a3cc/a b.txt");
+  assert.equal(claveEspacio({ destino: "proyecto", project_id: "p1", sesion: "s" }), "proyecto|p1|s");
+  assert.equal(claveEspacio({}), "chat||web-general");
+});
+
+test("espacioDe / nombreArchivoValido: nada de rutas, separadores ni espacios desconocidos", () => {
+  assert.deepEqual(espacioDe({}), { destino: "chat" });
+  assert.deepEqual(espacioDe({ destino: "proyecto", project_id: "p-1", sesion: "web-general" }), { destino: "proyecto", project_id: "p-1", sesion: "web-general" });
+  for (const mal of [{ destino: "x" }, { sesion: "a/b" }, { sesion: "" }, { project_id: "../x" }, { sesion: 5 }]) assert.equal(espacioDe(mal), null, JSON.stringify(mal));
+  for (const ok of ["a.txt", "mi doc (1).md", "informe-ñandú.txt"]) assert.ok(nombreArchivoValido(ok), ok);
+  for (const mal of ["../x", "a/b", "..", ".env", "", "x".repeat(130), 5]) assert.ok(!nombreArchivoValido(mal), String(mal));
+});
+
+test("textoDeBase64: texto con tope y marca de truncado; binario solo informa el tamano", () => {
+  assert.deepEqual(textoDeBase64(Buffer.from("hola").toString("base64")), { binario: false, bytes: 4, texto: "hola", truncado: false });
+  assert.equal(textoDeBase64(Buffer.from("abcdef").toString("base64"), 3).texto, "abc"); assert.equal(textoDeBase64(Buffer.from("abcdef").toString("base64"), 3).truncado, true);
+  assert.deepEqual(textoDeBase64(Buffer.from([1, 0, 2]).toString("base64")), { binario: true, bytes: 3 });
+});
+
+test("constitucionOficial: lee el archivo real del repo (id, version, FAIL_CLOSED, sha256); RIU_CONSTITUCION_PATH manda; inexistente o invalida = codigo, sin ruta", () => {
+  const c = constitucionOficial({ env: {} });
+  assert.equal(c.ok, true); assert.equal(c.id, "CONSTITUCION-YAIWES"); assert.equal(c.version, "1.1.0"); assert.match(c.sha256, /^[0-9a-f]{64}$/);
+  assert.equal(c.sha256, crypto.createHash("sha256").update(fs.readFileSync(path.join(REPO, "plugins/puente_chat/constitucion/CONSTITUCION-YAIWES.json"))).digest("hex"));
+  const dir = tmp();
+  try {
+    const f = path.join(dir, "c.json");
+    assert.deepEqual(constitucionOficial({ env: { RIU_CONSTITUCION_PATH: f } }), { ok: false, codigo: "CONSTITUCION_NO_ENCONTRADA" });
+    fs.writeFileSync(f, "{no json"); assert.equal(constitucionOficial({ env: { RIU_CONSTITUCION_PATH: f } }).codigo, "CONSTITUCION_INVALIDA");
+    fs.writeFileSync(f, JSON.stringify({ id: "X", version: "1", modo: "ABIERTO" })); assert.equal(constitucionOficial({ env: { RIU_CONSTITUCION_PATH: f } }).codigo, "CONSTITUCION_INVALIDA", "fail-closed como _gov_base");
+    fs.writeFileSync(f, JSON.stringify({ id: "X", version: "2", modo: "FAIL_CLOSED" })); assert.equal(constitucionOficial({ env: { RIU_CONSTITUCION_PATH: f } }).version, "2");
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  assert.ok(rutaConstitucion({}).endsWith("plugins/puente_chat/constitucion/CONSTITUCION-YAIWES.json"));
+});
+
+test("armarContextoFijo: mismas capas que app._chat_ficha (encendidas = con texto), en el mismo orden y formato [nombre]\\ntexto", () => {
+  const c = armarContextoFijo({ constitucion: "LEY", yaiwes: "", sandbox: "  ", pendientes: "- [ ] a" });
+  assert.deepEqual(c.capas.map((x) => x.presente), [true, false, false, true]);
+  assert.equal(c.texto, "[CONSTITUCION OFICIAL YAIWES (solo lectura): es ley para este trabajo; respetala al programar y en lo que respondes]\nLEY\n\n[PENDIENTES (lista compartida; la herramienta pendientes la consulta y la actualiza)]\n- [ ] a");
+  assert.equal(armarContextoFijo({}).texto, "");
+  const app = MVP("app.py");
+  for (const n of ["CONSTITUCION: es ley para este trabajo", "yaiwes.md (información del proyecto", "SANDBOX (system prompt de code)", "PENDIENTES (lista compartida"]) assert.ok(app.includes(n), n);
 });

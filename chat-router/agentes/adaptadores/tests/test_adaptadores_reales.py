@@ -1,6 +1,7 @@
 """Ejecucion REAL de los adaptadores (checklist A2 66-72, 194): los CLIs/SDKs son los REALES instalados bajo RIU_A2_INST (por defecto /tmp/a2-inst, fuera del repo);
 solo el LLM es un modelo de guion local (_modelo_falso.py). Se omite (skip con el comando de instalacion) lo que no este instalado.
-Instalacion (sin privilegios, fuera del repo):
+Instalacion recomendada: agentes/runtime/instalar-agentes.sh (instala en agentes/runtime/{bin,venv,node}, ignorado por git; estas pruebas lo usan primero).
+Alternativa manual (sin privilegios, fuera del repo, bajo RIU_A2_INST):
   npm i --prefix $INST/npm @openai/codex opencode-ai ; npm i --prefix $INST/npm-oc openclaw
   python3 -m venv $INST/venv-oh && $INST/venv-oh/bin/pip install openhands-sdk openhands-tools
   python3 -m venv $INST/venv-swe && cp -r agentes/agentes-listos/SWE-agent/SWE-agent-main $INST/swesrc && $INST/venv-swe/bin/pip install -e $INST/swesrc   (+ Docker daemon)"""
@@ -17,8 +18,18 @@ from agentes.adaptadores import claude_code, codex, disponibilidad, openclaw, op
 import _modelo_falso
 
 INST = os.environ.get("RIU_A2_INST", "/tmp/a2-inst")
-BINS = {"codex": INST + "/npm/node_modules/.bin/codex", "opencode": INST + "/npm/node_modules/.bin/opencode", "openclaw": INST + "/npm-oc/node_modules/.bin/openclaw",
-        "sweagent": INST + "/venv-swe/bin/sweagent", "openhands_python": INST + "/venv-oh/bin/python", "claude": shutil.which("claude") or ""}
+RT = os.path.join(os.path.dirname(os.path.abspath(disponibilidad.__file__)), "..", "runtime")  # agentes/runtime: lo que instala instalar-agentes.sh
+
+
+def _primero(*rutas):
+    """La primera ruta ejecutable (runtime del repo antes que la instalacion manual en RIU_A2_INST)."""
+    return next((os.path.normpath(r) for r in rutas if r and os.path.isfile(r) and os.access(r, os.X_OK)), os.path.normpath(rutas[-1]) if rutas[-1] else "")
+
+
+BINS = {"codex": _primero(RT + "/bin/codex", INST + "/npm/node_modules/.bin/codex"), "opencode": _primero(RT + "/bin/opencode", INST + "/npm/node_modules/.bin/opencode"),
+        "openclaw": _primero(RT + "/bin/openclaw", INST + "/npm-oc/node_modules/.bin/openclaw"), "sweagent": _primero(RT + "/bin/sweagent", INST + "/venv-swe/bin/sweagent"),
+        "openhands_python": _primero(RT + "/venv/openhands/bin/python", INST + "/venv-oh/bin/python"),
+        "claude": _primero(RT + "/bin/claude", shutil.which("claude") or "")}
 BASE = dict(tarea_id="t-real", checkpoint={})
 INSTALAR = {"codex": "npm i --prefix $INST/npm @openai/codex", "opencode": "npm i --prefix $INST/npm opencode-ai", "openclaw": "npm i --prefix $INST/npm-oc openclaw",
             "sweagent": "ver docstring del modulo (clon de SWE-agent + pip install -e, requiere Docker)", "openhands_python": "ver docstring del modulo (venv con openhands-sdk/openhands-tools)",

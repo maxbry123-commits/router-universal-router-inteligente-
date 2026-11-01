@@ -7,10 +7,11 @@ Documentación completa (arquitectura, recuperación, operación): `chat-router/
 (`README.md` ➡️ `ARQUITECTURA.md` ➡️ `INSTRUCCIONES.md` ➡️ `HANDOFF.md`).
 
 ## Acceso
-Toda ruta salvo `GET /health` exige `x-api-key` con una de las 4 claves de acceso del chat
-(`RIU_API_KEY`, `RIU_PUBLIC_CHAT_KEY`, `RIU_MCP_KEY`, `RIU_ROUTER_API_KEY`) o `BRIDGE_TOKEN`
-(`Authorization: Bearer` / `x-bridge-key`). Sin ninguna configurada: 503; clave mala: 401.
-`/v1/swe/*` exige `BRIDGE_TOKEN` (y `aprobar` y las tools con efectos, además un operador real: `x-operador` + su token individual en `x-operator-token`, verificado contra `BRIDGE_APROBADORES`).
+Toda ruta salvo `GET /health` exige una de las 4 claves de acceso del chat
+(`RIU_API_KEY`, `RIU_PUBLIC_CHAT_KEY`, `RIU_MCP_KEY`, `RIU_ROUTER_API_KEY`) en `x-api-key` **o en `Authorization: Bearer <clave>`** (el provider de OpenClaw usa `api_key` = clave de acceso), o `BRIDGE_TOKEN`
+(`Authorization: Bearer` / `x-bridge-key`). Sin ninguna configurada: 503; clave mala: 401. **`BRIDGE_TOKEN` es OPCIONAL** (basta una clave de acceso en Bearer).
+`/v1/swe/*` exige esa credencial en `Authorization: Bearer` (y `aprobar` y las tools con efectos, además un operador real: `x-operador` + su token individual en `x-operator-token`, verificado contra `BRIDGE_APROBADORES`; sin esa variable `aprobar` responde 503 y apunta a `chat-router/DEPLOY/generar-aprobadores.sh`).
+Sin variables nuevas (`src/defaults.js`, solo si la variable no está; vacía = desactivada): `SWECODE_URL_S1..S3` = URLs públicas `https://comand-center-1-swe-code-s{1,2,3}.hf.space/v1`; `RIU_DEEPSEEK_HARNESS_URL` = Harness local del Space (`http://127.0.0.1:$PORT/plugins/deepseek_harness`, 7861) si hay `RIU_API_KEY`. La confirmación del objetivo y de las operaciones previstas (141) está activa por defecto con `tools` (efectos); `BRIDGE_EXIGIR_CONFIRMACION=0` la desactiva.
 
 ## Flujo
 - `POST /v1/chat/completions` con `model`:

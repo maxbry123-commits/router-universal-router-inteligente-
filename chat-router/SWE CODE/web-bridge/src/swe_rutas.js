@@ -1,10 +1,12 @@
 // swe_rutas.js — rutas /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar} y GET /v1/swe/capacidades del bridge (backend de OpenClaw).
 // OpenClaw UI -> (aqui) -> Harness DeepSeek (POST {RIU_DEEPSEEK_HARNESS_URL}/invoke) -> agentes/adaptadores. El bridge NO ejecuta herramientas ni adaptadores Python:
 // solo valida y reenvia. RIU_API_KEY vive solo en este backend. Contrato de tarea: el mismo de YAIWES (chat-router/agentes/adaptadores/contrato.py, origen "openclaw").
-// Autenticacion OBLIGATORIA: sin BRIDGE_TOKEN configurado estas rutas se rechazan (503); no heredan el acceso libre de las rutas publicas con el token vacio.
+// Autenticacion OBLIGATORIA: sin credencial configurada (BRIDGE_TOKEN, que es OPCIONAL, ni ninguna clave de acceso) estas rutas se rechazan (503); no heredan el acceso libre de las rutas publicas.
+// Credencial valida: BRIDGE_TOKEN (Bearer / x-bridge-key) o una de las 4 clave de acceso (RIU_API_KEY, RIU_PUBLIC_CHAT_KEY, RIU_MCP_KEY, RIU_ROUTER_API_KEY) en Authorization: Bearer.
 import crypto from 'node:crypto';
 import { iguales } from './iguales.js';
-import { catalogoTools, ACCESO_ROUTER, ROUTER_LOCAL } from './openclaw.js';
+import { clavesAcceso, esClaveAcceso, bearerDe } from './acceso.js';
+import { catalogoTools, ACCESO_ROUTER, ROUTER_LOCAL, constitucionOficial, espacioDe, rutaArchivoChat, nombreArchivoValido, textoDeBase64, armarContextoFijo } from './openclaw.js';
 
 export const OPERACIONES_SWE = { iniciar: 'swe_iniciar', avanzar: 'swe_avanzar', estado: 'swe_estado', aprobar: 'swe_aprobar', reanudar: 'swe_reanudar' };
 const PERMITIDAS = new Set(Object.values(OPERACIONES_SWE));
@@ -117,6 +119,7 @@ function argsReferencia(b) {
 const respuesta = (res, codigo, error) => res.status(codigo).json({ ok: false, error });
 
 // BRIDGE_APROBADORES = "operador:sha256(token)" separados por coma: cada persona tiene SU token (en el entorno solo viaja el hash). Entradas mal formadas se ignoran.
+// Sin esta variable NO hay aprobadores por defecto (es seguridad): aprobar responde 503 y dice como generarla.
 const sha256 = (t) => crypto.createHash('sha256').update(String(t), 'utf8').digest('hex');
 function aprobadores(env) {
   const salida = new Map();
@@ -128,9 +131,13 @@ function aprobadores(env) {
 }
 // Identifica al OPERADOR REAL (x-operador + su token individual en x-operator-token). El BRIDGE_TOKEN lo comparte todo el que habla con el bridge y NO identifica a nadie:
 // sin aprobadores configurados 503; sin operador 403; operador no registrado 403; token ausente, de otro operador o el del bridge 401. Devuelve {operador} o {rechazo} ya enviado.
+// El token de un operador tampoco puede coincidir con BRIDGE_TOKEN ni con una clave de acceso (esas las comparte quien habla con el bridge y no identifican a nadie): 503.
+export const MSG_SIN_APROBADORES = 'falta la variable BRIDGE_APROBADORES (operador:sha256(token),...): genera la linea con chat-router/DEPLOY/generar-aprobadores.sh y pegala como secreto del Space';
 function identificarOperador(req, res, env) {
   const reg = aprobadores(env), h = req.headers || {};
-  if (!reg.size || [...reg.values()].some((x) => iguales(x, sha256(env.BRIDGE_TOKEN || '')))) return { rechazo: respuesta(res, 503, { code: 'APROBADORES_NO_CONFIGURADOS', message: 'esta operacion exige BRIDGE_APROBADORES (operador:sha256(token), token distinto de BRIDGE_TOKEN)' }) };
+  if (!reg.size) return { rechazo: respuesta(res, 503, { code: 'APROBADORES_NO_CONFIGURADOS', message: MSG_SIN_APROBADORES }) };
+  const compartidas = [env.BRIDGE_TOKEN || '', ...clavesAcceso(env)].map(sha256);
+  if ([...reg.values()].some((x) => compartidas.map((c) => iguales(x, c)).some(Boolean))) return { rechazo: respuesta(res, 503, { code: 'APROBADORES_NO_CONFIGURADOS', message: 'BRIDGE_APROBADORES: el token de un operador debe ser SUYO (distinto de BRIDGE_TOKEN y de las claves de acceso); genera uno nuevo con chat-router/DEPLOY/generar-aprobadores.sh' }) };
   const op = h['x-operador'] !== undefined ? String(h['x-operador']) : '';
   if (!OPERADOR.test(op)) return { rechazo: respuesta(res, 403, { code: 'OPERADOR_REQUERIDO' }) };
   if (!reg.has(op)) return { rechazo: respuesta(res, 403, { code: 'OPERADOR_NO_AUTORIZADO' }) };
@@ -142,9 +149,10 @@ function identificarOperador(req, res, env) {
 // Autenticacion obligatoria compartida por todas las rutas /v1/swe/*: devuelve null si pasa, o la respuesta de rechazo ya enviada.
 function exigirToken(req, res, env) {
   const token = env.BRIDGE_TOKEN || '';
-  if (!token) return respuesta(res, 503, { code: 'BRIDGE_TOKEN_NO_CONFIGURADO', message: 'las rutas /v1/swe/* exigen BRIDGE_TOKEN en el bridge' });
-  const h = req.headers || {}, bearer = /^Bearer\s+(.+)$/i.exec(String(h.authorization || '')), t = (bearer && bearer[1]) || String(h['x-bridge-key'] || '');
-  if (!t || !iguales(t, token)) return respuesta(res, 401, { code: 'NO_AUTORIZADO' });
+  if (!token && !clavesAcceso(env).length) return respuesta(res, 503, { code: 'BRIDGE_TOKEN_NO_CONFIGURADO', message: 'las rutas /v1/swe/* exigen una credencial en el bridge: una clave de acceso (RIU_API_KEY) en Authorization: Bearer, o BRIDGE_TOKEN (opcional)' });
+  const h = req.headers || {}, bearer = bearerDe(req), t = bearer || String(h['x-bridge-key'] || '');
+  const esToken = !!token && !!t && iguales(t, token), esClave = esClaveAcceso(bearer, env);  // ambas comparaciones se evaluan siempre (tiempo constante)
+  if (!esToken && !esClave) return respuesta(res, 401, { code: 'NO_AUTORIZADO' });
   return null;
 }
 
@@ -188,17 +196,18 @@ async function visiblesDelRouter(env, fetchFn) {
   } catch { return { router: 'no_disponible', visibles: null }; }
 }
 // Estado de cada tool segun lo que el Router DICE: el `tools/list` del Router solo trae las visibles (Agentes/IA/Tools ON y conexion activa).
-function estadoTool(t, vivo, harness) {
+function estadoTool(t, vivo, harness, env) {
   if (t.via === 'harness') return harness === 'ok' ? 'DISPONIBLE' : 'HARNESS_NO_DISPONIBLE';
+  if (t.id === 'constitucion' && !constitucionOficial({ env }).ok) return 'CONSTITUCION_NO_ENCONTRADA';  // la replica local necesita el archivo del repo (RIU_CONSTITUCION_PATH)
   if (!vivo.visibles) return 'ROUTER_NO_DISPONIBLE';
-  const mcp = t.via === 'mcp' ? t.destino.tool : t.mcp_equivalente;
+  const mcp = t.via === 'mcp' ? t.destino.tool : t.mcp_equivalente || t.depende_de;
   if (mcp) return vivo.visibles.has(mcp) ? 'DISPONIBLE' : 'BLOQUEADA_POR_ROUTER';
   return 'SIN_VERIFICAR';  // plugin/ruta HTTP sin tool MCP equivalente: existe en el codigo del Router pero no hay forma de listarla sin ejecutarla
 }
 const hayHarness = (env) => !!(String(env.RIU_DEEPSEEK_HARNESS_URL || '').trim() && env.RIU_API_KEY);
 export async function listarTools({ env = process.env, fetchFn = fetch } = {}) {
   const vivo = await visiblesDelRouter(env, fetchFn), cat = catalogoTools();
-  const tools = cat.tools.map((t) => ({ ...t, estado: estadoTool(t, vivo, hayHarness(env) ? 'ok' : 'no') }));
+  const tools = cat.tools.map((t) => ({ ...t, estado: estadoTool(t, vivo, hayHarness(env) ? 'ok' : 'no', env) }));
   return { ok: true, vivo: { router: vivo.router }, tools, gaps: cat.gaps, cubiertos: cat.cubiertos, nota: cat.nota };
 }
 const sinEfectos = (t, accion) => t.efectos === 'lectura' || (t.efectos === 'por_accion' && Array.isArray(t.lectura) && t.lectura.includes(accion));
@@ -217,21 +226,71 @@ export async function planificarTool(id, cuerpo, { env = process.env, fetchFn = 
   if (t.via === 'http' && Object.keys(args).some((k) => !t.campos.includes(k))) throw invalido('CAMPOS_DESCONOCIDOS');
   return { t, args, accion, efectos: !sinEfectos(t, accion) };
 }
+// tools/call del Router por MCP: devuelve el contenido estructurado o lanza un codigo fijo
+async function llamarMcp(nombre, argumentos, cfg, op) {
+  const j = await postRouter('/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: nombre, arguments: argumentos } }, cfg, op);
+  if (j && j.error) throw Object.assign(new Error('ROUTER_RPC_ERROR'), { http: 502, mensaje: redactar(j.error.message, op.env) });
+  const r = j && j.result;
+  if (!r) throw Object.assign(new Error('ROUTER_RESPUESTA_INVALIDA'), { http: 502 });
+  if (r.isError) throw Object.assign(new Error('ROUTER_TOOL_ERROR'), { http: 502, mensaje: redactar((r.content && r.content[0] && r.content[0].text) || '', op.env) });
+  return r.structuredContent !== undefined ? r.structuredContent : r;
+}
+const resultadoPlugin = (j) => (j && typeof j === 'object' && j.status === 'ok' && 'result' in j ? j.result : j);
+const POR_REPLICA_MAX = 100000;
+
+// REPLICAS de lectura (anclaje, constitucion, contexto): el Router no las sirve como endpoint, pero si los datos del servidor; aqui se piden y se arma el resultado. Solo lectura: ningun cuerpo lleva texto, op de escritura ni accion con efectos.
+async function listarArchivosChat(espacio, cfg, op) {
+  const r = resultadoPlugin(await postRouter('/plugins/puente_chat/call/archivos', espacio, cfg, op));
+  return Array.isArray(r && r.archivos) ? r.archivos.filter((n) => typeof n === 'string') : [];
+}
+async function leerArchivoChat(args, cfg, op) {
+  const espacio = espacioDe(args);
+  if (!espacio) throw invalido('ESPACIO_INVALIDO');
+  if (!nombreArchivoValido(args.nombre)) throw invalido('NOMBRE_INVALIDO');
+  if (!(await listarArchivosChat(espacio, cfg, op)).includes(args.nombre)) throw Object.assign(new Error('ARCHIVO_NO_ENCONTRADO'), { http: 404 });  // solo lo que el indice del Router declara (como control.ruta_de)
+  const a = await postRouter('/almacen', { accion: 'leer', destino: 'hf', nombre: rutaArchivoChat(espacio, args.nombre) }, cfg, op);
+  return { nombre: args.nombre, ...espacio, ...textoDeBase64(a && a.valor, POR_REPLICA_MAX) };
+}
+async function ejecutarReplica({ t, args, accion }, { env, fetchFn, ms }, cfg) {
+  const op = { env, fetchFn, ms };
+  if (t.id === 'constitucion' && accion === 'oficial') {
+    const c = constitucionOficial({ env });
+    if (!c.ok) throw Object.assign(new Error(c.codigo), { http: 404 });
+    return { id: c.id, version: c.version, sha256: c.sha256, texto: c.texto };
+  }
+  if (accion === 'archivos' || accion === 'leer_archivo') {
+    const a = t.id === 'constitucion' ? { ...args, destino: 'constitucion', sesion: args.sesion === undefined ? 'constitucion' : args.sesion } : args;
+    if (accion === 'leer_archivo') return leerArchivoChat(a, cfg, op);
+    const espacio = espacioDe(a); if (!espacio) throw invalido('ESPACIO_INVALIDO');
+    return { ...espacio, archivos: await listarArchivosChat(espacio, cfg, op) };
+  }
+  if (t.id === 'anclaje' && accion === 'proyectos') {
+    const id = args.project_id;
+    if (id !== undefined && (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,60}$/.test(id))) throw invalido('PROYECTO_INVALIDO');
+    return resultadoPlugin(await postRouter('/plugins/puente_chat/call/proyecto', id === undefined ? { op: 'list' } : { op: 'get', project_id: id }, cfg, op));  // op fijo: list|get, nunca upsert/delete
+  }
+  if (t.id === 'contexto' && accion === 'fijo') {
+    const ses = args.sesion === undefined ? 'web-general' : args.sesion;
+    if (typeof ses !== 'string' || !/^[A-Za-z0-9_.:@-]{1,60}$/.test(ses)) throw invalido('ESPACIO_INVALIDO');
+    const salto = async (f) => { try { return await f(); } catch { return null; } };  // una capa caida no tira las demas: queda marcada como ausente
+    const of = constitucionOficial({ env }), [yaiwes, sandbox, pend] = await Promise.all([
+      salto(async () => (await llamarMcp('yaiwes_md', { accion: 'leer' }, cfg, op)).texto),
+      salto(async () => resultadoPlugin(await postRouter('/plugins/puente_chat/call/sandbox', { sesion: ses }, cfg, op)).sandbox),  // sin `texto` = solo lectura
+      salto(async () => (await llamarMcp('pendientes', { accion: 'listar' }, cfg, op)).pendientes)]);
+    const lista = Array.isArray(pend) ? pend.slice(0, 30).map((p) => `- [${p && p.hecho ? 'x' : ' '}] ${String((p && p.texto) || '').slice(0, 300)}`).join('\n') : '';
+    return { sesion: ses, ...armarContextoFijo({ constitucion: of.ok ? of.texto : '', yaiwes, sandbox, pendientes: lista }), constitucion: of.ok ? { id: of.id, version: of.version, sha256: of.sha256 } : { error: of.codigo } };
+  }
+  throw invalido('ACCION_NO_PERMITIDA');
+}
 async function ejecutarTool({ t, args, accion }, { env, fetchFn }) {
-  if (t.via === 'harness') return consultarCapacidades({ env, fetchFn });
+  if (t.via === 'harness') { const c = await consultarCapacidades({ env, fetchFn }); return t.destino.campo ? { harness: c.harness, [t.destino.campo]: c[t.destino.campo] } : c; }
+  if (t.via === 'replica' && t.id === 'constitucion' && accion === 'oficial') return ejecutarReplica({ t, args, accion }, { env, fetchFn, ms: 0 }, null);  // local: no necesita Router
   const cfg = configRouter(env);
   if (cfg.error) throw Object.assign(new Error(cfg.error), { http: 503 });
   const ms = Number.parseInt(env.RIU_SWE_TOOLS_TIMEOUT_MS, 10) > 0 ? Number.parseInt(env.RIU_SWE_TOOLS_TIMEOUT_MS, 10) : TIMEOUT_TOOLS_MS, op = { env, fetchFn, ms };
-  if (t.via === 'mcp') {
-    const j = await postRouter('/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: t.destino.tool, arguments: accion ? { ...args, accion } : args } }, cfg, op);
-    if (j && j.error) throw Object.assign(new Error('ROUTER_RPC_ERROR'), { http: 502, mensaje: redactar(j.error.message, env) });
-    const r = j && j.result;
-    if (!r) throw Object.assign(new Error('ROUTER_RESPUESTA_INVALIDA'), { http: 502 });
-    if (r.isError) throw Object.assign(new Error('ROUTER_TOOL_ERROR'), { http: 502, mensaje: redactar((r.content && r.content[0] && r.content[0].text) || '', env) });
-    return r.structuredContent !== undefined ? r.structuredContent : r;
-  }
-  const j = t.via === 'plugin' ? await postRouter(`/plugins/${t.destino.plugin}/call/${accion}`, args, cfg, op) : await postRouter(t.destino.ruta, args, cfg, op);
-  return j && typeof j === 'object' && j.status === 'ok' && 'result' in j ? j.result : j;
+  if (t.via === 'replica') return ejecutarReplica({ t, args, accion }, op, cfg);
+  if (t.via === 'mcp') return llamarMcp(t.destino.tool, accion ? { ...args, accion } : args, cfg, op);
+  return resultadoPlugin(t.via === 'plugin' ? await postRouter(`/plugins/${t.destino.plugin}/call/${accion}`, args, cfg, op) : await postRouter(t.destino.ruta, args, cfg, op));
 }
 
 export function montarRutasSwe(app, { env = process.env, fetchFn = fetch } = {}) {
