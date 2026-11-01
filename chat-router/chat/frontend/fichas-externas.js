@@ -40,14 +40,25 @@ export function aplicar(d) {  // d: {groq:[{id,etiqueta,disponible}], nvidia:[�
   window.dispatchEvent(new CustomEvent("riu:fichas", { detail: { groq: G.lista.length, nvidia: (d.nvidia || []).length } }));
   refrescar();
 }
-aplicar(leer(CACHE, { groq: [], nvidia: [], avisoGroq: "cargando modelos de Groq…" }));  // antes de montar el chat: lo último conocido
+const cacheInicial = leer(CACHE, { groq: [], nvidia: [], avisoGroq: "cargando modelos de Groq…" });
+for (const p of ["groq", "nvidia"]) cacheInicial[p] = (cacheInicial[p] || []).map(m => ({
+  ...m, disponible: null, estado: "SIN VERIFICAR", etiqueta: MARCA[p] + (NOMBRES[m.id] || m.id) + " — SIN VERIFICAR"
+})); // disponibilidad anterior al reinicio: nunca certifica el estado de hoy
+aplicar(cacheInicial);
 export async function cargar() {
   const d = { groq: [], nvidia: [], locales: [] };
   // Fuente primaria: MISMO bridge y banco cifrado que hacen la inferencia de YAIWES y OpenClaw.
   // Si se consulta solo /chat/providers del Router MVP, faltan las claves guardadas en el bridge y aparecen falsos NO CONFIGURADO.
   try {
-    const [pub, banco] = await Promise.all([api("/web/v1/modelos/disponibilidad"), api("/web/v1/claves")]);
-    if (!pub?.ok || !Array.isArray(pub.modelos) || !banco?.ok) throw new Error("BRIDGE_CATALOGO_INVALIDO");
+    const pub = await api("/web/v1/modelos/disponibilidad");
+    if (!pub?.ok || !Array.isArray(pub.modelos)) throw new Error("BRIDGE_CATALOGO_INVALIDO");
+    // El mismo bridge que hace la inferencia informa si HAY claves efectivas: entorno + banco.
+    // /v1/claves solo enumera el panel y requiere permisos adicionales: no debe romper el selector.
+    let configurados = pub.configurados && typeof pub.configurados === "object" ? pub.configurados : null;
+    if (!configurados) {
+      try { const banco = await api("/web/v1/claves"); if (banco?.ok) configurados = { groq: Number(banco.groq) > 0, nvidia: Number(banco.nvidia) > 0 }; }
+      catch (e) { /* panel protegido: estado desconocido, NO "sin clave" */ }
+    }
     d.locales = (Array.isArray(pub.locales) ? pub.locales : []).filter(m => m && /^hf\/[a-z0-9._-]+$/i.test(m.id)).map(m => ({
       id: m.id, disponible: null, estado: m.estado === "NO CONFIGURADO" ? "NO CONFIGURADO" : "SIN VERIFICAR",
       etiqueta: m.id.slice(3) + (m.estado === "NO CONFIGURADO" ? " — NO CONFIGURADO" : " — SIN VERIFICAR"),
@@ -55,12 +66,13 @@ export async function cargar() {
     for (const p of ["groq", "nvidia"]) {
       const disponibles = pub.modelos.filter(m => m && m.proveedor === p && MODELOS_SELECCIONADOS.has(m.id));
       d[p] = disponibles.map(m => {
-        const tieneClave = Number(banco[p]) > 0;
-        const estado = !tieneClave ? "NO CONFIGURADO" : m.disponible === true ? "DISPONIBLE" : m.disponible === false ? "NO DISPONIBLE" : "SIN VERIFICAR";
-        return { id: m.id, estado, disponible: !tieneClave || m.disponible === false ? false : m.disponible === true ? true : null,
+        const claveConocida = configurados && typeof configurados[p] === "boolean";
+        const sinClave = claveConocida && configurados[p] === false;
+        const estado = sinClave ? "NO CONFIGURADO" : m.disponible === true ? "DISPONIBLE" : m.disponible === false ? "NO DISPONIBLE" : "SIN VERIFICAR";
+        return { id: m.id, estado, disponible: sinClave || m.disponible === false ? false : m.disponible === true ? true : null,
           etiqueta: MARCA[p] + NOMBRES[m.id] + (estado === "DISPONIBLE" ? "" : " — " + estado) };
       });
-      if (!Number(banco[p])) d["aviso" + (p === "groq" ? "Groq" : "Nvidia")] = "sin claves " + p.toUpperCase() + " en el banco del bridge";
+      if (configurados?.[p] === false) d["aviso" + (p === "groq" ? "Groq" : "Nvidia")] = "sin claves " + p.toUpperCase() + " en el bridge";
     }
     try { localStorage.setItem(CACHE, JSON.stringify(d)); } catch (e) {}
     aplicar(d); return;

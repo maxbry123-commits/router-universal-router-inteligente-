@@ -16,7 +16,7 @@ let catalogos = {}, providers = ["groq", "nvidia"], fallos = {}, puente = null;
 const ok = (cuerpo) => ({ ok: true, status: 200, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) });
 globalThis.fetch = async (url) => {
   const ruta = String(url).replace(/^https?:\/\/[^/]+/, "");
-  if (ruta === "/web/v1/modelos/disponibilidad" && puente) return ok({ ok: true, modelos: puente.modelos, locales: puente.locales || [] });
+  if (ruta === "/web/v1/modelos/disponibilidad" && puente) return ok({ ok: true, modelos: puente.modelos, locales: puente.locales || [], ...(puente.configurados ? { configurados: puente.configurados } : {}) });
   if (ruta === "/web/v1/claves" && puente) return ok({ ok: true, groq: puente.groq, nvidia: puente.nvidia });
   if (ruta === "/chat/providers") return ok({ providers: providers.map((id) => ({ id })) });
   const m = ruta.match(/^\/chat\/providers\/(groq|nvidia)\/models$/);
@@ -126,4 +126,26 @@ test("X-Ray: sin claves reales en el bridge no se marca DISPONIBLE un modelo ext
   assert.equal(window.RIU_GROQ.lista[0].estado, "NO CONFIGURADO");
   assert.ok(window.RIU_CONFIG.modelos.every(m => m.disponible === false && m.estado === "NO CONFIGURADO"));
   assert.equal(window.RIU_CONFIG.defecto, "", "sin clave el selector NVIDIA no inventa un modelo funcional");
+});
+
+test("X-Ray: claves de entorno en el bridge habilitan el selector aunque el panel de claves no informe ese numero", async () => {
+  reiniciar(); providers = [];
+  puente = { groq: 0, nvidia: 0, configurados: { groq: true, nvidia: true },
+    modelos: [{ id: GROQ, proveedor: "groq", disponible: true }, ...NV.map(id => ({ id, proveedor: "nvidia", disponible: null }))] };
+  await cargar();
+  assert.equal(window.RIU_GROQ.modelo, GROQ);
+  assert.equal(window.RIU_GROQ.lista[0].estado, "DISPONIBLE");
+  assert.equal(window.RIU_CONFIG.modelos[0].estado, "SIN VERIFICAR");
+  assert.equal(window.RIU_CONFIG.modelos[0].disponible, null);
+  assert.ok(!window.RIU_CONFIG.modelos.some(m => m.estado === "NO CONFIGURADO"));
+});
+
+test("X-Ray: disponibilidad sin contador y panel protegido NO se interpreta como cero claves", async () => {
+  reiniciar(); providers = [];
+  puente = { groq: 0, nvidia: 0, configurados: { groq: true, nvidia: true },
+    modelos: [{ id: GROQ, proveedor: "groq", disponible: null }, ...NV.map(id => ({ id, proveedor: "nvidia", disponible: null }))] };
+  await cargar();
+  assert.equal(window.RIU_GROQ.lista[0].estado, "SIN VERIFICAR");
+  assert.equal(window.RIU_GROQ.modelo, GROQ, "permite intentar el modelo exacto sin prometer conexion");
+  assert.equal(window.RIU_CONFIG.defecto, NV[0]);
 });
