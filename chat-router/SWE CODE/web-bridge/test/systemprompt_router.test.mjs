@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { textoSystemPrompt, conSystemPrompt, conSystemPromptTexto, systemPromptOn, setSystemPromptOn } from '../src/systemprompt.js';
+import { textoSystemPrompt, conSystemPrompt, conSystemPromptTexto, systemPromptOn, setSystemPromptOn, consultarPromptRouter } from '../src/systemprompt.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const ENV = { ...process.env, RIU_REPO_ROOT: RAIZ };
@@ -43,5 +43,36 @@ test('OpenClaw fijo ON (sin boton): YAIWES OFF no lo apaga', () => {
     assert.equal(conSystemPrompt(mensajes,env,{forzarOn:true})[0].role,'system');
     assert.ok(conSystemPromptTexto('hola',env,{forzarOn:true}).includes('BLOQUE 3/5'));
     assert.equal(conSystemPromptTexto('hola',env),'hola');
+  } finally {fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('boton YAIWES consulta y modifica solo el prompt_on del Router (con recibo)', async () => {
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'riu-prompt-router-'));
+  const env={...ENV,BRIDGE_STATE_DIR:dir,RIU_ROUTER_URL:'http://127.0.0.1:7861',RIU_API_KEY:'clave-prueba'};
+  let on=false; const llamadas=[];
+  const fetchFn=async (url,req)=>{
+    assert.equal(url,'http://127.0.0.1:7861/plugins/puente_chat/call/agent_access_lock');
+    assert.equal(req.headers['x-api-key'],'clave-prueba');
+    const data=JSON.parse(req.body);llamadas.push(data);
+    if(data.quien==='prompt') on=!data.locked;
+    return {ok:true,json:async()=>({status:'ok',result:{prompt_locked:!on}})};
+  };
+  try {
+    assert.equal(await consultarPromptRouter(null,{env,fetchFn}),false);
+    assert.equal(await consultarPromptRouter(true,{env,fetchFn}),true);
+    assert.equal(systemPromptOn(env),true);
+    assert.equal(await consultarPromptRouter(false,{env,fetchFn}),false);
+    assert.equal(systemPromptOn(env),false);
+    assert.deepEqual(llamadas,[{}, {quien:'prompt',locked:false}, {quien:'prompt',locked:true}]);
+  } finally {fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('sin recibo Router el boton no cambia estado local ni finge ON', async () => {
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'riu-prompt-error-'));
+  const env={...ENV,BRIDGE_STATE_DIR:dir,RIU_ROUTER_URL:'http://127.0.0.1:7861',RIU_API_KEY:'clave-prueba'};
+  try {
+    setSystemPromptOn(false,env);
+    await assert.rejects(consultarPromptRouter(true,{env,fetchFn:async()=>({ok:false,status:503})}),/ROUTER_HTTP_503/);
+    assert.equal(systemPromptOn(env),false);
   } finally {fs.rmSync(dir,{recursive:true,force:true});}
 });

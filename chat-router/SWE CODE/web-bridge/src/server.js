@@ -32,7 +32,7 @@ import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
 import { montarRutasSwe } from './swe_rutas.js';
 import { montarResponses } from './responses.js';
-import { systemPromptOn, setSystemPromptOn, conSystemPrompt, conSystemPromptTexto } from './systemprompt.js';
+import { conSystemPrompt, conSystemPromptTexto, consultarPromptRouter } from './systemprompt.js';
 
 // sin variables nuevas en Hugging Face: SWECODE_URL_S1..S3 y RIU_DEEPSEEK_HARNESS_URL (Harness local del Space) toman su default SOLO si no estan definidas (src/defaults.js)
 aplicarDefectos(process.env);
@@ -209,11 +209,15 @@ app.delete('/v1/claves', async (_req, res) => {
 
 // toggle ON/OFF del system-prompt de la ficha del Router MVP (systemprompt.js); defecto ON. Afecta a TODOS los modelos (Groq/NVIDIA/HF local/web-*)
 // del chat directo y de OpenClaw, via conPreambulo/prompt en /v1/chat/completions (mismo pipeline)
-app.get('/v1/system-prompt-on', (_req, res) => res.json({ ok: true, on: systemPromptOn() }));
-app.post('/v1/system-prompt-on', (req, res) => {
+app.get('/v1/system-prompt-on', async (_req, res) => {
+  try { res.json({ ok: true, on: await consultarPromptRouter() }); }
+  catch { res.status(503).json({ ok:false, error:{code:'ROUTER_PROMPT_NO_VERIFICADO'} }); }
+});
+app.post('/v1/system-prompt-on', async (req, res) => {
   const on = req.body && typeof req.body.on === 'boolean' ? req.body.on : null;
   if (on === null) return res.status(400).json({ error: { code: 'VALOR_INVALIDO', message: 'on: boolean' } });
-  res.json({ ok: true, on: setSystemPromptOn(on) });
+  try {res.json({ ok:true, on:await consultarPromptRouter(on) });}
+  catch {res.status(503).json({ ok:false, error:{code:'ROUTER_PROMPT_NO_CONFIRMADO'} });}
 });
 
 const idsModelos = () => {

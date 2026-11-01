@@ -71,6 +71,36 @@ export function setSystemPromptOn(on, env = process.env) {
   return systemPromptOn(env);
 }
 
+// El boton de YAIWES debe gobernar el estado REAL del Router MVP, no un toggle
+// paralelo del bridge. Sin credencial/Router, no se afirma que el cambio se aplico.
+// OpenClaw mantiene su prompt ON por origen y no requiere este boton.
+export async function consultarPromptRouter(on = null, { env = process.env, fetchFn = fetch } = {}) {
+  const clave = String(env.RIU_API_KEY || '').trim();
+  if (!clave) throw new Error('ROUTER_SIN_CREDENCIAL');
+  const puerto = Number(env.PORT);
+  const base = String(env.RIU_ROUTER_URL || `http://127.0.0.1:${Number.isInteger(puerto) && puerto > 0 && puerto < 65536 ? puerto : 7861}`).replace(/\\/+$/, '');
+  const url = new URL(base);
+  if (!(url.protocol === 'https:' || (url.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(url.hostname))) || url.username || url.password)
+    throw new Error('ROUTER_URL_INVALIDA');
+  const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 6000);
+  try {
+    const r = await fetchFn(base + '/plugins/puente_chat/call/agent_access_lock', {
+      method:'POST', redirect:'error', signal:ctrl.signal,
+      headers:{'content-type':'application/json','x-api-key':clave},
+      body:JSON.stringify(on === null ? {} : {quien:'prompt',locked:!on}),
+    });
+    if (!r.ok) throw new Error('ROUTER_HTTP_' + r.status);
+    const j = await r.json();
+    const locked = j?.result?.prompt_locked;
+    if (j?.status !== 'ok' || typeof locked !== 'boolean')
+      throw new Error('ROUTER_PROMPT_ESTADO_INVALIDO');
+    const confirmado = !locked;
+    if (on !== null && confirmado !== on) throw new Error('ROUTER_PROMPT_NO_CONFIRMADO');
+    setSystemPromptOn(confirmado,env); // solo se cambia el espejo tras CONFIRMACION del Router.
+    return confirmado;
+  } finally {clearTimeout(timer);}
+}
+
 // antepone el system prompt de la ficha (si ON y con contenido) ANTES del primer mensaje; si ya hay un mensaje de sistema
 // (p. ej. el preambulo de modo) se fusiona con el, en vez de agregar uno nuevo. OFF o sin contenido: no toca nada
 export function conSystemPrompt(mensajes, env = process.env, { forzarOn = false } = {}) {
