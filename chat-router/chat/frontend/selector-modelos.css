@@ -12,3 +12,9 @@
 .salida-x4 #histories{flex:0 0 auto;height:var(--salida-alto)}
 .salida-x4 #histories .chat-history{flex:1 1 auto;height:100%;min-height:0;max-height:none}
 .salida-x4 #composer{position:sticky;bottom:0;z-index:20;background:var(--surface,#1e1e1e)}
+
+/* X-Ray MODEL UI: listado nativo de Android legible sin duplicar el estado por fila. */
+.swe-ctl select[data-swe-ctl]{max-width:100%;min-width:0;font-size:16px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}
+.swe-ctl select[data-swe-ctl] option,.swe-ctl select[data-swe-ctl] optgroup{font-size:16px;font-weight:400}
+.swe-ctl .swe-rej-fila,.swe-ctl .swe-sel{min-width:0;max-width:100%;box-sizing:border-box}
+.swe-ctl .swe-rej-fila select{width:100%;box-sizing:border-box}

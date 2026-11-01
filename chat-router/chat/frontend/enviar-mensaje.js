@@ -142,7 +142,9 @@ export function montarEnviar(ctx) {
     const selAct = window.RIU_SELECTORES?.activo;
     const fichaQwen = (selAct === "team-qwen" || selAct === "team-5-mvp") && c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label || c.selectorQwen.modelo_id_slug) : null;
     const fichaGroq = selAct === "groq" ? ((window.RIU_GROQ || {}).modelo || "") : null;  // selector Groq: el modelo elegido en su hoja (groq/<id>)
-    if (fichaGroq === "") { c.hist.append(node("div", "Groq: " + ((window.RIU_GROQ || {}).aviso || "elige primero un modelo en la hoja Groq ⌄") + ". No se envió a otro modelo.", "item message meta")); abajo(c); return; }
+    if (selAct === "groq" && !fichaGroq) { c.hist.append(node("div", "Groq: " + ((window.RIU_GROQ || {}).aviso || "elige primero un modelo en la hoja Groq ⌄") + ". No se envió a otro modelo.", "item message meta")); abajo(c); return; }
+    const fichaNvidia = selAct === "nvidia-groq-team" ? (window.RIU_SWE_CENTRAL?.modeloVentana("nvidia") || "") : null;
+    if (selAct === "nvidia-groq-team" && !fichaNvidia) { c.hist.append(node("div", "NVIDIA: elige primero un modelo en la hoja NVIDIA. No se envió a otro modelo.", "item message meta")); abajo(c); return; }
     const fichaSwe = (selAct === "swe-code" || selAct === "swen-code-free") ? ((window.RIU_SWE || {})[selAct] || null) : null;  // selectores SWE CODE / SWEN CODE free: modelo elegido en su hoja
     const ventanaCentral = { "swe-code": "swe-code", "swen-code-free": "swen-code-free", groq: "groq", "nvidia-groq-team": "nvidia" }[selAct] || "";  // las 4 ventanas con el selector central unico
     const bloqueoCentral = ventanaCentral && window.RIU_SWE_CENTRAL ? window.RIU_SWE_CENTRAL.bloqueo(ventanaCentral) : "";  // eleccion NO DISPONIBLE: se queda visible con su error y NO se envia (ni se cambia a otro modelo)
@@ -217,7 +219,7 @@ export function montarEnviar(ctx) {
         });
         return { reply: partes.join('\n\n'), tools: [], ms: 0, finish_reason: rs.some((r) => r.status === 'fulfilled' && r.value.finish_reason === 'length') ? 'length' : null };
       };
-      const _modeloSwe = fichaSwe ? fichaSwe.model_id : ((fq === "1" || fichaMvp) && c.selectorQwen && esSwe(c.selectorQwen.model_id) ? c.selectorQwen.model_id : null);  // SWE CODE / SWEN CODE free: router propio (el bridge), sin pasar por el Router MVP
+      const _modeloSwe = fichaGroq || fichaNvidia || (fichaSwe ? fichaSwe.model_id : ((fq === "1" || fichaMvp) && c.selectorQwen && esSwe(c.selectorQwen.model_id) ? c.selectorQwen.model_id : null));  // SWE CODE / SWEN CODE free: router propio (el bridge), sin pasar por el Router MVP
       const _swe = !!_modeloSwe && _multiSel.length <= 1;
       const _tareaSwe = !!ventanaCentral && requiereHarness(leerSeleccion());  // workflow != individual o modo agentico ON: contrato TareaSWE al backend YAIWES -> Harness -> adaptadores (nunca herramientas desde el navegador)
       const answer = _tareaSwe

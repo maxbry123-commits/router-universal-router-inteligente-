@@ -207,3 +207,15 @@ test("A5 el `estado` explicito del Harness manda; `causa` es el texto; SIN VERIF
   const v = S.validarSeleccion({ ...S.SEL_DEFECTO, modo_agentico: true, agente_tool: "codex", modelo_tool: "hf/qwen2.5-coder-1.5b" }, cap);
   assert.ok(v.problemas.some((p) => /AGENTE QUE EJECUTA Codex: SIN VERIFICAR/.test(p)) && !v.problemas.some((p) => /NO INSTALADO/.test(p)), v.problemas.join("|"));
 });
+
+test("X-Ray objetivos: catálogo del bridge es la fuente del estado de Groq/NVIDIA en el chat normal", () => {
+  const capNo = S.normalizarCapacidades({ harness: "ok", modelos: {
+    "groq/qwen/qwen3.8-27b": { estado: "NO CONFIGURADO", disponible: false },
+  } });
+  const id = "groq/qwen/qwen3.8-27b";
+  const prov = (state) => S.opcionesModeloVentana("groq", capNo, { [id]: state }).find(m => m.id === id);
+  assert.deepEqual([prov(true).ok, prov(true).estado], [true, "DISPONIBLE"]);
+  assert.deepEqual([prov("SIN_VERIFICAR").ok, prov("SIN_VERIFICAR").elegible], [true, true]);
+  assert.deepEqual([prov(false).ok, prov(false).elegible], [false, false]);
+  assert.deepEqual([prov("NO_CONFIGURADO").ok, prov("NO_CONFIGURADO").elegible], [false, false]);
+});

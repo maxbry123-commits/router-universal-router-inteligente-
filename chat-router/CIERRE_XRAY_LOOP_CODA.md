@@ -87,3 +87,11 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 ### X-Ray 7B — checkpoint legado
 - Se detectó que un `WAIT_TOOLS` previamente guardado podía pasar directamente a `resolverLote` sin volver a validar los argumentos JSON. El preflight del lote ahora bloquea `TOOL_CALL_INVALIDA` ANTES de cualquier efecto, anota `RECONCILIAR` y evita ejecución parcial.
 - Prueba `X-Ray 7B` añadida en `test/retomar_local.test.mjs` con dos tools (primera válida, segunda corrupta): exige **cero** efectos. Prueba sin ejecutar en entorno Node.
+
+## Dos objetivos — X-Ray corrección del cableado YAIWES + OpenClaw (sin agentes)
+- **Incidente real:** `enviar-mensaje.js` tenía `if (fichaGroq === "")` sin comprobar el selector activo; al elegir Groq se bloqueaba y otros flujos podían quedar mal dirigidos. Se restringió el guard al selector Groq.
+- Groq y NVIDIA seleccionados ya pasan al bridge `/web/v1/chat/completions` por el **ID exacto elegido**, igual que los cuatro modelos locales HF. Nada de envío por otra ficha Qwen accidental.
+- Selector NVIDIA ya conserva el modelo elegido en `RIU_NVIDIA.modelo` y en el chat; dejó de depender de un `RIU_FICHA.elegir` que podía no existir.
+- `fichas-externas.js` consulta prioritariamente el banco real y el `GET /models` del bridge, no solo el banco del Router MVP. Disponibilidad real o SIN VERIFICAR; sin clave, NO CONFIGURADO. Sin exponer claves en navegador.
+- Los selectores priorizan la verificación del bridge sobre el estado de agentes del Harness en modo chat sin agentes; optgroup/option simplificados para móvil.
+- Pruebas nuevas en `chat/frontend/test/enviar-modelo.test.mjs` y `test/swe-central.test.mjs`; ejecución real y mirror NO certificados. Solo GitHub `chat-router/`; sin modificaciones Hugging Face ni agentes.

@@ -27,26 +27,48 @@ export function aplicar(d) {  // d: {groq:[{id,etiqueta,disponible}], nvidia:[�
   G.modelo = buenos.some((m) => m.id === guardado) ? guardado : perdido ? "" : (buenos[0] || {}).id || "";
   G.aviso = G.modelo ? "" : (perdido || G.lista[0]) ? (perdido || G.lista[0]).etiqueta.replace(/^Groq · /, "") : (d.avisoGroq || "el Router no tiene GROQ_API_KEY");
   if ((d.nvidia || []).length) {
-    const buenosNv = d.nvidia.filter((m) => m.disponible !== false);
-    cfg().modelos = d.nvidia; cfg().defecto = (buenosNv[0] || d.nvidia[0]).id;
-    try { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); if (c && VIEJAS.test(c.ficha || "")) c.ficha = cfg().defecto; } catch (e) {}
-  } else (cfg().modelos || []).forEach((m) => { if (VIEJAS.test(m.id) && !/responde Qwen/.test(m.etiqueta)) m.etiqueta += " (" + (d.avisoNvidia || "sin NVIDIA en el Router") + ": responde Qwen)"; });
-  window.RIU_NVIDIA = { aviso: (d.nvidia || []).length ? "" : (d.avisoNvidia || "sin NVIDIA en el Router"), lista: d.nvidia || [] };
+    const buenosNv = d.nvidia.filter((m) => m.disponible !== false), previoNv = (window.RIU_NVIDIA || {}).modelo || "";
+    cfg().modelos = d.nvidia;
+    cfg().defecto = buenosNv[0]?.id || "";
+    const actualNv = buenosNv.some(m => m.id === previoNv) ? previoNv : cfg().defecto;
+    window.RIU_NVIDIA = { aviso: actualNv ? "" : (d.avisoNvidia || "elige un modelo NVIDIA configurado"), lista: d.nvidia, modelo: actualNv };
+    try { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); if (c && (VIEJAS.test(c.ficha || "") || !c.ficha)) c.ficha = actualNv || c.ficha; } catch (e) {}
+  } else {
+    window.RIU_NVIDIA = { ...(window.RIU_NVIDIA || {}), aviso: d.avisoNvidia || "sin modelos NVIDIA verificados", lista: [], modelo: "" };
+  }
   window.dispatchEvent(new CustomEvent("riu:fichas", { detail: { groq: G.lista.length, nvidia: (d.nvidia || []).length } }));
   refrescar();
 }
 aplicar(leer(CACHE, { groq: [], nvidia: [], avisoGroq: "cargando modelos de Groq…" }));  // antes de montar el chat: lo último conocido
 export async function cargar() {
   const d = { groq: [], nvidia: [] };
+  // Fuente primaria: MISMO bridge y banco cifrado que hacen la inferencia de YAIWES y OpenClaw.
+  // Si se consulta solo /chat/providers del Router MVP, faltan las claves guardadas en el bridge y aparecen falsos NO CONFIGURADO.
+  try {
+    const [pub, banco] = await Promise.all([api("/web/v1/modelos/disponibilidad"), api("/web/v1/claves")]);
+    if (!pub?.ok || !Array.isArray(pub.modelos) || !banco?.ok) throw new Error("BRIDGE_CATALOGO_INVALIDO");
+    for (const p of ["groq", "nvidia"]) {
+      const disponibles = pub.modelos.filter(m => m && m.proveedor === p && MODELOS_SELECCIONADOS.has(m.id));
+      d[p] = disponibles.map(m => {
+        const tieneClave = Number(banco[p]) > 0;
+        const estado = !tieneClave ? "NO CONFIGURADO" : m.disponible === true ? "DISPONIBLE" : m.disponible === false ? "NO DISPONIBLE" : "SIN VERIFICAR";
+        return { id: m.id, estado, disponible: !tieneClave || m.disponible === false ? false : m.disponible === true ? true : null,
+          etiqueta: MARCA[p] + NOMBRES[m.id] + (estado === "DISPONIBLE" ? "" : " — " + estado) };
+      });
+      if (!Number(banco[p])) d["aviso" + (p === "groq" ? "Groq" : "Nvidia")] = "sin claves " + p.toUpperCase() + " en el banco del bridge";
+    }
+    try { localStorage.setItem(CACHE, JSON.stringify(d)); } catch (e) {}
+    aplicar(d); return;
+  } catch (e) { /* bridge anterior o inaccesible: comprobar Router sin afirmar falso NO DISPONIBLE */ }
   try {
     const provs = ((await api("/chat/providers")).providers || []).map((p) => p.id);
     for (const p of ["groq", "nvidia"]) {
-      if (!provs.includes(p)) { d["aviso" + (p === "groq" ? "Groq" : "Nvidia")] = "el Router no tiene " + p.toUpperCase() + "_API_KEY"; continue; }
+      if (!provs.includes(p)) { d["aviso" + (p === "groq" ? "Groq" : "Nvidia")] = "no configurado o sin conexión al bridge; revisa banco de claves"; continue; }
       try { d[p] = seleccionar(p, ((await api("/chat/providers/" + p + "/models")).models || []).map((m) => m.model_id)); }
       catch (e) { d["aviso" + (p === "groq" ? "Groq" : "Nvidia")] = p + ": " + e.message.slice(0, 80); }
     }
     try { localStorage.setItem(CACHE, JSON.stringify(d)); } catch (e) {}
-  } catch (e) { d.avisoGroq = d.avisoNvidia = "sin conexión con el Router"; }
+  } catch (e) { d.avisoGroq = d.avisoNvidia = "sin conexión con el Router ni el bridge"; }
   aplicar(d);
 }
 setTimeout(cargar, 800);

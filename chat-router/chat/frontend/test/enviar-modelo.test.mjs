@@ -25,7 +25,13 @@ globalThis.RIU_HARNESS = async (a) => { recibidas.push(a); return respuesta; };
 globalThis.RIU_SELECTORES = { activo: "team-qwen" };
 montarEnviar({ q: (k) => filas.get(k), chat: () => c, abajo() {}, burbuja: nodo, ajustarAlturaEditor() {}, pintarTabs() {},
   getModeUI: () => null, releerAnclas: () => [], chatTools: {}, FAST_SEL: () => false, getModo: () => "",
-  previo: () => previo, api: async (ruta, opts) => { assert.equal(ruta, "/chat/send"); recibidas.push(opts.body); return respuesta; }, tell() {},
+  previo: () => previo, api: async (ruta, opts) => {
+    if (ruta === "/web/v1/chat/completions") {
+      recibidas.push({ ruta, ...opts.body });
+      return { modelo_usado: opts.body.model, choices: [{ message: { content: "modelo: " + opts.body.model }, finish_reason: "stop" }] };
+    }
+    assert.equal(ruta, "/chat/send"); recibidas.push(opts.body); return respuesta;
+  }, tell() {},
 });
 const enviar = async () => { filas.get("#message").value = "¿Qué modelo eres?"; await filas.get("#composer").events.submit({ preventDefault() {} }); };
 
@@ -51,4 +57,26 @@ test("paralelo usa el mismo id canónico para cada modelo sin añadir qw-", asyn
   const antes = recibidas.length; await enviar();
   assert.equal(recibidas.length, antes + 2);
   assert.deepEqual(recibidas.slice(antes).map((a) => [a.model, a.qwen.modelo]), c.selectorQwenMulti.map((m) => [m.model_id, m.model_id]));
+});
+
+test("X-Ray objetivos: Groq y NVIDIA activos se envían por bridge con su ID exacto, nunca por Qwen/Harness", async () => {
+  RIU_CONFIG = { harnessUrl: "/harness" }; c.paralelo = false; c.selectorQwen = null;
+  globalThis.RIU_GROQ = { modelo: "groq/qwen/qwen3.8-27b", aviso: "" };
+  globalThis.RIU_SWE_CENTRAL = { modeloVentana: (v) => v === "nvidia" ? "nvidia/z-ai/glm-5.3" : "" , bloqueo: () => "" };
+  for (const [selector, esperado] of [["groq", "groq/qwen/qwen3.8-27b"], ["nvidia-groq-team", "nvidia/z-ai/glm-5.3"]]) {
+    RIU_SELECTORES.activo = selector;
+    const before = recibidas.length; await enviar();
+    assert.equal(recibidas.length, before + 1, selector);
+    assert.equal(recibidas.at(-1).ruta, "/web/v1/chat/completions");
+    assert.equal(recibidas.at(-1).model, esperado, "no se cambia el modelo");
+    assert.equal(c.ocupado, false);
+  }
+});
+test("X-Ray objetivos: un selector Qwen nunca se bloquea por falta de Groq", async () => {
+  RIU_CONFIG = { harnessUrl: "/harness" }; c.paralelo = false; RIU_SELECTORES.activo = "team-qwen";
+  c.selectorQwen = { model_id: "qwen3.8-max", label: "Qwen 3.8 Max" };
+  globalThis.RIU_GROQ = { modelo: "", aviso: "sin conexión con Router" };
+  const before = recibidas.length; await enviar();
+  assert.equal(recibidas.length, before + 1);
+  assert.equal(recibidas.at(-1).model, "qwen3.8-max");
 });

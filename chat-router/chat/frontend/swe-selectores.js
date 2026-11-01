@@ -31,7 +31,7 @@ const G = () => (window.RIU_GROQ = window.RIU_GROQ || { lista: [], modelo: "", a
 const chatActual = () => { try { return window.RIU_CHAT.chat(); } catch (e) { return null; } };
 function modeloVentana(w) {
   if (w === "groq") return G().modelo || "";
-  if (w === "nvidia") { const f = (chatActual() || {}).ficha || ""; return f.startsWith("nvidia/") ? f : ""; }
+  if (w === "nvidia") { const f = (window.RIU_NVIDIA || {}).modelo || (chatActual() || {}).ficha || ""; return f.startsWith("nvidia/") ? f : ""; }
   const m = (S[w] || {}).model_id || ""; return idCatalogo(m) || (MODELOS_WEB.some((x) => x[0] === m) ? m : "");
 }
 function elegirModeloSwe(w, mid, etiqueta) {
@@ -40,7 +40,13 @@ function elegirModeloSwe(w, mid, etiqueta) {
 }
 function fijarModeloVentana(w, cat) {
   if (w === "groq") { if (window.RIU_GROQ && window.RIU_GROQ.elegir) window.RIU_GROQ.elegir(cat); }
-  else if (w === "nvidia") { if (window.RIU_FICHA && window.RIU_FICHA.elegir) window.RIU_FICHA.elegir(cat); }
+  else if (w === "nvidia") {
+    const seleccionado = (window.RIU_CONFIG?.modelos || []).find(m => m.id === cat && m.disponible !== false);
+    if (seleccionado) {
+      window.RIU_NVIDIA = { ...(window.RIU_NVIDIA || {}), modelo: cat };
+      const c = chatActual(); if (c) c.ficha = cat;  // mismo id de extremo a extremo, sin elegir otro modelo
+    }
+  }
   else {
     const web = MODELOS_WEB.find((x) => x[0] === cat), m = web ? { model_id: cat, label: web[1] } : modeloParaLista(w, cat, S[w].model_id);
     if (m) elegirModeloSwe(w, m.model_id, m.label);
@@ -54,7 +60,11 @@ function mapaProveedor(w) {
   const lista = prov === "groq" ? G().lista || [] : (window.RIU_CONFIG && window.RIU_CONFIG.modelos || []).filter((m) => String(m.id).startsWith("nvidia/"));
   const aviso = prov === "groq" ? G().aviso || "" : (window.RIU_NVIDIA || {}).aviso || "";
   const o = {};
-  if (lista.length) { for (const m of lista) if (m.disponible === false) o[m.id] = false; return o; }
+  if (lista.length) {
+    for (const m of lista) o[m.id] = m.estado === "NO CONFIGURADO" ? "NO_CONFIGURADO"
+      : m.disponible === false ? false : m.disponible === true ? true : "SIN_VERIFICAR";
+    return o;
+  }
   const est = /GROQ_API_KEY|NVIDIA_API_KEY|no tiene/i.test(aviso) ? "NO_CONFIGURADO" : "SIN_VERIFICAR";
   for (const m of MODELOS_SWE) if (m[0].startsWith(prov + "/")) o[m[0]] = est;
   return o;
@@ -97,7 +107,7 @@ function controles() {
   return c;
 }
 function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al final y deshabilitado, con su estado real; la eleccion actual se queda visible aunque no este disponible
-  const op = (x, ok) => { const o = el("option", null, ok ? x.etq : `${x.etq} — ${ETIQUETA_ESTADO[x.estado]}`); o.value = x.id; o.selected = x.id === actual; o.disabled = !ok && !x.elegible; if (!ok) o.title = x.motivo; return o; };  // SIN VERIFICAR + intentable: se puede elegir con aviso
+  const op = (x, ok) => { const o = el("option", null, x.etq); o.value = x.id; o.selected = x.id === actual; o.disabled = !ok && !x.elegible; if (!ok) o.title = x.motivo; return o; }; // estado una sola vez: la agrupacion ya lo declara  // SIN VERIFICAR + intentable: se puede elegir con aviso
   s.replaceChildren(...items.ok.map((x) => op(x, true)));
   const grupos = [[items.sinVerificar, "Sin verificar"], [items.noInstalado, "No instalados"], [items.incompatible, "Incompatibles con este modelo"], [items.otros, "No configurados / no disponibles"]];
   grupos.forEach(([l, t]) => { if (!l.length) return; const og = el("optgroup"); og.label = t; og.append(...l.map((x) => op(x, false))); s.append(og); });
