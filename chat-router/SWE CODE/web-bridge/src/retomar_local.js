@@ -55,11 +55,16 @@ async function bajoCerrojo(id, fn) {
   try { return await fn(); } finally { libre(); if (cerrojos.get(id) === cola) cerrojos.delete(id); }
 }
 
+const cancelada = () => falla('ABORTADO', 'peticion cancelada por el cliente');
 export async function retomarLocal(tareaId, modelo, mensajes, extra = {}) {
+  if (extra.opts?.signal?.aborted) throw cancelada();
   if (!idValido(tareaId)) throw falla('TAREA_ID_INVALIDO', 'tarea_id: letras, numeros, - y _ (1 a 64)');
   if (!esLocal(modelo) && !esExterno(modelo)) throw falla('MODELO_NO_SOPORTADO', 'solo modelos locales HF o groq/ nvidia/: ' + String(modelo).slice(0, 60));
   if (!Array.isArray(mensajes)) throw falla('MENSAJES_INVALIDOS', 'mensajes debe ser una lista');
-  return bajoCerrojo(tareaId, () => ejecutar(tareaId, modelo, mensajes, extra || {}));
+  return bajoCerrojo(tareaId, () => {
+    if (extra.opts?.signal?.aborted) throw cancelada();
+    return ejecutar(tareaId, modelo, mensajes, extra || {});
+  });
 }
 
 async function ejecutar(tareaId, modelo, mensajes, extra) {
@@ -179,6 +184,7 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
   // ---- bucle ----
   let vueltas = 0;
   for (;;) {
+    if (extra.opts?.signal?.aborted) throw cancelada();
     if (st.lote) await resolverLote();
     if (vueltas >= limite || (vueltas > 0 && extra.hasta && Date.now() > extra.hasta)) {  // fuera de tope/plazo: lo parcial; el siguiente llamado sigue desde el checkpoint
       poner('CONTINUAR'); await guardar();

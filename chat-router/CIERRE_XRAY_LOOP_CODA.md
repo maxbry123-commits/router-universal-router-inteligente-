@@ -21,7 +21,7 @@ No crear otra raíz, otro router, GitHub Actions, LFS ni desplegar fuera del rep
 | 2 | Banco, autenticación, secretos y roles | CÓDIGO CORREGIDO PARCIAL; PRUEBAS AÚN SIN EJECUTAR | no secretos en logs/LS; 401/403; operador individual |
 | 3 | Fichas y Router MVP, Groq/NVIDIA, SSE, contexto, latencia | CÓDIGO CORREGIDO; PRUEBAS SIN EJECUTAR | pruebas unitarias y llamada real por id |
 | 4 | Harness, permisos Tools ON/OFF, tools, MCP, checkpoint | CÓDIGO CORREGIDO PARCIAL; PRUEBAS PENDIENTES | llamada de herramienta y reanudación con recibo |
-| 5 | Router SWE, SSE, cancelación, fallback y métricas | CÓDIGO CORREGIDO PARCIAL | pruebas de cancelación y SSE reales |
+| 5 | Router SWE, SSE, cancelación, fallback y métricas | PARCHE APLICADO; TEST E2E PENDIENTE | pruebas de cancelación y SSE reales |
 | 6 | Frontend YAIWES, modelos vs ejecutores y progreso | PENDIENTE DE E2E | browser: selector, controles, respuesta parcial |
 | 7 | Plugin de OpenClaw UI y contrato bidireccional | PENDIENTE DE E2E REAL | Control UI del Gateway ejecutando plugin instalado |
 | 8 | Pruebas cruzadas, versión desplegada HF/Vercel y cierre | BLOQUEADO HASTA PRUEBAS | SHA desplegado, contratos API, PASS/GAP/BLOQUEO |
@@ -63,3 +63,10 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - El diario ahora clasifica como potencialmente mutantes las herramientas MCP externas, acciones de archivos y operaciones LOOP no explícitamente de lectura; antes de ejecutarlas registra INICIADA.
 - Si el Router devuelve `error` JSON-RPC o `result.isError`, NO sella CONFIRMADA una operación potencialmente mutante: requiere reconciliación humana para evitar ejecución duplicada.
 - Pruebas añadidas `chat/backend/deepseek_harness/test_xray4_harness.py`. E2E, HF y pruebas de agentes reales pendientes, no declarar PASS operativo.
+
+## Segmento 5 — Bridge SWE CODE (solo backend)
+- `SWE CODE/web-bridge/src/server.js`: señales de cancelación unificadas para Groq/NVIDIA/local HF; la asesoría Groq transmite streaming real y no mezcla respuestas de otros modelos si entregó un parcial.
+- `SWE CODE/web-bridge/src/respaldo.js`: Retry-After y backoff cancelables; la cancelación no rota claves ni arranca otra llamada.
+- `SWE CODE/web-bridge/src/retomar_local.js`: no inicia/reanuda checkpoint de una petición cancelada, incluida la espera de cerrojo y otra vuelta.
+- Pruebas añadidas: `SWE CODE/web-bridge/test/xray5_backend.test.mjs`; no se han ejecutado (Node y servicios reales pendientes).
+- ALCANCE: solo GitHub `chat-router/`; FRONTEND NO TOCADO, Hugging Face NO TOCADO (mirror existente).
