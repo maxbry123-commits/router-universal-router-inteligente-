@@ -91,7 +91,7 @@ def test_web_openclaw_provider_completion_preserves_body():
 
 def test_web_openclaw_only_whitelists_models_and_completions():
     for ruta in ("openclaw/v1/claves", "openclaw/v1/swe/avanzar",
-                 "openclaw/admin", "openclaw/v1/models/../../../v1/claves"):
+                 "openclaw/admin", "openclaw/v1/models/%2e%2e/v1/claves"):
         r, seen = exercise(lambda req: (_ for _ in ()).throw(AssertionError("No upstream")),
                            "/web/" + ruta)
         assert r.status_code in (400, 404) and not seen
