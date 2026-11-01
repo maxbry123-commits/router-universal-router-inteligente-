@@ -22,6 +22,18 @@ PARTE B — Solo si el Harness corre en un Space SEPARADO (si está en este mism
 9. En los Settings del Space del Router añadir la variable `RIU_DEEPSEEK_HARNESS_URL` con la URL pública del Space del Harness (empieza por https://). Este Space es el que la usa.
 10. En los Settings del Space del Harness, confirmar que existen `GITHUB_TOKEN` y `RIU_API_KEY` (la misma clave de acceso) y añadir `RIU_SWE_APROBADORES` con el mismo valor de antes (pega aquí la línea que te dio el script) para que reconozca a los operadores.
 11. El Harness NO tiene autopull: debo reiniciarlo una vez (panel del Space → Restart o Factory reboot) para que cargue el código nuevo de `main`. Al terminar, su log muestra una línea `HEAD=<sha>`; comprobar que es el de `main`.
+11b. IMPORTANTE — los agentes (OpenClaw, SWE-agent, OpenHands, OpenCode, Codex, Claude Code) hoy salen "NO INSTALADO" en el selector porque el Space del Harness
+   todavía no tiene la imagen reconstruida con el Dockerfile nuevo (trae Node 22 + instala los agentes en el build). Un "Restart" simple NO basta si el Space
+   reutiliza la imagen ya construida: hace falta forzar una reconstrucción completa. Pasos:
+   a) Panel del Space del Harness → menú (⋮, arriba a la derecha) → "Factory reboot". Si ese botón no fuerza un build nuevo (puede reusar cache), usar en su
+      lugar: Settings → hacer scroll hasta abajo → "Rebuild" (o, si no aparece, un commit/push vacío al repo del Space, o "Restart this Space" seguido de
+      "Factory reboot" otra vez).
+   b) Confirmar que el secreto `GITHUB_TOKEN` existe en el Space del Harness ANTES de reconstruir (el build lo usa para clonar el repo privado e instalar los
+      agentes; sin él, el build sigue funcionando pero los agentes quedan pendientes para el arranque, que es más lento y puede no terminar a tiempo).
+   c) Esperar a que el estado diga "Running" otra vez (puede tardar varios minutos, instala Node + 5 paquetes npm + un entorno Python).
+   d) Verificar en los logs del Space (pestaña "Logs" del panel) que aparece la línea de `instalar-agentes.sh` / `verificar-agentes.sh` sin errores graves.
+   e) Volver al chat, abrir el selector de agentes y pulsar "Actualizar disponibilidad": ya no debe decir NO INSTALADO para los agentes cuyo binario se instaló
+      (puede seguir diciendo NO CONFIGURADO si falta un token/URL de pasarela propio de ese agente — eso es otro tema, no de instalación).
 
 PARTE C — Crear el Deploy Hook de Vercel (opcional; sirve para desplegar el frontend a mano)
 12. Entrar en https://vercel.com, abrir el proyecto `riu-jev-bridge` y ir a Settings → Git → "Deploy Hooks".
