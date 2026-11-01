@@ -120,8 +120,13 @@ function controles() {
 function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al final y deshabilitado, con su estado real; la eleccion actual se queda visible aunque no este disponible
   const op = (x, ok) => { const o = el("option", null, x.etq); o.value = x.id; o.selected = x.id === actual; o.disabled = !ok && !x.elegible; if (!ok) o.title = x.motivo; return o; }; // estado una sola vez: la agrupacion ya lo declara  // SIN VERIFICAR + intentable: se puede elegir con aviso
   s.replaceChildren(...items.ok.map((x) => op(x, true)));
-  const grupos = [[items.sinVerificar, "Sin verificar"], [items.noInstalado, "No instalados"], [items.incompatible, "Incompatibles"], [items.otros, "No disponibles"]];
-  grupos.forEach(([l, t]) => { if (!l.length) return; const og = el("optgroup"); og.label = t; og.append(...l.map((x) => op(x, false))); s.append(og); });
+  // Android muestra los <optgroup> nativos como cabeceras gigantes que tapan los modelos.
+  // Mantener UNA sola lista de <option>, con estado corto junto al nombre y sin ventanas extras.
+  const grupos = [[items.sinVerificar, "Sin verificar"], [items.noInstalado, "No instalado"],
+                  [items.incompatible, "Incompatible"], [items.otros, "No disponible"]];
+  for (const [lista, estado] of grupos) {
+    s.append(...lista.map(x => op({ ...x, etq: x.etq + " · " + estado }, false)));
+  }
   s.value = actual;
 }
 function agrupar(k, sel, w) {

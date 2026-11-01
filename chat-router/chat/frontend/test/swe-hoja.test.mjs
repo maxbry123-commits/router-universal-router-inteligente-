@@ -126,3 +126,10 @@ test("F3 NO INSTALADO: la lista de los 6 sigue completa y el rotulo explica la c
   const conMotivo = reporta(() => ({ disponible: false, estado: "NO INSTALADO", causa: "binario_ausente", motivo: "swe-agent no esta instalado (CLI `sweagent` ausente del PATH; define RIU_SWEAGENT_BIN)" }));
   assert.match(S.estadoOpcion(conMotivo, "agente", "swe-agent").motivo, /sweagent.*PATH/, "si el Harness manda el motivo concreto, manda el motivo");
 });
+
+test("Android: los modelos utilizan opciones planas, no optgroup nativo que cubre toda la pantalla", async () => {
+  const { readFileSync } = await import("node:fs");
+  const source = readFileSync(new URL("../swe-selectores.js", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /el\("optgroup"\)/);
+  assert.match(source, /lista\.map\(x => op\(\{ \.\.\.x, etq:/);
+});
