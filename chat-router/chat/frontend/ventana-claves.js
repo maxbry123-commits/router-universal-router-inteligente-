@@ -2,6 +2,7 @@
 // El valor se envía al servidor y NUNCA vuelve al navegador. "Compartir" = anclar solo el NOMBRE de la referencia al chat, la constitución,
 // los workflows o los agentes remotos; el servidor la resuelve. Si el servidor no expone /vault, la ventana lo dice (GAP) y no guarda nada aquí.
 import { leer, escribir, KEYS } from "./almacen.js";
+import { api } from "./api.js";
 import { guardarConEstado as guardarSwe, estado as estadoSwe } from "./swe-claves.js";
 import { el, boton, crearVentana, abrirVentana, agregarPill } from "./ventanas-comun.js";
 const PROV_SWE = ["groq", "nvidia"];  // grupos que van al banco del bridge (/web/v1/claves); el resto sigue en /vault
@@ -21,7 +22,9 @@ export function montarClaves({ root, q, tell }) {
   if (q("#pill-claves") && root.querySelector("#ventana-claves")) return;  // ya montada en ESTE DOM (al volver de Configuracion el panel se rehace: se vuelve a montar la pill)
   const { sheet, caja } = crearVentana(root, { id: "ventana-claves", titulo: "Banco de claves", css: "ventana-claves" });
   caja.querySelectorAll(".cl-cuerpo").forEach((n) => n.remove());  // crearVentana es idempotente: un montaje anterior no deja cuerpos duplicados
-  agregarPill(q, "pill-claves", "claves ⌄", () => { pintar(); estado(); abrirVentana(root, sheet); });
+  const abrir = () => { pintar(); estado(); abrirVentana(root, sheet); };
+  agregarPill(q, "pill-claves", "claves ⌄", abrir);
+  window.RIU_BANCO_CLAVES = { abrir }; // el + API/SDK usa ESTA MISMA ventana de Configuración
   const cuerpo = el("div", "cl-cuerpo"); caja.append(cuerpo);
   const msg = el("div", "vn-estado"), msgSwe = el("div", "vn-estado"); msg.setAttribute("role", "status"); msgSwe.setAttribute("role", "status");  // dos lineas: banco Groq/NVIDIA del bridge y banco /vault, sin mezclarlos
   async function estado() {
@@ -31,6 +34,40 @@ export function montarClaves({ root, q, tell }) {
   }
   function pintar() {
     cuerpo.replaceChildren(); cuerpo.append(msgSwe, msg);
+    // Alta aditiva: no reemplaza las claves ya guardadas del proveedor.
+    // Router MVP autenticado -> plugin banco_proveedores -> HTTP bridge SWE -> banco cifrado existente.
+    const filaApi = el("div", "cl-api-plus"), grupo = el("select", "vn-in");
+    for (const [v, t] of [["auto", "Detectar por prefijo"], ["groq", "Groq"], ["nvidia", "NVIDIA"], ["sdk", "Otro proveedor / SDK"]]) {
+      const opt = el("option", "", t); opt.value = v; grupo.append(opt);
+    }
+    grupo.setAttribute("aria-label", "Proveedor de API key o SDK");
+    const personalizado = el("input", "vn-in"); personalizado.placeholder = "Identificador del proveedor (ej. mi-sdk)";
+    personalizado.setAttribute("aria-label", "Identificador SDK"); personalizado.autocomplete = "off"; personalizado.hidden = true;
+    grupo.addEventListener("change", () => { personalizado.hidden = grupo.value !== "sdk"; });
+    const secreta = el("input", "vn-in"); secreta.type = "password"; secreta.autocomplete = "off";
+    secreta.placeholder = "Pega API key o token SDK · no se almacena en el navegador";
+    secreta.setAttribute("aria-label", "API key o token SDK");
+    const aviso = el("div", "vn-estado"); aviso.setAttribute("role", "status");
+    const guardarNueva = boton("+ Añadir API / SDK", "mini", async () => {
+      const prov = grupo.value === "sdk" ? personalizado.value.trim().toLowerCase() : grupo.value;
+      if (!/^(auto|[a-z][a-z0-9_-]{1,31})$/.test(prov) || secreta.value.length < 8 || secreta.value.length > 300) {
+        aviso.textContent = "Revisa proveedor y token (8–300 caracteres)."; return;
+      }
+      guardarNueva.disabled = true; aviso.textContent = "Guardando en el banco cifrado…";
+      try {
+        const r = await api("/plugins/banco_proveedores/call/anadir", { method: "POST",
+          body: { proveedor: prov, tipo: grupo.value === "sdk" ? "sdk" : "api_key", secret: secreta.value } });
+        if (r?.status !== "ok" || r.result?.ok !== true) throw new Error("No se confirmó la escritura.");
+        secreta.value = ""; aviso.textContent = r.result.proveedor + ": " + r.result.cantidad +
+          " clave(s) cifrada(s)" + (r.result.persistido ? " · respaldo actualizado" : " · respaldo sin confirmar") +
+          (r.result.compatible ? " · conectado a Router y SWE CODE" : " · SDK registrado (requiere adaptador para inferencia)");
+        estado(); window.RIU_FICHAS?.recargar?.().catch(() => {});
+      } catch (e) { aviso.textContent = "No se guardó: " + (e?.status === 401 ? "clave de acceso inválida" : "banco no disponible"); }
+      finally { guardarNueva.disabled = false; }
+    });
+    filaApi.append(el("div", "vn-t", "Conectar proveedor · API key / SDK"), grupo, personalizado,
+      secreta, guardarNueva, aviso, el("div", "fila-desc", "Prefijos Groq y NVIDIA se reconocen automáticamente. Otros SDK quedan registrados con nombre: necesitan un adaptador compatible para ejecutar modelos. No se guardan claves en el navegador."));
+    cuerpo.append(filaApi);
     const ph = el("input", "vn-in"); ph.type = "password"; ph.autocomplete = "off"; ph.placeholder = "Contraseña maestra (solo abre el banco en el servidor)"; ph.setAttribute("aria-label", "Contraseña maestra");
     const fa = el("div", "vn-fila");
     fa.append(boton("Abrir banco", "mini", async () => { try { await llamar("POST", "/vault/unlock", { passphrase: ph.value }); ph.value = ""; tell("Banco abierto"); } catch (e) { tell("No se abrió: " + e.message); } estado(); }),
