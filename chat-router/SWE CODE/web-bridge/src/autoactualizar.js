@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const RUTAS = ['chat-router/SWE CODE/', 'chat-router/SWE CODE free/', 'chat-router/chat/backend/mvp/prompts/'];
+export const RUTAS = ['chat-router/SWE CODE/', 'chat-router/SWE CODE free/', 'chat-router/chat/backend/mvp/prompts/', 'router-mvp/fichas/system-prompt/'];
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const git = (repo, args) => new Promise((ok, no) => execFile('git', ['-C', repo, ...args], { timeout: 20000 }, (e, out) => (e ? no(e) : ok(String(out).trim()))));
 

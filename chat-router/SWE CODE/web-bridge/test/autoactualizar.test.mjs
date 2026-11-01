@@ -41,7 +41,15 @@ test("si el directorio no es un repo git no hace nada ni lanza", async () => {
 });
 
 test("vigila las rutas del bridge, de SWE CODE free y el formato de salida", () => {
-  for (const r of ["chat-router/SWE CODE/", "chat-router/SWE CODE free/", "chat-router/chat/backend/mvp/prompts/"]) assert.ok(RUTAS.includes(r), r);
+  for (const r of ["chat-router/SWE CODE/", "chat-router/SWE CODE free/", "chat-router/chat/backend/mvp/prompts/", "router-mvp/fichas/system-prompt/"]) assert.ok(RUTAS.includes(r), r);
+});
+
+test("un cambio de ficha del Router actualiza tambien el bridge SIN tocar frontend", async () => {
+  const d=repo(), e={cabeza:git(d,"rev-parse","HEAD")};let actualizaciones=0;
+  const ficha=path.join(d,"router-mvp","fichas","system-prompt");fs.mkdirSync(ficha,{recursive:true});
+  commit(d,"router-mvp/fichas/system-prompt/system_core.md","ficha nueva"); 
+  await revisar({repo:d,estado:e,relanzar:async()=>{actualizaciones++;}});
+  assert.equal(actualizaciones,1);
 });
 
 // ---- verificacion previa al relanzamiento: node --check de los .js tocados (copia a .mjs) y npm install; si falla NO se relanza (sin git reset) ----
