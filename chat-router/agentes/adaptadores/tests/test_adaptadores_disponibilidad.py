@@ -213,7 +213,7 @@ def test_la_sonda_real_pide_get_models_con_la_clave_y_no_la_devuelve(vacio, monk
     def abrir(req, timeout=0):
         peticiones.append((req.full_url, req.get_header("Authorization"), req.get_method(), timeout))
         return R()
-    monkeypatch.setattr(disponibilidad.urllib.request, "urlopen", abrir)
+    monkeypatch.setattr(disponibilidad._comun, "abrir", abrir)
     disponibilidad._CACHE.clear()
     assert disponibilidad._sonda_modelos("groq", CLAVE_GROQ) == {"qwen/qwen3.8-27b", "otro"}
     assert peticiones == [("https://api.groq.com/openai/v1/models", "Bearer " + CLAVE_GROQ, "GET", 5)]
@@ -249,7 +249,7 @@ def test_cache_get_models_aislada_por_clave_y_rechazo_401(monkeypatch):
         if auth == "Bearer clave-rechazada":
             raise disponibilidad.urllib.error.HTTPError(req.full_url, 401, "sin permiso", {}, None)
         return Respuesta(["modelo-uno"] if auth == "Bearer clave-uno" else ["modelo-dos"])
-    monkeypatch.setattr(disponibilidad.urllib.request, "urlopen", abrir)
+    monkeypatch.setattr(disponibilidad._comun, "abrir", abrir)
     disponibilidad._CACHE.clear()
     assert disponibilidad._sonda_modelos("groq", "clave-uno") == {"modelo-uno"}
     assert disponibilidad._sonda_modelos("groq", "clave-dos") == {"modelo-dos"}
@@ -260,3 +260,19 @@ def test_cache_get_models_aislada_por_clave_y_rechazo_401(monkeypatch):
         assert fallo.value.codigo == 401
     assert llamadas == ["Bearer clave-uno", "Bearer clave-dos", "Bearer clave-rechazada"]
     assert all("clave-" not in str(k) for k in disponibilidad._CACHE)
+
+
+def test_sonda_modelos_usa_apertura_sin_redirecciones(monkeypatch):
+    """No reenviar Authorization a una URL redirigida: usa el abridor sin redirects compartido con los agentes."""
+    vistos = []
+    class R:
+        def __enter__(s): return s
+        def __exit__(s, *exc): return False
+        def read(s, n=-1): return b'{"data":[{"id":"qwen/qwen3.8-27b"}]}'
+    def seguro(req, timeout):
+        vistos.append((req.full_url, req.get_header("Authorization")))
+        return R()
+    monkeypatch.setattr(disponibilidad._comun, "abrir", seguro)
+    disponibilidad._CACHE.clear()
+    assert disponibilidad._sonda_modelos("groq", "clave-de-prueba-no-real") == {"qwen/qwen3.8-27b"}
+    assert vistos == [("https://api.groq.com/openai/v1/models", "Bearer clave-de-prueba-no-real")]

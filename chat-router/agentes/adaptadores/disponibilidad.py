@@ -115,7 +115,7 @@ def _sonda_modelos(proveedor, clave):
         return c[1]
     req = urllib.request.Request(_BASES[proveedor] + "/models", method="GET", headers={"Authorization": "Bearer " + clave, "Accept": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=5) as r:  # noqa: S310 (base fija https del proveedor)
+        with _comun.abrir(req, timeout=5) as r:  # URL fija https y redirecciones prohibidas: la clave NO se reenvia a otro host
             datos = json.loads(r.read(2_000_000).decode("utf-8", "replace"))
         ids = {m["id"] for m in datos["data"] if isinstance(m, dict) and isinstance(m.get("id"), str)}
     except urllib.error.HTTPError as exc:
