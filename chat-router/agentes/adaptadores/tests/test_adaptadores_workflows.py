@@ -949,6 +949,17 @@ def test_fallo_al_guardar_tras_ejecutar_deja_reconciliar_o_adoptable(mundo):
 
 
 # ---------- candado entre procesos / servidores (en el almacen, con TTL y propietario) ----------
+@pytest.mark.parametrize("valor", ["{invalido", "null", "[]", '""'])
+def test_candado_corrupto_falla_cerrado_sin_ejecutar_agentes(mundo, valor):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    mundo.almacen["swe/locks/yaiwes-001.json"] = valor
+    with pytest.raises(ValueError, match="CANDADO_CORRUPTO"):
+        wf.swe_avanzar({"task_id": "yaiwes-001"}, c)
+    assert mundo.agentes == []
+    assert mundo.almacen["swe/locks/yaiwes-001.json"] == valor
+
+
 def test_candado_en_el_almacen_bloquea_a_otro_propietario_vigente(mundo):
     c = mundo.ctx()
     wf.swe_iniciar(contrato(), c)

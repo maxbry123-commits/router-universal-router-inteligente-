@@ -138,12 +138,17 @@ def _ruta_candado(task_id):
 
 
 def _candado_leer(ctx, ruta):
+    # Un lock ilegible NO significa que esta libre: podria pertenecer a otro servidor.
     crudo = _leer(ctx, ruta, opcional=True)
+    if crudo is None:
+        return {}
     try:
-        d = json.loads(crudo) if crudo else {}
-    except ValueError:
-        d = {}
-    return d if isinstance(d, dict) else {}
+        d = json.loads(crudo)
+    except (ValueError, TypeError):
+        raise ValueError("CANDADO_CORRUPTO") from None
+    if not isinstance(d, dict):
+        raise ValueError("CANDADO_CORRUPTO")
+    return d
 
 
 def _candado_escribir(ctx, ruta, mio, segundos):
