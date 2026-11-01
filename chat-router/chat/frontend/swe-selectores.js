@@ -44,6 +44,7 @@ function fijarModeloVentana(w, cat) {
     const seleccionado = (window.RIU_CONFIG?.modelos || []).find(m => m.id === cat && m.disponible !== false);
     if (seleccionado) {
       window.RIU_NVIDIA = { ...(window.RIU_NVIDIA || {}), modelo: cat };
+      try { localStorage.setItem("riu_nvidia_modelo", cat); } catch (e) {}
       const c = chatActual(); if (c) c.ficha = cat;  // mismo id de extremo a extremo, sin elegir otro modelo
     }
   }

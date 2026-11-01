@@ -403,3 +403,24 @@ test("local() con flujo previo continua sin repetir y sin stream; setClaves sigu
     assert.equal(r2.salida, "Bearer gsk-INY-1");
   } finally { l.cerrar(); g.cerrar(); }
 });
+
+test("X-Ray: Groq y NVIDIA consultan /models en paralelo para no vencer el timeout 15 s del chat", async () => {
+  let solicitudes = 0, soltar;
+  const ambas = new Promise(ok => soltar = ok);
+  const callback = ({ res, url }) => {
+    if (!url.endsWith("/models")) return json(res, 404, {});
+    solicitudes++;
+    if (solicitudes === 2) soltar();
+    ambas.then(() => json(res, 200, modelos(["qwen/qwen3.8-27b", "minimaxai/minimax-m3.1-flash"])));
+  };
+  const g = await srv(callback), n = await srv(callback);
+  Object.assign(BASES, { groq: g.url, nvidia: n.url });
+  try {
+    const t = setTimeout(() => soltar(), 1500);
+    try {
+      const data = await disponibilidad({ env: { ...env1, NVIDIA_API_KEY: "nv-FAKE-1" }, opts: rapido() });
+      assert.equal(solicitudes, 2, "no se esperó a que Groq terminara para preguntar a NVIDIA");
+      assert.equal(data.length, MODELOS_API.length);
+    } finally { clearTimeout(t); }
+  } finally { g.cerrar(); n.cerrar(); }
+});

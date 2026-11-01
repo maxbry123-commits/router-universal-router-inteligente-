@@ -28,7 +28,7 @@ export function aplicar(d) {  // d: {groq:[{id,etiqueta,disponible}], nvidia:[â€
   G.modelo = buenos.some((m) => m.id === guardado) ? guardado : perdido ? "" : (buenos[0] || {}).id || "";
   G.aviso = G.modelo ? "" : (perdido || G.lista[0]) ? (perdido || G.lista[0]).etiqueta.replace(/^Groq Â· /, "") : (d.avisoGroq || "el Router no tiene GROQ_API_KEY");
   if ((d.nvidia || []).length) {
-    const buenosNv = d.nvidia.filter((m) => m.disponible !== false), previoNv = (window.RIU_NVIDIA || {}).modelo || "";
+    const buenosNv = d.nvidia.filter((m) => m.disponible !== false), previoNv = (window.RIU_NVIDIA || {}).modelo || localStorage.getItem("riu_nvidia_modelo") || "";
     cfg().modelos = d.nvidia;
     cfg().defecto = buenosNv[0]?.id || "";
     const actualNv = buenosNv.some(m => m.id === previoNv) ? previoNv : cfg().defecto;

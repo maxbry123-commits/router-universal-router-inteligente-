@@ -12,10 +12,12 @@ globalThis.CustomEvent = class { constructor(type, opts) { this.type = type; thi
 globalThis.MutationObserver = class { observe() {} };
 globalThis.document = { readyState: "loading", addEventListener() {}, getElementById() { return null; }, createElement: () => ({}), body: { append() {} } };
 const eventos = [];
-let catalogos = {}, providers = ["groq", "nvidia"], fallos = {};
+let catalogos = {}, providers = ["groq", "nvidia"], fallos = {}, puente = null;
 const ok = (cuerpo) => ({ ok: true, status: 200, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) });
 globalThis.fetch = async (url) => {
   const ruta = String(url).replace(/^https?:\/\/[^/]+/, "");
+  if (ruta === "/web/v1/modelos/disponibilidad" && puente) return ok({ ok: true, modelos: puente.modelos, locales: puente.locales || [] });
+  if (ruta === "/web/v1/claves" && puente) return ok({ ok: true, groq: puente.groq, nvidia: puente.nvidia });
   if (ruta === "/chat/providers") return ok({ providers: providers.map((id) => ({ id })) });
   const m = ruta.match(/^\/chat\/providers\/(groq|nvidia)\/models$/);
   if (m && fallos[m[1]]) return { ok: false, status: 502, headers: { get: () => "application/json" }, json: async () => ({ detail: fallos[m[1]] }), text: async () => JSON.stringify({ detail: fallos[m[1]] }) };
@@ -26,7 +28,7 @@ const { MODELOS_SELECCIONADOS, seleccionar, cargar } = await import("../fichas-e
 
 const GROQ = "groq/qwen/qwen3.8-27b";
 const NV = ["nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"];
-const reiniciar = () => { localStorage.clear(); eventos.length = 0; fallos = {}; providers = ["groq", "nvidia"]; window.RIU_CONFIG = { modelos: [{ id: "nv-muse-glimmer", etiqueta: "viejo" }] }; };
+const reiniciar = () => { localStorage.clear(); eventos.length = 0; fallos = {}; puente = null; providers = ["groq", "nvidia"]; window.RIU_CONFIG = { modelos: [{ id: "nv-muse-glimmer", etiqueta: "viejo" }] }; };
 
 test("MODELOS_SELECCIONADOS tiene exactamente los 5 ids del Director, Muse Glimmer una sola vez", () => {
   assert.deepEqual([...MODELOS_SELECCIONADOS], [GROQ, ...NV]);
@@ -96,4 +98,32 @@ test("cargar: si el catalogo no se pudo leer no se afirma NO DISPONIBLE (se dice
   providers = ["nvidia"]; catalogos = { nvidia: NV };
   await cargar();
   assert.equal(window.RIU_GROQ.modelo, ""); assert.match(window.RIU_GROQ.aviso, /GROQ_API_KEY/);
+});
+
+test("X-Ray: banco cifrado del bridge controla los modelos en los selectores (no solo /chat/providers)", async () => {
+  reiniciar();
+  providers = []; // Router MVP NO posee las claves, pero el bridge SI.
+  puente = { groq: 1, nvidia: 1, modelos: [
+    { id: GROQ, proveedor: "groq", disponible: true },
+    ...NV.map((id, i) => ({ id, proveedor: "nvidia", disponible: i === 0 ? true : null })),
+  ], locales: [{ id: "hf/qwen3-0.6b", estado: "SIN VERIFICAR" }] };
+  await cargar();
+  assert.equal(window.RIU_GROQ.modelo, GROQ, "el modelo se selecciona con el banco real del bridge");
+  assert.equal(window.RIU_CONFIG.defecto, NV[0]);
+  assert.equal(window.RIU_CONFIG.modelos[0].disponible, true);
+  assert.equal(window.RIU_CONFIG.modelos[1].disponible, null, "desconocido NO se declara no disponible");
+  assert.equal(window.RIU_LOCAL.lista[0].id, "hf/qwen3-0.6b");
+});
+
+test("X-Ray: sin claves reales en el bridge no se marca DISPONIBLE un modelo externo", async () => {
+  reiniciar();
+  puente = { groq: 0, nvidia: 0, modelos: [
+    { id: GROQ, proveedor: "groq", disponible: null },
+    ...NV.map((id) => ({ id, proveedor: "nvidia", disponible: null })),
+  ] };
+  await cargar();
+  assert.equal(window.RIU_GROQ.modelo, "");
+  assert.equal(window.RIU_GROQ.lista[0].estado, "NO CONFIGURADO");
+  assert.ok(window.RIU_CONFIG.modelos.every(m => m.disponible === false && m.estado === "NO CONFIGURADO"));
+  assert.equal(window.RIU_CONFIG.defecto, "", "sin clave el selector NVIDIA no inventa un modelo funcional");
 });

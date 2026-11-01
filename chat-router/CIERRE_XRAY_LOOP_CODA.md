@@ -101,3 +101,9 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - `SWE CODE/web-bridge/src/server.js`: respuesta del endpoint incluye `locales`, con **SIN VERIFICAR** si hay al menos un URL S1..S3 y **NO CONFIGURADO** si ninguno; no anuncia modelos locales como DISPONIBLES sin inferencia real.
 - `chat/frontend/fichas-externas.js`, `swe-selectores.js`, `swe-directo.js`: misma disponibilidad del bridge para modelos locales y APIs, sin depender de la detección de agentes por otro equipo. Frontend Groq/NVIDIA locales selectores reparados.
 - Pendiente: ejecución real del bridge y credenciales; un estado de catálogo no demuestra respuesta real. Sin cambios en Hugging Face ni infraestructura.
+
+### X-Ray III — pruebas de integración sin agentes
+- `chat/frontend/test/fichas-externas.test.mjs`: se agregaron pruebas de catálogos y conteos del bridge, modelos SIN VERIFICAR frente a NO CONFIGURADO y visibilidad local.
+- `SWE CODE/web-bridge/test/respaldo_stream.test.mjs`: prueba que Groq + NVIDIA se consultan simultáneamente, sin demorar ambas sondas secuencialmente.
+- NVIDIA conserva `riu_nvidia_modelo` en almacenamiento del navegador (solo ID, nunca credenciales), restaurando la selección tras recarga.
+- No se ejecutaron aún las pruebas completas ni se certificó respuesta real de proveedor; todo el código va por GitHub y el mirror existente, sin cambios en HF.
