@@ -7,6 +7,7 @@ nunca escribe y nunca devuelve el valor de una clave: los motivos nombran la VAR
 {"disponible": bool, "motivo": str} (contrato antiguo, intacto) mas los campos nuevos: "estado" (los seis), "veredicto" (los tres), "verificado" (bool), "causa" (codigo estable),
 "intentable" (bool: se puede intentar y mostrar el estado real; los modelos SIN VERIFICAR si, los agentes no) y, en agentes que solo admiten ciertos modelos, "modelos": [ids del catalogo];
 en modelos ademas "nombre", "proveedor" y, si hay, "nota" (todos del catalogo unico modelos.py)."""
+import hashlib
 import json
 import os
 import socket
@@ -102,8 +103,13 @@ def _sonda_hf(url):
 
 def _sonda_modelos(proveedor, clave):
     """Ids que el proveedor lista en GET {base}/models (cache 10 min; un fallo se recuerda 60 s para no frenar cada status). Lanza OSError/ValueError si no responde."""
-    c = _CACHE.get(("modelos", proveedor))
-    if c and time.time() - c[0] < (TTL_MODELOS_S if c[1] is not None else TTL_FALLO_S):
+    # No compartir resultados de una clave con otra: pueden tener permisos/modelos distintos.
+    # Solo se almacena la huella irreversible, nunca el token.
+    cache_key = ("modelos", proveedor, hashlib.sha256(clave.encode("utf-8")).hexdigest())
+    c = _CACHE.get(cache_key)
+    if c and time.time() - c[0] < (TTL_MODELOS_S if isinstance(c[1], set) else TTL_FALLO_S):
+        if isinstance(c[1], tuple) and c[1][0] == "rechazo":
+            raise ProveedorRechazo(c[1][1])
         if c[1] is None:
             raise OSError("proveedor sin respuesta (cache)")
         return c[1]
@@ -113,14 +119,14 @@ def _sonda_modelos(proveedor, clave):
             datos = json.loads(r.read(2_000_000).decode("utf-8", "replace"))
         ids = {m["id"] for m in datos["data"] if isinstance(m, dict) and isinstance(m.get("id"), str)}
     except urllib.error.HTTPError as exc:
-        _CACHE[("modelos", proveedor)] = (time.time(), None)
+        _CACHE[cache_key] = (time.time(), ("rechazo", exc.code) if exc.code in (401, 403) else None)
         if exc.code in (401, 403):
             raise ProveedorRechazo(exc.code) from None
         raise OSError("GET /models fallo") from None
     except (OSError, ValueError, KeyError, TypeError):
-        _CACHE[("modelos", proveedor)] = (time.time(), None)
+        _CACHE[cache_key] = (time.time(), None)
         raise OSError("GET /models fallo") from None
-    _CACHE[("modelos", proveedor)] = (time.time(), ids)
+    _CACHE[cache_key] = (time.time(), ids)
     return ids
 
 
@@ -207,7 +213,9 @@ def _modelo_hf(sonda_hf, activa):
     if not activa or sonda_hf is None:
         return _no("servidor HF configurado pero sin verificar (comprobacion desactivada)", "SIN VERIFICAR", "verificacion_desactivada", intentable=True)
     if any(sonda_hf(u) for u in urls):
-        return _ok()
+        # TCP abierto no demuestra que ninguno de los cuatro modelos esté cargado o que pueda inferir.
+        return _no("servidor HF alcanzable, pero el modelo especifico no tiene inferencia comprobada", "SIN VERIFICAR",
+                   "modelo_hf_no_verificado", intentable=True)
     return _no("ningun servidor HF (SWECODE_URL_S1..S3) responde ahora; un Space dormido tarda en arrancar: sin verificar", "SIN VERIFICAR", "servidor_hf_sin_respuesta", intentable=True)
 
 
