@@ -44,7 +44,7 @@ const IDS_DIRECTOS = (id) => /^(groq\/|nvidia\/|lfm2\.5|qwen2\.5-coder|qwen3\.5|
 
 // Groq/NVIDIA/locales con un modo (p. ej. despliega): reciben el preambulo de ese modo, como el agente que despliega
 // system-prompt-on (toggle ON/OFF via /v1/system-prompt-on, defecto ON): si esta ON y la ficha del Router MVP tiene contenido, se fusiona/antepone (systemprompt.js)
-const conPreambulo = (msgs, m) => conSystemPrompt(m && modoValido(m) ? [{ role: 'system', content: preambulo(m) }, ...msgs] : msgs);
+const conPreambulo = (msgs, m, forzarOn = false) => conSystemPrompt(m && modoValido(m) ? [{ role: 'system', content: preambulo(m) }, ...msgs] : msgs, process.env, { forzarOn });
 
 // acceso: TODAS las rutas (salvo /health) exigen una de las 4 claves de acceso del chat (x-api-key o Authorization: Bearer <clave>) o BRIDGE_TOKEN (Authorization: Bearer / x-bridge-key / x-api-key).
 // BRIDGE_TOKEN es OPCIONAL: el provider de OpenClaw puede usar api_key = clave de acceso. Sin ninguna configurada el bridge responde 503 (ya no queda abierto)
@@ -292,6 +292,9 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (conv_id != null && !/^[\w-]{1,80}$/.test(String(conv_id))) return res.status(400).json({ error: { code: 'CONV_ID_INVALIDO', message: 'conv_id: letras, numeros, - y _ (max 80)' } });
     if (model.startsWith('web-') && !MODELOS_WEB[model.slice(4)]) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     if (Array.isArray(documentos) && documentos.length > MAX_DOCS) return res.status(413).json({ error: { code: 'DEMASIADOS_DOCUMENTOS', max: MAX_DOCS } });
+    // La UI nativa de OpenClaw no incorpora un boton: sus tareas y tool_calls
+    // llevan la ficha activada aunque el chat YAIWES haya apagado SU interruptor.
+    const forzarPromptOpenClaw = req.body.origen === 'openclaw' || req.body.ejecutor_tools === 'openclaw';
     const messages = conFormato(mensajesIn);  // formato de salida del chat Yaiwes tambien para OpenClaw
     // credenciales vienen de OpenClaw por llamada (vía plugins->harness); env solo respaldo
     if (cuentas) setCuentas(cuentas, claveReq);
@@ -315,7 +318,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (docs) prompt = `${prompt}\n\n${docs}`;
     if (prompt.length > MAX_PROMPT) return res.status(413).json({ error: { code: 'PROMPT_DEMASIADO_GRANDE', max: MAX_PROMPT } });
     const mensajesM = docs ? [...messages, { role: 'user', content: docs }] : messages;
-    const promptFicha = conSystemPromptTexto(prompt);  // idem conPreambulo, pero para los modelos web-*/consenso (prompt de texto plano, no mensajes)
+    const promptFicha = conSystemPromptTexto(prompt, process.env, { forzarOn: forzarPromptOpenClaw });  // idem conPreambulo, pero para los modelos web-*/consenso (prompt de texto plano, no mensajes)
 
     let modeloWeb, modoUso = modo || 'consulta', salida, usado = model;
     if (model.startsWith('web-')) {
@@ -350,19 +353,19 @@ app.post('/v1/chat/completions', async (req, res) => {
       const b = req.body, str = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
       const vinculo = { propietario: propietarioDe(req), proyecto: str(proyecto), sesion: conv_id != null ? String(conv_id) : null, workflow: str(b.workflow), operacion: str(b.operacion) };
       const plan = b.objetivo !== undefined || b.operaciones_previstas !== undefined ? { objetivo: b.objetivo, operaciones: b.operaciones_previstas } : undefined;
-      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo), { ...extra, ...vinculo, plan, exigirPlan: b.exigir_confirmacion === true || String(process.env.BRIDGE_EXIGIR_CONFIRMACION ?? '').trim() !== '0', confirmarCompleta: b.tarea_completa === true || req.headers['x-tarea-completa'] === '1', origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + DEADLINE_MS * 0.8, flushChars: parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_CHARS, 10) || undefined, flushMs: Number.isFinite(parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10)) ? parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10) : undefined, ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: AbortSignal.any([sse.signal, ac1.signal]) } } : {}) }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
+      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { ...extra, ...vinculo, plan, exigirPlan: b.exigir_confirmacion === true || String(process.env.BRIDGE_EXIGIR_CONFIRMACION ?? '').trim() !== '0', confirmarCompleta: b.tarea_completa === true || req.headers['x-tarea-completa'] === '1', origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + DEADLINE_MS * 0.8, flushChars: parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_CHARS, 10) || undefined, flushMs: Number.isFinite(parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10)) ? parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10) : undefined, ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: AbortSignal.any([sse.signal, ac1.signal]) } } : {}) }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
       tarea = { id: r.tarea_id, estado: r.estado, fase: r.fase, secciones: r.secciones, reanudado: r.reanudado, desde_checkpoint: r.desde_checkpoint };
     } else if (esExterno(model)) {
-      const r = await externo(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
+      const r = await externo(model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
     } else if (esLocal(model)) {
-      const r = await local(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
+      const r = await local(model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
     } else if (modeloWeb) {
       const r = await conFallback(modeloWeb, promptFicha, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
     } else if (modoUso === 'asesoria') {
       // asesoria previa a ejecutar: primero Groq (las claves del chat Yaiwes), si no responde la web de SWE CODE free
       try {
-        const r = await externo(`groq/${modeloDefecto('groq')}`, conSystemPrompt([{ role: 'system', content: preambulo('asesoria') }, ...mensajesM]),
+        const r = await externo(`groq/${modeloDefecto('groq')}`, conSystemPrompt([{ role: 'system', content: preambulo('asesoria') }, ...mensajesM], process.env, { forzarOn: forzarPromptOpenClaw }),
                                 { ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) });
         toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; viaPrimaria = 'groq'; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
       } catch (e) {
@@ -396,7 +399,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       }
       if ((!salida || !String(salida).trim()) && !llamadas.length) {
         const ac2 = new AbortController();  // si vence el plazo del respaldo se cancela antes de responder el error
-        const r = await conDeadline(respaldo(conPreambulo(mensajesM, model.startsWith('swecode-') ? modoUso : modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac2.signal])) }), DEADLINE_MS, sse.pide ? sse.latido : null).catch((e2) => { if (e2.code === 'UPSTREAM_TIMEOUT') ac2.abort(); throw e2; });  // con texto ya entregado, el respaldo CONTINUA desde ahi (sse.flujo), no repite
+        const r = await conDeadline(respaldo(conPreambulo(mensajesM, model.startsWith('swecode-') ? modoUso : modo, forzarPromptOpenClaw), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac2.signal])) }), DEADLINE_MS, sse.pide ? sse.latido : null).catch((e2) => { if (e2.code === 'UPSTREAM_TIMEOUT') ac2.abort(); throw e2; });  // con texto ya entregado, el respaldo CONTINUA desde ahi (sse.flujo), no repite
         toolsInvalidas = r.tools_invalidas || []; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
         salida = r.salida; usado = r.usado; via = r.via; aviso = e.code || null;
         registrarLeccion({ codigo: e.code || 'WEB_FALLO', accion: 'respaldo ' + r.via, resultado: 'PASS', modelo: model });  // p. ej. CUENTAS_FALTAN: OpenClaw sabe que debe reenviar cuentas y clave

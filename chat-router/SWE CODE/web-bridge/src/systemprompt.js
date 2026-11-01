@@ -18,16 +18,34 @@ function candidatos(env) {
   out.push(path.resolve(AQUI, '..', '..', '..', '..', ...RELATIVA));
   return out;
 }
-// la ficha puede ser un archivo suelto o (como en este repo) una carpeta con system_core.md adentro
+// Misma composicion de mvp.prompt.sistema(): core parametrizado + bloque 3 + bloque 4.
+// Los archivos originales viven SOLO en router-mvp/fichas/system-prompt; no copiar
+// el texto de la ficha ni usar solamente el core (un prompt incompleto no es PASS).
+const VARIABLES = Object.freeze({
+  '[ROL_ESPECIALIZADO]': 'el ROL DEL NODO indicado más abajo',
+  '[NIVEL / ESPECIALIDAD / PLATAFORMA]': 'senior / el que exija la tarea / la del repositorio',
+  '[PROYECTO]': 'YAIWES',
+  '[RUTA]': 'el repositorio y rutas indicados en la tarea',
+  '[TAREA EXACTA]': 'la tarea del último mensaje del usuario',
+  '[RESULTADO]': 'el resultado verificable que pide la tarea',
+  '[EXISTENTE/AUTO-DETECT]': 'el existente (auto-detectar)',
+  '[OBJETIVO_FINAL]': 'el objetivo de la tarea del usuario',
+  '[CRITERIOS_DE_EXITO]': 'los criterios de la tarea y de la DEFINITION OF DONE',
+  '[FORMATO_EXACTO]': 'el formato que pida la tarea (si no pide, el FORMATO DE SALIDA de la ficha)',
+});
 function leerCandidato(p) {
   try {
     const st = fs.statSync(p);
-    if (st.isFile()) return fs.readFileSync(p, 'utf8');
-    if (st.isDirectory()) {
-      const core = path.join(p, 'system_core.md');
-      if (fs.existsSync(core)) return fs.readFileSync(core, 'utf8');
-    }
-  } catch { /* candidato siguiente */ }
+    if (!st.isDirectory()) return null; // la unica fuente autorizada es la ficha completa
+    let core = fs.readFileSync(path.join(p, 'system_core.md'), 'utf8');
+    for (const [k, v] of Object.entries(VARIABLES)) core = core.split(k).join(v);
+    core = core.replace('[MODO]\\n(ver bloque_1.md)\\n', '').replace('\\nEmpieza ahora.\\n', '\\n');
+    core = core.replace(/\\n=+ FIN INPUT BLOCK MAESTRO UNIFICADO =+\\n/g, '\\n');
+    const bloque3 = fs.readFileSync(path.join(p, 'bloques', 'bloque_3.md'), 'utf8').trim();
+    const bloque4 = fs.readFileSync(path.join(p, 'bloques', 'bloque_4.md'), 'utf8').trim();
+    if (!core.trim() || !bloque3 || !bloque4) return null;
+    return [core.trim(), bloque3, bloque4].join('\\n\\n');
+  } catch { /* candidato ausente o incompleto: siguiente */ }
   return null;
 }
 export function textoSystemPrompt(env = process.env) {
@@ -55,8 +73,8 @@ export function setSystemPromptOn(on, env = process.env) {
 
 // antepone el system prompt de la ficha (si ON y con contenido) ANTES del primer mensaje; si ya hay un mensaje de sistema
 // (p. ej. el preambulo de modo) se fusiona con el, en vez de agregar uno nuevo. OFF o sin contenido: no toca nada
-export function conSystemPrompt(mensajes, env = process.env) {
-  if (!systemPromptOn(env) || !Array.isArray(mensajes)) return mensajes;
+export function conSystemPrompt(mensajes, env = process.env, { forzarOn = false } = {}) {
+  if ((!forzarOn && !systemPromptOn(env)) || !Array.isArray(mensajes)) return mensajes;
   const txt = textoSystemPrompt(env);
   if (!txt) return mensajes;
   const primero = mensajes[0];
@@ -68,8 +86,8 @@ export function conSystemPrompt(mensajes, env = process.env) {
 }
 
 // version para los modelos web-* / consenso, que reciben un prompt de texto plano (no un arreglo de mensajes)
-export function conSystemPromptTexto(prompt, env = process.env) {
-  if (!systemPromptOn(env)) return prompt;
+export function conSystemPromptTexto(prompt, env = process.env, { forzarOn = false } = {}) {
+  if (!forzarOn && !systemPromptOn(env)) return prompt;
   const txt = textoSystemPrompt(env);
   return txt ? `${txt}\n\n${prompt}` : prompt;
 }
