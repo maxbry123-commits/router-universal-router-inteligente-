@@ -89,3 +89,36 @@ class TareaIdHaciaElBridge(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DiarioSeguro(unittest.TestCase):
+    def test_ausente_de_verdad_crea_diario_nuevo(self):
+        with patch.object(h, "leer", side_effect=RuntimeError("fallo HF: no existe tareas/t1/diario.json")):
+            self.assertEqual(h._diario("t1"), {})
+
+    def test_caida_de_hf_no_permite_repetir_herramientas(self):
+        with patch.object(h, "leer", side_effect=RuntimeError("fallo de lectura HF")):
+            with self.assertRaisesRegex(RuntimeError, "DIARIO_NO_DISPONIBLE"):
+                h._diario("t1")
+
+    def test_diario_corrupto_no_reinicia_la_tarea(self):
+        for valor in ('{invalido', '[]', 'null'):
+            with self.subTest(valor=valor), patch.object(h, "leer", return_value={"valor": valor}):
+                with self.assertRaisesRegex(RuntimeError, "DIARIO_CORRUPTO"):
+                    h._diario("t1")
+
+    def test_error_al_guardar_diario_es_fallo_obligatorio(self):
+        with patch.object(h, "guardar", side_effect=RuntimeError("fallo de escritura HF")):
+            with self.assertRaisesRegex(RuntimeError, "DIARIO_NO_PERSISTIDO"):
+                h._anotar("t1", {"k": "v"})
+
+    def test_registro_iniciada_se_guarda_antes_de_ejecutar_y_frena_reintento(self):
+        # Contrato de seguridad para la rama de herramientas del llm.
+        import inspect
+        fuente = inspect.getsource(h.llm)
+        self.assertLess(fuente.index('{"estado": "INICIADA", "herramienta": nombre}'),
+                        fuente.index('resultado = llamar("router_mvp", "mcp"'),
+                        "INICIADA debe persistirse antes de la llamada con efectos")
+        self.assertIn('raise RuntimeError("OPERACION_SIN_CONFIRMAR")', fuente)
+        self.assertIn('"estado": "CONFIRMADA"', fuente)
+

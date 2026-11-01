@@ -29,9 +29,9 @@ def valid_id(value, field='id'):
         raise QueueError(f'{field} inválido')
     return value
 
-def checked_tasks(items):
-    if not isinstance(items,list) or not 1 <= len(items) <= 50:
-        raise QueueError('Se requieren entre 1 y 50 tareas')
+def checked_tasks(items,max_tasks=50):
+    if not isinstance(items,list) or not 1 <= len(items) <= max_tasks:
+        raise QueueError(f'Se requieren entre 1 y {max_tasks} tareas')
     ids=set(); result=[]
     for i,t in enumerate(items):
         if not isinstance(t,dict):raise QueueError('Tarea no es un objeto')
@@ -123,14 +123,14 @@ class QueueStore:
 
     def create(self,body):
         if not isinstance(body,dict):raise QueueError('JSON inválido')
-        tasks=checked_tasks(body.get('tasks',[]))
+        tasks=checked_tasks(body.get('tasks',[]),100 if body.get('mode')=='dsl' else 50)
         chat_id=valid_id(body.get('chat_id','web-general'),'chat_id')
         title=body.get('title','Cola de tareas')
         if not isinstance(title,str) or not 1<=len(title)<=150:raise QueueError('title inválido')
         max_calls=body.get('max_model_calls',80)
         if type(max_calls)!=int or not 1<=max_calls<=1000:raise QueueError('Límite llamadas incorrecto')
         mode=body.get('mode','sequential')
-        if mode not in {'sequential','dag'}:raise QueueError('mode inválido')
+        if mode not in {'sequential','dag','dsl'}:raise QueueError('mode inválido')
         qid='cit_'+uuid.uuid4().hex[:20]
         with self.db() as c:
             c.execute('BEGIN IMMEDIATE')
@@ -264,7 +264,7 @@ class QueueStore:
         with self.db() as c:
             c.execute('BEGIN IMMEDIATE')
             now=time.time()
-            for q in c.execute("SELECT * FROM queues WHERE state='running' ORDER BY created").fetchall():
+            for q in c.execute("SELECT * FROM queues WHERE state='running' AND mode!='dsl' ORDER BY created").fetchall():
                 qid=q['id']
                 if q['deadline'] and q['deadline']<now:
                     c.execute("UPDATE queues SET state='expired' WHERE id=?",(qid,));self.ev(c,qid,'queue.expired');continue
@@ -302,6 +302,48 @@ class QueueStore:
                     c.execute('UPDATE queues SET state=? WHERE id=?',(nxt,qid));self.ev(c,qid,'queue.'+nxt)
             c.execute('COMMIT');return None
 
+
+    def disable_dsl_task(self,qid,tid):
+        """Disable a DSL slot without marking it PASS."""
+        valid_id(qid);valid_id(tid)
+        with self.db() as c:
+            c.execute('BEGIN IMMEDIATE')
+            q=c.execute('SELECT mode,state FROM queues WHERE id=?',(qid,)).fetchone()
+            if not q or q['mode']!='dsl' or q['state']!='running':
+                c.execute('ROLLBACK');raise QueueError('Cola DSL no disponible',409)
+            n=c.execute("UPDATE tasks SET state='skipped' WHERE queue_id=? AND id=? AND state='pending'",(qid,tid)).rowcount
+            if n!=1:
+                c.execute('ROLLBACK');raise QueueError('Tarea DSL no omitible',409)
+            self.ev(c,qid,'dsl.task.disabled',{'verification':'OFF'},tid)
+            states=[x['state'] for x in c.execute('SELECT state FROM tasks WHERE queue_id=?',(qid,)).fetchall()]
+            if states and all(x in TERMINAL for x in states):
+                c.execute("UPDATE queues SET state='completed' WHERE id=?",(qid,))
+                self.ev(c,qid,'queue.completed',{'verification':'ALL_OFF'})
+            c.execute('COMMIT')
+
+    def claim_dsl_for(self,qid,tid):
+        """Atomic one-slot claim. The legacy worker cannot claim DSL tasks."""
+        valid_id(qid);valid_id(tid)
+        with self.db() as c:
+            c.execute('BEGIN IMMEDIATE')
+            q=c.execute('SELECT state,mode FROM queues WHERE id=?',(qid,)).fetchone()
+            if not q or q['mode']!='dsl' or q['state']!='running':
+                c.execute('ROLLBACK');return {'claimed':False,'error':'QUEUE_NOT_RUNNING'}
+            rows=c.execute('SELECT id,state,details FROM tasks WHERE queue_id=?',(qid,)).fetchall()
+            task=next((row for row in rows if row['id']==tid),None)
+            if not task or task['state']!='pending':
+                c.execute('ROLLBACK');return {'claimed':False,'error':'TASK_NOT_PENDING'}
+            details=json.loads(task['details'])
+            status={row['id']:row['state'] for row in rows}
+            if any(status.get(d)!='succeeded' for d in details['depends_on']):
+                c.execute('ROLLBACK');return {'claimed':False,'error':'BLOCKED_DEPENDENCY'}
+            n=c.execute("UPDATE tasks SET state='running',lease=?,attempts=attempts+1 WHERE queue_id=? AND id=? AND state='pending'",(time.time()+900,qid,tid)).rowcount
+            if n!=1:
+                c.execute('ROLLBACK');return {'claimed':False,'error':'CLAIM_CONFLICT'}
+            self.ev(c,qid,'dsl.task.started',{},tid)
+            c.execute('COMMIT')
+            return {'claimed':True,'queue_id':qid,'task_id':tid}
+
     def complete(self,qid,tid,payload,*,ok=True,retry=False,delay=0):
         data=dump(payload)
         if len(data)>100000:raise QueueError('Resultado demasiado grande')
@@ -316,6 +358,14 @@ class QueueStore:
             c.execute('UPDATE tasks SET state=?,output=?,receipt_id=?,lease=NULL,due=? WHERE queue_id=? AND id=?',
                       (state,data,receipt,time.time()+delay if retry else 0,qid,tid))
             self.ev(c,qid,'task.'+state,{'receipt_id':receipt,'verification':payload.get('verification','NO_VERIFICADO')},tid)
+            if q['state']=='running':
+                mode=c.execute('SELECT mode FROM queues WHERE id=?',(qid,)).fetchone()['mode']
+                if mode=='dsl':
+                    remaining=[x['state'] for x in c.execute('SELECT state FROM tasks WHERE queue_id=?',(qid,)).fetchall()]
+                    if remaining and all(x in TERMINAL for x in remaining):
+                        final='completed' if all(x=='succeeded' for x in remaining) else 'failed'
+                        c.execute('UPDATE queues SET state=? WHERE id=?',(final,qid))
+                        self.ev(c,qid,'queue.'+final)
             if state=='failed':
                 c.execute("UPDATE queues SET state='failed' WHERE id=?",(qid,));self.ev(c,qid,'queue.failed',{'task_id':tid})
             c.execute('COMMIT')

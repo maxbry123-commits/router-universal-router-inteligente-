@@ -42,8 +42,11 @@ async function llamar(metodo, cuerpo) {
     r = await fetch(String(base).replace(/\/$/, "") + RUTA, { method: metodo, headers: h, credentials: base ? "omit" : "same-origin", body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo), signal: ac ? ac.signal : undefined });
   } catch (e) { throw { status: 0, code: "RED" }; } finally { if (t) clearTimeout(t); }
   let p = {}; try { p = await r.json(); } catch (e) {}
-  if (!r.ok) throw { status: r.status, code: (p && p.error && p.error.code) || "" };
-  return { groq: Number(p.groq) || 0, nvidia: Number(p.nvidia) || 0 };
+  if (!r.ok || p.ok === false || ((metodo === "POST" || metodo === "DELETE") && p.local !== true)) {
+    throw { status: r.ok ? 503 : r.status, code: (p && p.error && p.error.code) || "BANCO_NO_GUARDADO" };
+  }
+  return { groq: Number(p.groq) || 0, nvidia: Number(p.nvidia) || 0,
+    ...(metodo === "POST" || metodo === "DELETE" ? { local: p.local, persistido: p.persistido === true } : {}) };
 }
 export const estadoBanco = () => llamar("GET");
 export const borrarBanco = () => llamar("DELETE");
@@ -54,6 +57,8 @@ export function textoConteos(n) {
   return t || "Sin claves guardadas en el servidor";
 }
 export function textoError(e) {
+  if (e && e.code === "BANCO_NO_GUARDADO") return "No se guardó nada: falló el banco cifrado del servidor";
+  if (e && e.code === "BANCO_NO_BORRADO") return "No se borraron las claves: falló el banco cifrado del servidor";
   if (e && e.status === 401) return "Clave del chat incorrecta: no se guardó nada";
   if (e && e.status === 400) return "Clave con formato inválido (8–300 caracteres, sin espacios; separa varias con coma o salto de línea): no se guardó nada";
   if (e && e.status === 503) return "El servidor no tiene clave de acceso configurada: no se guardó nada";
@@ -67,7 +72,8 @@ export async function guardarConEstado(valores) {
   const v = {}; for (const p of PROVEEDORES) { const x = limpia(valores && valores[p]); if (x && x.length) v[p] = x; }
   if (!Object.keys(v).length) return { ok: false, texto: "Nada que guardar" };
   try {
-    return { ok: true, texto: textoConteos(await guardarEnBanco(v)) };
+    const n = await guardarEnBanco(v);
+    return { ok: true, texto: textoConteos(n) + (n.persistido ? " · respaldo cifrado publicado" : " · solo banco local; respaldo externo no confirmado") };
   } catch (e) {
     if (!sinBanco(e)) return { ok: false, texto: textoError(e) || "No se pudo guardar" };
     return { ok: false, texto: "No se guardó nada: " + SIN_SERVIDOR };
@@ -75,7 +81,10 @@ export async function guardarConEstado(valores) {
 }
 export const guardar = async (valores) => (await guardarConEstado(valores)).texto;
 export async function borrar() {
-  try { await borrarBanco(); return "Claves borradas del servidor"; } catch (e) { return sinBanco(e) ? "No se borró nada: " + SIN_SERVIDOR : "No se pudo borrar en el servidor" + (textoError(e) ? " · " + textoError(e) : ""); }
+  try {
+    const n = await borrarBanco();
+    return n.persistido ? "Claves borradas del servidor y del respaldo cifrado" : "Claves borradas del banco local; respaldo externo no confirmado";
+  } catch (e) { return textoError(e) || (sinBanco(e) ? "No se borró nada: " + SIN_SERVIDOR : "No se pudo borrar en el servidor"); }
 }
 export async function estado() {  // sin banco solo se informa el estado
   try { return textoConteos(await estadoBanco()); } catch (e) {

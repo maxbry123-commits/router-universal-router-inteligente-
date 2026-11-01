@@ -164,12 +164,22 @@ function usoDe(u) {
   return { p: Number.isFinite(p) ? p : 0, c: Number.isFinite(c) ? c : 0, t: Number.isFinite(t) ? t : (Number.isFinite(p) ? p : 0) + (Number.isFinite(c) ? c : 0) };
 }
 
+const cancelada = () => Object.assign(new Error('peticion cancelada por el cliente'), { code: 'ABORTADO' });
 async function pedir(base, modelo, mensajes, clave, extra = {}, r = red()) {
-  const resp = await fetch(`${base.replace(/\/$/, '')}/chat/completions`, {
-    method: 'POST', signal: AbortSignal.timeout(r.timeoutMs), headers: cabeceras(clave), body: cuerpo(modelo, mensajes, extra, false),
-  });
-  if (!resp.ok) throw errHttp(resp.status, resp.headers.get('retry-after'));
-  return interpretar(await resp.json(), r, declaradas(extra));
+  // Sin streaming (HF local, respuestas completas), Detener tambien debe cancelar la solicitud HTTP real.
+  if (r.signal?.aborted) throw cancelada();
+  const limite = AbortSignal.timeout(r.timeoutMs);
+  const signal = r.signal ? AbortSignal.any([r.signal, limite]) : limite;
+  try {
+    const resp = await fetch(`${base.replace(/\/$/, '')}/chat/completions`, {
+      method: 'POST', signal, headers: cabeceras(clave), body: cuerpo(modelo, mensajes, extra, false),
+    });
+    if (!resp.ok) throw errHttp(resp.status, resp.headers.get('retry-after'));
+    return interpretar(await resp.json(), r, declaradas(extra));
+  } catch (e) {
+    if (r.signal?.aborted) throw cancelada();  // una cancelacion nunca rota claves ni activa el respaldo
+    throw e;
+  }
 }
 
 // ---- streaming real: node:http(s) con Agent keep-alive (las conexiones se reutilizan entre peticiones) ----
@@ -337,18 +347,21 @@ export function estadoMetricas() {
 
 // GET {base}/models con la primera clave valida; cachea la lista de ids (o su ausencia)
 async function listarIds(prov, base, ks, r) {
+  if (r.signal?.aborted) throw cancelada();  // Detener antes de consultar /models
   const k = `${prov}\0${base}`, hit = cacheModelos.get(k);
   if (hit && hit.hasta > r.ahora()) return hit.ids;
   let ids = null;
   for (const clave of ks) {
     try {
-      const resp = await fetch(`${base.replace(/\/$/, '')}/models`, { signal: AbortSignal.timeout(Math.min(r.descubrirMs, r.timeoutMs)), headers: { 'user-agent': 'riu-swe-code', authorization: `Bearer ${clave}` } });
+      const limite = AbortSignal.timeout(Math.min(r.descubrirMs, r.timeoutMs));
+      const signal = r.signal ? AbortSignal.any([r.signal, limite]) : limite;
+      const resp = await fetch(`${base.replace(/\/$/, '')}/models`, { signal, headers: { 'user-agent': 'riu-swe-code', authorization: `Bearer ${clave}` } });
       if (resp.status === 401 || resp.status === 403) continue;  // clave invalida: prueba la siguiente
       if (!resp.ok) break;
       const j = await resp.json(), lista = Array.isArray(j?.data) ? j.data : Array.isArray(j?.models) ? j.models : [];
       ids = lista.map(m => typeof m === 'string' ? m : m?.id).filter(i => typeof i === 'string' && i);
       break;
-    } catch { break; }  // proveedor caido: no insistir con cada clave
+    } catch { if (r.signal?.aborted) throw cancelada(); break; }  // proveedor caido: no insistir con cada clave
   }
   cacheModelos.set(k, { ids, hasta: r.ahora() + (ids ? r.cacheMs : r.cacheFalloMs) });
   return ids;
@@ -413,7 +426,7 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
       return { salida: x.texto, tool_calls: x.tool_calls, tools_invalidas: x.tools_invalidas, finish_reason: x.finish_reason, via: prov, usado: id, metricas: x.metricas };
     } catch (e) {
       ultimo = e;
-      if (e.code === 'ABORTADO') break;  // el cliente se fue: no gastar mas claves
+      if (e.code === 'ABORTADO' || r.signal?.aborted) throw cancelada();  // Detener: ni otra clave ni otro proveedor
       if (esTimeout(e)) { for (const x of todas) enfriadas.set(`${prov}\0${x}`, r.ahora() + r.cooldownMs); break; }  // primer timeout: se enfria el proveedor (todas sus claves) y se corta; respaldo() no reentra
       if (e.status === 429) { enfriadas.set(`${prov}\0${k}`, r.ahora() + Math.max(r.cooldownMs, Math.min(e.retryAfterMs || 0, 600000))); await r.esperar(esperaCorta(e, r)); continue; }
       if (e.status === 402) { enfriadas.set(`${prov}\0${k}`, r.ahora() + COOLDOWN_CREDITO_MS); continue; }  // sin credito/cuota: otra clave puede servir; esta no se repite ni se prueba primero 10 min
@@ -431,7 +444,7 @@ export async function local(id, mensajes, { env = process.env, extra = {}, opts,
   if (onInicio) { try { onInicio({ via: 'hf-local', usado: id }); } catch { /* informativo */ } }
   for (const n of [1, 2, 3]) {
     const u = env[`SWECODE_URL_S${n}`]; if (!u) continue;
-    try { const x = await completar(u, id, mensajes, null, extra, r, { flujo }); anotarMetricas(`hf-local/${id}`, x.metricas); return { salida: x.texto, tool_calls: x.tool_calls, tools_invalidas: x.tools_invalidas, finish_reason: x.finish_reason, via: 'hf-local', usado: id, servidor: `S${n}`, metricas: x.metricas }; } catch (e) { fallos.push(`S${n}: ${e.message}`); }
+    try { const x = await completar(u, id, mensajes, null, extra, r, { flujo }); anotarMetricas(`hf-local/${id}`, x.metricas); return { salida: x.texto, tool_calls: x.tool_calls, tools_invalidas: x.tools_invalidas, finish_reason: x.finish_reason, via: 'hf-local', usado: id, servidor: `S${n}`, metricas: x.metricas }; } catch (e) { if (e.code === 'ABORTADO' || r.signal?.aborted) throw cancelada(); fallos.push(`S${n}: ${e.message}`); }
   }
   throw Object.assign(new Error('HF_LOCAL: ' + (fallos.join(' | ') || 'sin SWECODE_URL_S1..S3')), { code: 'HF_LOCAL_FALLO' });
 }
@@ -440,15 +453,16 @@ export async function respaldo(mensajes, { env = process.env, extra = {}, opts, 
   const fallos = [], r = red(opts), f = onDelta ? (flujo || { texto: '' }) : flujo;
   const intentos = [];  // 156-161: rastro (sin credenciales) de cada proveedor intentado; el cambio de proveedor/modelo NUNCA se oculta
   for (const prov of ['groq', 'nvidia']) {
+    if (r.signal?.aborted) throw cancelada();
     const todas = claves(prov.toUpperCase() + '_API_KEY', env);
     if (!todas.length) { fallos.push(`${prov}: sin clave`); continue; }
     if (!libres(prov, env, r).length) { fallos.push(`${prov}: enfriado (timeout/429 reciente)`); continue; }  // no se reentra en un proveedor ya enfriado
     let id = `${prov}/${modeloDefecto(prov, env)}`;
     try { id = `${prov}/${await modeloDe(prov, env, r)}`; const x = await externo(id, mensajes, { env, extra, opts, onDelta, onInicio, flujo: f }); intentos.push({ via: prov, usado: id, ok: true }); return { ...x, intentos }; }
-    catch (e) { intentos.push({ via: prov, usado: id, ok: false, tipo: e.tipo || tipoDe(e), ...(Number.isInteger(e.status) ? { status: e.status } : {}) }); fallos.push(limpiar(`${prov}: ${e.message}`, todas)); }
+    catch (e) { if (e.code === 'ABORTADO' || r.signal?.aborted) throw cancelada(); intentos.push({ via: prov, usado: id, ok: false, tipo: e.tipo || tipoDe(e), ...(Number.isInteger(e.status) ? { status: e.status } : {}) }); fallos.push(limpiar(`${prov}: ${e.message}`, todas)); }
   }
   try { const x = await local(LOCALES[0], mensajes, { env, extra, opts, onInicio, flujo: f }); intentos.push({ via: 'hf-local', usado: LOCALES[0], ok: true }); return { ...x, intentos }; }
-  catch (e) { intentos.push({ via: 'hf-local', usado: LOCALES[0], ok: false, tipo: 'timeout_red' }); fallos.push(e.message); }
+  catch (e) { if (e.code === 'ABORTADO' || r.signal?.aborted) throw cancelada(); intentos.push({ via: 'hf-local', usado: LOCALES[0], ok: false, tipo: 'timeout_red' }); fallos.push(e.message); }
   throw Object.assign(new Error('RESPALDO_AGOTADO: ' + fallos.join(' | ')), { code: 'RESPALDO_AGOTADO', intentos, ...(f?.texto ? { parcial: f.texto } : {}) });
 }
 

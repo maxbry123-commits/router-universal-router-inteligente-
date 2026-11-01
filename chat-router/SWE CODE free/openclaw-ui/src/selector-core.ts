@@ -62,7 +62,7 @@ export function normalizarCapacidades(p: unknown): Capacidades {
 }
 
 export type Veredicto = { ok: boolean; estado: Estado; motivo: string };
-const estadoDe = (e: Entrada): Estado => (ESTADOS as readonly string[]).includes(e.estado ?? '') ? (e.estado as Estado) : e.disponible ? 'DISPONIBLE' : 'NO INSTALADO';
+const estadoDe = (e: Entrada): Estado => (ESTADOS as readonly string[]).includes(e.estado ?? '') ? (e.estado as Estado) : e.disponible ? 'DISPONIBLE' : 'SIN VERIFICAR';
 // Estado de una opcion segun lo que el Harness DICE. Un agente o workflow sin entrada `disponible:true` no es ejecutable (el adaptador existente no prueba que este instalado);
 // un modelo sin entrada se deja elegir (no se sabe), uno SIN VERIFICAR se intenta y se muestra su estado real; GLM-5.3 u otro no disponible queda bloqueado.
 export function estadoOpcion(cap: Capacidades, tipo: 'agente' | 'workflow' | 'modelo', id: string, modelo?: string): Veredicto {
@@ -73,12 +73,13 @@ export function estadoOpcion(cap: Capacidades, tipo: 'agente' | 'workflow' | 'mo
   if (tipo === 'modelo') {
     if (!e) return { ok: true, estado: 'SIN VERIFICAR', motivo: 'el Harness no lo reporta' };
     const est = estadoDe(e);
-    if (e.disponible) return { ok: true, estado: 'DISPONIBLE', motivo };
-    return est === 'SIN VERIFICAR' && e.intentable === true ? { ok: true, estado: est, motivo } : { ok: false, estado: est, motivo: motivo || est };
+    if (est === 'SIN VERIFICAR') return { ok: e.intentable === true, estado: est, motivo: motivo || est };
+    if (e.disponible && est === 'DISPONIBLE') return { ok: true, estado: est, motivo };
+    return { ok: false, estado: est, motivo: motivo || est };
   }
   if (!e) return { ok: false, estado: 'SIN VERIFICAR', motivo: 'el Harness no lo reporta conectado' };
   const est = estadoDe(e);
-  if (!e.disponible) return { ok: false, estado: est, motivo: motivo || est };
+  if (!e.disponible || est !== 'DISPONIBLE') return { ok: false, estado: est, motivo: motivo || est };
   if (tipo === 'agente' && modelo && Array.isArray(e.modelos) && !e.modelos.includes(modelo)) return { ok: false, estado: 'NO COMPATIBLE', motivo: `incompatible con ${modelo}` };
   return { ok: true, estado: 'DISPONIBLE', motivo };
 }

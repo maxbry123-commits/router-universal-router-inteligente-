@@ -198,3 +198,18 @@ test('S8. POST/DELETE /v1/claves: `persistido` indica si GitHub se publico (loca
   r = await jpost(S, '/v1/claves', { groq: 'gsk-publicada-1234' }, k);
   assert.equal(r.json.persistido, false); assert.equal(r.json.local, true);
 });
+
+test('X-Ray 2: si falla guardar/borrar banco cifrado, 503 y no se anuncian claves en memoria ni se toca el proveedor', async () => {
+  const bancoFallido = path.join(TMP, 'fake-banco-fallo-xray.sh');
+  fs.writeFileSync(bancoFallido, '#!/bin/sh\nif [ "$1" = "leer" ]; then echo \'{"groq": [], "nvidia": []}\'; elif [ "$1" = "diagnostico" ]; then echo \'{}\'; else cat >/dev/null; echo \'{"ok": false}\'; exit 1; fi\n', { mode: 0o755 });
+  const S = await arrancar('FALLO_BANCO_XRAY', { __sinAcceso: true, RIU_API_KEY: ACCESO_TEST, RIU_CLAVES_CMD: bancoFallido });
+  const k = { 'x-api-key': ACCESO_TEST };
+  let r = await jpost(S, '/v1/claves', { groq: 'gsk-ficticia-xray-12345' }, k);
+  assert.equal(r.status, 503); assert.equal(r.json.error.code, 'BANCO_NO_GUARDADO');
+  assert.equal((await jget(S, '/v1/claves', k)).json.groq, 0, 'un guardado fallido no contamina memoria');
+  r = await jpost(S, '/v1/claves', undefined, k, 'DELETE');
+  assert.equal(r.status, 503); assert.equal(r.json.error.code, 'BANCO_NO_BORRADO');
+  r = await chat(S, { model: 'groq/qwen/qwen3.8-27b', claves: { groq: 'gsk-ficticia-xray-12345' } }, k);
+  assert.equal(r.status, 503); assert.equal(r.json.error.code, 'BANCO_NO_GUARDADO');
+  assert.equal((await jget(S, '/v1/claves', k)).json.groq, 0);
+});

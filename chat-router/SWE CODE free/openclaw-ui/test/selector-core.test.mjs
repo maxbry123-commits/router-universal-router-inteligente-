@@ -87,3 +87,23 @@ test('capacidades sin forma esperada no inventan nada', () => {
   for (const x of [null, 5, 'x', [], { agentes: 'no' }, { agentes: { a: { disponible: 'si' } } }]) { const c = normalizarCapacidades(x); assert.deepEqual([c.agentes, c.workflows, c.modelos].map((g) => Object.keys(g).length), [0, 0, 0]); }
   assert.equal(normalizarCapacidades(null).harness, 'desconocido');
 });
+
+
+test('X-RAY: un estado SIN VERIFICAR no se transforma en DISPONIBLE ni en NO INSTALADO', () => {
+  const c = normalizarCapacidades({ harness: 'ok',
+    agentes: {
+      opencode: { disponible: true, estado: 'SIN VERIFICAR', motivo: 'sonda fallida' },
+      codex: { disponible: false, motivo: 'sonda sin resultado' },
+    },
+    workflows: { swe_code: { disponible: true, estado: 'SIN VERIFICAR' } },
+    modelos: {
+      'hf/qwen3-0.6b': { disponible: true, estado: 'SIN VERIFICAR', intentable: true },
+      'hf/qwen3.5-0.8b': { disponible: true, estado: 'NO COMPATIBLE' },
+    },
+  });
+  assert.deepEqual([estadoOpcion(c, 'agente', 'opencode').ok, estadoOpcion(c, 'agente', 'opencode').estado], [false, 'SIN VERIFICAR']);
+  assert.deepEqual([estadoOpcion(c, 'agente', 'codex').ok, estadoOpcion(c, 'agente', 'codex').estado], [false, 'SIN VERIFICAR']);
+  assert.equal(estadoOpcion(c, 'workflow', 'swe_code').ok, false);
+  assert.deepEqual([estadoOpcion(c, 'modelo', 'hf/qwen3-0.6b').ok, estadoOpcion(c, 'modelo', 'hf/qwen3-0.6b').estado], [true, 'SIN VERIFICAR']);
+  assert.equal(estadoOpcion(c, 'modelo', 'hf/qwen3.5-0.8b').ok, false);
+});

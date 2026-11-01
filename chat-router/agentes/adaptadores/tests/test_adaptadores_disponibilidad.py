@@ -139,7 +139,8 @@ def test_modelos_hf_segun_los_servidores_configurados(vacio, monkeypatch):
     assert len(hf) == 4 and all("SWECODE_URL_S1..S3" in cap()["modelos"][m]["motivo"] for m in hf)
     monkeypatch.setenv("SWECODE_URL_S1", "http://127.0.0.1:9101/v1")
     c = cap(sonda_modelos=lambda p, k: set())  # con la verificacion activa y el servidor HF alcanzable (sonda_hf=True)
-    assert all(viejo(c["modelos"][m]) == {"disponible": True, "motivo": ""} for m in hf)
+    assert all(c["modelos"][m]["estado"] == "SIN VERIFICAR" and c["modelos"][m]["intentable"] is True
+               and c["modelos"][m]["causa"] == "modelo_hf_no_verificado" for m in hf)  # TCP no prueba inferencia
     assert c["workflows"]["liquid_mirror"]["disponible"] is False and "S2" in c["workflows"]["liquid_mirror"]["motivo"]  # Liquid Mirror necesita S2 y S3 propios
 
 
@@ -214,7 +215,7 @@ def test_la_sonda_real_pide_get_models_con_la_clave_y_no_la_devuelve(vacio, monk
     def abrir(req, timeout=0):
         peticiones.append((req.full_url, req.get_header("Authorization"), req.get_method(), timeout))
         return R()
-    monkeypatch.setattr(disponibilidad.urllib.request, "urlopen", abrir)
+    monkeypatch.setattr(disponibilidad._comun, "abrir", abrir)
     disponibilidad._CACHE.clear()
     assert disponibilidad._sonda_modelos("groq", CLAVE_GROQ) == {"qwen/qwen3.8-27b", "otro"}
     assert peticiones == [("https://api.groq.com/openai/v1/models", "Bearer " + CLAVE_GROQ, "GET", 5)]
@@ -234,3 +235,46 @@ def test_capacidades_nunca_lanza_un_agente(vacio, monkeypatch):
     c = cap()
     assert {a for a, e in c["agentes"].items() if e["disponible"]} == {"swe-agent", "opencode", "codex", "claude-code"}
     assert nunca_lanzado(vacio)
+
+
+def test_cache_get_models_aislada_por_clave_y_rechazo_401(monkeypatch):
+    """Dos claves del MISMO proveedor no heredan modelos ni permisos; un 401 cacheado mantiene su tipo."""
+    llamadas = []
+    class Respuesta:
+        def __init__(self, modelos): self.modelos = modelos
+        def __enter__(self): return self
+        def __exit__(self, *args): return False
+        def read(self, n=-1): return json.dumps({"data": [{"id": m} for m in self.modelos]}).encode()
+    def abrir(req, timeout=5):
+        auth = req.get_header("Authorization")
+        llamadas.append(auth)
+        if auth == "Bearer clave-rechazada":
+            raise disponibilidad.urllib.error.HTTPError(req.full_url, 401, "sin permiso", {}, None)
+        return Respuesta(["modelo-uno"] if auth == "Bearer clave-uno" else ["modelo-dos"])
+    monkeypatch.setattr(disponibilidad._comun, "abrir", abrir)
+    disponibilidad._CACHE.clear()
+    assert disponibilidad._sonda_modelos("groq", "clave-uno") == {"modelo-uno"}
+    assert disponibilidad._sonda_modelos("groq", "clave-dos") == {"modelo-dos"}
+    assert disponibilidad._sonda_modelos("groq", "clave-uno") == {"modelo-uno"}
+    for intento in range(2):
+        with pytest.raises(disponibilidad.ProveedorRechazo) as fallo:
+            disponibilidad._sonda_modelos("groq", "clave-rechazada")
+        assert fallo.value.codigo == 401
+    assert llamadas == ["Bearer clave-uno", "Bearer clave-dos", "Bearer clave-rechazada"]
+    assert all("clave-" not in str(k) for k in disponibilidad._CACHE)
+
+
+def test_sonda_modelos_usa_apertura_sin_redirecciones(monkeypatch):
+    """No reenviar Authorization a una URL redirigida: usa el abridor sin redirects compartido con los agentes."""
+    vistos = []
+    class R:
+        def __enter__(s): return s
+        def __exit__(s, *exc): return False
+        def read(s, n=-1): return b'{"data":[{"id":"qwen/qwen3.8-27b"}]}'
+    def seguro(req, timeout):
+        vistos.append((req.full_url, req.get_header("Authorization")))
+        return R()
+    monkeypatch.setattr(disponibilidad._comun, "abrir", seguro)
+    disponibilidad._CACHE.clear()
+    assert disponibilidad._sonda_modelos("groq", "clave-de-prueba-no-real") == {"qwen/qwen3.8-27b"}
+    assert vistos == [("https://api.groq.com/openai/v1/models", "Bearer clave-de-prueba-no-real")]

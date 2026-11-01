@@ -7,6 +7,7 @@ import re
 import time
 import urllib.error
 import urllib.request
+import uuid
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, Header, HTTPException
@@ -27,12 +28,17 @@ _SECRETO = re.compile(r"(?:sk-(?:sp-)?[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]
 def con_efectos(nombre, args):
     """Herramientas que cambian algo fuera del chat (escribir, enviar, delegar): se registran en el diario de la tarea."""
     a = args.get("accion")
-    if nombre in ("github_escribir", "agente", "llm", "swe_agente"):  # swe_agente: un agente real lanzado por swe_avanzar
+    if nombre in ("github_escribir", "agente", "llm", "swe_agente") or str(nombre).startswith("mcp__"):
+        # Una tool MCP externa no certifica que sea solo lectura; tratarla como potencialmente mutante.
         return True
-    return ((nombre == "github_api" and str(args.get("metodo", "GET")).upper() != "GET") or (nombre == "almacen" and a == "guardar")
+    if nombre == "archivos":
+        return a not in ("estado", "raiz", "listar_raiz", "buscar", "listar")
+    if nombre == "loop":
+        # FAIL CLOSED: nuevas operaciones del LOOP se registran hasta clasificarse expresamente.
+        return a not in ("status", "health", "estado", "estado_paralelo", "motores", "motor_fases", "motores_registro", "agentes", "fuente_listar")
+    return ((nombre == "github_api" and str(args.get("metodo", args.get("method", "GET"))).upper() != "GET") or (nombre == "almacen" and a == "guardar")
             or (nombre == "memoria" and a == "save") or (nombre == "yaiwes_md" and a == "escribir")
-            or (nombre == "pendientes" and a in ("agregar", "marcar", "ordenar", "quitar")) or (nombre == "sala" and a in ("crear", "enviar", "permiso"))
-            or (nombre == "loop" and a in ("gobernar", "paralelo", "ejecutar")))
+            or (nombre == "pendientes" and a in ("agregar", "marcar", "ordenar", "quitar")) or (nombre == "sala" and a not in ("listar", "leer")))
 
 
 def _llave(nombre, args):
@@ -40,17 +46,31 @@ def _llave(nombre, args):
 
 
 def _diario(tarea):
+    """Solo la ausencia comprobada del archivo equivale a diario nuevo. Ante red caída o corrupción, detenerse."""
     try:
-        return json.loads(leer({"nombre": "tareas/%s/diario.json" % tarea})["valor"])
-    except Exception:  # noqa: BLE001 - sin diario todavia (o almacen caido): se sigue sin el
-        return {}
+        valor = leer({"nombre": "tareas/%s/diario.json" % tarea})["valor"]
+    except Exception as exc:
+        if "no existe" in str(exc).lower() or "HTTP 404" in str(exc):
+            return {}
+        raise RuntimeError("DIARIO_NO_DISPONIBLE") from None
+    try:
+        datos = json.loads(valor)
+    except (ValueError, TypeError):
+        raise RuntimeError("DIARIO_CORRUPTO") from None
+    if not isinstance(datos, dict):
+        raise RuntimeError("DIARIO_CORRUPTO")
+    return datos
 
 
 def _anotar(tarea, diario):
+    """El guardado del diario es obligatorio: nunca silenciar fallos que permitirían repetir efectos."""
+    if not isinstance(diario, dict):
+        raise ValueError("DIARIO_INVALIDO")
+    valor = _SECRETO.sub("[REDACTADO]", json.dumps(diario, ensure_ascii=False))
     try:
-        guardar({"nombre": "tareas/%s/diario.json" % tarea, "valor": _SECRETO.sub("[REDACTADO]", json.dumps(diario, ensure_ascii=False))})
-    except Exception:  # noqa: BLE001
-        pass
+        guardar({"nombre": "tareas/%s/diario.json" % tarea, "valor": valor})
+    except Exception:
+        raise RuntimeError("DIARIO_NO_PERSISTIDO") from None
 
 
 def _tam(mensajes):
@@ -167,6 +187,29 @@ def _plan_bridge(mensajes, tools):
     return {"objetivo": _SECRETO.sub("[REDACTADO]", " ".join(ult.split()))[:500] or "tarea del chat", "operaciones_previstas": nombres[:100]}
 
 
+def _metricas_bridge(m):
+    """Traduce unidades del bridge SWE a las claves del Router MVP; nunca inventa mediciones."""
+    if not isinstance(m, dict):
+        return {}
+    out = {}
+    if type(m.get("stream")) is bool:
+        out["stream"] = m["stream"]
+    for origen, destino, factor in (("ttft_ms", "ttft_s", 0.001),
+                                    ("total_ms", "duracion_s", 0.001),
+                                    ("tokens_s", "tokens_por_s", 1.0)):
+        v = m.get(origen)
+        if isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v < 1e10:
+            out[destino] = round(v * factor, 4)
+    v = m.get("tokens")
+    if isinstance(v, int) and not isinstance(v, bool) and v >= 0:
+        out["tokens"] = v
+    if type(m.get("tokens_estimado")) is bool:
+        out["tokens_estimados"] = m["tokens_estimado"]
+    if m.get("origen_tokens") in ("proveedor", "estimado"):
+        out["origen_tokens"] = m["origen_tokens"]
+    return out
+
+
 def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
     """Una vuelta de chat por el bridge (OpenAI-compatible): mismo formato que _router('chat'). Con tarea (conv_id) y un modelo local/Groq/NVIDIA manda ademas tarea_id explicito."""
     modelo = SWE_ALIAS.get(modelo, modelo)
@@ -187,7 +230,8 @@ def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
     except (OSError, ValueError, KeyError, IndexError, TypeError, AttributeError) as exc:
         raise RuntimeError("Bridge " + type(exc).__name__ + ": " + str(exc)[:80]) from None
     return {"texto": msg.get("content") or "", "tool_calls": msg.get("tool_calls") or [], "finish_reason": bruto["choices"][0].get("finish_reason") or "stop",
-            "mensaje_asistente": msg, "modelo_respuesta": bruto.get("modelo_usado") or modelo}
+            "mensaje_asistente": msg, "modelo_respuesta": bruto.get("modelo_usado") or modelo,
+            **({"metricas": _metricas_bridge(bruto["metricas"])} if isinstance(bruto.get("metricas"), dict) else {})}
 
 
 def _bridge_sin_router(mensajes, modelo):
@@ -240,6 +284,41 @@ def _metricas(salida):
     return {"metricas": {k: (_SECRETO.sub("[REDACTADO]", v) if isinstance(v, str) else v) for k, v in out.items()}} if out else {}
 
 
+def _delegacion_permitida(nombre, cuerpo):
+    """Tools OFF no desactiva el MCP interno, pero nunca autoriza delegar a otras IA/agentes."""
+    if nombre in ("agente", "loop"):
+        return cuerpo.get("tools") is True and cuerpo.get("agente_tool") is True
+    if nombre == "llm":
+        return cuerpo.get("tools") is True and cuerpo.get("llm_tool") is True
+    return True
+
+
+def _normalizar_tool_calls(llamadas):
+    """Una tool sin id recibe uno unico; ids duplicados se rechazan ANTES de cualquier efecto."""
+    if not isinstance(llamadas, list):
+        raise RuntimeError("TOOL_CALLS_INVALIDAS")
+    resultado, ids = [], set()
+    for llamada in llamadas:
+        if not isinstance(llamada, dict) or not isinstance(llamada.get("function"), dict):
+            raise RuntimeError("TOOL_CALL_INVALIDA")
+        ident = llamada.get("id") or "call_" + uuid.uuid4().hex[:24]
+        if not isinstance(ident, str) or not ident or ident in ids:
+            raise RuntimeError("TOOL_CALL_ID_INVALIDO_O_DUPLICADO")
+        ids.add(ident)
+        resultado.append({**llamada, "id": ident})
+    return resultado
+
+
+def _respuesta_mcp_fallida(resultado):
+    """Ni un error JSON-RPC ni result.isError certifican una operacion con efectos."""
+    if not isinstance(resultado, dict):
+        return True
+    if resultado.get("error"):
+        return True
+    sub = resultado.get("result")
+    return isinstance(sub, dict) and sub.get("isError") is True
+
+
 def llm(cuerpo):
     mensajes = cuerpo.get("messages", cuerpo.get("mensajes"))
     if not isinstance(mensajes, list) or not mensajes:
@@ -255,7 +334,8 @@ def llm(cuerpo):
     if catalogo.get("error") and not sin_router:
         raise RuntimeError("No se pudo obtener el catalogo MCP")
     permitidas = {t["name"]: t for t in ({} if sin_router else catalogo).get("result", {}).get("tools", [])
-                  if t["name"] in ("github_leer", "github_escribir", "almacen", "pendientes", "sala", "agente", "llm", "yaiwes_md", "loop", "archivos") or t["name"].startswith("mcp__")}
+                  if (t["name"] in ("github_leer", "github_escribir", "almacen", "pendientes", "sala", "agente", "llm", "yaiwes_md", "loop", "archivos") or t["name"].startswith("mcp__"))
+                  and _delegacion_permitida(t["name"], cuerpo)}
     if not permitidas and not sin_router and not (es_swe(cuerpo.get("modelo")) and _bridge_url()):
         raise RuntimeError("Herramientas GitHub no disponibles en MCP")
     opciones["tools"] = [{"type": "function", "function": {"name": n,
@@ -284,11 +364,11 @@ def llm(cuerpo):
             if not acumulado:
                 raise
             return {"texto": acumulado, "tool_calls": [], "finish_reason": "length", "herramientas_usadas": usadas,
-                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta"), **aviso}
+                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta"), **aviso, **_metricas(salida)}
         aviso = {"aviso_modelo": salida["aviso_modelo"]} if salida.get("aviso_modelo") else {}
         if not isinstance(salida.get("tool_calls"), list) or not isinstance(salida.get("texto"), str):
             raise RuntimeError("Router respuesta de chat invalida")
-        llamadas = salida["tool_calls"]
+        llamadas = _normalizar_tool_calls(salida["tool_calls"])
         if not llamadas and salida.get("finish_reason") == "length" and salida["texto"] and continuaciones < 2:
             acumulado += salida["texto"]
             continuaciones += 1
@@ -301,12 +381,15 @@ def llm(cuerpo):
         if not llamadas or not permitidas:
             return {"texto": acumulado + salida["texto"], "tool_calls": llamadas, "finish_reason": salida.get("finish_reason"), "herramientas_usadas": usadas,
                     "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta"), **aviso, **_metricas(salida)}
-        mensajes.append(salida.get("mensaje_asistente") or {"role": "assistant", "content": salida["texto"] or None, "tool_calls": llamadas})
+        asistente = salida.get("mensaje_asistente")
+        if isinstance(asistente, dict):
+            asistente = {**asistente, "tool_calls": llamadas}  # mantener id normalizado en ambos lados del protocolo
+        else:
+            asistente = {"role": "assistant", "content": salida["texto"] or None, "tool_calls": llamadas}
+        mensajes.append(asistente)
         for llamada in llamadas:
             funcion = llamada.get("function") or {}
             nombre = funcion.get("name")
-            if not llamada.get("id"):
-                continue  # sin id no se puede responder; el modelo vuelve a pedirla en la ronda siguiente
             if nombre not in permitidas:  # no corta la tarea: el modelo recibe el error y elige otra herramienta
                 mensajes.append({"role": "tool", "tool_call_id": llamada["id"], "content": json.dumps({"error": "Herramienta no autorizada: " + str(nombre)}, ensure_ascii=False)})
                 continue
@@ -328,14 +411,28 @@ def llm(cuerpo):
                 mensajes.append({"role": "tool", "tool_call_id": llamada["id"], "content": json.dumps({"error": "Escritura GitHub permitida solo en main"}, ensure_ascii=False)})
                 continue
             llave = _llave(nombre, args) if tarea and con_efectos(nombre, args) else None
-            if llave and llave in diario:  # ya se hizo en esta tarea (antes de un reinicio o corte): se devuelve lo que paso, no se repite
-                resultado = {"ya_ejecutada_en_esta_tarea": True, "resultado": diario[llave]}
+            if llave and llave in diario:  # se reusa SOLO una operación confirmada: INICIADA puede haber tenido efectos
+                previa = diario[llave]
+                if isinstance(previa, dict) and previa.get("estado") == "INICIADA":
+                    raise RuntimeError("OPERACION_SIN_CONFIRMAR")
+                if isinstance(previa, dict) and previa.get("estado") != "CONFIRMADA":
+                    raise RuntimeError("DIARIO_CORRUPTO")
+                resultado = {"ya_ejecutada_en_esta_tarea": True,
+                             "resultado": previa.get("resultado") if isinstance(previa, dict) else previa}
             else:
+                if llave:
+                    diario[llave] = {"estado": "INICIADA", "herramienta": nombre}
+                    _anotar(tarea, diario)  # persistencia ANTES de tocar sistemas externos
                 resultado = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": llamada["id"],
                     "method": "tools/call", "params": {"name": nombre, "arguments": args}})
+                if llave and _respuesta_mcp_fallida(resultado):
+                    # La operacion pudo ejecutarse antes del error: guardar INICIADA y exigir conciliacion.
+                    raise RuntimeError("OPERACION_SIN_CONFIRMAR")
                 if llave:
-                    diario[llave] = json.dumps(resultado, ensure_ascii=False)[:2000]
-                    _anotar(tarea, diario)
+                    texto_resultado = json.dumps(resultado, ensure_ascii=False)
+                    diario[llave] = {"estado": "CONFIRMADA", "resultado": texto_resultado[:2000],
+                                    "recibo": hashlib.sha256(texto_resultado.encode("utf-8")).hexdigest()[:24]}
+                    _anotar(tarea, diario)  # si falla queda INICIADA: reconciliar, NUNCA ejecutar de nuevo
             mensajes.append({"role": "tool", "tool_call_id": llamada["id"],
                              "content": json.dumps(resultado, ensure_ascii=False)})
         if time.monotonic() - t0 > PAUSA_S:  # fin de una ronda de herramientas: el Router recibe la conversacion, la guarda y reanuda

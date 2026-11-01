@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>YAIWES · Canvas / mapa mental</title><link rel="stylesheet" href="./canvas-map.css"><script defer src="./canvas-map.js"></script></head>
+<body>
+<div class="shell">
+<header class="top">
+  <span class="mark" aria-hidden="true">◇</span>
+  <div class="heading"><h1>YAIWES / CANVAS</h1><p>Mapa mental · Grafo de dependencias · Arquitectura real</p></div>
+  <div id="server-state" class="status warning" role="status">◌ Sin backend verificado</div>
+  <div class="toptools"><button id="btn-import" type="button">↑ Importar JSON</button><button id="btn-export" type="button">↓ Descargar JSON</button><button id="btn-server-save" class="primary" type="button">Guardar servidor</button><button id="btn-server-load" type="button">↻ Recuperar</button></div>
+</header>
+<section class="info">Este mapa arranca con un <strong>ejemplo LOCAL</strong>, no con resultados de Chat 1 ni con un artefacto comprobado del Router. Los botones de guardado remoto necesitan conexión real y respuesta verificada.</section>
+<div class="layout">
+ <aside class="side card">
+  <h2>Proyecto / fuente</h2><label>Proyecto<input id="project-id" value="P-001" maxlength="80"></label>
+  <label>Grafo<input id="graph-id" value="MAP-LOCAL-001" maxlength="80"></label>
+  <label>LOOP<input id="loop-id" value="LOOP-001" maxlength="80"></label>
+  <label>Nombre<input id="graph-title" value="YAIWES · mapa de ejemplo LOCAL" maxlength="160"></label>
+  <label>Tipo de mapa<select id="graph-mode"><option value="mindmap">Mapa mental</option><option value="dag">DAG estricto</option></select></label>
+  <hr><h2>Explorar</h2><label>Buscar nodo<input id="filter" placeholder="Nombre / tipo / ID"></label>
+  <div class="commands"><button id="btn-add-node" type="button">＋ Nodo</button><button id="btn-del-node" type="button">− Nodo</button><button id="btn-center" type="button">⌖ Centrar</button></div>
+  <h3>Enlace entre nodos</h3><label>Desde<select id="edge-source"></select></label><label>Hacia<select id="edge-target"></select></label><button id="btn-add-edge" type="button" class="wide">＋ Relacionar</button>
+  <hr><p class="small">Los nodos representan contratos, fuentes y tareas. <strong>No ejecutan código</strong> al pulsarlos. Su estado PASS requiere evidencia real del backend.</p>
+ </aside>
+ <main class="stage card"><div class="stagehead"><h2>Mapa de ejecución</h2><div class="status-group"><span id="metric-nodes" class="chip">0 nodos</span><span id="metric-edges" class="chip">0 relaciones</span><span id="metric-sha" class="chip">SHA: local</span></div></div>
+ <div class="stagebuttons"><button id="btn-zoom-in" title="Ampliar">＋</button><button id="btn-zoom-out" title="Alejar">−</button><button id="btn-svg" title="Exportar vectorial">SVG ↓</button><small>Mover: arrastrar nodo · Pan: fondo · Zoom: rueda</small></div>
+ <svg id="diagram" role="img" aria-label="Mapa de nodos y dependencias interactivo" viewBox="0 0 1300 760"><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="none" stroke="#7895b5" stroke-width="1.2"/></marker><pattern id="dotgrid" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#414141"/></pattern></defs><rect id="map-background" width="20000" height="20000" x="-10000" y="-10000" fill="url(#dotgrid)"></rect><g id="edge-layer"></g><g id="node-layer"></g></svg>
+ <div id="mobile-node-list" class="mobile-node-list" aria-label="Lista accesible de nodos"></div>
+ <footer class="stagefoot"><span>Origen: <b id="data-origin">EJEMPLO LOCAL</b></span><span>Estado local: <b id="local-state">NO GUARDADO EN SERVIDOR</b></span></footer>
+ </main>
+ <aside class="inspector card"><div class="tabs" role="tablist" aria-label="Ventanas del Canvas"><button data-tab="inspector" aria-selected="true">Inspector</button><button data-tab="fuentes" aria-selected="false">Fuentes</button><button data-tab="bitacora" aria-selected="false">Bitácora</button><button data-tab="exportar" aria-selected="false">Exportar</button></div>
+  <section data-content="inspector"><h2>Nodo seleccionado</h2><div id="selected-id" class="selection">Selecciona un nodo</div>
+   <label>Título<input id="node-title" maxlength="120" disabled></label>
+   <label>Tipo<select id="node-kind" disabled><option value="root">Raíz</option><option value="group">Grupo</option><option value="task">Tarea</option><option value="component">Componente</option><option value="source">Fuente</option><option value="check">Verificador</option><option value="note">Nota</option></select></label>
+   <label>Estado<select id="node-status" disabled><option>UNKNOWN</option><option>DRAFT</option><option>RUNNING</option><option>FLAGGED</option><option>NOT_APPLICABLE</option><option>BLOCKED</option><option>OFF</option><option>PASS</option></select></label>
+   <label>Nota<textarea id="node-note" rows="4" disabled></textarea></label>
+   <label>Referencia a fuente<input id="node-source" disabled placeholder="ref:archivo-real"></label>
+   <label>Checkpoint<input id="node-checkpoint" disabled placeholder="ref:checkpoint"></label>
+   <label>Evidencia (1 ref por línea)<textarea id="node-evidence" rows="2" disabled placeholder="ref:recibo-verificado"></textarea></label>
+   <button id="btn-node-update" class="primary wide" disabled>Aplicar a nodo (local)</button>
+  </section>
+  <section data-content="fuentes" hidden><h2>Fuentes y arquitectura</h2><p class="small">Ninguna referencia remota se considera leída sin un resultado real. Importa un JSON validado del LOOP o de Archify.</p><div id="sources-list" class="stream"></div><button id="btn-open-anchor" class="wide">⚓ Abrir anclajes del chat</button></section>
+  <section data-content="bitacora" hidden><h2>Bitácora del mapa</h2><p class="small">Eventos UI locales; no equivalen a recibos de ejecución Python.</p><div id="log" class="stream"></div></section>
+  <section data-content="exportar" hidden><h2>Salida y trazabilidad</h2><p class="small">Exporta el grafo tipado en JSON o una imagen SVG de la representación. No borra ni modifica código.</p><button id="btn-validate" class="wide">✓ Validar en backend</button><button id="btn-download-copy" class="wide">↓ Descargar JSON</button><button id="btn-svg-copy" class="wide">↓ Exportar SVG</button><div id="validation-output" class="stream"></div></section>
+ </aside>
+</div>
+<footer class="legal">Canvas YAIWES · Vista HTML independiente dentro del frontend actual · Sin credenciales en el iframe · Sin llamadas automáticas a modelos.</footer>
+<input id="input-file" type="file" accept="application/json,.json" hidden>
+</div>
+</body></html>

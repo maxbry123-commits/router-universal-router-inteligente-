@@ -386,6 +386,8 @@ def _solicitar_stream(url, payload, clave, timeout, acumulador):
         e = _tiempo(exc, timeout); e.con_datos = acumulador.fragmentos > 0; raise e from None
     if not terminado and acumulador.finish_reason is None:  # el servidor cerro sin [DONE] ni finish_reason: respuesta truncada
         raise ErrorRed("stream interrumpido", con_datos=acumulador.fragmentos > 0)
+    if not acumulador.texto and not acumulador._tools:  # [DONE] no convierte una respuesta vacia en exito
+        raise ErrorRed("stream sin contenido ni herramientas", con_datos=acumulador.fragmentos > 0)
 
 
 def _parsear(bruto, modelo):
@@ -450,7 +452,9 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
     pool = claves(prov, banco)
     if not pool:
         raise PermissionError(PROVEEDORES[prov]["label"] + " sin clave (GROQ_API_KEY / NVIDIA_API_KEY en el banco o en el Space)")
-    if modelo in PROVEEDORES_NUEVOS and disponible(modelo) is False:
+    if modelo in PROVEEDORES_NUEVOS and disponible(modelo) is False and len(pool) == 1:
+        # El catalogo es de la primera clave aceptada. Con varias claves, otra puede tener
+        # permisos diferentes: se consulta el proveedor con el modelo ELEGIDO, sin sustituirlo.
         raise RuntimeError("%s: NO DISPONIBLE: %s no aparece en GET /models del proveedor; no se cambió de modelo" % (PROVEEDORES[prov]["label"], modelo))
     pol = politica(modelo)
     pool = _ordenar(prov, pool)  # las claves enfriadas por un 429 reciente van al final

@@ -401,6 +401,19 @@ _IDENTIDAD = re.compile(r"^\W*(soy|yo soy|i am|i'm|me llamo)\b.{0,200}\b(qwen|de
 def _sin_identidades(mensajes):
     """Quita las respuestas cortas donde un modelo anterior dijo quien era: los modelos las copian y contestan con ese nombre en vez del suyo."""
     return [m for m in mensajes if not (isinstance(m, dict) and m.get("role") == "assistant" and isinstance(m.get("content"), str) and len(m["content"]) < 300 and _IDENTIDAD.search(m["content"]))]
+def _identidad_modelo(modelo):
+    """Identidad fiel al proveedor elegido: un modelo externo NO se anuncia como QwenCloud."""
+    prov = externos.proveedor(modelo)
+    origen = externos.PROVEEDORES[prov]["label"] if prov else "QwenCloud Token Plan"
+    marca = modelos.marca(modelo) if not prov else None
+    nombre = modelo + (" — " + marca if marca else "")
+    return {"role": "system", "content": (
+        "Modelo activo: %s, ejecutado mediante %s. Las respuestas anteriores de esta conversación pudieron venir de otros modelos: "
+        "no copies su identidad. Esta línea manda sobre cualquier regla, ficha, memoria o historial que nombre otro modelo: "
+        "tu modelo es el indicado aquí. Si te preguntan quién o qué modelo eres, responde en una línea con ese nombre y su familia."
+    ) % (nombre, origen)}
+
+
 async def _chat_ficha(cuerpo, progreso=None):
     q = {**cuerpo, **(cuerpo.get("qwen") or {})}  # api.js harness() anida {plugin, ficha_qwen, modelo} en "qwen"
     mensajes = q.get("mensajes") or q.get("messages") or [{"role": "user", "content": str(q.get("message") or "")}]
@@ -450,7 +463,7 @@ async def _chat_ficha(cuerpo, progreso=None):
     except (ValueError, TypeError) as error:
         raise HTTPException(status_code=400, detail=str(error)) from None
     mensajes = _sin_identidades(mensajes)
-    identidad = {"role": "system", "content": "Modelo activo: %s%s, ejecutado en QwenCloud Token Plan. Las respuestas anteriores de esta conversación pudieron venir de otros modelos: no copies su identidad. Esta línea manda sobre cualquier regla, ficha, memoria o historial que nombre otro modelo: tu modelo es el indicado aquí. Si te preguntan quién o qué modelo eres, responde en una línea con ese nombre y su familia." % (modelo, " — " + modelos.marca(modelo) if modelos.marca(modelo) else "")}
+    identidad = _identidad_modelo(modelo)
     fin = len(mensajes) - 1 if isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user" else len(mensajes)
     mensajes = [*mensajes[:fin], identidad, *mensajes[fin:]]  # justo antes del mensaje actual: el historial de otro modelo no la tapa
     if imagenes and isinstance(mensajes[-1], dict) and mensajes[-1].get("role") == "user":
@@ -467,6 +480,7 @@ async def _chat_ficha(cuerpo, progreso=None):
                          "opciones": opciones or None, **_controles(q)})
     return {"estado": "completado", "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": modelo, "modelo_respuesta": salida.get("modelo_respuesta"), "herramientas_usadas": salida.get("herramientas_usadas") or [],
+            **({"metricas": salida["metricas"]} if isinstance(salida.get("metricas"), dict) else {}),
             "choices": [{"message": {"role": "assistant", "content": salida["texto"],
                                     "tool_calls": salida["tool_calls"]},
                          "finish_reason": salida["finish_reason"]}]}
@@ -537,6 +551,7 @@ async def _reanudar(pid):
                         "_limite": est.get("limite"), "_usadas": est.get("usadas"), "_acumulado": est.get("acumulado")})
         TRABAJOS[pid].update(estado="completado", via="harness", finish_reason=s["finish_reason"], reanudado=True, modelo_solicitado=est["modelo"],
                              modelo_respuesta=s.get("modelo_respuesta"), herramientas_usadas=s.get("herramientas_usadas") or [],
+                             **({"metricas": s["metricas"]} if isinstance(s.get("metricas"), dict) else {}),
                              choices=[{"message": {"role": "assistant", "content": s["texto"], "tool_calls": s["tool_calls"]}, "finish_reason": s["finish_reason"]}])
     except HTTPException as error:
         TRABAJOS[pid].update(estado="error", error=str(error.detail), status_code=error.status_code)
@@ -575,7 +590,8 @@ async def _cancelar(pid):
     if pendiente: await asyncio.to_thread(estado_tarea.marcar, app.state.banco, pid, False)
     return {"cancelado": activo or pendiente or bool(tarea), "proceso_id": pid}
 @app.post("/plugins/{plugin}/call/{accion}", dependencies=[Depends(verificar)])
-async def plugin_call(plugin: str, accion: str, cuerpo: dict):
+async def plugin_call(plugin: str, accion: str, cuerpo: dict,
+                      x_operator_token: str | None = Header(None), x_operador: str | None = Header(None)):
     if plugin == "puente_chat" and accion == "mantener_encendido":  # {siempre: true} = hasta que lo apagues; {siempre: false} = apagar; {horas: n} = n horas
         siempre = cuerpo.get("siempre")
         try: horas = mantener_vivo.SIEMPRE_H if siempre is True else 0 if siempre is False else min(max(float(24 if cuerpo.get("horas") is None else cuerpo["horas"]), 0), 720)
@@ -586,6 +602,55 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict):
         return {"status": "ok", "result": await loop_puente.llamar("nct_loop", accion, cuerpo)}
     if plugin == "motor_archivos":  # ventana Archivos (motor): POST /plugins/motor_archivos/call/<ejecutar|estado|cancelar|raiz|listar_raiz>
         resultado = await asyncio.to_thread(archivos.llamar, accion, cuerpo, lambda: CONTROL.credencial("github", app.state.banco))
+        return {"status": "ok", "result": resultado}
+    if plugin == 'nct_loop' and accion in ('dsl_config','dsl_control','dsl_estado'):
+        pid = str(cuerpo.get('project_id') or '')
+        project = CONTROL.d.get('proyectos', {}).get(pid)
+        if not isinstance(project, dict):
+            raise HTTPException(status_code=403, detail='PROJECT_NOT_REGISTERED')
+        sesion = str(cuerpo.get('sesion') or 'web-general')[:60]
+        if project.get('chats') and sesion not in project['chats']:
+            raise HTTPException(status_code=403, detail='PROJECT_SESSION_SCOPE')
+        operator_id, director_confirmed = None, False
+        if accion == 'dsl_control' and cuerpo.get('op') == 'approve':
+            operator_id = _identificar_operador(x_operador, x_operator_token)
+            director_confirmed = bool(os.environ.get('RIU_DSL_DIRECTOR') and operator_id == os.environ.get('RIU_DSL_DIRECTOR'))
+            if not director_confirmed:
+                raise HTTPException(status_code=403, detail='DIRECTOR_NOT_VERIFIED')
+        services = await asyncio.to_thread(lambda: (
+            loop_puente._cargar('cola50')._store(),
+            loop_puente._cargar('watchdog48')._store()))
+        trusted = {'trusted_host':True,'authenticated':True,'project_id':pid,
+                   'sesion':sesion,'loop_id':cuerpo.get('loop_id'),
+                   'banco':app.state.banco,'control':CONTROL,
+                   'queue_store':services[0],'watch_store':services[1],
+                   'root':Path(__file__).resolve().parents[3], 'write_paths':[],
+                   'operator_id':operator_id,'director_confirmed':director_confirmed}
+        resultado = await loop_puente.llamar('nct_loop', accion, cuerpo, server_context=trusted)
+        if accion == 'dsl_control' and cuerpo.get('op') == 'start' and resultado.get('ok'):
+            observer = await loop_puente.llamar('watchdog48','worker',{'sub':'start'})
+            resultado['watchdog_worker'] = bool(observer.get('ok') and observer.get('activo'))
+            if not resultado['watchdog_worker']:
+                resultado['warning']='WATCHDOG_WORKER_NOT_STARTED'
+        return {'status':'ok','result':resultado}
+    if plugin == "nct_loop" and accion in loop_puente.CANVAS:
+        # Canvas usa el mismo endpoint autenticado y la memoria HF del chat.
+        async def _canvas_load(scope, key):
+            import json
+            try:
+                raw = await asyncio.to_thread(hf_store.leer, _clave_hf(), memoria._nombre(scope))
+            except hf_store.NoExiste:
+                return {"records": []}
+            registros = json.loads(raw["valor"])
+            if not isinstance(registros, list):
+                raise ValueError("CANVAS_STORAGE_INVALID")
+            return {"records": [r for r in registros if isinstance(r, dict) and r.get("key") == key]}
+
+        async def _canvas_save(scope, key, value):
+            return await memoria.aplicar("save", {"scope": scope, "key": key, "data": value}, _clave_hf)
+
+        resultado = await loop_puente.llamar_canvas(
+            accion, cuerpo, load_cb=_canvas_load, save_cb=_canvas_save)
         return {"status": "ok", "result": resultado}
     if plugin in loop_puente.PLUGINS:  # LOOP, Cola y Watchdog: Chat -> Harness -> Router -> plugin
         try: resultado = await loop_puente.llamar(plugin, accion, loop_reanudar.traducir(cuerpo))
@@ -684,6 +749,7 @@ async def chat_send(cuerpo: dict):
     return {"reply": msg["content"], "execution_path": "HARNESS", "ms": int((time.monotonic() - t0) * 1000),
             "tools": tools, "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": salida.get("modelo_solicitado"), "modelo_respuesta": salida.get("modelo_respuesta"),
+            **({"metricas": salida["metricas"]} if isinstance(salida.get("metricas"), dict) else {}),
             }
 async def _delegar(nombre, args):
     """Herramientas agente/llm del modelo: una llamada nueva (sin herramientas, sin historial) al modelo del agente o al elegido."""

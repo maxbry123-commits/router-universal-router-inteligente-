@@ -1,5 +1,6 @@
 """Cliente Qwen compatible OpenAI. No guarda credenciales ni ejecuta tools."""
 import json
+import uuid
 import os
 import time
 from urllib import error, request
@@ -213,7 +214,13 @@ class AcumuladorSSE:
     def resultado(self, modelo_solicitado):
         fin = self._reloj()
         orden = sorted(self._orden) if all(isinstance(i, int) for i in self._orden) else self._orden
-        llamadas = [{"id": self._tools[i]["id"], "type": "function", "function": {"name": self._tools[i]["name"], "arguments": self._tools[i]["arguments"]}} for i in orden]
+        # Algunos proveedores omiten el ID: sin él, el Harness no puede devolver el resultado al tool_call y la omite.
+        # ID sintetico unico por llamada, solo cuando falte; conservar intacto el ID original si viene.
+        # Normalizar argumentos vacios a un objeto JSON para compatibilidad OpenAI.
+        llamadas = [{"id": self._tools[i]["id"] or "call_" + uuid.uuid4().hex[:24],
+                     "type": "function",
+                     "function": {"name": self._tools[i]["name"],
+                                  "arguments": self._tools[i]["arguments"] or "{}"}} for i in orden]
         invalidas = []  # se MARCAN, no se descartan: ninguna llamada pendiente se pierde; quien las ejecute decide (no ejecutar incompletas)
         for ll in llamadas:
             if self._declaradas and ll["function"]["name"] not in self._declaradas:

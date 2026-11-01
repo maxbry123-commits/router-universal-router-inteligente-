@@ -1,0 +1,25 @@
+{
+  "schema": "yaiwes.tool_profiles.v1",
+  "profiles": {
+    "read_only": [
+      "inspect_workspace",
+      "read_text",
+      "verify_exists",
+      "verify_contains"
+    ],
+    "verify_only": [
+      "read_text",
+      "verify_exists",
+      "verify_contains"
+    ],
+    "writer_n4": [
+      "inspect_workspace",
+      "read_text",
+      "verify_exists",
+      "verify_contains",
+      "create_directory",
+      "write_text"
+    ]
+  },
+  "enforcement": "HOST_AUTHORIZATION_REQUIRED_FOR_EVERY_OPERATION"
+}

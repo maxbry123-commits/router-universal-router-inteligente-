@@ -111,7 +111,8 @@ def test_hf_estados_segun_servidor_configurado_y_alcanzable(vacio, monkeypatch):
     assert all(c[m]["estado"] == "SIN VERIFICAR" and c[m]["causa"] == "servidor_hf_sin_respuesta" for m in hf)  # un Space dormido no es "no instalado"
     visto = []
     c = cap(sonda_hf=lambda u: visto.append(u) or True)["modelos"]
-    assert all(c[m]["estado"] == "DISPONIBLE" for m in hf) and visto == ["http://127.0.0.1:9101/v1"]
+    assert all(c[m]["estado"] == "SIN VERIFICAR" and c[m]["intentable"] is True
+               and c[m]["causa"] == "modelo_hf_no_verificado" for m in hf) and visto == ["http://127.0.0.1:9101/v1"]
 
 
 def test_agentes_seis_estados(vacio, monkeypatch):

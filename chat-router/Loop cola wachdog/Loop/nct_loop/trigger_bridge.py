@@ -1,0 +1,260 @@
+"""YAIWES trigger adapter: authenticated existing Harness, CIT-50 and Watchdog48."""
+from __future__ import annotations
+import inspect
+import time
+from .trigger_contract import ContractError, _id, canonical, sha256, validate_contract, validate_loop
+from .trigger_engine import TriggerEngine, HostPorts
+
+async def _invoke(cb, *args):
+    if not callable(cb):
+        raise ContractError("PORT_NOT_CONNECTED")
+    v = cb(*args)
+    return await v if inspect.isawaitable(v) else v
+
+class TriggerBridge:
+    def __init__(self, ports: HostPorts):
+        self.ports = ports
+        self.engine = TriggerEngine(ports)
+
+    async def _prior(self, project, loop, contract, contracts):
+        by = {c["id"]: c for c in contracts}
+        result = {}
+        current_const, _ = await self.engine._constitution()
+        for dep in contract.get("depends_on", []):
+            source = by.get(dep)
+            if source is None:
+                continue
+            receipt = await _invoke(self.ports.load, f"dsl:{project}:{loop}:{dep}")
+            if (not isinstance(receipt, dict) or receipt.get("status") != "PASS"
+                    or receipt.get("contract_sha256") != sha256(canonical(source))
+                    or receipt.get("constitution_sha256") != current_const
+                    or not isinstance(receipt.get("anchor_receipts"), dict)):
+                continue
+            good = True
+            for ref, recorded in receipt["anchor_receipts"].items():
+                a = await _invoke(self.ports.anchor, ref)
+                if not isinstance(recorded, dict) or not isinstance(a, dict) or not isinstance(a.get("bytes"), bytes) or sha256(a["bytes"]) != recorded.get("sha256"):
+                    good = False
+                    break
+            if good:
+                result[dep] = "PASS"
+        return result
+
+    async def handle(self, action, request, *, server_context=None):
+        try:
+            if action not in {"dsl_config", "dsl_control", "dsl_estado"}:
+                raise ContractError("UNKNOWN_ACTION")
+            if not isinstance(request, dict):
+                raise ContractError("BAD_REQUEST")
+            if not isinstance(server_context, dict) or server_context.get("authenticated") is not True:
+                raise ContractError("HOST_AUTH_REQUIRED")
+            if any(k in request for k in ("authenticated_by_host", "host_context", "previous")):
+                raise ContractError("UNTRUSTED_SERVER_FIELD")
+            project = _id(request.get("project_id"), "project_id")
+            loop = _id(request.get("loop_id"), "loop_id")
+            if server_context.get("project_id") != project:
+                raise ContractError("PROJECT_SCOPE_MISMATCH")
+            key = f"dsl-config:{project}:{loop}"
+            state = await _invoke(self.ports.load, key)
+            if state is None:
+                state = {"revision": 0, "contracts": [], "role_pairs": {}, "history": []}
+            if not isinstance(state, dict):
+                raise ContractError("STATE_INVALID")
+            op = request.get("op")
+            if action == "dsl_estado":
+                if op in ("get", "health", "flags"):
+                    qid = state.get("queue_id")
+                    queue = await _invoke(self.ports.queue_status, qid) if qid else None
+                    statuses = {}
+                    flags = []
+                    for c in state.get("contracts", []):
+                        receipt = await _invoke(self.ports.load, f"dsl:{project}:{loop}:{c['id']}")
+                        info = {"status": (receipt or {}).get("status", "QUEUED" if c["enabled"] else "OFF"),
+                                "flags": (receipt or {}).get("flags", []),
+                                "contract_sha256": sha256(canonical(c)),
+                                "depends_on": c.get("depends_on", []),
+                                "source_ref": c["source"]["document_ref"]}
+                        statuses[c["id"]] = info
+                        flags.extend(info["flags"])
+                    return {"ok": True, "status": "PASS", "project_id": project, "loop_id": loop,
+                            "revision": state["revision"], "contracts": state["contracts"],
+                            "role_pairs": state["role_pairs"], "history": state["history"],
+                            "loop_meta": state.get("loop_meta", {}), "queue": queue,
+                            "watchdog_id": state.get("watchdog_id"), "triggers": statuses,
+                            "flags": flags, "event_cursor": state["revision"]}
+                if op == "events":
+                    if not state.get("queue_id"):
+                        return {"ok": True, "status": "PASS", "events": []}
+                    return {"ok": True, "status": "PASS", "events": await _invoke(
+                        self.ports.queue_events, state["queue_id"], max(0, int(request.get("since_event") or 0)))}
+                if op == "checkpoint":
+                    tid = _id(request.get("trigger_id"), "trigger_id")
+                    return {"ok": True, "status": "PASS",
+                            "checkpoint": await _invoke(self.ports.load, f"dsl:{project}:{loop}:{tid}")}
+                raise ContractError("STATE_OP_UNSUPPORTED")
+            if action == "dsl_config":
+                if op == "contract_validate":
+                    c = request.get("contract")
+                    validate_contract(c)
+                    return {"ok": True, "status": "PASS", "contract_sha256": sha256(canonical(c))}
+                if request.get("expected_revision") != state["revision"]:
+                    raise ContractError("REVISION_CONFLICT")
+                new = dict(state)
+                new["contracts"] = [dict(c) for c in state.get("contracts", [])]
+                new["history"] = list(state.get("history", []))
+                new["role_pairs"] = dict(state.get("role_pairs", {}))
+                if op == "trigger_upsert":
+                    c = request.get("contract")
+                    validate_contract(c)
+                    if c["loop_id"] != loop:
+                        raise ContractError("LOOP_MISMATCH")
+                    old = next((c0 for c0 in new["contracts"] if c0["id"] == c["id"]), None)
+                    if old:
+                        new["history"].append({"id": old["id"], "sha256": sha256(canonical(old)), "reason": "REPLACED"})
+                    new["contracts"] = [c0 for c0 in new["contracts"] if c0["id"] != c["id"]] + [c]
+                elif op in ("trigger_toggle", "note_update", "anchor_bind", "trigger_remove"):
+                    tid = request.get("trigger_id")
+                    old = next((c for c in new["contracts"] if c["id"] == tid), None)
+                    if old is None:
+                        raise ContractError("TRIGGER_NOT_FOUND")
+                    new["history"].append({"id": tid, "sha256": sha256(canonical(old)), "reason": op})
+                    if op == "trigger_remove":
+                        new["contracts"] = [c for c in new["contracts"] if c["id"] != tid]
+                    else:
+                        updated = dict(old)
+                        if op == "trigger_toggle":
+                            if type(request.get("enabled")) is not bool:
+                                raise ContractError("BAD_ENABLED")
+                            updated["enabled"] = request["enabled"]
+                        elif op == "note_update":
+                            updated["note"] = request.get("note", "")
+                        else:
+                            updated["attachments"] = request.get("anchor_refs")
+                        validate_contract(updated)
+                        new["contracts"] = [updated if c["id"] == tid else c for c in new["contracts"]]
+                elif op == "loop_save":
+                    meta = request.get("loop_meta")
+                    if not isinstance(meta, dict) or set(meta) - {"name", "objective_ref", "notes", "depends_on_loops"}:
+                        raise ContractError("LOOP_META_INVALID")
+                    if any(not isinstance(v, str) or len(v) > 1500 for k, v in meta.items() if k != "depends_on_loops"):
+                        raise ContractError("LOOP_META_INVALID")
+                    deps = meta.get("depends_on_loops", [])
+                    if not isinstance(deps, list) or len(deps) > 100 or any(not isinstance(i, str) or len(i) > 80 for i in deps):
+                        raise ContractError("LOOP_META_INVALID")
+                    new["loop_meta"] = meta
+                elif op == "roles_save":
+                    roles = request.get("role_pairs")
+                    if not isinstance(roles, dict) or set(roles) - {"arquitecto", "auditor", "ejecutor_codigo", "frontend", "refactor_revision"}:
+                        raise ContractError("BAD_ROLE_PAIRS")
+                    for row in roles.values():
+                        if not isinstance(row, dict) or not row.get("model_id") or not row.get("agent_id"):
+                            raise ContractError("BAD_ROLE_PAIR")
+                    checked = await _invoke(self.ports.roles_resolve, roles)
+                    if not isinstance(checked, dict):
+                        raise ContractError("ROLE_RESOLVER_NOT_CONNECTED")
+                    new["role_pairs"] = checked
+                else:
+                    raise ContractError("CONFIG_OP_UNSUPPORTED")
+                if new["contracts"]:
+                    validate_loop(new["contracts"])
+                if state.get("queue_id"):
+                    raise ContractError("LOOP_CONFIG_FROZEN_AFTER_START")
+                new["revision"] += 1
+                if await _invoke(self.ports.save, key, new) is not True:
+                    raise ContractError("CHECKPOINT_NOT_DURABLE")
+                return {"ok": True, "status": "PASS", "revision": new["revision"],
+                        "count": len(new["contracts"]), "config_sha256": sha256(canonical(new))}
+            if op == "start":
+                if request.get("expected_revision") != state["revision"]:
+                    raise ContractError("REVISION_CONFLICT")
+                if state.get("queue_id"):
+                    raise ContractError("LOOP_ALREADY_STARTED")
+                contracts = state.get("contracts") or []
+                validate_loop(contracts)
+                await self.engine._constitution()
+                duration = request.get("duration_minutes", 60)
+                if type(duration) is not int or not 10 <= duration <= 2880:
+                    raise ContractError("WATCHDOG_DURATION_INVALID")
+                q = await _invoke(self.ports.queue_create, project, loop, contracts, duration)
+                if not isinstance(q, dict) or not q.get("queue_id"):
+                    raise ContractError("QUEUE_NOT_CONNECTED")
+                new = dict(state, queue_id=q["queue_id"],
+                           watchdog_id=q.get("watchdog_id"), revision=state["revision"] + 1)
+                try:
+                    if await _invoke(self.ports.save, key, new) is not True:
+                        raise ContractError("QUEUE_CREATED_CHECKPOINT_FAILED")
+                except Exception:
+                    try:
+                        await _invoke(self.ports.queue_control, q["queue_id"], "cancel")
+                    except Exception:
+                        raise ContractError("QUEUE_ORPHAN_RECONCILIATION_REQUIRED")
+                    raise ContractError("QUEUE_CREATED_CHECKPOINT_FAILED")
+                return {"ok": True, "status": "QUEUED", "queue_id": q["queue_id"],
+                        "watchdog_id": q.get("watchdog_id"), "revision": new["revision"]}
+            if op in ("pause", "resume", "cancel"):
+                if not state.get("queue_id"):
+                    raise ContractError("LOOP_NOT_STARTED")
+                q = await _invoke(self.ports.queue_control, state["queue_id"], op)
+                if not isinstance(q, dict) or not q.get("status"):
+                    raise ContractError("QUEUE_CONTROL_NOT_WIRED")
+                return {"ok": True, "status": q["status"], "queue": q}
+            if op == "approve":
+                if (request.get("command") != "/aprobar" or not server_context.get("operator_id")
+                        or not server_context.get("director_confirmed")):
+                    raise ContractError("BLOCKED_APPROVAL")
+                tid = request.get("trigger_id")
+                contract = next((c for c in state["contracts"] if c["id"] == tid), None)
+                if not contract:
+                    raise ContractError("TRIGGER_NOT_FOUND")
+                from .trigger_contract import WRITE_OPS
+                if not any(s["kind"] == "TOOL" and s.get("tool") in WRITE_OPS for s in contract["steps"]):
+                    raise ContractError("APPROVAL_NOT_APPLICABLE")
+                constitutional_sha, _ = await self.engine._constitution()
+                record = {"approved": True, "writer": "N4", "actor": server_context["operator_id"],
+                          "constitution_sha256": constitutional_sha,
+                          "contract_sha256": sha256(canonical(contract)),
+                          "write_paths": contract["execution"]["write_paths"],
+                          "timestamp": int(time.time())}
+                record["approval_ref"] = "approval:" + sha256(canonical(record))
+                if await _invoke(self.ports.save, f"dsl-approval:{project}:{loop}:{tid}", record) is not True:
+                    raise ContractError("CHECKPOINT_NOT_DURABLE")
+                return {"ok": True, "status": "APPROVED", "approval_ref": record["approval_ref"]}
+            if op == "next_loop":
+                current_sha, _ = await self.engine._constitution()
+                done = []
+                for c in state.get("contracts", []):
+                    r = await _invoke(self.ports.load, f"dsl:{project}:{loop}:{c['id']}")
+                    if (not isinstance(r, dict) or r.get("status") != "PASS"
+                            or r.get("contract_sha256") != sha256(canonical(c))
+                            or r.get("constitution_sha256") != current_sha
+                            or not isinstance(r.get("anchor_receipts"), dict)):
+                        continue
+                    valid = True
+                    for ref, old in r["anchor_receipts"].items():
+                        a = await _invoke(self.ports.anchor, ref)
+                        if not isinstance(a, dict) or not isinstance(a.get("bytes"), bytes) or sha256(a["bytes"]) != old.get("sha256"):
+                            valid = False
+                    if valid:
+                        done.append(c["id"])
+                eligible = [c["id"] for c in state["contracts"] if c["id"] not in done
+                            and c.get("enabled") and set(c.get("depends_on", [])) <= set(done)]
+                return {"ok": True, "status": "PASS", "completed": done, "eligible": eligible,
+                        "dispatched": False}
+            if op == "retry_safe":
+                raise ContractError("RETRY_REQUIRES_RECONCILIATION")
+            if op != "run_one":
+                raise ContractError("CONTROL_OP_UNSUPPORTED")
+            if not state.get("queue_id"):
+                raise ContractError("LOOP_NOT_STARTED")
+            q = await _invoke(self.ports.queue_status, state["queue_id"])
+            if not isinstance(q, dict) or q.get("status") != "running":
+                raise ContractError("QUEUE_NOT_RUNNING")
+            tid = request.get("trigger_id")
+            c = next((c for c in state["contracts"] if c["id"] == tid), None)
+            if c is None:
+                raise ContractError("TRIGGER_NOT_FOUND")
+            previous = await self._prior(project, loop, c, state["contracts"])
+            return await self.engine.run_once(project_id=project, contract=c,
+                role_pairs=state["role_pairs"], host_context=server_context, previous=previous)
+        except ContractError as e:
+            return {"ok": False, "status": "BLOCKED", "error": e.code, "detail": e.detail}

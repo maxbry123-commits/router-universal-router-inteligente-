@@ -23,10 +23,26 @@ def _cargar(plugin):
     return _CARGADOS[plugin]
 
 
-async def llamar(plugin, accion, cuerpo):
+CANVAS = frozenset(('canvas_validate', 'canvas_from_dag', 'canvas_save', 'canvas_load'))
+
+
+async def llamar_canvas(accion, cuerpo, *, load_cb=None, save_cb=None):
+    """Delegar al plugin existente con callbacks autenticados del mismo proceso."""
+    if accion not in CANVAS:
+        raise ValueError('accion canvas no permitida')
+    modulo = await asyncio.to_thread(_cargar, 'nct_loop')
+    return await modulo.handle_canvas_action(accion, dict(cuerpo or {}),
+                                            load_cb=load_cb, save_cb=save_cb)
+
+
+async def llamar(plugin, accion, cuerpo, *, server_context=None):
     if plugin not in PLUGINS:
         raise ValueError("plugin no permitido: " + str(plugin))
     modulo = await asyncio.to_thread(_cargar, plugin)
+    if server_context is not None:
+        if plugin != 'nct_loop' or accion not in ('dsl_config','dsl_control','dsl_estado'):
+            raise ValueError('trusted context no permitido')
+        return await asyncio.to_thread(modulo.handle, str(accion), dict(cuerpo or {}), server_context)
     return await asyncio.to_thread(modulo.handle, str(accion), dict(cuerpo or {}))
 
 

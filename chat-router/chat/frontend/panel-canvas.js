@@ -2,7 +2,16 @@ import { montarCanvas } from "./canvas-visor.js";
 import { media, node } from "./api.js";
 
 export async function mount(root, { api, tell }) {
-  if (montarCanvas(root, { tell })) return;  // visor real (canvas-visor.js); lo de abajo es la ruta vieja /chat/org/files
+  if (montarCanvas(root, { tell })) {
+    // Mantener visor multimedia; Canvas mapa abre iframe del mismo origen.
+    try {
+      const { attachCanvasMapEntry } = await import("./canvas-map-entry.js");
+      return attachCanvasMapEntry(root);
+    } catch (error) {
+      tell("Mapa mental no disponible: " + error.message);
+      return;
+    }
+  }
   let currentUrl;
   try {
     const files = (await api("/chat/org/files")).data.files;

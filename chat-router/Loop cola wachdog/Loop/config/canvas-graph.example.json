@@ -1,0 +1,70 @@
+{
+  "schema_id": "yaiwes.canvas.graph.v1",
+  "graph_id": "MAP-LOCAL-001",
+  "project_id": "P-001",
+  "loop_id": "LOOP-001",
+  "mode": "mindmap",
+  "title": "YAIWES · mapa de ejemplo LOCAL",
+  "note": "Ejemplo local de estructura. NO evidencia de ejecución",
+  "nodes": [
+    {
+      "id": "objetivo",
+      "title": "Proyecto / objetivo",
+      "kind": "root",
+      "status": "UNKNOWN",
+      "x": 120,
+      "y": 140,
+      "note": "Sin fuente real asociada",
+      "evidence_refs": []
+    },
+    {
+      "id": "arquitectura",
+      "title": "Arquitectura",
+      "kind": "group",
+      "status": "UNKNOWN",
+      "x": 440,
+      "y": 55,
+      "evidence_refs": []
+    },
+    {
+      "id": "frontend",
+      "title": "Frontend",
+      "kind": "component",
+      "status": "UNKNOWN",
+      "x": 440,
+      "y": 245,
+      "evidence_refs": []
+    },
+    {
+      "id": "checkpoint",
+      "title": "Checkpoint",
+      "kind": "check",
+      "status": "UNKNOWN",
+      "x": 750,
+      "y": 145,
+      "evidence_refs": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "l1",
+      "source": "objetivo",
+      "target": "arquitectura"
+    },
+    {
+      "id": "l2",
+      "source": "objetivo",
+      "target": "frontend"
+    },
+    {
+      "id": "l3",
+      "source": "arquitectura",
+      "target": "checkpoint"
+    },
+    {
+      "id": "l4",
+      "source": "frontend",
+      "target": "checkpoint"
+    }
+  ]
+}

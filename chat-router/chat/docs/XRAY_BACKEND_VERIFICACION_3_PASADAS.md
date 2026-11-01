@@ -1,0 +1,4 @@
+# X-Ray backend YAIWES — tres verificaciones
+1. **Contrato y archivos:** conservar Constitution y referencia Ricardo sin cambios; nuevos archivos sólo en chat-router/Loop cola wachdog y chat-router/chat/docs.
+2. **Aislamiento y gobernanza:** servidor autenticado establece puertos; el navegador no aporta operador, dependencias PASS ni permisos. El ejecutor N4 de GitHub permanece BLOQUEADO hasta integración verificada.
+3. **Pruebas:** paquete previo validado localmente (36 tests de contrato/host y 7 offline Ricardo); la actualización en GitHub necesita tests sobre HEAD real y confirmación de Space/health. Los tests previos no certifican esa ejecución.
