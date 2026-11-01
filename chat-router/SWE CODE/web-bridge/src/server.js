@@ -283,6 +283,18 @@ function crearSse(req, res) {
   return s;
 }
 
+// Canal EXCLUSIVO del provider OpenClaw: su cliente OpenAI-compatible NO
+// incluye "origen" en el JSON. Este alias añade el origen en el servidor,
+// sin depender de botones ni de cabeceras configurables del navegador.
+// El middleware de autentificacion general YA corrio y este alias no expone
+// rutas de claves, status, tools ni otros endpoints privilegiados.
+app.post('/openclaw/v1/chat/completions', (req, _res, next) => {
+  req.body = { ...(req.body || {}), origen: 'openclaw' };
+  req.url = '/v1/chat/completions';
+  next();
+});
+app.get('/openclaw/v1/models', (_req, res) => res.json({ object:'list', data: idsModelos().map(id => ({ id, object:'model' })) }));
+
 app.post('/v1/chat/completions', async (req, res) => {
   const sse = crearSse(req, res);
   try {

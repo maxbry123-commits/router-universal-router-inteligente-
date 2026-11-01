@@ -76,3 +76,14 @@ test('sin recibo Router el boton no cambia estado local ni finge ON', async () =
     assert.equal(systemPromptOn(env),false);
   } finally {fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test('canal OpenClaw no confunde el origen con el selector YAIWES', () => {
+  const fsCode=fs.readFileSync(path.join(RAIZ,'chat-router','SWE CODE','web-bridge','src','server.js'),'utf8');
+  const provider=JSON.parse(fs.readFileSync(path.join(RAIZ,'chat-router','SWE CODE free','provider-openclaw.json'),'utf8'));
+  const base=new URL(provider.base_url);
+  assert.equal(base.pathname,'/openclaw/v1');
+  assert.match(fsCode, /app\\.post\\('\/openclaw\/v1\/chat\/completions'/);
+  assert.match(fsCode, /origen:\s*'openclaw'/);
+  assert.match(fsCode, /app\\.get\\('\/openclaw\/v1\/models'/);
+  assert.match(fsCode, /const forzarPromptOpenClaw = req\\.body\\.origen === 'openclaw'/);
+});
