@@ -32,6 +32,7 @@ import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
 import { montarRutasSwe } from './swe_rutas.js';
 import { montarResponses } from './responses.js';
+import { systemPromptOn, setSystemPromptOn, conSystemPrompt, conSystemPromptTexto } from './systemprompt.js';
 
 // sin variables nuevas en Hugging Face: SWECODE_URL_S1..S3 y RIU_DEEPSEEK_HARNESS_URL (Harness local del Space) toman su default SOLO si no estan definidas (src/defaults.js)
 aplicarDefectos(process.env);
@@ -42,7 +43,8 @@ try { activar = createRequire(import.meta.url)(process.env.RIU_ACTIVAR_PATH || '
 const IDS_DIRECTOS = (id) => /^(groq\/|nvidia\/|lfm2\.5|qwen2\.5-coder|qwen3\.5|qwen3-0\.6b|web-|swecode-)/.test(id);
 
 // Groq/NVIDIA/locales con un modo (p. ej. despliega): reciben el preambulo de ese modo, como el agente que despliega
-const conPreambulo = (msgs, m) => (m && modoValido(m) ? [{ role: 'system', content: preambulo(m) }, ...msgs] : msgs);
+// system-prompt-on (toggle ON/OFF via /v1/system-prompt-on, defecto ON): si esta ON y la ficha del Router MVP tiene contenido, se fusiona/antepone (systemprompt.js)
+const conPreambulo = (msgs, m) => conSystemPrompt(m && modoValido(m) ? [{ role: 'system', content: preambulo(m) }, ...msgs] : msgs);
 
 // acceso: TODAS las rutas (salvo /health) exigen una de las 4 claves de acceso del chat (x-api-key o Authorization: Bearer <clave>) o BRIDGE_TOKEN (Authorization: Bearer / x-bridge-key / x-api-key).
 // BRIDGE_TOKEN es OPCIONAL: el provider de OpenClaw puede usar api_key = clave de acceso. Sin ninguna configurada el bridge responde 503 (ya no queda abierto)
@@ -205,6 +207,15 @@ app.delete('/v1/claves', async (_req, res) => {
   res.json({ ok: true, ...conteo(), ...(await persistir(true)) });  // se publica el banco ya vacio
 });
 
+// toggle ON/OFF del system-prompt de la ficha del Router MVP (systemprompt.js); defecto ON. Afecta a TODOS los modelos (Groq/NVIDIA/HF local/web-*)
+// del chat directo y de OpenClaw, via conPreambulo/prompt en /v1/chat/completions (mismo pipeline)
+app.get('/v1/system-prompt-on', (_req, res) => res.json({ ok: true, on: systemPromptOn() }));
+app.post('/v1/system-prompt-on', (req, res) => {
+  const on = req.body && typeof req.body.on === 'boolean' ? req.body.on : null;
+  if (on === null) return res.status(400).json({ error: { code: 'VALOR_INVALIDO', message: 'on: boolean' } });
+  res.json({ ok: true, on: setSystemPromptOn(on) });
+});
+
 const idsModelos = () => {
   const base = Object.keys(MODELOS_WEB).map(m => `web-${m}`);
   const modos = ['revision','solucion','arquitectura','archivos','prompt_code','consulta','despliega','asesoria'].map(m => `swecode-${m}`);
@@ -304,6 +315,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (docs) prompt = `${prompt}\n\n${docs}`;
     if (prompt.length > MAX_PROMPT) return res.status(413).json({ error: { code: 'PROMPT_DEMASIADO_GRANDE', max: MAX_PROMPT } });
     const mensajesM = docs ? [...messages, { role: 'user', content: docs }] : messages;
+    const promptFicha = conSystemPromptTexto(prompt);  // idem conPreambulo, pero para los modelos web-*/consenso (prompt de texto plano, no mensajes)
 
     let modeloWeb, modoUso = modo || 'consulta', salida, usado = model;
     if (model.startsWith('web-')) {
@@ -344,23 +356,23 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (esLocal(model)) {
       const r = await local(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts() }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
     } else if (modeloWeb) {
-      const r = await conFallback(modeloWeb, prompt, { modo: modoUso, convId: conv_id });
+      const r = await conFallback(modeloWeb, promptFicha, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
     } else if (modoUso === 'asesoria') {
       // asesoria previa a ejecutar: primero Groq (las claves del chat Yaiwes), si no responde la web de SWE CODE free
       try {
-        const r = await externo(`groq/${modeloDefecto('groq')}`, [{ role: 'system', content: preambulo('asesoria') }, ...mensajesM]);
+        const r = await externo(`groq/${modeloDefecto('groq')}`, conSystemPrompt([{ role: 'system', content: preambulo('asesoria') }, ...mensajesM]));
         salida = r.salida; usado = r.usado; viaPrimaria = 'groq';
       } catch {
-        const r = await conFallback(OBJETIVO_UNICO, prompt, { modo: modoUso, convId: conv_id });
+        const r = await conFallback(OBJETIVO_UNICO, promptFicha, { modo: modoUso, convId: conv_id });
         salida = r.salida; usado = r.usado;
       }
     } else if (esConsenso(modoUso)) {
-      const r = await consenso(prompt, { modo: modoUso, convId: conv_id });
+      const r = await consenso(promptFicha, { modo: modoUso, convId: conv_id });
       salida = r.final; usado = 'consenso';
       if (!res.headersSent) res.setHeader('x-consenso-detalle', Buffer.from(JSON.stringify(r.por_modelo)).toString('base64').slice(0, 4000));
     } else {
-      const r = await conFallback(OBJETIVO_UNICO, prompt, { modo: modoUso, convId: conv_id });
+      const r = await conFallback(OBJETIVO_UNICO, promptFicha, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
     }
     };
