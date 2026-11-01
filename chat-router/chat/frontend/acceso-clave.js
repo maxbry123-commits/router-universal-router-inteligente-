@@ -3,12 +3,35 @@
 // Aqui: se pide SOLO cuando el servidor rechaza la peticion (401/403) y se reintenta sola; se puede recordar en este dispositivo; y se puede escribir y probar en Configuración.
 import { el, boton, cargarCss } from "./ventanas-comun.js";
 const K = "riu_clave", KR = "riu_clave_recordada";
-export const esAuth = (e) => /(^|\D)(401|403)(\D|$)|unauthori[sz]ed|forbidden|api[ -]?key|x-api-key|clave|password|credencial|no autoriz|acceso denegado/i.test(String((e && e.message) || e || ""));
-export function restaurarClave() { try { if (!sessionStorage.getItem(K)) { const r = localStorage.getItem(KR); if (r) sessionStorage.setItem(K, r); } } catch (e) {} }
-export const hayClave = () => { try { return !!sessionStorage.getItem(K); } catch (e) { return false; } };
-export const claveRecordada = () => { try { return !!localStorage.getItem(KR); } catch (e) { return false; } };
-export function guardarClave(k, recordar) { try { sessionStorage.setItem(K, k); if (recordar) localStorage.setItem(KR, k); else localStorage.removeItem(KR); } catch (e) {} }
-export function olvidarClave() { try { sessionStorage.removeItem(K); localStorage.removeItem(KR); } catch (e) {} }
+export function esAuth(e) {
+  const m = String((e && e.message) || e || "");
+  if (/herramienta bloqueada|QWEN_API_KEY|HARNESS_NO_CONFIGURADO|credencial Harness ausente/i.test(m)) return false;
+  if (e && e.status === 401) return true;
+  if (e && e.status === 403) return /acceso|no autoriz|api[ -]?key|forbidden|token|clave de acceso/i.test(m);
+  return /\bHTTP\s*401\b|\bNO_AUTORIZADO\b|\bunauthori[sz]ed\b|\bclave de acceso invalida\b|\bHTTP\s*403\b[^\n]*(?:acceso|no autoriz|api[ -]?key|forbidden|clave de acceso)/i.test(m);
+}
+// Se restaura antes de cada solicitud, no solo al montar el panel.
+export function claveActual() {
+  try { const s = sessionStorage.getItem(K); if (s) return s; } catch(e) {}
+  try { const r = localStorage.getItem(KR); if (r) { try { sessionStorage.setItem(K, r); } catch(e) {} return r; } } catch(e) {}
+  return "";
+}
+export function restaurarClave() { return !!claveActual(); }
+export const hayClave = () => !!claveActual();
+export const claveRecordada = () => { try { return !!localStorage.getItem(KR); } catch(e) { return false; } };
+export function guardarClave(k, recordar) {
+  const v = String(k || "").trim(); if (!v) return false;
+  let sesion = false;
+  try { sessionStorage.setItem(K, v); sesion = sessionStorage.getItem(K) === v; } catch(e) {}
+  try {
+    if (recordar) { localStorage.setItem(KR, v); return localStorage.getItem(KR) === v; }
+    localStorage.removeItem(KR); return sesion && !localStorage.getItem(KR);
+  } catch(e) { return !recordar && sesion; }
+}
+export function olvidarClave() {
+  try { sessionStorage.removeItem(K); } catch(e) {}
+  try { localStorage.removeItem(KR); } catch(e) {}
+}
 restaurarClave();
 let abierta = null;
 export function pedirClave(motivo) {
@@ -17,12 +40,13 @@ export function pedirClave(motivo) {
   abierta = new Promise((resolve) => {
     const fondo = el("div", "ac-fondo"); fondo.setAttribute("role", "dialog"); fondo.setAttribute("aria-modal", "true"); fondo.setAttribute("aria-label", "Clave de acceso");
     const caja = el("div", "ac-caja"), inp = el("input", "vn-in"), lab = el("label", "ac-rec"), chk = el("input");
-    inp.type = "password"; inp.autocomplete = "off"; inp.placeholder = "Clave de acceso al servidor"; inp.setAttribute("aria-label", "Clave de acceso"); chk.type = "checkbox"; lab.append(chk, el("span", "", "Recordar en este dispositivo"));
+    inp.type = "password"; inp.autocomplete = "current-password"; inp.placeholder = "Clave de acceso al servidor"; inp.setAttribute("aria-label", "Clave de acceso"); chk.type = "checkbox"; chk.checked = claveRecordada(); lab.append(chk, el("span", "", "Recordar en este dispositivo"));
+    const error = el("div", "vn-estado"); error.setAttribute("role", "alert");
     const fin = (v) => { fondo.remove(); abierta = null; resolve(v); };
-    const ok = boton("Guardar y reintentar", "mini", () => { const k = inp.value.trim(); if (!k) { inp.focus(); return; } guardarClave(k, chk.checked); fin(k); });
+    const ok = boton("Guardar y reintentar", "mini", () => { const k = inp.value.trim(); if (!k) { inp.focus(); return; } if (!guardarClave(k, chk.checked)) { error.textContent = "El navegador no permite guardar la clave. Usa una pestaña normal de Chrome y habilita el almacenamiento."; return; } fin(k); });
     inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); ok.click(); } });
     const fila = el("div", "ac-acc"); fila.append(ok, boton("Cancelar", "mini", () => fin(null)));
-    caja.append(el("strong", "", "Clave de acceso"), el("p", "muted", motivo || "El servidor pidió la clave."), inp, lab, fila); fondo.append(caja); document.body.append(fondo); inp.focus();
+    caja.append(el("strong", "", "Clave de acceso"), el("p", "muted", motivo || "El servidor pidió la clave."), inp, lab, fila, error, el("small", "muted", "Recordar funciona por navegador y dirección web: huggingface.co y hf.space son independientes.")); fondo.append(caja); document.body.append(fondo); inp.focus();
   });
   return abierta;
 }
@@ -57,8 +81,8 @@ export function montarAccesoConfig(root, { avisa }) {
   inp.type = "password"; inp.autocomplete = "off"; inp.placeholder = hayClave() ? "Hay una clave guardada en esta sesión (escribe otra para cambiarla)" : "Clave de acceso al servidor"; inp.setAttribute("aria-label", "Clave de acceso");
   chk.type = "checkbox"; chk.checked = claveRecordada(); lab.append(chk, el("span", "", "Recordar en este dispositivo")); est.setAttribute("role", "status");
   fila.append(
-    boton("Guardar", "mini", () => { const k = inp.value.trim(); if (!k) { avisa("Escribe la clave"); return; } guardarClave(k, chk.checked); inp.value = ""; inp.placeholder = "Clave guardada"; avisa("Clave guardada"); }),
+    boton("Guardar", "mini", () => { const k = inp.value.trim(); if (!k) { avisa("Escribe la clave"); return; } if (!guardarClave(k, chk.checked)) { est.textContent = "No se pudo recordar la clave: revisa el almacenamiento del navegador."; return; } inp.value = ""; inp.placeholder = chk.checked ? "Clave recordada" : "Clave guardada en sesión"; avisa("Clave guardada"); }),
     boton("Probar conexión", "mini", async () => { est.textContent = "Probando…"; try { await window.RIU_ACCION("status", {}); est.textContent = "Conexión correcta con el servidor."; } catch (e) { est.textContent = esAuth(e) ? "El servidor rechazó la clave: " + e.message : "No se pudo conectar: " + e.message; } }),
     boton("Olvidar", "mini rojo", () => { olvidarClave(); inp.placeholder = "Clave de acceso al servidor"; chk.checked = false; avisa("Clave olvidada"); }));
-  caja.append(inp, lab, fila, est, el("div", "vn-estado", "La clave se guarda solo en este navegador y solo se envía al servidor del chat."));
+  caja.append(inp, lab, fila, est, el("div", "vn-estado", "La clave se guarda en este navegador y dominio, nunca en GitHub. La navegación privada puede borrarla al cerrar."));
 }

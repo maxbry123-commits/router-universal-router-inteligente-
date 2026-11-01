@@ -1,3 +1,4 @@
+import { claveActual } from "./acceso-clave.js";
 // api.js — Cliente API del Router (chat UI)
 // Cambios: trae util `copiar` al portador final; `chat` acepta flujo + historial + stop; manejo de errores de red
 const CFG = window.RIU_CONFIG || {};
@@ -52,10 +53,10 @@ async function liveRouter() {
 }
 
 function clave() {
-  return sessionStorage.getItem("riu_clave") || "";
+  return claveActual();
 }
 function remoto(headers) {
-  if (BASE) headers[CFG.authHeader || "X-API-Key"] = clave();
+  if (BASE && clave()) headers[CFG.authHeader || "X-API-Key"] = clave();
   return BASE ? "omit" : "same-origin";
 }
 const L4 = { job: null, url: null };
@@ -83,7 +84,7 @@ const avisoProceso = (ses, pid, t0, p) => {
 };
 const procs = () => { try { return JSON.parse(localStorage.getItem(CP) || '{}'); } catch (e) { return {}; } };
 const guardaProc = (ses, v) => { try { const t = procs(); if (v) t[ses] = v; else delete t[ses]; localStorage.setItem(CP, JSON.stringify(t)); } catch (e) {} };
-const hdrs = () => { const k = sessionStorage.getItem('riu_clave'); const h = { 'Content-Type': 'application/json' }; if (k) { h['X-API-Key'] = k; h.Authorization = 'Bearer ' + k; } return h; };
+const hdrs = () => { const k = clave(); const h = { 'Content-Type': 'application/json' }; if (k) { h['X-API-Key'] = k; h.Authorization = 'Bearer ' + k; } return h; };
 window.RIU_PENDIENTE = (ses) => procs()[ses] || null;
 window.RIU_CANCELAR = async (ses) => {  // Detener: en cola se cancela antes de ejecutar; si ya corre, el Router no lanza los pasos siguientes
   const v = procs()[ses]; if (!v) return false; guardaProc(ses, null);
@@ -127,7 +128,7 @@ async function puenteRouter(base, body, qs, headers) {
     payload.request_id = payload.request_id || ('rq-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10));
   }
   const h = { 'Content-Type': 'application/json' };
-  const pw = headers['X-Chat-Password'] || sessionStorage.getItem('riu_clave');
+  const pw = headers['X-Chat-Password'] || clave();
   if (pw) h['X-API-Key'] = pw;
   for (let intento = 0; intento < 2; intento++) {
     let r;
@@ -198,7 +199,7 @@ export async function accion(acc, payload) {
   // cualquier accion del puente (subir, archivos, xray, auditor_code, handoff, sandbox, ...)
   await liveRouter();
   const h = { 'Content-Type': 'application/json' };
-  const pw = sessionStorage.getItem('riu_clave');
+  const pw = clave();
   if (pw) h['X-API-Key'] = pw;
   payload = Object.assign({ sesion: sessionStorage.getItem('riu_sesion') || 'web-general' }, payload || {});
   const r = await fetchT(CFG.harnessUrl.replace(/[/]+$/, '') + '/' + acc, { method: 'POST', headers: h, body: JSON.stringify(payload) }, acc === 'subir' ? 60000 : acc === 'recurso_probar' ? 120000 : 15000);  // subir: archivo grande; recurso_probar: llamada real al modelo
@@ -210,7 +211,7 @@ window.RIU_ACCION = accion;
 export async function plugin(id, action, body) {
   await liveRouter();
   const h = { 'Content-Type': 'application/json' };
-  const pw = sessionStorage.getItem('riu_clave');
+  const pw = clave();
   if (pw) h['X-API-Key'] = pw;
   const url = (PBASE || location.origin).replace(/\/$/, '') + '/plugins/' + id + '/call/' + action;
   const r = await fetchT(url, { method: 'POST', headers: h, body: JSON.stringify(body || {}) }, 20000);
@@ -225,7 +226,7 @@ window.RIU_PLUGIN = plugin;
 export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id, instrucciones_fijas, mode_request, thinking_mode, tools = false, agente_tool = false, llm_tool = false }) {  // >>> MODOS <<< mode_request viaja en el payload
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
-  const pw = sessionStorage.getItem('riu_clave');
+  const pw = clave();
   if (pw) headers['X-Chat-Password'] = pw;
   const messages = [{ role: 'user', content: message }];
   const extra = Object.assign(
@@ -275,7 +276,7 @@ export async function apagarRespaldo() {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   // apaga TODOS los L4 de respaldo (el Router solo apaga los suyos), haya o no un job conocido
   const headers = { 'Content-Type': 'application/json' };
-  const pw = sessionStorage.getItem('riu_clave');
+  const pw = clave();
   if (pw) headers['X-Chat-Password'] = pw;
   const r = await puente(base, null, '?accion=apagar_todo', 'POST', headers);
   if (r.ok) { L4.job = L4.url = null; window.__riuJob = null; }
@@ -306,7 +307,12 @@ export async function api(path, options = {}) {
   if (options.sse && response.ok && /text\/event-stream/i.test(response.headers.get("content-type") || "")) return { __sse: response };  // streaming SSE: lo lee quien lo pidio (swe-directo.js); si el servidor responde JSON, sigue el camino de siempre
   const payload = response.headers.get("content-type")?.includes("application/json")
     ? await response.json() : { detail: `HTTP ${response.status}` };
-  if (!response.ok) throw new Error((response.status === 403 ? "HTTP 403: " : "") + (typeof payload.detail === "string" ? payload.detail : typeof payload.reason === "string" ? payload.reason : (payload.error && typeof payload.error.message === "string") ? ((payload.error.code ? payload.error.code + ": " : "") + payload.error.message) : `HTTP ${response.status}`));
+  if (!response.ok) {
+    const detalle = typeof payload.detail === "string" ? payload.detail : typeof payload.reason === "string" ? payload.reason : (payload.error && typeof payload.error.message === "string") ? ((payload.error.code ? payload.error.code + ": " : "") + payload.error.message) : "HTTP " + response.status;
+    const error = new Error((response.status === 401 || response.status === 403 ? "HTTP " + response.status + ": " : "") + detalle);
+    error.status = response.status;
+    throw error;
+  }
   return payload;
 }
 export async function media(id) {
