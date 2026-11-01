@@ -227,7 +227,17 @@ const idsModelos = () => {
 };
 app.get('/v1/models', (_req, res) => res.json({ object: 'list', data: idsModelos().map(id => ({ id, object: 'model' })) }));
 // disponibilidad real de los modelos Groq/NVIDIA (GET /models de cada proveedor): DISPONIBLE | NO DISPONIBLE | SIN VERIFICAR; jamas cambia de modelo en silencio ni muestra claves
-app.get('/v1/modelos/disponibilidad', async (_req, res) => { try { res.json({ ok: true, modelos: await disponibilidad() }); } catch (e) { res.status(502).json({ ok: false, error: { code: 'DISPONIBILIDAD_FALLO', message: String(e.message).slice(0, 200) } }); } });
+app.get('/v1/modelos/disponibilidad', async (_req, res) => {
+  try {
+    const URLs = estadoRespaldo().hf_local, locales = idsRespaldo().filter(id => !id.includes('/'))
+      .map(id => ({ id: 'hf/' + id, nombre: id, proveedor: 'hf-local', disponible: null,
+        estado: URLs ? 'SIN VERIFICAR' : 'NO CONFIGURADO', intentable: !!URLs }));
+    // URL configurada no significa modelo cargado: solo el primer chat confirma realmente su inferencia.
+    res.json({ ok: true, modelos: await disponibilidad(), locales });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: { code: 'DISPONIBILIDAD_FALLO', message: 'No se pudo consultar el catálogo' } });
+  }
+});
 
 // configuracion vigente de OpenClaw (providers, modelos, modos, workspace): solo lectura, sin secretos (conteos de claves, jamas valores)
 app.get('/v1/openclaw', (_req, res) => {

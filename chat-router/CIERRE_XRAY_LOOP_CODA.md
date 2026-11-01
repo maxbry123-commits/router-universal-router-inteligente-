@@ -95,3 +95,9 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - `fichas-externas.js` consulta prioritariamente el banco real y el `GET /models` del bridge, no solo el banco del Router MVP. Disponibilidad real o SIN VERIFICAR; sin clave, NO CONFIGURADO. Sin exponer claves en navegador.
 - Los selectores priorizan la verificación del bridge sobre el estado de agentes del Harness en modo chat sin agentes; optgroup/option simplificados para móvil.
 - Pruebas nuevas en `chat/frontend/test/enviar-modelo.test.mjs` y `test/swe-central.test.mjs`; ejecución real y mirror NO certificados. Solo GitHub `chat-router/`; sin modificaciones Hugging Face ni agentes.
+
+### X-Ray II — disponibilidad local y consulta paralela
+- `SWE CODE/web-bridge/src/respaldo.js`: consultas Groq + NVIDIA ahora se realizan en paralelo en `GET /v1/modelos/disponibilidad`; antes podían tardar 20 s y exceder el timeout del frontend (15 s), induciendo falso «sin conexión».
+- `SWE CODE/web-bridge/src/server.js`: respuesta del endpoint incluye `locales`, con **SIN VERIFICAR** si hay al menos un URL S1..S3 y **NO CONFIGURADO** si ninguno; no anuncia modelos locales como DISPONIBLES sin inferencia real.
+- `chat/frontend/fichas-externas.js`, `swe-selectores.js`, `swe-directo.js`: misma disponibilidad del bridge para modelos locales y APIs, sin depender de la detección de agentes por otro equipo. Frontend Groq/NVIDIA locales selectores reparados.
+- Pendiente: ejecución real del bridge y credenciales; un estado de catálogo no demuestra respuesta real. Sin cambios en Hugging Face ni infraestructura.

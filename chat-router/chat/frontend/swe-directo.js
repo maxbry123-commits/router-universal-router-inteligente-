@@ -188,7 +188,7 @@ export function opcionesModeloVentana(ventana, cap, proveedor = {}, { web = vent
     let st = estadoOpcion(cap, "modelo", id);
     const pv = proveedor ? proveedor[id] : undefined;  // false = el proveedor no lo publica; "NO_CONFIGURADO" / "SIN_VERIFICAR" = su catalogo no se pudo leer
     if (pv === false) st = { ok: false, elegible: false, estado: "NO_DISPONIBLE_PROVEEDOR", motivo: "el proveedor no publica el identificador seleccionado; no se sustituye por otro" };
-    else if (pv === "NO_CONFIGURADO") st = { ok: false, elegible: false, estado: "NO_CONFIGURADO", motivo: "el banco del bridge no tiene clave para este proveedor" };
+    else if (pv === "NO_CONFIGURADO") st = { ok: false, elegible: false, estado: "NO_CONFIGURADO", motivo: id.startsWith("hf/") ? "ningún servidor local está configurado en el bridge" : "el banco del bridge no tiene clave para este proveedor" };
     else if (pv === true) st = { ok: true, elegible: true, estado: "DISPONIBLE", motivo: "" };  // GET /models del mismo bridge que hace inferencia, no del Harness de agentes
     else if (pv === "SIN_VERIFICAR") st = { ok: true, elegible: true, estado: "SIN_VERIFICAR", motivo: "el bridge no pudo verificar el catálogo; puedes intentar este modelo" };
     const nom = st.nombre || etq;  // A5: el NOMBRE sale del catalogo del Harness cuando lo reporta (163)

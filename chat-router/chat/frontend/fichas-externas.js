@@ -20,7 +20,8 @@ const leer = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || "nul
 const cfg = () => (window.RIU_CONFIG = window.RIU_CONFIG || {});
 const G = (window.RIU_GROQ = window.RIU_GROQ || { lista: [], modelo: "", aviso: "cargando modelos de Groq…" });
 const refrescar = () => { try { window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar(); } catch (e) {} };
-export function aplicar(d) {  // d: {groq:[{id,etiqueta,disponible}], nvidia:[…], avisoGroq, avisoNvidia}
+export function aplicar(d) {  // d: {groq:[{id,etiqueta,disponible}], nvidia:[…], locales:[…], avisoGroq, avisoNvidia}
+  window.RIU_LOCAL = { lista: d.locales || [] }; // modelos HF por el MISMO bridge; sin afirmar disponible por solo tener URL
   G.lista = d.groq || [];
   const buenos = G.lista.filter((m) => m.disponible !== false), guardado = localStorage.getItem(KG) || "";
   const perdido = G.lista.find((m) => m.disponible === false && m.id === guardado);  // lo que el usuario tenía elegido y ya no existe: se dice, no se cambia
@@ -41,12 +42,16 @@ export function aplicar(d) {  // d: {groq:[{id,etiqueta,disponible}], nvidia:[�
 }
 aplicar(leer(CACHE, { groq: [], nvidia: [], avisoGroq: "cargando modelos de Groq…" }));  // antes de montar el chat: lo último conocido
 export async function cargar() {
-  const d = { groq: [], nvidia: [] };
+  const d = { groq: [], nvidia: [], locales: [] };
   // Fuente primaria: MISMO bridge y banco cifrado que hacen la inferencia de YAIWES y OpenClaw.
   // Si se consulta solo /chat/providers del Router MVP, faltan las claves guardadas en el bridge y aparecen falsos NO CONFIGURADO.
   try {
     const [pub, banco] = await Promise.all([api("/web/v1/modelos/disponibilidad"), api("/web/v1/claves")]);
     if (!pub?.ok || !Array.isArray(pub.modelos) || !banco?.ok) throw new Error("BRIDGE_CATALOGO_INVALIDO");
+    d.locales = (Array.isArray(pub.locales) ? pub.locales : []).filter(m => m && /^hf\/[a-z0-9._-]+$/i.test(m.id)).map(m => ({
+      id: m.id, disponible: null, estado: m.estado === "NO CONFIGURADO" ? "NO CONFIGURADO" : "SIN VERIFICAR",
+      etiqueta: m.id.slice(3) + (m.estado === "NO CONFIGURADO" ? " — NO CONFIGURADO" : " — SIN VERIFICAR"),
+    }));
     for (const p of ["groq", "nvidia"]) {
       const disponibles = pub.modelos.filter(m => m && m.proveedor === p && MODELOS_SELECCIONADOS.has(m.id));
       d[p] = disponibles.map(m => {

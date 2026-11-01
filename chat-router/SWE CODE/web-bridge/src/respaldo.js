@@ -393,8 +393,10 @@ async function modeloDe(prov, env, r) {
 // disponibilidad real de cada id de MODELOS_API segun GET /models de su proveedor. Sin clave o con el proveedor sin listar: SIN VERIFICAR (no se afirma nada).
 // NO DISPONIBLE solo si el proveedor listo sus modelos y el id no esta: nunca se sustituye por otro en silencio.
 export async function disponibilidad({ env = process.env, opts } = {}) {
-  const r = red(opts), listas = {};
-  for (const prov of ['groq', 'nvidia']) { const ks = libres(prov, env, r); listas[prov] = ks.length ? await listarIds(prov, BASES[prov], ks, r) : null; }
+  const r = red(opts), listas = Object.fromEntries(await Promise.all(['groq', 'nvidia'].map(async prov => {
+    const ks = libres(prov, env, r);
+    return [prov, ks.length ? await listarIds(prov, BASES[prov], ks, r) : null];
+  })));
   return MODELOS_API.map((m) => {
     const prov = m.id.split('/')[0], mid = m.id.slice(prov.length + 1), l = listas[prov];
     const disponible = Array.isArray(l) && l.length ? l.includes(mid) : null;

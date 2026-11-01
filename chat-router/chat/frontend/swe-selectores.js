@@ -56,7 +56,15 @@ function fijarModeloVentana(w, cat) {
 // catalogo del Router (fichas-externas.js) -> {id: false | "NO_CONFIGURADO" | "SIN_VERIFICAR"} para Groq/NVIDIA; vacio = sin informacion distinta del Harness
 function mapaProveedor(w) {
   const prov = w === "groq" ? "groq" : w === "nvidia" ? "nvidia" : "";
-  if (!prov) return {};
+  if (!prov) {
+    // SWE CODE = locales; SWEN CODE free = locales + APIs. No depender del estado de agentes del Harness.
+    if (w !== "swe-code" && w !== "swen-code-free") return {};
+    const datos = [...(window.RIU_LOCAL?.lista || []), ...(w === "swen-code-free" ? [...G().lista, ...(window.RIU_CONFIG?.modelos || []).filter(m => String(m.id).startsWith("nvidia/"))] : [])];
+    const o = {};
+    for (const m of datos) o[m.id] = m.estado === "NO CONFIGURADO" ? "NO_CONFIGURADO"
+      : m.disponible === true ? true : m.disponible === false ? false : "SIN_VERIFICAR";
+    return o;
+  }
   const lista = prov === "groq" ? G().lista || [] : (window.RIU_CONFIG && window.RIU_CONFIG.modelos || []).filter((m) => String(m.id).startsWith("nvidia/"));
   const aviso = prov === "groq" ? G().aviso || "" : (window.RIU_NVIDIA || {}).aviso || "";
   const o = {};
@@ -116,7 +124,7 @@ function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al
 function agrupar(k, sel, w) {
   const [lista, tipo] = LISTAS[k];
   if (k === "modelo_responde" || k === "modelo_tool") {
-    const resp = k === "modelo_responde", ops = opcionesModeloVentana(resp ? w : "swen-code-free", CAP, resp ? mapaProveedor(w) : {}, { web: resp && w === "swen-code-free" });
+    const resp = k === "modelo_responde", ops = opcionesModeloVentana(resp ? w : "swen-code-free", CAP, mapaProveedor(resp ? w : "swen-code-free"), { web: resp && w === "swen-code-free" });
     // un modelo SIN VERIFICAR no bloquea el chat normal: se puede elegir, con su rotulo; lo no disponible va al final, deshabilitado y con su estado real
     const g = { ok: ops.filter((o) => o.ok).map((o) => ({ id: o.id, etq: o.estado === "DISPONIBLE" ? o.nombre : `${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}`, estado: o.estado, motivo: o.motivo, elegible: o.elegible })), noInstalado: [], incompatible: [], sinVerificar: [], otros: ops.filter((o) => !o.ok).map((o) => ({ id: o.id, etq: o.nombre, estado: o.estado, motivo: o.motivo, elegible: o.elegible })) };
     return { g, ops };
