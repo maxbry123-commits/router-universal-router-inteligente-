@@ -61,6 +61,29 @@ class QueueSafety(unittest.TestCase):
         self.assertEqual("failed", q["status"])
         self.assertEqual("needs_reconciliation", next(t for t in q["tasks"] if t["id"]=="a")["status"])
 
+    def test_verify_exists_receipt_changes_with_file_contents(self):
+        target = self.root / "tracked.txt"
+        target.write_text("VERSION A", encoding="utf-8")
+        control = types.SimpleNamespace(d={"proyectos":{"test":{"anclas":[]}},"agentes":{},"agentes_on":False},
+                                        credencial=lambda *args,**kwargs:"fake")
+        fake_mvp = types.ModuleType("mvp")
+        fake_mvp.hf_store = types.ModuleType("hf_store")
+        fake_plugins = types.ModuleType("plugins")
+        fake_bridge = types.ModuleType("plugins.puente_chat")
+        fake_bridge.plugin = types.SimpleNamespace(FICHAS={},RESPALDO={})
+        fake_plugins.puente_chat = fake_bridge
+        with patch.dict(sys.modules, {"mvp":fake_mvp,"plugins":fake_plugins,
+                                      "plugins.puente_chat":fake_bridge}):
+            ports = build_ports({"authenticated":True,"trusted_host":True,
+                 "control":control,"banco":object(),"queue_store":self.store,
+                 "watch_store":None,"root":self.root,"project_id":"test",
+                 "loop_id":"x","sesion":"web-general"})
+            first = ports.tool("verify_exists", {"path":"tracked.txt"}, {})
+            target.write_text("VERSION B", encoding="utf-8")
+            second = ports.tool("verify_exists", {"path":"tracked.txt"}, {})
+        self.assertTrue(first["ok"] and second["ok"])
+        self.assertNotEqual(first["evidence_ref"],second["evidence_ref"])
+
     def test_cancelled_task_never_reported_as_pass(self):
         qid = self.queue()
         self.store.claim_dsl_for(qid, "a")
