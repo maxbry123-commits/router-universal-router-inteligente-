@@ -90,3 +90,32 @@ def test_el_harness_y_los_workflows_eligen_adaptador_solo_por_el_dispatcher():
     harness = os.path.join(os.path.dirname(__file__), "..", "..", "..", "chat", "backend", "deepseek_harness", "server.py")
     fuente = open(harness, encoding="utf-8").read()
     assert "from agentes.adaptadores.dispatcher import ejecutar_agente" in fuente and not re.search(r"adaptadores\.(codex|opencode|openhands|swe_agent|claude_code|openclaw)\b", fuente)
+
+
+@pytest.mark.parametrize("cambio,codigo", [
+    ({"agente": "openhands"}, "IDENTIDAD_RECIBO_INCORRECTA"),
+    ({"task_id": "otra-tarea"}, "IDENTIDAD_RECIBO_INCORRECTA"),
+    ({"recibo": "openhands:t-1:abc"}, "RECIBO_NO_CORRESPONDE"),
+    ({"recibo": "codex:otra-tarea:abc"}, "RECIBO_NO_CORRESPONDE"),
+    ({"exit_code": 1}, "EXIT_CODE_NO_CONFIRMADO"),
+    ({"exit_code": True}, "EXIT_CODE_NO_CONFIRMADO"),
+    ({"exit_code": None}, "EXIT_CODE_NO_CONFIRMADO"),
+    ({"truncado": True}, "SALIDA_AGENTE_TRUNCADA"),
+    ({"resultado": ""}, "RESULTADO_AGENTE_VACIO"),
+    ({"herramientas": "read"}, "EVIDENCIA_AGENTE_INVALIDA"),
+    ({"evidencias": None}, "EVIDENCIA_AGENTE_INVALIDA"),
+])
+def test_xray_no_acepta_recibo_incorrecto(monkeypatch, cambio, codigo):
+    valido = {"ok": True, "agente": "codex", "task_id": "t-1", "resultado": "hecho", "herramientas": [], "evidencias": [],
+              "recibo": "codex:t-1:abc", "exit_code": 0}
+    instalar(monkeypatch, "codex", {**valido, **cambio})
+    with pytest.raises(dispatcher.AgenteError) as e:
+        dispatcher.ejecutar_agente("codex", **ARGS)
+    assert e.value.codigo == codigo
+
+
+def test_xray_recibo_correcto(monkeypatch):
+    valido = {"ok": True, "agente": "codex", "task_id": "t-1", "resultado": "hecho", "herramientas": ["read"],
+              "evidencias": ["prueba:test"], "recibo": "codex:t-1:abc", "exit_code": 0, "truncado": False}
+    instalar(monkeypatch, "codex", valido)
+    assert dispatcher.ejecutar_agente("codex", **ARGS) == valido
