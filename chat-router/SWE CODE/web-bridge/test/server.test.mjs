@@ -903,3 +903,45 @@ test('SSE-8. error DESPUES de iniciar el stream (keepalive ya enviado, respaldo 
   assert.ok(err, 'hay un chunk con error'); assert.equal(err.error.code, 'RESPALDO_AGOTADO'); assert.equal(err.object, 'chat.completion.chunk');
   assert.ok(!r.texto.includes('gsk-SECRETO') && !r.texto.includes('nv-SECRETO'));
 });
+
+test('OpenClaw proveedor: canal fijo ON incluso con YAIWES OFF, sin doble motor', async () => {
+  const repoRoot = path.resolve(AQUI, '..', '..', '..', '..');
+  const groqOc = await mockApi('groq-openclaw');
+  const servidor = await arrancar('OC-CANAL', {
+    RIU_REPO_ROOT: repoRoot, RIU_API_KEY: ACCESO,
+    GROQ_API_KEY: 'gsk-PRUEBA-OC', TEST_GROQ_URL: groqOc.url,
+    RIU_FORMATO_PATH: path.join(TMP, 'FORMATO.md'),
+  });
+  fs.writeFileSync(path.join(servidor.state, 'system-prompt-on.flag'), '0');
+
+  const enviar = async (ruta, token = ACCESO) => {
+    const r = await fetch(servidor.base + ruta, {
+      method:'POST', headers:{'content-type':'application/json','x-api-key':token},
+      body: JSON.stringify({
+        model:'groq/qwen/qwen3.8-27b',
+        messages:[{role:'user',content:'hola'}],
+      }),
+    });
+    return {status:r.status, cuerpo:await r.json()};
+  };
+
+  const normal=await enviar('/v1/chat/completions');
+  assert.equal(normal.status,200,JSON.stringify(normal.cuerpo));
+  const msgNormal=groqOc.hits.at(-1).body.messages.map(m=>m.content||'').join('\n');
+  assert.ok(!msgNormal.includes('BLOQUE 3/5'), 'YAIWES OFF no debe forzar el system prompt');
+
+  const openclaw=await enviar('/openclaw/v1/chat/completions');
+  assert.equal(openclaw.status,200,JSON.stringify(openclaw.cuerpo));
+  const msgOpenclaw=groqOc.hits.at(-1).body.messages.map(m=>m.content||'').join('\n');
+  assert.ok(msgOpenclaw.includes('BLOQUE 3/5'), 'OpenClaw fijo ON debe llevar la ficha completa');
+  assert.ok(msgOpenclaw.includes('BLOQUE 4/5'), 'tambien debe llegar la verificacion');
+  assert.equal((msgOpenclaw.match(/BLOQUE 3\/5/g)||[]).length,1,'system prompt no se duplica');
+
+  const models=await fetch(servidor.base+'/openclaw/v1/models',{headers:{'x-api-key':ACCESO}});
+  assert.equal(models.status,200);
+  assert.ok((await models.json()).data.some(m=>m.id==='groq/qwen/qwen3.8-27b'));
+  const oculto=await fetch(servidor.base+'/openclaw/v1/claves',{headers:{'x-api-key':ACCESO}});
+  assert.equal(oculto.status,404,'alias no expone las claves del banco');
+  const sinAuth=await enviar('/openclaw/v1/chat/completions','incorrecta');
+  assert.equal(sinAuth.status,401,'alias conserva autenticacion');
+});
