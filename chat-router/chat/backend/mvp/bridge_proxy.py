@@ -19,7 +19,10 @@ def montar(app):
     @app.api_route("/web/{ruta:path}", methods=["GET", "POST", "DELETE", "PUT", "PATCH"], include_in_schema=False)
     async def web_bridge(ruta: str, request: Request):
         # Un proxy de rutas, NO un cliente HTTP arbitrario ni un proveedor nuevo.
-        if ruta != "health" and not ruta.startswith("v1/"):
+        # Solo el provider OpenClaw oficial; NO habilitar /openclaw/* arbitrario.
+        # Se conserva el control de autenticacion del bridge de destino.
+        openclaw_publico = ruta in ("openclaw/v1/models", "openclaw/v1/chat/completions")
+        if ruta != "health" and not ruta.startswith("v1/") and not openclaw_publico:
             return JSONResponse(status_code=404, content={"error": {"code": "RUTA_BRIDGE_INVALIDA"}})
         if len(ruta) > 256 or ".." in ruta or "\\" in ruta:
             return JSONResponse(status_code=400, content={"error": {"code": "RUTA_BRIDGE_INVALIDA"}})

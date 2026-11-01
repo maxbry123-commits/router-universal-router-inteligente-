@@ -65,3 +65,33 @@ def test_proxy_fails_closed_when_bridge_is_down():
 def test_web_health_is_supported():
     r, seen = exercise(lambda req: httpx.Response(200, json={"ok": True}), "/web/health")
     assert r.status_code == 200 and len(seen) == 1
+
+
+def test_web_openclaw_provider_alias_reaches_existing_bridge():
+    def handler(req):
+        assert req.url.path == "/openclaw/v1/models"
+        assert req.headers["authorization"] == "Bearer CLAVE-FALSA-PRUEBA"
+        return httpx.Response(200, json={"object": "list", "data": [{"id": "web-qwen38max"}]})
+    r, seen = exercise(handler, "/web/openclaw/v1/models",
+                       headers={"authorization": "Bearer CLAVE-FALSA-PRUEBA"})
+    assert r.status_code == 200 and r.json()["data"][0]["id"] == "web-qwen38max"
+    assert len(seen) == 1
+
+
+def test_web_openclaw_provider_completion_preserves_body():
+    payload = {"model": "web-qwen38max", "messages": [{"role": "user", "content": "hola"}]}
+    def handler(req):
+        assert req.url.path == "/openclaw/v1/chat/completions"
+        assert json.loads(req.content) == payload
+        return httpx.Response(200, json={"choices": [{"message": {"role": "assistant", "content": "ok"}}]})
+    r, seen = exercise(handler, "/web/openclaw/v1/chat/completions",
+                       method="POST", payload=payload, headers={"x-api-key": "CLAVE-FALSA-PRUEBA"})
+    assert r.status_code == 200 and r.json()["choices"][0]["message"]["content"] == "ok"
+
+
+def test_web_openclaw_only_whitelists_models_and_completions():
+    for ruta in ("openclaw/v1/claves", "openclaw/v1/swe/avanzar",
+                 "openclaw/admin", "openclaw/v1/models/../../../v1/claves"):
+        r, seen = exercise(lambda req: (_ for _ in ()).throw(AssertionError("No upstream")),
+                           "/web/" + ruta)
+        assert r.status_code in (400, 404) and not seen
