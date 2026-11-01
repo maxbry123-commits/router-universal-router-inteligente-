@@ -40,17 +40,31 @@ def _llave(nombre, args):
 
 
 def _diario(tarea):
+    """Solo la ausencia comprobada del archivo equivale a diario nuevo. Ante red caída o corrupción, detenerse."""
     try:
-        return json.loads(leer({"nombre": "tareas/%s/diario.json" % tarea})["valor"])
-    except Exception:  # noqa: BLE001 - sin diario todavia (o almacen caido): se sigue sin el
-        return {}
+        valor = leer({"nombre": "tareas/%s/diario.json" % tarea})["valor"]
+    except Exception as exc:
+        if "no existe" in str(exc).lower() or "HTTP 404" in str(exc):
+            return {}
+        raise RuntimeError("DIARIO_NO_DISPONIBLE") from None
+    try:
+        datos = json.loads(valor)
+    except (ValueError, TypeError):
+        raise RuntimeError("DIARIO_CORRUPTO") from None
+    if not isinstance(datos, dict):
+        raise RuntimeError("DIARIO_CORRUPTO")
+    return datos
 
 
 def _anotar(tarea, diario):
+    """El guardado del diario es obligatorio: nunca silenciar fallos que permitirían repetir efectos."""
+    if not isinstance(diario, dict):
+        raise ValueError("DIARIO_INVALIDO")
+    valor = _SECRETO.sub("[REDACTADO]", json.dumps(diario, ensure_ascii=False))
     try:
-        guardar({"nombre": "tareas/%s/diario.json" % tarea, "valor": _SECRETO.sub("[REDACTADO]", json.dumps(diario, ensure_ascii=False))})
-    except Exception:  # noqa: BLE001
-        pass
+        guardar({"nombre": "tareas/%s/diario.json" % tarea, "valor": valor})
+    except Exception:
+        raise RuntimeError("DIARIO_NO_PERSISTIDO") from None
 
 
 def _tam(mensajes):
@@ -339,14 +353,25 @@ def llm(cuerpo):
                 mensajes.append({"role": "tool", "tool_call_id": llamada["id"], "content": json.dumps({"error": "Escritura GitHub permitida solo en main"}, ensure_ascii=False)})
                 continue
             llave = _llave(nombre, args) if tarea and con_efectos(nombre, args) else None
-            if llave and llave in diario:  # ya se hizo en esta tarea (antes de un reinicio o corte): se devuelve lo que paso, no se repite
-                resultado = {"ya_ejecutada_en_esta_tarea": True, "resultado": diario[llave]}
+            if llave and llave in diario:  # se reusa SOLO una operación confirmada: INICIADA puede haber tenido efectos
+                previa = diario[llave]
+                if isinstance(previa, dict) and previa.get("estado") == "INICIADA":
+                    raise RuntimeError("OPERACION_SIN_CONFIRMAR")
+                if isinstance(previa, dict) and previa.get("estado") != "CONFIRMADA":
+                    raise RuntimeError("DIARIO_CORRUPTO")
+                resultado = {"ya_ejecutada_en_esta_tarea": True,
+                             "resultado": previa.get("resultado") if isinstance(previa, dict) else previa}
             else:
+                if llave:
+                    diario[llave] = {"estado": "INICIADA", "herramienta": nombre}
+                    _anotar(tarea, diario)  # persistencia ANTES de tocar sistemas externos
                 resultado = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": llamada["id"],
                     "method": "tools/call", "params": {"name": nombre, "arguments": args}})
                 if llave:
-                    diario[llave] = json.dumps(resultado, ensure_ascii=False)[:2000]
-                    _anotar(tarea, diario)
+                    texto_resultado = json.dumps(resultado, ensure_ascii=False)
+                    diario[llave] = {"estado": "CONFIRMADA", "resultado": texto_resultado[:2000],
+                                    "recibo": hashlib.sha256(texto_resultado.encode("utf-8")).hexdigest()[:24]}
+                    _anotar(tarea, diario)  # si falla queda INICIADA: reconciliar, NUNCA ejecutar de nuevo
             mensajes.append({"role": "tool", "tool_call_id": llamada["id"],
                              "content": json.dumps(resultado, ensure_ascii=False)})
         if time.monotonic() - t0 > PAUSA_S:  # fin de una ronda de herramientas: el Router recibe la conversacion, la guarda y reanuda
