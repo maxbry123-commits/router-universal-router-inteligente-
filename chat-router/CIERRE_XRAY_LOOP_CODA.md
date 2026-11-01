@@ -19,7 +19,7 @@ No crear otra raíz, otro router, GitHub Actions, LFS ni desplegar fuera del rep
 |---|---|---|---|
 | 1 | Reconstruir diff e instrucciones y descartar GAPS obsoletos | EN PROGRESO | diff por SHA y archivos trazados |
 | 2 | Banco, autenticación, secretos y roles | CÓDIGO CORREGIDO PARCIAL; PRUEBAS AÚN SIN EJECUTAR | no secretos en logs/LS; 401/403; operador individual |
-| 3 | Fichas y Router MVP, Groq/NVIDIA, SSE, contexto, latencia | CÓDIGO CORREGIDO PARCIAL | pruebas unitarias y llamada real por id |
+| 3 | Fichas y Router MVP, Groq/NVIDIA, SSE, contexto, latencia | CÓDIGO CORREGIDO; PRUEBAS SIN EJECUTAR | pruebas unitarias y llamada real por id |
 | 4 | Harness, permisos Tools ON/OFF, tools, MCP, checkpoint | CÓDIGO CORREGIDO PARCIAL | llamada de herramienta y reanudación con recibo |
 | 5 | Router SWE, SSE, cancelación, fallback y métricas | CÓDIGO CORREGIDO PARCIAL | pruebas de cancelación y SSE reales |
 | 6 | Frontend YAIWES, modelos vs ejecutores y progreso | PENDIENTE DE E2E | browser: selector, controles, respuesta parcial |
@@ -29,8 +29,8 @@ No crear otra raíz, otro router, GitHub Actions, LFS ni desplegar fuera del rep
 ## Pruebas solicitadas (no ejecutadas aquí)
 Desde la raíz, con dependencias y PYTHONPATH existentes:
 ```bash
-PYTHONPATH="router-mvp:chat-router" python3 -m unittest mvp.test_xray1_trazabilidad
-PYTHONPATH="router-mvp:chat-router" python3 -m unittest mvp.test_externos_nuevos mvp.test_externos_a5
+PYTHONPATH="chat-router/chat/backend/mvp:chat-router/chat/backend:chat-router:router-mvp" python3 -m unittest mvp.test_xray1_trazabilidad mvp.test_xray3_aceleradores
+PYTHONPATH="chat-router/chat/backend/mvp:chat-router/chat/backend:chat-router:router-mvp" python3 -m unittest mvp.test_externos_nuevos mvp.test_externos_a5
 node --test "chat-router/SWE CODE/web-bridge/test/xray2_cancelacion.test.mjs"
 node --test "chat-router/SWE CODE/web-bridge/test/respaldo_stream.test.mjs"
 ```
