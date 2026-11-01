@@ -283,3 +283,42 @@ test("el timeout global por defecto es 90000 ms: menor que el plazo del bridge (
   assert.equal(TIMEOUT_DEFECTO_MS, 90000);
   assert.ok(TIMEOUT_DEFECTO_MS < PLAZO_BRIDGE_MS);
 });
+
+// ---------- aislamiento de proveedor: Groq NUNCA toca NVIDIA (ni viceversa) dentro de su propia cadena de reintentos ----------
+test("externo('groq/...'): agota TODAS sus claves (402/5xx/429) sin que el servidor de NVIDIA reciba una sola peticion", async () => {
+  const n = await fake(() => ok("no deberia llamarse"));
+  const codigos = [402, 500, 429, 503];
+  const g = await fake(({ n: i }) => ({ status: codigos[(i - 1) % codigos.length], json: {} }));
+  Object.assign(BASES, { groq: g.url, nvidia: n.url });
+  setClaves({ groq: Array.from({ length: 5 }, (_, i) => `gsk-FAKE-G${i}`) });
+  try {
+    await assert.rejects(() => externo("groq/m", msgs, { env: {}, opts: rapido() }), (e) => e.code === "EXTERNO_FALLO");
+    assert.equal(n.vistos.length, 0, "NVIDIA no debe recibir ninguna peticion por un fallo exclusivo de Groq");
+    assert.ok(g.chat.length >= 1 && g.chat.every((c) => c.auth.startsWith("Bearer gsk-FAKE-G")), "todas las peticiones de Groq usaron SOLO claves de Groq");
+  } finally { g.cerrar(); n.cerrar(); }
+});
+
+test("externo('nvidia/...'): agota TODAS sus claves sin que el servidor de Groq reciba una sola peticion", async () => {
+  const g = await fake(() => ok("no deberia llamarse"));
+  const n = await fake(() => ({ status: 402, json: {} }));
+  Object.assign(BASES, { groq: g.url, nvidia: n.url });
+  setClaves({ nvidia: Array.from({ length: 4 }, (_, i) => `nv-FAKE-N${i}`) });
+  try {
+    await assert.rejects(() => externo("nvidia/m", msgs, { env: {}, opts: rapido() }), (e) => e.code === "EXTERNO_FALLO");
+    assert.equal(g.vistos.length, 0, "Groq no debe recibir ninguna peticion por un fallo exclusivo de NVIDIA");
+    assert.ok(n.chat.length >= 1 && n.chat.every((c) => c.auth.startsWith("Bearer nv-FAKE-N")), "todas las peticiones de NVIDIA usaron SOLO claves de NVIDIA");
+  } finally { g.cerrar(); n.cerrar(); }
+});
+
+test("timeout (colgar) en Groq: enfria SOLO las claves de Groq; una NVIDIA valida sigue disponible y respaldo() cae a ella como nivel EXPLICITO, nunca mezclada en la cadena de Groq", async () => {
+  const g = await fake(() => ({ colgar: true }));
+  const n = await fake(({ url }) => url.endsWith("/models") ? modelos([]) : ok("de nvidia"));
+  Object.assign(BASES, { groq: g.url, nvidia: n.url });
+  try {
+    const r = await respaldo(msgs, { env: { GROQ_API_KEY: "gsk-FAKE-1", GROQ_API_KEY_2: "gsk-FAKE-2", NVIDIA_API_KEY: "nv-FAKE-1" }, opts: rapido({ timeoutMs: 80 }) });
+    assert.equal(r.via, "nvidia"); assert.equal(r.salida, "de nvidia");
+    assert.equal(g.chat.length, 1, "el timeout de Groq corta su propia cadena en la PRIMERA clave: no prueba la clave 2 de Groq");
+    assert.deepEqual(r.intentos.map((x) => x.via), ["groq", "nvidia"], "el salto a NVIDIA es un nivel distinto y explicito (intentos), no una clave mas de Groq");
+    assert.ok(n.chat.every((c) => c.auth === "Bearer nv-FAKE-1"), "NVIDIA solo vio su propia clave");
+  } finally { g.cerrar(); n.cerrar(); }
+});

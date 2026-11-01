@@ -306,38 +306,34 @@ async function enviar(p, texto) {
     ok('F sin errores JS en la pagina', pf.errs.length === 0, pf.errs.join(' | '));
     await pf.context().close();
 
-    // ======== G) Salida SWE | OpenClaw: UN solo control (en el selector central), persistido, enviado como ejecutor_tools e INDEPENDIENTE de agente_tool ========
+    // ======== G) Salida SWE | OpenClaw: SIN control propio; se DERIVA de AGENTE QUE EJECUTA (contrato ejecutor_tools al bridge) ========
     const estG = { llamadas: [], catalogoFalla: false };
     const pg = await nuevaPagina(browser, estG);
     await abrirChat(pg, base);
-    const presionado = (q) => pg.evaluate((s) => (document.querySelector(s) || {}).getAttribute && document.querySelector(s).getAttribute('aria-pressed'), q);
-    ok('G1 el panel Selectores YA NO tiene su fila global «Salida de tools» (un solo control de salida en todo el documento)', await pg.evaluate(() => !document.querySelector('#sel-salida-swe') && !document.querySelector('#sel-power .sel-salida') && document.querySelectorAll('[data-salida]').length === 0));
+    ok('G1 no existe ningun control de salida propio: ni fila global ni [data-salida] en todo el documento (F1: una sola definicion, AGENTE QUE EJECUTA)', await pg.evaluate(() => !document.querySelector('#sel-salida-swe') && !document.querySelector('#sel-power .sel-salida') && document.querySelectorAll('[data-salida]').length === 0 && document.querySelectorAll('.swe-fila-salida').length === 0));
     await abrirV(pg, 'swen-code-free');
-    ok('G1 dentro del selector central hay UNA fila de Salida (SWE-agent | OpenClaw) y en todo el documento solo 2 botones [data-salida]', await pg.evaluate(() => document.querySelectorAll('[data-salida]').length === 2 && document.querySelectorAll('.swe-seg').length === 1 && [...document.querySelectorAll('[data-salida]')].map((b) => b.textContent).join() === 'SWE-agent,OpenClaw'));
-    ok('G1 por defecto Salida = SWE', (await presionado('#sh-swen-code-free [data-salida="swe"]')) === 'true' && (await presionado('#sh-swen-code-free [data-salida="openclaw"]')) === 'false');
+    ok('G1 dentro del selector central tampoco hay fila de Salida ([data-salida] sigue en 0)', await pg.evaluate(() => document.querySelectorAll('[data-salida]').length === 0 && !document.querySelector('.swe-fila-salida')));
+    ok('G1 por defecto AGENTE QUE EJECUTA = swe-agent', await pg.evaluate(() => document.querySelector('#sh-swen-code-free select[data-swe-ctl="agente_tool"]').value === 'swe-agent'));
     await pg.selectOption(ctlSel('swen-code-free', 'modelo_responde'), 'web-qwen38max'); await cerrarV(pg, 'swen-code-free');
     estG.llamadas.length = 0;
     await enviar(pg, 'salida por defecto');
     const g1 = estG.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
-    ok('G2 el POST lleva ejecutor_tools:"swe" por defecto', g1 && g1.body.ejecutor_tools === 'swe', JSON.stringify(g1 && g1.body.ejecutor_tools));
+    ok('G2 el POST lleva ejecutor_tools:"swe" por defecto (agente_tool swe-agent)', g1 && g1.body.ejecutor_tools === 'swe', JSON.stringify(g1 && g1.body.ejecutor_tools));
     await abrirV(pg, 'swen-code-free');
-    const agAntes = await pg.evaluate(() => JSON.parse(localStorage.getItem('riu_swe_seleccion') || '{}').agente_tool || 'swe-agent');
-    await pg.$eval('#sh-swen-code-free [data-salida="openclaw"]', (e) => e.click());
-    const agDespues = await pg.evaluate(() => JSON.parse(localStorage.getItem('riu_swe_seleccion') || '{}').agente_tool || 'swe-agent');
-    ok('197/62 cambiar la salida a OpenClaw NO modifica agente_tool', agAntes === agDespues && agDespues === 'swe-agent' && await pg.evaluate(() => document.querySelector('#sh-swen-code-free select[data-swe-ctl="agente_tool"]').value === 'swe-agent'), agAntes + '/' + agDespues);
-    ok('G3 elegir OpenClaw lo persiste en localStorage y marca el boton', await pg.evaluate(() => localStorage.getItem('riu_swe_ejecutor_tools') === 'openclaw') && (await presionado('#sh-swen-code-free [data-salida="openclaw"]')) === 'true' && (await presionado('#sh-swen-code-free [data-salida="swe"]')) === 'false');
+    await pg.selectOption(ctlSel('swen-code-free', 'agente_tool'), 'openclaw');
+    ok('G3 elegir AGENTE QUE EJECUTA = OpenClaw deriva ejecutor_tools = openclaw de inmediato (sin segunda eleccion)', await pg.evaluate(() => JSON.parse(localStorage.getItem('riu_swe_seleccion') || '{}').agente_tool === 'openclaw'));
     await cerrarV(pg, 'swen-code-free');
     estG.llamadas.length = 0;
     await enviar(pg, 'salida openclaw');
     const g2 = estG.llamadas.filter((l) => l.ruta === '/v1/chat/completions')[0];
-    ok('G4 el POST lleva ejecutor_tools:"openclaw"', g2 && g2.body.ejecutor_tools === 'openclaw', JSON.stringify(g2 && g2.body.ejecutor_tools));
+    ok('G4 el POST lleva ejecutor_tools:"openclaw" (agente_tool openclaw)', g2 && g2.body.ejecutor_tools === 'openclaw', JSON.stringify(g2 && g2.body.ejecutor_tools));
     await abrirV(pg, 'swe-code');
-    ok('G5 el MISMO control de salida aparece en SWE CODE con OpenClaw activo (sincronizado)', await pg.evaluate(() => { const b = [...document.querySelectorAll('#sh-swe-code [data-salida]')]; return b.length === 2 && b.find((x) => x.dataset.salida === 'openclaw').getAttribute('aria-pressed') === 'true'; }));
-    await pg.$eval('#sh-swe-code [data-salida="swe"]', (e) => e.click());
-    ok('G6 elegir SWE persiste en localStorage', await pg.evaluate(() => localStorage.getItem('riu_swe_ejecutor_tools') === 'swe'));
-    await pg.$eval('#sh-swe-code [data-salida="openclaw"]', (e) => e.click()); await pg.reload(); await pg.waitForSelector('#sel-swe', { state: 'attached', timeout: 20000 }); await pg.waitForTimeout(800);
+    ok('G5 el MISMO control (AGENTE QUE EJECUTA) aparece en SWE CODE con OpenClaw activo (sincronizado, mismo nodo)', await pg.evaluate(() => document.querySelector('#sh-swe-code select[data-swe-ctl="agente_tool"]').value === 'openclaw'));
+    await pg.selectOption(ctlSel('swe-code', 'agente_tool'), 'swe-agent');
+    ok('G6 volver a SWE-agent persiste en localStorage (agente_tool, no una key de salida aparte)', await pg.evaluate(() => JSON.parse(localStorage.getItem('riu_swe_seleccion') || '{}').agente_tool === 'swe-agent') && await pg.evaluate(() => localStorage.getItem('riu_swe_ejecutor_tools') === null));
+    await pg.selectOption(ctlSel('swe-code', 'agente_tool'), 'openclaw'); await pg.reload(); await pg.waitForSelector('#sel-swe', { state: 'attached', timeout: 20000 }); await pg.waitForTimeout(800);
     await abrirV(pg, 'swe-code');
-    ok('G7 la eleccion de salida sobrevive a recargar la pagina', (await presionado('#sh-swe-code [data-salida="openclaw"]')) === 'true');
+    ok('G7 la eleccion (AGENTE QUE EJECUTA openclaw) sobrevive a recargar la pagina, y la salida derivada tambien', await pg.evaluate(() => document.querySelector('#sh-swe-code select[data-swe-ctl="agente_tool"]').value === 'openclaw'));
     ok('G sin errores JS en la pagina', pg.errs.length === 0, pg.errs.join(' | '));
     await pg.context().close();
 
@@ -347,10 +343,10 @@ async function enviar(p, texto) {
     const ph = await nuevaPagina(browser, estH);
     await abrirChat(ph, base);
     await abrirV(ph, 'swen-code-free');
-    const ctl = await ph.evaluate(() => ({ etiquetas: ['agente_responde', 'modelo_responde', 'agente_tool', 'modelo_tool', 'modo_trabajo', 'workflow'].map((k) => document.querySelector('#sh-swen-code-free select[data-swe-ctl="' + k + '"]').getAttribute('aria-label')), agentico: (document.querySelector('#sh-swen-code-free [data-swe-agentico]') || {}).textContent, salida: [...document.querySelectorAll('#sh-swen-code-free [data-salida]')].map((b) => b.getAttribute('aria-label')) }));
-    ok('13/H1 estructura RESPONDE [agente][modelo] · EJECUTA [agente][modelo tool] · MODO DE TRABAJO · MODO AGENTICO · WORKFLOW · SALIDA, con su rotulo exacto', JSON.stringify(ctl.etiquetas) === JSON.stringify(['AGENTE QUE RESPONDE', 'MODELO QUE RESPONDE', 'AGENTE QUE EJECUTA', 'MODELO PARA TOOL', 'MODO DE TRABAJO', 'WORKFLOW']) && ctl.agentico === 'OFF' && JSON.stringify(ctl.salida) === JSON.stringify(['Salida: SWE-agent', 'Salida: OpenClaw']), JSON.stringify(ctl));
-    const orden = await ph.evaluate(() => { const y = (q) => document.querySelector(q).getBoundingClientRect().top; return [y('#sh-swen-code-free select[data-swe-ctl="agente_responde"]'), y('#sh-swen-code-free select[data-swe-ctl="agente_tool"]'), y('#sh-swen-code-free select[data-swe-ctl="modo_trabajo"]'), y('#sh-swen-code-free [data-swe-agentico]'), y('#sh-swen-code-free select[data-swe-ctl="workflow"]'), y('#sh-swen-code-free [data-salida]')]; });
-    ok('13 orden visual: Responde, Ejecuta, Modo de trabajo, Modo agentico, Workflow, Salida (de arriba abajo)', orden.every((v, i) => i === 0 || v > orden[i - 1]), JSON.stringify(orden));
+    const ctl = await ph.evaluate(() => ({ etiquetas: ['agente_responde', 'modelo_responde', 'agente_tool', 'modelo_tool', 'modo_trabajo', 'workflow'].map((k) => document.querySelector('#sh-swen-code-free select[data-swe-ctl="' + k + '"]').getAttribute('aria-label')), agentico: (document.querySelector('#sh-swen-code-free [data-swe-agentico]') || {}).textContent, salida: document.querySelectorAll('#sh-swen-code-free [data-salida]').length }));
+    ok('13/H1/F1 estructura RESPONDE [agente][modelo] · EJECUTA [agente][modelo tool] · MODO DE TRABAJO · MODO AGENTICO · WORKFLOW, con su rotulo exacto y SIN fila de Salida (se deriva de AGENTE QUE EJECUTA)', JSON.stringify(ctl.etiquetas) === JSON.stringify(['AGENTE QUE RESPONDE', 'MODELO QUE RESPONDE', 'AGENTE QUE EJECUTA', 'MODELO PARA TOOL', 'MODO DE TRABAJO', 'WORKFLOW']) && ctl.agentico === 'OFF' && ctl.salida === 0, JSON.stringify(ctl));
+    const orden = await ph.evaluate(() => { const y = (q) => document.querySelector(q).getBoundingClientRect().top; return [y('#sh-swen-code-free select[data-swe-ctl="agente_responde"]'), y('#sh-swen-code-free select[data-swe-ctl="agente_tool"]'), y('#sh-swen-code-free select[data-swe-ctl="modo_trabajo"]'), y('#sh-swen-code-free [data-swe-agentico]'), y('#sh-swen-code-free select[data-swe-ctl="workflow"]')]; });
+    ok('13 orden visual: Responde, Ejecuta, Modo de trabajo, Modo agentico, Workflow (de arriba abajo)', orden.every((v, i) => i === 0 || v > orden[i - 1]), JSON.stringify(orden));
     const opts = await ph.evaluate(() => ({ agentes: [...document.querySelectorAll('#sh-swen-code-free select[data-swe-ctl="agente_tool"] option')].map((o) => o.value), tool: [...document.querySelectorAll('#sh-swen-code-free select[data-swe-ctl="modelo_tool"] option')].map((o) => o.value), wf: [...document.querySelectorAll('#sh-swen-code-free select[data-swe-ctl="workflow"] option')].map((o) => o.textContent.replace(/ — .*/, '')) }));
     ok('H2 MODELO PARA TOOL con los 9 ids exactos del catalogo (hf/..., groq/..., nvidia/...), seis agentes y tres workflows', JSON.stringify(opts.tool) === JSON.stringify(['hf/lfm2.5-350m', 'hf/qwen2.5-coder-1.5b', 'hf/qwen3.5-0.8b', 'hf/qwen3-0.6b', 'groq/qwen/qwen3.8-27b', 'nvidia/minimaxai/minimax-m3.1-flash', 'nvidia/meta/muse-glimmer-30b', 'nvidia/nvidia/nemotron-3-ultra-550b-a55b', 'nvidia/z-ai/glm-5.3']) && opts.agentes.length === 6 && JSON.stringify(opts.wf) === JSON.stringify(['Individual', 'SWE CODE cuatro pasos', 'Liquid Mirror']), JSON.stringify(opts));
     const nd = await ph.evaluate(() => { const o = (k, v) => { const e = document.querySelector('#sh-swen-code-free select[data-swe-ctl="' + k + '"] option[value="' + v + '"]'); return e ? { t: e.textContent, d: e.disabled, g: e.parentElement.tagName === 'OPTGROUP' ? e.parentElement.label : '' } : null; }; return { codex: o('agente_tool', 'codex'), swe: o('workflow', 'swe_code'), ind: o('workflow', 'individual'), estado: document.querySelector('#sh-swen-code-free .swe-estado').textContent, noinst: document.querySelector('#sh-swen-code-free .swe-noinst').textContent }; });
@@ -412,15 +408,15 @@ async function enviar(p, texto) {
     const lq = await ph.evaluate(() => ({ chips: [...document.querySelectorAll('#sh-swen-code-free .swe-liquid .dg-paso')].map((x) => x.textContent), visible: !!document.querySelector('#sh-swen-code-free .swe-liquid').getClientRects().length, toolOff: document.querySelector('#sh-swen-code-free select[data-swe-ctl="modelo_tool"]').disabled }));
     ok('H9 Liquid Mirror: LIQUID 1 — LECTOR (S2) y LIQUID 2 — EJECUTOR (S3), tool bloqueado, sin modelos web', lq.visible && lq.chips.length === 2 && /LIQUID 1 — LECTOR · S2 · lfm2\.5-350m/.test(lq.chips[0]) && /LIQUID 2 — EJECUTOR · S3 · lfm2\.5-350m/.test(lq.chips[1]) && lq.toolOff && !lq.chips.join().includes('web-'), JSON.stringify(lq));
     ok('8 Liquid Mirror: tambien fijos los tres controles', await ph.evaluate(() => ['modelo_responde', 'agente_responde', 'modelo_tool'].every((k) => document.querySelector('#sh-swen-code-free select[data-swe-ctl="' + k + '"]').disabled)));
-    // 63/197: seleccionar un agente NO cambia la salida y la salida NO cambia el agente
-    await ph.$eval('#sh-swen-code-free [data-salida="openclaw"]', (e) => e.click());
-    ok('H10/197 elegir Salida: OpenClaw NO modifica AGENTE QUE EJECUTA (sigue codex)', await ph.evaluate(() => document.querySelector('#sh-swen-code-free select[data-swe-ctl="agente_tool"]').value === 'codex' && JSON.parse(localStorage.getItem('riu_swe_seleccion')).agente_tool === 'codex'));
-    for (const ag of ['opencode', 'openhands', 'claude-code', 'codex']) {
+    // 63/197: la salida NO tiene control propio; es AGENTE QUE EJECUTA el que decide (openclaw -> openclaw; cualquier otro -> swe)
+    ok('H10/197 con AGENTE QUE EJECUTA codex la salida derivada es swe (no openclaw)', await ph.evaluate(() => document.querySelector('#sh-swen-code-free select[data-swe-ctl="agente_tool"]').value === 'codex'));
+    await ph.selectOption(ctl2('agente_tool'), 'openclaw');
+    for (const ag of ['opencode', 'openhands', 'claude-code', 'openclaw']) {
       await ph.selectOption(ctl2('agente_tool'), ag);
-      ok('63 elegir ' + ag + ' como AGENTE QUE EJECUTA NO modifica la Salida (sigue OpenClaw)', await ph.evaluate(() => localStorage.getItem('riu_swe_ejecutor_tools') === 'openclaw' && document.querySelector('#sh-swen-code-free [data-salida="openclaw"]').getAttribute('aria-pressed') === 'true'));
+      ok('63 elegir ' + ag + ' como AGENTE QUE EJECUTA persiste ese agente (salida derivada = ' + (ag === 'openclaw' ? 'openclaw' : 'swe') + ')', await ph.evaluate((a) => JSON.parse(localStorage.getItem('riu_swe_seleccion')).agente_tool === a, ag));
     }
-    await ph.$eval('#sh-swen-code-free [data-salida="swe"]', (e) => e.click());
-    ok('H10 elegir Salida: SWE-agent tampoco toca AGENTE QUE EJECUTA', await ph.evaluate(() => document.querySelector('#sh-swen-code-free select[data-swe-ctl="agente_tool"]').value === 'codex'));
+    await ph.selectOption(ctl2('agente_tool'), 'codex');
+    ok('H10 volver a codex como AGENTE QUE EJECUTA se guarda igual (una sola definicion)', await ph.evaluate(() => document.querySelector('#sh-swen-code-free select[data-swe-ctl="agente_tool"]').value === 'codex'));
     // 198: modelo_tool no modifica modelo_responde (workflow individual: ambos libres)
     await ph.selectOption(ctl2('workflow'), 'individual');
     await ph.selectOption(ctl2('modelo_responde'), 'hf/qwen3-0.6b');
@@ -486,7 +482,7 @@ async function enviar(p, texto) {
         const sh = document.getElementById('sh-' + i), vis = [...document.querySelectorAll('.sheet')].filter((x) => !x.hidden && getComputedStyle(x).display !== 'none');
         return { mismo: nodo === window.__nodoCentral, nodos: document.querySelectorAll('.swe-ctl').length, enHoja: sh.querySelectorAll('.swe-ctl').length, selects: document.querySelectorAll('select[data-swe-ctl]').length, agentico: document.querySelectorAll('[data-swe-agentico]').length, salida: document.querySelectorAll('[data-salida]').length, refrescar: document.querySelectorAll('.swe-refrescar').length, modales: vis.map((x) => x.id), cuatro: ['agente_responde', 'modelo_responde', 'agente_tool', 'modelo_tool'].every((k) => !!sh.querySelector('select[data-swe-ctl="' + k + '"]')), modo: !!sh.querySelector('select[data-swe-ctl="modo_trabajo"]'), wf: !!sh.querySelector('select[data-swe-ctl="workflow"]'), listas: sh.querySelectorAll('button.fila, .list').length, quinto: document.querySelectorAll('select[data-swe-ctl="agente_responde"], select[data-swe-ctl="agente_tool"]').length };
       }, [id, primero]); primero = false;
-      ok(`195/196/191 ventana ${id}: tiene los 4 desplegables + MODO DE TRABAJO + WORKFLOW + MODO AGENTICO + SALIDA, y es el MISMO nodo (sin segundo selector: 1 .swe-ctl, 6 selects, 2 botones de salida, 2 selects de agente)`, r.mismo && r.nodos === 1 && r.enHoja === 1 && r.selects === 6 && r.agentico === 1 && r.salida === 2 && r.cuatro && r.modo && r.wf && r.quinto === 2 && r.refrescar === 1, JSON.stringify(r));
+      ok(`195/196/191 ventana ${id}: tiene los 4 desplegables + MODO DE TRABAJO + WORKFLOW + MODO AGENTICO, y es el MISMO nodo (sin segundo selector: 1 .swe-ctl, 6 selects, 2 selects de agente, SIN control de salida propio)`, r.mismo && r.nodos === 1 && r.enHoja === 1 && r.selects === 6 && r.agentico === 1 && r.salida === 0 && r.cuatro && r.modo && r.wf && r.quinto === 2 && r.refrescar === 1, JSON.stringify(r));
       ok(`31/32 ventana ${id}: UNA sola modal activa (la ventana «Selector de modelos» de debajo no se superpone)`, r.modales.length === 1 && r.modales[0] === 'sh-' + id, JSON.stringify(r.modales));
       ok(`28 ventana ${id}: no hay lista de modelos encima del selector central (sin .fila ni .list)`, r.listas === 0, String(r.listas));
       const lista = await pi.evaluate((i) => [...document.querySelectorAll('#sh-' + i + ' select[data-swe-ctl="modelo_responde"] option')].map((o) => [o.value, o.disabled, o.textContent]), id);
@@ -649,7 +645,7 @@ async function enviar(p, texto) {
     const estL = { llamadas: [], catalogoFalla: false, conTools: true };
     const pl = await nuevaPagina(browser, estL);
     await abrirChat(pl, base);
-    await abrirV(pl, 'swe-code'); await pl.selectOption(ctlSel('swe-code', 'modelo_responde'), 'hf/qwen3-0.6b'); await pl.$eval('#sh-swe-code [data-salida="openclaw"]', (e) => e.click()); await cerrarV(pl, 'swe-code');
+    await abrirV(pl, 'swe-code'); await pl.selectOption(ctlSel('swe-code', 'modelo_responde'), 'hf/qwen3-0.6b'); await pl.selectOption(ctlSel('swe-code', 'agente_tool'), 'openclaw'); await cerrarV(pl, 'swe-code');
     estL.llamadas.length = 0;
     const rL = await enviar(pl, 'lee el repo');
     const pedidas = await pl.evaluate(() => [...document.querySelectorAll('.chat-history .meta')].map((x) => x.innerText).filter((t) => /Pedidas/.test(t)).pop() || '');

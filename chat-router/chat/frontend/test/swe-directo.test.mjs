@@ -84,7 +84,7 @@ test("los modelos locales y groq/nvidia viajan por /web/v1 (el proxy del Space m
   }
 });
 
-import { EJECUTORES_TOOLS, leerEjecutorTools, guardarEjecutorTools } from "../swe-directo.js";
+import { EJECUTORES_TOOLS, leerEjecutorTools, leerSeleccion, guardarSeleccion } from "../swe-directo.js";
 
 const conStorage = (inicial = {}) => {
   const m = new Map(Object.entries(inicial));
@@ -92,24 +92,26 @@ const conStorage = (inicial = {}) => {
   return m;
 };
 
-test("ejecutor_tools: dos opciones (swe|openclaw), por defecto 'swe', persistido en localStorage", () => {
+test("ejecutor_tools: dos valores de contrato (swe|openclaw), defecto 'swe', DERIVADO de agente_tool (sin key propia)", () => {
   assert.deepEqual(EJECUTORES_TOOLS, ["swe", "openclaw"]);
   delete globalThis.localStorage;
   assert.equal(leerEjecutorTools(), "swe", "sin localStorage -> swe");
   const m = conStorage();
   assert.equal(leerEjecutorTools(), "swe");
-  assert.equal(guardarEjecutorTools("openclaw"), "openclaw"); assert.equal(m.get("riu_swe_ejecutor_tools"), "openclaw");
-  assert.equal(leerEjecutorTools(), "openclaw");
-  assert.equal(guardarEjecutorTools("otro"), "swe", "valor desconocido -> swe"); assert.equal(leerEjecutorTools(), "swe");
-  m.set("riu_swe_ejecutor_tools", "basura"); assert.equal(leerEjecutorTools(), "swe");
+  guardarSeleccion({ agente_tool: "openclaw" }); assert.equal(leerSeleccion().agente_tool, "openclaw");
+  assert.equal(leerEjecutorTools(), "openclaw"); assert.equal(m.has("riu_swe_ejecutor_tools"), false, "no hay key propia de salida");
+  guardarSeleccion({ agente_tool: "otro" }); assert.equal(leerEjecutorTools(), "openclaw", "agente invalido no pisa el anterior");
+  guardarSeleccion({ agente_tool: "codex" }); assert.equal(leerEjecutorTools(), "swe");
+  m.set("riu_swe_ejecutor_tools", "openclaw"); assert.equal(leerEjecutorTools(), "swe", "la key vieja se ignora");
+  m.set("riu_swe_seleccion", "{corrupto"); assert.equal(leerEjecutorTools(), "swe");
   delete globalThis.localStorage;
 });
 
-test("armar envia ejecutor_tools en cada peticion (defecto 'swe'; el guardado; o el explicito)", () => {
+test("armar envia ejecutor_tools en cada peticion (derivado del agente que ejecuta; o el explicito)", () => {
   const base = { model: "web-qwen38max", historial: [], mensaje: "x", sesion: "s" };
   delete globalThis.localStorage;
   assert.equal(armar(base).ejecutor_tools, "swe");
-  conStorage({ riu_swe_ejecutor_tools: "openclaw" });
+  conStorage({ riu_swe_seleccion: JSON.stringify({ agente_tool: "openclaw" }) });
   assert.equal(armar(base).ejecutor_tools, "openclaw");
   assert.equal(armar({ ...base, ejecutor_tools: "swe" }).ejecutor_tools, "swe");
   assert.equal(armar({ ...base, ejecutor_tools: "x" }).ejecutor_tools, "swe");

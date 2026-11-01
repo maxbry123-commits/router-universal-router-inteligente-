@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import * as S from "../swe-directo.js";
 import * as C from "../swe-claves.js";
 
-// Auditoria 3 · A1: selector central unico (4 campos), salida independiente, estados reales, R1 (sin claves en el navegador), R4 (tool_calls con texto), R6 (SIN VERIFICAR).
+// Auditoria 3 · A1: selector central unico (4 campos), salida DERIVADA de AGENTE QUE EJECUTA, estados reales, R1 (sin claves en el navegador), R4 (tool_calls con texto), R6 (SIN VERIFICAR).
 // Sin red ni claves reales: api() es un doble; los valores de "clave" son marcadores de prueba.
 const conStorage = (inicial = {}) => {
   const m = new Map(Object.entries(inicial));
@@ -14,19 +14,22 @@ const AGS = ["openclaw", "swe-agent", "openhands", "opencode", "codex", "claude-
 const CAP_OK = S.normalizarCapacidades({ harness: "ok", agentes: Object.fromEntries(AGS.map((a) => [a, { disponible: true }])), workflows: { swe_code: { disponible: true }, liquid_mirror: { disponible: true } }, modelos: Object.fromEntries(S.MODELOS_SWE.map((m) => [m[0], { disponible: true }])) });
 test.beforeEach(() => { S.olvidarCapacidades(); delete globalThis.localStorage; });
 
-// ---------- 197 / 62 / 63: salida y agente_tool independientes ----------
-test("197 cambiar la salida (swe|openclaw) NO modifica agente_tool, en ninguna direccion", () => {
+// ---------- 197 / 62 / 63: UNA sola definicion de salida: AGENTE QUE EJECUTA (agente_tool); ejecutor_tools se DERIVA ----------
+test("197 ejecutor_tools se DERIVA de agente_tool: openclaw -> 'openclaw'; cualquier otro agente -> 'swe'", () => {
   conStorage();
-  S.guardarSeleccion({ agente_tool: "codex" });
-  for (const v of ["openclaw", "swe", "openclaw"]) { S.guardarEjecutorTools(v); assert.equal(S.leerSeleccion().agente_tool, "codex", "salida " + v); assert.equal(S.leerEjecutorTools(), v); }
-  S.guardarEjecutorTools("openclaw");
-  for (const a of ["opencode", "openhands", "claude-code", "swe-agent", "codex"]) { S.guardarSeleccion({ agente_tool: a }); assert.equal(S.leerEjecutorTools(), "openclaw", "agente " + a + " no toca la salida"); assert.equal(S.leerSeleccion().agente_tool, a); }
-});
-test("salidaActiva sigue SOLO a ejecutor_tools (contrato swe|openclaw), nunca a agente_tool", () => {
-  conStorage();
-  S.guardarSeleccion({ agente_tool: "openclaw" }); assert.equal(S.salidaActiva(), "swe");
-  S.guardarEjecutorTools("openclaw"); S.guardarSeleccion({ agente_tool: "codex" }); assert.equal(S.salidaActiva(), "openclaw");
+  assert.equal(S.leerEjecutorTools(), "swe", "defecto (agente_tool swe-agent)");
+  for (const [a, e] of [["openclaw", "openclaw"], ["swe-agent", "swe"], ["codex", "swe"], ["openclaw", "openclaw"], ["opencode", "swe"], ["openhands", "swe"], ["claude-code", "swe"]]) {
+    S.guardarSeleccion({ agente_tool: a }); assert.equal(S.leerSeleccion().agente_tool, a); assert.equal(S.leerEjecutorTools(), e, "agente " + a);
+  }
   assert.deepEqual(S.EJECUTORES_TOOLS, ["swe", "openclaw"]);
+});
+test("ya no hay segunda definicion: sin guardarEjecutorTools/salidaActiva/ETIQUETA_SALIDA y la key vieja riu_swe_ejecutor_tools se ignora", () => {
+  const m = conStorage({ riu_swe_ejecutor_tools: "openclaw" });
+  for (const k of ["guardarEjecutorTools", "salidaActiva", "ETIQUETA_SALIDA"]) assert.equal(S[k], undefined, k + " ya no existe");
+  assert.equal(S.leerEjecutorTools(), "swe", "la key vieja no es fuente");
+  assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "swe");
+  S.guardarSeleccion({ agente_tool: "openclaw" }); assert.equal(m.get("riu_swe_ejecutor_tools"), "openclaw", "no se escribe ni se lee");
+  assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "openclaw");
 });
 test("198 cambiar modelo_tool NO modifica modelo_responde (y al reves)", () => {
   conStorage();

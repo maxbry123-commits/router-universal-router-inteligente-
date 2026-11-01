@@ -36,15 +36,13 @@ export const esSelectorSwe = (id) => typeof id === "string" && Object.hasOwn(SWE
 
 export const esSwe = (id) => typeof id === "string" && (/^(web-|swecode-|groq\/|nvidia\/)/.test(id) || Object.hasOwn(REAL, id) || LOCALES.includes(id));
 
-// Salida de las tools: quien ejecuta los tool_calls. 'swe' (defecto) = el SWE-agent via bridge/Harness como hoy; 'openclaw' = el bridge los devuelve tal cual a OpenClaw (seccion WAIT_TOOLS).
-// Contrato en SWE CODE free/ARQUITECTURA.md. Se guarda en localStorage y viaja en cada peticion como `ejecutor_tools`.
+// Salida de las tools (contrato externo `ejecutor_tools`): quien ejecuta los tool_calls. NO es un segundo control: se DERIVA de AGENTE QUE EJECUTA (agente_tool).
+// 'openclaw' = el bridge devuelve los tool_calls tal cual a OpenClaw (seccion WAIT_TOOLS); cualquier otro agente = 'swe' (el SWE-agent via bridge/Harness, como hoy).
+// Contrato en SWE CODE free/ARQUITECTURA.md. Viaja en cada peticion como `ejecutor_tools`; no hay key propia en localStorage.
 export const EJECUTORES_TOOLS = ["swe", "openclaw"];
-export const ETIQUETA_SALIDA = { swe: "Salida: SWE-agent", openclaw: "Salida: OpenClaw" };
-const K_EJECUTOR = "riu_swe_ejecutor_tools";
 const normEjecutor = (v) => (EJECUTORES_TOOLS.includes(v) ? v : "swe");
-export function leerEjecutorTools() { try { return normEjecutor(localStorage.getItem(K_EJECUTOR)); } catch (e) { return "swe"; } }
-const escribirEjecutor = (x) => { try { localStorage.setItem(K_EJECUTOR, x); } catch (e) {} return x; };
-export function guardarEjecutorTools(v) { return escribirEjecutor(normEjecutor(v)); }  // la salida es SU PROPIO dato: no toca agente_tool (ni al reves)
+export const ejecutorDeAgente = (agente) => (agente === "openclaw" ? "openclaw" : "swe");
+export function leerEjecutorTools() { return ejecutorDeAgente(leerSeleccion().agente_tool); }
 
 // ---- Selectores de agente/modelo/workflow (contrato TareaSWE de chat-router/agentes/adaptadores/contrato.py) ----
 // Catalogo unico de agentes/adaptadores/modelos.py: el frontend solo lo refleja; el servidor valida y la disponibilidad real la reporta el Harness.
@@ -76,10 +74,8 @@ function normSeleccion(x, base) {
 export function leerSeleccion() { try { return normSeleccion(JSON.parse(localStorage.getItem(K_SEL) || "{}"), SEL_DEFECTO); } catch (e) { return { ...SEL_DEFECTO }; } }
 function escribirSeleccion(sel) { try { localStorage.setItem(K_SEL, JSON.stringify(sel)); } catch (e) {} return sel; }
 export function guardarSeleccion(parcial) {
-  return escribirSeleccion(normSeleccion({ ...leerSeleccion(), ...(parcial && typeof parcial === "object" ? parcial : {}) }, leerSeleccion()));  // un valor invalido no pisa el anterior; cada campo es independiente (salida, agente_tool, modelo_tool, modelo_responde)
+  return escribirSeleccion(normSeleccion({ ...leerSeleccion(), ...(parcial && typeof parcial === "object" ? parcial : {}) }, leerSeleccion()));  // un valor invalido no pisa el anterior; cada campo es independiente (agente_tool, modelo_tool, modelo_responde); ejecutor_tools no se guarda: se deriva de agente_tool
 }
-// Salida de los tool_calls (swe | openclaw): contrato externo ejecutor_tools; independiente de AGENTE QUE EJECUTA (agente_tool)
-export const salidaActiva = () => leerEjecutorTools();
 export const requiereHarness = (sel) => !!sel && (sel.workflow !== "individual" || sel.modo_agentico === true);
 // modelo del selector clasico (alias hf-*, ids locales, groq/, nvidia/) -> id del catalogo; null si no esta registrado (p. ej. web-*, swecode-*)
 export function idCatalogo(id) {
@@ -134,8 +130,8 @@ export function normalizarCapacidades(p) {
 export const ETIQUETA_ESTADO = { DISPONIBLE: "DISPONIBLE", NO_INSTALADO: "NO INSTALADO", NO_CONFIGURADO: "NO CONFIGURADO", NO_COMPATIBLE: "NO COMPATIBLE", NO_DISPONIBLE_PROVEEDOR: "NO DISPONIBLE EN PROVEEDOR", SIN_VERIFICAR: "SIN VERIFICAR" };
 // el Harness puede decir el estado explicito (`estado`); si solo da {disponible, motivo} se deduce del motivo (disponibilidad.py nombra la causa)
 const estadoDeMotivo = (tipo, motivo) => {
-  if (/sin verificar|no se pudo comprobar|cache\)/i.test(motivo) && !/no esta instalado|ausente del PATH/i.test(motivo)) return "SIN_VERIFICAR";
-  if (/no esta instalado|ausente del PATH|no instalad/i.test(motivo)) return "NO_INSTALADO";
+  if (/sin verificar|no se pudo comprobar|cache\)/i.test(motivo) && !/no est[aá] instalado|ausente del PATH/i.test(motivo)) return "SIN_VERIFICAR";
+  if (/no est[aá] instalado|ausente del PATH|no instalad/i.test(motivo)) return "NO_INSTALADO";
   if (/incompatible|no compatible/i.test(motivo)) return "NO_COMPATIBLE";
   if (tipo === "modelo" && /no figura en GET \/models|no esta en el catalogo del proveedor|no publica|404/i.test(motivo)) return "NO_DISPONIBLE_PROVEEDOR";
   if (/sin configurar|instalado pero|\bfalta[n]?\b|invalida|no es un ejecutable|API_KEY|_URL|TOKEN|no responde en la URL/i.test(motivo)) return "NO_CONFIGURADO";
@@ -143,10 +139,15 @@ const estadoDeMotivo = (tipo, motivo) => {
 };
 const sinHarness = (cap) => cap.harness !== "ok";
 const motivoSinHarness = { sin_respuesta: "el Harness no respondió", sin_credencial: "falta la clave de acceso del chat", no_configurado: "el Harness no está configurado en el servidor", no_disponible: "el Harness no está disponible", desconocido: "el Harness no ha reportado" };
+// `causa` del Harness: texto libre (se muestra tal cual) o CODIGO estable (disponibilidad.py). Un codigo se explica en claro: primero el `motivo` concreto del Harness, si no esta, este texto; nunca el codigo crudo.
+export const CAUSAS = { binario_ausente: "el agente no está instalado en el servidor del Harness (falta su binario)", sdk_ausente: "el SDK del agente no está instalado en el servidor del Harness", python_no_ejecutable: "el Python del agente no es ejecutable en el servidor del Harness",
+  falta_token_gateway: "falta el token del gateway de OpenClaw en el Harness", falta_pasarela: "falta configurar la pasarela del agente en el Harness", falta_docker: "falta Docker en el servidor del Harness", gateway_sin_respuesta: "el gateway no responde",
+  servidor_hf_sin_respuesta: "ningún servidor HF responde ahora (un Space dormido tarda en arrancar)", dependencias: "faltan agentes conectados de los que depende", comprobacion_fallida: "no se pudo comprobar", url_invalida: "la URL configurada no es válida", sin_clave: "falta la clave en el Harness", verificacion_desactivada: "la verificación está desactivada" };
+const causaLegible = (causa, motivo) => (/^[a-z][a-z0-9]*(_[a-z0-9]+)*$/.test(causa) ? motivo || CAUSAS[causa] || causa.replace(/_/g, " ") : causa || motivo);
 export function estadoOpcion(cap, tipo, id, modelo) {
   const e = (tipo === "agente" ? cap.agentes : tipo === "workflow" ? cap.workflows : cap.modelos)[id];
   const txt = (v) => (typeof v === "string" && v ? v : "");
-  const motivo = e ? txt(e.causa) || txt(e.motivo) : "";  // A5: `causa` concreta (sin credenciales); `motivo` es el formato anterior
+  const motivo = e ? causaLegible(txt(e.causa), txt(e.motivo)) : "";  // A5: `causa` concreta (sin credenciales); `motivo` es el formato anterior
   const r = (estado, m, ok = estado === "DISPONIBLE", extra = {}) => ({ ok, estado, motivo: m, elegible: ok || extra.elegible === true, ...extra });
   if (tipo === "workflow" && id === "individual") return r("DISPONIBLE", "");
   if (!e && sinHarness(cap)) return r("SIN_VERIFICAR", "sin verificar: " + (motivoSinHarness[cap.harness] || motivoSinHarness.desconocido) + (tipo === "agente" ? " (sin adaptador conectado que lo confirme)" : ""), tipo === "modelo");  // un modelo sin verificar no bloquea el chat normal; un agente/workflow si

@@ -34,12 +34,13 @@ test("lineaNoInstalados: una sola linea «No instalados: X, Y, Z» (vacia si no 
   assert.equal(S.lineaNoInstalados(todos), "");
 });
 
-test("el contrato no cambia: la seleccion y el ejecutor siguen persistiendo como antes", () => {
+test("el contrato no cambia: la seleccion persiste como antes y el ejecutor de tools se deriva de agente_tool", () => {
   conStorage();
   S.guardarSeleccion({ agente_tool: "codex", workflow: "swe_code", modo_agentico: true });
   assert.deepEqual(S.leerSeleccion(), { ...S.SEL_DEFECTO, agente_tool: "codex", workflow: "swe_code", modo_agentico: true });
-  S.guardarEjecutorTools("openclaw");
-  assert.equal(S.leerSeleccion().agente_tool, "codex", "la salida NO cambia agente_tool"); assert.equal(S.leerEjecutorTools(), "openclaw");
+  assert.equal(S.leerEjecutorTools(), "swe");
+  S.guardarSeleccion({ agente_tool: "openclaw" });
+  assert.equal(S.leerSeleccion().workflow, "swe_code", "cambiar el agente no toca el workflow"); assert.equal(S.leerEjecutorTools(), "openclaw");
 });
 
 // ---- F1: lo que muestra el desplegable «Responde» es lo que se envia, aunque la lista de la hoja no tenga ese modelo ----
@@ -81,4 +82,47 @@ test("F8 la hoja NVIDIA se titula «NVIDIA · modelos» y config.js ya no trae N
   assert.match(leer("panel-chat.html"), /<div id="sh-ficha"[^>]*>.*?<strong>NVIDIA · modelos<\/strong>/);
   assert.ok(!/Glimmer \/ Nemotron 3 Super/.test(leer("panel-chat.html")));
   const cfg = leer("config.js"); assert.ok(!/nv-nemotron-super/.test(cfg)); assert.match(cfg, /nv-muse-glimmer'[^}]*\(respaldo\)/);
+});
+
+// ---- F3: los 6 agentes SIEMPRE aparecen en AMBOS selectores; si el Harness los reporta disponibles son elegibles y activos; si no, el rotulo dice por que ----
+const SEIS = ["openclaw", "swe-agent", "openhands", "opencode", "codex", "claude-code"];
+const reporta = (f) => S.normalizarCapacidades({ harness: "ok", agentes: Object.fromEntries(SEIS.map((a) => [a, f(a)])), workflows: { individual: { disponible: true } }, modelos: {} });
+const DISP = { disponible: true, estado: "DISPONIBLE", veredicto: "DISPONIBLE", verificado: true, intentable: true };  // forma real de agentes/adaptadores/disponibilidad.py
+
+test("F3 el Harness reporta los 6 agentes DISPONIBLES: los 6 salen activos (sin rotulo de estado) y se pueden elegir como RESPONDE y como EJECUTA", () => {
+  conStorage();
+  const cap6 = reporta(() => DISP);
+  const g = S.agruparOpciones(cap6, "agente", S.AGENTES_SWE, "hf/qwen2.5-coder-1.5b");
+  assert.deepEqual(g.ok.map((x) => x.id), SEIS); assert.equal(g.noInstalado.length + g.sinVerificar.length + g.incompatible.length + g.otros.length, 0);
+  for (const a of SEIS) {
+    const st = S.estadoOpcion(cap6, "agente", a, "hf/qwen2.5-coder-1.5b");
+    assert.deepEqual([st.ok, st.estado, st.elegible], [true, "DISPONIBLE", true], a);
+    S.guardarSeleccion({ agente_responde: a, agente_tool: a, modo_agentico: true });  // ambos selectores aceptan cada agente
+    assert.equal(S.leerSeleccion().agente_responde, a); assert.equal(S.leerSeleccion().agente_tool, a);
+    assert.equal(S.validarSeleccion(S.leerSeleccion(), cap6).ok, true, "modo agentico ON con " + a + " disponible no se bloquea");
+  }
+  assert.equal(S.lineaNoInstalados(g), ""); assert.equal(S.lineaOtros(g), "");
+});
+
+test("F3 capacidades REALES del runtime local (3 disponibles, 3 sin configurar): los 6 salen listados; los disponibles activos, los otros deshabilitados con su causa real", () => {
+  const cfg = (motivo, causa) => ({ disponible: false, motivo, estado: "NO CONFIGURADO", veredicto: "NO DISPONIBLE", verificado: true, intentable: false, ...(causa ? { causa } : {}) });
+  const real = S.normalizarCapacidades({ harness: "ok", workflows: { individual: DISP }, modelos: {}, agentes: {
+    openclaw: cfg("openclaw sin configurar: falta OPENCLAW_GATEWAY_TOKEN en el entorno del Harness", "falta_token_gateway"), "swe-agent": DISP, openhands: DISP, opencode: DISP,
+    codex: cfg("codex instalado pero falta RIU_CODEX_BASE_URL: Codex solo habla la API Responses y necesita un endpoint /responses"), "claude-code": cfg("claude-code instalado pero sin configurar: faltan RIU_CLAUDE_PASARELA_URL y/o RIU_CLAUDE_PASARELA_MODELO", "falta_pasarela") } });
+  const g = S.agruparOpciones(real, "agente", S.AGENTES_SWE);
+  assert.deepEqual(g.ok.map((x) => x.id), ["swe-agent", "openhands", "opencode"]);
+  assert.deepEqual(g.otros.map((x) => x.id), ["openclaw", "codex", "claude-code"]);
+  assert.equal(g.ok.length + g.otros.length, 6, "ninguno desaparece de la lista");
+  assert.ok(g.ok.every((x) => x.elegible)); assert.ok(g.otros.every((x) => !x.elegible && x.estado === "NO_CONFIGURADO" && /falta|sin configurar/i.test(x.motivo)), JSON.stringify(g.otros));
+  assert.match(S.lineaOtros(g), /^No configurados \/ no disponibles: OpenClaw \(no configurado\), Codex \(no configurado\), Claude Code \(no configurado\)$/);
+});
+
+test("F3 NO INSTALADO: la lista de los 6 sigue completa y el rotulo explica la causa en claro (nunca el codigo crudo binario_ausente)", () => {
+  const sin = reporta(() => ({ disponible: false, estado: "NO INSTALADO", veredicto: "NO DISPONIBLE", verificado: true, intentable: false, causa: "binario_ausente" }));  // el Harness solo dio el codigo
+  const g = S.agruparOpciones(sin, "agente", S.AGENTES_SWE);
+  assert.deepEqual(g.noInstalado.map((x) => x.id), SEIS); assert.equal(g.ok.length, 0);
+  assert.equal(S.lineaNoInstalados(g), "No instalados: OpenClaw, SWE-agent, OpenHands, OpenCode, Codex, Claude Code");
+  for (const x of g.noInstalado) { assert.doesNotMatch(x.motivo, /binario_ausente/); assert.match(x.motivo, /no está instalado|no esta instalado/i); assert.equal(x.elegible, false); }
+  const conMotivo = reporta(() => ({ disponible: false, estado: "NO INSTALADO", causa: "binario_ausente", motivo: "swe-agent no esta instalado (CLI `sweagent` ausente del PATH; define RIU_SWEAGENT_BIN)" }));
+  assert.match(S.estadoOpcion(conMotivo, "agente", "swe-agent").motivo, /sweagent.*PATH/, "si el Harness manda el motivo concreto, manda el motivo");
 });

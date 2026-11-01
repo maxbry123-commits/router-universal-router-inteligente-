@@ -40,26 +40,25 @@ test("seleccion: defectos, persistencia en localStorage y valores invalidos vuel
   delete globalThis.localStorage;
 });
 
-test("el boton de salida (ejecutor_tools) es SWE-agent | OpenClaw y es INDEPENDIENTE de AGENTE QUE EJECUTA", () => {
+test("ejecutor_tools (swe|openclaw) lo define SOLO AGENTE QUE EJECUTA: no hay segundo control de salida", () => {
   assert.deepEqual(S.EJECUTORES_TOOLS, ["swe", "openclaw"]);
-  assert.deepEqual(S.ETIQUETA_SALIDA, { swe: "Salida: SWE-agent", openclaw: "Salida: OpenClaw" });
+  assert.equal(S.ETIQUETA_SALIDA, undefined); assert.equal(S.guardarEjecutorTools, undefined); assert.equal(S.salidaActiva, undefined);
   conStorage();
-  S.guardarEjecutorTools("openclaw"); assert.equal(S.leerSeleccion().agente_tool, "swe-agent"); assert.equal(S.leerEjecutorTools(), "openclaw");
-  S.guardarEjecutorTools("swe"); assert.equal(S.leerSeleccion().agente_tool, "swe-agent");
-  S.guardarSeleccion({ agente_tool: "openclaw" }); assert.equal(S.leerEjecutorTools(), "swe", "elegir el agente OpenClaw no cambia la salida");
+  assert.equal(S.leerSeleccion().agente_tool, "swe-agent"); assert.equal(S.leerEjecutorTools(), "swe");
+  S.guardarSeleccion({ agente_tool: "openclaw" }); assert.equal(S.leerEjecutorTools(), "openclaw", "elegir el agente OpenClaw = salida OpenClaw");
   S.guardarSeleccion({ agente_tool: "codex" }); assert.equal(S.leerEjecutorTools(), "swe");
-  assert.equal(S.salidaActiva(), "swe");
+  S.guardarSeleccion({ agente_tool: "swe-agent" }); assert.equal(S.leerEjecutorTools(), "swe");
   delete globalThis.localStorage;
 });
 
-test("armar() envia la SALIDA elegida (ejecutor_tools) con cualquier agente ejecutor", () => {
+test("armar() envia ejecutor_tools DERIVADO del agente que ejecuta (openclaw -> openclaw; el resto -> swe)", () => {
   conStorage();
-  S.guardarEjecutorTools("openclaw"); S.guardarSeleccion({ agente_tool: "opencode" });
-  assert.equal(S.leerEjecutorTools(), "openclaw"); assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "openclaw");
-  S.guardarEjecutorTools("swe"); assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "swe");
+  S.guardarSeleccion({ agente_tool: "opencode" });
+  assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "swe");
+  S.guardarSeleccion({ agente_tool: "openclaw" });
+  assert.equal(S.armar({ model: "lfm2.5-350m", mensaje: "x", sesion: "s" }).ejecutor_tools, "openclaw");
   delete globalThis.localStorage;
 });
-
 test("requiereHarness: solo con workflow != individual o modo agentico ON", () => {
   assert.equal(S.requiereHarness({ ...S.SEL_DEFECTO }), false);
   assert.equal(S.requiereHarness({ ...S.SEL_DEFECTO, modo_agentico: true }), true);

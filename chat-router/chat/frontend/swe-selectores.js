@@ -1,10 +1,11 @@
 // swe-selectores.js — SELECTOR CENTRAL UNICO de 4 campos, reutilizado como el MISMO nodo en las ventanas SWE CODE, SWEN CODE free, Groq y NVIDIA:
-//   RESPONDE [Agente que responde][Modelo que responde] · EJECUTA [Agente que ejecuta][Modelo para tool] · MODO DE TRABAJO · MODO AGENTICO · WORKFLOW · SALIDA.
+//   RESPONDE [Agente que responde][Modelo que responde] · EJECUTA [Agente que ejecuta][Modelo para tool] · MODO DE TRABAJO · MODO AGENTICO · WORKFLOW.
+// La salida de los tool_calls (ejecutor_tools) NO tiene control propio: se deriva de AGENTE QUE EJECUTA (swe-directo.js leerEjecutorTools).
 // Una sola funcion construye los controles (controles()), una sola registra sus eventos (delegados en document, una vez), una sola valida (swe-directo.js validarSeleccion),
 // una sola consulta disponibilidad (cargarCapacidades) y una sola serializa el contrato (swe-directo.js leerSeleccion/armarTarea). Abrir una ventana MUEVE el nodo; no clona.
 // Cada ventana solo aporta lo suyo: su lista de MODELO QUE RESPONDE (swe-directo.js opcionesModeloVentana), su nota de conexion y su titulo.
 import { api } from "./api.js";
-import { camposFijos, modeloParaLista, modeloGuardado, SWE_LISTAS, EJECUTORES_TOOLS, ETIQUETA_SALIDA, guardarEjecutorTools, leerEjecutorTools, MODELOS_SWE, MODELOS_WEB, MODOS_TRABAJO, AGENTES_SWE, WORKFLOWS_SWE, LIQUID_MIRROR, leerSeleccion, guardarSeleccion, requiereHarness, cargarCapacidades, olvidarCapacidades, normalizarCapacidades, estadoOpcion, idCatalogo, agruparOpciones, lineaNoInstalados, lineaSinVerificar, lineaOtros, opcionesModeloVentana, ETIQUETA_ESTADO, VENTANAS_CENTRAL } from "./swe-directo.js";
+import { camposFijos, modeloParaLista, modeloGuardado, SWE_LISTAS, MODELOS_SWE, MODELOS_WEB, MODOS_TRABAJO, AGENTES_SWE, WORKFLOWS_SWE, LIQUID_MIRROR, leerSeleccion, guardarSeleccion, requiereHarness, cargarCapacidades, olvidarCapacidades, normalizarCapacidades, estadoOpcion, idCatalogo, agruparOpciones, lineaNoInstalados, lineaSinVerificar, lineaOtros, opcionesModeloVentana, ETIQUETA_ESTADO, VENTANAS_CENTRAL } from "./swe-directo.js";
 const K = "riu_swe_modelo";
 const leer = () => { try { return JSON.parse(localStorage.getItem(K) || "{}") || {}; } catch (e) { return {}; } };
 const refrescar = () => { try { window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar(); } catch (e) {} };
@@ -12,7 +13,6 @@ const S = (window.RIU_SWE = window.RIU_SWE || {});
 const guardado = leer();
 for (const id of Object.keys(SWE_LISTAS)) S[id] = modeloGuardado(id, guardado[id]);  // lo guardado puede ser una entrada de la lista o el id del bridge elegido en el desplegable «Responde»
 const nombreDe = (lista, id) => (lista.find((x) => x[0] === id) || [id, id])[1];
-const SALIDA_CORTA = { swe: "SWE-agent", openclaw: "OpenClaw" };
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
 
 // ---- Las 4 ventanas: lo unico propio de cada una (titulo, pastilla que la abre, nota) ----
@@ -67,25 +67,13 @@ function notaVentana(w) {
   return w === "swe-code" ? "Modelos locales HF del Harness (el agente se elige abajo)." : "Cuentas web del bridge + modelos del catálogo. El modo de trabajo elige asesoría, revisión, solución…";
 }
 
-// ---- Salida (SWE | OpenClaw): UN solo control (en el selector central). Es independiente de AGENTE QUE EJECUTA. ----
-function pintarSalida() {
-  const v = leerEjecutorTools();
-  document.querySelectorAll("[data-salida]").forEach((b) => { const on = b.dataset.salida === v; b.setAttribute("aria-pressed", String(on)); b.classList.toggle("on", on); });
-}
-function filaSalida() {
-  const w = el("div", "swe-fila-salida swe-bloque"); w.append(el("span", "swe-rej-t", "Salida de los tool_calls"));
-  const f = el("div", "swe-seg"); f.setAttribute("role", "group"); f.setAttribute("aria-label", "Salida de las tools");
-  EJECUTORES_TOOLS.forEach((e) => { const b = el("button", null, SALIDA_CORTA[e]); b.type = "button"; b.dataset.salida = e; b.setAttribute("aria-label", ETIQUETA_SALIDA[e]); f.append(b); });
-  w.append(f); return w;
-}
-
 // ---- Disponibilidad: una sola consulta (cargarCapacidades); «Actualizar» la repite sin recargar el chat ----
 let CAP = normalizarCapacidades(null), CAP_LISTA = false, CTL = null, VENTANA = "", ULTIMA = 0;
 const ROTULOS = { agente_responde: "AGENTE QUE RESPONDE", modelo_responde: "MODELO QUE RESPONDE", agente_tool: "AGENTE QUE EJECUTA", modelo_tool: "MODELO PARA TOOL", workflow: "WORKFLOW", modo_trabajo: "MODO DE TRABAJO" };
 const LISTAS = { agente_responde: [AGENTES_SWE, "agente"], agente_tool: [AGENTES_SWE, "agente"], modelo_responde: [MODELOS_SWE, "modelo"], modelo_tool: [MODELOS_SWE, "modelo"], workflow: [WORKFLOWS_SWE, "workflow"] };
 function selector(k) { const s = el("select"); s.dataset.sweCtl = k; s.setAttribute("aria-label", ROTULOS[k]); return s; }
 function controles() {
-  const c = el("div", "swe-ctl"); c.setAttribute("role", "group"); c.setAttribute("aria-label", "Selector central: agentes, modelos, modo, workflow y salida");
+  const c = el("div", "swe-ctl"); c.setAttribute("role", "group"); c.setAttribute("aria-label", "Selector central: agentes, modelos, modo y workflow");
   const nota = el("p", "fila-desc swe-nota");
   const rej = el("div", "swe-rej");
   [["Responde", "agente_responde", "modelo_responde"], ["Ejecuta", "agente_tool", "modelo_tool"]].forEach(([t, a1, m1]) => {
@@ -99,7 +87,7 @@ function controles() {
   const fw = el("div", "swe-rej-fila swe-wf swe-bloque"); fw.append(el("span", "swe-rej-t", "Workflow"), selector("workflow"));
   const lq = el("div", "consil-diagrama lleno swe-liquid"); lq.hidden = true; lq.setAttribute("aria-label", "Liquid Mirror: dos participantes");
   const act = el("div", "swe-actualizar"), bt = el("button", "secondary swe-refrescar", "Actualizar disponibilidad"); bt.type = "button"; bt.setAttribute("aria-label", "Actualizar disponibilidad de agentes y modelos"); act.append(bt, el("span", "swe-hora"));
-  c.append(nota, rej, lm, mo, fw, filaSalida(), lq, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
+  c.append(nota, rej, lm, mo, fw, lq, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
   return c;
 }
 function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al final y deshabilitado, con su estado real; la eleccion actual se queda visible aunque no este disponible
@@ -168,7 +156,6 @@ function pintarControles() {
       : "Individual con modo agéntico OFF: responde el modelo elegido, como siempre (los agentes no se activan).";
     const h = c.querySelector(".swe-hora"); if (h) h.textContent = ULTIMA ? "Comprobado " + new Date(ULTIMA).toLocaleTimeString() : "";
   });
-  pintarSalida();
 }
 async function refrescarCapacidades(forzar, conFichas = false) {
   if (forzar) olvidarCapacidades();
@@ -180,7 +167,6 @@ async function refrescarCapacidades(forzar, conFichas = false) {
 
 // ---- Eventos: registrados UNA vez (delegados en document); abrir una ventana no vuelve a registrar nada ----
 document.addEventListener("click", (e) => {
-  const o = e.target.closest && e.target.closest("[data-salida]"); if (o) { guardarEjecutorTools(o.dataset.salida); pintarControles(); return; }
   const b = e.target.closest && e.target.closest("[data-swe-agentico]"); if (b) { guardarSeleccion({ modo_agentico: !leerSeleccion().modo_agentico }); pintarControles(); return; }
   if (e.target.closest && e.target.closest(".swe-refrescar")) refrescarCapacidades(true, true);
 });
@@ -195,7 +181,7 @@ document.addEventListener("change", (e) => {
   }
   pintarControles();
 });
-// el contrato siempre lleva el modelo de la ventana abierta (modelo_tool, agentes, workflow y salida no se tocan)
+// el contrato siempre lleva el modelo de la ventana abierta (modelo_tool, agentes y workflow no se tocan)
 function sincronizar(w) { const m = modeloVentana(w); if (m) guardarSeleccion({ modelo_responde: m }); }
 
 // ---- Una sola ventana modal activa: abrir una ventana cierra las demas; al cerrar vuelve la de debajo (Selector de modelos) ----
@@ -209,6 +195,12 @@ function cerrarHoja(s) {
   const o = opener && opener.isConnected ? opener : document.getElementById(openerId);  // el pill puede haberse vuelto a pintar al elegir modelo
   opener = null; if (o && typeof o.focus === "function") o.focus();
 }
+function iconoX() {
+  const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg"), d = document.createElementNS(NS, "path");
+  svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("width", "22"); svg.setAttribute("height", "22"); svg.setAttribute("aria-hidden", "true"); svg.setAttribute("focusable", "false");
+  d.setAttribute("d", "M6 6l12 12M18 6L6 18"); d.setAttribute("fill", "none"); d.setAttribute("stroke", "currentColor"); d.setAttribute("stroke-width", "2.4"); d.setAttribute("stroke-linecap", "round");
+  svg.append(d); return svg;
+}
 function hoja(id, desde) {
   const v = VENTANAS[id];
   let s = document.getElementById("sh-" + id);
@@ -216,7 +208,7 @@ function hoja(id, desde) {
     s = el("div", "sheet swe-hoja"); s.id = "sh-" + id; s.hidden = true; s.setAttribute("role", "dialog"); s.setAttribute("aria-modal", "true"); s.setAttribute("aria-label", v.titulo);
     const caja = el("div", "va-caja");
     const cab = el("div", "row va-head swe-cab");  // pegajosa: titulo + X siempre a la vista
-    const x = el("button", "secondary sh-cerrar", "✕"); x.type = "button"; x.setAttribute("aria-label", "Cerrar");
+    const x = el("button", "secondary sh-cerrar"); x.type = "button"; x.setAttribute("aria-label", "Cerrar"); x.title = "Cerrar"; x.append(iconoX());  // icono SVG propio: no depende de que la fuente del sistema tenga el glifo ✕
     cab.append(el("strong", null, v.titulo), x);
     const cuerpo = el("div", "swe-cuerpo"); cuerpo.dataset.host = id;
     caja.append(cab, cuerpo); s.append(caja);
