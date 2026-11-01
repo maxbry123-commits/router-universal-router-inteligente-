@@ -21,7 +21,7 @@ No crear otra raíz, otro router, GitHub Actions, LFS ni desplegar fuera del rep
 | 2 | Banco, autenticación, secretos y roles | CÓDIGO CORREGIDO PARCIAL; PRUEBAS AÚN SIN EJECUTAR | no secretos en logs/LS; 401/403; operador individual |
 | 3 | Fichas y Router MVP, Groq/NVIDIA, SSE, contexto, latencia | CÓDIGO CORREGIDO; PRUEBAS SIN EJECUTAR | pruebas unitarias y llamada real por id |
 | 4 | Harness, permisos Tools ON/OFF, tools, MCP, checkpoint | CÓDIGO CORREGIDO PARCIAL; PRUEBAS PENDIENTES | llamada de herramienta y reanudación con recibo |
-| 5 | Router SWE, SSE, cancelación, fallback y métricas | CÓDIGO CORREGIDO PARCIAL | pruebas de cancelación y SSE reales |
+| 5 | Router SWE, SSE, cancelación, fallback y métricas | PARCHE APLICADO; TEST E2E PENDIENTE | pruebas de cancelación y SSE reales |
 | 6 | Frontend YAIWES, modelos vs ejecutores y progreso | PENDIENTE DE E2E | browser: selector, controles, respuesta parcial |
 | 7 | Plugin de OpenClaw UI y contrato bidireccional | PENDIENTE DE E2E REAL | Control UI del Gateway ejecutando plugin instalado |
 | 8 | Pruebas cruzadas, versión desplegada HF/Vercel y cierre | BLOQUEADO HASTA PRUEBAS | SHA desplegado, contratos API, PASS/GAP/BLOQUEO |
@@ -63,3 +63,27 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - El diario ahora clasifica como potencialmente mutantes las herramientas MCP externas, acciones de archivos y operaciones LOOP no explícitamente de lectura; antes de ejecutarlas registra INICIADA.
 - Si el Router devuelve `error` JSON-RPC o `result.isError`, NO sella CONFIRMADA una operación potencialmente mutante: requiere reconciliación humana para evitar ejecución duplicada.
 - Pruebas añadidas `chat/backend/deepseek_harness/test_xray4_harness.py`. E2E, HF y pruebas de agentes reales pendientes, no declarar PASS operativo.
+
+## Segmento 5 — Bridge SWE CODE (solo backend)
+- `SWE CODE/web-bridge/src/server.js`: señales de cancelación unificadas para Groq/NVIDIA/local HF; la asesoría Groq transmite streaming real y no mezcla respuestas de otros modelos si entregó un parcial.
+- `SWE CODE/web-bridge/src/respaldo.js`: Retry-After y backoff cancelables; la cancelación no rota claves ni arranca otra llamada.
+- `SWE CODE/web-bridge/src/retomar_local.js`: no inicia/reanuda checkpoint de una petición cancelada, incluida la espera de cerrojo y otra vuelta.
+- Pruebas añadidas: `SWE CODE/web-bridge/test/xray5_backend.test.mjs`; no se han ejecutado (Node y servicios reales pendientes).
+- ALCANCE: solo GitHub `chat-router/`; FRONTEND NO TOCADO, Hugging Face NO TOCADO (mirror existente).
+
+## Segmento 6 — OpenClaw BACKEND exclusivamente; frontend reservado para Claude Code
+- X-Ray detectó bypass de autorización del operador en `sala:contexto`: estaba declarada como lectura, pero `mvp/control.py` escribe el contexto de ROOM. Eliminada de `lectura` en `SWE CODE/web-bridge/src/openclaw.js`; el operador individual es obligatorio para cambiarlo.
+- `SWE CODE/web-bridge/src/swe_rutas.js`: respuestas HTTP 200 con `status=degraded/error`, `ok=false` o error en resultado ahora devuelven `ROUTER_PLUGIN_ERROR`, sin suponer éxito ni reflejar secretos.
+- Pruebas de regresión incorporadas en `SWE CODE/web-bridge/test/swe_rutas.test.mjs`: operador para sala.contexto, lectura permitida y error de plugin detrás de HTTP 200. No ejecutadas en servidor vivo.
+- No se tocó frontend, Hugging Face ni OpenClaw independiente. Cierre de UI YAIWES/OpenClaw queda explícitamente reservado hasta terminar Claude Code.
+
+## Segmento 7 — X-Ray de tool_calls inválidas (backend; frontend no tocar)
+- Claude Code incorporó en paralelo el control de idempotencia de `swe_iniciar` (contrato completo, índice huérfano); se auditó y no se duplicó.
+- `SWE CODE/web-bridge/src/retomar_local.js`: los `tools_invalidas` del proveedor bloquean ejecución, dejan error tipado en el checkpoint y no generan `WAIT_TOOLS` ejecutable.
+- `SWE CODE/web-bridge/src/server.js`: tool_calls inválidas no se entregan a OpenClaw ni al Harness, tampoco tras fallback. Error tipado `TOOL_CALL_INVALIDA`; sin ejecutar herramientas.
+- Prueba añadida en `SWE CODE/web-bridge/test/retomar_local.test.mjs` con argumentos JSON incompletos y verificación de cero efectos. No ejecutada; pendiente runner Node real.
+- Nada de frontend, Hugging Face, OpenClaw independiente ni nuevas raíces. Guardado GitHub main; mirror externo NO certificado.
+
+### X-Ray 7B — checkpoint legado
+- Se detectó que un `WAIT_TOOLS` previamente guardado podía pasar directamente a `resolverLote` sin volver a validar los argumentos JSON. El preflight del lote ahora bloquea `TOOL_CALL_INVALIDA` ANTES de cualquier efecto, anota `RECONCILIAR` y evita ejecución parcial.
+- Prueba `X-Ray 7B` añadida en `test/retomar_local.test.mjs` con dos tools (primera válida, segunda corrupta): exige **cero** efectos. Prueba sin ejecutar en entorno Node.

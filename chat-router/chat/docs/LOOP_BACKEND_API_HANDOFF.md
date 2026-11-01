@@ -27,3 +27,14 @@ Escrituras N4 de DSL siguen `AUTHORIZED_GITHUB_WRITER_NOT_CONNECTED`: no declara
 `retry_safe` sigue bloqueado hasta reconciliación de efectos; no repetir side-effects inciertos.
 Estados del motor: `PASS`, `OFF`, `BLOCKED`, `PARTIAL`, `NEEDS_RECONCILIATION`, `QUEUED`, `NOT_APPLICABLE`.
 No envíe `authenticated_by_host`, `host_context` ni `previous` desde navegador.
+
+
+## Control de seguridad DSL — 2026-11-01 (X-Ray posterior)
+
+La cola DSL reutiliza `cola50` en modo `dsl` (hasta 100 slots sin alterar el máximo histórico 50). El backend limita los claims a **una tarea RUNNING por cola**, bloquea nuevos claims después del vencimiento del watchdog/cola y no reintenta automáticamente operaciones de resultado incierto. Los leases vencidos se marcan `needs_reconciliation`; el operador debe revisar evidencia antes de crear otro trabajo. Una cancelación que ocurre mientras corre el modelo **nunca** debe mostrar un `PASS` del trigger: se contrasta el estado real de la tarea con `succeeded` antes de emitir recibo positivo.
+
+Errores nuevos relevantes para la UI: `QUEUE_BUSY`, `QUEUE_EXPIRED`, `NEEDS_RECONCILIATION` y `QUEUE_COMPLETION_STATE_MISMATCH`. Mostrar `BLOCKED` o el estado real, sin reintentar automáticamente escrituras ni convertir estas condiciones en éxito. La comprobación de entrada es `POST /plugins/nct_loop/call/dsl_estado` con `{\"project_id\":\"...\",\"loop_id\":\"...\",\"op\":\"get\"}` en la puerta autenticada existente.
+
+Pruebas de regresión añadidas dentro de la raíz existente: `chat-router/Loop cola wachdog/Loop/tests/test_trigger_dsl_safety.py`. Son **pruebas a ejecutar en el runner real**, no evidencia de E2E ni de despliegue. Las pruebas DSL anteriores (36/36) se reprodujeron localmente sobre el ZIP aportado; no certifican las nuevas modificaciones del servidor.
+
+**Límites explícitos:** El escritor GitHub N4 continúa `AUTHORIZED_GITHUB_WRITER_NOT_CONNECTED` hasta que el circuito completo /aprobar + autenticación individual + commit + read-back esté probado. El `boot.sh` del Space clona `main` al arrancar, pero leer ese script NO demuestra qué commit está sirviendo ahora; comparar `/health.commit` en producción con el HEAD GitHub antes de declarar `DEPLOY_PASS`.

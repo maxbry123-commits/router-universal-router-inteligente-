@@ -221,3 +221,24 @@ test("13: sin disco local y sin origen conocido, lee de openclaw/yaiwes; con el 
     assert.equal(h.peticiones[0].cuerpo.args.nombre, "tareas/swe/openclaw/loc/checkpoint.json", "el origen sale del checkpoint local");
   } finally { h.cerrar(); }
 });
+
+
+test("checkpoint remoto exigido rechaza un Harness caido aunque guarde en local", async () => {
+  const dir = tmp();
+  const e = envCon(dir, { RIU_DEEPSEEK_HARNESS_URL: 'http://127.0.0.1:9', RIU_API_KEY: CLAVE_HARNESS });
+  await assert.rejects(
+    guardarCheckpoint("seguro-1", { estado: 'OPERACION_INICIADA' }, { env: e, exigirRemoto: true, timeoutMs: 200 }),
+    { code: "CHECKPOINT_REMOTO_REQUERIDO" }
+  );
+  assert.equal(fs.existsSync(path.join(dir, "checkpoints", "seguro-1.json")), true);
+});
+
+test("checkpoint remoto exigido se relee para confirmar el manifiesto", async () => {
+  const dir = tmp(), h = await harnessFalso();
+  try {
+    const e = envCon(dir, { RIU_DEEPSEEK_HARNESS_URL: h.url, RIU_API_KEY: CLAVE_HARNESS });
+    const r = await guardarCheckpoint("seguro-2", { estado: 'OPERACION_INICIADA' }, { env: e, exigirRemoto: true });
+    assert.equal(r.harness, true);
+    assert.deepEqual(h.peticiones.map((p) => p.cuerpo.tool).slice(-2), ['guardar', 'leer']);
+  } finally { h.cerrar(); }
+});

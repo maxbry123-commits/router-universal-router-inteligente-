@@ -165,6 +165,20 @@ function usoDe(u) {
 }
 
 const cancelada = () => Object.assign(new Error('peticion cancelada por el cliente'), { code: 'ABORTADO' });
+// Backoff/Retry-After cancelables: Detener no permite otro intento tras una espera.
+export function esperarCancelable(ms, r) {
+  if (r.signal?.aborted) return Promise.reject(cancelada());
+  if (!r.signal) return r.esperar(ms);
+  return new Promise((resolve, reject) => {
+    const abortar = () => { r.signal.removeEventListener('abort', abortar); reject(cancelada()); };
+    r.signal.addEventListener('abort', abortar, { once: true });
+    if (r.signal.aborted) return abortar();
+    Promise.resolve().then(() => r.esperar(ms)).then(
+      v => { r.signal.removeEventListener('abort', abortar); resolve(v); },
+      e => { r.signal.removeEventListener('abort', abortar); reject(e); },
+    );
+  });
+}
 async function pedir(base, modelo, mensajes, clave, extra = {}, r = red()) {
   // Sin streaming (HF local, respuestas completas), Detener tambien debe cancelar la solicitud HTTP real.
   if (r.signal?.aborted) throw cancelada();
@@ -419,6 +433,7 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
   let ultimo = new Error(todas.length ? 'claves enfriadas' : 'sin clave'), n = 0, fallos = 0;
   if (onInicio) { try { onInicio({ via: prov, usado: id }); } catch { /* informativo */ } }
   for (const [i, k] of ks.entries()) {
+    if (r.signal?.aborted) throw cancelada();
     if (n++ >= 20) break;
     try {
       const x = await completar(BASES[prov], modelo, mensajes, k, extra, r, ctx);
@@ -428,11 +443,11 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
       ultimo = e;
       if (e.code === 'ABORTADO' || r.signal?.aborted) throw cancelada();  // Detener: ni otra clave ni otro proveedor
       if (esTimeout(e)) { for (const x of todas) enfriadas.set(`${prov}\0${x}`, r.ahora() + r.cooldownMs); break; }  // primer timeout: se enfria el proveedor (todas sus claves) y se corta; respaldo() no reentra
-      if (e.status === 429) { enfriadas.set(`${prov}\0${k}`, r.ahora() + Math.max(r.cooldownMs, Math.min(e.retryAfterMs || 0, 600000))); await r.esperar(esperaCorta(e, r)); continue; }
+      if (e.status === 429) { enfriadas.set(`${prov}\0${k}`, r.ahora() + Math.max(r.cooldownMs, Math.min(e.retryAfterMs || 0, 600000))); await esperarCancelable(esperaCorta(e, r), r); continue; }
       if (e.status === 402) { enfriadas.set(`${prov}\0${k}`, r.ahora() + COOLDOWN_CREDITO_MS); continue; }  // sin credito/cuota: otra clave puede servir; esta no se repite ni se prueba primero 10 min
       if (e.status === 401 || e.status === 403) continue;  // clave descartada
       if (e.status >= 400 && e.status < 500) break;  // 400/404/422...: no depende de la clave
-      if (i < ks.length - 1) await r.esperar(Number.isFinite(e.retryAfterMs) && e.status >= 500 ? esperaCorta(e, r) : backoff(fallos++, r));  // 5xx/red: Retry-After (con tope) o backoff exponencial con jitter antes de la siguiente clave
+      if (i < ks.length - 1) await esperarCancelable(Number.isFinite(e.retryAfterMs) && e.status >= 500 ? esperaCorta(e, r) : backoff(fallos++, r), r);  // 5xx/red: Retry-After (con tope) o backoff exponencial con jitter antes de la siguiente clave
     }
   }
   throw Object.assign(new Error(limpiar(`EXTERNO_${prov.toUpperCase()}: ${ultimo.message}`, todas)), { code: 'EXTERNO_FALLO', tipo: tipoDe(ultimo), ...(Number.isInteger(ultimo.status) ? { status: ultimo.status } : {}), ...(ctx.flujo?.texto ? { parcial: ctx.flujo.texto } : {}) });

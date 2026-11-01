@@ -326,7 +326,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (!esExterno(model) && !esLocal(model)) {
       return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     }
-    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop', tarea = null, metricas = null, servidor = null;
+    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop', tarea = null, metricas = null, servidor = null, toolsInvalidas = [];
     // tarea_id (cuerpo o cabecera x-tarea-id): modelos locales/Groq/NVIDIA con checkpoint universal (retomar_local.js).
     // Sin tarea_id pero con conv_id se DERIVA <conv_id>-<sha256 de [modelo, modo, mensajes] (12)>: el mismo envio reintentado reanuda, uno distinto es tarea nueva. Sin conv_id nada cambia.
     const explicito = esExterno(model) || esLocal(model), pideRespaldo = req.body.respaldo === true;
@@ -340,7 +340,8 @@ app.post('/v1/chat/completions', async (req, res) => {
     // streaming real (stream:true): Groq/NVIDIA entregan fragmentos por onDelta -> sse.delta; flujo = lo ya entregado al cliente (el failover continua desde ahi, sin repetir)
     sse.model = `swecode:${model}`;
     const ac1 = new AbortController();  // primer intento; si vence el plazo se cancela antes del respaldo (no puede seguir escribiendo en el mismo stream)
-    const streamOpts = (senal) => (sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: senal } } : {});
+    // Una sola señal alcanza al proveedor incluso sin upstream SSE (locales), sin duplicar rutas.
+    const streamOpts = (senal) => ({ ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio } : {}), opts: { signal: senal } });
 
     const ejecutar = async () => {
     if (usaTarea) {
@@ -352,18 +353,20 @@ app.post('/v1/chat/completions', async (req, res) => {
       const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo), { ...extra, ...vinculo, plan, exigirPlan: b.exigir_confirmacion === true || String(process.env.BRIDGE_EXIGIR_CONFIRMACION ?? '').trim() !== '0', confirmarCompleta: b.tarea_completa === true || req.headers['x-tarea-completa'] === '1', origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + DEADLINE_MS * 0.8, flushChars: parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_CHARS, 10) || undefined, flushMs: Number.isFinite(parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10)) ? parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10) : undefined, ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: AbortSignal.any([sse.signal, ac1.signal]) } } : {}) }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
       tarea = { id: r.tarea_id, estado: r.estado, fase: r.fase, secciones: r.secciones, reanudado: r.reanudado, desde_checkpoint: r.desde_checkpoint };
     } else if (esExterno(model)) {
-      const r = await externo(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
+      const r = await externo(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
     } else if (esLocal(model)) {
-      const r = await local(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts() }); salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
+      const r = await local(model, conPreambulo(mensajesM, modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
     } else if (modeloWeb) {
       const r = await conFallback(modeloWeb, promptFicha, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
     } else if (modoUso === 'asesoria') {
       // asesoria previa a ejecutar: primero Groq (las claves del chat Yaiwes), si no responde la web de SWE CODE free
       try {
-        const r = await externo(`groq/${modeloDefecto('groq')}`, conSystemPrompt([{ role: 'system', content: preambulo('asesoria') }, ...mensajesM]));
-        salida = r.salida; usado = r.usado; viaPrimaria = 'groq';
-      } catch {
+        const r = await externo(`groq/${modeloDefecto('groq')}`, conSystemPrompt([{ role: 'system', content: preambulo('asesoria') }, ...mensajesM]),
+                                { ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) });
+        toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; viaPrimaria = 'groq'; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
+      } catch (e) {
+        if (sse.signal.aborted || sse.flujo.texto) throw e; // no combinar respuesta parcial SSE con modelo diferente
         const r = await conFallback(OBJETIVO_UNICO, promptFicha, { modo: modoUso, convId: conv_id });
         salida = r.salida; usado = r.usado;
       }
@@ -379,11 +382,11 @@ app.post('/v1/chat/completions', async (req, res) => {
     sse.vigilar();
     try {
       await conDeadline(ejecutar(), DEADLINE_MS, sse.pide ? sse.latido : null);
+      if (toolsInvalidas.length) throw Object.assign(new Error('Tool calls invalidas: no se entregan al ejecutor'), { code: 'TOOL_CALL_INVALIDA' });
       if ((!salida || !String(salida).trim()) && !llamadas.length) throw Object.assign(new Error('respuesta vacia del modelo web'), { code: 'EMPTY_RESPONSE' });
     } catch (e) {
       if (e.code === 'UPSTREAM_TIMEOUT') ac1.abort();  // el intento colgado (tambien el de una tarea con checkpoint) no puede seguir escribiendo en el stream
-      if (e.code === 'MODO_INVALIDO' || usaTarea || sse.signal.aborted) throw e;  // cliente desconectado: no se gasta mas respaldo. Con tarea_id retomarLocal ya probo local/Groq/NVIDIA y guardo el checkpoint: el cliente reintenta con el mismo tarea_id
-      if (e.code === 'UPSTREAM_TIMEOUT') ac1.abort();  // el intento colgado no puede seguir escribiendo en el stream mientras responde el respaldo
+      if (e.code === 'MODO_INVALIDO' || e.code === 'TOOL_CALL_INVALIDA' || usaTarea || sse.signal.aborted) throw e;  // cliente desconectado: no se gasta mas respaldo. Con tarea_id retomarLocal ya probo local/Groq/NVIDIA y guardo el checkpoint: el cliente reintenta con el mismo tarea_id
       if (e.code === 'UPSTREAM_TIMEOUT' && conv_id) await cerrarPagina(conv_id).catch(() => {});  // la tab colgada liberaba su slot solo al cerrarse
       // modelo EXPLICITO (groq/, nvidia/, HF local): si falla NO se cambia de modelo en silencio; error claro con el motivo. El respaldo solo con respaldo:true (o modelos web-*/swecode-*)
       if (explicito && !pideRespaldo) throw e.code === 'EXTERNO_FALLO' && e.status === 404 ? Object.assign(e, { code: 'NO_DISPONIBLE', message: `modelo ${model} no disponible en el proveedor (HTTP 404); ${e.message}` }) : e;
@@ -394,11 +397,12 @@ app.post('/v1/chat/completions', async (req, res) => {
       if ((!salida || !String(salida).trim()) && !llamadas.length) {
         const ac2 = new AbortController();  // si vence el plazo del respaldo se cancela antes de responder el error
         const r = await conDeadline(respaldo(conPreambulo(mensajesM, model.startsWith('swecode-') ? modoUso : modo), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac2.signal])) }), DEADLINE_MS, sse.pide ? sse.latido : null).catch((e2) => { if (e2.code === 'UPSTREAM_TIMEOUT') ac2.abort(); throw e2; });  // con texto ya entregado, el respaldo CONTINUA desde ahi (sse.flujo), no repite
-        llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
+        toolsInvalidas = r.tools_invalidas || []; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
         salida = r.salida; usado = r.usado; via = r.via; aviso = e.code || null;
         registrarLeccion({ codigo: e.code || 'WEB_FALLO', accion: 'respaldo ' + r.via, resultado: 'PASS', modelo: model });  // p. ej. CUENTAS_FALTAN: OpenClaw sabe que debe reenviar cuentas y clave
       }
     }
+    if (toolsInvalidas.length) throw Object.assign(new Error('Tool calls invalidas: no se entregan al ejecutor'), { code: 'TOOL_CALL_INVALIDA' });
     if (llamadas.length && fin !== 'tool_calls') fin = 'tool_calls';  // R4: con tool_calls el finish_reason SIEMPRE lo dice (un 'stop' haria que el cliente ignore las llamadas); texto y tool_calls viajan juntos
     let archivo = null;
     if (modoUso === 'asesoria') { try { archivo = guardarAsesoria(proyecto || conv_id, { texto: salida, via: via || viaPrimaria || 'web', modelo: usado }); } catch { /* guardar es mejor esfuerzo */ } }

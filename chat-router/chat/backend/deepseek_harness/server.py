@@ -344,7 +344,9 @@ def llm(cuerpo):
     mensajes = list(mensajes)
     acumulado, continuaciones, usadas = str(cuerpo.get("acumulado") or ""), 0, []  # usadas: herramientas realmente ejecutadas (diagnostico)
     tarea = re.sub(r"[^A-Za-z0-9_-]", "", str(cuerpo.get("tarea_id") or ""))[:64]  # con tarea_id, lo que ya se ejecuto no se repite si la tarea se retoma
-    diario = _diario(tarea) if tarea else {}
+    # Solo consultar el diario al llegar una operacion con efectos. Un chat sin herramientas
+    # no debe fallar si HF esta temporalmente caido; una escritura sigue fallando cerrado.
+    diario = None
     t0, paso, salida, aviso = time.monotonic(), -1, {}, {}
     while True:
         paso += 1
@@ -411,6 +413,8 @@ def llm(cuerpo):
                 mensajes.append({"role": "tool", "tool_call_id": llamada["id"], "content": json.dumps({"error": "Escritura GitHub permitida solo en main"}, ensure_ascii=False)})
                 continue
             llave = _llave(nombre, args) if tarea and con_efectos(nombre, args) else None
+            if llave and diario is None:
+                diario = _diario(tarea)  # HF caido o corrupto: error ANTES de cualquier efecto.
             if llave and llave in diario:  # se reusa SOLO una operación confirmada: INICIADA puede haber tenido efectos
                 previa = diario[llave]
                 if isinstance(previa, dict) and previa.get("estado") == "INICIADA":
@@ -430,7 +434,10 @@ def llm(cuerpo):
                     raise RuntimeError("OPERACION_SIN_CONFIRMAR")
                 if llave:
                     texto_resultado = json.dumps(resultado, ensure_ascii=False)
-                    diario[llave] = {"estado": "CONFIRMADA", "resultado": texto_resultado[:2000],
+                    # Guardar el resultado estructurado completo. Truncarlo a 2000 caracteres
+                    # rompe la reanudacion; si el almacenamiento excede su limite, debe
+                    # permanecer INICIADA y exigir reconciliacion, nunca fingir CONFIRMADA.
+                    diario[llave] = {"estado": "CONFIRMADA", "resultado": resultado,
                                     "recibo": hashlib.sha256(texto_resultado.encode("utf-8")).hexdigest()[:24]}
                     _anotar(tarea, diario)  # si falla queda INICIADA: reconciliar, NUNCA ejecutar de nuevo
             mensajes.append({"role": "tool", "tool_call_id": llamada["id"],

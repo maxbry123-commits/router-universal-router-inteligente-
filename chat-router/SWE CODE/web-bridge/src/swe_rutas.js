@@ -289,8 +289,27 @@ async function ejecutarTool({ t, args, accion }, { env, fetchFn }) {
   if (cfg.error) throw Object.assign(new Error(cfg.error), { http: 503 });
   const ms = Number.parseInt(env.RIU_SWE_TOOLS_TIMEOUT_MS, 10) > 0 ? Number.parseInt(env.RIU_SWE_TOOLS_TIMEOUT_MS, 10) : TIMEOUT_TOOLS_MS, op = { env, fetchFn, ms };
   if (t.via === 'replica') return ejecutarReplica({ t, args, accion }, op, cfg);
-  if (t.via === 'mcp') return llamarMcp(t.destino.tool, accion ? { ...args, accion } : args, cfg, op);
-  return resultadoPlugin(t.via === 'plugin' ? await postRouter(`/plugins/${t.destino.plugin}/call/${accion}`, args, cfg, op) : await postRouter(t.destino.ruta, args, cfg, op));
+  if (t.via === 'mcp') {
+    const j = await postRouter('/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: t.destino.tool, arguments: accion ? { ...args, accion } : args } }, cfg, op);
+    if (j && j.error) throw Object.assign(new Error('ROUTER_RPC_ERROR'), { http: 502, mensaje: redactar(j.error.message, env) });
+    const r = j && j.result;
+    if (!r) throw Object.assign(new Error('ROUTER_RESPUESTA_INVALIDA'), { http: 502 });
+    if (r.isError) throw Object.assign(new Error('ROUTER_TOOL_ERROR'), { http: 502, mensaje: redactar((r.content && r.content[0] && r.content[0].text) || '', env) });
+    return r.structuredContent !== undefined ? r.structuredContent : r;
+  }
+  const j = t.via === 'plugin' ? await postRouter(`/plugins/${t.destino.plugin}/call/${accion}`, args, cfg, op) : await postRouter(t.destino.ruta, args, cfg, op);
+  // El HTTP 200 no demuestra exito: plugin host puede devolver status=degraded/error,
+  // ok=false o un resultado con error. No anunciar ok:true a OpenClaw ante fallos.
+  if (!j || typeof j !== 'object') throw Object.assign(new Error('ROUTER_RESPUESTA_INVALIDA'), { http: 502 });
+  const resultado = j.status === 'ok' && Object.prototype.hasOwnProperty.call(j, 'result') ? j.result : j;
+  const esError = (x) => x && typeof x === 'object' && (x.ok === false || x.status === 'degraded'
+    || x.status === 'error' || x.error);
+  const fallo = esError(j) || esError(resultado)
+    || (resultado && typeof resultado === 'object' && esError(resultado.result));
+  if (fallo) throw Object.assign(new Error('ROUTER_PLUGIN_ERROR'), { http: 502 });
+  if (j.status === 'ok' && !Object.prototype.hasOwnProperty.call(j, 'result'))
+    throw Object.assign(new Error('ROUTER_RESPUESTA_INVALIDA'), { http: 502 });
+  return resultado;
 }
 
 export function montarRutasSwe(app, { env = process.env, fetchFn = fetch } = {}) {

@@ -178,6 +178,24 @@ test("ids y modelos invalidos", async () => {
 // ---------- herramientas ----------
 const tc = (id, name = "escribir", args = '{"x":1}') => ({ id, type: "function", function: { name, arguments: args } });
 
+test("no ejecuta herramientas si el Harness configurado no confirma checkpoint remoto", async () => {
+  const modelo = await fake(() => ok("", "tool_calls", { content: null, tool_calls: [
+    { id: "x1", type: "function", function: { name: "escribir", arguments: '{}' } }
+  ] }));
+  const dir = tmp(), llamadas = [];
+  try {
+    const e = extra(env(dir, { SWECODE_URL_S1: modelo.url,
+      RIU_DEEPSEEK_HARNESS_URL: "http://127.0.0.1:9", RIU_API_KEY: KHARNESS }), {
+      sinRespaldo: true, ejecutarHerramienta: async (t) => { llamadas.push(t.id); return "MAL"; },
+      tools: [{ type: "function", function: { name: "escribir" } }], timeoutCheckpointMs: 200,
+    });
+    await assert.rejects(retomarLocal("t-sin-remoto", MODELO, msgs, e), { code: "CHECKPOINT_REMOTO_REQUERIDO" });
+    assert.deepEqual(llamadas, []);
+    const st = await leerCheckpoint("t-sin-remoto", { env: e.env });
+    assert.equal(st.lote.herramientas[0].estado, "iniciada");
+  } finally { modelo.cerrar(); }
+});
+
 test("tool_calls con ejecutor: cada herramienta se ejecuta UNA sola vez, su resultado se guarda y el 2º llamado no la repite", async () => {
   const s1 = await fake(({ n }) => n === 1 ? ok("", "tool_calls", { content: null, tool_calls: [tc("c1"), tc("c2", "leer", "{}")] }) : ok("HECHO"));
   const dir = tmp(); const vistas = [];
@@ -199,6 +217,25 @@ test("tool_calls con ejecutor: cada herramienta se ejecuta UNA sola vez, su resu
 
 const sembrar = async (dir, id, estado, hv = {}) => guardarCheckpoint(id, { tipo: TIPO, version: 1, tarea_id: id, huella: huellaDe(MODELO, msgs), modelo: MODELO, mensajes: msgs, completo: false, conversacion: [], parcial: "", secciones: [{ n: 1 }], contextos: {}, herramientas: {}, ...estado }, { env: env(dir, hv) });
 const lote = (...ts) => ({ assistant: { role: "assistant", content: null, tool_calls: ts.map((x) => tc(x)) }, herramientas: ts.map((x) => ({ id: x, nombre: "escribir", argumentos: '{"x":1}', estado: "pendiente" })) });
+
+test("X-Ray 7B: checkpoint legado con argumentos invalidos bloquea el lote ANTES del primer efecto", async () => {
+  const dir = tmp(), servidor = await fake(() => ok("NO_DEBE_LLEGAR")), vistas = [];
+  try {
+    const l = lote("c1", "c2");
+    l.herramientas[1].argumentos = '{"incompleto":';
+    await sembrar(dir, "xray7-lote", { estado: "WAIT_TOOLS", lote: l });
+    await assert.rejects(retomarLocal("xray7-lote", MODELO, msgs,
+      extra(env(dir, { SWECODE_URL_S1: servidor.url }), {
+        ejecutarHerramienta: async (t) => { vistas.push(t.id); return "MAL"; },
+      })), e => e.code === 'TOOL_CALL_INVALIDA');
+    assert.deepEqual(vistas, [], "no puede ejecutarse ni la primera tool valida");
+    const ck = leerArch(dir, "xray7-lote");
+    assert.equal(ck.fase, "RECONCILIAR");
+    assert.equal(ck.ultimo_error, "TOOL_CALL_INVALIDA");
+    assert.equal(ck.lote.herramientas[0].estado, "pendiente");
+    assert.equal(servidor.chat.length, 0);
+  } finally { servidor.cerrar(); }
+});
 
 test("WAIT_TOOLS tras un corte: la herramienta ya hecha NO se repite, solo se ejecuta la pendiente", async () => {
   const s1 = await fake(() => ok("FIN")); const dir = tmp(); const vistas = [];
@@ -230,6 +267,24 @@ test("herramienta sin confirmar (iniciada y sin resultado): VERIFICAR_HERRAMIENT
     await sembrar(dir, "t-ver2", { estado: "WAIT_TOOLS", lote: l });
     await retomarLocal("t-ver2", MODELO, msgs, { ...e, verificarHerramienta: async () => ({ hecha: false }) });
     assert.deepEqual(vistas, ["z1"]);
+  } finally { s1.cerrar(); }
+});
+
+test("X-Ray 7: los argumentos JSON invalidos de tool_calls no se ejecutan ni se declaran WAIT_TOOLS", async () => {
+  const s1 = await fake(() => ok("", "tool_calls", { content: null, tool_calls: [tc("invalida-1", "guardar", '{"incompleto":')] }));
+  const dir = tmp(), realizadas = [];
+  try {
+    const e = extra(env(dir, { SWECODE_URL_S1: s1.url }), {
+      tools: [{ type: "function", function: { name: "guardar", parameters: { type: "object" } } }],
+      ejecutarHerramienta: async (t) => { realizadas.push(t); return { ok: true }; },
+      sinRespaldo: true,
+    });
+    await assert.rejects(retomarLocal("xray7-invalida", MODELO, msgs, e), (err) => err.code === "TOOL_CALL_INVALIDA");
+    assert.equal(realizadas.length, 0);
+    const estado = leerArch(dir, "xray7-invalida");
+    assert.equal(estado.estado, "ERROR");
+    assert.equal(estado.ultimo_error, "TOOL_CALL_INVALIDA");
+    assert.equal(estado.lote, null, "ninguna tool invalida se entrega al ejecutor");
   } finally { s1.cerrar(); }
 });
 

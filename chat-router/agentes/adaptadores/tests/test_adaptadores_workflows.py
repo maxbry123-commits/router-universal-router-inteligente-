@@ -156,6 +156,40 @@ def test_iniciar_es_idempotente_y_no_pisa_otra_identidad(mundo):
         wf.swe_iniciar(contrato(sesion="chat-002"), c)
 
 
+def test_iniciar_rechaza_mismo_id_con_otro_objetivo_o_modelo(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    ruta = "swe/yaiwes/yaiwes/chat-001/yaiwes-001.json"
+    anterior = mundo.almacen[ruta]
+    for cambio in ({"mensaje": "otra tarea"}, {"modelo_tool": "hf/qwen3-0.6b"}, {"workflow": "individual"}):
+        with pytest.raises(ValueError, match="TASK_ID_EN_USO"):
+            wf.swe_iniciar(contrato(**cambio), c)
+        assert mundo.almacen[ruta] == anterior
+
+
+def test_iniciar_restaura_indice_faltante_sin_reejecutar(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    indice = "swe/indice/yaiwes-001.json"
+    ruta = "swe/yaiwes/yaiwes/chat-001/yaiwes-001.json"
+    estado = mundo.almacen[ruta]
+    del mundo.almacen[indice]
+    r = wf.swe_iniciar(contrato(), c)
+    assert r["ya_existia"] is True and mundo.almacen[ruta] == estado
+    assert json.loads(mundo.almacen[indice])["ruta"] == ruta
+    assert mundo.agentes == []
+
+
+def test_iniciar_no_recrea_estado_perdido_si_hay_indice(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    ruta = "swe/yaiwes/yaiwes/chat-001/yaiwes-001.json"
+    del mundo.almacen[ruta]
+    with pytest.raises(ValueError, match="TAREA_ESTADO_FALTANTE"):
+        wf.swe_iniciar(contrato(), c)
+    assert ruta not in mundo.almacen
+
+
 def test_iniciar_con_fallo_de_guardado_devuelve_error_de_persistencia(mundo):
     mundo.falla_guardar = lambda n: True
     with pytest.raises(RuntimeError, match="PERSISTENCIA_FALLIDA"):
@@ -756,6 +790,18 @@ def test_done_exige_todas_las_etapas_con_recibo_y_operaciones_confirmadas(mundo)
     assert wf.verificado(e) is False
 
 
+def test_cursor_al_final_no_fabrica_done(mundo):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    reg = estado_guardado(mundo)
+    reg["paso_actual"] = len(reg["plan"])
+    reg["estado"] = "CONTINUAR"
+    mundo.almacen[reg["ruta"]] = json.dumps(reg)
+    r = wf.swe_avanzar({"task_id": "yaiwes-001"}, c)
+    assert r["estado"] == "GAP" and r["error"]["codigo"] == "DONE_NO_VERIFICADO"
+    assert mundo.agentes == []
+
+
 def test_ultimo_paso_sin_recibo_no_marca_done(mundo):
     mundo.respuesta_agente = lambda a, n: {"ok": True, "agente": a, "task_id": "yaiwes-001", "resultado": "x", "recibo": "", "exit_code": 0} if n == 4 else None
     c = mundo.ctx()
@@ -937,6 +983,17 @@ def test_fallo_al_guardar_tras_ejecutar_deja_reconciliar_o_adoptable(mundo):
 
 
 # ---------- candado entre procesos / servidores (en el almacen, con TTL y propietario) ----------
+@pytest.mark.parametrize("valor", ["{invalido", "null", "[]", '""'])
+def test_candado_corrupto_falla_cerrado_sin_ejecutar_agentes(mundo, valor):
+    c = mundo.ctx()
+    wf.swe_iniciar(contrato(), c)
+    mundo.almacen["swe/locks/yaiwes-001.json"] = valor
+    with pytest.raises(ValueError, match="CANDADO_CORRUPTO"):
+        wf.swe_avanzar({"task_id": "yaiwes-001"}, c)
+    assert mundo.agentes == []
+    assert mundo.almacen["swe/locks/yaiwes-001.json"] == valor
+
+
 def test_candado_en_el_almacen_bloquea_a_otro_propietario_vigente(mundo):
     c = mundo.ctx()
     wf.swe_iniciar(contrato(), c)

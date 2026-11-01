@@ -148,12 +148,17 @@ def _ruta_candado(task_id):
 
 
 def _candado_leer(ctx, ruta):
+    # Un lock ilegible NO significa que esta libre: podria pertenecer a otro servidor.
     crudo = _leer(ctx, ruta, opcional=True)
+    if crudo is None:
+        return {}
     try:
-        d = json.loads(crudo) if crudo else {}
-    except ValueError:
-        d = {}
-    return d if isinstance(d, dict) else {}
+        d = json.loads(crudo)
+    except (ValueError, TypeError):
+        raise ValueError("CANDADO_CORRUPTO") from None
+    if not isinstance(d, dict):
+        raise ValueError("CANDADO_CORRUPTO")
+    return d
 
 
 def _candado_escribir(ctx, ruta, mio, segundos):
@@ -401,13 +406,26 @@ def swe_iniciar(args, ctx):
     c["aprobacion"] = False  # la aprobacion solo la da swe_aprobar
     ruta = _ruta(c["origen"], c["proyecto"], c["sesion"], c["task_id"])
     with _candado(ctx, c["task_id"]):
-        ind = _leer(ctx, _indice(c["task_id"]), opcional=True)
+        indice_ruta = _indice(c["task_id"])
+        ind = _leer(ctx, indice_ruta, opcional=True)
         if ind is not None:
             if json.loads(ind).get("ruta") != ruta:
                 raise ValueError("TASK_ID_EN_USO")
-            existente = _leer(ctx, ruta, opcional=True)
-            if existente is not None:
-                return _vista(json.loads(existente), {"ya_existia": True})
+        # El estado pudo persistir mientras el indice fallo: nunca sobrescribirlo
+        # ni reutilizar task_id para un objetivo o una seleccion diferentes.
+        existente = _leer(ctx, ruta, opcional=True)
+        if existente is not None:
+            try:
+                anterior = json.loads(existente)
+            except (TypeError, ValueError):
+                raise ValueError("TAREA_ESTADO_CORRUPTO") from None
+            if not isinstance(anterior, dict) or anterior.get("ruta") != ruta or anterior.get("contrato") != c:
+                raise ValueError("TASK_ID_EN_USO")
+            if ind is None:
+                _guardar(ctx, indice_ruta, json.dumps({"ruta": ruta, "origen": c["origen"], "proyecto": c["proyecto"], "sesion": c["sesion"]}))
+            return _vista(anterior, {"ya_existia": True})
+        if ind is not None:  # indice existente pero estado perdido: no inventar una tarea nueva
+            raise ValueError("TAREA_ESTADO_FALTANTE")
         reg = {"version": 1, "task_id": c["task_id"], "origen": c["origen"], "proyecto": c["proyecto"], "sesion": c["sesion"], "ruta": ruta,
                "workflow": c["workflow"], "mensaje": _limpio(ctx, c["mensaje"], 20000), "contrato": c, "modo_agentico": c["modo_agentico"],
                "modelo_responde": c["modelo_responde"], "modelo_lector": c["modelo_lector"], "modelo_tool": c["modelo_tool"],
@@ -614,7 +632,13 @@ def _una(reg, ctx):
         return False
     idx = reg["paso_actual"]
     if idx >= len(reg["plan"]):
-        reg["estado"] = "DONE"
+        # El cursor no certifica que todas las etapas hayan terminado.
+        completo = idx == len(reg["plan"]) and verificado(reg)
+        reg["estado"] = "DONE" if completo else "GAP"
+        if not completo:
+            reg["error"] = {"codigo": "DONE_NO_VERIFICADO",
+                            "mensaje": "cursor final sin etapas y operaciones confirmadas",
+                            "paso": None, "fecha": _ahora()}
         _guardar_estado(ctx, reg)
         return False
     p = reg["plan"][idx]

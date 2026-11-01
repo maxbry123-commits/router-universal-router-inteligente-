@@ -55,11 +55,16 @@ async function bajoCerrojo(id, fn) {
   try { return await fn(); } finally { libre(); if (cerrojos.get(id) === cola) cerrojos.delete(id); }
 }
 
+const cancelada = () => falla('ABORTADO', 'peticion cancelada por el cliente');
 export async function retomarLocal(tareaId, modelo, mensajes, extra = {}) {
+  if (extra.opts?.signal?.aborted) throw cancelada();
   if (!idValido(tareaId)) throw falla('TAREA_ID_INVALIDO', 'tarea_id: letras, numeros, - y _ (1 a 64)');
   if (!esLocal(modelo) && !esExterno(modelo)) throw falla('MODELO_NO_SOPORTADO', 'solo modelos locales HF o groq/ nvidia/: ' + String(modelo).slice(0, 60));
   if (!Array.isArray(mensajes)) throw falla('MENSAJES_INVALIDOS', 'mensajes debe ser una lista');
-  return bajoCerrojo(tareaId, () => ejecutar(tareaId, modelo, mensajes, extra || {}));
+  return bajoCerrojo(tareaId, () => {
+    if (extra.opts?.signal?.aborted) throw cancelada();
+    return ejecutar(tareaId, modelo, mensajes, extra || {});
+  });
 }
 
 async function ejecutar(tareaId, modelo, mensajes, extra) {
@@ -85,7 +90,10 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
   const uso = { visto: false, p: 0, c: 0, t: 0 };  // usage de las llamadas de ESTA ejecucion (no se persiste)
   // todos los guardados en cola (un volcado incremental no pisa a uno posterior); un fallo de un volcado incremental no rompe la generacion
   let cola = Promise.resolve();
-  const guardar = () => { const p = cola.then(() => guardarCheckpoint(tareaId, st, ck)); cola = p.catch(() => {}); return p; };
+  const guardar = (exigirRemoto = false) => {
+    const p = cola.then(() => guardarCheckpoint(tareaId, st, exigirRemoto ? { ...ck, exigirRemoto: true } : ck));
+    cola = p.catch(() => {}); return p;
+  };
   const poner = (estado, fase = FASE[estado]) => { st.estado = estado; st.fase = fase; };
   const ultima = () => st.secciones[st.secciones.length - 1] || {};
   const salida = (o) => ({ salida: st.parcial, tool_calls: [], finish_reason: 'stop', via: ultima().via || null, usado: ultima().usado || null, servidor: ultima().servidor || null, ...(uso.visto ? { metricas: { prompt_tokens: uso.p, completion_tokens: uso.c, total_tokens: uso.t } } : {}), tarea_id: tareaId, estado: st.estado, fase: st.fase, secciones: st.secciones.length, reanudado, desde_checkpoint: false, ...o });
@@ -149,6 +157,20 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
   };
   const resolverLote = async () => {
     const lote = st.lote;
+    // Checkpoints creados antes de validar tools pueden contener argumentos corruptos.
+    // Inspeccionar TODO el lote antes del primer efecto para no ejecutar el elemento sano y fallar luego.
+    const invalidas = lote.herramientas.filter((t) => {
+      if (typeof t.nombre !== 'string' || !t.nombre.trim()) return true;
+      const a = t.argumentos === '' || t.argumentos == null ? '{}' : t.argumentos;
+      if (typeof a !== 'string') return true;
+      try { const v = JSON.parse(a); return !v || typeof v !== 'object' || Array.isArray(v); }
+      catch { return true; }
+    });
+    if (invalidas.length) {
+      poner('WAIT_TOOLS', 'RECONCILIAR'); st.ultimo_error = 'TOOL_CALL_INVALIDA';
+      await guardar();
+      throw falla('TOOL_CALL_INVALIDA', 'Checkpoint contiene llamadas de herramientas invalidas; bloquear efectos hasta reconciliar');
+    }
     const sinConfirmar = lote.herramientas.filter((t) => !yaHecha(t) && t.estado === 'iniciada');
     if (sinConfirmar.length && !extra.verificarHerramienta) { poner('WAIT_TOOLS', 'RECONCILIAR'); await guardar(); throw falla('VERIFICAR_HERRAMIENTAS_PENDIENTES', `herramientas iniciadas sin confirmar (${sinConfirmar.map((t) => t.id).join(', ')}): verificar si se hicieron antes de reintentar`, { ids: sinConfirmar.map((t) => t.id) }); }
     for (const t of lote.herramientas) {
@@ -158,7 +180,10 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
         const v = await extra.verificarHerramienta({ ...t });
         if (v && v.hecha) { await registrar(t, v.resultado); continue; }
       }
-      t.estado = 'iniciada'; st.fase = 'OPERACION_INICIADA'; await guardar();  // marca ANTES de ejecutar: si el proceso muere aqui, el reintento sabe que hay que verificar
+      t.estado = 'iniciada'; st.fase = 'OPERACION_INICIADA';
+      // Si hay Harness configurado, una escritura SOLO local no autoriza efectos.
+      // Guardar + releer remoto antes de invocar el ejecutor; nunca asumir exito por disco efimero.
+      await guardar(!!env.RIU_DEEPSEEK_HARNESS_URL);
       await registrar(t, await extra.ejecutarHerramienta({ ...t }));
     }
     st.conversacion.push(lote.assistant, ...lote.herramientas.map((t) => ({ role: 'tool', tool_call_id: t.id, content: JSON.stringify(st.herramientas[t.id].resultado) })));
@@ -179,6 +204,7 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
   // ---- bucle ----
   let vueltas = 0;
   for (;;) {
+    if (extra.opts?.signal?.aborted) throw cancelada();
     if (st.lote) await resolverLote();
     if (vueltas >= limite || (vueltas > 0 && extra.hasta && Date.now() > extra.hasta)) {  // fuera de tope/plazo: lo parcial; el siguiente llamado sigue desde el checkpoint
       poner('CONTINUAR'); await guardar();
@@ -217,6 +243,10 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
     if (transmite && !r.tool_calls?.length) sincronizar();  // lo que no llego por streaming (p. ej. modelo local HF) se entrega ahora
 
     const llamadas = Array.isArray(r.tool_calls) ? r.tool_calls : [];
+    if (Array.isArray(r.tools_invalidas) && r.tools_invalidas.length) {
+      poner('ERROR'); st.ultimo_error = 'TOOL_CALL_INVALIDA'; await guardar();
+      throw falla('TOOL_CALL_INVALIDA', 'Tool calls invalidas: checkpoint guardado sin ejecutar efectos');
+    }
     if (llamadas.length) {
       const tcs = unicas(llamadas);
       try { verificarPlan(tcs); } catch (e) { poner('ERROR'); st.ultimo_error = String(e.message).slice(0, 500); await guardar(); throw e; }

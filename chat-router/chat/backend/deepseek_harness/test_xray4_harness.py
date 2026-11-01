@@ -91,6 +91,61 @@ class TestRecibos(unittest.TestCase):
         self.assertTrue(h._respuesta_mcp_fallida({"result": {"isError": True}}))
         self.assertFalse(h._respuesta_mcp_fallida({"result": {"isError": False}}))
 
+    def test_chat_con_task_id_sin_efectos_no_depende_del_diario_hf(self):
+        def leer_diario(_):
+            raise AssertionError("No debe leerse el diario en una respuesta sin tools")
+        with patch.object(h, "llamar", lambda *a, **k: CAT), \
+             patch.object(h, "_router", lambda accion, datos: {"texto": "hola", "tool_calls": [], "finish_reason": "stop"}), \
+             patch.object(h, "_diario", leer_diario):
+            r = h.llm({"messages": [{"role": "user", "content": "hola"}],
+                       "modelo": "hf/qwen3-0.6b", "tarea_id": "conversacion-uno"})
+        self.assertEqual(r["texto"], "hola")
+
+    def test_tool_con_efectos_ante_diario_caido_no_se_ejecuta(self):
+        llamadas = []
+        salida = {"texto": "", "tool_calls": [
+            llamada("github_escribir", {"repo": "o/r", "ruta": "a", "contenido": "b"}, "c1")],
+            "finish_reason": "tool_calls"}
+        def fake_llamar(plugin, accion, datos, timeout=None):
+            llamadas.append(datos["method"])
+            return CAT if datos["method"] == "tools/list" else {"result": {"ok": True}}
+        with patch.object(h, "llamar", fake_llamar), \
+             patch.object(h, "_router", lambda accion, datos: salida), \
+             patch.object(h, "_diario", side_effect=RuntimeError("DIARIO_NO_DISPONIBLE")), \
+             patch.object(h, "PAUSA_S", 1e9):
+            with self.assertRaisesRegex(RuntimeError, "DIARIO_NO_DISPONIBLE"):
+                h.llm({"messages": [{"role": "user", "content": "escribe"}],
+                       "modelo": "x", "tarea_id": "conversacion-uno"})
+        self.assertEqual(llamadas, ["tools/list"])
+
+    def test_resultado_grande_de_tool_no_se_trunca_y_se_reutiliza(self):
+        import copy
+        estado, llamadas_mcp = {}, []
+        texto = "evidencia-verificada-" * 300
+        solicitud = llamada("github_escribir", {"repo": "o/r", "ruta": "a", "contenido": "b"}, "c1")
+        def mcp(plugin, accion, datos, timeout=None):
+            llamadas_mcp.append(datos["method"])
+            if datos["method"] == "tools/list":
+                return CAT
+            return {"result": {"ok": True, "contenido": texto}}
+        def router(accion, datos):
+            return {"texto": "", "tool_calls": [solicitud], "finish_reason": "tool_calls"}
+        def guardar(tarea, diario):
+            estado.clear()
+            estado.update(copy.deepcopy(diario))
+        with patch.object(h, "llamar", mcp), patch.object(h, "_router", router), \
+             patch.object(h, "_diario", lambda tarea: copy.deepcopy(estado)), \
+             patch.object(h, "_anotar", guardar), patch.object(h, "PAUSA_S", -1):
+            primera = h.llm({"messages": [{"role": "user", "content": "escribe"}],
+                             "modelo": "x", "tarea_id": "tarea-x"})
+            segundo = h.llm({"messages": [{"role": "user", "content": "escribe"}],
+                             "modelo": "x", "tarea_id": "tarea-x"})
+        self.assertEqual(llamadas_mcp, ["tools/list", "tools/call", "tools/list"])
+        self.assertEqual(next(iter(estado.values()))["resultado"]["result"]["contenido"], texto)
+        self.assertIn(texto, primera["mensajes"][-1]["content"])
+        self.assertIn(texto, segundo["mensajes"][-1]["content"])
+        self.assertIn("ya_ejecutada_en_esta_tarea", segundo["mensajes"][-1]["content"])
+
     def test_error_de_tool_efectiva_deja_diario_iniciada_y_para(self):
         diario, anotadas, llamadas = {}, [], []
         turnos = iter([{"texto": "", "tool_calls": [

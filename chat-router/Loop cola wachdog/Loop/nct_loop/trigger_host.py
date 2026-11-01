@@ -135,8 +135,9 @@ def build_ports(host: dict) -> HostPorts:
             raise ContractError("QUEUE_COMPLETION_FAILED")
         row = store.get(qid)
         task = next((t for t in row["tasks"] if t["id"] == tid), None)
-        if not task or not task.get("receipt_id"):
-            raise ContractError("QUEUE_RECEIPT_MISSING")
+        expected = "succeeded" if receipt.get("verification") == "PASS" else "failed"
+        if not task or task.get("status") != expected or not task.get("receipt_id"):
+            raise ContractError("QUEUE_COMPLETION_STATE_MISMATCH")
         return {"ok": True, "evidence_ref": "cit:" + qid + ":" + task["receipt_id"]}
 
     def roles_resolve(roles):
@@ -208,8 +209,15 @@ def build_ports(host: dict) -> HostPorts:
         if op not in ("read_text", "verify_exists", "verify_contains"):
             raise ContractError("TOOL_NOT_AVAILABLE")
         if op == "verify_exists":
-            ok = target.is_file()
-            return {"ok": ok, "evidence_ref": "fs:" + sha256(str(target).encode())}
+            if not target.is_file():
+                return {"ok": False, "evidence_ref": "fs:missing:" + sha256(str(target).encode())}
+            # X-Ray: file existence alone is not immutable evidence of its contents.
+            # Stream the hash without loading unbounded files into RAM.
+            digest = hashlib.sha256()
+            with target.open("rb") as f:
+                for chunk in iter(lambda: f.read(65536), b""):
+                    digest.update(chunk)
+            return {"ok": True, "evidence_ref": "fs:" + digest.hexdigest()}
         if not target.is_file() or target.stat().st_size > 1_000_000:
             raise ContractError("FILE_NOT_READABLE")
         raw = target.read_bytes()
