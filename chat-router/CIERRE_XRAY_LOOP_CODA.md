@@ -18,7 +18,7 @@ No crear otra raíz, otro router, GitHub Actions, LFS ni desplegar fuera del rep
 | Segmento | Alcance | Estado | Criterio para PASS real |
 |---|---|---|---|
 | 1 | Reconstruir diff e instrucciones y descartar GAPS obsoletos | EN PROGRESO | diff por SHA y archivos trazados |
-| 2 | Banco, autenticación, secretos y roles | PENDIENTE DE PRUEBAS | no secretos en logs/LS; 401/403; operador individual |
+| 2 | Banco, autenticación, secretos y roles | CÓDIGO CORREGIDO PARCIAL; PRUEBAS AÚN SIN EJECUTAR | no secretos en logs/LS; 401/403; operador individual |
 | 3 | Fichas y Router MVP, Groq/NVIDIA, SSE, contexto, latencia | CÓDIGO CORREGIDO PARCIAL | pruebas unitarias y llamada real por id |
 | 4 | Harness, permisos Tools ON/OFF, tools, MCP, checkpoint | CÓDIGO CORREGIDO PARCIAL | llamada de herramienta y reanudación con recibo |
 | 5 | Router SWE, SSE, cancelación, fallback y métricas | CÓDIGO CORREGIDO PARCIAL | pruebas de cancelación y SSE reales |
@@ -42,3 +42,9 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 - Ante un fallo después de emitir texto, preservar parcial/checkpoint y nunca duplicar una operación con efectos.
 - El usuario no autorizó modificar `maxbry123-commits/openclaw` ni `~/.openclaw/openclaw.json`.
 - Mantener este archivo como bitácora de segmentos; no declarar DONE total mientras queden bloqueos.
+
+## Segmento 2 — persistencia de secretos (parche)
+- `SWE CODE/web-bridge/src/server.js`: POST/DELETE de claves confirma solo después de escritura cifrada; una inyección autorizada por petición tampoco activa claves cuando falla el banco. Retorna 503 `BANCO_NO_GUARDADO`/`BANCO_NO_BORRADO` sin secretos.
+- `chat/frontend/swe-claves.js`: exige `local:true` para confirmar escritura; distingue banco local de respaldo externo `persistido:true`, evitando prometer persistencia tras reinicios del Space.
+- Pruebas ampliadas: `SWE CODE/web-bridge/test/seguridad.test.mjs` y `chat/frontend/test/swe-claves.test.mjs`. Aún no ejecutadas en entorno Node real.
+- Pendiente: verificar servidor real, caja de claves HF persistente, publicación cifrada en rama exclusiva y permisos del operador. No hay nuevo router ni terceros.

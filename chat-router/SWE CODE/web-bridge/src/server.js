@@ -189,12 +189,17 @@ app.get('/v1/claves', (_req, res) => res.json({ ok: true, ...conteo() }));
 app.post('/v1/claves', async (req, res) => {
   const nuevas = validarClaves(req.body);
   if (!nuevas) return res.status(400).json({ error: { code: 'CLAVE_INVALIDA', message: MSG_CLAVE } });
+  // El banco cifrado es fuente de verdad: nunca confirmar ni aplicar una escritura que no se pudo guardar.
+  const local = await guardarEnBanco(nuevas).catch(() => false);
+  if (!local) return res.status(503).json({ ok: false, error: { code: 'BANCO_NO_GUARDADO', message: 'No se guardaron las claves en el banco cifrado' } });
   setClaves(nuevas);
-  res.json({ ok: true, ...conteo(), ...(await persistir(await guardarEnBanco(nuevas).catch(() => false))) });
+  res.json({ ok: true, ...conteo(), ...(await persistir(true)) });
 });
 app.delete('/v1/claves', async (_req, res) => {
+  const local = await borrarDelBanco().catch(() => false);
+  if (!local) return res.status(503).json({ ok: false, error: { code: 'BANCO_NO_BORRADO', message: 'No se pudo borrar el banco cifrado' } });
   limpiarClaves();
-  res.json({ ok: true, ...conteo(), ...(await persistir(await borrarDelBanco().catch(() => false))) });  // se publica el banco ya vacio
+  res.json({ ok: true, ...conteo(), ...(await persistir(true)) });  // se publica el banco ya vacio
 });
 
 const idsModelos = () => {
@@ -276,7 +281,13 @@ app.post('/v1/chat/completions', async (req, res) => {
     const messages = conFormato(mensajesIn);  // formato de salida del chat Yaiwes tambien para OpenClaw
     // credenciales vienen de OpenClaw por llamada (vía plugins->harness); env solo respaldo
     if (cuentas) setCuentas(cuentas, claveReq);
-    if (clavesValidas) { setClaves(clavesValidas); guardarEnBanco(clavesValidas).then((ok) => ok && publicarEnGithub()).catch(() => {}); }  // solo autenticadas (arriba)  // claves de Groq/NVIDIA por llamada: en memoria y en el banco propio cifrado (sobreviven reinicios)
+    if (clavesValidas) {
+      // Aun en el envio autenticado, NO aplicar claves si la persistencia cifrada fallo.
+      const local = await guardarEnBanco(clavesValidas).catch(() => false);
+      if (!local) return res.status(503).json({ error: { code: 'BANCO_NO_GUARDADO', message: 'No se guardaron las claves en el banco cifrado' } });
+      setClaves(clavesValidas);
+      publicarEnGithub().catch(() => {});  // copia cifrada opcional; el resultado permanente se consulta en el panel
+    }
     const iU = messages.map(m => m.role).lastIndexOf('user');
     const ultimo = iU >= 0 ? messages[iU].content : '';
     const anterior = messages.filter((m, i) => i !== iU).map(m => `${m.role}: ${m.content}`).join('\n');

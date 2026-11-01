@@ -41,9 +41,9 @@ function entorno({ respuestas = [], clave = "clave-chat", ls } = {}) {
 const sinClaves = (m) => assert.ok(![...m.values()].some((v) => /MARCADOR/.test(v)), "ningun valor de clave queda en localStorage");
 
 test("guardar: POST a /web/v1/claves con X-API-Key, estado con conteos y sin valores; nada en localStorage", async () => {
-  const { llamadas, m } = entorno({ respuestas: [{ status: 200, json: { ok: true, groq: 2, nvidia: 1 } }] });
+  const { llamadas, m } = entorno({ respuestas: [{ status: 200, json: { ok: true, groq: 2, nvidia: 1, local: true, persistido: false } }] });
   const t = await guardar({ groq: "  MARCADOR-PRUEBA-A  ", nvidia: "MARCADOR-PRUEBA-B", otro: "x" });
-  assert.equal(t, "Groq: 2 guardadas · NVIDIA: 1 guardada");
+  assert.equal(t, "Groq: 2 guardadas · NVIDIA: 1 guardada · solo banco local; respaldo externo no confirmado");
   assert.ok(!t.includes("MARCADOR"));
   assert.equal(llamadas.length, 1);
   assert.equal(llamadas[0].url, BASE + "/web/v1/claves"); assert.equal(llamadas[0].metodo, "POST");
@@ -66,8 +66,8 @@ test("estado: GET con X-API-Key y conteos", async () => {
 });
 
 test("borrar: DELETE al servidor", async () => {
-  const { llamadas } = entorno({ respuestas: [{ status: 200, json: { ok: true, groq: 0, nvidia: 0 } }] });
-  assert.equal(await borrar(), "Claves borradas del servidor");
+  const { llamadas } = entorno({ respuestas: [{ status: 200, json: { ok: true, groq: 0, nvidia: 0, local: true, persistido: true } }] });
+  assert.equal(await borrar(), "Claves borradas del servidor y del respaldo cifrado");
   assert.equal(llamadas[0].metodo, "DELETE"); assert.equal(llamadas[0].headers["X-API-Key"], "clave-chat");
 });
 
@@ -93,4 +93,21 @@ test("R1 con el servidor caido: estado = «Sin verificar…» (no se inventa), b
   assert.match(await estado(), /^Sin verificar: el servidor no respondió/);
   entorno({ respuestas: [{ red: true }] });
   assert.match(await borrar(), /No se borró nada: el servidor no respondió/);
+});
+
+test("X-Ray 2: POST 200 sin local:true nunca confirma guardado ni conserva clave en navegador", async () => {
+  const { m } = entorno({ respuestas: [{ status: 200, json: { ok: true, groq: 1, nvidia: 0, local: false } }] });
+  const x = await C.guardarConEstado({ groq: "MARCADOR-PRUEBA-C" });
+  assert.equal(x.ok, false); assert.match(x.texto, /No se guardó nada/i); sinClaves(m);
+});
+
+test("X-Ray 2: banco guardado sin publicar se informa sin prometer permanencia externa", async () => {
+  entorno({ respuestas: [{ status: 200, json: { ok: true, groq: 1, nvidia: 0, local: true, persistido: false } }] });
+  const x = await C.guardarConEstado({ groq: "MARCADOR-PRUEBA-C" });
+  assert.equal(x.ok, true); assert.match(x.texto, /respaldo externo no confirmado/);
+});
+
+test("X-Ray 2: DELETE 503 con BANCO_NO_BORRADO muestra error especifico", async () => {
+  entorno({ respuestas: [{ status: 503, json: { error: { code: "BANCO_NO_BORRADO" } } }] });
+  assert.match(await borrar(), /No se borraron las claves.*banco cifrado/);
 });
