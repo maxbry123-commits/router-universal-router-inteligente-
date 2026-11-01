@@ -283,7 +283,7 @@ async def swe_operacion(operacion: str, cuerpo: dict, x_operator_token: str | No
     if isinstance(salida, dict) and salida.get("status_code") == 403: raise HTTPException(status_code=403, detail="Herramienta bloqueada por el Router")
     if codigo: raise HTTPException(status_code=SWE_HTTP.get(codigo, 400), detail=codigo if SWE_HTTP.get(codigo, 400) < 500 else "SWE_HARNESS_ERROR: " + codigo)
     raise HTTPException(status_code=502, detail="SWE_HARNESS_ERROR")
-# --- G14: panel-chat.js lee {providers:[{id,label}]} y {models:[{model_id,label}]}; datos solo de mvp/modelos.json ---
+# --- Catalogos de proveedores conectados al banco cifrado compartido y a las APIs oficiales ---
 @app.get("/chat/providers", dependencies=[Depends(verificar)])
 def chat_providers():  # Groq y NVIDIA solo si hay clave: el selector no ofrece lo que no puede responder
     return {"providers": [{"id": "qwen", "label": modelos.cargar()["proveedor"]}] + [{"id": p, "label": d["label"]} for p, d in externos.PROVEEDORES.items() if externos.clave(p, app.state.banco)]}

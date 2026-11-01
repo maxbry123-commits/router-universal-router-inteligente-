@@ -131,7 +131,7 @@ def es_swe(modelo):
     return m in SWE_IDS or m.startswith(SWE_PREFIJOS)
 
 
-EXTERNO_PREFIJOS = ("groq/", "nvidia/")
+EXTERNO_PREFIJOS = ("groq/", "nvidia/", "deepseek/", "minimax/", "openai/")
 
 
 def es_externo(modelo):
@@ -238,10 +238,8 @@ def _bridge_sin_router(mensajes, modelo):
     """Router MVP caido: un modelo externo pedido se intenta primero por el bridge con ESE id; solo si eso falla se degrada a local, y se dice (aviso_modelo)."""
     pedido = str(modelo or "")
     if es_externo(pedido):
-        try:
-            return _bridge_chat(mensajes, pedido)
-        except RuntimeError:
-            pass
+        # Ningun modelo externo solicitado por nombre se reemplaza silenciosamente por HF local.
+        return _bridge_chat(mensajes, pedido)
     local = os.environ.get("RIU_SWE_LOCAL_MODELO", "lfm2.5-350m")
     salida = _bridge_chat(mensajes, local)
     salida["aviso_modelo"] = "Se pidio %s y no respondio (Router MVP caido); respondio el modelo local %s." % (pedido or "(sin modelo)", salida.get("modelo_respuesta") or local)

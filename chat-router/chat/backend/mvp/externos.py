@@ -20,6 +20,9 @@ except ImportError:  # pragma: no cover - depende del entorno
 PROVEEDORES = {
     "groq": {"label": "Groq", "base": "https://api.groq.com/openai/v1", "var": "GROQ_API_KEY"},
     "nvidia": {"label": "NVIDIA", "base": "https://integrate.api.nvidia.com/v1", "var": "NVIDIA_API_KEY"},
+    "deepseek": {"label": "DeepSeek", "base": "https://api.deepseek.com", "var": "DEEPSEEK_API_KEY"},
+    "minimax": {"label": "MiniMax", "base": "https://api.minimax.io/v1", "var": "MINIMAX_API_KEY"},
+    "openai": {"label": "OpenAI", "base": "https://api.openai.com/v1", "var": "OPENAI_API_KEY"},
 }
 NO_CHAT = ("whisper", "tts", "guard", "embed", "rerank", "vision-", "distil-whisper", "playai", "orpheus", "parse", "clip", "nv-embed", "reward")
 # Modelos elegidos por el Director para el chat YAIWES. El id completo lleva el proveedor delante («groq/…», «nvidia/…»); `env` es solo el NOMBRE de la variable con la clave.
@@ -30,6 +33,12 @@ PROVEEDORES_NUEVOS = {
     "nvidia/meta/muse-glimmer-30b": _P("Muse Glimmer 30B", "nvidia", temperature=1.0, top_p=0.95, max_tokens=4096),
     "nvidia/nvidia/nemotron-3-ultra-550b-a55b": _P("Nemotron 3 Ultra 550B", "nvidia", temperature=1.0, top_p=0.95, max_tokens=4096),
     "nvidia/z-ai/glm-5.3": _P("GLM 5.3", "nvidia", temperature=0.5, top_p=1.0, max_tokens=4096),
+    "deepseek/deepseek-v4-pro": _P("DeepSeek V4 Pro", "deepseek"),
+    "deepseek/deepseek-flash": _P("DeepSeek Flash", "deepseek"),
+    "minimax/MiniMax-M3": _P("MiniMax M3", "minimax"),
+    "minimax/MiniMax-M2.7": _P("MiniMax M2.7", "minimax"),
+    "openai/gpt-5.6": _P("OpenAI GPT-5.6", "openai"),
+    "openai/gpt-5.5": _P("OpenAI GPT-5.5", "openai"),
 }
 PARAMETROS_MODELO = {mid: {k: v for k, v in cfg.items() if k in ("temperature", "top_p", "max_tokens", "reasoning_effort", "reasoning_format")} for mid, cfg in PROVEEDORES_NUEVOS.items()}
 _PARAMS = ("temperature", "top_p", "max_tokens", "reasoning_effort", "reasoning_format")
@@ -105,7 +114,7 @@ def modelos(prov, banco=None):
         return CACHE[prov][1]
     pool, datos, ultimo = claves(prov, banco), None, None
     if not pool:
-        raise RuntimeError(PROVEEDORES[prov]["label"] + " sin clave (GROQ_API_KEY / NVIDIA_API_KEY)")
+        raise RuntimeError(PROVEEDORES[prov]["label"] + " sin clave (" + PROVEEDORES[prov]["var"] + ")")
     for k in pool:  # la primera clave que el proveedor acepte
         try:
             datos = _get(PROVEEDORES[prov]["base"] + "/models", k); break
