@@ -111,3 +111,7 @@ No activar GitHub Actions ni cambiar el despliegue para ejecutar estas pruebas.
 ### X-Ray IV — precisión de estados
 - El selector ahora diferencia **verificado disponible** frente a **sin verificar**; no declara «publicado» un modelo cuyo catálogo no se pudo consultar. La prueba de paralelo falla si NVIDIA debe esperar el timeout de Groq.
 - Verificación local aislada con funciones reales de `enviar-mensaje.js` y `fichas-externas.js` evaluadas sobre dobles: 3/3 rutas de chat (Groq, NVIDIA, HF local) enviaron ID exacto al puente, 2/2 estados de banco correctos. **No es un E2E con proveedores**.
+
+### X-Ray V — contrato cruzado entre dos chats
+- Prueba `SWE CODE/web-bridge/test/xray_modelos_ambos_chats.test.mjs`: OpenClaw y YAIWES comparten los 5 identificadores Groq/NVIDIA y los 4 locales HF; la ruta YAIWES llega al mismo bridge OpenAI-compatible con el modelo exacto.
+- La verificación dinámica aislada anterior mostró 3/3 rutas UI correctas (Groq, NVIDIA, HF local) y 2/2 casos de banco simulado. **No** equivale a respuestas API en producción ni prueba que el Gateway haya instalado el provider.
