@@ -1,5 +1,6 @@
 // ventana-loop.js — LOOP del chat: objetivo, plan y tareas. Se guardan en yaiwes.md y en el proyecto LOOP.
 import { el, btn, ventana, vivo, SIN_BACKEND } from "./ventanas-control.js";
+import {loopNewUIEnabled,renderLoopIFrame,mountLoopPowerButton} from "./loop-iframe-host.js";
 import { leer, escribir } from "./almacen.js";
 import { crearProyecto, listaProyectos } from "./objetivos-ancla.js";
 
@@ -411,8 +412,15 @@ function pintarLoop(cuerpo) {
   pintar();
 }
 
-const montar = () => { ventana("loop", "LOOP", pintarLoop); marcarBoton(); };
+const montar = () => {
+  ventana("loop", "LOOP", (cuerpo) => {
+    if(loopNewUIEnabled()){parar();renderLoopIFrame(cuerpo);}
+    else pintarLoop(cuerpo);
+  });
+  if(loopNewUIEnabled()){parar();mountLoopPowerButton();}
+  else marcarBoton();
+};
 new MutationObserver(montar).observe(document.body, { childList: true, subtree: true });
 montar();
-if (estado.on) latido();
+if (estado.on && !loopNewUIEnabled()) latido();
 spec().catch(() => {});
