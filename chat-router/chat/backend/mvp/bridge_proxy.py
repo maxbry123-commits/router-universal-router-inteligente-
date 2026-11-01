@@ -41,7 +41,7 @@ def montar(app):
         if "text/event-stream" in upstream.headers.get("content-type", "").lower():
             async def chunks():
                 try:
-                    async for item in upstream.aiter_raw():
+                    async for item in upstream.aiter_bytes():  # acepta SSE tanto streaming real como respuesta prebufferizada
                         if item:
                             yield item
                 finally:
