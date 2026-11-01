@@ -103,7 +103,7 @@ function controles() {
   return c;
 }
 function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al final y deshabilitado, con su estado real; la eleccion actual se queda visible aunque no este disponible
-  const op = (x, ok) => { const o = el("option", null, ok ? x.etq : `${x.etq} — ${ETIQUETA_ESTADO[x.estado]}`); o.value = x.id; o.selected = x.id === actual; o.disabled = !ok; if (!ok) o.title = x.motivo; return o; };
+  const op = (x, ok) => { const o = el("option", null, ok ? x.etq : `${x.etq} — ${ETIQUETA_ESTADO[x.estado]}`); o.value = x.id; o.selected = x.id === actual; o.disabled = !ok && !x.elegible; if (!ok) o.title = x.motivo; return o; };  // SIN VERIFICAR + intentable: se puede elegir con aviso
   s.replaceChildren(...items.ok.map((x) => op(x, true)));
   const grupos = [[items.sinVerificar, "Sin verificar"], [items.noInstalado, "No instalados"], [items.incompatible, "Incompatibles con este modelo"], [items.otros, "No configurados / no disponibles"]];
   grupos.forEach(([l, t]) => { if (!l.length) return; const og = el("optgroup"); og.label = t; og.append(...l.map((x) => op(x, false))); s.append(og); });
@@ -114,7 +114,7 @@ function agrupar(k, sel, w) {
   if (k === "modelo_responde" || k === "modelo_tool") {
     const resp = k === "modelo_responde", ops = opcionesModeloVentana(resp ? w : "swen-code-free", CAP, resp ? mapaProveedor(w) : {}, { web: resp && w === "swen-code-free" });
     // un modelo SIN VERIFICAR no bloquea el chat normal: se puede elegir, con su rotulo; lo no disponible va al final, deshabilitado y con su estado real
-    const g = { ok: ops.filter((o) => o.ok).map((o) => ({ id: o.id, etq: o.estado === "DISPONIBLE" ? o.nombre : `${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}`, estado: o.estado, motivo: o.motivo })), noInstalado: [], incompatible: [], sinVerificar: [], otros: ops.filter((o) => !o.ok).map((o) => ({ id: o.id, etq: o.nombre, estado: o.estado, motivo: o.motivo })) };
+    const g = { ok: ops.filter((o) => o.ok).map((o) => ({ id: o.id, etq: o.estado === "DISPONIBLE" ? o.nombre : `${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}`, estado: o.estado, motivo: o.motivo, elegible: o.elegible })), noInstalado: [], incompatible: [], sinVerificar: [], otros: ops.filter((o) => !o.ok).map((o) => ({ id: o.id, etq: o.nombre, estado: o.estado, motivo: o.motivo, elegible: o.elegible })) };
     return { g, ops };
   }
   const modelo = k === "agente_responde" ? sel.modelo_responde : k === "agente_tool" ? (sel.workflow === "liquid_mirror" ? "hf/lfm2.5-350m" : sel.modelo_tool) : undefined;

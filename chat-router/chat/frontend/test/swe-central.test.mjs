@@ -185,3 +185,22 @@ test("modelo_responde acepta los modelos web de SWEN solo para chat directo; con
   const v = S.validarSeleccion({ ...S.leerSeleccion(), modo_agentico: true }, CAP_OK);
   assert.equal(v.ok, false); assert.ok(v.problemas.some((p) => /MODELO QUE RESPONDE.*NO COMPATIBLE/.test(p)), v.problemas.join("|"));
 });
+
+// ---------- A5: estado/causa/intentable/nombre del catalogo que reporta el Harness (compatibles hacia atras) ----------
+test("A5 el `estado` explicito del Harness manda; `causa` es el texto; SIN VERIFICAR + intentable se puede elegir con aviso y NO es NO INSTALADO", () => {
+  const cap = S.normalizarCapacidades({ harness: "ok", agentes: {
+    codex: { estado: "SIN_VERIFICAR", veredicto: "SIN VERIFICAR", verificado: false, intentable: true, causa: "la sonda no respondio a tiempo", disponible: false },
+    opencode: { estado: "NO INSTALADO", veredicto: "NO DISPONIBLE", causa: "CLI opencode ausente del PATH", intentable: false, disponible: false },
+    openhands: { estado: "NO_COMPATIBLE", causa: "no admite este modelo", disponible: false },
+    "swe-agent": { estado: "DISPONIBLE", veredicto: "DISPONIBLE", verificado: true, disponible: true } },
+  modelos: { "hf/qwen3-0.6b": { estado: "DISPONIBLE", nombre: "Qwen3 0.6B (HF)", proveedor: "hf", nota: "x" }, "nvidia/z-ai/glm-5.3": { estado: "NO DISPONIBLE EN PROVEEDOR", causa: "glm-5.3 no figura en GET /models", nombre: "GLM 5.3" } } });
+  const c = S.estadoOpcion(cap, "agente", "codex"); assert.equal(c.estado, "SIN_VERIFICAR"); assert.equal(c.ok, false); assert.equal(c.elegible, true); assert.match(c.motivo, /sonda/);
+  const o = S.estadoOpcion(cap, "agente", "opencode"); assert.equal(o.estado, "NO_INSTALADO"); assert.equal(o.elegible, false); assert.match(o.motivo, /ausente del PATH/);
+  assert.equal(S.estadoOpcion(cap, "agente", "openhands").estado, "NO_COMPATIBLE"); assert.equal(S.estadoOpcion(cap, "agente", "swe-agent").ok, true);
+  assert.equal(S.estadoOpcion(cap, "modelo", "nvidia/z-ai/glm-5.3").estado, "NO_DISPONIBLE_PROVEEDOR");
+  const g = S.agruparOpciones(cap, "agente", S.AGENTES_SWE); assert.ok(g.sinVerificar.some((x) => x.id === "codex" && x.elegible)); assert.deepEqual(g.noInstalado.map((x) => x.id), ["opencode"]);
+  assert.equal(S.opcionesModeloVentana("swe-code", cap).find((x) => x.id === "hf/qwen3-0.6b").nombre, "Qwen3 0.6B (HF)", "el nombre sale del catalogo del Harness");
+  // con modo agentico ON un agente SIN VERIFICAR sigue sin ejecutarse (51): se dice SIN VERIFICAR, no NO INSTALADO
+  const v = S.validarSeleccion({ ...S.SEL_DEFECTO, modo_agentico: true, agente_tool: "codex", modelo_tool: "hf/qwen2.5-coder-1.5b" }, cap);
+  assert.ok(v.problemas.some((p) => /AGENTE QUE EJECUTA Codex: SIN VERIFICAR/.test(p)) && !v.problemas.some((p) => /NO INSTALADO/.test(p)), v.problemas.join("|"));
+});

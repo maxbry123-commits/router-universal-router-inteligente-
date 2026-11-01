@@ -1037,3 +1037,76 @@ def test_liquid2_cortado_guarda_el_parcial_y_no_activa_al_agente(mundo):
     srv_length(mundo, {"S2": [("analisis", "stop")], "S3": [("plan completo", "stop")]})
     r = wf.swe_reanudar({"task_id": "openclaw-001"}, c)  # reintenta SOLO Liquid 2 con el handoff ya guardado
     assert r["paso_actual"] == 3 and r["parcial"] is None and [s[0] for s in mundo.servidores][-1] == "S3"
+
+
+# ---------- preflight segun `estado` de disponibilidad (A5): bloquea lo que de verdad falta, deja intentar lo SIN VERIFICAR ----------
+@pytest.mark.parametrize("estado", ["NO INSTALADO", "NO CONFIGURADO", "NO COMPATIBLE", "NO DISPONIBLE EN PROVEEDOR"])
+def test_preflight_bloquea_los_estados_que_de_verdad_faltan(mundo, estado):
+    mundo.caps = {a: {"disponible": True, "estado": "DISPONIBLE", "motivo": ""} for a in ("codex", "opencode", "swe-agent", "openhands")}
+    mundo.caps["opencode"] = {"disponible": False, "estado": estado, "motivo": "causa concreta"}
+    r = wf.swe_iniciar(contrato(), mundo.ctx())
+    assert r["estado"] == "NO_DISPONIBLE" and "opencode" in r["error"]["mensaje"] and mundo.agentes == []
+
+
+def test_preflight_deja_intentar_un_agente_sin_verificar_y_el_resultado_es_el_real(mundo):
+    mundo.caps = {a: {"disponible": True, "estado": "DISPONIBLE", "motivo": ""} for a in ("codex", "opencode", "swe-agent", "openhands")}
+    mundo.caps["codex"] = {"disponible": False, "estado": "SIN VERIFICAR", "motivo": "no se pudo comprobar", "intentable": False}
+    c = mundo.ctx()
+    r = wf.swe_iniciar(contrato(), c)
+    assert r["estado"] == "PENDIENTE" and r["error"] is None  # no se presenta como NO INSTALADO
+    no = {"ok": False, "agente": "codex", "codigo": "AGENTE_NO_INSTALADO", "error": "falta codex", "efectos_posibles": False}
+    mundo.respuesta_agente = lambda a, n: AgenteError("EJECUCION_AGENTE_FALLIDA", no)
+    r = aprobar_y_avanzar(mundo, c)  # se intento de verdad y el adaptador dijo la verdad
+    assert r["estado"] == "GAP" and r["error"]["codigo"] == "AGENTE_NO_INSTALADO" and len(mundo.agentes) == 1
+
+
+# ---------- candado ENTRE PROCESOS reales (almacen compartido en disco; no solo threads) ----------
+_PROCESO = r'''
+import json, os, re, sys, time
+from agentes.adaptadores import workflows as wf
+almacen, rol, task = sys.argv[1], sys.argv[2], sys.argv[3]
+def ruta(n): return os.path.join(almacen, n.replace("/", "__"))
+def guardar(a):
+    open(ruta(a["nombre"]), "w").write(a["valor"]); return {"nombre": a["nombre"], "destino": "hf"}
+def leer(a):
+    if not os.path.exists(ruta(a["nombre"])): raise RuntimeError("Router HTTP 404: no existe")
+    return {"valor": open(ruta(a["nombre"])).read()}
+def agente(ag, t, modelo, objetivo, contexto, permisos, cp):
+    open(os.path.join(almacen, "EJECUTADO-%s-%d" % (rol, os.getpid())), "w").write(ag)
+    time.sleep(float(os.environ.get("DUERME", "0")))
+    return {"ok": True, "agente": ag, "task_id": t, "resultado": "hecho", "herramientas": [], "evidencias": [], "recibo": "%s:%s:r-%s" % (ag, t, rol), "exit_code": 0, "modelo_usado": modelo}
+c = wf.Contexto(guardar=guardar, leer=leer, llm=None, router=None, con_efectos=lambda *a: False, diario=lambda t: {}, anotar=lambda *a: None, llave=lambda n, a: n,
+                secreto=re.compile(r"(?!x)x"), ejecutar_agente=agente, operadores=lambda: {"ana"}, disponibilidad=lambda: {})
+try:
+    r = wf.swe_avanzar({"task_id": task}, c)
+    print(json.dumps({"ok": True, "estado": r["estado"], "paso_actual": r["paso_actual"]}))
+except ValueError as e:
+    print(json.dumps({"ok": False, "error": str(e)}))
+'''
+
+
+def test_dos_procesos_reales_no_ejecutan_la_misma_tarea_a_la_vez(tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    almacen = tmp_path / "almacen"; almacen.mkdir()
+    (tmp_path / "ws" / "yaiwes").mkdir(parents=True)
+    monkeypatch.setenv("RIU_SWE_WORKSPACE_RAIZ", str(tmp_path / "ws"))
+    m = Mundo(); c = m.ctx()
+    wf.swe_iniciar(contrato(), c)
+    op = wf.swe_avanzar({"task_id": "yaiwes-001"}, c)["pendiente_aprobacion"]["op_id"]
+    wf.swe_aprobar({"task_id": "yaiwes-001", "op_id": op, "operador": "ana"}, c)
+    for nombre, valor in m.almacen.items():  # el mismo estado, ahora en el almacen compartido en disco
+        (almacen / nombre.replace("/", "__")).write_text(valor)
+    import os
+    env = {**os.environ, "RIU_SWE_WORKSPACE_RAIZ": str(tmp_path / "ws"), "PYTHONPATH": os.pathsep.join(sys.path)}
+    a = subprocess.Popen([sys.executable, "-c", _PROCESO, str(almacen), "A", "yaiwes-001"], env={**env, "DUERME": "6"}, stdout=subprocess.PIPE, text=True)
+    t0 = time.time()
+    while not list(almacen.glob("EJECUTADO-A-*")) and time.time() - t0 < 30:
+        time.sleep(0.1)
+    assert list(almacen.glob("EJECUTADO-A-*")), "el proceso A debia estar ejecutando el agente"
+    b = subprocess.run([sys.executable, "-c", _PROCESO, str(almacen), "B", "yaiwes-001"], env=env, capture_output=True, text=True, timeout=60)
+    sal_b = json.loads(b.stdout.strip().splitlines()[-1])
+    sal_a = json.loads(a.communicate(timeout=60)[0].strip().splitlines()[-1])
+    assert sal_b == {"ok": False, "error": "TAREA_BLOQUEADA"} and not list(almacen.glob("EJECUTADO-B-*"))  # B no ejecuto nada
+    assert sal_a["ok"] is True and len(list(almacen.glob("EJECUTADO-*"))) == 1
+    assert json.loads((almacen / "swe__locks__yaiwes-001.json").read_text())["expira"] == 0  # A libero el candado

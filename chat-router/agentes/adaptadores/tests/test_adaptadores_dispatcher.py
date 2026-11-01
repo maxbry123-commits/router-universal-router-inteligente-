@@ -1,4 +1,5 @@
 """Dispatcher: solo adaptadores autorizados; exige dict, ok True y recibo."""
+import re
 import sys
 import types
 import pytest
@@ -64,3 +65,28 @@ def test_excepcion_del_adaptador_se_trata_como_fallo_con_efectos_posibles(monkey
     with pytest.raises(dispatcher.AgenteError) as e:
         dispatcher.ejecutar_agente("codex", **ARGS)
     assert e.value.resultado["efectos_posibles"] is True and e.value.resultado["codigo"] == "ADAPTADOR_EXCEPCION"
+
+
+# ---------------- A2 73-76: los adaptadores viven solo en agentes/adaptadores y el dispatcher es el unico punto de seleccion ----------------
+def test_adaptadores_solo_en_agentes_adaptadores_y_sin_copias_en_yaiwes_ni_swe_code():
+    import os
+    raiz = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))  # chat-router
+    from agentes.adaptadores.dispatcher import ADAPTADORES
+    esperados = {m + ".py" for m in ADAPTADORES.values()}
+    for ambito in ("chat/backend", "SWE CODE", "SWE CODE free", "chat/frontend"):
+        for dirpath, dirs, files in os.walk(os.path.join(raiz, ambito)):
+            dirs[:] = [d for d in dirs if d not in ("node_modules", "__pycache__", ".git")]
+            copias = esperados & set(files)
+            assert not copias, "implementacion duplicada de adaptador en %s: %s" % (dirpath, copias)
+
+
+def test_el_harness_y_los_workflows_eligen_adaptador_solo_por_el_dispatcher():
+    import inspect
+    import os
+    from agentes.adaptadores import workflows
+    assert "import_module" not in inspect.getsource(workflows) and not re.search(r"from \. import .*\b(codex|opencode|openhands|swe_agent|claude_code)\b", inspect.getsource(workflows))
+    ctx = workflows.Contexto(guardar=None, leer=None, llm=None, router=None, con_efectos=None, diario=None, anotar=None, llave=None, secreto=None)
+    assert ctx.ejecutar_agente is dispatcher.ejecutar_agente
+    harness = os.path.join(os.path.dirname(__file__), "..", "..", "..", "chat", "backend", "deepseek_harness", "server.py")
+    fuente = open(harness, encoding="utf-8").read()
+    assert "from agentes.adaptadores.dispatcher import ejecutar_agente" in fuente and not re.search(r"adaptadores\.(codex|opencode|openhands|swe_agent|claude_code|openclaw)\b", fuente)

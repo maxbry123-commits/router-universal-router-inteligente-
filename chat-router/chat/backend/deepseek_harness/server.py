@@ -210,6 +210,23 @@ def computar(args):
 HERRAMIENTAS = {"guardar": guardar, "leer": leer, "computar": computar}
 
 
+METRICAS_ESCALARES = ("stream", "ttft_s", "ttft_origen", "duracion_s", "tokens", "tokens_estimados", "origen_tokens", "tokens_por_s", "tools_invalidas", "lineas_invalidas")
+METRICAS_OBJETO = ("parametros", "contexto_compactado")  # el recorte de contexto y los parametros ignorados NO son silenciosos: viajan con la respuesta
+
+
+def _metricas(salida):
+    """Metricas del Router/proveedor reenviadas SOLO con claves conocidas y valores simples (sin secretos ni campos arbitrarios). Sin metricas no se inventan."""
+    m = salida.get("metricas") if isinstance(salida, dict) else None
+    if not isinstance(m, dict):
+        return {}
+    out = {k: m[k] for k in METRICAS_ESCALARES if k in m and (m[k] is None or isinstance(m[k], (bool, int, float, str)))}
+    for k in METRICAS_OBJETO:
+        v = m.get(k)
+        if isinstance(v, dict) and len(json.dumps(v, default=str)) <= 2000:
+            out[k] = json.loads(_SECRETO.sub("[REDACTADO]", json.dumps(v, default=str)))
+    return {"metricas": {k: (_SECRETO.sub("[REDACTADO]", v) if isinstance(v, str) else v) for k, v in out.items()}} if out else {}
+
+
 def llm(cuerpo):
     mensajes = cuerpo.get("messages", cuerpo.get("mensajes"))
     if not isinstance(mensajes, list) or not mensajes:
@@ -270,7 +287,7 @@ def llm(cuerpo):
             continue
         if not llamadas or not permitidas:
             return {"texto": acumulado + salida["texto"], "tool_calls": llamadas, "finish_reason": salida.get("finish_reason"), "herramientas_usadas": usadas,
-                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta"), **aviso}
+                    "modelo_solicitado": cuerpo.get("modelo"), "modelo_respuesta": salida.get("modelo_respuesta"), **aviso, **_metricas(salida)}
         mensajes.append(salida.get("mensaje_asistente") or {"role": "assistant", "content": salida["texto"] or None, "tool_calls": llamadas})
         for llamada in llamadas:
             funcion = llamada.get("function") or {}

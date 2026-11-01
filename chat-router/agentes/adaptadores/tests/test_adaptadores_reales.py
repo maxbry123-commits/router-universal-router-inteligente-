@@ -211,3 +211,92 @@ def test_real_swe_agent_ejecuta_en_contenedor(ws, monkeypatch):
         assert r["ok"] is True and r["agente"] == "swe-agent" and r["recibo"].startswith("swe-agent:")
     finally:
         s.shutdown(); s.server_close()
+
+
+# ---------------- 203/204/87/88/89: cadena SWE CODE de cuatro pasos con los agentes REALES por el dispatcher ----------------
+from agentes.adaptadores import dispatcher, workflows as wf  # noqa: E402
+from test_adaptadores_workflows import Mundo, aprobar_y_avanzar, contrato, estado_guardado, lm  # noqa: E402,F401
+
+
+@pytest.fixture
+def entorno_cadena(tmp_path, monkeypatch):
+    (tmp_path / "ws" / "yaiwes").mkdir(parents=True)
+    monkeypatch.setenv("RIU_SWE_WORKSPACE_RAIZ", str(tmp_path / "ws"))
+    monkeypatch.setenv("HOME", str(tmp_path / "home")); (tmp_path / "home").mkdir()
+    s = _modelo_falso.arrancar("%s::contenido de la cadena" % (tmp_path / "ws" / "yaiwes" / "hola.txt"))
+    base = "http://127.0.0.1:%d" % s.server_port
+    for k, v in {"RIU_AGENTES_LLM_BASE_URL": base, "RIU_AGENTES_LLM_API_KEY": "clave-ficticia-local", "OPENHANDS_SUPPRESS_BANNER": "1",
+                 "RIU_CODEX_BIN": BINS["codex"], "RIU_CODEX_BASE_URL": base + "/v1", "RIU_OPENCODE_BIN": BINS["opencode"], "RIU_OPENHANDS_PYTHON": BINS["openhands_python"],
+                 "RIU_CLAUDE_BIN": BINS["claude"], "RIU_CLAUDE_PASARELA_URL": base, "RIU_CLAUDE_PASARELA_MODELO": "nvidia/nemotron-3-ultra-550b-a55b"}.items():
+        monkeypatch.setenv(k, v)
+    yield s, tmp_path
+    s.shutdown(); s.server_close()
+
+
+@requiere("codex", "opencode", "openhands_python", "claude")
+def test_real_swe_code_cuatro_pasos_codex_opencode_seleccionado_openhands(entorno_cadena):
+    s, tmp_path = entorno_cadena
+    m = Mundo()
+    c = m.ctx(); c.ejecutar_agente = dispatcher.ejecutar_agente; c.disponibilidad = wf._disponibilidad_real  # dispatcher y disponibilidad REALES
+    wf.swe_iniciar(contrato(task_id="cadena-1", agente_tool="claude-code", modelo_tool="nvidia/nvidia/nemotron-3-ultra-550b-a55b", modelo_revisor="hf/lfm2.5-350m"), c)
+    for _ in range(4):
+        r = aprobar_y_avanzar(m, c, "cadena-1")
+    assert r["estado"] == "DONE" and r["estado_detallado"] == "DONE"
+    e = estado_guardado(m, "cadena-1")
+    assert [p["agente_ejecutado"] for p in e["pasos_terminados"]] == ["codex", "opencode", "claude-code", "openhands"]
+    assert [p["modelo_usado"] for p in e["pasos_terminados"]] == ["qwen2.5-coder-1.5b", "qwen3.5-0.8b", "nvidia/nemotron-3-ultra-550b-a55b", "lfm2.5-350m"]
+    assert all(p["recibo"].split(":")[0] == p["agente_ejecutado"] and p["exit_code"] == 0 for p in e["pasos_terminados"]) and all(o["estado"] == "CONFIRMADA" for o in e["operaciones"].values())
+    assert (tmp_path / "ws" / "yaiwes" / "hola.txt").read_text() == "contenido de la cadena"  # efecto real hecho por OpenCode (paso 2)
+    assert wf.verificado(e) is True and all(p["resultado"] for p in e["pasos_terminados"])
+    n = len(s.visto)
+    assert wf.swe_avanzar({"task_id": "cadena-1"}, c)["estado"] == "DONE" and len(s.visto) == n  # una confirmacion valida no se vuelve a ejecutar
+
+
+@requiere("codex")
+def test_real_swe_code_con_un_agente_ausente_es_no_disponible_con_la_disponibilidad_real(entorno_cadena, monkeypatch):
+    s, tmp_path = entorno_cadena
+    monkeypatch.setenv("RIU_OPENCODE_BIN", str(tmp_path / "no-existe"))  # opencode ausente de verdad
+    m = Mundo()
+    c = m.ctx(); c.ejecutar_agente = dispatcher.ejecutar_agente; c.disponibilidad = wf._disponibilidad_real
+    r = wf.swe_iniciar(contrato(task_id="cadena-2"), c)
+    assert r["estado"] == "NO_DISPONIBLE" and "opencode" in r["error"]["mensaje"]
+    r = wf.swe_avanzar({"task_id": "cadena-2"}, c)
+    assert r["estado"] == "NO_DISPONIBLE" and s.visto == [] and r["pasos_terminados"] == []  # nada se ejecuto ni se simulo con LLM
+
+
+@requiere("opencode")
+def test_real_individual_apagado_no_lanza_agentes_y_encendido_si(entorno_cadena):
+    s, tmp_path = entorno_cadena
+    m = Mundo()
+    c = m.ctx(); c.ejecutar_agente = dispatcher.ejecutar_agente; c.disponibilidad = wf._disponibilidad_real
+    llm_llamadas = []
+    c.llm = lambda cuerpo: (llm_llamadas.append(cuerpo), {"texto": "respuesta del modelo", "tool_calls": [], "finish_reason": "stop", "herramientas_usadas": [], "modelo_respuesta": "x"})[1]
+    wf.swe_iniciar(contrato(workflow="individual", task_id="ind-r1", modo_agentico=False, agente_tool="opencode", modelo_tool="hf/qwen2.5-coder-1.5b"), c)
+    assert wf.swe_avanzar({"task_id": "ind-r1"}, c)["estado"] == "DONE" and s.visto == [] and len(llm_llamadas) == 1  # ningun proceso de agente
+    wf.swe_iniciar(contrato(workflow="individual", task_id="ind-r2", modo_agentico=True, agente_tool="opencode", modelo_tool="hf/qwen2.5-coder-1.5b"), c)
+    aprobar_y_avanzar(m, c, "ind-r2")
+    r = wf.swe_avanzar({"task_id": "ind-r2"}, c)
+    assert r["estado"] == "DONE" and (tmp_path / "ws" / "yaiwes" / "hola.txt").exists() and r["pasos_terminados"][0]["agente_ejecutado"] == "opencode"
+    assert "opencode:ind-r2:" in json.dumps(llm_llamadas[-1])  # la respuesta se genera sobre el recibo real de la operacion
+
+
+# ---------------- 204: Liquid Mirror con S2 y S3 como servidores HTTP independientes + agentes reales para ejecuta/verifica ----------------
+@requiere("opencode", "openhands_python")
+def test_real_liquid_mirror_s2_s3_independientes_y_agentes_reales(entorno_cadena, monkeypatch):
+    s, tmp_path = entorno_cadena
+    s2, s3 = _modelo_falso.arrancar(""), _modelo_falso.arrancar("")
+    monkeypatch.setenv("SWECODE_URL_S2", "http://127.0.0.1:%d/v1" % s2.server_port); monkeypatch.setenv("SWECODE_URL_S3", "http://127.0.0.1:%d/v1" % s3.server_port)
+    try:
+        m = Mundo()
+        c = m.ctx(); c.ejecutar_agente = dispatcher.ejecutar_agente; c.disponibilidad = wf._disponibilidad_real; c.servidor_llm = wf.llamar_servidor
+        wf.swe_iniciar(contrato(workflow="liquid_mirror", task_id="openclaw-001", origen="openclaw", sesion="openclaw-001", proyecto="yaiwes", agente_tool="opencode", modelo_tool="hf/qwen2.5-coder-1.5b", modelo_revisor="hf/lfm2.5-350m"), c)
+        for _ in range(3):
+            r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+        assert len(peticiones_chat(s2)) == 1 and len(peticiones_chat(s3)) == 1 and s2.server_port != s3.server_port  # cada participante, SU servidor
+        assert "TAREA_HECHA" in json.dumps(peticiones_chat(s3)[0]["body"]["messages"])  # S3 solo conoce el handoff (resultado de S2)
+        assert r["handoff"]["confirmado"] is True and r["pasos_terminados"][0]["host"].endswith(str(s2.server_port)) and r["pasos_terminados"][2]["host"].endswith(str(s3.server_port))
+        aprobar_y_avanzar(m, c, "openclaw-001"); r = aprobar_y_avanzar(m, c, "openclaw-001")
+        assert r["estado"] == "DONE" and [p["agente_ejecutado"] for p in r["pasos_terminados"] if p.get("agente_ejecutado")] == ["opencode", "openhands"]
+    finally:
+        for x in (s2, s3):
+            x.shutdown(); x.server_close()

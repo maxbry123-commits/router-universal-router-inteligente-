@@ -145,23 +145,32 @@ const sinHarness = (cap) => cap.harness !== "ok";
 const motivoSinHarness = { sin_respuesta: "el Harness no respondió", sin_credencial: "falta la clave de acceso del chat", no_configurado: "el Harness no está configurado en el servidor", no_disponible: "el Harness no está disponible", desconocido: "el Harness no ha reportado" };
 export function estadoOpcion(cap, tipo, id, modelo) {
   const e = (tipo === "agente" ? cap.agentes : tipo === "workflow" ? cap.workflows : cap.modelos)[id];
-  const motivo = e && typeof e.motivo === "string" && e.motivo ? e.motivo : "";
-  const r = (estado, m, ok = estado === "DISPONIBLE") => ({ ok, estado, motivo: m });
+  const txt = (v) => (typeof v === "string" && v ? v : "");
+  const motivo = e ? txt(e.causa) || txt(e.motivo) : "";  // A5: `causa` concreta (sin credenciales); `motivo` es el formato anterior
+  const r = (estado, m, ok = estado === "DISPONIBLE", extra = {}) => ({ ok, estado, motivo: m, elegible: ok || extra.elegible === true, ...extra });
   if (tipo === "workflow" && id === "individual") return r("DISPONIBLE", "");
   if (!e && sinHarness(cap)) return r("SIN_VERIFICAR", "sin verificar: " + (motivoSinHarness[cap.harness] || motivoSinHarness.desconocido) + (tipo === "agente" ? " (sin adaptador conectado que lo confirme)" : ""), tipo === "modelo");  // un modelo sin verificar no bloquea el chat normal; un agente/workflow si
   if (!e) return r("SIN_VERIFICAR", "sin verificar: el Harness no lo reporta", tipo === "modelo");
-  const explicito = typeof e.estado === "string" ? e.estado.toUpperCase().replace(/[\s-]+/g, "_") : "";
-  if (e.disponible === false) { const est = Object.hasOwn(ETIQUETA_ESTADO, explicito) && explicito !== "DISPONIBLE" ? explicito : estadoDeMotivo(tipo, motivo); return r(est, motivo || (tipo === "modelo" ? "no esta en el catalogo del proveedor" : "el Harness no lo reporta conectado")); }
-  if (e.disponible !== true) return r("SIN_VERIFICAR", motivo || "sin verificar: el Harness no dio un estado firme", tipo === "modelo");
-  if (explicito === "SIN_VERIFICAR" || /sin verificar/i.test(motivo)) return r("SIN_VERIFICAR", motivo || "sin verificar", true);
-  if (tipo === "agente" && modelo && Array.isArray(e.modelos) && !e.modelos.includes(modelo)) return r("NO_COMPATIBLE", "incompatible con " + modelo);
-  return r("DISPONIBLE", "");
+  const explicito = txt(e.estado).toUpperCase().replace(/[\s-]+/g, "_").replace("_EN_PROVEEDOR", "_PROVEEDOR"), intentable = e.intentable === true, nombre = txt(e.nombre);
+  const extra = { ...(nombre ? { nombre } : {}), ...(e.verificado === false ? { verificado: false } : {}) };
+  const sinVer = (m, okModelo) => r("SIN_VERIFICAR", m, okModelo, { ...extra, elegible: okModelo || intentable });  // intentable: se puede elegir con aviso y reintentar la verificacion (A5)
+  if (Object.hasOwn(ETIQUETA_ESTADO, explicito)) {  // estado explicito del Harness (instruccion 37): manda sobre `disponible`
+    if (explicito === "SIN_VERIFICAR") return sinVer(motivo || "sin verificar", tipo === "modelo");
+    if (explicito !== "DISPONIBLE") return r(explicito, motivo || (tipo === "modelo" ? "no esta en el catalogo del proveedor" : "el Harness no lo reporta conectado"), false, extra);
+    if (tipo === "agente" && modelo && Array.isArray(e.modelos) && !e.modelos.includes(modelo)) return r("NO_COMPATIBLE", "incompatible con " + modelo, false, extra);
+    return r("DISPONIBLE", "", true, extra);
+  }
+  if (e.disponible === false) { const est = estadoDeMotivo(tipo, motivo); return est === "SIN_VERIFICAR" ? sinVer(motivo, tipo === "modelo") : r(est, motivo || (tipo === "modelo" ? "no esta en el catalogo del proveedor" : "el Harness no lo reporta conectado"), false, extra); }
+  if (e.disponible !== true) return sinVer(motivo || "sin verificar: el Harness no dio un estado firme", tipo === "modelo");
+  if (/sin verificar/i.test(motivo)) return r("SIN_VERIFICAR", motivo, true, { ...extra, elegible: true });
+  if (tipo === "agente" && modelo && Array.isArray(e.modelos) && !e.modelos.includes(modelo)) return r("NO_COMPATIBLE", "incompatible con " + modelo, false, extra);
+  return r("DISPONIBLE", "", true, extra);
 }
 // Hoja compacta: disponibles arriba; lo que no esta disponible se agrupa por su estado real y se muestra en UNA linea cada grupo, no como filas largas.
 export function agruparOpciones(cap, tipo, lista, modelo) {
   const g = { ok: [], noInstalado: [], incompatible: [], sinVerificar: [], otros: [] };
   for (const [id, etq] of lista) {
-    const st = estadoOpcion(cap, tipo, id, modelo), x = { id, etq, motivo: st.motivo, estado: st.estado };
+    const st = estadoOpcion(cap, tipo, id, modelo), x = { id, etq: tipo === "modelo" && st.nombre ? st.nombre : etq, motivo: st.motivo, estado: st.estado, elegible: st.elegible };
     (st.ok ? g.ok : st.estado === "NO_INSTALADO" ? g.noInstalado : st.estado === "NO_COMPATIBLE" ? g.incompatible : st.estado === "SIN_VERIFICAR" ? g.sinVerificar : g.otros).push(x);
   }
   return g;
@@ -180,7 +189,8 @@ export function opcionesModeloVentana(ventana, cap, proveedor = {}, { web = vent
     if (pv === false) st = { ok: false, estado: "NO_DISPONIBLE_PROVEEDOR", motivo: "el catálogo del proveedor no publica este modelo; no se sustituye por otro" };
     else if (pv === "NO_CONFIGURADO") st = { ok: false, estado: "NO_CONFIGURADO", motivo: "el Router no tiene la clave de este proveedor (banco de claves del servidor)" };
     else if (pv === "SIN_VERIFICAR" && st.estado === "DISPONIBLE") st = { ok: true, estado: "SIN_VERIFICAR", motivo: "sin verificar: no se pudo leer el catálogo del proveedor" };
-    return { id, etq: etq + (st.estado === "DISPONIBLE" ? "" : " — " + ETIQUETA_ESTADO[st.estado]), nombre: etq, ok: st.ok, estado: st.estado, motivo: st.motivo };
+    const nom = st.nombre || etq;  // A5: el NOMBRE sale del catalogo del Harness cuando lo reporta (163)
+    return { id, etq: nom + (st.estado === "DISPONIBLE" ? "" : " — " + ETIQUETA_ESTADO[st.estado]), nombre: nom, ok: st.ok, elegible: st.elegible !== false && (st.ok || st.elegible === true), estado: st.estado, motivo: st.motivo };
   });
 }
 const nombreDe = (lista, id) => (lista.find((x) => x[0] === id) || [id, id])[1];

@@ -502,6 +502,16 @@ def _avanzar(reg, args, ctx):
     return _vista(reg)
 
 
+ESTADOS_QUE_BLOQUEAN = ("NO INSTALADO", "NO CONFIGURADO", "NO COMPATIBLE", "NO DISPONIBLE EN PROVEEDOR")
+
+
+def _bloquea(c):
+    """Con `estado` (disponibilidad.py): solo bloquean los que de verdad faltan; SIN VERIFICAR se deja intentar (el adaptador dira la verdad). Sin `estado` (contrato antiguo): disponible False."""
+    if not isinstance(c, dict):
+        return False
+    return c["estado"] in ESTADOS_QUE_BLOQUEAN if "estado" in c else c.get("disponible") is False
+
+
 def _preflight(reg, ctx):
     """True (y estado NO_DISPONIBLE) si falta algo NECESARIO para lo que queda del plan: agentes (instalados/configurados, y compatibles con su modelo)
     y, en Liquid Mirror, S2/S3 independientes. Nada se ejecuta ni se pide aprobar. Una comprobacion rota NO se presenta como 'no instalado'."""
@@ -519,7 +529,7 @@ def _preflight(reg, ctx):
                 if p["tipo"] != "agente":
                     continue
                 c = caps.get(p["agente"])
-                if isinstance(c, dict) and c.get("disponible") is False:
+                if _bloquea(c):
                     faltan.append("%s (%s)" % (p["agente"], str(c.get("motivo") or "no disponible")[:120]))
                 elif isinstance(c, dict) and isinstance(c.get("modelos"), list) and p["modelo"] not in c["modelos"]:
                     faltan.append("%s (no admite el modelo %s; solo %s)" % (p["agente"], p["modelo"], ", ".join(c["modelos"])))

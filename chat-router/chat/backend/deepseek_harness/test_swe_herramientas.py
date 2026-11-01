@@ -221,7 +221,10 @@ def test_el_selector_deja_de_marcar_no_disponible_lo_conectado_y_lo_sigue_marcan
     r = subprocess.run([NODE, "--input-type=module", "-e", js, json.dumps(cap)], capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, r.stderr
     vista = json.loads(r.stdout)
-    assert vista == {"opencode": True, "codex": False, "claude": False, "openclaw": False, "individual": True, "swe_code": False, "liquid": False, "hf": False, "groq": False}  # R6: hf con URL pero sin sonda = SIN VERIFICAR -> disponible False (el frontend debe usar `estado`/`intentable` cuando harness_client los reenvie)
+    assert vista == {"opencode": True, "codex": False, "claude": False, "openclaw": False, "individual": True, "swe_code": False, "liquid": False, "hf": True, "groq": False}  # R6: hf con URL pero sin sonda = SIN VERIFICAR (disponible False, intentable True): harness_client ya reenvia estado/intentable y el selector lo deja INTENTAR mostrando su estado real
+    hf = cap["modelos"]["hf/lfm2.5-350m"]
+    assert hf["disponible"] is False and hf["estado"] == "SIN VERIFICAR" and hf["intentable"] is True and hf["verificado"] is False, hf  # desconocido jamas se presenta como verificado
+    assert cap["agentes"]["codex"]["estado"] == "NO INSTALADO" and cap["agentes"]["codex"]["disponible"] is False
 
 
 def test_el_harness_reenvia_tarea_id_al_router_para_el_parcial_en_streaming():
@@ -273,3 +276,21 @@ def test_tools_lock_viaja_por_puente_chat_porque_router_mvp_responde_404(monkeyp
     monkeypatch.setattr(h, "llamar", lambda plugin, accion, datos, timeout=None: vistos.append((plugin, accion)) or {"tools": [], "ia": True, "agentes_on": True})
     h._exigir_agentes_on()
     assert vistos == [("puente_chat", "tools_lock")]
+
+
+# ---- metricas extendidas (A5): el Harness las reenvia (TTFT, tokens reales vs estimados, parametros, contexto recortado, tools invalidas) sin secretos ni basura ----
+def test_el_harness_reenvia_las_metricas_extendidas_saneadas(monkeypatch):
+    metricas = {"stream": True, "ttft_s": 0.4, "ttft_origen": "primer_token", "duracion_s": 2.0, "tokens": 120, "tokens_estimados": False, "origen_tokens": "proveedor", "tokens_tps": None,
+                "tokens_por_s": 60.0, "tools_invalidas": 1, "lineas_invalidas": 0, "parametros": {"temperature": 0.2, "ignorados": ["top_k"]}, "contexto_compactado": {"antes": 9000, "despues": 4000},
+                "clave": "gsk_" + "a" * 20, "extra_raro": {"x": [1, 2, 3]}}
+    monkeypatch.setattr(h, "_router", lambda accion, datos: {"texto": "hola", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "nvidia/z-ai/glm-5.3", "metricas": metricas})
+    monkeypatch.setattr(h, "_bridge_url", lambda: "")
+    monkeypatch.setattr(h, "llamar", lambda plugin, accion, datos, timeout=None: {"result": {"tools": [{"name": "github_leer", "description": "d", "inputSchema": {"type": "object"}}]}})
+    r = h.llm({"messages": [{"role": "user", "content": "hola"}], "modelo": "nvidia/z-ai/glm-5.3"})
+    m = r["metricas"]
+    assert (m["origen_tokens"], m["ttft_origen"], m["tokens_estimados"], m["tools_invalidas"]) == ("proveedor", "primer_token", False, 1)
+    assert m["parametros"] == {"temperature": 0.2, "ignorados": ["top_k"]} and m["contexto_compactado"] == {"antes": 9000, "despues": 4000}
+    assert "clave" not in m and "extra_raro" not in m, "solo claves conocidas; nada de campos arbitrarios ni secretos"
+    assert "gsk_" not in json.dumps(r)
+    monkeypatch.setattr(h, "_router", lambda accion, datos: {"texto": "hola", "tool_calls": [], "finish_reason": "stop", "modelo_respuesta": "m"})
+    assert "metricas" not in h.llm({"messages": [{"role": "user", "content": "hola"}], "modelo": "m"}), "sin metricas del Router no se inventan"
