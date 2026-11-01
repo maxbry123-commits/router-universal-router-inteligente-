@@ -77,15 +77,20 @@ export async function cargar() {
     try { localStorage.setItem(CACHE, JSON.stringify(d)); } catch (e) {}
     aplicar(d); return;
   } catch (e) { /* bridge anterior o inaccesible: comprobar Router sin afirmar falso NO DISPONIBLE */ }
+  // Sin bridge ni Router accesibles: mostrar los modelos autorizados como SIN VERIFICAR.
+  // No ocultarlos, no inventar "NO DISPONIBLE" y no sustituir el ID por otro.
+  const sinVerificar = (p) => [...MODELOS_SELECCIONADOS].filter(id => id.startsWith(p + "/"))
+    .map(id => ({ id, disponible: null, estado: "SIN VERIFICAR",
+      etiqueta: MARCA[p] + NOMBRES[id] + " — SIN VERIFICAR" }));
   try {
     const provs = ((await api("/chat/providers")).providers || []).map((p) => p.id);
     for (const p of ["groq", "nvidia"]) {
-      if (!provs.includes(p)) { d["aviso" + (p === "groq" ? "Groq" : "Nvidia")] = "no configurado o sin conexión al bridge; revisa banco de claves"; continue; }
+      if (!provs.includes(p)) { d[p] = sinVerificar(p); d["aviso" + (p === "groq" ? "Groq" : "Nvidia")] = "sin conexión verificable: modelo seleccionable para probar"; continue; }
       try { d[p] = seleccionar(p, ((await api("/chat/providers/" + p + "/models")).models || []).map((m) => m.model_id)); }
-      catch (e) { d["aviso" + (p === "groq" ? "Groq" : "Nvidia")] = p + ": " + e.message.slice(0, 80); }
+      catch (e) { d[p] = sinVerificar(p); d["aviso" + (p === "groq" ? "Groq" : "Nvidia")] = p + ": sin catálogo verificable"; }
     }
     try { localStorage.setItem(CACHE, JSON.stringify(d)); } catch (e) {}
-  } catch (e) { d.avisoGroq = d.avisoNvidia = "sin conexión con el Router ni el bridge"; }
+  } catch (e) { d.groq = sinVerificar("groq"); d.nvidia = sinVerificar("nvidia"); d.avisoGroq = d.avisoNvidia = "sin conexión con el Router ni el bridge: comprueba el envío"; }
   aplicar(d);
 }
 setTimeout(cargar, 800);

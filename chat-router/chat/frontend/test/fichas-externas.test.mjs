@@ -93,11 +93,11 @@ test("cargar: si el catalogo no se pudo leer no se afirma NO DISPONIBLE (se dice
   await cargar();
   assert.equal(window.RIU_GROQ.modelo, GROQ);
   assert.ok(!window.RIU_CONFIG.modelos.some((m) => /NO DISPONIBLE/.test(m.etiqueta)));  // sin lista nueva queda lo anterior, marcado como que responde Qwen
-  assert.ok(window.RIU_CONFIG.modelos.every((m) => /responde Qwen/.test(m.etiqueta)));
+  assert.ok(window.RIU_CONFIG.modelos.every((m) => m.estado === "SIN VERIFICAR" && m.disponible === null));
   reiniciar();
   providers = ["nvidia"]; catalogos = { nvidia: NV };
   await cargar();
-  assert.equal(window.RIU_GROQ.modelo, ""); assert.match(window.RIU_GROQ.aviso, /GROQ_API_KEY/);
+  assert.equal(window.RIU_GROQ.modelo, GROQ); assert.equal(window.RIU_GROQ.lista[0].estado, "SIN VERIFICAR");
 });
 
 test("X-Ray: banco cifrado del bridge controla los modelos en los selectores (no solo /chat/providers)", async () => {
@@ -148,4 +148,13 @@ test("X-Ray: disponibilidad sin contador y panel protegido NO se interpreta como
   assert.equal(window.RIU_GROQ.lista[0].estado, "SIN VERIFICAR");
   assert.equal(window.RIU_GROQ.modelo, GROQ, "permite intentar el modelo exacto sin prometer conexion");
   assert.equal(window.RIU_CONFIG.defecto, NV[0]);
+});
+
+test("X-Ray: si ambos catálogos están inaccesibles se mantienen los cinco IDs, todos sin verificar y seleccionables", async () => {
+  reiniciar(); providers = [];
+  await cargar();
+  assert.equal(window.RIU_GROQ.modelo, GROQ);
+  assert.equal(window.RIU_GROQ.lista[0].estado, "SIN VERIFICAR");
+  assert.deepEqual(window.RIU_CONFIG.modelos.map(m => m.id), NV);
+  assert.ok(window.RIU_CONFIG.modelos.every(m => m.disponible === null));
 });
