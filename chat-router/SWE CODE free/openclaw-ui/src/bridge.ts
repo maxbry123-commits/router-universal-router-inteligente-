@@ -9,20 +9,18 @@ export type Operador = { operador: string; token_operador: string };
 type Fetch = (url: string, init: Record<string, unknown>) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>;
 
 const simple = (o: unknown): o is Record<string, unknown> => !!o && typeof o === 'object' && !Array.isArray(o);
-const SEGMENTO = /^[A-Za-z0-9_-]{1,64}$/, OPERADOR = /^[A-Za-z0-9_.@-]{2,64}$/, ENV = /^[A-Z][A-Z0-9_]{2,63}$/;
+const SEGMENTO = /^[A-Za-z0-9_-]{1,64}$/, OPERADOR = /^[A-Za-z0-9_.@-]{2,64}$/;
 
 export function urlValida(u: string): boolean {
   try { const x = new URL(u); return (x.protocol === 'https:' && !!x.hostname && !x.username) || (x.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(x.hostname) && !x.username); }
   catch { return false; }
 }
-// Configuracion del plugin (plugins.entries.swe-selector.config): solo la URL del bridge y el NOMBRE de la variable de entorno con su token (el valor nunca va en la config).
-export function leerConfig(raw: unknown, env: Record<string, string | undefined> = process.env): { url: string; token: string } | { error: string } {
-  const c = simple(raw) ? raw : {};
-  const url = (typeof c.bridgeUrl === 'string' && c.bridgeUrl.trim() ? c.bridgeUrl.trim() : URL_DEFECTO).replace(/\/+$/, '');
-  const nombre = typeof c.bridgeTokenEnv === 'string' && c.bridgeTokenEnv ? c.bridgeTokenEnv : ENV_TOKEN_DEFECTO;
+// Configuracion SOLO por entorno del Gateway (el manifiesto no declara config: `plugins build` regenera configSchema desde defineFeaturePlugin, que no admite config propia):
+// RIU_SWE_BRIDGE_URL (defecto http://127.0.0.1:7870, la misma variable que usa el Harness) y BRIDGE_TOKEN. El valor del token nunca va en ningun archivo.
+export function leerConfig(env: Record<string, string | undefined> = process.env): { url: string; token: string } | { error: string } {
+  const url = (env.RIU_SWE_BRIDGE_URL ?? '').trim().replace(/\/+$/, '') || URL_DEFECTO;
   if (!urlValida(url)) return { error: 'BRIDGE_URL_INVALIDA' };
-  if (!ENV.test(nombre)) return { error: 'BRIDGE_TOKEN_ENV_INVALIDA' };
-  const token = (env[nombre] ?? '').trim();
+  const token = (env[ENV_TOKEN_DEFECTO] ?? '').trim();
   return token ? { url, token } : { error: 'BRIDGE_TOKEN_NO_CONFIGURADO' };
 }
 

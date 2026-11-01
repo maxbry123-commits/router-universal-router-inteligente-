@@ -13,9 +13,9 @@ export default defineFeaturePlugin({
   contract,
   name: 'SWE Selector',
   description: 'Selector central SWE (agente/modelo que responde y ejecuta, modo agentico, workflow, salida) y tools del Router Yaiwes para OpenClaw, sobre el bridge SWE CODE.',
-  setup(api) {
+  setup() {
     const cliente = (): Cliente | Respuesta => {  // se resuelve en cada llamada: la variable de entorno puede definirse despues de cargar el plugin
-      const c = leerConfig(api.pluginConfig);
+      const c = leerConfig();
       return 'error' in c ? sinConfig(c.error) : crearCliente(c);
     };
     const con = async (f: (c: Cliente) => Promise<Respuesta>): Promise<Respuesta> => { const c = cliente(); return 'ok' in c ? c : f(c); };

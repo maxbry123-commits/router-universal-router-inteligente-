@@ -329,7 +329,8 @@ def test_openclaw_camino_feliz(monkeypatch, tmp_path, gateway):
     monkeypatch.setenv("OPENCLAW_GATEWAY_TOKEN", CLAVE_FICTICIA)
     r = openclaw.run(permisos=permisos(tmp_path, escritura=True), **{**BASE, "modelo": "hf/lfm2.5-350m"})
     comunes_ok(r, "openclaw")
-    assert r["modelo_usado"]  # lo que el Gateway informa (o el id pedido)
+    assert r["modelo_usado"] == "swecode/lfm2.5-350m"  # el Gateway solo informa su alias openclaw/default: se registra el modelo PEDIDO, no un modelo verificado
+    assert any(e.startswith("modelo_gateway:") for e in r["evidencias"])
     assert r["resultado"] == "orquestado" and CLAVE_FICTICIA not in json.dumps(r)
     ruta, cab, cuerpo = Gateway.visto[0]
     cab = {k.lower(): v for k, v in cab.items()}

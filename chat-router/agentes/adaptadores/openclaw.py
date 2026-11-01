@@ -5,6 +5,7 @@ Gateway inaccesible -> AGENTE_NO_INSTALADO (no hay nada que ejecutar). Las polit
 import hashlib
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 from urllib.parse import urlparse
@@ -45,7 +46,7 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     cuerpo = json.dumps({"model": "openclaw/default", "user": "conv:" + tarea_id, "messages": [{"role": "user", "content": p["prompt"]}]}).encode()
     req = urllib.request.Request(base + "/v1/chat/completions", data=cuerpo, method="POST", headers={
         "Content-Type": "application/json", "Authorization": "Bearer " + token, "x-openclaw-model": "swecode/" + id_bridge})
-    inicio = _comun.ahora()
+    inicio, t0 = _comun.ahora(), time.monotonic()
     try:
         with _comun.abrir(req, _comun.TIMEOUT_S) as r:  # noqa: S310 (URL validada arriba; sin seguir redirecciones)
             bruto = r.read(_comun.MAX_SALIDA + 1)
@@ -70,5 +71,6 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
         datos = {}
     if not texto:
         return _comun.error(AGENTE, tarea_id, "AGENTE_SIN_RESULTADO", "el Gateway no devolvio contenido", True)
-    proc = {"exit_code": 0, "stdout": hashlib.sha256(bruto).hexdigest(), "stderr": str(datos.get("id") or ""), "duracion_s": 0.0, "truncado": len(bruto) > _comun.MAX_SALIDA}
-    return _comun.resultado_ok(AGENTE, tarea_id, proc, texto, [], ["gateway:" + base, "http:%d" % estado, "id:%s" % datos.get("id"), "modelo:%s" % datos.get("model")], inicio, str(datos.get("model") or id_bridge))
+    proc = {"exit_code": 0, "stdout": hashlib.sha256(bruto).hexdigest(), "stderr": str(datos.get("id") or ""), "duracion_s": round(time.monotonic() - t0, 3), "truncado": len(bruto) > _comun.MAX_SALIDA}
+    return _comun.resultado_ok(AGENTE, tarea_id, proc, texto, [], ["gateway:" + base, "http:%d" % estado, "id:%s" % datos.get("id"), "modelo_gateway:%s" % datos.get("model")], inicio,
+                               "swecode/" + id_bridge if datos.get("model") in (None, "openclaw/default") else str(datos["model"]))
