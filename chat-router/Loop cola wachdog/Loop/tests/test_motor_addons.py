@@ -35,6 +35,11 @@ class GapTests(unittest.TestCase):
         state=dict(S, triggers={'T05': {'status':'QUEUED'}})
         self.assertEqual(from_loop_state(state), [])
         self.assertEqual(from_loop_state(state,at_closure=True)[0]['category'], 'PENDING')
+    def test_not_applicable_notice_is_not_a_gap(self):
+        state=dict(S, triggers={
+            'T06':{'status':'NOT_APPLICABLE','flags':[{'symbol':'NOTICE','reason':'not_applicable'}]},
+            'T07':{'status':'NOT_APPLICABLE','flags':[{'symbol':'FLAG','reason':'requires_review'}]}})
+        self.assertEqual([x['trigger_id'] for x in from_loop_state(state,at_closure=True)],['T07'])
     def test_merge_deduplicates(self):
         g=from_loop_state(S)
         self.assertEqual(len(merge_gaps(g,g)),2)
