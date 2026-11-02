@@ -2,6 +2,7 @@ import { abrirAnclajeUniversal } from "./anclaje-puente-universal.js";
 // Chat 2: panel LOOP independiente, mismo origen, sin claves dentro del iframe.
 const CHANNEL='yaiwes.loop.ui.v1';
 const ALLOWED=new Set(['status','dsl_estado','dsl_config','dsl_control','mirror_listar']);
+const COLA_ACTIONS=new Set(['listar','estado','crear']);
 let selected=null;
 export function loopNewUIEnabled(){try{return localStorage.getItem('yaiwes_loop_panel_v1')!=='off';}catch{return true;}}
 function powerState(status){
@@ -29,8 +30,23 @@ export function renderLoopIFrame(cuerpo){
     const reply={channel:CHANNEL,type:'reply',id:d.id,ok:false};
     try{
       if(d.name==='plugin'){
-        if(d.plugin!=='nct_loop'||!ALLOWED.has(d.action)||!d.payload||typeof d.payload!=='object'||Array.isArray(d.payload))throw Error('ACCION_NO_AUTORIZADA');
-        reply.result=await api(d.action,d.payload);reply.ok=true;
+        if(!d.payload||typeof d.payload!=='object'||Array.isArray(d.payload))throw Error('PAYLOAD_INVALIDO');
+        if(d.plugin==='nct_loop'&&ALLOWED.has(d.action))reply.result=await api(d.action,d.payload);
+        else if(d.plugin==='cola50'&&COLA_ACTIONS.has(d.action)){
+          if(!selected)throw Error('VERIFICA_LOOP_PRIMERO');
+          const p=d.payload;
+          if(d.action==='listar'&&!/^loop_[a-f0-9]{40}$/.test(String(p.chat_id||'')))throw Error('SCOPE_COLA_INVALIDO');
+          if(d.action==='estado'&&!/^cit_[a-f0-9]{20}$/.test(String(p.qid||'')))throw Error('QID_COLA_INVALIDO');
+          if(d.action==='crear'){
+            if(!/^loop_[a-f0-9]{40}$/.test(String(p.chat_id||''))||p.mode!=='sequential'||typeof p.title!=='string'||!p.title.trim()||p.title.length>150||!Array.isArray(p.tasks)||p.tasks.length!==1||p.tasks[0]?.type!=='model'||p.tasks[0]?.id!=='t1'||typeof p.tasks[0]?.prompt!=='string'||!p.tasks[0].prompt.trim()||p.tasks[0].prompt.length>24000)throw Error('CONTRATO_CREACION_COLA_INVALIDO');
+          }
+          if(typeof window.RIU_PLUGIN!=='function')throw Error('BACKEND_NO_DISPONIBLE');
+          const r=await window.RIU_PLUGIN('cola50',d.action,p);
+          const result=r&&r.result&&typeof r.result==='object'?r.result:r;
+          if(!result||result.error||result.ok===false)throw Error(String(result?.error||'COLA_RECHAZADA'));
+          reply.result=result;
+        }else throw Error('ACCION_NO_AUTORIZADA');
+        reply.ok=true;
       }else if(d.name==='selection'){
         const p=d.payload||{};
         if(!/^[\w-]{1,80}$/.test(p.project_id||'')||!/^[\w-]{1,80}$/.test(p.loop_id||''))throw Error('IDS_INVALIDOS');
