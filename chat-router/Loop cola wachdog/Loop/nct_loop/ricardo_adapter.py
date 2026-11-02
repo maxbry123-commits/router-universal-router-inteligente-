@@ -9,9 +9,13 @@ from .contracts import NCTError, stable_hash
 from referencia_ricardo.motor_cli import Motor
 
 class RicardoOpsDemo:
-    def __init__(self,root:Path,policy_file:Path):
+    def __init__(self,root:Path,policy_file:Path, approved_write_paths=None):
         self.root=Path(root).resolve()
         self.policy=json.loads(Path(policy_file).read_text(encoding='utf8'))
+        # LOCAL demo workspace only. The default explicitly permits evidence/
+        # artifacts, never arbitrary files or GitHub. N4 is separate.
+        self.approved_write_paths = (list(approved_write_paths) if approved_write_paths is not None
+                                     else ["evidencia"])
         self.root.mkdir(parents=True,exist_ok=True)
     async def execute(self,validated_ops:dict,task_id:str)->dict:
         """La autorización real también debe existir en harness; la allowlist JSON sola no basta."""
@@ -40,6 +44,18 @@ class RicardoOpsDemo:
             if 'path' in op and (not isinstance(op['path'],str) or not op['path']):raise NCTError('path inválido')
             if 'text' in op and (not isinstance(op['text'],str) or len(op['text'])>self.policy['max_text_chars']):
                 raise NCTError('texto excesivo')
+        from .ricardo_plan_guard import inspect_plan, RicardoGuardError
+        # Always validate BEFORE Motor.run. This guard makes it impossible
+        # for a remote model to authorize mutations outside the host's scope.
+        try:
+            inspected=inspect_plan(validated_ops,self.policy,
+                                   allowed_write_paths=self.approved_write_paths)
+        except RicardoGuardError as exc:
+            return {'ok':False,'receipts':[],
+                    'errors':[{'type':'RicardoGuardError','message':str(exc)}],
+                    'executed_count':0,'ops_total':len(ops),
+                    'report_origin':'MOTOR_CLI_NOT_EXECUTED_GUARD',
+                    'plan_sha256':stable_hash(validated_ops)}
         result=Motor(self.root,self.policy).run(validated_ops)
         return {'ok':result['ok'], 'receipts':result['receipts'],
                 'errors':result['errors'],'executed_count':result['ops_executed'],

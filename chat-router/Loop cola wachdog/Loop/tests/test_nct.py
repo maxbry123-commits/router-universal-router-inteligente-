@@ -34,6 +34,15 @@ class NCTTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue((Path(self.tmp.name)/'evidencia/smoke.txt').is_file())
         self.assertEqual(len(self.model.calls),7)
         self.assertTrue(result['triple_gate']['per_task'][0]['checker']['three_layers']['cross_file_hash'])
+    async def test_ricardo_guard_before_motor_run_denies_unapproved_write(self):
+        planner=RicardoOpsDemo(Path(self.tmp.name),
+            ROOT/'referencia_ricardo/allowed_ops.json',approved_write_paths=[])
+        result=await planner.execute(self.proposal['S_UNIT'],'S_UNIT')
+        self.assertFalse(result['ok'])
+        self.assertEqual(result['executed_count'],0)
+        self.assertEqual(result['errors'][0]['type'],'RicardoGuardError')
+        self.assertFalse((Path(self.tmp.name)/'evidencia/smoke.txt').exists())
+
     async def test_no_duplicate_after_checkpoint(self):
         await self.eng.run(self.mission)
         other=await self.eng.run(self.mission)
