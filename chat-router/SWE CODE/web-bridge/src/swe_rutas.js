@@ -313,6 +313,26 @@ async function ejecutarTool({ t, args, accion }, { env, fetchFn }) {
 }
 
 export function montarRutasSwe(app, { env = process.env, fetchFn = fetch } = {}) {
+  // Control del Router existente, SOLO desde la UI autenticada por RIU_API_KEY.
+  // BRIDGE_TOKEN NO puede abrir globalmente los permisos de seis agentes.
+  // La autoridad sigue siendo control.py/agent_access_lock; no se duplica estado.
+  app.post('/v1/swe/agentes-lock', async (req, res) => {
+    const rechazo = exigirToken(req, res, env); if (rechazo) return rechazo;
+    if (!esClaveAcceso(bearerDe(req), env))
+      return respuesta(res, 403, { code: 'CLAVE_CHAT_REQUERIDA' });
+    const datos = simple(req.body) ? req.body : {};
+    if (Object.keys(datos).some(k => k !== 'locked') || ('locked' in datos && typeof datos.locked !== 'boolean'))
+      return respuesta(res, 400, { code: 'CONTROL_INVALIDO' });
+    const cfg = configRouter(env);
+    if (cfg.error) return respuesta(res, 503, { code: cfg.error });
+    try {
+      const b = { quien: 'agentes', ...('locked' in datos ? { locked: datos.locked } : {}) };
+      const x = resultadoPlugin(await postRouter('/plugins/puente_chat/call/agent_access_lock', b, cfg, { env, fetchFn, ms: 12000 }));
+      if (!x || x.ok !== true || typeof x.agentes_locked !== 'boolean')
+        return respuesta(res, 502, { code: 'CONTROL_NO_CONFIRMADO' });
+      return res.json({ ok: true, resultado: { agentes_locked: x.agentes_locked } });
+    } catch (e) { return respuesta(res, e.http || 502, { code: /^ROUTER_[A-Z0-9_]+$/.test(e.message || '') ? e.message : 'ROUTER_NO_DISPONIBLE' }); }
+  });
   // GET /v1/swe/capacidades: solo lectura, sin secretos, misma autenticacion obligatoria. La UI de OpenClaw marca NO DISPONIBLE lo que no figura conectado.
   app.get('/v1/swe/capacidades', async (req, res) => exigirToken(req, res, env) || res.json(await consultarCapacidades({ env, fetchFn })));
   // TOOLS de OpenClaw: catalogo (con el estado real que da el Router) y reenvio al Router. Misma autenticacion obligatoria; lo que tiene efectos pide ademas un operador identificado.
