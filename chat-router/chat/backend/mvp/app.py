@@ -29,12 +29,22 @@ async def inicio(app):
             app.state.commit = cmd.stdout.strip()
     except (OSError, subprocess.TimeoutExpired):
         pass
-    try:
-        await asyncio.wait_for(CONTROL.cargar(), 15)  # estado de permisos guardado por /almacen; sin HF sigue en memoria
-    except asyncio.TimeoutError:
-        pass
-    try: elegido = await asyncio.wait_for(asyncio.to_thread(mantener_vivo.leer, app.state.banco), 8)  # True = hasta que el Director lo apague; un HF lento no puede dejar al Router sin responder
-    except asyncio.TimeoutError: elegido = None
+    # Recuperar estado de controles y preferencias EN PARALELO (max. 15 s, antes
+    # eran hasta 15+8=23 s). No cambia defaults ni permisos: la UI puede cargar
+    # apenas las dos fuentes independientes terminan, sin serializar HF lento.
+    async def cargar_control():
+        try:
+            await asyncio.wait_for(CONTROL.cargar(), 15)
+        except asyncio.TimeoutError:
+            pass
+
+    async def leer_mantener():
+        try:
+            return await asyncio.wait_for(asyncio.to_thread(mantener_vivo.leer, app.state.banco), 8)
+        except asyncio.TimeoutError:
+            return None
+
+    _, elegido = await asyncio.gather(cargar_control(), leer_mantener())
     mantener_vivo.SIEMPRE["on"] = bool(elegido)
     mantener_vivo.mantener(mantener_vivo.SIEMPRE_H if elegido else 0 if elegido is False else float(os.environ.get("RIU_MANTENER_HORAS", "24")), _en_curso)
     if app.state.banco: _lanzar(_reanudar_todas()); _lanzar(loop_reanudar.reanudar_todas(app.state.banco))  # tareas del chat y del LOOP que quedaron a medias por un reinicio
