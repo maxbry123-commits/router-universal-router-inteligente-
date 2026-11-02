@@ -31,12 +31,49 @@ _cola_core = _mod('cola50_core_obs', _COLA_DIR / 'nct_addons' / 'cola50' / 'core
 _STORE = None
 _COLA = None
 _WORKER = {'thread': None, 'worker': None}
+_WATCH_STORAGE_READY = None
+
+
+def _hf_storage():
+    from plugins.hf_storage import plugin as storage
+    return storage
+
+
+class _DurableWatchStore(_core.WatchStore):
+    """Existing watchdog observer, checkpointed to the same memory HF bucket."""
+    def _checkpoint(self):
+        if _WATCH_STORAGE_READY is not True:
+            raise RuntimeError("WATCHDOG_STORAGE_RECOVERY_UNAVAILABLE")
+        _hf_storage().sqlite_checkpoint(self.path, "watchdog48")
+
+    def create(self, data):
+        if _WATCH_STORAGE_READY is not True:
+            raise RuntimeError("WATCHDOG_STORAGE_RECOVERY_UNAVAILABLE")
+        result = super().create(data)
+        self._checkpoint()
+        return result
+
+    def control(self, wid, action):
+        result = super().control(wid, action)
+        self._checkpoint()
+        return result
+
+    def tick(self, queue_observer=None):
+        result = super().tick(queue_observer)
+        if result:
+            self._checkpoint()
+        return result
 
 
 def _store():
-    global _STORE
+    global _STORE, _WATCH_STORAGE_READY
     if _STORE is None:
-        _STORE = _core.WatchStore(_DB)
+        try:
+            _hf_storage().sqlite_restore_if_missing(_DB, "watchdog48")
+            _WATCH_STORAGE_READY = True
+        except Exception:
+            _WATCH_STORAGE_READY = False
+        _STORE = _DurableWatchStore(_DB)
     return _STORE
 
 
