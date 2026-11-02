@@ -88,6 +88,37 @@ export async function mount(root, { api, tell }) {
     } catch (e) {}
     try { A.respaldarPestanas(JSON.parse(localStorage.getItem(CLAVE_CHATS) || "[]")); } catch (e) {}  // respaldo de pestañas en el Router (nombre y orden)
   };
+  // Contador de archivos por chat: enlaces, raíces y handoffs no son adjuntos.
+  const resumenAdjuntos = (c) => {
+    const items = [...(c?.anclados || [])].filter((t) =>
+      typeof t === "string" && !/^(?:enlace|raiz|handoff|constitucion|secreto):/i.test(t));
+    const esImagen = (t) => /^imagen:/i.test(t) ||
+      /\.(?:jpe?g|png|gif|webp|avif|bmp|tiff?|heic|heif|svg)(?:[?#].*)?$/i.test(t.replace(/^(?:archivo|imagen):/i, ""));
+    const imagenes = items.filter(esImagen).length;
+    let silenciadas = [];
+    try {
+      const mapa = JSON.parse(localStorage.getItem("riu_mute_anclas_v1") || "{}");
+      silenciadas = Array.isArray(mapa?.[c?.sesion]) ? mapa[c.sesion] : [];
+    } catch (e) {}
+    const off = items.filter((t) => silenciadas.includes(t)).length;
+    return { archivos: items.length - imagenes, imagenes, total: items.length, on: items.length - off, off };
+  };
+  // A diferencia de #anclados, el aviso no queda oculto en la barra móvil.
+  const crearEstadoAnclas = (id, base) => {
+    if (!base) return null;
+    let v = q("#" + id);
+    if (!v) {
+      v = document.createElement("div");
+      v.id = id;
+      v.className = "riu-anclas-estado";
+      v.setAttribute("role", "status");
+      v.setAttribute("aria-live", "polite");
+      base.insertAdjacentElement("afterend", v);
+    }
+    return v;
+  };
+  const estadoInput = crearEstadoAnclas("estado-adjuntos-input", editor);
+  const estadoVentana = crearEstadoAnclas("estado-adjuntos-ancla", q("#ventana-ancla .va-head"));
   const pintarAnclados = () => {
     const caja = q("#anclados");
     caja.innerHTML = "";
@@ -96,6 +127,11 @@ export async function mount(root, { api, tell }) {
     if ((chat().instrucciones || "").trim()) caja.append(node("span", "📌 instrucciones fijas", "anclado-item"));
     todos.slice(0, 3).forEach((a) => caja.append(node("span", etiquetaCorta(a), "anclado-item")));
     if (todos.length > 3) caja.append(node("span", "+" + (todos.length - 3) + " más ⚓", "anclado-item"));
+    const n = resumenAdjuntos(chat());
+    const mensaje = n.total
+      ? "⚓ Anclados en este chat: 📎 " + n.archivos + (n.archivos === 1 ? " archivo" : " archivos") + " · 🖼️ " + n.imagenes + (n.imagenes === 1 ? " imagen" : " imágenes") + " · " + n.on + "/" + n.total + " ON" + (n.off ? " · " + n.off + " OFF" : "")
+      : "⚓ En este chat: 0 archivos y 0 imágenes anclados";
+    for (const v of [estadoInput, estadoVentana]) if (v && v.textContent !== mensaje) v.textContent = mensaje;
   };
   const pintarFichaPill = () => {
     const et = fichaEt(chat().ficha);
@@ -253,6 +289,7 @@ export async function mount(root, { api, tell }) {
     pintarTabs(); guardar(); tell("Chat borrado");
   };
   try { montarProyectos(root, { tell: (t) => { try { const e = document.createElement("div"); e.className = "item message meta"; e.textContent = t; chat().hist.append(e); } catch (x) {} } }); } catch (e) {}  // ventana Proyectos disponible desde el arranque
+  window.addEventListener("riu:almacen", (e) => { if (e.detail === "riu_mute_anclas_v1") pintarAnclados(); });
   window.RIU_CHAT = { chat, ocupado: () => chats.some((x) => x.ocupado), tokens: () => [...chat().anclados], sincronizarAnclas: () => { chats.forEach(releerAnclas); pintarAnclados(); }, pintar: () => { pintarAnclados(); guardar(); } };  // ganchos para las ventanas de workflows / constitución / claves
   window.RIU_DESTINO_ARCHIVOS = () => {  // destinoArchivos(): UNICA autoridad de a donde van los archivos segun el objetivo de la ventana-ancla
     const o = window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : null;
