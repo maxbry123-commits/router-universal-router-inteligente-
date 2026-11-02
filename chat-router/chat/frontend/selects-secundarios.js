@@ -16,7 +16,11 @@ export async function montarSelectsSecundarios(ctx) {
   try {
     const providers = await api("/chat/providers");
     select("#provider", (providers.providers || []).filter(item => item.id !== "auto"), "id", "label");
-    select("#agent", (await api("/chat/agents")).agents || [], "id", "name");
+    const agentesLegados = (await api("/chat/agents")).agents || [];
+    select("#agent", agentesLegados, "id", "name");
+    // Agentes SWE reales se eligen en el selector unico del Harness, no en el legacy vacio.
+    const legacy = q("#agent");
+    if (legacy?.closest("label")) legacy.closest("label").hidden = !agentesLegados.length;
     const accounts = await api("/chat/github/accounts");
     select("#github", accounts.accounts || [], "account", "account");
   } catch (error) { tell(error.message); }
