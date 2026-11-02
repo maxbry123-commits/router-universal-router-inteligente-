@@ -336,7 +336,11 @@ MIMOS_IMG = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "web
 async def _contexto_anclado(anclados, sesion):
     """Anclas del chat -> (mensaje de sistema, imagenes): archivos subidos (texto), textos y enlaces; los secretos nunca viajan al modelo."""
     partes, imagenes, total, vistos = [], [], 0, set()
-    for a in (anclados if isinstance(anclados, list) else [])[:20]:
+    todas = anclados if isinstance(anclados, list) else []
+    nombres_imagen = [str(a).rsplit(":", 1)[-1] for a in todas if str(a).rsplit(".", 1)[-1].lower() in MIMOS_IMG]
+    if len(nombres_imagen) > 4 or any(str(a).rsplit(".", 1)[-1].lower() in MIMOS_IMG for a in todas[20:]):
+        raise HTTPException(status_code=422, detail="ANCLAS_IMAGENES_MAX_4: máximo cuatro fotos dentro de las primeras veinte anclas")
+    for a in todas[:20]:
         a = str(a)[:300]
         if a.startswith("secreto:"):
             continue
@@ -347,23 +351,40 @@ async def _contexto_anclado(anclados, sesion):
         if a.split(":", 1)[0] in ("enlace", "raiz", "texto", "handoff"):
             partes.append("- " + a)
             continue
+        mime = MIMOS_IMG.get(a.rsplit(".", 1)[-1].lower()) if "." in a else None
         ruta = CONTROL.ruta_de(a, sesion)
-        if not ruta or total > 200_000:
+        if not ruta:
+            if mime:
+                raise HTTPException(status_code=422, detail="ANCLA_IMAGEN_NO_ENCONTRADA: " + a[:120])
+            continue
+        if total > 200_000 and not mime:
             continue
         try:
             crudo = (await almacen({"accion": "leer", "destino": "hf", "nombre": ruta}))["valor"]
-            mime = MIMOS_IMG.get(a.rsplit(".", 1)[-1].lower()) if "." in a else None
             if mime:
+                base64.b64decode(crudo, validate=True)  # no declarar entregada una foto corrupta
                 imagenes.append({"nombre": a, "url": "data:" + mime + ";base64," + crudo})
                 partes.append("- " + a + " (imagen adjunta: viaja como imagen al modelo)")
                 continue
             texto = base64.b64decode(crudo).decode("utf-8")[:60_000]
-        except Exception:  # noqa: BLE001 - binario o almacén caído: se omite, el chat sigue
+        except Exception:  # noqa: BLE001 - para texto se informa; para imagen nunca se finge visión
+            if mime:
+                raise HTTPException(status_code=502, detail="ANCLA_IMAGEN_NO_LEIDA: " + a[:120]) from None
             partes.append("- " + a + " (no se pudo leer su contenido)")
             continue
         total += len(texto)
         partes.append("--- " + a + " ---\n" + texto)
     return ({"role": "system", "content": "[ANCLADOS POR EL DIRECTOR]\n" + "\n".join(partes)} if partes else None, imagenes)
+@app.post("/chat/anclas/imagenes", dependencies=[Depends(verificar)])
+async def obtener_imagenes_ancladas(cuerpo: dict):
+    """Mismo almacén y sesión del chat. No recibe URL arbitraria ni revela archivos sin anclar."""
+    anclados = cuerpo.get("anclados")
+    sesion = str(cuerpo.get("sesion") or "")[:60]
+    if not sesion or not isinstance(anclados, list) or len(anclados) > 200:
+        raise HTTPException(status_code=400, detail="ANCLAS_O_SESION_INVALIDAS")
+    _, imagenes = await _contexto_anclado(anclados, sesion)
+    return {"ok": True, "imagenes": imagenes}
+
 ORGANIZADOR = "qwen3.7-plus"
 async def _organizar(cuerpo):
     """Pendientes: un modelo (qwen3.7 por defecto) los ordena por prioridad; solo se reordena, nunca se crea ni se borra nada."""
@@ -451,6 +472,8 @@ async def _chat_ficha(cuerpo, progreso=None):
     anclado, imagenes = await _contexto_anclado(q.get("anclados"), ses)
     arch_con, imagenes_con = await _contexto_anclado(con.get("anclados"), ses)
     imagenes += imagenes_con
+    if len(imagenes) > 4:
+        raise HTTPException(status_code=422, detail="ANCLAS_IMAGENES_MAX_4: selecciona hasta cuatro fotos")
     pend = "\n".join("- [%s] %s" % ("x" if p["hecho"] else " ", p["texto"][:300]) for p in CONTROL.d["pendientes"][:30])
     propios = [("CONSTITUCION: es ley para este trabajo; respétala al programar y en lo que respondes", (str(con.get("texto") or "").strip() + ("\n" + arch_con["content"] if arch_con else "")).strip()),
                ("yaiwes.md (información del proyecto; la herramienta yaiwes_md la lee y la escribe)", CONTROL.d["handoff"].get("yaiwes")),
