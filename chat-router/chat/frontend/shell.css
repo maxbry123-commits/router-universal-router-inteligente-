@@ -285,3 +285,7 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
     font-size:11.5px;
   }
 }
+
+/* Estado de anclas: no ocupar espacio cuando el chat no tiene adjuntos. */
+.riu-anclas-estado[hidden]{display:none!important}
+.riu-anclas-estado .riu-anclas-icono{color:#fff;stroke:#fff;display:inline-block;vertical-align:-3px;flex:none;margin:0 3px}
