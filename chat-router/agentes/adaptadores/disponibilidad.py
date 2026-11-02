@@ -226,6 +226,36 @@ def _modelo_hf(sonda_hf, activa):
     return _no("ningun servidor HF (SWECODE_URL_S1..S3) responde ahora; un Space dormido tarda en arrancar: sin verificar", "SIN VERIFICAR", "servidor_hf_sin_respuesta", intentable=True)
 
 
+
+def _modelos_bridge():
+    """Lee una vez el GET /models del bridge existente (banco cifrado compartido).
+    Nunca pide tokens, no copia claves y nunca certifica inferencia por un catalogo.
+    """
+    key = _comun._credencial_bridge()
+    if key == "no-requerida":
+        return None
+    cache_key = ("modelos_bridge",)
+    cached = _CACHE.get(cache_key)
+    if cached and time.time() - cached[0] < 45:
+        return cached[1]
+    from urllib.parse import urlparse
+    base = (os.environ.get("RIU_SWE_BRIDGE_URL") or "http://127.0.0.1:7870").strip().rstrip("/")
+    x = urlparse(base)
+    if not (x.scheme == "https" or x.scheme == "http" and x.hostname in ("127.0.0.1", "localhost")):
+        return None
+    try:
+        req = urllib.request.Request(base + "/v1/modelos/disponibilidad",
+                                     headers={"X-API-Key": key, "Accept": "application/json"})
+        with _comun.abrir(req, 5) as resp:
+            doc = json.load(resp)
+        modelos = doc.get("modelos")
+        listado = {m["id"]: m for m in modelos if isinstance(m, dict) and isinstance(m.get("id"), str)} if doc.get("ok") is True and isinstance(modelos, list) else None
+    except (OSError, ValueError, TypeError, KeyError):
+        listado = None
+    _CACHE[cache_key] = (time.time(), listado)
+    return listado
+
+
 def _modelos(sonda, sonda_hf=None):
     out, listas, hf = {}, {}, None
     for mid, cfg in MODELOS.items():
@@ -236,7 +266,21 @@ def _modelos(sonda, sonda_hf=None):
         else:
             clave = _comun._clave(prov.upper() + "_API_KEY")
             if not clave:
-                e = _no("falta %s_API_KEY (o *_1..20) en el entorno del Harness" % prov.upper(), "NO CONFIGURADO", "sin_clave")
+                # El bridge ya dispone de las claves del banco cifrado.
+                # Consultarlo en loopback evita declarar NO CONFIGURADO algo
+                # que el proveedor SI publica a traves del mismo Router.
+                if _comun._credencial_bridge() != "no-requerida":
+                    if "_bridge" not in listas:
+                        listas["_bridge"] = _modelos_bridge()
+                    b = (listas["_bridge"] or {}).get(mid)
+                    if b and b.get("disponible") is True:
+                        e = _ok()
+                    elif b and b.get("disponible") is False:
+                        e = _no("el bridge no encuentra este modelo en GET /models del proveedor", "NO DISPONIBLE EN PROVEEDOR", "ausente_en_get_models")
+                    else:
+                        e = _no("banco de claves accesible por bridge; proveedor sin verificar para este modelo", "SIN VERIFICAR", "bridge_sin_verificar", intentable=True)
+                else:
+                    e = _no("falta %s_API_KEY (o *_1..20) en el entorno del Harness y acceso al bridge" % prov.upper(), "NO CONFIGURADO", "sin_clave")
             elif sonda is None:  # una clave existente NO prueba que el modelo exista (38)
                 e = _no("clave presente pero sin verificar GET /models (comprobacion desactivada)", "SIN VERIFICAR", "verificacion_desactivada", intentable=True)
             else:
