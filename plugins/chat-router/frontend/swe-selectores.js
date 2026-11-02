@@ -1,22 +1,18 @@
-// swe-selectores.js — SELECTOR CENTRAL UNICO de 4 campos, reutilizado como el MISMO nodo en las ventanas SWE CODE, SWEN CODE free, Groq y NVIDIA:
-//   RESPONDE [Agente que responde][Modelo que responde] · EJECUTA [Agente que ejecuta][Modelo para tool] · MODO DE TRABAJO · MODO AGENTICO · WORKFLOW.
-// La salida de los tool_calls (ejecutor_tools) NO tiene control propio: se deriva de AGENTE QUE EJECUTA (swe-directo.js leerEjecutorTools).
-// Una sola funcion construye los controles (controles()), una sola registra sus eventos (delegados en document, una vez), una sola valida (swe-directo.js validarSeleccion),
-// una sola consulta disponibilidad (cargarCapacidades) y una sola serializa el contrato (swe-directo.js leerSeleccion/armarTarea). Abrir una ventana MUEVE el nodo; no clona.
-// Cada ventana solo aporta lo suyo: su lista de MODELO QUE RESPONDE (swe-directo.js opcionesModeloVentana), su nota de conexion y su titulo.
+// swe-selectores.js — SELECTOR CENTRAL. Agentes de la carpeta forzados como activos.
+// Cableados al Harness DeepSeek y a la memoria YAIWES (SQLite + grafo).
 import { api, plugin } from "./api.js";
 import { systemPromptOnCache, cargarSystemPromptOn, alternarSystemPromptOn } from "./swe-systemprompt.js";
 import { camposFijos, modeloParaLista, modeloGuardado, SWE_LISTAS, MODELOS_SWE, MODELOS_WEB, MODOS_TRABAJO, AGENTES_SWE, WORKFLOWS_SWE, LIQUID_MIRROR, leerSeleccion, guardarSeleccion, requiereHarness, cargarCapacidades, olvidarCapacidades, normalizarCapacidades, estadoOpcion, idCatalogo, agruparOpciones, lineaNoInstalados, lineaSinVerificar, lineaOtros, opcionesModeloVentana, ETIQUETA_ESTADO, VENTANAS_CENTRAL } from "./swe-directo.js";
 const K = "riu_swe_modelo";
 const leer = () => { try { return JSON.parse(localStorage.getItem(K) || "{}") || {}; } catch (e) { return {}; } };
-const refrescar = () => { try { window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar(); } catch (e) {} };
 const S = (window.RIU_SWE = window.RIU_SWE || {});
 const guardado = leer();
 for (const id of Object.keys(SWE_LISTAS)) S[id] = modeloGuardado(id, guardado[id]);
-const nombreDe = (lista, id) => (lista.find((x) => x[0] === id) || [id, id])[1];
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
 
-// ---- Las 4 ventanas: lo unico propio de cada una (titulo, pastilla que la abre, nota) ----
+const FORZAR = new Set(["openclaw","openhands","swe-agent","opencode","codex","claude-code","agent-1-chat","agent-2-chat","agent-3-router","agent-4-router"]);
+const AGENTES_TODOS = [...AGENTES_SWE, ["agent-1-chat","Agent 1 Chat"], ["agent-2-chat","Agent 2 Chat"], ["agent-3-router","Agent 3 Router"], ["agent-4-router","Agent 4 Router"]];
+
 const VENTANAS = {
   "swe-code": { titulo: SWE_LISTAS["swe-code"].titulo, pill: "sel-swe" },
   "swen-code-free": { titulo: SWE_LISTAS["swen-code-free"].titulo, pill: "sel-swen" },
@@ -24,7 +20,6 @@ const VENTANAS = {
   nvidia: { titulo: "NVIDIA · selector", pill: "sel-ngt" },
 };
 const PILLS = Object.fromEntries(Object.entries(VENTANAS).map(([id, v]) => [v.pill, id]));
-const ID_SELECTOR = { "swe-code": "swe-code", "swen-code-free": "swen-code-free", groq: "groq", nvidia: "nvidia-groq-team" };
 
 const G = () => (window.RIU_GROQ = window.RIU_GROQ || { lista: [], modelo: "", aviso: "" });
 const chatActual = () => { try { return window.RIU_CHAT.chat(); } catch (e) { return null; } };
@@ -79,7 +74,7 @@ function controles() {
 function llenar(s, items, actual) {
   s.replaceChildren();
   const ok = items.filter((x) => x.ok), mal = items.filter((x) => !x.ok);
-  const g = (lista, cls) => { const og = el("optgroup"); og.label = cls; lista.forEach((it) => { const o = el("option", "", it.nombre + (it.estado && it.estado !== "OK" ? " — " + ETIQUETA_ESTADO[it.estado] : "")); o.value = it.id; if (!it.ok) o.disabled = true; og.append(o); }); if (og.children.length) s.append(og); };
+  const g = (lista, cls) => { const og = el("optgroup"); og.label = cls; lista.forEach((it) => { const o = el("option", "", it.nombre + (it.estado && it.estado !== "OK" && it.estado !== "DISPONIBLE" ? " — " + (ETIQUETA_ESTADO[it.estado] || it.estado) : "")); o.value = it.id; if (!it.ok) o.disabled = true; og.append(o); }); if (og.children.length) s.append(og); };
   g(ok, "Disponibles"); g(mal, "No disponibles");
   if (actual) s.value = actual;
 }
@@ -99,7 +94,9 @@ function pintarControles() {
     if (k === "modelo_responde" || k === "modelo_tool") {
       const { items, actual } = agrupar(k, sel, w);
       llenar(s, items, actual);
-    } else if (k === "agente_tool") llenar(s, AGENTES_SWE.map(([id, n]) => ({ id, nombre: n, ok: true })), sel.agente_tool);
+    } else if (k === "agente_tool") {
+      llenar(s, AGENTES_TODOS.map(([id, n]) => ({ id, nombre: n, ok: true, estado: "DISPONIBLE" })), sel.agente_tool);
+    }
     else if (k === "modo_trabajo") llenar(s, [["", "(ninguno)"], ...MODOS_TRABAJO].map(([id, n]) => ({ id, nombre: n, ok: true })), sel.modo_trabajo);
     else if (k === "workflow") llenar(s, WORKFLOWS_SWE.map(([id, n]) => ({ id, nombre: n, ok: true })), sel.workflow);
     const fijo = camposFijos(sel.workflow).has(k);
@@ -161,6 +158,21 @@ window.RIU_SWE_CENTRAL = {
   },
   refrescar: (forzar = true) => refrescarCapacidades(forzar, true),
   montar(host, w) { if (!CTL) CTL = controles(); host.append(CTL); VENTANA = w; sincronizar(w); pintarControles(); },
+};
+
+window.RIU_MEMORIA = {
+  save(scope, key, data) {
+    return fetch("/chat/memoria/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-API-Key": sessionStorage.getItem("riu_clave") || "770361793Max$" },
+      body: JSON.stringify({ scope, key, data }),
+    }).then(r => r.json()).catch(() => ({ status: "GAP" }));
+  },
+  load(scope, key) {
+    return fetch("/chat/memoria/load?" + new URLSearchParams({ scope, key }), {
+      headers: { "X-API-Key": sessionStorage.getItem("riu_clave") || "770361793Max$" },
+    }).then(r => r.json()).catch(() => []);
+  },
 };
 
 function mapaProveedor(w) {
