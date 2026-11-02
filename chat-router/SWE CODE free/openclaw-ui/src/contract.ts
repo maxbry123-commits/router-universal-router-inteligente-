@@ -47,6 +47,10 @@ export const contract = defineFeatureContract({
       kind: 'query', description: 'Catalogo de tools del Router Yaiwes (motores de descarga/extraccion, Loop, cola, watchdog, almacen, memoria, chat, GitHub...) con su estado real y los GAP (GET /v1/swe/tools).',
       input: Type.Object({}, { additionalProperties: false }), output: Resultado, tool: { name: 'swe_tools_catalogo', label: 'Catalogo de tools Yaiwes' },
     },
+    agentes_lock: {
+      kind: 'action', description: 'UI nativa exclusivamente: consulta o cambia el permiso global de agentes existente del Router. No ofrece tool al modelo.',
+      input: Type.Object({ locked: Type.Optional(Type.Boolean()) }, { additionalProperties: false }), output: Resultado,
+    },
     iniciar: { kind: 'action', description: 'Crea una tarea SWE con el contrato TareaSWE (POST /v1/swe/iniciar).', input: Tarea, output: Resultado },
     avanzar: { kind: 'action', description: 'Avanza la tarea SWE (POST /v1/swe/avanzar). Repetir hasta DONE, GAP, REQUIERE_APROBACION o RECONCILIAR.', input: Referencia, output: Resultado },
     estado: { kind: 'query', description: 'Estado de una tarea SWE (POST /v1/swe/estado, solo lectura).', input: Referencia, output: Resultado, tool: { name: 'swe_estado', label: 'Estado de tarea SWE' } },
