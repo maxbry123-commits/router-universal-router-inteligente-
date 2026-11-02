@@ -51,6 +51,24 @@ class QueueSafety(unittest.TestCase):
         with self.assertRaises(core.QueueError):
             self.store.skip_dsl_task(qid, "b", "NOT_APPLICABLE")
 
+    def test_segment_metadata_validation(self):
+        from nct_loop.trigger_bridge import validate_loop_meta
+        contracts = [{"id":"T01"},{"id":"T02"}]
+        good = {"name":"A", "verify_on_end":True, "next_loop_id":"loop-02",
+                "segments":[{"id":"phase1","name":"Arquitectura","trigger_ids":["T01"]},
+                            {"id":"phase2","name":"Revision","trigger_ids":["T02"]}]}
+        self.assertEqual(validate_loop_meta(good, loop_id="loop-01", contracts=contracts), good)
+        with self.assertRaises(ContractError):
+            validate_loop_meta({**good, "verify_on_end":"false"}, loop_id="loop-01", contracts=contracts)
+        with self.assertRaises(ContractError):
+            validate_loop_meta({**good, "next_loop_id":"loop-01"}, loop_id="loop-01", contracts=contracts)
+        with self.assertRaises(ContractError):
+            validate_loop_meta({**good, "segments":[{"id":"A","name":"A","trigger_ids":["T01"]},
+                        {"id":"B","name":"B","trigger_ids":["T01"]}]}, loop_id="loop-01", contracts=contracts)
+        with self.assertRaises(ContractError):
+            validate_loop_meta({**good, "segments":[{"id":"A","name":"A","trigger_ids":["MISSING"]}]},
+                               loop_id="loop-01", contracts=contracts)
+
     def test_one_writer_per_dsl_queue(self):
         qid = self.queue()
         self.assertTrue(self.store.claim_dsl_for(qid, "a")["claimed"])

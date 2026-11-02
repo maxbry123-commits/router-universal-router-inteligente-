@@ -11,6 +11,48 @@ async def _invoke(cb, *args):
     v = cb(*args)
     return await v if inspect.isawaitable(v) else v
 
+def validate_loop_meta(meta, *, loop_id, contracts):
+    """Extend the persisted loop configuration, keeping old loop_save payloads valid."""
+    if not isinstance(meta, dict) or set(meta) - {"name", "objective_ref", "notes",
+            "depends_on_loops", "segments", "verify_on_end", "next_loop_id"}:
+        raise ContractError("LOOP_META_INVALID")
+    if any(not isinstance(v, str) or len(v) > 1500
+           for k, v in meta.items() if k not in
+           ("depends_on_loops", "segments", "verify_on_end")):
+        raise ContractError("LOOP_META_INVALID")
+    deps = meta.get("depends_on_loops", [])
+    if not isinstance(deps, list) or len(deps) > 100 or any(
+            not isinstance(x, str) or len(x) > 80 for x in deps):
+        raise ContractError("LOOP_META_INVALID")
+    if "verify_on_end" in meta and type(meta["verify_on_end"]) is not bool:
+        raise ContractError("VERIFY_ON_END_INVALID")
+    next_id = meta.get("next_loop_id")
+    if next_id:
+        _id(next_id, "next_loop_id")
+        if next_id == loop_id:
+            raise ContractError("NEXT_LOOP_CYCLE")
+    segments = meta.get("segments", [])
+    if not isinstance(segments, list) or len(segments) > 100:
+        raise ContractError("SEGMENTS_INVALID")
+    ids, assigned = set(), set()
+    known = {c["id"] for c in contracts}
+    for seg in segments:
+        if not isinstance(seg, dict) or set(seg) != {"id", "name", "trigger_ids"}:
+            raise ContractError("SEGMENT_INVALID")
+        sid = _id(seg["id"], "segment_id")
+        if sid in ids or not isinstance(seg["name"], str) or not (1 <= len(seg["name"]) <= 150):
+            raise ContractError("SEGMENT_DUPLICATE_OR_NAME_INVALID")
+        ids.add(sid)
+        triggers = seg["trigger_ids"]
+        if not isinstance(triggers, list) or len(triggers) > 100 or any(
+                not isinstance(t, str) or t not in known or t in assigned for t in triggers):
+            raise ContractError("SEGMENT_TRIGGERS_INVALID")
+        if len(set(triggers)) != len(triggers):
+            raise ContractError("SEGMENT_TRIGGERS_INVALID")
+        assigned.update(triggers)
+    return meta
+
+
 class TriggerBridge:
     def __init__(self, ports: HostPorts):
         self.ports = ports
@@ -138,7 +180,13 @@ class TriggerBridge:
                                 "source_ref": c["source"]["document_ref"]}
                         statuses[c["id"]] = info
                         flags.extend(info["flags"])
+                    segments = state.get("loop_meta", {}).get("segments", [])
+                    phase_index = next((i for i, seg in enumerate(segments) if any(
+                        statuses.get(tid, {}).get("status") not in
+                        ("PASS", "NOT_APPLICABLE", "OFF")
+                        for tid in seg.get("trigger_ids", []))), len(segments))
                     return {"ok": True, "status": "PASS", "project_id": project, "loop_id": loop,
+                            "phase_index": phase_index, "verify_on_end": state.get("loop_meta", {}).get("verify_on_end", True),
                             "revision": state["revision"], "contracts": state["contracts"],
                             "role_pairs": state["role_pairs"], "history": state["history"],
                             "loop_meta": state.get("loop_meta", {}), "queue": queue,
@@ -196,14 +244,8 @@ class TriggerBridge:
                         new["contracts"] = [updated if c["id"] == tid else c for c in new["contracts"]]
                 elif op == "loop_save":
                     meta = request.get("loop_meta")
-                    if not isinstance(meta, dict) or set(meta) - {"name", "objective_ref", "notes", "depends_on_loops"}:
-                        raise ContractError("LOOP_META_INVALID")
-                    if any(not isinstance(v, str) or len(v) > 1500 for k, v in meta.items() if k != "depends_on_loops"):
-                        raise ContractError("LOOP_META_INVALID")
-                    deps = meta.get("depends_on_loops", [])
-                    if not isinstance(deps, list) or len(deps) > 100 or any(not isinstance(i, str) or len(i) > 80 for i in deps):
-                        raise ContractError("LOOP_META_INVALID")
-                    new["loop_meta"] = meta
+                    new["loop_meta"] = validate_loop_meta(meta, loop_id=loop,
+                        contracts=new["contracts"])
                 elif op == "roles_save":
                     roles = request.get("role_pairs")
                     if not isinstance(roles, dict) or set(roles) - {"arquitecto", "auditor", "ejecutor_codigo", "frontend", "refactor_revision"}:
