@@ -12,7 +12,7 @@ import time
 
 import requests
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, Response, HTMLResponse
 
 REPO = "maxbry123-commits/router-universal-router-inteligente-"
 FLAG = "router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag"
@@ -24,6 +24,8 @@ KEY = os.getenv("RIU_ROUTER_API_KEY", "")
 GH = os.getenv("GH_TOKEN", "")
 PROXY = ("v1/", "chat/", "control/", "groups", "workflows", "health")
 _cache: dict[str, tuple[float, object]] = {}
+_front_cache: dict[str, tuple[float, bytes, str]] = {}
+FRONT_TTL = 60  # segundos; el Space relee el frontend de GitHub sin reinicio
 
 app = FastAPI()
 
@@ -83,9 +85,40 @@ def router_alive(url: str) -> bool:
     return cached("alive:" + url, 15, get)
 
 
+def front_get(rel: str) -> tuple[bytes, str] | None:
+    """Lee un archivo del frontend desde GitHub (rama reorganizacion) con cache corto."""
+    key = "front:" + rel
+    hit = _front_cache.get(key)
+    if hit and time.time() - hit[0] < FRONT_TTL:
+        return hit[1], hit[2]
+    path = f"plugins/chat-router/frontend/{rel}"
+    r = gh("GET", f"/contents/{requests.utils.quote(path)}?ref=reorganizacion")
+    if r.status_code != 200:
+        return None
+    d = r.json()
+    raw = base64.b64decode(d["content"])
+    ctype = "text/html" if rel.endswith(".html") else "application/javascript" if rel.endswith(".js") else "text/css" if rel.endswith(".css") else "application/json" if rel.endswith(".json") else "application/octet-stream"
+    _front_cache[key] = (time.time(), raw, ctype)
+    return raw, ctype
+
+
 @app.get("/")
-def index() -> FileResponse:
+def index() -> Response:
+    got = front_get("shell.html")
+    if got:
+        body, ctype = got
+        return Response(content=body, media_type=ctype)
     return FileResponse("index.html")
+
+
+@app.get("/chat/ui/{path:path}")
+def front_ui(path: str) -> Response:
+    """Sirve el frontend desde GitHub. Cambios en el repo aparecen en ~60 s sin reinicio."""
+    got = front_get(path)
+    if not got:
+        return JSONResponse({"error": "archivo no encontrado"}, status_code=404)
+    body, ctype = got
+    return Response(content=body, media_type=ctype, headers={"Cache-Control": "public, max-age=30"})
 
 
 @app.get("/power/status")
