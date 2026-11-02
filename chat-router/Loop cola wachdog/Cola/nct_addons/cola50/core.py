@@ -321,6 +321,31 @@ class QueueStore:
                 self.ev(c,qid,'queue.completed',{'verification':'ALL_OFF'})
             c.execute('COMMIT')
 
+    def skip_dsl_task(self,qid,tid,reason):
+        """Explicit NOT_APPLICABLE receipt, never PASS. Only an unclaimed DSL slot."""
+        valid_id(qid);valid_id(tid)
+        if reason != 'NOT_APPLICABLE':
+            raise QueueError('Motivo DSL no permitido')
+        with self.db() as c:
+            c.execute('BEGIN IMMEDIATE')
+            q=c.execute('SELECT mode,state FROM queues WHERE id=?',(qid,)).fetchone()
+            if not q or q['mode']!='dsl' or q['state']!='running':
+                c.execute('ROLLBACK');raise QueueError('QUEUE_NOT_RUNNING',409)
+            running=c.execute("SELECT 1 FROM tasks WHERE queue_id=? AND state='running' LIMIT 1",(qid,)).fetchone()
+            if running:
+                c.execute('ROLLBACK');raise QueueError('QUEUE_BUSY',409)
+            changed=c.execute("UPDATE tasks SET state='skipped' WHERE queue_id=? AND id=? AND state='pending'",(qid,tid)).rowcount
+            if changed!=1:
+                c.execute('ROLLBACK');raise QueueError('TASK_NOT_PENDING',409)
+            self.ev(c,qid,'dsl.task.not_applicable',{'verification':'NOT_APPLICABLE'},tid)
+            states=[x['state'] for x in c.execute('SELECT state FROM tasks WHERE queue_id=?',(qid,))]
+            if all(x in TERMINAL for x in states):
+                final='completed' if all(x=='succeeded' for x in states) else 'failed'
+                c.execute('UPDATE queues SET state=? WHERE id=?',(final,qid))
+                self.ev(c,qid,'queue.'+final,{'verification':'PARTIAL_NOT_APPLICABLE'})
+            c.execute('COMMIT')
+            return {'skipped':True,'queue_id':qid,'task_id':tid,'status':'NOT_APPLICABLE'}
+
     def claim_dsl_for(self,qid,tid):
         """Atomic one-slot claim. The legacy worker cannot claim DSL tasks."""
         valid_id(qid);valid_id(tid)

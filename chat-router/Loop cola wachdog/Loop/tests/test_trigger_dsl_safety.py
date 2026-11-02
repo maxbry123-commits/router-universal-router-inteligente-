@@ -36,6 +36,21 @@ class QueueSafety(unittest.TestCase):
                 {"id": "b", "title": "b", "type": "handoff"}]})
         return self.store.start(q["queue_id"], seconds=600)["queue_id"]
 
+    def test_not_applicable_is_skipped_not_pass(self):
+        qid = self.queue()
+        result = self.store.skip_dsl_task(qid, "a", "NOT_APPLICABLE")
+        self.assertTrue(result["skipped"])
+        task = next(t for t in self.store.get(qid)["tasks"] if t["id"] == "a")
+        self.assertEqual(task["status"], "skipped")
+        self.assertIsNone(task["receipt_id"])
+        self.assertTrue(any(x["event"] == "dsl.task.not_applicable" for x in self.store.events(qid)))
+
+    def test_not_applicable_rejects_running_claim(self):
+        qid = self.queue()
+        self.store.claim_dsl_for(qid, "a")
+        with self.assertRaises(core.QueueError):
+            self.store.skip_dsl_task(qid, "b", "NOT_APPLICABLE")
+
     def test_one_writer_per_dsl_queue(self):
         qid = self.queue()
         self.assertTrue(self.store.claim_dsl_for(qid, "a")["claimed"])

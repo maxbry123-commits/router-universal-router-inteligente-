@@ -32,6 +32,7 @@ class HostPorts:
     queue_events: Callable | None = None
     roles_resolve: Callable | None = None
     can_write: bool = True
+    queue_skip: Callable | None = None
 
 class TriggerEngine:
     def __init__(self, ports: HostPorts):

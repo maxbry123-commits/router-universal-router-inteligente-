@@ -346,6 +346,35 @@ _GRUPOS: dict = {}
 _CANCEL: set = set()
 
 
+_DSL_WORKERS: dict = {}
+_DSL_LOCK = threading.Lock()
+
+
+def _dsl_coda_worker(payload: dict, context: dict) -> dict:
+    """Run the already-existing DSL engine through the existing NCT thread pool.
+    A process restart never repeats an in-flight claimed action automatically.
+    """
+    from nct_loop.trigger_bridge import TriggerBridge
+    from nct_loop.trigger_host import build_ports
+    request = {"project_id": payload["project_id"], "loop_id": payload["loop_id"],
+               "op": "run_ready", "max_steps": 100}
+    return asyncio.run(TriggerBridge(build_ports(context)).handle(
+        "dsl_control", request, server_context=context))
+
+
+def _dsl_schedule(payload: dict, context: dict) -> dict:
+    key = (payload["project_id"], payload["loop_id"])
+    if not isinstance(context, dict) or context.get("authenticated") is not True or context.get("trusted_host") is not True:
+        return {"scheduled": False, "reason": "HOST_AUTH_REQUIRED"}
+    with _DSL_LOCK:
+        prior = _DSL_WORKERS.get(key)
+        if prior is not None and not prior.done():
+            return {"scheduled": True, "already_running": True}
+        future = _POOL.submit(_dsl_coda_worker, dict(payload), context)
+        _DSL_WORKERS[key] = future
+    return {"scheduled": True, "execution": "EXISTING_NCT_POOL", "completed": False}
+
+
 def _build_mission(p: dict) -> dict:
     m = p.get('mision')
     if isinstance(m, dict) and m.get('units'):
@@ -883,8 +912,12 @@ def handle(action: str, payload: "dict | None" = None, server_context=None) -> d
         from nct_loop.trigger_host import build_ports
         from nct_loop.trigger_contract import ContractError
         try:
-            return asyncio.run(TriggerBridge(build_ports(server_context)).handle(
+            result = asyncio.run(TriggerBridge(build_ports(server_context)).handle(
                 action, dict(p), server_context=server_context))
+            if (action == 'dsl_control' and p.get('op') in ('start', 'resume')
+                    and result.get('ok') and result.get('status') in ('QUEUED', 'running')):
+                result['dispatcher'] = _dsl_schedule(p, server_context)
+            return result
         except ContractError as error:
             return {'ok':False,'status':'BLOCKED','error':error.code,'detail':error.detail}
     if action in ('status', 'health'):

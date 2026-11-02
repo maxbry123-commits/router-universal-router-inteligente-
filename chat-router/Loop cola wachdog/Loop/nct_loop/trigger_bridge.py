@@ -40,6 +40,68 @@ class TriggerBridge:
                 result[dep] = "PASS"
         return result
 
+    async def dispatch_ready(self, *, project, loop, state, server_context, max_steps=100):
+        """Continue an existing DSL queue on this very PluginHost executor.
+        The CIT-50 claim is the single-executor gate; no second queue/daemon.
+        Each checkpoint and PASS is checked by the existing TriggerEngine.
+        """
+        if type(max_steps) is not int or not 1 <= max_steps <= 100:
+            raise ContractError("BAD_DISPATCH_LIMIT")
+        qid = state.get("queue_id")
+        if not qid:
+            raise ContractError("LOOP_NOT_STARTED")
+        contracts = state.get("contracts", [])
+        completed = []
+        for _ in range(max_steps):
+            q = await _invoke(self.ports.queue_status, qid)
+            if not isinstance(q, dict) or not isinstance(q.get("tasks"), list):
+                raise ContractError("QUEUE_NOT_CONNECTED")
+            if q.get("status") != "running":
+                return {"ok": q.get("status") == "completed", "status": q.get("status", "BLOCKED").upper(),
+                        "queue_id": qid, "processed": completed, "queue_status": q.get("status")}
+            rows = {t["id"]: t for t in q["tasks"] if isinstance(t, dict) and isinstance(t.get("id"), str)}
+            if any(t.get("status") in ("running", "needs_reconciliation") for t in rows.values()):
+                return {"ok": False, "status": "BLOCKED", "error": "QUEUE_BUSY_OR_RECONCILIATION",
+                        "queue_id": qid, "processed": completed}
+            eligible = None
+            previous = {}
+            for c in contracts:
+                t = rows.get(c["id"])
+                if not c.get("enabled") or not t or t.get("status") != "pending":
+                    continue
+                p = await self._prior(project, loop, c, contracts)
+                if all(p.get(dep) == "PASS" for dep in c.get("depends_on", [])):
+                    eligible, previous = c, p
+                    break
+            if eligible is None:
+                return {"ok": False, "status": "BLOCKED", "error": "NO_ELIGIBLE_TRIGGER",
+                        "queue_id": qid, "processed": completed,
+                        "pending": [t["id"] for t in rows.values() if t.get("status") == "pending"]}
+            result = await self.engine.run_once(project_id=project, contract=eligible,
+                role_pairs=state.get("role_pairs", {}), host_context=server_context, previous=previous)
+            if not isinstance(result, dict):
+                raise ContractError("ENGINE_RESULT_INVALID")
+            status = result.get("status")
+            if status == "NOT_APPLICABLE":
+                if not callable(self.ports.queue_skip):
+                    raise ContractError("QUEUE_SKIP_NOT_CONNECTED")
+                skipped = await _invoke(self.ports.queue_skip, qid, eligible["id"], "NOT_APPLICABLE")
+                if not isinstance(skipped, dict) or skipped.get("skipped") is not True:
+                    raise ContractError("QUEUE_SKIP_FAILED")
+                completed.append({"id": eligible["id"], "status": "NOT_APPLICABLE"})
+                continue
+            if status != "PASS" or result.get("ok") is not True or result.get("replayed"):
+                return {"ok": False, "status": "BLOCKED", "error": result.get("error") or
+                        ("REPLAY_RECONCILIATION_REQUIRED" if result.get("replayed") else status or "ENGINE_FAILED"),
+                        "queue_id": qid, "processed": completed, "failed_trigger": eligible["id"]}
+            verified_q = await _invoke(self.ports.queue_status, qid)
+            verified = next((x for x in verified_q.get("tasks", []) if x.get("id") == eligible["id"]), None)
+            if not verified or verified.get("status") != "succeeded" or not verified.get("receipt_id"):
+                raise ContractError("QUEUE_COMPLETION_STATE_MISMATCH")
+            completed.append({"id": eligible["id"], "status": "PASS", "receipt_id": verified["receipt_id"]})
+        return {"ok": True, "status": "LIMIT_REACHED", "queue_id": qid, "processed": completed,
+                "next": "CALL_DISPATCH_AGAIN"}
+
     async def handle(self, action, request, *, server_context=None):
         try:
             if action not in {"dsl_config", "dsl_control", "dsl_estado"}:
@@ -164,6 +226,9 @@ class TriggerBridge:
                     raise ContractError("CHECKPOINT_NOT_DURABLE")
                 return {"ok": True, "status": "PASS", "revision": new["revision"],
                         "count": len(new["contracts"]), "config_sha256": sha256(canonical(new))}
+            if op == "run_ready":
+                return await self.dispatch_ready(project=project, loop=loop, state=state,
+                    server_context=server_context, max_steps=request.get("max_steps", 100))
             if op == "start":
                 if request.get("expected_revision") != state["revision"]:
                     raise ContractError("REVISION_CONFLICT")
