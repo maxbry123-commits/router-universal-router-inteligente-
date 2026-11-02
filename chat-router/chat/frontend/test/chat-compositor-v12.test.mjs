@@ -47,3 +47,26 @@ test("Conservación de selectores, herramientas, motores y entradas existentes",
  assert.match(js,/btn-paralelo/);
  assert.match(src("loop-iframe-host.js"),/yaiwes_loop_panel_v1/);
 });
+
+test("Cubo no sigue visible ni encendido al terminar: hidden vence el display de la barra",()=>{
+ const css=src("pensando-3d.css"), js=src("pensando-3d.js"), mobile=src("chat-compositor-v12.css");
+ assert.match(css,/#composer \\.composer-bar > \\.p3d\\[hidden\\],\\.p3d\\[hidden\\]\\{display:none!important\\}/);
+ assert.match(js,/if \\(!o && !w\\.hidden\\) w\\.hidden = true/);
+ assert.match(mobile,/#composer \\.composer-bar > \\.p3d/);
+});
+test("Sin hueco muerto entre respuesta e input; se limita solo el máximo del historial",()=>{
+ const css=src("chat-compositor-v12.css");
+ assert.match(css,/height:auto!important;min-height:0!important;max-height:min\\(48dvh,500px\\)/);
+ assert.match(css,/#histories \\.chat-history:not\\(:empty\\)::before\\{content:none!important/);
+ assert.doesNotMatch(css,/height:clamp\\(260px,49dvh,520px\\)/);
+ const js=src("panel-chat.js");
+ assert.match(js,/c\\.hist\\.scrollTop = c\\.hist\\.scrollHeight/);
+});
+test("Cerebro plano, sin reborde permanente, conserva selector y accesibilidad de foco",()=>{
+ const css=src("chat-compositor-v12.css");
+ assert.match(css,/#composer-extra > #mode-selector-mount \\.ms-btn\\{/);
+ assert.match(css,/border:0!important;border-radius:9px!important;background:transparent!important/);
+ assert.match(css,/#composer-extra > #mode-selector-mount \\.ms-btn:focus-visible/);
+ assert.match(css,/#composer-extra > #mode-selector-mount \\.ms-brain\\{/);
+ assert.match(src("barra-mas.js"),/chat-compositor-v12\\.css/);
+});

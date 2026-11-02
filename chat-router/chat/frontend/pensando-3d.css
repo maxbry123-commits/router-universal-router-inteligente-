@@ -2,7 +2,8 @@
 .composer-bar>.p3d{position:relative;display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:14px;background:var(--surface);border:1px solid var(--border-strong);box-shadow:0 8px 28px rgba(0,0,0,.45);z-index:35;pointer-events:none;flex:0 0 auto !important;width:auto !important;margin:0 8px 0 auto !important}
 .composer-bar>.p3d+.action{margin-left:0 !important}
 .p3d-escena{transform:scale(.72);transform-origin:center;margin:-7px}
-.p3d[hidden]{display:none}
+/* Mantener hidden como autoridad incluso cuando otras capas fuerzan display:flex !important */
+#composer .composer-bar > .p3d[hidden],.p3d[hidden]{display:none!important}
 @media (max-width:720px){.composer-bar>.p3d{margin-right:150px !important}  /* en movil Enviar es absoluto abajo a la derecha: deja su hueco */}
 .p3d-escena{position:relative;width:46px;height:46px;perspective:260px}
 .p3d-cubo{position:absolute;inset:11px;transform-style:preserve-3d;animation:p3d-gira 4s linear infinite}

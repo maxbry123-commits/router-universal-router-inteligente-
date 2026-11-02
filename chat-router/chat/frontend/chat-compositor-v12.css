@@ -10,19 +10,23 @@
     gap:8px!important;
   }
   #histories{
-    display:flex!important; flex:0 0 auto!important;
-    height:clamp(260px,49dvh,520px)!important;
-    min-height:260px!important;max-height:520px!important;
-    overflow:hidden!important;position:relative!important;
+    display:flex!important; flex:0 0 auto!important;flex-direction:column!important;
+    height:auto!important;min-height:0!important;max-height:min(48dvh,500px)!important;
+    overflow:visible!important;position:relative!important;
     box-sizing:border-box!important;
   }
   #histories .chat-history:not([hidden]){
-    flex:1 1 auto!important;height:100%!important;
-    min-height:0!important;max-height:none!important;
+    flex:0 1 auto!important;height:auto!important;
+    min-height:0!important;max-height:min(48dvh,500px)!important;
     overflow-y:auto!important;overscroll-behavior:contain!important;
     padding:8px 10px 16px!important;
   }
   #histories .chat-history[hidden]{display:none!important}
+  /* El pseudo-espaciador de RUI2 estiraba los mensajes al fondo:
+     para respuestas con mensajes reales debe desaparecer. */
+  #histories .chat-history:not(:empty)::before{content:none!important;display:none!important}
+  /* Sin altura obligatoria entre el último mensaje y la caja de escritura. */
+  #histories .chat-history:not([hidden]):not(:empty){padding-bottom:6px!important}
   /* Posición constante al desplazarse dentro de la respuesta. */
   #histories > .riu-bajar{
     position:fixed!important;top:clamp(116px,34dvh,330px)!important;
@@ -127,7 +131,24 @@
     border:0!important;border-radius:9px!important;background:transparent!important;
     box-shadow:none!important;filter:none;
   }
-  #composer-extra > #mode-selector-mount .ms-btn{width:40px!important;height:40px!important}
+  /* Cerebro = icono plano como los demás; sin chip circular siempre encendido. */
+  #composer-extra > #mode-selector-mount .ms-btn{
+    width:40px!important;min-width:40px!important;max-width:40px!important;
+    height:40px!important;min-height:40px!important;
+    border:0!important;border-radius:9px!important;background:transparent!important;
+    box-shadow:none!important;outline:0!important;filter:none!important;
+    padding:0!important;display:inline-flex!important;align-items:center!important;
+    justify-content:center!important;color:var(--title,#f1f1f1)!important;
+  }
+  #composer-extra > #mode-selector-mount .ms-btn:focus-visible{
+    outline:2px solid var(--status-blue,#2F80FF)!important;outline-offset:2px!important;
+  }
+  #composer-extra > #mode-selector-mount .ms-brain{
+    display:grid!important;place-items:center!important;
+    width:24px!important;height:24px!important;color:#f1f1f1!important;
+    border:0!important;border-radius:0!important;background:transparent!important;
+    box-shadow:none!important;filter:none!important;
+  }
   #composer-extra > button svg,#composer-extra > #mode-selector-mount svg{
     width:23.4px!important;height:23.4px!important;
   }

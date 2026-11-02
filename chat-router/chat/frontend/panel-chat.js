@@ -47,13 +47,12 @@ export async function mount(root, { api, tell }) {
   const abajo = (c) => {
     // El único control «Bajar al final» pertenece a chat-riu.js.
     // No crear otro botón flotante que tape la respuesta.
-    if (mmMovil.matches) {
-      const page = document.scrollingElement || document.documentElement;
-      const cerca = page.scrollHeight - (page.scrollTop + page.clientHeight) < 160;
-      if (cerca) requestAnimationFrame(() => {
-        window.scrollTo({top:document.documentElement.scrollHeight,behavior:"instant"});
-      });
-    } else if (c.hist.__sigue !== false) c.hist.scrollTop = c.hist.scrollHeight;
+    // El historial es el único contenedor con scroll para mensajes largos.
+    // Respetar cuando la persona ha subido para leer mensajes anteriores.
+    if (c.hist && c.hist.__sigue !== false) {
+      requestAnimationFrame(() => { if (c.hist && c.hist.isConnected && c.hist.__sigue !== false)
+        c.hist.scrollTop = c.hist.scrollHeight; });
+    }
   };
   const mmMovil = window.matchMedia("(max-width: 720px)");
   const reacomodoMovil = () => {
