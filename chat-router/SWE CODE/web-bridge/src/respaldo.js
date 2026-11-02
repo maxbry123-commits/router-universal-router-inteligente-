@@ -471,12 +471,54 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
 }
 
 // modelo local de la cola HF: entra por S1 y salta a S2/S3 si no responde (sin stream: la cola HF no lo recibe; con flujo previo continua sin repetirlo)
+// El manager HF descarga/carga el GGUF bajo demanda (hasta 300 s en S1/S2/S3).
+// Se prioriza el slot que YA tiene el modelo cargado o donde es primario.
+// El modelo exacto siempre viaja en el POST; no hay sustitución por otra IA.
+export function ordenSlotsLocal(id, estado, env = process.env) {
+  const slots = (estado?.slots || []).reduce((a, s) => (a[s.slot] = s, a), {});
+  const configured = [1, 2, 3].filter(n => env[`SWECODE_URL_S${n}`]);
+  return configured.sort((a, b) => {
+    const sa = slots['S' + a] || {}, sb = slots['S' + b] || {};
+    const puntuar = x => x.cargados?.includes(id) ? 0 : x.primario === id ? 1 : x.estado === 'CATALOGO_OK' ? 2 : 3;
+    return puntuar(sa) - puntuar(sb) || a - b;
+  });
+}
 export async function local(id, mensajes, { env = process.env, extra = {}, opts, onInicio, flujo } = {}) {
   const fallos = [], r = conTimeout(red(opts), id, env);
+  // No crear otro router ni abrir la puerta al proveedor: llama al servicio HF existente.
+  r.timeoutMs = Math.max(r.timeoutMs, 175000);
   if (onInicio) { try { onInicio({ via: 'hf-local', usado: id }); } catch { /* informativo */ } }
-  for (const n of [1, 2, 3]) {
-    const u = env[`SWECODE_URL_S${n}`]; if (!u) continue;
-    try { const x = await completar(u, id, mensajes, null, extra, r, { flujo }); anotarMetricas(`hf-local/${id}`, x.metricas); return { salida: x.texto, tool_calls: x.tool_calls, tools_invalidas: x.tools_invalidas, finish_reason: x.finish_reason, via: 'hf-local', usado: id, servidor: `S${n}`, metricas: x.metricas }; } catch (e) { if (e.code === 'ABORTADO' || r.signal?.aborted) throw cancelada(); fallos.push(`S${n}: ${e.message}`); }
+  const estado = await disponibilidadLocal({ env });
+  const slots = ordenSlotsLocal(id, estado, env);
+  let solo503 = slots.length > 0;
+  for (const n of slots) {
+    const u = env[`SWECODE_URL_S${n}`];
+    if (r.signal?.aborted) throw cancelada();
+    try {
+      const x = await completar(u, id, mensajes, null, extra, r, { flujo });
+      anotarMetricas(`hf-local/${id}`, x.metricas);
+      return { salida: x.texto, tool_calls: x.tool_calls, tools_invalidas: x.tools_invalidas, finish_reason: x.finish_reason, via: 'hf-local', usado: id, servidor: `S${n}`, metricas: x.metricas };
+    } catch (e) {
+      if (e.code === 'ABORTADO' || r.signal?.aborted) throw cancelada();
+      solo503 = solo503 && e.status === 503;
+      fallos.push(`S${n}: ${e.message}`);
+    }
+  }
+  // Un 503 en todos los slots suele ser cold-start/sleep HF. Dar UN despertar
+  // breve y reintentar el MISMO modelo una vez, respetando Detener y timeout.
+  if (solo503) {
+    await esperarCancelable(2500, r);
+    for (const n of slots) {
+      if (r.signal?.aborted) throw cancelada();
+      try {
+        const x = await completar(env[`SWECODE_URL_S${n}`], id, mensajes, null, extra, r, { flujo });
+        anotarMetricas(`hf-local/${id}`, x.metricas);
+        return { salida: x.texto, tool_calls: x.tool_calls, tools_invalidas: x.tools_invalidas, finish_reason: x.finish_reason, via: 'hf-local', usado: id, servidor: `S${n}`, metricas: x.metricas };
+      } catch (e) {
+        if (e.code === 'ABORTADO' || r.signal?.aborted) throw cancelada();
+        fallos.push(`S${n} (wake): ${e.message}`);
+      }
+    }
   }
   throw Object.assign(new Error('HF_LOCAL: ' + (fallos.join(' | ') || 'sin SWECODE_URL_S1..S3')), { code: 'HF_LOCAL_FALLO' });
 }
@@ -518,8 +560,11 @@ export async function disponibilidadLocal({ env = process.env, consultar = fetch
       if (r.status === 503) return { slot, estado: 'NO_DISPONIBLE', motivo: 'HTTP_503' };
       if (!r.ok) return { slot, estado: 'SIN_VERIFICAR', motivo: 'HTTP_' + r.status };
       const obj = await r.json();
-      const modelos = Array.isArray(obj?.data) ? obj.data.map(x => x?.id).filter(x => typeof x === 'string') : [];
-      return { slot, estado: modelos.length ? 'CATALOGO_OK' : 'SIN_VERIFICAR', modelos };
+      const datos = Array.isArray(obj?.data) ? obj.data : [];
+      const modelos = datos.map(x => x?.id).filter(x => typeof x === 'string');
+      const cargados = datos.filter(x => x?.loaded === true && typeof x.id === 'string').map(x => x.id);
+      const primario = datos.find(x => x?.primary === true)?.id || null;
+      return { slot, estado: modelos.length ? 'CATALOGO_OK' : 'SIN_VERIFICAR', modelos, cargados, primario };
     } catch {
       return { slot, estado: 'SIN_VERIFICAR', motivo: 'SIN_CONEXION' };
     }
@@ -533,7 +578,7 @@ export function estadosModelosLocales(ids, estado) {
   return ids.map(id => {
     const presentes = slots.filter(s => Array.isArray(s.modelos) && s.modelos.includes(id));
     const caidos = slots.filter(s => s.estado === 'NO_DISPONIBLE' && s.motivo === 'HTTP_503');
-    const confirmado = presentes.length > 0;
+    const confirmado = presentes.some(s => s.cargados?.includes(id));
     const ninguno = configurados > 0 && caidos.length === configurados;
     const e = confirmado ? 'DISPONIBLE' : !configurados ? 'NO_CONFIGURADO' : ninguno ? 'NO_DISPONIBLE' : 'SIN_VERIFICAR';
     return { id: 'hf/' + id, nombre: id, proveedor: 'hf-local',

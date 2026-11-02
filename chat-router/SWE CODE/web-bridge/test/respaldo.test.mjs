@@ -123,8 +123,28 @@ test("HF local: S1/S2/S3 con 503 no figuran DISPONIBLES y no se sustituyen por o
 test("HF local: un S2 que anuncia un modelo permite seleccionarlo sin tocar S1 ni agentes", async () => {
   const { disponibilidadLocal, estadosModelosLocales } = await import("../src/respaldo.js");
   const estado = await disponibilidadLocal({ env:{SWECODE_URL_S1:"https://s1.example/v1",SWECODE_URL_S2:"https://s2.example/v1"}, refrescar:true,
-    consultar: async url => url.includes("s2.example") ? {status:200,ok:true,json:async()=>({data:[{id:"lfm2.5-350m"}]})} : {status:503,ok:false}});
+    consultar: async url => url.includes("s2.example") ? {status:200,ok:true,json:async()=>({data:[{id:"lfm2.5-350m",loaded:true}]})} : {status:503,ok:false}});
   const [liquid,qwen]=estadosModelosLocales(["lfm2.5-350m","qwen2.5-coder-1.5b"],estado);
   assert.equal(liquid.estado,"DISPONIBLE");
   assert.equal(qwen.estado,"SIN_VERIFICAR");
+});
+
+test("HF: preferir el slot con GGUF cargado y no declarar DISPONIBLE por listado sin load", async () => {
+  const { ordenSlotsLocal, estadosModelosLocales } = await import("../src/respaldo.js");
+  const env={SWECODE_URL_S1:"https://s1.example/v1",SWECODE_URL_S2:"https://s2.example/v1",SWECODE_URL_S3:"https://s3.example/v1"};
+  const slots=[{slot:"S1",estado:"CATALOGO_OK",modelos:["lfm2.5-350m"],cargados:[],primario:"qwen2.5-coder-1.5b"},
+    {slot:"S2",estado:"CATALOGO_OK",modelos:["lfm2.5-350m"],cargados:["lfm2.5-350m"],primario:"lfm2.5-350m"},
+    {slot:"S3",estado:"CATALOGO_OK",modelos:["lfm2.5-350m"],cargados:[],primario:"qwen3-0.6b"}];
+  assert.deepEqual(ordenSlotsLocal("lfm2.5-350m",{slots},env),[2,1,3]);
+  const status=estadosModelosLocales(["lfm2.5-350m"],{slots,configurados:3});
+  assert.equal(status[0].estado,"DISPONIBLE");
+  const cold=estadosModelosLocales(["lfm2.5-350m"],{slots:slots.map(s=>({...s,cargados:[]})),configurados:3});
+  assert.equal(cold[0].estado,"SIN_VERIFICAR");
+});
+test("HF: si /v1/models marca unloaded, no prometer respuesta antes del cold-start", async () => {
+  const { disponibilidadLocal, estadosModelosLocales } = await import("../src/respaldo.js");
+  const estado=await disponibilidadLocal({env:{SWECODE_URL_S1:"https://s1.example/v1"},refrescar:true,
+    consultar:async()=>({ok:true,status:200,json:async()=>({data:[{id:"lfm2.5-350m",loaded:false,primary:true}]})})});
+  assert.equal(estado.slots[0].primario,"lfm2.5-350m");
+  assert.equal(estadosModelosLocales(["lfm2.5-350m"],estado)[0].estado,"SIN_VERIFICAR");
 });

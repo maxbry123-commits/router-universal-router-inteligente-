@@ -99,6 +99,9 @@ const WEB_FALLBACK = (process.env.WEB_FALLBACK || 'qwen38max,qwen37max,dsv4-flas
 
 // deadline duro por request: nunca colgar >120s (proxy/cliente). Devuelve 504 JSON.
 const DEADLINE_MS = parseInt(process.env.BRIDGE_DEADLINE_MS || '100000', 10);
+// SOLO modelos HF GGUF: el manager remoto puede descargar el archivo y arrancar
+// llama-server en frío. SSE keepalive mantiene la conexión dentro del mismo router.
+const HF_LOCAL_DEADLINE_MS = Math.max(DEADLINE_MS, 360000);
 // latido (opcional, streaming): objeto cuyo .fn reinicia el plazo; cada fragmento recibido cuenta como actividad (el plazo pasa a ser de inactividad)
 function conDeadline(p, ms, latido) {
   let t;
@@ -382,6 +385,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     // tarea_id (cuerpo o cabecera x-tarea-id): modelos locales/Groq/NVIDIA con checkpoint universal (retomar_local.js).
     // Sin tarea_id pero con conv_id se DERIVA <conv_id>-<sha256 de [modelo, modo, mensajes] (12)>: el mismo envio reintentado reanuda, uno distinto es tarea nueva. Sin conv_id nada cambia.
     const explicito = esExterno(model) || esLocal(model), pideRespaldo = req.body.respaldo === true;
+    const plazoModelo = esLocal(model) ? HF_LOCAL_DEADLINE_MS : DEADLINE_MS;
     let tareaId = req.body.tarea_id != null ? req.body.tarea_id : req.headers['x-tarea-id'];
     if ((tareaId == null || tareaId === '') && explicito && conv_id != null && conv_id !== '') tareaId = tareaDerivada(conv_id, model, modo, mensajesM, propietarioDe(req));
     const origen = ['yaiwes', 'openclaw'].includes(req.body.origen) ? req.body.origen : undefined;  // origen del contrato: ruta del checkpoint en el Harness
@@ -402,7 +406,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       const b = req.body, str = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
       const vinculo = { propietario: propietarioDe(req), proyecto: str(proyecto), sesion: conv_id != null ? String(conv_id) : null, workflow: str(b.workflow), operacion: str(b.operacion) };
       const plan = b.objetivo !== undefined || b.operaciones_previstas !== undefined ? { objetivo: b.objetivo, operaciones: b.operaciones_previstas } : undefined;
-      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { ...extra, ...vinculo, plan, exigirPlan: b.exigir_confirmacion === true || String(process.env.BRIDGE_EXIGIR_CONFIRMACION ?? '').trim() !== '0', confirmarCompleta: b.tarea_completa === true || req.headers['x-tarea-completa'] === '1', origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + DEADLINE_MS * 0.8, flushChars: parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_CHARS, 10) || undefined, flushMs: Number.isFinite(parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10)) ? parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10) : undefined, ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: AbortSignal.any([sse.signal, ac1.signal]) } } : {}) }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
+      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { ...extra, ...vinculo, plan, exigirPlan: b.exigir_confirmacion === true || String(process.env.BRIDGE_EXIGIR_CONFIRMACION ?? '').trim() !== '0', confirmarCompleta: b.tarea_completa === true || req.headers['x-tarea-completa'] === '1', origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + plazoModelo * 0.9, flushChars: parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_CHARS, 10) || undefined, flushMs: Number.isFinite(parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10)) ? parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10) : undefined, ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: AbortSignal.any([sse.signal, ac1.signal]) } } : {}) }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
       tarea = { id: r.tarea_id, estado: r.estado, fase: r.fase, secciones: r.secciones, reanudado: r.reanudado, desde_checkpoint: r.desde_checkpoint };
     } else if (esExterno(model)) {
       const r = await externo(model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
@@ -433,7 +437,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     };
     sse.vigilar();
     try {
-      await conDeadline(ejecutar(), DEADLINE_MS, sse.pide ? sse.latido : null);
+      await conDeadline(ejecutar(), plazoModelo, sse.pide ? sse.latido : null);
       if (toolsInvalidas.length) throw Object.assign(new Error('Tool calls invalidas: no se entregan al ejecutor'), { code: 'TOOL_CALL_INVALIDA' });
       if ((!salida || !String(salida).trim()) && !llamadas.length) throw Object.assign(new Error('respuesta vacia del modelo web'), { code: 'EMPTY_RESPONSE' });
     } catch (e) {
