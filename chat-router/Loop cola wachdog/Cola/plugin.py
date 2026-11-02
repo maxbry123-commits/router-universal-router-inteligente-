@@ -101,6 +101,25 @@ class _DurableQueueStore(_core.QueueStore):
         return result
 
 
+# One local transition+bucket readback at a time. Without this lock,
+# two threads could upload snapshots out of order even though SQLite WAL
+# serialized their individual commits.
+_DSL_SNAPSHOT_LOCK = threading.RLock()
+
+
+def _serialized_transition(fn):
+    def wrapped(self, *args, **kwargs):
+        with _DSL_SNAPSHOT_LOCK:
+            return fn(self, *args, **kwargs)
+    return wrapped
+
+
+for _method in ("create", "start", "claim_dsl_for", "complete", "control",
+                "disable_dsl_task", "skip_dsl_task"):
+    setattr(_DurableQueueStore, _method,
+            _serialized_transition(getattr(_DurableQueueStore, _method)))
+
+
 def _store():
     global _STORE, _DSL_STORAGE_READY
     if _STORE is None:
