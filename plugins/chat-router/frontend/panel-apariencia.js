@@ -3,6 +3,7 @@
 import { ICONOS, TRAZOS, PALETA, SENAL, FUENTES, FUENTES_ETQ, TEMAS, PRESETS, ROLES, DESTINOS, COLOR_DEF } from "./apariencia-datos.js";
 import { cargar, guardarEstado, construirCSS, HEX } from "./apariencia-aplicar.js";
 import { montarExtra } from "./apariencia-extra.js";
+import { mountSweCodeFree } from "./swe-code-free.js";
 
 const svg = (id, w = 20) => '<svg viewBox="0 0 24 24" width="' + w + '" height="' + w + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (TRAZOS[id] || TRAZOS.info) + "</svg>";
 const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4))); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
@@ -269,4 +270,7 @@ export async function mount(root, { api, tell } = {}) {
     wrap.append(tok, el("div", "", ""), fila, estSrv, el("div", "vn-estado", "Token solo en este navegador. Trigger usa el puente Vercel. Alarma cada 10 min si saldo ≤ 1$ o health falla."));
     controlBox.append(wrap);
   }
+
+  // SWE CODE free — auto-reparación OpenClaw
+  try { mountSweCodeFree(root, { api, tell }); } catch (e) { console.error("SWE CODE free", e); }
 }
