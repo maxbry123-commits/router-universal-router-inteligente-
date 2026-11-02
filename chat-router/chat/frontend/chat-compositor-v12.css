@@ -177,3 +177,19 @@
   #composer .composer-bar > .p3d .p3d-cubo,
   #composer .composer-bar > .p3d .p3d-anillo{animation:none!important}
 }
+
+/* CHAT 2 · V12.2 · Cronómetro dentro de la salida y clip visual más discreto.
+   El cubo 3D y el comportamiento de los selectores se conservan intactos. */
+#histories .chat-history .p3d-reloj{
+  display:block;align-self:flex-start;flex:0 0 auto;
+  color:var(--quiet,#b0b0b0);font:500 12px/1.4 system-ui,sans-serif;
+  font-variant-numeric:tabular-nums;
+  padding:4px 8px;margin:2px 6px 8px;
+  background:transparent;border:0;box-shadow:none;max-width:100%;
+}
+@media(max-width:720px){
+  /* Reducir visualmente el clip sin reducir el área táctil del botón. */
+  #composer #composer-extra > #btn-adjunto svg{
+    width:18px!important;height:18px!important;
+  }
+}

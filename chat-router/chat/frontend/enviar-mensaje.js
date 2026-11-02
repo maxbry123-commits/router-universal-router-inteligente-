@@ -174,8 +174,21 @@ export function montarEnviar(ctx) {
     input.value = ""; ajustarAlturaEditor();
     c.ocupado = true; pintarTabs();
     let enviado = false;
-    const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta que el Router confirma proceso_id; luego riu-progreso pone Pensando/tools
+    const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta confirmacion del Router
     c.hist.append(pending);
+    // Cronómetro real de esta solicitud, aislado de los demás chats.
+    // La palabra Pensando y los segundos pertenecen a la SALIDA, no al cubo.
+    // No representa tokens de inferencia: mide el tiempo transcurrido de la solicitud.
+    const inicioRespuesta = performance.now();
+    const relojRespuesta = node("div", "Pensando… · 0 s", "item p3d-reloj");
+    relojRespuesta.setAttribute("role", "timer");
+    relojRespuesta.setAttribute("aria-label", "Tiempo transcurrido de respuesta");
+    c.hist.append(relojRespuesta);
+    const relojInterval = setInterval(() => {
+      if (!relojRespuesta.isConnected) return;
+      const seg = Math.max(0, Math.floor((performance.now() - inicioRespuesta) / 1000));
+      relojRespuesta.textContent = "Pensando… · " + seg + " s";
+    }, 1000);
     const alProgreso = (e) => {
       if (!pending.isConnected) { window.removeEventListener('riu-progreso', alProgreso); return; }  // listener fuera solo si la burbuja desaparecio (o en finally)
       const d = e.detail;
@@ -285,6 +298,17 @@ export function montarEnviar(ctx) {
       abajo(c);
       if (!(c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) && !input.value) { input.value = message; input.dispatchEvent(new Event("input", { bubbles: true })); }  // si falla, el mensaje vuelve a la caja
     } finally {
+      clearInterval(relojInterval);
+      const segFinal = Math.max(0, (performance.now() - inicioRespuesta) / 1000);
+      const redondeado = (Math.round(segFinal * 10) / 10).toFixed(1);
+      const tituloTiempo = enviado ? "Tiempo de cómputo (transcurrido): "
+        : (c.detenerFlag ? "Detenido tras: " : "Tiempo hasta el error: ");
+      relojRespuesta.textContent = tituloTiempo + redondeado + " s";
+      relojRespuesta.setAttribute("role", "status");
+      relojRespuesta.setAttribute("aria-label", relojRespuesta.textContent);
+      // Al completar el modelo, la duración queda al pie de la última salida.
+      // Append mueve el MISMO nodo: no crea cronómetros duplicados.
+      if (relojRespuesta.isConnected) c.hist.append(relojRespuesta);
       window.removeEventListener('riu-progreso', alProgreso);  // listener fuera al terminar/error/cancelar
       c.detenerFn = null; c.ocupado = false; pintarTabs();
       if (enviado && c.colaMensajes && c.colaMensajes.length) {

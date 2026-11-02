@@ -86,7 +86,7 @@ if (!document.getElementById("chat-compositor-v12")) {
   hoja.id = "chat-compositor-v12";
   hoja.rel = "stylesheet";
   const css = new URL("./chat-compositor-v12.css", import.meta.url);
-  css.searchParams.set("v", "12.1");
+  css.searchParams.set("v", "12.2");
   hoja.href = css.href;
   document.head.append(hoja);
 }
