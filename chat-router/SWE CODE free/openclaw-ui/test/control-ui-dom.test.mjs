@@ -21,7 +21,9 @@ test('UI en jsdom: selector central con 3 campos reales + modo + workflow + sali
   const TOOLS = { ok: true, http: 200, datos: { vivo: { router: 'ok' }, tools: [{ id: 'salud', grupo: 'chat', titulo: 'Estado del Router', estado: 'DISPONIBLE', efectos: 'lectura' }, { id: 'almacen', grupo: 'almacen', titulo: 'Almacen', estado: 'DISPONIBLE', efectos: 'por_accion', acciones: ['leer', 'guardar'], lectura: ['leer'] }], gaps: [{ id: 'anclaje', motivo: 'campo de /chat/send' }] } };
   const host = {
     pluginId: 'swe-selector', signal: new AbortController().signal, connection: { connected: true }, sessions: { selectedKey: 'sesion-1' },
-    request: async (m, p) => { llamadas.push([p.actionId, p.payload]); const r = p.actionId === 'capacidades' ? CAP : p.actionId === 'tools' ? TOOLS : { ok: true, http: 200, datos: { estado: 'PENDIENTE', pendiente_aprobacion: { op_id: 'op-1' } } }; return { ok: true, result: r }; },
+    request: async (m, p) => { llamadas.push([p.actionId, p.payload]); const r = p.actionId === 'capacidades' ? CAP : p.actionId === 'tools' ? TOOLS
+      : p.actionId === 'agentes_lock' ? { ok: true, http: 200, datos: { agentes_locked: p.payload.locked ?? true } }
+      : { ok: true, http: 200, datos: { estado: 'PENDIENTE', pendiente_aprobacion: { op_id: 'op-1' } } }; return { ok: true, result: r }; },
     onEvent: () => () => {}, subscribe: () => () => {},
     components: { mountSelectPicker: (c, props) => { const h = { props, dispose() {}, update(n) { h.props = n; } }; pickers.push({ c, h }); c.append(Object.assign(document.createElement('span'), { textContent: props.accessibleLabel })); return h; } },
     ui: { registerNavigation: () => () => {}, registerPanel: () => () => {}, registerPage: (p) => { host.pagina = p; return () => {}; } },
@@ -47,6 +49,8 @@ test('UI en jsdom: selector central con 3 campos reales + modo + workflow + sali
   assert.equal(ultimo('SALIDA').value, 'openclaw', 'elegir Codex no cambia la salida'); assert.equal(ultimo('AGENTE QUE EJECUTA').value, 'codex', 'la eleccion no disponible queda visible');
   // modo agentico ON con codex no instalado: ejecucion bloqueada con aviso, no se envia nada
   raiz.querySelector('[aria-label="MODO AGENTICO"]').click();
+  await new Promise((ok) => setTimeout(ok, 20));
+  assert.ok(llamadas.some(([id, payload]) => id === 'agentes_lock' && payload.locked === false), 'el Router confirmo Agentes ON');
   assert.match(raiz.querySelector('.swe-selector-problemas').textContent, /AGENTE QUE EJECUTA codex: NO INSTALADO/);
   const msg = raiz.querySelector('.swe-mensaje'); msg.value = 'hazlo';
   const botones = (t) => [...raiz.querySelectorAll('button')].find((b) => b.textContent === t);
