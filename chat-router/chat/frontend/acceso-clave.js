@@ -68,7 +68,8 @@ export function montarAcceso({ root, q, tell }) {
   const equipar = () => hist.querySelectorAll(".message.error").forEach((m) => {
     if (m.dataset.ac) return; m.dataset.ac = "1"; if (!/^GAP:/.test(m.textContent)) return;
     const f = el("div", "ac-acc");
-    f.append(boton("Reintentar", "mini", reintentar), boton("Clave de acceso…", "mini", async () => { const k = await pedirClave("Escribe la clave del servidor y reintenta."); if (k) { tell("Clave guardada"); reintentar(); } }));
+    f.append(boton("Reintentar", "mini", reintentar));
+    if (esAuth(m.textContent)) f.append(boton("Clave de acceso…", "mini", async () => { const k = await pedirClave("Escribe la clave del servidor y reintenta."); if (k) { tell("Clave guardada"); reintentar(); } }));
     m.append(f);
   });
   new MutationObserver(() => requestAnimationFrame(equipar)).observe(hist, { childList: true, subtree: true });
