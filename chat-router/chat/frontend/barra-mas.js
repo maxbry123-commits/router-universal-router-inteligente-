@@ -7,7 +7,7 @@
 //   Cuaderno (selector): loop, cola, watchdog, prompt, skills y el resto de ventanas.
 // El modelo sigue en su selector, debajo de la caja. Auto sale de la fila de iconos.
 const CONTEXTO = ["btn-archivos", "btn-ancla", "btn-sandbox", "btn-copiar-input"];
-const TRABAJO = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tareas", "btn-tools", "btn-agentes", "btn-prompt"];
+const TRABAJO = ["btn-loop", "btn-cola", "btn-watchdog", "btn-tareas", "btn-tools", "btn-agentes", "btn-prompt", "btn-paralelo"];
 const INTERRUPTORES = ["btn-tools", "btn-agentes", "btn-prompt"];
 const VENTANAS = ["btn-comandos", "btn-sesion", "btn-reglas", "btn-motor-archivos", "btn-mcp", "btn-pendientes", "btn-conexiones", "btn-room", "btn-power"];
 const CUADERNO = VENTANAS;
@@ -76,8 +76,18 @@ if (!document.getElementById("chat-flujo-movil-v11")) {
   hoja.id = "chat-flujo-movil-v11";
   hoja.rel = "stylesheet";
   const ruta = new URL("./chat-flujo-movil.css", import.meta.url);
-  ruta.searchParams.set("v", "11.1");
+  ruta.searchParams.set("v", "12.0");
   hoja.href = ruta.href;
+  document.head.append(hoja);
+}
+// V12: última capa quirúrgica para móvil; no sustituye los estilos del chat.
+if (!document.getElementById("chat-compositor-v12")) {
+  const hoja = document.createElement("link");
+  hoja.id = "chat-compositor-v12";
+  hoja.rel = "stylesheet";
+  const css = new URL("./chat-compositor-v12.css", import.meta.url);
+  css.searchParams.set("v", "12.0");
+  hoja.href = css.href;
   document.head.append(hoja);
 }
 
@@ -157,7 +167,10 @@ function grupo(id, icono, hoja, etiqueta) {
   if (!b.querySelector("svg")) b.innerHTML = svg(icono);
   b.setAttribute("aria-label", etiqueta);
   const env = bar.querySelector(".action");
-  if (b.parentNode !== bar) bar.insertBefore(b, env || null);
+  // Los mismos grupos viven en la fila auxiliar móvil; no moverlos al composer
+  // al repetirse el MutationObserver (evita rebotes y reflow).
+  if (b.parentNode !== bar && (!movil() || b.parentNode?.id !== "composer-extra"))
+    bar.insertBefore(b, env || null);
   return b;
 }
 
@@ -341,6 +354,59 @@ function botonExpandirInput() {
   setExpand(false);
 }
 
+// Reinciar SOLO el input: texto, expansión y scroll del editor; sin enviar.
+function botonReiniciarInput() {
+  const fila = bar(), form = document.getElementById("composer");
+  const campo = form?.querySelector("#message");
+  if (!fila || !campo || document.getElementById("btn-reiniciar-input")) return;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.id = "btn-reiniciar-input";
+  btn.className = "secondary";
+  btn.title = "Reiniciar el cuadro de escritura";
+  btn.setAttribute("aria-label", "Reiniciar el cuadro de escritura");
+  btn.innerHTML = svg('<path d="M4 11a8 8 0 1 1 2 6"/><path d="M4 4v7h7"/>');
+  btn.addEventListener("click", () => {
+    campo.value = "";
+    campo.scrollTop = 0;
+    form.classList.remove("riu-input-expanded");
+    const ampliar = document.getElementById("btn-expandir-input");
+    if (ampliar?.getAttribute("aria-expanded") === "true") ampliar.click();
+    campo.dispatchEvent(new Event("input", { bubbles:true }));
+    campo.focus();
+  });
+  fila.append(btn);
+}
+
+// Una sola barra de herramientas bajo Enviar, encima del selector de modelos.
+// El DOM y los handlers originales se conservan: no clonamos botones.
+function organizarComposerMovil() {
+  const form = document.getElementById("composer"), fila = bar();
+  if (!form || !fila || !movil()) return;
+  let extra = document.getElementById("composer-extra");
+  if (!extra) {
+    extra = document.createElement("div");
+    extra.id = "composer-extra";
+    extra.setAttribute("role", "toolbar");
+    extra.setAttribute("aria-label", "Herramientas del chat");
+    fila.after(extra);
+  }
+  const IDs = ["btn-adjunto", "btn-pegar", "mode-selector-mount",
+    "btn-grp-ctx", "btn-grp-trab", "btn-grp-cuad", "btn-limpiar-input",
+    "btn-expandir-input", "btn-reiniciar-input"];
+  for (const id of IDs) {
+    const boton = document.getElementById(id);
+    if (boton && boton.parentElement !== extra) extra.append(boton);
+  }
+}
+function devolverComposerExtras() {
+  const extra = document.getElementById("composer-extra"), fila = bar();
+  if (!extra || !fila) return;
+  const envio = fila.querySelector(".action");
+  [...extra.children].forEach(b => fila.insertBefore(b, envio || null));
+  extra.remove();
+}
+
 function devolver() {
   const fila = bar();
   if (!fila) return;
@@ -438,8 +504,10 @@ function colocar() {
     botonPegar();
     botonLimpiar();
     botonExpandirInput();
-    if (!movil()) { devolver(); menu(); return; }
+    botonReiniciarInput();
+    if (!movil()) { devolverComposerExtras(); devolver(); menu(); return; }
     tres();
+    organizarComposerMovil();
   } finally { ocupado = false; }
 }
 

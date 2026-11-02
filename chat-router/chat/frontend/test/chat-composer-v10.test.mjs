@@ -7,7 +7,7 @@ test("El cubo original está recuperado, con 6 caras y 2 anillos sin transformac
  for(const id of ["f1","f2","f3","f4","f5","f6","a1","a2"])assert.ok(js.includes('class="'+id+'"')||js.includes(" "+id+'"' ),id);
  assert.match(css,/@keyframes p3d-gira/);
  assert.doesNotMatch(css,/p3d-formas-v10/);
- assert.match(css,/animation-play-state:paused/);
+ assert.match(js,/const w = el\("div", "p3d"\); w.hidden = true/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.match(js,/estado\.textContent = "Pensando…"/);
 });

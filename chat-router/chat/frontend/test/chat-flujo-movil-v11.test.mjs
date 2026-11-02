@@ -19,16 +19,17 @@ test("En móvil el chat se desplaza como página, sin forzar altura al historial
 });
 test("El scroll RUI08 usa la página en móvil, la burbuja baja y permanece solo una flecha",()=>{
  const js=src("chat-riu.js");
- assert.match(js,/document.scrollingElement \|\| document.documentElement/);
- assert.match(js,/window.addEventListener\("scroll", medir/);
- assert.match(js,/last.scrollIntoView/);
+ assert.match(js,/const scroller = h/);
+ assert.match(js,/h.scrollTo\(\{ top: h.scrollHeight/);
+ assert.match(js,/bajar.hidden = max <= 48 \|\| fromBottom <= 70/);
  assert.equal((js.match(/document.createElement\("button"\); bajar/g)||[]).length,1);
 });
 test("Los iconos no chocan y se conservan modelos, modos, LOOP y ancla",()=>{
  const css=src("chat-flujo-movil.css"),html=src("panel-chat.html");
- assert.match(css,/grid-area:2 \/ 4!important/);
- assert.match(css,/grid-area:2 \/ 5!important/);
- assert.match(css,/grid-area:2 \/ 6 \/ 3 \/ 8!important/);
+ const next=src("chat-compositor-v12.css");
+ assert.match(next,/grid-template-columns/);
+ assert.match(next,/#composer-extra/);
+ assert.match(next,/#btn-microfono/);
  assert.match(html,/id="btn-selector-modelos"|id="sel-groq"/);
  assert.match(src("barra-mas.js"),/chat-flujo-movil\.css/);
 });

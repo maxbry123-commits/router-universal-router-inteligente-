@@ -42,8 +42,7 @@ export function conectarRiu({ q }) {
   const medir = () => {
     const h = activa();
     if (!h) { barra.style.width = "0"; bajar.hidden = true; return; }
-    const page = matchMedia("(max-width:720px)").matches;
-    const scroller = page ? (document.scrollingElement || document.documentElement) : h;
+    const scroller = h; // historial moderado, con su propio scroll
     const max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
     const fromBottom = max - scroller.scrollTop;
     barra.style.width = max > 4 ? Math.round((scroller.scrollTop / max) * 100) + "%" : "0";
@@ -57,12 +56,7 @@ export function conectarRiu({ q }) {
     const h = activa();
     if (!h) return;
     h.__sigue = true;
-    if (matchMedia("(max-width:720px)").matches) {
-      // Bajar al final de la salida, no al final de un contenedor ya sin scroll.
-      const last = [...h.querySelectorAll(".message")].at(-1);
-      if (last) last.scrollIntoView({ block:"end", behavior:"smooth" });
-      else window.scrollTo({top:document.documentElement.scrollHeight,behavior:"smooth"});
-    } else h.scrollTo({ top: h.scrollHeight, behavior: "smooth" });
+    h.scrollTo({ top: h.scrollHeight, behavior: "smooth" });
     medir();
   });
   hist.addEventListener("scroll", medir, { capture: true, passive: true });
