@@ -33,6 +33,7 @@ PROVEEDORES_NUEVOS = {
     "nvidia/meta/muse-glimmer-30b": _P("Muse Glimmer 30B", "nvidia", temperature=1.0, top_p=0.95, max_tokens=4096),
     "nvidia/nvidia/nemotron-3-ultra-550b-a55b": _P("Nemotron 3 Ultra 550B", "nvidia", temperature=1.0, top_p=0.95, max_tokens=4096),
     "nvidia/z-ai/glm-5.3": _P("GLM 5.3", "nvidia", temperature=0.5, top_p=1.0, max_tokens=4096),
+    "nvidia/z-ai/glm-5.3-flash": _P("GLM 5.3 Flash", "nvidia", temperature=0.5, top_p=1.0, max_tokens=4096),
     "deepseek/deepseek-v4-pro": _P("DeepSeek V4 Pro", "deepseek"),
     "deepseek/deepseek-flash": _P("DeepSeek Flash", "deepseek"),
     "minimax/MiniMax-M3": _P("MiniMax M3", "minimax"),
