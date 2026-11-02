@@ -138,5 +138,24 @@ class TestAutomaticLoopHandoff(unittest.TestCase):
         self.assertEqual(result["status"],"QUEUE_NOT_COMPLETED")
         self.assertFalse(result["dispatched"])
 
+
+class TestMechanicoLedger(unittest.TestCase):
+    def test_real_checkpoint_yields_gap_not_pass(self):
+        from nct_loop.repair import gap_events
+        from nct_loop.trigger_contract import canonical,sha256
+        c={"id":"T01","enabled":True}
+        receipt={"error":"MODEL_TIMEOUT","contract_sha256":sha256(canonical(c))}
+        rows={"queue_id":"Q1","tasks":[{"id":"T01","status":"failed"}]}
+        found=gap_events("P1","L1",[c],{"T01":receipt},rows)
+        self.assertEqual(len(found),1)
+        self.assertEqual(found[0]["code"],"MODEL_TIMEOUT")
+
+    def test_all_ten_unavailable_do_not_forge_evidence(self):
+        from nct_loop.repair import research_sources
+        def offline(url,espera=5):raise TimeoutError("offline")
+        result=research_sources("MODEL_TIMEOUT",offline)
+        self.assertEqual(len(result),10)
+        self.assertTrue(all(row["status"]=="UNAVAILABLE" for row in result))
+
 if __name__ == "__main__":
     unittest.main()

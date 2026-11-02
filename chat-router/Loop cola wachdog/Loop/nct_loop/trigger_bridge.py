@@ -276,6 +276,17 @@ class TriggerBridge:
                             "loop_meta": state.get("loop_meta", {}), "queue": queue,
                             "watchdog_id": state.get("watchdog_id"), "triggers": statuses,
                             "flags": flags, "event_cursor": state["revision"]}
+                if op == "gaps":
+                    ledger = await _invoke(self.ports.load, f"dsl-gaps:{project}") or {}
+                    return {"ok": True, "status": "PASS", "project_id": project,
+                            "gaps": ledger.get("gaps", []), "revision": ledger.get("revision", 0)}
+                if op == "gap_sources":
+                    ledger = await _invoke(self.ports.load, f"dsl-gaps:{project}") or {}
+                    item = next((g for g in ledger.get("gaps", []) if g["gap_id"] ==
+                                 request.get("gap_id")), None)
+                    if not item:raise ContractError("GAP_NOT_FOUND")
+                    return {"ok": True, "status": "PASS",
+                            "research": item.get("research", []), "selected": item.get("selected")}
                 if op == "events":
                     if not state.get("queue_id"):
                         return {"ok": True, "status": "PASS", "events": []}
@@ -352,6 +363,55 @@ class TriggerBridge:
                     raise ContractError("CHECKPOINT_NOT_DURABLE")
                 return {"ok": True, "status": "PASS", "revision": new["revision"],
                         "count": len(new["contracts"]), "config_sha256": sha256(canonical(new))}
+            if op == "gap_collect":
+                if not state.get("queue_id"):raise ContractError("LOOP_NOT_STARTED")
+                from .repair import gap_events
+                q = await _invoke(self.ports.queue_status, state["queue_id"])
+                checkpoints = {c["id"]:await _invoke(self.ports.load,
+                    f"dsl:{project}:{loop}:{c['id']}") for c in state.get("contracts",[])}
+                observed=gap_events(project,loop,state.get("contracts",[]),checkpoints,q)
+                key_gaps=f"dsl-gaps:{project}"
+                old=await _invoke(self.ports.load,key_gaps) or {"revision":0,"gaps":[]}
+                existing={item["gap_id"]:item for item in old["gaps"]}
+                for item in observed:
+                    if item["gap_id"] not in existing:
+                        existing[item["gap_id"]]=dict(item,status="OPEN",research=[])
+                if len(existing)>250:raise ContractError("GAP_LEDGER_LIMIT")
+                new={"revision":old["revision"]+1,"gaps":list(existing.values())}
+                if await _invoke(self.ports.save,key_gaps,new) is not True:
+                    raise ContractError("GAPS_CHECKPOINT_NOT_DURABLE")
+                if await _invoke(self.ports.load,key_gaps)!=new:
+                    raise ContractError("GAPS_READBACK_FAILED")
+                return {"ok":True,"status":"PASS","project_id":project,"total":len(existing),
+                        "new":len(existing)-len(old["gaps"]),"revision":new["revision"]}
+            if op in ("gap_research","gap_select"):
+                key_gaps=f"dsl-gaps:{project}"
+                old=await _invoke(self.ports.load,key_gaps)
+                if not isinstance(old,dict):raise ContractError("GAPS_NOT_COLLECTED")
+                gaps=[dict(item) for item in old["gaps"]]
+                item=next((g for g in gaps if g["gap_id"]==request.get("gap_id")),None)
+                if not item:raise ContractError("GAP_NOT_FOUND")
+                if op=="gap_research":
+                    source=getattr(self.ports,"research",None)
+                    candidates=await _invoke(source,item["code"])
+                    if not isinstance(candidates,list) or len(candidates)!=10:
+                        raise ContractError("RESEARCH_INCOMPLETE")
+                    item["research"]=candidates
+                    item["status"]="RESEARCHED_UNVERIFIED"
+                else:
+                    selected=request.get("selected_url")
+                    matches=[s for s in item.get("research",[]) if s.get("url")==selected
+                        and s.get("status")=="SOURCE_FOUND_UNVERIFIED"]
+                    if len(matches)!=1:raise ContractError("SELECTION_NOT_IN_RESEARCH")
+                    item["selected"]={"url":selected,"sha256":matches[0]["sha256"]}
+                    item["status"]="SELECTED_NEEDS_CONTRACT_APPROVAL"
+                new={"revision":old["revision"]+1,"gaps":gaps}
+                if await _invoke(self.ports.save,key_gaps,new) is not True:
+                    raise ContractError("GAPS_CHECKPOINT_NOT_DURABLE")
+                if await _invoke(self.ports.load,key_gaps)!=new:
+                    raise ContractError("GAPS_READBACK_FAILED")
+                return {"ok":True,"status":item["status"],"gap_id":item["gap_id"],
+                        "revision":new["revision"],"executable":False}
             if op == "run_ready":
                 return await self.dispatch_ready(project=project, loop=loop, state=state,
                     server_context=server_context, max_steps=request.get("max_steps", 100))

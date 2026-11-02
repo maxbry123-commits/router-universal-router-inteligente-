@@ -34,7 +34,7 @@ def build_ports(host: dict) -> HostPorts:
 
     def save(key, document):
         raw = canonical(document).decode("utf8")
-        if key.startswith("dsl-config:") and hasattr(store, "db"):
+        if key.startswith(("dsl-config:","dsl-gaps:")) and hasattr(store, "db"):
             with store.db() as conn:
                 conn.execute("BEGIN IMMEDIATE")
                 old = load(key)
@@ -242,7 +242,14 @@ def build_ports(host: dict) -> HostPorts:
             return {"approved": False}
         return row
 
-    return HostPorts(load, save, constitution, anchor, facts, queue_claim,
-                     model, tool, approve, queue_complete,
-                     queue_create, store.control, store.get, store.events, roles_resolve,
-                     False, store.skip_dsl_task)
+    def research(query):
+        from mvp.archivos.seguridad import abrir
+        from .repair import research_sources
+        return research_sources(query,abrir)
+
+    ports=HostPorts(load,save,constitution,anchor,facts,queue_claim,
+                    model,tool,approve,queue_complete,queue_create,
+                    store.control,store.get,store.events,roles_resolve,
+                    False,store.skip_dsl_task)
+    ports.research=research
+    return ports
