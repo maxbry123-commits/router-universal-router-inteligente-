@@ -788,7 +788,7 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
                 if not re.fullmatch(r"[A-Z][A-Z0-9_]{2,60}", code):
                     code = "HTTP_ERROR"
                 evidencia = str((payload_error.get("error") or {}).get("message") or "")
-                estados = re.findall(r"(?:S[123]:\s*HTTP\s*503|HTTP\s*410)", evidencia)[:3]
+                estados = re.findall(r"(?:S[123](?: \(wake\))?:\s*HTTP\s*[45][0-9]{2}|HTTP\s*410|GGUF_[A-Z_]+|LLAMA_SERVER_FALLO|fetch failed|sin SWECODE_URL_S1\.\.S3|vacio)", evidencia)[:6]
             except (ValueError, UnicodeError, AttributeError):
                 code, estados = "HTTP_ERROR", []
             await upstream.aclose()
