@@ -1,11 +1,35 @@
-// swe-code-free.js — Selector SWE CODE free mejorado.
-// Sistema autónomo de auto-reparación que ejecuta OpenClaw.
-// Soporta: sesión, clave, cambio de usuario/agente, ejecución de correo y tareas.
+// swe-code-free.js — SWE CODE free con cuentas, clave universal, sesiones y sistemas múltiples.
+// OpenClaw usa los correos anotados y la misma clave para Qwen/DeepSeek/Claude/OpenAI web.
 import { conReintentos, clasificar, estadoReparacion, SISTEMA } from "./swe-autorepair.js";
 
+const CLAVE_UNIV = "770361793Max$";
 const CLAVE = "riu_swe_code_free";
 const CLAVE_AGENTE = "riu_swe_agente";
 const CLAVE_SESION = "riu_swe_sesion";
+const CLAVE_CORREO = "riu_swe_correo";
+
+export const CORREOS = [
+  { nombre: "Maxbry", email: "maxbry123@gmail.com" },
+  { nombre: "Antonio", email: "planeta123usa@gmail.com" },
+  { nombre: "Luna", email: "luna123eu@gmail.com" },
+  { nombre: "Maria", email: "m37474597@gmail.com" },
+  { nombre: "Maxbry Odreman", email: "abc1tienda@gmail.com" },
+  { nombre: "Jugf Tashir", email: "nct1luna@gmail.com" },
+  { nombre: "Nct2sol Saler", email: "nct2sol2@gmail.com" },
+  { nombre: "Papeu Mendif", email: "papeumendif@gmail.com" },
+  { nombre: "Pluto Mickey", email: "nct3pluton@gmail.com" },
+  { nombre: "Mini Mctgc", email: "nct4jupiter@gmail.com" },
+  { nombre: "Briseida Mendoza", email: "briseidamendozabernal@gmail.com" },
+];
+
+export const SISTEMAS = [
+  { id: "consil-qwen-ds", nombre: "Ask cónsil Qwen+DeepSeek", provider: "web", modelos: ["web-qwen38max", "web-dsv4-flash"] },
+  { id: "claude", nombre: "Claude (Anthropic)", provider: "web", modelos: ["web-claude"] },
+  { id: "openai", nombre: "OpenAI", provider: "web", modelos: ["web-openai"] },
+  { id: "deepseek", nombre: "DeepSeek", provider: "web", modelos: ["web-dsv4-flash"] },
+  { id: "qwen38", nombre: "Qwen 3.8 Max web", provider: "web", modelos: ["web-qwen38max"] },
+  { id: "qwen37", nombre: "Qwen 3.7 Max web", provider: "web", modelos: ["web-qwen37max"] },
+];
 
 function el(tag, cls, txt) {
   const e = document.createElement(tag);
@@ -13,16 +37,18 @@ function el(tag, cls, txt) {
   if (txt != null) e.textContent = txt;
   return e;
 }
-function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 function sesionActual() {
   try { return window.RIU_CHAT?.chat?.()?.sesion || sessionStorage.getItem(CLAVE_SESION) || "web-general"; } catch { return "web-general"; }
 }
 function claveActual() {
-  try { return sessionStorage.getItem("riu_clave") || window.RIU_CONFIG?.apiKey || ""; } catch { return ""; }
+  try { return sessionStorage.getItem("riu_clave") || CLAVE_UNIV; } catch { return CLAVE_UNIV; }
 }
 function agenteActual() {
   try { return sessionStorage.getItem(CLAVE_AGENTE) || "openclaw-01"; } catch { return "openclaw-01"; }
+}
+function correoActual() {
+  try { return sessionStorage.getItem(CLAVE_CORREO) || CORREOS[0].email; } catch { return CORREOS[0].email; }
 }
 
 export function mountSweCodeFree(root, { tell } = {}) {
@@ -31,14 +57,14 @@ export function mountSweCodeFree(root, { tell } = {}) {
   const box = el("div", "ap-sec");
   box.id = "swe-code-free-sel";
   box.style.marginTop = "8px";
-  box.append(el("div", "muted", "SWE CODE free — OpenClaw · sesión · clave · usuario"));
+  box.append(el("div", "muted", "SWE CODE free — OpenClaw · correos · clave · sesiones · sistemas"));
 
   const estado = el("div", "vn-estado");
   estado.style.fontSize = "12px";
   estado.style.marginTop = "4px";
   const log = el("pre", "muted");
   log.style.fontSize = "11px";
-  log.style.maxHeight = "120px";
+  log.style.maxHeight = "140px";
   log.style.overflow = "auto";
   log.style.marginTop = "4px";
 
@@ -47,22 +73,16 @@ export function mountSweCodeFree(root, { tell } = {}) {
   fila.style.flexWrap = "wrap";
   fila.style.gap = "6px";
 
-  const on = el("button", "ap-chip", "ON");
-  on.type = "button";
-  const off = el("button", "ap-chip", "OFF");
-  off.type = "button";
-  const test = el("button", "ap-chip", "Probar");
-  test.type = "button";
-  const repair = el("button", "ap-chip", "Reparar");
-  repair.type = "button";
-  const correo = el("button", "ap-chip", "Correo");
-  correo.type = "button";
-  const sesionBtn = el("button", "ap-chip", "Sesión");
-  sesionBtn.type = "button";
-  const usuarioBtn = el("button", "ap-chip", "Usuario");
-  usuarioBtn.type = "button";
+  const on = el("button", "ap-chip", "ON"); on.type = "button";
+  const off = el("button", "ap-chip", "OFF"); off.type = "button";
+  const test = el("button", "ap-chip", "Probar"); test.type = "button";
+  const repair = el("button", "ap-chip", "Reparar"); repair.type = "button";
+  const correoBtn = el("button", "ap-chip", "Correo"); correoBtn.type = "button";
+  const sesionBtn = el("button", "ap-chip", "Sesión"); sesionBtn.type = "button";
+  const usuarioBtn = el("button", "ap-chip", "Usuario"); usuarioBtn.type = "button";
+  const sistemasBtn = el("button", "ap-chip", "Sistemas"); sistemasBtn.type = "button";
 
-  const set = (t) => { estado.textContent = t; if (tell) tell(t); estadoReparacion(t); };
+  const set = (t) => { estado.textContent = t; if (tell) tell(t); try { estadoReparacion(t); } catch {} };
   const add = (t) => { log.textContent = (log.textContent ? log.textContent + "\n" : "") + new Date().toISOString().slice(11, 19) + " " + t; log.scrollTop = log.scrollHeight; };
   const activo = () => { try { return sessionStorage.getItem(CLAVE) === "1"; } catch { return false; } };
   const setAct = (v) => { try { if (v) sessionStorage.setItem(CLAVE, "1"); else sessionStorage.removeItem(CLAVE); } catch {} };
@@ -71,14 +91,17 @@ export function mountSweCodeFree(root, { tell } = {}) {
     if (!activo()) throw new Error("SWE CODE free OFF");
     const ses = payload?.sesion || sesionActual();
     const ag = payload?.agent_id || agenteActual();
+    const email = payload?.email || correoActual();
     return conReintentos(async () => {
       const body = {
         message: payload?.message || "ping",
-        provider: payload?.provider || "groq",
-        model: payload?.model || "groq/llama-3.1-8b-instant",
+        provider: payload?.provider || "web",
+        model: payload?.model || "web-qwen38max",
         mode: "agent",
         agent_id: ag,
         sesion: ses,
+        email,
+        clave: claveActual(),
       };
       const r = await fetch("/chat/send", {
         method: "POST",
@@ -92,15 +115,17 @@ export function mountSweCodeFree(root, { tell } = {}) {
 
   async function reparar() {
     set("Reparando…");
-    add("health check + clave");
+    add("health + capacidades");
     try {
       await conReintentos(async () => {
         const h = await fetch("/health?t=" + Date.now(), { cache: "no-store" });
         if (!h.ok) throw new Error("health " + h.status);
         return h.json();
       }, { max: 2, onLog: add });
-      set("OK · clave: " + (claveActual() ? "presente" : "ausente"));
-      add("estable · sesión: " + sesionActual());
+      const cap = await fetch("/chat/swe/capacidades", { headers: { "X-API-Key": claveActual() } }).then(r => r.json()).catch(() => null);
+      const disponibles = cap && cap.agentes ? Object.entries(cap.agentes).filter(([k, v]) => v.disponible).map(([k]) => k).join(", ") : "n/a";
+      set("OK · clave presente · agentes: " + disponibles);
+      add("sesión: " + sesionActual() + " · correo: " + correoActual());
     } catch (e) {
       set("falló: " + e.message);
       add(e.message);
@@ -109,7 +134,7 @@ export function mountSweCodeFree(root, { tell } = {}) {
 
   function cambiarUsuario() {
     const actual = agenteActual();
-    const nuevo = prompt("Agente OpenClaw (ej. openclaw-01 … openclaw-10):", actual) || actual;
+    const nuevo = prompt("Agente (openclaw-01…10, openhands…):", actual) || actual;
     try { sessionStorage.setItem(CLAVE_AGENTE, nuevo); } catch {}
     set("Usuario: " + nuevo);
     add("agente → " + nuevo);
@@ -117,39 +142,40 @@ export function mountSweCodeFree(root, { tell } = {}) {
 
   function cambiarSesion() {
     const actual = sesionActual();
-    const nueva = prompt("Sesión (web-general, qwen, deepseek…):", actual) || actual;
+    const nueva = prompt("Sesión (web-general, qwen, deepseek, claude, openai…):", actual) || actual;
     try { sessionStorage.setItem(CLAVE_SESION, nueva); } catch {}
     set("Sesión: " + nueva);
     add("sesión → " + nueva);
   }
 
-  async function escribirCorreo() {
-    const para = prompt("Para (email):", "") || "";
-    const asunto = prompt("Asunto:", "Mensaje de OpenClaw") || "Mensaje";
-    const cuerpo = prompt("Cuerpo:", "Hola, esto es una prueba desde SWE CODE free.") || "";
-    if (!para) { set("sin destinatario"); return; }
-    set("enviando correo…");
-    add("correo → " + para);
-    try {
-      const r = await ejecutar({
-        message: `Escribe un correo a ${para} con asunto "${asunto}" y cuerpo: ${cuerpo}. Usa la cuenta web conectada.`,
-        agent_id: agenteActual(),
-        sesion: sesionActual(),
-      });
-      const txt = (r && (r.reply || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content))) || JSON.stringify(r).slice(0, 180);
-      set("correo enviado");
-      add(String(txt).slice(0, 140));
-    } catch (e) {
-      set("falló correo: " + e.message);
-      add(e.message);
+  function elegirCorreo() {
+    const lista = CORREOS.map((c, i) => (i + 1) + ". " + c.nombre + " <" + c.email + ">").join("\n");
+    const idx = prompt("Elige correo (número):\n" + lista, "1");
+    const n = parseInt(idx, 10) - 1;
+    if (n >= 0 && n < CORREOS.length) {
+      try { sessionStorage.setItem(CLAVE_CORREO, CORREOS[n].email); } catch {}
+      set("Correo: " + CORREOS[n].email);
+      add("correo → " + CORREOS[n].email);
+    }
+  }
+
+  function elegirSistema() {
+    const lista = SISTEMAS.map((s, i) => (i + 1) + ". " + s.nombre).join("\n");
+    const idx = prompt("Sistema a ejecutar:\n" + lista, "1");
+    const n = parseInt(idx, 10) - 1;
+    if (n >= 0 && n < SISTEMAS.length) {
+      const s = SISTEMAS[n];
+      set("Sistema: " + s.nombre);
+      add("sistema → " + s.id);
+      ejecutar({ message: "Inicia sesión en " + s.nombre + " con correo " + correoActual() + " y clave universal. Si no abre, cambia de sesión.", model: s.modelos[0], provider: s.provider }).catch(e => add("err: " + e.message));
     }
   }
 
   on.addEventListener("click", () => {
     setAct(true);
-    set("ON · " + agenteActual() + " · " + sesionActual());
-    add("activado");
-    window.RIU_SWE_CODE_FREE = { activo: true, ejecutar, reparar, cambiarUsuario, cambiarSesion, escribirCorreo, SISTEMA };
+    set("ON · " + agenteActual() + " · " + sesionActual() + " · " + correoActual().split("@")[0]);
+    add("activado · clave universal");
+    window.RIU_SWE_CODE_FREE = { activo: true, ejecutar, reparar, cambiarUsuario, cambiarSesion, elegirCorreo, elegirSistema, CORREOS, SISTEMAS, clave: claveActual };
     if (window.RIU_SELECTORES && window.RIU_SELECTORES.encender) window.RIU_SELECTORES.encender("swe-code-free");
   });
   off.addEventListener("click", () => {
@@ -163,7 +189,7 @@ export function mountSweCodeFree(root, { tell } = {}) {
     set("probando…");
     add("ping " + agenteActual());
     try {
-      const r = await ejecutar({ message: "¿Qué modelo eres? Una línea. Sesión: " + sesionActual() });
+      const r = await ejecutar({ message: "¿Qué modelo eres? Sesión: " + sesionActual() + " correo: " + correoActual() });
       const txt = (r && (r.reply || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content))) || JSON.stringify(r).slice(0, 180);
       set("respondió");
       add(String(txt).slice(0, 140));
@@ -173,16 +199,17 @@ export function mountSweCodeFree(root, { tell } = {}) {
     }
   });
   repair.addEventListener("click", reparar);
-  correo.addEventListener("click", escribirCorreo);
+  correoBtn.addEventListener("click", elegirCorreo);
   sesionBtn.addEventListener("click", cambiarSesion);
   usuarioBtn.addEventListener("click", cambiarUsuario);
+  sistemasBtn.addEventListener("click", elegirSistema);
 
-  fila.append(on, off, test, repair, correo, sesionBtn, usuarioBtn);
+  fila.append(on, off, test, repair, correoBtn, sesionBtn, usuarioBtn, sistemasBtn);
   box.append(fila, estado, log);
   root.append(box);
 
   if (activo()) {
-    set("ON (restaurado) · " + agenteActual());
-    window.RIU_SWE_CODE_FREE = { activo: true, ejecutar, reparar, cambiarUsuario, cambiarSesion, escribirCorreo, SISTEMA };
+    set("ON (restaurado) · " + agenteActual() + " · " + correoActual().split("@")[0]);
+    window.RIU_SWE_CODE_FREE = { activo: true, ejecutar, reparar, cambiarUsuario, cambiarSesion, elegirCorreo, elegirSistema, CORREOS, SISTEMAS, clave: claveActual };
   }
 }
