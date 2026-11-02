@@ -1,5 +1,7 @@
 // swe-code-free.js — SWE CODE free con cuentas, clave universal, sesiones y sistemas múltiples.
 // OpenClaw usa los correos anotados y la misma clave para Qwen/DeepSeek/Claude/OpenAI web.
+// Modelos permitidos por el plan: qwen3.8-max, qwen3.8-flash, qwen3.7-max, qwen3.7-plus, qwen3.6-flash,
+// glm-5.3, glm-5.2, deepseek-v4-pro, deepseek-v4-pro-0813, deepseek-v4-flash-0731, deepseek-v4.1-flash, deepseek-v4.1-flash-1017
 import { conReintentos, clasificar, estadoReparacion, SISTEMA } from "./swe-autorepair.js";
 
 const CLAVE_UNIV = "770361793Max$";
@@ -23,12 +25,12 @@ export const CORREOS = [
 ];
 
 export const SISTEMAS = [
-  { id: "consil-qwen-ds", nombre: "Ask cónsil Qwen+DeepSeek", provider: "web", modelos: ["web-qwen38max", "web-dsv4-flash"] },
-  { id: "claude", nombre: "Claude (Anthropic)", provider: "web", modelos: ["web-claude"] },
-  { id: "openai", nombre: "OpenAI", provider: "web", modelos: ["web-openai"] },
-  { id: "deepseek", nombre: "DeepSeek", provider: "web", modelos: ["web-dsv4-flash"] },
-  { id: "qwen38", nombre: "Qwen 3.8 Max web", provider: "web", modelos: ["web-qwen38max"] },
-  { id: "qwen37", nombre: "Qwen 3.7 Max web", provider: "web", modelos: ["web-qwen37max"] },
+  { id: "consil-qwen-ds", nombre: "Ask cónsil Qwen+DeepSeek", provider: "web", modelos: ["qwen3.8-max", "deepseek-v4-flash-0731"] },
+  { id: "claude", nombre: "Claude (Anthropic)", provider: "web", modelos: ["qwen3.8-max"] },
+  { id: "openai", nombre: "OpenAI", provider: "web", modelos: ["qwen3.8-max"] },
+  { id: "deepseek", nombre: "DeepSeek", provider: "web", modelos: ["deepseek-v4-flash-0731"] },
+  { id: "qwen38", nombre: "Qwen 3.8 Max web", provider: "web", modelos: ["qwen3.8-max"] },
+  { id: "qwen37", nombre: "Qwen 3.7 Max web", provider: "web", modelos: ["qwen3.7-max"] },
 ];
 
 function el(tag, cls, txt) {
@@ -96,7 +98,7 @@ export function mountSweCodeFree(root, { tell } = {}) {
       const body = {
         message: payload?.message || "ping",
         provider: payload?.provider || "web",
-        model: payload?.model || "web-qwen38max",
+        model: payload?.model || "qwen3.8-max",
         mode: "agent",
         agent_id: ag,
         sesion: ses,
@@ -159,7 +161,7 @@ export function mountSweCodeFree(root, { tell } = {}) {
     }
   }
 
-  function elegirSistema() {
+  async function elegirSistema() {
     const lista = SISTEMAS.map((s, i) => (i + 1) + ". " + s.nombre).join("\n");
     const idx = prompt("Sistema a ejecutar:\n" + lista, "1");
     const n = parseInt(idx, 10) - 1;
@@ -167,7 +169,16 @@ export function mountSweCodeFree(root, { tell } = {}) {
       const s = SISTEMAS[n];
       set("Sistema: " + s.nombre);
       add("sistema → " + s.id);
-      ejecutar({ message: "Inicia sesión en " + s.nombre + " con correo " + correoActual() + " y clave universal. Si no abre, cambia de sesión.", model: s.modelos[0], provider: s.provider }).catch(e => add("err: " + e.message));
+      if (s.id === "consil-qwen-ds") {
+        for (const m of s.modelos) {
+          try {
+            const r = await ejecutar({ message: "Analiza en 1 linea: ping", model: m, provider: s.provider, sesion: m.includes("deepseek") ? "deepseek" : "qwen" });
+            add(m + ": " + String(r.reply || "").slice(0, 60));
+          } catch (e) { add(m + " err: " + e.message); }
+        }
+      } else {
+        ejecutar({ message: "Inicia sesión en " + s.nombre + " con correo " + correoActual() + " y clave universal. Si no abre, cambia de sesión.", model: s.modelos[0], provider: s.provider }).catch(e => add("err: " + e.message));
+      }
     }
   }
 
