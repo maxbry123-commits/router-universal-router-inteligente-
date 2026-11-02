@@ -80,6 +80,29 @@ def test_codex_exige_binario_y_endpoint_responses(vacio, monkeypatch):
     assert nunca_lanzado(vacio)
 
 
+def test_codex_con_bridge_existente_no_exige_url_adicional(vacio, monkeypatch):
+    monkeypatch.setenv("RIU_CODEX_BIN", falso(vacio, "codex"))
+    monkeypatch.setenv("RIU_API_KEY", "clave-ficticia-del-chat")
+    monkeypatch.delenv("RIU_CODEX_BASE_URL", raising=False)
+    assert cap(sonda_gateway=lambda url: True)["agentes"]["codex"]["estado"] == "DISPONIBLE"
+    assert cap(sonda_gateway=lambda url: False)["agentes"]["codex"]["estado"] == "SIN VERIFICAR"
+    assert nunca_lanzado(vacio)
+
+
+def test_modelos_consultan_bridge_cuando_claves_viven_en_banco(vacio, monkeypatch):
+    from unittest.mock import patch
+    monkeypatch.setenv("RIU_API_KEY", "clave-ficticia-del-chat")
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+    lista = {"groq/qwen/qwen3.8-27b": {"disponible": True},
+             "nvidia/z-ai/glm-5.3": {"disponible": None}}
+    with patch.object(disponibilidad, "_modelos_bridge", return_value=lista) as probe:
+        c = cap()["modelos"]
+        assert c["groq/qwen/qwen3.8-27b"]["estado"] == "DISPONIBLE"
+        assert c["nvidia/z-ai/glm-5.3"]["estado"] == "SIN VERIFICAR"
+        assert probe.call_count == 1
+
+
 def test_opencode_y_swe_agent(vacio, monkeypatch):
     monkeypatch.setenv("RIU_OPENCODE_BIN", falso(vacio, "opencode"))
     monkeypatch.setenv("RIU_SWEAGENT_BIN", falso(vacio, "sweagent"))
