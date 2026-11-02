@@ -147,6 +147,11 @@ export function montarEnviar(ctx) {
     if (selAct === "nvidia-groq-team" && !fichaNvidia) { c.hist.append(node("div", "NVIDIA: elige primero un modelo en la hoja NVIDIA. No se envió a otro modelo.", "item message meta")); abajo(c); return; }
     const fichaSwe = (selAct === "swe-code" || selAct === "swen-code-free") ? ((window.RIU_SWE || {})[selAct] || null) : null;  // selectores SWE CODE / SWEN CODE free: modelo elegido en su hoja
     const ventanaCentral = { "swe-code": "swe-code", "swen-code-free": "swen-code-free", groq: "groq", "nvidia-groq-team": "nvidia" }[selAct] || "";  // las 4 ventanas con el selector central unico
+    // Evitar fingir que se ejecutó un agente cuando el selector activo no tiene contrato SWE.
+    if (requiereHarness(leerSeleccion()) && !ventanaCentral) {
+      c.hist.append(node("div", "Modo agéntico/workflow activo: selecciona un modelo HF, Groq, NVIDIA o SWE CODE para enviar la tarea al Harness. No se ejecutó otro agente.", "item message error"));
+      abajo(c); return;
+    }
     const bloqueoCentral = ventanaCentral && window.RIU_SWE_CENTRAL ? window.RIU_SWE_CENTRAL.bloqueo(ventanaCentral) : "";  // eleccion NO DISPONIBLE: se queda visible con su error y NO se envia (ni se cambia a otro modelo)
     if (bloqueoCentral) { c.hist.append(node("div", bloqueoCentral + ". No se envió a otro modelo.", "item message error")); abajo(c); return; }
     const fichaMvp = selAct === "team-5-mvp";  // Team 5 MVP: ruta propia -> fichas_qwen ficha_qwen=5 (1 modelo elegido, historial completo y tools)
