@@ -38,7 +38,8 @@ function montarSelector(container: HTMLElement, host: ControlUiHost, signal: Abo
   });
   const ids = (t: 'agentes' | 'workflows' | 'modelos', actual: string) => { const k = Object.keys(capacidades[t]); return k.includes(actual) ? k : [actual, ...k]; };
   const campos: { rotulo: string; fila: 'RESPONDE' | 'EJECUTA'; clave: keyof Seleccion; lista: () => ReturnType<typeof opciones> }[] = [
-    { fila: 'RESPONDE', rotulo: 'Agente que responde', clave: 'agente_responde', lista: () => opciones('agente', ids('agentes', seleccion.agente_responde)) },
+    // El backend responde con modelo_responde; agente_responde es legado no ejecutado.
+    // Mostrar solo agente_tool, que realmente pasa al dispatcher via Harness.
     { fila: 'RESPONDE', rotulo: 'Modelo que responde', clave: 'modelo_responde', lista: () => opciones('modelo', ids('modelos', seleccion.modelo_responde)) },
     { fila: 'EJECUTA', rotulo: 'Agente que ejecuta', clave: 'agente_tool', lista: () => opciones('agente', ids('agentes', seleccion.agente_tool), seleccion.modelo_tool) },
     { fila: 'EJECUTA', rotulo: 'Modelo para tool', clave: 'modelo_tool', lista: () => opciones('modelo', ids('modelos', seleccion.modelo_tool)) },

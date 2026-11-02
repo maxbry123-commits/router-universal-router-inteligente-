@@ -10,7 +10,7 @@ let JSDOM = null; try { ({ JSDOM } = await import('jsdom')); } catch { /* sin js
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const saltar = JSDOM ? false : 'jsdom no instalado (npm i -D jsdom)';
 
-test('UI en jsdom: selector central con 4 campos + modo + workflow + salida; elegir cambia SOLO su campo; ejecucion bloqueada con aviso; iniciar/estado/aprobar/tool llaman al backend', { skip: saltar }, async () => {
+test('UI en jsdom: selector central con 3 campos reales + modo + workflow + salida; elegir cambia SOLO su campo; ejecucion bloqueada con aviso; iniciar/estado/aprobar/tool llaman al backend', { skip: saltar }, async () => {
   const dom = new JSDOM('<!doctype html><body><div id="raiz"></div></body>');
   Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement });
   const { outputFiles } = await build({ entryPoints: [path.join(AQUI, '..', 'src', 'control-ui.ts')], bundle: true, format: 'esm', platform: 'browser', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
@@ -31,7 +31,9 @@ test('UI en jsdom: selector central con 4 campos + modo + workflow + salida; ele
   const vista = host.pagina.mount(raiz, { host, signal: host.signal, props: {} });
   await new Promise((ok) => setTimeout(ok, 30));
   const etiquetas = pickers.map((p) => p.h.props.accessibleLabel);
-  for (const e of ['AGENTE QUE RESPONDE', 'MODELO QUE RESPONDE', 'AGENTE QUE EJECUTA', 'MODELO PARA TOOL', 'WORKFLOW', 'SALIDA']) assert.ok(etiquetas.includes(e), `falta el control ${e}: ${etiquetas}`);
+  for (const e of ['MODELO QUE RESPONDE', 'AGENTE QUE EJECUTA', 'MODELO PARA TOOL', 'WORKFLOW', 'SALIDA']) assert.ok(etiquetas.includes(e), `falta el control ${e}: ${etiquetas}`);
+  assert.equal(pickers.filter(p => p.h.props.accessibleLabel === 'AGENTE QUE RESPONDE').length, 0, 'no hay selector agente ficticio');
+  assert.equal(pickers.filter(p => p.h.props.accessibleLabel === 'AGENTE QUE EJECUTA').length, 1, 'un agente ejecutor real');
   assert.ok(raiz.querySelector('[aria-label="MODO AGENTICO"]'), 'falta el boton MODO AGENTICO');
   assert.equal(llamadas[0][0], 'capacidades');
   const ultimo = (etq) => pickers.filter((p) => p.h.props.accessibleLabel === etq).at(-1).h.props;

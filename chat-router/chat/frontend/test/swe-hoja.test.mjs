@@ -133,3 +133,18 @@ test("Android: los modelos utilizan opciones planas, no optgroup nativo que cubr
   assert.doesNotMatch(source, /el\("optgroup"\)/);
   assert.match(source, /lista\.map\(x => op\(\{ \.\.\.x, etq:/);
 });
+
+test("selector chat YAIWES: solo un agente ejecutor real, no doble agente que responde sin motor", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const p = new URL("../swe-selectores.js", import.meta.url);
+  const fuente = readFileSync(p, "utf8");
+  const css = readFileSync(new URL("../shell.css", import.meta.url), "utf8");
+  assert.match(fuente, /\["Responde", \[\["Modelo", "modelo_responde"\]\]\]/);
+  assert.match(fuente, /\["Ejecuta", \[\["Agente", "agente_tool"\]/);
+  assert.doesNotMatch(fuente, /\["Responde", "agente_responde"/);
+  assert.match(css, /swe-rej-fila\[data-swe-fila="responde"\]/);
+  assert.match(css, /max-height:min\(76dvh/);
+  assert.equal(S.AGENTES_SWE.length, 6, "seis adaptadores, un solo selector agente");
+  assert.equal(S.armarTarea({sel:S.SEL_DEFECTO,mensaje:"x",sesion:"s"}).agente_tool, "swe-agent");
+});

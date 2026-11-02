@@ -221,7 +221,7 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 .swe-hoja .list .fila{min-height:40px;padding:4px 8px;font-size:14px}
 .swe-hoja .list .fila-nom{flex:1;flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:0 8px;min-width:0}
 .swe-hoja .list .fila-desc{display:inline;padding:0;font-size:11px}
-/* RESPONDE y EJECUTA: una tarjeta cada uno (titulo + [Agente][Modelo]); en pantallas estrechas los dos desplegables van uno bajo otro, a ancho completo */
+/* RESPONDE: un modelo. EJECUTA: el UNICO agente real y el modelo de herramienta. */
 .swe-hoja .swe-rej{display:flex;flex-direction:column;gap:12px}
 .swe-hoja .swe-rej-fila{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 12px;align-items:end;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--surface-alt)}
 .swe-hoja .swe-rej-fila.swe-wf{grid-template-columns:minmax(0,1fr);gap:8px;padding:0;border:0;border-radius:0;background:transparent}
@@ -251,3 +251,13 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 .swe-hoja .swe-actualizar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .swe-hoja .swe-refrescar{min-height:44px;padding:0 18px;border-radius:999px}
 .swe-hoja .swe-hora{font-size:12px;color:var(--quiet-2)}
+
+/* Ajuste acotado a la hoja de agentes: no afecta al chat, LOOP ni otros modales. */
+.sheet.swe-hoja .va-caja{width:min(600px,calc(100vw - 32px));max-height:min(79dvh,calc(100dvh - 20px))}
+.sheet.swe-hoja .swe-rej-fila[data-swe-fila="responde"]{grid-template-columns:minmax(0,1fr)}
+.sheet.swe-hoja .swe-ctl{gap:12px}
+.sheet.swe-hoja .swe-cuerpo{padding:12px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+@media(max-width:720px){
+  .sheet.swe-hoja .va-caja{width:100vw;max-height:min(76dvh,calc(100dvh - 8px))}
+  .sheet.swe-hoja .swe-rej-fila{padding:10px;gap:8px}
+}

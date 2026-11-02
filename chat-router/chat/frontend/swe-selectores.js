@@ -99,9 +99,14 @@ function controles() {
   const c = el("div", "swe-ctl"); c.setAttribute("role", "group"); c.setAttribute("aria-label", "Selector central: agentes, modelos, modo y workflow");
   const nota = el("p", "fila-desc swe-nota");
   const rej = el("div", "swe-rej");
-  [["Responde", "agente_responde", "modelo_responde"], ["Ejecuta", "agente_tool", "modelo_tool"]].forEach(([t, a1, m1]) => {
-    const caja = (micro, k) => { const w = el("span", "swe-sel"), m = el("span", "swe-micro", micro); m.setAttribute("aria-hidden", "true"); w.append(m, selector(k)); return w; };  // micro-etiqueta visible; el aria-label del select sigue siendo el rotulo completo
-    const r = el("div", "swe-rej-fila"); r.append(el("span", "swe-rej-t", t), caja("Agente", a1), caja("Modelo", m1)); rej.append(r);
+  // Un solo selector de agente REAL: agente_tool se ejecuta en el Harness.
+  // agente_responde sigue en el contrato legado, pero workflows.py nunca lo usa
+  // para responder; no mostrar un segundo selector que promete una accion ficticia.
+  [["Responde", [["Modelo", "modelo_responde"]]],
+   ["Ejecuta", [["Agente", "agente_tool"], ["Modelo para tool", "modelo_tool"]]]].forEach(([t, campos]) => {
+    const caja = (micro, k) => { const w = el("span", "swe-sel"), m = el("span", "swe-micro", micro); m.setAttribute("aria-hidden", "true"); w.append(m, selector(k)); return w; };
+    const r = el("div", "swe-rej-fila"); r.dataset.sweFila = t.toLowerCase();
+    r.append(el("span", "swe-rej-t", t), ...campos.map(([micro, k]) => caja(micro, k))); rej.append(r);
   });
   const lm = el("div", "swe-rej-fila swe-wf swe-bloque"); lm.append(el("span", "swe-rej-t", "Modo de trabajo"), selector("modo_trabajo"));
   const mo = el("div", "sel-salida swe-bloque"); mo.setAttribute("role", "group"); mo.setAttribute("aria-label", "Modo agéntico");
