@@ -27,7 +27,7 @@ test("El clip es más pequeño visualmente pero conserva el blanco táctil", () 
 });
 test("No se modifica el cubo original y se renueva caché móvil", () => {
   const s=src("barra-mas.js"),css=src("chat-compositor-v12.css");
-  assert.match(s,/css.searchParams.set\("v", "12.2"\)/);
+  assert.match(s,/css.searchParams.set\("v", "12.3"\)/);
   assert.match(css,/#histories \.chat-history \.p3d-reloj/);
   assert.match(src("pensando-3d.css"),/#composer \.composer-bar > \.p3d\[hidden\]/);
 });
