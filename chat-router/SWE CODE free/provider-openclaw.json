@@ -49,19 +49,19 @@
     },
     {
       "id": "lfm2.5-350m",
-      "nombre": "Liquid LFM2.5-350M (HF S1-S3)"
+      "nombre": "Liquid LFM2.5 350M"
     },
     {
       "id": "qwen2.5-coder-1.5b",
-      "nombre": "Qwen Coder 1.5B (HF S1-S3)"
+      "nombre": "Qwen2.5 Coder 1.5B"
     },
     {
       "id": "qwen3.5-0.8b",
-      "nombre": "Qwen3.5 0.8B (HF S1-S3)"
+      "nombre": "Qwen3.5 0.8B"
     },
     {
       "id": "qwen3-0.6b",
-      "nombre": "Qwen3 0.6B (HF S1-S3)"
+      "nombre": "Qwen3 0.6B"
     },
     {
       "id": "groq/qwen/qwen3.8-27b",
@@ -110,6 +110,10 @@
     {
       "id": "openai/gpt-5.5",
       "nombre": "OpenAI GPT-5.5 API"
+    },
+    {
+      "id": "nvidia/z-ai/glm-5.3-flash",
+      "nombre": "GLM 5.3 Flash"
     }
   ],
   "gramatica": "SWEN CODE free [modo <m>] [con|solo|modelo <m>] [chat <id>] [pipeline code|free] [doc <ruta>] <texto> — ver INSTRUCCIONES.md",
