@@ -36,8 +36,17 @@ test('La luz azul requiere estado de controles o apertura real',()=>{
   assert.match(css,/\[aria-pressed="true"\]/);
   assert.match(css,/\[aria-expanded="true"\]/);
   assert.match(css,/#btn-loop-power\[data-verified="false"\]/);
+  assert.match(css,/#btn-loop-power\[data-verified="true"\]\[aria-pressed="true"\]/);
   assert.match(css,/#2F80FF/);
   assert.doesNotMatch(css,/button:hover\s*\{[^}]*background:#193A62/);
+});
+test('El LOOP móvil indica estado accesible y permite reanudar con readback',()=>{
+  const host=read('loop-iframe-host.js'),css=read('composer-v07.css');
+  assert.match(host,/button\.setAttribute\('aria-label',/);
+  assert.match(host,/queueStatus==='paused'\?'resume'/);
+  assert.match(host,/op==='resume'&&now\.queue\?\.status!=='running'/);
+  assert.match(css,/#composer \.composer-bar > #btn-loop-power::before/);
+  assert.match(css,/font-size:0 !important/);
 });
 test('La base del LOOP sigue intacta',()=>{
   assert.match(read('loop-iframe-host.js'),/yaiwes_loop_panel_v1/);

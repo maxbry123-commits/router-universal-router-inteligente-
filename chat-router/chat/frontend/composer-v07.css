@@ -139,6 +139,35 @@
     color:#D6EAFF !important;
     box-shadow:0 0 0 1px #2F80FF66, 0 0 10px #2F80FF36 !important;
   }
+  /* Antes «LOOP ?» invadía la fila; el estado completo permanece en aria-label. */
+  #composer .composer-bar > #btn-loop-power {
+    position:relative !important;
+    font-size:0 !important;
+    overflow:visible !important;
+  }
+  #composer .composer-bar > #btn-loop-power::before {
+    content:"∞";
+    display:block;
+    font-size:25px;
+    line-height:1;
+    font-weight:700;
+    color:inherit;
+  }
+  #composer .composer-bar > #btn-loop-power::after {
+    content:"";
+    position:absolute;
+    right:3px;
+    top:3px;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#8D8D8D;
+    border:1px solid #2A2A2A;
+  }
+  #composer .composer-bar > #btn-loop-power[data-verified="true"][aria-pressed="true"]::after {
+    background:#2F80FF;
+    box-shadow:0 0 7px #2F80FF;
+  }
   #composer #btn-loop-power[data-verified="false"] {
     border-color:#626262 !important;
     background:#2A2A2A !important;
