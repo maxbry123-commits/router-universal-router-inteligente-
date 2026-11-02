@@ -35,9 +35,9 @@ class ModeloGateTests(unittest.TestCase):
                 self.assertEqual(f.await_count, 1)
                 return items
         items = asyncio.run(ejecutar())
-        self.assertGreaterEqual(items.count(": keepalive\\n\\n"), 1)
+        self.assertGreaterEqual(items.count(": keepalive\n\n"), 1)
         self.assertEqual(sum('"content": "una respuesta"' in x for x in items), 1)
-        self.assertEqual(items.count("data: [DONE]\\n\\n"), 1)
+        self.assertEqual(items.count("data: [DONE]\n\n"), 1)
 
     def test_mvp_heartbeat_error_es_terminal(self):
         import asyncio
@@ -51,7 +51,7 @@ class ModeloGateTests(unittest.TestCase):
                 return [x async for x in h._sse_mvp_con_latidos({}, {}, "nvidia/z-ai/glm-5.3", latido_s=0.005)]
         datos = asyncio.run(ejecutar())
         self.assertTrue(any('PROVEEDOR_HTTP_410' in x and 'error' in x for x in datos))
-        self.assertEqual(datos.count("data: [DONE]\\n\\n"), 1)
+        self.assertEqual(datos.count("data: [DONE]\n\n"), 1)
 
     def test_sse_un_mensaje_y_un_done(self):
         resp = h._mensaje_openai("nvidia/z-ai/glm-5.3", [], {"texto": "Hola", "finish_reason": "stop"}, via="mvp")
