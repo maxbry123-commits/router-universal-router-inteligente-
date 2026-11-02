@@ -47,9 +47,10 @@ export function conectarRiu({ q }) {
     const max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
     const fromBottom = max - scroller.scrollTop;
     barra.style.width = max > 4 ? Math.round((scroller.scrollTop / max) * 100) + "%" : "0";
-    // ÚNICA flecha, siempre disponible junto al borde inferior de la salida.
-    bajar.hidden = false;
-    bajar.disabled = max <= 2 || fromBottom <= 2;
+    // Una sola flecha contextual: no mostrar nada cuando ya estamos al final.
+    // En el móvil el otro icono (expandir input) ya no tiene forma de flecha.
+    bajar.hidden = max <= 48 || fromBottom <= 70;
+    bajar.disabled = bajar.hidden;
     bajar.setAttribute("aria-label", fromBottom > 2 ? "Bajar al final de la respuesta" : "Ya estás al final");
   };
   bajar.addEventListener("click", () => {

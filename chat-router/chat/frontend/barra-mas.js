@@ -311,8 +311,9 @@ function botonExpandirInput() {
   btn.className = "secondary";
   btn.setAttribute("aria-controls", "message");
   btn.setAttribute("aria-expanded", "false");
-  const iconExpand = svg('<path d="M8 3H3v5M16 21h5v-5M3 3l7 7M21 21l-7-7"/>');
-  const iconCollapse = svg('<path d="M4 10h6V4M20 14h-6v6M10 10 3 3M14 14l7 7"/>');
+  // Iconos distintos de las flechas de navegación: ampliar / contraer editor.
+  const iconExpand = svg('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/>');
+  const iconCollapse = svg('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12h8"/>');
   function setExpand(on) {
     form.classList.toggle("riu-input-expanded", on);
     btn.setAttribute("aria-expanded", String(on));
@@ -332,7 +333,11 @@ function botonExpandirInput() {
     }
   });
   form.addEventListener("submit", () => setExpand(false));
-  campo.after(btn);
+  // El espacio libre es la tercera posición de la segunda fila.
+  // No se superpone al texto ni crea una tercera línea de botones.
+  const fila = form.querySelector(".composer-bar");
+  if (!fila) return;
+  fila.append(btn);
   setExpand(false);
 }
 

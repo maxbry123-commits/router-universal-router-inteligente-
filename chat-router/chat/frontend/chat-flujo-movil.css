@@ -33,7 +33,7 @@
    order:1!important;
    height:auto;min-height:116px!important;
    max-height:min(240px,36dvh)!important;
-   padding:12px 44px 10px 9px!important;
+   padding:12px 9px 10px 9px!important;
    resize:vertical!important;overflow-y:auto!important;
    line-height:1.45!important;font-size:16px!important;
    box-sizing:border-box!important;
@@ -63,6 +63,22 @@
  }
  #composer .composer-bar > #btn-grp-cuad{grid-area:2 / 1!important}
  #composer .composer-bar > #btn-limpiar-input{grid-area:2 / 2!important}
+ /* Ampliar en la celda vacía entre escoba y Detener; icono cuadrado sin flechas. */
+ #composer .composer-bar > #btn-expandir-input{
+   grid-area:2 / 3!important;
+   position:static!important;inset:auto!important;order:initial!important;
+   display:inline-flex!important;justify-content:center!important;align-items:center!important;
+   place-self:center!important;
+   width:42px!important;height:44px!important;min-height:44px!important;
+   max-width:100%!important;margin:0!important;padding:0!important;
+   border:0!important;background:transparent!important;
+   box-shadow:none!important;color:var(--title,#eee)!important;
+   filter:none!important;z-index:auto!important
+ }
+ #composer .composer-bar > #btn-expandir-input svg{width:24px!important;height:24px!important}
+ #composer .composer-bar > #btn-expandir-input:focus-visible{
+   outline:2px solid var(--status-blue,#2F80FF)!important;outline-offset:2px!important
+ }
  #composer .composer-bar > #btn-detener{grid-area:2 / 4!important}
  /* El cubo original NO comparte celda con Detener/Enviar. */
  #composer .composer-bar > .p3d{
@@ -83,7 +99,6 @@
    height:44px!important;min-height:44px!important;
    padding:0 5px!important;box-shadow:none!important;
  }
- #composer > #btn-expandir-input{top:12px!important;right:10px!important}
  /* Orbe/estado solo si trabaja realmente; iconos no permanecen encendidos. */
  #composer .composer-bar > #btn-grp-ctx:not([aria-expanded="true"]),
  #composer .composer-bar > #btn-grp-trab:not([aria-expanded="true"]),

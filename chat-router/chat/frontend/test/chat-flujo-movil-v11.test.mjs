@@ -32,3 +32,14 @@ test("Los iconos no chocan y se conservan modelos, modos, LOOP y ancla",()=>{
  assert.match(html,/id="btn-selector-modelos"|id="sel-groq"/);
  assert.match(src("barra-mas.js"),/chat-flujo-movil\.css/);
 });
+
+test("Una sola flecha de bajar contextual y expandir input sin flechas ni superposición",()=>{
+ const rui=src("chat-riu.js"),js=src("barra-mas.js"),css=src("chat-flujo-movil.css");
+ assert.match(rui,/bajar\.hidden = max <= 48 \|\| fromBottom <= 70/);
+ assert.equal((rui.match(/className = "riu-bajar"/g)||[]).length,1);
+ assert.match(js,/fila\.append\(btn\)/);
+ assert.match(js,/const iconExpand = svg\('<rect/);
+ assert.match(css,/#composer \.composer-bar > #btn-expandir-input/);
+ assert.match(css,/grid-area:2 \/ 3!important/);
+ assert.doesNotMatch(css,/#composer > #btn-expandir-input/);
+});

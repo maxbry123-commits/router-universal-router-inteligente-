@@ -25,11 +25,11 @@ test("Escoba y botón ampliar texto preservan el campo y las acciones de envío"
  assert.match(js,/function botonExpandirInput\(\)/);
  assert.match(js,/form\.classList\.toggle\("riu-input-expanded", on\)/);
  assert.match(js,/setExpand\(!form\.classList\.contains/);
- assert.match(js,/campo\.after\(btn\)/);
+ assert.match(js,/fila\.append\(btn\)/);
  assert.match(js,/botonLimpiar\(\)/);
  assert.match(js,/M19 3L10 14/);
  assert.match(css,/#composer\.riu-input-expanded #message/);
- assert.match(css,/#composer > #btn-expandir-input/);
+ assert.match(src("chat-flujo-movil.css"),/#composer \.composer-bar > #btn-expandir-input/);
 });
 test("Composición no repite los selectores de modelos ni cambia LOOP o el backend",()=>{
  const html=src("panel-chat.html"),toolbar=src("chat-toolbar-v09.css");
