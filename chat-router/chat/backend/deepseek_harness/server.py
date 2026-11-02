@@ -573,7 +573,7 @@ async def _mvp_modelo_compat(req, headers, modelo):
         # El 410 de NVIDIA GLM y el 503 HF son diagnósticos, no fallback.
         try:
             motivo = str(up.json().get("detail") or "")
-            origin = re.search(r"\\bHTTP\\s+(410|429|503)\\b", motivo)
+            origin = re.search(r"\bHTTP\s+(410|429|503)\b", motivo)
         except (ValueError, AttributeError):
             origin = None
         raise HTTPException(status_code=502 if up.status_code >= 500 else up.status_code,
@@ -760,7 +760,7 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
                 if not re.fullmatch(r"[A-Z][A-Z0-9_]{2,60}", code):
                     code = "HTTP_ERROR"
                 evidencia = str((payload_error.get("error") or {}).get("message") or "")
-                estados = re.findall(r"(?:S[123]:\\s*HTTP\\s*503|HTTP\\s*410)", evidencia)[:3]
+                estados = re.findall(r"(?:S[123]:\s*HTTP\s*503|HTTP\s*410)", evidencia)[:3]
             except (ValueError, UnicodeError, AttributeError):
                 code, estados = "HTTP_ERROR", []
             await upstream.aclose()
