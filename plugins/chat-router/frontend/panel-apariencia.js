@@ -162,8 +162,9 @@ export async function mount(root, { api, tell } = {}) {
     });
   }
 
-  // Servidor HF — panel completo en la sección Control (top)
-  const controlBox = Array.from(root.querySelectorAll("section, div")).find(d => /Control/.test(d.textContent || "") && d.querySelector("button"));
+  // Servidor HF — inyectar en la sección Control (id fijo)
+  const hCtl = q("#ap-h-ctl");
+  const controlBox = hCtl ? hCtl.closest("section") : null;
   if (controlBox && !controlBox.querySelector("#srv-hf")) {
     const wrap = el("div", "", "");
     wrap.id = "srv-hf";
@@ -198,7 +199,6 @@ export async function mount(root, { api, tell } = {}) {
       return data;
     };
 
-    // Trigger: ping al puente Vercel (no necesita token) para despertar
     const trigger = async () => {
       estSrv.textContent = "Enviando trigger…";
       try {
@@ -246,7 +246,6 @@ export async function mount(root, { api, tell } = {}) {
       chip("Abrir Billing", false, () => { window.open("https://huggingface.co/settings/billing", "_blank"); avisa("Billing abierto"); })
     );
 
-    // Alarma periódica de saldo y health (cada 10 min, solo si hay token)
     let alarmaId = null;
     const iniciarAlarma = () => {
       if (alarmaId) clearInterval(alarmaId);
