@@ -14,6 +14,7 @@ export const MODELOS_API = [
   { id: 'nvidia/meta/muse-glimmer-30b', nombre: 'NVIDIA Muse Glimmer 30B' },
   { id: 'nvidia/nvidia/nemotron-3-ultra-550b-a55b', nombre: 'NVIDIA Nemotron 3 Ultra' },
   { id: 'nvidia/z-ai/glm-5.3', nombre: 'NVIDIA GLM 5.3' },
+  { id: 'nvidia/z-ai/glm-5.3-flash', nombre: 'NVIDIA GLM 5.3 Flash' },
   { id: 'deepseek/deepseek-v4-pro', nombre: 'DeepSeek V4 Pro (API)' },
   { id: 'deepseek/deepseek-flash', nombre: 'DeepSeek Flash (API)' },
   { id: 'minimax/MiniMax-M3', nombre: 'MiniMax M3 (API)' },
