@@ -175,6 +175,43 @@ def _iniciar_hilo():
     return True
 
 
+def _instalar_agentes_fondo():
+    """Instala y comprueba los agentes del Harness YA existente; nunca bloquea el arranque.
+    
+    La fuente es chat-router/agentes/runtime, sin nueva raiz de codigo, Space ni
+    duplicar el Harness. Los adaptadores reportan NO INSTALADO mientras no
+    termine la instalacion y NO CONFIGURADO si falta Gateway, Docker o claves.
+    """
+    if os.environ.get("RIU_AGENTES_AUTO_INSTALAR", "1") == "0":
+        return
+    runtime = REPO / "chat-router" / "agentes" / "runtime"
+    instalar = runtime / "instalar-agentes.sh"
+    verificar = runtime / "verificar-agentes.sh"
+    if not instalar.is_file() or not verificar.is_file():
+        print("AGENTES: scripts existentes ausentes; no se simula disponibilidad", flush=True)
+        return
+
+    def tarea():
+        env = _entorno()
+        env.setdefault("RIU_AGENTES_RUNTIME", str(runtime))
+        env["RIU_INSTALAR_TOLERANTE"] = "1"
+        # Los instaladores solo requieren PATH/proxy; no necesitan claves de APIs.
+        env = {k: v for k, v in env.items()
+               if not any(t in k.upper() for t in ("TOKEN", "PASSWORD", "API_KEY", "SECRET", "PASSPHRASE"))}
+        try:
+            with open("/tmp/riu-agentes-instalacion.log", "a", encoding="utf-8") as registro:
+                inst = subprocess.run(["bash", str(instalar)], cwd=str(REPO), env=env,
+                                      stdout=registro, stderr=subprocess.STDOUT, check=False)
+                estado = subprocess.run(["bash", str(verificar)], cwd=str(REPO), env=env,
+                                         stdout=registro, stderr=subprocess.STDOUT, check=False)
+            print("AGENTES: instalacion=%s verificacion=%s (disponibilidad real: Harness status.swe)"
+                  % (inst.returncode, estado.returncode), flush=True)
+        except (OSError, subprocess.SubprocessError) as error:
+            print("AGENTES: no se pudo comprobar runtime (%s)" % type(error).__name__, flush=True)
+
+    threading.Thread(target=tarea, name="riu-agentes-runtime", daemon=True).start()
+
+
 def main():
     for ruta in reversed(_rutas()):
         sys.path.insert(0, ruta)
@@ -182,6 +219,7 @@ def main():
     ARRANQUE = _head()
     print("MVP commit: " + (ARRANQUE or "desconocido"), flush=True)
     _iniciar_bridge()
+    _instalar_agentes_fondo()
     _iniciar_hilo()
     import uvicorn
     uvicorn.run("mvp.app:app", host="0.0.0.0", port=int(os.environ.get("PORT") or 7860))  # el Space lo lanza con PORT=7861 (detras de su proxy); boot.sh detecta esta linea
