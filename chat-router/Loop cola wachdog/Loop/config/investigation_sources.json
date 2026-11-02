@@ -1,0 +1,17 @@
+{
+  "schema":"yaiwes.mechanic.research_sources.v1",
+  "description":"10 fuentes de investigación para Mecánico. Solo el buscador autorizado del Harness consulta. No permitir llamadas directas del JSON/LLM.",
+  "sources":[
+    {"source_id":"github","domain":"github.com","role":"bugs, issues, code y soluciones revisables"},
+    {"source_id":"huggingface","domain":"huggingface.co","role":"modelos, Spaces, discusiones y documentación"},
+    {"source_id":"stackoverflow","domain":"stackoverflow.com","role":"preguntas, errores y respuestas"},
+    {"source_id":"python_docs","domain":"docs.python.org","role":"biblioteca estándar y Python"},
+    {"source_id":"mdn","domain":"developer.mozilla.org","role":"HTML, CSS, JS y navegador"},
+    {"source_id":"fastapi","domain":"fastapi.tiangolo.com","role":"API, autenticación y validación"},
+    {"source_id":"pytest","domain":"docs.pytest.org","role":"pruebas y regresión"},
+    {"source_id":"pypi","domain":"pypi.org","role":"versiones y dependencias"},
+    {"source_id":"owasp","domain":"owasp.org","role":"seguridad y revisión de riesgos"},
+    {"source_id":"sqlite_docs","domain":"sqlite.org","role":"transacciones, WAL y concurrencia"}
+  ],
+  "guardrails":{"read_only":true,"no_external_code_execution":true,"require_evidence":true,"max_results":100}
+}
