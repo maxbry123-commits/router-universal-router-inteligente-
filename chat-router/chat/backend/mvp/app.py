@@ -47,7 +47,12 @@ async def inicio(app):
     _, elegido = await asyncio.gather(cargar_control(), leer_mantener())
     mantener_vivo.SIEMPRE["on"] = bool(elegido)
     mantener_vivo.mantener(mantener_vivo.SIEMPRE_H if elegido else 0 if elegido is False else float(os.environ.get("RIU_MANTENER_HORAS", "24")), _en_curso)
-    if app.state.banco: _lanzar(_reanudar_todas()); _lanzar(loop_reanudar.reanudar_todas(app.state.banco))  # tareas del chat y del LOOP que quedaron a medias por un reinicio
+    if app.state.banco:
+        _lanzar(_reanudar_todas())
+        _lanzar(loop_reanudar.reanudar_todas(app.state.banco))
+        # Reuse existing Watchdog48 worker on restart. Its _store() now
+        # restores from the SAME HF memory bucket before polling queues.
+        _lanzar(loop_puente.llamar("watchdog48", "worker", {"sub": "start"}))
     yield
 app = FastAPI(lifespan=inicio)
 # El cliente del Router y el bridge ya apuntan por defecto a esta ruta del MISMO
