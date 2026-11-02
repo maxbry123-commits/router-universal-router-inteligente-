@@ -434,34 +434,84 @@ class TriggerBridge:
                     raise ContractError("GAPS_READBACK_FAILED")
                 return {"ok":True,"status":"PASS","project_id":project,"total":len(merged),
                         "new":len(merged)-len(prior),"revision":new["revision"]}
-            if op in ("gap_research","gap_select"):
+            if op in ("gap_research", "gap_select", "gap_propose", "gap_select_solution"):
+                if op == "gap_select":
+                    raise ContractError("GAP_SELECTION_REQUIRES_N4")
                 key_gaps=f"dsl-gaps:{project}"
                 old=await _invoke(self.ports.load,key_gaps)
-                if not isinstance(old,dict):raise ContractError("GAPS_NOT_COLLECTED")
-                gaps=[dict(item) for item in old["gaps"]]
-                item=next((g for g in gaps if g["gap_id"]==request.get("gap_id")),None)
+                if not isinstance(old,dict):
+                    raise ContractError("GAPS_NOT_COLLECTED")
+                if type(request.get("expected_revision")) is not int or (
+                        request["expected_revision"] != old.get("revision")):
+                    raise ContractError("GAPS_REVISION_CONFLICT")
+                gaps=[dict(item) for item in old.get("gaps",[])]
+                item=next((g for g in gaps if g.get("gap_id")==request.get("gap_id")),None)
                 if not item:raise ContractError("GAP_NOT_FOUND")
-                if op=="gap_research":
+                if item.get("project_id")!=project:
+                    raise ContractError("GAP_PROJECT_SCOPE_MISMATCH")
+                if op == "gap_research":
                     source=getattr(self.ports,"research",None)
-                    candidates=await _invoke(source,item["code"])
+                    query=str(item.get("error") or item.get("code") or "")[:160]
+                    candidates=await _invoke(source,query)
                     if not isinstance(candidates,list) or len(candidates)!=10:
                         raise ContractError("RESEARCH_INCOMPLETE")
                     item["research"]=candidates
-                    item["status"]="RESEARCHED_UNVERIFIED"
+                    item["ledger_status"]="RESEARCHED_UNVERIFIED"
+                elif op == "gap_propose":
+                    from .gap_mechanic import normalize_research_hits, propose
+                    hits=normalize_research_hits(item["gap_id"], item.get("research",[]))
+                    if not hits:
+                        raise ContractError("RESEARCH_WITH_CITABLE_EVIDENCE_REQUIRED")
+                    bundle=propose(item,request.get("solutions"),hits)
+                    item["bundle"]=bundle
+                    item["ledger_status"]="AWAITING_DIRECTOR_SELECTION"
                 else:
-                    selected=request.get("selected_url")
-                    matches=[s for s in item.get("research",[]) if s.get("url")==selected
-                        and s.get("status")=="SOURCE_FOUND_UNVERIFIED"]
-                    if len(matches)!=1:raise ContractError("SELECTION_NOT_IN_RESEARCH")
-                    item["selected"]={"url":selected,"sha256":matches[0]["sha256"]}
-                    item["status"]="SELECTED_NEEDS_CONTRACT_APPROVAL"
+                    if (not server_context.get("director_confirmed")
+                            or not server_context.get("operator_id")):
+                        raise ContractError("BLOCKED_APPROVAL")
+                    from .gap_mechanic import prepare_selected_trigger
+                    bundle=item.get("bundle")
+                    if not isinstance(bundle,dict):
+                        raise ContractError("SOLUTION_BUNDLE_NOT_FOUND")
+                    if request.get("bundle_revision_sha256")!=bundle.get("revision_sha256"):
+                        raise ContractError("SOLUTION_BUNDLE_REVISION_CONFLICT")
+                    solution=request.get("solution_id")
+                    if not any(x.get("solution_id")==solution for x in bundle.get("solutions",[])):
+                        raise ContractError("SOLUTION_NOT_FOUND")
+                    constitution,_=await self.engine._constitution()
+                    proof={"project_id":project,"gap_id":item["gap_id"],
+                           "solution_id":solution,"bundle_sha256":bundle["revision_sha256"],
+                           "actor":server_context["operator_id"],
+                           "constitution_sha256":constitution,
+                           "approved_for":"DRAFT_ONLY_NO_WRITE",
+                           "created_at":int(time.time())}
+                    proof["approval_ref"]="approval:"+sha256(canonical(proof))
+                    approval_key=f"dsl-gap-selection:{project}:{item['gap_id']}:{solution}"
+                    if await _invoke(self.ports.save,approval_key,proof) is not True:
+                        raise ContractError("SELECTION_RECEIPT_NOT_DURABLE")
+                    if await _invoke(self.ports.load,approval_key)!=proof:
+                        raise ContractError("SELECTION_RECEIPT_READBACK_FAILED")
+                    target_loop=_id(request.get("target_loop_id"),"target_loop_id")
+                    draft=prepare_selected_trigger(bundle,solution,
+                        server_approval_ref=proof["approval_ref"],target_loop=target_loop)
+                    item["selected"]={"solution_id":solution,"target_loop_id":target_loop,
+                                      "approval_ref":proof["approval_ref"],
+                                      "bundle_revision_sha256":bundle["revision_sha256"]}
+                    item["draft"]=draft
+                    item["ledger_status"]="TRIGGER_DRAFT_NOT_EXECUTABLE"
                 new={"revision":old["revision"]+1,"gaps":gaps}
                 if await _invoke(self.ports.save,key_gaps,new) is not True:
                     raise ContractError("GAPS_CHECKPOINT_NOT_DURABLE")
                 if await _invoke(self.ports.load,key_gaps)!=new:
                     raise ContractError("GAPS_READBACK_FAILED")
-                return {"ok":True,"status":item["status"],"gap_id":item["gap_id"],
+                result={"ok":True,"status":item["ledger_status"],"gap_id":item["gap_id"],
                         "revision":new["revision"],"executable":False}
+                if op=="gap_propose":
+                    result["bundle"]=item["bundle"]
+                if op=="gap_select_solution":
+                    result["draft"]=item["draft"]
+                    result["approval_ref"]=item["selected"]["approval_ref"]
+                return result
             if op == "run_ready":
                 return await self.dispatch_ready(project=project, loop=loop, state=state,
                     server_context=server_context, max_steps=request.get("max_steps", 100))
