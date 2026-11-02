@@ -115,3 +115,64 @@ def handle(action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]
         return {"status": "error", "error": "accion no permitida", "allowed": list(ACTIONS)}
     except Exception as exc:  # el plugin nunca tumba al host
         return {"status": "error", "error": str(exc)[:300]}
+
+# YAIWES LOOP: checkpoint of the existing CIT-50 and Watchdog SQLite stores.
+# Reuses this plugin's SAME HF Bucket; never stores WAL files on bucket/FUSE.
+# Intended for the existing plugin's _store() adapter, not a new storage API.
+def sqlite_checkpoint(db_path, store_name: str) -> dict:
+    import hashlib
+    import sqlite3
+    import tempfile
+    from pathlib import Path
+    if store_name not in ("cola50", "watchdog48"):
+        raise ValueError("store_name no autorizado")
+    src = Path(db_path)
+    if not src.is_file():
+        raise RuntimeError("SQLite de origen inexistente")
+    with tempfile.TemporaryDirectory() as temp:
+        dst = Path(temp) / "snapshot.sqlite3"
+        with sqlite3.connect(str(src)) as source, sqlite3.connect(str(dst)) as target:
+            source.backup(target)  # consistent copy including live WAL state
+        data = dst.read_bytes()
+    if not 0 < len(data) <= 20_000_000:
+        raise RuntimeError("snapshot SQLite fuera de limites")
+    digest = hashlib.sha256(data).hexdigest()
+    uri = _full("tasks/system/" + store_name + ".sqlite3")
+    fs = _fs()  # Existing HF_TOKEN (not passed in a contract or logged).
+    fs.pipe_file(uri, data)
+    if hashlib.sha256(fs.cat_file(uri)).hexdigest() != digest:
+        raise RuntimeError("HF_STORAGE_READBACK_MISMATCH")
+    return {"ok": True, "sha256": digest, "bytes": len(data), "store_name": store_name}
+
+
+def sqlite_restore_if_missing(db_path, store_name: str) -> dict:
+    import hashlib
+    import sqlite3
+    import tempfile
+    from pathlib import Path
+    if store_name not in ("cola50", "watchdog48"):
+        raise ValueError("store_name no autorizado")
+    path = Path(db_path)
+    if path.exists():
+        return {"ok": True, "status": "PRESENT_LOCAL"}
+    fs = _fs()  # Never fall back silently to a fresh empty DB on a network/auth error.
+    try:
+        data = fs.cat_file(_full("tasks/system/" + store_name + ".sqlite3"))
+    except FileNotFoundError:
+        return {"ok": True, "status": "FIRST_BOOT_NO_SNAPSHOT"}
+    if not 0 < len(data) <= 20_000_000:
+        raise RuntimeError("HF_STORAGE_SNAPSHOT_INVALID_SIZE")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(prefix=".restore-", suffix=".sqlite3",
+                                     dir=str(path.parent), delete=False) as tmp:
+        temp_path = Path(tmp.name)
+        tmp.write(data)
+    try:
+        with sqlite3.connect(str(temp_path)) as connection:
+            if connection.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise RuntimeError("HF_STORAGE_SQLITE_INTEGRITY_FAILED")
+        # No concurrent SQLite process can start before this call returns.
+        temp_path.replace(path)
+    finally:
+        temp_path.unlink(missing_ok=True)
+    return {"ok": True, "status": "RESTORED", "sha256": hashlib.sha256(data).hexdigest()}
