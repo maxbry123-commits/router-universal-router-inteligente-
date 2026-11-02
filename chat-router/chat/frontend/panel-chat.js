@@ -43,17 +43,11 @@ export async function mount(root, { api, tell }) {
 
   // ---- multi-chat: hasta 5 estancias, cada una con su sesion, su ficha, sus anclas y su historial ----
   const tabsEl = q("#chat-tabs"), histEl = q("#histories");
-  const abajo = (c) => {  // sigue las respuestas solo si estas cerca del final; si subiste, aparece "↓ nuevo"
-    if (c.hist.__sigue !== false) { c.hist.scrollTop = c.hist.scrollHeight; if (c.hist.__nuevo) c.hist.__nuevo.hidden = true; return; }
-    let b = c.hist.__nuevo;
-    if (!b) {
-      b = c.hist.__nuevo = document.createElement("button"); b.type = "button"; b.className = "btn-nuevo-abajo"; b.textContent = "↓ nuevo";
-      b.style.cssText = "position:sticky;bottom:8px;left:50%;transform:translateX(-50%);display:block;margin:0 auto;z-index:5;padding:4px 12px;border-radius:14px;font-size:13px";
-      b.addEventListener("click", () => { c.hist.__sigue = true; c.hist.scrollTop = c.hist.scrollHeight; b.hidden = true; });
-      c.hist.addEventListener("scroll", () => { if (c.hist.__sigue) b.hidden = true; }, { passive: true });
-    }
-    c.hist.append(b); b.hidden = false;
-  };  // sigue las respuestas solo si estas cerca del final; el historial tiene su propio scroll
+  const abajo = (c) => {
+    // El único control «Bajar al final» pertenece a chat-riu.js.
+    // No crear otro botón «↓ nuevo» dentro de la respuesta ni tapar texto.
+    if (c.hist.__sigue !== false) c.hist.scrollTop = c.hist.scrollHeight;
+  };
   const mmMovil = window.matchMedia("(max-width: 720px)");
   const reacomodoMovil = () => {
     const h1 = document.querySelector("#h1-slot h1, #h1-slot-int h1");

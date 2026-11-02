@@ -212,3 +212,48 @@ html.salida-x4 #histories { flex: 1 1 auto; height: auto; }
   section:has(> #histories) { flex: 1 1 auto; height: auto; min-height: 0; overflow: hidden; }
 }
 
+
+/* CHAT 2 · Restauración de espacio de salida.
+ * Mantiene los botones/selectores históricos. El texto se lee dentro de
+ * .chat-history, sin recortar su alto por la altura variable del composer.
+ */
+@media(max-width:720px){
+  main section:has(> #histories){
+    height:auto !important;
+    min-height:calc(100dvh - var(--ctl-top,56px) - 12px) !important;
+    display:flex;flex-direction:column;
+    overflow:visible;
+  }
+  main section > #histories{
+    height:clamp(250px,49dvh,560px) !important;
+    min-height:clamp(250px,49dvh,560px) !important;
+    flex:1 0 auto !important;
+    overflow:hidden;
+  }
+  #histories .chat-history{
+    flex:1 1 auto !important;
+    min-height:0 !important;
+    height:100% !important;
+    padding:8px 44px 10px 6px !important;
+    box-sizing:border-box;
+    overflow-y:auto;
+  }
+  #composer{
+    flex:0 0 auto !important;
+    min-width:0;
+  }
+  #histories .chat-history > .message:not(.user){
+    padding-right:12px !important;
+    padding-top:42px;
+    max-width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    overflow-wrap:anywhere;
+  }
+  #histories .chat-history > .message.user{
+    padding-right:12px !important;
+    max-width:95%;
+    box-sizing:border-box;
+  }
+  #histories .chat-history .message .txt{min-width:0;overflow-wrap:anywhere}
+}

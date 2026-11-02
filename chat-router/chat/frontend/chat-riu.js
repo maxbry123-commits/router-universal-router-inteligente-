@@ -35,24 +35,34 @@ export function conectarRiu({ q }) {
   hist.prepend(barra); hist.append(bajar);
   const curso = document.createElement("button"); curso.type = "button"; curso.id = "en-curso"; curso.className = "en-curso"; curso.hidden = true;
   curso.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M10 8.5v7l6-3.5z"/></svg><span></span>';
-  const comp = q("#composer"); if (comp) comp.before(curso);
+  // El indicador de tareas también pertenece a la salida, no al composer.
+  hist.append(curso);
   curso.addEventListener("click", () => { const p = hist.querySelector(".message.pending"); if (p) p.scrollIntoView({ block: "nearest" }); });
-  const subir = document.createElement("button"); subir.type = "button"; subir.className = "riu-bajar riu-subir"; subir.hidden = true; subir.title = "Ir al principio"; subir.setAttribute("aria-label", "Ir al principio"); subir.innerHTML = ICO_BAJAR; hist.append(subir);
-  subir.addEventListener("click", () => { const h = [...hist.querySelectorAll(".chat-history")].find((x) => !x.hidden && x.offsetParent !== null); if (h) h.scrollTo({ top: 0, behavior: "smooth" }); });
-  const activa = () => [...hist.querySelectorAll(".chat-history")].find((h) => !h.hidden && h.offsetParent !== null);
+  const activa = () => [...hist.querySelectorAll(".chat-history")].find(h => !h.hidden && h.offsetParent !== null);
   const medir = () => {
-    const h = activa(); if (!h) { barra.style.width = "0"; if (!bajar.hidden) bajar.hidden = true; subir.hidden = true; return; }
-    const max = h.scrollHeight - h.clientHeight;
+    const h = activa();
+    if (!h) { barra.style.width = "0"; bajar.hidden = true; return; }
+    const max = Math.max(0, h.scrollHeight - h.clientHeight);
+    const fromBottom = max - h.scrollTop;
     barra.style.width = max > 4 ? Math.round((h.scrollTop / max) * 100) + "%" : "0";
-    { if (bajar.hidden) bajar.hidden = false; if (subir.hidden) subir.hidden = false; }
+    // ÚNICA flecha, siempre disponible junto al borde inferior de la salida.
+    bajar.hidden = false;
+    bajar.disabled = max <= 2 || fromBottom <= 2;
+    bajar.setAttribute("aria-label", fromBottom > 2 ? "Bajar al final de la respuesta" : "Ya estás al final");
   };
-  bajar.addEventListener("click", () => { const h = activa(); if (h) h.scrollTo({ top: h.scrollHeight, behavior: "smooth" }); });
+  bajar.addEventListener("click", () => {
+    const h = activa();
+    if (!h) return;
+    h.__sigue = true;
+    h.scrollTo({ top: h.scrollHeight, behavior: "smooth" });
+    medir();
+  });
   hist.addEventListener("scroll", medir, { capture: true, passive: true });
   let pend = 0;
   const revisar = () => {
     pend = 0;
     hist.querySelectorAll(".message:not(.user) .txt").forEach(bloquesDeCodigo);
-    const n = hist.querySelectorAll(".message.pending").length;
+    const n = hist.querySelectorAll(".chat-history:not([hidden]) .message.pending").length;
     curso.hidden = n < 1;
     curso.querySelector("span").textContent = String(n);
     curso.setAttribute("aria-label", n === 1 ? "1 tarea en ejecución" : n + " tareas en ejecución");
