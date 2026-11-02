@@ -48,25 +48,24 @@ test("Conservación de selectores, herramientas, motores y entradas existentes",
  assert.match(src("loop-iframe-host.js"),/yaiwes_loop_panel_v1/);
 });
 
-test("Cubo no sigue visible ni encendido al terminar: hidden vence el display de la barra",()=>{
- const css=src("pensando-3d.css"), js=src("pensando-3d.js"), mobile=src("chat-compositor-v12.css");
- assert.match(css,/#composer \\.composer-bar > \\.p3d\\[hidden\\],\\.p3d\\[hidden\\]\\{display:none!important\\}/);
- assert.match(js,/if \\(!o && !w\\.hidden\\) w\\.hidden = true/);
- assert.match(mobile,/#composer \\.composer-bar > \\.p3d/);
+test("Cubo se apaga cuando termina: hidden tiene prioridad sobre display",()=>{
+ const cubeCss=src("pensando-3d.css"),cubeJs=src("pensando-3d.js");
+ assert.ok(cubeCss.includes('.p3d[hidden]{display:none!important}'));
+ assert.ok(cubeJs.includes('if (!o && !w.hidden) w.hidden = true'));
+ assert.ok(src("chat-compositor-v12.css").includes('#composer .composer-bar > .p3d'));
 });
-test("Sin hueco muerto entre respuesta e input; se limita solo el máximo del historial",()=>{
+test("La salida ajusta su altura al contenido sin hueco de 260px",()=>{
  const css=src("chat-compositor-v12.css");
- assert.match(css,/height:auto!important;min-height:0!important;max-height:min\\(48dvh,500px\\)/);
- assert.match(css,/#histories \\.chat-history:not\\(:empty\\)::before\\{content:none!important/);
- assert.doesNotMatch(css,/height:clamp\\(260px,49dvh,520px\\)/);
- const js=src("panel-chat.js");
- assert.match(js,/c\\.hist\\.scrollTop = c\\.hist\\.scrollHeight/);
+ assert.ok(css.includes('height:auto!important;min-height:0!important;max-height:min(48dvh,500px)'));
+ assert.ok(css.includes('#histories .chat-history:not(:empty)::before{content:none!important;display:none!important}'));
+ assert.ok(!css.includes('height:clamp(260px,49dvh,520px)'));
+ assert.ok(src("panel-chat.js").includes('c.hist.scrollTop = c.hist.scrollHeight'));
 });
-test("Cerebro plano, sin reborde permanente, conserva selector y accesibilidad de foco",()=>{
+test("El cerebro es icono sin cuadro y muestra foco al navegar con teclado",()=>{
  const css=src("chat-compositor-v12.css");
- assert.match(css,/#composer-extra > #mode-selector-mount \\.ms-btn\\{/);
- assert.match(css,/border:0!important;border-radius:9px!important;background:transparent!important/);
- assert.match(css,/#composer-extra > #mode-selector-mount \\.ms-btn:focus-visible/);
- assert.match(css,/#composer-extra > #mode-selector-mount \\.ms-brain\\{/);
- assert.match(src("barra-mas.js"),/chat-compositor-v12\\.css/);
+ assert.ok(css.includes('#composer-extra > #mode-selector-mount .ms-btn{'));
+ assert.ok(css.includes('border:0!important;border-radius:9px!important;background:transparent!important'));
+ assert.ok(css.includes('#composer-extra > #mode-selector-mount .ms-btn:focus-visible'));
+ assert.ok(css.includes('#composer-extra > #mode-selector-mount .ms-brain{'));
+ assert.ok(src("barra-mas.js").includes('chat-compositor-v12.css'));
 });
