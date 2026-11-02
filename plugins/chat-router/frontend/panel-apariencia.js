@@ -11,7 +11,7 @@ const bajar = (nombre, texto, tipo) => {
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([texto], { type: tipo })); a.download = nombre;
   document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 };
-const sanear = (o) => {  // solo valores conocidos y validos (importar / datos rotos)
+const sanear = (o) => {
   const r = { colores: {}, tipo: {}, iconos: {} }; if (!o || typeof o !== "object") return r;
   if (HEX.test(o.senal)) r.senal = o.senal;
   const num = (v, a, b) => (Number.isFinite(Number(v)) ? Math.min(b, Math.max(a, Number(v))) : undefined);
@@ -35,7 +35,7 @@ const sanear = (o) => {  // solo valores conocidos y validos (importar / datos r
 
 export async function mount(root, { api, tell } = {}) {
   const q = (s) => root.querySelector(s);
-  try {  // 13 · YAIWES: SKILLS-REGISTRY y PLAN-DAG listados desde la fabrica servida en /yaiwes/
+  try {
     const j = (u) => fetch(u, { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
     const ps = q("#ap-skills"), pd = q("#ap-dag"), bp = q("#ap-proyectos");
     if (bp) bp.addEventListener("click", () => { if (window.RIU_PROYECTOS_ABRIR) window.RIU_PROYECTOS_ABRIR(); else { localStorage.setItem("riu_abrir_proyectos", "1"); location.hash = ""; location.reload(); } });
@@ -53,12 +53,10 @@ export async function mount(root, { api, tell } = {}) {
   const swatch = (hex, nombre, on, fn) => { const b = el("button", "ap-sw"); b.type = "button"; b.style.background = hex; b.title = nombre + " " + hex.toUpperCase(); b.setAttribute("aria-label", nombre); b.setAttribute("aria-pressed", String(on)); b.addEventListener("click", fn); return b; };
   const chip = (txt, on, fn, rolAria) => { const b = el("button", "ap-chip" + (on ? " on" : ""), txt); b.type = "button"; if (rolAria) { b.setAttribute("role", rolAria); b.setAttribute(rolAria === "tab" ? "aria-selected" : "aria-checked", String(on)); } b.addEventListener("click", fn); return b; };
 
-  // 1 · tema (el mismo selector del encabezado: se guarda como siempre)
   const pintarTemas = () => {
     const sel = document.querySelector("#theme"), actual = document.documentElement.dataset.theme || "gris", box = q("#ap-temas"); box.replaceChildren();
     TEMAS.forEach(([id, nombre]) => box.append(chip(nombre, id === actual, () => { if (sel) { sel.value = id; sel.dispatchEvent(new Event("change")); } else document.documentElement.dataset.theme = id; pintarTemas(); }, "radio")));
   };
-  // 2 · color de señal
   const pintarSenal = () => {
     const box = q("#ap-senal"); box.replaceChildren();
     SENAL.forEach(([n, h]) => box.append(swatch(h, n, (est.senal || "").toLowerCase() === h.toLowerCase(), () => { est.senal = h; guardar(); pintarSenal(); })));
@@ -66,12 +64,10 @@ export async function mount(root, { api, tell } = {}) {
   };
   q("#ap-senal-custom").addEventListener("input", (e) => { est.senal = e.target.value; guardar(); pintarSenal(); });
   q("#ap-senal-reset").addEventListener("click", () => { delete est.senal; guardar(); pintarSenal(); });
-  // 3 · estilos listos
   const pintarPresets = () => {
     const box = q("#ap-presets"); box.replaceChildren();
     PRESETS.forEach(([n, mapa]) => box.append(chip(n, false, () => { est.colores = {}; for (const [k, v] of Object.entries(mapa)) if (HEX.test(v)) est.colores[k] = v; guardar(); pintarEstudio(); avisa("Estilo aplicado: " + n); })));
   };
-  // 4 · estudio de letras
   const pintarRoles = () => {
     const box = q("#ap-roles"); box.replaceChildren();
     ROLES.forEach(([id, n]) => box.append(chip(n, id === rol, () => { rol = id; pintarRoles(); pintarEstudio(); }, "tab")));
@@ -105,7 +101,6 @@ export async function mount(root, { api, tell } = {}) {
   const cssTexto = () => "/* YAIWES · apariencia */\n" + (est.senal ? ":root{--active:" + est.senal + ";--status-blue:" + est.senal + "}\n" : "") + (construirCSS(est) || "/* sin cambios */");
   q("#ap-css-bajar").addEventListener("click", () => { bajar("yaiwes-apariencia.css", cssTexto(), "text/css"); avisa("CSS descargado"); });
   q("#ap-css-copiar").addEventListener("click", async () => { try { await navigator.clipboard.writeText(cssTexto()); avisa("CSS copiado"); } catch (e) { avisa("No se pudo copiar: usa Descargar CSS"); } });
-  // 5 · iconos
   const pintarDestinos = () => {
     const box = q("#ap-destinos"); box.replaceChildren();
     DESTINOS.forEach(([id, n]) => { const b = chip("", id === destino, () => { destino = id; pintarDestinos(); pintarIconos(); }, "tab"); if (est.iconos[id]) b.insertAdjacentHTML("beforeend", svg(est.iconos[id], 16)); b.append(document.createTextNode(n)); box.append(b); });
@@ -122,13 +117,11 @@ export async function mount(root, { api, tell } = {}) {
   };
   q("#ap-icono-buscar").addEventListener("input", pintarIconos);
   q("#ap-iconos-reset").addEventListener("click", () => { est.iconos = {}; guardar(); pintarDestinos(); pintarIconos(); avisa("Iconos restablecidos"); });
-  // 6 · avisos y tamaño (duration-picker)
   const pintarAvisos = () => { q("#ap-aviso-v").textContent = String(est.avisoSeg || 4.5).replace(".", ",") + " s"; q("#ap-escala").value = est.escala || 100; q("#ap-v-escala").textContent = (est.escala || 100) + " %"; };
   const paso = (d) => { est.avisoSeg = Math.min(15, Math.max(2, Math.round(((est.avisoSeg || 4.5) + d) * 2) / 2)); guardar(); pintarAvisos(); };
   q("#ap-aviso-menos").addEventListener("click", () => paso(-0.5)); q("#ap-aviso-mas").addEventListener("click", () => paso(0.5));
   q("#ap-aviso-probar").addEventListener("click", () => avisa("Así se ve un aviso"));
   q("#ap-escala").addEventListener("input", (e) => { const v = Number(e.target.value); if (v === 100) delete est.escala; else est.escala = v; guardar(); pintarAvisos(); });
-  // 7 · guardar y recuperar
   q("#ap-exportar").addEventListener("click", () => { bajar("yaiwes-apariencia.json", JSON.stringify(est, null, 2), "application/json"); avisa("Apariencia exportada"); });
   q("#ap-importar").addEventListener("change", async (e) => {
     const f = e.target.files && e.target.files[0]; if (!f) return;
@@ -167,5 +160,38 @@ export async function mount(root, { api, tell } = {}) {
         if (r.ok) window.__riuJob = null;
       } catch (error) { avisa(error.message); }
     });
+  }
+
+  // Servidor HF — botones en la sección Control
+  const controlBox = Array.from(root.querySelectorAll("div, section")).find(d => /Control/.test(d.textContent || "") && d.querySelector("button"));
+  if (controlBox && !controlBox.querySelector("#srv-hf")) {
+    const wrap = el("div", "", "");
+    wrap.id = "srv-hf";
+    wrap.style.marginTop = "12px";
+    wrap.append(el("div", "muted", "Servidor HF (Space)"));
+    const fila = el("div", "ac-acc");
+    const estSrv = el("div", "vn-estado");
+    estSrv.style.fontSize = "12px";
+    estSrv.style.marginTop = "6px";
+    const tok = el("input", "vn-in");
+    tok.type = "password";
+    tok.placeholder = "Token HF (write)";
+    tok.style.marginBottom = "6px";
+    tok.style.width = "100%";
+    try { tok.value = sessionStorage.getItem("riu_hf_token") || ""; } catch {}
+    const guardarTok = () => { try { sessionStorage.setItem("riu_hf_token", tok.value.trim()); } catch {} avisa("Token HF guardado"); };
+    const hf = async (method, path) => {
+      const t = tok.value.trim(); if (!t) throw new Error("Pega el token HF primero");
+      const r = await fetch("https://huggingface.co/api" + path, { method, headers: { "Authorization": "Bearer " + t } });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json().catch(() => ({}));
+    };
+    fila.append(
+      chip("Estado", false, async () => { estSrv.textContent = "Consultando…"; try { const s = await hf("GET", "/spaces/maxbry123-commits/comand-center-1-riu-router"); estSrv.textContent = "Estado: " + (s.runtime?.stage || s.status || "ok"); } catch (e) { estSrv.textContent = e.message; } }),
+      chip("Reiniciar", false, async () => { estSrv.textContent = "Reiniciando…"; try { await hf("POST", "/spaces/maxbry123-commits/comand-center-1-riu-router/restart"); estSrv.textContent = "Reinicio enviado. Espera ~30-60 s."; avisa("Reinicio solicitado"); } catch (e) { estSrv.textContent = e.message; } }),
+      chip("Pausar", false, async () => { estSrv.textContent = "Pausando…"; try { await hf("POST", "/spaces/maxbry123-commits/comand-center-1-riu-router/pause"); estSrv.textContent = "Pausa solicitada."; } catch (e) { estSrv.textContent = e.message; } })
+    );
+    wrap.append(tok, el("div", "", ""), fila, estSrv);
+    controlBox.append(wrap);
   }
 }
