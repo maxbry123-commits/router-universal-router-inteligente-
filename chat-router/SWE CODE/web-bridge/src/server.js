@@ -18,7 +18,7 @@ import { clavesAcceso, claveAccesoDe } from './acceso.js';
 import { aplicarDefectos } from './defaults.js';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import nodeFs from 'node:fs';
-import { vigilarWorkspace, rutaWorkspace, configVigente, vigilarConfig, espejo, normalizarEjecutor } from './openclaw.js';
+import { vigilarWorkspace, vigilarModelosOpenClaw, rutaWorkspace, configVigente, vigilarConfig, espejo, normalizarEjecutor } from './openclaw.js';
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, estadoMetricas, disponibilidad, modeloDefecto, setClaves, limpiarClaves } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo, checkpointGuardar } from './bloques.js';
 import { retomarLocal, retomarPorId, TIPO as TIPO_LOCAL } from './retomar_local.js';
@@ -529,7 +529,10 @@ if (process.env.BRIDGE_AUTORETOMAR !== '0') {
 }
 
 // auto-reparacion de cableado de OpenClaw: openclaw.sh borra su home en cada arranque y no recrea el workspace del agente
-if (process.env.OPENCLAW_ENABLE === '1' || process.env.BRIDGE_REPARAR_OPENCLAW === '1') vigilarWorkspace();
+if (process.env.OPENCLAW_ENABLE === '1' || process.env.BRIDGE_REPARAR_OPENCLAW === '1') {
+  vigilarWorkspace();
+  vigilarModelosOpenClaw(idsModelos); // sin reiniciar el Space, sin claves externas en el gateway
+}
 
 // el bridge se actualiza solo cuando llega codigo nuevo de SWE CODE / SWE CODE free (sin reiniciar el Space); BRIDGE_AUTOACTUALIZAR=0 lo apaga
 vigilarActualizacion();

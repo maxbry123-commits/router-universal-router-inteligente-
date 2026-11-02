@@ -25,6 +25,59 @@ export function vigilarWorkspace(intervaloMs = 60000) {
   return setInterval(paso, intervaloMs).unref();
 }
 
+
+// Sincronización del catálogo MODELO (NO de agentes): OpenClaw inicia desde
+// /swecode_provider.json del Space, que puede estar desactualizado y tener
+// apiKey:"local" (el bridge rechaza esa credencial). El bridge ya lee el banco,
+// por tanto OpenClaw necesita la CLAVE DE ACCESO a 127.0.0.1:7870, no las claves
+// API privadas de NVIDIA/Groq. Solo se modifica la sección "swecode" y su
+// allowlist de modelos de manera aditiva; se conserva el modelo predeterminado,
+// pairing, workspace, gateway y demás providers.
+const ORIGEN_OC = 'http://127.0.0.1:7870/openclaw/v1';
+export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_KEY, dir = null, fs = nodeFs } = {}) {
+  if (!key || !Array.isArray(modelos) || !modelos.length) return false;
+  const home = process.env.OPENCLAW_HOME || path.join('/tmp', `openclaw-home-${process.getuid()}`);
+  const target = path.join(dir || path.join(home, '.openclaw'), 'openclaw.json');
+  let before, cfg;
+  try {
+    const stat = fs.lstatSync(target);
+    if (!stat.isFile() || stat.isSymbolicLink()) return false; // no crear state ni seguir symlinks
+    before = fs.readFileSync(target, 'utf8');
+    cfg = JSON.parse(before); // configuración JSON5 desconocida: fallar cerrado sin sobreescribirla
+  } catch { return false; }
+  if (!cfg || typeof cfg !== 'object' || !cfg.models || !cfg.models.providers || !cfg.agents?.defaults?.models) return false;
+  const safeIds = [...new Set(modelos)].filter(id => typeof id === 'string' &&
+    /^(?:web-|swecode-|groq\/|nvidia\/|deepseek\/|minimax\/|openai\/|lfm2\.5|qwen2\.5|qwen3)/.test(id) &&
+    id.length <= 100);
+  if (!safeIds.length) return false;
+  const previo = cfg.models.providers.swecode || {};
+  const previos = new Map((Array.isArray(previo.models) ? previo.models : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]));
+  cfg.models.providers.swecode = {
+    ...previo, baseUrl: ORIGEN_OC, apiKey: key, api: 'openai-completions',
+    models: safeIds.map(id => ({ ...{ name: id, reasoning: false, input: ['text'],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      contextWindow: 32768, maxTokens: 4096 }, ...(previos.get(id) || {}), id })),
+  };
+  for (const id of safeIds) cfg.agents.defaults.models['swecode/' + id] ||= {};
+  const after = JSON.stringify(cfg, null, 2);
+  if (after === JSON.stringify(JSON.parse(before), null, 2)) return false;
+  const tmp = target + '.riu-' + process.pid + '.tmp';
+  try {
+    fs.writeFileSync(tmp, after, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+    fs.renameSync(tmp, target);  // OpenClaw recarga models.providers en caliente
+    return true;
+  } catch { try { fs.unlinkSync(tmp); } catch {} return false; }
+}
+export function vigilarModelosOpenClaw(modelos, intervaloMs = 10000) {
+  const paso = () => {
+    try { if (sincronizarModelosOpenClaw(modelos())) console.warn('openclaw: catálogo de modelos SWE sincronizado desde GitHub'); }
+    catch { /* OpenClaw opcional y sin alterar su funcionamiento */ }
+  };
+  paso();
+  const timer = setInterval(paso, intervaloMs); timer.unref();
+  return timer;
+}
+
 // ---- configuracion vigente de OpenClaw (solo lectura, SIN secretos) ----
 // La fuente es el repo (SWE CODE free/provider-openclaw.json + swen.json): el bridge la sirve en GET /v1/openclaw,
 // que llega por Vercel (/web/v1/openclaw) y por el Space (proxy) sin tocar Hugging Face a mano. El vigilante de 60 s la mantiene al dia.
