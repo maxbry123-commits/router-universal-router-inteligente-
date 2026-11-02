@@ -413,8 +413,8 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (esLocal(model)) {
       const r = await local(model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
     } else if (modeloWeb) {
-      const r = await conFallback(modeloWeb, promptFicha, { modo: modoUso, convId: conv_id });
-      salida = r.salida; usado = r.usado;
+      salida = await consultarWeb(modeloWeb, promptFicha, { modo: modoUso, convId: conv_id });
+      usado = modeloWeb;
     } else if (modoUso === 'asesoria') {
       // asesoria previa a ejecutar: primero Groq (las claves del chat Yaiwes), si no responde la web de SWE CODE free
       try {
@@ -445,7 +445,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       if (e.code === 'MODO_INVALIDO' || e.code === 'TOOL_CALL_INVALIDA' || usaTarea || sse.signal.aborted) throw e;  // cliente desconectado: no se gasta mas respaldo. Con tarea_id retomarLocal ya probo local/Groq/NVIDIA y guardo el checkpoint: el cliente reintenta con el mismo tarea_id
       if (e.code === 'UPSTREAM_TIMEOUT' && conv_id) await cerrarPagina(conv_id).catch(() => {});  // la tab colgada liberaba su slot solo al cerrarse
       // modelo EXPLICITO (groq/, nvidia/, HF local): si falla NO se cambia de modelo en silencio; error claro con el motivo. El respaldo solo con respaldo:true (o modelos web-*/swecode-*)
-      if (explicito && !pideRespaldo) throw e.code === 'EXTERNO_FALLO' && e.status === 404 ? Object.assign(e, { code: 'NO_DISPONIBLE', message: `modelo ${model} no disponible en el proveedor (HTTP 404); ${e.message}` }) : e;
+      if ((explicito || model.startsWith('web-')) && !pideRespaldo) throw e.code === 'EXTERNO_FALLO' && e.status === 404 ? Object.assign(e, { code: 'NO_DISPONIBLE', message: `modelo ${model} no disponible en el proveedor (HTTP 404); ${e.message}` }) : e;
       // auto-reparacion: sesion caida -> re-login/rotacion de correo y UN reintento; si sigue mal, respaldo Groq -> NVIDIA -> HF local
       if (e.code === 'SESSION_EXPIRED') {
         try { await salud(); salida = null; await conDeadline(ejecutar(), 50000); registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'PASS', modelo: model }); } catch { registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'FAIL', modelo: model }); }
