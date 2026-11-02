@@ -530,6 +530,80 @@ class TriggerBridge:
                     result["draft"]=item["draft"]
                     result["approval_ref"]=item["selected"]["approval_ref"]
                 return result
+            if op == "gap_prepare_trigger":
+                # Convert a selected solution into an ACTUAL v1 draft, using
+                # the exact user-authored bytes from a real scoped source.
+                # This never starts a queue or grants GitHub writer authority.
+                from .trigger_contract import validate_loop
+                gap_id=request.get("gap_id")
+                solution_id=request.get("solution_id")
+                key_gaps=f"dsl-gaps:{project}"
+                ledger=await _invoke(self.ports.load,key_gaps)
+                if not isinstance(ledger,dict):
+                    raise ContractError("GAPS_NOT_COLLECTED")
+                if request.get("expected_revision")!=ledger.get("revision"):
+                    raise ContractError("GAPS_REVISION_CONFLICT")
+                gap=next((g for g in ledger.get("gaps",[])
+                          if g.get("gap_id")==gap_id),None)
+                if not isinstance(gap,dict) or gap.get("project_id")!=project:
+                    raise ContractError("GAP_PROJECT_SCOPE_MISMATCH")
+                selected=gap.get("selected")
+                if (not isinstance(selected,dict) or selected.get("solution_id")!=solution_id
+                        or selected.get("bundle_revision_sha256")!=
+                           (gap.get("bundle") or {}).get("revision_sha256")):
+                    raise ContractError("GAP_SELECTION_NOT_VERIFIED")
+                key_approval=f"dsl-gap-selection:{project}:{gap_id}:{solution_id}"
+                proof=await _invoke(self.ports.load,key_approval)
+                if (not isinstance(proof,dict) or proof.get("approval_ref")!=selected.get("approval_ref")
+                        or proof.get("bundle_sha256")!=selected.get("bundle_revision_sha256")
+                        or proof.get("approved_for")!="DRAFT_ONLY_NO_WRITE"
+                        or not proof.get("actor")):
+                    raise ContractError("GAP_APPROVAL_RECEIPT_INVALID")
+                constitution,_=await self.engine._constitution()
+                if proof.get("constitution_sha256")!=constitution:
+                    raise ContractError("CONSTITUTION_CHANGED")
+                target=selected["target_loop_id"]
+                candidate=request.get("contract")
+                validate_contract(candidate)
+                if (candidate["loop_id"]!=target or candidate["enabled"] is not False):
+                    raise ContractError("DRAFT_MUST_BE_DISABLED")
+                if not isinstance(candidate.get("source"),dict):
+                    raise ContractError("SOURCE_ANCHOR_REQUIRED")
+                ref=candidate["source"].get("source_anchor_ref")
+                original_sha=candidate["source"].get("original_document_sha256")
+                if not ref or not original_sha:
+                    raise ContractError("SOURCE_ANCHOR_REQUIRED")
+                attached=await _invoke(self.ports.anchor,ref)
+                if (not isinstance(attached,dict)
+                        or not isinstance(attached.get("bytes"),bytes)
+                        or sha256(attached["bytes"])!=original_sha):
+                    raise ContractError("SOURCE_DOCUMENT_SHA_MISMATCH")
+                if candidate["input_block_verbatim"].encode("utf8") not in attached["bytes"]:
+                    raise ContractError("VERBATIM_NOT_IN_ANCHORED_SOURCE")
+                config=await _invoke(self.ports.load,f"dsl-config:{project}:{target}")
+                if not isinstance(config,dict) or config.get("queue_id"):
+                    raise ContractError("TARGET_LOOP_FROZEN_OR_MISSING")
+                if request.get("expected_target_revision")!=config.get("revision"):
+                    raise ContractError("TARGET_LOOP_REVISION_CONFLICT")
+                existing=config.get("contracts",[])
+                if any(c["id"]==candidate["id"] for c in existing):
+                    raise ContractError("TARGET_TRIGGER_EXISTS")
+                validate_loop(existing+[candidate])
+                draft={"schema":"yaiwes.gap.draft.v1","project_id":project,
+                       "source_gap_id":gap_id,"solution_id":solution_id,
+                       "target_loop_id":target,"target_revision":config["revision"],
+                       "contract":candidate,"contract_sha256":sha256(canonical(candidate)),
+                       "approval_ref":proof["approval_ref"],"constitution_sha256":constitution,
+                       "status":"VALIDATED_DRAFT_NOT_EXECUTABLE"}
+                key_draft=f"dsl-gap-draft:{project}:{gap_id}:{solution_id}"
+                if await _invoke(self.ports.save,key_draft,draft) is not True:
+                    raise ContractError("DRAFT_CHECKPOINT_NOT_DURABLE")
+                if await _invoke(self.ports.load,key_draft)!=draft:
+                    raise ContractError("DRAFT_READBACK_MISMATCH")
+                return {"ok":True,"status":"VALIDATED_DRAFT_NOT_EXECUTABLE",
+                        "draft_ref":key_draft,"contract_sha256":draft["contract_sha256"],
+                        "contract":candidate,"target_loop_id":target,
+                        "next":"REVIEW_AND_TRIGGER_UPSERT_EXPECTED_REVISION"}
             if op == "run_ready":
                 return await self.dispatch_ready(project=project, loop=loop, state=state,
                     server_context=server_context, max_steps=request.get("max_steps", 100))
