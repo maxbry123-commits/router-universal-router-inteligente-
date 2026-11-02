@@ -261,3 +261,27 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
   .sheet.swe-hoja .va-caja{width:100vw;max-height:min(76dvh,calc(100dvh - 8px))}
   .sheet.swe-hoja .swe-rej-fila{padding:10px;gap:8px}
 }
+
+/* RIU · contador real de adjuntos anclados por chat */
+#composer > .riu-anclas-estado{
+  order:1; align-self:flex-start; box-sizing:border-box;
+  max-width:100%; padding:4px 10px; margin:3px 0 2px;
+  font-size:12px; line-height:1.45; font-weight:500;
+  color:var(--quiet,#bcbcbc); background:var(--panel,#2a2a2a);
+  border:1px solid var(--border,#3c3c3c); border-radius:10px;
+  white-space:normal; overflow-wrap:anywhere;
+}
+#ventana-ancla .riu-anclas-estado{
+  display:block; box-sizing:border-box; width:100%; max-width:100%;
+  padding:8px 10px; margin:6px 0 10px;
+  font-size:12px; line-height:1.5; font-weight:600;
+  color:var(--title,#f1f1f1); background:var(--panel,#2a2a2a);
+  border:1px solid var(--border,#3c3c3c); border-radius:12px;
+  white-space:normal; overflow-wrap:anywhere;
+}
+@media(max-width:720px){
+  #composer > .riu-anclas-estado{
+    order:1!important; width:100%; margin:2px 0 4px;
+    font-size:11.5px;
+  }
+}
