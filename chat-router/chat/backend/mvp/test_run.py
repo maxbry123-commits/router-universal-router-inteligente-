@@ -124,13 +124,13 @@ class TestAutopull(unittest.TestCase):
             hilo.assert_not_called()
 
     def test_instalacion_agentes_desactivada_no_arranca_procesos(self):
-        with patch.dict(os.environ, {"RIU_AGENTES_AUTO_INSTALAR": "0"}), \\
+        with patch.dict(os.environ, {"RIU_AGENTES_AUTO_INSTALAR": "0"}), \
              patch.object(run.threading, "Thread") as hilo:
             run._instalar_agentes_fondo()
             hilo.assert_not_called()
 
     def test_instalacion_agentes_programada_en_hilo_sin_bloquear(self):
-        with patch.dict(os.environ, {"RIU_AGENTES_AUTO_INSTALAR": "1"}), \\
+        with patch.dict(os.environ, {"RIU_AGENTES_AUTO_INSTALAR": "1"}), \
              patch.object(run.threading, "Thread") as hilo:
             run._instalar_agentes_fondo()
             hilo.assert_called_once()
