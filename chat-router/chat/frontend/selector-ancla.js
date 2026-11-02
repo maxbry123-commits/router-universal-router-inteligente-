@@ -1,5 +1,7 @@
 // selector-ancla.js — selector de ancla: handoffs con botón de encender + pegar enlace/handoff propio
 // Extraído de panel-chat.js sin cambiar la lógica: recibe lo que usa por ctx y devuelve lo que otros bloques necesitan.
+import { leer, escribir } from "./almacen.js";
+const K_HOFF="riu_handoff_borrador_v1";
 export function montarSelectorAncla(ctx) {
   const { q, filaEncender, chat, burbuja, abajo, fila, cerrarHojas, chatA, pintarAnclados, guardar, tell } = ctx;
   // ---- selector de ancla: handoffs con boton de encender + pegar enlace/handoff propio ----
@@ -35,16 +37,22 @@ export function montarSelectorAncla(ctx) {
   };
   // mi handoff: texto propio guardado en memoria, editable; va interno con cada mensaje
   const cargarMiHandoff = async () => {
+    const key=chatA().sesion, saved=leer(K_HOFF,{})[key]||"";
     try {
-      const r = await window.RIU_ACCION("handoff_texto", { sesion: chatA().sesion });
-      q("#mi-handoff").value = r.texto || "";
-      q("#mh-estado").textContent = r.encendido ? "encendido" : "apagado";
-    } catch (err) { q("#mh-estado").textContent = err.message; }
+      const r=await window.RIU_ACCION("handoff_texto",{sesion:key});
+      q("#mi-handoff").value=r.texto||saved;
+      if(r.texto){const l=leer(K_HOFF,{});l[key]=r.texto;escribir(K_HOFF,l);}
+      q("#mh-estado").textContent=r.encendido?"encendido":"apagado";
+    }catch(err){
+      q("#mi-handoff").value=saved;
+      q("#mh-estado").textContent="sin confirmar";
+    }
   };
   q("#mh-guardar").addEventListener("click", async () => {
     try {
-      const texto = q("#mi-handoff").value;
-      const r = await window.RIU_ACCION("handoff_texto", { sesion: chatA().sesion, texto });
+      const texto=q("#mi-handoff").value,key=chatA().sesion,all=leer(K_HOFF,{});
+      all[key]=texto;if(!escribir(K_HOFF,all))throw Error("No se guardó el borrador");
+      const r=await window.RIU_ACCION("handoff_texto",{sesion:key,texto});
       q("#mh-estado").textContent = r.encendido ? "encendido" : "apagado";
       if (r.encendido) {
         const c = chat();
@@ -56,8 +64,11 @@ export function montarSelectorAncla(ctx) {
   });
   q("#mh-apagar").addEventListener("click", async () => {
     try {
-      await window.RIU_ACCION("handoff_texto", { sesion: chatA().sesion, texto: "" });
-      q("#mh-estado").textContent = "apagado";
+      const key=chatA().sesion,all=leer(K_HOFF,{});
+      all[key]=q("#mi-handoff").value;
+      if(!escribir(K_HOFF,all))throw Error("No se pudo conservar el handoff");
+      await window.RIU_ACCION("handoff_texto",{sesion:key,texto:""});
+      q("#mh-estado").textContent="apagado";
       tell("yaiwes.md apagado");
     } catch (err) { tell(err.message); }
   });

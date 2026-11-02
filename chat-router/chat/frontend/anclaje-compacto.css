@@ -19,3 +19,27 @@
 #ventana-ancla button:focus-visible,#ventana-ancla select:focus-visible,#ventana-ancla summary:focus-visible{outline:2px solid #2196FF;outline-offset:2px}
 @media(max-width:720px){#ventana-ancla .va-caja{width:100vw;max-height:89dvh;padding:12px 14px 18px;border-radius:22px 22px 0 0}#ventana-ancla .va-head{top:-12px}#ventana-ancla .vn-destinos{padding:10px}}
 @media(prefers-reduced-motion:reduce){#ventana-ancla *{scroll-behavior:auto!important}}
+
+/* SALIDA 3 · controles de cada ancla. Solo el sheet ⚓ */
+#ventana-ancla .anc3{display:grid;gap:9px;padding:11px;border:1px solid #3a3a3a;border-radius:14px;background:#262626;margin:9px 0}
+#ventana-ancla .anc3-head{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+#ventana-ancla .anc3-head strong{font-size:15px;color:#fafafa}
+#ventana-ancla .anc3-count{font-size:12px;color:#bcbcbc}
+#ventana-ancla .anc3-actions,#ventana-ancla .anc3-upload{display:flex;gap:6px;flex-wrap:wrap}
+#ventana-ancla .anc3-all,#ventana-ancla .anc3-file{border:1px solid #525252;border-radius:11px;background:#303030;color:#eee;min-height:40px;padding:8px 10px;font-size:12px;cursor:pointer}
+#ventana-ancla .anc3-all-on{border-color:#247bff;color:#e3f2ff}
+#ventana-ancla .anc3-all:disabled{opacity:.5;cursor:default}
+#ventana-ancla .anc3-danger{margin-left:auto;color:#ffb8b8}
+#ventana-ancla .anc3-file{flex:1 1 110px;font-size:14px}
+#ventana-ancla .anc3-list{display:grid;gap:6px;max-height:32vh;overflow-y:auto}
+#ventana-ancla .anc3-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;min-height:48px;padding:8px 9px;border:1px solid #3f3f3f;border-radius:11px;background:#202020}
+#ventana-ancla .anc3-name{overflow-wrap:anywhere;min-width:0;font-size:13px;color:#eee}
+#ventana-ancla .anc3-row-actions{display:flex;gap:5px;align-items:center}
+#ventana-ancla .anc3-toggle,#ventana-ancla .anc3-note-btn,#ventana-ancla .anc3-remove{min-height:34px;border-radius:10px;border:1px solid #494949;background:#2a2a2a;color:#ddd;padding:5px 8px;font-size:12px;cursor:pointer}
+#ventana-ancla .anc3-toggle.on{background:#0968f7;border-color:#32a2ff;color:#fff;box-shadow:0 0 10px #0869ed3b}
+#ventana-ancla .anc3-note{grid-column:1/-1;min-width:0}
+#ventana-ancla .anc3-note[hidden]{display:none}
+#ventana-ancla .anc3-text{box-sizing:border-box;width:100%;min-height:68px;border-radius:10px;background:#292929;border:1px solid #525252;color:#eee;padding:9px;font-size:13px}
+#ventana-ancla .anc3-hint,#ventana-ancla .anc3-empty{display:block;color:#aaa;font-size:11px;padding:5px 2px}
+#ventana-ancla .anc3-empty[hidden]{display:none}
+@media(max-width:390px){#ventana-ancla .anc3-row{grid-template-columns:1fr}#ventana-ancla .anc3-row-actions{justify-content:flex-end}#ventana-ancla .anc3-danger{margin-left:0}}

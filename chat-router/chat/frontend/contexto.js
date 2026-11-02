@@ -118,7 +118,7 @@ export function parsearSlashWF(msg, lista) {  // "/wf <nombre> <instrucción>" d
   }
   return { wf: null, texto: resto };
 }
-export const K_PIN = "riu_pin_anclas_v1", K_MUTE = "riu_mute_anclas_v1", K_ALIAS = "riu_alias_anclas_v1";
+export const K_PIN = "riu_pin_anclas_v1", K_MUTE = "riu_mute_anclas_v1", K_ALIAS = "riu_alias_anclas_v1", K_NOTES = "riu_notas_anclas_v1";
 const sinMute = (clave, arr) => { const m = leer(K_MUTE, {})[clave]; return Array.isArray(m) ? (arr || []).filter((t) => !m.includes(t)) : (arr || []); };
 const lineas = (arr) => arr.map((t) => "- " + String(t).slice(0, 400)).join("\n");
 export function construirPrefijo(oficial, modelo) {
@@ -157,6 +157,15 @@ export function construirPrefijo(oficial, modelo) {
     const he = bloqueHechas(!!(f.tools || f.llm_tool || f.agente_tool));
     if (he) partes.push(he);
   } catch (e) {}
+  // Las notas de anclas ON viajan con la solicitud al Harness; OFF nunca se incluye.
+  try {
+    const c=typeof window!=="undefined"?window.RIU_CHAT?.chat?.():null;
+    if(c?.sesion){
+      const notes=leer(K_NOTES,{})[c.sesion]||{};
+      const rows=sinMute(c.sesion,[...(c.anclados||[])]).map(t=>[t,notes[t]]).filter(([,n])=>typeof n==="string"&&n.trim()).slice(0,24);
+      if(rows.length)partes.push("[NOTAS DE ANCLAS ACTIVAS]"+String.fromCharCode(10)+rows.map(([t,n])=>"- "+String(t).slice(0,180)+": "+n.trim().slice(0,1200)).join(String.fromCharCode(10)));
+    }
+  }catch(e){}
   return partes.join("\n\n");
 }
 export function aplicarAMensaje(msg, oficial, modelo) { const p = construirPrefijo(oficial, modelo); return p ? p + "\n\n--- MENSAJE DEL DIRECTOR ---\n" + msg : msg; }
