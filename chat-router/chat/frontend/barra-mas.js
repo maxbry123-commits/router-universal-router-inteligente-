@@ -208,6 +208,37 @@ function devolverAuto() {
 
 function bar() { return document.querySelector("#composer .composer-bar"); }
 
+// Botón Pegar: lectura local exclusivamente por pulsación del usuario.
+// Inserta en el cursor del campo; nunca envía el mensaje automáticamente.
+function botonPegar() {
+  const fila = bar(), campo = document.getElementById("message");
+  if (!fila || !campo || document.getElementById("btn-pegar")) return;
+  const boton = document.createElement("button");
+  boton.id = "btn-pegar";
+  boton.type = "button";
+  boton.className = "secondary";
+  boton.setAttribute("aria-label", "Pegar texto copiado");
+  boton.title = "Pegar texto copiado";
+  boton.textContent = "▤";
+  boton.addEventListener("click", async () => {
+    try {
+      const texto = await navigator.clipboard.readText();
+      if (!texto) return;
+      campo.setRangeText(texto, campo.selectionStart, campo.selectionEnd, "end");
+      campo.dispatchEvent(new Event("input", { bubbles: true }));
+      campo.focus();
+    } catch (_error) {
+      campo.focus();
+      const aviso = document.getElementById("notice");
+      if (aviso) aviso.textContent = "Portapapeles bloqueado. Mantén pulsado el campo y pulsa Pegar.";
+    }
+  });
+  const adjunto = fila.querySelector("#btn-adjunto");
+  if (adjunto) adjunto.after(boton);
+  else fila.append(boton);
+}
+
+
 function devolver() {
   const fila = bar();
   if (!fila) return;
@@ -302,6 +333,7 @@ function colocar() {
   if (ocupado) return;
   ocupado = true;
   try {
+    botonPegar();
     if (!movil()) { devolver(); menu(); return; }
     tres();
   } finally { ocupado = false; }
