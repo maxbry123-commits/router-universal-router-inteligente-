@@ -234,7 +234,7 @@ html.salida-x4 #histories { flex: 1 1 auto; height: auto; }
     flex:1 1 auto !important;
     min-height:0 !important;
     height:100% !important;
-    padding:8px 44px 10px 6px !important;
+    padding:8px 6px 44px 6px !important; /* reserva la flecha solo al final, no a la derecha de cada línea */
     box-sizing:border-box;
     overflow-y:auto;
   }
@@ -244,12 +244,13 @@ html.salida-x4 #histories { flex: 1 1 auto; height: auto; }
   }
   #histories .chat-history > .message:not(.user){
     padding-right:12px !important;
-    padding-top:42px;
     max-width:100%;
     min-width:0;
     box-sizing:border-box;
     overflow-wrap:anywhere;
   }
+  #histories .chat-history > .message:not(.user):has(> .copiar),
+  #histories .chat-history > .message.user:has(> .editar){padding-top:42px}
   #histories .chat-history > .message.user{
     padding-right:12px !important;
     max-width:95%;
