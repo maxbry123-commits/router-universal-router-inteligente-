@@ -3,7 +3,6 @@
 import { ICONOS, TRAZOS, PALETA, SENAL, FUENTES, FUENTES_ETQ, TEMAS, PRESETS, ROLES, DESTINOS, COLOR_DEF } from "./apariencia-datos.js";
 import { cargar, guardarEstado, construirCSS, HEX } from "./apariencia-aplicar.js";
 import { montarExtra } from "./apariencia-extra.js";
-import { mountSweCodeFree } from "./swe-code-free.js";
 
 const svg = (id, w = 20) => '<svg viewBox="0 0 24 24" width="' + w + '" height="' + w + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (TRAZOS[id] || TRAZOS.info) + "</svg>";
 const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4))); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
@@ -163,114 +162,36 @@ export async function mount(root, { api, tell } = {}) {
     });
   }
 
-  // Servidor HF — inyectar en la sección Control (id fijo)
-  const hCtl = q("#ap-h-ctl");
-  const controlBox = hCtl ? hCtl.closest("section") : null;
+  // Servidor HF — botones en la sección Control
+  const controlBox = Array.from(root.querySelectorAll("div, section")).find(d => /Control/.test(d.textContent || "") && d.querySelector("button"));
   if (controlBox && !controlBox.querySelector("#srv-hf")) {
     const wrap = el("div", "", "");
     wrap.id = "srv-hf";
-    wrap.style.marginTop = "14px";
-    wrap.append(el("div", "muted", "Servidor HF (Space) — ON/OFF, reinicio, saldo y alertas"));
-
-    const tok = el("input", "vn-in");
-    tok.type = "password";
-    tok.placeholder = "Token HF (write) — solo en este navegador";
-    tok.style.margin = "6px 0";
-    tok.style.width = "100%";
-    try { tok.value = sessionStorage.getItem("riu_hf_token") || ""; } catch {}
-    const guardarTok = () => { try { sessionStorage.setItem("riu_hf_token", tok.value.trim()); } catch {} avisa("Token HF guardado"); };
-
+    wrap.style.marginTop = "12px";
+    wrap.append(el("div", "muted", "Servidor HF (Space)"));
+    const fila = el("div", "ac-acc");
     const estSrv = el("div", "vn-estado");
     estSrv.style.fontSize = "12px";
     estSrv.style.marginTop = "6px";
-    estSrv.setAttribute("role", "status");
-
-    const SPACE = "comand-center-1-riu-router";
-    const OWNER = "maxbry123-commits";
-    const hf = async (method, path, body) => {
+    const tok = el("input", "vn-in");
+    tok.type = "password";
+    tok.placeholder = "Token HF (write)";
+    tok.style.marginBottom = "6px";
+    tok.style.width = "100%";
+    try { tok.value = sessionStorage.getItem("riu_hf_token") || ""; } catch {}
+    const guardarTok = () => { try { sessionStorage.setItem("riu_hf_token", tok.value.trim()); } catch {} avisa("Token HF guardado"); };
+    const hf = async (method, path) => {
       const t = tok.value.trim(); if (!t) throw new Error("Pega el token HF primero");
-      const r = await fetch("https://huggingface.co/api" + path, {
-        method,
-        headers: { "Authorization": "Bearer " + t, "Content-Type": "application/json" },
-        body: body ? JSON.stringify(body) : undefined
-      });
-      const txt = await r.text();
-      let data; try { data = JSON.parse(txt); } catch { data = { raw: txt }; }
-      if (!r.ok) throw new Error(data.error || data.message || txt || ("HTTP " + r.status));
-      return data;
+      const r = await fetch("https://huggingface.co/api" + path, { method, headers: { "Authorization": "Bearer " + t } });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json().catch(() => ({}));
     };
-
-    const trigger = async () => {
-      estSrv.textContent = "Enviando trigger…";
-      try {
-        const r = await fetch("/health?t=" + Date.now(), { cache: "no-store" });
-        estSrv.textContent = r.ok ? "Trigger enviado (health ok)" : "Trigger enviado (HTTP " + r.status + ")";
-        avisa("Trigger de despertar enviado");
-      } catch (e) { estSrv.textContent = "Trigger falló: " + e.message; }
-    };
-
-    const fila = el("div", "ac-acc");
-    fila.style.display = "flex";
-    fila.style.flexWrap = "wrap";
-    fila.style.gap = "6px";
-    fila.style.marginTop = "6px";
-
     fila.append(
-      chip("ON", false, async () => {
-        estSrv.textContent = "Encendiendo…";
-        try { await hf("POST", `/spaces/${OWNER}/${SPACE}/restart`); estSrv.textContent = "ON enviado. Espera ~30-60 s."; avisa("Servidor ON (restart)"); }
-        catch (e) { estSrv.textContent = e.message; }
-      }),
-      chip("OFF", false, async () => {
-        estSrv.textContent = "Apagando…";
-        try { await hf("POST", `/spaces/${OWNER}/${SPACE}/pause`); estSrv.textContent = "OFF (pausa) solicitado."; avisa("Servidor OFF"); }
-        catch (e) { estSrv.textContent = e.message; }
-      }),
-      chip("Reiniciar", false, async () => {
-        estSrv.textContent = "Reiniciando…";
-        try { await hf("POST", `/spaces/${OWNER}/${SPACE}/restart`); estSrv.textContent = "Reinicio enviado. Espera ~30-60 s."; avisa("Reinicio solicitado"); }
-        catch (e) { estSrv.textContent = e.message; }
-      }),
-      chip("Trigger", false, trigger),
-      chip("Saldo", false, async () => {
-        estSrv.textContent = "Consultando saldo…";
-        try {
-          const b = await hf("GET", "/settings/billing");
-          const cred = b.credits || b.credit || b.balance || b.amount || "?";
-          estSrv.textContent = "Saldo: " + cred;
-          if (typeof cred === "number" && cred <= 1) {
-            avisa("ALERTA: saldo HF ≤ 1$");
-            if (window.RIU_CHAT && window.RIU_CHAT.avisa) window.RIU_CHAT.avisa("ALERTA: saldo Hugging Face ≤ 1$");
-          }
-        } catch (e) { estSrv.textContent = "Saldo: " + e.message + " (abre Billing)"; }
-      }),
-      chip("Abrir Billing", false, () => { window.open("https://huggingface.co/settings/billing", "_blank"); avisa("Billing abierto"); })
+      chip("Estado", false, async () => { estSrv.textContent = "Consultando…"; try { const s = await hf("GET", "/spaces/maxbry123-commits/comand-center-1-riu-router"); estSrv.textContent = "Estado: " + (s.runtime?.stage || s.status || "ok"); } catch (e) { estSrv.textContent = e.message; } }),
+      chip("Reiniciar", false, async () => { estSrv.textContent = "Reiniciando…"; try { await hf("POST", "/spaces/maxbry123-commits/comand-center-1-riu-router/restart"); estSrv.textContent = "Reinicio enviado. Espera ~30-60 s."; avisa("Reinicio solicitado"); } catch (e) { estSrv.textContent = e.message; } }),
+      chip("Pausar", false, async () => { estSrv.textContent = "Pausando…"; try { await hf("POST", "/spaces/maxbry123-commits/comand-center-1-riu-router/pause"); estSrv.textContent = "Pausa solicitada."; } catch (e) { estSrv.textContent = e.message; } })
     );
-
-    let alarmaId = null;
-    const iniciarAlarma = () => {
-      if (alarmaId) clearInterval(alarmaId);
-      alarmaId = setInterval(async () => {
-        try {
-          if (!tok.value.trim()) return;
-          const b = await hf("GET", "/settings/billing");
-          const cred = b.credits || b.credit || b.balance || b.amount;
-          if (typeof cred === "number" && cred <= 1) {
-            avisa("ALERTA: saldo HF ≤ 1$");
-            if (window.RIU_CHAT && window.RIU_CHAT.avisa) window.RIU_CHAT.avisa("ALERTA: saldo Hugging Face ≤ 1$");
-          }
-          const h = await fetch("/health?t=" + Date.now(), { cache: "no-store" }).catch(() => null);
-          if (!h || !h.ok) avisa("ALERTA: Space no responde (/health)");
-        } catch {}
-      }, 10 * 60 * 1000);
-    };
-    tok.addEventListener("change", () => { guardarTok(); iniciarAlarma(); });
-    iniciarAlarma();
-
-    wrap.append(tok, el("div", "", ""), fila, estSrv, el("div", "vn-estado", "Token solo en este navegador. Trigger usa el puente Vercel. Alarma cada 10 min si saldo ≤ 1$ o health falla."));
+    wrap.append(tok, el("div", "", ""), fila, estSrv);
     controlBox.append(wrap);
   }
-
-  // SWE CODE free — auto-reparación OpenClaw
-  try { mountSweCodeFree(root, { api, tell }); } catch (e) { console.error("SWE CODE free", e); }
 }

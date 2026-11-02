@@ -1,5 +1,5 @@
 {
-  "commit": "3226e4debc9e",
-  "updated": "2026-11-02T22:05:00Z",
-  "note": "SWE CODE free auto-reparable + panel Control servidor. version.js recarga solo."
+  "commit": "5fd92afdd528",
+  "updated": "2026-11-02T22:15:00Z",
+  "note": "Revertido a estado anterior a cambios de SWE CODE free."
 }
