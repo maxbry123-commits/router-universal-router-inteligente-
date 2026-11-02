@@ -1,0 +1,37 @@
+/* Maxbry UI V07 · Vista D ejecución (iframe aislado, sin tocar shell) */
+.lx-view{max-width:1000px;margin:0 auto;display:grid;gap:12px;padding:4px 0 22px}
+.lx-view[hidden]{display:none!important}
+.lx-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border:1px solid #3a3a3a;background:#202020;border-radius:15px;padding:15px}
+.lx-title>div{flex:1 1 200px}.lx-title small{color:#9dc4ff;letter-spacing:.7px;font-weight:700;font-size:10px}
+.lx-title h2{margin:5px 0;font-size:20px;color:#eee}.lx-title p{margin:0;color:#bfbfbf;font-size:12px}
+.lx-title button{font-size:12px;min-height:42px}
+.lx-statusbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:9px 11px;background:#272727;border:1px solid #3c3c3c;border-radius:12px}
+.lx-statusbar>span:not(.lx-badge){font-size:11px;color:#c3c3c3;overflow-wrap:anywhere}
+.lx-badge{color:#bdd8ff;border:1px solid #3c7cc2;background:#19354a;border-radius:9px;padding:7px 10px;font-weight:700;font-size:11px}
+.lx-badge[data-state=blocked],.lx-badge[data-state=failed],.lx-badge[data-state=cancelled]{color:#ffc4c4;border-color:#b34c4c;background:#402626}
+.lx-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.lx-card{border:1px solid #3b3b3b;background:#222;border-radius:14px;padding:13px;min-width:0;display:flex;flex-direction:column;gap:9px}
+.lx-card h3{font-size:14px;color:#f4f4f4;margin:0}.lx-card>strong{font-size:22px;color:#eaeaea}
+.lx-card p{font-size:12px;line-height:1.5;color:#bfbfbf;margin:0;overflow-wrap:anywhere}
+.lx-card label{font-size:12px;color:#bfbfbf}.lx-card select{width:100%;min-height:44px;background:#2a2a2a;border:1px solid #525252;color:#fff;border-radius:10px;padding:8px}
+.lx-card progress{width:100%;height:12px;accent-color:#2f80ff}
+.lx-card progress[hidden]{display:none!important}
+.lx-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.lx-actions button{font-size:12px;min-width:0;padding:7px 6px}
+#lx-start,#lx-resume,#lx-one{border-color:#2e78d6;background:#193a67;color:#e5f0ff}
+#lx-cancel{border-color:#775050;color:#ffc0c0}
+#lx-one{width:100%;font-size:12px}
+.lx-card .lx-disclaimer{font-size:11px;color:#aebcc9}
+.lx-section-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.lx-section-head>span{font-size:12px;color:#bcd6fb}
+.lx-checklist{display:grid;gap:6px;max-height:320px;overflow-y:auto}
+.lx-step{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid #464646;border-radius:10px;padding:9px 10px;background:#292929}
+.lx-step-label{display:grid;min-width:0;gap:3px}.lx-step-label strong{font-size:12px;overflow-wrap:anywhere}.lx-step-label small{font-size:11px;color:#bdbdbd}
+.lx-step-state{flex:none;font-size:11px;border-radius:8px;padding:5px 7px;border:1px solid #4a4a4a;background:#222}
+.lx-step[data-state=PASS] .lx-step-state{border-color:#348d64;color:#9ee0bb;background:#163328}
+.lx-step[data-state=BLOCKED] .lx-step-state,.lx-step[data-state=FLAGGED] .lx-step-state{border-color:#ae5656;color:#ffbbbb}
+.lx-warning{padding:7px 9px;border:1px solid #695050;border-radius:9px;background:#362929;color:#ffbfbf!important}
+.lx-close{border-color:#3d5d83}.lx-close button{align-self:flex-start}
+.lx-foot{border:1px solid #3a3a3a;background:#272727;color:#bfbfbf;font-size:12px;line-height:1.5;padding:10px 12px;border-radius:11px;margin:0}
+.lx-foot.lx-error{border-color:#a85b5b;color:#ffc0c0;background:#362626}
+@media(max-width:700px){.lx-grid{grid-template-columns:minmax(0,1fr)}.lx-title h2{font-size:18px}.lx-statusbar{gap:6px}.lx-card{padding:11px}.lx-actions button{min-height:44px}}
+@media(max-width:390px){.lx-title{padding:12px}.lx-card{gap:8px}.lx-step{flex-wrap:wrap}.lx-step-state{margin-left:auto}}
