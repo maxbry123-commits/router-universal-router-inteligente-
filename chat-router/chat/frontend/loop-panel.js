@@ -59,6 +59,7 @@ async function command(t,op,payload){
   if(op==='trigger_upsert'&&canonical(found)!==canonical(payload.contract))throw Error('CONTRATO_NO_CONFIRMADO');
  }
  restoreBackend(after);
+ A.el('go-run').disabled=!all.some(t=>t.enabled);
  notice(t.id+' · '+op+' confirmado · revisión '+String(after.revision));
  return after;
 }
