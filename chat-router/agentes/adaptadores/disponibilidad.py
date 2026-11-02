@@ -139,7 +139,14 @@ def _agente_codex(sondas):
     if not _comun.binario("codex", "RIU_CODEX_BIN"):
         return _faltan("codex", "codex", "RIU_CODEX_BIN")
     if not os.environ.get("RIU_CODEX_BASE_URL", "").strip():
-        return _no("codex instalado pero falta RIU_CODEX_BASE_URL: Codex solo habla la API Responses y necesita un endpoint /responses", "NO CONFIGURADO", "falta_RIU_CODEX_BASE_URL")
+        # El bridge existente ya implementa POST /v1/responses. Codex lo usa
+        # por _comun.endpoint_modelo, sin un servidor ni variables nuevos.
+        if not (os.environ.get("RIU_API_KEY", "").strip() or os.environ.get("BRIDGE_TOKEN", "").strip()
+                or os.environ.get("RIU_AGENTES_LLM_API_KEY", "").strip()):
+            return _no("codex instalado pero falta RIU_CODEX_BASE_URL o credencial del bridge SWE CODE (RIU_API_KEY)", "NO CONFIGURADO", "falta_RIU_CODEX_BASE_URL")
+        url = (os.environ.get("RIU_SWE_BRIDGE_URL") or "http://127.0.0.1:7870").strip()
+        if not sondas["gateway"](url):
+            return _no("codex instalado: bridge /v1/responses sin respuesta; no se certifica ejecucion", "SIN VERIFICAR", "bridge_sin_respuesta")
     return _ok()
 
 
