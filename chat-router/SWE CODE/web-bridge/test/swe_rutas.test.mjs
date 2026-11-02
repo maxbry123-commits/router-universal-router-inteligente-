@@ -45,6 +45,29 @@ test('llamarHarness: solo las cinco operaciones; sin base/clave HARNESS_NO_CONFI
   assert.ok(log[0].init.signal, 'con timeout (AbortSignal)'); assert.equal(TIMEOUT_HARNESS_MS, 60000);
 });
 
+test('agentes-lock OpenClaw: solo clave del chat, misma ruta Router, sin aprobar por BRIDGE_TOKEN', async () => {
+  const log = [], env = { ...ENV, PORT: '7860' };
+  const app = montar(env, async (url, init) => {
+    log.push({ url, init });
+    const body = JSON.parse(init.body);
+    return { ok: true, status: 200, json: async () => ({
+      status: 'ok', result: { ok: true, agentes_locked: body.locked ?? true },
+    }) };
+  });
+  const tok = await llamar(app, 'agentes-lock', { body: { locked: false }, headers: AUTH });
+  assert.equal(tok.codigo, 403);
+  assert.equal(tok.cuerpo.error.code, 'CLAVE_CHAT_REQUERIDA');
+  assert.equal(log.length, 0);
+  const good = await llamar(app, 'agentes-lock', { body: { locked: false }, headers: { authorization: 'Bearer ' + CLAVE_HARNESS } });
+  assert.equal(good.codigo, 200);
+  assert.deepEqual(good.cuerpo, { ok: true, resultado: { agentes_locked: false } });
+  assert.ok(log[0].url.startsWith('http://127.0.0.1:7860/plugins/puente_chat/call/agent_access_lock'));
+  assert.deepEqual(JSON.parse(log[0].init.body), { quien: 'agentes', locked: false });
+  const bad = await llamar(app, 'agentes-lock', { body: { locked: 'false' }, headers: { authorization: 'Bearer ' + CLAVE_HARNESS } });
+  assert.equal(bad.codigo, 400);
+  assert.equal(log.length, 1);
+});
+
 test('llamarHarness: HARNESS_HTTP_<status>, HARNESS_EJECUCION_FALLIDA, no disponible y timeout; ningun mensaje trae la URL ni la clave', async () => {
   const f = (impl) => ({ env: ENV, fetchFn: impl });
   await assert.rejects(() => llamarHarness('swe_estado', {}, f(async () => ({ ok: false, status: 502, json: async () => ({}) }))), /^Error: HARNESS_HTTP_502$/);
@@ -58,7 +81,7 @@ test('llamarHarness: HARNESS_HTTP_<status>, HARNESS_EJECUCION_FALLIDA, no dispon
 test('autenticacion OBLIGATORIA: sin NINGUNA credencial (ni BRIDGE_TOKEN ni clave de acceso) las 5 rutas responden 503 y no llaman al Harness (no heredan el acceso libre de las rutas publicas)', async () => {
   // BRIDGE_TOKEN es opcional: con una clave de acceso configurada (RIU_API_KEY...) ya no es 503 sino 401/200 segun el Bearer (ver sin_variables.test.mjs); 503 = no hay credencial alguna
   const log = [], app = montar({ RIU_DEEPSEEK_HARNESS_URL: URL_HARNESS }, harnessOk(log));
-  assert.deepEqual(Object.keys(app.rutas).sort(), ['/v1/swe/aprobar', '/v1/swe/avanzar', '/v1/swe/estado', '/v1/swe/iniciar', '/v1/swe/reanudar', '/v1/swe/tools/:id', 'GET /v1/swe/capacidades', 'GET /v1/swe/tools']);
+  assert.deepEqual(Object.keys(app.rutas).sort(), ['/v1/swe/agentes-lock', '/v1/swe/aprobar', '/v1/swe/avanzar', '/v1/swe/estado', '/v1/swe/iniciar', '/v1/swe/reanudar', '/v1/swe/tools/:id', 'GET /v1/swe/capacidades', 'GET /v1/swe/tools']);
   for (const ruta of Object.keys(OPERACIONES_SWE)) {
     const r = await llamar(app, ruta, { body: TAREA, headers: AUTH });
     assert.equal(r.codigo, 503, ruta); assert.equal(r.cuerpo.ok, false); assert.equal(r.cuerpo.error.code, 'BRIDGE_TOKEN_NO_CONFIGURADO');
