@@ -41,3 +41,45 @@
   color:var(--quiet,#BFBFBF);font-size:13px;line-height:1.3;
 }
 #histories .chat-history > .p3d-salida-estado[hidden]{display:none!important}
+
+/* V10 · Preserva el cubo original de 6 caras y sus 2 anillos.
+   Tres transformaciones 3D continuas: órbita, volteo diagonal y rotación axial. */
+@media(max-width:720px){
+ #composer .composer-bar > .p3d {width:50px!important;height:50px!important;overflow:visible;transform:none!important}
+ #composer .composer-bar > .p3d .p3d-escena{
+   width:50px;height:50px;transform:scale(1.06);transform-origin:center;overflow:visible;
+ }
+ #composer .composer-bar > .p3d .p3d-cubo{inset:11px;animation:p3d-formas-v10 14s ease-in-out infinite}
+ #composer .composer-bar > .p3d .p3d-cubo i{
+   border-width:2px;
+   border-color:rgba(46,151,255,.94);
+   background:linear-gradient(145deg,rgba(0,188,255,.18),rgba(14,58,168,.12));
+   box-shadow:inset 0 0 7px rgba(36,125,255,.21),0 0 5px rgba(50,141,255,.25);
+ }
+ #composer .composer-bar > .p3d .p3d-cubo .f1{transform:translateZ(14px)}
+ #composer .composer-bar > .p3d .p3d-cubo .f2{transform:rotateY(180deg) translateZ(14px)}
+ #composer .composer-bar > .p3d .p3d-cubo .f3{transform:rotateY(90deg) translateZ(14px)}
+ #composer .composer-bar > .p3d .p3d-cubo .f4{transform:rotateY(-90deg) translateZ(14px)}
+ #composer .composer-bar > .p3d .p3d-cubo .f5{transform:rotateX(90deg) translateZ(14px)}
+ #composer .composer-bar > .p3d .p3d-cubo .f6{transform:rotateX(-90deg) translateZ(14px)}
+ #composer .composer-bar > .p3d .p3d-anillo{
+   inset:1px;border-width:1.7px;opacity:.9;
+ }
+ #composer .composer-bar > .p3d .p3d-anillo.a1{animation:p3d-orbita-v10 5s linear infinite}
+ #composer .composer-bar > .p3d .p3d-anillo.a2{animation:p3d-orbita-v10 6.6s linear infinite reverse}
+}
+@keyframes p3d-formas-v10{
+  0%,100% {transform:rotateX(-22deg) rotateY(0deg) rotateZ(0deg)}
+  25% {transform:rotateX(68deg) rotateY(160deg) rotateZ(8deg)}
+  50% {transform:rotateX(-43deg) rotateY(315deg) rotateZ(135deg)}
+  75% {transform:rotateX(135deg) rotateY(495deg) rotateZ(310deg)}
+}
+@keyframes p3d-orbita-v10{
+  0% {transform:rotateX(72deg) rotateY(0deg) rotateZ(0deg)}
+  50% {transform:rotateX(28deg) rotateY(180deg) rotateZ(150deg)}
+  100% {transform:rotateX(72deg) rotateY(360deg) rotateZ(360deg)}
+}
+@media(prefers-reduced-motion:reduce){
+ #composer .composer-bar > .p3d .p3d-cubo,
+ #composer .composer-bar > .p3d .p3d-anillo{animation:none!important}
+}

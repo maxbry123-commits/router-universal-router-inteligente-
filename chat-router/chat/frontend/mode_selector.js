@@ -113,7 +113,10 @@ export async function initModeSelector(opts) {
 
   function render() {
     const m = byId[lock];
-    btn.replaceChildren(el("span", { "aria-hidden": "true" }, m ? m.icon : "🧠"), el("span", { class: "ms-lb" }, m ? m.label : "Auto"));
+    const icono = el("span", { class: "ms-brain", "aria-hidden": "true" });
+    // Trazado estático y blanco: sustituye el emoji rosa; las opciones mantienen sus iconos originales.
+    icono.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 18V6"/><path d="M12 7c-1-3-5-3-6 0-3 .3-3 4-1 5-2 2-1 5 2 5 0 3 4 4 5 1"/><path d="M12 7c1-3 5-3 6 0 3 .3 3 4 1 5 2 2 1 5-2 5 0 3-4 4-5 1"/><path d="M8 10c2 0 3 1 4 3M16 10c-2 0-3 1-4 3"/></svg>';
+    btn.replaceChildren(icono, el("span", { class: "ms-lb" }, m ? m.label : "Auto"));
     btn.dataset.locked = String(Boolean(m));
     btn.title = `Modo ${m ? m.label : "Auto"} · tools ${approval === "auto" ? "automáticas" : "manuales"}`;
     btn.setAttribute("aria-label", btn.title);

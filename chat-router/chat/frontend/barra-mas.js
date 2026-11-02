@@ -280,7 +280,7 @@ function botonLimpiar() {
   boton.className = "secondary";
   boton.title = "Limpiar el texto de entrada";
   boton.setAttribute("aria-label", "Limpiar el texto escrito");
-  boton.innerHTML = svg('<path d="M15 3l6 6M8 17 18 7l-4-4L4 13l4 4zM8 17l-2 4M3 21h18"/>');
+  boton.innerHTML = svg('<path d="M19 3L10 14"/><path d="M8 13l7 5-4 3H3l5-8z"/><path d="M7 17l1 4M11 18l1 3"/>');
   boton.addEventListener("click", () => {
     if (!campo.value) return;
     campo.value = "";
@@ -288,6 +288,42 @@ function botonLimpiar() {
     campo.focus();
   });
   fila.append(boton);
+}
+
+// Vista ampliada del texto escrito (sin duplicar textarea ni cambiar el contenido).
+function botonExpandirInput() {
+  const form = document.getElementById("composer");
+  const campo = form?.querySelector("#message");
+  if (!form || !campo || document.getElementById("btn-expandir-input")) return;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.id = "btn-expandir-input";
+  btn.className = "secondary";
+  btn.setAttribute("aria-controls", "message");
+  btn.setAttribute("aria-expanded", "false");
+  const iconExpand = svg('<path d="M8 3H3v5M16 21h5v-5M3 3l7 7M21 21l-7-7"/>');
+  const iconCollapse = svg('<path d="M4 10h6V4M20 14h-6v6M10 10 3 3M14 14l7 7"/>');
+  function setExpand(on) {
+    form.classList.toggle("riu-input-expanded", on);
+    btn.setAttribute("aria-expanded", String(on));
+    btn.setAttribute("aria-label", on ? "Contraer texto escrito" : "Ampliar todo el texto escrito");
+    btn.title = on ? "Contraer input" : "Ampliar input";
+    btn.innerHTML = on ? iconCollapse : iconExpand;
+    if (on) {
+      campo.focus();
+      // Muestra el final del borrador, manteniendo la posibilidad de recorrerlo.
+      campo.scrollTop = campo.scrollHeight;
+    }
+  }
+  btn.addEventListener("click", () => setExpand(!form.classList.contains("riu-input-expanded")));
+  form.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && form.classList.contains("riu-input-expanded")) {
+      setExpand(false); btn.focus();
+    }
+  });
+  form.addEventListener("submit", () => setExpand(false));
+  campo.after(btn);
+  setExpand(false);
 }
 
 function devolver() {
@@ -386,6 +422,7 @@ function colocar() {
   try {
     botonPegar();
     botonLimpiar();
+    botonExpandirInput();
     if (!movil()) { devolver(); menu(); return; }
     tres();
   } finally { ocupado = false; }
