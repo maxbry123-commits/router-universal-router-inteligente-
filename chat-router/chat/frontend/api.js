@@ -223,7 +223,7 @@ export async function plugin(id, action, body) {
   return p.result !== undefined && p.status === 'ok' ? p.result : p;
 }
 window.RIU_PLUGIN = plugin;
-export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id, instrucciones_fijas, mode_request, thinking_mode, tools = false, agente_tool = false, llm_tool = false }) {  // >>> MODOS <<< mode_request viaja en el payload
+export async function harness({ model, message, max_tokens, avisar, anclados, sesion, anclados_sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id, instrucciones_fijas, mode_request, thinking_mode, tools = false, agente_tool = false, llm_tool = false }) {  // >>> MODOS <<< mode_request viaja en el payload
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
   const pw = clave();
@@ -231,7 +231,7 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
   const messages = [{ role: 'user', content: message }];
   const extra = Object.assign(
     { active_anchors_v1: true, tools: !!tools, agente_tool: !!agente_tool, llm_tool: !!llm_tool },
-    { sesion: sesion || undefined, anclados: anclados || [] },
+    { sesion: sesion || undefined, anclados_sesion: anclados_sesion || undefined, anclados: anclados || [] },
     gobernanza !== undefined ? { gobernanza } : {},
     constitucion !== undefined ? { constitucion } : {},
     instrucciones_fijas ? { instrucciones_fijas } : {},
