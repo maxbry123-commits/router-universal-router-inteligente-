@@ -425,6 +425,7 @@ export const TABLA_ERRORES = {
   timeout_red:        { codigos: [408], reintentar: true,  rotarClave: false, respetaRetryAfter: false, enfriarClave: false, texto: 'timeout/red: el proveedor entero se enfria y se pasa al siguiente (no se prueban sus demas claves)' },
   servidor_temporal:  { codigos: [500, 502, 503, 504, 529], reintentar: true, rotarClave: false, respetaRetryAfter: true, enfriarClave: false, texto: '5xx: backoff exponencial con jitter (o Retry-After) y siguiente clave; tope = numero de claves' },
   peticion_invalida:  { codigos: [400, 404, 422], reintentar: false, rotarClave: false, respetaRetryAfter: false, enfriarClave: false, texto: '400/404/422: modelo o peticion invalida; no se reintenta ni se cambia de modelo' },
+  modelo_no_servido:  { codigos: [410], reintentar: false, rotarClave: false, respetaRetryAfter: false, enfriarClave: false, texto: '410 Gone: este endpoint no sirve el modelo solicitado para la clave actual; verificar catalogo y permisos, sin sustitucion' },
 };
 export function clasificarError(status, { red = false } = {}) {
   if (red) return { tipo: 'timeout_red', ...TABLA_ERRORES.timeout_red };
@@ -465,7 +466,8 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
       if (i < ks.length - 1) await esperarCancelable(Number.isFinite(e.retryAfterMs) && e.status >= 500 ? esperaCorta(e, r) : backoff(fallos++, r), r);  // 5xx/red: Retry-After (con tope) o backoff exponencial con jitter antes de la siguiente clave
     }
   }
-  throw Object.assign(new Error(limpiar(`EXTERNO_${prov.toUpperCase()}: ${ultimo.message}`, todas)), { code: 'EXTERNO_FALLO', tipo: tipoDe(ultimo), ...(Number.isInteger(ultimo.status) ? { status: ultimo.status } : {}), ...(ctx.flujo?.texto ? { parcial: ctx.flujo.texto } : {}) });
+  const detalle410 = ultimo.status === 410 ? ` (410 Gone: ${id} no servido por este endpoint/clave; comprueba acceso en GET /models, sin cambiar de modelo)` : '';
+  throw Object.assign(new Error(limpiar(`EXTERNO_${prov.toUpperCase()}: ${ultimo.message}${detalle410}`, todas)), { code: 'EXTERNO_FALLO', tipo: tipoDe(ultimo), ...(Number.isInteger(ultimo.status) ? { status: ultimo.status } : {}), ...(ctx.flujo?.texto ? { parcial: ctx.flujo.texto } : {}) });
 }
 
 // modelo local de la cola HF: entra por S1 y salta a S2/S3 si no responde (sin stream: la cola HF no lo recibe; con flujo previo continua sin repetirlo)
