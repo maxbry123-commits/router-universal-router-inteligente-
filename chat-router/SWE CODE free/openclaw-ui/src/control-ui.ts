@@ -59,7 +59,20 @@ function montarSelector(container: HTMLElement, host: ControlUiHost, signal: Abo
     }
     const abajo = el('div', 'swe-fila');
     const modo = el('button', 'swe-btn swe-toggle', `Modo agentico: ${seleccion.modo_agentico ? 'ON' : 'OFF'}`); modo.type = 'button'; modo.setAttribute('aria-pressed', String(seleccion.modo_agentico)); modo.setAttribute('aria-label', 'MODO AGENTICO');
-    modo.onclick = () => { seleccion = aplicar(seleccion, { modo_agentico: !seleccion.modo_agentico }); onChange(); render(); };
+    modo.onclick = async () => {
+      if (modo.disabled) return;
+      const encender = !seleccion.modo_agentico;
+      modo.disabled = true;
+      try {
+        const r = await feature.invoke('agentes_lock', { locked: !encender });
+        const v = r.datos && typeof r.datos === 'object' ? r.datos as { agentes_locked?: boolean } : {};
+        if (!r.ok || v.agentes_locked !== !encender) throw new Error(r.codigo ?? 'ROUTER_NO_CONFIRMADO');
+        seleccion = aplicar(seleccion, { modo_agentico: encender });
+        onChange(); render();  // no activar un agente en la UI si el Router lo rechazo
+      } catch (error) {
+        if (!signal.aborted) estado.textContent = 'AGENTES SIN ACTIVAR: ' + (error instanceof Error ? error.message : 'Router sin respuesta');
+      } finally { modo.disabled = false; }
+    };
     abajo.append(modo);
     const wf = picker(abajo, 'Workflow', 'WORKFLOW');
     handles.push(host.components.mountSelectPicker(wf, { options: opciones('workflow', ids('workflows', seleccion.workflow)), value: seleccion.workflow, accessibleLabel: 'WORKFLOW', onSelect: (v) => { seleccion = aplicar(seleccion, { workflow: v }); onChange(); render(); } }));
@@ -73,9 +86,16 @@ function montarSelector(container: HTMLElement, host: ControlUiHost, signal: Abo
   const cargar = async () => {
     estado.textContent = 'Consultando disponibilidad...';
     try {
-      const r = await feature.invoke('capacidades', {});
+      const [r, lock] = await Promise.all([
+        feature.invoke('capacidades', {}), feature.invoke('agentes_lock', {}),
+      ]);
       signal.throwIfAborted();
       capacidades = normalizarCapacidades(r.ok ? r.datos : null);
+      const d = lock.ok && lock.datos && typeof lock.datos === 'object' ? lock.datos as { agentes_locked?: boolean } : {};
+      if (d.agentes_locked !== false && seleccion.modo_agentico) {
+        seleccion = aplicar(seleccion, { modo_agentico: false });
+        onChange();
+      }
       if (!r.ok) estado.textContent = `Harness: no disponible (${r.codigo ?? 'error'})`;
     } catch (e) { if (!signal.aborted) estado.textContent = String(e); }
     if (!signal.aborted) render();
