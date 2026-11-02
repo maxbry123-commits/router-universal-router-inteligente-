@@ -73,3 +73,13 @@ test('UI en jsdom: selector central con 3 campos reales + modo + workflow + sali
   assert.deepEqual(llamadas.at(-1)[0], 'tool'); assert.equal(llamadas.at(-1)[1].id, 'salud');
   vista.dispose(); assert.equal(raiz.children.length, 0, 'dispose limpia el DOM');
 });
+
+test('el selector OpenClaw usa un unico picker de agente y ancho responsive limitado al panel', async () => {
+  const { readFileSync } = await import('node:fs');
+  const codigo = readFileSync(new URL('../src/control-ui.ts', import.meta.url), 'utf8');
+  const estilos = readFileSync(new URL('../src/control-ui.css', import.meta.url), 'utf8');
+  assert.match(codigo, /rotulo: 'Agente que ejecuta', clave: 'agente_tool'/);
+  assert.doesNotMatch(codigo, /rotulo: 'Agente que responde', clave: 'agente_responde'/);
+  assert.match(estilos, /\.swe-selector\{box-sizing:border-box;width:100%;max-width:720px/);
+  assert.match(estilos, /@media\(max-width:520px\)/);
+});

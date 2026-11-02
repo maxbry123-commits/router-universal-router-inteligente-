@@ -13,3 +13,12 @@
 .swe-gap { opacity: .75; font-size: .9em; }
 .swe-salida, .swe-selector-estado { white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: .85em; }
 .swe-aprobar input, .swe-tools input { padding: 6px 8px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+
+/* OpenClaw: ancho y columnas dentro de su panel, sin tocar estilos globales. */
+.swe-selector{box-sizing:border-box;width:100%;max-width:720px;min-width:0;margin-inline:auto}
+.swe-selector .swe-selector-filas{display:grid;gap:12px;min-width:0}
+.swe-selector .swe-fila{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));align-items:end;min-width:0;gap:10px}
+.swe-selector .swe-fila-t{grid-column:1/-1;min-width:0}
+.swe-selector .swe-campo{min-width:0;max-width:100%}
+.swe-selector .swe-campo-c{min-width:0;max-width:100%}
+@media(max-width:520px){.swe-selector{padding:12px}.swe-selector .swe-fila{grid-template-columns:minmax(0,1fr)}}
