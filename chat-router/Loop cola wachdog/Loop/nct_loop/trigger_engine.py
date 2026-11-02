@@ -290,6 +290,8 @@ class TriggerEngine:
         except asyncio.TimeoutError:
             return await self._failed(key, current, "MODEL_TIMEOUT", started, mutating)
         except ContractError as e:
-            return await self._failed(key, current, e.code, started, mutating or e.code == "NEEDS_RECONCILIATION")
+            return await self._failed(key, current, e.code, started,
+                                      mutating or bool(current.get("claim_ref"))
+                                      or e.code == "NEEDS_RECONCILIATION")
         except (OSError, RuntimeError, ValueError, TypeError, KeyError):
             return await self._failed(key, current, "HOST_PORT_FAILURE", started, mutating)
