@@ -8,7 +8,7 @@ let liveVerified = false;  // solo tras una resolución real de LIVE_URL se cons
 let liveCheckedAt = 0;
 let liveRequest = null;
 let PBASE = "";  // base de los plugins (chat_async, /resultado): mismo origen en Vercel (rewrites de vercel.json) o el Space directo
-// fetch con tope: en movil (4G, pestaña en segundo plano) un fetch puede quedar colgado para siempre y el chat se queda en "Pensando" sin que el Router reciba nada
+// fetch con tope: en movil (4G, pestaña en segundo plano) un fetch puede quedar colgado para siempre y el chat se queda en "Pemsando" sin que el Router reciba nada
 const vivos = new Set();
 const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const reg = ac ? { ac, t0: Date.now() } : null; if (reg && !(ms >= 120000)) vivos.add(reg); /* las peticiones largas (SWE por el bridge) no se cortan al volver a la pestana */ const t = ms ? setTimeout(() => ac && ac.abort(), ms) : 0; if (ac && opts && opts.signal) { if (opts.signal.aborted) ac.abort(); else opts.signal.addEventListener('abort', () => ac.abort(), { once: true }); } /* senal externa (Detener): corta tambien la lectura del stream */ return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => { clearTimeout(t); if (reg) vivos.delete(reg); }); };
 // al volver a la pestaña: cortar los fetch que quedaron colgados en segundo plano; el polling sigue con el mismo proceso_id y un chat_async sin proceso_id se reintenta
@@ -79,7 +79,7 @@ const fmtTools = (p) => {
 };
 const avisoProceso = (ses, pid, t0, p) => {
   const tools = fmtTools(p);
-  const texto = 'Pensando · ' + fmtReloj(Date.now() - (t0 || Date.now())) + (tools ? ' · ' + tools : '') + (p && p.progreso ? ' · ' + p.progreso : '');
+  const texto = 'Pemsando · ' + fmtReloj(Date.now() - (t0 || Date.now())) + (tools ? ' · ' + tools : '') + (p && p.progreso ? ' · ' + p.progreso : '');
   try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: ses, proceso_id: pid, texto } })); } catch (e) {}
 };
 const procs = () => { try { return JSON.parse(localStorage.getItem(CP) || '{}'); } catch (e) { return {}; } };
@@ -150,7 +150,7 @@ async function puenteRouter(base, body, qs, headers) {
     if (p.estado === 'procesando' && p.proceso_id) {
       const deadline = Date.now() + TOPE_ESPERA;
       const t0 = Date.now();
-      try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'Pensando…' } })); } catch (e) {}  // el cubo y la burbuja dicen Pensando, no cola
+      try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'Pemsando…' } })); } catch (e) {}  // el cubo y la burbuja dicen Pemsando, no cola
       if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: t0 });
       let primera = true;  // primera consulta inmediata, luego cada 250 ms; el tope es 48 h
       let fallosRed = 0;  // fix 5: la red caida ya no se oculta para siempre
