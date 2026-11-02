@@ -169,7 +169,7 @@ async def openclaw_ws(ws: WebSocket, path: str = ""):
 async def openclaw_http(req: Request, path: str = ""):
     body = await req.body()
     hdrs = openclaw_hdrs(req.headers)
-    url = "http://%s/%s" % (OPENCLAW, path)
+    url = "http://%s/openclaw/%s" % (OPENCLAW, path)
     r = cli.build_request(req.method, url, params=req.query_params, headers=hdrs, content=body)
     resp = await cli.send(r, stream=True)
     oh = {k: v for k, v in resp.headers.items() if k.lower() not in (HOP - {"content-encoding"})}
