@@ -45,7 +45,8 @@ def _oid(clon, ruta, env):
     return git(["hash-object", "-w", "--no-filters", str(ruta)], cwd=clon, env=env)
 
 
-def publicar(fuente, destino, mensaje, token_fn=None, sobrescribir=False, cancelado=lambda: False):
+def publicar(fuente, destino, mensaje, token_fn=None, sobrescribir=False,
+             cancelado=lambda: False, expected_head=None):
     owner, repo, rama, carpeta = parsear(destino)
     env = {**entorno_git(token_fn, owner), **_ID}
     if "MOTOR_TOKEN" not in env and not os.environ.get("RIU_MOTOR_CREDENCIAL_EXTERNA"):  # esa variable la pone el operador cuando git ya se autentica por fuera (proxy o credencial del servidor)
@@ -55,6 +56,14 @@ def publicar(fuente, destino, mensaje, token_fn=None, sobrescribir=False, cancel
         clon = Path(tmp) / "repo"
         git(["clone", "--depth", "1", "--filter=blob:none", "--no-checkout", *(["--branch", rama] if rama else []), url_remota(owner, repo), str(clon)], env=env)
         rama = rama or git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=clon, env=env)
+        # N4 safety: reject a changed remote branch even if it changed between
+        # the preliminary read and this clone; ordinary legacy callers are intact.
+        if expected_head is not None:
+            if not re.fullmatch(r"[0-9a-f]{40}", str(expected_head)):
+                raise MotorError("EXPECTED_HEAD_INVALID")
+            head_at_clone = git(["rev-parse", "HEAD"], cwd=clon, env=env)
+            if head_at_clone != expected_head:
+                raise MotorError("EXPECTED_HEAD_CHANGED_REAPPROVAL_REQUIRED")
         git(["read-tree", "HEAD"], cwd=clon, env=env)  # indice del ultimo commit, sin bajar el contenido del repo
         fuente = Path(fuente)
         base = fuente if fuente.is_dir() else fuente.parent

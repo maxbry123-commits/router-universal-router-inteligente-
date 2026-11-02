@@ -249,7 +249,8 @@ def build_ports(host: dict) -> HostPorts:
         if not github_ready or not isinstance(approval,dict) or not approval.get("approved"):
             raise ContractError("BLOCKED_APPROVAL")
         if (approval.get("writer")!="N4" or not approval.get("actor")
-                or approval.get("write_paths")!=project_row.get("write_paths")
+                or not isinstance(approval.get("write_paths"),list)
+                or any(scope not in project_row["write_paths"] for scope in approval["write_paths"])
                 or not isinstance(approval.get("github_head"),str)
                 or approval["github_head"]!=github_head()):
             raise ContractError("GITHUB_HEAD_CHANGED_REAPPROVAL_REQUIRED")
@@ -268,7 +269,7 @@ def build_ports(host: dict) -> HostPorts:
                   "git:maxbry123-commits/router-universal-router-inteligente-@main/"+target_dir.as_posix(),
                   "YAIWES N4 approved "+project+" "+loop,
                   token_fn=lambda:control.credencial("github",banco,estricto=True),
-                  sobrescribir=True)
+                  sobrescribir=True, expected_head=approval["github_head"])
             except Exception:
                 raise ContractError("GITHUB_WRITE_NOT_VERIFIED") from None
         committed=github_head()
