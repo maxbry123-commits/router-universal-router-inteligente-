@@ -294,7 +294,7 @@ export async function api(path, options = {}) {
   try {
     const credentials = remoto(headers);
     response = await fetchT(BASE + path, { method: options.method || "GET", headers, credentials,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body), signal: options.signal }, (path === "/chat/send" || path === "/v1/chat/completions" || path === "/web/v1/chat/completions" || (path.startsWith("/chat/swe/") && path !== "/chat/swe/capacidades")) ? 450000 : 15000);  // /chat/swe/*: cada paso espera a un agente real  // /chat/send (sin harness) espera la respuesta completa
+      body: options.body === undefined ? undefined : JSON.stringify(options.body), signal: options.signal }, (path === "/chat/send" || path === "/v1/chat/completions" || path === "/web/v1/chat/completions" || path === "/plugins/deepseek_harness/modelos/v1/chat/completions" || (path.startsWith("/chat/swe/") && path !== "/chat/swe/capacidades")) ? 450000 : 15000);  // /chat/swe/*: cada paso espera a un agente real  // /chat/send (sin harness) espera la respuesta completa
   } catch (error) {
     if (error && error.name === "AbortError" && options.signal && options.signal.aborted) throw new Error("PROCESO_DETENIDO");  // Detener del usuario: no es un fallo de conexion
     window.dispatchEvent(new CustomEvent("router-connection", { detail: "Sin conexión" }));

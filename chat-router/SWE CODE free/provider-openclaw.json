@@ -2,10 +2,10 @@
   "provider": "swecode",
   "nombre": "SWE CODE / SWEN CODE free",
   "tipo": "openai-compatible",
-  "base_url": "http://localhost:7870/openclaw/v1",
+  "base_url": "http://127.0.0.1:7861/plugins/deepseek_harness/modelos/v1",
   "api_key": "${RIU_API_KEY}",
   "token_nota": "Marcador: OpenClaw debe sustituir ${RIU_API_KEY} por la clave de acceso real (RIU_API_KEY) desde su entorno, nunca escrita en este archivo; el bridge la acepta como Authorization: Bearer y BRIDGE_TOKEN es opcional. Sin ella, toda llamada al bridge da 401.",
-  "nota": "El catálogo /v1/models sirve DeepSeek, MiniMax, OpenAI, Groq, NVIDIA y locales HF mediante el bridge OpenAI-compatible ya incorporado en OpenClaw. Verificar disponibilidad real con /v1/modelos/disponibilidad.",
+  "nota": "Chat OpenClaw -> plugin Harness DeepSeek -> Router MVP (Groq/NVIDIA/API) o Router SWE CODE (HF local/web). Modelo explícito sin fallback. La clave de acceso es RIU_API_KEY del Gateway, no la clave de un proveedor.",
   "modelos": [
     {
       "id": "web-qwen38max",
@@ -113,7 +113,7 @@
     }
   ],
   "gramatica": "SWEN CODE free [modo <m>] [con|solo|modelo <m>] [chat <id>] [pipeline code|free] [doc <ruta>] <texto> — ver INSTRUCCIONES.md",
-  "via": "app openclaw -> bridge :7870 (router propio de SWE CODE free). Tambien accesible por plugins -> deepseek_harness desde el chat Yaiwes",
+  "via": "Chat OpenClaw -> DeepSeek Harness -> Router MVP o Router SWE CODE -> proveedor/HF; el cliente de la app reutiliza esta misma entrada.",
   "mcp": {
     "nombre": "yaiwes-router",
     "tipo": "streamable-http",

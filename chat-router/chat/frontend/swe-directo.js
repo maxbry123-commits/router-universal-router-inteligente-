@@ -328,7 +328,9 @@ export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecut
 
 // El proxy del Space solo manda /v1/* al bridge si el modelo empieza por web-/swecode-; el resto (locales HF, groq/, nvidia/) caeria en el Router
 // (400 MODEL_NOT_IN_CERTIFIED_REGISTRY). /web/* va SIEMPRE al bridge (igual que /web/v1/claves): por ahi viajan los demas ids.
-export const rutaSwe = (id) => (/^(web-|swecode-)/.test(Object.hasOwn(REAL, id) ? REAL[id] : String(id)) ? "/v1/chat/completions" : "/web/v1/chat/completions");
+// Todos los modelos entran por Harness DeepSeek, que decide Router MVP (API)
+// o Router SWE CODE (HF/local/web) por HTTP. Nunca conectar la UI directamente a /web.
+export const rutaSwe = (_id) => "/plugins/deepseek_harness/modelos/v1/chat/completions";
 
 // ---- Streaming SSE (bridge): lector tolerante a CRLF, comentarios (": keepalive"), eventos partidos entre chunks y lineas data: multiples ----
 export async function leerSSE(response, alEvento, signal) {

@@ -38,3 +38,10 @@ test("DeepSeek MiniMax y OpenAI aparecen en el selector y sus claves se eligen d
   for (const p of ["deepseek", "minimax", "openai"]) assert.ok(banco.includes('["' + p + '",'), p);
   assert.doesNotMatch(s, /API_KEY\s*=/);
 });
+
+test("El selector YAIWES y el proveedor OpenClaw entran por Harness antes de ambos routers", () => {
+  const sw = src("swe-directo.js"), ui = src("selector-modelos.js"), conf = JSON.parse(src("../SWE CODE free/provider-openclaw.json"));
+  assert.match(sw, /rutaSwe = \(_id\) => "\/plugins\/deepseek_harness\/modelos\/v1\/chat\/completions"/);
+  assert.ok(ui.includes("/plugins/deepseek_harness/modelos/v1/disponibilidad"));
+  assert.equal(conf.base_url, "http://127.0.0.1:7861/plugins/deepseek_harness/modelos/v1");
+});

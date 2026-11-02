@@ -9,7 +9,7 @@ async function cargarModelosApi() {
   if (catalogoCargando) return;
   catalogoCargando = true;
   try {
-    const res = await api("/web/v1/modelos/disponibilidad");
+    const res = await api("/plugins/deepseek_harness/modelos/v1/disponibilidad");
     if (!res?.ok || !Array.isArray(res.modelos)) return;
     modelosApi = res.modelos.filter(m => m && /^(deepseek|openai|minimax)\//.test(m.id));
     pintarCatalogo();
