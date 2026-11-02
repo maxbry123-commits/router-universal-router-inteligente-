@@ -23,6 +23,9 @@ export default defineFeaturePlugin({
     return {
       capacidades: () => con((c) => c.capacidades()),
       tools: () => con((c) => c.tools()),
+      // Nunca exponer al modelo la operacion de permisos; el contrato no
+      // declara tool. Solo la UI nativa del Gateway puede invocarla.
+      agentes_lock: (i) => con((c) => c.agentesLock(i.locked)),
       iniciar: (tarea) => con((c) => c.iniciar(tarea)),
       avanzar: (r) => con((c) => c.avanzar(r)),
       estado: (r) => con((c) => c.estado(r)),
