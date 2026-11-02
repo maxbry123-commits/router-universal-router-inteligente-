@@ -63,12 +63,16 @@ def from_loop_state(payload: dict, *, at_closure: bool = False) -> list[dict]:
         flags = info.get("flags") or []
         if not isinstance(flags, list):
             raise GapError("INVALID_FLAGS")
+        # Notices (e.g. NOT_APPLICABLE) are not blocking flags; 🚩 is.
+        blocking_flags = [f for f in flags if isinstance(f, dict)
+                          and (f.get("symbol") in ("FLAG", "🚩")
+                               or f.get("blocking") is True)]
         # Un estado UNKNOWN no se declara fallo, pero sí pendiente de conciliación.
-        if status not in ISSUE_STATES and status != "UNKNOWN" and not flags and not (at_closure and status in PENDING_STATES):
+        if status not in ISSUE_STATES and status != "UNKNOWN" and not blocking_flags and not (at_closure and status in PENDING_STATES):
             continue
-        if status == "UNKNOWN" and not flags:
+        if status == "UNKNOWN" and not blocking_flags:
             category = "UNVERIFIED"
-        elif at_closure and status in PENDING_STATES and not flags:
+        elif at_closure and status in PENDING_STATES and not blocking_flags:
             category = "PENDING"
         else:
             category = "GAP"
