@@ -201,7 +201,22 @@ async function pedir(base, modelo, mensajes, clave, extra = {}, r = red()) {
     const resp = await fetch(`${base.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST', signal, headers: cabeceras(clave), body: cuerpo(modelo, mensajes, extra, false),
     });
-    if (!resp.ok) throw errHttp(resp.status, resp.headers.get('retry-after'));
+    if (!resp.ok) {
+      const error = errHttp(resp.status, resp.headers.get('retry-after'));
+      // Un 503 del manager HF puede significar descarga GGUF, error de carga
+      // de llama-server o Space dormido. Clasificar sin publicar rutas/secretos.
+      if (!clave && resp.status === 503 && /json/i.test(String(resp.headers.get('content-type') || ''))) {
+        try {
+          const m = String((await resp.json())?.error || '').slice(0, 400);
+          error.tipoHF = /llama-server (?:exited|not healthy)/i.test(m) ? 'LLAMA_SERVER_FALLO'
+            : /download|404|repository|dataset|hub|entry.not.found/i.test(m) ? 'GGUF_DESCARGA_FALLO'
+            : /memory|alloc|out of memory|oom/i.test(m) ? 'GGUF_MEMORIA_INSUFICIENTE'
+            : /load failed/i.test(m) ? 'GGUF_CARGA_FALLO' : 'HF_SPACE_503';
+          error.message = 'HTTP 503 · ' + error.tipoHF;
+        } catch { error.tipoHF = 'HF_SPACE_503'; }
+      }
+      throw error;
+    }
     return interpretar(await resp.json(), r, declaradas(extra));
   } catch (e) {
     if (r.signal?.aborted) throw cancelada();  // una cancelacion nunca rota claves ni activa el respaldo
@@ -486,7 +501,10 @@ export function ordenSlotsLocal(id, estado, env = process.env) {
 export async function local(id, mensajes, { env = process.env, extra = {}, opts, onInicio, flujo } = {}) {
   const fallos = [], r = conTimeout(red(opts), id, env);
   // No crear otro router ni abrir la puerta al proveedor: llama al servicio HF existente.
-  r.timeoutMs = Math.max(r.timeoutMs, 175000);
+  // Si el operador fijó un plazo local, respetarlo; la gracia de 175 s es
+  // solo para el arranque frío sin timeout explícito.
+  if (opts?.timeoutMs == null && opts?.timeoutsModelo?.[id] == null && !env.RIU_SWE_TIMEOUTS && !env.BRIDGE_RESPALDO_MS)
+    r.timeoutMs = Math.max(r.timeoutMs, 175000);
   if (onInicio) { try { onInicio({ via: 'hf-local', usado: id }); } catch { /* informativo */ } }
   const estado = await disponibilidadLocal({ env });
   const slots = ordenSlotsLocal(id, estado, env);

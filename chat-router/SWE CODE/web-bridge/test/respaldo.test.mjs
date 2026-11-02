@@ -148,3 +148,18 @@ test("HF: si /v1/models marca unloaded, no prometer respuesta antes del cold-sta
   assert.equal(estado.slots[0].primario,"lfm2.5-350m");
   assert.equal(estadosModelosLocales(["lfm2.5-350m"],estado)[0].estado,"SIN_VERIFICAR");
 });
+
+test("HF 503 JSON: clasifica falla llama-server vs proxy sin exponer secretos", async () => {
+  const { local } = await import('../src/respaldo.js');
+  const base='https://un-servidor-hf.example/v1';
+  const original=globalThis.fetch;
+  try {
+    globalThis.fetch=async(url,opts)=>{
+      if(String(url).endsWith('/models')) return {ok:true,status:200,json:async()=>({data:[{id:'lfm2.5-350m'}]})};
+      return {ok:false,status:503,headers:{get:(n)=>n==='content-type'?'application/json':null},
+        json:async()=>({error:'load failed: llama-server exited: PRIVATE_PATH_NEVER_LEAK'})};
+    };
+    await assert.rejects(()=>local('lfm2.5-350m',msgs,{env:{SWECODE_URL_S1:base},opts:{esperar:async()=>{},timeoutMs:1000}}),
+      err=>err.code==='HF_LOCAL_FALLO' && /LLAMA_SERVER_FALLO/.test(err.message) && !/PRIVATE_PATH/.test(err.message));
+  } finally {globalThis.fetch=original;}
+});
