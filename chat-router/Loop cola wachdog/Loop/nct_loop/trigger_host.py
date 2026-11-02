@@ -279,6 +279,23 @@ def build_ports(host: dict) -> HostPorts:
         if not any(path==scope or path.startswith(scope.rstrip("/")+"/")
                    for scope in project_row["write_paths"]):
             raise ContractError("SUPERVISOR_SCOPE_VIOLATION")
+        # The Ricardo reference motor never receives this GitHub capability.
+        # Its vetted DAG/path admission policy is checked here BEFORE the
+        # existing authenticated writer publishes any bytes.
+        from .ricardo_plan_guard import inspect_plan, RicardoGuardError
+        policy_path = (root / "Loop cola wachdog" / "Loop" /
+                       "referencia_ricardo" / "allowed_ops.json")
+        try:
+            policy = json.loads(policy_path.read_text(encoding="utf8"))
+            policy["max_text_chars"] = 512000
+            inspection = inspect_plan({"ops": [{
+                "id": "n4_write", "op": "write_text", "path": path,
+                "text": value, "depends_on": []}]}, policy,
+                allowed_write_paths=approval["write_paths"])
+            if not inspection.get("requires_n4_approval"):
+                raise RicardoGuardError("WRITER_N4_REQUIRED")
+        except (RicardoGuardError, OSError, ValueError, KeyError, TypeError):
+            raise ContractError("RICARDO_PLAN_GUARD_BLOCKED") from None
         from mvp.archivos.destino_git import publicar
         with tempfile.TemporaryDirectory(prefix="n4-git-write-") as tmp:
             source = Path(tmp)/Path(path).name
@@ -298,7 +315,7 @@ def build_ports(host: dict) -> HostPorts:
         if git_read_text(path)!=value.encode("utf8"):
             raise ContractError("GITHUB_FILE_READBACK_MISMATCH")
         return {"ok":True,"evidence_ref":"git:"+committed+":"+sha256(value.encode("utf8")),
-                "commit":committed}
+                "plan_sha256": inspection["plan_sha256"], "commit":committed}
 
     def tool(op, args, context):
         from .trigger_contract import WRITE_OPS
