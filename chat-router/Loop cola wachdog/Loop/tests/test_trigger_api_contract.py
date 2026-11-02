@@ -30,6 +30,18 @@ class ContractSmoke(unittest.TestCase):
                 with self.assertRaises(ContractError):
                     _safe_path(p)
 
+    def test_existing_pluginhost_symlinks_resolve_inside_chat_router(self):
+        chat_root = LOOP_ROOT.parents[1].resolve()
+        app = chat_root / "chat" / "backend" / "mvp" / "app.py"
+        self.assertEqual(app.resolve().parents[2], chat_root)
+        repo_root = chat_root.parent
+        self.assertTrue((repo_root / "router-mvp" / "mvp" / "app.py").is_file())
+        for plug in ("nct_loop", "cola50", "watchdog48"):
+            self.assertTrue((chat_root / "plugins" / plug / "plugin.py").is_file(),
+                            "plugin no cableado: " + plug)
+        self.assertTrue((chat_root / "plugins" / "puente_chat" / "constitucion" /
+                         "CONSTITUCION-YAIWES.json").is_file())
+
     def test_cola_100_opt_in(self):
         from tempfile import TemporaryDirectory
         import importlib.util
