@@ -212,7 +212,7 @@ export function montarEnviar(ctx) {
       body.contexto_previo = ctxPrev;  // historial completo de esta sesion; el input actual viaja una sola vez
       const _multiSel = fq === "1" && c.paralelo ? (c.selectorQwenMulti || []).slice(0, 6) : [];  // >>> MODOS <<< T6: fan-out paralelo
       const _fanout = async () => {  // una llamada por modelo elegido; cada burbuja lleva su nombre
-        const rs = await Promise.allSettled(_multiSel.map((m, i) => esSwe(m.model_id) ? enviarSwe(api, { model: m.model_id, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion + '-' + (m.modelo_id_slug || i), proyecto: c.project_id || undefined, signal: ctlDetener ? ctlDetener.signal : undefined }) : window.RIU_HARNESS({
+        const rs = await Promise.allSettled(_multiSel.map((m, i) => esSwe(m.model_id) ? enviarSwe(api, { ...controlTools, model: m.model_id, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion + '-' + (m.modelo_id_slug || i), proyecto: c.project_id || undefined, signal: ctlDetener ? ctlDetener.signal : undefined }) : window.RIU_HARNESS({
           model: m.model_id || m.label || m.modelo_id_slug, message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null,
           contexto_previo: ctxPrev, anclados, sesion: c.sesion + '-' + (m.modelo_id_slug || i), instrucciones_fijas: fijasQwen || undefined,
           ...controlTools, thinking_mode: getModo() === 'think' ? 'on' : 'off',
@@ -230,7 +230,7 @@ export function montarEnviar(ctx) {
       const answer = _tareaSwe
         ? await Promise.race([enviarTareaSwe(api, { mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined, parar, signal: ctlDetener ? ctlDetener.signal : undefined, alPaso: (t) => window.dispatchEvent(new CustomEvent("riu-progreso", { detail: { sesion: c.sesion, texto: t } })) }), raceDetener])
         : _swe
-        ? await Promise.race([enviarSwe(api, { model: _modeloSwe, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined, signal: ctlDetener ? ctlDetener.signal : undefined, alParcial: (t) => { try { window.dispatchEvent(new CustomEvent("riu-progreso", { detail: { sesion: c.sesion, parcial: t } })); } catch (e) {} } }), raceDetener])  // parciales del stream SSE -> burbuja pending (riu-progreso)
+        ? await Promise.race([enviarSwe(api, { ...controlTools, model: _modeloSwe, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined, signal: ctlDetener ? ctlDetener.signal : undefined, alParcial: (t) => { try { window.dispatchEvent(new CustomEvent("riu-progreso", { detail: { sesion: c.sesion, parcial: t } })); } catch (e) {} } }), raceDetener])  // parciales del stream SSE -> burbuja pending (riu-progreso)
         : window.RIU_CONFIG?.harnessUrl
         ? (_multiSel.length > 1
             ? await Promise.race([_fanout(), raceDetener])  // >>> MODOS <<< T6: misma tarea a cada modelo; un proceso por modelo en el backend
