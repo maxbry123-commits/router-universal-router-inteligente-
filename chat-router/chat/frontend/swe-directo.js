@@ -317,13 +317,16 @@ export async function aprobarYContinuarSwe(api, d, alPaso) {
   return conducir(api, await aprobarTareaSwe(api, d), tarea, alPaso, { parar: d.parar, signal: d.signal });
 }
 
-export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecutor_tools, modo, tools = false, agente_tool = false, llm_tool = false }) {
+export function armar({ model, historial = [], mensaje, imagenes = [], sesion, proyecto, ejecutor_tools, modo, tools = false, agente_tool = false, llm_tool = false }) {
   const h = historial.slice(-MAX_HISTORIAL);
   const m = modo === undefined ? leerSeleccion().modo_trabajo : modo, mt = en(MODOS_TRABAJO, m) ? m : "";  // MODO DE TRABAJO: `modo` junto al modelo; Concilio lleva el modo en el id (swecode-<modo>)
   const real = Object.hasOwn(REAL, model) ? REAL[model]
     : typeof model === "string" && model.startsWith("hf/") && LOCALES.includes(model.slice(3)) ? model.slice(3) : model;
+  // Multimodal OpenAI: las fotos resueltas por el Router viajan como image_url; el texto permanece verbatim.
+  const fotos = (Array.isArray(imagenes) ? imagenes : []).filter(i => i && typeof i.url === "string" && /^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(i.url)).slice(0, 4);
+  const contenido = fotos.length ? [{ type: "text", text: mensaje }, ...fotos.map((i) => ({ type: "image_url", image_url: { url: i.url } }))] : mensaje;
   // R1: el navegador NUNCA guarda ni reenvia claves de API: el banco cifrado del servidor es la unica fuente (swe-claves.js solo informa su estado)
-  return { model: mt && real === "swecode-consulta" ? "swecode-" + mt : real, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, stream: true, tools: tools === true, agente_tool: agente_tool === true, llm_tool: llm_tool === true, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(mt && real !== "swecode-consulta" ? { modo: mt } : {}), ...(proyecto ? { proyecto } : {}) };
+  return { model: mt && real === "swecode-consulta" ? "swecode-" + mt : real, messages: [...h, { role: "user", content: contenido }], conv_id: sesion, stream: true, tools: tools === true, agente_tool: agente_tool === true, llm_tool: llm_tool === true, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(mt && real !== "swecode-consulta" ? { modo: mt } : {}), ...(proyecto ? { proyecto } : {}) };
 }
 
 // El proxy del Space solo manda /v1/* al bridge si el modelo empieza por web-/swecode-; el resto (locales HF, groq/, nvidia/) caeria en el Router
