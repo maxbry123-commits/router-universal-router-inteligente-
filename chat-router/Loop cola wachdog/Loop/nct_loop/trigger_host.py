@@ -246,6 +246,9 @@ def build_ports(host: dict) -> HostPorts:
                 raise ContractError("GITHUB_READBACK_UNAVAILABLE") from None
 
     def git_write_text(path, value, approval):
+        # Validate untrusted model bytes before calling encode() or touching git.
+        if not isinstance(value,str) or len(value.encode("utf8"))>512000:
+            raise ContractError("WRITE_TEXT_TOO_LARGE_OR_INVALID")
         if not github_ready or not isinstance(approval,dict) or not approval.get("approved"):
             raise ContractError("BLOCKED_APPROVAL")
         if (approval.get("writer")!="N4" or not approval.get("actor")
