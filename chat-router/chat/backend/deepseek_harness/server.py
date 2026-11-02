@@ -561,6 +561,62 @@ def credenciales(accion: str, cuerpo: dict, x_api_key: str | None = Header(None)
 
 
 
+
+async def _mvp_modelo_compat(req, headers, modelo):
+    """Una petición modelo al Router MVP ya autorizado, sin volver a Harness."""
+    async with httpx.AsyncClient(timeout=httpx.Timeout(210, connect=6), trust_env=False) as client:
+        try:
+            up = await client.post(_HARNESS_MODELOS + "/chat", headers=headers, json=req)
+        except httpx.HTTPError:
+            raise HTTPException(status_code=503, detail="ROUTER_MVP_SIN_CONEXION") from None
+    if up.status_code != 200:
+        # El 410 de NVIDIA GLM y el 503 HF son diagnósticos, no fallback.
+        try:
+            motivo = str(up.json().get("detail") or "")
+            origin = re.search(r"\\bHTTP\\s+(410|429|503)\\b", motivo)
+        except (ValueError, AttributeError):
+            origin = None
+        raise HTTPException(status_code=502 if up.status_code >= 500 else up.status_code,
+                            detail="ROUTER_MVP_HTTP_" + str(up.status_code) +
+                                   (" · PROVEEDOR_HTTP_" + origin.group(1) if origin else ""))
+    try:
+        obj = up.json()
+    except ValueError:
+        raise HTTPException(status_code=502, detail="ROUTER_MVP_RESPUESTA_INVALIDA") from None
+    return _mensaje_openai(modelo, req["mensajes"], obj, via="mvp")
+
+
+async def _sse_mvp_con_latidos(req, headers, modelo, latido_s=12):
+    """Solo comentarios hasta respuesta final: evita timeout del proxy HF/Vercel.
+    Nunca relanza la petición ni reenvía texto duplicado.
+    """
+    task = asyncio.create_task(_mvp_modelo_compat(req, headers, modelo))
+    try:
+        yield ": inicio\n\n"
+        while not task.done():
+            try:
+                await asyncio.wait_for(asyncio.shield(task), timeout=latido_s)
+            except asyncio.TimeoutError:
+                yield ": keepalive\n\n"
+        try:
+            resultado = await task
+        except HTTPException as error:
+            # Después de abrir SSE, el HTTP status ya es 200. Informar un
+            # único error tipado dentro del stream; no fingir respuesta modelo.
+            codigos = re.findall(r"(?:ROUTER_MVP_[A-Z0-9_]+|PROVEEDOR_HTTP_[0-9]{3})", str(error.detail))[:3]
+            codigo = codigos[-1] if codigos else "ROUTER_MVP_FALLO"
+            yield "data: " + json.dumps({"error": {"code": codigo, "message": codigo},
+                "choices": [{"index": 0, "delta": {}, "finish_reason": "error"}]}) + "\n\n"
+            yield "data: [DONE]\n\n"
+        else:
+            for evento in _openai_sse(resultado):
+                yield evento
+    finally:
+        if not task.done():
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+
 # --- Unica entrada OpenAI-compatible para ambos chats: Chat -> Harness ->
 # Router MVP (APIs externas) o Router SWE CODE (locales/web) -> proveedor/HF.
 # No crear un tercer router ni pasar por /web desde el navegador.
@@ -738,27 +794,10 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
         req["tools"] = False
         req["agente_tool"] = False
         req["llm_tool"] = False
-        async with httpx.AsyncClient(timeout=httpx.Timeout(210, connect=6), trust_env=False) as client:
-            try:
-                up = await client.post(_HARNESS_MODELOS + "/chat", headers=h, json=req)
-            except httpx.HTTPError:
-                raise HTTPException(status_code=503, detail="ROUTER_MVP_SIN_CONEXION") from None
-        if up.status_code != 200:
-            # El 410 de NVIDIA GLM y el 503 HF son diagnósticos, no un motivo
-            # para cambiar silenciosamente el modelo solicitado por otro.
-            try:
-                motivo = str(up.json().get("detail") or "")
-                origin = re.search(r"\\bHTTP\\s+(410|429|503)\\b", motivo)
-            except (ValueError, AttributeError):
-                origin = None
-            raise HTTPException(status_code=502 if up.status_code >= 500 else up.status_code,
-                                detail="ROUTER_MVP_HTTP_" + str(up.status_code) +
-                                       (" · PROVEEDOR_HTTP_" + origin.group(1) if origin else ""))
-        try:
-            obj = up.json()
-        except ValueError:
-            raise HTTPException(status_code=502, detail="ROUTER_MVP_RESPUESTA_INVALIDA") from None
-        resultado = _mensaje_openai(modelo, req["mensajes"], obj, via="mvp")
+        if stream:
+            return StreamingResponse(_sse_mvp_con_latidos(req, h, modelo), media_type="text/event-stream",
+                                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+        return await _mvp_modelo_compat(req, h, modelo)
     if stream:
         return StreamingResponse(_openai_sse(resultado), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-cache"})

@@ -21,6 +21,38 @@ class ModeloGateTests(unittest.TestCase):
             with self.assertRaises(HTTPException):
                 h._autorizar_chat_modelos("PRUEBA-EXTERNA", None)
 
+    def test_mvp_heartbeat_no_duplica_modelo(self):
+        import asyncio
+        from unittest.mock import patch
+
+        async def simulacion(_req, _headers, modelo):
+            await asyncio.sleep(0.035)
+            return h._mensaje_openai(modelo, [], {"texto": "una respuesta", "finish_reason": "stop"}, via="mvp")
+
+        async def ejecutar():
+            with patch.object(h, "_mvp_modelo_compat", side_effect=simulacion) as f:
+                items = [x async for x in h._sse_mvp_con_latidos({}, {}, "nvidia/meta/muse-glimmer-30b", latido_s=0.005)]
+                self.assertEqual(f.await_count, 1)
+                return items
+        items = asyncio.run(ejecutar())
+        self.assertGreaterEqual(items.count(": keepalive\\n\\n"), 1)
+        self.assertEqual(sum('"content": "una respuesta"' in x for x in items), 1)
+        self.assertEqual(items.count("data: [DONE]\\n\\n"), 1)
+
+    def test_mvp_heartbeat_error_es_terminal(self):
+        import asyncio
+        from unittest.mock import patch
+
+        async def error(_req, _headers, _modelo):
+            raise HTTPException(status_code=502, detail="ROUTER_MVP_HTTP_502 · PROVEEDOR_HTTP_410")
+
+        async def ejecutar():
+            with patch.object(h, "_mvp_modelo_compat", side_effect=error):
+                return [x async for x in h._sse_mvp_con_latidos({}, {}, "nvidia/z-ai/glm-5.3", latido_s=0.005)]
+        datos = asyncio.run(ejecutar())
+        self.assertTrue(any('PROVEEDOR_HTTP_410' in x and 'error' in x for x in datos))
+        self.assertEqual(datos.count("data: [DONE]\\n\\n"), 1)
+
     def test_sse_un_mensaje_y_un_done(self):
         resp = h._mensaje_openai("nvidia/z-ai/glm-5.3", [], {"texto": "Hola", "finish_reason": "stop"}, via="mvp")
         datos = list(h._openai_sse(resp))
