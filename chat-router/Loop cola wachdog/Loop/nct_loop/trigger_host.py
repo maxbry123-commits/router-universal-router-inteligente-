@@ -4,6 +4,8 @@ import base64
 import hashlib
 import json
 import time
+import tempfile
+import re
 from pathlib import Path
 from .trigger_contract import ContractError, canonical, sha256, _safe_path
 from .trigger_engine import HostPorts
@@ -19,6 +21,13 @@ def build_ports(host: dict) -> HostPorts:
         raise ContractError("BLOCKED_PORT_NOT_CONNECTED")
     root = root.resolve()
     project, loop, sesion = host["project_id"], host.get("loop_id"), host.get("sesion", "web-general")
+    project_row = control.d.get("proyectos", {}).get(project) or {}
+    github_ready = (project_row.get("repo") ==
+        "maxbry123-commits/router-universal-router-inteligente-" and
+        project_row.get("branch") == "main" and
+        isinstance(project_row.get("write_paths"), list) and
+        bool(project_row["write_paths"]) and
+        host.get("write_paths") == project_row["write_paths"])
 
     def key_name(key):
         return "yaiwes/dsl/" + hashlib.sha256(key.encode("utf8")).hexdigest() + ".json"
@@ -193,13 +202,105 @@ def build_ports(host: dict) -> HostPorts:
             raise ContractError("PATH_OUT_OF_SCOPE")
         return target
 
+    def github_head():
+        if not github_ready:
+            raise ContractError("PROJECT_GITHUB_SCOPE_NOT_CONFIGURED")
+        from mvp.archivos.origen import git, entorno_git
+        try:
+            env = entorno_git(lambda: control.credencial("github", banco, estricto=True),
+                              "maxbry123-commits")
+            if not env.get("MOTOR_TOKEN"):
+                raise ContractError("GITHUB_TOKEN_NO_DISPONIBLE")
+            remote = git(["ls-remote",
+                "https://github.com/maxbry123-commits/router-universal-router-inteligente-.git",
+                "refs/heads/main"], env=env, espera=40)
+            sha = remote.split()[0]
+            if not re.fullmatch(r"[0-9a-f]{40}", sha):
+                raise ContractError("GITHUB_HEAD_NOT_VERIFIED")
+            return sha
+        except ContractError:
+            raise
+        except Exception:
+            # Never reveal tokens, git stderr, or credential helper output.
+            raise ContractError("GITHUB_HEAD_UNAVAILABLE") from None
+
+    def git_read_text(path):
+        from mvp.archivos.origen import clonar
+        if not github_ready:
+            raise ContractError("PROJECT_GITHUB_SCOPE_NOT_CONFIGURED")
+        with tempfile.TemporaryDirectory(prefix="n4-git-read-") as tmp:
+            try:
+                checkout = clonar(
+                    "git:maxbry123-commits/router-universal-router-inteligente-@main",
+                    Path(tmp)/"repo",
+                    token_fn=lambda:control.credencial("github",banco,estricto=True))
+                target = (checkout/"chat-router"/path).resolve()
+                if not target.is_relative_to((checkout/"chat-router").resolve()):
+                    raise ContractError("PATH_OUT_OF_SCOPE")
+                if not target.is_file() or target.stat().st_size > 1_000_000:
+                    raise ContractError("GITHUB_FILE_NOT_READABLE")
+                return target.read_bytes()
+            except ContractError:
+                raise
+            except Exception:
+                raise ContractError("GITHUB_READBACK_UNAVAILABLE") from None
+
+    def git_write_text(path, value, approval):
+        if not github_ready or not isinstance(approval,dict) or not approval.get("approved"):
+            raise ContractError("BLOCKED_APPROVAL")
+        if (approval.get("writer")!="N4" or not approval.get("actor")
+                or approval.get("write_paths")!=project_row.get("write_paths")
+                or not isinstance(approval.get("github_head"),str)
+                or approval["github_head"]!=github_head()):
+            raise ContractError("GITHUB_HEAD_CHANGED_REAPPROVAL_REQUIRED")
+        if not isinstance(value,str) or len(value.encode("utf8"))>512000:
+            raise ContractError("WRITE_TEXT_TOO_LARGE")
+        if not any(path==scope or path.startswith(scope.rstrip("/")+"/")
+                   for scope in project_row["write_paths"]):
+            raise ContractError("SUPERVISOR_SCOPE_VIOLATION")
+        from mvp.archivos.destino_git import publicar
+        with tempfile.TemporaryDirectory(prefix="n4-git-write-") as tmp:
+            source = Path(tmp)/Path(path).name
+            source.write_text(value,encoding="utf8")
+            target_dir=Path("chat-router")/Path(path).parent
+            try:
+                published=publicar(source,
+                  "git:maxbry123-commits/router-universal-router-inteligente-@main/"+target_dir.as_posix(),
+                  "YAIWES N4 approved "+project+" "+loop,
+                  token_fn=lambda:control.credencial("github",banco,estricto=True),
+                  sobrescribir=True)
+            except Exception:
+                raise ContractError("GITHUB_WRITE_NOT_VERIFIED") from None
+        committed=github_head()
+        if not committed.startswith(str(published.get("commit",""))):
+            raise ContractError("GITHUB_COMMIT_READBACK_MISMATCH")
+        if git_read_text(path)!=value.encode("utf8"):
+            raise ContractError("GITHUB_FILE_READBACK_MISMATCH")
+        return {"ok":True,"evidence_ref":"git:"+committed+":"+sha256(value.encode("utf8")),
+                "commit":committed}
+
     def tool(op, args, context):
         from .trigger_contract import WRITE_OPS
         if op in WRITE_OPS:
-            raise ContractError("AUTHORIZED_GITHUB_WRITER_NOT_CONNECTED")
+            if op != "write_text":
+                raise ContractError("GITHUB_EMPTY_DIRECTORY_NOT_A_COMMIT")
+            if not isinstance(args,dict):
+                raise ContractError("BAD_TOOL_ARGS")
+            path=args.get("path")
+            if not isinstance(path,str):
+                raise ContractError("BAD_TOOL_ARGS")
+            safe_target(path)
+            return git_write_text(path,args.get("text"),context.get("authorization"))
         if not isinstance(args, dict):
             raise ContractError("BAD_TOOL_ARGS")
         target = safe_target(args["path"]) if "path" in args else root
+        if context.get("readback_write") is True and op == "read_text":
+            raw = git_read_text(args["path"])
+            try:
+                value=raw.decode("utf8")
+            except UnicodeError:
+                raise ContractError("GITHUB_READBACK_NOT_UTF8")
+            return {"ok":True,"text":value,"evidence_ref":"gitfile:"+sha256(raw)}
         if op == "inspect_workspace":
             names = sorted(p.name for p in root.iterdir())[:100]
             return {"ok": True, "entries": names,
@@ -238,6 +339,8 @@ def build_ports(host: dict) -> HostPorts:
                 or row.get("contract_sha256") != req["contract_sha256"]
                 or row.get("constitution_sha256") != req["constitution_sha256"]
                 or row.get("write_paths") != req["write_paths"]
+                or not github_ready or not row.get("github_head")
+                or row["github_head"] != github_head()
                 or time.time() - row.get("timestamp", 0) > 1800):
             return {"approved": False}
         return row
@@ -252,4 +355,6 @@ def build_ports(host: dict) -> HostPorts:
                     store.control,store.get,store.events,roles_resolve,
                     False,store.skip_dsl_task)
     ports.research=research
+    ports.github_head=github_head if github_ready else None
+    ports.can_write=github_ready
     return ports

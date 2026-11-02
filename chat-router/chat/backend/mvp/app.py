@@ -649,7 +649,10 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict,
                    'sesion':sesion,'loop_id':cuerpo.get('loop_id'),
                    'banco':app.state.banco,'control':CONTROL,
                    'queue_store':services[0],'watch_store':services[1],
-                   'root':Path(__file__).resolve().parents[3], 'write_paths':[],
+                   'root':Path(__file__).resolve().parents[3],
+                   'write_paths':project.get('write_paths',[]) if
+                        project.get('repo')=='maxbry123-commits/router-universal-router-inteligente-'
+                        and project.get('branch')=='main' else [],
                    'operator_id':operator_id,'director_confirmed':director_confirmed}
         resultado = await loop_puente.llamar('nct_loop', accion, cuerpo, server_context=trusted)
         if accion == 'dsl_control' and cuerpo.get('op') == 'start' and resultado.get('ok'):

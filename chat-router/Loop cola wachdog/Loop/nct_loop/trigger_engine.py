@@ -169,6 +169,8 @@ class TriggerEngine:
             write_steps = [s for s in contract["steps"] if s["kind"] == "TOOL" and s.get("tool") in WRITE_OPS]
             approval = None
             if write_steps:
+                if len(write_steps) != 1 or write_steps[0]["tool"] != "write_text":
+                    raise ContractError("GITHUB_WRITER_ONE_FILE_PER_TRIGGER")
                 if self.p.can_write is not True:
                     raise ContractError("AUTHORIZED_GITHUB_WRITER_NOT_CONNECTED")
                 if contract["execution"]["tool_profile"] != "writer_n4" or role not in {"ejecutor_codigo", "frontend", "refactor_revision"}:
@@ -249,7 +251,8 @@ class TriggerEngine:
                         check_op = "read_text" if op == "write_text" else "verify_exists"
                         verified = await _call(self.p.tool, check_op, {"path": args["path"]},
                             {"project_id": project_id, "loop_id": lid, "trigger_id": tid,
-                             "authorization": None, "constitution_sha256": constitution_sha})
+                             "authorization": None, "constitution_sha256": constitution_sha,
+                             "readback_write": True})
                         if (not isinstance(verified, dict) or verified.get("ok") is not True
                              or not verified.get("evidence_ref")
                              or (check_op == "read_text" and verified.get("text") != args.get("text"))):

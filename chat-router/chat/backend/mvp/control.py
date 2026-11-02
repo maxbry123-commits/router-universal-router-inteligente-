@@ -436,6 +436,25 @@ class Control:
             for k in ("anclas", "items"):
                 if isinstance(c.get(k), list):
                     p[k] = [str(x)[:500] for x in c[k]][:200]
+            # Optional N4 project scope, stored in existing CONTROL project.
+            # GitHub source remains the single root; no new DB or router.
+            if any(k in c for k in ("repo", "branch", "write_paths")):
+                if actor != "director":
+                    raise PermissionError("DIRECTOR_ONLY_PROJECT_GIT_SCOPE")
+                if c.get("repo", p.get("repo")) != "maxbry123-commits/router-universal-router-inteligente-":
+                    raise ValueError("PROJECT_GITHUB_REPO_NOT_ALLOWED")
+                if c.get("branch", p.get("branch", "main")) != "main":
+                    raise ValueError("PROJECT_GITHUB_BRANCH_NOT_ALLOWED")
+                paths = c.get("write_paths", p.get("write_paths", []))
+                if (not isinstance(paths, list) or len(paths)>30 or any(
+                    not isinstance(x,str) or not x or x.startswith(("/","."))
+                    or ".." in x.split("/") or "\\" in x or len(x)>160
+                    or x.startswith(("state/","DEPLOY/","chat/frontend/"))
+                    for x in paths)):
+                    raise ValueError("PROJECT_WRITE_PATHS_INVALID")
+                p["repo"]="maxbry123-commits/router-universal-router-inteligente-"
+                p["branch"]="main"
+                p["write_paths"]=paths
             p["updated_at"] = time.time()
             self._sucio = True
             return {"ok": True, "proyecto": p}

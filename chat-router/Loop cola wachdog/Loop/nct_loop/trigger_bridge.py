@@ -461,7 +461,13 @@ class TriggerBridge:
                 if not any(s["kind"] == "TOOL" and s.get("tool") in WRITE_OPS for s in contract["steps"]):
                     raise ContractError("APPROVAL_NOT_APPLICABLE")
                 constitutional_sha, _ = await self.engine._constitution()
+                if self.ports.can_write is not True or not callable(getattr(self.ports, "github_head", None)):
+                    raise ContractError("AUTHORIZED_GITHUB_WRITER_NOT_CONNECTED")
+                github_head = await _invoke(self.ports.github_head)
+                if not isinstance(github_head, str) or len(github_head) != 40:
+                    raise ContractError("GITHUB_HEAD_NOT_VERIFIED")
                 record = {"approved": True, "writer": "N4", "actor": server_context["operator_id"],
+                          "github_head": github_head,
                           "constitution_sha256": constitutional_sha,
                           "contract_sha256": sha256(canonical(contract)),
                           "write_paths": contract["execution"]["write_paths"],
