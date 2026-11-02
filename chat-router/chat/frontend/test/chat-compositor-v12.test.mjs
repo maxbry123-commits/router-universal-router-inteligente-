@@ -4,7 +4,8 @@ import {readFileSync} from "node:fs";
 const src=f=>readFileSync(new URL("../"+f,import.meta.url),"utf8");
 test("Cubo original restaurado del historial (6 caras, 2 anillos, respuesta real)",()=>{
  const js=src("pensando-3d.js"),css=src("pensando-3d.css");
- for (const c of ["f1","f2","f3","f4","f5","f6","a1","a2"])assert.ok(js.includes('class="'+c+'"'));
+ for (const c of ["f1","f2","f3","f4","f5","f6"])assert.ok(js.includes('class="'+c+'"'),c);
+ for (const c of ["a1","a2"])assert.ok(js.includes(" "+c+'"'),c);
  assert.match(js,/if \(o && w\.hidden\)/);
  assert.match(js,/if \(!o && !w\.hidden\)/);
  assert.match(css,/@keyframes p3d-gira/);
@@ -38,8 +39,10 @@ test("Desplazamiento dentro de salida con una única flecha fija en pantalla",()
 });
 test("Conservación de selectores, herramientas, motores y entradas existentes",()=>{
  const html=src("panel-chat.html"),js=src("barra-mas.js");
- for(const id of ["sel-groq","sel-ngt","sel-swe","sel-swen","btn-detener","btn-microfono"])
+ for(const id of ["sel-groq","sel-ngt","sel-swe","sel-swen","btn-detener"])
    assert.ok(html.includes('id="'+id+'"'),id);
+ // El micrófono se inserta dinámicamente (chat-microfono.js), no en panel-chat.html.
+ assert.match(src("chat-microfono.js"),/b\.id = "btn-microfono"/);
  assert.match(js,/TRABAJO = \["btn-loop"/);
  assert.match(js,/btn-paralelo/);
  assert.match(src("loop-iframe-host.js"),/yaiwes_loop_panel_v1/);

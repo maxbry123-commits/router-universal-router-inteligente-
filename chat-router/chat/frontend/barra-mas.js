@@ -369,9 +369,10 @@ function botonReiniciarInput() {
   btn.addEventListener("click", () => {
     campo.value = "";
     campo.scrollTop = 0;
-    form.classList.remove("riu-input-expanded");
     const ampliar = document.getElementById("btn-expandir-input");
+    // Contraer ANTES de eliminar la clase: el handler lee este mismo estado.
     if (ampliar?.getAttribute("aria-expanded") === "true") ampliar.click();
+    else form.classList.remove("riu-input-expanded");
     campo.dispatchEvent(new Event("input", { bubbles:true }));
     campo.focus();
   });

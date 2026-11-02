@@ -5,11 +5,11 @@ import {readFileSync} from 'node:fs';
 const src=f=>readFileSync(new URL('../'+f,import.meta.url),'utf8');
 test('pensamiento junto a Enviar, no en el historial',()=>{
  const js=src('pensando-3d.js'),css=src('pensando-3d.css');
- assert.match(js,/barra\.insertBefore\(w, enviar\)/);
- assert.match(js,/barra\.querySelector\("\.action"\)/);
+ assert.match(js,/barra\.insertBefore\(w, barra\.querySelector\("\.action"\) \|\| null\)/);
+ assert.match(js,/const ocupado = \(\) =>/);
  assert.doesNotMatch(js,/target\.append\(w\)/);
  assert.match(js,/salida\.append\(estado\)/);
- assert.match(css,/#composer \.composer-bar > \.p3d/);
+ assert.match(css,/\.composer-bar>\.p3d/);
  assert.doesNotMatch(css,/#histories \.chat-history > \.p3d\s*\{/);
 });
 test('salida tiene altura mínima móvil y no pierde el área de escritura',()=>{

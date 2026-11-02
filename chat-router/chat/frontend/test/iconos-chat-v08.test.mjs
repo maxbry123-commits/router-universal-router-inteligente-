@@ -20,10 +20,10 @@ test('Iconos 30 por ciento mayores, sin recuadro, controles activos azules y Env
 });
 test('El cubo está inmediatamente antes de Enviar y conserva el estado ocupado del chat',()=>{
  const js=get('pensando-3d.js'),css=get('pensando-3d.css');
- assert.match(js,/barra\.insertBefore\(w, enviar\)/);
+ assert.match(js,/barra\.insertBefore\(w, barra\.querySelector\("\.action"\) \|\| null\)/);
  assert.match(js,/c\.ocupado/);
- assert.match(js,/if \(!o\)/);
- assert.match(css,/#composer \.composer-bar > \.p3d/);
+ assert.match(js,/if \(!o && !w\.hidden\)/);
+ assert.match(css,/\.composer-bar>\.p3d/);
  assert.match(css,/\.p3d\[hidden\]\{display:none!important\}/);
 });
 test('Carga CSS aislado y no cambia backend o selector de modelos',()=>{

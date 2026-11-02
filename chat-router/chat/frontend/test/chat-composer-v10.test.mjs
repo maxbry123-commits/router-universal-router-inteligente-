@@ -9,7 +9,7 @@ test("El cubo original está recuperado, con 6 caras y 2 anillos sin transformac
  assert.doesNotMatch(css,/p3d-formas-v10/);
  assert.match(js,/const w = el\("div", "p3d"\); w.hidden = true/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
- assert.match(js,/estado\.textContent = "Pensando…"/);
+ assert.match(js,/const ocupado = \(\) =>/);
 });
 test("Iconos tamaño 24, cerebro blanco SVG, paralelo distinto de copiar",()=>{
  const mode=src("mode_selector.js"),css=src("chat-toolbar-v09.css");
