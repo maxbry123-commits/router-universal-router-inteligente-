@@ -12,6 +12,9 @@ class ModeloGateTests(unittest.TestCase):
         self.assertEqual(h._modelo_destino("deepseek/deepseek-v4-pro"), ("mvp", "deepseek/deepseek-v4-pro"))
         self.assertEqual(h._modelo_destino("hf/lfm2.5-350m"), ("swe", "lfm2.5-350m"))
         self.assertEqual(h._modelo_destino("web-qwen38max"), ("swe", "web-qwen38max"))
+        self.assertEqual(h._modelo_destino("swecode/nvidia/z-ai/glm-5.3"), ("mvp", "nvidia/z-ai/glm-5.3"))
+        self.assertEqual(h._modelo_destino("swecode/lfm2.5-350m"), ("swe", "lfm2.5-350m"))
+        self.assertEqual(h._modelo_destino("swecode/web-qwen38max"), ("swe", "web-qwen38max"))
         with self.assertRaises(HTTPException):
             h._modelo_destino("modelo-inexistente")
 

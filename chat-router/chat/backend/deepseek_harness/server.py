@@ -639,7 +639,11 @@ def _modelo_destino(id_modelo):
     """Seleccion determinista, nunca salta de un modelo externo a uno HF."""
     if not isinstance(id_modelo, str) or not _MODELOS_PRE.fullmatch(id_modelo):
         raise HTTPException(status_code=400, detail="MODELO_INVALIDO")
-    model = SWE_ALIAS.get(id_modelo, id_modelo)
+    # OpenClaw presenta 'swecode/<modelo>' en su catálogo. Algunos clientes
+    # mandan el ID interno y otros el nombre completo del provider: aceptar
+    # ambos, sin permitir prefijos arbitrarios ni saltar de router.
+    solicitado = id_modelo.removeprefix("swecode/")
+    model = SWE_ALIAS.get(solicitado, solicitado)
     if model.startswith("hf/") and model[3:] in _SWE_MODELOS_LOCALES:
         model = model[3:]
     if es_externo(model):
