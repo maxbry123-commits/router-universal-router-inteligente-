@@ -235,8 +235,11 @@ export function montarEnviar(ctx) {
       c.detenerFn = null;
       if (c.detenerFlag) throw new Error("PROCESO_DETENIDO");  // detenido mientras la respuesta llegaba: no pintar respuesta tardia
       pending.remove();
-      c.hist.append(burbuja(answer.reply || "Sin respuesta"));
-      if (answer.nota) c.hist.append(node("div", answer.nota, "item meta"));
+      // Un turno = UNA salida del modelo. La procedencia es metadato accesible
+      // en el tooltip, no un segundo globo que parece otra respuesta.
+      const respuesta = burbuja(answer.reply || "Sin respuesta");
+      if (answer.nota) { respuesta.title = answer.nota; respuesta.dataset.procedencia = answer.nota; }
+      c.hist.append(respuesta);
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
       if (answer.finish_reason === "length") { const aviso = node("div", "La respuesta se cortó por el límite de salida del proveedor. ", "item message meta"), seguir = node("button", "Continuar", "mx-continuar"); seguir.type = "button"; seguir.onclick = () => { seguir.disabled = true; const m = q("#message"); m.value = "Continúa exactamente donde se cortó la respuesta anterior, sin repetir texto."; q("#composer").requestSubmit(); }; aviso.append(seguir); c.hist.append(aviso); }  // un clic y sigue desde el corte
       if (answer.requiere_aprobacion && answer.task_id) {  // el operador aprueba con este boton; el servidor lo identifica y la tarea sigue desde su checkpoint
@@ -246,7 +249,7 @@ export function montarEnviar(ctx) {
           const cred = await pedirAprobador();
           if (!cred) { ap.disabled = false; c.hist.append(node("div", "Aprobación cancelada: no se envió nada.", "item meta")); abajo(c); return; }
           const cabeceras = { "x-operador": cred.operador, "x-operator-token": cred.token }; let ok = false;
-          try { const r = await aprobarYContinuarSwe(api, { task_id: answer.task_id, op_id: answer.pendiente && answer.pendiente.op_id, sesion: c.sesion, proyecto: c.project_id || undefined, headers: cabeceras }); ok = true; c.hist.append(node("div", mensajeExito(cred.operador), "item meta")); c.hist.append(burbuja(r.reply || "Sin respuesta")); A.registrar(c.sesion, "bot", r.reply || ""); if (r.nota) c.hist.append(node("div", r.nota, "item meta")); }
+          try { const r = await aprobarYContinuarSwe(api, { task_id: answer.task_id, op_id: answer.pendiente && answer.pendiente.op_id, sesion: c.sesion, proyecto: c.project_id || undefined, headers: cabeceras }); ok = true; c.hist.append(node("div", mensajeExito(cred.operador), "item meta")); const unica = burbuja(r.reply || "Sin respuesta"); if (r.nota) unica.title = r.nota; c.hist.append(unica); A.registrar(c.sesion, "bot", r.reply || ""); }
           catch (e) { const m = mensajeAprobacion(e); c.hist.append(node("div", m || (String((e && e.message) || e).startsWith("GAP:") ? e.message : "GAP: " + e.message), "item message error")); }
           finally { for (const k of Object.keys(cabeceras)) delete cabeceras[k]; cred.token = ""; cred.operador = ""; if (!ok) ap.disabled = false; }
           abajo(c);

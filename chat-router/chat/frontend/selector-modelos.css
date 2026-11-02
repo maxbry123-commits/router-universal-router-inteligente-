@@ -27,3 +27,10 @@
 #sh-selectores #anadir-api-sdk{flex:0 0 auto;font-size:14px;min-width:90px;padding:8px 10px;border-radius:12px}
 #sh-selectores #api-modelos-nota{font-size:12px;line-height:1.35}
 @media(max-width:380px){#sh-selectores .api-modelos-fila{flex-wrap:wrap}#sh-selectores #anadir-api-sdk{flex:1 1 100%}}
+
+/* Una sola selección visible: los botones legado Groq/NVIDIA siguen cableados
+   pero no duplican el selector de modelos ni el indicador que ya pinta #composer. */
+#sh-selectores #selectores .sel-resp-global,
+#sh-selectores #selectores .sel-fila[data-selector="groq"],
+#sh-selectores #selectores .sel-fila[data-selector="nvidia-groq-team"]{display:none!important}
+#sh-selectores .api-modelos-rapido{order:-1}

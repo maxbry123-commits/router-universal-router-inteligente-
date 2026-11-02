@@ -109,7 +109,7 @@ function asegurarHoja() {
   // Una sola entrada directa para locales HF, Groq y todos los NVIDIA; no altera los selectores de agentes.
   const panel = document.createElement("div"); panel.className = "api-modelos-rapido";
   const fila = document.createElement("div"); fila.className = "api-modelos-fila";
-  const model = document.createElement("select"); model.id = "modelo-unificado"; model.setAttribute("aria-label", "Elegir modelo de HF, Groq o NVIDIA");
+  const model = document.createElement("select"); model.id = "modelo-unificado"; model.setAttribute("aria-label", "Elegir un modelo de HF, Groq, NVIDIA, DeepSeek, MiniMax u OpenAI");
   model.addEventListener("change", () => elegirUnificado(model.value));
   const plus = document.createElement("button"); plus.type = "button"; plus.id = "anadir-api-sdk";
   plus.className = "secondary"; plus.textContent = "+ API / SDK"; plus.setAttribute("aria-label", "Añadir API key o SDK al banco cifrado");
@@ -123,9 +123,9 @@ function asegurarHoja() {
       else { const e = document.getElementById("api-modelos-nota"); if (e) e.textContent = "Abre Configuración → Banco de claves para añadir una API / SDK."; }
     }
   });
-  const texto = document.createElement("label"); texto.setAttribute("for", "modelo-unificado"); texto.textContent = "Modelo que responde · HF / Groq / NVIDIA";
+  const texto = document.createElement("label"); texto.setAttribute("for", "modelo-unificado"); texto.textContent = "Modelo que responde · único selector";
   const info = document.createElement("div"); info.id = "api-modelos-nota"; info.className = "fila-desc";
-  info.textContent = "Una selección, sin cambiar de proveedor automáticamente. Los agentes no intervienen.";
+  info.textContent = "HF · Groq · NVIDIA · DeepSeek · MiniMax · OpenAI. Un modelo por mensaje, sin cambiar de proveedor.";
   fila.append(model, plus); panel.append(texto, fila, info);
   hoja.querySelector(".va-caja").append(panel);
   const cerrar = () => { if (hoja.hidden) return; hoja.hidden = true; if (btn) { btn.setAttribute("aria-expanded", "false"); btn.focus(); } };
@@ -145,6 +145,9 @@ function montar() {
   const caja = asegurarHoja().querySelector(".va-caja");
   [...caja.querySelectorAll("#selectores")].forEach((n) => { if (n !== sec) n.remove(); });
   if (sec.parentNode !== caja) caja.append(sec);
+  // Las filas Groq/NVIDIA conservan su estado para el backend, pero se controlan
+  // exclusivamente desde #modelo-unificado. No crear un segundo selector visible.
+  sec.classList.add("riu-modelos-unificados");
   if (!btn || !composer.contains(btn)) {
     btn = document.createElement("button");
     btn.type = "button"; btn.id = "btn-selector-modelos"; btn.className = "pill sel-indicador"; btn.setAttribute("aria-haspopup", "dialog"); btn.setAttribute("aria-controls", "sh-selectores");

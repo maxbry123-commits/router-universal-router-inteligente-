@@ -102,7 +102,12 @@ const filas = () => {  // panel Selectores del chat: ⓘ diagrama, ⚡ respuesta
       b.lastChild.textContent = on ? "ON" : "OFF"; f.querySelector(".sel-resp").textContent = "Modelo: " + modelo(s);
     });
     const a = SELECTORES.find((s) => s.id === act());
-    global.textContent = a ? "Responde: " + a.nombre + " · " + modelo(a) : "Ningún selector encendido: responde " + (/^nv-/.test(((window.RIU_CHAT && window.RIU_CHAT.chat()) || {}).ficha || "nv-") ? "Qwen 3.8 Max (por defecto del Router)" : fichaEt()); global.classList.toggle("on", !!a);
+    const nombreModelo = a ? modelo(a) : "";
+    // Si el catálogo ya dice «NVIDIA · MiniMax», no anteponer «NVIDIA» otra vez.
+    const indicador = a && (nombreModelo.toLowerCase().startsWith(a.nombre.toLowerCase() + " · ")
+      || nombreModelo.toLowerCase().startsWith(a.nombre.toLowerCase() + " ·"))
+      ? nombreModelo : a ? a.nombre + " · " + nombreModelo : "";
+    global.textContent = a ? "Responde: " + indicador : "Ningún selector encendido: responde " + (/^nv-/.test(((window.RIU_CHAT && window.RIU_CHAT.chat()) || {}).ficha || "nv-") ? "Qwen 3.8 Max (por defecto del Router)" : fichaEt()); global.classList.toggle("on", !!a);
     window.dispatchEvent(new CustomEvent("riu:selector-activo", { detail: { activo: act(), anterior: "", nombre: a ? a.nombre : "" } }));
   };
   SELECTORES.filter((s) => !s.mirror).forEach((s) => {
