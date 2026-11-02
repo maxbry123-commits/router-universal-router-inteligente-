@@ -271,9 +271,15 @@ class TriggerBridge:
                         receipt = await _invoke(self.ports.load, f"dsl:{project}:{loop}:{c['id']}")
                         info = {"status": (receipt or {}).get("status", "QUEUED" if c["enabled"] else "OFF"),
                                 "flags": (receipt or {}).get("flags", []),
+                                "error": (receipt or {}).get("error", ""),
+                                "reason": (receipt or {}).get("reason", ""),
                                 "contract_sha256": sha256(canonical(c)),
                                 "depends_on": c.get("depends_on", []),
                                 "source_ref": c["source"]["document_ref"]}
+                        if (isinstance(receipt, dict) and receipt.get("status") == "PASS"
+                                and receipt.get("contract_sha256") != sha256(canonical(c))):
+                            info["status"] = "NEEDS_RECONCILIATION"
+                            info["error"] = "STALE_CONTRACT_SHA"
                         statuses[c["id"]] = info
                         flags.extend(info["flags"])
                     segments = state.get("loop_meta", {}).get("segments", [])
@@ -281,13 +287,18 @@ class TriggerBridge:
                         statuses.get(tid, {}).get("status") not in
                         ("PASS", "NOT_APPLICABLE", "OFF")
                         for tid in seg.get("trigger_ids", []))), len(segments))
-                    return {"ok": True, "status": "PASS", "project_id": project, "loop_id": loop,
+                    snapshot = {"ok": True, "status": "PASS", "project_id": project, "loop_id": loop,
                             "phase_index": phase_index, "verify_on_end": state.get("loop_meta", {}).get("verify_on_end", True),
                             "revision": state["revision"], "contracts": state["contracts"],
                             "role_pairs": state["role_pairs"], "history": state["history"],
                             "loop_meta": state.get("loop_meta", {}), "queue": queue,
                             "watchdog_id": state.get("watchdog_id"), "triggers": statuses,
                             "flags": flags, "event_cursor": state["revision"]}
+                    from .gap_mechanic import from_loop_state
+                    closure = isinstance(queue, dict) and queue.get("status") in (
+                        "completed", "failed", "cancelled", "expired")
+                    snapshot["mechanico_gaps"] = from_loop_state(snapshot, at_closure=closure)
+                    return snapshot
                 if op == "gaps":
                     ledger = await _invoke(self.ports.load, f"dsl-gaps:{project}") or {}
                     return {"ok": True, "status": "PASS", "project_id": project,
@@ -377,25 +388,30 @@ class TriggerBridge:
                         "count": len(new["contracts"]), "config_sha256": sha256(canonical(new))}
             if op == "gap_collect":
                 if not state.get("queue_id"):raise ContractError("LOOP_NOT_STARTED")
-                from .repair import gap_events
-                q = await _invoke(self.ports.queue_status, state["queue_id"])
-                checkpoints = {c["id"]:await _invoke(self.ports.load,
-                    f"dsl:{project}:{loop}:{c['id']}") for c in state.get("contracts",[])}
-                observed=gap_events(project,loop,state.get("contracts",[]),checkpoints,q)
+                from .gap_mechanic import from_loop_state, merge_gaps
+                snapshot = await self.handle("dsl_estado", {"project_id": project,
+                    "loop_id": loop, "op": "get"}, server_context=server_context)
+                if not snapshot.get("ok") or not isinstance(snapshot.get("triggers"), dict):
+                    raise ContractError("GAP_SOURCE_SNAPSHOT_INVALID")
+                queue = snapshot.get("queue")
+                closure = isinstance(queue, dict) and queue.get("status") in (
+                    "completed", "failed", "cancelled", "expired")
+                observed = from_loop_state(snapshot, at_closure=closure)
                 key_gaps=f"dsl-gaps:{project}"
                 old=await _invoke(self.ports.load,key_gaps) or {"revision":0,"gaps":[]}
-                existing={item["gap_id"]:item for item in old["gaps"]}
-                for item in observed:
-                    if item["gap_id"] not in existing:
-                        existing[item["gap_id"]]=dict(item,status="OPEN",research=[])
-                if len(existing)>250:raise ContractError("GAP_LEDGER_LIMIT")
-                new={"revision":old["revision"]+1,"gaps":list(existing.values())}
+                prior=old.get("gaps", [])
+                if not isinstance(prior,list):raise ContractError("GAP_LEDGER_INVALID")
+                normalized=[dict(item, status=item.get("status","OPEN"), research=[],
+                    ledger_status="OPEN") for item in observed]
+                merged=merge_gaps(prior, normalized)
+                if len(merged)>250:raise ContractError("GAP_LEDGER_LIMIT")
+                new={"revision":old["revision"]+1,"gaps":merged}
                 if await _invoke(self.ports.save,key_gaps,new) is not True:
                     raise ContractError("GAPS_CHECKPOINT_NOT_DURABLE")
                 if await _invoke(self.ports.load,key_gaps)!=new:
                     raise ContractError("GAPS_READBACK_FAILED")
-                return {"ok":True,"status":"PASS","project_id":project,"total":len(existing),
-                        "new":len(existing)-len(old["gaps"]),"revision":new["revision"]}
+                return {"ok":True,"status":"PASS","project_id":project,"total":len(merged),
+                        "new":len(merged)-len(prior),"revision":new["revision"]}
             if op in ("gap_research","gap_select"):
                 key_gaps=f"dsl-gaps:{project}"
                 old=await _invoke(self.ports.load,key_gaps)
