@@ -65,6 +65,23 @@ class _DurableWatchStore(_core.WatchStore):
         return result
 
 
+# Keep Watchdog's event transition and its HF read-back in the same
+# in-process critical section; the WatchWorker uses this same store.
+_WATCH_SNAPSHOT_LOCK = threading.RLock()
+
+
+def _serialized_watch_transition(fn):
+    def wrapped(self, *args, **kwargs):
+        with _WATCH_SNAPSHOT_LOCK:
+            return fn(self, *args, **kwargs)
+    return wrapped
+
+
+for _method in ("create", "control", "tick"):
+    setattr(_DurableWatchStore, _method,
+            _serialized_watch_transition(getattr(_DurableWatchStore, _method)))
+
+
 def _store():
     global _STORE, _WATCH_STORAGE_READY
     if _STORE is None:
