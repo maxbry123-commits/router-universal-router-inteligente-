@@ -118,5 +118,25 @@ class TestCheckpointAfterClaim(unittest.TestCase):
         self.assertEqual(result["error"],"CHECKPOINT_NOT_DURABLE")
 
 
+
+class TestAutomaticLoopHandoff(unittest.TestCase):
+    def test_requires_review_when_toggle_on(self):
+        ports = SimpleNamespace(queue_status=lambda _: {"status":"completed","tasks":[]})
+        bridge = TriggerBridge(ports)
+        result = asyncio.run(bridge._handoff_verified(project="P01",loop="L1",
+            state={"queue_id":"cit1","loop_meta":{"next_loop_id":"L2",
+                   "verify_on_end":True}},server_context={"authenticated":True,"project_id":"P01"}))
+        self.assertEqual(result["status"],"REVIEW_REQUIRED")
+        self.assertFalse(result["dispatched"])
+
+    def test_requires_actual_completed_queue(self):
+        ports = SimpleNamespace(queue_status=lambda _:{"status":"running","tasks":[]})
+        bridge = TriggerBridge(ports)
+        result = asyncio.run(bridge._handoff_verified(project="P01",loop="L1",
+            state={"queue_id":"cit1","loop_meta":{"next_loop_id":"L2",
+                   "verify_on_end":False}},server_context={"authenticated":True,"project_id":"P01"}))
+        self.assertEqual(result["status"],"QUEUE_NOT_COMPLETED")
+        self.assertFalse(result["dispatched"])
+
 if __name__ == "__main__":
     unittest.main()

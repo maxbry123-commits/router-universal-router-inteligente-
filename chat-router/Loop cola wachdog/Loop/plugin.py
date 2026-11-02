@@ -356,10 +356,31 @@ def _dsl_coda_worker(payload: dict, context: dict) -> dict:
     """
     from nct_loop.trigger_bridge import TriggerBridge
     from nct_loop.trigger_host import build_ports
-    request = {"project_id": payload["project_id"], "loop_id": payload["loop_id"],
-               "op": "run_ready", "max_steps": 100}
-    return asyncio.run(TriggerBridge(build_ports(context)).handle(
-        "dsl_control", request, server_context=context))
+    # One queue at a time on the existing executor, bounded to 100 LOOPs.
+    # A handoff happens only if the predecessor has verified durable PASS
+    # receipts, the successor already exists, and review was disabled.
+    def _run():
+        current_id = payload["loop_id"]
+        visited = set()
+        last = {}
+        for _ in range(100):
+            if current_id in visited:
+                return {"ok": False, "status": "BLOCKED", "error": "NEXT_LOOP_CYCLE",
+                        "last_result": last}
+            visited.add(current_id)
+            current = dict(context, loop_id=current_id)
+            request = {"project_id": payload["project_id"], "loop_id": current_id,
+                       "op": "run_ready", "max_steps": 100}
+            last = asyncio.run(TriggerBridge(build_ports(current)).handle(
+                "dsl_control", request, server_context=current))
+            handoff = last.get("handoff") or {}
+            if not (last.get("ok") and handoff.get("dispatched")
+                    and handoff.get("next_loop_id")):
+                return last
+            current_id = handoff["next_loop_id"]
+        return {"ok": False, "status": "BLOCKED", "error": "LOOP_CHAIN_LIMIT",
+                "last_result": last}
+    return _run()
 
 
 def _dsl_schedule(payload: dict, context: dict) -> dict:

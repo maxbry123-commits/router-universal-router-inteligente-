@@ -82,6 +82,77 @@ class TriggerBridge:
                 result[dep] = "PASS"
         return result
 
+    async def _handoff_verified(self, *, project, loop, state, server_context):
+        """Transition into an ALREADY configured LOOP with durable evidence only.
+        Uses existing HF state and CIT-50 queue; no autonomous model authority.
+        """
+        meta = state.get("loop_meta") or {}
+        next_id = meta.get("next_loop_id")
+        if not next_id:
+            return {"status": "NO_NEXT_LOOP", "dispatched": False}
+        if meta.get("verify_on_end", True):
+            return {"status": "REVIEW_REQUIRED", "dispatched": False, "next_loop_id": next_id}
+        qid = state.get("queue_id")
+        queue = await _invoke(self.ports.queue_status, qid)
+        if not isinstance(queue, dict) or queue.get("status") != "completed":
+            return {"status": "QUEUE_NOT_COMPLETED", "dispatched": False}
+        rows = {x["id"]: x for x in queue.get("tasks", []) if isinstance(x, dict) and x.get("id")}
+        constitution, _ = await self.engine._constitution()
+        contracts = state.get("contracts", [])
+        # A queue receipt alone isn't proof. Compare immutable contract,
+        # Constitution and source anchors before enabling the next LOOP.
+        all_enabled = [c["id"] for c in contracts if c.get("enabled")]
+        verified = await self._prior(project, loop, {"depends_on": all_enabled}, contracts)
+        for c in contracts:
+            row = rows.get(c["id"])
+            if not row:
+                return {"status": "MISSING_QUEUE_RECEIPT", "dispatched": False}
+            if not c.get("enabled"):
+                if row.get("status") != "skipped":
+                    return {"status": "OFF_SLOT_NOT_SKIPPED", "dispatched": False}
+                continue
+            if row.get("status") == "succeeded" and c["id"] in verified and row.get("receipt_id"):
+                continue
+            rec = await _invoke(self.ports.load, f"dsl:{project}:{loop}:{c['id']}")
+            if (row.get("status") == "skipped" and isinstance(rec, dict)
+                    and rec.get("status") == "NOT_APPLICABLE"
+                    and rec.get("contract_sha256") == sha256(canonical(c))
+                    and rec.get("constitution_sha256") == constitution):
+                continue
+            return {"status": "UNVERIFIED_CURRENT_LOOP", "dispatched": False, "trigger_id": c["id"]}
+        successor = await _invoke(self.ports.load, f"dsl-config:{project}:{next_id}")
+        if not isinstance(successor, dict) or not successor.get("contracts"):
+            return {"status": "NEXT_LOOP_NOT_CONFIGURED", "dispatched": False, "next_loop_id": next_id}
+        from .trigger_contract import validate_loop
+        validate_loop(successor["contracts"])
+        deps = (successor.get("loop_meta") or {}).get("depends_on_loops", [])
+        if loop not in deps:
+            return {"status": "NEXT_LOOP_DEPENDENCY_NOT_LINKED", "dispatched": False}
+        if successor.get("queue_id"):
+            return {"status": "NEXT_LOOP_ALREADY_STARTED", "dispatched": False, "next_loop_id": next_id}
+        started = await self.handle("dsl_control", {
+            "project_id": project, "loop_id": next_id, "op": "start",
+            "expected_revision": successor["revision"]}, server_context=server_context)
+        if not started.get("ok") or not started.get("queue_id"):
+            return {"status": "NEXT_LOOP_START_FAILED", "dispatched": False, "detail": started}
+        record = {"from_loop": loop, "to_loop": next_id,
+                  "queue_id": started["queue_id"],
+                  "from_config_sha256": sha256(canonical(state)),
+                  "to_config_sha256": sha256(canonical(successor)),
+                  "constitution_sha256": constitution, "status": "HANDOFF_STARTED"}
+        key = f"dsl-handoff:{project}:{loop}:{next_id}"
+        # The successor was already durably STARTED. Read back the handoff
+        # before we report dispatched=True, never imply false success.
+        if await _invoke(self.ports.save, key, record) is not True:
+            return {"status": "HANDOFF_CHECKPOINT_UNCERTAIN", "dispatched": False,
+                    "next_loop_id": next_id}
+        check = await _invoke(self.ports.load, key)
+        if check != record:
+            return {"status": "HANDOFF_READBACK_MISMATCH", "dispatched": False,
+                    "next_loop_id": next_id}
+        return {"status": "HANDOFF_STARTED", "dispatched": True,
+                "next_loop_id": next_id, "queue_id": started["queue_id"]}
+
     async def dispatch_ready(self, *, project, loop, state, server_context, max_steps=100):
         """Continue an existing DSL queue on this very PluginHost executor.
         The CIT-50 claim is the single-executor gate; no second queue/daemon.
@@ -99,8 +170,12 @@ class TriggerBridge:
             if not isinstance(q, dict) or not isinstance(q.get("tasks"), list):
                 raise ContractError("QUEUE_NOT_CONNECTED")
             if q.get("status") != "running":
-                return {"ok": q.get("status") == "completed", "status": q.get("status", "BLOCKED").upper(),
-                        "queue_id": qid, "processed": completed, "queue_status": q.get("status")}
+                output = {"ok": q.get("status") == "completed", "status": q.get("status", "BLOCKED").upper(),
+                          "queue_id": qid, "processed": completed, "queue_status": q.get("status")}
+                if q.get("status") == "completed":
+                    output["handoff"] = await self._handoff_verified(project=project, loop=loop,
+                        state=state, server_context=server_context)
+                return output
             rows = {t["id"]: t for t in q["tasks"] if isinstance(t, dict) and isinstance(t.get("id"), str)}
             if any(t.get("status") in ("running", "needs_reconciliation") for t in rows.values()):
                 return {"ok": False, "status": "BLOCKED", "error": "QUEUE_BUSY_OR_RECONCILIATION",
@@ -143,9 +218,13 @@ class TriggerBridge:
             completed.append({"id": eligible["id"], "status": "PASS", "receipt_id": verified["receipt_id"]})
         final = await _invoke(self.ports.queue_status, qid)
         if final.get("status") != "running":
-            return {"ok": final.get("status") == "completed",
-                    "status": final.get("status", "BLOCKED").upper(), "queue_id": qid,
-                    "processed": completed, "queue_status": final.get("status")}
+            output = {"ok": final.get("status") == "completed",
+                      "status": final.get("status", "BLOCKED").upper(), "queue_id": qid,
+                      "processed": completed, "queue_status": final.get("status")}
+            if final.get("status") == "completed":
+                output["handoff"] = await self._handoff_verified(project=project, loop=loop,
+                    state=state, server_context=server_context)
+            return output
         return {"ok": True, "status": "LIMIT_REACHED", "queue_id": qid,
                 "processed": completed, "next": "CALL_DISPATCH_AGAIN"}
 
