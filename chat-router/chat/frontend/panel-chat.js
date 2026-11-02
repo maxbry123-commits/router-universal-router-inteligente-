@@ -230,7 +230,7 @@ export async function mount(root, { api, tell }) {
     cerrarHojas();
     sh.hidden = abierto;
     if (!abierto && b.dataset.sheet === "ventana-archivos") cargarArchivos();
-    if (!abierto && b.dataset.sheet === "ventana-ancla") { cargarArchivos("#anc-lista"); ancla.refrescar(); }
+    if (!abierto && b.dataset.sheet === "ventana-ancla") { cargarArchivos("#anc-lista"); ancla.refrescar(); pintarAnclas(); cargarMiHandoff(); }
     if (!abierto && b.dataset.sheet === "ventana-sandbox") cargarSandbox();
     if (!abierto && b.dataset.sheet === "sh-ancla") { pintarAnclas(); cargarMiHandoff(); }
   }));

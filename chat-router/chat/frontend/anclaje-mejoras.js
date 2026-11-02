@@ -30,7 +30,10 @@ function tambienEn(tok) {
 const bajar = (nombre, texto) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([texto], { type: "application/json" })); a.download = nombre; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
 export function montarMejorasAncla({ root, q, tell }) {
   const caja = q("#ventana-ancla .va-caja"), resumen = q("#anc-resumen"); if (!caja || !resumen || caja.dataset.mej) return; caja.dataset.mej = "1"; cargarCss("anclaje-mejoras");
-  const barra = el("div", "vn-sec am-barra"), ref = caja.querySelector(".vn-destinos") || caja.querySelector(".va-head"); if (ref) ref.after(barra); else caja.prepend(barra);
+  const barra = el("div", "vn-sec am-barra"), avanzado = el("details", "ancla-grupo ancla-herramientas");
+  avanzado.append(el("summary", "", "Herramientas avanzadas · buscar, importar, exportar"), barra);
+  const ref = caja.querySelector(".vn-destinos") || caja.querySelector(".va-head");
+  if (ref) ref.after(avanzado); else caja.prepend(avanzado);
   let pila = [], vistos = new Set(), claveVista = null, filtro = "";
   const tokens = () => { const o = obj(); return o ? [...o.anclados] : []; };
   const refrescar = () => { try { if (window.RIU_CHAT && !window.RIU_OBJETIVO_ANCLA) window.RIU_CHAT.pintar(); } catch (e) {} if (window.RIU_ANCLA_REFRESCAR) window.RIU_ANCLA_REFRESCAR(); };

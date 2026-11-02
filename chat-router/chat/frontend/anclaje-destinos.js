@@ -26,39 +26,30 @@ export function montarDestinos({ root, q, tell }) {
     fijar(t);
   }
   function pintar() {
-    fila.replaceChildren(el("div", "vn-t", "Anclar a · misma ventana, cambia el objetivo"));
-    const bs = el("div", "vn-fila");
-    OBJETIVOS.forEach(([id, nom]) => { const on = id === tipo, b = boton(nom, "toggle" + (on ? " on" : ""), () => cambiar(id)); b.setAttribute("aria-pressed", String(on)); bs.append(b); });
-    fila.append(bs);
+    fila.replaceChildren(el("div", "vn-t", "⚓ Destino de las anclas"));
+    const destino = el("select", "ancla-destino-select");
+    destino.setAttribute("aria-label", "Elegir dónde se aplican las anclas");
+    OBJETIVOS.forEach(([id, nom]) => { const opt = el("option", "", nom); opt.value = id; destino.append(opt); });
+    destino.value = tipo;
+    destino.addEventListener("change", () => { cambiar(destino.value); destino.value = tipo; });
+    fila.append(destino);
     const acc = el("div", "vn-fila");
-    acc.append(boton("Yaiwes.md", "toggle", () => {
-      const s = q("#sh-ancla"), h = q("#ventana-ancla"), ta = q("#mi-handoff");
-      const caja = s && s.querySelector(".va-caja"), head = caja && caja.querySelector(".va-head");
-      if (h) h.hidden = true;
-      if (s) s.hidden = false;
-      if (ta && head) {
-        const nodes = [];
-        let n = ta;
-        for (let i = 0; i < 3 && n; i++) { nodes.push(n); n = n.nextElementSibling; }
-        let ref = head;
-        nodes.forEach((x) => { ref.after(x); ref = x; });
-        const viejo = q("#ancla-enlace");
-        if (viejo && viejo.parentElement) viejo.parentElement.hidden = true;
-        ta.focus();
-      }
-    }), boton("Tools", "toggle", () => {
-      const b = document.querySelector("#btn-tools"), s = q("#ventana-ancla");
-      if (s) s.hidden = true;
-      if (b) b.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
-      else tell("Tools no está");
+    acc.append(boton("📌 Handoff permanente", "mini", () => {
+      const grupo = q("#ancla-handoffs");
+      if (!grupo) { tell("Handoff no disponible"); return; }
+      grupo.open = true;
+      grupo.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      q("#mi-handoff")?.focus({ preventScroll: true });
     }));
     fila.append(acc);
     // encendido/apagado de CADA ancla, siempre visible en la hoja (la Constitución arranca apagada; solo viaja si está encendida)
-    const est = el("div", "vn-fila vn-encendidos"); est.append(el("div", "vn-t", "Encendido de cada ancla"));
+    const ajustes = el("details", "ancla-grupo ancla-ajustes");
+    ajustes.append(el("summary", "", "🔵 Encendido de contextos"));
+    const est = el("div", "vn-fila vn-encendidos");
     const tog = (t, id, etq) => { const o = crearObjetivo(t, id); if (!o) return; const on = !!o.encendido, b = boton(etq + ": " + (on ? "ON" : "OFF"), "toggle" + (on ? " on" : ""), () => { o.encendido = !o.encendido; tell(etq + (o.encendido ? ": ON · viaja con cada mensaje" : ": OFF · no se envía")); pintar(); }); b.dataset.ancla = t + (id ? ":" + id : ""); b.setAttribute("aria-pressed", String(on)); est.append(b); };
     est.append(el("span", "vn-estado", "● Chat · siempre"));
     tog("constitucion", undefined, "Constitución"); listaWF().forEach((w) => tog("workflows", w.id, "Workflow " + w.nombre)); tog("agentes", undefined, "Agentes remotos"); listaProyectos().forEach((p) => tog("proyecto", p.nombre, "Proyecto " + p.nombre)); tog("sandbox", undefined, "Sandbox");
-    fila.append(est);
+    ajustes.append(est); fila.append(ajustes);
     if (tipo === "workflows" && obj) {
       const s = el("select", "vn-in"); s.setAttribute("aria-label", "Workflow");
       listaWF().forEach((w) => { const o = el("option", "", w.nombre); o.value = w.id; s.append(o); }); s.value = obj.id;

@@ -1,0 +1,21 @@
+/* Maxbry UI V07 · anclaje universal compacto. Aislado al sheet nativo. */
+#ventana-ancla .va-caja{width:min(540px,100vw);max-height:min(88dvh,900px);padding:13px 15px 18px;overscroll-behavior:contain;overflow-y:auto;background:#202020;border:1px solid #3A3A3A;color:#EDEDED;scrollbar-gutter:stable}
+#ventana-ancla .va-head{position:sticky;top:-13px;z-index:3;background:#202020;border-bottom:1px solid #3A3A3A;padding:8px 4px 12px;margin:-6px 0 9px}
+#ventana-ancla .va-head strong{font-size:18px;letter-spacing:.1px}
+#ventana-ancla .vn-destinos{border:1px solid #3A3A3A;border-radius:14px;background:#2A2A2A;padding:12px;margin:8px 0;gap:8px}
+#ventana-ancla .ancla-destino-select{width:100%;min-height:44px;padding:10px 12px;border:1px solid #525252;border-radius:11px;background:#202020;color:#FAFAFA;font:inherit}
+#ventana-ancla .ancla-grupo{border:1px solid #3A3A3A;border-radius:13px;background:#252525;padding:0 12px;margin:9px 0;min-width:0}
+#ventana-ancla .ancla-grupo>summary{list-style:none;display:flex;align-items:center;min-height:48px;cursor:pointer;color:#EDEDED;font-size:13px;font-weight:650;overflow-wrap:anywhere}
+#ventana-ancla .ancla-grupo>summary::-webkit-details-marker{display:none}
+#ventana-ancla .ancla-grupo>summary::after{content:'⌄';margin-left:auto;color:#48A8FF;font-size:19px;padding-left:8px}
+#ventana-ancla .ancla-grupo[open]>summary::after{content:'⌃'}
+#ventana-ancla .ancla-grupo[open]>summary{border-bottom:1px solid #3A3A3A;margin-bottom:9px}
+#ventana-ancla .ancla-grupo .vn-encendidos{padding:4px 0 12px;gap:7px}
+#ventana-ancla .ancla-grupo .vn-encendidos .toggle.on{background:#0869ED;border-color:#329DFF;color:#FFF}
+#ventana-ancla #ancla-handoffs>*:not(summary){max-width:100%;margin-bottom:8px}
+#ventana-ancla #ancla-handoffs textarea,#ventana-ancla #ancla-handoffs input{max-width:100%;width:100%;min-height:44px;box-sizing:border-box}
+#ventana-ancla #ancla-handoffs .row{flex-wrap:wrap;gap:7px}
+#ventana-ancla .vn-destinos .mini{min-height:44px;font-size:13px;background:#303030;border-color:#525252}
+#ventana-ancla button:focus-visible,#ventana-ancla select:focus-visible,#ventana-ancla summary:focus-visible{outline:2px solid #2196FF;outline-offset:2px}
+@media(max-width:720px){#ventana-ancla .va-caja{width:100vw;max-height:89dvh;padding:12px 14px 18px;border-radius:22px 22px 0 0}#ventana-ancla .va-head{top:-12px}#ventana-ancla .vn-destinos{padding:10px}}
+@media(prefers-reduced-motion:reduce){#ventana-ancla *{scroll-behavior:auto!important}}
