@@ -193,3 +193,28 @@
     width:18px!important;height:18px!important;
   }
 }
+
+
+/* CHAT 2 · V12.3 · Copiar/editar nunca flotan encima del texto de salida.
+   Se reutilizan los botones y listeners originales: solo cambia su distribución. */
+#histories .chat-history > .message:has(> .copiar){
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 36px 36px;
+  grid-template-rows:auto 36px;
+  column-gap:4px;row-gap:5px;align-items:start;
+  padding:10px 12px!important;
+}
+#histories .chat-history > .message:has(> .copiar) > .txt{
+  grid-column:1 / -1;grid-row:1;min-width:0;overflow-wrap:anywhere;
+}
+#histories .chat-history > .message:has(> .copiar) > .copiar,
+#histories .chat-history > .message:has(> .copiar) > .editar{
+  position:static!important;inset:auto!important;
+  grid-row:2;width:36px;height:36px;min-width:36px;min-height:36px;
+  margin:0!important;padding:0!important;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+#histories .chat-history > .message:has(> .copiar) > .copiar{grid-column:3}
+#histories .chat-history > .message:has(> .copiar) > .editar{grid-column:2}
+/* El botón copiar de bloques de código tampoco cubre su primera línea. */
+#histories .chat-history .message .riu-code{padding-top:40px}
