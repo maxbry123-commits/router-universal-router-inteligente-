@@ -708,7 +708,7 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict,
         if project.get('chats') and sesion not in project['chats']:
             raise HTTPException(status_code=403, detail='PROJECT_SESSION_SCOPE')
         operator_id, director_confirmed = None, False
-        if accion == 'dsl_control' and cuerpo.get('op') == 'approve':
+        if accion == 'dsl_control' and cuerpo.get('op') in ('approve','gap_select_solution'):
             operator_id = _identificar_operador(x_operador, x_operator_token)
             director_confirmed = bool(os.environ.get('RIU_DSL_DIRECTOR') and operator_id == os.environ.get('RIU_DSL_DIRECTOR'))
             if not director_confirmed:
