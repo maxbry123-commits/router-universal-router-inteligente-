@@ -340,7 +340,7 @@ class QueueStore:
             self.ev(c,qid,'dsl.task.not_applicable',{'verification':'NOT_APPLICABLE'},tid)
             states=[x['state'] for x in c.execute('SELECT state FROM tasks WHERE queue_id=?',(qid,))]
             if all(x in TERMINAL for x in states):
-                final='completed' if all(x=='succeeded' for x in states) else 'failed'
+                final='completed' if all(x in {'succeeded','skipped'} for x in states) else 'failed'
                 c.execute('UPDATE queues SET state=? WHERE id=?',(final,qid))
                 self.ev(c,qid,'queue.'+final,{'verification':'PARTIAL_NOT_APPLICABLE'})
             c.execute('COMMIT')
@@ -403,7 +403,7 @@ class QueueStore:
                 if mode=='dsl':
                     remaining=[x['state'] for x in c.execute('SELECT state FROM tasks WHERE queue_id=?',(qid,)).fetchall()]
                     if remaining and all(x in TERMINAL for x in remaining):
-                        final='completed' if all(x=='succeeded' for x in remaining) else 'failed'
+                        final='completed' if all(x in {'succeeded','skipped'} for x in remaining) else 'failed'
                         c.execute('UPDATE queues SET state=? WHERE id=?',(final,qid))
                         self.ev(c,qid,'queue.'+final)
             if state=='failed':

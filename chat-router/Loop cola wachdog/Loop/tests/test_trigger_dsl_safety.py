@@ -69,6 +69,24 @@ class QueueSafety(unittest.TestCase):
             validate_loop_meta({**good, "segments":[{"id":"A","name":"A","trigger_ids":["MISSING"]}]},
                                loop_id="loop-01", contracts=contracts)
 
+    def test_not_applicable_and_success_can_close_loop(self):
+        qid = self.queue()
+        self.store.skip_dsl_task(qid,"a","NOT_APPLICABLE")
+        self.assertTrue(self.store.claim_dsl_for(qid,"b")["claimed"])
+        self.assertTrue(self.store.complete(qid,"b",{"verification":"PASS"}))
+        self.assertEqual(self.store.get(qid)["status"],"completed")
+        rows={row["id"]:row for row in self.store.get(qid)["tasks"]}
+        self.assertEqual(rows["a"]["status"],"skipped")
+        self.assertNotEqual(rows["a"]["status"],"succeeded")
+        self.assertEqual(rows["b"]["status"],"succeeded")
+
+    def test_success_and_not_applicable_can_close_loop(self):
+        qid = self.queue()
+        self.assertTrue(self.store.claim_dsl_for(qid,"a")["claimed"])
+        self.assertTrue(self.store.complete(qid,"a",{"verification":"PASS"}))
+        self.store.skip_dsl_task(qid,"b","NOT_APPLICABLE")
+        self.assertEqual(self.store.get(qid)["status"],"completed")
+
     def test_one_writer_per_dsl_queue(self):
         qid = self.queue()
         self.assertTrue(self.store.claim_dsl_for(qid, "a")["claimed"])
