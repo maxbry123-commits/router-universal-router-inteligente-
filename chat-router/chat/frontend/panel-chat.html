@@ -7,10 +7,7 @@
 <script type="module">
   import { api } from "/chat/ui/api.js";
   import { mount } from "/chat/ui/panel-chat.js";
-  import { mountMirrorSelectors } from "/chat/ui/agentes-mirror.js";
   mount(document.body, { api, tell: (m) => { let n = document.getElementById("notice"); if (!n) { n = document.createElement("div"); n.id = "notice"; document.body.appendChild(n); } n.textContent = m; }, view: "chat" });
-  // Montar selectores de agentes mirror justo debajo de los selectores de modo/agente existentes
-  try { await mountMirrorSelectors(document.body); } catch (e) { console.error("[mirror] mount fail", e); }
 </script>
 <div id="h1-slot"><h1>Chat del Router</h1></div>
 <div id="ctl-wrap">
