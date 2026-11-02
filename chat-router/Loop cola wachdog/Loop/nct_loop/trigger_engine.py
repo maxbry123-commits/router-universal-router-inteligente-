@@ -194,8 +194,11 @@ class TriggerEngine:
             if not isinstance(claim, dict) or claim.get("claimed") is not True or not claim.get("receipt_ref"):
                 raise ContractError("QUEUE_NOT_CONNECTED")
             current.update(status="STARTED", claim_ref=claim["receipt_ref"], anchor_receipts=refs)
-            await self._save(key, current)
+            # The claim already took effect in CIT-50. If the durable
+            # STARTED checkpoint fails, report reconciliation instead of
+            # pretending no execution was claimed.
             started = True
+            await self._save(key, current)
             model_data, model_evidence, tool_receipts, read_observations = {}, [], [], []
             for step in ordered_steps(contract):
                 if step["kind"] == "MODEL":

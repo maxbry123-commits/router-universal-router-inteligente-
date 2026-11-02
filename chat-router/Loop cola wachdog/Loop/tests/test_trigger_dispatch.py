@@ -84,5 +84,39 @@ class TestDispatchReady(unittest.TestCase):
         self.assertFalse(output["ok"])
 
 
+
+class TestCheckpointAfterClaim(unittest.TestCase):
+    def test_claim_succeeded_but_start_checkpoint_failed_needs_reconciliation(self):
+        from unittest.mock import AsyncMock, patch
+        from nct_loop.trigger_engine import TriggerEngine
+        from nct_loop.trigger_contract import ContractError
+        claimed = []
+        def claim(request):
+            claimed.append(request["trigger_id"])
+            return {"claimed": True, "receipt_ref": "cit:queue:T01"}
+        ports = SimpleNamespace(load=lambda k: None,
+            facts=lambda project, loop: {},
+            queue_claim=claim, queue_complete=None, can_write=False)
+        engine = TriggerEngine(ports)
+        contract={"id":"T01","loop_id":"L01","enabled":True,
+                  "depends_on":[],"attachments":[],
+                  "source":{"source_anchor_ref":None},"role":"auditor","steps":[],
+                  "execution":{}, "when":{"predicate":"always","args":{}}}
+        async def never_saves(*args):
+            raise ContractError("CHECKPOINT_NOT_DURABLE")
+        with patch("nct_loop.trigger_engine.validate_contract", return_value=None), \
+             patch("nct_loop.trigger_engine.check_condition", return_value=("PASS","matched")), \
+             patch.object(engine,"_constitution", AsyncMock(return_value=("const",{}))), \
+             patch.object(engine,"_save", side_effect=never_saves):
+            result=asyncio.run(engine.run_once(project_id="project1",
+                contract=contract, role_pairs={"auditor":{"model_id":"model",
+                    "agent_id":"agent","available":True}},
+                host_context={"authenticated":True,"project_id":"project1"}))
+        self.assertEqual(claimed, ["T01"])
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["status"],"NEEDS_RECONCILIATION")
+        self.assertEqual(result["error"],"CHECKPOINT_NOT_DURABLE")
+
+
 if __name__ == "__main__":
     unittest.main()
