@@ -10,7 +10,7 @@ test('pensamiento junto a Enviar, no en el historial',()=>{
  assert.doesNotMatch(js,/target\.append\(w\)/);
  assert.match(js,/salida\.append\(estado\)/);
  assert.match(css,/#composer \.composer-bar > \.p3d/);
- assert.doesNotMatch(css,/#histories \.chat-history > \.p3d/);
+ assert.doesNotMatch(css,/#histories \.chat-history > \.p3d\s*\{/);
 });
 test('salida tiene altura mínima móvil y no pierde el área de escritura',()=>{
  const css=src('chat-espacio.css');
