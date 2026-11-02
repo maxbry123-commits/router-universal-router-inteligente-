@@ -240,17 +240,17 @@ def _modelos_bridge():
         return cached[1]
     from urllib.parse import urlparse
     base = (os.environ.get("RIU_SWE_BRIDGE_URL") or "http://127.0.0.1:7870").strip().rstrip("/")
-    x = urlparse(base)
-    if not (x.scheme == "https" or x.scheme == "http" and x.hostname in ("127.0.0.1", "localhost")):
-        return None
     try:
+        x = urlparse(base)
+        if not (x.scheme == "https" or x.scheme == "http" and x.hostname in ("127.0.0.1", "localhost")) or x.username or x.password:
+            return None
         req = urllib.request.Request(base + "/v1/modelos/disponibilidad",
                                      headers={"X-API-Key": key, "Accept": "application/json"})
         with _comun.abrir(req, 5) as resp:
             doc = json.load(resp)
         modelos = doc.get("modelos")
         listado = {m["id"]: m for m in modelos if isinstance(m, dict) and isinstance(m.get("id"), str)} if doc.get("ok") is True and isinstance(modelos, list) else None
-    except (OSError, ValueError, TypeError, KeyError):
+    except (OSError, ValueError, TypeError, KeyError, AttributeError):
         listado = None
     _CACHE[cache_key] = (time.time(), listado)
     return listado
