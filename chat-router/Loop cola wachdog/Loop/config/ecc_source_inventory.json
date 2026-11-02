@@ -1,0 +1,1617 @@
+{
+  "schema": "yaiwes.ecc.source_inventory.v1",
+  "kind": "INDEX_ONLY_NOT_EXECUTION",
+  "source_repository": "affaan-m/ECC",
+  "source_mirror_path": "chat-router/workflow-loop-code-yaiwes/skills/workflow-loop-yaiwes/ECC/skills/",
+  "source_skills_tree_git_sha1": "dd4267b412b5c8b7e229b0d6ed6cd60962321800",
+  "inspected_main_head": "b96e4d8f208073940ff4e5e400bf8fe02ca3d010",
+  "git_blob_sha_is_not_sha256": true,
+  "skill_count": 311,
+  "sources": [
+    {
+      "path": "accessibility/SKILL.md",
+      "git_blob_sha1": "0685394eef10a1bf1e5c02f67a3a8b06ae210cc4",
+      "bytes": 6546
+    },
+    {
+      "path": "agent-architecture-audit/SKILL.md",
+      "git_blob_sha1": "a3c2caa67b0ca7e5323d4e853d898f599694ff10",
+      "bytes": 10278
+    },
+    {
+      "path": "agent-eval/SKILL.md",
+      "git_blob_sha1": "c082704f19ad58e8f0aa986a25f1da0b29809922",
+      "bytes": 4696
+    },
+    {
+      "path": "agent-harness-construction/SKILL.md",
+      "git_blob_sha1": "6f828f92298e9c534c9af1e7f0e9832ef7443a2d",
+      "bytes": 2100
+    },
+    {
+      "path": "agent-introspection-debugging/SKILL.md",
+      "git_blob_sha1": "7f40c4579f09b15884e7e4e22635ccd41e1ba1a7",
+      "bytes": 5627
+    },
+    {
+      "path": "agent-payment-x402/SKILL.md",
+      "git_blob_sha1": "41608571d94d9a935d6d808cf38f989a2b3c98ff",
+      "bytes": 27483
+    },
+    {
+      "path": "agent-runtime-gateway-smoke-test/SKILL.md",
+      "git_blob_sha1": "d2ed4dd6e10bea3e179607f4f39b3384ebb487dc",
+      "bytes": 5556
+    },
+    {
+      "path": "agent-security-hardening/SKILL.md",
+      "git_blob_sha1": "726cd3e2e01e7b03103c98639585868dd3afc392",
+      "bytes": 10678
+    },
+    {
+      "path": "agent-self-evaluation/SKILL.md",
+      "git_blob_sha1": "4e241380aa8c9b26ea249d7208d78edea9e5f397",
+      "bytes": 7625
+    },
+    {
+      "path": "agent-sort/SKILL.md",
+      "git_blob_sha1": "f07eb28ba7aaefe346c6688799143988b28aa950",
+      "bytes": 5922
+    },
+    {
+      "path": "agentic-engineering/SKILL.md",
+      "git_blob_sha1": "c4b2428c1d2edd0a8431700fcb6617c10d3aff8c",
+      "bytes": 1830
+    },
+    {
+      "path": "agentic-os/SKILL.md",
+      "git_blob_sha1": "4ec8cfd914430a58dd68042fd68cba87f559e905",
+      "bytes": 12349
+    },
+    {
+      "path": "ai-first-engineering/SKILL.md",
+      "git_blob_sha1": "9e49702f31fafaddf36a76e890b4aa411bf6c5cc",
+      "bytes": 1454
+    },
+    {
+      "path": "ai-regression-testing/SKILL.md",
+      "git_blob_sha1": "e8dac65b1792ead1289090e3db0326ec00c26fbf",
+      "bytes": 11659
+    },
+    {
+      "path": "android-clean-architecture/SKILL.md",
+      "git_blob_sha1": "268cfbd78573348bda6df8466f92095d7b9a18b8",
+      "bytes": 8887
+    },
+    {
+      "path": "angular-developer/SKILL.md",
+      "git_blob_sha1": "f5b6eac3ca99f15c24239d1e3f013a60b99aa9c5",
+      "bytes": 11021
+    },
+    {
+      "path": "api-connector-builder/SKILL.md",
+      "git_blob_sha1": "52029f27565b1743b36582de0db7648261b463a5",
+      "bytes": 2664
+    },
+    {
+      "path": "api-design/SKILL.md",
+      "git_blob_sha1": "655d730e64492b997bded91038c52f75398c5563",
+      "bytes": 13224
+    },
+    {
+      "path": "architecture-decision-records/SKILL.md",
+      "git_blob_sha1": "84f2dd608b4589f7e74e876927ddce866e12a3d1",
+      "bytes": 7182
+    },
+    {
+      "path": "article-writing/SKILL.md",
+      "git_blob_sha1": "9dfa979ca56940e731ebede2c46ec2dca688818e",
+      "bytes": 2926
+    },
+    {
+      "path": "automation-audit-ops/SKILL.md",
+      "git_blob_sha1": "595a2217c5be1d1e3f4b23f67ae37f84f7844f88",
+      "bytes": 4167
+    },
+    {
+      "path": "autonomous-agent-harness/SKILL.md",
+      "git_blob_sha1": "2f92a5a17f2096b5752ff489600ac282110fc292",
+      "bytes": 12864
+    },
+    {
+      "path": "autonomous-loops/SKILL.md",
+      "git_blob_sha1": "b6c64c2af3d52d325a12181888c0dac4fec4fb5e",
+      "bytes": 24851
+    },
+    {
+      "path": "backend-patterns/SKILL.md",
+      "git_blob_sha1": "1142d0a51de34808f8493bac40b68aa745dcd80e",
+      "bytes": 13349
+    },
+    {
+      "path": "benchmark-methodology/SKILL.md",
+      "git_blob_sha1": "18722edceb629773fb88ee6c0888dfe1a52950d5",
+      "bytes": 9942
+    },
+    {
+      "path": "benchmark-optimization-loop/SKILL.md",
+      "git_blob_sha1": "f76d0d54efdd46bd817220f9ded410d7ab733e62",
+      "bytes": 2658
+    },
+    {
+      "path": "benchmark/SKILL.md",
+      "git_blob_sha1": "3020088b5932d0db9275e19c7c0047c92abf84d3",
+      "bytes": 2630
+    },
+    {
+      "path": "bengali-nlp/SKILL.md",
+      "git_blob_sha1": "74a81067fc16e01e92846b5741e5fd60fe361135",
+      "bytes": 16109
+    },
+    {
+      "path": "blender-motion-state-inspection/SKILL.md",
+      "git_blob_sha1": "5ececd7185da91c64607cc5469a145cdedcf831f",
+      "bytes": 8146
+    },
+    {
+      "path": "blueprint/SKILL.md",
+      "git_blob_sha1": "4c27da2fa537afeeb7c7a452c73960508615f686",
+      "bytes": 5153
+    },
+    {
+      "path": "brand-discovery/SKILL.md",
+      "git_blob_sha1": "b5872f48a9310fdd233344557e2ce52c5d307f22",
+      "bytes": 7550
+    },
+    {
+      "path": "brand-voice/SKILL.md",
+      "git_blob_sha1": "a70421076f3aba4f2d1a0886888b839095b50380",
+      "bytes": 3648
+    },
+    {
+      "path": "brownfield-retrospective/SKILL.md",
+      "git_blob_sha1": "a7975931a97e6764789a552124f36f20cb52c7e5",
+      "bytes": 11440
+    },
+    {
+      "path": "browser-qa/SKILL.md",
+      "git_blob_sha1": "f6358d6ac8b43edb7cb894481de56c53e19b3cf2",
+      "bytes": 4104
+    },
+    {
+      "path": "bun-runtime/SKILL.md",
+      "git_blob_sha1": "999f71dfed6d2155daddbfdaece4a2fa412c8329",
+      "bytes": 5755
+    },
+    {
+      "path": "canary-watch/SKILL.md",
+      "git_blob_sha1": "8397ab540ccf7516fa7194622ea2909a1f98b8af",
+      "bytes": 3128
+    },
+    {
+      "path": "carrier-relationship-management/SKILL.md",
+      "git_blob_sha1": "f5d1bad7743ae2a56b51af7567becde9317f5f05",
+      "bytes": 23645
+    },
+    {
+      "path": "change-impact/SKILL.md",
+      "git_blob_sha1": "b220205a5cb783df3acd5bddba46624ada473637",
+      "bytes": 6216
+    },
+    {
+      "path": "cisco-ios-patterns/SKILL.md",
+      "git_blob_sha1": "fc935921263f19540d73d0e9967bb7b6425289f7",
+      "bytes": 5305
+    },
+    {
+      "path": "ck/SKILL.md",
+      "git_blob_sha1": "8f3cbb0b169ffb4a6210ebe31f107f7b28ba0a6f",
+      "bytes": 5011
+    },
+    {
+      "path": "claude-devfleet/SKILL.md",
+      "git_blob_sha1": "1e7358a61ba4466589c145956cd19ce85ae233e5",
+      "bytes": 6216
+    },
+    {
+      "path": "click-path-audit/SKILL.md",
+      "git_blob_sha1": "ffc469829b6c4bf893c4f6212d4110e87e9568d6",
+      "bytes": 7975
+    },
+    {
+      "path": "clickhouse-io/SKILL.md",
+      "git_blob_sha1": "5a97ddc66b31ebd715a07a87a7e60dc5fbff580e",
+      "bytes": 10731
+    },
+    {
+      "path": "code-tour/SKILL.md",
+      "git_blob_sha1": "d66b7e008287833ac592550f9b0941feaea52443",
+      "bytes": 8030
+    },
+    {
+      "path": "codebase-onboarding/SKILL.md",
+      "git_blob_sha1": "ac70816c9edac808100df8e980dfd15ebd166cee",
+      "bytes": 8235
+    },
+    {
+      "path": "codehealth-mcp/SKILL.md",
+      "git_blob_sha1": "6119608dcae1fafb83663f12feb52b3a42da731a",
+      "bytes": 7463
+    },
+    {
+      "path": "coding-standards/SKILL.md",
+      "git_blob_sha1": "051cccec47d1191129207aeadaf2a749c0b7c4e4",
+      "bytes": 12866
+    },
+    {
+      "path": "competitive-platform-analysis/SKILL.md",
+      "git_blob_sha1": "f57364b84d08372805bb450319b4a2b30efe5716",
+      "bytes": 11978
+    },
+    {
+      "path": "competitive-report-structure/SKILL.md",
+      "git_blob_sha1": "37264b3cda37894c9ce1ff574a8e77f0320db354",
+      "bytes": 8551
+    },
+    {
+      "path": "compose-multiplatform-patterns/SKILL.md",
+      "git_blob_sha1": "585b70f65d3fb38728b987c75a9b3da601aa997c",
+      "bytes": 8229
+    },
+    {
+      "path": "config-gc/SKILL.md",
+      "git_blob_sha1": "0583e2c8555e476d1d8d4484a35980dacf256cd6",
+      "bytes": 7942
+    },
+    {
+      "path": "configure-ecc/SKILL.md",
+      "git_blob_sha1": "532eedd8bc5203b6f193626768f8976e07b9375f",
+      "bytes": 7979
+    },
+    {
+      "path": "connections-optimizer/SKILL.md",
+      "git_blob_sha1": "2fde485abe725c1edf4179492e0cf77ec0a036f1",
+      "bytes": 5477
+    },
+    {
+      "path": "content-engine/SKILL.md",
+      "git_blob_sha1": "28ddd4e1676f4ea67d34a9d244a94164e088b80e",
+      "bytes": 4370
+    },
+    {
+      "path": "content-hash-cache-pattern/SKILL.md",
+      "git_blob_sha1": "fe4ef6f2dd7034aa0ef6caf67600d8bef2e815c5",
+      "bytes": 5732
+    },
+    {
+      "path": "context-and-decisions/SKILL.md",
+      "git_blob_sha1": "23d5cad6023b741cb17485da4233dde2c7a0a218",
+      "bytes": 4728
+    },
+    {
+      "path": "context-budget/SKILL.md",
+      "git_blob_sha1": "063e29a464e1f7461517569061d14bc31596f10d",
+      "bytes": 6225
+    },
+    {
+      "path": "continuous-agent-loop/SKILL.md",
+      "git_blob_sha1": "6e4f12236e090fd7df5224dcf8061c3c9a5b92cc",
+      "bytes": 1190
+    },
+    {
+      "path": "continuous-learning-v2/SKILL.md",
+      "git_blob_sha1": "397b3d334dd1fdf5d7648dd619b6a744cd4734a5",
+      "bytes": 14149
+    },
+    {
+      "path": "continuous-learning/SKILL.md",
+      "git_blob_sha1": "9fe24a46efac8b17d3577f3684f8779e4bb5ed53",
+      "bytes": 4536
+    },
+    {
+      "path": "contract-first/SKILL.md",
+      "git_blob_sha1": "a828bd60db452daa6b4edaf4e6cc02d192b99071",
+      "bytes": 9761
+    },
+    {
+      "path": "conventional-commit-review/SKILL.md",
+      "git_blob_sha1": "a53c70f6b153c6204ee31bb26b6ee0bc3efb5851",
+      "bytes": 4647
+    },
+    {
+      "path": "cost-aware-llm-pipeline/SKILL.md",
+      "git_blob_sha1": "e38c15c6d355dfb97c44b9de40f7cb235bfd3f9f",
+      "bytes": 5992
+    },
+    {
+      "path": "cost-tracking/SKILL.md",
+      "git_blob_sha1": "d21a401b45442e7db6427da0bf8d8e2800d7909f",
+      "bytes": 5102
+    },
+    {
+      "path": "council-multi-model/SKILL.md",
+      "git_blob_sha1": "7227afecf2ccead7e3790db71e4f044f6768590b",
+      "bytes": 5987
+    },
+    {
+      "path": "council/SKILL.md",
+      "git_blob_sha1": "89cbd962863623354742a9b176be1aaa976936f3",
+      "bytes": 6358
+    },
+    {
+      "path": "counterparty-channel-discipline/SKILL.md",
+      "git_blob_sha1": "aa717a37738db7aed7a4a2f694a27f16b02f20dc",
+      "bytes": 9023
+    },
+    {
+      "path": "cpp-coding-standards/SKILL.md",
+      "git_blob_sha1": "c74c928252aafdef6810471d8171877bc971caf8",
+      "bytes": 22291
+    },
+    {
+      "path": "cpp-testing/SKILL.md",
+      "git_blob_sha1": "a996a23059b5d055964ec7877167812b8fb6f20d",
+      "bytes": 9175
+    },
+    {
+      "path": "crosspost/SKILL.md",
+      "git_blob_sha1": "b9bbafbd945f734c4dd779321ed2ca7b4ba18bab",
+      "bytes": 4345
+    },
+    {
+      "path": "csharp-testing/SKILL.md",
+      "git_blob_sha1": "e307bbe36e0ae176b7fa1559c690b23bad945e36",
+      "bytes": 8726
+    },
+    {
+      "path": "customer-billing-ops/SKILL.md",
+      "git_blob_sha1": "d421a386deb2989e48edb434874939a90b3eb8f6",
+      "bytes": 4289
+    },
+    {
+      "path": "customs-trade-compliance/SKILL.md",
+      "git_blob_sha1": "d27e2a80786e769f95bea8f0d4c49fa125309574",
+      "bytes": 29039
+    },
+    {
+      "path": "dart-flutter-patterns/SKILL.md",
+      "git_blob_sha1": "f9835833d3adfe930689b270cd0b55be413c5e07",
+      "bytes": 16024
+    },
+    {
+      "path": "dashboard-builder/SKILL.md",
+      "git_blob_sha1": "ba3d7c064b4d8c5739004cf6838eb16b7413a596",
+      "bytes": 2358
+    },
+    {
+      "path": "data-scraper-agent/SKILL.md",
+      "git_blob_sha1": "e252ff998382cd488fdd8665bc74de1bb6417f7d",
+      "bytes": 25520
+    },
+    {
+      "path": "data-throughput-accelerator/SKILL.md",
+      "git_blob_sha1": "440c3bf412a8b869690617d46bb81601c95ce15a",
+      "bytes": 2832
+    },
+    {
+      "path": "database-migrations/SKILL.md",
+      "git_blob_sha1": "92d6d693066783cb00c225244a690e851fdab8c1",
+      "bytes": 12034
+    },
+    {
+      "path": "deep-research/SKILL.md",
+      "git_blob_sha1": "75371ee0ec6e627b1246154f28587da19c81581f",
+      "bytes": 6057
+    },
+    {
+      "path": "deepseek-harness-setup/SKILL.md",
+      "git_blob_sha1": "2904b95c89e200d94dbd4742fad6ff43739e937c",
+      "bytes": 3717
+    },
+    {
+      "path": "defi-amm-security/SKILL.md",
+      "git_blob_sha1": "18c75aba53b000b99ebd241fd60975d506708ede",
+      "bytes": 5390
+    },
+    {
+      "path": "delivery-gate/SKILL.md",
+      "git_blob_sha1": "940e261601024daee44dd28050e2493934be72e9",
+      "bytes": 5225
+    },
+    {
+      "path": "deployment-patterns/SKILL.md",
+      "git_blob_sha1": "b9d279f8a99889b6f36db99b17b762374474dc99",
+      "bytes": 11113
+    },
+    {
+      "path": "design-system/SKILL.md",
+      "git_blob_sha1": "c041ed8ab627ebad68c00d062603963fc179fae9",
+      "bytes": 2815
+    },
+    {
+      "path": "dev-team/SKILL.md",
+      "git_blob_sha1": "a6a7340dbde4f58713811fe945ae86f6cca5f074",
+      "bytes": 8318
+    },
+    {
+      "path": "django-celery/SKILL.md",
+      "git_blob_sha1": "0ae9877559d4c4b64ad124621f33480e2abb2e12",
+      "bytes": 13134
+    },
+    {
+      "path": "django-patterns/SKILL.md",
+      "git_blob_sha1": "9d30f4ea76c88646adf4eaed3924ccb9d52fc3aa",
+      "bytes": 21116
+    },
+    {
+      "path": "django-security/SKILL.md",
+      "git_blob_sha1": "9e1fb25a0411601784a516d36a2c6874f5484c5b",
+      "bytes": 17269
+    },
+    {
+      "path": "django-tdd/SKILL.md",
+      "git_blob_sha1": "aaa2cd87ff9f74203f3dc97353019cf270bf83c0",
+      "bytes": 21031
+    },
+    {
+      "path": "django-verification/SKILL.md",
+      "git_blob_sha1": "2c5062f025a99753f822dc5e2bb5674eb130049d",
+      "bytes": 11733
+    },
+    {
+      "path": "dmux-workflows/SKILL.md",
+      "git_blob_sha1": "58f2c3e2b56d8fea50e894c0ff5356d00950076d",
+      "bytes": 6336
+    },
+    {
+      "path": "docker-patterns/SKILL.md",
+      "git_blob_sha1": "36e792966e771f84ea0f2ebf48dc9577b05a07a9",
+      "bytes": 16807
+    },
+    {
+      "path": "docs-governance/SKILL.md",
+      "git_blob_sha1": "ae00cf8b3f96dcca17f6c53176afccd669150157",
+      "bytes": 4589
+    },
+    {
+      "path": "documentation-lookup/SKILL.md",
+      "git_blob_sha1": "8bb9de6232d1693cd19a8e035712371e7c0e4769",
+      "bytes": 4912
+    },
+    {
+      "path": "dotnet-patterns/SKILL.md",
+      "git_blob_sha1": "13669d523338e89ac82bea41370cae33b6308924",
+      "bytes": 9316
+    },
+    {
+      "path": "dynamic-workflow-mode/SKILL.md",
+      "git_blob_sha1": "016bdaa9664c6927d9ac2ad4f0d8d59dfde58fdd",
+      "bytes": 5389
+    },
+    {
+      "path": "e2e-testing/SKILL.md",
+      "git_blob_sha1": "f9ca797a1badc3a85352e14d31e6262dfde535bc",
+      "bytes": 8170
+    },
+    {
+      "path": "ecc-guide/SKILL.md",
+      "git_blob_sha1": "b794250fc7dd1c24f768961ffccd8d1684a219e4",
+      "bytes": 5713
+    },
+    {
+      "path": "ecc-recipes/SKILL.md",
+      "git_blob_sha1": "e0e6cddef4cb3033f264f966a04267a1bf0731da",
+      "bytes": 6451
+    },
+    {
+      "path": "ecc-tools-cost-audit/SKILL.md",
+      "git_blob_sha1": "a4981c1c38e39c19ffb9cd8ea64e9d698caa59ec",
+      "bytes": 6477
+    },
+    {
+      "path": "email-ops/SKILL.md",
+      "git_blob_sha1": "f0126efa6c79d0e56bac2049e47a9f062e9ae111",
+      "bytes": 4401
+    },
+    {
+      "path": "energy-procurement/SKILL.md",
+      "git_blob_sha1": "cd8c2fa7b36bb8d20d2a9f8111d0d350a41a5577",
+      "bytes": 29934
+    },
+    {
+      "path": "enterprise-agent-ops/SKILL.md",
+      "git_blob_sha1": "d7d56fc40dbf5470f415874fed433dc6ba39f81b",
+      "bytes": 1536
+    },
+    {
+      "path": "error-handling/SKILL.md",
+      "git_blob_sha1": "add87f2cdb6f374781b08a0b1cf971eb9ec1915e",
+      "bytes": 10984
+    },
+    {
+      "path": "esign-field-placement/SKILL.md",
+      "git_blob_sha1": "3a1f4abd7532860417d5211c0950238f7b708769",
+      "bytes": 10333
+    },
+    {
+      "path": "eval-harness/SKILL.md",
+      "git_blob_sha1": "133193446a3116e96648081aabcf4f2ea863b0e0",
+      "bytes": 8738
+    },
+    {
+      "path": "evm-token-decimals/SKILL.md",
+      "git_blob_sha1": "a1519886b2ac67d2bdb2c5328abbbc38d966996b",
+      "bytes": 3988
+    },
+    {
+      "path": "exa-search/SKILL.md",
+      "git_blob_sha1": "ec3428386cf362b59902370de2f049d0143e09cd",
+      "bytes": 4425
+    },
+    {
+      "path": "fal-ai-media/SKILL.md",
+      "git_blob_sha1": "b1e837bbb771d94f37e5e47e396b6c7dc84f57ae",
+      "bytes": 7515
+    },
+    {
+      "path": "fastapi-patterns/SKILL.md",
+      "git_blob_sha1": "6cff4479d19d22d850ada13a3155cd2313358db8",
+      "bytes": 15637
+    },
+    {
+      "path": "finance-billing-ops/SKILL.md",
+      "git_blob_sha1": "bae0dc6ee1691b615722bc1785a82ace92d22d05",
+      "bytes": 3831
+    },
+    {
+      "path": "flox-environments/SKILL.md",
+      "git_blob_sha1": "0d16475b3f026778d6a4a49aaba50f3a432f93bb",
+      "bytes": 14168
+    },
+    {
+      "path": "flutter-dart-code-review/SKILL.md",
+      "git_blob_sha1": "f8f902a86fe5360635db2eaab3fb791f9e7bbc52",
+      "bytes": 23194
+    },
+    {
+      "path": "foundation-models-on-device/SKILL.md",
+      "git_blob_sha1": "1af35736875a3c802da544245bd95aa463ec4476",
+      "bytes": 8255
+    },
+    {
+      "path": "frontend-a11y/SKILL.md",
+      "git_blob_sha1": "a39419935900b1ac1003827d83c896610350b619",
+      "bytes": 12861
+    },
+    {
+      "path": "frontend-design-direction/SKILL.md",
+      "git_blob_sha1": "6139c73ec7de85b33d62f121cb263f95dfd69f8c",
+      "bytes": 8820
+    },
+    {
+      "path": "frontend-patterns/SKILL.md",
+      "git_blob_sha1": "a63977a8b0a8896217a884cdf9e6d49fc8771be6",
+      "bytes": 15432
+    },
+    {
+      "path": "frontend-slides/SKILL.md",
+      "git_blob_sha1": "0852122c39a98ae82b204f91cb70232fad56bfcf",
+      "bytes": 6559
+    },
+    {
+      "path": "fsharp-testing/SKILL.md",
+      "git_blob_sha1": "9440ec6742c4ea3eeddc7530b29f7ca77b7f87cb",
+      "bytes": 7941
+    },
+    {
+      "path": "gan-style-harness/SKILL.md",
+      "git_blob_sha1": "a22db0388b7445f37382b341a1bf95c58088e98f",
+      "bytes": 12431
+    },
+    {
+      "path": "gateguard/SKILL.md",
+      "git_blob_sha1": "208174601bc8387f8efa55e8a8e4945526f7960b",
+      "bytes": 42350
+    },
+    {
+      "path": "generating-python-installer/SKILL.md",
+      "git_blob_sha1": "d1d061e2f61be2f3e7467748d347d4ca1773f14d",
+      "bytes": 30327
+    },
+    {
+      "path": "git-workflow/SKILL.md",
+      "git_blob_sha1": "81a858d3a79344a6879fa60322b5a36cdf758206",
+      "bytes": 15308
+    },
+    {
+      "path": "github-ops/SKILL.md",
+      "git_blob_sha1": "dbbe7b129d9d722e8f0e622c3d8f045fc97bd855",
+      "bytes": 6202
+    },
+    {
+      "path": "golang-patterns/SKILL.md",
+      "git_blob_sha1": "85e4b3f70bcf7186ab1070ca6108fdac6d7ee5a6",
+      "bytes": 14136
+    },
+    {
+      "path": "golang-testing/SKILL.md",
+      "git_blob_sha1": "45ca4871b2e5c46891bead7f23efd094a66cb6b7",
+      "bytes": 16744
+    },
+    {
+      "path": "google-workspace-ops/SKILL.md",
+      "git_blob_sha1": "af26f80c3c5d55dc4cb36a861d5ca16d719c7b3a",
+      "bytes": 2736
+    },
+    {
+      "path": "growth-log/SKILL.md",
+      "git_blob_sha1": "80c7d75a3b551eb3e723c6c71a4aa1cdfc1da589",
+      "bytes": 7034
+    },
+    {
+      "path": "healthcare-cdss-patterns/SKILL.md",
+      "git_blob_sha1": "f98314a5ef164e78f9f1a6826ea08297428d0183",
+      "bytes": 9461
+    },
+    {
+      "path": "healthcare-emr-patterns/SKILL.md",
+      "git_blob_sha1": "86e8b8cbbb59d51b13a3e03c1fffb102258e6217",
+      "bytes": 6746
+    },
+    {
+      "path": "healthcare-eval-harness/SKILL.md",
+      "git_blob_sha1": "43ce12ea5c7a602f1ff5544eed6183a95706bf8f",
+      "bytes": 7849
+    },
+    {
+      "path": "healthcare-phi-compliance/SKILL.md",
+      "git_blob_sha1": "6b1b90821bd0f089b548131d04421275418e8f8c",
+      "bytes": 5753
+    },
+    {
+      "path": "hermes-imports/SKILL.md",
+      "git_blob_sha1": "38c08ccc6ba4f36a6993908a955838feb0f7799c",
+      "bytes": 3006
+    },
+    {
+      "path": "hexagonal-architecture/SKILL.md",
+      "git_blob_sha1": "54943754db2e7e993bb6428a789cbb3915322d7c",
+      "bytes": 11520
+    },
+    {
+      "path": "hipaa-compliance/SKILL.md",
+      "git_blob_sha1": "c1fa78e99fc1f962486b05ef8a5ec438ebc46d4a",
+      "bytes": 3631
+    },
+    {
+      "path": "homelab-network-readiness/SKILL.md",
+      "git_blob_sha1": "8e41e52177231f6866eacb9c939ce202abe67e02",
+      "bytes": 7782
+    },
+    {
+      "path": "homelab-network-setup/SKILL.md",
+      "git_blob_sha1": "b4cbbef8272ca12aa3de0d27002f078ec43b66c8",
+      "bytes": 4432
+    },
+    {
+      "path": "homelab-pihole-dns/SKILL.md",
+      "git_blob_sha1": "3dfa5b1b2ce6940f27f98df244f6d978d2aca0f9",
+      "bytes": 9592
+    },
+    {
+      "path": "homelab-vlan-segmentation/SKILL.md",
+      "git_blob_sha1": "bd1927bc5f8f072fcdd39f653722bc5be9c93c1c",
+      "bytes": 10290
+    },
+    {
+      "path": "homelab-wireguard-vpn/SKILL.md",
+      "git_blob_sha1": "abddf8acab9e6d96ddd738d452777c748940c81b",
+      "bytes": 10628
+    },
+    {
+      "path": "hookify-rules/SKILL.md",
+      "git_blob_sha1": "b0e5d70e60944a15a4b163abc67685c3c7f11183",
+      "bytes": 4801
+    },
+    {
+      "path": "i18n-sync/SKILL.md",
+      "git_blob_sha1": "91e0436803310f58e6929c7a53ae85c7d4ed9802",
+      "bytes": 7051
+    },
+    {
+      "path": "inherit-legacy-style/SKILL.md",
+      "git_blob_sha1": "b43189023a965f2a51e028d4bd098ee3e6d0f135",
+      "bytes": 8416
+    },
+    {
+      "path": "intent-driven-development/SKILL.md",
+      "git_blob_sha1": "a5f0328996282ccb2a422f85798345f0b7eff570",
+      "bytes": 17199
+    },
+    {
+      "path": "inventory-demand-planning/SKILL.md",
+      "git_blob_sha1": "48c8d44338d75ca743618f206d2e0ecf7cc88564",
+      "bytes": 24381
+    },
+    {
+      "path": "investor-materials/SKILL.md",
+      "git_blob_sha1": "82eaba3a95a9d1eb79672addcffb17c1a18faead",
+      "bytes": 2735
+    },
+    {
+      "path": "investor-outreach/SKILL.md",
+      "git_blob_sha1": "01be7534bfd0ae457cb094c168826816a24cfdd8",
+      "bytes": 2655
+    },
+    {
+      "path": "ios-icon-gen/SKILL.md",
+      "git_blob_sha1": "a2f25322986a59341a3817f577847af47bf03894",
+      "bytes": 5653
+    },
+    {
+      "path": "iterative-retrieval/SKILL.md",
+      "git_blob_sha1": "5b4fbcd58c38701a8ef6a43f80b820f792716982",
+      "bytes": 6786
+    },
+    {
+      "path": "ito-baskets/SKILL.md",
+      "git_blob_sha1": "74313290283a9fedfdf7bf6a0047ec7f06845b92",
+      "bytes": 13385
+    },
+    {
+      "path": "ito-compute/SKILL.md",
+      "git_blob_sha1": "4970a757b6075d1ce12043ba3c73e0bdea52f1ed",
+      "bytes": 6619
+    },
+    {
+      "path": "ito-inference/SKILL.md",
+      "git_blob_sha1": "4a95b6c36bc3cc8228985a4aab8acdeec7b5189a",
+      "bytes": 6147
+    },
+    {
+      "path": "ito-training/SKILL.md",
+      "git_blob_sha1": "f28e2e6b0064205a9b6a8e22431496adc48eb5c4",
+      "bytes": 6087
+    },
+    {
+      "path": "java-coding-standards/SKILL.md",
+      "git_blob_sha1": "47b34a0f802f776fc84ee9c40eab786053aa47b8",
+      "bytes": 11550
+    },
+    {
+      "path": "jira-integration/SKILL.md",
+      "git_blob_sha1": "22fb65ea891304ca2ef8e23dfff593e4b74f2a52",
+      "bytes": 9897
+    },
+    {
+      "path": "jpa-patterns/SKILL.md",
+      "git_blob_sha1": "5c2f6425dd6f299f6ceb918f56673ad9fbeee8a8",
+      "bytes": 4679
+    },
+    {
+      "path": "knowledge-ops/SKILL.md",
+      "git_blob_sha1": "298449d70858abe1c44a667bc182d52a1a13916e",
+      "bytes": 6752
+    },
+    {
+      "path": "kotlin-coroutines-flows/SKILL.md",
+      "git_blob_sha1": "7bbb13c9a62cfe630362b9d0a4779171ec5a342c",
+      "bytes": 7869
+    },
+    {
+      "path": "kotlin-exposed-patterns/SKILL.md",
+      "git_blob_sha1": "5f853d7bded06841e6e73ef53b4f7b530ccd3da7",
+      "bytes": 22119
+    },
+    {
+      "path": "kotlin-ktor-patterns/SKILL.md",
+      "git_blob_sha1": "b36688570b9590aff40e1400621a5c6da13b965f",
+      "bytes": 19536
+    },
+    {
+      "path": "kotlin-patterns/SKILL.md",
+      "git_blob_sha1": "7b6baba881698144a3af501b64445a3ce7079710",
+      "bytes": 18951
+    },
+    {
+      "path": "kotlin-testing/SKILL.md",
+      "git_blob_sha1": "18df9b22c6d06f03af588c8a1e6515c9346b30c1",
+      "bytes": 20800
+    },
+    {
+      "path": "kubernetes-patterns/SKILL.md",
+      "git_blob_sha1": "fdd0eba6883e14a1f82688acf9ef5a96ddc6180f",
+      "bytes": 20099
+    },
+    {
+      "path": "laravel-patterns/SKILL.md",
+      "git_blob_sha1": "a3ce33fdfa0550f2ec9e5186d0924a2382e644bc",
+      "bytes": 10664
+    },
+    {
+      "path": "laravel-plugin-discovery/SKILL.md",
+      "git_blob_sha1": "f5d2f212e60b23611c541e223eb906ab01da5ab7",
+      "bytes": 6393
+    },
+    {
+      "path": "laravel-security/SKILL.md",
+      "git_blob_sha1": "f039fdfddf40a261aefb73771f057c5827ad297b",
+      "bytes": 26844
+    },
+    {
+      "path": "laravel-tdd/SKILL.md",
+      "git_blob_sha1": "15ccea11b7ef975901fa7816517261de75364ffb",
+      "bytes": 17863
+    },
+    {
+      "path": "laravel-verification/SKILL.md",
+      "git_blob_sha1": "26dd898660bbe8f1c7080b77ceb41eae4848ccf7",
+      "bytes": 4376
+    },
+    {
+      "path": "latency-critical-systems/SKILL.md",
+      "git_blob_sha1": "cbcf27ca709bba4d6fd6b837f4b76156cf82461f",
+      "bytes": 2500
+    },
+    {
+      "path": "lead-intelligence/SKILL.md",
+      "git_blob_sha1": "e29be63ed9cd4fbe0424e26a0ee43cf1e1697f4b",
+      "bytes": 13111
+    },
+    {
+      "path": "liquid-glass-design/SKILL.md",
+      "git_blob_sha1": "495dd01a63bb523ad9b6d02f76fae2c4f2ab29e8",
+      "bytes": 9119
+    },
+    {
+      "path": "living-docs-governance/SKILL.md",
+      "git_blob_sha1": "9e165da65cb92c478fed84dd6d4a531e395d92f5",
+      "bytes": 8482
+    },
+    {
+      "path": "llm-trading-agent-security/SKILL.md",
+      "git_blob_sha1": "5a6252a3d9f3f33cc6993b1e98a66c62b539f344",
+      "bytes": 4632
+    },
+    {
+      "path": "logistics-exception-management/SKILL.md",
+      "git_blob_sha1": "d94400f0e22cc712e378dd1251969788c9176baa",
+      "bytes": 16818
+    },
+    {
+      "path": "loop-design-check/SKILL.md",
+      "git_blob_sha1": "c54266211898024e69b141fd1993aa9a8e678c58",
+      "bytes": 11941
+    },
+    {
+      "path": "mailtrap-email-integration/SKILL.md",
+      "git_blob_sha1": "f70c7bc0ff8713a1042c45f9138979691d704fc6",
+      "bytes": 3820
+    },
+    {
+      "path": "make-interfaces-feel-better/SKILL.md",
+      "git_blob_sha1": "e589f3f30312ac4e522dfbdd3e592862f69fd008",
+      "bytes": 4795
+    },
+    {
+      "path": "manim-video/SKILL.md",
+      "git_blob_sha1": "2e2121a14b513634fa2fde71aba48f614408ad82",
+      "bytes": 2906
+    },
+    {
+      "path": "market-research/SKILL.md",
+      "git_blob_sha1": "b2ddc25b8cbd74056460a7b28e5628ceb9454ac0",
+      "bytes": 3185
+    },
+    {
+      "path": "marketing-campaign/SKILL.md",
+      "git_blob_sha1": "24389d77a508f00b647abcadd2293951b9ce4d55",
+      "bytes": 5293
+    },
+    {
+      "path": "master-agreement-generator/SKILL.md",
+      "git_blob_sha1": "d0c933755c3a24a5ddfde5fe615d66114a577b67",
+      "bytes": 11550
+    },
+    {
+      "path": "mcp-dependency-review/SKILL.md",
+      "git_blob_sha1": "4b08af8b05d44a0301693fc025a60ca5f4e8ee6d",
+      "bytes": 10245
+    },
+    {
+      "path": "mcp-server-patterns/SKILL.md",
+      "git_blob_sha1": "503c31bad5ef287368e3badf23226314fad68dbe",
+      "bytes": 4192
+    },
+    {
+      "path": "messages-ops/SKILL.md",
+      "git_blob_sha1": "65e59b1cc8c4c74386aafac1d8f95d2ab5d63448",
+      "bytes": 2896
+    },
+    {
+      "path": "ml-adoption-playbook/SKILL.md",
+      "git_blob_sha1": "0b6d3a0b715e9bd8f9292cf45101feb65d196b15",
+      "bytes": 3899
+    },
+    {
+      "path": "mle-workflow/SKILL.md",
+      "git_blob_sha1": "b81aa08306c0cc451180418edf591ec507ac9d8d",
+      "bytes": 22450
+    },
+    {
+      "path": "module-regression/SKILL.md",
+      "git_blob_sha1": "d8186cbfc4c481eb884a13c14b6f2a38aace0b7a",
+      "bytes": 8124
+    },
+    {
+      "path": "motion-advanced/SKILL.md",
+      "git_blob_sha1": "607b2228cdabc87a18c06e28521a245c2f60c2c2",
+      "bytes": 18800
+    },
+    {
+      "path": "motion-foundations/SKILL.md",
+      "git_blob_sha1": "63b866247e97f6d82eb421ed39b3e4f484b21101",
+      "bytes": 9797
+    },
+    {
+      "path": "motion-patterns/SKILL.md",
+      "git_blob_sha1": "d786e47adf4a8c9a1342f59383f8e7f963c61b1d",
+      "bytes": 13418
+    },
+    {
+      "path": "mybatis-patterns/SKILL.md",
+      "git_blob_sha1": "51cbbc256592cf9ba3c57dc5c7ff8729c8b6defc",
+      "bytes": 18106
+    },
+    {
+      "path": "mysql-patterns/SKILL.md",
+      "git_blob_sha1": "d9043b49989034ac8d0a8f562d561a98452bfb38",
+      "bytes": 12169
+    },
+    {
+      "path": "nanoclaw-repl/SKILL.md",
+      "git_blob_sha1": "f7d91a6902df66d24470756d9765897e3605ffdc",
+      "bytes": 1144
+    },
+    {
+      "path": "nasiko-control-plane/SKILL.md",
+      "git_blob_sha1": "014929ab0b9ff608881d6a64613f47f443c245b8",
+      "bytes": 2639
+    },
+    {
+      "path": "nestjs-patterns/SKILL.md",
+      "git_blob_sha1": "067cb8994c1e2f8e8ca003820b732679e43f9543",
+      "bytes": 6533
+    },
+    {
+      "path": "netmiko-ssh-automation/SKILL.md",
+      "git_blob_sha1": "d0aea7db85f3cb2b0cec2675684a1ff984be2deb",
+      "bytes": 6046
+    },
+    {
+      "path": "network-bgp-diagnostics/SKILL.md",
+      "git_blob_sha1": "f3e0fdbbfe219b7a00a92d400af0bf45bf8a3100",
+      "bytes": 5641
+    },
+    {
+      "path": "network-config-validation/SKILL.md",
+      "git_blob_sha1": "b3f059fac05165a23354b1a844f4bbe3e9a39889",
+      "bytes": 7727
+    },
+    {
+      "path": "network-interface-health/SKILL.md",
+      "git_blob_sha1": "a4f41113a93f4b83bcbdb939c2aa78528a95366f",
+      "bytes": 5754
+    },
+    {
+      "path": "nextjs-turbopack/SKILL.md",
+      "git_blob_sha1": "43e1e60ee22d274259d3f0e8f12afeaffc799bec",
+      "bytes": 3141
+    },
+    {
+      "path": "nodejs-keccak256/SKILL.md",
+      "git_blob_sha1": "c1b9712036d0153b404a6c56f26dfd4bf04c9e41",
+      "bytes": 2992
+    },
+    {
+      "path": "nutrient-document-processing/SKILL.md",
+      "git_blob_sha1": "e1bf3dfa96c02f27cb5ae5b2ae80c7b1b4fe443c",
+      "bytes": 6015
+    },
+    {
+      "path": "nuxt4-patterns/SKILL.md",
+      "git_blob_sha1": "bf7068766984f9f4121051260c04ddb282452635",
+      "bytes": 4761
+    },
+    {
+      "path": "openclaw-persona-forge/SKILL.md",
+      "git_blob_sha1": "f09e76a728793d60ffd3abe926df0ad35c64ecbb",
+      "bytes": 12525
+    },
+    {
+      "path": "opensource-pipeline/SKILL.md",
+      "git_blob_sha1": "d72f15eb0b12a091c7488eda7aa1f4fef27700af",
+      "bytes": 8948
+    },
+    {
+      "path": "operator-approval-loop/SKILL.md",
+      "git_blob_sha1": "5c97fa8381df307236f989afc1c1498bcf622de3",
+      "bytes": 13126
+    },
+    {
+      "path": "orch-add-feature/SKILL.md",
+      "git_blob_sha1": "e26285093ce99cd6f6ba6dcbbd84b03b1e4236ed",
+      "bytes": 1803
+    },
+    {
+      "path": "orch-build-mvp/SKILL.md",
+      "git_blob_sha1": "10388aa2f0a50f819d851fbbc564515130b0d433",
+      "bytes": 2399
+    },
+    {
+      "path": "orch-change-feature/SKILL.md",
+      "git_blob_sha1": "972b0666b30666599ca517b29bd4dd0813653dae",
+      "bytes": 1711
+    },
+    {
+      "path": "orch-fix-defect/SKILL.md",
+      "git_blob_sha1": "69bfc986cf9637e6ffee1dd831ca2ab6d56ac9bf",
+      "bytes": 1684
+    },
+    {
+      "path": "orch-pipeline/SKILL.md",
+      "git_blob_sha1": "86dab2fdef704134d2d868949d235646cfa57a4f",
+      "bytes": 6402
+    },
+    {
+      "path": "orch-refine-code/SKILL.md",
+      "git_blob_sha1": "a57ba5c897e250cc2d2b0c7d706a7caa934a36f7",
+      "bytes": 1819
+    },
+    {
+      "path": "osint-investigation/SKILL.md",
+      "git_blob_sha1": "de93126d73d1d615eae98a5e2cdd5cc92d5b00d0",
+      "bytes": 22735
+    },
+    {
+      "path": "parallel-execution-optimizer/SKILL.md",
+      "git_blob_sha1": "e755960e4805cbfffb748803ad39c3b3fb1babaf",
+      "bytes": 2846
+    },
+    {
+      "path": "perl-patterns/SKILL.md",
+      "git_blob_sha1": "a2aaa8621df3c175783ee49053f505d1e7fc8b92",
+      "bytes": 11591
+    },
+    {
+      "path": "perl-security/SKILL.md",
+      "git_blob_sha1": "7bb7e470fc1651882482619fa492b5535cd3e719",
+      "bytes": 13856
+    },
+    {
+      "path": "perl-testing/SKILL.md",
+      "git_blob_sha1": "c170c19f9897838ab4d2fd17a974b6e27641e510",
+      "bytes": 11282
+    },
+    {
+      "path": "plan-canvas/SKILL.md",
+      "git_blob_sha1": "7c87e18752df8d6788353fbf51d8bc793b9eda6f",
+      "bytes": 8676
+    },
+    {
+      "path": "plan-orchestrate/SKILL.md",
+      "git_blob_sha1": "0d4887d555236c1115a4ae2d20d205602138f10b",
+      "bytes": 18649
+    },
+    {
+      "path": "plankton-code-quality/SKILL.md",
+      "git_blob_sha1": "c056a5b200037795766ece6643b28c297344f1f1",
+      "bytes": 12896
+    },
+    {
+      "path": "postgres-patterns/SKILL.md",
+      "git_blob_sha1": "12a3a4a05c2278c7fe1316d9403b5ca037dadf69",
+      "bytes": 3914
+    },
+    {
+      "path": "prediction-market-oracle-research/SKILL.md",
+      "git_blob_sha1": "8cb9314ac76ca1c306e2c45e6d4a3feac09b79ed",
+      "bytes": 2306
+    },
+    {
+      "path": "prediction-market-risk-review/SKILL.md",
+      "git_blob_sha1": "3b60d35ecf9101852388b8dddc2854f49c6e28e4",
+      "bytes": 1882
+    },
+    {
+      "path": "prisma-patterns/SKILL.md",
+      "git_blob_sha1": "9ea78b8eb5debae24782e372f21e4c30c58a4f55",
+      "bytes": 15281
+    },
+    {
+      "path": "product-capability/SKILL.md",
+      "git_blob_sha1": "c004325504b8b444f07ec223c7fc05ec2cfc8eaf",
+      "bytes": 4436
+    },
+    {
+      "path": "product-lens/SKILL.md",
+      "git_blob_sha1": "af5149d1c692b0919d4337160c6cde5cca43c836",
+      "bytes": 3373
+    },
+    {
+      "path": "production-audit/SKILL.md",
+      "git_blob_sha1": "a6d92fa5e91928f2da69c40228a684ce45e3b019",
+      "bytes": 7727
+    },
+    {
+      "path": "production-scheduling/SKILL.md",
+      "git_blob_sha1": "3e0870b105f2e33b1e1546e71f39960d82887789",
+      "bytes": 28542
+    },
+    {
+      "path": "project-flow-ops/SKILL.md",
+      "git_blob_sha1": "6ab2e62d15f882208e7e43c7ec4866f53273f62f",
+      "bytes": 3145
+    },
+    {
+      "path": "prompt-caching-strategy/SKILL.md",
+      "git_blob_sha1": "c6bd9f18b8da2329f69743250e4d0a258465ef4e",
+      "bytes": 10109
+    },
+    {
+      "path": "prompt-optimizer/SKILL.md",
+      "git_blob_sha1": "16ae27d10c3015f456d38f4344643ff56e764f70",
+      "bytes": 16077
+    },
+    {
+      "path": "python-patterns/SKILL.md",
+      "git_blob_sha1": "ced3d588d816fb6880dfef4d67f30cab9d1b82df",
+      "bytes": 16914
+    },
+    {
+      "path": "python-testing/SKILL.md",
+      "git_blob_sha1": "ddfcc0abc566994a35df68337476c2a401201e57",
+      "bytes": 18955
+    },
+    {
+      "path": "pytorch-patterns/SKILL.md",
+      "git_blob_sha1": "068225c16284e92130f46b1f411319a04f7188a0",
+      "bytes": 11797
+    },
+    {
+      "path": "quality-nonconformance/SKILL.md",
+      "git_blob_sha1": "721073cd7ea5977a1a8647038e9ac41fb9ca1edd",
+      "bytes": 30261
+    },
+    {
+      "path": "quarkus-patterns/SKILL.md",
+      "git_blob_sha1": "467bd1ceb990df421300ee5a7abaf71deba7c256",
+      "bytes": 21520
+    },
+    {
+      "path": "quarkus-security/SKILL.md",
+      "git_blob_sha1": "6c785751e96b150161179b98c050cc4e9decd3ba",
+      "bytes": 12401
+    },
+    {
+      "path": "quarkus-tdd/SKILL.md",
+      "git_blob_sha1": "1c4d52441554f0470660e4c090f7533c236e2dc3",
+      "bytes": 25526
+    },
+    {
+      "path": "quarkus-verification/SKILL.md",
+      "git_blob_sha1": "2d620bd02a9727c068d90de0fa140938b89f8a1e",
+      "bytes": 10739
+    },
+    {
+      "path": "rails-patterns/SKILL.md",
+      "git_blob_sha1": "876df985a7c773870093f50f362626142bbb29ab",
+      "bytes": 16514
+    },
+    {
+      "path": "ralphinho-rfc-pipeline/SKILL.md",
+      "git_blob_sha1": "7ac2ba00e8a9327896e2a4447a6dbee9c9646ea3",
+      "bytes": 1837
+    },
+    {
+      "path": "react-native-patterns/SKILL.md",
+      "git_blob_sha1": "d0e6c3272c385891935eb837d966377a8665d07a",
+      "bytes": 11752
+    },
+    {
+      "path": "react-patterns/SKILL.md",
+      "git_blob_sha1": "66acd2a6c84eb0bbcf72eaeb43ba4be37e8dddff",
+      "bytes": 11466
+    },
+    {
+      "path": "react-performance/SKILL.md",
+      "git_blob_sha1": "6952967cf4b894f900b5cf692e851ababaf854f5",
+      "bytes": 18184
+    },
+    {
+      "path": "react-testing/SKILL.md",
+      "git_blob_sha1": "babaf6ebef80f1e6ba66ef5242372dd175870a40",
+      "bytes": 13168
+    },
+    {
+      "path": "recsys-pipeline-architect/SKILL.md",
+      "git_blob_sha1": "2964a85f81bd73d60943c95b1cf72dae907324d6",
+      "bytes": 7788
+    },
+    {
+      "path": "recursive-decision-ledger/SKILL.md",
+      "git_blob_sha1": "ebdb53fa5f0b6d1cb5f037424019595788340078",
+      "bytes": 2803
+    },
+    {
+      "path": "redis-patterns/SKILL.md",
+      "git_blob_sha1": "463e7dd4ff6babdeb25b603eed0dc754cf2f9554",
+      "bytes": 11977
+    },
+    {
+      "path": "regex-vs-llm-structured-text/SKILL.md",
+      "git_blob_sha1": "18d84e4a5265fee0a4fceaf441617e9b0823f206",
+      "bytes": 6749
+    },
+    {
+      "path": "remotion-video-creation/SKILL.md",
+      "git_blob_sha1": "b86102f825e6a6dbee8fcfc93255e180681555df",
+      "bytes": 3642
+    },
+    {
+      "path": "repo-scan/SKILL.md",
+      "git_blob_sha1": "c2f40eee7ae20da55f5b9e60b658d0574e5cf18d",
+      "bytes": 7242
+    },
+    {
+      "path": "research-ops/SKILL.md",
+      "git_blob_sha1": "449ddc95ef7efeb01883955070d44ad2be83e817",
+      "bytes": 3605
+    },
+    {
+      "path": "returns-reverse-logistics/SKILL.md",
+      "git_blob_sha1": "63b5e35b8cee31de84f469e8b28b0d34c3e3983a",
+      "bytes": 24668
+    },
+    {
+      "path": "rules-distill/SKILL.md",
+      "git_blob_sha1": "9f76d3fe0c36af92c15607a006ba9b99d18559ef",
+      "bytes": 9586
+    },
+    {
+      "path": "rust-patterns/SKILL.md",
+      "git_blob_sha1": "b87afe5eb81cff8c22e9c71cedc5f29688736c0d",
+      "bytes": 13500
+    },
+    {
+      "path": "rust-testing/SKILL.md",
+      "git_blob_sha1": "464555b45ce646ea9396f63277be08f40d2ce49b",
+      "bytes": 11798
+    },
+    {
+      "path": "safety-guard/SKILL.md",
+      "git_blob_sha1": "3a4aa11ee7fe63d3044eb519ce99e9d962405e2a",
+      "bytes": 2217
+    },
+    {
+      "path": "santa-method/SKILL.md",
+      "git_blob_sha1": "add4a3f734dd62201a68504964155ea85e316f97",
+      "bytes": 12991
+    },
+    {
+      "path": "scientific-db-pubmed-database/SKILL.md",
+      "git_blob_sha1": "18b4c0cb39ec5a5d2ffd70e9c533e164d3ec4cd3",
+      "bytes": 4827
+    },
+    {
+      "path": "scientific-db-uspto-database/SKILL.md",
+      "git_blob_sha1": "a577161ce83cf11d57f4adbc8c54db8f7d2f03e5",
+      "bytes": 6331
+    },
+    {
+      "path": "scientific-pkg-gget/SKILL.md",
+      "git_blob_sha1": "13b2ca46fbc377ade82299532760a11b57d5d12a",
+      "bytes": 5089
+    },
+    {
+      "path": "scientific-thinking-literature-review/SKILL.md",
+      "git_blob_sha1": "dd240c89bcabf71bbe1d181fbb7ba3c0d7935729",
+      "bytes": 5201
+    },
+    {
+      "path": "scientific-thinking-scholar-evaluation/SKILL.md",
+      "git_blob_sha1": "170c287ab81f0050f76d4bc44e7f6e3759d1a0df",
+      "bytes": 4906
+    },
+    {
+      "path": "search-first/SKILL.md",
+      "git_blob_sha1": "3d2669e71ba54afba95defb05080253058190600",
+      "bytes": 8210
+    },
+    {
+      "path": "security-bounty-hunter/SKILL.md",
+      "git_blob_sha1": "ea62db8b0b58af0646c4ab3f5f147136122fd156",
+      "bytes": 3628
+    },
+    {
+      "path": "security-review/SKILL.md",
+      "git_blob_sha1": "3f26b0df65661425de4e5c40c295e04edcad7a83",
+      "bytes": 12955
+    },
+    {
+      "path": "security-scan/SKILL.md",
+      "git_blob_sha1": "9026c08e024ce2a9ffcb1db0b999b9957cee6bf0",
+      "bytes": 4592
+    },
+    {
+      "path": "seo/SKILL.md",
+      "git_blob_sha1": "a4032a5b5a98c4b09eabf4e4f8971ed664887496",
+      "bytes": 4320
+    },
+    {
+      "path": "skill-comply/SKILL.md",
+      "git_blob_sha1": "303863e302fe9ff340197fc7442a86bacbb7f425",
+      "bytes": 2500
+    },
+    {
+      "path": "skill-host-compat/SKILL.md",
+      "git_blob_sha1": "220e8b3117056b3924ed1c9c11e28b5de09f9293",
+      "bytes": 3788
+    },
+    {
+      "path": "skill-scout/SKILL.md",
+      "git_blob_sha1": "8a55c548ccd47e4f5adf738cf5becf0b8b9ad9e7",
+      "bytes": 4486
+    },
+    {
+      "path": "skill-stocktake/SKILL.md",
+      "git_blob_sha1": "aa4d16bfd22c297a538cc696ecc4e3e2ee3342d8",
+      "bytes": 12389
+    },
+    {
+      "path": "social-graph-ranker/SKILL.md",
+      "git_blob_sha1": "c128380cd6a87bbf85fb1ef0b83eca93893bbd4d",
+      "bytes": 4156
+    },
+    {
+      "path": "social-publisher/SKILL.md",
+      "git_blob_sha1": "a00651738fbaa46d62aad5690736df10b9fdb9f5",
+      "bytes": 4520
+    },
+    {
+      "path": "springboot-patterns/SKILL.md",
+      "git_blob_sha1": "dc0b5f2a1f5e03ad66d774cd1bef3b92e3807cc2",
+      "bytes": 10047
+    },
+    {
+      "path": "springboot-security/SKILL.md",
+      "git_blob_sha1": "37391ec7e1b2b16c7ee9b636efdd73a4a619a553",
+      "bytes": 8133
+    },
+    {
+      "path": "springboot-tdd/SKILL.md",
+      "git_blob_sha1": "fc07f24face95ac19568ae338760a8e73d18b01e",
+      "bytes": 3786
+    },
+    {
+      "path": "springboot-verification/SKILL.md",
+      "git_blob_sha1": "4abd92b1c7a9b11fa02668843aba0dc7c4cda07e",
+      "bytes": 6079
+    },
+    {
+      "path": "story-lifecycle/SKILL.md",
+      "git_blob_sha1": "4965a136f8629cf3151e0cb31e1327df11e9bfd9",
+      "bytes": 17744
+    },
+    {
+      "path": "strategic-compact/SKILL.md",
+      "git_blob_sha1": "134e767151c4b7f039833bf496cdf4f145875c12",
+      "bytes": 8608
+    },
+    {
+      "path": "swift-actor-persistence/SKILL.md",
+      "git_blob_sha1": "9cbf45df1487593cfffa25024d1cbeddcd0e7c7b",
+      "bytes": 4906
+    },
+    {
+      "path": "swift-concurrency-6-2/SKILL.md",
+      "git_blob_sha1": "d88911687e9108f73473f307ece3a55ecd444593",
+      "bytes": 8117
+    },
+    {
+      "path": "swift-protocol-di-testing/SKILL.md",
+      "git_blob_sha1": "5866cfd2683a6a1d29ef05d8cb1beb97008418a3",
+      "bytes": 6112
+    },
+    {
+      "path": "swiftui-patterns/SKILL.md",
+      "git_blob_sha1": "4497ece6e75bfb30839dd5d7bb3bd1ee53431f75",
+      "bytes": 7039
+    },
+    {
+      "path": "taste-application/SKILL.md",
+      "git_blob_sha1": "2e080c2fb7bba8d592c1c915bb1f5c4fea3a83ab",
+      "bytes": 19794
+    },
+    {
+      "path": "taste-distillation/SKILL.md",
+      "git_blob_sha1": "e844b6b2902cf15e9e2a2bd7d34b84d8775cc5bc",
+      "bytes": 9133
+    },
+    {
+      "path": "taste/SKILL.md",
+      "git_blob_sha1": "1b307d33af748841382842a6e79b80f7972507fd",
+      "bytes": 15406
+    },
+    {
+      "path": "tasteforge-video/SKILL.md",
+      "git_blob_sha1": "51a416bf1c960ef20ba7482a9a8673fc902466e2",
+      "bytes": 14932
+    },
+    {
+      "path": "tdd-workflow/SKILL.md",
+      "git_blob_sha1": "ad6517386574e623d954c5e9fec74a3f0e36803a",
+      "bytes": 21596
+    },
+    {
+      "path": "team-agent-orchestration/SKILL.md",
+      "git_blob_sha1": "7f4d75b6f521c946123fca98682a8f6be840014e",
+      "bytes": 4897
+    },
+    {
+      "path": "team-builder/SKILL.md",
+      "git_blob_sha1": "2de7d028b6af3e67fb88ab54b631b10fb3e779a8",
+      "bytes": 7478
+    },
+    {
+      "path": "terminal-opener/SKILL.md",
+      "git_blob_sha1": "a78e0a95d95687364ca67e82c31a3476882e616c",
+      "bytes": 2539
+    },
+    {
+      "path": "terminal-ops/SKILL.md",
+      "git_blob_sha1": "22aecd4198c90476495d5449eb2e20d0b0605cfe",
+      "bytes": 2997
+    },
+    {
+      "path": "test-collaboration/SKILL.md",
+      "git_blob_sha1": "f6623ee2e9c64af5eb749fa59911951ca79dc4fe",
+      "bytes": 11127
+    },
+    {
+      "path": "tinystruct-patterns/SKILL.md",
+      "git_blob_sha1": "f354debc06cf243f3b6469f55ed714b0a7bb0756",
+      "bytes": 23365
+    },
+    {
+      "path": "token-budget-advisor/SKILL.md",
+      "git_blob_sha1": "49987758c37150718bca091e29ecfca6dfc6627d",
+      "bytes": 5740
+    },
+    {
+      "path": "token-card/SKILL.md",
+      "git_blob_sha1": "978fb57d3017ba28906bc986da058b340a23f7b0",
+      "bytes": 5153
+    },
+    {
+      "path": "ui-demo/SKILL.md",
+      "git_blob_sha1": "b90b7fe6834de3fc7950c0bab28922e9d1534f2d",
+      "bytes": 15256
+    },
+    {
+      "path": "ui-to-vue/SKILL.md",
+      "git_blob_sha1": "83bf5e912be65860c79c18cf1f8be7a77a5cf6da",
+      "bytes": 4809
+    },
+    {
+      "path": "uncloud/SKILL.md",
+      "git_blob_sha1": "e4e98126deb6348ac09e5756362a19274845363a",
+      "bytes": 9282
+    },
+    {
+      "path": "unified-memory/SKILL.md",
+      "git_blob_sha1": "2eb70c775d90ed081530f9eeb419cc5ba81be147",
+      "bytes": 7871
+    },
+    {
+      "path": "unified-notifications-ops/SKILL.md",
+      "git_blob_sha1": "fe3839306cbab33a1543c69580e0f581246825ee",
+      "bytes": 5630
+    },
+    {
+      "path": "verification-loop/SKILL.md",
+      "git_blob_sha1": "35cb4b7737ed2389a808b968aa360b00807eaffe",
+      "bytes": 3064
+    },
+    {
+      "path": "video-editing/SKILL.md",
+      "git_blob_sha1": "524f075989aff50a74ca3b3159b6a9200eee82fa",
+      "bytes": 11754
+    },
+    {
+      "path": "videodb/SKILL.md",
+      "git_blob_sha1": "e1290296ab5277274bc04ca6856544c0e6aca816",
+      "bytes": 14004
+    },
+    {
+      "path": "visa-doc-translate/SKILL.md",
+      "git_blob_sha1": "0d48bb2da7b2414e80401bbfb9b3c9e4c0877a40",
+      "bytes": 4153
+    },
+    {
+      "path": "vite-patterns/SKILL.md",
+      "git_blob_sha1": "98db326bd2e4f1d38fa539b84c0c0ab059848ea4",
+      "bytes": 17115
+    },
+    {
+      "path": "vue-patterns/SKILL.md",
+      "git_blob_sha1": "978381a60a4c76de4a6ff85c8affe4f48ab8f67d",
+      "bytes": 13182
+    },
+    {
+      "path": "windows-desktop-e2e/SKILL.md",
+      "git_blob_sha1": "f965b043cee51ed1c464088c08b91cf05710d65f",
+      "bytes": 30577
+    },
+    {
+      "path": "workspace-surface-audit/SKILL.md",
+      "git_blob_sha1": "6e7e75376c8fd520240425ee5b6bea967da19277",
+      "bytes": 5163
+    },
+    {
+      "path": "x-api/SKILL.md",
+      "git_blob_sha1": "70fa8396e7d3ef3a3c09f537d5a662f4d96e5775",
+      "bytes": 7438
+    }
+  ],
+  "verified_source_sha256_first_batch": [
+    {
+      "name": "agent-architecture-audit",
+      "source_sha256": "64f57e232c3533877403703bc95b3c75df9de23f657899a306f13c703009ff57",
+      "bytes": 10278,
+      "git_blob_sha": "a3c2caa67b0ca7e5323d4e853d898f599694ff10",
+      "annexes": [],
+      "semantic_nodes": "UNBOUND_UNTIL_HANDLER_IS_CONNECTED"
+    },
+    {
+      "name": "agent-introspection-debugging",
+      "source_sha256": "0cdbfe3c822ff50d21df8cd0e20c72407a6f5658089edc0e96e79a03927cb956",
+      "bytes": 5627,
+      "git_blob_sha": "7f40c4579f09b15884e7e4e22635ccd41e1ba1a7",
+      "annexes": [],
+      "semantic_nodes": "UNBOUND_UNTIL_HANDLER_IS_CONNECTED"
+    },
+    {
+      "name": "agent-self-evaluation",
+      "source_sha256": "96bb21eb37760f596789f84ec0a5dad4ef92fc2255e35cd7b88dc4234062b8c1",
+      "bytes": 7625,
+      "git_blob_sha": "4e241380aa8c9b26ea249d7208d78edea9e5f397",
+      "annexes": [
+        "agent-self-evaluation/examples/high-score-example.md",
+        "agent-self-evaluation/examples/low-score-example.md",
+        "agent-self-evaluation/references/evaluation-criteria.md",
+        "agent-self-evaluation/references/hook-integration.md",
+        "agent-self-evaluation/scripts/evaluate.py",
+        "agent-self-evaluation/templates/evaluation-report.md"
+      ],
+      "semantic_nodes": "UNBOUND_UNTIL_HANDLER_IS_CONNECTED"
+    },
+    {
+      "name": "ai-first-engineering",
+      "source_sha256": "114913bdcb6127392df56d96f7f1312f36c74d69c278dece6d377b9bd92123a5",
+      "bytes": 1454,
+      "git_blob_sha": "9e49702f31fafaddf36a76e890b4aa411bf6c5cc",
+      "annexes": [],
+      "semantic_nodes": "UNBOUND_UNTIL_HANDLER_IS_CONNECTED"
+    },
+    {
+      "name": "android-clean-architecture",
+      "source_sha256": "20cbb9d7778462c549ccd32c830c0004fc7b92cfa009db99900d773373115f12",
+      "bytes": 8887,
+      "git_blob_sha": "268cfbd78573348bda6df8466f92095d7b9a18b8",
+      "annexes": [],
+      "semantic_nodes": "UNBOUND_UNTIL_HANDLER_IS_CONNECTED"
+    }
+  ],
+  "note": "Inventory, not semantic conversion. 86 node handlers and 46 prompt sections remain unbound until exact originals and handler mappings are available. Existing 25 exclusions unchanged."
+}
