@@ -440,7 +440,7 @@ def _con_reintentos(accion, pol, payload, ultima_clave, al_429=None):
             if exc.codigo == 429 and not ultima_clave and r.get("rotar_clave_en_429", True):
                 raise compute._Alterna("HTTP 429") from None
             if exc.codigo == 400 and any(isinstance(m.get("content"), list) for m in payload["messages"] if isinstance(m, dict)):
-                payload["messages"] = _sin_imagenes(payload["messages"]); continue  # el modelo no admite imagen: se repite con solo el texto
+                raise ErrorProveedor("MODELO_SIN_VISION: proveedor rechazó las fotos; cambia a un modelo con visión", 400) from None
             if exc.codigo not in TRANSITORIOS or n == maximo - 1:
                 raise ErrorProveedor("HTTP %d" % exc.codigo, exc.codigo) from None
             ultimo[0] = exc.codigo
