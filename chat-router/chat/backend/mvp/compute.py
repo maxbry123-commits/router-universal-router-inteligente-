@@ -70,10 +70,7 @@ def _intentar(url, payload, clave, modelo):
                     "modelo_solicitado": modelo, "modelo_respuesta": bruto.get("model")}
         except error.HTTPError as exc:
             if exc.code == 400 and any(isinstance(m.get("content"), list) for m in payload["messages"]):
-                payload = {**payload, "messages": [  # el modelo no admite imagen: se reintenta con solo el texto
-                    ({**m, "content": "\n".join(p.get("text", "") for p in m["content"] if p.get("type") == "text") + "\n[imagenes adjuntas omitidas: este modelo no admite imagen]"}
-                     if isinstance(m.get("content"), list) else m) for m in payload["messages"]]}
-                continue
+                raise RuntimeError("MODELO_SIN_VISION: el proveedor rechazó las fotos; no se enviará una respuesta fingiendo haberlas visto") from None
             if exc.code in (401, 403, 404):
                 raise _Alterna("Qwen HTTP " + str(exc.code)) from None
             if exc.code not in REINTENTABLES or intento == 2:
