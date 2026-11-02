@@ -208,6 +208,14 @@ class TriggerBridge:
             if q.get("status") != "running":
                 output = {"ok": q.get("status") == "completed", "status": q.get("status", "BLOCKED").upper(),
                           "queue_id": qid, "processed": completed, "queue_status": q.get("status")}
+                if q.get("status") in ("completed", "failed", "cancelled", "expired"):
+                    closure = await self.handle("dsl_control", {"project_id":project,
+                        "loop_id":loop, "op":"gap_collect"},server_context=server_context)
+                    if not closure.get("ok"):
+                        return {"ok":False,"status":"BLOCKED","error":"GAP_CLOSURE_NOT_DURABLE",
+                                "queue_id":qid,"detail":closure}
+                    output["gap_closure"] = {"revision":closure["revision"],
+                                              "total":closure["total"]}
                 if q.get("status") == "completed":
                     output["handoff"] = await self._handoff_verified(project=project, loop=loop,
                         state=state, server_context=server_context)
@@ -257,6 +265,14 @@ class TriggerBridge:
             output = {"ok": final.get("status") == "completed",
                       "status": final.get("status", "BLOCKED").upper(), "queue_id": qid,
                       "processed": completed, "queue_status": final.get("status")}
+            if final.get("status") in ("completed", "failed", "cancelled", "expired"):
+                closure = await self.handle("dsl_control", {"project_id":project,
+                    "loop_id":loop, "op":"gap_collect"},server_context=server_context)
+                if not closure.get("ok"):
+                    return {"ok":False,"status":"BLOCKED","error":"GAP_CLOSURE_NOT_DURABLE",
+                            "queue_id":qid,"detail":closure}
+                output["gap_closure"] = {"revision":closure["revision"],
+                                          "total":closure["total"]}
             if final.get("status") == "completed":
                 output["handoff"] = await self._handoff_verified(project=project, loop=loop,
                     state=state, server_context=server_context)
