@@ -32,7 +32,7 @@ class ModeloGateTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "AGENTES_APAGADOS"):
                 h._exigir_agentes_on()
 
-    def test_cómputo_mvp_usa_puerto_del_space_y_no_7861_fijo(self):
+    def test_computo_mvp_usa_puerto_del_space_y_no_7861_fijo(self):
         with patch.dict("os.environ", {"PORT": "7860"}, clear=True):
             self.assertEqual(h._mvp_modelos_url(), "http://127.0.0.1:7860")
         with patch.dict("os.environ", {"PORT": "7861"}, clear=True):
