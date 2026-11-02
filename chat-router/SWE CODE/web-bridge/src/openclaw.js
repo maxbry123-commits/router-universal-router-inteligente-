@@ -28,12 +28,12 @@ export function vigilarWorkspace(intervaloMs = 60000) {
 
 // Sincronización del catálogo MODELO (NO de agentes): OpenClaw inicia desde
 // /swecode_provider.json del Space, que puede estar desactualizado y tener
-// apiKey:"local" (el bridge rechaza esa credencial). El bridge ya lee el banco,
+// apiKey:"local" (el bridge rechaza esa credencial). El Router SWE CODE ya lee el banco,
 // por tanto OpenClaw necesita la CLAVE DE ACCESO a 127.0.0.1:7870, no las claves
 // API privadas de NVIDIA/Groq. Solo se modifica la sección "swecode" y su
 // allowlist de modelos de manera aditiva; se conserva el modelo predeterminado,
 // pairing, workspace, gateway y demás providers.
-const ORIGEN_OC = 'http://127.0.0.1:7870/openclaw/v1';
+const ORIGEN_OC = 'http://127.0.0.1:7861/plugins/deepseek_harness/modelos/v1';
 export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_KEY, dir = null, fs = nodeFs } = {}) {
   if (!key || !Array.isArray(modelos) || !modelos.length) return false;
   const home = process.env.OPENCLAW_HOME || path.join('/tmp', `openclaw-home-${process.getuid()}`);

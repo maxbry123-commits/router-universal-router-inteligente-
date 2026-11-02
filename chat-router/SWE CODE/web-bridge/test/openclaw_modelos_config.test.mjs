@@ -25,7 +25,7 @@ test('OpenClaw: un único provider SWE, clave del chat y catálogo real, sin toc
     'nvidia/minimaxai/minimax-m3.1-flash', 'nvidia/z-ai/glm-5.3', 'lfm2.5-350m'];
   assert.equal(sincronizarModelosOpenClaw(ids, { key: 'CLAVE-INTERNA-TEST', dir }), true);
   const cfg = JSON.parse(readFileSync(path, 'utf8'));
-  assert.equal(cfg.models.providers.swecode.baseUrl, 'http://127.0.0.1:7870/openclaw/v1');
+  assert.equal(cfg.models.providers.swecode.baseUrl, 'http://127.0.0.1:7861/plugins/deepseek_harness/modelos/v1');
   assert.equal(cfg.models.providers.swecode.apiKey, 'CLAVE-INTERNA-TEST');
   assert.deepEqual(cfg.models.providers.otro, base.models.providers.otro);
   assert.deepEqual(cfg.gateway, base.gateway);
