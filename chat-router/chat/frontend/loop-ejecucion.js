@@ -19,7 +19,7 @@ async function get(op='get',extra={}){
  if(!scope)throw Error('LOOP_NO_VINCULADO');
  const p={project_id:scope.project_id,loop_id:scope.loop_id,op,...extra};
  const r=await A.send('nct_loop','dsl_estado',p);
- if(r?.ok!==true||r.status!=='PASS'||r.project_id!==scope.project_id||r.loop_id!==scope.loop_id)throw Error(r?.error||'DSL_ESTADO_NO_VERIFICADO');
+ if(r?.ok!==true||r.status!=='PASS'||(op!=='checkpoint'&&(r.project_id!==scope.project_id||r.loop_id!==scope.loop_id)))throw Error(r?.error||'DSL_ESTADO_NO_VERIFICADO');
  return r;
 }
 function valid(r){
