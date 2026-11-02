@@ -1,7 +1,7 @@
 // acceso-clave.js — la clave de acceso al servidor (cabecera X-API-Key), que api.js lee de sessionStorage "riu_clave".
-// Hasta ahora NADA en la interfaz la pedia ni la guardaba: si el servidor la exige, cada mensaje y cada accion fallaban y no habia como arreglarlo.
-// Aqui: se pide SOLO cuando el servidor rechaza la peticion (401/403) y se reintenta sola; se puede recordar en este dispositivo; y se puede escribir y probar en Configuración.
+// + montarServidorHF para control del Space.
 import { el, boton, cargarCss } from "./ventanas-comun.js";
+import { montarServidorHF } from "./servidor-hf.js";
 const K = "riu_clave", KR = "riu_clave_recordada";
 export const esAuth = (e) => /(^|\D)(401|403)(\D|$)|unauthori[sz]ed|forbidden|api[ -]?key|x-api-key|clave|password|credencial|no autoriz|acceso denegado/i.test(String((e && e.message) || e || ""));
 export function restaurarClave() { try { if (!sessionStorage.getItem(K)) { const r = localStorage.getItem(KR); if (r) sessionStorage.setItem(K, r); } } catch (e) {} }
@@ -33,11 +33,9 @@ export async function conReintentoDeClave(fn) {
     return await fn();
   }
 }
-// envuelve las dos llamadas al servidor (mensajes y acciones): si piden clave, la piden y reintentan una vez
 export function instalarAuth() {
   for (const n of ["RIU_HARNESS", "RIU_ACCION"]) { const f = window[n]; if (typeof f !== "function" || f.__riuAuth) continue; const w = (...a) => conReintentoDeClave(() => f(...a)); w.__riuAuth = true; if (f.__riuCtx) w.__riuCtx = true; window[n] = w; }
 }
-// en el chat: las burbujas de error ("GAP: …") traen Reintentar y Clave de acceso
 export function montarAcceso({ root, q, tell }) {
   const hist = q("#histories"); if (!hist || hist.dataset.acc) return; hist.dataset.acc = "1"; cargarCss("acceso-clave");
   const reintentar = () => { const c = q("#composer"), m = q("#message"); if (c && m && m.value.trim()) c.requestSubmit(); else tell("Escribe o pega tu mensaje otra vez"); };
@@ -48,9 +46,8 @@ export function montarAcceso({ root, q, tell }) {
     m.append(f);
   });
   new MutationObserver(() => requestAnimationFrame(equipar)).observe(hist, { childList: true, subtree: true });
-  const t = setInterval(() => { if (!root.isConnected) { clearInterval(t); return; } equipar(); }, 800);  // respaldo por si el observador no avisa
+  const t = setInterval(() => { if (!root.isConnected) { clearInterval(t); return; } equipar(); }, 800);
 }
-// en Configuración: escribir, recordar y probar la clave
 export function montarAccesoConfig(root, { avisa }) {
   const caja = root.querySelector("#ap-acceso"); if (!caja || caja.dataset.ok) return; caja.dataset.ok = "1";
   const inp = el("input", "vn-in"), lab = el("label", "ac-rec"), chk = el("input"), est = el("div", "vn-estado"), fila = el("div", "ac-acc");
@@ -61,4 +58,7 @@ export function montarAccesoConfig(root, { avisa }) {
     boton("Probar conexión", "mini", async () => { est.textContent = "Probando…"; try { await window.RIU_ACCION("status", {}); est.textContent = "Conexión correcta con el servidor."; } catch (e) { est.textContent = esAuth(e) ? "El servidor rechazó la clave: " + e.message : "No se pudo conectar: " + e.message; } }),
     boton("Olvidar", "mini rojo", () => { olvidarClave(); inp.placeholder = "Clave de acceso al servidor"; chk.checked = false; avisa("Clave olvidada"); }));
   caja.append(inp, lab, fila, est, el("div", "vn-estado", "La clave se guarda solo en este navegador y solo se envía al servidor del chat."));
+
+  // Servidor HF
+  montarServidorHF(root, { avisa });
 }
