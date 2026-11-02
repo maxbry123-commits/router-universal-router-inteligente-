@@ -172,6 +172,18 @@ class TestMechanicoLedger(unittest.TestCase):
         self.assertIs(output["dispatched"],False)
 
 class TestHarnessResearchShape(unittest.TestCase):
+    def test_source_html_scripts_are_not_in_research_excerpt(self):
+        from nct_loop.repair import research_sources
+        class Fake:
+            status=200
+            headers={"Content-Type":"text/html"}
+            def __enter__(self):return self
+            def __exit__(self,*a):return False
+            def read(self,n):
+                return b"<title>Issue</title><script>PRIVATE SCRIPT</script><p>Actual evidence</p>"
+        result=research_sources("MODEL_TIMEOUT",lambda *a,**kw:Fake())
+        self.assertEqual(len(result),10)
+        self.assertTrue(all("PRIVATE SCRIPT" not in str(x.get("excerpt","")) for x in result))
     def test_mock_http_produces_normalizable_evidence(self):
         from nct_loop.repair import research_sources
         from nct_loop.gap_mechanic import normalize_research_hits

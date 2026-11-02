@@ -62,9 +62,9 @@ def research_sources(query, opener):
             page=data.decode("utf8","replace")
             title=re.search(r"<title[^>]*>(.*?)</title>",page,re.I|re.S)
             title=html.unescape(re.sub(r"<[^>]+>","",title.group(1))).strip()[:140] if title else ""
-            clean=re.sub(r"<(script|style)[^>]*>.*?</\\1>"," ",page,flags=re.I|re.S)
+            clean=re.sub(r"<(script|style)[^>]*>.*?</\1>"," ",page,flags=re.I|re.S)
             excerpt=html.unescape(re.sub(r"<[^>]+>"," ",clean))
-            excerpt=re.sub(r"\\s+"," ",excerpt).strip()[:1000]
+            excerpt=re.sub(r"\s+"," ",excerpt).strip()[:1000]
             digest=hashlib.sha256(data).hexdigest()
             if not title or not excerpt:
                 return {"site":name,"source_id":name,"url":url,
