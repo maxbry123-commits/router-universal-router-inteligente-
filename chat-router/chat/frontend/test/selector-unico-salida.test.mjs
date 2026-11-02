@@ -1,31 +1,26 @@
-// Regresiones de duplicación: un selector real y un solo mensaje de respuesta.
+// Reglas de salida única y selectores individuales históricos.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-const src = (f) => readFileSync(new URL("../" + f, import.meta.url), "utf8");
-
-test("Groq y NVIDIA permanecen en un unico selector de modelos, sin filas duplicadas", () => {
-  const s = src("selector-modelos.js"), c = src("selector-modelos.css");
-  assert.match(s, /id = "modelo-unificado"/);
-  for (const id of ["groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash",
-    "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"])
-    assert.ok(s.includes(id), id);
-  assert.match(c, /\.sel-fila\[data-selector="groq"\]/);
-  assert.match(c, /\.sel-fila\[data-selector="nvidia-groq-team"\]/);
-  assert.match(c, /#sh-selectores #selectores \.sel-resp-global/);
+import {readFileSync} from "node:fs";
+const src=f=>readFileSync(new URL("../"+f,import.meta.url),"utf8");
+test("Groq y NVIDIA tienen selectores específicos, no un desplegable nuevo",()=>{
+ const s=src("selector-modelos.js"),c=src("selector-modelos.css"),h=src("panel-chat.html");
+ for(const [id,label]of [["sel-groq","Groq"],["sel-ngt","NVIDIA"]]){
+   assert.ok(h.includes('id="'+id+'"'),label);
+ }
+ assert.match(c,/#sh-selectores #selectores \{ display: block !important/);
+ assert.doesNotMatch(c,/sel-fila\[data-selector="groq"\].*display:none/);
+ assert.doesNotMatch(s,/modelo-unificado/);
 });
-
-test("Una respuesta del proveedor crea un globo, no otro item meta para procedencia", () => {
-  const s = src("enviar-mensaje.js");
-  assert.match(s, /const respuesta = burbuja\(answer.reply/);
-  assert.match(s, /respuesta\.dataset\.procedencia = answer\.nota/);
-  assert.doesNotMatch(s, /if \(answer\.nota\) c\.hist\.append\(node\("div", answer\.nota/);
-  assert.doesNotMatch(s, /if \(r\.nota\) c\.hist\.append\(node\("div", r\.nota/);
+test("una respuesta del proveedor crea un globo y conserva su procedencia",()=>{
+ const s=src("enviar-mensaje.js");
+ assert.match(s,/const respuesta = burbuja\(answer.reply/);
+ assert.match(s,/respuesta\.dataset\.procedencia = answer\.nota/);
+ assert.doesNotMatch(s,/if \(answer\.nota\) c\.hist\.append\(node\("div", answer\.nota/);
+ assert.doesNotMatch(s,/if \(r\.nota\) c\.hist\.append\(node\("div", r\.nota/);
 });
-
-test("La ruta de elección del proveedor no activa la lógica de agentes", () => {
-  const s = src("selector-modelos.js");
-  assert.match(s, /selec\?\.encender\?\.\("groq"\)/);
-  assert.match(s, /selec\?\.encender\?\.\("nvidia-groq-team"\)/);
-  assert.match(s, /selec\?\.encender\?\.\("swe-code"\)/);
+test("elección del proveedor usa selectores existentes, agentes por separado",()=>{
+ const s=src("chat-selectores.js"),a=src("swe-selectores.js");
+ for(const name of ["nvidia-groq-team","groq","swe-code"])assert.ok(s.includes('"'+name+'"'));
+ assert.match(a, /#sel-swe, #sel-swen, #sel-groq, #sel-ngt/);
 });

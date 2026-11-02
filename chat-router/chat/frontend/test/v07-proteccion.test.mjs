@@ -6,11 +6,18 @@ const path=n=>new URL('../'+n,import.meta.url);
 const get=n=>readFileSync(path(n),'utf8');
 test('Panel LOOP aislado: cuatro vistas, assets válidos e IDs únicos',()=>{
  const html=get('loop-panel.html'),paths=[...html.matchAll(/(?:src|href)="\.\/([^"]+)"/g)].map(m=>m[1]);
- assert.ok(paths.length>=13);
+ assert.ok(paths.length>=11);
  for(const p of paths){assert.ok(!p.includes('..'));assert.ok(existsSync(path(p)),p)}
  const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
  assert.equal(ids.length,new Set(ids).size);
- for(const id of ['lp-home','loop-workspace','lp-resources','lp-execution'])assert.ok(ids.includes(id),id);
+ for(const id of ['lp-home','loop-workspace','lp-execution'])assert.ok(ids.includes(id),id);
+});
+test('Cola y Watchdog sin vistas ni ventanas duplicadas',()=>{
+ const html=get('loop-panel.html');
+ assert.doesNotMatch(html,/id="lp-resources"|loop-recursos\.(?:js|css)|lr-open-cola|lr-open-watchdog/);
+ assert.equal([...html.matchAll(/id="lq-add"/g)].length,1);
+ assert.equal([...html.matchAll(/id="loop-workspace"/g)].length,1);
+ assert.doesNotMatch(get('loop-iframe-host.js'),/open_native|WATCHDOG_FUERA_DEL_LOOP/);
 });
 test('Rollback a ventana LOOP previa y chat original',()=>{
  const host=get('loop-iframe-host.js');

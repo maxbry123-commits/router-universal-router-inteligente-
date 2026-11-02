@@ -50,16 +50,6 @@ export function renderLoopIFrame(cuerpo){
           const result=r&&r.result&&typeof r.result==='object'?r.result:r;
           if(!result||result.error||result.ok===false)throw Error(String(result?.error||'COLA_RECHAZADA'));
           reply.result=result;
-        }else if(d.plugin==='watchdog48'&&d.action==='estado'){
-          if(!selected)throw Error('VERIFICA_LOOP_PRIMERO');
-          const state=await api('dsl_estado',{op:'get',...selected});
-          const wid=String(d.payload.wid||'');
-          if(!/^wd_[0-9a-f]{20}$/.test(wid)||state.watchdog_id!==wid)throw Error('WATCHDOG_FUERA_DEL_LOOP');
-          if(typeof window.RIU_PLUGIN!=='function')throw Error('BACKEND_NO_DISPONIBLE');
-          const raw=await window.RIU_PLUGIN('watchdog48','estado',{wid});
-          const result=raw?.result&&typeof raw.result==='object'?raw.result:raw;
-          if(!result||result.error||result.id!==wid||result.target_id!==state.queue?.queue_id)throw Error(String(result?.error||'WATCHDOG_NO_CONFIRMADO'));
-          reply.result=result;
         }else throw Error('ACCION_NO_AUTORIZADA');
         reply.ok=true;
       }else if(d.name==='selection'){
@@ -69,36 +59,6 @@ export function renderLoopIFrame(cuerpo){
         const s=await api('dsl_estado',{op:'get',...k});
         if(s.ok!==true||s.status!=='PASS'||s.project_id!==k.project_id||s.loop_id!==k.loop_id)throw Error('SELECCION_NO_VERIFICADA');
         selected=k;powerState(s);reply.result={selected:true,status:s.status};reply.ok=true;
-      }else if(d.name==='open_native'){
-        const target=String(d.payload?.target||'');
-        if(!['canvas','cola','watchdog'].includes(target))throw Error('VENTANA_NO_AUTORIZADA');
-        const loop=document.querySelector('#ventana-loop');
-        if(!loop)throw Error('LOOP_WINDOW_MISSING');
-        const wasOpen=!loop.hidden;
-        if(target==='canvas'){
-          const nav=document.querySelector('[data-view="canvas"]');
-          if(!nav)throw Error('CANVAS_TAB_MISSING');
-          if(wasOpen)loop.hidden=true;
-          try{
-            nav.click();
-            if(nav.getAttribute('aria-current')!=='page')throw Error('CANVAS_NAV_NO_CONFIRMADA');
-            reply.ok=true;reply.result={requested:true,target:'canvas',native:true,note:'Canvas del chat; abre el mapa mental con su botón existente'};
-          }catch(e){if(wasOpen&&loop.isConnected)loop.hidden=false;throw e}
-        }else{
-          const panel=document.querySelector('#ventana-'+target);
-          const button=document.querySelector('#btn-'+target);
-          if(!panel||!button)throw Error('VENTANA_NATIVA_NO_DISPONIBLE');
-          if(wasOpen)loop.hidden=true;
-          try{
-            if(panel.hidden)button.click();
-            if(panel.hidden)throw Error('VENTANA_NATIVA_NO_ABIERTA');
-            if(wasOpen){
-              const observer=new MutationObserver(()=>{if(panel.hidden){observer.disconnect();if(loop.isConnected)loop.hidden=false}});
-              observer.observe(panel,{attributes:true,attributeFilter:['hidden']});
-            }
-            reply.ok=true;reply.result={opened:true,native:true,target};
-          }catch(e){if(wasOpen&&loop.isConnected)loop.hidden=false;throw e}
-        }
       }else if(d.name==='open_pending'){
         const pending=document.querySelector('#ventana-pendientes');
         const btn=document.querySelector('#btn-pendientes');
