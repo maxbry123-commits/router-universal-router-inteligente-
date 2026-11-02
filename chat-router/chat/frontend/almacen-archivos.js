@@ -1,4 +1,5 @@
 // almacen-archivos.js — sistema de almacenamiento de archivos (panel Archivos) con 20 mejoras. Usa el MISMO almacén del chat (acciones archivos, subir, archivo_borrar, xray).
+import { prepararImagenOArchivo } from "./imagen-subida.js";
 //  1 almacén real (adiós «Not Found») · 2 carpeta por chat · 3 subida múltiple · 4 arrastrar y soltar · 5 progreso y reintento · 6 límite 2 MB amable
 //  7 duplicados · 8 buscador · 9 filtros por tipo · 10 orden · 11 iconos · 12 selección múltiple · 13 anclar a cualquier objetivo · 14 insignias «anclado en»
 //  15 borrar · 16 papelera con restaurar · 17 X-Ray · 18 copiar nombre · 19 contador y medidor · 20 recarga al volver + atajos (Supr, Ctrl+A)
@@ -77,12 +78,11 @@ export function montarAlmacenArchivos(root, { tell }) {
   };
   // ---- subir ----
   async function subirUno(s) {
-    const f = s.f;
     try {
-      if (f.size > MAX) throw new Error("pesa más de 2 MB");
+      const f = await prepararImagenOArchivo(s.f);
       const buf = await f.arrayBuffer(); let bin = ""; const by = new Uint8Array(buf); for (let i = 0; i < by.length; i += 8192) bin += String.fromCharCode.apply(null, by.subarray(i, i + 8192));
       const r = await window.RIU_ACCION("subir", { nombre: f.name, tipo: f.type || "texto", datos_b64: btoa(bin), sesion });
-      if (r && r.error) throw new Error(String(r.error)); s.estado = "ok"; s.nota = ""; bytes += f.size; marcar(f.name, false);
+      if (!r || r.error || r.ok !== true) throw new Error(String((r && (r.error || r.detalle)) || "SUBIDA_SIN_CONFIRMACION")); s.estado = "ok"; s.nota = s.f.name !== f.name ? "Foto optimizada: " + f.name : ""; bytes += f.size; marcar(f.name, false);
       const v = leer(KV, {}); v[sesion] = Object.assign(v[sesion] || {}, { [f.name]: Date.now() }); escribir(KV, v);
     } catch (e) { s.estado = "error"; s.nota = e.message; }
     pintarSub();
