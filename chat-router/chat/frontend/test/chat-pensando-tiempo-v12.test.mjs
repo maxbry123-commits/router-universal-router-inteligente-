@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const src = (n) => readFileSync(new URL("../"+n, import.meta.url), "utf8");
 
-test("Pensando y cronómetro viven en la salida y empiezan al enviar", () => {
+test("Pemsando y cronómetro viven en la salida y empiezan al enviar", () => {
   const s=src("enviar-mensaje.js");
   assert.match(s,/const inicioRespuesta = performance.now\(\)/);
-  assert.match(s,/node\("div", "Pensando… · 0 s", "item p3d-reloj"\)/);
+  assert.match(s,/node\("div", "Pemsando… · 0 s", "item p3d-reloj"\)/);
   assert.match(s,/c.hist.append\(relojRespuesta\)/);
   assert.match(s,/setInterval\(\(\) => \{/);
-  assert.match(s,/relojRespuesta.textContent = "Pensando… · " \+ seg/);
+  assert.match(s,/relojRespuesta.textContent = "Pemsando… · " \+ seg/);
 });
 test("Al terminar congela el tiempo, limpia intervalo y conserva un solo nodo", () => {
   const s=src("enviar-mensaje.js");
@@ -17,7 +17,7 @@ test("Al terminar congela el tiempo, limpia intervalo y conserva un solo nodo", 
   assert.match(s,/Tiempo de cómputo \(transcurrido\):/);
   assert.match(s,/Tiempo hasta el error:/);
   assert.match(s,/if \(relojRespuesta.isConnected\) c.hist.append\(relojRespuesta\)/);
-  assert.equal((s.match(/node\("div", "Pensando… · 0 s", "item p3d-reloj"\)/g) || []).length,1);
+  assert.equal((s.match(/node\("div", "Pemsando… · 0 s", "item p3d-reloj"\)/g) || []).length,1);
 });
 test("El clip es más pequeño visualmente pero conserva el blanco táctil", () => {
   const s=src("chat-compositor-v12.css");
