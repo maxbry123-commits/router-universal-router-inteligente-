@@ -1,3 +1,4 @@
+import { MODELOS_API } from './respaldo.js';
 // openclaw.js — auto-reparacion del cableado de OpenClaw (sin tocar HF).
 // openclaw.sh hace `rm -rf $OPENCLAW_HOME` en cada arranque y no recrea el workspace del agente:
 // el gateway responde "This agent's workspace is missing on the gateway host". Aqui se recrea.
@@ -50,13 +51,17 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
     /^(?:web-|swecode-|groq\/|nvidia\/|deepseek\/|minimax\/|openai\/|lfm2\.5|qwen2\.5|qwen3)/.test(id) &&
     id.length <= 100);
   if (!safeIds.length) return false;
+  const nombres = new Map(MODELOS_API.map(m => [m.id, m.nombre]));
+  for (const [id, nombre] of Object.entries({'lfm2.5-350m':'Liquid LFM2.5 350M','qwen2.5-coder-1.5b':'Qwen2.5 Coder 1.5B','qwen3.5-0.8b':'Qwen3.5 0.8B','qwen3-0.6b':'Qwen3 0.6B'})) nombres.set(id, nombre);
+  cfg.agents.defaults.timeoutSeconds = Math.max(Number(cfg.agents.defaults.timeoutSeconds) || 0, 600);
   const previo = cfg.models.providers.swecode || {};
   const previos = new Map((Array.isArray(previo.models) ? previo.models : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]));
   cfg.models.providers.swecode = {
-    ...previo, baseUrl: ORIGEN_OC, apiKey: key, api: 'openai-completions',
+    ...previo, baseUrl: ORIGEN_OC, apiKey: key, api: 'openai-completions', timeoutSeconds: 480,
     models: safeIds.map(id => ({ ...{ name: id, reasoning: false, input: ['text'],
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-      contextWindow: 32768, maxTokens: 4096 }, ...(previos.get(id) || {}), id })),
+      contextWindow: 32768, maxTokens: 4096 }, ...(previos.get(id) || {}), id, name: nombres.get(id) || previos.get(id)?.name || id,
+      ...(nombres.has(id) && !id.includes('/') ? { contextWindow: 16384 } : {}) })),
   };
   for (const id of safeIds) cfg.agents.defaults.models['swecode/' + id] ||= {};
   const after = JSON.stringify(cfg, null, 2);
