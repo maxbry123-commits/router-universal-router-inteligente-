@@ -1,5 +1,7 @@
 """Harness HTTP: /invoke -> Router MVP por HTTP. Sin modelos, claves HF ni datos GitHub."""
 import hashlib
+import asyncio
+import httpx
 import json
 import hmac
 import os
@@ -11,7 +13,7 @@ import uuid
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from plugins.router_api_cliente import llamar
 
 OPCIONES = {"tools", "tool_choice", "temperature", "top_p", "max_tokens",
@@ -556,6 +558,172 @@ def credenciales(accion: str, cuerpo: dict, x_api_key: str | None = Header(None)
     if not isinstance(respuesta, dict) or respuesta.get("error") or respuesta.get("ok") is not True:
         return _err("banco no disponible", 503)  # no reflejar detalle del banco ni el secreto
     return _ok(respuesta)
+
+
+
+# --- Unica entrada OpenAI-compatible para ambos chats: Chat -> Harness ->
+# Router MVP (APIs externas) o Router SWE CODE (locales/web) -> proveedor/HF.
+# No crear un tercer router ni pasar por /web desde el navegador.
+_HARNESS_MODELOS = "http://127.0.0.1:7861"
+_SWE_MODELOS_LOCALES = {"lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"}
+_MODELOS_PRE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.:/-]{0,99}$")
+
+
+def _autorizar_chat_modelos(x_api_key, authorization):
+    """Misma clave de acceso del chat; una API KEY de modelos no abre este endpoint."""
+    token = authorization[7:].strip() if isinstance(authorization, str) and authorization.lower().startswith("bearer ") else ""
+    entradas = [v for v in (x_api_key, token) if isinstance(v, str) and v]
+    esperadas = [os.environ[n] for n in ACCESO_BRIDGE if os.environ.get(n)]
+    if not any(hmac.compare_digest(v.encode("utf-8", "surrogatepass"),
+                                k.encode("utf-8", "surrogatepass")) for v in entradas for k in esperadas):
+        raise HTTPException(status_code=401, detail="acceso Harness no autorizado")
+
+
+def _modelo_destino(id_modelo):
+    """Seleccion determinista, nunca salta de un modelo externo a uno HF."""
+    if not isinstance(id_modelo, str) or not _MODELOS_PRE.fullmatch(id_modelo):
+        raise HTTPException(status_code=400, detail="MODELO_INVALIDO")
+    model = SWE_ALIAS.get(id_modelo, id_modelo)
+    if model.startswith("hf/") and model[3:] in _SWE_MODELOS_LOCALES:
+        model = model[3:]
+    if es_externo(model):
+        return "mvp", model
+    if es_swe(model):
+        return "swe", model
+    raise HTTPException(status_code=400, detail="MODELO_FUERA_DE_CATALOGO")
+
+
+def _mensaje_openai(modelo, mensajes, salida, *, via):
+    """Un unico mensaje OpenAI; identidad completa y finish_reason preservados."""
+    if via == "mvp":
+        m = salida.get("mensaje_asistente") if isinstance(salida.get("mensaje_asistente"), dict) else {}
+        texto = salida.get("texto") or ""
+        tools = salida.get("tool_calls") or []
+        usado = salida.get("modelo_respuesta") or modelo
+        fin = salida.get("finish_reason") or ("tool_calls" if tools else "stop")
+    else:
+        c = (salida.get("choices") or [{}])[0]
+        m = c.get("message") or {}
+        texto = m.get("content") or ""
+        tools = m.get("tool_calls") or []
+        usado = salida.get("modelo_usado") or modelo
+        fin = c.get("finish_reason") or ("tool_calls" if tools else "stop")
+    return {"id": "harness-" + uuid.uuid4().hex[:20], "object": "chat.completion",
+            "model": usado, "modelo_usado": usado, "via_router": via,
+            "choices": [{"index": 0, "message": {"role": "assistant", "content": texto,
+                **({"tool_calls": tools} if tools else {})}, "finish_reason": fin}]}
+
+
+def _openai_sse(respuesta):
+    """El MVP entrega el mensaje al terminar. El bridge ya entrega SSE real."""
+    j = json.dumps(respuesta, ensure_ascii=False)
+    c = respuesta["choices"][0]
+    o = {"id": respuesta["id"], "object": "chat.completion.chunk", "model": respuesta["model"],
+         "choices": [{"index": 0, "delta": {"role": "assistant", "content": c["message"]["content"]},
+                      "finish_reason": None}]}
+    yield "data: " + json.dumps(o, ensure_ascii=False) + "\\n\\n"
+    if c["message"].get("tool_calls"):
+        o["choices"][0]["delta"] = {"tool_calls": c["message"]["tool_calls"]}
+        yield "data: " + json.dumps(o, ensure_ascii=False) + "\\n\\n"
+    o["choices"][0]["delta"] = {}
+    o["choices"][0]["finish_reason"] = c["finish_reason"]
+    yield "data: " + json.dumps(o, ensure_ascii=False) + "\\n\\n"
+    yield "data: [DONE]\\n\\n"
+
+
+@app.get("/modelos/v1/models")
+async def catalogo_modelos(x_api_key: str | None = Header(None), authorization: str | None = Header(None)):
+    _autorizar_chat_modelos(x_api_key, authorization)
+    # Misma lista del Router SWE CODE, que conoce Groq/NVIDIA/HF/web. No divulgar claves.
+    headers = _cabeceras_bridge()
+    async with httpx.AsyncClient(timeout=12, trust_env=False) as client:
+        try:
+            r = await client.get(_bridge_url() + "/v1/models", headers=headers)
+            r.raise_for_status()
+            datos = r.json()
+            return {"object": "list", "data": datos.get("data", [])}
+        except (httpx.HTTPError, ValueError):
+            raise HTTPException(status_code=503, detail="SWE_CODE_CATALOGO_NO_DISPONIBLE") from None
+
+
+@app.post("/modelos/v1/chat/completions")
+async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
+                       authorization: str | None = Header(None)):
+    _autorizar_chat_modelos(x_api_key, authorization)
+    if not isinstance(cuerpo, dict) or not isinstance(cuerpo.get("messages"), list) or not cuerpo["messages"]:
+        raise HTTPException(status_code=400, detail="MENSAJES_INVALIDOS")
+    # Chat de un modelo: tools de agentes van por /invoke y /chat/swe existentes,
+    # nunca por un atajo sin los permisos del Router MVP.
+    if cuerpo.get("tools") or cuerpo.get("tool_choice") not in (None, "none", "auto"):
+        raise HTTPException(status_code=403, detail="TOOLS_REQUIEREN_HARNESS_INVOKE")
+    destino, modelo = _modelo_destino(cuerpo.get("model"))
+    stream = cuerpo.get("stream") is True
+    h = _cabeceras_bridge()
+    # Los datos que sí atraviesan el Harness son solo el contrato de conversación,
+    # no las API keys, tokens del navegador ni rutas arbitrarias.
+    req = {"model": modelo, "messages": cuerpo["messages"],
+           **{k: cuerpo[k] for k in ("conv_id", "modo", "proyecto") if isinstance(cuerpo.get(k), str)}}
+    if destino == "swe":
+        if not _bridge_url():
+            raise HTTPException(status_code=503, detail="SWE_CODE_ROUTER_NO_CONFIGURADO")
+        req["stream"] = stream
+        req["origen"] = "openclaw" if cuerpo.get("origen") == "openclaw" else "yaiwes"
+        client = httpx.AsyncClient(timeout=httpx.Timeout(240, connect=6), trust_env=False)
+        try:
+            upstream = await client.send(client.build_request("POST", _bridge_url() + "/v1/chat/completions",
+                                                               headers=h, json=req), stream=True)
+        except httpx.HTTPError:
+            await client.aclose()
+            raise HTTPException(status_code=503, detail="SWE_CODE_ROUTER_SIN_CONEXION") from None
+        if upstream.status_code != 200:
+            await upstream.aclose()
+            await client.aclose()
+            raise HTTPException(status_code=502 if upstream.status_code >= 500 else upstream.status_code,
+                                detail="SWE_CODE_HTTP_" + str(upstream.status_code))
+        if stream and "text/event-stream" in upstream.headers.get("content-type", "").lower():
+            async def trozos():
+                try:
+                    async for bloque in upstream.aiter_bytes():
+                        if bloque:
+                            yield bloque
+                finally:
+                    await upstream.aclose()
+                    await client.aclose()
+            return StreamingResponse(trozos(), media_type="text/event-stream",
+                                     headers={"Cache-Control": "no-cache"})
+        try:
+            obj = json.loads((await upstream.aread()).decode("utf-8"))
+        except (ValueError, UnicodeError):
+            raise HTTPException(status_code=502, detail="SWE_CODE_RESPUESTA_INVALIDA") from None
+        finally:
+            await upstream.aclose()
+            await client.aclose()
+        resultado = _mensaje_openai(modelo, req["messages"], obj, via="swe")
+    else:
+        # Externos pasan por Router MVP en el MISMO Space (sin reentrada Harness).
+        # /chat sin 'via=harness' llama mvp.externos una sola vez, exacto modelo.
+        req["modelo"] = req.pop("model")
+        req["mensajes"] = req.pop("messages")
+        req["tools"] = False
+        req["agente_tool"] = False
+        req["llm_tool"] = False
+        async with httpx.AsyncClient(timeout=httpx.Timeout(210, connect=6), trust_env=False) as client:
+            try:
+                up = await client.post(_HARNESS_MODELOS + "/chat", headers=h, json=req)
+            except httpx.HTTPError:
+                raise HTTPException(status_code=503, detail="ROUTER_MVP_SIN_CONEXION") from None
+        if up.status_code != 200:
+            raise HTTPException(status_code=502 if up.status_code >= 500 else up.status_code,
+                                detail="ROUTER_MVP_HTTP_" + str(up.status_code))
+        try:
+            obj = up.json()
+        except ValueError:
+            raise HTTPException(status_code=502, detail="ROUTER_MVP_RESPUESTA_INVALIDA") from None
+        resultado = _mensaje_openai(modelo, req["mensajes"], obj, via="mvp")
+    if stream:
+        return StreamingResponse(_openai_sse(resultado), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-cache"})
+    return resultado
 
 
 @app.post("/invoke")
