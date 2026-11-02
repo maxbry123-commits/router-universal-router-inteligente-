@@ -616,19 +616,18 @@ def _mensaje_openai(modelo, mensajes, salida, *, via):
 
 def _openai_sse(respuesta):
     """El MVP entrega el mensaje al terminar. El bridge ya entrega SSE real."""
-    j = json.dumps(respuesta, ensure_ascii=False)
     c = respuesta["choices"][0]
     o = {"id": respuesta["id"], "object": "chat.completion.chunk", "model": respuesta["model"],
          "choices": [{"index": 0, "delta": {"role": "assistant", "content": c["message"]["content"]},
                       "finish_reason": None}]}
-    yield "data: " + json.dumps(o, ensure_ascii=False) + "\\n\\n"
+    yield "data: " + json.dumps(o, ensure_ascii=False) + "\n\n"
     if c["message"].get("tool_calls"):
         o["choices"][0]["delta"] = {"tool_calls": c["message"]["tool_calls"]}
-        yield "data: " + json.dumps(o, ensure_ascii=False) + "\\n\\n"
+        yield "data: " + json.dumps(o, ensure_ascii=False) + "\n\n"
     o["choices"][0]["delta"] = {}
     o["choices"][0]["finish_reason"] = c["finish_reason"]
-    yield "data: " + json.dumps(o, ensure_ascii=False) + "\\n\\n"
-    yield "data: [DONE]\\n\\n"
+    yield "data: " + json.dumps(o, ensure_ascii=False) + "\n\n"
+    yield "data: [DONE]\n\n"
 
 
 @app.get("/modelos/v1/models")
@@ -654,8 +653,11 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
         raise HTTPException(status_code=400, detail="MENSAJES_INVALIDOS")
     # Chat de un modelo: tools de agentes van por /invoke y /chat/swe existentes,
     # nunca por un atajo sin los permisos del Router MVP.
-    if cuerpo.get("tools") or cuerpo.get("tool_choice") not in (None, "none", "auto"):
+    if cuerpo.get("tool_choice") not in (None, "none", "auto"):
         raise HTTPException(status_code=403, detail="TOOLS_REQUIEREN_HARNESS_INVOKE")
+    # OpenClaw suele incluir su inventario de tools en cada petición incluso en
+    # conversación normal. No reenviarlo al modelo ni activarlo: los efectos
+    # exigen el flujo /invoke y permisos de la constitución.
     destino, modelo = _modelo_destino(cuerpo.get("model"))
     stream = cuerpo.get("stream") is True
     h = _cabeceras_bridge()
@@ -676,10 +678,19 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
             await client.aclose()
             raise HTTPException(status_code=503, detail="SWE_CODE_ROUTER_SIN_CONEXION") from None
         if upstream.status_code != 200:
+            try:
+                payload_error = json.loads((await upstream.aread()).decode("utf-8"))
+                code = str((payload_error.get("error") or {}).get("code") or "HTTP_ERROR")
+                if not re.fullmatch(r"[A-Z][A-Z0-9_]{2,60}", code):
+                    code = "HTTP_ERROR"
+                evidencia = str((payload_error.get("error") or {}).get("message") or "")
+                estados = re.findall(r"(?:S[123]:\\s*HTTP\\s*503|HTTP\\s*410)", evidencia)[:3]
+            except (ValueError, UnicodeError, AttributeError):
+                code, estados = "HTTP_ERROR", []
             await upstream.aclose()
             await client.aclose()
             raise HTTPException(status_code=502 if upstream.status_code >= 500 else upstream.status_code,
-                                detail="SWE_CODE_HTTP_" + str(upstream.status_code))
+                                detail="SWE_CODE_" + code + (" · " + " | ".join(estados) if estados else ""))
         if stream and "text/event-stream" in upstream.headers.get("content-type", "").lower():
             async def trozos():
                 try:
@@ -713,8 +724,16 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
             except httpx.HTTPError:
                 raise HTTPException(status_code=503, detail="ROUTER_MVP_SIN_CONEXION") from None
         if up.status_code != 200:
+            # El 410 de NVIDIA GLM y el 503 HF son diagnósticos, no un motivo
+            # para cambiar silenciosamente el modelo solicitado por otro.
+            try:
+                motivo = str(up.json().get("detail") or "")
+                origin = re.search(r"\\bHTTP\\s+(410|429|503)\\b", motivo)
+            except (ValueError, AttributeError):
+                origin = None
             raise HTTPException(status_code=502 if up.status_code >= 500 else up.status_code,
-                                detail="ROUTER_MVP_HTTP_" + str(up.status_code))
+                                detail="ROUTER_MVP_HTTP_" + str(up.status_code) +
+                                       (" · PROVEEDOR_HTTP_" + origin.group(1) if origin else ""))
         try:
             obj = up.json()
         except ValueError:
