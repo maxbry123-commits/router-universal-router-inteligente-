@@ -226,9 +226,9 @@ export function montarEnviar(ctx) {
       body.contexto_previo = ctxPrev;  // historial completo de esta sesion; el input actual viaja una sola vez
       const _multiSel = fq === "1" && c.paralelo ? (c.selectorQwenMulti || []).slice(0, 6) : [];  // >>> MODOS <<< T6: fan-out paralelo
       const _fanout = async () => {  // una llamada por modelo elegido; cada burbuja lleva su nombre
-        const rs = await Promise.allSettled(_multiSel.map((m, i) => esSwe(m.model_id) ? enviarSwe(api, { ...controlTools, model: m.model_id, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion + '-' + (m.modelo_id_slug || i), proyecto: c.project_id || undefined, signal: ctlDetener ? ctlDetener.signal : undefined }) : window.RIU_HARNESS({
+        const rs = await Promise.allSettled(_multiSel.map((m, i) => esSwe(m.model_id) ? (imagenesAncladas.length && !/^(groq|nvidia)\//.test(String(m.model_id)) ? Promise.reject(new Error("GAP_MODELO_SIN_VISION")) : enviarSwe(api, { ...controlTools, model: m.model_id, historial: ctxPrev || [], mensaje: mensajeQwen, imagenes: imagenesParaSwe, sesion: c.sesion + '-' + (m.modelo_id_slug || i), proyecto: c.project_id || undefined, signal: ctlDetener ? ctlDetener.signal : undefined })) : window.RIU_HARNESS({
           model: m.model_id || m.label || m.modelo_id_slug, message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null,
-          contexto_previo: ctxPrev, anclados, sesion: c.sesion + '-' + (m.modelo_id_slug || i), instrucciones_fijas: fijasQwen || undefined,
+          contexto_previo: ctxPrev, anclados, sesion: c.sesion + '-' + (m.modelo_id_slug || i), anclados_sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined,
           ...controlTools, thinking_mode: getModo() === 'think' ? 'on' : 'off',
           mode_request: getModeUI() ? getModeUI().getModeRequest() : undefined, tool_approval: getModeUI() && getModeUI().getApproval ? getModeUI().getApproval() : undefined,
           qwen: { plugin: "fichas_qwen", ficha_qwen: "1", modelo: m.model_id || m.label || m.modelo_id_slug || "", task_type: "chat" }, avisar: () => {} })));
@@ -245,7 +245,7 @@ export function montarEnviar(ctx) {
       const imagenesAncladas = anclados.filter((t) => /\.(?:png|jpe?g|webp|gif)$/i.test(String(t).split(":").at(-1)));
       if (imagenesAncladas.length && _tareaSwe) throw new Error("GAP_IMAGEN_WORKFLOW: este workflow no transporta imágenes ancladas; selecciona un modelo con visión en modo Individual.");
       if (imagenesAncladas.length && _swe && !/^(groq|nvidia)\//.test(String(_modeloSwe))) throw new Error("GAP_MODELO_SIN_VISION: el modelo seleccionado no admite imágenes ancladas en esta ruta.");
-      const imagenesParaSwe = imagenesAncladas.length && _swe
+      const imagenesParaSwe = imagenesAncladas.length && (_swe || _multiSel.some((m) => esSwe(m.model_id)))
         ? (await api("/chat/anclas/imagenes", { method: "POST", body: { sesion: c.sesion, anclados }, signal: ctlDetener?.signal })).imagenes
         : [];
       const answer = _tareaSwe
