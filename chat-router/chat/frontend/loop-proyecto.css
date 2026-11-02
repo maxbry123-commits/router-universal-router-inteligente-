@@ -1,0 +1,43 @@
+/* Vista A — Inicio / Proyecto · Maxbry V07.
+   No afecta shell.html ni el chat; solo loop-panel.html. */
+.lp-views{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:12px 0 10px}
+.lp-tab{background:#292929;border:1px solid #494949;color:#e2e2e2;border-radius:12px;font-size:13px;font-weight:650}
+.lp-tab.is-current{background:#165bd4;border:1px solid #248aff;color:#fff;box-shadow:inset 0 0 0 1px #348aff,0 3px 10px #0255d020}
+.lp-home{max-width:800px;margin:0 auto;display:grid;gap:12px}
+.lp-hero,.lp-build{border:1px solid #3a3a3a;background:#202020;border-radius:15px;padding:13px}
+.lp-hero-top{display:flex;align-items:center;gap:11px;padding-bottom:12px}
+.lp-logo{width:46px;height:46px;flex:none;border:1px solid #2f80ff;border-radius:13px;background:#162b44;color:#199aff;font-size:40px;line-height:42px;display:grid;place-items:center;text-shadow:0 0 10px #238fff77}
+.lp-heading{min-width:0;flex:1}.lp-heading h2{font-size:23px;margin:0;color:#fafafa}.lp-heading p{font-size:11px;color:#bfbfbf;margin:1px 0 0}
+.lp-state{border:1px solid #595959;background:#2a2a2a;color:#c6c6c6;border-radius:999px;padding:7px 9px;font-size:11px;white-space:nowrap}
+.lp-state.is-verified{background:#183347;border-color:#2f80ff;color:#b8d9ff}
+.lp-project{display:flex;align-items:center;gap:10px;padding:12px;background:#2a2a2a;border:1px solid #474747;border-radius:12px;min-width:0}
+.lp-project-mark{width:37px;height:37px;flex:none;display:grid;place-items:center;background:#23374a;color:#51a7ff;border:1px solid #315b7b;border-radius:9px;font-size:24px}
+.lp-project-name{flex:1;min-width:0;display:grid;gap:2px}
+.lp-project-name small{font-size:11px;color:#bfbfbf}
+.lp-project-name strong{font-size:14px;overflow-wrap:anywhere}
+.lp-project-name span{font-size:11px;color:#bfbfbf;overflow-wrap:anywhere}
+.lp-project-open{font-size:28px;flex:none;line-height:25px;padding:4px 11px;border:0;background:transparent}
+.lp-quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.lp-quick button{min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;border-radius:11px;padding:9px 2px;background:#2a2a2a;font-size:11px}
+.lp-quick button span{font-size:21px;color:#b3cbe8;line-height:1.1}
+.lp-quick button:hover,.lp-tools button:hover{border-color:#2f80ff}
+.lp-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.lp-section-head small{font-size:10px;letter-spacing:1px;color:#93bbe6}
+.lp-section-head h3{font-size:16px;margin:5px 0 0}
+.lp-section-head button{font-size:12px;flex:none;color:#bfdcff}
+.lp-flow{display:flex;align-items:center;justify-content:space-between;gap:3px;padding:12px 0 10px;min-width:0}
+.lp-flow span{flex:1 1 0;min-width:0;display:grid;place-items:center;text-align:center;padding:10px 3px;background:#2a2a2a;border:1px solid #484848;border-radius:10px;font-size:11px}
+.lp-flow b{flex:none;color:#91bcf2}
+.lp-message{padding:10px 11px;border-radius:10px;background:#262626;border:1px solid #424242;color:#c2c2c2;font-size:12px;line-height:1.45;margin-bottom:11px}
+.lp-message.is-verified{color:#c2dbff;border-color:#316bb0;background:#1c2e3f}
+.lp-launch{display:block;width:100%;min-height:50px;background:#0869eb;color:#fff;border:1px solid #269cff;border-radius:13px;font-size:15px;font-weight:750}
+.lp-launch:disabled{background:#303030;border-color:#494949;color:#afafaf;opacity:1}
+.lp-build-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.lp-build-actions button{font-size:12px}
+.lp-tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.lp-tools button{display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;padding:11px 2px;font-size:11px;background:#2a2a2a}
+.lp-tools button span{font-size:22px;color:#89b4ea}
+.lp-footnote{font-size:11px;color:#bfbfbf;line-height:1.45;padding:0 4px}
+#lp-home[hidden],#loop-workspace[hidden],#loop-safety-banner[hidden]{display:none!important}
+@media(max-width:700px){.lp-views{position:sticky;top:0;z-index:6;background:#1b1b1b;padding:7px 0 10px}.lp-home{gap:10px}.lp-hero,.lp-build{padding:12px}.lp-state{max-width:126px;white-space:normal;text-align:center}.lp-heading h2{font-size:21px}}
+@media(max-width:370px){.lp-logo{width:39px;height:39px;font-size:33px}.lp-quick,.lp-tools{gap:5px}.lp-quick button,.lp-tools button{font-size:10px}.lp-flow span{font-size:10px;padding:9px 1px}.lp-section-head h3{font-size:14px}}

@@ -23,7 +23,7 @@
    else p.reject(new Error(String(d.error||'BACKEND_REJECTED')));
  });
  const send=(plugin,action,payload={})=>request('plugin',{plugin,action,payload});
- const openAnchor=()=>request('open_anchor');
+ const openAnchor=(kind='general')=>request('open_anchor',{payload:{kind}});
  const selection=(project_id,loop_id)=>request('selection',{payload:{project_id,loop_id}});
  const state={connected:false};
  const el=(id)=>document.getElementById(id);

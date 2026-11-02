@@ -7,9 +7,11 @@ const SOURCES=Object.freeze({
   pendientes:{sheet:"ventana-pendientes",destination:"chat",label:"Pendientes"},
   constitucion:{sheet:"ventana-constitucion",destination:"constitucion",label:"Constitución"}
 });
-export function abrirAnclajeUniversal(origen){
+export function abrirAnclajeUniversal(origen,destino){
   const o=SOURCES[origen];
   if(!o)throw Error("ORIGEN_ANCLA_INVALIDO");
+  if(destino!==undefined && !["chat","constitucion"].includes(destino))throw Error("DESTINO_ANCLA_INVALIDO");
+  const dest=destino||o.destination;
   const native=document.getElementById("ventana-ancla");
   const source=document.getElementById(o.sheet);
   if(!native||!document.getElementById("btn-ancla")||typeof window.RIU_ANCLA_ABRIR!=="function")throw Error("ANCLA_NATIVA_NO_DISPONIBLE");
@@ -32,7 +34,7 @@ export function abrirAnclajeUniversal(origen){
     watcher.observe(native,{attributes:true,attributeFilter:["hidden"]});
   }
   try{
-    window.RIU_ANCLA_ABRIR(o.destination);
+    window.RIU_ANCLA_ABRIR(dest);
     if(native.hidden)throw Error("ANCLA_NATIVA_NO_ABIERTA");
     const caja=native.querySelector(".va-caja");
     let badge=caja?.querySelector("#ancla-contexto-origen");
@@ -45,9 +47,9 @@ export function abrirAnclajeUniversal(origen){
       if(header)header.after(badge);else caja.prepend(badge);
     }
     if(badge){
-      badge.textContent="⚓ Desde "+o.label+" · destino "+(o.destination==="constitucion"?"Constitución":"Chat")+" · anclaje compartido";
+      badge.textContent="⚓ Desde "+o.label+" · destino "+(dest==="constitucion"?"Constitución":"Chat")+" · anclaje compartido";
       badge.hidden=false;
     }
-    return {opened:true,native:true,destination:o.destination,origin:origen};
+    return {opened:true,native:true,destination:dest,origin:origen};
   }catch(e){restore();throw e}
 }

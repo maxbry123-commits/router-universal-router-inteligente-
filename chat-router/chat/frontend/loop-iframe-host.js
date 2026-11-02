@@ -39,8 +39,15 @@ export function renderLoopIFrame(cuerpo){
         if(!s.status||s.project_id!==k.project_id||s.loop_id!==k.loop_id)throw Error('SELECCION_NO_VERIFICADA');
         selected=k;powerState(s.status);reply.result={selected:true,status:s.status};reply.ok=true;
       }else if(d.name==='open_anchor'){
-        const result=abrirAnclajeUniversal('loop');
-        reply.ok=true;reply.result={...result,anchored:false};
+        const kind=String(d.payload?.kind||'general');
+        if(!['general','handoff','files','notes','constitution'].includes(kind))throw Error('ANCLA_SECCION_INVALIDA');
+        const result=abrirAnclajeUniversal('loop',kind==='constitution'?'constitucion':'chat');
+        const target=kind==='handoff'?'#ancla-handoffs':kind==='files'?'#anc-lista':kind==='notes'?'.anc3-list':null;
+        if(kind==='handoff'){
+          const h=document.querySelector('#ancla-handoffs');if(h)h.open=true;
+        }
+        if(target)document.querySelector(target)?.scrollIntoView({block:'nearest',behavior:'smooth'});
+        reply.ok=true;reply.result={...result,section:kind,anchored:false};
       }else throw Error('OPERACION_NO_AUTORIZADA');
     }catch(e){reply.error=String(e.message||e).slice(0,180)}
     if(f.isConnected&&f.contentWindow)f.contentWindow.postMessage(reply,location.origin);
