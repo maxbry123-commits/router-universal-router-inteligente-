@@ -54,6 +54,9 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
   const nombres = new Map(MODELOS_API.map(m => [m.id, m.nombre]));
   for (const [id, nombre] of Object.entries({'lfm2.5-350m':'Liquid LFM2.5 350M','qwen2.5-coder-1.5b':'Qwen2.5 Coder 1.5B','qwen3.5-0.8b':'Qwen3.5 0.8B','qwen3-0.6b':'Qwen3 0.6B'})) nombres.set(id, nombre);
   cfg.agents.defaults.timeoutSeconds = Math.max(Number(cfg.agents.defaults.timeoutSeconds) || 0, 600);
+  cfg.gateway ||= {};
+  cfg.gateway.controlUi ||= {};
+  cfg.gateway.controlUi.basePath = '/openclaw';
   const previo = cfg.models.providers.swecode || {};
   const previos = new Map((Array.isArray(previo.models) ? previo.models : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]));
   cfg.models.providers.swecode = {
@@ -63,7 +66,10 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
       contextWindow: 32768, maxTokens: 4096 }, ...(previos.get(id) || {}), id, name: nombres.get(id) || previos.get(id)?.name || id,
       ...(nombres.has(id) && !id.includes('/') ? { contextWindow: 16384 } : {}) })),
   };
-  for (const id of safeIds) cfg.agents.defaults.models['swecode/' + id] ||= {};
+  for (const id of safeIds) {
+    const entry = cfg.agents.defaults.models['swecode/' + id] ||= {};
+    if (nombres.has(id)) entry.alias = nombres.get(id);
+  }
   const after = JSON.stringify(cfg, null, 2);
   if (after === JSON.stringify(JSON.parse(before), null, 2)) return false;
   const tmp = target + '.riu-' + process.pid + '.tmp';
