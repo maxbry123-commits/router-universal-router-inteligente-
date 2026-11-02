@@ -602,10 +602,11 @@ async def _reanudar_dsl_seguro():
     """Recover queued DSL after process restart via SAME PluginHost and CIT-50.
     A claimed/running slot is not retried. Ambiguous session/auth => no dispatch.
     """
-    from nct_loop.trigger_contract import _id
     try:
         queue_plugin=await asyncio.to_thread(loop_puente._cargar,"cola50")
         loop_plugin=await asyncio.to_thread(loop_puente._cargar,"nct_loop")
+        # Loading the existing plugin adds its Loop root to sys.path.
+        from nct_loop.trigger_contract import _id
         watchdog=await asyncio.to_thread(loop_puente._cargar,"watchdog48")
         store=await asyncio.to_thread(queue_plugin._store)
         watch_store=await asyncio.to_thread(watchdog._store)
