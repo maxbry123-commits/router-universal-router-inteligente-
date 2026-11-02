@@ -1,6 +1,6 @@
 /* Vista A — Inicio / Proyecto · Maxbry V07.
    No afecta shell.html ni el chat; solo loop-panel.html. */
-.lp-views{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:12px 0 10px}
+.lp-views{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:12px 0 10px}
 .lp-tab{background:#292929;border:1px solid #494949;color:#e2e2e2;border-radius:12px;font-size:13px;font-weight:650}
 .lp-tab.is-current{background:#165bd4;border:1px solid #248aff;color:#fff;box-shadow:inset 0 0 0 1px #348aff,0 3px 10px #0255d020}
 .lp-home{max-width:800px;margin:0 auto;display:grid;gap:12px}
@@ -39,5 +39,5 @@
 .lp-tools button span{font-size:22px;color:#89b4ea}
 .lp-footnote{font-size:11px;color:#bfbfbf;line-height:1.45;padding:0 4px}
 #lp-home[hidden],#loop-workspace[hidden],#loop-safety-banner[hidden]{display:none!important}
-@media(max-width:700px){.lp-tab{padding:8px 5px;font-size:11px;min-height:43px}.lp-views{position:sticky;top:0;z-index:6;background:#1b1b1b;padding:7px 0 10px}.lp-home{gap:10px}.lp-hero,.lp-build{padding:12px}.lp-state{max-width:126px;white-space:normal;text-align:center}.lp-heading h2{font-size:21px}}
+@media(max-width:700px){.lp-views{position:sticky;top:0;z-index:6;background:#1b1b1b;padding:7px 0 10px}.lp-home{gap:10px}.lp-hero,.lp-build{padding:12px}.lp-state{max-width:126px;white-space:normal;text-align:center}.lp-heading h2{font-size:21px}}
 @media(max-width:370px){.lp-logo{width:39px;height:39px;font-size:33px}.lp-quick,.lp-tools{gap:5px}.lp-quick button,.lp-tools button{font-size:10px}.lp-flow span{font-size:10px;padding:9px 1px}.lp-section-head h3{font-size:14px}}

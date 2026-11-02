@@ -18,27 +18,3 @@
 .swe-ctl select[data-swe-ctl] option,.swe-ctl select[data-swe-ctl] optgroup{font-size:16px;font-weight:400}
 .swe-ctl .swe-rej-fila,.swe-ctl .swe-sel{min-width:0;max-width:100%;box-sizing:border-box}
 .swe-ctl .swe-rej-fila select{width:100%;box-sizing:border-box}
-
-/* Selector unico de modelos (misma hoja existente) + acceso al banco configurado. */
-#sh-selectores .api-modelos-rapido{display:grid;gap:8px;padding:12px 0;max-width:100%}
-#sh-selectores .api-modelos-rapido label{font-size:13px;font-weight:650;opacity:.86}
-#sh-selectores .api-modelos-fila{display:flex;gap:8px;min-width:0;align-items:stretch}
-#sh-selectores #modelo-unificado{flex:1 1 0;width:100%;min-width:0;max-width:100%;font-size:16px;padding:10px;border-radius:12px;text-overflow:ellipsis}
-#sh-selectores #anadir-api-sdk{flex:0 0 auto;font-size:14px;min-width:90px;padding:8px 10px;border-radius:12px}
-#sh-selectores #api-modelos-nota{font-size:12px;line-height:1.35}
-@media(max-width:380px){#sh-selectores .api-modelos-fila{flex-wrap:wrap}#sh-selectores #anadir-api-sdk{flex:1 1 100%}}
-
-/* Rollback visual: los selectores NVIDIA y Groq de la vista original
-   vuelven a mostrarse con sus botones ON/OFF y listas. */
-#sh-selectores #selectores .sel-fila[data-selector="groq"],
-#sh-selectores #selectores .sel-fila[data-selector="nvidia-groq-team"]{display:flex!important}
-#sh-selectores #selectores .sel-resp-global{display:block!important}
-#sh-selectores .api-modelos-rapido{order:-1}
-#sh-selectores .agentes-restore-shortcut{
-  display:grid;gap:8px;margin:10px 0;padding:12px;
-  background:var(--panel,#2A2A2A);border:1px solid var(--border,#484848);border-radius:12px;
-}
-#sh-selectores .agentes-restore-shortcut strong{font-size:14px}
-#sh-selectores .agentes-restore-shortcut p,
-#sh-selectores .agentes-restore-shortcut small{margin:0;line-height:1.4;font-size:12px;overflow-wrap:anywhere}
-#sh-selectores .agentes-restore-shortcut button{width:100%;min-height:44px;text-align:center}

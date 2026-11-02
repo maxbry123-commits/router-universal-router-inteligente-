@@ -2,24 +2,21 @@
 (() => {
  'use strict';
  const el=id=>document.getElementById(id);
- const home=el('lp-home'),work=el('loop-workspace'),resources=el('lp-resources'),exec=el('lp-execution'),banner=el('loop-safety-banner');
- const tabHome=el('lp-tab-home'),tabWork=el('lp-tab-work'),tabResources=el('lp-tab-resources'),tabExec=el('lp-tab-exec'),go=el('go-run');
- if(!home||!work||!resources||!exec||!banner||!tabHome||!tabWork||!tabResources||!tabExec||!go)return;
+ const home=el('lp-home'),work=el('loop-workspace'),exec=el('lp-execution'),banner=el('loop-safety-banner');
+ const tabHome=el('lp-tab-home'),tabWork=el('lp-tab-work'),tabExec=el('lp-tab-exec'),go=el('go-run');
+ if(!home||!work||!exec||!banner||!tabHome||!tabWork||!tabExec||!go)return;
  let verified=null;
  const output=el('lp-runtime');
  function message(t){output.textContent=String(t).slice(0,250);output.classList.remove('is-verified');}
  function switchView(name,focus){
-   const start=name==='home',building=name==='work',visual=name==='resources',running=name==='execution';
-   home.hidden=!start;work.hidden=!building;resources.hidden=!visual;exec.hidden=!running;banner.hidden=!building;
+   const start=name==='home',building=name==='work',running=name==='execution';
+   home.hidden=!start;work.hidden=!building;exec.hidden=!running;banner.hidden=!building;
    tabHome.classList.toggle('is-current',start);
    tabWork.classList.toggle('is-current',building);
-   tabResources.classList.toggle('is-current',visual);
    tabExec.classList.toggle('is-current',running);
    tabHome.setAttribute('aria-selected',String(start));
    tabWork.setAttribute('aria-selected',String(building));
-   tabResources.setAttribute('aria-selected',String(visual));
    tabExec.setAttribute('aria-selected',String(running));
-   if(visual)window.dispatchEvent(new CustomEvent('yaiwes:resources-view-open'));
    if(running)window.dispatchEvent(new CustomEvent('yaiwes:exec-view-open'));
    if(focus){const node=el(focus);if(node){node.scrollIntoView({block:'nearest',behavior:'smooth'});node.focus({preventScroll:true});}}
  }
@@ -45,7 +42,6 @@
  }
  tabHome.addEventListener('click',()=>switchView('home'));
  tabWork.addEventListener('click',()=>switchView('work'));
- tabResources.addEventListener('click',()=>switchView('resources'));
  tabExec.addEventListener('click',()=>switchView('execution'));
  el('lp-config-project').addEventListener('click',()=>switchView('work','project-id'));
  el('lp-setup').addEventListener('click',()=>switchView('work','project-id'));
