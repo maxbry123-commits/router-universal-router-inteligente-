@@ -52,7 +52,10 @@ class SnapshotTests(unittest.TestCase):
         self.assertTrue(result["ok"])
         uri = storage._full("tasks/system/cola50.sqlite3")
         self.assertEqual(result["sha256"], hashlib.sha256(self.fs.files[uri]).hexdigest())
+        # Simulate a clean Space clone, where the SQLite WAL/shm also vanish.
         self.db.unlink()
+        for suffix in ("-wal", "-shm"):
+            Path(str(self.db) + suffix).unlink(missing_ok=True)
         recovered = storage.sqlite_restore_if_missing(self.db, "cola50")
         self.assertEqual(recovered["status"], "RESTORED")
         self.assertEqual(self._row(self.db), "claimed")
