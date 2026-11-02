@@ -4,7 +4,7 @@
 // Una sola funcion construye los controles (controles()), una sola registra sus eventos (delegados en document, una vez), una sola valida (swe-directo.js validarSeleccion),
 // una sola consulta disponibilidad (cargarCapacidades) y una sola serializa el contrato (swe-directo.js leerSeleccion/armarTarea). Abrir una ventana MUEVE el nodo; no clona.
 // Cada ventana solo aporta lo suyo: su lista de MODELO QUE RESPONDE (swe-directo.js opcionesModeloVentana), su nota de conexion y su titulo.
-import { api } from "./api.js";
+import { api, plugin } from "./api.js";
 import { systemPromptOnCache, cargarSystemPromptOn, alternarSystemPromptOn } from "./swe-systemprompt.js";
 import { camposFijos, modeloParaLista, modeloGuardado, SWE_LISTAS, MODELOS_SWE, MODELOS_WEB, MODOS_TRABAJO, AGENTES_SWE, WORKFLOWS_SWE, LIQUID_MIRROR, leerSeleccion, guardarSeleccion, requiereHarness, cargarCapacidades, olvidarCapacidades, normalizarCapacidades, estadoOpcion, idCatalogo, agruparOpciones, lineaNoInstalados, lineaSinVerificar, lineaOtros, opcionesModeloVentana, ETIQUETA_ESTADO, VENTANAS_CENTRAL } from "./swe-directo.js";
 const K = "riu_swe_modelo";
@@ -206,8 +206,27 @@ async function refrescarCapacidades(forzar, conFichas = false) {
 }
 
 // ---- Eventos: registrados UNA vez (delegados en document); abrir una ventana no vuelve a registrar nada ----
-document.addEventListener("click", (e) => {
-  const b = e.target.closest && e.target.closest("[data-swe-agentico]"); if (b) { guardarSeleccion({ modo_agentico: !leerSeleccion().modo_agentico }); pintarControles(); return; }
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest && e.target.closest("[data-swe-agentico]");
+  if (b) {
+    // Activar el modo SOLO si el Router confirmó su lock real. Un estado
+    // en localStorage NO autoriza herramientas ni agentes del Harness.
+    if (b.disabled) return;
+    const siguiente = !leerSeleccion().modo_agentico;
+    b.disabled = true;
+    try {
+      const control = await plugin("puente_chat", "agent_access_lock",
+                                   { quien: "agentes", locked: !siguiente });
+      if (control?.ok !== true || control.agentes_locked !== !siguiente)
+        throw new Error("el Router no confirmó el bloqueo de agentes");
+      guardarSeleccion({ modo_agentico: siguiente });
+      pintarControles();
+    } catch (err) {
+      const nota = document.querySelector(".swe-ctl .swe-estado");
+      if (nota) nota.textContent = "AGENTES SIN ACTIVAR: " + (err?.message || "Router sin respuesta");
+    } finally { b.disabled = false; }
+    return;
+  }
   const spB = e.target.closest && e.target.closest("[data-swe-systemprompt]"); if (spB) { alternarSystemPromptOn().then(pintarControles); return; }
   if (e.target.closest && e.target.closest(".swe-refrescar")) refrescarCapacidades(true, true);
 });
