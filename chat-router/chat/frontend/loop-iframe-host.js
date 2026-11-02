@@ -54,6 +54,19 @@ export function renderLoopIFrame(cuerpo){
         const s=await api('dsl_estado',{op:'get',...k});
         if(!s.status||s.project_id!==k.project_id||s.loop_id!==k.loop_id)throw Error('SELECCION_NO_VERIFICADA');
         selected=k;powerState(s.status);reply.result={selected:true,status:s.status};reply.ok=true;
+      }else if(d.name==='open_pending'){
+        const pending=document.querySelector('#ventana-pendientes');
+        const btn=document.querySelector('#btn-pendientes');
+        const loop=document.querySelector('#ventana-loop');
+        if(!pending||!btn||!loop)throw Error('PENDIENTES_NO_DISPONIBLES');
+        const restore=!loop.hidden;
+        if(restore)loop.hidden=true;
+        try{
+          if(pending.hidden)btn.click();
+          if(pending.hidden)throw Error('PENDIENTES_NO_ABIERTOS');
+          if(restore){const obs=new MutationObserver(()=>{if(pending.hidden){obs.disconnect();if(loop.isConnected)loop.hidden=false}});obs.observe(pending,{attributes:true,attributeFilter:['hidden']})}
+          reply.ok=true;reply.result={opened:true,native:true};
+        }catch(e){if(restore&&loop.isConnected)loop.hidden=false;throw e}
       }else if(d.name==='open_anchor'){
         const kind=String(d.payload?.kind||'general');
         if(!['general','handoff','files','notes','constitution'].includes(kind))throw Error('ANCLA_SECCION_INVALIDA');
