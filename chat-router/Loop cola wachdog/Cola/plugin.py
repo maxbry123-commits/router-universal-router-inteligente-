@@ -32,12 +32,87 @@ _core = _mod('cola50_core', _DIR / 'nct_addons' / 'cola50' / 'core.py')
 _motor_mod = None
 _STORE = None
 _WORKER = {'thread': None, 'worker': None, 'loop': None}
+_DSL_STORAGE_READY = None
+
+
+def _hf_storage():
+    from plugins.hf_storage import plugin as storage
+    return storage
+
+
+class _DurableQueueStore(_core.QueueStore):
+    """Same SQLite queue, with synchronous verified HF-bucket receipts for DSL.
+    Legacy CIT-50 paths retain the original behavior and limits.
+    """
+    def _checkpoint_dsl(self):
+        if _DSL_STORAGE_READY is not True:
+            raise RuntimeError("DSL_STORAGE_RECOVERY_UNAVAILABLE")
+        _hf_storage().sqlite_checkpoint(self.path, "cola50")
+
+    def create(self, body):
+        dsl = isinstance(body, dict) and body.get("mode") == "dsl"
+        if dsl and _DSL_STORAGE_READY is not True:
+            raise RuntimeError("DSL_STORAGE_RECOVERY_UNAVAILABLE")
+        result = super().create(body)
+        if dsl:
+            self._checkpoint_dsl()
+        return result
+
+    def start(self, qid, seconds=3600):
+        dsl = self.get(qid).get("mode") == "dsl"
+        if dsl and _DSL_STORAGE_READY is not True:
+            raise RuntimeError("DSL_STORAGE_RECOVERY_UNAVAILABLE")
+        result = super().start(qid, seconds)
+        if dsl:
+            self._checkpoint_dsl()
+        return result
+
+    def claim_dsl_for(self, qid, tid):
+        if _DSL_STORAGE_READY is not True:
+            raise RuntimeError("DSL_STORAGE_RECOVERY_UNAVAILABLE")
+        result = super().claim_dsl_for(qid, tid)
+        # Persist the RUNNING claim BEFORE the model/tool may execute.
+        if result.get("claimed") or result.get("error") in ("QUEUE_EXPIRED", "NEEDS_RECONCILIATION"):
+            self._checkpoint_dsl()
+        return result
+
+    def complete(self, qid, tid, payload, *, ok=True, retry=False, delay=0):
+        dsl = self.get(qid).get("mode") == "dsl"
+        result = super().complete(qid, tid, payload, ok=ok, retry=retry, delay=delay)
+        if dsl and result:
+            self._checkpoint_dsl()
+        return result
+
+    def control(self, qid, action):
+        dsl = self.get(qid).get("mode") == "dsl"
+        result = super().control(qid, action)
+        if dsl:
+            self._checkpoint_dsl()
+        return result
+
+    def disable_dsl_task(self, qid, tid):
+        result = super().disable_dsl_task(qid, tid)
+        self._checkpoint_dsl()
+        return result
+
+    def skip_dsl_task(self, qid, tid, reason):
+        result = super().skip_dsl_task(qid, tid, reason)
+        self._checkpoint_dsl()
+        return result
 
 
 def _store():
-    global _STORE
+    global _STORE, _DSL_STORAGE_READY
     if _STORE is None:
-        _STORE = _core.QueueStore(_DB)
+        try:
+            # Restore BEFORE connecting SQLite: never use WAL directly on HF FUSE.
+            _hf_storage().sqlite_restore_if_missing(_DB, "cola50")
+            _DSL_STORAGE_READY = True
+        except Exception:
+            # Legacy queues stay available; DSL fails closed until a clean
+            # restart/restore, never silently starts on an empty local DB.
+            _DSL_STORAGE_READY = False
+        _STORE = _DurableQueueStore(_DB)
     return _STORE
 
 
