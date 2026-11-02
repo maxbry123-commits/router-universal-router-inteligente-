@@ -38,6 +38,10 @@ class TestDispatchReady(unittest.TestCase):
         bridge = TriggerBridge(ports)
         bridge._prior = previous
         bridge.engine.run_once = run_one
+        async def closure(action, request, *, server_context=None):
+            self.assertEqual((action,request["op"]),("dsl_control","gap_collect"))
+            return {"ok":True,"status":"PASS","revision":1,"total":0}
+        bridge.handle = closure  # mock external HF checkpoint; not an E2E test
         outcome = asyncio.run(bridge.dispatch_ready(project="demo", loop="L1",
            state={"queue_id": "cit_mock", "contracts": contracts, "role_pairs": {}},
            server_context={"authenticated": True, "project_id": "demo"},
@@ -73,6 +77,18 @@ class TestDispatchReady(unittest.TestCase):
             server_context={"authenticated":True,"project_id":"demo"}))
         self.assertEqual(output["error"], "NO_ELIGIBLE_TRIGGER")
         self.assertEqual(output["pending"], ["B"])
+
+    def test_completed_queue_requires_durable_gap_checkpoint(self):
+        ports = SimpleNamespace(queue_status=lambda q:{"status":"completed","tasks":[]})
+        bridge = TriggerBridge(ports)
+        async def broken(action, request, *, server_context=None):
+            return {"ok":False,"status":"BLOCKED","error":"GAPS_READBACK_FAILED"}
+        bridge.handle=broken
+        result=asyncio.run(bridge.dispatch_ready(project="demo",loop="L1",
+            state={"queue_id":"cit_test","contracts":[],"role_pairs":{}},
+            server_context={"authenticated":True,"project_id":"demo"}))
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"],"GAP_CLOSURE_NOT_DURABLE")
 
     def test_paused_queue_does_not_execute(self):
         ports = SimpleNamespace(queue_status=lambda q: {"status":"paused","tasks":[]}, queue_skip=None)
