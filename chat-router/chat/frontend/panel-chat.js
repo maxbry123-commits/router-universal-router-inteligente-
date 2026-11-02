@@ -128,10 +128,21 @@ export async function mount(root, { api, tell }) {
     todos.slice(0, 3).forEach((a) => caja.append(node("span", etiquetaCorta(a), "anclado-item")));
     if (todos.length > 3) caja.append(node("span", "+" + (todos.length - 3) + " más ⚓", "anclado-item"));
     const n = resumenAdjuntos(chat());
-    const mensaje = n.total
-      ? "⚓ Anclados en este chat: 📎 " + n.archivos + (n.archivos === 1 ? " archivo" : " archivos") + " · 🖼️ " + n.imagenes + (n.imagenes === 1 ? " imagen" : " imágenes") + " · " + n.on + "/" + n.total + " ON" + (n.off ? " · " + n.off + " OFF" : "")
-      : "⚓ En este chat: 0 archivos y 0 imágenes anclados";
-    for (const v of [estadoInput, estadoVentana]) if (v && v.textContent !== mensaje) v.textContent = mensaje;
+    // Sin adjuntos reales no se muestra aviso. Nunca alterar el historial ni la sesión aquí.
+    const svg = (trazos) => '<svg class="riu-anclas-icono" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + trazos + '</svg>';
+    const iconoAncla = svg('<circle cx="12" cy="5" r="2"/><path d="M12 7v14M7 11h10M4 15a8 8 0 0 0 16 0"/>');
+    const iconoArchivo = svg('<path d="m21 12.5-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.8 1.8 0 0 1-2.6-2.6l8.5-8.5"/>');
+    const iconoCamara = svg('<path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="3"/>');
+    const texto = "Anclados en este chat: " + n.archivos + (n.archivos === 1 ? " archivo" : " archivos") + ", " + n.imagenes + (n.imagenes === 1 ? " imagen" : " imágenes") + ", " + n.on + " de " + n.total + " activos" + (n.off ? ", " + n.off + " apagados" : "");
+    const html = iconoAncla + '<span>Anclados en este chat: </span>' + iconoArchivo + '<span>' + n.archivos + (n.archivos === 1 ? ' archivo' : ' archivos') + '</span><span>·</span>' + iconoCamara + '<span>' + n.imagenes + (n.imagenes === 1 ? ' imagen' : ' imágenes') + ' · ' + n.on + '/' + n.total + ' ON' + (n.off ? ' · ' + n.off + ' OFF' : '') + '</span>';
+    for (const v of [estadoInput, estadoVentana]) {
+      if (!v) continue;
+      v.hidden = n.total === 0;
+      if (n.total && v.getAttribute("aria-label") !== texto) {
+        v.setAttribute("aria-label", texto);
+        v.innerHTML = html; // solo iconos SVG fijos y contadores numéricos, sin contenido externo
+      }
+    }
   };
   const pintarFichaPill = () => {
     const et = fichaEt(chat().ficha);
