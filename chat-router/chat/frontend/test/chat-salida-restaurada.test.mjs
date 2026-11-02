@@ -21,7 +21,7 @@ test('salida tiene altura mínima móvil y no pierde el área de escritura',()=>
 });
 test('solo hay flecha de bajar en el historial, sin nuevo flotando a mitad del chat',()=>{
  const js=src('chat-riu.js'),panel=src('panel-chat.js');
- assert.match(js,/bajar\.hidden = false/);
+ assert.match(js,/bajar\.hidden = max <= 48 \|\| fromBottom <= 70/);
  assert.match(js,/h\.scrollTo\(\{ top: h\.scrollHeight/);
  assert.doesNotMatch(js,/const subir = document\.createElement/);
  assert.doesNotMatch(panel,/btn-nuevo-abajo/);
