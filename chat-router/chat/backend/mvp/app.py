@@ -163,7 +163,9 @@ async def _llamar_modelo(mensajes, modelo, opciones):
 async def chat(cuerpo: dict):
     controles = _controles(cuerpo)
     try:
-        modelo = modelos.validar(cuerpo.get("modelo"))
+        from plugins.deepseek_harness.server import es_swe, SWE_ALIAS
+        solicitado = cuerpo.get("modelo")
+        modelo = SWE_ALIAS.get(solicitado, solicitado) if cuerpo.get("via") == "harness" and es_swe(solicitado) else modelos.validar(solicitado)
     except (ValueError, TypeError) as error:
         raise HTTPException(status_code=400, detail=str(error)) from None
     mensajes = cuerpo.get("mensajes")
