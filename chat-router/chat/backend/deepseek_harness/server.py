@@ -234,7 +234,7 @@ def _bridge_chat(mensajes, modelo, conv_id="", opciones=None):
                                                 **opc, **plan}).encode())
     try:
         from agentes.adaptadores import _comun as _c  # opener sin redireccion (chat-router va en PYTHONPATH)
-        with _c.abrir(req, float(os.environ.get("RIU_SWE_TIMEOUT_S", "130"))) as r:
+        with _c.abrir(req, float(os.environ.get("RIU_SWE_TIMEOUT_S", "450"))) as r:
             bruto = json.load(r)
         msg = bruto["choices"][0]["message"]
         msg.get  # message null -> AttributeError controlado abajo
@@ -706,7 +706,7 @@ def _openai_sse(respuesta):
                       "finish_reason": None}]}
     yield "data: " + json.dumps(o, ensure_ascii=False) + "\n\n"
     if c["message"].get("tool_calls"):
-        o["choices"][0]["delta"] = {"tool_calls": c["message"]["tool_calls"]}
+        o["choices"][0]["delta"] = {"tool_calls": [{"index": i, **t} for i, t in enumerate(c["message"]["tool_calls"])]}
         yield "data: " + json.dumps(o, ensure_ascii=False) + "\n\n"
     o["choices"][0]["delta"] = {}
     o["choices"][0]["finish_reason"] = c["finish_reason"]
@@ -755,13 +755,16 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
     _autorizar_chat_modelos(x_api_key, authorization)
     if not isinstance(cuerpo, dict) or not isinstance(cuerpo.get("messages"), list) or not cuerpo["messages"]:
         raise HTTPException(status_code=400, detail="MENSAJES_INVALIDOS")
-    # Chat de un modelo: tools de agentes van por /invoke y /chat/swe existentes,
-    # nunca por un atajo sin los permisos del Router MVP.
-    if cuerpo.get("tool_choice") not in (None, "none", "auto"):
-        raise HTTPException(status_code=403, detail="TOOLS_REQUIEREN_HARNESS_INVOKE")
-    # OpenClaw suele incluir su inventario de tools en cada petición incluso en
-    # conversación normal. No reenviarlo al modelo ni activarlo: los efectos
-    # exigen el flujo /invoke y permisos de la constitución.
+    # Booleano: motor de tools del Harness. Lista: OpenClaw ejecuta sus propias
+    # funciones y devuelve sus resultados; este endpoint no ejecuta esa lista.
+    tools = cuerpo.get("tools", False)
+    if not isinstance(tools, (bool, list)):
+        raise HTTPException(status_code=400, detail="TOOLS_INVALIDAS")
+    if isinstance(tools, list) and (len(tools) > 128 or any(
+        not isinstance(t, dict) or t.get("type") != "function" or
+        not isinstance(t.get("function"), dict) or
+        not isinstance(t["function"].get("name"), str) for t in tools)):
+        raise HTTPException(status_code=400, detail="TOOLS_INVALIDAS")
     destino, modelo = _modelo_destino(cuerpo.get("model"))
     stream = cuerpo.get("stream") is True
     h = _cabeceras_bridge()
@@ -769,7 +772,20 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
     # no las API keys, tokens del navegador ni rutas arbitrarias.
     req = {"model": modelo, "messages": cuerpo["messages"],
            **{k: cuerpo[k] for k in ("conv_id", "modo", "proyecto") if isinstance(cuerpo.get(k), str)}}
+    if tools is True:
+        # Reutilizar el bucle existente: catalogo MCP, permisos, diario y reanudacion.
+        motor = {"modelo": modelo, "mensajes": req["messages"], "via": "harness",
+                 "tools": True, "agente_tool": cuerpo.get("agente_tool") is True,
+                 "llm_tool": cuerpo.get("llm_tool") is True}
+        if stream:
+            return StreamingResponse(_sse_mvp_con_latidos(motor, h, modelo), media_type="text/event-stream",
+                                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+        return await _mvp_modelo_compat(motor, h, modelo)
+    opciones_cliente = {"tools": tools, "tool_choice": cuerpo.get("tool_choice", "auto")} if isinstance(tools, list) and tools else {}
     if destino == "swe":
+        if opciones_cliente:
+            req.update(opciones_cliente)
+            req["ejecutor_tools"] = "openclaw"
         if not _bridge_url():
             raise HTTPException(status_code=503, detail="SWE_CODE_ROUTER_NO_CONFIGURADO")
         req["stream"] = stream
@@ -819,7 +835,8 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
         # /chat sin 'via=harness' llama mvp.externos una sola vez, exacto modelo.
         req["modelo"] = req.pop("model")
         req["mensajes"] = req.pop("messages")
-        req["tools"] = False
+        req["opciones"] = opciones_cliente
+        req["tools"] = bool(opciones_cliente)
         req["agente_tool"] = False
         req["llm_tool"] = False
         if stream:
@@ -856,3 +873,4 @@ def invoke(cuerpo: dict, x_api_key: str | None = Header(None)):
         return _err(str(exc))
     except Exception as exc:
         return _err(type(exc).__name__)
+
