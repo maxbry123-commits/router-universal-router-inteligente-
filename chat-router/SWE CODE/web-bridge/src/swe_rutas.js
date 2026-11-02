@@ -164,7 +164,10 @@ const redactar = (texto, env) => {
   return t.slice(0, 200);
 };
 function configRouter(env) {
-  const base = String(env.RIU_ROUTER_URL || '').trim().replace(/\/+$/, '') || ROUTER_LOCAL;
+  const puerto = String(env.PORT || '').trim();
+  const local = /^\d{1,5}$/.test(puerto) && +puerto >= 1 && +puerto <= 65535
+    ? 'http://127.0.0.1:' + puerto : ROUTER_LOCAL;
+  const base = String(env.RIU_ROUTER_URL || '').trim().replace(/\/+$/, '') || local;
   const clave = ACCESO_ROUTER.map((v) => String(env[v] || '').trim()).find(Boolean);
   if (!clave) return { error: 'ROUTER_NO_CONFIGURADO', estado: 'sin_credencial' };
   let ok = false; try { const u = new URL(base); ok = (u.protocol === 'https:' && !!u.hostname) || (u.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(u.hostname) && !u.username); } catch { ok = false; }
