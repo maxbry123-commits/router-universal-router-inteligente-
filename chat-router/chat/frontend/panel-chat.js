@@ -1,5 +1,6 @@
 import { node } from "./api.js";
 import * as A from "./chat-ancla.js";
+import { prepararImagenOArchivo } from "./imagen-subida.js";
 import { conectarSelectorModelos } from "./chat-selector-modelos.js";
 import { conectarMicrofono } from "./chat-microfono.js";
 import { conectarVentanas } from "./chat-ventanas.js";
@@ -316,9 +317,9 @@ export async function mount(root, { api, tell }) {
   const { pintarAnclas, cargarMiHandoff } = montarSelectorAncla({ q, filaEncender, chat, burbuja, abajo, fila, cerrarHojas, chatA, pintarAnclados, guardar, tell });  // selector de ancla: handoffs con botón de encender + pegar enlace/handoff propio → selector-ancla.js
   // ---- adjuntar y ventana de archivos (boton encender = anclar al chat + x-ray) ----
   let anclarAlSubir = false;  // true solo cuando se sube desde la ventana ⚓
-  const subir = async (file) => {
+  const subir = async (origen) => {
+    const file = await prepararImagenOArchivo(origen);
     const buf = await file.arrayBuffer();
-    if (buf.byteLength > 2_000_000) throw new Error('ARCHIVO_MUY_GRANDE: límite vigente de 2 MB por archivo');
     let bin = ""; const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
     const _dest = window.RIU_DESTINO_ARCHIVOS || (() => ({}));  // destinoArchivos(): unica autoridad de a donde van los archivos (chat / constitucion / proyecto seleccionado)
