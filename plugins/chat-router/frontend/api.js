@@ -1,5 +1,6 @@
 // api.js — Cliente API del Router (chat UI)
-// Cambio: cuando el Space HF no responde, el error dice explícitamente "Space caído — reinicia en Hugging Face" en lugar de GAP network error genérico.
+// Timeout chat_async / resultado = 90 s (1.5 min) + 2 reintentos con backoff para Groq/NVIDIA.
+// Alineado con el límite que ya existía en el backend (max(120, tope+15)).
 const CFG = window.RIU_CONFIG || {};
 let BASE = "";
 let liveVerified = false;
@@ -8,6 +9,8 @@ let liveCheckedAt = 0;
 let liveRequest = null;
 let PBASE = "";
 const vivos = new Set();
+const TOPE_CHAT = 90000; // 1.5 min
+const TOPE_POLL = 90000;
 const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const reg = ac ? { ac, t0: Date.now() } : null; if (reg) vivos.add(reg); const t = setTimeout(() => ac && ac.abort(), ms); return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => { clearTimeout(t); if (reg) vivos.delete(reg); }); };
 try { const cortarColgados = () => { for (const r of [...vivos]) if (Date.now() - r.t0 > 2000) { try { r.ac.abort(); } catch (e) {} } }; document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cortarColgados(); }); window.addEventListener('online', cortarColgados); window.addEventListener('pageshow', (e) => { if (e.persisted) cortarColgados(); }); } catch (e) {}
 const usarProxy = () => { try { return /\.vercel\.app$/.test(location.hostname) && localStorage.getItem('riu_proxy') !== '0' && !/[?&]proxy=0/.test(location.search); } catch (e) { return false; } };
@@ -68,7 +71,7 @@ window.RIU_RETOMAR = async (ses) => {
   while (Date.now() < fin) {
     if (!procs()[ses]) return { error: 'PROCESO_DETENIDO' };
     try {
-      const r = await fetchT(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid, espera: 8 }) }, 16000);
+      const r = await fetchT(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid, espera: 8 }) }, TOPE_POLL);
       const e = await r.json().catch(() => ({})); const p = e.result || {};
       if (!r.ok || e.status !== 'ok') { if (++malos >= 8) return { estado: 'reanudable', proceso_id: v.pid, error: 'GAP_ROUTER_ESTADO_NO_CONFIRMADO', detalle: e.reason || e.detail || ('HTTP ' + r.status) }; }
       else if (p.error) { guardaProc(ses, null); return p; }
@@ -97,14 +100,19 @@ async function puenteRouter(base, body, qs, headers) {
   const h = { 'Content-Type': 'application/json' };
   const pw = headers['X-Chat-Password'] || sessionStorage.getItem('riu_clave');
   if (pw) h['X-API-Key'] = pw;
-  for (let intento = 0; intento < 2; intento++) {
+  const maxIntentos = 3; // 1 original + 2 reintentos
+  for (let intento = 0; intento < maxIntentos; intento++) {
     let r;
     for (let k = 0; k < 3; k++) {
-      try { r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, k ? 20000 : 15000); break; }
+      try { r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, TOPE_CHAT); break; }
       catch (e) {
         if (k === 2) {
           const msg = String(e && e.message || e);
           if (/failed to fetch|networkerror|abort|timeout/i.test(msg)) {
+            if (intento < maxIntentos - 1) {
+              await new Promise(ok => setTimeout(ok, 1500 * (intento + 1)));
+              continue;
+            }
             throw new Error('GAP: Space HF caído o dormido. Ve a Hugging Face → Space comand-center-1-riu-router → Restart.');
           }
           throw e;
@@ -113,9 +121,16 @@ async function puenteRouter(base, body, qs, headers) {
         await new Promise(ok => setTimeout(ok, 800 * (k + 1)));
       }
     }
+    if (!r) continue;
     const env = await r.json().catch(() => ({}));
     if (r.status === 401 || r.status === 403) return { status: 401, ok: false, p: env };
-    if (!r.ok || env.status !== 'ok') return { status: r.ok ? 502 : r.status, ok: false, p: { error: env.reason || env.detail || ('HTTP ' + r.status) } };
+    if (!r.ok || env.status !== 'ok') {
+      if (intento < maxIntentos - 1 && (r.status === 429 || r.status >= 500)) {
+        await new Promise(ok => setTimeout(ok, 2000 * (intento + 1)));
+        continue;
+      }
+      return { status: r.ok ? 502 : r.status, ok: false, p: { error: env.reason || env.detail || ('HTTP ' + r.status) } };
+    }
     let p = env.result || {};
     let cortado = false;
     let proceso = p.proceso_id || null;
@@ -130,7 +145,7 @@ async function puenteRouter(base, body, qs, headers) {
         if (Date.now() > deadline) { cortado = true; break; }
         if (!primera) await new Promise(resolve => setTimeout(resolve, 250)); primera = false;
         try {
-          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 8 }) }, 16000);
+          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 8 }) }, TOPE_POLL);
           const envelope = await poll.json().catch(() => ({}));
           if (poll.status === 401 || poll.status === 403) return { status: 401, ok: false, p: envelope };
           if (!poll.ok || envelope.status !== 'ok') throw new Error(envelope.reason || envelope.detail || ('HTTP ' + poll.status));
@@ -155,6 +170,7 @@ async function puenteRouter(base, body, qs, headers) {
     if (p.error) return { status: 502, ok: false, p };
     return { status: 200, ok: true, p };
   }
+  return { status: 503, ok: false, p: { error: 'GAP: reintentos agotados (1.5 min x 3)' } };
 }
 async function puente(base, body, qs, method, headers) {
   if (String(base).includes('/plugins/puente_chat')) return puenteRouter(base, body, qs, headers);
