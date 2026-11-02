@@ -583,7 +583,7 @@ def credenciales(accion: str, cuerpo: dict, x_api_key: str | None = Header(None)
 
 async def _mvp_modelo_compat(req, headers, modelo):
     """Una petición modelo al Router MVP ya autorizado, sin volver a Harness."""
-    async with httpx.AsyncClient(timeout=httpx.Timeout(210, connect=6), trust_env=False) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(450, connect=6), trust_env=False) as client:
         try:
             up = await client.post(_mvp_modelos_url() + "/chat", headers=headers, json=req)
         except httpx.HTTPError:
@@ -774,7 +774,7 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
             raise HTTPException(status_code=503, detail="SWE_CODE_ROUTER_NO_CONFIGURADO")
         req["stream"] = stream
         req["origen"] = "openclaw" if cuerpo.get("origen") == "openclaw" else "yaiwes"
-        client = httpx.AsyncClient(timeout=httpx.Timeout(240, connect=6), trust_env=False)
+        client = httpx.AsyncClient(timeout=httpx.Timeout(450, connect=6), trust_env=False)
         try:
             upstream = await client.send(client.build_request("POST", _bridge_url() + "/v1/chat/completions",
                                                                headers=h, json=req), stream=True)
