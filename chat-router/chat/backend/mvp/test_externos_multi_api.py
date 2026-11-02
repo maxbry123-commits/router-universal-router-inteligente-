@@ -21,6 +21,15 @@ class TestProveedoresDirectos(unittest.TestCase):
     def test_proveedor_desconocido_no_permanece_permitido(self):
         self.assertIsNone(externos.proveedor("otro/mi-modelo"))
 
+    def test_ruta_banco_compartido_igual_que_el_bridge_en_space(self):
+        # boot.sh exporta BRIDGE_STATE_DIR solo al proceso Node, Python no lo ve.
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(externos._ruta_banco_swe(), "/tmp/state/banco-swe.bin")
+        with patch.dict(os.environ, {"BRIDGE_STATE_DIR": "/otra/ruta"}, clear=True):
+            self.assertEqual(externos._ruta_banco_swe(), "/otra/ruta/banco-swe.bin")
+        with patch.dict(os.environ, {"RIU_BANCO_SWE": "/path/cifrado.bin"}, clear=True):
+            self.assertEqual(externos._ruta_banco_swe(), "/path/cifrado.bin")
+
     def test_llaves_compatibles_salen_del_mismo_banco_cifrado(self):
         class Banco:
             def leer(self, n):

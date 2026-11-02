@@ -52,15 +52,20 @@ CACHE = {}  # proveedor -> (instante, lista de ids)
 _SWE = {}  # (ruta, mtime_ns, tamano, clave de acceso) -> banco compartido abierto (o None si no se pudo abrir); evita repetir PBKDF2
 
 
+def _ruta_banco_swe():
+    """Ruta común con boot.sh: el bridge corre con BRIDGE_STATE_DIR=/tmp/state.
+    Esa variable se define solo en el proceso Node, NO en el proceso Python.
+    La ruta anterior bajo web-bridge/state no correspondía al banco persistido.
+    """
+    return os.environ.get("RIU_BANCO_SWE") or os.path.join(
+        os.environ.get("BRIDGE_STATE_DIR") or "/tmp/state", "banco-swe.bin")
+
+
 def _banco_compartido():
-    """Banco cifrado del web-bridge (solo lectura): RIU_BANCO_SWE o <BRIDGE_STATE_DIR|/tmp/state>/banco-swe.bin. Nunca lanza; None si no aporta."""
+    """Solo LECTURA del banco cifrado que usa el Router SWE CODE: sin duplicar secretos."""
     try:
         from mvp import bank
-        # La carpeta del bridge es una UNICA fuente: el mismo banco cifrado se ve desde
-        # el Router MVP, el Harness y OpenClaw aunque BRIDGE_STATE_DIR no este exportado.
-        bridge_root = pathlib.Path(__file__).resolve().parents[3] / "SWE CODE" / "web-bridge"
-        ruta = os.environ.get("RIU_BANCO_SWE") or os.path.join(
-            os.environ.get("BRIDGE_STATE_DIR") or str(bridge_root / "state"), "banco-swe.bin")
+        ruta = _ruta_banco_swe()
         accesos = tuple(dict.fromkeys(os.environ[v] for v in bank.ACCESO if os.environ.get(v)))  # el banco puede estar cifrado con cualquiera de las variables de acceso
         if not accesos or not os.path.isfile(ruta):  # no existe: no se abre (abrir() crearia el archivo)
             return None
