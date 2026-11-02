@@ -276,7 +276,17 @@ function hoja(id, desde) {
   const x = s.querySelector(".sh-cerrar"); if (x) x.focus();
 }
 // capturar: estas 4 pastillas abren SOLO esta ventana (las hojas viejas de Groq y NVIDIA ya no existen: su lista de modelos era el duplicado)
-document.addEventListener("click", (e) => { const p = e.target.closest && e.target.closest("#sel-swe, #sel-swen, #sel-groq, #sel-ngt"); if (p) { e.stopImmediatePropagation(); e.preventDefault(); hoja(PILLS[p.id], p); } }, true);
+document.addEventListener("click", (e) => {
+  const p = e.target.closest && e.target.closest("#sel-swe, #sel-swen, #sel-groq, #sel-ngt, #btn-agentes-swe");
+  if (!p) return;
+  const activo = window.RIU_SELECTORES?.activo;
+  const actual = { "swe-code": "swe-code", "swen-code-free": "swen-code-free", groq: "groq", "nvidia-groq-team": "nvidia" }[activo];
+  const destino = p.id === "btn-agentes-swe" ? (actual || "swe-code") : PILLS[p.id];
+  if (!destino) return;
+  e.stopImmediatePropagation();
+  e.preventDefault();
+  hoja(destino, p); // reutiliza el MISMO selector central y no cambia de modelo silenciosamente
+}, true);
 window.addEventListener("riu:fichas", () => { if (VENTANA) { sincronizar(VENTANA); pintarControles(); } });  // llegan los catalogos de Groq/NVIDIA
 
 // Gancho para el resto del frontend (enviar-mensaje.js): estado de la eleccion de una ventana, sin segundo selector
