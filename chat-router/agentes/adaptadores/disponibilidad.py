@@ -240,6 +240,8 @@ def _modelos_bridge():
         return cached[1]
     from urllib.parse import urlparse
     base = (os.environ.get("RIU_SWE_BRIDGE_URL") or "http://127.0.0.1:7870").strip().rstrip("/")
+    if base.endswith("/v1"):
+        base = base[:-3]
     try:
         x = urlparse(base)
         if not (x.scheme == "https" or x.scheme == "http" and x.hostname in ("127.0.0.1", "localhost")) or x.username or x.password:
