@@ -157,5 +157,19 @@ class TestMechanicoLedger(unittest.TestCase):
         self.assertEqual(len(result),10)
         self.assertTrue(all(row["status"]=="UNAVAILABLE" for row in result))
 
+
+    def test_all_off_cannot_autojump_without_verified_work(self):
+        ports=SimpleNamespace(queue_status=lambda _:{"status":"completed",
+            "tasks":[{"id":"T1","status":"skipped"}]})
+        bridge=TriggerBridge(ports)
+        async def constitution():return ("sha",{})
+        bridge.engine._constitution=constitution
+        output=asyncio.run(bridge._handoff_verified(project="P1",loop="L1",
+            state={"queue_id":"Q1","contracts":[{"id":"T1","enabled":False}],
+                   "loop_meta":{"next_loop_id":"L2","verify_on_end":False}},
+            server_context={"authenticated":True,"project_id":"P1"}))
+        self.assertEqual(output["status"],"ALL_TRIGGERS_OFF_NO_HANDOFF")
+        self.assertIs(output["dispatched"],False)
+
 if __name__ == "__main__":
     unittest.main()

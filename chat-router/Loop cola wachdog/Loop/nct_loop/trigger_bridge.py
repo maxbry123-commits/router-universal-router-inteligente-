@@ -102,6 +102,8 @@ class TriggerBridge:
         # A queue receipt alone isn't proof. Compare immutable contract,
         # Constitution and source anchors before enabling the next LOOP.
         all_enabled = [c["id"] for c in contracts if c.get("enabled")]
+        if not all_enabled:
+            return {"status": "ALL_TRIGGERS_OFF_NO_HANDOFF", "dispatched": False}
         verified = await self._prior(project, loop, {"depends_on": all_enabled}, contracts)
         for c in contracts:
             row = rows.get(c["id"])
@@ -129,7 +131,17 @@ class TriggerBridge:
         if loop not in deps:
             return {"status": "NEXT_LOOP_DEPENDENCY_NOT_LINKED", "dispatched": False}
         if successor.get("queue_id"):
-            return {"status": "NEXT_LOOP_ALREADY_STARTED", "dispatched": False, "next_loop_id": next_id}
+            # Resume an already-started successor after process restart iff
+            # the exact durable handoff proof exists and matches the queue.
+            previous = await _invoke(self.ports.load, f"dsl-handoff:{project}:{loop}:{next_id}")
+            if (isinstance(previous, dict) and previous.get("status") == "HANDOFF_STARTED"
+                    and previous.get("to_loop") == next_id and previous.get("from_loop") == loop
+                    and previous.get("queue_id") == successor["queue_id"]
+                    and previous.get("constitution_sha256") == constitution):
+                return {"status": "HANDOFF_ALREADY_STARTED", "dispatched": True,
+                        "next_loop_id": next_id, "queue_id": successor["queue_id"]}
+            return {"status": "NEXT_LOOP_RECONCILIATION_REQUIRED", "dispatched": False,
+                    "next_loop_id": next_id}
         started = await self.handle("dsl_control", {
             "project_id": project, "loop_id": next_id, "op": "start",
             "expected_revision": successor["revision"]}, server_context=server_context)
@@ -430,7 +442,8 @@ class TriggerBridge:
                 if not isinstance(q, dict) or not q.get("queue_id"):
                     raise ContractError("QUEUE_NOT_CONNECTED")
                 new = dict(state, queue_id=q["queue_id"],
-                           watchdog_id=q.get("watchdog_id"), revision=state["revision"] + 1)
+                           watchdog_id=q.get("watchdog_id"), revision=state["revision"] + 1,
+                           session=server_context.get("sesion","web-general"))
                 try:
                     if await _invoke(self.ports.save, key, new) is not True:
                         raise ContractError("QUEUE_CREATED_CHECKPOINT_FAILED")

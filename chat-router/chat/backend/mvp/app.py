@@ -53,6 +53,9 @@ async def inicio(app):
         # Reuse existing Watchdog48 worker on restart. Its _store() now
         # restores from the SAME HF memory bucket before polling queues.
         _lanzar(loop_puente.llamar("watchdog48", "worker", {"sub": "start"}))
+        # Resume only unclaimed DSL work from the existing restored CIT-50/HF
+        # store; never repeat a running or reconciliation-required tool.
+        _lanzar(_reanudar_dsl_seguro())
     yield
 app = FastAPI(lifespan=inicio)
 # El cliente del Router y el bridge ya apuntan por defecto a esta ruta del MISMO
@@ -595,6 +598,73 @@ async def _seguir_adoptado(pid, url, remoto):
     except escalado.DestinoError as error: TRABAJOS[pid].update(estado="error", error=str(error))
     TRABAJOS[pid].pop("subestado", None); await _persistir(pid)
 _POR_PID = {}  # proceso_id -> tarea asyncio que lo ejecuta aqui (para poder cortarla con «Detener»)
+async def _reanudar_dsl_seguro():
+    """Recover queued DSL after process restart via SAME PluginHost and CIT-50.
+    A claimed/running slot is not retried. Ambiguous session/auth => no dispatch.
+    """
+    from nct_loop.trigger_contract import _id
+    try:
+        queue_plugin=await asyncio.to_thread(loop_puente._cargar,"cola50")
+        loop_plugin=await asyncio.to_thread(loop_puente._cargar,"nct_loop")
+        watchdog=await asyncio.to_thread(loop_puente._cargar,"watchdog48")
+        store=await asyncio.to_thread(queue_plugin._store)
+        watch_store=await asyncio.to_thread(watchdog._store)
+    except Exception:
+        return {"ok":False,"error":"DSL_RESTORE_PORT_UNAVAILABLE"}
+    resumed=[]
+    for pid, project in list(CONTROL.d.get("proyectos",{}).items()):
+        if not isinstance(project,dict) or project.get("encendido",True) is False:
+            continue
+        try:
+            _id(pid,"project_id")
+            queues=await asyncio.to_thread(store.list,pid)
+        except Exception:
+            continue
+        for q in queues:
+            if q.get("mode")!="dsl" or q.get("state")!="running":
+                continue
+            try:
+                full=await asyncio.to_thread(store.get,q["id"])
+                if any(t.get("status") in ("running","needs_reconciliation") for t in full["tasks"]):
+                    continue
+                title=full.get("title","")
+                if not title.startswith("LOOP "):
+                    continue
+                loop_id=_id(title[5:],"loop_id")
+                chats=project.get("chats",[])
+                if not isinstance(chats,list):
+                    continue
+                seed_chats=chats[0] if len(chats)==1 else "web-general"
+                trusted={"authenticated":True,"trusted_host":True,
+                         "project_id":pid,"loop_id":loop_id,"sesion":seed_chats,
+                         "banco":app.state.banco,"control":CONTROL,
+                         "queue_store":store,"watch_store":watch_store,
+                         "root":Path(__file__).resolve().parents[3],
+                         "write_paths":project.get("write_paths",[]) if
+                         project.get("repo")=="maxbry123-commits/router-universal-router-inteligente-"
+                         and project.get("branch")=="main" else [],
+                         "operator_id":None,"director_confirmed":False}
+                from nct_loop.trigger_host import build_ports
+                config=await asyncio.to_thread(build_ports(trusted))
+                record=await asyncio.to_thread(config.load,f"dsl-config:{pid}:{loop_id}")
+                if not isinstance(record,dict) or record.get("queue_id")!=q["id"]:
+                    continue
+                session=record.get("session")
+                if isinstance(session,str) and session:
+                    if chats and session not in chats:
+                        continue
+                    trusted["sesion"]=session
+                elif len(chats)>1:
+                    continue
+                scheduled=loop_plugin._dsl_schedule({"project_id":pid,"loop_id":loop_id},trusted)
+                if scheduled.get("scheduled"):
+                    resumed.append(q["id"])
+            except Exception:
+                # No fabricated PASS; unverified queues remain visible to operator.
+                continue
+    return {"ok":True,"resumed_queues":resumed}
+
+
 def _lanzar(coro, pid=None):
     tarea = asyncio.create_task(coro); _TAREAS.add(tarea); tarea.add_done_callback(_TAREAS.discard)
     if pid:
