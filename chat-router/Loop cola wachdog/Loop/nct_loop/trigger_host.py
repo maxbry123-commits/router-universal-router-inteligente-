@@ -225,25 +225,40 @@ def build_ports(host: dict) -> HostPorts:
             raise ContractError("GITHUB_HEAD_UNAVAILABLE") from None
 
     def git_read_text(path):
-        from mvp.archivos.origen import clonar
+        # Read GitHub source of truth directly, not the possibly stale HF
+        # checkout. Reuse the existing bank's GitHub credential.
+        import urllib.parse
+        import urllib.request
         if not github_ready:
             raise ContractError("PROJECT_GITHUB_SCOPE_NOT_CONFIGURED")
-        with tempfile.TemporaryDirectory(prefix="n4-git-read-") as tmp:
-            try:
-                checkout = clonar(
-                    "git:maxbry123-commits/router-universal-router-inteligente-@main",
-                    Path(tmp)/"repo",
-                    token_fn=lambda:control.credencial("github",banco,estricto=True))
-                target = (checkout/"chat-router"/path).resolve()
-                if not target.is_relative_to((checkout/"chat-router").resolve()):
-                    raise ContractError("PATH_OUT_OF_SCOPE")
-                if not target.is_file() or target.stat().st_size > 1_000_000:
-                    raise ContractError("GITHUB_FILE_NOT_READABLE")
-                return target.read_bytes()
-            except ContractError:
-                raise
-            except Exception:
-                raise ContractError("GITHUB_READBACK_UNAVAILABLE") from None
+        safe_target(path)
+        encoded=urllib.parse.quote("chat-router/"+path,safe="/")
+        url=("https://api.github.com/repos/maxbry123-commits/"
+             "router-universal-router-inteligente-/contents/"+encoded+"?ref=main")
+        try:
+            token=control.credencial("github",banco,estricto=True)
+            if not isinstance(token,str) or not token:
+                raise ContractError("GITHUB_TOKEN_NO_DISPONIBLE")
+            req=urllib.request.Request(url,headers={
+                "Accept":"application/vnd.github+json",
+                "Authorization":"Bearer "+token,
+                "User-Agent":"YAIWES-N4-readback"})
+            with urllib.request.urlopen(req,timeout=20) as response:
+                if response.status!=200:
+                    raise ContractError("GITHUB_READBACK_UNAVAILABLE")
+                raw=response.read(1400000)
+            data=json.loads(raw.decode("utf8"))
+            if data.get("type")!="file" or data.get("encoding")!="base64":
+                raise ContractError("GITHUB_FILE_READBACK_INVALID")
+            payload=base64.b64decode(data["content"],validate=False)
+            if len(payload)>1000000:
+                raise ContractError("GITHUB_FILE_TOO_LARGE")
+            return payload
+        except ContractError:
+            raise
+        except Exception:
+            # No provider error body or token is ever logged.
+            raise ContractError("GITHUB_READBACK_UNAVAILABLE") from None
 
     def git_write_text(path, value, approval):
         # Validate untrusted model bytes before calling encode() or touching git.
