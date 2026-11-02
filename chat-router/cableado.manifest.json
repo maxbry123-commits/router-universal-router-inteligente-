@@ -1,175 +1,190 @@
 {
- "enlaces": {
-  "chat-router/harness": "chat/backend/deepseek_harness",
-  "chat-router/plugins/deepseek_harness": "../chat/backend/deepseek_harness",
-  "chat-router/plugins/router_api_cliente.py": "../chat/backend/router_api_cliente.py",
-  "router-mvp/mvp": "../chat-router/chat/backend/mvp"
- },
- "plugins": {
-  "agentes": {
-   "destino": "../agentes/agentes-yaiwes",
-   "enlace": true,
-   "ficha": false
+  "enlaces": {
+    "chat-router/harness": "chat/backend/deepseek_harness",
+    "chat-router/plugins/deepseek_harness": "../chat/backend/deepseek_harness",
+    "chat-router/plugins/router_api_cliente.py": "../chat/backend/router_api_cliente.py",
+    "router-mvp/mvp": "../chat-router/chat/backend/mvp"
   },
-  "chat": {
-   "destino": "../otros/chat",
-   "enlace": true,
-   "ficha": true
+  "plugins": {
+    "agentes": {
+      "destino": "../agentes/agentes-yaiwes",
+      "enlace": true,
+      "ficha": false
+    },
+    "chat": {
+      "destino": "../otros/chat",
+      "enlace": true,
+      "ficha": true
+    },
+    "cola50": {
+      "destino": "../Loop cola wachdog/Cola",
+      "enlace": true,
+      "ficha": true
+    },
+    "connectivity": {
+      "destino": "",
+      "enlace": false,
+      "ficha": true
+    },
+    "deepseek_harness": {
+      "destino": "../chat/backend/deepseek_harness",
+      "enlace": true,
+      "ficha": true
+    },
+    "hf_compute": {
+      "destino": "",
+      "enlace": false,
+      "ficha": true
+    },
+    "hf_datasets": {
+      "destino": "../memoria/hf_datasets",
+      "enlace": true,
+      "ficha": true
+    },
+    "hf_skills": {
+      "destino": "../workflow-loop-code-yaiwes/hf_skills",
+      "enlace": true,
+      "ficha": true
+    },
+    "hf_storage": {
+      "destino": "",
+      "enlace": false,
+      "ficha": true
+    },
+    "lifeguard": {
+      "destino": "",
+      "enlace": false,
+      "ficha": true
+    },
+    "memoria": {
+      "destino": "../memoria/memoria-yaiwes",
+      "enlace": true,
+      "ficha": false
+    },
+    "motores": {
+      "destino": "../motores/motores",
+      "enlace": true,
+      "ficha": false
+    },
+    "motores-descarga": {
+      "destino": "../motores/motores-descarga",
+      "enlace": true,
+      "ficha": false
+    },
+    "nct_loop": {
+      "destino": "../Loop cola wachdog/Loop",
+      "enlace": true,
+      "ficha": true
+    },
+    "orquestador": {
+      "destino": "../agentes/orquestacion/orquestador",
+      "enlace": true,
+      "ficha": true
+    },
+    "parallel": {
+      "destino": "../agentes/orquestacion/parallel",
+      "enlace": true,
+      "ficha": true
+    },
+    "puente_chat": {
+      "destino": "",
+      "enlace": false,
+      "ficha": true
+    },
+    "router_api_cliente.py": {
+      "destino": "../chat/backend/router_api_cliente.py",
+      "enlace": true,
+      "ficha": false
+    },
+    "ssh_bridge": {
+      "destino": "",
+      "enlace": false,
+      "ficha": true
+    },
+    "swe_code": {
+      "destino": "../SWE CODE",
+      "enlace": true,
+      "ficha": true
+    },
+    "swen_code_free": {
+      "destino": "../SWE CODE free",
+      "enlace": true,
+      "ficha": true
+    },
+    "watchdog48": {
+      "destino": "../Loop cola wachdog/wachdog",
+      "enlace": true,
+      "ficha": true
+    },
+    "workflow-loop-yaiwes": {
+      "destino": "../workflow-loop-code-yaiwes/workflow-loop-yaiwes",
+      "enlace": true,
+      "ficha": false
+    }
   },
-  "cola50": {
-   "destino": "../Loop cola wachdog/Cola",
-   "enlace": true,
-   "ficha": true
+  "protegido": {
+    "chat-router/chat/auditoria": {
+      "archivos": 4,
+      "sha256": "29449ccb087fb132892430d6d38398eaf51d4b1e33e15a660758a1dd6a3fdcb3"
+    },
+    "chat-router/chat/backend": {
+      "archivos": 129,
+      "sha256": "3e74d6b9903b2b53d9b109a3a0938b8ac9bea6cda78a5f852bc64991f26dc914"
+    },
+    "chat-router/chat/e2e": {
+      "archivos": 23,
+      "sha256": "fd538e86f30d9d067664fdfbf8141717ef6eec3a3464ab6a3d8df6028992671d"
+    },
+    "chat-router/chat/espejo": {
+      "archivos": 1,
+      "sha256": "fd6578f73ee2acfdc63510750e189086fb025a8c0cabf293be028e5e6f5cb8c0"
+    },
+    "chat-router/chat/frontend": {
+      "archivos": 572,
+      "sha256": "3a64bc0c8a02f7c9bdc2761448581e154eb275649c9b7f1ec4a2422629002be2"
+    },
+    "chat-router/plugins/__init__.py": {
+      "archivos": 1,
+      "sha256": "0c48ab8e0ab68fe4477e565769c22c023f71a49c84e4c53e1bff6b4d1d07610f"
+    },
+    "chat-router/plugins/hf_storage": {
+      "archivos": 3,
+      "sha256": "892aab1ec3da8cb03e5438ad83e42573fa3b4df65a81fafc05fdb98c4c098503"
+    },
+    "chat-router/plugins/puente_chat": {
+      "archivos": 44,
+      "sha256": "660454e2dfbc65f4b3439da62757afe51563703e935922866814f492a873c9a1"
+    },
+    "router-mvp/fichas": {
+      "archivos": 220,
+      "sha256": "2c6b9b6d7b51f32dd1daacdb0bc5adb3a47b54551d944cdff995c68118a4ffce"
+    },
+    "router-mvp/raiz_fichas_prompt": {
+      "archivos": 5,
+      "sha256": "14274d1854b93bfd96d10563e660bf31bea4d508e3c308598be6645e1d7492a9"
+    },
+    "router-mvp/raiz_router": {
+      "archivos": 583,
+      "sha256": "9157e83c7d597d40194f12ecb3aa12bd6575c011a812476c6d420059dee09667"
+    },
+    "router-mvp/router": {
+      "archivos": 176,
+      "sha256": "587e7ee9690ecb6abfc14c1b0dc3b65932a7aa7d662130da85306f3511d4b138"
+    }
   },
-  "connectivity": {
-   "destino": "",
-   "enlace": false,
-   "ficha": true
-  },
-  "deepseek_harness": {
-   "destino": "../chat/backend/deepseek_harness",
-   "enlace": true,
-   "ficha": true
-  },
-  "hf_compute": {
-   "destino": "",
-   "enlace": false,
-   "ficha": true
-  },
-  "hf_datasets": {
-   "destino": "../memoria/hf_datasets",
-   "enlace": true,
-   "ficha": true
-  },
-  "hf_skills": {
-   "destino": "../workflow-loop-code-yaiwes/hf_skills",
-   "enlace": true,
-   "ficha": true
-  },
-  "hf_storage": {
-   "destino": "",
-   "enlace": false,
-   "ficha": true
-  },
-  "lifeguard": {
-   "destino": "",
-   "enlace": false,
-   "ficha": true
-  },
-  "memoria": {
-   "destino": "../memoria/memoria-yaiwes",
-   "enlace": true,
-   "ficha": false
-  },
-  "motores": {
-   "destino": "../motores/motores",
-   "enlace": true,
-   "ficha": false
-  },
-  "motores-descarga": {
-   "destino": "../motores/motores-descarga",
-   "enlace": true,
-   "ficha": false
-  },
-  "nct_loop": {
-   "destino": "../Loop cola wachdog/Loop",
-   "enlace": true,
-   "ficha": true
-  },
-  "orquestador": {
-   "destino": "../agentes/orquestacion/orquestador",
-   "enlace": true,
-   "ficha": true
-  },
-  "parallel": {
-   "destino": "../agentes/orquestacion/parallel",
-   "enlace": true,
-   "ficha": true
-  },
-  "puente_chat": {
-   "destino": "",
-   "enlace": false,
-   "ficha": true
-  },
-  "router_api_cliente.py": {
-   "destino": "../chat/backend/router_api_cliente.py",
-   "enlace": true,
-   "ficha": false
-  },
-  "ssh_bridge": {
-   "destino": "",
-   "enlace": false,
-   "ficha": true
-  },
-  "swe_code": {
-   "destino": "../SWE CODE",
-   "enlace": true,
-   "ficha": true
-  },
-  "swen_code_free": {
-   "destino": "../SWE CODE free",
-   "enlace": true,
-   "ficha": true
-  },
-  "watchdog48": {
-   "destino": "../Loop cola wachdog/wachdog",
-   "enlace": true,
-   "ficha": true
-  },
-  "workflow-loop-yaiwes": {
-   "destino": "../workflow-loop-code-yaiwes/workflow-loop-yaiwes",
-   "enlace": true,
-   "ficha": false
+  "rutas_modelos": {
+    "version": 1,
+    "fuente_unica": "GitHub: chat-router + router-mvp (enlace existente mvp)",
+    "chat_yaiwes": "chat-router/chat/frontend/swe-directo.js",
+    "chat_openclaw": "chat-router/SWE CODE/web-bridge/src/openclaw.js",
+    "entrada_unica": "POST /plugins/deepseek_harness/modelos/v1/chat/completions",
+    "harness": "chat-router/chat/backend/deepseek_harness/server.py",
+    "router_mvp": "router-mvp/mvp -> chat-router/chat/backend/mvp; POST /chat [API externa]",
+    "router_swe_code": "chat-router/SWE CODE/web-bridge/src/server.js; POST /v1/chat/completions [HF local/web]",
+    "banco": "chat-router/SWE CODE/web-bridge/src/clavesbanco.js + chat-router/chat/backend/mvp/externos.py; BRIDGE_STATE_DIR=/tmp/state",
+    "catalogo": "GET /plugins/deepseek_harness/modelos/v1/disponibilidad",
+    "sin_fallback_automatico": true,
+    "tools_agentes": "separados: /plugins/deepseek_harness/invoke y /chat/swe",
+    "huggingface_no_tocado": true
   }
- },
- "protegido": {
-  "chat-router/chat/auditoria": {
-   "archivos": 4,
-   "sha256": "29449ccb087fb132892430d6d38398eaf51d4b1e33e15a660758a1dd6a3fdcb3"
-  },
-  "chat-router/chat/backend": {
-   "archivos": 129,
-   "sha256": "3e74d6b9903b2b53d9b109a3a0938b8ac9bea6cda78a5f852bc64991f26dc914"
-  },
-  "chat-router/chat/e2e": {
-   "archivos": 23,
-   "sha256": "fd538e86f30d9d067664fdfbf8141717ef6eec3a3464ab6a3d8df6028992671d"
-  },
-  "chat-router/chat/espejo": {
-   "archivos": 1,
-   "sha256": "fd6578f73ee2acfdc63510750e189086fb025a8c0cabf293be028e5e6f5cb8c0"
-  },
-  "chat-router/chat/frontend": {
-   "archivos": 572,
-   "sha256": "3a64bc0c8a02f7c9bdc2761448581e154eb275649c9b7f1ec4a2422629002be2"
-  },
-  "chat-router/plugins/__init__.py": {
-   "archivos": 1,
-   "sha256": "0c48ab8e0ab68fe4477e565769c22c023f71a49c84e4c53e1bff6b4d1d07610f"
-  },
-  "chat-router/plugins/hf_storage": {
-   "archivos": 3,
-   "sha256": "892aab1ec3da8cb03e5438ad83e42573fa3b4df65a81fafc05fdb98c4c098503"
-  },
-  "chat-router/plugins/puente_chat": {
-   "archivos": 44,
-   "sha256": "660454e2dfbc65f4b3439da62757afe51563703e935922866814f492a873c9a1"
-  },
-  "router-mvp/fichas": {
-   "archivos": 220,
-   "sha256": "2c6b9b6d7b51f32dd1daacdb0bc5adb3a47b54551d944cdff995c68118a4ffce"
-  },
-  "router-mvp/raiz_fichas_prompt": {
-   "archivos": 5,
-   "sha256": "14274d1854b93bfd96d10563e660bf31bea4d508e3c308598be6645e1d7492a9"
-  },
-  "router-mvp/raiz_router": {
-   "archivos": 583,
-   "sha256": "9157e83c7d597d40194f12ecb3aa12bd6575c011a812476c6d420059dee09667"
-  },
-  "router-mvp/router": {
-   "archivos": 176,
-   "sha256": "587e7ee9690ecb6abfc14c1b0dc3b65932a7aa7d662130da85306f3511d4b138"
-  }
- }
 }
