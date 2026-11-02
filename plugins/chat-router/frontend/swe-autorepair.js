@@ -49,12 +49,14 @@ export async function conReintentos(fn, opts = {}) {
   throw last || new Error("falló tras " + max);
 }
 
+// Gancho para que SWE CODE free pueda modificar su propio sistema (propuestas aprobadas).
 export const SISTEMA = {
   reglas: REGLAS,
   agregarRegla(re, act, msg) {
     if (re instanceof RegExp) REGLAS.push({ re, act, msg });
   },
   async aplicarParche(api, parche) {
+    // parche: { archivo, buscar, reemplazar } — solo si el backend lo permite
     if (!api || !parche || !parche.archivo) throw new Error("parche inválido");
     return api("/chat/swe/parche", { method: "POST", body: parche });
   },
