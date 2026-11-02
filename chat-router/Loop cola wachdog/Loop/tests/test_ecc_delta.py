@@ -53,6 +53,26 @@ class CompilerTests(unittest.TestCase):
             self.assertEqual(make_python_wrappers(catalog,d/'generated'),2)
             self.assertEqual(len(list((d/'generated').glob('*.py'))),2)
             self.assertEqual(json.loads((d/'compiled.json').read_text())['total_source_documents'],2)
+    def test_generated_wrapper_executes_the_actual_executor_signature(self):
+        import sys
+        from unittest.mock import patch
+        # The previous generated wrapper passed motor_id, although the
+        # executor expects skill_id: mere compilation never detected this.
+        with tempfile.TemporaryDirectory() as tmp:
+            d=Path(tmp)
+            compiled=compile_skill('tdd-workflow',SAMPLE)
+            registry={'tdd-workflow':compiled.asdict()}
+            make_python_wrappers(registry,d)
+            spec=importlib.util.spec_from_file_location('ecc_wrapper_regression',
+                            d/'ecc_tdd_workflow.py')
+            module=importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            result=asyncio.run(module.run(catalog={'skills':registry},
+                event='code.changed',task_id='T001',context={'goal':'verify'},
+                approved_handlers={},receipt_callback=lambda request,proposal:None))
+            self.assertEqual(result['status'],'NOT_IMPLEMENTED')
+            self.assertEqual(result['executed'],0)
+
     def test_empty_checkout_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(ECCCompilationError):compile_directory(Path(tmp))

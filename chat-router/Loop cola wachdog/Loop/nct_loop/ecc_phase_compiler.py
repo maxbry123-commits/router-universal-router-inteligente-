@@ -131,7 +131,7 @@ def make_python_wrappers(registry:dict, output_dir:Path) -> int:
             '',
             'async def run(*, catalog, event, task_id, context, approved_handlers, receipt_callback):',
             '    return await execute_compiled_motor(',
-            '        catalog=catalog, motor_id=MOTOR_ID, source_sha256=SOURCE_SHA256,',
+            '        catalog=catalog, skill_id=MOTOR_ID, source_sha256=SOURCE_SHA256,',
             '        event=event, task_id=task_id, context=context,',
             '        approved_handlers=approved_handlers, receipt_callback=receipt_callback)',
             '',
