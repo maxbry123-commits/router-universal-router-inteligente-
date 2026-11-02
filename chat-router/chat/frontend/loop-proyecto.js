@@ -2,23 +2,26 @@
 (() => {
  'use strict';
  const el=id=>document.getElementById(id);
- const home=el('lp-home'),work=el('loop-workspace'),banner=el('loop-safety-banner');
- const tabHome=el('lp-tab-home'),tabWork=el('lp-tab-work'),go=el('go-run');
- if(!home||!work||!banner||!tabHome||!tabWork||!go)return;
+ const home=el('lp-home'),work=el('loop-workspace'),exec=el('lp-execution'),banner=el('loop-safety-banner');
+ const tabHome=el('lp-tab-home'),tabWork=el('lp-tab-work'),tabExec=el('lp-tab-exec'),go=el('go-run');
+ if(!home||!work||!exec||!banner||!tabHome||!tabWork||!tabExec||!go)return;
  let verified=null;
  const output=el('lp-runtime');
  function message(t){output.textContent=String(t).slice(0,250);output.classList.remove('is-verified');}
  function switchView(name,focus){
-   const start=name==='home';
-   home.hidden=!start;work.hidden=start;banner.hidden=start;
+   const start=name==='home',building=name==='work',running=name==='execution';
+   home.hidden=!start;work.hidden=!building;exec.hidden=!running;banner.hidden=!building;
    tabHome.classList.toggle('is-current',start);
-   tabWork.classList.toggle('is-current',!start);
+   tabWork.classList.toggle('is-current',building);
+   tabExec.classList.toggle('is-current',running);
    tabHome.setAttribute('aria-selected',String(start));
-   tabWork.setAttribute('aria-selected',String(!start));
+   tabWork.setAttribute('aria-selected',String(building));
+   tabExec.setAttribute('aria-selected',String(running));
+   if(running)window.dispatchEvent(new CustomEvent('yaiwes:exec-view-open'));
    if(focus){const node=el(focus);if(node){node.scrollIntoView({block:'nearest',behavior:'smooth'});node.focus({preventScroll:true});}}
  }
  function isVerified(){
-   return !!verified && !go.disabled &&
+   return !!verified &&
      verified.project_id===el('project-id')?.value.trim() &&
      verified.loop_id===el('loop-id')?.value.trim();
  }
@@ -27,7 +30,7 @@
    el('lp-project-name').textContent=ok?'Proyecto '+p:'Sin proyecto vinculado';
    el('lp-project-loop').textContent=ok?'LOOP '+l+' · backend confirmado':'Vincula project_id y loop_id reales';
    const state=el('lp-state');state.textContent=ok?'● Vinculado':'◌ Sin verificar';state.classList.toggle('is-verified',ok);
-   el('lp-start').disabled=!ok;el('lp-checkpoint').disabled=!ok;
+   el('lp-start').disabled=!ok||go.disabled;el('lp-checkpoint').disabled=!ok;
    if(ok){output.textContent='LOOP verificado por el backend. Los controles ejecutan acciones reales.';output.classList.add('is-verified');}
    else{output.textContent='Sin proyecto verificado: no se enviará ninguna orden al motor.';output.classList.remove('is-verified');}
  }
@@ -39,6 +42,7 @@
  }
  tabHome.addEventListener('click',()=>switchView('home'));
  tabWork.addEventListener('click',()=>switchView('work'));
+ tabExec.addEventListener('click',()=>switchView('execution'));
  el('lp-config-project').addEventListener('click',()=>switchView('work','project-id'));
  el('lp-setup').addEventListener('click',()=>switchView('work','project-id'));
  el('lp-verify').addEventListener('click',()=>switchView('work','project-id'));
@@ -56,9 +60,7 @@
  });
  el('lp-checkpoint').addEventListener('click',()=>{
    if(!isVerified()){message('Checkpoint no disponible sin backend confirmado');return;}
-   switchView('work');
-   el('load-checkpoint')?.click();
-   el('events')?.scrollIntoView({block:'nearest',behavior:'smooth'});
+   switchView('execution','lx-check-select');
  });
  window.addEventListener('yaiwes:loop-verified',e=>{
    const v=e.detail;
@@ -67,6 +69,7 @@
    repaint();
  });
  window.addEventListener('yaiwes:loop-unverified',()=>{verified=null;repaint();});
+ window.addEventListener('yaiwes:exec-open',()=>switchView('execution'));
  for(const name of ['project-id','loop-id'])el(name)?.addEventListener('input',repaint);
  new MutationObserver(repaint).observe(go,{attributes:true,attributeFilter:['disabled']});
  switchView('home');repaint();

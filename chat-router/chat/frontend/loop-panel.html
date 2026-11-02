@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>YAIWES · LOOP</title><link rel="stylesheet" href="./yaiwes-panel.css"><link rel="stylesheet" href="./loop-proyecto.css"><link rel="stylesheet" href="./loop-colas.css"><link rel="stylesheet" href="./loop-triggers.css"><script defer src="./yaiwes-panel-bridge.js"></script><script defer src="./loop-panel.js"></script><script defer src="./loop-proyecto.js"></script><script defer src="./loop-colas.js"></script><script defer src="./loop-triggers.js"></script></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>YAIWES · LOOP</title><link rel="stylesheet" href="./yaiwes-panel.css"><link rel="stylesheet" href="./loop-proyecto.css"><link rel="stylesheet" href="./loop-colas.css"><link rel="stylesheet" href="./loop-triggers.css"><link rel="stylesheet" href="./loop-ejecucion.css"><script defer src="./yaiwes-panel-bridge.js"></script><script defer src="./loop-panel.js"></script><script defer src="./loop-proyecto.js"></script><script defer src="./loop-colas.js"></script><script defer src="./loop-triggers.js"></script><script defer src="./loop-ejecucion.js"></script></head>
 <body><div class="app">
 <header class="top"><div class="symbol" aria-hidden="true">⟳</div><div class="titlebox"><h1>YAIWES / LOOP</h1><p>Motor determinista · Contratos DSL/DAG · Hasta 100 triggers</p></div><span id="connection-state" class="pill offline" role="status">◌ Sin conexión verificada</span><div class="top-actions"><button id="refresh">↻ Estado</button><button id="go-run" class="primary" disabled>▶ Iniciar</button><button id="go-pause" disabled>⏸ Pausar</button></div></header>
 <nav id="loop-views" class="lp-views" aria-label="Vistas del LOOP">
  <button type="button" id="lp-tab-home" class="lp-tab is-current" aria-selected="true" aria-controls="lp-home">⌂ Inicio / Proyecto</button>
  <button type="button" id="lp-tab-work" class="lp-tab" aria-selected="false" aria-controls="loop-workspace">∞ LOOP / Etapas</button>
+ <button type="button" id="lp-tab-exec" class="lp-tab" aria-selected="false" aria-controls="lp-execution">▷ Ejecución</button>
 </nav>
 <section id="lp-home" class="lp-home" aria-labelledby="lp-home-title">
  <div class="lp-hero">
@@ -40,6 +41,23 @@
   <button type="button" id="lp-pending"><span>✓</span>Verificar</button>
  </section>
  <p class="lp-footnote">Esta vista no simula ejecución ni progreso. Los controles de ejecución solo se habilitan tras la respuesta del backend. Las anclas utilizan la misma ventana ⚓ del chat.</p>
+</section>
+<section id="lp-execution" class="lx-view" aria-labelledby="lx-title" hidden>
+ <div class="lx-title"><div><small>VISTA D · EJECUCIÓN VERIFICABLE</small><h2 id="lx-title">Control y seguimiento del LOOP</h2><p>El progreso procede del backend, nunca de temporizadores visuales.</p></div><button id="lx-refresh" type="button">↻ Actualizar</button></div>
+ <div class="lx-statusbar"><span id="lx-state" class="lx-badge" role="status">◌ Sin verificar</span><span id="lx-queue">Sin cola del LOOP confirmada</span><span id="lx-revision">Revisión —</span></div>
+ <div class="lx-grid">
+  <section class="lx-card"><h3>Progreso real</h3><strong id="lx-progress">—</strong><progress id="lx-bar" value="0" max="1" aria-label="Triggers completados" hidden></progress><p id="lx-progress-desc">Vincula el LOOP para consultar evidencias.</p></section>
+  <section class="lx-card"><h3>Fase activa</h3><strong id="lx-phase">Sin datos</strong><p id="lx-phase-desc">Las fases se leen de loop_meta.segments.</p></section>
+  <section class="lx-card"><h3>Checkpoint</h3><label for="lx-check-select">Trigger registrado</label><select id="lx-check-select" aria-label="Trigger para checkpoint"><option value="">Vincula el LOOP</option></select><button type="button" id="lx-check" disabled>↪ Consultar checkpoint</button><p id="lx-check-result">Sin lectura.</p></section>
+  <section class="lx-card"><h3>Controles del motor</h3><div class="lx-actions"><button type="button" id="lx-start" disabled>▶ Iniciar</button><button type="button" id="lx-pause" disabled>⏸ Pausar</button><button type="button" id="lx-resume" disabled>▷ Reanudar</button><button type="button" id="lx-cancel" disabled>■ Cancelar</button></div><button type="button" id="lx-one" disabled>↪ Ejecutar siguiente segmento (1 trigger)</button><p class="lx-disclaimer">Una llamada al ejecutor requiere confirmación. Si vence el tiempo, refresca antes de repetir.</p></section>
+ </div>
+ <section class="lx-card"><div class="lx-section-head"><h3>Checklist · estados verificados</h3><span id="lx-done">—</span></div><div id="lx-checklist" class="lx-checklist"><p>Sin ejecución confirmada.</p></div></section>
+ <div class="lx-grid">
+  <section class="lx-card"><h3>🚩 Bloqueos / pendientes</h3><div id="lx-flags">Sin consulta.</div><button type="button" id="lx-flags-refresh">Consultar flags</button></section>
+  <section class="lx-card"><h3>Revisión y refactoría</h3><div id="lx-refactor">Sin contratos de refactoría consultados.</div><button type="button" id="lx-refactor-open">Ver contratos de refactoría</button><p class="lx-disclaimer">Aprobaciones de escritura N4: solo por el backend autenticado con director confirmado; no se simulan.</p></section>
+ </div>
+ <section class="lx-card lx-close"><h3>Evaluar cierre y continuidad</h3><p>Solo se considera cerrado si todos los triggers habilitados tienen evidencia PASS / NOT_APPLICABLE y la cola ha finalizado.</p><button id="lx-close-check" type="button" disabled>✓ Verificar condiciones de cierre</button><p id="lx-close-result">Sin revisión de cierre.</p></section>
+ <p class="lx-foot" id="lx-message" role="status">La vista de ejecución es solo lectura hasta verificar un LOOP existente.</p>
 </section>
 <div class="banner" id="loop-safety-banner" hidden><b>Modo seguro:</b> no se generan colas ni pasos preestablecidos. Las colas reales se consultan a CIT-50 y los triggers al LOOP. Los cambios solo se consideran guardados/ejecutados si el backend responde. Abrir el HTML local no enciende el motor Python.</div>
 <div class="layout" id="loop-workspace" hidden>

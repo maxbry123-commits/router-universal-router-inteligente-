@@ -84,8 +84,8 @@ async function verify(){
   await A.selection(ids.project_id,ids.loop_id);
   idsConfirmed=true;connected=true;A.banner('● DSL verificado','ok');
   restoreBackend(r);
-  A.el('go-run').disabled=!all.some(t=>t.enabled);
-  A.el('go-pause').disabled=false;
+  A.el('go-run').disabled=!!r.queue||!all.some(t=>t.enabled);
+  A.el('go-pause').disabled=!r.queue||String(r.queue.status||'').toLowerCase()!=='running';
   notice('Contratos confirmados: '+all.length+' · revisión '+r.revision);
   window.dispatchEvent(new CustomEvent('yaiwes:loop-verified',{detail:{project_id:ids.project_id,loop_id:ids.loop_id,status:r.status,revision:r.revision}}));
   return r;
@@ -105,11 +105,25 @@ for(const field of ['project-id','loop-id']) A.el(field).addEventListener('input
 });
 window.addEventListener('yaiwes:trigger-saved',()=>verify().catch(()=>{}));
 A.el('verify-ids').onclick=()=>verify().catch(()=>{});A.el('refresh').onclick=async()=>{try{await A.health('nct_loop');if(idsConfirmed)await verify();}catch(e){notice(e.message);}};
-async function control(op){try{const ids=pids();if(!idsConfirmed)throw Error('LOOP no confirmado');const r=await A.send('nct_loop','dsl_estado',{op:'get',...ids});if(!r?.status)throw Error('ESTADO_NO_CONFIRMADO');const done=await A.send('nct_loop','dsl_control',{...ids,op,expected_revision:r.revision});if(done?.error)throw Error(done.error);const read=await verify();if(op==='start'&&String(read.status).toUpperCase()!=='RUNNING')throw Error('START_NO_CONFIRMADO');if(op==='pause'&&String(read.status).toUpperCase()==='RUNNING')throw Error('PAUSE_NO_CONFIRMADO');notice('Comando '+op+' · backend ahora '+read.status);}catch(e){notice('CONTROL NO CONFIRMADO: '+e.message);}}
+async function control(op){
+ try{
+  const ids=pids();if(!idsConfirmed)throw Error('LOOP_NO_CONFIRMADO');
+  const before=await A.send('nct_loop','dsl_estado',{op:'get',...ids});
+  if(before?.ok!==true||!Number.isInteger(before.revision))throw Error('ESTADO_NO_CONFIRMADO');
+  const result=await A.send('nct_loop','dsl_control',{...ids,op,expected_revision:before.revision});
+  if(result?.ok!==true)throw Error(result?.error||'CONTROL_RECHAZADO');
+  const after=await verify(),q=after.queue?.status;
+  if(op==='start'&&(!after.queue?.queue_id||String(q).toLowerCase()!=='running'||after.revision!==before.revision+1))throw Error('START_READBACK_NO_CONFIRMADO');
+  if(op==='pause'&&String(q).toLowerCase()!=='paused')throw Error('PAUSE_READBACK_NO_CONFIRMADO');
+  notice('LOOP · '+op+' confirmado por la cola · '+String(q||'sin estado'));
+  window.dispatchEvent(new CustomEvent('yaiwes:exec-refresh'));
+ }catch(e){notice('CONTROL NO CONFIRMADO · '+String(e.message||e)+' · refresca el estado antes de repetir');}
+}
 A.el('go-run').onclick=()=>control('start');A.el('go-pause').onclick=()=>control('pause');
 A.el('search').oninput=render;A.el('show-filter').onchange=render;
 // La incorporación de triggers se realiza solo mediante contratos explícitos y confirmación del backend (Salida 7).
 A.el('save-roles').onclick=async()=>{if(!idsConfirmed){notice('Primero vincular LOOP real');return;}const roles={};for(const [id]of roleIDs){roles[id]={model_id:A.el('role-'+id+'-model').value.trim(),agent_id:A.el('role-'+id+'-agent').value.trim()};if(!roles[id].model_id||!roles[id].agent_id){notice('Completa ambos identificadores para '+id);return;}}try{const r=await remote('dsl_config',{op:'roles_save',roles});if(r?.error)throw Error(r.error);notice('Solicitud de roles enviada; falta lectura de verificación antes de marcar GUARDADO');}catch(e){notice(e.message);}};
-for(const [btn,op]of [['load-flags','flags'],['load-checkpoint','checkpoint']])A.el(btn).onclick=async()=>{try{const r=await remote('dsl_estado',{op});log(op+' : '+JSON.stringify(r).slice(0,700));}catch(e){notice(e.message);}};
+A.el('load-flags').onclick=()=>window.dispatchEvent(new CustomEvent('yaiwes:exec-open',{detail:{focus:'flags'}}));
+A.el('load-checkpoint').onclick=()=>window.dispatchEvent(new CustomEvent('yaiwes:exec-open',{detail:{focus:'checkpoint'}}));
 rolePanel();categories();render();A.health('nct_loop').then(()=>{notice('Backend responde; selecciona IDs reales');return loadRoleOptions();}).catch(()=>notice('Modo vista previa. Backend no verificado.'));
 })();
