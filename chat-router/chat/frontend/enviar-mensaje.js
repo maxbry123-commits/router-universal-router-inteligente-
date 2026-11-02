@@ -1,5 +1,6 @@
 import { node } from "./api.js";
 import * as A from "./chat-ancla.js";
+import { ampliarAnclados } from "./contexto.js";
 import { pedirOperadorYToken, mensajeAprobacion, mensajeExito } from "./aprobar-operador.js";
 import { esSwe, enviarSwe, enviarTareaSwe, aprobarYContinuarSwe, leerSeleccion, requiereHarness } from "./swe-directo.js";
 // enviar-mensaje.js — envío del mensaje: cada chat corre su tarea con su sesión, ficha, anclas, modos y herramientas
@@ -213,9 +214,9 @@ export function montarEnviar(ctx) {
       const mensajeQwen = soloLiteralQwen ? rawText : (mvp ? rawText : A.envolver(rawText, c.instrucciones)); // no eliminar espacios del input real
       const fijasQwen = (soloLiteralQwen || mvp) ? (c.instrucciones || "") : "";
       const _conModo = getModeUI() ? getModeUI().wrapSend((b) => b) : ((b) => b);  // >>> MODOS <<< punto B: agrega mode_request al payload sin tocar el resto
-      const anclados = releerAnclas(c);
+      const anclados = ampliarAnclados(releerAnclas(c));  // un solo snapshot ON para todas las rutas; respeta silenciadas y Constitución
       const controlTools = { tools: !!chatTools.tools, agente_tool: !!chatTools.agente_tool, llm_tool: !!chatTools.llm_tool };
-      const body = _conModo({ ...controlTools, message: mensajeQwen, ficha: fichaQwen || fichaGroq || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, thinking: getModo() === "think", ...(fijasQwen ? { instrucciones_fijas: fijasQwen } : {}), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label) : "", task_type: "chat" } : {}), ...(mvp || {}) });  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha; ficha 2/3 verbatim + instrucciones_fijas
+      const body = _conModo({ ...controlTools, sesion: c.sesion, anclados, message: mensajeQwen, ficha: fichaQwen || fichaGroq || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, thinking: getModo() === "think", ...(fijasQwen ? { instrucciones_fijas: fijasQwen } : {}), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? (c.selectorQwen.model_id || c.selectorQwen.label) : "", task_type: "chat" } : {}), ...(mvp || {}) });  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha; ficha 2/3 verbatim + instrucciones_fijas
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const ctlDetener = typeof AbortController === "function" ? new AbortController() : null;  // Detener = parar y esperar: aborta el fetch SWE en vuelo y corta el bucle de avance de la tarea
@@ -240,10 +241,17 @@ export function montarEnviar(ctx) {
       const _modeloSwe = fichaGroq || fichaNvidia || (fichaSwe ? fichaSwe.model_id : ((fq === "1" || fichaMvp) && c.selectorQwen && esSwe(c.selectorQwen.model_id) ? c.selectorQwen.model_id : null));  // SWE CODE / SWEN CODE free: router propio (el bridge), sin pasar por el Router MVP
       const _swe = !!_modeloSwe && _multiSel.length <= 1;
       const _tareaSwe = !!ventanaCentral && requiereHarness(leerSeleccion());  // workflow != individual o modo agentico ON: contrato TareaSWE al backend YAIWES -> Harness -> adaptadores (nunca herramientas desde el navegador)
+      // El bridge de modelos externos recibe imágenes reales, no solamente nombres de archivos.
+      const imagenesAncladas = anclados.filter((t) => /\.(?:png|jpe?g|webp|gif)$/i.test(String(t).split(":").at(-1)));
+      if (imagenesAncladas.length && _tareaSwe) throw new Error("GAP_IMAGEN_WORKFLOW: este workflow no transporta imágenes ancladas; selecciona un modelo con visión en modo Individual.");
+      if (imagenesAncladas.length && _swe && !/^(groq|nvidia)\//.test(String(_modeloSwe))) throw new Error("GAP_MODELO_SIN_VISION: el modelo seleccionado no admite imágenes ancladas en esta ruta.");
+      const imagenesParaSwe = imagenesAncladas.length && _swe
+        ? (await api("/chat/anclas/imagenes", { method: "POST", body: { sesion: c.sesion, anclados }, signal: ctlDetener?.signal })).imagenes
+        : [];
       const answer = _tareaSwe
         ? await Promise.race([enviarTareaSwe(api, { mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined, parar, signal: ctlDetener ? ctlDetener.signal : undefined, alPaso: (t) => window.dispatchEvent(new CustomEvent("riu-progreso", { detail: { sesion: c.sesion, texto: t } })) }), raceDetener])
         : _swe
-        ? await Promise.race([enviarSwe(api, { ...controlTools, model: _modeloSwe, historial: ctxPrev || [], mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined, signal: ctlDetener ? ctlDetener.signal : undefined, alParcial: (t) => { try { window.dispatchEvent(new CustomEvent("riu-progreso", { detail: { sesion: c.sesion, parcial: t } })); } catch (e) {} } }), raceDetener])  // parciales del stream SSE -> burbuja pending (riu-progreso)
+        ? await Promise.race([enviarSwe(api, { ...controlTools, model: _modeloSwe, historial: ctxPrev || [], mensaje: mensajeQwen, imagenes: imagenesParaSwe, sesion: c.sesion, proyecto: c.project_id || undefined, signal: ctlDetener ? ctlDetener.signal : undefined, alParcial: (t) => { try { window.dispatchEvent(new CustomEvent("riu-progreso", { detail: { sesion: c.sesion, parcial: t } })); } catch (e) {} } }), raceDetener])  // parciales del stream SSE -> burbuja pending (riu-progreso)
         : window.RIU_CONFIG?.harnessUrl
         ? (_multiSel.length > 1
             ? await Promise.race([_fanout(), raceDetener])  // >>> MODOS <<< T6: misma tarea a cada modelo; un proceso por modelo en el backend
