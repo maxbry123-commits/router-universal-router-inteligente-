@@ -103,3 +103,28 @@ test("timeout por defecto de Groq 60000 ms (por modelo, tabla unica R8); los no 
   assert.equal(timeoutDe("qwen/qwen3.8-27b", {}, { ...r, timeoutsModelo: { "qwen/qwen3.8-27b": 7000 } }), 7000);
   assert.equal(timeoutDe("qwen/qwen3.8-27b", { RIU_SWE_TIMEOUTS: "no-json" }, r), 60000);
 });
+
+test("HF local: S1/S2/S3 con 503 no figuran DISPONIBLES y no se sustituyen por otra API", async () => {
+  const { disponibilidadLocal, estadosModelosLocales } = await import("../src/respaldo.js");
+  const env = { SWECODE_URL_S1: "https://s1.example/v1", SWECODE_URL_S2: "https://s2.example/v1", SWECODE_URL_S3: "https://s3.example/v1" };
+  const llamadas = [];
+  const estado = await disponibilidadLocal({ env, refrescar:true, consultar: async url => {
+    llamadas.push(url);
+    return {status:503, ok:false};
+  }});
+  assert.equal(llamadas.length, 3);
+  assert.ok(llamadas.every(x => x.endsWith("/v1/models")));
+  const [liquid] = estadosModelosLocales(["lfm2.5-350m"],estado);
+  assert.equal(liquid.estado,"NO_DISPONIBLE");
+  assert.equal(liquid.disponible,false);
+  assert.match(liquid.motivo,/S1:HTTP_503.*S2:HTTP_503.*S3:HTTP_503/);
+  assert.equal(liquid.id,"hf/lfm2.5-350m");
+});
+test("HF local: un S2 que anuncia un modelo permite seleccionarlo sin tocar S1 ni agentes", async () => {
+  const { disponibilidadLocal, estadosModelosLocales } = await import("../src/respaldo.js");
+  const estado = await disponibilidadLocal({ env:{SWECODE_URL_S1:"https://s1.example/v1",SWECODE_URL_S2:"https://s2.example/v1"}, refrescar:true,
+    consultar: async url => url.includes("s2.example") ? {status:200,ok:true,json:async()=>({data:[{id:"lfm2.5-350m"}]})} : {status:503,ok:false}});
+  const [liquid,qwen]=estadosModelosLocales(["lfm2.5-350m","qwen2.5-coder-1.5b"],estado);
+  assert.equal(liquid.estado,"DISPONIBLE");
+  assert.equal(qwen.estado,"SIN_VERIFICAR");
+});

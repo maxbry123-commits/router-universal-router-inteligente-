@@ -498,6 +498,51 @@ export async function respaldo(mensajes, { env = process.env, extra = {}, opts, 
   throw Object.assign(new Error('RESPALDO_AGOTADO: ' + fallos.join(' | ')), { code: 'RESPALDO_AGOTADO', intentos, ...(f?.texto ? { parcial: f.texto } : {}) });
 }
 
+
+// Estado verificado de los TRES slots locales del Router SWE CODE. Solo lectura:
+// GET /models del mismo endpoint /v1 que usa completar(); no cargar modelos,
+// reiniciar Spaces ni cambiar el destino solicitado.
+const ESTADO_LOCAL_MS = 20000;
+let cacheLocal = { vence: 0, clave: "", valor: null };
+export async function disponibilidadLocal({ env = process.env, consultar = fetch, ahora = Date.now, plazoMs = 2500, refrescar = false } = {}) {
+  const urls = [1, 2, 3].map(n => ({ slot: 'S' + n, base: String(env['SWECODE_URL_S' + n] || '').replace(/\/+$/, '') })).filter(x => x.base);
+  const clave = urls.map(x => x.slot + ':' + x.base).join('|');
+  if (!refrescar && cacheLocal.valor && cacheLocal.clave === clave && ahora() < cacheLocal.vence) return cacheLocal.valor;
+  const slots = await Promise.all(urls.map(async ({slot, base}) => {
+    try {
+      const destino = new URL(base + '/models');
+      if (!['https:', 'http:'].includes(destino.protocol) || destino.username || destino.password ||
+          (destino.protocol !== 'https:' && !['localhost','127.0.0.1'].includes(destino.hostname)))
+        return { slot, estado: 'SIN_VERIFICAR', motivo: 'URL_INVALIDA' };
+      const r = await consultar(destino.href, { method: 'GET', signal: AbortSignal.timeout(plazoMs), headers: { accept: 'application/json' } });
+      if (r.status === 503) return { slot, estado: 'NO_DISPONIBLE', motivo: 'HTTP_503' };
+      if (!r.ok) return { slot, estado: 'SIN_VERIFICAR', motivo: 'HTTP_' + r.status };
+      const obj = await r.json();
+      const modelos = Array.isArray(obj?.data) ? obj.data.map(x => x?.id).filter(x => typeof x === 'string') : [];
+      return { slot, estado: modelos.length ? 'CATALOGO_OK' : 'SIN_VERIFICAR', modelos };
+    } catch {
+      return { slot, estado: 'SIN_VERIFICAR', motivo: 'SIN_CONEXION' };
+    }
+  }));
+  const resultado = { slots, configurados: urls.length };
+  if (urls.length) cacheLocal = { clave, vence: ahora() + ESTADO_LOCAL_MS, valor: resultado };
+  return resultado;
+}
+export function estadosModelosLocales(ids, estado) {
+  const slots = estado?.slots || [], configurados = estado?.configurados || 0;
+  return ids.map(id => {
+    const presentes = slots.filter(s => Array.isArray(s.modelos) && s.modelos.includes(id));
+    const caidos = slots.filter(s => s.estado === 'NO_DISPONIBLE' && s.motivo === 'HTTP_503');
+    const confirmado = presentes.length > 0;
+    const ninguno = configurados > 0 && caidos.length === configurados;
+    const e = confirmado ? 'DISPONIBLE' : !configurados ? 'NO_CONFIGURADO' : ninguno ? 'NO_DISPONIBLE' : 'SIN_VERIFICAR';
+    return { id: 'hf/' + id, nombre: id, proveedor: 'hf-local',
+      disponible: confirmado ? true : ninguno ? false : null,
+      estado: e, intentable: !ninguno && !!configurados,
+      ...(ninguno ? { motivo: slots.map(s => s.slot + ':' + s.motivo).join(' | ') } : {}) };
+  });
+}
+
 // que respaldos hay configurados (conteos, nunca valores): para /health y el auto-diagnostico
 export function estadoRespaldo(env = process.env) {
   return { ...Object.fromEntries(Object.keys(BASES).map(p => [p, claves(p.toUpperCase() + '_API_KEY', env).length])),

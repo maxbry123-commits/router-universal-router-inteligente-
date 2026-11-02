@@ -19,7 +19,7 @@ import { aplicarDefectos } from './defaults.js';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import nodeFs from 'node:fs';
 import { vigilarWorkspace, vigilarModelosOpenClaw, rutaWorkspace, configVigente, vigilarConfig, espejo, normalizarEjecutor } from './openclaw.js';
-import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, estadoMetricas, disponibilidad, modeloDefecto, setClaves, limpiarClaves } from './respaldo.js';
+import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, estadoMetricas, disponibilidad, disponibilidadLocal, estadosModelosLocales, modeloDefecto, setClaves, limpiarClaves } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo, checkpointGuardar } from './bloques.js';
 import { retomarLocal, retomarPorId, TIPO as TIPO_LOCAL } from './retomar_local.js';
 import { idValido as tareaIdValido } from './checkpoint_hf.js';
@@ -247,15 +247,15 @@ app.get('/v1/models', (_req, res) => res.json({ object: 'list', data: idsModelos
 // disponibilidad real de los modelos Groq/NVIDIA (GET /models de cada proveedor): DISPONIBLE | NO DISPONIBLE | SIN VERIFICAR; jamas cambia de modelo en silencio ni muestra claves
 app.get('/v1/modelos/disponibilidad', async (_req, res) => {
   try {
-    const URLs = estadoRespaldo().hf_local, locales = idsRespaldo().filter(id => !id.includes('/'))
-      .map(id => ({ id: 'hf/' + id, nombre: id, proveedor: 'hf-local', disponible: null,
-        estado: URLs ? 'SIN VERIFICAR' : 'NO CONFIGURADO', intentable: !!URLs }));
-    // URL configurada no significa modelo cargado: solo el primer chat confirma realmente su inferencia.
+    const estadoHF = await disponibilidadLocal();
+    const locales = estadosModelosLocales(idsRespaldo().filter(id => !id.includes('/')), estadoHF);
+    // GET /v1/models prueba salud sin generar tokens: un 503 real de S1/S2/S3
+    // se presenta como NO DISPONIBLE, no como modelo listo para usar.
     // El selector necesita el estado EFECTIVO de las credenciales (entorno + banco cifrado).
     // GET /v1/claves informa solo sobre el banco y puede exigir permisos distintos;
     // no usar ese contador para decidir falsamente que un modelo esta NO CONFIGURADO.
     const cuentas = estadoRespaldo();
-    res.json({ ok: true, modelos: await disponibilidad(), locales,
+    res.json({ ok: true, modelos: await disponibilidad(), locales, slots_hf: estadoHF.slots.map(s => ({ slot: s.slot, estado: s.estado, ...(s.motivo ? { motivo: s.motivo } : {}) })),
       configurados: Object.fromEntries(Object.entries(cuentas).map(([k, n]) => [k, n > 0])) });
   } catch (e) {
     res.status(502).json({ ok: false, error: { code: 'DISPONIBILIDAD_FALLO', message: 'No se pudo consultar el catálogo' } });
