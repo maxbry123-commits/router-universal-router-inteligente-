@@ -3,6 +3,7 @@
 // defecto) y «silenciadas» (fila OFF = sigue anclada pero no viaja; contexto.js ya las filtra al enviar).
 //  A · una barra: pegas / arrastras / escribes para buscar; ON/OFF por fila.   B · tarjetas por destino.   C · mínimo: un botón ⚓ y una lista.
 import { leer, escribir } from "./almacen.js";
+import { prepararImagenOArchivo } from "./imagen-subida.js";
 import { crearObjetivo, listaWF, listaProyectos, crearProyecto, proyId } from "./objetivos-ancla.js";
 import { K_MUTE } from "./contexto.js";
 import { clasificar } from "./chat-ancla.js";
@@ -44,13 +45,14 @@ export const M = {
   anclar(k, toks) { const o = objDe(k); if (!o) return 0; let n = 0; toks.forEach((t) => { if (!o.anclados.has(t)) { o.anclados.add(t); n++; } }); tras(o); return n; },
   quitar(k, tok) { const o = objDe(k); if (!o) return false; const r = o.anclados.delete(tok); tras(o); return r; },
   claveReal(k) { if (k !== "proyecto") return k; const o = objDe(k); return o ? "proyecto:" + o.id : k; },
-  async subir(k, file) {
-    if (file.size > 2_000_000) throw new Error(file.name + ": muy grande (máx ~2 MB)");
+  async subir(k, origen) {
+    const file = await prepararImagenOArchivo(origen);
     const o = objDe(k), c = window.RIU_CHAT && window.RIU_CHAT.chat(); if (!o || !c || !window.RIU_ACCION) throw new Error("chat no listo");
     const bytes = new Uint8Array(await file.arrayBuffer()); let bin = ""; for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
     const dest = o.tipo === "constitucion" ? { destino: "constitucion" } : o.tipo === "proyecto" ? { destino: "proyecto", project_id: o.project_id || proyId(o.id) } : {};
     const r = await window.RIU_ACCION("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: c.sesion, ...dest });
-    const n = (r && r.nombre) || file.name; o.anclados.add(n); tras(o); return n;
+    if (!r || r.error || r.ok !== true) throw new Error(String((r && (r.error || r.detalle)) || "SUBIDA_SIN_CONFIRMACION"));
+    const n = r.nombre || file.name; o.anclados.add(n); tras(o); return n;
   },
   async archivos() { try { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); const r = await window.RIU_ACCION("archivos", { sesion: c ? c.sesion : undefined }); return Array.isArray(r.archivos) ? r.archivos : []; } catch (e) { return []; } },
   // texto pegado: enlaces/raíces se anclan tal cual; texto largo sin enlaces se guarda como nota .txt y se ancla (real, en la carpeta del chat)
