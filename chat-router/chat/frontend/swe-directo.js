@@ -317,13 +317,13 @@ export async function aprobarYContinuarSwe(api, d, alPaso) {
   return conducir(api, await aprobarTareaSwe(api, d), tarea, alPaso, { parar: d.parar, signal: d.signal });
 }
 
-export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecutor_tools, modo }) {
+export function armar({ model, historial = [], mensaje, sesion, proyecto, ejecutor_tools, modo, tools = false, agente_tool = false, llm_tool = false }) {
   const h = historial.slice(-MAX_HISTORIAL);
   const m = modo === undefined ? leerSeleccion().modo_trabajo : modo, mt = en(MODOS_TRABAJO, m) ? m : "";  // MODO DE TRABAJO: `modo` junto al modelo; Concilio lleva el modo en el id (swecode-<modo>)
   const real = Object.hasOwn(REAL, model) ? REAL[model]
     : typeof model === "string" && model.startsWith("hf/") && LOCALES.includes(model.slice(3)) ? model.slice(3) : model;
   // R1: el navegador NUNCA guarda ni reenvia claves de API: el banco cifrado del servidor es la unica fuente (swe-claves.js solo informa su estado)
-  return { model: mt && real === "swecode-consulta" ? "swecode-" + mt : real, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, stream: true, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(mt && real !== "swecode-consulta" ? { modo: mt } : {}), ...(proyecto ? { proyecto } : {}) };
+  return { model: mt && real === "swecode-consulta" ? "swecode-" + mt : real, messages: [...h, { role: "user", content: mensaje }], conv_id: sesion, stream: true, tools: tools === true, agente_tool: agente_tool === true, llm_tool: llm_tool === true, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(mt && real !== "swecode-consulta" ? { modo: mt } : {}), ...(proyecto ? { proyecto } : {}) };
 }
 
 // El proxy del Space solo manda /v1/* al bridge si el modelo empieza por web-/swecode-; el resto (locales HF, groq/, nvidia/) caeria en el Router
@@ -423,3 +423,4 @@ export async function enviarSwe(api, datos) {
   }
   return { reply: texto, tools: [], ...(llamadas.length ? { pedidas: nombres, tool_calls: llamadas, ejecutor: quien } : {}), finish_reason: r.choices[0].finish_reason || (llamadas.length ? "tool_calls" : null), nota: `SWE · ${r.modelo_usado || datos.model}${via}${llamadas.length ? " · tools → " + quien : ""}` };
 }
+
