@@ -49,18 +49,6 @@ st.textContent = "@media(max-width:720px){"
   + "#mas-pop button{width:100% !important;max-width:none !important;height:auto !important;min-height:40px !important;aspect-ratio:auto !important;border-radius:12px !important;padding:8px 10px !important;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px}"
   + "}";
 document.head.append(st);
-// V07: hoja responsiva independiente, cargada tras el CSS legado y ligada al SHA del módulo.
-// No duplica botones, no toca el chat ni modifica los handlers de herramientas.
-if (!document.getElementById("riu-composer-v07-css")) {
-  const uiCss = document.createElement("link");
-  uiCss.id = "riu-composer-v07-css";
-  uiCss.rel = "stylesheet";
-  const locationCss = new URL("./composer-v07.css", import.meta.url);
-  const revision = new URL(import.meta.url).searchParams.get("v");
-  if (revision) locationCss.searchParams.set("v", revision);
-  uiCss.href = locationCss.href;
-  document.head.append(uiCss);
-}
 
 function panel(id, titulo) {
   let p = document.getElementById(id);

@@ -128,6 +128,28 @@ function asegurarHoja() {
   info.textContent = "HF · Groq · NVIDIA · DeepSeek · MiniMax · OpenAI. Un modelo por mensaje, sin cambiar de proveedor.";
   fila.append(model, plus); panel.append(texto, fila, info);
   hoja.querySelector(".va-caja").append(panel);
+  // Acceso directo al selector auténtico de agentes del Harness.
+  // No creamos agentes alternativos ni fingimos disponibilidad.
+  const agentes = document.createElement("div");
+  agentes.className = "agentes-restore-shortcut";
+  const tituloAgentes = document.createElement("strong");
+  tituloAgentes.textContent = "Agentes de programación";
+  const listaAgentes = document.createElement("p");
+  listaAgentes.textContent = "OpenClaw · SWE-agent · OpenHands · OpenCode · Codex · Claude Code";
+  const estadoAgentes = document.createElement("small");
+  estadoAgentes.textContent = "Catálogo existente. Abre el selector para comprobar disponibilidad.";
+  const verAgentes = document.createElement("button");
+  verAgentes.type = "button"; verAgentes.className = "secondary";
+  verAgentes.textContent = "Ver lista y elegir agente";
+  verAgentes.addEventListener("click", () => {
+    const original = document.getElementById("btn-agentes-swe");
+    if (!original) { estadoAgentes.textContent = "Selector de agentes no encontrado en el chat."; return; }
+    hoja.hidden = true;
+    if (btn) btn.setAttribute("aria-expanded", "false");
+    original.click();
+  });
+  agentes.append(tituloAgentes, listaAgentes, estadoAgentes, verAgentes);
+  hoja.querySelector(".va-caja").append(agentes);
   const cerrar = () => { if (hoja.hidden) return; hoja.hidden = true; if (btn) { btn.setAttribute("aria-expanded", "false"); btn.focus(); } };
   hoja.addEventListener("click", (e) => {
     if (e.target === hoja || e.target.closest(".sh-cerrar")) { cerrar(); return; }
@@ -147,7 +169,8 @@ function montar() {
   if (sec.parentNode !== caja) caja.append(sec);
   // Las filas Groq/NVIDIA conservan su estado para el backend, pero se controlan
   // exclusivamente desde #modelo-unificado. No crear un segundo selector visible.
-  sec.classList.add("riu-modelos-unificados");
+  // Restaurado: los selectores individuales NVIDIA y Groq son visibles
+  // y conservan su propio estado, ON/OFF y fichas nativas.
   if (!btn || !composer.contains(btn)) {
     btn = document.createElement("button");
     btn.type = "button"; btn.id = "btn-selector-modelos"; btn.className = "pill sel-indicador"; btn.setAttribute("aria-haspopup", "dialog"); btn.setAttribute("aria-controls", "sh-selectores");

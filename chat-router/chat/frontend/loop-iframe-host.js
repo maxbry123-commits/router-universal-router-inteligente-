@@ -15,8 +15,6 @@ function powerState(state){
   button.setAttribute('aria-pressed',String(known&&live));
   button.title=known?'Backend: cola '+(state.queue?s:'sin crear'):'Estado no confirmado';
   button.dataset.verified=known?'true':'false';
-  // El rótulo se mantiene para escritorio; en móvil se muestra un icono compacto.
-  button.setAttribute('aria-label',!known?'LOOP sin estado confirmado':live?'LOOP activo. Pulsar para pausar':s==='PAUSED'?'LOOP pausado. Pulsar para reanudar':'LOOP '+s+'. Abrir panel para configurar');
 }
 async function api(action,payload){
   if(typeof window.RIU_PLUGIN!=='function')throw Error('BACKEND_NO_DISPONIBLE');
@@ -142,15 +140,14 @@ export function mountLoopPowerButton(){
       const old=await api('dsl_estado',{op:'get',...selected});
       if(old.ok!==true||old.status!=='PASS'||old.project_id!==selected.project_id||old.loop_id!==selected.loop_id||!Number.isInteger(old.revision))throw Error('ESTADO_NO_VERIFICADO');
       const queueStatus=String(old.queue?.status||'').toLowerCase();
-      const op=queueStatus==='running'?'pause':queueStatus==='paused'?'resume':!old.queue&&old.contracts?.some(c=>c.enabled===true)?'start':null;
+      const op=queueStatus==='running'?'pause':!old.queue&&old.contracts?.some(c=>c.enabled===true)?'start':null;
       if(!op)throw Error('USA_VISTA_EJECUCION_PARA_ESTE_ESTADO');
       const result=await api('dsl_control',{...selected,op,expected_revision:old.revision});
       if(result.ok!==true)throw Error(result.error||'CONTROL_NO_CONFIRMADO');
       const now=await api('dsl_estado',{op:'get',...selected});
       if(now.ok!==true||now.status!=='PASS'||now.project_id!==selected.project_id||now.loop_id!==selected.loop_id
         ||op==='start'&&(!now.queue?.queue_id||now.queue?.status!=='running'||now.revision!==old.revision+1)
-        ||op==='pause'&&now.queue?.status!=='paused'
-        ||op==='resume'&&now.queue?.status!=='running')throw Error('CONTROL_NO_CONFIRMADO');
+        ||op==='pause'&&now.queue?.status!=='paused')throw Error('CONTROL_NO_CONFIRMADO');
       powerState(now);
     }catch(e){powerState();button.title=String(e.message||e)}finally{button.disabled=false}
   };

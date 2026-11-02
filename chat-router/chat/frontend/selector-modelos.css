@@ -28,9 +28,17 @@
 #sh-selectores #api-modelos-nota{font-size:12px;line-height:1.35}
 @media(max-width:380px){#sh-selectores .api-modelos-fila{flex-wrap:wrap}#sh-selectores #anadir-api-sdk{flex:1 1 100%}}
 
-/* Una sola selección visible: los botones legado Groq/NVIDIA siguen cableados
-   pero no duplican el selector de modelos ni el indicador que ya pinta #composer. */
-#sh-selectores #selectores .sel-resp-global,
+/* Rollback visual: los selectores NVIDIA y Groq de la vista original
+   vuelven a mostrarse con sus botones ON/OFF y listas. */
 #sh-selectores #selectores .sel-fila[data-selector="groq"],
-#sh-selectores #selectores .sel-fila[data-selector="nvidia-groq-team"]{display:none!important}
+#sh-selectores #selectores .sel-fila[data-selector="nvidia-groq-team"]{display:flex!important}
+#sh-selectores #selectores .sel-resp-global{display:block!important}
 #sh-selectores .api-modelos-rapido{order:-1}
+#sh-selectores .agentes-restore-shortcut{
+  display:grid;gap:8px;margin:10px 0;padding:12px;
+  background:var(--panel,#2A2A2A);border:1px solid var(--border,#484848);border-radius:12px;
+}
+#sh-selectores .agentes-restore-shortcut strong{font-size:14px}
+#sh-selectores .agentes-restore-shortcut p,
+#sh-selectores .agentes-restore-shortcut small{margin:0;line-height:1.4;font-size:12px;overflow-wrap:anywhere}
+#sh-selectores .agentes-restore-shortcut button{width:100%;min-height:44px;text-align:center}
