@@ -33,7 +33,7 @@ test("DeepSeek MiniMax y OpenAI aparecen en el selector y sus claves se eligen d
     assert.ok(s.includes(id), id);
     assert.ok(router.includes(id), id);
   }
-  assert.match(s, /api\("\/web\/v1\/modelos\/disponibilidad"\)/);
+  assert.match(s, /api\("\/plugins\/deepseek_harness\/modelos\/v1\/disponibilidad"\)/);
   assert.match(s, /encender\?\.\("swen-code-free"\)/);
   for (const p of ["deepseek", "minimax", "openai"]) assert.ok(banco.includes('["' + p + '",'), p);
   assert.doesNotMatch(s, /API_KEY\s*=/);
