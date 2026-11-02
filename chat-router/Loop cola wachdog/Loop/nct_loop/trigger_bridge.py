@@ -4,6 +4,8 @@ import inspect
 import time
 from .trigger_contract import ContractError, _id, canonical, sha256, validate_contract, validate_loop
 from .trigger_engine import TriggerEngine, HostPorts
+from .gap_mechanic import GapError
+from .loop_continuity import ContinuityError
 
 async def _invoke(cb, *args):
     if not callable(cb):
@@ -623,3 +625,5 @@ class TriggerBridge:
                 role_pairs=state["role_pairs"], host_context=server_context, previous=previous)
         except ContractError as e:
             return {"ok": False, "status": "BLOCKED", "error": e.code, "detail": e.detail}
+        except (GapError, ContinuityError) as e:
+            return {"ok": False, "status": "BLOCKED", "error": str(e)[:100]}
