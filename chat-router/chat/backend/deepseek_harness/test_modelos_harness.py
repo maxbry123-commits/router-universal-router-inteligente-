@@ -18,6 +18,29 @@ class ModeloGateTests(unittest.TestCase):
         with self.assertRaises(HTTPException):
             h._modelo_destino("modelo-inexistente")
 
+    def test_router_swe_usa_la_entrada_existente_sin_variable_url_nueva(self):
+        # El Harness vive montado en el Router: ausencia de RIU_ROUTER_URL
+        # NO equivale a Router caido ni bloquea los agentes por error.
+        with patch.dict("os.environ", {"PORT": "7860"}, clear=True), \
+             patch.object(h, "llamar", return_value={"agentes_on": True}) as cliente:
+            h._exigir_agentes_on()
+            cliente.assert_called_once_with("puente_chat", "tools_lock", {}, timeout=None)
+
+    def test_router_swe_sigue_respetando_agentes_off(self):
+        with patch.dict("os.environ", {"PORT": "7860"}, clear=True), \
+             patch.object(h, "llamar", return_value={"agentes_on": False}):
+            with self.assertRaisesRegex(ValueError, "AGENTES_APAGADOS"):
+                h._exigir_agentes_on()
+
+    def test_cómputo_mvp_usa_puerto_del_space_y_no_7861_fijo(self):
+        with patch.dict("os.environ", {"PORT": "7860"}, clear=True):
+            self.assertEqual(h._mvp_modelos_url(), "http://127.0.0.1:7860")
+        with patch.dict("os.environ", {"PORT": "7861"}, clear=True):
+            self.assertEqual(h._mvp_modelos_url(), "http://127.0.0.1:7861")
+        with patch.dict("os.environ", {"PORT": "99999"}, clear=True):
+            with self.assertRaises(HTTPException):
+                h._mvp_modelos_url()
+
     def test_la_clave_de_proveedor_no_es_clave_harness(self):
         with patch.dict("os.environ", {"RIU_API_KEY": "PRUEBA-INTERNA"}, clear=True):
             h._autorizar_chat_modelos("PRUEBA-INTERNA", None)
