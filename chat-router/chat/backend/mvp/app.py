@@ -469,7 +469,8 @@ async def _chat_ficha(cuerpo, progreso=None):
         mensajes = list(q["contexto_previo"]) + list(mensajes)
     con = q.get("constitucion") if isinstance(q.get("constitucion"), dict) else {}
     ses = str(q.get("sesion") or "web-general")[:60]
-    anclado, imagenes = await _contexto_anclado(q.get("anclados"), ses)
+    ses_ancladas = str(q.get("anclados_sesion") or ses)[:60]  # fan-out: cada proceso propio, fotos del chat de origen
+    anclado, imagenes = await _contexto_anclado(q.get("anclados"), ses_ancladas)
     arch_con, imagenes_con = await _contexto_anclado(con.get("anclados"), ses)
     imagenes += imagenes_con
     if len(imagenes) > 4:
