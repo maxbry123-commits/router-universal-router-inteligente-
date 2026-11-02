@@ -11,7 +11,7 @@ async function cargarModelosApi() {
   try {
     const res = await api("/plugins/deepseek_harness/modelos/v1/disponibilidad");
     if (!res?.ok || !Array.isArray(res.modelos)) return;
-    modelosApi = res.modelos.filter(m => m && /^(deepseek|openai|minimax)\//.test(m.id));
+    modelosApi = res.modelos.filter(m => m && /^(hf|groq|nvidia|deepseek|openai|minimax)\//.test(m.id));
     pintarCatalogo();
   } catch { /* sin catalogo: quedan como SIN VERIFICAR; no fingir DISPONIBLE */ }
   finally { catalogoCargando = false; }
@@ -19,10 +19,10 @@ async function cargarModelosApi() {
 // Catálogo unificado de MODELOS (no de agentes). Lee los estados del mismo bridge que responde.
 function modelosDisponibles() {
   const f = [
+    ...modelosApi,
     ...((window.RIU_LOCAL || {}).lista || []),
     ...((window.RIU_GROQ || {}).lista || []),
     ...((window.RIU_CONFIG || {}).modelos || []).filter(m => String(m.id || "").startsWith("nvidia/")),
-    ...modelosApi,
   ];
   // Si aun no existe catalogo accesible, conservar las fichas solicitadas como SIN VERIFICAR.
   const esperados = [
