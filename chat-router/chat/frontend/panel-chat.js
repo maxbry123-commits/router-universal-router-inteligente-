@@ -45,7 +45,7 @@ export async function mount(root, { api, tell }) {
   const tabsEl = q("#chat-tabs"), histEl = q("#histories");
   const abajo = (c) => {
     // El único control «Bajar al final» pertenece a chat-riu.js.
-    // No crear otro botón «↓ nuevo» dentro de la respuesta ni tapar texto.
+    // No crear otro botón flotante que tape la respuesta.
     if (c.hist.__sigue !== false) c.hist.scrollTop = c.hist.scrollHeight;
   };
   const mmMovil = window.matchMedia("(max-width: 720px)");

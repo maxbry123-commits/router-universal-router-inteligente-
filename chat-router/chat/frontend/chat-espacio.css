@@ -219,15 +219,15 @@ html.salida-x4 #histories { flex: 1 1 auto; height: auto; }
  */
 @media(max-width:720px){
   main section:has(> #histories){
-    height:auto !important;
-    min-height:calc(100dvh - var(--ctl-top,56px) - 12px) !important;
+    height:calc(100dvh - var(--chat-top,var(--ctl-top,56px)) - 8px) !important;
+    min-height:0 !important;
     display:flex;flex-direction:column;
-    overflow:visible;
+    overflow:hidden;
   }
   main section > #histories{
-    height:clamp(250px,49dvh,560px) !important;
-    min-height:clamp(250px,49dvh,560px) !important;
-    flex:1 0 auto !important;
+    height:auto !important;
+    min-height:0 !important;
+    flex:1 1 auto !important;
     overflow:hidden;
   }
   #histories .chat-history{

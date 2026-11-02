@@ -13,7 +13,7 @@ test('pensamiento existe solo en el historial visible, nunca entre botones',()=>
 });
 test('salida tiene altura mínima móvil y no pierde el área de escritura',()=>{
  const css=src('chat-espacio.css');
- assert.match(css,/height:clamp\(250px,49dvh,560px\) !important/);
+ assert.match(css,/height:calc\(100dvh - var\(--chat-top/);
  assert.match(css,/padding:8px 6px 44px 6px !important/);
  assert.match(css,/#composer\{\s*flex:0 0 auto !important/);
  assert.match(css,/max-width:100%/);
