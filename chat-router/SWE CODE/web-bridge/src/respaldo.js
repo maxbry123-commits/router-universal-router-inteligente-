@@ -129,7 +129,7 @@ export function ajustesFinales(modelo, extra) {
   }
   return { ajustes, info: info.ignorados.length || Object.keys(info.recortados).length ? Object.fromEntries(Object.entries(info).filter(([, x]) => (Array.isArray(x) ? x.length : Object.keys(x).length))) : null };
 }
-const cuerpo = (modelo, mensajes, extra, stream) => JSON.stringify({ model: modelo, messages: mensajes, ...ajustesFinales(modelo, extra).ajustes, ...(extra.tools && extra.tools.length ? { tools: extra.tools, tool_choice: extra.tool_choice || 'auto' } : {}), ...(stream ? { stream: true } : {}) });
+const cuerpo = (modelo, mensajes, extra, stream) => JSON.stringify({ model: modelo, messages: mensajes, ...ajustesFinales(modelo, extra).ajustes, ...(['qwen3.5-0.8b', 'qwen3-0.6b'].includes(modelo) ? { chat_template_kwargs: { enable_thinking: false } } : {}), ...(extra.tools && extra.tools.length ? { tools: extra.tools, tool_choice: extra.tool_choice || 'auto' } : {}), ...(stream ? { stream: true } : {}) });
 const cabeceras = (clave) => ({ 'content-type': 'application/json', 'user-agent': 'riu-swe-code', ...(clave ? { authorization: `Bearer ${clave}` } : {}) });
 
 // R3: nombre completo de una herramienta que llega fragmentada. Tres formas reales: una vez; repetido entero en cada delta; acumulativo (git, github, github_leer)
