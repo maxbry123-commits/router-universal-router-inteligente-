@@ -1,0 +1,61 @@
+/* Maxbry UI Frontend V07 · Chat2 · Iconos sin recuadros.
+   Tamaño del trazo 18px -> 23.4px (+30%). Área táctil intacta, sin agrandar botones.
+   Este estilo afecta SOLO los botones del composer en móvil; Enviar y el selector
+   de modelos conservan sus formas y funciones. */
+@media(max-width:720px){
+ #composer .composer-bar > button.secondary:not(.action),
+ #composer .composer-bar > button.grp,
+ #composer .composer-bar > #btn-paralelo,
+ #composer .composer-bar > #mode-selector-mount .ms-btn {
+   background:transparent !important;
+   border-color:transparent !important;
+   border-style:solid !important;
+   box-shadow:none !important;
+   outline-color:transparent;
+   color:var(--title,#EDEDED);
+ }
+ #composer .composer-bar > button.secondary:not(.action) svg,
+ #composer .composer-bar > button.grp svg,
+ #composer .composer-bar > #mode-selector-mount .ms-btn svg {
+   width:23.4px !important;
+   height:23.4px !important;
+   flex:0 0 23.4px;
+ }
+ #composer .composer-bar > #btn-paralelo::before {
+   font-size:20.8px !important;
+   line-height:1 !important;
+ }
+ #composer .composer-bar > #btn-pegar {font-size:23.4px !important}
+ #composer .composer-bar > button.grp::after {content:none !important}
+ #composer .composer-bar > button.grp .mas-nom {display:none !important}
+ #composer .composer-bar > button.secondary:not(.action)[aria-pressed="true"],
+ #composer .composer-bar > button.grp[aria-expanded="true"],
+ #composer .composer-bar > #btn-paralelo[aria-pressed="true"],
+ #composer .composer-bar > #mode-selector-mount .ms-btn[aria-pressed="true"] {
+   color:var(--status-blue,#2F80FF) !important;
+   filter:drop-shadow(0 0 4px rgba(47,128,255,.65));
+ }
+ #composer .composer-bar > button.secondary:not(.action):focus-visible,
+ #composer .composer-bar > button.grp:focus-visible,
+ #composer .composer-bar > #btn-paralelo:focus-visible,
+ #composer .composer-bar > #mode-selector-mount .ms-btn:focus-visible {
+   outline:2px solid var(--status-blue,#2F80FF) !important;
+   outline-offset:2px;
+ }
+ #composer .composer-bar > #btn-loop-power{
+   font-size:0 !important;
+   position:relative;
+ }
+ #composer .composer-bar > #btn-loop-power::before{
+   content:"∞";font-size:23.4px;line-height:1;color:inherit
+ }
+ #composer .composer-bar > #btn-loop-power[data-verified="false"]{
+   color:var(--quiet,#989898) !important;filter:none !important
+ }
+ #composer .composer-bar > #btn-loop-power[data-verified="true"][aria-pressed="true"]{
+   color:var(--status-blue,#2F80FF) !important
+ }
+ /* Cubo activo: detrás de Detener e inmediatamente a la izquierda de Enviar. */
+ #composer .composer-bar > .p3d{order:3 !important}
+ #composer .composer-bar > .action{order:3 !important}
+}

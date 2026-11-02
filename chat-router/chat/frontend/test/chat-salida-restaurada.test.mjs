@@ -3,13 +3,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const src=f=>readFileSync(new URL('../'+f,import.meta.url),'utf8');
-test('pensamiento existe solo en el historial visible, nunca entre botones',()=>{
+test('pensamiento junto a Enviar, no en el historial',()=>{
  const js=src('pensando-3d.js'),css=src('pensando-3d.css');
- assert.match(js,/hist\.querySelectorAll\("\.chat-history"\)/);
- assert.match(js,/target\.append\(w\)/);
- assert.doesNotMatch(js,/barra\.insertBefore\(w/);
- assert.match(css,/#histories \.chat-history > \.p3d/);
- assert.doesNotMatch(css,/composer-bar>\.p3d/);
+ assert.match(js,/barra\.insertBefore\(w, enviar\)/);
+ assert.match(js,/barra\.querySelector\("\.action"\)/);
+ assert.doesNotMatch(js,/target\.append\(w\)/);
+ assert.match(css,/#composer \.composer-bar > \.p3d/);
+ assert.doesNotMatch(css,/#histories \.chat-history > \.p3d/);
 });
 test('salida tiene altura mínima móvil y no pierde el área de escritura',()=>{
  const css=src('chat-espacio.css');
@@ -29,6 +29,7 @@ test('solo hay flecha de bajar en el historial, sin nuevo flotando a mitad del c
 test('selector NVIDIA, Groq y agentes siguen intactos',()=>{
  const ui=src('selector-modelos.js'),sel=src('panel-chat.html');
  assert.doesNotMatch(ui,/modelo-unificado/);
- for(const id of ['sel-ngt','sel-groq','sel-swe','sel-swen','btn-agentes-swe'])
+ for(const id of ['sel-ngt','sel-groq','sel-swe','sel-swen'])
   assert.match(sel,new RegExp('id="'+id+'"'));
+ assert.doesNotMatch(sel,/id="btn-agentes-swe"/);
 });

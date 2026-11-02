@@ -49,6 +49,16 @@ st.textContent = "@media(max-width:720px){"
   + "#mas-pop button{width:100% !important;max-width:none !important;height:auto !important;min-height:40px !important;aspect-ratio:auto !important;border-radius:12px !important;padding:8px 10px !important;display:inline-flex;align-items:center;justify-content:flex-start;gap:8px}"
   + "}";
 document.head.append(st);
+if (!document.getElementById("riu-iconos-sin-cuadros")) {
+  const hoja = document.createElement("link");
+  hoja.id = "riu-iconos-sin-cuadros";
+  hoja.rel = "stylesheet";
+  const ruta = new URL("./iconos-chat-v08.css", import.meta.url);
+  const version = new URL(import.meta.url).searchParams.get("v");
+  if (version) ruta.searchParams.set("v", version);
+  hoja.href = ruta.href;
+  document.head.append(hoja);
+}
 
 function panel(id, titulo) {
   let p = document.getElementById(id);
@@ -219,7 +229,7 @@ function botonPegar() {
   boton.className = "secondary";
   boton.setAttribute("aria-label", "Pegar texto copiado");
   boton.title = "Pegar texto copiado";
-  boton.textContent = "▤";
+  boton.innerHTML = svg('<rect x="9" y="6" width="11" height="15" rx="2"/><path d="M7 17H5V3h11v2"/>');
   boton.addEventListener("click", async () => {
     try {
       const texto = await navigator.clipboard.readText();

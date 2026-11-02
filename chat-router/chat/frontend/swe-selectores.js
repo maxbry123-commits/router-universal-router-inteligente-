@@ -305,11 +305,11 @@ function hoja(id, desde) {
 }
 // capturar: estas 4 pastillas abren SOLO esta ventana (las hojas viejas de Groq y NVIDIA ya no existen: su lista de modelos era el duplicado)
 document.addEventListener("click", (e) => {
-  const p = e.target.closest && e.target.closest("#sel-swe, #sel-swen, #sel-groq, #sel-ngt, #btn-agentes-swe");
+  const p = e.target.closest && e.target.closest("#sel-swe, #sel-swen, #sel-groq, #sel-ngt");
   if (!p) return;
   const activo = window.RIU_SELECTORES?.activo;
   const actual = { "swe-code": "swe-code", "swen-code-free": "swen-code-free", groq: "groq", "nvidia-groq-team": "nvidia" }[activo];
-  const destino = p.id === "btn-agentes-swe" ? (actual || "swe-code") : PILLS[p.id];
+  const destino = PILLS[p.id];
   if (!destino) return;
   e.stopImmediatePropagation();
   e.preventDefault();
