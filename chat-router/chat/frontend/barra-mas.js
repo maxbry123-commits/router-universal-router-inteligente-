@@ -70,6 +70,16 @@ if (!document.getElementById("chat-toolbar-v09")) {
   ajuste.href = url.href;
   document.head.append(ajuste);
 }
+// Se carga al final para resolver estilos heredados SIN modificar shell.html.
+if (!document.getElementById("chat-flujo-movil-v11")) {
+  const hoja = document.createElement("link");
+  hoja.id = "chat-flujo-movil-v11";
+  hoja.rel = "stylesheet";
+  const ruta = new URL("./chat-flujo-movil.css", import.meta.url);
+  ruta.searchParams.set("v", "11.1");
+  hoja.href = ruta.href;
+  document.head.append(hoja);
+}
 
 function panel(id, titulo) {
   let p = document.getElementById(id);

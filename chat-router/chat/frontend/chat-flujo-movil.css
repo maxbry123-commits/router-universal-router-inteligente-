@@ -1,0 +1,125 @@
+/* Maxbry V07 · FE/chat mobile flow V11.
+ * El documento, NO la conversación en una caja fija, se desplaza por la página.
+ * Comportamientos reales reutilizados: RUI 02/04/07/08/09/11/13/16/19/22.
+ * No crear nuevos motores, selectores, iframes ni animaciones ficticias. */
+@media(max-width:720px){
+ html,body{height:auto!important;min-height:100%!important;overflow-y:auto!important;overflow-x:hidden!important}
+ .shell,main#panel{height:auto!important;min-height:100dvh!important;max-height:none!important;overflow:visible!important}
+ main#panel section:has(> #histories){
+   height:auto!important;max-height:none!important;
+   min-height:calc(100dvh - 140px)!important;
+   overflow:visible!important;display:flex!important;flex-direction:column!important;
+   gap:10px!important;
+ }
+ #histories,#histories .chat-history,#histories .chat-history:not([hidden]){
+   height:auto!important;max-height:none!important;min-height:0!important;
+   overflow:visible!important;flex:0 0 auto!important;overscroll-behavior:auto!important;
+ }
+ #histories .chat-history:not([hidden]){
+   padding-right:clamp(8px,2.8vw,16px)!important;
+   padding-bottom:14px!important;
+ }
+ #histories .chat-history::before{flex:0 0 0px!important}
+ #histories .message{max-width:calc(100% - 4px);box-sizing:border-box;overflow-wrap:anywhere}
+ #histories .message .txt{overflow-wrap:anywhere}
+ #composer{
+   position:relative!important;bottom:auto!important;top:auto!important;
+   flex:0 0 auto!important;min-width:0!important;
+   max-width:100%!important;margin:14px auto 22px!important;
+   padding:11px 10px 9px!important;
+   overflow:visible!important;
+ }
+ #composer #message{
+   order:1!important;
+   height:auto;min-height:116px!important;
+   max-height:min(240px,36dvh)!important;
+   padding:12px 44px 10px 9px!important;
+   resize:vertical!important;overflow-y:auto!important;
+   line-height:1.45!important;font-size:16px!important;
+   box-sizing:border-box!important;
+ }
+ #composer.riu-input-expanded #message{
+   height:min(60dvh,560px)!important;
+   min-height:min(60dvh,560px)!important;
+   max-height:min(60dvh,560px)!important;
+ }
+ #composer .composer-bar{
+   grid-template-columns:repeat(7,minmax(0,1fr))!important;
+   grid-template-rows:48px 54px!important;
+   gap:8px 2px!important;align-items:center!important;
+   justify-items:center!important;margin:6px 0 4px!important;
+ }
+ #composer .composer-bar > button.secondary,
+ #composer .composer-bar > button.grp,
+ #composer .composer-bar > #mode-selector-mount{
+   display:inline-flex;justify-content:center;align-items:center;
+   width:42px!important;height:44px!important;min-height:44px!important;
+   max-width:100%!important;margin:0!important;padding:0!important;
+   border:0!important;background:transparent!important;
+   box-shadow:none!important;outline-offset:2px!important;
+ }
+ #composer .composer-bar > #mode-selector-mount .ms-btn{
+   display:inline-flex!important;width:42px!important;height:44px!important;min-height:44px!important;
+ }
+ #composer .composer-bar > #btn-grp-cuad{grid-area:2 / 1!important}
+ #composer .composer-bar > #btn-limpiar-input{grid-area:2 / 2!important}
+ #composer .composer-bar > #btn-detener{grid-area:2 / 4!important}
+ /* El cubo original NO comparte celda con Detener/Enviar. */
+ #composer .composer-bar > .p3d{
+   grid-area:2 / 5!important;order:initial!important;
+   position:relative!important;display:inline-flex!important;
+   width:46px!important;height:46px!important;overflow:visible!important;
+   margin:0!important;transform:none!important;justify-self:center!important;
+   z-index:1!important
+ }
+ #composer .composer-bar > .p3d .p3d-escena{
+   width:46px!important;height:46px!important;
+   transform:scale(1.05)!important;transform-origin:center!important
+ }
+ #composer .composer-bar > .action{
+   grid-area:2 / 6 / 3 / 8!important;order:initial!important;
+   position:static!important;justify-self:end!important;
+   width:100%!important;min-width:0!important;max-width:112px!important;
+   height:44px!important;min-height:44px!important;
+   padding:0 5px!important;box-shadow:none!important;
+ }
+ #composer > #btn-expandir-input{top:12px!important;right:10px!important}
+ /* Orbe/estado solo si trabaja realmente; iconos no permanecen encendidos. */
+ #composer .composer-bar > #btn-grp-ctx:not([aria-expanded="true"]),
+ #composer .composer-bar > #btn-grp-trab:not([aria-expanded="true"]),
+ #composer .composer-bar > #btn-grp-cuad:not([aria-expanded="true"]),
+ #composer .composer-bar > #btn-paralelo:not([aria-pressed="true"]){
+   filter:none!important;text-shadow:none!important;color:var(--title,#eee)!important
+ }
+ #composer .composer-bar > #btn-grp-ctx[aria-expanded="true"],
+ #composer .composer-bar > #btn-grp-trab[aria-expanded="true"],
+ #composer .composer-bar > #btn-grp-cuad[aria-expanded="true"]{
+   animation:riu-entra .22s ease-out both;
+   filter:drop-shadow(0 0 2px rgba(47,128,255,.22))!important;
+ }
+ /* RUI 08: el único botón de bajar pertenece al historial, sin tapar burbujas. */
+ #histories>.riu-bajar{
+   position:relative!important;inset:auto!important;
+   width:36px!important;height:36px!important;
+   min-height:36px!important;
+   align-self:flex-end!important;margin:3px 7px 4px auto!important;
+   z-index:2!important
+ }
+ #histories>.riu-progreso{display:none!important}
+ /* RUI 13: reacciones estilizadas de tamaño homogéneo. */
+ .riu-r{transition:transform .16s ease,filter .16s ease}
+ .riu-r:active{transform:scale(.94)}
+}
+@media(max-width:370px){
+ #composer .composer-bar{gap:5px 1px!important}
+ #composer .composer-bar>.p3d{width:44px!important;height:44px!important}
+ #composer .composer-bar>.action{max-width:103px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #composer .composer-bar > #btn-grp-ctx[aria-expanded="true"],
+ #composer .composer-bar > #btn-grp-trab[aria-expanded="true"],
+ #composer .composer-bar > #btn-grp-cuad[aria-expanded="true"]{
+   animation:none!important
+ }
+ .riu-r{transition:none!important}
+}

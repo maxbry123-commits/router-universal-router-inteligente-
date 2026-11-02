@@ -47,7 +47,13 @@ export async function mount(root, { api, tell }) {
   const abajo = (c) => {
     // El único control «Bajar al final» pertenece a chat-riu.js.
     // No crear otro botón flotante que tape la respuesta.
-    if (c.hist.__sigue !== false) c.hist.scrollTop = c.hist.scrollHeight;
+    if (mmMovil.matches) {
+      const page = document.scrollingElement || document.documentElement;
+      const cerca = page.scrollHeight - (page.scrollTop + page.clientHeight) < 160;
+      if (cerca) requestAnimationFrame(() => {
+        window.scrollTo({top:document.documentElement.scrollHeight,behavior:"instant"});
+      });
+    } else if (c.hist.__sigue !== false) c.hist.scrollTop = c.hist.scrollHeight;
   };
   const mmMovil = window.matchMedia("(max-width: 720px)");
   const reacomodoMovil = () => {
