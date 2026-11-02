@@ -1,3 +1,4 @@
+import { abrirAnclajeUniversal } from "./anclaje-puente-universal.js";
 // ventanas-control.js — base de las ventanas del composer (Conexiones, ROOM CONFERENCIAS, Servidor): botón con icono de línea + hoja.
 // El navegador solo muestra y pide: permisos, secretos y salas viven en el servidor (mvp/control.py).
 export const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -39,7 +40,17 @@ export function ventana(id, titulo, alAbrir) {
     else if (ev.shiftKey && document.activeElement === primero) { ev.preventDefault(); ultimo.focus(); }
     else if (!ev.shiftKey && document.activeElement === ultimo) { ev.preventDefault(); primero.focus(); }
   });
-  h.append(el("strong", "", titulo), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
+  h.append(el("strong", "", titulo));
+  if(["loop","cola","watchdog"].includes(id)){
+    const anchor=btn("⚓ Anclar","mini cv-ancla",()=>{
+      try{abrirAnclajeUniversal(id)}
+      catch(e){anchor.title=String(e.message||e);anchor.dataset.error="true"}
+    });
+    anchor.dataset.anclaOrigen=id;
+    anchor.setAttribute("aria-label","Abrir anclaje universal desde "+titulo);
+    h.append(anchor);
+  }
+  h.append(x); c.append(h, cuerpo); s.append(c); document.body.append(s);
   b.onclick = () => { s.hidden = false; x.focus(); alAbrir(cuerpo, s); };
   bar.insertBefore(b, bar.querySelector(".action") || null);
 }

@@ -1,3 +1,4 @@
+import { abrirAnclajeUniversal } from "./anclaje-puente-universal.js";
 // Chat 2: panel LOOP independiente, mismo origen, sin claves dentro del iframe.
 const CHANNEL='yaiwes.loop.ui.v1';
 const ALLOWED=new Set(['status','dsl_estado','dsl_config','dsl_control','mirror_listar']);
@@ -38,33 +39,8 @@ export function renderLoopIFrame(cuerpo){
         if(!s.status||s.project_id!==k.project_id||s.loop_id!==k.loop_id)throw Error('SELECCION_NO_VERIFICADA');
         selected=k;powerState(s.status);reply.result={selected:true,status:s.status};reply.ok=true;
       }else if(d.name==='open_anchor'){
-        // Reutilizar el anclaje NATIVO conservado desde 2026-10-25; nunca crear un segundo sistema.
-        const native=document.querySelector('#ventana-ancla');
-        const button=document.querySelector('#btn-ancla');
-        const loopSheet=document.querySelector('#ventana-loop');
-        if(!native||!button)throw Error('ANCLA_NO_DISPONIBLE');
-        const restore=!!loopSheet&&!loopSheet.hidden;
-        if(restore)loopSheet.hidden=true; // liberar la hoja modal LOOP para que el anclaje sea interactivo en móvil
-        let observer=null;
-        if(restore){
-          observer=new MutationObserver(()=>{
-            if(native.hidden){
-              observer.disconnect();
-              if(loopSheet?.isConnected)loopSheet.hidden=false;
-            }
-          });
-          observer.observe(native,{attributes:true,attributeFilter:['hidden']});
-        }
-        try{
-          if(typeof window.RIU_ANCLA_ABRIR==='function')window.RIU_ANCLA_ABRIR('chat');
-          else if(native.hidden)button.click();
-          if(native.hidden)throw Error('ANCLA_NO_ABIERTA');
-        }catch(e){
-          if(observer)observer.disconnect();
-          if(restore&&loopSheet?.isConnected)loopSheet.hidden=false;
-          throw e;
-        }
-        reply.ok=true;reply.result={opened:true,anchored:false,native:true};
+        const result=abrirAnclajeUniversal('loop');
+        reply.ok=true;reply.result={...result,anchored:false};
       }else throw Error('OPERACION_NO_AUTORIZADA');
     }catch(e){reply.error=String(e.message||e).slice(0,180)}
     if(f.isConnected&&f.contentWindow)f.contentWindow.postMessage(reply,location.origin);

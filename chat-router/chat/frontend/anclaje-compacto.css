@@ -43,3 +43,11 @@
 #ventana-ancla .anc3-hint,#ventana-ancla .anc3-empty{display:block;color:#aaa;font-size:11px;padding:5px 2px}
 #ventana-ancla .anc3-empty[hidden]{display:none}
 @media(max-width:390px){#ventana-ancla .anc3-row{grid-template-columns:1fr}#ventana-ancla .anc3-row-actions{justify-content:flex-end}#ventana-ancla .anc3-danger{margin-left:0}}
+
+/* Chat 2 · acceso al anclaje en paneles existentes (V07). */
+#ancla-contexto-origen.anc-origen{display:flex;align-items:center;margin:6px 0 10px;padding:9px 11px;border:1px solid #2467af;border-radius:11px;background:#12253a;color:#b7dbff;font-size:12px;line-height:1.45}
+#ancla-contexto-origen.anc-origen[hidden]{display:none}
+#ventana-loop .cv-ancla,#ventana-cola .cv-ancla,#ventana-watchdog .cv-ancla,#ventana-pendientes .cv-ancla{flex:0 0 auto;margin-left:auto;min-height:38px;padding:7px 12px;border:1px solid #357dcc;border-radius:11px;background:#18334d;color:#d3e9ff;font-size:12px;white-space:nowrap;cursor:pointer}
+#ventana-loop .cv-ancla:focus-visible,#ventana-cola .cv-ancla:focus-visible,#ventana-watchdog .cv-ancla:focus-visible,#ventana-pendientes .cv-ancla:focus-visible{outline:2px solid #329dff;outline-offset:2px}
+#ventana-loop .cv-ancla[data-error=true],#ventana-cola .cv-ancla[data-error=true],#ventana-watchdog .cv-ancla[data-error=true],#ventana-pendientes .cv-ancla[data-error=true]{border-color:#f66;color:#ffbcbc}
+@media(max-width:390px){#ventana-loop .va-head,#ventana-cola .va-head,#ventana-watchdog .va-head,#ventana-pendientes .va-head{flex-wrap:wrap;gap:6px}}

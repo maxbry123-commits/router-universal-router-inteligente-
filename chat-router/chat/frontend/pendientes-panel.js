@@ -1,3 +1,4 @@
+import { abrirAnclajeUniversal } from "./anclaje-puente-universal.js";
 // pendientes-panel.js — t175u: panel 📋 Pendientes del bloc de notas. Guarda cada input block VERBATIM 1:1 (inmutable, sha256),
 // la LLM (Ficha 4 por el Harness del chat: puente_chat notas/pendientes) lo organiza en un DSL DAG con 5 estados,
 // y Antonio edita aquí el prompt JSON / system prompt que usa el modelo organizador (se aplica en la siguiente organización).
@@ -85,7 +86,14 @@ function instalar() {
   const s = el("div", "sheet"); s.id = "ventana-pendientes"; s.hidden = true;
   const c = el("div", "va-caja"), h = el("div", "row va-head"), x = el("button", "secondary", "✕"), cuerpo = el("div", "list");
   x.type = "button"; x.onclick = () => { s.hidden = true; }; s.onclick = (ev) => { if (ev.target === s) s.hidden = true; };
-  h.append(el("strong", "", "Pendientes"), x); c.append(h, cuerpo); s.append(c); document.body.append(s);
+  const anchor=btn("⚓ Anclar",()=>{
+    try{abrirAnclajeUniversal("pendientes")}
+    catch(e){anchor.title=String(e.message||e);anchor.dataset.error="true"}
+  });
+  anchor.classList.add("cv-ancla");
+  anchor.dataset.anclaOrigen="pendientes";
+  anchor.setAttribute("aria-label","Abrir anclaje universal desde Pendientes");
+  h.append(el("strong", "", "Pendientes"), anchor, x); c.append(h, cuerpo); s.append(c); document.body.append(s);
   b.onclick = () => { s.hidden = false; pintar(cuerpo); };
   const env = bar.querySelector(".action"); bar.insertBefore(b, env || null);
 }
