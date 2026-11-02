@@ -73,3 +73,10 @@ El escritor GitHub N4 hace `ricardo_plan_guard.inspect_plan()` inmediatamente an
 **GAPs al cierre:** el dispatcher registra `dsl_control:gap_collect` antes de ofrecer `handoff`, con readback y bloqueo si la persistencia falla. `gap_prepare_trigger` acepta un contrato `yaiwes.trigger.v1` suministrado por el operador, lo valida contra bytes reales de ancla, constitución, revisión de destino y `validate_loop`; entrega `VALIDATED_DRAFT_NOT_EXECUTABLE` y exige aprobación antes de `trigger_upsert` y posterior ejecución. No convierte sugerencias directamente en instrucciones ejecutables.
 
 **No certificado en producción:** X-Ray de código y commits está verificado mediante GitHub, pero el `boot.sh` del Space solo clona `main` al iniciar. Se requiere comprobar que `/health.commit` corresponda al HEAD y ejecutar el endpoint real con autenticación; no hay evidencia suficiente para declarar `E2E_PASS`. No tocar Vercel ni crear infraestructura.
+
+
+### RicardoOpsDemo.execute preflight en workspace — 2026-11-02
+
+El adaptador existente `nct_loop/ricardo_adapter.py` llama `ricardo_plan_guard.inspect_plan()` ANTES de `Motor.run()`, rechazando DAG cíclicos, operaciones fuera de la allowlist y escrituras fuera de `approved_write_paths`. El modo demostración conserva un ámbito local limitado a `evidencia/` (NO representa permiso N4 ni publicación GitHub); puede cerrarse con `approved_write_paths=[]`. `tests/test_nct.py` incluye regresión negativa sin escritura. El motor de referencia y sus siete operaciones originales permanecen intactos.
+
+**Pruebas:** los 17 tests del paquete original fueron ejecutados localmente en el ZIP aportado, PASS. Los tests nuevos en `main`, incluidos Harness, root path y Coda, requieren ejecutar el checkout actualizado de GitHub en su entorno; la lectura de blobs SHA/verificación estática no equivale a ejecución E2E. El Space no se modificó manualmente.
