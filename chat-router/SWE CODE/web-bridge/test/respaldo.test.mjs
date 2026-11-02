@@ -163,3 +163,11 @@ test("HF 503 JSON: clasifica falla llama-server vs proxy sin exponer secretos", 
       err=>err.code==='HF_LOCAL_FALLO' && /LLAMA_SERVER_FALLO/.test(err.message) && !/PRIVATE_PATH/.test(err.message));
   } finally {globalThis.fetch=original;}
 });
+
+test("HF GGUF cold-load: contrato de tiempo cubre espera de llama-server (300s) sin pisar timeout explícito", async()=>{
+  const texto=await import('node:fs').then(x=>x.readFileSync(new URL('../src/respaldo.js',import.meta.url),'utf8'));
+  const bridge=await import('node:fs').then(x=>x.readFileSync(new URL('../src/server.js',import.meta.url),'utf8'));
+  assert.match(texto, /r\.timeoutMs = Math\.max\(r\.timeoutMs, 330000\)/);
+  assert.match(bridge, /HF_LOCAL_DEADLINE_MS = Math\.max\(DEADLINE_MS, 430000\)/);
+  assert.match(texto, /opts\?\.timeoutMs == null/);
+});

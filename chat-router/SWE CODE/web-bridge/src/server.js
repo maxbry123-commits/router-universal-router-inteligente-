@@ -101,7 +101,7 @@ const WEB_FALLBACK = (process.env.WEB_FALLBACK || 'qwen38max,qwen37max,dsv4-flas
 const DEADLINE_MS = parseInt(process.env.BRIDGE_DEADLINE_MS || '100000', 10);
 // SOLO modelos HF GGUF: el manager remoto puede descargar el archivo y arrancar
 // llama-server en frío. SSE keepalive mantiene la conexión dentro del mismo router.
-const HF_LOCAL_DEADLINE_MS = Math.max(DEADLINE_MS, 360000);
+const HF_LOCAL_DEADLINE_MS = Math.max(DEADLINE_MS, 430000);
 // latido (opcional, streaming): objeto cuyo .fn reinicia el plazo; cada fragmento recibido cuenta como actividad (el plazo pasa a ser de inactividad)
 function conDeadline(p, ms, latido) {
   let t;

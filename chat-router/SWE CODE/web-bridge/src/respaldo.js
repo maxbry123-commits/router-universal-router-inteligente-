@@ -502,9 +502,10 @@ export async function local(id, mensajes, { env = process.env, extra = {}, opts,
   const fallos = [], r = conTimeout(red(opts), id, env);
   // No crear otro router ni abrir la puerta al proveedor: llama al servicio HF existente.
   // Si el operador fijó un plazo local, respetarlo; la gracia de 175 s es
-  // solo para el arranque frío sin timeout explícito.
+  // solo para el arranque frío sin timeout explícito. El manager de S1/S2/S3
+  // espera hasta 300 s SOLO para arrancar llama-server, sin contar descarga GGUF.
   if (opts?.timeoutMs == null && opts?.timeoutsModelo?.[id] == null && !env.RIU_SWE_TIMEOUTS && !env.BRIDGE_RESPALDO_MS)
-    r.timeoutMs = Math.max(r.timeoutMs, 175000);
+    r.timeoutMs = Math.max(r.timeoutMs, 330000);
   if (onInicio) { try { onInicio({ via: 'hf-local', usado: id }); } catch { /* informativo */ } }
   const estado = await disponibilidadLocal({ env });
   const slots = ordenSlotsLocal(id, estado, env);
