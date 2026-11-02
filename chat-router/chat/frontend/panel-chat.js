@@ -18,6 +18,7 @@ import { montarSelectorAncla } from "./selector-ancla.js";
 import { montarControlesChat } from "./controles-chat.js";
 import { montarEnviar } from "./enviar-mensaje.js";
 import { montarPildoraFicha } from "./pildora-ficha.js";
+import { mountMirrorSelectors } from "./agentes-mirror.js"; // espejos virtuales LOOP: configuracion dentro de Mas, no son seis agentes SWE
 // <<< MODOS END
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
@@ -373,6 +374,8 @@ export async function mount(root, { api, tell }) {
   const { cargarArchivos } = montarMotor({ chat, abajo, q, chatA, pintarAnclados, guardar, cerrarHojas, burbuja, tell });  // ventana del motor: descarga/extracción/copiar/mover entre repos → ventana-motor.js
   const { cargarSandbox } = await montarSandboxChat({ chat, q, api, tell });  // sandbox: system prompt de code anclado a esta sesión → ventana-sandbox-chat.js
   await montarSelectsSecundarios({ q, api, tell });  // selects secundarios (dentro de «más»): proveedor, modelo, agente, grupo, cuenta GitHub → selects-secundarios.js
+  const mirrorHost = q("#sh-mas .va-caja");
+  if (mirrorHost) mountMirrorSelectors(mirrorHost).catch(() => tell("Espejos LOOP: sin verificación del Router"));
 
   // ---- enviar: cada chat corre su tarea en paralelo con su sesion, su ficha y sus anclas ----
   if (window.__riuFastH) window.removeEventListener("riu:fast-reply-toggle", window.__riuFastH);
