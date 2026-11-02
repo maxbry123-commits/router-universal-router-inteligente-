@@ -177,17 +177,17 @@ export function montarEnviar(ctx) {
     const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta confirmacion del Router
     c.hist.append(pending);
     // Cronómetro real de esta solicitud, aislado de los demás chats.
-    // La palabra Pensando y los segundos pertenecen a la SALIDA, no al cubo.
+    // La palabra Pemsando y los segundos pertenecen a la SALIDA, no al cubo.
     // No representa tokens de inferencia: mide el tiempo transcurrido de la solicitud.
     const inicioRespuesta = performance.now();
-    const relojRespuesta = node("div", "Pensando… · 0 s", "item p3d-reloj");
+    const relojRespuesta = node("div", "Pemsando… · 0 s", "item p3d-reloj");
     relojRespuesta.setAttribute("role", "timer");
     relojRespuesta.setAttribute("aria-label", "Tiempo transcurrido de respuesta");
     c.hist.append(relojRespuesta);
     const relojInterval = setInterval(() => {
       if (!relojRespuesta.isConnected) return;
       const seg = Math.max(0, Math.floor((performance.now() - inicioRespuesta) / 1000));
-      relojRespuesta.textContent = "Pensando… · " + seg + " s";
+      relojRespuesta.textContent = "Pemsando… · " + seg + " s";
     }, 1000);
     const alProgreso = (e) => {
       if (!pending.isConnected) { window.removeEventListener('riu-progreso', alProgreso); return; }  // listener fuera solo si la burbuja desaparecio (o en finally)
@@ -196,7 +196,7 @@ export function montarEnviar(ctx) {
       const v = window.RIU_PENDIENTE && window.RIU_PENDIENTE(c.sesion);  // progreso aislado: solo mi sesion y, si hay PID guardado, solo mi proceso
       if (v && v.pid && d.proceso_id && d.proceso_id !== v.pid) return;
       if (d.parcial) { const ya = pending.classList.contains('parcial') ? pending.textContent : ''; if (ya && d.parcial.startsWith(ya)) { if (d.parcial.length > ya.length) pending.append(d.parcial.slice(ya.length)); } else pending.textContent = d.parcial; pending.classList.add('parcial'); try { abajo(c); } catch (x) {} return; }  // render incremental: solo se anade el trozo nuevo  // texto parcial en stream dentro de la burbuja; la final la reemplaza (pending.remove)
-      if (pending.classList.contains('parcial')) return;  // ya hay texto parcial: no volver a 'Pensando…'
+      if (pending.classList.contains('parcial')) return;  // ya hay texto parcial: no volver a 'Pemsando…'
       pending.textContent = d.texto !== undefined ? d.texto : d;
     };
     window.addEventListener('riu-progreso', alProgreso);
