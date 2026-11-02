@@ -69,3 +69,17 @@ test("El cerebro es icono sin cuadro y muestra foco al navegar con teclado",()=>
  assert.ok(css.includes('#composer-extra > #mode-selector-mount .ms-brain{'));
  assert.ok(src("barra-mas.js").includes('chat-compositor-v12.css'));
 });
+
+test("Copiar y editar permanecen bajo el texto; no lo superponen en móvil ni escritorio",()=>{
+ const css=src("chat-compositor-v12.css"), js=src("panel-chat.js");
+ assert.match(css,/#histories \.chat-history > \.message:has\(> \.copiar\)\{/);
+ assert.match(css,/display:grid!important/);
+ assert.match(css,/grid-template-columns:minmax\(0,1fr\) 36px 36px/);
+ assert.match(css,/grid-template-rows:auto 36px/);
+ assert.match(css,/grid-column:1 \/ -1;grid-row:1/);
+ assert.match(css,/position:static!important;inset:auto!important/);
+ assert.match(css,/\.copiar\{grid-column:3\}/);
+ assert.match(css,/\.editar\{grid-column:2\}/);
+ assert.match(css,/\.riu-code\{padding-top:40px\}/);
+ assert.match(js,/b\.addEventListener\("click", \(\) => copiarTexto\(span\.textContent\)\)/);
+});
