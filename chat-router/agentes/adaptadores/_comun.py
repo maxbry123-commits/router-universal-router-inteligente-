@@ -227,7 +227,10 @@ def _clave(var):
 def _credencial_bridge():
     """Los agentes (clientes OpenAI-compatibles) mandan esto como Bearer al bridge, que exige credencial: RIU_AGENTES_LLM_API_KEY o, si no, BRIDGE_TOKEN.
     Sin ninguna queda el marcador «no-requerida» y el bridge respondera 401 (se ve en el error del agente)."""
-    return os.environ.get("RIU_AGENTES_LLM_API_KEY", "").strip() or os.environ.get("BRIDGE_TOKEN", "").strip() or "no-requerida"
+    return (os.environ.get("RIU_AGENTES_LLM_API_KEY", "").strip()
+            or os.environ.get("BRIDGE_TOKEN", "").strip()
+            or os.environ.get("RIU_API_KEY", "").strip()
+            or "no-requerida")
 
 
 def endpoint_modelo(modelo_id, agente="", tarea_id=""):
@@ -242,7 +245,18 @@ def endpoint_modelo(modelo_id, agente="", tarea_id=""):
     base = {"groq": "https://api.groq.com/openai/v1", "nvidia": "https://integrate.api.nvidia.com/v1"}[prov]
     clave = _clave(prov.upper() + "_API_KEY")
     if not clave:
-        raise ErrorPrevio(error(agente, tarea_id, "AGENTE_NO_CONFIGURADO", "falta %s_API_KEY en el entorno del Harness" % prov.upper()))
+        # El bridge del MISMO Space ya tiene el banco cifrado de Groq/NVIDIA.
+        # Enviar el ID COMPLETO para que su proveedor se resuelva sin mezclar
+        # claves ni inventar nuevas variables; los agentes pasan por Harness.
+        acceso = _credencial_bridge()
+        if acceso == "no-requerida":
+            raise ErrorPrevio(error(agente, tarea_id, "AGENTE_NO_CONFIGURADO",
+                                    "falta clave de proveedor o acceso al bridge (RIU_API_KEY)"))
+        puente = (os.environ.get("RIU_AGENTES_LLM_BASE_URL")
+                  or os.environ.get("RIU_SWE_BRIDGE_URL") or "http://127.0.0.1:7870").strip().rstrip("/")
+        if not puente.endswith("/v1"):
+            puente += "/v1"
+        return {"proveedor": prov, "base_url": puente, "modelo": modelo_id, "api_key": acceso}
     return {"proveedor": prov, "base_url": base, "modelo": cfg["model"], "api_key": clave}
 
 
