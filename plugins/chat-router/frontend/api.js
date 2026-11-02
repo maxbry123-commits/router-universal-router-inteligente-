@@ -1,21 +1,18 @@
 // api.js — Cliente API del Router (chat UI)
-// Cambios: trae util `copiar` al portador final; `chat` acepta flujo + historial + stop; manejo de errores de red
+// Cambio: cuando el Space HF no responde, el error dice explícitamente "Space caído — reinicia en Hugging Face" en lugar de GAP network error genérico.
 const CFG = window.RIU_CONFIG || {};
-let BASE = "";  // sin base hardcodeada: la única fuente de verdad es LIVE_URL.json
-let liveVerified = false;  // solo tras una resolución real de LIVE_URL se conserva BASE en la sesión
+let BASE = "";
+let liveVerified = false;
 
 let liveCheckedAt = 0;
 let liveRequest = null;
-let PBASE = "";  // base de los plugins (chat_async, /resultado): mismo origen en Vercel (rewrites de vercel.json) o el Space directo
-// fetch con tope: en movil (4G, pestaña en segundo plano) un fetch puede quedar colgado para siempre y el chat se queda en "Pensando" sin que el Router reciba nada
+let PBASE = "";
 const vivos = new Set();
 const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const reg = ac ? { ac, t0: Date.now() } : null; if (reg) vivos.add(reg); const t = setTimeout(() => ac && ac.abort(), ms); return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => { clearTimeout(t); if (reg) vivos.delete(reg); }); };
-// al volver a la pestaña: cortar los fetch que quedaron colgados en segundo plano; el polling sigue con el mismo proceso_id y un chat_async sin proceso_id se reintenta
-try { const cortarColgados = () => { for (const r of [...vivos]) if (Date.now() - r.t0 > 2000) { try { r.ac.abort(); } catch (e) {} } }; document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cortarColgados(); }); window.addEventListener('online', cortarColgados); window.addEventListener('pageshow', (e) => { if (e.persisted) cortarColgados(); }); } catch (e) {}  // volver a la pestana, recuperar red o volver del bfcache: los fetch colgados se cortan y el polling reintenta
+try { const cortarColgados = () => { for (const r of [...vivos]) if (Date.now() - r.t0 > 2000) { try { r.ac.abort(); } catch (e) {} } }; document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cortarColgados(); }); window.addEventListener('online', cortarColgados); window.addEventListener('pageshow', (e) => { if (e.persisted) cortarColgados(); }); } catch (e) {}
 const usarProxy = () => { try { return /\.vercel\.app$/.test(location.hostname) && localStorage.getItem('riu_proxy') !== '0' && !/[?&]proxy=0/.test(location.search); } catch (e) { return false; } };
 function aplicarBase(url) {
   BASE = url;
-  // mismo origen: en Vercel, si LIVE_URL es el Space al que apuntan los rewrites, los plugins van por location.origin (4G no corta *.hf.space). ?proxy=0 o localStorage riu_proxy=0 lo apaga
   PBASE = (url === CFG.proxyDestino && usarProxy()) ? location.origin : url;
   CFG.apiBase = BASE;
   CFG.harnessUrl = PBASE + '/plugins/puente_chat/call';
@@ -41,30 +38,27 @@ function refrescarLive() {
 }
 async function liveRouter() {
   if (CFG.routerStopped) throw new Error('Router detenido por orden del Director');
-  if (!BASE) {  // no bloquear el envio esperando raw.githubusercontent: ultima direccion buena o el Space fijo de config.js
+  if (!BASE) {
     let c = ''; try { c = localStorage.getItem('riu_live_url') || ''; } catch (e) {}
     if (!VALIDA(c)) c = CFG.proxyDestino || '';
     if (VALIDA(c)) aplicarBase(c);
   }
-  if (Date.now() - liveCheckedAt >= 30000) { const pr = refrescarLive(); if (!BASE) return pr; pr.catch(() => {}); }  // con BASE: refresco en segundo plano
+  if (Date.now() - liveCheckedAt >= 30000) { const pr = refrescarLive(); if (!BASE) return pr; pr.catch(() => {}); }
   return BASE;
 }
 
-function clave() {
-  return sessionStorage.getItem("riu_clave") || "";
-}
+function clave() { return sessionStorage.getItem("riu_clave") || ""; }
 function remoto(headers) {
   if (BASE) headers[CFG.authHeader || "X-API-Key"] = clave();
   return BASE ? "omit" : "same-origin";
 }
 const L4 = { job: null, url: null };
-// ---- procesos en curso: una recarga NO relanza la tarea; se retoma por su proceso_id (sesion, proceso_id, direccion exacta del Router, hora) ----
 const CP = 'riu_proc_v1';
 const procs = () => { try { return JSON.parse(localStorage.getItem(CP) || '{}'); } catch (e) { return {}; } };
 const guardaProc = (ses, v) => { try { const t = procs(); if (v) t[ses] = v; else delete t[ses]; localStorage.setItem(CP, JSON.stringify(t)); } catch (e) {} };
 const hdrs = () => { const k = sessionStorage.getItem('riu_clave'); const h = { 'Content-Type': 'application/json' }; if (k) { h['X-API-Key'] = k; h.Authorization = 'Bearer ' + k; } return h; };
 window.RIU_PENDIENTE = (ses) => procs()[ses] || null;
-window.RIU_CANCELAR = async (ses) => {  // Detener: en cola se cancela antes de ejecutar; si ya corre, el Router no lanza los pasos siguientes
+window.RIU_CANCELAR = async (ses) => {
   const v = procs()[ses]; if (!v) return false; guardaProc(ses, null);
   try { await fetchT(v.base.replace(/[/]+$/, '') + '/cancelar', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid }) }, 8000); } catch (e) {}
   return true;
@@ -72,32 +66,29 @@ window.RIU_CANCELAR = async (ses) => {  // Detener: en cola se cancela antes de 
 window.RIU_RETOMAR = async (ses) => {
   const v = procs()[ses]; if (!v) return null; const fin = Date.now() + 560000; let malos = 0;
   while (Date.now() < fin) {
-    if (!procs()[ses]) return { error: 'PROCESO_DETENIDO' };  // Detener sobre una tarea retomada: RIU_CANCELAR ya borro el registro y aviso al Router
-
+    if (!procs()[ses]) return { error: 'PROCESO_DETENIDO' };
     try {
       const r = await fetchT(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid, espera: 8 }) }, 16000);
       const e = await r.json().catch(() => ({})); const p = e.result || {};
-      if (!r.ok || e.status !== 'ok') { if (++malos >= 8) return { estado: 'reanudable', proceso_id: v.pid, error: 'GAP_ROUTER_ESTADO_NO_CONFIRMADO', detalle: e.reason || e.detail || ('HTTP ' + r.status) }; } // sin estado terminal verificable conservar el PID
-      else if (p.error) { guardaProc(ses, null); return p; }  // error real del proceso (PROCESO_NO_EXISTE tras reinicio): borrar PID y devolver ya
+      if (!r.ok || e.status !== 'ok') { if (++malos >= 8) return { estado: 'reanudable', proceso_id: v.pid, error: 'GAP_ROUTER_ESTADO_NO_CONFIRMADO', detalle: e.reason || e.detail || ('HTTP ' + r.status) }; }
+      else if (p.error) { guardaProc(ses, null); return p; }
       else if (p.estado && p.estado !== 'procesando') { guardaProc(ses, null); return p; }
       else if (!p.estado) { if (++malos >= 8) return { estado: 'reanudable', proceso_id: v.pid, error: 'GAP_RESULTADO_TEMPORALMENTE_VACIO', detalle: 'Reconsultar el mismo PID; no relanzar el trabajo' }; }
       else malos = 0;
-    } catch (x) { if (++malos >= 12) { return { estado: 'reanudable', proceso_id: v.pid, error: 'ROUTER_SIN_RESPUESTA' }; } }  // red caida: mismo PID sigue siendo recuperable
+    } catch (x) { if (++malos >= 12) { return { estado: 'reanudable', proceso_id: v.pid, error: 'ROUTER_SIN_RESPUESTA' }; } }
     await new Promise((ok) => setTimeout(ok, 500));
   }
   return { estado: 'reanudable', proceso_id: v.pid, error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'sigue en el Router' };
 };
-try { liveRouter().catch(() => {}); } catch (e) {}  // harnessUrl listo antes del primer envio
+try { liveRouter().catch(() => {}); } catch (e) {}
 async function puenteRouter(base, body, qs, headers) {
   await liveRouter();
-  const baseDe = () => (body && body.plugin ? PBASE + '/plugins/' + body.plugin + '/call' : CFG.harnessUrl);  // plugin del Router elegido por el selector
+  const baseDe = () => (body && body.plugin ? PBASE + '/plugins/' + body.plugin + '/call' : CFG.harnessUrl);
   base = baseDe();
-  // Puente dentro del Router (plugin puente_chat, puerta fija): POST <base>/<accion>, respuesta {status, result}.
   const q = new URLSearchParams((qs || '').replace(/^[?]/, ''));
   const accion = q.get('accion') || 'chat';
   let payload = accion === 'chat' ? Object.assign({}, body || {}) : { job: q.get('job'), url: q.get('url') };
   if (accion === 'chat') {
-    // sesion por estancia de chat (pestaña): cada chat lleva la suya
     let s = (body && body.sesion) || sessionStorage.getItem('riu_sesion');
     if (!s) { s = 'web-' + Math.random().toString(36).slice(2, 10); sessionStorage.setItem('riu_sesion', s); }
     payload.sesion = s;
@@ -108,11 +99,16 @@ async function puenteRouter(base, body, qs, headers) {
   if (pw) h['X-API-Key'] = pw;
   for (let intento = 0; intento < 2; intento++) {
     let r;
-    // envio reintentable: request_id fijo => el Router devuelve el mismo proceso_id si el POST anterior si llego (sin duplicar)
     for (let k = 0; k < 3; k++) {
       try { r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, k ? 20000 : 15000); break; }
       catch (e) {
-        if (k === 2) throw e;
+        if (k === 2) {
+          const msg = String(e && e.message || e);
+          if (/failed to fetch|networkerror|abort|timeout/i.test(msg)) {
+            throw new Error('GAP: Space HF caído o dormido. Ve a Hugging Face → Space comand-center-1-riu-router → Restart.');
+          }
+          throw e;
+        }
         liveCheckedAt = 0; await liveRouter(); base = baseDe();
         await new Promise(ok => setTimeout(ok, 800 * (k + 1)));
       }
@@ -125,27 +121,27 @@ async function puenteRouter(base, body, qs, headers) {
     let proceso = p.proceso_id || null;
     if (p.estado === 'procesando' && p.proceso_id) {
       const deadline = Date.now() + 560000;
-      try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'En cola…' } })); } catch (e) {}  // process_id != modelo corriendo: el backend informa el estado real; sesion+pid aíslan el progreso entre chats
+      try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'En cola…' } })); } catch (e) {}
       if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: Date.now() });
-      let primera = true;  // primera consulta inmediata, luego cada 250 ms (tope total sigue en deadline 560 s)
-      let fallosRed = 0;  // fix 5: la red caida ya no se oculta para siempre
-      let vaciosEstado = 0; // respuesta temporal sin estado no significa DONE; conservar PID
+      let primera = true;
+      let fallosRed = 0;
+      let vaciosEstado = 0;
       while (p.estado === 'procesando' || !p.estado) {
         if (Date.now() > deadline) { cortado = true; break; }
         if (!primera) await new Promise(resolve => setTimeout(resolve, 250)); primera = false;
         try {
-          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 8 }) }, 16000);  // long-poll: el Router responde apenas hay resultado/progreso (max 8 s, max 3 a la vez por plugin: host limita 8 llamadas)
+          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 8 }) }, 16000);
           const envelope = await poll.json().catch(() => ({}));
           if (poll.status === 401 || poll.status === 403) return { status: 401, ok: false, p: envelope };
-          if (!poll.ok || envelope.status !== 'ok') throw new Error(envelope.reason || envelope.detail || ('HTTP ' + poll.status));  // /resultado fallido (cupo del host, 5xx): contar y reintentar, no cortar el chat
+          if (!poll.ok || envelope.status !== 'ok') throw new Error(envelope.reason || envelope.detail || ('HTTP ' + poll.status));
           p = envelope.result || {}; fallosRed = 0;
           if (!p.estado && !p.error && ++vaciosEstado >= 8) {
             return { status: 503, ok: false, p: { estado: 'reanudable', error: 'GAP_RESULTADO_TEMPORALMENTE_VACIO', detalle: 'El trabajo sigue asociado al mismo PID; usar Retomar', proceso_id: proceso } };
           }
           if (p.estado) vaciosEstado = 0;
-          if (p.error && !p.estado) break; // error terminal explicito, sin confundirlo con transporte vacio
+          if (p.error && !p.estado) break;
           if (p.progreso || p.parcial) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso || '', parcial: p.parcial || '' } })); } catch (e) {} }
-        } catch (e) {  // red/job en cambio: seguir esperando, pero avisar y cortar tras 80 fallos seguidos (~20 s a 250 ms)
+        } catch (e) {
           fallosRed++;
           try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'Sin conexión con el Router (' + fallosRed + ')…' } })); } catch (x) {}
           if (fallosRed >= 12) return { status: 503, ok: false, p: { error: 'ROUTER_SIN_RESPUESTA', detalle: String(e && e.message || e).slice(0, 200), proceso_id: proceso } };
@@ -153,10 +149,10 @@ async function puenteRouter(base, body, qs, headers) {
         }
       }
     }
-    if (!cortado && payload && payload.sesion) guardaProc(payload.sesion, null);  // termino: ya no hay nada que retomar
+    if (!cortado && payload && payload.sesion) guardaProc(payload.sesion, null);
     if (cortado) { return { status: 504, ok: false, p: { estado: 'reanudable', error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'El proceso sigue en el Router; no se relanza la tarea', proceso_id: proceso || p.proceso_id } }; }
     if (p.estado === 'encendiendo') return { status: 202, ok: true, p };
-    if (p.error) return { status: 502, ok: false, p };  // proceso terminado en error: NO se relanza otro chat_async (el reintento de red de LIVE_URL solo vale antes de obtener proceso_id)
+    if (p.error) return { status: 502, ok: false, p };
     return { status: 200, ok: true, p };
   }
 }
@@ -167,19 +163,18 @@ async function puente(base, body, qs, method, headers) {
   return { status: r.status, ok: r.ok, p };
 }
 export async function accion(acc, payload) {
-  // cualquier accion del puente (subir, archivos, xray, auditor_code, handoff, sandbox, ...)
   await liveRouter();
   const h = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) h['X-API-Key'] = pw;
   payload = Object.assign({ sesion: sessionStorage.getItem('riu_sesion') || 'web-general' }, payload || {});
-  const r = await fetchT(CFG.harnessUrl.replace(/[/]+$/, '') + '/' + acc, { method: 'POST', headers: h, body: JSON.stringify(payload) }, acc === 'subir' ? 60000 : acc === 'recurso_probar' ? 120000 : 15000);  // subir: archivo grande; recurso_probar: llamada real al modelo
+  const r = await fetchT(CFG.harnessUrl.replace(/[/]+$/, '') + '/' + acc, { method: 'POST', headers: h, body: JSON.stringify(payload) }, acc === 'subir' ? 60000 : acc === 'recurso_probar' ? 120000 : 15000);
   const env = await r.json().catch(() => ({}));
   if (!r.ok || env.status !== 'ok') throw new Error(env.reason || env.detail || ('HTTP ' + r.status));
   return env.result || {};
 }
 window.RIU_ACCION = accion;
-export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id, instrucciones_fijas, mode_request, thinking_mode }) {  // >>> MODOS <<< mode_request viaja en el payload
+export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id, instrucciones_fijas, mode_request, thinking_mode }) {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
@@ -195,9 +190,9 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
     motor ? { motor } : {},
     project_id ? { project_id } : {},
     contexto_previo ? { contexto_previo } : {},
-    mode_request ? { mode_request } : {},   // >>> MODOS <<<
-    thinking_mode !== undefined ? { thinking_mode } : {}, // Think Qwen: control estructurado visible en backend, no solo tokens UI
-    qwen ? { qwen: mode_request ? { ...qwen, mode_request } : qwen } : {}   // >>> MODOS <<< tambien dentro de qwen: llega a fichas_qwen haga el merge que haga el puente
+    mode_request ? { mode_request } : {},
+    thinking_mode !== undefined ? { thinking_mode } : {},
+    qwen ? { qwen: mode_request ? { ...qwen, mode_request } : qwen } : {}
   );
   const esHF = model.startsWith('hf-');
   let r;
@@ -222,14 +217,12 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
     r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
   }
   if (!r.ok) throw new Error(r.p.error || r.p.detail || ('HTTP ' + r.status));
-  if (r.p && r.p.error) throw new Error(String(r.p.error));  // GAP del backend no se presenta como respuesta OK
-  const prueba = Array.isArray(r.p.traza) && r.p.traza.length ? '\n\n— Prueba de ejecución —\n' + r.p.traza.filter((t) => t.modelo !== 'goals').map((t) => t.nodo + ' · ' + String(t.modelo).replace('ficha-', '') + ' · ' + (t.rol || '') + (t.ok ? ' ✔' : ' ✘')).join('\n') : '';
+  if (r.p && r.p.error) throw new Error(String(r.p.error));
   return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || ''), traza: r.p.traza, job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })), fast_lane: !!r.p.fast_lane, fast_consult: !!r.p.fast_consult, execution_path: r.p.execution_path || "HEAVY", ms: Number(r.p.ms || 0) };
 }
 window.RIU_HARNESS = harness;
 export async function apagarRespaldo() {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
-  // apaga TODOS los L4 de respaldo (el Router solo apaga los suyos), haya o no un job conocido
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
@@ -247,7 +240,7 @@ export async function api(path, options = {}) {
   try {
     const credentials = remoto(headers);
     response = await fetchT(BASE + path, { method: options.method || "GET", headers, credentials,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body) }, path === "/chat/send" ? 120000 : 15000);  // /chat/send (sin harness) espera la respuesta completa
+      body: options.body === undefined ? undefined : JSON.stringify(options.body) }, path === "/chat/send" ? 120000 : 15000);
   } catch (error) {
     window.dispatchEvent(new CustomEvent("router-connection", { detail: "Sin conexión" }));
     throw error;
@@ -259,19 +252,4 @@ export async function api(path, options = {}) {
     ? await response.json() : { detail: `HTTP ${response.status}` };
   if (!response.ok) throw new Error(typeof payload.detail === "string" ? payload.detail : `HTTP ${response.status}`);
   return payload;
-}
-export async function media(id) {
-  await liveRouter();
-  if (!/^[a-f0-9]{24}$/.test(id)) throw new Error("ID de archivo inválido");
-  const headers = {};
-  const credentials = remoto(headers);
-  const response = await fetchT(`${BASE}/chat/media/${id}`, { headers, credentials }, 15000);
-  if (!response.ok) throw new Error(`MEDIA_HTTP_${response.status}`);
-  return response.blob();
-}
-export function node(tag, text, className = "") {
-  const element = document.createElement(tag);
-  element.textContent = String(text ?? "");
-  if (className) element.className = className;
-  return element;
 }
