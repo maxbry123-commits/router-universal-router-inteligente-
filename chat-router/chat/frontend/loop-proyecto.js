@@ -29,6 +29,7 @@
    const state=el('lp-state');state.textContent=ok?'● Vinculado':'◌ Sin verificar';state.classList.toggle('is-verified',ok);
    el('lp-start').disabled=!ok;el('lp-checkpoint').disabled=!ok;
    if(ok){output.textContent='LOOP verificado por el backend. Los controles ejecutan acciones reales.';output.classList.add('is-verified');}
+   else{output.textContent='Sin proyecto verificado: no se enviará ninguna orden al motor.';output.classList.remove('is-verified');}
  }
  async function anchor(kind){
    const a=window.YAIWES_PANEL;

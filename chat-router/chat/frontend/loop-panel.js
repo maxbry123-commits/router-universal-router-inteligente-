@@ -73,6 +73,13 @@ async function verify(){try{const ids=pids();const r=await A.send('nct_loop','ds
 window.dispatchEvent(new CustomEvent('yaiwes:loop-verified',{detail:{project_id:ids.project_id,loop_id:ids.loop_id,status:r.status}}));return r;}catch(e){idsConfirmed=false;connected=false;all.forEach(t=>{t.serverConfirmed=false;t.status='UNKNOWN';});A.el('go-run').disabled=true;A.el('go-pause').disabled=true;
 window.dispatchEvent(new CustomEvent('yaiwes:loop-unverified'));
 A.banner('◌ Sin backend confirmado');notice(e.message);render();throw e;}}
+for(const field of ['project-id','loop-id']) A.el(field).addEventListener('input',()=>{
+  if(!idsConfirmed)return;
+  idsConfirmed=false;connected=false;
+  A.el('go-run').disabled=true;A.el('go-pause').disabled=true;
+  window.dispatchEvent(new CustomEvent('yaiwes:loop-unverified'));
+  A.banner('◌ IDs modificados · verifica de nuevo');
+});
 A.el('verify-ids').onclick=()=>verify().catch(()=>{});A.el('refresh').onclick=async()=>{try{await A.health('nct_loop');if(idsConfirmed)await verify();}catch(e){notice(e.message);}};
 async function control(op){try{const ids=pids();if(!idsConfirmed)throw Error('LOOP no confirmado');const r=await A.send('nct_loop','dsl_estado',{op:'get',...ids});if(!r?.status)throw Error('ESTADO_NO_CONFIRMADO');const done=await A.send('nct_loop','dsl_control',{...ids,op,expected_revision:r.revision});if(done?.error)throw Error(done.error);const read=await verify();if(op==='start'&&String(read.status).toUpperCase()!=='RUNNING')throw Error('START_NO_CONFIRMADO');if(op==='pause'&&String(read.status).toUpperCase()==='RUNNING')throw Error('PAUSE_NO_CONFIRMADO');notice('Comando '+op+' · backend ahora '+read.status);}catch(e){notice('CONTROL NO CONFIRMADO: '+e.message);}}
 A.el('go-run').onclick=()=>control('start');A.el('go-pause').onclick=()=>control('pause');
