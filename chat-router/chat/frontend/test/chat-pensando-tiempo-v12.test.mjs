@@ -31,3 +31,16 @@ test("No se modifica el cubo original y se renueva caché móvil", () => {
   assert.match(css,/#histories \.chat-history \.p3d-reloj/);
   assert.match(src("pensando-3d.css"),/#composer \.composer-bar > \.p3d\[hidden\]/);
 });
+
+test("Pemsando es solo etiqueta: se conserva el contrato del cubo y las rutas de modelos", () => {
+  const cubo = src("pensando-3d.js");
+  const api = src("api.js");
+  const envio = src("enviar-mensaje.js");
+  assert.match(cubo, /export function montarPensando3D\(/);
+  assert.match(cubo, /<strong>Pemsando…<\/strong>/);
+  assert.match(api, /'Pemsando · '/);
+  assert.match(api, /texto: 'Pemsando…'/);
+  assert.match(api, /'\/plugins\/puente_chat\/call'/);
+  assert.match(envio, /enviarSwe\(api,/);
+  assert.match(envio, /window\.RIU_HARNESS\(/);
+});
