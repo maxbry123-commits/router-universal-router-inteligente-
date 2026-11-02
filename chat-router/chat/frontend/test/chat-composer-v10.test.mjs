@@ -2,12 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 const src=n=>readFileSync(new URL("../"+n,import.meta.url),"utf8");
-test("Cubo 3D original intacto: seis caras, dos anillos y tres variaciones de transformación",()=>{
+test("El cubo original está recuperado, con 6 caras y 2 anillos sin transformaciones V10",()=>{
  const js=src("pensando-3d.js"),css=src("pensando-3d.css");
  for(const id of ["f1","f2","f3","f4","f5","f6","a1","a2"])assert.ok(js.includes('class="'+id+'"')||js.includes(" "+id+'"' ),id);
- assert.match(css,/@keyframes p3d-formas-v10/);
- assert.match(css,/rotateX\(68deg\)/);
- assert.match(css,/rotateY\(315deg\)/);
+ assert.match(css,/@keyframes p3d-gira/);
+ assert.doesNotMatch(css,/p3d-formas-v10/);
+ assert.match(css,/animation-play-state:paused/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.match(js,/estado\.textContent = "Pensando…"/);
 });
