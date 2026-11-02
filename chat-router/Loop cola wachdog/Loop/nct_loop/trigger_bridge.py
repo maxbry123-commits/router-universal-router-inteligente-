@@ -122,6 +122,26 @@ class TriggerBridge:
                     and rec.get("constitution_sha256") == constitution):
                 continue
             return {"status": "UNVERIFIED_CURRENT_LOOP", "dispatched": False, "trigger_id": c["id"]}
+        from .loop_continuity import build_handoff, verify_readback
+        snapshot = await self.handle("dsl_estado", {
+            "project_id": project, "loop_id": loop, "op": "get"},
+            server_context=server_context)
+        if snapshot.get("ok") is not True or not isinstance(snapshot.get("triggers"), dict):
+            return {"status": "HANDOFF_SOURCE_UNVERIFIED", "dispatched": False}
+        handoff = build_handoff(snapshot, snapshot["mechanico_gaps"],
+            next_loop_id=next_id, review_at_end=False,
+            checkpoint_refs=["cit:" + qid + ":" + t["receipt_id"]
+                             for t in rows.values() if isinstance(t.get("receipt_id"), str)])
+        if handoff["status"] != "ELIGIBLE_FOR_NEXT_LOOP_CHECK":
+            return {"status": handoff["status"], "dispatched": False,
+                    "blocking": handoff["blocking_triggers"],
+                    "gap_ids": handoff["gap_ids"]}
+        proof_key = f"dsl-handoff-proof:{project}:{loop}:{next_id}"
+        if await _invoke(self.ports.save, proof_key, handoff) is not True:
+            return {"status": "HANDOFF_CHECKPOINT_NOT_DURABLE", "dispatched": False}
+        recorded_proof = await _invoke(self.ports.load, proof_key)
+        if not verify_readback(handoff, recorded_proof):
+            return {"status": "HANDOFF_CHECKPOINT_READBACK_MISMATCH", "dispatched": False}
         successor = await _invoke(self.ports.load, f"dsl-config:{project}:{next_id}")
         if not isinstance(successor, dict) or not successor.get("contracts"):
             return {"status": "NEXT_LOOP_NOT_CONFIGURED", "dispatched": False, "next_loop_id": next_id}
@@ -151,7 +171,9 @@ class TriggerBridge:
                   "queue_id": started["queue_id"],
                   "from_config_sha256": sha256(canonical(state)),
                   "to_config_sha256": sha256(canonical(successor)),
-                  "constitution_sha256": constitution, "status": "HANDOFF_STARTED"}
+                  "constitution_sha256": constitution,
+                  "handoff_sha256": handoff["sha256"],
+                  "status": "HANDOFF_STARTED"}
         key = f"dsl-handoff:{project}:{loop}:{next_id}"
         # The successor was already durably STARTED. Read back the handoff
         # before we report dispatched=True, never imply false success.
