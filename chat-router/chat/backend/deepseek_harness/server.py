@@ -645,6 +645,26 @@ async def catalogo_modelos(x_api_key: str | None = Header(None), authorization: 
             raise HTTPException(status_code=503, detail="SWE_CODE_CATALOGO_NO_DISPONIBLE") from None
 
 
+@app.get("/modelos/v1/disponibilidad")
+async def modelos_disponibilidad(x_api_key: str | None = Header(None),
+                                authorization: str | None = Header(None)):
+    """Catálogo y estados del router SWE CODE, consultados SIEMPRE por Harness."""
+    _autorizar_chat_modelos(x_api_key, authorization)
+    base = _bridge_url()
+    if not base:
+        raise HTTPException(status_code=503, detail="SWE_CODE_ROUTER_NO_CONFIGURADO")
+    async with httpx.AsyncClient(timeout=18, trust_env=False) as client:
+        try:
+            r = await client.get(base + "/v1/modelos/disponibilidad", headers=_cabeceras_bridge())
+            r.raise_for_status()
+            datos = r.json()
+            if not isinstance(datos, dict) or not isinstance(datos.get("modelos"), list):
+                raise ValueError("catalogo invalido")
+            return datos
+        except (httpx.HTTPError, ValueError):
+            raise HTTPException(status_code=503, detail="SWE_CODE_CATALOGO_NO_DISPONIBLE") from None
+
+
 @app.post("/modelos/v1/chat/completions")
 async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
                        authorization: str | None = Header(None)):
