@@ -77,7 +77,8 @@ def test_endpoint_hf_usa_bridge_y_modelo_desnudo(monkeypatch):
 
 
 def test_endpoint_groq_nvidia_requieren_clave_del_entorno(monkeypatch):
-    for v in ("GROQ_API_KEY", "GROQ_API_KEY_1", "NVIDIA_API_KEY", "NVIDIA_API_KEY_1"):
+    for v in ("RIU_API_KEY", "BRIDGE_TOKEN", "RIU_AGENTES_LLM_API_KEY",
+              "GROQ_API_KEY", "GROQ_API_KEY_1", "NVIDIA_API_KEY", "NVIDIA_API_KEY_1"):
         monkeypatch.delenv(v, raising=False)
     with pytest.raises(_comun.ErrorPrevio) as e:
         _comun.endpoint_modelo("groq/qwen/qwen3.8-27b")
@@ -88,6 +89,29 @@ def test_endpoint_groq_nvidia_requieren_clave_del_entorno(monkeypatch):
     monkeypatch.setenv("NVIDIA_API_KEY", "otra-clave-ficticia")
     n = _comun.endpoint_modelo("nvidia/z-ai/glm-5.3")
     assert n["base_url"] == "https://integrate.api.nvidia.com/v1" and n["modelo"] == "z-ai/glm-5.3"
+
+
+
+def test_agentes_usan_la_clave_del_chat_para_el_bridge_existente(monkeypatch):
+    for k in ("RIU_AGENTES_LLM_API_KEY", "BRIDGE_TOKEN"):
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.setenv("RIU_API_KEY", "clave-ficticia-del-chat")
+    assert _comun._credencial_bridge() == "clave-ficticia-del-chat"
+    hf = _comun.endpoint_modelo("hf/lfm2.5-350m")
+    assert hf["modelo"] == "lfm2.5-350m" and hf["api_key"] == "clave-ficticia-del-chat"
+
+
+def test_proveedores_sin_variable_reutilizan_banco_del_bridge(monkeypatch):
+    for k in ["RIU_AGENTES_LLM_API_KEY", "BRIDGE_TOKEN", "RIU_AGENTES_LLM_BASE_URL",
+              "GROQ_API_KEY", "NVIDIA_API_KEY"] + [f"GROQ_API_KEY_{n}" for n in range(1, 21)] + [f"NVIDIA_API_KEY_{n}" for n in range(1, 21)]:
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.setenv("RIU_API_KEY", "clave-ficticia-del-chat")
+    monkeypatch.setenv("RIU_SWE_BRIDGE_URL", "http://127.0.0.1:7870")
+    for model in ("groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash"):
+        ep = _comun.endpoint_modelo(model)
+        assert ep["modelo"] == model
+        assert ep["base_url"] == "http://127.0.0.1:7870/v1"
+        assert ep["api_key"] == "clave-ficticia-del-chat"
 
 
 def test_recibo_es_hash_de_la_ejecucion_real():
