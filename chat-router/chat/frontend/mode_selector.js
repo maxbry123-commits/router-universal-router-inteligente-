@@ -75,7 +75,7 @@ export async function initModeSelector(opts) {
   function items() {
     sheet.replaceChildren();
     sheet.append(el("div", { class: "ms-sec" }, "Modo"));
-    const rows = [{ id: "auto", icon: "✨", label: "Auto", slash: autoSlash, summary: "El router elige un modo seguro." }, ...modes];
+    const rows = [{ id: "auto", icon: "🧠", label: "Auto", slash: autoSlash, summary: "El router elige un modo seguro." }, ...modes];
     for (const m of rows) {
       sheet.append(fila(m.icon, m.label, (m.slash ? m.slash + " · " : "") + m.summary, m.id === lock, () => { setLock(m.id); close(); }));
     }
@@ -113,7 +113,7 @@ export async function initModeSelector(opts) {
 
   function render() {
     const m = byId[lock];
-    btn.replaceChildren(el("span", { "aria-hidden": "true" }, m ? m.icon : "✨"), el("span", { class: "ms-lb" }, m ? m.label : "Auto"));
+    btn.replaceChildren(el("span", { "aria-hidden": "true" }, m ? m.icon : "🧠"), el("span", { class: "ms-lb" }, m ? m.label : "Auto"));
     btn.dataset.locked = String(Boolean(m));
     btn.title = `Modo ${m ? m.label : "Auto"} · tools ${approval === "auto" ? "automáticas" : "manuales"}`;
     btn.setAttribute("aria-label", btn.title);

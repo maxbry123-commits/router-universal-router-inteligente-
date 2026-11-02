@@ -8,6 +8,7 @@ test('pensamiento junto a Enviar, no en el historial',()=>{
  assert.match(js,/barra\.insertBefore\(w, enviar\)/);
  assert.match(js,/barra\.querySelector\("\.action"\)/);
  assert.doesNotMatch(js,/target\.append\(w\)/);
+ assert.match(js,/salida\.append\(estado\)/);
  assert.match(css,/#composer \.composer-bar > \.p3d/);
  assert.doesNotMatch(css,/#histories \.chat-history > \.p3d/);
 });

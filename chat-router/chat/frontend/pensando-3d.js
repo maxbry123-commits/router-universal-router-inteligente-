@@ -13,12 +13,31 @@ export function montarPensando3D({ root, q }) {
   if (enviar) barra.insertBefore(w, enviar);
   else barra.append(w);
   const t = w.querySelector(".p3d-t"); let ini = 0;
+  const hist = q("#histories");
+  const estado = document.createElement("div");
+  estado.className = "p3d-salida-estado";
+  estado.setAttribute("role", "status");
+  estado.setAttribute("aria-live", "polite");
+  estado.textContent = "Pensando…";
+  estado.hidden = true;
   const ocupado = () => { try { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); return !!(c && c.ocupado); } catch (e) { return false; } };
   const id = setInterval(() => {
     if (!root.isConnected) { clearInterval(id); return; }
     const o = ocupado();
-    if (!o) { if (!w.hidden) w.hidden = true; return; }
+    if (!o) {
+      w.hidden = true;
+      estado.hidden = true;
+      if (estado.parentElement) estado.remove();
+      return;
+    }
     if (w.hidden) { w.hidden = false; ini = Date.now(); }
     t.textContent = Math.floor((Date.now() - ini) / 1000) + " s";
+    const salida = hist && [...hist.querySelectorAll(".chat-history")]
+      .find(h => !h.hidden && h.offsetParent !== null);
+    if (salida) {
+      // Mostrar estado verdadero, tras la última respuesta, sin copiar razonamiento privado.
+      if (estado.parentElement !== salida || estado !== salida.lastElementChild) salida.append(estado);
+      estado.hidden = false;
+    } else estado.hidden = true;
   }, 300);
 }

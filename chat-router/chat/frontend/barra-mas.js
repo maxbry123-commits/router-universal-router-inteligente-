@@ -60,6 +60,17 @@ if (!document.getElementById("riu-iconos-sin-cuadros")) {
   document.head.append(hoja);
 }
 
+if (!document.getElementById("chat-toolbar-v09")) {
+  const ajuste = document.createElement("link");
+  ajuste.id = "chat-toolbar-v09";
+  ajuste.rel = "stylesheet";
+  const url = new URL("./chat-toolbar-v09.css", import.meta.url);
+  const revision = new URL(import.meta.url).searchParams.get("v");
+  if (revision) url.searchParams.set("v", revision);
+  ajuste.href = url.href;
+  document.head.append(ajuste);
+}
+
 function panel(id, titulo) {
   let p = document.getElementById(id);
   if (p) return p;
@@ -81,7 +92,12 @@ function panel(id, titulo) {
   x.className = "secondary sh-cerrar";
   x.textContent = "✕";
   x.setAttribute("aria-label", "Cerrar");
-  x.onclick = (ev) => { ev.stopPropagation(); p.hidden = true; };
+  x.onclick = (ev) => {
+    ev.stopPropagation();
+    p.hidden = true;
+    const disparador = document.querySelector('.grp[aria-controls="' + id + '"]');
+    if (disparador) disparador.setAttribute("aria-expanded", "false");
+  };
   const list = document.createElement("div");
   list.className = "list riu-lista";
   head.append(t, x);
@@ -229,18 +245,23 @@ function botonPegar() {
   boton.className = "secondary";
   boton.setAttribute("aria-label", "Pegar texto copiado");
   boton.title = "Pegar texto copiado";
-  boton.innerHTML = svg('<rect x="9" y="6" width="11" height="15" rx="2"/><path d="M7 17H5V3h11v2"/>');
+  // Portapapeles real, no icono de carpeta.
+  boton.innerHTML = svg('<rect x="6" y="5" width="13" height="16" rx="2"/><path d="M9 5V3h7v2M9 9h7M9 13h5"/>');
   boton.addEventListener("click", async () => {
     try {
+      // La API del navegador solo permite leer si concede permiso al gesto del usuario.
       const texto = await navigator.clipboard.readText();
-      if (!texto) return;
-      campo.setRangeText(texto, campo.selectionStart, campo.selectionEnd, "end");
+      if (!texto) { campo.focus(); return; }
+      const inicio = campo.selectionStart ?? campo.value.length;
+      const fin = campo.selectionEnd ?? inicio;
+      campo.setRangeText(texto, inicio, fin, "end");
       campo.dispatchEvent(new Event("input", { bubbles: true }));
       campo.focus();
     } catch (_error) {
       campo.focus();
       const aviso = document.getElementById("notice");
-      if (aviso) aviso.textContent = "Portapapeles bloqueado. Mantén pulsado el campo y pulsa Pegar.";
+      if (aviso) aviso.textContent =
+        "El navegador no autorizó pegar con un toque. Mantén pulsado el campo y elige Pegar.";
     }
   });
   const adjunto = fila.querySelector("#btn-adjunto");
@@ -248,6 +269,26 @@ function botonPegar() {
   else fila.append(boton);
 }
 
+
+// Escoba: limpia solo el borrador, sin borrar la conversación ni archivos.
+function botonLimpiar() {
+  const fila = bar(), campo = document.getElementById("message");
+  if (!fila || !campo || document.getElementById("btn-limpiar-input")) return;
+  const boton = document.createElement("button");
+  boton.id = "btn-limpiar-input";
+  boton.type = "button";
+  boton.className = "secondary";
+  boton.title = "Limpiar el texto de entrada";
+  boton.setAttribute("aria-label", "Limpiar el texto escrito");
+  boton.innerHTML = svg('<path d="M15 3l6 6M8 17 18 7l-4-4L4 13l4 4zM8 17l-2 4M3 21h18"/>');
+  boton.addEventListener("click", () => {
+    if (!campo.value) return;
+    campo.value = "";
+    campo.dispatchEvent(new Event("input", { bubbles: true }));
+    campo.focus();
+  });
+  fila.append(boton);
+}
 
 function devolver() {
   const fila = bar();
@@ -344,6 +385,7 @@ function colocar() {
   ocupado = true;
   try {
     botonPegar();
+    botonLimpiar();
     if (!movil()) { devolver(); menu(); return; }
     tres();
   } finally { ocupado = false; }

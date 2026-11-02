@@ -1,0 +1,111 @@
+/* Maxbry V07 · Chat 2 · Distribución de iconos móvil (v09).
+ * Solo organiza los nodos existentes. Los selectores de modelos viven debajo.
+ * Estado azul = panel abierto / acción confirmada; sin iluminaciones persistentes.
+ */
+@media (max-width:720px){
+  #composer .composer-bar {
+    display:grid !important;
+    grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+    grid-template-rows:42px 48px !important;
+    gap:5px 3px !important;
+    justify-items:center !important;
+    align-items:center !important;
+    align-content:start !important;
+    width:100% !important;
+    min-width:0 !important;
+    margin:6px 0 1px !important;
+  }
+  #composer .composer-bar::after{display:none!important;content:none!important}
+  #composer .composer-bar > button.secondary,
+  #composer .composer-bar > button.grp,
+  #composer .composer-bar > #btn-paralelo,
+  #composer .composer-bar > #mode-selector-mount{
+    box-sizing:border-box !important;
+    width:40px !important;min-width:0 !important;max-width:100% !important;
+    height:40px !important;min-height:40px !important;
+    margin:0 !important;padding:0 !important;
+    place-self:center !important;
+    border:0 !important;background:transparent !important;
+    box-shadow:none !important;border-radius:8px !important;
+    flex:none !important;position:static !important;
+  }
+  #composer .composer-bar > button.secondary svg,
+  #composer .composer-bar > button.grp svg {width:23.4px !important;height:23.4px !important}
+  #composer .composer-bar > #btn-adjunto{grid-area:1 / 1}
+  #composer .composer-bar > #btn-pegar{grid-area:1 / 2}
+  #composer .composer-bar > #btn-microfono{grid-area:1 / 3}
+  #composer .composer-bar > #mode-selector-mount{grid-area:1 / 4}
+  #composer .composer-bar > #btn-paralelo{grid-area:1 / 5}
+  #composer .composer-bar > #btn-grp-ctx{grid-area:1 / 6}
+  #composer .composer-bar > #btn-grp-trab{grid-area:1 / 7}
+  #composer .composer-bar > #btn-grp-cuad{grid-area:2 / 1}
+  #composer .composer-bar > #btn-limpiar-input{grid-area:2 / 2}
+  /* Solo un LOOP en móvil: el menú LOOP abre la ventana con ON/OFF real. */
+  #composer .composer-bar > #btn-loop-power{display:none!important}
+  #composer .composer-bar > #btn-detener{
+    grid-area:2 / 5 !important;
+    order:initial !important;
+    width:40px !important;min-width:0 !important;max-width:100% !important;
+    height:40px !important;min-height:40px !important;
+    margin:0 !important;place-self:center !important;
+  }
+  #composer .composer-bar > .p3d{
+    grid-area:2 / 4 !important;order:initial !important;
+    width:46px !important;height:44px !important;
+    margin:0 !important;justify-self:center !important;
+  }
+  #composer .composer-bar > .action{
+    grid-area:2 / 6 / 3 / 8 !important;
+    position:static !important;order:initial !important;
+    width:100% !important;min-width:0 !important;max-width:none !important;
+    height:40px !important;min-height:40px !important;
+    margin:0 !important;padding:0 4px !important;
+    justify-content:center !important;align-items:center !important;
+    gap:3px !important;border-radius:11px !important;
+    font-size:13px !important;box-sizing:border-box !important;
+  }
+  #composer .composer-bar > .action svg{width:17px;height:17px;flex:0 0 17px}
+  #composer .composer-bar > .action::after{content:none!important;display:none!important}
+  #composer .composer-bar > .action .env-txt{
+    display:inline !important;font-size:13px !important;white-space:nowrap !important;
+  }
+  #composer .composer-bar > #mode-selector-mount .ms-btn{
+    background:transparent!important;border:0!important;box-shadow:none!important;
+    width:40px!important;min-width:0!important;max-width:40px!important;
+    height:40px!important;min-height:40px!important;
+    display:flex!important;justify-content:center!important;
+    font-size:23.4px!important;
+  }
+  #composer .composer-bar > #btn-paralelo::before{font-size:23.4px!important;line-height:1!important}
+  /* No presentar el nombre técnico de proyecto entre la barra y el modelo. */
+  #composer .composer-bar > .anclados{display:none!important}
+  /* Reducir cualquier brillo obsoleto. Indicador visible sólo al abrir la ventana. */
+  #composer .composer-bar > button.secondary:not(.action),
+  #composer .composer-bar > button.grp,
+  #composer .composer-bar > #btn-paralelo{
+    color:var(--title,#EDEDED) !important;filter:none!important;
+    text-shadow:none!important;
+  }
+  #composer .composer-bar > #btn-grp-ctx[aria-expanded="true"],
+  #composer .composer-bar > #btn-grp-trab[aria-expanded="true"],
+  #composer .composer-bar > #btn-grp-cuad[aria-expanded="true"],
+  #composer .composer-bar > #btn-paralelo[aria-pressed="true"],
+  #composer .composer-bar > #btn-microfono[aria-pressed="true"]{
+    color:var(--status-blue,#2F80FF) !important;
+    filter:drop-shadow(0 0 2px rgba(47,128,255,.23)) !important;
+  }
+  #composer .composer-bar > button:focus-visible,
+  #composer .composer-bar > #mode-selector-mount .ms-btn:focus-visible{
+    outline:2px solid var(--status-blue,#2F80FF)!important;outline-offset:2px!important
+  }
+  /* Mantener los puntos de anclaje y herramientas en sus ventanas, no como iconos extra. */
+  #composer .composer-bar > .mas-nom{display:none!important}
+}
+@media (max-width:350px){
+  #composer .composer-bar{gap:4px 2px!important}
+  #composer .composer-bar > .action .env-txt{font-size:12px!important}
+  #composer .composer-bar > .p3d{transform:scale(.92);transform-origin:center}
+}
+@media(prefers-reduced-motion:reduce){
+  #composer .composer-bar > button{transition:none!important}
+}
