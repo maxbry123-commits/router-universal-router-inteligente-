@@ -123,10 +123,24 @@ class TestAutopull(unittest.TestCase):
             self.assertFalse(run._iniciar_hilo())
             hilo.assert_not_called()
 
+    def test_instalacion_agentes_desactivada_no_arranca_procesos(self):
+        with patch.dict(os.environ, {"RIU_AGENTES_AUTO_INSTALAR": "0"}), \\
+             patch.object(run.threading, "Thread") as hilo:
+            run._instalar_agentes_fondo()
+            hilo.assert_not_called()
+
+    def test_instalacion_agentes_programada_en_hilo_sin_bloquear(self):
+        with patch.dict(os.environ, {"RIU_AGENTES_AUTO_INSTALAR": "1"}), \\
+             patch.object(run.threading, "Thread") as hilo:
+            run._instalar_agentes_fondo()
+            hilo.assert_called_once()
+            self.assertTrue(hilo.return_value.start.called)
+
     def test_registra_commit_y_puerto(self):
         fake = Mock()
         with patch.dict(sys.modules, {"uvicorn": SimpleNamespace(run=fake)}), \
              patch.object(run, "_iniciar_hilo", return_value=False), \
+             patch.object(run, "_instalar_agentes_fondo"), \
              patch.object(run, "_head", return_value="abc123"), \
              patch("builtins.print") as escribir:
             run.main()
@@ -145,7 +159,8 @@ class TestAutopull(unittest.TestCase):
         import re
         self.assertTrue(re.search(r"environ.*PORT", Path(run.__file__).read_text()), "boot.sh no detecta PORT en run.py")
         with patch.dict(os.environ, {"PORT": "7861"}), patch.object(run, "_head", return_value="abc123"), \
-             patch.object(run, "_iniciar_hilo"), patch.dict(sys.modules, {"uvicorn": Mock()}), patch("builtins.print"):
+             patch.object(run, "_iniciar_hilo"), patch.object(run, "_instalar_agentes_fondo"), \
+             patch.dict(sys.modules, {"uvicorn": Mock()}), patch("builtins.print"):
             run.main()
             sys.modules["uvicorn"].run.assert_called_once_with("mvp.app:app", host="0.0.0.0", port=7861)
 
