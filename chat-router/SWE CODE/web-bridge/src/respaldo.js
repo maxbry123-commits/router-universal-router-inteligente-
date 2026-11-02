@@ -79,6 +79,14 @@ const metricas = new Map();  // `${prov}/${modelo}` -> acumulados de TTFT y toke
 export function limpiarEstado() { enfriadas.clear(); cacheModelos.clear(); metricas.clear(); }
 
 
+// Los slots aceptan el origen del Space o la base OpenAI /v1.
+export function baseLocal(url) {
+  const u = new URL(String(url));
+  if (/^comand-center-1-swe-code-s[123]\.hf\.space$/.test(u.hostname)) {
+    u.pathname = '/v1'; u.search = ''; u.hash = '';
+  }
+  return u.href.replace(/\/+$/, '');
+}
 export const esLocal = (m) => LOCALES.includes(String(m || ''));
 // solo ids del selector (MODELOS_API) o el que el operador fija por entorno (RIU_SWE_GROQ_MODELO / RIU_SWE_NVIDIA_MODELO): groq/llama-3.3-70b-versatile y demas ids inventados no entran
 export const esExterno = (m, env = process.env) => typeof m === 'string' && (MODELOS_API.some(x => x.id === m) || Object.keys(MODELO).some(p => env[MODELO[p][0]] && m === `${p}/${env[MODELO[p][0]]}`));
@@ -525,7 +533,8 @@ async function reservarSlot(slots, env, r) {
   }
 }
 export async function local(id, mensajes, options = {}) {
-  const env = options.env || process.env;
+  const env = { ...(options.env || process.env) };
+  for (const n of [1, 2, 3]) if (env[`SWECODE_URL_S${n}`]) env[`SWECODE_URL_S${n}`] = baseLocal(env[`SWECODE_URL_S${n}`]);
   const r = red(options.opts);
   // La espera también termina al cancelar o alcanzar el plazo del cliente.
   const limite = AbortSignal.timeout(Math.max(1, options.opts?.timeoutMs || 430000));
@@ -617,7 +626,7 @@ export async function respaldo(mensajes, { env = process.env, extra = {}, opts, 
 const ESTADO_LOCAL_MS = 20000;
 let cacheLocal = { vence: 0, clave: "", valor: null };
 export async function disponibilidadLocal({ env = process.env, consultar = fetch, ahora = Date.now, plazoMs = 2500, refrescar = false } = {}) {
-  const urls = [1, 2, 3].map(n => ({ slot: 'S' + n, base: String(env['SWECODE_URL_S' + n] || '').replace(/\/+$/, '') })).filter(x => x.base);
+  const urls = [1, 2, 3].map(n => ({ slot: 'S' + n, base: env['SWECODE_URL_S' + n] ? baseLocal(env['SWECODE_URL_S' + n]) : '' })).filter(x => x.base);
   const clave = urls.map(x => x.slot + ':' + x.base).join('|');
   if (!refrescar && cacheLocal.valor && cacheLocal.clave === clave && ahora() < cacheLocal.vence) return cacheLocal.valor;
   const slots = await Promise.all(urls.map(async ({slot, base}) => {
