@@ -104,9 +104,18 @@ ACCIONES_CONTROL = ("tools_lock",)  # solo lectura cuando no llevan `tool`: esta
 
 
 def _router(accion, datos):
+    # Misma URL local que plugins.router_api_cliente.llamar: sin variable nueva.
+    # Antes se exigia RIU_ROUTER_URL aun con el Router montado en el mismo Space,
+    # dejando los seis agentes bloqueados en AGENTES_ESTADO_NO_COMPROBADO.
     base = os.environ.get("RIU_ROUTER_URL", "").strip()
-    if not (base.startswith("https://") or base.startswith("http://127.0.0.1:")):
-        raise RuntimeError("RIU_ROUTER_URL no configurada")
+    if not base:
+        puerto = os.environ.get("PORT", "7860").strip() or "7860"
+        if not puerto.isdecimal() or not 1 <= int(puerto) <= 65535:
+            raise RuntimeError("PORT local invalido")
+        base = "http://127.0.0.1:" + puerto
+    parsed = urlparse(base)
+    if (parsed.scheme != "https" and not (parsed.scheme == "http" and parsed.hostname == "127.0.0.1")) or not parsed.hostname:
+        raise RuntimeError("RIU_ROUTER_URL no permitida")
     plugin = "fichas_qwen" if accion == "chat" else "puente_chat" if accion in ACCIONES_CONTROL else "router_mvp"  # el Router sirve las acciones de control (tools_lock...) por /plugins/puente_chat/call/<accion>; con router_mvp responde 404
     resultado = llamar(plugin, "llm" if accion == "chat" else accion, datos, timeout=None)
     if isinstance(resultado, dict) and resultado.get("status_code") == 403:
@@ -566,7 +575,7 @@ async def _mvp_modelo_compat(req, headers, modelo):
     """Una petición modelo al Router MVP ya autorizado, sin volver a Harness."""
     async with httpx.AsyncClient(timeout=httpx.Timeout(210, connect=6), trust_env=False) as client:
         try:
-            up = await client.post(_HARNESS_MODELOS + "/chat", headers=headers, json=req)
+            up = await client.post(_mvp_modelos_url() + "/chat", headers=headers, json=req)
         except httpx.HTTPError:
             raise HTTPException(status_code=503, detail="ROUTER_MVP_SIN_CONEXION") from None
     if up.status_code != 200:
@@ -620,7 +629,12 @@ async def _sse_mvp_con_latidos(req, headers, modelo, latido_s=12):
 # --- Unica entrada OpenAI-compatible para ambos chats: Chat -> Harness ->
 # Router MVP (APIs externas) o Router SWE CODE (locales/web) -> proveedor/HF.
 # No crear un tercer router ni pasar por /web desde el navegador.
-_HARNESS_MODELOS = "http://127.0.0.1:7861"
+def _mvp_modelos_url():
+    """Reentrada al Router MVP del MISMO Space y puerto real (PORT=7860/7861)."""
+    puerto = (os.environ.get("PORT") or "7860").strip()
+    if not puerto.isdecimal() or not 1 <= int(puerto) <= 65535:
+        raise HTTPException(status_code=503, detail="ROUTER_MVP_PUERTO_INVALIDO")
+    return "http://127.0.0.1:" + puerto
 _SWE_MODELOS_LOCALES = {"lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"}
 _MODELOS_PRE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.:/-]{0,99}$")
 
