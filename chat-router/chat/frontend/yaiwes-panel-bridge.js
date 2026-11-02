@@ -25,6 +25,7 @@
  const send=(plugin,action,payload={})=>request('plugin',{plugin,action,payload});
  const openAnchor=(kind='general')=>request('open_anchor',{payload:{kind}});
  const openPending=()=>request('open_pending');
+ const openNative=target=>request('open_native',{payload:{target}});
  const selection=(project_id,loop_id)=>request('selection',{payload:{project_id,loop_id}});
  const state={connected:false};
  const el=(id)=>document.getElementById(id);
@@ -45,5 +46,5 @@
  function h(t,clazz,value){const n=document.createElement(t);if(clazz)n.className=clazz;if(value!==undefined)n.textContent=txt(value);return n;}
  function idSafe(v){return /^[A-Za-z0-9_-]{1,80}$/.test(v||'');}
  function statusFlag(s){const k=String(s||'UNKNOWN').toUpperCase();return k==='PASS'?'✅ PASS':k==='NOT_APPLICABLE'?'🚧 NO APLICA':k==='BLOCKED'?'🛑 BLOQUEO':k==='RUNNING'?'🔵 EN CURSO':k==='FLAGGED'?'🚩 OBSERVACIÓN':k==='OFF'?'⚪ OFF':k==='PAUSED'?'⏸ PAUSA':k==='DRAFT'?'▫ BORRADOR':k==='UNKNOWN'?'◌ SIN VERIFICAR':k;}
- window.YAIWES_PANEL={request,send,openAnchor,openPending,selection,health,state,el,banner,showError,txt,h,idSafe,statusFlag};
+ window.YAIWES_PANEL={request,send,openAnchor,openPending,openNative,selection,health,state,el,banner,showError,txt,h,idSafe,statusFlag};
 })();

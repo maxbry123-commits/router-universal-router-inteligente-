@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>YAIWES · LOOP</title><link rel="stylesheet" href="./yaiwes-panel.css"><link rel="stylesheet" href="./loop-proyecto.css"><link rel="stylesheet" href="./loop-colas.css"><link rel="stylesheet" href="./loop-triggers.css"><link rel="stylesheet" href="./loop-ejecucion.css"><script defer src="./yaiwes-panel-bridge.js"></script><script defer src="./loop-panel.js"></script><script defer src="./loop-proyecto.js"></script><script defer src="./loop-colas.js"></script><script defer src="./loop-triggers.js"></script><script defer src="./loop-ejecucion.js"></script></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>YAIWES · LOOP</title><link rel="stylesheet" href="./yaiwes-panel.css"><link rel="stylesheet" href="./loop-proyecto.css"><link rel="stylesheet" href="./loop-colas.css"><link rel="stylesheet" href="./loop-triggers.css"><link rel="stylesheet" href="./loop-ejecucion.css"><link rel="stylesheet" href="./loop-recursos.css"><script defer src="./yaiwes-panel-bridge.js"></script><script defer src="./loop-panel.js"></script><script defer src="./loop-proyecto.js"></script><script defer src="./loop-colas.js"></script><script defer src="./loop-triggers.js"></script><script defer src="./loop-ejecucion.js"></script><script defer src="./loop-recursos.js"></script></head>
 <body><div class="app">
 <header class="top"><div class="symbol" aria-hidden="true">⟳</div><div class="titlebox"><h1>YAIWES / LOOP</h1><p>Motor determinista · Contratos DSL/DAG · Hasta 100 triggers</p></div><span id="connection-state" class="pill offline" role="status">◌ Sin conexión verificada</span><div class="top-actions"><button id="refresh">↻ Estado</button><button id="go-run" class="primary" disabled>▶ Iniciar</button><button id="go-pause" disabled>⏸ Pausar</button></div></header>
 <nav id="loop-views" class="lp-views" aria-label="Vistas del LOOP">
  <button type="button" id="lp-tab-home" class="lp-tab is-current" aria-selected="true" aria-controls="lp-home">⌂ Inicio / Proyecto</button>
  <button type="button" id="lp-tab-work" class="lp-tab" aria-selected="false" aria-controls="loop-workspace">∞ LOOP / Etapas</button>
+ <button type="button" id="lp-tab-resources" class="lp-tab" aria-selected="false" aria-controls="lp-resources">◇ Canvas / Motores</button>
  <button type="button" id="lp-tab-exec" class="lp-tab" aria-selected="false" aria-controls="lp-execution">▷ Ejecución</button>
 </nav>
 <section id="lp-home" class="lp-home" aria-labelledby="lp-home-title">
@@ -41,6 +42,26 @@
   <button type="button" id="lp-pending"><span>✓</span>Verificar</button>
  </section>
  <p class="lp-footnote">Esta vista no simula ejecución ni progreso. Los controles de ejecución solo se habilitan tras la respuesta del backend. Las anclas utilizan la misma ventana ⚓ del chat.</p>
+</section>
+<section id="lp-resources" class="lr-view" aria-labelledby="lr-title" hidden>
+  <div class="lr-heading"><div><small>VISTA C · MAPA Y MOTORES EXISTENTES</small><h2 id="lr-title">Canvas · Cola · Watchdog</h2><p>Una única arquitectura. El mapa muestra contratos del backend, no ejemplos simulados.</p></div><button type="button" id="lr-refresh">↻ Consultar</button></div>
+  <div class="lr-summary">
+    <span id="lr-link" role="status">◌ Sin LOOP vinculado</span>
+    <span id="lr-revision">Revisión —</span>
+    <span id="lr-count">0 triggers confirmados</span>
+  </div>
+  <section class="lr-card">
+    <div class="lr-title-row"><h3>◈ Mapa visual del DAG</h3><button type="button" id="lr-native-canvas">Abrir Canvas del chat ↗</button></div>
+    <div class="lr-graph-frame"><svg id="lr-dag" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Grafo de triggers y dependencias verificados" viewBox="0 0 640 180"><text x="20" y="45" fill="#bfbfbf">Vincula LOOP para consultar el DAG real.</text></svg></div>
+    <div id="lr-dag-list" class="lr-dag-list" aria-live="polite"><p>Sin datos del motor.</p></div>
+    <p class="lr-note">El grafo es de solo lectura. Para editar y guardar, abre el Canvas ya instalado en el chat; conserva sus propias comprobaciones y controles.</p>
+  </section>
+  <div class="lr-service-grid">
+    <section class="lr-card"><div class="lr-title-row"><h3>☷ Cola CIT-50</h3><span id="lr-queue-status" class="lr-badge">SIN VERIFICAR</span></div><p id="lr-queue-id">Ninguna cola asociada al LOOP.</p><p id="lr-queue-tasks">Sin tareas consultadas.</p><button type="button" id="lr-open-cola">Abrir Cola existente ↗</button></section>
+    <section class="lr-card"><div class="lr-title-row"><h3>◷ Watchdog48</h3><span id="lr-watch-status" class="lr-badge">SIN VERIFICAR</span></div><p id="lr-watch-id">No hay identificador confirmado.</p><p id="lr-watch-detail">No se ejecutan temporizadores en el navegador.</p><button type="button" id="lr-open-watchdog">Abrir Watchdog existente ↗</button></section>
+  </div>
+  <div class="lr-actions"><button type="button" id="lr-open-anchor">⚓ Anclaje compartido</button><button type="button" id="lr-open-exec">▷ Ver ejecución</button></div>
+  <p id="lr-notice" class="lr-notice" role="status">Conecta un proyecto y LOOP real antes de consultar el estado de sus motores.</p>
 </section>
 <section id="lp-execution" class="lx-view" aria-labelledby="lx-title" hidden>
  <div class="lx-title"><div><small>VISTA D · EJECUCIÓN VERIFICABLE</small><h2 id="lx-title">Control y seguimiento del LOOP</h2><p>El progreso procede del backend, nunca de temporizadores visuales.</p></div><button id="lx-refresh" type="button">↻ Actualizar</button></div>
