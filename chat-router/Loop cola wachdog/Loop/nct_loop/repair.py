@@ -9,16 +9,17 @@ def decide_repair(failures:int, *, retryable:bool, has_checkpoint:bool, authoriz
     return {'action':'ESCALATE','reason':'replanificar o solicitar decisión del usuario'}
 
 # MECÁNICO deterministic GAP evidence and bounded read-only research.
-RESEARCH_SITES=(("GitHub","https://github.com/search?q={q}&type=code"),
-("HuggingFace","https://huggingface.co/models?search={q}"),
-("StackOverflow","https://stackoverflow.com/search?q={q}"),
-("Python","https://docs.python.org/3/search.html?q={q}"),
-("MDN","https://developer.mozilla.org/en-US/search?q={q}"),
-("GitHubDocs","https://docs.github.com/en/search?query={q}"),
-("PyPI","https://pypi.org/search/?q={q}"),
-("FastAPI","https://fastapi.tiangolo.com/"),
-("Pytest","https://docs.pytest.org/en/stable/"),
-("PythonDiscuss","https://discuss.python.org/search?q={q}"))
+# Approved source IDs exactly match config/investigation_sources.json.
+RESEARCH_SITES=(("github","https://github.com/search?q={q}&type=code"),
+("huggingface","https://huggingface.co/models?search={q}"),
+("stackoverflow","https://stackoverflow.com/search?q={q}"),
+("python_docs","https://docs.python.org/3/search.html?q={q}"),
+("mdn","https://developer.mozilla.org/en-US/search?q={q}"),
+("fastapi","https://fastapi.tiangolo.com/"),
+("pytest","https://docs.pytest.org/en/stable/"),
+("pypi","https://pypi.org/search/?q={q}"),
+("owasp","https://owasp.org/"),
+("sqlite_docs","https://sqlite.org/search.html"))
 
 def gap_events(project,loop,contracts,checkpoints,queue):
     import re
@@ -58,13 +59,42 @@ def research_sources(query, opener):
                     return {"site":name,"url":url,"status":"NO_EVIDENCE","http_status":status}
                 data=response.read(16001)
             if len(data)>16000:return {"site":name,"url":url,"status":"TOO_LARGE"}
-            title=re.search(r"<title[^>]*>(.*?)</title>",data.decode("utf8","replace"),re.I|re.S)
+            page=data.decode("utf8","replace")
+            title=re.search(r"<title[^>]*>(.*?)</title>",page,re.I|re.S)
             title=html.unescape(re.sub(r"<[^>]+>","",title.group(1))).strip()[:140] if title else ""
-            return {"site":name,"url":url,"status":"SOURCE_FOUND_UNVERIFIED",
-                    "title":title,"sha256":hashlib.sha256(data).hexdigest()}
+            clean=re.sub(r"<(script|style)[^>]*>.*?</\\1>"," ",page,flags=re.I|re.S)
+            excerpt=html.unescape(re.sub(r"<[^>]+>"," ",clean))
+            excerpt=re.sub(r"\\s+"," ",excerpt).strip()[:1000]
+            digest=hashlib.sha256(data).hexdigest()
+            if not title or not excerpt:
+                return {"site":name,"source_id":name,"url":url,
+                        "status":"NO_EXTRACTABLE_EVIDENCE"}
+            return {"site":name,"source_id":name,"url":url,
+                    "status":"SOURCE_FOUND_UNVERIFIED","title":title,
+                    "excerpt":excerpt,"retrieved_ref":"http-sha256:"+digest,
+                    "sha256":digest}
         except Exception as e:
             code=getattr(e,"code",None)
             return {"site":name,"url":url,"status":"UNAVAILABLE",
                     "http_status":code if isinstance(code,int) else None}
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         return list(pool.map(one,RESEARCH_SITES))
+
+def safe_research_open(url, espera=5):
+    """Read only fixed HTTPS hosts; no redirects, private DNS or credentials."""
+    import ipaddress,socket,urllib.parse,urllib.request
+    from .gap_mechanic import SOURCE_DOMAINS
+    u=urllib.parse.urlsplit(url)
+    hosts=set(SOURCE_DOMAINS.values())
+    if (u.scheme!="https" or u.username is not None or u.password is not None
+            or u.port not in (None,443) or u.hostname not in hosts):
+        raise ValueError("RESEARCH_HOST_DENIED")
+    resolved=socket.getaddrinfo(u.hostname,443,type=socket.SOCK_STREAM)
+    if not resolved or any(not ipaddress.ip_address(x[4][0]).is_global for x in resolved):
+        raise ValueError("RESEARCH_DNS_DENIED")
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self,req,fp,code,msg,headers,newurl):
+            return None
+    client=urllib.request.build_opener(NoRedirect())
+    req=urllib.request.Request(url,headers={"User-Agent":"YAIWES-ReadOnly-Research/1"})
+    return client.open(req,timeout=min(float(espera),6.0))

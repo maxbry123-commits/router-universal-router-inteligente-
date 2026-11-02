@@ -386,9 +386,20 @@ def build_ports(host: dict) -> HostPorts:
         return row
 
     def research(query):
-        from mvp.archivos.seguridad import abrir
-        from .repair import research_sources
-        return research_sources(query,abrir)
+        # Cross-building calls MUST use the existing Harness HTTP /invoke.
+        # The Harness owns external research, not the browser or model.
+        from mvp import harness_client
+        try:
+            credential=banco.leer("RIU_API_KEY")
+            out=harness_client._enviar("invoke",{
+                "tool":"mechanico_buscar","args":{"query":query}},credential)
+        except Exception:
+            raise ContractError("HARNESS_RESEARCH_UNAVAILABLE") from None
+        if (not isinstance(out,dict) or out.get("status")!="ok"
+                or not isinstance(out.get("result"),list)
+                or len(out["result"])!=10):
+            raise ContractError("HARNESS_RESEARCH_NOT_VERIFIED")
+        return out["result"]
 
     ports=HostPorts(load,save,constitution,anchor,facts,queue_claim,
                     model,tool,approve,queue_complete,queue_create,

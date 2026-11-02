@@ -171,5 +171,19 @@ class TestMechanicoLedger(unittest.TestCase):
         self.assertEqual(output["status"],"ALL_TRIGGERS_OFF_NO_HANDOFF")
         self.assertIs(output["dispatched"],False)
 
+class TestHarnessResearchShape(unittest.TestCase):
+    def test_mock_http_produces_normalizable_evidence(self):
+        from nct_loop.repair import research_sources
+        from nct_loop.gap_mechanic import normalize_research_hits
+        class FakeResponse:
+            status=200
+            headers={"Content-Type":"text/html; charset=utf-8"}
+            def __enter__(self):return self
+            def __exit__(self,*a):return False
+            def read(self,n):return b"<html><title>Verified test title</title><p>Mock issue report</p></html>"
+        rows=research_sources("CIT50_FAIL",lambda *args,**kw:FakeResponse())
+        self.assertEqual(len(rows),10)
+        self.assertEqual(len(normalize_research_hits("gap_example",rows)),10)
+
 if __name__ == "__main__":
     unittest.main()

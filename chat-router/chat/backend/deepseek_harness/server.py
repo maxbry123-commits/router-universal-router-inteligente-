@@ -273,7 +273,17 @@ def computar(args):
     raise ValueError("computar no implementado: contrato de tarea sin definir")
 
 
-HERRAMIENTAS = {"guardar": guardar, "leer": leer, "computar": computar}
+def mechanico_buscar(args):
+    """Authenticated read-only search port; never run snippets as code."""
+    if not isinstance(args,dict) or set(args)!={"query"}:
+        raise ValueError("MECHANIC_RESEARCH_ARGUMENTS_INVALID")
+    from nct_loop.repair import research_sources, safe_research_open
+    # All ten URLs are fixed in the existing LOOP code/config; the query
+    # is URL-encoded and never influences hostnames or imported modules.
+    return research_sources(args["query"],safe_research_open)
+
+HERRAMIENTAS = {"guardar": guardar, "leer": leer, "computar": computar,
+                "mechanico_buscar": mechanico_buscar}
 
 
 METRICAS_ESCALARES = ("stream", "ttft_s", "ttft_origen", "duracion_s", "tokens", "tokens_estimados", "origen_tokens", "tokens_por_s", "tools_invalidas", "lineas_invalidas")
