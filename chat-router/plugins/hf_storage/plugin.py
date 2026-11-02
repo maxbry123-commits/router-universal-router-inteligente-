@@ -31,7 +31,14 @@ def _bucket() -> str:
 def _fs():
     token = os.getenv("HF_TOKEN", "").strip()
     if not token:
-        raise ValueError("HF_TOKEN ausente")
+        # Same credential bank as chat backend, NOT a second token store.
+        # The token stays server-side; do not add it to HTTP/DSL payloads.
+        try:
+            from mvp import app as chat_app
+            bank = getattr(chat_app.app.state, "banco", None)
+            token = chat_app.CONTROL.credencial("hf", bank, estricto=False)
+        except (ImportError, AttributeError, KeyError, RuntimeError):
+            raise ValueError("HF_TOKEN no disponible en entorno ni banco del chat") from None
     from huggingface_hub import HfFileSystem
     return HfFileSystem(token=token, skip_instance_cache=True)
 
