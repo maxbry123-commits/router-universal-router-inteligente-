@@ -1,7 +1,7 @@
 // pensando-3d.js — animación 3D del "pensamiento": mientras el chat trabaja, un cubo 3D con anillos gira sobre la caja de escritura y cuenta el tiempo.
 // Usa el estado real del chat (ocupado); si el sistema pide menos movimiento, queda quieto.
 import { el, cargarCss } from "./ventanas-comun.js";
-export function montarPemsando3D({ root, q }) {
+export function montarPensando3D({ root, q }) {
   const f = q("#composer"); if (!f || f.dataset.p3d) return; f.dataset.p3d = "1"; cargarCss("pensando-3d");
   const css = document.getElementById("css-pensando-3d"); if (css) css.href = "/chat/ui/pensando-3d.css?v=87315";
   const w = el("div", "p3d"); w.hidden = true; w.setAttribute("role", "status"); w.setAttribute("aria-live", "polite");
