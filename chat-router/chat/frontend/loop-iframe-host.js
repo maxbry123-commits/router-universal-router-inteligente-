@@ -5,11 +5,16 @@ const ALLOWED=new Set(['status','dsl_estado','dsl_config','dsl_control','mirror_
 const COLA_ACTIONS=new Set(['listar','estado','crear']);
 let selected=null;
 export function loopNewUIEnabled(){try{return localStorage.getItem('yaiwes_loop_panel_v1')!=='off';}catch{return true;}}
-function powerState(status){
+function powerState(state){
   const button=document.querySelector('#btn-loop-power');if(!button)return;
-  const s=String(status||'UNKNOWN').toUpperCase(),yes=s==='RUNNING',known=yes||['OFF','PAUSED','STOPPED','IDLE','DRAFT'].includes(s);
-  button.textContent=known?'LOOP '+(yes?'ON':'OFF'):'LOOP ?';button.setAttribute('aria-pressed',String(yes));
-  button.title=known?'Backend: '+s:'Estado real no confirmado';button.dataset.verified=known?'true':'false';
+  const verified=state?.ok===true&&state?.status==='PASS';
+  const s=String(state?.queue?.status||'OFF').toUpperCase();
+  const known=verified&&['RUNNING','PAUSED','DRAFT','COMPLETED','FAILED','CANCELLED','OFF'].includes(s);
+  const live=s==='RUNNING';
+  button.textContent=!known?'LOOP ?':!state.queue?'LOOP OFF':live?'LOOP ON':s==='PAUSED'?'LOOP PAUSA':'LOOP '+s;
+  button.setAttribute('aria-pressed',String(known&&live));
+  button.title=known?'Backend: cola '+(state.queue?s:'sin crear'):'Estado no confirmado';
+  button.dataset.verified=known?'true':'false';
 }
 async function api(action,payload){
   if(typeof window.RIU_PLUGIN!=='function')throw Error('BACKEND_NO_DISPONIBLE');
@@ -62,8 +67,8 @@ export function renderLoopIFrame(cuerpo){
         if(!/^[\w-]{1,80}$/.test(p.project_id||'')||!/^[\w-]{1,80}$/.test(p.loop_id||''))throw Error('IDS_INVALIDOS');
         const k={project_id:p.project_id,loop_id:p.loop_id};
         const s=await api('dsl_estado',{op:'get',...k});
-        if(!s.status||s.project_id!==k.project_id||s.loop_id!==k.loop_id)throw Error('SELECCION_NO_VERIFICADA');
-        selected=k;powerState(s.status);reply.result={selected:true,status:s.status};reply.ok=true;
+        if(s.ok!==true||s.status!=='PASS'||s.project_id!==k.project_id||s.loop_id!==k.loop_id)throw Error('SELECCION_NO_VERIFICADA');
+        selected=k;powerState(s);reply.result={selected:true,status:s.status};reply.ok=true;
       }else if(d.name==='open_native'){
         const target=String(d.payload?.target||'');
         if(!['canvas','cola','watchdog'].includes(target))throw Error('VENTANA_NO_AUTORIZADA');
@@ -133,12 +138,17 @@ export function mountLoopPowerButton(){
     if(!selected){button.title='Abre LOOP y vincula el proyecto primero';return}
     button.disabled=true;try{
       const old=await api('dsl_estado',{op:'get',...selected});
-      if(!old.status||old.project_id!==selected.project_id||old.loop_id!==selected.loop_id)throw Error('ESTADO_NO_VERIFICADO');
-      const op=String(old.status).toUpperCase()==='RUNNING'?'pause':'start';
-      await api('dsl_control',{...selected,op,expected_revision:old.revision});
+      if(old.ok!==true||old.status!=='PASS'||old.project_id!==selected.project_id||old.loop_id!==selected.loop_id||!Number.isInteger(old.revision))throw Error('ESTADO_NO_VERIFICADO');
+      const queueStatus=String(old.queue?.status||'').toLowerCase();
+      const op=queueStatus==='running'?'pause':!old.queue&&old.contracts?.some(c=>c.enabled===true)?'start':null;
+      if(!op)throw Error('USA_VISTA_EJECUCION_PARA_ESTE_ESTADO');
+      const result=await api('dsl_control',{...selected,op,expected_revision:old.revision});
+      if(result.ok!==true)throw Error(result.error||'CONTROL_NO_CONFIRMADO');
       const now=await api('dsl_estado',{op:'get',...selected});
-      if(!now.status||now.project_id!==selected.project_id||now.loop_id!==selected.loop_id||op==='start'&&now.status!=='RUNNING'||op==='pause'&&now.status==='RUNNING')throw Error('CONTROL_NO_CONFIRMADO');
-      powerState(now.status);
+      if(now.ok!==true||now.status!=='PASS'||now.project_id!==selected.project_id||now.loop_id!==selected.loop_id
+        ||op==='start'&&(!now.queue?.queue_id||now.queue?.status!=='running'||now.revision!==old.revision+1)
+        ||op==='pause'&&now.queue?.status!=='paused')throw Error('CONTROL_NO_CONFIRMADO');
+      powerState(now);
     }catch(e){powerState();button.title=String(e.message||e)}finally{button.disabled=false}
   };
 }

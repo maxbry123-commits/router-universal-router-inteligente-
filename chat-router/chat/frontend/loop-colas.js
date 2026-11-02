@@ -6,11 +6,11 @@ const A=window.YAIWES_PANEL, el=id=>document.getElementById(id);
 if(!A||!el('lq-add')||!el('lq-list'))return;
 const menu=el('lq-add'), form=el('lq-form'), input=el('lq-name'),task=el('lq-task'),
 list=el('lq-list'),counter=el('lq-count'),status=el('lq-message');
-let ids=null,scope=null,loading=false,queues=[],searching=false;
+let ids=null,scope=null,loading=false,queues=[],refreshQueued=false,version=0;
 const msg=(s,err=false)=>{status.textContent=String(s).slice(0,260);status.classList.toggle('is-error',err)};
 const btn=(label,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',fn);return b};
 const clean=()=>{
-  ids=null;scope=null;queues=[];menu.value='';form.hidden=true;
+  version++;ids=null;scope=null;queues=[];refreshQueued=false;menu.value='';form.hidden=true;
   counter.textContent='0';list.replaceChildren();
   const p=document.createElement('p');p.className='help';p.textContent='Vincula el proyecto y LOOP para consultar colas reales.';list.append(p);
   msg('Ninguna cola visible sin verificación del backend.');
@@ -53,16 +53,21 @@ function render(){
 }
 async function refresh(){
   if(!ids||!scope)return;
-  if(loading)return;
+  if(loading){refreshQueued=true;return}
+  const stamp=version,current=scope;
   loading=true;msg('Consultando colas del LOOP en CIT-50…');menu.disabled=true;
   try{
     const r=await cola('listar',{chat_id:scope});
+    if(stamp!==version||current!==scope)return;
     if(!Array.isArray(r.queues))throw Error('RESPUESTA_COLAS_INVALIDA');
     // El backend filtra por chat_id, pero filtramos de nuevo para no mostrar colas ajenas.
     queues=r.queues.filter(x=>x&&x.chat_id===scope).slice(0,100);
     render();msg(queues.length+' cola(s) verificadas en CIT-50. No se crean colas automáticamente.');
-  }catch(e){queues=[];render();msg('CIT-50 no confirmado: '+e.message,true)}
-  finally{loading=false;menu.disabled=false}
+  }catch(e){if(stamp===version){queues=[];render();msg('CIT-50 no confirmado: '+e.message,true)}}
+  finally{
+    loading=false;menu.disabled=false;
+    if(refreshQueued&&scope){refreshQueued=false;refresh()}
+  }
 }
 async function init(p,l){
   clean();

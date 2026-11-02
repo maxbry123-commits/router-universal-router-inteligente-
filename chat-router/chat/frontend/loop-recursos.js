@@ -5,7 +5,7 @@
 const A=window.YAIWES_PANEL,$=id=>document.getElementById(id);
 if(!A||!$('lp-resources')||!$('lr-refresh'))return;
 const ui=Object.fromEntries(['refresh','link','revision','count','dag','dag-list','queue-status','queue-id','queue-tasks','watch-status','watch-id','watch-detail','native-canvas','open-cola','open-watchdog','open-anchor','open-exec','notice'].map(k=>[k,$('lr-'+k)]));
-let scope=null,seq=0,loading=false;
+let scope=null,seq=0,loading=false,refreshQueued=false;
 const make=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=String(txt);return e};
 const setNotice=(txt,err)=>{ui.notice.textContent=String(txt).slice(0,350);ui.notice.classList.toggle('error',!!err)};
 const validID=v=>A.idSafe(v);
@@ -86,7 +86,8 @@ function diagram(r){
  if(all.length>shown.length)list.prepend(make('p','',shown.length+' nodos dibujados de '+all.length+'; el listado incluye todos.'));
 }
 async function refresh(){
- if(!scope||loading)return;
+ if(!scope)return;
+ if(loading){refreshQueued=true;return}
  const turn=++seq;loading=true;ui.refresh.disabled=true;
  try{
   const r=await state();
@@ -120,7 +121,10 @@ async function refresh(){
   if(turn===seq)setNotice('Canvas de solo lectura y motores sincronizados con el backend · revisión '+r.revision);
  }catch(e){
   if(turn===seq){reset();setNotice('Estado sin verificar: '+String(e.message||e),true)}
- }finally{if(turn===seq){loading=false;ui.refresh.disabled=false}}
+ }finally{
+   loading=false;ui.refresh.disabled=false;
+   if(refreshQueued&&scope){refreshQueued=false;refresh()}
+ }
 }
 const native=async target=>{
  try{
@@ -141,7 +145,7 @@ window.addEventListener('yaiwes:loop-verified',e=>{
  seq++;scope={project_id:p,loop_id:l};reset();refresh();
 });
 window.addEventListener('yaiwes:loop-unverified',()=>{
- seq++;scope=null;reset();setNotice('Vincula primero un LOOP real. Las ventanas nativas siguen disponibles.');
+ seq++;scope=null;refreshQueued=false;reset();setNotice('Vincula primero un LOOP real. Las ventanas nativas siguen disponibles.');
 });
 window.addEventListener('yaiwes:resources-view-open',()=>{if(scope)refresh()});
 window.addEventListener('yaiwes:exec-state-updated',()=>{if(scope)refresh()});

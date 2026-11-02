@@ -4,7 +4,7 @@
 const A=window.YAIWES_PANEL,$=id=>document.getElementById(id);
 if(!A||!$('lp-execution')||!$('lx-refresh'))return;
 const ui=Object.fromEntries(['state','queue','revision','progress','bar','progress-desc','phase','phase-desc','check-select','check','check-result','start','pause','resume','cancel','one','checklist','done','flags','flags-refresh','refactor','refactor-open','close-check','close-result','message','refresh'].map(k=>[k,$('lx-'+k)]));
-let scope=null,last=null,loading=false,acting=false,unknownAction=false,version=0;
+let scope=null,last=null,loading=false,acting=false,unknownAction=false,version=0,refreshQueued=false;
 const states=['PASS','NOT_APPLICABLE','BLOCKED','FLAGGED','RUNNING','STARTED','QUEUED','OFF','UNKNOWN'];
 const positive=new Set(['PASS','NOT_APPLICABLE']),queueDone=new Set(['completed']),canStop=new Set(['running','paused']);
 const note=(s,error=false)=>{ui.message.textContent=String(s).slice(0,500);ui.message.classList.toggle('lx-error',error)};
@@ -100,7 +100,8 @@ function drawFlags(r){
  }
 }
 async function refresh(){
- if(!scope||loading||acting)return;
+ if(!scope)return;
+ if(loading||acting){refreshQueued=true;return}
  const stamp=version;loading=true;buttons();
  try{
   const r=await get();
@@ -108,7 +109,10 @@ async function refresh(){
   if(!valid(r))throw Error('CONTRATOS_NO_CONFIRMADOS');
   render(r);unknownAction=false;note('Estado leído del backend · revisión '+r.revision+(r.queue?' · cola '+queueStatus(r):' · sin cola'));
  }catch(e){if(stamp===version){last=null;note('Estado NO confirmado: '+String(e.message||e),true);reset()}}
- finally{loading=false;buttons()}
+ finally{
+   loading=false;buttons();
+   if(refreshQueued&&scope&&!acting){refreshQueued=false;refresh()}
+ }
 }
 async function action(op){
  if(!scope||!last||acting||loading||unknownAction)return;
@@ -196,7 +200,7 @@ window.addEventListener('yaiwes:loop-verified',e=>{
  if(!safe(p)||!safe(l))return;
  scope={project_id:p,loop_id:l};version++;reset();refresh();
 });
-window.addEventListener('yaiwes:loop-unverified',()=>{version++;scope=null;unknownAction=false;reset();note('Vincula el LOOP para consultar su ejecución.')});
+window.addEventListener('yaiwes:loop-unverified',()=>{version++;scope=null;unknownAction=false;refreshQueued=false;reset();note('Vincula el LOOP para consultar su ejecución.')});
 window.addEventListener('yaiwes:exec-refresh',()=>{unknownAction=false;refresh()});
 window.addEventListener('yaiwes:exec-view-open',()=>{if(scope)refresh()});
 window.addEventListener('yaiwes:exec-open',e=>{if(e.detail?.focus==='checkpoint')setTimeout(()=>ui['check-select'].focus(),0);else if(e.detail?.focus==='flags')setTimeout(()=>ui['flags-refresh'].focus(),0)});
