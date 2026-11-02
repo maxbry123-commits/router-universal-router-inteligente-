@@ -92,6 +92,7 @@ export function crearCliente(cfg: { url: string; token: string }, opciones: { fe
       return fusionarCapacidades(h, modelos, claves);
     },
     tools: () => llamar('GET', '/v1/swe/tools'),
+    agentesLock: (locked?: boolean): Promise<Respuesta> => llamar('POST', '/v1/swe/agentes-lock', locked === undefined ? {} : { locked }),
     iniciar: (tarea: Record<string, unknown>) => llamar('POST', '/v1/swe/iniciar', tarea),
     avanzar: (r: { task_id: string; sesion?: string; proyecto?: string }) => llamar('POST', '/v1/swe/avanzar', ref(r), undefined, true),
     estado: (r: { task_id: string; sesion?: string; proyecto?: string }) => llamar('POST', '/v1/swe/estado', ref(r)),
