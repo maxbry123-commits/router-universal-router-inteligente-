@@ -499,7 +499,57 @@ export function ordenSlotsLocal(id, estado, env = process.env) {
     return puntuar(sa) - puntuar(sb) || a - b;
   });
 }
-export async function local(id, mensajes, { env = process.env, extra = {}, opts, onInicio, flujo } = {}) {
+// Reservas del bridge compartido por ambos chats. FIFO y una inferencia por URL.
+// El manager mantiene su propio bloqueo para carga e inferencia.
+const slotsOcupados = new Set();
+const colaLocal = [];
+async function reservarSlot(slots, env, r) {
+  const ticket = {};
+  colaLocal.push(ticket);
+  try {
+    while (true) {
+      if (r.signal?.aborted) throw cancelada();
+      if (colaLocal[0] === ticket) {
+        const n = slots.find(n => !slotsOcupados.has(env[`SWECODE_URL_S${n}`]));
+        if (n !== undefined) {
+          const url = env[`SWECODE_URL_S${n}`];
+          slotsOcupados.add(url);
+          return { n, liberar: () => slotsOcupados.delete(url) };
+        }
+      }
+      await esperarCancelable(50, r);
+    }
+  } finally {
+    const i = colaLocal.indexOf(ticket);
+    if (i >= 0) colaLocal.splice(i, 1);
+  }
+}
+export async function local(id, mensajes, options = {}) {
+  const env = options.env || process.env;
+  const r = red(options.opts);
+  // La espera también termina al cancelar o alcanzar el plazo del cliente.
+  const limite = AbortSignal.timeout(Math.max(1, options.opts?.timeoutMs || 430000));
+  r.signal = r.signal ? AbortSignal.any([r.signal, limite]) : limite;
+  const estado = await disponibilidadLocal({ env, refrescar: true });
+  const slots = ordenSlotsLocal(id, estado, env);
+  if (!slots.length) throw Object.assign(new Error('HF_LOCAL: sin SWECODE_URL_S1..S3'), { code: 'HF_LOCAL_FALLO' });
+  const fallos = [];
+  while (slots.length) {
+    const reserva = await reservarSlot(slots, env, r);
+    const solo = { ...env };
+    for (const n of [1, 2, 3]) if (n !== reserva.n) delete solo[`SWECODE_URL_S${n}`];
+    try {
+      return await localEnSlot(id, mensajes, { ...options, env: solo,
+        opts: { ...options.opts, signal: r.signal } });
+    } catch (e) {
+      if (r.signal.aborted || e.code === 'ABORTADO' || e.parcial || options.flujo?.texto) throw e;
+      fallos.push(e.message);
+      slots.splice(slots.indexOf(reserva.n), 1);
+    } finally { reserva.liberar(); }
+  }
+  throw Object.assign(new Error(fallos.join(' | ')), { code: 'HF_LOCAL_FALLO' });
+}
+async function localEnSlot(id, mensajes, { env = process.env, extra = {}, opts, onInicio, flujo } = {}) {
   const fallos = [], r = conTimeout(red(opts), id, env);
   // No crear otro router ni abrir la puerta al proveedor: llama al servicio HF existente.
   // Si el operador fijó un plazo local, respetarlo; la gracia de 175 s es
@@ -613,3 +663,4 @@ export function estadoRespaldo(env = process.env) {
   return { ...Object.fromEntries(Object.keys(BASES).map(p => [p, claves(p.toUpperCase() + '_API_KEY', env).length])),
     hf_local: [1, 2, 3].filter(n => env[`SWECODE_URL_S${n}`]).length };
 }
+
