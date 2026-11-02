@@ -5,6 +5,7 @@ import { conectarMicrofono } from "./chat-microfono.js";
 import { conectarVentanas } from "./chat-ventanas.js";
 import { conectarRiu } from "./chat-riu.js";
 import { conectarRiu2 } from "./chat-riu2.js";
+import { montarPensando3D } from "./pensando-3d.js";
 import { conectarVentanasNuevas } from "./ventanas-nuevas.js";
 import { proyId } from "./objetivos-ancla.js";
 import { montarProyectos } from "./ventana-proyectos.js";
@@ -255,7 +256,8 @@ export async function mount(root, { api, tell }) {
   };
   window.RIU_ANCLA_REFRESCAR = () => { cargarArchivos("#anc-lista"); ancla.refrescar(); pintarAnclas(); cargarMiHandoff(); };  // refresca la ventana de anclaje al cambiar de objetivo
   root.addEventListener("riu:cerrar-chat", (e) => cerrarChat(e.detail));
-  conectarRiu2({ root, q, tell });  // RUI 12-21 + mejoras de flujo (ventanas, borrador, avisos)
+  conectarRiu2({ root, q, tell });  // RUI existentes: sin nuevos montajes ficticios
+  montarPensando3D({ root, q }); // cubo junto a Enviar + estado al final de la salida
   conectarVentanasNuevas({ root, q, tell });  // workflows, constitución sentinela, banco de claves y destinos del anclaje (cada uno en su archivo)
 
   const fila = (titulo, desc, marcada, alClick) => {
