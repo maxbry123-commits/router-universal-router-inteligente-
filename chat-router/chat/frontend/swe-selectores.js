@@ -201,7 +201,16 @@ async function refrescarCapacidades(forzar, conFichas = false) {
   if (forzar) olvidarCapacidades();
   const bt = document.querySelector(".swe-refrescar"); if (bt) bt.disabled = true;
   try { if (conFichas && window.RIU_FICHAS && window.RIU_FICHAS.recargar) await window.RIU_FICHAS.recargar(); } catch (e) {}  // catalogos Groq/NVIDIA del Router, sin recargar el chat
-  CAP = await cargarCapacidades(api); CAP_LISTA = true; ULTIMA = Date.now(); pintarControles();
+  CAP = await cargarCapacidades(api); CAP_LISTA = true; ULTIMA = Date.now();
+  let lock = null;
+  try { lock = await plugin("puente_chat", "agent_access_lock", {}); } catch (_) {}
+  const bloqueo = !lock || lock.ok !== true || lock.agentes_locked !== false;
+  if (bloqueo && leerSeleccion().modo_agentico) guardarSeleccion({ modo_agentico: false });
+  pintarControles();
+  if (bloqueo) {
+    const aviso = document.querySelector(".swe-ctl .swe-estado");
+    if (aviso) aviso.textContent = lock?.agentes_locked ? "AGENTES APAGADOS EN ROUTER: activa Modo agéntico para habilitarlos" : "AGENTES SIN VERIFICAR: no se confirmó el control del Router";
+  }
   if (bt) bt.disabled = false;
 }
 
