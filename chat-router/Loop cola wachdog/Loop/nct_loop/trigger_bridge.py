@@ -141,8 +141,13 @@ class TriggerBridge:
             if not verified or verified.get("status") != "succeeded" or not verified.get("receipt_id"):
                 raise ContractError("QUEUE_COMPLETION_STATE_MISMATCH")
             completed.append({"id": eligible["id"], "status": "PASS", "receipt_id": verified["receipt_id"]})
-        return {"ok": True, "status": "LIMIT_REACHED", "queue_id": qid, "processed": completed,
-                "next": "CALL_DISPATCH_AGAIN"}
+        final = await _invoke(self.ports.queue_status, qid)
+        if final.get("status") != "running":
+            return {"ok": final.get("status") == "completed",
+                    "status": final.get("status", "BLOCKED").upper(), "queue_id": qid,
+                    "processed": completed, "queue_status": final.get("status")}
+        return {"ok": True, "status": "LIMIT_REACHED", "queue_id": qid,
+                "processed": completed, "next": "CALL_DISPATCH_AGAIN"}
 
     async def handle(self, action, request, *, server_context=None):
         try:
