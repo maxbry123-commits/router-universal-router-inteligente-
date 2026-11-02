@@ -251,6 +251,8 @@ def build_ports(host: dict) -> HostPorts:
         if (approval.get("writer")!="N4" or not approval.get("actor")
                 or not isinstance(approval.get("write_paths"),list)
                 or any(scope not in project_row["write_paths"] for scope in approval["write_paths"])
+                or not isinstance(approval.get("approved_content_sha256"),str)
+                or approval["approved_content_sha256"]!=sha256(value.encode("utf8"))
                 or not isinstance(approval.get("github_head"),str)
                 or approval["github_head"]!=github_head()):
             raise ContractError("GITHUB_HEAD_CHANGED_REAPPROVAL_REQUIRED")
@@ -341,6 +343,8 @@ def build_ports(host: dict) -> HostPorts:
                 or row.get("constitution_sha256") != req["constitution_sha256"]
                 or row.get("write_paths") != req["write_paths"]
                 or not github_ready or not row.get("github_head")
+                or not isinstance(row.get("approved_content_sha256"), str)
+                or not re.fullmatch(r"[0-9a-f]{64}", row["approved_content_sha256"])
                 or row["github_head"] != github_head()
                 or time.time() - row.get("timestamp", 0) > 1800):
             return {"approved": False}

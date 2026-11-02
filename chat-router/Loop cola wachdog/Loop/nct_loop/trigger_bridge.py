@@ -463,10 +463,17 @@ class TriggerBridge:
                 constitutional_sha, _ = await self.engine._constitution()
                 if self.ports.can_write is not True or not callable(getattr(self.ports, "github_head", None)):
                     raise ContractError("AUTHORIZED_GITHUB_WRITER_NOT_CONNECTED")
+                # N4 approves an exact diff/content SHA, not an unknown future
+                # model output. The human must review the proposed bytes first.
+                import re
+                approved_sha = request.get("approved_content_sha256")
+                if not isinstance(approved_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", approved_sha):
+                    raise ContractError("N4_REQUIRES_REVIEWED_CONTENT_SHA256")
                 github_head = await _invoke(self.ports.github_head)
                 if not isinstance(github_head, str) or len(github_head) != 40:
                     raise ContractError("GITHUB_HEAD_NOT_VERIFIED")
                 record = {"approved": True, "writer": "N4", "actor": server_context["operator_id"],
+                          "approved_content_sha256": approved_sha,
                           "github_head": github_head,
                           "constitution_sha256": constitutional_sha,
                           "contract_sha256": sha256(canonical(contract)),
