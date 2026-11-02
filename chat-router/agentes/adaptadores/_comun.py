@@ -225,8 +225,9 @@ def _clave(var):
 
 
 def _credencial_bridge():
-    """Los agentes (clientes OpenAI-compatibles) mandan esto como Bearer al bridge, que exige credencial: RIU_AGENTES_LLM_API_KEY o, si no, BRIDGE_TOKEN.
-    Sin ninguna queda el marcador «no-requerida» y el bridge respondera 401 (se ve en el error del agente)."""
+    """Acceso al bridge ya existente: override de agente, BRIDGE_TOKEN o RIU_API_KEY.
+    El valor se entrega exclusivamente al proceso del agente, nunca al repo/logs.
+    Sin ninguna queda el marcador no-requerida; no se inventa una clave."""
     return (os.environ.get("RIU_AGENTES_LLM_API_KEY", "").strip()
             or os.environ.get("BRIDGE_TOKEN", "").strip()
             or os.environ.get("RIU_API_KEY", "").strip()
