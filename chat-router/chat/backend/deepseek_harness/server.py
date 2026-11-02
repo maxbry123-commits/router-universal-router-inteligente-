@@ -694,6 +694,7 @@ def _mensaje_openai(modelo, mensajes, salida, *, via):
         fin = c.get("finish_reason") or ("tool_calls" if tools else "stop")
     return {"id": "harness-" + uuid.uuid4().hex[:20], "object": "chat.completion",
             "model": usado, "modelo_usado": usado, "via_router": via,
+            "herramientas_usadas": salida.get("herramientas_usadas", []) if via == "mvp" else [],
             "choices": [{"index": 0, "message": {"role": "assistant", "content": texto,
                 **({"tool_calls": tools} if tools else {})}, "finish_reason": fin}]}
 
@@ -702,6 +703,7 @@ def _openai_sse(respuesta):
     """El MVP entrega el mensaje al terminar. El bridge ya entrega SSE real."""
     c = respuesta["choices"][0]
     o = {"id": respuesta["id"], "object": "chat.completion.chunk", "model": respuesta["model"],
+         "herramientas_usadas": respuesta.get("herramientas_usadas", []),
          "choices": [{"index": 0, "delta": {"role": "assistant", "content": c["message"]["content"]},
                       "finish_reason": None}]}
     yield "data: " + json.dumps(o, ensure_ascii=False) + "\n\n"
