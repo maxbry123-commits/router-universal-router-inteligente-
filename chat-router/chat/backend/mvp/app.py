@@ -640,7 +640,7 @@ async def _reanudar_dsl_seguro():
                          "project_id":pid,"loop_id":loop_id,"sesion":seed_chats,
                          "banco":app.state.banco,"control":CONTROL,
                          "queue_store":store,"watch_store":watch_store,
-                         "root":Path(__file__).resolve().parents[3],
+                         "root":Path(__file__).resolve().parents[2],
                          "write_paths":project.get("write_paths",[]) if
                          project.get("repo")=="maxbry123-commits/router-universal-router-inteligente-"
                          and project.get("branch")=="main" else [],
@@ -720,7 +720,7 @@ async def plugin_call(plugin: str, accion: str, cuerpo: dict,
                    'sesion':sesion,'loop_id':cuerpo.get('loop_id'),
                    'banco':app.state.banco,'control':CONTROL,
                    'queue_store':services[0],'watch_store':services[1],
-                   'root':Path(__file__).resolve().parents[3],
+                   'root':Path(__file__).resolve().parents[2],
                    'write_paths':project.get('write_paths',[]) if
                         project.get('repo')=='maxbry123-commits/router-universal-router-inteligente-'
                         and project.get('branch')=='main' else [],
