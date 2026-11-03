@@ -16,11 +16,13 @@ const CLAVES = new Set([
   'CLAUDE_AGENTE_NO_INSTALADO','CLAUDE_GATEWAY_NO_CONECTADO',
   'CLAUDE_GATEWAY_NO_DISPONIBLE','CLAUDE_GATEWAY_NO_CONFIGURADO',
   'CLAUDE_GATEWAY_NO_AUTORIZADO','CLAUDE_CUENTAS_AGOTADAS',
+  'CLAUDE_PROVEEDOR_SIN_CREDENCIALES',
   'CUENTAS_FALTAN','NO_AUTORIZADO','BRIDGE_ERROR'
 ]);
 const INTERVENCION = new Set([
   'SESSION_EXPIRED','AGE_VERIFICATION_REQUIRED','CF_CHALLENGE',
   'CLAUDE_GATEWAY_NO_AUTORIZADO','CLAUDE_CUENTAS_AGOTADAS',
+  'CLAUDE_PROVEEDOR_SIN_CREDENCIALES',
   'CUENTAS_FALTAN','NO_AUTORIZADO'
 ]);
 const RECUPERABLE = new Set(['WEB_SITIO_NO_RESPONDE']);
@@ -39,6 +41,7 @@ export function clasificarGap(code) {
     reintentar:RECUPERABLE.has(seguro),
     accion:requiereUsuario?'Mantener checkpoint y solicitar acceso oficial/permiso o cuota válida; no eludir controles':
       seguro==='MODELO_SELECTOR_NO_VERIFICADO'?'Revisar selector de modelo y no atribuir la respuesta a otro modelo':
+      seguro==='CLAUDE_PROVEEDOR_SIN_CREDENCIALES'?'Conectar Anthropic API o autenticar Claude CLI por el procedimiento oficial; no copiar tokens ni crear cuentas':
       seguro==='CLAUDE_AGENTE_NO_INSTALADO'?'Revisar registro y modelo del agente en OpenClaw; no cambiar a otro modelo':
       seguro==='CLAUDE_GATEWAY_NO_CONECTADO'?'Comprobar salud/configuración del Gateway existente y sus logs':
       seguro==='WEB_SITIO_NO_RESPONDE'?'Reintentar UNA vez el mismo modelo tras una falla de navegación previa al envío':
