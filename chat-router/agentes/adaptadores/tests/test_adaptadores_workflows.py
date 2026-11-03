@@ -87,6 +87,9 @@ def mundo(monkeypatch, tmp_path):
     monkeypatch.setenv("RIU_SWE_WORKSPACE_RAIZ", str(tmp_path / "ws"))
     monkeypatch.setenv("SWECODE_URL_S2", "https://s2.example.test/v1")  # dos servidores Liquid distintos por defecto (los dobles no hacen HTTP)
     monkeypatch.setenv("SWECODE_URL_S3", "https://s3.example.test/v1")
+    # Estas pruebas antiguas cubren el modo manual de otros origenes;
+    # en produccion el chat YAIWES evita la segunda autenticacion.
+    monkeypatch.setattr(wf, "_necesita_aprobacion_manual", lambda reg: True)
     wf._LOCKS.clear()
     return Mundo()
 
@@ -111,6 +114,14 @@ def aprobar_y_avanzar(m, c, task="yaiwes-001"):
     a = wf.swe_aprobar({"task_id": task, "op_id": op, "operador": "ana"}, c)
     assert a["estado"] in ("CONTINUAR", "VERIFICANDO")
     return wf.swe_avanzar({"task_id": task}, c)
+
+
+
+def test_politica_yaiwes_sin_segundo_token():
+    """El acceso al chat autoriza la ruta; no se necesita RIU_SWE_APROBADORES."""
+    from agentes.adaptadores import workflows
+    assert workflows._necesita_aprobacion_manual({"origen": "yaiwes"}) is False
+    assert workflows._necesita_aprobacion_manual({"origen": "openclaw"}) is True
 
 
 # ---------- constantes de workflow ----------
