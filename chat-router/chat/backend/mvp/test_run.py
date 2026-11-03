@@ -137,6 +137,34 @@ class TestAutopull(unittest.TestCase):
             hilo.assert_called_once()
             self.assertTrue(hilo.return_value.start.called)
 
+    def test_pasarela_claude_respeta_url_explicita_del_operador(self):
+        with patch.dict(os.environ, {"RIU_API_KEY": "clave-ficticia", "RIU_CLAUDE_PASARELA_URL": "https://servicio.example",
+                                     "RIU_CLAUDE_PASARELA_AUTO_ACTIVA": "0"}), patch.object(run.subprocess, "Popen") as spawn:
+            self.assertFalse(run._iniciar_pasarela())
+            spawn.assert_not_called()
+
+    def test_pasarela_claude_utiliza_script_existente_y_bridge_local(self):
+        anterior = run._PASARELA
+        try:
+            with patch.dict(os.environ, {"RIU_API_KEY": "clave-ficticia", "RIU_CLAUDE_PASARELA_AUTO": "1"}):
+                for key in ("RIU_CLAUDE_PASARELA_URL", "RIU_CLAUDE_PASARELA_MODELO", "RIU_CLAUDE_PASARELA_AUTO_ACTIVA"):
+                    os.environ.pop(key, None)
+                with patch.object(run.Path, "is_file", return_value=True), \
+                     patch.object(run, "_pasarela_escuchando", return_value=False), \
+                     patch.object(run.subprocess, "Popen") as spawn:
+                    run._PASARELA = None
+                    self.assertTrue(run._iniciar_pasarela())
+                    spawn.assert_called_once()
+                    command = spawn.call_args.args[0]
+                    env = spawn.call_args.kwargs["env"]
+                    self.assertEqual(command[0], sys.executable)
+                    self.assertTrue(command[1].endswith("agentes/claude-code/pasarela.py"))
+                    self.assertEqual(env["RIU_CLAUDE_PASARELA_BRIDGE"], "1")
+                    self.assertEqual(env["MODELO"], "nvidia/minimaxai/minimax-m3.1-flash")
+                    self.assertEqual(env["RIU_CLAUDE_PASARELA_URL"], "http://127.0.0.1:8082")
+        finally:
+            run._PASARELA = anterior
+
     def test_registra_commit_y_puerto(self):
         fake = Mock()
         with patch.dict(sys.modules, {"uvicorn": SimpleNamespace(run=fake)}), \
