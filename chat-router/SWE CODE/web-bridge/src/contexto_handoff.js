@@ -49,9 +49,13 @@ export function registrarContexto({ conv_id, propietario, modelo, modo, proyecto
   const t = { modelo:limite(modelo,90), modo:limite(modo,50),
     entrada:limite(entrada,5000), salida:limite(salida,10000), ts:new Date().toISOString() };
   const turnos = [...(antiguo.turnos || []), t].slice(-MAX_TURNOS);
-  const pendientes = Array.isArray(tool_calls) ? tool_calls.slice(0,12).map(x=>({
+  const recibidos = Array.isArray(resultado_tools) ? resultado_tools.slice(0,12) : [];
+  const idsConfirmados = new Set(recibidos.map(x=>x.id).filter(Boolean));
+  const anteriores = (antiguo.pendientes || []).filter(x=>!idsConfirmados.has(x.id));
+  const nuevas = Array.isArray(tool_calls) ? tool_calls.slice(0,12).map(x=>({
     id:limite(x.id,100), tool:limite(x.function?.name,100) })) : [];
-  const recibos = [...(antiguo.recibos || []), ...(Array.isArray(resultado_tools) ? resultado_tools.slice(0,12) : [])]
+  const pendientes = [...anteriores,...nuevas].slice(-16);
+  const recibos = [...(antiguo.recibos || []), ...recibidos]
     .map(x=>sanear(x)).slice(-16);
   return escribir(conv_id, propietario, { ...antiguo,
     objetivo:antiguo.objetivo || limite(entrada,2000),
