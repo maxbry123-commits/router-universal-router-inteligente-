@@ -886,8 +886,10 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
     origen_ctx = cuerpo.get("contexto_de")
     if isinstance(origen_ctx, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,80}", origen_ctx):
         req["contexto_de"] = origen_ctx
-    if tools is True:
-        # Reutilizar el bucle existente: catalogo MCP, permisos, diario y reanudacion.
+    # GAP crítico: Tools ON para web-/swecode- NO puede desviarse al Router MVP.
+    # Si destino es SWE, el bridge compone tool_calls deterministas con tools/list,
+    # y la ejecución real la autoriza el agente/Harness (no se finge un recibo).
+    if tools is True and destino != "swe":
         motor = {"modelo": modelo, "mensajes": req["messages"], "via": "harness",
                  "tools": True, "agente_tool": cuerpo.get("agente_tool") is True,
                  "llm_tool": cuerpo.get("llm_tool") is True}
@@ -897,7 +899,11 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
         return await _mvp_modelo_compat(motor, h, modelo)
     opciones_cliente = {"tools": tools, "tool_choice": cuerpo.get("tool_choice", "auto")} if isinstance(tools, list) and tools else {}
     if destino == "swe":
-        if opciones_cliente:
+        if tools is True:
+            req["tools"] = True
+            req["tool_choice"] = cuerpo.get("tool_choice", "auto")
+            req["ejecutor_tools"] = ("openclaw" if cuerpo.get("ejecutor_tools") == "openclaw" else "swe")
+        elif opciones_cliente:
             req.update(opciones_cliente)
             req["ejecutor_tools"] = "openclaw"
         if not _bridge_url():
