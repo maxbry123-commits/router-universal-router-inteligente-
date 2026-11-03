@@ -21,7 +21,27 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
         ep = _comun.endpoint_modelo(modelo, AGENTE, tarea_id)
     except _comun.ErrorPrevio as e:
         return e.resultado
-    base = (os.environ.get("RIU_CODEX_BASE_URL") or ep["base_url"]).strip()
+    # Codex usa Responses, no Chat Completions. Groq/NVIDIA directos NO
+    # ofrecen necesariamente /responses. Usar el bridge SWE CODE EXISTENTE
+    # (/v1/responses -> /v1/chat/completions -> proveedor) con el banco.
+    from urllib.parse import urlparse
+    base = (os.environ.get("RIU_CODEX_BASE_URL") or os.environ.get("RIU_AGENTES_LLM_BASE_URL")
+            or os.environ.get("RIU_SWE_BRIDGE_URL") or "http://127.0.0.1:7870").strip().rstrip("/")
+    url = urlparse(base)
+    if not ((url.scheme == "http" and url.hostname in ("127.0.0.1", "localhost")) or
+            (url.scheme == "https" and url.hostname and not url.username and not url.password)):
+        return _comun.error(AGENTE, tarea_id, "AGENTE_NO_CONFIGURADO",
+                            "Codex necesita bridge Responses local o HTTPS configurado", False)
+    if not base.endswith("/v1"):
+        base += "/v1"
+    if not os.environ.get("RIU_CODEX_BASE_URL"):
+        clave_bridge = _comun._credencial_bridge()
+        if clave_bridge == "no-requerida":
+            return _comun.error(AGENTE, tarea_id, "AGENTE_NO_CONFIGURADO",
+                                "Codex necesita acceso al bridge; conecta la clave del chat en el banco", False)
+        ep["api_key"] = clave_bridge
+        if modelo.startswith(("groq/", "nvidia/")):
+            ep["modelo"] = modelo  # el bridge enruta por proveedor: NO quitar el prefijo
     sandbox = "workspace-write" if p["escritura"] else "read-only"  # nunca danger-full-access ni --yolo
     tmp = tempfile.mkdtemp(prefix="riu-codex-")
     salida = os.path.join(tmp, "ultimo.txt")
