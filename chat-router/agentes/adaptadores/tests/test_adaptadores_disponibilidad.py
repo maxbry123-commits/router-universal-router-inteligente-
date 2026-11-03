@@ -115,6 +115,21 @@ def test_opencode_y_swe_agent(vacio, monkeypatch):
     assert nunca_lanzado(vacio)
 
 
+def test_swe_agent_no_finge_daemon_ni_imagen(vacio, monkeypatch):
+    monkeypatch.setenv("RIU_SWEAGENT_BIN", falso(vacio, "sweagent"))
+    monkeypatch.setenv("RIU_DOCKER_BIN", falso(vacio, "docker"))
+    for estado, causa in (("daemon_inactivo", "docker_daemon_inactivo"),
+                          ("imagen_ausente", "imagen_sweagent_ausente"),
+                          ("sin_verificar", "docker_sin_verificar")):
+        e = cap(sonda_docker=lambda exe, img, st=estado: st)["agentes"]["swe-agent"]
+        assert e["disponible"] is False and e["causa"] == causa
+    visto = []
+    e = cap(sonda_docker=lambda exe, img: visto.append((exe, img)) or "ok")["agentes"]["swe-agent"]
+    assert e["estado"] == "DISPONIBLE"
+    assert visto == [(str(vacio / "docker"), "riu-sweagent:latest")]
+    assert nunca_lanzado(vacio)
+
+
 def test_openhands_solo_si_el_python_importa_el_sdk(vacio, monkeypatch):
     monkeypatch.setenv("RIU_OPENHANDS_PYTHON", sys.executable)
     visto = []
