@@ -8,6 +8,7 @@ MODELOS = {
     "hf/qwen3-0.6b": {"provider": "hf", "model": "qwen3-0.6b"},
     # Cuentas web del bridge: sólo IDs reales publicados por /v1/models.
     # Estos modelos se pueden usar por el runtime OpenClaw sin LLM traductor.
+    "swecode-consulta": {"provider": "web", "model": "swecode-consulta"},
     "web-qwen38max": {"provider": "web", "model": "web-qwen38max"},
     "web-qwen37max": {"provider": "web", "model": "web-qwen37max"},
     "web-dsv4-flash": {"provider": "web", "model": "web-dsv4-flash"},
@@ -23,6 +24,7 @@ NOMBRES = {
     "hf/qwen2.5-coder-1.5b": "Qwen2.5-Coder 1.5B (HF local)",
     "hf/qwen3.5-0.8b": "Qwen3.5 0.8B (HF local)",
     "hf/qwen3-0.6b": "Qwen3 0.6B (HF local)",
+    "swecode-consulta": "Ask Cónsil · arbitra Qwen 3.8 Max",
     "web-qwen38max": "Qwen 3.8 Max · web",
     "web-qwen37max": "Qwen 3.7 Max · web",
     "web-dsv4-flash": "DeepSeek V4 Flash · web",
