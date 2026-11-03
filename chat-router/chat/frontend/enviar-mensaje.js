@@ -328,7 +328,7 @@ export function montarEnviar(ctx) {
       else if (c.fastReply && FAST_SEL() && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));
       if (answer.pedidas && answer.pedidas.length) {  // R4: tool_calls devueltos tal cual (con o sin texto): no se usaron aqui y NO se pierden; quedan en el chat hasta que el ejecutor los tome
         c.toolCallsPendientes = [...(c.toolCallsPendientes || []), ...(Array.isArray(answer.tool_calls) ? answer.tool_calls : [])];
-        c.hist.append(node("div", "Pedidas (las ejecuta " + (answer.ejecutor || "el agente") + "): " + answer.pedidas.join(", ") + " · pendientes: " + (c.toolCallsPendientes.length || answer.pedidas.length), "item message meta"));
+        c.hist.append(node("div", "Tool calls RECIBIDAS, aún NO ejecutadas: " + answer.pedidas.join(", ") + " · pendientes: " + (c.toolCallsPendientes.length || answer.pedidas.length) + ". Ejecución: activa Modo agéntico ON y usa el Harness/ejecutor seleccionado; los cambios con efectos requieren aprobación.", "item message meta"));
       }
       if (answer.tools && answer.tools.length) { const meta = node("div", "Herramientas usadas: ", "item message meta"); answer.tools.forEach((t, i) => { const ok = typeof t === "string" || t.ok; const s = document.createElement("span"); s.textContent = (typeof t === "string" ? t : t.nombre) + (ok ? "" : " (fallo)"); if (!ok) s.className = "tool-fail"; if (i) meta.append(", "); meta.append(s); }); c.hist.append(meta); }
       if (answer.job_id) { window.__riuJob = answer.job_id; const ar = q('#apagar-respaldo'); if (ar) ar.hidden = false; }
