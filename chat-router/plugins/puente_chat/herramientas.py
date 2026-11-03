@@ -16,7 +16,7 @@ BUCKET = NS + '/yaiwes-memoria-storage'
 _cache = {}
 _log = logging.getLogger(__name__)
 SISTEMA = ('Tienes herramientas reales: GitHub (cuenta maxbry123-commits) y Hugging Face (cuenta COMAND-CENTER-1). '
-           'El repo principal es router-universal-router-inteligente- (lleva guion al final) en la rama reorganizacion. '
+           'El repo principal es router-universal-router-inteligente- (lleva guion al final) en la rama main. '
            'Cuando te pidan leer, buscar, crear o cambiar archivos, repositorios, jobs o modelos, usa las herramientas en lugar de decir que no puedes. '
            'Nunca muestres claves ni tokens. Responde en espanol.')
 S = {'type': 'string'}
@@ -32,9 +32,11 @@ TOOLS = [
     _fn('github_escribir', 'Crea o cambia un archivo en un repositorio de GitHub de maxbry123-commits (hace un commit). Archivos grandes (hasta 500000 caracteres): escribe por partes con anexar=true y offset=<caracteres que el archivo tiene ahora (0 la primera vez)>; el resultado informa total=<caracteres>.', {'repo': S, 'ruta': S, 'contenido': S, 'mensaje': S, 'rama': S, 'anexar': {'type': 'boolean'}, 'offset': {'type': 'integer'}}, ['repo', 'ruta', 'contenido']),  # >>> PARCHE_500K <<<
 
     _fn('github_api', 'Llama a la API de GitHub con los permisos de la cuenta del Director. metodo: GET, POST, PUT, PATCH o DELETE. ruta: empieza con / (ej. /repos/<owner>/<repo>/commits?per_page=3); admite ?query params.', {'metodo': S, 'ruta': S, 'cuerpo': O}, ['metodo', 'ruta']),
+    _fn('github_salud', 'Comprueba si el banco del Router puede leer y hacer push al repo solicitado de maxbry123-commits. SOLO lectura; nunca muestra ni solicita el token.', {'repo': S}, []),
     _fn('hf_leer', 'Lee un archivo de un repo de Hugging Face. tipo: model, dataset o space.', {'repo': S, 'ruta': S, 'tipo': S, 'rama': S}, ['repo', 'ruta']),
     _fn('hf_escribir', 'Crea o cambia un archivo en un repo de Hugging Face de la cuenta COMAND-CENTER-1.', {'repo': S, 'ruta': S, 'contenido': S, 'mensaje': S, 'tipo': S}, ['repo', 'ruta', 'contenido']),
     _fn('hf_api', 'Llama a la API de Hugging Face (la ruta empieza con /api/). Escribir solo en la cuenta COMAND-CENTER-1.', {'metodo': S, 'ruta': S, 'cuerpo': O}, ['metodo', 'ruta']),
+    _fn('hf_salud', 'Comprueba autenticación y lectura en un Space/modelo/dataset de Hugging Face. No ejecuta tareas ni devuelve tokens; NO certifica permiso de escritura.', {'repo': S, 'tipo': S}, []),
     _fn('hf_almacenamiento', 'Almacenamiento permanente de Hugging Face. accion: listar, leer o escribir.', {'accion': S, 'ruta': S, 'contenido': S}, ['accion']),
 ]
 
@@ -273,7 +275,7 @@ def _texto(s, d, limite=12000):
 def github_leer(a):
     repo = a.get('repo') or 'router-universal-router-inteligente-'
     ruta = urllib.parse.quote(a.get('ruta', '') or '', safe='/')
-    rama = urllib.parse.quote(a.get('rama') or 'reorganizacion', safe='')
+    rama = urllib.parse.quote(a.get('rama') or 'main', safe='')
     s, d = _gh('GET', '/repos/%s/%s/contents/%s?ref=%s' % (OWNER, repo, ruta, rama))
     if isinstance(d, list):
         return json.dumps([x.get('name', '') + ('/' if x.get('type') == 'dir' else '') for x in d])[:12000]
@@ -315,7 +317,7 @@ MAX_ARCHIVO_CHARS = 500000  # >>> PARCHE_500K <<<
 
 def github_escribir(a):
     repo = a.get('repo') or 'router-universal-router-inteligente-'
-    rama = a.get('rama') or 'reorganizacion'
+    rama = a.get('rama') or 'main'
     base = '/repos/%s/%s/contents/%s' % (OWNER, repo, urllib.parse.quote(a.get('ruta', ''), safe='/'))
     s0, d0 = _gh('GET', base + '?ref=' + urllib.parse.quote(rama, safe=''))
     contenido = a.get('contenido') or ''  # >>> PARCHE_500K <<<
@@ -428,7 +430,29 @@ def hf_almacenamiento(a):
         return 'ERROR ' + str(e)[:300]
 
 
-FUNCS = {'github_leer': github_leer, 'github_escribir': github_escribir, 'github_api': github_api, 'hf_leer': hf_leer,
+def hf_salud(a=None):
+    """Estado de permisos de un repositorio HF con la credencial del banco (solo lectura).
+    Que funcione whoami no garantiza permisos de escritura ni acceso a un repositorio privado.
+    """
+    a = a if isinstance(a, dict) else {}
+    tipo = a.get('tipo') or 'space'
+    if tipo not in ('space', 'model', 'dataset'):
+        return {'authenticated': False, 'lectura': False, 'escritura': 'SIN_VERIFICAR', 'http': 0, 'causa': 'TIPO_INVALIDO'}
+    repo = str(a.get('repo') or NS + '/riu-router').strip()
+    if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', repo):
+        return {'authenticated': False, 'lectura': False, 'escritura': 'SIN_VERIFICAR', 'http': 0, 'causa': 'REPO_INVALIDO'}
+    token = _token_hf()
+    if not token:
+        return {'authenticated': False, 'lectura': False, 'escritura': 'SIN_VERIFICAR', 'http': 0,
+                'causa': 'CONECTAR_HF_EN_BANCO'}
+    categoria = {'space': 'spaces', 'model': 'models', 'dataset': 'datasets'}[tipo]
+    s, _ = _peticion('GET', 'https://huggingface.co/api/' + categoria + '/' + repo, token, espera=15)
+    return {'authenticated': True, 'lectura': s == 200, 'escritura': 'SIN_VERIFICAR' if repo.startswith(NS + '/') else 'FUERA_DE_CUENTA',
+            'http': s, 'causa': 'OK' if s == 200 else ('REPO_SIN_ACCESO' if s in (401, 403, 404) else 'SONDA_SIN_VERIFICAR')}
+
+
+FUNCS = {'github_leer': github_leer, 'github_escribir': github_escribir, 'github_api': github_api, 'github_salud': lambda a: json.dumps(github_salud(a)),
+         'hf_salud': hf_salud, 'hf_leer': hf_leer,
          'hf_escribir': hf_escribir, 'hf_api': hf_api, 'hf_almacenamiento': hf_almacenamiento}
 
 
@@ -498,7 +522,7 @@ TOOLS.extend([
 FUNCS.update({'internet_leer':internet_leer,'internet_buscar':internet_buscar})
 SISTEMA += ' Tambien tienes internet_buscar e internet_leer para consultar la web publica.'
 
-SISTEMA += ' Si una herramienta falla, explica el error; no inventes su resultado.'
+SISTEMA += ' Si una herramienta falla, explica el error; no inventes su resultado. Antes de trabajar en otro repositorio, comprueba github_salud(repo) o hf_salud(repo,tipo); si falta acceso o permiso push, pide conectar una credencial con alcance solo al repositorio indicado en el Banco de claves del Router. Nunca pidas pegar tokens en el chat ni entregues valores secretos al modelo o al repositorio.'
 
 # --- Groq: una sola ficha como tool para enrutar a agentes (pool de hasta 20) ---
 GROQ_MAX = 20
@@ -887,19 +911,30 @@ def componentes_backend(a):
     if '..' in ruta:
         return 'ERROR: ruta no permitida'
     base = _COMP_RAIZ + ('/' + comp + '/code' if comp else '')
-    return github_leer({'repo': 'router-universal-router-inteligente-', 'ruta': base + ('/' + ruta if ruta and comp else ''), 'rama': 'reorganizacion', 'lineas': a.get('lineas')})
+    return github_leer({'repo': 'router-universal-router-inteligente-', 'ruta': base + ('/' + ruta if ruta and comp else ''), 'rama': 'main', 'lineas': a.get('lineas')})
 
 
 def github_salud(a=None):
-    # Chequeo de salud de GitHub: autenticacion y permiso push sobre el repo, sin devolver el token
-    repo = _resolver_repo((a or {}).get('repo') or 'router-universal-router-inteligente-')
-    t = _token_gh(repo, True)
+    """Permisos REALES de lectura/push sobre un repo. No envía credenciales al modelo."""
+    a = a if isinstance(a, dict) else {}
+    nombre = str(a.get('repo') or 'router-universal-router-inteligente-')
+    if not re.fullmatch(r'[A-Za-z0-9._-]{1,120}', nombre):
+        return {'authenticated': False, 'read': False, 'push': False, 'http': 0, 'causa': 'REPO_INVALIDO'}
+    repo = _resolver_repo(nombre)
+    t = _token_gh(repo, False)
     if not t:
-        return {'authenticated': False, 'push': False, 'http': 0}
-    s, d = _peticion('GET', 'https://api.github.com/repos/%s/%s' % (OWNER, repo), t, espera=20,
+        return {'authenticated': False, 'read': False, 'push': False, 'http': 0,
+                'causa': 'CONECTAR_GITHUB_EN_BANCO'}
+    s, d = _peticion('GET', 'https://api.github.com/repos/%s/%s' % (OWNER, repo), t, espera=15,
                      extra={'Accept': 'application/vnd.github+json'})
-    push = bool(s == 200 and isinstance(d, dict) and (d.get('permissions') or {}).get('push'))
-    return {'authenticated': s == 200, 'push': push, 'http': s}
+    lectura = s == 200 and isinstance(d, dict)
+    permiso = lectura and bool((d.get('permissions') or {}).get('push'))
+    if lectura and not permiso:
+        permiso = bool(_token_gh(repo, True))
+    return {'authenticated': lectura, 'read': lectura, 'push': permiso, 'http': s,
+            'causa': 'OK' if lectura and permiso else 'SOLO_LECTURA' if lectura else 'REPO_SIN_ACCESO' if s in (403, 404) else 'SONDA_SIN_VERIFICAR'}
+
+
 
 
 def http_accion(action, p):
