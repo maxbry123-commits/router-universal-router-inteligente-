@@ -141,9 +141,24 @@ def _consulta(modelo, mensaje, sesion, timeout):
                                    **os.environ,"HOME":home,
                                    "OPENCLAW_STATE_DIR":home+"/.openclaw",
                                    "OPENCLAW_HOME":home})
+            salida = (run.stdout+"\\n"+run.stderr).lower()
+            if run.returncode == 0:
+                tipo = "VALIDA"
+            elif any(k in salida for k in ("unknown command","unknown option",
+                                           "unrecognized command","no such command")):
+                tipo = "CLI_SIN_CONFIG_VALIDATE"
+            elif any(k in salida for k in ("invalid config","validation failed",
+                                           "unrecognized key","unknown key","invalid configuration")):
+                tipo = "CONFIG_INVALIDA"
+            elif "permission denied" in salida:
+                tipo = "PERMISOS"
+            else:
+                tipo = "ERROR_NO_CLASIFICADO"
+            paths = sorted(set(re.findall(
+                r"(?:gateway|agents|models|tools)\\.[A-Za-z0-9_.\\[\\]-]{1,80}",salida)))
             return {"estado":"terminado","diagnostico":"schema_openclaw",
-                    "config_valida":run.returncode==0,
-                    "codigo_salida":run.returncode}
+                    "config_valida":run.returncode==0, "tipo":tipo,
+                    "campos":paths[:8], "codigo_salida":run.returncode}
         except (OSError,subprocess.TimeoutExpired):
             return {"estado":"error","error":"OPENCLAW_DOCTOR_NO_DISPONIBLE"}
     if mensaje.strip() == "@swen/occonfig":
