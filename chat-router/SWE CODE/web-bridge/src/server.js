@@ -26,6 +26,7 @@ import { idValido as tareaIdValido } from './checkpoint_hf.js';
 import { conFormato } from './formato.js';
 import { promptHerramientasWeb, extraerLlamadasWeb } from './web_tools.js';
 import { estadoContexto, registrarContexto, transferirContexto, tarjetaHandoff } from './contexto_handoff.js';
+import { montarAccionesOpenAI } from './openai_acciones.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
 import { vigilarActualizacion } from './autoactualizar.js';
 import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco, diagnosticoBanco, resumenBanco, catalogoProveedores, anadirProveedor } from './clavesbanco.js';
@@ -83,6 +84,7 @@ app.use((req, res, next) => {
   return conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key o Authorization: Bearer)' } });
 });
 app.use(express.json({ limit: '10mb' }));
+montarAccionesOpenAI(app,propietarioDe); // OpenAI API explícita, no chatGPT subscripción
 // Handoff: rutas autenticadas para recuperación entre selector/modelos/conv_id.
 // Sin clave de acceso no se consulta ni se transfiere el contexto de otro usuario.
 app.get('/v1/contexto/:id', (req,res) => {
