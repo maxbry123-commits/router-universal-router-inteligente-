@@ -58,7 +58,17 @@ export async function consultarClaude(texto,{convId='',fetchFn=fetch,timeoutMs=1
         messages:[{role:'user',content:'/think:max\n'+String(texto).slice(0,100000)}]})});
   }catch(e){throw issue(e?.name==='TimeoutError'||e?.name==='AbortError'?
     'CLAUDE_GATEWAY_TIMEOUT':'CLAUDE_GATEWAY_NO_CONECTADO')}
-  if(!r.ok)throw classify(r.status);
+  if(!r.ok){
+    // OpenClaw puede devolver 500 para "all auth profiles in cooldown".
+    // Sólo se inspecciona para clasificar, nunca se muestra ni registra el cuerpo
+    // que puede contener datos de una cuenta.
+    if(r.status===500||r.status===503){
+      const errorBody=String(await r.text().catch(()=>'')).slice(0,8000);
+      if(/no available auth profile|all (?:auth )?profiles|all profiles.*(?:cooldown|unusable)|(?:billing|insufficient.?credit|quota).*(?:exhaust|limit|exceed)|(?:auth|provider).*(?:quota|cooldown)/i.test(errorBody))
+        throw issue('CLAUDE_CUENTAS_AGOTADAS',429);
+    }
+    throw classify(r.status);
+  }
   const raw=await r.text();
   if(raw.length>500000)throw issue('CLAUDE_RESPUESTA_GRANDE',502);
   let x;
@@ -68,7 +78,7 @@ export async function consultarClaude(texto,{convId='',fetchFn=fetch,timeoutMs=1
   if(!m||!String(m.content||'').trim())throw issue('CLAUDE_RESPUESTA_VACIA',502);
   if((x.modelo_usado||x.model)&&String(x.modelo_usado||x.model).includes('opus'))
     throw issue('CLAUDE_MODELO_NO_PERMITIDO',502);
-  return {texto:clean(m.content).length===String(m.content).length ? String(m.content):String(m.content).slice(0,100000),
+  return {texto:String(m.content).slice(0,100000),
     modelo:MODEL,thinking:'max',origen:'openclaw',perfil:'gestionado_por_gateway'};
 }
 export function esCuotaClaude(code){
