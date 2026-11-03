@@ -51,7 +51,8 @@ async function asegurarSitio(site) {
   const { page } = entry;
   if (page.isClosed()) { contextos.delete(site); return asegurarSitio(site); }
 
-  await page.goto(cfg.url, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+  try { await page.goto(cfg.url, { waitUntil:'domcontentloaded', timeout:45000 }); }
+  catch { throw Object.assign(new Error('WEB_SITIO_NO_RESPONDE'),{code:'WEB_SITIO_NO_RESPONDE'}); }
   await pasarAgeGate(page, cfg); // Verificación oficial requerida; no saltarla.
   if (!(await necesitaLogin(page, cfg))) { entry.cuenta = cuentaActual(); return entry; }
 
@@ -84,7 +85,11 @@ export async function nuevaPagina(site, convId) {
   const cfg = SITES[site];
   await esperarSlot(site);
   const page = await ctx.newPage();
-  await page.goto(cfg.url, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+  try { await page.goto(cfg.url, { waitUntil:'domcontentloaded', timeout:45000 }); }
+  catch {
+    await page.close().catch(() => {});
+    throw Object.assign(new Error('WEB_SITIO_NO_RESPONDE'),{code:'WEB_SITIO_NO_RESPONDE'});
+  }
   await pasarAgeGate(page, cfg); // Verificación oficial requerida; no saltarla.
   // "New Chat" para que el hilo no se mezcle con el anterior
   for (const sel of cfg.nuevo_chat || []) {
