@@ -210,6 +210,18 @@ export function opcionesModeloVentana(ventana, cap, proveedor = {}, { web = vent
 }
 const nombreDe = (lista, id) => (lista.find((x) => x[0] === id) || [id, id])[1];
 const esWeb = id => typeof id === "string" && (id.startsWith("web-") || id === "swecode-consulta");
+// La disponibilidad del CLI es distinta de su compatibilidad con un modelo.
+// Claude Code puede estar instalado aunque su pasarela solo acepte NVIDIA.
+// Al elegir el agente, ajustar el modelo TOOL al ID que anuncia el Harness,
+// sin sustituir nunca el modelo que RESPONDE ni inventar disponibilidad.
+export function modeloToolCompatible(cap, agente, actual) {
+  const admitidos = cap?.agentes?.[agente]?.modelos;
+  if (!Array.isArray(admitidos) || !admitidos.length || admitidos.includes(actual)) return actual;
+  const registrados = admitidos.filter(id => MODELOS_SWE.some(m => m[0] === id));
+  const disponibles = registrados.filter(id => estadoOpcion(cap, "modelo", id).ok);
+  return disponibles[0] || registrados[0] || actual; // validarSeleccion decide si se puede ejecutar
+}
+
 export function validarSeleccion(sel, cap) {
   if (!requiereHarness(sel)) return { ok: true, problemas: [] };
   const problemas = [], plano = (m) => String(m).replace(/\s*\(([^()]*)\)/g, ": $1").replace(/[()]/g, ""), mal = (etq, r, id = "") => { if (!r.ok && !(esWeb(id) && r.estado === "SIN_VERIFICAR" && r.elegible)) problemas.push(etq + ": " + ETIQUETA_ESTADO[r.estado] + (r.motivo ? ", " + plano(r.motivo) : "")); };
