@@ -117,9 +117,13 @@ const ident = (v, defecto) => { const t = String(v == null ? "" : v).replace(/[^
 export function nuevoTaskId() { return "yaiwes-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 export function armarTarea({ sel, mensaje, sesion, proyecto, task_id }) {
   const s = normSeleccion(sel, SEL_DEFECTO), lm = s.workflow === "liquid_mirror";
+  const esFreeWeb = s.workflow === "individual" && (s.modelo_responde.startsWith("web-") || s.modelo_responde === "swecode-consulta");
+  // En SWE CODE free los campos heredados no deben inyectar Liquid/HF;
+  // en workflow individual son metadatos (solo responde + ejecuta).
+  const soloWeb = esFreeWeb ? s.modelo_responde : null;
   return { task_id: task_id || nuevoTaskId(), origen: "yaiwes", workflow: s.workflow, mensaje: String(mensaje == null ? "" : mensaje),
-    modelo_responde: s.modelo_responde, modelo_lector: LIQUID, modelo_tool: lm ? LIQUID : s.modelo_tool, modelo_revisor: REVISOR,
-    agente_responde: s.agente_responde, agente_tool: s.agente_tool, agente_verificador: VERIFICADOR,
+    modelo_responde: s.modelo_responde, modelo_lector: soloWeb || LIQUID, modelo_tool: lm ? LIQUID : s.modelo_tool, modelo_revisor: soloWeb || REVISOR,
+    agente_responde: s.agente_responde, agente_tool: s.agente_tool, agente_verificador: esFreeWeb ? s.agente_tool : VERIFICADOR,
     modo_agentico: s.modo_agentico, aprobacion: false,  // la aprobacion NUNCA sale del cliente: la da el operador por /chat/swe/aprobar
     sesion: ident(sesion, ""), proyecto: ident(proyecto, "yaiwes") };
 }
