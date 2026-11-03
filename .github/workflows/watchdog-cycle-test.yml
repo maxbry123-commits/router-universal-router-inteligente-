@@ -1,0 +1,58 @@
+name: Watchdog cycle test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "chat-router/Loop cola wachdog/Loop/tests/test_watchdog_cycle.py"
+      - "chat-router/Loop cola wachdog/wachdog/nct_addons/watchdog48/core.py"
+      - "chat-router/Loop cola wachdog/state/input.txt"
+      - ".github/workflows/watchdog-cycle-test.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  watchdog-cycle-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ejecutar ciclo Watchdog48
+        id: test
+        shell: bash
+        run: |
+          set +e
+          TEST_OUTPUT=$(cd "chat-router/Loop cola wachdog/Loop" && python3 -m unittest discover -s tests -p "test_watchdog_cycle.py" -v 2>&1)
+          TEST_RC=$?
+          set -e
+          INPUT_SHA=$(sha256sum "chat-router/Loop cola wachdog/state/input.txt" | cut -d' ' -f1)
+          export TEST_OUTPUT TEST_RC INPUT_SHA GITHUB_SHA
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          rc = int(os.environ["TEST_RC"])
+          report = {
+              "folio": "WDT-PING-001",
+              "test": "test_ping_cycle_create_heartbeat_tick_control_cancel",
+              "status": "PASS" if rc == 0 else "FAIL",
+              "exit_code": rc,
+              "input_sha256": os.environ["INPUT_SHA"],
+              "source_sha": os.environ["GITHUB_SHA"],
+              "output": os.environ["TEST_OUTPUT"],
+          }
+          path = Path("chat-router/Loop cola wachdog/state/watchdog_cycle_test_report.json")
+          path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          PY
+          git config user.name "YAIWES CI"
+          git config user.email "yaiwes-ci@users.noreply.github.com"
+          git add "chat-router/Loop cola wachdog/state/watchdog_cycle_test_report.json"
+          if git diff --cached --quiet; then
+            echo "No report changes to commit"
+          else
+            git commit -m "test: registra evidencia watchdog cycle [skip ci]"
+            git push
+          fi
+          exit "$TEST_RC"
