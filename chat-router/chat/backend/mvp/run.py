@@ -56,9 +56,13 @@ def _parar_bridge():
         proc.wait(timeout=3)
 
 
-def _iniciar_bridge():
+def _iniciar_bridge(*, arranque=False):
     """Bridge EXISTENTE en el MISMO Space, no otro servicio externo ni nueva raiz."""
     global _BRIDGE
+    # El boot externo tiene prioridad en el primer arranque, evita EADDRINUSE.
+    # El watchdog puede recuperar el puerto solo si sigue caido después.
+    if arranque and _bridge_externo():
+        return True
     if _BRIDGE and _BRIDGE.poll() is None:
         return True
     # Si el boot externo administra 7870 y escucha, NO lanzar un segundo Node.
@@ -230,7 +234,7 @@ def main():
     global ARRANQUE
     ARRANQUE = _head()
     print("MVP commit: " + (ARRANQUE or "desconocido"), flush=True)
-    _iniciar_bridge()
+    _iniciar_bridge(arranque=True)
     _instalar_agentes_fondo()
     _iniciar_hilo()
     import uvicorn
