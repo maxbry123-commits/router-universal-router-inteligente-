@@ -560,7 +560,8 @@ def _ejecutar_agente_con_prompt(agente, tarea_id, modelo, objetivo, contexto, pe
         if not reglas or "[CREACIÓN DE CÓDIGO]" not in reglas:
             raise ValueError("SYSTEM_PROMPT_FICHA_INCOMPLETA")
         anterior = contexto if isinstance(contexto, str) else json.dumps(contexto, ensure_ascii=False, default=str)
-        contexto = "[SYSTEM PROMPT DEL ROUTER · CORE + BLOQUES 3 Y 4]\\n" + reglas + ("\\n\\n[CONTEXTO DE LA TAREA]\\n" + anterior if anterior else "")
+        salto = chr(10)
+        contexto = salto.join(["[SYSTEM PROMPT DEL ROUTER · CORE + BLOQUES 3 Y 4]", reglas] + (["[CONTEXTO DE LA TAREA]", anterior] if anterior else []))
         from agentes.adaptadores import _comun
         if len(contexto) > _comun.MAX_CONTEXTO:
             raise ValueError("SYSTEM_PROMPT_CONTEXTO_EXCEDE_LIMITE")
