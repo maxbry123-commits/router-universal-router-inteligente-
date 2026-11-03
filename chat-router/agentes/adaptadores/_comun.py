@@ -238,11 +238,19 @@ def endpoint_modelo(modelo_id, agente="", tarea_id=""):
     """Endpoint OpenAI-compatible del modelo. hf -> bridge (RIU_SWE_BRIDGE_URL); groq/nvidia -> proveedor, con la clave del entorno."""
     cfg = validar_modelo(modelo_id)
     prov = cfg["provider"]
-    if prov == "hf":
+    if prov in ("hf", "web"):
+        # Cuentas WEB y HF comparten el bridge EXISTENTE, pero SWEN web
+        # conserva siempre su ID completo y no permite fallback a HF.
         base = (os.environ.get("RIU_AGENTES_LLM_BASE_URL") or os.environ.get("RIU_SWE_BRIDGE_URL") or "http://127.0.0.1:7870").strip().rstrip("/")
         if not base.endswith("/v1"):
             base += "/v1"
-        return {"proveedor": prov, "base_url": base, "modelo": cfg["model"], "api_key": _credencial_bridge()}
+        credencial = _credencial_bridge()
+        if prov == "web" and credencial == "no-requerida":
+            raise ErrorPrevio(error(agente, tarea_id, "AGENTE_NO_CONFIGURADO",
+                                    "falta BRIDGE_TOKEN o RIU_API_KEY para el modelo web"))
+        return {"proveedor": prov, "base_url": base,
+                "modelo": modelo_id if prov == "web" else cfg["model"],
+                "api_key": credencial}
     base = {"groq": "https://api.groq.com/openai/v1", "nvidia": "https://integrate.api.nvidia.com/v1"}[prov]
     clave = _clave(prov.upper() + "_API_KEY")
     if not clave:
