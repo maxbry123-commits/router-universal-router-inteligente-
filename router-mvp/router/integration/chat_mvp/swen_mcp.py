@@ -114,6 +114,38 @@ def _inferencia_y_checkpoint(pid, modelo, mensaje, sesion, timeout, firma):
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
+    if mensaje.strip() == "@swen/ocroute":
+        # Sonda HTTP localhost con bearer del entorno; imprime SOLO status.
+        token = os.getenv("OPENCLAW_GATEWAY_TOKEN") or ""
+        estados = {}
+        for ruta in ("/v1/models","/openclaw/v1/models","/health"):
+            req = urllib.request.Request("http://127.0.0.1:18789"+ruta,
+                                          headers={"Authorization":"Bearer "+token})
+            try:
+                with urllib.request.urlopen(req,timeout=6) as resp:
+                    estados[ruta] = resp.status
+            except urllib.error.HTTPError as exc:
+                estados[ruta] = exc.code
+            except (OSError,TimeoutError):
+                estados[ruta] = 0
+        return {"estado":"terminado","diagnostico":"rutas_gateway",
+                "http":estados,"url_custom_configurado":bool(os.getenv("RIU_OPENCLAW_URL"))}
+    if mensaje.strip() == "@swen/ocdoctor":
+        binary = shutil.which("openclaw") or "/opt/node24/bin/openclaw"
+        if not os.path.isfile(binary):
+            return {"estado":"error","error":"OPENCLAW_BIN_NO_ENCONTRADO"}
+        home = "/tmp/openclaw-home-" + str(os.getuid())
+        try:
+            run = subprocess.run([binary,"config","validate"],cwd="/tmp",capture_output=True,
+                                 text=True,timeout=22,check=False,env={
+                                   **os.environ,"HOME":home,
+                                   "OPENCLAW_STATE_DIR":home+"/.openclaw",
+                                   "OPENCLAW_HOME":home})
+            return {"estado":"terminado","diagnostico":"schema_openclaw",
+                    "config_valida":run.returncode==0,
+                    "codigo_salida":run.returncode}
+        except (OSError,subprocess.TimeoutExpired):
+            return {"estado":"error","error":"OPENCLAW_DOCTOR_NO_DISPONIBLE"}
     if mensaje.strip() == "@swen/occonfig":
         # Diagnóstico seguro del Gateway: sólo booleanos de la configuración,
         # nunca claves, tokens, perfiles ni datos personales.
