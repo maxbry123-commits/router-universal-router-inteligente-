@@ -1,21 +1,37 @@
 {
   "modo": "m10_agenda",
-  "updated_at": "2025-03-08T00:00:00Z",
   "tasks": [
     {
       "folio": "WDT-PING-001",
       "source": "ping watchdog cycle test",
-      "input_sha256": "PENDING",
+      "input_file": "chat-router/Loop cola wachdog/state/input.txt",
+      "input_sha256": "PENDING_CI",
       "priority": "P0",
       "dependencies": [],
       "queue": "watchdog-cycle-test",
       "watchdog": true,
       "status": "IN_PROGRESS",
-      "fragments": ["ping", "watchdog", "cycle test"],
+      "fragments": [
+        {"fragment": "ping", "task": "WDT-PING-001"},
+        {"fragment": "watchdog", "task": "WDT-PING-001"},
+        {"fragment": "cycle test", "task": "WDT-PING-001"}
+      ],
+      "artifacts": [
+        "chat-router/Loop cola wachdog/Loop/tests/test_watchdog_cycle.py",
+        ".github/workflows/watchdog-cycle-test.yml"
+      ],
       "evidence": [
         {
           "action": "github_leer",
           "result": "Watchdog48 localizado; contrato create/tick/heartbeat/control confirmado"
+        },
+        {
+          "action": "github_escribir",
+          "result": "test real creado en commit aa5e0e5410"
+        },
+        {
+          "action": "github_escribir",
+          "result": "workflow de validación creado en commit 6cbaa913d8"
         }
       ]
     }
