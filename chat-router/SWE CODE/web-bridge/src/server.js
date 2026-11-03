@@ -449,6 +449,9 @@ app.post('/v1/chat/completions', async (req, res) => {
     // Los demás modelos conservan exactamente sus plazos originales.
     const plazoModelo = model === 'web-claude-sonnet' ? Math.max(DEADLINE_MS, 320000)
       : model === 'swecode-consulta' || model === 'swecode-plan' ? Math.max(DEADLINE_MS, 415000)
+      // Primera apertura Chromium + restauración de sesión + generación:
+      // el plazo global de 100 s anterior cortaba incluso antes de leer respuesta.
+      : model.startsWith('web-') ? Math.max(DEADLINE_MS, 250000)
       : esLocal(model) ? HF_LOCAL_DEADLINE_MS : DEADLINE_MS;
     let tareaId = req.body.tarea_id != null ? req.body.tarea_id : req.headers['x-tarea-id'];
     if ((tareaId == null || tareaId === '') && explicito && conv_id != null && conv_id !== '') tareaId = tareaDerivada(conv_id, model, modo, mensajesM, propietarioDe(req));
