@@ -265,6 +265,11 @@ def _modelos(sonda, sonda_hf=None):
         if prov == "hf":
             hf = hf or _modelo_hf(sonda_hf, sonda is not None)  # una sola comprobacion para los cuatro modelos locales
             e = dict(hf)
+        elif prov == "web":
+            # Una cuenta WEB no tiene GET /models tipo API. La sesion se valida
+            # al enviar la tarea; nunca fingir disponibilidad por catalogo estatico.
+            e = _no("Modelo web registrado; sesión de suscripción sin verificar. Se comprueba al ejecutar.",
+                    "SIN VERIFICAR", "web_sesion_pendiente", intentable=True)
         else:
             clave = _comun._clave(prov.upper() + "_API_KEY")
             if not clave:
