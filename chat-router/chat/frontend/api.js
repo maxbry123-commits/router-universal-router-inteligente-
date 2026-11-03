@@ -300,7 +300,12 @@ export async function api(path, options = {}) {
   let response;
   try {
     const credentials = remoto(headers);
-    response = await fetchT(BASE + path, { method: options.method || "GET", headers, credentials,
+    // Groq/NVIDIA y memoria: en Vercel usar el proxy /plugins y /memoria
+    // configurado en vercel.json. El origen HF directo puede fallar en Android
+    // (4G, CORS, DNS) aunque el Router esté sano. En HF se conserva BASE.
+    const viaProxy = /^\/(?:memoria\/|plugins\/deepseek_harness\/modelos\/v1\/chat\/completions$)/.test(path);
+    const destino = viaProxy ? (PBASE || BASE) : BASE;
+    response = await fetchT(destino + path, { method: options.method || "GET", headers, credentials,
       body: options.body === undefined ? undefined : JSON.stringify(options.body), signal: options.signal }, (path === "/chat/send" || path === "/v1/chat/completions" || path === "/web/v1/chat/completions" || path === "/plugins/deepseek_harness/modelos/v1/chat/completions" || (path.startsWith("/chat/swe/") && path !== "/chat/swe/capacidades")) ? 450000 : path === "/plugins/deepseek_harness/modelos/v1/openai/image" ? 210000 : path === "/plugins/deepseek_harness/modelos/v1/openai/research" ? 100000 : path.includes("/modelos/v1/openai/image/") ? 60000 : path === "/plugins/deepseek_harness/modelos/v1/disponibilidad" ? 30000 : path === "/chat/anclas/imagenes" ? 60000 : 15000);  // /chat/swe/*: cada paso espera a un agente real  // /chat/send (sin harness) espera la respuesta completa
   } catch (error) {
     if (error && error.name === "AbortError" && options.signal && options.signal.aborted) throw new Error("PROCESO_DETENIDO");  // Detener del usuario: no es un fallo de conexion
