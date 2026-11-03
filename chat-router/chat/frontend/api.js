@@ -92,7 +92,7 @@ window.RIU_CANCELAR = async (ses) => {  // Detener: en cola se cancela antes de 
   return true;
 };
 window.RIU_RETOMAR = async (ses) => {
-  const v = procs()[ses]; if (!v) return null; const fin = Date.now() + TOPE_ESPERA; let malos = 0;
+  const v = procs()[ses]; if (!v) return null; const fin = Date.now() + (v.externo ? 120000 : TOPE_ESPERA); let malos = 0;
   while (Date.now() < fin) {
     if (!procs()[ses]) return { error: 'PROCESO_DETENIDO' };  // Detener sobre una tarea retomada: RIU_CANCELAR ya borro el registro y aviso al Router
 
@@ -130,28 +130,35 @@ async function puenteRouter(base, body, qs, headers) {
   const h = { 'Content-Type': 'application/json' };
   const pw = headers['X-Chat-Password'] || clave();
   if (pw) h['X-API-Key'] = pw;
+  const externoApi = accion === 'chat' && /^(groq|nvidia)\//.test(String(payload.model || payload.modelo || payload.qwen?.modelo || ''));
+  const finExterno = externoApi ? Date.now() + 120000 : Infinity;
   for (let intento = 0; intento < 2; intento++) {
     let r;
     // envio reintentable: request_id fijo => el Router devuelve el mismo proceso_id si el POST anterior si llego (sin duplicar)
-    for (let k = 0; k < 10000; k++) {  // sin tope de espera: el Router puede estar reiniciando; se reintenta con el mismo request_id (no duplica)
-      try { r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, 0); break; }
+    const maxEnvios = externoApi ? 3 : 10000; // Groq/NVIDIA no pueden quedar en bucle infinito
+    for (let k = 0; k < maxEnvios; k++) {
+      if (externoApi && Date.now() >= finExterno) return { status: 504, ok: false, p: { error: 'TIEMPO_LLAMADA_120_S', detalle: 'Sin confirmación de proceso antes de 2 minutos; conserva request_id' } };
+      try { r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, externoApi ? Math.max(1000, Math.min(25000, finExterno - Date.now())) : 0); break; }
       catch (e) {
-        if (k === 9999) throw e;
+        if (k === maxEnvios - 1) throw new Error('GAP: TIEMPO_LLAMADA_120_S · Router sin confirmar el envío: ' + String(e?.message || e));
         liveCheckedAt = 0; await liveRouter(); base = baseDe();
         await new Promise(ok => setTimeout(ok, Math.min(800 * (k + 1), 5000)));
       }
     }
     const env = await r.json().catch(() => ({}));
     if (r.status === 401 || r.status === 403) return { status: r.status, ok: false, p: { error: 'HTTP ' + r.status + ': ' + (env.reason || env.detail || env.error || 'Acceso rechazado') } };
-    if (!r.ok || env.status !== 'ok') return { status: r.ok ? 502 : r.status, ok: false, p: { error: env.reason || env.detail || ('HTTP ' + r.status) } };
+    if (!r.ok || env.status !== 'ok') {
+      if (externoApi && intento === 0 && Date.now() < finExterno - 3000 && [408, 429, 500, 502, 503, 504].includes(r.status)) { await new Promise(ok => setTimeout(ok, 1000)); continue; }
+      return { status: r.ok ? 502 : r.status, ok: false, p: { error: env.reason || env.detail || ('HTTP ' + r.status) } };
+    }
     let p = env.result || {};
     let cortado = false;
     let proceso = p.proceso_id || null;
     if (p.estado === 'procesando' && p.proceso_id) {
-      const deadline = Date.now() + TOPE_ESPERA;
+      const deadline = externoApi ? finExterno : Date.now() + TOPE_ESPERA;
       const t0 = Date.now();
       try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'Pemsando…' } })); } catch (e) {}  // el cubo y la burbuja dicen Pemsando, no cola
-      if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: t0 });
+      if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: t0, externo: externoApi });
       let primera = true;  // primera consulta inmediata, luego cada 250 ms; el tope es 48 h
       let fallosRed = 0;  // fix 5: la red caida ya no se oculta para siempre
       let vaciosEstado = 0; // respuesta temporal sin estado no significa DONE; conservar PID
@@ -159,7 +166,7 @@ async function puenteRouter(base, body, qs, headers) {
         if (Date.now() > deadline) { cortado = true; break; }
         if (!primera) await new Promise(resolve => setTimeout(resolve, 250)); primera = false;
         try {
-          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 8 }) }, 16000);  // long-poll: el Router responde apenas hay resultado/progreso (max 8 s, max 3 a la vez por plugin: host limita 8 llamadas)
+          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 8 }) }, externoApi ? Math.max(1000, Math.min(16000, deadline - Date.now())) : 16000);  // long-poll: el Router responde apenas hay resultado/progreso (max 8 s, max 3 a la vez por plugin: host limita 8 llamadas)
           const envelope = await poll.json().catch(() => ({}));
           if (poll.status === 401 || poll.status === 403) return { status: poll.status, ok: false, p: { error: 'HTTP ' + poll.status + ': ' + (envelope.reason || envelope.detail || envelope.error || 'Acceso rechazado') } };
           const motivo = envelope.reason || envelope.detail || envelope.error || ('HTTP ' + poll.status);
