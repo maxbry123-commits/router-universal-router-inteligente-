@@ -38,14 +38,21 @@ export const SITES = {
     enviar: ['button[aria-label*="end" i]', 'div[role="button"]', 'button[type="submit"]'],
     respuesta: ['.ds-markdown', '.markdown-body', '[class*="markdown"]', '[class*="message"]'],
     stop_gen: ['button[class*="stop" i]'],
-    login_email: ['input[type="email"]', 'input[name="email"]', 'input[placeholder*="mail" i]'],
-    login_pass: ['input[type="password"]', 'input[name="password"]'],
-    login_btn: ['div[role="button"]:has-text("Log in")', 'button:has-text("Log in")', 'button[type="submit"]'],
+    // Calibrado comunidad 2025/2026 (.ds-sign-in-form): el identificador es input[type=text]
+    // autocomplete=username con placeholder "Phone number / email address" (es-ES: "correo").
+    login_email: ['.ds-sign-in-form__main input[autocomplete="username"]', 'input[autocomplete="username"]',
+      'input[type="email"]', 'input[name="email"]', 'input[placeholder*="mail" i]', 'input[placeholder*="correo" i]',
+      'input[placeholder*="phone" i]', 'input[placeholder*="teléfono" i]', '.ds-sign-in-form__main input[type="text"]'],
+    login_pass: ['input[autocomplete="current-password"]', 'input[type="password"]', 'input[name="password"]'],
+    login_btn: ['.ds-sign-in-form__main button.ds-basic-button--primary', 'div[role="button"]:has-text("Log in")', 'button:has-text("Log in")',
+      'div[role="button"]:has-text("Iniciar sesión")', 'button:has-text("Iniciar sesión")', 'button:has-text("登录")', 'button[type="submit"]'],
+    // DeepSeek abre por defecto "código SMS"; pasar a contraseña si existe la pestaña.
+    login_switch_pass: ['div:text-is("Password")', 'div:text-is("Contraseña")', 'div:text-is("密码登录")'],
     // DeepSeek puede mostrar la pantalla de inicio de sesión como modal en /
     // (sin cambiar a /sign_in): una URL / NO prueba cuenta autenticada.
     login_visible: ['a[href*="sign_in"]', 'button:has-text("Log in")',
       'a:has-text("Log in")', 'button:has-text("Sign in")',
-      'a:has-text("Sign in")', 'button:has-text("登录")'],
+      'a:has-text("Sign in")', 'button:has-text("登录")', '.ds-sign-in-form__main', 'button:has-text("Iniciar sesión")'],
     model_selector: [],
     // No hay selector conocido de V4 Flash; únicamente comprobar un indicador REAL.
     // Sin evidencia del modelo, fallar cerrado (no declarar DeepSeek V4 Flash).
@@ -236,18 +243,20 @@ export async function login(page, cfg, email, pass) {
       if (el) { await el.click(); await page.waitForTimeout(800); break; }
     }
   }
-  for (const sel of cfg.login_email) {
-    const el = await page.$(sel);
-    if (el) { await el.fill(email); break; }
-  }
-  for (const sel of cfg.login_pass) {
-    const el = await page.$(sel);
-    if (el) { await el.fill(pass); break; }
-  }
+  // Campo visible (no oculto) y diagnóstico de qué faltó, sin datos personales.
+  const rellenar = async (lista, valor) => {
+    for (const sel of lista || []) {
+      try { const loc = page.locator(sel).first(); if (await loc.isVisible({ timeout: 1500 })) { await loc.fill(valor); return true; } } catch {}
+    }
+    return false;
+  };
+  if (!await rellenar(cfg.login_email, email)) throw Object.assign(new Error('LOGIN_FORM_NO_ENCONTRADO'), { code: 'LOGIN_FORM_NO_ENCONTRADO', campo: 'identificador' });
+  if (!await rellenar(cfg.login_pass, pass)) throw Object.assign(new Error('LOGIN_FORM_NO_ENCONTRADO'), { code: 'LOGIN_FORM_NO_ENCONTRADO', campo: 'clave' });
+  let pulsado = false;
   for (const sel of cfg.login_btn) {
-    const el = await page.$(sel);
-    if (el) { await el.click(); break; }
+    try { const loc = page.locator(sel).first(); if (await loc.isVisible({ timeout: 800 })) { await loc.click(); pulsado = true; break; } } catch {}
   }
+  if (!pulsado) await page.keyboard.press('Enter').catch(() => {});
   await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
   await page.waitForTimeout(1000);
   // Antes daba LOGIN_OK por URL incluso si el formulario seguía en pantalla.

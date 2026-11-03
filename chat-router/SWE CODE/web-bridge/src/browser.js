@@ -53,9 +53,23 @@ export function asegurar(site) {
   return corrida;
 }
 
+// Fallos de sesión que SOLO el titular resuelve: no se reintentan en bucle
+// (evita bloquear cuentas y escalar retos anti-bot). Se enfría N ms y se
+// responde al instante con el mismo motivo; importarSesion() lo limpia.
+const TERMINALES = new Set(['RETO_ANTIBOT', 'LOGIN_RECHAZADO_TODAS_CUENTAS', 'SIN_SESION_EN_PERFIL', 'SIN_CUENTAS_CONFIGURADAS', 'LOGIN_FORM_NO_ENCONTRADO']);
+const ENFRIAR_MS = parseInt(process.env.BRIDGE_SESION_ENFRIAR_MS || '600000', 10);
+const LOGIN_MAX = Math.max(1, parseInt(process.env.BRIDGE_LOGIN_MAX || '3', 10));
+export function limpiarEnfriamiento(site) { ultimoFallo.delete(site); }
+
 async function asegurarSitio(site) {
   const cfg = SITES[site];
   if (!cfg) throw new Error(`sitio desconocido: ${site}`);
+  const previo = ultimoFallo.get(site);
+  if (previo && TERMINALES.has(previo.motivo) && Date.now() - previo.ts < ENFRIAR_MS) {
+    throw Object.assign(new Error('SESSION_EXPIRED: ' + previo.motivo + ' (enfriando; requiere titular)'), {
+      code: 'SESSION_EXPIRED', site, motivo: previo.motivo, terminal: true,
+      reintentar_en_s: Math.ceil((ENFRIAR_MS - (Date.now() - previo.ts)) / 1000) });
+  }
   let entry = contextos.get(site);
   if (!entry) {
     entry = await lanzar(site);
@@ -89,7 +103,7 @@ async function asegurarSitio(site) {
     })();
     if (expirada || !editor) {
       const f = fallo(site, 'SESSION_EXPIRED', 'CLAUDE_WEB_REQUIERE_SESION_AUTORIZADA');
-      f.motivo = (await hayReto(page)) ? 'RETO_ANTIBOT' : 'SIN_SESION_EN_PERFIL';
+      f.motivo = (await hayReto(page)) ? 'RETO_ANTIBOT' : 'SIN_SESION_EN_PERFIL'; f.terminal = true;
       ultimoFallo.set(site, { code: f.code, motivo: f.motivo, ts: Date.now() });
       throw f;
     }
@@ -100,24 +114,31 @@ async function asegurarSitio(site) {
 
   // sesion caida: intenta login con cuenta actual, rota hasta agotar
   const total = cuentaActual().total;
-  for (let i = 0; i < total; i++) {
+  const intentos = Math.min(total, LOGIN_MAX);  // tope N: no quemar las 10 cuentas en cada llamada
+  for (let i = 0; i < intentos; i++) {
     const c = cuentaActual();
     let ok=false;
     try { ok=await login(page, cfg, c.email, clave()); }
-    catch (e) { if (e?.code === 'AGE_VERIFICATION_REQUIRED') throw e; }
+    catch (e) {
+      if (e?.code === 'AGE_VERIFICATION_REQUIRED') throw e;
+      if (e?.code === 'LOGIN_FORM_NO_ENCONTRADO') {  // selectores desactualizados: rotar cuentas no ayuda
+        const r = fallo(site, 'SESSION_EXPIRED', 'WEB_LOGIN_FORM_NO_ENCONTRADO'); r.motivo = (await hayReto(page)) ? 'RETO_ANTIBOT' : 'LOGIN_FORM_NO_ENCONTRADO';
+        r.campo = e.campo; r.terminal = true; ultimoFallo.set(site, { code: r.code, motivo: r.motivo, campo: e.campo, ts: Date.now() }); throw r;
+      }
+    }
     if (ok) { await pasarAgeGate(page, cfg); ultimoFallo.delete(site); entry.cuenta = c; return entry; }
     // Reto anti-bot (captcha/slider): headless no puede resolverlo; rotar cuentas
     // solo quema intentos. Fallar cerrado con causa distinguible.
     if (await hayReto(page)) {
       const r = fallo(site, 'SESSION_EXPIRED', 'WEB_RETO_ANTIBOT_REQUIERE_TITULAR');
-      r.motivo = 'RETO_ANTIBOT'; ultimoFallo.set(site, { code: r.code, motivo: r.motivo, ts: Date.now() });
+      r.motivo = 'RETO_ANTIBOT'; r.terminal = true; ultimoFallo.set(site, { code: r.code, motivo: r.motivo, ts: Date.now() });
       throw r;
     }
     rotar(); // siguiente correo, misma clave
   }
   const e = fallo(site, 'SESSION_EXPIRED', 'SESSION_EXPIRED: todas las cuentas fallaron');
-  e.motivo = total ? 'LOGIN_RECHAZADO_TODAS_CUENTAS' : 'SIN_CUENTAS_CONFIGURADAS';
-  ultimoFallo.set(site, { code: e.code, motivo: e.motivo, ts: Date.now() });
+  e.motivo = total ? 'LOGIN_RECHAZADO_TODAS_CUENTAS' : 'SIN_CUENTAS_CONFIGURADAS'; e.terminal = true; e.intentos = intentos;
+  ultimoFallo.set(site, { code: e.code, motivo: e.motivo, intentos, ts: Date.now() });
   throw e;
 }
 

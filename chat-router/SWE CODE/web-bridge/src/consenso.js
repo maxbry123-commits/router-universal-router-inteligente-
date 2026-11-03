@@ -30,11 +30,14 @@ export async function consenso(pregunta, opts = {}) {
   const validas = [];
   MODELOS.forEach((m, i) => {
     const r = resultados[i];
-    por_modelo[m] = r.status === 'fulfilled' ? r.value : `ERROR: ${r.reason?.message || r.status}`;
+    por_modelo[m] = r.status === 'fulfilled' ? r.value : `ERROR: ${r.reason?.code || ''}${r.reason?.motivo ? ' · ' + r.reason.motivo : ''} ${r.reason?.message || r.status}`.trim();
     if (r.status === 'fulfilled' && r.value) validas.push(r.value);
   });
   if (!validas.length) {
-    const e = new Error('CONSENSO_SIN_RESPUESTAS');
+    // Si todos cayeron por sesión web, propagar SESSION_EXPIRED + motivo (antes salía BRIDGE_ERROR opaco).
+    const sesion = resultados.map(r => r.reason).find(x => x?.code === 'SESSION_EXPIRED');
+    const e = Object.assign(new Error('CONSENSO_SIN_RESPUESTAS'), { code: sesion ? 'SESSION_EXPIRED' : 'CONSENSO_SIN_RESPUESTAS',
+      ...(sesion ? { motivo: sesion.motivo, site: sesion.site, terminal: sesion.terminal } : {}) });
     e.detail = por_modelo;
     throw e;
   }
