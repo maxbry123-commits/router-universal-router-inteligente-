@@ -217,7 +217,8 @@ def _cola():
 def _chat_modelo(modelo: str, prompt: str, sesion: str) -> dict:
     from plugins.puente_chat import plugin as _pc
     return _pc._chat({'model': modelo, 'messages': [{'role': 'user', 'content': prompt}],
-                      'max_tokens': 4096, 'sesion': sesion})
+                      'max_tokens': 4096, 'sesion': sesion,
+                      'workflow_loop': True})  # extension Wordflow SOLO en los turnos del LOOP
 
 
 def _texto_respuesta(r: dict) -> str:
