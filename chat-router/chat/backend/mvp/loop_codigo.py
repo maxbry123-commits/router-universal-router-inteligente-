@@ -48,7 +48,8 @@ def _valida(parte: str, limite: int, hashes: set[str]) -> tuple[bool, str, int]:
         return False, "SEGMENTO_REPETIDO", n
     try:
         arbol = ast.parse(t)
-    except SyntaxError:
+        compile(arbol, "<coda-segmento>", "exec")  # compilar, NUNCA ejecutar
+    except (SyntaxError, ValueError):
         return False, "SINTAXIS_PYTHON_INVALIDA", n
     if not any(isinstance(x, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) for x in arbol.body):
         return False, "FALTAN_DEFINICIONES", n
@@ -165,8 +166,8 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
         progreso(str(sum(len(x.splitlines()) for x in piezas)), "parte %d verificada por AST" % len(piezas))
     codigo = "\n".join(piezas) + "\n"
     try:
-        ast.parse(codigo)
-    except SyntaxError as e:
+        compile(codigo, "<coda-final>", "exec")  # sintaxis completa sin efectos secundarios
+    except (SyntaxError, ValueError) as e:
         raise RuntimeError("CODA_VALIDACION_GLOBAL_FALLO_CHECKPOINT_CONSERVADO") from e
     if len(codigo.splitlines()) != n_lineas:
         raise RuntimeError("CODA_LINEAS_INCORRECTAS_CHECKPOINT_CONSERVADO")
