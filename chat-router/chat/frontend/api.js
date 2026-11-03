@@ -59,7 +59,6 @@ function remoto(headers) {
   if (BASE && clave()) headers[CFG.authHeader || "X-API-Key"] = clave();
   return BASE ? "omit" : "same-origin";
 }
-const L4 = { job: null, url: null };
 // ---- procesos en curso: una recarga NO relanza la tarea; se retoma por su proceso_id (sesion, proceso_id, direccion exacta del Router, hora) ----
 const CP = 'riu_proc_v1';
 const TOPE_ESPERA = Infinity;  // sin limite de tiempo del chat: solo cuenta el del modelo
@@ -250,44 +249,18 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
     thinking_mode !== undefined ? { thinking_mode } : {}, // Think Qwen: control estructurado visible en backend, no solo tokens UI
     qwen ? { qwen: mode_request ? { ...qwen, mode_request } : qwen } : {}   // >>> MODOS <<< tambien dentro de qwen: llega a fichas_qwen haga el merge que haga el puente
   );
-  const esHF = model.startsWith('hf-');
-  let r;
-  if (esHF && L4.url) {
-    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
-    if (!r.ok) { L4.job = L4.url = null; r = null; }
-  }
-  if (!r) r = await puente(base, { model, messages, max_tokens, ...extra }, '', 'POST', headers);
-  if (r.status === 202 && r.p.job_id) {
-    L4.job = r.p.job_id; L4.url = null;
-    window.__riuJob = r.p.job_id;
-    if (avisar) avisar('Encendiendo modelo (aprox. 1 a 4 min)...');
-    let listo = false;
-    for (let i = 0; i < 80 && !listo; i++) {
-      await new Promise((ok) => setTimeout(ok, 5000));
-      const e = await puente(base, null, '?accion=estado&job=' + encodeURIComponent(r.p.job_id) + '&url=' + encodeURIComponent(r.p.url || ''), 'GET', headers);
-      if (e.ok && e.p.listo) listo = true;
-      else if (e.ok && ['ERROR', 'CANCELED', 'COMPLETED', 'DELETED'].includes(e.p.etapa)) { L4.job = null; throw new Error('El modelo se apago: ' + e.p.etapa); }
-    }
-    if (!listo) throw new Error('El modelo no encendio a tiempo');
-    L4.url = r.p.url;
-    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
-  }
+  // Ruta vigente: Router MVP -> Harness -> SWE CODE -> servidores locales S1/S2/S3.
+  const r = await puente(base, { model, messages, max_tokens, ...extra }, '', 'POST', headers);
   if (!r.ok) throw new Error(r.p.error || r.p.reason || r.p.detail || ('HTTP ' + r.status));
   if (r.p && r.p.error) throw new Error(String(r.p.error));  // GAP del backend no se presenta como respuesta OK
   const prueba = Array.isArray(r.p.traza) && r.p.traza.length ? '\n\n— Prueba de ejecución —\n' + r.p.traza.filter((t) => t.modelo !== 'goals').map((t) => t.nodo + ' · ' + String(t.modelo).replace('ficha-', '') + ' · ' + (t.rol || '') + (t.ok ? ' ✔' : ' ✘')).join('\n') : '';
   // el Router MVP manda herramientas_usadas (nombres) y avisos de modo/modelo (aviso_modo, aviso_modelo)
-  return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || ''), modelo_solicitado: r.p.modelo_solicitado, modelo_respuesta: r.p.modelo_respuesta, finish_reason: r.p.finish_reason || r.p.choices?.[0]?.finish_reason || null, traza: r.p.traza, job_id: L4.job, tools: r.p.herramientas ? r.p.herramientas.map((x) => ({ nombre: x.herramienta, ok: !!x.ok })) : (r.p.herramientas_usadas || []), aviso: r.p.aviso_modo || r.p.aviso_modelo || '', fast_lane: !!r.p.fast_lane, fast_consult: !!r.p.fast_consult, execution_path: r.p.execution_path || "HEAVY", ms: Number(r.p.ms || 0) };
+  return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || ''), modelo_solicitado: r.p.modelo_solicitado, modelo_respuesta: r.p.modelo_respuesta, finish_reason: r.p.finish_reason || r.p.choices?.[0]?.finish_reason || null, traza: r.p.traza, job_id: null, tools: r.p.herramientas ? r.p.herramientas.map((x) => ({ nombre: x.herramienta, ok: !!x.ok })) : (r.p.herramientas_usadas || []), aviso: r.p.aviso_modo || r.p.aviso_modelo || '', fast_lane: !!r.p.fast_lane, fast_consult: !!r.p.fast_consult, execution_path: r.p.execution_path || "HEAVY", ms: Number(r.p.ms || 0) };
 }
 window.RIU_HARNESS = harness;
 export async function apagarRespaldo() {
-  const base = (window.RIU_CONFIG || {}).harnessUrl;
-  // apaga TODOS los L4 de respaldo (el Router solo apaga los suyos), haya o no un job conocido
-  const headers = { 'Content-Type': 'application/json' };
-  const pw = clave();
-  if (pw) headers['X-Chat-Password'] = pw;
-  const r = await puente(base, null, '?accion=apagar_todo', 'POST', headers);
-  if (r.ok) { L4.job = L4.url = null; window.__riuJob = null; }
-  return r;
+  // Compatibilidad: no manipular la infraestructura SWE CODE S1/S2/S3.
+  return { status: 410, ok: false, p: { error: 'HF_JOBS_RUTA_RETIRADA', detalle: 'Los modelos locales usan SWE CODE S1/S2/S3.' } };
 }
 window.RIU_APAGAR = apagarRespaldo;
 export async function api(path, options = {}) {
