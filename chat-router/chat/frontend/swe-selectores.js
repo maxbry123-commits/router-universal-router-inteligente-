@@ -6,7 +6,7 @@
 // Cada ventana solo aporta lo suyo: su lista de MODELO QUE RESPONDE (swe-directo.js opcionesModeloVentana), su nota de conexion y su titulo.
 import { api, plugin } from "./api.js";
 import { systemPromptOnCache, cargarSystemPromptOn, alternarSystemPromptOn } from "./swe-systemprompt.js";
-import { camposFijos, modeloParaLista, modeloGuardado, SWE_LISTAS, MODELOS_SWE, MODELOS_WEB, MODOS_TRABAJO, AGENTES_SWE, WORKFLOWS_SWE, LIQUID_MIRROR, leerSeleccion, guardarSeleccion, requiereHarness, cargarCapacidades, olvidarCapacidades, normalizarCapacidades, estadoOpcion, idCatalogo, agruparOpciones, lineaNoInstalados, lineaSinVerificar, lineaOtros, opcionesModeloVentana, ETIQUETA_ESTADO, VENTANAS_CENTRAL } from "./swe-directo.js";
+import { camposFijos, modeloParaLista, modeloGuardado, SWE_LISTAS, MODELOS_SWE, MODELOS_WEB, MODOS_TRABAJO, AGENTES_SWE, WORKFLOWS_SWE, LIQUID_MIRROR, leerSeleccion, guardarSeleccion, requiereHarness, cargarCapacidades, olvidarCapacidades, normalizarCapacidades, estadoOpcion, idCatalogo, modeloToolCompatible, agruparOpciones, lineaNoInstalados, lineaSinVerificar, lineaOtros, opcionesModeloVentana, ETIQUETA_ESTADO, VENTANAS_CENTRAL } from "./swe-directo.js";
 const K = "riu_swe_modelo";
 const leer = () => { try { return JSON.parse(localStorage.getItem(K) || "{}") || {}; } catch (e) { return {}; } };
 const refrescar = () => { try { window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar(); } catch (e) {} };
@@ -148,7 +148,9 @@ function agrupar(k, sel, w) {
     const g = { ok: ops.filter((o) => o.ok).map((o) => ({ id: o.id, etq: o.estado === "DISPONIBLE" ? o.nombre : `${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}`, estado: o.estado, motivo: o.motivo, elegible: o.elegible })), noInstalado: [], incompatible: [], sinVerificar: [], otros: ops.filter((o) => !o.ok).map((o) => ({ id: o.id, etq: o.nombre, estado: o.estado, motivo: o.motivo, elegible: o.elegible })) };
     return { g, ops };
   }
-  const modelo = k === "agente_responde" ? sel.modelo_responde : k === "agente_tool" ? (sel.workflow === "liquid_mirror" ? "hf/lfm2.5-350m" : sel.modelo_tool) : undefined;
+  // Mostrar TODOS los agentes por su instalación real, no por el modelo TOOL guardado.
+  // Si Claude Code usa otro modelo, la selección elegirá uno compatible de su pasarela.
+  const modelo = k === "agente_responde" ? sel.modelo_responde : undefined;
   return { g: agruparOpciones(CAP, tipo, lista, modelo), tipo };
 }
 function pintarControles() {
@@ -181,7 +183,7 @@ function pintarControles() {
         problemas.push("MODELO QUE RESPONDE: selecciona un modelo del proveedor");
       }
       s.disabled = false;
-      const st = k.startsWith("modelo") ? (ops || []).find((o) => o.id === valor) || estadoOpcion(CAP, "modelo", valor) : estadoOpcion(CAP, tipo, valor, k === "agente_responde" ? sel.modelo_responde : sel.modelo_tool);
+      const st = k.startsWith("modelo") ? (ops || []).find((o) => o.id === valor) || estadoOpcion(CAP, "modelo", valor) : estadoOpcion(CAP, tipo, valor, k === "agente_responde" ? sel.modelo_responde : undefined);
       const malo = !st.ok || st.estado === "SIN_VERIFICAR";
       s.classList.toggle("no-ok", !st.ok); s.title = malo ? ROTULOS[k] + ": " + ETIQUETA_ESTADO[st.estado] + (st.motivo ? " — " + st.motivo : "") : "";
       const importa = k === "modelo_responde" || (k === "modelo_tool" ? sel.modo_agentico : requiereHarness(sel));  // un agente/modelo de tool solo BLOQUEA si hay modo agentico o workflow; igual se muestra su error
@@ -283,6 +285,13 @@ document.addEventListener("change", (e) => {
   const s = e.target.closest && e.target.closest("select[data-swe-ctl]"); if (!s) return;
   const k = s.dataset.sweCtl;
   guardarSeleccion({ [k]: s.value });
+  // Claude Code y otros adaptadores con modelos restringidos: el Harness
+  // anuncia qué modelo acepta (p. ej. NVIDIA MiniMax). Conservar «Responde»
+  // y cambiar SOLO modelo_tool, sin marcar como instalado a un agente ausente.
+  if (k === "agente_tool" && VENTANA !== "swen-code-free") {
+    const actual = leerSeleccion(), compatible = modeloToolCompatible(CAP, actual.agente_tool, actual.modelo_tool);
+    if (compatible !== actual.modelo_tool) guardarSeleccion({ modelo_tool: compatible });
+  }
   if (k === "modelo_responde" && VENTANA) {  // el desplegable ES la lista de modelos de la ventana: lo mostrado es lo que se envia
     fijarModeloVentana(VENTANA, s.value);
     try { window.RIU_SELECTORES && window.RIU_SELECTORES.encender(ID_SELECTOR[VENTANA]); } catch (err) {}  // elegir un modelo enciende ESE selector: el mensaje sale a este modelo y no a otra ficha activa
