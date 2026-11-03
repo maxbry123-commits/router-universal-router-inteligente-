@@ -92,9 +92,14 @@ const delRouter = async (api, sesion) => {
 export const recuperar = async (c, burbuja, api) => {
   const vistos = new Set(), l = [];
   for (const m of [...(await idbLeer(c.sesion)), ...cache(c.sesion), ...(memo[c.sesion] || [])]) { const k = m.ts + m.rol + m.texto; if (!vistos.has(k)) { vistos.add(k); l.push(m); } }
-  const rem = api ? await delRouter(api, c.sesion) : null, ya = new Set(l.map((m) => m.rol + "\u0000" + String(m.texto).trim()));
+  const rem = api ? await delRouter(api, c.sesion) : null;
+  // Si el usuario envía un mensaje mientras respondía /memoria, no repintar ni
+  // sobreescribir el historial vivo con el snapshot anterior.
+  if (c.ocupado) return { total: cargarHistorial(c.sesion).length, router: 0, routerOk: rem !== null };
+  const llave = (m) => String(m.ts || 0) + "\u0000" + m.rol + "\u0000" + String(m.texto || "");
+  const ya = new Set(l.map(llave));
   let nuevos = 0;
-  for (const m of rem || []) if (m.texto && !ya.has(m.rol + "\u0000" + m.texto)) { l.push(m); nuevos++; }
+  for (const m of rem || []) if (m.texto && !ya.has(llave(m))) { l.push(m); ya.add(llave(m)); nuevos++; }
   l.sort((a, b) => (a.ts || 0) - (b.ts || 0));
   memo[c.sesion] = l; if (l.length) guardar(c.sesion);
   c.hist.replaceChildren(...l.map((m) => m.rol === "user" ? burbuja(m.texto, "user") : m.rol === "err" ? burbuja(m.texto, "error") : burbuja(m.texto)));
