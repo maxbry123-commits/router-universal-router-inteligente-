@@ -112,6 +112,19 @@ def _inferencia_y_checkpoint(pid, modelo, mensaje, sesion, timeout, firma):
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
+    if mensaje.strip() == "@swen/diag":
+        req = urllib.request.Request("http://127.0.0.1:7870/v1/web/diagnostico",
+                                     headers={"X-API-Key": _clave()})
+        try:
+            with urllib.request.urlopen(req, timeout=14) as response:
+                d = json.load(response)
+            return {"estado":"terminado","diagnostico":"web_auth_editor",
+                    "indicadores":d.get("indicadores",{}),
+                    "nota":"Diagnóstico de elementos visibles, no acceso a credenciales."}
+        except urllib.error.HTTPError as exc:
+            return {"estado":"error","error":"SWEN_DIAG_HTTP_"+str(exc.code)}
+        except (OSError,ValueError,TimeoutError):
+            return {"estado":"error","error":"SWEN_DIAG_NO_DISPONIBLE"}
     if mensaje.strip() == "@swen/claude":
         req = urllib.request.Request("http://127.0.0.1:7870/v1/claude/estado",
                                      headers={"X-API-Key": _clave()})
