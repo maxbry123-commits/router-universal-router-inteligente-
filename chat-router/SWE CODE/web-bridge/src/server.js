@@ -25,6 +25,7 @@ import { retomarLocal, retomarPorId, TIPO as TIPO_LOCAL } from './retomar_local.
 import { idValido as tareaIdValido } from './checkpoint_hf.js';
 import { conFormato } from './formato.js';
 import { promptHerramientasWeb, extraerLlamadasWeb } from './web_tools.js';
+import { estadoContexto, registrarContexto, transferirContexto, tarjetaHandoff } from './contexto_handoff.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
 import { vigilarActualizacion } from './autoactualizar.js';
 import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco, diagnosticoBanco, resumenBanco, catalogoProveedores, anadirProveedor } from './clavesbanco.js';
@@ -69,6 +70,21 @@ app.use((req, res, next) => {
   if (req.path === '/health') return next();
   if (!TOKEN && !clavesAcceso().length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (RIU_API_KEY, o BRIDGE_TOKEN)' } });
   return conToken(req) || conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key o Authorization: Bearer) o el token del bridge' } });
+});
+// Handoff: rutas autenticadas para recuperación entre selector/modelos/conv_id.
+// Sin clave de acceso no se consulta ni se transfiere el contexto de otro usuario.
+app.get('/v1/contexto/:id', (req,res) => {
+  const r=estadoContexto(req.params.id,propietarioDe(req));
+  return r ? res.json({ok:true,contexto:r}) :
+    res.status(404).json({ok:false,error:{code:'CONTEXTO_NO_ENCONTRADO'}});
+});
+app.post('/v1/contexto/transferir', (req,res) => {
+  const a=req.body?.origen,b=req.body?.destino;
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(String(a||'')) || !/^[A-Za-z0-9_-]{1,80}$/.test(String(b||'')) || a===b)
+    return res.status(400).json({ok:false,error:{code:'CONTEXTO_ID_INVALIDO'}});
+  const ok=transferirContexto(a,b,propietarioDe(req));
+  return ok ? res.json({ok:true,origen:a,destino:b}) :
+    res.status(409).json({ok:false,error:{code:'CONTEXTO_NO_EXISTE_O_DESTINO_OCUPADO'}});
 });
 // panel de claves del chat (el proxy del Space reenvia /web/* aqui): ademas exige la clave de acceso del chat en x-api-key. La ruta se normaliza (minusculas, sin barras
 // dobles ni finales, sin /./) para que ninguna variante salte la puerta, aunque el enrutado ya sea estricto
@@ -370,8 +386,17 @@ app.post('/v1/chat/completions', async (req, res) => {
       .join('\n\n');
     if (docs) prompt = `${prompt}\n\n${docs}`;
     if (prompt.length > MAX_PROMPT) return res.status(413).json({ error: { code: 'PROMPT_DEMASIADO_GRANDE', max: MAX_PROMPT } });
-    const mensajesM = docs ? [...messages, { role: 'user', content: docs }] : messages;
-    const promptFicha = conSystemPromptTexto(prompt, process.env, { forzarOn: forzarPromptOpenClaw });  // idem conPreambulo, pero para los modelos web-*/consenso (prompt de texto plano, no mensajes)
+    let mensajesM = docs ? [...messages, { role: 'user', content: docs }] : messages;
+    // Handoff exacto desde el checkpoint anterior. El modelo NO usa una IA local para resumirlo.
+    const origenContexto = req.body.contexto_de;
+    if (origenContexto != null && (typeof origenContexto !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/.test(origenContexto)))
+      return res.status(400).json({ error:{ code:'CONTEXTO_ID_INVALIDO' } });
+    if (origenContexto && conv_id && origenContexto !== conv_id)
+      transferirContexto(origenContexto, String(conv_id), propietarioDe(req));
+    const handoff = tarjetaHandoff({ conv_id:conv_id == null ? null : String(conv_id),
+      origen:origenContexto, propietario:propietarioDe(req), modelo:model });
+    if (handoff) mensajesM = [{role:'system',content:handoff},...mensajesM];
+    const promptFicha = conSystemPromptTexto(handoff ? handoff + '\n\n' + prompt : prompt, process.env, { forzarOn: forzarPromptOpenClaw });  // idem conPreambulo, pero para los modelos web-*/consenso (prompt de texto plano, no mensajes)
 
     let modeloWeb, modoUso = modo || 'consulta', salida, usado = model;
     if (model.startsWith('web-')) {
@@ -470,6 +495,15 @@ app.post('/v1/chat/completions', async (req, res) => {
     let archivo = null;
     if (modoUso === 'asesoria') { try { archivo = guardarAsesoria(proyecto || conv_id, { texto: salida, via: via || viaPrimaria || 'web', modelo: usado }); } catch { /* guardar es mejor esfuerzo */ } }
     if (proyecto || conv_id) guardarTurno(proyecto || conv_id, ultimo, salida, usado).catch(() => {});  // misma memoria del chat Yaiwes (mejor esfuerzo)
+    // Registro de continuidad en disco existente, sin una llamada LLM de "resumen".
+    // Una tool sin resultado conserva WAIT_TOOLS y no se vuelve a ejecutar automáticamente.
+    if (conv_id) try {
+      registrarContexto({ conv_id:String(conv_id), propietario:propietarioDe(req), modelo:usado,
+        modo:modoUso, proyecto, entrada:ultimo, salida,
+        tool_calls:llamadas, resultado_tools:mensajesIn.filter(m=>m.role==='tool').map(m=>({
+          id:String(m.tool_call_id||'').slice(0,100), resultado:String(m.content||'').slice(0,4000) })),
+        estado: fin==='stop'?'RESPUESTA_COMPLETA':'CONTINUAR' });
+    } catch { /* fallo de disco no puede inventar un handoff; el historial principal permanece */ }
     // ejecutor_tools: 'openclaw' = las tools las ejecuta OpenClaw (se devuelven tal cual y la seccion queda WAIT_TOOLS); 'swe' (defecto) no cambia nada
     const ejecutor = normalizarEjecutor(req.body.ejecutor_tools), esOc = ejecutor === 'openclaw' && conv_id != null;
     if (esOc) {
