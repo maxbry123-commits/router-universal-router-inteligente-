@@ -186,7 +186,11 @@ def _agente_claude(sondas):
         return _no("claude-code instalado pero sin configurar: faltan RIU_CLAUDE_PASARELA_URL y/o RIU_CLAUDE_PASARELA_MODELO (pasarela Anthropic->NVIDIA)", "NO CONFIGURADO", "falta_pasarela")
     if "nvidia/" + modelo not in MODELOS:
         return _no("claude-code: el modelo de la pasarela no esta en el catalogo NVIDIA de modelos.py (RIU_CLAUDE_PASARELA_MODELO)", "NO COMPATIBLE", "modelo_fuera_del_catalogo")
-    return _ok(modelos=["nvidia/" + modelo])  # Claude Code solo usa el modelo NVIDIA que sirve la pasarela
+    if not _url_local_o_https(url):
+        return _no("claude-code: URL de pasarela invalida (solo HTTPS o HTTP loopback)", "NO CONFIGURADO", "url_invalida")
+    if not sondas["gateway"](url):
+        return _no("claude-code: pasarela Anthropic->NVIDIA no responde, no se certifica el agente", "SIN VERIFICAR", "pasarela_sin_respuesta")
+    return _ok(modelos=["nvidia/" + modelo])  # Pasarela alcanzable y CLI instalada (no equivale a ejecucion del modelo)
 
 
 def _agente_openclaw(sondas):
