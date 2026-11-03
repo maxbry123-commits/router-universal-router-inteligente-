@@ -164,6 +164,27 @@ async function conFallback(modelo, prompt, opts) {
   throw ultimo;
 }
 
+// Diagnostico local SOLO lectura del Router ya existente en el mismo Space.
+// La clave nunca cruza el loopback ni se presenta en /web/health.
+async function estadoAutoRouter() {
+  const clave = String(process.env.RIU_API_KEY || process.env.RIU_PUBLIC_CHAT_KEY || '').trim();
+  if (!clave) return { conectable: false };
+  const puerto = String(process.env.ROUTER_PORT || '7861');
+  if (!/^[0-9]{2,5}$/.test(puerto) || Number(puerto) > 65535) return { conectable: false };
+  try {
+    const r = await fetch('http://127.0.0.1:' + puerto + '/health', {
+      headers: { 'x-api-key': clave },
+      signal: AbortSignal.timeout(2400), redirect: 'error'
+    });
+    if (!r.ok) return { conectable: false };
+    const d = await r.json();
+    const sha = String(d.commit || '');
+    return { conectable: true,
+      codigo_en_ejecucion: /^[0-9a-f]{10,40}$/i.test(sha) ? sha.slice(0,10) : null,
+      tareas_activas: Number.isInteger(d.tareas_en_curso) && d.tareas_en_curso > 0 };
+  } catch { return { conectable: false }; }
+}
+
 app.get('/health', async (req, res) => {
   let poolInfo;
   try {
@@ -173,9 +194,11 @@ app.get('/health', async (req, res) => {
   } catch { poolInfo = { total: 0, loaded: false, error: 'WEB_ACCOUNTS_VACIO' }; }
   const completo = conToken(req) || conAcceso(req);  // sin credencial valida: banco recortado a contadores y booleanos, sin rutas del disco
   const shaClon = versionCheckout(); // HEAD local; no consulta GitHub ni secretos
+  const autoRouter = await estadoAutoRouter();
   res.json({ ok: true, pool: poolInfo, cuentas: sinCorreos(estadoCuentas()), respaldo: estadoRespaldo(), banco: completo ? diagnosticoBanco() : resumenBanco(diagnosticoBanco()), metricas: estadoMetricas(),
     autoactualizacion: { bridge_cargado: SHA_BRIDGE_ARRANQUE, checkout_git: shaClon,
-      recarga_pendiente: !!(shaClon && SHA_BRIDGE_ARRANQUE && shaClon !== SHA_BRIDGE_ARRANQUE) },
+      recarga_pendiente: !!(shaClon && SHA_BRIDGE_ARRANQUE && shaClon !== SHA_BRIDGE_ARRANQUE),
+      router: autoRouter },
     ...(completo ? { state_dir: process.env.BRIDGE_STATE_DIR || './state' } : {}) });
 });
 
