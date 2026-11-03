@@ -613,8 +613,14 @@ async def _codigo_largo_comun(modelo, mensajes, opciones, q, lineas, progreso=No
         # request HTTP. La cuota del proveedor NO se puede saltar.
         _token = _PID.set(None)  # evita confundir checkpoint del subturno con el job
         try:
+            # Groq Qwen razonador puede consumir todo max_tokens en pensamiento
+            # y entregar content='' + finish_reason=length. Para codificacion
+            # segmentada se usa el parametro OFICIAL soportado por este modelo.
+            opciones_parte = {"max_tokens": max_tokens}
+            if modelo == "groq/qwen/qwen3.8-27b":
+                opciones_parte["reasoning_effort"] = "none"
             return await chat({"modelo": modelo, "mensajes": sistemas + peticion,
-                               "via": "harness", "opciones": {"max_tokens": max_tokens},
+                               "via": "harness", "opciones": opciones_parte,
                                "tools": False, "agente_tool": False, "llm_tool": False})
         finally:
             _PID.reset(_token)
