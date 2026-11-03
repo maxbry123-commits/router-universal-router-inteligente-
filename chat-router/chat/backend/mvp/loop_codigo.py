@@ -83,7 +83,9 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
     piezas = list(estado["piezas"])
     hashes = {hashlib.sha256(t.encode()).hexdigest() for t in piezas}
     if estado.get("validacion") == "PASS" and sum(len(x.splitlines()) for x in piezas) == n_lineas:
-        return {"texto": "\n".join(piezas) + "\n", "lineas": n_lineas, "partes": len(piezas), "desde_checkpoint": True}
+        return {"texto": "\n".join(piezas) + "\n", "lineas": n_lineas, "partes": len(piezas), "desde_checkpoint": True,
+                "validacion_tipo": "PASS_SINTAXIS", "ejecucion_real": False,
+                "publicacion_confirmada": False}
     vencimiento = min(float(estado["creado"]) + horas * 3600, reloj() + horas * 3600)
     fallos = 0
     while sum(len(t.splitlines()) for t in piezas) < n_lineas:
@@ -192,4 +194,7 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
     if not await guardar(estado):
         raise RuntimeError("CODA_CHECKPOINT_NO_PERSISTIDO")
     return {"texto": codigo, "lineas": n_lineas, "partes": len(piezas), "desde_checkpoint": False,
-            "sha256": hashlib.sha256(codigo.encode()).hexdigest()}
+            "sha256": hashlib.sha256(codigo.encode()).hexdigest(),
+            # AST/compile no equivalen a ejecutar el proyecto ni a publicarlo.
+            "validacion_tipo": "PASS_SINTAXIS", "ejecucion_real": False,
+            "publicacion_confirmada": False}
