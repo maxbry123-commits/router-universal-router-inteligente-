@@ -70,16 +70,7 @@ async function asegurarSitio(site) {
     entry.cuenta = { tipo:'sesion_web_autorizada', site };
     return entry;
   }
-  if (!expirada) {
-    // Sesión web persistente válida: antes fallaba si WEB_ACCOUNTS estaba vacío.
-    // No depender de credenciales adicionales ni intentar un nuevo login.
-    try { entry.cuenta = cuentaActual(); }
-    catch (e) {
-      if (e?.code !== "CUENTAS_FALTAN") throw e;
-      entry.cuenta = { tipo:"sesion_web_autorizada", site };
-    }
-    return entry;
-  }
+  if (!expirada) { entry.cuenta = cuentaActual(); return entry; }
 
   // sesion caida: intenta login con cuenta actual, rota hasta agotar
   const total = cuentaActual().total;
