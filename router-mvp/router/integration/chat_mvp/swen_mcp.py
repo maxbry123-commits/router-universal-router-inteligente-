@@ -107,7 +107,45 @@ def _coda_resultado(pid, modelo, key, solicitado=500, horas=4):
             "proceso_router": pid, "modelo_solicitado": modelo}
 
 
+def _diagnostico_claves():
+    """Solo conteos de claves configuradas (no validez, valores ni huellas).
+    Se consulta el MISMO banco del Router y el panel del bridge OpenClaw.
+    """
+    inventario = {}
+    try:
+        from mvp import externos
+        from mvp import app as mvp_app
+        banco = getattr(mvp_app.app.state, "banco", None)
+        inventario["yaiwes"] = {
+            "groq": len(externos.claves("groq", banco)),
+            "nvidia": len(externos.claves("nvidia", banco))}
+    except (ImportError, RuntimeError, TypeError, AttributeError) as exc:
+        inventario["yaiwes"] = {"error": type(exc).__name__}
+    key = _clave()
+    try:
+        if not key:
+            raise ValueError("SIN_CLAVE_ACCESO")
+        req = urllib.request.Request("http://127.0.0.1:7870/v1/claves",
+                                     headers={"X-API-Key": key})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            datos = json.loads(response.read(10240))
+        if not isinstance(datos, dict) or datos.get("ok") is not True:
+            raise ValueError("SIN_CONTEOS")
+        inventario["openclaw"] = {p: int(datos[p]) for p in ("groq","nvidia")
+                                  if type(datos.get(p)) is int and 0 <= datos[p] <= 1000}
+    except (urllib.error.URLError, OSError, ValueError, TypeError, KeyError) as exc:
+        inventario["openclaw"] = {"error": type(exc).__name__}
+    # Las claves configuradas no certifican permiso, saldo ni que sean
+    # cuentas distintas: 429 de organizacion requiere esperar su cuota.
+    return {"estado": "terminado", "reply": "Inventario de claves: "
+            + json.dumps(inventario, ensure_ascii=False, sort_keys=True),
+            "inventario": inventario,
+            "aviso": "Cantidad configurada, no claves validadas ante proveedor."}
+
+
 def _consulta(modelo, mensaje, sesion, timeout):
+    if str(mensaje).strip() == "@swen/claves":
+        return _diagnostico_claves()
     key = _clave()
     if not key:
         return {"estado": "error", "error": "SWEN_MCP_SIN_CLAVE_BACKEND"}
