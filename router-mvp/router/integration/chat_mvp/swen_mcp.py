@@ -112,6 +112,25 @@ def _inferencia_y_checkpoint(pid, modelo, mensaje, sesion, timeout, firma):
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
+    if mensaje.strip() == "@swen/sesiones":
+        # Diagnóstico auténtico de las SESIONES WEB. Emplea el endpoint
+        # existente; se respetan las verificaciones oficiales de cada sitio.
+        req = urllib.request.Request("http://127.0.0.1:7870/refresh_session",
+                                     data=b"{}", method="POST",
+                                     headers={"Content-Type": "application/json",
+                                              "X-API-Key": _clave()})
+        try:
+            with urllib.request.urlopen(req, timeout=180) as resp:
+                obj = json.load(resp)
+            return {"estado": "terminado", "diagnostico": "sesiones",
+                    "sitios": {k: str(v)[:160] for k, v in
+                               (obj.get("sitios") or {}).items()
+                               if k in ("qwen", "deepseek")},
+                    "nota": "Prueba de sesión/login; ninguna inferencia ejecutada."}
+        except urllib.error.HTTPError as exc:
+            return {"estado": "error", "error": "SWEN_SESIONES_HTTP_" + str(exc.code)}
+        except (OSError, ValueError, TimeoutError):
+            return {"estado": "error", "error": "SWEN_SESIONES_NO_DISPONIBLES"}
     key = _clave()
     if not key:
         return {"estado": "error", "error": "SWEN_MCP_SIN_CLAVE_BACKEND"}
