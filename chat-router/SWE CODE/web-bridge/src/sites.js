@@ -55,7 +55,7 @@ export const MODELOS_WEB = {
   'qwen38max':   { site: 'qwen',     etiqueta: 'Qwen 3.8 Max',      modelo_regex: /3\.8.*max|qwen3\.8-max/i },
 };
 
-const VIS_MS = 20000;
+const VIS_MS = 8500; // 4 candidatos * 8.5s; evitar agotar el deadline WEB por input ausente
 
 // espera visible + rellena; sin espera la SPA del Space tardaba -> INPUT_NO_ENCONTRADO falso
 export async function escribe(page, cfg, texto) {
@@ -82,20 +82,31 @@ export async function enviar(page, cfg) {
 }
 
 // espera a que termine de generar: texto del ultimo bloque estable 2 polls
-export async function leerRespuesta(page, cfg, { timeoutMs = 60000 } = {}) {
+export async function leerRespuesta(page, cfg, { timeoutMs = 145000, previo = '' } = {}) {
   const sel = cfg.respuesta.join(',');
   const t0 = Date.now();
-  let ultimo = '', estable = 0;
+  let ultimo = '', estable = 0, recibido = '';
   while (Date.now() - t0 < timeoutMs) {
-    await page.waitForTimeout(1200);
+    await page.waitForTimeout(1300);
     const txt = await page.evaluate((sel) => {
       const els = [...document.querySelectorAll(sel)];
-      return els.length ? els[els.length - 1].innerText : '';
+      return els.length ? String(els[els.length - 1].innerText || '') : '';
     }, sel);
-    if (txt && txt === ultimo) { if (++estable >= 2) return txt; }
+    if (!txt || txt === previo) continue; // no devolver el mensaje ANTERIOR como si fuera la respuesta
+    recibido = txt;
+    const generando = await (async () => {
+      for (const stop of cfg.stop_gen || []) {
+        try { const boton = page.locator(stop).first(); if (await boton.isVisible({timeout:400})) return true; }
+        catch { /* DOM cambió */ }
+      }
+      return false;
+    })();
+    if (txt === ultimo && !generando) { if (++estable >= 3) return txt; }
     else { estable = 0; ultimo = txt; }
   }
-  return ultimo || null;
+  if (recibido) throw Object.assign(new Error('SALIDA_PARCIAL_NO_CONFIRMADA'), {
+    code:'WEB_SALIDA_PARCIAL', texto_parcial:recibido.slice(0,20000) });
+  throw Object.assign(new Error('NO_SE_RECIBIO_SALIDA_DEL_CHAT_WEB'), {code:'WEB_SIN_RESPUESTA'});
 }
 
 export function sesionMuerta(page, cfg) {
@@ -109,9 +120,11 @@ export async function elegirModelo(page, cfg, modelo_regex) {
   for (const sel of cfg.model_selector) {
     const el = await page.$(sel);
     if (!el) continue;
+    const actual = (await el.innerText().catch(() => '')).trim();
+    if (modelo_regex.test(actual)) return true; // ya seleccionado
     await el.click();
     await page.waitForTimeout(800);
-    const opciones = await page.$$('[role="option"], [class*="option"], [class*="item"], li, button');
+    const opciones = await page.$('[role="option"], [class*="option"], [class*="item"], li, button');
     for (const op of opciones) {
       const t = (await op.innerText().catch(() => '')).trim();
       if (modelo_regex.test(t)) { await op.click(); await page.waitForTimeout(500); return true; }
