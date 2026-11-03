@@ -24,6 +24,7 @@ import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo, 
 import { retomarLocal, retomarPorId, TIPO as TIPO_LOCAL } from './retomar_local.js';
 import { idValido as tareaIdValido } from './checkpoint_hf.js';
 import { conFormato } from './formato.js';
+import { promptHerramientasWeb, extraerLlamadasWeb } from './web_tools.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
 import { vigilarActualizacion } from './autoactualizar.js';
 import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco, diagnosticoBanco, resumenBanco, catalogoProveedores, anadirProveedor } from './clavesbanco.js';
@@ -413,7 +414,13 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (esLocal(model)) {
       const r = await local(model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
     } else if (modeloWeb) {
-      salida = await consultarWeb(modeloWeb, promptFicha, { modo: modoUso, convId: conv_id });
+      // Sólo con esquema de herramientas explícito: el texto WEB NO es una tool_call por defecto.
+      // No se llama a otro LLM para "traducir" JSON; tampoco se ejecutan tools aquí.
+      salida = await consultarWeb(modeloWeb, promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
+      const contratoWeb = extraerLlamadasWeb(salida, extra.tools);
+      salida = contratoWeb.texto;
+      llamadas = contratoWeb.tool_calls;
+      fin = contratoWeb.finish_reason;
       usado = modeloWeb;
     } else if (modoUso === 'asesoria') {
       // asesoria previa a ejecutar: primero Groq (las claves del chat Yaiwes), si no responde la web de SWE CODE free
