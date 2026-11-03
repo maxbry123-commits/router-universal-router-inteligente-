@@ -543,6 +543,12 @@ async def _chat_ficha(cuerpo, progreso=None):
     if not harness_client.url_harness():  # sin variable: el Harness del mismo Space; vacia = desactivado
         raise HTTPException(status_code=503, detail="HARNESS_NO_CONFIGURADO")
     opciones = dict(q.get("opciones") or {})
+    # El MCP de pruebas y el selector pueden pedir un max_tokens pequeño.
+    # Antes se ignoraba y Groq reservaba 2048 tokens de salida: junto al
+    # system prompt podía superar los 8K TPM de la cuenta y devolver 413.
+    pedido = q.get("max_tokens")
+    if modelo.startswith(("groq/", "nvidia/")) and type(pedido) is int and 0 < pedido <= 16384:
+        opciones["max_tokens"] = pedido
     if q.get("thinking_mode") in ("on", "off") and modelo == "qwen3.8-max":  # selector Pensar del chat; solo este modelo admite el interruptor (modelos.extra_body)
         opciones.setdefault("enable_thinking", q["thinking_mode"] == "on")
     salida = await chat({"modelo": modelo, "mensajes": mensajes, "via": "harness",
