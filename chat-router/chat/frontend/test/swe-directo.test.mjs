@@ -13,11 +13,11 @@ test("arma el POST OpenAI con el historial, la sesion y el proyecto; los alias h
   assert.deepEqual(b.messages.map((m) => m.content), ["a", "b", "c"]);
 });
 
-test("enviarSwe usa /v1/chat/completions y devuelve la forma que pinta el chat", async () => {
+test("enviarSwe usa el Harness existente y devuelve la forma que pinta el chat", async () => {
   let visto;
   const api = async (ruta, op) => { visto = { ruta, op }; return { modelo_usado: "web-qwen38max", via_respaldo: "groq", choices: [{ message: { content: "listo" }, finish_reason: "stop" }] }; };
   const r = await enviarSwe(api, { model: "web-qwen38max", historial: [], mensaje: "hola", sesion: "s" });
-  assert.equal(visto.ruta, "/v1/chat/completions"); assert.equal(visto.op.method, "POST");
+  assert.equal(visto.ruta, "/plugins/deepseek_harness/modelos/v1/chat/completions"); assert.equal(visto.op.method, "POST");
   assert.equal(r.reply, "listo"); assert.equal(r.finish_reason, "stop"); assert.match(r.nota, /groq/);
 });
 
@@ -60,27 +60,25 @@ test("R1 armar NO incluye claves (ni de localStorage); nunca van en el texto de 
   delete globalThis.localStorage;
 });
 
-test("SWEN CODE free incluye los 5 modelos de Groq y NVIDIA autorizados y ya no trae los dos Llama", () => {
+test("SWEN CODE free solo contiene cuentas WEB, no mezcla Groq/NVIDIA ni agentes como modelos", () => {
   const ids = SWE_LISTAS["swen-code-free"].modelos.map(([m]) => m);
-  for (const m of ["groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"]) assert.equal(ids.filter((x) => x === m).length, 1, m + " exactamente una vez");
-  assert.ok(!ids.some((m) => /llama/i.test(m)), "sin Llama en el selector");
-  const todo = JSON.stringify(SWE_LISTAS);
-  assert.ok(!/llama/i.test(todo), "ninguna etiqueta/descripcion menciona Llama");
-  const fila = SWE_LISTAS["swen-code-free"].modelos.find(([m]) => m === "nvidia/meta/muse-glimmer-30b");
-  assert.deepEqual(fila.slice(1), ["Muse Glimmer 30B", "API NVIDIA"]);
+  assert.ok(ids.length >= 4);
+  assert.ok(ids.every(m => m.startsWith("web-") || m === "swecode-consulta"), ids.join(", "));
+  assert.ok(!ids.some(m => /llama/i.test(m)));
+  assert.ok(!SWE_LISTAS["swe-code"].modelos.some(([m]) => m.startsWith("nvidia/")));
 });
 
 import { rutaSwe } from "../swe-directo.js";
 
-test("los modelos locales y groq/nvidia viajan por /web/v1 (el proxy del Space manda /web/* al bridge); web-* y swecode-* siguen por /v1", async () => {
-  // el proxy del Space solo reenvia /v1/* al bridge si el modelo empieza por web-/swecode-: un id local por /v1 cae en el Router (400 MODEL_NOT_IN_CERTIFIED_REGISTRY)
+test("todos los modelos viajan por el Harness existente; el modelo enviado conserva su id real", async () => {
+  // El Harness decide Router/Bridge según ID real. La UI no escoge un puente alternativo ni sustituye el modelo.
   for (const m of ["hf-liquid-lfm25", "swe-codex-qwen25-15b", "swe-opencode-qwen35-08b", "swe-agent-lfm25", "swe-openhands-lfm25", "hf-qwen25-coder-15b", "lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b", "groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"])
-    assert.equal(rutaSwe(m), "/web/v1/chat/completions", m);
-  for (const m of ["web-qwen38max", "web-dsv4-flash", "swecode-consulta", "swecode-asesoria"]) assert.equal(rutaSwe(m), "/v1/chat/completions", m);
+    assert.equal(rutaSwe(m), "/plugins/deepseek_harness/modelos/v1/chat/completions", m);
+  for (const m of ["web-qwen38max", "web-dsv4-flash", "swecode-consulta", "swecode-asesoria"]) assert.equal(rutaSwe(m), "/plugins/deepseek_harness/modelos/v1/chat/completions", m);
   for (const [id, real] of [["hf-liquid-lfm25", "lfm2.5-350m"], ["swe-codex-qwen25-15b", "qwen2.5-coder-1.5b"], ["swe-opencode-qwen35-08b", "qwen3.5-0.8b"], ["swe-agent-lfm25", "lfm2.5-350m"], ["swe-openhands-lfm25", "lfm2.5-350m"], ["hf-qwen25-coder-15b", "qwen2.5-coder-1.5b"]]) {
     let visto;
     const r = await enviarSwe(async (ruta, op) => { visto = { ruta, op }; return { modelo_usado: real, choices: [{ message: { content: "hola" }, finish_reason: "stop" }] }; }, { model: id, historial: [], mensaje: "x", sesion: "s" });
-    assert.equal(visto.ruta, "/web/v1/chat/completions", id); assert.equal(visto.op.body.model, real, id); assert.equal(r.reply, "hola");
+    assert.equal(visto.ruta, "/plugins/deepseek_harness/modelos/v1/chat/completions", id); assert.equal(visto.op.body.model, real, id); assert.equal(r.reply, "hola");
   }
 });
 
@@ -127,7 +125,7 @@ test("enviarSwe con tool_calls (passthrough a OpenClaw) no es un GAP: devuelve l
   assert.match(r.reply, /github_leer/);
 });
 
-test("X-Ray modelos locales: el id hf/ del selector se traduce a modelo real del bridge y NO al router MVP", async () => {
+test("X-Ray locales: id hf/ se normaliza antes de llegar al Harness (no se sustituye modelo)", async () => {
   for (const m of ["lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"]) {
     assert.ok(esSwe("hf/" + m));
     let visto;
@@ -135,7 +133,7 @@ test("X-Ray modelos locales: el id hf/ del selector se traduce a modelo real del
       visto = { ruta, body: opts.body };
       return { modelo_usado: m, choices: [{ message: { content: "OK" }, finish_reason: "stop" }] };
     }, { model: "hf/" + m, mensaje: "hola", sesion: "prueba", historial: [] });
-    assert.equal(visto.ruta, "/web/v1/chat/completions");
+    assert.equal(visto.ruta, "/plugins/deepseek_harness/modelos/v1/chat/completions");
     assert.equal(visto.body.model, m);
     assert.equal(out.reply, "OK");
   }
