@@ -477,7 +477,8 @@ def _sin_identidades(mensajes):
 def _identidad_modelo(modelo):
     """Identidad fiel al proveedor elegido: un modelo externo NO se anuncia como QwenCloud."""
     prov = externos.proveedor(modelo)
-    origen = externos.PROVEEDORES[prov]["label"] if prov else "QwenCloud Token Plan"
+    from plugins.deepseek_harness.server import es_swe
+    origen = "SWE CODE / Hugging Face S1/S2/S3" if es_swe(modelo) else externos.PROVEEDORES[prov]["label"] if prov else "QwenCloud Token Plan"
     marca = modelos.marca(modelo) if not prov else None
     nombre = modelo + (" — " + marca if marca else "")
     return {"role": "system", "content": (
@@ -542,7 +543,10 @@ async def _chat_ficha(cuerpo, progreso=None):
     if medio and medio != "texto":  # imagen, voz, ASR y video: llamada directa a la ficha (no pasan por herramientas)
         return await _generar_medio(seleccionado, medio, mensajes, progreso)
     try:
-        modelo = modelos.validar(seleccionado or None)
+        # Misma lista autorizada del Harness: los modelos locales reales van al bridge SWE CODE,
+        # no a QwenCloud y nunca a un Job HF heredado.
+        from plugins.deepseek_harness.server import SWE_IDS, SWE_ALIAS
+        modelo = SWE_ALIAS.get(seleccionado, seleccionado) if seleccionado in SWE_IDS else modelos.validar(seleccionado or None)
     except (ValueError, TypeError) as error:
         raise HTTPException(status_code=400, detail=str(error)) from None
     mensajes = _sin_identidades(mensajes)
