@@ -130,6 +130,16 @@ export function montarAccionesOpenAI(app,propietarioDe){
       return res.json({ok:true,id,mime:'image/png',bytes:img.length,descarga:'/v1/openai/image/'+id});
     }catch(e){return responderError(res,e)}
   });
+  app.get('/v1/openai/image/:id/data',(req,res)=>{
+    const t=leer(req.params.id,propietarioDe(req));
+    if(!t||t.tipo!=='imagen')return res.status(404).json({ok:false,error:{code:'IMAGEN_NO_ENCONTRADA'}});
+    try{
+      const bytes=fs.readFileSync(path.join(DIR(),t.id+'.png'));
+      if(bytes.length>MAX_IMAGEN_BYTES)throw ERROR('IMAGEN_INVALIDA',500);
+      return res.json({ok:true,id:t.id,mime:'image/png',nombre:'openai-'+t.id.slice(0,10)+'.png',
+        base64:bytes.toString('base64')});
+    }catch(e){return responderError(res,e)}
+  });
   app.get('/v1/openai/image/:id',(req,res)=>{
     const t=leer(req.params.id,propietarioDe(req));
     if(!t||t.tipo!=='imagen')return res.status(404).json({ok:false,error:{code:'IMAGEN_NO_ENCONTRADA'}});
