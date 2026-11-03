@@ -54,6 +54,9 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
   const nombres = new Map(MODELOS_API.map(m => [m.id, m.nombre]));
   for (const [id, nombre] of Object.entries({'lfm2.5-350m':'Liquid LFM2.5 350M','qwen2.5-coder-1.5b':'Qwen2.5 Coder 1.5B','qwen3.5-0.8b':'Qwen3.5 0.8B','qwen3-0.6b':'Qwen3 0.6B'})) nombres.set(id, nombre);
   cfg.agents.defaults.timeoutSeconds = Math.max(Number(cfg.agents.defaults.timeoutSeconds) || 0, 600);
+  // La allowlist global necesita admitir Sonnet; los agentes swen-council
+  // y swen-repair lo usan sin cambiar el modelo predeterminado del chat.
+  cfg.agents.defaults.models['anthropic/claude-sonnet-5-5'] ||= {};
   // Agente dedicado para las opiniones de Claude. El runtime nativo OpenClaw
   // rota sólo perfiles Anthropic AUTORIZADOS; no crea correos ni evita límites.
   // No modifica el agente principal ni otras rutas del Gateway.
@@ -87,6 +90,7 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
   cfg.agents.entries['swen-repair'] = {
     ...(cfg.agents.entries['swen-repair'] || {}),
     name:'SWEN · Investigación de GAPS',
+    model:{primary:'anthropic/claude-sonnet-5-5',fallbacks:[]},
     thinkingDefault:'high',
     skills:[],
     tools:{profile:'minimal',allow:['read','web_search','web_fetch','session_status'],
