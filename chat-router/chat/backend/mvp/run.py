@@ -133,8 +133,39 @@ def _carga_bien():
     return r.returncode == 0
 
 
-ARRANQUE, _DIFERIDO = None, None  # commit que corre este proceso; desde cuando se difiere un reinicio
-DIFERIR_MAX_S = (float(os.environ["RIU_MAX_HORAS"]) + 1) * 3600 if float(os.environ.get("RIU_MAX_HORAS", "0")) > 0 else float(os.environ.get("RIU_DEFER_MAX_S", "3600"))  # sin RIU_MAX_HORAS: espera maxima de 1 h (RIU_DEFER_MAX_S); un trabajo procesando atascado no difiere el reinicio para siempre
+ARRANQUE, _DIFERIDO = None, None  # commit realmente ejecutado; primer instante de espera
+# El limite de HORAS de una tarea no puede bloquear durante 49 h una
+# actualizacion de codigo. Main se descarga cada 60 s; un reinicio pendiente
+# espera hasta 6 min por las tareas (maximo absoluto 9 min). Despues el
+# checkpoint/diario existentes recuperan las tareas al arrancar.
+def _limite_diferido():
+    try:
+        segundos = float(os.environ.get("RIU_DEFER_MAX_S", "360"))
+        return min(540.0, max(0.0, segundos)) if segundos == segundos else 360.0
+    except (ValueError, OverflowError):
+        return 360.0
+
+DIFERIR_MAX_S = _limite_diferido()
+
+
+def _estado_auto(fase, nuevo=None, tareas=None):
+    """Observabilidad del autopull existente, sin credenciales ni rutas locales."""
+    appmod = sys.modules.get("mvp.app")
+    if appmod is None or not hasattr(appmod, "app"):
+        return
+    try:
+        appmod.app.state.autoactualizacion = {
+            "activo": os.environ.get("MVP_AUTOPULL", "1") != "0",
+            "estado": fase,
+            "codigo_cargado": (ARRANQUE or "")[:10],
+            "checkout_git": (nuevo or _head() or "")[:10],
+            "tareas_en_curso": tareas,
+            "reanudacion_persistente": True,
+            "diferido_max_s": DIFERIR_MAX_S,
+            "revisado_en": int(time.time()),
+        }
+    except (AttributeError, OSError, TypeError):
+        pass
 
 
 def _tareas_en_curso():
@@ -149,9 +180,11 @@ def _actualizar():
     global _DIFERIDO
     anterior = _head()
     if not anterior:
+        _estado_auto("SIN_CHECKOUT")
         return False
     correcto, _ = _git("pull", "--ff-only")
     if not correcto:
+        _estado_auto("GIT_PULL_FALLIDO", anterior)
         print("AUTOPULL: git pull fallo; sigo con " + anterior[:10], flush=True)
         return False
     nuevo = _head()
@@ -162,26 +195,39 @@ def _actualizar():
             if _DIFERIDO is None:
                 _DIFERIDO = time.time()
                 print("AUTOPULL: hay tareas en curso; el reinicio con %s espera a que terminen" % nuevo[:10], flush=True)
+            _estado_auto("DIFERIDO_TAREAS", nuevo, en_curso)
             return False
         if en_curso:  # tope de espera vencido con tareas sin terminar: se reinicia igual y se reanudan al arrancar
             print("AUTOPULL: tareas en curso tras el tope de espera; reinicio con %s (se reanudan al arrancar)" % nuevo[:10], flush=True)
         if not _carga_bien():
             _git("reset", "--hard", base)  # vuelve a la version que funcionaba
+            _estado_auto("CODIGO_RECHAZADO_POR_IMPORT", _head(), en_curso)
             print("AUTOPULL: deshice %s y sigo con %s" % (nuevo[:10], base[:10]), flush=True)
             return False
+        _estado_auto("REINICIANDO_CON_CHECKPOINT", nuevo, en_curso)
         print("AUTOPULL: reinicio con %s" % nuevo[:10], flush=True)
         _parar_bridge()  # liberar 7870 antes de ejecutar el nuevo codigo
         os.execv(sys.executable, [sys.executable, *sys.argv])
         return True
+    _DIFERIDO = None
+    _estado_auto("AL_DIA" if nuevo == base else "ARCHIVOS_ACTUALIZADOS_SIN_REINICIO", nuevo, _tareas_en_curso())
     return False
 
 
 def _vigilar():
+    """El watchdog no muere si una revision de Git lanza un error inesperado."""
     while True:
         time.sleep(60)
-        _actualizar()
-        if (_BRIDGE is None or _BRIDGE.poll() is not None) and not _bridge_escuchando():
-            _iniciar_bridge()  # recupera Connection refused sin crear otro Space/servicio.
+        try:
+            _actualizar()
+        except Exception as exc:  # noqa: BLE001 - conservar el ciclo sin exponer secretos
+            _estado_auto("FALLO_CICLO_" + type(exc).__name__)
+            print("AUTOPULL: error ciclo " + type(exc).__name__, flush=True)
+        try:
+            if (_BRIDGE is None or _BRIDGE.poll() is not None) and not _bridge_escuchando():
+                _iniciar_bridge()  # mismo Node existente, nunca otro Space
+        except Exception as exc:  # noqa: BLE001
+            print("AUTOPULL: bridge watchdog " + type(exc).__name__, flush=True)
 
 
 def _iniciar_hilo():
