@@ -167,7 +167,7 @@ def _router_caido(exc):
     m = str(exc)
     if re.search(r"PROVEEDOR_(?:GROQ|NVIDIA)_HTTP_", m):
         return False
-    return bool(re.match(r"Router (?!HTTP )\\w+", m) or re.match(r"Router HTTP 50[234]", m))
+    return bool(re.match(r"Router (?!HTTP )\w+", m) or re.match(r"Router HTTP 50[234]", m))
 
 
 ACCESO_BRIDGE = ("RIU_API_KEY", "RIU_PUBLIC_CHAT_KEY", "RIU_MCP_KEY", "RIU_ROUTER_API_KEY")  # las 4 claves de acceso que el bridge acepta en x-api-key
