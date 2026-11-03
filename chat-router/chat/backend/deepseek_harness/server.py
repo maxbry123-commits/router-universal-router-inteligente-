@@ -304,6 +304,21 @@ def _metricas(salida):
         v = m.get(k)
         if isinstance(v, dict) and len(json.dumps(v, default=str)) <= 2000:
             out[k] = json.loads(_SECRETO.sub("[REDACTADO]", json.dumps(v, default=str)))
+    # Traza anonima del pool Groq/NVIDIA: solo contadores y codigos HTTP.
+    # No pasar strings, indices secretos, huellas ni tokens al chat.
+    c = m.get("credenciales")
+    if isinstance(c, dict):
+        campos = ("configuradas", "probadas", "rotaciones", "llamadas_http")
+        seguro = {k: c[k] for k in campos if type(c.get(k)) is int and 0 <= c[k] <= 100000}
+        if type(c.get("retry_after_s")) in (int, float) and 0 <= c["retry_after_s"] <= 600:
+            seguro["retry_after_s"] = c["retry_after_s"]
+        codes = c.get("errores_http")
+        if isinstance(codes, dict):
+            seguro["errores_http"] = {str(k): v for k, v in codes.items()
+                                      if str(k) in ("400", "401", "402", "403", "404", "408", "413", "422", "429", "500", "502", "503", "504", "529")
+                                      and type(v) is int and 0 <= v <= 100000}
+        if seguro:
+            out["credenciales"] = seguro
     return {"metricas": {k: (_SECRETO.sub("[REDACTADO]", v) if isinstance(v, str) else v) for k, v in out.items()}} if out else {}
 
 
