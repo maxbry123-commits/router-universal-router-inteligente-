@@ -26,12 +26,21 @@ _BRIDGE = None
 
 
 def _bridge_externo():
-    """El Space existente ejecuta /proxy.py y su propio boot.sh lanza :7870.
-
-    No iniciar un segundo bridge desde el Runner (EADDRINUSE / respuestas intermitentes).
-    En contenedores que arrancan solo con el Dockerfile del repo, /proxy.py no existe.
-    """
+    """Indicador de arranque externo; NO demuestra que Node siga vivo."""
     return Path("/proxy.py").is_file()
+
+
+def _bridge_escuchando():
+    """Prueba TCP local sin autenticar ni imprimir credenciales."""
+    import socket
+    try:
+        port = int(os.environ.get("BRIDGE_PORT") or 7870)
+        if not 1 <= port <= 65535:
+            return False
+        with socket.create_connection(("127.0.0.1", port), timeout=0.6):
+            return True
+    except (OSError, ValueError):
+        return False
 
 
 def _parar_bridge():
@@ -50,9 +59,12 @@ def _parar_bridge():
 def _iniciar_bridge():
     """Bridge EXISTENTE en el MISMO Space, no otro servicio externo ni nueva raiz."""
     global _BRIDGE
-    if _bridge_externo():
-        return True  # HF boot.sh administra el Node y el proxy; no duplicar el puerto 7870.
     if _BRIDGE and _BRIDGE.poll() is None:
+        return True
+    # Si el boot externo administra 7870 y escucha, NO lanzar un segundo Node.
+    # Si /proxy.py existe pero Node cayó (Connection refused), recuperar el
+    # MISMO bridge dentro del Runner; el watchdog volverá a comprobar cada 60 s.
+    if _bridge_escuchando():
         return True
     node = shutil.which("node")
     if not node or not (BRIDGE_DIR / "node_modules" / "express").is_dir():
@@ -164,8 +176,8 @@ def _vigilar():
     while True:
         time.sleep(60)
         _actualizar()
-        if not _bridge_externo() and (_BRIDGE is None or _BRIDGE.poll() is not None):
-            _iniciar_bridge()  # solo si el Runner es dueno del bridge; HF boot ya lo vigila
+        if (_BRIDGE is None or _BRIDGE.poll() is not None) and not _bridge_escuchando():
+            _iniciar_bridge()  # recupera Connection refused sin crear otro Space/servicio.
 
 
 def _iniciar_hilo():
