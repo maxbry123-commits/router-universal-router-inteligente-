@@ -66,6 +66,18 @@ export async function consultarClaude(texto,{convId='',fetchFn=fetch,timeoutMs=3
   }catch(e){throw issue(e?.name==='TimeoutError'||e?.name==='AbortError'?
     'CLAUDE_GATEWAY_TIMEOUT':'CLAUDE_GATEWAY_NO_CONECTADO')}
   if(!r.ok){
+    // 401 puede venir del proveedor Anthropic (missing-provider-auth) AUN
+    // cuando el token del Gateway es válido. No atribuirlo falsamente a la API.
+    if(r.status===401){
+      const raw=String(await r.text().catch(()=>'')).slice(0,8000);
+      let er={};try{er=JSON.parse(raw)?.error||{}}catch{}
+      const code=String(er?.code||'').toLowerCase();
+      const tipo=String(er?.type||'').toLowerCase();
+      if(code==='missing-provider-auth' ||
+         (tipo==='authentication_error' && code.includes('provider')))
+        throw issue('CLAUDE_PROVEEDOR_SIN_CREDENCIALES',401);
+      throw issue('CLAUDE_GATEWAY_NO_AUTORIZADO',401);
+    }
     // Categorizar HTTP 400 sin propagar el cuerpo: puede contener detalles de
     // perfiles/credenciales. Sólo códigos prefijados conocidos.
     if(r.status===400){
