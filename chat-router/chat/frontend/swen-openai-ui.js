@@ -72,13 +72,34 @@ async function generarImagen(h){
   const input=h.querySelector('[data-swen-image-id]');if(input)input.value=x.id;
   return mostrarImagen(h,x.id);
 }
+async function trabajos(h){
+  const r=await api(BASE+'/trabajos');
+  const panel=tarjeta(h,'Trabajos guardados de este usuario');
+  const items=Array.isArray(r.trabajos)?r.trabajos:[];
+  if(!items.length){linea(panel,'No hay trabajos guardados.');return;}
+  for(const x of items){
+    if(!/^[0-9a-f]{32}$/.test(String(x.id||'')))continue;
+    const btn=document.createElement('button');
+    btn.type='button';btn.className='secondary';
+    btn.textContent=String(x.tipo||'trabajo')+' · '+String(x.estado||'')+' · '+String(x.prompt||'').slice(0,100);
+    btn.addEventListener('click',()=>{
+      const imagen=x.tipo==='imagen';
+      const input=h.querySelector(imagen?'[data-swen-image-id]':'[data-swen-research-id]');
+      if(input)input.value=x.id;
+      const cargar=h.querySelector(imagen?'[data-swen-imagen-cargar]':'[data-swen-investigacion-cargar]');
+      cargar?.click();
+    });
+    panel.append(btn);
+  }
+}
 document.addEventListener('click',async e=>{
-  const b=e.target.closest?.('[data-swen-accion],[data-swen-investigacion-cargar],[data-swen-imagen-cargar]');
+  const b=e.target.closest?.('[data-swen-accion],[data-swen-investigacion-cargar],[data-swen-imagen-cargar],[data-swen-trabajos]');
   if(!b||b.disabled)return;
   const h=host();if(!h)return;
   b.disabled=true;
   try{
-    if(b.dataset.swenAccion==='research')await investigar(h,b,'');
+    if(b.dataset.swenTrabajos)await trabajos(h);
+    else if(b.dataset.swenAccion==='research')await investigar(h,b,'');
     else if(b.dataset.swenAccion==='image')await generarImagen(h);
     else if(b.dataset.swenInvestigacionCargar){
       const id=String(h.querySelector('[data-swen-research-id]')?.value||'').trim();
