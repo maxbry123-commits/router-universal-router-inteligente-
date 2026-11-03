@@ -385,6 +385,10 @@ async function respuestaDeSSE(response, datos) {
     if (!o || typeof o !== "object") return;
     for (const k of ["modelo_usado", "via_respaldo", "via_primaria"]) if (typeof o[k] === "string") a.extra[k] = o[k];
     if (o.consenso_detalle && typeof o.consenso_detalle === "object") a.extra.consenso_detalle = o.consenso_detalle;
+    // Bandera visible incluso cuando el servidor envía un SSE con finish_reason=error.
+    // No convertir falta de Claude en respuesta confirmada.
+    if (o.flag_claude && typeof o.flag_claude === "object" && typeof o.flag_claude.codigo === "string")
+      a.extra.flag_claude = { codigo:o.flag_claude.codigo, mensaje:String(o.flag_claude.mensaje||"").slice(0,240) };
     if (o.error && typeof o.error === "object") a.error = o.error;
     const c = Array.isArray(o.choices) ? o.choices[0] : null;
     if (!c || typeof c !== "object") return;
@@ -471,7 +475,10 @@ export async function enviarSwe(api, datos) {
   const llamadas = Array.isArray(msg.tool_calls) ? msg.tool_calls.filter(Boolean) : [];
   // R4: una respuesta con tool_calls (con o sin texto) NUNCA pierde las llamadas pendientes: las ejecuta el cliente (OpenClaw) o el SWE-agent, no es un fallo
   const nombres = llamadas.map((t) => (t && t.function && t.function.name) || "tool"), quien = cuerpo.ejecutor_tools === "openclaw" ? "OpenClaw" : "SWE-agent";
-  const metadatos = r?.consenso_detalle ? { consenso:r.consenso_detalle } : {};
+  const metadatos = {
+    ...(r?.consenso_detalle ? { consenso:r.consenso_detalle } : {}),
+    ...(r?.flag_claude ? { flag_claude:r.flag_claude } : {})
+  };
   if (!r?.error && !msg.content && llamadas.length) return { ...metadatos, reply: "Tools pedidas: " + nombres.join(", "), tools: [], pedidas: nombres, tool_calls: llamadas, ejecutor: quien, finish_reason: r.choices[0].finish_reason || "tool_calls", nota: `SWE · ${r.modelo_usado || datos.model} · tools → ${quien}` };
   const texto = msg.content;
   if (!texto) {  // un fallo no se pinta como respuesta del modelo (entraria al historial del turno siguiente)
