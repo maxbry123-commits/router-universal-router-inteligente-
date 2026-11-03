@@ -474,6 +474,14 @@ app.post('/v1/chat/completions', async (req, res) => {
       salida = r.salida; usado = r.usado;
     }
     };
+    // Checkpoint ANTES de solicitar respuesta: sobrevive a caída del navegador/bridge.
+    // Al terminar se completa el mismo turno; no hay llamadas LLM para el resumen.
+    if (conv_id) try {
+      const identModelo = model.startsWith('web-') ? model.slice(4) :
+        model.startsWith('swecode-') ? 'qwen38max' : model;
+      registrarContexto({conv_id:String(conv_id),propietario:propietarioDe(req),
+        modelo:identModelo,modo:modoUso,proyecto,entrada:ultimo,salida:'',estado:'CONTINUAR'});
+    } catch { /* no se bloquea el envío por fallo del disco */ }
     sse.vigilar();
     try {
       await conDeadline(ejecutar(), plazoModelo, sse.pide ? sse.latido : null);
