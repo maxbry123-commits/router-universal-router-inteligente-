@@ -14,6 +14,7 @@ import concurrent.futures as cf
 import hashlib
 import json
 import os
+from pathlib import Path
 import re
 import threading
 import time
@@ -34,6 +35,8 @@ _JOBS: dict[str, dict] = {}
 _REQUESTS: dict[str, str] = {}
 _LOCK = threading.RLock()
 _ID = re.compile(r"^[A-Za-z0-9_-]{1,80}$")
+# Compartido con el estado persistente del bridge, no usa nuevas infraestructuras.
+_JOURNAL = Path(os.getenv("BRIDGE_STATE_DIR") or "/tmp/state") / "swen_mcp"
 # Sólo servicios LOCALES existentes: no aceptar URL aportada por el modelo.
 _RUTA = "/plugins/deepseek_harness/modelos/v1/chat/completions"
 
@@ -54,6 +57,58 @@ def _destinos():
 
 def _clave():
     return str(os.getenv("RIU_API_KEY") or os.getenv("RIU_PUBLIC_CHAT_KEY") or "").strip()
+
+
+def _guardar(pid, doc):
+    """Checkpoint atómico de proceso/resultados; no guarda claves, correos ni prompts."""
+    try:
+        _JOURNAL.mkdir(mode=0o700, parents=True, exist_ok=True)
+        p = _JOURNAL / (pid + ".json")
+        tmp = _JOURNAL / (pid + "." + uuid.uuid4().hex + ".tmp")
+        with open(tmp, "x", encoding="utf-8") as out:
+            os.chmod(tmp, 0o600)
+            json.dump(doc, out, ensure_ascii=False)
+        os.replace(tmp, p)
+    except OSError:
+        try:
+            tmp.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+
+def _leer(pid):
+    if not re.fullmatch(r"swen_[0-9a-f]{32}", str(pid)):
+        return None
+    try:
+        doc = json.loads((_JOURNAL / (pid + ".json")).read_text(encoding="utf-8"))
+        return doc if isinstance(doc, dict) and doc.get("proceso_id") == pid else None
+    except (OSError, ValueError, TypeError):
+        return None
+
+
+def _diagnostico():
+    """Salud REAL del bridge; no ejecuta una inferencia ni expone datos de cuentas."""
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:7870/health", timeout=8) as response:
+            datos = json.load(response)
+        pool = datos.get("pool") or {}
+        return {"estado": "terminado", "diagnostico": "bridge_swen",
+                "bridge_ok": bool(datos.get("ok")), "cuentas_configuradas": bool(pool.get("loaded")),
+                "cantidad_cuentas": int(pool.get("total") or 0),
+                "estado_sesiones": "SIN_VERIFICAR_CON_LOGIN",
+                "nota": "Health confirma proceso/cuentas, no respuesta de modelo."}
+    except (OSError, ValueError, urllib.error.URLError):
+        return {"estado": "error", "error": "SWEN_BRIDGE_HEALTH_NO_DISPONIBLE"}
+
+
+def _inferencia_y_checkpoint(pid, modelo, mensaje, sesion, timeout, firma):
+    try:
+        respuesta = _consulta(modelo, mensaje, sesion, timeout)
+    except Exception:
+        respuesta = {"estado": "error", "error": "SWEN_EXCEPCION_INTERNA"}
+    _guardar(pid, {"proceso_id": pid, "firma": firma, "modelo": modelo,
+                   "estado": respuesta.get("estado"), "resultado": respuesta})
+    return respuesta
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
@@ -127,6 +182,8 @@ def iniciar(args):
     mensaje = args.get("message")
     if not isinstance(mensaje, str) or not mensaje.strip() or len(mensaje) > 100000:
         return {"error": "SWEN_MENSAJE_INVALIDO"}
+    if mensaje.strip() == "@swen/health":
+        return _diagnostico()
     sesion = str(args.get("sesion") or ("mcp_" + uuid.uuid4().hex[:16]))
     if not _ID.fullmatch(sesion):
         return {"error": "SWEN_SESION_INVALIDA"}
@@ -146,8 +203,10 @@ def iniciar(args):
         if len(_JOBS) >= 128:
             return {"error": "SWEN_COLA_LLENA"}
         pid = "swen_" + uuid.uuid4().hex
-        f = _EXEC.submit(_consulta, modelo, mensaje, sesion,
-                         450 if modelo == "swecode-consulta" else 360)
+        _guardar(pid, {"proceso_id": pid, "firma": firma, "modelo": modelo,
+                       "estado": "procesando", "creado": time.time()})
+        f = _EXEC.submit(_inferencia_y_checkpoint, pid, modelo, mensaje, sesion,
+                         450 if modelo == "swecode-consulta" else 360, firma)
         _JOBS[pid] = {"futuro": f, "creado": time.time(), "firma": firma, "modelo": modelo}
         if rid:
             _REQUESTS[rid] = pid
@@ -161,6 +220,13 @@ def resultado(args):
     with _LOCK:
         job = _JOBS.get(pid)
     if not job:
+        guardado = _leer(pid)
+        if guardado:
+            if isinstance(guardado.get("resultado"), dict):
+                return {"proceso_id": pid, **guardado["resultado"]}
+            return {"estado": "interrumpido", "proceso_id": pid,
+                    "modelo_solicitado": guardado.get("modelo"),
+                    "error": "SWEN_PROCESO_REINICIADO_ANTES_DE_TERMINAR"}
         return {"estado": "error", "error": "SWEN_PROCESO_NO_ENCONTRADO", "proceso_id": pid}
     futuro = job["futuro"]
     espera = max(0, min(float(args.get("espera") or 0), 12))
