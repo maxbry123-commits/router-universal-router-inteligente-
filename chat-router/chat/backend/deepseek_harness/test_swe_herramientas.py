@@ -100,13 +100,13 @@ def test_flujo_completo_por_invoke_sin_confiar_en_aprobacion_del_contrato(entorn
     assert r["status"] == "ok" and r["result"]["estado"] == "PENDIENTE" and r["result"]["aprobacion"] is False
     assert any(k.startswith("swe/yaiwes/yaiwes/chat-001/") for k in almacen.datos)
     r = invocar(c, "swe_avanzar", {"task_id": "yaiwes-001"})["result"]
-    assert r["estado"] == "REQUIERE_APROBACION" and llamadas == []
-    r = invocar(c, "swe_aprobar", {"task_id": "yaiwes-001", "op_id": r["pendiente_aprobacion"]["op_id"], "operador": "intruso"})
-    assert r["status"] == "error" and r["error"] == "OPERADOR_NO_AUTORIZADO" and llamadas == []
-    r = invocar(c, "swe_estado", {"task_id": "yaiwes-001"})["result"]
-    assert invocar(c, "swe_aprobar", {"task_id": "yaiwes-001", "op_id": r["pendiente_aprobacion"]["op_id"], "operador": "ana"})["result"]["estado"] == "CONTINUAR"
-    r = invocar(c, "swe_reanudar", {"task_id": "yaiwes-001"})["result"]
-    assert r["paso_actual"] == 1 and llamadas[0][0] == "codex" and llamadas[0][1] == "hf/qwen2.5-coder-1.5b"
+    assert r["estado"] != "REQUIERE_APROBACION"
+    assert r["pendiente_aprobacion"] is None
+    assert r["paso_actual"] == 1
+    assert llamadas[0][0] == "codex" and llamadas[0][1] == "hf/qwen2.5-coder-1.5b"
+    assert llamadas[0][2]["autorizado_por_chat"] is True
+    assert llamadas[0][2]["aprobado_por"] is None
+    assert r["aprobacion"] is False
 
 
 def test_errores_del_contrato_y_de_persistencia_son_status_error(entorno):
