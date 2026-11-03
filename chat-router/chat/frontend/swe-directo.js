@@ -40,6 +40,9 @@ export function leerEjecutorTools() { return ejecutorDeAgente(leerSeleccion().ag
 export const MODELOS_SWE = [
   ["hf/lfm2.5-350m", "Liquid LFM2.5 350M", "HF local"], ["hf/qwen2.5-coder-1.5b", "Qwen2.5 Coder 1.5B", "HF local"],
   ["hf/qwen3.5-0.8b", "Qwen3.5 0.8B", "HF local"], ["hf/qwen3-0.6b", "Qwen3 0.6B", "HF local"],
+  ["swecode-consulta", "Ask Cónsil · Qwen 3.8", "web"],
+  ["web-qwen38max", "Qwen 3.8 Max", "web"], ["web-qwen37max", "Qwen 3.7 Max", "web"],
+  ["web-dsv4-flash", "DeepSeek V4 Flash", "web"],
   ["groq/qwen/qwen3.8-27b", "Qwen 3.8 Groq", "API Groq"], ["nvidia/minimaxai/minimax-m3.1-flash", "MiniMax M3.1 Flash", "API NVIDIA"],
   ["nvidia/meta/muse-glimmer-30b", "Muse Glimmer 30B", "API NVIDIA"], ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "Nemotron 3 Ultra", "API NVIDIA"],
   ["nvidia/z-ai/glm-5.3", "GLM 5.3", "API NVIDIA"],
@@ -198,20 +201,20 @@ export function opcionesModeloVentana(ventana, cap, proveedor = {}, { web = vent
   });
 }
 const nombreDe = (lista, id) => (lista.find((x) => x[0] === id) || [id, id])[1];
+const esWeb = id => typeof id === "string" && (id.startsWith("web-") || id === "swecode-consulta");
 export function validarSeleccion(sel, cap) {
   if (!requiereHarness(sel)) return { ok: true, problemas: [] };
-  const problemas = [], plano = (m) => String(m).replace(/\s*\(([^()]*)\)/g, ": $1").replace(/[()]/g, ""), mal = (etq, r) => { if (!r.ok) problemas.push(etq + ": " + ETIQUETA_ESTADO[r.estado] + (r.motivo ? ", " + plano(r.motivo) : "")); };
+  const problemas = [], plano = (m) => String(m).replace(/\s*\(([^()]*)\)/g, ": $1").replace(/[()]/g, ""), mal = (etq, r, id = "") => { if (!r.ok && !(esWeb(id) && r.estado === "SIN_VERIFICAR" && r.elegible)) problemas.push(etq + ": " + ETIQUETA_ESTADO[r.estado] + (r.motivo ? ", " + plano(r.motivo) : "")); };
   // SWE CODE cuatro pasos corre agentes (escribe/revisa/ejecuta/verifica) que solo se activan con el modo agentico (workflows.py: MODO_AGENTICO_APAGADO): se dice ANTES de crear la tarea
   if (sel.workflow === "swe_code" && !sel.modo_agentico) problemas.push("WORKFLOW " + nombreDe(WORKFLOWS_SWE, sel.workflow) + " exige MODO AGÉNTICO ON");
   mal("WORKFLOW " + nombreDe(WORKFLOWS_SWE, sel.workflow), estadoOpcion(cap, "workflow", sel.workflow));
   // agente_responde no lo usa ningun workflow del backend (plan_de: «responde» es un LLM sin agente) y modelo_responde solo cuenta en Individual (camposFijos): no se validan
   if (!camposFijos(sel.workflow).has("modelo_responde")) {
-    if (en(MODELOS_WEB, sel.modelo_responde)) problemas.push("MODELO QUE RESPONDE " + nombreDe(MODELOS_WEB, sel.modelo_responde) + ": " + ETIQUETA_ESTADO.NO_COMPATIBLE + ", el contrato del Harness solo admite modelos del catálogo (elige uno HF, Groq o NVIDIA)");
-    else mal("MODELO QUE RESPONDE " + nombreDe(MODELOS_SWE, sel.modelo_responde), estadoOpcion(cap, "modelo", sel.modelo_responde));
+    mal("MODELO QUE RESPONDE " + nombreDe(MODELOS_SWE, sel.modelo_responde), estadoOpcion(cap, "modelo", sel.modelo_responde), sel.modelo_responde);
   }
   if (sel.modo_agentico) {
     const tool = sel.workflow === "liquid_mirror" ? LIQUID : sel.modelo_tool;
-    mal("MODELO PARA TOOL " + nombreDe(MODELOS_SWE, tool), estadoOpcion(cap, "modelo", tool));
+    mal("MODELO PARA TOOL " + nombreDe(MODELOS_SWE, tool), estadoOpcion(cap, "modelo", tool), tool);
     mal("AGENTE QUE EJECUTA " + nombreDe(AGENTES_SWE, sel.agente_tool), estadoOpcion(cap, "agente", sel.agente_tool, tool));
     if (sel.workflow !== "individual") mal("AGENTE VERIFICADOR " + nombreDe(AGENTES_SWE, VERIFICADOR), estadoOpcion(cap, "agente", VERIFICADOR, LIQUID));
   }
