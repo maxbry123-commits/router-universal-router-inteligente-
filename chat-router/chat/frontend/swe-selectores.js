@@ -190,7 +190,7 @@ function pintarControles() {
     const sm = c.querySelector('select[data-swe-ctl="modo_trabajo"]');
     if (sm) { sm.replaceChildren(...[["", "Sin modo (conversación normal)"], ...MODOS_TRABAJO].map(([v, t]) => { const o = el("option", null, t); o.value = v; return o; })); sm.value = sel.modo_trabajo; sm.title = VENTANA === "groq" || VENTANA === "nvidia" ? "El modo de trabajo se envía en los chats por el bridge (SWE CODE / SWEN CODE free); Groq y NVIDIA por el Router no lo usan todavía." : ""; }
     const b = c.querySelector("[data-swe-agentico]"); if (b) { b.textContent = sel.modo_agentico ? "ON" : "OFF"; b.setAttribute("aria-pressed", String(sel.modo_agentico)); b.classList.toggle("on", sel.modo_agentico); }
-    const spB = c.querySelector("[data-swe-systemprompt]"); if (spB) { const on = systemPromptOnCache(); spB.textContent = on ? "ON" : "OFF"; spB.setAttribute("aria-pressed", String(on)); spB.classList.toggle("on", on); }
+    const spB = c.querySelector("[data-swe-systemprompt]"); if (spB) { const on = systemPromptOnCache(); spB.textContent = on === null ? "SIN VERIFICAR" : on ? "ON" : "OFF"; spB.setAttribute("aria-pressed", String(on === true)); spB.classList.toggle("on", on === true); spB.title = on === null ? "Sin respuesta del Router" : "System Prompt " + (on ? "ON" : "OFF"); }
     const lq = c.querySelector(".swe-liquid"); lq.hidden = sel.workflow !== "liquid_mirror";
     if (!lq.hidden) {
       const lm = estadoOpcion(CAP, "workflow", "liquid_mirror"); lq.replaceChildren();
@@ -211,6 +211,14 @@ function pintarControles() {
       : "Individual con modo agéntico OFF: responde el modelo elegido, como siempre (los agentes no se activan).";
     const h = c.querySelector(".swe-hora"); if (h) h.textContent = ULTIMA ? "Comprobado " + new Date(ULTIMA).toLocaleTimeString() : "";
   });
+  const global = document.getElementById("btn-system-prompt-on");
+  if (global) {
+    const on = systemPromptOnCache();
+    global.textContent = "System Prompt " + (on === null ? "SIN VERIFICAR" : on ? "ON" : "OFF");
+    global.setAttribute("aria-pressed", String(on === true));
+    global.classList.toggle("on", on === true);
+    global.title = on === null ? "No se confirmó el estado del Router" : "System Prompt del Router para los modelos y agentes";
+  }
 }
 async function refrescarCapacidades(forzar, conFichas = false) {
   if (forzar) olvidarCapacidades();
@@ -251,7 +259,24 @@ document.addEventListener("click", async (e) => {
     } finally { b.disabled = false; }
     return;
   }
-  const spB = e.target.closest && e.target.closest("[data-swe-systemprompt]"); if (spB) { alternarSystemPromptOn().then(pintarControles); return; }
+  const spB = e.target.closest && e.target.closest("[data-swe-systemprompt], #btn-system-prompt-on");
+  if (spB) {
+    if (spB.disabled) return;
+    document.querySelectorAll("[data-swe-systemprompt], #btn-system-prompt-on").forEach(b => { b.disabled = true; });
+    try { await alternarSystemPromptOn(); }
+    catch (err) {
+      const note = "SYSTEM PROMPT SIN CONFIRMAR: " + String(err?.message || "Router no disponible");
+      const estado = document.querySelector(".swe-ctl .swe-estado");
+      if (estado) estado.textContent = note;
+      const btn = document.getElementById("btn-system-prompt-on");
+      if (btn) btn.title = note;
+    }
+    finally {
+      document.querySelectorAll("[data-swe-systemprompt], #btn-system-prompt-on").forEach(b => { b.disabled = false; });
+      pintarControles();
+    }
+    return;
+  }
   if (e.target.closest && e.target.closest(".swe-refrescar")) refrescarCapacidades(true, true);
 });
 document.addEventListener("change", (e) => {
@@ -402,3 +427,8 @@ window.RIU_SWE_CENTRAL = {
   refrescar: (forzar = true) => refrescarCapacidades(forzar, true),
   montar(host, w) { if (!CTL) CTL = controles(); host.append(CTL); VENTANA = w; sincronizar(w); pintarControles(); },
 };
+
+// Refrescar el indicador global al montar el panel sin activar ningun selector.
+const sincronizarBotonGlobalPrompt = () => cargarSystemPromptOn().then(pintarControles);
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", sincronizarBotonGlobalPrompt, { once: true });
+else sincronizarBotonGlobalPrompt();
