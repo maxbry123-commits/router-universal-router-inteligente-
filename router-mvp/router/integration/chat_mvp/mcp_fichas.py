@@ -73,6 +73,16 @@ def ejecutar(nombre, args):
     falta = REQUERIDO.get(nombre)
     if falta and not args.get(falta):
         return 'FALTA: %s' % falta, True
+    # SWE CODE free entra por la MISMA herramienta MCP chat/resultado ya instalada,
+    # sin cambiar el selector de fichas Qwen ni aceptar IDs WEB como Qwen Token Plan.
+    if nombre == 'chat' and args.get('ficha_qwen') == 'swen-code-free':
+        from . import swen_mcp
+        res = swen_mcp.iniciar(args)
+        return json.dumps(res, ensure_ascii=False), _es_error(res)
+    if nombre == 'resultado' and str(args.get('proceso_id') or '').startswith('swen_'):
+        from . import swen_mcp
+        res = swen_mcp.resultado(args)
+        return json.dumps(res, ensure_ascii=False), _es_error(res)
     res = _llamar(PLUGIN, ACCION[nombre], dict(args))
     return json.dumps(res, ensure_ascii=False), _es_error(res)
 
