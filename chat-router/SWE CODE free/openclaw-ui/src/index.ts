@@ -51,6 +51,7 @@ export default defineFeaturePlugin({
       contexto:(i) => con((c)=>c.contexto(i.id)),
       contexto_transferir:(i) => con((c)=>c.contextoTransferir(i.origen,i.destino)),
       openai_estado:() => con((c)=>c.openaiEstado()),
+      openai_trabajos:() => con((c)=>c.openaiTrabajos()),
       openai_research:(i) => agenteApiHabilitado()
         ? con((c)=>c.openaiResearch(i.prompt)) : sinConfig('OPENAI_AGENTE_NO_AUTORIZADO'),
       openai_research_estado:(i) => con((c)=>c.openaiResearchEstado(i.id)),
