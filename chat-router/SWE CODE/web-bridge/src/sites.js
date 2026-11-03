@@ -158,11 +158,19 @@ export async function pasarAgeGate(page, cfg) {
 
 // login necesario: URL de auth O boton "Iniciar sesión"/"Log in" visible (URL puede seguir en /)
 export async function necesitaLogin(page, cfg) {
+  // Una URL "/" puede ser página pública o mostrar auth modal: NO es prueba
+  // de acceso. Revisar indicadores reales DESPUÉS de la hidratación de la SPA.
   try { if (cfg.sesion_muerta(page.url())) return true; } catch {}
-  for (const sel of cfg.login_visible || []) {
+  const selLogin = [
+    ...(cfg.login_visible || []),
+    'input[type="password"]',
+    'form input[type="email"]'
+  ];
+  for (const sel of selLogin) {
     try {
       const el = page.locator(sel).first();
-      if (await el.count() && await el.isVisible().catch(() => false)) return true;
+      if (await el.count() && await el.isVisible({ timeout: 400 }).catch(() => false))
+        return true;
     } catch {}
   }
   return false;
