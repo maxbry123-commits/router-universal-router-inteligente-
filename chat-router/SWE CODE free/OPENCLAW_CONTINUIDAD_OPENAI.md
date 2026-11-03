@@ -10,8 +10,9 @@ Cuando se necesita ejecutar herramientas, el agente elegido se usa mediante
 ## Cuentas web y ejecución
 
 El selector SWE CODE free contiene únicamente:
-- Ask Cónsil (los participantes existentes y árbitro Qwen 3.8 Max);
+- Ask Cónsil (DeepSeek, Claude Sonnet 5.5 MAX, Qwen 3.7 y Qwen 3.8; árbitro Qwen 3.8 Max);
 - Qwen 3.8 Max web;
+- Claude Sonnet 5.5 MAX vía OpenClaw;
 - Qwen 3.7 Max web;
 - DeepSeek V4 Flash web.
 
@@ -66,13 +67,27 @@ OpenClaw plugin `swe-selector` expone `swen_contexto` y
 
 ## Ask Cónsil
 
-Participantes configurados actualmente: DeepSeek V4 Flash, Qwen 3.7 Max y Qwen 3.8 Max.
+Participantes configurados actualmente: DeepSeek V4 Flash, **Claude Sonnet 5.5 (segundo)**, Qwen 3.7 Max y Qwen 3.8 Max.
 Árbitro de la decisión: **Qwen 3.8 Max**; su fallo no se disfraza con otro árbitro.
 La respuesta incluye `consenso_detalle` (opiniones individuales, decisión, árbitro);
 el chat despliega un control para ver cada opinión, adoptar una como criterio humano y
 editar alcance/objetivo. Adoptar opinión crea un **borrador**, no ejecuta código.
-Claude es opcional pero **no está conectado ni se mostrará como disponible**
-hasta disponer de un adaptador web autenticado y pruebas reales.
+Claude se conecta al **Gateway OpenClaw existente**, con el agente aislado
+`openclaw/swen-council`, selección estricta `anthropic/claude-sonnet-5-5`,
+`thinkingDefault:max` y sin fallback a Opus/Haiku/u otro modelo. Se utiliza
+el orden/rotación **nativa** de perfiles Anthropic válidamente autorizados
+de OpenClaw, sin copiar claves, automatizar verificaciones de identidad o
+crear cuentas. Los perfiles son propios del agente y deben estar autorizados
+para `swen-council`; la existencia de perfiles del agente `main` no garantiza
+que el consejero pueda utilizarlos. Al agotarse todos los perfiles elegibles,
+la salida del consejero lleva 🚩 `CLAUDE_SONNET_SIN_CUENTA_DISPONIBLE`.
+**Ask Cónsil no se detiene:** conserva la opinión faltante y Qwen 3.8 Max
+decide utilizando las demás respuestas confirmadas. Una solicitud exclusiva
+a Claude registra la incidencia y permite retomar la tarea posteriormente,
+sin atribuirle una respuesta de otro modelo.
+`GET /v1/claude/estado` sólo comprueba que el agente figure en el Gateway;
+**no certifica inferencia ni saldo**. Se requiere una prueba real y perfiles
+Anthropic configurados en el Gateway para marcarlo Disponible.
 
 ## OpenAI opcional: servicio distinto de la suscripción ChatGPT
 
