@@ -19,11 +19,34 @@ def formato():
     return _leer('prompts/FORMATO_SALIDA.md').strip()
 
 
-def sistema():
-    """core (con los huecos llenos) + bloque 3 (codigo) + bloque 4 (verificacion): el agente que ejecuta y verifica."""
+def _core():
+    """Core literal con los mismos marcadores resueltos que sistema()."""
     core = (FICHA / 'system_core.md').read_text(encoding='utf-8')
     for k, v in VARS.items():
         core = core.replace(k, v)
-    core = core.replace('[MODO]\n(ver bloque_1.md)\n', '').replace('\nEmpieza ahora.\n', '\n')
-    core = re.sub(r'\n=+ FIN INPUT BLOCK MAESTRO UNIFICADO =+\n', '\n', core)
-    return '\n\n'.join([core.strip(), (FICHA / 'bloques/bloque_3.md').read_text(encoding='utf-8').strip(), (FICHA / 'bloques/bloque_4.md').read_text(encoding='utf-8').strip()])
+    core = core.replace('[MODO]\\n(ver bloque_1.md)\\n', '').replace('\\nEmpieza ahora.\\n', '\\n')
+    core = re.sub(r'\\n=+ FIN INPUT BLOCK MAESTRO UNIFICADO =+\\n', '\\n', core)
+    return core.strip()
+
+
+def sistema():
+    """Core + bloques completos 3 y 4. Contrato original, sin cambios."""
+    return '\\n\\n'.join([_core(),
+                          (FICHA / 'bloques/bloque_3.md').read_text(encoding='utf-8').strip(),
+                          (FICHA / 'bloques/bloque_4.md').read_text(encoding='utf-8').strip()])
+
+
+def sistema_groq():
+    """Solo Qwen3.8/Groq de cuota baja: core original sin recortar.
+    Los bloques originales 3 y 4 quedan intactos en disco y el Harness.
+    Esta síntesis conserva reglas esenciales de programación y verificación,
+    sin recortar ni modificar el input del usuario o su Constitución.
+    """
+    return '\\n\\n'.join([_core(),
+        "[CONTRATO CODIGO] Respeta la estructura, rutas y archivos del repositorio, "
+        "nunca inventes resultados de herramientas ni secretos; input del usuario "
+        "verbatim, cambios mínimos, validación antes de cada commit y un ejecutor por tarea.",
+        "[CONTRATO TESTING] Ejecuta o solicita las pruebas necesarias y comprueba sus "
+        "resultados; separa PASS, GAP y BLOQUEO. Confirma commits y ejecución real "
+        "antes de declarar completada una tarea; si una dependencia falla, deja "
+        "checkpoint recuperable sin ocultar el error."]) 
