@@ -36,6 +36,10 @@ const funcion = <K extends keyof typeof FUNCIONES_YAIWES>(nombre: K, descripcion
   input: EntradaFuncion, output: Resultado, tool: { name: nombre as string, label: FUNCIONES_YAIWES[nombre].label },
 });
 
+// Contrato único del plugin; perdido en una reconstrucción previa del archivo.
+export const contract = defineFeatureContract({
+  pluginId: 'swe-selector',
+  operations: {
     capacidades: {
       kind: 'query', description: 'Disponibilidad real de agentes, workflows y modelos que reporta el Harness (GET /v1/swe/capacidades).',
       input: Type.Object({}, { additionalProperties: false }), output: Resultado, tool: { name: 'swe_capacidades', label: 'Capacidades SWE' },
