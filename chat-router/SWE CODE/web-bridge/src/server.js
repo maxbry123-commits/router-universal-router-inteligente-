@@ -71,6 +71,18 @@ app.use((req, res, next) => {
   if (!TOKEN && !clavesAcceso().length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (RIU_API_KEY, o BRIDGE_TOKEN)' } });
   return conToken(req) || conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key o Authorization: Bearer) o el token del bridge' } });
 });
+// panel de claves del chat (el proxy del Space reenvia /web/* aqui): ademas exige la clave de acceso del chat en x-api-key. La ruta se normaliza (minusculas, sin barras
+// dobles ni finales, sin /./) para que ninguna variante salte la puerta, aunque el enrutado ya sea estricto
+const rutaNorm = (p) => { let x = String(p || ''); try { x = decodeURIComponent(x); } catch { /* tal cual */ } return path.posix.normalize(x).toLowerCase().replace(/\/+$/, ''); };
+const PROTEGIDAS = ['/v1/claves', '/v1/credenciales', '/v1/openclaw'];
+app.use((req, res, next) => {
+  const r = rutaNorm(req.path);
+  if (!PROTEGIDAS.some(p => r === p || r.startsWith(p + '/'))) return next();
+  if (req.method === 'GET' && req.path === '/v1/openclaw' && conToken(req)) return next();  // config de OpenClaw (solo lectura, sin secretos): tambien con BRIDGE_TOKEN. /v1/claves sigue exigiendo la clave de acceso
+  if (!clavesAcceso().length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (RIU_API_KEY)' } });
+  return conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key o Authorization: Bearer)' } });
+});
+app.use(express.json({ limit: '10mb' }));
 // Handoff: rutas autenticadas para recuperación entre selector/modelos/conv_id.
 // Sin clave de acceso no se consulta ni se transfiere el contexto de otro usuario.
 app.get('/v1/contexto/:id', (req,res) => {
@@ -86,18 +98,7 @@ app.post('/v1/contexto/transferir', (req,res) => {
   return ok ? res.json({ok:true,origen:a,destino:b}) :
     res.status(409).json({ok:false,error:{code:'CONTEXTO_NO_EXISTE_O_DESTINO_OCUPADO'}});
 });
-// panel de claves del chat (el proxy del Space reenvia /web/* aqui): ademas exige la clave de acceso del chat en x-api-key. La ruta se normaliza (minusculas, sin barras
-// dobles ni finales, sin /./) para que ninguna variante salte la puerta, aunque el enrutado ya sea estricto
-const rutaNorm = (p) => { let x = String(p || ''); try { x = decodeURIComponent(x); } catch { /* tal cual */ } return path.posix.normalize(x).toLowerCase().replace(/\/+$/, ''); };
-const PROTEGIDAS = ['/v1/claves', '/v1/credenciales', '/v1/openclaw'];
-app.use((req, res, next) => {
-  const r = rutaNorm(req.path);
-  if (!PROTEGIDAS.some(p => r === p || r.startsWith(p + '/'))) return next();
-  if (req.method === 'GET' && req.path === '/v1/openclaw' && conToken(req)) return next();  // config de OpenClaw (solo lectura, sin secretos): tambien con BRIDGE_TOKEN. /v1/claves sigue exigiendo la clave de acceso
-  if (!clavesAcceso().length) return res.status(503).json({ error: { code: 'SIN_CLAVE_DE_ACCESO', message: 'el bridge no tiene clave de acceso configurada (RIU_API_KEY)' } });
-  return conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key o Authorization: Bearer)' } });
-});
-app.use(express.json({ limit: '10mb' }));
+
 const PORT = process.env.BRIDGE_PORT || 7870;
 montarResponses(app);  // POST /v1/responses (Codex): traduce a /v1/chat/completions
 montarRutasSwe(app);  // /v1/swe/{iniciar,avanzar,estado,aprobar,reanudar} -> Harness DeepSeek; exigen una clave de acceso (Bearer) o BRIDGE_TOKEN
