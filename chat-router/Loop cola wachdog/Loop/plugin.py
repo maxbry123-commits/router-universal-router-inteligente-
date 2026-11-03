@@ -215,10 +215,39 @@ def _cola():
 
 
 def _chat_modelo(modelo: str, prompt: str, sesion: str) -> dict:
+    """Un solo cableado existente: fichas antiguas -> puente_chat; ids del selector -> Harness.
+
+    Nunca reemplazar el modelo elegido. Los modelos HF locales se normalizan
+    con el MISMO catalogo del Harness que usa la UI. Sin tools de modelo:
+    las operaciones del LOOP las valida y ejecuta el motor determinista.
+    """
     from plugins.puente_chat import plugin as _pc
-    return _pc._chat({'model': modelo, 'messages': [{'role': 'user', 'content': prompt}],
-                      'max_tokens': 4096, 'sesion': sesion,
-                      'workflow_loop': True})  # extension Wordflow SOLO en los turnos del LOOP
+    if modelo in _pc.FICHAS:
+        return _pc._chat({'model': modelo, 'messages': [{'role': 'user', 'content': prompt}],
+                          'max_tokens': 4096, 'sesion': sesion, 'workflow_loop': True})
+    from plugins.deepseek_harness.server import _modelo_destino
+    from mvp import app as _router_app, prompt as _prompt, harness_client as _cliente
+    _destino, real = _modelo_destino(modelo)  # p.ej. hf/qwen3-0.6b -> qwen3-0.6b
+    control = _router_app.CONTROL.d
+    if type(control.get('prompt_on')) is not bool:
+        raise RuntimeError('SYSTEM_PROMPT_ESTADO_NO_VERIFICADO')
+    mensajes = [{'role': 'user', 'content': prompt}]
+    if control['prompt_on']:
+        core = _prompt.sistema_groq() if real == 'groq/qwen/qwen3.8-27b' else _prompt.sistema()
+        mensajes.insert(0, {'role': 'system', 'content': core + '\n\n' + _prompt.wordflow_loop()})
+    out = _cliente.llm(_router_app.clave_harness(), mensajes, real, {'max_tokens': 4096},
+                       {'tools': False, 'agente_tool': False, 'llm_tool': False})
+    if out.get('status') == 'error':
+        return {'error': str(out.get('error') or 'HARNESS_FALLO')[:180]}
+    result = out.get('result', out)
+    texto = str(result.get('texto') or '')
+    if result.get('tool_calls'):
+        return {'error': 'LOOP_TOOL_CALLS_NO_AUTORIZADAS'}
+    if not texto:
+        return {'error': 'MODELO_SIN_TEXTO', 'finish_reason': result.get('finish_reason')}
+    return {'model': modelo, 'modelo_usado': result.get('modelo_respuesta') or real,
+            'choices': [{'message': {'role': 'assistant', 'content': texto},
+                         'finish_reason': result.get('finish_reason') or 'stop'}]}
 
 
 def _texto_respuesta(r: dict) -> str:
