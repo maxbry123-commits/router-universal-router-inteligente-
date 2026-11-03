@@ -112,6 +112,38 @@ def _inferencia_y_checkpoint(pid, modelo, mensaje, sesion, timeout, firma):
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
+    if mensaje.strip() == "@swen/gaps":
+        req = urllib.request.Request("http://127.0.0.1:7870/v1/swen/gaps",
+                                     headers={"X-API-Key": _clave()})
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.load(resp)
+            return {"estado":"terminado","diagnostico":"autoreparacion",
+                    "gaps":(data.get("gaps") or [])[:20]}
+        except urllib.error.HTTPError as exc:
+            return {"estado":"error","error":"SWEN_GAPS_HTTP_"+str(exc.code)}
+        except (OSError, ValueError, TimeoutError):
+            return {"estado":"error","error":"SWEN_GAPS_NO_DISPONIBLES"}
+    if mensaje.strip().startswith("@swen/reparar "):
+        partes = mensaje.strip().split()
+        gap = partes[1] if len(partes)==2 else ""
+        if not re.fullmatch(r"gap_[0-9a-f]{24}",gap):
+            return {"estado":"error","error":"SWEN_GAP_ID_INVALIDO"}
+        req = urllib.request.Request("http://127.0.0.1:7870/v1/swen/gaps/"+gap+"/investigar",
+                                     data=b"{}",method="POST",
+                                     headers={"X-API-Key": _clave(),
+                                              "Content-Type":"application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=75) as resp:
+                return {"estado":"terminado","diagnostico":"openclaw", "respuesta":json.load(resp)}
+        except urllib.error.HTTPError as exc:
+            try:
+                detalle=json.loads(exc.read(8192))
+                return {"estado":"error","error":str(detalle.get("code") or "NO_DISPONIBLE")[:90]}
+            except (ValueError, TypeError):
+                return {"estado":"error","error":"SWEN_REPARAR_HTTP_"+str(exc.code)}
+        except (OSError,ValueError,TimeoutError):
+            return {"estado":"error","error":"SWEN_REPARAR_SIN_RESPUESTA"}
     if mensaje.strip() == "@swen/diag":
         req = urllib.request.Request("http://127.0.0.1:7870/v1/web/diagnostico",
                                      headers={"X-API-Key": _clave()})
