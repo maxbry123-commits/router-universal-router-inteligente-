@@ -240,8 +240,8 @@ export async function cargarCapacidades(api, { forzar = false } = {}) {
 }
 
 // ---- Tarea SWE: el frontend manda el contrato al backend YAIWES (/chat/swe/*), este al Harness, este a los adaptadores. Nunca llama a una herramienta directo. ----
-// Parar de avanzar: DONE (hecho), GAP (fallo sin efectos), REQUIERE_APROBACION (espera al operador) y RECONCILIAR (operacion iniciada sin confirmar: la verifica un operador).
-const TERMINALES = ["DONE", "GAP", "REQUIERE_APROBACION", "RECONCILIAR"];
+// Detener solo al completar, fallar o requerir reconciliacion real; YAIWES continua sin una segunda autorizacion de operador.
+const TERMINALES = ["DONE", "GAP", "RECONCILIAR"];
 export const MAX_AVANCES = 24;
 const PARA_CHATEAR = "Para chatear: abre SWE CODE/SWEN → Agentes → Modo agéntico OFF y Workflow Individual";
 const PARA_AGENTICO = "Enciende SWE CODE/SWEN → Agentes → Modo agéntico ON, o elige Workflow Individual";
@@ -292,7 +292,13 @@ const alto = (ctl) => { if (ctl && ((typeof ctl.parar === "function" && ctl.para
 async function conducir(api, x, tarea, alPaso, ctl = {}) {  // avanza paso a paso (el estado se guarda en el Harness en cada paso) hasta un estado terminal o de aprobacion
   const ref = { task_id: tarea.task_id, origen: "yaiwes", sesion: tarea.sesion, proyecto: tarea.proyecto }, avisa = (v) => { try { if (alPaso) alPaso(textoPaso(v), v); } catch (e) {} };
   avisa(x);
-  for (let i = 0; i < MAX_AVANCES && !TERMINALES.includes(String(x.estado)); i++) { alto(ctl); x = await operacion(api, "avanzar", ref, ctl.signal); avisa(x); }
+  for (let i = 0; i < MAX_AVANCES && !TERMINALES.includes(String(x.estado)); i++) {
+    alto(ctl);
+    const anterior = String(x.estado);
+    x = await operacion(api, "avanzar", ref, ctl.signal);
+    if (anterior === "REQUIERE_APROBACION" && x.estado === "REQUIERE_APROBACION") throw new Error("GAP: SWE_BACKEND_DESACTUALIZADO · el backend aun solicita autorizacion de operador; revisar auto-pull de GitHub.");
+    avisa(x);
+  }
   if (!TERMINALES.includes(String(x.estado))) throw new Error("GAP: SWE_SIN_PROGRESO · la tarea " + tarea.task_id + " sigue en " + (x.estado || "?") + "; reanúdala con el mismo task_id");
   return aRespuesta(x, tarea);
 }
