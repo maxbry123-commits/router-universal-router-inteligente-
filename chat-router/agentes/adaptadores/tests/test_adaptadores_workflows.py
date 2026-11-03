@@ -1178,3 +1178,12 @@ def test_dos_procesos_reales_no_ejecutan_la_misma_tarea_a_la_vez(tmp_path, monke
     assert sal_b == {"ok": False, "error": "TAREA_BLOQUEADA"} and not list(almacen.glob("EJECUTADO-B-*"))  # B no ejecuto nada
     assert sal_a["ok"] is True and len(list(almacen.glob("EJECUTADO-*"))) == 1
     assert json.loads((almacen / "swe__locks__yaiwes-001.json").read_text())["expira"] == 0  # A libero el candado
+
+def test_workflow_off_no_llama_liquid_ni_llm_ni_agentes(mundo):
+    """Un selector workflow activado con modo agentico OFF no ejecuta ni la primera fase."""
+    c = mundo.ctx()
+    wf.swe_iniciar(lm(modo_agentico=False), c)
+    r = wf.swe_avanzar({"task_id": "openclaw-001"}, c)
+    assert r["estado"] == "GAP" and r["error"]["codigo"] == "MODO_AGENTICO_APAGADO"
+    assert mundo.servidores == [] and mundo.agentes == [] and mundo.llm_llamadas == []
+
