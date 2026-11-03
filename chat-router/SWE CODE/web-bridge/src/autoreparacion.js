@@ -107,9 +107,9 @@ export async function investigarConOpenClaw(id,{fetchFn=fetch}={}){
   ].join('\n');
   let respuesta;
   try {
-    const r=await fetchFn('http://127.0.0.1:'+String(process.env.OPENCLAW_PORT||'18789')+'/openclaw/v1/chat/completions',{
+    const r=await fetchFn('http://127.0.0.1:'+String(process.env.OPENCLAW_PORT||'18789')+'/v1/chat/completions',{
       method:'POST',redirect:'error',signal:AbortSignal.timeout(70000),
-      headers:{authorization:'Bearer '+process.env.OPENCLAW_GATEWAY_TOKEN,'content-type':'application/json'},
+      headers:{authorization:'Bearer '+process.env.OPENCLAW_GATEWAY_TOKEN,'content-type':'application/json',accept:'application/json, text/html;q=0'},
       body:JSON.stringify({model:agent,stream:false,user:'swen-repair-'+fila.id,
         messages:[{role:'user',content:texto}]})
     });
