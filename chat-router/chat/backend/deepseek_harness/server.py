@@ -351,19 +351,36 @@ def llm(cuerpo):
         raise ValueError("opciones no permitidas")
     opciones = dict(opciones)
     permitidas = {}
-    # GitHub/HF no dependen del permiso de delegacion a otras IA.
-    catalogo = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": "catalogo", "method": "tools/list"})
-    sin_router = bool(catalogo.get("error")) and bool(_bridge_url())  # Router MVP caido: el Harness sigue solo con el bridge, sin herramientas
-    if catalogo.get("error") and not sin_router:
-        raise RuntimeError("No se pudo obtener el catalogo MCP")
-    permitidas = {t["name"]: t for t in ({} if sin_router else catalogo).get("result", {}).get("tools", [])
-                  if (t["name"] in ("github_leer", "github_escribir", "almacen", "pendientes", "sala", "agente", "llm", "yaiwes_md", "loop", "archivos") or t["name"].startswith("mcp__"))
-                  and _delegacion_permitida(t["name"], cuerpo)}
-    if not permitidas and not sin_router and not (es_swe(cuerpo.get("modelo")) and _bridge_url()):
-        raise RuntimeError("Herramientas GitHub no disponibles en MCP")
-    opciones["tools"] = [{"type": "function", "function": {"name": n,
-        "description": t["description"], "parameters": t["inputSchema"]}} for n, t in permitidas.items()]
-    opciones["tool_choice"] = "auto"
+    habilitar_tools = cuerpo.get("tools") is True
+    sin_router = False
+    # Tools OFF afecta SOLO a las tool_calls del modelo; los MCP internos
+    # del Router siguen funcionando. Sin tools no cargar catálogos enormes.
+    if habilitar_tools:
+        catalogo = llamar("router_mvp", "mcp", {"jsonrpc": "2.0", "id": "catalogo", "method": "tools/list"})
+        sin_router = bool(catalogo.get("error")) and bool(_bridge_url())
+        if catalogo.get("error") and not sin_router:
+            raise RuntimeError("No se pudo obtener el catalogo MCP")
+        permitidas = {t["name"]: t for t in ({} if sin_router else catalogo).get("result", {}).get("tools", [])
+                      if (t["name"] in ("github_leer", "github_escribir", "github_api", "almacen", "pendientes", "sala", "agente", "llm", "yaiwes_md", "loop", "archivos") or t["name"].startswith("mcp__"))
+                      and _delegacion_permitida(t["name"], cuerpo)}
+        if cuerpo.get("modelo") == "groq/qwen/qwen3.8-27b":
+            # La petición al Qwen de Groq llegaba a HTTP 413 porque se mandaba
+            # TODO el catálogo MCP, con cientos de esquemas en cada turno.
+            # Mantener el conjunto GitHub esencial para lectura, commits y API
+            # sin renunciar a las herramientas de memoria del Router.
+            prioridad = ("github_leer", "github_escribir", "github_api",
+                         "archivos", "almacen", "yaiwes_md", "pendientes", "sala")
+            permitidas = {n: permitidas[n] for n in prioridad if n in permitidas}
+        if not permitidas and not sin_router and not (es_swe(cuerpo.get("modelo")) and _bridge_url()):
+            raise RuntimeError("Herramientas GitHub no disponibles en MCP")
+    if permitidas:
+        opciones["tools"] = [{"type": "function", "function": {"name": n,
+            "description": t["description"], "parameters": t["inputSchema"]}}
+            for n, t in permitidas.items()]
+        opciones["tool_choice"] = "auto"
+    else:
+        opciones.pop("tools", None)
+        opciones.pop("tool_choice", None)
     mensajes = list(mensajes)
     acumulado, continuaciones, usadas = str(cuerpo.get("acumulado") or ""), 0, []  # usadas: herramientas realmente ejecutadas (diagnostico)
     tarea = re.sub(r"[^A-Za-z0-9_-]", "", str(cuerpo.get("tarea_id") or ""))[:64]  # con tarea_id, lo que ya se ejecuto no se repite si la tarea se retoma
