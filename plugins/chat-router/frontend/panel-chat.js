@@ -192,6 +192,16 @@ export async function mount(root, { api, tell }) {
       if (t) { c.hist.append(burbuja(t)); A.registrar(c.sesion, "bot", t); } else c.hist.append(burbuja(p && p.error === "PROCESO_NO_EXISTE" ? "La tarea ya no está en el Router (se reinició). Reenvía tu mensaje." : "Sin respuesta de la tarea recuperada: " + ((p && (p.error || p.detalle)) || "vacía"), "error"));
     }).finally(() => { c.ocupado = false; pintarTabs(); abajo(c); });
   }); });
+  // Restauración automática fiable: shell.js monta este panel después de DOMContentLoaded.
+  // Se esperan las lecturas de IndexedDB antes de localizar pestañas huérfanas.
+  Promise.allSettled(chats.map((c) => c.historialListo)).then(async () => {
+    if (chats.some((c) => c.ocupado)) return; // tareas activas se recuperan por PID
+    try {
+      const perdidas = await A.pestanasPerdidas(chats.map((c) => c.sesion));
+      if (chats.some((c) => c.ocupado)) return;
+      if (perdidas.length || chats.every((c) => !A.cargarHistorial(c.sesion).length)) await recuperarHist();
+    } catch (error) { console.warn("[historial] recuperación automática", error); }
+  });
   conectarSelectorModelos({ q, chat, tell, guardar });  // Selector Qwen: solo frontend
   conectarMicrofono({ q, tell });  // micrófono: dictado por voz al input
   // ---- hojas (sheets): cada pildora abre la suya ----
