@@ -298,3 +298,29 @@ test("F3 no se valida agente_responde (el backend no lo usa) ni modelo_responde 
   const noFijo = S.validarSeleccion({ ...S.SEL_DEFECTO, modo_agentico: true, modelo_responde: "hf/lfm2.5-350m" }, S.normalizarCapacidades(sinOpenclaw));
   assert.ok(noFijo.problemas.some((p) => /MODELO QUE RESPONDE/.test(p)), "en Individual el modelo que responde SI se usa y se valida");
 });
+
+test("Individual ON: devuelve resultado del agente y respuesta final en una sola burbuja", async () => {
+  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "individual",
+    modo_agentico: true, agente_tool: "codex", modelo_tool: "nvidia/minimaxai/minimax-m3.1-flash" }) });
+  const routes = [];
+  const api = async (ruta, op) => {
+    routes.push(ruta);
+    if (ruta === "/chat/swe/capacidades") return TODOS_OK;
+    if (ruta === "/chat/swe/iniciar") return { ok: true, resultado: { task_id: op.body.task_id, estado: "EJECUTANDO" } };
+    return { ok: true, resultado: { task_id: op.body.task_id, estado: "DONE", resultado_tool: "hecho por codex",
+      evidencia: ["commit confirmado"], pasos_terminados: [
+        { paso: "ejecuta", agente: "codex", agente_ejecutado: "codex",
+          modelo: "nvidia/minimaxai/minimax-m3.1-flash", recibo: "codex:abc", resultado: "resultado real",
+          herramientas: ["github_leer"] },
+        { paso: "responde", agente: null, modelo: "hf/lfm2.5-350m",
+          recibo: "llm:ok", resultado: "resumen confirmado" }
+      ] } };
+  };
+  const r = await S.enviarTareaSwe(api, { mensaje: "Revisar proyecto", sesion: "s" });
+  assert.deepEqual(routes, ["/chat/swe/capacidades", "/chat/swe/iniciar", "/chat/swe/avanzar"]);
+  assert.match(r.reply, /Agente codex/);
+  assert.match(r.reply, /resultado real/);
+  assert.match(r.reply, /resumen confirmado/);
+  assert.match(r.reply, /recibo ejecuta/);
+  assert.equal(r.estado, "DONE");
+});
