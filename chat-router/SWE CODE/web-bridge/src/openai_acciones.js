@@ -68,6 +68,23 @@ const responderError=(res,e)=>{
   return res.status(e.http||502).json({ok:false,error:{code}});
 };
 export function montarAccionesOpenAI(app,propietarioDe){
+  app.get('/v1/openai/trabajos',(req,res)=>{
+    const owner=propietarioDe(req);
+    if(!owner)return res.status(401).json({ok:false,error:{code:'NO_AUTORIZADO'}});
+    let ls=[];try{ls=fs.readdirSync(DIR()).filter(x=>/^[0-9a-f]{32}\.json$/.test(x)).slice(-250)}
+    catch{return res.json({ok:true,trabajos:[]})}
+    const out=[];
+    for(const fn of ls){
+      try{
+        const v=JSON.parse(fs.readFileSync(path.join(DIR(),fn),'utf8'));
+        if(v.propietario!==owner||!['imagen','investigacion'].includes(v.tipo))continue;
+        out.push({id:v.id,tipo:v.tipo,estado:v.status||(v.tipo==='imagen'?'LISTA':'SIN_ESTADO'),
+          fecha:v.fecha,prompt:String(v.prompt||'').slice(0,140)});
+      }catch{}
+    }
+    out.sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+    return res.json({ok:true,trabajos:out.slice(0,30)});
+  });
   app.get('/v1/openai/estado',(_req,res)=>res.json({ok:true,
     configurada:!!CLAVE(),habilitada:ACTIVADO(),
     requiere:'OPENAI_API_KEY y RIU_OPENAI_ACCIONES_ON=1',facturacion:'API OpenAI separada de ChatGPT',
