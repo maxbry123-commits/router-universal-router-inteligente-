@@ -16,6 +16,7 @@ from typing import Awaitable, Callable
 CODIGO = re.compile(r"\b(?:c[oó]digo|code|python|programa|script|\.py)\b", re.I)
 LINEAS = re.compile(r"\b(\d{2,4})\s+l[ií]neas?\b", re.I)
 REINTENTABLE = re.compile(r"(?:HTTP[_ ](?:408|425|429|500|502|503|504|529)|limite.temporal|timeout|timed.out|GROQ_NVIDIA_REINTENTOS)", re.I)
+RETRY_AFTER = re.compile(r"\bretry_after_s=(\d+)\b", re.I)
 BLOQUE = 50
 
 
@@ -75,6 +76,7 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
     if not estado:
         estado = dict(tipo="coda-codigo-v1", huella=huella, modelo=modelo,
                       n_lineas=n_lineas, piezas=[], creado=reloj(), intentos=0,
+                      tam_bloque=BLOQUE, fallos_segmento=0,
                       siguiente_llamada=0, validacion="PENDIENTE")
         if not await guardar(estado):
             raise RuntimeError("CODA_CHECKPOINT_NO_PERSISTIDO")
@@ -90,7 +92,7 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
         if reloj() >= vencimiento:
             raise RuntimeError("CODA_TIEMPO_AGOTADO_CHECKPOINT_CONSERVADO")
         faltan = n_lineas - sum(len(t.splitlines()) for t in piezas)
-        pedir_lineas = min(BLOQUE, faltan)
+        pedir_lineas = min(max(10, min(int(estado.get("tam_bloque") or BLOQUE), BLOQUE)), faltan)
         definiciones = []
         for t in piezas:
             arbol = ast.parse(t)
@@ -130,8 +132,12 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
             raise RuntimeError("CODA_CHECKPOINT_NO_PERSISTIDO")
         progreso(str(sum(len(x.splitlines()) for x in piezas)), "generando parte %d" % (len(piezas) + 1))
         try:
-            r = await inferir(peticion, min(1900, 550 + pedir_lineas * 17))
+            tokens = min(1700 if modelo.startswith("groq/") else 3000,
+                         650 + pedir_lineas * (20 if modelo.startswith("groq/") else 35))
+            r = await inferir(peticion, tokens)
             texto = str(r.get("texto") or "")
+            if not texto.strip():
+                raise ValueError("CODA_MODELO_SIN_TEXTO_FINISH_REASON_" + str(r.get("finish_reason") or "none")[:35])
             if r.get("tool_calls"):
                 raise ValueError("CODA_TOOLS_INESPERADAS")
             ok, resultado, cuenta = _valida(texto, pedir_lineas, hashes)
@@ -141,21 +147,32 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
         except Exception as e:
             fallos += 1
             error = str(e)
-            if not REINTENTABLE.search(error) and not error.startswith(("CODA_CANTIDAD", "CODA_SINTAXIS", "CODA_SEGMENTO", "CODA_FALTAN")):
+            if not REINTENTABLE.search(error) and not error.startswith(("CODA_CANTIDAD", "CODA_SINTAXIS", "CODA_SEGMENTO", "CODA_FALTAN", "CODA_MODELO_SIN_TEXTO")):
                 raise
             transitorio = bool(REINTENTABLE.search(error))
             # 429/503 pueden durar minutos: el horizonte de 1-4h pertenece
             # al motor, no a los tres reintentos de una llamada del proveedor.
             # No reintentar indefinidamente codigo rechazado sin variar entrada.
-            if not transitorio and fallos >= 4:
-                raise RuntimeError("CODA_CODIGO_INVALIDO_REPETIDO_CHECKPOINT_CONSERVADO: " + error[:150]) from None
-            espera = (65 if modelo.startswith("groq/") else min(120, 10 * min(fallos, 12))) if transitorio else 4
+            if not transitorio:
+                estado["fallos_segmento"] = int(estado.get("fallos_segmento", 0)) + 1
+                # Rechazo o salida vacia: disminuir SOLO el tamano del proximo
+                # segmento, sin perder piezas ya verificadas ni repetir writes.
+                if estado["fallos_segmento"] >= 2:
+                    estado["tam_bloque"] = max(10, min(BLOQUE, int(estado.get("tam_bloque") or BLOQUE) // 2))
+                    estado["fallos_segmento"] = 0
+                if fallos >= 7:
+                    raise RuntimeError("CODA_CODIGO_INVALIDO_REPETIDO_CHECKPOINT_CONSERVADO: " + error[:150]) from None
+            ra = RETRY_AFTER.search(error)
+            servidor_espera = min(int(ra.group(1)), 600) if ra else 0
+            espera = (max(65 if modelo.startswith("groq/") else 10, servidor_espera)
+                      if transitorio else 4)
             estado["siguiente_llamada"] = reloj() + espera
             estado["ultimo_gap"] = error[:150]
             if not await guardar(estado):
                 raise RuntimeError("CODA_CHECKPOINT_NO_PERSISTIDO")
             continue
         fallos = 0
+        estado["fallos_segmento"] = 0
         piezas.append(resultado)
         hashes.add(hashlib.sha256(resultado.encode()).hexdigest())
         estado["piezas"] = piezas
