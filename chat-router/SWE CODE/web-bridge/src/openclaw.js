@@ -84,6 +84,10 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
         'gateway','nodes','canvas','mcp__*','swe_tool_llamar','yaiwes_*']},
   };
   cfg.gateway ||= {};
+  // El Space usa OpenClaw en loopback; el bootstrap antiguo omite gateway.mode.
+  // Sin mode:"local" el validador de OpenClaw falla aunque sirva /health,
+  // y la API /v1/models permanece deshabilitada en el proceso activo.
+  if (cfg.gateway.mode == null) cfg.gateway.mode = 'local';
   cfg.gateway.controlUi ||= {};
   cfg.gateway.controlUi.basePath = '/openclaw';
   // GAP real: el openclaw.sh INTEGRADO EN EL SPACE es una copia antigua
