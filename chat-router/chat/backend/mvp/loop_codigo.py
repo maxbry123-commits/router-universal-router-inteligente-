@@ -16,7 +16,7 @@ from typing import Awaitable, Callable
 CODIGO = re.compile(r"\b(?:c[oó]digo|code|python|programa|script|\.py)\b", re.I)
 LINEAS = re.compile(r"\b(\d{2,4})\s+l[ií]neas?\b", re.I)
 REINTENTABLE = re.compile(r"(?:HTTP[_ ](?:408|425|429|500|502|503|504|529)|limite.temporal|timeout|timed.out|GROQ_NVIDIA_REINTENTOS)", re.I)
-BLOQUE = 75
+BLOQUE = 50
 
 
 def solicitado(mensaje: str, tipo: str = "", modo: str = "") -> int | None:
@@ -97,7 +97,7 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
         cabecera = (
             f"TAREA CODA DE CODIGO PYTHON. Archivo total: {n_lineas} lineas; "
             f"ya validadas: {n_lineas - faltan}; parte {len(piezas)+1}.\n"
-            f"Genera como maximo {pedir_lineas} lineas de codigo nuevas. "
+            f"Genera EXACTAMENTE {pedir_lineas} lineas FISICAS de codigo nuevas en ESTA parte. "
             "Solo Python sintacticamente valido, sin markdown ni explicaciones. "
             "Este segmento debe poder analizarse solo con ast.parse: "
             "funciones o clases completas, no fragmentos con sangria abierta. "
@@ -111,7 +111,15 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
                if str(estado.get("ultimo_gap") or "").startswith("CODA_") else "")
         )
         user = next((str(m.get("content") or "") for m in reversed(mensajes) if m.get("role") == "user"), "")
-        peticion = [{"role": "user", "content": cabecera + user}]
+        peticion = [{"role": "user", "content":
+            cabecera + "[INSTRUCCIONES ORIGINALES VERBATIM: objetivo global, NO son la cantidad de lineas de ESTA parte]\n"
+            + user
+            + "\n[FIN DEL INPUT ORIGINAL]\n"
+            + ("CORRECCION DEL ULTIMO INTENTO: " + str(estado.get("ultimo_gap") or "")[:180] + "\n"
+               if str(estado.get("ultimo_gap") or "").startswith("CODA_") else "")
+            + f"ORDEN ACTUAL DE ESTA PARTE: escribe SOLO {pedir_lineas} lineas de Python; "
+              "no 500 lineas ahora. Sin markdown, sin explicaciones, sin comentarios de relleno. "
+              "Cierra todas las funciones y clases. Codigo solo."}]
         espera = max(0., float(estado.get("siguiente_llamada", 0)) - reloj())
         if espera:
             progreso(str(sum(len(x.splitlines()) for x in piezas)), "cuota: espera %.0fs" % espera)
@@ -127,7 +135,8 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
                 raise ValueError("CODA_TOOLS_INESPERADAS")
             ok, resultado, cuenta = _valida(texto, faltan, hashes)
             if not ok:
-                raise ValueError("CODA_" + resultado)
+                raise ValueError("CODA_" + resultado + ": recibidas=" + str(cuenta)
+                                 + " limite=" + str(pedir_lineas))
         except Exception as e:
             fallos += 1
             error = str(e)
@@ -139,7 +148,7 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
             # No reintentar indefinidamente codigo rechazado sin variar entrada.
             if not transitorio and fallos >= 4:
                 raise RuntimeError("CODA_CODIGO_INVALIDO_REPETIDO_CHECKPOINT_CONSERVADO: " + error[:150]) from None
-            espera = 65 if modelo.startswith("groq/") else min(120, 10 * min(fallos, 12))
+            espera = (65 if modelo.startswith("groq/") else min(120, 10 * min(fallos, 12))) if transitorio else 4
             estado["siguiente_llamada"] = reloj() + espera
             estado["ultimo_gap"] = error[:150]
             if not await guardar(estado):
