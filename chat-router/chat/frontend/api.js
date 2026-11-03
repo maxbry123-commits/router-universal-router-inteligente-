@@ -191,7 +191,7 @@ async function puenteRouter(base, body, qs, headers) {
     if (!cortado && payload && payload.sesion) guardaProc(payload.sesion, null);  // termino: ya no hay nada que retomar
     if (cortado) { return { status: 504, ok: false, p: { estado: 'reanudable', error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'El proceso sigue en el Router; no se relanza la tarea', proceso_id: proceso || p.proceso_id } }; }
     if (p.estado === 'encendiendo') return { status: 202, ok: true, p };
-    if (p.error) return { status: 502, ok: false, p };  // proceso terminado en error: NO se relanza otro chat_async (el reintento de red de LIVE_URL solo vale antes de obtener proceso_id)
+    if (p.error) { if (/SESSION_EXPIRED|RETO_ANTIBOT|SIN_SESION_EN_PERFIL|LOGIN_RECHAZADO|REQUIERE_SESION/i.test(JSON.stringify(p.error))) return { status: 424, ok: false, p: { ...p, tipo: 'SESION_WEB' } }; return { status: 502, ok: false, p: { ...p, tipo: p.tipo || 'ERROR_PROCESO' } }; }  // sesión web ≠ red; proceso terminado en error: NO se relanza otro chat_async (el reintento de red de LIVE_URL solo vale antes de obtener proceso_id)
     return { status: 200, ok: true, p };
   }
 }
@@ -297,6 +297,10 @@ async function apiOnce(path, options = {}) {
     const detalle = typeof payload.detail === "string" ? payload.detail : typeof payload.reason === "string" ? payload.reason : (payload.error && typeof payload.error.message === "string") ? ((payload.error.code ? payload.error.code + ": " : "") + payload.error.message) : "HTTP " + response.status;
     const error = new Error((response.status === 401 || response.status === 403 ? "HTTP " + response.status + ": " : "") + detalle);
     error.status = response.status;
+    // Sesión web caducada/reto del titular: el Router SÍ responde; no es un fallo de red.
+    if (/SESSION_EXPIRED|RETO_ANTIBOT|SIN_SESION_EN_PERFIL|LOGIN_RECHAZADO|REQUIERE_SESION/i.test(detalle)) {
+      error.tipo = "SESION_WEB"; window.dispatchEvent(new CustomEvent("router-connection", { detail: "Router disponible · sesión web requiere titular" }));
+    }
     throw error;
   }
   return payload;

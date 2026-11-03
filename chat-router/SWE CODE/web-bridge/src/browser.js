@@ -240,3 +240,41 @@ export async function cerrarTodo() {
   contextos.clear();
   paginas.clear();
 }
+
+// Importación de sesión autorizada (Playwright storageState) exportada por el
+// TITULAR desde su propio navegador tras iniciar sesión y resolver cualquier
+// verificación oficial. No elude captcha: solo reutiliza una sesión legítima.
+// Se inyecta en el perfil persistente existente (mismo contexto/arquitectura).
+// Nunca se registran cookies ni valores en logs/respuestas.
+export async function importarSesion(site, estado) {
+  const cfg = SITES[site];
+  if (!cfg) return { ok:false, code:'SITIO_INVALIDO' };
+  if (!estado || !Array.isArray(estado.cookies) || !estado.cookies.length)
+    return { ok:false, code:'STORAGE_STATE_INVALIDO' };
+  const host = new URL(cfg.url).hostname.split('.').slice(-2).join('.');
+  const cookies = estado.cookies.filter(c => c && c.name && typeof c.value === 'string' &&
+    String(c.domain || '').replace(/^\./, '').endsWith(host)).map(c => {
+      const o = { name:c.name, value:c.value, domain:c.domain, path:c.path || '/',
+        httpOnly:!!c.httpOnly, secure:c.secure !== false, sameSite:['Strict','Lax','None'].includes(c.sameSite) ? c.sameSite : 'Lax' };
+      if (typeof c.expires === 'number' && c.expires > 0) o.expires = c.expires;
+      return o;
+    });
+  if (!cookies.length) return { ok:false, code:'SIN_COOKIES_DEL_SITIO', dominio:host };
+  let entry = contextos.get(site);
+  if (!entry || entry.page.isClosed()) { entry = await lanzar(site); contextos.set(site, entry); }
+  await entry.ctx.addCookies(cookies);
+  const origenes = (estado.origins || []).filter(o => o && String(o.origin || '').includes(host));
+  for (const o of origenes) {
+    try {
+      await entry.page.goto(o.origin, { waitUntil:'domcontentloaded', timeout:45000 });
+      await entry.page.evaluate(items => { for (const i of items || []) localStorage.setItem(i.name, i.value); }, o.localStorage || []);
+    } catch {}
+  }
+  ultimoFallo.delete(site);
+  try {
+    await asegurar(site);
+    return { ok:true, code:'SESION_IMPORTADA_Y_VERIFICADA', cookies:cookies.length, origenes:origenes.length };
+  } catch (e) {
+    return { ok:false, code:'SESION_IMPORTADA_PERO_NO_VALIDA', motivo:e?.motivo || e?.code || 'DESCONOCIDO', cookies:cookies.length };
+  }
+}

@@ -9,7 +9,7 @@ import { createRequire } from 'node:module';
 import { consultarWeb, salud } from './motor.js';
 import { consenso } from './consenso.js';
 import { modoValido } from './modos.js';
-import { estadoCuentas, estadoTabs, snapshotTab, diagnosticoAcceso, reiniciarSitioInactivo, cerrarPagina, cerrarTodo } from './browser.js';
+import { estadoCuentas, estadoTabs, snapshotTab, diagnosticoAcceso, reiniciarSitioInactivo, importarSesion, cerrarPagina, cerrarTodo } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -214,6 +214,12 @@ app.get('/health', async (req, res) => {
 app.get('/v1/web/diagnostico',async(_req,res)=>{
   try { res.json({ok:true,indicadores:await diagnosticoAcceso()}); }
   catch { res.status(503).json({ok:false,error:{code:'WEB_DIAGNOSTICO_FALLO'}}); }
+});
+// Importa storageState de Playwright exportado por el titular (sesión legítima, sin eludir captcha). Requiere clave de acceso.
+app.post('/v1/web/sesion/importar', async (req, res) => {
+  const { site, storageState } = req.body || {};
+  try { const r = await importarSesion(String(site || ''), storageState); res.status(r.ok ? 200 : 422).json(r); }
+  catch (e) { res.status(500).json({ ok:false, code:'IMPORTACION_FALLO', message:String(e?.message || e).slice(0,160) }); }
 });
 app.get('/v1/queue', (_req, res) => {
   res.json({ ok: true, ...estadoTabs(), cuentas: sinCorreos(estadoCuentas()) });
