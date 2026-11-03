@@ -1,31 +1,52 @@
-// swe-systemprompt.js — ON/OFF del system prompt de la ficha del Router MVP, aplicado por el bridge a TODOS los modelos
-// (chat directo SWE CODE/SWEN CODE free y lo que llega desde OpenClaw: mismo pipeline en server.js). Defecto ON.
-// GET/POST {apiBase}/v1/system-prompt-on (web-bridge/src/systemprompt.js + server.js). Mismo patron de base/clave que swe-claves.js.
-const RUTA = "/v1/system-prompt-on";
-const cfg = () => (typeof window !== "undefined" && window.RIU_CONFIG) || {};
-async function resolverBase() {
-  const c = cfg(); if (c.apiBase) return c.apiBase;
-  try { const m = await import("./api.js"); await m.api("/health").catch(() => {}); } catch (e) {}
-  return cfg().apiBase || cfg().proxyDestino || "";
+// Unica autoridad: Router MVP -> control.prompt_on, sincronizado por el bridge SWE CODE.
+// GET/POST /web/v1/system-prompt-on: el proxy existente reenvia a SWE CODE :7870,
+// y ese bridge confirma el estado con /plugins/puente_chat/call/agent_access_lock.
+// Nunca interpretar un 404, 401 o 503 como "ON"; nunca fingir un cambio.
+import { api } from "./api.js";
+
+const RUTA = "/web/v1/system-prompt-on";
+let estado = null, cargado = false, ultimoError = "";
+
+async function llamar(metodo, on) {
+  const p = await api(RUTA, {
+    method: metodo,
+    ...(metodo === "POST" ? { body: { on } } : {}),
+  });
+  if (p?.ok !== true || typeof p.on !== "boolean") throw new Error("SYSTEM_PROMPT_ESTADO_NO_CONFIRMADO");
+  if (metodo === "POST" && p.on !== on) throw new Error("SYSTEM_PROMPT_CAMBIO_NO_CONFIRMADO");
+  return p.on;
 }
-async function llamar(metodo, cuerpo) {
-  const base = await resolverBase(), c = cfg(), h = { "Content-Type": "application/json" };
-  let k = ""; try { k = sessionStorage.getItem("riu_clave") || ""; } catch (e) {}
-  h[c.authHeader || "X-API-Key"] = k;
-  const r = await fetch(String(base).replace(/\/$/, "") + RUTA, { method: metodo, headers: h, body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo) });
-  let p = {}; try { p = await r.json(); } catch (e) {}
-  return typeof p.on === "boolean" ? p.on : true;  // defecto ON si el bridge no responde (mismo defecto que systemprompt.js del servidor)
-}
-let estado = true, cargado = false;
-export const systemPromptOnCache = () => estado;
-export async function cargarSystemPromptOn() {
-  if (cargado) return estado;
-  try { estado = await llamar("GET"); } catch (e) { /* defecto ON, no rompe el selector */ }
-  cargado = true;
+
+export const systemPromptOnCache = () => estado; // null = SIN VERIFICAR, distinto de OFF
+export const systemPromptError = () => ultimoError;
+
+export async function cargarSystemPromptOn({ forzar = false } = {}) {
+  if (cargado && !forzar) return estado;
+  try {
+    estado = await llamar("GET");
+    ultimoError = "";
+    cargado = true;
+  } catch (e) {
+    estado = null;
+    ultimoError = String(e?.message || "SIN_CONEXION");
+    cargado = false; // siguiente intento vuelve a preguntar al servidor
+  }
   return estado;
 }
+
 export async function alternarSystemPromptOn() {
-  const quiero = !estado;
-  try { estado = await llamar("POST", { on: quiero }); } catch (e) { /* si falla el POST, el estado local no cambia */ }
-  return estado;
+  if (estado === null) await cargarSystemPromptOn({ forzar: true });
+  if (estado === null) throw new Error(ultimoError || "SYSTEM_PROMPT_NO_VERIFICADO");
+  const nuevo = !estado;
+  try {
+    const confirmado = await llamar("POST", nuevo);
+    estado = confirmado;
+    ultimoError = "";
+    cargado = true;
+    return estado;
+  } catch (e) {
+    // Estado previo preservado; la UI NO muestra exito ante un fallo del servidor.
+    ultimoError = String(e?.message || "CAMBIO_NO_CONFIRMADO");
+    throw e;
+  }
 }
