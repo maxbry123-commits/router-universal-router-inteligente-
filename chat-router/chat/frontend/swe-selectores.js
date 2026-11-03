@@ -92,6 +92,31 @@ function notaVentana(w) {
 
 // ---- Disponibilidad: una sola consulta (cargarCapacidades); «Actualizar» la repite sin recargar el chat ----
 let CAP = normalizarCapacidades(null), CAP_LISTA = false, CTL = null, VENTANA = "", ULTIMA = 0;
+// Sólo SWE CODE free: diagnóstico real del navegador existente, no catálogo
+// de agentes del Harness. Editor visible NO certifica inferencia/modelo.
+let WEB_DIAG = {cargado:false,error:"",indicadores:{}};
+const SITIOS_WEB = {"web-qwen38max":"qwen","web-qwen37max":"qwen",
+  "web-dsv4-flash":"deepseek","web-claude-sonnet":"claude"};
+function estadoWebFree(id) {
+  if (!Object.hasOwn(SITIOS_WEB,id) && id !== "swecode-consulta") return null;
+  if (!WEB_DIAG.cargado) return {etiqueta:"CONSULTANDO SESIÓN WEB",detalle:"Esperando diagnóstico del Bridge"};
+  if (WEB_DIAG.error) return {etiqueta:"BRIDGE SIN CONEXIÓN",detalle:WEB_DIAG.error};
+  const sitio = site => {
+    const x=WEB_DIAG.indicadores?.[site] || {};
+    if (x.navegador !== "ABIERTO") return {etiqueta:"SESIÓN WEB SIN INICIAR",detalle:"Navegador del sitio no iniciado"};
+    if (x.auth_url || x.login_visible) return {etiqueta:"LOGIN REQUERIDO",detalle:"La web exige autenticación oficial"};
+    if (!x.editor_visible) return {etiqueta:"EDITOR NO DETECTADO",detalle:"No se localizó el editor de mensajes"};
+    return {etiqueta:"EDITOR LISTO · SIN PRUEBA",detalle:"La respuesta real del modelo aún no se ha validado"};
+  };
+  if (id === "swecode-consulta") {
+    const estados=["qwen","deepseek"].map(sitio);
+    return estados.every(s=>s.etiqueta==="EDITOR LISTO · SIN PRUEBA")
+      ? {etiqueta:"CÓNSIL SIN PROBAR",detalle:"Falta comprobar las tres opiniones y el arbitraje"}
+      : {etiqueta:"CONSEJEROS SIN VALIDAR",detalle:estados.map(s=>s.etiqueta).join(" / ")};
+  }
+  return sitio(SITIOS_WEB[id]);
+}
+
 const ROTULOS = { agente_responde: "AGENTE QUE RESPONDE", modelo_responde: "MODELO QUE RESPONDE", agente_tool: "AGENTE QUE EJECUTA", modelo_tool: "MODELO PARA TOOL", workflow: "WORKFLOW", modo_trabajo: "MODO DE TRABAJO" };
 const LISTAS = { agente_responde: [AGENTES_SWE, "agente"], agente_tool: [AGENTES_SWE, "agente"], modelo_responde: [MODELOS_SWE, "modelo"], modelo_tool: [MODELOS_SWE, "modelo"], workflow: [WORKFLOWS_SWE, "workflow"] };
 function selector(k) { const s = el("select"); s.dataset.sweCtl = k; s.setAttribute("aria-label", ROTULOS[k]); return s; }
@@ -145,7 +170,14 @@ function agrupar(k, sel, w) {
       { web: v === "swen-code-free" || v === "modelo_tool_global" });
     if (!resp && w === "swen-code-free") ops = ops.filter(o => o.id.startsWith("web-"));
     // un modelo SIN VERIFICAR no bloquea el chat normal: se puede elegir, con su rotulo; lo no disponible va al final, deshabilitado y con su estado real
-    const g = { ok: ops.filter((o) => o.ok).map((o) => ({ id: o.id, etq: o.estado === "DISPONIBLE" ? o.nombre : `${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}`, estado: o.estado, motivo: o.motivo, elegible: o.elegible })), noInstalado: [], incompatible: [], sinVerificar: [], otros: ops.filter((o) => !o.ok).map((o) => ({ id: o.id, etq: o.nombre, estado: o.estado, motivo: o.motivo, elegible: o.elegible })) };
+    const g = { ok: ops.filter((o) => o.ok).map((o) => {
+      const web = w === "swen-code-free" ? estadoWebFree(o.id) : null;
+      return { id:o.id, etq:web ? `${o.nombre} — ${web.etiqueta}`
+        : o.estado==="DISPONIBLE" ? o.nombre : `${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}`,
+        estado:o.estado, motivo:web?.detalle || o.motivo, elegible:o.elegible };
+    }), noInstalado:[], incompatible:[], sinVerificar:[],
+      otros:ops.filter((o)=>!o.ok).map((o)=>({id:o.id,etq:o.nombre,
+        estado:o.estado,motivo:o.motivo,elegible:o.elegible})) };
     return { g, ops };
   }
   const modelo = k === "agente_responde" ? sel.modelo_responde : k === "agente_tool" ? (sel.workflow === "liquid_mirror" ? "hf/lfm2.5-350m" : sel.modelo_tool) : undefined;
@@ -183,7 +215,10 @@ function pintarControles() {
       s.disabled = false;
       const st = k.startsWith("modelo") ? (ops || []).find((o) => o.id === valor) || estadoOpcion(CAP, "modelo", valor) : estadoOpcion(CAP, tipo, valor, k === "agente_responde" ? sel.modelo_responde : sel.modelo_tool);
       const malo = !st.ok || st.estado === "SIN_VERIFICAR";
-      s.classList.toggle("no-ok", !st.ok); s.title = malo ? ROTULOS[k] + ": " + ETIQUETA_ESTADO[st.estado] + (st.motivo ? " — " + st.motivo : "") : "";
+      s.classList.toggle("no-ok", !st.ok);
+      const web = VENTANA === "swen-code-free" && k.startsWith("modelo") ? estadoWebFree(valor) : null;
+      s.title = web ? ROTULOS[k] + ": " + web.etiqueta + " — " + web.detalle
+        : malo ? ROTULOS[k] + ": " + ETIQUETA_ESTADO[st.estado] + (st.motivo ? " — " + st.motivo : "") : "";
       const importa = k === "modelo_responde" || (k === "modelo_tool" ? sel.modo_agentico : requiereHarness(sel));  // un agente/modelo de tool solo BLOQUEA si hay modo agentico o workflow; igual se muestra su error
       if (!st.ok) problemas.push(ROTULOS[k] + " " + (nombreDe(lista, valor) || nombreDe(MODELOS_WEB, valor)) + ": " + ETIQUETA_ESTADO[st.estado] + (st.motivo ? " — " + String(st.motivo).replace(/\s*\(([^()]*)\)/g, ": $1") : "") + (importa ? "" : " (no bloquea: modo agéntico OFF)"));
     });
@@ -217,6 +252,15 @@ async function refrescarCapacidades(forzar, conFichas = false) {
   const bt = document.querySelector(".swe-refrescar"); if (bt) bt.disabled = true;
   try { if (conFichas && window.RIU_FICHAS && window.RIU_FICHAS.recargar) await window.RIU_FICHAS.recargar(); } catch (e) {}  // catalogos Groq/NVIDIA del Router, sin recargar el chat
   CAP = await cargarCapacidades(api); CAP_LISTA = true; ULTIMA = Date.now();
+  if (VENTANA === "swen-code-free") {
+    try {
+      const r=await api("/web/v1/web/diagnostico");
+      if (!r?.ok || !r.indicadores) throw new Error("WEB_DIAGNOSTICO_INVALIDO");
+      WEB_DIAG={cargado:true,error:"",indicadores:r.indicadores};
+    } catch {
+      WEB_DIAG={cargado:true,error:"El Bridge no pudo comprobar las sesiones web",indicadores:{}};
+    }
+  }
   let lock = null;
   try { lock = await plugin("puente_chat", "agent_access_lock", {}); } catch (_) {}
   const bloqueo = !lock || lock.ok !== true || lock.agentes_locked !== false;
@@ -363,6 +407,7 @@ function hoja(id, desde) {
   if (!CTL) CTL = controles();
   s.querySelector(".swe-cuerpo").append(CTL);  // el unico juego de controles pasa a esta hoja (sale de la otra): el MISMO nodo
   VENTANA = id; sincronizar(id);
+  if (id === "swen-code-free") WEB_DIAG={cargado:false,error:"",indicadores:{}};
   pintarControles();
   opener = desde || null; openerId = desde && desde.id ? desde.id : "";
   s.hidden = false; s.querySelector(".swe-cuerpo").scrollTop = 0; refrescarCapacidades(true);  // al abrir se vuelve a preguntar al Harness: un "no disponible" viejo no se queda pegado
