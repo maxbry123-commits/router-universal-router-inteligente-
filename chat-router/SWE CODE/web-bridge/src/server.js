@@ -24,6 +24,7 @@ import { vigilarWorkspace, vigilarModelosOpenClaw, rutaWorkspace, configVigente,
 import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, estadoMetricas, disponibilidad, disponibilidadLocal, estadosModelosLocales, modeloDefecto, setClaves, limpiarClaves } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo, checkpointGuardar } from './bloques.js';
 import { retomarLocal, retomarPorId, TIPO as TIPO_LOCAL } from './retomar_local.js';
+import { servirCodaRouter } from './coda_router.js';
 import { idValido as tareaIdValido } from './checkpoint_hf.js';
 import { conFormato } from './formato.js';
 import { promptHerramientasWeb, extraerLlamadasWeb } from './web_tools.js';
@@ -477,6 +478,13 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (usaTarea && !res.headersSent) res.setHeader('x-tarea-id', String(tareaId));  // 128: el id de la tarea viaja siempre; se reenvia tal cual para reanudar
     const catalogo = req.body.tools === true ? await toolsDeRouter() : undefined;
     const extra = { tools: Array.isArray(req.body.tools) ? req.body.tools : catalogo, tool_choice: req.body.tool_choice };
+    // CODA 500+ lineas: mismo Router MVP/Harness y proceso persistente del
+    // chat YAIWES. Tanto provider OpenClaw como SWEN/YAIWES entran aqui.
+    // El motor externo solo ve partes sin tools; no altera otros modelos.
+    if (await servirCodaRouter(req, res, sse, {
+      modelo: model, mensajes: mensajesM, sesion: conv_id,
+      propietario: propietarioDe(req)
+    })) return;
     // UI Tools ON se resuelve con tools/list REAL: el bridge sólo produce tool_calls
     // pendientes. El Harness/ejecutor verifica permisos, aprobación y recibos.
     // streaming real (stream:true): Groq/NVIDIA entregan fragmentos por onDelta -> sse.delta; flujo = lo ya entregado al cliente (el failover continua desde ahi, sin repetir)
