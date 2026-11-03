@@ -98,7 +98,7 @@ def crear_dir_privado(ruta):
             os.chmod(ruta, 0o700)
         return True
     except OSError:
-return False
+        return False
 
 
 def ahora():
@@ -206,7 +206,7 @@ def preparar(agente, tarea_id, modelo, objetivo, contexto, permisos, checkpoint)
         validar_modelo(modelo)
     except ValueError:
         raise fallo("MODELO_NO_REGISTRADO", "modelo fuera del catalogo") from None
-if not isinstance(objetivo, str) or not objetivo.strip():
+    if not isinstance(objetivo, str) or not objetivo.strip():
         raise fallo("OBJETIVO_VACIO", "objetivo vacio")
     if len(objetivo) > MAX_OBJETIVO:
         raise fallo("OBJETIVO_DEMASIADO_LARGO", "objetivo supera %d caracteres" % MAX_OBJETIVO)
@@ -306,7 +306,7 @@ def jsonl(texto):
             try:
                 out.append(json.loads(linea))
             except ValueError:
-pass
+                pass
     return out
 
 
