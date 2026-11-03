@@ -1,0 +1,33 @@
+/* === ajustes UI composer (input más alto, botones compactos, mic abajo, enviar -40%) === */
+#composer { padding: 10px 10px 8px; }
+#composer textarea, #composer #message {
+  min-height: 96px;
+  max-height: min(220px, 30dvh);
+  padding: 8px 10px;
+}
+.composer-bar { gap: 4px 6px; align-items: center; }
+.composer-bar .action {
+  min-height: 22px;
+  height: 22px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 14px;
+  transform: scale(0.6);
+  transform-origin: center right;
+}
+.composer-bar .secondary {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+}
+#btn-detener, #btn-copiar-input, #btn-recuperar-hist {
+  align-self: flex-start;
+  margin-top: -6px;
+}
+#btn-microfono, .mic-btn, [data-role="mic"] {
+  margin-top: 10px;
+}
+#composer .pensando-3d, #composer .cubo-pensando, #composer [data-cubo] {
+  margin: 0 4px;
+  transform: scale(0.9);
+}
