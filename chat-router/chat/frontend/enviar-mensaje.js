@@ -329,6 +329,21 @@ export function montarEnviar(ctx) {
       const visto = parado ? "proceso detenido por el usuario" : (crudo.startsWith("GAP:") ? crudo : "GAP: " + crudo);
       A.registrar(c.sesion, "err", visto);
       c.hist.append(node("div", visto, "item message" + (parado ? " meta" : " error")));
+      // Solicitar credenciales desde el BANCO existente, nunca del chat ni al LLM.
+      // Los codigos los genera la sonda GH/HF por repositorio; no confundir
+      // cualquier HTTP 403 con falta de token (puede ser el control de permisos).
+      const faltaGithub = /CONECTAR_GITHUB_EN_BANCO|GITHUB_SIN_CANDIDATOS|SIN_PAT_CON_PUSH|GITHUB_ACCESO_REPO_DENEGADO|REPO_SIN_ACCESO.*GitHub/i.test(crudo);
+      const faltaHf = /CONECTAR_HF_EN_BANCO|HF_TOKEN_AUSENTE|HF_REPO_SIN_ACCESO/i.test(crudo);
+      if (!parado && (faltaGithub || faltaHf)) {
+        const proveedor = faltaGithub ? "github" : "hf";
+        const btn = node("button", "🔑 Conectar " + (faltaGithub ? "GitHub" : "Hugging Face") + " en Banco de claves", "mini swe-credencial-faltante");
+        btn.type = "button";
+        btn.onclick = () => {
+          if (window.RIU_BANCO_CLAVES?.abrir) window.RIU_BANCO_CLAVES.abrir(proveedor);
+          else tell("Abre el Banco de claves y conecta " + (faltaGithub ? "GitHub" : "Hugging Face") + "; no pegues secretos en el chat.");
+        };
+        c.hist.append(btn);
+      }
       abajo(c);
       if (!(c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) && !input.value) { input.value = message; input.dispatchEvent(new Event("input", { bubbles: true })); }  // si falla, el mensaje vuelve a la caja
     } finally {
