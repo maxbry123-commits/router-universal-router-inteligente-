@@ -114,6 +114,25 @@ def _inferencia_y_checkpoint(pid, modelo, mensaje, sesion, timeout, firma):
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
+    if mensaje.strip() == "@swen/ocproc":
+        # Observabilidad estricta: procesa sólo /proc local y entrega contadores,
+        # sin argumentos ni token de los procesos.
+        procesos=[]
+        for proc in Path("/proc").iterdir():
+            if not proc.name.isdigit():
+                continue
+            try:
+                argv=(proc/"cmdline").read_bytes().decode("utf-8","replace").split("\\x00")
+                args=" ".join(argv)
+                if "openclaw" in args.lower() and "gateway" in args.lower():
+                    procesos.append({"pid":int(proc.name),
+                        "puerto": "--port 18789" in args,
+                        "comando_gateway":" gateway " in (" "+args+" ")})
+            except (OSError,ValueError):
+                continue
+        return {"estado":"terminado","diagnostico":"proceso_openclaw",
+                "procesos":procesos[:12],
+                "total":len(procesos)}
     if mensaje.strip() == "@swen/ocroute":
         # Sonda HTTP localhost con bearer del entorno; imprime SOLO status.
         token = os.getenv("OPENCLAW_GATEWAY_TOKEN") or ""
