@@ -19,7 +19,8 @@ function cfg(){
   return token?{url,token}:null;
 }
 function classify(http){
-  if(http===401||http===403)return issue('CLAUDE_CUENTA_NO_AUTORIZADA',http);
+  // 401/403 suelen corresponder al token del propio Gateway, NO a cuota de Anthropic.
+  if(http===401||http===403)return issue('CLAUDE_GATEWAY_NO_AUTORIZADO',http);
   if(http===402||http===429)return issue('CLAUDE_CUENTAS_AGOTADAS',http);
   if(http===404)return issue('CLAUDE_AGENTE_NO_INSTALADO',http);
   if(http===408||http>=500)return issue('CLAUDE_GATEWAY_TEMPORAL',http);
@@ -82,6 +83,6 @@ export async function consultarClaude(texto,{convId='',fetchFn=fetch,timeoutMs=1
     modelo:MODEL,thinking:'max',origen:'openclaw',perfil:'gestionado_por_gateway'};
 }
 export function esCuotaClaude(code){
-  return ['CLAUDE_CUENTAS_AGOTADAS','CLAUDE_CUENTA_NO_AUTORIZADA'].includes(String(code||''));
+  return ['CLAUDE_CUENTAS_AGOTADAS'].includes(String(code||''));
 }
 export const CLAUDE_MODEL = MODEL;
