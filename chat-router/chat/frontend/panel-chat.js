@@ -184,8 +184,11 @@ export async function mount(root, { api, tell }) {
     { const bd = q("#btn-detener"); if (bd) bd.hidden = false; }  // Detener SIEMPRE visible (restaurado por orden de Antonio)
     guardar();
   };
-  const recuperarHist = async () => {  // ↺: une copia local + respaldo del Router; reabre (en su orden) los chats cuya pestaña se perdió; los borrados no vuelven
+  let recuperandoHist = false;
+  const recuperarHist = async () => {  // ↺: rescata también mensajes ausentes de una sesión que todavía tiene historial local
+    if (recuperandoHist) return;
     let c = chat(); if (c.ocupado) { tell("Ese chat está trabajando: espera o pulsa Detener"); return; }
+    recuperandoHist = true;
     tell("Recuperando historial…"); let pest = 0;
     try {
       let r = { total: 0, router: 0, routerOk: true }, total0 = 0;
@@ -196,6 +199,7 @@ export async function mount(root, { api, tell }) {
       pintarTabs(); c.hist.__sigue = true; abajo(c);
       tell(r.total ? "Historial recuperado: " + r.total + " mensajes" + (r.router ? " (" + r.router + " desde el Router)" : "") + (pest ? " · " + pest + " chat(s) reabiertos" : "") : (r.routerOk ? "No hay historial guardado para este chat" : "Sin conexión con el Router: solo se revisó la copia local"));
     } catch (e) { tell("No se pudo recuperar el historial"); }
+    finally { recuperandoHist = false; }
   };
   const nuevoChat = (restaurado) => {
     if (chats[activo] && editor) chats[activo].borrador = editor.value;
@@ -274,10 +278,10 @@ export async function mount(root, { api, tell }) {
   Promise.allSettled(chats.map((c) => c.historialListo)).then(async () => {
     if (chats.some((c) => c.ocupado)) return;
     try {
-      const perdidas = await A.pestanasPerdidas(chats.map((c) => c.sesion));
+      // Aun con pestañas locales, recuperar desde /memoria mensajes que no
+      // existan en este navegador. El método deduplica y conserva el ID.
       if (chats.some((c) => c.ocupado)) return;
-      const vacias = chats.every((c) => !A.cargarHistorial(c.sesion).length);
-      if (perdidas.length || vacias) await recuperarHist();
+      await recuperarHist();
     } catch (e) { console.warn("[historial] rescate", e); }
   });
   conectarSelectorModelos({ q, chat, tell, guardar });  // Selector Qwen: solo frontend
