@@ -114,6 +114,28 @@ def _inferencia_y_checkpoint(pid, modelo, mensaje, sesion, timeout, firma):
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
+    if mensaje.strip() == "@swen/ocauth":
+        # Verificación de disponibilidad de RUTAS YA AUTORIZADAS (sin tokens).
+        # No inicia sesión, no copia credenciales ni crea cuentas.
+        claude=shutil.which("claude") or ("/opt/node24/bin/claude" if os.path.isfile("/opt/node24/bin/claude") else "")
+        api=bool(os.getenv("ANTHROPIC_API_KEY"))
+        cli_status="NO_INSTALADO"
+        if claude:
+            try:
+                home="/tmp/openclaw-home-"+str(os.getuid())
+                resp=subprocess.run([claude,"auth","status","--json"],
+                    timeout=12,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,
+                    text=True,check=False,env={**os.environ,
+                      "HOME":home,"PATH":"/opt/node24/bin:"+os.getenv("PATH","")})
+                if resp.returncode==0:
+                    d=json.loads(resp.stdout[:5000])
+                    cli_status="ACTIVO" if d.get("loggedIn") is True else "NO_AUTORIZADO"
+                else: cli_status="NO_AUTORIZADO"
+            except (OSError,ValueError,subprocess.TimeoutExpired):
+                cli_status="NO_VERIFICABLE"
+        return {"estado":"terminado","diagnostico":"anthropic_auth",
+                "anthropic_api_env":api,"claude_cli":cli_status,
+                "nota":"El Gateway puede tener perfiles almacenados aparte; ping HTTP sigue siendo la prueba definitiva."}
     if mensaje.strip() == "@swen/ocping":
         # Prueba REAL mínima de OpenClaw Sonnet, sin override de modelos ni
         # comandos /think: aislar error de contrato HTTP vs autenticación.
