@@ -537,11 +537,16 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
                 # 413 no mejora esperando ni cambiando de clave. Reducir SOLO
                 # documentacion del catalogo, nunca mensajes ni contratos de tools.
                 reducidas = _tools_compactas(payload.get("tools"))
-                if exc.codigo != 413 or prov != "groq" or not reducidas or reducidas == payload.get("tools"):
+                mensajes_compactos = _sistemas_sin_blancos(payload["messages"])
+                cambio_tools = bool(reducidas and reducidas != payload.get("tools"))
+                if exc.codigo != 413 or prov != "groq" or not (cambio_tools or mensajes_compactos != payload["messages"]):
                     raise
-                payload["tools"] = reducidas
+                if cambio_tools:
+                    payload["tools"] = reducidas
+                payload["messages"] = mensajes_compactos
                 r = _con_reintentos(accion, pol, payload, i == len(pool) - 1, lambda ra, cod, k=k: _enfriar(prov, k, pol, ra, cod))
-                r["metricas"]["catalogo_compactado"] = True
+                r["metricas"]["catalogo_compactado"] = cambio_tools
+                r["metricas"]["formato_system_compactado"] = mensajes_compactos != mensajes_ok
             if info_param:
                 r["metricas"]["parametros"] = info_param
             if info_ctx:
@@ -589,5 +594,31 @@ def _tools_compactas(tools):
         if "parameters" in fn:
             fn["parameters"] = schema(fn["parameters"])
         out.append({**tool, "function": fn})
+    return out
+
+
+def _sistemas_sin_blancos(mensajes):
+    """Quita lineas vacias del system fuera de bloques de codigo. Conserva
+    todas las palabras, instrucciones, codigo y mensajes user/assistant/tool.
+    Solo se usa ante un rechazo 413; no modifica el historial almacenado.
+    """
+    out = []
+    for m in mensajes:
+        if not isinstance(m, dict) or m.get("role") != "system" or not isinstance(m.get("content"), str):
+            out.append(m)
+            continue
+        lineas, cerca = [], None
+        for linea in m["content"].splitlines(keepends=True):
+            marca = re.match(r"^\s*(`{3,}|~{3,})", linea)
+            if marca:
+                token = marca.group(1)
+                if cerca is None:
+                    cerca = token
+                elif token[0] == cerca[0] and len(token) >= len(cerca):
+                    cerca = None
+                lineas.append(linea)
+            elif cerca or linea.strip():
+                lineas.append(linea)
+        out.append({**m, "content": "".join(lineas)})
     return out
 

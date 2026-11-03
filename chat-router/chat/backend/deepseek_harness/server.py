@@ -613,7 +613,7 @@ async def _mvp_modelo_compat(req, headers, modelo):
         # El 410 de NVIDIA GLM y el 503 HF son diagnósticos, no fallback.
         try:
             motivo = str(up.json().get("detail") or "")
-            origin = re.search(r"\bHTTP[ _]+([45][0-9]{2})\b", motivo)
+            origin = re.search(r"(?:^|[_\s])HTTP[ _]+([45][0-9]{2})\b", motivo)
         except (ValueError, AttributeError):
             origin = None
         raise HTTPException(status_code=502 if up.status_code >= 500 else up.status_code,

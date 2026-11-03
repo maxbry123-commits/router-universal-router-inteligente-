@@ -52,3 +52,18 @@ def test_413_persistente_no_bucle_ni_cambio_modelo():
         with pytest.raises(e.ErrorProveedor) as error:
             e.llamar([{'role': 'user', 'content': 'hola'}], 'groq/qwen/qwen3.8-27b', opciones={'tools': tools})
     assert error.value.codigo == 413 and call.call_count == 2
+
+
+def test_formato_system_conserva_instrucciones_codigo_y_usuario():
+    system = 'Regla A\n\nRegla B\n\n```python\nx = """\n\ntexto\n"""\n```\n\nFin\n'
+    user = {'role': 'user', 'content': 'exacto\n\n  espacios'}
+    msgs = [{'role': 'system', 'content': system}, user]
+    out = e._sistemas_sin_blancos(msgs)
+    assert out[0]['content'] == 'Regla A\nRegla B\n```python\nx = """\n\ntexto\n"""\n```\nFin\n'
+    assert out[1] is user and msgs[0]['content'] == system
+
+
+def test_limite_numerico_no_expone_cuerpo_error():
+    error = e.ErrorHTTP(413, cuerpo='secret org-interno Limit 7000, Requested 7019')
+    assert (error.limite_tokens, error.pedidos_tokens) == (7000, 7019)
+    assert str(error) == 'HTTP 413'
