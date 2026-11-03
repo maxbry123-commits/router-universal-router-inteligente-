@@ -256,6 +256,7 @@ def _consulta(modelo, mensaje, sesion, timeout):
             # --json: sólo revelar rutas de campos con error de esquema,
             # nunca valores de configuración, perfiles o secretos.
             paths_json=[]
+            descripciones=[]
             datos_clase="SIN_JSON"
             raiz_campos=[]
             try:
@@ -275,6 +276,16 @@ def _consulta(modelo, mensaje, sesion, timeout):
                         if isinstance(p,str) and re.fullmatch(
                            r"(?:gateway|agents|models|tools)(?:[.\\[\\]a-zA-Z0-9_-]*)",p):
                             paths_json.append(p[:110])
+                        # Sólo vocabulario técnico, nunca valores contenidos en el mensaje.
+                        raw=str(item.get("message") or item.get("reason") or "").lower()
+                        vocab=("default","ownership","explicit","legacy","migration",
+                               "workspace","required","missing","invalid","unknown",
+                               "agent","binding","systemagent","main","schema",
+                               "duplicate","conflict","unsupported","id")
+                        if "descripciones" not in locals(): descripciones=[]
+                        descripciones.append({"codigo":str(item.get("code") or "")[:45]
+                               if re.fullmatch(r"[A-Za-z0-9_-]{1,45}",str(item.get("code") or "")) else "",
+                               "palabras":[k for k in vocab if k in raw]})
             except (ValueError,TypeError,AttributeError):
                 pass
             if run.returncode == 0:
@@ -303,7 +314,8 @@ def _consulta(modelo, mensaje, sesion, timeout):
                 pistas.append(linea[:160])
             return {"estado":"terminado","diagnostico":"schema_openclaw",
                     "config_valida":run.returncode==0, "tipo":tipo,
-                    "campos":sorted(set(paths+paths_json))[:12], "pistas":pistas[:6],
+                    "campos":sorted(set(paths+paths_json))[:12],
+                    "categorias_issues":descripciones[:8], "pistas":pistas[:6],
                     "json_tipo":datos_clase, "json_campos":raiz_campos,
                     "salidas":{"stdout":bool(run.stdout.strip()),"stderr":bool(run.stderr.strip())},
                     "codigo_salida":run.returncode}
