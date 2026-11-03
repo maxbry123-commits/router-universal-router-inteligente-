@@ -107,6 +107,8 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
             "Esta parte debe poder agregarse despues de las otras partes.\n"
             f"Definiciones ya usadas: {', '.join(definiciones[-35:]) or '(ninguna)'}.\n"
             "Requisitos originales del usuario, sin reinterpretar:\n"
+            + (("CORRIGE EL ERROR ANTERIOR SIN REPETIR CODIGO: " + str(estado.get("ultimo_gap"))[:130] + "\n")
+               if str(estado.get("ultimo_gap") or "").startswith("CODA_") else "")
         )
         user = next((str(m.get("content") or "") for m in reversed(mensajes) if m.get("role") == "user"), "")
         peticion = [{"role": "user", "content": cabecera + user}]
@@ -119,7 +121,7 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
             raise RuntimeError("CODA_CHECKPOINT_NO_PERSISTIDO")
         progreso(str(sum(len(x.splitlines()) for x in piezas)), "generando parte %d" % (len(piezas) + 1))
         try:
-            r = await inferir(peticion, min(1400, 400 + pedir_lineas * 14))
+            r = await inferir(peticion, min(1900, 550 + pedir_lineas * 17))
             texto = str(r.get("texto") or "")
             if r.get("tool_calls"):
                 raise ValueError("CODA_TOOLS_INESPERADAS")
