@@ -122,5 +122,15 @@ document.addEventListener('click',e=>{
       estado(h,x.habilitada?'OpenAI API habilitada (coste por uso).':
         'OpenAI API sin habilitar. Configura OPENAI_API_KEY y RIU_OPENAI_ACCIONES_ON=1 en el backend.');
     }catch(error){estado(h,'No se pudo verificar OpenAI API.');}
+    const claude=h.querySelector('.swe-claude-estado');
+    if(claude){
+      try{
+        const r=await api('/plugins/deepseek_harness/modelos/v1/claude/estado');
+        claude.textContent=r.disponible
+          ? 'Claude Sonnet 5.5 · MAX · Gateway y agente encontrados. Inferencia/cuentas aún sin probar.'
+          : '🚩 Claude Sonnet 5.5 · ' + String(r.reason||'GATEWAY_SIN_VERIFICAR') +
+            '. El consejo puede continuar con los demás modelos.';
+      }catch{claude.textContent='🚩 Claude Sonnet 5.5 · Gateway no verificable (sin afirmar cuentas agotadas).';}
+    }
   },250);
 });
