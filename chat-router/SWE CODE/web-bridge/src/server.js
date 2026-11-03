@@ -10,7 +10,8 @@ import { consultarWeb, salud } from './motor.js';
 import { consenso } from './consenso.js';
 import { consultarClaude, estadoClaude, esCuotaClaude, CLAUDE_MODEL } from './claude_gateway.js';
 import { modoValido } from './modos.js';
-import { estadoCuentas, estadoTabs, snapshotTab, diagnosticoAcceso, cerrarPagina, cerrarTodo } from './browser.js';
+import { estadoCuentas, estadoTabs, snapshotTab, diagnosticoAcceso, reiniciarSitioInactivo, cerrarPagina, cerrarTodo } from './browser.js';
+import { registrarGap, listarGaps, gapPorId, investigarConOpenClaw } from './autoreparacion.js';
 import { MODELOS_WEB } from './sites.js';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -184,6 +185,17 @@ app.get('/health', async (req, res) => {
 app.get('/v1/web/diagnostico',async(_req,res)=>{
   try { res.json({ok:true,indicadores:await diagnosticoAcceso()}); }
   catch { res.status(503).json({ok:false,error:{code:'WEB_DIAGNOSTICO_FALLO'}}); }
+});
+// Panel de recuperación de OpenClaw: lecturas de GAPS sin prompts ni secretos.
+app.get('/v1/swen/gaps', (_req,res) => res.json({ok:true,gaps:listarGaps()}));
+app.get('/v1/swen/gaps/:id', (req,res) => {
+  const g=gapPorId(req.params.id);
+  return g ? res.json({ok:true,gap:g}) :
+    res.status(404).json({ok:false,error:{code:'GAP_NO_ENCONTRADO'}});
+});
+app.post('/v1/swen/gaps/:id/investigar', async(req,res) => {
+  const r=await investigarConOpenClaw(req.params.id);
+  return res.status(r.ok?200:503).json(r);
 });
 app.get('/v1/queue', (_req, res) => {
   res.json({ ok: true, ...estadoTabs(), cuentas: sinCorreos(estadoCuentas()) });
@@ -504,7 +516,17 @@ app.post('/v1/chat/completions', async (req, res) => {
           fin = 'error';
         }
       } else {
-        salida = await consultarWeb(modeloWeb, promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
+        const site = modeloWeb.startsWith('qwen') ? 'qwen' : modeloWeb === 'dsv4-flash' ? 'deepseek' : null;
+        try {
+          salida = await consultarWeb(modeloWeb, promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
+        } catch(e) {
+          // ÚNICO reintento válido: navegación fallida ANTES del envío.
+          // No repetir respuestas parciales, tools, cuotas o sesiones expiradas.
+          if (e.code!=='WEB_SITIO_NO_RESPONDE'||!site||sse.signal.aborted) throw e;
+          const reciclaje=await reiniciarSitioInactivo(site);
+          if(!reciclaje.ok) throw e;
+          salida = await consultarWeb(modeloWeb, promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
+        }
       }
       if (!flagClaude) {
         const contratoWeb = extraerLlamadasWeb(salida, extra.tools);
@@ -622,12 +644,19 @@ app.post('/v1/chat/completions', async (req, res) => {
     });
   } catch (e) {
     const code = e.code || 'BRIDGE_ERROR';
+    // Registro duradero, sin prompts/tokens/datos de cuentas. OpenClaw puede
+    // investigar con herramientas de lectura; no aplica parches de LLM sin validar.
+    const gap = registrarGap({code,modelo:req.body?.model,convId:req.body?.conv_id});
+    if(gap.nuevo && !gap.estado.startsWith('🚩') && process.env.OPENCLAW_ENABLE==='1') {
+      void investigarConOpenClaw(gap.id).catch(()=>null);
+    }
     sse.parar();
     if (sse.pide && sse.signal.aborted) return;  // el cliente ya no esta
     if (sse.activo) return res.writableEnded ? undefined : sse.error(code, e.message, e.detail);  // error tras abrir el stream: chunk con el error + [DONE]
     if (res.headersSent) return;
     const st = code === 'SESSION_EXPIRED' ? 503 : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : HTTP_TAREA[code] ? HTTP_TAREA[code] : ['EXTERNO_FALLO', 'HF_LOCAL_FALLO', 'NO_DISPONIBLE'].includes(code) ? 502 : 500;
-    res.status(st).json({ error: { code, message: e.message, detail: e.detail } });
+    res.status(st).json({ error: { code, message: e.message, detail: e.detail,
+      gap_id:gap.id, flag:gap.estado, accion:gap.accion } });
   }
 });
 
