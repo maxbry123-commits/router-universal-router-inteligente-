@@ -268,6 +268,45 @@ export function montarEnviar(ctx) {
       const respuesta = burbuja(answer.reply || "Sin respuesta");
       if (answer.nota) { respuesta.title = answer.nota; respuesta.dataset.procedencia = answer.nota; }
       c.hist.append(respuesta);
+      // SWE CODE free · Ask Cónsil: opiniones visibles y decisión HUMANA editable.
+      // No cambia el dictamen del árbitro ni ejecuta herramientas sin envío nuevo.
+      if (selAct === "swen-code-free" && answer.consenso?.opiniones) {
+        const panel = document.createElement("details");
+        panel.className = "item message meta swen-consil-review";
+        const cab = document.createElement("summary");
+        cab.textContent = "Ask Cónsil · opiniones individuales · árbitro Qwen 3.8 Max";
+        const escoger = document.createElement("select");
+        escoger.setAttribute("aria-label", "Selecciona la opinión que deseas revisar");
+        const partes = Object.entries(answer.consenso.opiniones);
+        for (const [id] of partes) {
+          const op = document.createElement("option"); op.value = id; op.textContent = id; escoger.append(op);
+        }
+        const opinion = document.createElement("pre");
+        opinion.style.cssText = "white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow-y:auto";
+        const pintar = () => { opinion.textContent = String(answer.consenso.opiniones[escoger.value] || "Sin opinión confirmada"); };
+        escoger.addEventListener("change", pintar); pintar();
+        const cambiar = document.createElement("button");
+        cambiar.type = "button"; cambiar.textContent = "Adoptar opinión como nueva decisión";
+        const refactor = document.createElement("button");
+        refactor.type = "button"; refactor.textContent = "Mandar a refactoría / modificar objetivo";
+        const alcance = document.createElement("textarea");
+        alcance.placeholder = "Modifica aquí el alcance u objetivo (opcional)";
+        alcance.setAttribute("aria-label", "Nuevo alcance u objetivo de la tarea");
+        alcance.rows = 2;
+        const preparar = (refactorizar) => {
+          const criterio = String(answer.consenso.opiniones[escoger.value] || "").slice(0,4000);
+          const objetivo = alcance.value.trim();
+          const instrucciones = (refactorizar ? "Refactoriza y revisa el plan sin ejecutar sin aprobación." : "Adopto este criterio para continuar.") +
+            "\nDecisión del operador: " + escoger.value + "\nOpinión:\n" + criterio +
+            (objetivo ? "\nNuevo objetivo / alcance:\n" + objetivo : "");
+          const inputActual = q("#message");
+          if (inputActual) { inputActual.value = instrucciones; inputActual.dispatchEvent(new Event("input",{bubbles:true})); inputActual.focus(); }
+        };
+        cambiar.addEventListener("click", () => preparar(false));
+        refactor.addEventListener("click", () => preparar(true));
+        panel.append(cab, escoger, opinion, alcance, cambiar, refactor);
+        c.hist.append(panel);
+      }
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
       if (answer.finish_reason === "length") { const aviso = node("div", "La respuesta se cortó por el límite de salida del proveedor. ", "item message meta"), seguir = node("button", "Continuar", "mx-continuar"); seguir.type = "button"; seguir.onclick = () => { seguir.disabled = true; const m = q("#message"); m.value = "Continúa exactamente donde se cortó la respuesta anterior, sin repetir texto."; q("#composer").requestSubmit(); }; aviso.append(seguir); c.hist.append(aviso); }  // un clic y sigue desde el corte
       if (answer.requiere_aprobacion && answer.task_id) {  // el operador aprueba con este boton; el servidor lo identifica y la tarea sigue desde su checkpoint
