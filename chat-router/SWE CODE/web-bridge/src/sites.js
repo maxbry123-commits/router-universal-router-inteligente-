@@ -123,34 +123,18 @@ export async function elegirModelo(page, cfg, modelo_regex) {
 }
 
 
-// AGE_GATE qwen: modal "Confirma tu edad" — Antonio orden año 2000
-// pasarAgeGate(page, cfg) ; compat: segundo arg string = year
-export async function pasarAgeGate(page, cfg, year = '2000') {
+// Cualquier control de edad/identidad se resuelve exclusivamente mediante los
+// mecanismos oficiales y legítimos de la plataforma por su titular.
+// No inventar un año de nacimiento ni completar la verificación automáticamente.
+export async function pasarAgeGate(page, cfg) {
   try {
-    if (typeof cfg === 'string') { year = cfg; cfg = null; }
     const modal = page.getByText(/Confirma tu edad|Confirm your age|naciste|year were you born/i).first();
-    try { await modal.waitFor({ state: 'visible', timeout: 5000 }); } catch { return false; }
-    // año: combobox / select / listbox
-    try {
-      const combo = page.locator('button:has-text("2000"), [role="combobox"], select, [class*="select"]').first();
-      if (await combo.count()) {
-        await combo.click({ timeout: 2000 }).catch(() => {});
-        const opt = page.locator(`[role="option"]:has-text("${year}"), option[value="${year}"], text="${year}"`).first();
-        if (await opt.count()) await opt.click({ timeout: 2000 }).catch(() => {});
-      }
-    } catch {}
-    const sels = cfg?.age_gate_continue?.length
-      ? cfg.age_gate_continue
-      : ['button:has-text("Continuar")', 'button:has-text("Continue")', 'button:has-text("Confirm")'];
-    for (const sel of sels) {
-      const el = page.locator(sel).first();
-      if (await el.count() && await el.isVisible().catch(() => false)) {
-        await el.click({ timeout: 3000 });
-        await page.waitForTimeout(1200);
-        return true;
-      }
+    if (await modal.isVisible().catch(() => false)) {
+      throw Object.assign(new Error('AGE_VERIFICATION_REQUIRED'), { code:'AGE_VERIFICATION_REQUIRED' });
     }
-  } catch {}
+  } catch (e) {
+    if (e.code === 'AGE_VERIFICATION_REQUIRED') throw e;
+  }
   return false;
 }
 
