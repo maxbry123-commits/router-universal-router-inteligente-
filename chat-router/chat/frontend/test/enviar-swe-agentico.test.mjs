@@ -32,7 +32,7 @@ globalThis.RIU_SELECTORES = { activo: "swen-code-free" };
 globalThis.RIU_SWE = { "swen-code-free": { model_id: "hf-liquid-lfm25", label: "Liquid" }, "swe-code": { model_id: "hf-liquid-lfm25", label: "Liquid" } };
 globalThis.RIU_CONFIG = {};
 montarEnviar({ q: (k) => filas.get(k), chat: () => c, abajo() {}, burbuja: (t) => { pintado.push(String(t)); return nodo(); }, ajustarAlturaEditor() {}, pintarTabs() {},
-  pedirAprobador: async () => { dialogos++; return credenciales && { ...credenciales }; }, getModeUI: () => null, releerAnclas: () => [], chatTools: {}, FAST_SEL: () => false, getModo: () => "", previo: () => [], api, tell() {} });
+  getModeUI: () => null, releerAnclas: () => [], chatTools: {}, FAST_SEL: () => false, getModo: () => "", previo: () => [], api, tell() {} });
 const enviar = async (txt = "hola") => { llamadas.length = 0; pintado.length = 0; c.hist.children.length = 0; filas.get("#message").value = txt; await filas.get("#composer").events.submit({ preventDefault() {} }); };
 const textos = () => c.hist.children.map((x) => x.textContent || "").join("\n");
 test.beforeEach(() => { S.olvidarCapacidades(); datos.clear(); capacidades = OK; estadoFinal = "DONE"; rechazo = 0; credenciales = { operador: "luna", token: "tok-de-prueba" }; dialogos = 0; });
@@ -70,50 +70,13 @@ test("un agente NO DISPONIBLE se dice en el chat y no se manda a otro (ni al bri
   assert.match(textos(), /GAP: SELECCION_NO_DISPONIBLE.*SWE-agent.*NO INSTALADO/);
 });
 
-test("REQUIERE_APROBACION: boton Aprobar que llama a /chat/swe/aprobar con el task_id (sin campo aprobacion) y pinta el resultado", async () => {
+test("YAIWES continua tras estado legado REQUIERE_APROBACION sin formulario, token ni endpoint aprobar", async () => {
   S.guardarSeleccion({ workflow: "swe_code", modo_agentico: true });
   estadoFinal = "REQUIERE_APROBACION";
   await enviar("Revisar y desplegar");
-  const boton = c.hist.children.flatMap((x) => x.children || []).find((x) => /mx-aprobar/.test(x.className));
-  assert.ok(boton, "hay boton de aprobar");
-  const id = llamadas.find((l) => l.ruta === "/chat/swe/iniciar").body.task_id;
-  llamadas.length = 0; pintado.length = 0;
-  await boton.onclick();
-  assert.deepEqual(llamadas.map((l) => l.ruta), ["/chat/swe/aprobar", "/chat/swe/avanzar"]);
-  assert.equal(llamadas[0].body.task_id, id); assert.equal(llamadas[0].body.op_id, "0123456789abcdef"); assert.ok(!("aprobacion" in llamadas[0].body) && !("operador" in llamadas[0].body));
+  assert.deepEqual(llamadas.map((l) => l.ruta), ["/chat/swe/capacidades", "/chat/swe/iniciar", "/chat/swe/avanzar"]);
   assert.ok(pintado.some((t) => /listo desde el agente/.test(t)));
-});
-
-const pedirAprobacion = async () => {
-  S.guardarSeleccion({ workflow: "swe_code", modo_agentico: true }); estadoFinal = "REQUIERE_APROBACION";
-  await enviar("Revisar y desplegar");
-  const boton = c.hist.children.flatMap((x) => x.children || []).find((x) => /mx-aprobar/.test(x.className));
-  llamadas.length = 0; pintado.length = 0; c.hist.children.length = 0;
-  return boton;
-};
-test("AP1 Aprobar y continuar pide operador y token (dialogo), los manda como cabeceras SOLO en /chat/swe/aprobar y no los deja en el cuerpo ni en storage", async () => {
-  const boton = await pedirAprobacion();
-  await boton.onclick();
-  assert.equal(dialogos, 1);
-  const ap = llamadas.find((l) => l.ruta === "/chat/swe/aprobar");
-  assert.deepEqual(ap.headers, { "x-operador": "luna", "x-operator-token": "tok-de-prueba" });
-  assert.ok(!JSON.stringify(ap.body).includes("tok-de-prueba") && !JSON.stringify(ap.body).includes("luna"));
-  for (const l of llamadas.filter((x) => x.ruta !== "/chat/swe/aprobar")) assert.ok(!l.headers || !("x-operator-token" in l.headers), l.ruta);
-  assert.ok(![...datos.values()].some((v) => v.includes("tok-de-prueba")), "nada en localStorage");
-  assert.deepEqual(Object.keys(refCabeceras), [], "tras el envio el objeto de cabeceras queda vacio (se descarta)");
-  assert.match(textosTodos(), /Aprobación registrada/);
-});
-const textosTodos = () => c.hist.children.map((x) => x.textContent || "").join("\n") + "\n" + pintado.join("\n");
-test("AP1 Cancelar el dialogo no llama al servidor y deja el boton disponible", async () => {
-  const boton = await pedirAprobacion(); credenciales = null;
-  await boton.onclick();
-  assert.equal(llamadas.length, 0); assert.equal(boton.disabled, false); assert.match(textosTodos(), /cancelad/i);
-});
-test("AP1 403 y 503 muestran mensajes claros (503 indica RIU_SWE_APROBADORES) y permiten reintentar; el token no se imprime", async () => {
-  let boton = await pedirAprobacion(); rechazo = 403;
-  await boton.onclick();
-  assert.match(textosTodos(), /operador o token incorrecto/); assert.ok(!textosTodos().includes("tok-de-prueba")); assert.equal(boton.disabled, false);
-  c.hist.children.length = 0; rechazo = 503;
-  await boton.onclick();
-  assert.match(textosTodos(), /RIU_SWE_APROBADORES/); assert.equal(boton.disabled, false);
+  assert.equal(dialogos, 0);
+  assert.ok(!llamadas.some((l) => l.ruta === "/chat/swe/aprobar" || l.headers?.["x-operator-token"]));
+  assert.ok(!textos().includes("Aprobar y continuar"));
 });
