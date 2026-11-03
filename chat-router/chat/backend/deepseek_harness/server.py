@@ -123,7 +123,17 @@ def _router(accion, datos):
         raise HTTPException(status_code=403, detail="Herramienta bloqueada por Router (HTTP 403)" + (": " + causa if causa else ""))
     if not isinstance(resultado, dict) or resultado.get("error") or resultado.get("status") == "degraded":
         motivo = resultado.get("error", "respuesta invalida") if isinstance(resultado, dict) else "respuesta invalida"
-        raise RuntimeError("Router " + str(motivo)[:(320 if "PROVEEDOR_GROQ_HTTP_413" in str(motivo) else 80)])
+        detalle = str(motivo)
+        # El Router ya filtró estos datos: preservar Retry-After y cuántas
+        # claves se probaron, incluso tras 429. Nunca propagar texto libre
+        # del proveedor, tokens de autorización ni huellas de claves.
+        proveedor = re.search(r"PROVEEDOR_(?:GROQ|NVIDIA)_HTTP_(?:429|413)", detalle)
+        if proveedor:
+            nums = re.findall(r"(?:retry_after_s|credenciales_configuradas|credenciales_probadas|rotaciones|llamadas_http|limite_tokens|pedidos_tokens)=\d+", detalle)
+            detalle = proveedor.group(0) + (": " + " ".join(nums) if nums else "")
+        else:
+            detalle = detalle[:80]
+        raise RuntimeError("Router " + detalle[:250])
     if accion == "almacen" and resultado.get("ok") is not True:
         raise RuntimeError("Router no confirmo almacenamiento HF")
     return resultado
