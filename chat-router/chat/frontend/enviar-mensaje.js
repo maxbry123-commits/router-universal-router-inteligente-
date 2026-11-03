@@ -147,6 +147,8 @@ export function montarEnviar(ctx) {
     const fichaNvidia = selAct === "nvidia-groq-team" ? (window.RIU_SWE_CENTRAL?.modeloVentana("nvidia") || "") : null;
     if (selAct === "nvidia-groq-team" && !fichaNvidia) { c.hist.append(node("div", "NVIDIA: elige primero un modelo en la hoja NVIDIA. No se envió a otro modelo.", "item message meta")); abajo(c); return; }
     const fichaSwe = (selAct === "swe-code" || selAct === "swen-code-free") ? ((window.RIU_SWE || {})[selAct] || null) : null;  // selectores SWE CODE / SWEN CODE free: modelo elegido en su hoja
+    const origenHandoff = selAct === "swen-code-free" ? (window.RIU_SWE_CONTEXTO?.() || "") : "";
+    if (selAct === "swen-code-free") { try { localStorage.setItem("riu_swen_ultima_sesion", c.sesion); } catch (_) {} }
     const ventanaCentral = { "swe-code": "swe-code", "swen-code-free": "swen-code-free", groq: "groq", "nvidia-groq-team": "nvidia" }[selAct] || "";  // las 4 ventanas con el selector central unico
     // Evitar fingir que se ejecutó un agente cuando el selector activo no tiene contrato SWE.
     if (requiereHarness(leerSeleccion()) && !ventanaCentral) {
@@ -251,7 +253,7 @@ export function montarEnviar(ctx) {
       const answer = _tareaSwe
         ? await Promise.race([enviarTareaSwe(api, { mensaje: mensajeQwen, sesion: c.sesion, proyecto: c.project_id || undefined, parar, signal: ctlDetener ? ctlDetener.signal : undefined, alPaso: (t) => window.dispatchEvent(new CustomEvent("riu-progreso", { detail: { sesion: c.sesion, texto: t } })) }), raceDetener])
         : _swe
-        ? await Promise.race([enviarSwe(api, { ...controlTools, model: _modeloSwe, historial: ctxPrev || [], mensaje: mensajeQwen, imagenes: imagenesParaSwe, sesion: c.sesion, proyecto: c.project_id || undefined, signal: ctlDetener ? ctlDetener.signal : undefined, alParcial: (t) => { try { window.dispatchEvent(new CustomEvent("riu-progreso", { detail: { sesion: c.sesion, parcial: t } })); } catch (e) {} } }), raceDetener])  // parciales del stream SSE -> burbuja pending (riu-progreso)
+        ? await Promise.race([enviarSwe(api, { ...controlTools, model: _modeloSwe, historial: ctxPrev || [], mensaje: mensajeQwen, imagenes: imagenesParaSwe, sesion: c.sesion, contexto_de: origenHandoff, proyecto: c.project_id || undefined, signal: ctlDetener ? ctlDetener.signal : undefined, alParcial: (t) => { try { window.dispatchEvent(new CustomEvent("riu-progreso", { detail: { sesion: c.sesion, parcial: t } })); } catch (e) {} } }), raceDetener])  // parciales del stream SSE -> burbuja pending (riu-progreso)
         : window.RIU_CONFIG?.harnessUrl
         ? (_multiSel.length > 1
             ? await Promise.race([_fanout(), raceDetener])  // >>> MODOS <<< T6: misma tarea a cada modelo; un proceso por modelo en el backend
