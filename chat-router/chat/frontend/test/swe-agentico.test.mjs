@@ -160,16 +160,33 @@ test("enviarTareaSwe: si no se pueden leer las capacidades tampoco se presenta c
   delete globalThis.localStorage;
 });
 
-test("enviarTareaSwe: REQUIERE_APROBACION se detiene (no avanza ni aprueba solo), dice que se aprueba y devuelve task_id y op_id", async () => {
+test("enviarTareaSwe: estado legado REQUIERE_APROBACION avanza sin solicitar credenciales ni endpoint /aprobar", async () => {
   conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: true }) });
   const rutas = [];
-  const pendiente = { op_id: "0123456789abcdef", paso: "escribe", agente: "codex", modelo: "hf/qwen2.5-coder-1.5b", permisos: { escritura: true, ejecucion: false }, objetivo: "Voy a editar el repo" };
-  const api = async (ruta, op) => { rutas.push(ruta); if (ruta === "/chat/swe/capacidades") return TODOS_OK; return respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "REQUIERE_APROBACION", paso_actual: 0, pendiente_aprobacion: pendiente }); };
-  const r = await S.enviarTareaSwe(api, { mensaje: "Revisar y desplegar", sesion: "s" });
-  assert.deepEqual(rutas, ["/chat/swe/capacidades", "/chat/swe/iniciar"]);
-  assert.equal(r.estado, "REQUIERE_APROBACION"); assert.equal(r.requiere_aprobacion, true); assert.ok(r.task_id);
-  assert.equal(r.pendiente.op_id, "0123456789abcdef");
-  assert.match(r.reply, /aprobaci/i); assert.match(r.reply, /escribe/); assert.match(r.reply, /codex/); assert.match(r.reply, /escritura/); assert.match(r.reply, /Voy a editar el repo/);
+  const pendiente = { op_id: "0123456789abcdef", paso: "escribe", agente: "codex", modelo: "hf/qwen2.5-coder-1.5b", permisos: { escritura: true, ejecucion: false } };
+  const api = async (ruta, op) => {
+    rutas.push(ruta);
+    if (ruta === "/chat/swe/capacidades") return TODOS_OK;
+    if (ruta === "/chat/swe/iniciar") return respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "REQUIERE_APROBACION", pendiente_aprobacion: pendiente });
+    return respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "DONE", resultado_tool: "Agente completado" });
+  };
+  const resultado = await S.enviarTareaSwe(api, { mensaje: "Revisar y desplegar", sesion: "s" });
+  assert.deepEqual(rutas, ["/chat/swe/capacidades", "/chat/swe/iniciar", "/chat/swe/avanzar"]);
+  assert.equal(resultado.estado, "DONE");
+  assert.match(resultado.reply, /Agente completado/);
+  delete globalThis.localStorage;
+});
+
+test("enviarTareaSwe: un backend obsoleto con aprobacion persistente falla sin pedir token ni repetir indefinidamente", async () => {
+  conStorage({ riu_swe_seleccion: JSON.stringify({ ...S.SEL_DEFECTO, workflow: "swe_code", modo_agentico: true }) });
+  const rutas = [];
+  const api = async (ruta, op) => {
+    rutas.push(ruta);
+    if (ruta === "/chat/swe/capacidades") return TODOS_OK;
+    return respuestaHarness({ task_id: cuerpoDe(op).task_id, estado: "REQUIERE_APROBACION" });
+  };
+  await assert.rejects(() => S.enviarTareaSwe(api, { mensaje: "x", sesion: "s" }), /SWE_BACKEND_DESACTUALIZADO/);
+  assert.deepEqual(rutas, ["/chat/swe/capacidades", "/chat/swe/iniciar", "/chat/swe/avanzar"]);
   delete globalThis.localStorage;
 });
 
