@@ -139,6 +139,9 @@ if p.exists():
     except Exception:
         cfg = {}
 gw = cfg.setdefault("gateway", {})
+# OpenClaw requiere mode=local para abrir su API HTTP en loopback.
+# No se sobreescribe un modo existente establecido por el propietario.
+gw.setdefault("mode", "local")
 gw.setdefault("controlUi", {})["basePath"] = "/openclaw"
 # HTTP OpenAI-compatible sólo en el Gateway protegido con bearer token.
 # Necesario para GET /v1/models y POST /v1/chat/completions del consejero Sonnet.
