@@ -245,10 +245,13 @@ def _coda_tests():
                            "mvp.test_loop_codigo", "mvp.test_rotacion_groq_coda", "-v"], backend),
         ("mcp_harness", [sys.executable, "-m", "unittest",
                           "deepseek_harness.test_metricas_credenciales", "-v"], backend),
+        ("autopull_python", [sys.executable, "-m", "unittest", "discover",
+                             "-s", "mvp", "-p", "test_run.py", "-v"], backend),
     ]
     node = __import__("shutil").which("node")
     if node:
-        casos.append(("bridge_openclaw", [node, "--test", str(js_test)], raiz))
+        auto_js = js_test.with_name("autoactualizar.test.mjs")
+        casos.append(("bridge_openclaw", [node, "--test", str(js_test), str(auto_js)], raiz))
     salidas = {}
     for nombre, argv, cwd in casos:
         try:
