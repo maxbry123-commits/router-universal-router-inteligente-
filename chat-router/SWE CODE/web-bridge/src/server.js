@@ -179,9 +179,18 @@ async function estadoAutoRouter() {
     if (!r.ok) return { conectable: false };
     const d = await r.json();
     const sha = String(d.commit || '');
+    const auto = d.autoactualizacion || {};
+    const fases = new Set(['AL_DIA', 'ARCHIVOS_ACTUALIZADOS_SIN_REINICIO',
+      'DIFERIDO_TAREAS', 'REINICIANDO_CON_CHECKPOINT',
+      'CODIGO_RECHAZADO_POR_IMPORT', 'GIT_PULL_FALLIDO', 'SIN_CHECKOUT',
+      'ESPERANDO_PRIMER_CICLO']);
     return { conectable: true,
       codigo_en_ejecucion: /^[0-9a-f]{10,40}$/i.test(sha) ? sha.slice(0,10) : null,
-      tareas_activas: Number.isInteger(d.tareas_en_curso) ? d.tareas_en_curso > 0 : null };
+      tareas_activas: Number.isInteger(d.tareas_en_curso) ? d.tareas_en_curso > 0 : null,
+      actualizador: { activo: auto.activo === true, 
+        fase: fases.has(auto.estado) ? auto.estado : 'SIN_DIAGNOSTICO',
+        diferido_max_s: Number.isFinite(auto.diferido_max_s) ? auto.diferido_max_s : null,
+        checkpoint_coda: auto.checkpoint_coda_disponible === true } };
   } catch { return { conectable: false }; }
 }
 
