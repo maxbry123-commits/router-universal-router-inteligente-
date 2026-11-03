@@ -138,8 +138,11 @@ function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al
 function agrupar(k, sel, w) {
   const [lista, tipo] = LISTAS[k];
   if (k === "modelo_responde" || k === "modelo_tool") {
-    const resp = k === "modelo_responde", v = resp ? w : (w === "swen-code-free" ? w : "swen-code-free");
-    let ops = opcionesModeloVentana(v, CAP, mapaProveedor(v), { web: v === "swen-code-free" });
+    // Historial 183380411ecc: solo FREE limita tools a web; no contaminar Groq/NVIDIA/HF.
+    const resp = k === "modelo_responde";
+    const v = resp ? w : (w === "swen-code-free" ? w : "modelo_tool_global");
+    let ops = opcionesModeloVentana(v, CAP, mapaProveedor(resp ? v : "swen-code-free"),
+      { web: v === "swen-code-free" || v === "modelo_tool_global" });
     if (!resp && w === "swen-code-free") ops = ops.filter(o => o.id.startsWith("web-"));
     // un modelo SIN VERIFICAR no bloquea el chat normal: se puede elegir, con su rotulo; lo no disponible va al final, deshabilitado y con su estado real
     const g = { ok: ops.filter((o) => o.ok).map((o) => ({ id: o.id, etq: o.estado === "DISPONIBLE" ? o.nombre : `${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}`, estado: o.estado, motivo: o.motivo, elegible: o.elegible })), noInstalado: [], incompatible: [], sinVerificar: [], otros: ops.filter((o) => !o.ok).map((o) => ({ id: o.id, etq: o.nombre, estado: o.estado, motivo: o.motivo, elegible: o.elegible })) };
@@ -161,12 +164,22 @@ function pintarControles() {
         return;
       }
       delete s.dataset.fijo; s.classList.remove("fijo");
-      const valor = k === "modelo_responde" ? (modeloVentana(VENTANA) || sel.modelo_responde) : sel[k];
+      // Si Groq/NVIDIA no tiene modelo elegido, NO mostrar el último WEB de FREE.
+      const otroProveedor = VENTANA === "groq" || VENTANA === "nvidia";
+      const valor = k === "modelo_responde"
+        ? (modeloVentana(VENTANA) || (otroProveedor ? "" : sel.modelo_responde))
+        : sel[k];
       const { g, ops } = agrupar(k, sel, VENTANA);
       // la eleccion actual se queda SIEMPRE visible (con su estado), aunque no este en la lista de la ventana
       const ya = [...g.ok, ...g.sinVerificar, ...g.noInstalado, ...g.incompatible, ...g.otros].some((x) => x.id === valor);
       if (!ya && valor && !(VENTANA === "swen-code-free" && k.startsWith("modelo"))) { const st = k.startsWith("modelo") ? estadoOpcion(CAP, "modelo", valor) : estadoOpcion(CAP, tipo, valor); g.otros.push({ id: valor, etq: nombreDe(lista, valor) || nombreDe(MODELOS_WEB, valor), estado: st.ok ? "SIN_VERIFICAR" : st.estado, motivo: st.motivo || "no es un modelo de esta ventana" }); }
       llenar(s, g, valor);
+      if (k === "modelo_responde" && otroProveedor && !valor) {
+        const falta = el("option", null, "Elige un modelo " + (VENTANA === "groq" ? "Groq" : "NVIDIA"));
+        falta.value = ""; falta.disabled = true; falta.selected = true;
+        s.prepend(falta); s.value = "";
+        problemas.push("MODELO QUE RESPONDE: selecciona un modelo del proveedor");
+      }
       s.disabled = false;
       const st = k.startsWith("modelo") ? (ops || []).find((o) => o.id === valor) || estadoOpcion(CAP, "modelo", valor) : estadoOpcion(CAP, tipo, valor, k === "agente_responde" ? sel.modelo_responde : sel.modelo_tool);
       const malo = !st.ok || st.estado === "SIN_VERIFICAR";
@@ -254,15 +267,56 @@ document.addEventListener("change", (e) => {
 });
 // el contrato siempre lleva el modelo de la ventana abierta (modelo_tool, agentes y workflow no se tocan)
 function sincronizar(w) {
+  if (w === "swen-code-free") entrarSwen();
+  else salirSwen();
   const m = modeloVentana(w);
-  if (!m) return;
-  if (w === "swen-code-free") {
-    // En ESTE selector nada usa modelos HF: individual web y modelo de ejecución web.
-    const sel = leerSeleccion();
-    const tool = String(sel.modelo_tool || "").startsWith("web-") ? sel.modelo_tool : (m.startsWith("web-") ? m : "web-qwen38max");
-    guardarSeleccion({ modelo_responde:m, modelo_tool:tool, workflow:"individual" });
-  } else guardarSeleccion({ modelo_responde:m });
+  if (m) guardarSeleccion({ modelo_responde:m }); // salida exclusiva del proveedor seleccionado
 }
+
+// Solo SWEN cambia a modelos web; conservar intactos modelo_tool, agente y
+// workflow de las otras ventanas. No se modifica el contrato del Harness.
+const K_SWEN_PROPIO = "riu_swen_selector_propio_v1";
+const K_OTROS_PREV = "riu_swe_selector_otros_v1";
+const CAMPOS_PROPIOS = ["modelo_tool", "agente_tool", "workflow", "modo_trabajo"];
+let SWEN_EN_USO = false;
+const estadoPropio = s => Object.fromEntries(CAMPOS_PROPIOS.map(k => [k, s[k]]));
+function leerPropio(k) {
+  try {
+    const v = JSON.parse(localStorage.getItem(k) || "null");
+    return v && typeof v === "object" && !Array.isArray(v) ? v : null;
+  } catch { return null; }
+}
+function escribirPropio(k, s) { try { localStorage.setItem(k, JSON.stringify(estadoPropio(s))); } catch {} }
+function entrarSwen() {
+  if (SWEN_EN_USO) return;
+  const otros = leerPropio(K_OTROS_PREV);
+  // No pisar el respaldo al recargar con FREE ya activo.
+  if (window.RIU_SELECTORES?.activo !== "swen-code-free" || !otros)
+    escribirPropio(K_OTROS_PREV, leerSeleccion());
+  const anterior = leerPropio(K_SWEN_PROPIO) || {};
+  const mid = modeloVentana("swen-code-free");
+  const tool = String(anterior.modelo_tool || "").startsWith("web-")
+    ? anterior.modelo_tool : (mid.startsWith("web-") ? mid : "web-qwen38max");
+  guardarSeleccion({ ...anterior, modelo_tool:tool, agente_tool:anterior.agente_tool || "openclaw",
+    workflow:"individual" });
+  SWEN_EN_USO = true;
+}
+function salirSwen() {
+  if (!SWEN_EN_USO) return;
+  escribirPropio(K_SWEN_PROPIO, leerSeleccion());
+  const otros = leerPropio(K_OTROS_PREV);
+  if (otros) guardarSeleccion(otros);
+  SWEN_EN_USO = false;
+}
+// Cambio ON/OFF también desde el panel principal, sin abrir la hoja.
+window.addEventListener("riu:selector-activo", () => {
+  if (VENTANA) return;
+  const a = window.RIU_SELECTORES?.activo;
+  const w = { groq:"groq", "nvidia-groq-team":"nvidia", "swe-code":"swe-code",
+    "swen-code-free":"swen-code-free" }[a];
+  if (w) sincronizar(w);
+  else salirSwen();
+});
 
 // ---- Una sola ventana modal activa: abrir una ventana cierra las demas; al cerrar vuelve la de debajo (Selector de modelos) ----
 let opener = null, openerId = "", debajo = "";
@@ -337,7 +391,10 @@ window.RIU_SWE_CENTRAL = {
   // texto del bloqueo si la eleccion de esa ventana NO esta disponible (se queda visible con su error); "" si se puede enviar. Con modo agentico/workflow lo valida enviarTareaSwe.
   bloqueo(w) {
     if (!VENTANAS[w] || requiereHarness(leerSeleccion())) return "";
-    const m = modeloVentana(w) || leerSeleccion().modelo_responde;
+    const actual = modeloVentana(w);
+    if (!actual && (w === "groq" || w === "nvidia"))
+      return (w === "groq" ? "Groq" : "NVIDIA") + ": selecciona un modelo de ese proveedor";
+    const m = actual || leerSeleccion().modelo_responde;
     const o = opcionesModeloVentana(w, CAP, mapaProveedor(w), { web: w === "swen-code-free" }).find((x) => x.id === m);
     if (!o || o.ok || (w === "swen-code-free" && o.elegible && o.estado === "SIN_VERIFICAR")) return "";
     return `${VENTANAS[w].titulo.split(" · ")[0]}: MODELO QUE RESPONDE ${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}${o.motivo ? " (" + o.motivo + ")" : ""}`;
