@@ -30,7 +30,15 @@ const pend = () => leer(CLAVE_PEND) || [];
 let vaciando = false;
 const vaciar = async () => {
   if (!API || vaciando) return; vaciando = true;
-  try { let l = pend(); while (l.length) { try { await API("/memoria/save", { method: "POST", body: l[0] }); } catch (e) { break; } l = pend(); l.shift(); escribir(CLAVE_PEND, l); } } finally { vaciando = false; }
+  try { let l = pend(); while (l.length) {
+    let confirmado = false;
+    try {
+      const r = await API("/memoria/save", { method: "POST", body: l[0] });
+      confirmado = r && r.ok === true;
+    } catch (e) { break; }
+    if (!confirmado) break; // HTTP 200 sin confirmación NO elimina el mensaje
+    l = pend(); l.shift(); escribir(CLAVE_PEND, l);
+  } } finally { vaciando = false; }
 };
 const subir = (scope, key, data) => { const l = pend(); l.push({ scope, key, data }); escribir(CLAVE_PEND, l.slice(-500)); vaciar(); };  // cola con tope (sin red mucho tiempo no llena localStorage)
 const subirMsg = (sesion, m) => subir((SC_HIST + sesion).slice(0, 80), "m-" + m.ts + "-" + m.rol, m);
