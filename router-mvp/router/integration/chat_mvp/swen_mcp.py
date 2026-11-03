@@ -162,6 +162,39 @@ def _consulta(modelo, mensaje, sesion, timeout):
         return {"estado":"terminado","diagnostico":"rutas_gateway",
                 "http":estados,"detalles":detalles,
                 "url_custom_configurado":bool(os.getenv("RIU_OPENCLAW_URL"))}
+    if mensaje.strip() == "@swen/oclint":
+        # Doctor LINT es sólo lectura; no altera pairing, sesión o configuración.
+        binary = "/opt/node24/bin/openclaw" if os.path.isfile("/opt/node24/bin/openclaw") else shutil.which("openclaw")
+        if not binary or not os.path.isfile(binary):
+            return {"estado":"error","error":"OPENCLAW_BIN_NO_ENCONTRADO"}
+        home = "/tmp/openclaw-home-" + str(os.getuid())
+        try:
+            run = subprocess.run([binary,"doctor","--lint","--only",
+                                  "core/doctor/gateway-config","--json"],
+                cwd="/tmp",capture_output=True,text=True,timeout=35,check=False,
+                env={**os.environ,"HOME":home,
+                     "OPENCLAW_STATE_DIR":home+"/.openclaw","OPENCLAW_HOME":home,
+                     "PATH":"/opt/node24/bin:"+os.getenv("PATH","")})
+            try:
+                result=json.loads(run.stdout)
+                findings=result.get("findings") or []
+                safe=[]
+                for issue in findings[:12] if isinstance(findings,list) else []:
+                    if not isinstance(issue,dict):continue
+                    field=issue.get("path") or ""
+                    if not isinstance(field,str) or not re.fullmatch(
+                        r"(?:gateway|agents|models|tools)[.\\[\\]a-zA-Z0-9_./-]{0,120}",field):
+                        field=""
+                    safe.append({"check":str(issue.get("checkId") or "")[:70],
+                        "severity":str(issue.get("severity") or "")[:20],"path":field})
+                return {"estado":"terminado","diagnostico":"openclaw_doctor_lint",
+                    "codigo":run.returncode,"comprobaciones":int(result.get("checksRun") or 0),
+                    "fallos":safe}
+            except (ValueError,TypeError,AttributeError):
+                return {"estado":"error","error":"OPENCLAW_LINT_NO_JSON",
+                    "codigo":run.returncode}
+        except (OSError,subprocess.TimeoutExpired):
+            return {"estado":"error","error":"OPENCLAW_LINT_FALLO"}
     if mensaje.strip() == "@swen/ocdoctor":
         binary = "/opt/node24/bin/openclaw" if os.path.isfile("/opt/node24/bin/openclaw") else shutil.which("openclaw")
         if not os.path.isfile(binary):
