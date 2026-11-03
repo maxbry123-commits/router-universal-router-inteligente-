@@ -17,10 +17,11 @@ export const SWE_LISTAS = {
     ["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max", "opiniones web + decisión Qwen 3.8 Max"],
     ["web-qwen38max", "Qwen 3.8 Max (web)", "suscripción web"],
     ["web-qwen37max", "Qwen 3.7 Max (web)", "suscripción web"],
-    ["web-dsv4-flash", "DeepSeek V4 Flash (web)", "suscripción web"]] },
+    ["web-dsv4-flash", "DeepSeek V4 Flash (web)", "suscripción web"],
+    ["web-claude-sonnet", "Claude Sonnet (web)", "sesión web autorizada · verificación obligatoria"]] },
 };
 // Modelos web de SWEN CODE free (cuentas web del bridge): no estan en el catalogo del Harness, solo sirven para el chat directo por el bridge.
-export const MODELOS_WEB = [["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"]];
+export const MODELOS_WEB = [["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"], ["web-claude-sonnet", "Claude Sonnet (web)"]];
 // MODO DE TRABAJO (antes «modelos» swecode-<modo>): el bridge ya acepta `modo` junto a cualquier modelo (server.js: conPreambulo). Vacio = sin modo.
 export const MODOS_TRABAJO = [["asesoria", "Asesoría"], ["revision", "Revisión"], ["solucion", "Solución"], ["arquitectura", "Arquitectura"], ["archivos", "Archivos"], ["prompt_code", "Prompt code"], ["despliega", "Despliega"]];
 export const esSelectorSwe = (id) => typeof id === "string" && Object.hasOwn(SWE_LISTAS, id);
@@ -42,7 +43,7 @@ export const MODELOS_SWE = [
   ["hf/qwen3.5-0.8b", "Qwen3.5 0.8B", "HF local"], ["hf/qwen3-0.6b", "Qwen3 0.6B", "HF local"],
   ["swecode-consulta", "Ask Cónsil · Qwen 3.8", "web"],
   ["web-qwen38max", "Qwen 3.8 Max", "web"], ["web-qwen37max", "Qwen 3.7 Max", "web"],
-  ["web-dsv4-flash", "DeepSeek V4 Flash", "web"],
+  ["web-dsv4-flash", "DeepSeek V4 Flash", "web"], ["web-claude-sonnet", "Claude Sonnet", "web"],
   ["groq/qwen/qwen3.8-27b", "Qwen 3.8 Groq", "API Groq"], ["nvidia/minimaxai/minimax-m3.1-flash", "MiniMax M3.1 Flash", "API NVIDIA"],
   ["nvidia/meta/muse-glimmer-30b", "Muse Glimmer 30B", "API NVIDIA"], ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "Nemotron 3 Ultra", "API NVIDIA"],
   ["nvidia/z-ai/glm-5.3", "GLM 5.3", "API NVIDIA"],

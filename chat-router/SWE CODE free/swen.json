@@ -1,7 +1,7 @@
 {
   "sistema": "SWEN CODE free",
   "activacion": "SWEN CODE free",
-  "descripcion": "Capa libre de SWE CODE: modos + puente web (cuentas Qwen/DeepSeek) + puente móvil (APK). Solo responde cuando el mensaje empieza con 'SWEN CODE free'.",
+  "descripcion": "SWE CODE free: modos y puente web de suscripciones autorizadas (Qwen, DeepSeek, Claude); OpenClaw orquesta. Ninguna API comercial de esos modelos.",
   "modos": [
     "revision",
     "solucion",
@@ -42,6 +42,11 @@
         "coder",
         "qwen code",
         "qwen2.5"
+      ],
+      "web-claude-sonnet": [
+        "claude",
+        "claude sonnet",
+        "sonnet"
       ]
     },
     "locales": "lfm2.5-350m, qwen2.5-coder-1.5b, qwen3.5-0.8b y qwen3-0.6b salen por el bridge a la cola HF (SWECODE_URL_S1..S3, entra por S1 y salta a S2/S3)",

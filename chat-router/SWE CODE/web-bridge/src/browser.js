@@ -54,7 +54,23 @@ async function asegurarSitio(site) {
   try { await page.goto(cfg.url, { waitUntil:'domcontentloaded', timeout:45000 }); }
   catch { throw Object.assign(new Error('WEB_SITIO_NO_RESPONDE'),{code:'WEB_SITIO_NO_RESPONDE'}); }
   await pasarAgeGate(page, cfg); // Verificación oficial requerida; no saltarla.
-  if (!(await necesitaLogin(page, cfg))) { entry.cuenta = cuentaActual(); return entry; }
+  const expirada = await necesitaLogin(page, cfg);
+  if (cfg.manual_login) {
+    // Claude: no reutilizar el email/clave global de Qwen y DeepSeek.
+    // Una cuenta autenticada se conserva en Chromium persistente.
+    const editor = await (async () => {
+      for (const sel of cfg.input) {
+        try { if (await page.locator(sel).first().isVisible({timeout:400})) return true; } catch {}
+      }
+      return false;
+    })();
+    if (expirada || !editor)
+      throw Object.assign(new Error('CLAUDE_WEB_REQUIERE_SESION_AUTORIZADA'),
+        { code: 'SESSION_EXPIRED', site });
+    entry.cuenta = { tipo:'sesion_web_autorizada', site };
+    return entry;
+  }
+  if (!expirada) { entry.cuenta = cuentaActual(); return entry; }
 
   // sesion caida: intenta login con cuenta actual, rota hasta agotar
   const total = cuentaActual().total;

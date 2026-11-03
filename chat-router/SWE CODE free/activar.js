@@ -28,6 +28,7 @@ const MODELOS_ALIAS = [
   [/^(groq|nvidia)\/[\w.\/-]*\w/i, idLiteral],
   [/^(lfm2\.5-350m|qwen2\.5-coder-1\.5b|qwen3\.5-0\.8b|qwen3-0\.6b)(?![\w-]|\.\w)/i, idLiteral],
   [/^(concilio|c[oó]ncil|consenso|todos|los\s*3)\b/i, "consenso"],
+  [/^(claude(?:[- ]?sonnet)?|sonnet)\b/i, "web-claude-sonnet"],
   [/^(deepseek[- ]?v4[- ]?flash|deepseek[- ]?v4|dsv4[- ]?flash|dsv4|deepseek)\b/i, "web-dsv4-flash"],
   [/^(qwen[- ]?3\.?7[- ]?max|qwen[- ]?3\.?7|qwen37[- ]?max|qwen37)\b/i, "web-qwen37max"],
   [/^(qwen[- ]?3\.?8[- ]?max|qwen[- ]?3\.?8|qwen38[- ]?max|qwen38)\b/i, "web-qwen38max"],

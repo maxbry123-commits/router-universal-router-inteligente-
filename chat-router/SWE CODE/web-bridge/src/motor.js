@@ -19,7 +19,7 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
     // Verificar el modelo REAL; antes se ignoraba silenciosamente un picker fallido
     // y se respondía bajo el ID solicitado aunque el sitio ejecutara otro modelo.
     const elegido = await elegirModelo(page, siteCfg, cfg.modelo_regex);
-    if (siteCfg.model_selector?.length && !elegido) {
+    if (!elegido) {
       throw Object.assign(new Error('No pude verificar el modelo en el selector de la web'), {
         code:'MODELO_SELECTOR_NO_VERIFICADO', site });
     }

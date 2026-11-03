@@ -6,7 +6,8 @@
   "description": "Puente web -> OpenAI-compatible para cuentas web Qwen/DeepSeek (SWE CODE free)",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "test:sites": "node --test test/sites_web.test.mjs"
   },
   "dependencies": {
     "express": "^4.19.2",

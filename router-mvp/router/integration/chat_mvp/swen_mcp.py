@@ -26,6 +26,7 @@ MODELOS = {
     "web-qwen38max": "qwen38max",
     "web-qwen37max": "qwen37max",
     "web-dsv4-flash": "dsv4-flash",
+    "web-claude-sonnet": "claude-sonnet",
     "swecode-consulta": "qwen38max",
 }
 _EXEC = cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="mcp_swen")

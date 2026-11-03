@@ -20,6 +20,10 @@
       "nombre": "DeepSeek V4 Flash (web)"
     },
     {
+      "id": "web-claude-sonnet",
+      "nombre": "Claude Sonnet (chat web autorizado)"
+    },
+    {
       "id": "swecode-consulta",
       "nombre": "Concilio — los 3 web"
     },

@@ -47,9 +47,36 @@ export const SITES = {
       'a:has-text("Log in")', 'button:has-text("Sign in")',
       'a:has-text("Sign in")', 'button:has-text("登录")'],
     model_selector: [],
+    // No hay selector conocido de V4 Flash; únicamente comprobar un indicador REAL.
+    // Sin evidencia del modelo, fallar cerrado (no declarar DeepSeek V4 Flash).
+    model_indicador: ['button:has-text("V4 Flash")', '[data-testid*="model" i]',
+      'button[aria-label*="model" i]', '[role="combobox"]'],
     nuevo_chat: ['[class*="new" i][class*="chat" i]', 'button:has-text("New chat")', 'div[role="button"]:has-text("New")'],
     sesion_muerta: (url) => /sign_in|login/i.test(url),
     sse_match: /chat|completion|session/i,
+  },
+  claude: {
+    nombre: 'Claude Sonnet · chat web',
+    url: 'https://claude.ai/new',
+    login_url: 'https://claude.ai/login',
+    // Claude usa sesiones autorizadas del navegador; no Anthropic API ni Claude CLI.
+    // La autenticación (email, SSO, desafíos) corresponde al titular.
+    manual_login: true,
+    input: ['div.ProseMirror[contenteditable="true"]', '[contenteditable="true"][data-placeholder]',
+      '[role="textbox"][contenteditable="true"]'],
+    enviar: ['button[aria-label="Send Message"]', 'button[aria-label="Send message"]',
+      'button[data-testid="send-button"]', 'button[type="submit"]'],
+    // Priorizar mensajes del asistente: no leer el último mensaje del usuario.
+    respuesta: ['.font-claude-response', '[data-testid="assistant-message"]', '[data-is-streaming]'],
+    stop_gen: ['button[aria-label*="Stop response" i]', 'button[aria-label*="Stop generating" i]'],
+    login_visible: ['a[href*="/login"]', 'button:has-text("Log in")',
+      'a:has-text("Log in")', 'button:has-text("Sign in")'],
+    model_selector: ['button[data-testid*="model" i]', 'button[aria-label*="model" i]',
+      'button:has-text("Sonnet")'],
+    model_indicador: ['button:has-text("Sonnet")', '[data-testid*="model" i]'],
+    nuevo_chat: ['a[href="/new"]', 'button[aria-label*="New chat" i]'],
+    sesion_muerta: (url) => /claude\.ai\/(?:login|auth|signup|verify)/i.test(url),
+    sse_match: /completion|conversation|stream/i,
   },
 };
 
@@ -58,6 +85,7 @@ export const MODELOS_WEB = {
   'dsv4-flash':  { site: 'deepseek', etiqueta: 'DeepSeek V4 Flash', modelo_regex: /v4.*flash|flash/i },
   'qwen37max':   { site: 'qwen',     etiqueta: 'Qwen 3.7 Max',      modelo_regex: /3\.7.*max|qwen3\.7-max/i },
   'qwen38max':   { site: 'qwen',     etiqueta: 'Qwen 3.8 Max',      modelo_regex: /3\.8.*max|qwen3\.8-max/i },
+  'claude-sonnet': { site: 'claude', etiqueta: 'Claude Sonnet (web)', modelo_regex: /sonnet/i },
 };
 
 const VIS_MS = 8500; // 4 candidatos * 8.5s; evitar agotar el deadline WEB por input ausente
@@ -118,24 +146,45 @@ export function sesionMuerta(page, cfg) {
   return cfg.sesion_muerta(page.url());
 }
 
-// elige el modelo en el picker de la web (qwen: aria-label="Select Model")
-// si no hay selector o no matchea, sigue con el modelo que este activo
+// Verificar el modelo por texto visible (no confiar en el ID del request).
+// Si un sitio cambia el DOM, el error es MODELO_SELECTOR_NO_VERIFICADO,
+// nunca se sustituye por un modelo local o la API del proveedor.
 export async function elegirModelo(page, cfg, modelo_regex) {
-  if (!cfg.model_selector?.length || !modelo_regex) return false;
-  for (const sel of cfg.model_selector) {
-    const el = await page.$(sel);
-    if (!el) continue;
-    const actual = (await el.innerText().catch(() => '')).trim();
-    if (modelo_regex.test(actual)) return true; // ya seleccionado
-    await el.click();
-    await page.waitForTimeout(800);
-    const opciones = await page.$('[role="option"], [class*="option"], [class*="item"], li, button');
-    for (const op of opciones) {
-      const t = (await op.innerText().catch(() => '')).trim();
-      if (modelo_regex.test(t)) { await op.click(); await page.waitForTimeout(500); return true; }
+  if (!(modelo_regex instanceof RegExp)) return false;
+  const indicadores = [...(cfg.model_indicador || []), ...(cfg.model_selector || [])];
+  const visibleConModelo = async () => {
+    for (const sel of indicadores) {
+      try {
+        const loc = page.locator(sel).first();
+        if (!await loc.isVisible({ timeout: 350 })) continue;
+        const label = (await loc.innerText().catch(() => '')) ||
+          (await loc.getAttribute?.('aria-label').catch(() => '')) || '';
+        if (modelo_regex.test(String(label))) return true;
+      } catch { /* otro selector */ }
     }
-    await page.keyboard.press('Escape');
     return false;
+  };
+  if (await visibleConModelo()) return true;
+  for (const sel of cfg.model_selector || []) {
+    try {
+      const control = page.locator(sel).first();
+      if (!await control.isVisible({ timeout: 500 })) continue;
+      await control.click();
+      await page.waitForTimeout(350);
+      // page.$$ devuelve lista; page.$ devolvía un solo handle o null.
+      const opciones = await page.$$(
+        '[role="option"], [role="menuitemradio"], [role="menuitem"], ' +
+        '[data-testid*="model-option" i], [role="listbox"] button, [role="menu"] button'
+      );
+      for (const op of opciones) {
+        const t = String(await op.innerText().catch(() => '')).trim();
+        if (!modelo_regex.test(t) || !await op.isVisible().catch(() => false)) continue;
+        await op.click();
+        await page.waitForTimeout(450);
+        if (await visibleConModelo()) return true; // comprobar POST selección
+      }
+      await page.keyboard.press('Escape').catch(() => {});
+    } catch { /* probar otro control */ }
   }
   return false;
 }

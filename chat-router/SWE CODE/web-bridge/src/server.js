@@ -487,7 +487,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       const r = await local(model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
     } else if (modeloWeb) {
       // Sólo chat web de la suscripción autorizada. Nunca API Anthropic/Claude CLI.
-      const site = modeloWeb.startsWith('qwen') ? 'qwen' : modeloWeb === 'dsv4-flash' ? 'deepseek' : null;
+      const site = MODELOS_WEB[modeloWeb]?.site || null;
       try {
         salida = await consultarWeb(modeloWeb, promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
       } catch(e) {
