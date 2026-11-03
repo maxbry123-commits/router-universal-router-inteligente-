@@ -118,18 +118,31 @@ def _consulta(modelo, mensaje, sesion, timeout):
         # Sonda HTTP localhost con bearer del entorno; imprime SOLO status.
         token = os.getenv("OPENCLAW_GATEWAY_TOKEN") or ""
         estados = {}
+        detalles = {}
         for ruta in ("/v1/models","/openclaw/v1/models","/health"):
             req = urllib.request.Request("http://127.0.0.1:18789"+ruta,
                                           headers={"Authorization":"Bearer "+token})
             try:
                 with urllib.request.urlopen(req,timeout=6) as resp:
                     estados[ruta] = resp.status
+                    tipo = str(resp.headers.get("content-type","")).split(";")[0].strip().lower()
+                    muestra = resp.read(4096)
+                    try:
+                        j = json.loads(muestra)
+                        api = (isinstance(j,dict) and j.get("object")=="list"
+                               and isinstance(j.get("data"),list))
+                    except (ValueError,UnicodeError,TypeError):
+                        api = False
+                    detalles[ruta] = {"tipo":tipo[:40],"catalogo_api":api}
             except urllib.error.HTTPError as exc:
                 estados[ruta] = exc.code
+                detalles[ruta] = {"tipo":"HTTP_ERROR","catalogo_api":False}
             except (OSError,TimeoutError):
                 estados[ruta] = 0
+                detalles[ruta] = {"tipo":"SIN_CONEXION","catalogo_api":False}
         return {"estado":"terminado","diagnostico":"rutas_gateway",
-                "http":estados,"url_custom_configurado":bool(os.getenv("RIU_OPENCLAW_URL"))}
+                "http":estados,"detalles":detalles,
+                "url_custom_configurado":bool(os.getenv("RIU_OPENCLAW_URL"))}
     if mensaje.strip() == "@swen/ocdoctor":
         binary = "/opt/node24/bin/openclaw" if os.path.isfile("/opt/node24/bin/openclaw") else shutil.which("openclaw")
         if not os.path.isfile(binary):
