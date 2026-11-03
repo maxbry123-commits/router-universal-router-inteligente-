@@ -52,15 +52,17 @@ async function asegurarSitio(site) {
   if (page.isClosed()) { contextos.delete(site); return asegurarSitio(site); }
 
   await page.goto(cfg.url, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
-  await pasarAgeGate(page, cfg).catch(() => {});
+  await pasarAgeGate(page, cfg); // Verificación oficial requerida; no saltarla.
   if (!(await necesitaLogin(page, cfg))) { entry.cuenta = cuentaActual(); return entry; }
 
   // sesion caida: intenta login con cuenta actual, rota hasta agotar
   const total = cuentaActual().total;
   for (let i = 0; i < total; i++) {
     const c = cuentaActual();
-    const ok = await login(page, cfg, c.email, clave()).catch(() => false);
-    if (ok) { await pasarAgeGate(page, cfg).catch(() => {}); entry.cuenta = c; return entry; }
+    let ok=false;
+    try { ok=await login(page, cfg, c.email, clave()); }
+    catch (e) { if (e?.code === 'AGE_VERIFICATION_REQUIRED') throw e; }
+    if (ok) { await pasarAgeGate(page, cfg); entry.cuenta = c; return entry; }
     rotar(); // siguiente correo, misma clave
   }
   const e = new Error('SESSION_EXPIRED: todas las cuentas fallaron');
@@ -83,7 +85,7 @@ export async function nuevaPagina(site, convId) {
   await esperarSlot(site);
   const page = await ctx.newPage();
   await page.goto(cfg.url, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
-  await pasarAgeGate(page, cfg).catch(() => {});
+  await pasarAgeGate(page, cfg); // Verificación oficial requerida; no saltarla.
   // "New Chat" para que el hilo no se mezcle con el anterior
   for (const sel of cfg.nuevo_chat || []) {
     const el = await page.$(sel);
