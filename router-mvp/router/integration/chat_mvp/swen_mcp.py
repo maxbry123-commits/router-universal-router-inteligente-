@@ -195,6 +195,42 @@ def _consulta(modelo, mensaje, sesion, timeout):
                     "codigo":run.returncode}
         except (OSError,subprocess.TimeoutExpired):
             return {"estado":"error","error":"OPENCLAW_LINT_FALLO"}
+    if mensaje.strip() == "@swen/ocschema":
+        # Validación read-only del JSON local contra el esquema publicado
+        # por el ejecutable OpenClaw instalado. No copiar valores secretos.
+        binary = "/opt/node24/bin/openclaw" if os.path.isfile("/opt/node24/bin/openclaw") else shutil.which("openclaw")
+        try:
+            import jsonschema
+        except ImportError:
+            return {"estado":"error","error":"VALIDADOR_JSONSCHEMA_NO_INSTALADO"}
+        if not binary or not os.path.isfile(binary):
+            return {"estado":"error","error":"OPENCLAW_BIN_NO_ENCONTRADO"}
+        home = "/tmp/openclaw-home-" + str(os.getuid())
+        env = {**os.environ,"HOME":home,"OPENCLAW_STATE_DIR":home+"/.openclaw",
+               "OPENCLAW_HOME":home,"PATH":"/opt/node24/bin:"+os.getenv("PATH","")}
+        try:
+            run=subprocess.run([binary,"config","schema"],capture_output=True,
+                               text=True,timeout=28,check=False,env=env,cwd="/tmp")
+            if run.returncode or len(run.stdout)>6000000:
+                return {"estado":"error","error":"OPENCLAW_SCHEMA_NO_DISPONIBLE"}
+            spec=json.loads(run.stdout)
+            schema=spec.get("schema") if isinstance(spec,dict) and isinstance(spec.get("schema"),dict) else spec
+            cfgpath=Path(home)/".openclaw"/"openclaw.json"
+            if cfgpath.is_symlink() or not cfgpath.is_file():
+                return {"estado":"error","error":"OPENCLAW_CONFIG_NO_ENCONTRADA"}
+            config=json.loads(cfgpath.read_text(encoding="utf-8"))
+            val=jsonschema.Draft202012Validator(schema)
+            issues=[]
+            for err in val.iter_errors(config):
+                path=".".join(str(x) for x in err.path)
+                if not re.fullmatch(r"[A-Za-z0-9_.:/\\[\\]-]{0,130}",path):
+                    path="[RUTA_REDACTADA]"
+                issues.append({"campo":path[:130],"criterio":str(err.validator)[:36]})
+                if len(issues)>=18:break
+            return {"estado":"terminado","diagnostico":"jsonschema_openclaw",
+                    "config_valida":len(issues)==0,"issues":issues}
+        except (OSError,subprocess.TimeoutExpired,ValueError,TypeError):
+            return {"estado":"error","error":"OPENCLAW_SCHEMA_VALIDACION_FALLO"}
     if mensaje.strip() == "@swen/ocdoctor":
         binary = "/opt/node24/bin/openclaw" if os.path.isfile("/opt/node24/bin/openclaw") else shutil.which("openclaw")
         if not os.path.isfile(binary):
