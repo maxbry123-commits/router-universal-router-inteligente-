@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { revisar, RUTAS } from "../src/autoactualizar.js";
+import { revisar, RUTAS, versionCheckout } from "../src/autoactualizar.js";
 
 const git = (dir, ...a) => execFileSync("git", ["-C", dir, "-c", "user.email=t@t", "-c", "user.name=t", ...a], { encoding: "utf8" }).trim();
 function repo() {
@@ -15,6 +15,18 @@ function repo() {
   return d;
 }
 const commit = (d, rel, txt) => { fs.writeFileSync(path.join(d, rel), txt); git(d, "add", "-A"); git(d, "commit", "-qm", txt); };
+
+
+test("versionCheckout: detecta SHA Git local; no realiza fetch, pull ni revela secretos", () => {
+  const d = repo();
+  const inicial = git(d, "rev-parse", "HEAD");
+  assert.equal(versionCheckout(d), inicial.slice(0, 10));
+  commit(d, "chat-router/SWE CODE/web-bridge/a.js", "export const b = 5;");
+  const nuevo = git(d, "rev-parse", "HEAD");
+  assert.notEqual(nuevo, inicial);
+  assert.equal(versionCheckout(d), nuevo.slice(0, 10));
+  assert.equal(versionCheckout(path.join(d, "no-repo")), null);
+});
 
 test("un cambio en SWE CODE o SWE CODE free hace que el bridge se relance solo", async () => {
   const d = repo(); const estado = { cabeza: git(d, "rev-parse", "HEAD") }; let relanzado = 0;
