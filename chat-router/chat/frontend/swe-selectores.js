@@ -87,7 +87,7 @@ function notaVentana(w) {
     const desconocidos = lista.filter(m => m.disponible == null).length;
     return lista.length ? `${prov}: ${confirmados} de ${lista.length} modelos verificados disponibles${desconocidos ? "; " + desconocidos + " sin verificar" : ""}.` : `${prov}: ${aviso || "sin modelos cargados"}.`;
   }
-  return w === "swe-code" ? "Modelos locales HF del Harness (el agente se elige abajo)." : "Cuentas web del bridge + modelos del catálogo. El modo de trabajo elige asesoría, revisión, solución…";
+  return w === "swe-code" ? "Modelos locales HF del Harness (el agente se elige abajo)." : "SWE CODE free: solo cuentas web. OpenClaw ejecuta tools con permisos y recibos; sin modelo local traductor.";
 }
 
 // ---- Disponibilidad: una sola consulta (cargarCapacidades); «Actualizar» la repite sin recargar el chat ----
@@ -138,7 +138,9 @@ function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al
 function agrupar(k, sel, w) {
   const [lista, tipo] = LISTAS[k];
   if (k === "modelo_responde" || k === "modelo_tool") {
-    const resp = k === "modelo_responde", ops = opcionesModeloVentana(resp ? w : "swen-code-free", CAP, mapaProveedor(resp ? w : "swen-code-free"), { web: resp && w === "swen-code-free" });
+    const resp = k === "modelo_responde", v = resp ? w : (w === "swen-code-free" ? w : "swen-code-free");
+    let ops = opcionesModeloVentana(v, CAP, mapaProveedor(v), { web: v === "swen-code-free" });
+    if (!resp && w === "swen-code-free") ops = ops.filter(o => o.id.startsWith("web-"));
     // un modelo SIN VERIFICAR no bloquea el chat normal: se puede elegir, con su rotulo; lo no disponible va al final, deshabilitado y con su estado real
     const g = { ok: ops.filter((o) => o.ok).map((o) => ({ id: o.id, etq: o.estado === "DISPONIBLE" ? o.nombre : `${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}`, estado: o.estado, motivo: o.motivo, elegible: o.elegible })), noInstalado: [], incompatible: [], sinVerificar: [], otros: ops.filter((o) => !o.ok).map((o) => ({ id: o.id, etq: o.nombre, estado: o.estado, motivo: o.motivo, elegible: o.elegible })) };
     return { g, ops };
@@ -163,7 +165,7 @@ function pintarControles() {
       const { g, ops } = agrupar(k, sel, VENTANA);
       // la eleccion actual se queda SIEMPRE visible (con su estado), aunque no este en la lista de la ventana
       const ya = [...g.ok, ...g.sinVerificar, ...g.noInstalado, ...g.incompatible, ...g.otros].some((x) => x.id === valor);
-      if (!ya && valor) { const st = k.startsWith("modelo") ? estadoOpcion(CAP, "modelo", valor) : estadoOpcion(CAP, tipo, valor); g.otros.push({ id: valor, etq: nombreDe(lista, valor) || nombreDe(MODELOS_WEB, valor), estado: st.ok ? "SIN_VERIFICAR" : st.estado, motivo: st.motivo || "no es un modelo de esta ventana" }); }
+      if (!ya && valor && !(VENTANA === "swen-code-free" && k.startsWith("modelo"))) { const st = k.startsWith("modelo") ? estadoOpcion(CAP, "modelo", valor) : estadoOpcion(CAP, tipo, valor); g.otros.push({ id: valor, etq: nombreDe(lista, valor) || nombreDe(MODELOS_WEB, valor), estado: st.ok ? "SIN_VERIFICAR" : st.estado, motivo: st.motivo || "no es un modelo de esta ventana" }); }
       llenar(s, g, valor);
       s.disabled = false;
       const st = k.startsWith("modelo") ? (ops || []).find((o) => o.id === valor) || estadoOpcion(CAP, "modelo", valor) : estadoOpcion(CAP, tipo, valor, k === "agente_responde" ? sel.modelo_responde : sel.modelo_tool);
@@ -251,7 +253,16 @@ document.addEventListener("change", (e) => {
   pintarControles();
 });
 // el contrato siempre lleva el modelo de la ventana abierta (modelo_tool, agentes y workflow no se tocan)
-function sincronizar(w) { const m = modeloVentana(w); if (m) guardarSeleccion({ modelo_responde: m }); }
+function sincronizar(w) {
+  const m = modeloVentana(w);
+  if (!m) return;
+  if (w === "swen-code-free") {
+    // En ESTE selector nada usa modelos HF: individual web y modelo de ejecución web.
+    const sel = leerSeleccion();
+    const tool = String(sel.modelo_tool || "").startsWith("web-") ? sel.modelo_tool : (m.startsWith("web-") ? m : "web-qwen38max");
+    guardarSeleccion({ modelo_responde:m, modelo_tool:tool, workflow:"individual" });
+  } else guardarSeleccion({ modelo_responde:m });
+}
 
 // ---- Una sola ventana modal activa: abrir una ventana cierra las demas; al cerrar vuelve la de debajo (Selector de modelos) ----
 let opener = null, openerId = "", debajo = "";
@@ -328,7 +339,7 @@ window.RIU_SWE_CENTRAL = {
     if (!VENTANAS[w] || requiereHarness(leerSeleccion())) return "";
     const m = modeloVentana(w) || leerSeleccion().modelo_responde;
     const o = opcionesModeloVentana(w, CAP, mapaProveedor(w), { web: w === "swen-code-free" }).find((x) => x.id === m);
-    if (!o || o.ok) return "";
+    if (!o || o.ok || (w === "swen-code-free" && o.elegible && o.estado === "SIN_VERIFICAR")) return "";
     return `${VENTANAS[w].titulo.split(" · ")[0]}: MODELO QUE RESPONDE ${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}${o.motivo ? " (" + o.motivo + ")" : ""}`;
   },
   refrescar: (forzar = true) => refrescarCapacidades(forzar, true),
