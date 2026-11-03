@@ -218,3 +218,92 @@
 #histories .chat-history > .message:has(> .copiar) > .editar{grid-column:2}
 /* El botón copiar de bloques de código tampoco cubre su primera línea. */
 #histories .chat-history .message .riu-code{padding-top:40px}
+
+
+/* V12.4 · Orden real de controles móviles, sin modificar backend ni historial.
+   Arriba: limpiar · reiniciar entrada · ampliar · detener · cubo · enviar.
+   Abajo: micrófono y herramientas secundarias (mismos nodos/listeners).
+   IMPORTANTE: estas reglas van después de las versiones móviles anteriores. */
+@media(max-width:720px){
+  #composer #message{
+    min-height:106px!important;
+    max-height:min(220px,32dvh)!important;
+  }
+  #composer .composer-bar{
+    grid-template-columns:repeat(4,minmax(0,36px)) minmax(46px,1fr) 72px!important;
+    grid-template-rows:46px!important;
+    column-gap:2px!important;
+    row-gap:0!important;
+    justify-items:center!important;
+  }
+  #composer .composer-bar > #btn-limpiar-input,
+  #composer .composer-bar > #btn-reiniciar-input,
+  #composer .composer-bar > #btn-expandir-input{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    position:static!important;inset:auto!important;
+    width:36px!important;min-width:0!important;max-width:36px!important;
+    height:42px!important;min-height:42px!important;
+    margin:0!important;padding:0!important;
+    border:0!important;border-radius:9px!important;
+    background:transparent!important;color:var(--title,#f1f1f1)!important;
+    box-shadow:none!important;transform:none!important;
+    order:initial!important;place-self:center!important;
+  }
+  #composer .composer-bar > #btn-limpiar-input{grid-area:1 / 1!important}
+  #composer .composer-bar > #btn-reiniciar-input{grid-area:1 / 2!important}
+  #composer .composer-bar > #btn-expandir-input{grid-area:1 / 3!important}
+  #composer .composer-bar > #btn-detener{
+    grid-area:1 / 4!important;
+    width:36px!important;min-width:0!important;max-width:36px!important;
+    height:42px!important;min-height:42px!important;
+  }
+  #composer .composer-bar > .p3d{
+    grid-area:1 / 5!important;
+    justify-self:end!important;align-self:center!important;
+    width:46px!important;min-width:46px!important;
+    height:46px!important;margin:0!important;
+  }
+  /* Ancho reducido un 40% respecto a 116px, sin transform que reserve hueco extra. */
+  #composer .composer-bar > .action{
+    grid-area:1 / 6!important;
+    width:70px!important;min-width:0!important;max-width:70px!important;
+    height:34px!important;min-height:34px!important;
+    margin:0!important;padding:0 2px!important;
+    justify-self:end!important;align-self:center!important;
+    gap:3px!important;font-size:11px!important;
+    border-radius:10px!important;
+    transform:none!important;
+  }
+  #composer .composer-bar > .action::after{font-size:11px!important;line-height:1!important}
+  #composer .composer-bar > .action svg{
+    width:15px!important;height:15px!important;flex:0 0 15px!important
+  }
+  #composer .composer-bar > .action .env-txt{display:none!important}
+  #composer > #composer-extra > #btn-microfono{
+    grid-area:1 / 1!important;
+    display:inline-flex!important;
+    align-items:center!important;justify-content:center!important;
+    width:40px!important;min-width:0!important;
+    height:40px!important;min-height:40px!important;
+    margin:0!important;padding:0!important;
+    border:0!important;border-radius:9px!important;
+    background:transparent!important;color:var(--title,#f1f1f1)!important;
+  }
+  #composer > #composer-extra > #btn-microfono.on,
+  #composer > #composer-extra > #btn-microfono[aria-pressed="true"]{
+    color:var(--status-blue,#2F80FF)!important;
+  }
+}
+@media(max-width:350px){
+  #composer .composer-bar{
+    grid-template-columns:repeat(4,minmax(0,32px)) minmax(43px,1fr) 70px!important;
+    column-gap:1px!important;
+  }
+  #composer .composer-bar > #btn-limpiar-input,
+  #composer .composer-bar > #btn-reiniciar-input,
+  #composer .composer-bar > #btn-expandir-input,
+  #composer .composer-bar > #btn-detener{width:32px!important;max-width:32px!important}
+  #composer .composer-bar > .action{width:70px!important;max-width:70px!important}
+}
