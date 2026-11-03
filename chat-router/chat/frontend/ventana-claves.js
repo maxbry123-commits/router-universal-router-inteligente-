@@ -27,9 +27,9 @@ export function montarClaves({ root, q, tell }) {
   const abrir = (proveedor = "") => {
     pintar(); estado(); abrirVentana(root, sheet);
     if (proveedor === "github" || proveedor === "hf") {
-      const ref = sheet.querySelector('input[aria-label="Referencia"]');
-      const secreto = sheet.querySelector('input[aria-label="Valor secreto"]');
-      if (ref) ref.value = proveedor === "github" ? "github/token" : "hf/token";
+      const grupo = sheet.querySelector("select[data-repo-servicio]");
+      const secreto = sheet.querySelector("input[data-repo-token]");
+      if (grupo) grupo.value = proveedor;
       if (secreto) secreto.focus();
     }
   };
@@ -82,6 +82,38 @@ export function montarClaves({ root, q, tell }) {
     filaApi.append(el("div", "vn-t", "Conectar proveedor · API key / SDK"), grupo, personalizado,
       secreta, guardarNueva, aviso, el("div", "fila-desc", "Groq y NVIDIA se reconocen por prefijo. Para DeepSeek, MiniMax y OpenAI selecciona el proveedor (sus claves no se distinguen de forma fiable). APIs compatibles se usan desde ambos chats; otros SDK necesitan adaptador."));
     cuerpo.append(filaApi);
+    // GitHub/HF: conectar al MISMO banco cifrado del Router, no /vault (ruta
+    // antigua que el MVP no publica). El secreto no toca el chat ni el modelo.
+    const red = el("div", "cl-api-plus");
+    const srv = el("select", "vn-in"); srv.dataset.repoServicio = "1";
+    for (const [v, n] of [["github", "GitHub"], ["hf", "Hugging Face"]]) {
+      const o = el("option", "", n); o.value = v; srv.append(o);
+    }
+    srv.setAttribute("aria-label", "Servicio repositorios");
+    const cred = el("input", "vn-in");
+    cred.type = "password"; cred.autocomplete = "off"; cred.dataset.repoToken = "1";
+    cred.placeholder = "Token con permisos del repositorio · solo se envía al Router";
+    cred.setAttribute("aria-label", "Credencial GitHub o Hugging Face");
+    const info = el("div", "vn-estado"); info.setAttribute("role", "status");
+    const conectar = boton("Conectar al Router", "mini", async () => {
+      if (cred.value.length < 8) { info.textContent = "Introduce el token en este Banco de claves, no en el chat."; return; }
+      conectar.disabled = true; info.textContent = "Verificando guardado en Router…";
+      try {
+        const servicio = srv.value;
+        const r = await api("/plugins/puente_chat/call/conexiones", { method: "POST",
+          body: { accion: "agregar", servicio, etiqueta: servicio === "github" ? "GitHub para agentes" : "Hugging Face para agentes", secreto: cred.value } });
+        if (r?.status !== "ok" || !Array.isArray(r?.result?.servicios)) throw new Error("NO_CONFIRMADO");
+        const conexion = r.result.servicios.find(x => x.servicio === servicio);
+        if (!conexion || !Array.isArray(conexion.conexiones) || !conexion.conexiones.some(x => x.on && x.etiqueta?.endsWith("para agentes"))) throw new Error("NO_CONFIRMADO");
+        cred.value = ""; info.textContent = "Conexión registrada en el banco del Router. Verifica permisos del repositorio antes de ejecutar.";
+      } catch (e) {
+        info.textContent = "No se confirmó la conexión; comprueba el acceso al Router y el banco.";
+      } finally { conectar.disabled = false; }
+    });
+    red.append(el("div", "vn-t", "Acceso a repositorios para agentes · banco cifrado del Router"),
+      srv, cred, conectar, info,
+      el("div", "fila-desc", "Elige GitHub o Hugging Face, añade un token limitado a los repositorios necesarios. El modelo nunca recibe su valor."));
+    cuerpo.append(red);
     const ph = el("input", "vn-in"); ph.type = "password"; ph.autocomplete = "off"; ph.placeholder = "Contraseña maestra (solo abre el banco en el servidor)"; ph.setAttribute("aria-label", "Contraseña maestra");
     const fa = el("div", "vn-fila");
     fa.append(boton("Abrir banco", "mini", async () => { try { await llamar("POST", "/vault/unlock", { passphrase: ph.value }); ph.value = ""; tell("Banco abierto"); } catch (e) { tell("No se abrió: " + e.message); } estado(); }),
