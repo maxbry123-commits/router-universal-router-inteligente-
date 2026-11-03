@@ -288,15 +288,27 @@ function aRespuesta(x, tarea) {
   if (estado === "GAP") { const e = x.error && typeof x.error === "object" ? x.error : { codigo: x.codigo, mensaje: x.error }; throw new Error("GAP: " + (e.codigo || "GAP") + (e.mensaje ? " · " + texto(e.mensaje) : "")); }
   if (estado === "RECONCILIAR") { const r = x.pendiente_reconciliacion || {}; throw new Error("GAP: RECONCILIAR · la operación " + (r.op_id || "?") + " (" + (r.paso || "?") + ") quedó iniciada sin confirmar" + (r.motivo ? " (" + r.motivo + ")" : "") + ": un operador debe verificar su estado real antes de reanudar la tarea " + idTarea); }
   const pide = estado === "REQUIERE_APROBACION", pend = pide && x.pendiente_aprobacion && typeof x.pendiente_aprobacion === "object" ? x.pendiente_aprobacion : null;
-  const final = x.resultado_tool || x.texto || x.resultado || x.reply || (pasos.length ? pasos[pasos.length - 1].resultado : "");
+  // En modo agentico Individual el agente REAL es quien devuelve el resultado
+  // al chat. El resumen del LLM solo complementa: no suplanta su recibo ni
+  // permite afirmar que una tool se ejecuto sin evidencia verificable.
+  const ejecutado = tarea.workflow === "individual" && tarea.modo_agentico === true
+    ? pasos.find(p => p.paso === "ejecuta" && p.agente && p.recibo) : null;
+  const modeloFinal = ejecutado ? pasos.find(p => p.paso === "responde" && !p.agente && p.recibo) : null;
+  const final = ejecutado ? ejecutado.resultado
+    : x.resultado_tool || x.texto || x.resultado || x.reply || (pasos.length ? pasos[pasos.length - 1].resultado : "");
   const evid = [...(Array.isArray(x.evidencia) ? x.evidencia : []), ...(Array.isArray(x.evidencias) ? x.evidencias : [])].map(lineaEvidencia);
   pasos.filter((p) => p.recibo).forEach((p) => evid.push("recibo " + p.paso + " (" + (p.servidor || p.agente || "?") + "): " + p.recibo));
   const permisos = pend && pend.permisos ? Object.keys(pend.permisos).filter((k) => pend.permisos[k]).join(" y ") : "";
   const cabecera = pend ? "Requiere aprobación del operador: paso " + pend.paso + " con " + pend.agente + " (" + pend.modelo + ")" + (permisos ? " · " + permisos : "") + (pend.objetivo ? "\n" + texto(pend.objetivo) : "") : pide ? "Requiere aprobación del operador antes de continuar." : "";
-  const reply = [cabecera, texto(final), evid.length ? "Evidencias:\n" + evid.map((e) => "- " + e).join("\n") : ""].filter(Boolean).join("\n\n");
+  const agenteReal = ejecutado
+    ? "Agente " + (ejecutado.agente_ejecutado || ejecutado.agente) + " · modelo " + (ejecutado.modelo_usado || ejecutado.modelo)
+    : "";
+  const resumen = modeloFinal && typeof modeloFinal.resultado === "string" && modeloFinal.resultado.trim()
+    ? "Respuesta final del modelo (basada en el resultado del agente):\n" + texto(modeloFinal.resultado) : "";
+  const reply = [cabecera, agenteReal, texto(final), resumen, evid.length ? "Evidencias:\n" + evid.map((e) => "- " + e).join("\n") : ""].filter(Boolean).join("\n\n");
   const tools = [...new Set(pasos.flatMap((p) => (Array.isArray(p.herramientas) ? p.herramientas : []).map((h) => (typeof h === "string" ? h : (h && h.nombre) || "tool"))))];
   return { reply, tools, finish_reason: estado === "DONE" ? "stop" : null, estado, task_id: idTarea, requiere_aprobacion: pide, pendiente: pend,
-    nota: `SWE · ${tarea.workflow} · ${tarea.agente_responde}→${tarea.agente_tool} · tarea ${idTarea} · ${estado || "?"}${x.ejecucion_s2_s3 ? " · S2/S3 " + x.ejecucion_s2_s3 : ""}` };
+    nota: `SWE · ${tarea.workflow} · agente ejecutor ${ejecutado?.agente_ejecutado || ejecutado?.agente || tarea.agente_tool} · tarea ${idTarea} · ${estado || "?"}${x.ejecucion_s2_s3 ? " · S2/S3 " + x.ejecucion_s2_s3 : ""}` };
 }
 const textoPaso = (x) => { const plan = Array.isArray(x.plan) ? x.plan : [], p = plan[x.paso_actual] || plan[plan.length - 1]; return "SWE · " + (x.estado || "?") + (p && p.paso ? " · " + p.paso : "") + (Number.isInteger(x.paso_actual) && plan.length ? " (" + Math.min(x.paso_actual + 1, plan.length) + "/" + plan.length + ")" : ""); };
 // ctl = { parar, signal }: Detener = parar y esperar. parar() se consulta antes de cada paso (no se llama a avanzar tras Detener) y signal aborta la peticion en vuelo.
