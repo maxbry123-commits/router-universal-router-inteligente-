@@ -14,7 +14,11 @@ function cfg(){
     const x=new URL(base);
     if(x.username||x.password||!((x.protocol==='https:' && x.hostname)
       ||(x.protocol==='http:' && ['localhost','127.0.0.1','::1'].includes(x.hostname))))return null;
-    url=base;
+    // gateway.controlUi.basePath="/openclaw" monta toda la API HTTP bajo ese prefijo.
+    // En producción GET /openclaw/v1/models = 200, mientras /v1/models = 404.
+    const prefijo=x.pathname==='/' ? '/openclaw' :
+      (x.pathname.endsWith('/') ? x.pathname.slice(0,-1) : x.pathname);
+    url=x.origin+prefijo;
   }catch{return null;}
   return token?{url,token}:null;
 }
