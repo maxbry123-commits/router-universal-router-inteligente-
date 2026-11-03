@@ -46,6 +46,90 @@ _ID = re.compile(r"^[A-Za-z0-9_-]{1,80}$")
 # Sólo servicios LOCALES existentes: no aceptar URL aportada por el modelo.
 _RUTA = "/plugins/deepseek_harness/modelos/v1/chat/completions"
 
+# Estado de los procesos MCP en el almacenamiento YA EXISTENTE, no en GitHub.
+# Solo el usuario del servidor puede leer los archivos (modo 0600).
+_ESTADO = Path(os.getenv("SWEN_MCP_STATE_DIR") or
+    (Path(os.getenv("BRIDGE_STATE_DIR") or "/data/state") / "swen_mcp"))
+
+def _persist_path(pid):
+    return (_ESTADO / (pid + ".json")) if re.fullmatch(r"swen_[0-9a-f]{32}",str(pid)) else None
+
+def _persist_read(pid):
+    p=_persist_path(pid)
+    try:
+        if not p or p.is_symlink() or not p.is_file() or p.stat().st_size>380000:
+            return None
+        obj=json.loads(p.read_text(encoding="utf-8"))
+        return obj if isinstance(obj,dict) and obj.get("pid")==pid else None
+    except (OSError,ValueError,TypeError):
+        return None
+
+def _persist_write(pid, datos):
+    p=_persist_path(pid)
+    if p is None:
+        return False
+    tmp=p.with_name("."+pid+"."+uuid.uuid4().hex+".tmp")
+    try:
+        _ESTADO.mkdir(mode=0o700,parents=True,exist_ok=True)
+        if _ESTADO.is_symlink():
+            return False
+        serial=json.dumps({"pid":pid,**datos},ensure_ascii=False,default=str)
+        if len(serial.encode("utf-8"))>350000:
+            return False
+        descriptor=os.open(tmp,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
+        with os.fdopen(descriptor,"w",encoding="utf-8") as fh:
+            fh.write(serial)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp,p)
+        return True
+    except (OSError,ValueError,TypeError):
+        return False
+    finally:
+        try: tmp.unlink(missing_ok=True)
+        except OSError: pass
+
+def _persist_result(pid):
+    obj=_persist_read(pid)
+    if not obj:
+        return None
+    if isinstance(obj.get("resultado"),dict):
+        return {"proceso_id":pid,**obj["resultado"],"recuperado_del_disco":True}
+    worker=obj.get("worker")
+    try:
+        if type(worker) is int and worker>1:
+            os.kill(worker,0)
+            return {"estado":"procesando","proceso_id":pid,
+                    "modelo_solicitado":obj.get("modelo"),"recuperado_del_disco":True}
+    except OSError:
+        pass
+    return {"estado":"error","proceso_id":pid,
+            "error":"SWEN_PROCESO_INTERRUMPIDO_TRAS_REINICIO",
+            "modelo_solicitado":obj.get("modelo"),
+            "sesion":obj.get("sesion"),"recuperado_del_disco":True}
+
+def _persist_by_request(digest):
+    try:
+        files=sorted(_ESTADO.glob("swen_*.json"),
+                     key=lambda f:f.stat().st_mtime,reverse=True)[:256]
+        for p in files:
+            obj=_persist_read(p.stem)
+            if obj and obj.get("rid_hash")==digest:
+                return obj
+    except OSError:
+        pass
+    return None
+
+def _persist_done(pid,modelo,sesion,firma,digest,created,future):
+    try:
+        outcome=future.result()
+        if not isinstance(outcome,dict):
+            outcome={"estado":"error","error":"SWEN_RESPUESTA_INVALIDA"}
+    except Exception:
+        outcome={"estado":"error","error":"SWEN_INFERENCIA_FALLIDA"}
+    _persist_write(pid,{"modelo":modelo,"sesion":sesion,"firma":firma,
+        "rid_hash":digest,"creado":created,"worker":os.getpid(),"resultado":outcome})
+
 
 def _destinos():
     rutas = []
@@ -219,6 +303,18 @@ def _consulta(modelo, mensaje, sesion, timeout):
             return {"estado":"error","error":"SWEN_DIAGNOSTICO_NO_DISPONIBLE"}
     if str(mensaje).strip() == "@swen/claves":
         return _diagnostico_claves()
+    if str(mensaje).strip() == "@swen/selftest-persistencia":
+        pid = "swen_" + uuid.uuid4().hex
+        ok = _persist_write(pid,{"modelo":"web-qwen38max","worker":os.getpid(),
+                "resultado":{"estado":"terminado","reply":"PERSISTENCIA_OK"}})
+        resultado = _persist_result(pid)
+        try:
+            p = _persist_path(pid)
+            if p: p.unlink(missing_ok=True)
+        except OSError: pass
+        return {"estado":"terminado","diagnostico":"persistencia_mcp",
+                "pass":bool(ok and resultado and resultado.get("reply")=="PERSISTENCIA_OK"),
+                "disco":"DISPONIBLE" if ok else "NO_DISPONIBLE"}
     if str(mensaje).strip() == "@swen/codatest":
         return _coda_tests()
     key = _clave()
@@ -314,15 +410,30 @@ def iniciar(args):
             if previo:
                 return {"estado": "procesando", "proceso_id": _REQUESTS[rid],
                         "modelo_solicitado": modelo}
+        digest=hashlib.sha256((rid+"|"+_clave()).encode()).hexdigest() if rid else ""
+        if digest:
+            anterior=_persist_by_request(digest)
+            if anterior:
+                if anterior.get("firma") != firma:
+                    return {"error":"SWEN_REQUEST_ID_REUTILIZADO"}
+                return _persist_result(anterior["pid"]) or {
+                    "estado":"error","error":"SWEN_REGISTRO_NO_DISPONIBLE"}
         if len(_JOBS) >= 128:
             return {"error": "SWEN_COLA_LLENA"}
         pid = "swen_" + uuid.uuid4().hex
+        creado=time.time()
+        persistido=_persist_write(pid,{"modelo":modelo,"sesion":sesion,
+            "firma":firma,"rid_hash":digest,"creado":creado,"worker":os.getpid()})
         f = _EXEC.submit(_consulta, modelo, mensaje, sesion,
                          450 if modelo == "swecode-consulta" else 360)
-        _JOBS[pid] = {"futuro": f, "creado": time.time(), "firma": firma, "modelo": modelo}
+        _JOBS[pid] = {"futuro": f, "creado": creado, "firma": firma, "modelo": modelo}
+        f.add_done_callback(lambda futuro,_pid=pid,_m=modelo,_s=sesion,
+            _f=firma,_d=digest,_c=creado:
+            _persist_done(_pid,_m,_s,_f,_d,_c,futuro))
         if rid:
             _REQUESTS[rid] = pid
-        return {"estado": "procesando", "proceso_id": pid, "modelo_solicitado": modelo}
+        return {"estado": "procesando", "proceso_id": pid, "modelo_solicitado": modelo,
+                "persistencia_mcp":"ACTIVA" if persistido else "NO_DISPONIBLE"}
 
 
 def resultado(args):
@@ -332,7 +443,8 @@ def resultado(args):
     with _LOCK:
         job = _JOBS.get(pid)
     if not job:
-        return {"estado": "error", "error": "SWEN_PROCESO_NO_ENCONTRADO", "proceso_id": pid}
+        return _persist_result(pid) or {
+            "estado":"error","error":"SWEN_PROCESO_NO_ENCONTRADO","proceso_id":pid}
     futuro = job["futuro"]
     espera = max(0, min(float(args.get("espera") or 0), 12))
     try:
