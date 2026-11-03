@@ -171,6 +171,8 @@ def _gh(metodo, ruta, cuerpo=None):
         return 0, 'ERROR: ruta de GitHub no permitida (solo repos de maxbry123-commits, /user y busquedas)'
     if '..' in urllib.parse.unquote(str(ruta)):  # PARCHE_GH_URL_ENC
         return 0, 'ERROR: ruta de GitHub no permitida (solo repos de maxbry123-commits, /user y busquedas)'
+    if not GH_RUTA.fullmatch(str(ruta)):
+        return 0, 'ERROR: ruta de GitHub no permitida (solo cuenta maxbry123-commits)'
     ruta = _ruta_gh_codificada(ruta)  # PARCHE_GH_URL_ENC
     if metodo == 'DELETE' and re.match('^/repos/maxbry123-commits/[^/?]+/?([?].*)?$', str(ruta)):
         return 0, 'ERROR: no se puede borrar un repositorio'
