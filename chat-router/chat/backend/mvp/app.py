@@ -164,8 +164,14 @@ async def _llamar_modelo(mensajes, modelo, opciones):
             proveedor = modelo.split("/", 1)[0].upper()
             codigo = error.codigo if isinstance(error.codigo, int) else "RED"
             http = codigo if isinstance(codigo, int) and 400 <= codigo < 500 else 502
-            cifras = " ".join(re.findall(r"(?:entrada_chars|tools_chars|salida_tokens|limite_tokens|pedidos_tokens)=\d+", str(error))) if codigo == 413 else ""
-            raise HTTPException(status_code=http, detail="PROVEEDOR_%s_HTTP_%s: %s%s" % (proveedor, codigo, error.tipo, " " + cifras if cifras else "")) from None
+            # Diagnostico tipado seguro: la UI/MCP reciben conteos y Retry-After,
+            # nunca tokens, claves, hashes ni respuesta textual del proveedor.
+            cifras = " ".join(re.findall(
+                r"(?:entrada_chars|tools_chars|salida_tokens|limite_tokens|pedidos_tokens|"
+                r"credenciales_configuradas|credenciales_probadas|rotaciones|llamadas_http|retry_after_s)=\d+",
+                str(error)))
+            raise HTTPException(status_code=http, detail="PROVEEDOR_%s_HTTP_%s: %s%s" %
+                                (proveedor, codigo, error.tipo, " " + cifras if cifras else "")) from None
         raise HTTPException(status_code=502, detail=str(error)) from None
     except (ValueError, TypeError, RuntimeError) as error:
         raise HTTPException(status_code=502, detail=str(error)) from None
