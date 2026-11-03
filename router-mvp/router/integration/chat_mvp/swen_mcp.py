@@ -268,6 +268,39 @@ def _consulta(modelo, mensaje, sesion, timeout):
     # Sondas rápidas de la infraestructura EXISTENTE. No mandan prompts a
     # Qwen, DeepSeek ni Claude y nunca solicitan contraseñas o cookies.
     comando = str(mensaje).strip()
+    if comando == "@swen/autopull":
+        # Diagnostico del autopull EXISTENTE por el mismo bridge local.
+        # Solo se devuelven SHAs cortos y fases permitidas; nunca claves.
+        key = _clave()
+        if not key:
+            return {"estado": "error", "error": "AUTOPULL_SIN_CLAVE_ACCESO"}
+        req = urllib.request.Request("http://127.0.0.1:7870/health",
+                                     headers={"X-API-Key": key})
+        try:
+            with urllib.request.urlopen(req, timeout=8) as response:
+                datos = json.loads(response.read(65536))
+            auto = datos.get("autoactualizacion")
+            if not isinstance(auto, dict):
+                return {"estado": "error", "error": "AUTOPULL_SIN_DIAGNOSTICO_BRIDGE"}
+            router = auto.get("router") if isinstance(auto.get("router"), dict) else {}
+            def sha_corto(v):
+                v = str(v or "")
+                return v[:10] if re.fullmatch(r"[0-9a-f]{10,40}", v, re.I) else None
+            checkout = sha_corto(auto.get("checkout_git"))
+            bridge = sha_corto(auto.get("bridge_cargado"))
+            router_sha = sha_corto(router.get("codigo_en_ejecucion"))
+            pendiente = bool(checkout and router_sha and checkout != router_sha)
+            return {"estado": "terminado", "diagnostico": "autopull_git_checkout",
+                    "checkout_git": checkout, "bridge_cargado": bridge,
+                    "router_cargado": router_sha,
+                    "bridge_recarga_pendiente": auto.get("recarga_pendiente") is True,
+                    "router_recarga_pendiente": pendiente if router_sha else None,
+                    "router_conectable": router.get("conectable") is True,
+                    "router_actualizador": (router.get("actualizador") or {}).get("fase") if isinstance(router.get("actualizador"), dict) else None,
+                    "tareas_activas": router.get("tareas_activas"),
+                    "nota": "CHECKOUT != proceso: Git se descarga cada 60 s; un restart puede diferirse por tareas."}
+        except (urllib.error.URLError, OSError, ValueError, TypeError) as exc:
+            return {"estado": "error", "error": "AUTOPULL_DIAGNOSTICO_" + type(exc).__name__}
     if comando in ("@swen/health", "@swen/diag"):
         key = _clave()
         if not key:
