@@ -150,7 +150,7 @@ def test_el_runtime_versionado_tiene_scripts_y_lockfiles_y_ignora_binarios():
         os.makedirs(os.path.join(t, "runtime"))
         shutil.copy(os.path.join(RUNTIME, ".gitignore"), os.path.join(t, "runtime", ".gitignore"))
         ignorados = ["runtime/bin/codex", "runtime/bin", "runtime/venv/openhands/bin/python", "runtime/venv", "runtime/node/agentes/node_modules/x", "runtime/node",
-                     "runtime/node-agentes/node_modules/x", "runtime/estado-agentes.json", "runtime/.instalado/codex", "runtime/.instalar.lock"]
+                     "runtime/node-agentes/node_modules/x", "runtime/node24/bin/node", "runtime/.node24.tmp/extraccion", "runtime/estado-agentes.json", "runtime/.instalado/codex", "runtime/.instalar.lock"]
         versionados = ["runtime/instalar-agentes.sh", "runtime/verificar-agentes.sh", "runtime/entorno.sh", "runtime/requirements-sweagent.txt", "runtime/node-agentes/package-lock.json"]
         r = subprocess.run(["git", "-C", t, "check-ignore"] + ignorados + versionados, capture_output=True, text=True)
         assert sorted(r.stdout.split()) == sorted(ignorados), r.stdout
