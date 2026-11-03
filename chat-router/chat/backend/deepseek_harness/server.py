@@ -13,7 +13,7 @@ import uuid
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, Response
 from plugins.router_api_cliente import llamar
 
 OPCIONES = {"tools", "tool_choice", "temperature", "top_p", "max_tokens",
@@ -714,6 +714,80 @@ def _openai_sse(respuesta):
     o["choices"][0]["finish_reason"] = c["finish_reason"]
     yield "data: " + json.dumps(o, ensure_ascii=False) + "\n\n"
     yield "data: [DONE]\n\n"
+
+
+
+# SWEN / OpenClaw: API OpenAI OPCIONAL por el mismo Harness existente.
+# Las credenciales se quedan en el bridge; no se usa ni se emula la suscripción ChatGPT.
+# Al crear un trabajo (POST) se factura según la API; los GET sólo consultan.
+async def _openai_bridge_pasar(ruta, metodo, cuerpo=None, binario=False):
+    base = _bridge_url()
+    if not base:
+        raise HTTPException(status_code=503, detail="SWE_CODE_ROUTER_NO_CONFIGURADO")
+    timeout = httpx.Timeout(205.0 if metodo == "POST" and ruta == "/v1/openai/image" else 50.0, connect=6.0)
+    try:
+        async with httpx.AsyncClient(timeout=timeout, trust_env=False, follow_redirects=False) as client:
+            r = await client.request(metodo, base + ruta, headers=_cabeceras_bridge(), json=cuerpo)
+            if r.status_code != 200:
+                try:
+                    e = r.json().get("error") or {}
+                    code = e.get("code") or "OPENAI_BRIDGE_FALLO"
+                    if not re.fullmatch(r"[A-Z][A-Z0-9_]{2,60}", str(code)):
+                        code = "OPENAI_BRIDGE_FALLO"
+                except (ValueError, AttributeError, TypeError):
+                    code = "OPENAI_BRIDGE_FALLO"
+                raise HTTPException(status_code=r.status_code, detail=code)
+            if binario:
+                if len(r.content) > 9_000_000:
+                    raise HTTPException(status_code=502, detail="IMAGEN_GRANDE")
+                return Response(content=r.content, media_type="image/png",
+                                headers={"Cache-Control":"private, no-store",
+                                         "Content-Disposition":"attachment; filename=openai.png"})
+            return r.json()
+    except httpx.HTTPError:
+        raise HTTPException(status_code=503, detail="OPENAI_BRIDGE_SIN_CONEXION") from None
+
+
+@app.get("/modelos/v1/openai/estado")
+async def openai_estado(x_api_key: str | None = Header(None), authorization: str | None = Header(None)):
+    _autorizar_chat_modelos(x_api_key, authorization)
+    return await _openai_bridge_pasar("/v1/openai/estado", "GET")
+
+
+@app.post("/modelos/v1/openai/research")
+async def openai_research(cuerpo: dict, x_api_key: str | None = Header(None), authorization: str | None = Header(None)):
+    _autorizar_chat_modelos(x_api_key, authorization)
+    return await _openai_bridge_pasar("/v1/openai/research", "POST", cuerpo)
+
+
+@app.get("/modelos/v1/openai/research/{id}")
+async def openai_research_estado(id: str, x_api_key: str | None = Header(None), authorization: str | None = Header(None)):
+    _autorizar_chat_modelos(x_api_key, authorization)
+    if not re.fullmatch(r"[0-9a-f]{32}", id):
+        raise HTTPException(status_code=400, detail="INVESTIGACION_ID_INVALIDO")
+    return await _openai_bridge_pasar("/v1/openai/research/" + id, "GET")
+
+
+@app.post("/modelos/v1/openai/image")
+async def openai_image(cuerpo: dict, x_api_key: str | None = Header(None), authorization: str | None = Header(None)):
+    _autorizar_chat_modelos(x_api_key, authorization)
+    return await _openai_bridge_pasar("/v1/openai/image", "POST", cuerpo)
+
+
+@app.get("/modelos/v1/openai/image/{id}/data")
+async def openai_image_data(id: str, x_api_key: str | None = Header(None), authorization: str | None = Header(None)):
+    _autorizar_chat_modelos(x_api_key, authorization)
+    if not re.fullmatch(r"[0-9a-f]{32}", id):
+        raise HTTPException(status_code=400, detail="IMAGEN_ID_INVALIDO")
+    return await _openai_bridge_pasar("/v1/openai/image/" + id + "/data", "GET")
+
+
+@app.get("/modelos/v1/openai/image/{id}")
+async def openai_image_descargar(id: str, x_api_key: str | None = Header(None), authorization: str | None = Header(None)):
+    _autorizar_chat_modelos(x_api_key, authorization)
+    if not re.fullmatch(r"[0-9a-f]{32}", id):
+        raise HTTPException(status_code=400, detail="IMAGEN_ID_INVALIDO")
+    return await _openai_bridge_pasar("/v1/openai/image/" + id, "GET", binario=True)
 
 
 @app.get("/modelos/v1/models")
