@@ -118,6 +118,29 @@ class HarnessSwe(unittest.TestCase):
                 h._bridge_chat(MSGS, "web-qwen38max")
         s.shutdown()
 
+    def test_openclaw_lista_tools_llega_con_plan_al_bridge(self):
+        """OpenClaw usa el Harness autenticado: tools explicitas llevan contrato de plan al Bridge."""
+        from fastapi.testclient import TestClient
+        s, url, vistos = bridge("soy Liquid")
+        llamada_tools = [{"type": "function", "function": {
+            "name": "github_leer", "parameters": {"type": "object", "properties": {}}}}]
+        try:
+            with patch.dict(os.environ, {"RIU_API_KEY": "clave-de-prueba-sin-secreto",
+                                         "RIU_SWE_BRIDGE_URL": url}):
+                with TestClient(h.app) as cliente:
+                    respuesta = cliente.post("/modelos/v1/chat/completions",
+                        headers={"x-api-key": "clave-de-prueba-sin-secreto"},
+                        json={"model": "swecode/lfm2.5-350m", "conv_id": "oc-plan-01",
+                              "origen": "openclaw", "messages": MSGS, "tools": llamada_tools})
+        finally:
+            s.shutdown()
+        self.assertEqual(respuesta.status_code, 200, respuesta.text)
+        self.assertEqual(vistos[0]["model"], "lfm2.5-350m")
+        self.assertEqual(vistos[0]["tools"], llamada_tools)
+        self.assertEqual(vistos[0]["objetivo"], "hola")
+        self.assertEqual(vistos[0]["operaciones_previstas"], ["github_leer"])
+        self.assertEqual(respuesta.json()["choices"][0]["message"]["content"], "soy Liquid")
+
     def test_ids_swe(self):
         for m in ("web-qwen38max", "swecode-despliega", "hf-liquid-lfm25", "lfm2.5-350m"):
             self.assertTrue(h.es_swe(m), m)
