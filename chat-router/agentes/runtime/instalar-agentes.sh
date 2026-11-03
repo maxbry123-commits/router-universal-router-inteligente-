@@ -73,8 +73,8 @@ requiere_node() {
 instalar_npm() {
   local comp="$1" lock="$AQUI/$2"; shift 2
   local dir="$DESTINO/node/$comp" h; h="$(huella "$lock/package.json" "$lock/package-lock.json")"
+  requiere_node || return 1  # antes de validar el binario ya instalado: no probarlo con Node 20 del bridge
   if al_dia "$comp" "$h" && "$dir/node_modules/.bin/${1%%:*}" --version >/dev/null 2>&1; then log "$comp ya instalado (lockfile sin cambios)"; return 0; fi
-  requiere_node || return 1
   mkdir -p "$dir"; cp "$lock/package.json" "$lock/package-lock.json" "$dir/"
   log "npm ci $comp ($(grep -c '"resolved"' "$dir/package-lock.json") paquetes fijados)"
   (cd "$dir" && npm ci --no-audit --no-fund --loglevel=error) || return 1
