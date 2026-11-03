@@ -319,7 +319,11 @@ class ErrorProveedor(RuntimeError):
 
 
 class ErrorHTTP(Exception):
-    def __init__(self, codigo, retry_after=None):
+    def __init__(self, codigo, retry_after=None, cuerpo=""):
+        # Solo cifras del limite: nunca claves, ids de organizacion ni texto bruto.
+        detalle = re.search(r"Limit\s+(\d+).*?Requested\s+(\d+)", str(cuerpo), re.I)
+        self.limite_tokens = int(detalle.group(1)) if detalle else None
+        self.pedidos_tokens = int(detalle.group(2)) if detalle else None
         super().__init__("HTTP %d" % codigo); self.codigo, self.retry_after = codigo, retry_after
 
 
@@ -366,14 +370,14 @@ def _solicitar(url, payload, clave, timeout):
         if _httpx is not None:
             r = _cliente().post(url, json=payload, headers=_cab(clave), timeout=_httpx.Timeout(timeout, connect=min(timeout, 20.0)))
             if r.status_code >= 400:
-                raise ErrorHTTP(r.status_code, _retry_after(r.headers.get("Retry-After")))
+                raise ErrorHTTP(r.status_code, _retry_after(r.headers.get("Retry-After")), r.text)
             return r.json()
         with request.urlopen(request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=_cab(clave), method="POST"), timeout=timeout) as r:
             return json.load(r)
     except ErrorHTTP:
         raise
     except error.HTTPError as exc:
-        raise ErrorHTTP(exc.code, _retry_after(exc.headers.get("Retry-After"))) from None
+        raise ErrorHTTP(exc.code, _retry_after(exc.headers.get("Retry-After")), exc.read(16384).decode("utf-8", "replace")) from None
     except ValueError:
         raise ErrorRed("respuesta no es JSON") from None
     except error.URLError as exc:
@@ -390,7 +394,7 @@ def _solicitar_stream(url, payload, clave, timeout, acumulador):
             with _cliente().stream("POST", url, json=payload, headers=_cab(clave, True), timeout=_httpx.Timeout(timeout, connect=min(timeout, 20.0))) as r:
                 if r.status_code >= 400:
                     r.read()  # se consume el cuerpo del error: la conexion queda libre para reutilizarse
-                    raise ErrorHTTP(r.status_code, _retry_after(r.headers.get("Retry-After")))
+                    raise ErrorHTTP(r.status_code, _retry_after(r.headers.get("Retry-After")), r.text)
                 for linea in r.iter_lines():
                     if acumulador.linea(linea):
                         terminado = True; break
@@ -402,7 +406,7 @@ def _solicitar_stream(url, payload, clave, timeout, acumulador):
     except ErrorHTTP:
         raise
     except error.HTTPError as exc:
-        raise ErrorHTTP(exc.code, _retry_after(exc.headers.get("Retry-After"))) from None
+        raise ErrorHTTP(exc.code, _retry_after(exc.headers.get("Retry-After")), exc.read(16384).decode("utf-8", "replace")) from None
     except RuntimeError:
         raise  # error del proveedor dentro del stream: no se reintenta
     except error.URLError as exc:
@@ -448,7 +452,12 @@ def _con_reintentos(accion, pol, payload, ultima_clave, al_429=None):
             if exc.codigo == 400 and any(isinstance(m.get("content"), list) for m in payload["messages"] if isinstance(m, dict)):
                 raise ErrorProveedor("MODELO_SIN_VISION: proveedor rechazó las fotos; cambia a un modelo con visión", 400) from None
             if exc.codigo not in TRANSITORIOS or n == maximo - 1:
-                raise ErrorProveedor("HTTP %d" % exc.codigo, exc.codigo) from None
+                diagnostico = ""
+                if exc.codigo == 413:
+                    diagnostico = " entrada_chars=%d tools_chars=%d salida_tokens=%d" % (_tam(payload.get("messages", [])), len(json.dumps(payload.get("tools", []))), payload.get("max_tokens") or 0)
+                    if exc.limite_tokens:
+                        diagnostico += " limite_tokens=%d pedidos_tokens=%d" % (exc.limite_tokens, exc.pedidos_tokens)
+                raise ErrorProveedor("HTTP %d%s" % (exc.codigo, diagnostico), exc.codigo) from None
             ultimo[0] = exc.codigo
             if exc.retry_after is not None:
                 espera = min(exc.retry_after, float(r.get("retry_after_max_s", 60.0)))

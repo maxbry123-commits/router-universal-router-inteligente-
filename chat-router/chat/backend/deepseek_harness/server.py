@@ -123,7 +123,7 @@ def _router(accion, datos):
         raise HTTPException(status_code=403, detail="Herramienta bloqueada por Router (HTTP 403)" + (": " + causa if causa else ""))
     if not isinstance(resultado, dict) or resultado.get("error") or resultado.get("status") == "degraded":
         motivo = resultado.get("error", "respuesta invalida") if isinstance(resultado, dict) else "respuesta invalida"
-        raise RuntimeError("Router " + str(motivo)[:80])
+        raise RuntimeError("Router " + str(motivo)[:(320 if "PROVEEDOR_GROQ_HTTP_413" in str(motivo) else 80)])
     if accion == "almacen" and resultado.get("ok") is not True:
         raise RuntimeError("Router no confirmo almacenamiento HF")
     return resultado
