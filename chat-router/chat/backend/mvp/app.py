@@ -157,6 +157,15 @@ async def _llamar_modelo(mensajes, modelo, opciones):
         return await asyncio.to_thread(compute.llamar, mensajes, modelo, modelos.base_url(), clave, opciones)
     except PermissionError as error:
         raise HTTPException(status_code=503, detail=str(error)) from None
+    except externos.ErrorProveedor as error:
+        # El Harness debe saber que falló Groq/NVIDIA, no inventar que
+        # se cayó el Router entero y volver a ejecutar las mismas tools.
+        if modelo.startswith(("groq/", "nvidia/")):
+            proveedor = modelo.split("/", 1)[0].upper()
+            codigo = error.codigo if isinstance(error.codigo, int) else "RED"
+            http = 429 if codigo == 429 else 422 if codigo in (400, 404, 422) else 502
+            raise HTTPException(status_code=http, detail="PROVEEDOR_%s_HTTP_%s: %s" % (proveedor, codigo, error.tipo)) from None
+        raise HTTPException(status_code=502, detail=str(error)) from None
     except (ValueError, TypeError, RuntimeError) as error:
         raise HTTPException(status_code=502, detail=str(error)) from None
 @app.post("/chat", dependencies=[Depends(verificar)])
