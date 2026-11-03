@@ -100,7 +100,7 @@ def _err(mensaje, codigo=200):
     return JSONResponse({"status": "error", "error": mensaje}, status_code=codigo)
 
 
-ACCIONES_CONTROL = ("tools_lock",)  # solo lectura cuando no llevan `tool`: estado de los botones del chat (agentes_on, ia)
+ACCIONES_CONTROL = ("tools_lock", "agent_access_lock")  # lectura de permisos y prompt_on del Router; las mutaciones las valida el Router
 
 
 def _router(accion, datos):
@@ -546,11 +546,32 @@ def _defaults_entorno():
             os.environ["RIU_SWE_WORKSPACE_RAIZ"] = raiz
 
 
+def _ejecutar_agente_con_prompt(agente, tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
+    """Propaga System Prompt de la ficha a los SEIS adaptadores reales (CLI/Gateway),
+    solo cuando el Router confirma ON. Es contexto de ejecucion, no una segunda
+    infraestructura ni un selector separado. Una verificacion fallida no equivale a ON.
+    """
+    r = _router("agent_access_lock", {})
+    if not isinstance(r, dict) or type(r.get("prompt_locked")) is not bool:
+        raise ValueError("SYSTEM_PROMPT_ESTADO_NO_VERIFICADO")
+    if r["prompt_locked"] is False:
+        from mvp import prompt as ficha_prompt
+        reglas = ficha_prompt.sistema()
+        if not reglas or "[CREACIÓN DE CÓDIGO]" not in reglas:
+            raise ValueError("SYSTEM_PROMPT_FICHA_INCOMPLETA")
+        anterior = contexto if isinstance(contexto, str) else json.dumps(contexto, ensure_ascii=False, default=str)
+        contexto = "[SYSTEM PROMPT DEL ROUTER · CORE + BLOQUES 3 Y 4]\\n" + reglas + ("\\n\\n[CONTEXTO DE LA TAREA]\\n" + anterior if anterior else "")
+        from agentes.adaptadores import _comun
+        if len(contexto) > _comun.MAX_CONTEXTO:
+            raise ValueError("SYSTEM_PROMPT_CONTEXTO_EXCEDE_LIMITE")
+    return ejecutar_agente(agente, tarea_id, modelo, objetivo, contexto, permisos, checkpoint)
+
+
 def _ctx_swe():
     """Las funciones del Harness se pasan en cada llamada (no se copian): guardar/leer/_router/llm/con_efectos/_diario/_anotar/_llave."""
     _defaults_entorno()
     return _swe.Contexto(guardar=guardar, leer=leer, llm=llm, router=_router, con_efectos=con_efectos, diario=_diario, anotar=_anotar, llave=_llave, secreto=_SECRETO,
-                         ejecutar_agente=lambda *a, **k: ejecutar_agente(*a, **k))
+                         ejecutar_agente=_ejecutar_agente_con_prompt)
 
 
 def _exigir_agentes_on():
