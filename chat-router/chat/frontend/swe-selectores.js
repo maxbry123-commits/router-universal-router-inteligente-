@@ -119,7 +119,29 @@ function controles() {
   const fw = el("div", "swe-rej-fila swe-wf swe-bloque"); fw.append(el("span", "swe-rej-t", "Workflow"), selector("workflow"));
   const lq = el("div", "consil-diagrama lleno swe-liquid"); lq.hidden = true; lq.setAttribute("aria-label", "Liquid Mirror: dos participantes");
   const act = el("div", "swe-actualizar"), bt = el("button", "secondary swe-refrescar", "Actualizar disponibilidad"); bt.type = "button"; bt.setAttribute("aria-label", "Actualizar disponibilidad de agentes y modelos"); act.append(bt, el("span", "swe-hora"));
-  c.append(nota, rej, lm, mo, sp, fw, lq, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
+  // Sólo en SWE CODE free: recuperar contexto sin modelo local y acciones OpenAI opt-in.
+  const extras = el("div", "swen-extras swe-bloque");
+  extras.style.cssText = "display:grid;gap:8px;padding:10px;border:1px solid #484848;border-radius:12px";
+  const title = el("strong", null, "Continuidad y herramientas · cuentas web");
+  const source = el("input");
+  source.type = "text"; source.maxLength = 80; source.pattern = "[A-Za-z0-9_-]+";
+  source.dataset.swenOrigen = "1"; source.placeholder = "ID del chat anterior (opcional)";
+  source.setAttribute("aria-label", "Retomar hilo desde otra sesión");
+  source.value = localStorage.getItem("riu_swen_handoff_origen") || "";
+  const fila = el("div", "row");
+  const ultimo = el("button", "secondary", "↺ Usar última sesión");
+  ultimo.type = "button"; ultimo.dataset.swenUltima = "1";
+  const info = el("span", "fila-desc", "Mismo chat: el checkpoint se recupera automáticamente. Para otro chat, indica el ID anterior.");
+  fila.append(ultimo);
+  const herramientas = el("div", "row");
+  for (const [accion, etiqueta] of [["research","@ Investigación profunda · OpenAI API"],["image","📷 Imagen · OpenAI API"]]) {
+    const btn = el("button", "secondary", etiqueta); btn.type="button"; btn.dataset.swenAccion=accion;
+    btn.title="Requiere API de OpenAI configurada en el servidor (independiente de la suscripción ChatGPT)";
+    herramientas.append(btn);
+  }
+  const estado = el("p", "fila-desc swe-openai-estado", "OpenAI: acceso API independiente. No utiliza la sesión de ChatGPT ni un modelo local traductor.");
+  extras.append(title, source, fila, info, herramientas, estado);
+  c.append(nota, rej, lm, mo, sp, fw, lq, extras, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
   cargarSystemPromptOn().then(pintarControles);  // estado real del bridge en segundo plano; el boton ya nace pintado en ON (defecto) mientras llega
   return c;
 }
@@ -151,6 +173,7 @@ function agrupar(k, sel, w) {
 function pintarControles() {
   const sel = leerSeleccion();
   document.querySelectorAll(".swe-ctl").forEach((c) => {
+    const ext = c.querySelector(".swen-extras"); if (ext) ext.hidden = VENTANA !== "swen-code-free";
     const problemas = [];
     Object.keys(LISTAS).forEach((k) => {
       const s = c.querySelector(`select[data-swe-ctl="${k}"]`); if (!s) return;
@@ -240,7 +263,26 @@ document.addEventListener("click", async (e) => {
   }
   const spB = e.target.closest && e.target.closest("[data-swe-systemprompt]"); if (spB) { alternarSystemPromptOn().then(pintarControles); return; }
   if (e.target.closest && e.target.closest(".swe-refrescar")) refrescarCapacidades(true, true);
+  const last = e.target.closest && e.target.closest("[data-swen-ultima]");
+  if (last && VENTANA === "swen-code-free") {
+    const previo = localStorage.getItem("riu_swen_ultima_sesion") || "";
+    const input = document.querySelector(".swen-extras [data-swen-origen]");
+    const ahora = window.RIU_CHAT?.chat()?.sesion || "";
+    if (input && previo && previo !== ahora) {
+      input.value = previo;
+      localStorage.setItem("riu_swen_handoff_origen", previo);
+    }
+  }
 });
+document.addEventListener("input", (e) => {
+  const input = e.target.closest && e.target.closest("[data-swen-origen]");
+  if (input) {
+    const v = String(input.value || "").trim();
+    if (!v || /^[A-Za-z0-9_-]{1,80}$/.test(v))
+      localStorage.setItem("riu_swen_handoff_origen", v);
+  }
+});
+window.RIU_SWE_CONTEXTO = () => localStorage.getItem("riu_swen_handoff_origen") || "";
 document.addEventListener("change", (e) => {
   const s = e.target.closest && e.target.closest("select[data-swe-ctl]"); if (!s) return;
   const k = s.dataset.sweCtl;
