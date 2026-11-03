@@ -774,6 +774,10 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
     # no las API keys, tokens del navegador ni rutas arbitrarias.
     req = {"model": modelo, "messages": cuerpo["messages"],
            **{k: cuerpo[k] for k in ("conv_id", "modo", "proyecto") if isinstance(cuerpo.get(k), str)}}
+    # Handoff solo como ID validado: el bridge lo resuelve bajo la misma credencial.
+    origen_ctx = cuerpo.get("contexto_de")
+    if isinstance(origen_ctx, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,80}", origen_ctx):
+        req["contexto_de"] = origen_ctx
     if tools is True:
         # Reutilizar el bucle existente: catalogo MCP, permisos, diario y reanudacion.
         motor = {"modelo": modelo, "mensajes": req["messages"], "via": "harness",
