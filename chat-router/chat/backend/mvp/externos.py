@@ -618,6 +618,11 @@ def _sistemas_sin_blancos(mensajes):
                     cerca = None
                 lineas.append(linea)
             elif cerca or linea.strip():
+                if not cerca and not linea.startswith(("    ", "\t")):
+                    # Separadores decorativos de las fichas; no son reglas ni codigo.
+                    linea = re.sub(r"^={4,}[ \t]*|[ \t]*={4,}(?=\r?\n?$)", "", linea)
+                    if re.fullmatch(r"[ \t]*[-=─━]{4,}[ \t]*\r?\n?", linea) or not linea.strip():
+                        continue
                 lineas.append(linea)
         out.append({**m, "content": "".join(lineas)})
     return out
