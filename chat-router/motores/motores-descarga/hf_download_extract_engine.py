@@ -10,7 +10,6 @@ SOURCE_REPO=os.getenv('SOURCE_REPO','').strip(); SOURCE_REF=os.getenv('SOURCE_RE
 SLUG=os.getenv('SLUG','').strip(); DEST_REPO=os.getenv('DEST_REPO','maxbry123-commits/frontend').strip()
 DEST_BRANCH=os.getenv('DEST_BRANCH','main').strip() or 'main'; DEST_ROOT=os.getenv('DEST_ROOT','📂componentes open soure fromtend').strip().strip('/')
 TOKEN=os.getenv('GITHUB_TOKEN',''); PUBLISH=os.getenv('PUBLISH','0').lower() in {'1','true','yes'}
-OK_VERDICTS={'DRY_RUN_DOWNLOAD_EXTRACT_VERIFIED','PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED','ALREADY_PRESENT_VERIFIED'}
 
 def run(argv,cwd=None,env=None,check=True):
     p=subprocess.run(argv,cwd=cwd,env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
@@ -39,31 +38,9 @@ def auth_env():
     return e
 
 def acquire(work):
-    """2026-09-26: si la rama pedida no existe (p. ej. 'main' en un repo con 'master'), prueba HEAD, main y master antes de fallar."""
     d=work/'source'; d.mkdir(); run(['git','init','-q'],d); run(['git','remote','add','origin',repo_url(SOURCE_REPO)+'.git'],d); no_lfs(d)
-    tried=[]
-    for ref in dict.fromkeys([SOURCE_REF,'HEAD','main','master']):
-        tried.append(ref)
-        out=run(['git','fetch','--depth=1','--filter=blob:none','origin',ref],d,check=False)
-        if 'fatal' not in out.lower() and 'error' not in out.lower()[:200]:
-            run(['git','checkout','-q','--detach','FETCH_HEAD'],d)
-            return d,run(['git','rev-parse','HEAD'],d),ref
-    raise RuntimeError('SOURCE_REF_GAP:'+','.join(tried))
-
-def strip_special(d):
-    """2026-09-26 (autorizado por el Director): los enlaces simbólicos y archivos especiales del ORIGEN ya no bloquean la descarga.
-    Se quitan del árbol fuente antes de empaquetar y quedan registrados en el manifiesto (skipped_special). El resto de controles no cambia."""
-    special=[]
-    for p in sorted(d.rglob('*'),key=lambda x:x.as_posix()):
-        if '.git' in p.parts: continue
-        try: m=p.lstat().st_mode
-        except FileNotFoundError: continue
-        if stat.S_ISLNK(m) or not (stat.S_ISREG(m) or stat.S_ISDIR(m)): special.append(p)
-    rels=[p.relative_to(d).as_posix() for p in special]
-    for p in special:
-        try: p.unlink()
-        except (FileNotFoundError, IsADirectoryError, PermissionError): pass
-    return rels
+    run(['git','fetch','--depth=1','--filter=blob:none','origin',SOURCE_REF],d); run(['git','checkout','-q','--detach','FETCH_HEAD'],d)
+    return d,run(['git','rev-parse','HEAD'],d)
 
 def scan_tree(d,enforce_blob_limit=False):
     rows=[]; total=0; ptr=[]; special=[]; oversized=[]
@@ -148,9 +125,7 @@ def publish(work,parts_dir,extracted,manifest_path,slug):
     env=auth_env(); rel=(pathlib.Path(DEST_ROOT)/slug).as_posix(); dst=work/'destination'; sparse_checkout(dst,DEST_REPO,DEST_BRANCH,rel,env)
     run(['git','config','user.name','yaiwes-hf-combined-engine'],dst); run(['git','config','user.email','yaiwes-hf-combined-engine@users.noreply.github.com'],dst)
     target=dst/rel
-    if target.exists():
-        # 2026-09-26: ya descargado antes = éxito (no se vuelve a subir ni se pisa). Se deja constancia si tiene manifiesto.
-        return {'verdict':'ALREADY_PRESENT_VERIFIED','detail':rel,'has_manifest':(target/'DOWNLOAD_EXTRACT_MANIFEST.json').exists()}
+    if target.exists(): raise RuntimeError('DESTINATION_EXISTS:'+rel)
     target.mkdir(parents=True); shutil.copytree(extracted,target/'code',dirs_exist_ok=False); archives=target/'_archives'; archives.mkdir()
     for p in sorted(parts_dir.iterdir()):
         if p.is_file() and not p.name.startswith('_') and p.name!='DOWNLOAD_EXTRACT_MANIFEST.json': shutil.copy2(p,archives/p.name)
@@ -174,15 +149,13 @@ def main():
     if not SOURCE_REPO: raise SystemExit(json.dumps({'schema':SCHEMA,'verdict':'INPUT_GAP','detail':'SOURCE_REPO required'}))
     slug=SLUG or slug_default(SOURCE_REPO)
     with tempfile.TemporaryDirectory(prefix='yaiwes-hf-combined-') as td:
-        work=pathlib.Path(td); src,commit,ref_used=acquire(work); skipped=strip_special(src); rows,src_bytes=scan_tree(src); src_tree=tree_hash(src)
+        work=pathlib.Path(td); src,commit=acquire(work); rows,src_bytes=scan_tree(src); src_tree=tree_hash(src)
         bundle=work/f'{slug}.bundle.zip'; make_zip(rows,bundle); bsha=sha256(bundle); parts_dir=work/'parts'; parts=split_bundle(bundle,parts_dir,slug)
         rebuilt=rebuild(parts_dir,parts,bsha); extracted=work/'extracted'; safe_extract(rebuilt,extracted); ext_tree=tree_hash(extracted)
         if ext_tree!=src_tree: raise RuntimeError('SOURCE_EXTRACTED_TREE_MISMATCH')
-        manifest={'schema':SCHEMA,'source_repo':SOURCE_REPO,'source_ref':ref_used,'source_commit':commit,'slug':slug,'source_files':len(rows),'source_bytes':src_bytes,'source_tree':src_tree,'bundle_bytes':bundle.stat().st_size,'bundle_sha256':bsha,'parts':parts,'part_size_limit_bytes':PART_SIZE,'max_github_blob_bytes':MAX_BLOB,'no_lfs':True,'reconstruction_verified':True,'extraction_verified':True,'extracted_tree':ext_tree,'skipped_special_count':len(skipped),'skipped_special':skipped[:200]}
+        manifest={'schema':SCHEMA,'source_repo':SOURCE_REPO,'source_ref':SOURCE_REF,'source_commit':commit,'slug':slug,'source_files':len(rows),'source_bytes':src_bytes,'source_tree':src_tree,'bundle_bytes':bundle.stat().st_size,'bundle_sha256':bsha,'parts':parts,'part_size_limit_bytes':PART_SIZE,'max_github_blob_bytes':MAX_BLOB,'no_lfs':True,'reconstruction_verified':True,'extraction_verified':True,'extracted_tree':ext_tree}
         mp=parts_dir/'DOWNLOAD_EXTRACT_MANIFEST.json'; mp.write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
         pub=publish(work,parts_dir,extracted,mp,slug) if PUBLISH else {'verdict':'DRY_RUN_DOWNLOAD_EXTRACT_VERIFIED'}
-        verdict='VERIFIED_CLOSED' if pub['verdict'] in OK_VERDICTS else pub['verdict']
-        # compatibilidad con las cadenas que esperan publish.verdict=PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED
-        if pub['verdict']=='ALREADY_PRESENT_VERIFIED': pub={**pub,'verdict':'PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED','original_verdict':'ALREADY_PRESENT_VERIFIED'}
+        verdict='VERIFIED_CLOSED' if pub['verdict'] in {'DRY_RUN_DOWNLOAD_EXTRACT_VERIFIED','PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED'} else pub['verdict']
         print(json.dumps({**manifest,'publish':pub,'elapsed_seconds':round(time.time()-t,2),'verdict':verdict},ensure_ascii=False,sort_keys=True))
 if __name__=='__main__': main()
