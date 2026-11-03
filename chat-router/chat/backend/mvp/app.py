@@ -183,7 +183,11 @@ async def chat(cuerpo: dict):
         try:
             if pid: await guardar_estado()
             reintentos, tope = 0, cuerpo.get("_contexto_max")
-            while True:  # el Harness devuelve la conversacion tras cada ronda de herramientas; se reanuda hasta terminar. Solo un servidor caido corta la tarea
+            # Groq/NVIDIA: el usuario solicita 2 min por llamada. No ampliar
+            # el tiempo de otros modelos ni dejar una reentrada infinita tras 502.
+            externo = modelo.startswith(("groq/", "nvidia/"))
+            hasta_externo = time.monotonic() + 120 if externo else None
+            while True:  # las demás tareas del Harness mantienen su continuidad
                 try:
                     salida = await asyncio.to_thread(harness_client.llm, clave_harness(), mensajes, modelo, cuerpo.get("opciones"),
                                                      {**controles, "acumulado": acumulado, "tarea_id": pid or "", **({"contexto_max": tope} if tope else {})})
@@ -195,9 +199,13 @@ async def chat(cuerpo: dict):
                         tope = max(20_000, tam // 2); continue
                     if not _pasajero(detalle): raise HTTPException(status_code=502, detail=detalle) from None
                     reintentos += 1
-                    if int(os.environ.get("RIU_REINTENTOS_MAX", "0") or 0) and reintentos > int(os.environ["RIU_REINTENTOS_MAX"]): raise HTTPException(status_code=502, detail=detalle) from None  # 0 = sin tope: solo un servidor caido corta la tarea  # falla pasajera (proveedor saturado, red, Harness reiniciando): se espera y se reintenta, nunca se corta la tarea
+                    if externo and (reintentos >= 3 or time.monotonic() >= hasta_externo):
+                        raise HTTPException(status_code=504, detail="GROQ_NVIDIA_REINTENTOS_120_S: " + detalle[:140]) from None
+                    if int(os.environ.get("RIU_REINTENTOS_MAX", "0") or 0) and reintentos > int(os.environ["RIU_REINTENTOS_MAX"]): raise HTTPException(status_code=502, detail=detalle) from None
                     if pid in TRABAJOS: TRABAJOS[pid].update(subestado="reintentando", progreso="Reintentando (%d): %s" % (reintentos, detalle[:80]))
-                    await asyncio.sleep(min(2 ** min(reintentos, 6), 60)); continue
+                    pausa = min(2 ** min(reintentos, 6), 60)
+                    if externo: pausa = min(pausa, max(0, hasta_externo - time.monotonic()))
+                    await asyncio.sleep(pausa); continue
                 if reintentos and pid in TRABAJOS: TRABAJOS[pid].pop("subestado", None)
                 reintentos = 0
                 if salida.get("status") == "error":
