@@ -680,7 +680,9 @@ def _paso_agente(reg, ctx, idx, p):
     directorio, falta = _directorio(reg)
     if falta:
         return _fallar(ctx, reg, idx, falta[0], falta[1], True)
-    if p["efectos"] and op_id not in reg["aprobaciones"]:
+    # YAIWES ya autentica el chat y exige Agentes ON: no introduce otra autorizacion manual.
+    # Otros origenes conservan el control de aprobacion existente.
+    if p["efectos"] and op_id not in reg["aprobaciones"] and reg["origen"] != "yaiwes":
         reg["estado"], reg["aprobacion"] = "REQUIERE_APROBACION", False
         reg["pendiente_aprobacion"] = {"op_id": op_id, "paso": p["paso"], "agente": p["agente"], "modelo": p["modelo"],
                                        "permisos": {"escritura": p["paso"] in PASOS_CON_EFECTOS, "ejecucion": p["paso"] in ("ejecuta", "verifica")},
@@ -689,7 +691,7 @@ def _paso_agente(reg, ctx, idx, p):
         return False
     aprobada = reg["aprobaciones"].get(op_id) or {}
     permisos = {"directorio": directorio, "escritura": p["paso"] in PASOS_CON_EFECTOS, "ejecucion": p["paso"] in ("ejecuta", "verifica") and p["efectos"],
-                "aprobado_por": aprobada.get("por")}
+                "aprobado_por": aprobada.get("por"), "autorizado_por_chat": reg["origen"] == "yaiwes" and reg["modo_agentico"] is True}
     llave = ctx.llave("swe_agente", {"task_id": reg["task_id"], "op_id": op_id})
     # 1) INICIADA se guarda ANTES de lanzar nada con efectos: si no queda guardada, no se ejecuta
     reg["operaciones"][op_id] = {"estado": "INICIADA", "idx": idx, "paso": p["paso"], "agente": p["agente"], "modelo": p["modelo"], "llave": llave,
