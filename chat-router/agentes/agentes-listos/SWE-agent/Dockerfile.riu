@@ -10,4 +10,4 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 # misma version que runtime/requirements-sweagent.txt
 RUN pip install --no-cache-dir "swe-rex==1.4.0" \
-    && git --version && swerex-remote --version
+    && git --version && python -c 'import swerex' && swerex-remote --help >/dev/null
