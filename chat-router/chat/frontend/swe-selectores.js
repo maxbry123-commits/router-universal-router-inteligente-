@@ -186,6 +186,11 @@ function agrupar(k, sel, w) {
     const g = { ok: ops.filter((o) => o.ok).map((o) => ({ id: o.id, etq: o.estado === "DISPONIBLE" ? o.nombre : `${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}`, estado: o.estado, motivo: o.motivo, elegible: o.elegible })), noInstalado: [], incompatible: [], sinVerificar: [], otros: ops.filter((o) => !o.ok).map((o) => ({ id: o.id, etq: o.nombre, estado: o.estado, motivo: o.motivo, elegible: o.elegible })) };
     return { g, ops };
   }
+  if (k === "workflow" && w === "swen-code-free") {
+    // SWEN excluye los pipelines legados con HF/Liquid; otros selectores intactos.
+    return { g: { ok: [{ id:"individual", etq:"Individual · modelos web", estado:"DISPONIBLE", elegible:true }],
+      sinVerificar:[], noInstalado:[], incompatible:[], otros:[] }, tipo:"workflow" };
+  }
   const modelo = k === "agente_responde" ? sel.modelo_responde : k === "agente_tool" ? (sel.workflow === "liquid_mirror" ? "hf/lfm2.5-350m" : sel.modelo_tool) : undefined;
   return { g: agruparOpciones(CAP, tipo, lista, modelo), tipo };
 }
@@ -220,7 +225,7 @@ function pintarControles() {
     if (sm) { sm.replaceChildren(...[["", "Sin modo (conversación normal)"], ...MODOS_TRABAJO].map(([v, t]) => { const o = el("option", null, t); o.value = v; return o; })); sm.value = sel.modo_trabajo; sm.title = VENTANA === "groq" || VENTANA === "nvidia" ? "El modo de trabajo se envía en los chats por el bridge (SWE CODE / SWEN CODE free); Groq y NVIDIA por el Router no lo usan todavía." : ""; }
     const b = c.querySelector("[data-swe-agentico]"); if (b) { b.textContent = sel.modo_agentico ? "ON" : "OFF"; b.setAttribute("aria-pressed", String(sel.modo_agentico)); b.classList.toggle("on", sel.modo_agentico); }
     const spB = c.querySelector("[data-swe-systemprompt]"); if (spB) { const on = systemPromptOnCache(); spB.textContent = on ? "ON" : "OFF"; spB.setAttribute("aria-pressed", String(on)); spB.classList.toggle("on", on); }
-    const lq = c.querySelector(".swe-liquid"); lq.hidden = sel.workflow !== "liquid_mirror";
+    const lq = c.querySelector(".swe-liquid"); lq.hidden = VENTANA === "swen-code-free" || sel.workflow !== "liquid_mirror";
     if (!lq.hidden) {
       const lm = estadoOpcion(CAP, "workflow", "liquid_mirror"); lq.replaceChildren();
       LIQUID_MIRROR.forEach((p, i) => {
@@ -318,9 +323,10 @@ function sincronizar(w) {
   const m = modeloVentana(w);
   if (!m) return;
   if (w === "swen-code-free") {
-    // En ESTE selector nada usa modelos HF: individual web y modelo de ejecución web.
+    // NO tocar Liquid, HF ni workflows de otros selectores; sólo esta ventana.
     const sel = leerSeleccion();
-    const tool = String(sel.modelo_tool || "").startsWith("web-") ? sel.modelo_tool : (m.startsWith("web-") ? m : "web-qwen38max");
+    const tool = String(sel.modelo_tool || "").startsWith("web-")
+      ? sel.modelo_tool : (m.startsWith("web-") ? m : "web-qwen38max");
     guardarSeleccion({ modelo_responde:m, modelo_tool:tool, workflow:"individual" });
   } else guardarSeleccion({ modelo_responde:m });
 }
