@@ -607,6 +607,24 @@ def _prompt_lib(nombre):
     return _PROMPT_LIB[nombre]
 
 
+def _prompt_habilitado_en_router():
+    """La MISMA autoridad de YAIWES/OpenClaw: mvp.app.CONTROL.prompt_on.
+
+    El cache de las fichas nunca decide ON/OFF. Una lectura imposible no
+    significa ON: no se inyecta el system prompt sin permiso confirmado.
+    """
+    try:
+        import importlib
+        servicio = importlib.import_module('mvp.app')
+        control = servicio.CONTROL
+        on = control.d.get('prompt_on')
+        if type(on) is bool:
+            return on
+    except (ImportError, AttributeError, KeyError):
+        pass
+    raise RuntimeError('SYSTEM_PROMPT_ESTADO_NO_VERIFICADO')
+
+
 _CAPA_NODO = {'N4': 'bloque_3', 'N6': 'bloque_4', 'N7': 'bloque_4', 'N8': 'bloque_4',
               'N1': 'bloque_2', 'N2': 'bloque_2', 'N3': 'bloque_2', 'N3B': 'bloque_2', 'N3D': 'bloque_2',
               'N5': 'bloque_5'}  # DSL G10 capa B: ejecutor->B3, verificador->B4, analista->B2, reporte->B5
@@ -2786,7 +2804,8 @@ def _chat(p):
     _sys_in = [str(m.get('content') or '') for m in mensajes if m.get('role') == 'system']
     mensajes = [m for m in mensajes if m.get('role') != 'system']  # DSL G1: UN SOLO system; el del nodo se funde en el bloque ROL
     sysb = {}
-    _core = _core_render(_prompt_lib('system_core.md'), str(p.get('nodo') or ''))
+    _prompt_on = _prompt_habilitado_en_router()
+    _core = _core_render(_prompt_lib('system_core.md'), str(p.get('nodo') or '')) if _prompt_on else ''
     if _core:
         sysb['core'] = _core  # DSL G10 capa A: SYSTEM_CORE siempre primero en el system
     sysb['const'] = _herr().SISTEMA + ' Modelo seleccionado: ' + FICHAS[model][2]
@@ -2796,9 +2815,14 @@ def _chat(p):
         sysb['const'] += ' ' + gov_bloque
     if _sys_in:
         sysb['rol'] = 'ROL DEL NODO %s:\n%s' % (str(p.get('nodo') or ''), '\n'.join(_sys_in))  # DSL G1/G10: ROL DEL NODO tras la Constitucion
-    for _cb in _bloques_capas(p.get('capas'), str(p.get('nodo') or '')):
+    for _cb in (_bloques_capas(p.get('capas'), str(p.get('nodo') or '')) if _prompt_on else []):
         sysb.setdefault('capab', '')
         sysb['capab'] = (sysb['capab'] + '\n\n' + _cb).strip() if sysb['capab'] else _cb
+    if _prompt_on and p.get('workflow_loop') is True:
+        # Solo el workflow NCT: anexos Wordflow canonicos, pre-cargados antes
+        # de enviar el turno. No se incorporan al chat normal ni a OpenClaw.
+        from mvp import prompt as _ficha_prompt
+        sysb['loop'] = _ficha_prompt.wordflow_loop()
     sistema = ''  # se arma al final por prioridad (G13)
     anclados = p.get('anclados') or []
     fuentes_anc = []
@@ -2839,7 +2863,7 @@ def _chat(p):
     except Exception:  # noqa: BLE001
         pass
     # DSL G13: recorte con prioridad — memoria -> anclas -> handoff/sandbox; NUNCA core/constitucion/rol/capas
-    _ORDEN_SYS = ('core', 'const', 'rol', 'capab', 'anc', 'mem', 'der', 'sand', 'hand')
+    _ORDEN_SYS = ('core', 'const', 'rol', 'capab', 'loop', 'anc', 'mem', 'der', 'sand', 'hand')
     _lim_sys = int((_perfil() or (0, 0, 0))[0] or 0)
     _recortes = []
     if _lim_sys:
