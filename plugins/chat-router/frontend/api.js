@@ -67,7 +67,7 @@ window.RIU_CANCELAR = async (ses) => {
   return true;
 };
 window.RIU_RETOMAR = async (ses) => {
-  const v = procs()[ses]; if (!v) return null; const fin = Date.now() + 560000; let malos = 0;
+  const v = procs()[ses]; if (!v) return null; const fin = Date.now() + (v.externo ? 120000 : 560000); let malos = 0;
   while (Date.now() < fin) {
     if (!procs()[ses]) return { error: 'PROCESO_DETENIDO' };
     try {
@@ -100,20 +100,23 @@ async function puenteRouter(base, body, qs, headers) {
   const h = { 'Content-Type': 'application/json' };
   const pw = headers['X-Chat-Password'] || sessionStorage.getItem('riu_clave');
   if (pw) h['X-API-Key'] = pw;
+  const externo = accion === 'chat' && /^(groq|nvidia)\//.test(String(payload.model || payload.modelo || payload.qwen?.modelo || ''));
+  const finExterno = externo ? Date.now() + 120000 : Infinity;
   const maxIntentos = 3; // 1 original + 2 reintentos
   for (let intento = 0; intento < maxIntentos; intento++) {
     let r;
     for (let k = 0; k < 3; k++) {
-      try { r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, TOPE_CHAT); break; }
+      if (externo && Date.now() >= finExterno) return { status: 504, ok: false, p: { error: 'TIEMPO_LLAMADA_120_S', detalle: '2 minutos sin confirmación del Router; se conserva request_id' } };
+      try { r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, externo ? Math.max(1000, Math.min(25000, finExterno - Date.now())) : TOPE_CHAT); break; }
       catch (e) {
         if (k === 2) {
           const msg = String(e && e.message || e);
-          if (/failed to fetch|networkerror|abort|timeout/i.test(msg)) {
-            if (intento < maxIntentos - 1) {
+          if (/failed to fetch|networkerror|network error|abort|timeout/i.test(msg)) {
+            if (intento < maxIntentos - 1 && Date.now() < finExterno) {
               await new Promise(ok => setTimeout(ok, 1500 * (intento + 1)));
               continue;
             }
-            throw new Error('GAP: Space HF caído o dormido. Ve a Hugging Face → Space comand-center-1-riu-router → Restart.');
+            throw new Error(externo ? 'GAP: SIN_CONEXION_GROQ_NVIDIA · agotados los reintentos dentro de 2 minutos' : 'GAP: Space HF caído o dormido. Ve a Hugging Face → Space comand-center-1-riu-router → Restart.');
           }
           throw e;
         }
@@ -125,7 +128,7 @@ async function puenteRouter(base, body, qs, headers) {
     const env = await r.json().catch(() => ({}));
     if (r.status === 401 || r.status === 403) return { status: 401, ok: false, p: env };
     if (!r.ok || env.status !== 'ok') {
-      if (intento < maxIntentos - 1 && (r.status === 429 || r.status >= 500)) {
+      if (intento < maxIntentos - 1 && Date.now() < finExterno - 3000 && (r.status === 429 || r.status >= 500)) {
         await new Promise(ok => setTimeout(ok, 2000 * (intento + 1)));
         continue;
       }
@@ -135,9 +138,9 @@ async function puenteRouter(base, body, qs, headers) {
     let cortado = false;
     let proceso = p.proceso_id || null;
     if (p.estado === 'procesando' && p.proceso_id) {
-      const deadline = Date.now() + 560000;
+      const deadline = externo ? finExterno : Date.now() + 560000;
       try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'En cola…' } })); } catch (e) {}
-      if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: Date.now() });
+      if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: Date.now(), externo });
       let primera = true;
       let fallosRed = 0;
       let vaciosEstado = 0;
@@ -145,7 +148,7 @@ async function puenteRouter(base, body, qs, headers) {
         if (Date.now() > deadline) { cortado = true; break; }
         if (!primera) await new Promise(resolve => setTimeout(resolve, 250)); primera = false;
         try {
-          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 8 }) }, TOPE_POLL);
+          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 8 }) }, externo ? Math.max(1000, Math.min(16000, deadline - Date.now())) : TOPE_POLL);
           const envelope = await poll.json().catch(() => ({}));
           if (poll.status === 401 || poll.status === 403) return { status: 401, ok: false, p: envelope };
           if (!poll.ok || envelope.status !== 'ok') throw new Error(envelope.reason || envelope.detail || ('HTTP ' + poll.status));
@@ -170,7 +173,7 @@ async function puenteRouter(base, body, qs, headers) {
     if (p.error) return { status: 502, ok: false, p };
     return { status: 200, ok: true, p };
   }
-  return { status: 503, ok: false, p: { error: 'GAP: reintentos agotados (1.5 min x 3)' } };
+  return { status: 503, ok: false, p: { error: externo ? 'GAP: SIN_RESPUESTA_120_S · 2 minutos de reintentos sin respuesta confirmada' : 'GAP: reintentos agotados (1.5 min x 3)' } };
 }
 async function puente(base, body, qs, method, headers) {
   if (String(base).includes('/plugins/puente_chat')) return puenteRouter(base, body, qs, headers);
