@@ -119,7 +119,8 @@ def health(authorization: str | None = Header(None),
         return {"status": "ok" if app.state.banco else "degraded", "commit": str(getattr(app.state, "commit", "desconocido"))[:10]}  # el commit no es secreto: sirve para comprobar que version corre
     return {"status": "ok" if app.state.banco else "degraded", "cpu": escalado.cpu_local(),
             "commit": app.state.commit, "banco_abierto": bool(app.state.banco),
-            "tareas_en_curso": _en_curso(), "latido": mantener_vivo.ULTIMO, "mantener_hasta": mantener_vivo.HASTA["t"], "mantener_siempre": mantener_vivo.SIEMPRE["on"],
+            "tareas_en_curso": _en_curso(), "autoactualizacion": getattr(app.state, "autoactualizacion", {"estado": "ESPERANDO_PRIMER_CICLO"}),
+            "latido": mantener_vivo.ULTIMO, "mantener_hasta": mantener_vivo.HASTA["t"], "mantener_siempre": mantener_vivo.SIEMPRE["on"],
             "qwen_base_url_presente": bool(modelos.base_url()),
             "plan": modelos.plan(), "modelo_defecto": modelos.cargar()["modelo_defecto"],
             "clave_qwen_presente": bool(modelos.clave_env() or
