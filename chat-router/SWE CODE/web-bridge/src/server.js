@@ -119,6 +119,31 @@ const HTTP_TAREA = { TAREA_AJENA: 403, TAREA_OTRO_CONTEXTO: 409, CHECKPOINT_OTRA
 // usage OpenAI desde result.metricas (prompt/completion/total tokens reales del proveedor); sin ellos, ceros como siempre
 const usageDe = (m) => { const n = (v) => (Number.isFinite(Number(v)) && v !== null ? Number(v) : 0); const p = n(m?.prompt_tokens), c = n(m?.completion_tokens); return { prompt_tokens: p, completion_tokens: c, total_tokens: m && Number.isFinite(Number(m.total_tokens)) && m.total_tokens !== null ? Number(m.total_tokens) : p + c }; };
 const esConsenso = (modo) => ['consulta', 'plan'].includes(modo);
+// Catálogo REAL del Router para cuando la UI manda Tools ON.
+// No se crea ninguna tool nueva, nunca ejecuta herramientas y no conecta a servidores arbitrarios.
+async function toolsDeRouter() {
+  const key=String(process.env.RIU_API_KEY||process.env.RIU_PUBLIC_CHAT_KEY||'').trim();
+  if(!key)return [];
+  const puerto=String(process.env.PORT||'7861');
+  if(!/^\d{2,5}$/.test(puerto)||+puerto>65535)return [];
+  try {
+    const r=await fetch('http://127.0.0.1:'+puerto+'/mcp',{
+      method:'POST',signal:AbortSignal.timeout(9000),redirect:'error',
+      headers:{'content-type':'application/json','x-api-key':key},
+      body:JSON.stringify({jsonrpc:'2.0',id:'swen_catalogo',method:'tools/list'})
+    });
+    if(!r.ok)return [];
+    const j=await r.json();
+    const items=j?.result?.tools;
+    if(!Array.isArray(items))return [];
+    return items.filter(x=>x&&typeof x.name==='string'&&/^[A-Za-z_][A-Za-z0-9_.-]{0,100}$/.test(x.name)&&
+      x.inputSchema&&typeof x.inputSchema==='object').slice(0,24).map(x=>({
+      type:'function',function:{name:x.name,description:String(x.description||'').slice(0,320),
+        parameters:x.inputSchema}
+    }));
+  }catch{return []}
+}
+
 const OBJETIVO_UNICO = process.env.SWECODE_OBJETIVO || 'qwen38max';
 // fallback dentro de la web antes de escalar a modelos locales
 const WEB_FALLBACK = (process.env.WEB_FALLBACK || 'qwen38max,qwen37max,dsv4-flash').split(',');
@@ -427,7 +452,10 @@ app.post('/v1/chat/completions', async (req, res) => {
     const usaTarea = tareaId != null && tareaId !== '' && explicito;
     if (usaTarea && !tareaIdValido(String(tareaId))) return res.status(400).json({ error: { code: 'TAREA_ID_INVALIDO', message: 'tarea_id: letras, numeros, - y _ (max 64)' } });
     if (usaTarea && !res.headersSent) res.setHeader('x-tarea-id', String(tareaId));  // 128: el id de la tarea viaja siempre; se reenvia tal cual para reanudar
-    const extra = { tools: Array.isArray(req.body.tools) ? req.body.tools : undefined, tool_choice: req.body.tool_choice };  // groq/nvidia/locales ejecutan tools: el Harness las corre
+    const catalogo = req.body.tools === true ? await toolsDeRouter() : undefined;
+    const extra = { tools: Array.isArray(req.body.tools) ? req.body.tools : catalogo, tool_choice: req.body.tool_choice };
+    // UI Tools ON se resuelve con tools/list REAL: el bridge sólo produce tool_calls
+    // pendientes. El Harness/ejecutor verifica permisos, aprobación y recibos.
     // streaming real (stream:true): Groq/NVIDIA entregan fragmentos por onDelta -> sse.delta; flujo = lo ya entregado al cliente (el failover continua desde ahi, sin repetir)
     sse.model = `swecode:${model}`;
     const ac1 = new AbortController();  // primer intento; si vence el plazo se cancela antes del respaldo (no puede seguir escribiendo en el mismo stream)
