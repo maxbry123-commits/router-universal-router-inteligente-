@@ -721,8 +721,9 @@ async def _reanudar_codigo(clave):
     if not isinstance(entrada, dict) or not entrada.get("modelo") or not isinstance(entrada.get("mensajes"), list):
         await asyncio.to_thread(estado_tarea.marcar, app.state.banco, clave, False)
         return
-    if pid in TRABAJOS and TRABAJOS[pid].get("estado") == "procesando":
-        return  # no duplicar ejecucion en el mismo worker
+    activo = _POR_PID.get(pid)
+    if activo is not None and not activo.done():
+        return  # solo una tarea realmente ejecutandose; un job restaurado no bloquea
     anterior = await asyncio.to_thread(trabajos.leer, app.state.banco, pid)
     TRABAJOS[pid] = {**(anterior if isinstance(anterior, dict) else {}),
                     "estado": "procesando", "proceso_id": pid,
