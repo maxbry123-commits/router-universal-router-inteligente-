@@ -156,9 +156,20 @@ def _consulta(modelo, mensaje, sesion, timeout):
                 tipo = "ERROR_NO_CLASIFICADO"
             paths = sorted(set(re.findall(
                 r"(?:gateway|agents|models|tools)\\.[A-Za-z0-9_.\\[\\]-]{1,80}",salida)))
+            # Publicar sólo líneas diagnósticas redactadas, sin valores/config.
+            pistas=[]
+            for linea in (run.stderr+"\\n"+run.stdout).splitlines():
+                if not re.search(r"error|invalid|unknown|unsupported|command|schema|usage|validation|failed",linea,re.I):
+                    continue
+                linea=re.sub(r"[\\w.+-]+@[\\w.-]+","[EMAIL]",linea)
+                linea=re.sub(r"https?://[^\\s]+","[URL]",linea)
+                linea=re.sub(r"(?i)(password|token|secret|api.?key).*",r"\\1 [REDACTADO]",linea)
+                linea=re.sub(r"\\b[A-Za-z0-9_-]{36,}\\b","[VALOR]",linea)
+                pistas.append(linea[:160])
             return {"estado":"terminado","diagnostico":"schema_openclaw",
                     "config_valida":run.returncode==0, "tipo":tipo,
-                    "campos":paths[:8], "codigo_salida":run.returncode}
+                    "campos":paths[:8], "pistas":pistas[:6],
+                    "codigo_salida":run.returncode}
         except (OSError,subprocess.TimeoutExpired):
             return {"estado":"error","error":"OPENCLAW_DOCTOR_NO_DISPONIBLE"}
     if mensaje.strip() == "@swen/occonfig":
