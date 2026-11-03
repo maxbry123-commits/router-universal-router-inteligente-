@@ -66,6 +66,47 @@ class LoopCodaCodigo(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(loop_codigo.solicitado("Escribe 500 lineas de codigo Python"),500)
         self.assertEqual(loop_codigo.solicitado("Continuar", "code_largo", "loop"),500)
 
+    async def test_retry_after_del_proveedor_manda_sobre_espera_fija(self):
+        estado, reloj, llamadas = {}, [100000.], [0]
+        async def inferir(_msg, _tokens):
+            llamadas[0] += 1
+            if llamadas[0] == 1:
+                raise RuntimeError("PROVEEDOR_GROQ_HTTP_429 retry_after_s=240")
+            return {"texto": bloque(50, llamadas[0])}
+        async def cargar(): return estado.get("doc")
+        async def guardar(doc):
+            estado["doc"] = dict(doc, piezas=list(doc["piezas"]))
+            return True
+        async def dormir(s): reloj[0] += s
+        salida = await loop_codigo.generar(
+            mensajes=[{"role":"user","content":"100 lineas codigo Python"}],
+            modelo="groq/qwen/qwen3.8-27b", pid="retry-after", n_lineas=100,
+            inferir=inferir,cargar=cargar,guardar=guardar,dormir=dormir,reloj=lambda:reloj[0])
+        self.assertEqual(salida["lineas"],100)
+        self.assertGreaterEqual(reloj[0]-100000.,240)
+        self.assertEqual(estado["doc"]["validacion"],"PASS")
+
+    async def test_respuesta_vacia_reduce_segmento_con_checkpoint(self):
+        estado, reloj, llamadas = {}, [100000.], [0]
+        async def inferir(_msg, _tokens):
+            llamadas[0] += 1
+            if llamadas[0] <= 2:
+                return {"texto":"","finish_reason":"length"}
+            return {"texto":bloque(25,llamadas[0]),"finish_reason":"stop"}
+        async def cargar(): return estado.get("doc")
+        async def guardar(doc):
+            estado["doc"] = dict(doc,piezas=list(doc["piezas"]))
+            return True
+        async def dormir(s): reloj[0] += s
+        salida = await loop_codigo.generar(
+            mensajes=[{"role":"user","content":"100 lineas codigo Python"}],
+            modelo="nvidia/minimaxai/minimax-m3.1-flash",pid="empty-to-25",n_lineas=100,
+            inferir=inferir,cargar=cargar,guardar=guardar,dormir=dormir,reloj=lambda:reloj[0])
+        self.assertEqual(salida["lineas"],100)
+        self.assertEqual(estado["doc"]["tam_bloque"],25)
+        self.assertEqual(len(salida["texto"].splitlines()),100)
+        self.assertEqual(estado["doc"]["validacion"],"PASS")
+
     async def test_checkpoint_fallo_no_inicia_modelo(self):
         n = [0]
         async def inferir(msg,tokens): n[0] += 1; return {"texto":bloque(50, n[0])}
