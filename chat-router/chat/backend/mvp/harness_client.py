@@ -62,9 +62,16 @@ def _enviar(accion, datos, clave):
     cuerpo = json.dumps({"action": accion, **datos}).encode("utf-8")
     solicitud = request.Request(url, data=cuerpo, headers=headers, method="POST")
     plazo = _timeout(accion, datos)
+    # No dejar tres llamadas secuenciales de 600 s al mismo modelo externo:
+    # el presupuesto completo de transporte Groq/NVIDIA es de 120 s.
+    externo = accion == "llm" and str(datos.get("modelo") or "").startswith(("groq/", "nvidia/"))
+    vence = time.monotonic() + 120.0 if externo else None
     for intento in range(3):
+        restante = (vence - time.monotonic()) if vence is not None else plazo
+        if restante <= 0:
+            raise RuntimeError("GROQ_NVIDIA_TIMEOUT_120_S")
         try:
-            with request.urlopen(solicitud, timeout=plazo) as respuesta:
+            with request.urlopen(solicitud, timeout=min(plazo, restante)) as respuesta:
                 return json.load(respuesta)
         except error.HTTPError as exc:
             if exc.code == 403:
@@ -77,7 +84,13 @@ def _enviar(accion, datos, clave):
                 raise RuntimeError("Harness HTTP " + str(exc.code)) from None
         except (error.URLError, TimeoutError, OSError):
             raise RuntimeError("Harness no disponible") from None  # incluye el timeout: finito, no cuelga
-        time.sleep(min(2 ** intento, 2))
+        espera = min(2 ** intento, 2)
+        if vence is not None:
+            restante = vence - time.monotonic()
+            if restante <= 0:
+                raise RuntimeError("GROQ_NVIDIA_TIMEOUT_120_S")
+            espera = min(espera, restante)
+        time.sleep(espera)
 
 
 def status(clave):
