@@ -171,3 +171,32 @@ test("X-Ray: NVIDIA conserva el modelo anterior no disponible sin cambiarlo por 
   assert.equal(window.RIU_CONFIG.defecto, NV[0]);
   assert.equal(window.RIU_CONFIG.modelos.at(-1).disponible, false);
 });
+
+
+test("SWE CODE: HF local cargado desde S1-S3 conserva DISPONIBLE real",async()=>{
+  reiniciar();
+  providers=[];
+  puente={configurados:{groq:false,nvidia:false},modelos:[],locales:[
+    {id:"hf/lfm2.5-350m",disponible:true,estado:"DISPONIBLE"},
+    {id:"hf/qwen3-0.6b",disponible:null,estado:"SIN_VERIFICAR"},
+    {id:"hf/qwen2.5-coder-1.5b",disponible:null,estado:"NO_CONFIGURADO"},
+    {id:"hf/qwen3.5-0.8b",disponible:false,estado:"NO_DISPONIBLE"}
+  ]};
+  await cargar();
+  assert.deepEqual(window.RIU_LOCAL.lista.map(m=>[m.id,m.disponible,m.estado]),[
+    ["hf/lfm2.5-350m",true,"DISPONIBLE"],
+    ["hf/qwen3-0.6b",null,"SIN VERIFICAR"],
+    ["hf/qwen2.5-coder-1.5b",null,"NO CONFIGURADO"],
+    ["hf/qwen3.5-0.8b",false,"NO DISPONIBLE"]
+  ]);
+});
+test("SWE CODE: ninguna disponibilidad fingida sin loaded:true",async()=>{
+  reiniciar(); providers=[];
+  puente={configurados:{groq:false,nvidia:false},modelos:[],locales:[
+    {id:"hf/lfm2.5-350m",disponible:null,estado:"DISPONIBLE"},
+    {id:"hf/qwen3-0.6b",disponible:true,estado:"SIN_VERIFICAR"}
+  ]};
+  await cargar();
+  assert.ok(window.RIU_LOCAL.lista.every(m=>m.disponible===null));
+  assert.ok(window.RIU_LOCAL.lista.every(m=>m.estado==="SIN VERIFICAR"));
+});
