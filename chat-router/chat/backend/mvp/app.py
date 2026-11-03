@@ -126,7 +126,7 @@ def health(authorization: str | None = Header(None),
                                        (app.state.banco and app.state.banco.leer("QWEN_API_KEY")))}
 _TEXTO_PASAJERO = re.compile(r"error de red|no disponible|timed out|timeout|temporar|reset|refused", re.I)
 def _codigo(detalle):  # el error llega envuelto ("Router HTTP 502: Qwen HTTP 429"): cuenta el codigo MAS INTERNO, el del proveedor
-    c = re.findall(r"HTTP (\d{3})", str(detalle)); return int(c[-1]) if c else None
+    c = re.findall(r"HTTP[ _]+(\d{3})", str(detalle)); return int(c[-1]) if c else None
 def _pasajero(detalle): return _codigo(detalle) in (408, 425, 429, 500, 502, 503, 504, 529) or (_codigo(detalle) is None and bool(_TEXTO_PASAJERO.search(str(detalle))))
 def _contexto_grande(detalle): return _codigo(detalle) in (400, 413)
 _SES = ContextVar("sesion_tarea", default="")  # sesion del chat de la tarea: donde se deja la respuesta si nadie la recoge
@@ -163,7 +163,7 @@ async def _llamar_modelo(mensajes, modelo, opciones):
         if modelo.startswith(("groq/", "nvidia/")):
             proveedor = modelo.split("/", 1)[0].upper()
             codigo = error.codigo if isinstance(error.codigo, int) else "RED"
-            http = 413 if codigo == 413 else 429 if codigo == 429 else 422 if codigo in (400, 404, 422) else 502
+            http = codigo if isinstance(codigo, int) and 400 <= codigo < 500 else 502
             raise HTTPException(status_code=http, detail="PROVEEDOR_%s_HTTP_%s: %s" % (proveedor, codigo, error.tipo)) from None
         raise HTTPException(status_code=502, detail=str(error)) from None
     except (ValueError, TypeError, RuntimeError) as error:
@@ -204,8 +204,10 @@ async def chat(cuerpo: dict):
                         raise RuntimeError(str(salida.get("error") or "harness error"))
                 except (ValueError, RuntimeError) as error:
                     detalle, tam = str(error), sum(len(str(m.get("content") or "")) for m in mensajes if isinstance(m, dict))
-                    if _contexto_grande(detalle) and tam > 20_000:  # el modelo no admite tanto contexto: se reduce a la mitad y se reintenta
-                        tope = max(20_000, tam // 2); continue
+                    if _contexto_grande(detalle) and tam > 20_000:
+                        siguiente = max(20_000, (tope or tam) // 2)
+                        if siguiente < (tope or tam):
+                            tope = siguiente; continue
                     if not _pasajero(detalle): raise HTTPException(status_code=502, detail=detalle) from None
                     reintentos += 1
                     if externo and (reintentos >= 3 or time.monotonic() >= hasta_externo):
@@ -912,3 +914,4 @@ mcp_route.montar(app, verificar_mcp, chat, almacen, CONTROL, _delegar)
 from mvp import bridge_proxy  # noqa: E402
 bridge_proxy.montar(app)
 frontend_estatico.montar(app)  # el chat tambien sale del Router: Vercel puede estar sin cupo de despliegues
+

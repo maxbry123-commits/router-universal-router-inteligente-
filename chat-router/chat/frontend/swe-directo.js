@@ -362,6 +362,7 @@ export async function leerSSE(response, alEvento, signal) {
       if (r.done) break;
       consumir(dec.decode(r.value, { stream: true }), false);
       if (detenido()) throw new Error(DETENIDO);
+      if (fin) { await rd.cancel().catch(() => {}); break; }
     }
     consumir(dec.decode(), true);
   } finally { if (signal) signal.removeEventListener("abort", cortar); }
@@ -371,7 +372,9 @@ export async function leerSSE(response, alEvento, signal) {
 // junta los chat.completion.chunk en la misma forma que el JSON de /v1/chat/completions
 async function respuestaDeSSE(response, datos) {
   const a = { texto: "", llamadas: [], fin: null, error: null, extra: {} };
-  const { fin: hecho } = await leerSSE(response, (o) => {
+  let hecho = false;
+  try {
+  ({ fin: hecho } = await leerSSE(response, (o) => {
     if (!o || typeof o !== "object") return;
     for (const k of ["modelo_usado", "via_respaldo", "via_primaria"]) if (typeof o[k] === "string") a.extra[k] = o[k];
     if (o.consenso_detalle && typeof o.consenso_detalle === "object") a.extra.consenso_detalle = o.consenso_detalle;
@@ -389,7 +392,12 @@ async function respuestaDeSSE(response, datos) {
       if (tc.function && typeof tc.function.arguments === "string") slot.function.arguments += tc.function.arguments;
     }
     if (c.finish_reason) a.fin = c.finish_reason;
-  }, datos.signal);
+  }, datos.signal));
+  } catch (e) {
+    if (datos.signal?.aborted || (!a.texto && !a.llamadas.length)) throw e;
+    // Una desconexion no borra lo recibido ni relanza la inferencia/tools.
+    a.error = { code: "STREAM_CORTADO", message: "conexion interrumpida; respuesta parcial conservada" };
+  }
   if (a.fin === "error" && !a.error) a.error = { code: "STREAM_ERROR", message: "el servidor cerró el stream con error" };
   if (!a.error && !a.fin && !hecho && (a.texto || a.llamadas.length)) a.error = { code: "STREAM_CORTADO", message: "el stream terminó sin finish_reason" };
   return { ...a.extra, ...(a.error ? { error: a.error } : {}), choices: [{ message: { content: a.texto, ...(a.llamadas.length ? { tool_calls: a.llamadas.filter(Boolean) } : {}) }, finish_reason: a.error ? "error" : a.fin }] };
@@ -469,4 +477,5 @@ export async function enviarSwe(api, datos) {
   }
   return { ...metadatos, reply: texto, tools: [], ...(llamadas.length ? { pedidas: nombres, tool_calls: llamadas, ejecutor: quien } : {}), finish_reason: r.choices[0].finish_reason || (llamadas.length ? "tool_calls" : null), nota: `SWE · ${r.modelo_usado || datos.model}${via}${llamadas.length ? " · tools → " + quien : ""}` };
 }
+
 

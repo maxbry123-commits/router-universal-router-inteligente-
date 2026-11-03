@@ -522,7 +522,17 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
                              "origen_tokens": "proveedor" if tok is not None else None, "tokens_por_s": round(tok / dur, 2) if tok and dur > 0 else None}  # sin usage no se inventan tokens
             return r
         try:
-            r = _con_reintentos(accion, pol, payload, i == len(pool) - 1, lambda ra, cod, k=k: _enfriar(prov, k, pol, ra, cod))
+            try:
+                r = _con_reintentos(accion, pol, payload, i == len(pool) - 1, lambda ra, cod, k=k: _enfriar(prov, k, pol, ra, cod))
+            except ErrorProveedor as exc:
+                # 413 no mejora esperando ni cambiando de clave. Reducir SOLO
+                # documentacion del catalogo, nunca mensajes ni contratos de tools.
+                reducidas = _tools_compactas(payload.get("tools"))
+                if exc.codigo != 413 or prov != "groq" or not reducidas or reducidas == payload.get("tools"):
+                    raise
+                payload["tools"] = reducidas
+                r = _con_reintentos(accion, pol, payload, i == len(pool) - 1, lambda ra, cod, k=k: _enfriar(prov, k, pol, ra, cod))
+                r["metricas"]["catalogo_compactado"] = True
             if info_param:
                 r["metricas"]["parametros"] = info_param
             if info_ctx:
@@ -535,3 +545,40 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
         raise ErrorProveedor("%s: HTTP 404 para el modelo %s (no existe o la clave no lo tiene habilitado); no se cambió de modelo" % (PROVEEDORES[prov]["label"], payload["model"]), 404)
     cod = re.search(r"HTTP (\d{3})", str(ultimo))
     raise ErrorProveedor(PROVEEDORES[prov]["label"] + ": ninguna de las %d claves fue aceptada (%s)" % (len(pool), str(ultimo).replace("Qwen ", "")), int(cod.group(1)) if cod else None, not cod)
+
+
+def _tools_compactas(tools):
+    """Copia el schema intacto salvo anotaciones; no altera propiedades/enum/required.
+    Se usa una sola vez tras 413. Conserva una descripcion breve por funcion.
+    """
+    if not isinstance(tools, list):
+        return None
+    def schema(valor):
+        if not isinstance(valor, dict):
+            return valor
+        out = {}
+        for k, v in valor.items():
+            if k in ("description", "title", "examples", "$comment"):
+                continue
+            if k in ("properties", "$defs", "definitions", "patternProperties", "dependentSchemas") and isinstance(v, dict):
+                out[k] = {nombre: schema(sub) for nombre, sub in v.items()}
+            elif k in ("items", "additionalProperties", "contains", "not", "if", "then", "else", "propertyNames"):
+                out[k] = schema(v)
+            elif k in ("allOf", "anyOf", "oneOf", "prefixItems") and isinstance(v, list):
+                out[k] = [schema(sub) for sub in v]
+            else:
+                out[k] = v
+        return out
+    out = []
+    for tool in tools:
+        if not isinstance(tool, dict) or not isinstance(tool.get("function"), dict):
+            out.append(tool)
+            continue
+        fn = dict(tool["function"])
+        if isinstance(fn.get("description"), str):
+            fn["description"] = fn["description"][:240]
+        if "parameters" in fn:
+            fn["parameters"] = schema(fn["parameters"])
+        out.append({**tool, "function": fn})
+    return out
+

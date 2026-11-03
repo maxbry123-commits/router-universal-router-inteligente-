@@ -613,7 +613,7 @@ async def _mvp_modelo_compat(req, headers, modelo):
         # El 410 de NVIDIA GLM y el 503 HF son diagnósticos, no fallback.
         try:
             motivo = str(up.json().get("detail") or "")
-            origin = re.search(r"\bHTTP\s+(410|429|503)\b", motivo)
+            origin = re.search(r"\bHTTP[ _]+([45][0-9]{2})\b", motivo)
         except (ValueError, AttributeError):
             origin = None
         raise HTTPException(status_code=502 if up.status_code >= 500 else up.status_code,
@@ -634,9 +634,10 @@ async def _sse_mvp_con_latidos(req, headers, modelo, latido_s=12):
     try:
         yield ": inicio\n\n"
         while not task.done():
-            try:
-                await asyncio.wait_for(asyncio.shield(task), timeout=latido_s)
-            except asyncio.TimeoutError:
+            # wait() observa el estado sin propagar la excepcion del modelo:
+            # se transforma abajo en el evento terminal SSE, incluso tras latidos.
+            terminadas, _ = await asyncio.wait({task}, timeout=latido_s)
+            if not terminadas:
                 yield ": keepalive\n\n"
         try:
             resultado = await task
@@ -986,4 +987,5 @@ def invoke(cuerpo: dict, x_api_key: str | None = Header(None)):
         return _err(str(exc))
     except Exception as exc:
         return _err(type(exc).__name__)
+
 
