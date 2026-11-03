@@ -66,6 +66,27 @@ export async function consultarClaude(texto,{convId='',fetchFn=fetch,timeoutMs=3
   }catch(e){throw issue(e?.name==='TimeoutError'||e?.name==='AbortError'?
     'CLAUDE_GATEWAY_TIMEOUT':'CLAUDE_GATEWAY_NO_CONECTADO')}
   if(!r.ok){
+    // Categorizar HTTP 400 sin propagar el cuerpo: puede contener detalles de
+    // perfiles/credenciales. Sólo códigos prefijados conocidos.
+    if(r.status===400){
+      const raw=String(await r.text().catch(()=>'')).slice(0,9000);
+      let body={};try{body=JSON.parse(raw)}catch{}
+      const error=body?.error||{};
+      const msg=String(error?.message||'').toLowerCase();
+      const code=String(error?.code||'').toLowerCase();
+      const joined=code+' '+msg;
+      if(/model.*(?:not allowed|allowlist|not in|unknown|unavailable|invalid)|model_not_allowed/.test(joined))
+        throw issue('CLAUDE_MODELO_NO_AUTORIZADO_GATEWAY',400);
+      if(/agent.*(?:unknown|not found|not allowed|invalid)|unknown.agent/.test(joined))
+        throw issue('CLAUDE_AGENTE_NO_INSTALADO',400);
+      if(/(?:auth|credential|profile|login|token).*(?:missing|unavailable|required|invalid)/.test(joined))
+        throw issue('CLAUDE_CREDENCIALES_NO_DISPONIBLES',400);
+      if(/thinking|effort/.test(joined))
+        throw issue('CLAUDE_RAZONAMIENTO_NO_ADMITIDO',400);
+      if(/session|user/.test(joined))
+        throw issue('CLAUDE_SESION_INVALIDA',400);
+      throw issue('CLAUDE_PETICION_NO_ACEPTADA',400);
+    }
     // OpenClaw puede devolver 500 para "all auth profiles in cooldown".
     // Sólo se inspecciona para clasificar, nunca se muestra ni registra el cuerpo
     // que puede contener datos de una cuenta.
