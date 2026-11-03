@@ -38,8 +38,10 @@ export async function consenso(pregunta, opts = {}) {
     e.detail = por_modelo;
     throw e;
   }
-  const final = validas.length === 1
-    ? validas[0]
-    : await consultarWeb(ARBITRO, PROMPT_ARBITRO(pregunta, validas), opcionesDe(opts, 'arbitro'));
-  return { final, por_modelo };
+  // La decisión FINAL siempre es de Qwen 3.8 Max, incluso con una sola opinión.
+  // Si no está disponible, no se atribuye el dictamen a otro modelo.
+  let final;
+  try { final = await consultarWeb(ARBITRO, PROMPT_ARBITRO(pregunta, validas), opcionesDe(opts, 'arbitro')); }
+  catch (e) { throw Object.assign(new Error('el árbitro Qwen 3.8 Max no respondió; conservar opiniones para revisión manual'), { code: 'CONSIL_ARBITRO_NO_DISPONIBLE', causa: e?.code }); }
+  return { final, por_modelo, arbitro:'qwen38max' };
 }
