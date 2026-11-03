@@ -459,7 +459,7 @@ TRABAJO_VENCE, MAX_COLA, _PROPIOS = float(os.environ.get("RIU_TRABAJO_VENCE_S", 
 def _en_curso(): return sum(1 for t in TRABAJOS.values() if t.get("estado") == "procesando") + loop_puente.en_curso()  # trabajos del chat + procesos del LOOP
 TRABAJOS, _TAREAS = {}, set()  # proceso_id -> {estado, proceso_id, choices|error}; en memoria (se pierde al reiniciar)
 FICHAS_QWEN = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "5": "ficha5-mvp"}
-FICHAS_HEREDADAS = ("nv-", "hf-", "ask-consil")  # ids de ficha del chat anterior; no son modelos del MVP
+FICHAS_HEREDADAS = ("nv-", "ask-consil")  # los IDs hf-* antiguos no se convierten silenciosamente a QwenCloud
 async def _generar_medio(modelo, tipo, mensajes, progreso):
     banco = app.state.banco
     clave = banco.leer("QWEN_API_KEY") if banco else None
@@ -533,6 +533,8 @@ async def _chat_ficha(cuerpo, progreso=None):
     mensajes = [{"role": "system", "content": capa}] + list(mensajes)
     seleccionado = str(q.get("modelo") or q.get("model") or "")
     seleccionado = next((m for m, _ in modelos.catalogo() if "".join(c for c in m.lower() if c.isalnum()) == "".join(c for c in seleccionado.lower() if c.isalnum())), seleccionado)
+    if seleccionado.startswith("hf-"):
+        raise HTTPException(status_code=400, detail="MODELO_HF_HEREDADO_RETIRADO: elige un modelo de SWE CODE S1/S2/S3; no se sustituye por QwenCloud")
     heredada = seleccionado.startswith(FICHAS_HEREDADAS)
     if heredada:  # sin selector Qwen activo el chat manda su ficha (nv-muse-glimmer): se usa el modelo por defecto y el chat muestra «Modelo solicitado · API»
         seleccionado = ""
