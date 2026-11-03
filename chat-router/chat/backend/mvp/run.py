@@ -87,6 +87,72 @@ def _iniciar_bridge(*, arranque=False):
 
 atexit.register(_parar_bridge)
 
+# Claude Code utiliza la PASARELA YA EXISTENTE (agentes/claude-code/pasarela.py).
+# Solo se arranca dentro del Router/SWE CODE actual: sin otro Space ni raíz.
+# El backend de la pasarela apunta al bridge local, que utiliza el banco cifrado.
+_PASARELA = None
+
+
+def _pasarela_escuchando():
+    import socket
+    try:
+        with socket.create_connection(("127.0.0.1", 8082), timeout=0.5):
+            return True
+    except OSError:
+        return False
+
+
+def _parar_pasarela():
+    global _PASARELA
+    p, _PASARELA = _PASARELA, None
+    if p is None or p.poll() is not None:
+        return
+    p.terminate()
+    try:
+        p.wait(timeout=4)
+    except subprocess.TimeoutExpired:
+        p.kill()
+        p.wait(timeout=2)
+
+
+atexit.register(_parar_pasarela)
+
+
+def _iniciar_pasarela():
+    """Habilitar Claude Code con el bridge propio, sin claves nuevas ni reconfigurar pasarelas explícitas."""
+    global _PASARELA
+    if os.environ.get("RIU_CLAUDE_PASARELA_AUTO", "1") == "0":
+        return False
+    if "RIU_CLAUDE_PASARELA_URL" in os.environ and os.environ.get("RIU_CLAUDE_PASARELA_AUTO_ACTIVA") != "1":
+        return False  # el operador configuró otra pasarela, o desactivó esta
+    if not os.environ.get("RIU_API_KEY", "").strip():
+        return False
+    script = REPO / "chat-router" / "agentes" / "claude-code" / "pasarela.py"
+    if not script.is_file():
+        return False
+    os.environ.setdefault("RIU_CLAUDE_PASARELA_MODELO", "minimaxai/minimax-m3.1-flash")
+    model = os.environ["RIU_CLAUDE_PASARELA_MODELO"].strip()
+    if not model:
+        return False
+    os.environ.setdefault("RIU_CLAUDE_PASARELA_URL", "http://127.0.0.1:8082")
+    os.environ["RIU_CLAUDE_PASARELA_BRIDGE"] = "1"
+    os.environ["RIU_CLAUDE_PASARELA_AUTO_ACTIVA"] = "1"
+    if _PASARELA is not None and _PASARELA.poll() is None:
+        return True
+    if _pasarela_escuchando():
+        return True  # ya la administra el proceso previo en el mismo Space
+    env = _entorno()
+    env["MODELO"] = model if model.startswith("nvidia/") else "nvidia/" + model
+    env["PUERTO_PASARELA"] = "8082"
+    try:
+        with open("/tmp/riu-claude-pasarela.log", "a", encoding="utf-8") as log:
+            _PASARELA = subprocess.Popen([sys.executable, str(script)], cwd=str(script.parent),
+                                         env=env, stdin=subprocess.DEVNULL, stdout=log,
+                                         stderr=subprocess.STDOUT, start_new_session=True)
+        return True
+    except OSError:
+        return False
+
 
 def _rutas():
     """Las 2 raices del repo: router-mvp (mvp, router, fichas) y chat-router (plugins, chat)."""
@@ -206,6 +272,7 @@ def _actualizar():
             return False
         _estado_auto("REINICIANDO_CON_CHECKPOINT", nuevo, en_curso)
         print("AUTOPULL: reinicio con %s" % nuevo[:10], flush=True)
+        _parar_pasarela()  # soltar la pasarela propia antes del reinicio (puerto 8082)
         _parar_bridge()  # liberar 7870 antes de ejecutar el nuevo codigo
         os.execv(sys.executable, [sys.executable, *sys.argv])
         return True
@@ -228,6 +295,12 @@ def _vigilar():
                 _iniciar_bridge()  # mismo Node existente, nunca otro Space
         except Exception as exc:  # noqa: BLE001
             print("AUTOPULL: bridge watchdog " + type(exc).__name__, flush=True)
+        try:
+            if (os.environ.get("RIU_CLAUDE_PASARELA_AUTO_ACTIVA") == "1" and
+                (_PASARELA is None or _PASARELA.poll() is not None) and not _pasarela_escuchando()):
+                _iniciar_pasarela()
+        except Exception as exc:  # noqa: BLE001
+            print("AUTOPULL: pasarela Claude " + type(exc).__name__, flush=True)
 
 
 def _iniciar_hilo():
@@ -281,6 +354,7 @@ def main():
     ARRANQUE = _head()
     print("MVP commit: " + (ARRANQUE or "desconocido"), flush=True)
     _iniciar_bridge(arranque=True)
+    _iniciar_pasarela()
     _instalar_agentes_fondo()
     _iniciar_hilo()
     import uvicorn
