@@ -430,7 +430,7 @@ def _sin_imagenes(mensajes):
              if isinstance(m.get("content"), list) else m) for m in mensajes]
 
 
-def _con_reintentos(accion, pol, payload, ultima_clave, al_429=None):
+def _con_reintentos(accion, pol, payload, ultima_clave, al_429=None, auditoria=None):
     """Una clave: backoff exponencial con jitter, Retry-After del proveedor, tope de intentos y PRESUPUESTO total de tiempo (R8) de la politica.
     Cada familia de error (TABLA_ERRORES) tiene su politica: 401/402/403/404 -> _Alterna (siguiente clave); 429 con otra clave disponible -> _Alterna sin esperar (el limite es por clave).
     al_429(retry_after): aviso para enfriar esa clave entre llamadas. Siempre devuelve la respuesta o LANZA (nunca None); el error final es ErrorProveedor (con `tipo`)."""
@@ -440,9 +440,16 @@ def _con_reintentos(accion, pol, payload, ultima_clave, al_429=None):
     ultimo = [None]  # codigo HTTP del ultimo fallo transitorio (None = red)
     for n in range(maximo):
         espera = min(float(r.get("tope_s", 30.0)), float(r.get("base_s", 0.5)) * 2 ** n) * (0.5 + _azar() / 2)  # jitter: entre la mitad y el valor completo
+        if auditoria is not None:
+            auditoria["llamadas_http"] = auditoria.get("llamadas_http", 0) + 1
         try:
             return accion()
         except ErrorHTTP as exc:
+            if auditoria is not None:
+                cod = str(exc.codigo)
+                auditoria.setdefault("errores_http", {})[cod] = auditoria.setdefault("errores_http", {}).get(cod, 0) + 1
+                if exc.codigo == 429 and exc.retry_after is not None:
+                    auditoria["retry_after_s"] = max(float(auditoria.get("retry_after_s", 0)), min(float(exc.retry_after), 600.0))
             if exc.codigo in (429, 402) and al_429:
                 al_429(exc.retry_after, exc.codigo)
             if exc.codigo in (401, 402, 403, 404):  # clave invalida, sin credito o sin acceso al modelo: otra clave puede servir
@@ -457,6 +464,8 @@ def _con_reintentos(accion, pol, payload, ultima_clave, al_429=None):
                     diagnostico = " entrada_chars=%d tools_chars=%d salida_tokens=%d" % (_tam(payload.get("messages", [])), len(json.dumps(payload.get("tools", []))), payload.get("max_tokens") or 0)
                     if exc.limite_tokens:
                         diagnostico += " limite_tokens=%d pedidos_tokens=%d" % (exc.limite_tokens, exc.pedidos_tokens)
+                if exc.codigo == 429 and exc.retry_after is not None:
+                    diagnostico += " retry_after_s=%d" % min(max(int(exc.retry_after), 0), 600)
                 raise ErrorProveedor("HTTP %d%s" % (exc.codigo, diagnostico), exc.codigo) from None
             ultimo[0] = exc.codigo
             if exc.retry_after is not None:
@@ -513,6 +522,9 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
               and (st.get("con_tools", True) or not payload.get("tools")))
     nombres_tools = [t.get("function", {}).get("name") for t in (payload.get("tools") or []) if isinstance(t, dict)]
     url, estado, ultimo, codigos = compute._endpoint(PROVEEDORES[prov]["base"]), {"stream": stream}, None, []
+    auditoria = {"llamadas_http": 0, "errores_http": {}, "retry_after_s": 0}
+    # Solo conteos y orden de claves, nunca valores, fragmentos ni huellas.
+    # Se incluyen en la salida para que MCP/YAIWES/OpenClaw detecten si hubo rotacion REAL.
     for i, k in enumerate(pool):  # una clave inválida o agotada (401/403/404) pasa a la siguiente del pool
         def accion():
             t0 = time.monotonic()
@@ -532,7 +544,7 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
             return r
         try:
             try:
-                r = _con_reintentos(accion, pol, payload, i == len(pool) - 1, lambda ra, cod, k=k: _enfriar(prov, k, pol, ra, cod))
+                r = _con_reintentos(accion, pol, payload, i == len(pool) - 1, lambda ra, cod, k=k: _enfriar(prov, k, pol, ra, cod), auditoria=auditoria)
             except ErrorProveedor as exc:
                 # 413 no mejora esperando ni cambiando de clave. Reducir SOLO
                 # documentacion del catalogo, nunca mensajes ni contratos de tools.
@@ -544,9 +556,14 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
                 if cambio_tools:
                     payload["tools"] = reducidas
                 payload["messages"] = mensajes_compactos
-                r = _con_reintentos(accion, pol, payload, i == len(pool) - 1, lambda ra, cod, k=k: _enfriar(prov, k, pol, ra, cod))
+                r = _con_reintentos(accion, pol, payload, i == len(pool) - 1, lambda ra, cod, k=k: _enfriar(prov, k, pol, ra, cod), auditoria=auditoria)
                 r["metricas"]["catalogo_compactado"] = cambio_tools
                 r["metricas"]["formato_system_compactado"] = mensajes_compactos != mensajes_ok
+            r.setdefault("metricas", {})["credenciales"] = {
+                "configuradas": len(pool), "probadas": i + 1,
+                "rotaciones": i, "llamadas_http": auditoria["llamadas_http"],
+                "errores_http": dict(auditoria["errores_http"]),
+                "retry_after_s": round(auditoria["retry_after_s"], 2)}
             if info_param:
                 r["metricas"]["parametros"] = info_param
             if info_ctx:
@@ -555,6 +572,14 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
             return {**r, "modelo_solicitado": modelo}
         except compute._Alterna as exc:
             ultimo = exc; codigos.append(str(exc))
+        except ErrorProveedor as exc:
+            # Importante: el chat debe distinguir una sola clave agotada de
+            # varias claves realmente probadas, sin exponer credenciales.
+            diagnostico = " credenciales_configuradas=%d credenciales_probadas=%d rotaciones=%d llamadas_http=%d" % (
+                len(pool), i + 1, i, auditoria["llamadas_http"])
+            if auditoria["retry_after_s"]:
+                diagnostico += " retry_after_s=%d" % int(auditoria["retry_after_s"])
+            raise ErrorProveedor(str(exc) + diagnostico, exc.codigo, exc.codigo is None) from None
     if codigos and all(c.endswith("HTTP 404") for c in codigos):
         raise ErrorProveedor("%s: HTTP 404 para el modelo %s (no existe o la clave no lo tiene habilitado); no se cambió de modelo" % (PROVEEDORES[prov]["label"], payload["model"]), 404)
     cod = re.search(r"HTTP (\d{3})", str(ultimo))
