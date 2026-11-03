@@ -10,7 +10,7 @@ import { consultarWeb, salud } from './motor.js';
 import { consenso } from './consenso.js';
 import { consultarClaude, estadoClaude, esCuotaClaude, CLAUDE_MODEL } from './claude_gateway.js';
 import { modoValido } from './modos.js';
-import { estadoCuentas, estadoTabs, snapshotTab, cerrarPagina, cerrarTodo } from './browser.js';
+import { estadoCuentas, estadoTabs, snapshotTab, diagnosticoAcceso, cerrarPagina, cerrarTodo } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -181,6 +181,10 @@ app.get('/health', async (req, res) => {
   res.json({ ok: true, pool: poolInfo, cuentas: sinCorreos(estadoCuentas()), respaldo: estadoRespaldo(), banco: completo ? diagnosticoBanco() : resumenBanco(diagnosticoBanco()), metricas: estadoMetricas(), ...(completo ? { state_dir: process.env.BRIDGE_STATE_DIR || './state' } : {}) });
 });
 
+app.get('/v1/web/diagnostico',async(_req,res)=>{
+  try { res.json({ok:true,indicadores:await diagnosticoAcceso()}); }
+  catch { res.status(503).json({ok:false,error:{code:'WEB_DIAGNOSTICO_FALLO'}}); }
+});
 app.get('/v1/queue', (_req, res) => {
   res.json({ ok: true, ...estadoTabs(), cuentas: sinCorreos(estadoCuentas()) });
 });
