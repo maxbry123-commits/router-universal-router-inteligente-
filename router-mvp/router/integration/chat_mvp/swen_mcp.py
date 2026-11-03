@@ -185,8 +185,17 @@ def _consulta(modelo, mensaje, sesion, timeout):
                     if not isinstance(field,str) or not re.fullmatch(
                         r"(?:gateway|agents|models|tools)[.\\[\\]a-zA-Z0-9_./-]{0,120}",field):
                         field=""
+                    msg=str(issue.get("message") or "")
+                    # Mostrar solo nombres de CLAVES DE CONFIG, nunca mensajes completos:
+                    # un proveedor podría incluir tokens/emails en sus diagnósticos.
+                    refs=sorted(set(re.findall(
+                        r"(?:gateway|agents|models|tools)(?:\\.[A-Za-z_][A-Za-z0-9_-]*){1,8}",msg)))
+                    clases=[w for w in ("unknown","invalid","missing","unrecognized",
+                                        "unsupported","schema","config","workspace",
+                                        "provider","authentication","migration") if w in msg.lower()]
                     safe.append({"check":str(issue.get("checkId") or "")[:70],
-                        "severity":str(issue.get("severity") or "")[:20],"path":field})
+                        "severity":str(issue.get("severity") or "")[:20],
+                        "path":field,"referencias":refs[:8],"categorias":clases})
                 return {"estado":"terminado","diagnostico":"openclaw_doctor_lint",
                     "codigo":run.returncode,"comprobaciones":int(result.get("checksRun") or 0),
                     "fallos":safe}
@@ -310,8 +319,12 @@ def _consulta(modelo, mensaje, sesion, timeout):
             c = json.loads(p.read_text(encoding="utf-8"))
             gw = c.get("gateway") or {}
             http = (gw.get("http") or {}).get("endpoints") or {}
-            agents = (c.get("agents") or {}).get("entries") or {}
+            registro = c.get("agents") or {}
+            agents = registro.get("entries") or {}
             return {"estado":"terminado","diagnostico":"config_openclaw",
+                    "agentes_list_presente":isinstance(registro.get("list"),list),
+                    "agentes_entries_presente":isinstance(registro.get("entries"),dict),
+                    "gateway_mode_local":gw.get("mode")=="local",
                     "chat_completions_habilitado":bool((http.get("chatCompletions") or {}).get("enabled")),
                     "agente_claude_registrado":"swen-council" in agents,
                     "agente_reparador_registrado":"swen-repair" in agents,
