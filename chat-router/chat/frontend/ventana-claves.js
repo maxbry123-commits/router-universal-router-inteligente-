@@ -105,7 +105,10 @@ export function montarClaves({ root, q, tell }) {
         if (r?.status !== "ok" || !Array.isArray(r?.result?.servicios)) throw new Error("NO_CONFIRMADO");
         const conexion = r.result.servicios.find(x => x.servicio === servicio);
         if (!conexion || !Array.isArray(conexion.conexiones) || !conexion.conexiones.some(x => x.on && x.etiqueta?.endsWith("para agentes"))) throw new Error("NO_CONFIRMADO");
-        cred.value = ""; info.textContent = "Conexión registrada en el banco del Router. Verifica permisos del repositorio antes de ejecutar.";
+        cred.value = "";
+        info.textContent = r.result.persistente === true
+          ? "Conexión registrada en el banco del Router; estado respaldado. Verifica permisos del repositorio."
+          : "Credencial registrada localmente, pero respaldo HF SIN CONFIRMAR. No se certifica continuidad tras reiniciar.";
       } catch (e) {
         info.textContent = "No se confirmó la conexión; comprueba el acceso al Router y el banco.";
       } finally { conectar.disabled = false; }
