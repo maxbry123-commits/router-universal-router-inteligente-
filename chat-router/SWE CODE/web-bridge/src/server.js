@@ -8,6 +8,7 @@ import express from 'express';
 import { createRequire } from 'node:module';
 import { consultarWeb, salud } from './motor.js';
 import { consenso } from './consenso.js';
+import { consultarClaude, estadoClaude, esCuotaClaude, CLAUDE_MODEL } from './claude_gateway.js';
 import { modoValido } from './modos.js';
 import { estadoCuentas, estadoTabs, snapshotTab, cerrarPagina, cerrarTodo } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
@@ -84,7 +85,12 @@ app.use((req, res, next) => {
   return conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key o Authorization: Bearer)' } });
 });
 app.use(express.json({ limit: '10mb' }));
-montarAccionesOpenAI(app,propietarioDe); // OpenAI API explícita, no chatGPT subscripción
+montarAccionesOpenAI(app,propietarioDe);
+app.get('/v1/claude/estado',async(_req,res)=>{
+  // Estado sin direcciones de correo ni tokens, disponible para todas las UI.
+  const e=await estadoClaude();
+  res.json(e);
+}); // OpenAI API explícita, no chatGPT subscripción
 // Handoff: rutas autenticadas para recuperación entre selector/modelos/conv_id.
 // Sin clave de acceso no se consulta ni se transfiere el contexto de otro usuario.
 app.get('/v1/contexto/:id', (req,res) => {
@@ -410,7 +416,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (!esExterno(model) && !esLocal(model)) {
       return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     }
-    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop', tarea = null, metricas = null, servidor = null, toolsInvalidas = [], consensoDetalle = null;
+    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop', tarea = null, metricas = null, servidor = null, toolsInvalidas = [], consensoDetalle = null, flagClaude = null;
     // tarea_id (cuerpo o cabecera x-tarea-id): modelos locales/Groq/NVIDIA con checkpoint universal (retomar_local.js).
     // Sin tarea_id pero con conv_id se DERIVA <conv_id>-<sha256 de [modelo, modo, mensajes] (12)>: el mismo envio reintentado reanuda, uno distinto es tarea nueva. Sin conv_id nada cambia.
     const explicito = esExterno(model) || esLocal(model), pideRespaldo = req.body.respaldo === true;
@@ -444,12 +450,30 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (modeloWeb) {
       // Sólo con esquema de herramientas explícito: el texto WEB NO es una tool_call por defecto.
       // No se llama a otro LLM para "traducir" JSON; tampoco se ejecutan tools aquí.
-      salida = await consultarWeb(modeloWeb, promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
-      const contratoWeb = extraerLlamadasWeb(salida, extra.tools);
-      salida = contratoWeb.texto;
-      llamadas = contratoWeb.tool_calls;
-      fin = contratoWeb.finish_reason;
-      usado = modeloWeb;
+      if (modeloWeb === 'claude-sonnet') {
+        // Claude trabaja con el agente OpenClaw swen-council, razonamiento max y
+        // rotación NATIVA de perfiles Anthropic. Sin modelo traductor ni scraping.
+        usado = CLAUDE_MODEL;
+        try {
+          const r = await consultarClaude(promptFicha + promptHerramientasWeb(extra.tools), { convId:String(conv_id||'consulta') });
+          salida = r.texto;
+        } catch (e) {
+          if (!esCuotaClaude(e.code)) throw e;
+          flagClaude = { codigo:'CLAUDE_SONNET_SIN_CUENTA_DISPONIBLE',
+            mensaje:'No quedan perfiles Anthropic elegibles en OpenClaw. La tarea se mantiene pendiente para recuperación.' };
+          salida = '🚩 Claude Sonnet 5.5 · ' + flagClaude.codigo + '. Se conservó el contexto; los demás modelos y tareas pueden continuar.';
+          fin = 'error';
+        }
+      } else {
+        salida = await consultarWeb(modeloWeb, promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
+      }
+      if (!flagClaude) {
+        const contratoWeb = extraerLlamadasWeb(salida, extra.tools);
+        salida = contratoWeb.texto;
+        llamadas = contratoWeb.tool_calls;
+        fin = contratoWeb.finish_reason;
+      }
+      usado = modeloWeb === 'claude-sonnet' ? CLAUDE_MODEL : modeloWeb;
     } else if (modoUso === 'asesoria') {
       // asesoria previa a ejecutar: primero Groq (las claves del chat Yaiwes), si no responde la web de SWE CODE free
       try {
@@ -532,7 +556,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (!res.headersSent) { res.setHeader('x-modelo-usado', usado); if (via) res.setHeader('x-via-respaldo', via); }
 
     if (sse.pide) {  // OpenClaw (openai-completions) pide SSE: lo que llego por streaming real ya se entrego; se emite SOLO lo que falte + tool_calls + finish_reason + [DONE]
-      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}) };
+      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(flagClaude ? { flag_claude: flagClaude } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}) };
       sse.abrir(); sse.rolInicial();
       const yaEntregado = sse.flujo.texto, completo = String(salida || '');
       for (const t of trozosDe(completo.startsWith(yaEntregado) ? completo.slice(yaEntregado.length) : '')) sse.chunk({ content: t });
@@ -542,7 +566,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}),
+      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(flagClaude ? { flag_claude: flagClaude } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}),
       choices: [{ index: 0, finish_reason: fin, message: { role: 'assistant', content: salida || '', ...(llamadas.length ? { tool_calls: llamadas } : {}) } }],
       usage: usageDe(metricas),
     });
