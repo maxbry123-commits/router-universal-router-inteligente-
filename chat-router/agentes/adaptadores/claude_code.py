@@ -38,7 +38,13 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     herramientas = ["Read", "Glob", "Grep"] + (["Edit", "Write"] if p["escritura"] else []) + (_bash_permitidos() if p["ejecucion"] else [])
     modo = "acceptEdits" if p["escritura"] else "plan"
     argv = [exe, "-p", "--output-format", "json", "--no-session-persistence", "--permission-mode", modo, "--allowedTools", ",".join(herramientas)]
-    env = _comun.entorno_base({"ANTHROPIC_BASE_URL": url, "ANTHROPIC_AUTH_TOKEN": os.environ.get("RIU_CLAUDE_AUTH_TOKEN", "pasarela-local")})
+    # La pasarela propia del Router exige la misma credencial del banco/bridge;
+    # no enviar una cadena por defecto conocida cuando se activó autenticación.
+    token = (os.environ.get("RIU_API_KEY", "") if os.environ.get("RIU_CLAUDE_PASARELA_BRIDGE") == "1"
+             else os.environ.get("RIU_CLAUDE_AUTH_TOKEN", "pasarela-local"))
+    if not token:
+        return _comun.error(AGENTE, tarea_id, "AGENTE_NO_CONFIGURADO", "falta credencial para la pasarela local del Harness")
+    env = _comun.entorno_base({"ANTHROPIC_BASE_URL": url, "ANTHROPIC_AUTH_TOKEN": token})
     inicio = _comun.ahora()
     proc = _comun.ejecutar_proceso(argv, p["directorio"], env, entrada=p["prompt"])
     if proc["timeout"] or proc["exit_code"] != 0:
