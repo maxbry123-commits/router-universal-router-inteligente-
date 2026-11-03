@@ -516,6 +516,7 @@ app.post('/v1/chat/completions', async (req, res) => {
                 mensaje:'El Gateway está operativo pero falta una conexión Anthropic o Claude CLI autorizada. Se conserva la tarea para continuar.' }
             : { codigo:'CLAUDE_SONNET_SIN_CUENTA_DISPONIBLE',
                 mensaje:'No quedan perfiles Anthropic elegibles en OpenClaw. La tarea se mantiene pendiente para recuperación.' };
+          registrarGap({modelo:model,code:requiereAuth?'CLAUDE_PROVEEDOR_SIN_CREDENCIALES':'CLAUDE_CUENTAS_AGOTADAS',convId:conv_id});
           salida = '🚩 Claude Sonnet 5.5 · ' + flagClaude.codigo + '. Se conservó el contexto; los demás modelos y tareas pueden continuar.';
           fin = 'error';
         }
