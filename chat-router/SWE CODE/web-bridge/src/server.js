@@ -181,7 +181,7 @@ async function estadoAutoRouter() {
     const sha = String(d.commit || '');
     return { conectable: true,
       codigo_en_ejecucion: /^[0-9a-f]{10,40}$/i.test(sha) ? sha.slice(0,10) : null,
-      tareas_activas: Number.isInteger(d.tareas_en_curso) && d.tareas_en_curso > 0 };
+      tareas_activas: Number.isInteger(d.tareas_en_curso) ? d.tareas_en_curso > 0 : null };
   } catch { return { conectable: false }; }
 }
 
