@@ -42,6 +42,7 @@ def cap(**k):
     k.setdefault("sonda_openhands", lambda py: False)
     k.setdefault("sonda_gateway", lambda url: False)
     k.setdefault("sonda_hf", lambda url: True)
+    k.setdefault("sonda_docker", lambda exe, imagen: "ok")  # no ejecutar el binario falso
     return disponibilidad.capacidades(**k)
 
 
