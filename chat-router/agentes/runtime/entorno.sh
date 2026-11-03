@@ -5,6 +5,12 @@
 _riu_aqui="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export RIU_AGENTES_RUNTIME="${RIU_AGENTES_RUNTIME:-$_riu_aqui}"
 case ":$PATH:" in *":$RIU_AGENTES_RUNTIME/bin:"*) ;; *) export PATH="$RIU_AGENTES_RUNTIME/bin:$PATH" ;; esac
+# Node24 es exclusivo de los CLIs de agentes; el bridge conserva su Node original.
+if [ -x "$RIU_AGENTES_RUNTIME/node24/bin/node" ]; then
+  export PATH="$RIU_AGENTES_RUNTIME/node24/bin:$PATH"
+elif [ -x /opt/node24/bin/node ]; then
+  export PATH="/opt/node24/bin:$PATH"
+fi
 _riu_exporta() { # $1 variable, $2 ejecutable
   if [ -z "${!1:-}" ] && [ -x "$RIU_AGENTES_RUNTIME/bin/$2" ]; then export "$1=$RIU_AGENTES_RUNTIME/bin/$2"; fi
 }
