@@ -180,6 +180,32 @@ class TestAutopull(unittest.TestCase):
             reiniciar.assert_called_once()
         self.assertEqual(run._head(), nuevo)
 
+    def test_varios_commits_en_cola_entran_en_un_solo_git_pull(self):
+        previo = run._head()
+        for n in ("cambio uno", "cambio dos", "cambio tres"):
+            (self.writer / "test.txt").write_text(n + "\\n")
+            git("-C", self.writer, "commit", "-am", n)
+            git("-C", self.writer, "push", "origin", "main")
+        ultimo = git("-C", self.writer, "rev-parse", "HEAD")
+        with patch.object(run, "ARRANQUE", previo), patch.object(run.os, "execv") as reiniciar:
+            self.assertTrue(run._actualizar())
+            reiniciar.assert_called_once()
+        self.assertEqual(run._head(), ultimo)
+
+    def test_health_autopull_no_incluye_claves_y_distingue_revisiones(self):
+        appmod = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(banco=object())))
+        with patch.dict(sys.modules, {"mvp.app": appmod}), \
+             patch.object(run, "ARRANQUE", "a" * 40), \
+             patch.object(run, "_head", return_value="b" * 40):
+            run._estado_auto("DIFERIDO_TAREAS", tareas=2)
+        est = appmod.app.state.autoactualizacion
+        self.assertEqual(est["estado"], "DIFERIDO_TAREAS")
+        self.assertEqual(est["codigo_cargado"], "a" * 10)
+        self.assertEqual(est["checkout_git"], "b" * 10)
+        self.assertEqual(est["tareas_en_curso"], 2)
+        self.assertTrue(est["checkpoint_coda_disponible"])
+        self.assertFalse(any(k in str(est).lower() for k in ("api_key", "password", "token")))
+
     def test_puerto_sale_de_PORT_para_correr_detras_del_proxy_del_space(self):
         """boot.sh solo lanza `python -m mvp.run` (con autopull) si run.py lee PORT; si no, arranca uvicorn pelado y el Space nunca se actualiza."""
         import re
