@@ -50,6 +50,7 @@ export default defineFeaturePlugin({
       tools: () => con((c) => c.tools()),
       contexto:(i) => con((c)=>c.contexto(i.id)),
       contexto_transferir:(i) => con((c)=>c.contextoTransferir(i.origen,i.destino)),
+      claude_estado:() => con((c)=>c.claudeEstado()),
       openai_estado:() => con((c)=>c.openaiEstado()),
       openai_trabajos:() => con((c)=>c.openaiTrabajos()),
       openai_research:(i) => agenteApiHabilitado()
