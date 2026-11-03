@@ -67,3 +67,19 @@ def test_limite_numerico_no_expone_cuerpo_error():
     error = e.ErrorHTTP(413, cuerpo='secret org-interno Limit 7000, Requested 7019')
     assert (error.limite_tokens, error.pedidos_tokens) == (7000, 7019)
     assert str(error) == 'HTTP 413'
+
+
+def test_413_sin_tools_recupera_formato_y_conserva_user_verbatim():
+    msgs = [{'role': 'system', 'content': 'regla\n\n' * 100}, {'role': 'user', 'content': 'texto\n\n literal'}]
+    vistos = []
+    def solicitar(url, payload, clave, timeout):
+        vistos.append(copy.deepcopy(payload))
+        if len(vistos) == 1:
+            raise e.ErrorHTTP(413, cuerpo='Limit 7000, Requested 7019')
+        return {'choices': [{'message': {'content': 'OK'}, 'finish_reason': 'stop'}], 'usage': {}}
+    with patch.object(e, 'claves', return_value=['ficticia']), patch.object(e, '_solicitar', side_effect=solicitar):
+        result = e.llamar(msgs, 'groq/qwen/qwen3.8-27b')
+    assert result['texto'] == 'OK' and len(vistos) == 2
+    assert result['metricas']['formato_system_compactado'] is True
+    assert vistos[1]['messages'][1] == msgs[1]
+    assert len(vistos[1]['messages'][0]['content']) < len(msgs[0]['content'])
