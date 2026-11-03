@@ -585,7 +585,7 @@ async def _codigo_largo_comun(modelo, mensajes, opciones, q, lineas, progreso=No
     banco = app.state.banco
     datos = {"modelo": modelo, "mensajes": mensajes, "opciones": opciones,
              "sesion": str(q.get("sesion") or "")[:60], "lineas": lineas,
-             "horas": min(4., max(0.1, float(q.get("duracion_horas") or 4)))}
+             "horas": min(4., max(0.1, float(q.get("duracion_horas") or q.get("horas") or 4)))}
     sistemas = [m for m in mensajes if isinstance(m, dict)
                 and m.get("role") == "system"
                 and not str(m.get("content") or "").startswith(prompt.formato())]
