@@ -532,7 +532,18 @@ app.post('/v1/chat/completions', async (req, res) => {
       // (tarea_completa:true | x-tarea-completa:1). 141: objetivo + operaciones_previstas, exigidos POR DEFECTO con tools (efectos); BRIDGE_EXIGIR_CONFIRMACION=0 lo desactiva (el cuerpo no puede apagarlo); sin tools nada cambia
       const b = req.body, str = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
       const vinculo = { propietario: propietarioDe(req), proyecto: str(proyecto), sesion: conv_id != null ? String(conv_id) : null, workflow: str(b.workflow), operacion: str(b.operacion) };
-      const plan = b.objetivo !== undefined || b.operaciones_previstas !== undefined ? { objetivo: b.objetivo, operaciones: b.operaciones_previstas } : undefined;
+      // YAIWES Tools ON: el Router autentificado ya entrega tools/list.
+      // El modelo no debe fallar con PLAN_REQUERIDO por omisión del frontend:
+      // reutilizar el MISMO contrato de _plan_bridge() del Harness.
+      // Las operaciones son exclusivamente los nombres realmente ofrecidos;
+      // no se usa '*' ni se modifica la verificación del ejecutor/recibos.
+      const planExplicito = b.objetivo !== undefined || b.operaciones_previstas !== undefined;
+      const plan = planExplicito
+        ? { objetivo: b.objetivo, operaciones: b.operaciones_previstas }
+        : b.tools === true && catalogo?.length && typeof ultimo === 'string' && ultimo.trim()
+          ? { objetivo: ultimo.trim().slice(0, 2000),
+              operaciones: catalogo.map(t => t.function.name) }
+          : undefined;
       const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { ...extra, ...vinculo, plan, exigirPlan: b.exigir_confirmacion === true || String(process.env.BRIDGE_EXIGIR_CONFIRMACION ?? '').trim() !== '0', confirmarCompleta: b.tarea_completa === true || req.headers['x-tarea-completa'] === '1', origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + plazoModelo * 0.9, flushChars: parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_CHARS, 10) || undefined, flushMs: Number.isFinite(parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10)) ? parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10) : undefined, ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: AbortSignal.any([sse.signal, ac1.signal]) } } : {}) }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
       tarea = { id: r.tarea_id, estado: r.estado, fase: r.fase, secciones: r.secciones, reanudado: r.reanudado, desde_checkpoint: r.desde_checkpoint };
     } else if (esExterno(model)) {
