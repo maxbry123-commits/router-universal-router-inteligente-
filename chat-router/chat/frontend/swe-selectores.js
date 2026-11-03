@@ -156,8 +156,9 @@ function controles() {
   recImagen.append(idImagen,bajarImagen);
   const verHistorial=el("button","secondary","Ver investigaciones e imágenes guardadas");verHistorial.type="button";
   verHistorial.dataset.swenTrabajos="1";
+  const claudeEstado = el("p", "fila-desc swe-claude-estado", "Claude Sonnet 5.5 · pensando MAX · esperando verificación del Gateway OpenClaw.");
   const estado = el("p", "fila-desc swe-openai-estado", "OpenAI: acceso API independiente. No utiliza la sesión de ChatGPT ni un modelo local traductor.");
-  extras.append(title, source, fila, info, herramientas, recuperar, recImagen, verHistorial, estado);
+  extras.append(title, source, fila, info, claudeEstado, herramientas, recuperar, recImagen, verHistorial, estado);
   c.append(nota, rej, lm, mo, sp, fw, lq, extras, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
   cargarSystemPromptOn().then(pintarControles);  // estado real del bridge en segundo plano; el boton ya nace pintado en ON (defecto) mientras llega
   return c;
