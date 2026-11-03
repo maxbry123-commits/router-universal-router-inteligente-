@@ -31,9 +31,42 @@ marcar() { printf '%s' "$2" > "$DESTINO/.instalado/$1"; }
 enlazar() { ln -sfn "$(realpath -s --relative-to="$DESTINO/bin" "$2")" "$DESTINO/bin/$1"; }  # enlace relativo: el runtime se puede mover
 
 requiere_node() {
-  command -v node >/dev/null && command -v npm >/dev/null || { log "ERROR: falta node/npm (se necesita Node >= 22)"; return 1; }
-  local mayor; mayor="$(node -p 'process.versions.node.split(".")[0]')"
-  (( mayor >= 22 )) || { log "ERROR: Node $(node -v) es antiguo (se necesita >= 22)"; return 1; }
+  # El Space del Router trae Node 20 para el bridge; NO sustituirlo globalmente.
+  # Los agentes npm necesitan Node >=22: reutilizar el Node24 de OpenClaw si existe,
+  # o instalarlo dentro del MISMO runtime de agentes, verificando SHA-256 oficial.
+  local mayor="0" directorio version="v24.22.2" arquitectura archivo tmp
+  if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+    mayor="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+    if [[ "$mayor" =~ ^[0-9]+$ ]] && (( mayor >= 22 )); then return 0; fi
+  fi
+  for directorio in "/opt/node24/bin" "$DESTINO/node24/bin"; do
+    if [[ -x "$directorio/node" && -x "$directorio/npm" ]]; then
+      mayor="$("$directorio/node" -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+      if [[ "$mayor" =~ ^[0-9]+$ ]] && (( mayor >= 22 )); then
+        export PATH="$directorio:$PATH"
+        return 0
+      fi
+    fi
+  done
+  case "$(uname -m)" in x86_64) arquitectura=x64 ;; aarch64) arquitectura=arm64 ;;
+    *) log "ERROR: arquitectura de Node24 no compatible"; return 1 ;; esac
+  command -v curl >/dev/null 2>&1 || { log "ERROR: falta curl para instalar Node24"; return 1; }
+  archivo="node-${version}-linux-${arquitectura}.tar.gz"
+  tmp="$(mktemp -d "$DESTINO/.node24.XXXXXXXX")" || return 1
+  log "Node del Space demasiado antiguo; instalando Node24 verificado en runtime existente"
+  if ! curl -fsSL --connect-timeout 10 --max-time 120 "https://nodejs.org/dist/${version}/${archivo}" -o "$tmp/$archivo" ||
+     ! curl -fsSL --connect-timeout 10 --max-time 30 "https://nodejs.org/dist/${version}/SHASUMS256.txt" -o "$tmp/SHASUMS256.txt" ||
+     ! (cd "$tmp" && grep -F "  $archivo" SHASUMS256.txt | sha256sum -c -) ||
+     ! tar -xzf "$tmp/$archivo" -C "$tmp"; then
+    log "ERROR: Node24 no descargado o huella SHA-256 no verificada"
+    rm -rf "$tmp"
+    return 1
+  fi
+  rm -rf "$DESTINO/node24"
+  mv "$tmp/node-${version}-linux-${arquitectura}" "$DESTINO/node24"
+  rm -rf "$tmp"
+  export PATH="$DESTINO/node24/bin:$PATH"
+  "$DESTINO/node24/bin/node" -v >/dev/null && "$DESTINO/node24/bin/npm" -v >/dev/null
 }
 
 # $1 componente, $2 carpeta de lockfile (package.json + package-lock.json), resto: "nombre-del-bin:ruta/relativa/en/node_modules/.bin"
