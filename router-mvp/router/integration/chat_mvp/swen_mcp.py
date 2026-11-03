@@ -114,6 +114,46 @@ def _inferencia_y_checkpoint(pid, modelo, mensaje, sesion, timeout, firma):
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
+    if mensaje.strip() == "@swen/ocping":
+        # Prueba REAL mínima de OpenClaw Sonnet, sin override de modelos ni
+        # comandos /think: aislar error de contrato HTTP vs autenticación.
+        token = os.getenv("OPENCLAW_GATEWAY_TOKEN") or ""
+        if not token:
+            return {"estado":"error","error":"OPENCLAW_TOKEN_NO_CONFIGURADO"}
+        body = json.dumps({"model":"openclaw/swen-council","stream":False,
+                           "messages":[{"role":"user","content":"Responde solo PING_SWEN_OK"}]}).encode()
+        req = urllib.request.Request("http://127.0.0.1:18789/v1/chat/completions",
+                                      data=body,method="POST",headers={
+                                      "Authorization":"Bearer "+token,
+                                      "Content-Type":"application/json","Accept":"application/json"})
+        try:
+            with urllib.request.urlopen(req,timeout=100) as response:
+                data=json.load(response)
+            msg = str(((data.get("choices") or [{}])[0].get("message") or {}).get("content") or "")
+            return {"estado":"terminado","diagnostico":"openclaw_sonnet_ping",
+                    "http":200,"respuesta_no_vacia":bool(msg.strip()),
+                    "ping_ok":"PING_SWEN_OK" in msg}
+        except urllib.error.HTTPError as exc:
+            raw=exc.read(6000)
+            try:
+                data=json.loads(raw)
+                er=data.get("error") or {}
+                if not isinstance(er,dict): er={}
+                code=str(er.get("code") or "")
+                kind=str(er.get("type") or "")
+                msg=str(er.get("message") or "").lower()
+            except (ValueError,TypeError,UnicodeError):
+                code=kind=msg=""
+            if not re.fullmatch(r"[A-Za-z0-9_-]{1,60}",code):code="SIN_CODIGO"
+            if not re.fullmatch(r"[A-Za-z0-9_-]{1,60}",kind):kind="SIN_TIPO"
+            vocab=("model","agent","auth","provider","credential","profile",
+                   "session","schema","invalid","unknown","allow","quota",
+                   "gateway","configuration","missing","required","disabled")
+            return {"estado":"error","diagnostico":"openclaw_sonnet_ping",
+                    "http":exc.code,"codigo":code,"tipo":kind,
+                    "categorias":[v for v in vocab if v in msg]}
+        except (OSError,ValueError,TimeoutError):
+            return {"estado":"error","error":"OPENCLAW_PING_SIN_RESPUESTA"}
     if mensaje.strip() == "@swen/ocproc":
         # Observabilidad estricta: procesa sólo /proc local y entrega contadores,
         # sin argumentos ni token de los procesos.
