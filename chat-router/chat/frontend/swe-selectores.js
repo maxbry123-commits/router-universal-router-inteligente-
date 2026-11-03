@@ -137,7 +137,7 @@ function controles() {
   const mo = el("div", "sel-salida swe-bloque"); mo.setAttribute("role", "group"); mo.setAttribute("aria-label", "Modo agéntico");
   const b = el("button", "pill salida-op"); b.type = "button"; b.dataset.sweAgentico = "1"; b.setAttribute("aria-label", "MODO AGÉNTICO");
   mo.append(el("span", "sel-salida-t", "Modo agéntico:"), b);
-  // System prompt de la ficha del Router MVP: ON/OFF, aplica a TODOS los modelos (chat Yaiwes y OpenClaw, mismo bridge). Defecto ON.
+  // Un unico estado real, tambien visible junto al chat para todos los selectores.
   const sp = el("div", "sel-salida swe-bloque"); sp.setAttribute("role", "group"); sp.setAttribute("aria-label", "System prompt de la ficha");
   const spB = el("button", "pill salida-op"); spB.type = "button"; spB.dataset.sweSystemprompt = "1"; spB.setAttribute("aria-label", "SYSTEM PROMPT");
   sp.append(el("span", "sel-salida-t", "System prompt:"), spB);
@@ -145,7 +145,7 @@ function controles() {
   const lq = el("div", "consil-diagrama lleno swe-liquid"); lq.hidden = true; lq.setAttribute("aria-label", "Liquid Mirror: dos participantes");
   const act = el("div", "swe-actualizar"), bt = el("button", "secondary swe-refrescar", "Actualizar disponibilidad"); bt.type = "button"; bt.setAttribute("aria-label", "Actualizar disponibilidad de agentes y modelos"); act.append(bt, el("span", "swe-hora"));
   c.append(nota, rej, lm, mo, sp, fw, lq, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
-  cargarSystemPromptOn().then(pintarControles);  // estado real del bridge en segundo plano; el boton ya nace pintado en ON (defecto) mientras llega
+  cargarSystemPromptOn().then(pintarControles); // sin respuesta: SIN VERIFICAR, nunca ON inventado
   return c;
 }
 function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al final y deshabilitado, con su estado real; la eleccion actual se queda visible aunque no este disponible
@@ -225,7 +225,7 @@ function pintarControles() {
     const sm = c.querySelector('select[data-swe-ctl="modo_trabajo"]');
     if (sm) { sm.replaceChildren(...[["", "Sin modo (conversación normal)"], ...MODOS_TRABAJO].map(([v, t]) => { const o = el("option", null, t); o.value = v; return o; })); sm.value = sel.modo_trabajo; sm.title = VENTANA === "groq" || VENTANA === "nvidia" ? "El modo de trabajo se envía en los chats por el bridge (SWE CODE / SWEN CODE free); Groq y NVIDIA por el Router no lo usan todavía." : ""; }
     const b = c.querySelector("[data-swe-agentico]"); if (b) { b.textContent = sel.modo_agentico ? "ON" : "OFF"; b.setAttribute("aria-pressed", String(sel.modo_agentico)); b.classList.toggle("on", sel.modo_agentico); }
-    const spB = c.querySelector("[data-swe-systemprompt]"); if (spB) { const on = systemPromptOnCache(); spB.textContent = on ? "ON" : "OFF"; spB.setAttribute("aria-pressed", String(on)); spB.classList.toggle("on", on); }
+    const spB = c.querySelector("[data-swe-systemprompt]"); if (spB) { const on = systemPromptOnCache(); spB.textContent = on === null ? "SIN VERIFICAR" : on ? "ON" : "OFF"; spB.setAttribute("aria-pressed", String(on === true)); spB.classList.toggle("on", on === true); spB.title = on === null ? "Estado del Router sin confirmar" : "System Prompt del Router: " + (on ? "ON" : "OFF"); }
     const lq = c.querySelector(".swe-liquid"); lq.hidden = sel.workflow !== "liquid_mirror";
     if (!lq.hidden) {
       const lm = estadoOpcion(CAP, "workflow", "liquid_mirror"); lq.replaceChildren();
@@ -246,6 +246,9 @@ function pintarControles() {
       : "Individual con modo agéntico OFF: responde el modelo elegido, como siempre (los agentes no se activan).";
     const h = c.querySelector(".swe-hora"); if (h) h.textContent = ULTIMA ? "Comprobado " + new Date(ULTIMA).toLocaleTimeString() : "";
   });
+  // Boton global del chat: los seis selectores comparten este MISMO interruptor.
+  const global = document.getElementById("btn-system-prompt-on");
+  if (global) { const on = systemPromptOnCache(); global.textContent = "System Prompt " + (on === null ? "SIN VERIFICAR" : on ? "ON" : "OFF"); global.setAttribute("aria-pressed", String(on === true)); global.classList.toggle("on", on === true); global.title = on === null ? "No se confirmó el estado del Router" : "Mismo System Prompt para cualquier modelo o agente"; }
 }
 async function refrescarCapacidades(forzar, conFichas = false) {
   if (forzar) olvidarCapacidades();
@@ -295,7 +298,23 @@ document.addEventListener("click", async (e) => {
     } finally { b.disabled = false; }
     return;
   }
-  const spB = e.target.closest && e.target.closest("[data-swe-systemprompt]"); if (spB) { alternarSystemPromptOn().then(pintarControles); return; }
+  const spB = e.target.closest && e.target.closest("[data-swe-systemprompt], #btn-system-prompt-on");
+  if (spB) {
+    if (spB.disabled) return;
+    document.querySelectorAll("[data-swe-systemprompt], #btn-system-prompt-on").forEach(b => { b.disabled = true; });
+    try {
+      await alternarSystemPromptOn();
+    } catch (err) {
+      const nota = document.querySelector(".swe-ctl .swe-estado");
+      if (nota) nota.textContent = "SYSTEM PROMPT SIN CONFIRMAR: " + String(err?.message || "Router sin respuesta");
+      const global = document.getElementById("btn-system-prompt-on");
+      if (global) global.title = "SYSTEM PROMPT SIN CONFIRMAR: " + String(err?.message || "Router sin respuesta");
+    } finally {
+      document.querySelectorAll("[data-swe-systemprompt], #btn-system-prompt-on").forEach(b => { b.disabled = false; });
+      pintarControles();
+    }
+    return;
+  }
   if (e.target.closest && e.target.closest(".swe-refrescar")) refrescarCapacidades(true, true);
 });
 document.addEventListener("change", (e) => {
