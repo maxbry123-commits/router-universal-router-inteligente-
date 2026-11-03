@@ -523,6 +523,11 @@ def _avanzar(reg, args, ctx):
         n = 1
     if reg["estado"] == "NO_DISPONIBLE":  # puede haberse instalado el agente: se vuelve a comprobar
         reg["estado"], reg["error"] = "CONTINUAR" if reg["paso_actual"] else "PENDIENTE", None
+    # OFF bloquea TODAS las fases del workflow antes de llamar Liquid/LLM/agentes.
+    if reg["workflow"] != "individual" and reg["modo_agentico"] is not True and reg["estado"] not in ("DONE", "RECONCILIAR", "GAP"):
+        _fallar(ctx, reg, reg["paso_actual"], "MODO_AGENTICO_APAGADO",
+                "Enciende Modo agentico ON antes de activar un workflow", True)
+        return _vista(reg)
     if reg["estado"] not in ("DONE", "RECONCILIAR", "GAP") and _preflight(reg, ctx):
         _guardar_estado(ctx, reg)
         return _vista(reg)
