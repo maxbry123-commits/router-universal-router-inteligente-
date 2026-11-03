@@ -129,3 +129,37 @@ test("tool_calls con tarea_id: se devuelven al cliente (las corre el Harness) y 
   const b = await chat(B, { tarea_id: "tarea-t", tools: [{ type: "function", function: { name: "escribir" } }], ...plan });
   assert.deepEqual(b.json.choices[0].message.tool_calls.map((t) => t.id), ["call_9"]); assert.equal(s1.chat.length, 1);
 });
+
+
+test("regresion SWE CODE: chat HF con Tools ON toma plan del catalogo MCP existente, sin PLAN_REQUERIDO", async () => {
+  const mcp = await mock(({ url }) => url === "/mcp" ? { status:200, json:{
+    jsonrpc:"2.0",id:"swen_catalogo",result:{ tools:[
+      { name:"github_leer",description:"leer",inputSchema:{type:"object",properties:{}} }
+    ] }
+  }} : { status:404,json:{} });
+  const s1 = await mock(() => ok("Soy Qwen2.5 Coder 1.5B"));
+  const dir=disco("tools-on-plan");
+  const B=await arrancar("tools-on-plan",{ BRIDGE_STATE_DIR:dir,SWECODE_URL_S1:s1.url,
+    PORT:String(new URL(mcp.url).port),RIU_API_KEY:KH });
+  const body={tarea_id:"swe-hf-tools-on",tools:true,
+    messages:[{role:"user",content:"Que modelo eres"}]};
+  const a=await chat(B,body);
+  assert.equal(a.status,200,JSON.stringify(a.json));
+  assert.equal(a.json.choices[0].message.content,"Soy Qwen2.5 Coder 1.5B");
+  assert.deepEqual(s1.chat[0].body.tools.map(t=>t.function.name),["github_leer"]);
+  const ck=JSON.parse(fs.readFileSync(arch(dir,body.tarea_id),"utf8"));
+  assert.equal(ck.plan.objetivo,"Que modelo eres");
+  assert.deepEqual(ck.plan.operaciones,["github_leer"]);
+  const b=await chat(B,body);
+  assert.equal(b.status,200);
+  assert.equal(s1.chat.length,1,"checkpoint no duplica inferencia");
+});
+test("regresion: lista explícita de tools sin plan sigue bloqueada; no se relaja la seguridad", async()=>{
+  const s1=await mock(()=>ok("no debe ejecutarse"));
+  const B=await arrancar("plan-guard",{BRIDGE_STATE_DIR:disco("plan-guard"),SWECODE_URL_S1:s1.url});
+  const r=await chat(B,{tarea_id:"swe-sin-plan-explicito",
+    tools:[{type:"function",function:{name:"escribir",parameters:{type:"object"}}}]});
+  assert.equal(r.status,409);
+  assert.equal(r.json.error.code,"PLAN_REQUERIDO");
+  assert.equal(s1.chat.length,0);
+});
