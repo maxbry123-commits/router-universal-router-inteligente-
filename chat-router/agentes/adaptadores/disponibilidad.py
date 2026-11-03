@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import socket
+import subprocess
 import sys
 import tempfile
 import time
@@ -131,6 +132,32 @@ def _sonda_modelos(proveedor, clave):
 
 
 # ---------------- agentes ----------------
+def _sonda_docker(exe, imagen):
+    """Comprobar daemon e imagen sin iniciar contenedores ni descargar nada (60 s cache)."""
+    cache = ("docker", exe, imagen)
+    previo = _CACHE.get(cache)
+    if previo is not None and time.time() - previo[0] < TTL_FALLO_S:
+        return previo[1]
+    resultado = "sin_verificar"
+    entorno = _comun.entorno_base()
+    # El socket Docker local puede ser inaccesible en Hugging Face Spaces.
+    # No intentar levantar dockerd, pedir privilegios ni ejecutar el agente fuera de contenedor.
+    try:
+        info = subprocess.run([exe, "info", "--format", "{{.ServerVersion}}"], cwd=tempfile.gettempdir(),
+                              env=entorno, stdin=subprocess.DEVNULL, capture_output=True, timeout=4, check=False)
+        if info.returncode != 0:
+            resultado = "daemon_inactivo"
+        else:
+            imagen_local = subprocess.run([exe, "image", "inspect", "--format", "{{.Id}}", imagen],
+                                           cwd=tempfile.gettempdir(), env=entorno, stdin=subprocess.DEVNULL,
+                                           capture_output=True, timeout=4, check=False)
+            resultado = "ok" if imagen_local.returncode == 0 else "imagen_ausente"
+    except (OSError, subprocess.TimeoutExpired):
+        resultado = "sin_verificar"
+    _CACHE[cache] = (time.time(), resultado)
+    return resultado
+
+
 def _faltan(agente, binario, variable):
     return _no("%s no esta instalado (CLI `%s` ausente del PATH; define %s)" % (agente, binario, variable), "NO INSTALADO", "binario_ausente")
 
@@ -157,8 +184,18 @@ def _agente_opencode(sondas):
 def _agente_swe_agent(sondas):
     if not _comun.binario("sweagent", "RIU_SWEAGENT_BIN"):
         return _faltan("swe-agent", "sweagent", "RIU_SWEAGENT_BIN")
-    if not _comun.binario("docker", "RIU_DOCKER_BIN"):
-        return _no("swe-agent instalado pero corre en un contenedor y falta Docker (docker en PATH o RIU_DOCKER_BIN)", "NO CONFIGURADO", "falta_docker")
+    docker = _comun.binario("docker", "RIU_DOCKER_BIN")
+    if not docker:
+        return _no("SWE-agent requiere Docker y no hay cliente en el runtime", "NO CONFIGURADO", "falta_docker")
+    imagen = os.environ.get("RIU_SWEAGENT_IMAGE", "").strip() or "riu-sweagent:latest"
+    # Una ruta docker ejecutable NO demuestra que exista daemon ni imagen.
+    estado = sondas["docker"](docker, imagen)
+    if estado == "daemon_inactivo":
+        return _no("Docker instalado pero el daemon no responde en el Space", "NO CONFIGURADO", "docker_daemon_inactivo")
+    if estado == "imagen_ausente":
+        return _no("Docker funciona pero falta la imagen SWE-agent del runtime", "NO CONFIGURADO", "imagen_sweagent_ausente")
+    if estado != "ok":
+        return _no("Docker no pudo verificarse: se bloquea SWE-agent sin ejecutar nada", "SIN VERIFICAR", "docker_sin_verificar")
     return _ok()
 
 
@@ -350,9 +387,10 @@ def _workflow_liquid_mirror(agentes):
     return _ok()
 
 
-def capacidades(sonda_openhands=None, sonda_gateway=None, sonda_modelos=None, sonda_hf=None):
+def capacidades(sonda_openhands=None, sonda_gateway=None, sonda_modelos=None, sonda_hf=None, sonda_docker=None):
     """{"agentes": {...}, "workflows": {...}, "modelos": {...}} con la disponibilidad real en este entorno. Solo lectura."""
-    sondas = {"openhands": sonda_openhands or _sonda_openhands, "gateway": sonda_gateway or _sonda_gateway}
+    sondas = {"openhands": sonda_openhands or _sonda_openhands, "gateway": sonda_gateway or _sonda_gateway,
+              "docker": sonda_docker or _sonda_docker}
     if sonda_modelos is None and os.environ.get("RIU_SWE_SONDA_MODELOS", "1").strip() != "0":
         sonda_modelos = _sonda_modelos
         sonda_hf = sonda_hf or _sonda_hf
