@@ -573,6 +573,38 @@ def _mensajes_swe_con_prompt(mensajes):
     return [{"role": "system", "content": reglas}, *mensajes]
 
 
+
+def _mensajes_modelo_con_prompt(mensajes, modelo, origen=""):
+    """Completa el cableado del endpoint OpenAI del Harness para Groq/NVIDIA.
+
+    Los locales/web usan el Bridge, que ya inyecta la ficha. El endpoint
+    externo no pasa por _chat_ficha; por eso valida el mismo ON/OFF del Router.
+    OpenClaw conserva ON por su propia ruta, sin cambiar el boton YAIWES.
+    """
+    from mvp import prompt as ficha_prompt
+    if origen == "openclaw":
+        on = True
+    else:
+        estado = _router("agent_access_lock", {})
+        if not isinstance(estado, dict) or type(estado.get("prompt_locked")) is not bool:
+            raise ValueError("SYSTEM_PROMPT_ESTADO_NO_VERIFICADO")
+        on = not estado["prompt_locked"]
+    if not on:
+        return mensajes
+    reglas = (ficha_prompt.sistema_groq() if modelo == "groq/qwen/qwen3.8-27b"
+              else ficha_prompt.sistema())
+    if not reglas:
+        raise ValueError("SYSTEM_PROMPT_FICHA_INCOMPLETA")
+    if not isinstance(mensajes, list):
+        raise ValueError("SYSTEM_PROMPT_MENSAJES_INVALIDOS")
+    # Si el Router de YAIWES ya puso la ficha, NO duplicar ni gastar 2x TPM.
+    firma = ficha_prompt._core()[:85]
+    if any(isinstance(m, dict) and m.get("role") == "system"
+           and isinstance(m.get("content"), str) and firma in m["content"] for m in mensajes):
+        return mensajes
+    return [{"role": "system", "content": reglas}, *mensajes]
+
+
 def _llm_swe_con_prompt(cuerpo):
     if not isinstance(cuerpo, dict):
         raise ValueError("SWE_LLM_CUERPO_INVALIDO")
@@ -876,6 +908,11 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
     # no las API keys, tokens del navegador ni rutas arbitrarias.
     req = {"model": modelo, "messages": cuerpo["messages"],
            **{k: cuerpo[k] for k in ("conv_id", "modo", "proyecto") if isinstance(cuerpo.get(k), str)}}
+    if destino != "swe":
+        # Groq/NVIDIA por /modelos/v1 (YAIWES y cliente OpenClaw): la ficha
+        # no se pierde al saltar _chat_ficha. Verifica ON/OFF en cada llamada.
+        req["messages"] = _mensajes_modelo_con_prompt(
+            req["messages"], modelo, cuerpo.get("origen"))
     # Handoff solo como ID validado: el bridge lo resuelve bajo la misma credencial.
     origen_ctx = cuerpo.get("contexto_de")
     if isinstance(origen_ctx, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,80}", origen_ctx):
