@@ -711,9 +711,51 @@ async def _reanudar(pid):
         TRABAJOS[pid].update(estado="error", error=type(error).__name__)
     await _persistir(pid)
     _lanzar(_entregar_si_nadie(pid, {"sesion": est.get("sesion")}))
+async def _reanudar_codigo(clave):
+    """Recupera una tarea CODA desde el cursor, no como un chat de un turno.
+    El indice usa code-<pid> y el job visible conserva el pid original.
+    """
+    pid = clave[len("code-"):]
+    est = await asyncio.to_thread(estado_tarea.leer, app.state.banco, clave)
+    entrada = est.get("entrada") if isinstance(est, dict) else None
+    if not isinstance(entrada, dict) or not entrada.get("modelo") or not isinstance(entrada.get("mensajes"), list):
+        await asyncio.to_thread(estado_tarea.marcar, app.state.banco, clave, False)
+        return
+    if pid in TRABAJOS and TRABAJOS[pid].get("estado") == "procesando":
+        return  # no duplicar ejecucion en el mismo worker
+    anterior = await asyncio.to_thread(trabajos.leer, app.state.banco, pid)
+    TRABAJOS[pid] = {**(anterior if isinstance(anterior, dict) else {}),
+                    "estado": "procesando", "proceso_id": pid,
+                    "finish_reason": "", "reanudado": True}
+    _PROPIOS.add(pid)
+    _PID.set(pid)
+    _SES.set(str(entrada.get("sesion") or ""))
+    try:
+        s = await _codigo_largo_comun(entrada["modelo"], entrada["mensajes"],
+                                     entrada.get("opciones") or {}, entrada,
+                                     int(entrada["lineas"]), pid=pid)
+        TRABAJOS[pid].update(estado="completado", via="harness",
+                             finish_reason="stop", modelo_solicitado=entrada["modelo"],
+                             modelo_respuesta=s["modelo_respuesta"],
+                             herramientas_usadas=[],
+                             metricas=s["metricas"],
+                             choices=[{"message":{"role":"assistant","content":s["texto"],"tool_calls":[]},
+                                       "finish_reason":"stop"}])
+    except HTTPException as exc:
+        TRABAJOS[pid].update(estado="error", error=str(exc.detail), status_code=exc.status_code)
+    except Exception as exc:
+        TRABAJOS[pid].update(estado="error", error=type(exc).__name__)
+    finally:
+        await _persistir(pid)
+    _lanzar(_entregar_si_nadie(pid, {"sesion":entrada.get("sesion") or ""}))
+
+
 async def _reanudar_todas():
-    for pid in list(await asyncio.to_thread(estado_tarea.pendientes, app.state.banco)):
-        _lanzar(_reanudar(pid), pid)
+    for clave in list(await asyncio.to_thread(estado_tarea.pendientes, app.state.banco)):
+        if clave.startswith("code-"):
+            _lanzar(_reanudar_codigo(clave), clave)
+        else:
+            _lanzar(_reanudar(clave), clave)
 async def _recuperar(pid):
     """Trabajo iniciado o terminado por otro proceso: se lee del almacen; un trabajo local 'procesando' sin latido de 15 min se da por interrumpido."""
     doc = await asyncio.to_thread(trabajos.leer, app.state.banco, pid)
