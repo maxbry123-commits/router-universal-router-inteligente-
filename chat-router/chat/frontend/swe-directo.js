@@ -65,7 +65,10 @@ function normSeleccion(x, base) {
   const o = x && typeof x === "object" ? x : {};
   return {
     modelo_responde: en(MODELOS_SWE, o.modelo_responde) || en(MODELOS_WEB, o.modelo_responde) ? o.modelo_responde : base.modelo_responde,  // los web-* solo sirven para el chat directo (validarSeleccion)
-    modelo_tool: en(MODELOS_SWE, o.modelo_tool) ? o.modelo_tool : base.modelo_tool,
+    // SWEN CODE free usa SOLO modelos web. Compartimos el contrato de selección,
+    // pero nunca convertimos su modelo_tool a Liquid/HF por normalización.
+    modelo_tool: en(MODELOS_SWE, o.modelo_tool) || (en(MODELOS_WEB, o.modelo_tool) && o.modelo_tool !== "swecode-consulta")
+      ? o.modelo_tool : base.modelo_tool,
     agente_responde: en(AGENTES_SWE, o.agente_responde) ? o.agente_responde : base.agente_responde,
     agente_tool: en(AGENTES_SWE, o.agente_tool) ? o.agente_tool : base.agente_tool,
     modo_agentico: typeof o.modo_agentico === "boolean" ? o.modo_agentico : base.modo_agentico,
