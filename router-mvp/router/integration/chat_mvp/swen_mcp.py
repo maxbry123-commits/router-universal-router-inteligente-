@@ -168,13 +168,29 @@ def _consulta(modelo, mensaje, sesion, timeout):
             return {"estado":"error","error":"OPENCLAW_BIN_NO_ENCONTRADO"}
         home = "/tmp/openclaw-home-" + str(os.getuid())
         try:
-            run = subprocess.run([binary,"config","validate"],cwd="/tmp",capture_output=True,
+            run = subprocess.run([binary,"config","validate","--json"],cwd="/tmp",capture_output=True,
                                  text=True,timeout=22,check=False,env={
                                    **os.environ,"HOME":home,
                                    "OPENCLAW_STATE_DIR":home+"/.openclaw",
                                    "OPENCLAW_HOME":home,
                                    "PATH":"/opt/node24/bin:"+os.getenv("PATH","")})
             salida = (run.stdout+"\\n"+run.stderr).lower()
+            # --json: sólo revelar rutas de campos con error de esquema,
+            # nunca valores de configuración, perfiles o secretos.
+            paths_json=[]
+            try:
+                obj=json.loads(run.stdout)
+                errores=obj.get("errors") or obj.get("issues") or []
+                if isinstance(errores,list):
+                    for item in errores[:20]:
+                        if not isinstance(item,dict): continue
+                        p=item.get("path") or item.get("field") or ""
+                        if isinstance(p,list): p=".".join(str(x) for x in p)
+                        if isinstance(p,str) and re.fullmatch(
+                           r"(?:gateway|agents|models|tools)(?:[.\\[\\]a-zA-Z0-9_-]*)",p):
+                            paths_json.append(p[:110])
+            except (ValueError,TypeError,AttributeError):
+                pass
             if run.returncode == 0:
                 tipo = "VALIDA"
             elif any(k in salida for k in ("unknown command","unknown option",
@@ -201,7 +217,7 @@ def _consulta(modelo, mensaje, sesion, timeout):
                 pistas.append(linea[:160])
             return {"estado":"terminado","diagnostico":"schema_openclaw",
                     "config_valida":run.returncode==0, "tipo":tipo,
-                    "campos":paths[:8], "pistas":pistas[:6],
+                    "campos":sorted(set(paths+paths_json))[:12], "pistas":pistas[:6],
                     "codigo_salida":run.returncode}
         except (OSError,subprocess.TimeoutExpired):
             return {"estado":"error","error":"OPENCLAW_DOCTOR_NO_DISPONIBLE"}
