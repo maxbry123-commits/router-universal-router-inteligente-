@@ -12,7 +12,7 @@ after(()=>fs.rmSync(dir,{recursive:true,force:true}));
 
 test('bloqueos de autenticación/edad/cuota no se saltan ni repiten',()=>{
   for(const code of ['SESSION_EXPIRED','AGE_VERIFICATION_REQUIRED','CF_CHALLENGE',
-    'CLAUDE_CUENTAS_AGOTADAS','NO_AUTORIZADO']){
+    'CLAUDE_CUENTAS_AGOTADAS','CLAUDE_PROVEEDOR_SIN_CREDENCIALES','NO_AUTORIZADO']){
     const x=clasificarGap(code);
     assert.equal(x.reintentar,false);
     assert.match(x.estado,/REQUIERE_OPERADOR/);
@@ -78,5 +78,24 @@ test('sin agente o token no inventa PASS',async()=>{
   }finally{
     if(save===undefined)delete process.env.OPENCLAW_ENABLE;
     else process.env.OPENCLAW_ENABLE=save;
+  }
+});
+
+test('Claude 401 proveedor distinto de error de acceso al Gateway',async()=>{
+  const {consultarClaude}=await import('../src/claude_gateway.js');
+  const anterior=process.env.OPENCLAW_GATEWAY_TOKEN;
+  process.env.OPENCLAW_GATEWAY_TOKEN='TOKEN_DE_PRUEBA_NO_REAL';
+  try{
+    const simular=(code)=>async()=>({ok:false,status:401,
+      text:async()=>JSON.stringify({error:{type:'authentication_error',code}})});
+    await assert.rejects(
+      ()=>consultarClaude('Prueba',{fetchFn:simular('missing-provider-auth')}),
+      e=>e.code==='CLAUDE_PROVEEDOR_SIN_CREDENCIALES');
+    await assert.rejects(
+      ()=>consultarClaude('Prueba',{fetchFn:simular('invalid-token')}),
+      e=>e.code==='CLAUDE_GATEWAY_NO_AUTORIZADO');
+  }finally{
+    if(anterior===undefined)delete process.env.OPENCLAW_GATEWAY_TOKEN;
+    else process.env.OPENCLAW_GATEWAY_TOKEN=anterior;
   }
 });
