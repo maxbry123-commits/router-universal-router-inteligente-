@@ -1,4 +1,4 @@
-import { claveActual } from "./acceso-clave.js";
+import { claveActual, conReintentoDeClave } from "./acceso-clave.js";
 // api.js — Cliente API del Router (chat UI)
 // Cambios: trae util `copiar` al portador final; `chat` acepta flujo + historial + stop; manejo de errores de red
 const CFG = window.RIU_CONFIG || {};
@@ -263,7 +263,7 @@ export async function apagarRespaldo() {
   return { status: 410, ok: false, p: { error: 'HF_JOBS_RUTA_RETIRADA', detalle: 'Los modelos locales usan SWE CODE S1/S2/S3.' } };
 }
 window.RIU_APAGAR = apagarRespaldo;
-export async function api(path, options = {}) {
+async function apiOnce(path, options = {}) {
   await liveRouter();
   if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Ruta inválida");
   const headers = {};
@@ -300,6 +300,9 @@ export async function api(path, options = {}) {
     throw error;
   }
   return payload;
+}
+export async function api(path, options = {}) {
+  return conReintentoDeClave(() => apiOnce(path, options));
 }
 export async function media(id) {
   await liveRouter();
