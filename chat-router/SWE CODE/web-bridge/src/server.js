@@ -407,7 +407,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (!esExterno(model) && !esLocal(model)) {
       return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     }
-    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop', tarea = null, metricas = null, servidor = null, toolsInvalidas = [];
+    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop', tarea = null, metricas = null, servidor = null, toolsInvalidas = [], consensoDetalle = null;
     // tarea_id (cuerpo o cabecera x-tarea-id): modelos locales/Groq/NVIDIA con checkpoint universal (retomar_local.js).
     // Sin tarea_id pero con conv_id se DERIVA <conv_id>-<sha256 de [modelo, modo, mensajes] (12)>: el mismo envio reintentado reanuda, uno distinto es tarea nueva. Sin conv_id nada cambia.
     const explicito = esExterno(model) || esLocal(model), pideRespaldo = req.body.respaldo === true;
@@ -459,9 +459,13 @@ app.post('/v1/chat/completions', async (req, res) => {
         salida = r.salida; usado = r.usado;
       }
     } else if (esConsenso(modoUso)) {
-      const r = await consenso(promptFicha, { modo: modoUso, convId: conv_id });
-      salida = r.final; usado = 'consenso';
-      if (!res.headersSent) res.setHeader('x-consenso-detalle', Buffer.from(JSON.stringify(r.por_modelo)).toString('base64').slice(0, 4000));
+      const r = await consenso(promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
+      const rTools = extraerLlamadasWeb(r.final, extra.tools);
+      salida = rTools.texto; llamadas = rTools.tool_calls; fin = rTools.finish_reason;
+      usado = 'qwen38max';
+      consensoDetalle = { arbitro:'qwen38max', opiniones:Object.fromEntries(
+        Object.entries(r.por_modelo).map(([k,v])=>[k,String(v).slice(0,3500)])),
+        decision:String(r.final).slice(0,3500), modificable_por_operador:true };
     } else {
       const r = await conFallback(OBJETIVO_UNICO, promptFicha, { modo: modoUso, convId: conv_id });
       salida = r.salida; usado = r.usado;
@@ -517,7 +521,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (!res.headersSent) { res.setHeader('x-modelo-usado', usado); if (via) res.setHeader('x-via-respaldo', via); }
 
     if (sse.pide) {  // OpenClaw (openai-completions) pide SSE: lo que llego por streaming real ya se entrego; se emite SOLO lo que falte + tool_calls + finish_reason + [DONE]
-      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}) };
+      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}) };
       sse.abrir(); sse.rolInicial();
       const yaEntregado = sse.flujo.texto, completo = String(salida || '');
       for (const t of trozosDe(completo.startsWith(yaEntregado) ? completo.slice(yaEntregado.length) : '')) sse.chunk({ content: t });
@@ -527,7 +531,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}),
+      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}),
       choices: [{ index: 0, finish_reason: fin, message: { role: 'assistant', content: salida || '', ...(llamadas.length ? { tool_calls: llamadas } : {}) } }],
       usage: usageDe(metricas),
     });
