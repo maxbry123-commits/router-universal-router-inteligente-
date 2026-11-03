@@ -103,6 +103,8 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
             "funciones o clases completas, no fragmentos con sangria abierta. "
             "No repitas definiciones anteriores. Solo biblioteca estandar. "
             "Sin llamadas a herramientas, sin afirmar commits. "
+            "No uses from __future__ ni nombres de funciones anteriores. "
+            "Esta parte debe poder agregarse despues de las otras partes.\n"
             f"Definiciones ya usadas: {', '.join(definiciones[-35:]) or '(ninguna)'}.\n"
             "Requisitos originales del usuario, sin reinterpretar:\n"
         )
@@ -129,9 +131,14 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
             error = str(e)
             if not REINTENTABLE.search(error) and not error.startswith(("CODA_CANTIDAD", "CODA_SINTAXIS", "CODA_SEGMENTO", "CODA_FALTAN")):
                 raise
-            if fallos >= 8:
-                raise RuntimeError("CODA_REINTENTOS_AGOTADOS_CHECKPOINT_CONSERVADO: " + error[:150]) from None
-            estado["siguiente_llamada"] = reloj() + (65 if modelo.startswith("groq/") else min(90, 10 * fallos))
+            transitorio = bool(REINTENTABLE.search(error))
+            # 429/503 pueden durar minutos: el horizonte de 1-4h pertenece
+            # al motor, no a los tres reintentos de una llamada del proveedor.
+            # No reintentar indefinidamente codigo rechazado sin variar entrada.
+            if not transitorio and fallos >= 4:
+                raise RuntimeError("CODA_CODIGO_INVALIDO_REPETIDO_CHECKPOINT_CONSERVADO: " + error[:150]) from None
+            espera = 65 if modelo.startswith("groq/") else min(120, 10 * min(fallos, 12))
+            estado["siguiente_llamada"] = reloj() + espera
             estado["ultimo_gap"] = error[:150]
             if not await guardar(estado):
                 raise RuntimeError("CODA_CHECKPOINT_NO_PERSISTIDO")
