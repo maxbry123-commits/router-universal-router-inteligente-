@@ -181,6 +181,42 @@ def _coda_tests():
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
+    # Sondas rápidas de la infraestructura EXISTENTE. No mandan prompts a
+    # Qwen, DeepSeek ni Claude y nunca solicitan contraseñas o cookies.
+    comando = str(mensaje).strip()
+    if comando in ("@swen/health", "@swen/diag"):
+        key = _clave()
+        if not key:
+            return {"estado":"error","error":"SWEN_MCP_SIN_CLAVE_BACKEND"}
+        ruta = "/health" if comando == "@swen/health" else "/v1/web/diagnostico"
+        req = urllib.request.Request("http://127.0.0.1:7870" + ruta,
+                                     headers={"X-API-Key": key})
+        try:
+            with urllib.request.urlopen(req, timeout=15) as res:
+                obj = json.loads(res.read(65536))
+            if comando == "@swen/health":
+                pool = obj.get("pool") or {}
+                return {"estado":"terminado","diagnostico":"bridge_health",
+                        "bridge_ok":obj.get("ok") is True,
+                        "cuentas_configuradas":int(pool.get("total") or 0),
+                        "banco_cargado":pool.get("loaded") is True,
+                        "nota":"Cuentas configuradas no equivalen a sesiones iniciadas."}
+            data = obj.get("indicadores") or {}
+            sites = {}
+            for site in ("qwen","deepseek","claude"):
+                item = data.get(site) or {}
+                sites[site] = {"navegador":str(item.get("navegador") or "NO_VERIFICADO")[:30],
+                    "auth_url":item.get("auth_url") is True,
+                    "login_visible":item.get("login_visible") is True,
+                    "editor_visible":item.get("editor_visible") is True,
+                    "modelo_selector_visible":item.get("modelo_selector_visible") is True}
+            return {"estado":"terminado","diagnostico":"estado_web_sin_datos_personales",
+                    "sitios":sites,
+                    "nota":"Indicadores de DOM; no prueban inferencia ni autentican cuentas."}
+        except urllib.error.HTTPError as exc:
+            return {"estado":"error","error":"SWEN_DIAGNOSTICO_HTTP_"+str(exc.code)}
+        except (OSError,ValueError,TypeError,TimeoutError):
+            return {"estado":"error","error":"SWEN_DIAGNOSTICO_NO_DISPONIBLE"}
     if str(mensaje).strip() == "@swen/claves":
         return _diagnostico_claves()
     if str(mensaje).strip() == "@swen/codatest":
