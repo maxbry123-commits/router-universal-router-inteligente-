@@ -52,7 +52,9 @@ export async function servirCodaRouter(req, res, sse, {modelo, mensajes, sesion,
     res.status(503).json({error:{code:'CODA_ROUTER_NO_CONFIGURADO'}});
     return true;
   }
-  const conv = /^[A-Za-z0-9_-]{1,60}$/.test(String(sesion||'')) ? String(sesion) : 'coda-openclaw';
+  const conv = /^[A-Za-z0-9_-]{1,60}$/.test(String(sesion||'')) ? String(sesion)
+    : 'coda-' + crypto.createHash('sha256').update(JSON.stringify([propietario || '',modelo,mensajes]))
+      .digest('hex').slice(0,32); // sin conv_id, NUNCA compartir sesion entre usuarios
   const request_id = 'coda-' + crypto.createHash('sha256').update(JSON.stringify([
     modelo, mensajes, propietario || '', conv
   ])).digest('hex').slice(0, 43);
