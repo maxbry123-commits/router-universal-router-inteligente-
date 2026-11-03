@@ -392,9 +392,16 @@ function organizarComposerMovil() {
     extra.setAttribute("aria-label", "Herramientas del chat");
     fila.after(extra);
   }
-  const IDs = ["btn-adjunto", "btn-pegar", "mode-selector-mount",
-    "btn-grp-ctx", "btn-grp-trab", "btn-grp-cuad", "btn-limpiar-input",
-    "btn-expandir-input", "btn-reiniciar-input"];
+  // Reordenar nodos EXISTENTES: acciones sobre el micrófono y el micrófono abajo.
+  const superiores = ["btn-limpiar-input", "btn-reiniciar-input", "btn-expandir-input"];
+  const detener = document.getElementById("btn-detener");
+  const enviar = fila.querySelector(".action");
+  for (const id of superiores) {
+    const boton = document.getElementById(id);
+    if (boton && boton.parentElement !== fila) fila.insertBefore(boton, detener || enviar || null);
+  }
+  const IDs = ["btn-microfono", "btn-adjunto", "btn-pegar", "mode-selector-mount",
+    "btn-grp-ctx", "btn-grp-trab", "btn-grp-cuad"];
   for (const id of IDs) {
     const boton = document.getElementById(id);
     if (boton && boton.parentElement !== extra) extra.append(boton);
