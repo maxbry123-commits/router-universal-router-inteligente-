@@ -16,8 +16,13 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
   let ck = null;
   try {
     const siteCfg = SITES[site];
-    // elige el modelo pedido en el picker de la web (qwen: Select Model)
-    await elegirModelo(page, siteCfg, cfg.modelo_regex).catch(() => false);
+    // Verificar el modelo REAL; antes se ignoraba silenciosamente un picker fallido
+    // y se respondía bajo el ID solicitado aunque el sitio ejecutara otro modelo.
+    const elegido = await elegirModelo(page, siteCfg, cfg.modelo_regex);
+    if (siteCfg.model_selector?.length && !elegido) {
+      throw Object.assign(new Error('No pude verificar el modelo en el selector de la web'), {
+        code:'MODELO_SELECTOR_NO_VERIFICADO', site });
+    }
     const bloques = partir(`${preambulo(modo)}\n${texto}`);
     const h = huella(texto, modo);
     ck = checkpointLeer(convId, h);
@@ -40,8 +45,23 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
     for (let i = ck.enviados; i < ck.total; i++) {
       const ok = await escribe(page, siteCfg, cabecera(i + 1, ck.total, modo) + bloques[i]);
       if (!ok) throw Object.assign(new Error('INPUT_NO_ENCONTRADO'), { code: 'SELECTOR_BROKEN', site });
+      // El texto que ya estaba en pantalla NO prueba que el modelo respondió.
+      const previo = await page.evaluate((sel) => {
+        const lista = [...document.querySelectorAll(sel)];
+        return lista.length ? String(lista[lista.length - 1].innerText || '') : '';
+      }, siteCfg.respuesta.join(',')).catch(() => '');
       await enviar(page, siteCfg);
-      const salida = await leerRespuesta(page, siteCfg);
+      let salida;
+      try {
+        salida = await leerRespuesta(page, siteCfg, { previo, timeoutMs:145000 });
+      } catch (e) {
+        if (e.code === 'WEB_SALIDA_PARCIAL' && e.texto_parcial) {
+          // Preservar lo recibido como PARCIAL, jamás declarar DONE o repetir herramientas.
+          checkpointGuardar(convId, { ...ck, ultima_salida:String(e.texto_parcial).slice(0,20000),
+            estado:'PARCIAL', completo:false, cuenta, url:page.url() });
+        }
+        throw e;
+      }
       if (sesionMuerta(page, siteCfg)) throw Object.assign(new Error('SESION_MUERTA'), { code: 'SESSION_EXPIRED', site });
       ck = { ...ck, enviados: i + 1, ultima_salida: salida || '', cuenta, url: (() => { try { return page.url(); } catch { return ck.url; } })() };
       checkpointGuardar(convId, ck);
