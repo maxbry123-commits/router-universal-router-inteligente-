@@ -140,6 +140,15 @@ def test_claude_code_instalado_pero_sin_pasarela_no_esta_conectado(vacio, monkey
     assert e["estado"] == "SIN VERIFICAR" and e["causa"] == "pasarela_sin_respuesta"
     e = cap(sonda_gateway=lambda url: url == "http://127.0.0.1:8082")["agentes"]["claude-code"]
     assert e["disponible"] is True and e["modelos"] == ["nvidia/minimaxai/minimax-m3.1-flash"]
+    # En modo bridge local también se comprueba el proveedor, no basta el puerto de la pasarela.
+    monkeypatch.setenv("RIU_CLAUDE_PASARELA_BRIDGE", "1")
+    visto = []
+    e = cap(sonda_gateway=lambda url: visto.append(url) or url == "http://127.0.0.1:8082")["agentes"]["claude-code"]
+    assert e["estado"] == "SIN VERIFICAR" and e["causa"] == "bridge_sin_respuesta"
+    assert "http://127.0.0.1:7870" in visto
+    e = cap(sonda_gateway=lambda url: url in ("http://127.0.0.1:8082", "http://127.0.0.1:7870"))["agentes"]["claude-code"]
+    assert e["disponible"] is True
+    monkeypatch.delenv("RIU_CLAUDE_PASARELA_BRIDGE")
     monkeypatch.setenv("RIU_CLAUDE_PASARELA_URL", "http://fuera-del-space.example")
     assert cap(sonda_gateway=lambda url: pytest.fail("una URL insegura no se sondea"))["agentes"]["claude-code"]["causa"] == "url_invalida"
     monkeypatch.setenv("RIU_CLAUDE_PASARELA_URL", "http://127.0.0.1:8082")
