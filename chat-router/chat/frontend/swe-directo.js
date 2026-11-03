@@ -13,29 +13,14 @@ export const SWE_LISTAS = {
     ["hf-qwen25-coder-15b", "Qwen2.5 Coder 1.5B", "HF local"],
     ["hf-qwen35-08b", "Qwen3.5 0.8B", "HF local"],
     ["hf-qwen3-06b", "Qwen3 0.6B", "HF local"]] },
-  "swen-code-free": { nombre: "SWEN CODE free", titulo: "SWEN CODE free · cuentas web", modelos: [
-    ["swecode-consulta", "Concilio · los 3 web", "los 3 modelos web a la vez + síntesis"],
-    ["web-qwen38max", "Qwen 3.8 Max (web)", "Código complejo · via bridge"],
-    ["web-qwen37max", "Qwen 3.7 Max (web)", "Razonamiento · via bridge"],
-    ["web-dsv4-flash", "DeepSeek V4 Flash (web)", "Código rápido · via bridge"],
-    ["hf-liquid-lfm25", "Liquid LFM2.5 350M", "HF local"],
-    ["hf-qwen25-coder-15b", "Qwen2.5 Coder 1.5B", "HF local"],
-    ["hf-qwen35-08b", "Qwen3.5 0.8B", "HF local"],
-    ["hf-qwen3-06b", "Qwen3 0.6B", "HF local"],
-    ["groq/qwen/qwen3.8-27b", "Qwen 3.8 Groq", "API Groq"],
-    ["nvidia/minimaxai/minimax-m3.1-flash", "MiniMax M3.1 Flash", "API NVIDIA"],
-    ["nvidia/meta/muse-glimmer-30b", "Muse Glimmer 30B", "API NVIDIA"],
-    ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "Nemotron 3 Ultra", "API NVIDIA"],
-    ["nvidia/z-ai/glm-5.3", "GLM 5.3", "API NVIDIA"],
-    ["deepseek/deepseek-v4-pro", "DeepSeek V4 Pro", "API DeepSeek"],
-    ["deepseek/deepseek-flash", "DeepSeek Flash", "API DeepSeek"],
-    ["minimax/MiniMax-M3", "MiniMax M3", "API MiniMax"],
-    ["minimax/MiniMax-M2.7", "MiniMax M2.7", "API MiniMax"],
-    ["openai/gpt-5.6", "OpenAI GPT-5.6", "API OpenAI"],
-    ["openai/gpt-5.5", "OpenAI GPT-5.5", "API OpenAI"]] },
+  "swen-code-free": { nombre: "SWEN CODE free", titulo: "SWE CODE free · cuentas web", modelos: [
+    ["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max", "opiniones web + decisión Qwen 3.8 Max"],
+    ["web-qwen38max", "Qwen 3.8 Max (web)", "suscripción web"],
+    ["web-qwen37max", "Qwen 3.7 Max (web)", "suscripción web"],
+    ["web-dsv4-flash", "DeepSeek V4 Flash (web)", "suscripción web"]] },
 };
 // Modelos web de SWEN CODE free (cuentas web del bridge): no estan en el catalogo del Harness, solo sirven para el chat directo por el bridge.
-export const MODELOS_WEB = [["swecode-consulta", "Concilio · los 3 web"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"]];
+export const MODELOS_WEB = [["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"]];
 // MODO DE TRABAJO (antes «modelos» swecode-<modo>): el bridge ya acepta `modo` junto a cualquier modelo (server.js: conPreambulo). Vacio = sin modo.
 export const MODOS_TRABAJO = [["asesoria", "Asesoría"], ["revision", "Revisión"], ["solucion", "Solución"], ["arquitectura", "Arquitectura"], ["archivos", "Archivos"], ["prompt_code", "Prompt code"], ["despliega", "Despliega"]];
 export const esSelectorSwe = (id) => typeof id === "string" && Object.hasOwn(SWE_LISTAS, id);
@@ -110,7 +95,7 @@ export function entradaParaCatalogo(lista, cat, actual) {
 export function modeloParaLista(lista, cat, actual) {
   const mid = entradaParaCatalogo(lista, cat, actual);
   if (mid) return { model_id: mid, label: SWE_LISTAS[lista].modelos.find((m) => m[0] === mid)[1] };
-  if (!SWE_LISTAS[lista] || !en(MODELOS_SWE, cat)) return null;
+  if (!SWE_LISTAS[lista] || lista === "swen-code-free" || !en(MODELOS_SWE, cat)) return null;
   return { model_id: cat.startsWith("hf/") ? cat.slice(3) : cat, label: nombreDe(MODELOS_SWE, cat) };
 }
 // Lo guardado en localStorage (id de la lista o id del bridge elegido desde el desplegable) -> {model_id, label}; lo desconocido, la primera entrada
@@ -195,7 +180,7 @@ export const lineaOtros = (g) => (g.otros.length ? "No configurados / no disponi
 const SOLO = { "swe-code": (id) => id.startsWith("hf/"), groq: (id) => id.startsWith("groq/"), nvidia: (id) => id.startsWith("nvidia/"), "swen-code-free": () => true };
 export const VENTANAS_CENTRAL = ["swe-code", "swen-code-free", "groq", "nvidia"];
 export function opcionesModeloVentana(ventana, cap, proveedor = {}, { web = ventana === "swen-code-free" } = {}) {
-  const lista = [...(web ? MODELOS_WEB : []), ...MODELOS_SWE.filter((m) => (SOLO[ventana] || SOLO["swen-code-free"])(m[0]))];
+  const lista = ventana === "swen-code-free" ? MODELOS_WEB : [...(web ? MODELOS_WEB : []), ...MODELOS_SWE.filter((m) => (SOLO[ventana] || SOLO["swen-code-free"])(m[0]))];
   return lista.map(([id, etq]) => {
     let st = estadoOpcion(cap, "modelo", id);
     const pv = proveedor ? proveedor[id] : undefined;  // false = el proveedor no lo publica; "NO_CONFIGURADO" / "SIN_VERIFICAR" = su catalogo no se pudo leer
