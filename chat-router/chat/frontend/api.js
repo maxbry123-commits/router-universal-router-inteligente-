@@ -251,6 +251,7 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
   );
   // Ruta vigente: Router MVP -> Harness -> SWE CODE -> servidores locales S1/S2/S3.
   const r = await puente(base, { model, messages, max_tokens, ...extra }, '', 'POST', headers);
+  if (r.status === 424) { const e = new Error('GAP: SESION_WEB · ' + String(r.p.error || 'SESSION_EXPIRED') + ' · el titular debe iniciar sesión o importar su sesión (SWE CODE free/SESION_IMPORTAR.md); no es un fallo de red'); e.status = 424; e.tipo = 'SESION_WEB'; throw e; }  // no reintentable
   if (!r.ok) throw new Error(r.p.error || r.p.reason || r.p.detail || ('HTTP ' + r.status));
   if (r.p && r.p.error) throw new Error(String(r.p.error));  // GAP del backend no se presenta como respuesta OK
   const prueba = Array.isArray(r.p.traza) && r.p.traza.length ? '\n\n— Prueba de ejecución —\n' + r.p.traza.filter((t) => t.modelo !== 'goals').map((t) => t.nodo + ' · ' + String(t.modelo).replace('ficha-', '') + ' · ' + (t.rol || '') + (t.ok ? ' ✔' : ' ✘')).join('\n') : '';

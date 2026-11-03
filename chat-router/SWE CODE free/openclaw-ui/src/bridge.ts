@@ -60,7 +60,18 @@ export function leerConfig(env: Record<string, string | undefined> = process.env
 
 export function crearCliente(cfg: { url: string; token: string }, opciones: { fetchFn?: Fetch; timeoutMs?: number; timeoutLargoMs?: number } = {}) {
   const fetchFn: Fetch = opciones.fetchFn ?? ((u, i) => fetch(u, i as RequestInit) as unknown as ReturnType<Fetch>);
+  // Auto-reparación: lecturas idempotentes (GET y /v1/swe/estado) se reintentan 2 veces con backoff ante red caída/timeout/5xx transitorio.
+  // Nunca se reintentan escrituras (iniciar/avanzar/aprobar/tools) ni errores 4xx (p. ej. 424 sesión web del titular).
   async function llamar(metodo: 'GET' | 'POST', ruta: string, cuerpo?: unknown, operador?: Operador, largo = false): Promise<Respuesta> {
+    const idem = metodo === 'GET' || ruta === '/v1/swe/estado';
+    let r = await llamarUna(metodo, ruta, cuerpo, operador, largo);
+    for (let k = 1; idem && k <= 2 && !r.ok && (r.http === 0 || r.http === 502 || r.http === 503 || r.http === 504); k++) {
+      await new Promise((ok) => setTimeout(ok, 500 * k));
+      r = await llamarUna(metodo, ruta, cuerpo, operador, largo);
+    }
+    return r;
+  }
+  async function llamarUna(metodo: 'GET' | 'POST', ruta: string, cuerpo?: unknown, operador?: Operador, largo = false): Promise<Respuesta> {
     const ctl = new AbortController(), ms = largo ? (opciones.timeoutLargoMs ?? 1_800_000) : (opciones.timeoutMs ?? 60_000), t = setTimeout(() => ctl.abort(), ms);
     const cab: Record<string, string> = { authorization: `Bearer ${cfg.token}` };
     if (metodo === 'POST') cab['content-type'] = 'application/json';
@@ -73,7 +84,10 @@ export function crearCliente(cfg: { url: string; token: string }, opciones: { fe
       if (r.ok && simple(j) && 'harness' in j) return { ok: true, http: r.status, datos: j };  // GET /capacidades devuelve el informe directo
       const e = simple(j) && simple(j.error) ? j.error : {};
       return { ok: false, http: r.status, codigo: typeof e.code === 'string' && /^[A-Z][A-Z0-9_]{2,63}$/.test(e.code) ? e.code : `BRIDGE_HTTP_${r.status}`,
-        ...(typeof e.codigo_harness === 'string' ? { datos: { codigo_harness: e.codigo_harness } } : {}) };
+        ...(typeof e.codigo_harness === 'string' || typeof e.motivo === 'string'
+          ? { datos: { ...(typeof e.codigo_harness === 'string' ? { codigo_harness: e.codigo_harness } : {}),
+            // sesión web del titular (RETO_ANTIBOT / LOGIN_RECHAZADO_TODAS_CUENTAS / SIN_SESION_EN_PERFIL): no reintentar, avisar al titular
+            ...(typeof e.motivo === 'string' && /^[A-Z][A-Z0-9_]{2,63}$/.test(e.motivo) ? { motivo: e.motivo, requiere_titular: true } : {}) } } : {}) };
     } catch (e) {
       const nombre = e instanceof Error ? e.name : '';
       return { ok: false, http: 0, codigo: nombre === 'AbortError' || nombre === 'TimeoutError' ? 'BRIDGE_TIMEOUT' : 'BRIDGE_NO_DISPONIBLE' };  // sin URL ni token en el mensaje
