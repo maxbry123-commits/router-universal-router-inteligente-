@@ -522,6 +522,13 @@ app.post('/v1/chat/completions', async (req, res) => {
       const rTools = extraerLlamadasWeb(r.final, extra.tools);
       salida = rTools.texto; llamadas = rTools.tool_calls; fin = rTools.finish_reason;
       usado = 'qwen38max';
+      const claudeOpinion = String(r.por_modelo['claude-sonnet'] || '');
+      if (claudeOpinion.startsWith('🚩')) {
+        flagClaude = { codigo:claudeOpinion.includes('CLAUDE_SONNET_SIN_CUENTA_DISPONIBLE')
+          ? 'CLAUDE_SONNET_SIN_CUENTA_DISPONIBLE' : 'CLAUDE_SONNET_NO_DISPONIBLE',
+          mensaje:'El consejero Claude no respondió; Ask Cónsil continúa con Qwen árbitro.' };
+        salida = [salida, claudeOpinion].filter(Boolean).join('\n\n');
+      }
       consensoDetalle = { arbitro:'qwen38max', opiniones:Object.fromEntries(
         Object.entries(r.por_modelo).map(([k,v])=>[k,String(v).slice(0,3500)])),
         decision:String(r.final).slice(0,3500), modificable_por_operador:true };
