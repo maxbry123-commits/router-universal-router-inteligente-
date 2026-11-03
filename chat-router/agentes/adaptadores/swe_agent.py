@@ -19,8 +19,19 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
         exe = _comun.binario("sweagent", "RIU_SWEAGENT_BIN")
         if not exe:
             return _comun.no_instalado(AGENTE, tarea_id)
-        if not _comun.binario("docker", "RIU_DOCKER_BIN"):
-            return _comun.error(AGENTE, tarea_id, "AGENTE_NO_CONFIGURADO", "SWE-agent corre en un contenedor y falta Docker (docker en PATH o RIU_DOCKER_BIN)", False)
+        docker = _comun.binario("docker", "RIU_DOCKER_BIN")
+        if not docker:
+            return _comun.error(AGENTE, tarea_id, "AGENTE_NO_CONFIGURADO", "SWE-agent requiere Docker en el runtime", False)
+        imagen = os.environ.get("RIU_SWEAGENT_IMAGE", "").strip() or IMAGEN_POR_DEFECTO
+        # La comprobacion pasiva del Harness y esta comprobacion previa comparten
+        # el mismo contrato: nunca ejecutar sweagent sin daemon e imagen reales.
+        from . import disponibilidad
+        docker_estado = disponibilidad._sonda_docker(docker, imagen)
+        if docker_estado != "ok":
+            causa = {"daemon_inactivo": "daemon Docker inaccesible",
+                     "imagen_ausente": "imagen SWE-agent no instalada"}
+            return _comun.error(AGENTE, tarea_id, "AGENTE_NO_CONFIGURADO",
+                                causa.get(docker_estado, "Docker sin verificar"), False)
         ep = _comun.endpoint_modelo(modelo, AGENTE, tarea_id)
     except _comun.ErrorPrevio as e:
         return e.resultado
@@ -28,7 +39,7 @@ def run(tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     try:
         argv = [exe, "run", "--agent.model.name=openai/" + ep["modelo"], "--agent.model.api_base=" + ep["base_url"],
                 "--agent.model.api_key=$RIU_AGENTE_LLM_KEY", "--agent.model.per_instance_cost_limit=0", "--agent.model.total_cost_limit=0",
-                "--env.repo.path=" + p["directorio"], "--env.deployment.image=" + (os.environ.get("RIU_SWEAGENT_IMAGE", "").strip() or IMAGEN_POR_DEFECTO),
+                "--env.repo.path=" + p["directorio"], "--env.deployment.image=" + imagen,
                 "--problem_statement.text=" + p["prompt"], "--output_dir=" + salida]
         inicio = _comun.ahora()
         proc = _comun.ejecutar_proceso(argv, p["directorio"], _comun.entorno_base({"RIU_AGENTE_LLM_KEY": ep["api_key"]}))
