@@ -445,7 +445,11 @@ app.post('/v1/chat/completions', async (req, res) => {
     // tarea_id (cuerpo o cabecera x-tarea-id): modelos locales/Groq/NVIDIA con checkpoint universal (retomar_local.js).
     // Sin tarea_id pero con conv_id se DERIVA <conv_id>-<sha256 de [modelo, modo, mensajes] (12)>: el mismo envio reintentado reanuda, uno distinto es tarea nueva. Sin conv_id nada cambia.
     const explicito = esExterno(model) || esLocal(model), pideRespaldo = req.body.respaldo === true;
-    const plazoModelo = esLocal(model) ? HF_LOCAL_DEADLINE_MS : DEADLINE_MS;
+    // Sonnet MAX y el consejo de 4 modelos requieren margen real de razonamiento.
+    // Los demás modelos conservan exactamente sus plazos originales.
+    const plazoModelo = model === 'web-claude-sonnet' ? Math.max(DEADLINE_MS, 320000)
+      : model === 'swecode-consulta' || model === 'swecode-plan' ? Math.max(DEADLINE_MS, 415000)
+      : esLocal(model) ? HF_LOCAL_DEADLINE_MS : DEADLINE_MS;
     let tareaId = req.body.tarea_id != null ? req.body.tarea_id : req.headers['x-tarea-id'];
     if ((tareaId == null || tareaId === '') && explicito && conv_id != null && conv_id !== '') tareaId = tareaDerivada(conv_id, model, modo, mensajesM, propietarioDe(req));
     const origen = ['yaiwes', 'openclaw'].includes(req.body.origen) ? req.body.origen : undefined;  // origen del contrato: ruta del checkpoint en el Harness
