@@ -102,6 +102,32 @@ export async function nuevaPagina(site, convId) {
   return page;
 }
 
+// Diagnóstico seguro del navegador ya abierto, sin texto, URL, DOM, cookies,
+ // claves, capturas ni identidades. No ejecuta login ni navega por la web.
+export async function diagnosticoAcceso() {
+  const r = {};
+  for (const [site, cfg] of Object.entries(SITES)) {
+    const e = contextos.get(site);
+    if (!e || e.page.isClosed()) { r[site] = { navegador:'SIN_INICIAR' }; continue; }
+    const p = e.page;
+    const visible = async (selectores) => {
+      for (const s of selectores || []) {
+        try { if (await p.locator(s).first().isVisible({ timeout:250 })) return true; }
+        catch { /* selectores no presentes */ }
+      }
+      return false;
+    };
+    r[site] = { navegador:'ABIERTO',
+      auth_url: cfg.sesion_muerta(p.url()),
+      login_visible:await visible([...(cfg.login_visible||[]),'input[type="password"]','form input[type="email"]']),
+      editor_visible:await visible(cfg.input),
+      modelo_selector_visible:await visible(cfg.model_selector),
+      // Es indicador, NO prueba criptográfica de una cuenta autenticada.
+      nota:'Los indicadores no demuestran una respuesta de inferencia.' };
+  }
+  return r;
+}
+
 export function estadoCuentas() {
   const out = {};
   for (const [site, e] of contextos) out[site] = e.cuenta || null;
