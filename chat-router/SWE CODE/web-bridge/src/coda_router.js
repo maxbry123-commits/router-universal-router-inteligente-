@@ -57,12 +57,15 @@ export async function servirCodaRouter(req, res, sse, {modelo, mensajes, sesion,
     modelo, mensajes, propietario || '', conv
   ])).digest('hex').slice(0, 43);
   const mensaje = [...mensajes].reverse().find(m=>m && m.role === 'user')?.content || '';
+  const duracionTexto = /\b([1-4])\s*horas?\b/i.exec(String(mensaje));
+  const duracion = Number(req.body?.duracion_horas || duracionTexto?.[1] || 4);
+  const horas = Number.isFinite(duracion) ? Math.max(1,Math.min(4,duracion)) : 4;
   let pid = null;
   try {
     const job = await llamadaRouter(base, key, 'chat_async', {
       modelo, messages: mensajes, message: String(mensaje),
       sesion: conv, request_id, task_type:'code_largo', modo:'loop',
-      duracion_horas:4, tools:false, agente_tool:false, llm_tool:false,
+      duracion_horas:horas, tools:false, agente_tool:false, llm_tool:false,
     }, fetchFn, AbortSignal.timeout(14000));
     pid = String(job.proceso_id || '');
     if (!/^p-[A-Za-z0-9_-]{1,80}$/.test(pid)) throw new Error('CODA_PID_INVALIDO');
