@@ -147,8 +147,15 @@ function controles() {
   idInvestigacion.setAttribute("aria-label","ID de investigación OpenAI anterior");
   const consultar=el("button","secondary","Consultar investigación");consultar.type="button";consultar.dataset.swenInvestigacionCargar="1";
   recuperar.append(idInvestigacion,consultar);
+  const recImagen = el("div", "row");
+  const idImagen = el("input"); idImagen.type="text"; idImagen.maxLength=32;
+  idImagen.dataset.swenImageId="1"; idImagen.placeholder="ID de imagen guardada";
+  idImagen.value=localStorage.getItem("riu_swen_ultima_imagen_id")||"";
+  idImagen.setAttribute("aria-label","ID de imagen PNG guardada");
+  const bajarImagen=el("button","secondary","Recuperar imagen"); bajarImagen.type="button"; bajarImagen.dataset.swenImagenCargar="1";
+  recImagen.append(idImagen,bajarImagen);
   const estado = el("p", "fila-desc swe-openai-estado", "OpenAI: acceso API independiente. No utiliza la sesión de ChatGPT ni un modelo local traductor.");
-  extras.append(title, source, fila, info, herramientas, recuperar, estado);
+  extras.append(title, source, fila, info, herramientas, recuperar, recImagen, estado);
   c.append(nota, rej, lm, mo, sp, fw, lq, extras, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
   cargarSystemPromptOn().then(pintarControles);  // estado real del bridge en segundo plano; el boton ya nace pintado en ON (defecto) mientras llega
   return c;
