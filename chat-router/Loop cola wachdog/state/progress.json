@@ -11,7 +11,13 @@
       "queue": "watchdog-cycle-test",
       "watchdog": true,
       "status": "IN_PROGRESS",
-      "evidence": []
+      "fragments": ["ping", "watchdog", "cycle test"],
+      "evidence": [
+        {
+          "action": "github_leer",
+          "result": "Watchdog48 localizado; contrato create/tick/heartbeat/control confirmado"
+        }
+      ]
     }
   ]
 }
