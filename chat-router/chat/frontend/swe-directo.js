@@ -392,9 +392,53 @@ async function respuestaDeSSE(response, datos) {
 
 export async function enviarSwe(api, datos) {
   const cuerpo = armar(datos), opc = { method: "POST", body: cuerpo, sse: true };
-  if (datos.signal) opc.signal = datos.signal;
-  let r = await api(rutaSwe(datos.model), opc);
-  if (r && r.__sse) r = await respuestaDeSSE(r.__sse, datos);  // si el servidor respondio JSON normal, r ya es el JSON: camino de siempre
+  // Sólo Groq/NVIDIA: presupuesto de 120 s para envío + streaming + reintentos.
+  // El AbortController abarca también la lectura SSE, no sólo sus cabeceras.
+  const externo = /^(groq|nvidia)\//.test(String(datos.model || ""));
+  const fin = externo ? Date.now() + 120000 : Infinity;
+  const signalUsuario = datos.signal;
+  let r;
+  for (let intento = 0; intento < (externo ? 3 : 1); intento++) {
+    const restante = fin - Date.now();
+    if (externo && restante <= 0) throw new Error("GAP: TIEMPO_LLAMADA_120_S · se agotaron 2 minutos; verifica la respuesta antes de reenviar");
+    const controlador = externo ? new AbortController() : null;
+    const abortar = () => controlador && controlador.abort();
+    if (controlador && signalUsuario) {
+      if (signalUsuario.aborted) throw new Error(DETENIDO);
+      signalUsuario.addEventListener("abort", abortar, { once: true });
+    }
+    const reloj = controlador ? setTimeout(abortar, restante) : null;
+    let parcial = false;
+    try {
+      const signal = controlador ? controlador.signal : signalUsuario;
+      r = await api(rutaSwe(datos.model), { ...opc, ...(signal ? { signal } : {}) });
+      if (r && r.__sse) {
+        r = await respuestaDeSSE(r.__sse, { ...datos, signal, alParcial: (t) => {
+          if (t) parcial = true;
+          if (typeof datos.alParcial === "function") datos.alParcial(t);
+        } });
+      }
+      // Error temporal del proveedor sin ningún token: puede reintentarse.
+      if (externo && r?.error && !parcial && /429|502|503|504|rate.limit|tempor|network|timeout/i.test(JSON.stringify(r.error))) {
+        throw new Error("GAP: PROVEEDOR_TEMPORAL · " + JSON.stringify(r.error).slice(0, 170));
+      }
+      break;
+    } catch (e) {
+      if (signalUsuario?.aborted) throw new Error(DETENIDO);
+      if (externo && Date.now() >= fin) throw new Error("GAP: TIEMPO_LLAMADA_120_S · se agotaron 2 minutos; el modelo no confirmó respuesta");
+      const m = String(e?.message || e);
+      const temporal = [408, 429, 500, 502, 503, 504].includes(e?.status) ||
+        /network|failed to fetch|timeout|tempor|abort|HTTP (408|429|5\\d\\d)|GAP: network error|PROVEEDOR_TEMPORAL/i.test(m);
+      // Sin repetir una inferencia que ya entregó texto ni errores de autenticación.
+      if (!externo || parcial || !temporal || intento === 2) throw e;
+      const pausa = Math.min(1000 * (intento + 1), Math.max(0, fin - Date.now() - 100));
+      if (pausa < 200) throw new Error("GAP: TIEMPO_LLAMADA_120_S · presupuesto de 2 minutos agotado");
+      await new Promise((ok) => setTimeout(ok, pausa));
+    } finally {
+      if (reloj) clearTimeout(reloj);
+      if (signalUsuario && controlador) signalUsuario.removeEventListener("abort", abortar);
+    }
+  }
   const msg = (r && r.choices && r.choices[0] && r.choices[0].message) || {};
   const llamadas = Array.isArray(msg.tool_calls) ? msg.tool_calls.filter(Boolean) : [];
   // R4: una respuesta con tool_calls (con o sin texto) NUNCA pierde las llamadas pendientes: las ejecuta el cliente (OpenClaw) o el SWE-agent, no es un fallo
