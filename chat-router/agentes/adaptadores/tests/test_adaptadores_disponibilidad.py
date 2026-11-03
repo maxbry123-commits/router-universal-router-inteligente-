@@ -130,6 +130,32 @@ def test_swe_agent_no_finge_daemon_ni_imagen(vacio, monkeypatch):
     assert nunca_lanzado(vacio)
 
 
+def test_sonda_docker_real_es_solo_lectura_y_acotada(vacio, monkeypatch):
+    """Una sonda válida solo consulta Docker info e image inspect; no inicia contenedores."""
+    from types import SimpleNamespace
+    consultas = []
+    def falso_run(argv, **kw):
+        consultas.append((list(argv), kw))
+        assert kw["timeout"] <= 4 and kw["stdin"] == disponibilidad.subprocess.DEVNULL
+        return SimpleNamespace(returncode=0)
+    monkeypatch.setattr(disponibilidad.subprocess, "run", falso_run)
+    disponibilidad._CACHE.clear()
+    assert disponibilidad._sonda_docker("/usr/bin/docker", "riu-sweagent:latest") == "ok"
+    assert [c[0][1:3] for c in consultas] == [["info", "--format"], ["image", "inspect"]]
+    assert disponibilidad._sonda_docker("/usr/bin/docker", "riu-sweagent:latest") == "ok"
+    assert len(consultas) == 2  # resultado cacheado, sin crear procesos nuevos
+    disponibilidad._CACHE.clear()
+    consultas.clear()
+
+    def daemon_caido(argv, **kw):
+        consultas.append(argv)
+        return SimpleNamespace(returncode=3)
+    monkeypatch.setattr(disponibilidad.subprocess, "run", daemon_caido)
+    assert disponibilidad._sonda_docker("/usr/bin/docker", "riu-sweagent:latest") == "daemon_inactivo"
+    assert len(consultas) == 1  # no se busca la imagen en daemon caído
+    disponibilidad._CACHE.clear()
+
+
 def test_openhands_solo_si_el_python_importa_el_sdk(vacio, monkeypatch):
     monkeypatch.setenv("RIU_OPENHANDS_PYTHON", sys.executable)
     visto = []
