@@ -22,8 +22,18 @@ export function montarClaves({ root, q, tell }) {
   if (q("#pill-claves") && root.querySelector("#ventana-claves")) return;  // ya montada en ESTE DOM (al volver de Configuracion el panel se rehace: se vuelve a montar la pill)
   const { sheet, caja } = crearVentana(root, { id: "ventana-claves", titulo: "Banco de claves", css: "ventana-claves" });
   caja.querySelectorAll(".cl-cuerpo").forEach((n) => n.remove());  // crearVentana es idempotente: un montaje anterior no deja cuerpos duplicados
-  const abrir = () => { pintar(); estado(); abrirVentana(root, sheet); };
-  agregarPill(q, "pill-claves", "claves ⌄", abrir);
+  // Misma ventana/banco existente: si un agente reporta credencial ausente,
+  // abrirla con la referencia preparada; el secreto solo va al servidor.
+  const abrir = (proveedor = "") => {
+    pintar(); estado(); abrirVentana(root, sheet);
+    if (proveedor === "github" || proveedor === "hf") {
+      const ref = sheet.querySelector('input[aria-label="Referencia"]');
+      const secreto = sheet.querySelector('input[aria-label="Valor secreto"]');
+      if (ref) ref.value = proveedor === "github" ? "github/token" : "hf/token";
+      if (secreto) secreto.focus();
+    }
+  };
+  agregarPill(q, "pill-claves", "claves ⌄", () => abrir());
   window.RIU_BANCO_CLAVES = { abrir }; // el + API/SDK usa ESTA MISMA ventana de Configuración
   const cuerpo = el("div", "cl-cuerpo"); caja.append(cuerpo);
   const msg = el("div", "vn-estado"), msgSwe = el("div", "vn-estado"); msg.setAttribute("role", "status"); msgSwe.setAttribute("role", "status");  // dos lineas: banco Groq/NVIDIA del bridge y banco /vault, sin mezclarlos
