@@ -86,6 +86,14 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
   cfg.gateway ||= {};
   cfg.gateway.controlUi ||= {};
   cfg.gateway.controlUi.basePath = '/openclaw';
+  // GAP real: el openclaw.sh INTEGRADO EN EL SPACE es una copia antigua
+  // y no habilita Chat Completions. GET/POST /v1/* devolvían 404 aunque
+  // el Gateway estuviese levantado. Resolver desde GitHub -> autoconfig,
+  // sin editar manualmente el Space y sin tocar autenticación.
+  cfg.gateway.http ||= {};
+  cfg.gateway.http.endpoints ||= {};
+  cfg.gateway.http.endpoints.chatCompletions ||= {};
+  cfg.gateway.http.endpoints.chatCompletions.enabled = true;
   const previo = cfg.models.providers.swecode || {};
   const previos = new Map((Array.isArray(previo.models) ? previo.models : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]));
   cfg.models.providers.swecode = {
