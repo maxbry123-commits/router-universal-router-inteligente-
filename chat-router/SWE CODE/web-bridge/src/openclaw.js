@@ -59,13 +59,17 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
   // No modifica el agente principal ni otras rutas del Gateway.
   cfg.agents.entries ||= {};
   cfg.agents.entries.main ||= {}; // conserva el destinatario predeterminado del resto del chat.
-  // Root cause confirmado por OpenClaw config validate:
-  // agents.ownership exige flota "explicit" O un único default heredado.
-  // Preservamos el agente MAIN del chat actual y NO cambiamos ownership,
-  // bindings, cuentas, identidad o modelo de los demás agentes.
-  if (cfg.agents.ownership !== 'explicit' &&
-      !Object.values(cfg.agents.entries).some(a => a && a.default === true))
-    cfg.agents.entries.main.default = true;
+  // Contrato canónico de OpenClaw 2026.10: una flota multiagente
+  // NO admite un default:true heredado directo. Registrar ownership explícito
+  // sin inventar propietarios de otras cuentas, y conservar MAIN como el
+  // agente del sistema (no se alteran bindings/pairings/identidades).
+  if (Object.keys(cfg.agents.entries).length > 1 &&
+      cfg.agents.ownership !== 'explicit' &&
+      (cfg.agents.entries.main?.default === true || cfg.agents.ownership == null)) {
+    if (cfg.agents.entries.main?.default === true) delete cfg.agents.entries.main.default;
+    cfg.agents.ownership = 'explicit';
+    cfg.agents.defaults.systemAgent ||= { agentId: 'main' };
+  }
   cfg.agents.entries['swen-council'] = {
     ...(cfg.agents.entries['swen-council'] || {}),
     name:'SWEN · Claude Sonnet (consejero)',
