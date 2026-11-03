@@ -58,6 +58,7 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
   // rota sólo perfiles Anthropic AUTORIZADOS; no crea correos ni evita límites.
   // No modifica el agente principal ni otras rutas del Gateway.
   cfg.agents.entries ||= {};
+  cfg.agents.entries.main ||= {}; // conserva el destinatario predeterminado del resto del chat.
   cfg.agents.entries['swen-council'] = {
     ...(cfg.agents.entries['swen-council'] || {}),
     name:'SWEN · Claude Sonnet (consejero)',
