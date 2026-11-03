@@ -116,11 +116,15 @@ export const recuperar = async (c, burbuja, api) => {
   const vistos = new Set(), l = [];
   for (const m of [...(await idbLeer(c.sesion)), ...cache(c.sesion), ...(memo[c.sesion] || [])]) { const k = m.ts + m.rol + m.texto; if (!vistos.has(k)) { vistos.add(k); l.push(m); } }
   const rem = api ? await delRouter(api, c.sesion) : null;
-  // Si el usuario envía un mensaje mientras respondía /memoria, no repintar ni
-  // sobreescribir el historial vivo con el snapshot anterior.
-  if (c.ocupado) return { total: cargarHistorial(c.sesion).length, router: 0, routerOk: rem !== null };
+  // El usuario pudo escribir y recibir una respuesta MIENTRAS el Router
+  // consultaba su memoria. Incluir los mensajes vivos tras el await.
   const llave = (m) => String(m.ts || 0) + "\u0000" + m.rol + "\u0000" + String(m.texto || "");
   const ya = new Set(l.map(llave));
+  for (const m of memo[c.sesion] || []) if (!ya.has(llave(m))) {
+    l.push(m); ya.add(llave(m));
+  }
+  // No repintar una inferencia que está en curso ni perder el pending/SSE.
+  if (c.ocupado) return { total: cargarHistorial(c.sesion).length, router: 0, routerOk: rem !== null };
   let nuevos = 0;
   for (const m of rem || []) if (m.texto && !ya.has(llave(m))) { l.push(m); ya.add(llave(m)); nuevos++; }
   l.sort((a, b) => (a.ts || 0) - (b.ts || 0));
