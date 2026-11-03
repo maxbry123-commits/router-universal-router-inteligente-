@@ -133,7 +133,7 @@ async def generar(*, mensajes: list[dict], modelo: str, pid: str, n_lineas: int,
             texto = str(r.get("texto") or "")
             if r.get("tool_calls"):
                 raise ValueError("CODA_TOOLS_INESPERADAS")
-            ok, resultado, cuenta = _valida(texto, faltan, hashes)
+            ok, resultado, cuenta = _valida(texto, pedir_lineas, hashes)
             if not ok:
                 raise ValueError("CODA_" + resultado + ": recibidas=" + str(cuenta)
                                  + " limite=" + str(pedir_lineas))
