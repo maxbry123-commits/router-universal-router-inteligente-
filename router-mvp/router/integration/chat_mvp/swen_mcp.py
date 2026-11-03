@@ -16,6 +16,8 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
+import subprocess
 import threading
 import time
 import urllib.error
@@ -112,6 +114,24 @@ def _inferencia_y_checkpoint(pid, modelo, mensaje, sesion, timeout, firma):
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
+    if mensaje.strip() == "@swen/autotest":
+        # Suite fija de nuestro repositorio, nunca comandos externos arbitrarios.
+        raiz = Path(__file__).resolve().parents[4]
+        test = raiz / "chat-router" / "SWE CODE" / "web-bridge" / "test" / "autoreparacion.test.mjs"
+        node = shutil.which("node")
+        if not node or not test.is_file():
+            return {"estado":"error","error":"SWEN_AUTOTEST_SIN_NODE_O_ARCHIVO"}
+        try:
+            r = subprocess.run([node,"--test",str(test)], cwd=str(raiz),text=True,
+                               capture_output=True,timeout=40,check=False,
+                               env={**os.environ,"OPENCLAW_ENABLE":"0"})
+            output=(r.stdout+"\n"+r.stderr)[-6000:]
+            return {"estado":"terminado" if r.returncode==0 else "error",
+                    "diagnostico":"autorreparacion_test",
+                    "pass":r.returncode==0,"codigo_salida":r.returncode,
+                    "resumen":output}
+        except (OSError,subprocess.TimeoutExpired):
+            return {"estado":"error","error":"SWEN_AUTOTEST_FALLO_TIMEOUT"}
     if mensaje.strip() == "@swen/gaps":
         req = urllib.request.Request("http://127.0.0.1:7870/v1/swen/gaps",
                                      headers={"X-API-Key": _clave()})
