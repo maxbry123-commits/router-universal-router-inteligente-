@@ -24,14 +24,14 @@ def _core():
     core = (FICHA / 'system_core.md').read_text(encoding='utf-8')
     for k, v in VARS.items():
         core = core.replace(k, v)
-    core = core.replace('[MODO]\\n(ver bloque_1.md)\\n', '').replace('\\nEmpieza ahora.\\n', '\\n')
-    core = re.sub(r'\\n=+ FIN INPUT BLOCK MAESTRO UNIFICADO =+\\n', '\\n', core)
+    core = core.replace('[MODO]\n(ver bloque_1.md)\n', '').replace('\nEmpieza ahora.\n', '\n')
+    core = re.sub(r'\n=+ FIN INPUT BLOCK MAESTRO UNIFICADO =+\n', '\n', core)
     return core.strip()
 
 
 def sistema():
     """Core + bloques completos 3 y 4. Contrato original, sin cambios."""
-    return '\\n\\n'.join([_core(),
+    return '\n\n'.join([_core(),
                           (FICHA / 'bloques/bloque_3.md').read_text(encoding='utf-8').strip(),
                           (FICHA / 'bloques/bloque_4.md').read_text(encoding='utf-8').strip()])
 
@@ -42,7 +42,7 @@ def sistema_groq():
     Esta síntesis conserva reglas esenciales de programación y verificación,
     sin recortar ni modificar el input del usuario o su Constitución.
     """
-    return '\\n\\n'.join([_core(),
+    return '\n\n'.join([_core(),
         "[CONTRATO CODIGO] Respeta la estructura, rutas y archivos del repositorio, "
         "nunca inventes resultados de herramientas ni secretos; input del usuario "
         "verbatim, cambios mínimos, validación antes de cada commit y un ejecutor por tarea.",
