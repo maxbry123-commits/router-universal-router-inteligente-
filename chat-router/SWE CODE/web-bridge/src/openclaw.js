@@ -70,6 +70,19 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
         'sessions_spawn','sessions_send','message','gateway','nodes','canvas',
         'mcp__*','swe_tool_llamar','yaiwes_*']},
   };
+  // Agente recuperador de solo lectura. No toca perfiles, cuotas ni permisos,
+  // no modifica GitHub: el operador valida cambios y el motor aplica sólo
+  // recuperaciones técnicas reversibles.
+  cfg.agents.entries['swen-repair'] = {
+    ...(cfg.agents.entries['swen-repair'] || {}),
+    name:'SWEN · Investigación de GAPS',
+    thinkingDefault:'high',
+    skills:[],
+    tools:{profile:'minimal',allow:['read','web_search','web_fetch','session_status'],
+      deny:['exec','write','edit','apply_patch','browser','group:runtime',
+        'group:messaging','sessions_spawn','sessions_send','message','cron',
+        'gateway','nodes','canvas','mcp__*','swe_tool_llamar','yaiwes_*']},
+  };
   cfg.gateway ||= {};
   cfg.gateway.controlUi ||= {};
   cfg.gateway.controlUi.basePath = '/openclaw';
