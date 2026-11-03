@@ -9,6 +9,19 @@ const STATE = process.env.BRIDGE_STATE_DIR || './state';
 const PROXY = process.env.BRIDGE_PROXY || null; // http://user:pass@host:port (residencial opcional)
 
 const contextos = new Map(); // site -> {ctx, page, cuenta}
+// Último motivo de fallo de sesión por sitio (sin datos personales) para @swen/diag.
+const ultimoFallo = new Map(); // site -> {code, ts}
+// Desafíos anti-bot: no se resuelven ni eluden; se informa al titular.
+const RETO = ['iframe[src*="captcha" i]', 'iframe[src*="recaptcha" i]', 'iframe[src*="hcaptcha" i]',
+  '[id*="captcha" i]', '[class*="captcha" i]', '#nc_1_wrapper', '[id*="nocaptcha" i]', 'iframe[src*="turnstile" i]'];
+async function hayReto(page) {
+  for (const s of RETO) { try { if (await page.locator(s).first().isVisible({ timeout: 300 })) return true; } catch {} }
+  return false;
+}
+function fallo(site, code, msg) {
+  ultimoFallo.set(site, { code, ts: Date.now() });
+  return Object.assign(new Error(msg || code), { code, site });
+}
 const paginas = new Map();   // convId -> {page, site}
 const cola = [];             // espera de slot de tab
 const MAX_TABS = parseInt(process.env.BRIDGE_MAX_TABS || '4', 10);
@@ -52,7 +65,17 @@ async function asegurarSitio(site) {
   if (page.isClosed()) { contextos.delete(site); return asegurarSitio(site); }
 
   try { await page.goto(cfg.url, { waitUntil:'domcontentloaded', timeout:45000 }); }
-  catch { throw Object.assign(new Error('WEB_SITIO_NO_RESPONDE'),{code:'WEB_SITIO_NO_RESPONDE'}); }
+  catch {
+    // Auto-reparación NO destructiva: un solo reciclado del contexto (mismo perfil) y reintento.
+    if (!entry._reciclado) {
+      contextos.delete(site);
+      await entry.ctx.close().catch(() => {});
+      const nuevo = await lanzar(site); nuevo._reciclado = true; contextos.set(site, nuevo);
+      return asegurarSitio(site);
+    }
+    throw fallo(site, 'WEB_SITIO_NO_RESPONDE');
+  }
+  entry._reciclado = false;
   await pasarAgeGate(page, cfg); // Verificación oficial requerida; no saltarla.
   const expirada = await necesitaLogin(page, cfg);
   if (cfg.manual_login) {
@@ -64,13 +87,16 @@ async function asegurarSitio(site) {
       }
       return false;
     })();
-    if (expirada || !editor)
-      throw Object.assign(new Error('CLAUDE_WEB_REQUIERE_SESION_AUTORIZADA'),
-        { code: 'SESSION_EXPIRED', site });
+    if (expirada || !editor) {
+      const f = fallo(site, 'SESSION_EXPIRED', 'CLAUDE_WEB_REQUIERE_SESION_AUTORIZADA');
+      f.motivo = (await hayReto(page)) ? 'RETO_ANTIBOT' : 'SIN_SESION_EN_PERFIL';
+      ultimoFallo.set(site, { code: f.code, motivo: f.motivo, ts: Date.now() });
+      throw f;
+    }
     entry.cuenta = { tipo:'sesion_web_autorizada', site };
     return entry;
   }
-  if (!expirada) { entry.cuenta = cuentaActual(); return entry; }
+  if (!expirada) { ultimoFallo.delete(site); entry.cuenta = cuentaActual(); return entry; }
 
   // sesion caida: intenta login con cuenta actual, rota hasta agotar
   const total = cuentaActual().total;
@@ -79,11 +105,19 @@ async function asegurarSitio(site) {
     let ok=false;
     try { ok=await login(page, cfg, c.email, clave()); }
     catch (e) { if (e?.code === 'AGE_VERIFICATION_REQUIRED') throw e; }
-    if (ok) { await pasarAgeGate(page, cfg); entry.cuenta = c; return entry; }
+    if (ok) { await pasarAgeGate(page, cfg); ultimoFallo.delete(site); entry.cuenta = c; return entry; }
+    // Reto anti-bot (captcha/slider): headless no puede resolverlo; rotar cuentas
+    // solo quema intentos. Fallar cerrado con causa distinguible.
+    if (await hayReto(page)) {
+      const r = fallo(site, 'SESSION_EXPIRED', 'WEB_RETO_ANTIBOT_REQUIERE_TITULAR');
+      r.motivo = 'RETO_ANTIBOT'; ultimoFallo.set(site, { code: r.code, motivo: r.motivo, ts: Date.now() });
+      throw r;
+    }
     rotar(); // siguiente correo, misma clave
   }
-  const e = new Error('SESSION_EXPIRED: todas las cuentas fallaron');
-  e.code = 'SESSION_EXPIRED';
+  const e = fallo(site, 'SESSION_EXPIRED', 'SESSION_EXPIRED: todas las cuentas fallaron');
+  e.motivo = total ? 'LOGIN_RECHAZADO_TODAS_CUENTAS' : 'SIN_CUENTAS_CONFIGURADAS';
+  ultimoFallo.set(site, { code: e.code, motivo: e.motivo, ts: Date.now() });
   throw e;
 }
 
@@ -138,7 +172,10 @@ export async function diagnosticoAcceso() {
   const r = {};
   for (const [site, cfg] of Object.entries(SITES)) {
     const e = contextos.get(site);
-    if (!e || e.page.isClosed()) { r[site] = { navegador:'SIN_INICIAR' }; continue; }
+    const perfil = path.join(STATE, 'perfiles', site);
+    const base = { perfil_absoluto: path.isAbsolute(STATE), perfil_existe: fs.existsSync(perfil),
+      ultimo_fallo: ultimoFallo.get(site) || null };
+    if (!e || e.page.isClosed()) { r[site] = { navegador:'SIN_INICIAR', ...base }; continue; }
     const p = e.page;
     const visible = async (selectores) => {
       for (const s of selectores || []) {
@@ -147,7 +184,7 @@ export async function diagnosticoAcceso() {
       }
       return false;
     };
-    r[site] = { navegador:'ABIERTO',
+    r[site] = { navegador:'ABIERTO', ...base, reto_antibot: await hayReto(p),
       auth_url: cfg.sesion_muerta(p.url()),
       login_visible:await visible([...(cfg.login_visible||[]),'input[type="password"]','form input[type="email"]']),
       editor_visible:await visible(cfg.input),
