@@ -37,7 +37,8 @@ def ejecutable(ruta, cuerpo="#!/bin/sh\necho v-falsa 1.2.3\n"):
 
 
 def cap():
-    return disponibilidad.capacidades(sonda_openhands=lambda py: True, sonda_gateway=lambda u: False, sonda_hf=lambda u: True)["agentes"]
+    return disponibilidad.capacidades(sonda_openhands=lambda py: True, sonda_gateway=lambda u: False,
+                                     sonda_hf=lambda u: True, sonda_docker=lambda exe, imagen: "ok")["agentes"]
 
 
 # ---------------- ruta de busqueda ----------------
