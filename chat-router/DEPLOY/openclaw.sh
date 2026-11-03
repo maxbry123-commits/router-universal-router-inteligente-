@@ -159,13 +159,25 @@ gw["trustedProxies"] = ["127.0.0.1", "::1"]
 tp = auth.setdefault("trustedProxy", {})
 tp["allowLoopback"] = True
 tp["userHeader"] = "x-forwarded-user"
-# --- provider swecode (SOLO 14 modelos del json del repo) ---
+# --- provider swecode: merge conservador (no borrar Anthropic ni perfiles ya configurados) ---
 try:
     sw = json.loads(Path("/swecode_provider.json").read_text())
-    cfg["models"] = sw["models"]  # replace: solo provider swecode
+    # No borrar providers Anthropic/OAuth ni modelos admitidos del Gateway al reiniciar.
+    # Conservar las sesiones/autorizaciones que el operador configuró legalmente.
+    modelcfg = cfg.setdefault("models", {})
+    modelcfg.setdefault("providers", {}).update(sw["models"].get("providers", {}))
     ad = cfg.setdefault("agents", {}).setdefault("defaults", {})
-    ad["model"] = sw["agents"]["defaults"]["model"]
-    ad["models"] = sw["agents"]["defaults"]["models"]  # allowlist solo swecode/*
+    # No cambiar el modelo principal del Gateway si ya lo eligió su propietario.
+    ad.setdefault("model", sw["agents"]["defaults"]["model"])
+    ad.setdefault("models", {}).update(sw["agents"]["defaults"]["models"])
+    # Permitir SOLO Sonnet para el consejero dedicado, no lo convierte en default.
+    ad["models"].setdefault("anthropic/claude-sonnet-5-5", {})
+    agents = cfg.setdefault("agents", {}).setdefault("entries", {})
+    counsel = agents.setdefault("swen-council", {})
+    counsel.update({"name":"SWEN Claude Sonnet 5.5","model":{"primary":"anthropic/claude-sonnet-5-5","fallbacks":[]},
+      "thinkingDefault":"max","skills":[],
+      "tools":{"profile":"minimal","allow":["session_status"],
+        "deny":["group:fs","group:runtime","group:web","group:messaging","browser","exec","write","apply_patch","cron"]}})
     for prov, var in (("groq", "GROQ_API_KEY"), ("nvidia", "NVIDIA_API_KEY")):
         pv = cfg["models"]["providers"].get(prov)
         if pv is None: continue
