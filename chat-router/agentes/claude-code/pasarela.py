@@ -15,8 +15,16 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from normalizar import (anthropic_a_openai, estimar_tokens, modelo_destino,
                         openai_a_anthropic)
 
-UPSTREAM = os.environ.get(
-    "NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1/chat/completions")
+# Reutilizar el bridge del MISMO Space si el Router arranca esta pasarela.
+# El bridge ya tiene el banco cifrado y la ruta NVIDIA; no requiere claves nuevas.
+# Si no se activa este modo, el comportamiento NVIDIA directo sigue intacto.
+MODO_BRIDGE = os.environ.get("RIU_CLAUDE_PASARELA_BRIDGE") == "1"
+_PUERTO_BRIDGE = os.environ.get("BRIDGE_PORT", "7870")
+if not _PUERTO_BRIDGE.isdecimal() or not (1 <= int(_PUERTO_BRIDGE) <= 65535):
+    _PUERTO_BRIDGE = "7870"
+UPSTREAM = ("http://127.0.0.1:" + _PUERTO_BRIDGE + "/v1/chat/completions"
+            if MODO_BRIDGE else os.environ.get(
+                "NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1/chat/completions"))
 PUERTO = int(os.environ.get("PUERTO_PASARELA", "8082"))
 
 app = FastAPI(title="pasarela-claude-code-nvidia")
@@ -28,10 +36,13 @@ def _clave():
 
 
 def _cabeceras():
-    return {
-        "Authorization": f"Bearer {_clave()}",
-        "Content-Type": "application/json",
-    }
+    if MODO_BRIDGE:
+        # Auth exclusivamente loopback: la clave permanece dentro del backend.
+        clave = os.environ.get("RIU_API_KEY", "").strip()
+        if not clave:
+            raise RuntimeError("CLAVE_BRIDGE_AUSENTE")
+        return {"X-API-Key": clave, "Content-Type": "application/json"}
+    return {"Authorization": f"Bearer {_clave()}", "Content-Type": "application/json"}
 
 
 def _sse(evento, datos):
