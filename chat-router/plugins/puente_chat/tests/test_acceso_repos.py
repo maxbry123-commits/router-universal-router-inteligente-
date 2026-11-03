@@ -29,7 +29,7 @@ def test_lectura_y_escritura_tienen_main_por_defecto_sin_modificar_otras_ramas()
 
 def test_github_salud_detecta_permisos_por_repo_y_nunca_exhibe_token():
     with patch.object(h, "_resolver_repo", side_effect=lambda x: x), \
-         patch.object(h, "_token_gh", return_value="credencial-ficticia-solo-test"), \
+         patch.object(h, "_token_gh", side_effect=lambda repo, escritura=False: "" if escritura else "credencial-ficticia-solo-test"), \
          patch.object(h, "_peticion", return_value=(200, {"permissions": {"pull": True, "push": False}})):
         r = h.github_salud({"repo": "Maxbry-AGI"})
     assert r["authenticated"] is True and r["read"] is True and r["push"] is False
