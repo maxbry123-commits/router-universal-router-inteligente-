@@ -178,9 +178,17 @@ def _consulta(modelo, mensaje, sesion, timeout):
             # --json: sólo revelar rutas de campos con error de esquema,
             # nunca valores de configuración, perfiles o secretos.
             paths_json=[]
+            datos_clase="SIN_JSON"
+            raiz_campos=[]
             try:
                 obj=json.loads(run.stdout)
-                errores=obj.get("errors") or obj.get("issues") or []
+                if isinstance(obj,dict):
+                    datos_clase="JSON_OBJETO"
+                    raiz_campos=sorted(x for x in obj.keys() if x in
+                        ("ok","valid","errors","issues","path","details","error","message","warnings"))
+                else:
+                    datos_clase="JSON_OTRO"
+                errores=(obj.get("errors") or obj.get("issues") or []) if isinstance(obj,dict) else []
                 if isinstance(errores,list):
                     for item in errores[:20]:
                         if not isinstance(item,dict): continue
@@ -204,7 +212,7 @@ def _consulta(modelo, mensaje, sesion, timeout):
             else:
                 tipo = "ERROR_NO_CLASIFICADO"
             paths = sorted(set(re.findall(
-                r"(?:gateway|agents|models|tools)\\.[A-Za-z0-9_.\\[\\]-]{1,80}",salida)))
+                r"(?:gateway|agents|models|tools)\.[A-Za-z0-9_.\[\]-]{1,80}",salida)))
             # Publicar sólo líneas diagnósticas redactadas, sin valores/config.
             pistas=[]
             for linea in (run.stderr+"\\n"+run.stdout).splitlines():
@@ -218,6 +226,8 @@ def _consulta(modelo, mensaje, sesion, timeout):
             return {"estado":"terminado","diagnostico":"schema_openclaw",
                     "config_valida":run.returncode==0, "tipo":tipo,
                     "campos":sorted(set(paths+paths_json))[:12], "pistas":pistas[:6],
+                    "json_tipo":datos_clase, "json_campos":raiz_campos,
+                    "salidas":{"stdout":bool(run.stdout.strip()),"stderr":bool(run.stderr.strip())},
                     "codigo_salida":run.returncode}
         except (OSError,subprocess.TimeoutExpired):
             return {"estado":"error","error":"OPENCLAW_DOCTOR_NO_DISPONIBLE"}
