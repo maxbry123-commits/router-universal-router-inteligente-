@@ -27,3 +27,13 @@ test('error definitivo 413 llega como tal sin reintentar', async () => {
   await assert.rejects(enviarSwe(api,base), /PROVEEDOR_HTTP_413/);
   assert.equal(calls,1);
 });
+
+test('corte en argumentos no entrega herramientas incompletas para ejecutar', async () => {
+  let reads=0, calls=0;
+  const api=async()=>{calls++;return {__sse:new Response(new ReadableStream({pull(c){
+    if(reads++===0)c.enqueue(enc.encode(evento({tool_calls:[{index:0,id:'t1',function:{name:'github_escribir',arguments:'{"ruta":'}}]})));
+    else c.error(new Error('network disconnected'));
+  }}))};};
+  await assert.rejects(enviarSwe(api,base),/STREAM_CORTADO/);
+  assert.equal(calls,1);
+});

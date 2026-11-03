@@ -61,6 +61,8 @@ def test_formato_system_conserva_instrucciones_codigo_y_usuario():
     out = e._sistemas_sin_blancos(msgs)
     assert out[0]['content'] == 'Regla A\nRegla B\n```python\nx = """\n\ntexto\n"""\n```\nFin\n'
     assert out[1] is user and msgs[0]['content'] == system
+    decorado = [{'role':'system', 'content':'================ REGLAS ================\n' + '=' * 112 + '\nNo borrar.\n'}]
+    assert e._sistemas_sin_blancos(decorado)[0]['content'] == 'REGLAS\nNo borrar.\n'
 
 
 def test_limite_numerico_no_expone_cuerpo_error():
