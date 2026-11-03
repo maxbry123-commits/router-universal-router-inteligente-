@@ -50,3 +50,23 @@ def sistema_groq():
         "resultados; separa PASS, GAP y BLOQUEO. Confirma commits y ejecución real "
         "antes de declarar completada una tarea; si una dependencia falla, deja "
         "checkpoint recuperable sin ocultar el error."]) 
+
+
+def wordflow_loop():
+    """Extension SOLO para LOOP: los tres documentos canonicos, entregados completos.
+
+    El System Prompt principal sigue en sistema(); este modo NO reemplaza
+    el Core ni los bloques 3/4. Archivo ausente = fail closed.
+    """
+    root = FICHA / 'wordflow_loop'
+    archivos = ('DIRECTOR-CODE-GRAPH-METHODS.md', 'GRAPHIFY-MVP-INTEGRATION.md', 'SYSTEM_PROMPT.md')
+    partes = []
+    for nombre in archivos:
+        try:
+            contenido = (root / nombre).read_text(encoding='utf-8').strip()
+        except (OSError, UnicodeError) as exc:
+            raise RuntimeError('SYSTEM_PROMPT_EXTENSION_MISSING: ' + nombre) from exc
+        if not contenido:
+            raise RuntimeError('SYSTEM_PROMPT_EXTENSION_MISSING: ' + nombre)
+        partes.append(contenido)
+    return '\n\n'.join(partes)
