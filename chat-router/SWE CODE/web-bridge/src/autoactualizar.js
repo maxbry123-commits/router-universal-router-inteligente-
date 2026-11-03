@@ -1,6 +1,6 @@
 // autoactualizar.js — el bridge se actualiza solo: el Space baja `main` al clon (autopull del Router) pero solo recarga el Router MVP.
 // Si cambia algo de SWE CODE / SWE CODE free (o el formato de salida que lee el bridge), el bridge se relanza solo: sin reiniciar el Space.
-import { execFile, spawn } from 'node:child_process';
+import { execFile, execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -8,6 +8,17 @@ import { fileURLToPath } from 'node:url';
 
 export const RUTAS = ['chat-router/SWE CODE/', 'chat-router/SWE CODE free/', 'chat-router/chat/backend/mvp/prompts/', 'router-mvp/fichas/system-prompt/'];
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
+// Solo diagnostico de Git: permite verificar que el autopull GitHub->clone
+// realmente trajo main, incluso si se difiere el reinicio del Router.
+// No hace fetch/pull/restart, no expone credenciales ni rutas privadas.
+export function versionCheckout(repo = process.env.BRIDGE_REPO || path.resolve(AQUI, '../../../..'), ejecutar = execFileSync) {
+  try {
+    const sha = String(ejecutar('git', ['-C', repo, 'rev-parse', 'HEAD'],
+      { timeout: 1500, encoding: 'utf8' })).trim();
+    return /^[0-9a-f]{40}$/i.test(sha) ? sha.slice(0, 10) : null;
+  } catch { return null; }
+}
+
 const git = (repo, args) => new Promise((ok, no) => execFile('git', ['-C', repo, ...args], { timeout: 20000 }, (e, out) => (e ? no(e) : ok(String(out).trim()))));
 
 // node --check de cada .js tocado (dentro de RUTAS y aun presente): se copia a .mjs para comprobar solo la sintaxis, sea CJS o ESM. Devuelve los nombres que no compilan.
