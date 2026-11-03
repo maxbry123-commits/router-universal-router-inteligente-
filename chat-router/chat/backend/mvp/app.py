@@ -666,7 +666,9 @@ async def _codigo_largo_comun(modelo, mensajes, opciones, q, lineas, progreso=No
             "modelo_respuesta": modelo, "herramientas_usadas": [],
             "metricas": {"lineas_verificadas": res["lineas"],
                         "partes": res["partes"], "desde_checkpoint": res["desde_checkpoint"],
-                        "sha256": res.get("sha256")}}
+                        "sha256": res.get("sha256"),
+                        "validacion_tipo": res.get("validacion_tipo", "PASS_SINTAXIS"),
+                        "ejecucion_real": False, "publicacion_confirmada": False}}
 
 async def _local(pid, cuerpo):
     _PID.set(pid); _SES.set(str(cuerpo.get("sesion") or (cuerpo.get("qwen") or {}).get("sesion") or "")[:60])
