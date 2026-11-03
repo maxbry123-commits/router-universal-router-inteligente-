@@ -11,9 +11,19 @@ const memo = {};
 const idb = () => new Promise((ok, no) => { const r = indexedDB.open("riu_hist", 1); r.onupgradeneeded = () => r.result.createObjectStore("h"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
 const idbLeer = async (k) => { try { const d = await idb(); return await new Promise((ok) => { const q = d.transaction("h").objectStore("h").get(k); q.onsuccess = () => ok(Array.isArray(q.result) ? q.result : []); q.onerror = () => ok([]); }); } catch (e) { return []; } };
 const idbEscribir = async (k, v) => { try { const d = await idb(); await new Promise((ok) => { const tx = d.transaction("h", "readwrite"); if (v === null) tx.objectStore("h").delete(k); else tx.objectStore("h").put(v, k); tx.oncomplete = ok; tx.onerror = ok; tx.onabort = ok; }); } catch (e) {} };
+// Serializar escrituras por sesión: un guardado anterior no puede sobrescribir
+// mensajes posteriores al completar fuera de orden en IndexedDB.
+const escrituras = new Map();
+const idbEnCola = (sesion, lista) => {
+  const anterior = escrituras.get(sesion) || Promise.resolve();
+  const siguiente = anterior.catch(() => {}).then(() => idbEscribir(sesion, lista));
+  escrituras.set(sesion, siguiente);
+  siguiente.then(() => { if (escrituras.get(sesion) === siguiente) escrituras.delete(sesion); });
+  return siguiente;
+};
 const cache = (sesion) => { const t = leer(CLAVE_HIST) || {}; return Array.isArray(t[sesion]) ? t[sesion] : []; };
 export const cargarHistorial = (sesion) => memo[sesion] || cache(sesion);
-const guardar = (sesion) => { idbEscribir(sesion, memo[sesion]); const t = leer(CLAVE_HIST) || {}; t[sesion] = memo[sesion].slice(-40); escribir(CLAVE_HIST, t); };
+const guardar = (sesion) => { idbEnCola(sesion, memo[sesion].slice()); const t = leer(CLAVE_HIST) || {}; t[sesion] = memo[sesion].slice(-40); escribir(CLAVE_HIST, t); };
 // ---- respaldo en el Router: cada mensaje COMPLETO (user/bot/err, sin recorte) va a /memoria (SQLite + sync al bucket); si falla, queda en cola y se reintenta ----
 let API = null; const CLAVE_PEND = "riu_hist_pend_v1", SC_HIST = "chat-ui:hist:", SC_TABS = "chat-ui:pestanas";
 const pend = () => leer(CLAVE_PEND) || [];
@@ -36,13 +46,26 @@ export const reemplazar = (sesion, viejo, nuevo) => {  // editar una salida SUST
   for (let i = l.length - 1; i >= 0; i--) if (l[i].rol !== "user" && l[i].texto === viejo) { l[i].texto = nuevo; guardar(sesion); subirMsg(sesion, l[i]); return true; }  // misma llave: el registro más nuevo manda
   return false;
 };
-export const olvidar = (sesion) => { marcarBorrado(sesion); delete memo[sesion]; idbEscribir(sesion, null); const t = leer(CLAVE_HIST) || {}; delete t[sesion]; escribir(CLAVE_HIST, t); };  // solo al eliminar ese chat
+export const olvidar = (sesion) => { marcarBorrado(sesion); delete memo[sesion]; idbEnCola(sesion, null); const t = leer(CLAVE_HIST) || {}; delete t[sesion]; escribir(CLAVE_HIST, t); };  // solo al eliminar ese chat
 // vuelve a pintar el historial completo en el chat c (c.hist = contenedor). burbuja = la funcion de panel-chat.js
 export const restaurar = async (c, burbuja) => {
-  const completo = await idbLeer(c.sesion), corto = cache(c.sesion), ult0 = completo.length ? completo[completo.length - 1].ts : 0;
-  const l = completo.concat(corto.filter((m) => m.ts > ult0)); memo[c.sesion] = l;
+  const completo = await idbLeer(c.sesion);
+  const corto = cache(c.sesion), enVivo = memo[c.sesion] || [];
+  const vistos = new Set(), l = [];
+  // No perder entradas si el usuario escribió mientras IndexedDB estaba abriendo.
+  for (const m of [...completo, ...corto, ...enVivo]) {
+    if (!m || typeof m !== "object") continue;
+    const id = String(m.ts || 0) + "\\u0000" + m.rol + "\\u0000" + String(m.texto || "");
+    if (!vistos.has(id)) { vistos.add(id); l.push(m); }
+  }
+  l.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  memo[c.sesion] = l;
+  if (l.length) guardar(c.sesion); // restablecer la copia completa tras un envío concurrente
+  // El DOM contiene el progreso del turno activo: jamás sobrescribirlo.
+  if (c.ocupado) return;
   if (!l.length) return;
-  for (const m of l) c.hist.append(m.rol === "user" ? burbuja(m.texto, "user") : m.rol === "err" ? burbuja(m.texto, "error") : burbuja(m.texto));
+  c.hist.replaceChildren(...l.map((m) =>
+    m.rol === "user" ? burbuja(m.texto, "user") : m.rol === "err" ? burbuja(m.texto, "error") : burbuja(m.texto)));
   const ult = l[l.length - 1];
   if (ult.rol === "user" && !(window.RIU_PENDIENTE && window.RIU_PENDIENTE(c.sesion))) c.hist.append(burbuja("La respuesta se interrumpió al recargar la página. Reenvía tu mensaje si hace falta.", "meta"));
 };
