@@ -35,7 +35,7 @@ import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
 import { preambulo } from './modos.js';
 import { montarRutasSwe } from './swe_rutas.js';
 import { montarResponses } from './responses.js';
-import { conSystemPrompt, conSystemPromptTexto, consultarPromptRouter } from './systemprompt.js';
+import { conSystemPrompt, conSystemPromptTexto, consultarPromptRouter, setSystemPromptOn } from './systemprompt.js';
 
 // sin variables nuevas en Hugging Face: SWECODE_URL_S1..S3 y RIU_DEEPSEEK_HARNESS_URL (Harness local del Space) toman su default SOLO si no estan definidas (src/defaults.js)
 aplicarDefectos(process.env);
@@ -313,6 +313,22 @@ app.delete('/v1/claves', async (_req, res) => {
   res.json({ ok: true, ...conteo(), ...(await persistir(true)) });  // se publica el banco ya vacio
 });
 
+// Sincronizacion periodica con la autoridad del Router: un solo estado ON/OFF.
+// Si el Router no responde, el bridge sigue atendiendo modelos y fuerza
+// el prompt compartido OFF (nunca informa que esta ON sin confirmacion).
+let promptVerificadoHasta = 0, promptConsulta = null;
+async function sincronizarPromptParaInferencia() {
+  if (Date.now() < promptVerificadoHasta) return;
+  if (!promptConsulta) {
+    promptConsulta = (async () => {
+      try { await consultarPromptRouter(); }
+      catch { setSystemPromptOn(false); }
+      promptVerificadoHasta = Date.now() + 5000;
+    })().finally(() => { promptConsulta = null; });
+  }
+  await promptConsulta;
+}
+
 // toggle ON/OFF del system-prompt de la ficha del Router MVP (systemprompt.js); defecto ON. Afecta a TODOS los modelos (Groq/NVIDIA/HF local/web-*)
 // del chat directo y de OpenClaw, via conPreambulo/prompt en /v1/chat/completions (mismo pipeline)
 app.get('/v1/system-prompt-on', async (_req, res) => {
@@ -429,6 +445,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (conv_id != null && !/^[\w-]{1,80}$/.test(String(conv_id))) return res.status(400).json({ error: { code: 'CONV_ID_INVALIDO', message: 'conv_id: letras, numeros, - y _ (max 80)' } });
     if (model.startsWith('web-') && !MODELOS_WEB[model.slice(4)]) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     if (Array.isArray(documentos) && documentos.length > MAX_DOCS) return res.status(413).json({ error: { code: 'DEMASIADOS_DOCUMENTOS', max: MAX_DOCS } });
+    await sincronizarPromptParaInferencia(); // todos los proveedores, incluidos HF local y web
     // La UI nativa de OpenClaw no incorpora un boton: sus tareas y tool_calls
     // llevan la ficha activada aunque el chat YAIWES haya apagado SU interruptor.
     const forzarPromptOpenClaw = req.body.origen === 'openclaw' || req.body.ejecutor_tools === 'openclaw';
