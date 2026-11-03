@@ -61,3 +61,39 @@ Prueba reproducible: `tests/swen_selector_3x.mjs` (Node 22, sin paquetes adicion
 🚩 No dar por hecho que el código ya está desplegado o que hay disponibilidad real sin estos resultados.
 
 **La ejecución con distintos agentes está cableada a los adaptadores existentes y depende de instalación, permisos y políticas del Harness; la configuración actual no acredita por sí sola que OpenClaw sea siempre el orquestador cuando se selecciona otro ejecutor.**
+
+## Revisión adicional posterior — GAP causal identificado
+
+**GAP crítico localizado y corregido en** `chat/backend/deepseek_harness/server.py`:
+el bloque `if tools is True` enviaba **todas** las solicitudes `tools: true`
+a `_mvp_modelo_compat()`, incluso `web-*` y `swecode-consulta`.
+Eso desviaba el modelo seleccionado fuera del bridge de suscripciones web;
+el Router MVP podía rechazar el ID o devolver un modelo de respaldo no solicitado.
+
+**Corrección:** separar el destino antes de la rama Tools ON:
+- Modelo `web-*` o `swecode-*` → Harness → **SWE CODE web-bridge** con `tools:true`, sin LLM traductor.
+- Modelos propios Router MVP → mantienen su motor y catálogo MCP.
+- `ejecutor_tools` preserva OpenClaw u otro ejecutor según el selector.
+- El bridge bloquea fallback de modelo web/Ask Cónsil a Liquid/HF/NVIDIA.
+
+**Resultado de repetir los 15 intentos reales desde este ChatGPT con el MCP
+`riu_router_github.chat`:** 0/15 admitidos. Los 15 obtuvieron
+`MCP_MODELO_NO_PERMITIDO` antes de llegar a SWE CODE free.
+**Este conector personal usa una lista de modelos API distinta del catálogo
+web de SWE CODE free. No comprueba los cinco selectores ni puede verificar
+suscripciones con esos IDs.** No se deben atribuir esas negativas al servidor de
+modelos web sin pruebas adicionales.
+
+**Pruebas adicionales de código actual:** 15/15 del selector + 3/3 del Consejo
+simulados (PASS); verificaciones de enrute `Tools ON` y no-fallback (PASS).
+
+**Prueba REAL preparada en el repositorio**:
+`tests/swen_live_3x.mjs`, ejecutable desde el mismo servidor con sus
+credenciales existentes. Envía 3 consultas por ID vía Harness, registra HTTP,
+modelo efectivo, respuesta no vacía, dictamen de Ask Cónsil y anomalías.
+El script no crea infraestructura adicional ni publica secretos. **No se
+ejecutó desde este entorno: no tiene acceso HTTP/autenticación a ese Space**.
+
+**Criterio de cierre:** 15/15 `PASS` de pruebas REALES desde el propio
+servidor y recibo de una ejecución de herramienta con el agente elegido.
+Hasta entonces, publicar código no equivale a acreditar despliegue funcional.
