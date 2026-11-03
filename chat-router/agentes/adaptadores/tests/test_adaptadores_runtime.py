@@ -128,6 +128,7 @@ def test_swe_agent_usa_por_defecto_la_imagen_riu_y_RIU_SWEAGENT_IMAGE_la_cambia(
     log = tmp_path / "argv.json"
     ejecutable(rt / "bin" / "sweagent", "#!%s\nimport sys, json\njson.dump(sys.argv[1:], open(%r, 'w'))\nsys.exit(1)\n" % (sys.executable, str(log)))
     ejecutable(rt / "bin" / "docker")
+    monkeypatch.setattr(disponibilidad, "_sonda_docker", lambda exe, imagen: "ok")
     ws = tmp_path / "ws"; ws.mkdir()
     monkeypatch.setenv("RIU_AGENTES_LLM_BASE_URL", "http://127.0.0.1:1"); monkeypatch.setenv("RIU_AGENTES_LLM_API_KEY", "clave-ficticia-local")
     args = dict(tarea_id="t-1", modelo="hf/qwen2.5-coder-1.5b", objetivo="x", contexto="", checkpoint={}, permisos={"directorio": str(ws), "escritura": False, "ejecucion": False})
@@ -136,6 +137,23 @@ def test_swe_agent_usa_por_defecto_la_imagen_riu_y_RIU_SWEAGENT_IMAGE_la_cambia(
     monkeypatch.setenv("RIU_SWEAGENT_IMAGE", "otra:1")
     swe_agent.run(**args)
     assert "--env.deployment.image=otra:1" in json.load(open(log))
+
+
+def test_swe_agent_no_ejecuta_si_docker_esta_caido_o_falta_imagen(rt, tmp_path, monkeypatch):
+    ejecutable(rt / "bin" / "sweagent", "#!/bin/sh\\ntouch %s\\n" % (tmp_path / "se-ejecuto"))
+    ejecutable(rt / "bin" / "docker")
+    ws = tmp_path / "ws-bloqueado"; ws.mkdir()
+    monkeypatch.setenv("RIU_AGENTES_LLM_BASE_URL", "http://127.0.0.1:1")
+    monkeypatch.setenv("RIU_AGENTES_LLM_API_KEY", "clave-ficticia")
+    tarea = dict(tarea_id="swe-preflight", modelo="hf/qwen2.5-coder-1.5b", objetivo="leer",
+                 contexto="", checkpoint={},
+                 permisos={"directorio": str(ws), "escritura": False, "ejecucion": False})
+    for estado in ("daemon_inactivo", "imagen_ausente", "sin_verificar"):
+        monkeypatch.setattr(disponibilidad, "_sonda_docker", lambda exe, img, e=estado: e)
+        salida = swe_agent.run(**tarea)
+        assert salida["ok"] is False and salida["codigo"] == "AGENTE_NO_CONFIGURADO"
+        assert salida["efectos_posibles"] is False
+        assert not (tmp_path / "se-ejecuto").exists()
 
 
 # ---------------- versionado: solo scripts y lockfiles ----------------
