@@ -371,10 +371,11 @@ def llm(cuerpo):
     mensajes = cuerpo.get("messages", cuerpo.get("mensajes"))
     if not isinstance(mensajes, list) or not mensajes:
         raise ValueError("se requieren messages")
-    # Invocaciones internas de Harness (LOOP, herramientas, agentes y Router):
-    # aplicar la misma ficha y el mismo ON/OFF, sin duplicarla si ya venia
-    # inyectada por _chat_ficha o por el wrapper SWE.
-    mensajes = _mensajes_modelo_con_prompt(mensajes, cuerpo.get("modelo"), cuerpo.get("origen"))
+    # Externos por /invoke llm (ademas del endpoint OpenAI): el Router podria
+    # no haber pasado por _chat_ficha. Locales/web ya reciben el prompt del
+    # Bridge, y la ruta Qwen del MVP conserva su propio control; no tocarlos.
+    if es_externo(cuerpo.get("modelo")):
+        mensajes = _mensajes_modelo_con_prompt(mensajes, cuerpo.get("modelo"), cuerpo.get("origen"))
     opciones = cuerpo.get("opciones") or {}
     if not isinstance(opciones, dict) or any(k not in OPCIONES for k in opciones):
         raise ValueError("opciones no permitidas")
