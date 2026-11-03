@@ -38,7 +38,7 @@ test("armar manda stream:true (los modelos van por el bridge) y enviarSwe lo env
   assert.equal(S.armar(base).stream, true);
   guion = (_q, res) => { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify({ choices: [{ message: { content: "json" }, finish_reason: "stop" }] })); };
   await S.enviarSwe(api, base);
-  assert.equal(peticiones[0].body.stream, true); assert.equal(peticiones[0].url, "/v1/chat/completions");
+  assert.equal(peticiones[0].body.stream, true); assert.equal(peticiones[0].url, "/plugins/deepseek_harness/modelos/v1/chat/completions");
 });
 
 test("SSE: chunks partidos a mitad de evento, CRLF y comentarios keepalive; los parciales son acumulados y la respuesta final el texto completo", async () => {
@@ -83,7 +83,7 @@ test("SSE con tool_calls: devuelve los nombres como hoy (Tools pedidas), con los
   };
   const r = await S.enviarSwe(api, { ...base, model: "groq/qwen/qwen3.8-27b", ejecutor_tools: "openclaw" });
   assert.deepEqual(r.tools, []); assert.deepEqual(r.pedidas, ["github_leer", "ls"]); assert.equal(r.finish_reason, "tool_calls"); assert.match(r.reply, /Tools pedidas: github_leer, ls/); assert.match(r.nota, /OpenClaw/);
-  assert.equal(peticiones[0].url, "/web/v1/chat/completions");
+  assert.equal(peticiones[0].url, "/plugins/deepseek_harness/modelos/v1/chat/completions");
 });
 
 test("SSE: un chunk de error sin texto es un GAP con su codigo; con texto parcial se conserva el texto y se avisa en la nota", async () => {
@@ -161,3 +161,4 @@ test("aprobarYContinuarSwe tambien respeta parar()", async () => {
   await assert.rejects(() => S.aprobarYContinuarSwe(api2, { task_id: "t1", op_id: "0123456789abcdef", sesion: "s", parar: () => ++n > 1 }), /PROCESO_DETENIDO/);
   assert.ok(log.filter((r) => r === "/chat/swe/avanzar").length <= 1);
 });
+
