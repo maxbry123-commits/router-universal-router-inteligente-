@@ -139,13 +139,50 @@ instalar_openhands() {
   marcar openhands "$h"
 }
 
+# Imagen existente de SWE-agent: solo construir si YA HAY un daemon Docker funcional.
+# HF Space puede ejecutar Dockerfile para su app sin permitir Docker dentro del contenedor:
+# NO iniciar dockerd ni escalar privilegios. Solo usa el Dockerfile.riu ya versionado.
+preparar_imagen_sweagent() {
+  local docker imagen archivo
+  [[ "${RIU_SWEAGENT_AUTO_IMAGEN:-1}" != "0" ]] || { log "SWE-agent: imagen automatica desactivada"; return 0; }
+  docker="${RIU_DOCKER_BIN:-}"
+  if [[ -n "$docker" ]]; then
+    [[ -x "$docker" ]] || { log "SWE-agent: RIU_DOCKER_BIN no es ejecutable"; return 0; }
+  else
+    docker="$(command -v docker 2>/dev/null || true)"
+  fi
+  if [[ -z "$docker" ]]; then log "SWE-agent: cliente Docker ausente; se informa NO CONFIGURADO"; return 0; fi
+  if ! timeout 8 "$docker" info >/dev/null 2>&1; then
+    log "SWE-agent: daemon Docker inaccesible; no se iniciara nada fuera del contenedor"
+    return 0
+  fi
+  imagen="${RIU_SWEAGENT_IMAGE:-riu-sweagent:latest}"
+  if timeout 8 "$docker" image inspect "$imagen" >/dev/null 2>&1; then
+    log "SWE-agent: imagen $imagen ya disponible"
+    return 0
+  fi
+  archivo="$LISTOS/SWE-agent/Dockerfile.riu"
+  [[ -f "$archivo" ]] || { log "SWE-agent: falta el Dockerfile existente"; return 1; }
+  log "SWE-agent: construyendo imagen $imagen en el daemon disponible"
+  if ! timeout 360 "$docker" build -t "$imagen" - < "$archivo"; then
+    log "SWE-agent: Docker build fallo; estado NO CONFIGURADO hasta corregir imagen"
+    return 1
+  fi
+  timeout 8 "$docker" image inspect "$imagen" >/dev/null 2>&1
+}
+
+instalar_sweagent_con_imagen() {
+  instalar_sweagent || return 1
+  preparar_imagen_sweagent
+}
+
 for comp in $SELECCION; do
   if [[ "$OMITIR" == *" $comp "* ]]; then log "$comp omitido (RIU_INSTALAR_OMITIR)"; continue; fi
   case "$comp" in
     codex-opencode) paso=(instalar_npm agentes node-agentes codex:codex opencode:opencode) ;;
     claude)         paso=(instalar_npm claude node-claude claude:claude) ;;
     openclaw)       paso=(instalar_npm openclaw node-openclaw openclaw:openclaw) ;;
-    sweagent)       paso=(instalar_sweagent) ;;
+    sweagent)       paso=(instalar_sweagent_con_imagen) ;;
     openhands)      paso=(instalar_openhands) ;;
     *) log "componente desconocido: $comp"; FALLOS+=("$comp"); continue ;;
   esac
