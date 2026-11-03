@@ -940,7 +940,12 @@ async def chat_modelos(cuerpo: dict, x_api_key: str | None = Header(None),
             req["tool_choice"] = cuerpo.get("tool_choice", "auto")
             req["ejecutor_tools"] = ("openclaw" if cuerpo.get("ejecutor_tools") == "openclaw" else "swe")
         elif opciones_cliente:
+            # OpenClaw ya eligio su lista de funciones; el Bridge exige que el
+            # checkpoint registre objetivo y operaciones ANTES de inferencia.
+            # Solo este acceso autenticado al Harness genera el plan; el Bridge
+            # directo sigue rechazando listas sin plan (fail closed).
             req.update(opciones_cliente)
+            req.update(_plan_bridge(req["messages"], tools))
             req["ejecutor_tools"] = "openclaw"
         if not _bridge_url():
             raise HTTPException(status_code=503, detail="SWE_CODE_ROUTER_NO_CONFIGURADO")
