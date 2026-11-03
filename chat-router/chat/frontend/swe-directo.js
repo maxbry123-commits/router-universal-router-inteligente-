@@ -16,11 +16,12 @@ export const SWE_LISTAS = {
   "swen-code-free": { nombre: "SWEN CODE free", titulo: "SWE CODE free · cuentas web", modelos: [
     ["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max", "opiniones web + decisión Qwen 3.8 Max"],
     ["web-qwen38max", "Qwen 3.8 Max (web)", "suscripción web"],
+    ["web-claude-sonnet", "Claude Sonnet 5.5 · MAX (OpenClaw)", "perfiles Anthropic del Gateway"],
     ["web-qwen37max", "Qwen 3.7 Max (web)", "suscripción web"],
     ["web-dsv4-flash", "DeepSeek V4 Flash (web)", "suscripción web"]] },
 };
 // Modelos web de SWEN CODE free (cuentas web del bridge): no estan en el catalogo del Harness, solo sirven para el chat directo por el bridge.
-export const MODELOS_WEB = [["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"]];
+export const MODELOS_WEB = [["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-claude-sonnet", "Claude Sonnet 5.5 · MAX (OpenClaw)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"]];
 // MODO DE TRABAJO (antes «modelos» swecode-<modo>): el bridge ya acepta `modo` junto a cualquier modelo (server.js: conPreambulo). Vacio = sin modo.
 export const MODOS_TRABAJO = [["asesoria", "Asesoría"], ["revision", "Revisión"], ["solucion", "Solución"], ["arquitectura", "Arquitectura"], ["archivos", "Archivos"], ["prompt_code", "Prompt code"], ["despliega", "Despliega"]];
 export const esSelectorSwe = (id) => typeof id === "string" && Object.hasOwn(SWE_LISTAS, id);
