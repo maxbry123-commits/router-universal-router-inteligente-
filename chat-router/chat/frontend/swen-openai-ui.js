@@ -51,23 +51,29 @@ async function investigar(h,boton,id){
   }
   estado(h,'Sigue en curso. Puedes consultar de nuevo con el mismo ID.');
 }
+async function mostrarImagen(h,id){
+  if(!/^[0-9a-f]{32}$/.test(String(id||'')))throw Error('IMAGEN_ID_INVALIDO');
+  const v=await api(BASE+'/image/'+id+'/data');
+  if(!v.base64||v.mime!=='image/png')throw Error('IMAGEN_SIN_DATOS');
+  const url='data:image/png;base64,'+v.base64;
+  const panel=tarjeta(h,'Imagen OpenAI '+id.slice(0,12));
+  const im=document.createElement('img');im.src=url;im.alt='Imagen generada con OpenAI';
+  const a=document.createElement('a');a.href=url;a.download=v.nombre||'openai.png';
+  a.textContent='Descargar PNG';panel.append(im,a);
+  estado(h,'Imagen disponible para descargar PNG.');
+}
 async function generarImagen(h){
   const prompt=String(document.querySelector('#message')?.value||'').trim();
   if(!prompt){estado(h,'Escribe la descripcion de la imagen en el input.');return;}
   if(!window.confirm('Crear UNA imagen con API OpenAI (facturacion distinta de ChatGPT)?'))return;
   const x=await api(BASE+'/image',{method:'POST',body:{prompt}});
   if(!/^[0-9a-f]{32}$/.test(String(x.id||'')))throw Error('IMAGEN_ID_INVALIDO');
-  const v=await api(BASE+'/image/'+x.id+'/data');
-  if(!v.base64||v.mime!=='image/png')throw Error('IMAGEN_SIN_DATOS');
-  const url='data:image/png;base64,'+v.base64;
-  const panel=tarjeta(h,'Imagen OpenAI '+x.id.slice(0,12));
-  const im=document.createElement('img');im.src=url;im.alt='Imagen generada con OpenAI';
-  const a=document.createElement('a');a.href=url;a.download=v.nombre||'openai.png';
-  a.textContent='Descargar PNG';panel.append(im,a);
-  estado(h,'Imagen creada; puedes descargarla. El borrador sigue intacto.');
+  localStorage.setItem('riu_swen_ultima_imagen_id',x.id);
+  const input=h.querySelector('[data-swen-image-id]');if(input)input.value=x.id;
+  return mostrarImagen(h,x.id);
 }
 document.addEventListener('click',async e=>{
-  const b=e.target.closest?.('[data-swen-accion],[data-swen-investigacion-cargar]');
+  const b=e.target.closest?.('[data-swen-accion],[data-swen-investigacion-cargar],[data-swen-imagen-cargar]');
   if(!b||b.disabled)return;
   const h=host();if(!h)return;
   b.disabled=true;
@@ -78,6 +84,10 @@ document.addEventListener('click',async e=>{
       const id=String(h.querySelector('[data-swen-research-id]')?.value||'').trim();
       if(id)await investigar(h,b,id);
       else estado(h,'Escribe el ID guardado de la investigacion.');
+    } else if(b.dataset.swenImagenCargar){
+      const id=String(h.querySelector('[data-swen-image-id]')?.value||'').trim();
+      if(id)await mostrarImagen(h,id);
+      else estado(h,'Escribe el ID guardado de la imagen.');
     }
   }catch(error){estado(h,'GAP OpenAI: '+String(error?.message||error).slice(0,180));}
   finally{b.disabled=false;}
