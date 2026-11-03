@@ -667,6 +667,11 @@ def _revisar_iniciada(reg, ctx, idx, op_id):
     return _fallar(ctx, reg, idx, "OPERACION_SIN_CONFIRMAR", "la operacion %s quedo iniciada sin confirmacion: verificar su estado real antes de reintentar" % op_id, False, op_id)
 
 
+def _necesita_aprobacion_manual(reg):
+    """Un segundo token de operador no es parte del chat YAIWES autenticado."""
+    return reg["origen"] != "yaiwes"
+
+
 def _paso_agente(reg, ctx, idx, p):
     objetivo, contexto = _entrada_agente(reg, p["paso"])
     op_id = _op_id(reg, idx, p, objetivo, contexto)
@@ -680,9 +685,8 @@ def _paso_agente(reg, ctx, idx, p):
     directorio, falta = _directorio(reg)
     if falta:
         return _fallar(ctx, reg, idx, falta[0], falta[1], True)
-    # YAIWES ya autentica el chat y exige Agentes ON: no introduce otra autorizacion manual.
-    # Otros origenes conservan el control de aprobacion existente.
-    if p["efectos"] and op_id not in reg["aprobaciones"] and reg["origen"] != "yaiwes":
+    # YAIWES usa el acceso del chat y Agentes ON; solo los demas origenes precisan operador.
+    if p["efectos"] and op_id not in reg["aprobaciones"] and _necesita_aprobacion_manual(reg):
         reg["estado"], reg["aprobacion"] = "REQUIERE_APROBACION", False
         reg["pendiente_aprobacion"] = {"op_id": op_id, "paso": p["paso"], "agente": p["agente"], "modelo": p["modelo"],
                                        "permisos": {"escritura": p["paso"] in PASOS_CON_EFECTOS, "ejecucion": p["paso"] in ("ejecuta", "verifica")},
