@@ -401,9 +401,13 @@ export async function enviarSwe(api, datos) {
   // El AbortController abarca también la lectura SSE, no sólo sus cabeceras.
   const externo = /^(groq|nvidia)\//.test(String(datos.model || ""));
   const fin = externo ? Date.now() + 120000 : Infinity;
+  // Sin idempotencia de tool_calls en una conexión caída, repetir un POST
+  // podría ejecutar dos commits. Reintentar solo chat sin efectos.
+  const sinEfectos = datos.tools !== true && datos.agente_tool !== true && datos.llm_tool !== true;
+  const intentos = externo && sinEfectos ? 3 : 1;
   const signalUsuario = datos.signal;
   let r;
-  for (let intento = 0; intento < (externo ? 3 : 1); intento++) {
+  for (let intento = 0; intento < intentos; intento++) {
     const restante = fin - Date.now();
     if (externo && restante <= 0) throw new Error("GAP: TIEMPO_LLAMADA_120_S · se agotaron 2 minutos; verifica la respuesta antes de reenviar");
     const controlador = externo ? new AbortController() : null;
@@ -433,9 +437,13 @@ export async function enviarSwe(api, datos) {
       if (externo && Date.now() >= fin) throw new Error("GAP: TIEMPO_LLAMADA_120_S · se agotaron 2 minutos; el modelo no confirmó respuesta");
       const m = String(e?.message || e);
       const temporal = [408, 429, 500, 502, 503, 504].includes(e?.status) ||
-        /network|failed to fetch|timeout|tempor|abort|HTTP (408|429|5\\d\\d)|GAP: network error|PROVEEDOR_TEMPORAL/i.test(m);
+        /network|failed to fetch|timeout|tempor|abort|HTTP (408|429|5\d\d)|GAP: network error|PROVEEDOR_TEMPORAL/i.test(m);
       // Sin repetir una inferencia que ya entregó texto ni errores de autenticación.
-      if (!externo || parcial || !temporal || intento === 2) throw e;
+      if (!externo || parcial || !temporal || intento === intentos - 1) {
+        if (externo && !sinEfectos && temporal && !parcial)
+          throw new Error("GAP: OPERACION_SIN_CONFIRMAR · verifica el commit/resultado anterior antes de volver a enviar: " + m.slice(0, 140));
+        throw e;
+      }
       const pausa = Math.min(1000 * (intento + 1), Math.max(0, fin - Date.now() - 100));
       if (pausa < 200) throw new Error("GAP: TIEMPO_LLAMADA_120_S · presupuesto de 2 minutos agotado");
       await new Promise((ok) => setTimeout(ok, pausa));
