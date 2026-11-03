@@ -189,8 +189,14 @@ def _agente_claude(sondas):
     if not _url_local_o_https(url):
         return _no("claude-code: URL de pasarela invalida (solo HTTPS o HTTP loopback)", "NO CONFIGURADO", "url_invalida")
     if not sondas["gateway"](url):
-        return _no("claude-code: pasarela Anthropic->NVIDIA no responde, no se certifica el agente", "SIN VERIFICAR", "pasarela_sin_respuesta")
-    return _ok(modelos=["nvidia/" + modelo])  # Pasarela alcanzable y CLI instalada (no equivale a ejecucion del modelo)
+        return _no("claude-code: pasarela sin respuesta", "SIN VERIFICAR", "pasarela_sin_respuesta")
+    if os.environ.get("RIU_CLAUDE_PASARELA_BRIDGE") == "1":
+        port = os.environ.get("BRIDGE_PORT", "7870")
+        if not port.isdecimal() or not (1 <= int(port) <= 65535):
+            port = "7870"
+        if not sondas["gateway"]("http://127.0.0.1:" + port):
+            return _no("claude-code: bridge sin respuesta", "SIN VERIFICAR", "bridge_sin_respuesta")
+    return _ok(modelos=["nvidia/" + modelo])
 
 
 def _agente_openclaw(sondas):
