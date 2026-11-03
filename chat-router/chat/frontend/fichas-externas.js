@@ -43,6 +43,8 @@ export function aplicar(d) {  // d: {groq:[{id,etiqueta,disponible}], nvidia:[�
   refrescar();
 }
 const cacheInicial = leer(CACHE, { groq: [], nvidia: [], avisoGroq: "cargando modelos de Groq…" });
+cacheInicial.locales = (cacheInicial.locales || []).map(m => ({...m,disponible:null,
+  estado:"SIN VERIFICAR",etiqueta:String(m.id || "").replace(/^hf\//,"")+" — SIN VERIFICAR"}));
 for (const p of ["groq", "nvidia"]) cacheInicial[p] = (cacheInicial[p] || []).map(m => ({
   ...m, disponible: null, estado: "SIN VERIFICAR", etiqueta: MARCA[p] + (NOMBRES[m.id] || m.id) + " — SIN VERIFICAR"
 })); // disponibilidad anterior al reinicio: nunca certifica el estado de hoy
@@ -61,10 +63,22 @@ export async function cargar() {
       try { const banco = await api("/web/v1/claves"); if (banco?.ok) configurados = { groq: Number(banco.groq) > 0, nvidia: Number(banco.nvidia) > 0 }; }
       catch (e) { /* panel protegido: estado desconocido, NO "sin clave" */ }
     }
-    d.locales = (Array.isArray(pub.locales) ? pub.locales : []).filter(m => m && /^hf\/[a-z0-9._-]+$/i.test(m.id)).map(m => ({
-      id: m.id, disponible: null, estado: m.estado === "NO CONFIGURADO" ? "NO CONFIGURADO" : "SIN VERIFICAR",
-      etiqueta: m.id.slice(3) + (m.estado === "NO CONFIGURADO" ? " — NO CONFIGURADO" : " — SIN VERIFICAR"),
-    }));
+    // SWE CODE local HF S1-S3: el Bridge comprueba /models y loaded:true.
+    // No convertir a SIN VERIFICAR un modelo efectivamente cargado.
+    d.locales = (Array.isArray(pub.locales) ? pub.locales : [])
+      .filter(m => m && /^hf\/[a-z0-9._-]+$/i.test(m.id))
+      .map(m => {
+        const code = String(m.estado || "").trim().toUpperCase().replace(/[ -]+/g,"_");
+        const states = {DISPONIBLE:"DISPONIBLE",NO_CONFIGURADO:"NO CONFIGURADO",
+          NO_DISPONIBLE:"NO DISPONIBLE",SIN_VERIFICAR:"SIN VERIFICAR"};
+        const reported = states[code] || "SIN VERIFICAR";
+        const verified = reported === "DISPONIBLE" && m.disponible === true;
+        const blocked = reported === "NO DISPONIBLE" && m.disponible === false;
+        const estado = verified ? "DISPONIBLE" :
+          reported === "DISPONIBLE" ? "SIN VERIFICAR" : reported;
+        return {id:m.id, estado, disponible:verified ? true : blocked ? false : null,
+          etiqueta:m.id.slice(3)+(estado === "DISPONIBLE" ? "" : " — "+estado)};
+      });
     for (const p of ["groq", "nvidia"]) {
       const disponibles = pub.modelos.filter(m => m && m.proveedor === p && MODELOS_SELECCIONADOS.has(m.id));
       d[p] = disponibles.map(m => {
