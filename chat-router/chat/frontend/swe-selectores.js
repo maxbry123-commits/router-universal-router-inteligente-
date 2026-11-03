@@ -116,7 +116,10 @@ function controles() {
   const sp = el("div", "sel-salida swe-bloque"); sp.setAttribute("role", "group"); sp.setAttribute("aria-label", "System prompt de la ficha");
   const spB = el("button", "pill salida-op"); spB.type = "button"; spB.dataset.sweSystemprompt = "1"; spB.setAttribute("aria-label", "SYSTEM PROMPT");
   sp.append(el("span", "sel-salida-t", "System prompt:"), spB);
-  const fw = el("div", "swe-rej-fila swe-wf swe-bloque"); fw.append(el("span", "swe-rej-t", "Workflow"), selector("workflow"));
+  const fw = el("div", "swe-rej-fila swe-wf swe-bloque");
+  const wfB = el("button", "pill salida-op"); wfB.type = "button"; wfB.dataset.sweWorkflowOn = "1";
+  wfB.setAttribute("aria-label", "WORKFLOW ON/OFF");
+  fw.append(el("span", "swe-rej-t", "Workflow"), selector("workflow"), wfB);
   const lq = el("div", "consil-diagrama lleno swe-liquid"); lq.hidden = true; lq.setAttribute("aria-label", "Liquid Mirror: dos participantes");
   const act = el("div", "swe-actualizar"), bt = el("button", "secondary swe-refrescar", "Actualizar disponibilidad"); bt.type = "button"; bt.setAttribute("aria-label", "Actualizar disponibilidad de agentes y modelos"); act.append(bt, el("span", "swe-hora"));
   c.append(nota, rej, lm, mo, sp, fw, lq, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
@@ -192,6 +195,10 @@ function pintarControles() {
     const sm = c.querySelector('select[data-swe-ctl="modo_trabajo"]');
     if (sm) { sm.replaceChildren(...[["", "Sin modo (conversación normal)"], ...MODOS_TRABAJO].map(([v, t]) => { const o = el("option", null, t); o.value = v; return o; })); sm.value = sel.modo_trabajo; sm.title = VENTANA === "groq" || VENTANA === "nvidia" ? "El modo de trabajo se envía en los chats por el bridge (SWE CODE / SWEN CODE free); Groq y NVIDIA por el Router no lo usan todavía." : ""; }
     const b = c.querySelector("[data-swe-agentico]"); if (b) { b.textContent = sel.modo_agentico ? "ON" : "OFF"; b.setAttribute("aria-pressed", String(sel.modo_agentico)); b.classList.toggle("on", sel.modo_agentico); }
+    const wfB = c.querySelector("[data-swe-workflow-on]");
+    if (wfB) { const on = sel.workflow !== "individual" && sel.modo_agentico === true;
+      wfB.textContent = on ? "ON" : "OFF"; wfB.setAttribute("aria-pressed", String(on));
+      wfB.classList.toggle("on", on); wfB.title = on ? "Workflow de varios pasos ACTIVO" : "Workflow OFF: Individual. Activa Modo agéntico antes de encenderlo"; }
     const spB = c.querySelector("[data-swe-systemprompt]"); if (spB) { const on = systemPromptOnCache(); spB.textContent = on === null ? "SIN VERIFICAR" : on ? "ON" : "OFF"; spB.setAttribute("aria-pressed", String(on === true)); spB.classList.toggle("on", on === true); spB.title = on === null ? "Sin respuesta del Router" : "System Prompt " + (on ? "ON" : "OFF"); }
     const lq = c.querySelector(".swe-liquid"); lq.hidden = sel.workflow !== "liquid_mirror";
     if (!lq.hidden) {
@@ -230,7 +237,7 @@ async function refrescarCapacidades(forzar, conFichas = false) {
   let lock = null;
   try { lock = await plugin("puente_chat", "agent_access_lock", {}); } catch (_) {}
   const bloqueo = !lock || lock.ok !== true || lock.agentes_locked !== false;
-  if (bloqueo && leerSeleccion().modo_agentico) guardarSeleccion({ modo_agentico: false });
+  if (bloqueo && (leerSeleccion().modo_agentico || leerSeleccion().workflow !== "individual")) guardarSeleccion({ modo_agentico: false, workflow: "individual" });
   pintarControles();
   if (bloqueo) {
     const aviso = document.querySelector(".swe-ctl .swe-estado");
@@ -241,6 +248,23 @@ async function refrescarCapacidades(forzar, conFichas = false) {
 
 // ---- Eventos: registrados UNA vez (delegados en document); abrir una ventana no vuelve a registrar nada ----
 document.addEventListener("click", async (e) => {
+  const wfB = e.target.closest && e.target.closest("[data-swe-workflow-on]");
+  if (wfB) {
+    const actual = leerSeleccion();
+    if (actual.workflow !== "individual") {
+      try { localStorage.setItem("riu_swe_workflow_preferido", actual.workflow); } catch (_) {}
+      guardarSeleccion({ workflow: "individual" });
+    } else if (actual.modo_agentico === true) {
+      let preferido = "swe_code";
+      try { const w = localStorage.getItem("riu_swe_workflow_preferido"); if (WORKFLOWS_SWE.some(x => x[0] === w) && w !== "individual") preferido = w; } catch (_) {}
+      guardarSeleccion({ workflow: preferido });
+    } else {
+      const nota = document.querySelector(".swe-ctl .swe-estado");
+      if (nota) nota.textContent = "WORKFLOW APAGADO: activa Modo agéntico ON antes de encender la secuencia.";
+    }
+    pintarControles();
+    return;
+  }
   const b = e.target.closest && e.target.closest("[data-swe-agentico]");
   if (b) {
     // Activar el modo SOLO si el Router confirmó su lock real. Un estado
@@ -253,7 +277,11 @@ document.addEventListener("click", async (e) => {
                                    { quien: "agentes", locked: !siguiente });
       if (control?.ok !== true || control.agentes_locked !== !siguiente)
         throw new Error("el Router no confirmó el bloqueo de agentes");
-      guardarSeleccion({ modo_agentico: siguiente });
+      const previo = leerSeleccion();
+      if (!siguiente && previo.workflow !== "individual") {
+        try { localStorage.setItem("riu_swe_workflow_preferido", previo.workflow); } catch (_) {}
+      }
+      guardarSeleccion({ modo_agentico: siguiente, ...(!siguiente ? { workflow: "individual" } : {}) });
       pintarControles();
     } catch (err) {
       const nota = document.querySelector(".swe-ctl .swe-estado");
@@ -284,6 +312,15 @@ document.addEventListener("click", async (e) => {
 document.addEventListener("change", (e) => {
   const s = e.target.closest && e.target.closest("select[data-swe-ctl]"); if (!s) return;
   const k = s.dataset.sweCtl;
+  if (k === "workflow" && s.value !== "individual" && !leerSeleccion().modo_agentico) {
+    s.value = leerSeleccion().workflow;
+    const nota = document.querySelector(".swe-ctl .swe-estado");
+    if (nota) nota.textContent = "WORKFLOW APAGADO: activa Modo agéntico ON antes de elegir una secuencia.";
+    return;
+  }
+  if (k === "workflow" && s.value !== "individual") {
+    try { localStorage.setItem("riu_swe_workflow_preferido", s.value); } catch (_) {}
+  }
   guardarSeleccion({ [k]: s.value });
   // Claude Code y otros adaptadores con modelos restringidos: el Harness
   // anuncia qué modelo acepta (p. ej. NVIDIA MiniMax). Conservar «Responde»
