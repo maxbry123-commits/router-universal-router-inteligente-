@@ -305,7 +305,7 @@ export async function aprobarYContinuarSwe(api, d, alPaso) {
   return conducir(api, await aprobarTareaSwe(api, d), tarea, alPaso, { parar: d.parar, signal: d.signal });
 }
 
-export function armar({ model, historial = [], mensaje, imagenes = [], sesion, proyecto, ejecutor_tools, modo, tools = false, agente_tool = false, llm_tool = false }) {
+export function armar({ model, historial = [], mensaje, imagenes = [], sesion, proyecto, contexto_de, ejecutor_tools, modo, tools = false, agente_tool = false, llm_tool = false }) {
   const h = historial.slice(-MAX_HISTORIAL);
   const m = modo === undefined ? leerSeleccion().modo_trabajo : modo, mt = en(MODOS_TRABAJO, m) ? m : "";  // MODO DE TRABAJO: `modo` junto al modelo; Concilio lleva el modo en el id (swecode-<modo>)
   const real = Object.hasOwn(REAL, model) ? REAL[model]
@@ -314,7 +314,7 @@ export function armar({ model, historial = [], mensaje, imagenes = [], sesion, p
   const fotos = (Array.isArray(imagenes) ? imagenes : []).filter(i => i && typeof i.url === "string" && /^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(i.url)).slice(0, 4);
   const contenido = fotos.length ? [{ type: "text", text: mensaje }, ...fotos.map((i) => ({ type: "image_url", image_url: { url: i.url } }))] : mensaje;
   // R1: el navegador NUNCA guarda ni reenvia claves de API: el banco cifrado del servidor es la unica fuente (swe-claves.js solo informa su estado)
-  return { model: mt && real === "swecode-consulta" ? "swecode-" + mt : real, messages: [...h, { role: "user", content: contenido }], conv_id: sesion, stream: true, tools: tools === true, agente_tool: agente_tool === true, llm_tool: llm_tool === true, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(mt && real !== "swecode-consulta" ? { modo: mt } : {}), ...(proyecto ? { proyecto } : {}) };
+  return { model: mt && real === "swecode-consulta" ? "swecode-" + mt : real, messages: [...h, { role: "user", content: contenido }], conv_id: sesion, stream: true, tools: tools === true, agente_tool: agente_tool === true, llm_tool: llm_tool === true, ejecutor_tools: ejecutor_tools === undefined ? leerEjecutorTools() : normEjecutor(ejecutor_tools), ...(mt && real !== "swecode-consulta" ? { modo: mt } : {}), ...(proyecto ? { proyecto } : {}), ...(typeof contexto_de === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(contexto_de) && contexto_de !== sesion ? { contexto_de } : {}) };
 }
 
 // El proxy del Space solo manda /v1/* al bridge si el modelo empieza por web-/swecode-; el resto (locales HF, groq/, nvidia/) caeria en el Router
@@ -373,6 +373,7 @@ async function respuestaDeSSE(response, datos) {
   const { fin: hecho } = await leerSSE(response, (o) => {
     if (!o || typeof o !== "object") return;
     for (const k of ["modelo_usado", "via_respaldo", "via_primaria"]) if (typeof o[k] === "string") a.extra[k] = o[k];
+    if (o.consenso_detalle && typeof o.consenso_detalle === "object") a.extra.consenso_detalle = o.consenso_detalle;
     if (o.error && typeof o.error === "object") a.error = o.error;
     const c = Array.isArray(o.choices) ? o.choices[0] : null;
     if (!c || typeof c !== "object") return;
@@ -446,7 +447,8 @@ export async function enviarSwe(api, datos) {
   const llamadas = Array.isArray(msg.tool_calls) ? msg.tool_calls.filter(Boolean) : [];
   // R4: una respuesta con tool_calls (con o sin texto) NUNCA pierde las llamadas pendientes: las ejecuta el cliente (OpenClaw) o el SWE-agent, no es un fallo
   const nombres = llamadas.map((t) => (t && t.function && t.function.name) || "tool"), quien = cuerpo.ejecutor_tools === "openclaw" ? "OpenClaw" : "SWE-agent";
-  if (!msg.content && llamadas.length) return { reply: "Tools pedidas: " + nombres.join(", "), tools: [], pedidas: nombres, tool_calls: llamadas, ejecutor: quien, finish_reason: r.choices[0].finish_reason || "tool_calls", nota: `SWE · ${r.modelo_usado || datos.model} · tools → ${quien}` };
+  const metadatos = r?.consenso_detalle ? { consenso:r.consenso_detalle } : {};
+  if (!msg.content && llamadas.length) return { ...metadatos, reply: "Tools pedidas: " + nombres.join(", "), tools: [], pedidas: nombres, tool_calls: llamadas, ejecutor: quien, finish_reason: r.choices[0].finish_reason || "tool_calls", nota: `SWE · ${r.modelo_usado || datos.model} · tools → ${quien}` };
   const texto = msg.content;
   if (!texto) {  // un fallo no se pinta como respuesta del modelo (entraria al historial del turno siguiente)
     const e = (r && r.error) || {};
@@ -454,8 +456,8 @@ export async function enviarSwe(api, datos) {
   }
   const via = r.via_respaldo ? ` · respondió ${r.via_respaldo}` : r.via_primaria ? ` · vía ${r.via_primaria}` : "";
   if (r.error && r.choices[0].finish_reason === "error") {  // stream cortado con texto ya entregado: se conserva lo recibido y el corte se dice en la nota (no se da por completo)
-    return { reply: texto, tools: [], ...(llamadas.length ? { pedidas: nombres, tool_calls: llamadas, ejecutor: quien } : {}), finish_reason: "error", nota: `SWE · ${r.modelo_usado || datos.model}${via} · GAP: ${r.error.code || "STREAM_ERROR"}${r.error.message ? " · " + r.error.message : ""} (respuesta parcial)` };
+    return { ...metadatos, reply: texto, tools: [], ...(llamadas.length ? { pedidas: nombres, tool_calls: llamadas, ejecutor: quien } : {}), finish_reason: "error", nota: `SWE · ${r.modelo_usado || datos.model}${via} · GAP: ${r.error.code || "STREAM_ERROR"}${r.error.message ? " · " + r.error.message : ""} (respuesta parcial)` };
   }
-  return { reply: texto, tools: [], ...(llamadas.length ? { pedidas: nombres, tool_calls: llamadas, ejecutor: quien } : {}), finish_reason: r.choices[0].finish_reason || (llamadas.length ? "tool_calls" : null), nota: `SWE · ${r.modelo_usado || datos.model}${via}${llamadas.length ? " · tools → " + quien : ""}` };
+  return { ...metadatos, reply: texto, tools: [], ...(llamadas.length ? { pedidas: nombres, tool_calls: llamadas, ejecutor: quien } : {}), finish_reason: r.choices[0].finish_reason || (llamadas.length ? "tool_calls" : null), nota: `SWE · ${r.modelo_usado || datos.model}${via}${llamadas.length ? " · tools → " + quien : ""}` };
 }
 
