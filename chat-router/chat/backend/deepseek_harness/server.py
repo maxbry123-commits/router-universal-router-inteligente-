@@ -748,6 +748,12 @@ async def _openai_bridge_pasar(ruta, metodo, cuerpo=None, binario=False):
         raise HTTPException(status_code=503, detail="OPENAI_BRIDGE_SIN_CONEXION") from None
 
 
+@app.get("/modelos/v1/claude/estado")
+async def sonnet_estado(x_api_key: str | None = Header(None), authorization: str | None = Header(None)):
+    _autorizar_chat_modelos(x_api_key, authorization)
+    return await _openai_bridge_pasar("/v1/claude/estado", "GET")
+
+
 @app.get("/modelos/v1/openai/trabajos")
 async def openai_trabajos(x_api_key: str | None = Header(None), authorization: str | None = Header(None)):
     _autorizar_chat_modelos(x_api_key, authorization)
