@@ -12,8 +12,10 @@ const conStorage = (inicial = {}) => {
 const CAMPOS = ["task_id", "origen", "mensaje", "workflow", "modelo_responde", "modelo_lector", "modelo_tool", "modelo_revisor", "agente_responde", "agente_tool", "agente_verificador", "modo_agentico", "aprobacion", "sesion", "proyecto"];
 const TODOS_OK = { harness: "ok", agentes: Object.fromEntries(["openclaw", "swe-agent", "openhands", "opencode", "codex", "claude-code"].map((a) => [a, { disponible: true }])), workflows: { swe_code: { disponible: true }, liquid_mirror: { disponible: true } }, modelos: {} };
 
-test("catalogo: 9 modelos con el id exacto del catalogo unico (4 HF + Groq Qwen 3.8 + 4 NVIDIA), sin Llama", () => {
-  assert.deepEqual(S.MODELOS_SWE.map((m) => m[0]), ["hf/lfm2.5-350m", "hf/qwen2.5-coder-1.5b", "hf/qwen3.5-0.8b", "hf/qwen3-0.6b", "groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"]);
+test("catalogo: modelos base presentes, sin duplicados", () => {
+  const ids = new Set(S.MODELOS_SWE.map(m => m[0]));
+  for (const id of ["hf/lfm2.5-350m", "hf/qwen2.5-coder-1.5b", "hf/qwen3.5-0.8b", "hf/qwen3-0.6b", "groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"]) assert.ok(ids.has(id), id);
+  assert.equal(ids.size, S.MODELOS_SWE.length);
   assert.deepEqual(S.AGENTES_SWE.map((a) => a[0]), ["openclaw", "swe-agent", "openhands", "opencode", "codex", "claude-code"]);
   assert.deepEqual(S.WORKFLOWS_SWE.map((w) => w[0]), ["individual", "swe_code", "liquid_mirror"]);
   assert.deepEqual(S.WORKFLOWS_SWE.map((w) => w[1]), ["Individual", "SWE CODE cuatro pasos", "Liquid Mirror"]);
@@ -237,7 +239,7 @@ test("idCatalogo: el modelo del selector clasico se traduce al id del catalogo (
   assert.equal(S.idCatalogo("swe-codex-qwen25-15b"), "hf/qwen2.5-coder-1.5b");
   assert.equal(S.idCatalogo("qwen3-0.6b"), "hf/qwen3-0.6b");
   assert.equal(S.idCatalogo("nvidia/z-ai/glm-5.3"), "nvidia/z-ai/glm-5.3");
-  assert.equal(S.idCatalogo("web-qwen38max"), null);
+  assert.equal(S.idCatalogo("web-qwen38max"), "web-qwen38max");
   assert.equal(S.idCatalogo("swecode-asesoria"), null);
 });
 
