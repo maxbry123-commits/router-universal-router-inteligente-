@@ -219,6 +219,12 @@ def parametros(modelo, opciones, pol=None):
         for n in _PARAMS:
             if n not in comp:
                 out.pop(n, None)
+    # Qwen 3.8 27B de Groq acepta tools, pero no parallel tool calls.
+    # El valor por defecto del API es true: forzar false al ofrecer funciones.
+    if modelo == "groq/qwen/qwen3.8-27b" and out.get("tools"):
+        if out.get("parallel_tool_calls") is True:
+            info["ignorados"].append("parallel_tool_calls=true")
+        out["parallel_tool_calls"] = False
     return out, {k: v for k, v in info.items() if v}
 
 
@@ -465,6 +471,18 @@ def _seguro(cb):
     return f
 
 
+def _ordenar_system_groq(mensajes, modelo):
+    """Qwen3.8/Groq: system al comienzo. Su plantilla no acepta system
+    intercalado tras turnos user/assistant/tool de un agente.
+    Mantiene el orden de todos los turnos y sus tool_call_id sin alterarlos.
+    """
+    if modelo != "groq/qwen/qwen3.8-27b":
+        return mensajes
+    sistemas = [m for m in mensajes if isinstance(m, dict) and m.get("role") == "system"]
+    conversacion = [m for m in mensajes if not (isinstance(m, dict) and m.get("role") == "system")]
+    return sistemas + conversacion
+
+
 def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
     """Una llamada a Groq/NVIDIA con el modelo ELEGIDO (nunca se sustituye). Con `al_parcial(texto_acumulado, fragmento)` y si la politica lo permite, usa SSE."""
     prov = proveedor(modelo)
@@ -477,7 +495,7 @@ def llamar(mensajes, modelo, banco=None, opciones=None, al_parcial=None):
         raise RuntimeError("%s: NO DISPONIBLE: %s no aparece en GET /models del proveedor; no se cambió de modelo" % (PROVEEDORES[prov]["label"], modelo))
     pol = politica(modelo)
     pool = _ordenar(prov, pool)  # las claves enfriadas por un 429 reciente van al final
-    mensajes_ok, info_ctx = _compactar_info(mensajes, pol)
+    mensajes_ok, info_ctx = _compactar_info(_ordenar_system_groq(mensajes, modelo), pol)
     payload = {"model": modelo.split("/", 1)[1], "messages": mensajes_ok}
     extra, info_param = parametros(modelo, opciones, pol)
     payload.update(extra)
