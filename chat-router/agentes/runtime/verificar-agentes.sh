@@ -7,6 +7,9 @@ export OPENHANDS_SUPPRESS_BANNER=1  # el SDK imprime un cuadro al importarse
 
 AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNTIME="$(mkdir -p "${RIU_AGENTES_RUNTIME:-$AQUI}" && cd "${RIU_AGENTES_RUNTIME:-$AQUI}" && pwd)"
+# Ejecutar los --version con el MISMO Node24 que usan los adaptadores.
+if [ -x "$RUNTIME/node24/bin/node" ]; then export PATH="$RUNTIME/node24/bin:$PATH";
+elif [ -x /opt/node24/bin/node ]; then export PATH="/opt/node24/bin:$PATH"; fi
 SALIDA="${RIU_ESTADO_JSON:-$RUNTIME/estado-agentes.json}"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 
