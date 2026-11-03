@@ -3,6 +3,7 @@
 Expone /v1/messages (stream y no stream), /v1/messages/count_tokens y
 /v1/models en :8082 para que Claude Code use modelos del catálogo NVIDIA.
 """
+import hmac
 import json
 import os
 import uuid
@@ -43,6 +44,15 @@ def _cabeceras():
             raise RuntimeError("CLAVE_BRIDGE_AUSENTE")
         return {"X-API-Key": clave, "Content-Type": "application/json"}
     return {"Authorization": f"Bearer {_clave()}", "Content-Type": "application/json"}
+
+def _autenticado(request):
+    """La pasarela solo acepta la clave del Router cuando usa el bridge con banco."""
+    if not MODO_BRIDGE:
+        return True  # respetar el uso directo legado del servicio local
+    esperado = os.environ.get("RIU_API_KEY", "").strip()
+    bearer = request.headers.get("authorization", "")
+    ofrecido = bearer[7:].strip() if bearer.lower().startswith("bearer ") else request.headers.get("x-api-key", "")
+    return bool(esperado) and hmac.compare_digest(ofrecido, esperado)
 
 
 def _sse(evento, datos):
@@ -86,6 +96,8 @@ def _eventos_desde_respuesta(respuesta_openai, modelo):
 
 @app.post("/v1/messages")
 async def mensajes(request: Request):
+    if not _autenticado(request):
+        return JSONResponse(status_code=401, content={"type": "error", "error": {"type": "authentication_error", "message": "NO_AUTORIZADO"}})
     peticion = await request.json()
     modelo_original = peticion.get("model", "")
     cuerpo = anthropic_a_openai(peticion)
@@ -113,6 +125,8 @@ async def mensajes(request: Request):
 
 @app.post("/v1/messages/count_tokens")
 async def contar_tokens(request: Request):
+    if not _autenticado(request):
+        return JSONResponse(status_code=401, content={"type": "error", "error": {"type": "authentication_error", "message": "NO_AUTORIZADO"}})
     peticion = await request.json()
     return {"input_tokens": estimar_tokens(peticion)}
 
