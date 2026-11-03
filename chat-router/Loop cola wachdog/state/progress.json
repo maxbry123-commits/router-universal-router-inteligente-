@@ -1,0 +1,17 @@
+{
+  "modo": "m10_agenda",
+  "updated_at": "2025-03-08T00:00:00Z",
+  "tasks": [
+    {
+      "folio": "WDT-PING-001",
+      "source": "ping watchdog cycle test",
+      "input_sha256": "PENDING",
+      "priority": "P0",
+      "dependencies": [],
+      "queue": "watchdog-cycle-test",
+      "watchdog": true,
+      "status": "IN_PROGRESS",
+      "evidence": []
+    }
+  ]
+}
