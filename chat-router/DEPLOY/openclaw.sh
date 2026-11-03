@@ -176,6 +176,7 @@ try:
     # Permitir SOLO Sonnet para el consejero dedicado, no lo convierte en default.
     ad["models"].setdefault("anthropic/claude-sonnet-5-5", {})
     agents = cfg.setdefault("agents", {}).setdefault("entries", {})
+    agents.setdefault("main", {})  # proteger OpenClaw/default: no convertir el consejo en agente principal
     counsel = agents.setdefault("swen-council", {})
     counsel.update({"name":"SWEN Claude Sonnet 5.5","model":{"primary":"anthropic/claude-sonnet-5-5","fallbacks":[]},
       "thinkingDefault":"max","skills":[],
