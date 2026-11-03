@@ -45,11 +45,11 @@ export async function estadoClaude({fetchFn=fetch}={}){
 }
 // Ordinary user+text; caller-provided task text is data, no tool authority.
 // The dedicated OpenClaw agent has a minimal tool profile.
-export async function consultarClaude(texto,{convId='',fetchFn=fetch,timeoutMs=180000}={}){
+export async function consultarClaude(texto,{convId='',fetchFn=fetch,timeoutMs=300000}={}){
   const c=cfg();
   if(!c)throw issue('CLAUDE_GATEWAY_NO_CONFIGURADO');
   const key=ID.test(String(convId))?String(convId):'consulta';
-  const ctl=AbortSignal.timeout(Math.max(20000,Math.min(timeoutMs,180000)));
+  const ctl=AbortSignal.timeout(Math.max(20000,Math.min(timeoutMs,300000)));
   let r;
   try{
     r=await fetchFn(c.url+'/v1/chat/completions',{method:'POST',signal:ctl,redirect:'error',
