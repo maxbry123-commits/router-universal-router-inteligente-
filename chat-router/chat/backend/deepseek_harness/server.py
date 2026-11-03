@@ -371,6 +371,10 @@ def llm(cuerpo):
     mensajes = cuerpo.get("messages", cuerpo.get("mensajes"))
     if not isinstance(mensajes, list) or not mensajes:
         raise ValueError("se requieren messages")
+    # Invocaciones internas de Harness (LOOP, herramientas, agentes y Router):
+    # aplicar la misma ficha y el mismo ON/OFF, sin duplicarla si ya venia
+    # inyectada por _chat_ficha o por el wrapper SWE.
+    mensajes = _mensajes_modelo_con_prompt(mensajes, cuerpo.get("modelo"), cuerpo.get("origen"))
     opciones = cuerpo.get("opciones") or {}
     if not isinstance(opciones, dict) or any(k not in OPCIONES for k in opciones):
         raise ValueError("opciones no permitidas")
