@@ -174,8 +174,15 @@ try:
     ad.setdefault("models", {}).update(sw["agents"]["defaults"]["models"])
     # Permitir SOLO Sonnet para el consejero dedicado, no lo convierte en default.
     ad["models"].setdefault("anthropic/claude-sonnet-5-5", {})
-    agents = cfg.setdefault("agents", {}).setdefault("entries", {})
+    root_agents = cfg.setdefault("agents", {})
+    agents = root_agents.setdefault("entries", {})
     agents.setdefault("main", {})  # proteger OpenClaw/default: no convertir el consejo en agente principal
+    # Filtro de propiedad del multiagente: sin ownership explícito, un solo
+    # default heredado (main) mantiene el chat original y valida el Gateway.
+    if root_agents.get("ownership") != "explicit" and not any(
+        isinstance(x,dict) and x.get("default") is True for x in agents.values()
+    ):
+        agents["main"]["default"] = True
     counsel = agents.setdefault("swen-council", {})
     counsel.update({"name":"SWEN Claude Sonnet 5.5","model":{"primary":"anthropic/claude-sonnet-5-5","fallbacks":[]},
       "thinkingDefault":"max","skills":[],
