@@ -546,19 +546,51 @@ def _defaults_entorno():
             os.environ["RIU_SWE_WORKSPACE_RAIZ"] = raiz
 
 
+def _prompt_swe_verificado():
+    """Core + bloques 3/4, SOLO cuando el Router confirma ON; OFF devuelve vacio."""
+    r = _router("agent_access_lock", {})
+    if not isinstance(r, dict) or type(r.get("prompt_locked")) is not bool:
+        raise ValueError("SYSTEM_PROMPT_ESTADO_NO_VERIFICADO")
+    if r["prompt_locked"]:
+        return ""
+    from mvp import prompt as ficha_prompt
+    reglas = ficha_prompt.sistema()
+    if not reglas or "[CREACIÓN DE CÓDIGO]" not in reglas:
+        raise ValueError("SYSTEM_PROMPT_FICHA_INCOMPLETA")
+    return reglas
+
+
+def _mensajes_swe_con_prompt(mensajes):
+    """Misma ficha del Router en el LLM de pasos y en Liquid S2/S3."""
+    reglas = _prompt_swe_verificado()
+    if not reglas:
+        return mensajes
+    if not isinstance(mensajes, list):
+        raise ValueError("SYSTEM_PROMPT_MENSAJES_INVALIDOS")
+    if any(isinstance(m, dict) and m.get("role") == "system" and isinstance(m.get("content"), str)
+           and reglas[:70] in m["content"] for m in mensajes):
+        return mensajes
+    return [{"role": "system", "content": reglas}, *mensajes]
+
+
+def _llm_swe_con_prompt(cuerpo):
+    if not isinstance(cuerpo, dict):
+        raise ValueError("SWE_LLM_CUERPO_INVALIDO")
+    mensajes = cuerpo.get("messages", cuerpo.get("mensajes"))
+    return llm({**cuerpo, "messages": _mensajes_swe_con_prompt(mensajes)})
+
+
+def _servidor_llm_swe_con_prompt(servidor, modelo, mensajes, timeout=None):
+    return _swe.llamar_servidor(servidor, modelo, _mensajes_swe_con_prompt(mensajes), timeout)
+
+
 def _ejecutar_agente_con_prompt(agente, tarea_id, modelo, objetivo, contexto, permisos, checkpoint):
     """Propaga System Prompt de la ficha a los SEIS adaptadores reales (CLI/Gateway),
     solo cuando el Router confirma ON. Es contexto de ejecucion, no una segunda
     infraestructura ni un selector separado. Una verificacion fallida no equivale a ON.
     """
-    r = _router("agent_access_lock", {})
-    if not isinstance(r, dict) or type(r.get("prompt_locked")) is not bool:
-        raise ValueError("SYSTEM_PROMPT_ESTADO_NO_VERIFICADO")
-    if r["prompt_locked"] is False:
-        from mvp import prompt as ficha_prompt
-        reglas = ficha_prompt.sistema()
-        if not reglas or "[CREACIÓN DE CÓDIGO]" not in reglas:
-            raise ValueError("SYSTEM_PROMPT_FICHA_INCOMPLETA")
+    reglas = _prompt_swe_verificado()
+    if reglas:
         anterior = contexto if isinstance(contexto, str) else json.dumps(contexto, ensure_ascii=False, default=str)
         salto = chr(10)
         contexto = salto.join(["[SYSTEM PROMPT DEL ROUTER · CORE + BLOQUES 3 Y 4]", reglas] + (["[CONTEXTO DE LA TAREA]", anterior] if anterior else []))
@@ -571,8 +603,8 @@ def _ejecutar_agente_con_prompt(agente, tarea_id, modelo, objetivo, contexto, pe
 def _ctx_swe():
     """Las funciones del Harness se pasan en cada llamada (no se copian): guardar/leer/_router/llm/con_efectos/_diario/_anotar/_llave."""
     _defaults_entorno()
-    return _swe.Contexto(guardar=guardar, leer=leer, llm=llm, router=_router, con_efectos=con_efectos, diario=_diario, anotar=_anotar, llave=_llave, secreto=_SECRETO,
-                         ejecutar_agente=_ejecutar_agente_con_prompt)
+    return _swe.Contexto(guardar=guardar, leer=leer, llm=_llm_swe_con_prompt, router=_router, con_efectos=con_efectos, diario=_diario, anotar=_anotar, llave=_llave, secreto=_SECRETO,
+                         ejecutar_agente=_ejecutar_agente_con_prompt, servidor_llm=_servidor_llm_swe_con_prompt)
 
 
 def _exigir_agentes_on():
