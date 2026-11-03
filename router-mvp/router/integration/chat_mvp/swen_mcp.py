@@ -131,7 +131,7 @@ def _consulta(modelo, mensaje, sesion, timeout):
         return {"estado":"terminado","diagnostico":"rutas_gateway",
                 "http":estados,"url_custom_configurado":bool(os.getenv("RIU_OPENCLAW_URL"))}
     if mensaje.strip() == "@swen/ocdoctor":
-        binary = shutil.which("openclaw") or "/opt/node24/bin/openclaw"
+        binary = "/opt/node24/bin/openclaw" if os.path.isfile("/opt/node24/bin/openclaw") else shutil.which("openclaw")
         if not os.path.isfile(binary):
             return {"estado":"error","error":"OPENCLAW_BIN_NO_ENCONTRADO"}
         home = "/tmp/openclaw-home-" + str(os.getuid())
@@ -140,7 +140,8 @@ def _consulta(modelo, mensaje, sesion, timeout):
                                  text=True,timeout=22,check=False,env={
                                    **os.environ,"HOME":home,
                                    "OPENCLAW_STATE_DIR":home+"/.openclaw",
-                                   "OPENCLAW_HOME":home})
+                                   "OPENCLAW_HOME":home,
+                                   "PATH":"/opt/node24/bin:"+os.getenv("PATH","")})
             salida = (run.stdout+"\\n"+run.stderr).lower()
             if run.returncode == 0:
                 tipo = "VALIDA"
