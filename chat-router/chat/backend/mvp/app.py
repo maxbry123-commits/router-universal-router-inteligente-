@@ -556,14 +556,86 @@ async def _chat_ficha(cuerpo, progreso=None):
         opciones["max_tokens"] = pedido
     if q.get("thinking_mode") in ("on", "off") and modelo == "qwen3.8-max":  # selector Pensar del chat; solo este modelo admite el interruptor (modelos.extra_body)
         opciones.setdefault("enable_thinking", q["thinking_mode"] == "on")
-    salida = await chat({"modelo": modelo, "mensajes": mensajes, "via": "harness",
-                         "opciones": opciones or None, **_controles(q)})
+    # El codigo de 500+ lineas NO es una peticion de 1 turno/120 s: el
+    # mismo worker chat_async retoma partes con checkpoint, AST y cola de cuota.
+    # El chat normal, medios y modelos Qwen no cambian.
+    solicitud = str((ultimo or {}).get("content") or q.get("message") or "")
+    lineas = loop_codigo.solicitado(solicitud, str(q.get("task_type") or ""), str(q.get("modo") or ""))
+    if lineas and modelo.startswith(("groq/", "nvidia/")) and _PID.get():
+        salida = await _codigo_largo_comun(modelo, mensajes, opciones, q, lineas, progreso)
+    else:
+        salida = await chat({"modelo": modelo, "mensajes": mensajes, "via": "harness",
+                             "opciones": opciones or None, **_controles(q)})
     return {"estado": "completado", "via": "harness", "finish_reason": salida["finish_reason"],
             "modelo_solicitado": modelo, "modelo_respuesta": salida.get("modelo_respuesta"), "herramientas_usadas": salida.get("herramientas_usadas") or [],
             **({"metricas": salida["metricas"]} if isinstance(salida.get("metricas"), dict) else {}),
             "choices": [{"message": {"role": "assistant", "content": salida["texto"],
                                     "tool_calls": salida["tool_calls"]},
                          "finish_reason": salida["finish_reason"]}]}
+
+async def _codigo_largo_comun(modelo, mensajes, opciones, q, lineas, progreso=None, pid=None):
+    """Reutiliza chat/Harness, tareas persistidas HF y el mismo proceso_id.
+    No escribe en GitHub, no ejecuta herramientas: la salida requiere auditoria
+    antes de publicar. 429 pausa 65s, cada parte se valida antes de acumular.
+    """
+    pid = pid or _PID.get()
+    if not pid:
+        raise HTTPException(status_code=409, detail="CODA_REQUIERE_CHAT_ASYNC")
+    clave = "code-" + pid
+    banco = app.state.banco
+    datos = {"modelo": modelo, "mensajes": mensajes, "opciones": opciones,
+             "sesion": str(q.get("sesion") or "")[:60], "lineas": lineas,
+             "horas": min(4., max(0.1, float(q.get("duracion_horas") or 4)))}
+    sistemas = [m for m in mensajes if isinstance(m, dict)
+                and m.get("role") == "system"
+                and not str(m.get("content") or "").startswith(prompt.formato())]
+
+    async def cargar():
+        return await asyncio.to_thread(estado_tarea.leer, banco, clave)
+
+    async def guardar(estado):
+        # El checkpoint conserva el INPUT original y el cursor; no hay
+        # escrituras del modelo ni re-ejecucion de tools en cada vuelta.
+        ok = await asyncio.to_thread(estado_tarea.guardar, banco, clave,
+                                     {**estado, "entrada": datos})
+        if ok and estado.get("validacion") != "PASS":
+            await asyncio.to_thread(estado_tarea.marcar, banco, clave, True)
+        return ok
+
+    async def inferir(peticion, max_tokens):
+        # Una llamada por parte; los reintentos largos son del motor, no del
+        # request HTTP. La cuota del proveedor NO se puede saltar.
+        _token = _PID.set(None)  # evita confundir checkpoint del subturno con el job
+        try:
+            return await chat({"modelo": modelo, "mensajes": sistemas + peticion,
+                               "via": "harness", "opciones": {"max_tokens": max_tokens},
+                               "tools": False, "agente_tool": False, "llm_tool": False})
+        finally:
+            _PID.reset(_token)
+
+    def avance(cantidad, nota):
+        if pid in TRABAJOS:
+            TRABAJOS[pid]["progreso"] = "CODA %s/%d lineas · %s" % (cantidad, lineas, nota)
+            TRABAJOS[pid]["subestado"] = "coda"
+        if progreso:
+            progreso("CODA %s/%d · %s" % (cantidad, lineas, nota))
+
+    try:
+        res = await loop_codigo.generar(
+            mensajes=mensajes, modelo=modelo, pid=pid, n_lineas=lineas,
+            inferir=inferir, cargar=cargar, guardar=guardar,
+            progreso=avance,
+            cancelado=lambda: pid in TRABAJOS and TRABAJOS[pid].get("estado") == "cancelado",
+            horas=datos["horas"])
+    except (RuntimeError, ValueError) as error:
+        raise HTTPException(status_code=504, detail=str(error)[:260]) from None
+    await asyncio.to_thread(estado_tarea.marcar, banco, clave, False)
+    return {"texto": res["texto"], "tool_calls": [], "finish_reason": "stop",
+            "modelo_respuesta": modelo, "herramientas_usadas": [],
+            "metricas": {"lineas_verificadas": res["lineas"],
+                        "partes": res["partes"], "desde_checkpoint": res["desde_checkpoint"],
+                        "sha256": res.get("sha256")}}
+
 async def _local(pid, cuerpo):
     _PID.set(pid); _SES.set(str(cuerpo.get("sesion") or (cuerpo.get("qwen") or {}).get("sesion") or "")[:60])
     try:
@@ -926,4 +998,3 @@ mcp_route.montar(app, verificar_mcp, chat, almacen, CONTROL, _delegar)
 from mvp import bridge_proxy  # noqa: E402
 bridge_proxy.montar(app)
 frontend_estatico.montar(app)  # el chat tambien sale del Router: Vercel puede estar sin cupo de despliegues
-
