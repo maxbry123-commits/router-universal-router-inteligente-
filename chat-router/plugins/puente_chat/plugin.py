@@ -1,9 +1,9 @@
 """Plugin puente_chat (Director 2026-10-04): papel del harness para la UI del chat, dentro del Router (su computo, puerta fija).
 
 Llamada: POST <puerta>/plugins/puente_chat/call/<accion> con el token del chat (Bearer). Respuesta del host: {"status": "ok", "result": ...}.
-Acciones: status | modelos | chat {model, messages, max_tokens, sesion, respaldo_url?} | estado {job, url} | apagar {job}.
+Acciones vigentes: status | modelos | chat | herramientas. Los modelos HF locales se sirven mediante SWE CODE (S1/S2/S3).
 Modelos NV/GROQ: llamada directa al proveedor con las claves del banco; rota claves del MISMO modelo; tope total 90 s (GLM 96 s).
-Modelos HF: enciende un L4 (almacenamiento conectado como disco). Seguridades: (1) se apaga solo 30 s tras terminar la salida; (2) 5 min sin pedidos; (3) tope duro de HF de 20 min; (4) barrendero del Router cancela L4 viejos; (5) un solo L4 a la vez; remoto: apagar / apagar_todo.
+Modelos locales HF: el servidor actual es SWE CODE con S1/S2/S3. Este plugin NO crea Jobs ni instancias de inferencia.
 Memoria: antes de responder busca contexto en /memoria (scope chat:<sesion>); despues guarda pregunta y respuesta.
 """
 from __future__ import annotations
@@ -49,9 +49,7 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
-NS = "COMAND-CENTER-1"
 DUENO = "chat-ui"
-ETIQUETA_L4 = "router-respaldo-l4"
 TOPE_TOTAL_S = 90
 MAX_PASOS = 6
 _CACHE_H = {}
@@ -61,12 +59,8 @@ _catalog = [json.loads(f.read_text()) for f in sorted(_CONFIG_DIR.glob("modelo-*
 FICHAS = {f["id"]:(f["nombre"],f.get("proveedor","pipeline"),f.get("modelo","pipeline"),f["timeout_s"]) for f in _catalog if f["tipo"] in ("api","consil","motor","xray","auditor")}
 ESPECIALES = {f["id"]: f["tipo"] for f in _catalog if f["tipo"] in ("consil","motor","xray","auditor")}
 _RETIRADO = {f['id']: f['retirado'] for f in _catalog if f.get('retirado')}  # modelo dado de baja por el proveedor: error claro, sin caer a otro modelo
-RESPALDO = {f["id"]:(f["nombre"],f["archivo"]) for f in _catalog if f["tipo"]=="hf"}
-ARRANQUE = ('/app/llama-server --host 0.0.0.0 --port 8080 -m "/modelos/$ARCHIVO" --alias "$ALIAS" -ngl 999 -fa on -np 1 -b 128 -c 16384 '
-            '--temp 0 --top-k 20 --top-p 0.95 --no-mmproj --reasoning-budget 0 --spec-type draft-mtp --spec-draft-n-max 2 --jinja > /tmp/l.log 2>&1 &\n'
-            'P=$!\nwhile kill -0 $P 2>/dev/null; do\n  sleep 5\n  I=$(( $(date +%s) - $(stat -c %Y /tmp/l.log) ))\n'
-            '  if grep -q print_timing /tmp/l.log && [ $I -ge 30 ]; then echo APAGADO_FIN_DE_SALIDA; kill $P; exit 0; fi\n'
-            '  if [ $I -ge 300 ]; then echo APAGADO_5_MIN_SIN_USO; kill $P; exit 0; fi\ndone\n')
+# La antigua clase hf-* no es un modelo local operativo ni se publica.
+RESPALDO = {}
 
 
 import http.client as _hc
@@ -459,56 +453,6 @@ def _api(proveedor: str, modelo: str, mensajes: list, max_tokens: int, tope: int
         return providers.chat(proveedor, modelo, mensajes, max_tokens, tope)
     except Exception as exc:  # noqa: BLE001
         return {'error': 'ROUTER_API_NO_DISPONIBLE', 'detalle': str(exc)[:200]}  # router_api.chat: mismo bucle de claves/plazo en el edificio 1
-
-
-MAX_VIDA_L4_S = 1200  # seguridad 3: tope duro de HF (20 min), se aplica FUERA del contenedor
-FINALIZADOS = ("COMPLETED", "CANCELED", "ERROR", "DELETED")
-
-
-def _edad_s(creado: str) -> float:
-    from datetime import datetime, timezone
-    try:
-        t = datetime.fromisoformat(str(creado).replace("Z", "+00:00"))
-        return (datetime.now(timezone.utc) - t).total_seconds()
-    except ValueError:
-        return 0.0
-
-
-def _l4_vivos() -> list[dict[str, Any]]:
-    s, lista = _hf("GET", "/api/jobs/" + NS)
-    if s >= 400 or not isinstance(lista, list):
-        return []
-    return [j for j in lista if (j.get("labels") or {}).get("name") == ETIQUETA_L4
-            and (j.get("status") or {}).get("stage") not in FINALIZADOS]
-
-
-def _cancelar(job_id: str) -> bool:
-    s, _ = _hf("POST", "/api/jobs/%s/%s/cancel" % (NS, job_id))
-    return s < 400
-
-
-def _apagar_todo() -> dict[str, Any]:
-    """Apagado remoto de emergencia: cancela TODOS los L4 de respaldo."""
-    return {"apagados": sum(1 for j in _l4_vivos() if _cancelar(j["id"]))}
-
-
-def _barrer() -> int:
-    """Seguridad 4 (barrendero del Router): cualquier L4 mas viejo que su vida maxima se cancela."""
-    return sum(1 for j in _l4_vivos() if _edad_s(j.get("createdAt", "")) > MAX_VIDA_L4_S and _cancelar(j["id"]))
-
-
-def _encender(model: str) -> dict[str, Any]:
-    _apagar_todo()  # seguridad 5: un solo L4 a la vez
-    _, archivo = RESPALDO[model]
-    s, j = _hf("POST", "/api/jobs/" + NS, {
-        "dockerImage": "ghcr.io/ggml-org/llama.cpp:server-cuda", "command": ["bash", "-c", ARRANQUE], "arguments": [],
-        "environment": {"ARCHIVO": archivo, "ALIAS": model}, "flavor": "l4x1", "timeoutSeconds": MAX_VIDA_L4_S, "labels": {"name": ETIQUETA_L4},
-        "volumes": [{"type": "bucket", "source": NS + "/yaiwes-memoria-storage", "mountPath": "/modelos", "readOnly": True,
-                     "path": "router-respaldo/modelos"}],
-        "expose": {"ports": [8080], "portsPublic": []}})
-    if s >= 400:
-        return {"error": "NO_SE_PUDO_ENCENDER", "detalle": str(j)[:300]}
-    return {"estado": "encendiendo", "job_id": j["id"], "url": "https://" + j["id"] + "--8080.hf.jobs", "model": model}
 
 
 def _herr():
@@ -1109,19 +1053,6 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             if 0 < ultimo[0] < 500 and ultimo[0] != 429:
                 return ultimo  # error de contenido (2xx sin choices, 4xx): reintentar no lo arregla; solo red/timeout/5xx
         time.sleep(1 + random.random() * 0.5)  # backoff corto con jitter antes de la segunda vuelta
-    return ultimo
-
-
-def _llamar_l4(url, modelo, mensajes, max_tokens, tools):
-    ultimo = (0, {'error': 'SIN_TOKEN_HF_EN_EL_BANCO'})
-    for t in _tokens_hf():
-        cuerpo = {'model': modelo, 'messages': mensajes, 'max_tokens': max_tokens}
-        if tools:
-            cuerpo['tools'] = tools
-            cuerpo['tool_choice'] = 'auto'
-        ultimo = _http('POST', url + '/v1/chat/completions', t, cuerpo, 110)
-        if ultimo[0] < 400 or ultimo[0] == 400:
-            return ultimo
     return ultimo
 
 
@@ -2761,10 +2692,10 @@ def _chat(p):
     max_tokens = int(p.get('max_tokens') or 2048)
     sesion = str(p.get('sesion') or 'general')[:60]
     pregunta = next((str(m.get('content', '')) for m in reversed(mensajes) if m.get('role') == 'user'), '')
-    if model not in FICHAS and model not in RESPALDO:
-        return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *RESPALDO]}
-    if model in RESPALDO and not p.get('respaldo_url'):
-        return _encender(model)
+    if model.startswith('hf-'):
+        return {'error': 'MODELO_HF_HEREDADO_RETIRADO', 'detalle': 'Selecciona un modelo local real de SWE CODE (S1/S2/S3); no se crea HF Jobs ni se sustituye el modelo.'}
+    if model not in FICHAS:
+        return {'error': 'MODELO_DESCONOCIDO', 'validos': list(FICHAS)}
     if model in _RETIRADO:
         return {'error': 'MODELO_RETIRADO', 'detalle': _RETIRADO[model]}
     presupuesto = 96 if model == 'nv-glm-5-3' else int(FICHAS[model][3]) + 5 if model in ('nv-kimi-k3', 'nv-muse-glimmer', 'nv-nemotron-super') else TOPE_TOTAL_S  # Kimi: timeout de su ficha (>1,6 min)
@@ -2858,7 +2789,7 @@ def _chat(p):
     _core = _core_render(_prompt_lib('system_core.md'), str(p.get('nodo') or ''))
     if _core:
         sysb['core'] = _core  # DSL G10 capa A: SYSTEM_CORE siempre primero en el system
-    sysb['const'] = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
+    sysb['const'] = _herr().SISTEMA + ' Modelo seleccionado: ' + FICHAS[model][2]
     if _deleg_lock():  # >>> PARCHE_LOCK_DELEG <<<
         sysb['const'] += ' Las tools que invocan otros modelos o agentes estan BLOQUEADAS por el Director (GAP_AGENT_ACCESS_LOCKED): no las uses.'
     if gov_bloque:  # Constitucion validada: primero, antes de memoria y anclas
@@ -2951,12 +2882,7 @@ def _chat(p):
             return _llamar_api(proveedor, modelo, ms, max_tokens, tope, tl)
         _DEADLINE.set(time.monotonic() + presupuesto)
     else:
-        url = str(p['respaldo_url'])
-        if not url.startswith('https://') or not url.endswith('--8080.hf.jobs'):
-            return {'error': 'RESPALDO_URL_INVALIDA'}
-
-        def llamar(ms, tl):
-            return _llamar_l4(url, model, ms, max_tokens, tl)
+        return {'error': 'MODELO_DESCONOCIDO'}
     # el sentinela de las fichas envuelve a la LLM: bucle hasta terminar la tarea
     ultimo = {'model': model}
 
@@ -3054,35 +2980,6 @@ def _chat(p):
     return salida
 
 
-def _estado(p: dict[str, Any]) -> dict[str, Any]:
-    try:
-        _barrer()
-    except Exception:  # noqa: BLE001
-        pass
-    s, j = _hf("GET", "/api/jobs/%s/%s" % (NS, p.get("job")))
-    etapa = (j.get("status") or {}).get("stage", "DESCONOCIDA") if isinstance(j, dict) else "DESCONOCIDA"
-    listo = False
-    url = str(p.get("url") or "")
-    if etapa == "RUNNING" and url.endswith("--8080.hf.jobs"):
-        for t in _tokens_hf():
-            code, _ = _http("GET", url + "/health", t, None, 10)
-            if code == 200:
-                listo = True
-                break
-    return {"etapa": etapa, "listo": listo}
-
-
-def _apagar(p: dict[str, Any]) -> dict[str, Any]:
-    job = str(p.get("job") or "")
-    s, j = _hf("GET", "/api/jobs/%s/%s" % (NS, job))
-    etiqueta = ((j.get("labels") or {}).get("name") if isinstance(j, dict) else None)
-    if etiqueta != ETIQUETA_L4:
-        return {"error": "SOLO_SE_APAGAN_JOBS_DEL_L4_DE_RESPALDO", "job_id": job}
-    s, _ = _hf("POST", "/api/jobs/%s/%s/cancel" % (NS, job))
-    return {"job_id": job, "apagado": s < 400}
-
-
-
 # ---- Team qwen: los 14 modelos de la ficha (Qwen Cloud). La clave va sellada con la clave del banco ----
 _QWEN_CACHE = {}
 
@@ -3110,11 +3007,7 @@ def _qwen_conf():
 
 def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "status":
-        try:
-            vivos = len(_l4_vivos())
-        except Exception:  # noqa: BLE001
-            vivos = -1
-        return {"ok": True, "modelos": len(FICHAS) + len(RESPALDO), "l4_vivos": vivos}
+        return {"ok": True, "modelos": len(FICHAS), "locales": "SWE CODE S1/S2/S3", "jobs_hf": "retirado"}
     if action == "modelos":
         return {"modelos": [{"id": k, "nombre": v[0], "respaldo": False} for k, v in FICHAS.items()]
                 + [{"id": k, "nombre": v[0], "respaldo": True} for k, v in RESPALDO.items()]}
@@ -3122,10 +3015,8 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         return llm_call(payload)
     if action == "chat":
         return _chat(payload)
-    if action == "estado":
-        return _estado(payload)
-    if action == "apagar":
-        return _apagar(payload)
+    if action in ("estado", "apagar", "apagar_todo"):
+        return {"error": "HF_JOBS_RUTA_RETIRADA", "detalle": "Los modelos locales se sirven por SWE CODE S1/S2/S3; no se gestionan Jobs en puente_chat."}
     if action == 'groq_agentes':  # ventana de tools: listar / guardar el pool de agentes Groq (max 20)
         h = _herr()
         if isinstance(payload.get('agentes'), list):
@@ -3154,8 +3045,6 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == 'herramientas_estado':
         h = _herr()
         return {'github': bool(h._token_gh()), 'hf': bool(h._token_hf())}
-    if action == "apagar_todo":
-        return _apagar_todo()
     if action == "subir":  # archivo adjunto del chat -> sistema de almacenamiento/memoria
         try:
             nombre = str(payload.get('nombre') or 'archivo')[:120]
