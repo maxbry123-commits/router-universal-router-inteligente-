@@ -14,11 +14,10 @@ function cfg(){
     const x=new URL(base);
     if(x.username||x.password||!((x.protocol==='https:' && x.hostname)
       ||(x.protocol==='http:' && ['localhost','127.0.0.1','::1'].includes(x.hostname))))return null;
-    // gateway.controlUi.basePath="/openclaw" monta toda la API HTTP bajo ese prefijo.
-    // En producción GET /openclaw/v1/models = 200, mientras /v1/models = 404.
-    const prefijo=x.pathname==='/' ? '/openclaw' :
-      (x.pathname.endsWith('/') ? x.pathname.slice(0,-1) : x.pathname);
-    url=x.origin+prefijo;
+    // Control UI basePath es sólo para la interfaz gráfica.
+    // /openclaw/v1/models devuelve HTML; la API real está en /v1/models.
+    url=x.origin+(x.pathname==='/' ? '' :
+      (x.pathname.endsWith('/') ? x.pathname.slice(0,-1) : x.pathname));
   }catch{return null;}
   return token?{url,token}:null;
 }
@@ -37,7 +36,8 @@ export async function estadoClaude({fetchFn=fetch}={}){
   try {
     const ctl=AbortSignal.timeout(6500);
     const r=await fetchFn(c.url+'/v1/models',{method:'GET',
-      headers:{authorization:'Bearer '+c.token},signal:ctl,redirect:'error'});
+      headers:{authorization:'Bearer '+c.token,accept:'application/json, text/html;q=0'},
+      signal:ctl,redirect:'error'});
     if(!r.ok)return {ok:false,disponible:false,modelo:MODEL,
       reason:r.status===401||r.status===403?'CLAUDE_GATEWAY_NO_AUTORIZADO':
         r.status===404?'CLAUDE_GATEWAY_MODELOS_NO_HABILITADOS':
