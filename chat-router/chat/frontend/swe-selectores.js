@@ -5,6 +5,7 @@
 // una sola consulta disponibilidad (cargarCapacidades) y una sola serializa el contrato (swe-directo.js leerSeleccion/armarTarea). Abrir una ventana MUEVE el nodo; no clona.
 // Cada ventana solo aporta lo suyo: su lista de MODELO QUE RESPONDE (swe-directo.js opcionesModeloVentana), su nota de conexion y su titulo.
 import { api, plugin } from "./api.js";
+import "./swen-openai-ui.js";
 import { systemPromptOnCache, cargarSystemPromptOn, alternarSystemPromptOn } from "./swe-systemprompt.js";
 import { camposFijos, modeloParaLista, modeloGuardado, SWE_LISTAS, MODELOS_SWE, MODELOS_WEB, MODOS_TRABAJO, AGENTES_SWE, WORKFLOWS_SWE, LIQUID_MIRROR, leerSeleccion, guardarSeleccion, requiereHarness, cargarCapacidades, olvidarCapacidades, normalizarCapacidades, estadoOpcion, idCatalogo, agruparOpciones, lineaNoInstalados, lineaSinVerificar, lineaOtros, opcionesModeloVentana, ETIQUETA_ESTADO, VENTANAS_CENTRAL } from "./swe-directo.js";
 const K = "riu_swe_modelo";
@@ -139,8 +140,15 @@ function controles() {
     btn.title="Requiere API de OpenAI configurada en el servidor (independiente de la suscripción ChatGPT)";
     herramientas.append(btn);
   }
+  const recuperar = el("div", "row");
+  const idInvestigacion=el("input"); idInvestigacion.type="text";idInvestigacion.placeholder="ID de investigación guardada";
+  idInvestigacion.dataset.swenResearchId="1";idInvestigacion.maxLength=32;
+  idInvestigacion.value=localStorage.getItem("riu_swen_investigacion_id")||"";
+  idInvestigacion.setAttribute("aria-label","ID de investigación OpenAI anterior");
+  const consultar=el("button","secondary","Consultar investigación");consultar.type="button";consultar.dataset.swenInvestigacionCargar="1";
+  recuperar.append(idInvestigacion,consultar);
   const estado = el("p", "fila-desc swe-openai-estado", "OpenAI: acceso API independiente. No utiliza la sesión de ChatGPT ni un modelo local traductor.");
-  extras.append(title, source, fila, info, herramientas, estado);
+  extras.append(title, source, fila, info, herramientas, recuperar, estado);
   c.append(nota, rej, lm, mo, sp, fw, lq, extras, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
   cargarSystemPromptOn().then(pintarControles);  // estado real del bridge en segundo plano; el boton ya nace pintado en ON (defecto) mientras llega
   return c;
