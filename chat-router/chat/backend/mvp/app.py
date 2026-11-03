@@ -517,7 +517,12 @@ async def _chat_ficha(cuerpo, progreso=None):
         mensajes = [*mensajes[:-1], {**ultimo, "content": ruteo["message"]}]
     if ruteo["source"] != "default_mode":  # el modo por defecto (m05: "sin herramientas") contradiría las tools autorizadas por el Router: sin regla ni modo elegido no se envuelve
         mensajes = [{"role": "system", "content": ruteo["ficha"]["system_block"]}] + list(mensajes)
-    capa = prompt.formato() + ("\n\n" + prompt.sistema() if CONTROL.d["prompt_on"] else "")  # capa externa: formato de salida siempre; system prompt completo con su boton
+    # Groq Qwen3.8 en plan gratuito admite ~8K TPM por organización; con
+    # system_core + bloque 3 + bloque 4 y los mensajes del chat devuelve 413.
+    # Mantener las fichas intactas y la Constitución/verbatim del usuario.
+    candidato = str(q.get("modelo") or q.get("model") or "")
+    capa = prompt.formato() + ("\n\n" + (prompt.sistema_groq() if candidato == "groq/qwen/qwen3.8-27b" else prompt.sistema())
+                                 if CONTROL.d["prompt_on"] else "")
     mensajes = [{"role": "system", "content": capa}] + list(mensajes)
     seleccionado = str(q.get("modelo") or q.get("model") or "")
     seleccionado = next((m for m, _ in modelos.catalogo() if "".join(c for c in m.lower() if c.isalnum()) == "".join(c for c in seleccionado.lower() if c.isalnum())), seleccionado)
