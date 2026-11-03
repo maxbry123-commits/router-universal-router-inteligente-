@@ -342,10 +342,23 @@ def chat_provider_models(proveedor: str):
     if proveedor != "qwen":
         raise HTTPException(status_code=404, detail="proveedor no disponible en mvp")
     return {"models": [{"model_id": m, "label": m, "tipo": t} for m, t in modelos.catalogo()]}
-# --- G16: panel-chat.js:542 lee {agents:[{id,name}]} y :543-544 {accounts:[{account}]}; mvp no tiene fuente de agentes ni de cuentas GitHub -> listas vacias (sin inventar) ---
+# Los seis agentes del catalogo real, con disponibilidad del MISMO Harness que /chat/swe/capacidades.
+# Nunca afirmar "disponible" si faltan binarios, backend o sondas.
 @app.get("/chat/agents", dependencies=[Depends(verificar)])
-def chat_agents():
-    return {"agents": []}
+async def chat_agents():
+    from agentes.adaptadores.modelos import AGENTES
+    cap = await swe_capacidades()
+    estado = cap.get("agentes") if isinstance(cap.get("agentes"), dict) else {}
+    nombres = {"openclaw": "OpenClaw", "swe-agent": "SWE-agent", "openhands": "OpenHands",
+               "opencode": "OpenCode", "codex": "Codex", "claude-code": "Claude Code"}
+    listado = []
+    for ident in AGENTES:
+        dato = estado.get(ident) if isinstance(estado.get(ident), dict) else {}
+        disponible = dato.get("disponible") is True and dato.get("estado", "DISPONIBLE") == "DISPONIBLE"
+        listado.append({"id": ident, "name": nombres[ident], "disponible": disponible,
+                        "estado": dato.get("estado", "SIN VERIFICAR") if not disponible else "DISPONIBLE",
+                        "motivo": str(dato.get("motivo") or "")[:200]})
+    return {"agents": listado, "harness": cap.get("harness", "desconocido")}
 @app.get("/chat/github/accounts", dependencies=[Depends(verificar)])
 def chat_github_accounts():
     return {"accounts": []}
