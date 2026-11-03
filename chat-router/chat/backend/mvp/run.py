@@ -160,7 +160,7 @@ def _estado_auto(fase, nuevo=None, tareas=None):
             "codigo_cargado": (ARRANQUE or "")[:10],
             "checkout_git": (nuevo or _head() or "")[:10],
             "tareas_en_curso": tareas,
-            "reanudacion_persistente": True,
+            "checkpoint_coda_disponible": bool(getattr(appmod.app.state, "banco", None)),
             "diferido_max_s": DIFERIR_MAX_S,
             "revisado_en": int(time.time()),
         }
