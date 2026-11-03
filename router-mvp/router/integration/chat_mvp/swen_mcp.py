@@ -112,6 +112,20 @@ def _inferencia_y_checkpoint(pid, modelo, mensaje, sesion, timeout, firma):
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
+    if mensaje.strip() == "@swen/claude":
+        req = urllib.request.Request("http://127.0.0.1:7870/v1/claude/estado",
+                                     headers={"X-API-Key": _clave()})
+        try:
+            with urllib.request.urlopen(req, timeout=12) as respuesta:
+                data = json.load(respuesta)
+            return {"estado":"terminado", "diagnostico":"claude_gateway",
+                    "gateway_disponible":bool(data.get("disponible")),
+                    "razon":str(data.get("reason") or "SIN_RESULTADO")[:100],
+                    "modelo":str(data.get("modelo") or "")[:100]}
+        except urllib.error.HTTPError as exc:
+            return {"estado":"error","error":"SWEN_CLAUDE_HTTP_" + str(exc.code)}
+        except (OSError, ValueError, TimeoutError):
+            return {"estado":"error","error":"SWEN_CLAUDE_NO_VERIFICABLE"}
     if mensaje.strip() == "@swen/sesiones":
         # Diagnóstico auténtico de las SESIONES WEB. Emplea el endpoint
         # existente; se respetan las verificaciones oficiales de cada sitio.
