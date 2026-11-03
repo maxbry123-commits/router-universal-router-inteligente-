@@ -98,7 +98,7 @@ def crear_dir_privado(ruta):
             os.chmod(ruta, 0o700)
         return True
     except OSError:
-        return False
+return False
 
 
 def ahora():
@@ -119,6 +119,14 @@ def entorno_base(extra=None):
     """Entorno minimo: no hereda claves del Harness (RIU_API_KEY, tokens). Cada adaptador anade solo lo que su agente necesita."""
     e = {k: os.environ[k] for k in ("PATH", "HOME", "LANG", "LC_ALL", "TMPDIR", "USER") if os.environ.get(k)}
     e.setdefault("PATH", "/usr/local/bin:/usr/bin:/bin")
+    # Los CLIs npm de agentes (Codex, OpenCode, Claude Code) exigen Node >=22.
+    # El bridge usa el Node propio del Space: NO cambiarlo globalmente.
+    # Solo los subprocesos de agentes priorizan el Node24 del runtime ya instalado.
+    candidatos = (os.path.join(dir_runtime(), "node24", "bin"), "/opt/node24/bin")
+    for carpeta in candidatos:
+        if os.path.isfile(os.path.join(carpeta, "node")):
+            e["PATH"] = carpeta + os.pathsep + e["PATH"]
+            break
     e.update(extra or {})
     return e
 
@@ -198,7 +206,7 @@ def preparar(agente, tarea_id, modelo, objetivo, contexto, permisos, checkpoint)
         validar_modelo(modelo)
     except ValueError:
         raise fallo("MODELO_NO_REGISTRADO", "modelo fuera del catalogo") from None
-    if not isinstance(objetivo, str) or not objetivo.strip():
+if not isinstance(objetivo, str) or not objetivo.strip():
         raise fallo("OBJETIVO_VACIO", "objetivo vacio")
     if len(objetivo) > MAX_OBJETIVO:
         raise fallo("OBJETIVO_DEMASIADO_LARGO", "objetivo supera %d caracteres" % MAX_OBJETIVO)
@@ -298,7 +306,7 @@ def jsonl(texto):
             try:
                 out.append(json.loads(linea))
             except ValueError:
-                pass
+pass
     return out
 
 
