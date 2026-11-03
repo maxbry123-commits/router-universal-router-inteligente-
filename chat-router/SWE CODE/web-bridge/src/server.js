@@ -28,7 +28,7 @@ import { conFormato } from './formato.js';
 import { promptHerramientasWeb, extraerLlamadasWeb } from './web_tools.js';
 import { estadoContexto, registrarContexto, transferirContexto, tarjetaHandoff } from './contexto_handoff.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
-import { vigilarActualizacion } from './autoactualizar.js';
+import { vigilarActualizacion, versionCheckout } from './autoactualizar.js';
 import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco, diagnosticoBanco, resumenBanco, catalogoProveedores, anadirProveedor } from './clavesbanco.js';
 import { publicarEnGithub, traerDeGithub } from './bancogithub.js';
 import { guardarAsesoria, leerProyecto, listarProyectos } from './proyectos.js';
@@ -64,6 +64,7 @@ const sinCorreos = (o) => JSON.parse(JSON.stringify(o ?? null, (k, v) => (k === 
 const textoDe = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map(p => (typeof p === 'string' ? p : p && typeof p.text === 'string' ? p.text : '')).filter(Boolean).join('\n') : '');
 const MAX_PROMPT = parseInt(process.env.BRIDGE_MAX_PROMPT || '400000', 10), MAX_DOCS = 10;
 
+const SHA_BRIDGE_ARRANQUE = versionCheckout(); // SHA del codigo cargado por este proceso Node
 const app = express();
 app.set('strict routing', true);          // '/v1/claves/' ya no es '/v1/claves'
 app.set('case sensitive routing', true);  // '/V1/CLAVES' tampoco
@@ -171,7 +172,11 @@ app.get('/health', async (req, res) => {
     poolInfo = { total: n, loaded: true, indices: [...Array(n).keys()], actual: idx };
   } catch { poolInfo = { total: 0, loaded: false, error: 'WEB_ACCOUNTS_VACIO' }; }
   const completo = conToken(req) || conAcceso(req);  // sin credencial valida: banco recortado a contadores y booleanos, sin rutas del disco
-  res.json({ ok: true, pool: poolInfo, cuentas: sinCorreos(estadoCuentas()), respaldo: estadoRespaldo(), banco: completo ? diagnosticoBanco() : resumenBanco(diagnosticoBanco()), metricas: estadoMetricas(), ...(completo ? { state_dir: process.env.BRIDGE_STATE_DIR || './state' } : {}) });
+  const shaClon = versionCheckout(); // HEAD local; no consulta GitHub ni secretos
+  res.json({ ok: true, pool: poolInfo, cuentas: sinCorreos(estadoCuentas()), respaldo: estadoRespaldo(), banco: completo ? diagnosticoBanco() : resumenBanco(diagnosticoBanco()), metricas: estadoMetricas(),
+    autoactualizacion: { bridge_cargado: SHA_BRIDGE_ARRANQUE, checkout_git: shaClon,
+      recarga_pendiente: !!(shaClon && SHA_BRIDGE_ARRANQUE && shaClon !== SHA_BRIDGE_ARRANQUE) },
+    ...(completo ? { state_dir: process.env.BRIDGE_STATE_DIR || './state' } : {}) });
 });
 
 app.get('/v1/web/diagnostico',async(_req,res)=>{
