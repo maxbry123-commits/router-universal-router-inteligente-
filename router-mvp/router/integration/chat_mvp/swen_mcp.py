@@ -114,6 +114,25 @@ def _inferencia_y_checkpoint(pid, modelo, mensaje, sesion, timeout, firma):
 
 
 def _consulta(modelo, mensaje, sesion, timeout):
+    if mensaje.strip() == "@swen/occonfig":
+        # Diagnóstico seguro del Gateway: sólo booleanos de la configuración,
+        # nunca claves, tokens, perfiles ni datos personales.
+        p = Path("/tmp/openclaw-home-" + str(os.getuid()) + "/.openclaw/openclaw.json")
+        try:
+            if p.is_symlink() or not p.is_file():
+                return {"estado":"error","error":"OPENCLAW_CONFIG_NO_ENCONTRADA"}
+            c = json.loads(p.read_text(encoding="utf-8"))
+            gw = c.get("gateway") or {}
+            http = (gw.get("http") or {}).get("endpoints") or {}
+            agents = (c.get("agents") or {}).get("entries") or {}
+            return {"estado":"terminado","diagnostico":"config_openclaw",
+                    "chat_completions_habilitado":bool((http.get("chatCompletions") or {}).get("enabled")),
+                    "agente_claude_registrado":"swen-council" in agents,
+                    "agente_reparador_registrado":"swen-repair" in agents,
+                    "openclaw_enable":os.getenv("OPENCLAW_ENABLE")=="1",
+                    "gateway_token_configurado":bool(os.getenv("OPENCLAW_GATEWAY_TOKEN"))}
+        except (OSError,ValueError,TypeError):
+            return {"estado":"error","error":"OPENCLAW_CONFIG_INACCESIBLE"}
     if mensaje.strip() == "@swen/autotest":
         # Suite fija de nuestro repositorio, nunca comandos externos arbitrarios.
         raiz = Path(__file__).resolve().parents[4]
@@ -186,7 +205,8 @@ def _consulta(modelo, mensaje, sesion, timeout):
             return {"estado":"terminado", "diagnostico":"claude_gateway",
                     "gateway_disponible":bool(data.get("disponible")),
                     "razon":str(data.get("reason") or "SIN_RESULTADO")[:100],
-                    "modelo":str(data.get("modelo") or "")[:100]}
+                    "modelo":str(data.get("modelo") or "")[:100],
+                    "http":int(data.get("http") or 0)}
         except urllib.error.HTTPError as exc:
             return {"estado":"error","error":"SWEN_CLAUDE_HTTP_" + str(exc.code)}
         except (OSError, ValueError, TimeoutError):
