@@ -8,10 +8,8 @@ import express from 'express';
 import { createRequire } from 'node:module';
 import { consultarWeb, salud } from './motor.js';
 import { consenso } from './consenso.js';
-import { consultarClaude, estadoClaude, esCuotaClaude, CLAUDE_MODEL } from './claude_gateway.js';
 import { modoValido } from './modos.js';
 import { estadoCuentas, estadoTabs, snapshotTab, diagnosticoAcceso, reiniciarSitioInactivo, cerrarPagina, cerrarTodo } from './browser.js';
-import { registrarGap, listarGaps, gapPorId, investigarConOpenClaw } from './autoreparacion.js';
 import { MODELOS_WEB } from './sites.js';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -29,7 +27,6 @@ import { idValido as tareaIdValido } from './checkpoint_hf.js';
 import { conFormato } from './formato.js';
 import { promptHerramientasWeb, extraerLlamadasWeb } from './web_tools.js';
 import { estadoContexto, registrarContexto, transferirContexto, tarjetaHandoff } from './contexto_handoff.js';
-import { montarAccionesOpenAI } from './openai_acciones.js';
 import { guardarTurno, leerTurnos } from './memoria.js';
 import { vigilarActualizacion } from './autoactualizar.js';
 import { cargarDelBanco, guardarEnBanco, borrarDelBanco, vigilarBanco, diagnosticoBanco, resumenBanco, catalogoProveedores, anadirProveedor } from './clavesbanco.js';
@@ -87,12 +84,6 @@ app.use((req, res, next) => {
   return conAcceso(req) ? next() : res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'falta o es invalida la clave de acceso (x-api-key o Authorization: Bearer)' } });
 });
 app.use(express.json({ limit: '10mb' }));
-montarAccionesOpenAI(app,propietarioDe);
-app.get('/v1/claude/estado',async(_req,res)=>{
-  // Estado sin direcciones de correo ni tokens, disponible para todas las UI.
-  const e=await estadoClaude();
-  res.json(e);
-}); // OpenAI API explícita, no chatGPT subscripción
 // Handoff: rutas autenticadas para recuperación entre selector/modelos/conv_id.
 // Sin clave de acceso no se consulta ni se transfiere el contexto de otro usuario.
 app.get('/v1/contexto/:id', (req,res) => {
@@ -186,17 +177,6 @@ app.get('/health', async (req, res) => {
 app.get('/v1/web/diagnostico',async(_req,res)=>{
   try { res.json({ok:true,indicadores:await diagnosticoAcceso()}); }
   catch { res.status(503).json({ok:false,error:{code:'WEB_DIAGNOSTICO_FALLO'}}); }
-});
-// Panel de recuperación de OpenClaw: lecturas de GAPS sin prompts ni secretos.
-app.get('/v1/swen/gaps', (_req,res) => res.json({ok:true,gaps:listarGaps()}));
-app.get('/v1/swen/gaps/:id', (req,res) => {
-  const g=gapPorId(req.params.id);
-  return g ? res.json({ok:true,gap:g}) :
-    res.status(404).json({ok:false,error:{code:'GAP_NO_ENCONTRADO'}});
-});
-app.post('/v1/swen/gaps/:id/investigar', async(req,res) => {
-  const r=await investigarConOpenClaw(req.params.id);
-  return res.status(r.ok?200:503).json(r);
 });
 app.get('/v1/queue', (_req, res) => {
   res.json({ ok: true, ...estadoTabs(), cuentas: sinCorreos(estadoCuentas()) });
@@ -312,7 +292,7 @@ app.post('/v1/system-prompt-on', async (req, res) => {
 const idsModelos = () => {
   const base = Object.keys(MODELOS_WEB).map(m => `web-${m}`);
   const modos = ['revision','solucion','arquitectura','archivos','prompt_code','consulta','despliega','asesoria'].map(m => `swecode-${m}`);
-  return [...base, 'web-claude-sonnet', ...modos, ...idsRespaldo()];
+  return [...base, ...modos, ...idsRespaldo()];
 };
 app.get('/v1/models', (_req, res) => res.json({ object: 'list', data: idsModelos().map(id => ({ id, object: 'model' })) }));
 // disponibilidad real de los modelos Groq/NVIDIA (GET /models de cada proveedor): DISPONIBLE | NO DISPONIBLE | SIN VERIFICAR; jamas cambia de modelo en silencio ni muestra claves
@@ -410,7 +390,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if ((clavesReq != null || cuentas) && !conAcceso(req)) return res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'claves/cuentas por llamada exigen la clave de acceso (x-api-key)' } });
     if (clavesReq != null && !clavesValidas) return res.status(400).json({ error: { code: 'CLAVE_INVALIDA', message: MSG_CLAVE } });
     if (conv_id != null && !/^[\w-]{1,80}$/.test(String(conv_id))) return res.status(400).json({ error: { code: 'CONV_ID_INVALIDO', message: 'conv_id: letras, numeros, - y _ (max 80)' } });
-    if (model.startsWith('web-') && model !== 'web-claude-sonnet' && !MODELOS_WEB[model.slice(4)]) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
+    if (model.startsWith('web-') && !MODELOS_WEB[model.slice(4)]) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     if (Array.isArray(documentos) && documentos.length > MAX_DOCS) return res.status(413).json({ error: { code: 'DEMASIADOS_DOCUMENTOS', max: MAX_DOCS } });
     // La UI nativa de OpenClaw no incorpora un boton: sus tareas y tool_calls
     // llevan la ficha activada aunque el chat YAIWES haya apagado SU interruptor.
@@ -458,14 +438,13 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (!esExterno(model) && !esLocal(model)) {
       return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     }
-    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop', tarea = null, metricas = null, servidor = null, toolsInvalidas = [], consensoDetalle = null, flagClaude = null;
+    let via = null, aviso = null, viaPrimaria = null, llamadas = [], fin = 'stop', tarea = null, metricas = null, servidor = null, toolsInvalidas = [], consensoDetalle = null;
     // tarea_id (cuerpo o cabecera x-tarea-id): modelos locales/Groq/NVIDIA con checkpoint universal (retomar_local.js).
     // Sin tarea_id pero con conv_id se DERIVA <conv_id>-<sha256 de [modelo, modo, mensajes] (12)>: el mismo envio reintentado reanuda, uno distinto es tarea nueva. Sin conv_id nada cambia.
     const explicito = esExterno(model) || esLocal(model), pideRespaldo = req.body.respaldo === true;
     // Sonnet MAX y el consejo de 4 modelos requieren margen real de razonamiento.
     // Los demás modelos conservan exactamente sus plazos originales.
-    const plazoModelo = model === 'web-claude-sonnet' ? Math.max(DEADLINE_MS, 320000)
-      : model === 'swecode-consulta' || model === 'swecode-plan' ? Math.max(DEADLINE_MS, 415000)
+    const plazoModelo = model === 'swecode-consulta' || model === 'swecode-plan' ? Math.max(DEADLINE_MS, 415000)
       // Primera apertura Chromium + restauración de sesión + generación:
       // el plazo global de 100 s anterior cortaba incluso antes de leer respuesta.
       : model.startsWith('web-') ? Math.max(DEADLINE_MS, 250000)
@@ -507,47 +486,21 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (esLocal(model)) {
       const r = await local(model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
     } else if (modeloWeb) {
-      // Sólo con esquema de herramientas explícito: el texto WEB NO es una tool_call por defecto.
-      // No se llama a otro LLM para "traducir" JSON; tampoco se ejecutan tools aquí.
-      if (modeloWeb === 'claude-sonnet') {
-        // Claude trabaja con el agente OpenClaw swen-council, razonamiento max y
-        // rotación NATIVA de perfiles Anthropic. Sin modelo traductor ni scraping.
-        usado = CLAUDE_MODEL;
-        try {
-          const r = await consultarClaude(promptFicha + promptHerramientasWeb(extra.tools), { convId:String(conv_id||'consulta') });
-          salida = r.texto;
-        } catch (e) {
-          const requiereAuth = e.code === 'CLAUDE_PROVEEDOR_SIN_CREDENCIALES';
-          if (!esCuotaClaude(e.code) && !requiereAuth) throw e;
-          flagClaude = requiereAuth
-            ? { codigo:'CLAUDE_SONNET_REQUIERE_AUTORIZACION',
-                mensaje:'El Gateway está operativo pero falta una conexión Anthropic o Claude CLI autorizada. Se conserva la tarea para continuar.' }
-            : { codigo:'CLAUDE_SONNET_SIN_CUENTA_DISPONIBLE',
-                mensaje:'No quedan perfiles Anthropic elegibles en OpenClaw. La tarea se mantiene pendiente para recuperación.' };
-          registrarGap({modelo:model,code:requiereAuth?'CLAUDE_PROVEEDOR_SIN_CREDENCIALES':'CLAUDE_CUENTAS_AGOTADAS',convId:conv_id});
-          salida = '🚩 Claude Sonnet 5.5 · ' + flagClaude.codigo + '. Se conservó el contexto; los demás modelos y tareas pueden continuar.';
-          fin = 'error';
-        }
-      } else {
-        const site = modeloWeb.startsWith('qwen') ? 'qwen' : modeloWeb === 'dsv4-flash' ? 'deepseek' : null;
-        try {
-          salida = await consultarWeb(modeloWeb, promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
-        } catch(e) {
-          // ÚNICO reintento válido: navegación fallida ANTES del envío.
-          // No repetir respuestas parciales, tools, cuotas o sesiones expiradas.
-          if (e.code!=='WEB_SITIO_NO_RESPONDE'||!site||sse.signal.aborted) throw e;
-          const reciclaje=await reiniciarSitioInactivo(site);
-          if(!reciclaje.ok) throw e;
-          salida = await consultarWeb(modeloWeb, promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
-        }
+      // Sólo chat web de la suscripción autorizada. Nunca API Anthropic/Claude CLI.
+      const site = modeloWeb.startsWith('qwen') ? 'qwen' : modeloWeb === 'dsv4-flash' ? 'deepseek' : null;
+      try {
+        salida = await consultarWeb(modeloWeb, promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
+      } catch(e) {
+        if (e.code!=='WEB_SITIO_NO_RESPONDE'||!site||sse.signal.aborted) throw e;
+        const reciclaje=await reiniciarSitioInactivo(site);
+        if(!reciclaje.ok) throw e;
+        salida = await consultarWeb(modeloWeb, promptFicha + promptHerramientasWeb(extra.tools), { modo: modoUso, convId: conv_id });
       }
-      if (!flagClaude) {
-        const contratoWeb = extraerLlamadasWeb(salida, extra.tools);
-        salida = contratoWeb.texto;
-        llamadas = contratoWeb.tool_calls;
-        fin = contratoWeb.finish_reason;
-      }
-      usado = modeloWeb === 'claude-sonnet' ? CLAUDE_MODEL : modeloWeb;
+      const contratoWeb = extraerLlamadasWeb(salida, extra.tools);
+      salida = contratoWeb.texto;
+      llamadas = contratoWeb.tool_calls;
+      fin = contratoWeb.finish_reason;
+      usado = modeloWeb;
     } else if (modoUso === 'asesoria') {
       // asesoria previa a ejecutar: primero Groq (las claves del chat Yaiwes), si no responde la web de SWE CODE free
       try {
@@ -564,13 +517,6 @@ app.post('/v1/chat/completions', async (req, res) => {
       const rTools = extraerLlamadasWeb(r.final, extra.tools);
       salida = rTools.texto; llamadas = rTools.tool_calls; fin = rTools.finish_reason;
       usado = 'qwen38max';
-      const claudeOpinion = String(r.por_modelo['claude-sonnet'] || '');
-      if (claudeOpinion.startsWith('🚩')) {
-        flagClaude = { codigo:claudeOpinion.includes('CLAUDE_SONNET_SIN_CUENTA_DISPONIBLE')
-          ? 'CLAUDE_SONNET_SIN_CUENTA_DISPONIBLE' : 'CLAUDE_SONNET_NO_DISPONIBLE',
-          mensaje:'El consejero Claude no respondió; Ask Cónsil continúa con Qwen árbitro.' };
-        salida = [salida, claudeOpinion].filter(Boolean).join('\n\n');
-      }
       consensoDetalle = { arbitro:'qwen38max', opiniones:Object.fromEntries(
         Object.entries(r.por_modelo).map(([k,v])=>[k,String(v).slice(0,3500)])),
         decision:String(r.final).slice(0,3500), modificable_por_operador:true };
@@ -641,7 +587,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (!res.headersSent) { res.setHeader('x-modelo-usado', usado); if (via) res.setHeader('x-via-respaldo', via); }
 
     if (sse.pide) {  // OpenClaw (openai-completions) pide SSE: lo que llego por streaming real ya se entrego; se emite SOLO lo que falte + tool_calls + finish_reason + [DONE]
-      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(flagClaude ? { flag_claude: flagClaude } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}) };
+      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}) };
       sse.abrir(); sse.rolInicial();
       const yaEntregado = sse.flujo.texto, completo = String(salida || '');
       for (const t of trozosDe(completo.startsWith(yaEntregado) ? completo.slice(yaEntregado.length) : '')) sse.chunk({ content: t });
@@ -651,25 +597,18 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(flagClaude ? { flag_claude: flagClaude } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}),
+      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}),
       choices: [{ index: 0, finish_reason: fin, message: { role: 'assistant', content: salida || '', ...(llamadas.length ? { tool_calls: llamadas } : {}) } }],
       usage: usageDe(metricas),
     });
   } catch (e) {
     const code = e.code || 'BRIDGE_ERROR';
-    // Registro duradero, sin prompts/tokens/datos de cuentas. OpenClaw puede
-    // investigar con herramientas de lectura; no aplica parches de LLM sin validar.
-    const gap = registrarGap({code,modelo:req.body?.model,convId:req.body?.conv_id});
-    if(gap.nuevo && !gap.estado.startsWith('🚩') && process.env.OPENCLAW_ENABLE==='1') {
-      void investigarConOpenClaw(gap.id).catch(()=>null);
-    }
     sse.parar();
     if (sse.pide && sse.signal.aborted) return;  // el cliente ya no esta
     if (sse.activo) return res.writableEnded ? undefined : sse.error(code, e.message, e.detail);  // error tras abrir el stream: chunk con el error + [DONE]
     if (res.headersSent) return;
     const st = code === 'SESSION_EXPIRED' ? 503 : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : HTTP_TAREA[code] ? HTTP_TAREA[code] : ['EXTERNO_FALLO', 'HF_LOCAL_FALLO', 'NO_DISPONIBLE'].includes(code) ? 502 : 500;
-    res.status(st).json({ error: { code, message: e.message, detail: e.detail,
-      gap_id:gap.id, flag:gap.estado, accion:gap.accion } });
+    res.status(st).json({ error: { code, message: e.message, detail: e.detail } });
   }
 });
 

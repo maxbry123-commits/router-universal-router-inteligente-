@@ -5,7 +5,6 @@
 // una sola consulta disponibilidad (cargarCapacidades) y una sola serializa el contrato (swe-directo.js leerSeleccion/armarTarea). Abrir una ventana MUEVE el nodo; no clona.
 // Cada ventana solo aporta lo suyo: su lista de MODELO QUE RESPONDE (swe-directo.js opcionesModeloVentana), su nota de conexion y su titulo.
 import { api, plugin } from "./api.js";
-import "./swen-openai-ui.js";
 import { systemPromptOnCache, cargarSystemPromptOn, alternarSystemPromptOn } from "./swe-systemprompt.js";
 import { camposFijos, modeloParaLista, modeloGuardado, SWE_LISTAS, MODELOS_SWE, MODELOS_WEB, MODOS_TRABAJO, AGENTES_SWE, WORKFLOWS_SWE, LIQUID_MIRROR, leerSeleccion, guardarSeleccion, requiereHarness, cargarCapacidades, olvidarCapacidades, normalizarCapacidades, estadoOpcion, idCatalogo, agruparOpciones, lineaNoInstalados, lineaSinVerificar, lineaOtros, opcionesModeloVentana, ETIQUETA_ESTADO, VENTANAS_CENTRAL } from "./swe-directo.js";
 const K = "riu_swe_modelo";
@@ -120,46 +119,7 @@ function controles() {
   const fw = el("div", "swe-rej-fila swe-wf swe-bloque"); fw.append(el("span", "swe-rej-t", "Workflow"), selector("workflow"));
   const lq = el("div", "consil-diagrama lleno swe-liquid"); lq.hidden = true; lq.setAttribute("aria-label", "Liquid Mirror: dos participantes");
   const act = el("div", "swe-actualizar"), bt = el("button", "secondary swe-refrescar", "Actualizar disponibilidad"); bt.type = "button"; bt.setAttribute("aria-label", "Actualizar disponibilidad de agentes y modelos"); act.append(bt, el("span", "swe-hora"));
-  // Sólo en SWE CODE free: recuperar contexto sin modelo local y acciones OpenAI opt-in.
-  const extras = el("div", "swen-extras swe-bloque");
-  extras.style.cssText = "display:grid;gap:8px;padding:10px;border:1px solid #484848;border-radius:12px";
-  const title = el("strong", null, "Continuidad y herramientas · cuentas web");
-  const source = el("input");
-  source.type = "text"; source.maxLength = 80; source.pattern = "[A-Za-z0-9_-]+";
-  source.dataset.swenOrigen = "1"; source.placeholder = "ID del chat anterior (opcional)";
-  source.setAttribute("aria-label", "Retomar hilo desde otra sesión");
-  source.value = localStorage.getItem("riu_swen_handoff_origen") || "";
-  const fila = el("div", "row");
-  const ultimo = el("button", "secondary", "↺ Usar última sesión");
-  ultimo.type = "button"; ultimo.dataset.swenUltima = "1";
-  const info = el("span", "fila-desc", "Mismo chat: el checkpoint se recupera automáticamente. Para otro chat, indica el ID anterior.");
-  fila.append(ultimo);
-  const herramientas = el("div", "row");
-  for (const [accion, etiqueta] of [["research","@ Investigación profunda · OpenAI API"],["image","📷 Imagen · OpenAI API"]]) {
-    const btn = el("button", "secondary", etiqueta); btn.type="button"; btn.dataset.swenAccion=accion;
-    btn.title="Requiere API de OpenAI configurada en el servidor (independiente de la suscripción ChatGPT)";
-    herramientas.append(btn);
-  }
-  const recuperar = el("div", "row");
-  const idInvestigacion=el("input"); idInvestigacion.type="text";idInvestigacion.placeholder="ID de investigación guardada";
-  idInvestigacion.dataset.swenResearchId="1";idInvestigacion.maxLength=32;
-  idInvestigacion.value=localStorage.getItem("riu_swen_investigacion_id")||"";
-  idInvestigacion.setAttribute("aria-label","ID de investigación OpenAI anterior");
-  const consultar=el("button","secondary","Consultar investigación");consultar.type="button";consultar.dataset.swenInvestigacionCargar="1";
-  recuperar.append(idInvestigacion,consultar);
-  const recImagen = el("div", "row");
-  const idImagen = el("input"); idImagen.type="text"; idImagen.maxLength=32;
-  idImagen.dataset.swenImageId="1"; idImagen.placeholder="ID de imagen guardada";
-  idImagen.value=localStorage.getItem("riu_swen_ultima_imagen_id")||"";
-  idImagen.setAttribute("aria-label","ID de imagen PNG guardada");
-  const bajarImagen=el("button","secondary","Recuperar imagen"); bajarImagen.type="button"; bajarImagen.dataset.swenImagenCargar="1";
-  recImagen.append(idImagen,bajarImagen);
-  const verHistorial=el("button","secondary","Ver investigaciones e imágenes guardadas");verHistorial.type="button";
-  verHistorial.dataset.swenTrabajos="1";
-  const claudeEstado = el("p", "fila-desc swe-claude-estado", "Claude Sonnet 5.5 · pensando MAX · esperando verificación del Gateway OpenClaw.");
-  const estado = el("p", "fila-desc swe-openai-estado", "OpenAI: acceso API independiente. No utiliza la sesión de ChatGPT ni un modelo local traductor.");
-  extras.append(title, source, fila, info, claudeEstado, herramientas, recuperar, recImagen, verHistorial, estado);
-  c.append(nota, rej, lm, mo, sp, fw, lq, extras, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
+  c.append(nota, rej, lm, mo, sp, fw, lq, el("p", "fila-desc swe-fijo"), el("p", "fila-desc swe-estado-sel"), el("p", "fila-desc swe-noinst"), el("p", "fila-desc swe-estado"), act);
   cargarSystemPromptOn().then(pintarControles);  // estado real del bridge en segundo plano; el boton ya nace pintado en ON (defecto) mientras llega
   return c;
 }
@@ -178,18 +138,12 @@ function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al
 function agrupar(k, sel, w) {
   const [lista, tipo] = LISTAS[k];
   if (k === "modelo_responde" || k === "modelo_tool") {
-    const resp = k === "modelo_responde", v = resp ? w : (w === "swen-code-free" ? w : "modelo_tool_global");
-    // Sólo SWE CODE free limita al subconjunto WEB; otros selectores conservan el catálogo general anterior.
-    let ops = opcionesModeloVentana(v, CAP, mapaProveedor(resp ? v : "swen-code-free"), { web: v === "swen-code-free" || v === "modelo_tool_global" });
+    const resp = k === "modelo_responde", v = resp ? w : (w === "swen-code-free" ? w : "swen-code-free");
+    let ops = opcionesModeloVentana(v, CAP, mapaProveedor(v), { web: v === "swen-code-free" });
     if (!resp && w === "swen-code-free") ops = ops.filter(o => o.id.startsWith("web-"));
     // un modelo SIN VERIFICAR no bloquea el chat normal: se puede elegir, con su rotulo; lo no disponible va al final, deshabilitado y con su estado real
     const g = { ok: ops.filter((o) => o.ok).map((o) => ({ id: o.id, etq: o.estado === "DISPONIBLE" ? o.nombre : `${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}`, estado: o.estado, motivo: o.motivo, elegible: o.elegible })), noInstalado: [], incompatible: [], sinVerificar: [], otros: ops.filter((o) => !o.ok).map((o) => ({ id: o.id, etq: o.nombre, estado: o.estado, motivo: o.motivo, elegible: o.elegible })) };
     return { g, ops };
-  }
-  if (k === "workflow" && w === "swen-code-free") {
-    // SWEN excluye los pipelines legados con HF/Liquid; otros selectores intactos.
-    return { g: { ok: [{ id:"individual", etq:"Individual · modelos web", estado:"DISPONIBLE", elegible:true }],
-      sinVerificar:[], noInstalado:[], incompatible:[], otros:[] }, tipo:"workflow" };
   }
   const modelo = k === "agente_responde" ? sel.modelo_responde : k === "agente_tool" ? (sel.workflow === "liquid_mirror" ? "hf/lfm2.5-350m" : sel.modelo_tool) : undefined;
   return { g: agruparOpciones(CAP, tipo, lista, modelo), tipo };
@@ -197,7 +151,6 @@ function agrupar(k, sel, w) {
 function pintarControles() {
   const sel = leerSeleccion();
   document.querySelectorAll(".swe-ctl").forEach((c) => {
-    const ext = c.querySelector(".swen-extras"); if (ext) ext.hidden = VENTANA !== "swen-code-free";
     const problemas = [];
     Object.keys(LISTAS).forEach((k) => {
       const s = c.querySelector(`select[data-swe-ctl="${k}"]`); if (!s) return;
@@ -225,7 +178,7 @@ function pintarControles() {
     if (sm) { sm.replaceChildren(...[["", "Sin modo (conversación normal)"], ...MODOS_TRABAJO].map(([v, t]) => { const o = el("option", null, t); o.value = v; return o; })); sm.value = sel.modo_trabajo; sm.title = VENTANA === "groq" || VENTANA === "nvidia" ? "El modo de trabajo se envía en los chats por el bridge (SWE CODE / SWEN CODE free); Groq y NVIDIA por el Router no lo usan todavía." : ""; }
     const b = c.querySelector("[data-swe-agentico]"); if (b) { b.textContent = sel.modo_agentico ? "ON" : "OFF"; b.setAttribute("aria-pressed", String(sel.modo_agentico)); b.classList.toggle("on", sel.modo_agentico); }
     const spB = c.querySelector("[data-swe-systemprompt]"); if (spB) { const on = systemPromptOnCache(); spB.textContent = on ? "ON" : "OFF"; spB.setAttribute("aria-pressed", String(on)); spB.classList.toggle("on", on); }
-    const lq = c.querySelector(".swe-liquid"); lq.hidden = VENTANA === "swen-code-free" || sel.workflow !== "liquid_mirror";
+    const lq = c.querySelector(".swe-liquid"); lq.hidden = sel.workflow !== "liquid_mirror";
     if (!lq.hidden) {
       const lm = estadoOpcion(CAP, "workflow", "liquid_mirror"); lq.replaceChildren();
       LIQUID_MIRROR.forEach((p, i) => {
@@ -287,26 +240,7 @@ document.addEventListener("click", async (e) => {
   }
   const spB = e.target.closest && e.target.closest("[data-swe-systemprompt]"); if (spB) { alternarSystemPromptOn().then(pintarControles); return; }
   if (e.target.closest && e.target.closest(".swe-refrescar")) refrescarCapacidades(true, true);
-  const last = e.target.closest && e.target.closest("[data-swen-ultima]");
-  if (last && VENTANA === "swen-code-free") {
-    const previo = localStorage.getItem("riu_swen_ultima_sesion") || "";
-    const input = document.querySelector(".swen-extras [data-swen-origen]");
-    const ahora = window.RIU_CHAT?.chat()?.sesion || "";
-    if (input && previo && previo !== ahora) {
-      input.value = previo;
-      localStorage.setItem("riu_swen_handoff_origen", previo);
-    }
-  }
 });
-document.addEventListener("input", (e) => {
-  const input = e.target.closest && e.target.closest("[data-swen-origen]");
-  if (input) {
-    const v = String(input.value || "").trim();
-    if (!v || /^[A-Za-z0-9_-]{1,80}$/.test(v))
-      localStorage.setItem("riu_swen_handoff_origen", v);
-  }
-});
-window.RIU_SWE_CONTEXTO = () => localStorage.getItem("riu_swen_handoff_origen") || "";
 document.addEventListener("change", (e) => {
   const s = e.target.closest && e.target.closest("select[data-swe-ctl]"); if (!s) return;
   const k = s.dataset.sweCtl;
@@ -323,10 +257,9 @@ function sincronizar(w) {
   const m = modeloVentana(w);
   if (!m) return;
   if (w === "swen-code-free") {
-    // NO tocar Liquid, HF ni workflows de otros selectores; sólo esta ventana.
+    // En ESTE selector nada usa modelos HF: individual web y modelo de ejecución web.
     const sel = leerSeleccion();
-    const tool = String(sel.modelo_tool || "").startsWith("web-")
-      ? sel.modelo_tool : (m.startsWith("web-") ? m : "web-qwen38max");
+    const tool = String(sel.modelo_tool || "").startsWith("web-") ? sel.modelo_tool : (m.startsWith("web-") ? m : "web-qwen38max");
     guardarSeleccion({ modelo_responde:m, modelo_tool:tool, workflow:"individual" });
   } else guardarSeleccion({ modelo_responde:m });
 }

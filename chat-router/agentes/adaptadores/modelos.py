@@ -10,7 +10,6 @@ MODELOS = {
     # Estos modelos se pueden usar por el runtime OpenClaw sin LLM traductor.
     "swecode-consulta": {"provider": "web", "model": "swecode-consulta"},
     "web-qwen38max": {"provider": "web", "model": "web-qwen38max"},
-    "web-claude-sonnet": {"provider": "web", "model": "web-claude-sonnet"},
     "web-qwen37max": {"provider": "web", "model": "web-qwen37max"},
     "web-dsv4-flash": {"provider": "web", "model": "web-dsv4-flash"},
     "groq/qwen/qwen3.8-27b": {"provider": "groq", "model": "qwen/qwen3.8-27b"},
@@ -27,7 +26,6 @@ NOMBRES = {
     "hf/qwen3-0.6b": "Qwen3 0.6B (HF local)",
     "swecode-consulta": "Ask Cónsil · arbitra Qwen 3.8 Max",
     "web-qwen38max": "Qwen 3.8 Max · web",
-    "web-claude-sonnet": "Claude Sonnet 5.5 · MAX (OpenClaw)",
     "web-qwen37max": "Qwen 3.7 Max · web",
     "web-dsv4-flash": "DeepSeek V4 Flash · web",
     "groq/qwen/qwen3.8-27b": "Qwen 3.8 27B",

@@ -16,12 +16,11 @@ export const SWE_LISTAS = {
   "swen-code-free": { nombre: "SWEN CODE free", titulo: "SWE CODE free · cuentas web", modelos: [
     ["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max", "opiniones web + decisión Qwen 3.8 Max"],
     ["web-qwen38max", "Qwen 3.8 Max (web)", "suscripción web"],
-    ["web-claude-sonnet", "Claude Sonnet 5.5 · MAX (OpenClaw)", "perfiles Anthropic del Gateway"],
     ["web-qwen37max", "Qwen 3.7 Max (web)", "suscripción web"],
     ["web-dsv4-flash", "DeepSeek V4 Flash (web)", "suscripción web"]] },
 };
 // Modelos web de SWEN CODE free (cuentas web del bridge): no estan en el catalogo del Harness, solo sirven para el chat directo por el bridge.
-export const MODELOS_WEB = [["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-claude-sonnet", "Claude Sonnet 5.5 · MAX (OpenClaw)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"]];
+export const MODELOS_WEB = [["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"]];
 // MODO DE TRABAJO (antes «modelos» swecode-<modo>): el bridge ya acepta `modo` junto a cualquier modelo (server.js: conPreambulo). Vacio = sin modo.
 export const MODOS_TRABAJO = [["asesoria", "Asesoría"], ["revision", "Revisión"], ["solucion", "Solución"], ["arquitectura", "Arquitectura"], ["archivos", "Archivos"], ["prompt_code", "Prompt code"], ["despliega", "Despliega"]];
 export const esSelectorSwe = (id) => typeof id === "string" && Object.hasOwn(SWE_LISTAS, id);
@@ -385,10 +384,6 @@ async function respuestaDeSSE(response, datos) {
     if (!o || typeof o !== "object") return;
     for (const k of ["modelo_usado", "via_respaldo", "via_primaria"]) if (typeof o[k] === "string") a.extra[k] = o[k];
     if (o.consenso_detalle && typeof o.consenso_detalle === "object") a.extra.consenso_detalle = o.consenso_detalle;
-    // Bandera visible incluso cuando el servidor envía un SSE con finish_reason=error.
-    // No convertir falta de Claude en respuesta confirmada.
-    if (o.flag_claude && typeof o.flag_claude === "object" && typeof o.flag_claude.codigo === "string")
-      a.extra.flag_claude = { codigo:o.flag_claude.codigo, mensaje:String(o.flag_claude.mensaje||"").slice(0,240) };
     if (o.error && typeof o.error === "object") a.error = o.error;
     const c = Array.isArray(o.choices) ? o.choices[0] : null;
     if (!c || typeof c !== "object") return;
@@ -476,8 +471,7 @@ export async function enviarSwe(api, datos) {
   // R4: una respuesta con tool_calls (con o sin texto) NUNCA pierde las llamadas pendientes: las ejecuta el cliente (OpenClaw) o el SWE-agent, no es un fallo
   const nombres = llamadas.map((t) => (t && t.function && t.function.name) || "tool"), quien = cuerpo.ejecutor_tools === "openclaw" ? "OpenClaw" : "SWE-agent";
   const metadatos = {
-    ...(r?.consenso_detalle ? { consenso:r.consenso_detalle } : {}),
-    ...(r?.flag_claude ? { flag_claude:r.flag_claude } : {})
+    ...(r?.consenso_detalle ? { consenso:r.consenso_detalle } : {})
   };
   if (!r?.error && !msg.content && llamadas.length) return { ...metadatos, reply: "Tools pedidas: " + nombres.join(", "), tools: [], pedidas: nombres, tool_calls: llamadas, ejecutor: quien, finish_reason: r.choices[0].finish_reason || "tool_calls", nota: `SWE · ${r.modelo_usado || datos.model} · tools → ${quien}` };
   const texto = msg.content;

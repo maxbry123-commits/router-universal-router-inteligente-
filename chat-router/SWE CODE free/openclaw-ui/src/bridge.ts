@@ -92,26 +92,6 @@ export function crearCliente(cfg: { url: string; token: string }, opciones: { fe
       return fusionarCapacidades(h, modelos, claves);
     },
     tools: () => llamar('GET', '/v1/swe/tools'),
-    // Continuidad entre modelo, chat y sesión; scope del propietario comprobado por el bridge.
-    contexto: (id: string) => /^[A-Za-z0-9_-]{1,80}$/.test(id)
-      ? llamar('GET', '/v1/contexto/'+id)
-      : Promise.resolve({ ok:false, http:400, codigo:'CONTEXTO_ID_INVALIDO' } as Respuesta),
-    contextoTransferir: (origen: string, destino: string) =>
-      /^[A-Za-z0-9_-]{1,80}$/.test(origen) && /^[A-Za-z0-9_-]{1,80}$/.test(destino)
-      ? llamar('POST','/v1/contexto/transferir',{origen,destino})
-      : Promise.resolve({ok:false,http:400,codigo:'CONTEXTO_ID_INVALIDO'} as Respuesta),
-    // OpenAI API independiente: solo el operador del Gateway habilita RIU_OPENAI_AGENTE_ON.
-    claudeEstado: () => llamar('GET','/v1/claude/estado'),
-    openaiEstado: () => llamar('GET','/v1/openai/estado'),
-    openaiTrabajos: () => llamar('GET','/v1/openai/trabajos'),
-    openaiResearch: (prompt: string) => llamar('POST','/v1/openai/research',{prompt}),
-    openaiResearchEstado: (id: string) => /^[0-9a-f]{32}$/.test(id)
-      ? llamar('GET','/v1/openai/research/'+id)
-      : Promise.resolve({ok:false,http:400,codigo:'INVESTIGACION_ID_INVALIDO'} as Respuesta),
-    openaiImagen: (prompt: string) => llamar('POST','/v1/openai/image',{prompt},undefined,true),
-    openaiImagenData: (id: string) => /^[0-9a-f]{32}$/.test(id)
-      ? llamar('GET','/v1/openai/image/'+id+'/data')
-      : Promise.resolve({ok:false,http:400,codigo:'IMAGEN_ID_INVALIDO'} as Respuesta),
     agentesLock: (locked?: boolean): Promise<Respuesta> => llamar('POST', '/v1/swe/agentes-lock', locked === undefined ? {} : { locked }),
     iniciar: (tarea: Record<string, unknown>) => llamar('POST', '/v1/swe/iniciar', tarea),
     avanzar: (r: { task_id: string; sesion?: string; proyecto?: string }) => llamar('POST', '/v1/swe/avanzar', ref(r), undefined, true),

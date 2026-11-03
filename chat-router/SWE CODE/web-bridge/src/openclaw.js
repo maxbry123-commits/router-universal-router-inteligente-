@@ -54,65 +54,9 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
   const nombres = new Map(MODELOS_API.map(m => [m.id, m.nombre]));
   for (const [id, nombre] of Object.entries({'lfm2.5-350m':'Liquid LFM2.5 350M','qwen2.5-coder-1.5b':'Qwen2.5 Coder 1.5B','qwen3.5-0.8b':'Qwen3.5 0.8B','qwen3-0.6b':'Qwen3 0.6B'})) nombres.set(id, nombre);
   cfg.agents.defaults.timeoutSeconds = Math.max(Number(cfg.agents.defaults.timeoutSeconds) || 0, 600);
-  // La allowlist global necesita admitir Sonnet; los agentes swen-council
-  // y swen-repair lo usan sin cambiar el modelo predeterminado del chat.
-  cfg.agents.defaults.models['anthropic/claude-sonnet-5-5'] ||= {};
-  // Agente dedicado para las opiniones de Claude. El runtime nativo OpenClaw
-  // rota sólo perfiles Anthropic AUTORIZADOS; no crea correos ni evita límites.
-  // No modifica el agente principal ni otras rutas del Gateway.
-  cfg.agents.entries ||= {};
-  cfg.agents.entries.main ||= {}; // conserva el destinatario predeterminado del resto del chat.
-  // Contrato canónico de OpenClaw 2026.10: una flota multiagente
-  // NO admite un default:true heredado directo. Registrar ownership explícito
-  // sin inventar propietarios de otras cuentas, y conservar MAIN como el
-  // agente del sistema (no se alteran bindings/pairings/identidades).
-  if (Object.keys(cfg.agents.entries).length > 1 &&
-      cfg.agents.ownership !== 'explicit' &&
-      (cfg.agents.entries.main?.default === true || cfg.agents.ownership == null)) {
-    if (cfg.agents.entries.main?.default === true) delete cfg.agents.entries.main.default;
-    cfg.agents.ownership = 'explicit';
-    cfg.agents.defaults.systemAgent ||= { agentId: 'main' };
-  }
-  cfg.agents.entries['swen-council'] = {
-    ...(cfg.agents.entries['swen-council'] || {}),
-    name:'SWEN · Claude Sonnet (consejero)',
-    model:{primary:'anthropic/claude-sonnet-5-5',fallbacks:[]},
-    thinkingDefault:'max',
-    skills:[],
-    tools:{profile:'minimal',allow:['session_status'],
-      deny:['group:fs','group:runtime','group:messaging','browser','cron',
-        'sessions_spawn','sessions_send','message','gateway','nodes','canvas',
-        'mcp__*','swe_tool_llamar','yaiwes_*']},
-  };
-  // Agente recuperador de solo lectura. No toca perfiles, cuotas ni permisos,
-  // no modifica GitHub: el operador valida cambios y el motor aplica sólo
-  // recuperaciones técnicas reversibles.
-  cfg.agents.entries['swen-repair'] = {
-    ...(cfg.agents.entries['swen-repair'] || {}),
-    name:'SWEN · Investigación de GAPS',
-    model:{primary:'anthropic/claude-sonnet-5-5',fallbacks:[]},
-    thinkingDefault:'high',
-    skills:[],
-    tools:{profile:'minimal',allow:['read','web_search','web_fetch','session_status'],
-      deny:['exec','write','edit','apply_patch','browser','group:runtime',
-        'group:messaging','sessions_spawn','sessions_send','message','cron',
-        'gateway','nodes','canvas','mcp__*','swe_tool_llamar','yaiwes_*']},
-  };
   cfg.gateway ||= {};
-  // El Space usa OpenClaw en loopback; el bootstrap antiguo omite gateway.mode.
-  // Sin mode:"local" el validador de OpenClaw falla aunque sirva /health,
-  // y la API /v1/models permanece deshabilitada en el proceso activo.
-  if (cfg.gateway.mode == null) cfg.gateway.mode = 'local';
   cfg.gateway.controlUi ||= {};
   cfg.gateway.controlUi.basePath = '/openclaw';
-  // GAP real: el openclaw.sh INTEGRADO EN EL SPACE es una copia antigua
-  // y no habilita Chat Completions. GET/POST /v1/* devolvían 404 aunque
-  // el Gateway estuviese levantado. Resolver desde GitHub -> autoconfig,
-  // sin editar manualmente el Space y sin tocar autenticación.
-  cfg.gateway.http ||= {};
-  cfg.gateway.http.endpoints ||= {};
-  cfg.gateway.http.endpoints.chatCompletions ||= {};
-  cfg.gateway.http.endpoints.chatCompletions.enabled = true;
   const previo = cfg.models.providers.swecode || {};
   const previos = new Map((Array.isArray(previo.models) ? previo.models : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]));
   cfg.models.providers.swecode = {

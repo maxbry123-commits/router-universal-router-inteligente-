@@ -36,7 +36,6 @@ const funcion = <K extends keyof typeof FUNCIONES_YAIWES>(nombre: K, descripcion
   input: EntradaFuncion, output: Resultado, tool: { name: nombre as string, label: FUNCIONES_YAIWES[nombre].label },
 });
 
-// Contrato único del plugin; perdido en una reconstrucción previa del archivo.
 export const contract = defineFeatureContract({
   pluginId: 'swe-selector',
   operations: {
@@ -52,55 +51,6 @@ export const contract = defineFeatureContract({
       kind: 'action', description: 'UI nativa exclusivamente: consulta o cambia el permiso global de agentes existente del Router. No ofrece tool al modelo.',
       input: Type.Object({ locked: Type.Optional(Type.Boolean()) }, { additionalProperties: false }), output: Resultado,
     },
-
-    // Recovery is read-only. Never replay a tool just because the session changed.
-    contexto: {
-      kind: 'query', description: 'Leer checkpoint, objetivo y recibos del propietario autenticado.',
-      input: Type.Object({ id: Type.String({ pattern: '^[A-Za-z0-9_-]{1,80}$' }) }, { additionalProperties: false }),
-      output: Resultado, tool: { name: 'swen_contexto', label: 'Recuperar contexto' },
-    },
-    contexto_transferir: {
-      kind: 'action', description: 'Copiar checkpoint sin sobrescribir el destino ni ejecutar operaciones.',
-      input: Type.Object({ origen: Type.String({ pattern: '^[A-Za-z0-9_-]{1,80}$' }),
-        destino: Type.String({ pattern: '^[A-Za-z0-9_-]{1,80}$' }) }, { additionalProperties: false }),
-      output: Resultado, tool: { name: 'swen_contexto_transferir', label: 'Transferir contexto' },
-    },
-    openai_estado: {
-      kind: 'query', description: 'Comprobar API OpenAI opcional; no usa suscripción ChatGPT.',
-      input: Type.Object({}, { additionalProperties: false }), output: Resultado,
-      tool: { name: 'swen_openai_estado', label: 'Estado OpenAI API' },
-    },
-    openai_trabajos: {
-      kind: 'query', description: 'Listar IDs de imágenes e investigaciones guardadas.',
-      input: Type.Object({}, { additionalProperties: false }), output: Resultado,
-      tool: { name: 'swen_openai_trabajos', label: 'Trabajos OpenAI' },
-    },
-    openai_research: {
-      kind: 'action', description: 'Iniciar UNA investigación en OpenAI API con coste; requiere consentimiento y configuración explícita.',
-      input: Type.Object({ prompt: Type.String({ minLength: 1, maxLength: 12000 }) }, { additionalProperties: false }),
-      output: Resultado, tool: { name: 'swen_openai_research', label: '@ Investigación profunda OpenAI' },
-    },
-    openai_research_estado: {
-      kind: 'query', description: 'Consultar una investigación existente, sin repetir inferencia.',
-      input: Type.Object({ id: Type.String({ pattern: '^[0-9a-f]{32}$' }) }, { additionalProperties: false }),
-      output: Resultado, tool: { name: 'swen_openai_research_estado', label: 'Consultar investigación' },
-    },
-    openai_imagen: {
-      kind: 'action', description: 'Crear UNA imagen PNG mediante OpenAI API opt-in; con coste separado de ChatGPT.',
-      input: Type.Object({ prompt: Type.String({ minLength: 1, maxLength: 8000 }) }, { additionalProperties: false }),
-      output: Resultado, tool: { name: 'swen_openai_imagen', label: 'Crear imagen OpenAI' },
-    },
-    openai_imagen_descargar: {
-      kind: 'action', description: 'Guardar un PNG ya generado en el workspace del Gateway.',
-      input: Type.Object({ id: Type.String({ pattern: '^[0-9a-f]{32}$' }) }, { additionalProperties: false }),
-      output: Resultado, tool: { name: 'swen_openai_imagen_descargar', label: 'Guardar PNG OpenAI' },
-    },
-    claude_estado: {
-      kind: 'query', description: 'Verificar Sonnet, perfiles activos y estado de conectividad sin secretos.',
-      input: Type.Object({}, { additionalProperties: false }), output: Resultado,
-      tool: { name: 'swen_claude_estado', label: 'Claude Sonnet status' },
-    },
-
     iniciar: { kind: 'action', description: 'Crea una tarea SWE con el contrato TareaSWE (POST /v1/swe/iniciar).', input: Tarea, output: Resultado },
     avanzar: { kind: 'action', description: 'Avanza la tarea SWE (POST /v1/swe/avanzar). Repetir hasta DONE, GAP, REQUIERE_APROBACION o RECONCILIAR.', input: Referencia, output: Resultado },
     estado: { kind: 'query', description: 'Estado de una tarea SWE (POST /v1/swe/estado, solo lectura).', input: Referencia, output: Resultado, tool: { name: 'swe_estado', label: 'Estado de tarea SWE' } },

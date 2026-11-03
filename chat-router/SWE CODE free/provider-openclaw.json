@@ -5,15 +5,11 @@
   "base_url": "http://127.0.0.1:7861/plugins/deepseek_harness/modelos/v1",
   "api_key": "${RIU_API_KEY}",
   "token_nota": "Marcador: OpenClaw debe sustituir ${RIU_API_KEY} por la clave de acceso real (RIU_API_KEY) desde su entorno, nunca escrita en este archivo; el bridge la acepta como Authorization: Bearer y BRIDGE_TOKEN es opcional. Sin ella, toda llamada al bridge da 401.",
-  "nota": "Chat OpenClaw -> plugin Harness DeepSeek -> Router MVP (Groq/NVIDIA/API) o Router SWE CODE (HF local/web). Modelo explícito sin fallback. La clave de acceso es RIU_API_KEY del Gateway, no la clave de un proveedor. Claude Sonnet 5.5 usa el agente swen-council de OpenClaw, razonamiento max, perfiles autorizados Anthropic y flag al no quedar perfiles elegibles.",
+  "nota": "Chat OpenClaw -> plugin Harness DeepSeek -> Router MVP (Groq/NVIDIA/API) o Router SWE CODE (HF local/web). Modelo explícito sin fallback. La clave de acceso es RIU_API_KEY del Gateway, no la clave de un proveedor.",
   "modelos": [
     {
       "id": "web-qwen38max",
       "nombre": "Qwen 3.8 Max (web)"
-    },
-    {
-      "id": "web-claude-sonnet",
-      "nombre": "Claude Sonnet 5.5 · MAX (Gateway OpenClaw)"
     },
     {
       "id": "web-qwen37max",

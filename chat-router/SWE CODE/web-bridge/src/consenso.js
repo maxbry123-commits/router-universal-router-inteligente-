@@ -1,23 +1,22 @@
-// consenso.js — opiniones DS/Claude/Qwen; Qwen 3.8 Max es árbitro final.
-// Claude es segundo y usa sesión oficial OpenClaw con solo Sonnet max.
+// consenso.js — fan-out a los 3 modelos web + sintesis Qwen3.8Max (metodo D)
+// consulta -> DSv4-flash + Qwen3.7Max + Qwen3.8Max en paralelo
 // arbitro: Qwen3.8Max sintetiza la respuesta final fusionando lo mejor
 import { MODELOS_WEB } from './sites.js';
 import { consultarWeb } from './motor.js';
-import { consultarClaude, esCuotaClaude } from './claude_gateway.js';
 
 const ARBITRO = 'qwen38max';
-const MODELOS = ['dsv4-flash', 'claude-sonnet', 'qwen37max', 'qwen38max'];
+const MODELOS = ['dsv4-flash', 'qwen37max', 'qwen38max'];
 
 const PROMPT_ARBITRO = (pregunta, respuestas) =>
-`Eres el arbitro Qwen 3.8 Max. Te doy respuestas del consejo a la misma consulta.
+`Eres el arbitro. Te doy 3 respuestas anonimas a la misma consulta.
 CONSULTA ORIGINAL:
 ${pregunta}
 
-${respuestas.map((r, i) => `RESPUESTA ${i+1}:\n${r}`).join('\n\n---\n\n')}
+${respuestas.map((r, i) => `RESPUESTA ${'ABC'[i]}:\n${r}`).join('\n\n---\n\n')}
 
-TAREA: redacta la respuesta FINAL sintetizando sólo opiniones realmente completadas.
-Reglas: corrige lo erróneo, conserva lo más completo. No ocultes los GAP.
-Si no se recibió Claude, no inventes su opinión; los indicadores 🚩 se informan al operador por separado.`;
+TAREA: redacta la respuesta FINAL sintetizando lo mejor de las tres.
+Reglas: corrige lo erroneo, conserva lo mas completo, no menciones A/B/C ni que eres arbitro.
+Si algo falta en las tres, marca [GAP] y dilo.`;
 
 // con conv_id cada modelo (y el arbitro) lleva su propia tab y checkpoint: antes los 3 compartian el mismo
 const opcionesDe = (opts, quien) => (opts.convId ? { ...opts, convId: `${opts.convId}-${quien}` } : opts);
@@ -25,19 +24,13 @@ const opcionesDe = (opts, quien) => (opts.convId ? { ...opts, convId: `${opts.co
 // consulta de consenso: retorna {final, por_modelo}
 export async function consenso(pregunta, opts = {}) {
   const resultados = await Promise.allSettled(
-    MODELOS.map(m => m === 'claude-sonnet'
-      ? consultarClaude(pregunta, opcionesDe(opts, m)).then(x => x.texto)
-      : consultarWeb(m, pregunta, opcionesDe(opts, m)))
+    MODELOS.map(m => consultarWeb(m, pregunta, opcionesDe(opts, m)))
   );
   const por_modelo = {};
   const validas = [];
   MODELOS.forEach((m, i) => {
     const r = resultados[i];
-    const err = r.status === 'rejected' ? (r.reason?.code || 'NO_DISPONIBLE') : null;
-    por_modelo[m] = r.status === 'fulfilled' ? r.value :
-      (m === 'claude-sonnet' && esCuotaClaude(err)
-        ? '🚩 CLAUDE_SONNET_SIN_CUENTA_DISPONIBLE: OpenClaw agotó los perfiles Anthropic elegibles; continúan los demás modelos del consejo.'
-        : '🚩 ' + m + ' ' + String(err||'FALLO'));
+    por_modelo[m] = r.status === 'fulfilled' ? r.value : `ERROR: ${r.reason?.message || r.status}`;
     if (r.status === 'fulfilled' && r.value) validas.push(r.value);
   });
   if (!validas.length) {
