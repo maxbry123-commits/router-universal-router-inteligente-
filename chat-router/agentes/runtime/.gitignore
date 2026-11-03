@@ -2,6 +2,8 @@
 /bin
 /venv
 /node
+/node24
+/.node24.*
 /src
 /.instalado
 /.instalar.lock
