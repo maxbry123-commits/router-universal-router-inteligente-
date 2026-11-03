@@ -5,6 +5,7 @@
 import crypto from 'node:crypto';
 
 const PYTHON = /\bpython\b|\.py\b/i;
+const OTRO_LENGUAJE = /\b(?:javascript|typescript|java|rust|golang|html|css|php|kotlin|swift|c\+\+|c#)\b/i;
 const CODIGO = /\b(?:c[oó]digo|code|programa|script)\b/i;
 const CUENTA = /\b(\d{2,4})\s+l[ií]neas?\b/i;
 const PAUSA = (ms) => new Promise(ok => setTimeout(ok, ms));
@@ -16,7 +17,9 @@ export function detectarCodigoLargo(modelo, mensajes, tools) {
     .find(m => m && m.role === 'user');
   const txt = String(u?.content || '');
   const n = CUENTA.exec(txt);
-  if (!n || !CODIGO.test(txt) || !PYTHON.test(txt)) return null;
+  // Si no se especifica lenguaje, la prueba de codigo largo usa Python.
+  // Nunca cambiar silenciosamente una solicitud explicita de JS, Java, etc.
+  if (!n || !CODIGO.test(txt) || (OTRO_LENGUAJE.test(txt) && !PYTHON.test(txt))) return null;
   const lineas = Number(n[1]);
   return lineas >= 100 && lineas <= 2000 ? lineas : null;
 }
@@ -69,13 +72,14 @@ export async function servirCodaRouter(req, res, sse, {modelo, mensajes, sesion,
   }
   if (!res.headersSent) res.setHeader('x-coda-proceso-id', pid);
   const hasta = Date.now() + (req.body?.stream === true ? 4*3600*1000+90000 : 90000);
-  if (req.body?.stream === true) sse.vigilar();
+  if (req.body?.stream === true) { sse.vigilar(); sse.rolInicial(); }
   let estado = 'procesando', ultimo = null;
   try {
     while (estado === 'procesando' && Date.now() < hasta && !sse.signal.aborted) {
       ultimo = await llamadaRouter(base,key,'resultado',{proceso_id:pid,espera:8},
                                   fetchFn,AbortSignal.timeout(14000));
       estado = String(ultimo.estado || 'procesando');
+      if (ultimo.error && Number(ultimo.status_code) >= 400) estado = 'error';
       // SSE comentarios de progreso; no se inventan tokens ni PASS.
       if (sse.pide && ultimo.progreso && !res.writableEnded) {
         sse.abrir();
@@ -112,6 +116,7 @@ export async function servirCodaRouter(req, res, sse, {modelo, mensajes, sesion,
     }
     return true;
   } catch (error) {
+    if (res.writableEnded || sse.signal.aborted) return true;
     if (sse.pide) sse.error('CODA_ROUTER_INTERRUPCION','Tarea conservada en Router', {proceso_id:pid});
     else res.status(502).json({error:{code:'CODA_ROUTER_INTERRUPCION'},proceso_id:pid});
     return true;
