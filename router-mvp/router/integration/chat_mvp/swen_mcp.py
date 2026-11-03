@@ -427,6 +427,33 @@ def _consulta(modelo, mensaje, sesion, timeout):
                     "resumen":output}
         except (OSError,subprocess.TimeoutExpired):
             return {"estado":"error","error":"SWEN_AUTOTEST_FALLO_TIMEOUT"}
+    if mensaje.strip() == "@swen/codatest":
+        # Solo tests fijos versionados en el repo, desde el MISMO MCP
+        # conectado. No usa HTTP externo ni permite comandos arbitrarios.
+        raiz = Path(__file__).resolve().parents[4]
+        backend = raiz / "chat-router" / "chat" / "backend"
+        prueba_py = backend / "mvp" / "test_loop_codigo.py"
+        prueba_js = raiz / "chat-router" / "SWE CODE" / "web-bridge" / "test" / "coda_router.test.mjs"
+        node24 = "/opt/node24/bin/node"
+        node = node24 if os.path.isfile(node24) else shutil.which("node")
+        py = shutil.which("python3") or shutil.which("python")
+        if not (node and py and prueba_py.is_file() and prueba_js.is_file()):
+            return {"estado":"error","error":"CODA_PRUEBAS_FALTAN_ARCHIVOS_O_EJECUTORES"}
+        salidas = {}
+        for nombre, comando, cwd in (
+            ("python", [py,"-m","unittest","mvp.test_loop_codigo","-v"],backend),
+            ("node", [node,"--test",str(prueba_js)],raiz)):
+            try:
+                r = subprocess.run(comando, cwd=str(cwd), capture_output=True,
+                                   text=True,timeout=50,check=False,
+                                   env={**os.environ,"OPENCLAW_ENABLE":"0"})
+                salidas[nombre] = {"pass":r.returncode==0,"exit":r.returncode,
+                                    "detalle":(r.stdout+"\n"+r.stderr)[-1900:]}
+            except (OSError,subprocess.TimeoutExpired):
+                salidas[nombre] = {"pass":False,"error":"TIMEOUT_O_EJECUTOR"}
+        return {"estado":"terminado" if all(x.get("pass") for x in salidas.values()) else "error",
+                "diagnostico":"coda_python_bridge","pruebas":salidas,
+                "nota":"Tests deterministas: no sustituyen prueba de inferencia real ni UI."}
     if mensaje.strip() == "@swen/gaps":
         req = urllib.request.Request("http://127.0.0.1:7870/v1/swen/gaps",
                                      headers={"X-API-Key": _clave()})
