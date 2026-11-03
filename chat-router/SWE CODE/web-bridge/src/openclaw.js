@@ -54,6 +54,21 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
   const nombres = new Map(MODELOS_API.map(m => [m.id, m.nombre]));
   for (const [id, nombre] of Object.entries({'lfm2.5-350m':'Liquid LFM2.5 350M','qwen2.5-coder-1.5b':'Qwen2.5 Coder 1.5B','qwen3.5-0.8b':'Qwen3.5 0.8B','qwen3-0.6b':'Qwen3 0.6B'})) nombres.set(id, nombre);
   cfg.agents.defaults.timeoutSeconds = Math.max(Number(cfg.agents.defaults.timeoutSeconds) || 0, 600);
+  // Agente dedicado para las opiniones de Claude. El runtime nativo OpenClaw
+  // rota sólo perfiles Anthropic AUTORIZADOS; no crea correos ni evita límites.
+  // No modifica el agente principal ni otras rutas del Gateway.
+  cfg.agents.entries ||= {};
+  cfg.agents.entries['swen-council'] = {
+    ...(cfg.agents.entries['swen-council'] || {}),
+    name:'SWEN · Claude Sonnet (consejero)',
+    model:{primary:'anthropic/claude-sonnet-5-5',fallbacks:[]},
+    thinkingDefault:'max',
+    skills:[],
+    tools:{profile:'minimal',allow:['session_status'],
+      deny:['group:fs','group:runtime','group:messaging','browser','cron',
+        'sessions_spawn','sessions_send','message','gateway','nodes','canvas',
+        'mcp__*','swe_tool_llamar','yaiwes_*']},
+  };
   cfg.gateway ||= {};
   cfg.gateway.controlUi ||= {};
   cfg.gateway.controlUi.basePath = '/openclaw';
