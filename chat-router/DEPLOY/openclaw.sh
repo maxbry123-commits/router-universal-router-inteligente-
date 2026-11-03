@@ -177,17 +177,17 @@ try:
     root_agents = cfg.setdefault("agents", {})
     agents = root_agents.setdefault("entries", {})
     agents.setdefault("main", {})  # proteger OpenClaw/default: no convertir el consejo en agente principal
-    # Filtro de propiedad del multiagente: sin ownership explícito, un solo
-    # default heredado (main) mantiene el chat original y valida el Gateway.
-    if root_agents.get("ownership") != "explicit" and not any(
-        isinstance(x,dict) and x.get("default") is True for x in agents.values()
-    ):
-        agents["main"]["default"] = True
     counsel = agents.setdefault("swen-council", {})
     counsel.update({"name":"SWEN Claude Sonnet 5.5","model":{"primary":"anthropic/claude-sonnet-5-5","fallbacks":[]},
       "thinkingDefault":"max","skills":[],
       "tools":{"profile":"minimal","allow":["session_status"],
         "deny":["group:fs","group:runtime","group:web","group:messaging","browser","exec","write","apply_patch","cron"]}})
+    # Ownership explícito requerido por el esquema de flotas de OpenClaw.
+    # MAIN sigue como sistema, sin alterar cuentas, roles ni bindings.
+    if len(agents) > 1 and root_agents.get("ownership") != "explicit":
+        agents["main"].pop("default",None)
+        root_agents["ownership"] = "explicit"
+        ad.setdefault("systemAgent", {"agentId":"main"})
     for prov, var in (("groq", "GROQ_API_KEY"), ("nvidia", "NVIDIA_API_KEY")):
         pv = cfg["models"]["providers"].get(prov)
         if pv is None: continue
