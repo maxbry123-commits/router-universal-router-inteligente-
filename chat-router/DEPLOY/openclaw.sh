@@ -144,6 +144,9 @@ if p.exists():
         cfg = {}
 gw = cfg.setdefault("gateway", {})
 gw.setdefault("controlUi", {})["basePath"] = "/openclaw"
+# HTTP OpenAI-compatible sólo en el Gateway protegido con bearer token.
+# Necesario para GET /v1/models y POST /v1/chat/completions del consejero Sonnet.
+gw.setdefault("http", {}).setdefault("endpoints", {}).setdefault("chatCompletions", {})["enabled"] = True
 auth = gw.setdefault("auth", {})
 auth["mode"] = "token"
 auth["token"] = os.environ["OPENCLAW_GATEWAY_TOKEN"]
