@@ -170,6 +170,7 @@ class TestAutopull(unittest.TestCase):
         with patch.dict(sys.modules, {"uvicorn": SimpleNamespace(run=fake)}), \
              patch.object(run, "_iniciar_hilo", return_value=False), \
              patch.object(run, "_instalar_agentes_fondo"), \
+             patch.object(run, "_iniciar_pasarela", return_value=False), \
              patch.object(run, "_head", return_value="abc123"), \
              patch("builtins.print") as escribir:
             run.main()
@@ -240,6 +241,7 @@ class TestAutopull(unittest.TestCase):
         self.assertTrue(re.search(r"environ.*PORT", Path(run.__file__).read_text()), "boot.sh no detecta PORT en run.py")
         with patch.dict(os.environ, {"PORT": "7861"}), patch.object(run, "_head", return_value="abc123"), \
              patch.object(run, "_iniciar_hilo"), patch.object(run, "_instalar_agentes_fondo"), \
+             patch.object(run, "_iniciar_pasarela", return_value=False), \
              patch.dict(sys.modules, {"uvicorn": Mock()}), patch("builtins.print"):
             run.main()
             sys.modules["uvicorn"].run.assert_called_once_with("mvp.app:app", host="0.0.0.0", port=7861)
