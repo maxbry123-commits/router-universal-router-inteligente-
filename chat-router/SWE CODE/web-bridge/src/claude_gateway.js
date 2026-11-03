@@ -35,7 +35,9 @@ export async function estadoClaude({fetchFn=fetch}={}){
     const r=await fetchFn(c.url+'/v1/models',{method:'GET',
       headers:{authorization:'Bearer '+c.token},signal:ctl,redirect:'error'});
     if(!r.ok)return {ok:false,disponible:false,modelo:MODEL,
-      reason:r.status===401||r.status===403?'CLAUDE_GATEWAY_NO_AUTORIZADO':'CLAUDE_GATEWAY_NO_DISPONIBLE',thinking:'max'};
+      reason:r.status===401||r.status===403?'CLAUDE_GATEWAY_NO_AUTORIZADO':
+        r.status===404?'CLAUDE_GATEWAY_MODELOS_NO_HABILITADOS':
+        'CLAUDE_GATEWAY_NO_DISPONIBLE',http:r.status,thinking:'max'};
     const x=await r.json(), agentes=Array.isArray(x.data)?x.data.map(t=>t.id):[];
     const instalado=agentes.includes(AGENT);
     return {ok:instalado,disponible:instalado,modelo:MODEL,
