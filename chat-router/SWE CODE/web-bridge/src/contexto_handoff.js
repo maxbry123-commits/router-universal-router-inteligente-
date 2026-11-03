@@ -48,7 +48,12 @@ export function registrarContexto({ conv_id, propietario, modelo, modo, proyecto
   const antiguo = cargar(conv_id, propietario) || { objetivo:limite(entrada,2000), turnos:[], recibos:[] };
   const t = { modelo:limite(modelo,90), modo:limite(modo,50),
     entrada:limite(entrada,5000), salida:limite(salida,10000), ts:new Date().toISOString() };
-  const turnos = [...(antiguo.turnos || []), t].slice(-MAX_TURNOS);
+  const turnosAnteriores=(antiguo.turnos || []).slice();
+  // Un registro EN_CURSO previo se actualiza, no duplica la conversación al finalizar.
+  const ultimoTurno=turnosAnteriores[turnosAnteriores.length-1];
+  if(ultimoTurno && !ultimoTurno.salida && ultimoTurno.entrada===t.entrada && ultimoTurno.modelo===t.modelo)
+    turnosAnteriores.pop();
+  const turnos = [...turnosAnteriores, t].slice(-MAX_TURNOS);
   const recibidos = Array.isArray(resultado_tools) ? resultado_tools.slice(0,12) : [];
   const idsConfirmados = new Set(recibidos.map(x=>x.id).filter(Boolean));
   const anteriores = (antiguo.pendientes || []).filter(x=>!idsConfirmados.has(x.id));
