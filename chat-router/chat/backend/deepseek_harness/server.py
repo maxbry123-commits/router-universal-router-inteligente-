@@ -161,9 +161,13 @@ def _bridge_url():
 
 
 def _router_caido(exc):
-    """Caida real del Router MVP (red, timeout, 502/503/504); una cuota (429), un 4xx o un error del modelo NO cuentan."""
+    """Solo fallos del transporte MVP; un 502 del proveedor no es una caída
+    del Router. Evita reejecutar Groq/NVIDIA (y herramientas) por el bridge.
+    """
     m = str(exc)
-    return bool(re.match(r"Router (?!HTTP )\w+", m) or re.match(r"Router HTTP 50[234]", m))
+    if re.search(r"PROVEEDOR_(?:GROQ|NVIDIA)_HTTP_", m):
+        return False
+    return bool(re.match(r"Router (?!HTTP )\\w+", m) or re.match(r"Router HTTP 50[234]", m))
 
 
 ACCESO_BRIDGE = ("RIU_API_KEY", "RIU_PUBLIC_CHAT_KEY", "RIU_MCP_KEY", "RIU_ROUTER_API_KEY")  # las 4 claves de acceso que el bridge acepta en x-api-key
