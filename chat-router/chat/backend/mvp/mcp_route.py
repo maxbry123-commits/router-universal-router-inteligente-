@@ -153,7 +153,14 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
         if args.get('ficha_qwen'):
             if args.get('modelo'):
                 args = {**args, 'modelo': modelos.canonico(args['modelo'])}  # nombres antiguos (ficha-qwen38max, qw-glm-5-3) -> id del catálogo
-            if args.get('modelo') and args['modelo'] not in dict(modelos.catalogo()) and not externos.proveedor(args['modelo']):  # groq/<id> y nvidia/<id> los valida su API  # texto, imagen, voz y video del plan (la ficha genera los medios)
+            # SWEN usa suscripciones WEB: nunca enviar sus IDs al plan Qwen Token Plan.
+            # El MCP instalado mantiene chat(ficha_qwen,modelo) sin agregar otra tool.
+            es_swen = args.get('ficha_qwen') == 'swen-code-free'
+            if es_swen:
+                from router.integration.chat_mvp import swen_mcp
+                if args.get('modelo') not in swen_mcp.MODELOS:
+                    return _error(id_, -32602, 'SWEN_MODELO_NO_PERMITIDO; usar uno de los 5 modelos WEB')
+            elif args.get('modelo') and args['modelo'] not in dict(modelos.catalogo()) and not externos.proveedor(args['modelo']):
                 return _error(id_, -32602, 'modelo no permitido en el plan %s; permitidos: %s' % (modelos.plan(), ', '.join(i for i, _ in modelos.catalogo())))
             if not isinstance(args['ficha_qwen'], str):
                 return _error(id_, -32602, 'ficha_qwen invalida')
@@ -201,6 +208,16 @@ async def _herramienta(id_, params, chat, almacen, plugin_call, control=None, ba
         if nombre in GITHUB:
             texto = await asyncio.to_thread(GITHUB[nombre], args)
             return _ok(id_, _contenido(texto, str(texto).startswith(('ERROR', 'FALTA'))))
+        # Ruta MCP -> chat WEB nativo, sin pasando por Ficha Qwen ni cambiar
+        # a Liquid. La lista permitida y la idempotencia viven en swen_mcp.
+        if nombre == 'chat' and args.get('ficha_qwen') == 'swen-code-free':
+            from router.integration.chat_mvp import swen_mcp
+            salida = await asyncio.to_thread(swen_mcp.iniciar, args)
+            return _ok(id_, _contenido(salida, bool(salida.get('error'))))
+        if nombre == 'resultado' and str(args.get('proceso_id') or '').startswith('swen_'):
+            from router.integration.chat_mvp import swen_mcp
+            salida = await asyncio.to_thread(swen_mcp.resultado, args)
+            return _ok(id_, _contenido(salida, bool(salida.get('error'))))
         if nombre in FICHAS and (nombre != 'chat' or args.get('ficha_qwen')):
             if plugin_call is None:
                 return _error(id_, -32602, 'Servicio de fichas no disponible')
