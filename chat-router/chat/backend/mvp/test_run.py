@@ -148,12 +148,37 @@ class TestAutopull(unittest.TestCase):
         escribir.assert_called_once_with("MVP commit: abc123", flush=True)
         fake.assert_called_once_with("mvp.app:app", host="0.0.0.0", port=7860)
 
-    def test_ciclo_es_cada_60_segundos(self):
+    def test_ciclo_es_cada_60_segundos_y_sobrevive_a_un_fallo(self):
         with patch.object(run.time, "sleep") as dormir, \
-             patch.object(run, "_actualizar", side_effect=RuntimeError("fin del test")):
-            with self.assertRaisesRegex(RuntimeError, "fin del test"):
+             patch.object(run, "_actualizar", side_effect=[RuntimeError("fallo temporal"), KeyboardInterrupt]) as actualizar, \
+             patch.object(run, "_bridge_escuchando", return_value=True), \
+             patch("builtins.print"):
+            with self.assertRaises(KeyboardInterrupt):
                 run._vigilar()
-        dormir.assert_called_once_with(60)
+        self.assertEqual(dormir.call_args_list, [unittest.mock.call(60), unittest.mock.call(60)])
+        self.assertEqual(actualizar.call_count, 2)
+
+    def test_las_48_horas_de_trabajo_no_bloquean_el_despliegue(self):
+        with patch.dict(os.environ, {"RIU_MAX_HORAS": "48", "RIU_DEFER_MAX_S": "3600"}):
+            self.assertEqual(run._limite_diferido(), 540)
+        with patch.dict(os.environ, {"RIU_MAX_HORAS": "48", "RIU_DEFER_MAX_S": "360"}):
+            self.assertEqual(run._limite_diferido(), 360)
+        with patch.dict(os.environ, {"RIU_DEFER_MAX_S": "invalido"}):
+            self.assertEqual(run._limite_diferido(), 360)
+
+    def test_descarga_con_tarea_en_cola_y_reinicia_al_expirar_tope(self):
+        antes = run._head()
+        (self.writer / "test.txt").write_text("nuevo backend\\n")
+        git("-C", self.writer, "commit", "-am", "backend en cola")
+        git("-C", self.writer, "push", "origin", "main")
+        nuevo = git("-C", self.writer, "rev-parse", "HEAD")
+        with patch.object(run, "ARRANQUE", antes), patch.object(run, "_DIFERIDO", None), \
+             patch.object(run, "DIFERIR_MAX_S", 0.0), \
+             patch.object(run, "_tareas_en_curso", return_value=1), \
+             patch.object(run.os, "execv") as reiniciar:
+            self.assertTrue(run._actualizar())
+            reiniciar.assert_called_once()
+        self.assertEqual(run._head(), nuevo)
 
     def test_puerto_sale_de_PORT_para_correr_detras_del_proxy_del_space(self):
         """boot.sh solo lanza `python -m mvp.run` (con autopull) si run.py lee PORT; si no, arranca uvicorn pelado y el Space nunca se actualiza."""
