@@ -365,7 +365,7 @@ function hoja(id, desde) {
   VENTANA = id; sincronizar(id);
   pintarControles();
   opener = desde || null; openerId = desde && desde.id ? desde.id : "";
-  s.hidden = false; s.querySelector(".swe-cuerpo").scrollTop = 0; refrescarCapacidades(true);  // al abrir se vuelve a preguntar al Harness: un "no disponible" viejo no se queda pegado
+  s.hidden = false; s.querySelector(".swe-cuerpo").scrollTop = 0; refrescarCapacidades(true, id === "swe-code");  // al abrir se vuelve a preguntar al Harness: un "no disponible" viejo no se queda pegado
   const x = s.querySelector(".sh-cerrar"); if (x) x.focus();
 }
 // capturar: estas 4 pastillas abren SOLO esta ventana (las hojas viejas de Groq y NVIDIA ya no existen: su lista de modelos era el duplicado)
