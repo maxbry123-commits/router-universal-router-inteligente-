@@ -41,6 +41,11 @@ export const SITES = {
     login_email: ['input[type="email"]', 'input[name="email"]', 'input[placeholder*="mail" i]'],
     login_pass: ['input[type="password"]', 'input[name="password"]'],
     login_btn: ['div[role="button"]:has-text("Log in")', 'button:has-text("Log in")', 'button[type="submit"]'],
+    // DeepSeek puede mostrar la pantalla de inicio de sesión como modal en /
+    // (sin cambiar a /sign_in): una URL / NO prueba cuenta autenticada.
+    login_visible: ['a[href*="sign_in"]', 'button:has-text("Log in")',
+      'a:has-text("Log in")', 'button:has-text("Sign in")',
+      'a:has-text("Sign in")', 'button:has-text("登录")'],
     model_selector: [],
     nuevo_chat: ['[class*="new" i][class*="chat" i]', 'button:has-text("New chat")', 'div[role="button"]:has-text("New")'],
     sesion_muerta: (url) => /sign_in|login/i.test(url),
@@ -187,5 +192,7 @@ export async function login(page, cfg, email, pass) {
     if (el) { await el.click(); break; }
   }
   await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
-  return !sesionMuerta(page, cfg);
+  await page.waitForTimeout(1000);
+  // Antes daba LOGIN_OK por URL incluso si el formulario seguía en pantalla.
+  return !(await necesitaLogin(page, cfg));
 }
