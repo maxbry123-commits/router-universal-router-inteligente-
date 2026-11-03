@@ -102,8 +102,11 @@ def test_real_disponibilidad_detecta_los_binarios_instalados_via_RIU_BIN(monkeyp
     monkeypatch.setenv("RIU_CLAUDE_BIN", BINS["claude"]); monkeypatch.setenv("RIU_CLAUDE_PASARELA_URL", "http://127.0.0.1:1"); monkeypatch.setenv("RIU_CLAUDE_PASARELA_MODELO", "nvidia/nemotron-3-ultra-550b-a55b")
     monkeypatch.setenv("RIU_SWEAGENT_BIN", BINS["sweagent"])
     caps = disponibilidad.capacidades(sonda_modelos=lambda p, c: (_ for _ in ()).throw(OSError("sin red")))["agentes"]  # sonda de openhands REAL: importa el SDK del venv
-    for a in ("codex", "opencode", "openhands", "claude-code"):
+    for a in ("codex", "opencode", "openhands"):
         assert caps[a]["disponible"] is True, (a, caps[a])
+    # Claude Code instalado no equivale a pasarela viva: 127.0.0.1:1 es un puerto sin servidor.
+    assert caps["claude-code"]["disponible"] is False
+    assert caps["claude-code"]["estado"] == "SIN VERIFICAR"
     assert caps["swe-agent"]["disponible"] is bool(shutil.which("docker")) or "Docker" in caps["swe-agent"]["motivo"]
 
 
