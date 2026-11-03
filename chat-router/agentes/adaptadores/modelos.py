@@ -6,6 +6,11 @@ MODELOS = {
     "hf/qwen2.5-coder-1.5b": {"provider": "hf", "model": "qwen2.5-coder-1.5b"},
     "hf/qwen3.5-0.8b": {"provider": "hf", "model": "qwen3.5-0.8b"},
     "hf/qwen3-0.6b": {"provider": "hf", "model": "qwen3-0.6b"},
+    # Cuentas web del bridge: sólo IDs reales publicados por /v1/models.
+    # Estos modelos se pueden usar por el runtime OpenClaw sin LLM traductor.
+    "web-qwen38max": {"provider": "web", "model": "web-qwen38max"},
+    "web-qwen37max": {"provider": "web", "model": "web-qwen37max"},
+    "web-dsv4-flash": {"provider": "web", "model": "web-dsv4-flash"},
     "groq/qwen/qwen3.8-27b": {"provider": "groq", "model": "qwen/qwen3.8-27b"},
     "nvidia/minimaxai/minimax-m3.1-flash": {"provider": "nvidia", "model": "minimaxai/minimax-m3.1-flash"},
     "nvidia/meta/muse-glimmer-30b": {"provider": "nvidia", "model": "meta/muse-glimmer-30b"},
@@ -18,6 +23,9 @@ NOMBRES = {
     "hf/qwen2.5-coder-1.5b": "Qwen2.5-Coder 1.5B (HF local)",
     "hf/qwen3.5-0.8b": "Qwen3.5 0.8B (HF local)",
     "hf/qwen3-0.6b": "Qwen3 0.6B (HF local)",
+    "web-qwen38max": "Qwen 3.8 Max · web",
+    "web-qwen37max": "Qwen 3.7 Max · web",
+    "web-dsv4-flash": "DeepSeek V4 Flash · web",
     "groq/qwen/qwen3.8-27b": "Qwen 3.8 27B",
     "nvidia/minimaxai/minimax-m3.1-flash": "MiniMax M3.1 Flash",
     "nvidia/meta/muse-glimmer-30b": "Muse Glimmer 30B",
