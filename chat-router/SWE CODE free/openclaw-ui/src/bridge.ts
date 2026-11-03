@@ -101,6 +101,7 @@ export function crearCliente(cfg: { url: string; token: string }, opciones: { fe
       ? llamar('POST','/v1/contexto/transferir',{origen,destino})
       : Promise.resolve({ok:false,http:400,codigo:'CONTEXTO_ID_INVALIDO'} as Respuesta),
     // OpenAI API independiente: solo el operador del Gateway habilita RIU_OPENAI_AGENTE_ON.
+    claudeEstado: () => llamar('GET','/v1/claude/estado'),
     openaiEstado: () => llamar('GET','/v1/openai/estado'),
     openaiTrabajos: () => llamar('GET','/v1/openai/trabajos'),
     openaiResearch: (prompt: string) => llamar('POST','/v1/openai/research',{prompt}),
