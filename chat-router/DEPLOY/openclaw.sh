@@ -29,12 +29,8 @@ bootstrap_node24() {
 bootstrap_node24
 export PATH="$NODE_DIR/bin:$PATH"
 
-# Setup code / bootstrap token sin caducidad práctica (upstream: 6e5 = 10 min, hardcoded).
-OPENCLAW_BOOTSTRAP_TTL_MS="${OPENCLAW_BOOTSTRAP_TTL_MS:-315360000000}"  # 10 años
-OC_DIST="$(npm root -g)/openclaw/dist"
-for f in $(grep -rl "DEVICE_BOOTSTRAP_TOKEN_TTL_MS = 6e5" "$OC_DIST" 2>/dev/null); do
-  sed -i "s/DEVICE_BOOTSTRAP_TOKEN_TTL_MS = 6e5;/DEVICE_BOOTSTRAP_TOKEN_TTL_MS = ${OPENCLAW_BOOTSTRAP_TTL_MS};/" "$f" && echo "bootstrap TTL patched: $f"
-done
+# El bootstrap de pairing usa la caducidad oficial de OpenClaw.
+# No modificar su código compilado ni prolongar tokens de identidad para evitar controles.
 
 # State MUST be a real local dir owned by this uid with mode 0700.
 # /data FUSE breaks OpenClaw state ownership locks — keep live state in /tmp only.
