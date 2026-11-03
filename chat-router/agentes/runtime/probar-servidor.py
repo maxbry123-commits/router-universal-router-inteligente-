@@ -75,7 +75,11 @@ def comprobar(base, clave, commit):
         if nombre != "yaiwes":
             agentes = obtener_agentes(doc) if isinstance(doc, dict) else {}
         validos = set(agentes) == AGENTES
-        checks[nombre] = {"http": status, "ok": status == 200 and validos,
+        operativos = sorted(k for k, v in agentes.items()
+                           if k in AGENTES and isinstance(v, dict) and v.get("disponible") is True)
+        checks[nombre] = {"http": status, "ok": status == 200 and validos and len(operativos) == len(AGENTES),
+                          "catalogo_ok": validos, "operativos": operativos,
+                          "no_operativos": sorted(AGENTES - set(operativos)),
                           "registrados": sorted(set(agentes) & AGENTES),
                           "faltantes": sorted(AGENTES - set(agentes))}
         if isinstance(doc, dict) and "harness" in doc:
@@ -88,7 +92,11 @@ def comprobar(base, clave, commit):
     result = (doc or {}).get("result") or {}
     swe = result.get("swe") or {}
     agentes = obtener_agentes(swe)
-    checks["harness"] = {"http": status, "ok": status == 200 and set(agentes) == AGENTES,
+    operativos = sorted(k for k, v in agentes.items()
+                       if k in AGENTES and isinstance(v, dict) and v.get("disponible") is True)
+    checks["harness"] = {"http": status, "ok": status == 200 and set(agentes) == AGENTES
+                         and len(operativos) == len(AGENTES), "operativos": operativos,
+                         "no_operativos": sorted(AGENTES - set(operativos)),
                          "faltantes": sorted(AGENTES - set(agentes))}
     return checks
 
