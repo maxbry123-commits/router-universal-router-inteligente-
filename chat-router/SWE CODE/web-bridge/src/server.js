@@ -509,9 +509,13 @@ app.post('/v1/chat/completions', async (req, res) => {
           const r = await consultarClaude(promptFicha + promptHerramientasWeb(extra.tools), { convId:String(conv_id||'consulta') });
           salida = r.texto;
         } catch (e) {
-          if (!esCuotaClaude(e.code)) throw e;
-          flagClaude = { codigo:'CLAUDE_SONNET_SIN_CUENTA_DISPONIBLE',
-            mensaje:'No quedan perfiles Anthropic elegibles en OpenClaw. La tarea se mantiene pendiente para recuperación.' };
+          const requiereAuth = e.code === 'CLAUDE_PROVEEDOR_SIN_CREDENCIALES';
+          if (!esCuotaClaude(e.code) && !requiereAuth) throw e;
+          flagClaude = requiereAuth
+            ? { codigo:'CLAUDE_SONNET_REQUIERE_AUTORIZACION',
+                mensaje:'El Gateway está operativo pero falta una conexión Anthropic o Claude CLI autorizada. Se conserva la tarea para continuar.' }
+            : { codigo:'CLAUDE_SONNET_SIN_CUENTA_DISPONIBLE',
+                mensaje:'No quedan perfiles Anthropic elegibles en OpenClaw. La tarea se mantiene pendiente para recuperación.' };
           salida = '🚩 Claude Sonnet 5.5 · ' + flagClaude.codigo + '. Se conservó el contexto; los demás modelos y tareas pueden continuar.';
           fin = 'error';
         }
