@@ -295,7 +295,7 @@ app.post('/v1/system-prompt-on', async (req, res) => {
 const idsModelos = () => {
   const base = Object.keys(MODELOS_WEB).map(m => `web-${m}`);
   const modos = ['revision','solucion','arquitectura','archivos','prompt_code','consulta','despliega','asesoria'].map(m => `swecode-${m}`);
-  return [...base, ...modos, ...idsRespaldo()];
+  return [...base, 'web-claude-sonnet', ...modos, ...idsRespaldo()];
 };
 app.get('/v1/models', (_req, res) => res.json({ object: 'list', data: idsModelos().map(id => ({ id, object: 'model' })) }));
 // disponibilidad real de los modelos Groq/NVIDIA (GET /models de cada proveedor): DISPONIBLE | NO DISPONIBLE | SIN VERIFICAR; jamas cambia de modelo en silencio ni muestra claves
@@ -393,7 +393,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if ((clavesReq != null || cuentas) && !conAcceso(req)) return res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'claves/cuentas por llamada exigen la clave de acceso (x-api-key)' } });
     if (clavesReq != null && !clavesValidas) return res.status(400).json({ error: { code: 'CLAVE_INVALIDA', message: MSG_CLAVE } });
     if (conv_id != null && !/^[\w-]{1,80}$/.test(String(conv_id))) return res.status(400).json({ error: { code: 'CONV_ID_INVALIDO', message: 'conv_id: letras, numeros, - y _ (max 80)' } });
-    if (model.startsWith('web-') && !MODELOS_WEB[model.slice(4)]) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
+    if (model.startsWith('web-') && model !== 'web-claude-sonnet' && !MODELOS_WEB[model.slice(4)]) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model } });
     if (Array.isArray(documentos) && documentos.length > MAX_DOCS) return res.status(413).json({ error: { code: 'DEMASIADOS_DOCUMENTOS', max: MAX_DOCS } });
     // La UI nativa de OpenClaw no incorpora un boton: sus tareas y tool_calls
     // llevan la ficha activada aunque el chat YAIWES haya apagado SU interruptor.
