@@ -102,6 +102,20 @@ export async function nuevaPagina(site, convId) {
   return page;
 }
 
+// Recuperación NO destructiva del contexto de un sitio cuando falla la
+// navegación ANTES de enviar el prompt. Si hay algún chat activo, no reiniciar.
+// Se conserva el perfil persistido; los checkpoints y demás sitios no se tocan.
+export async function reiniciarSitioInactivo(site) {
+  if (!SITES[site]) return {ok:false,code:'SITIO_INVALIDO'};
+  if ([...paginas.values()].some(x=>x.site===site&&!x.page.isClosed()))
+    return {ok:false,code:'CHATS_EN_CURSO'};
+  const entry=contextos.get(site);
+  if (!entry) return {ok:true,code:'SIN_CONTEXTO_ACTIVO'};
+  contextos.delete(site);
+  try { await entry.ctx.close(); return {ok:true,code:'CONTEXTO_RECICLADO'}; }
+  catch { return {ok:false,code:'CIERRE_NAVEGADOR_FALLO'}; }
+}
+
 // Diagnóstico seguro del navegador ya abierto, sin texto, URL, DOM, cookies,
  // claves, capturas ni identidades. No ejecuta login ni navega por la web.
 export async function diagnosticoAcceso() {
