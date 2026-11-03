@@ -679,7 +679,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     if (sse.activo) return res.writableEnded ? undefined : sse.error(code, e.message, e.detail);  // error tras abrir el stream: chunk con el error + [DONE]
     if (res.headersSent) return;
     const st = code === 'SESSION_EXPIRED' ? 503 : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : HTTP_TAREA[code] ? HTTP_TAREA[code] : ['EXTERNO_FALLO', 'HF_LOCAL_FALLO', 'NO_DISPONIBLE'].includes(code) ? 502 : 500;
-    res.status(st).json({ error: { code, message: e.message, detail: e.detail } });
+    res.status(st).json({ error: { code, message: e.message, detail: e.detail, ...(e.motivo ? { motivo: e.motivo, site: e.site, accion: 'POST /web/v1/web/sesion/importar (ver SWE CODE free/SESION_IMPORTAR.md)' } : {}) } });
   }
 });
 

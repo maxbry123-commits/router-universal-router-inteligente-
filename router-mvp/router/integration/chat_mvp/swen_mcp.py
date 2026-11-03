@@ -400,10 +400,15 @@ def _consulta(modelo, mensaje, sesion, timeout):
                 detalle = json.loads(exc.read(8192).decode("utf-8", "replace"))
                 err = (detalle.get("error") or detalle.get("detail") or {})
                 codigo = err.get("code") if isinstance(err, dict) else str(err)
-            except (ValueError, TypeError, UnicodeError):
-                codigo = "HTTP_" + str(exc.code)
-            return {"estado": "error", "error": str(codigo or ("HTTP_" + str(exc.code)))[:140],
-                    "http": exc.code, "modelo_solicitado": modelo}
+                motivo = (err.get("motivo") if isinstance(err, dict) else None) or detalle.get("motivo")
+            except (ValueError, TypeError, UnicodeError, AttributeError):
+                codigo, motivo = "HTTP_" + str(exc.code), None
+            out = {"estado": "error", "error": str(codigo or ("HTTP_" + str(exc.code)))[:140],
+                   "http": exc.code, "modelo_solicitado": modelo}
+            if motivo:  # causa distinguible (RETO_ANTIBOT / LOGIN_RECHAZADO_TODAS_CUENTAS / SIN_SESION_EN_PERFIL)
+                out["motivo"] = str(motivo)[:60]
+                out["accion_titular"] = "importar sesion: POST /web/v1/web/sesion/importar"
+            return out
         except (urllib.error.URLError, OSError, TimeoutError) as exc:
             ultimo = "SWEN_SIN_CONEXION_" + type(exc).__name__
         except (ValueError, KeyError, TypeError, IndexError):
