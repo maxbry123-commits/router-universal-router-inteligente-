@@ -15,6 +15,9 @@ import hashlib
 import json
 import os
 import re
+import subprocess
+import sys
+from pathlib import Path
 import threading
 import time
 import urllib.error
@@ -143,9 +146,45 @@ def _diagnostico_claves():
             "aviso": "Cantidad configurada, no claves validadas ante proveedor."}
 
 
+def _coda_tests():
+    """Ejecuta solo los tests versionados y fijos; no ejecuta texto del chat."""
+    raiz = Path(__file__).resolve().parents[4]
+    backend = raiz / "chat-router" / "chat" / "backend"
+    js_test = raiz / "chat-router" / "SWE CODE" / "web-bridge" / "test" / "coda_router.test.mjs"
+    if not (backend / "mvp" / "test_loop_codigo.py").is_file() or not js_test.is_file():
+        return {"estado":"error", "error":"PRUEBAS_CODA_AUSENTES"}
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.pathsep.join((str(raiz / "chat-router"), str(backend),
+                                        env.get("PYTHONPATH","")))
+    casos = [
+        ("mvp_codacode", [sys.executable, "-m", "unittest",
+                           "mvp.test_loop_codigo", "mvp.test_rotacion_groq_coda", "-v"], backend),
+        ("mcp_harness", [sys.executable, "-m", "unittest",
+                          "deepseek_harness.test_metricas_credenciales", "-v"], backend),
+    ]
+    node = __import__("shutil").which("node")
+    if node:
+        casos.append(("bridge_openclaw", [node, "--test", str(js_test)], raiz))
+    salidas = {}
+    for nombre, argv, cwd in casos:
+        try:
+            r = subprocess.run(argv, cwd=str(cwd), env=env,
+                               capture_output=True, text=True, timeout=55, check=False)
+            salidas[nombre] = {"pass":r.returncode==0, "exit":r.returncode,
+                               "resumen":(r.stdout+"\n"+r.stderr)[-1200:]}
+        except (OSError, subprocess.TimeoutExpired):
+            salidas[nombre] = {"pass":False, "error":"EJECUTOR_NO_DISPONIBLE_O_TIMEOUT"}
+    ok = all(v.get("pass") for v in salidas.values()) and bool(node)
+    return {"estado":"terminado" if ok else "error", "reply": "CODA_TESTS_" + ("PASS" if ok else "GAP"),
+            "pruebas":salidas, "node_presente":bool(node),
+            "aviso":"Pruebas deterministas. No sustituyen llamadas reales a APIs."}
+
+
 def _consulta(modelo, mensaje, sesion, timeout):
     if str(mensaje).strip() == "@swen/claves":
         return _diagnostico_claves()
+    if str(mensaje).strip() == "@swen/codatest":
+        return _coda_tests()
     key = _clave()
     if not key:
         return {"estado": "error", "error": "SWEN_MCP_SIN_CLAVE_BACKEND"}
