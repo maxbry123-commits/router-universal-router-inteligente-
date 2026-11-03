@@ -168,8 +168,9 @@ function llenar(s, items, actual) {  // disponibles arriba; lo no disponible, al
 function agrupar(k, sel, w) {
   const [lista, tipo] = LISTAS[k];
   if (k === "modelo_responde" || k === "modelo_tool") {
-    const resp = k === "modelo_responde", v = resp ? w : (w === "swen-code-free" ? w : "swen-code-free");
-    let ops = opcionesModeloVentana(v, CAP, mapaProveedor(v), { web: v === "swen-code-free" });
+    const resp = k === "modelo_responde", v = resp ? w : (w === "swen-code-free" ? w : "modelo_tool_global");
+    // Sólo SWE CODE free limita al subconjunto WEB; otros selectores conservan el catálogo general anterior.
+    let ops = opcionesModeloVentana(v, CAP, mapaProveedor(resp ? v : "swen-code-free"), { web: v === "swen-code-free" || v === "modelo_tool_global" });
     if (!resp && w === "swen-code-free") ops = ops.filter(o => o.id.startsWith("web-"));
     // un modelo SIN VERIFICAR no bloquea el chat normal: se puede elegir, con su rotulo; lo no disponible va al final, deshabilitado y con su estado real
     const g = { ok: ops.filter((o) => o.ok).map((o) => ({ id: o.id, etq: o.estado === "DISPONIBLE" ? o.nombre : `${o.nombre} — ${ETIQUETA_ESTADO[o.estado]}`, estado: o.estado, motivo: o.motivo, elegible: o.elegible })), noInstalado: [], incompatible: [], sinVerificar: [], otros: ops.filter((o) => !o.ok).map((o) => ({ id: o.id, etq: o.nombre, estado: o.estado, motivo: o.motivo, elegible: o.elegible })) };
