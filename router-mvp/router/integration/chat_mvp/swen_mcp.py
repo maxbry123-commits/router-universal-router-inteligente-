@@ -28,6 +28,12 @@ MODELOS = {
     "web-dsv4-flash": "dsv4-flash",
     "web-claude-sonnet": "claude-sonnet",
     "swecode-consulta": "qwen38max",
+    # El mismo MCP del chat comprueba el provider OpenClaw sin otro puente.
+    "groq/qwen/qwen3.8-27b": "groq/qwen/qwen3.8-27b",
+    "nvidia/minimaxai/minimax-m3.1-flash": "nvidia/minimaxai/minimax-m3.1-flash",
+    "nvidia/meta/muse-glimmer-30b": "nvidia/meta/muse-glimmer-30b",
+    "nvidia/nvidia/nemotron-3-ultra-550b-a55b": "nvidia/nvidia/nemotron-3-ultra-550b-a55b",
+    "nvidia/z-ai/glm-5.3": "nvidia/z-ai/glm-5.3",
 }
 _EXEC = cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="mcp_swen")
 _JOBS: dict[str, dict] = {}
@@ -56,12 +62,59 @@ def _clave():
     return str(os.getenv("RIU_API_KEY") or os.getenv("RIU_PUBLIC_CHAT_KEY") or "").strip()
 
 
+def _coda_resultado(pid, modelo, key, solicitado=500, horas=4):
+    """Polling sobre resultado del mismo Router; no crea otro proceso ni puente.
+    Se usa solo cuando el provider OpenClaw devolvio 202 + PID.
+    """
+    if not re.fullmatch(r"p-[A-Za-z0-9_-]{1,80}", str(pid)):
+        return {"estado": "error", "error": "CODA_PID_INVALIDO"}
+    fin = time.monotonic() + max(1, min(horas, 4)) * 3600
+    ultimo_error = "CODA_ROUTER_NO_DISPONIBLE"
+    while time.monotonic() < fin:
+        for puerto in ("7861", "7860"):
+            url = "http://127.0.0.1:" + puerto + "/plugins/puente_chat/call/resultado"
+            req = urllib.request.Request(
+                url, method="POST",
+                headers={"Content-Type": "application/json", "X-API-Key": key},
+                data=json.dumps({"proceso_id": pid, "espera": 6}).encode("utf-8"))
+            try:
+                with urllib.request.urlopen(req, timeout=14) as resp:
+                    data = json.loads(resp.read(2_000_001))
+                item = data.get("result") if data.get("status") == "ok" else None
+                if not isinstance(item, dict):
+                    ultimo_error = "CODA_RESPUESTA_ROUTER_INVALIDA"
+                    continue
+                estado = item.get("estado")
+                if estado == "completado":
+                    texto = str(((item.get("choices") or [{}])[0].get("message") or {}).get("content") or "")
+                    metricas = item.get("metricas") or {}
+                    if not texto.strip() or len(texto.splitlines()) != solicitado or metricas.get("lineas_verificadas") != solicitado:
+                        return {"estado": "error", "error": "CODA_SIN_500_LINEAS_VERIFICADAS",
+                                "lineas": len(texto.splitlines()), "proceso_router": pid}
+                    return {"estado": "terminado", "reply": texto[:150000],
+                            "modelo_solicitado": modelo, "modelo_usado": modelo, "finish_reason": "stop",
+                            "lineas_verificadas": solicitado, "proceso_router": pid,
+                            "origen": "openclaw_bridge_coda_mvp"}
+                if estado == "error" or item.get("error"):
+                    return {"estado": "error", "error": str(item.get("error") or "CODA_ERROR")[:180],
+                            "proceso_router": pid, "modelo_solicitado": modelo}
+                ultimo_error = "CODA_PENDIENTE"
+                break
+            except (OSError, ValueError, KeyError) as exc:
+                ultimo_error = "CODA_SIN_CONEXION_" + type(exc).__name__
+        time.sleep(4)
+    return {"estado": "error", "error": "CODA_LIMITE_TIEMPO_" + ultimo_error,
+            "proceso_router": pid, "modelo_solicitado": modelo}
+
+
 def _consulta(modelo, mensaje, sesion, timeout):
     key = _clave()
     if not key:
         return {"estado": "error", "error": "SWEN_MCP_SIN_CLAVE_BACKEND"}
+    es_api = modelo.startswith(("groq/", "nvidia/"))
     cuerpo = {"model": modelo, "messages": [{"role": "user", "content": mensaje}],
-              "conv_id": sesion, "tools": False, "stream": False, "origen": "mcp-swen"}
+              "conv_id": sesion, "tools": False, "stream": False,
+              "origen": "openclaw" if es_api else "mcp-swen"}
     datos = json.dumps(cuerpo, ensure_ascii=False).encode("utf-8")
     ultimo = "SWEN_BACKEND_NO_ACCESIBLE"
     for destino in _destinos():
@@ -74,16 +127,21 @@ def _consulta(modelo, mensaje, sesion, timeout):
             if len(crudo) > 2_000_000:
                 return {"estado": "error", "error": "SWEN_RESPUESTA_EXCESIVA"}
             obj = json.loads(crudo)
+            if es_api and obj.get("estado") == "procesando" and obj.get("proceso_id"):
+                return _coda_resultado(obj["proceso_id"], modelo, key)
             eleccion = (obj.get("choices") or [{}])[0]
             mensaje_respuesta = eleccion.get("message") or {}
             usado = obj.get("modelo_usado") or obj.get("model") or ""
             texto = mensaje_respuesta.get("content") or ""
             if not isinstance(texto, str) or not texto.strip():
                 return {"estado": "error", "error": "SWEN_SIN_RESPUESTA", "modelo_usado": usado}
+            # Los proveedores pueden informar el ID con o sin prefijo.
+            if es_api and usado and str(usado) == modelo.split("/", 1)[1]:
+                usado = modelo
             if usado and str(usado) != MODELOS[modelo]:
                 return {"estado": "error", "error": "SWEN_MODELO_CAMBIADO",
                         "modelo_solicitado": modelo, "modelo_usado": str(usado)[:100]}
-            if obj.get("via_respaldo"):
+            if obj.get("via_respaldo") and not es_api:
                 return {"estado": "error", "error": "SWEN_FALLBACK_NO_AUTORIZADO"}
             if modelo == "swecode-consulta" and (obj.get("consenso_detalle") or {}).get("arbitro") != "qwen38max":
                 return {"estado": "error", "error": "SWEN_CONSIL_SIN_ARBITRO"}
