@@ -36,3 +36,50 @@ endpoints:
     authorized_consumers: [chat-router/chat/backend]
     status: pending_audit
     evidence: null
+  # R3 (ROADMAP): gateway de entrada unica + adaptadores por motor. Rutas REALES del arbol git;
+  # sin inventar componentes (§18). Todo queda pending_audit hasta verificacion con evidencia.
+  - id: EP-005
+    service: gateway_entrada_unica
+    owner: chat-router/chat/backend/mvp/app.py
+    reference: FastAPI_app
+    method: GET
+    protocol: HTTP
+    authorized_consumers: [chat-router/chat/frontend]
+    status: pending_audit
+    evidence: null
+  - id: EP-006
+    service: adaptadores_dispatch
+    owner: chat-router/agentes/adaptadores
+    reference: dispatcher.py
+    method: INPROC
+    protocol: PYTHON
+    authorized_consumers: [chat-router/chat/backend]
+    status: pending_audit
+    evidence: null
+  - id: EP-007
+    service: motor_busqueda_contexto
+    owner: chat-router/motores/motores/busqueda-contexto
+    reference: motor_entrypoint
+    method: INPROC
+    protocol: PYTHON
+    authorized_consumers: [chat-router/chat/backend]
+    status: pending_audit
+    evidence: null
+  - id: EP-008
+    service: motor_descarga_copia
+    owner: chat-router/motores/motores/descarga-copia
+    reference: motor_entrypoint
+    method: INPROC
+    protocol: PYTHON
+    authorized_consumers: [chat-router/chat/backend]
+    status: pending_audit
+    evidence: null
+  - id: EP-009
+    service: motor_motores_caso
+    owner: chat-router/motores/motores/motores-caso
+    reference: motor_entrypoint
+    method: INPROC
+    protocol: PYTHON
+    authorized_consumers: [chat-router/chat/backend]
+    status: pending_audit
+    evidence: null
