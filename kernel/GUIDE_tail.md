@@ -44,3 +44,12 @@ Cuando se agotan las diez rutas: `FLAG_AND_CONTINUE_INDEPENDENT`. Se registra el
 | D-03 | `entrypoints` y `domains` de `KERNEL.yaml` rellenados con rutas reales | La guía los deja como `FILL` | `chat-router/chat/frontend/shell.html`, `dsla/dsla.py` y 12 dominios reales |
 | D-04 | `connections/registry.yaml` con el esquema de `wiring_check` (`from/to/via/provides/requires`) | El esquema de §5 (`name/source/target`) y el de `wiring_check` no coinciden | Precedencia del kernel: `kernel > registry > DSL DAG > cualquier nota`; `wiring_check` es la puerta |
 | D-05 | `ops/j11_patterns.py` + `ops/test_patterns.py` | R10 exigía "own job + test" y la guía no traía el fichero | El catálogo heredado no se reescribe |
+| D-06 | `ops/j7_mirror.py` excluye el código de terceros vendorizado (315.949 ficheros) | El Space no acepta el repo completo (374.205 ficheros / 10,42 GB) | El mirror es first-party (21.037 ficheros / 0,47 GB); el 84 % del repo permanece en el repo |
+| D-07 | `kernel/DAG.yaml` con `progress_pct` medido sobre el DAG | La guía lo deja `FILL` | 15 nodos S0–S12, `parallel.max=3`, 10 rutas de fallo |
+| D-08 | `j2_graph` evalúa sintaxis solo del código propio | Con el check literal, 61 errores de terceros tumban el job (39 vendorizados, 16 en `otros/descartados`, 1 truncado) | Los de terceros se(info) en `vendored_syntax_errors_reported`; no bloquean |
+| D-09 | `_quarantine/**` dentro de `protected` | La cuarentena es parte del plan, no un hueco | `kernel/KERNEL.yaml → protected` |
+| D-10 | `kernel/INPUT_BLOCK.yaml`: valor de `R9` entrecomillado | El texto literal de la guía produce YAML inválido (`{` sin comillas) → `ParserError` | Semántica idéntica; habilita el chequeo 1-a-1 programático |
+| D-11 | `ops/launch.sh` instala también `pyyaml` y acepta `PYTHON` | 3 scripts importan `yaml` y la guía solo instalaba `huggingface_hub` | Sin esto `j2/j5/j6` mueren en el contenedor con `ModuleNotFoundError` |
+| D-12 | Tokens solo por entorno heredado, nunca en argv | R2 e `improved_over_minimax` exigen "nunca en URL/argv/logs" | Lanzador con env heredada; 0 coincidencias de token en los logs |
+| D-13 | `common.clone()` idempotente (reutiliza el repo si ya existe) | El job muere con rc=128 cuando el destino ya existe y no está vacío | Rutas §20: 1 `existing_code` + 8 `smaller_scope`; mantiene 1 clon por job (R5) |
+| D-14 | `launch.sh` puede crear un clon sparse además del clon del job | La guía no define el reparto de clones | Solo cuando el script no está en el CWD; el clon sparse es mínimo (`ops/ kernel/ connections/`) |

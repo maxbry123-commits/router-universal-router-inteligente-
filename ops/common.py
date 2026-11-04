@@ -1,4 +1,4 @@
-import os,sys,json,time,base64,hashlib,pathlib,subprocess,traceback
+import os,sys,json,time,base64,hashlib,pathlib,subprocess,traceback,shutil
 RUN_ID=os.environ.get("RUN_ID",time.strftime("%Y%m%d-%H%M%S"))
 JOB=os.environ.get("JOB_NAME") or pathlib.Path(sys.argv[0]).stem
 OUT=pathlib.Path(os.environ.get("OUT_DIR",f"/tmp/out/{JOB}"));OUT.mkdir(parents=True,exist_ok=True)
@@ -29,6 +29,17 @@ def clone(dest,depth=1,since=None,blobless=False,branch=None):
     if since:c+=["--shallow-since",since]
     elif depth:c+=["--depth",str(depth)]
     if blobless:c+=["--filter=blob:none"]
+    # D-13 (rutas §20: 1 existing_code + 8 smaller_scope): clon idempotente.
+    # Si el destino ya es un repo git se reutiliza (fetch + reset); si existe y no es
+    # repo es scratch y se regenera. Evita el rc=128 "destination path already exists"
+    # que tumbaba j4_plan.
+    if os.path.isdir(os.path.join(dest,".git")):
+        sh(["git","-C",dest,"fetch","--depth","1","--no-tags","origin",br],check=False)
+        sh(["git","-C",dest,"checkout","-B",br,"FETCH_HEAD"],check=False)
+        sh(["git","-C",dest,"reset","--hard","FETCH_HEAD"],check=False)
+        return dest
+    if os.path.exists(dest):
+        shutil.rmtree(dest,ignore_errors=True)
     sh(c+[f"https://github.com/{repo}.git",dest]);return dest
 def sha256(p):
     h=hashlib.sha256()

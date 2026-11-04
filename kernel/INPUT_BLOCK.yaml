@@ -18,7 +18,7 @@ input_block:
     R6: {what: --timeout on every hf job,                job: launch.sh}
     R7: {what: registry with real topology pending_audit, job: connections/registry.yaml + wiring_check}
     R8: {what: audit PASS/FAIL + commit ref,             job: j8_audit}
-    R9: {what: connections/{registry,topology,endpoints,healthchecks}.yaml, job: kernel layout}
+    R9: {what: "connections/{registry,topology,endpoints,healthchecks}.yaml", job: kernel layout}
     R10:{what: pattern catalogs 6 vs 5 not unified,      job: ROADMAP item U1 (own job + test)}
   improved_over_minimax:
     - token never in URL/argv/logs (GIT_CONFIG_* env extraheader + redact)
