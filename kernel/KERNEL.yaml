@@ -123,7 +123,7 @@ roadmap:
     task: unify pattern catalogs (6 vs 5) with its own test
     job: agent
 handoff:
-  next: j4_plan
+  next: j5_apply
   log:
   - job: j0_preflight
     status: PASS
@@ -150,6 +150,13 @@ handoff:
     commit: 9dcd456ef922ff95897ce4f10b2d604e3447e106
     ts: '2026-11-04T20:19:05Z'
     run_id: 20261104-kernel01
+  - job: j4_plan
+    status: PASS
+    commit: 1b6837b505a5d7ace17437905739b8af3056cf8a
+    ts: '2026-11-04T21:51:02Z'
+    run_id: 20261104-kernel01
   flags:
-    - "🚩 j4_plan FAIL (rc=128): common.clone() no es idempotente; '/tmp/p' ya existe y no esta vacio. Resolucion pendiente por rutas §20 (1 existing_code / 8 smaller_scope). FAIL CLOSED: no se continua a j5."
-progress_pct: 36
+  - '🚩 j4_plan FAIL (rc=128): common.clone() no es idempotente; ''/tmp/p'' ya existe
+    y no esta vacio. Resolucion pendiente por rutas §20 (1 existing_code / 8 smaller_scope).
+    FAIL CLOSED: no se continua a j5.'
+progress_pct: 45
