@@ -1,0 +1,38 @@
+# connections/endpoints.yaml — sólo referencias REALES; sin URLs inventadas; sin secretos (§7).
+endpoints:
+  - id: EP-001
+    service: deepseek_harness
+    owner: chat-router/chat/backend/deepseek_harness
+    reference: DEEPSEEK_BASE_URL
+    method: POST
+    protocol: HTTP
+    authorized_consumers: [chat-router/chat/backend]
+    status: pending_audit
+    evidence: null
+  - id: EP-002
+    service: mcp_server
+    owner: chat-router
+    reference: MCP_SERVER_URL
+    method: POST
+    protocol: MCP
+    authorized_consumers: [chat-router/chat/backend, chat-router/chat/frontend]
+    status: pending_audit
+    evidence: null
+  - id: EP-003
+    service: plugins_gateway
+    owner: chat-router/plugins
+    reference: PLUGIN_BASE_URL
+    method: POST
+    protocol: HTTP
+    authorized_consumers: [chat-router/chat/backend]
+    status: pending_audit
+    evidence: null
+  - id: EP-004
+    service: hf_datasets
+    owner: chat-router/plugins/hf_datasets
+    reference: HF_REPOSITORY
+    method: POST
+    protocol: HTTP
+    authorized_consumers: [chat-router/chat/backend]
+    status: pending_audit
+    evidence: null

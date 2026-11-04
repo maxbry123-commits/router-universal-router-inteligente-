@@ -1,0 +1,20 @@
+flowchart LR
+  subgraph K[Kernel]
+    A([KERNEL.yaml]) --> B[NEXT] --> L[(APPLY)]
+  end
+  subgraph J[HF Jobs]
+    C[J0] --> D[J1] & E[J2] & F[J3] --> G[J4]
+    G --> H[J5] --> I[J7] --> M[J8]
+  end
+  subgraph H2[Human gates]
+    P1{J5 OK?}
+    P2{J6 OK?}
+  end
+  subgraph G2[Guardian]
+    Q[PRE/POST]
+  end
+  B --> C
+  G --> P1 --> H
+  M --> P2 --> R[J6] --> S[J9] --> T[J10] --> U([DONE])
+  H --> Q --> L
+  P1 -->|missing| X[🚩 CONTINUE]

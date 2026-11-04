@@ -1,0 +1,5 @@
+simulations:
+  SIM1_happy_path:   {gap: history analysis exceeds timeout,  fix: j3 uses --shallow-since + blobless, timeout 1h/job}
+  SIM2_private_repo: {gap: fetch exit 128 after remote reset, fix: env extraheader per command, never persisted}
+  SIM3_timeout_disk: {gap: job dies, all lost,                fix: small jobs, result.json to Dataset, rerun by idempotency_key}
+  SIM4_rewrite:      {gap: wired file deleted, no way back,   fix: tag+bundle first, rewrite only to main-clean, swap by approval}

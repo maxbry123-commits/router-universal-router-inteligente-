@@ -1,0 +1,6 @@
+kernel_rules:
+  single_writer: orchestrator
+  every_job_result: json -> Dataset -> `python ops/kernel.py apply` -> commit "kernel: <job> <status>"
+  resume: `python ops/kernel.py next` (reads statuses, never repeats a PASS with same commit)
+  conflict: kernel > registry > DSL DAG > any other note
+  no_secrets: true

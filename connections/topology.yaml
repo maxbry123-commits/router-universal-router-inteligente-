@@ -1,0 +1,48 @@
+# connections/topology.yaml — topología REAL del repo (declarada por el owner).
+# Regla: todo nace pending_audit; nada se declara activo sin evidencia (§5 L1225).
+topology:
+  entrypoint:
+    component: chat
+    path: chat-router/chat/frontend/shell.html
+  building:
+    component: building
+    path: router-mvp/raiz_router
+  fichas:
+    component: fichas
+    path: router-mvp/fichas
+  engines:
+    component: engines
+    path: chat-router/motores
+  plugins:
+    component: plugins
+    path: chat-router/plugins
+  harness:
+    component: harness
+    path: chat-router/chat/backend/deepseek_harness
+  chat:
+    component: chat
+    path: chat-router/chat/frontend
+  backend:
+    component: backend
+    path: chat-router/chat/backend
+  agents:
+    component: agents
+    path: chat-router/agentes
+  systems:
+    - router-universal-router-inteligente
+    - chat-router
+  communication:
+    - HTTP
+    - MCP
+    - API
+  external_services:
+    - huggingface
+  chain:
+    - building -> fichas
+    - fichas -> engines
+    - engines -> plugins
+    - plugins -> harness
+    - harness -> chat
+    - chat -> backend
+    - backend -> agents
+  status: pending_audit

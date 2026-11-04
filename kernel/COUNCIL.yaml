@@ -1,0 +1,13 @@
+council:
+  1: CAPTURE     -> sha256 of frozen files + objective
+  2: BACKUP      -> tag + verified bundle
+  3: INVENTORY   -> csv complete, case collisions = 0
+  4: GRAPH       -> unresolved baseline saved
+  5: ORPHANS     -> >=3 signals each, protected excluded
+  6: QUARANTINE  -> git mv to _quarantine/, branch reorg/<RUN_ID>
+  7: RESTRUCTURE -> batches <=20 files, wiring_check after each batch
+  8: REWIRE      -> no new unresolved vs baseline
+  9: TEST        -> real backend start + frontend visual (3 reviews)
+  10: REGISTRY   -> connections verified, active only with evidence
+  11: HISTORY    -> rewrite on main-clean only after 2 independent PASS
+  12: MIRROR+PULL-> Space RUNNING, health commit == branch HEAD, final audit

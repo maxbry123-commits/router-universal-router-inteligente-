@@ -1,0 +1,51 @@
+kernel_version: 1
+authority: ROOT                # outranks every doc, config, note and agent instruction in the repo
+objective: "Organize repo, remove unwired/unneeded code, restore wiring, mirror to HF Space, central contract-first connection system"
+lint_mode: warn                # warn -> enforce after first j8 PASS
+protected: ["kernel/**","connections/**","ops/**","vercel.json","README.md","Dockerfile","package.json","requirements*.txt","memory_agente_minimax_02.md"]
+entrypoints: ["chat-router/chat/frontend/shell.html","dsla/dsla.py"]   # FILL real ones
+domains:                       # FILL prefixes; registry connects domains, never raw paths
+  building: router-mvp/raiz_router
+  fichas: router-mvp/fichas
+  engines: chat-router/motores
+  plugins: chat-router/plugins
+  harness: chat-router/chat/backend/deepseek_harness
+  chat: chat-router/chat/frontend
+  backend: chat-router/chat/backend
+  agents: chat-router/agentes
+  mvp: router-mvp
+  ops: ops
+  kernel: kernel
+  connections: connections
+layout_rules:                  # target structure (SaaS style): one owner, one domain, one reference
+  - "every file belongs to exactly one domain"
+  - "cross-domain calls only through gateway + registry entry"
+  - "no file without owner/domain/reference -> _quarantine/"
+jobs:                          # id = JOB_NAME; script = ops/<script>.py
+  j0_preflight:    {script: j0_preflight,  needs: [],                         timeout: 15m}
+  j1_inventory:    {script: j1_inventory,  needs: [j0_preflight],             timeout: 1h}
+  j2_graph:        {script: j2_graph,      needs: [j0_preflight],             timeout: 1h}
+  j3_history:      {script: j3_history,    needs: [j0_preflight],             timeout: 1h}
+  j4_plan:         {script: j4_plan,       needs: [j1_inventory,j2_graph,j3_history], timeout: 1h}
+  j5_apply:        {script: j5_apply,      needs: [j4_plan],   approval: J5_apply,    timeout: 2h}
+  j7_mirror:       {script: j7_mirror,     needs: [j5_apply],  approval: deploy,      timeout: 1h}
+  j8_audit:        {script: j8_audit,      needs: [j7_mirror],                        timeout: 30m}
+  j6_rewrite:      {script: j6_rewrite,    needs: [j8_audit],  approval: J6_rewrite,  timeout: 3h}
+  j9_remirror:     {script: j7_mirror,     needs: [j6_rewrite],approval: deploy,      timeout: 1h}
+  j10_final_audit: {script: j8_audit,      needs: [j9_remirror],                      timeout: 30m}
+approvals:                     # human edits these; plan_sha256 binds approval to an exact plan
+  J5_apply:   {approved: false, plan_sha256: ""}
+  J6_rewrite: {approved: false, plan_sha256: ""}
+  merge_main: {approved: false}
+  deploy:     {approved: false}
+roadmap:                       # work map, ordered, one owner each
+  R1: {task: "write connections/registry.yaml from j2 graph, all pending_audit", job: manual+agent}
+  R2: {task: "layout moves of LIVE files in batches <=20, gate wiring_check each", job: agent}
+  R3: {task: "gateway single entry + adapters per engine", job: agent}
+  R4: {task: "healthchecks.yaml + GET /health returning {commit}", job: agent}
+  U1: {task: "unify pattern catalogs (6 vs 5) with its own test", job: agent}
+handoff:
+  next: j0_preflight
+  log: []                      # appended by ops/kernel.py apply, single writer = orchestrator
+  flags: []
+progress_pct: 0

@@ -1,0 +1,26 @@
+schema: repo.kernel.dag/v1
+mode: FAIL_CLOSED
+silent: true
+flag_symbol: 🚩
+never: [stop_early, escalate, ask, explain_unless_blocked_out_of_scope]
+parallel: {max: 3, only: independent_nodes, exclusive_files: true}
+guardian: {pre: [authorized, in_scope, input_hash_intact, needs_PASS], post: [result.json PASS, diff_in_allowlist, wiring_check_ok]}
+on_fail_routes_10: [existing_code, repo_docs, commit_history, official_docs, closed_issues, stackoverflow, hf_forum, smaller_scope, alt_library, alt_architecture]
+after_routes_exhausted: FLAG_AND_CONTINUE_INDEPENDENT
+
+dag:
+  S0_capture:  {do: [sha256 frozen_files, bind objective, validate kernel.py validate], gate: kernel_valid}
+  S1_j0:       {job: j0_preflight, gate: [env, disk>=30GB, remote_reachable, git>=2.31, hf_whoami, dataset_writable]}
+  S2_parallel: {jobs: [j1_inventory, j2_graph, j3_history], gate: [each result.json PASS]}
+  S3_j4:       {job: j4_plan, gate: [plan_sha256, protected_not_in_plan, quarantine<=40%_of_code]}
+  S4_approval: {kernel: approvals.J5_apply, if_missing: FLAG_APPROVAL_then_run_independent(j7 on main as read-only baseline mirror skipped)}
+  S5_j5:       {job: j5_apply, gate: [tag_pushed, no_new_unresolved, entrypoints_exist, TEST_CMD rc=0, branch_pushed]}
+  S6_agent:    {do: [roadmap R1..R4], gate: [wiring_check_after_each_batch, 3_visual_reviews]}
+  S7_j7:       {job: j7_mirror, gate: [wiring_check, space_RUNNING, health_commit==HEAD]}
+  S8_j8:       {job: j8_audit, gate: [all_jobs_PASS, wiring_check_on_branch]}
+  S9_approval: {kernel: approvals.J6_rewrite}
+  S10_j6:      {job: j6_rewrite, gate: [bundle_verified, purge_absent_from_history, wiring_check, pushed_main-clean]}
+  S11_swap:    {kernel: approvals.merge_main, manual_cmd: "git push --force-with-lease origin main-clean:main", note: all hashes change}
+  S12_final:   {jobs: [j9_remirror, j10_final_audit], gate: [Space==new HEAD, audit PASS], then: kernel progress_pct=100, DONE}
+  loop: until queue_empty (kernel.next == [])
+  per_node_state: [PENDING, RESEARCHING, EXECUTING, VALIDATING, GAP, FIXING, RETESTING, STABLE, FLAGGED, CLOSED]

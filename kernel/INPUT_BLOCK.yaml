@@ -1,0 +1,27 @@
+input_block:
+  mode: [VERBATIM, IMMUTABLE, READ_ONLY, DATA_ONLY_UNTIL_BOUND]
+  frozen_files:
+    - organización_de_la_raíz_del_repo.md   # sha256 computed at S0, never edited
+  objective_verbatim: >
+    objetivo organización del repo limpieza de archivos no cableados o innecesarios o code suelto
+    eliminar historial al finalizar la organización y cableado recuperación de el cableado
+    auto pull y mirror de code en servidor space huggueface y hacer un sistema centralizado de
+    comunicación de conexión del code que evite convertir el cableado en un barrio chino de
+    cables y de archivos desordenados mal ubicados debe ser tipo software saas
+  constraints_verbatim: ["No Github acción", "NO LFS GITHUB", "no usar vercel o huggueface sin autorización"]
+  minimax_inputs:            # 1 to 1 -> job that implements it
+    R1: {what: clone outer branch (--branch),            job: launch.sh}
+    R2: {what: credential erased before fetch,           job: common.py genv()}   # env header, not URL token
+    R3: {what: MAX_COMMITS + branch holds ops/,          job: j3_history (HISTORY_DAYS) + j0}
+    R4: {what: sizing 338,006 files / 7.9GB / >30GB disk, job: j0 MIN_FREE_GB + j3 shallow-since}
+    R5: {what: third job could not start,                job: launch.sh clones for every job}
+    R6: {what: --timeout on every hf job,                job: launch.sh}
+    R7: {what: registry with real topology pending_audit, job: connections/registry.yaml + wiring_check}
+    R8: {what: audit PASS/FAIL + commit ref,             job: j8_audit}
+    R9: {what: connections/{registry,topology,endpoints,healthchecks}.yaml, job: kernel layout}
+    R10:{what: pattern catalogs 6 vs 5 not unified,      job: ROADMAP item U1 (own job + test)}
+  improved_over_minimax:
+    - token never in URL/argv/logs (GIT_CONFIG_* env extraheader + redact)
+    - exec(open()) replaced by python <path>
+    - one clone per job (idempotent), no double clone
+    - history by shallow-since window, not full 7.9GB

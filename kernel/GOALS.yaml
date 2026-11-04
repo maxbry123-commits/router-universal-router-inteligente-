@@ -1,0 +1,13 @@
+goals:
+  G1:  {in: repo+branch,          out: backup bundle + tag pre-reorg-<RUN_ID>,   job: j5_apply(tag) + j6_rewrite(bundle)}
+  G2:  {in: tracked tree,         out: classified inventory.csv,                 job: j1_inventory}
+  G3:  {in: code,                 out: import/call graph (static),               job: j2_graph}
+  G4:  {in: graph+refs+history,   out: orphan list with 3 signals,               job: j4_plan}
+  G5:  {in: orphans,              out: quarantine (git mv), never delete,        job: j5_apply}
+  G6:  {in: current layout,       out: target layout by domain,                  job: KERNEL.layout + roadmap}
+  G7:  {in: wiring map,           out: connections/registry.yaml pending_audit,  job: roadmap R1 + wiring_check}
+  G8:  {in: registry,             out: active only with evidence,                job: wiring_check + healthchecks}
+  G9:  {in: clean repo,           out: rewritten history on main-clean,          job: j6_rewrite (approval)}
+  G10: {in: main,                 out: auto pull verified on Space,              job: j7_mirror}
+  G11: {in: repo,                 out: code mirror on Space,                     job: j7_mirror}
+  G12: {in: everything,           out: audit PASS/FAIL + commit ref,             job: j8_audit}

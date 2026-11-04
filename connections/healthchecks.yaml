@@ -1,0 +1,30 @@
+# connections/healthchecks.yaml — cómo verificar cada conexión (§8). Sin healthcheck no hay activo.
+healthchecks:
+  - id: HC-001
+    connection: CON-003
+    method: http
+    target: "plugins -> harness"
+    command: null
+    expect: {status: 200}
+    status: pending_audit
+  - id: HC-002
+    connection: CON-005
+    method: mcp
+    target: "chat -> harness"
+    command: null
+    expect: {tool: "tools/list"}
+    status: pending_audit
+  - id: HC-003
+    connection: CON-007
+    method: http
+    target: "backend -> agents"
+    command: null
+    expect: {status: 200}
+    status: pending_audit
+  - id: HC-004
+    connection: CON-008
+    method: space
+    target: "repo -> Space"
+    command: "GET /health -> {commit}"
+    expect: {commit_equals: "branch HEAD"}
+    status: pending_audit
