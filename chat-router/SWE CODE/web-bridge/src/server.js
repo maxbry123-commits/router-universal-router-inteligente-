@@ -21,7 +21,7 @@ import nodeFs from 'node:fs';
 import { vigilarWorkspace, vigilarModelosOpenClaw, rutaWorkspace, configVigente, vigilarConfig, espejo, normalizarEjecutor } from './openclaw.js';
 import { MODELOS_API, respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, estadoMetricas, disponibilidad, disponibilidadLocal, estadosModelosLocales, modeloDefecto, setClaves, limpiarClaves } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo, checkpointGuardar } from './bloques.js';
-import { tipoGap, esTareaLarga } from './presupuesto.js';  // A1 GAP tipado; C11 esTareaLarga disponible para la ruta chat
+import { tipoGap, esTareaLarga, watchdogRetomar } from './presupuesto.js';  // A1 GAP tipado; C11 esTareaLarga cableado en /v1/chat/completions; watchdog en el corte
 import { retomarLocal, retomarPorId, TIPO as TIPO_LOCAL } from './retomar_local.js';
 import { servirCodaRouter } from './coda_router.js';
 import { idValido as tareaIdValido } from './checkpoint_hf.js';
@@ -417,7 +417,7 @@ function crearSse(req, res) {
   s.vigilar = () => { if (pide && !s.timer) { s.timer = setInterval(() => { s.abrir(); if (s.activo) res.write(': keepalive\n\n'); }, SSE_KEEPALIVE_MS); res.on('close', s.parar); } };
   s.parar = () => { clearInterval(s.timer); s.timer = null; };
   s.chunk = (delta, finish_reason = null, extra = {}) => res.write(`data: ${JSON.stringify({ id: s.id, object: 'chat.completion.chunk', created: s.created, model: s.model, ...s.extra, choices: [{ index: 0, delta, finish_reason }], ...extra })}\n\n`);
-  s.error = (code, message, detail) => { s.abrir(); s.chunk({}, 'error', { error: { code, message, detail } }); res.end('data: [DONE]\n\n'); };
+  s.error = (code, message, detail, gap) => { s.abrir(); s.chunk({}, 'error', { error: { code, message, detail, ...(gap ? { gap } : {}) } }); res.end('data: [DONE]\n\n'); };  // A1-10: gap tipado tambien en SSE
   s.rolInicial = () => { if (!s.rol) { s.abrir(); s.chunk({ role: 'assistant', content: '' }); s.rol = true; } };
   s.delta = (texto) => { if (res.writableEnded) return; s.rolInicial(); for (const t of trozosDe(texto)) s.chunk({ content: t }); if (s.latido.fn) s.latido.fn(); };  // fragmento real del proveedor
   s.inicio = (i, conVia = true) => { s.extra = { ...s.extra, modelo_usado: i.usado, via_respaldo: conVia ? i.via : null }; if (!res.headersSent) { res.setHeader('x-modelo-usado', i.usado); if (conVia) res.setHeader('x-via-respaldo', i.via); } };  // proveedor que va a responder
@@ -520,8 +520,12 @@ app.post('/v1/chat/completions', async (req, res) => {
     let tareaId = req.body.tarea_id != null ? req.body.tarea_id : req.headers['x-tarea-id'];
     if ((tareaId == null || tareaId === '') && explicito && conv_id != null && conv_id !== '') tareaId = tareaDerivada(conv_id, model, modo, mensajesM, propietarioDe(req));
     const origen = ['yaiwes', 'openclaw'].includes(req.body.origen) ? req.body.origen : undefined;  // origen del contrato: ruta del checkpoint en el Harness
+    // C11: tarea larga (max_tokens/entrada grandes o larga:true) -> retomar_local + Harness (checkpoint); chat corto sigue por completions normales
+    const larga = explicito && esTareaLarga(mensajesM, { tarea_id: tareaId || undefined, larga: req.body.larga === true, max_tokens: req.body.max_tokens });
+    if ((tareaId == null || tareaId === '') && larga) tareaId = tareaDerivada(conv_id != null && conv_id !== '' ? conv_id : 'larga', model, modo, mensajesM, propietarioDe(req));
     const usaTarea = tareaId != null && tareaId !== '' && explicito;
     if (usaTarea && !tareaIdValido(String(tareaId))) return res.status(400).json({ error: { code: 'TAREA_ID_INVALIDO', message: 'tarea_id: letras, numeros, - y _ (max 64)' } });
+    if (usaTarea) req.__tareaWatch = String(tareaId);  // watchdog sabe que tarea reanudar
     if (usaTarea && !res.headersSent) res.setHeader('x-tarea-id', String(tareaId));  // 128: el id de la tarea viaja siempre; se reenvia tal cual para reanudar
     const catalogo = req.body.tools === true ? await toolsDeRouter() : undefined;
     const extra = { tools: Array.isArray(req.body.tools) ? req.body.tools : catalogo, tool_choice: req.body.tool_choice };
@@ -558,7 +562,7 @@ app.post('/v1/chat/completions', async (req, res) => {
           ? { objetivo: ultimo.trim().slice(0, 2000),
               operaciones: catalogo.map(t => t.function.name) }
           : undefined;
-      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { ...extra, ...vinculo, plan, exigirPlan: b.exigir_confirmacion === true || String(process.env.BRIDGE_EXIGIR_CONFIRMACION ?? '').trim() !== '0', confirmarCompleta: b.tarea_completa === true || req.headers['x-tarea-completa'] === '1', origen, sinRespaldo: !pideRespaldo, hasta: Date.now() + plazoModelo * 0.9, flushChars: parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_CHARS, 10) || undefined, flushMs: Number.isFinite(parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10)) ? parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10) : undefined, ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: AbortSignal.any([sse.signal, ac1.signal]) } } : {}) }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
+      const r = await retomarLocal(String(tareaId), model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { ...extra, ...vinculo, plan, exigirPlan: b.exigir_confirmacion === true || String(process.env.BRIDGE_EXIGIR_CONFIRMACION ?? '').trim() !== '0', confirmarCompleta: b.tarea_completa === true || req.headers['x-tarea-completa'] === '1', origen, escrituraIncremental: larga || b.escritura_incremental === true, sinRespaldo: !pideRespaldo, hasta: Date.now() + plazoModelo * 0.9, flushChars: parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_CHARS, 10) || undefined, flushMs: Number.isFinite(parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10)) ? parseInt(process.env.BRIDGE_CHECKPOINT_FLUSH_MS, 10) : undefined, ...(sse.pide ? { onDelta: sse.delta, flujo: sse.flujo, onInicio: sse.inicio, opts: { signal: AbortSignal.any([sse.signal, ac1.signal]) } } : {}) }); salida = r.salida; usado = r.usado || model; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null; servidor = r.servidor || null;
       tarea = { id: r.tarea_id, estado: r.estado, fase: r.fase, secciones: r.secciones, reanudado: r.reanudado, desde_checkpoint: r.desde_checkpoint };
     } else if (esExterno(model)) {
       const r = await externo(model, conPreambulo(mensajesM, modo, forzarPromptOpenClaw), { extra, ...streamOpts(AbortSignal.any([sse.signal, ac1.signal])) }); toolsInvalidas = r.tools_invalidas || []; salida = r.salida; usado = r.usado; via = r.via; llamadas = r.tool_calls || []; fin = r.finish_reason || 'stop'; metricas = r.metricas || null;
@@ -701,13 +705,19 @@ app.post('/v1/chat/completions', async (req, res) => {
     });
   } catch (e) {
     const code = e.code || 'BRIDGE_ERROR';
+    const gap = tipoGap(e) || undefined;  // A1-10: RATE_LIMIT|TIMEOUT|LENGTH|HARNESS_DOWN|BUDGET hacia el frontend
     sse.parar();
+    // watchdog: tarea con checkpoint cortada por GAP -> reanuda sola via /v1/secciones/:id/retomar (no bloquea la respuesta)
+    if (gap && gap !== 'HARNESS_DOWN' && req.__tareaWatch && String(process.env.RIU_WATCHDOG ?? '1') !== '0') {
+      const hdr = {}; for (const h of ['x-api-key', 'authorization', 'x-bridge-token']) if (req.headers[h]) hdr[h] = req.headers[h];
+      watchdogRetomar(`http://127.0.0.1:${PORT}`, req.__tareaWatch, { headers: hdr, esperaMs: Math.max(5000, Number(e.reanudarEnMs) || 0) }).catch(() => {});
+    }
     if (sse.pide && sse.signal.aborted) return;  // el cliente ya no esta
-    if (sse.activo) return res.writableEnded ? undefined : sse.error(code, e.message, e.detail);  // error tras abrir el stream: chunk con el error + [DONE]
+    if (sse.activo) return res.writableEnded ? undefined : sse.error(code, e.message, e.detail, gap);  // error tras abrir el stream: chunk con el error + [DONE]
     if (res.headersSent) return;
     // 424: sesión web que solo el titular resuelve (no reintentable: OpenClaw y la UI no deben martillear). 503: sesión caída transitoria.
     const st = code === 'SESSION_EXPIRED' ? (e.terminal || e.motivo ? 424 : 503) : code === 'UPSTREAM_TIMEOUT' ? 504 : code === 'EMPTY_RESPONSE' ? 502 : HTTP_TAREA[code] ? HTTP_TAREA[code] : ['EXTERNO_FALLO', 'HF_LOCAL_FALLO', 'NO_DISPONIBLE'].includes(code) ? 502 : 500;
-    res.status(st).json({ error: { code, message: e.message, detail: e.detail, ...(e.motivo ? { motivo: e.motivo, site: e.site, ...(e.reintentar_en_s ? { reintentar_en_s: e.reintentar_en_s } : {}), accion: 'POST /web/v1/web/sesion/importar (ver SWE CODE free/SESION_IMPORTAR.md)' } : {}) } });
+    res.status(st).json({ ...(e.reanudarEnMs ? { reanudarEnMs: e.reanudarEnMs } : {}), error: { code, gap, message: e.message, detail: e.detail, ...(e.motivo ? { motivo: e.motivo, site: e.site, ...(e.reintentar_en_s ? { reintentar_en_s: e.reintentar_en_s } : {}), accion: 'POST /web/v1/web/sesion/importar (ver SWE CODE free/SESION_IMPORTAR.md)' } : {}) } });
   }
 });
 

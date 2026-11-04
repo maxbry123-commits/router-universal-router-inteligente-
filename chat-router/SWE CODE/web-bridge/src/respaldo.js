@@ -644,6 +644,8 @@ async function localEnSlot(id, mensajes, { env = process.env, extra = {}, opts, 
   throw Object.assign(new Error('HF_LOCAL: ' + (fallos.join(' | ') || 'sin SWECODE_URL_S1..S3')), { code: 'HF_LOCAL_FALLO' });
 }
 
+// C10 rotacion: groq -> nvidia -> TERCER CARRIL = HF local existente (SWECODE_URL_S1..S3, LOCALES[0]); no se usa Ollama.
+// Se entra al carril HF local cuando Groq y NVIDIA estan sin clave, enfriados (429/timeout) o agotados (GAP BUDGET).
 export async function respaldo(mensajes, { env = process.env, extra = {}, opts, onDelta, onInicio, flujo } = {}) {
   const fallos = [], r = red(opts), f = onDelta ? (flujo || { texto: '' }) : flujo;
   const intentos = [];  // 156-161: rastro (sin credenciales) de cada proveedor intentado; el cambio de proveedor/modelo NUNCA se oculta

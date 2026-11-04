@@ -20,7 +20,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { local, externo, respaldo, esLocal, esExterno, claves } from './respaldo.js';
 import { guardarCheckpoint, leerCheckpoint, sanear, idValido, origenValido } from './checkpoint_hf.js';
-import { claveIdempotencia } from './presupuesto.js';  // C6; C5: este camino nunca resume/comprime la conversacion (prefijo prompt-cache intacto)
+import { claveIdempotencia, escribirIncremental } from './presupuesto.js';  // C6; C5: este camino nunca resume/comprime la conversacion (prefijo prompt-cache intacto)
 import { estadoDir, herramientaEjecutada, herramientaResultado, herramientaConfirmar } from './bloques.js';
 
 export const TIPO = 'retomar_local';
@@ -264,6 +264,13 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
     poner('RESPUESTA_COMPLETA'); st.completo = false;
     st.resultado = { salida: st.parcial, tool_calls: [], finish_reason: r.finish_reason || 'stop', via: r.via, usado };
     await guardar();
+    // C8: tarea larga -> volcado a disco N lineas por vuelta (RIU_LINEAS_POR_VUELTA, 50) con checkpoint tras cada trozo; al retomar sigue desde lineas_escritas
+    if (extra.escrituraIncremental) {
+      const archivo = path.join(estadoDir(), 'salidas', String(tareaId) + '.txt');
+      const desde = st.escritura?.archivo === archivo ? (st.escritura.lineas_escritas || 0) : 0;
+      await escribirIncremental(archivo, String(st.parcial || '').split('\n'), { porVuelta: parseInt(process.env.RIU_LINEAS_POR_VUELTA || '50', 10) || 50, desde,
+        guardarCheckpoint: async (p) => { st.escritura = p; await guardar(); } });
+    }
     if (extra.confirmarCompleta) await confirmar();
     return salida({ finish_reason: st.resultado.finish_reason });
   }
