@@ -22,7 +22,10 @@ export const SITES = {
     login_email: ['input[name="email"]', 'input[type="email"]', 'input[placeholder*="correo" i]', 'input[placeholder*="email" i]'],
     login_pass: ['input[name="password"]', 'input[type="password"]'],
     login_btn: ['button[type="submit"]', 'button:text-is("Iniciar sesión")', 'button:text-is("Log in")', 'button:text-is("Sign in")'],
-    login_visible: ['button:has-text("Iniciar sesión")', 'a:has-text("Iniciar sesión")', 'button:has-text("Log in")', 'a:has-text("Log in")', 'button:has-text("Sign in")'],
+    // CTA de auth o inputs del form. Evitar falsos positivos post-login.
+    login_visible: ['input[name="email"]', 'input[name="password"]', 'input[type="password"]',
+      'button:has-text("Iniciar sesión con contraseña")', 'button:has-text("Log in with a password")',
+      'a[href*="/auth"]', 'button:has-text("Sign in")'],
     age_gate_continue: ['button:has-text("Continuar")', 'button:has-text("Continue")'],
     // qwen muestra "Login with verification code" por defecto:
     // hay que clicar "Log in with a password" ANTES de llenar el pass
@@ -60,9 +63,9 @@ export const SITES = {
     ],
     // DeepSeek puede mostrar la pantalla de inicio de sesión como modal en /
     // (sin cambiar a /sign_in): una URL / NO prueba cuenta autenticada.
-    login_visible: ['a[href*="sign_in"]', 'button:has-text("Log in")',
-      'a:has-text("Log in")', 'button:has-text("Sign in")',
-      'a:has-text("Sign in")', 'button:has-text("登录")', '.ds-sign-in-form__main', 'button:has-text("Iniciar sesión")'],
+    // Solo señales del FORM de auth (un enlace footer sign_in no debe forzar re-login).
+    login_visible: ['.ds-sign-in-form__main', 'input[autocomplete="username"]',
+      'input[autocomplete="current-password"]', 'input[type="password"]'],
     model_selector: [],
     // No hay selector conocido de V4 Flash; únicamente comprobar un indicador REAL.
     // Sin evidencia del modelo, fallar cerrado (no declarar DeepSeek V4 Flash).
@@ -227,23 +230,16 @@ export async function necesitaLogin(page, cfg) {
   // Una URL "/" puede ser página pública o mostrar auth modal: NO es prueba
   // de acceso. Revisar indicadores reales DESPUÉS de la hidratación de la SPA.
   try { if (cfg.sesion_muerta(page.url())) return true; } catch {}
-  // Esperar un poco a que la SPA pinte editor o formulario (antes: 400ms → falso "vivo").
   await page.waitForTimeout(700).catch(() => {});
-  // Prueba POSITIVA de sesión: editor de chat usable.
-  for (const sel of cfg.input || []) {
-    try {
-      const el = page.locator(sel).first();
-      if (await el.count() && await el.isVisible({ timeout: 600 }).catch(() => false))
-        return false;
-    } catch {}
-  }
-  // DeepSeek: userToken en localStorage es señal real (comunidad).
-  try {
-    const tok = await page.evaluate(() => {
-      try { return !!(localStorage.getItem('userToken') || localStorage.getItem('token')); } catch { return false; }
-    });
-    if (tok) return false;
-  } catch {}
+  const visible = async (sels, ms = 500) => {
+    for (const sel of sels || []) {
+      try {
+        const el = page.locator(sel).first();
+        if (await el.count() && await el.isVisible({ timeout: ms }).catch(() => false)) return true;
+      } catch {}
+    }
+    return false;
+  };
   const selLogin = [
     ...(cfg.login_visible || []),
     'input[type="password"]',
@@ -251,14 +247,16 @@ export async function necesitaLogin(page, cfg) {
     'input[autocomplete="username"]',
     'input[autocomplete="current-password"]',
   ];
-  for (const sel of selLogin) {
-    try {
-      const el = page.locator(sel).first();
-      if (await el.count() && await el.isVisible({ timeout: 500 }).catch(() => false))
-        return true;
-    } catch {}
-  }
-  // Sin editor, sin token y sin form claro: asumir sesión muerta (evita falso "vivo").
+  const loginUi = await visible(selLogin, 500);
+  // Qwen: textarea visible PRE-login + botón "Iniciar sesión". El form/CTA gana al editor.
+  if (loginUi) return true;
+  try {
+    const tok = await page.evaluate(() => {
+      try { return !!(localStorage.getItem('userToken') || localStorage.getItem('token')); } catch { return false; }
+    });
+    if (tok) return false;
+  } catch {}
+  if (await visible(cfg.input || [], 600)) return false;
   return true;
 }
 
@@ -356,15 +354,8 @@ async function loginQwenApi(page, email, pass) {
 }
 
 async function sesionVivaTrasLogin(page, cfg) {
-  if (!(await necesitaLogin(page, cfg))) return true;
-  // DeepSeek: token real en localStorage aunque la URL aún diga /
-  try {
-    const tok = await page.evaluate(() => {
-      try { return !!(localStorage.getItem('userToken') || localStorage.getItem('token')); } catch { return false; }
-    });
-    if (tok) return true;
-  } catch { /* ignore */ }
-  return false;
+  // Tras submit: solo vivo si ya no hace falta login (login UI / auth URL vencen a token viejo).
+  return !(await necesitaLogin(page, cfg));
 }
 
 // login: {ok, motivo?, pista?} — nunca loguea email/clave. Formulario + (qwen) API SHA-256 de respaldo.

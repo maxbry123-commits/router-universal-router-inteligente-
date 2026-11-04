@@ -6,20 +6,25 @@ import path from 'node:path';
 const DATA = process.env.BRIDGE_STATE_DIR || './state';
 const IDX_FILE = path.join(DATA, 'cuentas-index.json');
 
+function limpiaSecreto(v) {
+  return String(v || '').trim().replace(/^["']+|["']+$/g, '').trim();
+}
+
 // credenciales inyectadas por OpenClaw en tiempo de llamada (duenas: OpenClaw);
 // env solo como respaldo. Nunca se loguean valores.
 let inyectadas = null;
 export function setCuentas(mails, pass) {
   const lista = Array.isArray(mails) ? mails : String(mails || '').split(',');
-  const limpias = lista.map(s => String(s).trim()).filter(Boolean);
-  if (!limpias.length || !pass) return false;
-  inyectadas = { mails: limpias, pass: String(pass) };
+  const limpias = lista.map(s => limpiaSecreto(s)).filter(Boolean);
+  const passL = limpiaSecreto(pass);
+  if (!limpias.length || !passL) return false;
+  inyectadas = { mails: limpias, pass: passL };
   return true;
 }
 
 export function pool() {
   if (inyectadas) return inyectadas.mails;
-  const mails = (process.env.WEB_ACCOUNTS || '').split(',').map(s => s.trim()).filter(Boolean);
+  const mails = (process.env.WEB_ACCOUNTS || '').split(',').map(s => limpiaSecreto(s)).filter(Boolean);
   if (!mails.length) throw Object.assign(new Error('WEB_ACCOUNTS vacio: OpenClaw debe enviar cuentas y clave en el POST'), { code: 'CUENTAS_FALTAN' });
   return mails;
 }
@@ -28,7 +33,9 @@ export function clave() {
   if (inyectadas) return inyectadas.pass;
   const p = process.env.WEB_PASS;
   if (!p) throw Object.assign(new Error('WEB_PASS no definido: OpenClaw debe enviar la clave en el POST'), { code: 'CUENTAS_FALTAN' });
-  return p;
+  const out = limpiaSecreto(p);
+  if (!out) throw Object.assign(new Error('WEB_PASS vacio tras normalizar'), { code: 'CUENTAS_FALTAN' });
+  return out;
 }
 
 function idxRead() {
