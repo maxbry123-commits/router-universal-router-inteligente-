@@ -10,9 +10,8 @@ export const BASES = { groq: 'https://api.groq.com/openai/v1', nvidia: 'https://
 // modelos autorizados del selector (Llama 3.3 de Groq y NVIDIA retirados). Muse Glimmer aparece una sola vez.
 export const MODELOS_API = [  // alcance activo (Antonio 2026-11-03): SOLO Groq + NVIDIA; nombres = los del selector OpenClaw (provider-openclaw.json)
   { id: 'groq/qwen/qwen3.8-27b', nombre: 'Groq · Qwen 3.8 27B' },
-  { id: 'nvidia/minimaxai/minimax-m3.1-flash', nombre: 'NVIDIA · MiniMax M3.1 Flash' },
   { id: 'nvidia/meta/muse-glimmer-30b', nombre: 'NVIDIA · Muse Glimmer 30B' },
-  { id: 'nvidia/nvidia/nemotron-3-super-120b-a12b', nombre: 'NVIDIA · Nemotron 3 Super' },
+  { id: 'nvidia/minimaxai/minimax-m3.1-flash', nombre: 'NVIDIA · MiniMax M3.1 Flash' },
   { id: 'nvidia/nvidia/nemotron-3-ultra-550b-a55b', nombre: 'NVIDIA · Nemotron 3 Ultra' },
   { id: 'nvidia/z-ai/glm-5.3', nombre: 'NVIDIA · GLM 5.3' },
   { id: 'nvidia/z-ai/glm-5.3-flash', nombre: 'NVIDIA · GLM 5.3 Flash' },
@@ -24,7 +23,7 @@ export const MODELOS_API = [  // alcance activo (Antonio 2026-11-03): SOLO Groq 
   { id: 'openai/gpt-5.6', nombre: 'OpenAI GPT-5.6 (API)' },
   { id: 'openai/gpt-5.5', nombre: 'OpenAI GPT-5.5 (API)' },
 ];
-const MODELO = { groq: ['RIU_SWE_GROQ_MODELO', 'qwen/qwen3.8-27b'], nvidia: ['RIU_SWE_NVIDIA_MODELO', 'minimaxai/minimax-m3.1-flash'],
+const MODELO = { groq: ['RIU_SWE_GROQ_MODELO', 'qwen/qwen3.8-27b'], nvidia: ['RIU_SWE_NVIDIA_MODELO', 'meta/muse-glimmer-30b'],
   deepseek: ['RIU_SWE_DEEPSEEK_MODELO', 'deepseek-v4-pro'], minimax: ['RIU_SWE_MINIMAX_MODELO', 'MiniMax-M3'], openai: ['RIU_SWE_OPENAI_MODELO', 'gpt-5.6'] };
 export const modeloDefecto = (prov, env = process.env) => env[MODELO[prov][0]] || MODELO[prov][1];
 // parametros de inferencia por modelo (id sin el prefijo del proveedor); los modelos locales y los no listados no mandan ninguno
@@ -62,7 +61,7 @@ const RED = { continuaciones: 8, cooldownMs: 60000, esperaMax: 2000, esperaDefec
 // parametros inyectables en tests: opts = { timeoutMs, timeoutsModelo, continuaciones, cooldownMs, esperaMax, backoffMs, jitter(), esperar(ms), ahora(), descubrirMs, cacheMs, signal }
 const red = (o = {}) => ({ ...RED, timeoutMs: TIMEOUT_MS, esperar: (ms) => new Promise(r => setTimeout(r, ms)), ahora: Date.now, jitter: Math.random, ...o });
 // timeout por modelo: opts.timeoutsModelo[<id>] > env RIU_SWE_TIMEOUTS ('{"<id>": ms}') > TIMEOUTS_DEFECTO (tabla, recortada al plazo del bridge) > global
-export const TIMEOUTS_DEFECTO = { 'qwen/qwen3.8-27b': 60000, 'minimaxai/minimax-m3.1-flash': 90000, 'meta/muse-glimmer-30b': 180000, 'nvidia/nemotron-3-ultra-550b-a55b': 300000, 'z-ai/glm-5.3': 180000 };
+export const TIMEOUTS_DEFECTO = { 'qwen/qwen3.8-27b': 60000, 'minimaxai/minimax-m3.1-flash': 45000, 'meta/muse-glimmer-30b': 90000, 'nvidia/nemotron-3-ultra-550b-a55b': 120000, 'z-ai/glm-5.3': 90000 };
 export function timeoutDe(modelo, env, r) {
   let t = r.timeoutsModelo?.[modelo], defecto = false;
   if (t == null && env?.RIU_SWE_TIMEOUTS) { try { const o = JSON.parse(env.RIU_SWE_TIMEOUTS); if (o && typeof o === 'object') t = o[modelo]; } catch { /* env invalido: sigue el defecto */ } }
