@@ -17,12 +17,15 @@ def main():
         # ("j7 on main as read-only baseline, mirror skipped"): calcula lo que se mirroriaria
         # y el estado del Space, SIN subir nada. El mirror real queda para j9_remirror.
         n=0;sz=0;pfx=[p[:-3] for p in IGN if p.endswith("/**")]
+        # D-19: os.scandir cachea el stat del propio recorrido (os.walk+getsize = 12+ min)
         for root,dirs,files in os.walk(d):
             dirs[:]=[x for x in dirs if x not in(".git","_quarantine","node_modules","__pycache__")]
-            for f in files:
-                fp=os.path.join(root,f);rel=os.path.relpath(fp,d).replace(os.sep,"/")
-                if any(rel.startswith(p) for p in pfx):continue
-                n+=1;sz+=os.path.getsize(fp)
+            with os.scandir(root) as it:
+                for e in it:
+                    if not e.is_file(follow_symlinks=False):continue
+                    rel=os.path.relpath(e.path,d).replace(os.sep,"/")
+                    if any(rel.startswith(p) for p in pfx):continue
+                    n+=1;sz+=e.stat(follow_symlinks=False).st_size
         stage=str(api.get_space_runtime(sp).stage)
         check("baseline_only_no_upload",True,f"{n} ficheros, {sz/1e6:.1f} MB (sin subir)")
         check("space_RUNNING","RUNNING" in stage,stage)
