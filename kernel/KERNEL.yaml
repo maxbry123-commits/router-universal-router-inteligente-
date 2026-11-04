@@ -15,7 +15,7 @@ protected:
 - memory_agente_minimax_02.md
 entrypoints:
 - chat-router/chat/frontend/shell.html
-- dsla/dsla.py
+- chat-router/chat/backend/mvp/app.py   # dsla/dsla.py esta truncado (31 lineas, docstring sin cerrar): no es entrypoint valido
 domains:
   building: router-mvp/raiz_router
   fichas: router-mvp/fichas
