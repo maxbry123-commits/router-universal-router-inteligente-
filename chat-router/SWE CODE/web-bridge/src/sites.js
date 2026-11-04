@@ -226,6 +226,30 @@ export async function pasarAgeGate(page, cfg) {
 }
 
 // login necesario: URL de auth O boton "Iniciar sesión"/"Log in" visible (URL puede seguir en /)
+// Evidencia criptográfica/local de sesión (comunidad): Qwen=localStorage.token JWT; DeepSeek=userToken.
+async function evidenciaSesionWeb(page, cfg) {
+  const u = String(cfg.url || cfg.login_url || '');
+  try {
+    if (/qwen\.ai/i.test(u)) {
+      return await page.evaluate(() => {
+        try {
+          const t = localStorage.getItem('token') || localStorage.getItem('access_token') || '';
+          return t.length > 20 && /^eyJ|^[A-Za-z0-9._-]{20,}$/.test(t);
+        } catch { return false; }
+      });
+    }
+    if (/deepseek/i.test(u)) {
+      return await page.evaluate(() => {
+        try {
+          const t = localStorage.getItem('userToken') || localStorage.getItem('token') || '';
+          return t.length > 10;
+        } catch { return false; }
+      });
+    }
+  } catch { return false; }
+  return null; // sitio sin regla (p.ej. Claude): null = no decidir aquí
+}
+
 export async function necesitaLogin(page, cfg) {
   // Una URL "/" puede ser página pública o mostrar auth modal: NO es prueba
   // de acceso. Revisar indicadores reales DESPUÉS de la hidratación de la SPA.
@@ -240,6 +264,10 @@ export async function necesitaLogin(page, cfg) {
     }
     return false;
   };
+  // Qwen/DeepSeek: sin token real = guest aunque haya textarea (Qwen lo muestra pre-login).
+  const evid = await evidenciaSesionWeb(page, cfg);
+  if (evid === true) return false;
+  if (evid === false) return true;
   const selLogin = [
     ...(cfg.login_visible || []),
     'input[type="password"]',
@@ -247,15 +275,7 @@ export async function necesitaLogin(page, cfg) {
     'input[autocomplete="username"]',
     'input[autocomplete="current-password"]',
   ];
-  const loginUi = await visible(selLogin, 500);
-  // Qwen: textarea visible PRE-login + botón "Iniciar sesión". El form/CTA gana al editor.
-  if (loginUi) return true;
-  try {
-    const tok = await page.evaluate(() => {
-      try { return !!(localStorage.getItem('userToken') || localStorage.getItem('token')); } catch { return false; }
-    });
-    if (tok) return false;
-  } catch {}
+  if (await visible(selLogin, 500)) return true;
   if (await visible(cfg.input || [], 600)) return false;
   return true;
 }

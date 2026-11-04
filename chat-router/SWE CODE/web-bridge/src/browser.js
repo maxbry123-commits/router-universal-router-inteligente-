@@ -12,8 +12,9 @@ const contextos = new Map(); // site -> {ctx, page, cuenta}
 // Último motivo de fallo de sesión por sitio (sin datos personales) para @swen/diag.
 const ultimoFallo = new Map(); // site -> {code, ts}
 // Desafíos anti-bot: no se resuelven ni eluden; se informa al titular.
-const RETO = ['iframe[src*="captcha" i]', 'iframe[src*="recaptcha" i]', 'iframe[src*="hcaptcha" i]',
-  '[id*="captcha" i]', '[class*="captcha" i]', '#nc_1_wrapper', '[id*="nocaptcha" i]', 'iframe[src*="turnstile" i]'];
+// Selectores ESTRECHOS: [class*="captcha"] disparaba falsos en UI de login (Google/Apple).
+const RETO = ['iframe[src*="recaptcha" i]', 'iframe[src*="hcaptcha" i]', 'iframe[src*="turnstile" i]',
+  'iframe[src*="captcha-delivery" i]', '#nc_1_wrapper', '.g-recaptcha', '[data-sitekey]'];
 async function hayReto(page) {
   for (const s of RETO) { try { if (await page.locator(s).first().isVisible({ timeout: 300 })) return true; } catch {} }
   return false;
@@ -165,7 +166,10 @@ async function asegurarSitio(site) {
     }
     // Reto anti-bot (captcha/slider): headless no puede resolverlo; rotar cuentas
     // solo quema intentos. Fallar cerrado con causa distinguible.
-    if (await hayReto(page) || res?.motivo === 'RETO_O_LIMITE') {
+    const retoDom = await hayReto(page);
+    // No confundir pantalla de login SSO (Google/Apple) con captcha real.
+    const pistaLoginSso = /google|apple|reg[ií]strate|sign\s*up|iniciar\s*sesi[oó]n/i.test(String(ultimaPista || ''));
+    if ((retoDom && !pistaLoginSso) || res?.motivo === 'RETO_O_LIMITE') {
       const r = fallo(site, 'SESSION_EXPIRED', 'WEB_RETO_ANTIBOT_REQUIERE_TITULAR');
       r.motivo = 'RETO_ANTIBOT'; r.terminal = true; r.pista = ultimaPista;
       ultimoFallo.set(site, { code: r.code, motivo: r.motivo, pista: ultimaPista, ts: Date.now() });
