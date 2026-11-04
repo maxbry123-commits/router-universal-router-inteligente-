@@ -7,7 +7,15 @@ def run(root):
     kp=root/"kernel/KERNEL.yaml";k=yaml.safe_load(kp.read_text()) if kp.exists() else {}
     c("kernel_present",bool(k))
     cur={tuple(u) for u in g["unresolved"] if not u[0].startswith("_quarantine/")}
-    c("no_syntax_errors",not [u for u in cur if u[1]=="SYNTAX_ERROR"])
+    # D-18 (misma regla que D-08 en j2_graph): los errores de sintaxis del codigo de TERCEROS
+    # vendorizado se INFORMAN pero no BLOQUEAN el gate; el codigo propio sigue bloqueando.
+    VENDORED=("agentes-listos/","agentes/frameworks/","agentes/investigacion/","chatbot/componentes/",
+              "memoria/componentes/","otros/descartados/","otros/Prueba/","descarga-copia/")
+    es_tercero=lambda p:any(k in p for k in VENDORED)
+    syn_all=[u for u in cur if u[1]=="SYNTAX_ERROR"]
+    syn_own=[u for u in syn_all if not es_tercero(u[0])]
+    c("no_syntax_errors",not syn_own,f"{len(syn_all)} de terceros (informativo), {len(syn_own)} propios")
+    c("third_party_syntax_reported",True,f"{len(syn_all)} errores de sintaxis en codigo de terceros")
     bp=pathlib.Path(os.environ.get("BASELINE",root/"connections/baseline_unresolved.json"))
     if bp.exists():
         b={tuple(x) for x in json.load(open(bp))};c("no_new_unresolved",cur<=b,sorted(cur-b)[:5])
