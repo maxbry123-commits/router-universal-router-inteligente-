@@ -35,7 +35,8 @@ REPO = os.environ.get("GH_REPO", "maxbry123-commits/router-universal-router-inte
 BRANCH = os.environ.get("GH_BRANCH", "main")
 HF_REPORT_REPO = os.environ.get("HF_REPORT_REPO", "COMAND-CENTER-1/router-universal-router-inteligente-auditoria")
 MAX_COMMITS = int(os.getenv("MAX_COMMITS", "500"))
-SCAN_MAX = int(os.getenv("SCAN_MAX", "40"))
+SCAN_MAX = int(os.getenv("SCAN_MAX", "250"))
+ACQUIRE_BUDGET = int(os.getenv("ACQUIRE_BUDGET_SEC", "1500"))
 SCAN_EXT = {".json", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".py", ".js", ".ts", ".tsx",
             ".jsx", ".mjs", ".cjs", ".sh", ".bash", ".md", ".txt", ".env", ".example"}
 WIRE_HINTS = ("manifest", "plugin", "cableado", "wiring", "loop", "watchdog", "cola", "router",
@@ -155,7 +156,7 @@ def list_commits(branch, max_pages=60):
     """Enumera commits de una rama. per_page=5 maximiza el aproveche del limite de 12000 B."""
     commits, page = [], 1
     while page <= max_pages:
-        data, raw, _ = gh_api("/repos/%s/commits?sha=%s&per_page=5&page=%d" % (REPO, branch, page))
+        data, raw, trunc = gh_api("/repos/%s/commits?sha=%s&per_page=3&page=%d" % (REPO, branch, page))
         got = []
         if isinstance(data, list):
             for c in data:
@@ -172,23 +173,41 @@ def list_commits(branch, max_pages=60):
         if not got:
             break
         commits.extend(got)
-        if len(got) < 5:
+        if not trunc and len(got) < 3:
             break
         page += 1
     return commits
 
 
-def tree_paths(sha):
-    data, raw, trunc = gh_api("/repos/%s/git/trees/%s?recursive=1" % (REPO, sha))
-    paths = []
-    if isinstance(data, dict) and data.get("tree"):
-        for e in data["tree"]:
-            if e.get("type") == "blob":
-                paths.append({"path": e.get("path"), "size": e.get("size", 0)})
-    else:
-        for m in re.finditer(r'"path":\s*"([^"]+)"\s*,\s*"mode":\s*"[^"]*"\s*,\s*"type":\s*"blob"\s*,\s*"sha":\s*"[0-9a-f]+"(?:\s*,\s*"size":\s*(\d+))?', raw):
-            paths.append({"path": m.group(1), "size": int(m.group(2) or 0)})
-    return paths, trunc
+def tree_walk(sha, max_depth=8, max_entries=6000):
+    """Recorre el arbol POR NIVELES (tree no recursivo). Cada directorio cabe en 12000 B
+    -> sin truncacion, inventario real. Devuelve (files, truncated)."""
+    files, truncated = [], False
+    stack = [(sha, "", 0)]
+    while stack:
+        s_, prefix, depth = stack.pop()
+        data, raw, tr = gh_api("/repos/%s/git/trees/%s" % (REPO, s_))
+        if tr:
+            truncated = True
+        entries = []
+        if isinstance(data, dict) and data.get("tree"):
+            entries = data["tree"]
+        else:
+            for m in re.finditer(r'"path":\s*"([^"]+)".{0,240}?"type":\s*"(blob|tree)".{0,240}?"sha":\s*"([0-9a-f]{40})"', raw, re.S):
+                entries.append({"path": m.group(1), "type": m.group(2), "sha": m.group(3)})
+        for e in entries:
+            p = prefix + e["path"]
+            if e.get("type") == "tree":
+                if depth < max_depth:
+                    stack.append((e.get("sha"), p + "/", depth + 1))
+                else:
+                    truncated = True
+            else:
+                files.append({"path": p, "sha": e.get("sha"), "size": e.get("size", 0)})
+                if len(files) >= max_entries:
+                    truncated = True
+                    break
+    return files, truncated
 
 
 def prioritize(paths):
@@ -254,31 +273,42 @@ def acquire():
                                 hist.append("PATCH\t%s\t%s\t%s" % (cat, c["sha"], redact(line[1:])))
     branch_scans = {}
     for b in branches:
-        paths, trunc = tree_paths(b["sha"])
-        cand = prioritize(paths)[:SCAN_MAX]
-        refs, scanned = [], 0
-        for p in cand:
-            content = gh_read(p["path"], b["name"])
+        if time.time() - t0 > ACQUIRE_BUDGET:
+            branch_scans[b["name"]] = {"sha": b["sha"], "refs": [], "files_in_tree": 0,
+                                       "files_eligible": 0, "files_scanned": 0, "files_skipped": 0,
+                                       "files_unreadable": 0, "tree_truncated": True, "complete": False,
+                                       "note": "presupuesto de tiempo agotado -> UNKNOWN (guia L347)"}
+            continue
+        files, trunc = tree_walk(b["sha"])
+        eligible = [f for f in files
+                    if os.path.splitext(f["path"])[1] in SCAN_EXT
+                    and not f["path"].endswith((".lock", ".map"))]
+        unsupported = len(files) - len(eligible)
+        refs, scanned, errors = [], 0, 0
+        for f in eligible[:SCAN_MAX]:
+            content = gh_read(f["path"], b["name"])
             if content and not content.startswith("ERROR"):
                 scanned += 1
                 STATS["files_scanned"] += 1
-                refs.extend(scan_content(p["path"], content))
+                refs.extend(scan_content(f["path"], content))
             else:
+                errors += 1
                 STATS["files_skipped"] += 1
-        skipped = len(paths) - scanned
-        STATS["files_skipped"] += skipped
-        branch_scans[b["name"]] = {"sha": b["sha"], "refs": refs, "files_in_tree": len(paths),
-                                   "files_scanned": scanned, "files_skipped": skipped,
-                                   "tree_truncated": trunc,
-                                   "complete": (not trunc) and scanned == len(paths)}
-    data, raw, trunc = gh_api("/repos/%s/contents/" % REPO)
+        STATS["files_skipped"] += unsupported
+        complete = (not trunc) and errors == 0 and len(eligible) <= SCAN_MAX
+        branch_scans[b["name"]] = {"sha": b["sha"], "refs": refs,
+                                   "files_in_tree": len(files), "files_eligible": len(eligible),
+                                   "files_scanned": scanned, "files_skipped": unsupported,
+                                   "files_unreadable": errors, "tree_truncated": trunc,
+                                   "complete": complete}
+    root_files_all, root_trunc = tree_walk(head if head else (branches[0]["sha"] if branches else ""))
     root = []
-    if isinstance(data, list):
-        for e in data:
-            root.append({"name": e.get("name"), "type": e.get("type"), "size": e.get("size"), "sha": e.get("sha")})
-    else:
-        for m in re.finditer(r'"name":\s*"([^"]+)"\s*,\s*"path":\s*"[^"]*"\s*,\s*"sha":\s*"([0-9a-f]{40})"(?:\s*,\s*"size":\s*(\d+))?', raw):
-            root.append({"name": m.group(1), "type": "file", "size": int(m.group(3) or 0), "sha": m.group(2)})
+    seen_names = set()
+    for f in root_files_all:
+        if "/" not in f["path"] and f["path"] not in seen_names:
+            seen_names.add(f["path"])
+            root.append({"name": f["path"], "type": "file", "size": f.get("size", 0), "sha": f.get("sha")})
+    root = sorted(root, key=lambda e: e["name"])
     root_files = []
     for e in root:
         if e["type"] == "file" and (e.get("size") or 0) < 200000:
@@ -291,7 +321,7 @@ def acquire():
             "branches": branches, "commits": ordered, "commits_total_available": STATS["commits_total_available"],
             "commits_examined": STATS["commits_examined"], "deleted_files": deleted,
             "renamed_files": renamed, "history": hist, "branch_scans": branch_scans,
-            "root": root, "root_files": root_files, "stats": STATS, "elapsed_sec": int(time.time() - t0)}
+            "root": root, "root_files": root_files, "root_truncated": root_trunc, "stats": STATS, "elapsed_sec": int(time.time() - t0)}
     path = os.environ.get("PACK_PATH", "/tmp/pack.json")
     open(path, "w").write(json.dumps(pack, ensure_ascii=False))
     print("ACQUIRE DONE: commits=%d branches=%d refs=%d files_scanned=%d skipped=%d -> %s"
