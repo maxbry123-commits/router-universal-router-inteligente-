@@ -183,6 +183,13 @@ try:
     for prov in ("groq", "nvidia"):
         c = next((k for k in vivos if k.startswith(prov + "/") and k != prim), None)
         if c and not (prim or "").startswith(prov + "/"): fb.append(c)
+    # A1-4/5: reforzar fallbacks (2.o id por proveedor como fallbackModel extra) + compaction safeguard.
+    for k in vivos:
+        if k != prim and k not in fb and len(fb) < 4: fb.append(k)
+    cp = ad.setdefault("compaction", {})
+    cp["mode"] = "safeguard"  # docs concepts/compaction: guardrails + auditoria; timeout/429 del resumen usan la cadena fallbacks
+    cp.setdefault("keepRecentTokens", int(os.environ.get("RIU_OC_KEEP_RECENT", "20000")))
+    print("compaction:", cp)
     if prim: ad["model"] = {"primary": prim, "fallbacks": fb}
     print("model primary:", prim, "fallbacks:", ",".join(fb) or "-")
     # A1-3 retry.* (docs.openclaw.ai/concepts/retry): retry.provider es de settings.json (no openclaw.json).
