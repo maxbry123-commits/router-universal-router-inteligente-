@@ -20,10 +20,17 @@ def main():
     if pats:
         pf="/tmp/j4_stems.txt"
         pathlib.Path(pf).write_text("\n".join(sorted({pathlib.Path(p).stem for p in pats if pathlib.Path(p).stem}))+"\n")
-        r=sh(["git","grep","-I","-o","-F","-f",pf,"--","."],cwd=d,check=False)
-        for line in r.stdout.splitlines():
-            f,_,m=line.partition(":")
-            refs[m].add(f)
+        # fase 1: ficheros que contienen algun stem (salida corta, sin -o)
+        r1=sh(["git","grep","-I","-l","-F","-f",pf,"--","."],cwd=d,check=False)
+        mfiles=[x for x in r1.stdout.splitlines() if x]
+        # fase 2: solo sobre esos ficheros, con -o para saber que stem aparece donde
+        if mfiles:
+            ff="/tmp/j4_files.txt"
+            pathlib.Path(ff).write_text("\n".join(mfiles)+"\n")
+            r2=sh(["git","grep","-I","-o","-F","-f",pf,"--pathspec-from-file="+ff],cwd=d,check=False)
+            for line in r2.stdout.splitlines():
+                f,_,m=line.partition(":")
+                refs[m].add(f)
     for p in pats:
         stem=pathlib.Path(p).stem
         par=str(pathlib.Path(p).parent)+"/"
