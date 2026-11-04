@@ -16,14 +16,18 @@ export const SITES = {
     enviar: ['button[aria-label*="end" i]', 'button[type="submit"]'],
     respuesta: ['.markdown-body', '[class*="markdown"]', '[class*="message"]', '[class*="prose"]'],
     stop_gen: ['button[aria-label*="top" i]'],
-    login_email: ['input[name="email"]', 'input[type="email"]'],
-    login_pass: ['input[type="password"]', 'input[name="password"]'],
-    login_btn: ['button:has-text("Continue")', 'button:has-text("Continuar")', 'button[type="submit"]'],
+    // Calibrado en vivo 2026-11 (es-ES): input[name=email] type=text; el pass solo aparece tras
+    // "Iniciar sesión con contraseña"; submit = button[type=submit] "Iniciar sesión".
+    // OJO: has-text("Continuar") casaba "Continuar con Google" (OAuth) -> solo submit / text-is.
+    login_email: ['input[name="email"]', 'input[type="email"]', 'input[placeholder*="correo" i]', 'input[placeholder*="email" i]'],
+    login_pass: ['input[name="password"]', 'input[type="password"]'],
+    login_btn: ['button[type="submit"]', 'button:text-is("Iniciar sesión")', 'button:text-is("Log in")', 'button:text-is("Sign in")'],
     login_visible: ['button:has-text("Iniciar sesión")', 'a:has-text("Iniciar sesión")', 'button:has-text("Log in")', 'a:has-text("Log in")', 'button:has-text("Sign in")'],
     age_gate_continue: ['button:has-text("Continuar")', 'button:has-text("Continue")'],
     // qwen muestra "Login with verification code" por defecto:
     // hay que clicar "Log in with a password" ANTES de llenar el pass
-    login_switch_pass: ['button:has-text("Log in with a password")', 'a:has-text("password")'],
+    login_switch_pass: ['button:has-text("Iniciar sesión con contraseña")', 'button:has-text("Log in with a password")',
+      'button:has-text("Log in with password")', 'button:has-text("Sign in with password")', 'button:has-text("密码登录")', 'a:has-text("password")'],
     model_selector: ['div[aria-label="Select Model"]'],
     nuevo_chat: ['div[aria-label="New Chat"]', 'button[aria-label*="New" i]'],
     model_option_text: /qwen3\.8|3\.8.?max/i,   // se sobrescribe por modelo logico
@@ -237,10 +241,12 @@ export async function login(page, cfg, email, pass) {
   await page.waitForTimeout(1500);
   await pasarAgeGate(page, cfg);
   // qwen: por defecto pide codigo -> cambiar a password primero
+  // SPA: esperar a que el formulario hidrate (antes 1.5 s fijos -> campos aún sin render).
+  await page.locator([...(cfg.login_email || []), ...(cfg.login_switch_pass || [])].join(', ')).first()
+    .waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
   if (cfg.login_switch_pass) {
     for (const sel of cfg.login_switch_pass) {
-      const el = await page.$(sel);
-      if (el) { await el.click(); await page.waitForTimeout(800); break; }
+      try { const loc = page.locator(sel).first(); if (await loc.isVisible({ timeout: 500 })) { await loc.click(); await page.waitForTimeout(1200); break; } } catch {}
     }
   }
   // Campo visible (no oculto) y diagnóstico de qué faltó, sin datos personales.
@@ -254,7 +260,7 @@ export async function login(page, cfg, email, pass) {
   if (!await rellenar(cfg.login_pass, pass)) throw Object.assign(new Error('LOGIN_FORM_NO_ENCONTRADO'), { code: 'LOGIN_FORM_NO_ENCONTRADO', campo: 'clave' });
   let pulsado = false;
   for (const sel of cfg.login_btn) {
-    try { const loc = page.locator(sel).first(); if (await loc.isVisible({ timeout: 800 })) { await loc.click(); pulsado = true; break; } } catch {}
+    try { const loc = page.locator(sel).first(); if (await loc.isVisible({ timeout: 800 })) { await loc.click({ timeout: 5000 }); pulsado = true; break; } } catch {}
   }
   if (!pulsado) await page.keyboard.press('Enter').catch(() => {});
   await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
