@@ -628,18 +628,15 @@ async def _codigo_largo_comun(modelo, mensajes, opciones, q, lineas, progreso=No
             await asyncio.to_thread(estado_tarea.marcar, banco, clave, True)
         return ok
 
-    async def inferir(peticion, max_tokens):
-        # Una llamada por parte; los reintentos largos son del motor, no del
-        # request HTTP. La cuota del proveedor NO se puede saltar.
-        _token = _PID.set(None)  # evita confundir checkpoint del subturno con el job
+    async def inferir(peticion, max_tokens, modelo_actual=None):
+        # Una llamada por sección; el modelo alterno se elige sólo desde checkpoint.
+        _token = _PID.set(None)
+        modelo_llamada = modelo_actual or modelo
         try:
-            # Groq Qwen razonador puede consumir todo max_tokens en pensamiento
-            # y entregar content='' + finish_reason=length. Para codificacion
-            # segmentada se usa el parametro OFICIAL soportado por este modelo.
             opciones_parte = {"max_tokens": max_tokens}
-            if modelo == "groq/qwen/qwen3.8-27b":
+            if modelo_llamada == "groq/qwen/qwen3.8-27b":
                 opciones_parte["reasoning_effort"] = "none"
-            return await chat({"modelo": modelo, "mensajes": sistemas + peticion,
+            return await chat({"modelo": modelo_llamada, "mensajes": sistemas + peticion,
                                "via": "harness", "opciones": opciones_parte,
                                "tools": False, "agente_tool": False, "llm_tool": False})
         finally:
@@ -663,7 +660,7 @@ async def _codigo_largo_comun(modelo, mensajes, opciones, q, lineas, progreso=No
         raise HTTPException(status_code=504, detail=str(error)[:260]) from None
     await asyncio.to_thread(estado_tarea.marcar, banco, clave, False)
     return {"texto": res["texto"], "tool_calls": [], "finish_reason": "stop",
-            "modelo_respuesta": modelo, "herramientas_usadas": [],
+            "modelo_respuesta": res.get("modelo_final", modelo), "herramientas_usadas": [],
             "metricas": {"lineas_verificadas": res["lineas"],
                         "partes": res["partes"], "desde_checkpoint": res["desde_checkpoint"],
                         "sha256": res.get("sha256"),

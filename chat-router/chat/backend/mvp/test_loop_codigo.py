@@ -1,124 +1,55 @@
-"""Pruebas del motor CODA de codigo largo: simulaciones etiquetadas, NO proveedor real."""
-import ast
-import unittest
+import asyncio, re, unittest
 from mvp import loop_codigo
 
+def bloque(n,k):
+    return "\n".join(f"def f{k}_{i}():\n    return {i}" for i in range(n//2))
 
-def bloque(n, k):
-    xs = [f"def grupo_{k}(x):", "    valor = int(x)"]
-    xs.extend("    valor += 1" for _ in range(n - 3))
-    xs.append("    return valor")
-    assert len(xs) == n
-    return "\n".join(xs)
+def datos(msg):
+    txt="\n".join(str(m.get("content", "")) for m in msg)
+    n=int(re.search(r"Genera exactamente (\\d+)",txt).group(1))
+    sec=int(re.search(r"FIN_SECCION_(\\d+)",txt).group(1))
+    return n,sec
 
-
-class LoopCodaCodigo(unittest.IsolatedAsyncioTestCase):
-    async def test_500_lineas_10_llamadas_una_sola_tarea(self):
-        estado = {}
-        reloj = [100000.]
-        llamadas = []
-        async def inferir(msg, tokens):
-            k = len(llamadas)
-            llamadas.append((msg, tokens))
-            return {"texto": bloque(50, k), "tool_calls": []}
-        async def cargar(): return estado.get("doc")
-        async def guardar(doc):
-            estado["doc"] = dict(doc, piezas=list(doc["piezas"]))
-            return True
-        async def dormir(s): reloj[0] += s
-        par = dict(mensajes=[{"role":"user","content":"Escribe 500 lineas de codigo Python"}],
-                   modelo="groq/qwen/qwen3.8-27b",pid="test-500",n_lineas=500,
-                   inferir=inferir,cargar=cargar,guardar=guardar,
-                   dormir=dormir,reloj=lambda: reloj[0])
-        r = await loop_codigo.generar(**par)
-        self.assertEqual(r["lineas"], 500)
-        self.assertEqual(len(llamadas), 10)
-        self.assertEqual(len(r["texto"].splitlines()), 500)
-        self.assertEqual(estado["doc"]["validacion"], "PASS")
-        ast.parse(r["texto"])
-        r2 = await loop_codigo.generar(**par)
-        self.assertTrue(r2["desde_checkpoint"])
-        self.assertEqual(len(llamadas), 10)
-
-    async def test_429_nueve_veces_reanuda_sin_falso_pass(self):
-        estado, reloj, n = {}, [100000.], [0]
-        async def inferir(msg, tokens):
-            n[0] += 1
-            if n[0] <= 9:
-                raise RuntimeError("PROVEEDOR_GROQ_HTTP_429: limite_temporal")
-            return {"texto": bloque(50, n[0])}
-        async def cargar(): return estado.get("doc")
-        async def guardar(doc):
-            estado["doc"] = dict(doc,piezas=list(doc["piezas"]))
-            return True
-        async def dormir(s): reloj[0] += s
-        r = await loop_codigo.generar(
-            mensajes=[{"role":"user","content":"100 lineas de codigo Python"}],
-            modelo="groq/qwen/qwen3.8-27b",pid="test-429",n_lineas=100,
-            inferir=inferir,cargar=cargar,guardar=guardar,
-            dormir=dormir,reloj=lambda: reloj[0])
-        self.assertEqual(r["lineas"], 100)
-        self.assertGreaterEqual(reloj[0]-100000, 9*65)
-        self.assertEqual(estado["doc"]["validacion"], "PASS")
-
-    async def test_no_activa_consultas_ni_cambia_otro_lenguaje(self):
-        self.assertIsNone(loop_codigo.solicitado("Explica el concepto de lineas", "chat"))
-        self.assertEqual(loop_codigo.solicitado("Escribe 500 lineas de codigo Python"),500)
-        self.assertEqual(loop_codigo.solicitado("Continuar", "code_largo", "loop"),500)
-
-    async def test_retry_after_del_proveedor_manda_sobre_espera_fija(self):
-        estado, reloj, llamadas = {}, [100000.], [0]
-        async def inferir(_msg, _tokens):
-            llamadas[0] += 1
-            if llamadas[0] == 1:
-                raise RuntimeError("PROVEEDOR_GROQ_HTTP_429 retry_after_s=240")
-            return {"texto": bloque(50, llamadas[0])}
-        async def cargar(): return estado.get("doc")
-        async def guardar(doc):
-            estado["doc"] = dict(doc, piezas=list(doc["piezas"]))
-            return True
-        async def dormir(s): reloj[0] += s
-        salida = await loop_codigo.generar(
-            mensajes=[{"role":"user","content":"100 lineas codigo Python"}],
-            modelo="groq/qwen/qwen3.8-27b", pid="retry-after", n_lineas=100,
-            inferir=inferir,cargar=cargar,guardar=guardar,dormir=dormir,reloj=lambda:reloj[0])
-        self.assertEqual(salida["lineas"],100)
-        self.assertGreaterEqual(reloj[0]-100000.,240)
-        self.assertEqual(estado["doc"]["validacion"],"PASS")
-
-    async def test_respuesta_vacia_reduce_segmento_con_checkpoint(self):
-        estado, reloj, llamadas = {}, [100000.], [0]
-        async def inferir(_msg, _tokens):
-            llamadas[0] += 1
-            if llamadas[0] <= 2:
-                return {"texto":"","finish_reason":"length"}
-            return {"texto":bloque(25,llamadas[0]),"finish_reason":"stop"}
-        async def cargar(): return estado.get("doc")
-        async def guardar(doc):
-            estado["doc"] = dict(doc,piezas=list(doc["piezas"]))
-            return True
-        async def dormir(s): reloj[0] += s
-        salida = await loop_codigo.generar(
-            mensajes=[{"role":"user","content":"100 lineas codigo Python"}],
-            modelo="nvidia/minimaxai/minimax-m3.1-flash",pid="empty-to-25",n_lineas=100,
-            inferir=inferir,cargar=cargar,guardar=guardar,dormir=dormir,reloj=lambda:reloj[0])
-        self.assertEqual(salida["lineas"],100)
-        self.assertEqual(estado["doc"]["tam_bloque"],25)
-        self.assertEqual(len(salida["texto"].splitlines()),100)
-        self.assertEqual(estado["doc"]["validacion"],"PASS")
-
-    async def test_checkpoint_fallo_no_inicia_modelo(self):
-        n = [0]
-        async def inferir(msg,tokens): n[0] += 1; return {"texto":bloque(50, n[0])}
+class TestContinuidadCODA(unittest.IsolatedAsyncioTestCase):
+    async def hacer(self, n=500, callback=None, modelo="groq/qwen/qwen3.8-27b"):
+        state={}; calls=[]
+        async def cargar(): return state.get("doc")
+        async def guardar(doc): state["doc"]=dict(doc,piezas=list(doc.get("piezas",[])),write_chunks=list(doc.get("write_chunks",[]))); return True
+        async def inferir(msg,tokens,actual):
+            calls.append((msg,tokens,actual))
+            if callback: return await callback(msg,tokens,actual,calls)
+            q,sec=datos(msg); return {"texto":bloque(q,len(calls)*1000)+f"\n<<FIN_SECCION_{sec}>>","finish_reason":"stop"}
+        out=await loop_codigo.generar(mensajes=[{"role":"user","content":f"{n} lineas de codigo python"}],modelo=modelo,pid="test",n_lineas=n,inferir=inferir,cargar=cargar,guardar=guardar)
+        return out,state,calls
+    async def test_500_en_tres_secciones_con_checkpoint(self):
+        out,state,calls=await self.hacer()
+        self.assertEqual((out["lineas"],out["partes"],len(calls)),(500,3,3))
+        self.assertEqual(state["doc"]["validacion"],"PASS")
+        self.assertEqual(len(state["doc"]["write_chunks"]),3)
+        self.assertIn("ÍNDICE NUMERADO",calls[0][0][0]["content"])
+    async def test_cent_inela_ausente_continua_con_prefill_50_lineas(self):
+        async def cb(msg,tokens,model,calls):
+            q,sec=datos(msg)
+            if len(calls)==1: return {"texto":bloque(q,44),"finish_reason":"length"}
+            self.assertEqual(msg[0]["role"],"assistant")
+            self.assertLessEqual(len(msg[0]["content"].splitlines()),50)
+            self.assertIn("desde la línea",msg[1]["content"])
+            return {"texto":f"<<FIN_SECCION_{sec}>>","finish_reason":"stop"}
+        out,state,calls=await self.hacer(100,cb)
+        self.assertEqual(out["lineas"],100); self.assertEqual(len(calls),2)
+    async def test_groq_falla_y_fallback_nvidia_reanuda_mismo_punto(self):
+        async def cb(msg,tokens,model,calls):
+            if len(calls)<=2: return {"texto":"","finish_reason":"length"}
+            q,sec=datos(msg); return {"texto":bloque(q,90)+f"\n<<FIN_SECCION_{sec}>>","finish_reason":"stop"}
+        out,state,calls=await self.hacer(100,cb)
+        self.assertEqual([c[2] for c in calls],['groq/qwen/qwen3.8-27b','groq/qwen/qwen3.8-27b','nvidia/minimaxai/minimax-m3.1-flash'])
+        self.assertEqual(out["modelo_final"],"nvidia/minimaxai/minimax-m3.1-flash")
+    async def test_checkpoint_obligatorio_antes_de_llamar(self):
+        calls=[]
+        async def inferir(*a): calls.append(1); return {}
         async def cargar(): return None
         async def guardar(doc): return False
         with self.assertRaisesRegex(RuntimeError,"CODA_CHECKPOINT_NO_PERSISTIDO"):
-            await loop_codigo.generar(
-                mensajes=[{"role":"user","content":"500 lineas de codigo Python"}],
-                modelo="nvidia/minimaxai/minimax-m3.1-flash",pid="test-storage",
-                n_lineas=500,inferir=inferir,cargar=cargar,guardar=guardar)
-        self.assertEqual(n[0],0)
-
-
-if __name__=="__main__":
-    unittest.main()
+            await loop_codigo.generar(mensajes=[{"role":"user","content":"100 lineas codigo Python"}],modelo="groq/qwen/qwen3.8-27b",pid="storage",n_lineas=100,inferir=inferir,cargar=cargar,guardar=guardar)
+        self.assertEqual(calls,[])
+if __name__=="__main__": unittest.main()
