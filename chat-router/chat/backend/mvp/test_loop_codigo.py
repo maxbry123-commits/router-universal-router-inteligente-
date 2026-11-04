@@ -15,11 +15,12 @@ class TestContinuidadCODA(unittest.IsolatedAsyncioTestCase):
         state={}; calls=[]
         async def cargar(): return state.get("doc")
         async def guardar(doc): state["doc"]=dict(doc,piezas=list(doc.get("piezas",[])),write_chunks=list(doc.get("write_chunks",[]))); return True
+        async def dormir(_): return None
         async def inferir(msg,tokens,actual):
             calls.append((msg,tokens,actual))
             if callback: return await callback(msg,tokens,actual,calls)
             q,sec=datos(msg); return {"texto":bloque(q,len(calls)*1000)+f"\n<<FIN_SECCION_{sec}>>","finish_reason":"stop"}
-        out=await loop_codigo.generar(mensajes=[{"role":"user","content":f"{n} lineas de codigo python"}],modelo=modelo,pid="test",n_lineas=n,inferir=inferir,cargar=cargar,guardar=guardar)
+        out=await loop_codigo.generar(mensajes=[{"role":"user","content":f"{n} lineas de codigo python"}],modelo=modelo,pid="test",n_lineas=n,inferir=inferir,cargar=cargar,guardar=guardar,dormir=dormir)
         return out,state,calls
     async def test_500_en_tres_secciones_con_checkpoint(self):
         out,state,calls=await self.hacer()
