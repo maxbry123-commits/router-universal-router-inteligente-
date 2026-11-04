@@ -122,12 +122,17 @@ roadmap:
     task: unify pattern catalogs (6 vs 5) with its own test
     job: agent
 handoff:
-  next: j1_inventory
+  next: j2_graph
   log:
   - job: j0_preflight
     status: PASS
     commit: null
     ts: '2026-11-04T18:28:19Z'
     run_id: 20261104-kernel01
+  - job: j1_inventory
+    status: PASS
+    commit: 10e3b5e6480f15140744def81e92770ed67d7714
+    ts: '2026-11-04T18:48:35Z'
+    run_id: 20261104-kernel01
   flags: []
-progress_pct: 9
+progress_pct: 18
