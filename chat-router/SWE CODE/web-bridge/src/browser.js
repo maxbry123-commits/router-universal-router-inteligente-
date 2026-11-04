@@ -322,6 +322,7 @@ export async function repararSesion(site = null) {
   try { reiniciarIndice(); } catch { /* sin pool aún */ }
   for (const s of sitios) {
     limpiarEnfriamiento(s);
+    // Reciclar SOLO si no hay tabs vivas (evita cerrar el contexto bajo los pies de asegurar()).
     const rec = await reiniciarSitioInactivo(s).catch(e => ({ ok: false, code: e?.code || 'RECICLO_FALLO' }));
     try {
       // Intento de hidratar sesión desde archivo del titular (sin secretos en logs).
@@ -329,6 +330,10 @@ export async function repararSesion(site = null) {
       await asegurar(s);
       out[s] = { ok: true, reciclado: rec, estado: 'vivo' };
     } catch (e) {
+      // Reintento único si el contexto se cerró en carrera con el reciclado.
+      if (/has been closed|Target page|context or browser/i.test(String(e?.message || '')) && !e?.terminal) {
+        try { await asegurar(s); out[s] = { ok: true, reciclado: rec, estado: 'vivo', via: 'reintento_cierre' }; continue; } catch (e2) { e = e2; }
+      }
       out[s] = { ok: false, reciclado: rec, estado: 'caido', code: e?.code || 'SESSION_EXPIRED',
         motivo: e?.motivo || null, pista: e?.pista || ultimoFallo.get(s)?.pista || null,
         reintentar_en_s: e?.reintentar_en_s };
