@@ -155,8 +155,5 @@ handoff:
     commit: 1b6837b505a5d7ace17437905739b8af3056cf8a
     ts: '2026-11-04T21:51:02Z'
     run_id: 20261104-kernel01
-  flags:
-  - '🚩 j4_plan FAIL (rc=128): common.clone() no es idempotente; ''/tmp/p'' ya existe
-    y no esta vacio. Resolucion pendiente por rutas §20 (1 existing_code / 8 smaller_scope).
-    FAIL CLOSED: no se continua a j5.'
+  flags: []
 progress_pct: 45
