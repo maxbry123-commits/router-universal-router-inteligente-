@@ -35,8 +35,8 @@ REPO = os.environ.get("GH_REPO", "maxbry123-commits/router-universal-router-inte
 BRANCH = os.environ.get("GH_BRANCH", "main")
 HF_REPORT_REPO = os.environ.get("HF_REPORT_REPO", "COMAND-CENTER-1/router-universal-router-inteligente-auditoria")
 MAX_COMMITS = int(os.getenv("MAX_COMMITS", "500"))
-SCAN_MAX = int(os.getenv("SCAN_MAX", "250"))
-ACQUIRE_BUDGET = int(os.getenv("ACQUIRE_BUDGET_SEC", "1500"))
+SCAN_MAX = int(os.getenv("SCAN_MAX", "150"))
+ACQUIRE_BUDGET = int(os.getenv("ACQUIRE_BUDGET_SEC", "2400"))
 SCAN_EXT = {".json", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".py", ".js", ".ts", ".tsx",
             ".jsx", ".mjs", ".cjs", ".sh", ".bash", ".md", ".txt", ".env", ".example"}
 WIRE_HINTS = ("manifest", "plugin", "cableado", "wiring", "loop", "watchdog", "cola", "router",
@@ -100,6 +100,8 @@ def mcp(tool, args, timeout=180):
 
 
 def gh_api(path):
+    """Devuelve (data|None, raw, incomplete). incomplete=True si la respuesta no es 200
+    (rate limit, 404, error) o si llega truncada a 12000 B."""
     STATS["api_calls"] += 1
     try:
         raw = mcp("github_api", {"metodo": "GET", "ruta": path})
@@ -107,10 +109,14 @@ def gh_api(path):
         STATS["errors"] += 1
         return None, "", True
     try:
-        return json.loads(raw).get("data"), raw, False
+        obj = json.loads(raw)
     except Exception:
         STATS["truncations"] += 1
         return None, raw, True
+    if obj.get("status") != 200:
+        STATS["errors"] += 1
+        return None, raw, True
+    return obj.get("data"), raw, False
 
 
 def gh_read(path, ref):
@@ -179,16 +185,22 @@ def list_commits(branch, max_pages=60):
     return commits
 
 
-def tree_walk(sha, max_depth=8, max_entries=6000):
+def tree_walk(sha, max_depth=3, max_entries=6000, dir_budget=40):
     """Recorre el arbol POR NIVELES (tree no recursivo). Cada directorio cabe en 12000 B
     -> sin truncacion, inventario real. Devuelve (files, truncated)."""
     files, truncated = [], False
     stack = [(sha, "", 0)]
+    dirs_used = 0
     while stack:
+        if dirs_used >= dir_budget:
+            truncated = True
+            break
         s_, prefix, depth = stack.pop()
+        dirs_used += 1
         data, raw, tr = gh_api("/repos/%s/git/trees/%s" % (REPO, s_))
         if tr:
             truncated = True
+            continue
         entries = []
         if isinstance(data, dict) and data.get("tree"):
             entries = data["tree"]
@@ -284,23 +296,25 @@ def acquire():
                     if os.path.splitext(f["path"])[1] in SCAN_EXT
                     and not f["path"].endswith((".lock", ".map"))]
         unsupported = len(files) - len(eligible)
-        refs, scanned, errors = [], 0, 0
+        refs, scanned, errors, spaths = [], 0, 0, []
         for f in eligible[:SCAN_MAX]:
             content = gh_read(f["path"], b["name"])
             if content and not content.startswith("ERROR"):
                 scanned += 1
+                spaths.append(f["path"])
                 STATS["files_scanned"] += 1
                 refs.extend(scan_content(f["path"], content))
             else:
                 errors += 1
                 STATS["files_skipped"] += 1
         STATS["files_skipped"] += unsupported
-        complete = (not trunc) and errors == 0 and len(eligible) <= SCAN_MAX
+        # R4: una rama con enumeracion vacia/fallida NUNCA es "complete" (evita REMOVED falsos)
+        complete = (not trunc) and errors == 0 and scanned > 0 and len(eligible) <= SCAN_MAX and len(files) > 0
         branch_scans[b["name"]] = {"sha": b["sha"], "refs": refs,
                                    "files_in_tree": len(files), "files_eligible": len(eligible),
                                    "files_scanned": scanned, "files_skipped": unsupported,
                                    "files_unreadable": errors, "tree_truncated": trunc,
-                                   "complete": complete}
+                                   "scanned_paths": spaths, "complete": complete}
     root_files_all, root_trunc = tree_walk(head if head else (branches[0]["sha"] if branches else ""))
     root = []
     seen_names = set()
@@ -337,19 +351,32 @@ def analyze(pack, prefix_wiring=True, prefix_root=True):
     scans = pack.get("branch_scans", {})
     complete = {k: v for k, v in scans.items() if v.get("complete")}
     incomplete = [k for k, v in scans.items() if not v.get("complete")]
+    # R4 comparativo: solo se comparan ramas sobre el conjunto COMUN de archivos leidos.
+    path_sets = {k: set(v.get("scanned_paths") or []) for k, v in scans.items()}
+    non_empty = {k: v for k, v in path_sets.items() if v}
+    common = set.intersection(*non_empty.values()) if non_empty else set()
+    covered = sorted(common)
     hist_set = {}
     for bname, sc in scans.items():
+        cpath = path_sets.get(bname, set())
         for r in sc.get("refs", []):
+            fpath = r["reference"].split(":", 1)[0]
+            if common and fpath not in common:
+                continue
             key = r["category"] + "|" + r["reference"].split(":", 1)[-1]
             hist_set.setdefault(key, []).append(bname)
     cur_refs = []
     main_scan = scans.get(BRANCH) or {}
     for r in main_scan.get("refs", []):
         cur_refs.append(r)
-    cur_set = set(r["category"] + "|" + r["reference"].split(":", 1)[-1] for r in cur_refs)
+    cur_set = set(r["category"] + "|" + r["reference"].split(":", 1)[-1] for r in cur_refs
+                  if (not common) or r["reference"].split(":", 1)[0] in common)
     comp_keys = set()
     for bname, sc in complete.items():
         for r in sc.get("refs", []):
+            fpath = r["reference"].split(":", 1)[0]
+            if common and fpath not in common:
+                continue
             comp_keys.add(r["category"] + "|" + r["reference"].split(":", 1)[-1])
     rows = []
     for key, brs in sorted(hist_set.items()):
@@ -373,7 +400,10 @@ def analyze(pack, prefix_wiring=True, prefix_root=True):
                 "narrativo_guia_L96_101": ["current_connections.json", "historical_connections.json",
                                            "comparison.json->summary.json", "recovery_candidates.json->removed_candidates.json"]},
             "completeness": {"branches_complete": sorted(complete), "branches_incomplete": incomplete,
-                             "incomplete_branches_cannot_produce_REMOVED": True},
+                             "incomplete_branches_cannot_produce_REMOVED": True,
+                             "comparison_basis": "interseccion de archivos leidos por todas las ramas con escaneo util",
+                             "common_files_count": len(common), "common_files": covered[:200],
+                             "rule": "REMOVED solo dentro del conjunto comun; fuera de el => UNKNOWN"},
             "generated_at": datetime.now(timezone.utc).isoformat()}
     def dump(n, d):
         open(os.path.join(OUT, n), "w").write(json.dumps(d, indent=2, ensure_ascii=False))
