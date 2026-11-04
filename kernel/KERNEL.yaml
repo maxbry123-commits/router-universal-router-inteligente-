@@ -155,5 +155,11 @@ handoff:
     commit: 1b6837b505a5d7ace17437905739b8af3056cf8a
     ts: '2026-11-04T21:51:02Z'
     run_id: 20261104-kernel01
-  flags: []
+  - job: j7_mirror
+    status: FAIL
+    commit: bbdc25bfafe4d0b55098083c1a43c47093279654
+    ts: '2026-11-04T22:16:38Z'
+    run_id: 20261104-kernel01
+  flags:
+  - 🚩 j7_mirror FAIL
 progress_pct: 45
