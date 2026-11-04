@@ -5,119 +5,59 @@
   "base_url": "http://127.0.0.1:7861/plugins/deepseek_harness/modelos/v1",
   "api_key": "${RIU_API_KEY}",
   "token_nota": "Marcador: OpenClaw debe sustituir ${RIU_API_KEY} por la clave de acceso real (RIU_API_KEY) desde su entorno, nunca escrita en este archivo; el bridge la acepta como Authorization: Bearer y BRIDGE_TOKEN es opcional. Sin ella, toda llamada al bridge da 401.",
-  "nota": "Chat OpenClaw -> plugin Harness DeepSeek -> Router MVP (Groq/NVIDIA/API) o Router SWE CODE (HF local/web). Modelo explícito sin fallback. La clave de acceso es RIU_API_KEY del Gateway, no la clave de un proveedor.",
+  "nota": "Chat OpenClaw -> plugin Harness DeepSeek -> Router MVP (Groq/NVIDIA/API) o Router SWE CODE (HF local/web). Modelo explícito sin fallback. La clave de acceso es RIU_API_KEY del Gateway, no la clave de un proveedor. Alcance activo: solo Groq + NVIDIA (ids = MODELOS_API de respaldo.js).",
   "modelos": [
     {
-      "id": "web-qwen38max",
-      "nombre": "Qwen 3.8 Max (web)"
-    },
-    {
-      "id": "web-qwen37max",
-      "nombre": "Qwen 3.7 Max (web)"
-    },
-    {
-      "id": "web-dsv4-flash",
-      "nombre": "DeepSeek V4 Flash (web)"
-    },
-    {
-      "id": "web-claude-sonnet",
-      "nombre": "Claude Sonnet (chat web autorizado)"
-    },
-    {
-      "id": "swecode-consulta",
-      "nombre": "Concilio — los 3 web"
-    },
-    {
       "id": "swecode-revision",
-      "nombre": "SWE · revision"
+      "nombre": "SWE CODE · revision"
     },
     {
       "id": "swecode-solucion",
-      "nombre": "SWE · solucion"
+      "nombre": "SWE CODE · solucion"
     },
     {
       "id": "swecode-arquitectura",
-      "nombre": "SWE · arquitectura"
+      "nombre": "SWE CODE · arquitectura"
     },
     {
       "id": "swecode-archivos",
-      "nombre": "SWE · archivos"
+      "nombre": "SWE CODE · archivos"
     },
     {
       "id": "swecode-prompt_code",
-      "nombre": "SWE · prompt_code"
+      "nombre": "SWE CODE · prompt_code"
     },
     {
       "id": "swecode-despliega",
-      "nombre": "SWE · despliega"
-    },
-    {
-      "id": "lfm2.5-350m",
-      "nombre": "Liquid LFM2.5 350M"
-    },
-    {
-      "id": "qwen2.5-coder-1.5b",
-      "nombre": "Qwen2.5 Coder 1.5B"
-    },
-    {
-      "id": "qwen3.5-0.8b",
-      "nombre": "Qwen3.5 0.8B"
-    },
-    {
-      "id": "qwen3-0.6b",
-      "nombre": "Qwen3 0.6B"
-    },
-    {
-      "id": "groq/qwen/qwen3.8-27b",
-      "nombre": "Groq Qwen 3.8"
-    },
-    {
-      "id": "nvidia/minimaxai/minimax-m3.1-flash",
-      "nombre": "MiniMax M3.1 Flash"
-    },
-    {
-      "id": "nvidia/meta/muse-glimmer-30b",
-      "nombre": "Muse Glimmer 30B"
-    },
-    {
-      "id": "nvidia/nvidia/nemotron-3-ultra-550b-a55b",
-      "nombre": "Nemotron 3 Ultra"
-    },
-    {
-      "id": "nvidia/z-ai/glm-5.3",
-      "nombre": "GLM 5.3"
+      "nombre": "SWE CODE · despliega"
     },
     {
       "id": "swecode-asesoria",
-      "nombre": "SWE · asesoria (plan antes de ejecutar)"
+      "nombre": "SWE CODE · asesoria (plan antes de ejecutar)"
     },
     {
-      "id": "deepseek/deepseek-v4-pro",
-      "nombre": "DeepSeek V4 Pro API"
+      "id": "groq/qwen/qwen3.8-27b",
+      "nombre": "Groq · Qwen 3.8 27B"
     },
     {
-      "id": "deepseek/deepseek-flash",
-      "nombre": "DeepSeek Flash API"
+      "id": "nvidia/minimaxai/minimax-m3.1-flash",
+      "nombre": "NVIDIA · MiniMax M3.1 Flash"
     },
     {
-      "id": "minimax/MiniMax-M3",
-      "nombre": "MiniMax M3 API"
+      "id": "nvidia/meta/muse-glimmer-30b",
+      "nombre": "NVIDIA · Muse Glimmer 30B"
     },
     {
-      "id": "minimax/MiniMax-M2.7",
-      "nombre": "MiniMax M2.7 API"
+      "id": "nvidia/nvidia/nemotron-3-ultra-550b-a55b",
+      "nombre": "NVIDIA · Nemotron 3 Ultra"
     },
     {
-      "id": "openai/gpt-5.6",
-      "nombre": "OpenAI GPT-5.6 API"
-    },
-    {
-      "id": "openai/gpt-5.5",
-      "nombre": "OpenAI GPT-5.5 API"
+      "id": "nvidia/z-ai/glm-5.3",
+      "nombre": "NVIDIA · GLM 5.3"
     },
     {
       "id": "nvidia/z-ai/glm-5.3-flash",
-      "nombre": "GLM 5.3 Flash"
+      "nombre": "NVIDIA · GLM 5.3 Flash"
     }
   ],
   "gramatica": "SWEN CODE free [modo <m>] [con|solo|modelo <m>] [chat <id>] [pipeline code|free] [doc <ruta>] <texto> — ver INSTRUCCIONES.md",

@@ -32,7 +32,7 @@ function modelo(nombre, puerto, ids) {
     res.end(JSON.stringify({ id: 'c1', object: 'chat.completion', created: 1, model: b.model, choices: [{ index: 0, message: hacerTool ? { role: 'assistant', content: null, tool_calls: tc.map(({ index, ...x }) => x) } : { role: 'assistant', content: texto }, finish_reason: hacerTool ? 'tool_calls' : 'stop' }], usage: { prompt_tokens: 3, completion_tokens: 4, total_tokens: 7 } }));
   }).listen(puerto, '127.0.0.1');
 }
-modelo('groq', 18801, ['qwen/qwen3.8-27b']); modelo('nvidia', 18802, ['minimaxai/minimax-m3.1-flash', 'meta/muse-glimmer-30b', 'nvidia/nemotron-3-ultra-550b-a55b', 'z-ai/glm-5.3']); modelo('hf-local', 18803, []);
+modelo('groq', 18801, ['qwen/qwen3.8-27b']); modelo('nvidia', 18802, ['minimaxai/minimax-m3.1-flash', 'meta/muse-glimmer-30b', 'nvidia/nemotron-3-ultra-550b-a55b', 'z-ai/glm-5.3', 'z-ai/glm-5.3-flash']); modelo('hf-local', 18803, []);
 // Router MVP falso: /mcp, /plugins/*, /almacen, /chat/send
 http.createServer(async (req, res) => {
   const b = req.method === 'POST' ? await leer(req) : {}, clave = req.headers['x-api-key'];

@@ -1,4 +1,4 @@
-import { MODELOS_API } from './respaldo.js';
+import { MODELOS_API, PLAZO_BRIDGE_MS } from './respaldo.js';
 // openclaw.js — auto-reparacion del cableado de OpenClaw (sin tocar HF).
 // openclaw.sh hace `rm -rf $OPENCLAW_HOME` en cada arranque y no recrea el workspace del agente:
 // el gateway responde "This agent's workspace is missing on the gateway host". Aqui se recrea.
@@ -60,7 +60,7 @@ export function sincronizarModelosOpenClaw(modelos, { key = process.env.RIU_API_
   const previo = cfg.models.providers.swecode || {};
   const previos = new Map((Array.isArray(previo.models) ? previo.models : []).filter(x => x && typeof x.id === 'string').map(x => [x.id, x]));
   cfg.models.providers.swecode = {
-    ...previo, baseUrl: ORIGEN_OC, apiKey: key, api: 'openai-completions', timeoutSeconds: 480,
+    ...previo, baseUrl: ORIGEN_OC, apiKey: key, api: 'openai-completions', timeoutSeconds: Math.ceil(PLAZO_BRIDGE_MS / 1000) + 20,  // mismo plazo que el chat YAIWES (BRIDGE_DEADLINE_MS) + margen: OpenClaw recibe el 504 tipado del bridge y reintenta/failover en vez de colgarse 480 s
     models: safeIds.map(id => ({ ...{ name: id, reasoning: false, input: ['text'],
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       contextWindow: 32768, maxTokens: 4096 }, ...(previos.get(id) || {}), id, name: nombres.get(id) || previos.get(id)?.name || id,
