@@ -12,8 +12,9 @@ def main():
         "chat-router/agentes/agentes-listos/**","chat-router/agentes/frameworks/**","chat-router/agentes/investigacion/**",
         "chat-router/chatbot/componentes/**","chat-router/memoria/componentes/**","chat-router/otros/descartados/**",
         "chat-router/otros/Prueba/**","chat-router/motores/motores/descarga-copia/**"]
-    if os.environ.get("BASELINE")=="1":
-        # D-16: modo baseline read-only que exige el DAG en S4_approval.if_missing
+    if os.environ.get("MIRROR_BASELINE")=="1":
+        # D-16/D-20: modo baseline read-only que exige el DAG en S4_approval.if_missing.
+        # D-20: la env se llama MIRROR_BASELINE y no BASELINE porque wiring_check usa BASELINE como RUTA del baseline.
         # ("j7 on main as read-only baseline, mirror skipped"): calcula lo que se mirroriaria
         # y el estado del Space, SIN subir nada. El mirror real queda para j9_remirror.
         n=0;sz=0;pfx=[p[:-3] for p in IGN if p.endswith("/**")]
