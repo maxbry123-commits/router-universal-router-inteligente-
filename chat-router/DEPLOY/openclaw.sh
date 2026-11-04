@@ -185,6 +185,18 @@ try:
         if c and not (prim or "").startswith(prov + "/"): fb.append(c)
     if prim: ad["model"] = {"primary": prim, "fallbacks": fb}
     print("model primary:", prim, "fallbacks:", ",".join(fb) or "-")
+    # A1-3 retry.* (docs.openclaw.ai/concepts/retry): retry.provider es de settings.json (no openclaw.json).
+    # maxRetries acotado + maxRetryDelayMs: retry-after/x-ratelimit-reset se respetan hasta el tope; si el piso es mayor pasa a fallbacks.
+    try:
+        sp = home / ".openclaw" / "settings.json"
+        st = json.loads(sp.read_text()) if sp.exists() else {}
+        rp = st.setdefault("retry", {}).setdefault("provider", {})
+        rp["maxRetries"] = int(os.environ.get("RIU_OC_MAX_RETRIES", "8"))
+        rp["maxRetryDelayMs"] = int(os.environ.get("RIU_OC_MAX_RETRY_DELAY_MS", "60000"))
+        sp.parent.mkdir(mode=0o700, parents=True, exist_ok=True); sp.write_text(json.dumps(st, indent=2))
+        print("retry.provider:", rp)
+    except Exception as e:
+        print("WARN retry.provider no aplicado:", e)
     print("swecode provider:", sum(len(v["models"]) for v in cfg["models"]["providers"].values()), "models; providers:", ",".join(cfg["models"]["providers"]))
 except Exception as e:
     print("WARN swecode provider no aplicado:", e)
