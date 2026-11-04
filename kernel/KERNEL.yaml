@@ -134,5 +134,10 @@ handoff:
     commit: 10e3b5e6480f15140744def81e92770ed67d7714
     ts: '2026-11-04T18:48:35Z'
     run_id: 20261104-kernel01
+  - job: j11_patterns
+    status: PASS
+    commit: 4162ced5ea7f1ca59b0e0dc17156655402406ffc
+    ts: '2026-11-04T18:54:50Z'
+    run_id: 20261104-kernel01
   flags: []
-progress_pct: 18
+progress_pct: 27

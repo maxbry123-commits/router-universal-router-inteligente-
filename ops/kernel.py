@@ -57,6 +57,7 @@ def cmd_apply():
     h["log"].append({"job":job,"status":st,"commit":r.get("commit"),"ts":time.strftime("%FT%TZ",time.gmtime()),"run_id":os.environ.get("RUN_ID")})
     if st!="PASS":h["flags"].append(f"🚩 {job} {st}")
     done=[x["job"] for x in h["log"] if x["status"]=="PASS"]
+    done=[j for j in ORDER if j in done]   # el progreso se mide sobre el DAG, no sobre tareas extra
     h["next"]=next((j for j in ORDER if j not in done),None)
     k["progress_pct"]=int(100*len(done)/len(ORDER))
     save(k)
