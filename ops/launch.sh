@@ -24,4 +24,7 @@ if [ ! -f "ops/$SCRIPT.py" ]; then          # R5: el script se obtiene SIEMPRE d
 fi
 cd "$SRC"
 export PYTHONPATH="$SRC/ops"
-python3 "ops/$SCRIPT.py"
+# D-11: los scripts de la guia importan yaml; su comando solo instalaba huggingface_hub.
+PY="${PYTHON:-python3}"
+$PY -c "import yaml, huggingface_hub" >/dev/null 2>&1 || pip install -q huggingface_hub pyyaml
+exec $PY "ops/$SCRIPT.py"
