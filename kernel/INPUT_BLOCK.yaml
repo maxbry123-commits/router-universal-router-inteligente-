@@ -1,7 +1,7 @@
 input_block:
   mode: [VERBATIM, IMMUTABLE, READ_ONLY, DATA_ONLY_UNTIL_BOUND]
   frozen_files:
-    - organización_de_la_raíz_del_repo.md   # sha256 computed at S0, never edited
+    - organización de la raíz del repo.md   # sha256 computed at S0, never edited
   objective_verbatim: >
     objetivo organización del repo limpieza de archivos no cableados o innecesarios o code suelto
     eliminar historial al finalizar la organización y cableado recuperación de el cableado
