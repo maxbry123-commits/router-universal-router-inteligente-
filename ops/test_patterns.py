@@ -9,14 +9,14 @@ def t(name,cond,detail=""):
     ok=ok and bool(cond)
 def main():
     t("canonical_has_6_categories",len(PATTERNS)==6,list(PATTERNS))
-    t("canonical_covers_legacy5",set(LEGACY_ALIASES)<=set(PATTERNS),LEGACY_ALIASES)
+    t("canonical_covers_legacy5",all(v in PATTERNS for v in LEGACY_ALIASES.values()) and set(LEGACY_ALIASES)=={"environment","network"},LEGACY_ALIASES)
     t("http_covers_network",LEGACY_ALIASES["network"] in PATTERNS)
     t("environment_maps_to_endpoints",LEGACY_ALIASES["environment"] in PATTERNS)
     ops=pathlib.Path(__file__).parent
     legacy=[p.name for p in ops.glob("*.py") if re.search(r'^\s*patterns\s*=\s*\{',p.read_text(errors="ignore"),re.M) and p.name not in("patterns.py","j11_patterns.py")]
     t("legacy_inline_catalogs_declared",isinstance(legacy,list),legacy)
-    scanners=[p.name for p in ops.glob("j*.py") if "PATTERNS" in p.read_text(errors="ignore") or "patterns" in p.read_text(errors="ignore")]
-    t("new_scanners_use_canonical",all(n in("j11_patterns.py",) or True for n in scanners),scanners)
+    scanners=[p.name for p in ops.glob("j*.py") if "from patterns import" in p.read_text(errors="ignore")]
+    t("new_scanners_use_canonical",scanners==["j11_patterns.py"],scanners)
     print("RESULT:", "PASS" if ok else "FAIL")
     return 0 if ok else 1
 if __name__=="__main__":sys.exit(main())
