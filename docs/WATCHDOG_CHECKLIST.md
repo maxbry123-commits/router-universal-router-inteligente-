@@ -1,10 +1,10 @@
 # WATCHDOG CHECKLIST RIU / OpenClaw / Yaiwes
-Ciclo: 2026-11-04 03:15 EST
-Commit router: d82217f15ee29c1fca56a936ef8970320d69c827
+Ciclo: 2026-11-04 08:10 EST
+Commit router: 976a4df595cfe36abcb52e9b64225412e1f801bb
 Rama: reorganizacion
 
 ## Estado Ixx
-- I01 Checkpoint/reinicio MVP: CERRADO (health ok, latido/autoactualizacion AL_DIA, commit d82217f, checkpoint_coda_disponible)
+- I01 Checkpoint/reinicio MVP: CERRADO (health ok, latido/autoactualizacion AL_DIA, commit 976a4df, checkpoint_coda_disponible)
 - I02 5 agentes cableados + harness DeepSeek: GAPS (permisos.agentes no confirmados; deepseek proveedores limitados en plan personal)
 - I03 SWE CODE free / SWEN CODE autónomo: BLOQUEADO (modelos swecode-* listados pero no permitidos en plan personal; error "modelo no permitido")
 - I04 Modelos selectores: CERRADO (v1/models OK; /chat/send groq/openai/gpt-oss-120b, groq/qwen/qwen3.8-27b y nvidia/minimaxai/minimax-m3.1-flash OK)
@@ -18,11 +18,11 @@ Rama: reorganizacion
 - I12 Watchdog: CERRADO (este ciclo ejecutado y checklist actualizada)
 
 ## Tests ciclo
-1. Health: OK (status ok, commit d82217f, banco_abierto true, AL_DIA)
+1. Health: OK (status ok, commit 976a4df, banco_abierto true, AL_DIA)
 2. MCP initialize + tools/list: OK
-3. /chat/send groq/openai/gpt-oss-120b: OK (pong, ~599ms)
-4. /chat/send groq/qwen/qwen3.8-27b: OK (pong, ~652ms)
-5. /chat/send nvidia/minimaxai/minimax-m3.1-flash: OK (pong, ~713ms)
+3. /chat/send groq/openai/gpt-oss-120b: OK (harness reply, ~1029ms)
+4. /chat/send groq/qwen/qwen3.8-27b: OK (harness reply, ~1683ms)
+5. /chat/send nvidia/minimaxai/minimax-m3.1-flash: OK (harness reply, ~13837ms)
 6. MCP chat + github_leer: OK
 7. UI Vercel: 200 OK
 
