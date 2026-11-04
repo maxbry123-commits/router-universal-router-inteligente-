@@ -58,8 +58,14 @@ def _ruta_banco_swe():
     Esa variable se define solo en el proceso Node, NO en el proceso Python.
     La ruta anterior bajo web-bridge/state no correspondía al banco persistido.
     """
-    return os.environ.get("RIU_BANCO_SWE") or os.path.join(
-        os.environ.get("BRIDGE_STATE_DIR") or "/tmp/state", "banco-swe.bin")
+    if os.environ.get("RIU_BANCO_SWE"):
+        return os.environ["RIU_BANCO_SWE"]
+    d = os.environ.get("BRIDGE_STATE_DIR") or "/tmp/state"
+    # B1: el bridge (estado_dir.js) usa /data en HF si es escribible y la variable falta o es tmp
+    if os.environ.get("BRIDGE_STATE_DIR_FIJO") != "1" and (d == "/tmp" or d.startswith("/tmp/")) \
+            and os.path.isdir("/data") and os.access("/data", os.W_OK):
+        d = "/data"
+    return os.path.join(d, "banco-swe.bin")
 
 
 def _banco_compartido():

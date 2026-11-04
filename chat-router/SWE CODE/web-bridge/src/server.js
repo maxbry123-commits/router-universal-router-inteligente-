@@ -4,6 +4,7 @@
 //   swecode-consulta/plan -> fan-out 3 modelos + sintesis Qwen3.8Max
 //   otros modos -> objetivo unico (qwen38max por defecto)
 // Errores tipados: SESSION_EXPIRED | SELECTOR_BROKEN | CF_CHALLENGE | RATE_LIMITED
+import { ESTADO_DIR_INFO } from './estado_dir.js';  // B1: primero, fija BRIDGE_STATE_DIR=/data en HF
 import express from 'express';
 import { createRequire } from 'node:module';
 import { consultarWeb, salud } from './motor.js';
@@ -212,7 +213,7 @@ app.get('/health', async (req, res) => {
     autoactualizacion: { bridge_cargado: SHA_BRIDGE_ARRANQUE, checkout_git: shaClon,
       recarga_pendiente: !!(shaClon && SHA_BRIDGE_ARRANQUE && shaClon !== SHA_BRIDGE_ARRANQUE),
       router: autoRouter },
-    ...(completo ? { state_dir: process.env.BRIDGE_STATE_DIR || './state' } : {}) });
+    ...(completo ? { state_dir: process.env.BRIDGE_STATE_DIR || './state', state_dir_info: ESTADO_DIR_INFO } : {}) });
 });
 
 app.get('/v1/web/diagnostico',async(_req,res)=>{
