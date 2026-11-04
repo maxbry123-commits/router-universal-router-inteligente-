@@ -1,0 +1,694 @@
+generated_by: ops/make_registry.py
+source_graph: j2_graph
+rule: todo pending_audit hasta verificacion con evidencia (§5)
+connections:
+- id: CON-001
+  from: agents
+  to: backend
+  via: gateway_pending_audit
+  provides: backend
+  requires: agents
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/agentes/adaptadores/tests/test_adaptadores_disponibilidad_estados.py
+    - chat-router/chat/backend/mvp/externos.py
+  - - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/examples/03_github_workflows/03_todo_management/agent_script.py
+    - chat-router/chat/backend/mvp/prompt.py
+  observed_edges: 2
+- id: CON-002
+  from: agents
+  to: engines
+  via: gateway_pending_audit
+  provides: engines
+  requires: agents
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/agentes/agentes-listos/SWE-agent/SWE-agent-main/tools/windowed/lib/flake8_utils.py
+    - chat-router/motores/fabrica-motores/registry.py
+  - - chat-router/agentes/agentes-listos/SWE-agent/SWE-agent-main/tools/windowed/lib/windowed_file.py
+    - chat-router/motores/fabrica-motores/registry.py
+  - - chat-router/agentes/frameworks/Prefect/tests/engine/reliability/test_sync_async.py
+    - chat-router/motores/evidencia/tests/__init__.py
+  - - chat-router/agentes/frameworks/Prefect/tests/engine/reliability/test_sync_async.py
+    - chat-router/motores/fabrica-motores/tests/__init__.py
+  - - chat-router/agentes/frameworks/Temporal-Python-SDK/tests/test_envconfig.py
+    - chat-router/motores/evidencia/tests/__init__.py
+  observed_edges: 14
+- id: CON-003
+  from: agents
+  to: fichas
+  via: gateway_pending_audit
+  provides: fichas
+  requires: agents
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/agentes/adaptadores/tests/test_adaptadores_disponibilidad_estados.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  observed_edges: 1
+- id: CON-004
+  from: agents
+  to: harness
+  via: gateway_pending_audit
+  provides: harness
+  requires: agents
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/agentes/agentes-listos/SWE-agent/SWE-agent-main/sweagent/inspector/static.py
+    - chat-router/chat/backend/deepseek_harness/server.py
+  - - chat-router/agentes/agentes-listos/codex/codex-main/scripts/mcp_conformance/review_regressions.py
+    - chat-router/chat/backend/deepseek_harness/server.py
+  - - chat-router/agentes/agentes-listos/codex/codex-main/scripts/mcp_conformance/test_server.py
+    - chat-router/chat/backend/deepseek_harness/server.py
+  - - chat-router/agentes/frameworks/Prefect/src/integrations/prefect-azure/tests/test_credentials.py
+    - chat-router/chat/backend/deepseek_harness/conftest.py
+  - - chat-router/agentes/frameworks/Prefect/src/integrations/prefect-dbt/tests/core/test_freshness.py
+    - chat-router/chat/backend/deepseek_harness/conftest.py
+  observed_edges: 28
+- id: CON-005
+  from: agents
+  to: mvp
+  via: gateway_pending_audit
+  provides: mvp
+  requires: agents
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/agentes/adaptadores/_comun.py
+    - router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py
+  - - chat-router/agentes/adaptadores/_comun.py
+    - router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py
+  - - chat-router/agentes/adaptadores/_comun.py
+    - router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py
+  - - chat-router/agentes/adaptadores/_comun.py
+    - router-mvp/router-componentes/pydantic/pydantic/json.py
+  - - chat-router/agentes/adaptadores/_comun.py
+    - router-mvp/router-componentes/pydantic/pydantic/v1/json.py
+  observed_edges: 62234
+- id: CON-006
+  from: agents
+  to: ops
+  via: gateway_pending_audit
+  provides: ops
+  requires: agents
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/agentes/agentes-yaiwes/agent-microkernel/kernel/runner.py
+    - ops/kernel.py
+  - - chat-router/agentes/agentes-yaiwes/agents-yaiwes/auditor_agent.py
+    - ops/common.py
+  - - chat-router/agentes/agentes-yaiwes/agents-yaiwes/auditor_agent.py
+    - ops/kernel.py
+  - - chat-router/agentes/agentes-yaiwes/agents-yaiwes/chain.py
+    - ops/common.py
+  - - chat-router/agentes/agentes-yaiwes/agents-yaiwes/common/probe_keys.py
+    - ops/common.py
+  observed_edges: 16
+- id: CON-007
+  from: agents
+  to: plugins
+  via: gateway_pending_audit
+  provides: plugins
+  requires: agents
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/agentes/orquestacion/orquestador/deploy.py
+    - chat-router/plugins/__init__.py
+  - - chat-router/agentes/orquestacion/orquestador/deploy.py
+    - chat-router/plugins/router_api_cliente.py
+  - - chat-router/agentes/orquestacion/orquestador/plugin.py
+    - chat-router/plugins/router_api_cliente.py
+  - - chat-router/agentes/orquestacion/orquestador/sandbox.py
+    - chat-router/plugins/__init__.py
+  - - chat-router/agentes/orquestacion/orquestador/sandbox.py
+    - chat-router/plugins/router_api_cliente.py
+  observed_edges: 6
+- id: CON-008
+  from: backend
+  to: agents
+  via: gateway_pending_audit
+  provides: agents
+  requires: backend
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/chat/backend/mvp/app.py
+    - chat-router/agentes/adaptadores/modelos.py
+  - - chat-router/chat/backend/mvp/app.py
+    - chat-router/agentes/agentes-listos/CLI-Anything/code/shotcut/agent-harness/cli_anything/shotcut/utils/time.py
+  - - chat-router/chat/backend/mvp/app.py
+    - chat-router/agentes/agentes-listos/openhands-automation/code/openhands/automation/utils/time.py
+  - - chat-router/chat/backend/mvp/app.py
+    - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
+  - - chat-router/chat/backend/mvp/app.py
+    - chat-router/agentes/agentes-listos/strix/code/strix/telemetry/logging.py
+  observed_edges: 1362
+- id: CON-009
+  from: backend
+  to: fichas
+  via: gateway_pending_audit
+  provides: fichas
+  requires: backend
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/chat/backend/mvp/app.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  - - chat-router/chat/backend/mvp/compute.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  - - chat-router/chat/backend/mvp/control.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  - - chat-router/chat/backend/mvp/estado_tarea.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  - - chat-router/chat/backend/mvp/externos.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  observed_edges: 64
+- id: CON-010
+  from: backend
+  to: mvp
+  via: gateway_pending_audit
+  provides: mvp
+  requires: backend
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/chat/backend/mvp/app.py
+    - router-mvp/router-componentes/MCP-Python-SDK/docs_src/logging/__init__.py
+  - - chat-router/chat/backend/mvp/app.py
+    - router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py
+  - - chat-router/chat/backend/mvp/app.py
+    - router-mvp/router-componentes/MCP-Python-SDK/src/mcp/server/mcpserver/utilities/logging.py
+  - - chat-router/chat/backend/mvp/app.py
+    - router-mvp/router-componentes/cryptography/cryptography/src/cryptography/hazmat/primitives/hmac.py
+  - - chat-router/chat/backend/mvp/app.py
+    - router-mvp/router-componentes/fastapi/fastapi/__init__.py
+  observed_edges: 616
+- id: CON-011
+  from: building
+  to: agents
+  via: gateway_pending_audit
+  provides: agents
+  requires: building
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/raiz_router/sdk_qwen/Qwen-Live-Harness/code/integration-tests/test-fixtures/qwen-tui-pty.py
+    - chat-router/agentes/investigacion/agents-deep-research/deep_researcher/utils/os.py
+  - - router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py
+    - chat-router/agentes/agentes-listos/CLI-Anything/code/shotcut/agent-harness/cli_anything/shotcut/utils/time.py
+  - - router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py
+    - chat-router/agentes/agentes-listos/openhands-automation/code/openhands/automation/utils/time.py
+  - - router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py
+    - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
+  - - router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py
+    - chat-router/agentes/frameworks/Prefect/tests/fixtures/time.py
+  observed_edges: 113
+- id: CON-012
+  from: building
+  to: mvp
+  via: gateway_pending_audit
+  provides: mvp
+  requires: building
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/raiz_router/sdk_qwen/Qwen-Live-Harness/code/integration-tests/test-fixtures/qwen-tui-pty.py
+    - router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py
+  - - router-mvp/raiz_router/sdk_qwen/Qwen-Live-Harness/code/integration-tests/test-fixtures/qwen-tui-pty.py
+    - router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py
+  - - router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py
+    - router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py
+  - - router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py
+    - router-mvp/router-componentes/pydantic/pydantic/json.py
+  - - router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py
+    - router-mvp/router-componentes/pydantic/pydantic/v1/json.py
+  observed_edges: 109
+- id: CON-013
+  from: chat
+  to: agents
+  via: gateway_pending_audit
+  provides: agents
+  requires: chat
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/chat/frontend/api/ecc_motor.py
+    - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
+  - - chat-router/chat/frontend/api/ecc_motor.py
+    - chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py
+  observed_edges: 2
+- id: CON-014
+  from: chat
+  to: mvp
+  via: gateway_pending_audit
+  provides: mvp
+  requires: chat
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/chat/frontend/api/ecc_motor.py
+    - router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py
+  - - chat-router/chat/frontend/api/ecc_motor.py
+    - router-mvp/router-componentes/pydantic/pydantic/json.py
+  - - chat-router/chat/frontend/api/ecc_motor.py
+    - router-mvp/router-componentes/pydantic/pydantic/v1/json.py
+  observed_edges: 3
+- id: CON-015
+  from: engines
+  to: agents
+  via: gateway_pending_audit
+  provides: agents
+  requires: engines
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/motores/evidencia/buscadores.py
+    - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/datetime.py
+  - - chat-router/motores/evidencia/buscadores.py
+    - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
+  - - chat-router/motores/evidencia/buscadores.py
+    - chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py
+  - - chat-router/motores/evidencia/buscadores.py
+    - chat-router/agentes/investigacion/agents-deep-research/deep_researcher/utils/os.py
+  - - chat-router/motores/evidencia/parser.py
+    - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
+  observed_edges: 174
+- id: CON-016
+  from: engines
+  to: mvp
+  via: gateway_pending_audit
+  provides: mvp
+  requires: engines
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/motores/evidencia/buscadores.py
+    - router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py
+  - - chat-router/motores/evidencia/buscadores.py
+    - router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py
+  - - chat-router/motores/evidencia/buscadores.py
+    - router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py
+  - - chat-router/motores/evidencia/buscadores.py
+    - router-mvp/router-componentes/pydantic/pydantic/json.py
+  - - chat-router/motores/evidencia/buscadores.py
+    - router-mvp/router-componentes/pydantic/pydantic/v1/json.py
+  observed_edges: 110
+- id: CON-017
+  from: fichas
+  to: agents
+  via: gateway_pending_audit
+  provides: agents
+  requires: fichas
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/fichas/fichas_qwen/modos/apply_addon.py
+    - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
+  - - router-mvp/fichas/fichas_qwen/modos/apply_addon.py
+    - chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py
+  - - router-mvp/fichas/fichas_qwen/modos/check_integration.py
+    - chat-router/agentes/investigacion/agents-deep-research/deep_researcher/utils/os.py
+  - - router-mvp/fichas/fichas_qwen/modos/programador.py
+    - chat-router/agentes/agentes-listos/CLI-Anything/code/shotcut/agent-harness/cli_anything/shotcut/utils/time.py
+  - - router-mvp/fichas/fichas_qwen/modos/programador.py
+    - chat-router/agentes/agentes-listos/openhands-automation/code/openhands/automation/utils/time.py
+  observed_edges: 217
+- id: CON-018
+  from: fichas
+  to: backend
+  via: gateway_pending_audit
+  provides: backend
+  requires: fichas
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/fichas/fichas_qwen/motor_json/pruebas_motor.py
+    - chat-router/chat/backend/mvp/herramientas/motor_cli.py
+  - - router-mvp/fichas/fichas_qwen/motor_json/pruebas_motor.py
+    - chat-router/chat/backend/mvp/herramientas/yaiwes_motor.py
+  - - router-mvp/fichas/fichas_qwen/plugin.py
+    - chat-router/chat/backend/mvp/herramientas/modos/loop_controller.py
+  - - router-mvp/fichas/fichas_qwen/plugin.py
+    - chat-router/chat/backend/mvp/herramientas/modos/mode_router.py
+  - - router-mvp/fichas/fichas_qwen/plugin.py
+    - chat-router/chat/backend/mvp/herramientas/modos/motor_objetivo.py
+  observed_edges: 16
+- id: CON-019
+  from: fichas
+  to: harness
+  via: gateway_pending_audit
+  provides: harness
+  requires: fichas
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py
+    - chat-router/chat/backend/deepseek_harness/plugin.py
+  observed_edges: 1
+- id: CON-020
+  from: fichas
+  to: mvp
+  via: gateway_pending_audit
+  provides: mvp
+  requires: fichas
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/fichas/fichas_qwen/modos/apply_addon.py
+    - router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py
+  - - router-mvp/fichas/fichas_qwen/modos/apply_addon.py
+    - router-mvp/router-componentes/pydantic/pydantic/json.py
+  - - router-mvp/fichas/fichas_qwen/modos/apply_addon.py
+    - router-mvp/router-componentes/pydantic/pydantic/v1/json.py
+  - - router-mvp/fichas/fichas_qwen/modos/check_integration.py
+    - router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py
+  - - router-mvp/fichas/fichas_qwen/modos/check_integration.py
+    - router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py
+  observed_edges: 120
+- id: CON-021
+  from: fichas
+  to: plugins
+  via: gateway_pending_audit
+  provides: plugins
+  requires: fichas
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py
+    - chat-router/plugins/connectivity/plugin.py
+  - - router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py
+    - chat-router/plugins/hf_compute/plugin.py
+  - - router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py
+    - chat-router/plugins/hf_storage/plugin.py
+  - - router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py
+    - chat-router/plugins/lifeguard/plugin.py
+  - - router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py
+    - chat-router/plugins/puente_chat/plugin.py
+  observed_edges: 27
+- id: CON-022
+  from: harness
+  to: agents
+  via: gateway_pending_audit
+  provides: agents
+  requires: harness
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/chat/backend/deepseek_harness/plugin.py
+    - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
+  - - chat-router/chat/backend/deepseek_harness/plugin.py
+    - chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py
+  - - chat-router/chat/backend/deepseek_harness/plugin.py
+    - chat-router/agentes/frameworks/langgraph/libs/langgraph/langgraph/typing.py
+  - - chat-router/chat/backend/deepseek_harness/plugin.py
+    - chat-router/agentes/investigacion/agents-deep-research/deep_researcher/utils/os.py
+  - - chat-router/chat/backend/deepseek_harness/server.py
+    - chat-router/agentes/adaptadores/__init__.py
+  observed_edges: 44
+- id: CON-023
+  from: harness
+  to: backend
+  via: gateway_pending_audit
+  provides: backend
+  requires: harness
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/chat/backend/deepseek_harness/server.py
+    - chat-router/chat/backend/mvp/prompt.py
+  - - chat-router/chat/backend/deepseek_harness/test_swe_herramientas.py
+    - chat-router/chat/backend/mvp/harness_client.py
+  observed_edges: 2
+- id: CON-024
+  from: harness
+  to: fichas
+  via: gateway_pending_audit
+  provides: fichas
+  requires: harness
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/chat/backend/deepseek_harness/server.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  - - chat-router/chat/backend/deepseek_harness/test_swe_herramientas.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  observed_edges: 2
+- id: CON-025
+  from: harness
+  to: mvp
+  via: gateway_pending_audit
+  provides: mvp
+  requires: harness
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/chat/backend/deepseek_harness/plugin.py
+    - router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py
+  - - chat-router/chat/backend/deepseek_harness/plugin.py
+    - router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py
+  - - chat-router/chat/backend/deepseek_harness/plugin.py
+    - router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py
+  - - chat-router/chat/backend/deepseek_harness/plugin.py
+    - router-mvp/router-componentes/pydantic/pydantic/json.py
+  - - chat-router/chat/backend/deepseek_harness/plugin.py
+    - router-mvp/router-componentes/pydantic/pydantic/typing.py
+  observed_edges: 44
+- id: CON-026
+  from: harness
+  to: plugins
+  via: gateway_pending_audit
+  provides: plugins
+  requires: harness
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/chat/backend/deepseek_harness/plugin.py
+    - chat-router/plugins/puente_chat/plugin.py
+  - - chat-router/chat/backend/deepseek_harness/server.py
+    - chat-router/plugins/router_api_cliente.py
+  observed_edges: 2
+- id: CON-027
+  from: mvp
+  to: agents
+  via: gateway_pending_audit
+  provides: agents
+  requires: mvp
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/router-componentes/MCP-Python-SDK/.github/actions/conformance/client.py
+    - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
+  - - router-mvp/router-componentes/MCP-Python-SDK/.github/actions/conformance/client.py
+    - chat-router/agentes/agentes-listos/strix/code/strix/telemetry/logging.py
+  - - router-mvp/router-componentes/MCP-Python-SDK/.github/actions/conformance/client.py
+    - chat-router/agentes/frameworks/Prefect/src/prefect/_internal/pydantic/__init__.py
+  - - router-mvp/router-componentes/MCP-Python-SDK/.github/actions/conformance/client.py
+    - chat-router/agentes/frameworks/Prefect/src/prefect/concurrency/asyncio.py
+  - - router-mvp/router-componentes/MCP-Python-SDK/.github/actions/conformance/client.py
+    - chat-router/agentes/frameworks/Prefect/src/prefect/concurrency/v1/asyncio.py
+  observed_edges: 34688
+- id: CON-028
+  from: mvp
+  to: backend
+  via: gateway_pending_audit
+  provides: backend
+  requires: mvp
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/router/integration/chat_mvp/swen_mcp.py
+    - chat-router/chat/backend/mvp/app.py
+  - - router-mvp/router/integration/chat_mvp/swen_mcp.py
+    - chat-router/chat/backend/mvp/externos.py
+  observed_edges: 2
+- id: CON-029
+  from: mvp
+  to: fichas
+  via: gateway_pending_audit
+  provides: fichas
+  requires: mvp
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/router/integration/chat_mvp/swen_mcp.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  - - router-mvp/router/tests/test_team5_simple.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  observed_edges: 2
+- id: CON-030
+  from: mvp
+  to: harness
+  via: gateway_pending_audit
+  provides: harness
+  requires: mvp
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/router-componentes/httpx/tests/test_exceptions.py
+    - chat-router/chat/backend/deepseek_harness/conftest.py
+  - - router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/test_concurrency.py
+    - chat-router/chat/backend/deepseek_harness/conftest.py
+  - - router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/test_e2e.py
+    - chat-router/chat/backend/deepseek_harness/conftest.py
+  - - router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/test_mvcc.py
+    - chat-router/chat/backend/deepseek_harness/conftest.py
+  observed_edges: 4
+- id: CON-031
+  from: mvp
+  to: ops
+  via: gateway_pending_audit
+  provides: ops
+  requires: mvp
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/flow/_test_crash_handler.py
+    - ops/common.py
+  - - router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/flow/effects_common.py
+    - ops/common.py
+  - - router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/flow/test_access_del_entity.py
+    - ops/common.py
+  - - router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/flow/test_aggregation.py
+    - ops/common.py
+  - - router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/flow/test_all_shortest_paths.py
+    - ops/common.py
+  observed_edges: 136
+- id: CON-032
+  from: mvp
+  to: plugins
+  via: gateway_pending_audit
+  provides: plugins
+  requires: mvp
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - router-mvp/router/tests/smoke_harness_qwen_read.py
+    - chat-router/plugins/puente_chat/plugin.py
+  - - router-mvp/router/tests/test_plugins_bloque3.py
+    - chat-router/plugins/connectivity/__init__.py
+  - - router-mvp/router/tests/test_plugins_bloque3.py
+    - chat-router/plugins/connectivity/plugin.py
+  - - router-mvp/router/tests/test_ssh_bridge.py
+    - chat-router/plugins/ssh_bridge/__init__.py
+  - - router-mvp/router/tests/test_ssh_bridge.py
+    - chat-router/plugins/ssh_bridge/plugin.py
+  observed_edges: 5
+- id: CON-033
+  from: ops
+  to: agents
+  via: gateway_pending_audit
+  provides: agents
+  requires: ops
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - ops/common.py
+    - chat-router/agentes/agentes-listos/CLI-Anything/code/shotcut/agent-harness/cli_anything/shotcut/utils/time.py
+  - - ops/common.py
+    - chat-router/agentes/agentes-listos/openhands-automation/code/openhands/automation/utils/time.py
+  - - ops/common.py
+    - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
+  - - ops/common.py
+    - chat-router/agentes/frameworks/Prefect/tests/fixtures/time.py
+  - - ops/common.py
+    - chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py
+  observed_edges: 189
+- id: CON-034
+  from: ops
+  to: mvp
+  via: gateway_pending_audit
+  provides: mvp
+  requires: ops
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - ops/common.py
+    - router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py
+  - - ops/common.py
+    - router-mvp/router-componentes/huggingface_hub/src/huggingface_hub/__init__.py
+  - - ops/common.py
+    - router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py
+  - - ops/common.py
+    - router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py
+  - - ops/common.py
+    - router-mvp/router-componentes/pydantic/pydantic/json.py
+  observed_edges: 85
+- id: CON-035
+  from: plugins
+  to: agents
+  via: gateway_pending_audit
+  provides: agents
+  requires: plugins
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/plugins/connectivity/plugin.py
+    - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
+  - - chat-router/plugins/connectivity/plugin.py
+    - chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py
+  - - chat-router/plugins/connectivity/plugin.py
+    - chat-router/agentes/frameworks/langgraph/libs/langgraph/langgraph/typing.py
+  - - chat-router/plugins/connectivity/plugin.py
+    - chat-router/agentes/investigacion/agents-deep-research/deep_researcher/utils/os.py
+  - - chat-router/plugins/hf_compute/plugin.py
+    - chat-router/agentes/agentes-listos/CLI-Anything/code/lldb/agent-harness/cli_anything/lldb/core/inspect.py
+  observed_edges: 332
+- id: CON-036
+  from: plugins
+  to: backend
+  via: gateway_pending_audit
+  provides: backend
+  requires: plugins
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/plugins/hf_storage/plugin.py
+    - chat-router/chat/backend/mvp/app.py
+  - - chat-router/plugins/puente_chat/plugin.py
+    - chat-router/chat/backend/mvp/prompt.py
+  observed_edges: 2
+- id: CON-037
+  from: plugins
+  to: fichas
+  via: gateway_pending_audit
+  provides: fichas
+  requires: plugins
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/plugins/hf_storage/plugin.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  - - chat-router/plugins/puente_chat/herramientas.py
+    - router-mvp/fichas/fichas_qwen/plugin.py
+  - - chat-router/plugins/puente_chat/plugin.py
+    - router-mvp/fichas/fichas_qwen/mvp.py
+  - - chat-router/plugins/puente_chat/plugin.py
+    - router-mvp/fichas/fichas_qwen/plugin.py
+  - - chat-router/plugins/puente_chat/tests/test_capacidad.py
+    - router-mvp/fichas/fichas_qwen/plugin.py
+  observed_edges: 5
+- id: CON-038
+  from: plugins
+  to: mvp
+  via: gateway_pending_audit
+  provides: mvp
+  requires: plugins
+  status: pending_audit
+  evidence: null
+  observed_paths:
+  - - chat-router/plugins/connectivity/plugin.py
+    - router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py
+  - - chat-router/plugins/connectivity/plugin.py
+    - router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py
+  - - chat-router/plugins/connectivity/plugin.py
+    - router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py
+  - - chat-router/plugins/connectivity/plugin.py
+    - router-mvp/router-componentes/pydantic/pydantic/json.py
+  - - chat-router/plugins/connectivity/plugin.py
+    - router-mvp/router-componentes/pydantic/pydantic/typing.py
+  observed_edges: 148
