@@ -603,9 +603,9 @@ SISTEMA += ' Tienes groq_agente(nombre, mensaje) para delegar en un agente Groq 
 # El Harness (plugin.py) inyecta LLM_CALL (llm_call -> HTTP -> Ficha 4) y LLM_NV (_llamar_api nvidia, claves 2-5).
 LLM_CALL = None
 LLM_NV = None
-NV_CODIGO = [('z-ai/glm-5.3', 'GLM-5.3', 'Codigo: 1o de la comunidad (SWE-bench, LMArena WebDev)'),
-             ('stepfun-ai/step-5-preview', 'Step 5 Preview', 'Codigo rapido: 2o en uso real OpenRouter'),
-             ('deepseek-ai/deepseek-v4.1-flash', 'DeepSeek V4.1 Flash', 'Codigo: 3a opcion, solo si responde en <30 s')]
+NV_CODIGO = [('stepfun-ai/step-5-preview', 'Step 5 Preview', 'Codigo: 1o (cadena A1; glm-5.3 al final por 410)'),
+             ('deepseek-ai/deepseek-v4.1-flash', 'DeepSeek V4.1 Flash', 'Codigo: 2o, solo si responde en <30 s'),
+             ('z-ai/glm-5.3', 'GLM-5.3', 'Codigo: 3o; 410/404 = saltar sin reintentar')]
 NV_TOPE = {'deepseek-ai/deepseek-v4.1-flash': 30}  # DeepSeek V4.1 Flash dio timeout >90 s el 16-oct: tope 30 s y se salta
 
 
@@ -681,7 +681,7 @@ def _t_recurso(a):
 
 
 def _t_nvcodigo(a):
-    # cadena: GLM-5.3 -> Step 5 Preview -> DeepSeek V4.1 Flash (<30 s); el modelo pedido va primero
+    # cadena A1: Step 5 -> DeepSeek V4.1 Flash -> GLM-5.3; 410/404 saltan al siguiente sin reintentar el mismo
     ids = [x[0] for x in NV_CODIGO]
     m = str(a.get('modelo') or '')
     orden = ([m] if m in ids else []) + [x for x in ids if x != m]
@@ -690,6 +690,8 @@ def _t_nvcodigo(a):
         r = llamar_recurso('nvcode:' + mod_, 'Eres un programador senior. Responde con codigo correcto y breve, en espanol.', a.get('mensaje'))
         if not str(r).startswith('ERROR') and str(r).strip():
             return r
+        if 'HTTP 410' in str(r) or 'HTTP 404' in str(r):
+            continue  # modelo retirado/renombrado: siguiente id, sin reintento
     return r
 
 
@@ -699,7 +701,7 @@ def _t_enlazar(a):
 
 
 TOOLS.extend([
-    _fn('nvidia_codigo', 'Tool NVIDIA de codigo (GLM-5.3 por defecto; si falla Step 5 Preview y luego DeepSeek V4.1 Flash): escribe o revisa codigo y devuelve la respuesta. modelo opcional: z-ai/glm-5.3, stepfun-ai/step-5-preview o deepseek-ai/deepseek-v4.1-flash.', {'mensaje': S, 'modelo': S}, ['mensaje']),
+    _fn('nvidia_codigo', 'Tool NVIDIA de codigo (Step 5 Preview -> DeepSeek V4.1 Flash -> GLM-5.3; 410/404 salta): escribe o revisa codigo. modelo opcional: stepfun-ai/step-5-preview, deepseek-ai/deepseek-v4.1-flash o z-ai/glm-5.3.', {'mensaje': S, 'modelo': S}, ['mensaje']),
     _fn('recurso_llm', 'Consulta un recurso LLM del staff de tools (ej. ficha4:ficha-qwen38max, nvcode:z-ai/glm-5.3, groq:openai/gpt-oss-120b) y devuelve su respuesta.', {'recurso': S, 'mensaje': S}, ['recurso', 'mensaje']),
     _fn('agente_enlazar', 'Enlaza un recurso LLM (modelo de la Ficha 4, NVIDIA codigo o Groq) a un agente del staff; si el agente no existe lo crea. Luego usa groq_agente(nombre, mensaje).', {'nombre': S, 'recurso': S, 'sistema': S}, ['nombre', 'recurso']),
 ])

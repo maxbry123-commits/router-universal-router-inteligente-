@@ -470,9 +470,9 @@ def _herr():
 
 
 _BUENA = {}
-_NV_IDX_CHAT = (0,)  # NVIDIA_API_KEY_1: ficha NVIDIA del chat (Glimmer / Nemotron 3 Super)
-_NV_IDX_CODIGO = (1, 2, 3, 4)  # NVIDIA_API_KEY_2..5: ficha de tools NVIDIA de codigo
-_NV_CODIGO = ('z-ai/glm-5.3', 'stepfun-ai/step-5-preview', 'deepseek-ai/deepseek-v4.1-flash')
+_NV_IDX_CHAT = ()  # vacio = todas las NVIDIA_API_KEY_* (chat: least-used / round-robin sobre el pool)
+_NV_IDX_CODIGO = ()  # vacio = todas las claves tambien para tools de codigo (~40 RPM/clave)
+_NV_CODIGO = ('stepfun-ai/step-5-preview', 'deepseek-ai/deepseek-v4.1-flash', 'z-ai/glm-5.3')  # glm-5.3 al final; 410 -> saltar
 _NEMO_ULTRA = 'nvidia/nemotron-3-ultra-550b-a55b'  # ficha Nemotron: Ultra primero; 503/404/410 -> Super (FICHAS) sin que el usuario haga nada
 _NEMO_ULTRA_KO = {'hasta': 0.0}  # Ultra caido: 10 min directo a Super para no pagar su 503 en cada mensaje
 
@@ -889,10 +889,13 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
         claves = providers.env_keys(proveedor)
         base = providers.base_url(proveedor)
     bk = proveedor
-    if proveedor == 'nvidia' and claves:  # ficha NVIDIA del chat: 1 sola clave; tool NVIDIA de codigo: las otras 4
+    if proveedor == 'nvidia' and modelo.startswith('nvidia/nvidia/'):
+        modelo = modelo[len('nvidia/'):]  # strip prefijo duplicado nvidia/nvidia/...
+    if proveedor == 'nvidia' and claves:  # pool completo de claves (chat y codigo); idxs vacios = todas
         grupo = 'codigo' if modelo in _NV_CODIGO else 'chat'
-        sel = [claves[i] for i in (_NV_IDX_CODIGO if grupo == 'codigo' else _NV_IDX_CHAT) if i < len(claves)]
-        claves, bk = (sel or claves[:1]), 'nvidia:' + grupo
+        idxs = _NV_IDX_CODIGO if grupo == 'codigo' else _NV_IDX_CHAT
+        sel = [claves[i] for i in idxs if i < len(claves)] if idxs else list(claves)
+        claves, bk = (sel or list(claves)), 'nvidia:' + grupo
     if not claves or not base:
         return 0, {'error': 'SIN_CLAVES_' + proveedor.upper()}
     fin = time.monotonic() + tope
@@ -3053,7 +3056,7 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
                 'tools': [t['function']['name'] for t in h.TOOLS], 'agentes': h.groq_pool(), 'recursos': h.recursos_llm(), 'max': h.GROQ_MAX,
                 'claves': {'github': bool(h._token_gh()) if not payload.get('rapido') else None, 'hf': bool(h._token_hf()) if not payload.get('rapido') else None,
                            'groq': len(h._llaves('groq', h.GROQ_ENV)), 'nvidia': _nvk,
-                           'nvidia_chat': min(_nvk, len(_NV_IDX_CHAT)), 'nvidia_codigo': len([i for i in _NV_IDX_CODIGO if i < _nvk])}}
+                           'nvidia_chat': (_nvk if not _NV_IDX_CHAT else min(_nvk, len(_NV_IDX_CHAT))), 'nvidia_codigo': (_nvk if not _NV_IDX_CODIGO else len([i for i in _NV_IDX_CODIGO if i < _nvk]))}}
     if action == 'agente_enlazar':  # ventana Tools: elegir el recurso LLM (Ficha 4 / NVIDIA codigo / Groq) de un agente
         return _herr().agente_enlazar(payload)
     if action == 'recurso_probar':  # ventana Tools: probar un recurso o un agente enlazado (Harness -> HTTP -> recurso)

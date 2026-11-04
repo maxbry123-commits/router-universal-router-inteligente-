@@ -12,6 +12,7 @@ export const MODELOS_API = [  // alcance activo (Antonio 2026-11-03): SOLO Groq 
   { id: 'groq/qwen/qwen3.8-27b', nombre: 'Groq · Qwen 3.8 27B' },
   { id: 'nvidia/minimaxai/minimax-m3.1-flash', nombre: 'NVIDIA · MiniMax M3.1 Flash' },
   { id: 'nvidia/meta/muse-glimmer-30b', nombre: 'NVIDIA · Muse Glimmer 30B' },
+  { id: 'nvidia/nvidia/nemotron-3-super-120b-a12b', nombre: 'NVIDIA · Nemotron 3 Super' },
   { id: 'nvidia/nvidia/nemotron-3-ultra-550b-a55b', nombre: 'NVIDIA · Nemotron 3 Ultra' },
   { id: 'nvidia/z-ai/glm-5.3', nombre: 'NVIDIA · GLM 5.3' },
   { id: 'nvidia/z-ai/glm-5.3-flash', nombre: 'NVIDIA · GLM 5.3 Flash' },
@@ -31,6 +32,7 @@ export const AJUSTES = {
   'qwen/qwen3.8-27b': { temperature: 1.0, top_p: 0.95, max_tokens: 2048, reasoning_effort: 'medium', reasoning_format: 'hidden' },
   'minimaxai/minimax-m3.1-flash': { temperature: 1.0, top_p: 0.95, max_tokens: 4096 },
   'meta/muse-glimmer-30b': { temperature: 1.0, top_p: 0.95, max_tokens: 4096 },
+  'nvidia/nemotron-3-super-120b-a12b': { temperature: 1.0, top_p: 0.95, max_tokens: 4096 },
   'nvidia/nemotron-3-ultra-550b-a55b': { temperature: 1.0, top_p: 0.95, max_tokens: 4096 },
   'z-ai/glm-5.3': { temperature: 0.5, top_p: 1.0, max_tokens: 4096 },
 };
@@ -492,7 +494,10 @@ const esperaCorta = (e, r) => Math.min(e.retryAfterMs ?? r.esperaDefecto, r.espe
 // modelo concreto groq/<id> o nvidia/<id>: va directo a su API; rota por todas las claves (429/402/408/5xx/timeout/red) y descarta las 401/403.
 // onDelta(texto): streaming real; flujo = { texto } acumula lo entregado (compartido entre intentos/proveedores); onInicio({via, usado}) al empezar.
 export async function externo(id, mensajes, { env = process.env, extra = {}, opts, onDelta, onInicio, flujo } = {}) {
-  const [prov, ...resto] = id.split('/'), modelo = resto.join('/'), r = conTimeout(red(opts), modelo, env);
+  const [prov, ...resto] = id.split('/');
+  let modelo = resto.join('/');
+  while (prov === 'nvidia' && modelo.startsWith('nvidia/nvidia/')) modelo = modelo.slice('nvidia/'.length);  // strip prefijo duplicado
+  const r = conTimeout(red(opts), modelo, env);
   const todas = claves(prov.toUpperCase() + '_API_KEY', env), ks = libres(prov, env, r);
   const ctx = onDelta ? { onDelta, flujo: flujo || { texto: '' } } : { flujo };
   let ultimo = new Error(todas.length ? 'claves enfriadas' : 'sin clave'), n = 0, fallos = 0;
@@ -516,6 +521,7 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
       if (e.status === 402) { enfriadas.set(`${prov}\0${k}`, r.ahora() + COOLDOWN_CREDITO_MS); continue; }  // sin credito/cuota: otra clave puede servir; esta no se repite ni se prueba primero 10 min
       if (e.status === 401 || e.status === 403) continue;  // clave descartada
       if (e.status >= 400 && e.status < 500) break;  // 400/404/422...: no depende de la clave
+      if (e.status >= 500 && Number.isFinite(e.retryAfterMs)) enfriadas.set(`${prov}\0${k}`, r.ahora() + Math.min(e.retryAfterMs, 600000));  // A1#6: cooldown clave solo con Retry-After en 5xx reales
       if (i < ks.length - 1) await esperarCancelable(Number.isFinite(e.retryAfterMs) && e.status >= 500 ? esperaCorta(e, r) : backoff(fallos++, r), r);  // 5xx/red: Retry-After (con tope) o backoff exponencial con jitter antes de la siguiente clave
     }
   }

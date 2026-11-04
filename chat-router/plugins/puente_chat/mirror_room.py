@@ -35,7 +35,7 @@ from typing import Any
 FICHA_MAP = {
     'ficha4': {'recurso': 'ficha4:ficha-qwen38max', 'nombre': 'Qwen 3.8 Max (Ficha 4)'},
     'ficha5': {'recurso': 'ficha4:ficha-qwen38flash', 'nombre': 'Qwen 3.8 Flash (Ficha 5)'},
-    'nvidia': {'recurso': 'nvcode:z-ai/glm-5.3', 'nombre': 'GLM 5.3 (NVIDIA)'},
+    'nvidia': {'recurso': 'nvcode:stepfun-ai/step-5-preview', 'nombre': 'Step 5 Preview (NVIDIA)'},
     'groq': {'recurso': 'groq:openai/gpt-oss-120b', 'nombre': 'GPT-OSS 120B (Groq)'},
 }
 
