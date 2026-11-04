@@ -2,7 +2,7 @@
 import { chromium } from 'playwright';
 import path from 'node:path';
 import fs from 'node:fs';
-import { SITES, login, pasarAgeGate, necesitaLogin } from './sites.js';
+import { SITES, login, pasarAgeGate, necesitaLogin, leerPistaLogin } from './sites.js';
 import { cuentaActual, clave, rotar } from './cuentas.js';
 
 const STATE = process.env.BRIDGE_STATE_DIR || './state';
@@ -31,14 +31,20 @@ async function lanzar(site) {
   fs.mkdirSync(dir, { recursive: true });
   const opts = {
     headless: true,
-    args: ['--disable-blink-features=AutomationControlled'],
+    args: ['--disable-blink-features=AutomationControlled', '--no-first-run', '--no-default-browser-check'],
+    ignoreDefaultArgs: ['--enable-automation'],
     viewport: { width: 1280, height: 900 },
     locale: 'es-ES',
     timezoneId: 'America/Bogota',
-    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+    // UA estable sin HeadlessChrome (comunidad DeepSeek/CloudFront).
+    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   };
   if (PROXY) opts.proxy = { server: PROXY };
   const ctx = await chromium.launchPersistentContext(dir, opts);
+  // Enmascarar navigator.webdriver en cada documento (stealth minimo, sin plugins externos).
+  await ctx.addInitScript(() => {
+    try { Object.defineProperty(navigator, 'webdriver', { get: () => undefined }); } catch {}
+  }).catch(() => {});
   const page = ctx.pages()[0] || await ctx.newPage();
   return { ctx, page };
 }
@@ -56,7 +62,7 @@ export function asegurar(site) {
 // Fallos de sesión que SOLO el titular resuelve: no se reintentan en bucle
 // (evita bloquear cuentas y escalar retos anti-bot). Se enfría N ms y se
 // responde al instante con el mismo motivo; importarSesion() lo limpia.
-const TERMINALES = new Set(['RETO_ANTIBOT', 'LOGIN_RECHAZADO_TODAS_CUENTAS', 'SIN_SESION_EN_PERFIL', 'SIN_CUENTAS_CONFIGURADAS', 'LOGIN_FORM_NO_ENCONTRADO']);
+const TERMINALES = new Set(['RETO_ANTIBOT', 'LOGIN_RECHAZADO_TODAS_CUENTAS', 'SIN_SESION_EN_PERFIL', 'SIN_CUENTAS_CONFIGURADAS', 'LOGIN_FORM_NO_ENCONTRADO', 'OTP_REQUERIDO', 'CREDENCIAL_RECHAZADA']);
 const ENFRIAR_MS = parseInt(process.env.BRIDGE_SESION_ENFRIAR_MS || '600000', 10);
 const LOGIN_MAX = Math.max(1, parseInt(process.env.BRIDGE_LOGIN_MAX || '3', 10));
 export function limpiarEnfriamiento(site) { ultimoFallo.delete(site); }
@@ -95,12 +101,31 @@ async function asegurarSitio(site) {
   if (cfg.manual_login) {
     // Claude: no reutilizar el email/clave global de Qwen y DeepSeek.
     // Una cuenta autenticada se conserva en Chromium persistente.
-    const editor = await (async () => {
+    // Opcional: WEB_SESION_CLAUDE / CLAUDE_STORAGE_STATE = storageState.json del titular.
+    let editor = await (async () => {
       for (const sel of cfg.input) {
         try { if (await page.locator(sel).first().isVisible({timeout:400})) return true; } catch {}
       }
       return false;
     })();
+    if ((expirada || !editor) && !entry._hidratoEnv) {
+      entry._hidratoEnv = true;
+      const okH = await hidratarSesionEnv(site);
+      if (okH) {
+        try { await page.goto(cfg.url, { waitUntil: 'domcontentloaded', timeout: 45000 }); } catch {}
+        await pasarAgeGate(page, cfg);
+        const exp2 = await necesitaLogin(page, cfg);
+        editor = false;
+        for (const sel of cfg.input) {
+          try { if (await page.locator(sel).first().isVisible({ timeout: 400 })) { editor = true; break; } } catch {}
+        }
+        if (!exp2 && editor) {
+          ultimoFallo.delete(site);
+          entry.cuenta = { tipo: 'sesion_web_autorizada', site, via: 'storage_env' };
+          return entry;
+        }
+      }
+    }
     if (expirada || !editor) {
       const f = fallo(site, 'SESSION_EXPIRED', 'CLAUDE_WEB_REQUIERE_SESION_AUTORIZADA');
       f.motivo = (await hayReto(page)) ? 'RETO_ANTIBOT' : 'SIN_SESION_EN_PERFIL'; f.terminal = true;
@@ -110,36 +135,56 @@ async function asegurarSitio(site) {
     entry.cuenta = { tipo:'sesion_web_autorizada', site };
     return entry;
   }
-  if (!expirada) { ultimoFallo.delete(site); entry.cuenta = cuentaActual(); return entry; }
+  if (!expirada) { ultimoFallo.delete(site); const c0 = cuentaActual(); entry.cuenta = { index: c0.index, total: c0.total }; return entry; }
 
   // sesion caida: intenta login con cuenta actual, rota hasta agotar
   const total = cuentaActual().total;
   const intentos = Math.min(total, LOGIN_MAX);  // tope N: no quemar las 10 cuentas en cada llamada
+  let ultimaPista = null, ultimoMotivoUi = null;
   for (let i = 0; i < intentos; i++) {
     const c = cuentaActual();
-    let ok=false;
-    try { ok=await login(page, cfg, c.email, clave()); }
+    let res = { ok: false };
+    try { res = await login(page, cfg, c.email, clave()); if (res === true) res = { ok: true }; if (res === false) res = { ok: false }; }
     catch (e) {
       if (e?.code === 'AGE_VERIFICATION_REQUIRED') throw e;
       if (e?.code === 'LOGIN_FORM_NO_ENCONTRADO') {  // selectores desactualizados: rotar cuentas no ayuda
         const r = fallo(site, 'SESSION_EXPIRED', 'WEB_LOGIN_FORM_NO_ENCONTRADO'); r.motivo = (await hayReto(page)) ? 'RETO_ANTIBOT' : 'LOGIN_FORM_NO_ENCONTRADO';
         r.campo = e.campo; r.terminal = true; ultimoFallo.set(site, { code: r.code, motivo: r.motivo, campo: e.campo, ts: Date.now() }); throw r;
       }
+      res = { ok: false, motivo: e?.code || 'LOGIN_ERROR', pista: String(e?.message || '').slice(0, 120) };
     }
-    if (ok) { await pasarAgeGate(page, cfg); ultimoFallo.delete(site); entry.cuenta = c; return entry; }
+    if (res?.ok) { await pasarAgeGate(page, cfg); ultimoFallo.delete(site); entry.cuenta = { index: c.index, total: c.total }; return entry; }
+    ultimaPista = res?.pista || ultimaPista;
+    ultimoMotivoUi = res?.motivo || ultimoMotivoUi;
+    // OTP / magic-link: rotar no ayuda (mismo factor humano). Fallar cerrado ya.
+    if (res?.motivo === 'OTP_REQUERIDO' || await paginaPideOtp(page)) {
+      const r = fallo(site, 'SESSION_EXPIRED', 'WEB_OTP_REQUIERE_TITULAR');
+      r.motivo = 'OTP_REQUERIDO'; r.terminal = true; r.pista = ultimaPista;
+      ultimoFallo.set(site, { code: r.code, motivo: r.motivo, pista: ultimaPista, intentos: i + 1, ts: Date.now() });
+      throw r;
+    }
     // Reto anti-bot (captcha/slider): headless no puede resolverlo; rotar cuentas
     // solo quema intentos. Fallar cerrado con causa distinguible.
-    if (await hayReto(page)) {
+    if (await hayReto(page) || res?.motivo === 'RETO_O_LIMITE') {
       const r = fallo(site, 'SESSION_EXPIRED', 'WEB_RETO_ANTIBOT_REQUIERE_TITULAR');
-      r.motivo = 'RETO_ANTIBOT'; r.terminal = true; ultimoFallo.set(site, { code: r.code, motivo: r.motivo, ts: Date.now() });
+      r.motivo = 'RETO_ANTIBOT'; r.terminal = true; r.pista = ultimaPista;
+      ultimoFallo.set(site, { code: r.code, motivo: r.motivo, pista: ultimaPista, ts: Date.now() });
       throw r;
     }
     rotar(); // siguiente correo, misma clave
   }
   const e = fallo(site, 'SESSION_EXPIRED', 'SESSION_EXPIRED: todas las cuentas fallaron');
-  e.motivo = total ? 'LOGIN_RECHAZADO_TODAS_CUENTAS' : 'SIN_CUENTAS_CONFIGURADAS'; e.terminal = true; e.intentos = intentos;
-  ultimoFallo.set(site, { code: e.code, motivo: e.motivo, intentos, ts: Date.now() });
+  e.motivo = total ? (ultimoMotivoUi === 'CREDENCIAL_RECHAZADA' ? 'CREDENCIAL_RECHAZADA' : 'LOGIN_RECHAZADO_TODAS_CUENTAS') : 'SIN_CUENTAS_CONFIGURADAS';
+  e.terminal = true; e.intentos = intentos; e.pista = ultimaPista;
+  ultimoFallo.set(site, { code: e.code, motivo: e.motivo, pista: ultimaPista, intentos, ts: Date.now() });
   throw e;
+}
+
+async function paginaPideOtp(page) {
+  try {
+    const p = await leerPistaLogin(page);
+    return p.motivo === 'OTP_REQUERIDO';
+  } catch { return false; }
 }
 
 async function esperarSlot(site) {
@@ -205,11 +250,13 @@ export async function diagnosticoAcceso() {
       }
       return false;
     };
+    const pistaUi = await leerPistaLogin(p).catch(() => ({ motivo: null, pista: null }));
     r[site] = { navegador:'ABIERTO', ...base, reto_antibot: await hayReto(p),
       auth_url: cfg.sesion_muerta(p.url()),
       login_visible:await visible([...(cfg.login_visible||[]),'input[type="password"]','form input[type="email"]']),
       editor_visible:await visible(cfg.input),
       modelo_selector_visible:await visible(cfg.model_selector),
+      pista_ui: pistaUi.pista || null, motivo_ui: pistaUi.motivo || null,
       // Es indicador, NO prueba criptográfica de una cuenta autenticada.
       nota:'Los indicadores no demuestran una respuesta de inferencia.' };
   }
@@ -262,40 +309,86 @@ export async function cerrarTodo() {
   paginas.clear();
 }
 
-// Importación de sesión autorizada (Playwright storageState) exportada por el
-// TITULAR desde su propio navegador tras iniciar sesión y resolver cualquier
-// verificación oficial. No elude captcha: solo reutiliza una sesión legítima.
-// Se inyecta en el perfil persistente existente (mismo contexto/arquitectura).
-// Nunca se registran cookies ni valores en logs/respuestas.
-export async function importarSesion(site, estado) {
+// Auto-reparación OpenClaw: limpia enfriamiento terminal, recicla contexto inactivo
+// y reintenta asegurar(). Usado por POST /refresh_session ante SESSION_EXPIRED.
+export async function repararSesion(site = null) {
+  const sitios = site ? [site] : Object.keys(SITES);
+  const out = {};
+  for (const s of sitios) {
+    limpiarEnfriamiento(s);
+    const rec = await reiniciarSitioInactivo(s).catch(e => ({ ok: false, code: e?.code || 'RECICLO_FALLO' }));
+    try {
+      // Intento de hidratar sesión desde archivo del titular (sin secretos en logs).
+      await hidratarSesionEnv(s);
+      await asegurar(s);
+      out[s] = { ok: true, reciclado: rec, estado: 'vivo' };
+    } catch (e) {
+      out[s] = { ok: false, reciclado: rec, estado: 'caido', code: e?.code || 'SESSION_EXPIRED',
+        motivo: e?.motivo || null, pista: e?.pista || ultimoFallo.get(s)?.pista || null,
+        reintentar_en_s: e?.reintentar_en_s };
+    }
+  }
+  return out;
+}
+
+// WEB_SESION_<SITE>=ruta.json (storageState Playwright del titular). Claude/Qwen/DeepSeek.
+// verificar=false cuando se llama DENTRO de asegurarSitio (evita deadlock del candado).
+async function hidratarSesionEnv(site, { verificar = false } = {}) {
+  const key = `WEB_SESION_${String(site || '').toUpperCase()}`;
+  const ruta = process.env[key] || (site === 'claude' ? process.env.CLAUDE_STORAGE_STATE : null);
+  if (!ruta || !fs.existsSync(ruta)) return false;
+  try {
+    const estado = JSON.parse(fs.readFileSync(ruta, 'utf8'));
+    const r = await inyectarStorageState(site, estado);
+    if (!r.ok) return false;
+    if (verificar) {
+      try { await asegurar(site); return true; } catch { return false; }
+    }
+    return true;
+  } catch { return false; }
+}
+
+// Solo cookies/localStorage — sin asegurar() (seguro desde asegurarSitio / repararSesion).
+async function inyectarStorageState(site, estado) {
   const cfg = SITES[site];
-  if (!cfg) return { ok:false, code:'SITIO_INVALIDO' };
+  if (!cfg) return { ok: false, code: 'SITIO_INVALIDO' };
   if (!estado || !Array.isArray(estado.cookies) || !estado.cookies.length)
-    return { ok:false, code:'STORAGE_STATE_INVALIDO' };
+    return { ok: false, code: 'STORAGE_STATE_INVALIDO' };
   const host = new URL(cfg.url).hostname.split('.').slice(-2).join('.');
   const cookies = estado.cookies.filter(c => c && c.name && typeof c.value === 'string' &&
     String(c.domain || '').replace(/^\./, '').endsWith(host)).map(c => {
-      const o = { name:c.name, value:c.value, domain:c.domain, path:c.path || '/',
-        httpOnly:!!c.httpOnly, secure:c.secure !== false, sameSite:['Strict','Lax','None'].includes(c.sameSite) ? c.sameSite : 'Lax' };
+      const o = { name: c.name, value: c.value, domain: c.domain, path: c.path || '/',
+        httpOnly: !!c.httpOnly, secure: c.secure !== false, sameSite: ['Strict', 'Lax', 'None'].includes(c.sameSite) ? c.sameSite : 'Lax' };
       if (typeof c.expires === 'number' && c.expires > 0) o.expires = c.expires;
       return o;
     });
-  if (!cookies.length) return { ok:false, code:'SIN_COOKIES_DEL_SITIO', dominio:host };
+  if (!cookies.length) return { ok: false, code: 'SIN_COOKIES_DEL_SITIO', dominio: host };
   let entry = contextos.get(site);
   if (!entry || entry.page.isClosed()) { entry = await lanzar(site); contextos.set(site, entry); }
   await entry.ctx.addCookies(cookies);
   const origenes = (estado.origins || []).filter(o => o && String(o.origin || '').includes(host));
   for (const o of origenes) {
     try {
-      await entry.page.goto(o.origin, { waitUntil:'domcontentloaded', timeout:45000 });
+      await entry.page.goto(o.origin, { waitUntil: 'domcontentloaded', timeout: 45000 });
       await entry.page.evaluate(items => { for (const i of items || []) localStorage.setItem(i.name, i.value); }, o.localStorage || []);
-    } catch {}
+    } catch { /* origen opcional */ }
   }
   ultimoFallo.delete(site);
+  return { ok: true, code: 'STORAGE_INYECTADO', cookies: cookies.length, origenes: origenes.length };
+}
+
+// Importación de sesión autorizada (Playwright storageState) exportada por el
+// TITULAR desde su propio navegador tras iniciar sesión y resolver cualquier
+// verificación oficial. No elude captcha: solo reutiliza una sesión legítima.
+// Se inyecta en el perfil persistente existente (mismo contexto/arquitectura).
+// Nunca se registran cookies ni valores en logs/respuestas.
+export async function importarSesion(site, estado) {
+  const inj = await inyectarStorageState(site, estado);
+  if (!inj.ok) return inj;
   try {
     await asegurar(site);
-    return { ok:true, code:'SESION_IMPORTADA_Y_VERIFICADA', cookies:cookies.length, origenes:origenes.length };
+    return { ok: true, code: 'SESION_IMPORTADA_Y_VERIFICADA', cookies: inj.cookies, origenes: inj.origenes };
   } catch (e) {
-    return { ok:false, code:'SESION_IMPORTADA_PERO_NO_VALIDA', motivo:e?.motivo || e?.code || 'DESCONOCIDO', cookies:cookies.length };
+    return { ok: false, code: 'SESION_IMPORTADA_PERO_NO_VALIDA', motivo: e?.motivo || e?.code || 'DESCONOCIDO', cookies: inj.cookies };
   }
 }

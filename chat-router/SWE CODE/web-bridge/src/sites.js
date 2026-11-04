@@ -236,35 +236,161 @@ export async function necesitaLogin(page, cfg) {
   return false;
 }
 
+// Sanitiza texto de UI/API: sin correos, tokens ni claves.
+export function sanitizarPista(t, max = 180) {
+  return String(t || '')
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[mail]')
+    .replace(/\b[0-9a-f]{16,}\b/gi, '[hex]')
+    .replace(/\b(?:password|passwd|pass|token|refresh_token|authorization)\b\s*[:=]\s*\S+/gi, '[redacted]')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max);
+}
+
+// Señales de OTP / código / magic-link / error tipico tras submit (sin PII).
+export async function leerPistaLogin(page) {
+  try {
+    const raw = await page.evaluate(() => {
+      const sels = [
+        '[role="alert"]', '[class*="error" i]', '[class*="Error"]', '.ant-message', '.ant-notification',
+        '[class*="toast" i]', '[class*="Toast"]', '[data-testid*="error" i]', '.ds-form-item-error',
+        '[class*="message-error" i]', '[class*="helper-text" i]', '[class*="FormError"]'
+      ];
+      const bits = [];
+      for (const s of sels) {
+        for (const el of document.querySelectorAll(s)) {
+          const t = String(el.innerText || el.textContent || '').trim();
+          if (t && t.length < 240) bits.push(t);
+        }
+      }
+      const body = String(document.body?.innerText || '').slice(0, 2500);
+      return { bits: bits.slice(0, 6), body };
+    });
+    const blob = [...(raw.bits || []), raw.body || ''].join(' | ');
+    const lower = blob.toLowerCase();
+    let motivo = null;
+    if (/verifica(tion|ción)?\s*code|código\s*(de\s*)?(verific|sms|otp)|one[- ]time|magic\s*link|te\s+enviamos\s+(un\s+)?c[oó]digo|enter\s+(the\s+)?code|input.*otp|otp/i.test(blob))
+      motivo = 'OTP_REQUERIDO';
+    else if (/incorrect|inv[aá]lid|wrong\s*password|contrase[nñ]a\s*(incorrecta|inv[aá]lida)|email or password|correo.*contrase|user\s*not\s*found|no\s*encontr|does not exist|cuenta.*no\s*exist/i.test(blob))
+      motivo = 'CREDENCIAL_RECHAZADA';
+    else if (/captcha|too\s*many|rate\s*limit|suspicious|blocked|acceso\s*denegado|try\s*again\s*later/i.test(blob))
+      motivo = 'RETO_O_LIMITE';
+    const pista = sanitizarPista((raw.bits && raw.bits[0]) || blob.match(/(incorrect[^.|]{0,80}|inv[aá]lid[^.|]{0,80}|código[^.|]{0,80}|verification[^.|]{0,80}|contrase[nñ]a[^.|]{0,80})/i)?.[0] || '');
+    return { motivo, pista: pista || null };
+  } catch {
+    return { motivo: null, pista: null };
+  }
+}
+
+async function rellenarHumano(page, lista, valor) {
+  for (const sel of lista || []) {
+    try {
+      const loc = page.locator(sel).first();
+      if (!(await loc.isVisible({ timeout: 1500 }).catch(() => false))) continue;
+      await loc.click({ timeout: 3000 }).catch(() => {});
+      await loc.fill('');
+      // React controlado: fill a veces no dispara onChange; pressSequentially sí.
+      if (typeof loc.pressSequentially === 'function') {
+        await loc.pressSequentially(String(valor), { delay: 25 }).catch(async () => { await loc.fill(String(valor)); });
+      } else {
+        await loc.fill(String(valor));
+      }
+      return true;
+    } catch { /* siguiente */ }
+  }
+  return false;
+}
+
+// Qwen: el front hashea SHA-256 hex antes del POST /api/v2/auths/signin (comunidad qwengate/qwen2API).
+async function loginQwenApi(page, email, pass) {
+  const crypto = await import('node:crypto');
+  const hash = crypto.createHash('sha256').update(String(pass)).digest('hex');
+  const r = await page.evaluate(async ({ email, hash }) => {
+    try {
+      const resp = await fetch('/api/v2/auths/signin', {
+        method: 'POST',
+        headers: {
+          accept: 'application/json, text/plain, */*',
+          'content-type': 'application/json',
+          source: 'web',
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          'x-request-id': (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password: hash }),
+      });
+      let body = '';
+      try { body = await resp.text(); } catch { /* ignore */ }
+      return { status: resp.status, ok: resp.ok, body: String(body).slice(0, 240) };
+    } catch (e) {
+      return { status: 0, ok: false, body: String(e && e.message || e).slice(0, 120) };
+    }
+  }, { email, hash });
+  return r;
+}
+
+async function sesionVivaTrasLogin(page, cfg) {
+  if (!(await necesitaLogin(page, cfg))) return true;
+  // DeepSeek: token real en localStorage aunque la URL aún diga /
+  try {
+    const tok = await page.evaluate(() => {
+      try { return !!(localStorage.getItem('userToken') || localStorage.getItem('token')); } catch { return false; }
+    });
+    if (tok) return true;
+  } catch { /* ignore */ }
+  return false;
+}
+
+// login: {ok, motivo?, pista?} — nunca loguea email/clave. Formulario + (qwen) API SHA-256 de respaldo.
 export async function login(page, cfg, email, pass) {
   await page.goto(cfg.login_url, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1500);
   await pasarAgeGate(page, cfg);
-  // qwen: por defecto pide codigo -> cambiar a password primero
-  // SPA: esperar a que el formulario hidrate (antes 1.5 s fijos -> campos aún sin render).
   await page.locator([...(cfg.login_email || []), ...(cfg.login_switch_pass || [])].join(', ')).first()
     .waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
   if (cfg.login_switch_pass) {
     for (const sel of cfg.login_switch_pass) {
-      try { const loc = page.locator(sel).first(); if (await loc.isVisible({ timeout: 500 })) { await loc.click(); await page.waitForTimeout(1200); break; } } catch {}
+      try {
+        const loc = page.locator(sel).first();
+        if (await loc.isVisible({ timeout: 800 })) { await loc.click(); await page.waitForTimeout(1200); break; }
+      } catch { /* siguiente */ }
     }
   }
-  // Campo visible (no oculto) y diagnóstico de qué faltó, sin datos personales.
-  const rellenar = async (lista, valor) => {
-    for (const sel of lista || []) {
-      try { const loc = page.locator(sel).first(); if (await loc.isVisible({ timeout: 1500 })) { await loc.fill(valor); return true; } } catch {}
-    }
-    return false;
-  };
-  if (!await rellenar(cfg.login_email, email)) throw Object.assign(new Error('LOGIN_FORM_NO_ENCONTRADO'), { code: 'LOGIN_FORM_NO_ENCONTRADO', campo: 'identificador' });
-  if (!await rellenar(cfg.login_pass, pass)) throw Object.assign(new Error('LOGIN_FORM_NO_ENCONTRADO'), { code: 'LOGIN_FORM_NO_ENCONTRADO', campo: 'clave' });
+  if (!await rellenarHumano(page, cfg.login_email, email))
+    throw Object.assign(new Error('LOGIN_FORM_NO_ENCONTRADO'), { code: 'LOGIN_FORM_NO_ENCONTRADO', campo: 'identificador' });
+  if (!await rellenarHumano(page, cfg.login_pass, pass))
+    throw Object.assign(new Error('LOGIN_FORM_NO_ENCONTRADO'), { code: 'LOGIN_FORM_NO_ENCONTRADO', campo: 'clave' });
   let pulsado = false;
   for (const sel of cfg.login_btn) {
-    try { const loc = page.locator(sel).first(); if (await loc.isVisible({ timeout: 800 })) { await loc.click({ timeout: 5000 }); pulsado = true; break; } } catch {}
+    try {
+      const loc = page.locator(sel).first();
+      if (await loc.isVisible({ timeout: 800 })) { await loc.click({ timeout: 5000 }); pulsado = true; break; }
+    } catch { /* siguiente */ }
   }
   if (!pulsado) await page.keyboard.press('Enter').catch(() => {});
   await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
-  await page.waitForTimeout(1000);
-  // Antes daba LOGIN_OK por URL incluso si el formulario seguía en pantalla.
-  return !(await necesitaLogin(page, cfg));
+  await page.waitForTimeout(1800);
+  if (await sesionVivaTrasLogin(page, cfg)) return { ok: true };
+
+  // Qwen: si el form no dejó sesión, intentar API con SHA-256 (mismo contrato que el front).
+  const esQwen = /qwen\.ai/i.test(String(cfg.url || cfg.login_url || ''));
+  if (esQwen) {
+    const api = await loginQwenApi(page, email, pass);
+    if (api.ok) {
+      await page.goto(cfg.url, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+      await page.waitForTimeout(1500);
+      if (await sesionVivaTrasLogin(page, cfg)) return { ok: true, via: 'api_sha256' };
+    }
+    const pistaApi = sanitizarPista(api.body || `http_${api.status}`);
+    const ui = await leerPistaLogin(page);
+    return {
+      ok: false,
+      motivo: ui.motivo || (api.status === 401 || api.status === 403 ? 'CREDENCIAL_RECHAZADA' : 'LOGIN_RECHAZADO'),
+      pista: ui.pista || pistaApi || null,
+      api_status: api.status,
+    };
+  }
+
+  const ui = await leerPistaLogin(page);
+  return { ok: false, motivo: ui.motivo || 'LOGIN_RECHAZADO', pista: ui.pista || null };
 }

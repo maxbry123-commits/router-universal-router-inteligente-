@@ -9,7 +9,7 @@ import { createRequire } from 'node:module';
 import { consultarWeb, salud } from './motor.js';
 import { consenso } from './consenso.js';
 import { modoValido } from './modos.js';
-import { estadoCuentas, estadoTabs, snapshotTab, diagnosticoAcceso, reiniciarSitioInactivo, importarSesion, cerrarPagina, cerrarTodo } from './browser.js';
+import { estadoCuentas, estadoTabs, snapshotTab, diagnosticoAcceso, reiniciarSitioInactivo, importarSesion, repararSesion, cerrarPagina, cerrarTodo } from './browser.js';
 import { MODELOS_WEB } from './sites.js';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -381,9 +381,14 @@ app.get('/v1/openclaw', (_req, res) => {
 });
 
 // herramienta nativa: el agente la llama cuando ve SESSION_EXPIRED
-app.post('/refresh_session', async (_req, res) => {
-  try { const s = await salud(); res.json({ ok: true, sitios: s }); }
-  catch (e) { res.status(503).json({ ok: false, error: e.code || e.message }); }
+// Antes solo hacia salud() (lectura). Ahora limpia enfriamiento, recicla y re-login.
+app.post('/refresh_session', async (req, res) => {
+  try {
+    const site = req.body?.site || req.query?.site || null;
+    const r = await repararSesion(site);
+    const vivos = Object.values(r).filter(x => x && x.ok).length;
+    res.status(vivos ? 200 : 424).json({ ok: vivos > 0, sitios: r, salud: await salud().catch(() => null) });
+  } catch (e) { res.status(503).json({ ok: false, error: e.code || e.message }); }
 });
 
 // SSE (stream:true): chat.completion.chunk (role -> content -> tool_calls -> finish_reason -> [DONE]). Groq/NVIDIA: los fragmentos REALES del proveedor se reenvian al instante (sse.delta);
@@ -616,12 +621,26 @@ app.post('/v1/chat/completions', async (req, res) => {
       // SWE CODE free: JAMÁS cambiar un modelo WEB ni Ask Cónsil a Groq/NVIDIA/Liquid
       // si fallan. Conservar error/FLAG, checkpoint y selector. Otros selectores
       // conservan su política de respaldo original.
-      if (model.startsWith('web-') || model.startsWith('swecode-') || (explicito && !pideRespaldo))
-        throw e.code === 'EXTERNO_FALLO' && e.status === 404
-          ? Object.assign(e, { code: 'NO_DISPONIBLE', message: `modelo ${model} no disponible en el proveedor (HTTP 404); ${e.message}` }) : e;
-      // auto-reparacion: sesion caida -> re-login/rotacion de correo y UN reintento; si sigue mal, respaldo Groq -> NVIDIA -> HF local
+      if (model.startsWith('web-') || model.startsWith('swecode-') || (explicito && !pideRespaldo)) {
+        // Un auto-reparo real (limpiar cool-down + re-login) antes de devolver 424 al agente.
+        if (e.code === 'SESSION_EXPIRED' && !req._reparoSesionWeb) {
+          req._reparoSesionWeb = true;
+          try {
+            await repararSesion(e.site || null);
+            salida = null; await conDeadline(ejecutar(), 50000);
+            registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'repararSesion + reintento', resultado: 'PASS', modelo: model });
+          } catch (e2) {
+            registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'repararSesion + reintento', resultado: 'FAIL', modelo: model });
+            throw e2.code ? e2 : e;
+          }
+        } else {
+          throw e.code === 'EXTERNO_FALLO' && e.status === 404
+            ? Object.assign(e, { code: 'NO_DISPONIBLE', message: `modelo ${model} no disponible en el proveedor (HTTP 404); ${e.message}` }) : e;
+        }
+      }
+      // auto-reparacion (selectores no-web): sesion caida -> repararSesion y UN reintento; si sigue mal, respaldo Groq -> NVIDIA -> HF local
       if (e.code === 'SESSION_EXPIRED') {
-        try { await salud(); salida = null; await conDeadline(ejecutar(), 50000); registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'PASS', modelo: model }); } catch { registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'salud() + reintento', resultado: 'FAIL', modelo: model }); }
+        try { await repararSesion(e.site || null); salida = null; await conDeadline(ejecutar(), 50000); registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'repararSesion + reintento', resultado: 'PASS', modelo: model }); } catch { registrarLeccion({ codigo: 'SESSION_EXPIRED', accion: 'repararSesion + reintento', resultado: 'FAIL', modelo: model }); }
       }
       if ((!salida || !String(salida).trim()) && !llamadas.length) {
         const ac2 = new AbortController();  // si vence el plazo del respaldo se cancela antes de responder el error
