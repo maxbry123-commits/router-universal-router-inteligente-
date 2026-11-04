@@ -172,6 +172,19 @@ try:
             cfg["models"]["providers"].pop(prov)
             for k in [k for k in ad["models"] if k.startswith(prov + "/")]: ad["models"].pop(k)
             print("WARN provider %s omitido: falta %s" % (prov, var))
+    # Retry/failover (docs.openclaw.ai/concepts/retry + model failover): el retry
+    # nativo (429 + retry-after, hasta 16 intentos) ya actua por request; aqui solo
+    # se declara fallback Groq<->NVIDIA para que tras agotar el retry pase al otro.
+    prim = ad.get("model")
+    prim = prim.get("primary") if isinstance(prim, dict) else prim
+    vivos = [k for k in ad["models"] if k.split("/", 1)[0] in cfg["models"]["providers"]]
+    if prim not in vivos: prim = vivos[0] if vivos else prim
+    fb = []
+    for prov in ("groq", "nvidia"):
+        c = next((k for k in vivos if k.startswith(prov + "/") and k != prim), None)
+        if c and not (prim or "").startswith(prov + "/"): fb.append(c)
+    if prim: ad["model"] = {"primary": prim, "fallbacks": fb}
+    print("model primary:", prim, "fallbacks:", ",".join(fb) or "-")
     print("swecode provider:", sum(len(v["models"]) for v in cfg["models"]["providers"].values()), "models; providers:", ",".join(cfg["models"]["providers"]))
 except Exception as e:
     print("WARN swecode provider no aplicado:", e)
