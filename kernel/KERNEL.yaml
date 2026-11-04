@@ -13,10 +13,10 @@ protected:
 - package.json
 - requirements*.txt
 - memory_agente_minimax_02.md
-- _quarantine/**   # D-09: coherente con wiring_check, que ya excluye _quarantine/ del analisis
+- _quarantine/**
 entrypoints:
 - chat-router/chat/frontend/shell.html
-- chat-router/chat/backend/mvp/app.py   # dsla/dsla.py esta truncado (31 lineas, docstring sin cerrar): no es entrypoint valido
+- chat-router/chat/backend/mvp/app.py
 domains:
   building: router-mvp/raiz_router
   fichas: router-mvp/fichas
@@ -123,7 +123,7 @@ roadmap:
     task: unify pattern catalogs (6 vs 5) with its own test
     job: agent
 handoff:
-  next: j2_graph
+  next: j4_plan
   log:
   - job: j0_preflight
     status: PASS
@@ -145,5 +145,10 @@ handoff:
     commit: 545da638bafd1cc2753f11ae8692e9b5bc96f611
     ts: '2026-11-04T19:12:32Z'
     run_id: 20261104-kernel01
+  - job: j2_graph
+    status: PASS
+    commit: 9dcd456ef922ff95897ce4f10b2d604e3447e106
+    ts: '2026-11-04T20:19:05Z'
+    run_id: 20261104-kernel01
   flags: []
-progress_pct: 27
+progress_pct: 36
