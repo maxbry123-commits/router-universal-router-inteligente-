@@ -13,6 +13,7 @@ protected:
 - package.json
 - requirements*.txt
 - memory_agente_minimax_02.md
+- _quarantine/**   # D-09: coherente con wiring_check, que ya excluye _quarantine/ del analisis
 entrypoints:
 - chat-router/chat/frontend/shell.html
 - chat-router/chat/backend/mvp/app.py   # dsla/dsla.py esta truncado (31 lineas, docstring sin cerrar): no es entrypoint valido
