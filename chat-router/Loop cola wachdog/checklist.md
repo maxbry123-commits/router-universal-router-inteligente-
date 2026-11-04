@@ -1,18 +1,18 @@
 # CHECKLIST WATCHDOG RIU / OpenClaw / Yaiwes
-Ciclo: 2026-11-04 ~12:10 UTC
-Health: OK (status=ok, commit=976a4df595cfe36abcb52e9b64225412e1f801bb, autoactualizacion=ESPERANDO_PRIMER_CICLO, banco_abierto=true)
-MCP salud: OK (tools/list + tools/call responden; chat y github_leer OK)
+Ciclo: 2026-11-04 ~17:08 UTC
+Health: OK (status=ok, commit=9ac9fd673d441ba008adb1de4d3afd1c85f60cd3, autoactualizacion=AL_DIA, banco_abierto=true, checkpoint_coda_disponible=true)
+MCP salud: OK (tools/list + tools/call salud responde; modelos Groq/Nvidia visibles)
 
 Tests /chat/send:
-- groq/openai/gpt-oss-120b: OK (reply, harness, ~1.1s)
-- groq/qwen/qwen3.8-27b: OK (reply, harness, ~0.8s)
-- nvidia/minimaxai/minimax-m3.1-flash: OK (reply, harness)
+- groq/openai/gpt-oss-120b: OK (reply pong, harness, ~0.85s)
+- groq/qwen/qwen3.8-27b: OK (reply, harness, ~3.1s)
+- nvidia/minimaxai/minimax-m3.1-flash: OK (reply, harness, ~9.5s)
 
 MCP chat: OK (qwen3.8-27b responde via tools/call)
-github_leer: OK (responde via MCP)
+github_leer: OK (responde via MCP, listado obtenido)
 
 Estados:
-I01 Checkpoint/reinicio MVP: CERRADO (health estable, commit visible, banco_abierto=true)
+I01 Checkpoint/reinicio MVP: CERRADO (health estable, commit visible, banco_abierto=true, checkpoint_coda=true)
 I02 5 agentes cableados + harness DeepSeek: VALIDACION (harness funciona para Groq y Nvidia; DeepSeek no re-testeado este ciclo)
 I03 SWE CODE free / SWEN CODE autónomo: PENDIENTE
 I04 Modelos selectores: CERRADO
