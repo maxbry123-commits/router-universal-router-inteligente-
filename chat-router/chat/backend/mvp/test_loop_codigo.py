@@ -6,8 +6,8 @@ def bloque(n,k):
 
 def datos(msg):
     txt="\n".join(str(m.get("content", "")) for m in msg)
-    n=int(re.search(r"Genera exactamente (\\d+)",txt).group(1))
-    sec=int(re.search(r"FIN_SECCION_(\\d+)",txt).group(1))
+    n=int(re.search(r"Genera exactamente (\d+)",txt).group(1))
+    sec=int(re.search(r"FIN_SECCION_(\d+)",txt).group(1))
     return n,sec
 
 class TestContinuidadCODA(unittest.IsolatedAsyncioTestCase):
