@@ -4,7 +4,7 @@ import { contract } from './contract.js';
 import { crearCliente, leerConfig, type Operador, type Respuesta } from './bridge.js';
 
 type Cliente = ReturnType<typeof crearCliente>;
-const sinConfig = (error: string): Respuesta => ({ ok: false, http: 503, codigo: error });
+const sinConfig = (error: string): Respuesta => ({ ok: false, http: 424, codigo: error });  // config ausente: 4xx no reintentable (OpenClaw reintenta 5xx)
 // El agente (tool/comando) NUNCA recibe credenciales de operador: solo la UI nativa (session-action) las pasa, y el bridge rechaza lo que tiene efectos sin operador.
 const operadorDe = (source: string, i: { operador?: string; token_operador?: string }): Operador | undefined =>
   source === 'session-action' && i.operador && i.token_operador ? { operador: i.operador, token_operador: i.token_operador } : undefined;
