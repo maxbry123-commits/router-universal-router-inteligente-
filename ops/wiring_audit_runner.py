@@ -75,19 +75,36 @@ def _req(method, url, body=None, headers=None, timeout=180):
 
 
 def mcp(tool, args, timeout=180):
+    """Llamada MCP al Router RIU con reintentos y backoff (el Router devuelve 500 transitorio)."""
     key = os.environ.get("RIU_ROUTER_API_KEY") or os.environ.get("UNIVERSAL_KEY") or ""
     body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
                        "params": {"name": tool, "arguments": args}}).encode()
-    raw = _req("POST", ROUTER, body, {"Content-Type": "application/json", "X-API-Key": key,
-                                      "Authorization": "Bearer " + key}, timeout)
-    d = json.loads(raw)
-    c = d.get("result", {}).get("content", [])
-    return c[0]["text"] if c else ""
+    hdr = {"Content-Type": "application/json", "X-API-Key": key, "Authorization": "Bearer " + key}
+    last = None
+    for attempt in range(5):
+        try:
+            raw = _req("POST", ROUTER, body, hdr, timeout)
+            d = json.loads(raw)
+            if "error" in d:
+                last = RuntimeError(str(d["error"])[:200])
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            c = d.get("result", {}).get("content", [])
+            return c[0]["text"] if c else ""
+        except Exception as e:
+            last = e
+            STATS["errors"] += 1
+            time.sleep(1.5 * (attempt + 1))
+    raise RuntimeError("MCP_FAIL %s: %s" % (tool, str(last)[:200]))
 
 
 def gh_api(path):
     STATS["api_calls"] += 1
-    raw = mcp("github_api", {"metodo": "GET", "ruta": path})
+    try:
+        raw = mcp("github_api", {"metodo": "GET", "ruta": path})
+    except Exception:
+        STATS["errors"] += 1
+        return None, "", True
     try:
         return json.loads(raw).get("data"), raw, False
     except Exception:
@@ -134,10 +151,11 @@ def list_branches():
     return uniq
 
 
-def list_commits(branch):
+def list_commits(branch, max_pages=60):
+    """Enumera commits de una rama. per_page=5 maximiza el aproveche del limite de 12000 B."""
     commits, page = [], 1
-    while page <= 400:
-        data, raw, _ = gh_api("/repos/%s/commits?sha=%s&per_page=3&page=%d" % (REPO, branch, page))
+    while page <= max_pages:
+        data, raw, _ = gh_api("/repos/%s/commits?sha=%s&per_page=5&page=%d" % (REPO, branch, page))
         got = []
         if isinstance(data, list):
             for c in data:
@@ -147,10 +165,14 @@ def list_commits(branch):
         else:
             for m in re.finditer(r'"sha":\s*"([0-9a-f]{40})"(.{0,900}?)"date":\s*"([^"]+)"', raw, re.S):
                 got.append({"sha": m.group(1), "date": m.group(3), "message": "", "branch": branch})
+            msgs = re.findall(r'"message":\s*"([^"]{0,300})"', raw)
+            for i, mm in enumerate(msgs):
+                if i < len(got) and not got[i]["message"]:
+                    got[i]["message"] = mm
         if not got:
             break
         commits.extend(got)
-        if len(got) < 3:
+        if len(got) < 5:
             break
         page += 1
     return commits
