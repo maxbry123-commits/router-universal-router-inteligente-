@@ -139,5 +139,10 @@ handoff:
     commit: 4162ced5ea7f1ca59b0e0dc17156655402406ffc
     ts: '2026-11-04T18:54:50Z'
     run_id: 20261104-kernel01
+  - job: j3_history
+    status: PASS
+    commit: 545da638bafd1cc2753f11ae8692e9b5bc96f611
+    ts: '2026-11-04T19:12:32Z'
+    run_id: 20261104-kernel01
   flags: []
 progress_pct: 27
