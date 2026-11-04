@@ -51,7 +51,13 @@ export const SITES = {
     login_btn: ['.ds-sign-in-form__main button.ds-basic-button--primary', 'div[role="button"]:has-text("Log in")', 'button:has-text("Log in")',
       'div[role="button"]:has-text("Iniciar sesión")', 'button:has-text("Iniciar sesión")', 'button:has-text("登录")', 'button[type="submit"]'],
     // DeepSeek abre por defecto "código SMS"; pasar a contraseña si existe la pestaña.
-    login_switch_pass: ['div:text-is("Password")', 'div:text-is("Contraseña")', 'div:text-is("密码登录")'],
+    login_switch_pass: [
+      'div:text-is("Password")', 'div:text-is("Contraseña")', 'div:text-is("密码登录")',
+      'button:has-text("Password")', 'button:has-text("Contraseña")',
+      '[role="tab"]:has-text("Password")', '[role="tab"]:has-text("Contraseña")',
+      '.ds-tab:has-text("Password")', '.ds-tab:has-text("Contraseña")',
+      'div.ds-sign-in-form__tab:has-text("Password")', 'div.ds-sign-in-form__tab:has-text("Contraseña")',
+    ],
     // DeepSeek puede mostrar la pantalla de inicio de sesión como modal en /
     // (sin cambiar a /sign_in): una URL / NO prueba cuenta autenticada.
     login_visible: ['a[href*="sign_in"]', 'button:has-text("Log in")',
@@ -221,19 +227,39 @@ export async function necesitaLogin(page, cfg) {
   // Una URL "/" puede ser página pública o mostrar auth modal: NO es prueba
   // de acceso. Revisar indicadores reales DESPUÉS de la hidratación de la SPA.
   try { if (cfg.sesion_muerta(page.url())) return true; } catch {}
+  // Esperar un poco a que la SPA pinte editor o formulario (antes: 400ms → falso "vivo").
+  await page.waitForTimeout(700).catch(() => {});
+  // Prueba POSITIVA de sesión: editor de chat usable.
+  for (const sel of cfg.input || []) {
+    try {
+      const el = page.locator(sel).first();
+      if (await el.count() && await el.isVisible({ timeout: 600 }).catch(() => false))
+        return false;
+    } catch {}
+  }
+  // DeepSeek: userToken en localStorage es señal real (comunidad).
+  try {
+    const tok = await page.evaluate(() => {
+      try { return !!(localStorage.getItem('userToken') || localStorage.getItem('token')); } catch { return false; }
+    });
+    if (tok) return false;
+  } catch {}
   const selLogin = [
     ...(cfg.login_visible || []),
     'input[type="password"]',
-    'form input[type="email"]'
+    'form input[type="email"]',
+    'input[autocomplete="username"]',
+    'input[autocomplete="current-password"]',
   ];
   for (const sel of selLogin) {
     try {
       const el = page.locator(sel).first();
-      if (await el.count() && await el.isVisible({ timeout: 400 }).catch(() => false))
+      if (await el.count() && await el.isVisible({ timeout: 500 }).catch(() => false))
         return true;
     } catch {}
   }
-  return false;
+  // Sin editor, sin token y sin form claro: asumir sesión muerta (evita falso "vivo").
+  return true;
 }
 
 // Sanitiza texto de UI/API: sin correos, tokens ni claves.
@@ -349,11 +375,24 @@ export async function login(page, cfg, email, pass) {
   await page.locator([...(cfg.login_email || []), ...(cfg.login_switch_pass || [])].join(', ')).first()
     .waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
   if (cfg.login_switch_pass) {
-    for (const sel of cfg.login_switch_pass) {
-      try {
-        const loc = page.locator(sel).first();
-        if (await loc.isVisible({ timeout: 800 })) { await loc.click(); await page.waitForTimeout(1200); break; }
-      } catch { /* siguiente */ }
+    for (let intento = 0; intento < 2; intento++) {
+      let cambiado = false;
+      for (const sel of cfg.login_switch_pass) {
+        try {
+          const loc = page.locator(sel).first();
+          if (await loc.isVisible({ timeout: 800 })) {
+            await loc.click();
+            await page.waitForTimeout(1000);
+            cambiado = true;
+            break;
+          }
+        } catch { /* siguiente */ }
+      }
+      // Confirmar que el campo password quedó visible (DeepSeek SMS-first).
+      const passVisible = await page.locator((cfg.login_pass || ['input[type="password"]']).join(', ')).first()
+        .isVisible({ timeout: 1500 }).catch(() => false);
+      if (passVisible) break;
+      if (!cambiado) await page.waitForTimeout(800);
     }
   }
   if (!await rellenarHumano(page, cfg.login_email, email))

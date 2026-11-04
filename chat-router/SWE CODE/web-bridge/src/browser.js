@@ -3,7 +3,7 @@ import { chromium } from 'playwright';
 import path from 'node:path';
 import fs from 'node:fs';
 import { SITES, login, pasarAgeGate, necesitaLogin, leerPistaLogin } from './sites.js';
-import { cuentaActual, clave, rotar } from './cuentas.js';
+import { cuentaActual, clave, rotar, reiniciarIndice } from './cuentas.js';
 
 const STATE = process.env.BRIDGE_STATE_DIR || './state';
 const PROXY = process.env.BRIDGE_PROXY || null; // http://user:pass@host:port (residencial opcional)
@@ -64,7 +64,7 @@ export function asegurar(site) {
 // responde al instante con el mismo motivo; importarSesion() lo limpia.
 const TERMINALES = new Set(['RETO_ANTIBOT', 'LOGIN_RECHAZADO_TODAS_CUENTAS', 'SIN_SESION_EN_PERFIL', 'SIN_CUENTAS_CONFIGURADAS', 'LOGIN_FORM_NO_ENCONTRADO', 'OTP_REQUERIDO', 'CREDENCIAL_RECHAZADA']);
 const ENFRIAR_MS = parseInt(process.env.BRIDGE_SESION_ENFRIAR_MS || '600000', 10);
-const LOGIN_MAX = Math.max(1, parseInt(process.env.BRIDGE_LOGIN_MAX || '3', 10));
+const LOGIN_MAX = Math.max(1, parseInt(process.env.BRIDGE_LOGIN_MAX || '10', 10));
 export function limpiarEnfriamiento(site) { ultimoFallo.delete(site); }
 
 async function asegurarSitio(site) {
@@ -314,6 +314,8 @@ export async function cerrarTodo() {
 export async function repararSesion(site = null) {
   const sitios = site ? [site] : Object.keys(SITES);
   const out = {};
+  // Al reparar: volver al correo 0 para no quedarse en un índice ya quemado (pool actual=3..).
+  try { reiniciarIndice(); } catch { /* sin pool aún */ }
   for (const s of sitios) {
     limpiarEnfriamiento(s);
     const rec = await reiniciarSitioInactivo(s).catch(e => ({ ok: false, code: e?.code || 'RECICLO_FALLO' }));

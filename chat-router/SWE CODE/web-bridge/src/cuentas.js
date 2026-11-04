@@ -53,3 +53,9 @@ export function rotar() {
   idxWrite({ i: ni, rotado_en: new Date().toISOString() });
   return { email: mails[ni], index: ni, total: mails.length };
 }
+
+// Vuelve al correo 0 (sin loguear el valor). repararSesion lo usa para no quedar atrapado en un índice quemado.
+export function reiniciarIndice() {
+  idxWrite({ i: 0, rotado_en: new Date().toISOString(), motivo: 'reparar' });
+  return cuentaActual();
+}
