@@ -11,11 +11,24 @@ def main():
     code=[r["path"] for r in inv if r["class"]=="code"]
     cand=[p for p in code if inb[p]==0 and p not in ent and not prot_f(p)]
     orphans=[];kept=[]
-    for p in cand[:int(os.environ.get("MAX_GREP","3000"))]:
+    # D-15 (§20 ruta 8 smaller_scope + ruta 1 existing_code): un SOLO barrido del repo
+    # con `git grep -f` (patrones multiples) en vez de hasta 3000 barridos completos.
+    # Medido: 74 s por barrido => 3000 barridos = 61 h (inviable). Un barrido = misma
+    # semantica de "no_text_ref" (referencias fuera del propio fichero).
+    pats=cand[:int(os.environ.get("MAX_GREP","3000"))]
+    refs=collections.defaultdict(set)
+    if pats:
+        pf="/tmp/j4_stems.txt"
+        pathlib.Path(pf).write_text("\n".join(sorted({pathlib.Path(p).stem for p in pats if pathlib.Path(p).stem}))+"\n")
+        r=sh(["git","grep","-I","-o","-F","-f",pf,"--","."],cwd=d,check=False)
+        for line in r.stdout.splitlines():
+            f,_,m=line.partition(":")
+            refs[m].add(f)
+    for p in pats:
         stem=pathlib.Path(p).stem
-        r=sh(["git","grep","-l","-F","-e",stem,"--",".",f":(exclude,literal){p}"],cwd=d,check=False)
         par=str(pathlib.Path(p).parent)+"/"
-        s={"no_inbound":True,"no_text_ref":not r.stdout.strip(),"not_recent":p not in touched,"no_dynamic_loader_nearby":not any(x.startswith(par) for x in dyn)}
+        others={f for f in refs.get(stem,()) if f!=p}
+        s={"no_inbound":True,"no_text_ref":not others,"not_recent":p not in touched,"no_dynamic_loader_nearby":not any(x.startswith(par) for x in dyn)}
         (orphans if all(s.values()) else kept).append({"path":p,"signals":s})
     heavy=sorted({"/".join(r["path"].split("/")[:r["path"].split("/").index(h)+1]) for r in inv if r["class"]=="heavy" for h in r["path"].split("/") if h in("node_modules","venv",".venv","__pycache__","dist","build",".next",".cache","site-packages")})
     plan={"quarantine":[o["path"] for o in orphans],"untrack":heavy,"purge_paths":heavy,
