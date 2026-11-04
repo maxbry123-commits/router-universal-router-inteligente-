@@ -515,7 +515,10 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
     } catch (e) {
       ultimo = e;
       if (e.code === 'ABORTADO' || r.signal?.aborted) throw cancelada();  // Detener: ni otra clave ni otro proveedor
-      if (esTimeout(e)) { for (const x of todas) enfriadas.set(`${prov}\0${x}`, r.ahora() + r.cooldownMs); break; }  // primer timeout: se enfria el proveedor (todas sus claves) y se corta; respaldo() no reentra
+      if (esTimeout(e)) {
+        if (prov === 'nvidia') { /* A1#6: timeout NVIDIA no enfría el pool (no es 429/5xx con Retry-After); prueba otra clave */ ultimo = e; continue; }
+        for (const x of todas) enfriadas.set(`${prov}\0${x}`, r.ahora() + r.cooldownMs); break;  // otros proveedores: timeout enfria el pool
+      }
       if (e.status === 429 && prov === 'nvidia') modelosFrios.set(id, r.ahora() + Math.max(r.cooldownMs, Math.min(e.retryAfterMs || 0, 600000)));  // C4: NVIDIA enfria el id, no solo la clave
       if (e.status === 429) { enfriadas.set(`${prov}\0${k}`, r.ahora() + Math.max(r.cooldownMs, Math.min(e.retryAfterMs || 0, 600000))); await esperarCancelable(esperaCorta(e, r), r); continue; }
       if (e.status === 402) { enfriadas.set(`${prov}\0${k}`, r.ahora() + COOLDOWN_CREDITO_MS); continue; }  // sin credito/cuota: otra clave puede servir; esta no se repite ni se prueba primero 10 min
