@@ -36,6 +36,13 @@ export const SITES = {
     model_option_text: /qwen3\.8|3\.8.?max/i,   // se sobrescribe por modelo logico
     sesion_muerta: (url) => /\/auth|login|signin/i.test(url),
     sse_match: /chat|completion|conversation/i,
+    // Import-first (vía 5+13): sin WEB_PASS churn; SSO/password solo con BRIDGE_ALLOW_WEB_PASS=1.
+    auth_import: true,
+    // Vía 14: profile APIs (401/403 = sesión expirada) ANTES del selector de modelo.
+    perfil_api: [
+      { url: 'https://chat.qwen.ai/api/v2/users/user/info', auth: 'qwen_token' },
+      { url: 'https://chat.qwen.ai/api/v1/auths/', auth: 'qwen_token' },
+    ],
   },
   deepseek: {
     nombre: 'DeepSeek web',
@@ -74,6 +81,11 @@ export const SITES = {
     nuevo_chat: ['[class*="new" i][class*="chat" i]', 'button:has-text("New chat")', 'div[role="button"]:has-text("New")'],
     sesion_muerta: (url) => /sign_in|login/i.test(url),
     sse_match: /chat|completion|session/i,
+    auth_import: true,
+    perfil_api: [
+      { url: 'https://chat.deepseek.com/api/v0/users/current', auth: 'deepseek_token' },
+      { url: 'https://chat.deepseek.com/api/v0/users/me', auth: 'deepseek_token' },
+    ],
   },
   claude: {
     nombre: 'Claude Sonnet · chat web',
@@ -97,6 +109,10 @@ export const SITES = {
     nuevo_chat: ['a[href="/new"]', 'button[aria-label*="New chat" i]'],
     sesion_muerta: (url) => /claude\.ai\/(?:login|auth|signup|verify)/i.test(url),
     sse_match: /completion|conversation|stream/i,
+    perfil_api: [
+      { url: 'https://claude.ai/api/organizations', auth: 'cookie' },
+      { url: 'https://claude.ai/api/account', auth: 'cookie' },
+    ],
   },
 };
 
@@ -207,6 +223,67 @@ export async function elegirModelo(page, cfg, modelo_regex) {
     } catch { /* probar otro control */ }
   }
   return false;
+}
+
+// Distingue "no hay selector/indicador visible" de "se ve OTRO modelo".
+export async function selectorMuestraOtroModelo(page, cfg, modelo_regex) {
+  const indicadores = [...(cfg.model_indicador || []), ...(cfg.model_selector || [])];
+  for (const sel of indicadores) {
+    try {
+      const loc = page.locator(sel).first();
+      if (!await loc.isVisible({ timeout: 300 })) continue;
+      const label = String((await loc.innerText().catch(() => '')) || (await loc.getAttribute('aria-label').catch(() => '')) || '').trim();
+      if (label && !(modelo_regex instanceof RegExp && modelo_regex.test(label))) return 'otro';
+    } catch { /* siguiente */ }
+  }
+  return 'sin_selector';
+}
+
+// Vía 14: verificar sesión con page.request a profile APIs (401/403 = expirada).
+// Debe llamarse ANTES de elegirModelo / MODELO_SELECTOR.
+export async function verificarSesionApi(page, cfg) {
+  const probes = cfg?.perfil_api || [];
+  if (!probes.length) return { ok: true, skipped: true };
+  let headersBase = {};
+  try {
+    // Tokens en localStorage (Qwen token / DeepSeek userToken / Claude sessionKey).
+    const toks = await page.evaluate(() => {
+      const g = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+      return {
+        token: g('token') || g('access_token') || g('qwen_token'),
+        userToken: g('userToken') || g('user_token'),
+        sessionKey: g('sessionKey'),
+      };
+    }).catch(() => ({}));
+    if (toks?.token) headersBase.authorization = `Bearer ${toks.token}`;
+    if (toks?.userToken && !headersBase.authorization) headersBase.authorization = `Bearer ${toks.userToken}`;
+  } catch { /* sin LS */ }
+
+  let last = { ok: true, skipped: false, status: null };
+  for (const probe of probes) {
+    const url = probe.url;
+    const headers = { ...headersBase, accept: 'application/json' };
+    try {
+      const resp = await page.request.get(url, { headers, timeout: 15000 });
+      const status = resp.status();
+      if (status === 401 || status === 403) {
+        return { ok: false, status, motivo: 'SESSION_EXPIRED', url_host: new URL(url).host };
+      }
+      if (status >= 200 && status < 300) {
+        let expira = null;
+        try {
+          const j = await resp.json();
+          expira = j?.expires_at || j?.expira || j?.data?.expires_at || null;
+        } catch { /* no json */ }
+        return { ok: true, status, expira, url_host: new URL(url).host };
+      }
+      // 404/405: endpoint cambió — probar siguiente; no declarar expirada.
+      last = { ok: true, status, soft: true, url_host: new URL(url).host };
+    } catch (e) {
+      last = { ok: true, error: String(e?.message || e).slice(0, 80), soft: true };
+    }
+  }
+  return last;
 }
 
 
@@ -410,6 +487,9 @@ export async function login(page, cfg, email, pass) {
     throw Object.assign(new Error('LOGIN_FORM_NO_ENCONTRADO'), { code: 'LOGIN_FORM_NO_ENCONTRADO', campo: 'identificador' });
   if (!await rellenarHumano(page, cfg.login_pass, pass))
     throw Object.assign(new Error('LOGIN_FORM_NO_ENCONTRADO'), { code: 'LOGIN_FORM_NO_ENCONTRADO', campo: 'clave' });
+  // Esperar la RESPUESTA real del endpoint de login (más fiable que networkidle en SPA).
+  const respLogin = page.waitForResponse(r => /auths\/signin|users\/login|sign_?in|\/login/i.test(r.url()) &&
+    r.request().method() === 'POST', { timeout: 30000 }).catch(() => null);
   let pulsado = false;
   for (const sel of cfg.login_btn) {
     try {
@@ -418,9 +498,26 @@ export async function login(page, cfg, email, pass) {
     } catch { /* siguiente */ }
   }
   if (!pulsado) await page.keyboard.press('Enter').catch(() => {});
-  await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
+  const rl = await respLogin;
+  let apiPista = null, apiStatus = null;
+  if (rl) {
+    apiStatus = rl.status();
+    try {
+      const b = await rl.text();
+      const j = JSON.parse(b);
+      const m = j?.msg || j?.message || j?.detail || j?.data?.biz_msg || j?.error?.message || '';
+      const c = j?.code ?? j?.data?.biz_code;
+      if (m || (c && c !== 0)) apiPista = sanitizarPista(`${c ?? ''} ${m}`.trim());
+    } catch { /* cuerpo no JSON */ }
+  }
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(1800);
   if (await sesionVivaTrasLogin(page, cfg)) return { ok: true };
+  if (apiPista && !/qwen\.ai/i.test(String(cfg.url || ''))) {
+    const ui0 = await leerPistaLogin(page);
+    return { ok: false, motivo: ui0.motivo || (/password|contrase|incorrect|not.*(found|exist)|invalid/i.test(apiPista) ? 'CREDENCIAL_RECHAZADA' : 'LOGIN_RECHAZADO'),
+      pista: apiPista, api_status: apiStatus };
+  }
 
   // Qwen: si el form no dejó sesión, intentar API con SHA-256 (mismo contrato que el front).
   const esQwen = /qwen\.ai/i.test(String(cfg.url || cfg.login_url || ''));

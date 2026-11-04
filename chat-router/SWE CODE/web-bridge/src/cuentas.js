@@ -1,13 +1,89 @@
 // cuentas.js — rotacion de cuentas web (5-9 correos, misma clave)
+// Vía 5+13: validar pool → pool.json; rotar solo índices ok; marcar fallos.
 // credenciales: OpenClaw las inyecta por llamada (setCuentas) o env (respaldo)
 import fs from 'node:fs';
 import path from 'node:path';
 
 const DATA = process.env.BRIDGE_STATE_DIR || './state';
 const IDX_FILE = path.join(DATA, 'cuentas-index.json');
+const POOL_FILE = path.join(DATA, 'pool.json');
 
 function limpiaSecreto(v) {
   return String(v || '').trim().replace(/^["']+|["']+$/g, '').trim();
+}
+
+function emailOk(e) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || ''));
+}
+
+function escribirAtomico(destino, obj) {
+  fs.mkdirSync(path.dirname(destino), { recursive: true });
+  const tmp = destino + '.tmp.' + process.pid;
+  fs.writeFileSync(tmp, JSON.stringify(obj, null, 2));
+  fs.renameSync(tmp, destino);
+}
+
+// Fallidos por índice (persistidos en pool.json). Solo se rota entre ok.
+function leerPoolMeta() {
+  try { return JSON.parse(fs.readFileSync(POOL_FILE, 'utf8')); }
+  catch { return { total: 0, indices: [], fallidos: {}, actualizado: null }; }
+}
+
+export function validarYGuardarPool(mails, pass) {
+  const lista = (Array.isArray(mails) ? mails : String(mails || '').split(','))
+    .map(s => limpiaSecreto(s)).filter(Boolean);
+  const passL = limpiaSecreto(pass);
+  const validos = lista.filter(emailOk);
+  if (!validos.length) return { ok: false, code: 'POOL_SIN_EMAILS_VALIDOS', total: 0 };
+  const meta = leerPoolMeta();
+  const fallidos = meta.fallidos && typeof meta.fallidos === 'object' ? meta.fallidos : {};
+  // No guardar secretos: solo conteos / índices / marcas de fallo.
+  const out = {
+    total: validos.length,
+    indices: [...Array(validos.length).keys()],
+    fallidos,
+    tiene_pass: !!passL,
+    actualizado: new Date().toISOString(),
+  };
+  try { escribirAtomico(POOL_FILE, out); } catch { /* disco opcional */ }
+  return { ok: true, ...out };
+}
+
+export function marcarFallo(index, motivo = 'LOGIN_RECHAZADO') {
+  const meta = leerPoolMeta();
+  meta.fallidos = meta.fallidos || {};
+  meta.fallidos[String(index)] = { motivo: String(motivo).slice(0, 80), ts: new Date().toISOString() };
+  meta.actualizado = new Date().toISOString();
+  try { escribirAtomico(POOL_FILE, meta); } catch { /* ignore */ }
+  return meta;
+}
+
+export function limpiarFallos() {
+  const meta = leerPoolMeta();
+  meta.fallidos = {};
+  meta.actualizado = new Date().toISOString();
+  try { escribirAtomico(POOL_FILE, meta); } catch { /* ignore */ }
+  return meta;
+}
+
+export function cuentasOk(index) {
+  const meta = leerPoolMeta();
+  const f = meta.fallidos || {};
+  return !f[String(index)];
+}
+
+export function estadoPool() {
+  const meta = leerPoolMeta();
+  let total = meta.total || 0;
+  try { total = pool().length; } catch { /* sin mails */ }
+  return {
+    total,
+    indices: [...Array(total).keys()],
+    fallidos: meta.fallidos || {},
+    ok: [...Array(total).keys()].filter(i => !meta.fallidos?.[String(i)]),
+    actualizado: meta.actualizado || null,
+    loaded: total > 0,
+  };
 }
 
 // credenciales inyectadas por OpenClaw en tiempo de llamada (duenas: OpenClaw);
@@ -19,6 +95,7 @@ export function setCuentas(mails, pass) {
   const passL = limpiaSecreto(pass);
   if (!limpias.length || !passL) return false;
   inyectadas = { mails: limpias, pass: passL };
+  validarYGuardarPool(limpias, passL);
   return true;
 }
 
@@ -26,6 +103,10 @@ export function pool() {
   if (inyectadas) return inyectadas.mails;
   const mails = (process.env.WEB_ACCOUNTS || '').split(',').map(s => limpiaSecreto(s)).filter(Boolean);
   if (!mails.length) throw Object.assign(new Error('WEB_ACCOUNTS vacio: OpenClaw debe enviar cuentas y clave en el POST'), { code: 'CUENTAS_FALTAN' });
+  // Validar/persistir meta sin secretos (una vez por proceso si falta).
+  try {
+    if (!fs.existsSync(POOL_FILE)) validarYGuardarPool(mails, process.env.WEB_PASS || '');
+  } catch { /* ignore */ }
   return mails;
 }
 
@@ -49,19 +130,28 @@ function idxWrite(v) {
 export function cuentaActual() {
   const mails = pool();
   const { i } = idxRead();
-  return { email: mails[i % mails.length], index: i % mails.length, total: mails.length };
+  // Preferir un índice ok.
+  let idx = i % mails.length;
+  for (let n = 0; n < mails.length; n++) {
+    const j = (idx + n) % mails.length;
+    if (cuentasOk(j)) { idx = j; break; }
+  }
+  return { email: mails[idx], index: idx, total: mails.length };
 }
 
-// rota al siguiente correo cuando la sesion cae (misma clave universal)
+// Rota al siguiente correo OK (salta fallidos). Si todos fallaron → SIN_CUENTAS_OK.
 export function rotar() {
   const mails = pool();
   const { i } = idxRead();
-  const ni = (i + 1) % mails.length;
-  idxWrite({ i: ni, rotado_en: new Date().toISOString() });
-  return { email: mails[ni], index: ni, total: mails.length };
+  for (let n = 1; n <= mails.length; n++) {
+    const ni = (i + n) % mails.length;
+    if (!cuentasOk(ni)) continue;
+    idxWrite({ i: ni, rotado_en: new Date().toISOString() });
+    return { email: mails[ni], index: ni, total: mails.length };
+  }
+  throw Object.assign(new Error('todas las cuentas marcadas fallidas'), { code: 'SIN_CUENTAS_OK' });
 }
 
-// Vuelve al correo 0 (sin loguear el valor). repararSesion lo usa para no quedar atrapado en un índice quemado.
 export function reiniciarIndice() {
   idxWrite({ i: 0, rotado_en: new Date().toISOString(), motivo: 'reparar' });
   return cuentaActual();

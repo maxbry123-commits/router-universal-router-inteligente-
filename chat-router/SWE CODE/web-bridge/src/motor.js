@@ -1,9 +1,13 @@
 // motor.js — el canal cableado: escribe bloques, lee salida, checkpoint, reintento
-import { SITES, MODELOS_WEB, escribe, enviar, leerRespuesta, sesionMuerta, elegirModelo } from './sites.js';
+// Vía 14: verificarSesionApi ANTES de MODELO_SELECTOR / elegirModelo.
+import { SITES, MODELOS_WEB, escribe, enviar, leerRespuesta, sesionMuerta, elegirModelo, selectorMuestraOtroModelo, verificarSesionApi } from './sites.js';
 import { asegurar, nuevaPagina, cerrarPagina } from './browser.js';
 import { partir, cabecera, checkpointLeer, checkpointGuardar, resumeCard, huella } from './bloques.js';
 import { cuentaActual } from './cuentas.js';
 import { preambulo } from './modos.js';
+
+// convId -> {modelo_verificado} de la última consulta (server lo expone en la respuesta)
+export const ultimaVerificacion = new Map();
 
 // consultarWeb(modelo_web, texto, {modo, convId}) -> respuesta del sitio
 export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = null } = {}) {
@@ -11,18 +15,34 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
   if (!cfg) throw new Error(`modelo web desconocido: ${modelo}`);
   const site = cfg.site;
   convId = convId || `${site}-${modelo}-${Date.now()}`;
-  // cada conv = su propio tab + chat nuevo (tareas en paralelo, separadas)
+  // cada conv = slot sobre la página maestra del sitio (mutex/cola en browser.js)
   const page = await nuevaPagina(site, convId);
   let ck = null;
   try {
     const siteCfg = SITES[site];
+    // Vía 14: profile API ANTES del selector de modelo (401/403 = SESSION_EXPIRED).
+    const api = await verificarSesionApi(page, siteCfg).catch(() => ({ ok: true, skipped: true }));
+    if (api && api.ok === false && (api.status === 401 || api.status === 403)) {
+      throw Object.assign(new Error('SESION_API_EXPIRADA'), {
+        code: 'SESSION_EXPIRED', site, motivo: 'SESSION_EXPIRED', api_status: api.status, importar: true });
+    }
     // Verificar el modelo REAL; antes se ignoraba silenciosamente un picker fallido
     // y se respondía bajo el ID solicitado aunque el sitio ejecutara otro modelo.
-    const elegido = await elegirModelo(page, siteCfg, cfg.modelo_regex);
-    if (!elegido) {
+    let elegido = await elegirModelo(page, siteCfg, cfg.modelo_regex);
+    // Tras login la SPA puede tardar en pintar el picker: un segundo intento tras hidratar.
+    if (!elegido) { await page.waitForTimeout(2500).catch(() => {}); elegido = await elegirModelo(page, siteCfg, cfg.modelo_regex); }
+    // Sin selector/indicador visible (DeepSeek no tiene picker; Qwen a veces lo oculta) NO es
+    // evidencia de otro modelo: se responde marcado modelo_verificado=false. Solo se bloquea si se
+    // VE otro modelo o si BRIDGE_MODELO_ESTRICTO=1.
+    const estricto = process.env.BRIDGE_MODELO_ESTRICTO === '1';
+    let verificado = !!elegido;
+    if (!elegido && (estricto || await selectorMuestraOtroModelo(page, siteCfg, cfg.modelo_regex) === 'otro')) {
       throw Object.assign(new Error('No pude verificar el modelo en el selector de la web'), {
         code:'MODELO_SELECTOR_NO_VERIFICADO', site });
     }
+    if (ultimaVerificacion.size > 500) ultimaVerificacion.clear();
+    ultimaVerificacion.set(convId, { modelo, site, modelo_verificado: verificado, ts: Date.now() });
+    if (!verificado) console.warn(`[motor] ${site}/${modelo}: selector no visible; respuesta marcada modelo_verificado=false`);
     const bloques = partir(`${preambulo(modo)}\n${texto}`);
     const h = huella(texto, modo);
     ck = checkpointLeer(convId, h);
@@ -67,7 +87,7 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
       checkpointGuardar(convId, ck);
     }
   } finally {
-    await cerrarPagina(convId).catch(() => {});  // la tab se libera siempre: el checkpoint guarda la URL para retomar
+    await cerrarPagina(convId).catch(() => {});  // libera slot maestra; no destruye el contexto
   }
   const final = ck.ultima_salida;
   checkpointGuardar(convId, { ...ck, completo: true });
