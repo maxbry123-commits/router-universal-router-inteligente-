@@ -8,7 +8,11 @@ def main():
     r=wc(d);check("wiring_check_before_mirror",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     if not all(c["ok"] for c in CHECKS):finish(commit=sha)
     api.upload_folder(folder_path=d,repo_id=sp,repo_type="space",commit_message=f"mirror {sha[:12]}",
-        ignore_patterns=[".git/**","_quarantine/**","**/node_modules/**","**/__pycache__/**"])
+        ignore_patterns=[".git/**","_quarantine/**","**/node_modules/**","**/__pycache__/**",
+            # D-06: fuera del espejo el codigo de terceros vendorizado (315.949 ficheros, 84% del repo).
+            "chat-router/agentes/agentes-listos/**","chat-router/agentes/frameworks/**","chat-router/agentes/investigacion/**",
+            "chat-router/chatbot/componentes/**","chat-router/memoria/componentes/**","chat-router/otros/descartados/**",
+            "chat-router/otros/Prueba/**","chat-router/motores/motores/descarga-copia/**"])
     hu=os.environ.get("HEALTH_URL");wait=int(os.environ.get("WAIT_S","600"));t0=time.time();seen=None;stage=None
     while time.time()-t0<wait:
         stage=str(api.get_space_runtime(sp).stage)
