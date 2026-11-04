@@ -32,7 +32,6 @@ export const AJUSTES = {
   'qwen/qwen3.8-27b': { temperature: 1.0, top_p: 0.95, max_tokens: 2048, reasoning_effort: 'medium', reasoning_format: 'hidden' },
   'minimaxai/minimax-m3.1-flash': { temperature: 1.0, top_p: 0.95, max_tokens: 4096 },
   'meta/muse-glimmer-30b': { temperature: 1.0, top_p: 0.95, max_tokens: 4096 },
-  'nvidia/nemotron-3-super-120b-a12b': { temperature: 1.0, top_p: 0.95, max_tokens: 4096 },
   'nvidia/nemotron-3-ultra-550b-a55b': { temperature: 1.0, top_p: 0.95, max_tokens: 4096 },
   'z-ai/glm-5.3': { temperature: 0.5, top_p: 1.0, max_tokens: 4096 },
 };
