@@ -7,6 +7,8 @@ SCRIPT="${2:-$JOB}"
 : "${GH_REPO:?}"; : "${GH_BRANCH:?}"; : "${RUN_ID:?clave de idempotencia}"
 export DATASET_REPO="${DATASET_REPO:-COMAND-CENTER-1/router-universal-router-inteligente-auditoria}"
 export JOB_NAME="$JOB"
+# D-17: todo Job de Hugging Face se crea con 32 GB RAM + CPU (flavor=cpu-upgrade) via ops/hf_job.py
+export HF_FLAVOR="${HF_FLAVOR:-cpu-upgrade}"
 if [ -n "${GH_TOKEN:-}" ]; then
   B=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')
   export GIT_CONFIG_COUNT=1
