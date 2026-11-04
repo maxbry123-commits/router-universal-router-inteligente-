@@ -1,10 +1,12 @@
 """Crea Jobs de Hugging Face con el perfil de 32 GB (flavor=cpu-upgrade) y secretos via entorno.
+D-21: la imagen por defecto es python:3.12 (CON git y curl). python:3.12-slim NO trae git ni curl:
+los jobs no podian clonar el repo ni publicar sus artefactos y el API los reportaba COMPLETED.
 REGLA (D-17): todo Job de HF usa 32 GB RAM + CPU. El perfil se fija aqui, no a mano en cada llamada.
 flavors: cpu-basic(16GB) | cpu-upgrade(32GB) | cpu-performance(64GB) | cpu-xl(128GB)."""
 import os,sys,json,urllib.request
 API="https://huggingface.co/api/jobs/"+os.environ.get("HF_NAMESPACE","COMAND-CENTER-1")
 FLAVOR=os.environ.get("HF_FLAVOR","cpu-upgrade")          # 32 GB RAM + 8 vCPU
-def create(name,docker_image="python:3.12-slim",command=None,secrets=None,environment=None,flavor=None):
+def create(name,docker_image="python:3.12",command=None,secrets=None,environment=None,flavor=None):
     env=dict(environment or {})
     if command: env["CMD"]=command
     body={"name":name,"dockerImage":docker_image,"flavor":flavor or FLAVOR,"environment":env,"secrets":secrets or {}}
