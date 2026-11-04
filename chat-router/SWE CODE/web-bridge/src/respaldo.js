@@ -503,10 +503,19 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
   const frio = modelosFrios.get(id) || 0;
   if (prov === 'nvidia' && frio > r.ahora()) throw Object.assign(new Error(`EXTERNO_NVIDIA: GAP RATE_LIMIT modelo ${id} enfriado ${Math.ceil((frio - r.ahora()) / 1000)} s tras 429 (se usa otro modelo/proveedor)`), { code: 'EXTERNO_FALLO', tipo: 'limite_temporal', status: 429, gap: 'RATE_LIMIT' });
   if (todas.length && !ks.length && todas.some((k) => !conCupo(prov, k, r.ahora()))) throw Object.assign(new Error(`EXTERNO_${prov.toUpperCase()}: GAP BUDGET cupo x-ratelimit agotado en todas las claves; reanuda al reset (sin tumbar la tarea)`), { code: 'EXTERNO_FALLO', tipo: 'limite_temporal', status: 429, gap: 'BUDGET' });
-  // C1/C2/budget80: coste estimado vs 80% del remaining (req y tok por separado) ANTES de llamar; C9: sin cupo = GAP BUDGET suave
+  // C1/C2/budget80: coste estimado vs 80% del remaining (req y tok por separado) ANTES de llamar; C9: sin cupo = GAP BUDGET suave.
+  // Cupo stale: si la ventana hasta ya pasó, o no hay hasta activo, no bloquear con remaining viejo (el 429 real enfría).
   const coste = estimarCoste(mensajes, extra);
-  const ksC = ks.filter((k) => alcanza(cupos.get(`${prov}\0${k}`), coste).ok);
-  if (ks.length && !ksC.length) throw gapBudget(prov, Math.max(1000, Math.min(...ks.map((k) => { const c = cupos.get(`${prov}\0${k}`); return c?.hasta ? c.hasta - r.ahora() : 60000; }))));
+  const ahoraCupo = r.ahora();
+  const ksC = ks.filter((k) => {
+    const cid = `${prov}\0${k}`;
+    let c = cupos.get(cid);
+    if (c?.hasta && c.hasta <= ahoraCupo) { cupos.delete(cid); c = null; }
+    if (alcanza(c, coste).ok) return true;
+    if (!c?.hasta || c.hasta <= ahoraCupo) { cupos.delete(cid); return true; }
+    return false;
+  });
+  if (ks.length && !ksC.length) throw gapBudget(prov, Math.max(1000, Math.min(...ks.map((k) => { const c = cupos.get(`${prov}\0${k}`); return c?.hasta && c.hasta > ahoraCupo ? c.hasta - ahoraCupo : 60000; }))));
   if (onInicio) { try { onInicio({ via: prov, usado: id }); } catch { /* informativo */ } }
   for (const [i, k] of ksC.entries()) {
     if (r.signal?.aborted) throw cancelada();
