@@ -3,6 +3,7 @@
 // conexiones keep-alive reutilizadas, TTFT y tokens/s medidos. Sin onDelta todo funciona como siempre (peticion completa, JSON).
 import http from 'node:http';
 import https from 'node:https';
+import { estimarCoste, alcanza, gapBudget, enCola, tipoGap } from './presupuesto.js';
 
 // Proveedores OFICIALES existentes en OpenClaw: origenes fijos, nunca URLs introducidas por el chat.
 export const BASES = { groq: 'https://api.groq.com/openai/v1', nvidia: 'https://integrate.api.nvidia.com/v1',
@@ -503,14 +504,18 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
   const frio = modelosFrios.get(id) || 0;
   if (prov === 'nvidia' && frio > r.ahora()) throw Object.assign(new Error(`EXTERNO_NVIDIA: GAP RATE_LIMIT modelo ${id} enfriado ${Math.ceil((frio - r.ahora()) / 1000)} s tras 429 (se usa otro modelo/proveedor)`), { code: 'EXTERNO_FALLO', tipo: 'limite_temporal', status: 429, gap: 'RATE_LIMIT' });
   if (todas.length && !ks.length && todas.some((k) => !conCupo(prov, k, r.ahora()))) throw Object.assign(new Error(`EXTERNO_${prov.toUpperCase()}: GAP BUDGET cupo x-ratelimit agotado en todas las claves; reanuda al reset (sin tumbar la tarea)`), { code: 'EXTERNO_FALLO', tipo: 'limite_temporal', status: 429, gap: 'BUDGET' });
+  // C1/C2/budget80: coste estimado vs 80% del remaining (req y tok por separado) ANTES de llamar; C9: sin cupo = GAP BUDGET suave
+  const coste = estimarCoste(mensajes, extra);
+  const ksC = ks.filter((k) => alcanza(cupos.get(`${prov}\0${k}`), coste).ok);
+  if (ks.length && !ksC.length) throw gapBudget(prov, Math.max(1000, Math.min(...ks.map((k) => { const c = cupos.get(`${prov}\0${k}`); return c?.hasta ? c.hasta - r.ahora() : 60000; }))));
   if (onInicio) { try { onInicio({ via: prov, usado: id }); } catch { /* informativo */ } }
-  for (const [i, k] of ks.entries()) {
+  for (const [i, k] of ksC.entries()) {
     if (r.signal?.aborted) throw cancelada();
     if (n++ >= 20) break;
     try {
-      const x = await completar(BASES[prov], modelo, mensajes, k, extra, r, ctx);
+      const x = await enCola(`${prov}\0${k}`, () => completar(BASES[prov], modelo, mensajes, k, extra, r, ctx));  // C3: 1 llamada a la vez por clave
       anotarMetricas(`${prov}/${modelo}`, x.metricas);
-      return { salida: x.texto, tool_calls: x.tool_calls, tools_invalidas: x.tools_invalidas, finish_reason: x.finish_reason, via: prov, usado: id, metricas: x.metricas };
+      return { salida: x.texto, tool_calls: x.tool_calls, tools_invalidas: x.tools_invalidas, finish_reason: x.finish_reason, gap: x.finish_reason === 'length' ? 'LENGTH' : undefined, via: prov, usado: id, metricas: x.metricas };
     } catch (e) {
       ultimo = e;
       if (e.code === 'ABORTADO' || r.signal?.aborted) throw cancelada();  // Detener: ni otra clave ni otro proveedor
@@ -524,11 +529,11 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
       if (e.status === 401 || e.status === 403) continue;  // clave descartada
       if (e.status >= 400 && e.status < 500) break;  // 400/404/422...: no depende de la clave
       if (e.status >= 500 && Number.isFinite(e.retryAfterMs)) enfriadas.set(`${prov}\0${k}`, r.ahora() + Math.min(e.retryAfterMs, 600000));  // A1#6: cooldown clave solo con Retry-After en 5xx reales
-      if (i < ks.length - 1) await esperarCancelable(Number.isFinite(e.retryAfterMs) && e.status >= 500 ? esperaCorta(e, r) : backoff(fallos++, r), r);  // 5xx/red: Retry-After (con tope) o backoff exponencial con jitter antes de la siguiente clave
+      if (i < ksC.length - 1) await esperarCancelable(Number.isFinite(e.retryAfterMs) && e.status >= 500 ? esperaCorta(e, r) : backoff(fallos++, r), r);  // 5xx/red: Retry-After (con tope) o backoff exponencial con jitter antes de la siguiente clave
     }
   }
   const detalle410 = ultimo.status === 410 ? ` (410 Gone: ${id} no servido por este endpoint/clave; comprueba acceso en GET /models, sin cambiar de modelo)` : '';
-  throw Object.assign(new Error(limpiar(`EXTERNO_${prov.toUpperCase()}: ${ultimo.message}${detalle410}`, todas)), { code: 'EXTERNO_FALLO', tipo: tipoDe(ultimo), ...(Number.isInteger(ultimo.status) ? { status: ultimo.status } : {}), ...(ctx.flujo?.texto ? { parcial: ctx.flujo.texto } : {}) });
+  throw Object.assign(new Error(limpiar(`EXTERNO_${prov.toUpperCase()}: ${ultimo.message}${detalle410}`, todas)), { code: 'EXTERNO_FALLO', tipo: tipoDe(ultimo), gap: tipoGap(ultimo) || undefined, ...(Number.isInteger(ultimo.status) ? { status: ultimo.status } : {}), ...(ctx.flujo?.texto ? { parcial: ctx.flujo.texto } : {}) });
 }
 
 // modelo local de la cola HF: entra por S1 y salta a S2/S3 si no responde (sin stream: la cola HF no lo recibe; con flujo previo continua sin repetirlo)

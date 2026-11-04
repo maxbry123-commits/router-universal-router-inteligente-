@@ -20,6 +20,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { local, externo, respaldo, esLocal, esExterno, claves } from './respaldo.js';
 import { guardarCheckpoint, leerCheckpoint, sanear, idValido, origenValido } from './checkpoint_hf.js';
+import { claveIdempotencia } from './presupuesto.js';  // C6; C5: este camino nunca resume/comprime la conversacion (prefijo prompt-cache intacto)
 import { estadoDir, herramientaEjecutada, herramientaResultado, herramientaConfirmar } from './bloques.js';
 
 export const TIPO = 'retomar_local';
@@ -147,11 +148,14 @@ async function ejecutar(tareaId, modelo, mensajes, extra) {
   // ---- herramientas del lote actual ----
   const registrar = async (t, resultado) => {
     if (usaBloques) { try { herramientaConfirmar(tareaId, t.id, resultado); } catch { /* el checkpoint propio lo guarda igual */ } }
-    st.herramientas[t.id] = { resultado: sanear(resultado === undefined ? null : resultado, secretos), ts: new Date().toISOString() };
+    st.herramientas[t.id] = { resultado: sanear(resultado === undefined ? null : resultado, secretos), idem: claveIdempotencia(tareaId, t), ts: new Date().toISOString() };
     t.estado = 'hecha'; st.fase = 'OPERACION_CONFIRMADA'; await guardar();
   };
   const yaHecha = (t) => {
     if (st.herramientas[t.id]) return true;
+    const idem = claveIdempotencia(tareaId, t);  // C6: mismo efecto (nombre+args) ya confirmado con otro id al retomar -> no re-ejecutar
+    const previa = Object.values(st.herramientas).find((h) => h && h.idem === idem);
+    if (previa) { st.herramientas[t.id] = { ...previa, ts: new Date().toISOString() }; return true; }
     if (usaBloques && herramientaEjecutada(tareaId, t.id)) { st.herramientas[t.id] = { resultado: herramientaResultado(tareaId, t.id), ts: new Date().toISOString() }; return true; }
     return false;
   };

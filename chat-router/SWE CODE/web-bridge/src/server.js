@@ -21,6 +21,7 @@ import nodeFs from 'node:fs';
 import { vigilarWorkspace, vigilarModelosOpenClaw, rutaWorkspace, configVigente, vigilarConfig, espejo, normalizarEjecutor } from './openclaw.js';
 import { MODELOS_API, respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, estadoMetricas, disponibilidad, disponibilidadLocal, estadosModelosLocales, modeloDefecto, setClaves, limpiarClaves } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo, checkpointGuardar } from './bloques.js';
+import { tipoGap, esTareaLarga } from './presupuesto.js';  // A1 GAP tipado; C11 esTareaLarga disponible para la ruta chat
 import { retomarLocal, retomarPorId, TIPO as TIPO_LOCAL } from './retomar_local.js';
 import { servirCodaRouter } from './coda_router.js';
 import { idValido as tareaIdValido } from './checkpoint_hf.js';
@@ -255,7 +256,7 @@ app.post('/v1/secciones/:id/retomar', async (req, res) => {
     if (r.error) return res.status(r.status).json({ error: r.error });
     const l = r.local;
     res.json({ id: `retoma-${Date.now()}`, object: 'chat.completion', modelo_usado: r.modelo, ...(l ? { via_respaldo: l.via, ...(l.servidor ? { servidor: l.servidor } : {}), tarea: { id: l.tarea_id, estado: l.estado, secciones: l.secciones } } : {}), choices: [{ index: 0, finish_reason: l ? l.finish_reason : 'stop', message: { role: 'assistant', content: r.salida || '', ...(l && l.tool_calls.length ? { tool_calls: l.tool_calls } : {}) } }] });
-  } catch (e) { res.status(HTTP_TAREA[e.code] || (e.code === 'UPSTREAM_TIMEOUT' ? 504 : 502)).json({ error: { code: e.code || 'BRIDGE_ERROR', message: String(e.message).slice(0, 200) } }); }
+  } catch (e) { res.status(HTTP_TAREA[e.code] || (e.code === 'UPSTREAM_TIMEOUT' ? 504 : 502)).json({ error: { code: e.code || 'BRIDGE_ERROR', gap: tipoGap(e) || undefined, message: String(e.message).slice(0, 200) }, ...(e.reanudarEnMs ? { reanudarEnMs: e.reanudarEnMs } : {}) }); }
 });
 
 // auto-evolucion: mejoras propuestas por lo que el bridge reparo solo (OpenClaw las aplica con su commit)
