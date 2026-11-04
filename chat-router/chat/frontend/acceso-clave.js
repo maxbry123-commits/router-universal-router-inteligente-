@@ -10,10 +10,10 @@ export function esAuth(e) {
   if (e && e.status === 403) return /acceso|no autoriz|api[ -]?key|forbidden|token|clave de acceso/i.test(m);
   return /\bHTTP\s*401\b|\bNO_AUTORIZADO\b|\bunauthori[sz]ed\b|\bclave de acceso invalida\b|\bHTTP\s*403\b[^\n]*(?:acceso|no autoriz|api[ -]?key|forbidden|clave de acceso)/i.test(m);
 }
-// Se restaura antes de cada solicitud, no solo al montar el panel.
+// Se restaura antes de cada solicitud, no solo al montar el panel. T1: persistente en localStorage por defecto; fallback: sessionStorage "riu_clave" (antiguo).
 export function claveActual() {
   try { const s = sessionStorage.getItem(K); if (s) return s; } catch(e) {}
-  try { const r = localStorage.getItem(KR); if (r) { try { sessionStorage.setItem(K, r); } catch(e) {} return r; } } catch(e) {}
+  try { const r = localStorage.getItem(KR) || localStorage.getItem(K); if (r) { try { sessionStorage.setItem(K, r); } catch(e) {} return r; } } catch(e) {}
   return "";
 }
 export function restaurarClave() { return !!claveActual(); }
@@ -40,7 +40,7 @@ export function pedirClave(motivo) {
   abierta = new Promise((resolve) => {
     const fondo = el("div", "ac-fondo"); fondo.setAttribute("role", "dialog"); fondo.setAttribute("aria-modal", "true"); fondo.setAttribute("aria-label", "Clave de acceso");
     const caja = el("div", "ac-caja"), inp = el("input", "vn-in"), lab = el("label", "ac-rec"), chk = el("input");
-    inp.type = "password"; inp.autocomplete = "current-password"; inp.placeholder = "Clave de acceso al servidor"; inp.setAttribute("aria-label", "Clave de acceso"); chk.type = "checkbox"; chk.checked = claveRecordada(); lab.append(chk, el("span", "", "Recordar en este dispositivo"));
+    inp.type = "password"; inp.autocomplete = "current-password"; inp.placeholder = "Clave de acceso al servidor"; inp.setAttribute("aria-label", "Clave de acceso"); chk.type = "checkbox"; chk.checked = true; /* T1: recordar (localStorage) por defecto */ lab.append(chk, el("span", "", "Recordar en este dispositivo"));
     const error = el("div", "vn-estado"); error.setAttribute("role", "alert");
     const fin = (v) => { fondo.remove(); abierta = null; resolve(v); };
     const ok = boton("Guardar y reintentar", "mini", () => { const k = inp.value.trim(); if (!k) { inp.focus(); return; } if (!guardarClave(k, chk.checked)) { error.textContent = "El navegador no permite guardar la clave. Usa una pestaña normal de Chrome y habilita el almacenamiento."; return; } fin(k); });
@@ -80,7 +80,7 @@ export function montarAccesoConfig(root, { avisa }) {
   const caja = root.querySelector("#ap-acceso"); if (!caja || caja.dataset.ok) return; caja.dataset.ok = "1";
   const inp = el("input", "vn-in"), lab = el("label", "ac-rec"), chk = el("input"), est = el("div", "vn-estado"), fila = el("div", "ac-acc");
   inp.type = "password"; inp.autocomplete = "off"; inp.placeholder = hayClave() ? "Hay una clave guardada en esta sesión (escribe otra para cambiarla)" : "Clave de acceso al servidor"; inp.setAttribute("aria-label", "Clave de acceso");
-  chk.type = "checkbox"; chk.checked = claveRecordada(); lab.append(chk, el("span", "", "Recordar en este dispositivo")); est.setAttribute("role", "status");
+  chk.type = "checkbox"; chk.checked = claveRecordada() || !hayClave(); lab.append(chk, el("span", "", "Recordar en este dispositivo")); est.setAttribute("role", "status");
   fila.append(
     boton("Guardar", "mini", () => { const k = inp.value.trim(); if (!k) { avisa("Escribe la clave"); return; } if (!guardarClave(k, chk.checked)) { est.textContent = "No se pudo recordar la clave: revisa el almacenamiento del navegador."; return; } inp.value = ""; inp.placeholder = chk.checked ? "Clave recordada" : "Clave guardada en sesión"; avisa("Clave guardada"); }),
     boton("Probar conexión", "mini", async () => { est.textContent = "Probando…"; try { await window.RIU_ACCION("status", {}); est.textContent = "Conexión correcta con el servidor."; } catch (e) { est.textContent = esAuth(e) ? "El servidor rechazó la clave: " + e.message : "No se pudo conectar: " + e.message; } }),

@@ -15,8 +15,8 @@ const porId = Object.fromEntries(cfg.modelos.map((m) => [m.id, m.nombre]));
 test("los 5 modelos API estan en el array modelos con su nombre", () => {
   assert.deepEqual(
     ["groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"].map((id) => porId[id]),
-    ["Groq Qwen 3.8", "MiniMax M3.1 Flash", "Muse Glimmer 30B", "Nemotron 3 Ultra", "GLM 5.3"]);
-  for (const m of MODELOS_API) assert.ok(porId[m.id], `falta ${m.id} (MODELOS_API)`);
+    ["Groq · Qwen 3.8 27B", "NVIDIA · MiniMax M3.1 Flash", "NVIDIA · Muse Glimmer 30B", "NVIDIA · Nemotron 3 Ultra", "NVIDIA · GLM 5.3"]);
+  for (const m of MODELOS_API.filter((m) => /^(groq|nvidia)\//.test(m.id))) assert.ok(porId[m.id], `falta ${m.id} (MODELOS_API)`);
 });
 
 test("los dos Llama ya no estan; no hay ids duplicados; Muse Glimmer una sola vez", () => {
@@ -26,9 +26,10 @@ test("los dos Llama ya no estan; no hay ids duplicados; Muse Glimmer una sola ve
   assert.equal(ids.filter((i) => /muse-glimmer/.test(i)).length, 1);
 });
 
-test("se conservan los modelos existentes (web, concilio, modos SWE, locales HF, asesoria) y los locales coinciden con respaldo.js", () => {
-  for (const id of ["web-qwen38max", "web-qwen37max", "web-dsv4-flash", "swecode-consulta", "swecode-revision", "swecode-solucion", "swecode-arquitectura", "swecode-archivos", "swecode-prompt_code", "swecode-despliega", "swecode-asesoria"]) assert.ok(porId[id], `falta ${id}`);
-  for (const id of idsRespaldo()) assert.ok(porId[id], `falta ${id} de idsRespaldo()`);
+test("alcance SOLO Groq+NVIDIA: modos SWE + ids groq/nvidia de idsRespaldo(); sin web Qwen/DeepSeek, concilio ni locales Liquid/Qwen", () => {
+  for (const id of ["swecode-revision", "swecode-solucion", "swecode-arquitectura", "swecode-archivos", "swecode-prompt_code", "swecode-despliega", "swecode-asesoria"]) assert.ok(porId[id], `falta ${id}`);
+  for (const id of idsRespaldo().filter((i) => /^(groq|nvidia)\//.test(i))) assert.ok(porId[id], `falta ${id} de idsRespaldo()`);
+  for (const id of ["web-qwen38max", "web-qwen37max", "web-dsv4-flash", "swecode-consulta", "lfm2.5-350m", "qwen3-0.6b"]) assert.ok(!porId[id], `sobra ${id}`);
 });
 
 test("estructura intacta: provider swecode, openai-compatible, puerto 7870, mcp y ejecutor_tools", () => {
@@ -46,8 +47,8 @@ test("el archivo no contiene claves", () => {
 // ---------- cableado de modelos con OpenClaw: el provider y el bridge hablan de los mismos ids ----------
 test("provider: baseUrl, api_key por variable de entorno y los 5 modelos API + 4 locales HF con ids exactos", () => {
   assert.equal(cfg.base_url, "http://localhost:7870/v1"); assert.equal(cfg.api_key, "${RIU_API_KEY}"); assert.ok(!cfg.api_key.includes("BRIDGE_TOKEN"), "BRIDGE_TOKEN es opcional: el provider usa la clave de acceso por Bearer");
-  assert.deepEqual(MODELOS_API.map((m) => m.id), ["groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"]);
-  assert.deepEqual(idsRespaldo().slice(5), ["lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"]);
+  assert.deepEqual(MODELOS_API.map((m) => m.id).filter((id) => /^(groq|nvidia)\//.test(id)), ["groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3", "nvidia/z-ai/glm-5.3-flash"]);
+  assert.deepEqual(idsRespaldo().slice(MODELOS_API.length), ["lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"]);
   for (const id of idsRespaldo()) assert.ok(porId[id], id);
 });
 

@@ -43,7 +43,7 @@ export const LIQUID = 'hf/lfm2.5-350m';
 export const REVISOR = 'hf/qwen3.5-0.8b';
 export const VERIFICADOR = 'openhands';
 export const SELECCION_DEFECTO: Seleccion = {
-  agente_responde: 'openclaw', modelo_responde: LIQUID, agente_tool: 'swe-agent', modelo_tool: 'hf/qwen2.5-coder-1.5b',
+  agente_responde: 'openclaw', modelo_responde: 'groq/qwen/qwen3.8-27b', agente_tool: 'swe-agent', modelo_tool: 'nvidia/z-ai/glm-5.3-flash'  /* T1: solo Groq+NVIDIA */,
   modo_agentico: false, workflow: 'individual', salida: 'swe',
 };
 export const ETIQUETAS_WORKFLOW: Record<string, string> = { individual: 'Individual', swe_code: 'SWE CODE cuatro pasos', liquid_mirror: 'Liquid Mirror' };

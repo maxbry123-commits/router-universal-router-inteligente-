@@ -19,7 +19,7 @@ import { aplicarDefectos } from './defaults.js';
 import { pool, cuentaActual, setCuentas } from './cuentas.js';
 import nodeFs from 'node:fs';
 import { vigilarWorkspace, vigilarModelosOpenClaw, rutaWorkspace, configVigente, vigilarConfig, espejo, normalizarEjecutor } from './openclaw.js';
-import { respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, estadoMetricas, disponibilidad, disponibilidadLocal, estadosModelosLocales, modeloDefecto, setClaves, limpiarClaves } from './respaldo.js';
+import { MODELOS_API, respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, estadoMetricas, disponibilidad, disponibilidadLocal, estadosModelosLocales, modeloDefecto, setClaves, limpiarClaves } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo, checkpointGuardar } from './bloques.js';
 import { retomarLocal, retomarPorId, TIPO as TIPO_LOCAL } from './retomar_local.js';
 import { servirCodaRouter } from './coda_router.js';
@@ -351,6 +351,8 @@ app.post('/v1/system-prompt-on', async (req, res) => {
 const idsModelos = () => {
   const base = Object.keys(MODELOS_WEB).map(m => `web-${m}`);
   const modos = ['revision','solucion','arquitectura','archivos','prompt_code','consulta','despliega','asesoria'].map(m => `swecode-${m}`);
+  // alcance activo SOLO Groq+NVIDIA (RIU_ALCANCE=todo restaura web-*, concilio y locales HF en el catalogo; el respaldo HF local sigue como carril interno)
+  if (process.env.RIU_ALCANCE !== 'todo') return [...modos.filter(m => m !== 'swecode-consulta'), ...idsRespaldo().filter(id => /^(groq|nvidia)\//.test(id))];
   return [...base, ...modos, ...idsRespaldo()];
 };
 app.get('/v1/models', (_req, res) => res.json({ object: 'list', data: idsModelos().map(id => ({ id, object: 'model' })) }));
@@ -674,10 +676,15 @@ app.post('/v1/chat/completions', async (req, res) => {
         else if (previo.estado === 'WAIT_TOOLS' && mensajesM.at(-1)?.role === 'tool') checkpointGuardar(conv_id, { ...previo, estado: 'CONTINUAR', pendientes: null });
       } catch { /* el checkpoint es mejor esfuerzo */ }
     }
-    if (!res.headersSent) { res.setHeader('x-modelo-usado', usado); if (via) res.setHeader('x-via-respaldo', via); }
+    // T1 formato de salida (solo Groq/NVIDIA): «Nombre del modelo | respondió | arquitectura». Metadato siempre (ficha_salida + cabecera x-riu-ficha);
+    // como ultima linea visible del texto salvo RIU_FICHA_SALIDA=0 o si la respuesta son tool_calls (no se ensucia el turno de herramientas).
+    const provU = String(usado || '').split('/')[0], ficha = (provU === 'groq' || provU === 'nvidia')
+      ? `${(MODELOS_API.find(m => m.id === usado) || {}).nombre || usado} | respondió | ${provU === 'groq' ? 'Groq LPU' : 'NVIDIA NIM'} · ${via && via !== provU ? 'respaldo ' + via : 'API directa'} · ${modoUso}` : null;
+    if (ficha && !llamadas.length && salida && process.env.RIU_FICHA_SALIDA !== '0') salida = String(salida) + `\n\n— ${ficha}`;
+    if (!res.headersSent) { res.setHeader('x-modelo-usado', usado); if (via) res.setHeader('x-via-respaldo', via); if (ficha) res.setHeader('x-riu-ficha', encodeURIComponent(ficha)); }
 
     if (sse.pide) {  // OpenClaw (openai-completions) pide SSE: lo que llego por streaming real ya se entrego; se emite SOLO lo que falte + tool_calls + finish_reason + [DONE]
-      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}) };
+      sse.parar(); sse.model = `swecode:${model}`; sse.extra = { modelo_usado: usado, via_respaldo: via, ...(ficha ? { ficha_salida: ficha } : {}), ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}) };
       sse.abrir(); sse.rolInicial();
       const yaEntregado = sse.flujo.texto, completo = String(salida || '');
       for (const t of trozosDe(completo.startsWith(yaEntregado) ? completo.slice(yaEntregado.length) : '')) sse.chunk({ content: t });
@@ -687,7 +694,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
     res.json({
       id: `webchat-${Date.now()}`, object: 'chat.completion', created: Math.floor(Date.now()/1000),
-      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, aviso, archivo, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}),
+      model: `swecode:${model}`, modelo_usado: usado, via_respaldo: via, via_primaria: viaPrimaria, ...(ficha ? { ficha_salida: ficha } : {}), aviso, archivo, ...(servidor ? { servidor } : {}), ...(metricas ? { metricas } : {}), ...(tarea ? { tarea } : {}), ...(consensoDetalle ? { consenso_detalle: consensoDetalle } : {}), ...(esOc ? { ejecutor_tools: 'openclaw' } : {}),
       choices: [{ index: 0, finish_reason: fin, message: { role: 'assistant', content: salida || '', ...(llamadas.length ? { tool_calls: llamadas } : {}) } }],
       usage: usageDe(metricas),
     });

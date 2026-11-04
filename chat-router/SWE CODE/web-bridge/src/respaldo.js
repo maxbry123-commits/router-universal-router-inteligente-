@@ -8,13 +8,14 @@ import https from 'node:https';
 export const BASES = { groq: 'https://api.groq.com/openai/v1', nvidia: 'https://integrate.api.nvidia.com/v1',
   deepseek: 'https://api.deepseek.com', minimax: 'https://api.minimax.io/v1', openai: 'https://api.openai.com/v1' };
 // modelos autorizados del selector (Llama 3.3 de Groq y NVIDIA retirados). Muse Glimmer aparece una sola vez.
-export const MODELOS_API = [
-  { id: 'groq/qwen/qwen3.8-27b', nombre: 'Groq Qwen 3.8 27B' },
-  { id: 'nvidia/minimaxai/minimax-m3.1-flash', nombre: 'NVIDIA MiniMax M3.1 Flash' },
-  { id: 'nvidia/meta/muse-glimmer-30b', nombre: 'NVIDIA Muse Glimmer 30B' },
-  { id: 'nvidia/nvidia/nemotron-3-ultra-550b-a55b', nombre: 'NVIDIA Nemotron 3 Ultra' },
-  { id: 'nvidia/z-ai/glm-5.3', nombre: 'NVIDIA GLM 5.3' },
-  { id: 'nvidia/z-ai/glm-5.3-flash', nombre: 'NVIDIA GLM 5.3 Flash' },
+export const MODELOS_API = [  // alcance activo (Antonio 2026-11-03): SOLO Groq + NVIDIA; nombres = los del selector OpenClaw (provider-openclaw.json)
+  { id: 'groq/qwen/qwen3.8-27b', nombre: 'Groq · Qwen 3.8 27B' },
+  { id: 'nvidia/minimaxai/minimax-m3.1-flash', nombre: 'NVIDIA · MiniMax M3.1 Flash' },
+  { id: 'nvidia/meta/muse-glimmer-30b', nombre: 'NVIDIA · Muse Glimmer 30B' },
+  { id: 'nvidia/nvidia/nemotron-3-ultra-550b-a55b', nombre: 'NVIDIA · Nemotron 3 Ultra' },
+  { id: 'nvidia/z-ai/glm-5.3', nombre: 'NVIDIA · GLM 5.3' },
+  { id: 'nvidia/z-ai/glm-5.3-flash', nombre: 'NVIDIA · GLM 5.3 Flash' },
+  // Fuera de alcance T1 (solo Groq+NVIDIA): se conservan inertes; /v1/models y provider OpenClaw NO los listan salvo RIU_ALCANCE=todo.
   { id: 'deepseek/deepseek-v4-pro', nombre: 'DeepSeek V4 Pro (API)' },
   { id: 'deepseek/deepseek-flash', nombre: 'DeepSeek Flash (API)' },
   { id: 'minimax/MiniMax-M3', nombre: 'MiniMax M3 (API)' },
@@ -76,7 +77,29 @@ const backoff = (n, r) => Math.round(Math.min(r.esperaMax, r.backoffMs * 2 ** n)
 const enfriadas = new Map();  // `${prov}\0${clave}` -> epoch ms hasta el que no se usa
 const cacheModelos = new Map();  // `${prov}\0${base}` -> { id|null, hasta }
 const metricas = new Map();  // `${prov}/${modelo}` -> acumulados de TTFT y tokens/s (solo numeros)
-export function limpiarEstado() { enfriadas.clear(); cacheModelos.clear(); metricas.clear(); }
+// R9 presupuesto (listas A1 #1-#3 / Code C1-C2-C4): cupo predictivo por clave desde x-ratelimit-* (Groq) y enfriado por MODELO tras 429 (NVIDIA, limites opacos por id).
+// Nunca tumba la tarea: una clave sin cupo se salta (GAP BUDGET suave) y el respaldo sigue con otra clave/proveedor; el modelo NVIDIA enfriado cede a otro id.
+const cupos = new Map();  // `${prov}\0${clave}` -> { req, tok, hasta }
+const modelosFrios = new Map();  // `${prov}/${modelo}` -> epoch ms
+export const UMBRAL_CUPO = { req: parseInt(process.env.RIU_CUPO_MIN_REQ || '1', 10), tok: parseInt(process.env.RIU_CUPO_MIN_TOK || '1500', 10) };
+// '2m59.56s' | '7.66s' | '120ms' | '1h2m' -> ms
+export function parseReset(v) {
+  const t = String(v || '').trim(); if (!t) return 0; if (/^\d+(\.\d+)?$/.test(t)) return Math.round(parseFloat(t) * 1000);
+  let ms = 0, ok = false; for (const [, n, u] of t.matchAll(/(\d+(?:\.\d+)?)(ms|h|m|s)/g)) { ok = true; ms += parseFloat(n) * ({ ms: 1, s: 1000, m: 60000, h: 3600000 })[u]; }
+  return ok ? Math.round(ms) : 0;
+}
+const provDe = (base) => Object.keys(BASES).find((p) => base && base.startsWith(BASES[p])) || (/groq/i.test(base) ? 'groq' : /nvidia/i.test(base) ? 'nvidia' : '');
+export function anotarCupo(base, clave, h, ahora = Date.now()) {
+  const g = (n) => (typeof h === 'function' ? h(n) : h?.[n]); const prov = provDe(base); if (!prov || !clave) return;
+  const req = parseInt(g('x-ratelimit-remaining-requests'), 10), tok = parseInt(g('x-ratelimit-remaining-tokens'), 10);
+  if (!Number.isFinite(req) && !Number.isFinite(tok)) return;
+  const bajoReq = Number.isFinite(req) && req < UMBRAL_CUPO.req, bajoTok = Number.isFinite(tok) && tok < UMBRAL_CUPO.tok;
+  const espera = Math.max(bajoReq ? parseReset(g('x-ratelimit-reset-requests')) : 0, bajoTok ? parseReset(g('x-ratelimit-reset-tokens')) : 0);
+  cupos.set(`${prov}\0${clave}`, { req, tok, hasta: (bajoReq || bajoTok) ? ahora + Math.min(Math.max(espera, 1000), 600000) : 0 });
+}
+const conCupo = (prov, k, ahora) => { const c = cupos.get(`${prov}\0${k}`); return !c || !c.hasta || c.hasta <= ahora; };
+export function estadoCupos() { return [...cupos.entries()].map(([k, v]) => ({ prov: k.split('\0')[0], req: v.req, tok: v.tok, enfriadaHasta: v.hasta || 0 })); }
+export function limpiarEstado() { enfriadas.clear(); cacheModelos.clear(); metricas.clear(); cupos.clear(); modelosFrios.clear(); }
 
 
 // Los slots aceptan el origen del Space o la base OpenAI /v1.
@@ -110,7 +133,7 @@ export function limpiarClaves() { for (const prov of Object.keys(inyectadas)) in
 
 export const claves = (var_, env) => [...[var_, ...Array.from({ length: 20 }, (_, i) => `${var_}_${i + 1}`)].map(n => env[n]), ...(inyectadas[var_.split('_')[0].toLowerCase()] || [])].filter((v, i, a) => v && a.indexOf(v) === i);
 
-const libres = (prov, env, r) => claves(prov.toUpperCase() + '_API_KEY', env).filter(k => (enfriadas.get(`${prov}\0${k}`) || 0) <= r.ahora());
+const libres = (prov, env, r) => claves(prov.toUpperCase() + '_API_KEY', env).filter(k => (enfriadas.get(`${prov}\0${k}`) || 0) <= r.ahora() && conCupo(prov, k, r.ahora()));
 const limpiar = (msg, ks) => ks.reduce((m, k) => (k ? m.split(k).join('[clave]') : m), String(msg));  // ninguna clave sale en errores
 
 const errHttp = (status, retryAfter) => Object.assign(new Error(`HTTP ${status}`), { status, retryAfterMs: parseRetryAfter(retryAfter) });
@@ -210,6 +233,7 @@ async function pedir(base, modelo, mensajes, clave, extra = {}, r = red()) {
     const resp = await fetch(`${base.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST', signal, headers: cabeceras(clave), body: cuerpo(modelo, mensajes, extra, false),
     });
+    if (clave) anotarCupo(base, clave, (n) => resp.headers.get(n));
     if (!resp.ok) {
       const error = errHttp(resp.status, resp.headers.get('retry-after'));
       // Un 503 del manager HF puede significar descarga GGUF, error de carga
@@ -318,6 +342,7 @@ async function pedirStream(base, modelo, mensajes, clave, extra, r, ctx, metr) {
   let json = null;
   await peticionStream(`${base.replace(/\/$/, '')}/chat/completions`, cabeceras(clave), cuerpo(modelo, mensajes, extra, true), r, {
     cabecera: (res) => {
+      if (clave) anotarCupo(base, clave, res.headers);
       if (res.statusCode < 200 || res.statusCode >= 300) throw errHttp(res.statusCode, res.headers['retry-after']);
       return /application\/json/i.test(String(res.headers['content-type'] || '')) ? 'json' : 'sse';
     },
@@ -471,6 +496,9 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
   const todas = claves(prov.toUpperCase() + '_API_KEY', env), ks = libres(prov, env, r);
   const ctx = onDelta ? { onDelta, flujo: flujo || { texto: '' } } : { flujo };
   let ultimo = new Error(todas.length ? 'claves enfriadas' : 'sin clave'), n = 0, fallos = 0;
+  const frio = modelosFrios.get(id) || 0;
+  if (prov === 'nvidia' && frio > r.ahora()) throw Object.assign(new Error(`EXTERNO_NVIDIA: GAP RATE_LIMIT modelo ${id} enfriado ${Math.ceil((frio - r.ahora()) / 1000)} s tras 429 (se usa otro modelo/proveedor)`), { code: 'EXTERNO_FALLO', tipo: 'limite_temporal', status: 429, gap: 'RATE_LIMIT' });
+  if (todas.length && !ks.length && todas.some((k) => !conCupo(prov, k, r.ahora()))) throw Object.assign(new Error(`EXTERNO_${prov.toUpperCase()}: GAP BUDGET cupo x-ratelimit agotado en todas las claves; reanuda al reset (sin tumbar la tarea)`), { code: 'EXTERNO_FALLO', tipo: 'limite_temporal', status: 429, gap: 'BUDGET' });
   if (onInicio) { try { onInicio({ via: prov, usado: id }); } catch { /* informativo */ } }
   for (const [i, k] of ks.entries()) {
     if (r.signal?.aborted) throw cancelada();
@@ -483,6 +511,7 @@ export async function externo(id, mensajes, { env = process.env, extra = {}, opt
       ultimo = e;
       if (e.code === 'ABORTADO' || r.signal?.aborted) throw cancelada();  // Detener: ni otra clave ni otro proveedor
       if (esTimeout(e)) { for (const x of todas) enfriadas.set(`${prov}\0${x}`, r.ahora() + r.cooldownMs); break; }  // primer timeout: se enfria el proveedor (todas sus claves) y se corta; respaldo() no reentra
+      if (e.status === 429 && prov === 'nvidia') modelosFrios.set(id, r.ahora() + Math.max(r.cooldownMs, Math.min(e.retryAfterMs || 0, 600000)));  // C4: NVIDIA enfria el id, no solo la clave
       if (e.status === 429) { enfriadas.set(`${prov}\0${k}`, r.ahora() + Math.max(r.cooldownMs, Math.min(e.retryAfterMs || 0, 600000))); await esperarCancelable(esperaCorta(e, r), r); continue; }
       if (e.status === 402) { enfriadas.set(`${prov}\0${k}`, r.ahora() + COOLDOWN_CREDITO_MS); continue; }  // sin credito/cuota: otra clave puede servir; esta no se repite ni se prueba primero 10 min
       if (e.status === 401 || e.status === 403) continue;  // clave descartada
