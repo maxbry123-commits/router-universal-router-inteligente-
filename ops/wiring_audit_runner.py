@@ -1,42 +1,47 @@
 #!/usr/bin/env python3
 """
 ADAPTADOR DE TRANSPORTE (NO es el JOB 1 ni el JOB 2 de la guia).
-Reproduce los MISMOS artefactos y las MISMAS clasificaciones de la guia
-"REPOSITORY ENGINEERING GOVERNANCE" sustituyendo `git clone` por la API de GitHub
-expuesta por el Router RIU (repo canonico privado + sin secret GH_TOKEN en la cuenta HF).
+Desviacion declarada del mecanismo de la guia (L24 "Clonar GitHub conservando el historial",
+L535/L537 "git clone ... GH_TOKEN"): el repo canonico es privado y la cuenta HF no tiene
+secret GH_TOKEN. La via sancionada por el contrato (references/conexiones.md L13, L29-31,
+L70) es el Router RIU. Por eso el flujo se parte en dos fases sobre el MISMO archivo:
 
-DESVIACIONES DECLARADAS (se incrustan en cada artefacto como "deviation_notes"):
- D1 transporte_api_router_en_vez_de_git_clone
- D2 cobertura_git_grep_reducida: la guia hace grep de contenido sobre el arbol COMPLETO
-    en cada commit (6 patrones x hasta 500 commits). Sustituto: (a) deltas por commit via
-    GET /commits/{sha} (files[] + patch) y (b) escaneo EXACTO del contenido en el tip de
-    cada rama via github_leer. Se registra por commit: files_total/files_scanned/files_skipped.
- D3 alcance_commits: tope global MAX_COMMITS (500), mas recientes primero entre todas las refs.
- D4 git_bisect_no_disponible: requiere clon local.
+  --mode acquire  (se ejecuta donde hay clave del Router: el orquestador)
+        Recoge la evidencia cruda (ramas, commits, deltas por commit, escaneo de contenido
+        en el tip de cada rama, raiz) y la publica en el Dataset de informes.
+  --mode analyze  (se ejecuta como Hugging Face Job, solo con HF_TOKEN)
+        Consume la evidencia, produce los artefactos de la guia y los sube al Dataset.
 
-CLASIFICACION (misma que la guia): PRESERVED | REMOVED | MODIFIED | NEW | BROKEN_CANDIDATE | UNKNOWN.
-Bin de archivos (owner): skill | plan | cableado_antes | cableado_despues | no_cableado | basura
-  -> "basura" es DESTINO/ESTADO, nunca borrado.
+DESVIACIONES DECLARADAS (van dentro de cada artefacto como "deviation_notes"):
+ D1 transporte=api_github_via_router_riu en vez de git clone (repo privado, sin GH_TOKEN).
+ D2 cobertura git-grep reducida: deltas por commit + escaneo en el tip de cada rama; se
+    registra por ref: files_in_tree, files_scanned, files_skipped, truncations.
+    COMPLETITUD: si files_scanned != files_in_tree hay truncamiento -> esa ref NO puede
+    producir REMOVED ni BROKEN_CANDIDATE, solo UNKNOWN (guia L347, L1225).
+ D3 semantica de fetch distinta por Job: JOB 1 = todas las ramas (L215/L222 --all);
+    JOB 2 = solo la rama del proyecto (L386-387 --single-branch).
+ D4 git bisect no disponible (requiere clon local).
+ D5 MAX_COMMITS acota el alcance del audit (guia L168) -> se declara como techo.
+
+CLASIFICACION (guia L84-91): PRESERVED | REMOVED | MODIFIED | NEW | BROKEN_CANDIDATE | UNKNOWN.
+Bin de archivos (owner, taxonomia no literal): skill | plan | cableado_antes | cableado_despues
+ | no_cableado | basura. "basura" es DESTINO/ESTADO, nunca borrado (guia L1091, L1088, L1457).
 """
-import argparse, json, os, re, sys, time
+import argparse, json, os, re, time
 from datetime import datetime, timezone
 
 ROUTER = os.environ.get("RIU_ROUTER_URL", "https://comand-center-1-riu-router.hf.space/mcp")
-KEY = os.environ.get("RIU_ROUTER_API_KEY", "")
 REPO = os.environ.get("GH_REPO", "maxbry123-commits/router-universal-router-inteligente-")
 BRANCH = os.environ.get("GH_BRANCH", "main")
 HF_REPORT_REPO = os.environ.get("HF_REPORT_REPO", "COMAND-CENTER-1/router-universal-router-inteligente-auditoria")
 MAX_COMMITS = int(os.getenv("MAX_COMMITS", "500"))
 SCAN_MAX = int(os.getenv("SCAN_MAX", "40"))
-MAX_SECONDS = int(os.getenv("MAX_SECONDS", "2700"))
-OUT = os.environ.get("OUT_DIR", "/tmp/audit")
 SCAN_EXT = {".json", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".py", ".js", ".ts", ".tsx",
             ".jsx", ".mjs", ".cjs", ".sh", ".bash", ".md", ".txt", ".env", ".example"}
 WIRE_HINTS = ("manifest", "plugin", "cableado", "wiring", "loop", "watchdog", "cola", "router",
               "api", "config", "setting", "registry", "mcp", "deepseek", "hermes", "vercel",
               "huggingface", "hf_", "package.json", "requirements", "docker", "compose",
               "makefile", "workflow", "env", "skill", "agents.md")
-
 PATTERNS = {
     "http": r"https?://|fetch\(|axios|requests\.|httpx|aiohttp",
     "mcp": r"\bMCP\b|tools/list|tools/call|streamable|stdio",
@@ -46,56 +51,52 @@ PATTERNS = {
     "imports": r"^\s*(import |from |require\()",
 }
 COMPILED = {k: re.compile(v, re.M) for k, v in PATTERNS.items()}
-DEVIATIONS = [
-    "D1 transporte=api_github_via_router_riu (sin git clone; repo privado y sin secret GH_TOKEN)",
-    "D2 cobertura git-grep reducida: deltas por commit + escaneo exacto en el tip de cada rama; cobertura registrada por commit",
-    "D3 alcance de commits: tope global MAX_COMMITS=%d, mas recientes primero entre todas las refs" % MAX_COMMITS,
-    "D4 git bisect no disponible (requiere clon local)",
-    "Nota de la guia: removed_candidates contiene candidatos, no conexiones rotas confirmadas (guia L347)",
-]
-STATS = {"api_calls": 0, "truncations": 0, "gh_leer_calls": 0, "commits_enumerated": 0,
-         "commits_examined": 0, "commits_total_available": 0, "files_scanned": 0,
-         "files_skipped": 0, "errors": 0}
+DEV = ["D1 transport=api_github_via_router_riu (sin git clone; repo privado y sin secret GH_TOKEN)",
+       "D2 cobertura git-grep reducida + garantia de completitud (scan incompleto => UNKNOWN, nunca REMOVED)",
+       "D3 JOB1=todas las ramas; JOB2=solo la rama del proyecto",
+       "D4 git bisect no disponible (requiere clon local)",
+       "D5 MAX_COMMITS=%d acota el alcance del audit (guia L168)" % MAX_COMMITS,
+       "Nota guia L347: removed_candidates contiene candidatos, no conexiones rotas confirmadas"]
+STATS = {"api_calls": 0, "truncations": 0, "leer_calls": 0, "commits_examined": 0,
+         "commits_total_available": 0, "files_scanned": 0, "files_skipped": 0, "errors": 0}
 
 
-def redact(text):
-    text = re.sub(r"(?i)(token|password|secret|api_key)(\s*[:=]\s*)['\"]?[^'\"\s,]+", r"\1\2[REDACTED]", text)
-    text = re.sub(r"(https?://)[^/@\s]+@", r"\1[REDACTED]@", text)
-    return text[:400]
+def redact(t):
+    t = re.sub(r"(?i)(token|password|secret|api_key)(\s*[:=]\s*)['\"]?[^'\"\s,]+", r"\1\2[REDACTED]", t)
+    t = re.sub(r"(https?://)[^/@\s]+@", r"\1[REDACTED]@", t)
+    return t[:400]
+
+
+def _req(method, url, body=None, headers=None, timeout=180):
+    import urllib.request
+    r = urllib.request.Request(url, data=body, headers=headers or {}, method=method)
+    with urllib.request.urlopen(r, timeout=timeout) as resp:
+        return resp.read().decode("utf-8", "replace")
 
 
 def mcp(tool, args, timeout=180):
+    key = os.environ.get("RIU_ROUTER_API_KEY") or os.environ.get("UNIVERSAL_KEY") or ""
     body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
                        "params": {"name": tool, "arguments": args}}).encode()
-    req = urllib_request("POST", ROUTER, body,
-                         {"Content-Type": "application/json", "X-API-Key": KEY, "Authorization": "Bearer " + KEY},
-                         timeout)
-    d = json.loads(req)
+    raw = _req("POST", ROUTER, body, {"Content-Type": "application/json", "X-API-Key": key,
+                                      "Authorization": "Bearer " + key}, timeout)
+    d = json.loads(raw)
     c = d.get("result", {}).get("content", [])
     return c[0]["text"] if c else ""
 
 
-def urllib_request(method, url, body=None, headers=None, timeout=180):
-    import urllib.request
-    req = urllib.request.Request(url, data=body, headers=headers or {}, method=method)
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read().decode("utf-8", "replace")
-
-
 def gh_api(path):
-    """Devuelve (data|None, raw, truncated). La respuesta del Router trunca a 12000 B."""
     STATS["api_calls"] += 1
     raw = mcp("github_api", {"metodo": "GET", "ruta": path})
     try:
-        obj = json.loads(raw)
-        return obj.get("data"), raw, False
+        return json.loads(raw).get("data"), raw, False
     except Exception:
         STATS["truncations"] += 1
         return None, raw, True
 
 
 def gh_read(path, ref):
-    STATS["gh_leer_calls"] += 1
+    STATS["leer_calls"] += 1
     try:
         return mcp("github_leer", {"repo": REPO, "ruta": path, "rama": ref})
     except Exception:
@@ -104,22 +105,20 @@ def gh_read(path, ref):
 
 
 def scan_content(path, content):
-    """Reproduce `git grep -n -I -E <pattern> <commit> -- . :!*.lock :!*.map` -> refs."""
-    refs = []
-    if not content:
-        return refs
-    if path.endswith((".lock", ".map")):
-        return refs
-    for category, rx in COMPILED.items():
+    out = []
+    if not content or path.endswith((".lock", ".map")):
+        return out
+    for cat, rx in COMPILED.items():
         for m in rx.finditer(content):
-            line_no = content.count("\n", 0, m.start()) + 1
-            line = content[m.start():content.find("\n", m.start()) if content.find("\n", m.start()) != -1 else len(content)]
-            refs.append({"category": category, "reference": redact("%s:%d:%s" % (path, line_no, line.strip()))})
-    return refs
+            ln = content.count("\n", 0, m.start()) + 1
+            end = content.find("\n", m.start())
+            line = content[m.start():end if end != -1 else len(content)]
+            out.append({"category": cat, "reference": redact("%s:%d:%s" % (path, ln, line.strip()))})
+    return out
 
 
 def list_branches():
-    data, raw, trunc = gh_api("/repos/%s/branches?per_page=100" % REPO)
+    data, raw, _ = gh_api("/repos/%s/branches?per_page=100" % REPO)
     out = []
     if isinstance(data, list):
         for b in data:
@@ -127,8 +126,7 @@ def list_branches():
     else:
         for m in re.finditer(r'"name":\s*"([^"]+)"[^}]*?"sha":\s*"([0-9a-f]{40})"', raw):
             out.append({"name": m.group(1), "sha": m.group(2)})
-    seen = set()
-    uniq = []
+    seen, uniq = set(), []
     for b in out:
         if b["name"] and b["name"] not in seen:
             seen.add(b["name"])
@@ -136,10 +134,10 @@ def list_branches():
     return uniq
 
 
-def list_commits(branch, max_pages=200):
+def list_commits(branch):
     commits, page = [], 1
-    while page <= max_pages:
-        data, raw, trunc = gh_api("/repos/%s/commits?sha=%s&per_page=3&page=%d" % (REPO, branch, page))
+    while page <= 400:
+        data, raw, _ = gh_api("/repos/%s/commits?sha=%s&per_page=3&page=%d" % (REPO, branch, page))
         got = []
         if isinstance(data, list):
             for c in data:
@@ -149,9 +147,6 @@ def list_commits(branch, max_pages=200):
         else:
             for m in re.finditer(r'"sha":\s*"([0-9a-f]{40})"(.{0,900}?)"date":\s*"([^"]+)"', raw, re.S):
                 got.append({"sha": m.group(1), "date": m.group(3), "message": "", "branch": branch})
-            for m in re.finditer(r'"message":\s*"([^"]{0,200})"', raw):
-                if got and not got[-1]["message"]:
-                    got[-1]["message"] = m.group(1)
         if not got:
             break
         commits.extend(got)
@@ -182,8 +177,7 @@ def prioritize(paths):
             s -= 100
         if path.count("/") == 0:
             s -= 40
-        ext = os.path.splitext(path)[1]
-        if ext not in SCAN_EXT:
+        if os.path.splitext(path)[1] not in SCAN_EXT:
             s += 60
         if p.get("size", 0) > 400000:
             s += 50
@@ -191,230 +185,231 @@ def prioritize(paths):
     return sorted(paths, key=score)
 
 
-def scan_ref(ref, sha):
-    """Escaneo EXACTO de contenido en el tip de una ref (via github_leer, sin truncacion)."""
-    paths, trunc = tree_paths(sha)
-    cand = prioritize(paths)[:SCAN_MAX]
-    refs, coverage = [], {"ref": ref, "tree_sha": sha, "files_total": len(paths),
-                          "files_candidate": len(cand), "files_scanned": 0, "files_skipped": len(paths) - len(cand),
-                          "tree_truncated": trunc}
-    for p in cand:
-        content = gh_read(p["path"], ref)
-        if content and not content.startswith("ERROR"):
-            coverage["files_scanned"] += 1
-            STATS["files_scanned"] += 1
-            refs.extend(scan_content(p["path"], content))
-        else:
-            coverage["files_skipped"] += 1
-    STATS["files_skipped"] += coverage["files_skipped"]
-    return refs, coverage
-
-
 def commit_detail(sha):
     data, raw, trunc = gh_api("/repos/%s/commits/%s" % (REPO, sha))
     files, patches = [], []
     if isinstance(data, dict) and data.get("files"):
         for f in data["files"]:
-            files.append({"filename": f.get("filename"), "status": f.get("status"), "additions": f.get("additions"), "deletions": f.get("deletions")})
+            files.append({"filename": f.get("filename"), "status": f.get("status")})
             if f.get("patch"):
                 patches.append({"filename": f.get("filename"), "patch": f.get("patch")})
     else:
         for m in re.finditer(r'"filename":\s*"([^"]+)"\s*,\s*"status":\s*"([A-Z])"', raw):
-            files.append({"filename": m.group(1), "status": m.group(2), "additions": None, "deletions": None})
-        for m in re.finditer(r'"patch":\s*"((?:[^"\\]|\\.){0,3000})"', raw):
+            files.append({"filename": m.group(1), "status": m.group(2)})
+        for m in re.finditer(r'"patch":\s*"((?:[^"\\]|\\.){0,2500})"', raw):
             patches.append({"filename": None, "patch": m.group(1)})
     return files, patches, trunc
 
 
-def classify(branch_refs, current_set):
-    out = []
-    for key, commits in branch_refs.items():
-        if key in current_set:
-            out.append({"reference": key, "status": "PRESERVED", "commits": commits})
-        else:
-            out.append({"reference": key, "status": "REMOVED", "commits": commits})
-    return out
-
-
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--phase", choices=["wiring", "root"], default="wiring")
-    args = ap.parse_args()
-    os.makedirs(OUT, exist_ok=True)
-    started = time.time()
-    head_sha = ""
+def acquire():
+    t0 = time.time()
     branches = list_branches()
-    with open(os.path.join(OUT, "branches.txt"), "w") as f:
-        f.write("branches\tname\tsha\n")
-        for b in branches:
-            f.write("%s\t%s\n" % (b["name"], b["sha"]))
+    head = next((b["sha"] for b in branches if b["name"] == BRANCH), "")
+    allc = []
     for b in branches:
-        if b["name"] == BRANCH:
-            head_sha = b["sha"]
+        allc.extend(list_commits(b["name"]))
+    seen = {}
+    for c in allc:
+        seen.setdefault(c["sha"], c)
+    ordered = sorted(seen.values(), key=lambda c: c.get("date") or "", reverse=True)[:MAX_COMMITS]
+    STATS["commits_total_available"] = len(seen)
+    deleted, renamed, hist = [], [], []
+    for c in ordered:
+        files, patches, _ = commit_detail(c["sha"])
+        STATS["commits_examined"] += 1
+        for f in files:
+            if f["status"] == "D":
+                deleted.append({"file": f["filename"], "commit": c["sha"], "date": c.get("date")})
+            elif f["status"] == "R":
+                renamed.append({"file": f["filename"], "commit": c["sha"], "date": c.get("date")})
+        hist.append("%s|%s|%s" % (c["sha"], c.get("date", ""), c.get("message", "")))
+        for p in patches:
+            if p.get("patch"):
+                for line in p["patch"].split("\n"):
+                    if line.startswith("+") and not line.startswith("+++"):
+                        for cat, rx in COMPILED.items():
+                            if rx.search(line[1:]):
+                                hist.append("PATCH\t%s\t%s\t%s" % (cat, c["sha"], redact(line[1:])))
+    branch_scans = {}
+    for b in branches:
+        paths, trunc = tree_paths(b["sha"])
+        cand = prioritize(paths)[:SCAN_MAX]
+        refs, scanned = [], 0
+        for p in cand:
+            content = gh_read(p["path"], b["name"])
+            if content and not content.startswith("ERROR"):
+                scanned += 1
+                STATS["files_scanned"] += 1
+                refs.extend(scan_content(p["path"], content))
+            else:
+                STATS["files_skipped"] += 1
+        skipped = len(paths) - scanned
+        STATS["files_skipped"] += skipped
+        branch_scans[b["name"]] = {"sha": b["sha"], "refs": refs, "files_in_tree": len(paths),
+                                   "files_scanned": scanned, "files_skipped": skipped,
+                                   "tree_truncated": trunc,
+                                   "complete": (not trunc) and scanned == len(paths)}
+    data, raw, trunc = gh_api("/repos/%s/contents/" % REPO)
+    root = []
+    if isinstance(data, list):
+        for e in data:
+            root.append({"name": e.get("name"), "type": e.get("type"), "size": e.get("size"), "sha": e.get("sha")})
+    else:
+        for m in re.finditer(r'"name":\s*"([^"]+)"\s*,\s*"path":\s*"[^"]*"\s*,\s*"sha":\s*"([0-9a-f]{40})"(?:\s*,\s*"size":\s*(\d+))?', raw):
+            root.append({"name": m.group(1), "type": "file", "size": int(m.group(3) or 0), "sha": m.group(2)})
+    root_files = []
+    for e in root:
+        if e["type"] == "file" and (e.get("size") or 0) < 200000:
+            c = gh_read(e["name"], BRANCH)
+            root_files.append({"name": e["name"], "size": e.get("size"), "sha": e.get("sha"),
+                               "content": c if c and not c.startswith("ERROR") else ""})
+    pack = {"repository": REPO, "branch": BRANCH, "head": head,
+            "transport": "api_github_via_router_riu", "deviation_notes": DEV,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "branches": branches, "commits": ordered, "commits_total_available": STATS["commits_total_available"],
+            "commits_examined": STATS["commits_examined"], "deleted_files": deleted,
+            "renamed_files": renamed, "history": hist, "branch_scans": branch_scans,
+            "root": root, "root_files": root_files, "stats": STATS, "elapsed_sec": int(time.time() - t0)}
+    path = os.environ.get("PACK_PATH", "/tmp/pack.json")
+    open(path, "w").write(json.dumps(pack, ensure_ascii=False))
+    print("ACQUIRE DONE: commits=%d branches=%d refs=%d files_scanned=%d skipped=%d -> %s"
+          % (STATS["commits_examined"], len(branches), sum(len(v["refs"]) for v in branch_scans.values()),
+             STATS["files_scanned"], STATS["files_skipped"], path))
+    return pack
 
-    if args.phase == "wiring":
-        # --- JOB 1: historial + comparacion ---
-        per_branch = {}
-        coverage = []
-        all_commits = []
-        for b in branches:
-            cl = list_commits(b["name"])
-            all_commits.extend(cl)
-        STATS["commits_total_available"] = len(all_commits)
-        seen = {}
-        for c in all_commits:
-            seen.setdefault(c["sha"], c)
-        ordered = sorted(seen.values(), key=lambda c: c.get("date") or "", reverse=True)[:MAX_COMMITS]
-        STATS["commits_enumerated"] = len(ordered)
 
-        deleted, renamed, history_lines = [], [], []
-        for c in ordered:
-            if time.time() - started > MAX_SECONDS:
-                break
-            files, patches, trunc = commit_detail(c["sha"])
-            STATS["commits_examined"] += 1
-            for f in files:
-                if f["status"] == "D":
-                    deleted.append({"file": f["filename"], "commit": c["sha"], "date": c.get("date"), "message": c.get("message")})
-                elif f["status"] == "R":
-                    renamed.append({"file": f["filename"], "commit": c["sha"], "date": c.get("date"), "message": c.get("message")})
-            history_lines.append("%s|%s|%s" % (c["sha"], c.get("date", ""), c.get("message", "")))
-            for p in patches:
-                if p.get("patch"):
-                    for line in p["patch"].split("\n"):
-                        if line.startswith("+") and not line.startswith("+++"):
-                            for cat, rx in COMPILED.items():
-                                if rx.search(line[1:]):
-                                    history_lines.append("PATCH\t%s\t%s\t%s" % (cat, c["sha"], redact(line[1:])))
-
-        branch_refs = {}
-        for b in branches:
-            refs, cov = scan_ref(b["name"], b["sha"])
-            coverage.append(cov)
-            d = {}
-            for r in refs:
-                key = r["category"] + "|" + r["reference"].split(":", 1)[-1]
-                d.setdefault(key, []).append(b["name"])
-            branch_refs.update(d)
-
-        current = []
-        for b in branches:
-            if b["name"] == BRANCH:
-                current, _ = scan_ref(BRANCH, b["sha"])
-                break
-        current_set = set(r["category"] + "|" + r["reference"].split(":", 1)[-1] for r in current)
-        historical_set = {}
-        for key, commits in branch_refs.items():
-            historical_set.setdefault(key, []).extend(commits)
-        removed = [{"reference": k, "commits": v} for k, v in historical_set.items() if k not in current_set]
-
-        with open(os.path.join(OUT, "file_history.txt"), "w") as f:
-            f.write("\n".join(history_lines))
-        with open(os.path.join(OUT, "historical_connections.json"), "w") as f:
-            json.dump({"transport": "api_github_via_router_riu", "deviation_notes": DEVIATIONS,
-                       "per_branch": branch_refs, "coverage": coverage,
-                       "commits_examined": STATS["commits_examined"], "commits_total_available": STATS["commits_total_available"]},
-                      f, indent=2, ensure_ascii=False)
-        with open(os.path.join(OUT, "current_connections.json"), "w") as f:
-            json.dump({"transport": "api_github_via_router_riu", "deviation_notes": DEVIATIONS,
-                       "head": head_sha, "references": current}, f, indent=2, ensure_ascii=False)
-        with open(os.path.join(OUT, "removed_candidates.json"), "w") as f:
-            json.dump({"transport": "api_github_via_router_riu", "deviation_notes": DEVIATIONS,
-                       "note": "candidatos, no conexiones rotas confirmadas (guia L347)",
-                       "removed_candidates": removed}, f, indent=2, ensure_ascii=False)
-        with open(os.path.join(OUT, "deleted_files.json"), "w") as f:
-            json.dump({"deleted": deleted}, f, indent=2, ensure_ascii=False)
-        with open(os.path.join(OUT, "renamed_files.json"), "w") as f:
-            json.dump({"renamed": renamed}, f, indent=2, ensure_ascii=False)
-        with open(os.path.join(OUT, "summary.json"), "w") as f:
-            json.dump({"repository": REPO, "branch": BRANCH, "head": head_sha,
-                       "commits_examined": STATS["commits_examined"],
-                       "commits_total_available": STATS["commits_total_available"],
-                       "historical_references": len(historical_set), "current_references": len(current),
-                       "removed_candidates": len(removed), "stats": STATS,
-                       "deviation_notes": DEVIATIONS,
-                       "generated_at": datetime.now(timezone.utc).isoformat()}, f, indent=2, ensure_ascii=False)
-
-    # --- JOB de conectividad: registry.json + git_history.txt + branches.txt ---
-    registry = {"connections": [], "transport": "api_github_via_router_riu", "deviation_notes": DEVIATIONS}
-    conn_id = 1
-    for key, commits in sorted(historical_set.items()):
-        cat, ref = key.split("|", 1)
-        registry["connections"].append({
-            "id": "CON-%03d" % conn_id, "name": "%s_%s" % (cat, re.sub(r"[^a-z0-9]+", "_", ref.lower())[:40]),
-            "source": "repo:" + REPO, "target": ref[:160], "protocol": cat.upper(),
-            "direction": "unknown", "endpoint": ref[:160],
-            "status": "PRESERVED" if key in current_set else "REMOVED",
-            "branches": sorted(set(commits)), "healthcheck": "required",
-            "observations": "detectado por escaneo de contenido; requiere verificacion runtime (guia L14/L347)"})
-        conn_id += 1
-    with open(os.path.join(OUT, "registry.json"), "w") as f:
-        json.dump(registry, f, indent=2, ensure_ascii=False)
-    with open(os.path.join(OUT, "git_history.txt"), "w") as f:
-        f.write("\n".join(history_lines))
-
-    if args.phase == "root":
-        # --- JOB 2: auditoria de raiz ---
-        data, raw, trunc = gh_api("/repos/%s/contents/" % REPO)
-        root = []
-        if isinstance(data, list):
-            for e in data:
-                root.append({"name": e.get("name"), "type": e.get("type"), "size": e.get("size"), "sha": e.get("sha")})
+def analyze(pack, prefix_wiring=True, prefix_root=True):
+    OUT = os.environ.get("OUT_DIR", "/tmp/audit")
+    os.makedirs(OUT, exist_ok=True)
+    head = pack.get("head") or "head"
+    scans = pack.get("branch_scans", {})
+    complete = {k: v for k, v in scans.items() if v.get("complete")}
+    incomplete = [k for k, v in scans.items() if not v.get("complete")]
+    hist_set = {}
+    for bname, sc in scans.items():
+        for r in sc.get("refs", []):
+            key = r["category"] + "|" + r["reference"].split(":", 1)[-1]
+            hist_set.setdefault(key, []).append(bname)
+    cur_refs = []
+    main_scan = scans.get(BRANCH) or {}
+    for r in main_scan.get("refs", []):
+        cur_refs.append(r)
+    cur_set = set(r["category"] + "|" + r["reference"].split(":", 1)[-1] for r in cur_refs)
+    comp_keys = set()
+    for bname, sc in complete.items():
+        for r in sc.get("refs", []):
+            comp_keys.add(r["category"] + "|" + r["reference"].split(":", 1)[-1])
+    rows = []
+    for key, brs in sorted(hist_set.items()):
+        if key in cur_set:
+            status = "PRESERVED"
+        elif key in comp_keys:
+            status = "REMOVED"
         else:
-            for m in re.finditer(r'"name":\s*"([^"]+)"\s*,\s*"path":\s*"[^"]*"\s*,\s*"sha":\s*"([0-9a-f]{40})"(?:\s*,\s*"size":\s*(\d+))?', raw):
-                root.append({"name": m.group(1), "type": "file", "size": int(m.group(3) or 0), "sha": m.group(2)})
-        manifest = gh_read("chat-router/cableado.manifest.json", BRANCH)
+            status = "UNKNOWN"
+        rows.append({"reference": key, "status": status, "branches": sorted(set(brs))})
+    removed = [r for r in rows if r["status"] == "REMOVED"]
+    candidates = [r for r in rows if r["status"] in ("REMOVED", "UNKNOWN")]
+    cov = [{"branch": b, "files_in_tree": v.get("files_in_tree"), "files_scanned": v.get("files_scanned"),
+            "files_skipped": v.get("files_skipped"), "tree_truncated": v.get("tree_truncated"),
+            "complete": v.get("complete")} for b, v in scans.items()]
+    meta = {"transport": "api_github_via_router_riu", "deviation_notes": DEV,
+            "artifact_mapping": {
+                "narrativo_guia_L51_57": ["commits.json->summary.json", "connections.jsonl->historical_connections.json",
+                                          "deleted_files.json->deleted_files.json", "renamed_files.json->renamed_files.json",
+                                          "historical_topology.json->historical_connections.json(per_branch)"],
+                "narrativo_guia_L96_101": ["current_connections.json", "historical_connections.json",
+                                           "comparison.json->summary.json", "recovery_candidates.json->removed_candidates.json"]},
+            "completeness": {"branches_complete": sorted(complete), "branches_incomplete": incomplete,
+                             "incomplete_branches_cannot_produce_REMOVED": True},
+            "generated_at": datetime.now(timezone.utc).isoformat()}
+    def dump(n, d):
+        open(os.path.join(OUT, n), "w").write(json.dumps(d, indent=2, ensure_ascii=False))
+    if prefix_wiring:
+        dump("historical_connections.json", dict(meta, per_branch={k: v["refs"] for k, v in scans.items()}, coverage=cov))
+        dump("current_connections.json", dict(meta, head=head, references=cur_refs))
+        dump("removed_candidates.json", dict(meta, note="candidatos, no conexiones rotas confirmadas (guia L347)",
+                                             removed_candidates=candidates))
+        dump("comparison.json", dict(meta, rows=rows))
+        dump("deleted_files.json", {"deleted": pack.get("deleted_files", [])})
+        dump("renamed_files.json", {"renamed": pack.get("renamed_files", [])})
+        dump("summary.json", dict(meta, repository=REPO, branch=BRANCH, head=head,
+                                   commits_examined=pack.get("commits_examined"),
+                                   commits_total_available=pack.get("commits_total_available"),
+                                   historical_references=len(hist_set), current_references=len(cur_refs),
+                                   removed_candidates=len(candidates), stats=pack.get("stats")))
+        open(os.path.join(OUT, "file_history.txt"), "w").write("\n".join(pack.get("history", [])))
+        reg = {"connections": [], "transport": "api_github_via_router_riu", "deviation_notes": DEV}
+        for i, r in enumerate(rows, 1):
+            cat, ref = r["reference"].split("|", 1)
+            reg["connections"].append({
+                "id": "CON-%03d" % i, "name": "%s_%s" % (cat, re.sub(r"[^a-z0-9]+", "_", ref.lower())[:40]),
+                "source": "repo:" + REPO, "target": ref[:160], "protocol": cat.upper(),
+                "direction": "unknown", "endpoint": ref[:160], "status": r["status"],
+                "branches": r["branches"], "healthcheck": "required",
+                "observations": "detectado por escaneo de contenido; requiere verificacion runtime (guia L14/L347)"})
+        dump("registry.json", reg)
+        open(os.path.join(OUT, "git_history.txt"), "w").write("\n".join(pack.get("history", [])))
+        open(os.path.join(OUT, "branches.txt"), "w").write("\n".join("%s\t%s" % (b["name"], b["sha"]) for b in pack.get("branches", [])))
+    if prefix_root:
+        manifest = ""
+        for rf in pack.get("root_files", []):
+            if rf["name"] == "cableado.manifest.json":
+                manifest = rf.get("content", "")
         entries = []
-        for e in root:
-            name = e["name"]
-            low = name.lower()
-            bin_ = "no_cableado"
-            if e["type"] == "dir":
-                bin_ = "estructura"
-            elif "skill" in low:
-                bin_ = "skill"
-            elif re.search(r"(plan|checkpoint|stated|bitacora|roadmap|guia|instruction)", low):
-                bin_ = "plan"
-            elif name in ("cableado.manifest.json", "LOOP-wachdog-cola.json") or "cableado" in low or "wiring" in low:
-                bin_ = "cableado_despues" if name not in manifest else "cableado_despues"
-            elif any(k in low for k in ("dsla", "mvp")):
-                bin_ = "no_cableado"
+        for e in pack.get("root", []):
+            name, low = e["name"], e["name"].lower()
+            content = next((rf.get("content", "") for rf in pack.get("root_files", []) if rf["name"] == name), "")
+            bin_ = "estructura" if e["type"] == "dir" else (
+                "skill" if "skill" in low else
+                "plan" if re.search(r"(plan|checkpoint|stated|bitacora|roadmap|guia|instruction|agents\.md)", low) else
+                "cableado_despues" if ("cableado" in low or "wiring" in low or "manifest" in low or "loop" in low) else
+                "no_cableado")
             if e["type"] == "file":
-                in_manifest = name in manifest
-                content = gh_read(name, BRANCH) if e.get("size", 0) < 200000 else ""
                 entries.append({"name": name, "type": "file", "size": e.get("size"), "sha": e.get("sha"),
-                                "bin": bin_, "referenced_in_manifest": in_manifest,
-                                "referenced_in_code": bool(re.search(re.escape(name), content)) if content else None,
-                                "proposed_location": "docs/" if name.endswith(".md") else "backend/" if name.endswith(".py") else "config/",
-                                "action": "REVISAR_CONSUMIDORES_ANTES_DE_MOVER", "automatic_move": False,
+                                "bin": bin_, "referenced_in_manifest": name in manifest,
+                                "content_excerpt": redact(content)[:400],
+                                "proposed_location": "ROOT_KEEP" if name == "AGENTS.md" else (
+                                    "docs/" if name.endswith(".md") else "backend/" if name.endswith(".py") else "config/"),
+                                "action": "MANUAL_REVIEW", "automatic_move": False,
                                 "deletion": "PROHIBIDA (guia L1091: no eliminar sin comprobar referencias)"})
             else:
                 entries.append({"name": name, "type": "dir", "bin": "estructura", "automatic_move": False,
                                 "action": "VERIFICAR_RESPONSABILIDAD (guia L893)"})
-        root_report = {"repository": REPO, "branch": BRANCH, "commit": head_sha,
-                       "transport": "api_github_via_router_riu", "deviation_notes": DEVIATIONS,
-                       "root_entries": entries, "root_listing_truncated": trunc,
-                       "stats": STATS, "generated_at": datetime.now(timezone.utc).isoformat()}
-        with open(os.path.join(OUT, "root_structure.json"), "w") as f:
-            json.dump(root_report, f, indent=2, ensure_ascii=False)
+        dump("root_structure.json", dict(meta, root_entries=entries, root_listing_truncated=bool(pack.get("root_truncated"))))
+    return {"out": OUT, "removed": len(removed), "rows": len(rows)}
 
-    # --- persistencia en Hugging Face (guia: upload_folder -> dataset) ---
-    prefixes = []
-    if args.phase == "wiring":
-        prefixes = ["wiring/%s" % (head_sha[:12] or "head"), "audits/%s" % (head_sha[:12] or "head")]
-    else:
-        prefixes = ["root-audit/%s" % (head_sha[:12] or "head")]
+
+def upload(prefixes):
     try:
         from huggingface_hub import upload_folder
         for pfx in prefixes:
-            upload_folder(folder_path=OUT, repo_id=HF_REPORT_REPO, repo_type="dataset", path_in_repo=pfx)
+            upload_folder(folder_path=os.environ.get("OUT_DIR", "/tmp/audit"),
+                         repo_id=HF_REPORT_REPO, repo_type="dataset", path_in_repo=pfx)
             print("UPLOADED", pfx)
+        return True
     except Exception as e:
         print("UPLOAD_SKIPPED:", e)
-    print("AUDIT COMPLETED")
-    print("commits_examined:", STATS["commits_examined"], "/", STATS["commits_total_available"])
-    print("historical_references:", len(historical_set), "current:", len(current), "removed_candidates:", len(removed))
-    print("stats:", json.dumps(STATS))
+        return False
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--mode", choices=["acquire", "analyze"], required=True)
+    ap.add_argument("--pack", default="/tmp/pack.json")
+    ap.add_argument("--phase", choices=["wiring", "root"], default="wiring")
+    a = ap.parse_args()
+    if a.mode == "acquire":
+        acquire()
+        return
+    pack = json.loads(open(a.pack, encoding="utf-8").read())
+    analyze(pack, prefix_wiring=(a.phase == "wiring"), prefix_root=(a.phase == "root"))
+    head = (pack.get("head") or "head")[:12]
+    if a.phase == "wiring":
+        upload(["wiring/%s" % head, "audits/%s" % head])
+    else:
+        upload(["root-audit/%s" % head])
+    print("ANALYZE DONE phase=%s" % a.phase)
 
 
 if __name__ == "__main__":
