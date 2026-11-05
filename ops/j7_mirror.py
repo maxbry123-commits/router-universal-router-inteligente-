@@ -15,7 +15,12 @@ def main():
         # D-58: el limite del endpoint de HF es de 20.000 ficheros por repo y el espejo
         # llegaba a 20.008. kernel/ y ops/ son el utillaje de despliegue (no runtime del
         # Space): excluirlos deja el espejo en 19.961 ficheros y 31 de margen.
-        "kernel/**","ops/**"]
+        "kernel/**","ops/**",
+        # D-62: `router-mvp/router-componentes/` son 14.602 ficheros de bibliotecas de terceros
+        # vendorizadas (fastapi, cryptography, pydantic, pyyaml, huggingface_hub, MCP SDKs...).
+        # El Space instala sus dependencias por pip: no las necesita en runtime y son las que
+        # hacen que el espejo (20.775) rebase el limite de 20.000 ficheros del repo del Space.
+        "router-mvp/router-componentes/**"]
     if os.environ.get("MIRROR_BASELINE")=="1":
         # D-16/D-20: modo baseline read-only que exige el DAG en S4_approval.if_missing.
         # D-20: la env se llama MIRROR_BASELINE y no BASELINE porque wiring_check usa BASELINE como RUTA del baseline.
