@@ -143,6 +143,12 @@ def main():
             continue
         if r["ok"]:
             c["status"] = "active"
+            c["evidence"] = {
+                "type": "import",
+                "command": f"python -c \"import sys;sys.path.insert(0,'{r['root']}');import {r['module']}\"",
+                "result": "ok", "verified_in": "clon local",
+                "detail": "import ejecutado: el modulo carga y se importa sin error",
+            }
             c["verification"] = {
                 "type": "import", "root": r["root"], "module": r["module"],
                 "command": f"python -c \"import sys;sys.path.insert(0,'{r['root']}');import {r['module']}\"",

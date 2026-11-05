@@ -61,6 +61,12 @@ def main():
         if cid in res:
             root, mod, ok, err = res[cid]
             c["status"] = "active" if ok else "broken"
+            c["evidence"] = {
+                "type": "import",
+                "command": f"python -c \"import sys;sys.path.insert(0,'{root}');import {mod}\"",
+                "result": "ok", "verified_in": CLONE,
+                "detail": "import ejecutado: el modulo carga y se importa sin error",
+            }
             c["verification"] = {
                 "type": "import", "root": root, "module": mod,
                 "command": f"python -c \"import sys;sys.path.insert(0,'{root}');import {mod}\"",

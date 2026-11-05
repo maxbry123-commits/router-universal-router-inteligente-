@@ -1,3 +1,5 @@
+# connections/registry.yaml — registro central de conexiones (§5 de la guia).
+# 11 campos obligatorios por conexion; un `active` exige healthcheck ejecutado y evidencia.
 generated_by: ops/make_registry.py
 source_graph: j2_graph
 rule: todo pending_audit hasta verificacion con evidencia (§5)
@@ -126,7 +128,12 @@ connections:
   via: gateway_pending_audit
   provides: mvp
   requires: agents
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.core"
+    result: ok
+    verified_in: clon local
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - chat-router/agentes/adaptadores/_comun.py
     - router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py
@@ -161,7 +168,12 @@ connections:
   via: gateway_pending_audit
   provides: ops
   requires: agents
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'.');import kernel"
+    result: ok
+    verified_in: clon local
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - chat-router/agentes/agentes-yaiwes/agent-microkernel/kernel/runner.py
     - ops/kernel.py
@@ -197,7 +209,12 @@ connections:
   via: gateway_pending_audit
   provides: plugins
   requires: agents
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente"
+    result: ok
+    verified_in: /tmp/r2
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - chat-router/agentes/orquestacion/orquestador/deploy.py
     - chat-router/plugins/__init__.py
@@ -233,7 +250,12 @@ connections:
   via: gateway_pending_audit
   provides: agents
   requires: backend
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos"
+    result: ok
+    verified_in: /tmp/r2
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - chat-router/chat/backend/mvp/app.py
     - chat-router/agentes/adaptadores/modelos.py
@@ -297,7 +319,12 @@ connections:
   via: gateway_pending_audit
   provides: mvp
   requires: backend
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.mcp_puente_github"
+    result: ok
+    verified_in: clon local
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - chat-router/chat/backend/mvp/app.py
     - router-mvp/router-componentes/MCP-Python-SDK/docs_src/logging/__init__.py
@@ -525,7 +552,12 @@ connections:
   via: gateway_pending_audit
   provides: backend
   requires: fichas
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.herramientas.modos"
+    result: ok
+    verified_in: clon local
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - router-mvp/fichas/fichas_qwen/motor_json/pruebas_motor.py
     - chat-router/chat/backend/mvp/herramientas/motor_cli.py
@@ -581,7 +613,12 @@ connections:
   via: gateway_pending_audit
   provides: mvp
   requires: fichas
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.red.http_plugins"
+    result: ok
+    verified_in: clon local
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - router-mvp/fichas/fichas_qwen/modos/apply_addon.py
     - router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py
@@ -617,7 +654,12 @@ connections:
   via: gateway_pending_audit
   provides: plugins
   requires: fichas
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.puente_chat.plugin"
+    result: ok
+    verified_in: /tmp/r2
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py
     - chat-router/plugins/connectivity/plugin.py
@@ -653,7 +695,12 @@ connections:
   via: gateway_pending_audit
   provides: agents
   requires: harness
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores"
+    result: ok
+    verified_in: /tmp/r2
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - chat-router/chat/backend/deepseek_harness/plugin.py
     - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
@@ -688,7 +735,12 @@ connections:
   via: gateway_pending_audit
   provides: backend
   requires: harness
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.prompt"
+    result: ok
+    verified_in: clon local
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - chat-router/chat/backend/deepseek_harness/server.py
     - chat-router/chat/backend/mvp/prompt.py
@@ -770,7 +822,12 @@ connections:
   via: gateway_pending_audit
   provides: plugins
   requires: harness
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins"
+    result: ok
+    verified_in: /tmp/r2
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - chat-router/chat/backend/deepseek_harness/plugin.py
     - chat-router/plugins/puente_chat/plugin.py
@@ -828,7 +885,12 @@ connections:
   via: gateway_pending_audit
   provides: backend
   requires: mvp
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.swen_mcp"
+    result: ok
+    verified_in: clon local
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - router-mvp/router/integration/chat_mvp/swen_mcp.py
     - chat-router/chat/backend/mvp/app.py
@@ -1052,7 +1114,12 @@ connections:
   via: gateway_pending_audit
   provides: backend
   requires: plugins
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp"
+    result: ok
+    verified_in: clon local
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - chat-router/plugins/hf_storage/plugin.py
     - chat-router/chat/backend/mvp/app.py
@@ -1082,7 +1149,12 @@ connections:
   via: gateway_pending_audit
   provides: fichas
   requires: plugins
-  evidence: null
+  evidence:
+    type: import
+    command: python -c "import sys;sys.path.insert(0,'router-mvp');import fichas.fichas_qwen.plugin"
+    result: ok
+    verified_in: /tmp/r2
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
   observed_paths:
   - - chat-router/plugins/hf_storage/plugin.py
     - router-mvp/fichas/fichas_qwen/mvp.py
