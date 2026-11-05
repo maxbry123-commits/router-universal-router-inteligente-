@@ -1,6 +1,6 @@
 # CHECKLIST WATCHDOG RIU / OpenClaw / Yaiwes
-Ciclo: 2026-11-05 ~20:10 UTC
-Health: BLOQUEADO (HF Space https://comand-center-1-riu-router.hf.space returning "Preparing Space" HTML; no JSON /health)
+Ciclo: 2026-11-05 ~21:09 UTC
+Health: BLOQUEADO (HF Space https://comand-center-1-riu-router.hf.space returning "Preparing Space" HTML tras múltiples intentos y esperas; no JSON /health)
 MCP salud: BLOQUEADO (mismo, space no disponible)
 
 Tests /chat/send:
@@ -17,7 +17,7 @@ github_leer: BLOQUEADO (MCP no disponible)
 UI: riu-jev-bridge.vercel.app OK (200, muestra "Sin respuesta del servidor"). HF space preparing.
 
 Estados:
-I01 Checkpoint/reinicio MVP: BLOQUEADO (space preparing, health no responde)
+I01 Checkpoint/reinicio MVP: BLOQUEADO (space preparing persistentemente, health no responde)
 I02 5 agentes cableados + harness DeepSeek: VALIDACION (no re-probado; space down)
 I03 SWE CODE free / SWEN CODE autónomo: PENDIENTE
 I04 Modelos selectores: BLOQUEADO (space down; Nvidia gap previo)
