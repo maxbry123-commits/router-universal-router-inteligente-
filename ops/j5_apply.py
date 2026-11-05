@@ -17,10 +17,19 @@ def main():
         before={tuple(u) for u in build(d)["unresolved"] if not u[0].startswith("_quarantine/")}
         cf.write_text(json.dumps({"sha":sha0,"u":[list(x) for x in before]}));check("before_cached",False,sha0[:12])
     tag=f"pre-reorg-{RUN_ID}";br=f"reorg/{RUN_ID}"
-    sh(["git","tag",tag],cwd=d);sh(["git","push","origin",tag],cwd=d)
-    sh(["git","checkout","-b",br],cwd=d)
+    # D-33: el job es REEJECUTABLE. tag/branch/movimientos/commit ya hechos no pueden fallar:
+    #   - tag: si existe se reapunta al HEAD (es el punto de rollback) y se re-pushea con --force
+    #   - branch: checkout -B (no -b) para reutilizar la rama existente
+    #   - git mv: si el path ya no existe (movido en una ejecucion previa) se ignora
+    #   - commit: --allow-empty para que una reejecucion sin cambios no rompa la cadena
+    if sh(["git","rev-parse","-q","--verify",f"refs/tags/{tag}"],cwd=d,check=False).stdout.strip():
+        sh(["git","tag","-f",tag],cwd=d);sh(["git","push","origin","--force",tag],cwd=d)
+    else:
+        sh(["git","tag",tag],cwd=d);sh(["git","push","origin",tag],cwd=d)
+    sh(["git","checkout","-B",br],cwd=d)
     for p in plan["quarantine"]:
-        dst=root/"_quarantine"/p;dst.parent.mkdir(parents=True,exist_ok=True);sh(["git","mv",p,str(dst.relative_to(root))],cwd=d)
+        dst=root/"_quarantine"/p;dst.parent.mkdir(parents=True,exist_ok=True)
+        sh(["git","mv",p,str(dst.relative_to(root))],cwd=d,check=False)
     for p in plan["untrack"]:sh(["git","rm","-r","--cached","-q","--ignore-unmatch",p],cwd=d)
     gi=root/".gitignore";old=gi.read_text() if gi.exists() else ""
     gi.write_text(old+"".join(f"\n{p}/" for p in plan["untrack"] if p+"/" not in old));sh(["git","add",".gitignore"],cwd=d)
@@ -39,7 +48,7 @@ def main():
     if tc:check("TEST_CMD_rc0",subprocess.run(tc,shell=True,cwd=d).returncode==0,tc)
     else:check("TEST_CMD_set",False,"set TEST_CMD (real backend start + smoke)")
     if not all(c["ok"] for c in CHECKS):finish({"rollback":f"git checkout main; branch {br} discarded; tag {tag}"})
-    sh(["git","-c","user.name=kernel-bot","-c","user.email=bot@local","commit","-qm",f"reorg {RUN_ID}: quarantine {len(plan['quarantine'])}, untrack {len(plan['untrack'])}"],cwd=d)
+    sh(["git","-c","user.name=kernel-bot","-c","user.email=bot@local","commit","--allow-empty","-qm",f"reorg {RUN_ID}: quarantine {len(plan['quarantine'])}, untrack {len(plan['untrack'])}"],cwd=d)
     sh(["git","push","origin",br],cwd=d)
     check("branch_pushed",True,br)
     finish({"branch":br,"tag":tag,"rollback":f"git push origin HEAD:main from tag {tag} (never automatic)"},commit=head(d))
