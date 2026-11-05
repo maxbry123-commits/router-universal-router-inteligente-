@@ -7,3 +7,41 @@ router inteligente universal/plugins/fichas_qwen/riu_data/
 
 # estado de ejecucion de LOOP/Cola/Watchdog (se crea al correr)
 chat-router/Loop cola wachdog/*/state/
+
+chat-router/agentes/agentes-listos/opencode/opencode-dev/services/www/src/docs/content/build/
+chat-router/chatbot/componentes/OpenBot-ashhart/code/build/
+chat-router/chatbot/componentes/OpenBot-nightly-labs/code/build/
+chat-router/chatbot/componentes/TypeScript/tsc/internal/execute/build/
+chat-router/chatbot/componentes/grafana/devenv/docker/blocks/caddy_tls/build/
+chat-router/chatbot/componentes/grafana/devenv/docker/blocks/mqtt/build/
+chat-router/chatbot/componentes/grafana/devenv/docker/blocks/mssql/build/
+chat-router/chatbot/componentes/grafana/devenv/docker/blocks/mssql_arm64/build/
+chat-router/chatbot/componentes/grafana/devenv/docker/blocks/mssql_tls/build/
+chat-router/chatbot/componentes/grafana/pkg/api/webassets/testdata/build/
+chat-router/chatbot/componentes/grafana/pkg/build/
+chat-router/chatbot/componentes/grafana/pkg/plugins/manager/testdata/app-with-child/dist/
+chat-router/chatbot/componentes/grafana/pkg/plugins/manager/testdata/plugin-with-dist/plugin/dist/
+chat-router/chatbot/componentes/grafana/pkg/plugins/manager/testdata/pluginRootWithDist/dist/
+chat-router/chatbot/componentes/grafana/pkg/plugins/manager/testdata/pluginRootWithDist/panel/dist/
+chat-router/chatbot/componentes/grafana/scripts/build/
+chat-router/chatbot/componentes/plex/plex/gulp-tasks/build/
+chat-router/chatbot/componentes/tailwindcss/packages/@tailwindcss-cli/src/commands/build/
+chat-router/chatbot/componentes/transformers.js/code/packages/transformers/docs/build/
+chat-router/chatbot/componentes/transformers.js/code/packages/transformers/scripts/build/
+chat-router/chatbot/componentes/vite/packages/vite/src/node/__tests__/fixtures/glob-exports/node_modules/
+chat-router/chatbot/componentes/vite/packages/vite/src/node/__tests__/fixtures/glob-exports/node_modules/my-pkg/dist/
+chat-router/chatbot/componentes/vite/packages/vite/src/node/__tests__/plugins/fixtures/sass-package-resolution/node_modules/
+chat-router/chatbot/componentes/vite/packages/vite/src/node/__tests__/plugins/importGlob/fixture-a/node_modules/
+chat-router/chatbot/componentes/vite/playground/glob-import/root/dir/node_modules/
+chat-router/chatbot/componentes/vllm/requirements/build/
+chat-router/memoria/componentes/chroma/chroma/docs/mintlify/guides/build/
+chat-router/memoria/componentes/redis/deps/xxhash/build/
+chat-router/otros/descartados/vLLM-Semantic-Router/vLLM-Semantic-Router/src/semantic-router/.cache/
+chat-router/workflow-loop-code-yaiwes/skills/workflow-loop-yaiwes/firecrawl-skills/build/
+router-mvp/raiz_router/sdk_qwen/Qwen-Live-Harness/code/packages/qwen-live-harness-host/build/
+router-mvp/router-componentes/httpx/scripts/build/
+router-mvp/router-componentes/pyyaml/packaging/build/
+router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/.claude/skills/build/
+router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/build/
+router-mvp/router-componentes/starlette/scripts/build/
+router-mvp/router-componentes/uvicorn/scripts/build/
