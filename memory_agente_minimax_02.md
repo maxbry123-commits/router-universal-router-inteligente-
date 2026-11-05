@@ -283,3 +283,81 @@
 - No crear los ~22 directorios de la estructura de referencia vacios (guia lo prohibe).
 - No restaurar commits completos: solo los cambios necesarios.
 - Fuera de `root_protection.allowlist`: una linea de justificacion por escritura/movimiento.
+
+
+
+---
+
+## ESTUDIO DE MOTORES DE DESCARGA Y EXTRACCIÓN (2026-11-04)
+
+### Objetivo
+Leer el skill canónico, el código fuente y el historial de commits de los motores de descarga/extracción/copia/movimiento en los repos `frontend`, `agentes` y `router-universal-router-inteligente-`; entender la lógica y aprender a montarlos.
+
+### Raíces canónicas (3 linajes, mismo origen)
+| Repo | Raíz | Skill |
+|---|---|---|
+| `frontend` | `➡️📂motores de descarga extracción copiado movimiento archivos fromtend/` | canónico (7 blobs SHA) |
+| `frontend` | `➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/` | copia 2026-10-25 |
+| `frontend` | `UI YAIWES/➡️📂motores ... frontend/` | espejo |
+| `agentes` | `➡️📂motores de descarga extracción copiado movimiento archivos agentes/` | copia verificada |
+| `agentes` | `Motores/` | copia |
+| `agentes` | `➡️📂 wordflow loop code Yaiwes/➡️📂motores ... agentes/` | copia |
+
+### Blob SHA verificados (via Router RIU `github_api` -> `/git/trees`)
+| Motor | SHA canónico | Estado verificado |
+|---|---|---|
+| `motor_1_extract_only.py` | `a52d5dc0e6ff26f75d753b848dcc1a40c5dd4500` | MATCH en los 6 linajes |
+| `motor_2_queue_download_extract.py` | `84d566e2ee4e98e42eb3a864026d067d48caabd9` | MATCH en los 6 linajes |
+| `hf_download_extract_engine.py` | `91e6e4486692eab314be5c7130d8310d3c855397` | **DIFF en 2 linajes** (ver gap G-MOTOR-01) |
+| `motor_3_copy_batches.py` | `3689924361ce4a1a9fde4ae2b6f6009c37a6042d` | MATCH en los 6 linajes |
+| `motor_copy_root_to_repo.py` | `8281211da76db3080fe1f1ea38b3eb0c45d655cb` | MATCH en los 6 linajes |
+| `motor_4_move_batches.py` | `9a21facfe11327cf60a2afca8f415ad52f0ecbe5` | MATCH en los 6 linajes |
+| `motor_5_zip_root.py` | `2516d85d81f691f86c32a70b90c2599639eb83c6` | declarado en skill `fromtend` y en `MOTOR-CODE-LOCK.json` |
+
+### Lógica de los 6 motores (copy-only, FAIL_CLOSED)
+1. **motor_1_extract_only.py** (`yaiwes.frontend.extract-only.v1`): extrae ZIP. Entradas `ARCHIVE_INPUT`, `DEST_DIR`, `STATE_FILE`, `BATCH_SIZE`. Reconstruye ZIP fragmentado (`*.zip.part-*`), CRC, bloquea rutas inseguras y symlink, extrae por lotes, persiste estado, `tree_hash` (rel+sha256+bytes), read-back. PASS = `VERIFIED_CLOSED` + `failed=0` + `pending=0`.
+2. **motor_2_queue_download_extract.py** (`yaiwes.frontend.download-extract-queue.v1`): cola JSON de items `{source_repo, source_ref, slug, dest_repo, dest_branch, dest_root, publish}`. Envía cada item al engine como proceso hijo con env por item, parsea la ultima linea JSON, exige `verdict == VERIFIED_CLOSED`. Balance: `VERIFIED_CLOSED`, `source_commit`, `extraction_verified`, `PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED`.
+3. **hf_download_extract_engine.py** (`yaiwes.hf.download-extract.v1`): el motor real. `acquire()` -> `git init` + remote + `no_lfs()` (desactiva filtros LFS) + `fetch --depth=1 --filter=blob:none` + checkout detached. `scan_tree()` -> rechaza punteros LFS (`SOURCE_LFS_POINTER_GAP`), symlinks/especiales (`SOURCE_SPECIAL_FILE_GAP`), blobs >= 95 MiB (`GIT_BLOB_LIMIT_GAP`). `tree_hash()` determinista. `make_zip()` (DEFLATE, timestamp fijo 1980-01-01, `testzip()`). `split_bundle()` en partes de 12 MiB con sha256 por parte. `rebuild()` reensambla y verifica sha256 del bundle + CRC. `safe_extract()` bloquea path absoluto/`..` y ficheros especiales ZIP. Verifica `ext_tree == src_tree`. `publish()` -> sparse-checkout del destino, commit sin force, rebase con deteccion de conflicto, push, y **read-back**: relee manifest y compara sha256 de cada parte + tree hash del codigo. Manifiesto: `DOWNLOAD_EXTRACT_MANIFEST.json` con `source_commit`, `bundle_sha256`, `parts[]`, `extracted_tree`.
+4. **motor_3_copy_batches.py** (`yaiwes.frontend.copy-batches.v1`): copia por lotes con `SOURCE_DIR`/`DEST_DIR`/`STATE_FILE`/`BATCH_SIZE=1..100`/`COLLISION_POLICY=fail|skip|replace`/`MAX_BATCHES`. Escribe en `.partial` y `os.replace` atomico; verifica sha256 antes de copiar, del `.partial` y del destino (`COPY_HASH_MISMATCH`, `READBACK_HASH_MISMATCH`).
+5. **motor_copy_root_to_repo.py** (`yaiwes.repo-root-copy.v1`): motor EXCLUSIVO para copiar la raiz de motores a otro repo. `SOURCE_ROOT`, `DEST_ROOT`, `DEST_REPO_NAME`, `BATCH_SIZE=2`. Valida nombre exacto de la raiz destino (`➡️📂motores de descarga extracción copiado movimiento archivos <NOMBRE_REPO>/`), valida allowlist exacta de 7 archivos, borra la raiz destino si falla, no crea ledger/manifest, salida solo por stdout.
+6. **motor_4_move_batches.py** (`yaiwes.frontend.move-batches.v1`): mover por lotes. Mueve a `.moving`, verifica sha256, `os.replace`, borra el origen solo tras copia verificada; limpia directorios vacios.
+
+### Motor de busqueda (regla de 20 fuentes, sin LLM)
+`➡️📂 motor de búsqueda/`: `websearch_engine.py` (5 proveedores: ddgs, brave, tavily, serper, firecrawl; dedup + ranking determinista; `result.json` + `summary.md`), `trigger_hf_websearch.py` (dispara HF Job ON_DEMAND, namespace COMAND-CENTER-1, flavor cpu-upgrade, workers HF1/HF2/HF3, engine pinneado a commit `029f516ce049c327a158b915a8ec5517236baeab`, publica en GitHub sin Actions con read-back), `research_prepass.py` (`yaiwes.research.prepass.v1`, genera `context_packet` desde `source_registry.json` + `context_packet.schema.json`), `source_registry.json`, tests deterministas sin red.
+
+### Motor de archivos vigente en el Router (NO es el canonico de skill)
+`chat-router/chat/backend/mvp/archivos/` -> herramienta MCP `archivos`. Acciones: `transferir|ejecutar|estado|cancelar|raiz|listar_raiz`. Modulo `motor de archivos` (tool.json): origen URL/git/local -> cola en hilo -> README + MANIFEST.json con sha256 -> destino `git:owner/repo@rama/carpeta`. Limites: `RIU_MOTOR_MAX_BYTES` 4 GiB, `RIU_MOTOR_MAX_ARCHIVOS` 300000, red interna bloqueada (`url_segura`), zip-slip bloqueado, `expected_head` revalidado antes de publicar. Publica por lotes de 200 MiB con `hash-object --no-filters` (blobs identicos, sin LFS) y `commit-tree` + push por lote.
+
+### Historial de commits reconstruido (pickaxe `/search/commits`)
+- `2026-09-09T17:12:54` `b7103bc7ab` build(motors): add immutable code lock manifest -> crea `MOTOR-CODE-LOCK.json` (`yaiwes.motors.code-lock.v1`, `FAIL_CLOSED_IMMUTABLE`).
+- `2026-09-09T17:14:00` (ledger) `MOTOR3_VERIFIED_CLOSED_THEN_PUBLISH`: primer paso oficial de copia frontend -> agentes, `BATCH_SIZE=2`.
+- `2026-09-09T17:17:50` `957626de32` refactor(motors): remove legacy move motor copy.
+- `2026-09-09T21:47:07` `e0b3cd3bc9` fix(motors): keep single canonical motors root.
+- `2026-09-10T08:16:11` `1c4a5ff346` copy motor_1_extract_only.py into componentes dest.
+- `2026-09-10T08:16:19` `cecfd0f79f` copy hf_download_extract_engine.py into componentes dest.
+- `2026-09-15T03:36:12` (ledger) `SURGICAL_COPY_METHOD_REPAIR`: `VERIFIED_CLOSED` 9 archivos; **repara un metodo previo no conforme que usaba GitHub Actions** -> confirma la prohibicion de Actions.
+- `2026-09-15T03:45:42` (ledger) `SURGICAL_COPY_MUSE_CODE_TRACEABILITY`: `VERIFIED_CLOSED` 17 archivos, read-back HF_JOB.
+- `2026-09-21T21:56:37` `29a3218436` (agentes) feat(motors): mirror canonical motor_5_zip_root.
+- `2026-09-21T21:58:14` `d13bd83f2d` docs(motors): register canonical motor_5 root zip contract.
+- `2026-09-21T21:58:38` `d1d5723233` (agentes) docs(motors): document motor_5 root zip.
+- `2026-09-26` (dentro del codigo divergente) `ALREADY_PRESENT_VERIFIED`, `SOURCE_REF_GAP` (fallback HEAD/main/master), `strip_special` -> cambios "autorizados por el Director".
+- `2026-09-29T17:30:47` `1c84a66c94` Motor de descarga: MOTOR_RUN_1723 create_or_update_file probe.
+- `2026-10-17T18:22:37/42` `0dc97002d3`/`f85f5ed3ea` motor_3: espejos de skills desde yaiwes-factory-ui.
+- `2026-10-25T02:10:17` `f24619095d` "Copia 1 a 1, input block verbatim, de los skills en la raiz del frontend" -> commit que introduce la raiz `router-universal-router-inteligente-` en `frontend`.
+
+### Gaps detectados
+- **G-MOTOR-01 (integridad, PENDIENTE de autorizacion)**: `hf_download_extract_engine.py` en la raiz `router-universal-router-inteligente-` (repo `frontend` y `agentes`) tiene blob `a0e1c87f1a5b...` != canonico `91e6e4486692...`, pese a que su propio SKILL (seccion 3) declara `91e6e448` como canonico. Diferencias: `OK_VERDICTS` con `ALREADY_PRESENT_VERIFIED`, fallback de `SOURCE_REF` a HEAD/main/master, `strip_special()` que deja de bloquear symlinks del origen, y `DESTINATION_EXISTS` -> exito en vez de error. Los 5 motores restantes si coinciden. NO se modifica (motores intocables): requiere autorizacion explicita del owner en el chat actual.
+- **G-MOTOR-02 (documental, PENDIENTE)**: el `MOTOR-CODE-LOCK.json` de `agentes` lista `canonical_source` en la raiz `fromtend` y declara `motor_5_zip_root.py`; la raiz `router-universal-router-inteligente-` de `frontend` NO tiene `motor_5_zip_root.py` en su allowlist de skill (7 archivos) aunque su MOTORES_VERSION.json declara origen `router-universal-router-inteligente-` commit `c883ccea4701efb1ad9b7e53908c6608c7c347ea`.
+- **G-MCP-01 (RESUELTO)**: el Space `claude-github-mcp-backup` estaba en pausa (503). Reiniciado via API HF; el MCP del Router RIU quedo operativo y es la via sancionada para GitHub (14+1 tools: `github_leer`, `github_escribir`, `github_api`, `archivos`, `memoria`, `pendientes`, `salud`...).
+- **G-MCP-02 (limitacion conocida)**: `github_api` del Router trunca a 12000 B exactos y **ignora el filtro `path`** de `/commits`. `github_leer` si entrega el archivo completo. Pickaxe `/search/commits?q=` funciona y es la via para el historial.
+- **G-MCP-03 (ENV)**: `git clone` del repo canonico es privado y no hay `GITHUB_TOKEN` en la cuenta HF -> solo lectura por API del Router.
+
+### Como montar los motores (procedimiento aprendido)
+1. Leer el SKILL completo de la raiz canonica (`frontend`, rama `main`).
+2. Confirmar que el usuario entrega el destino (`DESTINATION_INPUT_GAP` si falta). Nunca deducir ni reutilizar un destino previo.
+3. Copiar el codigo fuente exacto conservando el blob SHA (solo `copy_only`).
+4. Ejecutar con env explicita: `SOURCE_DIR/DEST_DIR/STATE_FILE/BATCH_SIZE/COLLISION_POLICY` (motores 3 y 4), `ARCHIVE_INPUT/DEST_DIR/STATE_FILE` (motor 1), `QUEUE_FILE/ENGINE_PATH/INDEX_PATH/SOURCE_REPO/SOURCE_REF/DEST_REPO/DEST_BRANCH/DEST_ROOT/PUBLISH` (motores 2 y engine).
+5. Persistir el estado en un `STATE_FILE` **fuera** de la raiz final (la raiz destino no admite ficheros extra).
+6. Cerrar solo con `VERIFIED_CLOSED` + `failed=0` + `pending=0` + read-back de `main` comparando nombre, allowlist y los 6 blob SHA.
+7. Publicar sin force; si la rama avanzo, releer `main` y reconstruir sobre el nuevo parent.
+8. Registrar la evidencia en el commit (nunca un ledger adicional dentro de la raiz de motores).
