@@ -24,7 +24,11 @@ def main():
         # D-76: en el clon ligero (filtrado) la lectura de blobs lanza la descarga del blob y
         # falla ("failed to unpack tree object"). El registro se lee del REPO LOCAL, que si tiene
         # los objetos completos, y el .gitattributes del Space se baja por la API.
-        reg_txt=sh(["git","show",f"{br}:connections/registry.yaml"],check=False).stdout
+        # D-78: el clon local del sandbox tambien es filtrado y su descarga de blobs falla
+        # ("failed to unpack tree object"), asi que el registro se lee del fichero ya
+        # materializado en el repositorio local (main; la rama solo añade movimientos de
+        # ficheros, no toca el registro).
+        reg_txt=open("connections/registry.yaml",errors="ignore").read()
         reg=_yaml.safe_load(reg_txt) or {}
         conns=reg.get("connections",[])
         need_f=("id","name","source","target","protocol","direction","endpoint","status","dependencies",
