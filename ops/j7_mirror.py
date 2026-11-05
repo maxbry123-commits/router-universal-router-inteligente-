@@ -73,7 +73,6 @@ def main():
     # Por git si se aceptan (limite del servidor HF: ~100k ficheros / 10 GB por push).
     # Antes se preservan los ficheros propios del Space (Dockerfile, boot.sh, proxy.py...):
     # el push es de arbol completo y los borraria.
-    import base64
     from huggingface_hub import hf_hub_download
     # D-63: NO se baja el repo entero del Space con snapshot_download: el repo del Space ya
     # contenia la copia anterior del espejo (19.998 ficheros) y bajarla entera tardaba horas y
