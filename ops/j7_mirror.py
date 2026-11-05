@@ -21,7 +21,9 @@ def main():
             "--depth","1","--branch",br,f"https://github.com/{need('GH_REPO')}.git",d],env=env3)
         sha=head(d)
         import yaml as _yaml
-        reg=_yaml.safe_load(open(os.path.join(d,"connections","registry.yaml"))) or {}
+        # el clon ligero no materializa el working tree: el registro se lee del objeto git
+        reg_txt=sh(["git","-C",d,"show","HEAD:connections/registry.yaml"],check=False).stdout
+        reg=_yaml.safe_load(reg_txt) or {}
         conns=reg.get("connections",[])
         need_f=("id","name","source","target","protocol","direction","endpoint","status","dependencies",
                 "verification","notes","from","to","via","provides","requires")
