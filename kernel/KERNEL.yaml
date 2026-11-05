@@ -178,7 +178,13 @@ handoff:
     commit: bb9e4c8088cfe4be35a91dfdc669b9a171200885
     ts: '2026-11-05T07:37:18Z'
     run_id: 20261104-kernel01
+  - job: j8_audit
+    status: FAIL
+    commit: bb9e4c8088cfe4be35a91dfdc669b9a171200885
+    ts: '2026-11-05T07:52:00Z'
+    run_id: 20261104-kernel01
   flags:
   - 🚩 j7_mirror FAIL
+  - 🚩 j8_audit FAIL
   input_block_sha256: 5c4bbb20421a9e674876d69f25fb8aaf9e67112d58a49ce3c3f527024ae83c3a
 progress_pct: 54
