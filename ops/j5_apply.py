@@ -19,6 +19,10 @@ def main():
     gi.write_text(old+"".join(f"\n{p}/" for p in plan["untrack"] if p+"/" not in old));sh(["git","add",".gitignore"],cwd=d)
     after={tuple(u) for u in build(d)["unresolved"] if not u[0].startswith("_quarantine/")}
     check("no_new_unresolved_vs_before",after<=before,sorted(after-before)[:5])
+    # D-24: la guia declara el gate entrypoints_exist en S5_j5 pero su codigo no lo implementaba.
+    eps=(yaml.safe_load((root/"kernel/KERNEL.yaml").read_text()).get("entrypoints") or [])
+    miss=[p for p in eps if not (root/p).exists()]
+    check("entrypoints_exist",not miss,miss[:5])
     r=wc(d);check("wiring_check",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     tc=os.environ.get("TEST_CMD")
     if tc:check("TEST_CMD_rc0",subprocess.run(tc,shell=True,cwd=d).returncode==0,tc)
