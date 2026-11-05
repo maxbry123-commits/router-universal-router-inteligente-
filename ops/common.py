@@ -13,8 +13,12 @@ def genv():  # token only in process env: never in URL, argv, remote config or l
                  GIT_CONFIG_KEY_0="http.https://github.com/.extraheader",
                  GIT_CONFIG_VALUE_0=f"AUTHORIZATION: basic {b}")
     return e
-def sh(cmd,cwd=None,check=True,timeout=None):
-    r=subprocess.run(cmd,cwd=cwd,env=genv(),capture_output=True,text=True,timeout=timeout)
+def sh(cmd,cwd=None,check=True,timeout=None,env=None):
+    # D-56: `env` permite fijar credenciales por destino (p.ej. el push al repo del Space
+    # en huggingface.co) sin tocar el resto del entorno ni pasar el token por argv.
+    e=genv()
+    if env:e.update(env)
+    r=subprocess.run(cmd,cwd=cwd,env=e,capture_output=True,text=True,timeout=timeout)
     if check and r.returncode:raise RuntimeError(f"{' '.join(cmd[:3])} rc={r.returncode} {redact(r.stderr)[-400:]}")
     return r
 def check(name,ok,detail=""):

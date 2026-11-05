@@ -31,8 +31,44 @@ def main():
         check("baseline_only_no_upload",True,f"{n} ficheros, {sz/1e6:.1f} MB (sin subir)")
         check("space_RUNNING","RUNNING" in stage,stage)
         finish({"space":sp,"head":sha,"baseline":True,"files":n,"bytes":sz},commit=sha)
-    api.upload_folder(folder_path=d,repo_id=sp,repo_type="space",commit_message=f"mirror {sha[:12]}",
-        ignore_patterns=IGN)
+    # D-56: el push del mirror se hace por protocolo git al repo del Space.
+    # `upload_folder` usa el endpoint de commits de HF, que RECHAZA el push cuando el
+    # repo tendria mas de ~10.000 ficheros ("Your push was rejected because it contains
+    # too many files ... 20008 files"); el mirror son 20.008 ficheros -> FAIL.
+    # Por git si se aceptan (limite del servidor HF: ~100k ficheros / 10 GB por push).
+    # Antes se preservan los ficheros propios del Space (Dockerfile, boot.sh, proxy.py...):
+    # el push es de arbol completo y los borraria.
+    import base64
+    from huggingface_hub import snapshot_download
+    snap=snapshot_download(repo_id=sp,repo_type="space",token=need("HF_TOKEN"))
+    keep=[]
+    for root,dirs,files in os.walk(snap):
+        dirs[:]=[x for x in dirs if x!=".git"]
+        for fn in files:
+            src=os.path.join(root,fn);rel=os.path.relpath(src,snap)
+            dst=os.path.join(d,rel)
+            if os.path.islink(src):continue
+            os.makedirs(os.path.dirname(dst),exist_ok=True)
+            shutil.copy2(src,dst);keep.append(rel)
+    sh(["git","-C",d,"checkout","-B",f"mirror/{sha[:12]}"])
+    for pat in IGN:
+        pfx=pat[:-3] if pat.endswith("/**") else None
+        if pfx:
+            sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch",pfx],check=False)
+        else:
+            sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch",pat],check=False)
+    sh(["git","-C",d,"add","-A"])
+    sh(["git","-C",d,"-c","user.name=kernel-mirror","-c","user.email=mirror@local",
+        "commit","-q","-m",f"mirror {sha[:12]} (j7_mirror D-56)"],check=False)
+    tok=need("HF_TOKEN");b=base64.b64encode(f"x-access-token:{tok}".encode()).decode()
+    env2=dict(os.environ)
+    env2.update(GIT_TERMINAL_PROMPT="0",GIT_CONFIG_COUNT="1",
+        GIT_CONFIG_KEY_0="http.https://huggingface.co/.extraheader",
+        GIT_CONFIG_VALUE_0=f"AUTHORIZATION: basic {b}")
+    r=sh(["git","-C",d,"push","-f","https://huggingface.co/spaces/"+sp,"HEAD:main"],env=env2,check=False)
+    check("mirror_push_git",r.returncode==0,(r.stdout+r.stderr)[-400:])
+    if r.returncode!=0:
+        finish({"space":sp,"head":sha,"push_error":(r.stdout+r.stderr)[-400:]},commit=sha)
     hu=os.environ.get("HEALTH_URL");wait=int(os.environ.get("WAIT_S","600"));t0=time.time();seen=None;stage=None
     while time.time()-t0<wait:
         stage=str(api.get_space_runtime(sp).stage)
