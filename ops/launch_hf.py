@@ -38,10 +38,18 @@ def build_cmd(job):
         "cd /tmp/repo && python ops/%s.py >> /tmp/job.log 2>&1; echo script_rc=$? >> /tmp/job.log; "
         "cat /tmp/job.log; "
         # D-68: el log del contenedor se publica en el Dataset (evidencia durable del job)
-        "python -c \"import os;from huggingface_hub import upload_file;"
-        "upload_file(path='/tmp/job.log',repo_id=os.environ['DATASET_REPO'],repo_type='dataset',"
-        "path_in_repo='job-evidencia/%s.log')\" >> /tmp/job.log 2>&1; "
-        "echo upload_rc=$?; cat /tmp/job.log" % (job, job)
+        "echo %s | base64 -d > /tmp/up.py; python /tmp/up.py >> /tmp/job.log 2>&1; "
+        "echo upload_rc=$?; cat /tmp/job.log" % (
+            job,
+            base64.b64encode(
+                ("import os\n"
+                 "from huggingface_hub import upload_file\n"
+                 "kw=dict(repo_id=os.environ['DATASET_REPO'],repo_type='dataset',"
+                 "path_in_repo='job-evidencia/%s.log')\n"
+                 "try:\n"
+                 "    upload_file(path='/tmp/job.log',**kw)\n"
+                 "except TypeError:\n"
+                 "    upload_file('/tmp/job.log',**kw)\n" % job).encode()).decode())
     )
 
 

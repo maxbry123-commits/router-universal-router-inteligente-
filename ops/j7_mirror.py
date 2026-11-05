@@ -69,6 +69,21 @@ def main():
             sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch",pfx],check=False)
         else:
             sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch",pat],check=False)
+    # D-69: el .gitattributes del Space marca como LFS muchas extensiones (*.bin, *.gz, *.tar,
+    # *.pt, *.npy, *.parquet, saved_model/**...). El hook lfs-check del servidor rechaza el push
+    # si esos punteros LFS llegan sin sus objetos en el almacen LFS del Space. Por eso se
+    # excluyen del espejo los ficheros que casan con los patrones LFS del propio Space.
+    lfs_pats=[]
+    ga=os.path.join(d,".gitattributes")
+    if os.path.exists(ga):
+        for line in open(ga,errors="ignore"):
+            line=line.strip()
+            if line and not line.startswith("#") and "filter=lfs" in line:
+                pat=line.split()[0]
+                if pat not in lfs_pats: lfs_pats.append(pat)
+    for pat in lfs_pats:
+        sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch",pat],check=False)
+    check("lfs_patterns_excluded",True,f"{len(lfs_pats)} patrones LFS del Space excluidos: {lfs_pats[:6]}")
     sh(["git","-C",d,"add","-A"])
     sh(["git","-C",d,"-c","user.name=kernel-mirror","-c","user.email=mirror@local",
         "commit","-q","-m",f"mirror {sha[:12]} (j7_mirror D-56)"],check=False)
