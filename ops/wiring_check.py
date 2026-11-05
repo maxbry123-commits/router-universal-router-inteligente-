@@ -6,8 +6,9 @@ from j2_graph import build
 VENDORED=("agentes-listos/","agentes/frameworks/","agentes/investigacion/","chatbot/componentes/",
           "memoria/componentes/","otros/descartados/","otros/Prueba/","descarga-copia/")
 es_tercero=lambda p:any(k in p for k in VENDORED)
-def run(root):
-    root=pathlib.Path(root);g=build(root);res=[]
+def run(root,graph=None):
+    # D-39: si el job ya construyo el grafo, se reutiliza (el build son ~10 min sobre 374k ficheros).
+    root=pathlib.Path(root);g=graph if graph is not None else build(root);res=[]
     def c(n,ok,d=""):res.append({"name":n,"ok":bool(ok),"detail":str(d)[:300]})
     kp=root/"kernel/KERNEL.yaml";k=yaml.safe_load(kp.read_text()) if kp.exists() else {}
     c("kernel_present",bool(k))
@@ -29,7 +30,7 @@ def run(root):
         c("third_party_unresolved_reported",True,f"{len(new_all)} referencias nuevas en codigo de terceros")
     else:c("baseline_exists",False,"commit j2 baseline_unresolved.json to connections/")
     miss=[e for e in k.get("entrypoints",[]) if not (root/e).exists()]
-    c("entrypoints_exist",bool(k.get("entrypoints")) and not miss,miss or "entrypoints empty")
+    c("entrypoints_exist",bool(k.get("entrypoints")) and not miss,(miss or f"{len(k.get('entrypoints',[]))} entrypoints presentes"))
     rp=root/"connections/registry.yaml";conns=(yaml.safe_load(rp.read_text()) or {}).get("connections",[]) if rp.exists() else []
     # D-37: la guia §5 fija los 11 campos obligatorios de cada conexion del registro oficial.
     need=("id","name","source","target","protocol","direction","endpoint","status","dependencies",

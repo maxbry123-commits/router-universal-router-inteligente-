@@ -33,7 +33,8 @@ def main():
     for p in plan["untrack"]:sh(["git","rm","-r","--cached","-q","--ignore-unmatch",p],cwd=d)
     gi=root/".gitignore";old=gi.read_text() if gi.exists() else ""
     gi.write_text(old+"".join(f"\n{p}/" for p in plan["untrack"] if p+"/" not in old));sh(["git","add",".gitignore"],cwd=d)
-    after={tuple(u) for u in build(d)["unresolved"] if not u[0].startswith("_quarantine/")}
+    g_after=build(d)  # D-39: un solo build; su resultado se reutiliza en wiring_check
+    after={tuple(u) for u in g_after["unresolved"] if not u[0].startswith("_quarantine/")}
     # D-25: las referencias nuevas que deja el untrack de los 37 directorios build/ estan en el
     # codigo de TERCEROS vendorizado (misma regla que D-18): se INFORMAN; solo el codigo propio bloquea.
     new_all=sorted(after-before);new_own=[u for u in new_all if not es_tercero(u[0])]
@@ -43,7 +44,7 @@ def main():
     eps=(yaml.safe_load((root/"kernel/KERNEL.yaml").read_text()).get("entrypoints") or [])
     miss=[p for p in eps if not (root/p).exists()]
     check("entrypoints_exist",not miss,miss[:5])
-    r=wc(d);check("wiring_check",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
+    r=wc(d,g_after);check("wiring_check",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     tc=os.environ.get("TEST_CMD")
     if tc:
         # D-36: el Space RIU se redespliega cada ~60 s (autosync) -> /health devuelve 503 durante
