@@ -21,8 +21,10 @@ def main():
             "--depth","1","--branch",br,f"https://github.com/{need('GH_REPO')}.git",d],env=env3)
         sha=head(d)
         import yaml as _yaml
-        # el clon ligero no materializa el working tree: el registro se lee del objeto git
-        reg_txt=sh(["git","-C",d,"show","HEAD:connections/registry.yaml"],check=False).stdout
+        # D-76: en el clon ligero (filtrado) la lectura de blobs lanza la descarga del blob y
+        # falla ("failed to unpack tree object"). El registro se lee del REPO LOCAL, que si tiene
+        # los objetos completos, y el .gitattributes del Space se baja por la API.
+        reg_txt=sh(["git","show",f"{br}:connections/registry.yaml"],check=False).stdout
         reg=_yaml.safe_load(reg_txt) or {}
         conns=reg.get("connections",[])
         need_f=("id","name","source","target","protocol","direction","endpoint","status","dependencies",
@@ -131,11 +133,13 @@ def main():
     # no del de la rama: el de la rama esta vacio y el push volvia a llevar punteros LFS -> 500.
     lfs_pats=[]
     ga_txt=""
-    if rem:
-        ga_txt=sh(["git","-C",d,"show",f"{rem}:.gitattributes"],check=False).stdout
+    try:
+        from huggingface_hub import hf_hub_download as _hd
+        ga_txt=open(_hd(repo_id=sp,filename=".gitattributes",repo_type="space",token=need("HF_TOKEN")),errors="ignore").read()
+    except Exception:
+        pass
     if not ga_txt.strip():
-        ga=os.path.join(d,".gitattributes")
-        if os.path.exists(ga): ga_txt=open(ga,errors="ignore").read()
+        ga_txt=sh(["git","show",f"{br}:.gitattributes"],check=False).stdout
     for line in ga_txt.splitlines():
         line=line.strip()
         if line and not line.startswith("#") and "filter=lfs" in line:
