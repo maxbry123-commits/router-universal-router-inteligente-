@@ -1,5 +1,5 @@
 # CHECKLIST WATCHDOG RIU / OpenClaw / Yaiwes
-Ciclo: 2026-11-05 ~18:10 UTC
+Ciclo: 2026-11-05 ~20:10 UTC
 Health: BLOQUEADO (HF Space https://comand-center-1-riu-router.hf.space returning "Preparing Space" HTML; no JSON /health)
 MCP salud: BLOQUEADO (mismo, space no disponible)
 
