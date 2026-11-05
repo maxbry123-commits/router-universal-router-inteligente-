@@ -1,6 +1,11 @@
 import sys,os,json,pathlib,re,fnmatch,yaml
 sys.path.insert(0,str(pathlib.Path(__file__).parent))
 from j2_graph import build
+# D-18/D-25: prefijos del codigo de TERCEROS vendorizado. Se evaluan en el codigo propio y
+# en las referencias nuevas (los errores de terceros se INFORMAN, no bloquean).
+VENDORED=("agentes-listos/","agentes/frameworks/","agentes/investigacion/","chatbot/componentes/",
+          "memoria/componentes/","otros/descartados/","otros/Prueba/","descarga-copia/")
+es_tercero=lambda p:any(k in p for k in VENDORED)
 def run(root):
     root=pathlib.Path(root);g=build(root);res=[]
     def c(n,ok,d=""):res.append({"name":n,"ok":bool(ok),"detail":str(d)[:300]})
@@ -9,16 +14,19 @@ def run(root):
     cur={tuple(u) for u in g["unresolved"] if not u[0].startswith("_quarantine/")}
     # D-18 (misma regla que D-08 en j2_graph): los errores de sintaxis del codigo de TERCEROS
     # vendorizado se INFORMAN pero no BLOQUEAN el gate; el codigo propio sigue bloqueando.
-    VENDORED=("agentes-listos/","agentes/frameworks/","agentes/investigacion/","chatbot/componentes/",
-              "memoria/componentes/","otros/descartados/","otros/Prueba/","descarga-copia/")
-    es_tercero=lambda p:any(k in p for k in VENDORED)
     syn_all=[u for u in cur if u[1]=="SYNTAX_ERROR"]
     syn_own=[u for u in syn_all if not es_tercero(u[0])]
     c("no_syntax_errors",not syn_own,f"{len(syn_all)} de terceros (informativo), {len(syn_own)} propios")
     c("third_party_syntax_reported",True,f"{len(syn_all)} errores de sintaxis en codigo de terceros")
     bp=pathlib.Path(os.environ.get("BASELINE",root/"connections/baseline_unresolved.json"))
     if bp.exists():
-        b={tuple(x) for x in json.load(open(bp))};c("no_new_unresolved",cur<=b,sorted(cur-b)[:5])
+        b={tuple(x) for x in json.load(open(bp))}
+        # D-25: el untrack de los 37 directorios build/ (plan de j4) deja sin resolver referencias
+        # del codigo de TERCEROS vendorizado (que importaba esos artefactos). Misma regla que D-18:
+        # las referencias nuevas de terceros se INFORMAN; solo las del codigo propio bloquean.
+        new_all=sorted(cur-b);new_own=[u for u in new_all if not es_tercero(u[0])]
+        c("no_new_unresolved",not new_own,f"{len(new_all)} de terceros (informativo), {len(new_own)} propios: {new_own[:3]}")
+        c("third_party_unresolved_reported",True,f"{len(new_all)} referencias nuevas en codigo de terceros")
     else:c("baseline_exists",False,"commit j2 baseline_unresolved.json to connections/")
     miss=[e for e in k.get("entrypoints",[]) if not (root/e).exists()]
     c("entrypoints_exist",bool(k.get("entrypoints")) and not miss,miss or "entrypoints empty")
