@@ -48,17 +48,20 @@ def main():
     # Antes se preservan los ficheros propios del Space (Dockerfile, boot.sh, proxy.py...):
     # el push es de arbol completo y los borraria.
     import base64
-    from huggingface_hub import snapshot_download
-    snap=snapshot_download(repo_id=sp,repo_type="space",token=need("HF_TOKEN"))
-    keep=[]
-    for root,dirs,files in os.walk(snap):
-        dirs[:]=[x for x in dirs if x!=".git"]
-        for fn in files:
-            src=os.path.join(root,fn);rel=os.path.relpath(src,snap)
-            dst=os.path.join(d,rel)
-            if os.path.islink(src):continue
-            os.makedirs(os.path.dirname(dst),exist_ok=True)
-            shutil.copy2(src,dst);keep.append(rel)
+    from huggingface_hub import hf_hub_download
+    # D-63: NO se baja el repo entero del Space con snapshot_download: el repo del Space ya
+    # contenia la copia anterior del espejo (19.998 ficheros) y bajarla entera tardaba horas y
+    # hacia que el push volviera a rebasar el limite de 20.000. Solo se recuperan los ficheros
+    # PROPIOS del Space (los que no estan en la rama): Dockerfile, boot.sh, proxy.py, etc.
+    space_files=api.list_repo_files(sp,repo_type="space")
+    branch_files=set(sh(["git","ls-tree","-r","--name-only","HEAD"],cwd=d).stdout.split())
+    own=[f for f in space_files if f not in branch_files]
+    for rel in own:
+        src=hf_hub_download(repo_id=sp,filename=rel,repo_type="space",token=need("HF_TOKEN"))
+        dst=os.path.join(d,rel)
+        os.makedirs(os.path.dirname(dst),exist_ok=True)
+        shutil.copy2(src,dst)
+    check("space_own_files_preserved",True,f"{len(own)} ficheros propios del Space: {own[:8]}")
     sh(["git","-C",d,"checkout","-B",f"mirror/{sha[:12]}"])
     for pat in IGN:
         pfx=pat[:-3] if pat.endswith("/**") else None
