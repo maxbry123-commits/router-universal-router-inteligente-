@@ -1,6 +1,6 @@
 # connections/healthchecks.yaml — verificación real por conexión (§5/§8).
-# Generado por ops/make_healthchecks.py: un healthcheck por conexión con canal real;
-# el comando se EJECUTA y su resultado decide el estado. "sin healthcheck no hay activo".
+# Generado por ops/make_healthchecks.py y cerrado por ops/verify_pending_healthchecks.py:
+# cada comando se EJECUTA y su resultado decide el estado. "sin healthcheck no hay activo".
 healthchecks:
 - id: HC-001
   connection: CON-005
@@ -27,8 +27,9 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente"
   expect:
     import_ok: true
-  status: pending_verificacion_full_clone
-  evidence: modulo presente en el arbol git (chat-router/plugins/router_api_cliente.py); el clon sparse local no lo materializa
+  status: verified
+  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
+  verified_in: /tmp/r2
 - id: HC-004
   connection: CON-008
   method: import
@@ -36,8 +37,9 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos"
   expect:
     import_ok: true
-  status: pending_verificacion_full_clone
-  evidence: modulo presente en el arbol git (chat-router/agentes/adaptadores/modelos.py); el clon sparse local no lo materializa
+  status: verified
+  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
+  verified_in: /tmp/r2
 - id: HC-005
   connection: CON-010
   method: import
@@ -72,8 +74,9 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.puente_chat.plugin"
   expect:
     import_ok: true
-  status: pending_verificacion_full_clone
-  evidence: modulo presente en el arbol git (chat-router/plugins/puente_chat/plugin.py); el clon sparse local no lo materializa
+  status: verified
+  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
+  verified_in: /tmp/r2
 - id: HC-009
   connection: CON-022
   method: import
@@ -81,8 +84,9 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores"
   expect:
     import_ok: true
-  status: pending_verificacion_full_clone
-  evidence: modulo presente en el arbol git (chat-router/agentes/adaptadores/__init__.py); el clon sparse local no lo materializa
+  status: verified
+  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
+  verified_in: /tmp/r2
 - id: HC-010
   connection: CON-023
   method: import
@@ -99,8 +103,9 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins"
   expect:
     import_ok: true
-  status: pending_verificacion_full_clone
-  evidence: modulo presente en el arbol git (chat-router/plugins/__init__.py); el clon sparse local no lo materializa
+  status: verified
+  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
+  verified_in: /tmp/r2
 - id: HC-012
   connection: CON-028
   method: import
@@ -126,8 +131,9 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'router-mvp');import fichas.fichas_qwen.plugin"
   expect:
     import_ok: true
-  status: pending_verificacion_full_clone
-  evidence: modulo presente en el arbol git (router-mvp/fichas/fichas_qwen/plugin.py); el clon sparse local no lo materializa
+  status: verified
+  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
+  verified_in: /tmp/r2
 - id: HC-001
   connection: CON-003
   method: http
@@ -146,13 +152,17 @@ healthchecks:
   connection: CON-007
   method: http
   target: backend -> agents
-  command: null
+  command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente"
   expect: {}
-  status: declared_heredado
+  status: verified
+  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
+  verified_in: /tmp/r2
 - id: HC-004
   connection: CON-008
   method: space
   target: repo -> Space
-  command: null
+  command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos"
   expect: {}
-  status: declared_heredado
+  status: verified
+  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
+  verified_in: /tmp/r2

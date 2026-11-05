@@ -181,16 +181,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_verificacion
+  status: active
   dependencies: agents
   verification:
     type: import
     root: chat-router
     module: plugins.router_api_cliente
-    path: chat-router/plugins/router_api_cliente.py
-    en_arbol_git: true
-    result: pending_full_clone
-    detail: 'ModuleNotFoundError: No module named ''plugins'''
+    command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente"
+    result: ok
+    verified_in: /tmp/r2
+    detail: null
   notes: pendiente de evidencia; par observado en el grafo j2
   from: agents
   to: plugins
@@ -217,16 +217,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_verificacion
+  status: active
   dependencies: backend
   verification:
     type: import
     root: chat-router
     module: agentes.adaptadores.modelos
-    path: chat-router/agentes/adaptadores/modelos.py
-    en_arbol_git: true
-    result: pending_full_clone
-    detail: 'ModuleNotFoundError: No module named ''agentes'''
+    command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos"
+    result: ok
+    verified_in: /tmp/r2
+    detail: null
   notes: pendiente de evidencia; par observado en el grafo j2
   from: backend
   to: agents
@@ -601,16 +601,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_verificacion
+  status: active
   dependencies: fichas
   verification:
     type: import
     root: chat-router
     module: plugins.puente_chat.plugin
-    path: chat-router/plugins/puente_chat/plugin.py
-    en_arbol_git: true
-    result: pending_full_clone
-    detail: 'ModuleNotFoundError: No module named ''plugins'''
+    command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.puente_chat.plugin"
+    result: ok
+    verified_in: /tmp/r2
+    detail: null
   notes: pendiente de evidencia; par observado en el grafo j2
   from: fichas
   to: plugins
@@ -637,16 +637,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_verificacion
+  status: active
   dependencies: harness
   verification:
     type: import
     root: chat-router
     module: agentes.adaptadores
-    path: chat-router/agentes/adaptadores/__init__.py
-    en_arbol_git: true
-    result: pending_full_clone
-    detail: 'ModuleNotFoundError: No module named ''agentes'''
+    command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores"
+    result: ok
+    verified_in: /tmp/r2
+    detail: null
   notes: pendiente de evidencia; par observado en el grafo j2
   from: harness
   to: agents
@@ -754,16 +754,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_verificacion
+  status: active
   dependencies: harness
   verification:
     type: import
     root: chat-router
     module: plugins
-    path: chat-router/plugins/__init__.py
-    en_arbol_git: true
-    result: pending_full_clone
-    detail: 'ModuleNotFoundError: No module named ''plugins'''
+    command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins"
+    result: ok
+    verified_in: /tmp/r2
+    detail: null
   notes: pendiente de evidencia; par observado en el grafo j2
   from: harness
   to: plugins
@@ -1066,16 +1066,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_verificacion
+  status: active
   dependencies: plugins
   verification:
     type: import
     root: router-mvp
     module: fichas.fichas_qwen.plugin
-    path: router-mvp/fichas/fichas_qwen/plugin.py
-    en_arbol_git: true
-    result: pending_full_clone
-    detail: 'ModuleNotFoundError: No module named ''fichas'''
+    command: python -c "import sys;sys.path.insert(0,'router-mvp');import fichas.fichas_qwen.plugin"
+    result: ok
+    verified_in: /tmp/r2
+    detail: null
   notes: pendiente de evidencia; par observado en el grafo j2
   from: plugins
   to: fichas
