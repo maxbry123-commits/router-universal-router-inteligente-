@@ -90,7 +90,9 @@ def main():
     helper=("!f() { echo username=x-access-token; echo password=$HF_TOKEN; }; f")
     cred=["-c","credential.helper=","-c",f"credential.helper={helper}"]
     space_url=f"https://huggingface.co/spaces/{sp}"
-    sh(["git","-C",d]+cred+["fetch","--depth","1",space_url,"main"],env=env2,check=False)
+    # D-77: el fetch del repo del Space va SIN --depth: con --depth 1 sobre un clon filtrado
+    # el pack no se desempaqueta ("failed to unpack tree object") y el push se cae.
+    sh(["git","-C",d]+cred+["fetch",space_url,"main"],env=env2,check=False)
     rem=sh(["git","-C",d]+cred+["rev-parse","FETCH_HEAD"],env=env2,check=False).stdout.strip()
     # los ficheros PROPIOS del Space (Dockerfile, boot.sh, proxy.py, .gitattributes...) se
     # recuperan del commit remoto y se meten en el indice: el push es de arbol completo.
