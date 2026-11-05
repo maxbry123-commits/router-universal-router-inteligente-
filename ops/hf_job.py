@@ -12,7 +12,14 @@ def create(name,docker_image="python:3.12",command=None,secrets=None,environment
     env=dict(environment or {})
     cmd=None
     if command:
-        cmd=["bash","-lc",command] if command.startswith("bash -lc ") else command.split()
+        # D-32 (X-Ray 2026-11-05): el comando SIEMPRE va como ["bash","-lc",<string>].
+        # Antes se hacía command.split() cuando el string no empezaba por "bash -lc ":
+        # el contenedor intentaba ejecutar el primer token como binario y moria con
+        # 'exec: "set": executable file not found in $PATH' (jobs 6aebd2580e0338d1bb804d1f/d21).
+        if isinstance(command, (list, tuple)):
+            cmd=list(command)
+        else:
+            cmd=["bash","-lc",command]
     body={"name":name,"dockerImage":docker_image,"flavor":flavor or FLAVOR,"environment":env,"secrets":secrets or {}}
     if cmd: body["command"]=cmd
     req=urllib.request.Request(API,data=json.dumps(body).encode(),
