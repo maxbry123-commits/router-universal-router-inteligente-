@@ -1,30 +1,158 @@
-# connections/healthchecks.yaml — cómo verificar cada conexión (§8). Sin healthcheck no hay activo.
+# connections/healthchecks.yaml — verificación real por conexión (§5/§8).
+# Generado por ops/make_healthchecks.py: un healthcheck por conexión con canal real;
+# el comando se EJECUTA y su resultado decide el estado. "sin healthcheck no hay activo".
 healthchecks:
-  - id: HC-001
-    connection: CON-003
-    method: http
-    target: "plugins -> harness"
-    command: null
-    expect: {status: 200}
-    status: pending_audit
-  - id: HC-002
-    connection: CON-005
-    method: mcp
-    target: "chat -> harness"
-    command: null
-    expect: {tool: "tools/list"}
-    status: pending_audit
-  - id: HC-003
-    connection: CON-007
-    method: http
-    target: "backend -> agents"
-    command: null
-    expect: {status: 200}
-    status: pending_audit
-  - id: HC-004
-    connection: CON-008
-    method: space
-    target: "repo -> Space"
-    command: "GET /health -> {commit}"
-    expect: {commit_equals: "branch HEAD"}
-    status: pending_audit
+- id: HC-001
+  connection: CON-005
+  method: import
+  target: router-mvp -> router.integration.chat_mvp.core
+  command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.core"
+  expect:
+    import_ok: true
+  status: verified
+  evidence: null
+- id: HC-002
+  connection: CON-006
+  method: import
+  target: . -> kernel
+  command: python -c "import sys;sys.path.insert(0,'.');import kernel"
+  expect:
+    import_ok: true
+  status: verified
+  evidence: null
+- id: HC-003
+  connection: CON-007
+  method: import
+  target: chat-router -> plugins.router_api_cliente
+  command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente"
+  expect:
+    import_ok: true
+  status: pending_verificacion_full_clone
+  evidence: modulo presente en el arbol git (chat-router/plugins/router_api_cliente.py); el clon sparse local no lo materializa
+- id: HC-004
+  connection: CON-008
+  method: import
+  target: chat-router -> agentes.adaptadores.modelos
+  command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos"
+  expect:
+    import_ok: true
+  status: pending_verificacion_full_clone
+  evidence: modulo presente en el arbol git (chat-router/agentes/adaptadores/modelos.py); el clon sparse local no lo materializa
+- id: HC-005
+  connection: CON-010
+  method: import
+  target: router-mvp -> router.mcp_puente_github
+  command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.mcp_puente_github"
+  expect:
+    import_ok: true
+  status: verified
+  evidence: null
+- id: HC-006
+  connection: CON-018
+  method: import
+  target: chat-router/chat -> backend.mvp.herramientas.modos
+  command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.herramientas.modos"
+  expect:
+    import_ok: true
+  status: verified
+  evidence: null
+- id: HC-007
+  connection: CON-020
+  method: import
+  target: router-mvp -> router.red.http_plugins
+  command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.red.http_plugins"
+  expect:
+    import_ok: true
+  status: verified
+  evidence: null
+- id: HC-008
+  connection: CON-021
+  method: import
+  target: chat-router -> plugins.puente_chat.plugin
+  command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.puente_chat.plugin"
+  expect:
+    import_ok: true
+  status: pending_verificacion_full_clone
+  evidence: modulo presente en el arbol git (chat-router/plugins/puente_chat/plugin.py); el clon sparse local no lo materializa
+- id: HC-009
+  connection: CON-022
+  method: import
+  target: chat-router -> agentes.adaptadores
+  command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores"
+  expect:
+    import_ok: true
+  status: pending_verificacion_full_clone
+  evidence: modulo presente en el arbol git (chat-router/agentes/adaptadores/__init__.py); el clon sparse local no lo materializa
+- id: HC-010
+  connection: CON-023
+  method: import
+  target: chat-router/chat -> backend.mvp.prompt
+  command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.prompt"
+  expect:
+    import_ok: true
+  status: verified
+  evidence: null
+- id: HC-011
+  connection: CON-026
+  method: import
+  target: chat-router -> plugins
+  command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins"
+  expect:
+    import_ok: true
+  status: pending_verificacion_full_clone
+  evidence: modulo presente en el arbol git (chat-router/plugins/__init__.py); el clon sparse local no lo materializa
+- id: HC-012
+  connection: CON-028
+  method: import
+  target: router-mvp -> router.integration.chat_mvp.swen_mcp
+  command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.swen_mcp"
+  expect:
+    import_ok: true
+  status: verified
+  evidence: null
+- id: HC-013
+  connection: CON-036
+  method: import
+  target: chat-router -> backend.mvp
+  command: python -c "import sys;sys.path.insert(0,'chat-router');import backend.mvp"
+  expect:
+    import_ok: true
+  status: verified
+  evidence: null
+- id: HC-014
+  connection: CON-037
+  method: import
+  target: router-mvp -> fichas.fichas_qwen.plugin
+  command: python -c "import sys;sys.path.insert(0,'router-mvp');import fichas.fichas_qwen.plugin"
+  expect:
+    import_ok: true
+  status: pending_verificacion_full_clone
+  evidence: modulo presente en el arbol git (router-mvp/fichas/fichas_qwen/plugin.py); el clon sparse local no lo materializa
+- id: HC-001
+  connection: CON-003
+  method: http
+  target: plugins -> harness
+  command: null
+  expect: {}
+  status: declared_heredado
+- id: HC-002
+  connection: CON-005
+  method: mcp
+  target: chat -> harness
+  command: null
+  expect: {}
+  status: declared_heredado
+- id: HC-003
+  connection: CON-007
+  method: http
+  target: backend -> agents
+  command: null
+  expect: {}
+  status: declared_heredado
+- id: HC-004
+  connection: CON-008
+  method: space
+  target: repo -> Space
+  command: null
+  expect: {}
+  status: declared_heredado

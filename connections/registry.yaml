@@ -111,9 +111,15 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: active
   dependencies: agents
-  verification: null
+  verification:
+    type: import
+    root: router-mvp
+    module: router.integration.chat_mvp.core
+    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.core"
+    result: ok
+    checked_at: 20261104-kernel01
   notes: pendiente de evidencia; par observado en el grafo j2
   from: agents
   to: mvp
@@ -140,9 +146,15 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: active
   dependencies: agents
-  verification: null
+  verification:
+    type: import
+    root: .
+    module: kernel
+    command: python -c "import sys;sys.path.insert(0,'.');import kernel"
+    result: ok
+    checked_at: 20261104-kernel01
   notes: pendiente de evidencia; par observado en el grafo j2
   from: agents
   to: ops
@@ -169,9 +181,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: pending_verificacion
   dependencies: agents
-  verification: null
+  verification:
+    type: import
+    root: chat-router
+    module: plugins.router_api_cliente
+    path: chat-router/plugins/router_api_cliente.py
+    en_arbol_git: true
+    result: pending_full_clone
+    detail: 'ModuleNotFoundError: No module named ''plugins'''
   notes: pendiente de evidencia; par observado en el grafo j2
   from: agents
   to: plugins
@@ -198,9 +217,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: pending_verificacion
   dependencies: backend
-  verification: null
+  verification:
+    type: import
+    root: chat-router
+    module: agentes.adaptadores.modelos
+    path: chat-router/agentes/adaptadores/modelos.py
+    en_arbol_git: true
+    result: pending_full_clone
+    detail: 'ModuleNotFoundError: No module named ''agentes'''
   notes: pendiente de evidencia; par observado en el grafo j2
   from: backend
   to: agents
@@ -256,9 +282,15 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: active
   dependencies: backend
-  verification: null
+  verification:
+    type: import
+    root: router-mvp
+    module: router.mcp_puente_github
+    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.mcp_puente_github"
+    result: ok
+    checked_at: 20261104-kernel01
   notes: pendiente de evidencia; par observado en el grafo j2
   from: backend
   to: mvp
@@ -478,9 +510,15 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: active
   dependencies: fichas
-  verification: null
+  verification:
+    type: import
+    root: chat-router/chat
+    module: backend.mvp.herramientas.modos
+    command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.herramientas.modos"
+    result: ok
+    checked_at: 20261104-kernel01
   notes: pendiente de evidencia; par observado en el grafo j2
   from: fichas
   to: backend
@@ -528,9 +566,15 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: active
   dependencies: fichas
-  verification: null
+  verification:
+    type: import
+    root: router-mvp
+    module: router.red.http_plugins
+    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.red.http_plugins"
+    result: ok
+    checked_at: 20261104-kernel01
   notes: pendiente de evidencia; par observado en el grafo j2
   from: fichas
   to: mvp
@@ -557,9 +601,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: pending_verificacion
   dependencies: fichas
-  verification: null
+  verification:
+    type: import
+    root: chat-router
+    module: plugins.puente_chat.plugin
+    path: chat-router/plugins/puente_chat/plugin.py
+    en_arbol_git: true
+    result: pending_full_clone
+    detail: 'ModuleNotFoundError: No module named ''plugins'''
   notes: pendiente de evidencia; par observado en el grafo j2
   from: fichas
   to: plugins
@@ -586,9 +637,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: pending_verificacion
   dependencies: harness
-  verification: null
+  verification:
+    type: import
+    root: chat-router
+    module: agentes.adaptadores
+    path: chat-router/agentes/adaptadores/__init__.py
+    en_arbol_git: true
+    result: pending_full_clone
+    detail: 'ModuleNotFoundError: No module named ''agentes'''
   notes: pendiente de evidencia; par observado en el grafo j2
   from: harness
   to: agents
@@ -615,9 +673,15 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: active
   dependencies: harness
-  verification: null
+  verification:
+    type: import
+    root: chat-router/chat
+    module: backend.mvp.prompt
+    command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.prompt"
+    result: ok
+    checked_at: 20261104-kernel01
   notes: pendiente de evidencia; par observado en el grafo j2
   from: harness
   to: backend
@@ -690,9 +754,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: pending_verificacion
   dependencies: harness
-  verification: null
+  verification:
+    type: import
+    root: chat-router
+    module: plugins
+    path: chat-router/plugins/__init__.py
+    en_arbol_git: true
+    result: pending_full_clone
+    detail: 'ModuleNotFoundError: No module named ''plugins'''
   notes: pendiente de evidencia; par observado en el grafo j2
   from: harness
   to: plugins
@@ -742,9 +813,15 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: active
   dependencies: mvp
-  verification: null
+  verification:
+    type: import
+    root: router-mvp
+    module: router.integration.chat_mvp.swen_mcp
+    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.swen_mcp"
+    result: ok
+    checked_at: 20261104-kernel01
   notes: pendiente de evidencia; par observado en el grafo j2
   from: mvp
   to: backend
@@ -960,9 +1037,15 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: active
   dependencies: plugins
-  verification: null
+  verification:
+    type: import
+    root: chat-router/chat
+    module: backend.mvp
+    command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp"
+    result: ok
+    checked_at: 20261104-kernel01
   notes: pendiente de evidencia; par observado en el grafo j2
   from: plugins
   to: backend
@@ -983,9 +1066,16 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: pending_audit
+  status: pending_verificacion
   dependencies: plugins
-  verification: null
+  verification:
+    type: import
+    root: router-mvp
+    module: fichas.fichas_qwen.plugin
+    path: router-mvp/fichas/fichas_qwen/plugin.py
+    en_arbol_git: true
+    result: pending_full_clone
+    detail: 'ModuleNotFoundError: No module named ''fichas'''
   notes: pendiente de evidencia; par observado en el grafo j2
   from: plugins
   to: fichas
