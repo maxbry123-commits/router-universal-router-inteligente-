@@ -89,14 +89,20 @@ def main():
     # *.pt, *.npy, *.parquet, saved_model/**...). El hook lfs-check del servidor rechaza el push
     # si esos punteros LFS llegan sin sus objetos en el almacen LFS del Space. Por eso se
     # excluyen del espejo los ficheros que casan con los patrones LFS del propio Space.
+    # D-73: los patrones LFS se leen del `.gitattributes` del PROPIO Space (el del commit remoto),
+    # no del de la rama: el de la rama esta vacio y el push volvia a llevar punteros LFS -> 500.
     lfs_pats=[]
-    ga=os.path.join(d,".gitattributes")
-    if os.path.exists(ga):
-        for line in open(ga,errors="ignore"):
-            line=line.strip()
-            if line and not line.startswith("#") and "filter=lfs" in line:
-                pat=line.split()[0]
-                if pat not in lfs_pats: lfs_pats.append(pat)
+    ga_txt=""
+    if rem:
+        ga_txt=sh(["git","-C",d,"show",f"{rem}:.gitattributes"],check=False).stdout
+    if not ga_txt.strip():
+        ga=os.path.join(d,".gitattributes")
+        if os.path.exists(ga): ga_txt=open(ga,errors="ignore").read()
+    for line in ga_txt.splitlines():
+        line=line.strip()
+        if line and not line.startswith("#") and "filter=lfs" in line:
+            pat=line.split()[0]
+            if pat not in lfs_pats: lfs_pats.append(pat)
     for pat in lfs_pats:
         sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch",pat],check=False)
     check("lfs_patterns_excluded",True,f"{len(lfs_pats)} patrones LFS del Space excluidos: {lfs_pats[:6]}")
