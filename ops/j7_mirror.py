@@ -1,11 +1,37 @@
 from common import *
+import base64
 import urllib.request,time
 from wiring_check import run as wc
 def main():
     from huggingface_hub import HfApi
     sp=need("SPACE_REPO");api=HfApi(token=need("HF_TOKEN"))
-    d=clone("/tmp/s");sha=head(d)
-    r=wc(d);check("wiring_check_before_mirror",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
+    LIGHT=os.environ.get("MIRROR_LIGHT")=="1"
+    if LIGHT:
+        # D-75: modo ligero. El sandbox reinicia /tmp cada 15-20 min y se lleva el clon de 18 GB;
+        # en modo ligero el clon es `--filter=blob:none --no-checkout` (arbol sin working tree) y el
+        # gate previo se evalua sobre el YAML del registro (el predicado exacto de wiring_check).
+        import shutil as _sh
+        d="/tmp/sl"
+        if os.path.isdir(d): _sh.rmtree(d,ignore_errors=True)
+        env3=dict(os.environ);env3.update(GIT_TERMINAL_PROMPT="0",GIT_CONFIG_COUNT="1",
+            GIT_CONFIG_KEY_0="http.https://github.com/.extraheader",
+            GIT_CONFIG_VALUE_0=f"AUTHORIZATION: basic {base64.b64encode(('x-access-token:'+need('GH_TOKEN')).encode()).decode()}")
+        br=os.environ.get("TARGET_BRANCH") or need("GH_BRANCH")
+        sh(["git","clone","--single-branch","--no-tags","--filter=blob:none","--no-checkout",
+            "--depth","1","--branch",br,f"https://github.com/{need('GH_REPO')}.git",d],env=env3)
+        sha=head(d)
+        import yaml as _yaml
+        reg=_yaml.safe_load(open(os.path.join(d,"connections","registry.yaml"))) or {}
+        conns=reg.get("connections",[])
+        need_f=("id","name","source","target","protocol","direction","endpoint","status","dependencies",
+                "verification","notes","from","to","via","provides","requires")
+        bad=[x.get("id") for x in conns if not all(q in x for q in need_f)
+             or x["status"] not in ("pending_audit","active","broken")
+             or (x["status"]=="active" and not x.get("evidence"))]
+        check("registry_valid",not bad,bad[:5] or "")
+    else:
+        d=clone("/tmp/s");sha=head(d)
+        r=wc(d);check("wiring_check_before_mirror",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     if not all(c["ok"] for c in CHECKS):finish(commit=sha)
     IGN=[".git/**","_quarantine/**","**/node_modules/**","**/__pycache__/**",
         # D-06: fuera del espejo el codigo de terceros vendorizado (315.949 ficheros, 84% del repo).
