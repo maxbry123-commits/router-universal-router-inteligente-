@@ -63,6 +63,7 @@ def main():
         shutil.copy2(src,dst)
     check("space_own_files_preserved",True,f"{len(own)} ficheros propios del Space: {own[:8]}")
     sh(["git","-C",d,"checkout","-B",f"mirror/{sha[:12]}"])
+    sh(["git","-C",d,"add","-A"])          # D-71: primero se anade todo...
     for pat in IGN:
         pfx=pat[:-3] if pat.endswith("/**") else None
         if pfx:
@@ -84,7 +85,8 @@ def main():
     for pat in lfs_pats:
         sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch",pat],check=False)
     check("lfs_patterns_excluded",True,f"{len(lfs_pats)} patrones LFS del Space excluidos: {lfs_pats[:6]}")
-    sh(["git","-C",d,"add","-A"])
+    n_tree=len(sh(["git","-C",d,"ls-files"],check=False).stdout.split())
+    check("mirror_tree_size",n_tree<20000,f"{n_tree} ficheros en el arbol del push (limite 20000)")
     sh(["git","-C",d,"-c","user.name=kernel-mirror","-c","user.email=mirror@local",
         "commit","-q","-m",f"mirror {sha[:12]} (j7_mirror D-56)"],check=False)
     # D-67: HF ignora la cabecera `http.<url>.extraheader` en el PUSH (la API responde 200 pero
