@@ -7,9 +7,14 @@ import os,sys,json,urllib.request
 API="https://huggingface.co/api/jobs/"+os.environ.get("HF_NAMESPACE","COMAND-CENTER-1")
 FLAVOR=os.environ.get("HF_FLAVOR","cpu-upgrade")          # 32 GB RAM + 8 vCPU
 def create(name,docker_image="python:3.12",command=None,secrets=None,environment=None,flavor=None):
+    # D-22: el comando va en el campo "command" (array), NO en environment.CMD: con CMD el
+    # contenedor arranco sin ejecutar nada y la API lo reportaba COMPLETED (jobs 6aebaf2c..6aebc60b).
     env=dict(environment or {})
-    if command: env["CMD"]=command
+    cmd=None
+    if command:
+        cmd=["bash","-lc",command] if command.startswith("bash -lc ") else command.split()
     body={"name":name,"dockerImage":docker_image,"flavor":flavor or FLAVOR,"environment":env,"secrets":secrets or {}}
+    if cmd: body["command"]=cmd
     req=urllib.request.Request(API,data=json.dumps(body).encode(),
         headers={"Authorization":"Bearer "+os.environ["HF_TOKEN"],"Content-Type":"application/json"})
     with urllib.request.urlopen(req,timeout=60) as r: return json.loads(r.read())
