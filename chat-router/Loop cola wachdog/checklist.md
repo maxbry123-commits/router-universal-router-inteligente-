@@ -1,7 +1,7 @@
 # CHECKLIST WATCHDOG RIU / OpenClaw / Yaiwes
-Ciclo: 2026-11-05 ~05:10 UTC
-Health: CERRADO (status ok, commit 40c8d591abaa7ff6e008e9e0801dc022a968fc6a, banco_abierto true, autoactualizacion AL_DIA, checkpoint_coda_disponible true)
-MCP salud: CERRADO (status ok, herramientas incluyen chat/github_leer/pendientes/archivos, proveedores_externos groq:6 nvidia:5)
+Ciclo: 2026-11-05 ~06:10 UTC
+Health: CERRADO (status ok, commit 7b56a0e572b7d22d29677fe7adff5f8943c83047, banco_abierto true, autoactualizacion AL_DIA, checkpoint_coda_disponible true)
+MCP salud: CERRADO (initialize OK, tools list OK, salud tool OK, herramientas incluyen chat/github_leer/pendientes/archivos)
 
 Tests /chat/send:
 - groq/openai/gpt-oss-120b: CERRADO (reply OK, modelo_respuesta openai/gpt-oss-120b)
@@ -9,10 +9,10 @@ Tests /chat/send:
 - nvidia/z-ai/glm-5.3: BLOQUEADO (HTTP 410 PROVEEDOR_NVIDIA_HTTP_410: peticion_invalida credenciales_configuradas)
 
 MCP chat:
-- groq/qwen/qwen3.8-27b: CERRADO (texto OK)
+- groq/qwen/qwen3.8-27b: CERRADO (texto OK: pong)
 - nvidia: BLOQUEADO (mismo 410)
 
-github_leer: CERRADO (leyó LIVE_URL.json correctamente con repo+rama)
+github_leer: CERRADO (acceso al repo OK, listado raíz y LIVE_URL.json accesible)
 
 UI: riu-jev-bridge.vercel.app y HF space HTML OK.
 
