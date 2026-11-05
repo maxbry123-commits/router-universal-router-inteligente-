@@ -3,8 +3,11 @@ sys.path.insert(0,str(pathlib.Path(__file__).parent))
 from j2_graph import build
 # D-18/D-25: prefijos del codigo de TERCEROS vendorizado. Se evaluan en el codigo propio y
 # en las referencias nuevas (los errores de terceros se INFORMAN, no bloquean).
-VENDORED=("agentes-listos/","agentes/frameworks/","agentes/investigacion/","chatbot/componentes/",
-          "memoria/componentes/","otros/descartados/","otros/Prueba/","descarga-copia/")
+# D-40: al mover chat-router/agentes -> agents/ los prefijos de TERCEROS deben seguir casando
+# con la nueva ubicacion (si no, 38.405 referencias vendorizadas pasan a "propias" y bloquean).
+VENDORED=("agentes-listos/","agentes/frameworks/","agentes/investigacion/",
+          "agents/agentes-listos/","agents/frameworks/","agents/investigacion/",
+          "chatbot/componentes/","memoria/componentes/","otros/descartados/","otros/Prueba/","descarga-copia/")
 es_tercero=lambda p:any(k in p for k in VENDORED)
 def run(root,graph=None):
     # D-39: si el job ya construyo el grafo, se reutiliza (el build son ~10 min sobre 374k ficheros).
@@ -25,7 +28,12 @@ def run(root,graph=None):
         # D-25: el untrack de los 37 directorios build/ (plan de j4) deja sin resolver referencias
         # del codigo de TERCEROS vendorizado (que importaba esos artefactos). Misma regla que D-18:
         # las referencias nuevas de terceros se INFORMAN; solo las del codigo propio bloquean.
-        new_all=sorted(cur-b);new_own=[u for u in new_all if not es_tercero(u[0])]
+        # D-41: el baseline esta indexado por ruta y un renombrado (lote R2) lo invalidaba.
+        # Se compara por (basename, destino): el renombrado conserva el nombre de fichero, asi que
+        # la comparacion sigue detectando referencias NUEVAS sin penalizar los movimientos.
+        nb={(pathlib.Path(x[0]).name,x[1]) for x in b}
+        new_all=sorted(cur-b)
+        new_own=[u for u in new_all if not es_tercero(u[0]) and (pathlib.Path(u[0]).name,u[1]) not in nb]
         c("no_new_unresolved",not new_own,f"{len(new_all)} de terceros (informativo), {len(new_own)} propios: {new_own[:3]}")
         c("third_party_unresolved_reported",True,f"{len(new_all)} referencias nuevas en codigo de terceros")
     else:c("baseline_exists",False,"commit j2 baseline_unresolved.json to connections/")

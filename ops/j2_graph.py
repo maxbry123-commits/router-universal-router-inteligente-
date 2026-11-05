@@ -7,8 +7,11 @@ EXT=(".py",".js",".mjs",".ts",".tsx",".jsx",".html")
 # D-08 (ruta "smaller_scope" del DAG): el codigo de TERCEROS vendorizado, lo descartado y las
 # copias duplicadas no son cableado propio -> sus errores de sintaxis se INFORMAN pero no BLOQUEAN.
 # Todo lo demas (codigo propio y _quarantine/) sigueHaving que parsear para pasar el gate.
-VENDORED=("agentes-listos/","agentes/frameworks/","agentes/investigacion/","chatbot/componentes/",
-          "memoria/componentes/","otros/descartados/","otros/Prueba/","descarga-copia/")
+# D-40: al mover chat-router/agentes -> agents/ los prefijos de TERCEROS deben seguir casando
+# con la nueva ubicacion (si no, 38.405 referencias vendorizadas pasan a "propias" y bloquean).
+VENDORED=("agentes-listos/","agentes/frameworks/","agentes/investigacion/",
+          "agents/agentes-listos/","agents/frameworks/","agents/investigacion/",
+          "chatbot/componentes/","memoria/componentes/","otros/descartados/","otros/Prueba/","descarga-copia/")
 def es_tercero(p):return any(k in p for k in VENDORED) or p.startswith("_quarantine/")
 def build(root):
     root=pathlib.Path(root)
