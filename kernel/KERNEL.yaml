@@ -30,6 +30,7 @@ domains:
   ops: ops
   kernel: kernel
   connections: connections
+  memoria: chat-router/memoria
 layout_rules:
 - every file belongs to exactly one domain
 - cross-domain calls only through gateway + registry entry
