@@ -128,8 +128,7 @@ def main():
         try: os.remove(pf)
         except OSError: pass
     ign_prefixes=[p[:-3] if p.endswith("/**") else p for p in IGN]
-    tracked=sh(["git","-C",d,"ls-files","-z"],check=False).stdout.split("\0")
-    tracked=[t.decode() for t in tracked if t]
+    tracked=[t for t in sh(["git","-C",d,"ls-files","-z"],check=False).stdout.split("\0") if t]
     rm_paths([t for t in tracked if any(t.startswith(pfx) for pfx in ign_prefixes)])
     # D-69: el .gitattributes del Space marca como LFS muchas extensiones (*.bin, *.gz, *.tar,
     # *.pt, *.npy, *.parquet, saved_model/**...). El hook lfs-check del servidor rechaza el push
@@ -152,8 +151,7 @@ def main():
             pat=line.split()[0]
             if pat not in lfs_pats: lfs_pats.append(pat)
     import fnmatch
-    tracked2=sh(["git","-C",d,"ls-files","-z"],check=False).stdout.split("\0")
-    tracked2=[t.decode() for t in tracked2 if t]
+    tracked2=[t for t in sh(["git","-C",d,"ls-files","-z"],check=False).stdout.split("\0") if t]
     lfs_files=[t for t in tracked2 if any(fnmatch.fnmatch(t,pat) or fnmatch.fnmatch(os.path.basename(t),pat)
                                           or t.startswith(pat.rstrip("*")) for pat in lfs_pats)]
     rm_paths(lfs_files)
