@@ -72,12 +72,16 @@ def main():
     sh(["git","-C",d,"add","-A"])
     sh(["git","-C",d,"-c","user.name=kernel-mirror","-c","user.email=mirror@local",
         "commit","-q","-m",f"mirror {sha[:12]} (j7_mirror D-56)"],check=False)
-    tok=need("HF_TOKEN");b=base64.b64encode(f"x-access-token:{tok}".encode()).decode()
-    env2=dict(os.environ)
-    env2.update(GIT_TERMINAL_PROMPT="0",GIT_CONFIG_COUNT="1",
-        GIT_CONFIG_KEY_0="http.https://huggingface.co/.extraheader",
-        GIT_CONFIG_VALUE_0=f"AUTHORIZATION: basic {b}")
-    r=sh(["git","-C",d,"push","-f","https://huggingface.co/spaces/"+sp,"HEAD:main"],env=env2,check=False)
+    # D-67: HF ignora la cabecera `http.<url>.extraheader` en el PUSH (la API responde 200 pero
+    # git sigue pidiendo usuario: "could not read Username for 'https://huggingface.co'").
+    # La via que si funciona es el AYUDANTE DE CREDENCIALES: el token se lee del entorno dentro
+    # del propio helper, de modo que no aparece ni en argv ni en la URL ni en el log.
+    tok=need("HF_TOKEN")
+    env2=dict(os.environ);env2["HF_TOKEN"]=tok
+    helper=("!f() { echo username=x-access-token; echo password=$HF_TOKEN; }; f")
+    r=sh(["git","-C",d,"-c","credential.helper=",
+          "-c",f"credential.helper={helper}",
+          "push","-f","https://huggingface.co/spaces/"+sp,"HEAD:main"],env=env2,check=False)
     check("mirror_push_git",r.returncode==0,(r.stdout+r.stderr)[-400:])
     if r.returncode!=0:
         finish({"space":sp,"head":sha,"push_error":(r.stdout+r.stderr)[-400:]},commit=sha)
