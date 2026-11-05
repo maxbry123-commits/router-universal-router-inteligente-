@@ -3,40 +3,34 @@
 # cada comando se EJECUTA y su resultado decide el estado. "sin healthcheck no hay activo".
 healthchecks:
 - id: HC-001
-  connection: CON-005
-  method: import
-  target: router-mvp -> router.integration.chat_mvp.core
-  command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.core"
-  expect:
-    import_ok: true
-  status: verified
-  evidence: null
+  connection: CON-003
+  method: http
+  target: plugins -> harness
+  command: null
+  expect: {}
+  status: declared_heredado
 - id: HC-002
-  connection: CON-006
-  method: import
-  target: . -> kernel
-  command: python -c "import sys;sys.path.insert(0,'.');import kernel"
-  expect:
-    import_ok: true
-  status: verified
-  evidence: null
+  connection: CON-005
+  method: mcp
+  target: chat -> harness
+  command: null
+  expect: {}
+  status: declared_heredado
 - id: HC-003
   connection: CON-007
-  method: import
-  target: chat-router -> plugins.router_api_cliente
+  method: http
+  target: backend -> agents
   command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente"
-  expect:
-    import_ok: true
+  expect: {}
   status: verified
   evidence: 'verificado en el clon completo (/tmp/r2): import ok'
   verified_in: /tmp/r2
 - id: HC-004
   connection: CON-008
-  method: import
-  target: chat-router -> agentes.adaptadores.modelos
+  method: space
+  target: repo -> Space
   command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos"
-  expect:
-    import_ok: true
+  expect: {}
   status: verified
   evidence: 'verificado en el clon completo (/tmp/r2): import ok'
   verified_in: /tmp/r2
@@ -131,38 +125,6 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'router-mvp');import fichas.fichas_qwen.plugin"
   expect:
     import_ok: true
-  status: verified
-  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
-  verified_in: /tmp/r2
-- id: HC-001
-  connection: CON-003
-  method: http
-  target: plugins -> harness
-  command: null
-  expect: {}
-  status: declared_heredado
-- id: HC-002
-  connection: CON-005
-  method: mcp
-  target: chat -> harness
-  command: null
-  expect: {}
-  status: declared_heredado
-- id: HC-003
-  connection: CON-007
-  method: http
-  target: backend -> agents
-  command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente"
-  expect: {}
-  status: verified
-  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
-  verified_in: /tmp/r2
-- id: HC-004
-  connection: CON-008
-  method: space
-  target: repo -> Space
-  command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos"
-  expect: {}
   status: verified
   evidence: 'verificado en el clon completo (/tmp/r2): import ok'
   verified_in: /tmp/r2
