@@ -159,8 +159,31 @@ def main():
                                           or t.startswith(pat.rstrip("*")) for pat in lfs_pats)]
     rm_paths(lfs_files)
     check("lfs_patterns_excluded",True,f"{len(lfs_pats)} patrones LFS del Space, {len(lfs_files)} ficheros excluidos: {lfs_pats[:6]}")
-    n_tree=len(sh(["git","-C",d,"ls-files"],check=False).stdout.split())
-    check("mirror_tree_size",n_tree<20000,f"{n_tree} ficheros en el arbol del push (limite 20000)")
+    # D-86: el Space NO es un espejo del repo. Su diseno original (commit 43dcc0c9 del
+    # owner) son 8 ficheros operativos; el codigo de la app llega al contenedor por el
+    # `git clone --filter=blob:none` de boot.sh contra GitHub. Volcar 20.008 ficheros al
+    # Space (limite del push -> podado -> arbol hibrido) fue el dano: ademas de reventar
+    # el limite de HF, rompe el diseno y engorda el contexto de build. Aqui el arbol del
+    # push se reduce a la allowlist operativa y los ficheros propios del Space (que no
+    # estan en la rama) se reponen desde su commit remoto.
+    SPACE_ALLOWLIST = {"Dockerfile", "boot.sh", "proxy.py", "openclaw.sh",
+                        "swecode_provider.json", "README.md", ".gitattributes",
+                        ".gitignore", ".rebuild"}
+    tracked3 = [t for t in sh(["git", "-C", d, "ls-files", "-z"], check=False).stdout.split("\0") if t]
+    rm_paths([t for t in tracked3 if t not in SPACE_ALLOWLIST])
+    for rel in own:
+        if rel not in SPACE_ALLOWLIST:
+            continue
+        if sh(["git", "-C", d, "ls-files", "--error-unmatch", rel], check=False).returncode == 0:
+            continue
+        line = sh(["git", "-C", d, "ls-tree", rem, rel], check=False).stdout.strip()
+        if not line:
+            continue
+        meta = line.split()
+        sh(["git", "-C", d, "update-index", "--add", "--cacheinfo", meta[0], meta[2], rel], check=False)
+    n_tree = len(sh(["git", "-C", d, "ls-files"], check=False).stdout.split())
+    check("mirror_tree_allowlist", n_tree <= len(SPACE_ALLOWLIST),
+          f"{n_tree} ficheros en el push (allowlist operativa de {len(SPACE_ALLOWLIST)}: {sorted(SPACE_ALLOWLIST)})")
     sh(["git","-C",d,"-c","user.name=kernel-mirror","-c","user.email=mirror@local",
         "commit","-q","-m",f"mirror {sha[:12]} (j7_mirror D-56)"],check=False)
     # D-67: HF ignora la cabecera `http.<url>.extraheader` en el PUSH (la API responde 200 pero
