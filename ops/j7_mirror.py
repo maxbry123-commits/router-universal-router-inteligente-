@@ -96,7 +96,10 @@ def main():
     space_url=f"https://huggingface.co/spaces/{sp}"
     # D-77: el fetch del repo del Space va SIN --depth: con --depth 1 sobre un clon filtrado
     # el pack no se desempaqueta ("failed to unpack tree object") y el push se cae.
-    sh(["git","-C",d]+cred+["fetch",space_url,"main"],env=env2,check=False)
+    # D-82: el fetch del repo del Space va con `--filter=blob:none`: el historico completo son
+    # ~20.000 ficheros (varios GB) y hacia que el job 星 superase el techo de 1800 s. Con filtro
+    # solo bajan los arboles (los 11 blobs propios se piden bajo demanda).
+    sh(["git","-C",d]+cred+["fetch","--filter=blob:none",space_url,"main"],env=env2,check=False)
     rem=sh(["git","-C",d]+cred+["rev-parse","FETCH_HEAD"],env=env2,check=False).stdout.strip()
     # los ficheros PROPIOS del Space (Dockerfile, boot.sh, proxy.py, .gitattributes...) se
     # recuperan del commit remoto y se meten en el indice: el push es de arbol completo.
