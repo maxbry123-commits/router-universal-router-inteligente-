@@ -3,12 +3,21 @@ source_graph: j2_graph
 rule: todo pending_audit hasta verificacion con evidencia (§5)
 connections:
 - id: CON-001
+  name: agents_to_backend
+  source: agents
+  target: backend
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: agents
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: agents
   to: backend
   via: gateway_pending_audit
   provides: backend
   requires: agents
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/agentes/adaptadores/tests/test_adaptadores_disponibilidad_estados.py
@@ -17,12 +26,21 @@ connections:
     - chat-router/chat/backend/mvp/prompt.py
   observed_edges: 2
 - id: CON-002
+  name: agents_to_engines
+  source: agents
+  target: engines
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: agents
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: agents
   to: engines
   via: gateway_pending_audit
   provides: engines
   requires: agents
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/agentes/agentes-listos/SWE-agent/SWE-agent-main/tools/windowed/lib/flake8_utils.py
@@ -37,24 +55,42 @@ connections:
     - chat-router/motores/evidencia/tests/__init__.py
   observed_edges: 14
 - id: CON-003
+  name: agents_to_fichas
+  source: agents
+  target: fichas
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: agents
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: agents
   to: fichas
   via: gateway_pending_audit
   provides: fichas
   requires: agents
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/agentes/adaptadores/tests/test_adaptadores_disponibilidad_estados.py
     - router-mvp/fichas/fichas_qwen/mvp.py
   observed_edges: 1
 - id: CON-004
+  name: agents_to_harness
+  source: agents
+  target: harness
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: agents
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: agents
   to: harness
   via: gateway_pending_audit
   provides: harness
   requires: agents
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/agentes/agentes-listos/SWE-agent/SWE-agent-main/sweagent/inspector/static.py
@@ -69,12 +105,21 @@ connections:
     - chat-router/chat/backend/deepseek_harness/conftest.py
   observed_edges: 28
 - id: CON-005
+  name: agents_to_mvp
+  source: agents
+  target: mvp
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: agents
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: agents
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: agents
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/agentes/adaptadores/_comun.py
@@ -89,12 +134,21 @@ connections:
     - router-mvp/router-componentes/pydantic/pydantic/v1/json.py
   observed_edges: 62234
 - id: CON-006
+  name: agents_to_ops
+  source: agents
+  target: ops
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: agents
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: agents
   to: ops
   via: gateway_pending_audit
   provides: ops
   requires: agents
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/agentes/agentes-yaiwes/agent-microkernel/kernel/runner.py
@@ -109,12 +163,21 @@ connections:
     - ops/common.py
   observed_edges: 16
 - id: CON-007
+  name: agents_to_plugins
+  source: agents
+  target: plugins
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: agents
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: agents
   to: plugins
   via: gateway_pending_audit
   provides: plugins
   requires: agents
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/agentes/orquestacion/orquestador/deploy.py
@@ -129,12 +192,21 @@ connections:
     - chat-router/plugins/router_api_cliente.py
   observed_edges: 6
 - id: CON-008
+  name: backend_to_agents
+  source: backend
+  target: agents
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: backend
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: backend
   to: agents
   via: gateway_pending_audit
   provides: agents
   requires: backend
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/chat/backend/mvp/app.py
@@ -149,12 +221,21 @@ connections:
     - chat-router/agentes/agentes-listos/strix/code/strix/telemetry/logging.py
   observed_edges: 1362
 - id: CON-009
+  name: backend_to_fichas
+  source: backend
+  target: fichas
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: backend
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: backend
   to: fichas
   via: gateway_pending_audit
   provides: fichas
   requires: backend
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/chat/backend/mvp/app.py
@@ -169,12 +250,21 @@ connections:
     - router-mvp/fichas/fichas_qwen/mvp.py
   observed_edges: 64
 - id: CON-010
+  name: backend_to_mvp
+  source: backend
+  target: mvp
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: backend
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: backend
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: backend
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/chat/backend/mvp/app.py
@@ -189,12 +279,21 @@ connections:
     - router-mvp/router-componentes/fastapi/fastapi/__init__.py
   observed_edges: 616
 - id: CON-011
+  name: building_to_agents
+  source: building
+  target: agents
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: building
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: building
   to: agents
   via: gateway_pending_audit
   provides: agents
   requires: building
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/raiz_router/sdk_qwen/Qwen-Live-Harness/code/integration-tests/test-fixtures/qwen-tui-pty.py
@@ -209,12 +308,21 @@ connections:
     - chat-router/agentes/frameworks/Prefect/tests/fixtures/time.py
   observed_edges: 113
 - id: CON-012
+  name: building_to_mvp
+  source: building
+  target: mvp
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: building
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: building
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: building
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/raiz_router/sdk_qwen/Qwen-Live-Harness/code/integration-tests/test-fixtures/qwen-tui-pty.py
@@ -229,12 +337,21 @@ connections:
     - router-mvp/router-componentes/pydantic/pydantic/v1/json.py
   observed_edges: 109
 - id: CON-013
+  name: chat_to_agents
+  source: chat
+  target: agents
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: chat
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: chat
   to: agents
   via: gateway_pending_audit
   provides: agents
   requires: chat
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/chat/frontend/api/ecc_motor.py
@@ -243,12 +360,21 @@ connections:
     - chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py
   observed_edges: 2
 - id: CON-014
+  name: chat_to_mvp
+  source: chat
+  target: mvp
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: chat
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: chat
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: chat
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/chat/frontend/api/ecc_motor.py
@@ -259,12 +385,21 @@ connections:
     - router-mvp/router-componentes/pydantic/pydantic/v1/json.py
   observed_edges: 3
 - id: CON-015
+  name: engines_to_agents
+  source: engines
+  target: agents
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: engines
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: engines
   to: agents
   via: gateway_pending_audit
   provides: agents
   requires: engines
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/motores/evidencia/buscadores.py
@@ -279,12 +414,21 @@ connections:
     - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
   observed_edges: 174
 - id: CON-016
+  name: engines_to_mvp
+  source: engines
+  target: mvp
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: engines
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: engines
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: engines
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/motores/evidencia/buscadores.py
@@ -299,12 +443,21 @@ connections:
     - router-mvp/router-componentes/pydantic/pydantic/v1/json.py
   observed_edges: 110
 - id: CON-017
+  name: fichas_to_agents
+  source: fichas
+  target: agents
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: fichas
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: fichas
   to: agents
   via: gateway_pending_audit
   provides: agents
   requires: fichas
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/fichas/fichas_qwen/modos/apply_addon.py
@@ -319,12 +472,21 @@ connections:
     - chat-router/agentes/agentes-listos/openhands-automation/code/openhands/automation/utils/time.py
   observed_edges: 217
 - id: CON-018
+  name: fichas_to_backend
+  source: fichas
+  target: backend
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: fichas
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: fichas
   to: backend
   via: gateway_pending_audit
   provides: backend
   requires: fichas
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/fichas/fichas_qwen/motor_json/pruebas_motor.py
@@ -339,24 +501,42 @@ connections:
     - chat-router/chat/backend/mvp/herramientas/modos/motor_objetivo.py
   observed_edges: 16
 - id: CON-019
+  name: fichas_to_harness
+  source: fichas
+  target: harness
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: fichas
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: fichas
   to: harness
   via: gateway_pending_audit
   provides: harness
   requires: fichas
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py
     - chat-router/chat/backend/deepseek_harness/plugin.py
   observed_edges: 1
 - id: CON-020
+  name: fichas_to_mvp
+  source: fichas
+  target: mvp
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: fichas
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: fichas
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: fichas
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/fichas/fichas_qwen/modos/apply_addon.py
@@ -371,12 +551,21 @@ connections:
     - router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py
   observed_edges: 120
 - id: CON-021
+  name: fichas_to_plugins
+  source: fichas
+  target: plugins
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: fichas
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: fichas
   to: plugins
   via: gateway_pending_audit
   provides: plugins
   requires: fichas
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py
@@ -391,12 +580,21 @@ connections:
     - chat-router/plugins/puente_chat/plugin.py
   observed_edges: 27
 - id: CON-022
+  name: harness_to_agents
+  source: harness
+  target: agents
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: harness
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: harness
   to: agents
   via: gateway_pending_audit
   provides: agents
   requires: harness
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/chat/backend/deepseek_harness/plugin.py
@@ -411,12 +609,21 @@ connections:
     - chat-router/agentes/adaptadores/__init__.py
   observed_edges: 44
 - id: CON-023
+  name: harness_to_backend
+  source: harness
+  target: backend
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: harness
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: harness
   to: backend
   via: gateway_pending_audit
   provides: backend
   requires: harness
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/chat/backend/deepseek_harness/server.py
@@ -425,12 +632,21 @@ connections:
     - chat-router/chat/backend/mvp/harness_client.py
   observed_edges: 2
 - id: CON-024
+  name: harness_to_fichas
+  source: harness
+  target: fichas
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: harness
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: harness
   to: fichas
   via: gateway_pending_audit
   provides: fichas
   requires: harness
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/chat/backend/deepseek_harness/server.py
@@ -439,12 +655,21 @@ connections:
     - router-mvp/fichas/fichas_qwen/mvp.py
   observed_edges: 2
 - id: CON-025
+  name: harness_to_mvp
+  source: harness
+  target: mvp
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: harness
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: harness
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: harness
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/chat/backend/deepseek_harness/plugin.py
@@ -459,12 +684,21 @@ connections:
     - router-mvp/router-componentes/pydantic/pydantic/typing.py
   observed_edges: 44
 - id: CON-026
+  name: harness_to_plugins
+  source: harness
+  target: plugins
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: harness
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: harness
   to: plugins
   via: gateway_pending_audit
   provides: plugins
   requires: harness
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/chat/backend/deepseek_harness/plugin.py
@@ -473,12 +707,21 @@ connections:
     - chat-router/plugins/router_api_cliente.py
   observed_edges: 2
 - id: CON-027
+  name: mvp_to_agents
+  source: mvp
+  target: agents
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: mvp
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: mvp
   to: agents
   via: gateway_pending_audit
   provides: agents
   requires: mvp
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/router-componentes/MCP-Python-SDK/.github/actions/conformance/client.py
@@ -493,12 +736,21 @@ connections:
     - chat-router/agentes/frameworks/Prefect/src/prefect/concurrency/v1/asyncio.py
   observed_edges: 34688
 - id: CON-028
+  name: mvp_to_backend
+  source: mvp
+  target: backend
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: mvp
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: mvp
   to: backend
   via: gateway_pending_audit
   provides: backend
   requires: mvp
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/router/integration/chat_mvp/swen_mcp.py
@@ -507,12 +759,21 @@ connections:
     - chat-router/chat/backend/mvp/externos.py
   observed_edges: 2
 - id: CON-029
+  name: mvp_to_fichas
+  source: mvp
+  target: fichas
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: mvp
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: mvp
   to: fichas
   via: gateway_pending_audit
   provides: fichas
   requires: mvp
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/router/integration/chat_mvp/swen_mcp.py
@@ -521,12 +782,21 @@ connections:
     - router-mvp/fichas/fichas_qwen/mvp.py
   observed_edges: 2
 - id: CON-030
+  name: mvp_to_harness
+  source: mvp
+  target: harness
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: mvp
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: mvp
   to: harness
   via: gateway_pending_audit
   provides: harness
   requires: mvp
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/router-componentes/httpx/tests/test_exceptions.py
@@ -539,12 +809,21 @@ connections:
     - chat-router/chat/backend/deepseek_harness/conftest.py
   observed_edges: 4
 - id: CON-031
+  name: mvp_to_ops
+  source: mvp
+  target: ops
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: mvp
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: mvp
   to: ops
   via: gateway_pending_audit
   provides: ops
   requires: mvp
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/flow/_test_crash_handler.py
@@ -559,12 +838,21 @@ connections:
     - ops/common.py
   observed_edges: 136
 - id: CON-032
+  name: mvp_to_plugins
+  source: mvp
+  target: plugins
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: mvp
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: mvp
   to: plugins
   via: gateway_pending_audit
   provides: plugins
   requires: mvp
-  status: pending_audit
   evidence: null
   observed_paths:
   - - router-mvp/router/tests/smoke_harness_qwen_read.py
@@ -579,12 +867,21 @@ connections:
     - chat-router/plugins/ssh_bridge/plugin.py
   observed_edges: 5
 - id: CON-033
+  name: ops_to_agents
+  source: ops
+  target: agents
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: ops
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: ops
   to: agents
   via: gateway_pending_audit
   provides: agents
   requires: ops
-  status: pending_audit
   evidence: null
   observed_paths:
   - - ops/common.py
@@ -599,12 +896,21 @@ connections:
     - chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py
   observed_edges: 189
 - id: CON-034
+  name: ops_to_mvp
+  source: ops
+  target: mvp
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: ops
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: ops
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: ops
-  status: pending_audit
   evidence: null
   observed_paths:
   - - ops/common.py
@@ -619,12 +925,21 @@ connections:
     - router-mvp/router-componentes/pydantic/pydantic/json.py
   observed_edges: 85
 - id: CON-035
+  name: plugins_to_agents
+  source: plugins
+  target: agents
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: plugins
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: plugins
   to: agents
   via: gateway_pending_audit
   provides: agents
   requires: plugins
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/plugins/connectivity/plugin.py
@@ -639,12 +954,21 @@ connections:
     - chat-router/agentes/agentes-listos/CLI-Anything/code/lldb/agent-harness/cli_anything/lldb/core/inspect.py
   observed_edges: 332
 - id: CON-036
+  name: plugins_to_backend
+  source: plugins
+  target: backend
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: plugins
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: plugins
   to: backend
   via: gateway_pending_audit
   provides: backend
   requires: plugins
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/plugins/hf_storage/plugin.py
@@ -653,12 +977,21 @@ connections:
     - chat-router/chat/backend/mvp/prompt.py
   observed_edges: 2
 - id: CON-037
+  name: plugins_to_fichas
+  source: plugins
+  target: fichas
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: plugins
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: plugins
   to: fichas
   via: gateway_pending_audit
   provides: fichas
   requires: plugins
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/plugins/hf_storage/plugin.py
@@ -673,12 +1006,21 @@ connections:
     - router-mvp/fichas/fichas_qwen/plugin.py
   observed_edges: 5
 - id: CON-038
+  name: plugins_to_mvp
+  source: plugins
+  target: mvp
+  protocol: gateway_pending_audit
+  direction: outbound
+  endpoint: null
+  status: pending_audit
+  dependencies: plugins
+  verification: null
+  notes: pendiente de evidencia; par observado en el grafo j2
   from: plugins
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: plugins
-  status: pending_audit
   evidence: null
   observed_paths:
   - - chat-router/plugins/connectivity/plugin.py

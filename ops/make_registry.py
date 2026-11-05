@@ -18,9 +18,17 @@ for a,b in g["edges"]:
     if da and db and da!=db:pairs[(da,db)].append([a,b])
 out=[]
 for i,((a,b),paths) in enumerate(sorted(pairs.items()),1):
-    out.append({"id":f"CON-{i:03d}","from":a,"to":b,"via":"gateway_pending_audit",
-        "provides":b,"requires":a,"status":"pending_audit","evidence":None,
-        "observed_paths":paths[:5],"observed_edges":len(paths)})
+    # D-37: esquema de la GUIA §5 (11 campos obligatorios por conexion):
+    # id, nombre, origen, destino, protocolo, direccion, endpoint, estado, dependencias,
+    # verificacion, observaciones. Se conservan los campos previos (from/to/via/...) para no
+    # romper el comprobador ni las consultas ya escritas.
+    out.append({"id":f"CON-{i:03d}",
+        "name":f"{a}_to_{b}","source":a,"target":b,
+        "protocol":"gateway_pending_audit","direction":"outbound","endpoint":None,
+        "status":"pending_audit","dependencies":a,"verification":None,
+        "notes":"pendiente de evidencia; par observado en el grafo j2",
+        "from":a,"to":b,"via":"gateway_pending_audit","provides":b,"requires":a,
+        "evidence":None,"observed_paths":paths[:5],"observed_edges":len(paths)})
 doc={"generated_by":"ops/make_registry.py","source_graph":"j2_graph",
      "rule":"todo pending_audit hasta verificacion con evidencia (§5)","connections":out}
 pathlib.Path("connections/registry.yaml").write_text(yaml.safe_dump(doc,sort_keys=False,allow_unicode=True))

@@ -31,7 +31,9 @@ def run(root):
     miss=[e for e in k.get("entrypoints",[]) if not (root/e).exists()]
     c("entrypoints_exist",bool(k.get("entrypoints")) and not miss,miss or "entrypoints empty")
     rp=root/"connections/registry.yaml";conns=(yaml.safe_load(rp.read_text()) or {}).get("connections",[]) if rp.exists() else []
-    need=("id","from","to","via","provides","requires","status")
+    # D-37: la guia §5 fija los 11 campos obligatorios de cada conexion del registro oficial.
+    need=("id","name","source","target","protocol","direction","endpoint","status","dependencies",
+          "verification","notes","from","to","via","provides","requires")
     bad=[x.get("id") for x in conns if not all(q in x for q in need) or x["status"] not in("pending_audit","active","broken") or (x["status"]=="active" and not x.get("evidence"))]
     c("registry_valid",rp.exists() and not bad,bad[:5] or ("missing registry" if not rp.exists() else ""))
     dom=k.get("domains",{});decl={(x["from"],x["to"]) for x in conns if "from" in x}
