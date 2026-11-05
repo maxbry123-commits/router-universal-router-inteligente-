@@ -6,7 +6,7 @@
   "selector": false,
   "memoria": "/memoria",
   "almacenamiento": "/chat/storage",
-  "computo": "HF Jobs cpu-basic",
+  "computo": "HF Jobs cpu-upgrade (32 GB + CPU; D-83)",
   "banco": "HF cifrado",
   "computo_endpoint": "/control/hf",
   "puertos": [

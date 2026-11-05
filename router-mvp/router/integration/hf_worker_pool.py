@@ -3,7 +3,9 @@
 Policy:
 - controller never shuts itself down;
 - CPU >= 85% OR RAM >= 85% for 3 samples -> start one worker;
-- RAM pressure gets cpu-upgrade (32 GB), CPU-only pressure gets cpu-basic (16 GB);
+- every worker is cpu-upgrade (32 GB + 8 vCPU): cpu-basic is prohibited by the
+  owner's hardware policy (D-83), so RAM/CPU pressure only decides *when*, not
+  *which* hardware;
 - temporary workers are cancelled after 300 seconds without assigned traffic;
 - child workers never autoscale recursively.
 
@@ -24,6 +26,8 @@ IDLE_SECONDS = int(os.getenv("HF_AUTOSCALE_IDLE_SECONDS", "300"))
 SAMPLE_SECONDS = int(os.getenv("HF_AUTOSCALE_SAMPLE_SECONDS", "10"))
 HOT_SAMPLES = int(os.getenv("HF_AUTOSCALE_HOT_SAMPLES", "3"))
 MAX_WORKERS = int(os.getenv("HF_AUTOSCALE_MAX_WORKERS", "4"))
+# D-83: hardware unico y de pago para TODO worker (32 GB + CPU). cpu-basic prohibido.
+FLAVOR = os.environ.get("HF_FLAVOR", "cpu-upgrade")
 PORT = 8000
 CHILD = os.getenv("HF_AUTOSCALE_CHILD", "0") == "1"
 
@@ -184,7 +188,7 @@ class HFWorkerPool:
     async def invoke(self, payload: dict[str, Any]) -> dict[str, Any]:
         worker = self.choose()
         if worker is None:
-            worker = self.launch("cpu-basic", "first managed request")
+            worker = self.launch(FLAVOR, "first managed request")
             return {"status": "starting", "worker": worker.public(), "retry_after_s": 10}
 
         key = os.getenv("RIU_ROUTER_API_KEY", "")
@@ -233,7 +237,7 @@ class HFWorkerPool:
                 hot = self.cpu_percent >= THRESHOLD or self.ram_percent >= THRESHOLD
                 self._hot = self._hot + 1 if hot else 0
                 if self.enabled and self._hot >= HOT_SAMPLES:
-                    flavor = "cpu-upgrade" if self.ram_percent >= THRESHOLD else "cpu-basic"
+                    flavor = FLAVOR
                     reason = (
                         f"cpu={self.cpu_percent:.1f}% "
                         f"ram={self.ram_percent:.1f}% "

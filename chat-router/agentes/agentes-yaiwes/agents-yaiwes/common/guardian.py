@@ -1,6 +1,6 @@
 """guardian: vigilante autonomo del Router en Hugging Face (sin GitHub Actions).
 
-Pensado para correr como un HF Job pequeno (cpu-basic). Cada ~60 s:
+Pensado para correr como un HF Job de pago (cpu-upgrade, 32 GB + CPU; D-83: cpu-basic prohibido). Cada ~60 s:
   1) lee LIVE_URL del flag del repo y comprueba /health del Router,
   2) mira la vida restante del Job del Router (API HF Jobs),
   3) si faltan < 6 h, o 3 fallos de /health seguidos, o no hay Router vivo:
@@ -76,8 +76,8 @@ class Config:
     max_launches_per_hour: int = 3
     health_wait_s: int = 480
     poll_s: int = 10
-    flavor_router: str = "cpu-basic"
-    flavor_guardian: str = "cpu-basic"
+    flavor_router: str = "cpu-upgrade"
+    flavor_guardian: str = "cpu-upgrade"
     life_router: str = "7d"
     life_guardian: str = "5d"
     assumed_life_s: dict = field(default_factory=lambda: {"router": 24 * 3600, "guardian": 24 * 3600})
@@ -109,8 +109,8 @@ class Config:
             fail_limit=int(e.get("GUARDIAN_FAIL_LIMIT") or 3),
             min_pause_s=parse_duration(e.get("GUARDIAN_MIN_PAUSE"), 600),
             max_launches_per_hour=int(e.get("GUARDIAN_MAX_PER_HOUR") or 3),
-            flavor_router=e.get("GUARDIAN_ROUTER_FLAVOR", "cpu-basic"),
-            flavor_guardian=e.get("GUARDIAN_FLAVOR", "cpu-basic"),
+            flavor_router=e.get("GUARDIAN_ROUTER_FLAVOR") or "cpu-upgrade",
+            flavor_guardian=e.get("GUARDIAN_FLAVOR") or "cpu-upgrade",
             life_router=e.get("GUARDIAN_ROUTER_LIFE", "7d"), life_guardian=e.get("GUARDIAN_LIFE", "5d"),
             assumed_life_s={"router": assumed, "guardian": assumed}, expiry_overrides=ov,
             state_path=e.get("GUARDIAN_STATE", "/tmp/guardian_state.json"),

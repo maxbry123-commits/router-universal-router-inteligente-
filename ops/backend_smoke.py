@@ -3,7 +3,7 @@
 Por que existe: el Space `COMAND-CENTER-1/riu-router` esta en hardware de pago sin saldo
 (HF responde 402) y queda PAUSED, asi que su /health da 503 y el gate "real backend start +
 smoke" no se puede cumplir a traves del Space. Este job hace lo mismo dentro de un Job de HF
-(cpu-basic, hardware gratuito): clona el repo, instala las dependencias del backend, levanta
+(cpu-upgrade, hardware de pago de 32 GB + CPU): clona el repo, instala las dependencias del backend, levanta
 uvicorn con la app real, llama a /health y publica el resultado en el Dataset.
 
 Modos:
