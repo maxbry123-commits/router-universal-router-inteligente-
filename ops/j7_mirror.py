@@ -2,9 +2,22 @@ from common import *
 import base64
 import urllib.request,time
 from wiring_check import run as wc
+def _space_stage(sp,token):
+    """D-91: stage del Space. huggingface_hub si esta disponible; si no, REST (mismo dato)."""
+    try:
+        from huggingface_hub import HfApi
+        return str(HfApi(token=token).get_space_runtime(sp).stage)
+    except ImportError:
+        import json as _j
+        req=urllib.request.Request(f"https://huggingface.co/api/spaces/{sp}",
+            headers={"Authorization":"Bearer "+token})
+        with urllib.request.urlopen(req,timeout=60) as r:
+            return str((_j.loads(r.read()).get("runtime") or {}).get("stage",""))
 def main():
-    from huggingface_hub import HfApi
-    sp=need("SPACE_REPO");api=HfApi(token=need("HF_TOKEN"))
+    sp=need("SPACE_REPO");token=need("HF_TOKEN")
+    # D-92: `br` se define SIEMPRE. Antes solo existia en el modo ligero -> en el push real
+    # (`git show <br>:.gitattributes`) salia NameError y el job moria.
+    br=os.environ.get("TARGET_BRANCH") or need("GH_BRANCH")
     LIGHT=os.environ.get("MIRROR_LIGHT")=="1"
     if LIGHT:
         # D-75: modo ligero. El sandbox reinicia /tmp cada 15-20 min y se lleva el clon de 18 GB;
@@ -16,7 +29,6 @@ def main():
         env3=dict(os.environ);env3.update(GIT_TERMINAL_PROMPT="0",GIT_CONFIG_COUNT="1",
             GIT_CONFIG_KEY_0="http.https://github.com/.extraheader",
             GIT_CONFIG_VALUE_0=f"AUTHORIZATION: basic {base64.b64encode(('x-access-token:'+need('GH_TOKEN')).encode()).decode()}")
-        br=os.environ.get("TARGET_BRANCH") or need("GH_BRANCH")
         sh(["git","clone","--single-branch","--no-tags","--filter=blob:none","--no-checkout",
             "--depth","1","--branch",br,f"https://github.com/{need('GH_REPO')}.git",d],env=env3)
         sha=head(d)
@@ -61,16 +73,25 @@ def main():
         # ("j7 on main as read-only baseline, mirror skipped"): calcula lo que se mirroriaria
         # y el estado del Space, SIN subir nada. El mirror real queda para j9_remirror.
         n=0;sz=0;pfx=[p[:-3] for p in IGN if p.endswith("/**")]
-        # D-19: os.scandir cachea el stat del propio recorrido (os.walk+getsize = 12+ min)
-        for root,dirs,files in os.walk(d):
-            dirs[:]=[x for x in dirs if x not in(".git","_quarantine","node_modules","__pycache__")]
-            with os.scandir(root) as it:
-                for e in it:
-                    if not e.is_file(follow_symlinks=False):continue
-                    rel=os.path.relpath(e.path,d).replace(os.sep,"/")
-                    if any(rel.startswith(p) for p in pfx):continue
-                    n+=1;sz+=e.stat(follow_symlinks=False).st_size
-        stage=str(api.get_space_runtime(sp).stage)
+        # D-93: el baseline se cuenta sobre el ARBOL GIT (`ls-tree -r -l`), no sobre el working
+        # tree: en el clon ligero (--no-checkout) no hay working tree y el recorrido daria 0
+        # ficheros (mentira). El arbol da el conjunto EXACTO de ficheros versionados a espejar.
+        # D-94: las exclusiones "**/X" NUNCA casaban con startswith (comparaba literally "**/"):
+        # node_modules y __pycache__ no se excluian. Ahora se comparan por segmento.
+        def _excluded(path):
+            for p in pfx:
+                if p.startswith("**/"):
+                    q=p[3:]
+                    if path==q or path.startswith(q+"/") or ("/"+q+"/") in path:return True
+                elif path.startswith(p):return True
+            return False
+        for line in sh(["git","-C",d,"ls-tree","-r","-l",sha],check=False).stdout.splitlines():
+            if "\t" not in line:continue
+            meta,path=line.split("\t",1);parts=meta.split()
+            if len(parts)<4 or not parts[3].isdigit():continue
+            if _excluded(path):continue
+            n+=1;sz+=int(parts[3])
+        stage=_space_stage(sp,token)
         check("baseline_only_no_upload",True,f"{n} ficheros, {sz/1e6:.1f} MB (sin subir)")
         check("space_RUNNING","RUNNING" in stage,stage)
         finish({"space":sp,"head":sha,"baseline":True,"files":n,"bytes":sz},commit=sha)
@@ -109,13 +130,34 @@ def main():
             meta,path=line.split("\t",1)
             mode,typ,sha_blob=meta.split()          # D-80: NO reutilizar `sha` (es el sha de la rama)
             if typ=="blob" and path not in own: own.append(path)
+    # D-96: los blobs PROPIOS del Space no estan en el clon local (el fetch va con
+    # --filter=blob:none): sin ellos, `write-tree`/`push` no tienen los objetos que el commit
+    # referencia. Se bajan por REST (los ficheros propios del Space son 8 y pequenos) y se
+    # escriben como objetos git locales con `hash-object -w`: el SHA coincide con el del Space
+    # (sha1("blob <len>\0" + contenido)) y el push se completa.
+    def _put_space_file(rel,meta):
+        try:
+            req=urllib.request.Request(f"https://huggingface.co/spaces/{sp}/resolve/main/{rel}",
+                headers={"Authorization":"Bearer "+need("HF_TOKEN")})
+            with urllib.request.urlopen(req,timeout=60) as r: content=r.read()
+            tmp=os.path.join(d,".space_files",rel);os.makedirs(os.path.dirname(tmp),exist_ok=True)
+            with open(tmp,"wb") as fh: fh.write(content)
+            blob=sh(["git","-C",d,"hash-object","-w",tmp],check=False).stdout.strip()
+            sh(["git","-C",d,"update-index","--add","--cacheinfo",meta[0],blob or meta[2],rel],check=False)
+            return blob or meta[2]
+        except Exception:
+            sh(["git","-C",d,"update-index","--add","--cacheinfo",meta[0],meta[2],rel],check=False)
+            return meta[2]
     for rel in own:
         line=sh(["git","-C",d,"ls-tree",rem,rel],check=False).stdout.strip()
         if not line: continue
         meta=line.split()
-        sh(["git","-C",d,"update-index","--add","--cacheinfo",meta[0],meta[2],rel],check=False)
+        _put_space_file(rel,meta)
     check("space_own_files_preserved",bool(own),f"{len(own)} ficheros propios del Space: {own[:8]}")
-    sh(["git","-C",d,"checkout","-B",f"mirror/{sha[:12]}"])
+    # D-95: en modo ligero el clon es `--no-checkout`: materializar el working tree descargaria
+    # los 18 GB de blobs. El indice del push se construye con `read-tree` (arbol), luego el
+    # checkout del working tree no es necesario. En modo normal se mantiene (working tree real).
+    if not LIGHT: sh(["git","-C",d,"checkout","-B",f"mirror/{sha[:12]}"])
     # D-74: el indice se construye con `read-tree` (arbol de la rama) en vez de `git add -A`
     # (working tree): con `add` entraban ficheros que no deben ir al push. Las exclusiones se
     # aplican con un fichero de pathspec (NUL-separated) para que los patrones con espacios y
@@ -180,7 +222,7 @@ def main():
         if not line:
             continue
         meta = line.split()
-        sh(["git", "-C", d, "update-index", "--add", "--cacheinfo", meta[0], meta[2], rel], check=False)
+        _put_space_file(rel,meta)
     n_tree = len(sh(["git", "-C", d, "ls-files"], check=False).stdout.split())
     check("mirror_tree_allowlist", n_tree <= len(SPACE_ALLOWLIST),
           f"{n_tree} ficheros en el push (allowlist operativa de {len(SPACE_ALLOWLIST)}: {sorted(SPACE_ALLOWLIST)})")
@@ -204,7 +246,7 @@ def main():
         finish({"space":sp,"head":sha,"push_error":(r.stdout+r.stderr)[-400:]},commit=sha)
     hu=os.environ.get("HEALTH_URL");wait=int(os.environ.get("WAIT_S","600"));t0=time.time();seen=None;stage=None
     while time.time()-t0<wait:
-        stage=str(api.get_space_runtime(sp).stage)
+        stage=_space_stage(sp,token)
         if "RUNNING" in stage and hu:
             try:
                 seen=json.loads(urllib.request.urlopen(hu,timeout=15).read()).get("commit")

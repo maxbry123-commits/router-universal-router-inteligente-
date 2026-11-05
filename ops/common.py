@@ -51,9 +51,34 @@ def sha256(p):
         for b in iter(lambda:f.read(1<<20),b""):h.update(b)
     return h.hexdigest()
 def head(d):return sh(["git","rev-parse","HEAD"],cwd=d).stdout.strip()
+def _ds_url(job,name):
+    return f"https://huggingface.co/datasets/{need('DATASET_REPO')}/resolve/main/{RUN_ID}/{job}/{name}"
 def dl(job,name):  # artifact of an earlier job, same RUN_ID
-    from huggingface_hub import hf_hub_download
-    return hf_hub_download(repo_id=need("DATASET_REPO"),repo_type="dataset",filename=f"{RUN_ID}/{job}/{name}",token=os.environ.get("HF_TOKEN"))
+    # D-91: huggingface_hub es una dependencia opcional. Si no esta instalada (sandbox sin PyPI),
+    # el artefacto se baja por REST con el token SOLO en la cabecera. Mismo bytes, mismo path.
+    try:
+        from huggingface_hub import hf_hub_download
+        return hf_hub_download(repo_id=need("DATASET_REPO"),repo_type="dataset",filename=f"{RUN_ID}/{job}/{name}",token=os.environ.get("HF_TOKEN"))
+    except ImportError:
+        import urllib.request,tempfile
+        req=urllib.request.Request(_ds_url(job,name),headers={"Authorization":"Bearer "+os.environ.get("HF_TOKEN","")})
+        with urllib.request.urlopen(req,timeout=300) as r: data=r.read()
+        fd,path=tempfile.mkstemp(prefix=job+"_");os.write(fd,data);os.close(fd);return path
+def _ds_upload_fallback(out_dir,repo,token):
+    """D-91: publica los artefactos del job en el Dataset por la API REST de HF.
+    Token SOLO en cabecera; el cuerpo va en base64 (nunca en logs ni en argv)."""
+    import base64,json as _j,urllib.request
+    out=pathlib.Path(out_dir);ops=[]
+    for f in sorted(out.rglob("*")):
+        if f.is_file():
+            rel=f.relative_to(out).as_posix()
+            ops.append({"operation":"addOrUpdate","path":f"{RUN_ID}/{JOB}/{rel}",
+                        "content":base64.b64encode(f.read_bytes()).decode()})
+    if not ops:return
+    body=_j.dumps({"commit_message":f"{JOB} {RUN_ID}","operations":ops}).encode()
+    req=urllib.request.Request(f"https://huggingface.co/api/datasets/{repo}/commit",data=body,method="POST",
+        headers={"Authorization":"Bearer "+token,"Content-Type":"application/json"})
+    with urllib.request.urlopen(req,timeout=300) as r: r.read()
 def finish(extra=None,commit=None):
     status="PASS" if CHECKS and all(c["ok"] for c in CHECKS) else "FAIL"
     res={"job":JOB,"run_id":RUN_ID,"status":status,"commit":commit,"ts":time.strftime("%FT%TZ",time.gmtime()),"checks":CHECKS,**(extra or {})}
@@ -61,8 +86,11 @@ def finish(extra=None,commit=None):
     try:
         r=os.environ.get("DATASET_REPO");t=os.environ.get("HF_TOKEN")
         if r and t:
-            from huggingface_hub import HfApi
-            HfApi(token=t).upload_folder(folder_path=str(OUT),repo_id=r,repo_type="dataset",path_in_repo=f"{RUN_ID}/{JOB}")
+            try:
+                from huggingface_hub import HfApi
+                HfApi(token=t).upload_folder(folder_path=str(OUT),repo_id=r,repo_type="dataset",path_in_repo=f"{RUN_ID}/{JOB}")
+            except ImportError:
+                _ds_upload_fallback(OUT,r,t)   # D-91: REST commit API (mismo repo, mismos paths)
     except Exception as e:print("upload_failed",redact(str(e)))
     print(json.dumps({"job":JOB,"status":status,"failed":[c["name"] for c in CHECKS if not c["ok"]]}))
     sys.exit(0 if status=="PASS" else 1)
