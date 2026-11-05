@@ -64,7 +64,7 @@ def main():
     env["GIT_CONFIG_KEY_0"] = "http.https://github.com/.extraheader"
     env["GIT_CONFIG_VALUE_0"] = "AUTHORIZATION: basic " + base64.b64encode(
         ("x-access-token:" + os.environ["GH_TOKEN"]).encode()).decode()
-    for extra in ("AUDIT_JOBS", "WAIT_S", "MIRROR_BASELINE"):
+    for extra in ("AUDIT_JOBS", "WAIT_S", "MIRROR_BASELINE", "MIRROR_LIGHT"):
         if extra in os.environ:
             env[extra] = os.environ[extra]
     sec = {"GH_TOKEN": os.environ["GH_TOKEN"], "HF_TOKEN": os.environ["HF_TOKEN"]}
