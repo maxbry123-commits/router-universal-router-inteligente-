@@ -104,7 +104,7 @@ def main():
     if rem:
         for line in sh(["git","-C",d,"ls-tree",rem],check=False).stdout.splitlines():
             meta,path=line.split("\t",1)
-            mode,typ,sha=meta.split()
+            mode,typ,sha_blob=meta.split()          # D-80: NO reutilizar `sha` (es el sha de la rama)
             if typ=="blob" and path not in own: own.append(path)
     for rel in own:
         line=sh(["git","-C",d,"ls-tree",rem,rel],check=False).stdout.strip()

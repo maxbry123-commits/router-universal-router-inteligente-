@@ -19,7 +19,7 @@ def sh(cmd,cwd=None,check=True,timeout=None,env=None):
     e=genv()
     if env:e.update(env)
     r=subprocess.run(cmd,cwd=cwd,env=e,capture_output=True,text=True,timeout=timeout)
-    if check and r.returncode:raise RuntimeError(f"{' '.join(cmd[:3])} rc={r.returncode} {redact(r.stderr)[-400:]}")
+    if check and r.returncode:raise RuntimeError(f"{' '.join(cmd[:6])} rc={r.returncode} {redact(r.stderr)[-400:]}")
     return r
 def check(name,ok,detail=""):
     CHECKS.append({"name":name,"ok":bool(ok),"detail":str(detail)[:300]});return bool(ok)
