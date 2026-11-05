@@ -11,7 +11,11 @@ def main():
         # D-06: fuera del espejo el codigo de terceros vendorizado (315.949 ficheros, 84% del repo).
         "chat-router/agentes/agentes-listos/**","chat-router/agentes/frameworks/**","chat-router/agentes/investigacion/**",
         "chat-router/chatbot/componentes/**","chat-router/memoria/componentes/**","chat-router/otros/descartados/**",
-        "chat-router/otros/Prueba/**","chat-router/motores/motores/descarga-copia/**"]
+        "chat-router/otros/Prueba/**","chat-router/motores/motores/descarga-copia/**",
+        # D-58: el limite del endpoint de HF es de 20.000 ficheros por repo y el espejo
+        # llegaba a 20.008. kernel/ y ops/ son el utillaje de despliegue (no runtime del
+        # Space): excluirlos deja el espejo en 19.961 ficheros y 31 de margen.
+        "kernel/**","ops/**"]
     if os.environ.get("MIRROR_BASELINE")=="1":
         # D-16/D-20: modo baseline read-only que exige el DAG en S4_approval.if_missing.
         # D-20: la env se llama MIRROR_BASELINE y no BASELINE porque wiring_check usa BASELINE como RUTA del baseline.
