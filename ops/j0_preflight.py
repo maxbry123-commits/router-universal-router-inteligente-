@@ -12,6 +12,17 @@ def main():
     ops=pathlib.Path(__file__).parent
     miss=[f for f in ["common","j1_inventory","j2_graph","j3_history","j4_plan","j5_apply","j6_rewrite","j7_mirror","j8_audit","wiring_check","kernel"] if not (ops/f"{f}.py").exists()]
     check("ops_scripts_present_on_branch",not miss,miss)
+    # D-31: el bloque de entrada esta CONGELADO (freeze/VERBATIM). Se valida su SHA-256
+    # contra el que registra el kernel (handoff.input_block_sha256): si cambia, el job falla.
+    import hashlib as _h
+    ibp=pathlib.Path(os.environ.get("KERNEL_DIR","kernel"))/"INPUT_BLOCK.yaml"
+    try:
+        cur=_h.sha256(ibp.read_bytes()).hexdigest()
+        import yaml as _y
+        rec=(_y.safe_load(pathlib.Path(os.environ.get("KERNEL_DIR","kernel")+"/KERNEL.yaml").read_text())
+             .get("handoff",{}).get("input_block_sha256"))
+        check("input_block_sha256_intacto",bool(rec) and cur==rec,f"actual={cur[:12]} registrado={(rec or '-')[:12]}")
+    except Exception as e:check("input_block_sha256_intacto",False,str(e)[:120])
     from huggingface_hub import HfApi
     api=HfApi(token=os.environ.get("HF_TOKEN"))
     try:api.whoami();check("hf_token_valid",True)

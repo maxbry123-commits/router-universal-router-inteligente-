@@ -178,4 +178,5 @@ handoff:
     ts: '2026-11-04T23:55:16Z'
     run_id: 20261104-kernel01
   flags: []
+  input_block_sha256: 5c4bbb20421a9e674876d69f25fb8aaf9e67112d58a49ce3c3f527024ae83c3a
 progress_pct: 54
