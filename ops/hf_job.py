@@ -18,5 +18,28 @@ def create(name,docker_image="python:3.12",command=None,secrets=None,environment
     req=urllib.request.Request(API,data=json.dumps(body).encode(),
         headers={"Authorization":"Bearer "+os.environ["HF_TOKEN"],"Content-Type":"application/json"})
     with urllib.request.urlopen(req,timeout=60) as r: return json.loads(r.read())
+
+def legacy_command(script, repo_env="GH_REPO", branch_env="GH_BRANCH", report_env="HF_REPORT_REPO"):
+    """Comando para los jobs heredados de la guia anterior (JOB 2 / JOB 3).
+    D-28: `upload_file` de huggingface_hub >= 2.x exige el path como ARGUMENTO CON NOMBRE
+    (`upload_file(path=...)`): con el path posicional lanza TypeError y el artefacto nunca
+    se publica (el job 6aebc8980e0338d1bb804a42 fallo por eso).
+    D-29: el log del contenedor se imprime al final (`cat /tmp/job.log`): la evidencia del job
+    queda en el stdout de HF y no solo dentro del contenedor.
+    D-30: un solo envoltorio `bash -lc` (antes el comando venia doblemente envuelto)."""
+    import base64
+    up=base64.b64encode((
+        "import os\n"
+        "from huggingface_hub import upload_file\n"
+        "upload_file(path='/tmp/job.log',repo_id=os.environ['"+report_env+"'],repo_type='dataset',path_in_repo='job-evidencia/"+script+".log')\n"
+        ).encode()).decode()
+    return ("set +e; pip install -q huggingface_hub; "
+        "echo inicio $(date -u) > /tmp/job.log; "
+        "echo repo=$"+repo_env+" branch=$"+branch_env+" >> /tmp/job.log; "
+        "git clone --single-branch --branch $"+branch_env+" --depth 1 https://github.com/$"+repo_env+".git /tmp/repo >> /tmp/job.log 2>&1; echo clone_rc=$? >> /tmp/job.log; "
+        "cd /tmp/repo && python ops/"+script+" >> /tmp/job.log 2>&1; echo rc=$? >> /tmp/job.log; "
+        "echo "+up+" | base64 -d > /tmp/up.py; python /tmp/up.py >> /tmp/job.log 2>&1; echo upload_rc=$? >> /tmp/job.log; "
+        "cat /tmp/job.log")
+
 if __name__=="__main__":
     print(json.dumps(create(sys.argv[1],command=sys.argv[2] if len(sys.argv)>2 else None),indent=1)[:600])

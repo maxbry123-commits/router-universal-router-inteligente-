@@ -54,7 +54,13 @@ def cmd_apply():
     if not job:print(json.dumps({"cmd":"apply","error":"missing job"}));sys.exit(2)
     k=load();r=result_of(job);st=r.get("status")
     h=k.setdefault("handoff",{"next":job,"log":[],"flags":[]})
-    h["log"].append({"job":job,"status":st,"commit":r.get("commit"),"ts":time.strftime("%FT%TZ",time.gmtime()),"run_id":os.environ.get("RUN_ID")})
+    # D-27 (reparacion del X-Ray): apply IDEMPOTENTE. Una sola entrada por (job, run_id):
+    # repetir apply actualiza la entrada en vez de duplicar el log, y el flag del job se
+    # recalcula (se retira si el job pasa). La guia original hacia append a ciegas.
+    ent={"job":job,"status":st,"commit":r.get("commit"),"ts":time.strftime("%FT%TZ",time.gmtime()),"run_id":os.environ.get("RUN_ID")}
+    h["log"]=[e for e in h.get("log",[]) if not (e.get("job")==job and e.get("run_id")==ent["run_id"])]
+    h["log"].append(ent)
+    h["flags"]=[f for f in h.get("flags",[]) if not f.startswith(f"🚩 {job}")]
     if st!="PASS":h["flags"].append(f"🚩 {job} {st}")
     done=[x["job"] for x in h["log"] if x["status"]=="PASS"]
     done=[j for j in ORDER if j in done]   # el progreso se mide sobre el DAG, no sobre tareas extra
