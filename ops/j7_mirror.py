@@ -53,15 +53,30 @@ def main():
     # contenia la copia anterior del espejo (19.998 ficheros) y bajarla entera tardaba horas y
     # hacia que el push volviera a rebasar el limite de 20.000. Solo se recuperan los ficheros
     # PROPIOS del Space (los que no estan en la rama): Dockerfile, boot.sh, proxy.py, etc.
-    space_files=api.list_repo_files(sp,repo_type="space")
-    branch_files=set(sh(["git","ls-tree","-r","--name-only","HEAD"],cwd=d).stdout.split())
-    own=[f for f in space_files if f not in branch_files]
+    # D-72: el push se hace como FAST-FORWARD sobre el HEAD actual del Space (commit con el
+    # remoto como padre). Sin eso, git negocia contra el remoto y el upload-pack responde
+    # "not our ref <HEAD>" -> el servidor responde "internal error hook: lfs-check" y el push
+    # se rechaza. Para el fast-forward hace falta el commit remoto: se obtiene con un fetch.
+    env2=dict(os.environ);env2["HF_TOKEN"]=need("HF_TOKEN")
+    helper=("!f() { echo username=x-access-token; echo password=$HF_TOKEN; }; f")
+    cred=["-c","credential.helper=","-c",f"credential.helper={helper}"]
+    space_url=f"https://huggingface.co/spaces/{sp}"
+    sh(["git","-C",d]+cred+["fetch","--depth","1",space_url,"main"],env=env2,check=False)
+    rem=sh(["git","-C",d]+cred+["rev-parse","FETCH_HEAD"],env=env2,check=False).stdout.strip()
+    # los ficheros PROPIOS del Space (Dockerfile, boot.sh, proxy.py, .gitattributes...) se
+    # recuperan del commit remoto y se meten en el indice: el push es de arbol completo.
+    own=[]
+    if rem:
+        for line in sh(["git","-C",d,"ls-tree",rem],check=False).stdout.splitlines():
+            meta,path=line.split("\t",1)
+            mode,typ,sha=meta.split()
+            if typ=="blob" and path not in own: own.append(path)
     for rel in own:
-        src=hf_hub_download(repo_id=sp,filename=rel,repo_type="space",token=need("HF_TOKEN"))
-        dst=os.path.join(d,rel)
-        os.makedirs(os.path.dirname(dst),exist_ok=True)
-        shutil.copy2(src,dst)
-    check("space_own_files_preserved",True,f"{len(own)} ficheros propios del Space: {own[:8]}")
+        line=sh(["git","-C",d,"ls-tree",rem,rel],check=False).stdout.strip()
+        if not line: continue
+        meta=line.split()
+        sh(["git","-C",d,"update-index","--add","--cacheinfo",meta[0],meta[2],rel],check=False)
+    check("space_own_files_preserved",bool(own),f"{len(own)} ficheros propios del Space: {own[:8]}")
     sh(["git","-C",d,"checkout","-B",f"mirror/{sha[:12]}"])
     sh(["git","-C",d,"add","-A"])          # D-71: primero se anade todo...
     for pat in IGN:
@@ -93,12 +108,15 @@ def main():
     # git sigue pidiendo usuario: "could not read Username for 'https://huggingface.co'").
     # La via que si funciona es el AYUDANTE DE CREDENCIALES: el token se lee del entorno dentro
     # del propio helper, de modo que no aparece ni en argv ni en la URL ni en el log.
-    tok=need("HF_TOKEN")
-    env2=dict(os.environ);env2["HF_TOKEN"]=tok
-    helper=("!f() { echo username=x-access-token; echo password=$HF_TOKEN; }; f")
-    r=sh(["git","-C",d,"-c","credential.helper=",
-          "-c",f"credential.helper={helper}",
-          "push","-f","https://huggingface.co/spaces/"+sp,"HEAD:main"],env=env2,check=False)
+    # D-72: el commit se crea con `commit-tree` usando el HEAD remoto como padre y se sube sin
+    # --force: asi el push es un fast-forward y no hay negociacion que dispare el lfs-check.
+    tree=sh(["git","-C",d,"write-tree"],check=False).stdout.strip()
+    parent=rem if rem else ""
+    cargs=["git","-C",d,"-c","user.name=kernel-mirror","-c","user.email=mirror@local","commit-tree",tree]
+    if parent: cargs+=["-p",parent]
+    cargs+=["-m",f"mirror {sha[:12]} (j7_mirror D-72)"]
+    new_commit=sh(cargs,check=False).stdout.strip()
+    r=sh(["git","-C",d]+cred+["push",space_url,f"{new_commit}:main"],env=env2,check=False)
     check("mirror_push_git",r.returncode==0,(r.stdout+r.stderr)[-400:])
     if r.returncode!=0:
         finish({"space":sp,"head":sha,"push_error":(r.stdout+r.stderr)[-400:]},commit=sha)
