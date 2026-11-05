@@ -78,13 +78,24 @@ def main():
         sh(["git","-C",d,"update-index","--add","--cacheinfo",meta[0],meta[2],rel],check=False)
     check("space_own_files_preserved",bool(own),f"{len(own)} ficheros propios del Space: {own[:8]}")
     sh(["git","-C",d,"checkout","-B",f"mirror/{sha[:12]}"])
-    sh(["git","-C",d,"add","-A"])          # D-71: primero se anade todo...
-    for pat in IGN:
-        pfx=pat[:-3] if pat.endswith("/**") else None
-        if pfx:
-            sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch",pfx],check=False)
-        else:
-            sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch",pat],check=False)
+    # D-74: el indice se construye con `read-tree` (arbol de la rama) en vez de `git add -A`
+    # (working tree): con `add` entraban ficheros que no deben ir al push. Las exclusiones se
+    # aplican con un fichero de pathspec (NUL-separated) para que los patrones con espacios y
+    # los `**` casen exactamente.
+    sh(["git","-C",d,"read-tree",sha])
+    def rm_paths(paths):
+        if not paths: return
+        pf=os.path.join(d,".excl_paths")
+        with open(pf,"wb") as f:
+            for x in paths: f.write(x.encode()+b"\0")
+        sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch",
+            f"--pathspec-from-file={pf}","--pathspec-file-nul"],check=False)
+        try: os.remove(pf)
+        except OSError: pass
+    ign_prefixes=[p[:-3] if p.endswith("/**") else p for p in IGN]
+    tracked=sh(["git","-C",d,"ls-files","-z"],check=False).stdout.split("\0")
+    tracked=[t.decode() for t in tracked if t]
+    rm_paths([t for t in tracked if any(t.startswith(pfx) for pfx in ign_prefixes)])
     # D-69: el .gitattributes del Space marca como LFS muchas extensiones (*.bin, *.gz, *.tar,
     # *.pt, *.npy, *.parquet, saved_model/**...). El hook lfs-check del servidor rechaza el push
     # si esos punteros LFS llegan sin sus objetos en el almacen LFS del Space. Por eso se
@@ -103,9 +114,13 @@ def main():
         if line and not line.startswith("#") and "filter=lfs" in line:
             pat=line.split()[0]
             if pat not in lfs_pats: lfs_pats.append(pat)
-    for pat in lfs_pats:
-        sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch",pat],check=False)
-    check("lfs_patterns_excluded",True,f"{len(lfs_pats)} patrones LFS del Space excluidos: {lfs_pats[:6]}")
+    import fnmatch
+    tracked2=sh(["git","-C",d,"ls-files","-z"],check=False).stdout.split("\0")
+    tracked2=[t.decode() for t in tracked2 if t]
+    lfs_files=[t for t in tracked2 if any(fnmatch.fnmatch(t,pat) or fnmatch.fnmatch(os.path.basename(t),pat)
+                                          or t.startswith(pat.rstrip("*")) for pat in lfs_pats)]
+    rm_paths(lfs_files)
+    check("lfs_patterns_excluded",True,f"{len(lfs_pats)} patrones LFS del Space, {len(lfs_files)} ficheros excluidos: {lfs_pats[:6]}")
     n_tree=len(sh(["git","-C",d,"ls-files"],check=False).stdout.split())
     check("mirror_tree_size",n_tree<20000,f"{n_tree} ficheros en el arbol del push (limite 20000)")
     sh(["git","-C",d,"-c","user.name=kernel-mirror","-c","user.email=mirror@local",
