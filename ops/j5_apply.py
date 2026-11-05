@@ -22,10 +22,13 @@ def main():
     #   - branch: checkout -B (no -b) para reutilizar la rama existente
     #   - git mv: si el path ya no existe (movido en una ejecucion previa) se ignora
     #   - commit: --allow-empty para que una reejecucion sin cambios no rompa la cadena
+    # D-48: la tag ya existe en remoto (reejecucion) -> el push se hace SIEMPRE con --force:
+    # sin el, el push se rechaza ("already exists") y el job muere con rc=1.
     if sh(["git","rev-parse","-q","--verify",f"refs/tags/{tag}"],cwd=d,check=False).stdout.strip():
-        sh(["git","tag","-f",tag],cwd=d);sh(["git","push","origin","--force",tag],cwd=d)
+        sh(["git","tag","-f",tag],cwd=d)
     else:
-        sh(["git","tag",tag],cwd=d);sh(["git","push","origin",tag],cwd=d)
+        sh(["git","tag",tag],cwd=d)
+    sh(["git","push","origin","--force",tag],cwd=d)
     sh(["git","checkout","-B",br],cwd=d)
     for p in plan["quarantine"]:
         dst=root/"_quarantine"/p;dst.parent.mkdir(parents=True,exist_ok=True)

@@ -62,7 +62,13 @@ def cmd_run():
     r = subprocess.run(f"pip install -q -r {req} uvicorn", shell=True, capture_output=True, text=True)
     chk("deps_installed", r.returncode == 0, r.stderr[-300:])
     env = dict(os.environ)
-    env["PYTHONPATH"] = f"{d}/{BACKEND}"
+    # D-49: el backend importa paquetes que viven en varias raices del repo:
+    #   mvp      -> chat-router/chat/backend      (from mvp import ...)
+    #   router   -> router-mvp                    (from router import ...)
+    #   agentes  -> chat-router                   (from agentes import ...)
+    #   plugins  -> chat-router                   (from plugins import ...)
+    # Con solo el backend en PYTHONPATH el import mvp_route peta con "No module named 'router'".
+    env["PYTHONPATH"] = ":".join([f"{d}/{BACKEND}", f"{d}/router-mvp", f"{d}/chat-router", f"{d}/chat-router/chat"])
     proc = subprocess.Popen(["python", "-m", "uvicorn", APP, "--host", "127.0.0.1", "--port", "8099"],
                             cwd=f"{d}/{BACKEND}", env=env,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
