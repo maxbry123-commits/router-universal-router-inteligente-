@@ -213,6 +213,17 @@ def main():
         time.sleep(20)
     check("space_RUNNING","RUNNING" in str(stage),stage)
     check("health_url_set",bool(hu),"add GET /health -> {commit} (kernel R4)")
-    check("health_commit_equals_HEAD",bool(seen) and sha.startswith(seen[:12]),f"seen={seen} head={sha[:12]}")
+    # D-88: el /health del Space informa del commit que boot.sh CLONEA (GitHub main), no del
+    # HEAD de la rama que se esta espejando (TARGET_BRANCH). La comparacion correcta es contra
+    # main: con la rama de reorg la comprobacion fallaba siempre aunque el Space sirviese bien.
+    main_sha=""
+    try:
+        _out=sh(["git","ls-remote","https://github.com/%s.git"%need("GH_REPO"),
+                 "refs/heads/%s"%need("GH_BRANCH")],env=env2,check=False).stdout.split()
+        if _out: main_sha=_out[0]
+    except Exception:
+        pass
+    check("health_commit_equals_HEAD",bool(seen) and bool(main_sha) and main_sha.startswith(seen[:12]),
+          f"seen={seen} main={main_sha[:12]} rama_espejo={sha[:12]}")
     finish({"space":sp,"head":sha},commit=sha)
 if __name__=="__main__":run(main)
