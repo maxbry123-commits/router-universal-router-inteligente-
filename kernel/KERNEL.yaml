@@ -180,7 +180,7 @@ handoff:
   - job: j5_apply
     status: PASS
     commit: e0773eb4f15a972c4f11568908ca97893eddf5fd
-    ts: '2026-11-05T05:30:11Z'
+    ts: '2026-11-05T05:42:51Z'
     run_id: 20261104-kernel01
   flags: []
   input_block_sha256: 5c4bbb20421a9e674876d69f25fb8aaf9e67112d58a49ce3c3f527024ae83c3a
