@@ -27,6 +27,9 @@ fi
 cd "$SRC"
 export PYTHONPATH="$SRC/ops"
 # D-11: los scripts de la guia importan yaml; su comando solo instalaba huggingface_hub.
+# D-35: el bin del interprete se anade al PATH: `git filter-repo` (j6_rewrite) vive en el venv
+# y sin esto el job muere con "git: 'filter-repo' is not a git command".
 PY="${PYTHON:-python3}"
+case ":$PATH:" in *":$(dirname "$PY"):"*) ;; *) PATH="$(dirname "$PY"):$PATH"; export PATH ;; esac
 $PY -c "import yaml, huggingface_hub" >/dev/null 2>&1 || pip install -q huggingface_hub pyyaml
 exec $PY "ops/$SCRIPT.py"
