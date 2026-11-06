@@ -53,6 +53,15 @@ def main():
         # El bundle se crea ANTES de reescribir: es el estado original (rama + etiqueta).
         sh(["git","bundle","create",b,"--all"],cwd=d)
         check("bundle_verified",sh(["git","bundle","verify",b],cwd=d,check=False).returncode==0)
+        # R5: el bundle debe contener el estado EXACTO de main y de la etiqueta de seguridad
+        # (si no, el rollback apuntaria a un estado incorrecto). Se comprueba ANTES de subirlo.
+        _heads=sh(["git","bundle","list-heads",b],cwd=d,check=False).stdout
+        _main_sha=sh(["git","rev-parse","refs/heads/main"],cwd=d,check=False).stdout.strip()
+        _tag_sha=sh(["git","rev-parse",f"refs/tags/pre-reorg-{RUN_ID}"],cwd=d,check=False).stdout.strip()
+        check("bundle_contains_main",bool(_main_sha) and _main_sha in _heads,f"main={_main_sha[:12]}")
+        check("bundle_contains_tag",bool(_tag_sha) and _tag_sha in _heads,f"tag={_tag_sha[:12]}")
+        if not all(c["ok"] for c in CHECKS):
+            finish({"flag":"BUNDLE_INCOMPLETE"})
         # D-34: huggingface_hub >= 2.x exige `path=` (con `path_or_fileobj=` lanza TypeError y el
         # bundle de rollback nunca se publica: fue lo que mato el job heredado 6aebc8980e0338d1bb804a42).
         # D-113: la firma real de huggingface_hub 2.x es upload_file(path_or_fileobj=...) con
@@ -86,6 +95,9 @@ def main():
         _args=["git","filter-repo","--force","--invert-paths","--paths-from-file",str(pf)]
         if in_place: _args+=["--refs",f"refs/heads/{os.environ.get('TARGET_BRANCH') or need('GH_BRANCH')}"]
         sh(_args,cwd=d)
+        # R3: tras el filtro de historial, refrescar origin (las refs remotas siguen apuntando
+        # al historial viejo y el lease debe calcularse sobre el estado real).
+        sh(["git","-C",d,"fetch","--prune","origin"],check=False)
         check("rewrite_applied",True,f"historial reescrito (filtro de {len(plan['purge_paths'])} rutas)")
     else:
         check("rewrite_already_applied",True,"la historia ya estaba purgada: no se reescribe otra vez")
@@ -103,19 +115,21 @@ def main():
     # el commit es el mismo, el gate ya esta verificado y se reutiliza (queda dicho en el
     # detalle: commit, hora de la verificacion). Si el arbol cambia, se recalcula.
     _h=head(d)
+    # R4: la cache se invalida si cambia el ARBOL aunque el commit sea el mismo.
+    _tree=sh(["git","rev-parse","HEAD^{tree}"],cwd=d,check=False).stdout.strip()
     _mk=pathlib.Path(os.environ.get("WORK_DIR","/workspace/work"))/"out"/"wiring_check_cache.json"
     _cached=None
     try:
         if _mk.exists(): _cached=json.loads(_mk.read_text())
     except Exception: _cached=None
-    if _cached and _cached.get("commit")==_h and _cached.get("ok"):
+    if _cached and _cached.get("commit")==_h and _cached.get("tree")==_tree and _cached.get("ok"):
         check("wiring_check",True,f"reutilizado: commit {_h[:12]} verificado a las {_cached.get('ts')} (arbol sin cambios)")
     else:
         r=wc(d);check("wiring_check",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
         if r["ok"]:
             try:
                 _mk.parent.mkdir(parents=True,exist_ok=True)
-                _mk.write_text(json.dumps({"commit":_h,"ok":True,"ts":time.strftime("%FT%TZ",time.gmtime())}))
+                _mk.write_text(json.dumps({"commit":_h,"tree":_tree,"ok":True,"ts":time.strftime("%FT%TZ",time.gmtime())}))
             except Exception: pass
     if not all(c["ok"] for c in CHECKS):finish()
     # D-117: GitHub corta los packs grandes (error 500 / "unexpected disconnect while reading

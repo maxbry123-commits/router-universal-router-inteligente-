@@ -58,11 +58,23 @@ def _verify(repo, branch):
         return True, f"verificado: {head[:12]}"
     return False, f"HEAD={head[:12]} remoto={(remote or 'None')[:12]}"
 
-def push_in_chunks(repo, branch, chunk_size=None, max_attempts=3):
-    """Empuja HEAD a origin/refs/heads/<branch> con lease renovado por tramo."""
+def push_in_chunks(repo, branch, chunk_size=None, max_attempts=3, expected_lease=None):
+    """Empuja HEAD a origin/refs/heads/<branch> con lease renovado por tramo.
+
+    expected_lease: si se pasa, el remoto DEBE coincidir con ese SHA o se aborta sin
+    empujar (no se renueva el lease a ciegas): protege el rollback en el intercambio.
+    """
     shas = _sh(["git","rev-list","--reverse","HEAD"], cwd=repo).stdout.split()
     if not shas:
         return False, "sin commits"
+
+    # Refutación 3: refrescar las refs remotas ANTES de calcular el lease, para que el
+    # lease se calcule sobre el estado real del remoto y no sobre una vista vieja.
+    _sh(["git","fetch","origin"], cwd=repo)
+    if expected_lease is not None:
+        _remoto=_ls_remote_sha(repo, branch)
+        if _remoto != expected_lease:
+            return False, f"lease esperado {(expected_lease or '')[:12]} != remoto {(_remoto or 'None')[:12]}"
 
     kib = estimate_pack_kib(repo) or 0
     over_limit = kib > PUSH_LIMIT_KIB
@@ -72,7 +84,7 @@ def push_in_chunks(repo, branch, chunk_size=None, max_attempts=3):
 
     # 1) intento único (rápido si el pack cabe bajo el límite de GitHub)
     if not over_limit:
-        lease = _lease_for(branch, _ls_remote_sha(repo, branch))
+        lease = _lease_for(branch, expected_lease if expected_lease is not None else _ls_remote_sha(repo, branch))
         r = _push_once(repo, branch, f"HEAD:refs/heads/{branch}", lease)
         if r.returncode == 0:
             ok, det = _verify(repo, branch)
@@ -86,6 +98,9 @@ def push_in_chunks(repo, branch, chunk_size=None, max_attempts=3):
         tip = lote[-1]
         pushed = False
         for attempt in range(1, max_attempts+1):
+            # Refutación 3: refrescar origin antes de cada tramo (el lease se calcula
+            # sobre el estado real del remoto, no sobre una vista vieja).
+            _sh(["git","fetch","origin"], cwd=repo)
             lease = _lease_for(branch, _ls_remote_sha(repo, branch))
             r = _push_once(repo, branch, f"{tip}:refs/heads/{branch}", lease)
             if r.returncode == 0:

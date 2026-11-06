@@ -70,10 +70,23 @@ def main():
         # D-121: el empuje usa el modulo compartido (lease RENOVADO en cada tramo, backoff,
         # subdivision y post-verificacion con ls-remote). El gate main_equals_tag_lease de
         # arriba sigue mandando: el lease real se lee del remoto en cada intento.
+        # R2: el clon temporal puede traer restos de un intento anterior: se limpia ANTES
+        # del checkout y se VERIFICA que HEAD apunta al commit que se va a publicar.
+        sh(["git", "-C", d, "reset", "--hard"], check=False)
+        sh(["git", "-C", d, "clean", "-fdx"], check=False)
         sh(["git", "-C", d, "checkout", "-B", "swap", src_sha], check=False)
+        _h = sh(["git", "-C", d, "rev-parse", "HEAD"], check=False).stdout.strip()
+        check("head_is_src_sha", _h == src_sha, f"HEAD={_h[:12]} src={src_sha[:12]}")
+        if not all(c["ok"] for c in CHECKS):
+            finish({"flag": "HEAD_MISMATCH", "mode": mode})
+        # R1: el lease queda ANCLADO al valor esperado (main == tag) y no se renueva a ciegas.
         from git_push_safe import push_in_chunks
-        ok, det = push_in_chunks(d, "main")
+        ok, det = push_in_chunks(d, "main", expected_lease=tag_sha)
         check("pushed_main_with_lease", ok, det)
+        # R4: read-back: el remoto debe apuntar EXACTAMENTE al commit publicado.
+        _remote = sh(["git", "-C", d, "ls-remote", "origin", "refs/heads/main"], check=False).stdout.split()
+        _remote_sha = _remote[0] if _remote else ""
+        check("remote_main_equals_src", _remote_sha == src_sha, f"remoto={_remote_sha[:12]} src={src_sha[:12]}")
         after = _lsremote(d, "refs/heads/main")
         check("main_equals_pushed_commit", after == src_sha, f"main={after[:12]} pushed={src_sha[:12]}")
         finish({"mode": mode, "source": SRC, "pushed": src_sha, "main_after": after,
