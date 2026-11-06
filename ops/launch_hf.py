@@ -24,6 +24,10 @@ def repo_env():
         "SPACE_REPO": os.environ.get("SPACE_REPO", "COMAND-CENTER-1/riu-router"),
         "HEALTH_URL": os.environ.get("HEALTH_URL", "https://comand-center-1-riu-router.hf.space/health"),
         "TEST_CMD": os.environ.get("TEST_CMD", "python ops/backend_smoke.py --ensure"),
+        # D-100: WORK_DIR del job. Dentro del contenedor de HF /tmp es local del contenedor
+        # (el problema D-64 es del overlay del sandbox), asi que el scratch del job va a un
+        # subdirectorio propio y se crea antes de clonar.
+        "WORK_DIR": os.environ.get("WORK_DIR", "/tmp/work"),
     }
 
 
@@ -31,10 +35,16 @@ def build_cmd(job):
     env = repo_env()
     br = env["GH_BRANCH"]
     # D-30: un solo envoltorio `bash -lc`; el rc del script se propaga y el log se imprime.
+    # D-100: clon LIGERO con filtro de blobs + sparse-checkout de las 3 carpetas que el job
+    # necesita (ops/, connections/, kernel/). El clon COMPLETO (373.420 ficheros) hacia morir el
+    # job en el techo de 1800 s (medido: 1798 s y 1796 s en los dos ultimos jobs). Con filtro el
+    # clon es de MB y el ARBOL git completo sigue disponible para `git ls-tree` (gate baseline).
     return (
         "set +e; pip install -q huggingface_hub pyyaml git-filter-repo >/dev/null 2>&1; "
-        f"git clone --single-branch --branch {br} --depth 1 https://github.com/{env['GH_REPO']}.git /tmp/repo > /tmp/job.log 2>&1; "
+        f"mkdir -p {env.get('WORK_DIR','/tmp/work')}; "
+        f"git clone --single-branch --branch {br} --depth 1 --filter=blob:none --sparse https://github.com/{env['GH_REPO']}.git /tmp/repo > /tmp/job.log 2>&1; "
         "echo clone_rc=$? >> /tmp/job.log; "
+        "git -C /tmp/repo sparse-checkout set ops connections kernel >> /tmp/job.log 2>&1; echo sparse_rc=$? >> /tmp/job.log; "
         "cd /tmp/repo && python ops/%s.py >> /tmp/job.log 2>&1; echo script_rc=$? >> /tmp/job.log; "
         "cat /tmp/job.log; "
         # D-68: el log del contenedor se publica en el Dataset (evidencia durable del job)
@@ -56,7 +66,7 @@ def build_cmd(job):
 def main():
     job = sys.argv[1]
     wait = "--wait" in sys.argv
-    timeout = 1700
+    timeout = int(os.environ.get("HF_JOB_TIMEOUT", "3600")) + 300  # D-100: el waiter supera al timeout del job
     if "--timeout" in sys.argv:
         timeout = int(sys.argv[sys.argv.index("--timeout") + 1])
     env = repo_env()
@@ -64,15 +74,19 @@ def main():
     env["GIT_CONFIG_KEY_0"] = "http.https://github.com/.extraheader"
     env["GIT_CONFIG_VALUE_0"] = "AUTHORIZATION: basic " + base64.b64encode(
         ("x-access-token:" + os.environ["GH_TOKEN"]).encode()).decode()
-    for extra in ("AUDIT_JOBS", "WAIT_S", "MIRROR_BASELINE", "MIRROR_LIGHT"):
+    # D-100: MODE y WORK_DIR tambien viajan. Sin MODE, j6b_swap (MODE=swap) empuja a main
+    # sin que nadie lo pida; sin WORK_DIR, el clon ligero del job no tiene directorio padre.
+    for extra in ("AUDIT_JOBS", "WAIT_S", "MIRROR_BASELINE", "MIRROR_LIGHT", "MODE", "WORK_DIR"):
         if extra in os.environ:
             env[extra] = os.environ[extra]
     sec = {"GH_TOKEN": os.environ["GH_TOKEN"], "HF_TOKEN": os.environ["HF_TOKEN"]}
     name = f"kernel-{job}-{int(time.time())}"
+    # D-100: timeout explicito del Job de HF (R6 del INPUT BLOCK) + waiter local que lo supera.
+    job_timeout = int(os.environ.get("HF_JOB_TIMEOUT", "3600"))
     job_info = create(name, docker_image="python:3.12", command=build_cmd(job),
-                      secrets=sec, environment=env, flavor="cpu-upgrade")
+                      secrets=sec, environment=env, flavor="cpu-upgrade", timeout=job_timeout)
     print(json.dumps({"job_created": job_info.get("id"), "flavor": "cpu-upgrade",
-                      "branch": env["GH_BRANCH"], "job": job}))
+                      "branch": env["GH_BRANCH"], "job": job, "job_timeout": job_timeout}))
     if not wait:
         return 0
     from huggingface_hub import hf_hub_download

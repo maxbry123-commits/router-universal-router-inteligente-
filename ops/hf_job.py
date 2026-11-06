@@ -6,7 +6,7 @@ flavors: cpu-basic(16GB) | cpu-upgrade(32GB) | cpu-performance(64GB) | cpu-xl(12
 import os,sys,json,urllib.request
 API="https://huggingface.co/api/jobs/"+os.environ.get("HF_NAMESPACE","COMAND-CENTER-1")
 FLAVOR=os.environ.get("HF_FLAVOR","cpu-upgrade")          # 32 GB RAM + 8 vCPU
-def create(name,docker_image="python:3.12",command=None,secrets=None,environment=None,flavor=None):
+def create(name,docker_image="python:3.12",command=None,secrets=None,environment=None,flavor=None,timeout=None):
     # D-22: el comando va en el campo "command" (array), NO en environment.CMD: con CMD el
     # contenedor arranco sin ejecutar nada y la API lo reportaba COMPLETED (jobs 6aebaf2c..6aebc60b).
     env=dict(environment or {})
@@ -21,6 +21,8 @@ def create(name,docker_image="python:3.12",command=None,secrets=None,environment
         else:
             cmd=["bash","-lc",command]
     body={"name":name,"dockerImage":docker_image,"flavor":flavor or FLAVOR,"environment":env,"secrets":secrets or {}}
+    # D-100: timeout explicito del Job de HF (R6 del INPUT BLOCK: --timeout en cada job hf).
+    if timeout: body["timeout"]=int(timeout)
     if cmd: body["command"]=cmd
     req=urllib.request.Request(API,data=json.dumps(body).encode(),
         headers={"Authorization":"Bearer "+os.environ["HF_TOKEN"],"Content-Type":"application/json"})
