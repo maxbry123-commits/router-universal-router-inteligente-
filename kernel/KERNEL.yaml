@@ -186,7 +186,7 @@ parts_nota: cada parte es un job de HF con perfil cpu-upgrade (32 GB RAM + 8 vCP
   de 30 minutos, o bien la misma ejecucion en local (G1 ruta 2); el log del contenedor se vuelca en
   vivo tras cada fase (D-101) y cada parte deja su evidencia en el Dataset.
 handoff:
-  next: j7_mirror
+  next: j8_audit
   log:
   - job: j0_preflight
     status: PASS
@@ -224,10 +224,14 @@ handoff:
     ts: '2026-11-05T05:30:08Z'
     run_id: 20261104-kernel01
   - job: j7_mirror
-    status: FAIL
-    commit: null
-    ts: '2026-11-05T14:21:45Z'
+    status: PASS
+    commit: 32892dd3f4347e7c1ca6bd5518d0cd3c33276127
+    ts: '2026-11-06T05:16:12Z'
     run_id: 20261104-kernel01
+    mode: baseline
+    checks: [registry_valid, baseline_only_no_upload, space_RUNNING]
+    baseline: {files: 6170, bytes: 110654589}
+    nota: D-104 REUSE_CLONE (clon ya materializado) en vez de un clon ligero atascado
   - job: j8_audit
     status: FAIL
     commit: bb9e4c8088cfe4be35a91dfdc669b9a171200885
@@ -249,9 +253,8 @@ handoff:
     ts: '2026-11-05T05:29:51Z'
     run_id: 20261104-kernel01
   flags:
-  - '🚩 j7_mirror FAIL'
   - '🚩 j8_audit FAIL'
   - '🚩 j6_rewrite FAIL'
   - '🚩 j9_remirror FAIL'
   - '🚩 j10_final_audit MISSING'
-progress_pct: 54
+progress_pct: 64
