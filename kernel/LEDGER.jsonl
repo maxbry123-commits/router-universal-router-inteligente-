@@ -1,0 +1,12 @@
+{"ts": "2026-11-06T05:16:12Z", "accion": "job_pass", "detalle": "j7_mirror PASS (baseline, sin subir)", "evidencia": "20261104-kernel01/j7_mirror/result.json"}
+{"ts": "2026-11-06T05:22:37Z", "accion": "job_pass", "detalle": "j8_audit PHASE=pre PASS", "evidencia": "20261104-kernel01/j8_audit/result.json"}
+{"ts": "2026-11-06T05:27:00Z", "accion": "commit_push", "detalle": "D-103..D-107 (parches, handoff, copia local de la reescritura)", "evidencia": "rama reorg/20261104-kernel01"}
+{"ts": "2026-11-06T06:42:00Z", "accion": "commit_push", "detalle": "D-111 INPUT BLOCK adjunto de objetivos YAIWES + guia regenerada", "evidencia": "kernel/INPUT_BLOCK_YAIWES_CABLEADO.md (9d01a464)"}
+{"ts": "2026-11-06T06:56:00Z", "accion": "commit_push", "detalle": "D-112 CODE_INDEX + SYSTEM_WIRING_REGISTRY + handoffs por area + bitacora", "evidencia": "rama reorg/20261104-kernel01"}
+{"ts": "2026-11-06T07:00:22Z", "accion": "upload", "detalle": "bundle de rollback creado y verificado (8.068.832.804 B)", "evidencia": "20261104-kernel01/j6_rewrite/result.json (bundle_verified)"}
+{"ts": "2026-11-06T07:07:00Z", "accion": "upload", "detalle": "bundle de rollback publicado en el Dataset", "evidencia": "commit 3bb6161d1388b7124c7ea7e20"}
+{"ts": "2026-11-06T07:12:00Z", "accion": "fix", "detalle": "D-113 firma real de subida (path_or_fileobj) y reutilizacion del clon", "evidencia": "commit fd79657c37"}
+{"ts": "2026-11-06T07:20:00Z", "accion": "fix", "detalle": "D-114 el token de GitHub deja de ir en argv y en .git/config", "evidencia": "commit 81beb16f04"}
+{"ts": "2026-11-06T08:28:55Z", "accion": "job_fail", "detalle": "j6_rewrite: purga y wiring_check OK; fallo solo el push (HTTP 500)", "evidencia": "20261104-kernel01/j6_rewrite/result.json"}
+{"ts": "2026-11-06T09:10:00Z", "accion": "fix", "detalle": "D-116 filter-repo borra origin: se re-crea; D-117 publicacion por tramos", "evidencia": "commits 7f0a689462 y bcb0b593c5"}
+{"ts": "2026-11-06T09:40:00Z", "accion": "fix", "detalle": "D-118 redactor de secretos propio (ops/redact.py) + bitacora canonica completa + enumeracion unica de 11 nodos + ledger", "evidencia": "kernel/LEDGER.jsonl + kernel/KERNEL.yaml"}
