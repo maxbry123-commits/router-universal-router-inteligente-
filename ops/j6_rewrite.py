@@ -125,29 +125,10 @@ def main():
     # D-119: la publicacion de main-clean tambien va CON CANDADO. Como la rama no existe
     # todavia, el lease vacio significa "creala solo si no existe" (si existiera, el push se
     # rechaza). Si ya existe, el lease es su sha actual leido ahora.
-    _cur=sh(["git","ls-remote","origin","refs/heads/main-clean"],cwd=d,check=False).stdout.split()
-    _lease=f"refs/heads/main-clean:{_cur[0]}" if _cur else "refs/heads/main-clean:"
-    # D-119: transporte robusto (GitHub cortaba el pack con HTTP 500): HTTP/1.1, postBuffer
-    # grande y sin timeout por lentitud.
-    _gitopt=["-c","http.version=HTTP/1.1","-c","http.postBuffer=524288000",
-             "-c","http.lowSpeedLimit=0","-c","http.lowSpeedTime=999999"]
-    r=sh(["git"]+_gitopt+["push","origin","HEAD:refs/heads/main-clean",f"--force-with-lease={_lease}"],cwd=d,check=False)
-    push_ok=(r.returncode==0)
-    detalle=(r.stdout+r.stderr)[-300:]
-    if not push_ok:
-        shas=sh(["git","rev-list","--reverse","HEAD"],cwd=d).stdout.split()
-        step=max(1,len(shas)//10)
-        i=0
-        while i<len(shas) and push_ok:
-            lote=shas[i:i+step]; tip=lote[-1]
-            rr=sh(["git"]+_gitopt+["push","origin",f"{tip}:refs/heads/main-clean",f"--force-with-lease={_lease}"],cwd=d,check=False)
-            if rr.returncode!=0 and len(lote)>1:
-                step=max(1,len(lote)//4)   # subdivide el tramo que fallo
-                continue
-            if rr.returncode!=0:
-                detalle=(rr.stdout+rr.stderr)[-300:]; push_ok=False; break
-            i+=len(lote)
-        if push_ok: detalle=f"publicado por tramos ({len(shas)} commits, paso {step})"
+    # D-121: publicacion robusta via modulo compartido (lease renovado por tramo,
+    # backoff exponencial, subdivision y post-verificacion con ls-remote).
+    from git_push_safe import push_in_chunks
+    push_ok,detalle=push_in_chunks(d,"main-clean")
     check("pushed_main-clean",push_ok,detalle)
     kh=head(d);sz=sh(["git","count-objects","-vH"],cwd=d).stdout
     shutil.rmtree(d,ignore_errors=True)   # D-106/G3: la copia de reescritura se borra siempre

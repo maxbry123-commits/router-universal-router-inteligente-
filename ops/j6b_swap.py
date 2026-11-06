@@ -67,9 +67,13 @@ def main():
               f"main={main_sha[:12]} tag={tag_sha[:12]}")
         if not all(c["ok"] for c in CHECKS):
             finish({"flag": "LEASE", "mode": mode, "main": main_sha, "tag": tag_sha})
-        r = sh(["git", "-C", d, "push", "origin", f"{src_sha}:refs/heads/main",
-                f"--force-with-lease=main:{tag_sha}"], check=False)
-        check("pushed_main_with_lease", r.returncode == 0, (r.stdout + r.stderr)[-300:])
+        # D-121: el empuje usa el modulo compartido (lease RENOVADO en cada tramo, backoff,
+        # subdivision y post-verificacion con ls-remote). El gate main_equals_tag_lease de
+        # arriba sigue mandando: el lease real se lee del remoto en cada intento.
+        sh(["git", "-C", d, "checkout", "-B", "swap", src_sha], check=False)
+        from git_push_safe import push_in_chunks
+        ok, det = push_in_chunks(d, "main")
+        check("pushed_main_with_lease", ok, det)
         after = _lsremote(d, "refs/heads/main")
         check("main_equals_pushed_commit", after == src_sha, f"main={after[:12]} pushed={src_sha[:12]}")
         finish({"mode": mode, "source": SRC, "pushed": src_sha, "main_after": after,
