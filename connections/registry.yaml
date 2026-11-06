@@ -1,5 +1,6 @@
 # connections/registry.yaml — registro central de conexiones (§5 de la guia).
 # 11 campos obligatorios por conexion; un `active` exige healthcheck ejecutado y evidencia.
+# R7 (DAG v3): todo nace pending_audit; `active` exige evidencia {kind, detail, commit, ts} de sonda real.
 generated_by: ops/make_registry.py
 source_graph: j2_graph
 rule: todo pending_audit hasta verificacion con evidencia (§5)
@@ -113,7 +114,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: agents
   verification:
     type: import
@@ -122,18 +123,14 @@ connections:
     command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.core"
     result: ok
     checked_at: 20261104-kernel01
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: agents
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: agents
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.core"
-    result: ok
-    verified_in: clon local
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - chat-router/agentes/adaptadores/_comun.py
     - router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py
@@ -146,6 +143,19 @@ connections:
   - - chat-router/agentes/adaptadores/_comun.py
     - router-mvp/router-componentes/pydantic/pydantic/v1/json.py
   observed_edges: 62234
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.core"
+      result: ok
+      verified_in: clon local
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-006
   name: agents_to_ops
   source: agents
@@ -153,7 +163,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: agents
   verification:
     type: import
@@ -162,18 +172,14 @@ connections:
     command: python -c "import sys;sys.path.insert(0,'.');import kernel"
     result: ok
     checked_at: 20261104-kernel01
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: agents
   to: ops
   via: gateway_pending_audit
   provides: ops
   requires: agents
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'.');import kernel"
-    result: ok
-    verified_in: clon local
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - chat-router/agentes/agentes-yaiwes/agent-microkernel/kernel/runner.py
     - ops/kernel.py
@@ -186,6 +192,19 @@ connections:
   - - chat-router/agentes/agentes-yaiwes/agents-yaiwes/common/probe_keys.py
     - ops/common.py
   observed_edges: 16
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'.');import kernel"
+      result: ok
+      verified_in: clon local
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-007
   name: agents_to_plugins
   source: agents
@@ -193,7 +212,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: agents
   verification:
     type: import
@@ -203,18 +222,14 @@ connections:
     result: ok
     verified_in: /tmp/r2
     detail: null
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: agents
   to: plugins
   via: gateway_pending_audit
   provides: plugins
   requires: agents
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente"
-    result: ok
-    verified_in: /tmp/r2
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - chat-router/agentes/orquestacion/orquestador/deploy.py
     - chat-router/plugins/__init__.py
@@ -227,6 +242,19 @@ connections:
   - - chat-router/agentes/orquestacion/orquestador/sandbox.py
     - chat-router/plugins/router_api_cliente.py
   observed_edges: 6
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente"
+      result: ok
+      verified_in: /tmp/r2
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-008
   name: backend_to_agents
   source: backend
@@ -234,7 +262,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: backend
   verification:
     type: import
@@ -244,18 +272,14 @@ connections:
     result: ok
     verified_in: /tmp/r2
     detail: null
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: backend
   to: agents
   via: gateway_pending_audit
   provides: agents
   requires: backend
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos"
-    result: ok
-    verified_in: /tmp/r2
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - chat-router/chat/backend/mvp/app.py
     - chat-router/agentes/adaptadores/modelos.py
@@ -268,6 +292,19 @@ connections:
   - - chat-router/chat/backend/mvp/app.py
     - chat-router/agentes/agentes-listos/strix/code/strix/telemetry/logging.py
   observed_edges: 1362
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos"
+      result: ok
+      verified_in: /tmp/r2
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-009
   name: backend_to_fichas
   source: backend
@@ -304,7 +341,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: backend
   verification:
     type: import
@@ -313,18 +350,14 @@ connections:
     command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.mcp_puente_github"
     result: ok
     checked_at: 20261104-kernel01
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: backend
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: backend
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.mcp_puente_github"
-    result: ok
-    verified_in: clon local
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - chat-router/chat/backend/mvp/app.py
     - router-mvp/router-componentes/MCP-Python-SDK/docs_src/logging/__init__.py
@@ -337,6 +370,19 @@ connections:
   - - chat-router/chat/backend/mvp/app.py
     - router-mvp/router-componentes/fastapi/fastapi/__init__.py
   observed_edges: 616
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.mcp_puente_github"
+      result: ok
+      verified_in: clon local
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-011
   name: building_to_agents
   source: building
@@ -537,7 +583,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: fichas
   verification:
     type: import
@@ -546,18 +592,14 @@ connections:
     command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.herramientas.modos"
     result: ok
     checked_at: 20261104-kernel01
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: fichas
   to: backend
   via: gateway_pending_audit
   provides: backend
   requires: fichas
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.herramientas.modos"
-    result: ok
-    verified_in: clon local
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - router-mvp/fichas/fichas_qwen/motor_json/pruebas_motor.py
     - chat-router/chat/backend/mvp/herramientas/motor_cli.py
@@ -570,6 +612,19 @@ connections:
   - - router-mvp/fichas/fichas_qwen/plugin.py
     - chat-router/chat/backend/mvp/herramientas/modos/motor_objetivo.py
   observed_edges: 16
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.herramientas.modos"
+      result: ok
+      verified_in: clon local
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-019
   name: fichas_to_harness
   source: fichas
@@ -598,7 +653,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: fichas
   verification:
     type: import
@@ -607,18 +662,14 @@ connections:
     command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.red.http_plugins"
     result: ok
     checked_at: 20261104-kernel01
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: fichas
   to: mvp
   via: gateway_pending_audit
   provides: mvp
   requires: fichas
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.red.http_plugins"
-    result: ok
-    verified_in: clon local
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - router-mvp/fichas/fichas_qwen/modos/apply_addon.py
     - router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py
@@ -631,6 +682,19 @@ connections:
   - - router-mvp/fichas/fichas_qwen/modos/check_integration.py
     - router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py
   observed_edges: 120
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.red.http_plugins"
+      result: ok
+      verified_in: clon local
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-021
   name: fichas_to_plugins
   source: fichas
@@ -638,7 +702,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: fichas
   verification:
     type: import
@@ -648,18 +712,14 @@ connections:
     result: ok
     verified_in: /tmp/r2
     detail: null
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: fichas
   to: plugins
   via: gateway_pending_audit
   provides: plugins
   requires: fichas
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.puente_chat.plugin"
-    result: ok
-    verified_in: /tmp/r2
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py
     - chat-router/plugins/connectivity/plugin.py
@@ -672,6 +732,19 @@ connections:
   - - router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py
     - chat-router/plugins/puente_chat/plugin.py
   observed_edges: 27
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.puente_chat.plugin"
+      result: ok
+      verified_in: /tmp/r2
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-022
   name: harness_to_agents
   source: harness
@@ -679,7 +752,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: harness
   verification:
     type: import
@@ -689,18 +762,14 @@ connections:
     result: ok
     verified_in: /tmp/r2
     detail: null
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: harness
   to: agents
   via: gateway_pending_audit
   provides: agents
   requires: harness
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores"
-    result: ok
-    verified_in: /tmp/r2
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - chat-router/chat/backend/deepseek_harness/plugin.py
     - chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py
@@ -713,6 +782,19 @@ connections:
   - - chat-router/chat/backend/deepseek_harness/server.py
     - chat-router/agentes/adaptadores/__init__.py
   observed_edges: 44
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores"
+      result: ok
+      verified_in: /tmp/r2
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-023
   name: harness_to_backend
   source: harness
@@ -720,7 +802,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: harness
   verification:
     type: import
@@ -729,24 +811,33 @@ connections:
     command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.prompt"
     result: ok
     checked_at: 20261104-kernel01
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: harness
   to: backend
   via: gateway_pending_audit
   provides: backend
   requires: harness
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.prompt"
-    result: ok
-    verified_in: clon local
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - chat-router/chat/backend/deepseek_harness/server.py
     - chat-router/chat/backend/mvp/prompt.py
   - - chat-router/chat/backend/deepseek_harness/test_swe_herramientas.py
     - chat-router/chat/backend/mvp/harness_client.py
   observed_edges: 2
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.prompt"
+      result: ok
+      verified_in: clon local
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-024
   name: harness_to_fichas
   source: harness
@@ -806,7 +897,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: harness
   verification:
     type: import
@@ -816,24 +907,33 @@ connections:
     result: ok
     verified_in: /tmp/r2
     detail: null
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: harness
   to: plugins
   via: gateway_pending_audit
   provides: plugins
   requires: harness
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins"
-    result: ok
-    verified_in: /tmp/r2
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - chat-router/chat/backend/deepseek_harness/plugin.py
     - chat-router/plugins/puente_chat/plugin.py
   - - chat-router/chat/backend/deepseek_harness/server.py
     - chat-router/plugins/router_api_cliente.py
   observed_edges: 2
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins"
+      result: ok
+      verified_in: /tmp/r2
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-027
   name: mvp_to_agents
   source: mvp
@@ -870,7 +970,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: mvp
   verification:
     type: import
@@ -879,24 +979,33 @@ connections:
     command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.swen_mcp"
     result: ok
     checked_at: 20261104-kernel01
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: mvp
   to: backend
   via: gateway_pending_audit
   provides: backend
   requires: mvp
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.swen_mcp"
-    result: ok
-    verified_in: clon local
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - router-mvp/router/integration/chat_mvp/swen_mcp.py
     - chat-router/chat/backend/mvp/app.py
   - - router-mvp/router/integration/chat_mvp/swen_mcp.py
     - chat-router/chat/backend/mvp/externos.py
   observed_edges: 2
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.swen_mcp"
+      result: ok
+      verified_in: clon local
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-029
   name: mvp_to_fichas
   source: mvp
@@ -1099,7 +1208,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: plugins
   verification:
     type: import
@@ -1108,24 +1217,33 @@ connections:
     command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp"
     result: ok
     checked_at: 20261104-kernel01
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: plugins
   to: backend
   via: gateway_pending_audit
   provides: backend
   requires: plugins
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp"
-    result: ok
-    verified_in: clon local
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - chat-router/plugins/hf_storage/plugin.py
     - chat-router/chat/backend/mvp/app.py
   - - chat-router/plugins/puente_chat/plugin.py
     - chat-router/chat/backend/mvp/prompt.py
   observed_edges: 2
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp"
+      result: ok
+      verified_in: clon local
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-037
   name: plugins_to_fichas
   source: plugins
@@ -1133,7 +1251,7 @@ connections:
   protocol: gateway_pending_audit
   direction: outbound
   endpoint: null
-  status: active
+  status: pending_audit
   dependencies: plugins
   verification:
     type: import
@@ -1143,18 +1261,14 @@ connections:
     result: ok
     verified_in: /tmp/r2
     detail: null
-  notes: pendiente de evidencia; par observado en el grafo j2
+  notes: 'pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda
+    real)'
   from: plugins
   to: fichas
   via: gateway_pending_audit
   provides: fichas
   requires: plugins
-  evidence:
-    type: import
-    command: python -c "import sys;sys.path.insert(0,'router-mvp');import fichas.fichas_qwen.plugin"
-    result: ok
-    verified_in: /tmp/r2
-    detail: 'import ejecutado: el modulo carga y se importa sin error'
+  evidence: null
   observed_paths:
   - - chat-router/plugins/hf_storage/plugin.py
     - router-mvp/fichas/fichas_qwen/mvp.py
@@ -1167,6 +1281,19 @@ connections:
   - - chat-router/plugins/puente_chat/tests/test_capacidad.py
     - router-mvp/fichas/fichas_qwen/plugin.py
   observed_edges: 5
+  prior_evidence:
+    kind: import_probe_not_wire_probe
+    detail: 'import ejecutado: el modulo carga y se importa sin error'
+    commit: null
+    ts: null
+    legacy_evidence:
+      type: import
+      command: python -c "import sys;sys.path.insert(0,'router-mvp');import fichas.fichas_qwen.plugin"
+      result: ok
+      verified_in: /tmp/r2
+      detail: 'import ejecutado: el modulo carga y se importa sin error'
+    reason: 'R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list
+      / file exists)'
 - id: CON-038
   name: plugins_to_mvp
   source: plugins

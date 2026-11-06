@@ -1,6 +1,7 @@
 # connections/healthchecks.yaml — verificación real por conexión (§5/§8).
 # Generado por ops/make_healthchecks.py y cerrado por ops/verify_pending_healthchecks.py:
 # cada comando se EJECUTA y su resultado decide el estado. "sin healthcheck no hay activo".
+# R7: los imports NO son sondas de cableado (HTTP status / MCP initialize+tools/list / file exists).
 healthchecks:
 - id: HC-001
   connection: CON-003
@@ -8,14 +9,20 @@ healthchecks:
   target: plugins -> harness
   command: null
   expect: {}
-  status: declared_heredado
+  status: pending_audit
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  evidence: null
+  notes: 'sin comando: requiere sonda real (HTTP status / MCP initialize+tools/list / file exists)'
 - id: HC-002
   connection: CON-005
   method: mcp
   target: chat -> harness
   command: null
   expect: {}
-  status: declared_heredado
+  status: pending_audit
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  evidence: null
+  notes: 'sin comando: requiere sonda real (HTTP status / MCP initialize+tools/list / file exists)'
 - id: HC-003
   connection: CON-007
   method: http
@@ -23,8 +30,12 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente"
   expect: {}
   status: verified
-  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
-  verified_in: /tmp/r2
+  evidence: sonda http ejecutada rc=0 en WORK_DIR clone (2026-11-06T01:53:17Z)
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 0
+    detail: ''
 - id: HC-004
   connection: CON-008
   method: space
@@ -32,8 +43,12 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos"
   expect: {}
   status: verified
-  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
-  verified_in: /tmp/r2
+  evidence: sonda space ejecutada rc=0 en WORK_DIR clone (2026-11-06T01:53:17Z)
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 0
+    detail: ''
 - id: HC-005
   connection: CON-010
   method: import
@@ -41,8 +56,14 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.mcp_puente_github"
   expect:
     import_ok: true
-  status: verified
+  status: pending_audit
   evidence: null
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 0
+    detail: ''
+  notes: 'import ejecutado rc=0; NO es sonda de cableado (HTTP/MCP/file-exists): queda pending_audit'
 - id: HC-006
   connection: CON-018
   method: import
@@ -50,8 +71,14 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.herramientas.modos"
   expect:
     import_ok: true
-  status: verified
+  status: pending_audit
   evidence: null
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 0
+    detail: ''
+  notes: 'import ejecutado rc=0; NO es sonda de cableado (HTTP/MCP/file-exists): queda pending_audit'
 - id: HC-007
   connection: CON-020
   method: import
@@ -59,8 +86,14 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.red.http_plugins"
   expect:
     import_ok: true
-  status: verified
+  status: pending_audit
   evidence: null
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 0
+    detail: ''
+  notes: 'import ejecutado rc=0; NO es sonda de cableado (HTTP/MCP/file-exists): queda pending_audit'
 - id: HC-008
   connection: CON-021
   method: import
@@ -68,9 +101,14 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins.puente_chat.plugin"
   expect:
     import_ok: true
-  status: verified
-  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
-  verified_in: /tmp/r2
+  status: pending_audit
+  evidence: null
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 0
+    detail: ''
+  notes: 'import ejecutado rc=0; NO es sonda de cableado (HTTP/MCP/file-exists): queda pending_audit'
 - id: HC-009
   connection: CON-022
   method: import
@@ -78,9 +116,14 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores"
   expect:
     import_ok: true
-  status: verified
-  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
-  verified_in: /tmp/r2
+  status: pending_audit
+  evidence: null
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 0
+    detail: ''
+  notes: 'import ejecutado rc=0; NO es sonda de cableado (HTTP/MCP/file-exists): queda pending_audit'
 - id: HC-010
   connection: CON-023
   method: import
@@ -88,8 +131,14 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.prompt"
   expect:
     import_ok: true
-  status: verified
+  status: pending_audit
   evidence: null
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 0
+    detail: ''
+  notes: 'import ejecutado rc=0; NO es sonda de cableado (HTTP/MCP/file-exists): queda pending_audit'
 - id: HC-011
   connection: CON-026
   method: import
@@ -97,9 +146,14 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router');import plugins"
   expect:
     import_ok: true
-  status: verified
-  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
-  verified_in: /tmp/r2
+  status: pending_audit
+  evidence: null
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 0
+    detail: ''
+  notes: 'import ejecutado rc=0; NO es sonda de cableado (HTTP/MCP/file-exists): queda pending_audit'
 - id: HC-012
   connection: CON-028
   method: import
@@ -107,8 +161,14 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.swen_mcp"
   expect:
     import_ok: true
-  status: verified
+  status: pending_audit
   evidence: null
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 0
+    detail: ''
+  notes: 'import ejecutado rc=0; NO es sonda de cableado (HTTP/MCP/file-exists): queda pending_audit'
 - id: HC-013
   connection: CON-036
   method: import
@@ -116,8 +176,15 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'chat-router');import backend.mvp"
   expect:
     import_ok: true
-  status: verified
+  status: pending_audit
   evidence: null
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 1
+    detail: "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nModuleNotFoundError:\
+      \ No module named 'backend'\n"
+  notes: 'import ejecutado rc=1; NO es sonda de cableado (HTTP/MCP/file-exists): queda pending_audit'
 - id: HC-014
   connection: CON-037
   method: import
@@ -125,6 +192,11 @@ healthchecks:
   command: python -c "import sys;sys.path.insert(0,'router-mvp');import fichas.fichas_qwen.plugin"
   expect:
     import_ok: true
-  status: verified
-  evidence: 'verificado en el clon completo (/tmp/r2): import ok'
-  verified_in: /tmp/r2
+  status: pending_audit
+  evidence: null
+  verified_in: WORK_DIR clone (/workspace/work/repo)
+  last_probe:
+    ts: '2026-11-06T01:53:17Z'
+    rc: 0
+    detail: ''
+  notes: 'import ejecutado rc=0; NO es sonda de cableado (HTTP/MCP/file-exists): queda pending_audit'
