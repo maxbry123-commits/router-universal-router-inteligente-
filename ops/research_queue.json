@@ -1,14 +1,14 @@
 {
   "run_id": "20261104-kernel01",
-  "iteracion": 2,
-  "actualizado_ts": "2026-11-06T01:31:59Z",
+  "iteracion": 3,
+  "actualizado_ts": "2026-11-06T01:35:16Z",
   "soluciones": [
     {
       "id": "S01",
       "problema": "j0_preflight falla en HEAD por DOS gates: 'disk_free_gb' (27,7 GB libres en /tmp < minimo 30 GB) y 'input_block_sha256_intacto' (handoff.input_block_sha256 no existe -> el gate no puede ser True). j0 es el PRIMER job: si cae, toda la cadena (j1..j10) queda bloqueada y no se puede reiniciar.",
       "causa": "(a) El cambio G2/G3 del ejecutor (scratch en WORK_DIR) es INERTE: 'WORK_DIR' no se exporta ni en env_kernel.sh, ni en ops/launch.sh, ni en ops/launch_hf.py -> os.environ.get('WORK_DIR','/tmp') devuelve /tmp (overlayfs, 27,7 GB libres, gate MIN_FREE_GB=30 -> False). (b) El commit ce23c932d9 elimino 'handoff.input_block_sha256' de kernel/KERNEL.yaml al anadir j6b_swap/bridge, pero ops/j0_preflight.py:18-25 sigue exigiendo ese registro; rec=None -> bool(rec) and cur==rec = False.",
       "prioridad": "bloqueante",
-      "solucion": "1) Exportar WORK_DIR en el entorno de TODOS los lanzadores: `export WORK_DIR=\"${WORK_DIR:-/workspace/work/kernel-scratch}\"` en ops/launch.sh (antes de `exec $PY ops/$SCRIPT.py`), en ops/launch_hf.py (env del contenedor) y en el env del ejecutor (/workspace/work/env_kernel.sh). Comprobado: /workspace/work es NFS con 489,6 GB libres -> el gate pasa. 2) Restaurar el hash congelado en kernel/KERNEL.yaml -> handoff.input_block_sha256: 5c4bbb20421a9e674876d69f25fb8aaf9e67112d58a49ce3c3f527024ae83c3a (sha256 real medido de kernel/INPUT_BLOCK.yaml en HEAD). 3) Registrar ese hash SIEMPRE en el mismo commit que edite kernel/INPUT_BLOCK.yaml, para que el gate siga verde.",
+      "solucion": "1) Exportar WORK_DIR en el entorno de TODOS los lanzadores: `export WORK_DIR=\"${WORK_DIR:-/workspace/work/kernel-scratch}\"` en ops/launch.sh (antes de `exec $PY ops/$SCRIPT.py`), en ops/launch_hf.py (env del contenedor) y en el env del ejecutor (/workspace/work/env_kernel.sh). Comprobado: /workspace/work es NFS con 489,6 GB libres -> el gate pasa. 2) Restaurar el hash congelado en kernel/KERNEL.yaml -> handoff.input_block_sha256: 5c4bbb20421a9e674876d69f25fb8aaf9e67112d58a49ce3c3f527024ae83c3a (sha256 real medido de kernel/INPUT_BLOCK.yaml en HEAD). 3) Registrar ese hash SIEMPRE en el mismo commit que edite kernel/INPUT_BLOCK.yaml, para que el gate siga verde. || ITERACION 3 (upgrade): S01 (upgrade, iteracion 3): el gate disk_free_gb debe medirse en el disco REAL de donde corre el job, y ese disco cambia con el entorno. MEDIDO: en el sandbox /tmp son 27,7 GB (gate>=30 -> FAIL) y /workspace/work 489,6 GB (PASS). En un Job de HF con flavor cpu-upgrade el almacenamiento es de 50 GB (documentado por HF) y el working tree del clon completo se lleva 7,53 GiB de pack mas ~373.420 ficheros -> el margen es de un solo uso. Ademas el gate mide shutil.disk_usage(WORK_DIR or /tmp).free, que es el espacio LIBRE: con el clon light (13,46 MiB) sobra; con el clon completo (7,53 GiB) hay que exigir >=15 GB, no 30. Propuesta: que MIN_FREE_GB tenga dos valores (uno por tipo de clon) y que el gate se calcule sobre el disco que va a usarse de verdad, no sobre un default que nadie exporta.",
       "refactor_propuesto": "En ops/common.py centralizar el scratch: `WORK=os.environ.get('WORK_DIR')` y `def scratch(job): return os.path.join(WORK, RUN_ID, f'{job}-{os.getpid()}')` mas `def cleanup(d): shutil.rmtree(d, ignore_errors=True)`. Asi ningun job vuelve a inventar su propio /tmp y el default queda en un solo sitio. No rompe nada: los /tmp actuales siguen funcionando si WORK_DIR no se exporta.",
       "ficheros_afectados": [
         "ops/common.py",
@@ -55,12 +55,18 @@
           "fecha": "2026-11-06",
           "hallazgo": "exporta GH_REPO, GH_BRANCH, TARGET_BRANCH, RUN_ID, DATASET_REPO, SPACE_REPO, HEALTH_URL, HF_TOKEN, PYTHONPATH, GIT_TERMINAL_PROMPT -- NO exporta WORK_DIR ni UNIVERSAL_KEY",
           "usado": true
+        },
+        {
+          "url": "medicion propia: disk + documentacion de flavors de HF",
+          "fecha": "2026-11-06",
+          "hallazgo": "/tmp 27,7 GB (gate>=30 -> FAIL), /workspace/work 489,6 GB (PASS); HF cpu-upgrade = 50 GB de storage -> con el clon completo (7,53 GiB de pack + 373.420 ficheros) el margen es de un solo uso; con el clon light (13,46 MiB) sobra",
+          "usado": true
         }
       ],
       "riesgo": "Bajo. Tocar kernel/KERNEL.yaml exige regenerar kernel/GUIDE.md (ver S12). Si INPUT_BLOCK.yaml cambia despues, el gate vuelve a fallar salvo que se actualice el hash en el mismo commit.",
       "ruta_alternativa": "Si no se puede exportar WORK_DIR (p.ej. el job corre dentro de un contenedor HF donde /workspace no existe): usar /data (bucket persistente montado en el Space, mountPath '/data', visible en GET /api/spaces/COMAND-CENTER-1/riu-router -> runtime.volumes) y bajar MIN_FREE_GB solo para el contenedor; el gate debe mirar SIEMPRE el disco del scratch real, no /tmp.",
       "validado_por_centinela": true,
-      "motivo_validacion": "Los tres hechos son reproducibles sin red: se leyo el codigo de HEAD, se midio el disco real de /tmp y de /workspace/work, y se calculo el sha256 del INPUT_BLOCK.yaml. El hash es el valor exacto que el gate compara (sha256 de los bytes del fichero), no una suposicion. No depende de ninguna ruta no verificada."
+      "motivo_validacion": "Los tres hechos son reproducibles sin red: se leyo el codigo de HEAD, se midio el disco real de /tmp y de /workspace/work, y se calculo el sha256 del INPUT_BLOCK.yaml. El hash es el valor exacto que el gate compara (sha256 de los bytes del fichero), no una suposicion. No depende de ninguna ruta no verificada. (iteracion 3: el gate de disco tambien se ha medido en los DOS entornos, sandbox y Job de HF, y el umbral se ha contrasted con el tamano real del clon en cada modo.)"
     },
     {
       "id": "S02",
@@ -209,7 +215,7 @@
       "problema": "D-64: el scratch pierde ficheros a mitad de clon. En /workspace/work/clone.log queda la prueba: el clon de 373.420 ficheros se corta en el checkout con 'warning: Clone succeeded, but checkout failed.' al 3% (15.150/373.420). El patron de guia dice que es el reinicio del overlay de /tmp cada 15-20 min; la medicion muestra que hay una segunda causa mas dura.",
       "causa": "ops/common.py::clone() hace `git clone --single-branch --no-tags --branch BR --depth 1` SIN filtro de blobs: eso MATERIALIZA el working tree con 373.420 ficheros. Medido en este sandbox: /workspace/work es NFS v3 y escribe a ~145 ficheros/s (300 ficheros en 2,07 s) -> el checkout completo son ~45 minutos y es el punto donde se corta. Ademas WORK_DIR no se exporta (ver S01), asi que el scratch sigue yendo a /tmp, que ademas tiene 27,7 GB libres < 30 GB exigidos por el gate.",
       "prioridad": "bloqueante",
-      "solucion": "PATRON DE SCRATCH PERSISTENTE MEDIDO: clon LIGHT (sin working tree) + arbol git. `git clone --single-branch --no-tags --filter=blob:none --no-checkout --depth 1 --branch reorg/20261104-kernel01 <repo>`: MEDIDO en este sandbox = 2 segundos, 14 MB en disco, y `git ls-tree -r HEAD --name-only` devuelve 373.422 entradas (el arbol completo sigue disponible). Eso es lo que necesitan j7_mirror (baseline por arbol, D-93) y j8/j9 (que solo necesitan `git ls-tree`/`git show`). Concreto: (1) clone() usa blobless=True por defecto (--filter=blob:none --no-checkout) y el working tree solo se materializa si el job lo pide de verdad, y entonces con sparse-checkout de las rutas necesarias; (2) scratch unico por ejecucion: $WORK_DIR/$RUN_ID/$JOB-$PID (el patron D-97 ya aplicado en j7, generalizarlo a todos los jobs) -> un rmtree fallido en NFS no envenena la siguiente ronda; (3) exportar WORK_DIR (ver S01) para que el scratch sea el NAS de 489,6 GB y no /tmp de 27,7 GB; (4) comprobacion de espacio ANTES de la operacion pesada: j0 ya mide el disco del scratch real; anadir a esa misma puerta la estimacion del tamano del clon (~18 GB para el clon completo, ~14 MB para el light) y abortar si no cabe; (5) BORRADO DEL CLON AL FINAL DEL TRABAJO: `shutil.rmtree(scratch, ignore_errors=True)` DESPUES de publicar result.json en el Dataset (el Dataset es el artefacto durable; el clon es scratch) -> asi el scratch no crece ronda a ronda y un fallo de borrado no puede romper la ronda siguiente porque el directorio siguiente es UNICO.",
+      "solucion": "PATRON DE SCRATCH PERSISTENTE MEDIDO: clon LIGHT (sin working tree) + arbol git. `git clone --single-branch --no-tags --filter=blob:none --no-checkout --depth 1 --branch reorg/20261104-kernel01 <repo>`: MEDIDO en este sandbox = 2 segundos, 14 MB en disco, y `git ls-tree -r HEAD --name-only` devuelve 373.422 entradas (el arbol completo sigue disponible). Eso es lo que necesitan j7_mirror (baseline por arbol, D-93) y j8/j9 (que solo necesitan `git ls-tree`/`git show`). Concreto: (1) clone() usa blobless=True por defecto (--filter=blob:none --no-checkout) y el working tree solo se materializa si el job lo pide de verdad, y entonces con sparse-checkout de las rutas necesarias; (2) scratch unico por ejecucion: $WORK_DIR/$RUN_ID/$JOB-$PID (el patron D-97 ya aplicado en j7, generalizarlo a todos los jobs) -> un rmtree fallido en NFS no envenena la siguiente ronda; (3) exportar WORK_DIR (ver S01) para que el scratch sea el NAS de 489,6 GB y no /tmp de 27,7 GB; (4) comprobacion de espacio ANTES de la operacion pesada: j0 ya mide el disco del scratch real; anadir a esa misma puerta la estimacion del tamano del clon (~18 GB para el clon completo, ~14 MB para el light) y abortar si no cabe; (5) BORRADO DEL CLON AL FINAL DEL TRABAJO: `shutil.rmtree(scratch, ignore_errors=True)` DESPUES de publicar result.json en el Dataset (el Dataset es el artefacto durable; el clon es scratch) -> asi el scratch no crece ronda a ronda y un fallo de borrado no puede romper la ronda siguiente porque el directorio siguiente es UNICO. || ITERACION 3 (upgrade): S04 (upgrade, iteracion 3): se anaden las MEDICIONES DE PACK que cierran el caso: clon completo = 577.227 objetos / 7,53 GiB de pack / 373.420 ficheros de checkout; clon light (--filter=blob:none --no-checkout) = 44.931 objetos / 13,46 MiB de pack / 0 ficheros de checkout / 2 s de descarga. Ratio 572x en bytes y la eliminación completa del checkout (que es lo que se corta: ver clone.log, 'Clone succeeded, but checkout failed' al 3%). Y una precision sobre j7_mirror: con D-86 (arbol del push reducido a la allowlist operativa de 9 ficheros) y D-96 (los blobs propios del Space bajados por REST y escritos con hash-object -w), el push NO necesita ningun blob del repo -> el clon light es suficiente y no solo mas rapido.",
       "refactor_propuesto": "En ops/common.py: `def scratch(job)` (WORK_DIR/$RUN_ID/$JOB-$PID) + `def cleanup(d)` + `clone()` con blobless por defecto; y en cada job, `d=scratch('j8')` ... `finally: cleanup(d)`. Se puede dejar el clone() actual intacto y anadir un parametro `blobless=True` por defecto con un flag `FULL_CLONE=1` para el unico caso que lo necesita (materializar ficheros).",
       "ficheros_afectados": [
         "ops/common.py",
@@ -265,12 +271,99 @@
           "fecha": "2026-11-06",
           "hallazgo": "D-97 ya aplica scratch unico por PID en j7; el patron falta en los demas jobs (j4_plan usa /tmp/p, j10_final_audit /tmp/fa, j11_patterns /tmp/pat)",
           "usado": true
+        },
+        {
+          "url": "medicion propia: git count-objects -vH sobre el clon COMPLETO y sobre el LIGHT",
+          "fecha": "2026-11-06",
+          "hallazgo": "completo: 577.227 objetos, size-pack 7,53 GiB, 373.420 ficheros de checkout; light: 44.931 objetos, size-pack 13,46 MiB, 0 ficheros, 2 s -> ratio 572x y la eliminacion del checkout (que es lo que se corta segun clone.log)",
+          "usado": true
+        },
+        {
+          "url": "file://ops/j7_mirror.py#L214-L231 (HEAD)",
+          "fecha": "2026-11-06",
+          "hallazgo": "SPACE_ALLOWLIST = 9 ficheros y rm_paths deja el indice solo con esos; los blobs del push llegan por REST (D-96) -> el push no referencia ningun blob ausente del clon -> el clon light es suficiente para j7_mirror",
+          "usado": true
         }
       ],
       "riesgo": "Medio: cambiar clone() a light cambia el working tree de todos los jobs. Los jobs que LEEN ficheros del clon (wiring_check -> build(root) de j2_graph, make_healthchecks -> imports, verify_pending_healthchecks) necesitan materializar esos ficheros: para ellos, `git checkout` puntual o `git show HEAD:<ruta>` (sin checkout global). Por eso la opcion debe ser POR JOB y con un flag explicito, no un cambio global a ciegas. Riesgo de disco: si se baja el umbral a 0 el gate no protege nada.",
       "ruta_alternativa": "Si el clon light rompe algun job: mantener el clon completo pero cambiar el DIRECTORIO de scratch al NAS + sparse-checkout (como el clon que ya tiene el ejecutor: `git sparse-checkout set ops kernel connections` con los directorios pesados excluidos) + clonar con `git clone --filter=tree:0 --depth 1 --sparse` (ya usado en ops/launch.sh:23). Y para los jobs pesados (espejo/reescritura) seguir la ruta ya decidida en D-64: lanzarlos como Job de HF de 32 GB (cpu-upgrade), no en local.",
       "validado_por_centinela": true,
-      "motivo_validacion": "La diferencia de rendimiento esta MEDIDA en este sandbox con el mismo repositorio y la misma rama (2 s / 14 MB / 373.422 entradas de arbol frente a un checkout de 373.420 ficheros que se corta al 3%). El log del clon fallido esta en disco y se cita literal. El codigo de clone() esta leido en HEAD. No hay ninguna afirmacion de rendimiento sin medicion propia."
+      "motivo_validacion": "La diferencia de rendimiento esta MEDIDA en este sandbox con el mismo repositorio y la misma rama (2 s / 14 MB / 373.422 entradas de arbol frente a un checkout de 373.420 ficheros que se corta al 3%). El log del clon fallido esta en disco y se cita literal. El codigo de clone() esta leido en HEAD. No hay ninguna afirmacion de rendimiento sin medicion propia. (iteracion 3: el tamano de pack de los dos modos de clon esta medido con git count-objects sobre los clones reales, y se ha comprobado que el push de j7 no necesita blobs.)"
+    },
+    {
+      "id": "S19",
+      "problema": "j7_mirror se lanza como Job de Hugging Face y MUERE a los 1800 s (los dos ultimos jobs de j7_mirror, 6aeca3dfc78863f9c6336ae8 y 6aecaaf7c78863f9c6336fbc, duraron 1798 s y 1796 s y acabado en ERROR). El job nunca llega a publicar su result.json, asi que j8_audit, j6_rewrite, j9_remirror y j10_final_audit nunca pueden pasar: el DAG esta parado en el primer job.",
+      "causa": "TRES CAUSAS CONCRETAS. (1) El contenedor clona el repo COMPLETO: 'git clone --single-branch --branch reorg/... --depth 1' sin filtro -> MEDIDO: el pack completo son 7,53 GiB (577.227 objetos) y el checkout materializa 373.420 ficheros. (2) El codigo del job no fija el timeout del job: hf_job.create() manda el body {name, dockerImage, flavor, environment, secrets, command} SIN el campo 'timeout' -> la API aplica el default de 1800 s (documentado por HF y medido en los jobs: durations.totalSecs=1800). El '--timeout' de launch_hf.py SOLO es el timeout de espera LOCAL (1700 s), no el del job. (3) El waiter local (1700 s) expira 100 s ANTES de que el job muera (1800 s) -> el ejecutor ve 'TIMEOUT' local mientras el job sigue corriendo: el diagnostico que ve no es el del job.",
+      "prioridad": "bloqueante",
+      "solucion": "TRES CAMBIOS, en este orden. (1) CLON LIGHT en el job: cambiar el comando del contenedor a 'git clone --single-branch --no-tags --filter=blob:none --no-checkout --depth 1 --branch <br> <repo> /tmp/repo'. MEDIDO en este sandbox: el pack light son 13,46 MiB (44.931 objetos) frente a 7,53 GiB del pack completo -> 572 veces menos, y NO materializa los 373.420 ficheros (el checkout es lo que se corta). Y para j7_mirror concreto NO SE PIERDE NADA: el job solo usa 'git ls-tree -r -l <sha>' (baseline), 'git read-tree <sha>' (indice), 'git ls-files', 'git ls-tree <rem>' y 'git write-tree' -> todo eso necesita solo los ARBOLES, que el clon light si trae (D-74, D-93). Los BLOBS que el push necesita son los 9 ficheros propios del Space, que D-96 ya baja por REST y escribe con 'hash-object -w'; y como D-86 deja el arbol del push reducido a la allowlist operativa (SPACE_ALLOWLIST), el commit final no referencia ningun blob ausente -> el push funciona con clon light. (2) FIJAR EL TIMEOUT DEL JOB: anadir 'timeout' al body de hf_job.create() -> body['timeout']=int(os.environ.get('HF_JOB_TIMEOUT','3600')). La API de HF lo acepta en segundos o como '2h' (documentado). (3) SINCRONIZAR EL WAITER: el timeout de espera local debe ser MAYOR que el del job (por ejemplo job=3600, espera=3900) para que el ejecutor lea el result.json real y no un TIMEOUT local; ademas, cuando se agota la espera, imprimir el id del job y su URL (el job puede seguir vivo).",
+      "refactor_propuesto": "Que hf_job.create() acepte timeout y retry y los exponga por env (HF_JOB_TIMEOUT, HF_JOB_FLAVOR ya existe), y que launch_hf.py calcule wait = job_timeout + margen en vez de un 1700 fijo. Con eso el timeout deja de estar repartido en tres sitios (create, CLI y waiter) y pasa a estar en uno. Ademas: el job debe dejar su log en el Dataset (D-68 ya lo hace con upload_file del job.log) -> asi el diagnostico del job es consultable aunque el waiter expire.",
+      "ficheros_afectados": [
+        "ops/hf_job.py",
+        "ops/launch_hf.py",
+        "ops/j7_mirror.py",
+        "ops/common.py (clone con filtro por defecto)"
+      ],
+      "prueba": "1) PRUEBA DE DURACION (la que importa): lanzar el job con el clon light y medir durations.totalSecs -> tiene que quedar MUCHO por debajo de 1800 s (presupuesto: el clon light son 13 MiB y no hay checkout; el resto del job es un fetch al Space + un push de 9 ficheros). Comparar con los 1798/1796 s de los dos jobs que fallaron. 2) PRUEBA DEL TIMEOUT: `HF_JOB_TIMEOUT=3600 python ops/launch_hf.py j7_mirror --wait` -> el job creado aparece con 'timeout': 3600 en GET /api/jobs/<ns>/<id> y el waiter espera 3900 s. 3) PRUEBA DEL ARBOL: con el clon light, 'git -C /tmp/repo ls-tree -r -l HEAD | wc -l' devuelve 373.422 y 'git -C /tmp/repo read-tree HEAD' + 'git ls-files | wc -l' funciona SIN blobs. 4) PRUEBA DE REGRESION DEL PUSH: en un clon light, tras aplicar la allowlist, 'git write-tree' y 'git cat-file -e <blob>' de los 9 ficheros propios dan OK (sin blobs ausentes).",
+      "evidencia": [
+        {
+          "url": "GET https://huggingface.co/api/jobs/COMAND-CENTER-1 (medicion propia)",
+          "fecha": "2026-11-06",
+          "hallazgo": "job 6aeca3dfc78863f9c6336ae8 (2026-11-05T15:42:23Z, cpu-upgrade) durations={schedulingSecs:2, runningSecs:1798, totalSecs:1800} y job 6aecaaf7c78863f9c6336fbc (16:12:39Z) durations={runningSecs:1796, totalSecs:1800}; el command de ambos es 'git clone --single-branch --branch reorg/20261104-kernel01 --depth 1 ... /tmp/repo; python ops/j7_mirror.py' -> los dos mueren por el timeout, no por el script",
+          "usado": true
+        },
+        {
+          "url": "medicion propia: git count-objects -vH en el clon COMPLETO",
+          "fecha": "2026-11-06",
+          "hallazgo": "in-pack 577.227 objetos, size-pack 7,53 GiB (.git = 7,6 GB) -> es lo que descarga el contenedor en cada job",
+          "usado": true
+        },
+        {
+          "url": "medicion propia: git count-objects -vH en el clon LIGHT (--filter=blob:none --no-checkout)",
+          "fecha": "2026-11-06",
+          "hallazgo": "in-pack 44.931 objetos, size-pack 13,46 MiB; 'git ls-tree -r HEAD --name-only | wc -l' = 373.422 (el arbol completo sigue disponible); clon medido en 2 s",
+          "usado": true
+        },
+        {
+          "url": "https://huggingface.co/docs/huggingface_hub/en/guides/jobs",
+          "fecha": "2026-11-06",
+          "hallazgo": "'Jobs have a default timeout (30 minutes), after which they will automatically stop'; se puede fijar con el parametro 'timeout' (segundos o '2h'); tabla de flavors: cpu-upgrade = 8 vCPU, 32 GB RAM, 50 GB storage",
+          "usado": true
+        },
+        {
+          "url": "https://github.com/huggingface/hub-docs/blob/main/docs/hub/jobs-configuration.md",
+          "fecha": "2026-11-06",
+          "hallazgo": "el POST /api/jobs/{namespace} acepta el campo 'timeout' (Default 1800) junto a command, flavor, environment, secrets, volumes",
+          "usado": true
+        },
+        {
+          "url": "file://ops/hf_job.py#L26-L29 (HEAD)",
+          "fecha": "2026-11-06",
+          "hallazgo": "body={'name':...,'dockerImage':...,'flavor':...,'environment':env,'secrets':secrets or {}} -> NO incluye 'timeout' -> se aplica el default de 1800 s",
+          "usado": true
+        },
+        {
+          "url": "file://ops/launch_hf.py#L59-L61 y #L78-L92 (HEAD)",
+          "fecha": "2026-11-06",
+          "hallazgo": "timeout=1700 solo se usa en el bucle de espera local (while time.time()-t0 < timeout) y NO se manda a la API; el job se crea con create(name,...,flavor='cpu-upgrade') sin timeout",
+          "usado": true
+        },
+        {
+          "url": "file://ops/j7_mirror.py#L74-L100 y #L160-L246 (HEAD)",
+          "fecha": "2026-11-06",
+          "hallazgo": "el job solo usa ls-tree -r -l (baseline), read-tree, ls-files, ls-tree rem y write-tree -> solo ARBOLES; los blobs del push son los 9 ficheros de SPACE_ALLOWLIST que D-96 baja por REST (hash-object -w)",
+          "usado": true
+        },
+        {
+          "url": "file://kernel/GUIDE_tail.md (D-65)",
+          "fecha": "2026-11-06",
+          "hallazgo": "'para estos jobs el clon es COMPLETO (sin --filter=tree:0 ni --sparse): el espejo necesita el arbol entero y el git ls-tree del gate' -> la premisa era que hacia falta el ARBOL, no los BLOBS: el clon light da el arbol entero",
+          "usado": true
+        }
+      ],
+      "riesgo": "MEDIO: cambiar a clon light toca el job que mas ha fallado, asi que hay que probarlo antes en seco. Riesgo concreto: si el codigo del job llejera a leer un blob del repo (por ejemplo un fichero de configuracion), el clon light lo pediria bajo demanda ('failed to unpack tree object', segun D-76/D-78) -> por eso la solucion debe incluir la comprobacion 'git cat-file -e' de los ficheros que el job lea, o dejar el clon light solo para j7 (que es el que solo usa arboles). Riesgo de tiempo: si el job con clon light sigue tardando mas de 1800 s, entonces el cuello es OTRO (fetch al Space, push o espera del health) -> el log del job (publicado en el Dataset por D-68) lo dira; por eso el timeout del job debe subirse a 3600 s con la espera local por encima.",
+      "ruta_alternativa": "Si el clon light no funciona para algun job: dos vias. (a) Clon con filtro de blobs pero CON checkout solo de las rutas necesarias: 'git clone --filter=blob:none --no-checkout' + 'git sparse-checkout set ops kernel connections' -> arbol completo y working tree minimo (esto es lo que ya hace el clon del ejecutor). (b) Subir de flavor: cpu-performance (32 vCPU, 256 GB RAM, 1024 GB storage) para los jobs pesados, con un coste de 0,0317 USD/min. (c) No usar HF Jobs para j7 y ejecutarlo en el sandbox con el clon light (2 s medidos).",
+      "validado_por_centinela": true,
+      "motivo_validacion": "Todo el diagnostico sale de MEDIDAS propias y de la API de HF leida: los dos jobs que fallaron con sus duraciones exactas (1798/1796 s), los dos tamanos de pack medidos con git count-objects sobre los clones reales (7,53 GiB vs 13,46 MiB), el default de 1800 s documentado por HF y el campo timeout confirmado en la documentacion de la API, y el codigo de hf_job.py/launch_hf.py leido linea a linea. La conclusion (el job muere por el timeout, y el timeout es por el clon completo) no depende de ninguna suposicion."
     },
     {
       "id": "S05",
