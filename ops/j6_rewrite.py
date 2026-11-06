@@ -12,7 +12,16 @@ def main():
     # Motivo: la subida del bundle es lenta y no debe comerse el techo del job.
     stage=os.environ.get("STAGE","all").lower()
     reuse=os.environ.get("REUSE_CLONE","").strip()
-    if reuse and os.path.isdir(os.path.join(reuse,".git")):
+    in_place=os.environ.get("REWRITE_IN_PLACE","")=="1"
+    if in_place and reuse:
+        # D-120: reescritura EN EL SITIO sobre la copia ya materializada. Motivo medido: un
+        # clon nuevo de este repo (338.007 ficheros) tarda ~45 min en el NAS y ya se pagaron
+        # tres; ademas un `checkout` sobre la copia REESCRITA devuelve el historial SIN
+        # purgar y pierde el trabajo. Aqui no se clona ni se hace checkout: se reescribe
+        # SOLO la rama de trabajo (--refs) y el resto de refs (main, respaldo, etiqueta)
+        # quedan intactos.
+        d=reuse
+    elif reuse and os.path.isdir(os.path.join(reuse,".git")):
         # D-106: el reescritor (filter-repo) CAMBIA el historial, asi que NUNCA debe tocar el
         # clon de trabajo compartido: se hace una COPIA local dentro de WORK_DIR.
         # D-109: la copia usa --shared (alternates): NO copia los 7,53 GiB de objetos (medido:
@@ -68,11 +77,18 @@ def main():
     # con la URL LIMPIA (el token viaja solo en la cabecera extraheader del entorno).
     # Ademas, si la reescritura YA se aplico en esta copia (.git/filter-repo/already_ran) no se
     # repite: el job es idempotente y no gasta una reescritura completa de 338.007 ficheros.
-    ya_reescrito=os.path.exists(os.path.join(d,".git","filter-repo","already_ran"))
-    if ya_reescrito:
-        check("rewrite_already_applied",True,"filter-repo ya_ran en esta copia: no se reescribe otra vez")
+    def _purgados():
+        return [p for p in plan["purge_paths"] if sh(["git","log","--oneline","-1","--",p],cwd=d).stdout.strip()]
+    # D-120: la decision de reescribir se toma por el ESTADO del historial (si los 37 paths
+    # siguen en la historia hay que reescribir), no por un marcador: asi el job es
+    # idempotente y nunca se salta una reescritura necesaria.
+    if _purgados():
+        _args=["git","filter-repo","--force","--invert-paths","--paths-from-file",str(pf)]
+        if in_place: _args+=["--refs",f"refs/heads/{os.environ.get('TARGET_BRANCH') or need('GH_BRANCH')}"]
+        sh(_args,cwd=d)
+        check("rewrite_applied",True,f"historial reescrito (filtro de {len(plan['purge_paths'])} rutas)")
     else:
-        sh(["git","filter-repo","--force","--invert-paths","--paths-from-file",str(pf)],cwd=d)
+        check("rewrite_already_applied",True,"la historia ya estaba purgada: no se reescribe otra vez")
     sh(["git","remote","remove","origin"],cwd=d,check=False)
     sh(["git","remote","add","origin",f"https://github.com/{need('GH_REPO')}.git"],cwd=d,check=False)
     check("origin_ready",sh(["git","remote","get-url","origin"],cwd=d,check=False).returncode==0,
@@ -81,7 +97,7 @@ def main():
     # seria imposible de satisfacer (las otras ramas y la etiqueta de seguridad DEBEN conservar
     # los 37 directorios purgados: son el punto de rollback). Lo que tiene que estar limpio es
     # la rama que se publica como main-clean.
-    left=[p for p in plan["purge_paths"] if sh(["git","log","--oneline","-1","--",p],cwd=d).stdout.strip()]
+    left=_purgados()
     check("purged_absent_from_history",not left,left[:5])
     # D-119: el wiring_check sobre 338.007 ficheros tarda ~15 min. Se cachea POR COMMIT: si
     # el commit es el mismo, el gate ya esta verificado y se reutiliza (queda dicho en el
