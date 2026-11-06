@@ -223,8 +223,8 @@
       "context_pack_ref": "skill yaiwes-node-dag + references/conexiones.md"
     }
   ],
-  "progress_pct": 73,
-  "progress_formula": "100 * CLOSED_NODES / 11 (nodos del DAG v3: N0..N10); cerrados: N0,N1,N2 y los nodos de job j0-j5,j11 -> 8/11 = 72,7 -> 73",
+  "progress_pct": 27,
+  "progress_formula": "100 * CLOSED_NODES / 11 (nodos del DAG v3: N0..N10); cerrados N0,N1,N2 -> 3/11 = 27 (los jobs j0-j5/j11 son de la fase anterior, no son nodos de este DAG)",
   "nodos_cerrados": ["N0_reconciliar","N1_j7_baseline","N2_j8_audit_pre","S1_j0","S2_j1_j2_j3","S3_j4","S5_j5","S6_roadmap"],
   "nodos_abiertos": ["N3_j6_rewrite","N4_swap_main","N5_bridge","N6_remirror","N7_auditoria_final","N8_cableado","N9_bitacora_readme","N10_cierre"],
   "authorized_deploy": [

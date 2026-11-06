@@ -83,13 +83,39 @@ def main():
     # la rama que se publica como main-clean.
     left=[p for p in plan["purge_paths"] if sh(["git","log","--oneline","-1","--",p],cwd=d).stdout.strip()]
     check("purged_absent_from_history",not left,left[:5])
-    r=wc(d);check("wiring_check",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
+    # D-119: el wiring_check sobre 338.007 ficheros tarda ~15 min. Se cachea POR COMMIT: si
+    # el commit es el mismo, el gate ya esta verificado y se reutiliza (queda dicho en el
+    # detalle: commit, hora de la verificacion). Si el arbol cambia, se recalcula.
+    _h=head(d)
+    _mk=pathlib.Path(os.environ.get("WORK_DIR","/workspace/work"))/"out"/"wiring_check_cache.json"
+    _cached=None
+    try:
+        if _mk.exists(): _cached=json.loads(_mk.read_text())
+    except Exception: _cached=None
+    if _cached and _cached.get("commit")==_h and _cached.get("ok"):
+        check("wiring_check",True,f"reutilizado: commit {_h[:12]} verificado a las {_cached.get('ts')} (arbol sin cambios)")
+    else:
+        r=wc(d);check("wiring_check",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
+        if r["ok"]:
+            try:
+                _mk.parent.mkdir(parents=True,exist_ok=True)
+                _mk.write_text(json.dumps({"commit":_h,"ok":True,"ts":time.strftime("%FT%TZ",time.gmtime())}))
+            except Exception: pass
     if not all(c["ok"] for c in CHECKS):finish()
     # D-117: GitHub corta los packs grandes (error 500 / "unexpected disconnect while reading
     # sideband packet") al publicar el historial reescrito de 338.007 ficheros. Se empuja por
     # TRAMOS: cada tramo actualiza la ref y solo envia los objetos nuevos de ese tramo, asi
     # que ningun pack  supera el limite. Si un tramo falla, se subdivide Commit a Commit.
-    r=sh(["git","push","origin","HEAD:refs/heads/main-clean","--force"],cwd=d,check=False)
+    # D-119: la publicacion de main-clean tambien va CON CANDADO. Como la rama no existe
+    # todavia, el lease vacio significa "creala solo si no existe" (si existiera, el push se
+    # rechaza). Si ya existe, el lease es su sha actual leido ahora.
+    _cur=sh(["git","ls-remote","origin","refs/heads/main-clean"],cwd=d,check=False).stdout.split()
+    _lease=f"refs/heads/main-clean:{_cur[0]}" if _cur else "refs/heads/main-clean:"
+    # D-119: transporte robusto (GitHub cortaba el pack con HTTP 500): HTTP/1.1, postBuffer
+    # grande y sin timeout por lentitud.
+    _gitopt=["-c","http.version=HTTP/1.1","-c","http.postBuffer=524288000",
+             "-c","http.lowSpeedLimit=0","-c","http.lowSpeedTime=999999"]
+    r=sh(["git"]+_gitopt+["push","origin","HEAD:refs/heads/main-clean",f"--force-with-lease={_lease}"],cwd=d,check=False)
     push_ok=(r.returncode==0)
     detalle=(r.stdout+r.stderr)[-300:]
     if not push_ok:
@@ -98,7 +124,7 @@ def main():
         i=0
         while i<len(shas) and push_ok:
             lote=shas[i:i+step]; tip=lote[-1]
-            rr=sh(["git","push","origin",f"{tip}:refs/heads/main-clean","--force"],cwd=d,check=False)
+            rr=sh(["git"]+_gitopt+["push","origin",f"{tip}:refs/heads/main-clean",f"--force-with-lease={_lease}"],cwd=d,check=False)
             if rr.returncode!=0 and len(lote)>1:
                 step=max(1,len(lote)//4)   # subdivide el tramo que fallo
                 continue

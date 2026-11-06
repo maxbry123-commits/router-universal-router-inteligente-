@@ -345,4 +345,4 @@ handoff:
   - '🚩 j6_rewrite EN_CURSO (bundle + purga)'
   - '🚩 j9_remirror FAIL'
   - '🚩 j10_final_audit MISSING'
-progress_pct: 73
+progress_pct: 27
