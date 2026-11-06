@@ -13,7 +13,8 @@ def main():
         # idempotente. Sin REUSE_CLONE se comporta como antes (clon en WORK_DIR).
         d=reuse
     else:
-        d=clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"au"));w=wc(d)   # G2: scratch en WORK_DIR (NAS)
+        d=clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"au"))
+    w=wc(d)   # G2: scratch en WORK_DIR (NAS)
     check("wiring_check_on_target",w["ok"],[c["name"] for c in w["checks"] if not c["ok"]])
     (OUT/"audit.json").write_text(json.dumps({"phase":os.environ.get("PHASE","pre"),"audited_commit":head(d),
         "per_job":{j:r["status"] for j,r in res.items()},"wiring":w},indent=1))

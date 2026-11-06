@@ -1,22 +1,48 @@
 from common import *
-import yaml,pathlib
+import yaml,pathlib,shutil
 from wiring_check import run as wc
 def main():
     from huggingface_hub import HfApi
     plan=json.load(open(dl("j4_plan","plan.json")))
     for j in("j5_apply","j8_audit"):check(f"{j}_PASS",json.load(open(dl(j,"result.json")))["status"]=="PASS")
     if not all(c["ok"] for c in CHECKS):finish({"flag":"PRECONDITION"})
-    d=clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"m"),depth=0,branch=os.environ.get("TARGET_BRANCH") or need("GH_BRANCH"))
+    # D-107: dos etapas. STAGE=prepare crea, verifica y publica el bundle de rollback
+    # (~7,5 GiB: el pack del repo tiene 7,53 GiB) sin reescribir nada. STAGE=rewrite
+    # purga, comprueba y publica la rama limpia. STAGE=all (por defecto) hace las dos.
+    # Motivo: la subida del bundle es lenta y no debe comerse el techo del job.
+    stage=os.environ.get("STAGE","all").lower()
+    reuse=os.environ.get("REUSE_CLONE","").strip()
+    if reuse and os.path.isdir(os.path.join(reuse,".git")):
+        # D-106: el reescritor (filter-repo) CAMBIA el historial, asi que NUNCA debe tocar el
+        # clon de trabajo compartido: se hace una COPIA local por hardlinks (sin red y sin
+        # duplicar los 7,53 GiB de objetos) dentro de WORK_DIR. La copia es independiente y
+        # descartable; el clon original queda intacto.
+        d=os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"rw")
+        shutil.rmtree(d,ignore_errors=True)
+        sh(["git","clone","--local",reuse,d])
+        sh(["git","checkout","--force",os.environ.get("TARGET_BRANCH") or need("GH_BRANCH")],cwd=d)
+    else:
+        d=clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"m"),depth=0,branch=os.environ.get("TARGET_BRANCH") or need("GH_BRANCH"))
     # G4: sin aprobaciones ni firma. Gate = SHA256 del plan del Dataset.
     ker=yaml.safe_load((pathlib.Path(d)/"kernel/KERNEL.yaml").read_text())
     if not check("plan_sha256_matches",ker.get("plan_sha256")==plan["plan_sha256"],f"kernel={str(ker.get('plan_sha256'))[:12]} plan={str(plan['plan_sha256'])[:12]}"):finish({"flag":"PLAN_CHANGED"})
-    b=os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"backup.bundle");sh(["git","bundle","create",b,"--all"],cwd=d)
-    check("bundle_verified",sh(["git","bundle","verify",b],cwd=d,check=False).returncode==0)
-    # D-34: huggingface_hub >= 2.x exige `path=` (con `path_or_fileobj=` lanza TypeError y el
-    # bundle de rollback nunca se publica: fue lo que mato el job heredado 6aebc8980e0338d1bb804a42).
-    HfApi(token=need("HF_TOKEN")).upload_file(path=b,path_in_repo=f"backups/{RUN_ID}.bundle",repo_id=need("DATASET_REPO"),repo_type="dataset")
-    check("bundle_uploaded",True)
-    if not all(c["ok"] for c in CHECKS):finish()
+    # Ancla de rollback: la etiqueta de seguridad que NO se toca (la copia local reescribe
+    # sus propias etiquetas, pero el bundle conserva el estado original y el servidor
+    # conserva la etiqueta original porque aqui solo se publica la rama limpia).
+    anchor=sh(["git","rev-parse","refs/tags/pre-reorg-20261104-kernel01"],cwd=d,check=False).stdout.strip()
+    b=os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"backup.bundle")
+    if stage in("all","prepare"):
+        # El bundle se crea ANTES de reescribir: es el estado original (rama + etiqueta).
+        sh(["git","bundle","create",b,"--all"],cwd=d)
+        check("bundle_verified",sh(["git","bundle","verify",b],cwd=d,check=False).returncode==0)
+        # D-34: huggingface_hub >= 2.x exige `path=` (con `path_or_fileobj=` lanza TypeError y el
+        # bundle de rollback nunca se publica: fue lo que mato el job heredado 6aebc8980e0338d1bb804a42).
+        HfApi(token=need("HF_TOKEN")).upload_file(path=b,path_in_repo=f"backups/{RUN_ID}.bundle",repo_id=need("DATASET_REPO"),repo_type="dataset")
+        check("bundle_uploaded",True)
+        if stage=="prepare":
+            finish({"stage":"prepare","bundle_bytes":os.path.getsize(b),"bundle_sha256":sha256(b),"rollback_anchor":anchor})
+    # --- etapa de reescritura ---
+    check("bundle_verified",os.path.exists(b) and sh(["git","bundle","verify",b],cwd=d,check=False).returncode==0)
     pf=pathlib.Path(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"purge.txt"));pf.write_text("\n".join(plan["purge_paths"]))
     sh(["git","filter-repo","--force","--invert-paths","--paths-from-file",str(pf)],cwd=d)
     # D-34: `git remote add` falla (rc=128) si origin ya existe: se usa set-url (idempotente).
@@ -26,6 +52,7 @@ def main():
     r=wc(d);check("wiring_check",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     if not all(c["ok"] for c in CHECKS):finish()
     sh(["git","push","origin","HEAD:refs/heads/main-clean","--force"],cwd=d);check("pushed_main-clean",True)
-    sz=sh(["git","count-objects","-vH"],cwd=d).stdout
-    finish({"size":sz,"swap_manual":"after approvals.merge_main: git push --force-with-lease origin main-clean:main","note":"all commit hashes change; re-run j9_remirror; rotate any token that ever lived in history"},commit=head(d))
+    kh=head(d);sz=sh(["git","count-objects","-vH"],cwd=d).stdout
+    shutil.rmtree(d,ignore_errors=True)   # D-106/G3: la copia de reescritura se borra siempre
+    finish({"size":sz,"stage":"rewrite","rollback_anchor":anchor,"swap_manual":"despues del swap con candado: git push --force-with-lease origin main-clean:main","note":"all commit hashes change; re-run j9_remirror; rotate any token that ever lived in history"},commit=kh)
 if __name__=="__main__":run(main)
