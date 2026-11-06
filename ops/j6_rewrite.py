@@ -14,12 +14,14 @@ def main():
     reuse=os.environ.get("REUSE_CLONE","").strip()
     if reuse and os.path.isdir(os.path.join(reuse,".git")):
         # D-106: el reescritor (filter-repo) CAMBIA el historial, asi que NUNCA debe tocar el
-        # clon de trabajo compartido: se hace una COPIA local por hardlinks (sin red y sin
-        # duplicar los 7,53 GiB de objetos) dentro de WORK_DIR. La copia es independiente y
-        # descartable; el clon original queda intacto.
+        # clon de trabajo compartido: se hace una COPIA local dentro de WORK_DIR.
+        # D-109: la copia usa --shared (alternates): NO copia los 7,53 GiB de objetos (medido:
+        # `git clone --local` tardaba 21 min y todavia copiaba; --shared es inmediato). Los
+        # objetos NUEVOS de la reescritura se escriben en la copia y el push los lleva al
+        # servidor; el clon original queda intacto y es el segundo copy del rollback.
         d=os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"rw")
         shutil.rmtree(d,ignore_errors=True)
-        sh(["git","clone","--local",reuse,d])
+        sh(["git","clone","--shared",reuse,d])
         sh(["git","checkout","--force",os.environ.get("TARGET_BRANCH") or need("GH_BRANCH")],cwd=d)
     else:
         d=clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"m"),depth=0,branch=os.environ.get("TARGET_BRANCH") or need("GH_BRANCH"))
@@ -30,7 +32,7 @@ def main():
     # sus propias etiquetas, pero el bundle conserva el estado original y el servidor
     # conserva la etiqueta original porque aqui solo se publica la rama limpia).
     anchor=sh(["git","rev-parse","refs/tags/pre-reorg-20261104-kernel01"],cwd=d,check=False).stdout.strip()
-    b=os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"backup.bundle")
+    b=os.environ.get("BUNDLE_PATH") or os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"backup.bundle")
     if stage in("all","prepare"):
         # El bundle se crea ANTES de reescribir: es el estado original (rama + etiqueta).
         sh(["git","bundle","create",b,"--all"],cwd=d)
@@ -39,6 +41,7 @@ def main():
         # bundle de rollback nunca se publica: fue lo que mato el job heredado 6aebc8980e0338d1bb804a42).
         HfApi(token=need("HF_TOKEN")).upload_file(path=b,path_in_repo=f"backups/{RUN_ID}.bundle",repo_id=need("DATASET_REPO"),repo_type="dataset")
         check("bundle_uploaded",True)
+        (OUT/"bundle_manifest.json").write_text(json.dumps({"bundle":b,"bytes":os.path.getsize(b),"sha256":sha256(b),"rollback_anchor":anchor},indent=1))
         if stage=="prepare":
             finish({"stage":"prepare","bundle_bytes":os.path.getsize(b),"bundle_sha256":sha256(b),"rollback_anchor":anchor})
     # --- etapa de reescritura ---
@@ -47,7 +50,11 @@ def main():
     sh(["git","filter-repo","--force","--invert-paths","--paths-from-file",str(pf)],cwd=d)
     # D-34: `git remote add` falla (rc=128) si origin ya existe: se usa set-url (idempotente).
     sh(["git","remote","set-url","origin",f"https://github.com/{need('GH_REPO')}.git"],cwd=d,check=False)
-    left=[p for p in plan["purge_paths"] if sh(["git","log","--all","--oneline","-1","--",p],cwd=d).stdout.strip()]
+    # D-109: el check mira el HISTORIAL QUE SE PUBLICA (HEAD), no "--all": con --all el gate
+    # seria imposible de satisfacer (las otras ramas y la etiqueta de seguridad DEBEN conservar
+    # los 37 directorios purgados: son el punto de rollback). Lo que tiene que estar limpio es
+    # la rama que se publica como main-clean.
+    left=[p for p in plan["purge_paths"] if sh(["git","log","--oneline","-1","--",p],cwd=d).stdout.strip()]
     check("purged_absent_from_history",not left,left[:5])
     r=wc(d);check("wiring_check",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     if not all(c["ok"] for c in CHECKS):finish()
