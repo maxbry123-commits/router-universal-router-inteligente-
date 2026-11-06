@@ -131,47 +131,55 @@ parts_8_fallback:
   objetivo: reconciliar N0 y medir el clon del espejo (preparacion)
   jobs: []
   evidencia: handoff reconstruido + medida real del clon ligero (objects, MiB, packs, segundos)
+  estado: CERRADO
 - id: E2
   objetivo: espejo en modo base (N1)
   jobs: [j7_mirror]
   evidencia: 20261104-kernel01/j7_mirror/result.json en PASS
+  estado: CERRADO
 - id: E3
   objetivo: auditoria previa (N2)
   jobs: [j8_audit]
   evidencia: result.json PASS de j8_audit con PHASE=pre
+  estado: CERRADO
 - id: E4
   objetivo: "reescritura de historial (N3) en dos tiempos: plan + bundle y push de la rama limpia"
   jobs: [j6_rewrite]
   evidencia: result.json PASS + bundle verificado + purgado ausente del historial
+  estado: EN_CURSO
 - id: E5
   objetivo: candado e intercambio de la rama principal (N4)
   jobs: [j6b_swap]
   evidencia: main == tag tras el rollback previo y swap con --force-with-lease
+  estado: PENDIENTE
 - id: E6
   objetivo: puente central (N5)
   jobs: [bridge]
   evidencia: connections/bridge_report.json con snapshot, historial 30 d, comparacion y sondas
+  estado: PENDIENTE
 - id: E7
   objetivo: reespejo al Space (N6) y auditoria final (N7)
   jobs: [j7_mirror, j8_audit]
   evidencia: health del Space con commit == HEAD + result.json PASS de j8_audit PHASE=post y j10_final_audit
+  estado: PENDIENTE
 - id: E8
   objetivo: cableado R7/R9/R10 (N8), bitacora e informe central (N9) y cierre (N10)
   jobs: []
   evidencia: conexiones con sonda real + wiring_changelog.md + wiring_history.jsonl + README + handoff.next + progress_pct 100 * CLOSED/11
+  estado: PENDIENTE
 parts_8_nota: se usa si una parte vuelve a fallar; cada trozo corre como un job de HF con techo de
   30 min o en local, y deja su propia evidencia en el Dataset.
 parts:
 - id: P1
   objetivo: reconciliar N0 + espejo en modo base (N1)
   jobs: [j7_mirror]
-  evidencia: 20261104-kernel01/j7_mirror/result.json en PASS + job-evidencia/j7_mirror.log
-  estado: EN_CURSO
+  evidencia: 20261104-kernel01/j7_mirror/result.json en PASS (6170 ficheros / 110,7 MB, sin subir)
+  estado: CERRADO
 - id: P2
   objetivo: auditoria previa N2 + reescritura de historial N3
   jobs: [j8_audit, j6_rewrite]
   evidencia: result.json PASS de j8_audit (PHASE=pre) y de j6_rewrite con bundle y purga verificados
-  estado: PENDIENTE
+  estado: EN_CURSO
 - id: P3
   objetivo: intercambio de la rama principal con candado N4 + puente central N5
   jobs: [j6b_swap, bridge]
@@ -188,7 +196,14 @@ parts_nota: cada parte es un job de HF con perfil cpu-upgrade (32 GB RAM + 8 vCP
 handoff:
   # D-108: hash CONGELADO del INPUT_BLOCK (gate j0_preflight 'input_block_sha256_intacto').
   input_block_sha256: 5c4bbb20421a9e674876d69f25fb8aaf9e67112d58a49ce3c3f527024ae83c3a
-  next: j8_audit
+  next: j6_rewrite
+  rollback:
+    tag: pre-reorg-20261104-kernel01
+    tag_actual: 40c8d591abaa7ff6e008e9e0801dc022a968fc6a
+    main_actual: c2ad951e0ca3f672ba6eabdd4ffd88c7435174aa
+    rama_respaldo: respaldo-main-pre-swap-20261104-kernel01
+    nota: D-110 la rama de respaldo se creo ANTES de cualquier cambio de main; la etiqueta se
+      re-apunta al main actual justo antes del intercambio para que el lease sea exacto
   log:
   - job: j0_preflight
     status: PASS
@@ -235,9 +250,12 @@ handoff:
     baseline: {files: 6170, bytes: 110654589}
     nota: D-104 REUSE_CLONE (clon ya materializado) en vez de un clon ligero atascado
   - job: j8_audit
-    status: FAIL
-    commit: bb9e4c8088cfe4be35a91dfdc669b9a171200885
-    ts: '2026-11-05T07:51:27Z'
+    status: PASS
+    commit: 6d072e806768356b9c7a6dd1e2e359fe43f3a904
+    ts: '2026-11-06T05:22:37Z'
+    run_id: 20261104-kernel01
+    phase: pre
+    checks: [j0_preflight_PASS, j1_inventory_PASS, j2_graph_PASS, j3_history_PASS, j4_plan_PASS, j11_patterns_PASS, j5_apply_PASS, j7_mirror_PASS, wiring_check_on_target]
     run_id: 20261104-kernel01
   - job: j6_rewrite
     status: FAIL
@@ -255,8 +273,8 @@ handoff:
     ts: '2026-11-05T05:29:51Z'
     run_id: 20261104-kernel01
   flags:
-  - '🚩 j8_audit FAIL'
+  - '🚩 j6_rewrite EN_CURSO (bundle + purga)'
   - '🚩 j6_rewrite FAIL'
   - '🚩 j9_remirror FAIL'
   - '🚩 j10_final_audit MISSING'
-progress_pct: 64
+progress_pct: 73
