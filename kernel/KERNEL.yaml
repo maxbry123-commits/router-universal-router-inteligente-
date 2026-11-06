@@ -236,6 +236,31 @@ parts:
 parts_nota: cada parte es un job de HF con perfil cpu-upgrade (32 GB RAM + 8 vCPU) cuyo techo real es
   de 30 minutos, o bien la misma ejecucion en local (G1 ruta 2); el log del contenedor se vuelca en
   vivo tras cada fase (D-101) y cada parte deja su evidencia en el Dataset.
+handoff_reglas:
+  formula_progress: "progress_pct = 100 * CLOSED_NODES / 11 (nodos N0..N10 del DAG v3)"
+  nodos_cerrados: [N0_reconciliar, N1_j7_baseline, N2_j8_audit_pre, S1_j0, S2_j1_j2_j3, S3_j4, S5_j5, S6_roadmap]
+  nodos_abiertos: [N3_j6_rewrite, N4_swap_main, N5_bridge, N6_remirror, N7_auditoria_final, N8_cableado, N9_bitacora_readme, N10_cierre]
+  ledger: "la verdad de cada job es 20261104-kernel01/<job>/result.json en el Dataset (read-back); el log del handoff es el espejo"
+  reglas_swap:
+    - "el tag pre-reorg se re-apunta al main REAL (commit del owner, autor Maxbry) justo antes del intercambio: es el punto de rollback exacto"
+    - "la rama respaldo-main-pre-swap-20261104-kernel01 conserva el main previo (c2ad951e0ca3)"
+    - "el intercambio va con --force-with-lease=main:<sha real>; si main se mueve, el push se rechaza solo"
+    - "no se restaura main a un commit antiguo: el DAG N4 lo sustituye por la rama reescrita"
+  equivalencia_fases_owner_kernel:
+    tabla: "1:nombre del owner -> numero de fase del kernel -> job -> salida"
+    filas:
+    - {owner: 1, kernel: 1, fase: recuperacion_forense_historica, job: j3_history + historical_wiring_audit}
+    - {owner: 2, kernel: 2, fase: auditoria_cableado_actual, job: j2_graph}
+    - {owner: 3, kernel: 3, fase: grafo_ast_dependencias, job: audit}
+    - {owner: 4, kernel: 4, fase: registro_central, job: make_registry}
+    - {owner: 5, kernel: 5, fase: contratos_harness, job: audit}
+    - {owner: 6, kernel: 6, fase: system_prompt_y_motores, job: audit}
+    - {owner: 7, kernel: 7, fase: chat_yaiwes_openclaw, job: audit}
+    - {owner: 8, kernel: 8, fase: guardianes_y_huerfanos, job: audit}
+    - {owner: 9, kernel: 9, fase: frontend_y_agentes, job: audit}
+    - {owner: 10, kernel: 10, fase: nvidia_locales_memoria_storage, job: audit}
+    - {owner: 11, kernel: 11, fase: job_test_integral, job: job_test}
+    - {owner: 12, kernel: 12, fase: cierre_repo_limpio, job: audit}
 handoff:
   # D-108: hash CONGELADO del INPUT_BLOCK (gate j0_preflight 'input_block_sha256_intacto').
   input_block_sha256: 5c4bbb20421a9e674876d69f25fb8aaf9e67112d58a49ce3c3f527024ae83c3a

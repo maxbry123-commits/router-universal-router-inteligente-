@@ -9,9 +9,11 @@
   "version": 1,
   "objective": "Recuperacion del cableado roto del Router Inteligente Universal + registro central de conectividad + reorganizacion de la raiz",
   "state": {
-    "node": "N4_execute",
+    "node": "N3_rewrite_j6",
     "step": "EXECUTE",
-    "fsm": "EXECUTING"
+    "fsm": "EXECUTING",
+    "run_id": "20261104-kernel01",
+    "actualizado": "2026-11-06T07:20Z"
   },
   "queue": [
     {
@@ -116,7 +118,7 @@
     }
   ],
   "handoff": {
-    "next": "A3",
+    "next": "j6_rewrite",
     "missing": [
       "GH_TOKEN no existe en la cuenta HF -> historial reconstruido por API GitHub via Router RIU (desviacion D1); sin eso no hay git clone ni git bisect",
       "authorized_deploy del contrato venia vacio [] -> rellenado con la autorizacion del owner en chat + guia L5; documentado como flag",
@@ -221,7 +223,10 @@
       "context_pack_ref": "skill yaiwes-node-dag + references/conexiones.md"
     }
   ],
-  "progress_pct": 45,
+  "progress_pct": 73,
+  "progress_formula": "100 * CLOSED_NODES / 11 (nodos del DAG v3: N0..N10); cerrados: N0,N1,N2 y los nodos de job j0-j5,j11 -> 8/11 = 72,7 -> 73",
+  "nodos_cerrados": ["N0_reconciliar","N1_j7_baseline","N2_j8_audit_pre","S1_j0","S2_j1_j2_j3","S3_j4","S5_j5","S6_roadmap"],
+  "nodos_abiertos": ["N3_j6_rewrite","N4_swap_main","N5_bridge","N6_remirror","N7_auditoria_final","N8_cableado","N9_bitacora_readme","N10_cierre"],
   "authorized_deploy": [
     "huggingface_jobs:audit-only (JOB 1 + JOB 2 de la guia, L147/L352; dataset de informes COMAND-CENTER-1/router-universal-router-inteligente-auditoria) - autorizacion explicita del owner en chat 2026-11-04: 'todo lo vas hacer con los job'"
   ],
@@ -361,3 +366,14 @@ Leer el skill canónico, el código fuente y el historial de commits de los moto
 6. Cerrar solo con `VERIFIED_CLOSED` + `failed=0` + `pending=0` + read-back de `main` comparando nombre, allowlist y los 6 blob SHA.
 7. Publicar sin force; si la rama avanzo, releer `main` y reconstruir sobre el nuevo parent.
 8. Registrar la evidencia en el commit (nunca un ledger adicional dentro de la raiz de motores).
+
+---
+
+## ESTADO CANONICO (2026-11-06T07:20Z) — la verdad esta en `kernel/KERNEL.yaml` + Dataset `20261104-kernel01`
+
+- **Cerrado con evidencia**: N0 (reconciliar), N1 (j7_mirror PASS: 6.170 ficheros / 110,7 MB, Space RUNNING), N2 (j8_audit PHASE=pre PASS: 8 jobs PASS + wiring_check_on_target).
+- **En curso**: N3 — j6_rewrite en dos etapas: `prepare` (bundle de rollback de 8,07 GB **subido** al Dataset, commit `3bb6161d1`) y `rewrite` (purga de 37 directorios + rama `main-clean`).
+- **Ramas**: `reorg/20261104-kernel01` = `fd79657c37` (trabajo) · `main` = `c2ad951e0ca3` (intacta hasta el swap) · `respaldo-main-pre-swap-20261104-kernel01` = `c2ad951e0ca3` (ancla de rollback creada) · tag `pre-reorg-20261104-kernel01` = `40c8d591ab`.
+- **Decisiones fijadas por el owner**: HF = espejo/auto-pull mínimo; servidores de pago 32 GB CPU con cola al 85 % y sueño a los 15 min; 1 modelo local por servidor; umbral `ACTIVE` de 7 condiciones; motor `research_prepass.py` **intacto**; claves **intactas**.
+- **Artefactos nuevos**: `CODE_INDEX.md` (11 entradas, rutas reales), `SYSTEM_WIRING_REGISTRY.yaml` (registro maestro), `handoff/docs/*` (5 handoffs), `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` (objetivos verbatim).
+- **Vetos del SHERIFF resueltos**: B1 token fuera de argv y de `.git/config` (D-114); B3 firma `path_or_fileobj` (D-113); B4 `main-clean` en curso; B2/B5 pendientes del swap (el tag se re-apunta al `main` real, que es el commit del owner, y se conserva la rama de respaldo).
