@@ -108,3 +108,48 @@ Cuando se agotan las diez rutas: `FLAG_AND_CONTINUE_INDEPENDENT`. Se registra el
 | D-74 | El indice del push se construye con `read-tree` (arbol de la rama) y las exclusiones se aplican con un fichero de pathspec NUL-separated | Con `git add -A` entraban en el push ficheros que no debian ir (1.232 de mas) y el servidor cortaba la conexion: "send-pack: unexpected disconnect while reading sideband packet" | Es exactamente el metodo que ya dio un push verificado (6.071 ficheros en el Space, con sus 8 ficheros propios) |
 | D-75 | El espejo admite modo ligero (`MIRROR_LIGHT=1`): clon `--filter=blob:none --no-checkout` (sin materializar 18 GB) y gate previo sobre el YAML del registro con el predicado exacto de `wiring_check` | El sandbox reinicia /tmp cada 15-20 min y se lleva el clon completo; ademas el clon completo del job fallaba con "failed to unpack tree object" | El push se hace igual (mismo arbol, mismo padre remoto) y el job cabe en la ventana entre reinicios |
 | D-82 | El fetch del repo del Space usa `--filter=blob:none` | El historico completo del Space son ~20.000 ficheros (varios GB) y el job de HF superaba el techo de 1800 s antes de publicar | Solo bajan los arboles; los 11 blobs propios del Space se piden bajo demanda |
+
+# 22. INPUT BLOCK ADJUNTO — OBJETIVOS YAIWES: AUDITORÍA Y RECONSTRUCCIÓN DEL CABLEADO (VERBATIM)
+
+Este bloque se **adjunta** a la guía de organización. La guía sigue siendo `AGENTS.md`, **congelado**
+(sha256 `5c77e0051a4e8caaee123b5e199980d98c9cd7b144ff246dbb2cccf415048943`, 35537 B) y **no se edita**.
+
+| Elemento | Ruta | sha256 | bytes |
+|---|---|---|---|
+| Guía de organización (FROZEN, el adjunto del owner) | `AGENTS.md` | `5c77e0051a4e8caaee123b5e199980d98c9cd7b144ff246dbb2cccf415048943` | 35537 |
+| Bloque de objetivos YAIWES (VERBATIM, nuevo) | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` | `9d01a464dfd01ddca80cb36694b84346456c331489f26800c57d104102b90baa` | 17258 |
+
+Contiene, literal del owner: la separación de raíces adicionales, el plan técnico de 12 fases, los 10
+objetivos, el criterio final de aceptación y las decisiones de arquitectura (servidores, cola, dormir,
+wake-up, espejo mínimo de HF, umbral `ACTIVE`, motor no autorizado, claves intactas).
+
+**Reglas que este bloque añade (normativas):**
+
+1. **GitHub** es el único sitio del código. **HuggingFace** = espejo + auto-pull **mínimo** (solo lo
+   que necesita para servir y actualizar la UI). **Vercel** = frontend + trigger del watchdog al
+   encender.
+2. **Servidores de pago, 32 GB RAM y CPU** (nunca `cpu-basic`).
+3. **Cola de servidores**: al **85 %** salta al siguiente; **15 min sin actividad** → duerme; la UI de
+   Chat YAIWES lleva **encendido/reinicio** y **botón ON/OFF permanente**.
+4. **Modelos locales**: **1 modelo por servidor**; failover al siguiente hasta **3 en cola**; al
+   estar lleno espera **1 servidor por modelo**; a los **15 min** abandona y duerme.
+5. **Un solo archivo central de cableado** (`connections/wiring_registry.yaml`) como centro de
+   distribución: consumidor, proveedor, protocolo, endpoint, contrato, healthcheck, fallback y estado.
+6. **Umbral `ACTIVE` (7 condiciones, todas obligatorias)**: autenticación válida, conexión real,
+   inferencia ejecutada, respuesta válida, latencia registrada, sin errores críticos. **Una prueba
+   superficial NO activa una conexión.**
+7. **Motor `research_prepass.py`: NO autorizado** → permanece intacto, problema pendiente.
+8. **Claves**: ninguna quedó expuesta y **no se tocan**; solo por entorno.
+9. **Repo limpio**: los ficheros de code no cableados, notas, pruebas y documentos que no pertenecen
+   al funcionamiento se borran **tras análisis de dependencias** (nunca sin evidencia).
+10. **Prohibido GitHub Actions y LFS** (heredado del INPUT BLOCK congelado); las pruebas se ejecutan
+    en local o como Job de HF `cpu-upgrade`.
+
+| Decision | Cambio | Por que | Evidencia |
+|---|---|---|---|
+| D-111 | Nuevo INPUT BLOCK adjunto `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` (17.258 B, sha256 `9d01a464…b90baa`) que fija objetivos, raíces, política de servidores, umbral ACTIVE y exclusiones | El owner ordeno registrar los objetivos como INPUT BLOCK VERBATIM y adjuntarlos a la guia de organizacion | sha256 del fichero + lectura del adjunto del owner (35.537 B, sha256 `5c77e005…8943`, identico a `AGENTS.md`) |
+| D-112 | HuggingFace queda como espejo/auto-pull MINIMO (solo servir + actualizar UI); Vercel dispara el trigger del watchdog al encender; todo el codigo vive en GitHub | Decision del owner sobre las responsabilidades de las tres plataformas | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` §4.1 y §1 |
+| D-113 | Politica de servidores y cola (32 GB CPU de pago, 85 %, 15 min, 1 modelo por servidor, 3 en cola, ON/OFF permanente en la UI) | Decision del owner; se implementa en `integrations/servers/` y en la configuracion de la UI | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` §4.2-4.3 |
+| D-114 | Umbral `ACTIVE` de 7 condiciones publicado en la guia; una conexion no se activa por una prueba superficial | Decision del owner; cierra el hueco de las 14 conexiones que se habian activo sin evidencia real | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` §4.4 y `connections/wiring_registry.yaml` (nuevo) |
+| D-115 | El motor `research_prepass.py` NO se toca: sigue intacto y el problema queda pendiente (recomendacion: autorizar solo tras error + contexto + regresion, guardando el codigo anterior para revertir) | Decision del owner; el motor es intocable por contrato | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` §6 |
+| D-116 | Ninguna clave se toca: no se rotan ni se inspeccionan sus valores (solo referencias por entorno) | Decision del owner | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` §6 |

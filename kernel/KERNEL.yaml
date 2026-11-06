@@ -169,6 +169,49 @@ parts_8_fallback:
   estado: PENDIENTE
 parts_8_nota: se usa si una parte vuelve a fallar; cada trozo corre como un job de HF con techo de
   30 min o en local, y deja su propia evidencia en el Dataset.
+input_blocks_adjuntos:
+- id: IB-YAIWES-01
+  ruta: kernel/INPUT_BLOCK_YAIWES_CABLEADO.md
+  sha256: 9d01a464dfd01ddca80cb36694b84346456c331489f26800c57d104102b90baa
+  bytes: 17258
+  modo: VERBATIM_READ_ONLY
+  adjunto_de: AGENTS.md
+  adjunto_sha256: 5c77e0051a4e8caaee123b5e199980d98c9cd7b144ff246dbb2cccf415048943
+  adjunto_bytes: 35537
+  regla: el bloque NO se edita; una orden nueva del owner genera version con su sha256
+decisiones_owner:
+  fijadas:
+  - {id: D-112, tema: plataformas, regla: "GitHub=code; HuggingFace=espejo/auto-pull minimo (servir + actualizar UI); Vercel=frontend + trigger del watchdog al encender"}
+  - {id: D-113, tema: servidores, regla: "pago 32 GB RAM CPU; cola salta al 85 %; 15 min sin actividad duerme; 1 modelo local por servidor; failover hasta 3 en cola; ON/OFF permanente en la UI"}
+  - {id: D-114, tema: umbral_active, regla: "7 condiciones obligatorias; una prueba superficial NO activa"}
+  - {id: D-115, tema: motor, regla: "research_prepass.py NO autorizado: intacto y pendiente"}
+  - {id: D-116, tema: claves, regla: "ninguna expuesta; no se tocan; solo entorno"}
+  pendientes_de_owner:
+  - {id: O1, tema: semantica_space, estado: ABIERTO, nota: "espejo real vs auto-pull (el boot clona main)"}
+  - {id: O2, tema: watchdog, estado: ABIERTO, nota: "si sigue publicando en main fuera del DAG"}
+  - {id: O3, tema: rotacion_claves, estado: CERRADO_POR_OWNER, nota: "no se tocan"}
+  - {id: O4, tema: motor, estado: CERRADO_POR_OWNER, nota: "no autorizado"}
+  - {id: O5, tema: promocion_activa, estado: CERRADO_POR_OWNER, nota: "umbral de 7 condiciones"}
+plan_cableado:
+  origen: IB-YAIWES-01
+  orden:
+  - {n: 1, fase: recuperacion_forense_historica, salida: "audit/historical_connections.json", job: j3_history + historical_wiring_audit}
+  - {n: 2, fase: auditoria_cableado_actual, salida: "audit/current_connections.json + dependency_graph.json + missing/duplicate/orphan", job: j2_graph}
+  - {n: 3, fase: grafo_ast_dependencias, salida: "audit/dependency_graph.json", job: audit}
+  - {n: 4, fase: registro_central, salida: "connections/wiring_registry.yaml (centro de distribucion)", job: make_registry}
+  - {n: 5, fase: contratos_harness, salida: "handoff/contracts/ + plugin dispatcher", job: audit}
+  - {n: 6, fase: system_prompt_y_motores, salida: "recorrido trazado + sha del prompt", job: audit}
+  - {n: 7, fase: chat_yaiwes_openclaw, salida: "UI preservada + MVP autonomo de OpenClaw", job: audit}
+  - {n: 8, fase: guardianes_y_huerfanos, salida: "audit/orphan_files.json + commit reversible a _quarantine", job: audit}
+  - {n: 9, fase: frontend_y_agentes, salida: "pruebas UI->backend->harness->router->modelo", job: audit}
+  - {n: 10, fase: nvidia_locales_memoria_storage, salida: "evidencia de inferencia real + latencia + ACK", job: audit}
+  - {n: 11, fase: job_test_integral, salida: "audit/runtime_results.json (J01..J13)", job: job_test}
+  - {n: 12, fase: cierre_repo_limpio, salida: "README + bitacora + handoff + arquitectura + repo limpio", job: audit}
+  adaptaciones_al_contrato:
+  - "GitHub Actions PROHIBIDO: las pruebas corren en local o Job HF cpu-upgrade"
+  - "LFS PROHIBIDO"
+  - "sin despliegue nuevo en Vercel o HF sin autorizacion"
+  - "todo job pesado cabe en 1800 s o se trocea en E1..E8"
 parts:
 - id: P1
   objetivo: reconciliar N0 + espejo en modo base (N1)
@@ -197,6 +240,7 @@ handoff:
   # D-108: hash CONGELADO del INPUT_BLOCK (gate j0_preflight 'input_block_sha256_intacto').
   input_block_sha256: 5c4bbb20421a9e674876d69f25fb8aaf9e67112d58a49ce3c3f527024ae83c3a
   next: j6_rewrite
+  input_block_adjunto: IB-YAIWES-01 (kernel/INPUT_BLOCK_YAIWES_CABLEADO.md, sha256 9d01a464…b90baa)
   rollback:
     tag: pre-reorg-20261104-kernel01
     tag_actual: 40c8d591abaa7ff6e008e9e0801dc022a968fc6a
