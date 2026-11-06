@@ -1,16 +1,16 @@
 # CHECKLIST WATCHDOG RIU / OpenClaw / Yaiwes
-Ciclo: 2026-11-06 ~05:10 UTC
+Ciclo: 2026-11-06 ~08:10 UTC
 Health: OK ({"status":"ok","commit":"4722f1dffcf25a2ecf2b63b36fc847fbc922115f","banco_abierto":true,"clave_qwen_presente":false,...})
 MCP salud: OK (status ok, modelos listados, herramientas incluyendo github_leer; proveedores_externos groq:6 nvidia:5 deepseek:0)
 
 Tests /chat/send:
 - groq/openai/gpt-oss-120b: OK (reply pong, harness)
-- groq/qwen/qwen3.8-27b: OK (reply Pong. Nodo operativo...)
+- groq/qwen/qwen3.8-27b: OK (reply Pong. operativo, ¿tarea?)
 - nvidia/z-ai/glm-5.3: BLOQUEADO (HTTP 410 peticion_invalida, credenciales_configuradas)
 
 MCP chat:
-- groq/openai/gpt-oss-120b: OK (texto Pong! The MCP is online...)
-- qwen3.8-max: no re-probado (clave_qwen_presente false)
+- groq/openai/gpt-oss-120b: OK (texto Pong!)
+- groq/qwen/qwen3.8-27b: OK (pong)
 - nvidia: BLOQUEADO (410)
 
 github_leer: OK (lista raíz del repo correctamente, necesita param repo)
