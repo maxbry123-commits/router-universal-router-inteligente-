@@ -45,7 +45,13 @@ def build_cmd(job):
         f"git clone --single-branch --branch {br} --depth 1 --filter=blob:none --sparse https://github.com/{env['GH_REPO']}.git /tmp/repo > /tmp/job.log 2>&1; "
         "echo clone_rc=$? >> /tmp/job.log; "
         "git -C /tmp/repo sparse-checkout set ops connections kernel >> /tmp/job.log 2>&1; echo sparse_rc=$? >> /tmp/job.log; "
+        # D-101: el log del contenedor se escribe a fichero y solo se volcaba AL FINAL, asi que
+        # un job que se colgaba en el clon se consumia su techo de 30 min a ciegas (job
+        # 6aed575d0e0338d1bb80e13a: ERROR 'Job timeout' sin una linea de log). Ahora cada fase
+        # hace tail a stdout y el log se ve en vivo en la API de HF.
+        "echo '--- fase: clon ---' >> /tmp/job.log; tail -n 20 /tmp/job.log; "
         "cd /tmp/repo && python ops/%s.py >> /tmp/job.log 2>&1; echo script_rc=$? >> /tmp/job.log; "
+        "echo '--- fase: script ---' >> /tmp/job.log; tail -n 40 /tmp/job.log; "
         "cat /tmp/job.log; "
         # D-68: el log del contenedor se publica en el Dataset (evidencia durable del job)
         "echo %s | base64 -d > /tmp/up.py; python /tmp/up.py >> /tmp/job.log 2>&1; "

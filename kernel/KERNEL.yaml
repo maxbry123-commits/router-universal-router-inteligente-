@@ -126,6 +126,30 @@ roadmap:
   U1:
     task: unify pattern catalogs (6 vs 5) with its own test
     job: agent
+parts:
+- id: P1
+  objetivo: reconciliar N0 + espejo en modo base (N1)
+  jobs: [j7_mirror]
+  evidencia: 20261104-kernel01/j7_mirror/result.json en PASS + job-evidencia/j7_mirror.log
+  estado: EN_CURSO
+- id: P2
+  objetivo: auditoria previa N2 + reescritura de historial N3
+  jobs: [j8_audit, j6_rewrite]
+  evidencia: result.json PASS de j8_audit (PHASE=pre) y de j6_rewrite con bundle y purga verificados
+  estado: PENDIENTE
+- id: P3
+  objetivo: intercambio de la rama principal con candado N4 + puente central N5
+  jobs: [j6b_swap, bridge]
+  evidencia: main == tag pre-reorg-20261104-kernel01 tras el swap + connections/bridge_report.json
+  estado: PENDIENTE
+- id: P4
+  objetivo: reespejo N6 + auditoria final N7 + cableado N8 + bitacora central N9 + cierre N10
+  jobs: [j7_mirror, j8_audit]
+  evidencia: health del Space con commit == HEAD + result.json PASS de j10_final_audit + connections/wiring_changelog.md + wiring_history.jsonl + README + handoff.next
+  estado: PENDIENTE
+parts_nota: cada parte es un job de HF con perfil cpu-upgrade (32 GB RAM + 8 vCPU) cuyo techo real es
+  de 30 minutos, o bien la misma ejecucion en local (G1 ruta 2); el log del contenedor se vuelca en
+  vivo tras cada fase (D-101) y cada parte deja su evidencia en el Dataset.
 handoff:
   next: j7_mirror
   log:
