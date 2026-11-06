@@ -24,3 +24,17 @@ Estado: **Fase 1 hecha** (carpetas, mapa, enlaces). Nada se movió. Cada fila se
 | LiteLLM, pydantic-settings, vLLM-Router, vLLM-Semantic-Router, RouterArena, gunicorn, python-dotenv | descartados | 3 | ninguno | — |
 
 Fase 6 (backend, requiere autorización expresa): herramientas de memoria y de motores en MCP, permisos y Harness; buzón del proceso.
+
+## Punto de entrada único y registro maestro de cableado (D-112)
+
+| Artefacto | Ruta | Qué es |
+|---|---|---|
+| **Índice de navegación del código** | [`CODE_INDEX.md`](../CODE_INDEX.md) | Las 11 entradas del sistema con enlaces relativos a la **ubicación real** (no copia ni mueve nada) |
+| **Registro maestro de cableado e integraciones (CIWR)** | [`SYSTEM_WIRING_REGISTRY.yaml`](../SYSTEM_WIRING_REGISTRY.yaml) | Centro de distribución: componentes, servicios, conexiones, contratos, healthchecks, fallback, estados y el **umbral de 7 condiciones** para `ACTIVE` |
+| Handoffs por área | [`handoff/docs/`](../handoff/docs/) | FRONTEND · AGENTS · MODELS · MEMORY · HARNESS (el maestro no los copia: los referencia) |
+| Bitácora central de cableado | [`connections/wiring_changelog.md`](../connections/wiring_changelog.md) + [`connections/wiring_history.jsonl`](../connections/wiring_history.jsonl) | Historia de movimientos del cableado (verificada contra el Dataset) |
+| Topología y verificaciones | [`connections/topology.yaml`](../connections/topology.yaml) · [`connections/endpoints.yaml`](../connections/endpoints.yaml) · [`connections/healthchecks.yaml`](../connections/healthchecks.yaml) | Topología, endpoints y cómo se comprueba cada conexión |
+
+Reglas: una conexión no pasa a `ACTIVE` sin las 7 condiciones (autenticación válida, conexión real,
+inferencia ejecutada, respuesta válida, latencia registrada, sin errores críticos y nada superficial).
+Motor `research_prepass.py`: **no autorizado, intacto**. Claves: **intactas, no se tocan**.
