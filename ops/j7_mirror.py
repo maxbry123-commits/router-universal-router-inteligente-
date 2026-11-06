@@ -13,6 +13,25 @@ def _space_stage(sp,token):
             headers={"Authorization":"Bearer "+token})
         with urllib.request.urlopen(req,timeout=60) as r:
             return str((_j.loads(r.read()).get("runtime") or {}).get("stage",""))
+def _tree_bytes_via_api(sha, repo=None):
+    """D-108: suma de 'size' de los blobs del arbol via la API de GitHub, POR SUBARBOLES.
+    Devuelve 0 si algun subarbol viene truncado (no se inventa el dato)."""
+    import urllib.request as _u, json as _j, os as _o
+    repo=repo or _o.environ.get("GH_REPO");tok=_o.environ.get("GH_TOKEN","")
+    def _get(url):
+        r=_u.Request(url,headers={"Authorization":"Bearer "+tok,"User-Agent":"kernel-mirror/1.0"})
+        return _j.loads(_u.urlopen(r,timeout=60).read())
+    try:
+        root=_get(f"https://api.github.com/repos/{repo}/git/trees/{sha}")
+        total=0
+        for e in root.get("tree",[]):
+            if e.get("type")!="tree":continue
+            t=_get(f"https://api.github.com/repos/{repo}/git/trees/{e['sha']}?recursive=1")
+            if t.get("truncated"):return 0     # dato incompleto -> no se reporta
+            total+=sum(x.get("size",0) for x in t.get("tree",[]) if x.get("type")=="blob")
+        return total
+    except Exception:
+        return 0
 def main():
     sp=need("SPACE_REPO");token=need("HF_TOKEN")
     # D-92: `br` se define SIEMPRE. Antes solo existia en el modo ligero -> en el push real
@@ -98,14 +117,20 @@ def main():
                     if path==q or path.startswith(q+"/") or ("/"+q+"/") in path:return True
                 elif path.startswith(p):return True
             return False
-        for line in sh(["git","-C",d,"ls-tree","-r","-l",sha],check=False).stdout.splitlines():
+        # D-108: SIN "-l". Medido: con "-l" git pide el TAMANO de cada blob y en un clon PARCIAL
+        # dispara la descarga perezosa de los 373.420 blobs (packs de 2-3 kB): el job se cuelga
+        # hasta el techo de 30 min. "git ls-tree -r" (sin -l) -> 2,3 s y el mismo conjunto.
+        # El BYTE TOTAL se pide aparte a la API de arbol de GitHub (por subarboles NO truncados).
+        for line in sh(["git","-C",d,"ls-tree","-r",sha],check=False).stdout.splitlines():
             if "\t" not in line:continue
             meta,path=line.split("\t",1);parts=meta.split()
-            if len(parts)<4 or not parts[3].isdigit():continue
+            if len(parts)<3:continue
             if _excluded(path):continue
-            n+=1;sz+=int(parts[3])
+            n+=1
+        sz=_tree_bytes_via_api(sha)
         stage=_space_stage(sp,token)
         check("baseline_only_no_upload",True,f"{n} ficheros, {sz/1e6:.1f} MB (sin subir)")
+        check("baseline_tree_api_not_truncated",sz>0,f"{sz} bytes via API de arbol (0 = subarbol truncado)")
         check("space_RUNNING","RUNNING" in stage,stage)
         finish({"space":sp,"head":sha,"baseline":True,"files":n,"bytes":sz},commit=sha)
     # D-56: el push del mirror se hace por protocolo git al repo del Space.

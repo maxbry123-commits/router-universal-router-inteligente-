@@ -155,7 +155,10 @@ def main():
                 "result": "ok", "checked_at": os.environ.get("RUN_ID", "20261104-kernel01"),
             }
         else:
-            c["status"] = "pending_verificacion" if r["estado"] == "pending_verificacion_full_clone" else "broken"
+            # D-108: 'pending_verificacion' NO es un estado valido del registro
+            # (validos: pending_audit|active|broken) y rompe 'registry_valid' (F04).
+            # Un modulo presente en el arbol pero no materializado es 'pending_audit'.
+            c["status"] = "pending_audit" if r["estado"] == "pending_verificacion_full_clone" else "broken"
             c["verification"] = {"type": "import", "root": r["root"], "module": r["module"],
                                  "path": r["path"], "en_arbol_git": r["en_arbol"],
                                  "result": "pending_full_clone" if r["estado"] == "pending_verificacion_full_clone" else "error",

@@ -86,6 +86,9 @@ def main():
         if extra in os.environ:
             env[extra] = os.environ[extra]
     sec = {"GH_TOKEN": os.environ["GH_TOKEN"], "HF_TOKEN": os.environ["HF_TOKEN"]}
+    # D-108: UNIVERSAL_KEY viaja en SECRETS (no en environment): la sonda MCP del bridge la
+    # necesita y la API de HF no devuelve los valores de 'environment' al leer un job.
+    if os.environ.get("UNIVERSAL_KEY"): sec["UNIVERSAL_KEY"] = os.environ["UNIVERSAL_KEY"]
     name = f"kernel-{job}-{int(time.time())}"
     # D-100: timeout explicito del Job de HF (R6 del INPUT BLOCK) + waiter local que lo supera.
     job_timeout = int(os.environ.get("HF_JOB_TIMEOUT", "3600"))

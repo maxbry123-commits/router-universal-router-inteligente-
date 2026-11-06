@@ -22,7 +22,9 @@ def create(name,docker_image="python:3.12",command=None,secrets=None,environment
             cmd=["bash","-lc",command]
     body={"name":name,"dockerImage":docker_image,"flavor":flavor or FLAVOR,"environment":env,"secrets":secrets or {}}
     # D-100: timeout explicito del Job de HF (R6 del INPUT BLOCK: --timeout en cada job hf).
-    if timeout: body["timeout"]=int(timeout)
+    # D-108: la API de HF NO conoce "timeout": el campo es "timeoutSeconds" (el "timeout" se
+    # descartaba en silencio y el job moria siempre a los 1.800 s, el tope por defecto).
+    if timeout: body["timeoutSeconds"]=int(timeout)
     if cmd: body["command"]=cmd
     req=urllib.request.Request(API,data=json.dumps(body).encode(),
         headers={"Authorization":"Bearer "+os.environ["HF_TOKEN"],"Content-Type":"application/json"})

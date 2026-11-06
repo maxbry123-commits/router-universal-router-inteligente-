@@ -186,6 +186,8 @@ parts_nota: cada parte es un job de HF con perfil cpu-upgrade (32 GB RAM + 8 vCP
   de 30 minutos, o bien la misma ejecucion en local (G1 ruta 2); el log del contenedor se vuelca en
   vivo tras cada fase (D-101) y cada parte deja su evidencia en el Dataset.
 handoff:
+  # D-108: hash CONGELADO del INPUT_BLOCK (gate j0_preflight 'input_block_sha256_intacto').
+  input_block_sha256: 5c4bbb20421a9e674876d69f25fb8aaf9e67112d58a49ce3c3f527024ae83c3a
   next: j8_audit
   log:
   - job: j0_preflight

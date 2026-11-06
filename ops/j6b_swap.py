@@ -27,8 +27,19 @@ def _lsremote(d, ref):
 
 
 def main():
-    mode = os.environ.get("MODE", "swap")
+    mode = os.environ.get("MODE", "")
     repo = need("GH_REPO")
+    # D-108: sin MODE explicito el job NO muta ninguna ref (fail-closed). Antes el valor por
+    # defecto era "swap": si MODE noviajaba al contenedor, el job empuja a main sin pedirlo.
+    # "swap" exige ademas SWAP_SOURCE explicito y el gate de lease.
+    if mode not in ("swap","rollback"):
+        check("mode_explicit",False,f"MODE={mode!r} (validos: swap|rollback)")
+        finish({"flag":"MODE_INVALID","mode":mode})
+        return
+    if mode=="swap" and not os.environ.get("SWAP_SOURCE"):
+        check("swap_source_explicit",False,"SWAP_SOURCE obligatorio en modo swap")
+        finish({"flag":"MODE_INVALID","mode":mode})
+        return
     j6 = json.load(open(dl("j6_rewrite", "result.json")))
     check("j6_rewrite_PASS", j6.get("status") == "PASS", j6.get("commit"))
     if mode == "swap" and not all(c["ok"] for c in CHECKS):

@@ -10,7 +10,8 @@ def main():
     r=sh(["git","ls-remote","--heads",f"https://github.com/{os.environ['GH_REPO']}.git",br],check=False)
     check("remote_and_branch",r.returncode==0 and br in r.stdout,f"rc={r.returncode}")
     ops=pathlib.Path(__file__).parent
-    miss=[f for f in ["common","j1_inventory","j2_graph","j3_history","j4_plan","j5_apply","j6_rewrite","j7_mirror","j8_audit","wiring_check","kernel"] if not (ops/f"{f}.py").exists()]
+    # D-108: los jobs del DAG v3 tambien deben estar en la rama.
+    miss=[f for f in ["common","j1_inventory","j2_graph","j3_history","j4_plan","j5_apply","j6_rewrite","j6b_swap","j7_mirror","j8_audit","j9_remirror","j10_final_audit","bridge","wiring_check","kernel"] if not (ops/f"{f}.py").exists()]
     check("ops_scripts_present_on_branch",not miss,miss)
     # D-31: el bloque de entrada esta CONGELADO (freeze/VERBATIM). Se valida su SHA-256
     # contra el que registra el kernel (handoff.input_block_sha256): si cambia, el job falla.
