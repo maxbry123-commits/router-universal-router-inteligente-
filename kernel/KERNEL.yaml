@@ -126,6 +126,41 @@ roadmap:
   U1:
     task: unify pattern catalogs (6 vs 5) with its own test
     job: agent
+parts_8_fallback:
+- id: E1
+  objetivo: reconciliar N0 y medir el clon del espejo (preparacion)
+  jobs: []
+  evidencia: handoff reconstruido + medida real del clon ligero (objects, MiB, packs, segundos)
+- id: E2
+  objetivo: espejo en modo base (N1)
+  jobs: [j7_mirror]
+  evidencia: 20261104-kernel01/j7_mirror/result.json en PASS
+- id: E3
+  objetivo: auditoria previa (N2)
+  jobs: [j8_audit]
+  evidencia: result.json PASS de j8_audit con PHASE=pre
+- id: E4
+  objetivo: "reescritura de historial (N3) en dos tiempos: plan + bundle y push de la rama limpia"
+  jobs: [j6_rewrite]
+  evidencia: result.json PASS + bundle verificado + purgado ausente del historial
+- id: E5
+  objetivo: candado e intercambio de la rama principal (N4)
+  jobs: [j6b_swap]
+  evidencia: main == tag tras el rollback previo y swap con --force-with-lease
+- id: E6
+  objetivo: puente central (N5)
+  jobs: [bridge]
+  evidencia: connections/bridge_report.json con snapshot, historial 30 d, comparacion y sondas
+- id: E7
+  objetivo: reespejo al Space (N6) y auditoria final (N7)
+  jobs: [j7_mirror, j8_audit]
+  evidencia: health del Space con commit == HEAD + result.json PASS de j8_audit PHASE=post y j10_final_audit
+- id: E8
+  objetivo: cableado R7/R9/R10 (N8), bitacora e informe central (N9) y cierre (N10)
+  jobs: []
+  evidencia: conexiones con sonda real + wiring_changelog.md + wiring_history.jsonl + README + handoff.next + progress_pct 100 * CLOSED/11
+parts_8_nota: se usa si una parte vuelve a fallar; cada trozo corre como un job de HF con techo de
+  30 min o en local, y deja su propia evidencia en el Dataset.
 parts:
 - id: P1
   objetivo: reconciliar N0 + espejo en modo base (N1)
