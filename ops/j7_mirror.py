@@ -28,12 +28,21 @@ def main():
         # un scratch puede dejar ficheros .nfs* abiertos y el clon siguiente fallaria con
         # "destination path already exists".
         d=os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"sl-%d"%os.getpid())
-        if os.path.isdir(d): _sh.rmtree(d,ignore_errors=True)
-        # El token va SOLO en la cabecera extraheader que genera common.genv()
-        # (nunca en argv, URL ni logs). Nada de .decode() sobre texto.
-        env3=genv()
-        sh(["git","clone","--single-branch","--no-tags","--filter=blob:none","--no-checkout",
-            "--depth","1","--branch",br,f"https://github.com/{need('GH_REPO')}.git",d],env=env3)
+        reuse=os.environ.get("REUSE_CLONE","").strip()
+        if reuse and os.path.isdir(os.path.join(reuse,".git")):
+            # D-104: REUSE_CLONE reutiliza un clon YA materializado (el del sandbox, 373.422
+            # ficheros). Motivo: el clon ligero en frio se cuelga con este repo (medido: 45.577
+            # objetos / 17,85 MiB y 7 minutos sin crecer) porque transfiere muchos packs
+            # pequenos. Reutilizar da el MISMO arbol git, evita un segundo clon pesado (G3) y
+            # hace el job idempotente: si ya hay clon, se usa.
+            d=reuse
+        else:
+            if os.path.isdir(d): _sh.rmtree(d,ignore_errors=True)
+            # El token va SOLO en la cabecera extraheader que genera common.genv()
+            # (nunca en argv, URL ni logs). Nada de .decode() sobre texto.
+            env3=genv()
+            sh(["git","clone","--single-branch","--no-tags","--filter=blob:none","--no-checkout",
+                "--depth","1","--branch",br,f"https://github.com/{need('GH_REPO')}.git",d],env=env3)
         sha=head(d)
         import yaml as _yaml
         # D-76: en el clon ligero (filtrado) la lectura de blobs lanza la descarga del blob y
@@ -43,7 +52,8 @@ def main():
         # ("failed to unpack tree object"), asi que el registro se lee del fichero ya
         # materializado en el repositorio local (main; la rama solo añade movimientos de
         # ficheros, no toca el registro).
-        reg_txt=open("connections/registry.yaml",errors="ignore").read()
+        reg_p=os.path.join(d,"connections","registry.yaml")
+        reg_txt=open(reg_p if os.path.exists(reg_p) else "connections/registry.yaml",errors="ignore").read()
         reg=_yaml.safe_load(reg_txt) or {}
         conns=reg.get("connections",[])
         need_f=("id","name","source","target","protocol","direction","endpoint","status","dependencies",
