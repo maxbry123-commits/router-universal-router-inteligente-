@@ -15,7 +15,7 @@ HF_TOKEN = os.environ["HF_TOKEN"]
 
 MAX_COMMITS = int(os.getenv("MAX_COMMITS", "500"))
 
-WORK = Path("/tmp/wiring-audit")
+WORK = Path(os.environ.get("WORK_DIR","/workspace/work"))/"wiring-audit"
 SRC = WORK / "source"
 OUT = WORK / "output"
 

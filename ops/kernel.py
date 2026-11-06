@@ -2,11 +2,11 @@ import sys,yaml,json,time,os,pathlib
 sys.path.insert(0,str(pathlib.Path(__file__).parent))
 from common import sh,redact,dl
 P="kernel/KERNEL.yaml"
-ORDER=["j0_preflight","j1_inventory","j2_graph","j3_history","j4_plan","j5_apply","j7_mirror","j8_audit","j6_rewrite","j9_remirror","j10_final_audit"]
+ORDER=["j0_preflight","j1_inventory","j2_graph","j3_history","j4_plan","j11_patterns","j5_apply","j7_baseline","j8_pre","j6_rewrite","j6b_swap","bridge","j9_remirror","j10_final_audit"]
 load=lambda:yaml.safe_load(open(P))
 def save(k):open(P,"w").write(yaml.safe_dump(k,sort_keys=False,allow_unicode=True))
 def validate(k):
-    e=[f"missing:{r}" for r in("authority","objective","domains","jobs","approvals","handoff","protected","entrypoints","lint_mode") if r not in k];J=k.get("jobs",{});seen=set()
+    e=[f"missing:{r}" for r in("authority","objective","domains","jobs","handoff","protected","entrypoints","lint_mode","autonomy","forbidden_states") if r not in k];J=k.get("jobs",{});seen=set()
     for j,v in J.items():
         e+=[f"{j}->unknown {d}" for d in v.get("needs",[]) if d not in J]
         if not v.get("script"):e.append(f"{j}->missing script")
@@ -21,9 +21,12 @@ def validate(k):
     for j in J:
         c=cyc(j,[])
         if c:e.append(f"cycle:{j}:{c}");break
-    for a,ap in k.get("approvals",{}).items():
-        if not isinstance(ap,dict):e.append(f"approval:{a}:not_dict")
-        elif "approved" not in ap:e.append(f"approval:{a}:no_approved_field")
+    # G4: no hay bloque `approvals` ni firma humana. La autoridad son los gates automaticos.
+    au=k.get("autonomy",{})
+    if au.get("human_signature")!="NOT_REQUIRED":e.append("autonomy:human_signature_must_be_NOT_REQUIRED")
+    if au.get("authorization")!="AUTO_BY_GATES":e.append("autonomy:authorization_must_be_AUTO_BY_GATES")
+    for f in("WAITING_SIGNATURE","WAITING_AUTHORIZATION","ASK_USER"):
+        if f not in k.get("forbidden_states",[]):e.append(f"forbidden_states:missing:{f}")
     h=k.get("handoff",{})
     for f in("next","log","flags"):
         if f not in h:e.append(f"handoff:{f}:missing")

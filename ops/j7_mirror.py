@@ -24,11 +24,14 @@ def main():
         # en modo ligero el clon es `--filter=blob:none --no-checkout` (arbol sin working tree) y el
         # gate previo se evalua sobre el YAML del registro (el predicado exacto de wiring_check).
         import shutil as _sh
-        d="/tmp/sl"
+        # G2: scratch en WORK_DIR (NAS). D-97: dir UNICO por ejecucion: en NFS el borrado de
+        # un scratch puede dejar ficheros .nfs* abiertos y el clon siguiente fallaria con
+        # "destination path already exists".
+        d=os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"sl-%d"%os.getpid())
         if os.path.isdir(d): _sh.rmtree(d,ignore_errors=True)
-        env3=dict(os.environ);env3.update(GIT_TERMINAL_PROMPT="0",GIT_CONFIG_COUNT="1",
-            GIT_CONFIG_KEY_0="http.https://github.com/.extraheader",
-            GIT_CONFIG_VALUE_0=f"AUTHORIZATION: basic {base64.b64encode(('x-access-token:'+need('GH_TOKEN')).encode()).decode()}")
+        # El token va SOLO en la cabecera extraheader que genera common.genv()
+        # (nunca en argv, URL ni logs). Nada de .decode() sobre texto.
+        env3=genv()
         sh(["git","clone","--single-branch","--no-tags","--filter=blob:none","--no-checkout",
             "--depth","1","--branch",br,f"https://github.com/{need('GH_REPO')}.git",d],env=env3)
         sha=head(d)
@@ -50,7 +53,7 @@ def main():
              or (x["status"]=="active" and not x.get("evidence"))]
         check("registry_valid",not bad,bad[:5] or "")
     else:
-        d=clone("/tmp/s");sha=head(d)
+        d=clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"s"));sha=head(d)
         r=wc(d);check("wiring_check_before_mirror",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     if not all(c["ok"] for c in CHECKS):finish(commit=sha)
     IGN=[".git/**","_quarantine/**","**/node_modules/**","**/__pycache__/**",
@@ -124,12 +127,27 @@ def main():
     rem=sh(["git","-C",d]+cred+["rev-parse","FETCH_HEAD"],env=env2,check=False).stdout.strip()
     # los ficheros PROPIOS del Space (Dockerfile, boot.sh, proxy.py, .gitattributes...) se
     # recuperan del commit remoto y se meten en el indice: el push es de arbol completo.
-    own=[]
-    if rem:
-        for line in sh(["git","-C",d,"ls-tree",rem],check=False).stdout.splitlines():
-            meta,path=line.split("\t",1)
-            mode,typ,sha_blob=meta.split()          # D-80: NO reutilizar `sha` (es el sha de la rama)
-            if typ=="blob" and path not in own: own.append(path)
+    # D-98: el listado de ficheros PROPIOS del Space se hace con la API JSON de HF
+    # (GET /api/spaces/<ns>/<name>/tree/main?recursive=true). NUNCA `.decode()` sobre texto:
+    # la API devuelve JSON (str) y el fallo "'str' object has no attribute 'decode'" era
+    # exactamente ese camino. Si la API no responde, se cae al arbol git como red de seguridad.
+    own=[];own_oid={}
+    try:
+        req=urllib.request.Request(f"https://huggingface.co/api/spaces/{sp}/tree/main?recursive=true",
+            headers={"Authorization":"Bearer "+need("HF_TOKEN")})
+        with urllib.request.urlopen(req,timeout=60) as r: tree=json.loads(r.read())
+        for e in tree:
+            p=e.get("path")
+            if e.get("type")=="file" and p and p not in own:
+                own.append(p);own_oid[p]=e.get("oid")
+    except Exception as ex:
+        print("space_tree_api_failed",redact(str(ex))[:120])
+        if rem:
+            for line in sh(["git","-C",d,"ls-tree",rem],check=False).stdout.splitlines():
+                meta,path=line.split("\t",1)
+                mode,typ,sha_blob=meta.split()
+                if typ=="blob" and path not in own:
+                    own.append(path);own_oid[path]=sha_blob
     # D-96: los blobs PROPIOS del Space no estan en el clon local (el fetch va con
     # --filter=blob:none): sin ellos, `write-tree`/`push` no tienen los objetos que el commit
     # referencia. Se bajan por REST (los ficheros propios del Space son 8 y pequenos) y se
@@ -137,6 +155,7 @@ def main():
     # (sha1("blob <len>\0" + contenido)) y el push se completa.
     def _put_space_file(rel,meta):
         try:
+            if len(meta)<3:meta=["100644","blob",None]
             req=urllib.request.Request(f"https://huggingface.co/spaces/{sp}/resolve/main/{rel}",
                 headers={"Authorization":"Bearer "+need("HF_TOKEN")})
             with urllib.request.urlopen(req,timeout=60) as r: content=r.read()
@@ -146,12 +165,15 @@ def main():
             sh(["git","-C",d,"update-index","--add","--cacheinfo",meta[0],blob or meta[2],rel],check=False)
             return blob or meta[2]
         except Exception:
-            sh(["git","-C",d,"update-index","--add","--cacheinfo",meta[0],meta[2],rel],check=False)
+            # El blob propio del Space no se pudo descargar: se conserva el OID del API JSON
+            # (el objeto puede no estar en el clon filtrado -> el push lo rechazara, pero no
+            # se corrompe el indice con un OID inventado).
+            if meta[2]:
+                sh(["git","-C",d,"update-index","--add","--cacheinfo",meta[0],meta[2],rel],check=False)
             return meta[2]
     for rel in own:
-        line=sh(["git","-C",d,"ls-tree",rem,rel],check=False).stdout.strip()
-        if not line: continue
-        meta=line.split()
+        line=sh(["git","-C",d,"ls-tree",rem,rel],check=False).stdout.strip() if rem else ""
+        meta=line.split() if line else ["100644","blob",own_oid.get(rel)]
         _put_space_file(rel,meta)
     check("space_own_files_preserved",bool(own),f"{len(own)} ficheros propios del Space: {own[:8]}")
     # D-95: en modo ligero el clon es `--no-checkout`: materializar el working tree descargaria

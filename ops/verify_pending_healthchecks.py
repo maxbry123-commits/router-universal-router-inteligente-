@@ -6,11 +6,11 @@ cadena para los lotes) y, si responden, pasan a `active` con la evidencia de la 
 
 Uso: python ops/verify_pending_healthchecks.py <ruta_clon_completo>
 """
-import pathlib, subprocess, sys
+import os, pathlib, subprocess, sys
 import yaml
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-CLONE = sys.argv[1] if len(sys.argv) > 1 else "/tmp/r2"
+CLONE = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"r2")
 
 PEND = {
     "CON-007": ("chat-router", "plugins.router_api_cliente"),

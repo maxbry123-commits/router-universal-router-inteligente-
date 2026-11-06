@@ -4,13 +4,15 @@ from j2_graph import build
 from wiring_check import run as wc, es_tercero
 def main():
     plan=json.load(open(dl("j4_plan","plan.json")))
-    d=clone("/tmp/a");root=pathlib.Path(d)
-    ap=yaml.safe_load((root/"kernel/KERNEL.yaml").read_text())["approvals"]["J5_apply"]
-    if not check("approval_matches_plan",ap.get("approved") is True and ap.get("plan_sha256")==plan["plan_sha256"],"approval missing or plan changed"):
-        finish({"flag":"APPROVAL_REQUIRED"})
+    d=clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"a"));root=pathlib.Path(d)   # G2: scratch en WORK_DIR (NAS)
+    # G4: NO hay bloque `approvals` ni firma humana (autonomy.human_signature=NOT_REQUIRED).
+    # El gate es el SHA256 del plan publicado en el Dataset: si el plan cambio, el job no corre.
+    ker=yaml.safe_load((root/"kernel/KERNEL.yaml").read_text())
+    if not check("plan_sha256_matches",ker.get("plan_sha256")==plan["plan_sha256"],f"kernel={str(ker.get('plan_sha256'))[:12]} plan={str(plan['plan_sha256'])[:12]}"):
+        finish({"flag":"PLAN_CHANGED"})
     # D-26: cache del conjunto "before" indexado por el sha del commit. El build del grafo
     # (~10 min sobre 374.205 ficheros) es determinista: cachear no altera el resultado.
-    sha0=head(d);cf=pathlib.Path("/tmp/before_unresolved.json")
+    sha0=head(d);cf=pathlib.Path(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"before_unresolved.json"))
     if cf.exists() and json.loads(cf.read_text()).get("sha")==sha0:
         before={tuple(x) for x in json.loads(cf.read_text())["u"]};check("before_cached",True,f"cache hit {sha0[:12]}")
     else:

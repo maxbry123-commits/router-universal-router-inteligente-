@@ -4,7 +4,7 @@ def main():
     inv=list(csv.DictReader(open(dl("j1_inventory","inventory.csv"))))
     g=json.load(open(dl("j2_graph","graph.json")))
     touched=set(open(dl("j3_history","touched.txt")).read().split("\n"))
-    d=clone("/tmp/p");kp=pathlib.Path(d)/"kernel/KERNEL.yaml"
+    d=clone(wd("p"));kp=pathlib.Path(d)/"kernel/KERNEL.yaml"
     k=yaml.safe_load(kp.read_text()) if kp.exists() else {}
     prot=k.get("protected",[]);prot_f=lambda p:any(fnmatch.fnmatch(p,x) for x in prot)
     inb=collections.Counter(b for a,b in g["edges"]);ent=set(g["entrypoints"]);dyn=g["dynamic"]
@@ -18,14 +18,14 @@ def main():
     pats=cand[:int(os.environ.get("MAX_GREP","3000"))]
     refs=collections.defaultdict(set)
     if pats:
-        pf="/tmp/j4_stems.txt"
+        pf=wd("j4_stems.txt")
         pathlib.Path(pf).write_text("\n".join(sorted({pathlib.Path(p).stem for p in pats if pathlib.Path(p).stem}))+"\n")
         # fase 1: ficheros que contienen algun stem (salida corta, sin -o)
         r1=sh(["git","grep","-I","-l","-F","-f",pf,"--","."],cwd=d,check=False)
         mfiles=[x for x in r1.stdout.splitlines() if x]
         # fase 2: solo sobre esos ficheros, con -o para saber que stem aparece donde
         if mfiles:
-            ff="/tmp/j4_files.txt"
+            ff=wd("j4_files.txt")
             pathlib.Path(ff).write_text("\n".join(mfiles)+"\n")
             r2=sh(["git","grep","-I","-o","-F","-f",pf,"--pathspec-from-file="+ff],cwd=d,check=False)
             for line in r2.stdout.splitlines():

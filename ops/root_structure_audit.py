@@ -12,7 +12,7 @@ REPORT_REPO = os.environ["HF_REPORT_REPO"]
 GH_TOKEN = os.environ["GH_TOKEN"]
 HF_TOKEN = os.environ["HF_TOKEN"]
 
-WORK = Path("/tmp/root-audit")
+WORK = Path(os.environ.get("WORK_DIR","/workspace/work"))/"root-audit"
 SRC = WORK / "source"
 OUT = WORK / "output"
 

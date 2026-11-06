@@ -3,7 +3,7 @@ import shutil,pathlib
 def main():
     for k in ["GH_REPO","GH_BRANCH","DATASET_REPO","HF_TOKEN","RUN_ID"]:check(f"env:{k}",bool(os.environ.get(k)))
     check("GH_TOKEN_mode",True,"set" if os.environ.get("GH_TOKEN") else "absent: public repo only")
-    free=shutil.disk_usage("/tmp").free/2**30
+    free=shutil.disk_usage(os.environ.get("WORK_DIR","/workspace/work")).free/2**30   # G2/G3: el disco que se mide es el del scratch real
     check("disk_free_gb",free>=float(os.environ.get("MIN_FREE_GB","30")),f"{free:.1f}GB")
     v=sh(["git","--version"]).stdout.split()[2];check("git>=2.31",tuple(int(x) for x in v.split(".")[:2])>=(2,31),v)
     br=os.environ.get("TARGET_BRANCH") or os.environ.get("GH_BRANCH")

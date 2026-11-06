@@ -4,7 +4,7 @@ import pathlib,re,sys
 sys.path.insert(0,str(pathlib.Path(__file__).parent))
 from patterns import PATTERNS,COMPILED,scan_texts
 def main():
-    d=clone("/tmp/pat",blobless=True)
+    d=clone(wd("pat"),blobless=True)
     items=[]
     for p in sh(["git","ls-files","-z"],cwd=d).stdout.split("\0"):
         if not p:continue

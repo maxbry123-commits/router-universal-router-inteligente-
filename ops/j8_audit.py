@@ -5,7 +5,7 @@ def main():
     for j in jobs:
         try:r=json.load(open(dl(j,"result.json")));res[j]=r;check(f"{j}_PASS",r["status"]=="PASS",r.get("commit"))
         except Exception as e:check(f"{j}_result_found",False,str(e)[:100])
-    d=clone("/tmp/au");w=wc(d)
+    d=clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"au"));w=wc(d)   # G2: scratch en WORK_DIR (NAS)
     check("wiring_check_on_target",w["ok"],[c["name"] for c in w["checks"] if not c["ok"]])
     (OUT/"audit.json").write_text(json.dumps({"phase":os.environ.get("PHASE","pre"),"audited_commit":head(d),
         "per_job":{j:r["status"] for j,r in res.items()},"wiring":w},indent=1))

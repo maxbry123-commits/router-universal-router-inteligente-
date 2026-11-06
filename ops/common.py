@@ -1,7 +1,10 @@
 import os,sys,json,time,base64,hashlib,pathlib,subprocess,traceback,shutil
 RUN_ID=os.environ.get("RUN_ID",time.strftime("%Y%m%d-%H%M%S"))
 JOB=os.environ.get("JOB_NAME") or pathlib.Path(sys.argv[0]).stem
-OUT=pathlib.Path(os.environ.get("OUT_DIR",f"/tmp/out/{JOB}"));OUT.mkdir(parents=True,exist_ok=True)
+WORK=os.environ.get("WORK_DIR","/workspace/work")
+def wd(*p):return os.path.join(WORK,*p)
+OUT=pathlib.Path(os.environ.get("OUT_DIR",wd("out",JOB)));OUT.mkdir(parents=True,exist_ok=True)
+_CLONES=[]
 CHECKS=[]
 def redact(s):
     t=os.environ.get("GH_TOKEN");return s.replace(t,"***") if t and s else (s or "")
@@ -37,13 +40,16 @@ def clone(dest,depth=1,since=None,blobless=False,branch=None):
     # Si el destino ya es un repo git se reutiliza (fetch + reset); si existe y no es
     # repo es scratch y se regenera. Evita el rc=128 "destination path already exists"
     # que tumbaba j4_plan.
+    _CLONES.append(dest)
     if os.path.isdir(os.path.join(dest,".git")):
         sh(["git","-C",dest,"fetch","--depth","1","--no-tags","origin",br],check=False)
         sh(["git","-C",dest,"checkout","-B",br,"FETCH_HEAD"],check=False)
         sh(["git","-C",dest,"reset","--hard","FETCH_HEAD"],check=False)
         return dest
-    if os.path.exists(dest):
-        shutil.rmtree(dest,ignore_errors=True)
+    # D-97/G3: en NFS el borrado puede fallar (ficheros .nfs* abiertos). Se intenta borrar y,
+    # si sigue existiendo, se usa un destino UNICO (nunca /tmp, nunca dos clones a la vez).
+    shutil.rmtree(dest,ignore_errors=True)
+    if os.path.exists(dest):dest=f"{dest}-{os.getpid()}"
     sh(c+[f"https://github.com/{repo}.git",dest]);return dest
 def sha256(p):
     h=hashlib.sha256()
@@ -93,7 +99,13 @@ def finish(extra=None,commit=None):
                 _ds_upload_fallback(OUT,r,t)   # D-91: REST commit API (mismo repo, mismos paths)
     except Exception as e:print("upload_failed",redact(str(e)))
     print(json.dumps({"job":JOB,"status":status,"failed":[c["name"] for c in CHECKS if not c["ok"]]}))
+    cleanup()
     sys.exit(0 if status=="PASS" else 1)
+def cleanup():
+    # G3: el clon de este job se borra SIEMPRE (tambien en fallo). Sin esto el scratch
+    # acumula clones de 7 GB y el siguiente job falla por disco/rc=128.
+    for d in list(_CLONES):
+        shutil.rmtree(d,ignore_errors=True)
 def run(main):
     try:main()
     except Exception as e:

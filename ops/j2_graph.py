@@ -72,7 +72,7 @@ def build(root):
     ent.update(p for p in files if pathlib.PurePosixPath(p).name in("main.py","app.py","index.html","server.js","shell.html","shell.js","Dockerfile","vercel.json","package.json"))
     return {"nodes":len(files),"edges":sorted(map(list,edges)),"unresolved":unres,"dynamic":dyn,"entrypoints":sorted(ent),"abs_refs":absrefs}
 def main():
-    d=clone("/tmp/g");g=build(d)
+    d=clone(wd("g"));g=build(d)
     (OUT/"graph.json").write_text(json.dumps(g))
     (OUT/"baseline_unresolved.json").write_text(json.dumps(g["unresolved"]))  # commit to connections/ after review
     check("graph_built",len(g["edges"])>0,len(g["edges"]))

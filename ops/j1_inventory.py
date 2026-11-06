@@ -12,7 +12,7 @@ def cls(p,sz):
     if ext in CONF:return "config"
     return "other_big" if sz>1<<20 else "other"
 def main():
-    d=clone("/tmp/r");root=pathlib.Path(d)
+    d=clone(wd("r"));root=pathlib.Path(d)
     rows=[];low=collections.defaultdict(list);cnt=collections.Counter();byt=collections.Counter()
     hashes=collections.defaultdict(list);odd=[];sym=[]
     for p in sh(["git","ls-files","-z"],cwd=d).stdout.split("\0"):

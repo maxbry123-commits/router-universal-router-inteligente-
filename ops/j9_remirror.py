@@ -9,7 +9,7 @@ from wiring_check import run as wc
 def main():
     from huggingface_hub import HfApi
     sp=need("SPACE_REPO");api=HfApi(token=need("HF_TOKEN"))
-    d=clone("/tmp/mirror9");sha=head(d)
+    d=clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"mirror9"));sha=head(d)   # G2: scratch en WORK_DIR (NAS)
     r=wc(d);check("wiring_check_before_remirror",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     if not all(c["ok"] for c in CHECKS):finish(commit=sha)
     IGN=[".git/**","_quarantine/**","**/node_modules/**","**/__pycache__/**",

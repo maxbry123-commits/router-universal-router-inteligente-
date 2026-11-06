@@ -132,19 +132,19 @@
     "[N4_execute][write][ops/root_structure_audit.py = L360-500 verbatim sha256 9c87f61c][commit 37b4723e5e read-back MATCH][EXECUTING]",
     "[N4_execute][write][ops/connectivity_job.py = L615-747 verbatim sha256 351c24a5][commit 8799732dc1 read-back MATCH][EXECUTING]",
     "[N4_execute][write][ops/wiring_audit_runner.py adaptador transporte 20673B sha256 affb46dd][commit a6bcec4402 read-back MATCH][EXECUTING]",
-    "[N4_execute][hf_dataset][COMAND-CENTER-1/router-universal-router-inteligente-auditoria PRIVADO][guia L525][EXECUTING]",
+    "[N4_execute][hf_dataset][COMAND-CENTER-1/router-universal-router-inteligente-auditoria][visible=public segun API][guia L525][EXECUTING]",
     "[N4_execute][hf_job][JOB wiring 6aeb13aa0e0338d1bb7fba2e RUNNING secrets HF_TOKEN+RIU_ROUTER_API_KEY][ejecutando][EXECUTING]",
     "[N4_execute][hf_job][JOB root 6aeb13aa0e0338d1bb7fba30 RUNNING][ejecutando][EXECUTING]"
   ],
   "flags": [
     {
       "task": "A2",
-      "cause": "repo canonico privado + sin secret GH_TOKEN en la cuenta HF (guia L537 lo exige para clonar)",
+      "cause": "CORREGIDO 2026-11-06: el repo canonico es PUBLICO (private=false, visibility=public) y ${GH_TOKEN} EXISTE en el entorno; la guia L537 era obsoleta. La clonacion se hace con cabecera GIT_CONFIG_* extraheader (token solo en entorno).",
       "routes_tried": [
-        "git clone con GH_TOKEN: no hay PAT",
+        "git clone con GH_TOKEN: ADOPTADO - ${GH_TOKEN} existe (PAGADO 2026-11-06)",
         "espejo publico abc1tienda-web: verificado otro linaje, NO sirve",
         "bucket HF con codigo actual: sin historial git",
-        "API GitHub via Router RIU: ADOPTADA"
+        "API GitHub via Router RIU: ADOPTADA (sigue siendo la via sancionada)"
       ],
       "proposal": "desviacion D1-D4 declarada en cada artefacto; adaptador etiquetado y con metricas de cobertura por commit"
     },
@@ -208,11 +208,11 @@
     {
       "keywords": [
         "hf jobs api schema",
-        "hf dataset privado informes",
+        "hf dataset informes auditoria",
         "git archaeology ramas"
       ],
       "date": "2026-11-04",
-      "chosen": "POST /api/jobs/{ns} con flavor + secrets(record) + environment; Dataset privado para persistir informes",
+      "chosen": "POST /api/jobs/{ns} con flavor + secrets(record) + environment; Dataset COMAND-CENTER-1/router-universal-router-inteligente-auditoria para persistir informes",
       "sources": [
         "https://huggingface.co/api/jobs/COMAND-CENTER-1",
         "https://huggingface.co/api/datasets/COMAND-CENTER-1/yaiwes-hf-memoria",
@@ -223,7 +223,7 @@
   ],
   "progress_pct": 45,
   "authorized_deploy": [
-    "huggingface_jobs:audit-only (JOB 1 + JOB 2 de la guia, L147/L352; dataset de informes privado L525) - autorizacion explicita del owner en chat 2026-11-04: 'todo lo vas hacer con los job'"
+    "huggingface_jobs:audit-only (JOB 1 + JOB 2 de la guia, L147/L352; dataset de informes COMAND-CENTER-1/router-universal-router-inteligente-auditoria) - autorizacion explicita del owner en chat 2026-11-04: 'todo lo vas hacer con los job'"
   ],
   "evidence": [
     {
@@ -350,7 +350,7 @@ Leer el skill canónico, el código fuente y el historial de commits de los moto
 - **G-MOTOR-02 (documental, PENDIENTE)**: el `MOTOR-CODE-LOCK.json` de `agentes` lista `canonical_source` en la raiz `fromtend` y declara `motor_5_zip_root.py`; la raiz `router-universal-router-inteligente-` de `frontend` NO tiene `motor_5_zip_root.py` en su allowlist de skill (7 archivos) aunque su MOTORES_VERSION.json declara origen `router-universal-router-inteligente-` commit `c883ccea4701efb1ad9b7e53908c6608c7c347ea`.
 - **G-MCP-01 (RESUELTO)**: el Space `claude-github-mcp-backup` estaba en pausa (503). Reiniciado via API HF; el MCP del Router RIU quedo operativo y es la via sancionada para GitHub (14+1 tools: `github_leer`, `github_escribir`, `github_api`, `archivos`, `memoria`, `pendientes`, `salud`...).
 - **G-MCP-02 (limitacion conocida)**: `github_api` del Router trunca a 12000 B exactos y **ignora el filtro `path`** de `/commits`. `github_leer` si entrega el archivo completo. Pickaxe `/search/commits?q=` funciona y es la via para el historial.
-- **G-MCP-03 (ENV)**: `git clone` del repo canonico es privado y no hay `GITHUB_TOKEN` en la cuenta HF -> solo lectura por API del Router.
+- **G-MCP-03 (ENV) — RESUELTO 2026-11-06**: la nota original ("el repo canonico es privado y no hay `GITHUB_TOKEN`") era FALSA. Hechos verificados: `maxbry123-commits/router-universal-router-inteligente-` es PUBLICO (`private=false`, `visibility=public`) y `${GH_TOKEN}` existe en el entorno. El clon usa cabecera `GIT_CONFIG_*` extraheader (token solo en entorno, nunca en URL/argv/logs); la API del Router RIU sigue siendo la via sancionada alternativa.
 
 ### Como montar los motores (procedimiento aprendido)
 1. Leer el SKILL completo de la raiz canonica (`frontend`, rama `main`).

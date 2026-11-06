@@ -33,7 +33,7 @@ def main():
     check("j6_rewrite_PASS", j6.get("status") == "PASS", j6.get("commit"))
     if mode == "swap" and not all(c["ok"] for c in CHECKS):
         finish({"flag": "PRECONDITION", "mode": mode})
-    d = os.path.join(os.environ.get("WORK_DIR", "/tmp"), "swap-" + mode)
+    d = os.path.join(os.environ.get("WORK_DIR", "/workspace/work"), "swap-" + mode)
     pathlib.Path(d).mkdir(parents=True, exist_ok=True)
     if not os.path.isdir(os.path.join(d, ".git")):
         sh(["git", "init", "-q", d])
