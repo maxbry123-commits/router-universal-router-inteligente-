@@ -62,9 +62,21 @@ def main():
     # --- etapa de reescritura ---
     check("bundle_verified",os.path.exists(b) and sh(["git","bundle","verify",b],cwd=d,check=False).returncode==0)
     pf=pathlib.Path(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"purge.txt"));pf.write_text("\n".join(plan["purge_paths"]))
-    sh(["git","filter-repo","--force","--invert-paths","--paths-from-file",str(pf)],cwd=d)
-    # D-34: `git remote add` falla (rc=128) si origin ya existe: se usa set-url (idempotente).
-    sh(["git","remote","set-url","origin",f"https://github.com/{need('GH_REPO')}.git"],cwd=d,check=False)
+    # D-116: `git filter-repo` BORRA el remoto `origin` al reescribir (por seguridad: evita
+    # empujar el historial reescrito al remoto original). Por eso el push siguiente fallaba
+    # con "fatal: 'origin' does not appear to be a git repository". Aqui se re-crea el remoto
+    # con la URL LIMPIA (el token viaja solo en la cabecera extraheader del entorno).
+    # Ademas, si la reescritura YA se aplico en esta copia (.git/filter-repo/already_ran) no se
+    # repite: el job es idempotente y no gasta una reescritura completa de 338.007 ficheros.
+    ya_reescrito=os.path.exists(os.path.join(d,".git","filter-repo","already_ran"))
+    if ya_reescrito:
+        check("rewrite_already_applied",True,"filter-repo ya_ran en esta copia: no se reescribe otra vez")
+    else:
+        sh(["git","filter-repo","--force","--invert-paths","--paths-from-file",str(pf)],cwd=d)
+    sh(["git","remote","remove","origin"],cwd=d,check=False)
+    sh(["git","remote","add","origin",f"https://github.com/{need('GH_REPO')}.git"],cwd=d,check=False)
+    check("origin_ready",sh(["git","remote","get-url","origin"],cwd=d,check=False).returncode==0,
+          sh(["git","remote","get-url","origin"],cwd=d,check=False).stdout.strip())
     # D-109: el check mira el HISTORIAL QUE SE PUBLICA (HEAD), no "--all": con --all el gate
     # seria imposible de satisfacer (las otras ramas y la etiqueta de seguridad DEBEN conservar
     # los 37 directorios purgados: son el punto de rollback). Lo que tiene que estar limpio es
