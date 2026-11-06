@@ -274,7 +274,6 @@ handoff:
     run_id: 20261104-kernel01
   flags:
   - '🚩 j6_rewrite EN_CURSO (bundle + purga)'
-  - '🚩 j6_rewrite FAIL'
   - '🚩 j9_remirror FAIL'
   - '🚩 j10_final_audit MISSING'
 progress_pct: 73
