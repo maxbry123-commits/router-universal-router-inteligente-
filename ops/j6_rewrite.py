@@ -85,7 +85,28 @@ def main():
     check("purged_absent_from_history",not left,left[:5])
     r=wc(d);check("wiring_check",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     if not all(c["ok"] for c in CHECKS):finish()
-    sh(["git","push","origin","HEAD:refs/heads/main-clean","--force"],cwd=d);check("pushed_main-clean",True)
+    # D-117: GitHub corta los packs grandes (error 500 / "unexpected disconnect while reading
+    # sideband packet") al publicar el historial reescrito de 338.007 ficheros. Se empuja por
+    # TRAMOS: cada tramo actualiza la ref y solo envia los objetos nuevos de ese tramo, asi
+    # que ningun pack  supera el limite. Si un tramo falla, se subdivide Commit a Commit.
+    r=sh(["git","push","origin","HEAD:refs/heads/main-clean","--force"],cwd=d,check=False)
+    push_ok=(r.returncode==0)
+    detalle=(r.stdout+r.stderr)[-300:]
+    if not push_ok:
+        shas=sh(["git","rev-list","--reverse","HEAD"],cwd=d).stdout.split()
+        step=max(1,len(shas)//10)
+        i=0
+        while i<len(shas) and push_ok:
+            lote=shas[i:i+step]; tip=lote[-1]
+            rr=sh(["git","push","origin",f"{tip}:refs/heads/main-clean","--force"],cwd=d,check=False)
+            if rr.returncode!=0 and len(lote)>1:
+                step=max(1,len(lote)//4)   # subdivide el tramo que fallo
+                continue
+            if rr.returncode!=0:
+                detalle=(rr.stdout+rr.stderr)[-300:]; push_ok=False; break
+            i+=len(lote)
+        if push_ok: detalle=f"publicado por tramos ({len(shas)} commits, paso {step})"
+    check("pushed_main-clean",push_ok,detalle)
     kh=head(d);sz=sh(["git","count-objects","-vH"],cwd=d).stdout
     shutil.rmtree(d,ignore_errors=True)   # D-106/G3: la copia de reescritura se borra siempre
     finish({"size":sz,"stage":"rewrite","rollback_anchor":anchor,"swap_manual":"despues del swap con candado: git push --force-with-lease origin main-clean:main","note":"all commit hashes change; re-run j9_remirror; rotate any token that ever lived in history"},commit=kh)
