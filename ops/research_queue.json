@@ -1,7 +1,7 @@
 {
   "run_id": "20261104-kernel01",
-  "iteracion": 1,
-  "actualizado_ts": "2026-11-06T01:22:56Z",
+  "iteracion": 2,
+  "actualizado_ts": "2026-11-06T01:31:59Z",
   "soluciones": [
     {
       "id": "S01",
@@ -465,69 +465,180 @@
     },
     {
       "id": "S09",
-      "problema": "14 conexiones estan marcadas 'active' sin evidencia real de sonda: su campo 'evidence' es un comando (type+command) sin resultado, sin codigo de retorno y sin fecha. La regla del propio repo ('sin healthcheck no hay activo', GOALS G8) no se cumple.",
-      "causa": "El predicado de wiring_check (ops/wiring_check.py:46) acepta cualquier 'evidence' truthy: `x['status']=='active' and not x.get('evidence')` -> basta un dict con {type,command}. make_healthchecks.py escribe evidence sin rc ni timestamp; verify_pending_healthchecks.py solo cubre 6 de las 14 (CON-007,008,021,022,026,037) y escribe en un clon que no existe (/tmp/r2). El predicado esta DUPLICADO en j7_mirror.py:49-53 (misma regla, dos copias que pueden divergir).",
+      "problema": "R7: 14 conexiones estan 'active' sin evidencia real de sonda, y (nuevo, medido) el registro no guarda la evidencia que permitiria decidir: guarda una MUESTRA de 5 rutas por conexion mientras el grafo real tiene hasta 62.234 aristas. Ademas las 38 conexiones declaran protocol='gateway_pending_audit' y endpoint=null: sin protocolo declarado no hay forma de elegir que sonda aplicar.",
+      "causa": "(a) El campo evidence de las 14 'active' es {type:'import', command:...}: una AFIRMACION de que un modulo se puede importar, no el resultado de una sonda (sin rc, sin ts). (b) connections/registry.yaml guarda observed_paths = 5 rutas MUESTREADAS por conexion (CON-005 declara observed_edges=62234 pero solo guarda 5, y esas 5 son de codigo vendorizado) -> decidir con la muestra da un veredicto FALSO. (c) protocol='gateway_pending_audit' y endpoint=null en las 38 -> falta la precondicion para elegir sonda (inproc/HTTP/MCP/fichero). (d) El gate wiring_check.py:46 acepta cualquier evidence truthy, asi que no hay presion para Mejorarlo.",
       "prioridad": "alta",
-      "solucion": "TRES TIPOS DE SONDA, todos con el MISMO registro de evidencia {type, command, rc, ts, verified_in, result, detail}: (1) HTTP: GET <url> -> rc del cliente HTTP y status; se exige status 200 y (si el cuerpo es JSON) la presencia de una clave esperada. (2) MCP: initialize -> notifications/initialized -> tools/list -> n_tools>=1, leyendo la cabecera 'mcp-session-id' de la respuesta de initialize (sin sesion, tools/list devuelve 'Session ID required'). (3) FICHERO: existencia real en el arbol git (`git cat-file -e HEAD:<ruta>`) y, si es codigo, import con rc=0. ORDEN OBLIGATORIO (importante): (a) BAJAR LAS 14 A pending_audit y registrarlo en el MISMO commit (si no, el gate registry_valid FAIL al endurecerlo y se bloquea j7 otra vez); (b) ejecutar las sondas; (c) promover a active SOLO las que tengan rc==0 Y ts, con el detalle de la sonda en la evidencia. ENDURECER EL GATE: registry_valid debe exigir `evidence.result=='ok'` y no solo truthiness. Corregir de paso: make_healthchecks.py escribe status 'pending_verificacion', que NO esta en el conjunto permitido {pending_audit, active, broken} -> eso solo rompe el gate; debe ser 'pending_audit'.",
-      "refactor_propuesto": "Extraer la regla a ops/registry_rules.py con REQUIRED_FIELDS (los 16 campos), ALLOWED_STATUS y evidence_ok(ev) -> invalid(conns); y que wiring_check.py y j7_mirror.py importen ese modulo (hoy tienen la regla copiada literal). Con eso el endurecimiento del gate se hace en UN sitio y no puede divergir. No rompe nada: con el registro actual los dos dan la misma lista vacia.",
+      "solucion": "PROCEDIMIENTO EN 3 PASOS, con el veredicto ya MEDIDO. (1) DECLARAR EL PROTOCOLO por conexion (precondicion): protocol inproc|http|mcp|file segun el canal real que se observa en el codigo; con eso se puede elegir la sonda. (2) BAJAR LAS 14 'active' a pending_audit y REGISTRARLO EN EL MISMO COMMIT (si no, endurecer el gate tumba j7 otra vez). (3) EJECUTAR LA SONDA ELEGIDA y promover solo las que den resultado verde. LA SONDA PARA inproc ES ESTATICA (no un import): contar las aristas de import PROPIAS que van del dominio origen al dominio destino, con el resolutor canonico de ops/j2_graph.py, excluyendo (a) codigo de terceros (agentes-listos/, agentes-yaiwes/, router-componentes/, memoria-yaiwes/, descarga-copia/...), (b) ficheros de test, (c) aristas intra-dominio. MEDICION HECHA sobre los 373.422 ficheros versionados de HEAD con el resolutor canonico: aristas propias por par de dominios -> agents->mvp 11, agents->ops 17, agents->plugins 8, backend->agents 5, backend->fichas 27, backend->mvp 8, fichas->backend 11, fichas->mvp 3, fichas->plugins 1, harness->agents 12, harness->backend 2, harness->fichas 2, harness->plugins 2, mvp->backend 2, mvp->fichas 2, plugins->backend 2, plugins->fichas 5 (y 0 para los pares con building, chat, engines). RESULTADO: las 14 'active' SI tienen cableado propio real -> no hay que degradarlas por falta de cableado, hay que cambiarles la EVIDENCIA. Ademas 3 'pending_audit' tambien lo tienen y se pueden promover: CON-009 (backend->fichas, 27), CON-024 (harness->fichas, 2), CON-029 (mvp->fichas, 2). CON-033 (ops->agents, 2) NO se promueve: sus 2 aristas van a chat-router/agentes/agentes-yaiwes/... (codigo de terceros). Las 20 que se quedan en pending_audit son las que tienen 0 aristas propias. FORMATO DE EVIDENCIA (uniforme, verificable, re-calculable): {type:'static_edge', method:'j2_graph resolver + filtro own-code/no-test', from:'<dominio>', to:'<dominio>', count:<n>, paths:[<3 rutas reales>], verified_in:'<commit sha>', ts:'<ISO>', result:'ok'|'none'} -> y para HTTP {type:'http', url, status, body_key}, para MCP {type:'mcp', tools_count, tools_names, session:true}, para fichero {type:'file', path, exists:true, blob_sha}. ENDURECER EL GATE en el mismo commit: registry_valid exige evidence.result=='ok' y evidence.ts presente (no basta un dict truthy). Corregir ademas make_healthchecks.py, que escribe status 'pending_verificacion' (fuera del conjunto permitido {pending_audit,active,broken}) y por tanto rompe el gate.",
+      "refactor_propuesto": "Extraer la regla a ops/registry_rules.py (REQUIRED_FIELDS, ALLOWED_STATUS, evidence_ok, invalid) y anadir ops/probe_connections.py que: (a) re-deriva las aristas con el resolutor de j2_graph.py, (b) elige la sonda segun protocol, (c) escribe la evidencia y el estado. El script debe ser REPRODUCIBLE: misma rama -> mismo count -> mismo veredicto (el conteo es determinista, el timestamp no: separarlos en campos distintos para que la comparacion sea estable).",
       "ficheros_afectados": [
         "connections/registry.yaml",
         "connections/healthchecks.yaml",
+        "ops/registry_rules.py (nuevo)",
+        "ops/probe_connections.py (nuevo)",
         "ops/wiring_check.py",
         "ops/j7_mirror.py",
         "ops/make_healthchecks.py",
-        "ops/verify_pending_healthchecks.py",
-        "ops/registry_rules.py (nuevo)"
+        "ops/verify_pending_healthchecks.py"
       ],
-      "prueba": "1) `python ops/wiring_check.py .` -> check registry_valid ok:true con las 38 conexiones (24 pending_audit + las que promotionadas con sonda verde). 2) Test negativo: una conexion 'active' con evidence sin 'rc' -> registry_valid ok:false (prueba de que el gate distingue afirmacion de resultado). 3) Test de sonda MCP: el mismo initialize+tools/list que usa ops/bridge.py contra https://comand-center-1-riu-router.hf.space/mcp -> n_tools>=14 (medido: 14 tools en la sesion actual). 4) Test de sonda HTTP: GET https://comand-center-1-riu-router.hf.space/health -> status 200 con clave 'commit'.",
+      "prueba": "1) `python ops/probe_connections.py --dry` imprime una tabla {id, from, to, protocol, count, veredicto} y la lista de las que promocionan; debe salir CON-009, CON-024, CON-029 y NO CON-033. 2) Ejecutado dos veces con la misma rama -> los `count` son IDENTICOS (determinismo). 3) `python ops/wiring_check.py .` -> registry_valid ok:true y las 38 conexiones con estado coherente (18 active con evidence.result=='ok', 20 pending_audit). 4) Test NEGATIVO: una conexion 'active' con evidence sin rc/ts -> registry_valid ok:false (la puerta distingue afirmacion de resultado). 5) Test de que la muestra no manda: una conexion con observed_edges=62234 y 5 observed_paths de terceros se evalua con el conteo real, no con la muestra.",
       "evidencia": [
         {
           "url": "file://connections/registry.yaml (HEAD ce23c932d9)",
           "fecha": "2026-11-06",
-          "hallazgo": "38 conexiones: 24 pending_audit + 14 active (CON-005,006,007,008,010,018,020,021,022,023,026,028,036,037). Las 14 'active' tienen evidence = {type:'import', command:'python -c ...'} SIN rc, SIN ts: es una AFIRMACION, no un resultado de sonda",
+          "hallazgo": "38 conexiones, todas con protocol='gateway_pending_audit', endpoint=null, via='gateway_pending_audit'; verification.type='import' en 14 y None en 24; las 14 'active' con notes='pendiente de evidencia; par observado en el grafo j2' (la propia entrada se contradice)",
+          "usado": true
+        },
+        {
+          "url": "file://connections/registry.yaml::CON-005",
+          "fecha": "2026-11-06",
+          "hallazgo": "observed_edges=62234 pero observed_paths guarda solo 5, las 5 de router-componentes/ (terceros) -> la muestra NO representa el conjunto y da veredicto falso",
+          "usado": true
+        },
+        {
+          "url": "medicion propia: resolutor canonico de ops/j2_graph.py sobre los 373.422 ficheros versionados de HEAD",
+          "fecha": "2026-11-06",
+          "hallazgo": "aristas propias (sin terceros, sin tests, entre dominios distintos): agents->mvp 11, agents->ops 17, agents->plugins 8, backend->agents 5, backend->fichas 27, backend->mvp 8, fichas->backend 11, fichas->mvp 3, fichas->plugins 1, harness->agents 12, harness->backend 2, harness->fichas 2, harness->plugins 2, mvp->backend 2, mvp->fichas 2, plugins->backend 2, plugins->fichas 5, ops->agents 2; 0 para todos los pares con building, chat y engines",
+          "usado": true
+        },
+        {
+          "url": "medicion propia: 14 sondas de import de make_healthchecks ejecutadas contra el clon real",
+          "fecha": "2026-11-06",
+          "hallazgo": "las 14 devuelven rc=0 -> el probe de import NO discrimina nada: pasa siempre, luego no puede ser el criterio de 'active'",
           "usado": true
         },
         {
           "url": "file://ops/wiring_check.py#L44-L47 (HEAD)",
           "fecha": "2026-11-06",
-          "hallazgo": "bad=[... if ... or (x['status']=='active' and not x.get('evidence'))] -> la puerta acepta cualquier evidence truthy. El mismo predicado esta copiado en ops/j7_mirror.py#L49-L53",
+          "hallazgo": "el gate acepta cualquier evidence truthy -> un dict {type,command} sin resultado vale como evidencia",
           "usado": true
         },
         {
-          "url": "file://ops/make_healthchecks.py#L155-L162 (HEAD)",
+          "url": "file://ops/make_healthchecks.py#L155-L162",
           "fecha": "2026-11-06",
-          "hallazgo": "c['status']='pending_verificacion' si el modulo esta en el arbol pero no se puede importar -> estado FUERA del conjunto permitido por wiring_check -> rompe registry_valid",
+          "hallazgo": "escribe status='pending_verificacion', que no esta en el conjunto permitido -> puede romper registry_valid",
           "usado": true
         },
         {
-          "url": "file://ops/verify_pending_healthchecks.py#L15-L22 (HEAD)",
+          "url": "file://ops/j2_graph.py#L16-L73 (resolver canonico)",
           "fecha": "2026-11-06",
-          "hallazgo": "PEND solo cubre 6 conexiones y CLONE por defecto /tmp/r2 (no existe en este sandbox) -> la verificacion no es reproducible",
+          "hallazgo": "el resolutor de imports que produce las aristas; se ha reutilizado sin modificar (copia en scratch) para el recount",
           "usado": true
         },
         {
-          "url": "Router RIU salud (probe MCP real)",
+          "url": "file://ops/bridge.py#L46-L81",
           "fecha": "2026-11-06",
-          "hallazgo": "POST /mcp initialize + tools/list -> 14 tools (chat, almacen, memoria, salud, listar_fichas, resultado, github_leer, github_escribir, github_api, pendientes, sala, llm, yaiwes_md, archivos) -> la sonda MCP por initialize+tools/list funciona y da un numero verificable",
-          "usado": true
-        },
-        {
-          "url": "file://ops/bridge.py#L46-L81 (_mcp_probe)",
-          "fecha": "2026-11-06",
-          "hallazgo": "YA existe una sonda MCP correcta: initialize -> notifications/initialized -> tools/list con mcp-session-id -> devuelve n_tools y la lista de nombres. Es el patron a reutilizar para las 14 conexiones",
-          "usado": true
-        },
-        {
-          "url": "https://huggingface.co/docs/huggingface_hub/en/package_reference/hf_file_system",
-          "fecha": "2026-11-06",
-          "hallazgo": "ls/glob sobre hf:// dan la lista de ficheros de un Space/Dataset sin decodificar texto (mismo patron que S02)",
+          "hallazgo": "el patron de sonda MCP (initialize + notifications/initialized + tools/list con mcp-session-id) ya existe y es reutilizable para el tipo 'mcp'",
           "usado": true
         }
       ],
-      "riesgo": "ALTO si se endurece el gate ANTES de bajar las 14: registry_valid pasaria a FAIL y tumbaria j7/j8/j9 otra vez (es exactamente el ciclo que ya ha pasado 3 veces). El orden (bajar -> sondar -> promover -> endurecer) lo evita. Riesgo adicional: las sondas import necesitan el modulo materializado; en el clon sparse fallan por eso (D-55) -> la sonda debe ejecutarse contra un clon donde el modulo exista, o usar la existencia en el arbol git como sonda de tipo (3).",
-      "ruta_alternativa": "Si no se pueden ejecutar las sondas (no hay clon completo ni permisos de ejecucion): bajar las 14 a pending_audit y dejar el informe de conexiones con el detalle de POR QUE no se pudo sondar (sin evidence) -> el registro queda honesto y el gate verde; la promocion a active queda para una ronda con capacidad de ejecucion. Es preferible a dejar 14 'active' sin sonda.",
+      "riesgo": "ALTO si se endurece el gate antes de degradar las 14: registry_valid pasaria a FAIL y tumbaria j7/j8/j9 (el ciclo ya repetido). El orden (degradar -> medir -> promover -> endurecer) lo evita. Riesgo de medida: el conteo de aristas depende de que el clon tenga el working tree completo (los ficheros ausentes no se leen) -> el probe debe correr sobre un clon completo o sobre el arbol git (git show), no sobre un clon sparse; si corre sparse, el conteo es una COTA INFERIOR y las conexiones con 0 aristas no se pueden declarar sin cableado (se dejarian pending_audit, que es el lado seguro).",
+      "ruta_alternativa": "Si no se puede ejecutar el probe estatico en esta ronda: degradar las 14 a pending_audit y dejar el informe de conexiones con el detalle de por que no se pudo sondar (sin evidence) -> registro honesto y gate verde; la promocion queda para la ronda con clon completo. Es preferible a mantener 14 'active' con una evidencia que no prueba nada.",
       "validado_por_centinela": true,
-      "motivo_validacion": "El conteo 14/24 y el contenido de su evidence se han LEIDO del YAML real; el predicado que las acepta se ha leido linea a linea en los dos ficheros; y el patron de sonda (initialize+tools/list con mcp-session-id, que da 14 tools medidos en esta sesion) ya esta implementado en ops/bridge.py, con lo que no hay que inventar el formato."
+      "motivo_validacion": "Los tres hechos estan MEDIDOS, no deducidos: (1) las 14 sondas de import se ejecutaron de verdad contra el clon (14/14 rc=0 -> el probe no discrimina); (2) el conteo de aristas propias se re-derivo con el resolver canonico de j2_graph.py sobre los 373.422 ficheros versionados; (3) la limitacion de la muestra (5 de 62.234) esta en el propio fichero del registro. La conclusion (promover 3, no degradar ninguna, cambiar la evidencia) sale de esos numeros."
+    },
+    {
+      "id": "S16",
+      "problema": "La sonda de import que respalda las 14 conexiones 'active' NO prueba la conexion que dice probar, y ademas puede pasar sin comprobar nada. Dos falsos positivos demostrados.",
+      "causa": "FALSO POSITIVO 1 (namespace package): 'import backend.mvp' y 'import backend.mvp.herramientas.modos' (CON-036 y CON-018) importan directorios SIN __init__.py -> Python 3 los resuelve como namespace packages y el import SIEMPRE tiene exito, incluso con el directorio VACIO (probado). FALSO POSITIVO 2 (prueba el target, no la arista): el evidence de CON-005 es 'import router.integration.chat_mvp.core' -> eso demuestra que el TARGET se puede importar; no dice NADA de si agents->mvp esta cableado. La conexion es el par (from,to) y su arista; la sonda nunca mira el source.",
+      "prioridad": "alta",
+      "solucion": "Regla de la sonda: una sonda de conexion tiene que observar la CONEXION, no uno de sus extremos. (1) Para una conexion inproc: la sonda es la arista (import real del source al target, codigo propio) -> es lo que mide S09. (2) Para una conexion HTTP: la sonda es GET al endpoint real (status + clave del JSON). (3) Para MCP: initialize + notifications/initialized + tools/list (con mcp-session-id) -> n_tools>=1. (4) Para una conexion de fichero: existencia real en el arbol git (git cat-file -e HEAD:<ruta>) +, si es codigo, el import de un MODULO CONCRETO (no de un paquete) y la comprobacion de un simbolo (p.ej. hasattr(mod,'<funcion que usa el source>')). Regla anti-falso-positivo que hay que escribir en el codigo: NUNCA usar como sonda el import de un directorio sin __init__.py, y NUNCA aceptar como evidencia el import de un modulo sin comprobar que existe el simbolo que se usa.",
+      "refactor_propuesto": "En el futuro probe_connections.py, que la funcion que decide el veredicto reciba (from, to, source_paths, target_paths) y no solo el modulo destino; y un test que falle si la sonda es un import de paquete (comprobando que el fichero importado tiene __init__.py) -> el falso positivo no puede volver.",
+      "ficheros_afectados": [
+        "ops/probe_connections.py (nuevo, ver S09)",
+        "ops/make_healthchecks.py",
+        "ops/verify_pending_healthchecks.py",
+        "connections/healthchecks.yaml"
+      ],
+      "prueba": "1) Test del namespace package: crear un directorio vacio sin __init__.py y comprobar que 'import <pkg>' devuelve rc=0 -> el test debe FALLAR si el codigo acepta ese import como evidencia (es decir, la sonda debe rechazar el paquete vacio). 2) Test de la arista: para CON-007 (agents->plugins) la sonda debe encontrar la arista chat-router/agentes/orquestacion/orquestador/deploy.py -> chat-router/plugins/router_api_cliente.py y ese par debe salir en la evidencia; para CON-005, aristas de chat-router/agentes/agentes-yaiwes/... (terceros) NO pueden valer. 3) Test de simbolo: la sonda debe comprobar hasattr del modulo sobre la funcion que el source usa, no solo el import.",
+      "evidencia": [
+        {
+          "url": "medicion propia: import de un directorio VACIO sin __init__.py",
+          "fecha": "2026-11-06",
+          "hallazgo": "'import paquete.sub' sobre un directorio vacio sin __init__.py -> rc=0, NamespaceLoader -> el import de un namespace package NUNCA falla",
+          "usado": true
+        },
+        {
+          "url": "file://connections/registry.yaml::CON-018 y CON-036",
+          "fecha": "2026-11-06",
+          "hallazgo": "las sondas son 'import backend.mvp.herramientas.modos' y 'import backend.mvp'; ninguno de esos paths tiene __init__.py en HEAD (verificado con git cat-file -e) -> las dos sondas son vacuas",
+          "usado": true
+        },
+        {
+          "url": "file://connections/registry.yaml::CON-005",
+          "fecha": "2026-11-06",
+          "hallazgo": "from='agents', to='mvp'; evidence.command importa 'router.integration.chat_mvp.core' (el target) y no toca el source -> la evidencia no puede distinguir 'cableado' de 'no cableado'",
+          "usado": true
+        },
+        {
+          "url": "medicion propia: 14 sondas de import",
+          "fecha": "2026-11-06",
+          "hallazgo": "14/14 rc=0 -> el probe de import no discrimina: sirve de prueba de que el arbol de imports es parseable, no de que la conexion existe",
+          "usado": true
+        },
+        {
+          "url": "https://docs.python.org/3/reference/import.html",
+          "fecha": "2026-11-06",
+          "hallazgo": "namespace packages (PEP 420): un directorio sin __init__.py es importable -> confirmacion del mecanismo",
+          "usado": true
+        }
+      ],
+      "riesgo": "Bajo como cambio de criterio (no toca codigo que hoy funcione); alto como cambio de veredicto: si se pasa de 'import del target' a 'arista propia', algunas conexiones perderan el 'active' que tienen -> es el objetivo (que 'active' signifique cableado), pero hay que publicar el antes/despues para que el cambio sea auditable.",
+      "ruta_alternativa": "Mantener el probe de import pero anadir al evidence el 'source' que se ha comprobado (no solo el target) y exigir que el source este en el dominio from: 'import target' + 'el source usa target' (grep/ast del source). Es mas barato de implementar y conserva el dato actual.",
+      "validado_por_centinela": true,
+      "motivo_validacion": "El falso positivo del namespace package se ha reproducido en un directorio vacio real (rc=0), y la ausencia de __init__.py en los dos paths citados esta verificada con git cat-file -e sobre HEAD. El segundo falso positivo se deduce de la lectura literal del evidence y de los campos from/to del registro. No hay ninguna afirmacion sin ejecucion."
+    },
+    {
+      "id": "S17",
+      "problema": "El lanzador de jobs de Hugging Face (ops/launch_hf.py) NO reenvia al contenedor las variables de entorno que el DAG v3 necesita. En concreto, j6b_swap corre con MODE por defecto (=swap) y empuja a main aunque nadie haya pedido ese modo: violacion FAIL_CLOSED.",
+      "causa": "launch_hf.py reenvia solo repo_env() (GH_REPO, GH_BRANCH, RUN_ID, DATASET_REPO, SPACE_REPO, HEALTH_URL, TEST_CMD) mas cuatro extras si estan en el entorno local (AUDIT_JOBS, WAIT_S, MIRROR_BASELINE, MIRROR_LIGHT). NO reenvia: MODE, SWAP_SOURCE, DRY, PHASE, WORK_DIR, MIN_FREE_GB, KERNEL_DIR, HISTORY_DAYS, MAX_GREP, TEST_CMD(no lo reenvia aunque repo_env lo declare), REPO_ROOT, RIU_URL, BRIDGE_URL, UNIVERSAL_KEY, GIT_TERMINAL_PROMPT, PYTHONPATH. Consecuencias: (a) j6b_swap usa MODE='swap' por defecto -> push a refs/heads/main sin confirmacion; (b) j8_audit y j10_final_audit necesitan AUDIT_JOBS (need()) y mueren con 'missing env AUDIT_JOBS' si no esta en el entorno local; (c) j8_audit y j10_final_audit ejecutan el MISMO script y sin PHASE los dos escriben phase='pre' -> el informe final no se distingue del previo; (d) bridge necesita UNIVERSAL_KEY para la sonda MCP -> sin ella la sonda cae y probe_mcp_tools falla.",
+      "prioridad": "alta",
+      "solucion": "1) Declarar la lista blanca de env que el lanzador reenvia, y que sea EXPLICITA y auditable: una constante WORKER_ENV = ('AUDIT_JOBS','WAIT_S','MIRROR_BASELINE','MIRROR_LIGHT','MODE','SWAP_SOURCE','DRY','PHASE','WORK_DIR','MIN_FREE_GB','KERNEL_DIR','HISTORY_DAYS','MAX_GREP','TEST_CMD','REPO_ROOT','RIU_URL','BRIDGE_URL') mas los secretos (GH_TOKEN, HF_TOKEN, UNIVERSAL_KEY) que van SOLO por entorno del contenedor. 2) MODO POR DEFECTO SEGURO: si el job es j6b_swap, exigir explicitamente MODE ('swap','rollback' o 'dry'); si MODE no esta, el job debe salir con flag NEEDS_MODE en vez de hacer push. Esto se puede hacer sin tocar launch_hf.py, dentro de j6b_swap.py: `mode=os.environ.get('MODE')` y si no esta -> finish({'flag':'MODE_REQUIRED'}) (fail closed). 3) PHASE: j10_final_audit debe forzar PHASE='final' (o el lanzador debe reenviarlo): como j10_final_audit.py es el script que se invoca, puede setear os.environ['PHASE']='final' antes de llamar a wc/finish. 4) En el contenedor de HF, WORK_DIR puede seguir siendo /tmp (el contenedor es efimero y tiene 32 GB): la regla es WORK_DIR para el sandbox local, /tmp para el Job de HF; lo que no puede ser es que launch.sh y launch_hf.py se comporten igual por descuido.",
+      "refactor_propuesto": "Que launch.sh y launch_hf.py compartan UNA tabla de entorno (p.ej. ops/job_env.py con build_env(job) -> dict) en vez de dos listas parciales que ya se han desincronizado. Un solo sitio decide que ve cada job; el resto es presentacion (local vs contenedor).",
+      "ficheros_afectados": [
+        "ops/launch_hf.py",
+        "ops/launch.sh",
+        "ops/j6b_swap.py",
+        "ops/j10_final_audit.py",
+        "ops/j8_audit.py",
+        "ops/job_env.py (nuevo)"
+      ],
+      "prueba": "1) Test del modo por defecto: ejecutar j6b_swap SIN MODE en un repo de prueba -> debe terminar con flag MODE_REQUIRED y NO hacer push (comprobar que 'refs/heads/main' no cambio). 2) Test de reenvio: `python ops/launch_hf.py --print-env j6b_swap` imprime el env que se pasaria al contenedor -> MODE, PHASE, AUDIT_JOBS, UNIVERSAL_KEY (como nombre, nunca el valor) tienen que aparecer. 3) Test de fase: ejecutar j10_final_audit con AUDIT_JOBS -> el result.json tiene phase='final' y el audit.json también. 4) Test de sonda MCP en el contenedor: el job bridge reporta mcp_tools>=14.",
+      "evidencia": [
+        {
+          "url": "file://ops/launch_hf.py#L26-L70 (HEAD)",
+          "fecha": "2026-11-06",
+          "hallazgo": "repo_env() declara 8 variables; el bucle final reenvia SOLO ('AUDIT_JOBS','WAIT_S','MIRROR_BASELINE','MIRROR_LIGHT') y solo si existen en el entorno local; TEST_CMD se declara en repo_env pero no llega al contenedor",
+          "usado": true
+        },
+        {
+          "url": "file://ops/j6b_swap.py#L30-L35",
+          "fecha": "2026-11-06",
+          "hallazgo": "mode=os.environ.get('MODE','swap') -> el default es el modo destructivo; solo hay 'swap' y 'rollback' (no 'dry')",
+          "usado": true
+        },
+        {
+          "url": "file://ops/j8_audit.py#L4 y ops/j10_final_audit.py#L8",
+          "fecha": "2026-11-06",
+          "hallazgo": "jobs=need('AUDIT_JOBS').split(',') -> sin la variable el job muere con 'missing env AUDIT_JOBS'; j10_final_audit usa el script j8_audit y phase=os.environ.get('PHASE','pre') -> los dos escriben 'pre'",
+          "usado": true
+        },
+        {
+          "url": "file://ops/bridge.py#L48-L49",
+          "fecha": "2026-11-06",
+          "hallazgo": "key=os.environ.get('UNIVERSAL_KEY','') -> sin la variable la cabecera va vacia, el MCP no responde y check('probe_mcp_tools', len(tools)>=14) falla -> bridge FAIL",
+          "usado": true
+        },
+        {
+          "url": "file:///workspace/work/env_kernel.sh",
+          "fecha": "2026-11-06",
+          "hallazgo": "el entorno del ejecutor exporta GH_REPO, GH_BRANCH, TARGET_BRANCH, RUN_ID, DATASET_REPO, SPACE_REPO, HEALTH_URL, HF_TOKEN, PYTHONPATH, GIT_TERMINAL_PROMPT: NO exporta MODE, PHASE, AUDIT_JOBS, UNIVERSAL_KEY ni WORK_DIR",
+          "usado": true
+        }
+      ],
+      "riesgo": "MEDIO: cambiar el default de MODE a 'obligatorio' hace que j6b_swap falle si nadie lo lanza con MODE -> es el comportamiento FAIL_CLOSED correcto, pero hay que avisar al orquestador de que el swap ahora hay que pedirlo explicitamente (modo dry primero, ver S11). Reenviar mas variables al contenedor es inocuo siempre que no se reenvien secretos por argv o URL.",
+      "ruta_alternativa": "Si no se quiere tocar launch_hf.py: ejecutar j6b_swap y bridge en LOCAL (no en HF Job) con las variables exportadas en el entorno del sandbox, y dejar launch_hf.py solo para los jobs pesados (espejo y reescritura, que son los de D-64). Es la division que ya sugiere el propio GUIDE_tail.md.",
+      "validado_por_centinela": true,
+      "motivo_validacion": "Las dos listas de variables (la que el job pide y la que el lanzador reenvia) se han leido enteras en HEAD y se han comparado variable a variable; el default 'swap' de j6b_swap esta citado literalmente; y la ausencia de las variables en env_kernel.sh esta comprobada. El fallo 'missing env AUDIT_JOBS' es consecuencia directa de need() sobre una variable que no viaja."
     },
     {
       "id": "S10",
@@ -836,6 +947,65 @@
       "ruta_alternativa": "Si no se quiere un fichero nuevo: usar el propio memory_agente_minimax_02.md como estado durable (ya es 'la fuente de verdad' segun conexiones.md) y anadirle una seccion 'next step exacto' + un bloque JSON de estado. Es lo que ya hace el contrato; la via de S08 es solo mas legible y testeable.",
       "validado_por_centinela": true,
       "motivo_validacion": "El patron de handoff incremental y el 'next step exacto' estan corroborados por cuatro fuentes independientes (Anthropic via dev.to, project-os-for-codex, ai-dev-workflow, y el articulo de checkpoints). El estado local (kernel.py cmd_apply) esta leido y YA commitea por job: la solucion solo completa lo que falta (cierre de ronda) en vez de inventar un mecanismo nuevo."
+    },
+    {
+      "id": "S18",
+      "problema": "P7: falta el conjunto central de cierre (bitacora central, historico de 30 dias, informe central de conexiones, README y handoff final). Parte de las piezas YA EXISTEN y estan verificadas; falta unirlas y faltan dos ficheros.",
+      "causa": "El historico de 30 dias ya se produce (j3_history -> wiring_history.jsonl + wiring_changelog.md, con ventana HISTORY_DAYS=30 por defecto) y esta publicado en el Dataset. El informe central de conexiones ya lo produce ops/bridge.py -> connections/bridge_report.json con 5 secciones (snapshot, history_30d, compare, probes, recovery). La bitacora existe como historial de commits (KERNEL_RULES: un commit por actualizacion). Lo que falta: (a) el README.md de la raiz (esta en 'protected' y no existe: ver S13), (b) connections/bridge_report.json (no existe hasta que bridge corra), (c) un handoff FINAL explicito (hoy el handoff es de estado, no de cierre), y (d) que nada de esto este enlazado entre si (el informe no cita al handoff, el README no cita al informe).",
+      "prioridad": "media",
+      "solucion": "FORMATO CONCRETO, con lo que ya existe: (1) BITACORA CENTRAL = kernel/KERNEL.yaml::handoff.log (una entrada por job, idempotente por (job,run_id)) + el historial de commits 'kernel: <job> <status>'; anadir a cada entrada el 'evidence' (el result.json del Dataset) para que la bitacora sea verificable. (2) HISTORICO DE 30 DIAS = el wiring_history.jsonl del Dataset (formato verificado: {commit, date, author, subject, changes:[{s, paths, wiring}]}) + el wiring_changelog.md con el recuento por dia y los 'suspects' (ficheros de cableado borrados/renombrados); se publica en el informe central como el bloque history_30d. (3) INFORME CENTRAL DE CONEXIONES = connections/bridge_report.json (ya implementado en bridge.py: snapshot con los healthchecks EJECUTADOS y su rc, history_30d, compare declarado-vs-observado con la lista de drift, probes HTTP reales del Space y del bridge Vercel + la sonda MCP con el numero de tools, y recovery con el tag y el bundle). Anadirle una 6a seccion 'veredicto' con el numero de conexiones verificadas, pendientes y en drift, que es lo que se lee el owner. (4) README.md de la raiz con 4 secciones: que es y objetivo, mapa de dominios, como ejecutar la cadena, como leer el estado (con los enlaces al informe central y a la bitacora). (5) HANDOFF FINAL: un fichero kernel/HANDOFF_FINAL.md generado por ops/handoff.py --final con {objetivo, estado de los 13 jobs, avance, decisiones (p.ej. el cambio de ramas con su etiqueta de seguridad), riesgos abiertos, y el siguiente paso si queda algo}. Formato: Markdown de 1 pagina, generado (no escrito a mano) para que no vuelva a desfasarse como GUIDE.md (ver S12).",
+      "refactor_propuesto": "Que exista UN generador (ops/make_closure.py) que produce los tres artefactos (README.md, connections/bridge_report.json y kernel/HANDOFF_FINAL.md) a partir de las MISMAS fuentes (kernel/KERNEL.yaml + el Dataset + el informe de bridge), y un gate 'closure_in_sync' que los compare. Con eso el cierre es reproducible y auditable en vez de un documento escrito a mano.",
+      "ficheros_afectados": [
+        "ops/handoff.py (nuevo, ver S08)",
+        "ops/bridge.py",
+        "ops/make_closure.py (nuevo)",
+        "README.md",
+        "connections/bridge_report.json",
+        "kernel/HANDOFF_FINAL.md"
+      ],
+      "prueba": "1) `python ops/handoff.py --from-dataset --final` produce kernel/HANDOFF_FINAL.md con los 13 jobs y el avance correcto (6/13 = 46 % hoy) y el fichero se regenera IDENTICO al reejecutarlo (salvo la marca de tiempo, que va en un campo aparte). 2) `python ops/make_closure.py --check` sale con rc=0 si README.md, bridge_report.json y HANDOFF_FINAL.md estan al dia y rc!=0 si se edita a mano uno de ellos. 3) `python ops/wiring_check.py .` -> aparece el check space_app_file_exists (hoy no aparece porque no hay README) y el informe central existe con sus 6 secciones.",
+      "evidencia": [
+        {
+          "url": "file://ops/j3_history.py#L5-L30 (HEAD)",
+          "fecha": "2026-11-06",
+          "hallazgo": "days=os.environ.get('HISTORY_DAYS','30'); escribe wiring_history.jsonl (solo los commits con cambios de cableado, con el flag 'wiring') y wiring_changelog.md (recuento por dia + suspects de borrados/renombrados) -> el historico de 30 dias YA existe",
+          "usado": true
+        },
+        {
+          "url": "https://huggingface.co/api/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria/tree/main?recursive=true",
+          "fecha": "2026-11-06",
+          "hallazgo": "20261104-kernel01/j3_history/wiring_history.jsonl (12.344.585 B) y wiring_changelog.md (5.865 B) publicados en el Dataset -> datos duraderos, no volatiles",
+          "usado": true
+        },
+        {
+          "url": "muestra real de wiring_history.jsonl (primeras lineas)",
+          "fecha": "2026-11-06",
+          "hallazgo": "{commit, date, author, subject, changes:[{s, paths, wiring}]} -> formato util y verificable: cada cambio dice si toca cableado",
+          "usado": true
+        },
+        {
+          "url": "file://ops/bridge.py#L94-L216 (HEAD)",
+          "fecha": "2026-11-06",
+          "hallazgo": "ya construye el informe con snapshot (healthchecks ejecutados con rc y ms), history_30d (git log 30d + wiring_history del Dataset), compare (drift declarado-vs-observado), probes (HTTP Space + Vercel + MCP con tools/list) y recovery (tag + bundle); escribe connections/bridge_report.json -> el informe central EXISTE, falta la seccion de veredicto",
+          "usado": true
+        },
+        {
+          "url": "file://kernel/KERNEL_RULES.yaml (HEAD)",
+          "fecha": "2026-11-06",
+          "hallazgo": "'every_job_result: json -> Dataset -> python ops/kernel.py apply -> commit kernel: <job> <status>' -> la bitacora central es el handoff.log + el historial de commits",
+          "usado": true
+        },
+        {
+          "url": "git ls-tree HEAD --name-only | grep -i readme",
+          "fecha": "2026-11-06",
+          "hallazgo": "vacio -> el README de la raiz NO existe (ver S13); y connections/bridge_report.json tampoco (no se ha ejecutado bridge)",
+          "usado": true
+        }
+      ],
+      "riesgo": "Bajo: es generacion de artefactos a partir de fuentes que ya existen. Riesgo de sobre-ingenieria:(make_closure.py + make_readme.py + make_guide.py) son tres generadores; para no multiplicarlos, la propuesta es que make_closure.py sea el UNICO generador nuevo y que README.md y HANDOFF_FINAL.md los produzca el (make_guide.py sigue siendo el de la guia, porque su formato ya esta establecido en el repo).",
+      "ruta_alternativa": "Si el plazo aprieta: el handoff final puede ser simplemente el propio KERNEL.yaml (handoff completo) + el bridge_report.json, con un README minimo escrito a mano (5 secciones, 30 lineas). La parte automatizable (handoff derivado del Dataset, ver S08) es la que mas valor aporta porque evita el error manual.",
+      "validado_por_centinela": true,
+      "motivo_validacion": "Los tres artefactos se han verificado por su codigo generador (j3_history, bridge.py, kernel.py) y por su presencia real en el Dataset (wiring_history.jsonl y wiring_changelog.md descargados y su formato leido). Se ha comprobado la AUSENCIA de README.md y de bridge_report.json en el arbol de HEAD. El formato propuesto reutiliza el que el codigo ya produce, no uno inventado."
     }
   ],
   "flags": [
@@ -920,6 +1090,19 @@
         "file://ops/job_status.py (D-53: el estado se toma del Dataset)"
       ],
       "propuesta": "Resolver con S07 (alinear ORDER) + S08 (handoff derivado del Dataset). El origen de la verdad queda unico y verificable: el Dataset."
+    },
+    {
+      "id": "F08",
+      "problema": "El filtro de codigo de terceros (VENDORED) de ops/wiring_check.py y ops/j2_graph.py esta INCOMPLETO: no incluye 'agentes-yaiwes/' (439 ficheros), 'memoria-yaiwes/' ni 'router-componentes/' (14.602 ficheros).",
+      "causa": "VENDORED=('agentes-listos/','agentes/frameworks/','agentes/investigacion/','agents/agentes-listos/','agents/frameworks/','agents/investigacion/','chatbot/componentes/','memoria/componentes/','otros/descartados/','otros/Prueba/','descarga-copia/'). Los tres ultimos directorios de codigo de terceros no casan: un error de sintaxis ahi se contaria como error PROPIO y BLOQUEARIA el gate no_syntax_errors.",
+      "fuentes_consultadas": [
+        "file://ops/wiring_check.py#L8-L15 (VENDORED)",
+        "file://ops/j2_graph.py#L12-L15 (VENDORED)",
+        "git ls-tree -r HEAD --name-only | grep -c 'agentes-yaiwes/' -> 439; 'agentes/agentes-listos/' -> 35.936",
+        "baseline_unresolved.json: 61 SYNTAX_ERROR, 0 de ellos bloquean -> el riesgo es LATENTE, no activo",
+        "medicion: los 67 .py de una muestra de 400 directorios de esos tres árbol compilan sin error"
+      ],
+      "propuesta": "Completar VENDORED con 'agentes-yaiwes/','memoria-yaiwes/','router-componentes/' y 'agents-yaiwes/' (un solo sitio, compartido: ver S14). Verificado hoy que el gate NO esta roto por esto (0 errores bloqueantes en el baseline), asi que es una mejora de robustez, no un desbloqueo. Anadir un test que compruebe que ningun directorio de >1000 ficheros bajo chat-router/ o router-mvp/ queda fuera de VENDORED sin justificacion."
     }
   ]
 }
