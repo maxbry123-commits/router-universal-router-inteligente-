@@ -20,8 +20,15 @@ def main():
         # objetos NUEVOS de la reescritura se escriben en la copia y el push los lleva al
         # servidor; el clon original queda intacto y es el segundo copy del rollback.
         d=os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"rw")
-        shutil.rmtree(d,ignore_errors=True)
-        sh(["git","clone","--shared",reuse,d])
+        # D-113: si el clon ya esta materializado (checkout completo de 338.007 ficheros, ~45 min)
+        # se REUTILIZA en vez de volver a clonar. El bundle ya creado comparte los mismos
+        # objetos; solo hay que reescribir el historial en esa copia.
+        if os.path.isdir(os.path.join(d,".git")):
+            sh(["git","-C",d,"fetch","--all","--tags","--prune"],check=False)
+            sh(["git","-C",d,"checkout","--force",os.environ.get("TARGET_BRANCH") or need("GH_BRANCH")],cwd=d,check=False)
+        else:
+            shutil.rmtree(d,ignore_errors=True)
+            sh(["git","clone","--shared",reuse,d])
         sh(["git","checkout","--force",os.environ.get("TARGET_BRANCH") or need("GH_BRANCH")],cwd=d)
     else:
         d=clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"m"),depth=0,branch=os.environ.get("TARGET_BRANCH") or need("GH_BRANCH"))
@@ -39,7 +46,15 @@ def main():
         check("bundle_verified",sh(["git","bundle","verify",b],cwd=d,check=False).returncode==0)
         # D-34: huggingface_hub >= 2.x exige `path=` (con `path_or_fileobj=` lanza TypeError y el
         # bundle de rollback nunca se publica: fue lo que mato el job heredado 6aebc8980e0338d1bb804a42).
-        HfApi(token=need("HF_TOKEN")).upload_file(path=b,path_in_repo=f"backups/{RUN_ID}.bundle",repo_id=need("DATASET_REPO"),repo_type="dataset")
+        # D-113: la firma real de huggingface_hub 2.x es upload_file(path_or_fileobj=...) con
+        # keywords; `path=` no existe (TypeError: unexpected keyword argument 'path'). Se
+        # intenta `path_or_fileobj` y, si la version no lo tiene, `path`. El token va SOLO en
+        # la cabecera de la API (nunca en argv ni en la URL del fichero).
+        api=HfApi(token=need("HF_TOKEN"))
+        try:
+            api.upload_file(path_or_fileobj=b,path_in_repo=f"backups/{RUN_ID}.bundle",repo_id=need("DATASET_REPO"),repo_type="dataset")
+        except TypeError:
+            api.upload_file(path=b,path_in_repo=f"backups/{RUN_ID}.bundle",repo_id=need("DATASET_REPO"),repo_type="dataset")
         check("bundle_uploaded",True)
         (OUT/"bundle_manifest.json").write_text(json.dumps({"bundle":b,"bytes":os.path.getsize(b),"sha256":sha256(b),"rollback_anchor":anchor},indent=1))
         if stage=="prepare":
