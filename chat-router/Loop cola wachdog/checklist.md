@@ -1,16 +1,17 @@
 # CHECKLIST WATCHDOG RIU / OpenClaw / Yaiwes
-Ciclo: 2026-11-06 ~21:08 UTC
+
+Ciclo: 2026-11-06 ~22:10 UTC
 Health: OK ({"status":"ok","commit":"4722f1dffcf25a2ecf2b63b36fc847fbc922115f","banco_abierto":true,"clave_qwen_presente":false,"modelo_defecto":"qwen3.8-max","autoactualizacion":"GIT_PULL_FALLIDO"})
-MCP salud: OK (JSON-RPC /mcp initialize OK, tools: chat, github_leer, ...; proveedores groq:6 nvidia:5 deepseek:0)
+MCP salud: OK (JSON-RPC /mcp initialize OK, tools: chat,github_leer,salud,... ; proveedores_externos groq:6 nvidia:5 deepseek:0)
 
 Tests /chat/send:
-- groq/openai/gpt-oss-120b: OK (harness "pong", ms~1035)
-- groq/qwen/qwen3.8-27b: OK (harness "pong.", ms~62085 con retries 503)
+- groq/openai/gpt-oss-120b: OK (harness "pong", ms~708)
+- groq/qwen/qwen3.8-27b: OK (harness "Ping recibido. Operativo.", ms~686)
 - nvidia/z-ai/glm-5.3: BLOQUEADO (HTTP 410 peticion_invalida)
 
 MCP chat:
-- groq/openai/gpt-oss-120b: OK (texto "Pong!")
-- groq/qwen/qwen3.8-27b: no re-probado este ciclo (anterior OK)
+- groq/openai/gpt-oss-120b: OK (texto "pong")
+- groq/qwen/qwen3.8-27b: (anterior OK)
 - nvidia/z-ai/glm-5.3: BLOQUEADO (410)
 
 github_leer: OK (lista raíz: .claude, AGENTS.md, chat-router, etc.)
