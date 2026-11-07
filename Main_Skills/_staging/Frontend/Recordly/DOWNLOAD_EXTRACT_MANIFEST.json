@@ -1,0 +1,63 @@
+{
+  "bundle_bytes": 86642716,
+  "bundle_sha256": "639ee22b4ea49cc4f91a1f5520cc979e33925c57f89ae69cfdc1a38ab6fe74b5",
+  "extracted_tree": {
+    "bytes": 107149311,
+    "files": 1208,
+    "sha256": "4b5f5f5b7864d58d2907313c6737f4cf63b2e78bf0ae9911c98e076b46d04b9d"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "Recordly.bundle.zip.part-0001",
+      "sha256": "e218649415650bf4a9fa79a42587f748fa84ae8ba9c105643a79fd2eb1ec25d9"
+    },
+    {
+      "bytes": 12582912,
+      "name": "Recordly.bundle.zip.part-0002",
+      "sha256": "32c9bd4d8e8e0a4a230b93861b37df0fcbef1d53c431af193b8dfba318223cbb"
+    },
+    {
+      "bytes": 12582912,
+      "name": "Recordly.bundle.zip.part-0003",
+      "sha256": "8293e69a2b3aef9c253b3a860d53521d610f34d256c7b404adbde32fde210859"
+    },
+    {
+      "bytes": 12582912,
+      "name": "Recordly.bundle.zip.part-0004",
+      "sha256": "6d5853dfcf324b3903fede28e0fb579e093587499cd96dad2cafae4535db1bac"
+    },
+    {
+      "bytes": 12582912,
+      "name": "Recordly.bundle.zip.part-0005",
+      "sha256": "55fdfbaf43c98dcdddb9ee84bedce441acb3c118875a04f30fac1a884bdfcab8"
+    },
+    {
+      "bytes": 12582912,
+      "name": "Recordly.bundle.zip.part-0006",
+      "sha256": "9d8ecaebb1bb9c5f07789b5cda15941fd737770af48e866c91bb63736fee7213"
+    },
+    {
+      "bytes": 11145244,
+      "name": "Recordly.bundle.zip.part-0007",
+      "sha256": "310058cb41116fa87018f2c9315bf5b1c94124af7fdb2a2709ccac6a12450a2b"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "Recordly",
+  "source_bytes": 107149311,
+  "source_commit": "109ca3a13c362e969d9add25d1f93406c36dba2a",
+  "source_files": 1208,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/webadderallorg/Recordly",
+  "source_tree": {
+    "bytes": 107149311,
+    "files": 1208,
+    "sha256": "4b5f5f5b7864d58d2907313c6737f4cf63b2e78bf0ae9911c98e076b46d04b9d"
+  }
+}
