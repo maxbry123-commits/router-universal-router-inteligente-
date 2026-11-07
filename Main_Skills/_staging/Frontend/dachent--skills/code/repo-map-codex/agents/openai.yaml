@@ -1,0 +1,7 @@
+interface:
+  display_name: "Codex Repo Map (Deprecated)"
+  short_description: "Deprecated; native Plan Mode grounds repositories"
+  default_prompt: "Do not invoke this deprecated skill. Use native Codex Plan Mode for read-first repository grounding and evidence collection."
+
+policy:
+  allow_implicit_invocation: false

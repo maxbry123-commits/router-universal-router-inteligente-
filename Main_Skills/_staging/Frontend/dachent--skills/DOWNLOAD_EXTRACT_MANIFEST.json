@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 1366481,
+  "bundle_sha256": "af6d61204f6de0aaa9299bf497ceb088a9c0b9abdc8117b1ead70c466eb70e01",
+  "extracted_tree": {
+    "bytes": 6288602,
+    "files": 685,
+    "sha256": "5a2654d1c60cda4da1f73a832a76b16cbcd9ec2ab08010c93264008a7324b216"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 1366481,
+      "name": "dachent--skills.bundle.zip.part-0001",
+      "sha256": "af6d61204f6de0aaa9299bf497ceb088a9c0b9abdc8117b1ead70c466eb70e01"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "dachent--skills",
+  "source_bytes": 6288602,
+  "source_commit": "2e133e356a11214cd9c31f479ec021625f2df571",
+  "source_files": 685,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/dachent/skills",
+  "source_tree": {
+    "bytes": 6288602,
+    "files": 685,
+    "sha256": "5a2654d1c60cda4da1f73a832a76b16cbcd9ec2ab08010c93264008a7324b216"
+  }
+}

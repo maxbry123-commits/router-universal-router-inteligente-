@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Intelligence (Claude Code only)"
+  short_description: "Explicit Claude Code provider router; not for Codex GPT-5.6 Sol"
+  default_prompt: "Do not invoke in Codex GPT-5.6 Sol. In Claude Code, use $code-intelligence only to select among already-installed analysis providers, establish graph freshness when relevant, preserve provider evidence, and verify conclusions against source and tests."

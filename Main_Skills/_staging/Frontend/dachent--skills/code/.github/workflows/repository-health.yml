@@ -1,0 +1,66 @@
+name: Repository Health
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 13 1 * *"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: repository-health
+  cancel-in-progress: false
+
+jobs:
+  report:
+    name: Monthly repository health report
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Build repository health report
+        id: health
+        continue-on-error: true
+        run: |
+          python tools/repository_health.py \
+            --json .health/repository-health.json \
+            --markdown .health/repository-health.md
+      - name: Upload repository health report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: repository-health-report
+          path: .health/
+          if-no-files-found: error
+      - name: Create or update repository health issue
+        if: always() && hashFiles('.health/repository-health.json') != ''
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('.health/repository-health.json', 'utf8'));
+            const markdown = fs.readFileSync('.health/repository-health.md', 'utf8');
+            const marker = '<!-- repository-health-report -->';
+            const title = 'Repository health review';
+            const body = `${marker}\n${markdown}\nWorkflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const {data: issues} = await github.rest.issues.listForRepo({owner: context.repo.owner, repo: context.repo.repo, state: 'open'});
+            const existing = issues.find(issue => issue.title === title || issue.body?.includes(marker));
+            if (report.status !== 'healthy') {
+              if (existing) await github.rest.issues.update({owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body});
+              else await github.rest.issues.create({owner: context.repo.owner, repo: context.repo.repo, title, body});
+            } else if (existing) {
+              await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body: 'The monthly repository health report is now healthy; closing.'});
+              await github.rest.issues.update({owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, state: 'closed'});
+            }
+      - name: Fail on repository health errors
+        if: steps.health.outcome == 'failure'
+        run: exit 1

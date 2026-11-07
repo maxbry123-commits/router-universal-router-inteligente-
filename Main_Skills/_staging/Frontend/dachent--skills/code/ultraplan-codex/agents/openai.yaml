@@ -1,0 +1,7 @@
+interface:
+  display_name: "Codex UltraPlan (Deprecated)"
+  short_description: "Deprecated; use native Codex Plan Mode"
+  default_prompt: "Do not invoke this deprecated skill. Use native Codex Plan Mode for grounded, decision-complete implementation plans."
+
+policy:
+  allow_implicit_invocation: false

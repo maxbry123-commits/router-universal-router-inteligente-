@@ -1,0 +1,70 @@
+name: Upstream Drift
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 12 * * 1"
+  pull_request:
+    paths:
+      - ".provenance/**"
+      - ".upstream/**"
+      - "skills-manifest.json"
+      - "tools/check_upstream_drift.py"
+      - "tools/validate_provenance.py"
+      - ".github/workflows/upstream-drift.yml"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream-drift-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Validate provenance registry
+        run: python tools/validate_provenance.py
+      - name: Check all registered upstreams
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/check_upstream_drift.py --json .upstream/reports/latest-drift.json
+      - name: Upload drift report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: upstream-drift-report
+          path: .upstream/reports/latest-drift.json
+          if-no-files-found: error
+      - name: Create or update drift review issue
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('.upstream/reports/latest-drift.json', 'utf8'));
+            const title = 'Upstream drift review';
+            const marker = '<!-- upstream-drift-review -->';
+            const impacted = report.impacted_skills || [];
+            const body = `${marker}\n## Latest automated review\n\n` +
+              (impacted.length ? `Impacted or unresolved skills: ${impacted.map(x => `\`${x}\``).join(', ')}.` : 'No registered skill is currently impacted.') +
+              `\n\nWorkflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const {data: issues} = await github.rest.issues.listForRepo({owner: context.repo.owner, repo: context.repo.repo, state: 'open'});
+            const existing = issues.find(issue => issue.title === title || issue.body?.includes(marker));
+            if (report.review_required) {
+              if (existing) await github.rest.issues.update({owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body});
+              else await github.rest.issues.create({owner: context.repo.owner, repo: context.repo.repo, title, body});
+            } else if (existing) {
+              await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body: 'Automated drift review is now clear; closing.'});
+              await github.rest.issues.update({owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, state: 'closed'});
+            }
