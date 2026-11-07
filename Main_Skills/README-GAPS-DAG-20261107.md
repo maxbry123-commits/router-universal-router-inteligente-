@@ -20,9 +20,15 @@ Dato duro: los deltas de las tablas de abajo se recalcularon con la funcion `tre
 | Code | headroom | 2790 | 2769 | +21 | 75563408 | 74290496 | +1272912 | SI |
 | Code | openevolve | 595 | 594 | +1 | 8525673 | 8521911 | +3762 | SI |
 
-**Origen de la divergencia (preexistente, NO introducida por este DAG):** el motor publica con el guard `DESTINATION_EXISTS` (fichero `hf_download_extract_engine.py`, linea 128): si la ruta de destino ya existe no la sobrescribe. Una publicacion anterior dejo `code/` incompleto y el manifest/bundle completo; al reintentar, el motor no toco `code/`. Se comprobo en el commit base `8b290d2f13` (anterior a este DAG): el manifest de `SimpleTES` ya declaraba 2.805 ficheros con 511 en el staging, y el `_staging` de `ui`, `webstudio` y `firecrawl` en la base es identico al publicado en HEAD (el movimiento no perdio ni un fichero).
+**Origen de la divergencia (la introdujo ESTE DAG, en el `publish()` del motor):** `publish()` hace `shutil.copytree(extracted, target/'code')`, es decir copia **el `.gitignore` del propio componente** dentro de `code/`; acto seguido ejecuta `git add --sparse -- <rel>` en el clon sparse-checkout del repo destino y **git honra ese `.gitignore`**, descartando en silencio los ficheros que coinciden. Comprobado: el **100 % de los ficheros ausentes** (2.400 de 2.400 en los 11 componentes) esta excluido por el `.gitignore` del propio componente (`git check-ignore` sobre cada ruta ausente). El commit se **pushea antes** del readback, asi que el arbol incompleto entro en `main` (p. ej. `3ae6b3d293`, SimpleTES con 506 de 2.805 ficheros, 09:39:45; `9dded8b264`, ui con 6.405) y el readback posterior revienta con `READBACK_TREE_HASH_GAP` (error del **intento 1**); el reintento (`attempts: 2`) ya solo vio `DESTINATION_EXISTS` (guard de `hf_download_extract_engine.py`, linea 128: si la ruta existe no la sobrescribe).
 
-**El contenido ausente NO se perdio:** esta en el bundle `_archives/` de cada componente (`bundle_sha256` coincide con el del manifest) y es reextraible con el propio motor.
+**No habia divergencia heredada:** la base real de este DAG es el commit `2414b9029d`, donde `Main_Skills/` **no exista** (0 rutas). El commit `8b290d2f13` (22:07:04, autor `hf-audit-job`) es **dentro** de la ventana de push de este DAG y no prueba nada sobre el origen de la divergencia: lo que si demuestra es que **el movimiento con motor_4 no perdio ficheros** (el `_staging` de `ui`, `webstudio` y `firecrawl` en ese commit es identico al publicado en HEAD).
+
+**Efecto secundario del mismo paso:** 13 ficheros con normalizacion CRLF->LF al confirmarlos en git (p. ej. `playwright/LICENSE`, `playwright/CODE_OF_CONDUCT.md`, `firecrawl/examples/o1_web_crawler/o1_web_crawler.py`).
+
+**El contenido ausente NO se perdio:** esta integro en el bundle `_archives/` de cada componente (`bundle_sha256` coincide con el del manifest y el CRC del ZIP es correcto).
+
+**Remedio correcto (el reextraer con el motor tal cual NO basta):** reejecutar `publish()` volveria a copiar el `.gitignore` y a descartar los mismos ficheros, y despues volveria a chocar con `DESTINATION_EXISTS`. La via que si funciona es **reextraer del bundle `_archives/`** y publicar con *force-add* (`git add -f`) o neutralizando el `.gitignore` copiado. Pendiente de ejecutar cuando el owner lo ordene: en este DAG **no se toco ningun componente**.
 
 ## 2. Componentes publicados que motor_2 NO/volvio a descargar en esta ejecucion
 
