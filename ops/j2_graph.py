@@ -9,10 +9,22 @@ EXT=(".py",".js",".mjs",".ts",".tsx",".jsx",".html")
 # Todo lo demas (codigo propio y _quarantine/) sigueHaving que parsear para pasar el gate.
 # D-40: al mover chat-router/agentes -> agents/ los prefijos de TERCEROS deben seguir casando
 # con la nueva ubicacion (si no, 38.405 referencias vendorizadas pasan a "propias" y bloquean).
-VENDORED=("agentes-listos/","agentes/frameworks/","agentes/investigacion/",
-          "agents/agentes-listos/","agents/frameworks/","agents/investigacion/",
-          "chatbot/componentes/","memoria/componentes/","otros/descartados/","otros/Prueba/","descarga-copia/")
-def es_tercero(p):return any(k in p for k in VENDORED) or p.startswith("_quarantine/")
+# D-148: la misma tabla de raices de TERCEROS que en ops/wiring_check.py (se mantienen en sync,
+# como en D-40), con comparacion de RUTA EXACTA por componentes en vez de subcadena, y con las
+# raices de los bundles publicados por la tuberia hf-combined (Main_Skills/_staging y
+# Main_Skills/Frontend): codigo de terceros importado, no cableado, cuyos errores se INFORMAN.
+VENDORED_ROOTS=(("agentes-listos",),("agentes","frameworks"),("agentes","investigacion"),
+                ("agents","agentes-listos"),("agents","frameworks"),("agents","investigacion"),
+                ("chatbot","componentes"),("memoria","componentes"),("otros","descartados"),
+                ("otros","Prueba"),("descarga-copia",),
+                ("Main_Skills","_staging"),("Main_Skills","Frontend"))
+def es_tercero(p):
+    parts=p.split("/")
+    for r in VENDORED_ROOTS:
+        n=len(r)
+        for i in range(len(parts)-n+1):
+            if parts[i:i+n]==list(r):return True
+    return p.startswith("_quarantine/")
 def build(root):
     root=pathlib.Path(root)
     files={p for p in sh(["git","ls-files","-z"],cwd=root).stdout.split("\0") if p}

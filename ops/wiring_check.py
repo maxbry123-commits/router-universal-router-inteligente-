@@ -5,10 +5,28 @@ from j2_graph import build
 # en las referencias nuevas (los errores de terceros se INFORMAN, no bloquean).
 # D-40: al mover chat-router/agentes -> agents/ los prefijos de TERCEROS deben seguir casando
 # con la nueva ubicacion (si no, 38.405 referencias vendorizadas pasan a "propias" y bloquean).
-VENDORED=("agentes-listos/","agentes/frameworks/","agentes/investigacion/",
-          "agents/agentes-listos/","agents/frameworks/","agents/investigacion/",
-          "chatbot/componentes/","memoria/componentes/","otros/descartados/","otros/Prueba/","descarga-copia/")
-es_tercero=lambda p:any(k in p for k in VENDORED)
+# D-148: la clasificacion de TERCEROS pasa de SUBCADENA a RUTA EXACTA (la raiz debe aparecer como
+# secuencia COMPLETA de componentes: "agentes-listos" ya no casa dentro de "ops/agentes-listos.txt"
+# ni de "xagentes-listos/y"). Con la subcadena, un nombre de fichero que contenga el nombre de una
+# raiz hacia pasar codigo PROPIO por TERCEROS y el gate `no_new_unresolved` se debilita en silencio.
+# D-148 (b): se anaden las raices de los bundles publicados por la tuberia hf-combined
+# (Main_Skills/_staging y Main_Skills/Frontend): 34.623 ficheros de codigo IMPORTADO de fuera
+# (Recordly, DESIGN, awesome-design, context7, playwright, plasmic, onlook, webstudio, ...; cada uno
+# con su DOWNLOAD_EXTRACT_MANIFEST.json), NO cableado (no estan en ninguna de las 11 entradas) y
+# sin revisar por el owner. Sus referencias sin resolver se INFORMAN (tercero_unresolved_reported);
+# el codigo PROPIO sigue bloqueando, que es la regla D-08/D-18/D-25/D-40 que ya regia.
+VENDORED_ROOTS=(("agentes-listos",),("agentes","frameworks"),("agentes","investigacion"),
+                ("agents","agentes-listos"),("agents","frameworks"),("agents","investigacion"),
+                ("chatbot","componentes"),("memoria","componentes"),("otros","descartados"),
+                ("otros","Prueba"),("descarga-copia",),
+                ("Main_Skills","_staging"),("Main_Skills","Frontend"))
+def es_tercero(p):
+    parts=p.split("/")
+    for r in VENDORED_ROOTS:
+        n=len(r)
+        for i in range(len(parts)-n+1):
+            if parts[i:i+n]==list(r):return True
+    return False
 def run(root,graph=None):
     # D-39: si el job ya construyo el grafo, se reutiliza (el build son ~10 min sobre 374k ficheros).
     root=pathlib.Path(root);g=graph if graph is not None else build(root);res=[]
