@@ -1,0 +1,44 @@
+{
+  "name": "ai-skills",
+  "owner": {
+    "name": "Sanjay"
+  },
+  "metadata": {
+    "description": "Collection of agent skills for AI coding assistants",
+    "version": "1.3.0"
+  },
+  "plugins": [
+    {
+      "name": "ai-skills",
+      "description": "Collection of agent skills: Gemini API CLI, PostgreSQL, MySQL, MSSQL, Imagen, Azure DevOps, Apple Container, Telegram, Atlassian (Jira + Confluence), Google Workspace (Gmail, Calendar, Chat, Docs, Drive, Sheets, Slides), NotebookLM, Jules, Manus, Deep Research, Outline, ElevenLabs, Google TTS, Grok Build, WhatsApp (pywhats).",
+      "source": "./",
+      "skills": [
+        "./skills/postgres",
+        "./skills/gemini-api",
+        "./skills/imagen",
+        "./skills/azure-devops",
+        "./skills/apple-container",
+        "./skills/deep-research",
+        "./skills/outline",
+        "./skills/jules",
+        "./skills/gmail",
+        "./skills/google-calendar",
+        "./skills/google-chat",
+        "./skills/google-docs",
+        "./skills/google-drive",
+        "./skills/google-sheets",
+        "./skills/google-slides",
+        "./skills/notebooklm",
+        "./skills/manus",
+        "./skills/elevenlabs",
+        "./skills/google-tts",
+        "./skills/mysql",
+        "./skills/mssql",
+        "./skills/atlassian",
+        "./skills/telegram",
+        "./skills/grok-build",
+        "./skills/whatsapp"
+      ]
+    }
+  ]
+}

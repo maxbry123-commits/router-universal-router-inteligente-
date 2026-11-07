@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 360457,
+  "bundle_sha256": "f18f9c9917bca87d562338a71da1745f93ef1d75def2502fb5686c71212d558c",
+  "extracted_tree": {
+    "bytes": 1117966,
+    "files": 152,
+    "sha256": "7bbd012d5471667a4818262244a55bae40777a9c163c5bff1b1a36cdbde3edce"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 360457,
+      "name": "ai-skills.bundle.zip.part-0001",
+      "sha256": "f18f9c9917bca87d562338a71da1745f93ef1d75def2502fb5686c71212d558c"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "ai-skills",
+  "source_bytes": 1117966,
+  "source_commit": "c84255839a1bfaa06d681aa528f9b50d70002afb",
+  "source_files": 152,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/sanjay3290/ai-skills",
+  "source_tree": {
+    "bytes": 1117966,
+    "files": 152,
+    "sha256": "7bbd012d5471667a4818262244a55bae40777a9c163c5bff1b1a36cdbde3edce"
+  }
+}
