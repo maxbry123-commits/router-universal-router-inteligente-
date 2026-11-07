@@ -11,6 +11,7 @@ def main():
             r=json.load(open(dl(j,"result.json")));res[j]=r
             check(f"{j}_PASS",r["status"]=="PASS",r.get("commit"))
         except Exception as e:check(f"{j}_result_found",False,str(e)[:120])
+    # D-146: reutiliza el clon disponible en modo SOLO LECTURA (REUSE_CLONE) o clona uno propio.
     d=clone(wd("fa"));w=wc(d)
     check("wiring_check_on_final_head",w["ok"],[c["name"] for c in w["checks"] if not c["ok"]])
     kh=head(d)

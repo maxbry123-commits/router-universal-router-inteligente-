@@ -3,46 +3,62 @@ import urllib.request,time
 from wiring_check import run as wc
 # ops/j9_remirror.py — re-mirror tras el swap de main (S12_final).
 # Guia: kernel/GUIDE.md S12_final: {jobs: [j9_remirror, j10_final_audit], gate: [Space==new HEAD, audit PASS]}
-# D-23: la guia DECLARA este job en el mapa de jobs y en S12 pero NO incluye su codigo.
-# Se implementa aqui siguiendo el patron exacto de ops/j7_mirror.py (mismo helper, mismos gates),
-# sin modo baseline: este job sube de verdad el HEAD nuevo al Space y verifica Space==new HEAD.
+#
+# D-145 (correccion del reespejo): el Space NO es un espejo del repo.
+# Su boot.sh hace `git clone --depth 1 --filter=blob:none --branch main` de GitHub en CADA build:
+# el Space ya es un auto-pull de main. El reespejo real = que el Space sirva el main nuevo, y
+# para eso basta (1) main publicado y (2) disparar un rebuild del Space.
+# El metodo anterior (empujar al Space un arbol derivado del repo) era Peligroso: proxy.py,
+# boot.sh, openclaw.sh, Dockerfile y swecode_provider.json viven en SUBCARPETAS del repo, no en
+# su raiz -> ese push habria BORRADO 6 ficheros operativos del Space y el router no habria
+# arrancado. Ademas el push por git al host de HF falla con "expected 'acknowledgments'" sobre
+# HTTP/2; la via fiable es la API de HF (huggingface_hub).
+#
+# D-146 (blindaje): este job NUNCA muta el indice ni el working tree del clon que recibe:
+# solo lee (git ls-files / lectura de ficheros) y usa un indice temporal cuando lo necesita.
+# Por eso REUSE_CLONE es seguro aqui (antes D-144 usaba `git rm --cached` sobre el clon vivo
+# y dejo 366.077 ficheros fuera del disco: el checkout-index -a -f los recupero).
 def main():
-    from huggingface_hub import HfApi
+    from huggingface_hub import HfApi,CommitOperationAdd
     sp=need("SPACE_REPO");api=HfApi(token=need("HF_TOKEN"))
-    d=clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"mirror9"));sha=head(d)   # G2: scratch en WORK_DIR (NAS)
+    reuse=os.environ.get("REUSE_CLONE")
+    # D-147: el sha de referencia es el MAIN REMOTO real (fuente de verdad), no el HEAD de un
+    # clon de trabajo: asi el gate "Space sirve main" compara contra lo que GitHub publica.
+    d=reuse or clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"mirror9"))
+    sha=sh(["git","ls-remote","origin","refs/heads/main"],cwd=d,check=False).stdout.split()
+    sha=sha[0] if sha else head(d)
+    # el gate de cableado se ejecuta en modo LECTURA sobre el arbol disponible
     r=wc(d);check("wiring_check_before_remirror",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     if not all(c["ok"] for c in CHECKS):finish(commit=sha)
-    IGN=[".git/**","_quarantine/**","**/node_modules/**","**/__pycache__/**",
-        "chat-router/agentes/agentes-listos/**","chat-router/agentes/frameworks/**","chat-router/agentes/investigacion/**",
-        "chat-router/chatbot/componentes/**","chat-router/memoria/componentes/**","chat-router/otros/descartados/**",
-        "chat-router/otros/Prueba/**","chat-router/motores/motores/descarga-copia/**"]
-    # D-108: el Space NO es un espejo del repo. Misma allowlist operativa que j7_mirror
-    # (D-86): el push es por protocolo git (upload_folder choca con el limite de 20.000
-    # ficheros del repo del Space) y solo suben los ficheros PROPIOS del Space.
-    SPACE_ALLOWLIST={"Dockerfile","boot.sh","proxy.py","openclaw.sh",
-                     "swecode_provider.json","README.md",".gitattributes",".gitignore",".rebuild"}
-    sh(["git","-C",d,"read-tree",sha])
-    _pf=os.path.join(d,".excl_paths")
-    with open(_pf,"wb") as fh:
-        for t in sh(["git","-C",d,"ls-files","-z"],check=False).stdout.split("\0"):
-            if t and t not in SPACE_ALLOWLIST: fh.write(t.encode()+b"\0")
-    sh(["git","-C",d,"rm","-r","--cached","--ignore-unmatch","--pathspec-from-file="+_pf,"--pathspec-file-nul"],check=False)
-    _tree=sh(["git","-C",d,"write-tree"],check=False).stdout.strip()
-    _new=sh(["git","-C",d,"-c","user.name=kernel-mirror","-c","user.email=mirror@local","commit-tree",_tree,"-m",f"remirror {sha[:12]}"],check=False).stdout.strip()
-    _env=dict(os.environ);_env["HF_TOKEN"]=need("HF_TOKEN")
-    _cred=["-c","credential.helper=","-c","credential.helper=!f() { echo username=x-access-token; echo password=$HF_TOKEN; }; f"]
-    _r=sh(["git","-C",d]+_cred+["push",f"https://huggingface.co/spaces/{sp}",f"{_new}:main"],env=_env,check=False)
-    check("remirror_push_git",_r.returncode==0,(_r.stdout+_r.stderr)[-300:])
-    hu=os.environ.get("HEALTH_URL");wait=int(os.environ.get("WAIT_S","900"));t0=time.time();seen=None;stage=None
+    # D-145: el Space debe conservar sus ficheros operativos (proxy.py/boot.sh/openclaw.sh/
+    # Dockerfile/swecode_provider.json). Si no estan, NO se toca nada: el Space esta roto.
+    try:
+        _files=api.list_repo_files(sp,repo_type="space")
+        _need=("boot.sh","Dockerfile","proxy.py","openclaw.sh","swecode_provider.json")
+        check("space_has_operational_files",all(f in _files for f in _need),f"{len(_files)} ficheros en el Space")
+    except Exception as _e:
+        check("space_has_operational_files",False,f"{type(_e).__name__}: {str(_e)[:160]}")
+    # D-145/D-146: disparar el rebuild por la API de HF (nunca por git push).
+    _stamp=time.strftime("%Y-%m-%dT%H:%M:%S-00:00")
+    try:
+        _c=api.create_commit(repo_id=sp,repo_type="space",
+                             operations=[CommitOperationAdd(path=".rebuild",content=_stamp)],
+                             commit_message=f"remirror {sha[:12]}: rebuild para servir main {sha[:12]}")
+        check("remirror_trigger_rebuild",True,str(getattr(_c,"oid",""))[:12])
+    except Exception as _e:
+        check("remirror_trigger_rebuild",False,f"{type(_e).__name__}: {str(_e)[:200]}")
+        finish(commit=sha)
+    hu=os.environ.get("HEALTH_URL");wait=int(os.environ.get("WAIT_S","1800"));t0=time.time();seen=None;stage=None
     while time.time()-t0<wait:
-        stage=str(api.get_space_runtime(sp).stage)
+        try:stage=str(api.get_space_runtime(sp).stage)
+        except Exception as _e:stage=f"ERR {type(_e).__name__}"
         if "RUNNING" in stage and hu:
             try:
                 seen=json.loads(urllib.request.urlopen(hu,timeout=15).read()).get("commit")
-                if seen and sha.startswith(seen[:12]):break
+                if seen and sha.startswith(str(seen)[:12]):break
             except Exception:pass
         time.sleep(20)
     check("space_RUNNING","RUNNING" in str(stage),stage)
-    check("health_commit_equals_new_HEAD",bool(seen) and sha.startswith(seen[:12]),f"seen={seen} head={sha[:12]}")
+    check("health_commit_equals_new_HEAD",bool(seen) and sha.startswith(str(seen)[:12]),f"seen={seen} main={sha[:12]}")
     finish({"space":sp,"head":sha,"remirror":True},commit=sha)
 if __name__=="__main__":run(main)

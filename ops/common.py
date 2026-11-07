@@ -31,6 +31,13 @@ def need(k):
     if not v:raise RuntimeError(f"missing env {k}")
     return v
 def clone(dest,depth=1,since=None,blobless=False,branch=None):
+    # D-146 (blindaje anti-destruccion): si REUSE_CLONE apunta a un clon valido, se USA EN MODO
+    # SOLO LECTURA para todos los jobs: no se registra en _CLONES (cleanup() hace rmtree), no se
+    # hace fetch/checkout/reset sobre el y su indice nunca se muta. Asi ningun job puede borrar
+    # ficheros del clon vivo (el 07-11 un job perdio 366.077 ficheros al reutilizarlo sin blindaje).
+    _ru=os.environ.get("REUSE_CLONE")
+    if _ru and os.path.isdir(os.path.join(_ru,".git")):
+        return _ru
     repo=need("GH_REPO");br=branch or os.environ.get("TARGET_BRANCH") or need("GH_BRANCH")
     c=["git","clone","--single-branch","--no-tags","--branch",br]
     if since:c+=["--shallow-since",since]
