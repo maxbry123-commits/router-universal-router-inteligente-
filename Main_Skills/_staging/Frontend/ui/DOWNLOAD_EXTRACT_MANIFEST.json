@@ -1,0 +1,43 @@
+{
+  "bundle_bytes": 25249179,
+  "bundle_sha256": "f515c0602e80f2ca91770415dc96e7c8ad00288d1bb38aa7c998a0467f8858c7",
+  "extracted_tree": {
+    "bytes": 51337202,
+    "files": 6411,
+    "sha256": "95dceb30cc379ee09bbcdd88826110679a591fc7593bf8aad4aaa98cca65243b"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "ui.bundle.zip.part-0001",
+      "sha256": "2b54aaddc1a0b27b8b618c79da02f35a6a8d439790b07869251eebdcebc9e2df"
+    },
+    {
+      "bytes": 12582912,
+      "name": "ui.bundle.zip.part-0002",
+      "sha256": "dba503373ca87016e309aa72ebcd25f169a797de13c4791522746967a88dab6a"
+    },
+    {
+      "bytes": 83355,
+      "name": "ui.bundle.zip.part-0003",
+      "sha256": "26452f656b9e60d45ab50da9c3d8c848ab4fcc4639245e11cf47309bc0931105"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "ui",
+  "source_bytes": 51337202,
+  "source_commit": "42f3bb63b46a69e52a24bd005cdc9ec15ba7a7b9",
+  "source_files": 6411,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/shadcn-ui/ui",
+  "source_tree": {
+    "bytes": 51337202,
+    "files": 6411,
+    "sha256": "95dceb30cc379ee09bbcdd88826110679a591fc7593bf8aad4aaa98cca65243b"
+  }
+}
