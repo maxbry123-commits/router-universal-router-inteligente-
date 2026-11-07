@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 1470671,
+  "bundle_sha256": "d7e954f352c2ccd5c310cbb1fc54d35faa5e30412eb8044938d3a892cdd77b90",
+  "extracted_tree": {
+    "bytes": 1606309,
+    "files": 18,
+    "sha256": "ce01528d456418fc12e27255dcb9f8c57c4cb28d9f7e0cf459af3622830999d7"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 1470671,
+      "name": "Dream-RSI.bundle.zip.part-0001",
+      "sha256": "d7e954f352c2ccd5c310cbb1fc54d35faa5e30412eb8044938d3a892cdd77b90"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "Dream-RSI",
+  "source_bytes": 1606309,
+  "source_commit": "b92bc1ea39e8186f9756e038c39e33de68adda74",
+  "source_files": 18,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/zhengkid/Dream-RSI",
+  "source_tree": {
+    "bytes": 1606309,
+    "files": 18,
+    "sha256": "ce01528d456418fc12e27255dcb9f8c57c4cb28d9f7e0cf459af3622830999d7"
+  }
+}
