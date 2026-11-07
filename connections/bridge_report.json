@@ -1,0 +1,211 @@
+{
+ "run_id": "20261104-kernel01",
+ "generated_at": "2026-11-07T03:03:03Z",
+ "repo": "maxbry123-commits/router-universal-router-inteligente-",
+ "commit": "a9d59fd1b2c53289e196f8052d2ec1bdbcefc620",
+ "connections": 38,
+ "endpoints": 9,
+ "healthchecks": {
+  "declared": 14,
+  "executed": 12,
+  "rc0": 12
+ },
+ "snapshot": [
+  {
+   "id": "HC-001",
+   "connection": "CON-003",
+   "method": "http",
+   "status": "no_command",
+   "declared": "pending_audit"
+  },
+  {
+   "id": "HC-002",
+   "connection": "CON-005",
+   "method": "mcp",
+   "status": "no_command",
+   "declared": "pending_audit"
+  },
+  {
+   "id": "HC-003",
+   "connection": "CON-007",
+   "method": "http",
+   "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente\"",
+   "rc": 0,
+   "ms": 81,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "HC-004",
+   "connection": "CON-008",
+   "method": "space",
+   "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos\"",
+   "rc": 0,
+   "ms": 25,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "HC-005",
+   "connection": "CON-010",
+   "method": "import",
+   "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import router.mcp_puente_github\"",
+   "rc": 0,
+   "ms": 68,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "HC-006",
+   "connection": "CON-018",
+   "method": "import",
+   "command": "python -c \"import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.herramientas.modos\"",
+   "rc": 0,
+   "ms": 23,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "HC-007",
+   "connection": "CON-020",
+   "method": "import",
+   "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import router.red.http_plugins\"",
+   "rc": 0,
+   "ms": 73,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "HC-008",
+   "connection": "CON-021",
+   "method": "import",
+   "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import plugins.puente_chat.plugin\"",
+   "rc": 0,
+   "ms": 118,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "HC-009",
+   "connection": "CON-022",
+   "method": "import",
+   "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores\"",
+   "rc": 0,
+   "ms": 21,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "HC-010",
+   "connection": "CON-023",
+   "method": "import",
+   "command": "python -c \"import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.prompt\"",
+   "rc": 0,
+   "ms": 40,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "HC-011",
+   "connection": "CON-026",
+   "method": "import",
+   "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import plugins\"",
+   "rc": 0,
+   "ms": 21,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "HC-012",
+   "connection": "CON-028",
+   "method": "import",
+   "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.swen_mcp\"",
+   "rc": 0,
+   "ms": 107,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "HC-013",
+   "connection": "CON-036",
+   "method": "import",
+   "command": "python -c \"import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp\"",
+   "rc": 0,
+   "ms": 31,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "id": "HC-014",
+   "connection": "CON-037",
+   "method": "import",
+   "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import fichas.fichas_qwen.plugin\"",
+   "rc": 0,
+   "ms": 120,
+   "stdout": "",
+   "stderr": ""
+  }
+ ],
+ "history_30d": {
+  "git_commits_30d": 2327,
+  "git_last": "a9d59fd1b2c53289e196f8052d2ec1bdbcefc620|2026-11-07T02:41:35+00:00|D-138: el check de purga del arbol compara rutas exactas (no subcadenas)",
+  "wiring_history_entries": null,
+  "wiring_history_error": "IncompleteRead(8855172 bytes read, 3489413 more expected)"
+ },
+ "compare": {
+  "drift": [],
+  "drift_count": 0
+ },
+ "probes": {
+  "http": [
+   {
+    "url": "https://comand-center-1-riu-router.hf.space/health",
+    "status": 200,
+    "ms": 67,
+    "body": "{\"status\":\"ok\",\"commit\":\"4722f1dffc\"}"
+   },
+   {
+    "url": "https://riu-jev-bridge.vercel.app/api/health",
+    "status": 404,
+    "ms": 74,
+    "body": "The page could not be found\n\nNOT_FOUND\n\niad1::4cjrf-1794020582635-83b209ec04fc\n"
+   },
+   {
+    "url": "https://riu-jev-bridge.vercel.app",
+    "status": 200,
+    "ms": 81,
+    "body": "<!doctype html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n  <title>YAIWES · Organización</title>\n  <link rel=\"stylesheet\" href=\"/chat/ui/shell.css?v=a5ebb5160b4b\">\n  <link rel=\"stylesheet\" href=\"/chat/ui/responsive.css?v=a5ebb5160b4b\">\n  <link rel=\"stylesheet\" href=\"/chat/ui/temas-nuevos.css?v=a5ebb5160b4b\">\n  <link rel=\"stylesheet\" href=\"/chat/ui/shell-riu.css?v=a5ebb5160b4b\">\n  <link rel=\"stylesheet\" href=\"/chat/ui/chat-movil.css?v=a5ebb5160b4b\">\n  <link rel=\"stylesheet\" href=\"/chat/ui/encendido"
+   }
+  ],
+  "mcp": {
+   "url": "https://comand-center-1-riu-router.hf.space/mcp",
+   "initialize_ok": true,
+   "session": false,
+   "tools": 14,
+   "tools_list": [
+    "chat",
+    "almacen",
+    "memoria",
+    "salud",
+    "listar_fichas",
+    "resultado",
+    "github_leer",
+    "github_escribir",
+    "github_api",
+    "pendientes",
+    "sala",
+    "llm",
+    "yaiwes_md",
+    "archivos"
+   ]
+  }
+ },
+ "recovery": {
+  "tag": "pre-reorg-20261104-kernel01",
+  "bundle": "backups/20261104-kernel01.bundle",
+  "tag_sha": "a5ebb5160b4b62837cff239441cd3877a462d6f2",
+  "bundle_bytes": 8068832804,
+  "bundle_present": true
+ },
+ "recovery_policy": "gated: el rollback NUNCA es automatico (exige gate explicito)"
+}

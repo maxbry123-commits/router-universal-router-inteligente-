@@ -173,7 +173,7 @@ healthchecks:
   connection: CON-036
   method: import
   target: chat-router -> backend.mvp
-  command: python -c "import sys;sys.path.insert(0,'chat-router');import backend.mvp"
+  command: python -c "import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp"
   expect:
     import_ok: true
   status: pending_audit

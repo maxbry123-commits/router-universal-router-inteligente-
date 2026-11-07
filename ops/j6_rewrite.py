@@ -167,7 +167,8 @@ def publish_tree_as_branch():
     msg=f"reorg {RUN_ID}: arbol limpio (37 rutas de build purgadas) sobre {base}"
     commit=sh(["git","commit-tree",sha_tree,"-p",parent,"-m",msg],cwd=".").stdout.strip()
     # el arbol NO debe contener las 37 rutas purgadas
-    left=[p for p in plan_purge_paths() if sh(["git","ls-tree","-r","--name-only",commit],cwd=".",check=False).stdout.find(p)>=0]
+    _names=set(sh(["git","ls-tree","-r","--name-only",commit],cwd=".",check=False).stdout.splitlines())
+    left=[p for p in plan_purge_paths() if p in _names]
     check("purged_absent_from_tree",not left,left[:5])
     lease=f"refs/heads/main-clean:{ls_remote('refs/heads/main-clean')}"
     r=sh(["git","push","origin",f"{commit}:refs/heads/main-clean",f"--force-with-lease={lease}"],cwd=".",check=False)
