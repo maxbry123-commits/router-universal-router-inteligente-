@@ -1,0 +1,38 @@
+{
+  "bundle_bytes": 22385845,
+  "bundle_sha256": "997ad2f40e2bdf323f6c65dc23f0469b218fea06df946c3cabd3fbf01e75cd7c",
+  "extracted_tree": {
+    "bytes": 27210144,
+    "files": 614,
+    "sha256": "938efa0a3d76abfce74ab80b93217dd00d4bba9eb0dcea7f6a9d18a19e3f3284"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "context7.bundle.zip.part-0001",
+      "sha256": "c350b2044a0cb12698156e611aeedb3a191f1718a8e0ed5454ad2d7a05093cb3"
+    },
+    {
+      "bytes": 9802933,
+      "name": "context7.bundle.zip.part-0002",
+      "sha256": "55376d339ca718359dbe6ba01837b93f8cff2ec016a96af604a071504b802b9b"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "context7",
+  "source_bytes": 27210144,
+  "source_commit": "078c0c731d19eb88d2391b236ab82a127dbabac3",
+  "source_files": 614,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/upstash/context7",
+  "source_tree": {
+    "bytes": 27210144,
+    "files": 614,
+    "sha256": "938efa0a3d76abfce74ab80b93217dd00d4bba9eb0dcea7f6a9d18a19e3f3284"
+  }
+}
