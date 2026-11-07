@@ -1,0 +1,1328 @@
+# 🔥 Firecrawl CLI
+
+Command-line interface for Firecrawl, the context API for AI agents. Search, scrape, parse, crawl, map, and interact with the web, search research papers, developer sources, and government sources, and run agent jobs directly from your terminal.
+
+## Installation
+
+```bash
+npm install -g firecrawl-cli
+```
+
+Or set up everything in one command (install CLI globally, authenticate, and install shared skills for your detected coding editors):
+
+```bash
+npx -y firecrawl-cli@latest init -y --browser
+```
+
+- `-y` runs setup non-interactively
+- `--browser` opens the browser for Firecrawl authentication automatically
+- skills install globally in the shared skills directory and are made available to detected AI coding agents by default
+
+### Setup Skills, Workflows, and MCP
+
+If you are using an AI coding agent like Claude Code, you can also install skill groups manually — one command per family:
+
+```bash
+firecrawl setup core       # scrape/search/crawl/interact primitives + index skills ("skills" is an alias)
+firecrawl setup build      # app-integration skills for the Firecrawl API
+firecrawl setup workflows  # end-to-end recipes (lead gen, deep research, ...)
+```
+
+Or install a single skill by name — the `firecrawl-` prefix is optional:
+
+```bash
+firecrawl setup developer-index
+firecrawl setup seo-audit
+```
+
+If no API key is found afterwards, an interactive terminal offers a browser login (pass `--browser` to log in without the prompt); non-interactive runs never block — they print a hint and the skills walk agents through setup on first use.
+
+Default installs use the shared `~/.agents/skills` directory and the coding editors detected by Firecrawl. The npx installer always includes Codex as the shared-directory target, even when Codex is not detected, preserving shared files and agent links. If no editors are detected, only the shared directory is populated. The npx path detects supported global targets, including Kiro and custom configuration locations such as `CLAUDE_CONFIG_DIR` and `XDG_CONFIG_HOME`. Project-only targets are excluded. Use `--agent <agent>` to target a specific editor.
+
+#### Scope setup to a single harness
+
+By default skills route to every detected harness. To install and route to only
+one harness in a single command:
+
+```bash
+# One-shot from the install script (non-interactive, no TTY needed)
+curl -fsSL https://firecrawl.dev/install.sh | bash -s -- --agent openclaw
+
+# Or, once the CLI is installed
+firecrawl init --agent openclaw          # only OpenClaw
+firecrawl setup skills --agent openclaw
+firecrawl setup workflows --agent openclaw
+```
+
+Any args after `bash -s --` are forwarded to `firecrawl init`, so you can add
+things like `--skip-auth` for a skills-only, no-login setup. When you run
+`firecrawl init` interactively without `--agent`, it shows a checkbox of your
+detected harnesses (all selected by default) so you can pick a subset.
+
+| Harness      | `--agent` value |
+| ------------ | --------------- |
+| Claude Code  | `claude-code`   |
+| Codex        | `codex`         |
+| Cursor       | `cursor`        |
+| Windsurf     | `windsurf`      |
+| OpenCode     | `opencode`      |
+| OpenClaw     | `openclaw`      |
+| OpenHands    | `openhands`     |
+| Hermes Agent | `hermes-agent`  |
+
+### Agent skills
+
+The init command installs the **CLI skills** by default and offers the **workflow skills** as optional extras, into AI coding agents (Cursor, Claude Code, Windsurf, etc.):
+
+- **CLI skills** — teach agents how to use the Firecrawl CLI for live web work (search, scrape, interact, map, crawl, agent) and Alexandria data providers. Installed by default.
+- **Workflow skills** — teach agents how to produce Firecrawl-powered deliverables such as research briefs, SEO audits, QA reports, lead lists, knowledge bases, and design-system extraction. Interactive multi-select during init.
+
+All skill families live in the [`firecrawl/skills`](https://github.com/firecrawl/skills) catalog — including the **build skills** for integrating Firecrawl into application code:
+
+```bash
+npx skills add firecrawl/skills
+```
+
+> Contributing skills? CLI skills (including the research/developer index skills) → PR this repo (`skills/`). Build/SDK skills → PR the [`firecrawl`](https://github.com/firecrawl/firecrawl) monorepo (`skills/`). Workflow skills → PR [`firecrawl/firecrawl-workflows`](https://github.com/firecrawl/firecrawl-workflows). The catalog ([`firecrawl/skills`](https://github.com/firecrawl/skills)) is read-only — never PR it directly.
+
+The Firecrawl Claude Code and Cursor plugins are released separately and do not include these CLI skills. Changes here still reach the skill catalog.
+
+To reinstall skills manually:
+
+```bash
+firecrawl setup core
+firecrawl setup build
+firecrawl setup workflows
+```
+
+### CLI updates
+
+Global npm, pnpm, bun, and yarn installations, plus standalone binaries on macOS
+and Linux, check for updates in the background. Commands do not wait for an
+update, and the updater never writes to stdout. The next invocation uses the
+updated release, with a one-time notice on an interactive terminal.
+
+For global package installs, the installed package is a stable launcher. The
+updater uses npm to install a new release into a separate directory under
+`~/.firecrawl/versions/`, verifies it, then atomically switches the current
+version pointer. It never rewrites the global installation or removes files
+used by running commands. Managed versions are shared within a Node major
+version, so a patch upgrade reuses the saved release. The launcher checks the
+release's Node requirements before selecting it. npm must be available on PATH
+for automatic package updates; otherwise use your package manager's manual
+update command. Install scripts are disabled. Dependencies resolve to versions
+published no later than the release itself, so the waiting period covers them
+too.
+
+Each global installation has its own version selection. Maintenance retains
+the current and previous release for each installation, plus any older release
+still used by a running CLI process. It removes other inactive versions and
+staging directories older than 24 hours whose installer has exited. Files owned
+by another machine on shared storage are retained conservatively.
+
+Reinstalling with npm resets the launcher's selection to that package,
+including an explicit downgrade. Disable automatic updates before reinstalling
+if you want to stay on the selected version. Disabling updates alone keeps the
+currently selected release.
+
+Standalone binaries download their release archive, verify its SHA-256 checksum
+and reported version, then atomically replace the executable. The previous
+binary is retained beside it with a `.previous` suffix.
+
+A newly observed release waits at least 24 hours before unattended installation.
+The worker rechecks that it is still the latest release after this delay; a
+changed candidate starts a new waiting period. Version checks normally refresh
+about once a day. Automatic updates never cross a major version or install a
+prerelease. Prerelease installations remain pinned.
+
+To update immediately, bypassing the waiting period, including to a new major
+version:
+
+```bash
+firecrawl update
+```
+
+To restore the previous version without the network:
+
+```bash
+firecrawl update --rollback
+```
+
+For global package installs, the launcher handles rollback without loading the
+active release, so it works even when that release cannot start. Rollback
+disables automatic updates so the same release is not immediately
+installed again. The first managed-package rollback returns to the original
+package-manager installation; later updates can roll back to the previous
+managed version. Moving the registry's latest tag back does not automatically
+downgrade an existing installation.
+
+Control automatic updates with:
+
+```bash
+firecrawl update --disable-auto
+firecrawl update --enable-auto
+export FIRECRAWL_NO_AUTO_UPDATE=1
+```
+
+Automatic updates are also off when `CI` is set, unless it is `0` or `false`.
+`FIRECRAWL_NO_UPDATE_CHECK=1` disables both automatic updates and notices.
+Explicit updates still work with these settings. Failures leave the active
+installation unchanged and back off before retrying. Details are recorded in
+`~/.firecrawl/auto-update.log`.
+
+Homebrew and other system packages, project-local installs, package runners
+such as npx, and standalone Windows binaries retain their selected release and
+show the appropriate manual update instruction. Enabling automatic updates on
+these installations reports that they are externally managed. Disabling updates
+saves the shared user preference from any installation.
+Non-writable or differently owned standalone binaries are not replaced.
+
+Package updates use npm's registry configuration. Binary version checks honor
+`npm_config_registry`; binary downloads use GitHub releases, or the mirror set
+with `FIRECRAWL_RELEASES_URL`.
+
+### Skill updates
+
+Interactive CLI sessions (except `init`, `setup`, and the `-y`/`--yes` init
+shorthand) show a boxed notice when installed Firecrawl skills differ from the
+current catalog. The check includes supporting reference files and runs
+independently of CLI releases. Installs record which catalog skills existed, so
+the notice announces skills published later, once, in families whose umbrella
+skill is installed. Skills skipped during setup are not offered again.
+
+Each affected family gets one command: `firecrawl setup core`,
+`firecrawl setup build`, or `firecrawl setup workflows`. These commands install
+the entire current family, including previously skipped skills and
+new skills added since your CLI was released. When installing through npx, failed
+catalog API discovery falls back to this CLI release's known names with a warning.
+Native installs discover skills directly from the Git repository and require that
+repository to be available. An explicit refresh replaces installed files, including
+local edits; the notice itself never changes them.
+
+Checks cover global installations recorded in `~/.agents/.skill-lock.json` with
+files in `~/.agents/skills`. They cache catalog results for 20 hours, repeat the
+notice at most once every 12 hours, and retry failed checks after an hour.
+Non-interactive runs stay quiet. Set `FIRECRAWL_NO_UPDATE_CHECK=1` to disable both
+CLI and skill update notices.
+
+### MCP and web defaults
+
+To install the Firecrawl MCP server into your editors (Cursor, Claude Code, VS Code, etc.):
+
+```bash
+firecrawl setup mcp
+```
+
+With a key saved by `firecrawl login`, export `FIRECRAWL_API_KEY` and pass
+`--agent <agent>` (or `--agent all`), or add `--keyless`: setup never writes a
+stored key into client configs.
+
+Use `--agent <agent>` for one client, or `--agent all --global` to configure
+Claude Code, VS Code, Codex, OpenCode, Cursor, Gemini CLI, Windsurf,
+Antigravity, Amp, Grok Build, Zed, Hermes Agent, and OpenClaw in one run. The
+`--agent` values for the newer clients are `amp` (or `ampcode`, `amp-code`),
+`grok` (or `grok-build`, `grok-cli`), and `zed`. Amp, Grok Build, and Zed are written to their user settings, so they do not take
+`--project`: Amp to `~/.config/amp/settings.json` (or an existing
+`settings.jsonc` when there is no `settings.json`), Grok Build to
+`~/.grok/config.toml`, and Zed to `~/.config/zed/settings.json`
+(`$XDG_CONFIG_HOME/zed/settings.json` on Linux when it is set,
+`%APPDATA%\Zed\settings.json` on Windows). Clients that cannot be
+configured on this machine (for example OpenClaw when the `openclaw` command is
+not installed) are skipped and listed in the summary; the command only fails
+when a client it tried to configure fails. When `FIRECRAWL_API_KEY` is set,
+Antigravity and Zed are skipped because they have no verified way to reference
+the key from the environment; add `--keyless` to include them.
+
+To make Firecrawl the default web provider for supported AI agents:
+
+```bash
+firecrawl setup defaults    # or: firecrawl make default
+```
+
+This disables native web fetch/search where supported so agents route web work
+through Firecrawl. When run interactively, it asks harness by harness (Claude
+Code, Codex) so you can choose exactly which to change. Use `-y` to skip the
+picker and apply to all, or `--agent` to target one:
+
+```bash
+firecrawl setup defaults --agent codex      # only Codex
+firecrawl setup defaults -y                  # all harnesses, no prompts
+```
+
+To undo those config changes (also interactive, harness by harness):
+
+```bash
+firecrawl setup defaults --undo              # pick which to restore
+firecrawl setup defaults --undo --agent claude
+```
+
+## Quick Start
+
+Just run a command - the CLI will prompt you to authenticate if needed:
+
+```bash
+firecrawl https://example.com
+```
+
+## Authentication
+
+On first run, you'll be prompted to authenticate:
+
+```
+  🔥 firecrawl cli
+  Search, scrape, and interact with the web
+
+Welcome! To get started, authenticate with your Firecrawl account.
+
+  1. Login with browser (recommended)
+  2. Enter API key manually
+
+Tip: You can also set FIRECRAWL_API_KEY environment variable
+
+Enter choice [1/2]:
+```
+
+### Authentication Methods
+
+```bash
+# Interactive (prompts automatically when needed)
+firecrawl
+
+# Browser login
+firecrawl login
+
+# Direct API key
+firecrawl login --api-key fc-your-api-key
+
+# Environment variable
+export FIRECRAWL_API_KEY=fc-your-api-key
+
+# Per-command API key
+firecrawl scrape https://example.com --api-key fc-your-api-key
+```
+
+### Self-hosted / Local Development
+
+For self-hosted Firecrawl instances or local development, use the `--api-url` option:
+
+```bash
+# Use a local Firecrawl instance (no API key required)
+firecrawl --api-url http://localhost:3002 scrape https://example.com
+
+# Or set via environment variable
+export FIRECRAWL_API_URL=http://localhost:3002
+firecrawl scrape https://example.com
+
+# Self-hosted with API key
+firecrawl --api-url https://firecrawl.mycompany.com --api-key fc-xxx scrape https://example.com
+```
+
+When using a custom API URL (anything other than `https://api.firecrawl.dev`), authentication is automatically skipped, allowing you to use local instances without an API key.
+
+---
+
+## Commands
+
+### `scrape` - Scrape URLs
+
+Extract content from any webpage. Pass multiple URLs to scrape them concurrently -- each result is saved to `.firecrawl/` automatically.
+
+```bash
+# Basic usage (outputs markdown)
+firecrawl https://example.com
+firecrawl scrape https://example.com
+
+# Get raw HTML
+firecrawl https://example.com --html
+firecrawl https://example.com -H
+
+# Multiple formats (outputs JSON)
+firecrawl https://example.com --format markdown,links,images
+
+# Save to file
+firecrawl https://example.com -o output.md
+firecrawl https://example.com --format json -o data.json --pretty
+
+# Multiple URLs (scraped concurrently, each saved to .firecrawl/)
+firecrawl scrape https://firecrawl.dev https://firecrawl.dev/blog https://docs.firecrawl.dev
+```
+
+#### Scrape Options
+
+| Option                     | Description                                            |
+| -------------------------- | ------------------------------------------------------ |
+| `-f, --format <formats>`   | Output format(s), comma-separated                      |
+| `-H, --html`               | Shortcut for `--format html`                           |
+| `-S, --summary`            | Shortcut for `--format summary`                        |
+| `--only-main-content`      | Extract only main content (the default)                |
+| `--full-page`              | Keep the whole page, including navs and footers        |
+| `--wait-for <ms>`          | Wait time before scraping (for JS-rendered content)    |
+| `--screenshot`             | Take a screenshot                                      |
+| `--full-page-screenshot`   | Take a full page screenshot                            |
+| `--include-tags <tags>`    | Only include specific HTML tags                        |
+| `--exclude-tags <tags>`    | Exclude specific HTML tags                             |
+| `--max-age <milliseconds>` | Maximum age of cached content in milliseconds          |
+| `--lockdown`               | Enable lockdown mode for the scrape                    |
+| `--redact-pii`             | Redact personally identifiable information from output |
+| `--schema <json>`          | JSON schema for structured extraction                  |
+| `--schema-file <path>`     | Path to JSON schema file for structured extraction     |
+| `--actions <json>`         | JSON actions array to run during scrape                |
+| `--actions-file <path>`    | Path to JSON actions file                              |
+| `--proxy <proxy>`          | Proxy mode for scraping (for example, `auto`, `basic`) |
+| `-o, --output <path>`      | Save output to file                                    |
+| `--json`                   | Output as JSON format                                  |
+| `--pretty`                 | Pretty print JSON output                               |
+| `--timing`                 | Show request timing info                               |
+
+#### Available Formats
+
+| Format           | Description                  |
+| ---------------- | ---------------------------- |
+| `markdown`       | Clean markdown (default)     |
+| `html`           | Cleaned HTML                 |
+| `rawHtml`        | Original HTML                |
+| `links`          | All links on the page        |
+| `images`         | All images on the page       |
+| `screenshot`     | Screenshot as base64         |
+| `summary`        | AI-generated summary         |
+| `json`           | Structured JSON extraction   |
+| `changeTracking` | Track changes on the page    |
+| `attributes`     | Page attributes and metadata |
+| `branding`       | Brand identity extraction    |
+
+#### Examples
+
+```bash
+# Extract only main content as markdown
+firecrawl https://blog.example.com --only-main-content
+
+# Wait for JS to render, then scrape
+firecrawl https://spa-app.com --wait-for 3000
+
+# Get all links from a page
+firecrawl https://example.com --format links
+
+# Screenshot + markdown
+firecrawl https://example.com --format markdown --screenshot
+
+# Extract specific elements only
+firecrawl https://example.com --include-tags article,main
+
+# Exclude navigation and ads
+firecrawl https://example.com --exclude-tags nav,aside,.ad
+```
+
+---
+
+### `search` - Search the web
+
+Search the web with query-relevant highlights and optionally scrape content from search results.
+
+```bash
+# Basic search
+firecrawl search "firecrawl"
+
+# Limit results
+firecrawl search "AI news" --limit 10
+
+# Search news sources
+firecrawl search "tech startups" --sources news
+
+# Search images
+firecrawl search "landscape photography" --sources images
+
+# Multiple sources
+firecrawl search "machine learning" --sources web,news,images
+
+# Filter by category (research-affiliated websites, PDFs, developer index, gov index)
+firecrawl search "transformer architecture" --categories research
+firecrawl search "machine learning" --categories pdf,research
+
+# Note: --categories research narrows *web* results to research-affiliated
+# websites. To search papers themselves, use `firecrawl research search-papers`.
+
+# Developer search: public repositories, GitHub issues, merged PRs, READMEs, and docs
+firecrawl search "axum middleware ordering" --categories developer
+
+# Government search: US government sources (cannot be combined with other categories)
+firecrawl search "California data breach notification statute" --categories gov
+
+# Time-based search
+firecrawl search "AI announcements" --tbs qdr:d   # Past day
+firecrawl search "tech news" --tbs qdr:w          # Past week
+
+# Location-based search
+firecrawl search "restaurants" --location "San Francisco,California,United States"
+firecrawl search "local news" --country DE
+
+# Search and scrape results
+firecrawl search "firecrawl tutorials" --scrape
+firecrawl search "API documentation" --scrape --scrape-formats markdown,links
+
+# Output as pretty JSON
+firecrawl search "AI data tools"
+```
+
+#### Search Options
+
+| Option                       | Description                                                                                                                                                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--limit <n>`                | Maximum results (default: 5, max: 100)                                                                                                                                                                            |
+| `--sources <sources>`        | Comma-separated: `web`, `images`, `news`, `alexandria` (default: web). With an API key, `alexandria` is always added with domain matching; `--no-domain-tools` turns domain matching off                          |
+| `--categories <categories>`  | Comma-separated: `research` (research-affiliated websites -- for papers use [`research search-papers`](#research---search-research-papers)), `pdf`, `developer`, `gov` (cannot be combined with other categories) |
+| `--tbs <value>`              | Time filter: `qdr:h` (hour), `qdr:d` (day), `qdr:w` (week), `qdr:m` (month), `qdr:y` (year)                                                                                                                       |
+| `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                                                                                                                                         |
+| `--country <code>`           | ISO country code (default: US)                                                                                                                                                                                    |
+| `--timeout <ms>`             | Timeout in milliseconds (default: 60000)                                                                                                                                                                          |
+| `--highlights`               | Query-relevant highlights for web and news when available (default)                                                                                                                                               |
+| `--no-highlights`            | Keep the original search snippets                                                                                                                                                                                 |
+| `--ignore-invalid-urls`      | Exclude URLs invalid for other Firecrawl endpoints                                                                                                                                                                |
+| `--scrape`                   | Enable scraping of search results                                                                                                                                                                                 |
+| `--scrape-formats <formats>` | Scrape formats when `--scrape` enabled (default: markdown)                                                                                                                                                        |
+| `--only-main-content`        | Include only the main content when scraping (the API default)                                                                                                                                                     |
+| `--full-page`                | Keep the whole page when scraping, including navs and footers                                                                                                                                                     |
+| `-o, --output <path>`        | Save to file                                                                                                                                                                                                      |
+| `--json`                     | Output as compact JSON                                                                                                                                                                                            |
+
+#### Examples
+
+```bash
+# Research a topic with recent results
+firecrawl search "React Server Components" --tbs qdr:m --limit 10
+
+# Search public developer sources
+firecrawl search "web data library" --categories developer --limit 20
+
+# Search and get full content
+firecrawl search "firecrawl documentation" --scrape --scrape-formats markdown --json -o results.json
+
+# Find research papers -- use the paper index, not the website filter
+firecrawl research search-papers "large language models" --json
+
+# Narrow web results to research-affiliated websites (not the paper index)
+firecrawl search "large language models" --categories research --json
+
+# Answer a programming question from public repositories, GitHub issues, merged PRs, READMEs, and docs
+firecrawl search "tokio select cancellation safety" --categories developer --json
+
+# Search with location targeting
+firecrawl search "best coffee shops" --location "Berlin,Germany" --country DE
+
+# Get news from the past week
+firecrawl search "AI startups funding" --sources news --tbs qdr:w --limit 15
+```
+
+---
+
+### `developer` - Search developer sources
+
+Search an index built for coding agents: public repositories, GitHub issues, merged pull requests, repository READMEs, and curated documentation sites. Use it for a programming question: code behaviour, a library or framework, an API contract, an error message, or a known bug.
+
+The CLI intentionally keeps this agent-facing surface lean: it accepts only the query and result count. Express repository, source, result-kind, language, topic, license, and other scoping intent in the query text; semantic retrieval handles the scoping. For advanced filters, use the [Developer Index REST API](https://docs.firecrawl.dev/features/developer).
+
+```bash
+firecrawl developer "axum middleware ordering"
+```
+
+#### Options
+
+| Option                | Description                                                |
+| --------------------- | ---------------------------------------------------------- |
+| `--limit <n>`         | Number of results (default: 10, max: 100)                  |
+| `-o, --output <path>` | Save to file                                               |
+| `--json`              | Output full response, including citations and index status |
+| `--pretty`            | Pretty print JSON output                                   |
+
+#### Examples
+
+```bash
+# Investigate a known bug
+firecrawl developer "tokio spawn_blocking panics thread limit" --limit 10
+
+# Put repository and evidence-kind intent directly in the semantic query
+firecrawl developer "tokio select cancellation safety in tokio-rs/tokio issues and merged pull requests"
+
+# Keep the full response, including passages, citations, and licenses
+firecrawl developer "tokio select cancellation safety" --json -o results.json
+```
+
+---
+
+### `gov` - Search the Firecrawl Government Index
+
+Search the Government Index: primary law and regulatory material from US federal, state, and local government sources, including statutes, regulations, codes, court opinions, and other government publications.
+
+For the request and response schema, see the [Government Index REST API](https://docs.firecrawl.dev/features/gov).
+
+```bash
+firecrawl gov "food labeling requirements for allergens"
+```
+
+#### Options
+
+| Option                  | Description                                                                                                                                                                                                                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--limit <n>`           | Number of results (default: 10, max: 100)                                                                                                                                                                                                                |
+| `--jurisdiction <code>` | Keep only pages of one jurisdiction: `us` for federal, or `us-` plus a two-letter state or territory code, such as `us-ca` or `us-dc`                                                                                                                    |
+| `--court <id>`          | Keep only pages labeled for one court, by CourtListener court id, such as `scotus`, `ca9`, or `nysd`                                                                                                                                                     |
+| `--court-type <type>`   | Keep only pages from one type of court: `federal-supreme`, `federal-appellate`, `federal-district`, `federal-bankruptcy`, `federal-special`, `military`, `state-supreme`, `state-appellate`, `state-trial`, `state-special`, or `state-attorney-general` |
+| `--cites <citation>`    | Keep only pages that cite one law or case, as a printed citation such as `"42 U.S.C. § 1983"` or `"5 U.S. 137"`, or a citation id such as `us:usc:42:1983`                                                                                               |
+| `--domain <domain>`     | Keep only pages from one site, such as `irs.gov`                                                                                                                                                                                                         |
+| `-o, --output <path>`   | Save to file                                                                                                                                                                                                                                             |
+| `--json`                | Output the raw response as JSON                                                                                                                                                                                                                          |
+| `--pretty`              | Pretty print JSON output                                                                                                                                                                                                                                 |
+
+Filters combine with AND. Filters keep only pages the index has labeled, so a filtered search can leave out relevant pages, and no results does not mean none exist. Court labels are most complete for federal courts and case-law collections.
+
+#### Examples
+
+```bash
+# Find state statutes on a topic
+firecrawl gov "California data breach notification statute" --limit 10
+
+# Narrow to one court
+firecrawl gov "qualified immunity excessive force" --court ca9
+
+# Keep only pages that cite a statute
+firecrawl gov "civil rights claims against police officers" --cites "42 U.S.C. § 1983"
+
+# Keep the raw response
+firecrawl gov "FDA food labeling regulations" --json -o results.json
+```
+
+---
+
+### `research` - Search research papers
+
+Search Firecrawl's research paper index: roughly 43M abstracts, around 90% biomedical (PubMed, bioRxiv, medRxiv) plus arXiv. Use this for biomedical, clinical, and scientific literature rather than scraping PubMed, bioRxiv, or Google Scholar by hand.
+
+This is **not** the same thing as `firecrawl search --categories research`, which only narrows ordinary web results to research-affiliated websites.
+
+```bash
+# Find papers by topic (start here)
+firecrawl research search-papers "CRISPR base editing off-target effects" --limit 20
+
+# Full metadata for one paper, by any supported id form
+firecrawl research inspect-paper pmid:40953549
+
+# Expand along the citation graph from your strongest hits
+firecrawl research related-papers pmcid:PMC12530322 --intent "in vivo delivery"
+
+# Read full-text passages to verify a specific claim
+firecrawl research read-paper doi:10.1016/j.neunet.2025.108095 --question "What was the sample size?"
+```
+
+Paper ids accept `pmid:`, `pmcid:`, `doi:`, and `arxiv:` forms, plus canonical `paperId` values returned by search.
+
+#### Subcommands
+
+| Subcommand                    | Description                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| `search-papers <query>`       | Semantic (HyDE) search over paper abstracts. The primary entry point.       |
+| `inspect-paper <paperId>`     | Canonical metadata: title, abstract, authors, categories, source ids, dates |
+| `related-papers <seedIds...>` | Citation-graph expansion from seed papers, ranked against `--intent`        |
+| `read-paper <paperId>`        | Best-matching in-body full-text passages for a `--question`                 |
+
+#### `search-papers` Options
+
+| Option                      | Description                                                                            |
+| --------------------------- | -------------------------------------------------------------------------------------- |
+| `--limit <n>`               | Number of results (default: 40)                                                        |
+| `--authors <authors>`       | Comma-separated author substring filter(s); all must match                             |
+| `--categories <categories>` | arXiv-style taxonomy labels (e.g. `cs.LG,cs.IR`). Biomedical records do not use these. |
+| `--from <date>`             | Inclusive lower bound on created/updated date (YYYY-MM-DD)                             |
+| `--to <date>`               | Inclusive upper bound on created/updated date (YYYY-MM-DD)                             |
+| `--sort <order>`            | `relevance` (default) or `date_desc` (newest of the most relevant matches)             |
+| `-o, --output <path>`       | Save to file                                                                           |
+| `--json`                    | Output as compact JSON                                                                 |
+| `--pretty`                  | Pretty print JSON output                                                               |
+
+#### Tips
+
+- Run several distinct framings of the same question rather than one query -- recall improves markedly.
+- Use `search-papers` to find anchors, `related-papers` to expand, then `read-paper` to verify a candidate before including it.
+
+---
+
+### `feedback` - Send endpoint job feedback
+
+Send concise feedback for a completed v2 `search`, `scrape`, `parse`, or `map`
+job. For search-result quality, `search-feedback` is still the most guided
+command; `feedback` is the generic endpoint/job surface.
+
+```bash
+firecrawl feedback scrape 0193f6c5-1234-7890-abcd-1234567890ab \
+  --rating partial \
+  --issues missing_markdown \
+  --tags docs \
+  --note "The pricing table was missing from the markdown output." \
+  --url https://example.com/pricing \
+  --page-numbers 1
+```
+
+Keep notes and metadata small. Do not send raw scrape or parse outputs as
+feedback.
+
+Set `FIRECRAWL_NO_ENDPOINT_FEEDBACK=1` to make `firecrawl feedback` skip
+endpoint feedback calls silently.
+
+#### Feedback Options
+
+| Option                                 | Description                                                                                                                  |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `--rating <rating>`                    | Required: `good`, `partial`, or `bad`                                                                                        |
+| `--issues <codesOrJson>`               | Comma-separated issue codes or JSON array                                                                                    |
+| `--tags <codesOrJson>`                 | Comma-separated tags or JSON array                                                                                           |
+| `--note <text>`                        | Short human-readable feedback                                                                                                |
+| `--valuable-sources <json>`            | JSON array of `{url, reason}` entries                                                                                        |
+| `--valuable-results <positionsOrJson>` | Search only: every useful result as `source:position`, e.g. `web:1,news:2`, or a JSON array of `{source, position, reason?}` |
+| `--missing-content <json>`             | JSON array of `{topic, description}` entries                                                                                 |
+| `--query-suggestions <text>`           | Search/query improvement notes                                                                                               |
+| `--url <url>`                          | Relevant URL for scrape or parse feedback                                                                                    |
+| `--page-numbers <numbersOrJson>`       | Comma-separated page numbers or JSON array                                                                                   |
+| `--metadata <json>`                    | Small JSON object with extra context                                                                                         |
+| `--metadata-file <path>`               | Path to small metadata JSON object                                                                                           |
+| `--silent`                             | Suppress output for background agent calls                                                                                   |
+
+---
+
+### `map` - Discover all URLs on a website
+
+Quickly discover all URLs on a website without scraping content.
+
+```bash
+# List all URLs (one per line)
+firecrawl map https://example.com
+
+# Output as JSON
+firecrawl map https://example.com --json
+
+# Search for specific URLs
+firecrawl map https://example.com --search "blog"
+
+# Limit results
+firecrawl map https://example.com --limit 500
+```
+
+#### Map Options
+
+| Option                      | Description                       |
+| --------------------------- | --------------------------------- |
+| `--limit <n>`               | Maximum URLs to discover          |
+| `--search <query>`          | Filter URLs by search query       |
+| `--sitemap <mode>`          | `include`, `skip`, or `only`      |
+| `--include-subdomains`      | Include subdomains                |
+| `--ignore-query-parameters` | Dedupe URLs with different params |
+| `--timeout <seconds>`       | Request timeout                   |
+| `--json`                    | Output as JSON                    |
+| `-o, --output <path>`       | Save to file                      |
+
+#### Examples
+
+```bash
+# Find all product pages
+firecrawl map https://shop.example.com --search "product"
+
+# Get sitemap URLs only
+firecrawl map https://example.com --sitemap only
+
+# Save URL list to file
+firecrawl map https://example.com -o urls.txt
+
+# Include subdomains
+firecrawl map https://example.com --include-subdomains --limit 1000
+```
+
+---
+
+### `crawl` - Crawl an entire website
+
+Crawl multiple pages from a website.
+
+```bash
+# Start a crawl (returns job ID)
+firecrawl crawl https://example.com
+
+# Wait for crawl to complete
+firecrawl crawl https://example.com --wait
+
+# With progress indicator
+firecrawl crawl https://example.com --wait --progress
+
+# Check crawl status
+firecrawl crawl <job-id>
+
+# Limit pages
+firecrawl crawl https://example.com --limit 100 --max-depth 3
+```
+
+#### Crawl Options
+
+| Option                         | Description                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------- |
+| `--wait`                       | Wait for crawl to complete                                                      |
+| `--progress`                   | Show progress while waiting                                                     |
+| `--limit <n>`                  | Maximum pages to crawl                                                          |
+| `--max-depth <n>`              | Maximum crawl depth                                                             |
+| `--include-paths <paths>`      | Only crawl matching paths                                                       |
+| `--exclude-paths <paths>`      | Skip matching paths                                                             |
+| `--sitemap <mode>`             | `include`, `skip`, or `only`                                                    |
+| `--allow-subdomains`           | Include subdomains                                                              |
+| `--allow-external-links`       | Follow external links                                                           |
+| `--crawl-entire-domain`        | Crawl entire domain                                                             |
+| `--ignore-query-parameters`    | Treat URLs with different params as same                                        |
+| `--delay <ms>`                 | Delay between requests in milliseconds, 1 to 60000 (sent to the API in seconds) |
+| `--max-concurrency <n>`        | Max concurrent requests                                                         |
+| `--scrape-options <json>`      | JSON scrape options passed to each page                                         |
+| `--scrape-options-file <path>` | Path to scrape options JSON file                                                |
+| `--webhook <url-or-json>`      | Webhook URL or configuration                                                    |
+| `--cancel`                     | Cancel an active crawl job by job ID                                            |
+| `--timeout <seconds>`          | Timeout when waiting                                                            |
+| `--poll-interval <seconds>`    | Status check interval                                                           |
+
+#### Examples
+
+```bash
+# Crawl blog section only
+firecrawl crawl https://example.com --include-paths /blog,/posts
+
+# Exclude admin pages
+firecrawl crawl https://example.com --exclude-paths /admin,/login
+
+# Crawl with rate limiting
+firecrawl crawl https://example.com --delay 1000 --max-concurrency 2
+
+# Deep crawl with high limit
+firecrawl crawl https://example.com --limit 1000 --max-depth 10 --wait --progress
+
+# Save results
+firecrawl crawl https://example.com --wait -o crawl-results.json --pretty
+```
+
+---
+
+### `batch-scrape` - Scrape a list of URLs
+
+Scrape many known URLs as one async job. Unlike multi-URL `scrape`, every requested format is kept and results come back as JSON.
+
+```bash
+# Start a batch scrape (returns job ID)
+firecrawl batch-scrape https://example.com https://example.org
+
+# Read URLs from a file (one per line; blank lines and # comments ignored)
+firecrawl batch-scrape --urls-file urls.txt
+
+# Wait for results
+firecrawl batch-scrape --urls-file urls.txt --format markdown,links --wait --progress
+
+# Check status (returns documents scraped so far)
+firecrawl batch-scrape <job-id>
+
+# Cancel a job
+firecrawl batch-scrape <job-id> --cancel
+```
+
+#### Batch Scrape Options
+
+| Option                         | Description                                     |
+| ------------------------------ | ----------------------------------------------- |
+| `--urls-file <path>`           | File with one URL per line                      |
+| `-f, --format <formats>`       | Output format(s), comma-separated               |
+| `--only-main-content`          | Extract only main content (the default)         |
+| `--full-page`                  | Keep the whole page, including navs and footers |
+| `--wait-for <ms>`              | Wait time before scraping each page             |
+| `--max-age <milliseconds>`     | Maximum age of cached content in milliseconds   |
+| `--schema <json>`              | JSON schema for extraction (adds `json` format) |
+| `--schema-file <path>`         | Path to JSON schema file                        |
+| `--prompt <text>`              | Extraction prompt (adds `json` format)          |
+| `--scrape-options <json>`      | JSON scrape options applied to every URL        |
+| `--scrape-options-file <path>` | Path to scrape options JSON file                |
+| `--wait`                       | Wait for the job to complete                    |
+| `--progress`                   | Show progress while waiting                     |
+| `--timeout <seconds>`          | Timeout when waiting                            |
+| `--poll-interval <seconds>`    | Status check interval (default: 2)              |
+| `--webhook <url-or-json>`      | Webhook URL or configuration                    |
+| `--max-concurrency <n>`        | Max concurrent scrapes for this job             |
+| `--ignore-invalid-urls`        | Skip invalid URLs instead of failing the job    |
+| `--status`                     | Check status of a job by job ID                 |
+| `--cancel`                     | Cancel an active job by job ID                  |
+| `-o, --output <path>`          | Save output to file                             |
+| `--pretty`                     | Pretty print JSON output                        |
+
+#### Examples
+
+```bash
+# Extract the same fields from every page
+firecrawl batch-scrape --urls-file products.txt --wait \
+  --schema '{"type":"object","properties":{"name":{"type":"string"},"price":{"type":"string"}}}' \
+  -o products.json --pretty
+
+# Notify a webhook instead of waiting
+firecrawl batch-scrape --urls-file urls.txt --webhook https://example.com/hooks/firecrawl
+```
+
+---
+
+### `credit-usage` - Check your credits
+
+```bash
+# Show credit usage
+firecrawl credit-usage
+
+# Output as JSON
+firecrawl credit-usage --json --pretty
+```
+
+---
+
+### `agent` - AI-powered web data extraction
+
+Run an AI agent that autonomously browses and extracts structured data from the web based on natural language prompts.
+
+> **Note:** Agent tasks typically take **2 to 5 minutes** to complete, and sometimes longer for complex extractions. Use sparingly and consider `--max-credits` to limit costs.
+
+```bash
+# Basic usage (returns job ID immediately)
+firecrawl agent "Find the pricing plans for Firecrawl"
+
+# Wait for completion
+firecrawl agent "Extract all product names and prices from this store" --wait
+
+# Focus on specific URLs
+firecrawl agent "Get the main features listed" --urls https://example.com/features
+
+# Use structured output with JSON schema
+firecrawl agent "Extract company info" --schema '{"type":"object","properties":{"name":{"type":"string"},"employees":{"type":"number"}}}'
+
+# Load schema from file
+firecrawl agent "Extract product data" --schema-file ./product-schema.json --wait
+
+# Check status of an existing job
+firecrawl agent <job-id>
+firecrawl agent <job-id> --wait
+```
+
+#### Agent Options
+
+| Option                         | Description                                                                                               |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `--urls <urls>`                | Comma-separated URLs to focus extraction on                                                               |
+| `--model <model>`              | `spark-2` (default). `spark-1-mini` and `spark-1-pro` are deprecated and run `spark-2`                    |
+| `--effort <level>`             | Reasoning effort: `low`, `medium`, or `high`                                                              |
+| `--schema <json>`              | JSON schema for structured output (inline JSON string)                                                    |
+| `--schema-file <path>`         | Path to JSON schema file for structured output                                                            |
+| `--max-credits <number>`       | Maximum credits to spend (job fails if exceeded)                                                          |
+| `--webhook <url-or-json>`      | Webhook URL or configuration                                                                              |
+| `--thread <threadId>`          | Continue an existing thread with this prompt as the next turn                                             |
+| `--mode <mode>`                | `extract` returns structured data; `chat` returns a text message                                          |
+| `--alexandria`                 | Let the agent call Alexandria providers (implied by the flags below); `--no-alexandria` keeps it off them |
+| `--toolkits <slugs>`           | Comma-separated provider slugs the agent may use (up to 5; default: the whole catalog)                    |
+| `--max-calls <n>`              | Most provider calls the agent may make this turn (1-30)                                                   |
+| `--require-approval`           | Stop for approval before any paid provider call (needs `--mode chat`)                                     |
+| `--approve <approvalId>`       | Approve the previous turn's pending approval (needs `--thread`)                                           |
+| `--call-ids <ids>`             | With `--approve`: comma-separated call IDs to approve (default: all)                                      |
+| `--always`                     | With `--approve`: stop asking for the rest of the thread                                                  |
+| `--decline <approvalId>`       | Decline the previous turn's pending approval (needs `--thread`)                                           |
+| `--on-terms-required <action>` | When a provider needs data terms the team has not accepted: `skip` it (default) or `ask`                  |
+| `--status`                     | Check status of existing agent job                                                                        |
+| `--cancel`                     | Cancel an active agent job by job ID                                                                      |
+| `--wait`                       | Wait for agent to complete before returning results                                                       |
+| `--poll-interval <seconds>`    | Polling interval in seconds when waiting (default: 5)                                                     |
+| `--timeout <seconds>`          | Timeout in seconds when waiting (default: no timeout)                                                     |
+| `-o, --output <path>`          | Save output to file                                                                                       |
+| `--json`                       | Output as JSON format                                                                                     |
+| `--pretty`                     | Pretty print JSON output                                                                                  |
+
+#### Examples
+
+```bash
+# Research task with timeout
+firecrawl agent "Find the top 5 competitors of Notion and their pricing" --wait --timeout 300
+
+# Extract data with cost limit
+firecrawl agent "Get all blog post titles and dates" --urls https://blog.example.com --max-credits 100 --wait
+
+# Spend more reasoning on a complex extraction
+firecrawl agent "Extract detailed technical specifications" --effort high --wait --json --pretty
+
+# Save structured results to file
+firecrawl agent "Extract contact information" --schema-file ./contact-schema.json --wait --json -o contacts.json --pretty
+
+# Check job status without waiting
+firecrawl agent abc123-def456-... --json
+
+# Poll a running job until completion
+firecrawl agent abc123-def456-... --wait --poll-interval 10
+```
+
+#### Alexandria providers
+
+A run uses Alexandria providers only when it starts with an Alexandria flag. A follow-up turn (`--thread`) keeps the previous turn's setting for every Alexandria flag it omits.
+
+```bash
+# Let the agent use two providers
+firecrawl agent "Find the head of sales at example.com" --toolkits apollo,crunchbase --wait
+
+# Ask before any paid provider call, then answer the approval on the next turn
+firecrawl agent "Find the head of sales at example.com" --mode chat --require-approval --wait
+firecrawl agent "Go ahead" --thread <thread-id> --mode chat --approve <approval-id> --wait
+```
+
+A run that stops for approval prints its approval ID and the exact `--approve` / `--decline` follow-up commands. With `--json`, read `pendingApproval` and `exchange` from the output.
+
+---
+
+### `interact` - Interact with scraped pages
+
+Scrape a page, then interact with it in a live browser session using natural language or code. No manual session management required.
+
+```bash
+# 1. Scrape a page first
+firecrawl scrape https://example.com
+
+# 2. Interact with it
+firecrawl interact "Click the pricing tab"
+firecrawl interact "Fill in the email field with test@example.com"
+firecrawl interact "Extract the pricing table"
+
+# 3. Code execution (Playwright)
+firecrawl interact -c "await page.title()"
+firecrawl interact -c "print(await page.title())" --python
+
+# 4. Stop the session
+firecrawl interact stop
+```
+
+#### Interact Options
+
+| Option                 | Description                                    |
+| ---------------------- | ---------------------------------------------- |
+| `-p, --prompt <text>`  | AI prompt (alternative to positional argument) |
+| `-c, --code <code>`    | Code to execute in the browser sandbox         |
+| `-s, --scrape-id <id>` | Scrape job ID (default: last scrape)           |
+| `--python`             | Execute code as Python/Playwright              |
+| `--node`               | Execute code as Node.js/Playwright (default)   |
+| `--bash`               | Execute code as Bash                           |
+| `--timeout <seconds>`  | Timeout in seconds (1-300, default: 30)        |
+| `-o, --output <path>`  | Save output to file                            |
+| `--json`               | Output as JSON format                          |
+
+#### Profiles
+
+Use `--profile` on the scrape to persist browser state across scrapes:
+
+```bash
+# Login and save state
+firecrawl scrape "https://app.example.com/login" --profile my-app
+firecrawl interact "Fill in email and click login"
+
+# Come back authenticated later
+firecrawl scrape "https://app.example.com/dashboard" --profile my-app
+firecrawl interact "Extract the dashboard data"
+```
+
+---
+
+### `monitor` - Watch pages for changes
+
+Create monitors when the goal is ongoing change detection, alerting, or repeated checks over time. A monitor runs recurring scrapes or crawls, diffs each result against the last retained snapshot, and can notify webhooks or email recipients.
+
+```bash
+firecrawl monitor create --name "Blog" \
+  --goal "Notify me when a new post is published" \
+  --schedule "every 30 minutes" \
+  --page https://example.com/blog \
+  --email alerts@example.com
+
+firecrawl monitor create --name "Product pages" \
+  --goal "Notify me when pricing, docs, or changelog content changes" \
+  --schedule "every 30 minutes" \
+  --scrape-urls https://example.com/pricing,https://example.com/docs,https://example.com/changelog
+
+firecrawl monitor create --name "Docs webhook" \
+  --goal "Notify me when docs content changes" \
+  --schedule "every 30 minutes" \
+  --page https://example.com/docs \
+  --webhook-url https://example.com/webhook \
+  --webhook-events monitor.page,monitor.check.completed
+
+firecrawl monitor list --limit 20
+firecrawl monitor run <monitorId>
+firecrawl monitor checks <monitorId>
+firecrawl monitor check <monitorId> <checkId> --page-status changed
+firecrawl monitor update <monitorId> --state paused
+firecrawl monitor delete <monitorId>
+```
+
+#### Monitor Options
+
+| Option                    | Description                                         |
+| ------------------------- | --------------------------------------------------- |
+| `--name <name>`           | Monitor name                                        |
+| `--goal <goal>`           | What changes this monitor should look for           |
+| `--cron <expression>`     | Cron schedule (e.g. `*/30 * * * *`)                 |
+| `--schedule <text>`       | Natural-language schedule (e.g. `every 30 minutes`) |
+| `--timezone <tz>`         | Schedule timezone (default: `UTC`)                  |
+| `--page <url>`            | Single page URL to scrape on each check             |
+| `--scrape-urls <list>`    | Comma-separated page URLs to scrape on each check   |
+| `--crawl-url <url>`       | Root URL for a crawl target                         |
+| `--webhook-url <url>`     | Webhook destination                                 |
+| `--webhook-events <list>` | Comma-separated webhook events                      |
+| `--email <list>`          | Comma-separated email recipients                    |
+| `--retention-days <n>`    | Snapshot retention window                           |
+
+For advanced targets such as JSON-mode `changeTracking`, pass a JSON payload:
+
+```bash
+firecrawl monitor create monitor.json
+cat monitor.json | firecrawl monitor create
+```
+
+---
+
+### `config` - Configure settings
+
+```bash
+# Configure with custom API URL
+firecrawl config --api-url https://firecrawl.mycompany.com
+firecrawl config --api-url http://localhost:3002 --api-key fc-xxx
+```
+
+### `view-config` - View current configuration
+
+```bash
+# View current configuration and authentication status
+firecrawl view-config
+```
+
+Shows authentication status and stored credentials location.
+
+---
+
+### `login` / `logout`
+
+```bash
+# Login
+firecrawl login
+firecrawl login --method browser
+firecrawl login --method manual
+firecrawl login --api-key fc-xxx
+
+# Login to self-hosted instance
+firecrawl login --api-url https://firecrawl.mycompany.com
+firecrawl login --api-url http://localhost:3002 --api-key fc-xxx
+
+# Logout
+firecrawl logout
+```
+
+---
+
+## Global Options
+
+These options work with any command:
+
+| Option                | Description                                            |
+| --------------------- | ------------------------------------------------------ |
+| `--status`            | Show version, auth, concurrency, and credits           |
+| `-k, --api-key <key>` | Use specific API key                                   |
+| `--api-url <url>`     | Use custom API URL (for self-hosted/local development) |
+| `-V, --version`       | Show version                                           |
+| `-h, --help`          | Show help                                              |
+
+### Check Status
+
+```bash
+firecrawl --status
+```
+
+```
+  🔥 firecrawl cli v1.20.0
+
+  ● Authenticated via stored credentials
+  Concurrency: 0/100 jobs (parallel scrape limit)
+  Credits: 500,000 / 1,000,000 (50% left this cycle)
+```
+
+---
+
+## Output Handling
+
+### Stdout vs File
+
+```bash
+# Output to stdout (default)
+firecrawl https://example.com
+
+# Pipe to another command
+firecrawl https://example.com | head -50
+
+# Save to file
+firecrawl https://example.com -o output.md
+
+# JSON output
+firecrawl https://example.com --format links --pretty
+```
+
+### Format Behavior
+
+- **Single format**: Outputs raw content (markdown text, HTML, etc.)
+- **Multiple formats**: Outputs JSON with all requested data
+
+```bash
+# Raw markdown output
+firecrawl https://example.com --format markdown
+
+# JSON output with multiple formats
+firecrawl https://example.com --format markdown,links,images
+```
+
+---
+
+## Tips & Tricks
+
+### Scrape multiple URLs
+
+```bash
+# Just pass multiple URLs -- results are saved to .firecrawl/
+firecrawl scrape https://firecrawl.dev https://firecrawl.dev/blog https://docs.firecrawl.dev
+
+# Many URLs, other formats, or JSON extraction: run one batch job
+firecrawl batch-scrape --urls-file urls.txt --format markdown,links --wait -o results.json
+```
+
+### Combine with other tools
+
+```bash
+# Extract links and process with jq
+firecrawl https://example.com --format links | jq '.links[].url'
+
+# Convert to PDF (with pandoc)
+firecrawl https://example.com | pandoc -o document.pdf
+
+# Search within scraped content
+firecrawl https://example.com | grep -i "keyword"
+```
+
+### CI/CD Usage
+
+```bash
+# Set API key via environment
+export FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}
+firecrawl crawl https://docs.example.com --wait -o docs.json
+
+# Use self-hosted instance
+export FIRECRAWL_API_URL=${{ secrets.FIRECRAWL_API_URL }}
+firecrawl scrape https://example.com -o output.md
+```
+
+---
+
+## Telemetry
+
+The CLI collects anonymous usage data during authentication to help improve the product:
+
+- CLI version, OS, and Node.js version
+- Detect development tools (e.g., Cursor, VS Code, Claude Code)
+
+**No command data, URLs, or file contents are collected via the CLI.**
+
+To disable telemetry, set the environment variable:
+
+```bash
+export FIRECRAWL_NO_TELEMETRY=1
+```
+
+Requests from the CLI are tagged `integration: cli`. A tool that wraps the CLI can tag them as its own by setting `FIRECRAWL_INTEGRATION`: the CLI sends the value, trimmed, as the `X-Integration` header on every API request (a value with control or non-ASCII characters cannot be a header and is not sent), and the API attributes the request to it when it is one of its integration names or any value starting with an underscore. Any other value is ignored by the API and never makes a request fail.
+
+```bash
+export FIRECRAWL_INTEGRATION=_my-tool
+```
+
+Supported API requests carry an origin of `cli@<version>`. When a coding agent runs the CLI, the origin also names the agent, for example `cli.codex@<version>`; it is detected from environment variables the agent sets in the commands it runs. Calls routed through the SDK include the agent only after the pinned SDK supports the origin option. To send plain `cli@<version>` instead:
+
+```bash
+export FIRECRAWL_CLI_DISABLE_AGENT_ORIGIN=1
+```
+
+---
+
+## Experimental
+
+Experimental commands live under `firecrawl experimental` (alias: `firecrawl x`).
+
+### `download` - Bulk Site Download
+
+Combines `map` + `scrape` to save a site as local files under `.firecrawl/`.
+
+```bash
+firecrawl x download https://docs.firecrawl.dev
+firecrawl x download https://docs.firecrawl.dev --screenshot --limit 20 -y
+firecrawl x download https://docs.firecrawl.dev --include-paths "/features,/sdks" -y
+```
+
+### Workflow Skills
+
+The old experimental AI workflow commands have moved to the
+[`firecrawl/skills`](https://github.com/firecrawl/skills) catalog
+(`skills/workflows/`). Workflow skills infer from the user's request first and only ask
+short clarifying questions when required inputs are missing. Install them with:
+
+```bash
+firecrawl setup workflows
+```
+
+---
+
+## Documentation
+
+For more details, visit the [Firecrawl Documentation](https://docs.firecrawl.dev).
+
+### Alexandria tool shorthand
+
+Use a provider/capability in place of a URL. The explicit `--alexandria` form remains supported:
+
+```bash
+firecrawl scrape benzinga/news/search --options '{"pageSize":10}'
+firecrawl scrape firecrawl-research-index/read --options '{"paperId":"123","query":"methodology","k":4}'
+firecrawl scrape --alexandria benzinga/news/search --options '{"pageSize":10}'
+firecrawl scrape https://example.com
+```
+
+URLs (including domains, IP addresses and localhost) continue to scrape websites. Tool addresses go directly to Alexandria, which validates the provider and capability; they never fall back to URL scraping. There is no extra catalog lookup. Bare names such as `firecrawl scrape amazon` fail locally with a suggested website URL and directions to `firecrawl list`. Suggestions are not verified or executed. Mixing URLs and tools in one command is rejected.
+
+### Alexandria provider terms
+
+When a provider returns `THIRD_PARTY_DATA_TERMS_REQUIRED`, an organization admin must
+accept that provider's terms in the Firecrawl dashboard, at the link the error returns
+(`requiresAction.url`) or https://www.firecrawl.dev/app/settings?tab=data-sources.
+The CLI does not accept terms. To read the current provider agreement and metadata first:
+
+```bash
+npx firecrawl-cli@latest alexandria terms show benzinga --pretty
+```
+
+Agents must give the user the dashboard link and must not retry the provider until the
+terms are accepted. Reading terms does not accept them, and a failed lookup is never
+consent. After an admin accepts them, rerun the original provider command; its normal
+credits apply.
+
+### Alexandria receipts and retries
+
+Alexandria execution JSON includes an additive `receipt`: `creditsUsed` is actual reported usage (missing means unknown), `requestId` is the client idempotency identity, and `operationId`/`operationType` identify the server scrape. Existing response fields remain available. IDs, reported credits, and available retry delays print to stderr.
+
+Use the same request ID to recover pending or uncertain execution. Completed results, including failures, replay under the same ID; a deliberate new execution needs a new ID and may charge again. Never automatically rotate an uncertain ID. Structured failures preserve available status, code, action and retry metadata.
+
+### Alexandria session feedback
+
+Report the outcome of a session, missing provider coverage, or capability issues:
+
+```bash
+firecrawl alexandria feedback --rating partial \
+  --url https://example.com \
+  --requested-functionality "Find records and download their attachments" \
+  --objective "Compare contract requirements across agencies before bidding" \
+  --rationale "Found summaries but could not retrieve attachments" --json
+```
+
+The optional `--objective` is the underlying goal of the session: what you or your user were ultimately trying to accomplish, beyond the single website. No job ID is required. It must be sent within 20 minutes of the team's most recent Alexandria search, discovery, or execution; later submissions are rejected with `FEEDBACK_WINDOW_EXPIRED`. Each submission refunds 1 credit, up to 10 credits per website and 100 credits per team each UTC day; past either cap, submissions are still recorded and return `websiteCapReached` or `dailyCapReached`. Optional `--provider-feedback` and `--capability-feedback` accept JSON arrays; see `firecrawl alexandria feedback --help` for their fields and issue codes. Capability issue codes are `new_capability_request` (requires `requestedFunctionality`), `missing_capability` (the provider exists but lacks this capability), `insufficient_functionality`, `incorrect_result`, `execution_error`, and `other`. Each eligible provider call prints a `Feedback ref` (for example `c3`) so ratings are attributed to the calls they are about. The CLI keeps up to 20 call tokens for 24 hours in its config directory and sends them with the session rating, then clears them after a successful submission. Rate individual calls with a repeatable `--call-rating c3=good`, or pass tokens yourself with a repeatable `--token <token>` (these replace the stored ones). Existing `feedback` and `search-feedback` commands retain their job-specific behavior. Endpoint feedback opt-out environment variables also apply to this command.

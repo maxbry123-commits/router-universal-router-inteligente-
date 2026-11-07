@@ -1,0 +1,545 @@
+import { rmSync } from 'fs';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  afterAll,
+} from 'vitest';
+import {
+  executeEndpointFeedback,
+  handleEndpointFeedbackCommand,
+  parseEndpointFeedbackEndpoint,
+  parseFeedbackListArg,
+  parsePageNumbersArg,
+} from '../../commands/feedback';
+import {
+  executeSearchFeedback,
+  parseValuableResultsArg,
+  type ValuableResultInput,
+} from '../../commands/search-feedback';
+import { parseAlexandriaFeedbackArray } from '../../commands/alexandria-feedback';
+import { getClient } from '../../utils/client';
+import { initializeConfig } from '../../utils/config';
+import { setupTest, teardownTest } from '../utils/mock-client';
+
+afterAll(() => rmSync(configDir, { recursive: true, force: true }));
+
+const configDir = vi.hoisted(() =>
+  require('fs').mkdtempSync(
+    require('path').join(require('os').tmpdir(), 'fc-feedback-')
+  )
+);
+
+vi.mock('../../utils/credentials', async () => ({
+  ...(await vi.importActual('../../utils/credentials')),
+  getConfigDirectoryPath: () => configDir,
+}));
+
+vi.mock('../../utils/agent-origin', () => ({
+  getCliOrigin: () => 'cli.test@1.0.0',
+}));
+
+vi.mock('../../utils/client', async () => {
+  const actual = await vi.importActual('../../utils/client');
+  return {
+    ...actual,
+    getClient: vi.fn(),
+  };
+});
+
+describe('executeEndpointFeedback', () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    setupTest();
+    initializeConfig({
+      apiKey: 'test-api-key',
+      apiUrl: 'https://api.firecrawl.dev',
+    });
+
+    mockFetch = vi.fn();
+    global.fetch = mockFetch as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    teardownTest();
+    vi.clearAllMocks();
+    delete process.env.FIRECRAWL_NO_ENDPOINT_FEEDBACK;
+    delete process.env.FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK;
+  });
+
+  it('posts Alexandria session feedback without job fields or legacy metadata', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        feedbackId: 'session-feedback',
+        creditsRefunded: 0,
+      }),
+    });
+    const requestedWebsite = {
+      url: 'https://example.com',
+      requestedFunctionality: 'Download attachments',
+    };
+    const capabilityFeedback = [
+      {
+        name: 'attachments',
+        provider: 'example',
+        issue: 'new_capability_request',
+        why: 'Missing documents',
+        requestedFunctionality: 'Return attachment URLs',
+      },
+    ];
+    const result = await executeEndpointFeedback({
+      endpoint: 'alexandria',
+      rating: 'partial',
+      requestedWebsite,
+      objective: 'Compare contract requirements across agencies',
+      rationale: 'Only summaries available',
+      capabilityFeedback,
+      jobId: 'must-not-be-sent',
+      url: 'https://legacy.example',
+      metadata: { legacy: true },
+    });
+    expect(result.success).toBe(true);
+    const [url, request] = mockFetch.mock.calls[0];
+    expect(url).toBe('https://api.firecrawl.dev/v2/feedback');
+    expect(JSON.parse(request.body)).toEqual({
+      endpoint: 'alexandria',
+      rating: 'partial',
+      origin: 'cli.test@1.0.0',
+      integration: 'cli',
+      requestedWebsite,
+      rationale: 'Only summaries available',
+      objective: 'Compare contract requirements across agencies',
+      capabilityFeedback,
+    });
+  });
+
+  it('posts generic endpoint feedback to /v2/feedback', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: async () => ({
+        success: true,
+        feedbackId: '0193f6c5-1234-7890-abcd-1234567890ab',
+        creditsRefunded: 1,
+      }),
+    });
+
+    const result = await executeEndpointFeedback({
+      endpoint: 'scrape',
+      jobId: '0193f6c5-1234-7890-abcd-1234567890ab',
+      rating: 'partial',
+      issues: ['missing_markdown'],
+      tags: ['docs'],
+      note: 'The markdown missed the pricing table.',
+      url: 'https://example.com/pricing',
+      pageNumbers: [1, 2],
+      metadata: { source: 'test' },
+      apiUrl: 'http://localhost:3002',
+    });
+
+    expect(getClient).toHaveBeenCalledWith({
+      apiKey: undefined,
+      apiUrl: 'http://localhost:3002',
+    });
+    expect(result).toEqual({
+      success: true,
+      feedbackId: '0193f6c5-1234-7890-abcd-1234567890ab',
+      creditsRefunded: 1,
+      creditsRefundedToday: undefined,
+      dailyRefundCap: undefined,
+      dailyCapReached: false,
+      alreadySubmitted: undefined,
+      warning: undefined,
+    });
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:3002/v2/feedback',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer test-api-key',
+          'Content-Type': 'application/json',
+        }),
+      })
+    );
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body).toEqual({
+      endpoint: 'scrape',
+      jobId: '0193f6c5-1234-7890-abcd-1234567890ab',
+      rating: 'partial',
+      origin: 'cli.test@1.0.0',
+      integration: 'cli',
+      issues: ['missing_markdown'],
+      tags: ['docs'],
+      note: 'The markdown missed the pricing table.',
+      url: 'https://example.com/pricing',
+      pageNumbers: [1, 2],
+      metadata: { source: 'test' },
+    });
+  });
+
+  it('sends FIRECRAWL_INTEGRATION as X-Integration on endpoint and search feedback', async () => {
+    vi.stubEnv('FIRECRAWL_INTEGRATION', 'rtk');
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, feedbackId: 'feedback-1' }),
+    });
+
+    try {
+      await executeEndpointFeedback({
+        endpoint: 'scrape',
+        jobId: '0193f6c5-1234-7890-abcd-1234567890ab',
+        rating: 'good',
+      });
+      await executeSearchFeedback({ searchId: 'search-1', rating: 'good' });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+
+    const [endpointUrl, endpointRequest] = mockFetch.mock.calls[0];
+    expect(endpointUrl).toBe('https://api.firecrawl.dev/v2/feedback');
+    expect(endpointRequest.headers['X-Integration']).toBe('rtk');
+    expect(JSON.parse(endpointRequest.body)).toMatchObject({
+      origin: 'cli.test@1.0.0',
+      integration: 'cli',
+    });
+    const [searchUrl, searchRequest] = mockFetch.mock.calls[1];
+    expect(searchUrl).toBe(
+      'https://api.firecrawl.dev/v2/search/search-1/feedback'
+    );
+    expect(searchRequest.headers['X-Integration']).toBe('rtk');
+    expect(JSON.parse(searchRequest.body)).toEqual({
+      rating: 'good',
+      origin: 'cli.test@1.0.0',
+      integration: 'cli',
+    });
+  });
+
+  it('rejects --valuable-results on non-search endpoints', async () => {
+    const result = await executeEndpointFeedback({
+      endpoint: 'scrape',
+      jobId: '0193f6c5-1234-7890-abcd-1234567890ab',
+      rating: 'good',
+      valuableResults: [{ source: 'web', position: 1 }],
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe(
+      '--valuable-results is only supported for search feedback.'
+    );
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('forwards valuableResults for search feedback', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: async () => ({ success: true, creditsRefunded: 1 }),
+    });
+
+    const valuableResults: ValuableResultInput[] = [
+      { source: 'web', position: 1 },
+      { source: 'news', position: 2 },
+    ];
+    const result = await executeEndpointFeedback({
+      endpoint: 'search',
+      jobId: '0193f6c5-1234-7890-abcd-1234567890ab',
+      rating: 'good',
+      valuableResults,
+    });
+
+    expect(result.success).toBe(true);
+    const [, request] = mockFetch.mock.calls[0];
+    expect(JSON.parse(request.body).valuableResults).toEqual(valuableResults);
+  });
+
+  it('treats team opt-out as a disabled success', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 403,
+      statusText: 'Forbidden',
+      json: async () => ({
+        success: false,
+        error: 'Feedback is disabled for this team.',
+        feedbackErrorCode: 'TEAM_OPTED_OUT',
+      }),
+    });
+
+    await expect(
+      executeEndpointFeedback({
+        endpoint: 'map',
+        jobId: '0193f6c5-1234-7890-abcd-1234567890ab',
+        rating: 'bad',
+        issues: ['missing_links'],
+      })
+    ).resolves.toMatchObject({
+      success: true,
+      disabled: true,
+      disabledSource: 'team',
+      creditsRefunded: 0,
+    });
+  });
+
+  it('skips endpoint feedback when local opt-out is set', async () => {
+    process.env.FIRECRAWL_NO_ENDPOINT_FEEDBACK = '1';
+
+    await expect(
+      executeEndpointFeedback({
+        endpoint: 'scrape',
+        jobId: '0193f6c5-1234-7890-abcd-1234567890ab',
+        rating: 'bad',
+        issues: ['missing_markdown'],
+      })
+    ).resolves.toMatchObject({
+      success: true,
+      disabled: true,
+      disabledSource: 'env',
+      creditsRefunded: 0,
+    });
+
+    expect(getClient).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('handles local opt-out silently in the CLI command path', async () => {
+    process.env.FIRECRAWL_NO_ENDPOINT_FEEDBACK = '1';
+
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((
+      code?: number | string | null
+    ) => {
+      throw new Error(`process.exit:${code}`);
+    }) as typeof process.exit);
+    const stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    try {
+      await expect(
+        handleEndpointFeedbackCommand({
+          endpoint: 'scrape',
+          jobId: '0193f6c5-1234-7890-abcd-1234567890ab',
+          rating: 'bad',
+          issues: ['missing_markdown'],
+        })
+      ).rejects.toThrow('process.exit:0');
+
+      expect(stderrSpy).not.toHaveBeenCalled();
+      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(getClient).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
+    } finally {
+      exitSpy.mockRestore();
+      stderrSpy.mockRestore();
+      stdoutSpy.mockRestore();
+    }
+  });
+
+  it.each([
+    [
+      { creditsRefunded: 1, creditsRefundedToday: 1, dailyRefundCap: 100 },
+      ['Feedback recorded.', 'Credits refunded: 1', 'Refunds today: 1 / 100'],
+    ],
+    [
+      {
+        creditsRefunded: 0,
+        creditsRefundedToday: 10,
+        dailyRefundCap: 100,
+        websiteCapReached: true,
+        warning: 'Daily refund cap reached for feedback about example.com.',
+      },
+      [
+        'Feedback recorded.',
+        'Credits refunded: 0',
+        'Daily refund cap reached for this website',
+        'Warning: Daily refund cap reached for feedback about example.com.',
+      ],
+    ],
+  ])(
+    'prints the Alexandria feedback refund outcome %#',
+    async (body, expected) => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true, feedbackId: 'fb', ...body }),
+      });
+      const stdoutSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      try {
+        await handleEndpointFeedbackCommand({
+          endpoint: 'alexandria',
+          rating: 'partial',
+          requestedWebsite: {
+            url: 'https://example.com',
+            requestedFunctionality: 'Download attachments',
+          },
+          rationale: 'Only summaries available',
+        });
+        const output = stdoutSpy.mock.calls.map(([chunk]) => chunk).join('');
+        for (const line of expected) expect(output).toContain(line);
+      } finally {
+        stdoutSpy.mockRestore();
+      }
+    }
+  );
+
+  it('keeps websiteCapReached in JSON output', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        feedbackId: 'fb',
+        creditsRefunded: 0,
+        websiteCapReached: true,
+      }),
+    });
+    const stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    try {
+      await handleEndpointFeedbackCommand({
+        endpoint: 'alexandria',
+        rating: 'good',
+        requestedWebsite: {
+          url: 'https://example.com',
+          requestedFunctionality: 'Download attachments',
+        },
+        rationale: 'All attachments returned',
+        json: true,
+      });
+      const output = stdoutSpy.mock.calls.map(([chunk]) => chunk).join('');
+      expect(JSON.parse(output)).toMatchObject({
+        creditsRefunded: 0,
+        websiteCapReached: true,
+      });
+    } finally {
+      stdoutSpy.mockRestore();
+    }
+  });
+});
+
+describe('feedback parsing', () => {
+  it('parses endpoint names', () => {
+    expect(parseEndpointFeedbackEndpoint('Scrape')).toBe('scrape');
+    expect(() => parseEndpointFeedbackEndpoint('crawl')).toThrow(
+      'endpoint must be one of'
+    );
+  });
+
+  it('parses comma-separated and JSON list options', () => {
+    expect(
+      parseFeedbackListArg('missing_markdown, bad_pdf', '--issues')
+    ).toEqual(['missing_markdown', 'bad_pdf']);
+    expect(parseFeedbackListArg('["a","b"]', '--tags')).toEqual(['a', 'b']);
+  });
+
+  it('parses positive page numbers', () => {
+    expect(parsePageNumbersArg('1, 2, bad, -1, 3')).toEqual([1, 2, 3]);
+    expect(parsePageNumbersArg('[4,5]')).toEqual([4, 5]);
+  });
+
+  it('parses valuable results as source:position pairs', () => {
+    expect(parseValuableResultsArg('web:1, news:2')).toEqual([
+      { source: 'web', position: 1 },
+      { source: 'news', position: 2 },
+    ]);
+    expect(parseValuableResultsArg('images:3')).toEqual([
+      { source: 'images', position: 3 },
+    ]);
+  });
+
+  it('parses valuable results from JSON, keeping reasons', () => {
+    expect(
+      parseValuableResultsArg(
+        '[{"source":"web","position":1,"reason":"Answered it"},{"source":"news","position":2}]'
+      )
+    ).toEqual([
+      { source: 'web', position: 1, reason: 'Answered it' },
+      { source: 'news', position: 2 },
+    ]);
+  });
+
+  // Each group is numbered from 1 independently, so a bare position does not
+  // identify a result.
+  it('rejects valuable results without a source', () => {
+    expect(() => parseValuableResultsArg('1,3')).toThrow(
+      'must be "source:position"'
+    );
+    expect(() => parseValuableResultsArg('[{"position":1}]')).toThrow(
+      'source must be one of'
+    );
+  });
+
+  it('rejects unknown sources and non-positive positions', () => {
+    expect(() => parseValuableResultsArg('video:1')).toThrow(
+      'source must be one of'
+    );
+    expect(() => parseValuableResultsArg('web:0')).toThrow(
+      'positions must be integers of 1 or greater'
+    );
+    expect(() => parseValuableResultsArg('web:abc')).toThrow(
+      'positions must be integers of 1 or greater'
+    );
+  });
+
+  it('returns undefined for empty input', () => {
+    expect(parseValuableResultsArg(undefined)).toBeUndefined();
+    expect(parseValuableResultsArg('   ')).toBeUndefined();
+  });
+});
+
+describe('parseAlexandriaFeedbackArray capability issues', () => {
+  const base = {
+    name: 'attachments',
+    provider: 'example',
+    why: 'Provider has no attachment endpoint',
+  };
+  const parse = (entry: Record<string, unknown>) =>
+    parseAlexandriaFeedbackArray(JSON.stringify([entry]), true);
+
+  it('accepts missing_capability without requestedFunctionality', () => {
+    expect(parse({ ...base, issue: 'missing_capability' })).toEqual([
+      { ...base, issue: 'missing_capability' },
+    ]);
+  });
+
+  it('accepts missing_capability with requestedFunctionality', () => {
+    expect(
+      parse({
+        ...base,
+        issue: 'missing_capability',
+        requestedFunctionality: ' Download attachments ',
+      })
+    ).toEqual([
+      {
+        ...base,
+        issue: 'missing_capability',
+        requestedFunctionality: 'Download attachments',
+      },
+    ]);
+  });
+
+  it('still requires requestedFunctionality for new_capability_request', () => {
+    expect(() => parse({ ...base, issue: 'new_capability_request' })).toThrow(
+      'requestedFunctionality must contain 1–2000 characters.'
+    );
+  });
+
+  it('still rejects unknown issue codes', () => {
+    expect(() => parse({ ...base, issue: 'not_a_real_issue' })).toThrow(
+      'unsupported issue code.'
+    );
+  });
+});

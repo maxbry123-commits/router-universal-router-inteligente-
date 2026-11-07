@@ -1,0 +1,848 @@
+/**
+ * Agent command implementation
+ */
+
+import type {
+  AgentEffort,
+  AgentIncompleteFields,
+  AgentModel,
+  AgentOptions,
+  AgentResult,
+  AgentStatus,
+  AgentStatusResult,
+  AgentThreadOptions,
+} from '../types/agent';
+import type {
+  AgentExchangeOptions,
+  AgentExchangeSummary,
+  AgentMode,
+  AgentStatusResponse,
+  AgentThread,
+  AgentWebhookConfig,
+  PendingApproval,
+} from 'firecrawl';
+import { getClient } from '../utils/client';
+import { isJobId } from '../utils/job';
+import { writeOutput } from '../utils/output';
+import { createSpinner } from '../utils/spinner';
+import { TERMS_DASHBOARD_URL } from './terms';
+import { readFileSync } from 'fs';
+
+/**
+ * Extract detailed error message from API errors
+ */
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const anyError = error as any;
+
+    // Handle Firecrawl SDK errors with details array
+    if (anyError.details && Array.isArray(anyError.details)) {
+      const messages = anyError.details
+        .map((d: any) => d.message || JSON.stringify(d))
+        .join('; ');
+      return messages || error.message;
+    }
+
+    // Check for response data in the error (common in axios/fetch errors)
+    if (anyError.response?.data?.error) {
+      return anyError.response.data.error;
+    }
+    if (anyError.response?.data?.message) {
+      return anyError.response.data.message;
+    }
+    if (anyError.response?.data) {
+      return JSON.stringify(anyError.response.data);
+    }
+
+    return error.message;
+  }
+  return 'Unknown error occurred';
+}
+
+/**
+ * Load schema from file
+ */
+function loadSchemaFromFile(filePath: string): Record<string, unknown> {
+  try {
+    const content = readFileSync(filePath, 'utf-8');
+    return JSON.parse(content);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error(`Schema file not found: ${filePath}`);
+    }
+    if (error instanceof SyntaxError) {
+      throw new Error(`Invalid JSON in schema file: ${filePath}`);
+    }
+    throw error;
+  }
+}
+
+type AgentStatusFromApi = 'processing' | 'completed' | 'failed';
+
+function normalizeAgentStatus(status: AgentStatusFromApi): AgentStatus {
+  return status as AgentStatus;
+}
+
+const CREDIT_LIMIT_REACHED = 'credit_limit_reached';
+
+/**
+ * Read the incomplete-result fields from a status response or thread run.
+ * The pinned SDK does not type them yet and older APIs never send them, so
+ * each field is copied only when it is present and well-formed.
+ */
+function readIncompleteFields(source: unknown): AgentIncompleteFields {
+  const raw = (source ?? {}) as Record<string, unknown>;
+  return {
+    ...(raw.partial !== undefined &&
+      raw.partial !== null && { partial: raw.partial }),
+    ...(typeof raw.partialSchemaValid === 'boolean' && {
+      partialSchemaValid: raw.partialSchemaValid,
+    }),
+    ...(typeof raw.stopReason === 'string' && {
+      stopReason: raw.stopReason,
+    }),
+  };
+}
+
+function isCreditLimitStop(
+  data: { status?: string; stopReason?: string } | undefined
+): boolean {
+  return (
+    data?.stopReason === CREDIT_LIMIT_REACHED ||
+    data?.status === CREDIT_LIMIT_REACHED
+  );
+}
+
+function failureLabel(status: AgentStatusResponse): string {
+  return isCreditLimitStop(readIncompleteFields(status))
+    ? 'Agent stopped at credit limit'
+    : 'Agent failed';
+}
+
+function toStatusData(
+  jobId: string,
+  status: AgentStatusResponse,
+  normalizedStatus: AgentStatus
+): NonNullable<AgentStatusResult['data']> {
+  return {
+    id: jobId,
+    status: normalizedStatus,
+    data: status.data,
+    creditsUsed: status.creditsUsed,
+    expiresAt: status.expiresAt,
+    ...(status.threadId !== undefined && { threadId: status.threadId }),
+    ...(status.threadTurn !== undefined && { threadTurn: status.threadTurn }),
+    ...(status.mode !== undefined && { mode: status.mode }),
+    ...(status.message !== undefined && { message: status.message }),
+    ...(status.suggestions?.length && { suggestions: status.suggestions }),
+    ...(status.pendingApproval && { pendingApproval: status.pendingApproval }),
+    ...(status.exchange && { exchange: status.exchange }),
+    ...readIncompleteFields(status),
+  };
+}
+
+/**
+ * Execute agent status check (with optional wait/polling)
+ */
+async function checkAgentStatus(
+  jobId: string,
+  options: AgentOptions
+): Promise<AgentStatusResult> {
+  const app = getClient({ apiKey: options.apiKey, apiUrl: options.apiUrl });
+
+  // If not waiting, just return current status
+  if (!options.wait) {
+    try {
+      const status = await app.getAgentStatus(jobId);
+      const normalizedStatus = normalizeAgentStatus(
+        status.status as AgentStatusFromApi
+      );
+      const isCancelled = normalizedStatus === 'cancelled';
+
+      return {
+        success: isCancelled ? true : status.success,
+        data: toStatusData(jobId, status, normalizedStatus),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: extractErrorMessage(error),
+      };
+    }
+  }
+
+  // Wait mode: poll until completion
+  const spinner = createSpinner(`Checking agent status...`);
+  spinner.start();
+
+  // Handle Ctrl+C gracefully
+  const handleInterrupt = () => {
+    spinner.stop();
+    process.stderr.write('\n\nInterrupted. Agent may still be running.\n');
+    process.stderr.write(`Check status with: firecrawl agent ${jobId}\n\n`);
+    process.exit(0);
+  };
+  process.on('SIGINT', handleInterrupt);
+
+  const pollMs = options.pollInterval ? options.pollInterval * 1000 : 5000;
+  const startTime = Date.now();
+  const timeoutMs = options.timeout ? options.timeout * 1000 : undefined;
+
+  try {
+    // Check initial status
+    let agentStatus = await app.getAgentStatus(jobId);
+    const normalizedStatusInitial = normalizeAgentStatus(
+      agentStatus.status as AgentStatusFromApi
+    );
+    spinner.update(`Agent ${normalizedStatusInitial}... (Job ID: ${jobId})`);
+
+    while (true) {
+      const currentNormalizedStatus = normalizeAgentStatus(agentStatus.status);
+
+      if (currentNormalizedStatus === 'completed') {
+        spinner.succeed('Agent completed');
+        return {
+          success: agentStatus.success,
+          data: toStatusData(jobId, agentStatus, currentNormalizedStatus),
+        };
+      }
+
+      if (currentNormalizedStatus === 'failed') {
+        spinner.fail(failureLabel(agentStatus));
+        return {
+          success: false,
+          data: toStatusData(jobId, agentStatus, currentNormalizedStatus),
+          error: agentStatus.error,
+        };
+      }
+
+      if (currentNormalizedStatus === 'cancelled') {
+        spinner.succeed('Agent cancelled');
+        return {
+          success: true,
+          data: toStatusData(jobId, agentStatus, currentNormalizedStatus),
+        };
+      }
+
+      // Check timeout
+      if (timeoutMs && Date.now() - startTime > timeoutMs) {
+        spinner.fail(`Timeout after ${options.timeout}s`);
+        return {
+          success: false,
+          error: `Timeout after ${options.timeout} seconds. Agent still processing.`,
+        };
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, pollMs));
+      agentStatus = await app.getAgentStatus(jobId);
+      const loopNormalizedStatus = normalizeAgentStatus(
+        agentStatus.status as AgentStatusFromApi
+      );
+      spinner.update(`Agent ${loopNormalizedStatus}... (Job ID: ${jobId})`);
+    }
+  } catch (error) {
+    spinner.fail('Failed to check agent status');
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
+  } finally {
+    process.removeListener('SIGINT', handleInterrupt);
+  }
+}
+
+/**
+ * Execute agent command
+ */
+export async function executeAgent(
+  options: AgentOptions
+): Promise<AgentResult | AgentStatusResult> {
+  try {
+    const app = getClient({ apiKey: options.apiKey, apiUrl: options.apiUrl });
+    const { prompt, status, cancel, wait, pollInterval, timeout } = options;
+
+    if (cancel) {
+      const cancelled = await app.cancelAgent(prompt);
+      if (!cancelled) {
+        return {
+          success: false,
+          error: `Failed to cancel agent job ${prompt}`,
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          id: prompt,
+          status: 'cancelled',
+        },
+      };
+    }
+
+    // If status flag is set or input looks like a job ID, check status
+    if (status || isJobId(prompt)) {
+      return await checkAgentStatus(prompt, options);
+    }
+
+    // Load schema from file if specified
+    let schema: Record<string, unknown> | undefined = options.schema as
+      | Record<string, unknown>
+      | undefined;
+    if (options.schemaFile) {
+      schema = loadSchemaFromFile(options.schemaFile);
+    }
+
+    // Build agent options
+    const agentParams: {
+      prompt: string;
+      urls?: string[];
+      schema?: Record<string, unknown>;
+      model?: AgentModel;
+      effort?: AgentEffort;
+      threadId?: string;
+      mode?: AgentMode;
+      maxCredits?: number;
+      pollInterval?: number;
+      timeout?: number;
+      webhook?: string | AgentWebhookConfig;
+      exchange?: AgentExchangeOptions;
+      integration?: string;
+    } = {
+      prompt,
+      integration: 'cli',
+    };
+
+    if (options.urls && options.urls.length > 0) {
+      agentParams.urls = options.urls;
+    }
+    if (schema) {
+      agentParams.schema = schema;
+    }
+    if (options.model) {
+      agentParams.model = options.model;
+    }
+    if (options.effort) {
+      agentParams.effort = options.effort;
+    }
+    if (options.threadId) {
+      agentParams.threadId = options.threadId;
+    }
+    if (options.mode) {
+      agentParams.mode = options.mode;
+    }
+    if (options.maxCredits !== undefined) {
+      agentParams.maxCredits = options.maxCredits;
+    }
+    if (options.webhook) {
+      agentParams.webhook = options.webhook;
+    }
+    if (options.exchange) {
+      agentParams.exchange = options.exchange;
+    }
+
+    // If wait mode, use polling with spinner
+    if (wait) {
+      const spinner = createSpinner('Starting agent...');
+      spinner.start();
+
+      // Start agent first
+      let response;
+      try {
+        response = await app.startAgent(agentParams);
+      } catch (error) {
+        spinner.fail('Failed to start agent');
+        return {
+          success: false,
+          error: extractErrorMessage(error),
+        };
+      }
+      const jobId = response.id;
+
+      // Handle Ctrl+C gracefully
+      const handleInterrupt = () => {
+        spinner.stop();
+        process.stderr.write('\n\nInterrupted. Agent is still running.\n');
+        process.stderr.write(`Check status with: firecrawl agent ${jobId}\n\n`);
+        process.exit(0);
+      };
+      process.on('SIGINT', handleInterrupt);
+
+      spinner.update(`Agent running... (Job ID: ${jobId})`);
+
+      // Poll for status
+      const pollMs = pollInterval ? pollInterval * 1000 : 5000;
+      const startTime = Date.now();
+      const timeoutMs = timeout ? timeout * 1000 : undefined;
+
+      try {
+        while (true) {
+          await new Promise((resolve) => setTimeout(resolve, pollMs));
+
+          const agentStatus = await app.getAgentStatus(jobId);
+          const normalizedStatus = normalizeAgentStatus(agentStatus.status);
+
+          if (normalizedStatus === 'completed') {
+            process.removeListener('SIGINT', handleInterrupt);
+            spinner.succeed('Agent completed');
+            return {
+              success: agentStatus.success,
+              data: toStatusData(jobId, agentStatus, normalizedStatus),
+            };
+          }
+
+          if (normalizedStatus === 'failed') {
+            process.removeListener('SIGINT', handleInterrupt);
+            spinner.fail(failureLabel(agentStatus));
+            return {
+              success: false,
+              data: toStatusData(jobId, agentStatus, normalizedStatus),
+              error: agentStatus.error,
+            };
+          }
+
+          // Check timeout
+          if (timeoutMs && Date.now() - startTime > timeoutMs) {
+            process.removeListener('SIGINT', handleInterrupt);
+            spinner.fail(`Timeout after ${timeout}s (Job ID: ${jobId})`);
+            return {
+              success: false,
+              error: `Timeout after ${timeout} seconds. Agent still processing. Job ID: ${jobId}`,
+            };
+          }
+        }
+      } finally {
+        process.removeListener('SIGINT', handleInterrupt);
+      }
+    }
+
+    // Otherwise, start agent and return job ID
+    const spinner = createSpinner('Starting agent...');
+    spinner.start();
+
+    let response;
+    try {
+      response = await app.startAgent(agentParams);
+    } catch (error) {
+      spinner.fail('Failed to start agent');
+      return {
+        success: false,
+        error: extractErrorMessage(error),
+      };
+    }
+
+    spinner.succeed(`Agent started (Job ID: ${response.id})`);
+
+    return {
+      success: response.success,
+      data: {
+        jobId: response.id,
+        status: 'processing',
+        ...(response.threadId !== undefined && {
+          threadId: response.threadId,
+        }),
+        ...(response.threadTurn !== undefined && {
+          threadTurn: response.threadTurn,
+        }),
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
+  }
+}
+
+/**
+ * Heading for a partial result, e.g. "Partial Result (incomplete, matches schema)".
+ */
+function partialHeading(data: AgentIncompleteFields): string {
+  const schemaNote =
+    data.partialSchemaValid === true
+      ? ', matches schema'
+      : data.partialSchemaValid === false
+        ? ', does not match schema'
+        : '';
+  return `Partial Result (incomplete${schemaNote})`;
+}
+
+/**
+ * First line of the credit-limit notice.
+ */
+function creditLimitHeadline(data: { creditsUsed?: number | null }): string {
+  // Failed runs are refunded, so the API can report 0 for a run that did work.
+  const used =
+    typeof data.creditsUsed === 'number' && data.creditsUsed > 0
+      ? `used ${data.creditsUsed} credits and `
+      : '';
+  return `Stopped at credit limit: the agent ${used}reached its credit limit before finishing.`;
+}
+
+/**
+ * How to pick up a run that stopped at its credit limit.
+ */
+function creditLimitNextSteps(threadId?: string): string[] {
+  const lines = ['To continue:'];
+  if (threadId) {
+    lines.push(
+      '  - Send a follow-up on the thread (it continues from the partial result):',
+      `      firecrawl agent "<follow-up prompt>" --thread ${threadId} --wait`
+    );
+  }
+  lines.push('  - Or rerun the prompt with a higher --max-credits.');
+  return lines;
+}
+
+/**
+ * What Alexandria did in the run: paid calls, their credits, and providers
+ * left out because their data terms are not accepted.
+ */
+function exchangeSummaryLines(exchange: AgentExchangeSummary): string[] {
+  const calls = `${exchange.paidCalls} paid call${exchange.paidCalls === 1 ? '' : 's'}`;
+  const credits =
+    typeof exchange.creditsUsed === 'number'
+      ? `, ${exchange.creditsUsed} credits`
+      : '';
+  const lines = [`Alexandria: ${calls}${credits}`];
+  if (exchange.skippedProviders?.length) {
+    lines.push('Skipped until their data terms are accepted:');
+    for (const provider of exchange.skippedProviders) {
+      lines.push(`  - ${provider.name}: ${provider.termsUrl}`);
+    }
+  }
+  return lines;
+}
+
+/**
+ * What a turn that ended on a pending approval waits for, and the follow-up
+ * commands that answer it.
+ */
+function pendingApprovalLines(
+  approval: PendingApproval,
+  threadId: string
+): string[] {
+  const lines = [`Pending approval ${approval.id}: ${approval.reason}`];
+  if (approval.kind === 'terms') {
+    lines.push(
+      `Approving does not accept terms. An organization admin must accept them in the Firecrawl dashboard first: ${TERMS_DASHBOARD_URL}`
+    );
+    for (const gate of approval.terms) {
+      lines.push(
+        `  - ${gate.name}: ${gate.url}`,
+        `    firecrawl alexandria terms show ${gate.provider}`
+      );
+    }
+  } else {
+    for (const call of approval.calls) {
+      const estimate =
+        typeof call.creditsEstimate === 'number'
+          ? ` (~${call.creditsEstimate} credits)`
+          : '';
+      lines.push(
+        `  - ${call.id}: ${call.provider}/${call.capability}${estimate}`
+      );
+    }
+  }
+  const followUp = `firecrawl agent "<follow-up prompt>" --thread ${threadId} --mode chat`;
+  lines.push(
+    'To answer it:',
+    `  ${followUp} --approve ${approval.id}`,
+    `  ${followUp} --decline ${approval.id}`
+  );
+  return lines;
+}
+
+/**
+ * Short credit-limit notice for stderr, used when the result itself goes to
+ * JSON or to a file and so is not shown on the terminal.
+ */
+function formatCreditLimitNotice(
+  data: NonNullable<AgentStatusResult['data']>,
+  outputPath?: string
+): string {
+  const lines = [creditLimitHeadline(data)];
+  if (data.message) {
+    lines.push(data.message);
+  }
+  const where = outputPath ? ` in ${outputPath}` : ' under "partial"';
+  lines.push(
+    data.partial !== undefined
+      ? `The ${partialHeading(data).toLowerCase()} is${where}.`
+      : 'No partial result was recovered.'
+  );
+  lines.push(...creditLimitNextSteps(data.threadId));
+  return lines.join('\n') + '\n';
+}
+
+/**
+ * Format agent status in human-readable way
+ */
+function formatAgentStatus(data: AgentStatusResult['data']): string {
+  if (!data) return '';
+
+  const lines: string[] = [];
+  const creditLimited = isCreditLimitStop(data);
+  if (creditLimited) {
+    lines.push(creditLimitHeadline(data));
+    if (data.partial === undefined) {
+      lines.push('No partial result was recovered.');
+    }
+    lines.push('');
+  }
+  lines.push(`Job ID: ${data.id}`);
+  lines.push(`Status: ${data.status}`);
+
+  if (data.threadId) {
+    lines.push(
+      `Thread: ${data.threadId}${data.threadTurn !== undefined ? ` (turn ${data.threadTurn})` : ''}`
+    );
+  }
+
+  if (data.mode) {
+    lines.push(`Mode: ${data.mode}`);
+  }
+
+  if (data.creditsUsed !== undefined) {
+    lines.push(`Credits Used: ${data.creditsUsed}`);
+  }
+
+  if (data.exchange) {
+    lines.push(...exchangeSummaryLines(data.exchange));
+  }
+
+  if (data.expiresAt) {
+    const expiresDate = new Date(data.expiresAt);
+    lines.push(
+      `Expires: ${expiresDate.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })}`
+    );
+  }
+
+  if (data.message) {
+    lines.push('');
+    lines.push('Message:');
+    lines.push(data.message);
+  }
+
+  if (data.data) {
+    lines.push('');
+    lines.push('Result:');
+    lines.push(JSON.stringify(data.data, null, 2));
+  }
+
+  if (data.partial !== undefined) {
+    lines.push('');
+    lines.push(`${partialHeading(data)}:`);
+    lines.push(JSON.stringify(data.partial, null, 2));
+  }
+
+  if (data.suggestions?.length) {
+    lines.push('');
+    lines.push('Suggestions:');
+    for (const suggestion of data.suggestions) {
+      lines.push(`  - ${suggestion.label}: ${suggestion.prompt}`);
+    }
+  }
+
+  if (data.pendingApproval && data.threadId) {
+    lines.push('');
+    lines.push(...pendingApprovalLines(data.pendingApproval, data.threadId));
+  }
+
+  if (creditLimited) {
+    lines.push('');
+    lines.push(...creditLimitNextSteps(data.threadId));
+  }
+
+  return lines.join('\n') + '\n';
+}
+
+function formatAgentThread(thread: AgentThread): string {
+  const lines: string[] = [];
+  lines.push(`Thread ID: ${thread.id}`);
+  lines.push(`Status: ${thread.status}`);
+  lines.push(`Updated: ${thread.updatedAt}`);
+  lines.push(`Runs: ${thread.runs.length}`);
+
+  for (const run of thread.runs) {
+    lines.push('');
+    lines.push(`Turn ${run.turn} (${run.mode}) - ${run.status}`);
+    lines.push(`  Job ID: ${run.id}`);
+    lines.push(`  Prompt: ${run.prompt}`);
+    if (run.creditsUsed !== null && run.creditsUsed !== undefined) {
+      lines.push(`  Credits Used: ${run.creditsUsed}`);
+    }
+    if (run.message) {
+      lines.push(`  Message: ${run.message}`);
+    }
+    if (run.data !== undefined) {
+      lines.push(`  Result: ${JSON.stringify(run.data)}`);
+    }
+    const incomplete = readIncompleteFields(run);
+    if (incomplete.partial !== undefined) {
+      lines.push(
+        `  ${partialHeading(incomplete)}: ${JSON.stringify(incomplete.partial)}`
+      );
+    }
+  }
+
+  const hint = threadCreditLimitHint(thread);
+  if (hint.length) {
+    lines.push('');
+    lines.push(...hint);
+  }
+
+  return lines.join('\n') + '\n';
+}
+
+/**
+ * How to continue a thread whose latest turn stopped at its credit limit.
+ * Only the latest turn can be continued, so only hint when it is the one
+ * that stopped. Empty when there is nothing to hint.
+ */
+function threadCreditLimitHint(thread: AgentThread): string[] {
+  const latest = thread.runs[thread.runs.length - 1];
+  if (
+    !latest ||
+    thread.status === 'running' ||
+    !isCreditLimitStop({
+      status: latest.status,
+      ...readIncompleteFields(latest),
+    })
+  ) {
+    return [];
+  }
+  return [
+    `Turn ${latest.turn} stopped at its credit limit.`,
+    ...creditLimitNextSteps(thread.id),
+  ];
+}
+
+/**
+ * Fetch a thread and print its runs, oldest turn first.
+ */
+export async function handleAgentThreadCommand(
+  options: AgentThreadOptions
+): Promise<void> {
+  const app = getClient({ apiKey: options.apiKey, apiUrl: options.apiUrl });
+
+  let thread: AgentThread;
+  try {
+    const response = await app.getAgentThread(options.threadId, {
+      includeData: options.includeData,
+    });
+    if (!response.success || !response.thread) {
+      throw new Error(response.error ?? 'Failed to get agent thread');
+    }
+    thread = response.thread;
+  } catch (error) {
+    console.error('Error:', extractErrorMessage(error));
+    process.exit(1);
+  }
+
+  const outputContent = options.json
+    ? JSON.stringify({ success: true, thread }, null, options.pretty ? 2 : 0)
+    : formatAgentThread(thread);
+
+  // As with status output, keep the continuation hint visible on stderr when
+  // the listing itself is not printed as text on the terminal.
+  const hint = threadCreditLimitHint(thread);
+  if (hint.length && (options.json || options.output)) {
+    process.stderr.write(hint.join('\n') + '\n');
+  }
+
+  writeOutput(outputContent, options.output, !!options.output);
+}
+
+/**
+ * Write a status result as JSON or human-readable text. A credit-limit stop
+ * also gets a stderr notice whenever the result is not printed as text on
+ * the terminal (JSON mode or --output), so the stop is never silent.
+ */
+function writeAgentStatusOutput(
+  data: NonNullable<AgentStatusResult['data']>,
+  options: AgentOptions,
+  envelope: { success: boolean; error?: string }
+): void {
+  let outputContent: string;
+
+  if (options.json) {
+    const payload = {
+      success: envelope.success,
+      ...(envelope.error !== undefined && { error: envelope.error }),
+      ...data,
+    };
+    outputContent = options.pretty
+      ? JSON.stringify(payload, null, 2)
+      : JSON.stringify(payload);
+  } else {
+    outputContent = formatAgentStatus(data);
+  }
+
+  if (isCreditLimitStop(data) && (options.json || options.output)) {
+    process.stderr.write(formatCreditLimitNotice(data, options.output));
+  }
+
+  writeOutput(outputContent, options.output, !!options.output);
+}
+
+/**
+ * Handle agent command output
+ */
+export async function handleAgentCommand(options: AgentOptions): Promise<void> {
+  const result = await executeAgent(options);
+
+  if (!result.success) {
+    // A run that stopped at its credit limit still has a result worth showing
+    // (the partial, its message, how to continue). It is still a failure.
+    const failedData = (result as AgentStatusResult).data;
+    if (failedData && 'id' in failedData && isCreditLimitStop(failedData)) {
+      writeAgentStatusOutput(failedData, options, {
+        success: false,
+        error: result.error,
+      });
+      // Set the exit code instead of calling process.exit() so the result
+      // written above is flushed to a piped stdout before the process ends.
+      process.exitCode = 1;
+      return;
+    }
+    console.error('Error:', result.error);
+    process.exit(1);
+  }
+
+  // Handle status result (completed agent job with data)
+  if ('data' in result && result.data && 'data' in result.data) {
+    const statusResult = result as AgentStatusResult;
+    if (statusResult.data) {
+      writeAgentStatusOutput(statusResult.data, options, { success: true });
+      return;
+    }
+  }
+
+  // Handle agent start result (job ID)
+  const agentResult = result as AgentResult;
+  if (!agentResult.data) {
+    return;
+  }
+
+  let outputContent: string;
+
+  if ('jobId' in agentResult.data) {
+    const jobData = agentResult.data;
+
+    outputContent = options.pretty
+      ? JSON.stringify({ success: true, data: jobData }, null, 2)
+      : JSON.stringify({ success: true, data: jobData });
+  } else {
+    outputContent = options.pretty
+      ? JSON.stringify(agentResult.data, null, 2)
+      : JSON.stringify(agentResult.data);
+  }
+
+  writeOutput(outputContent, options.output, !!options.output);
+}

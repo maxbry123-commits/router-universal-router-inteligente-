@@ -1,0 +1,578 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { dirname } from 'path';
+import { getConfig, isCustomApiUrl, validateConfig } from '../utils/config';
+import { getClient } from '../utils/client';
+import { getCliOrigin } from '../utils/agent-origin';
+import {
+  parseMissingContentArg,
+  parseValuableResultsArg,
+  parseValuableSourcesArg,
+  type MissingContentInput,
+  type SearchFeedbackRating,
+  type ValuableResultInput,
+  type ValuableSourceInput,
+} from './search-feedback';
+import { integrationHeaders } from '../utils/integration';
+import {
+  FEEDBACK_TOKEN_LIMIT,
+  clearFeedbackTokens,
+  feedbackTokenScope,
+  readFeedbackTokens,
+} from '../utils/alexandria-feedback-tokens';
+
+export type EndpointFeedbackEndpoint = 'search' | 'scrape' | 'parse' | 'map';
+
+export interface EndpointFeedbackOptions {
+  endpoint: EndpointFeedbackEndpoint | 'alexandria';
+  jobId?: string;
+  requestedWebsite?: { url: string; requestedFunctionality: string };
+  rationale?: string;
+  objective?: string;
+  providerFeedback?: Record<string, unknown>[];
+  capabilityFeedback?: Record<string, unknown>[];
+  tokens?: string[];
+  callRatings?: { ref: string; rating: SearchFeedbackRating }[];
+  rating: SearchFeedbackRating;
+  issues?: string[];
+  tags?: string[];
+  note?: string;
+  valuableSources?: ValuableSourceInput[];
+  valuableResults?: ValuableResultInput[];
+  missingContent?: MissingContentInput[];
+  querySuggestions?: string;
+  url?: string;
+  pageNumbers?: number[];
+  metadata?: Record<string, unknown>;
+  apiKey?: string;
+  apiUrl?: string;
+  output?: string;
+  json?: boolean;
+  pretty?: boolean;
+  silent?: boolean;
+}
+
+export type EndpointFeedbackErrorCode =
+  | 'JOB_NOT_FOUND'
+  | 'SEARCH_NOT_FOUND'
+  | 'FEEDBACK_WINDOW_EXPIRED'
+  | 'SEARCH_FAILED'
+  | 'PREVIEW_TEAM_NOT_ALLOWED'
+  | 'TEAM_OPTED_OUT'
+  | 'INVALID_BODY'
+  | 'DB_DISABLED'
+  | 'INTERNAL';
+
+export interface EndpointFeedbackResult {
+  success: boolean;
+  feedbackId?: string;
+  creditsRefunded?: number;
+  creditsRefundedToday?: number;
+  dailyRefundCap?: number;
+  dailyCapReached?: boolean;
+  websiteCapReached?: boolean;
+  alreadySubmitted?: boolean;
+  rejectedTokens?: number;
+  warning?: string;
+  error?: string;
+  errorCode?: EndpointFeedbackErrorCode;
+  status?: number;
+  disabled?: boolean;
+  disabledSource?: 'env' | 'team';
+}
+
+export const ENDPOINT_FEEDBACK_OPT_OUT_ENV_VARS = [
+  'FIRECRAWL_NO_ENDPOINT_FEEDBACK',
+  'FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK',
+] as const;
+
+const TRUTHY = new Set(['1', 'true', 'yes', 'on']);
+const DEFAULT_API_URL = 'https://api.firecrawl.dev';
+
+export const ENDPOINT_FEEDBACK_ENDPOINTS: EndpointFeedbackEndpoint[] = [
+  'search',
+  'scrape',
+  'parse',
+  'map',
+];
+
+function normalizeList(entries: string[] | undefined): string[] | undefined {
+  const cleaned = entries
+    ?.map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  return cleaned && cleaned.length > 0 ? cleaned : undefined;
+}
+
+export function parseFeedbackListArg(
+  raw: string | undefined,
+  label: string
+): string[] | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (!Array.isArray(parsed)) {
+        throw new Error(`${label} must be a JSON array.`);
+      }
+      return normalizeList(
+        parsed
+          .filter((entry) => typeof entry === 'string')
+          .map((entry) => entry as string)
+      );
+    } catch (error: any) {
+      throw new Error(
+        `${label} must be a comma-separated list or valid JSON array.`
+      );
+    }
+  }
+
+  return normalizeList(trimmed.split(','));
+}
+
+export function parsePageNumbersArg(
+  raw: string | undefined
+): number[] | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+
+  let values: unknown[];
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (!Array.isArray(parsed)) {
+        throw new Error('--page-numbers must be a JSON array.');
+      }
+      values = parsed;
+    } catch {
+      throw new Error(
+        '--page-numbers must be a comma-separated list or valid JSON array.'
+      );
+    }
+  } else {
+    values = trimmed.split(',').map((entry) => entry.trim());
+  }
+
+  const numbers = values
+    .map((value) =>
+      typeof value === 'number' ? value : Number.parseInt(String(value), 10)
+    )
+    .filter((value) => Number.isInteger(value) && value > 0);
+
+  return numbers.length > 0 ? numbers : undefined;
+}
+
+export function parseMetadataArg(
+  raw: string | undefined,
+  filePath: string | undefined
+): Record<string, unknown> | undefined {
+  if (raw === undefined && filePath === undefined) return undefined;
+
+  const input =
+    raw !== undefined ? raw : readFileSync(filePath as string, 'utf-8');
+
+  try {
+    const parsed = JSON.parse(input);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('metadata must be a JSON object.');
+    }
+    return parsed as Record<string, unknown>;
+  } catch (error: any) {
+    throw new Error(error?.message || 'Invalid metadata JSON.');
+  }
+}
+
+export function parseEndpointFeedbackEndpoint(
+  value: string
+): EndpointFeedbackEndpoint {
+  const endpoint = value.toLowerCase();
+  if (
+    !ENDPOINT_FEEDBACK_ENDPOINTS.includes(endpoint as EndpointFeedbackEndpoint)
+  ) {
+    throw new Error(
+      `endpoint must be one of: ${ENDPOINT_FEEDBACK_ENDPOINTS.join(', ')}`
+    );
+  }
+  return endpoint as EndpointFeedbackEndpoint;
+}
+
+export function parseEndpointFeedbackRating(
+  value: string
+): SearchFeedbackRating {
+  const rating = value.toLowerCase();
+  if (!['good', 'bad', 'partial'].includes(rating)) {
+    throw new Error('--rating must be one of: good, bad, partial');
+  }
+  return rating as SearchFeedbackRating;
+}
+
+/**
+ * The call tokens an Alexandria rating covers: the explicit ones when given, else those
+ * stored by earlier calls. Call-rating refs resolve against the store (or an explicit token).
+ */
+function resolveAlexandriaTokens(
+  options: EndpointFeedbackOptions,
+  scope: string
+) {
+  const stored = readFeedbackTokens(scope);
+  const explicit = options.tokens ?? [];
+  const byRef = new Map<string, string>(
+    explicit.length
+      ? explicit.map((token): [string, string] => [token, token])
+      : stored.map((entry): [string, string] => [entry.ref, entry.token])
+  );
+  const rated = new Map<string, SearchFeedbackRating>();
+  for (const { ref, rating } of options.callRatings ?? []) {
+    const token = byRef.get(ref);
+    if (!token) {
+      throw new Error(
+        `Unknown call ref "${ref}". Refs are printed after each Alexandria call and expire after 24 hours.`
+      );
+    }
+    rated.set(token, rating);
+  }
+  const tokens = [
+    ...new Set(explicit.length ? explicit : stored.map((entry) => entry.token)),
+  ].slice(-FEEDBACK_TOKEN_LIMIT);
+  return {
+    tokens,
+    callRatings: [...rated].map(([token, rating]) => ({ token, rating })),
+    sent: [...new Set([...tokens, ...rated.keys()])],
+  };
+}
+
+export function parseCallRatingArg(
+  value: string,
+  previous: { ref: string; rating: SearchFeedbackRating }[] = []
+): { ref: string; rating: SearchFeedbackRating }[] {
+  const separator = value.lastIndexOf('=');
+  const ref = value.slice(0, separator).trim();
+  if (separator < 1 || !ref) {
+    throw new Error('--call-rating must look like <ref>=<good|partial|bad>');
+  }
+  if (previous.length >= FEEDBACK_TOKEN_LIMIT) {
+    throw new Error(`Rate at most ${FEEDBACK_TOKEN_LIMIT} calls.`);
+  }
+  return [
+    ...previous,
+    {
+      ref,
+      rating: parseEndpointFeedbackRating(value.slice(separator + 1).trim()),
+    },
+  ];
+}
+
+export function parseFeedbackTokenArg(
+  value: string,
+  previous: string[] = []
+): string[] {
+  if (!value || value.length > 1024) {
+    throw new Error('--token must contain 1-1024 characters.');
+  }
+  if (previous.length >= FEEDBACK_TOKEN_LIMIT) {
+    throw new Error(`Pass at most ${FEEDBACK_TOKEN_LIMIT} tokens.`);
+  }
+  return [...previous, value];
+}
+
+export function isEndpointFeedbackDisabledLocally(
+  env: NodeJS.ProcessEnv = process.env
+): boolean {
+  for (const key of ENDPOINT_FEEDBACK_OPT_OUT_ENV_VARS) {
+    const value = env[key];
+    if (typeof value === 'string' && TRUTHY.has(value.trim().toLowerCase())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function parseEndpointFeedbackCliOptions(options: {
+  issues?: string;
+  tags?: string;
+  pageNumbers?: string;
+  metadata?: string;
+  metadataFile?: string;
+  valuableSources?: string;
+  valuableResults?: string;
+  missingContent?: string | string[];
+  rating?: string;
+}) {
+  return {
+    rating: parseEndpointFeedbackRating(String(options.rating || '')),
+    issues: parseFeedbackListArg(options.issues, '--issues'),
+    tags: parseFeedbackListArg(options.tags, '--tags'),
+    pageNumbers: parsePageNumbersArg(options.pageNumbers),
+    metadata: parseMetadataArg(options.metadata, options.metadataFile),
+    valuableSources: parseValuableSourcesArg(options.valuableSources),
+    valuableResults: parseValuableResultsArg(options.valuableResults),
+    missingContent: parseMissingContentArg(options.missingContent),
+  };
+}
+
+export async function executeEndpointFeedback(
+  options: EndpointFeedbackOptions
+): Promise<EndpointFeedbackResult> {
+  if (isEndpointFeedbackDisabledLocally()) {
+    return {
+      success: true,
+      disabled: true,
+      disabledSource: 'env',
+      creditsRefunded: 0,
+    };
+  }
+
+  try {
+    if (options.apiKey || options.apiUrl) {
+      getClient({ apiKey: options.apiKey, apiUrl: options.apiUrl });
+    }
+
+    const config = getConfig();
+    const apiKey = options.apiKey || config.apiKey;
+    const apiUrl = (options.apiUrl || config.apiUrl || DEFAULT_API_URL).replace(
+      /\/$/,
+      ''
+    );
+    if (!isCustomApiUrl(apiUrl)) {
+      validateConfig(apiKey);
+    }
+
+    const body: Record<string, unknown> = {
+      endpoint: options.endpoint,
+      ...(options.endpoint === 'alexandria' ? {} : { jobId: options.jobId }),
+      rating: options.rating,
+      origin: getCliOrigin(),
+      integration: 'cli',
+    };
+
+    if (options.endpoint !== 'alexandria' && !options.jobId) {
+      throw new Error('Job feedback requires a job ID.');
+    }
+    // Positions in `valuableResults` are 1-indexed within a search result
+    // group (web/images/news), so they are meaningless anywhere else. Reject
+    // rather than drop: silently ignoring the flag would let a caller believe
+    // the results were recorded.
+    if (options.endpoint !== 'search' && options.valuableResults?.length) {
+      throw new Error(
+        '--valuable-results is only supported for search feedback.'
+      );
+    }
+    const scope = feedbackTokenScope(apiKey);
+    const attribution =
+      options.endpoint === 'alexandria'
+        ? resolveAlexandriaTokens(options, scope)
+        : undefined;
+    const entries: Array<[string, unknown]> =
+      options.endpoint === 'alexandria'
+        ? [
+            ['requestedWebsite', options.requestedWebsite],
+            ['rationale', options.rationale],
+            ['objective', options.objective],
+            ['providerFeedback', options.providerFeedback],
+            ['capabilityFeedback', options.capabilityFeedback],
+            ['tokens', attribution?.tokens],
+            ['callRatings', attribution?.callRatings],
+          ]
+        : [
+            ['issues', normalizeList(options.issues)],
+            ['tags', normalizeList(options.tags)],
+            ['note', options.note],
+            ['valuableSources', options.valuableSources],
+            ['valuableResults', options.valuableResults],
+            ['missingContent', options.missingContent],
+            ['querySuggestions', options.querySuggestions],
+            ['url', options.url],
+            ['pageNumbers', options.pageNumbers],
+            ['metadata', options.metadata],
+          ];
+
+    for (const [key, value] of entries) {
+      if (value === undefined) continue;
+      if (Array.isArray(value) && value.length === 0) continue;
+      if (typeof value === 'string' && value.trim().length === 0) continue;
+      body[key] = value;
+    }
+
+    const response = await fetch(`${apiUrl}/v2/feedback`, {
+      method: 'POST',
+      headers: {
+        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        'Content-Type': 'application/json',
+        ...integrationHeaders(),
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data: Record<string, any> = await response
+      .json()
+      .catch(() => ({}) as Record<string, any>);
+
+    if (!response.ok || data?.success !== true) {
+      const errorMessage =
+        (typeof data?.error === 'string' && data.error) ||
+        `HTTP ${response.status}: ${response.statusText}`;
+      const errorCode =
+        typeof data?.feedbackErrorCode === 'string'
+          ? (data.feedbackErrorCode as EndpointFeedbackErrorCode)
+          : undefined;
+
+      if (errorCode === 'TEAM_OPTED_OUT') {
+        return {
+          success: true,
+          disabled: true,
+          disabledSource: 'team',
+          creditsRefunded: 0,
+          warning:
+            'Feedback is disabled for this team. Contact support to re-enable.',
+        };
+      }
+
+      return {
+        success: false,
+        error: errorMessage,
+        errorCode,
+        status: response.status,
+      };
+    }
+
+    if (attribution) clearFeedbackTokens(scope, attribution.sent);
+
+    return {
+      success: true,
+      feedbackId: data.feedbackId,
+      creditsRefunded: data.creditsRefunded ?? 0,
+      creditsRefundedToday:
+        typeof data.creditsRefundedToday === 'number'
+          ? data.creditsRefundedToday
+          : undefined,
+      dailyRefundCap:
+        typeof data.dailyRefundCap === 'number'
+          ? data.dailyRefundCap
+          : undefined,
+      dailyCapReached: data.dailyCapReached === true,
+      ...(data.websiteCapReached === true ? { websiteCapReached: true } : {}),
+      alreadySubmitted: data.alreadySubmitted,
+      ...(typeof data.rejectedTokens === 'number'
+        ? { rejectedTokens: data.rejectedTokens }
+        : {}),
+      warning: data.warning,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error?.message || 'Unknown error occurred',
+    };
+  }
+}
+
+function formatReadable(result: EndpointFeedbackResult): string {
+  const lines: string[] = [];
+  if (result.alreadySubmitted) {
+    lines.push('Feedback already submitted for this job.');
+  } else {
+    lines.push('Feedback recorded.');
+  }
+  if (result.feedbackId) {
+    lines.push(`Feedback ID: ${result.feedbackId}`);
+  }
+  lines.push(`Credits refunded: ${result.creditsRefunded ?? 0}`);
+  if (
+    typeof result.creditsRefundedToday === 'number' &&
+    typeof result.dailyRefundCap === 'number'
+  ) {
+    lines.push(
+      `Refunds today: ${result.creditsRefundedToday} / ${result.dailyRefundCap}`
+    );
+  }
+  if (result.dailyCapReached) {
+    lines.push(
+      'Daily refund cap reached; further feedback calls today will not refund credits.'
+    );
+  } else if (result.websiteCapReached) {
+    lines.push(
+      'Daily refund cap reached for this website; feedback about other websites can still refund credits.'
+    );
+  }
+  if (result.rejectedTokens) {
+    lines.push(
+      `${result.rejectedTokens} call token(s) could not be verified and were ignored.`
+    );
+  }
+  if (result.warning) {
+    lines.push(`Warning: ${result.warning}`);
+  }
+  return lines.join('\n') + '\n';
+}
+
+export async function handleEndpointFeedbackCommand(
+  options: EndpointFeedbackOptions
+): Promise<void> {
+  const result = await executeEndpointFeedback(options);
+
+  if (result.disabled) {
+    if (result.disabledSource === 'env') {
+      process.exit(0);
+    }
+    if (options.silent) {
+      process.exit(0);
+    }
+    console.error(result.warning ?? 'Feedback is disabled for this team.');
+    process.exit(0);
+  }
+
+  if (!result.success) {
+    if (options.silent) {
+      process.exit(0);
+    }
+    console.error('Error:', result.error);
+    if (result.errorCode) {
+      console.error(`Code: ${result.errorCode}`);
+    }
+    process.exit(1);
+  }
+
+  if (options.silent) {
+    return;
+  }
+
+  let outputContent: string;
+  if (options.json || options.pretty) {
+    const json: Record<string, unknown> = {
+      success: true,
+      feedbackId: result.feedbackId,
+      creditsRefunded: result.creditsRefunded ?? 0,
+      ...(typeof result.creditsRefundedToday === 'number'
+        ? { creditsRefundedToday: result.creditsRefundedToday }
+        : {}),
+      ...(typeof result.dailyRefundCap === 'number'
+        ? { dailyRefundCap: result.dailyRefundCap }
+        : {}),
+      ...(result.dailyCapReached ? { dailyCapReached: true } : {}),
+      ...(result.websiteCapReached ? { websiteCapReached: true } : {}),
+      ...(result.alreadySubmitted ? { alreadySubmitted: true } : {}),
+      ...(result.rejectedTokens
+        ? { rejectedTokens: result.rejectedTokens }
+        : {}),
+      ...(result.warning ? { warning: result.warning } : {}),
+    };
+    outputContent = options.pretty
+      ? JSON.stringify(json, null, 2)
+      : JSON.stringify(json);
+  } else {
+    outputContent = formatReadable(result);
+  }
+
+  if (options.output) {
+    const dir = dirname(options.output);
+    if (dir && !existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+    writeFileSync(options.output, outputContent, 'utf-8');
+    console.error(`Output written to: ${options.output}`);
+  } else {
+    if (!outputContent.endsWith('\n')) outputContent += '\n';
+    process.stdout.write(outputContent);
+  }
+}
