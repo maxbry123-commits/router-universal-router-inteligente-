@@ -1,0 +1,1627 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { Buffer } from 'node:buffer';
+import { getProjectPaths, getRunPaths } from './paths.js';
+import { initProject } from './init.js';
+import { loadSkillPackage, materializeSkillPackage } from './skill-package.js';
+import { appendTimeline, readTimeline } from './timeline.js';
+import { ensureDir, hashDirectory, pathExists, readJson, writeJson, writeText } from './store.js';
+import { loadProjectConfig, normalizeProjectConfig } from './config.js';
+import { normalizeTaskContract, taskContractOutputType } from './task-contracts.js';
+
+const MAX_BASELINE_ZIP_BYTES = 25 * 1024 * 1024;
+const UI_OUTPUT_TYPES = ['text', 'code', 'code_visual'];
+export const DEFAULT_UI_MODEL = 'gpt-6-sol';
+export const UI_OPENAI_MODELS = ['gpt-6-astra', 'gpt-6-sol', 'gpt-6-luna', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4-mini'];
+
+export async function createProjectForUi({
+  cwd,
+  projectName,
+  goal,
+  targetIterations = 3,
+  triggerMode = 'manual',
+  outputType = 'text',
+  model = DEFAULT_UI_MODEL,
+  baselineFiles = [],
+  baselineArchive = null,
+}) {
+  if (typeof projectName !== 'string' || projectName.trim() === '') {
+    throw badRequest('Project name is required');
+  }
+  if (typeof goal !== 'string' || goal.trim() === '') {
+    throw badRequest('Project goal is required');
+  }
+  const normalizedTargetIterations = Number.parseInt(targetIterations, 10);
+  if (!Number.isInteger(normalizedTargetIterations) || normalizedTargetIterations < 1) {
+    throw badRequest('Target iterations must be a positive integer');
+  }
+  const normalizedTaskContract = normalizeTaskContract(null, outputType);
+  const normalizedOutputType = UI_OUTPUT_TYPES.includes(taskContractOutputType(normalizedTaskContract))
+    ? taskContractOutputType(normalizedTaskContract)
+    : 'text';
+  const normalizedModel = normalizeUiModel(model);
+  const paths = getProjectPaths(cwd, projectName);
+  if (await pathExists(paths.stateJson)) {
+    const error = new Error(`Project "${paths.projectId}" already exists`);
+    error.statusCode = 409;
+    throw error;
+  }
+  const normalizedBaselineFiles = normalizeBaselineFiles(baselineFiles);
+  const normalizedBaselineArchive = normalizeBaselineArchive(baselineArchive);
+  if (normalizedBaselineFiles.length && normalizedBaselineArchive) {
+    throw badRequest('Choose either a baseline folder or a baseline zip, not both');
+  }
+  const preflightSource = normalizedBaselineArchive || normalizedBaselineFiles.length
+    ? await preflightBaselineSkill({
+      cwd,
+      files: normalizedBaselineFiles,
+      archive: normalizedBaselineArchive,
+    })
+    : null;
+
+  try {
+    await initProject({
+      cwd,
+      projectName,
+      goal,
+      runPolicy: {
+        triggerMode,
+        targetIterations: normalizedTargetIterations,
+      },
+      evalOutputType: normalizedOutputType,
+      taskContract: normalizedTaskContract,
+      models: {
+        agent: normalizedModel,
+        generation: normalizedModel,
+        judge: normalizedModel,
+      },
+    });
+    if (preflightSource) await installBaselineSkill({ paths, sourcePath: preflightSource.sourcePath });
+    return readProjectSummary({ cwd, projectName });
+  } finally {
+    if (preflightSource) await fs.rm(preflightSource.tmpDir, { recursive: true, force: true });
+  }
+}
+
+export async function createProjectDraftForUi({
+  cwd,
+  projectName = '',
+  goal = '',
+  targetIterations = 3,
+  triggerMode = 'manual',
+  outputType = null,
+  model = DEFAULT_UI_MODEL,
+  baselinePath = null,
+}) {
+  const now = new Date().toISOString();
+  const baseline = baselinePath ? await summarizeLocalBaselineDraft(baselinePath) : null;
+  const inferredName = baseline?.skillName ? prettifyDraftName(baseline.skillName) : baseline?.displayName || '';
+  const explicitOutputType = UI_OUTPUT_TYPES.includes(outputType);
+  const normalizedOutputType = explicitOutputType
+    ? normalizeUiOutputType(outputType)
+    : inferDraftOutputType({ projectName, goal, baseline });
+  const draft = {
+    schemaVersion: 1,
+    id: crypto.randomUUID(),
+    createdAt: now,
+    mode: baseline ? 'existing' : 'scratch',
+    projectName: String(projectName || '').trim() || inferredName,
+    goal: String(goal || '').trim() || baseline?.description || '',
+    targetIterations: normalizePositiveInteger(targetIterations, 3),
+    triggerMode: ['manual', 'continuous', 'hook', 'cron'].includes(triggerMode) ? triggerMode : 'manual',
+    outputType: normalizedOutputType,
+    outputTypeSource: explicitOutputType ? 'explicit' : 'inferred',
+    model: normalizeUiModel(model),
+    baseline,
+  };
+  await writeJson(projectDraftPath(cwd, draft.id), draft);
+  return sanitizeProjectDraft(draft);
+}
+
+export async function readProjectDraftForUi({ cwd, draftId }) {
+  const draft = await readProjectDraftRecord({ cwd, draftId });
+  return sanitizeProjectDraft(draft);
+}
+
+export async function createProjectFromDraftForUi({
+  cwd,
+  draftId,
+  projectName,
+  goal,
+  targetIterations = 3,
+  triggerMode = 'manual',
+  outputType = 'text',
+  model = DEFAULT_UI_MODEL,
+}) {
+  const draft = await readProjectDraftRecord({ cwd, draftId });
+  const summary = await createProjectFromLocalInput({
+    cwd,
+    projectName: String(projectName || '').trim() || draft.projectName,
+    goal: String(goal || '').trim() || draft.goal,
+    targetIterations,
+    triggerMode,
+    outputType,
+    model,
+    baselinePath: draft.baseline?.sourcePath || null,
+  });
+  await fs.rm(projectDraftPath(cwd, draft.id), { force: true });
+  return summary;
+}
+
+export async function createProjectFromLocalInput({
+  cwd,
+  projectName,
+  goal,
+  targetIterations = 3,
+  triggerMode = 'manual',
+  outputType = 'text',
+  model = DEFAULT_UI_MODEL,
+  baselinePath = null,
+}) {
+  if (typeof projectName !== 'string' || projectName.trim() === '') {
+    throw badRequest('Project name is required');
+  }
+  if (typeof goal !== 'string' || goal.trim() === '') {
+    throw badRequest('Project goal is required');
+  }
+  const normalizedTargetIterations = Number.parseInt(targetIterations, 10);
+  if (!Number.isInteger(normalizedTargetIterations) || normalizedTargetIterations < 1) {
+    throw badRequest('Target iterations must be a positive integer');
+  }
+  const normalizedTaskContract = normalizeTaskContract(null, outputType);
+  const normalizedOutputType = normalizeUiOutputType(taskContractOutputType(normalizedTaskContract));
+  const normalizedModel = normalizeUiModel(model);
+  const paths = getProjectPaths(cwd, projectName);
+  if (await pathExists(paths.stateJson)) {
+    const error = new Error(`Project "${paths.projectId}" already exists`);
+    error.statusCode = 409;
+    throw error;
+  }
+  const preflightSource = baselinePath
+    ? await preflightLocalBaselineSkill(baselinePath)
+    : null;
+
+  await initProject({
+    cwd,
+    projectName,
+    goal,
+    runPolicy: {
+      triggerMode,
+      targetIterations: normalizedTargetIterations,
+    },
+    evalOutputType: normalizedOutputType,
+    taskContract: normalizedTaskContract,
+    models: {
+      agent: normalizedModel,
+      generation: normalizedModel,
+      judge: normalizedModel,
+    },
+  });
+  if (preflightSource) await installBaselineSkill({ paths, sourcePath: preflightSource.sourcePath });
+  return readProjectSummary({ cwd, projectName });
+}
+
+function normalizeUiModel(model) {
+  return UI_OPENAI_MODELS.includes(model) ? model : DEFAULT_UI_MODEL;
+}
+
+function normalizeUiOutputType(outputType) {
+  return UI_OUTPUT_TYPES.includes(outputType) ? outputType : 'text';
+}
+
+function inferDraftOutputType({ projectName = '', goal = '', baseline = null }) {
+  const text = [
+    projectName,
+    goal,
+    baseline?.skillName,
+    baseline?.description,
+    baseline?.displayName,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (/\b(frontend|front-end|ui|ux|visual|browser|web app|react|css|html|design system|component|layout|screenshot|rendered|rendering)\b/.test(text)) {
+    return 'code_visual';
+  }
+  if (/\b(code|coding|implementation|implement|refactor|debug|api|cli|script|typescript|javascript|python|swift|sql|repository|repo|test|tests)\b/.test(text)) {
+    return 'code';
+  }
+  return 'text';
+}
+
+function normalizePositiveInteger(value, fallback) {
+  const number = Number.parseInt(value, 10);
+  return Number.isInteger(number) && number > 0 ? number : fallback;
+}
+
+async function summarizeLocalBaselineDraft(sourcePath) {
+  const absolutePath = path.resolve(sourcePath);
+  const skillPackage = await loadSkillPackage(absolutePath);
+  if (!skillPackage.validation.valid) {
+    throw badRequest(`Baseline skill is invalid: ${skillPackage.validation.errors.join('; ')}`);
+  }
+  const entrypoint = skillPackage.files.find(file => file.path === skillPackage.entrypoint && file.kind === 'text');
+  const frontmatter = parseSkillFrontmatter(entrypoint?.content || '');
+  return {
+    sourcePath: absolutePath,
+    displayName: skillPackage.filename || path.basename(absolutePath),
+    packageType: skillPackage.packageType,
+    skillName: frontmatter.name || '',
+    description: frontmatter.description || '',
+    fileCount: skillPackage.files.length,
+    hash: skillPackage.hash,
+  };
+}
+
+function parseSkillFrontmatter(content) {
+  const match = String(content || '').match(/^---\n([\s\S]*?)\n---\n?/);
+  if (!match) return {};
+  const result = {};
+  for (const line of match[1].split('\n')) {
+    const field = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+    if (!field) continue;
+    result[field[1]] = field[2].replace(/^["']|["']$/g, '').trim();
+  }
+  return result;
+}
+
+function prettifyDraftName(value) {
+  return String(value || '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase())
+    .trim();
+}
+
+function projectDraftPath(cwd, draftId) {
+  return path.join(cwd, '.skill-rsi', 'drafts', `${normalizeDraftId(draftId)}.json`);
+}
+
+async function readProjectDraftRecord({ cwd, draftId }) {
+  const draft = await readJson(projectDraftPath(cwd, draftId), null);
+  if (!draft || draft.schemaVersion !== 1) {
+    const error = new Error(`Draft "${draftId}" was not found`);
+    error.statusCode = 404;
+    throw error;
+  }
+  return draft;
+}
+
+function normalizeDraftId(draftId) {
+  const id = String(draftId || '').trim();
+  if (!/^[a-f0-9-]{36}$/i.test(id)) throw badRequest('Draft id is invalid');
+  return id;
+}
+
+function sanitizeProjectDraft(draft) {
+  return {
+    schemaVersion: 1,
+    id: draft.id,
+    mode: draft.mode || 'scratch',
+    projectName: draft.projectName || '',
+    goal: draft.goal || '',
+    targetIterations: draft.targetIterations || 3,
+    triggerMode: draft.triggerMode || 'manual',
+    outputType: normalizeUiOutputType(draft.outputType),
+    outputTypeSource: draft.outputTypeSource || 'explicit',
+    model: normalizeUiModel(draft.model),
+    baseline: draft.baseline ? {
+      displayName: draft.baseline.displayName || 'Baseline skill',
+      packageType: draft.baseline.packageType || null,
+      skillName: draft.baseline.skillName || '',
+      description: draft.baseline.description || '',
+      fileCount: draft.baseline.fileCount || 0,
+      hash: draft.baseline.hash || null,
+    } : null,
+    createdAt: draft.createdAt || null,
+  };
+}
+
+export async function readProjectSummaries({ cwd }) {
+  const rootDir = path.join(cwd, '.skill-rsi', 'projects');
+  if (!(await pathExists(rootDir))) return [];
+  const entries = await fs.readdir(rootDir, { withFileTypes: true });
+  const summaries = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    summaries.push(await readProjectSummary({ cwd, projectName: entry.name }));
+  }
+
+  return summaries.sort((a, b) => a.projectId.localeCompare(b.projectId));
+}
+
+export async function readProjectSummary({ cwd, projectName }) {
+  const paths = getProjectPaths(cwd, projectName);
+  const state = await readRequiredJson(paths.stateJson, `Project "${paths.projectId}" has not been initialized`);
+  const history = await readRequiredJson(paths.historyIndex, `Project "${paths.projectId}" has no history index`);
+  const promptBank = await readJson(paths.promptBankIndex, null);
+  const config = await loadProjectConfig({ cwd, projectName });
+  const humanDecisions = await listHumanDecisions(paths);
+  const automation = await readAutomationSummary({ cwd, paths, state, config });
+  const latestLoopResult = await buildLatestLoopResult({ paths, state, history });
+
+  return {
+    schemaVersion: 1,
+    projectId: paths.projectId,
+    projectDir: paths.projectDir,
+    goal: history.skillGoal,
+    state: {
+      runCount: state.runCount,
+      lastRunId: state.lastRunId || null,
+      currentChampion: state.currentChampion || null,
+      updatedAt: state.updatedAt || null,
+      runPolicy: normalizeRunPolicy(state.runPolicy),
+      budgetUsage: state.budgetUsage || { estimatedTokens: 0, estimatedSpendUsd: 0 },
+    },
+    config: {
+      trigger: config.trigger,
+      budget: config.budget,
+      eval: {
+        outputType: config.eval.outputType,
+        taskContract: config.eval.taskContract,
+        stablePromptCount: config.eval.stablePromptCount,
+        explorationPromptCount: config.eval.explorationPromptCount,
+      },
+      models: config.models,
+      portability: config.portability,
+    },
+    history: {
+      trajectoryLength: history.trajectory.length,
+      recentTrajectory: history.trajectory.slice(-10),
+      parameterLogCount: history.parameterLog.length,
+      nextLoopPremise: buildNextLoopPremise(history),
+    },
+    promptBank: promptBank ? {
+      currentRunId: promptBank.currentRunId || null,
+      stablePromptCount: promptBank.stablePromptIds?.length || 0,
+      provisionalPromptCount: promptBank.provisionalPromptIds?.length || promptBank.provisionalPrompts?.length || 0,
+      explorationPromptCount: promptBank.explorationPrompts?.length || promptBank.explorationPromptIds?.length || 0,
+      retiredPromptCount: promptBank.retired?.length || 0,
+      evidenceRecordCount: Object.keys(promptBank.promptEvidence || {}).length,
+      criteriaVersionCount: promptBank.criteriaVersions?.length || 0,
+    } : null,
+    humanDecisionCount: humanDecisions.length,
+    automation,
+    latestLoopResult,
+    artifacts: {
+      historyIndex: paths.historyIndex,
+      historySummary: paths.historySummary,
+      championSkillDir: paths.championSkillDir,
+      promptBankIndex: paths.promptBankIndex,
+    },
+  };
+}
+
+async function buildLatestLoopResult({ paths, state, history }) {
+  const runId = state.lastRunId;
+  if (!runId) return null;
+  const runPaths = getRunPaths(paths, runId);
+  const [run, experimentPlan, candidateDuel, challenge, recommendation] = await Promise.all([
+    readJson(runPaths.runJson, null),
+    readJson(runPaths.experimentPlanJson, null),
+    readJson(runPaths.candidateDuelJson, null),
+    readJson(runPaths.challengeJson, null),
+    readJson(runPaths.recommendationJson, null),
+  ]);
+  if (!run) return null;
+
+  const competitionMode = experimentPlan?.competitionMode || run.competitionMode || (challenge ? 'champion_challenge' : 'cold_start_duel');
+  const evalRun = competitionMode === 'cold_start_duel' ? candidateDuel : challenge || candidateDuel;
+  const labels = competitionMode === 'cold_start_duel'
+    ? {
+      sideA: 'Candidate A',
+      sideB: 'Candidate B',
+      sideARole: 'candidate-a',
+      sideBRole: 'candidate-b',
+    }
+    : {
+      sideA: 'Challenger',
+      sideB: 'Champion',
+      sideARole: 'challenger',
+      sideBRole: 'champion',
+    };
+  const trajectory = Array.isArray(history?.trajectory) ? history.trajectory : [];
+  const latestHistory = trajectory.find(item => item.runId === runId) || trajectory.at(-1) || null;
+  const overallProgress = await buildOverallProgress({ paths, history });
+
+  if (!evalRun) {
+    return {
+      schemaVersion: 1,
+      available: true,
+      runId,
+      runNumber: run.runNumber ?? state.runCount ?? null,
+      competitionMode,
+      outcome: run.status === 'failed' ? 'failed' : 'blocked',
+      headline: run.status === 'failed' ? 'Run failed' : 'No evaluation recorded',
+      subhead: run.status === 'failed'
+        ? 'The loop did not complete cleanly.'
+        : 'The loop produced no head-to-head evaluation to summarize.',
+      decision: recommendation?.decision || latestHistory?.decision || null,
+      confidence: recommendation?.confidence || null,
+      labels,
+      sides: buildScoreSides(labels, null),
+      scoreDelta: null,
+      promptWins: { sideA: 0, sideB: 0, ties: 0, failed: 0, total: 0 },
+      promptOutcomes: [],
+      topCriterionEdges: [],
+      overallProgress,
+      policyChips: buildPolicyChips({ recommendation, evalRun: null }),
+      blockers: extractPromotionBlockers(recommendation),
+      reasons: summarizeResultReasons({ recommendation, latestHistory }),
+      nextLoopNote: firstNextLoopNote(history),
+    };
+  }
+
+  const decision = recommendation?.decision || latestHistory?.decision || null;
+  const outcome = classifyLoopOutcome({ competitionMode, decision, recommendation, evalRun, run });
+  const headline = loopResultHeadline({ outcome, competitionMode, recommendation, evalRun, labels });
+  const subhead = loopResultSubhead({ outcome, recommendation, evalRun, labels });
+  const promptOutcomes = summarizePromptOutcomes(evalRun);
+
+  return {
+    schemaVersion: 1,
+    available: true,
+    runId,
+    runNumber: run.runNumber ?? state.runCount ?? null,
+    competitionMode,
+    outcome,
+    headline,
+    subhead,
+    decision,
+    confidence: recommendation?.confidence || evalRun.stats?.confidence?.level || null,
+    labels,
+    rawWinner: mapWinnerToSide(evalRun.stats?.winner),
+    promotedSide: promotedCandidateToSide(recommendation?.recommendedChampionCandidateId, competitionMode),
+    sides: buildScoreSides(labels, evalRun),
+    scoreDelta: Number.isFinite(evalRun.stats?.scoreDelta) ? evalRun.stats.scoreDelta : null,
+    promptWins: {
+      sideA: evalRun.stats?.skillAWins || 0,
+      sideB: evalRun.stats?.skillBWins || 0,
+      ties: evalRun.stats?.ties || 0,
+      failed: evalRun.stats?.failedEvals || 0,
+      total: evalRun.stats?.totalEvals || promptOutcomes.length,
+    },
+    promptOutcomes,
+    topCriterionEdges: summarizeCriterionEdges(evalRun),
+    overallProgress,
+    policyChips: buildPolicyChips({ recommendation, evalRun }),
+    blockers: extractPromotionBlockers(recommendation),
+    reasons: summarizeResultReasons({ recommendation, latestHistory }),
+    nextLoopNote: firstNextLoopNote(history),
+    visual: summarizeVisualResult(evalRun),
+  };
+}
+
+async function buildOverallProgress({ paths, history }) {
+  const promotedChallengeRuns = normalizeArray(history?.trajectory).filter(
+    entry => entry?.decision === 'promote' && entry?.winner === 'challenger' && entry?.runId
+  );
+  if (!promotedChallengeRuns.length) return null;
+
+  const gains = [];
+  for (const entry of promotedChallengeRuns) {
+    const gain = await readStablePromotionGain(paths, entry.runId);
+    if (!gain) return null;
+    gains.push(gain);
+  }
+
+  const factor = gains.reduce((product, gain) => product * gain.factor, 1);
+  const percent = Math.round((factor - 1) * 100);
+  if (!Number.isFinite(percent) || percent <= 0) return null;
+
+  return {
+    percent,
+    label: 'over v1 (stable prompts)',
+    display: `+${percent}% over v1 (stable prompts)`,
+    basis: 'stable_prompts',
+    comparisonCount: gains.length,
+    promptCount: gains.reduce((sum, gain) => sum + gain.promptCount, 0),
+  };
+}
+
+async function readStablePromotionGain(paths, runId) {
+  const runPaths = getRunPaths(paths, runId);
+  const challenge = await readJson(runPaths.challengeJson, null);
+  const evaluations = normalizeArray(challenge?.evaluations);
+  let challengerTotal = 0;
+  let championTotal = 0;
+  let promptCount = 0;
+
+  for (const evaluation of evaluations) {
+    if (!isComparableStableEvaluation(evaluation)) continue;
+    const challengerScore = Number(evaluation?.judge?.scoreA);
+    const championScore = Number(evaluation?.judge?.scoreB);
+    if (!Number.isFinite(challengerScore) || !Number.isFinite(championScore) || championScore <= 0) continue;
+    challengerTotal += challengerScore;
+    championTotal += championScore;
+    promptCount += 1;
+  }
+
+  if (promptCount === 0 || championTotal <= 0 || challengerTotal <= championTotal) return null;
+  return {
+    factor: challengerTotal / championTotal,
+    challengerTotal,
+    championTotal,
+    promptCount,
+  };
+}
+
+function isComparableStableEvaluation(evaluation) {
+  if (evaluation?.prompt?.bucket !== 'stable') return false;
+  const status = evaluation?.status || evaluation?.judge?.status || 'complete';
+  return !['failed', 'error', 'invalid', 'skipped'].includes(String(status).toLowerCase());
+}
+
+function classifyLoopOutcome({ competitionMode, decision, recommendation, evalRun, run }) {
+  if (run?.status === 'failed') return 'failed';
+  if (decision === 'promote') {
+    return competitionMode === 'cold_start_duel' ? 'first_champion' : 'promoted';
+  }
+  if (decision === 'keep_current') return 'kept';
+  if (decision === 'request_new_experiment') return 'inconclusive';
+  if (decision === 'edit_current') return 'refined';
+  if (recommendation?.resultSummary?.criticalRegressions?.length) return 'kept';
+  if (evalRun?.stats?.winner === 'tie') return 'inconclusive';
+  return 'complete';
+}
+
+function loopResultHeadline({ outcome, competitionMode, recommendation, evalRun, labels }) {
+  if (outcome === 'failed') return 'Run failed';
+  if (outcome === 'first_champion') return 'First champion crowned';
+  if (outcome === 'promoted') return 'Challenger promoted';
+  if (outcome === 'kept') return 'Champion held, challenger lost';
+  if (outcome === 'inconclusive') return 'No clear winner';
+  if (outcome === 'refined') return 'Champion refined';
+  const winner = mapWinnerToSide(evalRun?.stats?.winner);
+  if (winner === 'sideA') return `${labels.sideA} led the eval`;
+  if (winner === 'sideB') return `${labels.sideB} led the eval`;
+  return competitionMode === 'cold_start_duel' ? 'Candidate duel complete' : 'Challenge complete';
+}
+
+function loopResultSubhead({ outcome, recommendation, evalRun, labels }) {
+  if (recommendation?.reasoning) return firstSentence(recommendation.reasoning);
+  if (outcome === 'first_champion') return 'The bootstrap duel produced the project’s first champion.';
+  if (outcome === 'promoted') return 'The challenger cleared the promotion policy and became the new champion.';
+  if (outcome === 'kept') return 'The challenger did not clear the promotion policy, so the current champion remains in place.';
+  if (outcome === 'inconclusive') return 'The scores were too close or noisy to crown a new version.';
+  const winner = mapWinnerToSide(evalRun?.stats?.winner);
+  if (winner === 'sideA') return `${labels.sideA} had the stronger aggregate score.`;
+  if (winner === 'sideB') return `${labels.sideB} had the stronger aggregate score.`;
+  return 'The loop completed and recorded its evidence.';
+}
+
+function buildScoreSides(labels, evalRun) {
+  return {
+    sideA: {
+      label: labels.sideA,
+      role: labels.sideARole,
+      totalScore: Number.isFinite(evalRun?.stats?.totalScoreA) ? evalRun.stats.totalScoreA : null,
+    },
+    sideB: {
+      label: labels.sideB,
+      role: labels.sideBRole,
+      totalScore: Number.isFinite(evalRun?.stats?.totalScoreB) ? evalRun.stats.totalScoreB : null,
+    },
+  };
+}
+
+function mapWinnerToSide(winner) {
+  if (winner === 'skillA') return 'sideA';
+  if (winner === 'skillB') return 'sideB';
+  if (winner === 'tie') return 'tie';
+  return null;
+}
+
+function promotedCandidateToSide(candidateId, competitionMode) {
+  if (!candidateId) return null;
+  if (candidateId === 'challenger') return 'sideA';
+  if (candidateId === 'current' || candidateId === 'champion') return 'sideB';
+  if (competitionMode === 'cold_start_duel' && candidateId === 'candidate-a') return 'sideA';
+  if (competitionMode === 'cold_start_duel' && candidateId === 'candidate-b') return 'sideB';
+  return null;
+}
+
+function summarizePromptOutcomes(evalRun) {
+  return normalizeArray(evalRun?.evaluations).map((evaluation, index) => ({
+    id: evaluation.prompt?.id || evaluation.id || index + 1,
+    bucket: evaluation.prompt?.bucket || null,
+    status: evaluation.status || evaluation.judge?.status || 'complete',
+    winner: (evaluation.status && evaluation.status !== 'complete') || (evaluation.judge?.status && evaluation.judge.status !== 'complete')
+      ? 'failed'
+      : mapWinnerToSide(evaluation.judge?.winner) || 'failed',
+    scoreA: Number.isFinite(evaluation.judge?.scoreA) ? evaluation.judge.scoreA : null,
+    scoreB: Number.isFinite(evaluation.judge?.scoreB) ? evaluation.judge.scoreB : null,
+  }));
+}
+
+function summarizeCriterionEdges(evalRun) {
+  const criteria = normalizeArray(evalRun?.criteria).filter(criterion => !String(criterion.id || '').startsWith('parameter_'));
+  const rows = [];
+  for (const criterion of criteria) {
+    const criterionId = criterion.id || criterion.name;
+    let totalA = 0;
+    let totalB = 0;
+    let count = 0;
+    for (const evaluation of normalizeArray(evalRun?.evaluations)) {
+      const a = evaluation.judge?.breakdown?.skillA?.[criterionId];
+      const b = evaluation.judge?.breakdown?.skillB?.[criterionId];
+      if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
+      totalA += a;
+      totalB += b;
+      count += 1;
+    }
+    if (!count) continue;
+    const avgA = totalA / count;
+    const avgB = totalB / count;
+    const delta = avgA - avgB;
+    rows.push({
+      id: criterionId,
+      name: criterion.name || criterionId,
+      avgA: Number(avgA.toFixed(2)),
+      avgB: Number(avgB.toFixed(2)),
+      delta: Number(delta.toFixed(2)),
+      leader: delta > 0 ? 'sideA' : delta < 0 ? 'sideB' : 'tie',
+    });
+  }
+  return rows
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 3);
+}
+
+function buildPolicyChips({ recommendation, evalRun }) {
+  const chips = [];
+  if (recommendation?.confidence) {
+    chips.push({ kind: 'confidence', tone: confidenceTone(recommendation.confidence), label: `${recommendation.confidence} confidence` });
+  }
+  if (recommendation?.resultSummary?.provisionalBootstrap) {
+    chips.push({ kind: 'bootstrap', tone: 'info', label: 'provisional bootstrap' });
+  }
+  if (recommendation?.resultSummary?.criticalRegressions?.length) {
+    chips.push({ kind: 'regression', tone: 'warning', label: `stable regression x${recommendation.resultSummary.criticalRegressions.length}` });
+  }
+  if (evalRun?.stats?.failedEvals) {
+    chips.push({ kind: 'failed_eval', tone: 'warning', label: `${evalRun.stats.failedEvals} eval failure${evalRun.stats.failedEvals === 1 ? '' : 's'}` });
+  }
+  const visual = summarizeVisualResult(evalRun);
+  if (visual.renderIssues > 0) {
+    chips.push({ kind: 'visual', tone: 'warning', label: `${visual.renderIssues} render issue${visual.renderIssues === 1 ? '' : 's'}` });
+  } else if (visual.screenshotCount > 0) {
+    chips.push({ kind: 'visual', tone: 'success', label: `${visual.screenshotCount} screenshot${visual.screenshotCount === 1 ? '' : 's'}` });
+  }
+  return chips.slice(0, 4);
+}
+
+function confidenceTone(confidence) {
+  if (confidence === 'high') return 'success';
+  if (confidence === 'medium') return 'info';
+  return 'muted';
+}
+
+function extractPromotionBlockers(recommendation) {
+  const blockers = [];
+  const regressions = normalizeArray(recommendation?.resultSummary?.criticalRegressions);
+  if (regressions.length) {
+    blockers.push(regressions.length === 1
+      ? 'Stable-prompt regression blocked promotion'
+      : `${regressions.length} stable-prompt regressions blocked promotion`);
+  }
+  for (const noise of normalizeArray(recommendation?.resultSummary?.likelyNoise)) {
+    blockers.push(String(noise));
+  }
+  return blockers.slice(0, 3);
+}
+
+function summarizeResultReasons({ recommendation, latestHistory }) {
+  const observations = normalizeArray(recommendation?.observations).filter(Boolean);
+  const reasons = observations.length ? observations : [latestHistory?.summary].filter(Boolean);
+  return reasons.map(reason => compactSentence(reason, 140)).slice(0, 2);
+}
+
+function firstNextLoopNote(history) {
+  const premise = buildNextLoopPremise(history);
+  return premise?.notes?.[0] || null;
+}
+
+function compactSentence(value, maxLength) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, Math.max(0, maxLength - 1)).trim()}…`;
+}
+
+function firstSentence(value) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  const match = text.match(/^.*?[.!?](?:\s|$)/);
+  return (match?.[0] || text).trim();
+}
+
+function normalizeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function summarizeVisualResult(evalRun) {
+  let screenshotCount = 0;
+  let renderIssues = 0;
+  for (const evaluation of normalizeArray(evalRun?.evaluations)) {
+    const visuals = [
+      ...Object.values(evaluation.results || {}).map(result => result?.visual).filter(Boolean),
+      evaluation.visual?.skillA,
+      evaluation.visual?.skillB,
+    ].filter(Boolean);
+    for (const visual of visuals) {
+      screenshotCount += normalizeArray(visual.screenshots).length;
+      if (visual.status === 'failed' || visual.blankScreenDetected) renderIssues += 1;
+    }
+  }
+  return { screenshotCount, renderIssues };
+}
+
+export async function updateProjectModelForUi({ cwd, projectName, model }) {
+  const paths = getProjectPaths(cwd, projectName);
+  const normalizedModel = normalizeUiModel(model);
+  const state = await readJson(paths.stateJson, null);
+  if (!state) throw badRequest(`Project "${paths.projectId}" does not exist`);
+  const rawConfig = await readJson(paths.configJson, {});
+  const config = normalizeProjectConfig(rawConfig);
+  await writeJson(paths.configJson, {
+    ...rawConfig,
+    models: {
+      ...config.models,
+      agent: normalizedModel,
+      generation: normalizedModel,
+      judge: normalizedModel,
+    },
+  });
+  return readProjectSummary({ cwd, projectName });
+}
+
+async function readAutomationSummary({ cwd, paths, state, config }) {
+  const [locked, hooks, latestRun] = await Promise.all([
+    pathExists(path.join(paths.projectDir, 'run.lock')),
+    summarizeHookQueue(paths),
+    readLatestRunForAutomation(paths, state),
+  ]);
+  const runCount = Number.isInteger(state.runCount) ? state.runCount : 0;
+  const targetIterations = normalizeRunPolicy(state.runPolicy).targetIterations;
+  const maxRuns = config.budget?.maxRuns ?? null;
+  const generatedMaxRuns = maxRuns || Math.max(runCount + targetIterations, targetIterations);
+  const model = config.models?.agent || DEFAULT_UI_MODEL;
+  const scheduledMode = config.trigger?.mode === 'cron'
+    || config.trigger?.mode === 'continuous'
+    || latestRun?.trigger?.mode === 'continuous'
+    || latestRun?.trigger?.mode === 'cron'
+    || latestRun?.trigger?.mode === 'hook';
+  const atRunCeiling = Number.isInteger(maxRuns) && runCount >= maxRuns;
+  const hasCurrentFailure = isCurrentAutomationFailure({ hooks, latestRun });
+  const pendingHookContext = hooks.inbox.count > 0;
+
+  let status = 'manual';
+  if (locked) status = 'running';
+  else if (atRunCeiling) status = 'max_runs';
+  else if (hasCurrentFailure || latestRun?.status === 'failed') status = 'failed';
+  else if (pendingHookContext) status = 'hooks_waiting';
+  else if (scheduledMode) status = 'scheduled';
+
+  return {
+    schemaVersion: 1,
+    status,
+    locked,
+    scheduledObserved: Boolean(scheduledMode),
+    runCount,
+    targetIterations,
+    maxRuns,
+    generatedMaxRuns,
+    lastRun: latestRun ? {
+      runId: latestRun.runId,
+      runNumber: latestRun.runNumber ?? null,
+      status: latestRun.status || null,
+      triggerMode: latestRun.trigger?.mode || null,
+      startedAt: latestRun.startedAt || null,
+      completedAt: latestRun.completedAt || null,
+    } : null,
+    hooks,
+    commands: {
+      cron: buildCronCommand({ cwd, projectId: paths.projectId, maxRuns: generatedMaxRuns, model }),
+      codexHook: buildCodexHookCommand({ cwd, projectId: paths.projectId }),
+      powershell: {
+        cron: buildPowerShellCronCommand({ cwd, projectId: paths.projectId, maxRuns: generatedMaxRuns, model }),
+        codexHook: buildPowerShellCodexHookCommand({ cwd, projectId: paths.projectId }),
+      },
+    },
+  };
+}
+
+async function summarizeHookQueue(paths) {
+  const hooksDir = path.join(paths.projectDir, 'hooks');
+  const statuses = await Promise.all(['inbox', 'processing', 'processed', 'skipped', 'failed'].map(async status => {
+    const summary = await summarizeHookStatusDir(path.join(hooksDir, status));
+    return [status, summary];
+  }));
+  return Object.fromEntries(statuses);
+}
+
+async function summarizeHookStatusDir(dir) {
+  const entries = await safeReadDirEntries(dir);
+  const events = [];
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
+    const filePath = path.join(dir, entry.name);
+    const event = await readJson(filePath, null);
+    if (event) events.push({ ...event, fileName: entry.name });
+  }
+  events.sort((a, b) => String(a.receivedAt || '').localeCompare(String(b.receivedAt || '')));
+  const latest = events.at(-1) || null;
+  return {
+    count: events.length,
+    latest: latest ? summarizeHookEventForUi(latest) : null,
+  };
+}
+
+function summarizeHookEventForUi(event) {
+  return {
+    id: event.id || null,
+    eventName: event.eventName || event.payload?.hookEventName || event.payload?.hook_event_name || null,
+    receivedAt: event.receivedAt || null,
+    updatedAt: event.queueUpdatedAt || null,
+    changedFiles: Array.isArray(event.changedFiles) ? event.changedFiles.slice(0, 12) : [],
+    changedFileCount: Array.isArray(event.changedFiles) ? event.changedFiles.length : 0,
+    reason: event.payload?.reason || event.queueReason || event.reason || null,
+    focusParameterIds: Array.isArray(event.payload?.focusParameterIds) ? event.payload.focusParameterIds.slice(0, 8) : [],
+    parameterIds: Array.isArray(event.payload?.parameterIds) ? event.payload.parameterIds.slice(0, 8) : [],
+    error: event.queueError || null,
+  };
+}
+
+function isCurrentAutomationFailure({ hooks, latestRun }) {
+  if (!hooks.failed.count) return false;
+  const failedAt = hookTimestamp(hooks.failed.latest);
+  const laterSuccessAt = Math.max(
+    hookTimestamp(hooks.processed.latest),
+    hookTimestamp(hooks.skipped.latest),
+    Date.parse(latestRun?.completedAt || '') || 0,
+  );
+  return failedAt >= laterSuccessAt;
+}
+
+function hookTimestamp(event) {
+  const timestamp = Date.parse(event?.updatedAt || event?.receivedAt || '');
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+async function safeReadDirEntries(dir) {
+  try {
+    return await fs.readdir(dir, { withFileTypes: true });
+  } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  }
+}
+
+async function readLatestRunForAutomation(paths, state) {
+  const runId = state.lastRunId;
+  if (!runId) return null;
+  return readJson(getRunPaths(paths, runId).runJson, null);
+}
+
+function buildCronCommand({ cwd, projectId, maxRuns, model }) {
+  return [
+    `cd ${shellQuote(cwd)}`,
+    '&&',
+    '/usr/bin/env',
+    'node',
+    'scripts/skill-rsi-cron-runner.mjs',
+    shellQuote(projectId),
+    '--agentic',
+    '--real-eval',
+    '--max-runs',
+    String(maxRuns),
+    '--max-new-runs',
+    '1',
+    '--agent-model',
+    shellQuote(model),
+  ].join(' ');
+}
+
+function buildCodexHookCommand({ cwd, projectId }) {
+  return [
+    `cd ${shellQuote(cwd)}`,
+    '&&',
+    `SKILL_RSI_PROJECT=${shellQuote(projectId)}`,
+    'node',
+    'scripts/codex-skill-rsi-hook.mjs',
+  ].join(' ');
+}
+
+function buildPowerShellCronCommand({ cwd, projectId, maxRuns, model }) {
+  return [
+    `Set-Location ${powerShellQuote(cwd)}`,
+    `node ${powerShellQuote(path.join('scripts', 'skill-rsi-cron-runner.mjs'))} ${powerShellQuote(projectId)} --agentic --real-eval --max-runs ${String(maxRuns)} --max-new-runs 1 --agent-model ${powerShellQuote(model)}`,
+  ].join('; ');
+}
+
+function buildPowerShellCodexHookCommand({ cwd, projectId }) {
+  return [
+    `$env:SKILL_RSI_PROJECT=${powerShellQuote(projectId)}`,
+    `Set-Location ${powerShellQuote(cwd)}`,
+    `node ${powerShellQuote(path.join('scripts', 'codex-skill-rsi-hook.mjs'))}`,
+  ].join('; ');
+}
+
+function shellQuote(value) {
+  const text = String(value);
+  if (/^[A-Za-z0-9_./:=@+-]+$/.test(text)) return text;
+  return `'${text.replaceAll("'", "'\\''")}'`;
+}
+
+function powerShellQuote(value) {
+  return `'${String(value).replaceAll("'", "''")}'`;
+}
+
+function normalizeRunPolicy(runPolicy) {
+  const targetIterations = Number.parseInt(runPolicy?.targetIterations ?? '3', 10);
+  return {
+    triggerMode: runPolicy?.triggerMode || 'manual',
+    targetIterations: Number.isInteger(targetIterations) && targetIterations > 0 ? targetIterations : 3,
+  };
+}
+
+export async function readRunDetail({ cwd, projectName, runId = null }) {
+  const paths = getProjectPaths(cwd, projectName);
+  const state = await readRequiredJson(paths.stateJson, `Project "${paths.projectId}" has not been initialized`);
+  const resolvedRunId = runId || state.lastRunId;
+  if (!resolvedRunId) throw new Error(`Project "${paths.projectId}" has no runs`);
+
+  const runPaths = getRunPaths(paths, resolvedRunId);
+  const run = await readRequiredJson(runPaths.runJson, `Run "${resolvedRunId}" was not found`);
+  const [
+    parameterization,
+    manager,
+    experimentPlan,
+    evalConfig,
+    candidateDuel,
+    challenge,
+    promptBankUpdate,
+    recommendation,
+    timeline,
+    humanDecisions,
+  ] = await Promise.all([
+    readJson(runPaths.parameterizationJson, null),
+    readJson(runPaths.managerJson, null),
+    readJson(runPaths.experimentPlanJson, null),
+    readJson(runPaths.evalConfigJson, null),
+    readJson(runPaths.candidateDuelJson, null),
+    readJson(runPaths.challengeJson, null),
+    readJson(runPaths.promptBankUpdateJson, null),
+    readJson(runPaths.recommendationJson, null),
+    pathExists(runPaths.timelineJsonl).then(exists => exists ? readTimeline(runPaths.timelineJsonl) : []),
+    listHumanDecisions(paths, resolvedRunId),
+  ]);
+
+  return {
+    schemaVersion: 1,
+    projectId: paths.projectId,
+    runId: resolvedRunId,
+    run,
+    parameterization,
+    manager,
+    experimentPlan,
+    evalConfig,
+    candidates: summarizeRunCandidates(run),
+    reviews: await readCandidateReviews(runPaths),
+    evals: {
+      candidateDuel,
+      challenge,
+      promptBankUpdate,
+    },
+    recommendation,
+    timeline,
+    humanDecisions,
+    artifacts: {
+      runJson: runPaths.runJson,
+      timelineJsonl: runPaths.timelineJsonl,
+      parameterizationJson: runPaths.parameterizationJson,
+      managerJson: runPaths.managerJson,
+      experimentPlanJson: runPaths.experimentPlanJson,
+      evalConfigJson: runPaths.evalConfigJson,
+      candidateDuelJson: candidateDuel ? runPaths.candidateDuelJson : null,
+      challengeJson: challenge ? runPaths.challengeJson : null,
+      recommendationJson: runPaths.recommendationJson,
+      reportMd: runPaths.reportMd,
+    },
+  };
+}
+
+export async function readRunComparison({ cwd, projectName, runId = null }) {
+  const detail = await readRunDetail({ cwd, projectName, runId });
+  const paths = getProjectPaths(cwd, projectName);
+  const runPaths = getRunPaths(paths, detail.runId);
+  const candidateDuel = detail.evals.candidateDuel;
+  const challenge = detail.evals.challenge;
+  const competitionMode = detail.experimentPlan?.competitionMode || detail.run?.competitionMode || 'cold_start_duel';
+
+  return {
+    schemaVersion: 1,
+    projectId: detail.projectId,
+    runId: detail.runId,
+    competitionMode,
+    experimentQuestion: detail.experimentPlan?.experimentQuestion || null,
+    focusParameterIds: detail.experimentPlan?.focusParameterIds || [],
+    sides: {
+      candidateA: await summarizeComparableSkill({
+        label: 'candidateA',
+        candidate: detail.candidates.candidateA,
+        skillPath: detail.candidates.candidateA?.skillPath,
+      }),
+      candidateB: await summarizeComparableSkill({
+        label: 'candidateB',
+        candidate: detail.candidates.candidateB,
+        skillPath: detail.candidates.candidateB?.skillPath,
+      }),
+      currentChampion: await summarizeComparableSkill({
+        label: 'currentChampion',
+        candidate: null,
+        skillPath: await pathExists(path.join(paths.championSkillDir, 'SKILL.md')) ? paths.championSkillDir : null,
+      }),
+      champion: await summarizeComparableSkill({
+        label: 'champion',
+        candidate: null,
+        skillPath: await pathExists(path.join(runPaths.championDir, 'SKILL.md')) ? runPaths.championDir
+          : await pathExists(path.join(paths.championSkillDir, 'SKILL.md')) ? paths.championSkillDir : null,
+      }),
+      challenger: await summarizeComparableSkill({
+        label: 'challenger',
+        candidate: detail.candidates.challenger,
+        skillPath: detail.candidates.challenger?.skillPath,
+      }),
+    },
+    evalSummary: {
+      candidateDuel: candidateDuel ? {
+        winner: candidateDuel.stats.winner,
+        scoreDelta: candidateDuel.stats.scoreDelta,
+        wins: {
+          skillA: candidateDuel.stats.skillAWins,
+          skillB: candidateDuel.stats.skillBWins,
+          ties: candidateDuel.stats.ties,
+        },
+      } : null,
+      challenge: challenge ? {
+        winner: challenge.stats.winner,
+        scoreDelta: challenge.stats.scoreDelta,
+        wins: {
+          skillA: challenge.stats.skillAWins,
+          skillB: challenge.stats.skillBWins,
+          ties: challenge.stats.ties,
+        },
+      } : null,
+    },
+    recommendation: detail.recommendation ? {
+      decision: detail.recommendation.decision,
+      recommendedChampionCandidateId: detail.recommendation.recommendedChampionCandidateId || null,
+      confidence: detail.recommendation.confidence,
+      reasoning: detail.recommendation.reasoning,
+    } : null,
+  };
+}
+
+export async function deleteProject({ cwd, projectName }) {
+  const paths = getProjectPaths(cwd, projectName);
+  if (!(await pathExists(paths.stateJson))) {
+    const error = new Error(`Project "${paths.projectId}" was not found`);
+    error.statusCode = 404;
+    throw error;
+  }
+  // Soft delete: move the project into a trash folder so it is recoverable rather than destroyed.
+  const trashDir = path.join(paths.rootDir, '.trash');
+  await ensureDir(trashDir);
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const destination = path.join(trashDir, `${paths.projectId}-${stamp}`);
+  await fs.rename(paths.projectDir, destination);
+  return { schemaVersion: 1, deleted: paths.projectId, trashedTo: destination };
+}
+
+export async function readRunProgress({ cwd, projectName }) {
+  const paths = getProjectPaths(cwd, projectName);
+  if (!(await pathExists(paths.runsDir))) {
+    return { schemaVersion: 1, projectId: paths.projectId, runId: null, status: 'none', events: [] };
+  }
+  const entries = await fs.readdir(paths.runsDir, { withFileTypes: true });
+  const runIds = entries.filter(entry => entry.isDirectory()).map(entry => entry.name).sort();
+  if (runIds.length === 0) {
+    return { schemaVersion: 1, projectId: paths.projectId, runId: null, status: 'none', events: [] };
+  }
+  const runId = runIds[runIds.length - 1];
+  const runPaths = getRunPaths(paths, runId);
+  const run = await readJson(runPaths.runJson, null);
+  const events = (await pathExists(runPaths.timelineJsonl))
+    ? (await readTimeline(runPaths.timelineJsonl)).map(entry => ({ timestamp: entry.timestamp, event: entry.event, details: entry.details || {} }))
+    : [];
+  const completed = run?.status === 'completed' || events.some(entry => entry.event === 'run.completed');
+  return {
+    schemaVersion: 1,
+    projectId: paths.projectId,
+    runId,
+    runNumber: run?.runNumber ?? null,
+    competitionMode: run?.competitionMode || run?.experimentPlan?.competitionMode || null,
+    status: completed ? 'completed' : (run?.status || 'running'),
+    startedAt: run?.startedAt || null,
+    completedAt: run?.completedAt || null,
+    events,
+    stageDetails: await summarizeProgressArtifacts(runPaths),
+  };
+}
+
+function normalizeBaselineFiles(files) {
+  if (!Array.isArray(files) || files.length === 0) return [];
+  const normalized = files.map(file => {
+    const relativePath = normalizeBaselinePath(file?.path || file?.name || '');
+    const content = file?.content;
+    if (typeof content !== 'string') throw badRequest(`Baseline file "${relativePath}" must be text`);
+    return { path: relativePath, content };
+  });
+  return stripUploadedFolderRoot(normalized);
+}
+
+function normalizeBaselineArchive(archive) {
+  if (!archive) return null;
+  const name = typeof archive.name === 'string' && archive.name.trim() ? archive.name.trim() : 'baseline.zip';
+  if (!name.toLowerCase().endsWith('.zip')) throw badRequest('Baseline archive must be a .zip file');
+  if (typeof archive.contentBase64 !== 'string' || !archive.contentBase64.trim()) {
+    throw badRequest('Baseline archive content is required');
+  }
+  const compact = archive.contentBase64.replace(/\s/g, '');
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(compact) || compact.length % 4 !== 0) {
+    throw badRequest('Baseline archive content must be valid base64');
+  }
+  const bytes = Buffer.from(compact, 'base64');
+  if (bytes.length === 0) throw badRequest('Baseline archive is empty');
+  if (bytes.length > MAX_BASELINE_ZIP_BYTES) {
+    throw badRequest(`Baseline archive is too large. Maximum supported size is ${Math.round(MAX_BASELINE_ZIP_BYTES / 1024 / 1024)} MB.`);
+  }
+  return {
+    name: path.basename(name),
+    bytes,
+  };
+}
+
+function normalizeBaselinePath(filePath) {
+  if (typeof filePath !== 'string' || !filePath.trim()) {
+    throw badRequest('Baseline file path is required');
+  }
+  const normalized = path.normalize(filePath.trim().replaceAll('\\', '/')).replaceAll(path.sep, '/');
+  if (path.isAbsolute(normalized) || normalized === '..' || normalized.startsWith('../') || /^[a-z]:/i.test(normalized)) {
+    throw badRequest(`Baseline file path cannot leave the skill package: ${filePath}`);
+  }
+  return normalized;
+}
+
+function stripUploadedFolderRoot(files) {
+  if (files.some(file => file.path === 'SKILL.md')) return files;
+  const skillEntrypoints = files.filter(file => /(^|\/)SKILL\.md$/i.test(file.path));
+  if (skillEntrypoints.length !== 1) return files;
+  const skillDir = path.posix.dirname(skillEntrypoints[0].path);
+  if (!skillDir || skillDir === '.') return files;
+  const prefix = `${skillDir}/`;
+  if (!files.every(file => file.path === skillDir || file.path.startsWith(prefix))) return files;
+  return files.map(file => ({ ...file, path: file.path.slice(prefix.length) }));
+}
+
+async function preflightBaselineSkill({ cwd, files = [], archive = null }) {
+  const tmpRoot = path.join(cwd, '.skill-rsi', 'tmp');
+  await ensureDir(tmpRoot);
+  const tmpDir = await fs.mkdtemp(path.join(tmpRoot, 'baseline-'));
+  try {
+    const sourcePath = archive
+      ? await writeBaselineArchive(tmpDir, archive)
+      : await writeBaselineFiles(tmpDir, files);
+    const skillPackage = await loadSkillPackage(sourcePath);
+    if (!skillPackage.validation.valid) {
+      throw badRequest(`Baseline skill is invalid: ${skillPackage.validation.errors.join('; ')}`);
+    }
+    return { tmpDir, sourcePath };
+  } catch (error) {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+    if (error.statusCode) throw error;
+    throw badRequest(`Baseline skill could not be loaded: ${error.message}`);
+  }
+}
+
+async function preflightLocalBaselineSkill(sourcePath) {
+  try {
+    const skillPackage = await loadSkillPackage(sourcePath);
+    if (!skillPackage.validation.valid) {
+      throw badRequest(`Baseline skill is invalid: ${skillPackage.validation.errors.join('; ')}`);
+    }
+    return { sourcePath };
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw badRequest(`Baseline skill could not be loaded: ${error.message}`);
+  }
+}
+
+async function installBaselineSkill({ paths, sourcePath }) {
+  const skillPackage = await loadSkillPackage(sourcePath);
+  await materializeSkillPackage(skillPackage, paths.championSkillDir);
+  const skillHash = await hashDirectory(paths.championSkillDir);
+  const state = await readJson(paths.stateJson);
+  const history = await readJson(paths.historyIndex);
+  const now = new Date().toISOString();
+  const currentChampion = {
+    runId: 'baseline-upload',
+    candidateId: 'baseline',
+    skillHash,
+    skillPath: paths.championSkillDir,
+    source: 'uploaded-baseline',
+  };
+  await writeJson(paths.stateJson, {
+    ...state,
+    currentChampion,
+    updatedAt: now,
+  });
+  await writeJson(paths.historyIndex, {
+    ...history,
+    currentChampion,
+    baseline: {
+      source: 'uploaded-baseline',
+      importedAt: now,
+      skillHash,
+    },
+  });
+  await writeJson(path.join(paths.projectDir, 'baseline.json'), {
+    source: 'uploaded-baseline',
+    importedAt: now,
+    skillHash,
+    championSkillDir: paths.championSkillDir,
+  });
+}
+
+async function writeBaselineFiles(destinationDir, files) {
+  for (const file of files) {
+    await writeText(path.join(destinationDir, file.path), file.content);
+  }
+  return destinationDir;
+}
+
+async function writeBaselineArchive(destinationDir, archive) {
+  const archivePath = path.join(destinationDir, archive.name);
+  await fs.writeFile(archivePath, archive.bytes);
+  return archivePath;
+}
+
+function buildNextLoopPremise(history) {
+  const notes = Array.isArray(history.recentNextExperimentNotes) ? history.recentNextExperimentNotes.filter(Boolean) : [];
+  if (!notes.length) return null;
+  const sourceRun = history.trajectory?.at?.(-1) || null;
+  return {
+    sourceRunId: sourceRun?.runId || null,
+    sourceDecision: sourceRun?.decision || null,
+    notes,
+  };
+}
+
+async function summarizeProgressArtifacts(runPaths) {
+  const [
+    research,
+    ontologyQuality,
+    deconstructionQuality,
+    parameterization,
+    manager,
+    experimentPlan,
+    reviewA,
+    reviewB,
+    reviewChallenger,
+    candidateDuel,
+    challenge,
+    recommendation,
+  ] = await Promise.all([
+    readJson(runPaths.researchPacketJson, null),
+    readJson(runPaths.ontologyQualityReportJson, null),
+    readJson(runPaths.deconstructionQualityReportJson, null),
+    readJson(runPaths.parameterizationJson, null),
+    readJson(runPaths.managerJson, null),
+    readJson(runPaths.experimentPlanJson, null),
+    readJson(path.join(runPaths.candidateADir, 'review.json'), null),
+    readJson(path.join(runPaths.candidateBDir, 'review.json'), null),
+    readJson(path.join(runPaths.challengerDir, 'review.json'), null),
+    readJson(runPaths.candidateDuelJson, null),
+    readJson(runPaths.challengeJson, null),
+    readJson(runPaths.recommendationJson, null),
+  ]);
+  const coldStart = experimentPlan?.competitionMode === 'cold_start_duel';
+
+  return {
+    deconstruct: [
+      research ? `Research: ${research.researchMode}, ${research.sources?.length || 0} source(s), authorities: ${listNames(research.authorityMap)}` : null,
+      ontologyQuality ? `Ontology quality: ${ontologyQuality.status} (${ontologyQuality.issues?.length || 0} issue(s), ${ontologyQuality.warnings?.length || 0} warning(s))` : null,
+      deconstructionQuality ? `Deconstruction quality: ${deconstructionQuality.status} (${deconstructionQuality.issues?.length || 0} issue(s), ${deconstructionQuality.warnings?.length || 0} warning(s))` : null,
+      parameterization ? `Parameters: ${(parameterization.parameters || []).length}; top: ${listParameterSurfaces(parameterization)}` : null,
+    ].filter(Boolean),
+    plan: [
+      manager?.nextLoopPremise?.notes?.length ? `Premise: ${manager.nextLoopPremise.notes.join(' | ')}` : null,
+      manager?.strategy ? `Strategy: ${manager.strategy.posture}; ${manager.strategy.experimentFamily}` : null,
+      experimentPlan?.competitionMode ? `Competition: ${experimentPlan.competitionMode}` : null,
+      experimentPlan ? `Question: ${experimentPlan.experimentQuestion}` : null,
+      experimentPlan ? (coldStart
+        ? `Arms: ${experimentPlan.arms?.candidateA?.strategyName || 'A'} vs ${experimentPlan.arms?.candidateB?.strategyName || 'B'}`
+        : `Challenge: ${experimentPlan.arms?.challenger?.strategyName || 'planned'} vs current champion`) : null,
+    ].filter(Boolean),
+    generate: [
+      experimentPlan ? (coldStart
+        ? `Candidate A: ${experimentPlan.arms?.candidateA?.strategyName || 'planned'}`
+        : `Challenger: ${experimentPlan.arms?.challenger?.strategyName || 'planned'}`) : null,
+      experimentPlan && coldStart ? `Candidate B: ${experimentPlan.arms?.candidateB?.strategyName || 'planned'}` : null,
+    ].filter(Boolean),
+    review: [
+      reviewA ? `Candidate A review: ${reviewA.approveForEval ? 'approved' : 'blocked'}; ${reviewA.blockingIssues?.length || 0} blocking issue(s)` : null,
+      reviewB ? `Candidate B review: ${reviewB.approveForEval ? 'approved' : 'blocked'}; ${reviewB.blockingIssues?.length || 0} blocking issue(s)` : null,
+      reviewChallenger ? `Challenger review: ${reviewChallenger.approveForEval ? 'approved' : 'blocked'}; ${reviewChallenger.blockingIssues?.length || 0} blocking issue(s)` : null,
+    ].filter(Boolean),
+    evaluate: [
+      candidateDuel ? `Candidate duel: ${formatEvalOutcome(candidateDuel, {
+        skillA: 'Candidate A',
+        skillB: 'Candidate B',
+      })}` : null,
+      challenge ? `Champion challenge: ${formatEvalOutcome(challenge, {
+        skillA: 'Challenger',
+        skillB: 'Current champion',
+      })}` : null,
+    ].filter(Boolean),
+    decide: [
+      recommendation ? `Decision: ${recommendation.decision} (${recommendation.confidence} confidence)` : null,
+      recommendation?.nextRoundGuidance?.vary ? `Try next: ${recommendation.nextRoundGuidance.vary}` : null,
+    ].filter(Boolean),
+  };
+}
+
+function formatEvalOutcome(evalRun, labels = {}) {
+  const winner = evalRun?.stats?.winner || 'unknown';
+  const delta = evalRun?.stats?.scoreDelta;
+  const label = labels[winner] || winner;
+  if (winner === 'tie') return 'tie';
+  if (!Number.isFinite(delta)) return `${label}, margin n/a`;
+  return `${label} by ${Math.abs(delta)}`;
+}
+
+function listNames(items = []) {
+  const names = items.map(item => item?.name).filter(Boolean).slice(0, 3);
+  return names.length ? names.join(', ') : 'none';
+}
+
+function listParameterSurfaces(parameterization) {
+  const surfaces = (parameterization.parameters || [])
+    .slice(0, 3)
+    .map(parameter => parameter.surface || parameter.id)
+    .filter(Boolean);
+  return surfaces.length ? surfaces.join(', ') : 'none';
+}
+
+export async function readSkillContent({ cwd, projectName, source = 'champion', runId = null }) {
+  const paths = getProjectPaths(cwd, projectName);
+  let skillDir;
+  let resolvedRunId = null;
+
+  if (source === 'champion') {
+    if (runId) {
+      resolvedRunId = runId;
+      const runPaths = getRunPaths(paths, resolvedRunId);
+      skillDir = await pathExists(path.join(runPaths.championDir, 'SKILL.md'))
+        ? runPaths.championDir
+        : paths.championSkillDir;
+    } else {
+      skillDir = paths.championSkillDir;
+    }
+  } else if (source === 'candidate-a' || source === 'candidate-b' || source === 'challenger') {
+    const state = await readRequiredJson(paths.stateJson, `Project "${paths.projectId}" has not been initialized`);
+    resolvedRunId = runId || state.lastRunId;
+    if (!resolvedRunId) throw new Error(`Project "${paths.projectId}" has no runs`);
+    const runPaths = getRunPaths(paths, resolvedRunId);
+    const candidateDir = source === 'challenger' ? runPaths.challengerDir : source === 'candidate-a' ? runPaths.candidateADir : runPaths.candidateBDir;
+    skillDir = path.join(candidateDir, 'skill');
+  } else {
+    throw badRequest('source must be champion, challenger, candidate-a, or candidate-b');
+  }
+
+  if (!(await pathExists(path.join(skillDir, 'SKILL.md')))) {
+    return { schemaVersion: 1, projectId: paths.projectId, source, runId: resolvedRunId, available: false, files: [] };
+  }
+
+  const pkg = await loadSkillPackage(skillDir);
+  return {
+    schemaVersion: 1,
+    projectId: paths.projectId,
+    source,
+    runId: resolvedRunId,
+    available: true,
+    entrypoint: pkg.entrypoint,
+    packageType: pkg.packageType,
+    hash: pkg.hash,
+    validation: pkg.validation,
+    diagnostics: pkg.diagnostics,
+    files: pkg.files.map(file => ({
+      path: file.path,
+      role: file.role,
+      mediaType: file.mediaType,
+      size: file.size,
+      text: file.kind === 'text' ? file.content : null,
+    })),
+  };
+}
+
+export async function exportChampionForUi({ cwd, projectName, outDir }) {
+  const skill = await readSkillContent({ cwd, projectName, source: 'champion' });
+  if (!skill.available) throw badRequest(`Project "${skill.projectId}" has no champion to export`);
+  const destinationRoot = resolveWorkspaceExportDir(cwd, outDir || path.join('exports', `${skill.projectId}-champion`));
+  await fs.rm(destinationRoot, { recursive: true, force: true });
+  await ensureDir(destinationRoot);
+  for (const file of skill.files) {
+    const destination = safeExportFilePath(destinationRoot, file.path);
+    await writeText(destination, file.text || '');
+  }
+  return {
+    schemaVersion: 1,
+    projectId: skill.projectId,
+    action: 'champion_exported',
+    outDir: destinationRoot,
+    fileCount: skill.files.length,
+  };
+}
+
+function resolveWorkspaceExportDir(cwd, outDir) {
+  const destination = path.resolve(cwd, outDir);
+  if (!isPathInside(destination, cwd)) {
+    throw badRequest('Export path must stay inside the Skill RSI workspace');
+  }
+  return destination;
+}
+
+function safeExportFilePath(rootDir, filePath) {
+  if (isUnsafePackagePath(filePath)) {
+    throw badRequest(`Refusing to export unsafe file path: ${filePath}`);
+  }
+  const normalized = path.normalize(String(filePath || '')).replace(/^(\.\.(\/|\\|$))+/, '');
+  if (!normalized || path.isAbsolute(normalized) || normalized.startsWith('..')) {
+    throw badRequest(`Refusing to export unsafe file path: ${filePath}`);
+  }
+  const destination = path.resolve(rootDir, normalized);
+  if (!isPathInside(destination, rootDir)) {
+    throw badRequest(`Refusing to export unsafe file path: ${filePath}`);
+  }
+  return destination;
+}
+
+function isPathInside(candidatePath, rootPath) {
+  const relative = path.relative(path.resolve(rootPath), path.resolve(candidatePath));
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function isUnsafePackagePath(filePath) {
+  const text = String(filePath || '').trim();
+  const normalized = text.replaceAll('\\', '/');
+  return !text
+    || path.isAbsolute(text)
+    || /^[A-Za-z]:/.test(text)
+    || text.startsWith('\\\\')
+    || text.startsWith('//')
+    || normalized === '.'
+    || normalized === '..'
+    || normalized.startsWith('../')
+    || normalized.includes('/../');
+}
+
+export async function recordHumanDecision({
+  cwd,
+  projectName,
+  runId = null,
+  decision,
+  candidateId = null,
+  note = '',
+  author = 'local-cli',
+}) {
+  if (!['approve', 'reject', 'override_promote', 'override_keep', 'annotate'].includes(decision)) {
+    throw new Error('Human decision must be approve, reject, override_promote, override_keep, or annotate');
+  }
+
+  const paths = getProjectPaths(cwd, projectName);
+  const state = await readRequiredJson(paths.stateJson, `Project "${paths.projectId}" has not been initialized`);
+  const resolvedRunId = runId || state.lastRunId;
+  if (!resolvedRunId) throw new Error(`Project "${paths.projectId}" has no runs`);
+
+  const createdAt = new Date().toISOString();
+  const decisionId = createdAt.replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  const decisionDir = path.join(paths.projectDir, 'human-decisions');
+  const artifactPath = path.join(decisionDir, `${resolvedRunId}-${decisionId}.json`);
+  const artifact = {
+    schemaVersion: 1,
+    id: decisionId,
+    projectId: paths.projectId,
+    runId: resolvedRunId,
+    createdAt,
+    author,
+    decision,
+    candidateId,
+    note,
+  };
+
+  await ensureDir(decisionDir);
+  await writeJson(artifactPath, artifact);
+  await appendTimeline(getRunPaths(paths, resolvedRunId).timelineJsonl, 'human_decision.recorded', {
+    decision,
+    candidateId,
+    path: artifactPath,
+  });
+
+  return { ...artifact, artifactPath };
+}
+
+async function readRequiredJson(filePath, message) {
+  const value = await readJson(filePath, null);
+  if (!value) throw new Error(message);
+  return value;
+}
+
+function badRequest(message) {
+  const error = new Error(message);
+  error.statusCode = 400;
+  return error;
+}
+
+function summarizeRunCandidates(run) {
+  const candidates = Array.isArray(run?.candidates) ? run.candidates : [];
+  return {
+    candidateA: candidates.find(candidate => candidate.candidateId === 'candidate-a') || null,
+    candidateB: candidates.find(candidate => candidate.candidateId === 'candidate-b') || null,
+    challenger: run?.challenger || candidates.find(candidate => candidate.candidateId === 'challenger') || null,
+  };
+}
+
+async function readCandidateReviews(runPaths) {
+  const candidateAReview = await readJson(path.join(runPaths.candidateADir, 'review.json'), null);
+  const candidateBReview = await readJson(path.join(runPaths.candidateBDir, 'review.json'), null);
+  const challengerReview = await readJson(path.join(runPaths.challengerDir, 'review.json'), null);
+  return {
+    candidateA: candidateAReview,
+    candidateB: candidateBReview,
+    challenger: challengerReview,
+  };
+}
+
+async function summarizeComparableSkill({ label, candidate, skillPath }) {
+  if (!skillPath) {
+    return {
+      label,
+      available: false,
+      skillPath: null,
+    };
+  }
+
+  const skillPackage = await loadSkillPackage(skillPath);
+  return {
+    label,
+    available: true,
+    skillPath,
+    packageType: skillPackage.packageType,
+    entrypoint: skillPackage.entrypoint,
+    fileCount: skillPackage.files.length,
+    hash: skillPackage.hash,
+    diagnostics: skillPackage.diagnostics,
+    strategy: candidate?.strategy || null,
+    changedParameterIds: candidate?.changedParameterIds || [],
+  };
+}
+
+async function listHumanDecisions(paths, runId = null) {
+  const decisionDir = path.join(paths.projectDir, 'human-decisions');
+  if (!(await pathExists(decisionDir))) return [];
+  const entries = await fs.readdir(decisionDir, { withFileTypes: true });
+  const decisions = [];
+
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
+    const artifact = await readJson(path.join(decisionDir, entry.name), null);
+    if (!artifact) continue;
+    if (runId && artifact.runId !== runId) continue;
+    decisions.push({
+      ...artifact,
+      artifactPath: path.join(decisionDir, entry.name),
+    });
+  }
+
+  return decisions.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}

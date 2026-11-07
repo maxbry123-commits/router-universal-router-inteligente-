@@ -1,0 +1,1114 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { initProject } from '../src/lib/init.js';
+import {
+  AGENT_NAMES,
+  materializeCreatorArtifact,
+  runAgentContract,
+  writeAgentContractArtifact,
+  writeRealAgentContractArtifact,
+} from '../src/lib/agent-contracts.js';
+import { getProjectPaths } from '../src/lib/paths.js';
+
+test('all mock agent contracts produce prompts and artifacts', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-agent-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+
+  for (const agentName of AGENT_NAMES) {
+    const result = await runAgentContract({
+      cwd,
+      projectName: 'ux-design',
+      agentName,
+      runId: `contract-${agentName}`,
+      mode: 'mock',
+    });
+
+    assert.equal(result.agentName, agentName);
+    assert.match(result.prompt, /Skill RSI|Skill Creator|Analyst Agent/);
+    assert.ok(result.artifact);
+  }
+});
+
+test('writes an agent contract artifact', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-agent-write-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+  const outputPath = path.join(cwd, 'deconstructor.json');
+
+  await writeAgentContractArtifact({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'deconstructor',
+    runId: 'contract-deconstructor',
+    outputPath,
+  });
+
+  const written = JSON.parse(await fs.readFile(outputPath, 'utf8'));
+  assert.equal(written.agentName, 'deconstructor');
+  assert.equal(written.artifact.parameters.length, 12);
+});
+
+test('real ontology contract normalizes scalar fields', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-ontology-normalize-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'ontology',
+    runId: 'ontology-normalize',
+    mode: 'real',
+    model: 'fake-agent-model',
+    modelClient: async () => JSON.stringify({
+      skillGoal: 'Help agents design better UX.',
+      targetUsers: 'agents',
+      targetTasks: 'design UX',
+      invocationBoundaries: {
+        shouldTriggerWhen: 'UX task',
+        shouldNotTriggerWhen: 'unrelated task',
+      },
+      inputSurface: 'user request',
+      outputArtifacts: 'recommendation',
+      requiredKnowledge: 'Agent Skills',
+      failureModes: 'over-triggering',
+      qualityAxes: 'workflow clarity',
+      evalPromptTaxonomy: 'direct request',
+      candidateStrategySpace: 'lean procedural',
+    }),
+  });
+
+  assert.equal(result.artifact.runId, 'ontology-normalize');
+  assert.deepEqual(result.artifact.inputSurface, ['user request']);
+  assert.deepEqual(result.artifact.targetUsers, ['agents']);
+});
+
+test('real ontology contract caps lexicon and downgrades unprovenanced sourced entries', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-ontology-lexicon-cap-'));
+  await initProject({ cwd, projectName: 'Strategy Design', goal: 'Help agents design product strategy.' });
+  const lexicon = Array.from({ length: 55 }, (_, index) => ({
+    term: `term-${index + 1}`,
+    expertMeaning: 'A practitioner distinction.',
+    whyItMattersForThisSkill: 'It shapes the skill behavior.',
+    evalImplication: 'Check usage.',
+    evidenceBasis: 'sourced',
+    sourceRefs: index === 0 ? [] : ['s1'],
+  }));
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'strategy-design',
+    agentName: 'ontology',
+    runId: 'ontology-lexicon-cap',
+    mode: 'real',
+    model: 'fake-agent-model',
+    modelClient: async () => JSON.stringify({
+      skillGoal: 'Help agents design product strategy.',
+      targetUsers: ['agents'],
+      targetTasks: ['design product strategy'],
+      invocationBoundaries: {
+        shouldTriggerWhen: ['strategy task'],
+        shouldNotTriggerWhen: ['unrelated task'],
+      },
+      inputSurface: ['user request'],
+      outputArtifacts: ['recommendation'],
+      requiredKnowledge: ['Agent Skills'],
+      failureModes: ['over-triggering', 'jargon stuffing', 'weak validation'],
+      qualityAxes: ['strategic precision'],
+      evalPromptTaxonomy: ['direct request'],
+      candidateStrategySpace: ['lean procedural'],
+      practitionerLexicon: lexicon,
+      terminologyDiscriminators: [{
+        term: 'term-2',
+        distinguishFrom: 'adjacent term',
+        evidenceBasis: 'sourced',
+        sourceRefs: ['s1'],
+      }, 'positioning vs messaging'],
+      intertextualMap: {
+        canonicalTexts: ['Canonical strategy text'],
+        evidenceBasis: 'sourced',
+        sourceRefs: [],
+        conceptLineages: [{
+          concept: 'positioning',
+          drawsFrom: ['segmentation'],
+          evidenceBasis: 'sourced',
+          sourceRefs: [],
+        }],
+      },
+    }),
+  });
+
+  assert.equal(result.artifact.practitionerLexicon.length, 50);
+  assert.equal(result.artifact.practitionerLexicon[0].evidenceBasis, 'inferred');
+  assert.equal(result.artifact.practitionerLexicon[1].evidenceBasis, 'inferred');
+  assert.equal(result.artifact.terminologyDiscriminators[0].evidenceBasis, 'inferred');
+  assert.deepEqual(result.artifact.terminologyDiscriminators[1], {
+    term: 'positioning vs messaging',
+    evidenceBasis: 'inferred',
+    sourceRefs: [],
+  });
+  assert.equal(result.artifact.intertextualMap.evidenceBasis, 'inferred');
+  assert.equal(result.artifact.intertextualMap.conceptLineages[0].evidenceBasis, 'inferred');
+});
+
+test('real ontology contract normalizes pairwise terminology and node-style intertextual maps', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-ontology-model-shapes-'));
+  await initProject({ cwd, projectName: 'Ontology Skill', goal: 'Help agents build practitioner ontologies.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ontology-skill',
+    agentName: 'ontology',
+    runId: 'ontology-model-shapes',
+    mode: 'real',
+    model: 'fake-agent-model',
+    modelClient: async () => JSON.stringify({
+      skillGoal: 'Help agents build practitioner ontologies.',
+      targetUsers: ['agents'],
+      targetTasks: ['build ontology packets'],
+      invocationBoundaries: {
+        shouldTriggerWhen: ['ontology task'],
+        shouldNotTriggerWhen: ['unrelated task'],
+      },
+      inputSurface: ['user request'],
+      outputArtifacts: ['ontology packet'],
+      requiredKnowledge: ['ontology design'],
+      failureModes: ['shallow jargon', 'weak grounding', 'missing distinctions'],
+      qualityAxes: ['terminology precision'],
+      evalPromptTaxonomy: ['distinction check'],
+      candidateStrategySpace: ['intertextual alignment'],
+      practitionerLexicon: [{
+        term: 'taxonomy',
+        expertMeaning: 'Hierarchical classification.',
+        evidenceBasis: 'inferred',
+        sourceRefs: [],
+      }],
+      terminologyDiscriminators: [{
+        termA: 'taxonomy',
+        termB: 'ontology',
+        difference: 'Hierarchy versus relational semantic model.',
+        skillRule: 'Do not collapse hierarchy into ontology.',
+        evidenceBasis: 'sourced',
+        sourceRefs: ['s1'],
+      }],
+      intertextualMap: [{
+        node: 'W3C SHACL',
+        type: 'web standard',
+        connections: ['Separates validation from semantics'],
+        commonMisreadings: ['Using SHACL as ontology semantics'],
+        relevance: 'Validation layer for ontology checks',
+        sourceRefs: ['s2'],
+      }],
+    }),
+  });
+
+  assert.equal(result.artifact.terminologyDiscriminators[0].term, 'taxonomy vs ontology');
+  assert.equal(result.artifact.terminologyDiscriminators[0].evidenceBasis, 'inferred');
+  assert.equal(result.artifact.intertextualMap.conceptLineages[0].concept, 'W3C SHACL');
+  assert.deepEqual(result.artifact.intertextualMap.conceptLineages[0].drawsFrom, ['Separates validation from semantics']);
+  assert.match(result.artifact.intertextualMap.commonMisreadings[0], /W3C SHACL: Using SHACL/);
+});
+
+test('real ontology contract carries forward research lexicon entries', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-ontology-lexicon-merge-'));
+  await initProject({ cwd, projectName: 'Ontology Skill', goal: 'Help agents build practitioner ontologies.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ontology-skill',
+    agentName: 'ontology',
+    runId: 'ontology-lexicon-merge',
+    mode: 'real',
+    model: 'fake-agent-model',
+    researchPacket: {
+      practitionerLexicon: [
+        { term: 'ontology', expertMeaning: 'Formal model.', evidenceBasis: 'sourced', sourceRefs: ['s1'] },
+        { term: 'controlled vocabulary', expertMeaning: 'Approved terms.', evidenceBasis: 'sourced', sourceRefs: ['s2'] },
+        { term: 'taxonomy', expertMeaning: 'Hierarchical classification.', evidenceBasis: 'sourced', sourceRefs: ['s3'] },
+      ],
+      intertextualMap: { evidenceBasis: 'inferred', sourceRefs: [], conceptLineages: [] },
+    },
+    modelClient: async () => JSON.stringify({
+      skillGoal: 'Help agents build practitioner ontologies.',
+      targetUsers: ['agents'],
+      targetTasks: ['build ontology packets'],
+      invocationBoundaries: {
+        shouldTriggerWhen: ['ontology task'],
+        shouldNotTriggerWhen: ['unrelated task'],
+      },
+      inputSurface: ['user request'],
+      outputArtifacts: ['ontology packet'],
+      requiredKnowledge: ['ontology design'],
+      failureModes: ['shallow jargon', 'weak grounding', 'missing distinctions'],
+      qualityAxes: ['terminology precision'],
+      evalPromptTaxonomy: ['distinction check'],
+      candidateStrategySpace: ['intertextual alignment'],
+      practitionerLexicon: [{
+        term: 'ontology',
+        expertMeaning: 'A relation-rich domain model.',
+        evidenceBasis: 'sourced',
+        sourceRefs: ['s1'],
+      }],
+      intertextualMap: { evidenceBasis: 'inferred', sourceRefs: [], conceptLineages: [] },
+    }),
+  });
+
+  assert.deepEqual(result.artifact.practitionerLexicon.map(entry => entry.term), [
+    'ontology',
+    'controlled vocabulary',
+    'taxonomy',
+  ]);
+  assert.equal(result.artifact.practitionerLexicon[0].expertMeaning, 'A relation-rich domain model.');
+  assert.equal(result.artifact.practitionerLexicon[1].evidenceBasis, 'sourced');
+});
+
+test('refreshed ontology downgrades newly introduced sourced expert-register claims without research provenance', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-ontology-refresh-provenance-'));
+  await initProject({ cwd, projectName: 'Strategy Design', goal: 'Help agents design product strategy.' });
+  const paths = getProjectPaths(cwd, 'strategy-design');
+  await fs.mkdir(path.dirname(paths.ontologyCurrent), { recursive: true });
+  await fs.writeFile(paths.ontologyCurrent, JSON.stringify({
+    runId: 'existing-ontology',
+    skillGoal: 'Help agents design product strategy.',
+    targetUsers: ['agents'],
+    targetTasks: ['design product strategy'],
+    invocationBoundaries: {
+      shouldTriggerWhen: ['strategy task'],
+      shouldNotTriggerWhen: ['unrelated task'],
+    },
+    inputSurface: ['user request'],
+    outputArtifacts: ['recommendation'],
+    requiredKnowledge: ['Agent Skills'],
+    failureModes: ['over-triggering', 'jargon stuffing', 'weak validation'],
+    qualityAxes: ['strategic precision'],
+    evalPromptTaxonomy: ['direct request'],
+    candidateStrategySpace: ['lean procedural'],
+    practitionerLexicon: [{
+      term: 'segmentation',
+      evidenceBasis: 'sourced',
+      sourceRefs: ['s0'],
+    }],
+    intertextualMap: {
+      evidenceBasis: 'sourced',
+      sourceRefs: ['s0'],
+      conceptLineages: [{
+        concept: 'segmentation',
+        evidenceBasis: 'sourced',
+        sourceRefs: ['s0'],
+      }],
+    },
+  }, null, 2));
+
+  const researchPacket = {
+    researchMode: 'sourced',
+    sources: [{ id: 's1', title: 'Positioning Source', url: 'https://example.com/positioning' }],
+    practitionerLexicon: [{
+      term: 'positioning',
+      evidenceBasis: 'sourced',
+      sourceRefs: ['s1'],
+    }],
+    intertextualMap: {
+      evidenceBasis: 'sourced',
+      sourceRefs: ['s1'],
+      conceptLineages: [{
+        concept: 'positioning',
+        evidenceBasis: 'sourced',
+        sourceRefs: ['s1'],
+      }],
+    },
+  };
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'strategy-design',
+    agentName: 'ontology',
+    runId: 'ontology-refresh-provenance',
+    mode: 'real',
+    model: 'fake-agent-model',
+    refresh: true,
+    researchPacket,
+    modelClient: async () => JSON.stringify({
+      skillGoal: 'Help agents design product strategy.',
+      targetUsers: ['agents'],
+      targetTasks: ['design product strategy'],
+      invocationBoundaries: {
+        shouldTriggerWhen: ['strategy task'],
+        shouldNotTriggerWhen: ['unrelated task'],
+      },
+      inputSurface: ['user request'],
+      outputArtifacts: ['recommendation'],
+      requiredKnowledge: ['Agent Skills'],
+      failureModes: ['over-triggering', 'jargon stuffing', 'weak validation'],
+      qualityAxes: ['strategic precision'],
+      evalPromptTaxonomy: ['direct request'],
+      candidateStrategySpace: ['lean procedural'],
+      practitionerLexicon: [
+        { term: 'segmentation', evidenceBasis: 'sourced', sourceRefs: ['s0'] },
+        { term: 'positioning', evidenceBasis: 'sourced', sourceRefs: ['s1'] },
+        { term: 'narrative moat', evidenceBasis: 'sourced', sourceRefs: ['s1'] },
+      ],
+      intertextualMap: {
+        evidenceBasis: 'sourced',
+        sourceRefs: ['s1'],
+        conceptLineages: [
+          { concept: 'positioning', evidenceBasis: 'sourced', sourceRefs: ['s1'] },
+          { concept: 'narrative moat', evidenceBasis: 'sourced', sourceRefs: ['s1'] },
+        ],
+      },
+    }),
+  });
+
+  const lexiconByTerm = new Map(result.artifact.practitionerLexicon.map(entry => [entry.term, entry]));
+  assert.equal(lexiconByTerm.get('segmentation').evidenceBasis, 'sourced');
+  assert.equal(lexiconByTerm.get('positioning').evidenceBasis, 'sourced');
+  assert.equal(lexiconByTerm.get('narrative moat').evidenceBasis, 'inferred');
+  const lineageByConcept = new Map(result.artifact.intertextualMap.conceptLineages.map(entry => [entry.concept, entry]));
+  assert.equal(lineageByConcept.get('positioning').evidenceBasis, 'sourced');
+  assert.equal(lineageByConcept.get('narrative moat').evidenceBasis, 'inferred');
+});
+
+test('ontology prompt includes research packet and source-labeling instructions', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-ontology-research-prompt-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'ontology',
+    runId: 'ontology-research-prompt',
+    mode: 'mock',
+    researchPacket: {
+      researchMode: 'sourced',
+      authorityMap: [{ name: 'Steve Jobs', strongOpinions: ['Start with the customer experience.'] }],
+    },
+    qualityFeedback: { issues: [{ code: 'missing_authority_map' }] },
+  });
+
+  assert.match(result.prompt, /Research packet:/);
+  assert.match(result.prompt, /sourced, inferred, or speculative/);
+  assert.match(result.prompt, /practitionerLexicon/);
+  assert.match(result.prompt, /terminologyDiscriminators/);
+  assert.match(result.prompt, /intertextualMap/);
+  assert.match(result.prompt, /Previous quality report:/);
+});
+
+test('deconstructor prompt includes full champion package and Agent Skills standard', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-deconstructor-package-prompt-'));
+  const init = await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+  await fs.mkdir(init.paths.championSkillDir, { recursive: true });
+  await fs.writeFile(path.join(init.paths.championSkillDir, 'SKILL.md'), `---
+name: ux-design
+description: Use for UX design.
+---
+
+# UX Design
+
+Load [heuristics](references/heuristics.md).
+`);
+  await fs.mkdir(path.join(init.paths.championSkillDir, 'references'), { recursive: true });
+  await fs.writeFile(path.join(init.paths.championSkillDir, 'references', 'heuristics.md'), '# Heuristics\n\nPrefer clarity.');
+  const state = JSON.parse(await fs.readFile(init.paths.stateJson, 'utf8'));
+  await fs.writeFile(init.paths.stateJson, JSON.stringify({
+    ...state,
+    currentChampion: { runId: 'run-001', candidateId: 'candidate-a', skillHash: 'hash' },
+  }, null, 2));
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'deconstructor',
+    runId: 'deconstructor-package-prompt',
+    mode: 'mock',
+  });
+
+  assert.match(result.prompt, /Full champion package summary:/);
+  assert.match(result.prompt, /references\/heuristics\.md/);
+  assert.match(result.prompt, /Agent Skills standard:/);
+  assert.match(result.prompt, /artifactEvidence/);
+  assert.match(result.prompt, /couplingNotes/);
+  assert.match(result.prompt, /Treat ontology as the stable domain map/);
+  assert.match(result.prompt, /practitionerLexicon/);
+  assert.match(result.prompt, /wrong concept lineage/);
+  assert.match(result.prompt, /Every proposed parameter must be grounded in champion\/package evidence/);
+});
+
+test('real deconstructor contract validates injected model JSON', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-agent-real-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'deconstructor',
+    runId: 'real-deconstructor',
+    mode: 'real',
+    model: 'fake-agent-model',
+    modelClient: async () => JSON.stringify({
+      runId: 'real-deconstructor',
+      summary: 'Injected real-mode parameterization.',
+      parameters: Array.from({ length: 12 }, (_, index) => ({
+        id: `p${String(index + 1).padStart(2, '0')}`,
+        surface: `surface_${index + 1}`,
+        currentImplementation: 'current',
+        improvementHypothesis: 'hypothesis',
+        expectedBenefit: 'benefit',
+        regressionRisk: 'risk',
+        evidenceFromHistory: [],
+        possibleMutations: ['change'],
+        ...(index === 0 ? { measurementPlan: ['measure this'] } : { measurementPlan: 'measure' }),
+        priority: 'medium',
+        confidence: index === 0 ? 'medium-high' : 'low',
+        granularity: 'section',
+      })),
+      crossParameterInteractions: [],
+      highestLeverageHypotheses: ['test one thing'],
+      doNotTouchYet: [],
+      suggestedExperimentFamilies: ['one-parameter challenger test'],
+    }),
+  });
+
+  assert.equal(result.mode, 'real');
+  assert.equal(result.artifact.championSkillHash, 'none');
+  assert.match(result.artifact.parameters[0].measurementPlan, /Compare candidate outputs/);
+  assert.equal(result.artifact.parameters.length, 12);
+});
+
+test('real agent artifact can be saved as current context for the next agent', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-agent-current-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+  const outputPath = path.join(cwd, 'deconstructor.json');
+
+  await writeRealAgentContractArtifact({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'deconstructor',
+    runId: 'real-save-current',
+    outputPath,
+    model: 'fake-agent-model',
+    saveCurrent: true,
+    modelClient: async () => JSON.stringify({
+      runId: 'real-save-current',
+      championSkillHash: 'none',
+      summary: 'Saved parameterization.',
+      parameters: Array.from({ length: 12 }, (_, index) => ({
+        id: `p${String(index + 1).padStart(2, '0')}`,
+        surface: `surface_${index + 1}`,
+        currentImplementation: 'current',
+        improvementHypothesis: 'hypothesis',
+        expectedBenefit: 'benefit',
+        regressionRisk: 'risk',
+        evidenceFromHistory: [],
+        possibleMutations: ['change'],
+        measurementPlan: 'measure',
+        priority: 'medium',
+        confidence: 'medium',
+        granularity: 'section',
+      })),
+      crossParameterInteractions: [],
+      highestLeverageHypotheses: ['test one thing'],
+      doNotTouchYet: [],
+      suggestedExperimentFamilies: ['one-parameter challenger test'],
+    }),
+  });
+
+  const paths = getProjectPaths(cwd, 'ux-design');
+  const saved = JSON.parse(await fs.readFile(paths.parameterizationCurrent, 'utf8'));
+  assert.equal(saved.runId, 'real-save-current');
+
+  const planner = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'experiment-planner',
+    runId: 'planner-after-save',
+    mode: 'mock',
+  });
+  assert.match(planner.prompt, /Saved parameterization/);
+  assert.match(planner.prompt, /Ontology guardrail context:/);
+  assert.match(planner.prompt, /Prefer deconstruction evidence when choosing what to test/);
+});
+
+test('real experiment planner normalizes common arm aliases', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-agent-planner-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'experiment-planner',
+    runId: 'planner-aliases',
+    mode: 'real',
+    model: 'fake-agent-model',
+    modelClient: async () => JSON.stringify({
+      runId: 'planner-aliases',
+      experimentQuestion: 'Does a tighter validation rubric improve outcomes?',
+      focusParameterIds: ['p04-validation-rubric-explicitness'],
+      controlledParameterIds: ['p01-activation-phrase-specificity'],
+      hypothesis: 'More explicit validation should reduce incomplete outputs.',
+      arms: {
+        candidateA: {
+          strategy: 'Explicit rubric',
+          instructions: ['Add a short pass/fail rubric.'],
+        },
+        candidateB: {
+          name: 'Baseline validation',
+          changes: 'Keep validation lightweight.',
+        },
+      },
+      evalFocus: ['validation usefulness'],
+      successMetrics: ['higher validation criterion score'],
+      promotionRisks: ['extra length'],
+      reasonNotTestingOtherHighPriorityParameters: ['Keep this run focused.'],
+    }),
+  });
+
+  assert.equal(result.artifact.arms.candidateA.strategyName, 'Explicit rubric');
+  assert.deepEqual(result.artifact.arms.candidateB.mutationInstructions, ['Keep validation lightweight.']);
+});
+
+test('real experiment planner recovers missing hypothesis from selected parameter', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-agent-planner-hypothesis-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+  const paths = getProjectPaths(cwd, 'ux-design');
+  await fs.mkdir(path.dirname(paths.parameterizationCurrent), { recursive: true });
+  await fs.writeFile(paths.parameterizationCurrent, JSON.stringify({
+    runId: 'planner-missing-hypothesis-parameterization',
+    championSkillHash: 'none',
+    summary: 'Parameterization for planner normalization.',
+    parameters: [{
+      id: 'p04-validation-rubric-explicitness',
+      surface: 'validation rubric explicitness',
+      currentImplementation: 'Validation is implicit.',
+      improvementHypothesis: 'A concrete rubric should reduce incomplete outputs.',
+      expectedBenefit: 'More complete outputs.',
+      regressionRisk: 'Extra length.',
+      artifactEvidence: ['No champion yet.'],
+      evidenceFromHistory: [],
+      possibleMutations: ['Add a concrete rubric.'],
+      measurementPlan: 'Score validation usefulness.',
+      couplingNotes: ['May couple with workflow length.'],
+      priority: 'high',
+      confidence: 'medium',
+      granularity: 'section',
+    }],
+  }, null, 2));
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'experiment-planner',
+    runId: 'planner-missing-hypothesis',
+    mode: 'real',
+    model: 'fake-agent-model',
+    modelClient: async () => JSON.stringify({
+      runId: 'planner-missing-hypothesis',
+      experimentQuestion: 'Does a tighter validation rubric improve outcomes?',
+      selectedParameterIds: [{ id: 'p04-validation-rubric-explicitness' }],
+      controlledParameterIds: [],
+      arms: {
+        candidateA: {
+          strategyName: 'Explicit rubric',
+          mutationInstructions: ['Add a short pass/fail rubric.'],
+        },
+        candidateB: {
+          strategyName: 'Baseline validation',
+          mutationInstructions: ['Keep validation lightweight.'],
+        },
+      },
+      successMetrics: ['higher validation criterion score'],
+    }),
+  });
+
+  assert.equal(result.artifact.hypothesis, 'A concrete rubric should reduce incomplete outputs.');
+  assert.equal(result.artifact.focusParameterIds[0], 'p04-validation-rubric-explicitness');
+});
+
+test('creator artifacts can be materialized into candidate skill packages', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-creator-materialize-'));
+  const candidateDir = path.join(cwd, 'candidate-a');
+
+  const candidate = await materializeCreatorArtifact({
+    candidateDir,
+    artifact: {
+      runId: 'creator-materialize',
+      candidateId: 'candidate-a',
+      experimentArm: 'candidateA',
+      strategy: 'Explicit rubric',
+      changedParameterIds: ['p04-validation-rubric-explicitness'],
+      files: [{
+        path: 'SKILL.md',
+        content: '---\nname: ux-design\n---\n\n# UX Design\n',
+      }, {
+        path: 'references\\notes.md',
+        content: '# Notes\n',
+      }],
+      rationale: 'Adds a validation rubric.',
+      expectedAdvantages: ['more reliable validation'],
+      expectedRisks: ['slightly longer skill'],
+      selfCritique: ['Needs live eval.'],
+    },
+  });
+
+  assert.equal(candidate.skillPath, path.join(candidateDir, 'skill'));
+  assert.equal(
+    await fs.readFile(path.join(candidate.skillPath, 'SKILL.md'), 'utf8'),
+    '---\nname: ux-design\n---\n\n# UX Design\n',
+  );
+  assert.equal(
+    await fs.readFile(path.join(candidate.skillPath, 'references', 'notes.md'), 'utf8'),
+    '# Notes\n',
+  );
+  await assert.rejects(
+    materializeCreatorArtifact({
+      candidateDir: path.join(cwd, 'bad-candidate'),
+      artifact: {
+        runId: 'bad',
+        candidateId: 'candidate-b',
+        experimentArm: 'candidateB',
+        strategy: 'Bad path',
+        changedParameterIds: ['p01'],
+        files: [
+          { path: 'SKILL.md', content: '---\nname: bad\n---\n' },
+          { path: '../outside.md', content: 'nope' },
+        ],
+        rationale: 'Invalid package.',
+        expectedAdvantages: [],
+        expectedRisks: [],
+        selfCritique: [],
+      },
+    }),
+    /cannot leave/,
+  );
+  await assert.rejects(
+    materializeCreatorArtifact({
+      candidateDir: path.join(cwd, 'bad-windows-absolute'),
+      artifact: {
+        runId: 'bad-windows',
+        candidateId: 'candidate-c',
+        experimentArm: 'candidateA',
+        strategy: 'Bad Windows path',
+        changedParameterIds: ['p01'],
+        files: [
+          { path: 'SKILL.md', content: '---\nname: bad\n---\n' },
+          { path: 'C:\\outside\\SKILL.md', content: 'nope' },
+        ],
+        rationale: 'Invalid package.',
+        expectedAdvantages: [],
+        expectedRisks: [],
+        selfCritique: [],
+      },
+    }),
+    /must be relative/,
+  );
+  await assert.rejects(
+    materializeCreatorArtifact({
+      candidateDir: path.join(cwd, 'bad-windows-drive-relative'),
+      artifact: {
+        runId: 'bad-windows-drive-relative',
+        candidateId: 'candidate-d',
+        experimentArm: 'candidateA',
+        strategy: 'Bad Windows drive path',
+        changedParameterIds: ['p01'],
+        files: [
+          { path: 'SKILL.md', content: '---\nname: bad\n---\n' },
+          { path: 'C:outside\\SKILL.md', content: 'nope' },
+        ],
+        rationale: 'Invalid package.',
+        expectedAdvantages: [],
+        expectedRisks: [],
+        selfCritique: [],
+      },
+    }),
+    /must be relative/,
+  );
+});
+
+test('creator prompt includes Agent Skills standard and Skill Creator guidance', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-creator-guidance-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'creator',
+    runId: 'creator-guidance',
+    mode: 'mock',
+    experimentArm: 'candidateA',
+  });
+
+  assert.match(result.prompt, /=== AGENT SKILLS STANDARD ===/);
+  assert.match(result.prompt, /=== SKILL CREATOR GUIDANCE ===/);
+  assert.match(result.prompt, /Keep `SKILL\.md` concise/);
+  assert.match(result.prompt, /Progressive disclosure/);
+  assert.match(result.prompt, /Do not create auxiliary documentation/);
+  assert.match(result.prompt, /localized ablation-style variation/);
+  assert.match(result.prompt, /Preserve every unrelated section and behavior/);
+  assert.match(result.prompt, /Preserve the champion's instructional depth/);
+  assert.match(result.prompt, /control\/status-quo arm/);
+  assert.match(result.prompt, /Do not redesign from ontology/);
+  assert.match(result.prompt, /ontology may justify preserving domain correctness/);
+  assert.match(result.prompt, /Never invent author\/version metadata/);
+  assert.match(result.prompt, /never claim OpenAI, Codex, Claude, Anthropic, Skill RSI, or any AI system as the skill author/);
+});
+
+test('creator prompt includes current champion auxiliary package files', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-creator-package-context-'));
+  const init = await initProject({
+    cwd,
+    projectName: 'Frontend Design',
+    goal: 'Help agents produce implementation-ready frontend design work.',
+    evalOutputType: 'code',
+  });
+  await fs.mkdir(init.paths.championSkillDir, { recursive: true });
+  await fs.writeFile(path.join(init.paths.championSkillDir, 'SKILL.md'), `---
+name: frontend-design
+description: Use when producing frontend implementation code.
+license: Complete terms in LICENSE.txt
+---
+
+# Frontend Design
+
+Produce production-ready UI code.
+`, 'utf8');
+  await fs.writeFile(path.join(init.paths.championSkillDir, 'LICENSE.txt'), 'Copyright terms stay with the package.\n', 'utf8');
+  const state = JSON.parse(await fs.readFile(init.paths.stateJson, 'utf8'));
+  await fs.writeFile(init.paths.stateJson, JSON.stringify({
+    ...state,
+    currentChampion: { runId: 'run-001', candidateId: 'baseline', skillHash: 'hash' },
+  }, null, 2), 'utf8');
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'frontend-design',
+    agentName: 'creator',
+    runId: 'creator-package-context',
+    mode: 'mock',
+    experimentArm: 'candidateA',
+  });
+
+  assert.match(result.prompt, /Current champion package:/);
+  assert.match(result.prompt, /LICENSE\.txt/);
+  assert.match(result.prompt, /Copyright terms stay with the package/);
+  assert.match(result.prompt, /Preserve required auxiliary package files/);
+});
+
+test('creator prompt includes the project output contract', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-creator-output-contract-'));
+  await initProject({
+    cwd,
+    projectName: 'Frontend Design',
+    goal: 'Help agents design and implement better front-end UX.',
+    evalOutputType: 'code_visual',
+  });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'frontend-design',
+    agentName: 'creator',
+    runId: 'creator-output-contract',
+    mode: 'mock',
+    experimentArm: 'candidateA',
+  });
+
+  assert.match(result.prompt, /Expected user-output contract:/);
+  assert.match(result.prompt, /code_visual_standalone/);
+  assert.match(result.prompt, /browser-renderable UI implementations/);
+  assert.match(result.prompt, /single self-contained HTML document/);
+});
+
+test('ontology and deconstructor prompts receive the project output contract', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-output-contract-all-agents-'));
+  await initProject({
+    cwd,
+    projectName: 'Code Assistant',
+    goal: 'Help agents write implementation code.',
+    evalOutputType: 'code',
+  });
+
+  const ontology = await runAgentContract({
+    cwd,
+    projectName: 'code-assistant',
+    agentName: 'ontology',
+    runId: 'ontology-output-contract',
+    mode: 'mock',
+  });
+  const deconstructor = await runAgentContract({
+    cwd,
+    projectName: 'code-assistant',
+    agentName: 'deconstructor',
+    runId: 'deconstructor-output-contract',
+    mode: 'mock',
+  });
+
+  assert.match(ontology.prompt, /code_standalone/);
+  assert.match(ontology.prompt, /Task Contract Robustness/);
+  assert.match(deconstructor.prompt, /missing-context behavior/);
+});
+
+test('real creator contract normalizes omitted optional list fields', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-creator-normalize-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'creator',
+    runId: 'creator-normalize',
+    mode: 'real',
+    model: 'fake-agent-model',
+    experimentArm: 'candidateB',
+    modelClient: async () => JSON.stringify({
+      strategyName: 'Embedded boundary policy',
+      changedParameterIds: 'p01',
+      files: [{
+        path: 'SKILL.md',
+        content: '---\nname: ux-design\n---\n\n# UX Design\n',
+      }],
+      expectedAdvantages: 'clearer triggering',
+      expectedRisks: 'slightly longer',
+    }),
+  });
+
+  assert.equal(result.artifact.candidateId, 'candidate-b');
+  assert.equal(result.artifact.experimentArm, 'candidateB');
+  assert.equal(result.artifact.strategy, 'Embedded boundary policy');
+  assert.match(result.artifact.rationale, /Generated candidate-b/);
+  assert.deepEqual(result.artifact.changedParameterIds, ['p01']);
+  assert.deepEqual(result.artifact.expectedAdvantages, ['clearer triggering']);
+  assert.match(result.artifact.files[0].content, /description: Use when the user needs help with embedded boundary policy\./);
+  assert.doesNotMatch(result.artifact.files[0].content, /Skill RSI candidate/);
+  assert.equal(result.artifact.selfCritique.length, 1);
+});
+
+test('real creator contract normalizes common SKILL.md file aliases', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-creator-file-alias-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'creator',
+    runId: 'creator-file-alias',
+    mode: 'real',
+    model: 'fake-agent-model',
+    experimentArm: 'candidateA',
+    modelClient: async () => JSON.stringify({
+      strategy: 'Alias tolerant package',
+      changedParameterIds: [],
+      files: [{
+        filename: 'skill/SKILL.md',
+        markdown: '---\nname: ux-design\n---\n\n# UX Design\n',
+      }],
+      expectedAdvantages: [],
+      expectedRisks: [],
+    }),
+  });
+
+  assert.equal(result.artifact.files[0].path, 'SKILL.md');
+  assert.match(result.artifact.files[0].content, /description:/);
+});
+
+test('real creator contract parses JSON with fenced examples inside SKILL.md content', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-creator-nested-fence-'));
+  await initProject({ cwd, projectName: 'Screenplay Writing', goal: 'Help agents write screenplay scenes.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'screenplay-writing',
+    agentName: 'creator',
+    runId: 'creator-nested-fence',
+    mode: 'real',
+    model: 'fake-agent-model',
+    experimentArm: 'candidateA',
+    modelClient: async () => JSON.stringify({
+      strategy: 'Screenplay examples',
+      changedParameterIds: ['p07'],
+      files: [{
+        path: 'SKILL.md',
+        content: [
+          '---',
+          'name: screenplay-writing',
+          'description: Use when writing screenplay scenes.',
+          '---',
+          '',
+          '# Screenplay Writing',
+          '',
+          '```text',
+          'MONTAGE - TRAINING',
+          '',
+          '-- She sprints stairs at dawn.',
+          '',
+          'END MONTAGE',
+          '```',
+        ].join('\n'),
+      }],
+      expectedAdvantages: ['clear examples'],
+      expectedRisks: ['example overfit'],
+    }),
+  });
+
+  assert.equal(result.artifact.files[0].path, 'SKILL.md');
+  assert.match(result.artifact.files[0].content, /MONTAGE - TRAINING/);
+});
+
+test('real creator contract strips invented AI authorship metadata', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-creator-ai-author-'));
+  await initProject({ cwd, projectName: 'Frontend Design', goal: 'Help agents design better frontend UI.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'frontend-design',
+    agentName: 'creator',
+    runId: 'creator-ai-author',
+    mode: 'real',
+    model: 'fake-agent-model',
+    experimentArm: 'candidateA',
+    modelClient: async () => JSON.stringify({
+      strategy: 'Standalone visual implementation',
+      changedParameterIds: [],
+      files: [{
+        path: 'SKILL.md',
+        content: `---
+name: frontend-design
+description: Use when building frontend UI.
+metadata:
+  author: OpenAI
+  version: "1.0"
+---
+
+# Frontend Design
+`,
+      }],
+      expectedAdvantages: [],
+      expectedRisks: [],
+    }),
+  });
+
+  assert.doesNotMatch(result.artifact.files[0].content, /author:\s*OpenAI/i);
+  assert.match(result.artifact.files[0].content, /metadata:\n\s+version: "1\.0"/);
+});
+
+test('agent prompts receive compact Phase 1 history memory', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-history-context-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+  const paths = getProjectPaths(cwd, 'ux-design');
+  const history = JSON.parse(await fs.readFile(paths.historyIndex, 'utf8'));
+  await fs.writeFile(paths.historyIndex, `${JSON.stringify({
+    ...history,
+    currentChampion: { runId: 'run-002', candidateId: 'candidate-a', skillHash: 'abc123' },
+    trajectory: [{
+      runId: 'run-002',
+      decision: 'request_new_experiment',
+      winner: 'current',
+      scoreDelta: 0,
+      parameterTested: ['p01'],
+      hypothesisHeld: null,
+      summary: 'Experiment did not create a clear improvement.',
+    }],
+    parameterLog: [{
+      parameterId: 'p01',
+      testedInRuns: ['run-001', 'run-002'],
+      currentBelief: 'Activation metadata has been noisy twice.',
+      status: 'do_not_retry_without_new_evidence',
+      lastTestedRunId: 'run-002',
+      lastDecision: 'request_new_experiment',
+      outcomeCounts: { promote: 0, keep_current: 0, request_new_experiment: 2 },
+      currentEvidence: {
+        runId: 'run-002',
+        decision: 'request_new_experiment',
+        confidence: 'low',
+        scoreDelta: 0,
+        candidateDuelWinner: 'tie',
+        challengeWinner: null,
+        reviewBlocked: false,
+        summary: 'No useful activation metadata signal.',
+        caveats: ['Low score margin'],
+      },
+      staleEvidence: [{
+        runId: 'run-001',
+        decision: 'keep_current',
+        confidence: 'low',
+        scoreDelta: 1,
+        candidateDuelWinner: 'skillA',
+        challengeWinner: 'skillB',
+        reviewBlocked: false,
+        summary: 'Older weak activation metadata signal.',
+        caveats: ['Current champion held'],
+      }],
+    }],
+    knownWeaknesses: [{ runId: 'run-002', source: 'likely_noise', message: 'Low score margin', status: 'open' }],
+    doNotRepeat: ['Do not retry p01 without new evidence'],
+    failedStrategyLog: [{ runId: 'run-002', source: 'experiment_signal', message: 'Repeated weak activation test', status: 'inconclusive' }],
+    recentNextExperimentNotes: ['Try next: output contract'],
+  }, null, 2)}\n`, 'utf8');
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'experiment-planner',
+    runId: 'planner-history-context',
+    mode: 'mock',
+  });
+
+  assert.match(result.prompt, /Do not retry p01 without new evidence/);
+  assert.match(result.prompt, /Repeated weak activation test/);
+  assert.match(result.prompt, /Activation metadata has been noisy twice/);
+  assert.match(result.prompt, /Try next: output contract/);
+});
+
+test('experiment planner prompt receives explicit manager guidance', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-manager-prompt-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'experiment-planner',
+    runId: 'planner-manager-guidance',
+    mode: 'mock',
+    managerPlan: {
+      strategy: { experimentFamily: 'high_divergence_reset' },
+      avoid: { parameterIds: ['p01-activation_metadata'], reasons: ['No signal from p01.'] },
+      experimentIntent: {
+        plannerInstructions: ['Use reset planning and avoid p01 unless new evidence exists.'],
+      },
+    },
+  });
+
+  assert.match(result.prompt, /Manager guidance for this run/);
+  assert.match(result.prompt, /high_divergence_reset/);
+  assert.match(result.prompt, /p01-activation_metadata/);
+  assert.match(result.prompt, /Do not select avoid\.parameterIds/);
+  assert.match(result.prompt, /ablation-style\/local-variation experiment/);
+  assert.match(result.prompt, /preserve the current champion's unrelated structure and behavior/);
+});
+
+test('real analyst contract maps unimplemented edit_current to a new experiment', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-rsi-analyst-no-edit-'));
+  await initProject({ cwd, projectName: 'UX Design', goal: 'Help agents design better UX.' });
+
+  const result = await runAgentContract({
+    cwd,
+    projectName: 'ux-design',
+    agentName: 'analyst',
+    runId: 'analyst-no-edit',
+    mode: 'real',
+    model: 'fake-agent-model',
+    modelClient: async () => JSON.stringify({
+      runId: 'analyst-no-edit',
+      decision: 'edit_current',
+      recommendedChampionCandidateId: 'candidate-a',
+      confidence: 'medium',
+      reasoning: 'Try a surgical edit.',
+      observations: ['The model requested an unimplemented branch.'],
+      nextRoundGuidance: {
+        vary: 'same parameter',
+        preserve: 'current champion',
+        investigate: 'edit branch',
+      },
+    }),
+  });
+
+  assert.equal(result.artifact.decision, 'request_new_experiment');
+  assert.equal(result.artifact.recommendedChampionCandidateId, null);
+});

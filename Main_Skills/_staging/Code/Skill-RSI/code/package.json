@@ -1,0 +1,42 @@
+{
+  "name": "skill-rsi",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "skill-rsi": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "start": "node src/cli.js",
+    "doctor": "node src/cli.js doctor",
+    "diagnose": "node src/cli.js diagnose",
+    "support:prompt": "node src/cli.js support-prompt",
+    "server": "node src/server.js",
+    "dev:ui": "vite --config ui/vite.config.js --host 127.0.0.1",
+    "build:ui": "vite build --config ui/vite.config.js",
+    "preview:ui": "vite preview --config ui/vite.config.js --host 127.0.0.1",
+    "render:mermaid-diagrams": "node scripts/render-mermaid-diagrams.mjs",
+    "plugin:configure": "node scripts/skill-rsi-plugin-configure.mjs",
+    "plugin:validate": "node scripts/skill-rsi-plugin-validate.mjs",
+    "plugin:smoke": "node scripts/skill-rsi-plugin-smoke.mjs",
+    "plugin:check": "npm run plugin:configure -- --check && npm run plugin:validate && npm run plugin:smoke && npm test && npm run build:ui && git diff --check"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@mcp-ui/server": "^6.1.0",
+    "@modelcontextprotocol/ext-apps": "^0.3.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "lucide-react": "^1.16.0",
+    "playwright": "^1.60.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "vite": "^8.0.14"
+  },
+  "devDependencies": {
+    "mermaid": "^11.15.0"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "bundle_bytes": 93590996,
+  "bundle_sha256": "5dac12c887e7ff70ccf946bf5ad8ba019837e0a70d698857b2c68b8f0656902c",
+  "extracted_tree": {
+    "bytes": 96766286,
+    "files": 249,
+    "sha256": "43240e29d5df16934a021ffca432178952b044b3dfd17cee94aa002ff67334d4"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "Skill-RSI.bundle.zip.part-0001",
+      "sha256": "92acc52004ff36d7eafb0ce51cd7816a7d0faa01935258b63471c128f2bbba24"
+    },
+    {
+      "bytes": 12582912,
+      "name": "Skill-RSI.bundle.zip.part-0002",
+      "sha256": "ba369824b4238cd26405977d53a329fe63f2262ebc526a56f1fde68e0d330c76"
+    },
+    {
+      "bytes": 12582912,
+      "name": "Skill-RSI.bundle.zip.part-0003",
+      "sha256": "3a5b76149bdcf1c7a31991a383a6614b2ea6f00c1fb7cc426d0bcbff7db0d89e"
+    },
+    {
+      "bytes": 12582912,
+      "name": "Skill-RSI.bundle.zip.part-0004",
+      "sha256": "31adc5bfeb4ad555bd3ffe8074bbad92c2b83aec797726547da4e249fd29befe"
+    },
+    {
+      "bytes": 12582912,
+      "name": "Skill-RSI.bundle.zip.part-0005",
+      "sha256": "ff067fb839f98004f030b735281420581597bf8449a16eb51f65780bf8ea6a02"
+    },
+    {
+      "bytes": 12582912,
+      "name": "Skill-RSI.bundle.zip.part-0006",
+      "sha256": "97cfba3b2612dae6f1aa0b9dcaff9e3cc4f133277bc0d33eccd31b56134e469e"
+    },
+    {
+      "bytes": 12582912,
+      "name": "Skill-RSI.bundle.zip.part-0007",
+      "sha256": "a29bb0e9961953a3b87a7f2f178424d5909072a92bba48a273219590abf1e7de"
+    },
+    {
+      "bytes": 5510612,
+      "name": "Skill-RSI.bundle.zip.part-0008",
+      "sha256": "eed785ed749105f65bbc6e8c12ae221498325409740f6c654e6e75f0ba11ab93"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "Skill-RSI",
+  "source_bytes": 96766286,
+  "source_commit": "6c5c004becd31c98771275385fd56946d5506d47",
+  "source_files": 249,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/justinwetch/Skill-RSI",
+  "source_tree": {
+    "bytes": 96766286,
+    "files": 249,
+    "sha256": "43240e29d5df16934a021ffca432178952b044b3dfd17cee94aa002ff67334d4"
+  }
+}

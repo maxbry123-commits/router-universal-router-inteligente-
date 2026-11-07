@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "skill-rsi": {
+      "command": "node",
+      "args": [
+        "plugins/skill-rsi/mcp/server.mjs"
+      ],
+      "cwd": "/absolute/path/to/Skill-RSI",
+      "env": {
+        "SKILL_RSI_ROOT": "/absolute/path/to/Skill-RSI"
+      }
+    }
+  }
+}
