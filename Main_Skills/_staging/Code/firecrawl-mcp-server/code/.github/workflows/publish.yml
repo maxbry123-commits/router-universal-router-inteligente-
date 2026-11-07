@@ -1,0 +1,263 @@
+name: Publish Package
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - package.json
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      on_npm: ${{ steps.npm.outputs.on_npm }}
+      tarball: ${{ steps.pack.outputs.tarball }}
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "24"
+          package-manager-cache: false  # Never use caching in release builds
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Read the version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # A package.json change that does not bump the version, or a re-run after the npm step
+      # succeeded, must not fail on "cannot publish over a previously published version".
+      - name: Check whether npm already serves this version
+        id: npm
+        run: |
+          # npm view exits 1 both for a missing version (E404) and for a failed lookup; only the 404 means absent.
+          for attempt in 1 2 3; do
+            if output=$(npm view "firecrawl-mcp@${VERSION}" version 2>&1); then
+              if [ "${output}" = "${VERSION}" ]; then
+                echo "firecrawl-mcp@${VERSION} is already on npm; skipping the npm publish"
+                echo "on_npm=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              echo "unexpected answer from npm view for firecrawl-mcp@${VERSION}: ${output}" >&2
+              exit 1
+            fi
+            if printf '%s' "${output}" | grep -q "E404"; then
+              echo "on_npm=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "npm lookup failed (attempt ${attempt} of 3): ${output}" >&2
+            sleep 10
+          done
+          echo "npm did not answer the version lookup after 3 attempts" >&2
+          exit 1
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Sync MCP Registry version
+        run: |
+          node -e "
+            const fs = require('fs');
+            const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const manifest = JSON.parse(fs.readFileSync('server.json', 'utf8'));
+            manifest.version = packageJson.version;
+            for (const pkg of manifest.packages ?? []) {
+              if (pkg.registryType === 'npm' && pkg.identifier === 'firecrawl-mcp') {
+                pkg.version = packageJson.version;
+              }
+            }
+            fs.writeFileSync('server.json', JSON.stringify(manifest, null, 2) + '\n');
+          "
+
+      - name: Pack
+        id: pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/dist"
+          tarball=$(npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/dist" | tail -n 1)
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+          cp server.json "$RUNNER_TEMP/dist/server.json"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/dist
+          if-no-files-found: error
+          retention-days: 7
+
+  supersede:
+    name: Supersede unapproved runs
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        continue-on-error: true
+        with:
+          sparse-checkout: .github/actions
+          persist-credentials: false
+      - uses: ./.github/actions/supersede-waiting-runs
+        continue-on-error: true
+        timeout-minutes: 2
+
+  release-summary:
+    name: Release summary
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        continue-on-error: true
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - uses: ./.github/actions/release-summary
+        continue-on-error: true
+        timeout-minutes: 3
+        with:
+          gated-job: Publish
+          version: firecrawl-mcp@${{ needs.build.outputs.version }}
+          published-step: Publish to NPM
+
+  publish:
+    name: Publish
+    needs: [build, release-summary]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: release
+    concurrency:
+      group: ${{ github.workflow }}-release-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      id-token: write  # Required for OIDC authentication with npm and MCP registry
+
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release
+          path: release
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Publish to NPM
+        if: needs.build.outputs.on_npm != 'true'
+        env:
+          TARBALL: ${{ needs.build.outputs.tarball }}
+        run: npm publish "./release/$TARBALL" --provenance --access public
+
+      # npm takes a few minutes to serve a new version, and the MCP registry checks npm for the
+      # version before it accepts a server.json; publishing to it straight after npm fails with
+      # "version was not found (status: 404)". Wait until npm serves the version.
+      - name: Wait until npm serves the version
+        run: |
+          for attempt in $(seq 1 40); do
+            if output=$(npm view "firecrawl-mcp@${VERSION}" version 2>&1) && [ "${output}" = "${VERSION}" ]; then
+              echo "npm serves firecrawl-mcp@${VERSION}"
+              exit 0
+            fi
+            echo "firecrawl-mcp@${VERSION} is not on npm yet (attempt ${attempt} of 40; npm said: ${output}); waiting 15 s"
+            sleep 15
+          done
+          echo "firecrawl-mcp@${VERSION} is still not on npm after 10 minutes" >&2
+          exit 1
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+
+      - name: Install MCP Publisher
+        env:
+          MCP_PUBLISHER_VERSION: 1.8.1
+          MCP_PUBLISHER_SHA256: a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc
+        run: |
+          curl -sfL -o "$RUNNER_TEMP/mcp-publisher.tar.gz" "https://github.com/modelcontextprotocol/registry/releases/download/v${MCP_PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz"
+          echo "${MCP_PUBLISHER_SHA256}  $RUNNER_TEMP/mcp-publisher.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/mcp-publisher.tar.gz" -C release mcp-publisher
+
+      - name: Login to MCP Registry
+        working-directory: release
+        run: ./mcp-publisher login github-oidc
+
+      # Registry versions are immutable, so a version that is already registered is done.
+      - name: Check whether the MCP registry already has this version
+        id: registry
+        run: |
+          # Only a 404 means absent; anything but 200 or 404 is the registry not answering properly.
+          for attempt in 1 2 3; do
+            http_status=$(curl -s -o /dev/null -w '%{http_code}' "${VERSION_URL}")
+            case "${http_status}" in
+              200)
+                echo "${SERVER_NAME} ${VERSION} is already in the MCP registry; skipping the registry publish"
+                echo "registered=true" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+              404)
+                echo "registered=false" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+              *)
+                echo "the MCP registry answered ${http_status} for ${VERSION_URL} (attempt ${attempt} of 3)" >&2
+                sleep 10
+                ;;
+            esac
+          done
+          echo "the MCP registry did not answer 200 or 404 after 3 attempts" >&2
+          exit 1
+        env:
+          SERVER_NAME: io.github.firecrawl/firecrawl-mcp-server
+          VERSION: ${{ needs.build.outputs.version }}
+          VERSION_URL: https://registry.modelcontextprotocol.io/v0/servers/io.github.firecrawl%2Ffirecrawl-mcp-server/versions/${{ needs.build.outputs.version }}
+
+      - name: Publish to MCP Registry
+        if: steps.registry.outputs.registered != 'true'
+        working-directory: release
+        run: |
+          for attempt in 1 2 3; do
+            if ./mcp-publisher publish; then
+              exit 0
+            fi
+            # Registry versions are immutable: if another run registered this version meanwhile, the work is done.
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' "${VERSION_URL}")" = "200" ]; then
+              echo "${VERSION} is in the MCP registry now; nothing left to publish"
+              exit 0
+            fi
+            if [ "${attempt}" -lt 3 ]; then
+              echo "registry publish failed (attempt ${attempt} of 3); retrying in 30 s"
+              sleep 30
+            fi
+          done
+          exit 1
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          VERSION_URL: https://registry.modelcontextprotocol.io/v0/servers/io.github.firecrawl%2Ffirecrawl-mcp-server/versions/${{ needs.build.outputs.version }}
