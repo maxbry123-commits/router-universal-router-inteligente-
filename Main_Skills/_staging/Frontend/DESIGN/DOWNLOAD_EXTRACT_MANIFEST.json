@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 217521,
+  "bundle_sha256": "f678a79b59f638bca8c3262d1f96137544c096016d8f1601a9b4c9a2bd035412",
+  "extracted_tree": {
+    "bytes": 657581,
+    "files": 54,
+    "sha256": "4fa66a211b13226b833d2965801d93c04ab035ca2503527067cbd7f8037ffca3"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 217521,
+      "name": "DESIGN.bundle.zip.part-0001",
+      "sha256": "f678a79b59f638bca8c3262d1f96137544c096016d8f1601a9b4c9a2bd035412"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "DESIGN",
+  "source_bytes": 657581,
+  "source_commit": "014a1864c641f8e9792ed76de93c95493489dd8c",
+  "source_files": 54,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/AgentsORG/DESIGN",
+  "source_tree": {
+    "bytes": 657581,
+    "files": 54,
+    "sha256": "4fa66a211b13226b833d2965801d93c04ab035ca2503527067cbd7f8037ffca3"
+  }
+}

@@ -1,0 +1,822 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/AgentsORG/DESIGN/main/schema/design.v1.schema.json",
+  "title": "AgentsORG .design file — design.v1",
+  "description": "Living visual contract for AI design: tokens, components, intent, policy, and constraints.",
+  "type": "object",
+  "required": ["schema", "name", "version", "agent"],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional JSON Schema URL for editor validation."
+    },
+    "schema": {
+      "type": "string",
+      "const": "design.v1"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$",
+      "description": "SemVer 2.0.0 (MAJOR.MINOR.PATCH with optional pre-release and build metadata)."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["bootstrap", "refine", "lock", "evolve"]
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "overview": {
+      "type": "string"
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": true,
+            "properties": {
+              "name": { "type": "string" },
+              "external_assets": { "type": "boolean" },
+              "single_file": { "type": "boolean" },
+              "aspect": {
+                "type": "string",
+                "examples": ["16:9", "9:16", "1:1"],
+                "description": "Video targets: primary frame aspect."
+              },
+              "fps": { "type": "number", "description": "Video targets: frame rate timing is authored in." },
+              "loudness": {
+                "type": "string",
+                "pattern": "^-?\\d+(\\.\\d+)?LUFS$",
+                "description": "Video targets: delivery loudness of the rendered mix (e.g. -14LUFS)."
+              },
+              "notes": { "type": "string" }
+            }
+          }
+        ]
+      },
+      "description": "Target surfaces; object form declares environment constraints (e.g. no external assets, single-file output)."
+    },
+    "voice": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "register": { "type": "string" },
+        "casing": { "type": "string" },
+        "terminology": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "action_naming": { "type": "string" },
+        "errors": { "type": "string" }
+      },
+      "description": "UI copy contract: register, casing, system-term → user-term map, action-name continuity, error style."
+    },
+    "extends": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "agent": {
+      "type": "object",
+      "required": ["instructions"],
+      "additionalProperties": true,
+      "properties": {
+        "skill": {
+          "type": "string"
+        },
+        "instructions": {
+          "type": "string",
+          "minLength": 80,
+          "description": "Self-contained procedure so drag-drop / @-mention works without the portable skill."
+        }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "required": ["reference"],
+      "additionalProperties": true,
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1
+        },
+        "direction": {
+          "type": "string",
+          "description": "Committed aesthetic direction (e.g. minimal, editorial, brutalist, industrial, retro-futuristic)."
+        },
+        "signature": {
+          "type": "string",
+          "description": "One sentence naming the single distinctive element that carries the design."
+        },
+        "treatment": {
+          "type": "string",
+          "enum": ["utilitarian", "editorial"],
+          "description": "Default rendering register: restrained product craft vs distinctive identity."
+        },
+        "density": {
+          "type": "string",
+          "examples": ["compact", "comfortable", "spacious"]
+        },
+        "trust": {
+          "type": "string",
+          "examples": ["low", "medium", "high"]
+        },
+        "energy": {
+          "type": "string",
+          "examples": ["low", "medium", "high"]
+        },
+        "playfulness": {
+          "type": "string",
+          "examples": ["low", "medium", "high"]
+        },
+        "emotion": {
+          "type": "string"
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "additionalProperties": true,
+        "properties": {
+          "type": {
+            "type": "string",
+            "examples": ["repo", "figma", "url", "file", "components_json", "other"],
+            "description": "Source kind; common values listed as examples — unknown kinds are accepted."
+          },
+          "path": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "file_key": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "color": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/tokenNode" }
+        },
+        "typography": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "fontFamily": {
+                    "oneOf": [
+                      { "type": "string" },
+                      { "type": "array", "items": { "type": "string" } }
+                    ],
+                    "description": "Brand face, or a stack (comma list / array) whose tail is the fallback chain."
+                  },
+                  "fallbacks": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Ordered fallback faces when the primary is unavailable."
+                  },
+                  "fontSize": { "type": ["string", "number"] },
+                  "fontWeight": { "type": ["string", "number"] },
+                  "lineHeight": { "type": ["string", "number"] },
+                  "letterSpacing": { "type": ["string", "number"] },
+                  "fontFeature": { "type": "string" },
+                  "fontVariation": { "type": "string" }
+                }
+              }
+            ]
+          }
+        },
+        "spacing": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/tokenNode" }
+        },
+        "radius": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/tokenNode" }
+        },
+        "motion": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "elevation": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Shadow / blur / depth treatments (DESIGN.md Elevation & Depth)."
+        },
+        "border": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/tokenNode" }
+        },
+        "breakpoint": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/tokenNode" },
+          "description": "Named viewport thresholds (sm, md, lg, content-max, …)."
+        },
+        "opacity": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/tokenNode" },
+          "description": "Opacity scale; prefer 0–1 values for CSS."
+        },
+        "zIndex": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/tokenNode" },
+          "description": "Stacking scale (nav, modal, toast, …)."
+        },
+        "iconography": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "set": { "type": "string" },
+            "stroke": { "type": ["string", "number"] },
+            "sizes": {
+              "type": "object",
+              "additionalProperties": { "type": ["string", "number"] }
+            }
+          },
+          "description": "Default icon set, stroke rules, and sizes."
+        },
+        "background": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/tokenNode" },
+          "description": "Atmosphere treatments: gradients, mesh, noise/grain, patterns."
+        },
+        "sound": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "First-run state of the user's sound toggle. Product UI ships false; video targets ignore it."
+            },
+            "material": {
+              "type": "string",
+              "description": "The one physical material every sound is made of; prompt prefix for generation and search."
+            },
+            "peak": { "$ref": "#/$defs/level" },
+            "loudness": {
+              "type": "object",
+              "additionalProperties": { "$ref": "#/$defs/level" },
+              "description": "Integrated loudness per class (feedback, notification, …)."
+            },
+            "duration": {
+              "type": "object",
+              "additionalProperties": { "$ref": "#/$defs/time" },
+              "description": "Length per role; keys name the family and should match assets.sounds."
+            },
+            "sync-lag-max": { "$ref": "#/$defs/time" }
+          },
+          "description": "Sound design contract: toggle default, one material, levels, durations, sync tolerance (SPEC §11.6)."
+        }
+      }
+    },
+    "locked": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "components": {
+      "type": "object",
+      "description": "Catalog components and/or DESIGN.md flat property bags.",
+      "additionalProperties": {
+        "anyOf": [
+          { "$ref": "#/$defs/component" },
+          { "$ref": "#/$defs/componentPropertyBag" }
+        ]
+      }
+    },
+    "rationale": {
+      "type": "object",
+      "description": "DESIGN.md markdown-body sections as structured prose.",
+      "additionalProperties": true,
+      "properties": {
+        "overview": { "type": "string" },
+        "colors": { "type": "string" },
+        "typography": { "type": "string" },
+        "layout": { "type": "string" },
+        "elevation": { "type": "string" },
+        "shapes": { "type": "string" },
+        "components": { "type": "string" },
+        "motion": { "type": "string" },
+        "sound": { "type": "string" },
+        "dos": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "donts": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "omitted": {
+      "type": "array",
+      "description": "Intentionally absent sections (DESIGN.md omitted).",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          {
+            "type": "object",
+            "required": ["section"],
+            "additionalProperties": true,
+            "properties": {
+              "section": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          }
+        ]
+      }
+    },
+    "themes": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "default": { "type": "string" },
+        "single": {
+          "type": "boolean",
+          "description": "Deliberately single-theme system (suppresses missing-mode warnings)."
+        },
+        "reason": { "type": "string" },
+        "modes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "tokens": { "type": "object", "additionalProperties": true }
+            }
+          }
+        }
+      }
+    },
+    "exports": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "dtcg": { "type": "object", "additionalProperties": true },
+        "css": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "path": { "type": "string" },
+            "selector": { "type": "string" },
+            "prefix": { "type": "string" },
+            "mode_strategy": {
+              "type": "string",
+              "enum": ["media-query", "data-attribute", "both"]
+            },
+            "attribute": { "type": "string" }
+          }
+        },
+        "tailwind": { "type": "object", "additionalProperties": true },
+        "shadcn_registry": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "path": { "type": "string" },
+            "type": {
+              "type": "string",
+              "examples": ["registry:theme", "registry:style", "registry:base"]
+            }
+          },
+          "description": "shadcn registry item so the brand theme installs anywhere via the shadcn CLI."
+        },
+        "frame_md": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "path": { "type": "string" },
+            "aspect": { "type": "string", "examples": ["16:9", "9:16", "1:1"] }
+          },
+          "description": "HyperFrames frame.md — DESIGN.md-shaped video-frame companion carrying tokens plus motion and sound groups (SPEC §7.4)."
+        },
+        "style_dictionary": { "type": "object", "additionalProperties": true },
+        "ios": { "type": "object", "additionalProperties": true },
+        "android": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "logo": { "type": "object", "additionalProperties": true },
+        "wordmark": { "type": "string" },
+        "favicon": { "type": "string" },
+        "og_image": { "type": "string" },
+        "font_files": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sounds": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "pattern": "^(?!data:).+" },
+          "description": "Sound family by name → file path (never data: URIs). Names should match tokens.sound.duration keys."
+        }
+      }
+    },
+    "patterns": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "allowed": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "forbidden": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "prioritize": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "treatment": {
+            "type": "string",
+            "enum": ["utilitarian", "editorial"]
+          }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "hierarchy": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "reuse": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "prefer_existing_components": { "type": "boolean" },
+            "invent_threshold": { "type": "string" }
+          }
+        },
+        "fallback_order": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "if_missing": {
+          "type": "string",
+          "enum": ["ask", "nearest", "invent_with_note"]
+        },
+        "accessibility": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "color": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "accent_cycle": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Ordered tokens.color names that decorative non-text elements rotate through; text color chosen by contrast."
+            }
+          }
+        },
+        "responsive": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "decisions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["if", "then"],
+          "additionalProperties": true,
+          "properties": {
+            "if": {
+              "type": ["string", "object"]
+            },
+            "then": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "always": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "never": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "examples": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "good": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/exampleRef" }
+        },
+        "bad": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/exampleRef" }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "owner": { "type": "string" },
+        "last_reviewed": { "type": "string" },
+        "source_material": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "integrations": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "shadcn": {
+          "$ref": "#/$defs/shadcnIntegration"
+        },
+        "figma": {
+          "$ref": "#/$defs/figmaIntegration"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "time": {
+      "oneOf": [
+        { "type": "string", "pattern": "^\\d+(\\.\\d+)?(ms|s)$" },
+        { "type": "number" }
+      ],
+      "description": "Time value: number + ms|s, or a bare number of milliseconds."
+    },
+    "level": {
+      "type": "string",
+      "pattern": "^-?\\d+(\\.\\d+)?(dBFS|dBTP|LUFS)$",
+      "description": "Audio level: sample peak (dBFS), true peak (dBTP), or integrated loudness (LUFS)."
+    },
+    "tokenNode": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "number" },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/tokenNode" }
+        }
+      ],
+      "description": "Token leaf (string/number) or nested group (depth ≤ 20); referenced by full dot path."
+    },
+    "shadcnIntegration": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "style": { "type": "string" },
+        "base": {
+          "type": "string",
+          "description": "Primitive library the project is built on (base | radix | react-aria). Never mix bases.",
+          "examples": ["base", "radix", "react-aria"]
+        },
+        "icon_library": {
+          "type": "string",
+          "examples": ["lucide", "radix", "tabler"]
+        },
+        "preset": {
+          "type": "string",
+          "description": "components.json init preset combining base + style (e.g. base-nova)."
+        },
+        "css_variables": { "type": "boolean" },
+        "base_color": { "type": "string" },
+        "css": { "type": "string" },
+        "components_json": { "type": "string" },
+        "rsc": { "type": "boolean" },
+        "tsx": { "type": "boolean" },
+        "radius": { "type": ["string", "number"] },
+        "aliases": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "registries": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "required": ["url"],
+                "additionalProperties": true,
+                "properties": {
+                  "url": { "type": "string" },
+                  "headers": {
+                    "type": "object",
+                    "additionalProperties": { "type": "string" }
+                  },
+                  "params": {
+                    "type": "object",
+                    "additionalProperties": { "type": "string" }
+                  }
+                }
+              }
+            ]
+          },
+          "description": "@namespace → registry URL (or {url, headers, params}). Use ${ENV_VAR} for secrets; never inline them."
+        },
+        "components": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Canonical items to install (names, @namespace/name, or URLs)."
+        },
+        "mcp": {
+          "type": "boolean",
+          "description": "Hint that the shadcn MCP server is available for search/view/add."
+        },
+        "css_vars": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": ["string", "number"] }
+          },
+          "description": "Mode → variable map. Keys: light, dark, and optional theme (mode-independent vars: radius, fonts, tracking)."
+        },
+        "map_from_tokens": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "figmaIntegration": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "file_key": { "type": "string" },
+        "file_url": { "type": "string" },
+        "variable_collections": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "modes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sync": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "direction": {
+              "type": "string",
+              "enum": ["figma_to_design", "design_to_figma", "bidirectional"]
+            },
+            "tokens_path": { "type": "string" }
+          }
+        },
+        "code_connect": { "type": "boolean" },
+        "notes": { "type": "string" }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": true,
+      "if": {
+        "required": ["variants"],
+        "properties": { "variants": { "type": "array", "minItems": 1 } }
+      },
+      "then": {
+        "anyOf": [
+          { "required": ["when"] },
+          { "required": ["when_not"] }
+        ]
+      },
+      "properties": {
+        "description": { "type": "string" },
+        "import": { "type": "string" },
+        "when": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "when_not": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "variants": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "states": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "anatomy": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["stable", "experimental", "deprecated"]
+        },
+        "tokens": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/componentPropertyBag"
+          }
+        }
+      }
+    },
+    "componentPropertyBag": {
+      "type": "object",
+      "description": "DESIGN.md component property tokens (plus aliases). Unknown properties accepted (string/number/boolean) per consumer rules. Catalog-reserved keys are forbidden here so malformed catalog entries cannot slip through this branch.",
+      "additionalProperties": {
+        "type": ["string", "number", "boolean"]
+      },
+      "not": {
+        "anyOf": [
+          { "required": ["when"] },
+          { "required": ["when_not"] },
+          { "required": ["variants"] },
+          { "required": ["states"] },
+          { "required": ["anatomy"] },
+          { "required": ["tokens"] },
+          { "required": ["import"] },
+          { "required": ["status"] }
+        ]
+      },
+      "properties": {
+        "backgroundColor": { "type": ["string", "number"] },
+        "textColor": { "type": ["string", "number"] },
+        "typography": {
+          "oneOf": [
+            { "type": ["string", "number"] },
+            { "type": "object", "additionalProperties": true }
+          ]
+        },
+        "rounded": { "type": ["string", "number"] },
+        "padding": { "type": ["string", "number"] },
+        "size": { "type": ["string", "number"] },
+        "height": { "type": ["string", "number"] },
+        "width": { "type": ["string", "number"] },
+        "background": { "type": ["string", "number"] },
+        "foreground": { "type": ["string", "number"] },
+        "radius": { "type": ["string", "number"] },
+        "borderColor": { "type": ["string", "number"] },
+        "borderWidth": { "type": ["string", "number"] },
+        "shadow": { "type": ["string", "number"] },
+        "gap": { "type": ["string", "number"] },
+        "opacity": { "type": ["string", "number"] }
+      }
+    },
+    "exampleRef": {
+      "type": "object",
+      "required": ["ref"],
+      "additionalProperties": true,
+      "properties": {
+        "ref": { "type": "string" },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,1267 @@
+schema: design.v1
+name: notion
+version: 1.0.0
+status: refine
+description: "An inspired interpretation of Notion's design language — notion presents itself as the all-in-one workspace through a confident, illustration-rich brand voice — anchored by a deep navy hero band …"
+
+$schema: https://raw.githubusercontent.com/AgentsORG/DESIGN/main/schema/design.v1.schema.json
+
+agent:
+  skill: design
+  instructions: |
+    You are holding a .design living visual contract (schema design.v1).
+    If the AgentsORG `design` skill is installed, activate it - then still obey THIS file as source of truth.
+    If the skill is absent, follow these instructions exactly.
+    
+    READ
+    - Load this file before any UI generation or restyle. Large file? Normative core first
+      (intent, constraints, policy/decisions, tokens, components, themes, voice, locked); rationale on demand.
+    - Order: overview/intent -> constraints -> policy/decisions -> tokens -> voice -> rationale -> components/patterns -> integrations -> locked.
+    - Tokens and structured rules are normative. Rationale is judgment when tokens under-specify.
+    
+    FOLLOW (generate or edit UI)
+    - Calibrate treatment per surface: patterns.<name>.treatment > intent.treatment
+      (utilitarian = restrained product craft; editorial = distinctive identity).
+    - Prefer catalog components; obey when / when_not and decisions.* (first match wins).
+    - Bind every listed component property (backgroundColor, textColor, typography, rounded, padding, size, height, width).
+    - Never invent raw hex/spacing/radius when a token exists.
+    - Apply patterns.*; enforce constraints.always / never; apply voice.* to all UI copy.
+    - Concentrate boldness in intent.signature; keep everything around it quiet.
+    - Themes: generate for the active mode (themes.default); modes are designed, never inverted.
+    - Match the project's existing styling stack - do not switch stacks.
+    - If integrations.shadcn.enabled: prefer shadcn UI; write css_vars into the listed CSS file; tokens win on conflict.
+    - If integrations.figma is present: this file is repo-canonical unless sync.direction says otherwise; ask on conflicts.
+    - Craft defaults when this file is silent: one primary CTA; nested radius = outer - padding; transform/opacity only (<300ms); 44x44 targets; focus visible; prefers-reduced-motion; no transition:all.
+    
+    UPDATE
+    - Edit this file in place when design changes. Git is history.
+    - Ask before changing any path in locked. Bump version (SemVer).
+    
+    VERIFY
+    - Compare tokens <-> CSS/Tailwind and components <-> imports; report drift per token group
+      as added/removed/modified plus a regression flag before fixing.
+    
+    PRECEDENCE
+    1) User prompt  2) This file  3) design skill  4) Generic taste skills  5) Model defaults
+    
+    NEVER
+    - Invent a parallel design system beside this file
+    - Embed binaries or full page HTML trees here
+    - Claim affiliation with third-party brands used only as visual references
+    DISCLAIMER
+    Independent visual analysis - not affiliated with the named brand. Adapt before production use.
+
+overview: |
+  Notion presents itself as the all-in-one workspace through a confident, illustration-rich brand voice. The homepage opens with **"Meet the night shift."** rendered centered over a deep navy hero band ({tokens.color.brand-navy}), decorated with brand-colored sticky-note dots and mesh wire illustrations scattered around the headline. The signature **purple pill primary CTA** ({tokens.color.primary}) "Get Notion free" sits at the visual center, paired with an outlined "Request a demo" secondary. Below the buttons, a real Notion workspace UI mockup card (the "Ramp HQ" kanban board) breaks out of the hero band with a deep diffuse drop shadow.
+  
+  Below the hero, the page cycles through a distinctive sequence of feature sections: a dense sticky-note "Keep work moving 24/7" panel with red/blue/green/purple/teal status icons; a **bold yellow** ({tokens.color.card-tint-yellow-bold}) "Ask your on-demand assistants" banner card flanked by orange/rose/mint pastel feature tiles showing assistant UI mockups; and a "Bring all your work together" 3-column grid with brand-colored mockups (sky-blue tutorial card, light Notion calendar, brown/rust testimonial slate). The pricing page renders 4 tiers (Free / Plus / Business / Enterprise) horizontally with one tier featured (purple-bordered) and a dense feature comparison table running below.
+  
+  The system uses a Notion-Sans typeface (Inter-based) across every UI surface — humanist-geometric character that pairs naturally with the colorful illustrations. Buttons are `{tokens.radius.md}` (8px) rectangles, NOT pills — distinguishing Notion's sober rectangular geometry from competitors that use pills universally. Cards use `{tokens.radius.lg}` (12px) consistently.
+  
+  **Key Characteristics:**
+  - Deep navy hero band ({tokens.color.brand-navy}) with scattered sticky-note dots + mesh wire decorative illustrations
+  - **Signature purple pill** ({tokens.color.primary}) primary CTA — Notion's recognizable "Get Notion free" button color
+  - Real Notion workspace UI mockup card embedded in the hero with deep drop shadow
+  - Bold yellow feature banner ({tokens.color.card-tint-yellow-bold}) for high-emphasis content sections
+  - Pastel feature card palette (peach, rose, mint, lavender, sky, yellow) echoing the live product database properties
+  - Notion-Sans (Inter-based) across every UI surface
+  - 8px-rounded buttons (NOT pills), 12px-rounded cards — sober editorial geometry
+  - 4-tier pricing comparison with dense feature table
+  - Centered hero layout (different from the left-aligned norm of most B2B SaaS)
+
+intent:
+  reference: "Notion — warm minimalism, serif headings, soft surfaces, workspace calm"
+  direction: warm editorial minimalism
+  signature: Hand-drawn spot illustrations on calm ivory surfaces
+  density: comfortable
+  trust: high
+  energy: medium
+  playfulness: low
+
+voice:
+  register: "Friendly, plain-spoken, lowercase-calm; tool talk without jargon"
+  casing: sentence
+  action_naming: "Button labels name the exact action; the same verb carries through the flow"
+  errors: "State what happened, why, and the next step; never blame the user"
+
+targets:
+  - web
+
+sources:
+  - type: url
+    ref: https://getdesign.md/notion/design-md
+    note: getdesign.md curated DESIGN.md analysis
+  - type: url
+    ref: https://notion.com
+  - type: url
+    ref: https://github.com/voltagent/awesome-design-md/blob/main/design-md/notion/DESIGN.md
+    note: Upstream DESIGN.md (awesome-design-md)
+  - type: other
+    note: Independent analysis — not affiliated with the brand
+
+tokens:
+  color:
+    primary: "#5645d4"
+    primary-pressed: "#4534b3"
+    primary-deep: "#3a2a99"
+    on-primary: "#ffffff"
+    brand-navy: "#0a1530"
+    brand-navy-deep: "#070f24"
+    brand-navy-mid: "#1a2a52"
+    link-blue: "#0075de"
+    link-blue-pressed: "#005bab"
+    brand-orange: "#dd5b00"
+    brand-orange-deep: "#793400"
+    brand-pink: "#ff64c8"
+    brand-pink-deep: "#a02e6d"
+    brand-purple: "#7b3ff2"
+    brand-purple-300: "#d6b6f6"
+    brand-purple-800: "#391c57"
+    brand-teal: "#2a9d99"
+    brand-green: "#1aae39"
+    brand-yellow: "#f5d75e"
+    brand-brown: "#523410"
+    card-tint-peach: "#ffe8d4"
+    card-tint-rose: "#fde0ec"
+    card-tint-mint: "#d9f3e1"
+    card-tint-lavender: "#e6e0f5"
+    card-tint-sky: "#dcecfa"
+    card-tint-yellow: "#fef7d6"
+    card-tint-yellow-bold: "#f9e79f"
+    card-tint-cream: "#f8f5e8"
+    card-tint-gray: "#f0eeec"
+    canvas: "#ffffff"
+    surface: "#f6f5f4"
+    surface-soft: "#fafaf9"
+    hairline: "#e5e3df"
+    hairline-soft: "#ede9e4"
+    hairline-strong: "#c8c4be"
+    ink-deep: "#000000"
+    ink: "#1a1a1a"
+    charcoal: "#37352f"
+    slate: "#5d5b54"
+    steel: "#787671"
+    stone: "#a4a097"
+    muted: "#bbb8b1"
+    on-dark: "#ffffff"
+    on-dark-muted: "#a4a097"
+    semantic-success: "#1aae39"
+    semantic-warning: "#dd5b00"
+    semantic-error: "#e03131"
+  typography:
+    hero-display:
+      fontFamily: Notion Sans
+      fontSize: "80px"
+      fontWeight: "600"
+      lineHeight: "1.05"
+      letterSpacing: "-2px"
+    display-lg:
+      fontFamily: Notion Sans
+      fontSize: "56px"
+      fontWeight: "600"
+      lineHeight: "1.10"
+      letterSpacing: "-1px"
+    heading-1:
+      fontFamily: Notion Sans
+      fontSize: "48px"
+      fontWeight: "600"
+      lineHeight: "1.15"
+      letterSpacing: "-0.5px"
+    heading-2:
+      fontFamily: Notion Sans
+      fontSize: "36px"
+      fontWeight: "600"
+      lineHeight: "1.20"
+      letterSpacing: "-0.5px"
+    heading-3:
+      fontFamily: Notion Sans
+      fontSize: "28px"
+      fontWeight: "600"
+      lineHeight: "1.25"
+    heading-4:
+      fontFamily: Notion Sans
+      fontSize: "22px"
+      fontWeight: "600"
+      lineHeight: "1.30"
+    heading-5:
+      fontFamily: Notion Sans
+      fontSize: "18px"
+      fontWeight: "600"
+      lineHeight: "1.40"
+    subtitle:
+      fontFamily: Notion Sans
+      fontSize: "18px"
+      fontWeight: "400"
+      lineHeight: "1.50"
+    body-md:
+      fontFamily: Notion Sans
+      fontSize: "16px"
+      fontWeight: "400"
+      lineHeight: "1.55"
+    body-md-medium:
+      fontFamily: Notion Sans
+      fontSize: "16px"
+      fontWeight: "500"
+      lineHeight: "1.55"
+    body-sm:
+      fontFamily: Notion Sans
+      fontSize: "14px"
+      fontWeight: "400"
+      lineHeight: "1.50"
+    body-sm-medium:
+      fontFamily: Notion Sans
+      fontSize: "14px"
+      fontWeight: "500"
+      lineHeight: "1.50"
+    caption:
+      fontFamily: Notion Sans
+      fontSize: "13px"
+      fontWeight: "400"
+      lineHeight: "1.40"
+    caption-bold:
+      fontFamily: Notion Sans
+      fontSize: "13px"
+      fontWeight: "600"
+      lineHeight: "1.40"
+    micro:
+      fontFamily: Notion Sans
+      fontSize: "12px"
+      fontWeight: "500"
+      lineHeight: "1.40"
+    micro-uppercase:
+      fontFamily: Notion Sans
+      fontSize: "11px"
+      fontWeight: "600"
+      lineHeight: "1.40"
+      letterSpacing: "1px"
+    button-md:
+      fontFamily: Notion Sans
+      fontSize: "14px"
+      fontWeight: "500"
+      lineHeight: "1.30"
+  spacing:
+    unit: 8
+    xxs: "4px"
+    xs: "8px"
+    sm: "12px"
+    md: "16px"
+    lg: "20px"
+    xl: "24px"
+    xxl: "32px"
+    xxxl: "40px"
+    section-sm: "48px"
+    section: "64px"
+    section-lg: "96px"
+    hero: "120px"
+  radius:
+    xs: "4px"
+    sm: "6px"
+    md: "8px"
+    lg: "12px"
+    xl: "16px"
+    xxl: "20px"
+    xxxl: "24px"
+    full: "9999px"
+
+locked:
+  - tokens.color.primary
+  - tokens.color.canvas
+  - tokens.color.ink
+
+components:
+  button:
+    description: "Button family from DESIGN.md component tokens"
+    when: ["primary and secondary actions", "CTAs documented in rationale.components"]
+    when_not: ["inventing off-system button chrome", "more than one filled primary per view unless brand allows"]
+    variants:
+      - button-primary
+      - button-primary-pressed
+      - button-primary-disabled
+      - button-dark
+      - button-secondary
+      - button-on-dark
+      - button-secondary-on-dark
+      - button-ghost
+      - button-link
+    states: [default, disabled, pressed]
+    tokens:
+      button-primary:
+        backgroundColor: "{tokens.color.primary}"
+        textColor: "{tokens.color.on-primary}"
+        typography: "{tokens.typography.button-md}"
+        rounded: "{tokens.radius.md}"
+        padding: "10px 18px"
+      button-primary-pressed:
+        backgroundColor: "{tokens.color.primary-pressed}"
+        textColor: "{tokens.color.on-primary}"
+      button-primary-disabled:
+        backgroundColor: "{tokens.color.hairline}"
+        textColor: "{tokens.color.muted}"
+      button-dark:
+        backgroundColor: "{tokens.color.ink-deep}"
+        textColor: "{tokens.color.on-dark}"
+        typography: "{tokens.typography.button-md}"
+        rounded: "{tokens.radius.md}"
+        padding: "10px 18px"
+      button-secondary:
+        backgroundColor: transparent
+        textColor: "{tokens.color.ink}"
+        typography: "{tokens.typography.button-md}"
+        rounded: "{tokens.radius.md}"
+        padding: "10px 18px"
+        border: "1px solid {tokens.color.hairline-strong}"
+      button-on-dark:
+        backgroundColor: "{tokens.color.on-dark}"
+        textColor: "{tokens.color.ink}"
+        typography: "{tokens.typography.button-md}"
+        rounded: "{tokens.radius.md}"
+        padding: "10px 18px"
+      button-secondary-on-dark:
+        backgroundColor: transparent
+        textColor: "{tokens.color.on-dark}"
+        typography: "{tokens.typography.button-md}"
+        rounded: "{tokens.radius.md}"
+        padding: "10px 18px"
+        border: "1px solid {tokens.color.on-dark-muted}"
+      button-ghost:
+        backgroundColor: transparent
+        textColor: "{tokens.color.ink}"
+        typography: "{tokens.typography.button-md}"
+        rounded: "{tokens.radius.sm}"
+        padding: "8px 12px"
+      button-link:
+        backgroundColor: transparent
+        textColor: "{tokens.color.link-blue}"
+        typography: "{tokens.typography.body-sm-medium}"
+        padding: "0"
+  card-base:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xl}"
+        border: "1px solid {tokens.color.hairline}"
+  card-feature:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+        border: "1px solid {tokens.color.hairline}"
+  card-feature-yellow-bold:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.card-tint-yellow-bold}"
+        textColor: "{tokens.color.charcoal}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+  card-feature-peach:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.card-tint-peach}"
+        textColor: "{tokens.color.charcoal}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+  card-feature-rose:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.card-tint-rose}"
+        textColor: "{tokens.color.charcoal}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+  card-feature-mint:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.card-tint-mint}"
+        textColor: "{tokens.color.charcoal}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+  card-feature-sky:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.card-tint-sky}"
+        textColor: "{tokens.color.charcoal}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+  card-feature-lavender:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.card-tint-lavender}"
+        textColor: "{tokens.color.charcoal}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+  card-feature-yellow:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.card-tint-yellow}"
+        textColor: "{tokens.color.charcoal}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+  card-feature-cream:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.card-tint-cream}"
+        textColor: "{tokens.color.charcoal}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+  card-agent-tile:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xl}"
+        border: "1px solid {tokens.color.hairline}"
+  card-template:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.lg}"
+        border: "1px solid {tokens.color.hairline}"
+  card-startup-perk:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xl}"
+        border: "1px solid {tokens.color.hairline}"
+  pricing-card:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+        border: "1px solid {tokens.color.hairline}"
+  pricing-card-featured:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.surface}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+        border: "2px solid {tokens.color.primary}"
+  text-input:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        textColor: "{tokens.color.ink}"
+        typography: "{tokens.typography.body-md}"
+        rounded: "{tokens.radius.md}"
+        padding: "{tokens.spacing.sm} {tokens.spacing.md}"
+        border: "1px solid {tokens.color.hairline-strong}"
+        height: "44px"
+  text-input-focused:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        textColor: "{tokens.color.ink}"
+        border: "2px solid {tokens.color.primary}"
+  search-pill:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.surface}"
+        textColor: "{tokens.color.steel}"
+        typography: "{tokens.typography.body-md}"
+        rounded: "{tokens.radius.md}"
+        padding: "{tokens.spacing.sm} {tokens.spacing.md}"
+        height: "44px"
+        border: "1px solid {tokens.color.hairline}"
+  pill-tab:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: transparent
+        textColor: "{tokens.color.steel}"
+        typography: "{tokens.typography.body-sm-medium}"
+        rounded: "{tokens.radius.full}"
+        padding: "{tokens.spacing.xs} {tokens.spacing.md}"
+        border: "1px solid {tokens.color.hairline}"
+  pill-tab-active:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.ink-deep}"
+        textColor: "{tokens.color.on-dark}"
+        rounded: "{tokens.radius.full}"
+        border: "1px solid {tokens.color.ink-deep}"
+  segmented-tab:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: transparent
+        textColor: "{tokens.color.steel}"
+        typography: "{tokens.typography.body-sm-medium}"
+        padding: "{tokens.spacing.sm} {tokens.spacing.md}"
+        border: "0 0 2px transparent solid"
+  segmented-tab-active:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: transparent
+        textColor: "{tokens.color.ink}"
+        typography: "{tokens.typography.body-sm-medium}"
+        border: "0 0 2px {tokens.color.ink} solid"
+  badge-purple:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.primary}"
+        textColor: "{tokens.color.on-primary}"
+        typography: "{tokens.typography.caption-bold}"
+        rounded: "{tokens.radius.full}"
+        padding: "4px 10px"
+  badge-pink:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.brand-pink}"
+        textColor: "{tokens.color.on-primary}"
+        typography: "{tokens.typography.caption-bold}"
+        rounded: "{tokens.radius.full}"
+        padding: "4px 10px"
+  badge-orange:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.brand-orange}"
+        textColor: "{tokens.color.on-primary}"
+        typography: "{tokens.typography.caption-bold}"
+        rounded: "{tokens.radius.full}"
+        padding: "4px 10px"
+  badge-tag-purple:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.card-tint-lavender}"
+        textColor: "{tokens.color.brand-purple-800}"
+        typography: "{tokens.typography.caption-bold}"
+        rounded: "{tokens.radius.sm}"
+        padding: "2px 8px"
+  badge-tag-orange:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.card-tint-peach}"
+        textColor: "{tokens.color.brand-orange-deep}"
+        typography: "{tokens.typography.caption-bold}"
+        rounded: "{tokens.radius.sm}"
+        padding: "2px 8px"
+  badge-tag-green:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.card-tint-mint}"
+        textColor: "{tokens.color.brand-green}"
+        typography: "{tokens.typography.caption-bold}"
+        rounded: "{tokens.radius.sm}"
+        padding: "2px 8px"
+  badge-popular:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.primary}"
+        textColor: "{tokens.color.on-primary}"
+        typography: "{tokens.typography.caption-bold}"
+        rounded: "{tokens.radius.full}"
+        padding: "4px 10px"
+  promo-banner:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.surface}"
+        textColor: "{tokens.color.ink}"
+        typography: "{tokens.typography.body-sm-medium}"
+        padding: "{tokens.spacing.sm} {tokens.spacing.md}"
+  hero-band-dark:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.brand-navy}"
+        textColor: "{tokens.color.on-dark}"
+        rounded: "0"
+        padding: "{tokens.spacing.hero}"
+  workspace-mockup-card:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        rounded: "{tokens.radius.lg}"
+        padding: "0"
+        border: "1px solid {tokens.color.hairline}"
+        shadow: "rgba(15, 15, 15, 0.2) 0px 24px 48px -8px"
+  cta-banner-light:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.surface}"
+        textColor: "{tokens.color.ink}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.section}"
+  comparison-table:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        textColor: "{tokens.color.ink}"
+        typography: "{tokens.typography.body-sm}"
+        rounded: "{tokens.radius.md}"
+        border: "1px solid {tokens.color.hairline}"
+  comparison-row:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        textColor: "{tokens.color.ink}"
+        padding: "{tokens.spacing.md} {tokens.spacing.lg}"
+        border: "0 0 1px {tokens.color.hairline-soft} solid"
+  testimonial-card:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.xxl}"
+        border: "1px solid {tokens.color.hairline}"
+  logo-wall-item:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: transparent
+        textColor: "{tokens.color.steel}"
+        typography: "{tokens.typography.body-md-medium}"
+        padding: "{tokens.spacing.lg}"
+  faq-accordion-item:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        rounded: "{tokens.radius.md}"
+        padding: "{tokens.spacing.xl}"
+        border: "0 0 1px {tokens.color.hairline} solid"
+  stat-row:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.surface}"
+        textColor: "{tokens.color.ink}"
+        rounded: "{tokens.radius.lg}"
+        padding: "{tokens.spacing.section-sm}"
+  footer-region:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: "{tokens.color.canvas}"
+        textColor: "{tokens.color.charcoal}"
+        typography: "{tokens.typography.body-sm}"
+        padding: "{tokens.spacing.section} {tokens.spacing.xxl}"
+        border: "1px solid {tokens.color.hairline}"
+  footer-link:
+    description: "DESIGN.md component token group"
+    when: ["as documented in rationale.components and getdesign analysis"]
+    when_not: ["decorative misuse outside brand patterns"]
+    variants: [default]
+    tokens:
+      default:
+        backgroundColor: transparent
+        textColor: "{tokens.color.steel}"
+        typography: "{tokens.typography.body-sm}"
+        padding: "{tokens.spacing.xxs} 0"
+
+rationale:
+  overview: |
+    Notion presents itself as the all-in-one workspace through a confident, illustration-rich brand voice. The homepage opens with **"Meet the night shift."** rendered centered over a deep navy hero band ({tokens.color.brand-navy}), decorated with brand-colored sticky-note dots and mesh wire illustrations scattered around the headline. The signature **purple pill primary CTA** ({tokens.color.primary}) "Get Notion free" sits at the visual center, paired with an outlined "Request a demo" secondary. Below the buttons, a real Notion workspace UI mockup card (the "Ramp HQ" kanban board) breaks out of the hero band with a deep diffuse drop shadow.
+    
+    Below the hero, the page cycles through a distinctive sequence of feature sections: a dense sticky-note "Keep work moving 24/7" panel with red/blue/green/purple/teal status icons; a **bold yellow** ({tokens.color.card-tint-yellow-bold}) "Ask your on-demand assistants" banner card flanked by orange/rose/mint pastel feature tiles showing assistant UI mockups; and a "Bring all your work together" 3-column grid with brand-colored mockups (sky-blue tutorial card, light Notion calendar, brown/rust testimonial slate). The pricing page renders 4 tiers (Free / Plus / Business / Enterprise) horizontally with one tier featured (purple-bordered) and a dense feature comparison table running below.
+    
+    The system uses a Notion-Sans typeface (Inter-based) across every UI surface — humanist-geometric character that pairs naturally with the colorful illustrations. Buttons are `{tokens.radius.md}` (8px) rectangles, NOT pills — distinguishing Notion's sober rectangular geometry from competitors that use pills universally. Cards use `{tokens.radius.lg}` (12px) consistently.
+    
+    **Key Characteristics:**
+    - Deep navy hero band ({tokens.color.brand-navy}) with scattered sticky-note dots + mesh wire decorative illustrations
+    - **Signature purple pill** ({tokens.color.primary}) primary CTA — Notion's recognizable "Get Notion free" button color
+    - Real Notion workspace UI mockup card embedded in the hero with deep drop shadow
+    - Bold yellow feature banner ({tokens.color.card-tint-yellow-bold}) for high-emphasis content sections
+    - Pastel feature card palette (peach, rose, mint, lavender, sky, yellow) echoing the live product database properties
+    - Notion-Sans (Inter-based) across every UI surface
+    - 8px-rounded buttons (NOT pills), 12px-rounded cards — sober editorial geometry
+    - 4-tier pricing comparison with dense feature table
+    - Centered hero layout (different from the left-aligned norm of most B2B SaaS)
+  colors: |
+    > Source pages: notion.com/ (homepage), /enterprise, /product/ai, /product/agents, /startups, /pricing. Token coverage was identical across all six pages.
+    
+    ### Brand & Primary
+    - **Notion Purple** ({tokens.color.primary}): Signature primary CTA color — the unmistakable "Get Notion free" pill button. Reserved for the dominant CTA only.
+    - **Purple Pressed** ({tokens.color.primary-pressed}): Pressed-state variant
+    - **Purple Deep** ({tokens.color.primary-deep}): Deeper variant for emphasis
+    - **Brand Navy** ({tokens.color.brand-navy}): Hero band background — deep navy
+    - **Brand Navy Deep** ({tokens.color.brand-navy-deep}): Deeper navy for promo banner
+    - **Brand Navy Mid** ({tokens.color.brand-navy-mid}): Mid-spectrum navy
+    - **Link Blue** ({tokens.color.link-blue}): Inline text link blue (NOT primary CTA)
+    - **Link Blue Pressed** ({tokens.color.link-blue-pressed}): Pressed-state link blue
+    
+    ### Brand Color Spectrum (echoes live product database properties)
+    - **Brand Pink** ({tokens.color.brand-pink}): Pink accent
+    - **Brand Pink Deep** ({tokens.color.brand-pink-deep}): Deeper pink
+    - **Brand Orange** ({tokens.color.brand-orange}): Orange accent
+    - **Brand Orange Deep** ({tokens.color.brand-orange-deep}): Deeper orange-rust
+    - **Brand Purple** ({tokens.color.brand-purple}): Purple accent variant
+    - **Brand Purple 300** ({tokens.color.brand-purple-300}): Light purple
+    - **Brand Purple 800** ({tokens.color.brand-purple-800}): Deep purple for tag text
+    - **Brand Teal** ({tokens.color.brand-teal}): Teal accent
+    - **Brand Green** ({tokens.color.brand-green}): Bright green
+    - **Brand Yellow** ({tokens.color.brand-yellow}): Soft yellow
+    - **Brand Brown** ({tokens.color.brand-brown}): Brand brown for "earthy" tints
+    
+    ### Card Tints (Pastel Feature Card Backgrounds)
+    - **Tint Peach** ({tokens.color.card-tint-peach}): Pale peach
+    - **Tint Rose** ({tokens.color.card-tint-rose}): Pale rose-pink
+    - **Tint Mint** ({tokens.color.card-tint-mint}): Pale mint-green
+    - **Tint Lavender** ({tokens.color.card-tint-lavender}): Pale lavender
+    - **Tint Sky** ({tokens.color.card-tint-sky}): Pale sky-blue
+    - **Tint Yellow** ({tokens.color.card-tint-yellow}): Pale yellow
+    - **Tint Yellow Bold** ({tokens.color.card-tint-yellow-bold}): Bold yellow for high-emphasis feature banners ("Ask your on-demand assistants")
+    - **Tint Cream** ({tokens.color.card-tint-cream}): Cream tint
+    - **Tint Gray** ({tokens.color.card-tint-gray}): Neutral surface
+    
+    ### Surface
+    - **Canvas White** ({tokens.color.canvas}): Page background and primary card surface
+    - **Surface** ({tokens.color.surface}): Subtle section backgrounds, search-pill rest, featured pricing tier
+    - **Surface Soft** ({tokens.color.surface-soft}): Quieter section divisions
+    - **Hairline** ({tokens.color.hairline}): 1px borders and primary dividers
+    - **Hairline Soft** ({tokens.color.hairline-soft}): Quieter dividers
+    - **Hairline Strong** ({tokens.color.hairline-strong}): Stronger 1px border for inputs
+    
+    ### Text
+    - **Ink Deep** ({tokens.color.ink-deep}): Pure black for emphasis
+    - **Ink** ({tokens.color.ink}): Primary headlines and body text
+    - **Charcoal** ({tokens.color.charcoal}): Body emphasis (Notion's signature warm-charcoal)
+    - **Slate** ({tokens.color.slate}): Secondary text
+    - **Steel** ({tokens.color.steel}): Tertiary, footer links
+    - **Stone** ({tokens.color.stone}): Muted labels
+    - **Muted** ({tokens.color.muted}): Disabled, placeholders
+    - **On Dark** ({tokens.color.on-dark}): White text on dark surfaces
+    - **On Dark Muted** ({tokens.color.on-dark-muted}): Reduced-opacity white
+    
+    ### Semantic
+    - **Success** ({tokens.color.semantic-success}): Confirmation green
+    - **Warning** ({tokens.color.semantic-warning}): Mid-priority alerts (orange)
+    - **Error** ({tokens.color.semantic-error}): Validation errors (red)
+  typography: |
+    ### Font Family
+    **Notion Sans** (primary): Notion's custom Inter-based variable typeface. Fallbacks: Inter, -apple-system, system-ui, 'Segoe UI', Helvetica, sans-serif. Humanist-geometric character used across every UI surface.
+    
+    ### Hierarchy
+    
+    | Token | Size | Weight | Line Height | Letter Spacing | Use |
+    |---|---|---|---|---|---|
+    | `{tokens.typography.hero-display}` | 80px | 600 | 1.05 | -2px | Hero ("Meet the night shift") |
+    | `{tokens.typography.display-lg}` | 56px | 600 | 1.10 | -1px | Section openers |
+    | `{tokens.typography.heading-1}` | 48px | 600 | 1.15 | -0.5px | Page-level headlines ("Try for free") |
+    | `{tokens.typography.heading-2}` | 36px | 600 | 1.20 | -0.5px | Subsection headlines ("Keep work moving 24/7") |
+    | `{tokens.typography.heading-3}` | 28px | 600 | 1.25 | 0 | Card titles |
+    | `{tokens.typography.heading-4}` | 22px | 600 | 1.30 | 0 | Feature tile titles |
+    | `{tokens.typography.heading-5}` | 18px | 600 | 1.40 | 0 | FAQ questions |
+    | `{tokens.typography.subtitle}` | 18px | 400 | 1.50 | 0 | Hero subtitle |
+    | `{tokens.typography.body-md}` | 16px | 400 | 1.55 | 0 | Primary body text |
+    | `{tokens.typography.body-md-medium}` | 16px | 500 | 1.55 | 0 | Body emphasis |
+    | `{tokens.typography.body-sm}` | 14px | 400 | 1.50 | 0 | Secondary body |
+    | `{tokens.typography.body-sm-medium}` | 14px | 500 | 1.50 | 0 | Active sidebar, button labels |
+    | `{tokens.typography.caption-bold}` | 13px | 600 | 1.40 | 0 | Badge labels |
+    | `{tokens.typography.button-md}` | 14px | 500 | 1.30 | 0 | Button labels |
+    
+    ### Principles
+    - Tight hero leading (1.05) on 80px display
+    - Negative letter-spacing on display sizes (-2px to -0.5px)
+    - Generous body leading (1.55) for documentation readability
+    - 600 weight for headlines + 500 for buttons; 400 body
+  layout: |
+    ### Spacing System
+    - **Base unit**: 4px (8px primary increment)
+    - **Tokens**: `{tokens.spacing.xxs}` (4px) through `{tokens.spacing.hero}` (120px)
+    - **Section rhythm**: Marketing pages use `{tokens.spacing.section-lg}` (96px); pricing tightens to `{tokens.spacing.section}` (64px)
+    
+    ### Grid & Container
+    - 1280px max-width with 32px gutters
+    - Pricing: 4-tier card row at desktop with dense comparison table
+    - Homepage: centered hero with workspace mockup below buttons; alternating colorful feature card sections
+    
+    ### Whitespace Philosophy
+    Marketing surfaces use generous breathing room between feature card bands. Workspace mockup card on hero gets full-width treatment with deep drop shadow.
+  elevation: |
+    | Level | Treatment | Use |
+    |---|---|---|
+    | 0 (flat) | No shadow; `{tokens.color.hairline}` border | Default cards, table rows |
+    | 1 (subtle) | `rgba(15, 15, 15, 0.04) 0px 1px 2px 0px` | Hover-elevated tiles |
+    | 2 (card) | `rgba(15, 15, 15, 0.08) 0px 4px 12px 0px` | Feature cards |
+    | 3 (mockup) | `rgba(15, 15, 15, 0.20) 0px 24px 48px -8px` | Hero workspace mockup card |
+    | 4 (modal) | `rgba(15, 15, 15, 0.16) 0px 16px 48px -8px` | Modals, dropdowns |
+    
+    ### Decorative Depth
+    - Hero workspace mockup card uses deep diffuse drop shadow (Level 3) — significant elevation against the navy band
+    - Pastel feature cards carry their own visual weight via tint backgrounds
+    - Sticky-note dot illustrations and mesh wires add atmospheric decoration to navy hero
+  shapes: |
+    ### Border Radius Scale
+    
+    | Token | Value | Use |
+    |---|---|---|
+    | `{tokens.radius.xs}` | 4px | Tag chips |
+    | `{tokens.radius.sm}` | 6px | Type badges |
+    | `{tokens.radius.md}` | 8px | Buttons, inputs, search-pill |
+    | `{tokens.radius.lg}` | 12px | Cards, pricing tiers, agent tiles, workspace mockup |
+    | `{tokens.radius.xl}` | 16px | Larger feature panels |
+    | `{tokens.radius.xxl}` | 20px | Featured product showcases |
+    | `{tokens.radius.xxxl}` | 24px | Larger feature cards |
+    | `{tokens.radius.full}` | 9999px | Status badges, pill tabs (NOT regular buttons) |
+    
+    Notion's geometry is sober-editorial — `{tokens.radius.md}` (8px) buttons distinguish it from pill-button-everywhere brands.
+  components: |
+    > Per the no-hover policy, hover states are NOT documented.
+    
+    ### Buttons
+    
+    **`button-primary`** — Signature purple rectangular primary CTA, the dominant action.
+    - Background `{tokens.color.primary}`, text `{tokens.color.on-primary}`, typography `{tokens.typography.button-md}`, padding `10px 18px`, rounded `{tokens.radius.md}`.
+    - Pressed state `button-primary-pressed` deepens to `{tokens.color.primary-pressed}`.
+    - Disabled state uses `{tokens.color.hairline}` background.
+    
+    **`button-dark`** — Black rectangular CTA on light backgrounds.
+    - Background `{tokens.color.ink-deep}`, text `{tokens.color.on-dark}`, typography `{tokens.typography.button-md}`, padding `10px 18px`, rounded `{tokens.radius.md}`.
+    
+    **`button-secondary`** — Outlined rectangular for secondary actions ("Request a demo").
+    - Background transparent, text `{tokens.color.ink}`, border `1px solid {tokens.color.hairline-strong}`, typography `{tokens.typography.button-md}`, padding `10px 18px`, rounded `{tokens.radius.md}`.
+    
+    **`button-on-dark`** — White button on dark hero bands.
+    - Background `{tokens.color.on-dark}`, text `{tokens.color.ink}`, typography `{tokens.typography.button-md}`, padding `10px 18px`, rounded `{tokens.radius.md}`.
+    
+    **`button-secondary-on-dark`** — Outlined button on dark.
+    - Background transparent, text `{tokens.color.on-dark}`, border `1px solid {tokens.color.on-dark-muted}`, typography `{tokens.typography.button-md}`, padding `10px 18px`, rounded `{tokens.radius.md}`.
+    
+    **`button-ghost`** — Quieter ghost button.
+    - Background transparent, text `{tokens.color.ink}`, typography `{tokens.typography.button-md}`, padding `8px 12px`, rounded `{tokens.radius.sm}`.
+    
+    **`button-link`** — Inline blue text link (NOT primary purple).
+    - Background transparent, text `{tokens.color.link-blue}`, typography `{tokens.typography.body-sm-medium}`, padding `0`.
+    
+    ### Cards & Containers
+    
+    **`card-base`** — Standard content card.
+    - Background `{tokens.color.canvas}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.xl}`, border `1px solid {tokens.color.hairline}`.
+    
+    **`card-feature`** — Feature card with larger padding.
+    - Background `{tokens.color.canvas}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.xxl}`, border `1px solid {tokens.color.hairline}`.
+    
+    **`card-feature-yellow-bold`** — Bold yellow feature banner for high-emphasis content ("Ask your on-demand assistants").
+    - Background `{tokens.color.card-tint-yellow-bold}`, text `{tokens.color.charcoal}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.xxl}`.
+    
+    **`card-feature-peach`** + **`card-feature-rose`** + **`card-feature-mint`** + **`card-feature-sky`** + **`card-feature-lavender`** + **`card-feature-yellow`** + **`card-feature-cream`** — Pastel-tinted feature cards.
+    - Each variant uses its corresponding `card-tint-*` color as background, text `{tokens.color.charcoal}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.xxl}`.
+    
+    **`card-agent-tile`** — Agent assistant tile.
+    - Background `{tokens.color.canvas}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.xl}`, border `1px solid {tokens.color.hairline}`.
+    
+    **`card-template`** — Template thumbnail card.
+    - Background `{tokens.color.canvas}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.lg}`, border `1px solid {tokens.color.hairline}`.
+    
+    **`card-startup-perk`** — Startup-program perk grid item.
+    - Background `{tokens.color.canvas}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.xl}`, border `1px solid {tokens.color.hairline}`.
+    
+    **`pricing-card`** — Standard pricing tier card.
+    - Background `{tokens.color.canvas}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.xxl}`, border `1px solid {tokens.color.hairline}`.
+    
+    **`pricing-card-featured`** — Featured pricing tier (Plus or Business — purple-bordered).
+    - Background `{tokens.color.surface}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.xxl}`, border `2px solid {tokens.color.primary}`.
+    
+    ### Inputs & Forms
+    
+    **`text-input`** — Standard text field.
+    - Background `{tokens.color.canvas}`, text `{tokens.color.ink}`, border `1px solid {tokens.color.hairline-strong}`, rounded `{tokens.radius.md}`, padding `{tokens.spacing.sm} {tokens.spacing.md}`, height 44px.
+    
+    **`text-input-focused`** — Activated state.
+    - Border switches to `2px solid {tokens.color.primary}` (purple).
+    
+    **`search-pill`** — Search bar.
+    - Background `{tokens.color.surface}`, text `{tokens.color.steel}`, typography `{tokens.typography.body-md}`, rounded `{tokens.radius.md}`, height 44px, border `1px solid {tokens.color.hairline}`.
+    
+    ### Tabs
+    
+    **`pill-tab`** + **`pill-tab-active`** — Pill-style tab nav for top-level switching.
+    - Inactive: text `{tokens.color.steel}`, border `1px solid {tokens.color.hairline}`, padding `{tokens.spacing.xs} {tokens.spacing.md}`, rounded `{tokens.radius.full}`.
+    - Active: background `{tokens.color.ink-deep}`, text `{tokens.color.on-dark}`.
+    
+    **`segmented-tab`** + **`segmented-tab-active`** — Underline-style tab navigation.
+    - Inactive: text `{tokens.color.steel}`, no border. Active: text `{tokens.color.ink}`, 2px bottom border in `{tokens.color.ink}`.
+    
+    ### Badges & Status
+    
+    **`badge-purple`** — Purple status badge (matches primary CTA).
+    - Background `{tokens.color.primary}`, text `{tokens.color.on-primary}`, typography `{tokens.typography.caption-bold}`, rounded `{tokens.radius.full}`, padding `4px 10px`.
+    
+    **`badge-pink`** — Pink accent badge.
+    - Background `{tokens.color.brand-pink}`, text `{tokens.color.on-primary}`, typography `{tokens.typography.caption-bold}`, rounded `{tokens.radius.full}`, padding `4px 10px`.
+    
+    **`badge-orange`** — Orange accent badge.
+    - Background `{tokens.color.brand-orange}`, text `{tokens.color.on-primary}`, typography `{tokens.typography.caption-bold}`, rounded `{tokens.radius.full}`, padding `4px 10px`.
+    
+    **`badge-tag-purple`** — Soft-purple feature tag chip.
+    - Background `{tokens.color.card-tint-lavender}`, text `{tokens.color.brand-purple-800}`, typography `{tokens.typography.caption-bold}`, rounded `{tokens.radius.sm}`, padding `2px 8px`.
+    
+    **`badge-tag-orange`** — Soft-orange feature tag.
+    - Background `{tokens.color.card-tint-peach}`, text `{tokens.color.brand-orange-deep}`, typography `{tokens.typography.caption-bold}`, rounded `{tokens.radius.sm}`, padding `2px 8px`.
+    
+    **`badge-tag-green`** — Soft-mint feature tag.
+    - Background `{tokens.color.card-tint-mint}`, text `{tokens.color.brand-green}`, typography `{tokens.typography.caption-bold}`, rounded `{tokens.radius.sm}`, padding `2px 8px`.
+    
+    **`badge-popular`** — "Most Popular" tier indicator.
+    - Background `{tokens.color.primary}`, text `{tokens.color.on-primary}`, typography `{tokens.typography.caption-bold}`, rounded `{tokens.radius.full}`, padding `4px 10px`.
+    
+    **`promo-banner`** — Light surface promo strip ABOVE the top nav.
+    - Background `{tokens.color.surface}`, text `{tokens.color.ink}`, typography `{tokens.typography.body-sm-medium}`, padding `{tokens.spacing.sm} {tokens.spacing.md}`. ("Developers: Get a first look at our new Developer Platform on May 13.")
+    
+    ### Tables
+    
+    **`comparison-table`** — Pricing feature comparison table.
+    - Background `{tokens.color.canvas}`, text `{tokens.color.ink}`, typography `{tokens.typography.body-sm}`, rounded `{tokens.radius.md}`, border `1px solid {tokens.color.hairline}`.
+    
+    **`comparison-row`** — Individual feature row.
+    - Background `{tokens.color.canvas}`, text `{tokens.color.ink}`, padding `{tokens.spacing.md} {tokens.spacing.lg}`, bottom border `1px solid {tokens.color.hairline-soft}`.
+    
+    ### Documentation Components
+    
+    **`workspace-mockup-card`** — Embedded Notion workspace UI mockup on hero band ("Ramp HQ" kanban board).
+    - Background `{tokens.color.canvas}`, rounded `{tokens.radius.lg}`, border `1px solid {tokens.color.hairline}`, deep shadow `rgba(15, 15, 15, 0.20) 0px 24px 48px -8px`. Carries actual Notion product UI mock.
+    
+    **`testimonial-card`** — Customer testimonial card.
+    - Background `{tokens.color.canvas}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.xxl}`, border `1px solid {tokens.color.hairline}`.
+    
+    **`logo-wall-item`** — Customer logo wordmark cell.
+    - Background transparent, text `{tokens.color.steel}`, typography `{tokens.typography.body-md-medium}`, padding `{tokens.spacing.lg}`.
+    
+    **`faq-accordion-item`** — FAQ panel.
+    - Background `{tokens.color.canvas}`, rounded `{tokens.radius.md}`, padding `{tokens.spacing.xl}`, bottom border `1px solid {tokens.color.hairline}`.
+    
+    **`stat-row`** — Stats strip with bar chart visualization ("More productivity. Fewer tools.").
+    - Background `{tokens.color.surface}`, text `{tokens.color.ink}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.section-sm}`.
+    
+    **`cta-banner-light`** — Light surface CTA banner.
+    - Background `{tokens.color.surface}`, text `{tokens.color.ink}`, rounded `{tokens.radius.lg}`, padding `{tokens.spacing.section}`.
+    
+    ### Navigation
+    
+    **Top Navigation (Marketing)** — Sticky white bar.
+    - Background `{tokens.color.canvas}`, height ~64px, bottom border `1px solid {tokens.color.hairline}`.
+    - Left: Notion "N" logo + "Product / AI / Solutions / Resources / Enterprise / Pricing / Request a demo" links.
+    - Right: "Get Notion free" purple button + "Log in" link.
+    
+    ### Signature Components
+    
+    **`hero-band-dark`** — Deep navy hero band with embedded workspace mockup and decorative dots/wires.
+    - Background `{tokens.color.brand-navy}`, text `{tokens.color.on-dark}`, padding `{tokens.spacing.hero}`.
+    - Layout: centered headline `{tokens.typography.hero-display}`, subtitle, button row (`button-primary` purple + `button-secondary-on-dark`), `workspace-mockup-card` below.
+    - Atmospheric decoration: scattered colorful sticky-note dots and mesh wire illustrations around the hero content (NOT a literal pattern fill — handled per-page via SVG/illustration).
+    
+    **`footer-region`** — Multi-column light footer.
+    - Background `{tokens.color.canvas}`, padding `{tokens.spacing.section} {tokens.spacing.xxl}`, top border `1px solid {tokens.color.hairline}`.
+    - 6-column link grid (Product / Download / Resources / Notion for / Company / Legal).
+    
+    **`footer-link`** — Individual footer link.
+    - Background transparent, text `{tokens.color.steel}`, typography `{tokens.typography.body-sm}`, padding `{tokens.spacing.xxs} 0`.
+  responsive: |
+    ### Breakpoints
+    | Name | Width | Key Changes |
+    |---|---|---|
+    | Mobile (small) | < 480px | Single column. Hero 36px. Pricing 1-up. |
+    | Mobile (large) | 480 – 767px | Feature cards 2-up. Hero 48px. |
+    | Tablet | 768 – 1023px | 2-column feature grids. Hero 56px. |
+    | Desktop | 1024 – 1279px | 4-tier pricing card row. Hero 72px. |
+    | Wide Desktop | ≥ 1280px | Full 80px hero presentation. |
+    
+    ### Touch Targets
+    - Buttons render at 40–44px effective height
+    - Form inputs render at 44px height
+    - Pill tabs ~32px → 44px on mobile
+    
+    ### Collapsing Strategy
+    - **Promo banner** stays full-width; truncates at < 480px
+    - **Top nav** below 1024px collapses to hamburger
+    - **Hero band**: workspace mockup card moves below text/buttons on mobile
+    - **Pricing tiers**: 4-column → 2-column tablet → 1-column mobile
+    - **Feature cards**: 3-up desktop → 2-up tablet → 1-up mobile
+    - **Hero typography**: 80px → 56px → 48px → 36px
+    - **Footer**: 6-column desktop → 3-column tablet → accordion mobile
+    
+    ### Image Behavior
+    - Workspace mockup card maintains aspect ratio
+    - Pastel illustrations inside feature cards scale proportionally
+    - Customer logo wall: wordmarks at consistent 60–80px height
+  iteration: |
+    1. Focus on ONE component at a time
+    2. Reference component names and tokens directly
+    3. Run `npx @google/design.md lint DESIGN.md` after edits
+    4. Add new variants as separate `components:` entries
+    5. Default to `{tokens.typography.body-md}` for body
+    6. Keep `{tokens.color.primary}` (purple) as the primary CTA — distinct from `{tokens.color.link-blue}` for inline links
+    7. Use `{tokens.radius.md}` for buttons (rectangles), `{tokens.radius.lg}` for cards, `{tokens.radius.full}` for pill tabs/badges only
+  known_gaps: |
+    - Specific dark-mode token values not surfaced beyond hero bands
+    - Animation/transition timings not extracted; recommend 150–200ms ease
+    - Form validation success state not explicitly captured
+    - Pastel-tint mapping (which feature uses which tint) is observation-based — the actual brand library may have more entries
+  dos:
+    - "Use `{tokens.color.primary}` (purple) as the dominant CTA across all surfaces — it's the brand's recognizable signal"
+    - "Pair deep navy hero bands ({tokens.color.brand-navy}) with the purple button + decorative sticky-note dots"
+    - "Use pastel feature card tints (peach, rose, mint, lavender, sky, yellow) generously"
+    - "Use `{tokens.color.card-tint-yellow-bold}` for high-emphasis \"Ask the assistant\"-style banner cards"
+    - "Apply `{tokens.radius.md}` (8px) to buttons consistently — Notion uses rectangles, not pills"
+    - "Apply `{tokens.radius.lg}` (12px) to all card families"
+    - Maintain Notion-Sans across every UI surface
+    - Use the workspace mockup card on hero bands to show actual product UI
+  donts:
+    - use the purple for body text or large background surfaces
+    - use pill-shaped buttons; Notion's geometry is rectangular-sober
+    - "mix link-blue ({tokens.color.link-blue}) with primary-purple ({tokens.color.primary}) — they have distinct roles"
+    - apply heavy shadows on flat documentation cards
+    - replace Notion-Sans with a generic Inter
+
+omitted:
+  - section: tokens.elevation
+    reason: "Depth model lives in rationale.elevation; add shadow tokens as they stabilize"
+
+integrations:
+  shadcn:
+    enabled: true
+    style: new-york            # legacy style; current styles: see SPEC §7.1
+    icon_library: lucide
+    css_variables: true
+    base_color: neutral
+    css: app/globals.css
+    components_json: ./components.json
+    aliases:
+      components: "@/components"
+      utils: "@/lib/utils"
+      ui: "@/components/ui"
+      lib: "@/lib"
+      hooks: "@/hooks"
+    radius: "8px"
+    css_vars:
+      theme:
+        radius: "8px"
+      light:
+        background: "#ffffff"
+        foreground: "#1a1a1a"
+        card: "#f6f5f4"
+        card-foreground: "#1a1a1a"
+        popover: "#f6f5f4"
+        popover-foreground: "#1a1a1a"
+        primary: "#5645d4"
+        primary-foreground: "#ffffff"
+        secondary: "#f4f4f5"
+        secondary-foreground: "#1a1a1a"
+        muted: "#bbb8b1"
+        muted-foreground: "#1a1a1a"
+        accent: "#f4f4f5"
+        accent-foreground: "#1a1a1a"
+        destructive: "#e03131"
+        border: "#e5e3df"
+        input: "#e5e3df"
+        ring: "#5645d4"
+        sidebar: "#ffffff"
+        sidebar-foreground: "#1a1a1a"
+        sidebar-primary: "#5645d4"
+        sidebar-primary-foreground: "#ffffff"
+        sidebar-accent: "#f4f4f5"
+        sidebar-accent-foreground: "#1a1a1a"
+        sidebar-border: "#e5e3df"
+        sidebar-ring: "#5645d4"
+    map_from_tokens:
+      background: tokens.color.canvas|tokens.color.surface|tokens.color.background
+      foreground: tokens.color.ink|tokens.color.text|tokens.color.foreground
+      primary: tokens.color.primary
+      primary-foreground: tokens.color.on-primary
+      border: tokens.color.hairline|tokens.color.border
+      ring: tokens.color.primary-focus|tokens.color.primary
+
+policy:
+  if_missing: ask
+  hierarchy: [typography, spacing, contrast, color]
+  reuse:
+    prefer_existing_components: true
+  accessibility:
+    contrast: AA
+    focus_visible: required
+
+constraints:
+  always:
+    - use semantic tokens from this file; never invent off-brand hex
+    - bind every listed component property (backgroundColor, textColor, typography, rounded, padding, size, height, width)
+    - read rationale.layout / rationale.elevation / rationale.shapes before inventing chrome
+    - when shadcn is enabled, apply integrations.shadcn.css_vars to globals.css
+    - prefer catalog components over one-off controls
+    - "Use `{tokens.color.primary}` (purple) as the dominant CTA across all surfaces — it's the brand's recognizable signal"
+    - "Pair deep navy hero bands ({tokens.color.brand-navy}) with the purple button + decorative sticky-note dots"
+    - "Use pastel feature card tints (peach, rose, mint, lavender, sky, yellow) generously"
+    - "Use `{tokens.color.card-tint-yellow-bold}` for high-emphasis \"Ask the assistant\"-style banner cards"
+    - "Apply `{tokens.radius.md}` (8px) to buttons consistently — Notion uses rectangles, not pills"
+    - "Apply `{tokens.radius.lg}` (12px) to all card families"
+    - Maintain Notion-Sans across every UI surface
+    - Use the workspace mockup card on hero bands to show actual product UI
+  never:
+    - generic purple-on-white AI chrome unrelated to this brand
+    - dropping DESIGN.md component variants or rationale during restyle
+    - use the purple for body text or large background surfaces
+    - use pill-shaped buttons; Notion's geometry is rectangular-sober
+    - "mix link-blue ({tokens.color.link-blue}) with primary-purple ({tokens.color.primary}) — they have distinct roles"
+    - apply heavy shadows on flat documentation cards
+    - replace Notion-Sans with a generic Inter
+
+examples:
+  good:
+    - ref: https://notion.com
+      note: Live brand marketing / product surfaces
+    - ref: https://getdesign.md/notion/design-md
+      note: Source DESIGN.md analysis
+
+provenance:
+  owner: AgentsORG
+  last_reviewed: "2026-08-06"
+  source_material:
+    - https://getdesign.md/notion/design-md
+    - https://github.com/voltagent/awesome-design-md/blob/main/design-md/notion/DESIGN.md
+    - https://notion.com
+    - https://github.com/google-labs-code/design.md/blob/main/docs/spec.md
