@@ -1,6 +1,6 @@
 # ROUTER MVP v1/audit/run_audit_job.py
 #
-# [FIX-DAG-v1] Este fichero es el INPUT BLOCK VERBATIM del owner con 5 correcciones MINIMAS,
+# [FIX-DAG-v1] Este fichero es el INPUT BLOCK VERBATIM del owner con 6 correcciones MINIMAS,
 # cada una rotulada con su evidencia real (no hay cambios silenciosos). El fichero verbatim
 # original se conserva fuera del repo como evidencia del intento fallido.
 #   Evidencia del fallo verbatim (log real de HF API):
