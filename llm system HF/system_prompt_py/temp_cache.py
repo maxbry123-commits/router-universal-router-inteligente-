@@ -3,15 +3,8 @@ import time
 import sqlite3
 import json
 import threading
-from pathlib import Path
 
 class TempCache:
-    """
-    Caché temporal con TTL.
-    - Usa SQLite en /tmp (sobrevive al worker, no al restart).
-    - Cada entrada expira tras `ttl_s` segundos.
-    - Limpieza automática cada 60s.
-    """
     def __init__(self, db_path: str = "/tmp/temp_cache.db", ttl_s: int = 3600):
         self.db_path = db_path
         self.ttl_s = ttl_s
@@ -33,14 +26,16 @@ class TempCache:
             conn.commit()
             conn.close()
 
-    def set(self, key: str, value: dict, ttl_s: int = None):
+    def set(self, key: str, value, ttl_s: int = None):
         ttl = ttl_s or self.ttl_s
         expires = time.time() + ttl
+        # Acepta str o dict
+        serialized = value if isinstance(value, str) else json.dumps(value)
         with self.lock:
             conn = sqlite3.connect(self.db_path)
             conn.execute(
                 "INSERT OR REPLACE INTO cache (key, value, expires_at) VALUES (?, ?, ?)",
-                (key, json.dumps(value), expires)
+                (key, serialized, expires)
             )
             conn.commit()
             conn.close()
@@ -58,7 +53,11 @@ class TempCache:
         if time.time() > expires_at:
             self.delete(key)
             return None
-        return json.loads(value)
+        # Intentar deserializar si es JSON, si no devolver string
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return value
 
     def delete(self, key: str):
         with self.lock:
