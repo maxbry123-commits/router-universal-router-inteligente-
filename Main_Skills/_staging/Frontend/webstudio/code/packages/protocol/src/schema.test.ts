@@ -1,0 +1,246 @@
+import { describe, expect, test } from "vitest";
+import { builderNamespaces } from "@webstudio-is/project-build/contracts";
+import { builderPatchTransactionSchema } from "@webstudio-is/project-build/contracts";
+import {
+  isAssetFileName,
+  MissingImportedAssetFilesError,
+  getMissingImportedAssetFiles,
+  getBundleVersionMismatchMessage,
+  importProjectBundleInput,
+  historicalPublishedProjectBundle,
+  publishedProjectBundle,
+  bundleVersion,
+  stagedUploadPath,
+  stagedUploadProjectIdHeader,
+  buildPatchNamespaces,
+  buildPatchTransaction,
+  getPublicBuildIncludes,
+  publicBuildIncludes,
+  projectSessionRestorePointPath,
+} from "./schema";
+import { createPublishedProjectBundleFixture } from "./fixtures";
+
+describe("project bundle contract", () => {
+  test("defines staged upload transport details", () => {
+    expect(stagedUploadPath).toBe("/rest/staged-upload");
+    expect(stagedUploadProjectIdHeader).toBe("x-webstudio-project-id");
+    expect(projectSessionRestorePointPath).toBe("build.restorePoint");
+  });
+
+  test("validates asset file names", () => {
+    expect(isAssetFileName("image.png")).toBe(true);
+    expect(isAssetFileName("")).toBe(false);
+    expect(isAssetFileName(".")).toBe(false);
+    expect(isAssetFileName("..")).toBe(false);
+    expect(isAssetFileName("../image.png")).toBe(false);
+    expect(isAssetFileName("folder\\image.png")).toBe(false);
+  });
+
+  test("reads missing imported asset files from structured local and remote errors", () => {
+    const names = ["image.png", "font,latin.woff2"];
+    const error = new MissingImportedAssetFilesError(names);
+    error.message = "Wording may change";
+    expect(getMissingImportedAssetFiles(error)).toEqual(names);
+    expect(
+      getMissingImportedAssetFiles({
+        data: {
+          webstudioCode: "MISSING_IMPORTED_ASSET_FILES",
+          missingAssetNames: names,
+        },
+      })
+    ).toEqual(names);
+    expect(
+      getMissingImportedAssetFiles(
+        new Error(
+          'Imported asset files are missing: ["image.png","font,latin.woff2"]'
+        )
+      )
+    ).toBeUndefined();
+  });
+
+  test("preserves published project metadata", () => {
+    expect(
+      publishedProjectBundle.parse(
+        createPublishedProjectBundleFixture({
+          user: { email: "user@example.com", username: "Site Owner" },
+        })
+      )
+    ).toMatchObject({
+      projectDomain: "example",
+      projectTitle: "Example",
+      user: { email: "user@example.com", username: "Site Owner" },
+    });
+  });
+
+  test("retains the historical Form marker only in input parsing", () => {
+    const bundle = createPublishedProjectBundleFixture();
+    const historical = {
+      ...bundle,
+      build: {
+        ...bundle.build,
+        pages: { ...bundle.build.pages, formComponentIdentityVersion: 1 },
+      },
+    };
+    expect(
+      historicalPublishedProjectBundle.parse(historical).build.pages
+    ).toHaveProperty("formComponentIdentityVersion", 1);
+    expect(
+      importProjectBundleInput.parse({ projectId: "project", data: historical })
+        .data?.build.pages
+    ).toHaveProperty("formComponentIdentityVersion", 1);
+    expect(
+      publishedProjectBundle.parse(historical).build.pages
+    ).not.toHaveProperty("formComponentIdentityVersion");
+  });
+
+  test("preserves build-versioned marketplace metadata", () => {
+    const marketplaceProduct = {
+      category: "pageTemplates" as const,
+      name: "Marketplace template",
+      thumbnailAssetId: "asset-1",
+      author: "Webstudio",
+      email: "hello@example.com",
+      website: "https://example.com",
+      issues: "",
+      description: "A reusable marketplace template.",
+    };
+
+    expect(
+      publishedProjectBundle.parse(
+        createPublishedProjectBundleFixture({
+          build: { marketplaceProduct },
+        })
+      ).build.marketplaceProduct
+    ).toEqual(marketplaceProduct);
+  });
+
+  test("requires published project metadata", () => {
+    const data = createPublishedProjectBundleFixture();
+    delete (data as Partial<typeof data>).projectTitle;
+
+    expect(() => publishedProjectBundle.parse(data)).toThrow();
+  });
+
+  test("requires published project bundle when importing", () => {
+    const data = createPublishedProjectBundleFixture();
+    delete (data as Partial<typeof data>).projectTitle;
+
+    expect(() =>
+      importProjectBundleInput.parse({
+        projectId: "project",
+        data,
+      })
+    ).toThrow();
+  });
+
+  test("accepts staged upload id when importing", () => {
+    expect(
+      importProjectBundleInput.parse({
+        projectId: "project",
+        uploadId: "upload",
+      })
+    ).toEqual({
+      projectId: "project",
+      uploadId: "upload",
+    });
+  });
+
+  test("requires non-empty project and upload ids when importing", () => {
+    expect(() =>
+      importProjectBundleInput.parse({
+        projectId: "",
+        uploadId: "upload",
+      })
+    ).toThrow();
+
+    expect(() =>
+      importProjectBundleInput.parse({
+        projectId: "project",
+        uploadId: "",
+      })
+    ).toThrow();
+  });
+
+  test("requires exactly one project bundle import source", () => {
+    expect(() =>
+      importProjectBundleInput.parse({
+        projectId: "project",
+      })
+    ).toThrow("Provide either project bundle data or an upload id");
+
+    expect(() =>
+      importProjectBundleInput.parse({
+        projectId: "project",
+        data: createPublishedProjectBundleFixture(),
+        uploadId: "upload",
+      })
+    ).toThrow("Provide either project bundle data or an upload id");
+  });
+
+  test("generates the current bundle version", () => {
+    expect(bundleVersion).toMatch(/^bundle-[a-z0-9]+$/);
+  });
+
+  test("formats project bundle version mismatch messages", () => {
+    expect(
+      getBundleVersionMismatchMessage({
+        ignoreVersionCheckHint: "override the check",
+        receivedVersion: undefined,
+      })
+    ).toBe(
+      `Project bundle format is incompatible. Expected version ${bundleVersion}, received missing. Sync with a compatible API/CLI version and retry, or override the check.`
+    );
+  });
+
+  test("validates build patch transactions", () => {
+    expect(buildPatchNamespaces).toBe(builderNamespaces);
+    expect(buildPatchTransaction).toBe(builderPatchTransactionSchema);
+
+    expect(
+      buildPatchTransaction.safeParse({
+        id: "tx-1",
+        payload: [
+          {
+            namespace: "pages",
+            patches: [
+              {
+                op: "replace",
+                path: ["meta", "siteName"],
+                value: "Site",
+              },
+            ],
+          },
+        ],
+      }).success
+    ).toBe(true);
+
+    expect(
+      buildPatchTransaction.safeParse({
+        id: "tx-1",
+        payload: [
+          {
+            namespace: "pages",
+            patches: [{ op: "replace", path: ["meta", "siteName"] }],
+          },
+        ],
+      }).success
+    ).toBe(false);
+  });
+
+  test("maps every builder namespace to a supported public build include", () => {
+    const includes = getPublicBuildIncludes(builderNamespaces);
+
+    expect(includes).toContain("projectSettings");
+    expect(includes).toContain("marketplaceProduct");
+    expect(includes).toContain("folders");
+    expect(includes).toContain("variables");
+    expect(includes).not.toContain("dataSources");
+    expect(publicBuildIncludes).toContain("designTokens");
+    expect(
+      includes.every((include) => publicBuildIncludes.includes(include))
+    ).toBe(true);
+    expect(new Set(publicBuildIncludes)).toEqual(
+      new Set([...includes, "designTokens"])
+    );
+  });
+});

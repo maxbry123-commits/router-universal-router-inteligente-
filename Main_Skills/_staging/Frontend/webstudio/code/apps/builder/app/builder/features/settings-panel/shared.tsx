@@ -1,0 +1,423 @@
+import { computed } from "nanostores";
+import {
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+  useRef,
+  useState,
+  type ComponentProps,
+} from "react";
+import {
+  ariaAttributes,
+  attributesByTag,
+  elementsByTag,
+} from "@webstudio-is/html-data";
+import {
+  reactPropsToStandardAttributes,
+  showAttribute,
+  standardAttributesToReactProps,
+} from "@webstudio-is/react-sdk";
+import { showAttributeMeta } from "@webstudio-is/project-build/runtime";
+import {
+  encodeDataSourceVariable,
+  SYSTEM_VARIABLE_ID,
+  systemParameter,
+} from "@webstudio-is/sdk";
+import { getContentModePropNamesByTag } from "@webstudio-is/project-build/runtime";
+import type { PropMeta, Prop, Asset, WsComponentMeta } from "@webstudio-is/sdk";
+import {
+  Label as BaseLabel,
+  useIsTruncated,
+  Tooltip,
+  Box,
+  Flex,
+  Grid,
+  InfoTooltip,
+  Text,
+  theme,
+} from "@webstudio-is/design-system";
+import {
+  $registeredComponentMetas,
+  $variableValuesByInstanceSelector,
+} from "~/shared/nano-states";
+import { $dataSources } from "~/shared/sync/data-stores";
+import { humanizeString } from "~/shared/string-utils";
+import {
+  $selectedInstance,
+  $selectedInstanceKeyWithRoot,
+} from "~/shared/nano-states";
+import { $instanceTags } from "../style-panel/shared/model";
+
+export type PropValue =
+  | { type: "number"; value: number }
+  | { type: "string"; value: string }
+  | { type: "boolean"; value: boolean }
+  | { type: "json"; value: unknown }
+  | { type: "string[]"; value: string[] }
+  | Pick<Extract<Prop, { type: "expression" }>, "type" | "value" | "mode">
+  | { type: "asset"; value: Asset["id"] }
+  | { type: "page"; value: Extract<Prop, { type: "page" }>["value"] }
+  | { type: "action"; value: Extract<Prop, { type: "action" }>["value"] }
+  | {
+      type: "animationAction";
+      value: Extract<Prop, { type: "animationAction" }>["value"];
+    };
+
+// Weird code is to make type distributive
+// https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
+type PropMetaByControl<Control> = Control extends string
+  ? Extract<PropMeta, { control: Control }>
+  : never;
+export type ControlProps<Control> = {
+  instanceId: string;
+  meta: PropMetaByControl<Control>;
+  // prop is optional because we don't have it when an intial prop is not set
+  // and we don't want to show user something like a 0 for number when it's in fact not set to any value
+  prop: Prop | undefined;
+  propName: string;
+  computedValue: unknown;
+  computedProps?: ReadonlyMap<string, unknown>;
+  onChange: (value: PropValue) => void;
+};
+
+const SimpleLabel = ({
+  children,
+  ...rest
+}: ComponentPropsWithoutRef<typeof BaseLabel> & { children: string }) => {
+  const ref = useRef<HTMLLabelElement>(null);
+  const truncated = useIsTruncated(ref, children);
+
+  const label = (
+    <BaseLabel truncate {...rest} ref={ref}>
+      {children}
+    </BaseLabel>
+  );
+
+  return truncated ? <Tooltip content={children}>{label}</Tooltip> : label;
+};
+
+type LabelProps = ComponentPropsWithoutRef<typeof BaseLabel> & {
+  htmlFor?: string;
+  children: string;
+  description?: string;
+  openOnClick?: boolean;
+  readOnly?: boolean;
+};
+
+export const Label = ({
+  htmlFor,
+  children,
+  description,
+  openOnClick = false,
+  readOnly,
+  ...rest
+}: LabelProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  let label: ReactNode;
+
+  if (description == null) {
+    label = <SimpleLabel htmlFor={htmlFor}>{children}</SimpleLabel>;
+  } else {
+    label = (
+      <Tooltip
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        content={
+          <Flex
+            direction="column"
+            gap="2"
+            css={{ maxWidth: theme.spacing[28] }}
+          >
+            <Text variant="titles">{children}</Text>
+            <Text>{description}</Text>
+          </Flex>
+        }
+      >
+        <BaseLabel truncate htmlFor={htmlFor} {...rest}>
+          {children}
+        </BaseLabel>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <Flex align="center" css={{ gap: theme.spacing[3], width: "100%" }}>
+      <Box>{label}</Box>
+      {readOnly && (
+        <InfoTooltip
+          label="About expression controlled value"
+          content="The value is controlled by an expression and cannot be changed."
+        />
+      )}
+    </Flex>
+  );
+};
+
+type LayoutProps = {
+  label: ReturnType<typeof Label>;
+  children: ReactNode;
+};
+
+export const VerticalLayout = ({ label, children }: LayoutProps) => (
+  <Box>
+    <Grid
+      css={{
+        gridTemplateColumns: `1fr`,
+        justifyItems: "start",
+      }}
+      align="center"
+      gap="1"
+      justify="between"
+    >
+      {label}
+    </Grid>
+    <Box css={{ py: theme.spacing[2] }}>{children}</Box>
+  </Box>
+);
+
+export const HorizontalLayout = ({ label, children }: LayoutProps) => (
+  <Grid
+    css={{
+      gridTemplateColumns: `${theme.spacing[19]} 1fr`,
+      minHeight: theme.spacing[12],
+    }}
+    align="center"
+    gap="2"
+  >
+    {label}
+    {children}
+  </Grid>
+);
+
+export const ResponsiveLayout = ({ label, children }: LayoutProps) => {
+  return (
+    <Flex
+      align="center"
+      wrap="wrap"
+      css={{
+        columnGap: theme.spacing[5],
+        rowGap: theme.spacing[3],
+        paddingBlock: theme.spacing[2],
+      }}
+    >
+      <Box
+        css={{
+          // wrap label and input when label is more than ~9 characters
+          flexBasis: `calc(30% - ${theme.spacing[5]} / 2)`,
+          // allow content overflow flex basis
+          minWidth: "auto",
+        }}
+      >
+        {label}
+      </Box>
+      <Box
+        css={{ flexBasis: `calc(70% - ${theme.spacing[5]} / 2)`, flexGrow: 1 }}
+      >
+        {children}
+      </Box>
+    </Flex>
+  );
+};
+
+export const Row = ({
+  children,
+  css,
+}: Pick<ComponentProps<typeof Flex>, "css" | "children">) => (
+  <Flex
+    css={{ paddingInline: theme.panel.paddingInline, ...css }}
+    direction="column"
+  >
+    {children}
+  </Flex>
+);
+
+export const CenteredPanelMessage = ({
+  children,
+  color = "subtle",
+}: {
+  children: ReactNode;
+  color?: ComponentProps<typeof Text>["color"];
+}) => (
+  <Row
+    css={{
+      alignItems: "center",
+      justifyContent: "center",
+      flexGrow: 1,
+      minHeight: 100,
+      textAlign: "center",
+    }}
+  >
+    <Text color={color}>{children}</Text>
+  </Row>
+);
+
+export const $selectedInstanceScope = computed(
+  [
+    $selectedInstanceKeyWithRoot,
+    $variableValuesByInstanceSelector,
+    $dataSources,
+  ],
+  (instanceKey, variableValuesByInstanceSelector, dataSources) => {
+    const scope: Record<string, unknown> = {};
+    const aliases = new Map<string, string>();
+    if (instanceKey === undefined) {
+      return { scope, aliases };
+    }
+    const values = variableValuesByInstanceSelector.get(instanceKey);
+    if (values) {
+      for (const [dataSourceId, value] of values) {
+        let dataSource = dataSources.get(dataSourceId);
+        if (dataSourceId === SYSTEM_VARIABLE_ID) {
+          dataSource = systemParameter;
+        }
+        if (dataSource === undefined) {
+          continue;
+        }
+        const name = encodeDataSourceVariable(dataSourceId);
+        scope[name] = value;
+        aliases.set(name, dataSource.name);
+      }
+    }
+    return { scope, aliases };
+  }
+);
+
+export const humanizeAttribute = (string: string) => {
+  if (string.includes("-")) {
+    return string;
+  }
+  if (string === "class" || string === "className") {
+    return "Class";
+  }
+  if (string === "for" || string === "htmlFor") {
+    return "For";
+  }
+  return humanizeString(standardAttributesToReactProps[string] ?? string);
+};
+
+type Attribute = (typeof ariaAttributes)[number] & { defaultValue?: string };
+
+const attributeToMeta = (attribute: Attribute): PropMeta => {
+  const required = attribute.required ?? false;
+  const description = attribute.description;
+  if (attribute.type === "select") {
+    const options = attribute.options ?? [];
+    return {
+      type: "string",
+      control: options.length > 3 ? "select" : "radio",
+      required,
+      options,
+      description,
+      defaultValue: attribute.defaultValue,
+    };
+  }
+  if (attribute.type === "url") {
+    return { type: "string", control: "url", required, description };
+  }
+  if (attribute.type === "string") {
+    return { type: "string", control: "text", required, description };
+  }
+  if (attribute.type === "number") {
+    return { type: "number", control: "number", required, description };
+  }
+  if (attribute.type === "boolean") {
+    return { type: "boolean", control: "boolean", required, description };
+  }
+  attribute.type satisfies never;
+  throw Error("impossible case");
+};
+
+const $contentModePropNamesByTag = computed(
+  [$registeredComponentMetas],
+  getContentModePropNamesByTag
+);
+
+const getInitialPropNames = (
+  selectedInstance: ReturnType<typeof $selectedInstance.get>,
+  metas: ReturnType<typeof $registeredComponentMetas.get>,
+  instancePropsMetas: Map<string, PropMeta>
+) => {
+  const initialPropNames = new Set<string>();
+  if (selectedInstance) {
+    const initialProps =
+      metas.get(selectedInstance.component)?.initialProps ?? [];
+    for (const propName of initialProps) {
+      const htmlName = reactPropsToStandardAttributes[propName];
+      initialPropNames.add(
+        htmlName && instancePropsMetas.has(htmlName) ? htmlName : propName
+      );
+    }
+  }
+  for (const [propName, propMeta] of instancePropsMetas) {
+    if (propName !== showAttribute && propMeta.required) {
+      initialPropNames.add(propName);
+    }
+  }
+  return initialPropNames;
+};
+
+const getInstancePropsMetas = (
+  meta: WsComponentMeta | undefined,
+  tag: string | undefined,
+  contentModePropNames: Set<string> | undefined
+): Map<string, PropMeta> => {
+  const propsMetas = new Map<Prop["name"], PropMeta>();
+  const addAttributes = (attributes: readonly Attribute[] | undefined) => {
+    if (attributes === undefined) {
+      return;
+    }
+    for (const attribute of [...attributes].reverse()) {
+      const propMeta = attributeToMeta(attribute);
+      propsMetas.set(
+        attribute.name,
+        contentModePropNames?.has(attribute.name)
+          ? { ...propMeta, contentMode: true }
+          : propMeta
+      );
+    }
+  };
+
+  // Build from lowest to highest precedence, then reverse for display order.
+  if (tag && meta?.htmlAttributes !== "hide") {
+    if (elementsByTag[tag].categories.includes("html-element")) {
+      addAttributes(ariaAttributes);
+      addAttributes(attributesByTag["*"]);
+    }
+    addAttributes(attributesByTag[tag]);
+  }
+  for (const [name, propMeta] of Object.entries(meta?.props ?? {}).reverse()) {
+    // Component props take precedence over their equivalent HTML attributes.
+    const htmlName = reactPropsToStandardAttributes[name];
+    if (htmlName) {
+      propsMetas.delete(htmlName);
+    }
+    propsMetas.set(name, propMeta);
+  }
+  propsMetas.set(showAttribute, showAttributeMeta);
+  return new Map(Array.from(propsMetas.entries()).reverse());
+};
+
+export const $selectedInstancePropsMetas = computed(
+  [
+    $selectedInstance,
+    $registeredComponentMetas,
+    $instanceTags,
+    $contentModePropNamesByTag,
+  ],
+  (instance, metas, instanceTags, contentModePropNamesByTag) => {
+    if (instance === undefined) {
+      return new Map<string, PropMeta>();
+    }
+    const tag = instanceTags.get(instance.id);
+    return getInstancePropsMetas(
+      metas.get(instance.component),
+      tag,
+      tag === undefined ? undefined : contentModePropNamesByTag.get(tag)
+    );
+  }
+);
+
+export const $selectedInstanceInitialPropNames = computed(
+  [$selectedInstance, $registeredComponentMetas, $selectedInstancePropsMetas],
+  getInitialPropNames
+);
