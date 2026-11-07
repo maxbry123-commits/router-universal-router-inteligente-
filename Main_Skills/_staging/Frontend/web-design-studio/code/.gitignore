@@ -1,0 +1,243 @@
+# ============================================================================
+# .gitignore — cinematic-scroll-skill
+#
+# This repo IS the source: assets/, examples/, templates/ are committed on
+# purpose. We only ignore generated output, installed deps, secrets, and junk.
+# (Do NOT ignore those source dirs.)
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# macOS
+# ----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+Icon?
+
+# ----------------------------------------------------------------------------
+# Windows / other OS junk
+# ----------------------------------------------------------------------------
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ----------------------------------------------------------------------------
+# Node / package managers (templates are source — consumers install their own)
+# ----------------------------------------------------------------------------
+node_modules/
+jspm_packages/
+.npm
+.yarn/
+.yarn-integrity
+.pnp
+.pnp.js
+.pnp.cjs
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+yarn-*.log
+pnpm-debug.log*
+lerna-debug.log*
+.node_repl_history
+*.tgz
+
+# ----------------------------------------------------------------------------
+# Next.js / build output (if anyone runs the template in place)
+# ----------------------------------------------------------------------------
+.next/
+out/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+.swc/
+
+# Token build outputs ARE committed — Mode A is zero-build and inlines the
+# generated CSS, so tokens/build/ must override the generic build/ rule above.
+!tokens/build/
+!tokens/build/**
+
+# ----------------------------------------------------------------------------
+# Environment / secrets — NEVER commit fal.ai keys (FAL_KEY)
+# Used by examples/studio/generate.mjs via examples/studio/.env.local
+# or the repo-root .env.local. Keep *.example templates tracked.
+# ----------------------------------------------------------------------------
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+secrets.json
+!.env.example
+!.env*.example
+
+# ----------------------------------------------------------------------------
+# Vercel
+# ----------------------------------------------------------------------------
+.vercel
+.vercel/
+
+# ----------------------------------------------------------------------------
+# Generated AI assets (regenerable via generate.mjs, can be large)
+# Stills committed under examples/studio/assets/ are kept on purpose.
+# ----------------------------------------------------------------------------
+templates/nextjs/public/generated/
+
+# ----------------------------------------------------------------------------
+# Logs / coverage / cache
+# ----------------------------------------------------------------------------
+*.log
+logs/
+coverage/
+.nyc_output/
+*.lcov
+.cache/
+.eslintcache
+.stylelintcache
+.parcel-cache/
+
+# ----------------------------------------------------------------------------
+# Editors / IDE
+# ----------------------------------------------------------------------------
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ----------------------------------------------------------------------------
+# Misc temp
+# ----------------------------------------------------------------------------
+*.tmp
+*.temp
+*.bak
+.history/
+
+# transient launch/preview artifacts
+assets/_frame_*.jpg
+video/install.log
+video/node_modules/
+video/out/
+# HyperFrames preview caches (any film project)
+.thumbnails/
+
+# cinematic-doctor generated report (re-created on every run)
+tools/cinematic-doctor/cinematic-report.json
+
+# Reel: 4K master is local-only (too heavy for git); share the 1080p.
+assets/reel.mp4
+# Raw capture working dir — canonical render input is video/public/footage/.
+video/footage/
+
+# Generated render outputs — regenerate via `npm run render:*` (source is video/src/).
+# Kept out of git history; the README/site use GIF previews + the live demo, not these.
+assets/doctor.mp4
+assets/flagship-3d.mp4
+video/*/renders/
+
+# page-proof tool output (screenshots + report) — recreated on every run.
+.page-proof/
+.verify/
+.cinematic/
+
+# Social/LinkedIn post captures + posters — local deliverables, regenerate from examples.
+assets/post2-*
+assets/doctor-thumb*
+
+# promo asset workspace (generated)
+.promo/
+# Local source footage and private promo drafts; gallery exports live elsewhere.
+assets/Homevideo/
+
+# HeyGen walkthrough workspace (generated frames, stickers, payloads)
+.heygen/
+# HeyGen rendered walkthrough outputs — heavy + regenerable; the real render pipeline
+# lives outside this repo. Ship the tooling (tools/heygen/), not the videos.
+assets/heygen-walkthrough/
+
+# Capture/render intermediates that feed the Remotion comps (hq-capture.mjs + the
+# per-theme/3D scroll renders). Large + fully regenerable; the comps reference them
+# only at render time. Final promo deliverables live in assets/ and ARE committed.
+video/public/footage/
+
+# Third-party reference clips downloaded for inspiration (e.g. via ssstwitter) — never ship.
+**/ssstwitter.com_*
+*.refclip.mp4
+
+# Ad-hoc inspect/clip helper scripts created during capture/debugging
+_inspect.mjs
+_clip.mjs
+
+# Skill-showcase promo deliverables + media inputs — kept local (avoid repo bloat).
+# Regenerate: `npm run render:showcase` / `render:showcase:vertical` (source: video/src/SkillShowcase.tsx);
+# presenter via video/scripts/heygen-presenter.mjs; eleven-worlds clips from assets/promo-v2.4.0/.
+assets/skill-showcase*.mp4
+assets/skill-showcase*-poster.jpg
+video/public/showcase/
+
+# Personal QA / usability research — working artifact, not part of the shipped skill
+docs/qa/
+
+# ----------------------------------------------------------------------------
+# Marketing media → moved to the private Personal repo (cinematic-scroll-personal).
+# The public repo keeps ONLY the assets the README / live site / example pages
+# actually render (banners, gallery stills, the embedded scroll-demo clips).
+# Heavy reels, the YouTube campaign, Premiere projects, and reference frames
+# are NOT public.
+# ----------------------------------------------------------------------------
+.ref/
+assets/youtube/
+*.prproj
+*.prin
+assets/Adobe Premiere Pro Auto-Save/
+assets/reel-1080.mp4
+assets/reel-vertical.mp4
+assets/reel2.mp4
+assets/reel2-hero.gif
+assets/reel3-hero.gif
+assets/two-media.mp4
+assets/hero-demo.gif
+assets/flagship-ride.gif
+assets/flagship-dancer.gif
+assets/studio-scroll-demo.gif
+assets/demo-loop.webm
+assets/demo-poster.jpg
+assets/linkedin-post.md
+assets/promo-v2.4.0/eleven-worlds-1x1*
+assets/video/hero-demo.*
+assets/video/flagship-dancer.*
+assets/video/reel2-hero.*
+assets/video/studio-scroll-demo.mp4
+assets/video/studio-scroll-demo.poster.jpg
+
+# SDD scratch (subagent-driven-development ledger/handoffs)
+.superpowers/
+
+# Claude Code native worktrees (session-local checkouts)
+.claude/worktrees/
+
+# left behind by `npx skills add <path> --list` smoke tests
+skills-lock.json

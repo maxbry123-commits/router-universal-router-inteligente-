@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "cinematic-scroll",
+  "description": "Web Design Studio: cinematic-scroll, scroll-audit and launch-page-strategy. Distinctive websites with deliberate art direction, interactive 3D, scroll choreography and production-ready fallbacks. Installed under the established cinematic-scroll compatibility key.",
+  "version": "3.0.1",
+  "author": {
+    "name": "Simone Leonelli",
+    "email": "simone@w230.net"
+  },
+  "homepage": "https://mustbesimo.github.io/web-design-studio/",
+  "repository": "https://github.com/MustBeSimo/web-design-studio",
+  "license": "MIT",
+  "keywords": [
+    "scroll",
+    "animation",
+    "gsap",
+    "parallax",
+    "3d-tilt",
+    "cinematic",
+    "nextjs",
+    "react",
+    "lenis",
+    "landing-page",
+    "release-page"
+  ]
+}

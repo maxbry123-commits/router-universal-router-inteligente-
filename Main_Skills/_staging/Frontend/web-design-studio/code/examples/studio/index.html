@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Maya Torres — Creative Director · The Cut</title>
+<meta name="description" content="Maya Torres, creative director. A brutalist portfolio cut like a film: the scroll is the playhead, the type moves with intent, the work runs as a reel." />
+<meta property="og:title" content="Maya Torres — Creative Director" />
+<meta property="og:description" content="A portfolio cut like a film. Brutalist type, monochrome stills, one electric accent." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:," />
+
+<style>
+  /* ── tokens (design.md §2 roles + motion.tokens.json curves) ─────────── */
+  :root{
+    --bg:#E7E6E3; --surface:#F4F3F0; --fg:#111113; --fg-dim:#5E5E66; --muted:#5E5E66;
+    --accent:#0F4CFF; --line:rgba(17,17,19,.18);
+    --ink:#111113; --white:#FFFFFF; --grey:#E7E6E3; --grey2:#CFCFD3; --ink-dim:#9A9AA2;
+    --line-light:rgba(255,255,255,.22);
+    --shade:rgba(0,0,0,.55); --shade-0:rgba(0,0,0,0);
+    --pill-bg:rgba(10,12,16,.72); --pill-bg-hover:rgba(10,12,16,.86);
+    --pill-line:rgba(255,255,255,.18); --pill-line-hover:rgba(255,255,255,.34);
+    --pill-shadow:rgba(0,0,0,.34);
+    --ease-reveal:cubic-bezier(.16,1,.3,1);
+    --ease-exit:cubic-bezier(.7,0,.84,0);
+    --ease-playful:cubic-bezier(.34,1.56,.64,1);
+    --ease-cut:cubic-bezier(.87,0,.13,1);
+    --dur-fast:300ms; --dur-base:500ms; --dur-slow:720ms; --dur-glacial:1200ms;
+    --font-display:system-ui,-apple-system,"Helvetica Neue",Helvetica,"Inter",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --gutter:clamp(18px,5vw,72px);
+    --mast-h:56px;
+    --scroll:0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  @media (prefers-reduced-motion:no-preference){ html:focus-within{scroll-behavior:smooth} }
+  html,body{background:var(--bg);color:var(--fg)}
+  body{
+    font-family:var(--font-display); font-weight:500;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+    font-feature-settings:"ss01","cv11";
+  }
+  ::selection{background:var(--accent);color:var(--white)}
+  img{display:block;max-width:100%}
+  a{color:inherit}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+
+  /* ── masthead ─────────────────────────────────────────────────────────── */
+  .mast{
+    position:fixed;inset:0 0 auto 0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px var(--gutter);color:var(--fg);background:var(--bg);border-bottom:1px solid var(--line);
+    min-height:var(--mast-h);
+  }
+  .mast .mark{font-weight:800;letter-spacing:-.02em;font-size:15px;text-decoration:none}
+  .mast nav{display:flex;gap:clamp(14px,2.4vw,34px);font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+  .mast nav a{text-decoration:none;opacity:.8;transition:opacity var(--dur-fast) var(--ease-reveal)}
+  @media (hover:hover){ .mast nav a:hover{opacity:1} }
+  @media (max-width:680px){ .mast nav{display:none} .mast{padding:16px 18px} }
+  main{padding-top:var(--mast-h)}
+
+  /* ── deck: the live playhead readout (timecode computed from scroll) ──── */
+  .deck{
+    position:fixed;right:var(--gutter);bottom:max(18px,env(safe-area-inset-bottom));z-index:50;
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--fg);background:var(--bg);padding:10px 14px;display:flex;gap:18px;align-items:baseline;
+    font-variant-numeric:tabular-nums;
+  }
+  .deck .rec{width:8px;height:8px;border-radius:50%;background:var(--accent);align-self:center;
+    transform:scale(calc(.7 + var(--scroll) * .6));}
+  .deck .tc{font-weight:600}
+  @media (max-width:680px){ .deck{right:18px;gap:12px;font-size:10px;padding:8px 10px} .deck .fr{display:none} }
+
+  /* ── shared type ──────────────────────────────────────────────────────── */
+  .eyebrow{font-family:var(--font-mono);font-size:clamp(10px,.9vw,12px);letter-spacing:.32em;text-transform:uppercase;color:var(--accent)}
+  .giant{
+    font-weight:800;line-height:.88;letter-spacing:-.035em;text-transform:uppercase;
+    font-size:clamp(3.2rem,12.5vw,13rem);text-wrap:balance;
+  }
+  .giant .ln{display:block;max-width:100%}
+  .w{display:inline-block;white-space:pre;width:max-content;max-width:100%}
+  .ch{display:inline-block}
+  .acc{color:var(--accent)}
+  .lede{max-width:44ch;font-size:clamp(1.05rem,1.45vw,1.3rem);line-height:1.5;color:var(--fg-dim);font-weight:500}
+  .meta{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg-dim)}
+  section{position:relative;--t:0;--p:0}
+
+  /* ── 00 SLATE (hero) ──────────────────────────────────────────────────── */
+  .slate{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:1fr;align-content:end;
+    padding:0 var(--gutter) clamp(28px,6vh,64px)}
+  .slate .portrait{
+    position:absolute;top:var(--mast-h);right:0;width:clamp(300px,42vw,620px);height:calc(100% - var(--mast-h));
+    overflow:hidden;
+  }
+  .slate .portrait img{width:100%;height:100%;object-fit:cover;object-position:62% 0;
+    transform:translateY(calc(var(--scroll) * 60px)) scale(1.04)}
+  .slate .portrait::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(to bottom,var(--bg) 0%,var(--shade-0) 14%),linear-gradient(to right,var(--bg) 0%,var(--shade-0) 22%),linear-gradient(to top,var(--bg) 0%,var(--shade-0) 38%)}
+  .slate .slug{position:absolute;left:var(--gutter);top:calc(var(--mast-h) + clamp(24px,6vh,64px));display:grid;gap:8px}
+  .slate .slug .meta{color:var(--fg-dim)}
+  .slate .head{position:relative;z-index:2;max-width:62vw}
+  .slate h1{margin:14px 0 0}
+  .slate .lede{margin-top:clamp(18px,2.4vw,30px)}
+  .slate .hint{margin-top:clamp(18px,3vh,32px);display:flex;align-items:center;gap:14px;color:var(--fg-dim)}
+  .slate .hint i{display:block;width:60px;height:1px;background:var(--fg-dim);transform-origin:left;
+    transform:scaleX(calc(1 - var(--scroll) * 6))}
+  /* letters rise once (nocturne gesture 1) — JS adds .in; no JS = visible */
+  html.js .fx-rise .ch{transform:translateY(1.05em) rotate(6deg);opacity:0;
+    transition:transform var(--dur-glacial) var(--ease-reveal),opacity var(--dur-slow) var(--ease-reveal);
+    transition-delay:calc(var(--i) * 34ms)}
+  html.js .fx-rise.in .ch{transform:none;opacity:1}
+  @media (max-width:680px){
+    .slate{align-content:end;padding-top:0}
+    .slate .portrait{position:relative;top:auto;height:52svh;margin:0 -18px;width:calc(100% + 36px)}
+    .slate .portrait::after{background:linear-gradient(to top,var(--bg) 0%,var(--shade-0) 40%)}
+    .slate .slug{top:auto;position:relative;left:0;margin:22px 0 18px}
+    .slate .head{max-width:100%}
+    .giant{font-size:clamp(2.6rem,15.5vw,6rem)}
+  }
+
+  /* ── 01 BELIEF — words slide on opposite axes (nocturne gesture 2) ────── */
+  .belief{padding:clamp(80px,16vh,160px) var(--gutter) 0;overflow-x:clip}
+  .belief .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(20px,3vh,40px) clamp(24px,5vw,80px)}
+  .belief .grid > *,.craft .grid > *,.invite .grid > *{min-width:0}
+  .belief .grid > div{grid-column:1 / -1}
+  .belief .grid .lede{grid-column:2}
+  .belief h2{margin-top:16px;font-size:clamp(3rem,9.5vw,10rem)}
+  html.js .fx-slide .w{opacity:0;transition:transform var(--dur-glacial) var(--ease-reveal),opacity var(--dur-slow) var(--ease-reveal);transition-delay:calc(var(--i) * 60ms)}
+  html.js .fx-slide .w:nth-child(odd){transform:translateX(-22vw)}
+  html.js .fx-slide .w:nth-child(even){transform:translateX(22vw)}
+  html.js .fx-slide.in .w{transform:none;opacity:1}
+  .belief .strip{margin-top:clamp(40px,8vh,96px);height:clamp(260px,52vh,560px);overflow:hidden;position:relative}
+  .belief .strip img{width:100%;height:120%;object-fit:cover;object-position:50% 40%;
+    transform:translateY(calc(var(--p) * -16%))}
+  .belief .strip .cap{position:absolute;left:0;bottom:0;padding:14px 16px;background:var(--bg);color:var(--fg)}
+  @media (max-width:680px){ .belief .grid{grid-template-columns:1fr} .belief .grid .lede{grid-column:1} }
+
+  /* ── 02 THE REEL — the signature. DEFAULT = stacked contact sheet in flow
+     (no-JS, narrow, reduced motion all get the complete sequence). With JS on a
+     wide, motion-ok viewport it becomes a pinned stage: hard cuts between four
+     full-bleed frames, letters rising from in-frame progress, a live scrubber. */
+  .reel .stage{background:var(--ink);color:var(--white)}
+  .reel .flow-only{padding:clamp(60px,12vh,120px) var(--gutter) 0;color:var(--white)}
+  .reel .flow-only h2{margin-top:14px}
+  .reel .frame{position:relative;--f:1;display:grid;gap:18px;padding:clamp(40px,8vh,80px) var(--gutter)}
+  .reel .frame .art{position:relative;height:clamp(280px,56svh,620px);overflow:hidden}
+  .reel .frame .art img{width:100%;height:100%;object-fit:cover;object-position:50% 50%;
+    transform:scale(calc(1.02 + var(--f) * .08))}
+  .reel .frame .art::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,var(--shade) 0%,var(--shade-0) 55%)}
+  /* procedural art: 02 identity bar-field (28 bars = 28 markets) */
+  .reel .frame .art.ident{background:var(--ink);display:grid;justify-items:center;align-items:start;padding-top:clamp(48px,10vh,200px)}
+  .reel .frame .art.ident svg{width:min(88vw,1200px);height:min(44vh,520px);fill:var(--white);transform-origin:50% 50%;
+    transform:scaleY(calc(.72 + var(--f) * .34))}
+  .reel .frame .art.ident svg .acc{fill:var(--accent)}
+  /* procedural art: 03 OOH triptych — three pocket-device posters */
+  .reel .frame .art.ooh{background:var(--grey2);display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,2vw,30px);
+    padding:clamp(20px,5vw,60px) clamp(24px,8vw,140px);align-items:stretch}
+  .reel .frame .art.ooh::after{background:linear-gradient(to top,var(--ink) 0%,var(--shade-0) 46%)}
+  .reel .frame .art.ooh .poster{position:relative;background:var(--ink);overflow:hidden;
+    transform:translateY(calc((1 - var(--f)) * var(--dy)))}
+  .reel .frame .art.ooh .poster:nth-child(1){--dy:6vh}
+  .reel .frame .art.ooh .poster:nth-child(2){--dy:-4vh}
+  .reel .frame .art.ooh .poster:nth-child(3){--dy:9vh}
+  .reel .frame .art.ooh .dev{position:absolute;left:50%;top:26%;width:34%;aspect-ratio:9/19;border-radius:14% / 7%;
+    transform:translateX(-50%) rotate(calc(-8deg + var(--f) * 8deg));
+    background:linear-gradient(135deg,var(--white) 0%,var(--grey2) 30%,var(--ink-dim) 55%,var(--ink) 100%);
+    box-shadow:0 30px 60px var(--shade)}
+  .reel .frame .art.ooh .dev::after{content:"";position:absolute;inset:6% 7%;border-radius:10% / 5%;background:var(--ink)}
+  .reel .frame .art.ooh .poster:nth-child(2){background:var(--accent)}
+  .reel .frame .art.ooh .poster:nth-child(2) .dev{background:linear-gradient(135deg,var(--white) 0%,var(--grey2) 40%,var(--ink) 100%)}
+  .reel .frame .art.ooh .tag{position:absolute;left:8%;right:8%;top:7%;color:var(--white);font-weight:800;text-transform:uppercase;
+    letter-spacing:-.03em;line-height:.9;font-size:clamp(.9rem,4.4vw,4rem)}
+  .reel .frame .art.ooh .poster:nth-child(2) .tag{color:var(--ink)}
+  .reel .frame .copy{position:relative;z-index:3;color:var(--white)}
+  .reel .frame .copy .meta{color:var(--white);opacity:.75;margin-bottom:12px}
+  .reel .frame h3{font-weight:800;line-height:.88;letter-spacing:-.035em;text-transform:uppercase;font-size:clamp(2.4rem,12vw,12.5rem)}
+  .reel .frame .copy .lede{color:var(--white);opacity:.85;margin-top:16px;max-width:36ch}
+  .reel .hud,.reel .scrub{display:none}
+
+  @media (min-width:681px) and (prefers-reduced-motion:no-preference){
+    html.js .reel{height:calc(100vh + 320vh);height:calc(100svh + 320svh)}
+    html.js .reel .stage{position:sticky;top:var(--mast-h);height:calc(100vh - var(--mast-h));height:calc(100svh - var(--mast-h));overflow:hidden}
+    html.js .reel .flow-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;padding:0}
+    html.js .reel .frame{position:absolute;inset:0;opacity:0;visibility:hidden;--f:0;display:block;padding:0}
+    html.js .reel .frame.on{opacity:1;visibility:visible}
+    html.js .reel .frame .art{position:absolute;inset:0;height:auto}
+    /* letterbox: 2.39:1 cinema bars for the film frames */
+    html.js .reel .frame.film .art::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+      border-top:max(0px,calc((100vh - var(--mast-h) - 100vw / 2.39) / 2)) solid var(--ink);
+      border-bottom:max(0px,calc((100vh - var(--mast-h) - 100vw / 2.39) / 2)) solid var(--ink)}
+    html.js .reel .frame .art.ident{padding-top:clamp(120px,20vh,200px)}
+    html.js .reel .frame .art.ooh{padding:clamp(150px,20vh,220px) clamp(24px,8vw,140px) 0}
+    html.js .reel .frame .art.ooh::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+      background:linear-gradient(to bottom,var(--ink) 0%,var(--shade-0) 26%)}
+    html.js .reel .frame .copy{position:absolute;left:var(--gutter);right:var(--gutter);bottom:clamp(64px,12vh,120px)}
+    /* the frame's title: letters rise per-letter from in-frame progress --f */
+    html.js .reel .frame h3 .ch{--k:clamp(0, calc(var(--f) * 3.2 - var(--i) * .16), 1);
+      transform:translateY(calc((1 - var(--k)) * .9em));opacity:var(--k)}
+    html.js .reel .frame .copy .lede{
+      transform:translateY(calc((1 - clamp(0, calc(var(--f) * 2.4 - .5), 1)) * 24px));
+      opacity:clamp(0, calc(var(--f) * 2.4 - .5), 1)}
+    /* HUD: frame counter, project index, scrubber */
+    html.js .reel .hud{position:absolute;left:var(--gutter);right:var(--gutter);top:clamp(28px,6vh,72px);z-index:4;
+      display:flex;justify-content:space-between;align-items:flex-start;color:var(--white);font-variant-numeric:tabular-nums}
+    html.js .reel .hud .fr{font-weight:800;font-size:clamp(2.6rem,7vw,6.5rem);line-height:.85;letter-spacing:-.04em}
+    html.js .reel .hud .fr small{font-size:.32em;font-weight:600;letter-spacing:0;opacity:.6;vertical-align:top;margin-left:.2em}
+    html.js .reel .hud .idx{display:grid;gap:8px;justify-items:end;font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+    html.js .reel .hud .idx span{opacity:.4;transition:opacity var(--dur-fast) var(--ease-cut)}
+    html.js .reel .hud .idx span.on{opacity:1;color:var(--accent)}
+    html.js .reel .scrub{display:block;position:absolute;left:var(--gutter);right:var(--gutter);bottom:clamp(28px,5vh,44px);z-index:4;height:2px;background:var(--line-light)}
+    html.js .reel .scrub i{position:absolute;inset:0;background:var(--accent);transform-origin:left;transform:scaleX(var(--r,0))}
+    html.js .reel .scrub b{position:absolute;top:-5px;width:1px;height:12px;background:var(--white);opacity:.5}
+  }
+
+  /* ── 03 CRAFT — tracking stretches with scroll (nocturne gesture 3) ────── */
+  .craft{padding:clamp(100px,18vh,200px) var(--gutter) 0}
+  .craft .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(28px,5vh,56px) clamp(24px,5vw,80px);align-items:start}
+  .craft .grid > .head{grid-column:1 / -1}
+  .craft h2{margin-top:16px;font-size:clamp(2.6rem,9vw,9.5rem)}
+  .craft h2 .ln{letter-spacing:calc(-.035em + var(--p) * .16em);transition:letter-spacing 80ms linear}
+  .craft h2 .ln:last-child{letter-spacing:calc(-.035em + var(--p) * .02em)}
+  .craft .fig{position:relative;overflow:hidden;aspect-ratio:4/3}
+  .craft .fig img{width:100%;height:118%;object-fit:cover;transform:translateY(calc(var(--p) * -14%))}
+  .craft .fig .cap{position:absolute;right:0;bottom:0;padding:14px 16px;background:var(--bg);color:var(--fg)}
+  .craft .lede{margin-top:0}
+  .craft dl{margin-top:clamp(24px,4vh,40px);display:grid;grid-template-columns:auto 1fr;gap:10px 22px;font-family:var(--font-mono);font-size:12px;letter-spacing:.06em}
+  .craft dt{color:var(--accent)} .craft dd{color:var(--fg-dim)}
+  @media (max-width:680px){ .craft .grid{grid-template-columns:1fr} .craft h2 .ln{letter-spacing:-.035em!important} }
+
+  /* ── 04 RECOGNITION — the close gesture: type is the image (nocturne 9) ── */
+  .prix{padding:clamp(120px,22vh,240px) var(--gutter) clamp(60px,10vh,120px);display:grid;align-content:center}
+  .prix h2{font-size:clamp(4rem,19vw,22rem);line-height:.82;transform-origin:0 60%;
+    transform:scale(calc(.9 + var(--t) * .1));opacity:calc(.35 + var(--t) * .65);
+    transition:transform 90ms linear,opacity 90ms linear}
+  .prix .list{margin-top:clamp(28px,5vh,56px);display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:clamp(18px,3vw,40px);
+    border-top:1px solid var(--line);padding-top:24px}
+  .prix .list div{display:grid;gap:8px}
+  .prix .list strong{font-weight:800;font-size:clamp(1.2rem,2vw,1.6rem);letter-spacing:-.02em;line-height:1.1}
+
+  /* ── 05 INVITATION — the open page ────────────────────────────────────── */
+  .invite{padding:clamp(80px,12vh,140px) var(--gutter) clamp(60px,10vh,120px)}
+  .invite .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vh,56px) clamp(24px,5vw,80px);align-items:start}
+  .invite .grid > .head{grid-column:1 / -1}
+  .invite .fig{position:relative;overflow:hidden;aspect-ratio:4/3}
+  .invite .fig img{width:100%;height:116%;object-fit:cover;transform:translateY(calc(var(--p) * -12%))}
+  .invite h2{margin-top:16px;font-size:clamp(2.8rem,10vw,10.5rem)}
+  .invite h2 a{text-decoration:none;color:var(--accent);display:inline-block;white-space:nowrap;
+    transition:transform var(--dur-fast) var(--ease-playful)}
+  @media (hover:hover){ .invite h2 a:hover{transform:translateX(.08em)} }
+  .invite .cta{margin-top:clamp(22px,3vh,36px);display:inline-flex;align-items:center;gap:14px;
+    font-family:var(--font-mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    padding:16px 22px;background:var(--fg);color:var(--bg);text-decoration:none;
+    transition:transform var(--dur-fast) var(--ease-reveal)}
+  @media (hover:hover){ .invite .cta:hover{transform:translateY(-2px)} }
+  @media (max-width:680px){ .invite .grid{grid-template-columns:1fr} }
+
+  footer{padding:24px var(--gutter) max(80px,10vh);display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-between;border-top:1px solid var(--line)}
+  footer .meta a{color:inherit}
+
+  /* ── reduced motion: everything static, every readout at rest ─────────── */
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    section{--t:1!important;--p:1!important}
+    html.js .fx-rise .ch,html.js .fx-slide .w{transform:none!important;opacity:1!important;transition:none!important}
+    .slate .portrait img,.belief .strip img,.craft .fig img,.invite .fig img,.slate .hint i,.deck .rec{transform:none!important}
+    .craft h2 .ln,.prix h2{transition:none!important;transform:none!important;letter-spacing:-.035em!important}
+    .mast nav a,.invite h2 a,.invite .cta,.reel .hud .idx span{transition:none!important}
+  }
+
+  /* persistent "back to repo" affordance — present on every live demo page */
+  .repo-home-pill{position:fixed;left:max(14px,env(safe-area-inset-left));
+    bottom:max(14px,env(safe-area-inset-bottom));z-index:9999;display:inline-flex;
+    align-items:center;gap:8px;padding:9px 14px 9px 12px;border-radius:999px;
+    font:600 12px/1 var(--font-mono);letter-spacing:.04em;
+    color:var(--white);background:var(--pill-bg);border:1px solid var(--pill-line);
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);text-decoration:none;
+    box-shadow:0 4px 18px var(--pill-shadow);
+    transition:transform var(--dur-fast) var(--ease-reveal),background var(--dur-fast) var(--ease-reveal),border-color var(--dur-fast) var(--ease-reveal)}
+  .repo-home-pill .arw{font-size:14px;line-height:1;transition:transform var(--dur-fast) var(--ease-reveal)}
+  @media (hover:hover){
+    .repo-home-pill:hover{transform:translateY(-2px);background:var(--pill-bg-hover);border-color:var(--pill-line-hover)}
+    .repo-home-pill:hover .arw{transform:translateX(-3px)}
+  }
+  @media (prefers-reduced-motion:reduce){.repo-home-pill,.repo-home-pill .arw{transition:none}}
+</style>
+</head>
+<body>
+<a class="repo-home-pill" href="https://github.com/MustBeSimo/cinematic-scroll-skill" target="_blank" rel="noopener"
+   aria-label="Back to the cinematic-scroll repository on GitHub"><span class="arw" aria-hidden="true">&larr;</span> cinematic-scroll</a>
+
+<header class="mast">
+  <a class="mark" href="#top">MAYA TORRES</a>
+  <nav aria-label="Sections">
+    <a href="#work">Reel</a>
+    <a href="#craft">Craft</a>
+    <a href="#recognition">Recognition</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<aside class="deck" aria-label="Playhead readout" aria-live="off">
+  <i class="rec" aria-hidden="true"></i>
+  <span class="reel-n">Reel 00</span>
+  <span class="tc">TC 00:00:00:00</span>
+  <span class="fr">FR 0000</span>
+</aside>
+
+<main id="top">
+
+  <!-- 00 · SLATE -->
+  <section class="slate" aria-labelledby="name">
+    <div class="portrait">
+      <img src="assets/0-hero.jpg" width="2752" height="1536" alt="Black-and-white studio portrait of Maya Torres in a dark jacket, lit from one side, looking off-frame." fetchpriority="high" />
+    </div>
+    <div class="slug">
+      <span class="meta">Slate · Take 01 · 24 fps</span>
+      <span class="meta">Global Creative Director · MMXXVI</span>
+    </div>
+    <div class="head">
+      <p class="eyebrow">Creative direction · Brand, film, product</p>
+      <h1 class="giant fx-rise" id="name" data-split="letters"><span class="ln">Maya</span><span class="ln acc">Torres</span></h1>
+      <p class="lede">Two decades turning products into culture — and the last twelve years shaping how the world feels about the objects in its pockets.</p>
+      <p class="hint meta"><i aria-hidden="true"></i>Scroll to run the reel</p>
+    </div>
+  </section>
+
+  <!-- 01 · BELIEF -->
+  <section class="belief" aria-labelledby="belief-h">
+    <div class="grid">
+      <div>
+        <p class="eyebrow">01 · The belief</p>
+        <h2 class="giant fx-slide" id="belief-h" data-split="words"><span class="ln">Great work earns</span><span class="ln">its place <span class="acc">in culture.</span></span></h2>
+      </div>
+      <p class="lede">Creative that does not enter the conversation is decoration. Every brief starts with one question: will anyone outside this room care? If not, we start again.</p>
+    </div>
+    <figure class="strip">
+      <img src="assets/1-belief.jpg" width="2752" height="1536" alt="Empty concrete studio at dawn: tall industrial windows throw long grids of light across the floor toward a single wooden chair." loading="lazy" />
+      <figcaption class="cap meta">Fig. 01 · The studio floor, 06:40</figcaption>
+    </figure>
+  </section>
+
+  <!-- 02 · THE REEL (signature) -->
+  <section class="reel" id="work" aria-labelledby="reel-h">
+    <div class="stage">
+      <div class="flow-only">
+        <p class="eyebrow">02 · The reel</p>
+        <h2 class="giant" id="reel-h"><span class="ln">Selected</span><span class="ln acc">work.</span></h2>
+      </div>
+
+      <div class="hud" aria-hidden="true">
+        <div class="fr"><span class="n">01</span><small>/ 04</small></div>
+        <div class="idx">
+          <span class="on">2014 · Film</span><span>2017 · Brand</span><span>2020 · OOH</span><span>2023 · Film</span>
+        </div>
+      </div>
+
+      <article class="frame film on" data-frame="0">
+        <div class="art"><img src="assets/2-work.jpg" width="2752" height="1536" alt="Macro still of a sculptural brushed-aluminium wearable form floating on black, lit by a single rim light." loading="lazy" /></div>
+        <div class="copy">
+          <p class="meta">01 · 2014 · Wearable launch film · Global</p>
+          <h3 data-split="letters"><span class="ln">Wearable</span></h3>
+          <p class="lede">A launch film that never showed the interface. Ninety seconds of a body in motion and one object that kept up.</p>
+        </div>
+      </article>
+
+      <article class="frame" data-frame="1">
+        <div class="art ident" role="img" aria-label="Procedural identity artwork: twenty-eight vertical bars rising and falling like a waveform, two of them in electric blue.">
+          <svg viewBox="0 0 1200 750" preserveAspectRatio="none" aria-hidden="true">
+            <rect x="9" y="257" width="24" height="236"/><rect x="52" y="226" width="24" height="299"/><rect x="95" y="198" width="24" height="355"/><rect x="138" y="176" width="24" height="398"/><rect x="181" y="165" width="24" height="420"/><rect x="224" y="166" width="24" height="419"/><rect x="267" y="180" width="24" height="390"/><rect x="309" y="208" width="24" height="334"/><rect x="352" y="248" width="24" height="255"/><rect x="395" y="296" width="24" height="158" class="acc"/><rect x="438" y="295" width="24" height="160"/><rect x="481" y="242" width="24" height="267"/><rect x="524" y="193" width="24" height="365"/><rect x="567" y="153" width="24" height="445"/><rect x="609" y="126" width="24" height="498"/><rect x="652" y="114" width="24" height="522"/><rect x="695" y="119" width="24" height="513"/><rect x="738" y="139" width="24" height="473" class="acc"/><rect x="781" y="172" width="24" height="407"/><rect x="824" y="215" width="24" height="321"/><rect x="867" y="263" width="24" height="225"/><rect x="909" y="311" width="24" height="128"/><rect x="952" y="289" width="24" height="173"/><rect x="995" y="251" width="24" height="249"/><rect x="1038" y="223" width="24" height="305"/><rect x="1081" y="206" width="24" height="338"/><rect x="1124" y="201" width="24" height="348"/><rect x="1167" y="207" width="24" height="337"/>
+          </svg>
+        </div>
+        <div class="copy">
+          <p class="meta">02 · 2017 · Audio platform identity · 28 markets</p>
+          <h3 data-split="letters"><span class="ln">Identity</span></h3>
+          <p class="lede">One mark, twenty-eight markets, zero words. The identity is a waveform that every market re-records in its own voice.</p>
+        </div>
+      </article>
+
+      <article class="frame" data-frame="2">
+        <div class="art ooh" role="img" aria-label="Procedural out-of-home artwork: three tall posters, grey, electric blue and grey, each with a tilted pocket device and a one-word headline.">
+          <div class="poster"><div class="dev"></div><div class="tag">Pocket.</div></div>
+          <div class="poster"><div class="dev"></div><div class="tag">Pocket.</div></div>
+          <div class="poster"><div class="dev"></div><div class="tag">Pocket.</div></div>
+        </div>
+        <div class="copy">
+          <p class="meta">03 · 2020 · Pocket-device campaign · OOH · Platform</p>
+          <h3 data-split="letters"><span class="ln">Pocket</span></h3>
+          <p class="lede">Forty thousand posters and one word. The device tilted a few degrees further on every site, so the city itself became the animation.</p>
+        </div>
+      </article>
+
+      <article class="frame film" data-frame="3">
+        <div class="art"><img src="assets/4-recognition.jpg" width="2752" height="1536" alt="A tall glass monolith trophy on a black plinth, backlit so its edges glow against the dark." loading="lazy" /></div>
+        <div class="copy">
+          <p class="meta">04 · 2023 · Grand Prix anthem · Film · Craft</p>
+          <h3 data-split="letters"><span class="ln">Anthem</span></h3>
+          <p class="lede">The anthem film. No product for the first forty seconds — just the people the product was made for. It took the Grand Prix.</p>
+        </div>
+      </article>
+
+      <div class="scrub" aria-hidden="true"><b style="left:25%"></b><b style="left:50%"></b><b style="left:75%"></b><i></i></div>
+    </div>
+  </section>
+
+  <!-- 03 · CRAFT -->
+  <section class="craft" id="craft" aria-labelledby="craft-h">
+    <div class="grid">
+      <div class="head">
+        <p class="eyebrow">03 · The craft</p>
+        <h2 class="giant" id="craft-h"><span class="ln">The messy,</span><span class="ln"><span class="acc">meaningful</span> middle.</span></h2>
+      </div>
+      <div>
+        <p class="lede">I live between the blank page and the final release — leading multidisciplinary teams that feel safe taking real creative risks.</p>
+        <dl>
+          <dt>Team</dt><dd>14 · strategy, design, film, product</dd>
+          <dt>Method</dt><dd>Storyboard first. Deck last.</dd>
+          <dt>Rule</dt><dd>Safe to fail, built to ship.</dd>
+        </dl>
+      </div>
+      <figure class="fig">
+        <img src="assets/3-craft.jpg" width="2752" height="1536" alt="Overhead of a wooden table under a lamp: hands arranging contact sheets, film strips and a hand-drawn storyboard." loading="lazy" />
+        <figcaption class="cap meta">Fig. 03 · Process, in motion</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 04 · RECOGNITION -->
+  <section class="prix" id="recognition" aria-labelledby="prix-h">
+    <p class="eyebrow">04 · Recognition</p>
+    <h2 class="giant" id="prix-h"><span class="ln">Grand</span><span class="ln acc">Prix.</span></h2>
+    <div class="list">
+      <div><strong>Grand Prix</strong><span class="meta">Film · the world's largest creative festival</span></div>
+      <div><strong>Pencil</strong><span class="meta">Cultural impact</span></div>
+      <div><strong>11 metals</strong><span class="meta">Film + craft, 2014–2023</span></div>
+      <div><strong>28 markets</strong><span class="meta">One identity, every voice</span></div>
+    </div>
+  </section>
+
+  <!-- 05 · INVITATION -->
+  <section class="invite" id="contact" aria-labelledby="invite-h">
+    <div class="grid">
+    <div class="head">
+      <p class="eyebrow">05 · The invitation</p>
+      <h2 class="giant" id="invite-h"><span class="ln">Let's make work</span><span class="ln">that <a href="mailto:studio@example.com">matters →</a></span></h2>
+    </div>
+    <div>
+      <p class="lede">Open to select partnerships with ambitious brands and collaborators who believe in brave ideas. The page is blank and the cursor is blinking.</p>
+      <a class="cta" href="mailto:studio@example.com">Start a conversation <span aria-hidden="true">→</span></a>
+    </div>
+    <figure class="fig">
+      <img src="assets/5-invitation.jpg" width="2752" height="1536" alt="A single blank sheet of heavy paper on a dark desk, one shaft of window light falling across it." loading="lazy" />
+    </figure>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span class="meta">Maya Torres · fictional persona, no real brands</span>
+  <span class="meta">Built with the <a href="https://github.com/MustBeSimo/cinematic-scroll-skill">cinematic-scroll</a> Agent Skill · by Simone Leonelli</span>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement;
+  root.classList.add('js');
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var narrow = function () { return innerWidth <= 680; };
+  var clamp = function (v, a, b) { return Math.min(b, Math.max(a, v)); };
+  var smooth = function (t) { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+  var lerp = function (a, b, t) { return a + (b - a) * t; };
+
+  /* ---- split text (letters / words) keeping the accessible name intact ---- */
+  function split(el, mode) {
+    var counter = 0;
+    el.setAttribute('aria-label', el.textContent.replace(/\s+/g, ' ').trim());
+    function wrap(node) {
+      Array.prototype.slice.call(node.childNodes).forEach(function (child) {
+        if (child.nodeType === 3) {
+          var frag = document.createDocumentFragment();
+          child.textContent.split(/(\s+)/).forEach(function (tok) {
+            if (!tok) return;
+            if (/^\s+$/.test(tok)) { frag.appendChild(document.createTextNode(' ')); return; }
+            var w = document.createElement('span'); w.className = 'w';
+            if (mode === 'letters') {
+              Array.prototype.forEach.call(tok, function (c) {
+                var sp = document.createElement('span'); sp.className = 'ch'; sp.textContent = c;
+                sp.style.setProperty('--i', counter++); w.appendChild(sp);
+              });
+            } else { w.textContent = tok; w.style.setProperty('--i', counter++); }
+            frag.appendChild(w);
+          });
+          child.replaceWith(frag);
+        } else if (child.nodeType === 1) { wrap(child); }
+      });
+    }
+    el.querySelectorAll('.ln').forEach(function (line) { wrap(line); line.setAttribute('aria-hidden', 'true'); });
+  }
+  document.querySelectorAll('[data-split]').forEach(function (el) { split(el, el.dataset.split); });
+
+  /* ---- one-shot entrances (hero letters, belief words) ---- */
+  var risers = document.querySelectorAll('.fx-rise, .fx-slide');
+  if (reduce || !('IntersectionObserver' in window)) {
+    risers.forEach(function (el) { el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.2 });
+    risers.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---- palette read from the token block, mixed per frame from scroll depth ---- */
+  var cs = getComputedStyle(root);
+  function rgb(name) {
+    var v = cs.getPropertyValue(name).trim();
+    if (v[0] === '#') { var h = v.slice(1); if (h.length === 3) h = h.replace(/./g, '$&$&'); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+    var m = v.match(/[\d.]+/g); return m ? m.slice(0, 3).map(Number) : [0, 0, 0];
+  }
+  var GREY = rgb('--grey'), WHITE = rgb('--white'), INK = rgb('--ink'), DIM = rgb('--fg-dim'), INKDIM = rgb('--ink-dim');
+  var light = { bg: GREY, fg: INK, dim: DIM, line: 'rgba(17,17,19,.18)' };
+  var paper = { bg: WHITE, fg: INK, dim: DIM, line: 'rgba(17,17,19,.18)' };
+  var dark = { bg: INK, fg: WHITE, dim: INKDIM, line: 'rgba(255,255,255,.22)' };
+  var sections = Array.prototype.slice.call(document.querySelectorAll('main > section'));
+  // colour stop at each section's centre: slate, belief, reel, craft, prix, invite
+  var stops = [light, paper, dark, light, dark, paper];
+  function mix(a, b, t) { return 'rgb(' + Math.round(lerp(a[0], b[0], t)) + ',' + Math.round(lerp(a[1], b[1], t)) + ',' + Math.round(lerp(a[2], b[2], t)) + ')'; }
+
+  /* ---- deck + reel refs ---- */
+  var deck = { reel: document.querySelector('.deck .reel-n'), tc: document.querySelector('.deck .tc'), fr: document.querySelector('.deck .fr') };
+  var reel = document.querySelector('.reel');
+  var frames = Array.prototype.slice.call(reel.querySelectorAll('.frame'));
+  var hudN = reel.querySelector('.hud .n'), hudIdx = Array.prototype.slice.call(reel.querySelectorAll('.hud .idx span'));
+  var stage = reel.querySelector('.stage');
+  var RUNTIME_FRAMES = 24 * 134; // the whole film is 2:14:00 at 24 fps
+  function timecode(f) {
+    var s = Math.floor(f / 24), fr = f % 24;
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    return pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60) + ':' + pad(fr);
+  }
+
+  /* ---- geometry cached off the hot path ---- */
+  var tops = [], heights = [], docH = 1, vh = 1;
+  function measure() {
+    vh = innerHeight;
+    var y = scrollY;
+    tops = sections.map(function (s) { return s.getBoundingClientRect().top + y; });
+    heights = sections.map(function (s) { return s.offsetHeight; });
+    docH = Math.max(1, root.scrollHeight - vh);
+  }
+
+  /* ---- the single scroll clock ---- */
+  var shown = 0, target = 0, raf = 0, lastFrame = -1, lastReel = -1, lastTC = '';
+  function render() {
+    raf = 0;
+    var y = scrollY;
+    target = clamp(y / docH, 0, 1);
+    shown = reduce ? target : lerp(shown, target, 0.16);
+    if (Math.abs(shown - target) < 0.0005) shown = target;
+    root.style.setProperty('--scroll', shown.toFixed(4));
+
+    var mid = y + vh * 0.5, active = 0;
+    for (var i = 0; i < sections.length; i++) {
+      var top = tops[i] - y, h = heights[i];
+      // --t: how centred the section is · --p: 0→1 as it crosses the viewport
+      var t = smooth(1 - Math.abs(top + Math.min(h, vh) / 2 - vh / 2) / (vh * 0.7));
+      var p = clamp((vh - top) / (vh + h), 0, 1);
+      if (!reduce) { sections[i].style.setProperty('--t', t.toFixed(4)); sections[i].style.setProperty('--p', p.toFixed(4)); }
+      if (mid >= tops[i]) active = i;
+    }
+
+    // background / foreground: a CUT at each section boundary — both switch
+    // together over an 8vh window, so text and ground always move as a pair and
+    // contrast never dips (a film cut, not a dissolve)
+    var W = vh * 0.08, from = stops[active], to = from, k = 0;
+    if (active < sections.length - 1) {
+      var edge = tops[active + 1];
+      if (mid > edge - W / 2) { to = stops[active + 1]; k = smooth((mid - (edge - W / 2)) / W); }
+    }
+    if (k === 0 && active > 0) {
+      var edge0 = tops[active];
+      if (mid < edge0 + W / 2) { to = stops[active - 1]; k = smooth(((edge0 + W / 2) - mid) / W); }
+    }
+    root.style.setProperty('--bg', mix(from.bg, to.bg, k));
+    root.style.setProperty('--fg', mix(from.fg, to.fg, k));
+    root.style.setProperty('--fg-dim', mix(from.dim, to.dim, k));
+    root.style.setProperty('--line', k < 0.5 ? from.line : to.line);
+
+    // deck readout: the playhead in real timecode
+    var f = Math.round(shown * RUNTIME_FRAMES), tc = timecode(f);
+    if (tc !== lastTC) { lastTC = tc; deck.tc.textContent = 'TC ' + tc; deck.fr.textContent = 'FR ' + ('000' + f).slice(-4); }
+    if (active !== lastReel) { lastReel = active; deck.reel.textContent = 'Reel 0' + active; }
+
+    // the reel: pinned stage, progress r over the track, hard cuts between frames
+    var ri = sections.indexOf(reel), pinned = !narrow() && !reduce;
+    if (pinned) {
+      var r = clamp((y - tops[ri]) / (heights[ri] - vh), 0, 1);
+      var n = frames.length, idx = Math.min(n - 1, Math.floor(r * n)), inF = clamp(r * n - idx, 0, 1);
+      stage.style.setProperty('--r', r.toFixed(4));
+      frames[idx].style.setProperty('--f', smooth(inF * 1.15).toFixed(4));
+      if (idx !== lastFrame) {
+        frames.forEach(function (fr, j) { fr.classList.toggle('on', j === idx); if (j !== idx) fr.style.setProperty('--f', '0'); });
+        hudN.textContent = '0' + (idx + 1);
+        hudIdx.forEach(function (s, j) { s.classList.toggle('on', j === idx); });
+        lastFrame = idx;
+      }
+    }
+    if (!reduce && Math.abs(shown - target) > 0.0005) raf = requestAnimationFrame(render);
+  }
+  function onScroll() { if (!raf) raf = requestAnimationFrame(render); }
+  addEventListener('scroll', onScroll, { passive: true });
+  var rt; addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { measure(); lastFrame = -1; onScroll(); }, 120); }, { passive: true });
+  addEventListener('load', function () { measure(); lastFrame = -1; onScroll(); });
+  measure(); render();
+})();
+</script>
+</body>
+</html>

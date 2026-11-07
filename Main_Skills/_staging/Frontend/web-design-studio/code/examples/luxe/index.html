@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Maison Solenne — One Day of Light · cinematic-scroll example</title>
+<meta name="description" content="A quiet-luxury monograph in warm ivory and cognac: one object followed through one day of light. The scroll is the sun — colour temperature, shadows and the hour are all derived from scroll depth. A worked example for the cinematic-scroll Agent Skill." />
+<meta property="og:title" content="Maison Solenne — One Day of Light" />
+<meta property="og:description" content="A printed-monograph page where scrolling moves the sun across a single object. Zero dependencies, system fonts, one scroll clock." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:,">
+
+<style>
+  /* ───────────────────────────────────────────────────────────────
+     cinematic-scroll · Quiet-Luxury example  (MAISON SOLENNE)
+     "ONE DAY OF LIGHT" — the scroll is the sun. A single clock (the hour,
+     06:00 → 19:30) is derived from scroll depth and every visual state is
+     mixed from it per frame: the ground's colour temperature, the wash of
+     window light crossing each plate, the cast shadow lengthening under
+     the object, the Kelvin readout in the folio, the sun on the casement
+     diagram. Set like a printed monograph: folios, plate numbers, a
+     multi-column essay, a specification table — a different grid per
+     chapter. Single file, zero dependencies, system font stacks.
+     Motion contract: transform + opacity only, one rAF clock, lerped.
+     ─────────────────────────────────────────────────────────────── */
+
+  :root{
+    /* six colour roles (design.md §2) */
+    --bg:       #F5F0E6;
+    --surface:  #ECE4D5;
+    --fg:       #2B2622;
+    --fg-dim:   #6B6156;
+    --accent:   #9A6A3C;
+    --line:     rgba(43,38,34,.16);
+
+    /* supporting tints — all mixed from the roles above */
+    --accent-deep: #7E5530;
+    --ink-soft:    #45403A;
+    --bg-72:       rgba(245,240,230,.72);
+    --bg-0:        rgba(245,240,230,0);
+    --sun-wash:    rgba(255,238,205,.55);
+    --sun-wash-0:  rgba(255,238,205,0);
+    --cool-tint:   rgba(126,140,156,.9);
+    --warm-tint:   rgba(214,150,80,.9);
+    --dusk-tint:   rgba(70,42,24,.9);
+    --cast:        rgba(43,38,34,.55);
+    --cast-0:      rgba(43,38,34,0);
+    --focus:       #9A6A3C;
+
+    --shadow-plate: 0 34px 70px -34px rgba(43,38,34,.45), inset 0 0 0 1px rgba(43,38,34,.08);
+    --shadow-pill:  0 4px 18px rgba(0,0,0,.30);
+    --pill-bg:      rgba(10,12,16,.72);
+    --pill-bg-hi:   rgba(10,12,16,.86);
+    --pill-line:    rgba(255,255,255,.18);
+    --pill-line-hi: rgba(255,255,255,.34);
+    --pill-fg:      #FFFFFF;
+
+    /* grounds for the fixed sky (three moments of the day, cross-faded by opacity) */
+    --sky-morning: radial-gradient(120% 80% at 18% 0%, rgba(214,222,228,.55), rgba(214,222,228,0) 55%), linear-gradient(180deg, #F1EFE9, #EEEAE0);
+    --sky-noon:    radial-gradient(120% 80% at 22% 0%, rgba(255,252,246,.7), rgba(255,252,246,0) 55%), linear-gradient(180deg, #F5F0E6, #F2EBDE);
+    --sky-dusk:    radial-gradient(120% 90% at 84% 100%, rgba(154,106,60,.30), rgba(154,106,60,0) 60%), linear-gradient(180deg, #EFE3CF, #E6D2B6);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+
+    /* motion tokens (tokens/motion.tokens.json) */
+    --ease-reveal:  cubic-bezier(.16, 1, .3, 1);
+    --ease-exit:    cubic-bezier(.7, 0, .84, 0);
+    --ease-playful: cubic-bezier(.34, 1.56, .64, 1);
+    --ease-cut:     cubic-bezier(.87, 0, .13, 1);
+    --dur-fast: 300ms; --dur-base: 500ms; --dur-slow: 720ms; --dur-glacial: 1200ms;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, ui-serif, serif;
+    --sans:  ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    --gutter: clamp(20px, 5vw, 72px);
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:var(--serif);
+    font-size:clamp(1rem, .3vw + .92rem, 1.12rem); line-height:1.55;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    overflow-x:clip;
+  }
+  a{ color:inherit; }
+  ::selection{ background:var(--fg); color:var(--bg); }
+  :focus-visible{ outline:2px solid var(--focus); outline-offset:4px; border-radius:2px; }
+  h1,h2,h3{ font-weight:400; margin:0; text-wrap:balance; }
+  p{ margin:0; }
+  img{ display:block; max-width:100%; }
+
+  /* ── The sky: three grounds cross-faded per frame from the hour ─── */
+  .sky{ position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .sky > div{ position:absolute; inset:0; }
+  .sky .morning{ background:var(--sky-morning); opacity:0; }
+  .sky .noon   { background:var(--sky-noon);    opacity:1; }
+  .sky .dusk   { background:var(--sky-dusk);    opacity:0; }
+  .js .sky > div{ will-change:opacity; }
+  .grain{ position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.35; mix-blend-mode:multiply; background-image:var(--grain); }
+
+  /* ── Masthead ────────────────────────────────────────────────── */
+  .masthead{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+    padding:clamp(16px, 2.2vw, 26px) var(--gutter);
+    padding-top:max(clamp(16px,2.2vw,26px), env(safe-area-inset-top));
+    background:linear-gradient(to bottom, var(--bg) 48%, var(--bg-72) 78%, var(--bg-0));
+    font-family:var(--sans); font-size:.68rem; letter-spacing:.22em; text-transform:uppercase; color:var(--fg-dim);
+  }
+  .masthead .brand{ display:flex; align-items:baseline; gap:14px; text-decoration:none; }
+  .masthead .brand strong{ color:var(--fg); font-weight:600; letter-spacing:.34em; font-size:.8rem; }
+  .masthead nav{ display:flex; gap:clamp(14px, 2.4vw, 32px); }
+  .masthead nav a{ text-decoration:none; color:var(--fg-dim); transition:color var(--dur-fast) var(--ease-reveal); }
+  @media (hover:hover){ .masthead nav a:hover{ color:var(--fg); } }
+  .masthead nav a:active{ color:var(--fg); }
+  @media (max-width:640px){ .masthead nav{ display:none; } .masthead .brand span{ display:none; } }
+
+  /* ── Folio: the live readout (the instrument of the whole page) ── */
+  .folio{
+    position:fixed; right:var(--gutter); bottom:max(18px, env(safe-area-inset-bottom)); z-index:40;
+    display:flex; align-items:baseline; gap:14px; pointer-events:none;
+    font-family:var(--sans); font-size:.66rem; letter-spacing:.22em; text-transform:uppercase; color:var(--fg-dim);
+  }
+  .folio b{ color:var(--fg); font-weight:600; font-size:.8rem; letter-spacing:.1em; font-family:var(--mono); }
+  .folio .note{ white-space:nowrap; }
+  @media (max-width:640px){ .folio{ gap:10px; font-size:.6rem; padding:6px 10px; background:var(--bg-72); right:max(12px, env(safe-area-inset-right)); } .folio .note{ display:none; } }
+
+  /* ── Page frame ──────────────────────────────────────────────── */
+  main{ display:block; }
+  .ch{ position:relative; padding:0 var(--gutter); }
+  .wrap{ max-width:1320px; margin:0 auto; }
+  .kicker{
+    font-family:var(--sans); font-size:.68rem; letter-spacing:.3em; text-transform:uppercase; color:var(--accent);
+    display:flex; align-items:center; gap:16px; margin:0 0 26px;
+  }
+  .kicker::before{ content:""; width:40px; height:1px; background:var(--accent); flex:none; }
+  .small{ font-family:var(--sans); font-size:.68rem; letter-spacing:.22em; text-transform:uppercase; color:var(--fg-dim); line-height:2; }
+  .small b{ color:var(--fg); font-weight:600; }
+
+  /* plates — the photographs, with the light layers stacked on top */
+  figure{ margin:0; position:relative; }
+  .plate{
+    position:relative; overflow:hidden; aspect-ratio:4/5; background:var(--surface);
+    box-shadow:var(--shadow-plate);
+  }
+  .plate img{ width:100%; height:100%; object-fit:cover; }
+  .plate.wide{ aspect-ratio:21/9; }
+  .plate.wide img{ object-position:50% 100%; }
+  .plate.square{ aspect-ratio:1; }
+  .plate.square img{ object-position:50% 70%; }
+  /* light layers — transform/opacity only; defaults describe noon */
+  .plate .wash{
+    position:absolute; inset:-20% -45%; pointer-events:none;
+    background:linear-gradient(100deg, var(--sun-wash-0) 38%, var(--sun-wash) 50%, var(--sun-wash-0) 62%);
+    mix-blend-mode:soft-light; opacity:.6; transform:translate3d(0,0,0) rotate(-6deg);
+  }
+  .plate .tint{ position:absolute; inset:0; pointer-events:none; opacity:0; mix-blend-mode:multiply; }
+  .plate .tint.cool{ background:var(--cool-tint); }
+  .plate .tint.warm{ background:var(--warm-tint); }
+  .plate .dusk{ position:absolute; inset:0; pointer-events:none; opacity:0; mix-blend-mode:multiply;
+    background:linear-gradient(200deg, var(--cast-0) 40%, var(--dusk-tint) 130%); }
+  .js .plate .wash, .js .plate .tint, .js .plate .dusk{ will-change:opacity, transform; }
+  figcaption{
+    font-variant-caps:small-caps; letter-spacing:.08em; font-size:.82rem; color:var(--fg-dim);
+    margin-top:14px; display:flex; justify-content:space-between; gap:16px;
+  }
+  figcaption span:last-child{ color:var(--accent); white-space:nowrap; }
+
+  /* ── I · Frontispiece ────────────────────────────────────────── */
+  .front .wrap{
+    min-height:100vh; display:grid; grid-template-columns:1fr; gap:40px; align-items:center;
+    padding:clamp(96px, 14vh, 150px) 0 clamp(48px, 8vh, 96px);
+  }
+  @media (min-width:900px){ .front .wrap{ grid-template-columns:7fr 5fr; gap:clamp(40px, 6vw, 96px); } }
+  .front h1{
+    font-size:clamp(2.9rem, 7.6vw, 7rem); line-height:.95; letter-spacing:-.025em; color:var(--fg);
+  }
+  .front h1 em{ font-style:italic; font-weight:300; color:var(--accent-deep); }
+  .front .standfirst{
+    font-size:clamp(1.05rem, 1.35vw, 1.35rem); line-height:1.45; color:var(--ink-soft);
+    font-style:italic; max-width:40ch; margin-top:30px;
+  }
+  .front .byline{ margin-top:26px; }
+  .front .cue{
+    margin-top:34px; display:inline-flex; align-items:center; gap:14px;
+    background:none; border:0; padding:0; cursor:pointer; color:var(--fg-dim);
+    font-family:var(--sans); font-size:.66rem; letter-spacing:.26em; text-transform:uppercase;
+  }
+  .front .cue .bar{ width:44px; height:1px; background:currentColor; transform-origin:left; transition:transform var(--dur-slow) var(--ease-reveal); }
+  @media (hover:hover){ .front .cue:hover .bar{ transform:scaleX(1.5); } }
+  .front figure{ max-width:520px; justify-self:end; width:100%; }
+
+  /* ── II · Provenance (editorial spread) ──────────────────────── */
+  .prov{ padding-top:clamp(64px, 10vh, 120px); padding-bottom:clamp(48px, 7vh, 88px); }
+  .prov .head{ padding-bottom:clamp(32px, 4vw, 56px); border-bottom:1px solid var(--fg); }
+  .prov h2{ font-size:clamp(2.3rem, 5.2vw, 4.8rem); line-height:1; letter-spacing:-.02em; max-width:18ch; }
+  .prov .spread{ display:grid; grid-template-columns:1fr; gap:40px; padding-top:clamp(32px, 4vw, 56px); align-items:start; }
+  @media (min-width:960px){ .prov .spread{ grid-template-columns:5fr 7fr; gap:clamp(40px, 5vw, 72px); } }
+  .prov .side figure{ max-width:440px; }
+  .aside{ font-size:.9rem; line-height:1.6; color:var(--ink-soft); border-left:1px solid var(--line); padding-left:20px; margin-top:36px; max-width:440px; }
+  .aside h3{ font-family:var(--sans); font-size:.66rem; letter-spacing:.3em; text-transform:uppercase; margin:0 0 12px; color:var(--fg); }
+  .aside dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 16px; }
+  .aside dt{ font-variant-caps:small-caps; letter-spacing:.06em; color:var(--fg-dim); }
+  .aside dd{ margin:0; }
+  .columns{ column-count:1; column-gap:44px; column-rule:1px solid var(--line); }
+  @media (min-width:1180px){ .columns{ column-count:2; } }
+  .columns p{ margin:0 0 1.15em; hyphens:auto; orphans:3; widows:3; }
+  .columns p.lead::first-letter{
+    float:left; font-size:5em; line-height:.78; padding:.08em .1em 0 0; color:var(--fg);
+  }
+  .columns h3{ font-family:var(--sans); font-size:.68rem; letter-spacing:.3em; text-transform:uppercase; font-weight:600; color:var(--accent); margin:1.4em 0 .9em; break-after:avoid; }
+  .pull{
+    column-span:all; margin:28px 0 36px; padding:32px 0; border-top:1px solid var(--fg); border-bottom:1px solid var(--line);
+    display:grid; grid-template-columns:1fr; gap:18px; align-items:center;
+  }
+  @media (min-width:900px){ .pull{ grid-template-columns:2fr 1fr; gap:48px; } }
+  .pull blockquote{ margin:0; font-size:clamp(1.5rem, 2.8vw, 2.6rem); line-height:1.12; letter-spacing:-.02em; font-weight:300; font-style:italic; text-wrap:balance; }
+  .pull blockquote::before{ content:"\201C"; color:var(--accent); margin-left:-.45em; }
+  .pull blockquote::after{ content:"\201D"; color:var(--accent); }
+  .pull cite{ font-family:var(--sans); font-style:normal; font-size:.66rem; letter-spacing:.24em; text-transform:uppercase; color:var(--fg-dim); line-height:1.9; }
+  .end-mark{ display:inline-block; width:.5em; height:.5em; background:var(--accent); margin-left:.4em; vertical-align:baseline; }
+
+  /* ── III · The Object (the pinned day) ───────────────────────── */
+  .obj{ padding:0; border-top:1px solid var(--line); }
+  .obj .track{ position:relative; overflow:clip; }   /* clips the cast shadow's transform overflow; clip keeps sticky alive */
+  .obj .stage{
+    position:relative; padding:clamp(48px, 8vh, 112px) var(--gutter) clamp(48px, 8vh, 80px);
+    display:grid; align-content:center;
+  }
+  .obj .grid{ max-width:1320px; margin:0 auto; width:100%; display:grid; grid-template-columns:1fr; gap:34px; align-items:center; }
+  .obj h2{ font-size:clamp(1.7rem, 2.6vw, 2.5rem); line-height:1.08; letter-spacing:-.015em; }
+  .obj .hour-big{ font-family:var(--serif); font-weight:300; font-size:clamp(3.2rem, 6.4vw, 6rem); line-height:1; letter-spacing:-.03em; color:var(--fg); margin-top:clamp(20px, 3vh, 36px); font-variant-numeric:tabular-nums; }
+  .obj .hour-note{ margin-top:10px; }
+  .obj figure{ width:100%; max-width:520px; margin:0 auto; }
+  .obj .plate-wrap{ position:relative; margin:0 auto; isolation:isolate; }
+  .obj .plate{ margin:0 auto; transform-origin:50% 60%; }
+  .js .obj .plate{ will-change:transform; }
+  .obj .cast{
+    position:absolute; left:4%; right:4%; top:100%; height:5.5%; pointer-events:none; z-index:-1;
+    background:radial-gradient(50% 100% at 50% 0%, var(--cast), var(--cast-0) 88%);
+    opacity:.7; transform:translate3d(0,0,0) scaleX(.7); transform-origin:50% 0;
+  }
+  .obj figcaption{ margin-top:30px; }
+  .js .obj .cast{ will-change:transform, opacity; }
+  .caps{ display:block; }
+  .cap{ padding:14px 0; border-top:1px solid var(--line); }
+  .cap .when{ display:block; font-family:var(--sans); font-size:.66rem; letter-spacing:.26em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; font-variant-numeric:tabular-nums; }
+  .cap p{ font-size:clamp(1rem, 1.15vw, 1.15rem); line-height:1.5; color:var(--ink-soft); max-width:34ch; }
+  @media (min-width:900px){
+    .obj .grid{ grid-template-columns:minmax(200px, .85fr) minmax(0, 1.4fr) minmax(200px, .85fr); gap:clamp(28px, 4vw, 72px); }
+    .obj .plate{ height:min(66vh, 50vw); width:auto; max-width:100%; }
+    .obj figure{ max-width:none; width:fit-content; }
+    .obj .col-r{ justify-self:end; max-width:34ch; }
+  }
+  /* pinned + crossfading captions: desktop, JS, motion allowed */
+  @media (min-width:900px) and (prefers-reduced-motion:no-preference){
+    .js .obj .track{ height:320vh; }
+    .js .obj .stage{ position:sticky; top:0; height:100vh; }
+    .js .caps{ display:grid; }
+    .js .cap{ grid-area:1/1; opacity:0; border-top:0; padding:0; transition:opacity var(--dur-slow) var(--ease-reveal); }
+    .js .cap.on{ opacity:1; }
+  }
+
+  /* ── IV · Atelier (specification) ────────────────────────────── */
+  .atl{ padding-top:clamp(56px, 8vh, 100px); padding-bottom:clamp(64px, 10vh, 120px); }
+  .atl h2{ font-size:clamp(2.1rem, 4.4vw, 4rem); line-height:1.02; letter-spacing:-.02em; max-width:20ch; }
+  .atl .head{ display:grid; grid-template-columns:1fr; gap:24px; align-items:end; padding-bottom:clamp(28px, 4vw, 48px); }
+  @media (min-width:900px){ .atl .head{ grid-template-columns:7fr 5fr; gap:48px; } }
+  .atl .head p{ color:var(--ink-soft); max-width:40ch; font-style:italic; }
+  .atl .wideplate .plate{ aspect-ratio:4/3; }
+  @media (min-width:760px){ .atl .wideplate .plate{ aspect-ratio:21/9; } }
+  .atl .spec{ display:grid; grid-template-columns:1fr; gap:40px; padding-top:clamp(40px, 5vw, 72px); align-items:start; }
+  @media (min-width:900px){ .atl .spec{ grid-template-columns:1fr 1fr; gap:clamp(40px, 6vw, 96px); } }
+  table{ border-collapse:collapse; width:100%; font-size:.95rem; }
+  caption{ text-align:left; font-family:var(--sans); font-size:.66rem; letter-spacing:.3em; text-transform:uppercase; color:var(--fg); padding:0 0 14px; }
+  th, td{ text-align:left; vertical-align:top; padding:12px 0; border-top:1px solid var(--line); }
+  th{ font-variant-caps:small-caps; letter-spacing:.06em; font-weight:400; color:var(--fg-dim); width:38%; padding-right:20px; }
+  td em{ color:var(--accent-deep); }
+  tr:last-child th, tr:last-child td{ border-bottom:1px solid var(--fg); }
+  .sun figure{ width:100%; }
+  .sun svg{ display:block; width:100%; height:auto; }
+  .sun .arc{ fill:none; stroke:var(--fg-dim); stroke-width:1; stroke-dasharray:3 5; }
+  .sun .frame{ fill:none; stroke:var(--fg); stroke-width:1.2; }
+  .sun .mull{ stroke:var(--fg); stroke-width:1; opacity:.5; }
+  .sun .lbl{ font-family:var(--sans); font-size:9px; letter-spacing:.18em; fill:var(--fg-dim); }
+  .sun .tick{ stroke:var(--line); stroke-width:1; }
+  .sun .sunmark{ fill:var(--accent); }
+  .sun .halo{ fill:none; stroke:var(--accent); stroke-width:1; opacity:.5; }
+  .sun .beam{ fill:var(--sun-wash); opacity:.7; }
+  .js .sun .sunpos{ will-change:transform; }
+
+  /* ── V · Enquire ─────────────────────────────────────────────── */
+  .enq{ padding-top:clamp(56px, 8vh, 110px); padding-bottom:clamp(64px, 10vh, 120px); }
+  .enq .wrap{ max-width:760px; text-align:center; }
+  .enq .kicker{ justify-content:center; }
+  .enq .kicker::before{ display:none; }
+  .enq h2{ font-size:clamp(2.2rem, 5vw, 4.6rem); line-height:1; letter-spacing:-.02em; }
+  .enq p.lede{ margin:28px auto 0; max-width:46ch; color:var(--ink-soft); font-size:clamp(1.02rem, 1.25vw, 1.2rem); }
+  .cta{
+    margin-top:40px; display:inline-flex; align-items:center; gap:14px; padding:16px 30px;
+    border:1px solid var(--fg); color:var(--fg); background:transparent; text-decoration:none;
+    font-family:var(--sans); font-size:.7rem; letter-spacing:.26em; text-transform:uppercase;
+    transition:background var(--dur-base) var(--ease-reveal), color var(--dur-base) var(--ease-reveal);
+  }
+  @media (hover:hover){ .cta:hover{ background:var(--fg); color:var(--bg); } }
+  .cta:active{ background:var(--fg); color:var(--bg); }
+  .enq .small{ margin-top:30px; display:block; }
+
+  /* colophon */
+  .colophon{
+    margin:0 var(--gutter); max-width:1320px; padding:22px 0 90px; border-top:1px solid var(--fg);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px 32px;
+    font-family:var(--sans); font-size:.66rem; letter-spacing:.2em; text-transform:uppercase; color:var(--fg-dim);
+  }
+  @media (min-width:1464px){ .colophon{ margin:0 auto; } }
+  .colophon a{ color:var(--accent-deep); text-decoration:none; border-bottom:1px solid var(--line); }
+
+  /* ── Reveals (IntersectionObserver; content is visible without JS) ── */
+  .js .reveal{ opacity:0; transform:translateY(18px); transition:opacity var(--dur-glacial) var(--ease-reveal), transform var(--dur-glacial) var(--ease-reveal); transition-delay:var(--d, 0ms); }
+  .js .reveal.in{ opacity:1; transform:none; }
+
+  /* ── Reduced motion: static, complete, in flow ───────────────── */
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; }
+    .js .reveal{ opacity:1; transform:none; transition:none; }
+    .cta, .masthead nav a, .front .cue .bar{ transition:none; }
+    .js .cap{ transition:none; }
+  }
+
+  /* persistent "back to repo" affordance — present on every live demo page */
+  .repo-home-pill{
+    position:fixed; left:max(14px, env(safe-area-inset-left)); bottom:max(14px, env(safe-area-inset-bottom)); z-index:9999;
+    display:inline-flex; align-items:center; gap:8px; padding:9px 14px 9px 12px; border-radius:999px;
+    font:600 12px/1 var(--mono); letter-spacing:.04em; color:var(--pill-fg); background:var(--pill-bg);
+    border:1px solid var(--pill-line); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); text-decoration:none;
+    box-shadow:var(--shadow-pill);
+    transition:transform var(--dur-fast) var(--ease-reveal), background var(--dur-fast) var(--ease-reveal), border-color var(--dur-fast) var(--ease-reveal);
+  }
+  .repo-home-pill .arw{ font-size:14px; line-height:1; transition:transform var(--dur-fast) var(--ease-reveal); }
+  @media (hover:hover){
+    .repo-home-pill:hover{ transform:translateY(-2px); background:var(--pill-bg-hi); border-color:var(--pill-line-hi); }
+    .repo-home-pill:hover .arw{ transform:translateX(-3px); }
+  }
+  @media (prefers-reduced-motion:reduce){ .repo-home-pill, .repo-home-pill .arw{ transition:none; } }
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js');</script>
+
+<a class="repo-home-pill" href="https://github.com/MustBeSimo/cinematic-scroll-skill" target="_blank" rel="noopener" aria-label="Back to the cinematic-scroll repository on GitHub">
+  <span class="arw" aria-hidden="true">&larr;</span> cinematic-scroll
+</a>
+
+<div class="sky" aria-hidden="true">
+  <div class="morning" id="skyMorning"></div>
+  <div class="noon"></div>
+  <div class="dusk" id="skyDusk"></div>
+</div>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="masthead">
+  <a class="brand" href="#top"><strong>Maison Solenne</strong><span>Monograph I · One day of light</span></a>
+  <nav aria-label="Chapters">
+    <a href="#provenance">Provenance</a>
+    <a href="#object">The Object</a>
+    <a href="#atelier">Atelier</a>
+    <a href="#enquire">Enquire</a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <!-- I · FRONTISPIECE -->
+  <section class="ch front" aria-labelledby="h-front">
+    <div class="wrap">
+      <div>
+        <p class="kicker reveal">Monograph I · Frontispiece</p>
+        <h1 id="h-front" class="reveal" style="--d:120ms">The art of keeping <em>still.</em></h1>
+        <p class="standfirst reveal" style="--d:240ms">One object, followed through one day of light. The house makes fewer than forty pieces a year and asks of the people who keep them only patience. What follows is the day a single piece spends on the bench — from the first grey of the north window to the last of the cognac at dusk.</p>
+        <p class="byline small reveal" style="--d:320ms">Plates <b>Studio Solenne</b><br>Words <b>The house</b><br>Set in the three rooms above the rue de Solenne</p>
+        <button class="cue reveal" type="button" data-goto="provenance" style="--d:420ms"><span>Scroll at the speed of the sun</span><span class="bar" aria-hidden="true"></span></button>
+      </div>
+      <figure class="reveal" style="--d:200ms">
+        <div class="plate">
+          <img src="assets/overture.jpg" alt="A length of pale linen folded on a slab of dark stone, lit softly from a window to the left" width="1024" height="1280" fetchpriority="high">
+          <div class="wash" aria-hidden="true"></div>
+          <div class="tint cool" aria-hidden="true"></div>
+          <div class="tint warm" aria-hidden="true"></div>
+          <div class="dusk" aria-hidden="true"></div>
+        </div>
+        <figcaption><span>Plate I — Linen, folded, on the slab. 06:40, north window.</span><span>Warm ivory</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- II · PROVENANCE -->
+  <section class="ch prov" id="provenance" aria-labelledby="h-prov">
+    <div class="wrap">
+      <div class="head">
+        <p class="kicker reveal">II · Provenance</p>
+        <h2 id="h-prov" class="reveal" style="--d:100ms">A hundred unhurried years.</h2>
+      </div>
+      <div class="spread">
+        <div class="side">
+          <figure class="reveal">
+            <div class="plate square">
+              <img src="assets/provenance.jpg" alt="A small bronze seal resting on a sheet of handmade paper on an oak block, window light behind" width="1024" height="1280" loading="lazy">
+              <div class="wash" aria-hidden="true"></div>
+              <div class="tint cool" aria-hidden="true"></div>
+              <div class="tint warm" aria-hidden="true"></div>
+              <div class="dusk" aria-hidden="true"></div>
+            </div>
+            <figcaption><span>Plate II — The house seal, bronze, 1924. 08:10.</span><span>Sand light</span></figcaption>
+          </figure>
+          <aside class="aside reveal" style="--d:140ms">
+            <h3>The register</h3>
+            <dl>
+              <dt>Founded</dt><dd>1924, above the rue de Solenne</dd>
+              <dt>Rooms</dt><dd>Three. The same three.</dd>
+              <dt>Pieces a year</dt><dd>Fewer than forty</dd>
+              <dt>Mark</dt><dd>A bronze seal, inside. No monogram.</dd>
+              <dt>Waiting list</dt><dd>Kept by letter, in the ledger</dd>
+            </dl>
+          </aside>
+        </div>
+        <div class="columns">
+          <p class="lead reveal">The house was founded in 1924 by a saddler's daughter who had noticed, watching her father, that the last hour of any piece of work was the one that decided it — and that the last hour was the one nobody was paid for. She took three rooms above the rue de Solenne, hired two people who could be trusted to be slow, and made a rule that has not been broken since: nothing leaves the atelier until it has been looked at in every light the rooms afford.</p>
+          <p class="reveal">This is a practical rule, not a poetic one. Leather lies. Under the flat grey light of a north window a hide shows its grain honestly; at noon the same hide flattens and forgives; by evening, when the sun comes low through the west casement, every mark of the burnisher stands up like a hill. A seam that passes at nine may fail at five. So the piece waits on the bench for a day, and someone walks past it, and looks.</p>
+          <h3 class="reveal">The ledger</h3>
+          <p class="reveal">Every piece made here is entered by hand in a ledger that now runs to eleven volumes: the date it was begun, the date it was finished, the hide, the hands, and — in a column no other house keeps — the weather. The register is not shown to clients. It exists because the house believes that provenance is a habit before it is a claim, and that a thing written down slowly is harder to lie about later.</p>
+          <div class="pull reveal">
+            <blockquote>Nothing leaves the atelier until it has been looked at in every light the rooms afford.</blockquote>
+            <cite>House rule, 1924<br>Still in force</cite>
+          </div>
+          <p class="reveal">Four generations on, the rooms are the same three rooms. The windows have not been enlarged; the light, which is the only instrument the house has ever trusted, has not been improved. What has changed is the list of people willing to wait. It has become long. The house has responded by making no more than it did before.<span class="end-mark" aria-hidden="true"></span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- III · THE OBJECT — the pinned day -->
+  <section class="ch obj" id="object" aria-labelledby="h-obj">
+    <div class="track" id="track">
+      <div class="stage">
+        <div class="grid">
+          <div class="col-l">
+            <p class="kicker">III · The Object</p>
+            <h2 id="h-obj">One object, considered in every light.</h2>
+            <p class="hour-big" id="hourBig" aria-hidden="true">12:00</p>
+            <p class="hour-note small" id="hourNote">Noon · flat light · <b>5500 K</b></p>
+          </div>
+          <figure>
+            <div class="plate-wrap">
+              <div class="plate" id="objPlate">
+                <img src="assets/object.jpg" alt="A cognac leather card case standing in a brushed brass cradle on a sand-coloured stone bench against a plaster wall" width="1024" height="1280" loading="lazy">
+                <div class="wash" aria-hidden="true"></div>
+                <div class="tint cool" aria-hidden="true"></div>
+                <div class="tint warm" aria-hidden="true"></div>
+                <div class="dusk" aria-hidden="true"></div>
+              </div>
+              <div class="cast" id="cast" aria-hidden="true"></div>
+            </div>
+            <figcaption><span>Plate III — Card case No. 3, bridle leather on brass.</span><span>Cognac</span></figcaption>
+          </figure>
+          <div class="col-r">
+            <div class="caps" id="caps">
+              <div class="cap on" data-from="0" data-to="12">
+                <span class="when">09:30 — Morning</span>
+                <p>The north window gives a flat, honest light. The grain of the hide reads exactly as it is; nothing is forgiven yet.</p>
+              </div>
+              <div class="cap" data-from="12" data-to="15.5">
+                <span class="when">13:00 — Noon</span>
+                <p>The shadow shortens to almost nothing. This is the light the piece is judged in: every seam, every edge, at the same distance from the eye.</p>
+              </div>
+              <div class="cap" data-from="15.5" data-to="24">
+                <span class="when">17:30 — Evening</span>
+                <p>The sun comes low through the west casement and turns to cognac. The brass takes it first; the leather, a little later, keeps it.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IV · ATELIER -->
+  <section class="ch atl" id="atelier" aria-labelledby="h-atl">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <p class="kicker reveal">IV · Atelier</p>
+          <h2 id="h-atl" class="reveal" style="--d:100ms">Made in three rooms, judged by one window.</h2>
+        </div>
+        <p class="reveal" style="--d:200ms">By half past five the west casement lays a bar of light across the plaster. It is the last light of the working day and the only one the house fully trusts.</p>
+      </div>
+      <figure class="wideplate reveal">
+        <div class="plate wide">
+          <img src="assets/audience.jpg" alt="A cognac leather ottoman beside a white vase on a stone plinth, a bar of evening window light on the plaster wall" width="1024" height="1280" loading="lazy">
+          <div class="wash" aria-hidden="true"></div>
+          <div class="tint cool" aria-hidden="true"></div>
+          <div class="tint warm" aria-hidden="true"></div>
+          <div class="dusk" aria-hidden="true"></div>
+        </div>
+        <figcaption><span>Plate IV — The second room, 17:40. The west casement.</span><span>Evening</span></figcaption>
+      </figure>
+      <div class="spec">
+        <div class="reveal">
+          <table>
+            <caption>Specification · Card case No. 3</caption>
+            <tbody>
+              <tr><th scope="row">Leather</th><td>Bridle, <em>cognac</em>, vegetable-tanned; hand-burnished edges</td></tr>
+              <tr><th scope="row">Frame</th><td>Brass, unlacquered. It is meant to darken.</td></tr>
+              <tr><th scope="row">Dimensions</th><td>108 × 72 × 22 mm</td></tr>
+              <tr><th scope="row">Hands</th><td>Two. The same two, start to finish.</td></tr>
+              <tr><th scope="row">Time</th><td>Eleven weeks, three of them waiting on the bench</td></tr>
+              <tr><th scope="row">Looked at in</th><td>Every light the rooms afford</td></tr>
+              <tr><th scope="row">Mark</th><td>The house seal, inside, where only the owner sees it</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="sun reveal" style="--d:140ms">
+          <figure>
+            <svg viewBox="0 0 520 300" role="img" aria-labelledby="sunTitle sunDesc">
+              <title id="sunTitle">The day's light across the west casement</title>
+              <desc id="sunDesc">A diagram of the sun's arc over the atelier window from six in the morning to half past seven in the evening; the marker follows the reader's position in the page.</desc>
+              <rect class="frame" x="150" y="70" width="220" height="190"/>
+              <line class="mull" x1="260" y1="70" x2="260" y2="260"/>
+              <line class="mull" x1="150" y1="165" x2="370" y2="165"/>
+              <path class="beam" id="beam" d="M150 260 L370 260 L370 238 L150 250 Z"/>
+              <path class="arc" d="M40 250 A220 220 0 0 1 480 250"/>
+              <g class="ticks">
+                <line class="tick" x1="40" y1="250" x2="40" y2="262"/><text class="lbl" x="30" y="282">06</text>
+                <line class="tick" x1="104" y1="94" x2="98" y2="84"/><text class="lbl" x="72" y="82">09</text>
+                <line class="tick" x1="260" y1="30" x2="260" y2="18"/><text class="lbl" x="250" y="12">12</text>
+                <line class="tick" x1="416" y1="94" x2="422" y2="84"/><text class="lbl" x="424" y="82">15</text>
+                <line class="tick" x1="480" y1="250" x2="480" y2="262"/><text class="lbl" x="472" y="282">18</text>
+              </g>
+              <g class="sunpos" id="sunpos" transform="translate(260 30)">
+                <circle class="halo" r="14"/>
+                <circle class="sunmark" r="5"/>
+              </g>
+            </svg>
+            <figcaption><span>Fig. 4 — The sun over the west casement. The marker is where you are in the day.</span><span>Diagram</span></figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- V · ENQUIRE -->
+  <section class="ch enq" id="enquire" aria-labelledby="h-enq">
+    <div class="wrap">
+      <p class="kicker reveal">V · Enquire</p>
+      <h2 id="h-enq" class="reveal" style="--d:100ms">Request an audience with the house.</h2>
+      <p class="lede reveal" style="--d:200ms">The house makes a small number of pieces each year, by enquiry only. If you would like to commission one — and to wait the time it properly takes — the house keeps a quiet correspondence with those who understand the value of patience.</p>
+      <a class="cta reveal" style="--d:300ms" href="mailto:audience@example.com?subject=An%20audience%20with%20Maison%20Solenne">Begin a correspondence <span aria-hidden="true">→</span></a>
+      <span class="small reveal" style="--d:380ms">By letter · fewer than forty pieces a year · the ledger is kept</span>
+    </div>
+  </section>
+
+</main>
+
+<footer class="colophon reveal">
+  <span>Maison Solenne · Monograph I</span>
+  <span>Set in system serif and sans · light composed from scroll</span>
+  <span>By Simone Leonelli · built with the <a href="https://github.com/MustBeSimo/cinematic-scroll-skill">cinematic-scroll</a> Agent Skill · fictional maison</span>
+</footer>
+
+<div class="folio" aria-hidden="true">
+  <span class="note" id="folioNote">Noon · flat light</span>
+  <b id="folioHour">12:00</b>
+  <span id="folioK">5500 K</span>
+  <span>p.<b id="pageNo">1</b></span>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const wide   = window.matchMedia('(min-width: 900px)');
+  const clamp  = (n,a,b)=>Math.max(a,Math.min(b,n));
+  const lerp   = (a,b,t)=>a+(b-a)*t;
+
+  /* ── discrete reveals (IntersectionObserver) ─────────────────── */
+  const reveals = document.querySelectorAll('.reveal');
+  if (reduce.matches || !('IntersectionObserver' in window)){
+    reveals.forEach(el=>el.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{ if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { rootMargin:'0px 0px -8% 0px', threshold:0.08 });
+    reveals.forEach(el=>io.observe(el));
+  }
+
+  /* navigation cue */
+  document.querySelectorAll('[data-goto]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.getElementById(el.dataset.goto)?.scrollIntoView({ behavior: reduce.matches ? 'auto' : 'smooth' });
+    });
+  });
+
+  /* ── THE CLOCK: scroll depth → hour of day → every visual state ── */
+  const skyMorning = document.getElementById('skyMorning');
+  const skyDusk    = document.getElementById('skyDusk');
+  const hourBig    = document.getElementById('hourBig');
+  const hourNote   = document.getElementById('hourNote');
+  const folioHour  = document.getElementById('folioHour');
+  const folioNote  = document.getElementById('folioNote');
+  const folioK     = document.getElementById('folioK');
+  const pageNo     = document.getElementById('pageNo');
+  const cast       = document.getElementById('cast');
+  const objPlate   = document.getElementById('objPlate');
+  const sunpos     = document.getElementById('sunpos');
+  const beam       = document.getElementById('beam');
+  const caps       = [...document.querySelectorAll('#caps .cap')];
+  const plates     = [...document.querySelectorAll('.plate')].map(p=>({
+    wash:p.querySelector('.wash'), cool:p.querySelector('.tint.cool'),
+    warm:p.querySelector('.tint.warm'), dusk:p.querySelector('.dusk')
+  }));
+  const track = document.getElementById('track');
+  const prov  = document.getElementById('provenance');
+  const atl   = document.getElementById('atelier');
+
+  const H0 = 6, H1 = 19.5;                       // the day the page spans
+  let keys = [];                                  // [scrollY, hour] piecewise-linear, monotonic
+  function measure(){
+    const vh  = innerHeight;
+    const y   = scrollY;
+    const top = el => el.getBoundingClientRect().top + y;
+    const max = document.documentElement.scrollHeight - vh;
+    const tT = top(track), tH = track.offsetHeight;
+    const pinned = wide.matches && !reduce.matches;
+    keys = [
+      [0, H0],
+      [top(prov) - vh*0.6, 7.5],
+      pinned ? [tT, 9.5]                       : [tT - vh*0.5, 9.5],
+      pinned ? [tT + (tH - vh)*0.78, 17.5]     : [tT + tH*0.6, 17.5],
+      pinned ? [tT + tH - vh, 17.5]            : [tT + tH*0.85, 17.5],   // the hold: a stable viewing moment
+      [top(atl) + atl.offsetHeight*0.5, 18.6],
+      [Math.max(max, 1), H1],
+    ];
+    // enforce monotonic scroll positions
+    for (let i=1;i<keys.length;i++) if (keys[i][0] < keys[i-1][0]) keys[i][0] = keys[i-1][0];
+  }
+  function hourAt(y){
+    if (y <= keys[0][0]) return keys[0][1];
+    for (let i=1;i<keys.length;i++){
+      const [y0,h0] = keys[i-1], [y1,h1] = keys[i];
+      if (y <= y1) return y1===y0 ? h1 : lerp(h0, h1, (y-y0)/(y1-y0));
+    }
+    return keys[keys.length-1][1];
+  }
+
+  const fmt = h => { const hh = Math.floor(h), mm = Math.floor((h-hh)*60); return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`; };
+  const kelvin = h => h < 12 ? lerp(6400, 5500, (h-6)/6) : lerp(5500, 3100, (h-12)/7.5);
+  const note = h => h < 8 ? 'First light · north window' : h < 11.5 ? 'Morning · north window'
+                  : h < 14.5 ? 'Noon · flat light' : h < 17 ? 'Afternoon · west casement' : 'Evening · cognac';
+
+  let target = 12, cur = 12, raf = 0, lastTxt = '';
+  function render(h){
+    const t   = clamp((h - H0)/(H1 - H0), 0, 1);       // 0 dawn … 1 dusk
+    const e   = Math.sin(Math.PI * t);                   // sun elevation 0…1…0
+    const dir = t*2 - 1;                                 // −1 east (morning) … +1 west (evening)
+    const cool = 0.26 * clamp(1 - (h-6)/6, 0, 1);
+    const warm = 0.30 * clamp((h-14)/5, 0, 1);
+    const dusk = 0.42 * clamp((h-16)/3.5, 0, 1);
+
+    skyMorning.style.opacity = clamp(1 - (h-6)/5, 0, 1).toFixed(3);
+    skyDusk.style.opacity    = clamp((h-14.5)/4.5, 0, 1).toFixed(3);
+
+    const washX = (dir * 48).toFixed(2), washO = (0.35 + 0.45*e).toFixed(3);
+    plates.forEach(p=>{
+      p.wash.style.transform = `translate3d(${washX}%,0,0) rotate(${(-6 + dir*8).toFixed(2)}deg)`;
+      p.wash.style.opacity   = washO;
+      p.cool.style.opacity   = cool.toFixed(3);
+      p.warm.style.opacity   = warm.toFixed(3);
+      p.dusk.style.opacity   = dusk.toFixed(3);
+    });
+
+    // the cast shadow under the object: long at dawn/dusk, short and dark at noon
+    const len = 0.5 + 1.5*(1-e);
+    cast.style.transform = `translate3d(${(-dir*22).toFixed(2)}%,0,0) scaleX(${len.toFixed(3)})`;
+    cast.style.opacity   = (0.45 + 0.45*e).toFixed(3);
+    // an imperceptible push-in over the day: the reader leans closer
+    objPlate.style.transform = `scale(${(1 + 0.035*t).toFixed(4)})`;
+
+    // sun on the casement diagram: arc centre (260,250) r=220, 06→18 left→right
+    const a = Math.PI * (1 - clamp((h-6)/12, 0, 1));
+    sunpos.setAttribute('transform', `translate(${(260 + 220*Math.cos(a)).toFixed(1)} ${(250 - 220*Math.sin(a)).toFixed(1)})`);
+    beam.style.opacity = (0.15 + 0.7*clamp((h-15)/3, 0, 1)).toFixed(3);
+
+    caps.forEach(c=>{ c.classList.toggle('on', h >= +c.dataset.from && h < +c.dataset.to); });
+
+    const txt = fmt(h);
+    if (txt !== lastTxt){
+      lastTxt = txt;
+      hourBig.textContent = txt; folioHour.textContent = txt;
+      const k = `${Math.round(kelvin(h)/100)*100} K`;
+      const n = note(h);
+      folioK.textContent = k; folioNote.textContent = n;
+      hourNote.innerHTML = `${n} · <b>${k}</b>`;
+      pageNo.textContent = String(1 + Math.floor(t*23));
+    }
+  }
+  function loop(){
+    cur += (target - cur) * 0.14;
+    if (Math.abs(target - cur) < 0.002){ cur = target; render(cur); raf = 0; return; }
+    render(cur); raf = requestAnimationFrame(loop);
+  }
+  function onScroll(){ target = hourAt(scrollY); if (!raf) raf = requestAnimationFrame(loop); }
+
+  if (reduce.matches){
+    /* reduced motion: the page rests at one o'clock — complete and still */
+    measure(); render(13); return;
+  }
+  measure(); cur = target = hourAt(scrollY); render(cur);
+  addEventListener('scroll', onScroll, { passive:true });
+  let rTO = 0;
+  addEventListener('resize', ()=>{ clearTimeout(rTO); rTO = setTimeout(()=>{ measure(); onScroll(); }, 120); }, { passive:true });
+  addEventListener('load', ()=>{ measure(); onScroll(); });
+  wide.addEventListener('change', ()=>{ measure(); onScroll(); });
+})();
+</script>
+</body>
+</html>

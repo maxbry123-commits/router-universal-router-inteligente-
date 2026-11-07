@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>VANTASCOPE — HOLLOW STAR · a signal climbing out of the noise floor</title>
+<meta name="description" content="HOLLOW STAR — an editorial sci-fi release from VANTASCOPE. Scroll to raise the gain: a single carrier climbs out of a live spectrogram noise floor across four transmissions. Built with the cinematic-scroll Agent Skill." />
+<meta property="og:title" content="VANTASCOPE — HOLLOW STAR" />
+<meta property="og:description" content="A signal calling someone back. Scroll to raise the gain." />
+<meta property="og:type" content="website" />
+<meta name="theme-color" content="#05070a" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 fill=%22%2305070a%22/><rect x=%2215%22 y=%224%22 width=%222%22 height=%2224%22 fill=%22%23ff3b4e%22/></svg>" />
+
+<style>
+  /* ───────────────────────────────────────────────────────────────
+     cinematic-scroll · VANTASCOPE — "HOLLOW STAR"
+     One idea: the page is a receiver. Scroll is the gain knob.
+     A procedural spectrogram (canvas) is pure noise at the top of the
+     page; as you scroll a single crimson carrier climbs out of the
+     noise floor, sharpens, starts to pulse a cadence, and locks.
+     Every HUD readout is computed from scroll progress. The four
+     plates are evidence returned by the receiver. Zero dependencies.
+     ─────────────────────────────────────────────────────────────── */
+  :root{
+    /* colour roles (design.md §2) */
+    --bg:#05070a;
+    --bg-0:rgba(5,7,10,0);
+    --surface:rgba(5,7,10,.84);
+    --surface-2:rgba(233,238,238,.045);
+    --fg:#e9eeee;
+    --fg-dim:#8d989c;
+    --accent:#ff3b4e;
+    --accent-soft:rgba(255,59,78,.34);
+    --accent-glow:rgba(255,59,78,.6);
+    --line:rgba(233,238,238,.14);
+    --line-2:rgba(233,238,238,.32);
+    --shadow:rgba(0,0,0,.6);
+    /* per-frame world colours — JS mixes these from gain */
+    --world-a:#07141a;
+    --world-b:#05070a;
+    --lock:0;
+
+    /* motion roles (tokens/motion.tokens.json) */
+    --ease-reveal:cubic-bezier(.16,1,.3,1);
+    --ease-exit:cubic-bezier(.7,0,.84,0);
+    --ease-playful:cubic-bezier(.34,1.56,.64,1);
+    --ease-cut:cubic-bezier(.87,0,.13,1);
+    --dur-fast:300ms; --dur-base:500ms; --dur-slow:720ms; --dur-glacial:1200ms;
+
+    --display:system-ui,-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,ui-serif,serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Courier New",monospace;
+    --gutter:clamp(18px,5vw,84px);
+    --bar:64px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;color-scheme:dark}
+  body{
+    background:var(--bg);color:var(--fg);
+    font-family:var(--serif);-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  a{color:inherit}
+  ::selection{background:var(--accent);color:var(--bg)}
+
+  /* ── fixed world: gradient ground + spectrogram canvas ─────────── */
+  .world{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:linear-gradient(180deg,var(--world-a) 0%,var(--world-b) 100%);
+  }
+  .world::after{ /* crimson lock vignette — opacity only */
+    content:"";position:absolute;inset:0;opacity:var(--lock);
+    background:radial-gradient(70% 55% at 50% 60%,var(--accent-soft),transparent 70%);
+  }
+  /* no-JS / pre-paint ground: a static procedural noise floor so the stage is never blank */
+  #field{
+    position:fixed;inset:0;z-index:1;pointer-events:none;width:100%;height:100%;
+    background:
+      linear-gradient(90deg,transparent 49.3%,var(--accent-soft) 49.7%,var(--accent-soft) 50.3%,transparent 50.7%),
+      repeating-linear-gradient(180deg,var(--surface-2) 0 2px,transparent 2px 6px),
+      repeating-linear-gradient(90deg,transparent 0 5px,var(--surface-2) 5px 6px);
+    opacity:.9;
+  }
+  #field.live{background:none;opacity:1}
+  .scrim{position:fixed;left:0;right:0;bottom:0;z-index:12;pointer-events:none;height:120px;background:linear-gradient(0deg,var(--bg) 0%,var(--bg-0) 100%)}
+
+  /* ── HUD ────────────────────────────────────────────────────────── */
+  .hud{
+    position:fixed;z-index:20;pointer-events:none;
+    font-family:var(--mono);color:var(--fg-dim);
+    text-shadow:0 1px 3px var(--shadow);
+  }
+  .hud.readout{right:var(--gutter);top:0;height:var(--bar);z-index:31;display:flex;align-items:center;gap:clamp(12px,1.6vw,24px)}
+  .readout .big{
+    font-family:var(--display);font-weight:300;font-size:30px;
+    letter-spacing:-.03em;line-height:1;color:var(--fg);font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .readout .big small{font-family:var(--mono);font-size:.34em;letter-spacing:.14em;margin-left:6px;color:var(--fg-dim)}
+  .readout .row{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;display:flex;flex-direction:column;gap:3px}
+  .readout .row b{font-weight:400;color:var(--fg);font-variant-numeric:tabular-nums}
+  .readout .row.st b{color:var(--accent)}
+
+  .hud.meter{left:clamp(14px,2vw,28px);top:50%;transform:translateY(-50%);height:58vh;width:60px}
+  .meter .track{position:absolute;left:22px;top:0;bottom:0;width:1px;background:linear-gradient(180deg,var(--line),var(--line-2))}
+  .meter .tick{position:absolute;left:16px;width:13px;height:1px;background:var(--line-2)}
+  .meter .tick span{position:absolute;left:20px;top:-6px;font-size:9px;letter-spacing:.14em;white-space:nowrap;text-transform:uppercase}
+  .meter .marker{
+    position:absolute;left:17px;top:0;width:11px;height:11px;margin-top:-5px;
+    border:1px solid var(--fg);background:var(--bg);box-shadow:0 0 12px var(--accent-glow);
+    will-change:transform;
+  }
+  .meter .lab{position:absolute;left:0;bottom:-30px;font-size:9px;letter-spacing:.3em;text-transform:uppercase;white-space:nowrap}
+
+  .readout .scope{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .scope canvas{width:130px;height:26px;display:block;border-bottom:1px solid var(--line)}
+  .scope span{font-size:8px;letter-spacing:.28em;text-transform:uppercase}
+
+  .hud.hint{
+    left:50%;bottom:26px;transform:translateX(-50%);font-size:10px;letter-spacing:.3em;text-transform:uppercase;
+    display:flex;flex-direction:column;align-items:center;gap:10px;white-space:nowrap;
+    transition:opacity var(--dur-slow) var(--ease-exit);
+  }
+  .hint i{display:block;width:1px;height:34px;background:linear-gradient(180deg,var(--accent),transparent);animation:fall 2s var(--ease-reveal) infinite}
+  @keyframes fall{0%{transform:translateY(-8px);opacity:0}30%{opacity:1}100%{transform:translateY(10px);opacity:0}}
+
+  /* ── masthead ───────────────────────────────────────────────────── */
+  .masthead{
+    position:fixed;inset:0 0 auto 0;height:var(--bar);z-index:30;
+    display:flex;align-items:center;gap:clamp(18px,3vw,44px);padding:0 var(--gutter);
+    font-family:var(--mono);background:var(--bg);border-bottom:1px solid var(--line);
+  }
+  .masthead .brand{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.3em;text-decoration:none;color:var(--fg)}
+  .masthead .brand i{display:inline-block;width:2px;height:12px;background:var(--accent);margin-right:12px;vertical-align:-1px}
+  .masthead nav{display:flex;gap:clamp(12px,2vw,26px);font-size:10px;letter-spacing:.22em;text-transform:uppercase}
+  .masthead nav a{color:var(--fg-dim);text-decoration:none;transition:color var(--dur-fast) var(--ease-reveal)}
+  @media (hover:hover){ .masthead nav a:hover{color:var(--fg)} }
+  .masthead nav a:focus-visible,.cta:focus-visible,.brand:focus-visible,.repo-home-pill:focus-visible,footer a:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
+
+  /* ── scroll content ─────────────────────────────────────────────── */
+  main{position:relative;z-index:5}
+  section{position:relative;min-height:100vh;display:grid;align-items:center;padding:16vh var(--gutter);min-width:0;scroll-margin-top:var(--bar)}
+  section>*,.ch .grid>*{min-width:0}
+  .k{font-family:var(--mono);font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:12px}
+  .k::before{content:"";width:28px;height:1px;background:var(--accent)}
+
+  /* hero */
+  .hero{min-height:100vh;align-content:center}
+  .hero .inner{max-width:1180px;width:100%;margin:0 auto}
+  .hero h1{
+    margin-top:clamp(18px,2.6vw,30px);
+    font-family:var(--display);font-weight:800;text-transform:uppercase;
+    font-size:clamp(3.6rem,15.4vw,15rem);line-height:.86;letter-spacing:-.045em;color:var(--fg);
+    max-width:100%;overflow-wrap:normal;
+  }
+  .hero h1 em{font-style:normal;color:var(--accent)}
+  .hero .lede{margin-top:clamp(24px,3vw,40px);max-width:52ch;font-size:clamp(1.05rem,1.55vw,1.36rem);line-height:1.55;color:var(--fg);text-wrap:pretty}
+  .hero .lede span{color:var(--fg-dim)}
+  .release{
+    margin-top:clamp(26px,3.2vw,44px);display:flex;flex-wrap:wrap;gap:10px 34px;
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--fg-dim);
+    border-top:1px solid var(--line);padding-top:18px;max-width:760px;
+  }
+  .release b{font-weight:400;color:var(--fg)}
+
+  /* chapters: [plate] · carrier · [panel], alternating */
+  .ch{min-height:112vh;padding:16vh var(--gutter)}
+  .ch .grid{
+    width:100%;max-width:1320px;margin:0 auto;
+    display:grid;grid-template-columns:minmax(0,5fr) minmax(0,1.2fr) minmax(0,6fr);align-items:center;gap:0 clamp(16px,2vw,28px);
+  }
+  .ch .grid figure{order:1}
+  .ch .grid .gap{order:2;min-height:1px}
+  .ch .grid .panel{order:3}
+  .ch.flip .grid{grid-template-columns:minmax(0,6fr) minmax(0,1.2fr) minmax(0,5fr)}
+  .ch.flip .grid figure{order:3}
+  .ch.flip .grid .panel{order:1}
+
+  figure{position:relative;width:min(100%,460px);margin:0 auto;justify-self:center}
+  .ch.flip figure{justify-self:center}
+  figure .frame{position:relative;aspect-ratio:4/5;overflow:hidden;background:var(--surface);box-shadow:0 40px 80px -30px var(--shadow),0 0 0 1px var(--line)}
+  figure img{display:block;width:100%;height:100%;object-fit:cover;will-change:transform}
+  figure .frame::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px var(--line);pointer-events:none}
+  figure .rim{position:absolute;top:10%;right:-1px;width:2px;height:80%;background:linear-gradient(180deg,transparent,var(--accent) 40%,var(--accent) 60%,transparent);box-shadow:0 0 12px var(--accent-glow)}
+  figcaption{
+    margin-top:12px;display:flex;justify-content:space-between;gap:12px;
+    font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg-dim);
+  }
+  figcaption b{font-weight:400;color:var(--accent)}
+
+  .panel{
+    max-width:600px;width:100%;
+    background:var(--surface);border:1px solid var(--line);
+    padding:clamp(24px,3.4vw,44px) clamp(22px,3vw,40px);
+    box-shadow:0 30px 80px -30px var(--shadow);
+  }
+  .panel h2{
+    margin:16px 0 18px;font-family:var(--display);font-weight:800;text-transform:uppercase;
+    font-size:clamp(2.1rem,4.4vw,4.2rem);line-height:.92;letter-spacing:-.035em;color:var(--fg);
+    text-wrap:balance;
+  }
+  .panel h2 em{font-style:normal;color:var(--accent)}
+  .panel p{font-size:clamp(1rem,1.25vw,1.12rem);line-height:1.62;color:var(--fg);margin-bottom:12px;text-wrap:pretty}
+  .panel p:last-of-type{margin-bottom:0}
+  .panel .quiet{color:var(--fg-dim);font-style:italic}
+  .facts{
+    display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-dim);
+  }
+  .facts b{font-weight:400;color:var(--fg);font-variant-numeric:tabular-nums}
+
+  .cta{
+    margin-top:26px;display:inline-flex;align-items:center;gap:12px;padding:14px 26px;
+    border:1px solid var(--accent);color:var(--fg);text-decoration:none;
+    font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    transition:background var(--dur-fast) var(--ease-reveal),color var(--dur-fast) var(--ease-reveal),transform var(--dur-fast) var(--ease-reveal);
+  }
+  .cta i{display:inline-block;width:8px;height:8px;background:var(--accent);box-shadow:0 0 10px var(--accent-glow)}
+  @media (hover:hover){ .cta:hover{background:var(--accent);color:var(--bg);transform:translateY(-2px)} .cta:hover i{background:var(--bg)} }
+  .cta:active{transform:translateY(0)}
+
+  /* finale */
+  .finale{min-height:100vh;align-items:center;padding:14vh var(--gutter) 8vh}
+  .finale .inner{max-width:1180px;width:100%;margin:0 auto}
+  .finale h2{
+    margin-top:18px;font-family:var(--display);font-weight:800;text-transform:uppercase;
+    font-size:clamp(2.4rem,6.2vw,6rem);line-height:.9;letter-spacing:-.04em;color:var(--fg);
+    max-width:14ch;
+  }
+  .finale h2 em{font-style:normal;color:var(--accent)}
+  .finale p{margin-top:22px;max-width:56ch;font-size:clamp(1.05rem,1.5vw,1.3rem);line-height:1.55;color:var(--fg);text-wrap:pretty}
+  .finale .quiet{color:var(--fg-dim);font-style:italic}
+
+  footer{position:relative;z-index:5;padding:4vh var(--gutter) 12vh;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;line-height:1.9;text-transform:uppercase;color:var(--fg-dim)}
+  footer .inner{max-width:1180px;margin:0 auto;border-top:1px solid var(--line);padding-top:22px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 30px}
+  footer a{color:var(--fg);text-decoration:none;border-bottom:1px solid var(--line-2)}
+
+  /* repo affordance */
+  .repo-home-pill{
+    position:fixed;left:max(14px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));z-index:40;
+    display:inline-flex;align-items:center;gap:8px;padding:9px 14px 9px 12px;
+    font:600 11px/1 var(--mono);letter-spacing:.06em;color:var(--fg);text-decoration:none;
+    background:var(--surface);border:1px solid var(--line-2);
+    transition:transform var(--dur-fast) var(--ease-reveal);
+  }
+  @media (hover:hover){ .repo-home-pill:hover{transform:translateY(-2px)} }
+
+  /* ── reveals (JS-enhanced; visible without JS) ──────────────────── */
+  .js .rv{opacity:0;transform:translateY(26px);transition:opacity var(--dur-slow) var(--ease-reveal),transform var(--dur-slow) var(--ease-reveal)}
+  .js .rv.in{opacity:1;transform:none}
+  .js .rv h2,.js .rv.hero-t h1{clip-path:inset(0 0 100% 0);transition:clip-path var(--dur-glacial) var(--ease-cut)}
+  .js .rv.in h2,.js .rv.hero-t.in h1{clip-path:inset(-12% -4% -14% -4%)}
+  .js figure.rv img{transform:scale(1.12);transition:transform var(--dur-glacial) var(--ease-reveal)}
+  .js figure.rv.in img{transform:none}
+  .js .rv .k{letter-spacing:.6em;transition:letter-spacing var(--dur-glacial) var(--ease-reveal)}
+  .js .rv.in .k{letter-spacing:.34em}
+
+  /* ── intermediate widths: the bar has one row; shed HUD detail before it meets the nav ── */
+  @media (max-width:1300px){ .readout .scope{display:none} }
+  @media (max-width:1180px){ .readout .row{display:none} .readout .row.st{display:flex} .readout .big{font-size:26px} }
+  @media (max-width:800px){ .masthead nav{display:none} }
+  @media (max-width:1180px){ .hud.meter{left:8px;width:36px} .meter .tick span,.meter .lab{display:none} }
+
+  /* ── mobile: complete free-flow composition, modest motion ───────── */
+  @media (max-width:760px){
+    .masthead nav{display:none}
+    .hud.meter,.readout .scope{display:none}
+    :root{--bar:56px}
+    .masthead{padding:0 16px}
+    .hud.readout{right:16px;gap:12px}
+    .readout .big{font-size:22px}
+    .readout .row{display:none}
+    .readout .row.st{display:flex;font-size:9px}
+    .scrim{height:80px}
+    .hud.hint{display:none}
+    section{padding:12vh 20px}
+    .ch{min-height:0;padding:14vh 20px}
+    .ch .grid,.ch.flip .grid{grid-template-columns:1fr;gap:28px 0}
+    .ch .grid .gap{display:none}
+    .ch .grid figure,.ch.flip .grid figure{order:1}
+    .ch .grid .panel,.ch.flip .grid .panel{order:2}
+    figure{width:min(100%,420px)}
+    .panel{padding:24px 20px}
+    .hero h1{font-size:clamp(3.2rem,21vw,6rem)}
+    .finale{padding-bottom:10vh}
+    .repo-home-pill{bottom:max(14px,env(safe-area-inset-bottom));left:14px}
+    .js .rv{transform:translateY(16px)} /* modest motion: shorter rise, no scale */
+    .js figure.rv img{transform:none}
+  }
+
+  /* ── reduced motion: skip loops, scrubbing and reveals; everything readable ── */
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .hint i{animation:none}
+    .hud.hint{transition:none}
+    .js .rv,.js .rv.in{opacity:1;transform:none;transition:none}
+    .js .rv h2,.js .rv.hero-t h1{clip-path:none;transition:none}
+    .js figure.rv img{transform:none;transition:none}
+    .js .rv .k{letter-spacing:.34em;transition:none}
+    .cta,.masthead nav a,.repo-home-pill{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="world" aria-hidden="true"></div>
+<canvas id="field" aria-hidden="true"></canvas>
+<div class="scrim" aria-hidden="true"></div>
+
+<header class="masthead">
+  <a class="brand" href="#signal"><i aria-hidden="true"></i>VANTASCOPE</a>
+  <nav aria-label="Transmissions">
+    <a href="#signal">Signal</a>
+    <a href="#trace">Trace</a>
+    <a href="#descent">Descent</a>
+    <a href="#witness">Witness</a>
+    <a href="#access">Access</a>
+  </nav>
+</header>
+
+<!-- live receiver HUD — every value is computed from scroll progress -->
+<div class="hud readout" role="status" aria-live="off">
+  <div class="big"><span id="snr">−2.4</span><small>dB SNR</small></div>
+  <div class="row">Noise floor <b id="floor">−96.0 dBm</b></div>
+  <div class="row">Carrier <b id="carrier">1420.711 MHz</b></div>
+  <div class="row st">Status <b id="status">Noise floor</b></div>
+  <div class="scope" aria-hidden="true">
+    <canvas id="scope" width="480" height="88"></canvas>
+    <span>Spectrum · live</span>
+  </div>
+</div>
+<div class="hud meter" aria-hidden="true">
+  <div class="track"></div>
+  <div class="tick" style="top:0%"><span>Noise</span></div>
+  <div class="tick" style="top:12%"><span>Trace</span></div>
+  <div class="tick" style="top:38%"><span>Carrier</span></div>
+  <div class="tick" style="top:62%"><span>Cadence</span></div>
+  <div class="tick" style="top:88%"><span>Lock</span></div>
+  <div class="marker" id="marker"></div>
+  <div class="lab">Gain</div>
+</div>
+<div class="hud hint" id="hint" aria-hidden="true"><span>Scroll to raise the gain</span><i></i></div>
+
+<main>
+  <section class="hero" id="signal" data-g0="0" data-g1="0.06">
+    <div class="inner rv hero-t">
+      <p class="k">Vantascope · Transmission MMXXVI · four transmissions</p>
+      <h1>Hollow <em>Star</em></h1>
+      <p class="lede">Forty years after the last carrier went dark, a single coherent pulse climbs out of the noise floor. <span>It is not a beacon. It is a name — and it is calling one of us back.</span></p>
+      <div class="release">
+        <span>Premiere <b>14 · 11 · 2026</b></span>
+        <span>Runtime <b>128 min</b></span>
+        <span>Format <b>2.39 : 1 · 4K HDR</b></span>
+        <span>Sound <b>Atmos</b></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="trace" data-g0="0.06" data-g1="0.32">
+    <div class="grid">
+      <figure class="rv">
+        <div class="frame"><img src="assets/0-signal.jpg" alt="A dim industrial corridor in teal fog; a lone figure walks toward a single red lamp at the far end" width="1024" height="1280" loading="eager" /><span class="rim" aria-hidden="true"></span></div>
+        <figcaption><b>Plate I</b><span>Corridor · first return</span><span>−2 → 12 dB</span></figcaption>
+      </figure>
+      <div class="gap" aria-hidden="true"></div>
+      <div class="panel rv">
+        <p class="k">Transmission I · The Trace</p>
+        <h2>Something in the <em>noise</em></h2>
+        <p>The array was decommissioned in 1986 and left listening out of habit. On the ninth of March a ridge appears in the waterfall where there should be only hiss — too narrow to be weather, too patient to be a fault.</p>
+        <p>It sits exactly on the hydrogen line. The one frequency every listener in the galaxy would agree to try first.</p>
+        <div class="facts"><span>Carrier <b>1420.405 MHz</b></span><span>Origin <b>unresolved</b></span><span>Confidence <b>3.1 σ</b></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch flip" id="descent" data-g0="0.32" data-g1="0.56">
+    <div class="grid">
+      <figure class="rv">
+        <div class="frame"><img src="assets/1-descent.jpg" alt="A hooded figure in a long coat descends a wet concrete stairwell into teal darkness" width="1024" height="1280" loading="lazy" /><span class="rim" aria-hidden="true"></span></div>
+        <figcaption><b>Plate II</b><span>Stairwell · descent</span><span>12 → 24 dB</span></figcaption>
+      </figure>
+      <div class="gap" aria-hidden="true"></div>
+      <div class="panel rv">
+        <p class="k">Transmission II · The Descent</p>
+        <h2>Into the <em>quiet dark</em></h2>
+        <p>The derelict has no power, no heat, no record of ever having launched. Yet the corridors are warm where a body has just passed. We go down because the pulse is below us — and because turning back was never an option that survived the briefing.</p>
+        <p class="quiet">With every level the carrier narrows. Whatever is sending has noticed it is being heard.</p>
+        <div class="facts"><span>Bandwidth <b>4.2 → 0.6 kHz</b></span><span>Drift <b>settling</b></span><span>Depth <b>−214 m</b></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="witness" data-g0="0.56" data-g1="0.86">
+    <div class="grid">
+      <figure class="rv">
+        <div class="frame"><img src="assets/2-witness.jpg" alt="A figure in a sealed helmet and armoured suit, edge-lit in red, standing in rain-soaked teal city fog" width="1024" height="1280" loading="lazy" /><span class="rim" aria-hidden="true"></span></div>
+        <figcaption><b>Plate III</b><span>Witness · half-lit</span><span>24 → 40 dB</span></figcaption>
+      </figure>
+      <div class="gap" aria-hidden="true"></div>
+      <div class="panel rv">
+        <p class="k">Transmission III · The Witness</p>
+        <h2>It remembers <em>your name</em></h2>
+        <p>The carrier is not empty. Between the pulses there is a cadence — three long, two short, a pause — repeated without variation for as long as we care to listen. It is a call sign. It was retired with the array in 1986, and it belonged to one person.</p>
+        <p>Whatever answered the signal was not built and was not born. When it finally turns toward the light it is wearing a face you buried four decades ago — patient, unhurried, almost kind.</p>
+        <div class="facts"><span>Modulation <b>on–off keyed</b></span><span>Cadence <b>— — — · ·</b></span><span>Match <b>1 of 1</b></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch flip" id="access" data-g0="0.86" data-g1="1">
+    <div class="grid">
+      <figure class="rv">
+        <div class="frame"><img src="assets/3-access.jpg" alt="A small hooded figure stands before a towering stone gate filled with luminous teal mist, a red line of light along its threshold" width="1024" height="1280" loading="lazy" /><span class="rim" aria-hidden="true"></span></div>
+        <figcaption><b>Plate IV</b><span>Threshold · backlit</span><span>Lock</span></figcaption>
+      </figure>
+      <div class="gap" aria-hidden="true"></div>
+      <div class="panel rv">
+        <p class="k">Transmission IV · The Offer</p>
+        <h2>Stay, or <em>answer it</em></h2>
+        <p>The airlock is open. On one side, the long cold ride home and a report no one will believe. On the other, the thing wearing your past, holding the door, asking only that you walk through it of your own accord.</p>
+        <div class="facts"><span>Premiere <b>14 · 11 · 2026</b></span><span>Runtime <b>128 min</b></span><span>Format <b>2.39 : 1 · 4K HDR</b></span></div>
+        <a class="cta" href="mailto:transmission@example.com?subject=HOLLOW%20STAR%20%E2%80%94%20early%20access"><i aria-hidden="true"></i>Request early access</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="finale" data-g0="1" data-g1="1">
+    <div class="inner rv">
+      <p class="k">Lock · 42.4 dB · 1420.405 MHz</p>
+      <h2>A signal was sent.<br>Something <em>answered.</em></h2>
+      <p class="quiet">It is cold, and it is dark, and it is patient, and it knows which one of us to ask for.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="inner">
+    <span>Vantascope is a fictional studio — no real titles, people or brands.</span>
+    <span>Built with the <a href="https://github.com/MustBeSimo/web-design-studio">cinematic-scroll</a> Agent Skill · by Simone Leonelli</span>
+  </div>
+</footer>
+
+<a class="repo-home-pill" href="https://github.com/MustBeSimo/web-design-studio" target="_blank" rel="noopener" aria-label="Back to the cinematic-scroll repository on GitHub"><span aria-hidden="true">&larr;</span> cinematic-scroll</a>
+
+<script>
+(function(){
+  'use strict';
+  var root = document.documentElement;
+  root.classList.add('js');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var coarse = window.matchMedia('(hover: none) and (pointer: coarse)').matches; // touch: reduce field resolution; no tilt exists on this page
+
+  /* ---------- helpers ---------- */
+  function clamp(v,a,b){ return v<a?a:v>b?b:v; }
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function ss(e0,e1,x){ if(x<=e0) return 0; if(x>=e1) return 1; var t=(x-e0)/(e1-e0); return t*t*(3-2*t); }
+  function mix(c1,c2,t){ return 'rgb('+Math.round(lerp(c1[0],c2[0],t))+','+Math.round(lerp(c1[1],c2[1],t))+','+Math.round(lerp(c1[2],c2[2],t))+')'; }
+
+  /* ---------- scroll → gain (each section owns a gain range) ---------- */
+  var sections = Array.prototype.slice.call(document.querySelectorAll('main section'));
+  function gainFromScroll(y){
+    var mid = y + window.innerHeight*0.5;
+    for (var i=0;i<sections.length;i++){
+      var s=sections[i], top=s.offsetTop, h=s.offsetHeight;
+      var g0=+s.dataset.g0, g1=+s.dataset.g1;
+      if (mid < top+h || i===sections.length-1){
+        var t = clamp((mid-top)/h,0,1);
+        return clamp(lerp(g0,g1,t),0,1);
+      }
+    }
+    return 1;
+  }
+
+  /* ---------- receiver model: what the signal looks like at gain u ---------- */
+  var PATTERN = [1,1,1,0,1,1,1,0,1,1,1,0,1,0,1,0,0,0,0]; // — — — · ·  then silence
+  function sigAmp(u){ return ss(0.04,0.38,u); }
+  function widthAt(u){ return lerp(15,1.4,ss(0.08,0.86,u)); }
+  function noiseAmp(u){ return lerp(1,0.26,ss(0.70,0.90,u)); }
+  function modDepth(u){ return ss(0.56,0.74,u); }
+  function harmAmp(u){ return 0.42*ss(0.30,0.62,u)*(1-0.6*ss(0.86,0.96,u)); }
+  function snrAt(u){ return -2.4 + 44.8*ss(0.03,0.92,u); }
+  function floorAt(u){ return -96 - 22*ss(0.70,0.90,u); }
+  function carrierAt(u){ var lock=ss(0.2,0.86,u); return 1420.405 + (1-lock)*(0.306*Math.sin(u*41)+0.09*Math.sin(u*173)); }
+  function statusAt(u){
+    if (u<0.06) return 'Noise floor';
+    if (u<0.32) return 'Trace';
+    if (u<0.56) return 'Carrier';
+    if (u<0.86) return 'Cadence';
+    return 'Lock';
+  }
+
+  /* ---------- spectrogram field ---------- */
+  var field=document.getElementById('field'), fctx=field.getContext('2d',{alpha:true});
+  var off=document.createElement('canvas'), octx=off.getContext('2d');
+  var scope=document.getElementById('scope'), sctx=scope.getContext('2d');
+  var COLS=0, ROWS=0, BUF=1600, noise=null, colShape=null, img=null, data=null, lastRow=null, cell=6;
+  var BG=[5,7,10], TEAL=[22,38,42], GREY=[56,76,80], RED=[255,59,78], PINK=[255,150,150], HOT=[255,232,228];
+  var LUT=new Uint8ClampedArray(512*4);
+  (function buildLUT(){
+    var stops=[[0,BG,0],[0.34,TEAL,1],[0.62,GREY,1],[0.92,RED,1],[1.3,PINK,1],[1.75,HOT,1]];
+    for (var i=0;i<512;i++){
+      var v=i/512*2;
+      var a=stops[0], b=stops[stops.length-1];
+      for (var k=0;k<stops.length-1;k++){ if (v>=stops[k][0] && v<=stops[k+1][0]){ a=stops[k]; b=stops[k+1]; break; } }
+      var t = b[0]===a[0]?1:clamp((v-a[0])/(b[0]-a[0]),0,1);
+      LUT[i*4]=lerp(a[1][0],b[1][0],t); LUT[i*4+1]=lerp(a[1][1],b[1][1],t); LUT[i*4+2]=lerp(a[1][2],b[1][2],t);
+      LUT[i*4+3]=Math.round(255*clamp(v/0.30,0,1)*lerp(a[2],b[2],t)); // noise floor fades into the world gradient
+    }
+  })();
+  function seeded(seed){ var s=seed>>>0; return function(){ s=(s*1664525+1013904223)>>>0; return s/4294967296; }; }
+  function sizeField(){
+    var W=window.innerWidth, H=window.innerHeight;
+    cell = (W<760 || coarse) ? 4 : 6; // touch / narrow: coarser cells, fewer pixels to fill
+    COLS=Math.ceil(W/cell); ROWS=Math.ceil(H/cell);
+    off.width=COLS; off.height=ROWS;
+    var dpr=Math.min(1.5,window.devicePixelRatio||1);
+    field.width=Math.round(W*dpr); field.height=Math.round(H*dpr);
+    fctx.setTransform(dpr,0,0,dpr,0,0); fctx.imageSmoothingEnabled=false;
+    img=octx.createImageData(COLS,ROWS); data=img.data;
+    lastRow=new Float32Array(COLS);
+    var rnd=seeded(2026);
+    noise=new Float32Array(BUF*COLS);
+    for (var i=0;i<noise.length;i++){ var r=rnd(); noise[i]=r*r*(0.6+0.8*rnd()); } // skewed: mostly dark, sparse bright hiss
+    colShape=new Float32Array(COLS);
+    for (var c=0;c<COLS;c++){ colShape[c]=0.72+0.18*Math.sin(c*0.21)+0.10*Math.sin(c*0.047+1.7); }
+    // scope canvas backing store
+    var sr=scope.getBoundingClientRect(); if (sr.width){ scope.width=Math.round(sr.width*2); scope.height=Math.round(sr.height*2); }
+  }
+  function drawField(p){
+    var gb=Math.round(p*(BUF-1));
+    var scale=COLS/240;
+    var c0base=COLS*0.5, cHarm=COLS*0.155;
+    for (var r=0;r<ROWS;r++){
+      var g=gb-(ROWS-1-r);
+      var u = g<0 ? 0 : g/BUF;
+      var gi = ((g%BUF)+BUF)%BUF;
+      var a=sigAmp(u), w=widthAt(u)*scale, nA=noiseAmp(u)*(0.9+0.1*Math.sin(gi*0.07));
+      var wob=(1-ss(0.2,0.8,u))*6*Math.sin(gi*0.045)+(1-a)*3*Math.sin(gi*0.3);
+      var c0=c0base+wob*scale;
+      var ah=harmAmp(u), wh=w*1.5;
+      var bit=PATTERN[((gi>>2)%PATTERN.length)];
+      var m=1-modDepth(u)*(bit?0:0.88);
+      var boost=1.1+0.55*ss(0.80,0.95,u);
+      var inv2w=1/(2*w*w), inv2wh=1/(2*wh*wh);
+      var rowBase=gi*COLS, px=r*COLS;
+      for (var c=0;c<COLS;c++){
+        var d=c-c0, d1=c-(c0-cHarm), d2=c-(c0+cHarm);
+        var sig=a*Math.exp(-d*d*inv2w)*m*boost + ah*m*(Math.exp(-d1*d1*inv2wh)+Math.exp(-d2*d2*inv2wh));
+        var v=noise[rowBase+c]*nA*colShape[c]*0.72+sig;
+        if (r===ROWS-1) lastRow[c]=v;
+        var li=(v>=2?511:(v*256)|0)<<2, o=(px+c)<<2;
+        data[o]=LUT[li]; data[o+1]=LUT[li+1]; data[o+2]=LUT[li+2]; data[o+3]=LUT[li+3];
+      }
+    }
+    octx.putImageData(img,0,0);
+    fctx.clearRect(0,0,field.width,field.height);
+    fctx.drawImage(off,0,0,window.innerWidth,window.innerHeight);
+  }
+  function drawScope(){
+    var W=scope.width, H=scope.height; if(!W) return;
+    sctx.clearRect(0,0,W,H);
+    sctx.lineWidth=2; sctx.strokeStyle='rgb('+RED.join(',')+')'; sctx.globalAlpha=0.9;
+    sctx.beginPath();
+    for (var c=0;c<COLS;c++){
+      var x=c/(COLS-1)*W, y=H-4-clamp(lastRow[c],0,2)/2*(H-8);
+      if (c===0) sctx.moveTo(x,y); else sctx.lineTo(x,y);
+    }
+    sctx.stroke();
+    sctx.globalAlpha=0.35; sctx.strokeStyle='rgb('+GREY.join(',')+')'; sctx.lineWidth=1;
+    sctx.beginPath(); sctx.moveTo(0,H-4); sctx.lineTo(W,H-4); sctx.stroke();
+    sctx.globalAlpha=1;
+  }
+
+  /* ---------- HUD ---------- */
+  var el={ snr:document.getElementById('snr'), floor:document.getElementById('floor'), carrier:document.getElementById('carrier'),
+           status:document.getElementById('status'), marker:document.getElementById('marker'), hint:document.getElementById('hint') };
+  var meter=document.querySelector('.hud.meter'), meterH=0;
+  var WA0=[7,20,26], WA1=[12,6,9], WB0=[5,7,10], WB1=[16,4,7];
+  function fmtSnr(x){ return (x<0?'−':'')+Math.abs(x).toFixed(1); }
+  function renderHUD(u){
+    el.snr.textContent=fmtSnr(snrAt(u));
+    el.floor.textContent='−'+Math.abs(floorAt(u)).toFixed(1)+' dBm';
+    el.carrier.textContent=carrierAt(u).toFixed(3)+' MHz';
+    el.status.textContent=statusAt(u);
+    el.marker.style.transform='translateY('+(u*meterH).toFixed(1)+'px)';
+    var lock=ss(0.70,0.92,u);
+    root.style.setProperty('--world-a',mix(WA0,WA1,ss(0.1,0.9,u)));
+    root.style.setProperty('--world-b',mix(WB0,WB1,ss(0.3,0.95,u)));
+    root.style.setProperty('--lock',(lock*0.9).toFixed(3));
+  }
+
+  /* ---------- the one scroll clock ---------- */
+  var shown=0, target=0, raf=0, lastDrawn=-1;
+  function frame(){
+    raf=0;
+    target=gainFromScroll(window.scrollY||window.pageYOffset||0);
+    shown += (target-shown)*(reduce?1:0.16);
+    if (Math.abs(target-shown)<0.0004) shown=target;
+    if (Math.abs(shown-lastDrawn)>0.00025){
+      renderHUD(shown);
+      if (!reduce){ drawField(shown); drawScope(); }
+      lastDrawn=shown;
+    }
+    el.hint.style.opacity = (window.scrollY||0)>80 ? '0' : '1';
+    if (shown!==target) raf=requestAnimationFrame(frame);
+  }
+  function kick(){ if(!raf) raf=requestAnimationFrame(frame); }
+
+  function measure(){
+    meterH = meter.getBoundingClientRect().height || 0;
+    sizeField();
+    lastDrawn=-1;
+    if (reduce){ drawField(0.9); drawScope(); } // static locked-state frame; readouts still track position
+    kick();
+  }
+  var rT;
+  window.addEventListener('resize',function(){ clearTimeout(rT); rT=setTimeout(measure,90); },{passive:true});
+  window.addEventListener('scroll',kick,{passive:true});
+  window.addEventListener('load',function(){ measure(); },{once:true});
+
+  /* ---------- discrete reveals ---------- */
+  var rv=Array.prototype.slice.call(document.querySelectorAll('.rv'));
+  if ('IntersectionObserver' in window && !reduce){
+    var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } }); },{threshold:0.18, rootMargin:'0px 0px -6% 0px'});
+    rv.forEach(function(n){ io.observe(n); });
+  } else { rv.forEach(function(n){ n.classList.add('in'); }); }
+
+  field.classList.add('live');
+  measure();
+})();
+</script>
+</body>
+</html>

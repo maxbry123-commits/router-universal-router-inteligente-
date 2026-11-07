@@ -1,0 +1,191 @@
+# Web Design Studio — quality gate in CI.
+#
+# The whole pitch is that cinematic taste is a number you can block on. This
+# workflow proves it: every push and PR runs `cinematic-doctor` over the bundled
+# examples and builds the React Three Fiber / WebXR flagship (Mode B). A red X
+# here means a build dropped below the craft bar or stopped compiling. Since
+# 3.0.0 it also guards the install surface: every skills/* folder stays
+# text-only and self-contained, no root SKILL.md may reappear, no tracked file
+# may exceed 5 MB, and the real skills installer must list exactly three skills.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  craft-contract:
+    name: cinematic-doctor (quality gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # The gate must be able to fail: good fixture passes, bad fixture fails.
+      - name: Doctor self-test
+        run: node tools/cinematic-doctor/cli.mjs --selftest
+
+      # Design-contract invariants (all zero-dependency — pure node + git).
+      - name: Design-token contract
+        run: node tools/check-tokens.mjs
+      - name: Theme contract (11 systems)
+        run: node tools/check-themes.mjs
+      - name: Docs ↔ reality (dead links + stale strings)
+        run: node tools/check-links.mjs
+      - name: Consistency (version / secrets / token determinism)
+        run: node tools/check-consistency.mjs
+      - name: Learn tools self-test
+        run: npm run learn:selftest
+      - name: Skill pointer stubs in sync (.codex / .cursor)
+        run: node tools/skill-sync.mjs --check
+      - name: Skill folders (text-only, self-contained, version-synced, no root SKILL.md)
+        run: node tools/check-skills.mjs --forbid-root-skill
+      - name: Tracked media size (5 MB gate)
+        run: node tools/check-media-size.mjs
+      - name: Landing-page links resolve (Pages serves main plus the media overlay)
+        run: |
+          git fetch --depth=1 origin +refs/heads/media:refs/remotes/origin/media
+          node tools/check-site-links.mjs
+      - name: Installer, payload, validator and media-tool tests
+        run: node --test bin/install.test.mjs tools/check-package.test.mjs tools/check-skills.test.mjs tools/check-media-size.test.mjs tools/media-archive.test.mjs tools/media-branch.test.mjs tools/check-site-links.test.mjs tools/check-site-links.overlay.test.mjs
+      - name: Component library (doctor ≥80 each)
+        run: for f in components/mode-a/*.html; do node tools/cinematic-doctor/cli.mjs "$f" --min 80 --quiet || exit 1; done
+      - name: Evals (golden fixtures + trigger-set shape)
+        run: npm run evals:run
+
+      # Sweep every web build in the repo (landing pages + examples). Video
+      # compositions and test fixtures are skipped automatically. Default
+      # threshold is 80; a build under the bar exits non-zero and blocks merge.
+      - name: Score all web builds
+        run: node tools/cinematic-doctor/cli.mjs .
+
+  # What users actually receive: the real skills CLI against this checkout must
+  # discover exactly the three skill folders. If a root SKILL.md ever returns, the
+  # CLI would report one skill and ship the whole repository as its payload.
+  install-surface:
+    name: install surface (npx skills add lists 3 skills)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22  # the skills CLI (1.7.x) requires Node >= 22.20
+      - name: List skills with the real installer
+        run: |
+          # strip ANSI colour codes: the CLI prints "Found \e[32m3\e[39m skills"
+          npx -y skills@1.7.4 add "$GITHUB_WORKSPACE" --list 2>&1 | sed 's/\x1b\[[0-9;?]*[A-Za-z]//g' | tee /tmp/skills.txt
+          grep -q 'Found 3 skills' /tmp/skills.txt
+          for s in cinematic-scroll scroll-audit launch-page-strategy; do grep -q "$s" /tmp/skills.txt; done
+
+  flagship-build:
+    name: flagship Mode B (R3F + WebXR build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: templates/nextjs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+  # Runtime smoke — its own job because it needs a browser (the gate suite above stays
+  # zero-dependency). ubuntu-latest ships Google Chrome; proof:components auto-detects it
+  # and SKIPS cleanly if absent, so this never becomes a flaky blocker. Catches runtime
+  # errors in the self-contained components that the static doctor can't see.
+  runtime-proof:
+    name: page-proof (component runtime smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install (playwright-core)
+        run: npm install --no-audit --no-fund
+      - name: Shared runtime and standalone export
+        run: |
+          npm run runtime:check
+          npm run test:runtime
+          npm run check:lab
+          node tools/cinematic-doctor/cli.mjs examples/effects-lab/index.html --min 90
+      - name: Runtime lifecycle and shader pixels
+        run: |
+          CHROME_PATH="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          export CHROME_PATH
+          test -n "$CHROME_PATH"
+          npm run test:runtime:browser
+      - name: Runtime-proof the components (browser-gated)
+        run: |
+          CHROME_PATH="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium-browser || command -v chromium || true)"
+          export CHROME_PATH
+          echo "Using CHROME_PATH=${CHROME_PATH:-<none — step will skip>}"
+          npm run proof:components
+
+  clawhub-security:
+    name: ClawHub bundle (NVIDIA SkillSpector)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate ClawHub format and version
+        run: npm run clawhub:validate
+      - name: Install pinned NVIDIA SkillSpector
+        run: python -m pip install "git+https://github.com/NVIDIA/skillspector.git@88eedca754c74260dfae4e6d6cfb293a0053c908"
+      - name: Scan every skill folder without suppressions
+        run: |
+          for s in skills/*/; do
+            echo "== $s"
+            skillspector scan "$s" --no-llm --format json --output "/tmp/skillspector-$(basename "$s").json"
+          done
+
+  registry-pilot:
+    name: registry URL installs (Next + Vite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install test tools
+        run: |
+          npm install --no-audit --no-fund
+          if ! command -v ffmpeg >/dev/null; then sudo apt-get update && sudo apt-get install -y ffmpeg; fi
+      - name: Deterministic registry and real consumers
+        run: |
+          npm run test:registry
+          CHROME_PATH="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          export CHROME_PATH
+          test -n "$CHROME_PATH"
+          npm run test:registry:consumers
+      - name: Keep the pilot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: registry-pilot-proof
+          path: |
+            .verify/registry/report.json
+            .verify/registry/*.log
+            .verify/registry/*.png

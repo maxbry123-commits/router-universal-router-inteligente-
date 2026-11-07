@@ -1,0 +1,108 @@
+# AGENTS.md
+
+This repo ships **Web Design Studio**: three agent skills for websites people
+remember. The established agent-skill identifier **`cinematic-scroll`** stays in
+install commands, paths, URLs and compatibility interfaces; human-facing product
+copy uses the product name.
+
+## What it is
+
+A small collection of *craft skills* for coding agents:
+
+| Skill | Job |
+|---|---|
+| [`skills/cinematic-scroll/`](./skills/cinematic-scroll/SKILL.md) | Build a distinctive scroll-driven, 3D or motion website whose motion explains the subject, with mobile, reduced-motion, no-JS and renderer-failure states you can prove. |
+| [`skills/scroll-audit/`](./skills/scroll-audit/SKILL.md) | Score any live page's scroll experience on pacing, performance, accessibility and emotional arc; output a remediation plan. |
+| [`skills/launch-page-strategy/`](./skills/launch-page-strategy/SKILL.md) | Decide what a launch or landing page must say and prove before design or motion; hand a story brief to `cinematic-scroll`. |
+
+The motion grammar is the constant; the aesthetic is always the user's. The rest
+of this repository is the **toolkit** around those skills: the live showcase, 28
+examples, the design-token contract, the verifier, the doctor, the benchmark and
+the Next.js template.
+
+## When to use it
+
+Reach for `cinematic-scroll` when the user asks for a scroll-driven or
+"cinematic" website, pinned chapters, parallax, scroll-linked 3D or camera moves,
+an environment-morphing layout, a product story page, an editorial microsite, or
+a release/launch page. Reach for `scroll-audit` when they want an existing page
+reviewed or scored. Reach for `launch-page-strategy` when the question is what a
+page should say, prove or ask the visitor to do.
+
+## Canonical contracts
+
+**Each `skills/<name>/SKILL.md` is the single source of truth for that skill.**
+Read the relevant one in full before building. The folders are text-only and
+self-contained: every relative link resolves inside the folder, and
+`node tools/check-skills.mjs --forbid-root-skill` enforces that along with the
+version sync to `package.json`.
+
+**Never add a skill file (SKILL.md) at the repository root.** The skills installer
+(`npx skills add`) stops at a root skill and treats the whole repository as the
+install payload. Removing it in 3.0.0 cut the install from minutes to under one;
+moving site media to the `media` branch on 2026-10-28 took it to about ten seconds.
+
+Toolkit references for maintainers and full-repository clones live in
+[`references/`](./references/) (deep guidance such as
+[`references/scroll-patterns.md`](./references/scroll-patterns.md),
+[`references/film-archetypes.md`](./references/film-archetypes.md),
+[`references/performance-budget.md`](./references/performance-budget.md),
+[`references/mobile-motion.md`](./references/mobile-motion.md)) and in
+[`taste-guardrails.md`](./taste-guardrails.md). They are not part of any
+installed skill; do not link to them from inside `skills/`.
+
+Third-party stack integration lives inside the skill so installed copies carry it:
+`skills/cinematic-scroll/references/stack-shelf.md` (libraries, engines, editors,
+licences, status and fallbacks), `skills/cinematic-scroll/references/bake-pipeline.md`
+(offline simulation and frame sequences to scrubbed media) and
+`skills/cinematic-scroll/references/splat-scene.md` (Gaussian splats with Spark).
+Films about the work follow `docs/video-pipeline.md`; that production lane never
+enters the skill, and the skill never bundles or installs any library it describes.
+
+## Media rule
+
+No tracked file may exceed 5 MB (`node tools/check-media-size.mjs`, allowlist in
+the script). Promo films, reels and stills go to a `media-*` GitHub Release via
+`node tools/media-archive.mjs --plan` then `--apply`; the manifest in
+`docs/launch/` maps former paths to download URLs.
+
+Since 2026-10-28 the media the live site plays (example photos and videos,
+previews, brand films) lives on the orphan `media` branch, not on `main`.
+GitHub Pages is built by `.github/workflows/pages.yml`, which overlays that
+branch on `main`; URLs are unchanged. Consequences:
+
+- A plain clone of `main` shows example pages without their images. To preview
+  locally, overlay the branch without staging it:
+  `git fetch origin media && git restore --source=origin/media --worktree -- examples assets`
+  (the files appear untracked; do not commit them).
+- To add or change site media, commit to the `media` branch (for example in a
+  worktree: `git worktree add ../wds-media origin/media`), push it, then dispatch
+  the Pages workflow. Never run `node tools/media-branch.mjs --write-branch`
+  after the cutover; it refuses, because `main` no longer holds the media.
+- `node tools/check-site-links.mjs` counts a path committed on `origin/media`
+  as served; CI fetches that ref before running it.
+
+## Maintaining the public showcase
+
+For `index.html` and product brand assets, follow the user's Renaissance/classical
+direction confirmed on 2026-09-11, informed by contralabs.com: original painterly
+imagery, Cormorant Garamond with Space Grotesk, paper/charcoal surfaces, fluorescent
+chartreuse accents, fine rules and interactive collection navigation. Preserve the
+two-column galleries, all 28 destinations, and accessible motion fallbacks. See
+`assets/brand/art-direction.md` for the implemented identity and asset provenance.
+FIELD (`examples/v3-flagship/`) retains its established restrained brass editorial
+direction. Violet gradients and glow remain outside this brief.
+
+This preference is scoped to those showcase surfaces. It is not the default palette
+for websites generated by the skill, and it does not require restyling the other
+example worlds. Their distinct identities remain useful references.
+
+## Trigger usage
+
+> Use **cinematic-scroll** to build a self-contained HTML pinned hero chapter for [YOUR BRAND].
+
+> Use **scroll-audit** on https://example.com and give me the remediation plan.
+
+> Use **launch-page-strategy** to write the story brief for our waitlist page before we design it.
+
+More copy-paste triggers across aesthetic worlds: [`examples/PROMPTS.md`](./examples/PROMPTS.md).

@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Vanta Labs — Clarity in the dark · a forensic console (cinematic-scroll)</title>
+<meta name="description" content="Vanta Labs, precision systems. A scroll-driven forensic analysis: the noise floor falls, the signal isolates, tolerances tighten. One corridor, one light, one clean trace.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 fill=%22%2307090d%22/><circle cx=%2216%22 cy=%2216%22 r=%226%22 fill=%22%23ff334f%22/></svg>">
+<style>
+/* ── tokens (theme: clinical-noir · Vanta Labs) ─────────────────────────── */
+:root{
+  --bg:#07090D;
+  --surface:#0E131A;
+  --fg:#E8EDF1;
+  --fg-dim:#8A98A6;
+  --accent:#FF334F;
+  --line:#9FB2C326;
+  --line-strong:#9FB2C34D;
+  --scrim:#07090DD9;
+  --scrim-soft:#07090D8C;
+  --clear:#07090D00;
+  --accent-glow:#FF334F33;
+  --accent-faint:#FF334F14;
+  --font-display:system-ui,-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --font-body:system-ui,-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --font-ui:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --ease-reveal:cubic-bezier(.16,1,.3,1);
+  --ease-exit:cubic-bezier(.7,0,.84,0);
+  --ease-playful:cubic-bezier(.34,1.56,.64,1);
+  --ease-cut:cubic-bezier(.87,0,.13,1);
+  --curve-reveal:var(--curve-reveal);--curve-exit:var(--curve-exit);--curve-playful:var(--curve-playful);--curve-cut:var(--curve-cut);
+  --dur-fast:300ms;--dur-base:500ms;--dur-slow:720ms;--dur-glacial:1200ms;
+  --stagger-base:.06s;
+  --size-caption:.72rem;--size-body:1rem;--size-body-lg:1.125rem;
+  --fluid-display:clamp(2.6rem,1.2rem + 7.2vw,7.6rem);
+  --fluid-h2:clamp(1.7rem,1rem + 2.8vw,3.4rem);
+  --fluid-h3:clamp(1.1rem,.9rem + .9vw,1.5rem);
+  --space-xs:8px;--space-sm:12px;--space-md:16px;--space-lg:24px;--space-xl:32px;--space-2xl:48px;--space-3xl:64px;--space-4xl:96px;
+  --gutter:clamp(20px,5vw,72px);
+  --tracking-wide:.12em;--tracking-widest:.24em;--tracking-tight:-.03em;
+  --lh-tight:.94;--lh-body:1.65;
+  --hud-h:56px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--bg);overflow-x:clip}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:var(--size-body);line-height:var(--lh-body);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+::selection{background:var(--accent);color:var(--bg)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+a{color:inherit}
+img{display:block;max-width:100%}
+
+/* ── instrument stage (fixed, behind everything) ───────────────────────── */
+.stage{position:fixed;inset:0;z-index:0;pointer-events:none;background:var(--bg)}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity var(--dur-glacial) var(--curve-reveal)}
+.js .stage canvas{opacity:1}
+.stage-static{position:absolute;inset:0;width:100%;height:100%;opacity:.85}
+.js .stage-static{opacity:0;transition:opacity var(--dur-glacial) var(--curve-exit)}
+.stage-grid{position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,var(--clear) 1px),linear-gradient(90deg,var(--line) 1px,var(--clear) 1px);background-size:64px 64px;opacity:.5}
+.stage-vig{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 45%,var(--clear) 40%,var(--scrim-soft) 100%)}
+
+/* ── HUD (fixed readouts) ───────────────────────────────────────────────── */
+.hud{position:fixed;left:0;right:0;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:var(--space-lg);height:var(--hud-h);padding:0 var(--gutter);font-family:var(--font-ui);font-size:var(--size-caption);letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--line);background:var(--scrim);backdrop-filter:blur(10px)}
+.hud .mark{font-weight:700;color:var(--accent);letter-spacing:.2em;white-space:nowrap}
+.hud .mark small{color:var(--fg-dim);font-weight:400;letter-spacing:.12em;margin-left:var(--space-md)}
+.hud dl{display:flex;gap:var(--space-xl);margin:0}
+.hud dl div{display:flex;flex-direction:column;gap:2px;min-width:7ch}
+.hud dt{color:var(--fg-dim);font-size:.6rem;letter-spacing:.16em}
+.hud dd{color:var(--fg);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hud dd.hot{color:var(--accent)}
+.hud .req{color:var(--fg);text-decoration:none;border:1px solid var(--line-strong);padding:.55em 1em;white-space:nowrap;transition:border-color var(--dur-fast) var(--curve-reveal),color var(--dur-fast) var(--curve-reveal),background-color var(--dur-fast) var(--curve-reveal)}
+@media (hover:hover){.hud .req:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-faint)}}
+.hud .req:active{border-color:var(--accent);color:var(--accent)}
+@media (max-width:1240px){.hud dl div:nth-child(3),.hud dl div:nth-child(4){display:none}.hud .mark small{display:none}}
+@media (max-width:900px){.hud dl{gap:var(--space-md)}.hud dl div:nth-child(n+3){display:none}}
+@media (max-width:560px){.hud dl{display:none}}
+
+/* ── stage rail (fixed, right edge, 5 ticks) ───────────────────────────── */
+.rail{position:fixed;right:calc(var(--gutter) * .45);top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;gap:18px;font-family:var(--font-ui);font-size:.6rem;letter-spacing:.14em;color:var(--fg-dim)}
+.rail a{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;transition:color var(--dur-fast) var(--curve-reveal)}
+.rail a i{display:block;width:18px;height:1px;background:var(--line-strong);transform-origin:100% 50%;transition:transform var(--dur-base) var(--curve-reveal),background-color var(--dur-base) var(--curve-reveal)}
+.rail a.on{color:var(--fg)}.rail a.on i{background:var(--accent);transform:scaleX(1.8)}
+@media (hover:hover){.rail a:hover{color:var(--accent)}}
+@media (max-width:900px){.rail{display:none}}
+
+/* ── content (scrolls over the stage) ──────────────────────────────────── */
+main{position:relative;z-index:10}
+.wrap{max-width:1360px;margin:0 auto;padding:0 var(--gutter)}
+.eyebrow{font-family:var(--font-ui);font-size:var(--size-caption);letter-spacing:var(--tracking-widest);text-transform:uppercase;color:var(--fg-dim)}
+.eyebrow b{color:var(--accent);font-weight:400}
+h1,h2,h3{font-family:var(--font-display);font-weight:600;letter-spacing:var(--tracking-tight);line-height:var(--lh-tight);text-wrap:balance}
+p.lead{font-size:var(--size-body-lg);color:var(--fg);max-width:44ch}
+p.dim{color:var(--fg-dim);max-width:52ch}
+.mono{font-family:var(--font-ui)}
+
+/* kinetic type: wrappers never clip — width:max-content, no overflow:hidden */
+.k{display:block}
+.k .w{display:inline-block;width:max-content;max-width:100%;opacity:0;transform:translateY(.55em);transition:opacity var(--dur-slow) var(--curve-reveal),transform var(--dur-slow) var(--curve-reveal);transition-delay:calc(var(--i,0) * var(--stagger-base))}
+.in .k .w{opacity:1;transform:translateY(0)}
+.rise{opacity:0;transform:translateY(28px);transition:opacity var(--dur-slow) var(--curve-reveal),transform var(--dur-slow) var(--curve-reveal);transition-delay:calc(var(--i,0) * var(--stagger-base) + .12s)}
+.in .rise{opacity:1;transform:none}
+.grow{opacity:0;transform:scale(1.06);transform-origin:50% 60%;transition:opacity var(--dur-glacial) var(--curve-reveal),transform var(--dur-glacial) var(--curve-reveal)}
+.in .grow{opacity:1;transform:scale(1)}
+.wipe{clip-path:inset(0 100% 0 0);transition:clip-path var(--dur-glacial) var(--curve-cut)}
+.in .wipe{clip-path:inset(0 0 0 0)}
+.draw{transform:scaleX(0);transform-origin:0 50%;transition:transform var(--dur-glacial) var(--curve-cut) .2s}
+.in .draw{transform:scaleX(1)}
+
+/* hero */
+.hero{min-height:100vh;display:flex;align-items:flex-end;padding:calc(var(--hud-h) + 12vh) 0 10vh}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:var(--space-3xl);align-items:end;width:100%}
+.hero h1{font-size:var(--fluid-display);margin:var(--space-lg) 0 var(--space-xl);max-width:100%}
+.hero h1 .accent{color:var(--accent)}
+.hero .cue{display:flex;align-items:center;gap:var(--space-md);font-family:var(--font-ui);font-size:var(--size-caption);letter-spacing:var(--tracking-widest);text-transform:uppercase;color:var(--fg-dim);margin-top:var(--space-2xl)}
+.hero .cue i{display:block;width:34px;height:1px;background:var(--accent);transform-origin:0 50%;animation:cue 2.4s var(--curve-cut) infinite}
+@keyframes cue{0%,100%{transform:scaleX(.2)}50%{transform:scaleX(1)}}
+.spec{font-family:var(--font-ui);font-size:var(--size-caption);letter-spacing:.06em;color:var(--fg-dim);border-left:2px solid var(--accent);padding:var(--space-md) var(--space-lg);display:grid;gap:var(--space-xs);background:var(--scrim)}
+.spec span b{color:var(--fg);font-weight:400;margin-left:.6em;font-variant-numeric:tabular-nums}
+@media (max-width:900px){.hero-grid{grid-template-columns:1fr;gap:var(--space-2xl)}.hero{padding-top:calc(var(--hud-h) + 8vh)}}
+
+/* analysis stages */
+.st{min-height:0;display:flex;align-items:center;padding:9vh 0;border-top:1px solid var(--line);position:relative;overflow-x:clip}
+.st .wrap{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(32px,6vw,96px);align-items:center;width:100%}
+.st.flip .wrap{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+.st.flip .copy{order:2}
+.copy,.hero-copy,.final,.tol-wrap,.report-copy{background:var(--scrim);border:1px solid var(--line);padding:clamp(20px,3vw,40px)}
+.hero-copy{max-width:760px}
+.copy h2{font-size:var(--fluid-h2);margin:var(--space-md) 0 var(--space-lg)}
+.copy p+p{margin-top:var(--space-md)}
+.copy .num{font-family:var(--font-ui);font-size:var(--size-caption);color:var(--accent);letter-spacing:.2em;display:block;margin-bottom:var(--space-md)}
+.rule{height:1px;background:var(--accent);width:120px;margin:var(--space-xl) 0 0}
+@media (max-width:900px){.st{min-height:0;padding:9vh 0}.st .wrap,.st.flip .wrap{grid-template-columns:1fr;gap:var(--space-2xl)}.st.flip .copy{order:0}}
+
+/* evidence frames — the one corridor photo, cropped three ways */
+.ev{position:relative;background:var(--surface);border:1px solid var(--line-strong)}
+.ev img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.25) brightness(.82)}
+.ev.a{aspect-ratio:16/10}.ev.a img{object-position:50% 50%}
+.ev.b{aspect-ratio:1/1;max-width:520px;margin-left:auto}.ev.b img{object-position:92% 12%;transform:scale(1.8);transform-origin:92% 12%}
+.ev.c{aspect-ratio:3/4;max-width:460px}.ev.c img{object-position:62% 58%;transform:scale(1.45);transform-origin:62% 58%}
+.ev{overflow:hidden}
+.ev .tag{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;gap:var(--space-md);padding:var(--space-sm) var(--space-md);font-family:var(--font-ui);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--fg);background:linear-gradient(0deg,var(--scrim),var(--clear))}
+.ev .tag b{color:var(--accent);font-weight:400}
+.ev .corner{position:absolute;width:14px;height:14px;border:1px solid var(--accent)}
+.ev .corner.tl{top:8px;left:8px;border-right:0;border-bottom:0}.ev .corner.tr{top:8px;right:8px;border-left:0;border-bottom:0}
+.ev .corner.bl{bottom:34px;left:8px;border-right:0;border-top:0}.ev .corner.br{bottom:34px;right:8px;border-left:0;border-top:0}
+.ev svg.ret{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ev svg.ret *{vector-effect:non-scaling-stroke}
+.ret .ring{fill:none;stroke:var(--accent);stroke-width:1;transform-origin:50% 50%;transform:scale(2.2);opacity:0;transition:transform var(--dur-glacial) var(--curve-cut),opacity var(--dur-slow) var(--curve-reveal)}
+.in .ret .ring{transform:scale(1);opacity:1}
+.ret .hair{stroke:var(--accent);stroke-width:1;opacity:.7}
+.ret text{font-family:var(--font-ui);font-size:4.2px;fill:var(--accent);letter-spacing:.12em}
+
+/* tolerance table (procedural) */
+.tol{font-family:var(--font-ui);font-size:.78rem;border-top:1px solid var(--line-strong);width:100%}
+.tol-wrap{padding:0 clamp(16px,2.4vw,32px) clamp(6px,1vw,12px)}
+.tol div{display:grid;grid-template-columns:1.2fr 1fr 1fr 1.6fr;gap:var(--space-md);padding:var(--space-md) 0;border-bottom:1px solid var(--line);align-items:center;font-variant-numeric:tabular-nums}
+.tol div span:nth-child(2){color:var(--fg-dim)}
+.tol div span:nth-child(3){color:var(--fg)}
+.tol .bar{height:6px;background:var(--surface);border:1px solid var(--line);position:relative}
+.tol .bar i{position:absolute;inset:0;background:var(--accent);transform-origin:0 50%;transform:scaleX(var(--p,0));transition:transform var(--dur-glacial) var(--curve-cut)}
+.tol .head{color:var(--fg-dim);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase}
+@media (max-width:560px){.tol div{grid-template-columns:1.1fr 1fr 1fr}.tol div span:nth-child(4){display:none}.ev .tag span:last-child{display:none}}
+
+/* spectrogram readout (procedural SVG bars, animated by JS via transform) */
+.spectro-wrap{background:var(--scrim);border:1px solid var(--line);padding:clamp(16px,2.4vw,28px)}
+.spectro{display:grid;grid-template-columns:repeat(48,1fr);gap:2px;height:180px;align-items:end;border-bottom:1px solid var(--line-strong);padding-bottom:1px}
+.spectro i{display:block;background:var(--fg-dim);height:100%;transform-origin:50% 100%;transform:scaleY(var(--h,.1));opacity:.8}
+.spectro i.peak{background:var(--accent);opacity:1}
+.spectro-cap{display:flex;justify-content:space-between;font-family:var(--font-ui);font-size:.6rem;letter-spacing:.14em;color:var(--fg-dim);text-transform:uppercase;margin-top:var(--space-xs)}
+
+/* report / cta */
+.report{min-height:70vh;display:flex;align-items:center;border-top:1px solid var(--line);padding:10vh 0 8vh;overflow-x:clip}
+.report .wrap{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:var(--space-3xl);align-items:end}
+.report h2{font-size:var(--fluid-display)}
+.report h2 .accent{color:var(--accent)}
+.cta{display:inline-flex;align-items:center;gap:var(--space-md);margin-top:var(--space-2xl);font-family:var(--font-ui);font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;color:var(--bg);background:var(--fg);padding:1em 1.6em;transition:background-color var(--dur-fast) var(--curve-reveal),color var(--dur-fast) var(--curve-reveal),transform var(--dur-fast) var(--curve-playful)}
+@media (hover:hover){.cta:hover{background:var(--accent);color:var(--fg);transform:translateY(-2px)}}
+.cta:active{background:var(--accent);color:var(--fg)}
+.final{font-family:var(--font-ui);font-size:.78rem;display:grid;gap:var(--space-sm)}
+.final div{display:flex;justify-content:space-between;gap:var(--space-md);border-bottom:1px solid var(--line);padding-bottom:var(--space-sm);font-variant-numeric:tabular-nums}
+.final span:first-child{color:var(--fg-dim);letter-spacing:.12em;text-transform:uppercase;font-size:.62rem}
+.final b{font-weight:400;color:var(--fg)}
+.final b.hot{color:var(--accent)}
+@media (max-width:900px){.report .wrap{grid-template-columns:1fr;gap:var(--space-2xl)}}
+footer{position:relative;z-index:10;border-top:1px solid var(--line);padding:var(--space-xl) var(--gutter);display:flex;justify-content:space-between;flex-wrap:wrap;gap:var(--space-md);font-family:var(--font-ui);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-dim);background:var(--scrim)}
+
+/* ── no-JS: everything visible, static instrument ──────────────────────── */
+html:not(.js) .k .w,html:not(.js) .rise,html:not(.js) .grow{opacity:1;transform:none}
+html:not(.js) .wipe{clip-path:inset(0 0 0 0)}
+html:not(.js) .draw,html:not(.js) .tol .bar i{transform:scaleX(1)}
+html:not(.js) .ret .ring{transform:scale(1);opacity:1}
+html:not(.js) .spectro i{transform:scaleY(var(--s,.3))}
+
+/* ── reduced motion: final calibrated state, no loops, in flow ─────────── */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .k .w,.rise,.grow{opacity:1;transform:none;transition:none}
+  .wipe{clip-path:inset(0 0 0 0);transition:none}
+  .draw,.tol .bar i{transform:scaleX(1);transition:none}
+  .ret .ring{transform:scale(1);opacity:1;transition:none}
+  .hero .cue i{animation:none;transform:none}
+  .stage canvas,.stage-static{transition:none}
+  .rail a i{transition:none}
+}
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js');</script>
+
+<!-- instrument stage: canvas when JS runs, static SVG trace otherwise -->
+<div class="stage" aria-hidden="true">
+  <div class="stage-grid"></div>
+  <svg class="stage-static" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+    <path d="M0 450 C60 450 90 300 160 300 S260 600 320 600 360 380 420 380 470 520 540 520 590 330 660 330 700 560 760 560 820 410 900 410 960 500 1040 500 1090 350 1160 350 1220 540 1300 540 1380 450 1440 450" fill="none" stroke="#E8EDF1" stroke-width="1.5" opacity=".85"/>
+    <path d="M0 450 C60 450 90 300 160 300 S260 600 320 600 360 380 420 380 470 520 540 520 590 330 660 330 700 560 760 560 820 410 900 410 960 500 1040 500 1090 350 1160 350 1220 540 1300 540 1380 450 1440 450" fill="none" stroke="#FF334F" stroke-width="6" opacity=".12"/>
+  </svg>
+  <canvas id="scope"></canvas>
+  <div class="stage-vig"></div>
+</div>
+
+<header class="hud" role="banner">
+  <div class="mark">Vanta Labs<small>Precision Systems · Run 0931</small></div>
+  <dl aria-live="off">
+    <div><dt>Stage</dt><dd id="r-stage">05 · Report</dd></div>
+    <div><dt>Noise floor</dt><dd id="r-noise">−96.0 dB</dd></div>
+    <div><dt>SNR</dt><dd id="r-snr">68.0 dB</dd></div>
+    <div><dt>Tolerance</dt><dd id="r-tol">±2 µm</dd></div>
+    <div><dt>Confidence</dt><dd id="r-conf">99.7 %</dd></div>
+  </dl>
+  <a class="req" href="#report">Request calibration</a>
+</header>
+
+<nav class="rail" aria-label="Analysis stages">
+  <a href="#acquire" data-rail="0"><i></i>01</a>
+  <a href="#isolate" data-rail="1"><i></i>02</a>
+  <a href="#calibrate" data-rail="2"><i></i>03</a>
+  <a href="#verify" data-rail="3"><i></i>04</a>
+  <a href="#report" data-rail="4"><i></i>05</a>
+</nav>
+
+<main>
+  <section class="hero" id="top" data-scene>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow rise" style="--i:0">Precision systems <b>·</b> forensic analysis console</p>
+        <h1><span class="k"><span class="w" style="--i:1">Clarity</span> <span class="w" style="--i:2">in</span></span><span class="k"><span class="w accent" style="--i:3">the</span> <span class="w accent" style="--i:4">dark.</span></span></h1>
+        <p class="lead rise" style="--i:5">One corridor. One cold light. One buried signal. Scroll to run the analysis: the noise floor falls, the signal isolates, and the tolerance tightens until only what is true remains.</p>
+        <div class="cue rise" style="--i:6"><i></i>Scroll to begin the run</div>
+      </div>
+      <div class="spec rise" style="--i:4">
+        <span>Sample<b>Corridor B · frame 0931</b></span>
+        <span>Capture<b>1 × 4000 K fluorescent</b></span>
+        <span>Method<b>Progressive noise rejection</b></span>
+        <span>Instrument<b>Trace + spectral + reticle</b></span>
+        <span>Target<b>±2 µm · 99.7 % confidence</b></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="st" id="acquire" data-scene data-stage="0">
+    <div class="wrap">
+      <div class="copy">
+        <span class="num rise" style="--i:0">01 — Acquire</span>
+        <h2><span class="k"><span class="w" style="--i:1">Everything</span> <span class="w" style="--i:2">is</span> <span class="w" style="--i:3">noise</span></span><span class="k"><span class="w" style="--i:4">until</span> <span class="w" style="--i:5">you</span> <span class="w" style="--i:6">measure</span> <span class="w" style="--i:7">it.</span></span></h2>
+        <p class="lead rise" style="--i:6">The raw capture is honest and useless. Sensor grain, mains hum, thermal drift: the trace behind this page carries all of it, at a noise floor of −12 dB.</p>
+        <p class="dim rise" style="--i:7">We do not clean an image. We reject what does not repeat. Each stage below removes one class of noise and records the tolerance we can now defend.</p>
+        <div class="rule draw"></div>
+      </div>
+      <figure class="ev a wipe">
+        <img src="hero.jpg" alt="A dark laboratory corridor, one fluorescent tube lit near the ceiling, the far door barely visible." width="1600" height="1000">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <figcaption class="tag"><span><b>Frame A</b> full field</span><span>Crop 0.00,0.00 → 1.00,1.00</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="st flip" id="isolate" data-scene data-stage="1">
+    <div class="wrap">
+      <div class="copy">
+        <span class="num rise" style="--i:0">02 — Isolate</span>
+        <h2><span class="k"><span class="w" style="--i:1">One</span> <span class="w" style="--i:2">light.</span></span><span class="k"><span class="w" style="--i:3">Lock</span> <span class="w" style="--i:4">on</span> <span class="w" style="--i:5">it.</span></span></h2>
+        <p class="lead rise" style="--i:5">The corridor has exactly one source. The reticle finds it, and every other reading in the frame is now referenced to that 4000 K tube.</p>
+        <p class="dim rise" style="--i:6">Mains hum at 50 Hz and its harmonics leave first. The noise floor drops past −48 dB and the trace behind you stops shivering. This is the moment the page is built around.</p>
+        <div class="rule draw"></div>
+      </div>
+      <figure class="ev b grow">
+        <img src="hero.jpg" alt="Close crop of the corridor's single fluorescent tube, the only light source in the frame." width="1600" height="1000">
+        <svg class="ret" viewBox="0 0 100 100" aria-hidden="true">
+          <line class="hair" x1="50" y1="0" x2="50" y2="38"/><line class="hair" x1="50" y1="62" x2="50" y2="100"/>
+          <line class="hair" x1="0" y1="50" x2="38" y2="50"/><line class="hair" x1="62" y1="50" x2="100" y2="50"/>
+          <circle class="ring" cx="50" cy="50" r="12"/><circle class="ring" cx="50" cy="50" r="22"/>
+          <text x="64" y="46">LOCK</text><text x="64" y="54">4000 K</text>
+        </svg>
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <figcaption class="tag"><span><b>Frame B</b> source</span><span>Crop 0.78,0.02 → 1.00,0.24</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="st" id="calibrate" data-scene data-stage="2">
+    <div class="wrap">
+      <div class="copy">
+        <span class="num rise" style="--i:0">03 — Calibrate</span>
+        <h2><span class="k"><span class="w" style="--i:1">Measured,</span></span><span class="k"><span class="w" style="--i:2">not</span> <span class="w" style="--i:3">guessed.</span></span></h2>
+        <p class="lead rise" style="--i:4">Four references, one frame. Each is fitted against the locked source and the residual is written down, not rounded away.</p>
+        <p class="dim rise" style="--i:5">A tolerance is a promise about the worst case. Ours narrows from half a millimetre to two microns over the length of this run, and the bars record how much of that promise is already kept.</p>
+        <div class="rule draw"></div>
+      </div>
+      <div class="tol-wrap rise" style="--i:2"><div class="tol" role="table" aria-label="Calibration references">
+        <div class="head" role="row"><span role="columnheader">Reference</span><span role="columnheader">Nominal</span><span role="columnheader">Residual</span><span role="columnheader">Fit</span></div>
+        <div role="row" data-tol style="--p:.2;--s:.9"><span role="cell">Tube pitch</span><span role="cell">1200.00 mm</span><span role="cell" data-res="1199.998">—</span><span role="cell" class="bar"><i></i></span></div>
+        <div role="row" data-tol style="--p:.35"><span role="cell">Ceiling grid</span><span role="cell">600.00 mm</span><span role="cell" data-res="600.001">—</span><span role="cell" class="bar"><i></i></span></div>
+        <div role="row" data-tol style="--p:.55"><span role="cell">Door reveal</span><span role="cell">2100.00 mm</span><span role="cell" data-res="2100.003">—</span><span role="cell" class="bar"><i></i></span></div>
+        <div role="row" data-tol style="--p:.8"><span role="cell">Floor joint</span><span role="cell">900.00 mm</span><span role="cell" data-res="899.999">—</span><span role="cell" class="bar"><i></i></span></div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="st flip" id="verify" data-scene data-stage="3">
+    <div class="wrap">
+      <div class="copy">
+        <span class="num rise" style="--i:0">04 — Verify</span>
+        <h2><span class="k"><span class="w" style="--i:1">The</span> <span class="w" style="--i:2">far</span> <span class="w" style="--i:3">door</span></span><span class="k"><span class="w" style="--i:4">was</span> <span class="w" style="--i:5">always</span> <span class="w" style="--i:6">there.</span></span></h2>
+        <p class="lead rise" style="--i:5">At −90 dB the spectrum is a single clean peak and the darkest crop in the frame resolves into an edge, a handle, a threshold.</p>
+        <p class="dim rise" style="--i:6">Nothing was added. The door is not enhanced; the noise that hid it is gone. That is the difference between a picture and a measurement.</p>
+        <div class="rule draw"></div>
+      </div>
+      <div>
+        <figure class="ev c wipe" style="margin-bottom:var(--space-xl)">
+          <img src="hero.jpg" alt="Deep crop of the corridor's far end where the door edge emerges from darkness." width="1600" height="1000">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <figcaption class="tag"><span><b>Frame C</b> far door</span><span>Crop 0.48,0.40 → 0.76,0.76</span></figcaption>
+        </figure>
+        <div class="spectro-wrap rise" style="--i:3"><div class="spectro" id="spectro" aria-hidden="true"></div>
+        <div class="spectro-cap"><span>0 Hz</span><span id="r-peak">Peak · 412 Hz · signal</span><span>2 kHz</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="report" id="report" data-scene data-stage="4">
+    <div class="wrap">
+      <div class="report-copy">
+        <p class="eyebrow rise" style="--i:0">05 — Report <b>·</b> run 0931 complete</p>
+        <h2><span class="k"><span class="w" style="--i:1">See</span> <span class="w" style="--i:2">it</span></span><span class="k"><span class="w accent" style="--i:3">clearly.</span></span></h2>
+        <p class="lead rise" style="--i:4;margin-top:var(--space-lg)">Vanta Labs builds instruments for people who cannot afford to be approximately right. Send us the frame, the part, or the process, and we will tell you exactly what it is.</p>
+        <a class="cta rise" style="--i:5" href="mailto:lab@vantalabs.example?subject=Calibration%20request%20%E2%80%94%20run%200931">Request a calibration <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="final rise" style="--i:3">
+        <div><span>Noise floor</span><b id="f-noise">−96.0 dB</b></div>
+        <div><span>Signal to noise</span><b id="f-snr">68.0 dB</b></div>
+        <div><span>Tolerance</span><b id="f-tol">±2 µm</b></div>
+        <div><span>Confidence</span><b class="hot" id="f-conf">99.7 %</b></div>
+        <div><span>Result</span><b>Clear</b></div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <span>Vanta Labs · Precision Systems</span><span>Corridor B · frame 0931 · one source, one trace</span><span>Built with cinematic-scroll</span>
+</footer>
+
+<script>
+(function(){
+  'use strict';
+  var root=document.documentElement;
+  var mq=matchMedia('(prefers-reduced-motion: reduce)');
+  var reduce=mq.matches;
+  var coarse=matchMedia('(pointer: coarse)').matches;
+
+  /* ── helpers ── */
+  function lerp(a,b,t){return a+(b-a)*t}
+  function clamp(v,a,b){return v<a?a:v>b?b:v}
+  function smooth(t){return t*t*(3-2*t)}
+  function cssVar(n){return getComputedStyle(root).getPropertyValue(n).trim()}
+  function hex(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(function(c){return c+c}).join('');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+  function rgba(c,a){return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a.toFixed(3)+')'}
+
+  /* ── scroll model: one clock, progress p in [0,1] ── */
+  var docH=1,lastY=-1,p=0,shown=0;
+  function measure(){docH=Math.max(1,root.scrollHeight-innerHeight);sizeCanvas()}
+
+  /* stage labels */
+  var stages=['00 · Acquire','01 · Acquire','02 · Isolate','03 · Calibrate','04 · Verify','05 · Report'];
+  var sections=[].slice.call(document.querySelectorAll('[data-stage]'));
+  function stageAt(y){var mid=y+innerHeight*.5,s=0;for(var i=0;i<sections.length;i++){if(sections[i].offsetTop<=mid)s=i+1}return s}
+
+  /* readouts */
+  var R={stage:document.getElementById('r-stage'),noise:document.getElementById('r-noise'),snr:document.getElementById('r-snr'),tol:document.getElementById('r-tol'),conf:document.getElementById('r-conf'),peak:document.getElementById('r-peak')};
+  var rail=[].slice.call(document.querySelectorAll('[data-rail]'));
+  function fmt(v,d){return v.toFixed(d).replace('-','−')}
+  function readouts(t){
+    var noise=lerp(-12,-96,t), snr=lerp(2.1,68,t), tol=lerp(500,2,Math.pow(t,1.4)), conf=lerp(3,99.7,smooth(t));
+    R.noise.textContent=fmt(noise,1)+' dB';
+    R.snr.textContent=fmt(snr,1)+' dB';
+    R.tol.textContent='±'+(tol<10?tol.toFixed(1):Math.round(tol))+' µm';
+    R.conf.textContent=conf.toFixed(1)+' %';
+    R.conf.classList.toggle('hot',conf<97);
+    if(R.peak)R.peak.textContent=t<.6?'Peak · 50 Hz · noise':t<.85?'Peak · 50 Hz · rejecting':'Peak · 412 Hz · signal';
+  }
+  /* residuals write themselves in once stage 03 is in view */
+  var res=[].slice.call(document.querySelectorAll('[data-res]'));
+  function residuals(t){var k=clamp((t-.42)/.2,0,1);res.forEach(function(el,i){var v=parseFloat(el.dataset.res);var q=clamp(k*4-i*.6,0,1);el.textContent=q<=0?'—':(lerp(v+(i%2?-.7:.9),v,smooth(q))).toFixed(3)+' mm'})}
+
+  /* ── the instrument: trace + noise, drawn to canvas ── */
+  var canvas=document.getElementById('scope'),ctx=canvas.getContext('2d');
+  var W=0,H=0,dpr=1,C={};
+  function sizeCanvas(){dpr=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+    C.fg=hex(cssVar('--fg'));C.acc=hex(cssVar('--accent'));C.dim=hex(cssVar('--fg-dim'));C.bg=hex(cssVar('--bg'));C.cold=[C.bg[0],C.bg[1]+6,C.bg[2]+18]}
+  var seed=1;function rnd(){seed=(seed*16807)%2147483647;return (seed-1)/2147483646}
+  function signal(x,ph){return .55*Math.sin(x*6.28*3+ph)+.28*Math.sin(x*6.28*7.3+ph*1.7)+.17*Math.sin(x*6.28*13+ph*.4)}
+  var last=0,phase=0,noiseT=0;
+  function draw(now,t,scrolling){
+    var dt=last?Math.min(50,now-last):16;last=now;
+    var n=Math.pow(1-t,1.7);            // noise amount: 1 → 0
+    if(!reduce&&(scrolling||n>.02))noiseT+=dt*.001;
+    if(!reduce)phase+=dt*.00035*(0.35+n);
+    // ground: cold blue-black at full noise → neutral black when clear
+    var g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,rgba(C.cold,1));g.addColorStop(1,rgba(C.bg,1));
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    var cy=H*.52,amp=Math.min(H*.22,W*.12);
+    var xs=Math.max(120,Math.min(900,Math.round(W/2)));
+    // noise ghost traces (fade out as t rises)
+    if(n>.01){ctx.lineWidth=1;seed=17+Math.floor(noiseT*7);
+      for(var k=0;k<3;k++){ctx.strokeStyle=rgba(C.dim,.13*n*(1-k*.25));ctx.beginPath();
+        for(var i=0;i<=xs;i++){var x=i/xs;var y=cy+amp*(signal(x,phase)*(1-n*.6)+(rnd()-.5)*2.4*n*(1+k*.4));if(i===0)ctx.moveTo(0,y);else ctx.lineTo(x*W,y)}ctx.stroke()}}
+    // the trace
+    ctx.lineWidth=1.5;ctx.strokeStyle=rgba(C.fg,.34+.5*(1-n));ctx.beginPath();seed=991+Math.floor(noiseT*13);
+    for(var j=0;j<=xs;j++){var xx=j/xs;var yy=cy+amp*(signal(xx,phase)+(rnd()-.5)*1.6*n);if(j===0)ctx.moveTo(0,yy);else ctx.lineTo(xx*W,yy)}ctx.stroke();
+    // accent glow under the trace once it is clean
+    if(n<.6){ctx.lineWidth=8;ctx.strokeStyle=rgba(C.acc,.16*(1-n/.6));ctx.stroke()}
+    // noise floor line + label
+    var floorY=cy+amp*(1.15+.9*n);
+    ctx.strokeStyle=rgba(C.acc,.55);ctx.lineWidth=1;ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(0,floorY);ctx.lineTo(W,floorY);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=rgba(C.acc,.9);ctx.font='10px ui-monospace, SFMono-Regular, Menlo, monospace';ctx.textAlign='right';
+    ctx.fillText('NOISE FLOOR '+fmt(lerp(-12,-96,t),1)+' dB',W-Math.max(16,W*.05),floorY-6);
+    // scale ticks (left)
+    ctx.fillStyle=rgba(C.dim,.7);ctx.textAlign='left';
+    for(var q=-2;q<=2;q++){var ty=cy+amp*q*.5;ctx.fillRect(Math.max(12,W*.02),ty,10,1);if(q!==0)ctx.fillText((q>0?'+':'')+(q*.5).toFixed(1),Math.max(12,W*.02)+14,ty+3)}
+  }
+
+  /* ── spectrogram bars ── */
+  var spec=document.getElementById('spectro'),bars=[];
+  if(spec){for(var b=0;b<48;b++){var el=document.createElement('i');spec.appendChild(el);bars.push(el)}}
+  function spectrum(t){
+    var n=Math.pow(1-t,1.5);seed=77;
+    for(var i=0;i<bars.length;i++){var f=i/47;
+      var sig=Math.exp(-Math.pow((f-.2)/.03,2))*1+Math.exp(-Math.pow((f-.6)/.06,2))*.35;
+      var hum=Math.exp(-Math.pow((f-.025)/.02,2))*1.1+Math.exp(-Math.pow((f-.05)/.02,2))*.6;
+      var h=clamp(sig*(.35+.65*(1-n))+hum*n+(rnd()*.6+.1)*n,.03,1);
+      bars[i].style.setProperty('--h',h.toFixed(3));bars[i].classList.toggle('peak',n<.5&&sig>.6)}
+  }
+
+  /* ── reveals (IntersectionObserver), varied per section via CSS classes ── */
+  var scenes=[].slice.call(document.querySelectorAll('[data-scene]'));
+  if('IntersectionObserver' in window&&!reduce){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.22,rootMargin:'0px 0px -8% 0px'});
+    scenes.forEach(function(s){io.observe(s)});
+    requestAnimationFrame(function(){scenes[0].classList.add('in')});
+  }else scenes.forEach(function(s){s.classList.add('in')});
+
+  /* ── rAF loop: reads scroll once, writes transforms/text/canvas ── */
+  var ticking=false,scrollingUntil=0,visible=!document.hidden,raf=0;
+  function frame(now){
+    raf=0;
+    var y=scrollY||0;
+    var target=reduce?1:clamp(y/docH,0,1);
+    var scrolling=now<scrollingUntil;
+    shown+=(target-shown)*(reduce?1:.16);if(Math.abs(target-shown)<.0005)shown=target;
+    p=shown;
+    if(y!==lastY||Math.abs(target-shown)>.0001||(!reduce&&Math.pow(1-p,1.7)>.02)){
+      readouts(p);residuals(p);spectrum(p);
+      var s=stageAt(y);R.stage.textContent=stages[Math.min(s,stages.length-1)];
+      rail.forEach(function(a,i){a.classList.toggle('on',i===Math.max(0,s-1))});
+      lastY=y;
+      if(visible)draw(now,p,scrolling);
+      raf=requestAnimationFrame(frame);
+    }
+    ticking=false;
+  }
+  function kick(){if(!raf){raf=requestAnimationFrame(frame)}}
+  addEventListener('scroll',function(){scrollingUntil=performance.now()+220;kick()},{passive:true});
+  var rt;addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){measure();lastY=-1;kick()},120)},{passive:true});
+  document.addEventListener('visibilitychange',function(){visible=!document.hidden;if(visible){lastY=-1;kick()}});
+  mq.addEventListener&&mq.addEventListener('change',function(e){reduce=e.matches;scenes.forEach(function(s){s.classList.add('in')});lastY=-1;kick()});
+  addEventListener('load',function(){measure();lastY=-1;kick()});
+  measure();
+  if(reduce){shown=1}          // reduced motion: final calibrated state, static
+  lastY=-1;kick();
+})();
+</script>
+</body>
+</html>

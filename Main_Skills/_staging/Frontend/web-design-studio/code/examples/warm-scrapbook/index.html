@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Keepsake — Summers you can hold</title>
+<link rel="icon" href="data:,">
+<meta name="description" content="Keepsake — an album you scroll through. Prints lift out of their corner mounts, the light moves across the table, and one photograph turns over to show what was written on the back.">
+<style>
+/* ── warm-scrapbook · token contract (design.md §2/§5) ─────────────────── */
+:root{
+  --bg:#F3ECE0;            /* the table, morning */
+  --bg-dusk:#E9CDB6;       /* the table, golden hour — mixed in per frame */
+  --surface:#C98A6E;       /* album page, terracotta card */
+  --surface-deep:#B57456;
+  --paper:#FBF6EC;         /* print border / index card */
+  --paper-aged:#F1E4CC;
+  --fg:#3A302A;
+  --fg-dim:#7D6F62;
+  --accent:#D3683F;        /* one sun-faded orange */
+  --line:#3A302A2E;
+  --tape:#F2E3B8B8;
+  --shadow:#3A302A;        /* used only inside color-mix */
+  --ease-reveal:cubic-bezier(.16,1,.3,1);
+  --ease-exit:cubic-bezier(.7,0,.84,0);
+  --ease-playful:cubic-bezier(.34,1.56,.64,1);
+  --ease-cut:cubic-bezier(.87,0,.13,1);
+  --dur-fast:300ms;--dur-base:500ms;--dur-slow:720ms;--dur-glacial:1200ms;
+  --font-display:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,ui-serif,serif;
+  --font-hand:'Snell Roundhand','Apple Chancery','Bradley Hand','Segoe Script','Comic Sans MS',cursive;
+  --font-mono:ui-monospace,'SF Mono',Menlo,'Courier New',monospace;
+  --font-ui:ui-sans-serif,system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --space-sm:12px;--space-md:16px;--space-lg:24px;--space-xl:32px;--space-2xl:48px;--space-4xl:96px;
+  --radius-sm:4px;--radius-md:8px;
+  --size-caption:.74rem;--size-body:clamp(1rem,.35vw + .92rem,1.15rem);--size-lead:clamp(1.15rem,1.3vw,1.45rem);
+  --fluid-h1:clamp(2.6rem,7.2vw,6.4rem);--fluid-h2:clamp(2rem,4.2vw,3.6rem);--fluid-h3:clamp(1.4rem,2.2vw,1.9rem);
+  --measure:38ch;
+  --scroll:0;      /* global progress 0..1 (JS) */
+  --warm:0;        /* light warmth 0..1 (JS)     */
+  --p:0;           /* per-spread progress (JS)   */
+  --bg-now:color-mix(in srgb,var(--bg),var(--bg-dusk) calc(var(--warm)*100%));
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:auto}
+body{
+  background:var(--bg-now);
+  color:var(--fg);font-family:var(--font-display);font-size:var(--size-body);line-height:1.55;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
+}
+::selection{background:var(--accent);color:var(--paper)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:var(--radius-sm)}
+a{color:inherit}
+img{display:block;max-width:100%}
+
+/* the sun: one fixed band of light that crosses the table as you scroll (transform only) */
+.sun{position:fixed;inset:-20vh -30vw;pointer-events:none;z-index:1;
+  background:linear-gradient(100deg,transparent 38%,color-mix(in srgb,var(--paper) 32%,transparent) 50%,transparent 62%);
+  transform:translateX(calc((var(--scroll) - .5) * 70vw));will-change:transform}
+
+/* masthead */
+.masthead{position:fixed;top:0;left:0;right:0;z-index:40;background:linear-gradient(180deg,color-mix(in srgb,var(--bg-now) 82%,transparent),color-mix(in srgb,var(--bg-now) 40%,transparent) 60%,transparent);display:flex;justify-content:space-between;align-items:baseline;gap:var(--space-lg);
+  padding:var(--space-lg) clamp(20px,5vw,72px);font-family:var(--font-ui);font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:var(--fg-dim)}
+.masthead strong{color:var(--fg);letter-spacing:.34em;font-weight:600}
+.masthead .stamp{font-family:var(--font-mono);letter-spacing:.12em;text-transform:none;color:var(--fg);font-variant-numeric:tabular-nums}
+.masthead .stamp b{font-weight:400;color:var(--accent)}
+.masthead a{text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px}
+@media (hover:hover){.masthead a:hover{border-color:var(--accent);color:var(--accent)}}
+@media (max-width:640px){.masthead .stamp{display:none}}
+
+/* shared: eyebrow, copy, hand captions */
+.eyebrow{font-family:var(--font-ui);font-size:var(--size-caption);letter-spacing:.3em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-lg)}
+.eyebrow::before{content:"";width:36px;height:1px;background:var(--accent)}
+.lead{font-size:var(--size-lead);line-height:1.4;font-style:italic;color:var(--fg-dim);max-width:var(--measure)}
+.copy p{max-width:var(--measure);margin-top:var(--space-md)}
+.hand{font-family:var(--font-hand);font-size:clamp(1.15rem,1.6vw,1.5rem);line-height:1.3;color:var(--fg);white-space:nowrap;width:max-content;max-width:100%}
+h1,h2,h3{font-weight:400;letter-spacing:-.02em;line-height:1.02;text-wrap:balance}
+h1{font-size:var(--fluid-h1)}h2{font-size:var(--fluid-h2)}h3{font-size:var(--fluid-h3)}
+h1 em,h2 em{font-style:italic;color:var(--accent)}
+
+/* ── pinned spreads: a tall track with a sticky 100vh stage ─────────────── */
+.spread{position:relative;height:var(--track,220vh)}
+.stage{position:sticky;top:0;height:100vh;overflow:hidden;display:grid;align-items:center;padding:0 clamp(20px,5vw,72px)}
+.stage>.inner{width:100%;max-width:1320px;margin:0 auto;display:grid;grid-template-columns:5fr 7fr;gap:clamp(32px,5vw,80px);align-items:center;position:relative;z-index:2}
+
+/* ── cover ─────────────────────────────────────────────────────────────── */
+.cover{--track:170vh}
+.cover .stage{padding:0}
+.cover-photo{position:absolute;inset:0;overflow:hidden}
+.cover-photo img{width:100%;height:100%;object-fit:cover;object-position:50% 45%;
+  transform:scale(calc(1.02 + var(--p)*.14)) translateY(calc(var(--p) * -3%));will-change:transform;transform-origin:50% 60%}
+.cover-grade{position:absolute;inset:0;background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 12%,transparent),transparent 22%,transparent 78%,color-mix(in srgb,var(--bg) 70%,transparent))}
+.label{position:relative;z-index:2;justify-self:start;margin-left:clamp(20px,7vw,110px);
+  background:var(--paper);color:var(--fg);padding:clamp(28px,3.6vw,52px) clamp(28px,3.8vw,56px) clamp(24px,3vw,44px);max-width:min(560px,calc(100vw - 40px));
+  box-shadow:0 30px 70px color-mix(in srgb,var(--shadow) 28%,transparent),0 2px 6px color-mix(in srgb,var(--shadow) 12%,transparent);
+  transform:rotate(-1.2deg) translateY(calc(var(--q) * -18vh));opacity:calc(1 - var(--q));will-change:transform,opacity;
+  --q:clamp(0,calc((var(--p) - .55)/.4),1)}
+.label::before{content:"";position:absolute;top:-14px;left:50%;width:120px;height:28px;background:var(--tape);transform:translateX(-50%) rotate(-2deg)}
+.label .eyebrow{margin-bottom:var(--space-md)}
+.label h1{margin:0 0 var(--space-md)}
+.label .lead{font-size:clamp(1rem,1.1vw,1.2rem)}
+.cue{margin-top:var(--space-lg);font-family:var(--font-ui);font-size:.66rem;letter-spacing:.3em;text-transform:uppercase;color:var(--fg-dim);display:flex;align-items:center;gap:var(--space-sm)}
+.cue i{display:block;width:34px;height:1px;background:var(--accent);transform-origin:0 50%;animation:cue 2.4s var(--ease-reveal) infinite}
+@keyframes cue{0%,100%{transform:scaleX(.3);opacity:.5}50%{transform:scaleX(1);opacity:1}}
+
+/* ── the album page & prints ───────────────────────────────────────────── */
+.page{position:relative;background:var(--surface);border-radius:var(--radius-sm);aspect-ratio:5/4;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--shadow) 10%,transparent),0 40px 90px color-mix(in srgb,var(--shadow) 26%,transparent);
+  background-image:radial-gradient(120% 80% at 20% 0%,color-mix(in srgb,var(--paper) 18%,transparent),transparent 60%)}
+.page::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--shadow) 14%,transparent),transparent 6%)}
+.print{position:absolute;background:var(--paper);padding:5% 5% 12%;width:var(--w,36%);
+  box-shadow:0 calc(4px + var(--lift,0)*22px) calc(10px + var(--lift,0)*40px) color-mix(in srgb,var(--shadow) calc(14% + var(--lift,0)*20%),transparent);
+  transform:translate(var(--tx,0),var(--ty,0)) rotate(var(--r,0deg)) scale(var(--s,1));will-change:transform;transform-origin:50% 60%}
+.print .ph{aspect-ratio:var(--ar,4/3);background-image:url(hero.jpg);background-size:var(--zoom,700%) auto;background-position:var(--pos,50% 50%);
+  background-color:var(--paper-aged);filter:contrast(1.18) saturate(1.15) brightness(1.04)}
+.print .cap{position:absolute;left:5%;right:5%;bottom:2.5%;font-size:clamp(.85rem,1.1vw,1.1rem);white-space:normal;width:auto;line-height:1.15;
+  clip-path:inset(0 calc((1 - var(--wr,1)) * 100%) 0 0)}
+.mount{position:absolute;width:11%;aspect-ratio:1;background:var(--paper-aged);opacity:.9}
+.mount.tl{top:-3%;left:-3%;clip-path:polygon(0 0,100% 0,0 100%)}.mount.tr{top:-3%;right:-3%;clip-path:polygon(0 0,100% 0,100% 100%)}
+.mount.bl{bottom:-3%;left:-3%;clip-path:polygon(0 0,0 100%,100% 100%)}.mount.br{bottom:-3%;right:-3%;clip-path:polygon(100% 0,100% 100%,0 100%)}
+.tape{position:absolute;width:38%;height:9%;background:var(--tape);top:-4%;left:31%;transform:rotate(var(--tr,-3deg)) scaleX(var(--ts,1));transform-origin:50% 50%}
+
+/* spread I — Found: prints lift out of their corner mounts, captions are written in */
+.found{--track:230vh}
+.found .print{--lift:var(--q);--ty:calc(var(--q) * -4%);--s:calc(.97 + var(--q) * .06)}
+.found .p1{--w:38%;left:8%;top:9%;--r:calc(-4deg + var(--q)*4deg);--q:clamp(0,calc((var(--p) - .05)/.35),1);--wr:var(--q);--pos:12% 45%;--zoom:520%}
+.found .p2{--w:34%;right:8%;top:6%;--r:calc(3deg - var(--q)*3deg);--q:clamp(0,calc((var(--p) - .25)/.35),1);--wr:var(--q);--pos:49% 33%;--zoom:760%;--ar:1/1}
+.found .p3{--w:44%;left:30%;bottom:6%;--r:calc(2deg - var(--q)*2deg);--q:clamp(0,calc((var(--p) - .45)/.35),1);--wr:var(--q);--pos:63% 41%;--zoom:480%}
+
+/* spread II — Place: a tidy grid comes apart into a hand-placed page */
+.place{--track:260vh}
+.place .stage>.inner{grid-template-columns:4fr 8fr}
+.place .table{position:relative;aspect-ratio:5/4;--q:clamp(0,calc((var(--p) - .1)/.6),1)}
+.place .print{--lift:var(--q);--tx:calc(var(--dx) * var(--q));--ty:calc(var(--dy) * var(--q));--r:calc(var(--dr) * var(--q));--w:30%}
+.place .tape{--ts:var(--q);--tr:calc(var(--dr) * -1.4)}
+.place .g1{left:2%;top:4%;--dx:6%;--dy:9%;--dr:-6deg;--pos:12% 45%;--zoom:520%}
+.place .g2{left:35%;top:4%;--dx:-3%;--dy:18%;--dr:4deg;--pos:31% 57%;--zoom:520%}
+.place .g3{left:68%;top:4%;--dx:-8%;--dy:6%;--dr:-3deg;--pos:65% 40%;--zoom:600%}
+.place .g4{left:2%;top:52%;--dx:14%;--dy:-6%;--dr:5deg;--pos:22% 52%;--zoom:340%}
+.place .g5{left:35%;top:52%;--dx:-6%;--dy:-2%;--dr:-8deg;--pos:47% 34%;--zoom:520%}
+.place .g6{left:68%;top:52%;--dx:2%;--dy:-16%;--dr:7deg;--pos:34% 58%;--zoom:700%;--ar:1/1}
+
+/* spread III — Kept: one print turns over to show what was written on the back */
+.kept{--track:220vh}
+.kept .stage>.inner{grid-template-columns:5fr 7fr}
+.kept .flip{position:relative;aspect-ratio:4/3;perspective:1600px;--q:clamp(0,calc((var(--p) - .2)/.5),1)}
+.kept .card{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateY(calc(var(--q) * 180deg)) translateY(calc(var(--q) * (1 - var(--q)) * -12%));will-change:transform;transition:none}
+.kept .face{position:absolute;inset:0;backface-visibility:hidden;background:var(--paper);padding:4%;
+  box-shadow:0 30px 70px color-mix(in srgb,var(--shadow) 26%,transparent)}
+.kept .face.front .ph{height:100%;background-image:url(hero.jpg);background-size:280% auto;background-position:60% 42%;background-color:var(--paper-aged);filter:contrast(1.15) saturate(1.12)}
+.kept .face.back{transform:rotateY(180deg);background:var(--paper-aged);display:grid;align-content:center;gap:var(--space-md);padding:8%;
+  background-image:repeating-linear-gradient(180deg,transparent 0 2.2rem,var(--line) 2.2rem calc(2.2rem + 1px))}
+.kept .face.back .hand{white-space:normal;width:auto;font-size:clamp(1.25rem,2vw,1.9rem);line-height:2.2rem}
+.kept .face.back .stampmark{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.14em;color:var(--accent);border:1px solid var(--accent);padding:6px 10px;width:max-content;transform:rotate(-6deg);opacity:.85}
+.kept .hint{font-family:var(--font-ui);font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--fg-dim);margin-top:var(--space-lg)}
+
+/* rules — three index cards */
+.rules{padding:var(--space-4xl) clamp(20px,5vw,72px);max-width:1320px;margin:0 auto}
+.rules .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-xl);margin-top:var(--space-2xl)}
+.card-i{position:relative;background:var(--paper);padding:var(--space-xl);min-height:220px;border-top:6px solid var(--accent);
+  box-shadow:0 20px 50px color-mix(in srgb,var(--shadow) 18%,transparent);transform:rotate(var(--r,0deg)) translateY(var(--y,0));
+  transition:transform var(--dur-slow) var(--ease-playful),opacity var(--dur-base) var(--ease-reveal)}
+.card-i:nth-child(1){--r:-1.5deg}.card-i:nth-child(2){--r:.8deg}.card-i:nth-child(3){--r:-.6deg}
+.card-i .n{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.2em;color:var(--fg-dim)}
+.card-i h3{margin:var(--space-sm) 0 var(--space-sm)}
+.card-i p{color:var(--fg-dim)}
+.reveal{opacity:0;--y:32px}.reveal.in{opacity:1;--y:0}
+
+/* close */
+.close{min-height:80vh;display:grid;place-items:center;text-align:center;padding:var(--space-4xl) clamp(20px,5vw,72px);border-top:1px solid var(--line)}
+.close h2{font-size:clamp(2.4rem,6.5vw,5.6rem);max-width:14ch;letter-spacing:-.03em;margin-bottom:var(--space-xl)}
+.close .letters{display:inline-block;letter-spacing:calc(-.02em + var(--lq,0) * .09em)}
+.button{display:inline-block;font-family:var(--font-ui);font-size:.74rem;letter-spacing:.24em;text-transform:uppercase;text-decoration:none;
+  padding:18px 30px;background:var(--fg);color:var(--paper);border-radius:var(--radius-md);transition:transform var(--dur-fast) var(--ease-playful),background var(--dur-fast) var(--ease-reveal)}
+@media (hover:hover){.button:hover{background:var(--accent);transform:translateY(-2px)}}
+.button:active{transform:translateY(1px)}
+footer{padding:var(--space-2xl) clamp(20px,5vw,72px);border-top:1px solid var(--line);font-family:var(--font-ui);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-dim);display:flex;justify-content:space-between;flex-wrap:wrap;gap:var(--space-md)}
+
+/* ── narrow / coarse pointer: free flow, album laid out in its final state, fewer layers ── */
+@media (max-width:860px),(pointer:coarse){
+  .spread{height:auto}
+  .stage{position:relative;height:auto;overflow:visible;padding-top:var(--space-2xl);padding-bottom:var(--space-2xl)}
+  .stage>.inner{grid-template-columns:1fr!important;gap:var(--space-2xl)}
+  .cover .stage{min-height:100svh;padding:var(--space-4xl) 0;align-items:end}
+  .label{--q:0;margin:0 20px var(--space-2xl);transform:rotate(-1deg)}
+  .cover-photo img{transform:none}
+  .found .print,.place .print{--q:1}
+  .place .table{--q:1}
+  .kept .flip{perspective:none;aspect-ratio:auto;display:grid;gap:var(--space-lg)}
+  .kept .card{position:static;transform:none}
+  .kept .face{position:relative;backface-visibility:visible;aspect-ratio:4/3}
+  .kept .face.back{transform:none}
+  .kept .hint{display:none}
+  .rules .grid{grid-template-columns:1fr}
+  .sun{display:none} /* drop the light layer on narrow devices: fewer layers, lower paint cost */
+}
+/* ── reduced motion: nothing pins, nothing scrubs, everything is already in place ── */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .spread{height:auto}
+  .stage{position:relative;height:auto;overflow:visible;padding-top:var(--space-2xl);padding-bottom:var(--space-2xl)}
+  .cover .stage{min-height:100vh;padding:var(--space-4xl) 0;align-items:end}
+  .label{--q:0;margin:0 20px var(--space-2xl)}
+  .cover-photo img{transform:none}
+  .found .print,.place .print,.place .table{--q:1}
+  .kept .flip{perspective:none;aspect-ratio:auto;display:grid;gap:var(--space-lg)}
+  .kept .card{position:static;transform:none}
+  .kept .face{position:relative;backface-visibility:visible;aspect-ratio:4/3}
+  .kept .face.back{transform:none}
+  .kept .hint{display:none}
+  .sun{display:none}
+  .cue i{animation:none;transform:none}
+  .reveal{opacity:1;--y:0}
+  .card-i,.button{transition:none}
+}
+/* no JS: same as reduced motion */
+.no-js .spread{height:auto}
+.no-js .stage{position:relative;height:auto;overflow:visible;padding-top:var(--space-2xl);padding-bottom:var(--space-2xl)}
+.no-js .cover .stage{min-height:100vh;padding:var(--space-4xl) 0;align-items:end}
+.no-js .label{--q:0;margin:0 20px var(--space-2xl)}
+.no-js .found .print,.no-js .place .print,.no-js .place .table{--q:1}
+.no-js .kept .flip{perspective:none;aspect-ratio:auto;display:grid;gap:var(--space-lg)}
+.no-js .kept .card{position:static;transform:none}
+.no-js .kept .face{position:relative;backface-visibility:visible;aspect-ratio:4/3}
+.no-js .kept .face.back{transform:none}
+.no-js .kept .hint{display:none}
+.no-js .reveal{opacity:1;--y:0}
+.no-js .sun{display:none}
+</style>
+</head>
+<body class="no-js">
+<script>document.body.classList.remove('no-js')</script>
+<div class="sun" aria-hidden="true"></div>
+
+<nav class="masthead" aria-label="Keepsake">
+  <strong>Keepsake</strong>
+  <span class="stamp" aria-live="off">JULY 1994 · <b data-clock>08:00</b></span>
+  <a href="#keep">Keep one</a>
+</nav>
+
+<header class="spread cover" data-spread>
+  <div class="stage">
+    <div class="cover-photo"><img src="hero.jpg" alt="An open album on a sunlit table, its loose photographs of a family's summer spilling out of their corner mounts." fetchpriority="high"></div>
+    <div class="cover-grade" aria-hidden="true"></div>
+    <div class="label">
+      <p class="eyebrow">Memory, pressed · Vol. I</p>
+      <h1>Summers you <em>can hold.</em></h1>
+      <p class="lead">An album you scroll through. The prints lift out of their mounts, the light moves across the table, and one photograph turns over.</p>
+      <p class="cue"><i aria-hidden="true"></i>Open the album</p>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="spread found" data-spread aria-labelledby="h-found">
+  <div class="stage"><div class="inner">
+    <div class="copy">
+      <p class="eyebrow">01 — Found</p>
+      <h2 id="h-found">The affectionate <em>archive.</em></h2>
+      <p class="lead">Photographs that lean, corners that curl, warmth that stays.</p>
+      <p>Every print here was placed by hand, then left alone for thirty years. The sun found them anyway. That is not damage. That is the record of a room that was lived in.</p>
+    </div>
+    <div class="page" role="img" aria-label="An album page in terracotta card: three prints lift out of their corner mounts as the page is opened, each with a handwritten caption.">
+      <div class="print p1"><span class="mount tl"></span><span class="mount tr"></span><span class="mount bl"></span><span class="mount br"></span><div class="ph"></div><span class="cap hand">the cake nobody ordered</span></div>
+      <div class="print p2"><span class="mount tl"></span><span class="mount tr"></span><span class="mount bl"></span><span class="mount br"></span><div class="ph"></div><span class="cap hand">field, before the rain</span></div>
+      <div class="print p3"><span class="mount tl"></span><span class="mount tr"></span><span class="mount bl"></span><span class="mount br"></span><div class="ph"></div><span class="cap hand">the last evening</span></div>
+    </div>
+  </div></div>
+</section>
+
+<section class="spread place" data-spread aria-labelledby="h-place">
+  <div class="stage"><div class="inner">
+    <div class="copy">
+      <p class="eyebrow">02 — Place</p>
+      <h2 id="h-place">By <em>hand.</em></h2>
+      <p class="lead">Nothing aligned to a grid. Everything aligned to feeling.</p>
+      <p>The tidy contact sheet comes apart into the page as it was actually made: a little crooked, taped where the mounts gave out, arranged by who was talking to whom.</p>
+    </div>
+    <div class="table" role="img" aria-label="Six prints begin in a tidy grid and settle into a hand-placed arrangement with strips of tape as you scroll.">
+      <div class="print g1"><span class="tape"></span><div class="ph"></div><span class="cap hand">June</span></div>
+      <div class="print g2"><span class="tape"></span><div class="ph"></div><span class="cap hand">the three of them</span></div>
+      <div class="print g3"><span class="tape"></span><div class="ph"></div><span class="cap hand">July, late</span></div>
+      <div class="print g4"><span class="tape"></span><div class="ph"></div><span class="cap hand">the long grass</span></div>
+      <div class="print g5"><span class="tape"></span><div class="ph"></div><span class="cap hand">porch</span></div>
+      <div class="print g6"><span class="tape"></span><div class="ph"></div><span class="cap hand">the walk back</span></div>
+    </div>
+  </div></div>
+</section>
+
+<section class="spread kept" data-spread aria-labelledby="h-kept">
+  <div class="stage"><div class="inner">
+    <div class="copy">
+      <p class="eyebrow">03 — Kept</p>
+      <h2 id="h-kept">What was written <em>on the back.</em></h2>
+      <p class="lead">A photograph is only half the story. Turn it over.</p>
+      <p>The front is for everyone. The back is for the one person who will pick this up in forty years and need to know which lake, which week, and who burnt the corn.</p>
+      <p class="hint">Scroll to turn the print</p>
+    </div>
+    <div class="flip">
+      <div class="card">
+        <div class="face front" role="img" aria-label="A large print of two people leaning together in the last light of a summer evening."><div class="ph"></div></div>
+        <div class="face back">
+          <p class="hand">Lake house, the last week of August. Dad burnt the corn. We stayed up until the stars came out and nobody said we had to go in.</p>
+          <p class="hand">— M.</p>
+          <span class="stampmark">DEVELOPED · 08 SEP 1994</span>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<section class="rules" aria-labelledby="h-rules">
+  <p class="eyebrow">How Keepsake is made</p>
+  <h2 id="h-rules">Three rules of the <em>album.</em></h2>
+  <div class="grid">
+    <article class="card-i reveal"><span class="n">RULE 01</span><h3>Warm</h3><p>A found-summer palette. The sun is allowed to fade things; we never colour-correct a memory.</p></article>
+    <article class="card-i reveal"><span class="n">RULE 02</span><h3>Personal</h3><p>Imperfect on purpose. A crooked print says a hand placed it, and hands are the whole point.</p></article>
+    <article class="card-i reveal"><span class="n">RULE 03</span><h3>Tactile</h3><p>Paper you can feel. Corner mounts, tape, the back of the print: every surface earns its place.</p></article>
+  </div>
+</section>
+
+<section class="close" id="keep" aria-labelledby="h-keep">
+  <div>
+    <p class="eyebrow" style="justify-content:center">Keepsake</p>
+    <h2 id="h-keep"><span class="letters">Keep the moment.</span></h2>
+    <a class="button" href="mailto:hello@keepsake.example?subject=Keep%20one">Start an album</a>
+  </div>
+</section>
+</main>
+<footer><span>Keepsake · Memory, pressed</span><span>Built with cinematic-scroll</span></footer>
+
+<script>
+(function(){
+  'use strict';
+  var root=document.documentElement;
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)');
+  var coarse=matchMedia('(pointer: coarse)');
+  var narrow=matchMedia('(max-width: 860px)');
+  var spreads=Array.prototype.slice.call(document.querySelectorAll('[data-spread]'));
+  var clock=document.querySelector('[data-clock]');
+  var letters=document.querySelector('.close .letters');
+  var ticking=false, raf=0;
+
+  // one scroll clock: global progress, warmth, per-spread progress, the clock stamp
+  function update(){
+    ticking=false;
+    var vh=innerHeight, max=document.documentElement.scrollHeight-vh;
+    var g=max>0?Math.min(1,Math.max(0,scrollY/max)):0;
+    root.style.setProperty('--scroll',g.toFixed(4));
+    // light warms from morning to golden hour, then cools slightly at the close
+    var warm=Math.sin(Math.min(1,g*1.15)*Math.PI*.5);
+    root.style.setProperty('--warm',warm.toFixed(3));
+    if(clock){var h=8+g*12.5,hh=Math.floor(h),mm=Math.floor((h-hh)*60);clock.textContent=(hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;}
+    if(pinning){
+      for(var i=0;i<spreads.length;i++){
+        var s=spreads[i],r=s.getBoundingClientRect();
+        var range=r.height-vh; var p=range>0?Math.min(1,Math.max(0,-r.top/range)):(r.top<0?1:0);
+        s.style.setProperty('--p',p.toFixed(4));
+      }
+    }
+    if(letters){var lr=letters.getBoundingClientRect();var lq=Math.min(1,Math.max(0,(vh-lr.top)/(vh*.6)));letters.style.setProperty('--lq',lq.toFixed(3));}
+  }
+  function onScroll(){if(!ticking){ticking=true;raf=requestAnimationFrame(update);}}
+
+  var pinning=false;
+  function mode(){
+    // reduced motion / coarse pointer / narrow: skip pinning and parallax; CSS shows the final state.
+    pinning=!(reduce.matches||coarse.matches||narrow.matches);
+    if(!pinning){spreads.forEach(function(s){s.style.removeProperty('--p');});}
+    update();
+  }
+  [reduce,coarse,narrow].forEach(function(m){ (m.addEventListener?m.addEventListener('change',mode):m.addListener(mode)); });
+  addEventListener('scroll',onScroll,{passive:true});
+  addEventListener('resize',onScroll);
+  mode();
+
+  // index cards: settle in once, in flow
+  var cards=document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window && !reduce.matches){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.25});
+    cards.forEach(function(c,i){c.style.transitionDelay=(i*90)+'ms';io.observe(c);});
+  } else { cards.forEach(function(c){c.classList.add('in');}); }
+
+  // keyboard: step between spreads with arrows (native scrolling is never intercepted otherwise)
+  var anchors=[document.querySelector('.cover')].concat(spreads.slice(1),[document.querySelector('.rules'),document.querySelector('.close')]);
+  document.addEventListener('keydown',function(e){
+    if(e.target!==document.body)return;
+    if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;
+    var y=scrollY+innerHeight*.5,idx=0;
+    for(var i=0;i<anchors.length;i++){if(anchors[i].offsetTop<=y)idx=i;}
+    var next=anchors[Math.min(anchors.length-1,Math.max(0,idx+(e.key==='ArrowDown'?1:-1)))];
+    if(next){e.preventDefault();next.scrollIntoView({behavior:reduce.matches?'auto':'smooth',block:'start'});}
+  });
+  addEventListener('pagehide',function(){cancelAnimationFrame(raf);});
+})();
+</script>
+</body>
+</html>

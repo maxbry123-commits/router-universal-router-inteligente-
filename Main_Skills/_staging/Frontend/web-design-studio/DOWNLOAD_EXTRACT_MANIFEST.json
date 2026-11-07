@@ -1,0 +1,38 @@
+{
+  "bundle_bytes": 22247062,
+  "bundle_sha256": "6d34a1acad6083048f74784c233afea9f79e4c2db77d9d5c94a9fe79216004b6",
+  "extracted_tree": {
+    "bytes": 27024821,
+    "files": 814,
+    "sha256": "f2833bc4c8c09511bab8b98cf93a86675c88f09db3201764743824179f5f3d2a"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "web-design-studio.bundle.zip.part-0001",
+      "sha256": "8507016ab4686cee2655d7ad5d9569b1a43e69b80ffbfd43888a9dbf04cf4762"
+    },
+    {
+      "bytes": 9664150,
+      "name": "web-design-studio.bundle.zip.part-0002",
+      "sha256": "1a60979cb5758aadc0aaadc07e80fee7f903aef9778c103b5772ffc0b6d410f9"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "web-design-studio",
+  "source_bytes": 27024821,
+  "source_commit": "3c86f6ce400eeb0b9d0e99cdeab17751070c14b4",
+  "source_files": 814,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/MustBeSimo/web-design-studio",
+  "source_tree": {
+    "bytes": 27024821,
+    "files": 814,
+    "sha256": "f2833bc4c8c09511bab8b98cf93a86675c88f09db3201764743824179f5f3d2a"
+  }
+}

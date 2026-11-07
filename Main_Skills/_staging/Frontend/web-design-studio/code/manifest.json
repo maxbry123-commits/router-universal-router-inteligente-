@@ -1,0 +1,176 @@
+{
+  "name": "cinematic-scroll",
+  "version": "3.0.1",
+  "interactionRuntime": {
+    "license": "MIT",
+    "reference": "references/interaction-runtime.md",
+    "source": "runtime/",
+    "textTreatments": 6,
+    "shaderFamilies": 4,
+    "quality": "adaptive",
+    "webgpu": "experimental-separate-preview"
+  },
+  "description": "Web Design Studio is an Agent Skill for distinctive websites, interactive 3D and motion. It builds standalone HTML or Next.js experiences with deliberate art direction, scroll choreography, parallax, WebGL/WebXR scenes, responsive fallbacks, design tokens, verification tools and an optional five-phase production workflow. The established cinematic-scroll identifier remains the install and compatibility key.",
+  "author": {
+    "name": "Simone Leonelli",
+    "email": "simone@w230.net"
+  },
+  "license": "MIT",
+  "licenseFile": "LICENSE",
+  "price": 0,
+  "currency": "USD",
+  "maintained": true,
+  "maintenanceNote": "Open-source, actively developed. Community contributions and feedback welcome.",
+  "category": "frontend",
+  "tags": [
+    "react",
+    "nextjs",
+    "gsap",
+    "framer-motion",
+    "scroll",
+    "3d",
+    "parallax",
+    "animation",
+    "cinematic",
+    "fal.ai",
+    "ai-images",
+    "shopify-editions",
+    "release-page",
+    "landing-page",
+    "tailwind",
+    "threejs",
+    "react-three-fiber",
+    "webxr",
+    "3d-generation",
+    "draco",
+    "remotion"
+  ],
+  "compatibility": {
+    "claude": ">=3.5",
+    "agentskills.io": "1.x"
+  },
+  "entry": "skills/cinematic-scroll/SKILL.md",
+  "activation": {
+    "invokeWhen": [
+      "User asks to BUILD a cinematic/scroll-driven/parallax/3D-tilt/environment-morphing website, launch or release page, product story, or editorial microsite",
+      "User asks to AUDIT, review, or score the scroll experience of a specific URL or local build they own or are authorized to test",
+      "User asks to plan a cinematic motion storyboard, integrate scroll motion into an existing app, or improve a cinematic build",
+      "User references the flagship/WebXR/3D scroll experience or asks to generate 3D chapter assets in the Next.js template"
+    ],
+    "doNotInvokeFor": [
+      "Generic landing pages, CRUD apps, forms/wizards, CMS integrations, dashboards, or admin panels",
+      "Any request without explicit scroll-driven motion or cinematic web-design intent",
+      "Auditing arbitrary third-party URLs the user does not own or have authorization to test"
+    ],
+    "exampleTriggers": [
+      "Build a cinematic scroll release page for <product> in a <style> aesthetic",
+      "Audit the scroll experience of <a URL I own> and score pacing/perf/a11y/arc"
+    ]
+  },
+  "templates": "templates/nextjs/",
+  "repository": "https://github.com/MustBeSimo/cinematic-scroll-skill",
+  "homepage": "https://mustbesimo.github.io/cinematic-scroll-skill/",
+  "requires": {
+    "npmPackages": [
+      "choreo-3d",
+      "framer-motion",
+      "gsap",
+      "lenis",
+      "@fal-ai/client",
+      "@fal-ai/server-proxy",
+      "next",
+      "react",
+      "react-dom",
+      "tailwindcss"
+    ],
+    "envVars": [
+      "FAL_KEY",
+      "FAL_IMAGE_MODEL"
+    ]
+  },
+  "permissions": [
+    "filesystem:read",
+    "filesystem:write",
+    "network:fetch",
+    "shell:execute",
+    "env"
+  ],
+  "security": {
+    "note": "All sensitive capabilities are optional and user-initiated. FAL_KEY is a billable secret \u2014 store it in a gitignored .env.local or a secret manager, never in source or version control. Audit mode uses the agent's own browser/fetch access to analyze a user-supplied URL (not a local headless binary); the request may trigger analytics or side effects on the target \u2014 only audit sites you own or are authorized to test. Mode A output pages load GSAP + ScrollTrigger and three.js from cdn.jsdelivr.net, the three.js Draco decoder and @google/model-viewer from unpkg.com, and Google Fonts from fonts.googleapis.com / fonts.gstatic.com (SRI-pinned where the format allows \u2014 ES-module import maps cannot carry SRI) \u2014 self-host these if your deployment policy requires it. See manifest.md \u2192 Security & Privacy and audit-mode.md.",
+    "secrets": [
+      "FAL_KEY",
+      "GENERATE_API_SECRET"
+    ],
+    "thirdPartyNetworkCalls": [
+      {
+        "when": "Optional TasteHQ brand analysis and verification",
+        "destination": "www.tastehq.w230.net/api/query and /api/score (or explicitly configured compatible service)",
+        "trigger": "in-scope brand matching or a required project taste contract; sends supplied brief/URLs/grammar; no key required by the adapter, no background memory"
+      },
+      {
+        "when": "Mode B image/asset generation",
+        "destination": "fal.ai API",
+        "trigger": "user-initiated, requires FAL_KEY"
+      },
+      {
+        "when": "Audit mode",
+        "destination": "user-supplied URL",
+        "trigger": "user-initiated, explicit confirmation required. Learn mode uses this same browser/fetch access to observe user-authorized URLs; no additional network exception is introduced."
+      },
+      {
+        "when": "Mode A output pages",
+        "destination": "cdn.jsdelivr.net (GSAP + ScrollTrigger, three.js), unpkg.com (three.js Draco decoder, @google/model-viewer), fonts.googleapis.com + fonts.gstatic.com (Google Fonts)",
+        "trigger": "loaded by the generated HTML when opened in a browser \u2014 self-host to avoid"
+      }
+    ],
+    "disclosure": "manifest.md#security--privacy"
+  },
+  "modes": [
+    {
+      "name": "Scroll artifact",
+      "description": "Single self-contained HTML or .tsx scroll section / page. No build step, no AI keys. Generated pages load GSAP and Google Fonts from third-party CDNs (SRI-pinned). Fast preview."
+    },
+    {
+      "name": "Full release site",
+      "description": "Next.js App Router templates work with static or demo assets without keys. Optional fal.ai generation requires your own fal.ai account and FAL_KEY and makes outbound calls to fal.ai."
+    },
+    {
+      "name": "Cinematic audit",
+      "description": "Agent-driven analysis of an existing URL's scroll experience using the agent's browser/fetch access. Scores pacing, performance, accessibility, and emotional arc. Outputs remediation-plan.md with prioritized fixes. This is not a standalone CLI tool."
+    }
+  ],
+  "references": [
+    "references/story-design.md",
+    "references/build-recipes.md",
+    "references/tastehq.md",
+    "references/editions.md",
+    "design.md",
+    "taste-guardrails.md",
+    "references/scroll-patterns.md",
+    "references/film-archetypes.md",
+    "references/design-tokens.md",
+    "references/component-grammar.md",
+    "references/artifact-templates.md",
+    "references/performance-budget.md",
+    "references/visual-systems.md",
+    "references/detection-pipeline.md",
+    "references/pattern-ir.md",
+    "references/learning-rubric.md",
+    "references/promotion-rules.md",
+    "audit-mode.md",
+    "learn-mode.md",
+    "scroll-choreography.json"
+  ],
+  "pipeline": {
+    "phases": 5,
+    "gated": "adaptive",
+    "gatedNote": "Review checkpoints apply when requested. Otherwise complete the result autonomously; resolve material ambiguity from project context or ask a focused question. A small section needs decisions and evidence, not mandatory phase documents. Full stories can use one project note; separate artifacts below are for staged or complex work. Optional Phase 0 resolves the TasteHQ brand contract.",
+    "artifacts": [
+      "cinematic-audit.md",
+      "motion-storyboard.md",
+      "technical-spec.md",
+      "code-output",
+      "polish-report.md"
+    ]
+  }
+}
