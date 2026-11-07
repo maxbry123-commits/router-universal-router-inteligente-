@@ -1,0 +1,33 @@
+.root {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  position: relative;
+  background: var(--token-qYuX4XAEbRt);
+  column-gap: 4px;
+  border-radius: 4px;
+  padding: 8px;
+}
+.rootwarning {
+  background: var(--token-WsutfVbnQWpY);
+}
+.svg {
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+  left: auto;
+  top: auto;
+  color: var(--token-Y2CWh0ci95a);
+  flex-shrink: 0;
+}
+.svgwarning {
+  color: var(--token-4bm4kJpqcRTD);
+}
+.slotTargetChildren {
+  color: var(--token-Y2CWh0ci95a);
+}
+.slotTargetChildrenwarning {
+  color: var(--token-4bm4kJpqcRTD);
+}

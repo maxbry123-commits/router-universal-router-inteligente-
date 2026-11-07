@@ -1,0 +1,90 @@
+import { SidebarModal } from "@/wab/client/components/sidebar/SidebarModal";
+import { newTokenValueAllowed } from "@/wab/client/components/sidebar/token-utils";
+import { useClientTokenResolver } from "@/wab/client/components/widgets/ColorPicker/client-token-resolver";
+import { DimTokenSpinner } from "@/wab/client/components/widgets/DimTokenSelector";
+import { Icon } from "@/wab/client/components/widgets/Icon";
+import { SimpleTextbox } from "@/wab/client/components/widgets/SimpleTextbox";
+import TokenIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__Token";
+import { StudioCtx } from "@/wab/client/studio-ctx/StudioCtx";
+import { isTokenRef, tokenTypeDimOpts } from "@/wab/commons/StyleToken";
+import { VariantedStylesHelper } from "@/wab/shared/VariantedStylesHelper";
+import { assert, ensure } from "@/wab/shared/common";
+import { MutableToken, OverrideableToken } from "@/wab/shared/core/tokens";
+import { StyleToken } from "@/wab/shared/model/classes";
+import { observer } from "mobx-react";
+import * as React from "react";
+
+export const GeneralTokenEditModal = observer(
+  function GeneralTokenModal(props: {
+    token: MutableToken<StyleToken> | OverrideableToken<StyleToken>;
+    studioCtx: StudioCtx;
+    defaultEditingName?: boolean;
+    onClose: () => void;
+    vsh?: VariantedStylesHelper;
+  }) {
+    const {
+      token,
+      studioCtx,
+      defaultEditingName,
+      vsh = new VariantedStylesHelper(props.studioCtx.site),
+    } = props;
+
+    const resolver = useClientTokenResolver();
+    const activeTokenValue = vsh.getActiveTokenValue(token);
+    // Resolve CSS variable refs only
+    const tokenRefOrRealColor = isTokenRef(activeTokenValue)
+      ? activeTokenValue
+      : resolver(token, vsh);
+
+    const onChange = async (val: string | undefined) => {
+      assert(val !== undefined);
+      return studioCtx.changeUnsafe(() => {
+        if (newTokenValueAllowed(token, studioCtx.site, val, vsh)) {
+          vsh.updateToken(token, val);
+        }
+      });
+    };
+
+    return (
+      <SidebarModal
+        show={true}
+        title={
+          <>
+            <Icon
+              icon={TokenIcon}
+              className="token-fg custom-svg-icon--lg monochrome-exempt"
+            />
+            <SimpleTextbox
+              defaultValue={token.name}
+              onValueChange={(name) =>
+                studioCtx.changeUnsafe(() => {
+                  studioCtx.tplMgr().renameStyleToken(token.base, name);
+                })
+              }
+              readOnly={!(token instanceof MutableToken)}
+              placeholder={"(unnamed token)"}
+              autoFocus={defaultEditingName}
+              selectAllOnFocus={true}
+              fontSize="xlarge"
+              fontStyle="bold"
+            />
+          </>
+        }
+        onClose={() => props.onClose()}
+      >
+        <div className={"flex-col flex-vcenter p-xlg flex-stretch-items"}>
+          <DimTokenSpinner
+            value={tokenRefOrRealColor}
+            onChange={(val) => onChange(ensure(val, "new value is undefined"))}
+            noClear
+            studioCtx={studioCtx}
+            tokenType={token.type}
+            autoFocus={!defaultEditingName}
+            {...tokenTypeDimOpts(token.type)}
+            vsh={vsh}
+          />
+        </div>
+      </SidebarModal>
+    );
+  },
+);

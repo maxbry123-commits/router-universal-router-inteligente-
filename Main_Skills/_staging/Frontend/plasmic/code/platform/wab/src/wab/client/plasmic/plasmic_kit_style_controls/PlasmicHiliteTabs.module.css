@@ -1,0 +1,17 @@
+.root {
+  display: inline-flex;
+  flex-direction: row;
+  position: relative;
+  width: auto;
+  height: auto;
+  justify-content: flex-start;
+  align-items: flex-start;
+  column-gap: 16px;
+  padding: 0px 16px;
+  border-bottom: 1px solid var(--token-bV4cCeIniS6);
+}
+.hiliteTabButton:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+  margin-bottom: -1px;
+}

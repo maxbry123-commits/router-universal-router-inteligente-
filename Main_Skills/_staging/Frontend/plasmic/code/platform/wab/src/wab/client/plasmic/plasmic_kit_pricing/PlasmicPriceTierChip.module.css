@@ -1,0 +1,61 @@
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  row-gap: 8px;
+}
+.rootsimplified {
+  row-gap: 0px;
+  column-gap: 0px;
+}
+.h5 {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  font-size: var(--token-eTQczG7SkS0J);
+  line-height: 1.5;
+  min-width: 0;
+}
+.h5simplified {
+  margin: 0px;
+}
+.slotTargetTier {
+  line-height: 1.25rem;
+  letter-spacing: -1%;
+}
+.text___4TEmb {
+  position: relative;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  min-width: 0;
+}
+.freeBox {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 100%;
+  min-height: 72px;
+  min-width: 0;
+}
+.slotTargetDescription {
+  letter-spacing: -0.01em;
+  color: var(--token-UunsGa2Y3t3);
+  font-size: var(--token-YU1H6d7MUtVL);
+  line-height: 1.5;
+}
+.text {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--token-UunsGa2Y3t3);
+}
+.textcurrent {
+  display: block;
+}

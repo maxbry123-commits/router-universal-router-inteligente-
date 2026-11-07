@@ -1,0 +1,41 @@
+import ColumnJustifyCenterIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__ColumnJustifyCenter";
+import ColumnJustifyEndIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__ColumnJustifyEnd";
+import ColumnJustifySpaceBetweenIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__ColumnJustifySpaceBetween";
+import ColumnJustifyStartIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__ColumnJustifyStart";
+import RowJustifyCenterIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__RowJustifyCenter";
+import RowJustifyEndIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__RowJustifyEnd";
+import RowJustifySpaceBetweenIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__RowJustifySpaceBetween";
+import RowJustifyStartIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__RowJustifyStart";
+import ColumnJustifySpaceEvenlyIcon from "@/wab/client/plasmic/plasmic_kit_design_system/PlasmicIcon__ColumnJustifySpaceEvenly";
+import RowJustifySpaceEvenlyIcon from "@/wab/client/plasmic/plasmic_kit_design_system/PlasmicIcon__RowJustifySpaceEvenly";
+
+export const JustifyContentIcons = {
+  row: {
+    "flex-start": RowJustifyStartIcon,
+    center: RowJustifyCenterIcon,
+    "flex-end": RowJustifyEndIcon,
+    "space-between": RowJustifySpaceBetweenIcon,
+    "space-evenly": RowJustifySpaceEvenlyIcon,
+  },
+  column: {
+    "flex-start": ColumnJustifyStartIcon,
+    center: ColumnJustifyCenterIcon,
+    "flex-end": ColumnJustifyEndIcon,
+    "space-between": ColumnJustifySpaceBetweenIcon,
+    "space-evenly": ColumnJustifySpaceEvenlyIcon,
+  },
+  "row-reverse": {
+    "flex-start": RowJustifyEndIcon,
+    center: RowJustifyCenterIcon,
+    "flex-end": RowJustifyStartIcon,
+    "space-between": RowJustifySpaceBetweenIcon,
+    "space-evenly": RowJustifySpaceEvenlyIcon,
+  },
+  "column-reverse": {
+    "flex-start": ColumnJustifyEndIcon,
+    center: ColumnJustifyCenterIcon,
+    "flex-end": ColumnJustifyStartIcon,
+    "space-between": ColumnJustifySpaceBetweenIcon,
+    "space-evenly": ColumnJustifySpaceEvenlyIcon,
+  },
+};

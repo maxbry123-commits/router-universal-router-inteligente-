@@ -1,0 +1,110 @@
+import CommentPostForm from "@/wab/client/components/comments/CommentPostForm";
+import { FloatingWindow } from "@/wab/client/components/widgets/FloatingWindow";
+import {
+  DefaultCommentPostFormDialogProps,
+  PlasmicCommentPostFormDialog,
+} from "@/wab/client/plasmic/plasmic_kit_comments/PlasmicCommentPostFormDialog";
+import { useStudioCtx } from "@/wab/client/studio-ctx/StudioCtx";
+import { OpenedNewThread } from "@/wab/client/studio-ctx/comments-ctx";
+import { getSetOfPinnedVariantsForViewCtx } from "@/wab/client/studio-ctx/view-ctx";
+import { OnClickAway } from "@/wab/commons/components/OnClickAway";
+import { ensure } from "@/wab/shared/common";
+import { summarizeTpl } from "@/wab/shared/core/tpls";
+import { observer } from "mobx-react";
+import * as React from "react";
+
+export type CommentPostFormDialogProps = DefaultCommentPostFormDialogProps & {
+  openedNewThread: OpenedNewThread;
+};
+
+export const CommentPostFormDialog = observer(function CommentPostFormDialog({
+  openedNewThread,
+  ...props
+}: CommentPostFormDialogProps) {
+  const studioCtx = useStudioCtx();
+
+  const commentsCtx = studioCtx.commentsCtx;
+
+  const handleClickOutside = () => {
+    if (!openedNewThread.interacted) {
+      commentsCtx.closeNewThreadDialog();
+    }
+  };
+
+  const markThreadAsInteracted = () => {
+    openedNewThread.interacted = true;
+  };
+  const currentArena = ensure(
+    studioCtx.currentArena,
+    "Current arena should exist",
+  );
+
+  const threadSubject = openedNewThread.tpl;
+
+  return (
+    <OnClickAway onDone={handleClickOutside}>
+      <FloatingWindow
+        handleSelector=".CommentDialogDragHandle"
+        focusedMode={studioCtx.focusedMode}
+        initialWidth={300}
+        disableHeightResize
+        onClick={markThreadAsInteracted}
+        onKeyDown={markThreadAsInteracted}
+      >
+        <PlasmicCommentPostFormDialog
+          {...props}
+          commentsDialogHead={{
+            className: "CommentDialogDragHandle",
+            name: threadSubject.name || "Unnamed",
+            type: summarizeTpl(
+              threadSubject,
+              openedNewThread.viewCtx
+                .effectiveCurrentVariantSetting(threadSubject)
+                .rsh(),
+            ),
+            close: {
+              onClick: () => commentsCtx.closeNewThreadDialog(),
+            },
+          }}
+          commentPostForm={{
+            render: () => (
+              <CommentPostForm
+                id={"new"}
+                initialRows={5}
+                defaultValue={commentsCtx.getArenaDraft(currentArena)}
+                onSubmit={async (value: string) => {
+                  let subjectAddr = commentsCtx.bundler().addrOf(threadSubject);
+                  if (studioCtx.needsSaving() && !subjectAddr) {
+                    await studioCtx.save();
+                  }
+                  subjectAddr = commentsCtx.bundler().addrOf(threadSubject);
+                  const location = {
+                    subject: ensure(subjectAddr, "Subject Addr should exist"),
+                    variants: getSetOfPinnedVariantsForViewCtx(
+                      ensure(openedNewThread.viewCtx, ""),
+                      commentsCtx.bundler(),
+                    ).map((pv) =>
+                      ensure(
+                        commentsCtx.bundler().addrOf(pv),
+                        "Variant Addr should exist",
+                      ),
+                    ),
+                  };
+                  commentsCtx.postRootComment({
+                    body: value,
+                    location,
+                  });
+                  commentsCtx.clearArenaDraft(currentArena);
+                  commentsCtx.closeNewThreadDialog();
+                }}
+                onChange={(value) =>
+                  commentsCtx.setArenaDraft(currentArena, value)
+                }
+              />
+            ),
+          }}
+        />
+      </FloatingWindow>
+    </OnClickAway>
+  );
+});

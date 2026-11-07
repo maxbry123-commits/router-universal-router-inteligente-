@@ -1,0 +1,52 @@
+[
+  {
+    "scope": "https://next-js-store.myshopify.com:443",
+    "method": "POST",
+    "path": "/api/2025-01/graphql.json",
+    "body": {
+      "query": "\n    query getProductsFromCollection($categoryId: ID!, $first: Int = 250, $sortKey: ProductCollectionSortKeys = RELEVANCE, $reverse: Boolean = false) {\n  node(id: $categoryId) {\n    id\n    ... on Collection {\n      ...collection\n      products(first: $first, sortKey: $sortKey, reverse: $reverse) {\n        edges {\n          node {\n            ...product\n          }\n        }\n      }\n    }\n  }\n}\n    fragment collection on Collection {\n  id\n  title\n  handle\n  image {\n    ...image\n  }\n}\nfragment image on Image {\n  url\n  altText\n  width\n  height\n}\nfragment productVariant on ProductVariant {\n  id\n  sku\n  title\n  availableForSale\n  requiresShipping\n  selectedOptions {\n    name\n    value\n  }\n  image {\n    ...image\n  }\n  price {\n    amount\n    currencyCode\n  }\n  compareAtPrice {\n    amount\n    currencyCode\n  }\n}\nfragment product on Product {\n  id\n  handle\n  availableForSale\n  title\n  productType\n  description\n  descriptionHtml\n  options {\n    id\n    name\n    values\n  }\n  priceRange {\n    maxVariantPrice {\n      amount\n      currencyCode\n    }\n    minVariantPrice {\n      amount\n      currencyCode\n    }\n  }\n  variants(first: 250) {\n    edges {\n      node {\n        ...productVariant\n      }\n    }\n  }\n  featuredImage {\n    ...image\n  }\n  images(first: 20) {\n    edges {\n      node {\n        ...image\n      }\n    }\n  }\n  seo {\n    ...seo\n  }\n  tags\n  updatedAt\n  vendor\n}\nfragment seo on SEO {\n  description\n  title\n}",
+      "variables": {
+        "categoryId": "gid://shopify/Collection/271211167908",
+        "query": ""
+      }
+    },
+    "status": 200,
+    "response": [
+      "1f8b0800000000000013ed59db72e3b811fd950e9e29de445294caeb9457b3b397b2b3336b67d735593f40644b440604685cecf14ca92affb03f90d7fc46f227f99214a8bbd752d91eb93cb5f10b6d42e80bfaa0bb8f5a9f48490d25834f44c812dd5f56920199b0721004ba920d1bdf0443c93916864911c4bd288ea228ebf5c39c78c430c3910cc86ba4c62a2c89472a2aca766dbc5a63359d201908cbb9471a254b5b18ed8c6139414d067fdb69fecd4c20c8b238eaf5e22c49d2285bb7448b1a3b856d8847e815659c8e38be96ea94ba4f8db2b872f46878f20d0cdbad733fce6e1af7c14cbc445d28d6b8a3920139960a6b608db63594924b059a19a0351a0f0a293416068d55404bd6305d303101e4cc78a0b184520232ab6b5982c1ba910a982858c94a2b0c58039c8ea4424033538d50d389a04039bbb4d487378aa246610039d6288cad614c0bc699661a384ab8420e63c5c484714e01b501cb39ad0ba91a548013343e1c19607583aa64ce8c65408bc2d69a8ae541c0614297aaa1966ac45a87ad7ea8133e0ca598587712ab9806554951580d140552e1f6faf0cd04b5a1ba8dd0cc0a5825a80b4353518546d1d53f35d57af1b4dc285630d4fe264cdf999a930139a8d150282aaa349aaf7e25d68c3bf9afe4f04037541cbe00f925027910b4e0108fc816ca5921d85e007e6c7705791aa6fd28cf13f7201e11b476093c74c1271eb9a2dcb63585fc523183c4235f735abc2717d30b97f3acc09fa898b4b5a6a61f7ea68a5161deb875b7446b6985210312a77e483c5258a5501437c3b63c91bf9ebe22538fd44c3c4670eabc6bc51e5cfce6e682240cb324ebf5f3300dfb31f1887e6f9dd1305cabc68b836f2b860a2f2d53a84f2bd6344c4c16eb1a5d99c7f2c73538ee8aeed2840be9bcb67f2256b944ac8c69f420088a52f8f333f885ac031d8c19471d4441987493208cf33448d22c0916ed2018daa633565298ceb553ee3762f2e7abafa22cee46693fe9ba03526ecef0835974926b569a8a0ce230c93d52219b5466f6369d237d7f440b593754e1d1025067603af51e054db79767e11a34d11a34b3bb78173463caf57eb099d978226c464ef92d6cc2f419b0b9987a4b8af1fd9779ce36fc5b52fd4bf274fd9e7f4959dc62ac513abf3698d94c709e53ed75f088a11317e10b8fd8a6a406cba3f6628571d409b34e9c9c45bd41940c92f49d4b1514a554733e48ee99e8419a24bd6edccda3380c937502aa0d2bdea3ba07ff3c5deedca49f2b0d9b14f4173a4605856d0afa1ea1a0a2bc819a165449296024c5488af96a41056a282a448dabcd3ebc92c21a282adbd0f6e95ab6a6358216b4d10be14a169253e3a49ce8e66b4905d3950f67541928a4314ba3135bd7cc995d5fd4d7880694e4dc8799ff0dbbadd3872155b446aec1c8f11871a1ca87637669a5cbf4b92249cdefbd5a9d782e3e42aaa0e0f4da87e16adf3c6ed7ce0b1fbea3fc8a56a0a51d8ff97ffe0555fbeec32bd41a9581866aa36e161a69d370bcc375e0584b01a5928d5ec4842a25e75eb6b6e6aac130456ba62d8c9565a63df8ddf4b539dcc6605f6ec01fed061c8cd4e141d03c98f866aeae87711a2761b693f87eab68c950988772def0919477bbdc7e186f98e7fd38cdc359d59dd1aa354eb53cee9332dea595bd12ab793fe8d472a387c769d64db3adbdb21f86ab56d90fc33b39d52e346f53aa35b16c079a4f43baf61683a7e45b7b72722ba521a795bc06391ec38db40ab8bc42184b057fc10fc6ffbb062a4af81955811cae99a9c0544c8315ecd2a2079cd5cc60095832a70de66cc28733b7ab44cd26029886c6952a3906ba94505678206c3d42e5461d4a36400d980ae1072b101c7d5aba309462ecc3f706e63740035d7ae0a850a1e8d8e9342e71271ce7867df8160d3003d715e308da360d771d83536de0bffff80da4e0371087a1f3cc54a81174c594d170cd3887911b4394f82738e21c1a250bc472f55129056d6dcab6753273e3932dcc70c9b1b651c4f42cea0ed2ee20ec7f36458cd22c4b3628e2a5a5caa0ea7c64f71953be9ded8677ecf793ca4d4d4f7789e676e0236bfe6f2fd29d4ced73827ca08d926272782bd807c17cfddffffcc3867d71f4fb867f1993c773a528efba2fc3bbb8d26238e83d4069d88d7af14ae929fb881b3a4f89474e88478e8947cedbc7f9f143b958ffb1646c87e09ee68f69bfdf4fb37eb836e4ba3de182004e9f968ecd875cdea7bb5070affbe5696fdf9db2123b27b244bed9fee3a4b7b5fd47e17aff776f7732b59d58efa06af12eaaf6d0d96598f7f3a49766dd76a8be15d693e785f5e405d687666b14c7799c2769bc0bd6e3e785f5f805d687c3daed45dd6877b69e3f33aee72fc03e02d834ceb37077be9e3f3bb22fd03ec930648f6178ca71c8dedcdce76f4f6fdf75bea6b7c73371923fa33fafdd4f619fe7d0237e0423ed17b0470e3a2ea6d3e9f47fd95b88ce18260000"
+    ],
+    "rawHeaders": {
+      "access-control-allow-origin": "*",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "cf-ray": "90c2e4ac390cf7d7-LAX",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-language": "en",
+      "content-security-policy": "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Mon, 03 Feb 2025 13:51:00 GMT",
+      "nel": "{\"success_fraction\":0.01,\"report_to\":\"cf-nel\",\"max_age\":604800}",
+      "powered-by": "Shopify",
+      "report-to": "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v4?s=XYm55r4FDYIgLIXBNZg6okNN2kRZeVLrFxtKqMv2gLeKO%2FEAPujYyfqabL5lvL3y%2Bnv9SmK1Cs84lV5%2BqBwDYQexIPqyyyr91iJsQtB4GJpvKZj%2BN7CDkS%2FOpjIzy9C56frR4Pko9hnvsp%2BeDQ%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+      "server": "cloudflare",
+      "server-timing": "processing;dur=11, db;dur=3, asn;desc=\"7922\", edge;desc=\"LAX\", country;desc=\"US\", servedBy;desc=\"rsjg\", graphql;desc=\"storefront/query/getProductsFromCollection\", gqlSelectionNames;desc=\"sfr/node\", requestID;desc=\"597ed1a6-d2c4-415d-ba88-9d6cd603f826-1738590660\", cfRequestDuration;dur=62.000036",
+      "transfer-encoding": "chunked",
+      "vary": "Accept-Encoding,Accept",
+      "x-cache": "hit, server",
+      "x-content-type-options": "nosniff",
+      "x-dc": "gcp-us-west1,gcp-us-west1,gcp-us-west1",
+      "x-download-options": "noopen",
+      "x-frame-options": "DENY",
+      "x-permitted-cross-domain-policies": "none",
+      "x-request-id": "597ed1a6-d2c4-415d-ba88-9d6cd603f826-1738590660",
+      "x-shardid": "163",
+      "x-shopid": "43402854564",
+      "x-shopify-api-version": "2025-01",
+      "x-sorting-hat-podid": "163",
+      "x-sorting-hat-shopid": "43402854564",
+      "x-storefront-renderer-rendered": "1",
+      "x-xss-protection": "1; mode=block"
+    },
+    "responseIsBinary": false
+  }
+]

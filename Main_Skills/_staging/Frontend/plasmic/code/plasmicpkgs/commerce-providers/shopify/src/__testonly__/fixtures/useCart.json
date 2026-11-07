@@ -1,0 +1,267 @@
+[
+  {
+    "scope": "https://next-js-store.myshopify.com:443",
+    "method": "POST",
+    "path": "/api/2025-01/graphql.json",
+    "body": {
+      "query": "\n    mutation createCart($lines: [CartLineInput!]) {\n  cartCreate(input: {lines: $lines}) {\n    cart {\n      ...cart\n    }\n  }\n}\n    fragment cart on Cart {\n  id\n  createdAt\n  checkoutUrl\n  cost {\n    subtotalAmount {\n      amount\n      currencyCode\n    }\n    totalAmount {\n      amount\n      currencyCode\n    }\n    totalTaxAmount {\n      amount\n      currencyCode\n    }\n  }\n  lines(first: 100) {\n    edges {\n      node {\n        id\n        quantity\n        cost {\n          totalAmount {\n            amount\n            currencyCode\n          }\n        }\n        merchandise {\n          ... on ProductVariant {\n            ...productVariant\n            product {\n              ...product\n            }\n          }\n        }\n      }\n    }\n  }\n  totalQuantity\n}\nfragment image on Image {\n  url\n  altText\n  width\n  height\n}\nfragment productVariant on ProductVariant {\n  id\n  sku\n  title\n  availableForSale\n  requiresShipping\n  selectedOptions {\n    name\n    value\n  }\n  image {\n    ...image\n  }\n  price {\n    amount\n    currencyCode\n  }\n  compareAtPrice {\n    amount\n    currencyCode\n  }\n}\nfragment product on Product {\n  id\n  handle\n  availableForSale\n  title\n  productType\n  description\n  descriptionHtml\n  options {\n    id\n    name\n    values\n  }\n  priceRange {\n    maxVariantPrice {\n      amount\n      currencyCode\n    }\n    minVariantPrice {\n      amount\n      currencyCode\n    }\n  }\n  variants(first: 250) {\n    edges {\n      node {\n        ...productVariant\n      }\n    }\n  }\n  featuredImage {\n    ...image\n  }\n  images(first: 20) {\n    edges {\n      node {\n        ...image\n      }\n    }\n  }\n  seo {\n    ...seo\n  }\n  tags\n  updatedAt\n  vendor\n}\nfragment seo on SEO {\n  description\n  title\n}",
+      "variables": {
+        "lines": [
+          {
+            "merchandiseId": "gid://shopify/ProductVariant/40046243905700",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    "status": 200,
+    "response": [
+      "1f8b0800000000000013ed585973db3610fe2b183c5322c453e4e418c769d2766ce7f051351d3f40c48a820502340e474a46ffbd034af291d8499dd6aedbf10b0f00bbd8dd6fbf05b99f31a396e2f233aea8b6db1aa885cd9bbf73864b5c735686a199aa964f16e136d536fc10ed7ddc191d7dda193151c5efe66f4eb6e6fb3313ed1e4c5fbcfff46aefb7577b87bb27ecf5eecb7a7178f47bbc3b3b1a3d9fc1e2e964324e2783388af224ce0b36ce8a22cbf36194b03c4d8a498c035c7556b02d8b4b1c9128ed91a847e283415ca683920c3ef82553a866cad9432d7089a7d6b6a60c430973db3b313d6395867eb3585bdcaf54137a87c2ea6eed56a68b997163ab2c155b8d72b21ba1eb279cc569bf28fc5aa735c86ab1ad18e0121feebfc4cb00ff1db1033adf484a27c432c0824b305e0fb0da3ffcf119cb4eee465877b884b01aa6793220452f2db2bc97c493bc57148cf62825d5709cb02825d1731fcea73f124c1ce05347a5e57681cbc145d07ec8f565801bd0d5944ac6cd4d8ebdd58ab9ca1e51cda9b46142489245495c9034270407d8cc1c2e310eb0e55678d53b28442f04ad6638c0f48c7241c7025e29bd4ffdb4d50e02ace1d4710d667fcadb96cb7a336e40406581bd692d57721d74da78b5fbfc13e0009f51e1ba5df032389fdb5642e94b93abed97c701e60dad3bcfdc9554af98ec5f4e6f134eb800130e4292c44948a2611a26699684edca7b138e553306dd3ba1d50c6c8ff45b593f3f7b3ac8a2a820519ee7de59610f60be4ea0007fe4cc4e7139208404780abc9edad5db32c0ade615dc26472bd5b454c3967dfb95641a11d227374aae3df836ba619a24791c25514ef234c301f639d1a179c5ef6f20ba41ff45b71efdba59bfdefe60d1fad973350c4ca57987b207536968106f8d6b10f35822c32da20dd800554a1a9f13d66944196fb9a9b8ac11086e03648021a61070671ac59085a6551a715971c6999316398b041d2b0d08ec4a35a086d692222af8a9a37df4565330202d02010d48eb1a34a11517dc708304287406024d34973517822230163921685329dd82465083eda32d8b78d38266dc6fe338a255e51a43e5b923c827053d578d1aa5c7bc33d899db1ad147db4ad6ce7be23437484f95ac9c41142450e9d7f6d14f35184b4d17a1d52ec869497d18da29d56035bd7868a8319bab1356f38a83e95f85e967db78063d699f3da2f510d17a12b6cf7080d5a5ca7933df57f535cc8a84a4242683341d0e71705da9f59af00e0ef0a8bb8c76f0b12fbcdf553dccd234cf8a3cf307c685ea2b95bad3bd392a5e523d7b23f819bcd600121ffbeadd95c9f754ae4a7843e7eb53e8eb22f89df2d970f963a24b6f6a27f8d73f051e4fccfff289b9eca2747b74e361920d6f42f78be4fed760fec28e3bc47bf07fc73b1f4471761ddea3fba1f3e891cf7788afbfad0eaeebf1bd47427f1be84746ff6388c7599e47d7227e5f947ee4f4dd229c156972ed17d8e8de49fdc8ea5b637ebc0cf004a8751ad82f0f93011d4837fc293c244b2ff3e721e55387b101e5edbad2225a09aee9ba6ed05a5a777f902b037070d15d529e3af838c0ae65977be1831ec97a51daf5c2e39214be177e0692298d4bbc0773db3f313ed33a33ba96eabb8b66ab1fff134a31bce2f0170000"
+    ],
+    "rawHeaders": {
+      "access-control-allow-origin": "*",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "cf-ray": "90c2e4ae1efbf7d7-LAX",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-language": "en",
+      "content-security-policy": "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Mon, 03 Feb 2025 13:51:01 GMT",
+      "nel": "{\"success_fraction\":0.01,\"report_to\":\"cf-nel\",\"max_age\":604800}",
+      "powered-by": "Shopify",
+      "report-to": "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v4?s=SH8oeHOxmJ3U6Y7%2FJfQGd4nEdx8gBwX%2F1XsKnGqGEiYPcdcyDM8qaf2LZGBzm72UvAQVRJX22zrJCWBryQyLsBV8IZsjn3ZpJOG8KbNXNMfn3rw6rtfZV%2F5%2BdJYh0xM%2B8wEHC3KVeBrbLjR7Bg%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+      "server": "cloudflare",
+      "server-timing": "processing;dur=285, db;dur=13, edge_cart;dur=76.48;desc=\"trips=1\", fetch;dur=147, asn;desc=\"7922\", edge;desc=\"LAX\", country;desc=\"US\", servedBy;desc=\"q4bz\", graphql;desc=\"storefront/mutation/createCart\", gqlSelectionNames;desc=\"sfr/cartCreate\", requestID;desc=\"73500d75-ddcb-4b9c-ae10-93f2e8fc7820-1738590660\", cfRequestDuration;dur=601.999760",
+      "transfer-encoding": "chunked",
+      "vary": "Accept-Encoding,Accept",
+      "x-content-type-options": "nosniff",
+      "x-dc": "gcp-us-west1,gcp-us-east1,gcp-us-east1",
+      "x-download-options": "noopen",
+      "x-frame-options": "DENY",
+      "x-permitted-cross-domain-policies": "none",
+      "x-request-id": "73500d75-ddcb-4b9c-ae10-93f2e8fc7820-1738590660",
+      "x-shardid": "163",
+      "x-shopid": "43402854564",
+      "x-shopify-api-deprecated-reason": "https://shopify.dev/api/usage/versioning#deprecation-practices",
+      "x-shopify-api-version": "2025-01",
+      "x-sorting-hat-podid": "163",
+      "x-sorting-hat-shopid": "43402854564",
+      "x-storefront-renderer-rendered": "1",
+      "x-xss-protection": "1; mode=block"
+    },
+    "responseIsBinary": false
+  },
+  {
+    "scope": "https://next-js-store.myshopify.com:443",
+    "method": "POST",
+    "path": "/api/2025-01/graphql.json",
+    "body": {
+      "query": "\n    mutation addToCart($cartId: ID!, $lines: [CartLineInput!]!) {\n  cartLinesAdd(cartId: $cartId, lines: $lines) {\n    cart {\n      ...cart\n    }\n  }\n}\n    fragment cart on Cart {\n  id\n  createdAt\n  checkoutUrl\n  cost {\n    subtotalAmount {\n      amount\n      currencyCode\n    }\n    totalAmount {\n      amount\n      currencyCode\n    }\n    totalTaxAmount {\n      amount\n      currencyCode\n    }\n  }\n  lines(first: 100) {\n    edges {\n      node {\n        id\n        quantity\n        cost {\n          totalAmount {\n            amount\n            currencyCode\n          }\n        }\n        merchandise {\n          ... on ProductVariant {\n            ...productVariant\n            product {\n              ...product\n            }\n          }\n        }\n      }\n    }\n  }\n  totalQuantity\n}\nfragment image on Image {\n  url\n  altText\n  width\n  height\n}\nfragment productVariant on ProductVariant {\n  id\n  sku\n  title\n  availableForSale\n  requiresShipping\n  selectedOptions {\n    name\n    value\n  }\n  image {\n    ...image\n  }\n  price {\n    amount\n    currencyCode\n  }\n  compareAtPrice {\n    amount\n    currencyCode\n  }\n}\nfragment product on Product {\n  id\n  handle\n  availableForSale\n  title\n  productType\n  description\n  descriptionHtml\n  options {\n    id\n    name\n    values\n  }\n  priceRange {\n    maxVariantPrice {\n      amount\n      currencyCode\n    }\n    minVariantPrice {\n      amount\n      currencyCode\n    }\n  }\n  variants(first: 250) {\n    edges {\n      node {\n        ...productVariant\n      }\n    }\n  }\n  featuredImage {\n    ...image\n  }\n  images(first: 20) {\n    edges {\n      node {\n        ...image\n      }\n    }\n  }\n  seo {\n    ...seo\n  }\n  tags\n  updatedAt\n  vendor\n}\nfragment seo on SEO {\n  description\n  title\n}",
+      "variables": {
+        "cartId": "gid://shopify/Cart/Z2NwLXVzLXdlc3QxOjAxSks2MThBRzFNWFNUMjdGMDgyUVY3MkVX?key=ffb5f132274379db699677824d7549f3",
+        "lines": [
+          {
+            "merchandiseId": "gid://shopify/ProductVariant/40046243905700",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    "status": 200,
+    "response": [
+      "1f8b0800000000000013ed585973db3610fe2b183c5322788b9c1ce3384dda8eed1c3eaaa6e307885849b04080c1e148c9e8bf7740493e122b69d2da753b7ee1016017bbfbedb720f71366d4525c7dc235d5768f4b303b8c6ddefd9d335ce1096755189aa96af97811ee526dc377f1c187bde1c9c7bd211375f266feea6c677e3833f1fed1f4d9db8f2f0e7e7b7170bc7fc65eee3f9f2c8e4f7e4ff66727c3a733583c1e8f47d9384ae2b84893a264a3bc2cf3a218c4292bb2b41c2738c0b5066a81ed585ce198c4598fc43d921c454995451589def92553a867cad9632d7085a7d6b6a60a430973db3b333d6395867eb3585bdcaf55137a87c2fa76ed56a68b997123ab2c153b8d72b21ba1eb271cc545d42f077eb1d31a64bdd8550c70858f0f9fe36580ff96dc119d6f44a513621960e111f58a804dfcc31f9fb0ece4b602eb7320ac07599146a4ec65655ef4d2645cf4ca92d11ea5a41e8c521667247eea03faf847c28903fcde5169b95de02abe0cdb8ff9be0c7003ba9e52c9b8d9e6d96bad98abed09d59c4a1ba684a4799c2625c90a427080cdcce10ae3005b6e8557bd8742f44cd07a86034ccf29177424e085d287d44f5bed20c01ade3baec11c4e79db7239d98c1b10505b60af5acb955c479d365eed21ff0838c0e754b86e17bc0c2ee6769550facae46afbe569807943279d67ee5ab6d74cf6af66b809c75c8009a390a4491a927890856996a761bbf2de8423d58c40f7ce683d03db23fd564e9e9e3f8ef2382e495c14857756d82398af3328c01f38b3535c458490004f814fa676f5b60c70ab790dd790ca93ac5f965b93b4564d4b35ecd8d75f486631217db25572edc1d7d10db3342d92388d0b5264390eb0cf890ecd6b7e7f05d10dfacfbaf5e8d7cdfaf5f6478bd6cf5ea861606acd3b943d984a4383786b5c8398c712196e116dc006a856d2f89cb04e23ca78cb4dcde50481e036400618620a0177a6510c59685aa5119735679c396991b348d091d280c0ae54036ae8445244057fef681fbdd6140c488b404003d2ba068d69cd0537dc20010a9d834063cde5840b4111188b9c10b4a9956e41239880eda31d8b78d38266dc6fe338a275ed1a43e58523c82705bd508d1aa547bc33d899ef35a28f76959c38ef89d3dc203d55b27606519040a55fdb473f4dc0586aba08ad76414e4beac3d04ea906abe9e543438dd95c9db09ad71c4cff3a4c3fdbc633e851fbe401adfb88d6a3b07d8203acae54ceed7c5fd5d7302f53929184445936f087c40da5d66bc27b38c0c3ee32dcc3a7bef07e53f520cfb2222f8bdc1f1897aaaf55ea4ef7e6a8784ef5ec95e0e7f05203487ceaab775726df52b92ae10d9daf4fa12f8be037ca67c3e58f892ebda99de05fff16783831ffcb27e6b28bd2f7a39b0cd27cb00dddcf92fb5f83f9333b6e11efe8ff8e7711c5497e13dec3bba1f3f081cfb788afbfad0eae9bf1bd43427f1de80746ff6388277951c437227e57947ee0f4ed229c97597ae317d8f0ce49fdc0eaefc6fc7419e03150eb34b05fee27033a90b6fc29dc274baff2e73ee55387b101e5edbad6225a09aee9baeed05a3ae9fe205706e0e0b2bba43c75f069805dcbaeb6c3a31ec97b71d6b5c3938a94be1d7e0e92298d2b7c0073db3f333ed33a33ba9eea9bcb6eab1fff13a8f11765f5170000"
+    ],
+    "rawHeaders": {
+      "access-control-allow-origin": "*",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "cf-ray": "90c2e4b23d95f7d7-LAX",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-language": "en",
+      "content-security-policy": "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Mon, 03 Feb 2025 13:51:02 GMT",
+      "nel": "{\"success_fraction\":0.01,\"report_to\":\"cf-nel\",\"max_age\":604800}",
+      "powered-by": "Shopify",
+      "report-to": "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v4?s=AWdPzndj2DqePMUWbsEjmX5KqsoCtIXxJmfIknKd%2FSmIFSBkdKOwWdoMGCfkR29iF9KTK9O4hOpoYr8K%2B6ys6xB%2BqYFz%2BsZKy20swhN0xJIXum3dmETDuVUzBftpQWpID0RAGXqvINqZpG%2B96A%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+      "server": "cloudflare",
+      "server-timing": "processing;dur=349;desc=\"gc:5\", db;dur=12, fetch;dur=278, asn;desc=\"7922\", edge;desc=\"LAX\", country;desc=\"US\", servedBy;desc=\"9xs8\", graphql;desc=\"storefront/mutation/addToCart\", gqlSelectionNames;desc=\"sfr/cartLinesAdd\", requestID;desc=\"b00e13a2-a3c3-4d8e-bac3-44c2e6f4ca02-1738590661\", cfRequestDuration;dur=629.999876",
+      "transfer-encoding": "chunked",
+      "vary": "Accept-Encoding,Accept",
+      "x-content-type-options": "nosniff",
+      "x-dc": "gcp-us-west1,gcp-us-east1,gcp-us-east1",
+      "x-download-options": "noopen",
+      "x-frame-options": "DENY",
+      "x-permitted-cross-domain-policies": "none",
+      "x-request-id": "b00e13a2-a3c3-4d8e-bac3-44c2e6f4ca02-1738590661",
+      "x-shardid": "163",
+      "x-shopid": "43402854564",
+      "x-shopify-api-deprecated-reason": "https://shopify.dev/api/usage/versioning#deprecation-practices",
+      "x-shopify-api-version": "2025-01",
+      "x-sorting-hat-podid": "163",
+      "x-sorting-hat-shopid": "43402854564",
+      "x-storefront-renderer-rendered": "1",
+      "x-xss-protection": "1; mode=block"
+    },
+    "responseIsBinary": false
+  },
+  {
+    "scope": "https://next-js-store.myshopify.com:443",
+    "method": "POST",
+    "path": "/api/2025-01/graphql.json",
+    "body": {
+      "query": "\n    mutation editCartItems($cartId: ID!, $lines: [CartLineUpdateInput!]!) {\n  cartLinesUpdate(cartId: $cartId, lines: $lines) {\n    cart {\n      ...cart\n    }\n  }\n}\n    fragment cart on Cart {\n  id\n  createdAt\n  checkoutUrl\n  cost {\n    subtotalAmount {\n      amount\n      currencyCode\n    }\n    totalAmount {\n      amount\n      currencyCode\n    }\n    totalTaxAmount {\n      amount\n      currencyCode\n    }\n  }\n  lines(first: 100) {\n    edges {\n      node {\n        id\n        quantity\n        cost {\n          totalAmount {\n            amount\n            currencyCode\n          }\n        }\n        merchandise {\n          ... on ProductVariant {\n            ...productVariant\n            product {\n              ...product\n            }\n          }\n        }\n      }\n    }\n  }\n  totalQuantity\n}\nfragment image on Image {\n  url\n  altText\n  width\n  height\n}\nfragment productVariant on ProductVariant {\n  id\n  sku\n  title\n  availableForSale\n  requiresShipping\n  selectedOptions {\n    name\n    value\n  }\n  image {\n    ...image\n  }\n  price {\n    amount\n    currencyCode\n  }\n  compareAtPrice {\n    amount\n    currencyCode\n  }\n}\nfragment product on Product {\n  id\n  handle\n  availableForSale\n  title\n  productType\n  description\n  descriptionHtml\n  options {\n    id\n    name\n    values\n  }\n  priceRange {\n    maxVariantPrice {\n      amount\n      currencyCode\n    }\n    minVariantPrice {\n      amount\n      currencyCode\n    }\n  }\n  variants(first: 250) {\n    edges {\n      node {\n        ...productVariant\n      }\n    }\n  }\n  featuredImage {\n    ...image\n  }\n  images(first: 20) {\n    edges {\n      node {\n        ...image\n      }\n    }\n  }\n  seo {\n    ...seo\n  }\n  tags\n  updatedAt\n  vendor\n}\nfragment seo on SEO {\n  description\n  title\n}",
+      "variables": {
+        "cartId": "gid://shopify/Cart/Z2NwLXVzLXdlc3QxOjAxSks2MThBRzFNWFNUMjdGMDgyUVY3MkVX?key=ffb5f132274379db699677824d7549f3",
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/c8574109-5967-43f7-99da-aa0c8b4d2502?cart=Z2NwLXVzLXdlc3QxOjAxSks2MThBRzFNWFNUMjdGMDgyUVY3MkVX",
+            "quantity": 3
+          }
+        ]
+      }
+    },
+    "status": 200,
+    "response": [
+      "1f8b0800000000000013ed585973db3610fe2b183c5322c453e4e418c769d2766ce7f051351d3f40c48a8205020c0e474a46ffbd034af291584993d6aedbf10b0f00bbd8dd6fbf05b99f30a396e2f213aea8b67b5c82396e19b5b019f277ce70896bceca303453d5f2c922dca5da86efa2830f7ba3938f7b2326aaf8cdfcd5d9cefc7066a2fda3e9b3b71f5f1cfcf6e2e078ff8cbddc7f5e2f8e4f7e8ff76727a3a733583c9e4cc6e9641047519ec479c1c6595164793e8c1296a749318971802b0dd402dbb1b8c41189d21e897a243e1ac4653a28c9e09d5f32856aa69c3dd60297786a6d6bca309430b7bd33d3335669e8378bb5c5fd4a35a17728ac6ed76e65ba981937b6ca52b1d32827bb11ba7ec28382e4fd22f78b9dd620abc5ae62804b7c7cf81c2f03fcb7e48ee87c232a9d10cb000b0faa5704acf60f7f7cc2b293db0aac4f83b01aa6793220452f2db2bc97c493bc57148cf62825d5709cb02825d1531fd0c73f124e1ce0f78e4acbed0297f165d87eccf765801bd0d5944ac6cd36cf5e6bc55c654fa8e654da302124c9a2242e489a1382036c660e971807d8722bbcea3d14a2678256331c607a4eb9a063012f943ea47eda6a0701d6f0de710de670cadb96cb7a336e40406581bd6a2d57721d75da78b587fc23e0009f53e1ba5df032b898db5542e92b93abed97a701e60dad3bcfdcb56caf98ec5fcd70134eb800130e4292c44948a2611a26699684edca7b138e553306dd3ba3d50c6c8ff45b593f3d7f3cc8a2a820519efb1053618f60becea0007fe0cc4e7139208404780abc9edad5db32c0ade6155c432a8bd37e516c4dd24a352dd5b0635f7f21994684f4c956c9b5075f47374c93248fa324ca499e6638c03e273a34aff9fd154437e83febd6a35f37ebd7db1f2d5a3f7ba18681a934ef50f6602a0d0de2ad710d621e4b64b845b4011ba04a49e373c23a8d28e32d3715973502c16d800c30c41402ee4ca318b2d0b44a232e2bce3873d2226791a063a501815da906d4d05a5244057fef681fbdd6140c488b404003d2ba064d68c50537dc20010a9d834013cd65cd85a0088c454e08da544ab7a011d460fb68c722deb4a019f7db388e6855b9c65079e108f249412f54a346e931ef0c76e67b8de8a35d256be73d719a1ba4a74a56ce200a12a8f46bfbe8a71a8ca5a68bd06a17e4b4a43e0ced946ab09a5e3e34d498cdd509ab79c5c1f4afc3f4b36d3c831eb54f1ed0ba8f683d0adb2738c0ea4ae5dccef7557d0db322212989c9204d87431cdc546abd26bc87033cea2ea33d7cea0bef37550fb334cdb322cffc8171a9fa5aa5ee746f8e8ae754cf5e097e0e2f3580c4a7be7a7765f22d95ab12ded0f9fa14fab2087ea37c365cfe98e8d29bda09fef56f818713f3bf7c622ebb287d3fbaf130c986dbd0fd2cb9ff35983fb3e316f11efcdff1ce07519cdd84f7e86ee83c7ae0f32de2eb6fab83eb667cef90d05f07fa81d1ff18e27196e7d18d88df15a51f387dbb0867459adcf80536ba73523fb0fabb313f5d067802d43a0dec97fbc9800ea42d7f0af7c9d2abfcb94ff9d4616c4079bbaeb58856826bbaae3bb496d6dd1fe4ca001c5c769794a70e3e0db0eb9af217edf0418f64bd28eddae171490adf0e3f07c994c6253e80b9ed9f199f699d195d4ff5cd65b7d58fff092416f2daf8170000"
+    ],
+    "rawHeaders": {
+      "access-control-allow-origin": "*",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "cf-ray": "90c2e4b6ab4bf7d7-LAX",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-language": "en",
+      "content-security-policy": "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Mon, 03 Feb 2025 13:51:02 GMT",
+      "nel": "{\"success_fraction\":0.01,\"report_to\":\"cf-nel\",\"max_age\":604800}",
+      "powered-by": "Shopify",
+      "report-to": "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v4?s=x2bS0%2FUxll0tjkh2H13G8h%2FnOZfbqlKdqf351iQxh3bXBjL1v66rWiY%2B2V4d8cZr9eELz7hNrcEu77fUqZv3ydzu0XobkTRQJGRqEwIVSTiPShIuUoVHeunInJI%2BuR2ccok%2Bf2ceSdpY8%2BtvAA%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+      "server": "cloudflare",
+      "server-timing": "processing;dur=401;desc=\"gc:3\", db;dur=12, fetch;dur=350, asn;desc=\"7922\", edge;desc=\"LAX\", country;desc=\"US\", servedBy;desc=\"pltb\", graphql;desc=\"storefront/mutation/editCartItems\", gqlSelectionNames;desc=\"sfr/cartLinesUpdate\", requestID;desc=\"29b8ceeb-c1e0-4247-a1f9-6d1b7f907164-1738590662\", cfRequestDuration;dur=710.999966",
+      "transfer-encoding": "chunked",
+      "vary": "Accept-Encoding,Accept",
+      "x-content-type-options": "nosniff",
+      "x-dc": "gcp-us-west1,gcp-us-east1,gcp-us-east1",
+      "x-download-options": "noopen",
+      "x-frame-options": "DENY",
+      "x-permitted-cross-domain-policies": "none",
+      "x-request-id": "29b8ceeb-c1e0-4247-a1f9-6d1b7f907164-1738590662",
+      "x-shardid": "163",
+      "x-shopid": "43402854564",
+      "x-shopify-api-deprecated-reason": "https://shopify.dev/api/usage/versioning#deprecation-practices",
+      "x-shopify-api-version": "2025-01",
+      "x-sorting-hat-podid": "163",
+      "x-sorting-hat-shopid": "43402854564",
+      "x-storefront-renderer-rendered": "1",
+      "x-xss-protection": "1; mode=block"
+    },
+    "responseIsBinary": false
+  },
+  {
+    "scope": "https://next-js-store.myshopify.com:443",
+    "method": "POST",
+    "path": "/api/2025-01/graphql.json",
+    "body": {
+      "query": "\n    query getCart($cartId: ID!) {\n  cart(id: $cartId) {\n    ...cart\n  }\n}\n    fragment cart on Cart {\n  id\n  createdAt\n  checkoutUrl\n  cost {\n    subtotalAmount {\n      amount\n      currencyCode\n    }\n    totalAmount {\n      amount\n      currencyCode\n    }\n    totalTaxAmount {\n      amount\n      currencyCode\n    }\n  }\n  lines(first: 100) {\n    edges {\n      node {\n        id\n        quantity\n        cost {\n          totalAmount {\n            amount\n            currencyCode\n          }\n        }\n        merchandise {\n          ... on ProductVariant {\n            ...productVariant\n            product {\n              ...product\n            }\n          }\n        }\n      }\n    }\n  }\n  totalQuantity\n}\nfragment image on Image {\n  url\n  altText\n  width\n  height\n}\nfragment productVariant on ProductVariant {\n  id\n  sku\n  title\n  availableForSale\n  requiresShipping\n  selectedOptions {\n    name\n    value\n  }\n  image {\n    ...image\n  }\n  price {\n    amount\n    currencyCode\n  }\n  compareAtPrice {\n    amount\n    currencyCode\n  }\n}\nfragment product on Product {\n  id\n  handle\n  availableForSale\n  title\n  productType\n  description\n  descriptionHtml\n  options {\n    id\n    name\n    values\n  }\n  priceRange {\n    maxVariantPrice {\n      amount\n      currencyCode\n    }\n    minVariantPrice {\n      amount\n      currencyCode\n    }\n  }\n  variants(first: 250) {\n    edges {\n      node {\n        ...productVariant\n      }\n    }\n  }\n  featuredImage {\n    ...image\n  }\n  images(first: 20) {\n    edges {\n      node {\n        ...image\n      }\n    }\n  }\n  seo {\n    ...seo\n  }\n  tags\n  updatedAt\n  vendor\n}\nfragment seo on SEO {\n  description\n  title\n}",
+      "variables": {
+        "cartId": "gid://shopify/Cart/Z2NwLXVzLXdlc3QxOjAxSks2MThBRzFNWFNUMjdGMDgyUVY3MkVX?key=ffb5f132274379db699677824d7549f3"
+      }
+    },
+    "status": 200,
+    "response": [
+      "1f8b0800000000000013ed585973db3610fe2b183c5322c453e4e418c769d2766cc7898faae9f8012256142c106070389233faef1d50f295584993d6aedbf10b0912d8c5ee7efb2dc8fd8419b514979f7045b5f577ce70896bceca303453d5f2c922dca6da86efa3bd8f3ba3e3f39d111355fc76fee6746b7e3033d1eee1f4c5bbf3577bbfbdda3bda3d65af775fd68ba3e3dfe3ddd9f1e8f90c164f2793713a19c4519427715eb0715614599e0fa384e569524c621ce04a03b5c0b62c2e7144a2b447a21e890f0771990e4a3278ef974ca19a29678fb4c0259e5adb9a320c25cc6defd4f48c551afacd626d71bf524de81d0aabbbb55b992e66c68dadb2546c35cac9ee0d5d8ff0a02079bfc8fd62a735c86ab1ad18e0121f1dbcc4cb00ff2db9433abf10954e886580059760bc2260b51ffcf109cb4e6e23b03b5c42580dd33c1990a2971659de4be249de2b0a467b94926a384e589492e8b90fe8d31f09270ef00747a5e57681cbf82a6c3fe6fb32c00de86a4a25e3669367fb5a3157d963aa3995364c0849b228890b92e684e0009b99c325c601b6dc0aaf7a0785e885a0d50c07989e512ee858c02ba50fa89fb6da4180357c705c833998f2b6e5b2be786f40406581bd692d57721d75da78b507fc1c7080cfa870dd2e78195cce6d2ba1f4b5c9d5f6cb9300f386d69d67ee46b6574cf6af67b809275c8009072149e22424d1300d93344bc276e5bd09c7aa1983ee9dd26a06b647faadac9f9f3d1d6451549028cf7d88a9b087305f6750803f7266a7b81c1042023c055e4fedea6919e056f30a6e2095c569bf28362669a59a966ad8b2fb5f48a611217db25172edc1d7d10dd324c9e328897292a7190eb0cf890ecd1b7e7f05d10bf45f74ebd1af17ebd7db1f2e5a3f7ba98681a934ef50f6602a0d0de2ad710d621e4b64b845b4011ba04a49e373c23a8d28e32d3715973502c16d800c30c41402ee4ca318b2d0b44a232e2bce3873d2226791a063a501815da906d4d05a524405ffe0681fed6b0a06a44520a001695d8326b4e2821b6e900085ce40a089e6b2e6425004c62227046d2aa55bd0086ab07db465116f5ad08cfb6d1c47b4aa5c63a8bc7404f9a4a097aa51a3f49877063bf3bd46f4d1b692b5f39e38cd0dd253252b6710050954fab57df4530dc652d34568b50b725a521f86764a35584daf060d35e6e2ea84d5bce260fa3761fad9369e414fda678f683d44b49e84ed331c6075ad726ee6fbaabe8659919094c46490a6c3210e6e2bb55e13dec1011e7597d10e3ef185f79baa87599ae6599167fec0b8527da35277ba2f8e8a9754cfde087e06af3580c427be7a7765f21d95ab12ded0f9fa14fab2087ea37c365cfe98e8d29bda09fef56f81c713f3bf7c622ebb287d3fbaf130c9869bd0fd2cb9ff35983fb3e30ef11efcdff1ce07519cdd86f7e87ee83c7ae4f31de2eb6fab83eb767cef91d05f07fa91d1ff18e27196e7d1ad88df17a51f397db70867459adcfa0536ba77523fb2fabb313f59067802d43a0dec9787c9800ea40d7f0a0fc9d2ebfc7948f9d4616c4079bb6eb48856826bbaae3bb496d6dd1fe4ca001c5c759794a70e3e09b06bd9f576f8a047b25e9476edf0b824856f879f81644ae312efc1dcf64f8dcfb4ce8caea7faf6aadbba5c2eff049389c92be4170000"
+    ],
+    "rawHeaders": {
+      "access-control-allow-origin": "*",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "cf-ray": "90c2e4bbdca1f7d7-LAX",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-language": "en",
+      "content-security-policy": "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Mon, 03 Feb 2025 13:51:03 GMT",
+      "nel": "{\"success_fraction\":0.01,\"report_to\":\"cf-nel\",\"max_age\":604800}",
+      "powered-by": "Shopify",
+      "report-to": "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v4?s=RY%2Fm3W%2FPVUMz0EpJVGBGnl%2BJONWaUsiImhbidIfbD%2Ba8izJfQPkBoO5iIrJNkoCAom1EpUB%2BzsCQ1r3sQfLaqU5MUaIi%2BZLzhYdJsDAHbaR6YYmH8s%2FDup4P6CLyHJFTFlDxGS6JTbFwxh1QMw%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+      "server": "cloudflare",
+      "server-timing": "processing;dur=42;desc=\"gc:1\", db;dur=9, edge_cart;dur=1.2;desc=\"trips=1\", asn;desc=\"7922\", edge;desc=\"LAX\", country;desc=\"US\", servedBy;desc=\"zt5m\", graphql;desc=\"storefront/query/getCart\", gqlSelectionNames;desc=\"sfr/cart\", requestID;desc=\"79166594-b01c-4667-8309-620b7e9beb90-1738590663\", cfRequestDuration;dur=92.999935",
+      "transfer-encoding": "chunked",
+      "vary": "Accept-Encoding,Accept",
+      "x-content-type-options": "nosniff",
+      "x-dc": "gcp-us-west1,gcp-us-west1,gcp-us-west1",
+      "x-download-options": "noopen",
+      "x-frame-options": "DENY",
+      "x-permitted-cross-domain-policies": "none",
+      "x-request-id": "79166594-b01c-4667-8309-620b7e9beb90-1738590663",
+      "x-shardid": "163",
+      "x-shopid": "43402854564",
+      "x-shopify-api-deprecated-reason": "https://shopify.dev/api/usage/versioning#deprecation-practices",
+      "x-shopify-api-version": "2025-01",
+      "x-sorting-hat-podid": "163",
+      "x-sorting-hat-shopid": "43402854564",
+      "x-storefront-renderer-rendered": "1",
+      "x-xss-protection": "1; mode=block"
+    },
+    "responseIsBinary": false
+  },
+  {
+    "scope": "https://next-js-store.myshopify.com:443",
+    "method": "POST",
+    "path": "/api/2025-01/graphql.json",
+    "body": {
+      "query": "\n    mutation removeFromCart($cartId: ID!, $lineIds: [ID!]!) {\n  cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {\n    cart {\n      ...cart\n    }\n  }\n}\n    fragment cart on Cart {\n  id\n  createdAt\n  checkoutUrl\n  cost {\n    subtotalAmount {\n      amount\n      currencyCode\n    }\n    totalAmount {\n      amount\n      currencyCode\n    }\n    totalTaxAmount {\n      amount\n      currencyCode\n    }\n  }\n  lines(first: 100) {\n    edges {\n      node {\n        id\n        quantity\n        cost {\n          totalAmount {\n            amount\n            currencyCode\n          }\n        }\n        merchandise {\n          ... on ProductVariant {\n            ...productVariant\n            product {\n              ...product\n            }\n          }\n        }\n      }\n    }\n  }\n  totalQuantity\n}\nfragment image on Image {\n  url\n  altText\n  width\n  height\n}\nfragment productVariant on ProductVariant {\n  id\n  sku\n  title\n  availableForSale\n  requiresShipping\n  selectedOptions {\n    name\n    value\n  }\n  image {\n    ...image\n  }\n  price {\n    amount\n    currencyCode\n  }\n  compareAtPrice {\n    amount\n    currencyCode\n  }\n}\nfragment product on Product {\n  id\n  handle\n  availableForSale\n  title\n  productType\n  description\n  descriptionHtml\n  options {\n    id\n    name\n    values\n  }\n  priceRange {\n    maxVariantPrice {\n      amount\n      currencyCode\n    }\n    minVariantPrice {\n      amount\n      currencyCode\n    }\n  }\n  variants(first: 250) {\n    edges {\n      node {\n        ...productVariant\n      }\n    }\n  }\n  featuredImage {\n    ...image\n  }\n  images(first: 20) {\n    edges {\n      node {\n        ...image\n      }\n    }\n  }\n  seo {\n    ...seo\n  }\n  tags\n  updatedAt\n  vendor\n}\nfragment seo on SEO {\n  description\n  title\n}",
+      "variables": {
+        "cartId": "gid://shopify/Cart/Z2NwLXVzLXdlc3QxOjAxSks2MThBRzFNWFNUMjdGMDgyUVY3MkVX?key=ffb5f132274379db699677824d7549f3",
+        "lineIds": [
+          "gid://shopify/CartLine/c8574109-5967-43f7-99da-aa0c8b4d2502?cart=Z2NwLXVzLXdlc3QxOjAxSks2MThBRzFNWFNUMjdGMDgyUVY3MkVX"
+        ]
+      }
+    },
+    "status": 200,
+    "response": [
+      "1f8b0800000000000013b551cb6ec23010fc973d139cd8843496aa8a52d10ba1a2059a52f5606c87843c8c62a74d40f9f7ca087ea0524f3b1acdac6676cf20986140cfc0596de65925f5ab2cd5b7bc5176660228ec334111d2a93a664987a6ac36688b173ff378739ac7a2e064d9be1c26ed5bae71b44a1f5f4fb3c5fb6cb18e0ee2397ada77ebcd0789f24dfc90cbee3e49767ee2118c83110942b11b87e13808eef04804fe284c080c80d79219292606286017fb8e8b1d97ac3c427d8fbaded64a52c973d598755d0085d498a3a60855b235ce413bdaa85a0ecbee9a78c855896c21c4ff37b7d2979be966679461c5a4544d7561d815813b74adb0a96b59f16eaa84040a711c433f803f7b56acbdd9aaa628fa0114f6997689147b0b3ebf6eda65c32a93990ea8dbf77dff0b8da4900f04020000"
+    ],
+    "rawHeaders": {
+      "access-control-allow-origin": "*",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cf-cache-status": "DYNAMIC",
+      "cf-ray": "90c2e4bcafe3f7d7-LAX",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-language": "en",
+      "content-security-policy": "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Mon, 03 Feb 2025 13:51:03 GMT",
+      "nel": "{\"success_fraction\":0.01,\"report_to\":\"cf-nel\",\"max_age\":604800}",
+      "powered-by": "Shopify",
+      "report-to": "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report\\/v4?s=wF6IcTOO4ot10qf7fLK2saFnPEgPWBdtDPIY4Do3yy4d%2FJ9qoK44e1T68Q7Rxi%2BXB%2B4at9LOjUMvYkaDw6x%2BFUztQYOjlxPk0%2FharzXcclnu%2FYwxeuDgL8kaxV22%2Feu%2B277aLI4FfaC1eh2xbQ%3D%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+      "server": "cloudflare",
+      "server-timing": "processing;dur=278, db;dur=5, fetch;dur=246, asn;desc=\"7922\", edge;desc=\"LAX\", country;desc=\"US\", servedBy;desc=\"pp74\", graphql;desc=\"storefront/mutation/removeFromCart\", gqlSelectionNames;desc=\"sfr/cartLinesRemove\", requestID;desc=\"713f2edb-e796-4bda-9d8c-0c6d39949800-1738590663\", cfRequestDuration;dur=571.000099",
+      "transfer-encoding": "chunked",
+      "vary": "Accept-Encoding,Accept",
+      "x-content-type-options": "nosniff",
+      "x-dc": "gcp-us-west1,gcp-us-east1,gcp-us-east1",
+      "x-download-options": "noopen",
+      "x-frame-options": "DENY",
+      "x-permitted-cross-domain-policies": "none",
+      "x-request-id": "713f2edb-e796-4bda-9d8c-0c6d39949800-1738590663",
+      "x-shardid": "163",
+      "x-shopid": "43402854564",
+      "x-shopify-api-deprecated-reason": "https://shopify.dev/api/usage/versioning#deprecation-practices",
+      "x-shopify-api-version": "2025-01",
+      "x-sorting-hat-podid": "163",
+      "x-sorting-hat-shopid": "43402854564",
+      "x-storefront-renderer-rendered": "1",
+      "x-xss-protection": "1; mode=block"
+    },
+    "responseIsBinary": false
+  }
+]

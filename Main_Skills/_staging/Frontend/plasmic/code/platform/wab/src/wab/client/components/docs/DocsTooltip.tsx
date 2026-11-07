@@ -1,0 +1,24 @@
+import { Icon } from "@/wab/client/components/widgets/Icon";
+import InfoIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__Info";
+import { Popover } from "antd";
+import { TooltipPlacement } from "antd/lib/tooltip";
+import L from "lodash";
+import React from "react";
+
+export function DocsTooltip(props: {
+  children: React.ReactNode | (() => React.ReactNode);
+  placement?: TooltipPlacement;
+  maxWidth?: number;
+}) {
+  const { children, placement, maxWidth } = props;
+  const content = () => (
+    <div style={{ maxWidth: maxWidth ?? 300 }}>
+      {L.isFunction(children) ? children() : children}
+    </div>
+  );
+  return (
+    <Popover content={content} placement={placement ?? "rightTop"}>
+      <Icon icon={InfoIcon} className="ml-ch dimdimfg" />
+    </Popover>
+  );
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@plasmicapp/loader-svelte",
+  "description": "(DEPRECATED) Plasmic loader SDK for Svelte",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "packages/loader-svelte"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@plasmicapp/loader-vue",
+  "description": "(DEPRECATED) Plasmic loader SDK for Vue.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "packages/loader-vue"
+  }
+}

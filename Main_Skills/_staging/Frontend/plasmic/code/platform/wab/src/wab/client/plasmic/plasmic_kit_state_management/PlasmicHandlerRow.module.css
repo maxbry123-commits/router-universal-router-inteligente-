@@ -1,0 +1,48 @@
+.root {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  position: relative;
+  column-gap: 10px;
+  min-width: 0;
+  padding: 0px;
+}
+.freeBox__eUpUb {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  max-width: 70px;
+  min-width: 0;
+  padding: 0px;
+}
+.freeBox__qgIiv {
+  width: auto;
+  height: auto;
+  max-width: 800px;
+  display: flex;
+  flex-direction: row;
+}
+.freeBox___8J8Wo {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  row-gap: 2px;
+  min-width: 0;
+  padding: 0px;
+}
+.actionChip__z1NMw:global(.__wab_instance) {
+  position: relative;
+}

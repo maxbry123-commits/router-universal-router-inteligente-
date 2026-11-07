@@ -1,0 +1,109 @@
+.root:global(.__wab_instance):global(.__wab_instance) {
+  animation: none;
+  position: relative;
+  min-width: 300px;
+}
+.dialogHeader:global(.__wab_instance) {
+  animation: none;
+}
+.freeBox___3PZhd {
+  animation: none;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  align-items: center;
+  justify-content: flex-start;
+  column-gap: var(--token-vhXSTyxt_gU9);
+}
+.svg__tbVrl {
+  animation: none;
+  object-fit: cover;
+  color: var(--token-qP8a3gYPq7fd);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.text {
+  animation: none;
+  overflow: hidden;
+  width: 100%;
+  font-size: var(--token-UgD7DVJpT4oO);
+  text-decoration-line: none;
+  font-family: "Inter", sans-serif;
+  color: var(--token-dED0FYPw-qtp);
+  white-space: pre;
+  line-height: var(--token-wCNdq3-87nVE);
+  font-weight: 500;
+  min-width: 0;
+}
+.closeBtn:global(.__wab_instance) {
+  animation: none;
+  margin-right: -8px;
+}
+.svg__vnato {
+  animation: none;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+  color: var(--token-RTPypKCJE4bm);
+}
+.svg__vcItX {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.chatContent {
+  animation: none;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  row-gap: var(--token-8b4HJYZr1yuK);
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: var(--token-O2OprmOFWLju) var(--token-8b4HJYZr1yuK);
+}
+.freeBox__ajijo {
+  display: flex;
+  flex-direction: row;
+  position: sticky;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  z-index: 1;
+  bottom: 0px;
+  height: 0px;
+  min-width: 0;
+}
+.scrollToBottomButton:global(.__wab_instance) {
+  position: relative;
+  margin-top: -40px;
+  flex-shrink: 0;
+}
+.svg__crum7 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.svg__xq69T {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.freeBox__ecH {
+  animation: none;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  align-items: stretch;
+  justify-content: flex-start;
+  background: var(--token-rqQDmopteQdV);
+  border-bottom-left-radius: var(--token-8b4HJYZr1yuK);
+  border-bottom-right-radius: var(--token-8b4HJYZr1yuK);
+  padding: var(--token-O2OprmOFWLju) var(--token-8b4HJYZr1yuK);
+}
+.copilotPromptInput:global(.__wab_instance) {
+  animation: none;
+}

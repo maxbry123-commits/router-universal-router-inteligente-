@@ -1,0 +1,169 @@
+import { Api, CodeModule, isBrowser, LoaderBundleOutput } from "./api";
+
+export interface FetcherOptions {
+  projects: {
+    id: string;
+    version?: string;
+    token: string;
+  }[];
+  cache?: LoaderBundleCache;
+  platform?: "react" | "nextjs" | "gatsby";
+  platformOptions?: {
+    nextjs?: {
+      appDir: boolean;
+    };
+  };
+  preview?: boolean;
+  /** Fallback for apiHost and cdnHost. */
+  host?: string;
+  /** Used for fetching/previewing unpublished content. */
+  apiHost?: string;
+  /** Used for fetching published content. */
+  cdnHost?: string;
+  i18n?: {
+    keyScheme: "content" | "hash" | "path";
+    tagPrefix?: string;
+  };
+  skipHead?: boolean;
+  /** @deprecated No-op. Native fetch is always used now. */
+  nativeFetch?: boolean;
+  manualRedirect?: boolean;
+}
+
+export interface LoaderBundleCache {
+  set: (data: LoaderBundleOutput) => Promise<void>;
+  get: () => Promise<LoaderBundleOutput>;
+}
+
+export class PlasmicModulesFetcher {
+  private api: Api;
+  private curFetch: Promise<LoaderBundleOutput> | undefined = undefined;
+  constructor(private opts: FetcherOptions) {
+    this.api = new Api({
+      projects: opts.projects,
+      host: opts.host,
+      apiHost: opts.apiHost,
+      cdnHost: opts.cdnHost,
+      nativeFetch: opts.nativeFetch,
+      manualRedirect: opts.manualRedirect,
+    });
+  }
+
+  getChunksUrl(bundle: LoaderBundleOutput, modules: CodeModule[]) {
+    return this.api.getChunksUrl(bundle, modules);
+  }
+
+  async fetchAllData() {
+    // getCachedOrFetched uses a cache defined by the user.
+    const bundle = await this.getCachedOrFetch();
+
+    // For React Server Components (Next.js 13+),
+    // we need to pass server modules in LoaderBundleOutput from Server Components to Client Components.
+    // We don't want to pass them via normal page props because that will be serialized to the browser.
+    // Instead, we pass the bundle (including the server modules) via the Node `global` variable.
+    //
+    // cacheBundleInNodeServer caches a bundle in the Node server process.
+    this.cacheBundleInNodeServer(bundle);
+
+    return bundle;
+  }
+
+  private async getCachedOrFetch() {
+    if (this.opts.cache) {
+      const cachedData = await this.opts.cache.get();
+      if (cachedData) {
+        return cachedData;
+      }
+    }
+    if (this.curFetch) {
+      return await this.curFetch;
+    }
+    if (typeof process === "undefined" || !process.env?.PLASMIC_QUIET) {
+      console.debug("Plasmic: doing a fresh fetch...");
+    }
+    const fetchPromise = this.doFetch();
+    this.curFetch = fetchPromise;
+    try {
+      const data = await fetchPromise;
+      return data;
+    } finally {
+      // Reset this.curFetch only if it still holds the original fetch promise
+      if (this.curFetch === fetchPromise) {
+        this.curFetch = undefined;
+      }
+    }
+  }
+
+  private async doFetch() {
+    const data = await this.api.fetchLoaderData(
+      this.opts.projects.map((p) =>
+        p.version ? `${p.id}@${p.version}` : p.id
+      ),
+      {
+        platform: this.opts.platform,
+        platformOptions: this.opts.platformOptions,
+        preview: this.opts.preview,
+        i18nKeyScheme: this.opts.i18n?.keyScheme,
+        i18nTagPrefix: this.opts.i18n?.tagPrefix,
+        browserOnly: isBrowser,
+        skipHead: this.opts.skipHead,
+      }
+    );
+    if (this.opts.cache) {
+      await this.opts.cache.set(data);
+    }
+    if (typeof process === "undefined" || !process.env?.PLASMIC_QUIET) {
+      console.debug(
+        `Plasmic: fetched designs for ${data.projects
+          .map((p) => `"${p.name}" (${p.id}@${p.version})`)
+          .join(", ")}`
+      );
+    }
+    return data;
+  }
+
+  private cacheBundleInNodeServer(bundle: LoaderBundleOutput) {
+    if (isBrowser) {
+      return;
+    }
+
+    const global = globalThis as GlobalWithBundles;
+    if (global.__PLASMIC_BUNDLES === undefined) {
+      global.__PLASMIC_BUNDLES = {};
+    }
+    global.__PLASMIC_BUNDLES[getBundleKey(this.opts)] = bundle;
+  }
+}
+
+export function internal_getCachedBundleInNodeServer(
+  opts: FetcherOptions
+): LoaderBundleOutput | undefined {
+  if (isBrowser) {
+    throw new Error(`Should not be consulting Node server cache in browser`);
+  }
+
+  const global = globalThis as GlobalWithBundles;
+  return global.__PLASMIC_BUNDLES?.[getBundleKey(opts)];
+}
+
+function getBundleKey({
+  host,
+  platform,
+  i18n,
+  preview,
+  projects,
+  skipHead,
+}: FetcherOptions) {
+  return JSON.stringify({
+    host,
+    platform,
+    i18nKeyScheme: i18n?.keyScheme,
+    preview,
+    projects,
+    skipHead,
+  });
+}
+
+interface GlobalWithBundles {
+  __PLASMIC_BUNDLES?: { [bundleKey: string]: LoaderBundleOutput };
+}

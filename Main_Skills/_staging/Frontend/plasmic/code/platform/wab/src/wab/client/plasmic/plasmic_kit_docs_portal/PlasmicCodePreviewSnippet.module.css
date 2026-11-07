@@ -1,0 +1,73 @@
+.root {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  background: var(--token-pryzRkTNOFd);
+  row-gap: 16px;
+  min-width: 0;
+  border-radius: 8px;
+  padding: 16px;
+}
+.freeBox__edkBc {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+.slotTargetTitle {
+  font-weight: 600;
+}
+.freeBox__j4W4B {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  height: auto;
+}
+.slotTargetInfo {
+  color: var(--token-nadNyMOsLjl);
+}
+.freeBox___5Chei {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 240px;
+  column-gap: 8px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+.viewport {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 40%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--token-aUCjnzhayS);
+  min-height: 0;
+  border-radius: 8px;
+}
+.editor {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 60%;
+  height: 100%;
+  background: rgb(30, 30, 30);
+  min-height: 0;
+  border-radius: 8px;
+  padding: 16px 0px 16px 16px;
+}
+.text {
+  position: relative;
+  color: var(--token-aUCjnzhayS);
+  font-family: "IBM Plex Mono";
+  height: auto;
+}

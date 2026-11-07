@@ -1,0 +1,14 @@
+.root:global(.__wab_instance):global(.__wab_instance) {
+  min-width: 300px;
+}
+.freeBox {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: var(--token-O2OprmOFWLju) var(--token-8b4HJYZr1yuK);
+}
+.commentPostForm:global(.__wab_instance) {
+  position: relative;
+}

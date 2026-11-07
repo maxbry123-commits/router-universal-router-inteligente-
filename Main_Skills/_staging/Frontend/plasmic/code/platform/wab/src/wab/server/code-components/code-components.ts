@@ -1,0 +1,462 @@
+import { logger } from "@/wab/server/observability";
+import { BadRequestError } from "@/wab/shared/ApiErrors/errors";
+import { isSlot } from "@/wab/shared/SlotUtils";
+import { TplMgr } from "@/wab/shared/TplMgr";
+import {
+  getBuiltinComponentRegistrations,
+  isBuiltinCodeComponent,
+} from "@/wab/shared/code-components/builtin-code-components";
+import {
+  CodeComponentSyncCallbackFns,
+  CodeComponentsRegistry,
+  attachRenderableTplSlots,
+  compareComponentPropsWithMeta,
+  compareComponentStatesWithMeta,
+  createCustomFunctionFromRegistration,
+  createStyleTokenFromRegistration,
+  extractDefaultSlotContents,
+  getNewProps,
+  mkCodeComponent,
+  registeredFunctionId,
+  syncCodeComponents,
+} from "@/wab/shared/code-components/code-components";
+import { assert, ensure } from "@/wab/shared/common";
+import {
+  CodeComponent,
+  isCodeComponent,
+  isContextCodeComponent,
+  isHostLessCodeComponent,
+} from "@/wab/shared/core/components";
+import { customFunctionId } from "@/wab/shared/core/query-ids";
+import { createSite, writeable } from "@/wab/shared/core/sites";
+import { addComponentState } from "@/wab/shared/core/states";
+import { mkTplComponent } from "@/wab/shared/core/tpls";
+import {
+  HostLessPackageInfo,
+  Site,
+  ensureKnownPropParam,
+} from "@/wab/shared/model/classes";
+import { ComponentRegistration } from "@plasmicapp/host";
+import { type CodeComponentMeta } from "@plasmicapp/host/registerComponent";
+import { type GlobalContextMeta } from "@plasmicapp/host/registerGlobalContext";
+import { ok } from "neverthrow";
+import path from "path";
+import React from "react";
+
+let componentsUpdatingSlotContents = new WeakSet<CodeComponent>();
+
+const ccServerCallbackFns: CodeComponentSyncCallbackFns = {
+  onReset: () => {
+    componentsUpdatingSlotContents = new WeakSet();
+  },
+  onMissingCodeComponents: async (_ctx, missingComponents, missingContexts) =>
+    // Not using `err` because it should be a fatal error anyways
+    ok(
+      assert(
+        [...missingComponents, ...missingContexts].filter(
+          (c) => !isBuiltinCodeComponent(c),
+        ).length === 0,
+        () =>
+          "Hostless package removed components " +
+          [...missingComponents, ...missingContexts]
+            .map((c) => c.name)
+            .join(", "),
+      ),
+    ),
+  onInvalidReactVersion: async (_ctx, hostLessPkgInfo) =>
+    // Not using `err` because it should be a fatal error anyways
+    ok(
+      assert(
+        false,
+        `${hostLessPkgInfo.name} requires a React version >= ${hostLessPkgInfo.minimumReactVersion}. Current version is ${React.version}`,
+      ),
+    ),
+  onInvalidComponentImportNames: (components) =>
+    assert(
+      false,
+      () =>
+        "Hostless package registered components with invalid importNames: " +
+        components.join(", "),
+    ),
+  onStaleProps: async (ctx) => {
+    const changes = ctx.site.components
+      .filter(isCodeComponent)
+      .map((c) => {
+        // Should be safe to ensure, because `fixMissingCodeComponents` should
+        // fix all missing code components in the site before loading it.
+        const { meta } = ensure(
+          ctx.codeComponentsRegistry
+            .getRegisteredComponentsAndContextsMap()
+            .get(c.name),
+          "Missing code component " + c.name,
+        );
+        const maybeError = compareComponentPropsWithMeta(ctx.site, c, meta);
+        if (maybeError.isErr()) {
+          throw maybeError.error;
+        }
+        const diff = maybeError.value;
+        return {
+          component: c,
+          ...diff,
+        };
+      })
+      .filter(({ addedProps, updatedProps, removedProps }) =>
+        [addedProps, updatedProps, removedProps].some((i) => i.length > 0),
+      );
+    changes.forEach(({ addedProps, updatedProps, component }) => {
+      const affectedSlots = [
+        ...addedProps,
+        ...updatedProps.flatMap(({ before, after }) => [before, after]),
+      ].filter((param) => isSlot(param));
+      if (affectedSlots.length > 0) {
+        componentsUpdatingSlotContents.add(component);
+      }
+    });
+    return true;
+  },
+  onNewDefaultComponents: (message) =>
+    assert(
+      false,
+      () =>
+        "Hostless packages shouldn't use default components, however: " +
+        message,
+    ),
+  onSchemaToTplWarnings: (warnings) =>
+    assert(
+      false,
+      warnings.map((w) => `${w.message} - ${w.description}`).join("\n"),
+    ),
+  onSchemaToTplError: (err) => {
+    throw err;
+  },
+  onElementStyleWarnings: (warnings) =>
+    assert(
+      false,
+      warnings.map((w) => `${w.message} - ${w.description}`).join("\n"),
+    ),
+  onInvalidJsonForDefaultValue: (message) => assert(false, message),
+};
+
+export async function createSiteForHostlessProject(
+  hostLessPackageInfo: HostLessPackageInfo,
+) {
+  const site = createSite({
+    hostLessPackageInfo: new HostLessPackageInfo(hostLessPackageInfo),
+  });
+  await withFreshRegistries(async () => {
+    // First read the dependency packages, keeping track of the components that
+    // the dependencies registered
+    for (const dep of hostLessPackageInfo.deps) {
+      loadServerPackage(dep);
+    }
+
+    const depComponents = [...(globalThis.__PlasmicComponentRegistry ?? [])];
+    const depContexts = [...(globalThis.__PlasmicContextRegistry ?? [])];
+    const depTokens = [...(globalThis.__PlasmicTokenRegistry ?? [])];
+    const depFunctions = [...(globalThis.__PlasmicFunctionsRegistry ?? [])];
+
+    // Next, load the actual package
+    loadServerPackage(hostLessPackageInfo.name);
+
+    // read the registered components/contexts/tokens/functions, filtering out the ones
+    // registered by the dependencies
+    const registeredComponents = (
+      globalThis.__PlasmicComponentRegistry ?? []
+    ).filter((x) => !depComponents.includes(x));
+    const registeredContexts = (
+      globalThis.__PlasmicContextRegistry ?? []
+    ).filter((x) => !depContexts.includes(x));
+    registeredContexts.forEach((cc) => ((cc.meta as any).__isContext = true));
+
+    const registeredTokens = (globalThis.__PlasmicTokenRegistry ?? []).filter(
+      (x) => !depTokens.includes(x),
+    );
+
+    const registeredFunctions = (
+      globalThis.__PlasmicFunctionsRegistry ?? []
+    ).filter((x) => !depFunctions.includes(x));
+
+    // create code components
+    const componentToMeta = new Map<
+      CodeComponent,
+      CodeComponentMeta<any> | GlobalContextMeta<any>
+    >();
+
+    const newComponents = [...registeredComponents, ...registeredContexts].map(
+      ({ meta }) => {
+        const component = mkCodeComponent(meta.name, meta, {});
+        component.codeComponentMeta.isHostLess = true;
+
+        componentToMeta.set(component, meta);
+        return component;
+      },
+    );
+    site.components = [...site.components, ...newComponents];
+
+    site.globalContexts = [
+      ...site.globalContexts,
+      ...site.components
+        .filter(isContextCodeComponent)
+        .map((component) => mkTplComponent(component, site.globalVariant)),
+    ];
+
+    // add props and default value to slots
+    site.components.filter(isCodeComponent).forEach((c) => {
+      const meta = componentToMeta.get(c)!;
+      const newProps = getNewProps(site, c, meta);
+      if (!newProps.isErr()) {
+        c.params = newProps.value.newProps;
+        attachRenderableTplSlots(c);
+      } else {
+        throw newProps.error;
+      }
+
+      const newStates = compareComponentStatesWithMeta(site, c, meta);
+      if (!newStates.isErr()) {
+        // Only need to deal with addedStates, since we're creating a fresh component
+        newStates.value.addedStates.forEach((state) => {
+          addComponentState(site, c, state);
+          writeable(state.param).state = state;
+          ensureKnownPropParam(state.onChangeParam);
+        });
+      } else {
+        throw newStates.error;
+      }
+
+      const slotContents = extractDefaultSlotContents(meta);
+      c.codeComponentMeta.defaultSlotContents = slotContents;
+    });
+    site.components
+      .filter(isCodeComponent)
+      .forEach((c) => (c.codeComponentMeta.isHostLess = true));
+
+    site.styleTokens = [
+      ...site.styleTokens,
+      ...registeredTokens.map((tokenReg) =>
+        createStyleTokenFromRegistration(tokenReg),
+      ),
+    ];
+
+    site.customFunctions = [
+      ...site.customFunctions,
+      ...registeredFunctions.map((functionReg) =>
+        createCustomFunctionFromRegistration(functionReg),
+      ),
+    ];
+  });
+
+  return site;
+}
+
+/**
+ * Updates site, a hostless package site, by evaluating the latest hostless canvas package
+ * and updating the site component's metadata
+ */
+export async function updateHostlessPackage(
+  site: Site,
+  projectName: string,
+  plumeSite: Site,
+) {
+  await withFreshRegistries(async () => {
+    const existingComponents = site.components
+      .filter((c) => !isBuiltinCodeComponent(c))
+      .map((c) => c.uuid);
+    const existingParamsByComponent = Object.fromEntries(
+      site.components.map(
+        (c) =>
+          [
+            c.uuid,
+            {
+              slots: c.params
+                .filter((p) => isSlot(p))
+                .map((p) => p.variable.name),
+              nonSlots: c.params
+                .filter((p) => !isSlot(p))
+                .map((p) => p.variable.name),
+            },
+          ] as const,
+      ),
+    );
+
+    const pkgInfo = ensure(
+      site.hostLessPackageInfo,
+      () => "Expected hostless package",
+    );
+    logger.info(`UPDATING ${pkgInfo.name}`);
+
+    for (const dep of pkgInfo.deps) {
+      logger.info(`Loading dependency ${dep}`);
+      loadServerPackage(dep);
+    }
+
+    const importedComponentNames = new Set(
+      [
+        ...globalThis.__PlasmicComponentRegistry,
+        ...globalThis.__PlasmicContextRegistry,
+      ].map(({ meta }: ComponentRegistration) => meta.name),
+    );
+
+    const importedFunctionIds = new Set(
+      (globalThis.__PlasmicFunctionsRegistry ?? []).map(registeredFunctionId),
+    );
+
+    logger.info(`Loading main package ${pkgInfo.name}`);
+    loadServerPackage(pkgInfo.name);
+
+    logger.info(
+      `Registry has: ${globalThis.__PlasmicComponentRegistry
+        .map(({ meta }) => meta.name)
+        .join(",")}`,
+    );
+
+    const tplMgr = new TplMgr({ site });
+
+    ccServerCallbackFns.onReset?.();
+
+    const result = await syncCodeComponents(
+      {
+        change: async (f) => f(),
+        codeComponentsRegistry: new CodeComponentsRegistry(
+          globalThis,
+          getBuiltinComponentRegistrations(),
+        ),
+        getPlumeSite: () => plumeSite,
+        getRootSubReact: () => React,
+        site,
+        tplMgr: () => tplMgr,
+      },
+      ccServerCallbackFns,
+      { force: true },
+    );
+    if (result.isErr()) {
+      throw result.error;
+    }
+
+    // Delete global contexts from imported packages
+    const toDeleteComponents = site.components.filter(
+      (c) => importedComponentNames.has(c.name) || isBuiltinCodeComponent(c),
+    );
+    tplMgr.removeComponentGroup(toDeleteComponents);
+
+    site.customFunctions = site.customFunctions.filter(
+      (f) => !importedFunctionIds.has(customFunctionId(f)),
+    );
+
+    site.components
+      .filter(isCodeComponent)
+      .forEach((c) => (c.codeComponentMeta.isHostLess = true));
+
+    logger.info(`Registered: ${site.components.map((c) => c.name)}`);
+
+    // Clear site default styles
+    site.themes.forEach((theme) => {
+      theme.styles = [];
+      theme.defaultStyle.rs.values = {};
+    });
+
+    // Assert we have at least one component and marked as hostless or we
+    // have a code library
+    assert(
+      site.components.some((c) => isHostLessCodeComponent(c)) ||
+        site.codeLibraries.length > 0 ||
+        site.customFunctions.length > 0,
+      () => "No hostless component in site",
+    );
+
+    // Assert all existing components have been preserved
+    existingComponents.forEach((uuid) => {
+      const component = site.components.find((c) => c.uuid === uuid);
+      assert(component, () => `Component with uuid ${uuid} has been removed!`);
+      const { slots, nonSlots } = existingParamsByComponent[uuid];
+      slots.forEach((slot) => {
+        assert(
+          component.params.some((p) => isSlot(p) && p.variable.name === slot),
+          () => `Deleted slot ${slot} of component ${component.name}`,
+        );
+      });
+      nonSlots.forEach((param) => {
+        assert(
+          component.params.some((p) => !isSlot(p) && p.variable.name === param),
+          () => `Deleted param ${param} of component ${component.name}`,
+        );
+      });
+    });
+  });
+}
+
+async function withFreshRegistries(func: () => Promise<void>) {
+  if (!globalThis.__PlasmicComponentRegistry) {
+    globalThis.__PlasmicComponentRegistry = [];
+  }
+  if (!globalThis.__PlasmicContextRegistry) {
+    globalThis.__PlasmicContextRegistry = [];
+  }
+  if (!globalThis.__PlasmicTokenRegistry) {
+    globalThis.__PlasmicTokenRegistry = [];
+  }
+  if (!globalThis.__PlasmicFunctionsRegistry) {
+    globalThis.__PlasmicFunctionsRegistry = [];
+  }
+  if (!globalThis.__PlasmicLibraryRegistry) {
+    globalThis.__PlasmicLibraryRegistry = [];
+  }
+  assert(
+    globalThis.__PlasmicComponentRegistry.length === 0,
+    () => "__PlasmicComponentRegistry is not empty",
+  );
+  assert(
+    globalThis.__PlasmicContextRegistry.length === 0,
+    () => "__PlasmicContextRegistry is not empty",
+  );
+  assert(
+    globalThis.__PlasmicTokenRegistry.length === 0,
+    () => "__PlasmicTokenRegistry is not empty",
+  );
+  assert(
+    globalThis.__PlasmicFunctionsRegistry.length === 0,
+    () => "__PlasmicFunctionsRegistry is not empty",
+  );
+  assert(
+    globalThis.__PlasmicLibraryRegistry.length === 0,
+    () => "__PlasmicLibraryRegistry is not empty",
+  );
+
+  try {
+    await func();
+  } finally {
+    // clear registry
+    globalThis.__PlasmicComponentRegistry = [];
+    globalThis.__PlasmicContextRegistry = [];
+    globalThis.__PlasmicTokenRegistry = [];
+    globalThis.__PlasmicFunctionsRegistry = [];
+    globalThis.__PlasmicLibraryRegistry = [];
+  }
+}
+
+const canvasPackagesDir = path.resolve(
+  path.join(__dirname, "../../../../../canvas-packages"),
+);
+
+function loadServerPackage(pkg: string) {
+  // hostlessList.json is what esbuild compiles into build-server/,
+  // so it is the allowlist.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const allowedPkgs = require(
+    path.join(canvasPackagesDir, "hostlessList.json"),
+  ) as string[];
+  if (!allowedPkgs.includes(pkg)) {
+    throw new BadRequestError(`Unknown hostless package: ${pkg}`);
+  }
+
+  const pkgPath = path.join(canvasPackagesDir, "build-server", `${pkg}.js`);
+  logger.info(`Loading ${pkg} from ${pkgPath}`);
+
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const pkgModule = require(pkgPath);
+  if (!pkgModule.register) {
+    throw new Error(
+      `Package ${pkg} does not have a register function exported`,
+    );
+  }
+  pkgModule.register();
+}

@@ -1,0 +1,16 @@
+.tooltip:global(.__wab_instance):global(.__wab_instance) {
+  max-width: 100%;
+}
+.dottedUnderlineBorder {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 2px dotted #000000;
+}
+.slotTargetChildren {
+  font-size: var(--token-YU1H6d7MUtVL);
+  color: var(--token-mlyauzeAvywY);
+  line-height: 1.5;
+}
+.text___26Bq {
+  font-size: var(--token-YU1H6d7MUtVL);
+}

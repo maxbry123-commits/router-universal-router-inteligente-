@@ -1,0 +1,46 @@
+import { expect } from "@playwright/test";
+import { LOADER_NEXTJS_VERSIONS } from "../../../env";
+import { test } from "../../../fixtures";
+import {
+  NextJsContext,
+  setupNextJs,
+  teardownNextJs,
+} from "../../../nextjs/nextjs-setup";
+import { makeEnvName } from "../../setup-utils";
+
+test.describe(`Plasmic Antd5 Popover`, async () => {
+  for (const versions of LOADER_NEXTJS_VERSIONS) {
+    test.describe(makeEnvName({ type: "nextjs", ...versions }), async () => {
+      let ctx: NextJsContext;
+      test.beforeEach(async () => {
+        ctx = await setupNextJs({
+          bundleFile: "antd5/popover.json",
+          projectName: "Antd5 Popover",
+          removeComponentsPage: true,
+          ...versions,
+        });
+      });
+
+      test.afterEach(async () => {
+        await teardownNextJs(ctx);
+      });
+
+      test(`Popover state`, async ({ page }) => {
+        await page.goto(`${ctx.host}/popover-test`);
+
+        await expect(page.locator("#popover-state-text")).toHaveText("Closed!");
+        await expect(page.locator(`.ant-popover`)).not.toBeVisible();
+
+        await page.getByText(`Click me!`).click();
+
+        await expect(page.locator("#popover-state-text")).toHaveText("Opened!");
+        await expect(page.locator(`.ant-popover`)).toBeVisible();
+
+        await page.getByText(`Click me!`).click();
+
+        await expect(page.locator("#popover-state-text")).toHaveText("Closed!");
+        await expect(page.locator(`.ant-popover`)).not.toBeVisible();
+      });
+    });
+  }
+});

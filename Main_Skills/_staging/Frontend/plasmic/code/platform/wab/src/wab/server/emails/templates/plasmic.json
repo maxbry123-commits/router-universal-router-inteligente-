@@ -1,0 +1,297 @@
+{
+  "platform": "react",
+  "code": {
+    "lang": "ts",
+    "scheme": "blackbox",
+    "reactRuntime": "classic"
+  },
+  "style": {
+    "scheme": "css",
+    "defaultStyleCssFilePath": "plasmic/plasmic__default_style.css"
+  },
+  "images": {
+    "scheme": "cdn"
+  },
+  "srcDir": ".",
+  "defaultPlasmicDir": "./plasmic",
+  "projects": [
+    {
+      "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+      "projectApiToken": "EKres2MHDVs8Cct7T4vCVNPW1Bzl4lDDOiKLS3exsLnEXCw3loVZxFeaLyopZst8dg3JPD1ZhVYjAEwPN0Q",
+      "projectName": "[PlasmicKit] Email Templates",
+      "version": "latest",
+      "cssFilePath": "plasmic/plasmic_kit_email_templates/plasmic.css",
+      "components": [
+        {
+          "id": "coNtjSHoDNSq",
+          "name": "Layout",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicLayout.tsx",
+          "importSpec": {
+            "modulePath": "Layout.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicLayout.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "XGWqRhmEjwRw",
+          "name": "Footer",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicFooter.tsx",
+          "importSpec": {
+            "modulePath": "Footer.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicFooter.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "5OdShbT02UoK",
+          "name": "AtomsButtonOutline",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicAtomsButtonOutline.tsx",
+          "importSpec": {
+            "modulePath": "AtomsButtonOutline.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicAtomsButtonOutline.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "2cidd9ockVoM",
+          "name": "AtomsCard",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicAtomsCard.tsx",
+          "importSpec": {
+            "modulePath": "AtomsCard.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicAtomsCard.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "NUaRKxTU3gYx",
+          "name": "CommentsComment",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsComment.tsx",
+          "importSpec": {
+            "modulePath": "CommentsComment.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsComment.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "dNwSNaiJfR5y",
+          "name": "TemplateComments",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicTemplateComments.tsx",
+          "importSpec": {
+            "modulePath": "TemplateComments.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicTemplateComments.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "t8pedfUoDPO4",
+          "name": "CommentsComments",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsComments.tsx",
+          "importSpec": {
+            "modulePath": "CommentsComments.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsComments.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "aekteDGKbn5u",
+          "name": "CommentsHeader",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsHeader.tsx",
+          "importSpec": {
+            "modulePath": "CommentsHeader.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsHeader.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "I_o0WZFfuhAO",
+          "name": "CommentsReplies",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsReplies.tsx",
+          "importSpec": {
+            "modulePath": "CommentsReplies.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsReplies.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "xmHJRn1lA9BZ",
+          "name": "CommentsMentions",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsMentions.tsx",
+          "importSpec": {
+            "modulePath": "CommentsMentions.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsMentions.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "akS-yd3gJU3j",
+          "name": "CommentsReactions",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsReactions.tsx",
+          "importSpec": {
+            "modulePath": "CommentsReactions.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsReactions.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "rUeSkh2_5k3b",
+          "name": "CommentsResolutions",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsResolutions.tsx",
+          "importSpec": {
+            "modulePath": "CommentsResolutions.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicCommentsResolutions.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        },
+        {
+          "id": "csBO1M9NDqDd",
+          "name": "TemplateLegalNotice",
+          "type": "managed",
+          "projectId": "taNK5uwsoPrzfpYmBVwUwX",
+          "renderModuleFilePath": "plasmic/plasmic_kit_email_templates/PlasmicTemplateLegalNotice.tsx",
+          "importSpec": {
+            "modulePath": "TemplateLegalNotice.tsx"
+          },
+          "cssFilePath": "plasmic/plasmic_kit_email_templates/PlasmicTemplateLegalNotice.css",
+          "scheme": "blackbox",
+          "componentType": "component"
+        }
+      ],
+      "icons": [],
+      "images": [],
+      "indirect": false,
+      "globalContextsFilePath": "",
+      "splitsProviderFilePath": "",
+      "codeComponents": [
+        {
+          "id": "kBW5yqq3IuW5",
+          "name": "PlasmicHead",
+          "displayName": "hostless-plasmic-head",
+          "componentImportPath": "@plasmicapp/react-web"
+        },
+        {
+          "id": "nYY3DhgUD9Q2",
+          "name": "Fetcher",
+          "displayName": "plasmic-data-source-fetcher",
+          "componentImportPath": "@plasmicapp/react-web/lib/data-sources"
+        },
+        {
+          "id": "oy2tNUrSNuyD",
+          "name": "EmailContainer",
+          "displayName": "plasmic-email-container",
+          "componentImportPath": "@/wab/server/emails/components.tsx"
+        },
+        {
+          "id": "ni9IJwUvaPYp",
+          "name": "EmailButton",
+          "displayName": "plasmic-email-button",
+          "componentImportPath": "@/wab/server/emails/components.tsx"
+        },
+        {
+          "id": "7eMX-ae3z_Os",
+          "name": "EmailText",
+          "displayName": "plasmic-email-text",
+          "componentImportPath": "@/wab/server/emails/components.tsx"
+        },
+        {
+          "id": "BfZldbVXl9VI",
+          "name": "EmailImage",
+          "displayName": "plasmic-email-image",
+          "componentImportPath": "@/wab/server/emails/components.tsx"
+        },
+        {
+          "id": "7zgaUp0DUGtR",
+          "name": "EmailLink",
+          "displayName": "plasmic-email-link",
+          "componentImportPath": "@/wab/server/emails/components.tsx"
+        },
+        {
+          "id": "jhsSTRsuisaZ",
+          "name": "EmailMarkdown",
+          "displayName": "plasmic-email-markdown",
+          "componentImportPath": "@/wab/server/emails/components.tsx"
+        },
+        {
+          "id": "0uJtDjGRiPZA",
+          "name": "EmailHeading",
+          "displayName": "plasmic-email-heading",
+          "componentImportPath": "@/wab/server/emails/components.tsx"
+        },
+        {
+          "id": "xWkqfjbn8oyX",
+          "name": "EmailRow",
+          "displayName": "plasmic-email-row",
+          "componentImportPath": "@/wab/server/emails/components.tsx"
+        },
+        {
+          "id": "pVqOLFd6uDdb",
+          "name": "EmailColumn",
+          "displayName": "plasmic-email-column",
+          "componentImportPath": "@/wab/server/emails/components.tsx"
+        },
+        {
+          "id": "ccI_uNhThjcT",
+          "name": "EmailSection",
+          "displayName": "plasmic-email-section",
+          "componentImportPath": "@/wab/server/emails/components.tsx"
+        },
+        {
+          "id": "0Mjv6KY43Hfd",
+          "name": "EmailHr",
+          "displayName": "plasmic-email-hr",
+          "componentImportPath": "@/wab/server/emails/components.tsx"
+        }
+      ],
+      "customFunctions": [],
+      "styleTokensProviderFilePath": "plasmic/plasmic_kit_email_templates/PlasmicStyleTokensProvider.tsx",
+      "projectModuleFilePath": "plasmic/plasmic_kit_email_templates/plasmic.tsx",
+      "dataTokensFilePath": ""
+    }
+  ],
+  "globalVariants": {
+    "variantGroups": []
+  },
+  "wrapPagesWithGlobalContexts": true,
+  "preserveJsImportExtensions": false,
+  "tokens": {
+    "scheme": "theo",
+    "tokensFilePath": "plasmic-tokens.theo.json"
+  },
+  "cliVersion": "0.1.381",
+  "$schema": "https://unpkg.com/@plasmicapp/cli@0.1.381/dist/plasmic.schema.json"
+}

@@ -1,0 +1,98 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  height: auto;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 0px;
+  min-width: 0;
+}
+.freeBox__swhJx {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  row-gap: 0px;
+  min-width: 0;
+  padding: 0px;
+}
+.variableRow__eY4H3:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+}
+.variableRow__gfor4:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+}
+.freeBox__swXZo {
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  margin-bottom: 8px;
+  margin-top: 8px;
+  min-width: 0;
+  display: none;
+  padding: 0px 16px;
+}
+.freeBoxisExpanded__swXZojQ1D7 {
+  display: none;
+}
+.freeBoxhasImplicitStates_isExpanded__swXZo2CNa0JQ1D7 {
+  display: flex;
+}
+.listSectionSeparator:global(.__wab_instance) {
+  max-width: 100%;
+}
+.freeBox__w5Omk {
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  row-gap: var(--token-uzWT6AFCY);
+  min-width: 0;
+  display: none;
+}
+.freeBoxisExpanded__w5OmkjQ1D7 {
+  display: flex;
+}
+.implicitVariablesSection__fDm3O:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+}
+.variableRow__wuXum:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+  height: var(--token-aDa535tnF);
+}
+.svg__wfriV {
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.implicitVariablesSection__rIwMc:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+}
+.variableRow__eqFtr:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+  height: var(--token-aDa535tnF);
+}
+.svg___0PVog {
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}

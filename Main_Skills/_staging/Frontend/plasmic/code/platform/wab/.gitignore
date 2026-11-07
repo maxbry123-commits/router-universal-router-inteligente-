@@ -1,0 +1,32 @@
+/deps/chrome/
+/src/wab/gen/
+/public/static/img/*.svg
+/public/static/img/icons/*.svg
+/public/static/js/loader-hydrate.*
+/build/
+/src/wab/shared/model/classes.ts
+/src/wab/shared/model/classes-metas.ts
+/server/.cachedev-build/
+dev-build
+/src/wab/styles/_tokens.sass
+/src/wab/styles/_tokens.ts
+/src/wab/styles/css-variables.scss
+/src/wab/styles/css-variables.ts
+yarn-error.log
+.cache
+package-lock.json
+localhost-key.pem
+localhost.pem
+import-graph.json
+import-chains.png
+import-chains.dot
+.env
+
+# Code coverage
+coverage/
+cc-test-reporter
+
+to-import-into-substack.csv
+
+# TypeScript incremental build cache
+*.tsbuildinfo

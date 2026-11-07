@@ -1,0 +1,186 @@
+import { VariantLabel } from "@/wab/client/components/VariantControls";
+import VariantRow from "@/wab/client/components/variants/VariantRow";
+import {
+  VariantDataPicker,
+  makeVariantMenu,
+} from "@/wab/client/components/variants/variant-menu";
+import { EditableLabelHandles } from "@/wab/client/components/widgets/EditableLabel";
+import { StudioCtx } from "@/wab/client/studio-ctx/StudioCtx";
+import { ViewCtx } from "@/wab/client/studio-ctx/view-ctx";
+import { VariantPinState } from "@/wab/shared/PinManager";
+import { ensure, spawn } from "@/wab/shared/common";
+import {
+  Component,
+  ComponentVariantGroup,
+  ObjectPath,
+} from "@/wab/shared/model/classes";
+import { getPlumeVariantDef } from "@/wab/shared/plume/plume-registry";
+import { observer } from "mobx-react";
+import { ok } from "neverthrow";
+import * as React from "react";
+import { DraggableProvidedDragHandleProps } from "react-beautiful-dnd";
+
+interface StandaloneVariantProps {
+  studioCtx: StudioCtx;
+  component: Component;
+  onClone?: (newVariantGroup: ComponentVariantGroup) => void;
+  onRenamed?: () => void;
+  defaultEditing: boolean;
+  group: ComponentVariantGroup;
+  viewCtx?: ViewCtx;
+  pinState: VariantPinState | undefined;
+  isDraggable?: boolean;
+  dragHandleProps?: DraggableProvidedDragHandleProps;
+  isDragging?: boolean;
+  onClick?: () => void;
+  onTarget?: (target: boolean) => void;
+  onToggle?: () => void;
+}
+
+function StandaloneVariant_(props: StandaloneVariantProps) {
+  const {
+    studioCtx,
+    component,
+    viewCtx,
+    pinState,
+    onClick,
+    onTarget,
+    onToggle,
+  } = props;
+  const ref = React.useRef<EditableLabelHandles>(null);
+  const tplMgr = studioCtx.tplMgr();
+  const plumeDef = getPlumeVariantDef(component, props.group.variants[0]);
+
+  const hasCodeExpression = !!props.group.param.defaultExpr;
+  const [visibleDataPicker, setVisibleDataPicker] = React.useState(false);
+
+  return (
+    <VariantRow
+      studioCtx={studioCtx}
+      isStandalone
+      variant={props.group.variants[0]}
+      viewCtx={viewCtx}
+      pinState={pinState}
+      onClick={onClick}
+      onToggle={onToggle}
+      onTarget={onTarget}
+      plumeDef={plumeDef}
+      hasCodeExpression={hasCodeExpression}
+      exprButton={{
+        wrap: (node) => (
+          <VariantDataPicker
+            studioCtx={studioCtx}
+            component={props.component}
+            group={props.group}
+            visibleDataPicker={visibleDataPicker}
+            setVisibleDataPicker={setVisibleDataPicker}
+          >
+            {node}
+          </VariantDataPicker>
+        ),
+      }}
+      menu={makeVariantMenu({
+        isStandalone: true,
+        variant: props.group.variants[0],
+        component,
+        onRemove: () =>
+          spawn(studioCtx.siteOps().removeVariantGroup(component, props.group)),
+        onClone: () =>
+          spawn(
+            studioCtx.change(() => {
+              const newVariantGroup = tplMgr.cloneVariantGroup(
+                component,
+                props.group,
+              );
+              props.onClone?.(newVariantGroup);
+              return ok();
+            }),
+          ),
+        onCopyTo: (toVariant) =>
+          spawn(
+            studioCtx.change(() => {
+              tplMgr.copyToVariant(
+                component,
+                props.group.variants[0],
+                toVariant,
+              );
+              return ok();
+            }),
+          ),
+        onMove: (toGroup) =>
+          spawn(
+            studioCtx.change(() => {
+              tplMgr.moveVariant(component, props.group.variants[0], toGroup);
+              return ok();
+            }),
+          ),
+        onRename: () =>
+          spawn(
+            studioCtx.change(() => {
+              if (ref.current) {
+                ref.current.setEditing(true);
+              }
+              return ok();
+            }),
+          ),
+        onChangeAccessType: (accessType) => {
+          const state = ensure(
+            props.group.linkedState,
+            "Variant group is expected to have linked state",
+          );
+          spawn(
+            studioCtx.change(() => {
+              studioCtx.siteOps().updateState(state, {
+                accessType,
+              });
+              return ok();
+            }),
+          );
+        },
+        onEditDynamicValue: () => {
+          spawn(
+            studioCtx.change(() => {
+              if (!props.group.param.defaultExpr) {
+                studioCtx.siteOps().updateState(props.group.linkedState, {
+                  initialValue: new ObjectPath({
+                    path: ["undefined"],
+                    fallback: null,
+                  }),
+                });
+              }
+              setVisibleDataPicker(true);
+              return ok();
+            }),
+          );
+        },
+
+        onRemoveDynamicValue: () => {
+          spawn(
+            studioCtx.change(() => {
+              studioCtx.siteOps().updateState(props.group.linkedState, {
+                initialValue: null,
+              });
+              return ok();
+            }),
+          );
+        },
+      })}
+      label={
+        <>
+          <VariantLabel
+            ref={ref}
+            doubleClickToEdit
+            onRenamed={props.onRenamed}
+            variant={props.group.variants[0]}
+            defaultEditing={props.defaultEditing}
+          />
+        </>
+      }
+      isDraggable={props.isDraggable}
+      dragHandleProps={props.dragHandleProps}
+      isDragging={props.isDragging}
+    />
+  );
+}
+
+export const StandaloneVariant = observer(StandaloneVariant_);

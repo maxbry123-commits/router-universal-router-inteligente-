@@ -1,0 +1,63 @@
+{
+  "bundle_bytes": 81054022,
+  "bundle_sha256": "43f43ed467a9a1351c94eba3aec58f6a845f587a7a3bd294f5c7c144078b8969",
+  "extracted_tree": {
+    "bytes": 220404286,
+    "files": 7730,
+    "sha256": "bcf66d787b6a3d32a6aaa5828801cea436c53bcdc14b5afdcd2c9fb792ea35e4"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0001",
+      "sha256": "0ac92a6fdb6581b3d36da7b9a287049a2785c4bc6b55d33d4e95cff513737595"
+    },
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0002",
+      "sha256": "e506a4d3402e1775c0a092de0782c41d891df63a91a26427c2adc5fbd37a672e"
+    },
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0003",
+      "sha256": "a54db4e052e27489e767e594bb46e817ef3856c4a2fb738b189283a99b0b946d"
+    },
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0004",
+      "sha256": "8be55c830c0b545e58047cbd86fc81e87707238e2b2880451bb53897be3820b6"
+    },
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0005",
+      "sha256": "0be3c90de7bbc5b3465404caaf25d5cbd1e1a8b476f66ce0b191ea4464f3e716"
+    },
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0006",
+      "sha256": "73e48d5fd1bfacd8429e13d4ec6ca2bd5caa710ac42fdb6826617f6054e6c739"
+    },
+    {
+      "bytes": 5556550,
+      "name": "plasmic.bundle.zip.part-0007",
+      "sha256": "4e7ebef4b7c1862b1d219c49822d8e49b1f6e4d9c9572d423cb81206b2ef6b5b"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "plasmic",
+  "source_bytes": 220404286,
+  "source_commit": "972f7b068948ac838791cb1bed7bffab0d5143db",
+  "source_files": 7730,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/plasmicapp/plasmic",
+  "source_tree": {
+    "bytes": 220404286,
+    "files": 7730,
+    "sha256": "bcf66d787b6a3d32a6aaa5828801cea436c53bcdc14b5afdcd2c9fb792ea35e4"
+  }
+}

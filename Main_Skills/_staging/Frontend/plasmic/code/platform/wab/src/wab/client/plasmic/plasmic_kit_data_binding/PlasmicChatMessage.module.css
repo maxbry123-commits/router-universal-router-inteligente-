@@ -1,0 +1,36 @@
+.row {
+  display: flex;
+  position: relative;
+  justify-self: flex-start;
+  align-items: stretch;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+.rowtype_user {
+  padding-left: 16px;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+.rowtype_assistant {
+  padding-right: 16px;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  background: var(--token-yqAf_E0HIjU);
+  row-gap: var(--token-vhXSTyxt_gU9);
+  max-width: calc(100% - 16px);
+  overflow-x: auto;
+  border-radius: var(--token-XnnXV8YSKg9w);
+  padding: var(--token-O2OprmOFWLju);
+}
+.messagetype_assistant {
+  background: none;
+  border-radius: 0px;
+  padding: 0px;
+}

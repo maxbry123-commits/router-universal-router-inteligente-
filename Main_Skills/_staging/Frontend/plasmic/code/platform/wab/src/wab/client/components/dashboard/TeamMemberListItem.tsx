@@ -1,0 +1,193 @@
+import TextWithInfo from "@/wab/client/components/TextWithInfo";
+import { Matcher } from "@/wab/client/components/view-common";
+import {
+  commenterTooltip,
+  contentCreatorTooltip,
+  contentRoleHelp,
+  designerRoleHelp,
+  designerTooltip,
+  developerTooltip,
+  viewerTooltip,
+} from "@/wab/client/components/widgets/plasmic/PermissionItem";
+import Select from "@/wab/client/components/widgets/Select";
+import { useAppCtx } from "@/wab/client/contexts/AppContexts";
+import {
+  DefaultTeamMemberListItemProps,
+  PlasmicTeamMemberListItem,
+} from "@/wab/client/plasmic/plasmic_kit_dashboard/PlasmicTeamMemberListItem";
+import {
+  ApiFeatureTier,
+  ApiPermission,
+  TeamMember,
+} from "@/wab/shared/ApiSchema";
+import { fullName, getUserEmail } from "@/wab/shared/ApiSchemaUtil";
+import { ensure } from "@/wab/shared/common";
+import { accessLevelRank, GrantableAccessLevel } from "@/wab/shared/EntUtil";
+import { HTMLElementRefOf } from "@plasmicapp/react-web";
+import { Menu, Tooltip } from "antd";
+import moment from "moment";
+import * as React from "react";
+
+interface TeamMemberListItemProps extends DefaultTeamMemberListItemProps {
+  user: TeamMember;
+  matcher: Matcher;
+  perm?: ApiPermission;
+  tier: ApiFeatureTier;
+  changeRole: (email: string, role?: GrantableAccessLevel) => Promise<void>;
+  removeUser: (email: string) => Promise<void>;
+  disabled?: boolean;
+  perms: ApiPermission[];
+}
+
+function TeamMemberListItem_(
+  props: TeamMemberListItemProps,
+  ref: HTMLElementRefOf<"div">,
+) {
+  const {
+    user,
+    matcher,
+    perm,
+    tier,
+    changeRole,
+    removeUser,
+    disabled,
+    perms,
+    ...rest
+  } = props;
+  const appCtx = useAppCtx();
+  const selfInfo = ensure(appCtx.selfInfo, "Unexpected undefined selfInfo");
+
+  const selfPerm = perms.find((p) => p.userId === selfInfo.id);
+  const selfRoleValue = selfPerm ? selfPerm.accessLevel : "none";
+
+  const isSelf =
+    user.type === "user"
+      ? user.id === selfInfo.id
+      : user.email === selfInfo.email;
+  const targetRank = perm ? accessLevelRank(perm.accessLevel) : -1;
+  const selfRank = selfPerm ? accessLevelRank(selfPerm.accessLevel) : -1;
+
+  const roleValue =
+    !!perm &&
+    ["owner", "editor", "designer", "content", "commenter", "viewer"].includes(
+      perm.accessLevel,
+    )
+      ? perm.accessLevel
+      : "none";
+
+  const noneDesc =
+    "'None' means that the user has no team-wide permissions, but may have individual workspace or project permissions. Users with `None` will still count towards your seat count.";
+  return (
+    <PlasmicTeamMemberListItem
+      root={{ ref }}
+      {...rest}
+      name={matcher.boldSnippets(
+        user.type === "user" ? fullName(user) : user.email,
+      )}
+      email={matcher.boldSnippets(
+        user.type === "user" ? getUserEmail(user) : user.email,
+      )}
+      lastActive={
+        user.type === "user" && user.lastActive
+          ? moment(user.lastActive).fromNow()
+          : "never"
+      }
+      numProjects={`${
+        user.type === "user" && user.projectsCreated ? user.projectsCreated : 0
+      }`}
+      role={{
+        value: roleValue,
+        isDisabled: disabled || isSelf || targetRank > selfRank,
+        onChange: async (e) => {
+          if (e !== roleValue && e !== null) {
+            if (e === "none") {
+              await changeRole(user.email);
+            } else if (
+              [
+                "editor",
+                "designer",
+                "content",
+                "commenter",
+                "viewer",
+                "owner",
+              ].includes(e)
+            ) {
+              await changeRole(user.email, e as GrantableAccessLevel);
+            }
+          }
+        },
+        children: [
+          <Select.Option
+            style={selfRoleValue === "owner" ? {} : { display: "none" }}
+            value="owner"
+          >
+            Owner
+          </Select.Option>,
+          <Select.Option value="editor">{developerTooltip}</Select.Option>,
+          <Select.Option value="content" isDisabled={!tier.contentRole}>
+            {tier.contentRole ? (
+              contentCreatorTooltip
+            ) : (
+              <TextWithInfo tooltip={contentRoleHelp}>
+                {contentCreatorTooltip}
+              </TextWithInfo>
+            )}
+          </Select.Option>,
+          <Select.Option value="designer" isDisabled={!tier.designerRole}>
+            {tier.designerRole ? (
+              designerTooltip
+            ) : (
+              <TextWithInfo tooltip={designerRoleHelp}>
+                {designerTooltip}
+              </TextWithInfo>
+            )}
+          </Select.Option>,
+          <Select.Option value="commenter">{commenterTooltip}</Select.Option>,
+          <Select.Option value="viewer">{viewerTooltip}</Select.Option>,
+          <Select.Option
+            style={{
+              display: "none",
+            }}
+            value="none"
+          >
+            None
+          </Select.Option>,
+        ],
+      }}
+      roleHelp={{
+        wrap: (node) =>
+          roleValue === "none" ? (
+            <Tooltip title={noneDesc}>{node}</Tooltip>
+          ) : null,
+      }}
+      menuButton={{
+        wrap: (node) =>
+          !disabled &&
+          // Owners may not be removed directly
+          perm?.accessLevel !== "owner" &&
+          // Can always remove self
+          (isSelf ||
+            // Can remove others if editor/developer or higher
+            selfRank >= accessLevelRank("editor"))
+            ? node
+            : null,
+        props: {
+          menu: (
+            <Menu>
+              <Menu.Item
+                onClick={async () => {
+                  await removeUser(user.email);
+                }}
+              >
+                <strong>Remove</strong> {isSelf ? "self" : "member"}
+              </Menu.Item>
+            </Menu>
+          ),
+        },
+      }}
+    />
+  );
+}
+
+const TeamMemberListItem = React.forwardRef(TeamMemberListItem_);
+export default TeamMemberListItem;

@@ -1,0 +1,139 @@
+import {
+  LabeledStyleColorItemRow,
+  LabeledStyleDimItemRow,
+} from "@/wab/client/components/sidebar/sidebar-helpers";
+import { LabeledLineStyleToggleButtonGroupItemRow } from "@/wab/client/components/style-controls/LineStyleControls";
+import {
+  StylePanelSection,
+  useStyleComponent,
+} from "@/wab/client/components/style-controls/StyleComponent";
+import { IconLinkButton } from "@/wab/client/components/widgets";
+import { Icon } from "@/wab/client/components/widgets/Icon";
+import MinusIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__Minus";
+import PlusIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__Plus";
+import { StandardMarkdown } from "@/wab/client/utils/StandardMarkdown";
+import { isStyleOrCodeComponentVariant } from "@/wab/shared/Variants";
+import { LENGTH_PERCENTAGE_UNITS } from "@/wab/shared/css/types";
+import { Alert } from "antd";
+import { observer } from "mobx-react";
+import { ok } from "neverthrow";
+import React from "react";
+
+enum OutlineProps {
+  style = "outline-style",
+  width = "outline-width",
+  offset = "outline-offset",
+  color = "outline-color",
+}
+
+export const outlineStyleProps = [
+  OutlineProps.style,
+  OutlineProps.width,
+  OutlineProps.offset,
+  OutlineProps.color,
+];
+
+export const OutlinePanelSection = observer(function OutlinePanelSection() {
+  const sc = useStyleComponent();
+
+  const studioCtx = sc.studioCtx();
+
+  const exp = sc.exp();
+
+  const [isOpen, setIsOpen] = React.useState(false);
+  const hasOutlineProps = outlineStyleProps.some((prop) =>
+    sc.hasTargetProp(prop),
+  );
+  const isVisible = isOpen || hasOutlineProps;
+
+  // When editing/creating a Mixin, the focusedViewCtx can be undefined
+  const viewCtx = studioCtx.focusedViewCtx();
+  const isStyleOrCodeComponentVariantTargeted = viewCtx
+    ?.variantTplMgr()
+    .getCurrentVariantCombo()
+    .some(isStyleOrCodeComponentVariant);
+
+  const onClick = async () => {
+    if (isVisible) {
+      await studioCtx.change(() => {
+        outlineStyleProps.forEach((prop) => {
+          if (sc.hasTargetProp(prop)) {
+            exp.clear(prop);
+          }
+        });
+        return ok();
+      });
+      setIsOpen(false);
+    } else {
+      setIsOpen(true);
+    }
+  };
+
+  return (
+    <StylePanelSection
+      key={String(isVisible)}
+      title="Outline"
+      expsProvider={sc.props.expsProvider}
+      styleProps={outlineStyleProps}
+      onHeaderClick={!isVisible ? onClick : undefined}
+      controls={
+        <IconLinkButton onClick={onClick}>
+          <Icon icon={isVisible ? MinusIcon : PlusIcon} />
+        </IconLinkButton>
+      }
+    >
+      {isVisible && (
+        <>
+          {isStyleOrCodeComponentVariantTargeted === false && (
+            <Alert
+              className="mb-lg"
+              message={
+                <StandardMarkdown>
+                  [Outlines](https://developer.mozilla.org/en-US/docs/Web/CSS/outline)
+                  are typically used for styling the focused state of an
+                  element. We recommend only using this property for
+                  focus-related interaction variants.
+                </StandardMarkdown>
+              }
+              type="info"
+              showIcon
+            />
+          )}
+          <LabeledStyleDimItemRow
+            label="Width"
+            styleName={[OutlineProps.width]}
+            tokenType={"Spacing"}
+            dimOpts={{
+              extraOptions: [
+                { value: "thin", label: "Thin" },
+                { value: "medium", label: "Medium" },
+                { value: "thick", label: "Thick" },
+              ],
+              min: 0,
+              allowedUnits: LENGTH_PERCENTAGE_UNITS,
+              allowFunctions: true,
+            }}
+          />
+          <LabeledLineStyleToggleButtonGroupItemRow
+            label="Style"
+            styleName={[OutlineProps.style]}
+          />
+          <LabeledStyleColorItemRow
+            label="Color"
+            styleName={[OutlineProps.color]}
+            displayStyleName={OutlineProps.color}
+          />
+          <LabeledStyleDimItemRow
+            label="Offset"
+            styleName={[OutlineProps.offset]}
+            tokenType={"Spacing"}
+            dimOpts={{
+              allowedUnits: LENGTH_PERCENTAGE_UNITS,
+              allowFunctions: true,
+            }}
+          />
+        </>
+      )}
+    </StylePanelSection>
+  );
+});

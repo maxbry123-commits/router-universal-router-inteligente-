@@ -1,0 +1,48 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  row-gap: 16px;
+  min-width: 0;
+}
+.title {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.slotTargetTitle {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+.items {
+  display: grid;
+  position: relative;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-row-gap: 16px;
+  grid-column-gap: 16px;
+  overflow: visible;
+}
+.newComponentItem___50Oun:global(.__wab_instance) {
+  position: relative;
+}
+.img___2Qggo {
+  position: relative;
+  object-fit: cover;
+  max-width: 100%;
+}
+.img___2Qggo > picture > img {
+  object-fit: cover;
+}
+.newComponentItem__mplbv:global(.__wab_instance) {
+  position: relative;
+}
+.img__ylGDf {
+  position: relative;
+  object-fit: cover;
+  max-width: 100%;
+}
+.img__ylGDf > picture > img {
+  object-fit: cover;
+}

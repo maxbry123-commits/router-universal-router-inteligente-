@@ -1,0 +1,50 @@
+**/*.swp
+**/.claude/settings.local.json
+**/.idea/libraries/Generated_files.xml
+**/.idea/sqldialects.xml
+**/.idea/workspace.xml
+# Local .terraform directories
+**/.terraform/*
+**/.vscode/
+**/api/temp
+**/api/tsc
+*.pyc
+# .tfstate files
+*.tfstate
+*.tfstate.*
+.DS_Store
+.cache
+.cache-loader/
+.direnv
+.env
+.eslintcache
+.idea
+.ipynb_checkpoints/
+.venv/
+/.direnv/
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+.terragrunt-cache/
+**/backend.tf
+.terraform
+# Typedoc output
+/platform/sub/typedoc-*/
+/platform/sub/typedoc.json
+/platform/sub/typedoc.json.gz
+/platform/sub/typedoc/
+bower_components/
+# No trailing slash so node_modules symlinks are ignored too, not just directories
+node_modules
+.pnpm-store/
+lerna-debug.log
+storybook-static/
+.nx/
+# ignore decrypted yaml files by sops
+*.dec.*
+dist/
+# Packed by devops/cicd/cicd.bash for the publish-npm job
+/tarballs/
+# Playwright test results
+test-results/
+playwright-report/

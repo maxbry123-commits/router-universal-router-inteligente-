@@ -1,0 +1,63 @@
+.root {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  align-content: unset;
+  position: relative;
+  column-gap: 8px;
+  border-radius: 6px;
+  padding: 4px 6px;
+  border-style: none;
+}
+.root:focus:focus {
+  box-shadow: 0px 0px 0px 2px #0091ff80;
+  outline: none;
+}
+.root:hover:hover {
+  background: var(--token-Ik3bdE1e1Uy);
+}
+.avatars {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  margin-left: 8px;
+}
+.img__yZ5Ov {
+  object-fit: cover;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  margin: 0px 0px 0px -8px;
+  border: 1px solid #ffffff;
+}
+.img__yZ5Ov > picture > img {
+  object-fit: cover;
+}
+.img__voYmc {
+  object-fit: cover;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  margin: 0px 0px 0px -8px;
+  border: 1px solid #ffffff;
+}
+.img__voYmc > picture > img {
+  object-fit: cover;
+}
+.img__z81Bn {
+  object-fit: cover;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  margin: 0px 0px 0px -8px;
+  border: 1px solid #ffffff;
+}
+.img__z81Bn > picture > img {
+  object-fit: cover;
+}

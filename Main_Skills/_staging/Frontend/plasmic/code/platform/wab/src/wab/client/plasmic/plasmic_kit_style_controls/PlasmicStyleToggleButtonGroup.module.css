@@ -1,0 +1,47 @@
+.root {
+  display: flex;
+  width: 100%;
+  height: auto;
+  position: relative;
+  min-width: 0;
+}
+.rootautoWidth {
+  width: auto;
+  display: inline-flex;
+}
+.buttonsContainer {
+  background: var(--token-O4S7RMTqZ3);
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  column-gap: 2px;
+  min-width: 0;
+  border-radius: 6px;
+  padding: 2px;
+}
+.buttonsContainerstyleType_right {
+  align-items: stretch;
+  justify-content: flex-end;
+}
+.buttonsContainerstyleType_between {
+  justify-content: space-between;
+}
+.styleToggleButton__bW8S4:global(.__wab_instance) {
+  position: relative;
+}
+.svg__rsFgI {
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.styleToggleButton__l4DOy:global(.__wab_instance) {
+  position: relative;
+}
+.svg__pKot {
+  position: relative;
+  height: 1em;
+}
