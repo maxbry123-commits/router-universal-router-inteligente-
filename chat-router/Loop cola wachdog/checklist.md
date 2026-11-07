@@ -1,20 +1,20 @@
 # CHECKLIST WATCHDOG RIU / OpenClaw / Yaiwes
 
-Ciclo: 2026-11-07 ~00:15 UTC
-Health: OK ({"status":"ok","commit":"4722f1dffcf25a2ecf2b63b36fc847fbc922115f","banco_abierto":true,"clave_qwen_presente":false,"modelo_defecto":"qwen3.8-max","autoactualizacion":"GIT_PULL_FALLIDO"})
-MCP salud: OK (JSON-RPC /mcp initialize OK, tools: chat,github_leer,salud,... ; proveedores_externos groq:6 nvidia:5 deepseek:0)
+Ciclo: 2026-11-07 ~01:15 UTC
+Health: OK ({"status":"ok","commit":"4722f1dffcf25a2ecf2b63b36fc847fbc922115f","banco_abierto":true,"clave_qwen_presente":false,"modelo_defecto":"qwen3.8-max","autoactualizacion":"GIT_PULL_FALLIDO","cpu":6.1})
+MCP salud: OK (JSON-RPC /mcp initialize OK, tools/list OK, tools: chat,github_leer,salud,... )
 
 Tests /chat/send:
-- groq/openai/gpt-oss-120b: OK (harness "Sistema operativo...", ms~771)
-- groq/qwen/qwen3.8-27b: OK (harness "Pong. qwen3.8-27b operativo...", ms~783)
+- groq/openai/gpt-oss-120b: OK (harness "Pong.", ms~593)
+- groq/qwen/qwen3.8-27b: OK (harness "pong — operativo...", ms~642)
 - nvidia/z-ai/glm-5.3: BLOQUEADO (HTTP 410 peticion_invalida)
 
 MCP chat:
-- groq/openai/gpt-oss-120b: OK (texto "pong")
+- groq/openai/gpt-oss-120b: OK (texto "Pong!")
 - groq/qwen/qwen3.8-27b: OK (anterior confirmado)
 - nvidia/z-ai/glm-5.3: BLOQUEADO (410)
 
-github_leer: OK (lista raíz: .claude, AGENTS.md, chat-router, etc.)
+github_leer: OK (lista: .claude, AGENTS.md, chat-router, ops, etc.)
 
 UI: riu-jev-bridge.vercel.app OK (200)
 
