@@ -1,0 +1,43 @@
+{
+  "bundle_bytes": 37700844,
+  "bundle_sha256": "b703182e70f046ccbb13bd67d6c0c98110beb0b0e883cee5634b4a5ceacbda58",
+  "extracted_tree": {
+    "bytes": 75808904,
+    "files": 897,
+    "sha256": "3ce0c28358568b18dc111835e9e82814b0b81ef09657173f60a968bb0e4f97e2"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "OpenRSI.bundle.zip.part-0001",
+      "sha256": "95d4880ec3a1a30269c9682ecaa6a5e02329b9412e0ccabd34a3a797adb070c7"
+    },
+    {
+      "bytes": 12582912,
+      "name": "OpenRSI.bundle.zip.part-0002",
+      "sha256": "daac9ca0bcea7890a67fc94fe8659e7694e320841ec3396db13a6820731cf07a"
+    },
+    {
+      "bytes": 12535020,
+      "name": "OpenRSI.bundle.zip.part-0003",
+      "sha256": "314bbaf524092bd3604f129424bf64d0aa209e8c82eb5d53cbf8eab900549120"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "OpenRSI",
+  "source_bytes": 75808904,
+  "source_commit": "71ae803a035d5e3b78c19fa49ed9f67d0550cbaa",
+  "source_files": 897,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/FrontisAI/OpenRSI",
+  "source_tree": {
+    "bytes": 75808904,
+    "files": 897,
+    "sha256": "3ce0c28358568b18dc111835e9e82814b0b81ef09657173f60a968bb0e4f97e2"
+  }
+}
