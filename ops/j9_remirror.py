@@ -27,15 +27,6 @@ def main():
     d=reuse or clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"mirror9"))
     sha=sh(["git","ls-remote","origin","refs/heads/main"],cwd=d,check=False).stdout.split()
     sha=sha[0] if sha else head(d)
-    # D-149: el sha de referencia (D-147) queda CONGELADO al inicio del job, pero main SIGUE
-    # AVANZANDO mientras el job corre (la tuberia de bundles publica en main cada pocos minutos) y el
-    # Space hace auto-pull de main en CADA build: al verificar, el Space puede estar sirviendo un commit
-    # de main MAS NUEVO que ese sha congelado, y el gate fallaba aunque el objetivo del job ("el Space
-    # sirve main") se cumpliera. Fix: se registra TODOS los HEAD de main observados (el inicial + los
-    # que se ven en cada vuelta de la espera) y el gate acepta que el Space sirva cualquiera de ellos.
-    # Un Space que siga sirviendo un commit viejo (p.ej. 4722f1dffc, publicado antes del job) NO se
-    # acepta: el gate sigue detectando que el Space no se ha actualizado.
-    mains={sha}
     # el gate de cableado se ejecuta en modo LECTURA sobre el arbol disponible
     r=wc(d);check("wiring_check_before_remirror",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     if not all(c["ok"] for c in CHECKS):finish(commit=sha)
@@ -44,9 +35,13 @@ def main():
     try:
         _files=api.list_repo_files(sp,repo_type="space")
         _need=("boot.sh","Dockerfile","proxy.py","openclaw.sh","swecode_provider.json")
-        check("space_has_operational_files",all(f in _files for f in _need),f"{len(_files)} ficheros en el Space")
+        _ok=check("space_has_operational_files",all(f in _files for f in _need),f"{len(_files)} ficheros en el Space")
     except Exception as _e:
-        check("space_has_operational_files",False,f"{type(_e).__name__}: {str(_e)[:160]}")
+        _ok=check("space_has_operational_files",False,f"{type(_e).__name__}: {str(_e)[:160]}")
+    # D-148 (gate duro): si el Space no tiene sus ficheros operativos NO se toca nada: sin boot.sh
+    # el router no arranca y un rebuild solo empeoraria el estado. Se aborta con evidencia.
+    if not _ok:
+        finish(commit=sha)
     # D-145/D-146: disparar el rebuild por la API de HF (nunca por git push).
     _stamp=time.strftime("%Y-%m-%dT%H:%M:%S-00:00")
     try:
@@ -61,17 +56,13 @@ def main():
     while time.time()-t0<wait:
         try:stage=str(api.get_space_runtime(sp).stage)
         except Exception as _e:stage=f"ERR {type(_e).__name__}"
-        # D-149: cada vuelta registra el HEAD actual de main (main puede avanzar durante la espera).
-        _m=sh(["git","ls-remote","origin","refs/heads/main"],cwd=d,check=False).stdout.split()
-        if _m:mains.add(_m[0])
         if "RUNNING" in stage and hu:
             try:
                 seen=json.loads(urllib.request.urlopen(hu,timeout=15).read()).get("commit")
-                if seen and any(str(m).startswith(str(seen)[:12]) for m in mains):break
+                if seen and sha.startswith(str(seen)[:12]):break
             except Exception:pass
         time.sleep(20)
     check("space_RUNNING","RUNNING" in str(stage),stage)
-    check("health_commit_equals_new_HEAD",bool(seen) and any(str(m).startswith(str(seen)[:12]) for m in mains),
-          f"seen={seen} main={sha[:12]} heads_vistos={len(mains)}")
+    check("health_commit_equals_new_HEAD",bool(seen) and sha.startswith(str(seen)[:12]),f"seen={seen} main={sha[:12]}")
     finish({"space":sp,"head":sha,"remirror":True},commit=sha)
 if __name__=="__main__":run(main)

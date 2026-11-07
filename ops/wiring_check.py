@@ -28,6 +28,12 @@ def es_tercero(p):
             if parts[i:i+n]==list(r):return True
     return False
 def run(root,graph=None):
+    # D-149: el grafo se puede cargar de una CACHE en disco (GRAPH_CACHE) generada por el
+    # mismo j2_graph sobre el MISMO arbol: evita reconstruirlo (~8 min) en cada job (j9 -> j10).
+    _gc=os.environ.get("GRAPH_CACHE")
+    if graph is None and _gc and os.path.exists(_gc):
+        try:graph=json.load(open(_gc))
+        except Exception:graph=None
     # D-39: si el job ya construyo el grafo, se reutiliza (el build son ~10 min sobre 374k ficheros).
     root=pathlib.Path(root);g=graph if graph is not None else build(root);res=[]
     def c(n,ok,d=""):res.append({"name":n,"ok":bool(ok),"detail":str(d)[:300]})
