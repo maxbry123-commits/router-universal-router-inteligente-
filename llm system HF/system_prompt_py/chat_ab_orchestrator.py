@@ -34,6 +34,26 @@ class ChatABOrchestrator:
         if len(code.splitlines()) <= 200: score += 5
         return score
 
+    async def _run_gap_loop_async(self, prompt: str) -> str:
+        """Versión async del gap loop sin asyncio.run anidado."""
+        current_prompt = prompt
+        for round_num in range(self.gap_loop.max_rounds):
+            raw = await generate_code(current_prompt, model_family=self.model_family)
+            gap = self.gap_loop.detect_gap(raw)
+            if not gap:
+                return raw
+            if self.gap_loop.is_blocking(gap):
+                raise RuntimeError(f"Gap bloqueante: {gap}")
+            context = self.gap_loop.resolve(gap)
+            current_prompt = f"""
+[CONTEXTO RECUPERADO]
+{context}
+
+[INSTRUCCIÓN]
+Resuelve el gap: "{gap}". Si aún falta info, reporta GAP_DETECTADO. Si no, TERMINADO.
+"""
+        return f"[MÁXIMO DE RONDAS]\n{raw}"
+
     async def run(self, task_description: str) -> dict:
         EMITTER.emit("orchestrator_start", {"task": task_description})
 
@@ -43,7 +63,7 @@ class ChatABOrchestrator:
         EMITTER.emit("mode_selected", {"mode": mode_name})
 
         plan = decompose_task(task_description, max_loc=200)
-        real_plan_id = plan["plan_sha256"]
+        real_plan_id = plan.get("plan_sha256", self.plan_id)
 
         if real_plan_id != self.plan_id:
             EMITTER.emit("plan_id_reconciled", {"old": self.plan_id, "new": real_plan_id})
@@ -51,7 +71,7 @@ class ChatABOrchestrator:
             self.checkpoint = SemanticCheckpoint(real_plan_id, self.environment)
             self.rehydrator = ContextRehydrator(self.checkpoint)
 
-        next_block = self.checkpoint.get_next(plan["blocks"])
+        next_block = self.checkpoint.get_next(plan.get("blocks", []))
 
         if not next_block and not self.checkpoint.state.get("completed_blocks"):
             EMITTER.emit("orchestrator_empty", {"reason": "plan vacío"})
@@ -86,14 +106,7 @@ Si te falta información, escribe GAP_DETECTADO: <motivo>.
 """
 
             try:
-                async def model_call(p):
-                    return await generate_code(p, model_family=self.model_family)
-
-                raw_output = await asyncio.to_thread(
-                    self.gap_loop.run_with_loop,
-                    model_call_fn=lambda p: asyncio.run(model_call(p)),
-                    initial_prompt=prompt
-                )
+                raw_output = await self._run_gap_loop_async(prompt)
             except Exception as e:
                 EMITTER.emit("block_fail", {"block_id": block_id, "error": str(e)})
                 self.evidence.finalize("FAIL")
