@@ -1,83 +1,68 @@
 # temp_cache.py
-import time
-import sqlite3
+import aiosqlite
 import json
-import threading
+import time
+import asyncio
 
 class TempCache:
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self, db_path: str = "/tmp/temp_cache.db", ttl_s: int = 3600):
+        if self._initialized:
+            return
+        self._initialized = True
         self.db_path = db_path
         self.ttl_s = ttl_s
-        self.lock = threading.Lock()
-        self._init_db()
-        self._thread = threading.Thread(target=self._cleanup_loop, daemon=True)
-        self._thread.start()
+        self._lock = asyncio.Lock()
 
-    def _init_db(self):
-        with self.lock:
-            conn = sqlite3.connect(self.db_path)
-            conn.execute("""
+    async def init(self):
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("""
                 CREATE TABLE IF NOT EXISTS cache (
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL,
                     expires_at REAL NOT NULL
                 )
             """)
-            conn.commit()
-            conn.close()
+            await db.commit()
 
-    def set(self, key: str, value, ttl_s: int = None):
+    async def set(self, key: str, value, ttl_s: int = None):
         ttl = ttl_s or self.ttl_s
         expires = time.time() + ttl
-        # Acepta str o dict
         serialized = value if isinstance(value, str) else json.dumps(value)
-        with self.lock:
-            conn = sqlite3.connect(self.db_path)
-            conn.execute(
-                "INSERT OR REPLACE INTO cache (key, value, expires_at) VALUES (?, ?, ?)",
-                (key, serialized, expires)
-            )
-            conn.commit()
-            conn.close()
+        async with self._lock:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(
+                    "INSERT OR REPLACE INTO cache (key, value, expires_at) VALUES (?, ?, ?)",
+                    (key, serialized, expires)
+                )
+                await db.commit()
 
-    def get(self, key: str):
-        with self.lock:
-            conn = sqlite3.connect(self.db_path)
-            row = conn.execute(
+    async def get(self, key: str):
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute(
                 "SELECT value, expires_at FROM cache WHERE key = ?", (key,)
-            ).fetchone()
-            conn.close()
+            ) as cursor:
+                row = await cursor.fetchone()
         if not row:
             return None
         value, expires_at = row
         if time.time() > expires_at:
-            self.delete(key)
+            await self.delete(key)
             return None
-        # Intentar deserializar si es JSON, si no devolver string
         try:
             return json.loads(value)
         except json.JSONDecodeError:
             return value
 
-    def delete(self, key: str):
-        with self.lock:
-            conn = sqlite3.connect(self.db_path)
-            conn.execute("DELETE FROM cache WHERE key = ?", (key,))
-            conn.commit()
-            conn.close()
-
-    def _cleanup_loop(self):
-        while True:
-            time.sleep(60)
-            with self.lock:
-                conn = sqlite3.connect(self.db_path)
-                conn.execute("DELETE FROM cache WHERE expires_at < ?", (time.time(),))
-                conn.commit()
-                conn.close()
-
-    def clear(self):
-        with self.lock:
-            conn = sqlite3.connect(self.db_path)
-            conn.execute("DELETE FROM cache")
-            conn.commit()
-            conn.close()
+    async def delete(self, key: str):
+        async with self._lock:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute("DELETE FROM cache WHERE key = ?", (key,))
+                await db.commit()
