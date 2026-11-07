@@ -1,0 +1,45 @@
+{
+  "space": "COMAND-CENTER-1/local-llm-router-v7",
+  "local_count": 9,
+  "remote_count": 9,
+  "missing_local": [],
+  "extra_local": [],
+  "files": [
+    {
+      "path": "Dockerfile",
+      "bytes": 197
+    },
+    {
+      "path": "README.md",
+      "bytes": 158
+    },
+    {
+      "path": "agent_skills_engine.py",
+      "bytes": 529
+    },
+    {
+      "path": "app.py",
+      "bytes": 2450
+    },
+    {
+      "path": "ecc_engine.py",
+      "bytes": 773
+    },
+    {
+      "path": "parallel_agent.py",
+      "bytes": 1009
+    },
+    {
+      "path": "requirements.txt",
+      "bytes": 212
+    },
+    {
+      "path": "rsi_controller.py",
+      "bytes": 1240
+    },
+    {
+      "path": "search_engine.py",
+      "bytes": 1269
+    }
+  ]
+}
