@@ -1,47 +1,43 @@
 # key_pool.py
 import time
 import threading
-from collections import deque
 from typing import List, Dict, Optional
 
-class KeyCooldownError(Exception):
-    """Se lanza cuando todas las claves están en cooldown."""
-    pass
-
 class KeyPool:
-    """
-    Pool de claves con rotación round-robin y cooldown por clave.
-    Cada clave tiene su propio timestamp de cooldown.
-    """
     def __init__(self, provider: str, keys: List[str], cooldown_s: float = 60.0):
         self.provider = provider
-        self.keys = keys
+        self.keys = [k for k in keys if k.strip()]
         self.cooldown_s = cooldown_s
-        self.cooldowns: Dict[str, float] = {k: 0.0 for k in keys}
+        self.cooldowns: Dict[str, float] = {k: 0.0 for k in self.keys}
+        self.session_keys: Dict[str, str] = {}  # Sticky Session
         self._index = 0
         self.lock = threading.Lock()
 
-    def get_key(self) -> Optional[str]:
-        """
-        Retorna la siguiente clave disponible.
-        Si todas están en cooldown, retorna None.
-        """
+    def get_key(self, session_id: Optional[str] = None) -> Optional[str]:
         with self.lock:
             now = time.time()
+            
+            # 1. Intentar Sticky Session
+            if session_id and session_id in self.session_keys:
+                sticky_key = self.session_keys[session_id]
+                if sticky_key in self.cooldowns and now >= self.cooldowns.get(sticky_key, 0):
+                    return sticky_key
+                else:
+                    del self.session_keys[session_id]
+
+            # 2. Round-Robin si no hay sesion o fallo la pegajosa
             for _ in range(len(self.keys)):
+                if not self.keys:
+                    return None
                 key = self.keys[self._index]
                 self._index = (self._index + 1) % len(self.keys)
-                if now >= self.cooldowns[key]:
+                if now >= self.cooldowns.get(key, 0):
+                    if session_id:
+                        self.session_keys[session_id] = key
                     return key
             return None
 
     def mark_rate_limited(self, key: str):
-        """Marca una clave como en cooldown tras un 429."""
         with self.lock:
             self.cooldowns[key] = time.time() + self.cooldown_s
-
-    def available_count(self) -> int:
-        """Número de claves actualmente disponibles."""
-        now = time.time()
-        with self.lock:
-            return sum(1 for k in self.keys if now >= self.cooldowns[k])
+            self.session_keys = {sid: k for sid, k in self.session_keys.items() if k != key}
