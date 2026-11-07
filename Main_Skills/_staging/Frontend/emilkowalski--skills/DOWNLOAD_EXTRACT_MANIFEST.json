@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 148619,
+  "bundle_sha256": "0703fcb00d959d88d028137bad1204d0f109325f9f81b42b6c8c5ce74070db7a",
+  "extracted_tree": {
+    "bytes": 339791,
+    "files": 33,
+    "sha256": "9e360dddee9e86f8f77d07688384b9202d3c88717a8495db83440e633b0b38c2"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 148619,
+      "name": "emilkowalski--skills.bundle.zip.part-0001",
+      "sha256": "0703fcb00d959d88d028137bad1204d0f109325f9f81b42b6c8c5ce74070db7a"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "emilkowalski--skills",
+  "source_bytes": 339791,
+  "source_commit": "c8a79627b59d72d764d6ab6f2c87c09a48169833",
+  "source_files": 33,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/emilkowalski/skills",
+  "source_tree": {
+    "bytes": 339791,
+    "files": 33,
+    "sha256": "9e360dddee9e86f8f77d07688384b9202d3c88717a8495db83440e633b0b38c2"
+  }
+}
