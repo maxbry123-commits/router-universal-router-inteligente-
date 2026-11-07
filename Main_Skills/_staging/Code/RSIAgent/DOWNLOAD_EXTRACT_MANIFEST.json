@@ -1,0 +1,38 @@
+{
+  "bundle_bytes": 18433593,
+  "bundle_sha256": "2e8ec249220d2af918e1b161dcc37b68e9f93304bc00b7936dc5a78275f99cac",
+  "extracted_tree": {
+    "bytes": 21037072,
+    "files": 186,
+    "sha256": "2723f12100d427eaeff4220417c887785d32c0be9124a1ee1b3b376c090ad6f4"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "RSIAgent.bundle.zip.part-0001",
+      "sha256": "fb9aeaf9156e5e2d4d751417f66b29917f20465a1d0dd132ebad40cecca0f723"
+    },
+    {
+      "bytes": 5850681,
+      "name": "RSIAgent.bundle.zip.part-0002",
+      "sha256": "6645bf2a20377e84e1dbf7a2cce5ddea9c7975e7418b1808a172f8285820814d"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "RSIAgent",
+  "source_bytes": 21037072,
+  "source_commit": "4d7ef43770dda341fccd9a5743db92407687c615",
+  "source_files": 186,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/AetherLabsAI/RSIAgent",
+  "source_tree": {
+    "bytes": 21037072,
+    "files": 186,
+    "sha256": "2723f12100d427eaeff4220417c887785d32c0be9124a1ee1b3b376c090ad6f4"
+  }
+}
