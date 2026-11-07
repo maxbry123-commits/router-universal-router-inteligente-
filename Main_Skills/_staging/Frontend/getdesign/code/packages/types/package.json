@@ -1,0 +1,43 @@
+{
+  "name": "@getdesign/types",
+  "version": "0.1.1",
+  "description": "Shared Zod schemas and TypeScript types for getdesign packages.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./design-tokens": {
+      "types": "./dist/design-tokens.d.ts",
+      "import": "./dist/design-tokens.js"
+    },
+    "./design-doc": {
+      "types": "./dist/design-doc.d.ts",
+      "import": "./dist/design-doc.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "bun run build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@getdesign/config": "workspace:*",
+    "typescript": "^6.0.3"
+  }
+}

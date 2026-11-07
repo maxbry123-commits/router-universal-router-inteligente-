@@ -1,0 +1,202 @@
+import { useEffect, useState } from "react";
+
+import { AuthLanding } from "@/components/auth-landing";
+import { ChatSidebar } from "@/components/studio/chat-sidebar";
+import { StudioLoadingScreen } from "@/components/studio/studio-loading-screen";
+import { DeckWorkspace } from "@/components/deck-workspace";
+import { SettingsPage } from "@/components/settings-page";
+import { useStudioAppState } from "@/hooks/use-studio-app-state";
+
+export default function App() {
+  const studio = useStudioAppState();
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const {
+    view,
+    setView,
+    authStatus,
+    authLoaded,
+    previewAuth,
+    setPreviewAuth,
+    conversation,
+    chatSessions,
+    decks,
+    userSelectedDeckId,
+    setUserSelectedDeckId,
+    isChatOpen,
+    setIsChatOpen,
+    selectedModelId,
+    provider,
+    setProvider,
+    apiKey,
+    setApiKey,
+    manualCode,
+    setManualCode,
+    error,
+    visibleModelIds,
+    setVisibleModelIds,
+    oauthProviderCards,
+    models,
+    displayedModels,
+    isAuthed,
+    selectedDeckId,
+    refresh,
+    handleLogoutAll,
+    handleRuntimeKey,
+    handleSubmitLoginCode,
+    handleStartLogin,
+    handleDisconnectProvider,
+    handleAddCustomProvider,
+    handleAddCustomModel,
+    handleRemoveCustomModel,
+    handleModelChange,
+    handleSend,
+    handleStop,
+    handleNewChat,
+    handleRenameChatSession,
+    handleDeleteChatSession,
+    handleOpenChatSession,
+    handleOpenDeck,
+    handleExportDeck,
+    cursorAuth,
+    cursorApiKeyDraft,
+    setCursorApiKeyDraft,
+    cursorBusy,
+    cursorError,
+    handleCursorLogin,
+    handleCursorLogout,
+    handleOpenCursorDashboard,
+    constants,
+  } = studio;
+
+  useEffect(() => {
+    const subscribe = window.studioEnv?.onWindowChrome;
+    if (typeof subscribe !== "function") return;
+    const unsubscribe = subscribe((chrome) => {
+      setIsFullScreen(chrome.fullScreen || chrome.simpleFullScreen);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  if (!authLoaded) {
+    return <StudioLoadingScreen />;
+  }
+
+  if (!isAuthed || previewAuth) {
+    return (
+      <AuthLanding
+        previewMode={previewAuth}
+        onExitPreview={() => setPreviewAuth(false)}
+        error={error}
+        oauthProviderCards={oauthProviderCards}
+        authStatus={authStatus}
+        manualCode={manualCode}
+        setManualCode={setManualCode}
+        onSubmitLoginCode={handleSubmitLoginCode}
+        onStartLogin={handleStartLogin}
+        provider={provider}
+        setProvider={setProvider}
+        providers={constants.byokProviderOptions}
+        apiKey={apiKey}
+        setApiKey={setApiKey}
+        onRuntimeKey={handleRuntimeKey}
+        onAddCustomProvider={handleAddCustomProvider}
+        customProviderApiOptions={constants.customProviderApiOptions}
+        onRefresh={refresh}
+        cursorAuth={cursorAuth}
+        cursorApiKeyDraft={cursorApiKeyDraft}
+        setCursorApiKeyDraft={setCursorApiKeyDraft}
+        cursorBusy={cursorBusy}
+        cursorError={cursorError}
+        onCursorLogin={handleCursorLogin}
+        onCursorLogout={handleCursorLogout}
+        onOpenCursorDashboard={handleOpenCursorDashboard}
+      />
+    );
+  }
+
+  /** Traffic lights are hidden in fullscreen, so the inset is only needed in windowed mode. */
+  const darwinToolbarPad =
+    typeof window !== "undefined" &&
+    window.studioEnv?.platform === "darwin" &&
+    !isFullScreen;
+
+  if (view === "settings") {
+    return (
+      <SettingsPage
+        darwinTrafficLightInset={darwinToolbarPad}
+        models={models}
+        visibleModelIds={visibleModelIds}
+        setVisibleModelIds={setVisibleModelIds}
+        authStatus={authStatus}
+        oauthProviderCards={oauthProviderCards}
+        onStartLogin={handleStartLogin}
+        onDisconnectProvider={handleDisconnectProvider}
+        onLogoutAll={handleLogoutAll}
+        onPreviewAuth={() => {
+          setPreviewAuth(true);
+          setView("chat");
+        }}
+        onAddCustomProvider={handleAddCustomProvider}
+        onAddCustomModel={handleAddCustomModel}
+        onRemoveCustomModel={handleRemoveCustomModel}
+        customProviderApiOptions={constants.customProviderApiOptions}
+        provider={provider}
+        setProvider={setProvider}
+        providers={constants.byokProviderOptions}
+        apiKey={apiKey}
+        setApiKey={setApiKey}
+        onRuntimeKey={handleRuntimeKey}
+        onBack={() => setView("chat")}
+        onRefresh={refresh}
+        error={error}
+        cursorAuth={cursorAuth}
+        cursorApiKeyDraft={cursorApiKeyDraft}
+        setCursorApiKeyDraft={setCursorApiKeyDraft}
+        cursorBusy={cursorBusy}
+        cursorError={cursorError}
+        onCursorLogin={handleCursorLogin}
+        onCursorLogout={handleCursorLogout}
+        onOpenCursorDashboard={handleOpenCursorDashboard}
+      />
+    );
+  }
+
+  return (
+    <main className="flex h-full gap-2 overflow-hidden bg-canvas p-2 text-foreground">
+      {isChatOpen ? (
+        <ChatSidebar
+          darwinTrafficLightInset={darwinToolbarPad}
+          conversation={conversation}
+          chatSessions={chatSessions}
+          authStatus={authStatus}
+          error={error}
+          displayedModels={displayedModels}
+          selectedModelId={selectedModelId}
+          onCollapse={() => setIsChatOpen(false)}
+          onNewChat={handleNewChat}
+          onOpenSettings={() => setView("settings")}
+          onModelChange={handleModelChange}
+          onSend={handleSend}
+          onStop={handleStop}
+          onOpenChatSession={handleOpenChatSession}
+          onRenameChatSession={handleRenameChatSession}
+          onDeleteChatSession={handleDeleteChatSession}
+        />
+      ) : null}
+      <DeckWorkspace
+        darwinTrafficLightInset={darwinToolbarPad && !isChatOpen}
+        decks={decks}
+        selectedDeckId={selectedDeckId}
+        status={conversation.status}
+        showChatToggle={!isChatOpen}
+        onShowChat={() => setIsChatOpen(true)}
+        onSelectDeck={setUserSelectedDeckId}
+        onOpenDeck={handleOpenDeck}
+        onRevealPath={window.api.revealPath}
+        onExportDeck={handleExportDeck}
+      />
+    </main>
+  );
+}

@@ -1,0 +1,23 @@
+{
+  "id": "getdesign-app-mpml4und",
+  "url": "https://getdesign.app/",
+  "userId": "user_01KRAYGPPNANZV3PEEQGH47ZYK",
+  "userEmail": "mohtasham@citysage.my",
+  "status": "completed",
+  "message": "Ready",
+  "steps": {
+    "crawl": "ok",
+    "capture": "ok",
+    "describe": "ok",
+    "extract": "ok",
+    "synthesize": "ok",
+    "render": "ok"
+  },
+  "createdAt": 1779796922665,
+  "updatedAt": 1779797286635,
+  "currentStep": "render",
+  "mode": "visual",
+  "tiles": 4,
+  "completedAt": 1779797286634,
+  "markdownLength": 11657
+}
