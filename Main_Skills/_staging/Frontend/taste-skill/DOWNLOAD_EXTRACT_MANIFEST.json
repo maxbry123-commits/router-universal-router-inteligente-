@@ -1,0 +1,43 @@
+{
+  "bundle_bytes": 30709054,
+  "bundle_sha256": "f83a0e9ebf71ccbb29f60a52f6a94c07c3b29c387494e93a34029847c0bd51e9",
+  "extracted_tree": {
+    "bytes": 36796768,
+    "files": 1648,
+    "sha256": "215044d7749d5d898c555ef833cbe361e920d652c770e52b5dab44099c768f96"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "taste-skill.bundle.zip.part-0001",
+      "sha256": "c05a881c733a8bda7dd04afdf1743a2a3709536052695c9fe0cc87d753ddee68"
+    },
+    {
+      "bytes": 12582912,
+      "name": "taste-skill.bundle.zip.part-0002",
+      "sha256": "a79e23faef74c9632f8f5b68ebb5b4d7ee74c2fb8520dff3b0d64f22621c2207"
+    },
+    {
+      "bytes": 5543230,
+      "name": "taste-skill.bundle.zip.part-0003",
+      "sha256": "3ee4a86fd11f7708986f41d7f5beb6bf8993d6a5ff020ef04b144004f4f71c90"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "taste-skill",
+  "source_bytes": 36796768,
+  "source_commit": "9b4bf937a1f69348126959c15d2f99a73e65699b",
+  "source_files": 1648,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/Leonxlnx/taste-skill",
+  "source_tree": {
+    "bytes": 36796768,
+    "files": 1648,
+    "sha256": "215044d7749d5d898c555ef833cbe361e920d652c770e52b5dab44099c768f96"
+  }
+}
