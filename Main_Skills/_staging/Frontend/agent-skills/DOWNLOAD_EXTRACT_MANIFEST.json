@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 1133933,
+  "bundle_sha256": "a0e012ecd3a4d8bbed333e877a615a628622b77d92e1f45c3a1bdbfe131fada4",
+  "extracted_tree": {
+    "bytes": 2737847,
+    "files": 453,
+    "sha256": "442f43ec2eeff66c2a2db4f015df00aeef1614aa09f37a107c06c87b10cfa1e4"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 1133933,
+      "name": "agent-skills.bundle.zip.part-0001",
+      "sha256": "a0e012ecd3a4d8bbed333e877a615a628622b77d92e1f45c3a1bdbfe131fada4"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "agent-skills",
+  "source_bytes": 2737847,
+  "source_commit": "e7119661288542af7ca2dfc20c738f77371652d5",
+  "source_files": 453,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/JPeetz/agent-skills",
+  "source_tree": {
+    "bytes": 2737847,
+    "files": 453,
+    "sha256": "442f43ec2eeff66c2a2db4f015df00aeef1614aa09f37a107c06c87b10cfa1e4"
+  }
+}
