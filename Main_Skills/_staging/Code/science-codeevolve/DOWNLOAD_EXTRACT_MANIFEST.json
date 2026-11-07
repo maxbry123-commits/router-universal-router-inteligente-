@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 4384533,
+  "bundle_sha256": "4a897eefad409b54737433239d4cf230ade501929517c05b10e6ac98d09d7805",
+  "extracted_tree": {
+    "bytes": 6367299,
+    "files": 182,
+    "sha256": "c65d0891cedb95c13215aa30efa012ca70b6f0ea238ecebb30f9c211ecebf44d"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 4384533,
+      "name": "science-codeevolve.bundle.zip.part-0001",
+      "sha256": "4a897eefad409b54737433239d4cf230ade501929517c05b10e6ac98d09d7805"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "science-codeevolve",
+  "source_bytes": 6367299,
+  "source_commit": "9897ef16b79e95c4d6517ecb04461e27b2296e34",
+  "source_files": 182,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/inter-co/science-codeevolve",
+  "source_tree": {
+    "bytes": 6367299,
+    "files": 182,
+    "sha256": "c65d0891cedb95c13215aa30efa012ca70b6f0ea238ecebb30f9c211ecebf44d"
+  }
+}
