@@ -1,27 +1,27 @@
 # WATCHDOG CHECKLIST RIU / OpenClaw / Yaiwes
-Ciclo: 2026-11-05 03:10 EST
-Commit router: ac4e20bc63a9f85b85f1ef423e1316ecd7080aaf (previo a0eb06c2)
+Ciclo: 2026-11-07 01:10 EST
+Commit router: 4722f1dffcf25a2ecf2b63b36fc847fbc922115f
 Rama: reorganizacion
 
 ## Estado Ixx
-- I01 Checkpoint/reinicio MVP: BLOQUEADO (HF space stage=PAUSED; health unreachable, 503/Preparing Space)
-- I02 5 agentes cableados + harness DeepSeek: GAPS (sin cambios; no re-testable por space paused)
-- I03 SWE CODE free / SWEN CODE autónomo: BLOQUEADO (space paused; modelos no re-testables)
-- I04 Modelos selectores: BLOQUEADO (no re-testable; space paused)
-- I05 System prompt MVP: VALIDACION (sin re-test)
-- I06 Acceso HF + GitHub: BLOQUEADO (HF health/MCP fail por pause; github_leer no re-testable)
-- I07 Frontend selectores: CERRADO (UI Vercel 200 OK https://riu-jev-bridge.vercel.app)
-- I08 Yaiwes + OpenClaw UI: PENDIENTE (UI responde 200 pero backend paused)
-- I09 HTTP + MCP: BLOQUEADO (space paused, /health /mcp /chat/send unreachable)
+- I01 Checkpoint/reinicio MVP: CERRADO (health OK, space running, commit 4722f1dffc)
+- I02 5 agentes cableados + harness DeepSeek: GAPS (agentes=false en salud; harness responde pero no verificado 5 agentes)
+- I03 SWE CODE free / SWEN CODE autónomo: VALIDACION (modelos Groq responden via /chat/send y MCP)
+- I04 Modelos selectores: CERRADO (Groq modelos prioritarios responden; catalogo visible)
+- I05 System prompt MVP: VALIDACION (sin re-test especifico)
+- I06 Acceso HF + GitHub: CERRADO (health/MCP OK; github_leer OK)
+- I07 Frontend selectores: CERRADO (UI Vercel 200 OK)
+- I08 Yaiwes + OpenClaw UI: CERRADO (UI responde y backend live)
+- I09 HTTP + MCP: CERRADO (/health OK, /mcp initialize+tools/call OK, /chat/send OK)
 - I10 Tarea 1: PENDIENTE
 - I11 Tarea 2: PENDIENTE
-- I12 Watchdog: CERRADO (ciclo ejecutado; checklist actualizada; gap reportado)
+- I12 Watchdog: CERRADO (ciclo ejecutado; checklist actualizada)
 
 ## Tests ciclo
-1. Health: FAIL (space paused, Preparing Space / stage PAUSED)
-2. MCP initialize + tools/list: FAIL (space paused)
-3. /chat/send (cualquier modelo): FAIL (space paused)
-4. MCP github_leer: FAIL (space paused)
+1. Health: OK (status=ok, commit=4722f1dffc)
+2. MCP initialize + tools/list + tools/call (salud, github_leer, chat): OK
+3. /chat/send (groq/openai/gpt-oss-120b, groq/qwen/qwen3.8-27b): OK (harness responde)
+4. MCP github_leer: OK (leyó checklist anterior)
 5. UI Vercel: 200 OK
 
-Siguiente: Reiniciar space HF COMAND-CENTER-1/riu-router (maintainer, runtime stage PAUSED) luego re-ciclo health+MCP+3 tests. Prioridad I01/I09 desbloqueo.
+Siguiente: I02 GAPS — verificar/cablear 5 agentes + harness DeepSeek. Luego I10/I11.
