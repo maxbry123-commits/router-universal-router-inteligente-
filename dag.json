@@ -1,0 +1,150 @@
+{
+  "dsl_version": "1.0",
+  "dag_id": "cierre-20261107",
+  "input_block_sha256": "6c4383cbbb17d3f5257ff4c2c68cf5480068f2734aa2b05184176ca300a6e4d2",
+  "restrictions": {
+    "no_overwrite": true,
+    "lease_required": true,
+    "owner_gates": [
+      "N3",
+      "N4",
+      "N5"
+    ],
+    "forbidden_paths": [
+      "ops/research_prepass.py",
+      ".github/workflows/*",
+      "kernel/KERNEL.yaml"
+    ]
+  },
+  "parallel": [
+    [
+      "N0",
+      "C1"
+    ],
+    [
+      "N1",
+      "C1"
+    ],
+    [
+      "N2",
+      "C1"
+    ],
+    [
+      "N3",
+      "C1"
+    ],
+    [
+      "N4",
+      "C1"
+    ],
+    [
+      "N5",
+      "C1"
+    ]
+  ],
+  "nodes": [
+    {
+      "id": "N0",
+      "type": "validate",
+      "depends_on": [],
+      "owner_gate": false,
+      "outputs": [
+        "out/N0/validate.json"
+      ],
+      "checks": [
+        "input_block_sha256_ok",
+        "dsl_schema_ok",
+        "remote_shas_read"
+      ],
+      "run": "python ops/dag/n0_validate.py"
+    },
+    {
+      "id": "N1",
+      "type": "publish",
+      "depends_on": [
+        "N0"
+      ],
+      "owner_gate": false,
+      "outputs": [
+        "out/N1/patches.json"
+      ],
+      "checks": [
+        "files_exist",
+        "lease_read",
+        "push_rc0",
+        "remote_sha_matches"
+      ],
+      "run": "python ops/dag/n1_publish_patches.py"
+    },
+    {
+      "id": "N2",
+      "type": "push",
+      "depends_on": [
+        "N1"
+      ],
+      "owner_gate": false,
+      "outputs": [
+        "out/N2/push_main_clean.json"
+      ],
+      "checks": [
+        "divergence_detected",
+        "pack_measured",
+        "chunks_under_limit",
+        "lease_renewed",
+        "remote_equals_head"
+      ],
+      "run": "python ops/dag/n2_push_main_clean.py"
+    },
+    {
+      "id": "N3",
+      "type": "rebuild",
+      "depends_on": [
+        "N2"
+      ],
+      "owner_gate": true,
+      "outputs": [
+        "out/N3/rebuild.json"
+      ],
+      "checks": [
+        "space_operational_files",
+        "rebuild_triggered",
+        "build_running"
+      ],
+      "run": "python ops/dag/n3_rebuild_space.py"
+    },
+    {
+      "id": "N4",
+      "type": "audit",
+      "depends_on": [
+        "N3"
+      ],
+      "owner_gate": true,
+      "outputs": [
+        "out/N4/final_audit.json"
+      ],
+      "checks": [
+        "14_jobs_present",
+        "all_pass_or_flagged"
+      ],
+      "run": "python ops/dag/n4_final_audit.py"
+    },
+    {
+      "id": "N5",
+      "type": "fast_forward",
+      "depends_on": [
+        "N4"
+      ],
+      "owner_gate": true,
+      "outputs": [
+        "out/N5/ff.json"
+      ],
+      "checks": [
+        "main_clean_le_main",
+        "lease_read",
+        "ff_rc0",
+        "main_after_equals_main_clean"
+      ],
+      "run": "python ops/dag/n5_fast_forward.py"
+    }
+  ]
+}

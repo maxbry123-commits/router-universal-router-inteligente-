@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CloseDAG",
+  "type": "object",
+  "required": ["dsl_version","dag_id","input_block_sha256","restrictions","nodes","parallel"],
+  "properties": {
+    "dsl_version": {"const": "1.0"},
+    "dag_id": {"type": "string"},
+    "input_block_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "restrictions": {
+      "type": "object",
+      "required": ["no_overwrite","lease_required","owner_gates","forbidden_paths"],
+      "properties": {
+        "no_overwrite": {"const": true},
+        "lease_required": {"const": true},
+        "owner_gates": {"type": "array", "items": {"type": "string"}},
+        "forbidden_paths": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id","type","depends_on","run","outputs","checks","owner_gate"],
+        "properties": {
+          "id": {"type": "string"},
+          "type": {"enum": ["validate","publish","push","rebuild","audit","fast_forward"]},
+          "depends_on": {"type": "array", "items": {"type": "string"}},
+          "run": {"type": "string"},
+          "outputs": {"type": "array", "items": {"type": "string"}},
+          "checks": {"type": "array", "items": {"type": "string"}},
+          "owner_gate": {"type": "boolean"}
+        }
+      }
+    },
+    "parallel": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}}
+  }
+}
