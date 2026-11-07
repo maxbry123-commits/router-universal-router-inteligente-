@@ -1,0 +1,639 @@
+{
+  "generated_at": "2026-11-07T21:34:55.463670+00:00",
+  "generated_by": "hf_audit.py dentro de un Job real de Hugging Face",
+  "job_context": {
+    "namespace": "COMAND-CENTER-1",
+    "hf_username_env": "maxbry123-commits",
+    "job_id": null
+  },
+  "counts": {
+    "spaces": 9,
+    "datasets": 6,
+    "models": 0
+  },
+  "hardware_histogram": {
+    "None": 1,
+    "cpu-upgrade": 8
+  },
+  "spaces": [
+    {
+      "id": "COMAND-CENTER-1/claude-github-mcp-backup",
+      "repo_type": "space",
+      "private": false,
+      "sha": "12e8c402cc7128b9709c59825f43345d68257e66",
+      "created_at": "2026-11-05T21:39:04+00:00",
+      "last_modified": "2026-11-05T22:16:04+00:00",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "sdk": "docker",
+      "likes": 0,
+      "runtime": {
+        "stage": "PAUSED",
+        "hardware_current": null,
+        "hardware_requested": "cpu-upgrade",
+        "storage_current": null,
+        "sleep_time": 172800,
+        "volumes": null
+      },
+      "secret_names": [
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "HF_MCP_CLAUDE_PERMANENT",
+        "HF_TOKEN",
+        "HF_TOKEN_MCP_PERMANENT",
+        "JWT_SIGNING_KEY",
+        "MCP_SECRET_HF",
+        "MCP_SECRET_PATH",
+        "RIU_AGENT_API_KEYS",
+        "RIU_KERNEL_HF_TOKEN",
+        "RIU_ROUTER_API_KEY"
+      ],
+      "files_count": 10,
+      "files": [
+        ".gitattributes",
+        ".gitignore",
+        "Dockerfile",
+        "README.md",
+        "TOKEN_PERMISSIONS.md",
+        "app.py",
+        "door.py",
+        "fleet.py",
+        "mini.py",
+        "requirements.txt"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/local-llm-router",
+      "repo_type": "space",
+      "private": false,
+      "sha": "f04516499e510c0d3589ca0fb7e8ec0cd6bd3b2c",
+      "created_at": "2026-11-07T07:59:31+00:00",
+      "last_modified": "2026-11-07T08:45:53+00:00",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "sdk": "docker",
+      "likes": 0,
+      "runtime": {
+        "stage": "RUNNING",
+        "hardware_current": "cpu-upgrade",
+        "hardware_requested": "cpu-upgrade",
+        "storage_current": null,
+        "sleep_time": 172800,
+        "volumes": null
+      },
+      "secret_names": [
+        "GROQ_API_KEY",
+        "NVIDIA_API_KEY",
+        "ROUTER_API_KEY"
+      ],
+      "files_count": 5,
+      "files": [
+        ".gitattributes",
+        "Dockerfile",
+        "README.md",
+        "app.py",
+        "requirements.txt"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/local-llm-router-v2",
+      "repo_type": "space",
+      "private": false,
+      "sha": "eaa2b7bfe06ad1cdfa49dfe625d808cff8406e3b",
+      "created_at": "2026-11-07T07:59:39+00:00",
+      "last_modified": "2026-11-07T09:16:06+00:00",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "sdk": "docker",
+      "likes": 0,
+      "runtime": {
+        "stage": "RUNNING",
+        "hardware_current": "cpu-upgrade",
+        "hardware_requested": "cpu-upgrade",
+        "storage_current": null,
+        "sleep_time": 172800,
+        "volumes": null
+      },
+      "secret_names": [
+        "DATASET_CACHE",
+        "GROQ_API_KEY",
+        "NVIDIA_API_KEY",
+        "ROUTER_API_KEY"
+      ],
+      "files_count": 6,
+      "files": [
+        ".gitattributes",
+        "Dockerfile",
+        "README.md",
+        "app.py",
+        "requirements.txt",
+        "search_engine.py"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/local-llm-router-v7",
+      "repo_type": "space",
+      "private": false,
+      "sha": "0df092cde11383ae1a002eee2d2ccc776a3e2288",
+      "created_at": "2026-11-07T08:33:13+00:00",
+      "last_modified": "2026-11-07T09:16:06+00:00",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "sdk": "docker",
+      "likes": 0,
+      "runtime": {
+        "stage": "RUNNING",
+        "hardware_current": "cpu-upgrade",
+        "hardware_requested": "cpu-upgrade",
+        "storage_current": null,
+        "sleep_time": 172800,
+        "volumes": null
+      },
+      "secret_names": [
+        "GROQ_API_KEY",
+        "NVIDIA_API_KEY",
+        "ROUTER_API_KEY"
+      ],
+      "files_count": 10,
+      "files": [
+        ".gitattributes",
+        "Dockerfile",
+        "README.md",
+        "agent_skills_engine.py",
+        "app.py",
+        "ecc_engine.py",
+        "parallel_agent.py",
+        "requirements.txt",
+        "rsi_controller.py",
+        "search_engine.py"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/riu-router",
+      "repo_type": "space",
+      "private": false,
+      "sha": "d63b107225b68322ed070601fcc0ac63c5222966",
+      "created_at": "2026-11-05T21:38:58+00:00",
+      "last_modified": "2026-11-05T21:38:06+00:00",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "sdk": "docker",
+      "likes": 0,
+      "runtime": {
+        "stage": "RUNNING",
+        "hardware_current": "cpu-upgrade",
+        "hardware_requested": "cpu-upgrade",
+        "storage_current": null,
+        "sleep_time": 3600,
+        "volumes": [
+          {
+            "type": "bucket",
+            "source": "COMAND-CENTER-1/yaiwes-memoria-storage",
+            "mount_path": "/data",
+            "revision": null,
+            "read_only": false,
+            "path": null
+          }
+        ]
+      },
+      "secret_names": [
+        "GITHUB_TOKEN",
+        "HF_TOKEN",
+        "OPENCLAW_ENABLE",
+        "RIU_API_KEY",
+        "RIU_MCP_KEY",
+        "RIU_PUBLIC_CHAT_KEY"
+      ],
+      "files_count": 8,
+      "files": [
+        ".gitattributes",
+        ".rebuild",
+        "Dockerfile",
+        "README.md",
+        "boot.sh",
+        "openclaw.sh",
+        "proxy.py",
+        "swecode_provider.json"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-s1",
+      "repo_type": "space",
+      "private": false,
+      "sha": "3e4329fbf9f2af44ab56025172c56948967a136e",
+      "created_at": "2026-11-05T21:39:08+00:00",
+      "last_modified": "2026-11-07T04:17:42+00:00",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "sdk": "docker",
+      "likes": 0,
+      "runtime": {
+        "stage": "RUNNING",
+        "hardware_current": "cpu-upgrade",
+        "hardware_requested": "cpu-upgrade",
+        "storage_current": null,
+        "sleep_time": 172800,
+        "volumes": null
+      },
+      "secret_names": [
+        "HF_TOKEN"
+      ],
+      "files_count": 7,
+      "files": [
+        ".gitattributes",
+        "Dockerfile",
+        "README.md",
+        "entrypoint.sh",
+        "fetch_models.py",
+        "manager.py",
+        "scaler.py"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-s2",
+      "repo_type": "space",
+      "private": false,
+      "sha": "5c0276f7ee905095caef66afe09162e5cbb4b48f",
+      "created_at": "2026-11-05T21:39:12+00:00",
+      "last_modified": "2026-11-07T04:17:43+00:00",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "sdk": "docker",
+      "likes": 0,
+      "runtime": {
+        "stage": "RUNNING",
+        "hardware_current": "cpu-upgrade",
+        "hardware_requested": "cpu-upgrade",
+        "storage_current": null,
+        "sleep_time": 172800,
+        "volumes": null
+      },
+      "secret_names": [
+        "HF_TOKEN"
+      ],
+      "files_count": 7,
+      "files": [
+        ".gitattributes",
+        "Dockerfile",
+        "README.md",
+        "entrypoint.sh",
+        "fetch_models.py",
+        "manager.py",
+        "scaler.py"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-s3",
+      "repo_type": "space",
+      "private": false,
+      "sha": "c8042b2824a091f0034c9b56e92a3dbc837f1cbe",
+      "created_at": "2026-11-05T21:39:16+00:00",
+      "last_modified": "2026-11-07T04:17:43+00:00",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "sdk": "docker",
+      "likes": 0,
+      "runtime": {
+        "stage": "RUNNING",
+        "hardware_current": "cpu-upgrade",
+        "hardware_requested": "cpu-upgrade",
+        "storage_current": null,
+        "sleep_time": 172800,
+        "volumes": null
+      },
+      "secret_names": [
+        "HF_TOKEN"
+      ],
+      "files_count": 7,
+      "files": [
+        ".gitattributes",
+        "Dockerfile",
+        "README.md",
+        "entrypoint.sh",
+        "fetch_models.py",
+        "manager.py",
+        "scaler.py"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-web",
+      "repo_type": "space",
+      "private": true,
+      "sha": "9387835bc496119a1b69b919d672e16cd19784f8",
+      "created_at": "2026-11-05T21:39:19+00:00",
+      "last_modified": "2026-10-30T08:30:38+00:00",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "sdk": "docker",
+      "likes": 0,
+      "runtime": {
+        "stage": "RUNNING",
+        "hardware_current": "cpu-upgrade",
+        "hardware_requested": "cpu-upgrade",
+        "storage_current": null,
+        "sleep_time": 172800,
+        "volumes": null
+      },
+      "secret_names": [
+        "WEB_ACCOUNTS",
+        "WEB_PASS"
+      ],
+      "files_count": 12,
+      "files": [
+        ".gitattributes",
+        "Dockerfile",
+        "README.md",
+        "package.json",
+        "src/bloques.js",
+        "src/browser.js",
+        "src/consenso.js",
+        "src/cuentas.js",
+        "src/modos.js",
+        "src/motor.js",
+        "src/server.js",
+        "src/sites.js"
+      ]
+    }
+  ],
+  "datasets": [
+    {
+      "id": "COMAND-CENTER-1/router-assets-cache",
+      "repo_type": "dataset",
+      "private": false,
+      "sha": "5615a146dd8dd83253a60be24c8f34ada49c2583",
+      "created_at": "2026-11-07T07:16:06+00:00",
+      "last_modified": "2026-11-07T07:22:38+00:00",
+      "tags": [
+        "region:us"
+      ],
+      "likes": 0,
+      "downloads": 15,
+      "used_storage": 90868376,
+      "files_count": 12,
+      "files": [
+        ".gitattributes",
+        "1_Pooling/config.json",
+        "config.json",
+        "config_sentence_transformers.json",
+        "data_config.json",
+        "model.safetensors",
+        "modules.json",
+        "sentence_bert_config.json",
+        "special_tokens_map.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "vocab.txt"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/router-universal-router-inteligente-auditoria",
+      "repo_type": "dataset",
+      "private": true,
+      "sha": "661746721a08fda94ec3fdf705cbb6b3dbc729ab",
+      "created_at": "2026-11-04T11:09:52+00:00",
+      "last_modified": "2026-11-07T20:31:10+00:00",
+      "tags": [
+        "region:us"
+      ],
+      "likes": 0,
+      "downloads": 221,
+      "used_storage": 8862325860,
+      "files_count": 49,
+      "files": [
+        ".gitattributes",
+        "20261104-kernel01/audit/gaps/GAPS-PENDIENTES-CIERRE-20261107.md",
+        "20261104-kernel01/audit/gaps/TRAZABILIDAD-GAPS-CIERRE-20261107.md",
+        "20261104-kernel01/audit/j6_rewrite/INFORME-AUDIT-j6_rewrite.md",
+        "20261104-kernel01/audit/j6_rewrite/ops_j6_rewrite.py",
+        "20261104-kernel01/audit/j6_rewrite/result.json_ultimo.json",
+        "20261104-kernel01/audit/jobs-pendientes/00-INDICE-JOBS-PENDIENTES.md",
+        "20261104-kernel01/audit/jobs-pendientes/COMMON-common.py",
+        "20261104-kernel01/audit/jobs-pendientes/JOB-bridge.md",
+        "20261104-kernel01/audit/jobs-pendientes/JOB-j10_final_audit.md",
+        "20261104-kernel01/audit/jobs-pendientes/JOB-j6_rewrite.md",
+        "20261104-kernel01/audit/jobs-pendientes/JOB-j6b_swap.md",
+        "20261104-kernel01/audit/jobs-pendientes/JOB-j9_remirror.md",
+        "20261104-kernel01/audit/jobs-pendientes/MODULO-git_push_safe.py",
+        "20261104-kernel01/audit/jobs-pendientes/WIRING_CHECK-wiring_check.py",
+        "20261104-kernel01/backend_smoke/result.json",
+        "20261104-kernel01/bridge/bridge_report.json",
+        "20261104-kernel01/bridge/result.json",
+        "20261104-kernel01/j0_preflight/result.json",
+        "20261104-kernel01/j11_patterns/patterns_report.json",
+        "20261104-kernel01/j11_patterns/result.json",
+        "20261104-kernel01/j1_inventory/inventory.csv",
+        "20261104-kernel01/j1_inventory/result.json",
+        "20261104-kernel01/j2_graph/baseline_unresolved.json",
+        "20261104-kernel01/j2_graph/graph.json",
+        "20261104-kernel01/j2_graph/result.json",
+        "20261104-kernel01/j3_history/result.json",
+        "20261104-kernel01/j3_history/touched.txt",
+        "20261104-kernel01/j3_history/wiring_changelog.md",
+        "20261104-kernel01/j3_history/wiring_history.jsonl",
+        "20261104-kernel01/j4_plan/plan.json",
+        "20261104-kernel01/j4_plan/result.json",
+        "20261104-kernel01/j4_plan/result_FAIL_2020h21.json",
+        "20261104-kernel01/j5_apply/result.json",
+        "20261104-kernel01/j6_rewrite/result.json",
+        "20261104-kernel01/j6b_swap/result.json",
+        "20261104-kernel01/j7_mirror/result.json",
+        "20261104-kernel01/j8_audit/audit.json",
+        "20261104-kernel01/j8_audit/result.json",
+        "20261104-kernel01/j9_remirror/result.json",
+        "20261104-kernel01/research/context.md",
+        "20261104-kernel01/research/guia_code.md",
+        "20261104-kernel01/research/matriz_fuentes.md",
+        "20261104-kernel01/research/otros/context.md",
+        "20261104-kernel01/research/otros/guia_code.md",
+        "backups/20261104-kernel01.bundle",
+        "input/adapter.py",
+        "input/pack.json",
+        "root-audit/ac7881a5e60ab3df451853150e211b753982b45e/root_structure.json"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-datasets",
+      "repo_type": "dataset",
+      "private": false,
+      "sha": "2018af0a1b937735d9793dda3758f8a59c82875b",
+      "created_at": "2026-11-07T02:20:55+00:00",
+      "last_modified": "2026-11-07T05:26:01+00:00",
+      "tags": [
+        "size_categories:10K<n<100K",
+        "format:parquet",
+        "modality:text",
+        "library:datasets",
+        "library:dask",
+        "library:polars",
+        "library:mlcroissant",
+        "region:us"
+      ],
+      "likes": 0,
+      "downloads": 58,
+      "used_storage": 2917594680,
+      "files_count": 11,
+      "files": [
+        ".gitattributes",
+        "agente/Kwai-Klear__SWE-smith-mini_swe_agent_plus-trajectories-66k/data/train-00000-of-00047.parquet",
+        "agente/Kwai-Klear__SWE-smith-mini_swe_agent_plus-trajectories-66k/data/train-00002-of-00047.parquet",
+        "agente/nebius__SWE-agent-trajectories/data/train-00006-of-00012.parquet",
+        "agente/nebius__SWE-agent-trajectories/data/train-00010-of-00012.parquet",
+        "herramienta/NousResearch__hermes-function-calling-v1/func-calling-singleturn.json",
+        "herramienta/NousResearch__hermes-function-calling-v1/glaive-function-calling-5k.json",
+        "herramienta/glaiveai__glaive-function-calling-v2/glaive-function-calling-v2.json",
+        "programacion/iamtarun__python_code_instructions_18k_alpaca/data/train-00000-of-00001-8b6e212f3e1ece96.parquet",
+        "programacion/nickrosh__Evol-Instruct-Code-80k-v1/EvolInstruct-Code-80k.json",
+        "registry.json"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-hf-gguf",
+      "repo_type": "dataset",
+      "private": true,
+      "sha": "f17c1e9950ad36eab9b93c1039263d968836c8cb",
+      "created_at": "2026-10-30T02:23:06+00:00",
+      "last_modified": "2026-11-07T05:24:52+00:00",
+      "tags": [
+        "region:us"
+      ],
+      "likes": 0,
+      "downloads": 192,
+      "used_storage": 9143956259,
+      "files_count": 56,
+      "files": [
+        ".gitattributes",
+        "LiquidAI__LFM2.5-350M-GGUF__LFM2.5-350M-Q4_K_M.gguf",
+        "Qwen__Qwen2.5-Coder-0.5B-Instruct-GGUF__qwen2.5-coder-0.5b-instruct-q5_k_m.gguf",
+        "apk/swecode-agente.apk",
+        "job-evidencia/bench-flags-cpu-upgrade.log",
+        "job-evidencia/descarga-Qwen2.5-Coder-0.5B-Q5_K_M.log",
+        "job-evidencia/descarga-Qwen3.5-0.8B-IQ4_XS.log",
+        "job-evidencia/descargar-datasets-top2.log",
+        "job-evidencia/instalar-adaptadores-acopladores.log",
+        "job-evidencia/instalar-adaptadores-v2.log",
+        "job-evidencia/reconcilia-manifest-post-IQ4XS.log",
+        "job-evidencia/reconcilia-manifest-tras-borrar-1p5b.log",
+        "job-evidencia/test3-Qwen2.5-Coder-0.5B-Q5_K_M.log",
+        "job-evidencia/test3v3-Qwen2.5-Coder-0.5B-Q5_K_M.log",
+        "job-evidencia/test3v3-Qwen2.5-Coder-1.5B-Q4_K_M.log",
+        "job2_verify.json",
+        "manifest.json",
+        "openclaw-prep/Dockerfile",
+        "openclaw-prep/README.md",
+        "openclaw-prep/SECRETS_CHECKLIST.md",
+        "openclaw-prep/setup-hf-config.mjs",
+        "openclaw-prep/setup.sh",
+        "results/result_Qwen2.5-Coder-1.5B.json",
+        "results/result_Qwen2.5-Coder-1.5B_server.json",
+        "results/result_Qwen3-0.6B.json",
+        "results/result_Qwen3-0.6B_server.json",
+        "results/result_Qwen3.5-0.8B.json",
+        "results/result_Qwen3.5-0.8B_server.json",
+        "results/result_bench100_Qwen2.5-Coder-0.5B-Q5_K_M.json",
+        "results/result_bench100_Qwen2.5-Coder-0.5B-Q5_K_M_prompt-corto.json",
+        "results/result_bench100_Qwen2.5-Coder-1.5B-Q4_K_M.json",
+        "results/result_bench100_Qwen2.5-Coder-1.5B-Q4_K_M_prompt-corto.json",
+        "results/result_comparativa_qwen_code.json",
+        "results/result_descarga-Qwen2.5-Coder-0.5B-Q5_K_M.json",
+        "results/result_descarga-Qwen3.5-0.8B-IQ4_XS.json",
+        "results/result_descarga_Qwen2.5-Coder-0.5B-Q5.json",
+        "results/result_flags_lfm2.5-350m.json",
+        "results/result_flags_qwen2.5-coder-0.5b.json",
+        "results/result_flags_qwen3.5-0.8b.json",
+        "results/result_flags_todos.json",
+        "results/result_reconcilia-manifest-post-IQ4XS.json",
+        "results/result_reconcilia-manifest-tras-borrar-1p5b.json",
+        "results/result_test3-Qwen2.5-Coder-0.5B-Q5_K_M.json",
+        "results/result_test3v3-Qwen2.5-Coder-0.5B-Q5_K_M.json",
+        "results/result_test3v3-Qwen2.5-Coder-1.5B-Q4_K_M.json",
+        "results/result_volume.json",
+        "scripts/job2.sh",
+        "scripts/job_bench_flags.sh",
+        "scripts/job_descargar_datasets.sh",
+        "scripts/job_download_model.sh",
+        "scripts/job_download_model_v2.sh",
+        "scripts/job_instalar_adaptadores.sh",
+        "scripts/job_one_model.sh",
+        "scripts/job_test_3_segmentos.sh",
+        "scripts/job_test_3_segmentos_v3.sh",
+        "unsloth__Qwen3.5-0.8B-GGUF__Qwen3.5-0.8B-IQ4_XS.gguf"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-loras",
+      "repo_type": "dataset",
+      "private": false,
+      "sha": "0a64f17b29e73af5b2e07faa1b3bfe3c8229d615",
+      "created_at": "2026-10-30T10:58:25+00:00",
+      "last_modified": "2026-11-07T05:24:51+00:00",
+      "tags": [
+        "size_categories:n<1K",
+        "format:json",
+        "modality:text",
+        "library:datasets",
+        "library:pandas",
+        "library:polars",
+        "library:mlcroissant",
+        "region:us"
+      ],
+      "likes": 0,
+      "downloads": 88,
+      "used_storage": 2821592295,
+      "files_count": 14,
+      "files": [
+        ".gitattributes",
+        "10_qwen3.5-0.8b-agentic-reasoning.gguf",
+        "11_lfm2.5-350m-agente-frontend.gguf",
+        "12_lfm2.5-350m-tool-shellai.gguf",
+        "13_lfm2.5-350m-coder.gguf",
+        "1_shuyi-coder-lora-f16.gguf",
+        "20_qwen3.5-0.8b-tool-toolselect-judge.gguf",
+        "21_qwen2.5-coder-0.5b-agente-merge-resolver.gguf",
+        "22_qwen2.5-coder-0.5b-prog-cg-oss.gguf",
+        "2_aether-coder-lora-f16.gguf",
+        "3_bashcraft-lora-f16.gguf",
+        "5_browseragent-lora-f16.gguf",
+        "7_acrouter-lora-f16.gguf",
+        "registry.json"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/yaiwes-hf-memoria",
+      "repo_type": "dataset",
+      "private": true,
+      "sha": "bdb419f5d6e717097db3af7c721645bcb619de63",
+      "created_at": "2026-09-26T20:00:45+00:00",
+      "last_modified": "2026-10-03T08:26:46+00:00",
+      "tags": [
+        "region:us"
+      ],
+      "likes": 0,
+      "downloads": 3,
+      "used_storage": 0,
+      "files_count": 3,
+      "files": [
+        ".gitattributes",
+        "README.md",
+        "snapshots/memoria.sqlite"
+      ]
+    }
+  ],
+  "models": []
+}
