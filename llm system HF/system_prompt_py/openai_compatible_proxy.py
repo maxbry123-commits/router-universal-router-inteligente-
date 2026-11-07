@@ -1,116 +1,113 @@
 # openai_compatible_proxy.py
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
-import httpx
-import os
-import time
+from fastapi.responses import JSONResponse, StreamingResponse
+import httpx, os, time, json
 from key_pool import KeyPool
 from quota_budget import QuotaBudget
 from fallback_middleware import execute_with_fallback
-from key_health_scorer import KeyHealthScorer
-from event_emitter import EMITTER
+from model_format_adapter import ModelFormatAdapter
+from keep_alive import SpaceKeepAlive
 
-app = FastAPI(title="OpenAI-Compatible LLM Proxy (10 Keys)")
+app = FastAPI(title="Advanced LLM Proxy")
 
-# 1. Cargar keys desde variables de entorno (separadas por comas)
-GROQ_KEYS = os.getenv("GROQ_KEYS", "").split(",")
-NVIDIA_KEYS = os.getenv("NVIDIA_KEYS", "").split(",")
+GROQ_KEYS = [k.strip() for k in os.getenv("GROQ_KEYS", "").split(",") if k.strip()]
+NVIDIA_KEYS = [k.strip() for k in os.getenv("NVIDIA_KEYS", "").split(",") if k.strip()]
 
-# Limpiar strings vacíos si los hay
-GROQ_KEYS = [k.strip() for k in GROQ_KEYS if k.strip()]
-NVIDIA_KEYS = [k.strip() for k in NVIDIA_KEYS if k.strip()]
-
-print(f"✅ Cargadas {len(GROQ_KEYS)} keys de Groq y {len(NVIDIA_KEYS)} keys de NVIDIA.")
-
-# 2. Inicializar Pools y Budgets
 PROVIDERS = {
     "groq": {
         "base_url": "https://api.groq.com/openai/v1",
-        "model": "openai/gpt-oss-120b",
         "pool": KeyPool("groq", GROQ_KEYS),
-        "budget": QuotaBudget(rpm=30, tpm=8000)
+        "budget": QuotaBudget(rpm=30, tpm=8000),
+        "default_model": "openai/gpt-oss-120b"
     },
     "nvidia": {
         "base_url": "https://integrate.api.nvidia.com/v1",
-        "model": "meta/llama-3.3-70b-instruct",
         "pool": KeyPool("nvidia", NVIDIA_KEYS),
-        "budget": QuotaBudget(rpm=40, tpm=100000)
+        "budget": QuotaBudget(rpm=40, tpm=100000),
+        "default_model": "meta/llama-3.3-70b-instruct"
     }
 }
 
-# 3. Inicializar el Health Scorer
-def simple_health_check(key: str) -> bool:
-    # Petición mínima para verificar si la key es válida
-    try:
-        headers = {"Authorization": f"Bearer {key}"}
-        # Usamos un modelo barato o solo verificamos la respuesta HTTP
-        r = httpx.get("https://api.groq.com/openai/v1/models", headers=headers, timeout=5)
-        return r.status_code == 200
-    except:
-        return False
+MODEL_SPACE_URL = os.getenv("LOCAL_MODEL_SPACE_URL")
+if MODEL_SPACE_URL:
+    keep_alive = SpaceKeepAlive(MODEL_SPACE_URL, interval_s=300)
+    keep_alive.start()
 
-scorer = KeyHealthScorer(health_check_fn=simple_health_check)
-scorer.register_keys(GROQ_KEYS + NVIDIA_KEYS)
+async def stream_with_heartbeat(upstream_client, url, headers, payload, heartbeat_s=15.0):
+    async with upstream_client.stream("POST", url, json=payload, headers=headers) as response:
+        response.raise_for_status()
+        last_yield = time.time()
+        async for chunk in response.aiter_text():
+            if chunk:
+                yield chunk
+                last_yield = time.time()
+            if time.time() - last_yield > heartbeat_s:
+                yield 'data: {"choices":[{"delta":{"content":""}}]}\n\n'
+                last_yield = time.time()
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request):
     body = await request.json()
-    prompt = body["messages"][-1]["content"]
     model = body.get("model", "groq")
+    is_stream = body.get("stream", False)
+    session_id = request.headers.get("X-Session-Id", "default")
 
-    providers_order = ["groq", "nvidia"] if model == "groq" else ["nvidia", "groq"]
+    providers_order = ["groq", "nvidia"] if "groq" in model.lower() else ["nvidia", "groq"]
 
-    def call_provider(provider: str, prompt: str) -> str:
+    async def call_provider(provider: str, prompt: str):
         cfg = PROVIDERS[provider]
+        key = cfg["pool"].get_key(session_id=session_id)
         
-        # Obtener key del pool
-        key = cfg["pool"].get_key()
         if not key:
-            raise RuntimeError(f"Todas las keys de {provider} están en cooldown.")
-        
-        # Verificar que el health scorer la considere sana
-        if key not in scorer.get_healthy_keys():
-            cfg["pool"].mark_rate_limited(key)
-            raise RuntimeError(f"Key de {provider} marcada como no saludable.")
-
-        # Verificar presupuesto local
+            raise RuntimeError(f"Sin keys disponibles en {provider}")
         if not cfg["budget"].can_use(key, est_tokens=2000):
-            raise RuntimeError(f"Quota local excedida en {provider}")
+            raise RuntimeError(f"Quota excedida en {provider}")
 
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         payload = {
-            "model": cfg["model"],
-            "messages": [{"role": "user", "content": prompt}],
+            "model": body.get("model", cfg["default_model"]),
+            "messages": body["messages"],
             "temperature": body.get("temperature", 0.1),
-            "max_tokens": body.get("max_tokens", 4096)
+            "max_tokens": body.get("max_tokens", 4096),
+            "stream": is_stream
         }
 
-        with httpx.Client(timeout=120) as client:
-            r = client.post(f"{cfg['base_url']}/chat/completions", json=payload, headers=headers)
-
-            if r.status_code == 429:
-                cfg["pool"].mark_rate_limited(key)
-                scorer.mark_failure(key, "429")
-                retry_after = r.headers.get("retry-after", "60")
-                EMITTER.emit("rate_limit", {"provider": provider, "wait": retry_after})
-                raise RuntimeError(f"429 en {provider}, retry-after={retry_after}s")
+        if is_stream:
+            return stream_with_heartbeat(
+                httpx.AsyncClient(timeout=120),
+                f"{cfg['base_url']}/chat/completions",
+                headers, payload
+            )
+        else:
+            async with httpx.AsyncClient(timeout=120) as client:
+                r = await client.post(f"{cfg['base_url']}/chat/completions", json=payload, headers=headers)
+                if r.status_code == 429:
+                    cfg["pool"].mark_rate_limited(key)
+                    raise RuntimeError("429 Rate Limit")
+                r.raise_for_status()
+                cfg["budget"].record(key, est_tokens=2000)
                 
-            if r.status_code in (401, 403):
-                scorer.mark_failure(key, str(r.status_code))
-                raise RuntimeError(f"Key inválida en {provider}: {r.status_code}")
+                result = r.json()
+                content = result["choices"][0]["message"].get("content", "")
+                parsed_tools = ModelFormatAdapter.parse(payload["model"], content)
+                if parsed_tools:
+                    result["choices"][0]["message"]["tool_calls"] = parsed_tools
+                return result
 
-            r.raise_for_status()
-            cfg["budget"].record(key, est_tokens=2000)
-            return r.json()["choices"][0]["message"]["content"]
+    if is_stream:
+        for provider in providers_order:
+            try:
+                gen = await call_provider(provider, body["messages"][-1]["content"])
+                return StreamingResponse(gen, media_type="text/event-stream")
+            except Exception:
+                continue
+        raise HTTPException(502, "Todos los proveedores fallaron en streaming")
+    else:
+        try:
+            return await execute_with_fallback(providers_order, call_provider, body["messages"][-1]["content"])
+        except Exception as e:
+            raise HTTPException(502, detail=str(e))
 
-    try:
-        content = execute_with_fallback(providers_order, call_provider, prompt)
-    except Exception as e:
-        raise HTTPException(502, detail=str(e))
-
-    return JSONResponse({
-        "id": f"chatcmpl-{int(time.time())}",
-        "object": "chat.completion",
-        "model": model,
-        "choices": [{"index": 0, "message": {"role": "assistant", "content": content}}]
-    })
+@app.get("/health")
+async def health():
+    return {"status": "ok", "providers": list(PROVIDERS.keys())}
