@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 367067,
+  "bundle_sha256": "177834f0e169a66bc53d6dce3a952c8029fc0c82a12cb3912fac69b8cc082b2a",
+  "extracted_tree": {
+    "bytes": 1003434,
+    "files": 40,
+    "sha256": "0a1e6b2cb8aae686e82a34a88031d9ba8aac7d107a8a690cc25e19bdcd6f4e87"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 367067,
+      "name": "one-skill-to-rule-them-all.bundle.zip.part-0001",
+      "sha256": "177834f0e169a66bc53d6dce3a952c8029fc0c82a12cb3912fac69b8cc082b2a"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "one-skill-to-rule-them-all",
+  "source_bytes": 1003434,
+  "source_commit": "046b8f2aa6bdae369a93ae563889b7cc449d17ad",
+  "source_files": 40,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/rebelytics/one-skill-to-rule-them-all",
+  "source_tree": {
+    "bytes": 1003434,
+    "files": 40,
+    "sha256": "0a1e6b2cb8aae686e82a34a88031d9ba8aac7d107a8a690cc25e19bdcd6f4e87"
+  }
+}
