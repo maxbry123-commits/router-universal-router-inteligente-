@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 81283,
+  "bundle_sha256": "014ca9e710843729697fbc6accbbee5f42884fed48d30fc9c382f1c2ee15f0b0",
+  "extracted_tree": {
+    "bytes": 178081,
+    "files": 41,
+    "sha256": "f9297470300c9d6eb914b8c2347ed92ea8eb4090b390c6deb8b82544b145a156"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 81283,
+      "name": "24-strategy-skills-for-claude.bundle.zip.part-0001",
+      "sha256": "014ca9e710843729697fbc6accbbee5f42884fed48d30fc9c382f1c2ee15f0b0"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "24-strategy-skills-for-claude",
+  "source_bytes": 178081,
+  "source_commit": "f6825ba48543d52ce6a103af4109849e94d19a65",
+  "source_files": 41,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/Natan-Mohart/24-strategy-skills-for-claude",
+  "source_tree": {
+    "bytes": 178081,
+    "files": 41,
+    "sha256": "f9297470300c9d6eb914b8c2347ed92ea8eb4090b390c6deb8b82544b145a156"
+  }
+}
