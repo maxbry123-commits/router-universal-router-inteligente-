@@ -1,0 +1,43 @@
+{
+  "bundle_bytes": 37577879,
+  "bundle_sha256": "1c626c19ba86b153c8389aaac5e13e770fbdecd0b37754f09615a62e94e0529f",
+  "extracted_tree": {
+    "bytes": 75563408,
+    "files": 2790,
+    "sha256": "431ce17fe2667af18d5b1fb2eae49fdbdab20e0f98e9c805c0d17c7c40d495a9"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "headroom.bundle.zip.part-0001",
+      "sha256": "55763780431ab7f18b549f3acc5ed5a2cd312d1566ee75b39582b019dad2c3b0"
+    },
+    {
+      "bytes": 12582912,
+      "name": "headroom.bundle.zip.part-0002",
+      "sha256": "0148fb959fc363b2b63470ca719893df68ad41d9ca3e2c26795baf8275544c18"
+    },
+    {
+      "bytes": 12412055,
+      "name": "headroom.bundle.zip.part-0003",
+      "sha256": "2854743c980753ac52281883285882c3825a5f7e7e34863cecbde31c17581b68"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "headroom",
+  "source_bytes": 75563408,
+  "source_commit": "12864fc8f01a1ca6c58440eccef0dabdd3e595b8",
+  "source_files": 2790,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/headroomlabs-ai/headroom",
+  "source_tree": {
+    "bytes": 75563408,
+    "files": 2790,
+    "sha256": "431ce17fe2667af18d5b1fb2eae49fdbdab20e0f98e9c805c0d17c7c40d495a9"
+  }
+}
