@@ -243,7 +243,7 @@ handoff_reglas:
   - {id: N1_j7_baseline, estado: CERRADO, evidencia: "j7_mirror PASS: 6170 ficheros / 110,7 MB, Space RUNNING, nada subido"}
   - {id: N2_j8_audit_pre, estado: CERRADO, evidencia: "j8_audit PHASE=pre PASS: 8 jobs PASS + wiring_check_on_target"}
   - {id: N3_j6_rewrite, estado: CERRADO_CON_FLAG, evidencia: "j6_rewrite PASS: bundle 8,07 GB verificado, purga de 37 directorios verificada, wiring_check OK, arbol limpio publicado en main-clean. FLAG: el purgado del HISTORIAL queda pendiente (hay commits cuyo pack supera los 2 GiB y GitHub los rechaza con HTTP 500)"}
-  - {id: N4_swap_main, estado: PENDIENTE, evidencia: "j6b_swap MODE=swap SWAP_SOURCE=main-clean con lease exacto y etiqueta re-apuntada"}
+  - {id: N4_swap_main, estado: CERRADO, evidencia: "j6b_swap PASS: main == main-clean con lease exacto; etiqueta pre-reorg re-apuntada al main real y tres anclas de rollback (pre-reorg, safety/pre-reorg-original, respaldo-main-pre-swap)"}
   - {id: N5_bridge, estado: CERRADO, evidencia: "bridge PASS: 38 conexiones, 9 endpoints, 12/12 healthchecks con rc=0, 0 drift, sonda MCP real con 14 tools, /health 200, bundle y etiqueta verificados (connections/bridge_report.json)"}
   - {id: N6_remirror, estado: EN_CURSO, evidencia: "j9_remirror en marcha: push por git con allowlist al Space + verificacion health.commit == HEAD"}
   - {id: N7_auditoria_final, estado: PENDIENTE, evidencia: "j8_audit PHASE=post + j10_final_audit"}
