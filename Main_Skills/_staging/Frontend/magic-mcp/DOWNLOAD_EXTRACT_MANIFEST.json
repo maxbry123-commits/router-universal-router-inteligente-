@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 28158,
+  "bundle_sha256": "c8409b4a260c0f55655b93294754ff24d1413cd83ccf5fc3ad0fe99405145216",
+  "extracted_tree": {
+    "bytes": 56571,
+    "files": 21,
+    "sha256": "c609aca287ec401685a58fc7de127971e0dbd6e45d3efae262cdd29af36698fb"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 28158,
+      "name": "magic-mcp.bundle.zip.part-0001",
+      "sha256": "c8409b4a260c0f55655b93294754ff24d1413cd83ccf5fc3ad0fe99405145216"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "magic-mcp",
+  "source_bytes": 56571,
+  "source_commit": "6b5299e8a83ceffa73d4fc4e148905bb3eeeeb55",
+  "source_files": 21,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/21st-dev/magic-mcp",
+  "source_tree": {
+    "bytes": 56571,
+    "files": 21,
+    "sha256": "c609aca287ec401685a58fc7de127971e0dbd6e45d3efae262cdd29af36698fb"
+  }
+}
