@@ -1,0 +1,48 @@
+{
+  "bundle_bytes": 42785368,
+  "bundle_sha256": "22e55f98612ce12f18e464cc5ac21d8ffd3f57f42554625ff3273d1a00dd36de",
+  "extracted_tree": {
+    "bytes": 89175495,
+    "files": 2805,
+    "sha256": "aade83dc38cfc26adb9ce749994a9b9a4cce942ac7f9fbe63565ce7d801bc470"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "SimpleTES.bundle.zip.part-0001",
+      "sha256": "82421b5c7952692262cdcf7be675ea79d936a60df1592ec3c5ac392c663198b7"
+    },
+    {
+      "bytes": 12582912,
+      "name": "SimpleTES.bundle.zip.part-0002",
+      "sha256": "d0f5aa2c63b28feabb007dd3dd6caca729fc5b7e5df5bbef245c852e91e7a4ab"
+    },
+    {
+      "bytes": 12582912,
+      "name": "SimpleTES.bundle.zip.part-0003",
+      "sha256": "726a9eaae65a2808e1a2e73ca517144ea92a8408ebc77137eec7761d0fe6a605"
+    },
+    {
+      "bytes": 5036632,
+      "name": "SimpleTES.bundle.zip.part-0004",
+      "sha256": "f1f217f43780171e6bf499961287136454660fa3557b0f42c28ff28051ef4c07"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "SimpleTES",
+  "source_bytes": 89175495,
+  "source_commit": "47d3413da1d85dc24341219d47452d2601e56a57",
+  "source_files": 2805,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/wq-will/SimpleTES",
+  "source_tree": {
+    "bytes": 89175495,
+    "files": 2805,
+    "sha256": "aade83dc38cfc26adb9ce749994a9b9a4cce942ac7f9fbe63565ce7d801bc470"
+  }
+}
