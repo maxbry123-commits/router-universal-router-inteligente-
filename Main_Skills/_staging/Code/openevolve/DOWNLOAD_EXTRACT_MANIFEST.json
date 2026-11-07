@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 3702374,
+  "bundle_sha256": "c9a23751d59b1e7930afb822a912f7fa6a25f1a5e122331f80a522ee963cacf3",
+  "extracted_tree": {
+    "bytes": 8525673,
+    "files": 595,
+    "sha256": "0c96cf2b454d1ca46d769cd94cf30477edc99b62cdf70fd049dcbf6b7ea78b65"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 3702374,
+      "name": "openevolve.bundle.zip.part-0001",
+      "sha256": "c9a23751d59b1e7930afb822a912f7fa6a25f1a5e122331f80a522ee963cacf3"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "openevolve",
+  "source_bytes": 8525673,
+  "source_commit": "0fa8c4de9faff5d11e2f819557c6b14e0add3a23",
+  "source_files": 595,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/codelion/openevolve",
+  "source_tree": {
+    "bytes": 8525673,
+    "files": 595,
+    "sha256": "0c96cf2b454d1ca46d769cd94cf30477edc99b62cdf70fd049dcbf6b7ea78b65"
+  }
+}
