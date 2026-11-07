@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 230797,
+  "bundle_sha256": "37b2d821c29320b994ace0655281c5c8ecc835287f83d70a60d55ac82a661701",
+  "extracted_tree": {
+    "bytes": 951252,
+    "files": 75,
+    "sha256": "226ea04db67589b96103e31c6368731daf8768246c9533c7007652a7c447c92c"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 230797,
+      "name": "local-ultra-review.bundle.zip.part-0001",
+      "sha256": "37b2d821c29320b994ace0655281c5c8ecc835287f83d70a60d55ac82a661701"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "local-ultra-review",
+  "source_bytes": 951252,
+  "source_commit": "ea4881fb2bd5f8d90f6c421bd9267096c5a8b0dd",
+  "source_files": 75,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/cogine-ai/local-ultra-review",
+  "source_tree": {
+    "bytes": 951252,
+    "files": 75,
+    "sha256": "226ea04db67589b96103e31c6368731daf8768246c9533c7007652a7c447c92c"
+  }
+}
