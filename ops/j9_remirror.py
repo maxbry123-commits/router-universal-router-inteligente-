@@ -27,6 +27,15 @@ def main():
     d=reuse or clone(os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"mirror9"))
     sha=sh(["git","ls-remote","origin","refs/heads/main"],cwd=d,check=False).stdout.split()
     sha=sha[0] if sha else head(d)
+    # D-149: el sha de referencia (D-147) queda CONGELADO al inicio del job, pero main SIGUE
+    # AVANZANDO mientras el job corre (la tuberia de bundles publica en main cada pocos minutos) y el
+    # Space hace auto-pull de main en CADA build: al verificar, el Space puede estar sirviendo un commit
+    # de main MAS NUEVO que ese sha congelado, y el gate fallaba aunque el objetivo del job ("el Space
+    # sirve main") se cumpliera. Fix: se registra TODOS los HEAD de main observados (el inicial + los
+    # que se ven en cada vuelta de la espera) y el gate acepta que el Space sirva cualquiera de ellos.
+    # Un Space que siga sirviendo un commit viejo (p.ej. 4722f1dffc, publicado antes del job) NO se
+    # acepta: el gate sigue detectando que el Space no se ha actualizado.
+    mains={sha}
     # el gate de cableado se ejecuta en modo LECTURA sobre el arbol disponible
     r=wc(d);check("wiring_check_before_remirror",r["ok"],[c["name"] for c in r["checks"] if not c["ok"]])
     if not all(c["ok"] for c in CHECKS):finish(commit=sha)
@@ -52,13 +61,17 @@ def main():
     while time.time()-t0<wait:
         try:stage=str(api.get_space_runtime(sp).stage)
         except Exception as _e:stage=f"ERR {type(_e).__name__}"
+        # D-149: cada vuelta registra el HEAD actual de main (main puede avanzar durante la espera).
+        _m=sh(["git","ls-remote","origin","refs/heads/main"],cwd=d,check=False).stdout.split()
+        if _m:mains.add(_m[0])
         if "RUNNING" in stage and hu:
             try:
                 seen=json.loads(urllib.request.urlopen(hu,timeout=15).read()).get("commit")
-                if seen and sha.startswith(str(seen)[:12]):break
+                if seen and any(str(m).startswith(str(seen)[:12]) for m in mains):break
             except Exception:pass
         time.sleep(20)
     check("space_RUNNING","RUNNING" in str(stage),stage)
-    check("health_commit_equals_new_HEAD",bool(seen) and sha.startswith(str(seen)[:12]),f"seen={seen} main={sha[:12]}")
+    check("health_commit_equals_new_HEAD",bool(seen) and any(str(m).startswith(str(seen)[:12]) for m in mains),
+          f"seen={seen} main={sha[:12]} heads_vistos={len(mains)}")
     finish({"space":sp,"head":sha,"remirror":True},commit=sha)
 if __name__=="__main__":run(main)
