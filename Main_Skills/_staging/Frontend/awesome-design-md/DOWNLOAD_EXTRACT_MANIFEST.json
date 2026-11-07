@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 779519,
+  "bundle_sha256": "007b0ee59356a13bcafe30ec218a9bc14e54b740c8243bd1e9654bed7abe4040",
+  "extracted_tree": {
+    "bytes": 2504099,
+    "files": 173,
+    "sha256": "91a04d5230855dae8c877528e03f469b66cf69887b6343ece84e205ad3e59eb7"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 779519,
+      "name": "awesome-design-md.bundle.zip.part-0001",
+      "sha256": "007b0ee59356a13bcafe30ec218a9bc14e54b740c8243bd1e9654bed7abe4040"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "awesome-design-md",
+  "source_bytes": 2504099,
+  "source_commit": "fcc70284932276d085f01ef9f83edde90b1258cb",
+  "source_files": 173,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/VoltAgent/awesome-design-md",
+  "source_tree": {
+    "bytes": 2504099,
+    "files": 173,
+    "sha256": "91a04d5230855dae8c877528e03f469b66cf69887b6343ece84e205ad3e59eb7"
+  }
+}
