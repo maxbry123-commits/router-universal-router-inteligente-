@@ -3,6 +3,7 @@ import json
 from chat_a_architect import decompose_task
 from llm_provider_adapter import generate_code
 from semantic_checkpoint import SemanticCheckpoint
+from context_rehydrator import ContextRehydrator
 from event_emitter import EMITTER
 from output_formatter import EvidencePacket
 
@@ -10,14 +11,17 @@ class ChatABOrchestrator:
     """
     Orquesta el flujo Chat A (Arquitecto) -> Chat B (Programador).
     Aplica el límite estricto de 200 LOC.
+    Rehidrata contexto en cada bloque para recuperación real.
     """
     def __init__(self, plan_id: str, environment: dict):
         self.checkpoint = SemanticCheckpoint(plan_id, environment)
+        self.rehydrator = ContextRehydrator(self.checkpoint)
         self.evidence = EvidencePacket(task_id=plan_id, chat_b_id="orchestrator")
 
-    def run(self, task_description: str, all_blocks: list):
+    def run(self, task_description: str, all_blocks: list = None):
         """
         Ejecuta la tarea completa dividiéndola en bloques.
+        Rehidrata contexto antes de cada llamada a Chat B.
         """
         EMITTER.emit("orchestrator_start", {"task": task_description})
         
@@ -32,14 +36,19 @@ class ChatABOrchestrator:
             self.evidence.finalize("PASS")
             return self.evidence.data
 
-        # 3. Chat B implementa el bloque
+        # 3. Chat B implementa el bloque con rehidratación
         while next_block:
             block_id = next_block["id"]
             EMITTER.emit("block_start", {"block_id": block_id})
             
+            # Rehidratar contexto en CADA llamada
+            resume_brief = self.rehydrator.build_resume_brief(next_block)
+
             prompt = f"""
-            Eres Chat B. Escribe el código para la siguiente tarea.
-            Tarea: {next_block['description']}
+            {resume_brief}
+
+            [TAREA ESPECÍFICA DEL BLOQUE]
+            {next_block['description']}
             LÍMITE ESTRICTO: Máximo {next_block['max_loc']} líneas de código.
             Devuelve ÚNICAMENTE un JSON con el formato:
             {{\"status\": \"ok\", \"code\": \"tu código aquí\", \"tests\": [\"test1\", \"test2\"]}}
@@ -56,7 +65,6 @@ class ChatABOrchestrator:
                 
             except Exception as e:
                 EMITTER.emit("block_fail", {"block_id": block_id, "error": str(e)})
-                # El orquestador se detiene aquí. El sistema de recuperación (Paso 1) ya guardó la DLQ.
                 self.evidence.finalize("FAIL")
                 raise RuntimeError(f"Fallo crítico en bloque {block_id}: {e}")
             
