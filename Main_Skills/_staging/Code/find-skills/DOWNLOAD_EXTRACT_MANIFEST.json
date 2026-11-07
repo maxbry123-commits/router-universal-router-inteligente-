@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 260177,
+  "bundle_sha256": "15fd265c0c72b27bc7f0d7fb77f8222607038214af49d553cd60497dce64d290",
+  "extracted_tree": {
+    "bytes": 950968,
+    "files": 115,
+    "sha256": "b62aabe4d796dab6e8912e9216c58d415a84d23009f63676222e6483becf634a"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 260177,
+      "name": "find-skills.bundle.zip.part-0001",
+      "sha256": "15fd265c0c72b27bc7f0d7fb77f8222607038214af49d553cd60497dce64d290"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "find-skills",
+  "source_bytes": 950968,
+  "source_commit": "1164afa5f0e21ebd01e6fc11249759353f494ad1",
+  "source_files": 115,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/axxt0/find-skills",
+  "source_tree": {
+    "bytes": 950968,
+    "files": 115,
+    "sha256": "b62aabe4d796dab6e8912e9216c58d415a84d23009f63676222e6483becf634a"
+  }
+}
