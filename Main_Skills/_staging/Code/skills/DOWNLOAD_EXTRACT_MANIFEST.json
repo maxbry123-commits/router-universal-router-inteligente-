@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 108295,
+  "bundle_sha256": "99ad717f6cad5bb36ac9d36ff2526706eaf4305a3314da8e1404a72674dbc038",
+  "extracted_tree": {
+    "bytes": 222828,
+    "files": 74,
+    "sha256": "c5523600c213a602776f2a759edf897197f269d8af80188d07fdc7ca260ff74f"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 108295,
+      "name": "skills.bundle.zip.part-0001",
+      "sha256": "99ad717f6cad5bb36ac9d36ff2526706eaf4305a3314da8e1404a72674dbc038"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "skills",
+  "source_bytes": 222828,
+  "source_commit": "458d9d0331fb31121fd38e0e09ae5036f952784b",
+  "source_files": 74,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/firecrawl/skills",
+  "source_tree": {
+    "bytes": 222828,
+    "files": 74,
+    "sha256": "c5523600c213a602776f2a759edf897197f269d8af80188d07fdc7ca260ff74f"
+  }
+}
