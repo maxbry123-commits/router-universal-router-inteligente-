@@ -3,7 +3,7 @@ import re,collections
 WIRE=re.compile(r'(^|/)(vercel\.json|package\.json|requirements[^/]*\.txt|Dockerfile|README\.md|pyproject\.toml)$|(router|route|api|config|connection|registry|endpoint|gateway|motor|engine|shell)[^/]*\.(py|js|ts|json|ya?ml)$|^connections/|^kernel/',re.I)
 def main():
     days=os.environ.get("HISTORY_DAYS","30")
-    d=clone("/tmp/h",since=f"{days} days ago",blobless=True)
+    d=clone(wd("h"),since=f"{days} days ago",blobless=True)
     log=sh(["git","log","--since",f"{days} days ago","--name-status","-M","--pretty=format:@@%H|%aI|%an|%s"],cwd=d).stdout
     ev=[];cur=None
     for line in log.splitlines():

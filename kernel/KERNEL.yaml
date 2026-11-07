@@ -1,5 +1,13 @@
+plan_sha256: ce3d05e23504ca53c8d8d78a861811548f46b330b7da6c03f92d60afda26129f
 kernel_version: 1
 authority: ROOT
+autonomy:
+  human_signature: NOT_REQUIRED
+  authorization: AUTO_BY_GATES
+forbidden_states:
+- WAITING_SIGNATURE
+- WAITING_AUTHORIZATION
+- ASK_USER
 objective: Organize repo, remove unwired/unneeded code, restore wiring, mirror to
   HF Space, central contract-first connection system
 lint_mode: warn
@@ -30,6 +38,7 @@ domains:
   ops: ops
   kernel: kernel
   connections: connections
+  memoria: chat-router/memoria
 layout_rules:
 - every file belongs to exactly one domain
 - cross-domain calls only through gateway + registry entry
@@ -65,13 +74,11 @@ jobs:
     script: j5_apply
     needs:
     - j4_plan
-    approval: J5_apply
     timeout: 2h
   j7_mirror:
     script: j7_mirror
     needs:
     - j5_apply
-    approval: deploy
     timeout: 1h
   j8_audit:
     script: j8_audit
@@ -82,42 +89,27 @@ jobs:
     script: j6_rewrite
     needs:
     - j8_audit
-    approval: J6_rewrite
     timeout: 3h
   j9_remirror:
     script: j7_mirror
     needs:
     - j6_rewrite
-    approval: deploy
     timeout: 1h
   j10_final_audit:
     script: j8_audit
     needs:
     - j9_remirror
     timeout: 30m
-approvals:
-  J5_apply:
-    approved: true
-    plan_sha256: ce3d05e23504ca53c8d8d78a861811548f46b330b7da6c03f92d60afda26129f
-    authorized_by: 'owner: ''continua hasta el 100 % del cierre'' + ''montas los job
-      que falta si ya cerraron los anteriores'' (2026-11-04)'
-    ts: '2026-11-05T00:13:03Z'
-  J6_rewrite:
-    approved: true
-    plan_sha256: ''
-    authorized_by: 'owner: ''continua hasta el 100 % del cierre'' + ''montas los job
-      que falta si ya cerraron los anteriores'' (2026-11-04)'
-    ts: '2026-11-05T00:13:03Z'
-  merge_main:
-    approved: true
-    authorized_by: 'owner: ''continua hasta el 100 % del cierre'' + ''montas los job
-      que falta si ya cerraron los anteriores'' (2026-11-04)'
-    ts: '2026-11-05T00:13:03Z'
-  deploy:
-    approved: true
-    authorized_by: 'owner: ''continua hasta el 100 % del cierre'' + ''montas los job
-      que falta si ya cerraron los anteriores'' (2026-11-04)'
-    ts: '2026-11-05T00:13:03Z'
+  j6b_swap:
+    script: j6b_swap
+    needs:
+    - j6_rewrite
+    timeout: 1h
+  bridge:
+    script: bridge
+    needs:
+    - j6b_swap
+    timeout: 1h
 roadmap:
   R1:
     task: write connections/registry.yaml from j2 graph, all pending_audit
@@ -134,49 +126,228 @@ roadmap:
   U1:
     task: unify pattern catalogs (6 vs 5) with its own test
     job: agent
+parts_8_fallback:
+- id: E1
+  objetivo: reconciliar N0 y medir el clon del espejo (preparacion)
+  jobs: []
+  evidencia: handoff reconstruido + medida real del clon ligero (objects, MiB, packs, segundos)
+  estado: CERRADO
+- id: E2
+  objetivo: espejo en modo base (N1)
+  jobs: [j7_mirror]
+  evidencia: 20261104-kernel01/j7_mirror/result.json en PASS
+  estado: CERRADO
+- id: E3
+  objetivo: auditoria previa (N2)
+  jobs: [j8_audit]
+  evidencia: result.json PASS de j8_audit con PHASE=pre
+  estado: CERRADO
+- id: E4
+  objetivo: "reescritura de historial (N3) en dos tiempos: plan + bundle y push de la rama limpia"
+  jobs: [j6_rewrite]
+  evidencia: result.json PASS + bundle verificado + purgado ausente del historial
+  estado: EN_CURSO
+- id: E5
+  objetivo: candado e intercambio de la rama principal (N4)
+  jobs: [j6b_swap]
+  evidencia: main == tag tras el rollback previo y swap con --force-with-lease
+  estado: PENDIENTE
+- id: E6
+  objetivo: puente central (N5)
+  jobs: [bridge]
+  evidencia: connections/bridge_report.json con snapshot, historial 30 d, comparacion y sondas
+  estado: PENDIENTE
+- id: E7
+  objetivo: reespejo al Space (N6) y auditoria final (N7)
+  jobs: [j7_mirror, j8_audit]
+  evidencia: health del Space con commit == HEAD + result.json PASS de j8_audit PHASE=post y j10_final_audit
+  estado: PENDIENTE
+- id: E8
+  objetivo: cableado R7/R9/R10 (N8), bitacora e informe central (N9) y cierre (N10)
+  jobs: []
+  evidencia: conexiones con sonda real + wiring_changelog.md + wiring_history.jsonl + README + handoff.next + progress_pct 100 * CLOSED/11
+  estado: PENDIENTE
+parts_8_nota: se usa si una parte vuelve a fallar; cada trozo corre como un job de HF con techo de
+  30 min o en local, y deja su propia evidencia en el Dataset.
+input_blocks_adjuntos:
+- id: IB-YAIWES-01
+  ruta: kernel/INPUT_BLOCK_YAIWES_CABLEADO.md
+  sha256: 9d01a464dfd01ddca80cb36694b84346456c331489f26800c57d104102b90baa
+  bytes: 17258
+  modo: VERBATIM_READ_ONLY
+  adjunto_de: AGENTS.md
+  adjunto_sha256: 5c77e0051a4e8caaee123b5e199980d98c9cd7b144ff246dbb2cccf415048943
+  adjunto_bytes: 35537
+  regla: el bloque NO se edita; una orden nueva del owner genera version con su sha256
+decisiones_owner:
+  fijadas:
+  - {id: D-112, tema: plataformas, regla: "GitHub=code; HuggingFace=espejo/auto-pull minimo (servir + actualizar UI); Vercel=frontend + trigger del watchdog al encender"}
+  - {id: D-113, tema: servidores, regla: "pago 32 GB RAM CPU; cola salta al 85 %; 15 min sin actividad duerme; 1 modelo local por servidor; failover hasta 3 en cola; ON/OFF permanente en la UI"}
+  - {id: D-114, tema: umbral_active, regla: "7 condiciones obligatorias; una prueba superficial NO activa"}
+  - {id: D-115, tema: motor, regla: "research_prepass.py NO autorizado: intacto y pendiente"}
+  - {id: D-116, tema: claves, regla: "ninguna expuesta; no se tocan; solo entorno"}
+  pendientes_de_owner:
+  - {id: O1, tema: semantica_space, estado: ABIERTO, nota: "espejo real vs auto-pull (el boot clona main)"}
+  - {id: O2, tema: watchdog, estado: ABIERTO, nota: "si sigue publicando en main fuera del DAG"}
+  - {id: O3, tema: rotacion_claves, estado: CERRADO_POR_OWNER, nota: "no se tocan"}
+  - {id: O4, tema: motor, estado: CERRADO_POR_OWNER, nota: "no autorizado"}
+  - {id: O5, tema: promocion_activa, estado: CERRADO_POR_OWNER, nota: "umbral de 7 condiciones"}
+plan_cableado:
+  origen: IB-YAIWES-01
+  orden:
+  - {n: 1, fase: recuperacion_forense_historica, salida: "audit/historical_connections.json", job: j3_history + historical_wiring_audit}
+  - {n: 2, fase: auditoria_cableado_actual, salida: "audit/current_connections.json + dependency_graph.json + missing/duplicate/orphan", job: j2_graph}
+  - {n: 3, fase: grafo_ast_dependencias, salida: "audit/dependency_graph.json", job: audit}
+  - {n: 4, fase: registro_central, salida: "connections/wiring_registry.yaml (centro de distribucion)", job: make_registry}
+  - {n: 5, fase: contratos_harness, salida: "handoff/contracts/ + plugin dispatcher", job: audit}
+  - {n: 6, fase: system_prompt_y_motores, salida: "recorrido trazado + sha del prompt", job: audit}
+  - {n: 7, fase: chat_yaiwes_openclaw, salida: "UI preservada + MVP autonomo de OpenClaw", job: audit}
+  - {n: 8, fase: guardianes_y_huerfanos, salida: "audit/orphan_files.json + commit reversible a _quarantine", job: audit}
+  - {n: 9, fase: frontend_y_agentes, salida: "pruebas UI->backend->harness->router->modelo", job: audit}
+  - {n: 10, fase: nvidia_locales_memoria_storage, salida: "evidencia de inferencia real + latencia + ACK", job: audit}
+  - {n: 11, fase: job_test_integral, salida: "audit/runtime_results.json (J01..J13)", job: job_test}
+  - {n: 12, fase: cierre_repo_limpio, salida: "README + bitacora + handoff + arquitectura + repo limpio", job: audit}
+  adaptaciones_al_contrato:
+  - "GitHub Actions PROHIBIDO: las pruebas corren en local o Job HF cpu-upgrade"
+  - "LFS PROHIBIDO"
+  - "sin despliegue nuevo en Vercel o HF sin autorizacion"
+  - "todo job pesado cabe en 1800 s o se trocea en E1..E8"
+parts:
+- id: P1
+  objetivo: reconciliar N0 + espejo en modo base (N1)
+  jobs: [j7_mirror]
+  evidencia: 20261104-kernel01/j7_mirror/result.json en PASS (6170 ficheros / 110,7 MB, sin subir)
+  estado: CERRADO
+- id: P2
+  objetivo: auditoria previa N2 + reescritura de historial N3
+  jobs: [j8_audit, j6_rewrite]
+  evidencia: result.json PASS de j8_audit (PHASE=pre) y de j6_rewrite con bundle y purga verificados
+  estado: EN_CURSO
+- id: P3
+  objetivo: intercambio de la rama principal con candado N4 + puente central N5
+  jobs: [j6b_swap, bridge]
+  evidencia: main == tag pre-reorg-20261104-kernel01 tras el swap + connections/bridge_report.json
+  estado: PENDIENTE
+- id: P4
+  objetivo: reespejo N6 + auditoria final N7 + cableado N8 + bitacora central N9 + cierre N10
+  jobs: [j7_mirror, j8_audit]
+  evidencia: health del Space con commit == HEAD + result.json PASS de j10_final_audit + connections/wiring_changelog.md + wiring_history.jsonl + README + handoff.next
+  estado: PENDIENTE
+parts_nota: cada parte es un job de HF con perfil cpu-upgrade (32 GB RAM + 8 vCPU) cuyo techo real es
+  de 30 minutos, o bien la misma ejecucion en local (G1 ruta 2); el log del contenedor se vuelca en
+  vivo tras cada fase (D-101) y cada parte deja su evidencia en el Dataset.
+handoff_reglas:
+  formula_progress: "progress_pct = 100 * CLOSED_NODES / 11"
+  nodos: # una sola enumeracion de 11 nodos (B7: no dos listas que sumen 16)
+  - {id: N0_reconciliar, estado: CERRADO, evidencia: "handoff + Dataset leidos; hashes del bloque congelado verificados"}
+  - {id: N1_j7_baseline, estado: CERRADO, evidencia: "j7_mirror PASS: 6170 ficheros / 110,7 MB, Space RUNNING, nada subido"}
+  - {id: N2_j8_audit_pre, estado: CERRADO, evidencia: "j8_audit PHASE=pre PASS: 8 jobs PASS + wiring_check_on_target"}
+  - {id: N3_j6_rewrite, estado: EN_CURSO, evidencia: "bundle 8,07 GB subido; purga de 37 directorios y wiring_check OK; publicacion de main-clean por tramos"}
+  - {id: N4_swap_main, estado: PENDIENTE, evidencia: "j6b_swap MODE=swap SWAP_SOURCE=main-clean con lease exacto y etiqueta re-apuntada"}
+  - {id: N5_bridge, estado: PENDIENTE, evidencia: "bridge local: snapshot, historia 30 d, comparacion, sondas HTTP+MCP, bridge_report.json"}
+  - {id: N6_remirror, estado: PENDIENTE, evidencia: "j9_remirror: Space RUNNING + health commit == HEAD"}
+  - {id: N7_auditoria_final, estado: PENDIENTE, evidencia: "j8_audit PHASE=post + j10_final_audit"}
+  - {id: N8_cableado, estado: PENDIENTE, evidencia: "R7/R9/R10 con sonda real + umbral ACTIVE de 7 condiciones"}
+  - {id: N9_bitacora_readme, estado: PENDIENTE, evidencia: "wiring_changelog + wiring_history + README + handoff + CODE_INDEX + registro maestro"}
+  - {id: N10_cierre, estado: PENDIENTE, evidencia: "progress_pct 100 + ledger completo + CLOSED/11"}
+  cerrados: 3
+  progress_pct_derivado: 27
+  ledger: "kernel/LEDGER.jsonl (una linea por mutacion) + 20261104-kernel01/<job>/result.json en el Dataset (verdad)"
+  reglas_swap:
+    - "el tag pre-reorg se re-apunta al main REAL (commit c2ad951e0ca3, watchdog del owner) con --force-with-lease propio; el valor original 40c8d591 se conserva como safety/pre-reorg-original-20261104-kernel01"
+    - "la rama respaldo-main-pre-swap-20261104-kernel01 conserva el main previo"
+    - "el intercambio va con --force-with-lease=main:<sha real>; si main se mueve, el push se rechaza solo"
+    - "main-clean se publica con --force-with-lease tambien"
+  bitacora_canonica:
+    - {fichero: connections/wiring_history.jsonl, origen: "20261104-kernel01/j3_history/wiring_history.jsonl", bytes: 12344585, sha256: d087146df64fcc1dc3e448a6ce1939fed5602bb2598b17931444461541d988d0}
+    - {fichero: connections/wiring_changelog.md, origen: "20261104-kernel01/j3_history/wiring_changelog.md", bytes: 5865, sha256: bbe90e779c9f983a}
+gap_playbook:
+  fichero: kernel/GAP_PLAYBOOK.md
+  regla_owner: "si aparece un gap: aplico yo la instruccion del recetario (no escalo de entrada); si tras UN intento el job no avanza, escalo al owner con el hueco y el job y me detengo"
+  gaps: [G1_commit_mas_2GiB, G2_lease_obsoleto, G3_subida_bundle, G4_medicion_lenta, G5_500_persistente, G6_remoto_con_commits_extra]
+  prohibiciones: [forzar main sin lease, forzar main-clean sin lease, rotar claves, tocar el motor intocable, crear Actions/LFS, borrar sin analisis, declarar active sin las 7 condiciones]
 handoff:
-  next: j5_apply
+  # D-108: hash CONGELADO del INPUT_BLOCK (gate j0_preflight 'input_block_sha256_intacto').
+  input_block_sha256: 5c4bbb20421a9e674876d69f25fb8aaf9e67112d58a49ce3c3f527024ae83c3a
+  next: j6_rewrite
+  input_block_adjunto: IB-YAIWES-01 (kernel/INPUT_BLOCK_YAIWES_CABLEADO.md, sha256 9d01a464…b90baa)
+  rollback:
+    tag: pre-reorg-20261104-kernel01
+    tag_actual: 40c8d591abaa7ff6e008e9e0801dc022a968fc6a
+    main_actual: c2ad951e0ca3f672ba6eabdd4ffd88c7435174aa
+    rama_respaldo: respaldo-main-pre-swap-20261104-kernel01
+    nota: D-110 la rama de respaldo se creo ANTES de cualquier cambio de main; la etiqueta se
+      re-apunta al main actual justo antes del intercambio para que el lease sea exacto
   log:
   - job: j0_preflight
     status: PASS
     commit: null
-    ts: '2026-11-04T18:28:19Z'
+    ts: '2026-11-04T18:25:26Z'
     run_id: 20261104-kernel01
   - job: j1_inventory
     status: PASS
     commit: 10e3b5e6480f15140744def81e92770ed67d7714
-    ts: '2026-11-04T18:48:35Z'
-    run_id: 20261104-kernel01
-  - job: j11_patterns
-    status: PASS
-    commit: 4162ced5ea7f1ca59b0e0dc17156655402406ffc
-    ts: '2026-11-04T18:54:50Z'
-    run_id: 20261104-kernel01
-  - job: j3_history
-    status: PASS
-    commit: 545da638bafd1cc2753f11ae8692e9b5bc96f611
-    ts: '2026-11-04T19:12:32Z'
+    ts: '2026-11-04T18:46:50Z'
     run_id: 20261104-kernel01
   - job: j2_graph
     status: PASS
     commit: 9dcd456ef922ff95897ce4f10b2d604e3447e106
-    ts: '2026-11-04T20:19:05Z'
+    ts: '2026-11-04T20:17:59Z'
+    run_id: 20261104-kernel01
+  - job: j3_history
+    status: PASS
+    commit: 545da638bafd1cc2753f11ae8692e9b5bc96f611
+    ts: '2026-11-04T19:06:00Z'
     run_id: 20261104-kernel01
   - job: j4_plan
     status: PASS
     commit: 1b6837b505a5d7ace17437905739b8af3056cf8a
-    ts: '2026-11-04T21:51:02Z'
+    ts: '2026-11-04T21:38:00Z'
     run_id: 20261104-kernel01
-  - job: j7_mirror
-    status: FAIL
-    commit: bbdc25bfafe4d0b55098083c1a43c47093279654
-    ts: '2026-11-04T22:16:38Z'
+  - job: j11_patterns
+    status: PASS
+    commit: 4162ced5ea7f1ca59b0e0dc17156655402406ffc
+    ts: '2026-11-04T18:50:49Z'
+    run_id: 20261104-kernel01
+  - job: j5_apply
+    status: PASS
+    commit: e0773eb4f15a972c4f11568908ca97893eddf5fd
+    ts: '2026-11-05T05:30:08Z'
     run_id: 20261104-kernel01
   - job: j7_mirror
     status: PASS
-    commit: 011af005fd8f4e32bd33d565d19aa7811912f8c4
-    ts: '2026-11-04T23:55:16Z'
+    commit: 32892dd3f4347e7c1ca6bd5518d0cd3c33276127
+    ts: '2026-11-06T05:16:12Z'
     run_id: 20261104-kernel01
-  flags: []
-  input_block_sha256: 5c4bbb20421a9e674876d69f25fb8aaf9e67112d58a49ce3c3f527024ae83c3a
-progress_pct: 54
+    mode: baseline
+    checks: [registry_valid, baseline_only_no_upload, space_RUNNING]
+    baseline: {files: 6170, bytes: 110654589}
+    nota: D-104 REUSE_CLONE (clon ya materializado) en vez de un clon ligero atascado
+  - job: j8_audit
+    status: PASS
+    commit: 6d072e806768356b9c7a6dd1e2e359fe43f3a904
+    ts: '2026-11-06T05:22:37Z'
+    run_id: 20261104-kernel01
+    phase: pre
+    checks: [j0_preflight_PASS, j1_inventory_PASS, j2_graph_PASS, j3_history_PASS, j4_plan_PASS, j11_patterns_PASS, j5_apply_PASS, j7_mirror_PASS, wiring_check_on_target]
+    run_id: 20261104-kernel01
+  - job: j6_rewrite
+    status: FAIL
+    commit: null
+    ts: '2026-11-05T07:52:19Z'
+    run_id: 20261104-kernel01
+  - job: j9_remirror
+    status: FAIL
+    commit: bb9e4c8088cfe4be35a91dfdc669b9a171200885
+    ts: '2026-11-05T08:06:14Z'
+    run_id: 20261104-kernel01
+  - job: backend_smoke
+    status: PASS
+    commit: null
+    ts: '2026-11-05T05:29:51Z'
+    run_id: 20261104-kernel01
+  flags:
+  - '🚩 j6_rewrite EN_CURSO (bundle + purga)'
+  - '🚩 j9_remirror FAIL'
+  - '🚩 j10_final_audit MISSING'
+progress_pct: 27

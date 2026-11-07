@@ -18,7 +18,9 @@ if [ -n "${GH_TOKEN:-}" ]; then
 fi
 SRC="$PWD"
 if [ ! -f "ops/$SCRIPT.py" ]; then          # R5: el script se obtiene SIEMPRE del repo
-  WORK="${WORK:-/tmp/kernel-$RUN_ID}"
+  # D-108: el scratch va SIEMPRE en WORK_DIR (G2/H13): /tmp se reinicia cada 15-20 min
+  # y el repo ocupa 7,9 GB.
+  WORK="${WORK_DIR:-${WORK:-/workspace/work/kernel-scratch}}"
   rm -rf "$WORK"; mkdir -p "$WORK"
   git clone --filter=tree:0 --depth 1 --sparse --branch "$GH_BRANCH" "https://github.com/$GH_REPO.git" "$WORK/repo"
   git -C "$WORK/repo" sparse-checkout set ops kernel connections

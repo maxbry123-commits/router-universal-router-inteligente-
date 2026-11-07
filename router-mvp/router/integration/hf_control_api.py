@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from .chat_mvp.router import _auth
-from .hf_worker_pool import POOL
+from .hf_worker_pool import FLAVOR, POOL
 
 
 def build_hf_control_router() -> APIRouter:
@@ -23,9 +23,12 @@ def build_hf_control_router() -> APIRouter:
     @r.post("/workers/ensure")
     def ensure(payload: dict[str, Any] | None = None, _owner: str = Depends(_auth)) -> dict[str, Any]:
         payload = payload or {}
-        flavor = str(payload.get("flavor") or "cpu-basic")
-        if flavor not in {"cpu-basic", "cpu-upgrade"}:
-            raise HTTPException(status_code=400, detail="flavor debe ser cpu-basic o cpu-upgrade")
+        flavor = str(payload.get("flavor") or FLAVOR)
+        if flavor != "cpu-upgrade":
+            raise HTTPException(
+                status_code=400,
+                detail="flavor debe ser cpu-upgrade (32 GB + CPU); cpu-basic esta prohibido por la politica de hardware (D-83)",
+            )
         existing = POOL.choose()
         if existing:
             return {"status": "ready", "worker": existing.public()}

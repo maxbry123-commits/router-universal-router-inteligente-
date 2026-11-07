@@ -146,12 +146,14 @@ def install_pool(monkeypatch, pool):
 def test_compute_plan_por_tramos():
     m = load("hf_compute")
     cfg = m.load_config()
-    assert cfg["umbral_pct"] == 80 and [t["ram_gb"] for t in cfg["tramos"]] == [16, 16, 32]
-    b, u = {"flavor": "cpu-basic"}, {"flavor": "cpu-upgrade"}
+    assert cfg["umbral_pct"] == 80 and [t["ram_gb"] for t in cfg["tramos"]] == [32, 32, 32]
+    assert all(t["flavor"] == "cpu-upgrade" for t in cfg["tramos"]), "D-83: cpu-basic prohibido"
+    u = {"flavor": "cpu-upgrade"}
     assert m.plan(cfg, 79, 10, [])["launch"] is None
-    assert m.plan(cfg, 80, 10, [])["launch"] == "cpu-basic"
-    assert m.plan(cfg, 10, 91, [b])["launch"] == "cpu-upgrade"
-    assert m.plan(cfg, 95, 95, [b, u])["decision"] == "tope_alcanzado"
+    assert m.plan(cfg, 80, 10, [])["launch"] == "cpu-upgrade"
+    assert m.plan(cfg, 10, 91, [])["launch"] == "cpu-upgrade"
+    assert m.plan(cfg, 10, 91, [u])["decision"] == "tope_alcanzado"
+    assert m.plan(cfg, 95, 95, [u])["decision"] == "tope_alcanzado"
     assert m.plan(cfg, None, None, [])["decision"] == "sin_metricas"
 
 
@@ -162,14 +164,14 @@ def test_compute_ensure_dry_run_y_apply(monkeypatch):
     r = m.handle("ensure", {})
     assert r["dry_run"] is True and not pool.launched
     r = m.handle("ensure", {"apply": True})
-    assert r["applied"] is True and pool.launched[0][0] == "cpu-basic"
+    assert r["applied"] is True and pool.launched[0][0] == "cpu-upgrade"
     r = m.handle("invoke", {"body": {"q": 1}})
     assert r["result"]["echo"] == {"q": 1}
 
 
 def test_compute_status_publica_workers_y_usuarios(monkeypatch):
     m = load("hf_compute")
-    install_pool(monkeypatch, FakePool(5, 5, [{"flavor": "cpu-basic", "job_id": "j1"}]))
+    install_pool(monkeypatch, FakePool(5, 5, [{"flavor": "cpu-upgrade", "job_id": "j1"}]))
     monkeypatch.setenv("RIU_HERMES_URL", "http://hermes.test")
     monkeypatch.delenv("RIU_OPENCLAW_URL", raising=False)
     calls = mock(m, 200, b"ok")

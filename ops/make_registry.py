@@ -1,8 +1,8 @@
 # ops/make_registry.py — ROADMAP R1 (job: manual+agent): escribe connections/registry.yaml
 # desde el grafo REAL de j2_graph. Nada se declara activo sin evidencia (§5 L1225): todo pending_audit.
-import json,sys,pathlib,yaml,collections
+import json,sys,os,pathlib,yaml,collections
 sys.path.insert(0,str(pathlib.Path(__file__).parent))
-GRAPH=sys.argv[1] if len(sys.argv)>1 else "/tmp/out/j2_graph/graph.json"
+GRAPH=sys.argv[1] if len(sys.argv)>1 else os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"out","j2_graph","graph.json")
 K=pathlib.Path("kernel/KERNEL.yaml")
 k=yaml.safe_load(K.read_text());dom=k.get("domains",{})
 def dom_of(p):

@@ -3,7 +3,7 @@
 Por que existe: el Space `COMAND-CENTER-1/riu-router` esta en hardware de pago sin saldo
 (HF responde 402) y queda PAUSED, asi que su /health da 503 y el gate "real backend start +
 smoke" no se puede cumplir a traves del Space. Este job hace lo mismo dentro de un Job de HF
-(cpu-basic, hardware gratuito): clona el repo, instala las dependencias del backend, levanta
+(cpu-upgrade, hardware de pago de 32 GB + CPU): clona el repo, instala las dependencias del backend, levanta
 uvicorn con la app real, llama a /health y publica el resultado en el Dataset.
 
 Modos:
@@ -40,7 +40,7 @@ def _download_result():
 def _publish(res):
     from huggingface_hub import HfApi
     api = HfApi(token=os.environ.get("HF_TOKEN"))
-    out = pathlib.Path("/tmp/out/backend_smoke")
+    out = pathlib.Path(wd("out","backend_smoke"))
     out.mkdir(parents=True, exist_ok=True)
     (out / "result.json").write_text(json.dumps(res, indent=1))
     api.upload_folder(folder_path=str(out), repo_id=DS, repo_type="dataset",
@@ -53,7 +53,7 @@ def cmd_run():
     def chk(name, ok, detail=""):
         res["checks"].append({"name": name, "ok": bool(ok), "detail": str(detail)[:300]})
         return bool(ok)
-    d = "/tmp/backend"
+    d = os.path.join(os.environ.get("WORK_DIR","/workspace/work"),"backend")
     r = subprocess.run(f"git clone --single-branch --branch {BRANCH} --depth 1 "
                        f"https://github.com/{REPO}.git {d}", shell=True, capture_output=True, text=True)
     if not chk("clone_repo", r.returncode == 0, r.stderr[-300:]):

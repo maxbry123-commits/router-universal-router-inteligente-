@@ -83,3 +83,73 @@ Cuando se agotan las diez rutas: `FLAG_AND_CONTINUE_INDEPENDENT`. Se registra el
 | D-46 | Los Jobs de HF se crean con `flavor=cpu-upgrade` (el hardware del owner, 32 GB + CPU) | El owner decide no bajar a hardware gratis y esperar su recarga | Sin cambio de hardware; el Space mantiene el suyo |
 | D-48 | `j5_apply` pushea la tag SIEMPRE con `--force` | En la reejecucion la tag ya existe en remoto y el push se rechaza ("already exists") -> rc=1 y el job muere (X-Ray 15 min, 2026-11-05) | La tag es el punto de rollback del run; forzarla es idempotente |
 | D-49 | `ops/backend_smoke.py` fija el PYTHONPATH completo (backend, router-mvp, chat-router, chat-router/chat) | El backend importa `mvp`, `router`, `agentes` y `plugins`, que viven en raices distintas: con solo el backend en el PYTHONPATH el arranque peta con "No module named 'router'" (X-Ray 15 min, 2026-11-05) | Arranque real del backend con sus imports reales |
+| D-51 | La cadena registra un flag y CONTINUA cuando un nodo queda en rojo, en vez de abortar | Contrato del DAG: N8_gap_loop -> N9_flag -> seguir con los nodos independientes; el gate sigue FAIL_CLOSED (el nodo rojo no se da por bueno) | Cada nodo publica igualmente su resultado y el kernel guarda el flag |
+| D-52 | La rama de trabajo se exporta antes del bloque de lotes R2 | Con `set -u` una variable no definida abortaba la cadena entera ("TARGET_BRANCH: unbound variable") | La rama ya existe (la publica j5_apply) |
+| D-53 | `ops/job_status.py` (nuevo): el estado de cada job se lee del Dataset, no del fichero local de resultados | La cadena consultaba /tmp/out/<job>/result.json, volatil y borrado en cada reejecucion: tras reiniciar el sandbox volvia a ejecutar jobs ya en verde | El Dataset es la fuente durable de resultados |
+| D-54 | `ops/make_healthchecks.py` (nuevo): genera un healthcheck real por conexion con canal real y lo EJECUTA | §5/§8: "sin healthcheck no hay activo"; el registro tenia los 38 campos pero 0 verificaciones | 14 conexiones con canal real documentado; 8 verificadas por import ejecutado, 6 con el modulo presente en el arbol git pero no materializado en el clon sparse local (se verifican en el clon completo), 0 rotas |
+| D-55 | `ops/verify_pending_healthchecks.py` (nuevo): cierra en el clon completo las 6 verificaciones que el clon sparse local no podia materializar | 6 conexiones quedaron `pending_verificacion` (su modulo esta en el arbol git pero el clon sparse no lo trae) | 6/6 responden al import real en el clon completo -> 14/14 conexiones con canal real en `active` |
+| D-56 | El push del mirror al Space pasa de `upload_folder` (endpoint de commits de HF) a `git push` por protocolo git al repo del Space, preservando antes los ficheros propios del Space (Dockerfile, boot.sh, proxy.py...) | El endpoint de commits de HF rechaza el push cuando el repo tendria >10.000 ficheros: "Your push was rejected because it contains too many files ... 20008 files" -> S7 FAIL | El push por git admite el tamano del mirror; el arbol del Space conserva sus 8 ficheros |
+| D-57 | La cadena omite los lotes R2 si la rama de reorganizacion ya esta publicada | Tras reiniciar el sandbox la cadena re-aplicaba los movimientos ya aplicados (25 min y riesgo de colision) | `git ls-remote` comprueba la rama antes de aplicar |
+| D-59 | La cadena omite un paso cuyo job ya esta en verde en el Dataset (`ops/job_status.py`) | Sin ello, relanzar la cadena re-ejecutaba jobs ya terminados (clones de 18 GB y minutos perdidos) | Comprobacion antes de cada paso; S5/S6 ya lo hacian |
+| D-59 | La cadena omite un paso cuyo job ya esta en verde en el Dataset (`ops/job_status.py`) | Sin ello, relanzar la cadena re-ejecutaba jobs ya terminados (clones de 18 GB y minutos perdidos) | Comprobacion antes de cada paso; S5/S6 ya lo hacian |
+| D-59 | La cadena omite un paso cuyo job ya esta en verde en el Dataset (`ops/job_status.py`) | Sin ello, relanzar la cadena re-ejecutaba jobs ya terminados (clones de 18 GB y minutos perdidos) | Comprobacion antes de cada paso; S5/S6 ya lo hacian |
+| D-60 | Las conexiones `active` llevan campo `evidence` (comando ejecutado + resultado) ademas de `verification` | El gate `registry_valid` exige `evidence` no vacio en toda conexion `active`: sin el, el wiring_check del espejo fallaba y S7 no podia publicar | 14 conexiones con evidencia; el predicado del gate vuelve a dar OK |
+| D-62 | El espejo excluye `router-mvp/router-componentes/**` (14.602 ficheros de bibliotecas de terceros vendorizadas) | Con el limite real de 20.000 ficheros del repo del Space, el espejo iba a 20.775 (783 de exceso) | El espejo queda en 6.173 ficheros + 8 del Space = 6.181, con margen amplio; el Space instala sus dependencias por pip y no usa las copias vendorizadas |
+| D-63 | Al preservar los ficheros del Space antes del push se recuperan SOLO los que no estan en la rama (`hf_hub_download` por fichero), no el repo entero | `snapshot_download` bajaba los 19.998 ficheros de la copia anterior del espejo: 2 h de descarga y el push volvia a rebasar el limite de 20.000 | Solo se preservan los ficheros propios del Space (Dockerfile, boot.sh, proxy.py...) y el push sale con el tamano del espejo |
+| D-64 | `ops/launch_hf.py` (nuevo): lanza cualquier job del kernel como Job de Hugging Face (32 GB, `flavor=cpu-upgrade`) | Los jobs pesados en LOCAL no terminan: el sandbox reinicia su overlay de /tmp cada 15-20 min y mata el clon de 18 GB y el proceso del job a mitad (medido 3 veces) | El contenedor del job vive hasta el techo de 1800 s y tiene 32 GB; el resultado se publica en el Dataset igual que en local |
+| D-65 | En esos jobs el clon es COMPLETO (sin `--filter=tree:0` ni `--sparse`) | El espejo necesita el arbol entero y el `git ls-tree` del gate; el clon sparse del lanzador no sirve | El clon completo del repo en el contenedor |
+| D-67 | El push al Space usa un AYUDANTE DE CREDENCIALES que lee el token del entorno, en vez de la cabecera `http.<url>.extraheader` | HF ignora la cabecera extraheader en el push (la API responde 200 pero git sigue pidiendo usuario: "could not read Username for 'https://huggingface.co'"); con el helper la autenticacion funciona | El token no aparece en argv, en la URL ni en los logs |
+| D-69 | El espejo excluye los ficheros que el `.gitattributes` del Space marca como LFS (*.bin, *.gz, *.tar, *.pt, *.npy, *.parquet, saved_model/**...) | El hook `lfs-check` del servidor rechaza el push: "internal error hook: lfs-check" (los punteros LFS llegan sin sus objetos en el almacen LFS del Space) | Se excluyen por patron los ficheros con LFS; el gate `lfs_patterns_excluded` deja constancia |
+| D-70 | La subida del log del contenedor acepta las dos firmas de `upload_file` (con y sin `path=`) | El contenedor trae una version de `huggingface_hub` con la firma distinta: `TypeError: HfApi.upload_file() got an unexpected keyword argument 'path'` | El log del job se publica en el Dataset en ambos casos |
+| D-71 | En el espejo, el `git add -A` se hace ANTES de las exclusiones (el orden estaba invertido) | Con el orden anterior, el `add` volvia a meter en el indice los ficheros que se acababan de excluir (los de terceros y los de tipo LFS) y el push seguia rebasando el limite y el hook lfs-check | El arbol del push contiene solo lo permitido; el gate `mirror_tree_size` deja constancia del tamano |
+| D-72 | El push del espejo se hace como FAST-FORWARD: se obtiene el HEAD actual del repo del Space, se construye el arbol del espejo (indice de la rama menos las exclusiones mas los ficheros propios del Space) y se sube un commit creado con `commit-tree` usando el remoto como padre | Sin padre remoto, git negocia contra el remoto y el upload-pack responde `not our ref <HEAD>`; el servidor lo traducía como `internal error hook: lfs-check` y rechazaba el push | Push verificado: `80c9f17f..4294341226 -> main`, 6.071 ficheros, con los 8 ficheros propios del Space (Dockerfile, boot.sh, proxy.py...) |
+| D-73 | Los patrones LFS se leen del `.gitattributes` del propio Space (el del commit remoto), no del de la rama | El de la rama esta vacio: el push segnia llevando punteros LFS y el servidor respondia `HTTP 500` en el RPC | El arbol del push queda sin ficheros con LFS y el gate `lfs_patterns_excluded` lo deja constancia |
+| D-73 | Los patrones LFS se leen del `.gitattributes` del propio Space (el del commit remoto), no del de la rama | El de la rama esta vacio: el push segnia llevando punteros LFS y el servidor respondia `HTTP 500` en el RPC | El arbol del push queda sin ficheros con LFS y el gate `lfs_patterns_excluded` lo deja constancia |
+| D-74 | El indice del push se construye con `read-tree` (arbol de la rama) y las exclusiones se aplican con un fichero de pathspec NUL-separated | Con `git add -A` entraban en el push ficheros que no debian ir (1.232 de mas) y el servidor cortaba la conexion: "send-pack: unexpected disconnect while reading sideband packet" | Es exactamente el metodo que ya dio un push verificado (6.071 ficheros en el Space, con sus 8 ficheros propios) |
+| D-75 | El espejo admite modo ligero (`MIRROR_LIGHT=1`): clon `--filter=blob:none --no-checkout` (sin materializar 18 GB) y gate previo sobre el YAML del registro con el predicado exacto de `wiring_check` | El sandbox reinicia /tmp cada 15-20 min y se lleva el clon completo; ademas el clon completo del job fallaba con "failed to unpack tree object" | El push se hace igual (mismo arbol, mismo padre remoto) y el job cabe en la ventana entre reinicios |
+| D-82 | El fetch del repo del Space usa `--filter=blob:none` | El historico completo del Space son ~20.000 ficheros (varios GB) y el job de HF superaba el techo de 1800 s antes de publicar | Solo bajan los arboles; los 11 blobs propios del Space se piden bajo demanda |
+
+# 22. INPUT BLOCK ADJUNTO — OBJETIVOS YAIWES: AUDITORÍA Y RECONSTRUCCIÓN DEL CABLEADO (VERBATIM)
+
+Este bloque se **adjunta** a la guía de organización. La guía sigue siendo `AGENTS.md`, **congelado**
+(sha256 `5c77e0051a4e8caaee123b5e199980d98c9cd7b144ff246dbb2cccf415048943`, 35537 B) y **no se edita**.
+
+| Elemento | Ruta | sha256 | bytes |
+|---|---|---|---|
+| Guía de organización (FROZEN, el adjunto del owner) | `AGENTS.md` | `5c77e0051a4e8caaee123b5e199980d98c9cd7b144ff246dbb2cccf415048943` | 35537 |
+| Bloque de objetivos YAIWES (VERBATIM, nuevo) | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` | `9d01a464dfd01ddca80cb36694b84346456c331489f26800c57d104102b90baa` | 17258 |
+
+Contiene, literal del owner: la separación de raíces adicionales, el plan técnico de 12 fases, los 10
+objetivos, el criterio final de aceptación y las decisiones de arquitectura (servidores, cola, dormir,
+wake-up, espejo mínimo de HF, umbral `ACTIVE`, motor no autorizado, claves intactas).
+
+**Reglas que este bloque añade (normativas):**
+
+1. **GitHub** es el único sitio del código. **HuggingFace** = espejo + auto-pull **mínimo** (solo lo
+   que necesita para servir y actualizar la UI). **Vercel** = frontend + trigger del watchdog al
+   encender.
+2. **Servidores de pago, 32 GB RAM y CPU** (nunca `cpu-basic`).
+3. **Cola de servidores**: al **85 %** salta al siguiente; **15 min sin actividad** → duerme; la UI de
+   Chat YAIWES lleva **encendido/reinicio** y **botón ON/OFF permanente**.
+4. **Modelos locales**: **1 modelo por servidor**; failover al siguiente hasta **3 en cola**; al
+   estar lleno espera **1 servidor por modelo**; a los **15 min** abandona y duerme.
+5. **Un solo archivo central de cableado** (`connections/wiring_registry.yaml`) como centro de
+   distribución: consumidor, proveedor, protocolo, endpoint, contrato, healthcheck, fallback y estado.
+6. **Umbral `ACTIVE` (7 condiciones, todas obligatorias)**: autenticación válida, conexión real,
+   inferencia ejecutada, respuesta válida, latencia registrada, sin errores críticos. **Una prueba
+   superficial NO activa una conexión.**
+7. **Motor `research_prepass.py`: NO autorizado** → permanece intacto, problema pendiente.
+8. **Claves**: ninguna quedó expuesta y **no se tocan**; solo por entorno.
+9. **Repo limpio**: los ficheros de code no cableados, notas, pruebas y documentos que no pertenecen
+   al funcionamiento se borran **tras análisis de dependencias** (nunca sin evidencia).
+10. **Prohibido GitHub Actions y LFS** (heredado del INPUT BLOCK congelado); las pruebas se ejecutan
+    en local o como Job de HF `cpu-upgrade`.
+
+| Decision | Cambio | Por que | Evidencia |
+|---|---|---|---|
+| D-111 | Nuevo INPUT BLOCK adjunto `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` (17.258 B, sha256 `9d01a464…b90baa`) que fija objetivos, raíces, política de servidores, umbral ACTIVE y exclusiones | El owner ordeno registrar los objetivos como INPUT BLOCK VERBATIM y adjuntarlos a la guia de organizacion | sha256 del fichero + lectura del adjunto del owner (35.537 B, sha256 `5c77e005…8943`, identico a `AGENTS.md`) |
+| D-112 | HuggingFace queda como espejo/auto-pull MINIMO (solo servir + actualizar UI); Vercel dispara el trigger del watchdog al encender; todo el codigo vive en GitHub | Decision del owner sobre las responsabilidades de las tres plataformas | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` §4.1 y §1 |
+| D-113 | Politica de servidores y cola (32 GB CPU de pago, 85 %, 15 min, 1 modelo por servidor, 3 en cola, ON/OFF permanente en la UI) | Decision del owner; se implementa en `integrations/servers/` y en la configuracion de la UI | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` §4.2-4.3 |
+| D-114 | Umbral `ACTIVE` de 7 condiciones publicado en la guia; una conexion no se activa por una prueba superficial | Decision del owner; cierra el hueco de las 14 conexiones que se habian activo sin evidencia real | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` §4.4 y `connections/wiring_registry.yaml` (nuevo) |
+| D-115 | El motor `research_prepass.py` NO se toca: sigue intacto y el problema queda pendiente (recomendacion: autorizar solo tras error + contexto + regresion, guardando el codigo anterior para revertir) | Decision del owner; el motor es intocable por contrato | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` §6 |
+| D-116 | Ninguna clave se toca: no se rotan ni se inspeccionan sus valores (solo referencias por entorno) | Decision del owner | `kernel/INPUT_BLOCK_YAIWES_CABLEADO.md` §6 |

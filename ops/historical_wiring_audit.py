@@ -15,7 +15,7 @@ HF_TOKEN = os.environ["HF_TOKEN"]
 
 MAX_COMMITS = int(os.getenv("MAX_COMMITS", "500"))
 
-WORK = Path("/tmp/wiring-audit")
+WORK = Path(os.environ.get("WORK_DIR","/workspace/work"))/"wiring-audit"
 SRC = WORK / "source"
 OUT = WORK / "output"
 
@@ -28,7 +28,8 @@ def git(args, check=True):
         cwd=SRC,
         text=True,
         capture_output=True,
-        check=check
+        check=check,
+        env=globals().get("_env")   # D-114: cabecera extraheader en el entorno (sin token en argv)
     ).stdout
 
 
@@ -54,14 +55,22 @@ def save(name, data):
 
 
 # 1. Clonar historial completo disponible
-url = (
-    f"https://x-access-token:{GH_TOKEN}"
-    f"@github.com/{REPO}.git"
-)
+# D-114 (veto B1 del SHERIFF): el token de GitHub NO va NUNCA en la URL, ni en argv, ni en
+# .git/config. La URL es limpia y la autenticacion va SOLO en la cabecera de entorno
+# GIT_CONFIG_* extraheader (mismo metodo que ops/common.py genv()).
+url = f"https://github.com/{REPO}.git"
+
+_env = dict(os.environ)
+if GH_TOKEN:
+    import base64 as _b64
+    _env.update(GIT_TERMINAL_PROMPT="0", GIT_CONFIG_COUNT="1",
+                GIT_CONFIG_KEY_0="http.https://github.com/.extraheader",
+                GIT_CONFIG_VALUE_0="AUTHORIZATION: basic " +
+                                   _b64.b64encode(f"x-access-token:{GH_TOKEN}".encode()).decode())
 
 subprocess.run(
     ["git", "clone", "--no-single-branch", url, str(SRC)],
-    check=True
+    check=True, env=_env
 )
 
 git(["remote", "set-url", "origin",

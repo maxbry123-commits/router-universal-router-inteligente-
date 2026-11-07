@@ -11,7 +11,7 @@ from types import SimpleNamespace as NS
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-spec = importlib.util.spec_from_file_location("guardian_under_test", ROOT.parent.parent / "chat-router" / "plugins" / "agentes" / "agents-yaiwes" / "common" / "guardian.py")
+spec = importlib.util.spec_from_file_location("guardian_under_test", ROOT.parent.parent / "chat-router" / "agentes" / "agentes-yaiwes" / "agents-yaiwes" / "common" / "guardian.py")
 g = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = g
 spec.loader.exec_module(g)
@@ -104,7 +104,7 @@ def test_remaining_uses_marker_override_and_fallback():
 def test_spec_shape_matches_current_launcher():
     c = cfg()
     s = g.build_spec("router", c)
-    assert s["image"] == "python:3.12" and s["flavor"] == "cpu-basic" and s["expose"] == [8000] and s["timeout"] == "7d"
+    assert s["image"] == "python:3.12" and s["flavor"] == "cpu-upgrade" and s["expose"] == [8000] and s["timeout"] == "7d"
     assert s["command"][:2] == ["bash", "-lc"] and "router_job_persistent.py" in s["command"][2] and "git clone --depth 1" in s["command"][2]
     assert s["env"]["RIU_G2_GROQ_MODEL"] == "qwen/qwen3.8-27b"
     assert s["secrets"]["GROQ_API_KEY_2"] == "k2" and s["secrets"]["GITHUB_TOKEN"] == "gh_test"

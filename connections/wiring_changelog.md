@@ -1,0 +1,65 @@
+# wiring changelog (auto)
+window: last 30 days, commits: 2309
+
+- 2026-11-04: 15 wiring changes
+- 2026-11-03: 19 wiring changes
+- 2026-11-02: 20 wiring changes
+- 2026-11-01: 31 wiring changes
+- 2026-10-31: 34 wiring changes
+- 2026-10-30: 661 wiring changes
+- 2026-10-29: 0 wiring changes
+- 2026-10-28: 4 wiring changes
+- 2026-10-26: 771 wiring changes
+- 2026-10-25: 14370 wiring changes
+- 2026-10-24: 3085 wiring changes
+- 2026-10-23: 19 wiring changes
+- 2026-10-22: 16 wiring changes
+- 2026-10-21: 19 wiring changes
+- 2026-10-20: 12948 wiring changes
+- 2026-10-19: 20 wiring changes
+- 2026-10-18: 11 wiring changes
+- 2026-10-17: 7133 wiring changes
+- 2026-10-16: 18573 wiring changes
+- 2026-10-15: 2 wiring changes
+- 2026-10-14: 2 wiring changes
+- 2026-10-13: 2 wiring changes
+- 2026-10-12: 16 wiring changes
+- 2026-10-11: 28 wiring changes
+- 2026-10-10: 9 wiring changes
+- 2026-10-09: 4 wiring changes
+- 2026-10-08: 10 wiring changes
+- 2026-10-07: 12 wiring changes
+- 2026-10-06: 19 wiring changes
+- 2026-10-05: 11 wiring changes
+
+## suspects (deleted/renamed wiring files)
+- 2026-10-20 72332126cf reorganizacion etapa 2: Edificio 1 (router/ fichas/) + Edificio 2 (plugins/) + componentes/ (12831)
+- 2026-10-25 9a3c6e8cc8 Organización: componentes frameworks/investigación/memoria/skills/router reubicados (renames 100%) (7184)
+- 2026-10-16 f70f8808de limpieza t138u: borrar 10 candidatos verificados 3 pasadas (copia deepseek-harness-router, notas sueltas, pendientes, archives/zips, evidencia vieja, duplicados litellm/python-sdk/rowboat/openclaw viejos) (7148)
+- 2026-10-17 cf7e763f9b limpieza: OpenClaw y Hermes fuera de main (viven solo en sus repos propios) (6107)
+- 2026-10-16 f149a70eff t146u: OpenClaw v2026.10.4 (openclaw/openclaw 383c124c) via motores canonicos, identico al tag salvo 6 symlinks (politica del motor); borrar hermes-agent-v2026.9.24 y openclaw-v2026.9.6 (sin refs en workflows); refs esenciales actualizadas (agent-44, plan, README) (5764)
+- 2026-10-25 9ccdd9b6ad Organización: componentes chat-bot y chatbot -> chat-router (enlaces de compatibilidad) (4580)
+- 2026-10-16 a9f1910938 limpieza: duplicados, capturas y deepseek-harness-chat sin uso (1568)
+- 2026-10-25 85c9443c3b Organización: componentes descartados -> chat-router/otros/descartados (renames 100%) (1456)
+- 2026-10-24 a5b6235a64 Quitar copia duplicada del SDK QwenCloud en raiz_fichas_prompt (queda en raiz_router) (780)
+- 2026-10-24 908fd99fde Quitar qwen-code y Qwen-MM-Plugins del SDK; la prueba de escritura GitHub va a main (el Harness no permite otra rama) y Prueba/ no reinicia el Router (722)
+- 2026-10-16 877952f948 t145u: borrar copia vieja de Hermes (Componentes del Router/hermes-agent v2026.9.14, 13.030 archivos; no cableada, verificado 3 pasadas); queda hermes-agent-v2026.9.24; README actualizado (717)
+- 2026-10-26 ebb21c88cd Repo en 2 raíces: router-mvp/ (mvp, router, fichas, raiz_*, componentes) y chat-router/ (chat, plugins, LOOP, harness); rutas del código ajustadas; solo queda un system prompt en la ficha (690)
+- 2026-10-20 6a5c60f33c reorganizacion etapa 1: borrar README/handoff/notas/datos sueltos (94)
+- 2026-10-25 9c4e58e1a3 Organizar el chat en dos raices: chat/frontend y chat/backend (mvp, harness, cliente) con enlaces de compatibilidad para el Space y los plugins (53)
+- 2026-10-25 95db71c368 org: mover workflow-loop-yaiwes y hf_skills a chat-router/workflow-loop-code-yaiwes (enlaces en rutas viejas) (44)
+- 2026-10-26 7cd5e0eebf Raíz Chat router: plugins/ y el LOOP dentro de chat-router/ con enlaces de compatibilidad en la ruta vieja (34)
+- 2026-10-16 1caebda01f anclas: encendido/apagado de cada ancla en la hoja (Constitución apagada por defecto: gobernanza_activa=false si no está encendida); proyectos: Nuevo proyecto + ventana con archivos y procesos (backend proyecto get.procesos, registro de procesos por project_id); YAIWES servido en /yaiwes/ (PANEL-01, HOST, RUN, WALL, GBOT-01, FOTO 1-14, FICHAS, fábrica runtime/vendor, módulos, SKILLS-REGISTRY y PLAN-DAG en Configuración, chequeos seguridad/QA/empaque) (34)
+- 2026-10-25 d5c9d2afcb Mover plugins/agentes y 09-CLAUDE-CODE a chat-router/agentes (renombres 100%, enlace plugins/agentes) (20)
+- 2026-10-16 02847b8b2b t144u: agentes/ queda solo con chat-router-05-AGENTES, plan-opus-agentes y handoffs-agentes; borrar copias agents-yaiwes, router-agents y readme indice suelto (originales cableados intactos); README/HANDOFF actualizados + URLs Hermes/OpenClaw (20)
+- 2026-10-25 c5389d162b org: mover motores, motores-descarga, 11-EVIDENCIA y 12-FABRICA-MOTORES a chat-router/motores (con enlaces) (17)
+- 2026-10-26 2c4d5a387f Motores code: desaparece la palabra skills de la API (motores, motor_fases, motor_ejecutar, motores_registro), sin selector; carpeta motores_code; ejecutar = gobernar (12)
+- 2026-10-30 024a922377 Nombres finales: SWE CODE + SWE CODE free; router temporal HF dentro de SWE CODE via plugins/harness (9)
+- 2026-10-30 95aea3a6b1 Dos raices: swen code (edificio 1 router/motores/fichas) + swen code free (edificio 2 openclaw/puentes) bajo chat-router, enlaces via plugins/harness (9)
+- 2026-10-30 f08b3a7936 swe_code + swen_code_free DENTRO de plugins/ (dirs reales, sin raices nuevas) (9)
+- 2026-10-30 c175bb7061 Mover SWE CODE + SWEN CODE free a chat-router/ (organizacion existente, enlaces+manifest) (9)
+- 2026-10-23 959d400165 mvp: motores que envuelven el system prompt movidos a mvp/herramientas y mode_router conectado en la ficha (9)
+- 2026-10-25 7ce0644dd2 Mover 5 carpetas de plugins/chat-router a chat-router/chatbot (7)
+- 2026-10-25 4e0d52c2e8 chore(loop): organizar LOOP en subcarpeta Loop/ con la estructura que el codigo espera (5)
+- 2026-10-26 bdb4b3b0d9 Fuera de las 2 raíces: se borran CLAUDE.md, docs/ y el enlace Prueba (4)
+- 2026-10-16 e6bf3f1257 RETIRADO HF Jobs/L4: cierra todas las puertas de gasto (PASO 1) (3)

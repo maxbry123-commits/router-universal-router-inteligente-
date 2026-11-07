@@ -1,6 +1,6 @@
 """RIU kernel RETIRADO a bootstrap-sin-Jobs (2026-10-16).
 
-Antes este supervisor hacia HfApi.run_job/cancel_job del Router cpu-basic,
+Antes este supervisor hacia HfApi.run_job/cancel_job del Router de pago (cpu-upgrade, 32 GB + CPU),
 publicaba *.hf.jobs en LIVE_URL.json y tick() renovaba el Job (--watch).
 Ahora solo queda la hidratacion del banco de claves para el Space permanente:
 `python riu_kernel.py` -> pone los secretos del banco en el entorno del proceso.

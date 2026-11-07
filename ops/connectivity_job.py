@@ -13,7 +13,7 @@ HF_REPO = os.environ["HF_REPO"]
 GH_TOKEN = os.environ["GH_TOKEN"]
 HF_TOKEN = os.environ["HF_TOKEN"]
 
-WORK = Path("/tmp/router-audit")
+WORK = Path(os.environ.get("WORK_DIR","/workspace/work"))/"router-audit"
 SOURCE = WORK / "source"
 REPORT = WORK / "report"
 

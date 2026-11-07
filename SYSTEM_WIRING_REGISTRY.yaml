@@ -1,0 +1,345 @@
+# SYSTEM_WIRING_REGISTRY.yaml — REGISTRO MAESTRO DE CABLEADO E INTEGRACIONES (CIWR)
+#
+# Un solo archivo. Es el centro de distribucion: dice QUE existe, DONDE esta, QUIEN lo consume,
+# QUIEN lo provee, COMO se comunican, COMO se prueban y en QUE estado esta.
+# No duplica codigo, no lo mueve y no lo ejecuta. Los secretos solo se REFERENCIAN (nunca se guardan).
+#
+# Autoridad: kernel/INPUT_BLOCK_YAIWES_CABLEADO.md (verbatim del owner) + AGENTS.md (guia, frozen).
+# Indice de navegacion: CODE_INDEX.md.  Inventario de pares: connections/registry.yaml.
+# run_id: 20261104-kernel01   actualizado: 2026-11-06
+
+version: 1
+schema: repo.wiring.ciwr/v1
+run_id: 20261104-kernel01
+principio: >-
+  El registro maestro NO copia, NO mueve y NO ejecuta codigo. Solo documenta donde esta cada
+  componente, como se conecta y con que evidencia. Una conexion no pasa a ACTIVE por estar
+  configurada: tiene que responder de verdad.
+
+# ---------------------------------------------------------------------------------------------
+# 0. UMBRAL DE ACTIVACION (7 condiciones, obligatorias todas - decision del owner)
+# ---------------------------------------------------------------------------------------------
+umbral_active:
+  condiciones:
+  - autenticacion_valida
+  - conexion_real_con_el_proveedor
+  - solicitud_de_inferencia_ejecutada
+  - respuesta_valida_del_modelo
+  - tiempo_de_respuesta_registrado
+  - sin_errores_criticos
+  regla: una prueba superficial NO activa una conexion
+  who'd: owner (D-114)
+
+# ---------------------------------------------------------------------------------------------
+# 1. PLATAFORMAS (quien es la verdad de que)
+# ---------------------------------------------------------------------------------------------
+plataformas:
+  github:
+    rol: codigo_fuente_unico
+    reponsable: versionado + historial + workflows
+    rama_publicada: main
+    regla: todo el codigo vive aqui
+  huggingface:
+    rol: espejo_auto_pull_minimo
+    responsable: servir el servidor y actualizar la UI
+    contenido: lo minimo necesario (allowlist operativa del job de espejo)
+    regla: nunca es la fuente; el Space arranca con auto-pull del repo
+  vercel:
+    rol: frontend_publicado
+    responsable: publicar la UI y disparar el trigger del watchdog al ENCENDER
+    regla: sin despliegue nuevo sin autorizacion expresa
+  computo:
+    rol: servidores_de_pago
+    perfil: {ram_gb: 32, tipo: cpu, en_hf: cpu-upgrade}
+    prohibido: cpu-basic
+
+# ---------------------------------------------------------------------------------------------
+# 2. COMPONENTES (donde esta de verdad)
+# ---------------------------------------------------------------------------------------------
+componentes:
+  - id: chatbot
+    nombre: Chatbot
+    ruta: chat-router/chatbot/
+    responsabilidad: suite de chatbot (frontend YAIWES, espacio, funciones, suite UI)
+    consumidores: [chat_router]
+  - id: chat_router
+    nombre: Chat Router
+    ruta: chat-router/chat/
+    subrutas:
+      frontend_yaiwes: chat-router/chat/frontend/
+      backend_yaiwes: chat-router/chat/backend/
+      espejo_openclaw: chat-router/chat/espejo/espejo_prod.js
+    responsabilidad: UI Chat YAIWES + backend que despacha al harness y al router
+    consumidores: [frontend_chat_yaiwes, backend_chat_yaiwes]
+  - id: swe_code_free
+    nombre: SWE CODE free
+    ruta: chat-router/SWE CODE free/
+    responsabilidad: variante libre de SWE CODE (activacion, agente, APK movil, auditoria X-Ray)
+  - id: swe_code
+    nombre: SWE CODE
+    ruta: chat-router/SWE CODE/
+    responsabilidad: mini router de SWE CODE, cascada de motores, web-bridge
+  - id: router_mvp
+    nombre: Router MVP
+    ruta: router-mvp/
+    subrutas: {raiz_router: router-mvp/raiz_router/, raiz_fichas_prompt: router-mvp/raiz_fichas_prompt/, mvp: router-mvp/mvp/, router: router-mvp/router/}
+    responsabilidad: raiz de router, fichas/prompt y MVP ejecutable (app.py)
+  - id: router_swe_code
+    nombre: Router SWE CODE
+    ruta: chat-router/SWE CODE/mini_router.py
+    responsabilidad: router minimo de SWE CODE sobre la raiz de router
+  - id: harness_deepseek
+    nombre: Harness DeepSeek
+    ruta: chat-router/harness/
+    subrutas: {plugin: chat-router/harness/plugin.py, server: chat-router/harness/server.py, backend: chat-router/chat/backend/deepseek_harness/, plugin_registrado: chat-router/plugins/deepseek_harness/}
+    responsabilidad: centro de distribucion de instrucciones hacia modelos, agentes y herramientas
+  - id: registro_central
+    nombre: Sistema central de conexion y cableo
+    ruta: connections/
+    subrutas: {maestro: SYSTEM_WIRING_REGISTRY.yaml, pares: connections/registry.yaml, topologia: connections/topology.yaml, endpoints: connections/endpoints.yaml, healthchecks: connections/healthchecks.yaml, mapa: chat-router/MAPA.md}
+    responsabilidad: inventario oficial de conexiones + topologia + endpoints + como verificar
+  - id: agentes
+    nombre: Agentes
+    ruta: chat-router/agentes/
+    subrutas: {adaptadores: chat-router/agentes/adaptadores/, agentes_yaiwes: chat-router/agentes/agentes-yaiwes/, claude_code: chat-router/agentes/claude-code/, orquestacion: chat-router/agentes/orquestacion/, runtime: chat-router/agentes/runtime/}
+    responsabilidad: agentes, adaptadores, orquestacion y runtime
+  - id: loop_cola_watchdog
+    nombre: Loop, cola y watchdog
+    ruta: chat-router/Loop cola wachdog/
+    subrutas: {loop: chat-router/Loop cola wachdog/Loop/, cola: chat-router/Loop cola wachdog/Cola/, watchdog: chat-router/Loop cola wachdog/wachdog/, state: chat-router/Loop cola wachdog/state/, workflow: chat-router/workflow-loop-code-yaiwes/}
+    responsabilidad: cola de trabajo, loop de ejecucion, ECC y watchdog (encendido/reinicio)
+  - id: system_prompt_motores
+    nombre: System prompt y motores
+    ruta: router-mvp/raiz_fichas_prompt/
+    subrutas: {fichas: router-mvp/raiz_fichas_prompt/, prompt_frontend: chat-router/chat/frontend/swe-systemprompt.js, motores: chat-router/motores/, fabrica_motores: chat-router/motores/fabrica-motores/, pruebas_nvidia_groq: chat-router/motores/pruebas-nvidia-groq/}
+    responsabilidad: raiz del system prompt y de las fichas; motores que lo reciben y ejecutan
+  - id: memoria
+    nombre: Memoria y almacenamiento
+    ruta: chat-router/memoria/
+    subrutas: {memoria_yaiwes: chat-router/memoria/memoria-yaiwes/, hf_datasets: chat-router/memoria/hf_datasets/, arquitectura: chat-router/memoria/arquitectura/}
+    responsabilidad: persistencia y datasets de HF
+  - id: plugins
+    nombre: Plugins (Harness DeepSeek)
+    ruta: chat-router/plugins/
+    subrutas: {deepseek_harness: chat-router/plugins/deepseek_harness/, agentes: chat-router/plugins/agentes/, chat: chat-router/plugins/chat/, cola50: chat-router/plugins/cola50/, connectivity: chat-router/plugins/connectivity/, hf_compute: chat-router/plugins/hf_compute/, hf_datasets: chat-router/plugins/hf_datasets/, hf_skills: chat-router/plugins/hf_skills/, hf_storage: chat-router/plugins/hf_storage/}
+    responsabilidad: plugins que el harness despacha (agentes, chat, cola, compute, datasets, skills, storage)
+
+# ---------------------------------------------------------------------------------------------
+# 3. SERVICIOS (centro de distribucion: consumidor <-> proveedor)
+# ---------------------------------------------------------------------------------------------
+servicios:
+  - id: nvidia
+    tipo: llm_provider
+    consumidor: [selector_de_modelos, harness_deepseek, agentes]
+    proveedor: {endpoint_ref: NVIDIA_BASE_URL, auth_ref: NVIDIA_API_KEY}
+    transporte: http
+    contrato: {peticion: chat_completion, respuesta: model_response}
+    healthcheck: {tipo: inferencia, requerido: true, niveles: [conectividad, inferencia_real, integracion_selector]}
+    fallback: [groq, modelos_locales]
+    estado: DISCOVERED
+    evidencia: {nivel: documentada, prueba: pendiente_job_test_J08}
+  - id: groq
+    tipo: llm_provider
+    consumidor: [selector_de_modelos, harness_deepseek]
+    proveedor: {endpoint_ref: GROQ_BASE_URL, auth_ref: GROQ_API_KEY}
+    transporte: http
+    healthcheck: {tipo: inferencia, requerido: true}
+    fallback: [modelos_locales]
+    estado: DISCOVERED
+    evidencia: {nivel: documentada, prueba: pendiente}
+  - id: deepseek_harness
+    tipo: distribution_harness
+    consumidor: [chat_router, agentes, motores, loop_cola_watchdog]
+    proveedor: {ruta: chat-router/harness/, ficha: chat-router/harness/ficha.json}
+    transporte: inproc_python
+    contrato:
+      campos_obligatorios: [plugin_id, action, input, output]
+      auth: referencia a secreto por entorno
+      timeout: definido por el plugin
+      errores: declare y reporta, nunca "exito" sin confirmacion real
+    healthcheck: {tipo: contrato, requerido: true, nota: "un plugin no declara escritura exitosa sin ACK real"}
+    estado: CONFIGURED
+    evidencia: {nivel: encontrada_en_codigo, prueba: pendiente_job_test_J12}
+  - id: modelos_locales
+    tipo: llm_provider
+    consumidor: [selector_de_modelos, chat_router]
+    proveedor: {ruta: "chat-router/SWE CODE/", politica: 1_modelo_por_servidor}
+    transporte: http
+    healthcheck: {tipo: inferencia, requerido: true, niveles: [servidor_activo, modelo_cargado, inferencia_real, selector]}
+    fallback: [nvidia, groq]
+    política:
+      max_servidores_en_cola: 3
+      salto_por_llamada_fallida: siguiente_servidor
+      espera_por_modelo: 1_servidor
+      abandono_y_suspension_min: 15
+    estado: DISCOVERED
+    evidencia: {nivel: documentada, prueba: pendiente_job_test_J09}
+  - id: memoria
+    tipo: storage
+    consumidor: [chat_router, agentes, loop_cola_watchdog]
+    proveedor: {ruta: chat-router/memoria/, subrutas: [chat-router/memoria/memoria-yaiwes/, chat-router/memoria/hf_datasets/]}
+    transporte: harness_plugin
+    healthcheck: {tipo: escribir_leer, requerido: true, prueba: "escribir -> ACK -> leer -> comparar"}
+    estado: DISCOVERED
+    evidencia: {nivel: encontrada_en_codigo, prueba: pendiente_job_test_J10}
+  - id: storage
+    tipo: storage
+    consumidor: [chat_router, agentes, loop_cola_watchdog]
+    proveedor: {ruta: chat-router/memoria/hf_datasets/, plugin: chat-router/plugins/hf_storage/}
+    transporte: harness_plugin
+    healthcheck: {tipo: persistencia, requerido: true, prueba: "escribir -> reiniciar -> leer"}
+    estado: DISCOVERED
+    evidencia: {nivel: encontrada_en_codigo, prueba: pendiente_job_test_J11}
+  - id: mcp_router_riu
+    tipo: tool_server
+    consumidor: [chat_router, agentes, watchdog, job_test]
+    proveedor: {endpoint_ref: RIU_MCP_URL, auth_ref: UNIVERSAL_KEY, espacio: COMAND-CENTER-1/riu-router}
+    transporte: mcp
+    contrato: {peticion: initialize + notifications/initialized + tools/list + tools/call, respuestas: tools, count: 14}
+    healthcheck: {tipo: mcp, requerido: true}
+    fallback: []
+    estado: TESTING
+    evidencia:
+      nivel: probada_en_ejecucion
+      prueba: "initialize OK + tools/list = 14 (con clave de entorno); sin clave -> 401"
+      fecha: 2026-11-06
+  - id: space_riu_router
+    tipo: servidor_http
+    consumidor: [chat_router, vercel, watchdog, job_test]
+    proveedor: {espacio: COMAND-CENTER-1/riu-router, hardware: cpu-upgrade, health_ref: RIU_HEALTH_URL}
+    transporte: http
+    healthcheck: {tipo: http, esperado: 200, cuerpo: "status + commit"}
+    estado: TESTING
+    evidencia:
+      nivel: probada_en_ejecucion
+      prueba: "/health -> 200 con commit; stage RUNNING; hardware cpu-upgrade"
+      fecha: 2026-11-06
+  - id: vercel_frontend
+    tipo: hosting_frontend
+    consumidor: [usuarios]
+    proveedor: {proyecto_ref: VERCEL_PROJECT, url_ref: VERCEL_URL}
+    transporte: https
+    responsabilidad_adicional: "al ENCENDER dispara el trigger que despierta el servidor (watchdog)"
+    healthcheck: {tipo: http, requerido: false, nota: "/api/health del bridge devuelve 404: no es gate"}
+    estado: DISCOVERED
+    evidencia: {nivel: documentada, prueba: pendiente}
+  - id: github_source
+    tipo: source_of_truth
+    consumidor: [huggingface_mirror, vercel_frontend, job_test, agentes]
+    proveedor: {repo_ref: GH_REPO, rama: main, tag_rollback: pre-reorg-20261104-kernel01, rama_respaldo: respaldo-main-pre-swap-20261104-kernel01}
+    transporte: git
+    healthcheck: {tipo: git, requerido: true}
+    estado: CONFIGURED
+    evidencia: {nivel: probada_en_ejecucion, prueba: "ls-remote de main, tag y rama de respaldo; swap con --force-with-lease pendiente"}
+  - id: huggingface_mirror
+    tipo: mirror
+    consumidor: [space_riu_router]
+    proveedor: {espacio: COMAND-CENTER-1/riu-router, metodo: push_por_protocolo_git_allowlist, rama: main}
+    transporte: git
+    regla: "contenido minimo: solo lo necesario para servir y actualizar la UI; nunca >20.000 ficheros"
+    healthcheck: {tipo: git, requerido: true, prueba: "space_RUNNING + commit del health == HEAD"}
+    estado: CONFIGURED
+    evidencia: {nivel: probada_en_ejecucion, prueba: "j7_mirror PASS (baseline, sin subir) - el reespejo real es N6"}
+  - id: cola_servidores
+    tipo: orquestacion
+    consumidor: [chat_router, agentes, modelos_locales]
+    proveedor: {ruta: chat-router/Loop cola wachdog/Cola/, policy: 85_por_ciento_salta, 15_min_duerme}
+    transporte: inproc_python
+    contrato: {entrada: tarea, salida: resultado_o_reintento, estados: [pending, running, completed, failed, rejected]}
+    healthcheck: {tipo: contrato, requerido: true}
+    estado: DISCOVERED
+    evidencia: {nivel: documentada, prueba: pendiente}
+  - id: watchdog
+    tipo: supervision
+    consumidor: [vercel_frontend, queue, space_riu_router]
+    proveedor: {ruta: chat-router/Loop cola wachdog/wachdog/, trigger: vercel_al_encender}
+    transporte: inproc_python
+    responsabilidad: "encendido/reinicio de servidores; 15 min sin actividad -> dormir; boton ON/OFF permanente en la UI"
+    healthcheck: {tipo: servicio, requerido: true}
+    estado: DISCOVERED
+    evidencia: {nivel: documentada, prueba: pendiente}
+  - id: system_prompt
+    tipo: instruccion_raiz
+    consumidor: [harness_deepseek, agentes, motores]
+    proveedor: {ruta: router-mvp/raiz_fichas_prompt/, ficha: router-mvp/raiz_fichas_prompt/, frontend: chat-router/chat/frontend/swe-systemprompt.js}
+    recorrido: [raiz_ficha, motor_o_resolver, harness, adaptador_del_proveedor, modelo]
+    verificacion: "identificador de prueba inocuo en entorno de test + SHA del prompt (sin datos sensibles)"
+    persistencia_requerida: [delegacion, llamadas_herramientas, continuacion, reanudacion, cambio_de_modelo]
+    estado: DISCOVERED
+    evidencia: {nivel: encontrada_en_codigo, prueba: pendiente_job_test_J03}
+  - id: openclaw
+    tipo: gateway_independiente
+    consumidor: [usuarios, agentes]
+    proveedor: {ruta: chat-router/chat/espejo/espejo_prod.js, gateway: configurable}
+    transporte: mcp_http
+    contrato: "modelos.providers registrados directamente (sin depender del Router) + modelo principal y alternativo"
+    healthcheck: {tipo: inferencia, requerido: true, prueba: "responde con el Router caido"}
+    estado: DISCOVERED
+    evidencia: {nivel: documentada, prueba: pendiente_job_test_J13}
+
+# ---------------------------------------------------------------------------------------------
+# 4. CONEXIONES (pares con su archivo responsable)
+# ---------------------------------------------------------------------------------------------
+conexiones:
+  - {id: C-001, consumidor: chat_router, proveedor: deepseek_harness, protocolo: inproc_python, archivo: chat-router/chat/backend/mvp/, estado: DISCOVERED}
+  - {id: C-002, consumidor: deepseek_harness, proveedor: nvidia, protocolo: http, archivo: chat-router/harness/, estado: DISCOVERED}
+  - {id: C-003, consumidor: deepseek_harness, proveedor: groq, protocolo: http, archivo: chat-router/harness/, estado: DISCOVERED}
+  - {id: C-004, consumidor: deepseek_harness, proveedor: modelos_locales, protocolo: http, archivo: chat-router/SWE CODE/, estado: DISCOVERED}
+  - {id: C-005, consumidor: agentes, proveedor: deepseek_harness, protocolo: harness_plugin, archivo: chat-router/plugins/agentes/, estado: DISCOVERED}
+  - {id: C-006, consumidor: loop_cola_watchdog, proveedor: deepseek_harness, protocolo: harness_plugin, archivo: chat-router/plugins/cola50/, estado: DISCOVERED}
+  - {id: C-007, consumidor: chat_router, proveedor: mcp_router_riu, protocolo: mcp, archivo: chat-router/chat/backend/, estado: DISCOVERED}
+  - {id: C-008, consumidor: chat_router, proveedor: memoria, protocolo: harness_plugin, archivo: chat-router/plugins/memoria/, estado: DISCOVERED}
+  - {id: C-009, consumidor: agentes, proveedor: storage, protocolo: harness_plugin, archivo: chat-router/plugins/hf_storage/, estado: DISCOVERED}
+  - {id: C-010, consumidor: vercel_frontend, proveedor: space_riu_router, protocolo: http, archivo: chat-router/chat/frontend/vercel.json, estado: DISCOVERED}
+  - {id: C-011, consumidor: space_riu_router, proveedor: github_source, protocolo: git_auto_pull, archivo: router-mvp/router/boot.sh, estado: CONFIGURED}
+  - {id: C-012, consumidor: watchdog, proveedor: modelos_locales, protocolo: http, archivo: chat-router/Loop cola wachdog/wachdog/, estado: DISCOVERED}
+  - {id: C-013, consumidor: watchdog, proveedor: queue, protocolo: inproc_python, archivo: chat-router/Loop cola wachdog/wachdog/, estado: DISCOVERED}
+  - {id: C-014, consumidor: openclaw, proveedor: modelos_locales, protocolo: http, archivo: chat-router/chat/espejo/espejo_prod.js, estado: DISCOVERED}
+
+# ---------------------------------------------------------------------------------------------
+# 5. HANDOFFS (documentos por area; el maestro NO los copia)
+# ---------------------------------------------------------------------------------------------
+handoffs:
+  frontend: handoff/docs/HANDOFF_FRONTEND.md
+  agentes: handoff/docs/HANDOFF_AGENTS.md
+  modelos: handoff/docs/HANDOFF_MODELS.md
+  memoria: handoff/docs/HANDOFF_MEMORY.md
+  harness: handoff/docs/HANDOFF_HARNESS.md
+
+# ---------------------------------------------------------------------------------------------
+# 6. ESTADOS Y REGLAS DE TRANSICION
+# ---------------------------------------------------------------------------------------------
+estados:
+  - {id: DISCOVERED, significa: existe y esta documentado; sin prueba}
+  - {id: CONFIGURED, significa: esta cableado en codigo/config; sin prueba de ejecucion}
+  - {id: TESTING, significa: hay sonda real en curso}
+  - {id: ACTIVE, significa: cumple las 7 condiciones del umbral}
+  - {id: FAILED, significa: la sonda fallo con evidencia}
+  - {id: BLOCKED, significa: depende de una decision o credencial del owner}
+  - {id: DEPRECATED, significa: sustituido; se conserva el enlace de compatibilidad}
+  - {id: ORPHANED, significa: sin consumidor ni funcion demostrable; a cuarentena, nunca borrado sin evidencia}
+niveles_de_evidencia:
+  - documentada
+  - encontrada_en_codigo
+  - probada_en_ejecucion
+  - rota_o_pendiente
+reglas:
+  - "Todo servicio tiene consumidor, proveedor, protocolo, endpoint/referencia, contrato, healthcheck y fallback."
+  - "Ninguna conexion se declara activa sin las 7 condiciones."
+  - "Los secretos solo se referencian; jamas se guardan aqui."
+  - "El estado se actualiza con evidencia; no por configuracion."
+  - "GitHub Actions y LFS prohibidos; los jobs pesados se trocean (E1..E8)."
+
+# ---------------------------------------------------------------------------------------------
+# 7. EXCLUSIONES Y PENDIENTES DEL OWNER
+# ---------------------------------------------------------------------------------------------
+exclusiones:
+  motor_research_prepass:
+    estado: NO_AUTORIZADO
+    regla: "permanece intacto; el problema sigue pendiente; autorizar solo tras error + contexto + regresion, guardando el codigo anterior"
+  claves:
+    estado: INTACTAS
+    regla: "ninguna quedo expuesta; no se tocan; solo referencias por entorno"
+pendientes_owner:
+  - {id: O1, tema: semantica_del_space, pregunta: "espejo real o auto-pull (el boot clona main)?"}
+  - {id: O2, tema: watchdog_publica_en_main, pregunta: "sigue publicando commits en main fuera del DAG?"}

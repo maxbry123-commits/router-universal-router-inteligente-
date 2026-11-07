@@ -4,7 +4,7 @@
     "id": "hf_compute",
     "enabled_default": false,
     "health_action": "status",
-    "nota_roja": "Politica de computo 24/7 que ENVUELVE integration/hf_worker_pool.py (GPT), sin reescribirlo. Tramos en config.json (umbral 80, 16 GB cpu-basic, salto a 32 GB cpu-upgrade). Usan el computo: Vercel chat, Hermes, OpenClaw, Orquestador, harness DeepSeek. AVISO: el Director habla de HF de 12 GB previo y GPT de 16 GB; se usan los valores del JSON, sin decidir. ensure es dry-run salvo apply=true."
+    "nota_roja": "Politica de computo 24/7 que ENVUELVE integration/hf_worker_pool.py (GPT), sin reescribirlo. Tramos en config.json (umbral 80, hardware unico cpu-upgrade 32 GB + CPU; D-83 deja cpu-basic PROHIBIDO). Usan el computo: Vercel chat, Hermes, OpenClaw, Orquestador, harness DeepSeek. ensure es dry-run salvo apply=true."
   },
   "artifact_id": "riu.plugins.hf_compute",
   "version": "0.1.0",
