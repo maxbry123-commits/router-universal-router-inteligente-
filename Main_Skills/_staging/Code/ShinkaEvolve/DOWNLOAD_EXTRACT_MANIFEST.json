@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 9650749,
+  "bundle_sha256": "7d604504008e6f0af7dd239b8cf3908424798beb8c9ce263040499ba1b0a0dd9",
+  "extracted_tree": {
+    "bytes": 13227814,
+    "files": 326,
+    "sha256": "e7e3e472decc09b1cec7a146b0ff29cec280b7ae8924a50ab34cb3218120b98f"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 9650749,
+      "name": "ShinkaEvolve.bundle.zip.part-0001",
+      "sha256": "7d604504008e6f0af7dd239b8cf3908424798beb8c9ce263040499ba1b0a0dd9"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "ShinkaEvolve",
+  "source_bytes": 13227814,
+  "source_commit": "8adc053a2ce4511ad2ac310e004c530a73fb974a",
+  "source_files": 326,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/SakanaAI/ShinkaEvolve",
+  "source_tree": {
+    "bytes": 13227814,
+    "files": 326,
+    "sha256": "e7e3e472decc09b1cec7a146b0ff29cec280b7ae8924a50ab34cb3218120b98f"
+  }
+}
