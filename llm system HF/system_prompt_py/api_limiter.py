@@ -1,44 +1,42 @@
 # api_limiter.py
+import asyncio
 import time
-import threading
 from collections import deque
 
-class TokenBucket:
+class AsyncTokenBucket:
     def __init__(self, rpm: int, tpm: int):
         self.rpm = rpm
         self.tpm = tpm
-        self.request_timestamps = deque()
-        self.token_timestamps = deque()
-        self.lock = threading.Lock()
+        self.req_ts = deque()
+        self.tok_ts = deque()
+        self._lock = asyncio.Lock()
 
-    def _clean_expired(self, now: float) -> None:
-        while self.request_timestamps and now - self.request_timestamps[0] > 60:
-            self.request_timestamps.popleft()
-        while self.token_timestamps and now - self.token_timestamps[0][0] > 60:
-            self.token_timestamps.popleft()
+    async def _clean(self, now: float):
+        while self.req_ts and now - self.req_ts[0] > 60:
+            self.req_ts.popleft()
+        while self.tok_ts and now - self.tok_ts[0][0] > 60:
+            self.tok_ts.popleft()
 
-    def acquire(self, estimated_tokens: int = 1000, timeout: float = 60.0) -> bool:
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            with self.lock:
-                now = time.time()
-                self._clean_expired(now)
-                current_rpm = len(self.request_timestamps)
-                current_tpm = sum(t for _, t in self.token_timestamps)
-
-                if current_rpm < self.rpm and (current_tpm + estimated_tokens) <= self.tpm:
-                    self.request_timestamps.append(now)
-                    self.token_timestamps.append((now, estimated_tokens))
+    async def acquire(self, est_tokens: int = 1000, timeout: float = 60.0) -> bool:
+        start = time.monotonic()
+        while time.monotonic() - start < timeout:
+            async with self._lock:
+                now = time.monotonic()
+                await self._clean(now)
+                if len(self.req_ts) < self.rpm and sum(t for _, t in self.tok_ts) + est_tokens <= self.tpm:
+                    self.req_ts.append(now)
+                    self.tok_ts.append((now, est_tokens))
                     return True
-            time.sleep(1.0)
+            await asyncio.sleep(0.1)
         return False
 
 LIMITERS = {
-    "groq": TokenBucket(rpm=30, tpm=8000),      # Límites oficiales
-    "nvidia": TokenBucket(rpm=40, tpm=100000),  # Límites oficiales
+    "groq": AsyncTokenBucket(rpm=30, tpm=8000),
+    "nvidia": AsyncTokenBucket(rpm=40, tpm=100000),
 }
 
-def wait_for_slot(provider: str, estimated_tokens: int = 1000, timeout: float = 60.0) -> bool:
+async def wait_for_slot(provider: str, est_tokens: int = 1000) -> bool:
     limiter = LIMITERS.get(provider)
-    if not limiter: return True
-    return limiter.acquire(estimated_tokens, timeout)
+    if not limiter:
+        return True
+    return await limiter.acquire(est_tokens)
