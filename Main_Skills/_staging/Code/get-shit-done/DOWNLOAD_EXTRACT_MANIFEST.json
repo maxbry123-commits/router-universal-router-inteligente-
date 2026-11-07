@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 4879344,
+  "bundle_sha256": "8d26df24b63eebb542a3ba8220046fd634dadfb811438198c786f6bf883d12fa",
+  "extracted_tree": {
+    "bytes": 15635721,
+    "files": 1854,
+    "sha256": "951b03e3f9810e5a0f2eb46ce671337cfbea70ddb9b82d0711f38e44513bfe52"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 4879344,
+      "name": "get-shit-done.bundle.zip.part-0001",
+      "sha256": "8d26df24b63eebb542a3ba8220046fd634dadfb811438198c786f6bf883d12fa"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "get-shit-done",
+  "source_bytes": 15635721,
+  "source_commit": "bdcaab2c752d9a33a1a1ca9acf3a3c81fb991815",
+  "source_files": 1854,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/gsd-build/get-shit-done",
+  "source_tree": {
+    "bytes": 15635721,
+    "files": 1854,
+    "sha256": "951b03e3f9810e5a0f2eb46ce671337cfbea70ddb9b82d0711f38e44513bfe52"
+  }
+}
