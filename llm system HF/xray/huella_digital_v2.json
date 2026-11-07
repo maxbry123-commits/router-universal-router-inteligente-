@@ -1,0 +1,216 @@
+{
+  "spaces": [
+    {
+      "id": "COMAND-CENTER-1/riu-router",
+      "sdk": "docker",
+      "hardware": "cpu-upgrade",
+      "files": [
+        ".rebuild",
+        "Dockerfile",
+        "README.md",
+        "boot.sh",
+        "openclaw.sh",
+        "proxy.py",
+        "swecode_provider.json"
+      ],
+      "secrets_names": [
+        "GITHUB_TOKEN",
+        "RIU_API_KEY",
+        "RIU_MCP_KEY",
+        "RIU_PUBLIC_CHAT_KEY",
+        "HF_TOKEN",
+        "OPENCLAW_ENABLE"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/claude-github-mcp-backup",
+      "sdk": "docker",
+      "hardware": null,
+      "files": [
+        ".gitignore",
+        "Dockerfile",
+        "README.md",
+        "TOKEN_PERMISSIONS.md",
+        "app.py",
+        "door.py",
+        "fleet.py",
+        "mini.py",
+        "requirements.txt"
+      ],
+      "secrets_names": [
+        "HF_TOKEN",
+        "HF_MCP_CLAUDE_PERMANENT",
+        "HF_TOKEN_MCP_PERMANENT",
+        "RIU_KERNEL_HF_TOKEN",
+        "MCP_SECRET_HF",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "RIU_ROUTER_API_KEY",
+        "RIU_AGENT_API_KEYS",
+        "JWT_SIGNING_KEY",
+        "MCP_SECRET_PATH"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-s1",
+      "sdk": "docker",
+      "hardware": "cpu-upgrade",
+      "files": [
+        "Dockerfile",
+        "README.md",
+        "entrypoint.sh",
+        "fetch_models.py",
+        "manager.py",
+        "scaler.py"
+      ],
+      "secrets_names": [
+        "HF_TOKEN"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-s2",
+      "sdk": "docker",
+      "hardware": "cpu-upgrade",
+      "files": [
+        "Dockerfile",
+        "README.md",
+        "entrypoint.sh",
+        "fetch_models.py",
+        "manager.py",
+        "scaler.py"
+      ],
+      "secrets_names": [
+        "HF_TOKEN"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-s3",
+      "sdk": "docker",
+      "hardware": "cpu-upgrade",
+      "files": [
+        "Dockerfile",
+        "README.md",
+        "entrypoint.sh",
+        "fetch_models.py",
+        "manager.py",
+        "scaler.py"
+      ],
+      "secrets_names": [
+        "HF_TOKEN"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-web",
+      "sdk": "docker",
+      "hardware": "cpu-upgrade",
+      "files": [
+        "Dockerfile",
+        "README.md",
+        "package.json",
+        "src/bloques.js",
+        "src/browser.js",
+        "src/consenso.js",
+        "src/cuentas.js",
+        "src/modos.js",
+        "src/motor.js",
+        "src/server.js",
+        "src/sites.js"
+      ],
+      "secrets_names": [
+        "WEB_ACCOUNTS",
+        "WEB_PASS"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/local-llm-router",
+      "sdk": "docker",
+      "hardware": "cpu-upgrade",
+      "files": [
+        "Dockerfile",
+        "README.md",
+        "app.py",
+        "requirements.txt"
+      ],
+      "secrets_names": [
+        "GROQ_API_KEY",
+        "NVIDIA_API_KEY",
+        "ROUTER_API_KEY"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/local-llm-router-v2",
+      "sdk": "docker",
+      "hardware": "cpu-upgrade",
+      "files": [
+        "Dockerfile",
+        "README.md",
+        "app.py",
+        "requirements.txt",
+        "search_engine.py"
+      ],
+      "secrets_names": [
+        "DATASET_CACHE",
+        "GROQ_API_KEY",
+        "NVIDIA_API_KEY",
+        "ROUTER_API_KEY"
+      ]
+    },
+    {
+      "id": "COMAND-CENTER-1/local-llm-router-v7",
+      "sdk": "docker",
+      "hardware": "cpu-upgrade",
+      "files": [
+        "Dockerfile",
+        "README.md",
+        "agent_skills_engine.py",
+        "app.py",
+        "ecc_engine.py",
+        "parallel_agent.py",
+        "requirements.txt",
+        "rsi_controller.py",
+        "search_engine.py"
+      ],
+      "secrets_names": [
+        "GROQ_API_KEY",
+        "NVIDIA_API_KEY",
+        "ROUTER_API_KEY"
+      ]
+    }
+  ],
+  "datasets": [
+    {
+      "id": "COMAND-CENTER-1/yaiwes-hf-memoria"
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-hf-gguf"
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-loras"
+    },
+    {
+      "id": "COMAND-CENTER-1/router-universal-router-inteligente-auditoria"
+    },
+    {
+      "id": "COMAND-CENTER-1/swe-code-datasets"
+    },
+    {
+      "id": "COMAND-CENTER-1/router-assets-cache"
+    }
+  ],
+  "models": [],
+  "categorization": {
+    "bancos": [
+      "COMAND-CENTER-1/riu-router",
+      "COMAND-CENTER-1/claude-github-mcp-backup",
+      "COMAND-CENTER-1/local-llm-router",
+      "COMAND-CENTER-1/local-llm-router-v2",
+      "COMAND-CENTER-1/local-llm-router-v7"
+    ],
+    "modelos_locales": [],
+    "almacenamiento_colas": [
+      "COMAND-CENTER-1/local-llm-router-v7"
+    ],
+    "basura": [
+      "COMAND-CENTER-1/local-llm-router-v7"
+    ]
+  }
+}
