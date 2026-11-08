@@ -11,13 +11,14 @@
 | Índice | https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/ccr-f4604ccd-i68fpq/handoff/INDEX.md | Índice y dibujo de la raíz |
 | Registro de conexiones | https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/ccr-f4604ccd-i68fpq/connections/registry.yaml | 38 conexiones en `pending_audit` |
 | Handoffs por área | https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/ccr-f4604ccd-i68fpq/handoff/docs | 5 sub-handoffs |
+| Dataset (privado) | https://huggingface.co/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria | Fuente de evidencia de los jobs. Requiere acceso |
+| Dataset · run de reorganización | https://huggingface.co/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria/tree/main/20261104-kernel01 | 14 jobs con evidencia; sin `j10_final_audit` |
+| Dataset · run de cierre | https://huggingface.co/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria/tree/main/20261107-cierre | Solo `audit/` en esta pasada |
 
 ## Tomadas del documento de cierre (no verificadas en esta pasada)
 
 | Recurso | URL |
 |---|---|
-| Dataset (verdad) | https://huggingface.co/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria |
-| Dataset · run de cierre | https://huggingface.co/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria/tree/main/20261107-cierre |
 | Dataset · audit_trace | https://huggingface.co/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria/blob/main/20261107-cierre/audit/audit_trace.json |
 | Space | https://huggingface.co/spaces/COMAND-CENTER-1/riu-router |
 | Space · salud | https://comand-center-1-riu-router.hf.space/health |

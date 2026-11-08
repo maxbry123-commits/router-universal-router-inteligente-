@@ -6,6 +6,17 @@
 - Estado del kernel: `kernel/KERNEL.yaml` y `kernel/DAG.yaml`, referidos en el README. No verificados en esta pasada.
 - Documento de cierre 20261107: la carpeta `audit/cierre/` existe en `main`. El fichero `CIERRE-20261108-TRAZABILIDAD-Y-HANDOFF.md` no se ha confirmado dentro de ella en esta pasada.
 
+## Evidencia (dataset HF)
+
+El dataset de auditoría es la fuente de evidencia de los jobs. Es **privado**: las URLs requieren acceso a `COMAND-CENTER-1`.
+
+- Dataset: https://huggingface.co/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria
+- Run de reorganización (verificado): https://huggingface.co/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria/tree/main/20261104-kernel01
+  - Contiene 14 jobs con evidencia: `j0_preflight`, `j1_inventory`, `j2_graph`, `j3_history`, `j4_plan`, `j5_apply`, `j6_rewrite`, `j6b_swap`, `j7_mirror`, `j8_audit`, `j9_remirror`, `j11_patterns`, `backend_smoke`, `bridge`. Además `audit/` y `research/`.
+  - `j10_final_audit` **no existe** en esta carpeta, por lo que la evidencia está en 14 de 15 jobs.
+- Run de cierre (verificado): https://huggingface.co/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria/tree/main/20261107-cierre
+  - Solo contiene `audit/` en esta pasada. El contenido de `audit/` no se ha revisado.
+
 ## Sub-handoffs por área (verificados en `handoff/docs/`)
 
 | Área | Fichero | Tamaño |
