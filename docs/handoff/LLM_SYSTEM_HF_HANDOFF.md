@@ -2,6 +2,15 @@
 
 Actualizado: 2026-11-08. Rama de trabajo: `ccr-f01c3de9-bmry0s`.
 
+## 0. Registro de actividad (más reciente primero)
+
+- 2026-11-08 — README del Space añadido con arquitectura, variables y limitaciones.
+- 2026-11-08 — Handoff actualizado. Sin cambios de código en este Space en esta fecha.
+
+## 0.1 Arquitectura resumida
+
+`entrypoint.sh` clona el repo en la rama `GITHUB_BRANCH` y arranca `manager.py` (proxy en 7860). `manager.py` carga `llama-server` en 8081 bajo demanda y lo descarga tras `IDLE_UNLOAD_S`. `download_model.py` trae el GGUF desde Hugging Face al arrancar. Detalle en `llm system HF/README.md`.
+
 ## 1. Qué es
 Space de Docker para servir **un** modelo GGUF local con `llama-server`, detrás de un proxy HTTP que exige `X-API-Key` y descarga el modelo desde Hugging Face al arrancar. Es el "Edificio 1" de modelos locales.
 

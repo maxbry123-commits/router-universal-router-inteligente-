@@ -2,6 +2,17 @@
 
 Actualizado: 2026-11-08. Rama: `ccr-f01c3de9-bmry0s`. Último commit de código: `c38821dd87` (Lote 35). Último commit de docs: ver `git log`.
 
+## 0. Registro de actividad (más reciente primero)
+
+- 2026-11-08 — Lote 35 en `c38821dd87`: ventana de proveedor, aviso de saldo, división ≤200 LOC, parcial persistente. Simulación TODO OK (fuera del repo).
+- 2026-11-08 — Dockerfile: CMD sin `scaler_ram.py` (encendido automático retirado).
+- 2026-11-08 — README y handoffs actualizados con arquitectura. SALIDA 3 retirada del repo.
+- 2026-11-08 — `test_audit.py`: no existe en el repo ni en las ramas. Pendiente de localizar.
+
+## 0.1 Arquitectura resumida
+
+Proxy OpenAI-compatible (`openai_compatible_proxy.py`) → `ChatABOrchestrator` → Chat A (descomposición) y Chat B (implementación) → `GenericModelAdapter` con `fallback_middleware` y `provider_window` → Groq/NVIDIA. Bloques pasan por `code_splitter`, pytest, `SemanticCheckpoint` y `EvidencePacket`. Detalle en `ROUTER MVP v1/system_prompt_py/README.md`.
+
 ## 1. Qué es
 Router con orquestación Chat A (arquitecto) / Chat B (implementador) sobre proveedores Groq y NVIDIA, con checkpoint, parcial persistente, bloques ≤200 LOC verificados con pytest, herramientas HTTP y bucle agéntico acotado.
 
