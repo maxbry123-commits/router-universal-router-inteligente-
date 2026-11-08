@@ -1,0 +1,46 @@
+import json
+import hashlib
+from pathlib import Path
+from core_recovery import atomic_write_json
+from resume_validator import ResumeValidator
+
+class SemanticCheckpoint:
+    def __init__(self, plan_id: str, environment: dict):
+        self.plan_id = plan_id
+        self.environment = environment
+        self.dir = Path(".checkpoints")
+        self.dir.mkdir(exist_ok=True)
+        self.state_file = self.dir / f"{plan_id}_semantic.json"
+        self.environment_hash = self._hash_environment(environment)
+        self.state = self._load()
+
+    def _hash_environment(self, env: dict) -> str:
+        env_str = json.dumps(env, sort_keys=True)
+        return hashlib.sha256(env_str.encode()).hexdigest()
+
+    def _load(self) -> dict:
+        if self.state_file.exists():
+            with open(self.state_file, "r", encoding="utf-8") as f:
+                state = json.load(f)
+            if state.get("plan_sha256") != self.plan_id:
+                raise ValueError("Plan SHA256 cambio. Abortando reanudacion.")
+            if state.get("environment_hash") != self.environment_hash:
+                raise ValueError("Entorno cambio. Abortando reanudacion.")
+            ResumeValidator.validate_checkpoint(state)
+            return state
+        return {
+            "plan_sha256": self.plan_id,
+            "environment_hash": self.environment_hash,
+            "environment": self.environment,
+            "completed_blocks": [],
+            "current": None,
+            "consumed_interrupts": []
+        }
+
+    def save_block(self, block_id: str, code: str):
+        code_hash = hashlib.sha256(code.encode()).hexdigest()
+        self.state["completed_blocks"] = [b for b in self.state["completed_blocks"] if b["id"] != block_id]
+        self.state["completed_blocks"].append({"id": block_id, "hash": code_hash})
+        self.state["current"] = block_id
+        atomic_write_json(str(self.state_file), self.state)
+        return code_hash
