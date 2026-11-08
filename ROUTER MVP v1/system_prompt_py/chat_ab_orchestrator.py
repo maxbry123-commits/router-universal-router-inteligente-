@@ -1,4 +1,5 @@
 import os
+import uuid
 from chat_a_architect import ChatAArchitect
 from chat_b_implementer import ChatBImplementer
 from semantic_checkpoint import SemanticCheckpoint
@@ -23,6 +24,7 @@ class ChatABOrchestrator:
     async def run(self, task_description: str):
         mode_config = route_mode(task_description)
         EMITTER.emit("mode_selected", mode_config)
+        session_id = str(uuid.uuid4())
 
         council = self.chat_a.ask_council(task_description)
         contract = MissionContract(council["task"], ["Python"], ["Tests passing"])
@@ -38,7 +40,7 @@ class ChatABOrchestrator:
 
         while next_block:
             block_id = next_block["id"]
-            contract.verify_goal_lock(council["task"])
+            contract.verify_goal_lock(task_description)
 
             cached = await self.cache.get(f"{self.plan_id}_{block_id}")
             if cached:
@@ -48,11 +50,10 @@ class ChatABOrchestrator:
                 continue
 
             resume_brief = self.rehydrator.build_resume_brief(next_block)
-
-            enhanced_prompt = f"[MODO ACTIVO: {mode_config['mode']}]\nUsa el dataset: {mode_config['dataset']}\n{resume_brief}"
+            enhanced_prompt = f"[MODO: {mode_config['mode']}]\nDataset: {mode_config['dataset']}\n{resume_brief}"
 
             try:
-                code = await self.chat_b.implement(next_block, enhanced_prompt)
+                code = await self.chat_b.implement(next_block, enhanced_prompt, session_id)
                 filepath = os.path.join(self.workspace, f"{block_id}.py")
                 with open(filepath, "w", encoding="utf-8") as f:
                     f.write(code)
@@ -60,11 +61,10 @@ class ChatABOrchestrator:
                 await self.cache.set(f"{self.plan_id}_{block_id}", code)
                 self.checkpoint.save_block(block_id, code)
                 evidence.add_code(block_id, filepath, len(code.splitlines()))
-                EMITTER.emit("block_success", {"block_id": block_id, "mode": mode_config['mode']})
+                EMITTER.emit("block_success", {"block_id": block_id})
             except Exception as e:
-                EMITTER.emit("block_fail", {"block_id": block_id, "error": str(e)})
                 evidence.finalize("FAIL")
-                raise RuntimeError(f"Fallo en bloque {block_id}: {e}")
+                raise RuntimeError(f"Fallo en {block_id}: {e}")
 
             next_block = self.checkpoint.get_next(plan["blocks"])
 

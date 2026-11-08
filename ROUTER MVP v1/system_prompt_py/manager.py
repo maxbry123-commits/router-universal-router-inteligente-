@@ -15,23 +15,27 @@ class ModelProcess:
     def __init__(self):
         self.process = None
         self.last_call = time.time()
+        self.lock = threading.Lock()
 
     def load(self):
-        if self.process is None:
-            print("Cargando llama-server...")
-            self.process = subprocess.Popen(
-                ["llama-server", "-m", "/data/models/model.gguf", "--port", str(BACKEND_PORT)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
-        self.last_call = time.time()
+        with self.lock:
+            if self.process is None:
+                print("Cargando llama-server...")
+                try:
+                    self.process = subprocess.Popen(
+                        ["llama-server", "-m", "/data/models/model.gguf", "--port", str(BACKEND_PORT)],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    )
+                except FileNotFoundError:
+                    raise RuntimeError("llama-server no instalado en la imagen")
+            self.last_call = time.time()
 
     def unload_if_idle(self):
-        if self.process is not None and (time.time() - self.last_call) > IDLE_UNLOAD_S:
-            print("IDLE_UNLOAD: Matando llama-server para liberar RAM...")
-            self.process.send_signal(signal.SIGTERM)
-            self.process.wait()
-            self.process = None
+        with self.lock:
+            if self.process is not None and (time.time() - self.last_call) > IDLE_UNLOAD_S:
+                self.process.send_signal(signal.SIGTERM)
+                self.process.wait()
+                self.process = None
 
 MODEL = ModelProcess()
 
@@ -42,41 +46,25 @@ def idle_monitor():
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path == "/health":
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b'{"status":"ok"}')
-        elif self.path == "/v1/models":
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b'{"data":[]}')
-        else:
-            self.send_response(404)
-            self.end_headers()
+        self.send_response(200); self.end_headers(); self.wfile.write(b'{"status":"ok"}')
 
     def do_POST(self):
         if self.path.startswith("/v1/chat/completions"):
-            MODEL.load()
-            length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(length)
-            req = urllib.request.Request(BACKEND + "/v1/chat/completions", data=body, headers={"Content-Type": "application/json"})
             try:
+                MODEL.load()
+                length = int(self.headers.get('Content-Length', 0))
+                body = self.rfile.read(length)
+                req = urllib.request.Request(BACKEND + "/v1/chat/completions", data=body, headers={"Content-Type": "application/json"})
                 with urllib.request.urlopen(req) as resp:
-                    self.send_response(resp.status)
-                    self.end_headers()
-                    self.wfile.write(resp.read())
+                    self.send_response(resp.status); self.end_headers(); self.wfile.write(resp.read())
             except Exception as e:
-                self.send_response(502)
-                self.end_headers()
+                self.send_response(500); self.end_headers(); self.wfile.write(str(e).encode())
         else:
-            self.send_response(404)
-            self.end_headers()
+            self.send_response(404); self.end_headers()
 
-    def log_message(self, format, *args):
-        pass
+    def log_message(self, format, *args): pass
 
 if __name__ == "__main__":
     threading.Thread(target=idle_monitor, daemon=True).start()
     server = ThreadingHTTPServer(("0.0.0.0", 8080), Handler)
-    print("Manager on 8080 (Auto-kill enabled)")
     server.serve_forever()
