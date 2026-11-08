@@ -3,6 +3,9 @@ from fastapi.responses import JSONResponse
 import httpx
 import os
 import uuid
+import threading
+import time
+import subprocess
 from key_pool import KeyPool
 from fallback_middleware import execute_with_fallback_async
 from queue_manager import QueueManager
@@ -18,9 +21,19 @@ PROVIDERS = {
 
 ROUTER_API_KEY = os.getenv("ROUTER_API_KEY")
 if not ROUTER_API_KEY:
-    raise RuntimeError("FATAL: ROUTER_API_KEY no configurada. El proxy no puede arrancar de forma segura.")
+    raise RuntimeError("FATAL: ROUTER_API_KEY no configurada.")
 
 QUEUE = QueueManager(max_concurrent=3)
+
+def daily_cleanup_loop():
+    while True:
+        time.sleep(86400)
+        try:
+            subprocess.run(["python3", "maintenance.py"], check=False)
+        except Exception as e:
+            print(f"Error en mantenimiento: {e}")
+
+threading.Thread(target=daily_cleanup_loop, daemon=True).start()
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request, x_api_key: str = Header(None)):
