@@ -1,17 +1,25 @@
 import json
 import httpx
 import os
+import random
 from fallback_middleware import execute_with_fallback_async
 
 class GenericModelAdapter:
     def __init__(self):
         self.providers = ["groq", "nvidia"]
 
+    def _get_key(self, provider: str) -> str:
+        keys_str = os.getenv(f"{provider.upper()}_KEYS", "")
+        keys = [k.strip() for k in keys_str.split(",") if k.strip()]
+        if not keys:
+            return "dummy"
+        return random.choice(keys)
+
     async def generate_json(self, prompt: str, schema_hint: str) -> dict:
         async def _call_llm(provider: str, p: str, model_family: str) -> str:
             base_url = "https://api.groq.com/openai/v1" if provider == "groq" else "https://integrate.api.nvidia.com/v1"
             model_name = "openai/gpt-oss-120b" if provider == "groq" else "meta/llama-3.3-70b-instruct"
-            key = os.getenv(f"{provider.upper()}_API_KEY", "dummy")
+            key = self._get_key(provider)
 
             headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
             payload = {
