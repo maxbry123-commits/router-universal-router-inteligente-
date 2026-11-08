@@ -10,8 +10,6 @@ from event_emitter import EMITTER
 from contracts import MissionContract
 from mode_router_v2 import route as route_mode
 from subprocess_bridge import execute_code_safely
-from agent_skills_28 import AGENT_SKILLS
-from rsi_engines import RSI_ENGINES
 
 class ChatABOrchestrator:
     def __init__(self, plan_id: str, environment: dict):
@@ -28,14 +26,11 @@ class ChatABOrchestrator:
         mode_config = route_mode(task_description)
         session_id = str(uuid.uuid4())
 
+        self.checkpoint.verify_objective(task_description)
+
         plan = self.chat_a.decompose(task_description)
-
-        if plan["plan_sha256"] != self.plan_id:
-            self.plan_id = plan["plan_sha256"]
-            self.checkpoint = SemanticCheckpoint(self.plan_id, self.checkpoint.environment)
-            self.rehydrator = ContextRehydrator(self.checkpoint)
-
         self.checkpoint.lock_objective(task_description)
+
         council = self.chat_a.ask_council(task_description)
         contract = MissionContract(council["task"], plan["plan_sha256"], ["Python"], ["pytest OK"])
 
@@ -45,7 +40,6 @@ class ChatABOrchestrator:
         while next_block:
             block_id = next_block["id"]
 
-            self.checkpoint.verify_objective(task_description)
             contract.verify_goal_lock(task_description, plan["plan_sha256"], ["Python"])
 
             cached = await self.cache.get(f"{self.plan_id}_{block_id}")
@@ -63,19 +57,21 @@ class ChatABOrchestrator:
                 code = result["code"]
                 tests = result["tests"]
 
+                test_with_import = f"from {block_id} import *\n\n{tests}"
+
                 filepath = os.path.abspath(os.path.join(self.workspace, f"{block_id}.py"))
                 testpath = os.path.abspath(os.path.join(self.workspace, f"test_{block_id}.py"))
 
                 with open(filepath, "w", encoding="utf-8") as f:
                     f.write(code)
                 with open(testpath, "w", encoding="utf-8") as f:
-                    f.write(tests)
+                    f.write(test_with_import)
 
                 test_res = execute_code_safely(["python", "-m", "pytest", testpath], self.workspace)
 
                 if not test_res["ok"]:
                     evidence.add_test(block_id, "FAIL", test_res["logs"])
-                    raise RuntimeError(f"El codigo no pasa los tests: {test_res['logs']}")
+                    raise RuntimeError(f"Fallo en tests: {test_res['logs']}")
 
                 evidence.add_test(block_id, "PASS", "pytest OK")
                 await self.cache.set(f"{self.plan_id}_{block_id}", {"code": code, "tests": tests})

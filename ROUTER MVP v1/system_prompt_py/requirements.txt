@@ -6,3 +6,4 @@ aiosqlite==0.20.0
 ddgs==9.0.0
 beautifulsoup4==4.12.3
 huggingface_hub==0.22.2
+pytest==8.2.0
