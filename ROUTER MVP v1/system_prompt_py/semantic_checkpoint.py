@@ -34,7 +34,8 @@ class SemanticCheckpoint:
             "environment": self.environment,
             "completed_blocks": [],
             "current": None,
-            "consumed_interrupts": []
+            "consumed_interrupts": [],
+            "locked_objective": None
         }
 
     def save_block(self, block_id: str, code: str):
@@ -44,3 +45,17 @@ class SemanticCheckpoint:
         self.state["current"] = block_id
         atomic_write_json(str(self.state_file), self.state)
         return code_hash
+
+    def get_next(self, all_blocks: list) -> dict | None:
+        done = {b["id"] for b in self.state["completed_blocks"]}
+        return next((b for b in all_blocks if b["id"] not in done), None)
+
+    def lock_objective(self, objective: str):
+        if self.state.get("locked_objective") is None:
+            self.state["locked_objective"] = objective
+            atomic_write_json(str(self.state_file), self.state)
+
+    def verify_objective(self, current_objective: str):
+        locked = self.state.get("locked_objective")
+        if locked and locked != current_objective:
+            raise ValueError(f"GOAL_LOCK_VIOLADO: '{current_objective}' != '{locked}'")
