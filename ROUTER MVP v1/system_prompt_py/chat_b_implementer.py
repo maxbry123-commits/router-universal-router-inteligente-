@@ -37,7 +37,7 @@ class ChatBImplementer:
 
         elif parsed['type'] == 'tool_call':
             result = await self.executor.execute(parsed['tool'], parsed['args'])
-            return {'type': 'tool_result', 'tool': parsed['tool'], 'result': result}
+            return {'type': 'tool_result', 'tool': parsed['tool'], 'args': parsed['args'], 'result': result}
 
         else:
             raise ValueError(f"Respuesta no valida: {parsed}")
