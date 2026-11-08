@@ -88,7 +88,7 @@ Motor usado: el canonico `hf_download_extract_engine.py` con blob SHA `91e6e4486
 | Tipo de commit | Numero aprox | Autor | Que toca |
 |---|---|---|---|
 | `build(hf-combined): publish ...` (publicacion del motor) | 54 | motor `yaiwes-hf-combined-engine` | solo `Main_Skills/` |
-| `Auto-commit: ... (Auditado por Sheriff)` | 55 | `Sheriff-Agent` | solo `Main_Skills/` |
+| `Auto-commit: ... (Auditado por Sheriff)` | 56 | `Sheriff-Agent` | solo `Main_Skills/` |
 
 El commit unico con las 62.399 rutas no se pudo subir (la conexion se caia a los 64 s); se troceo en
 commits por componente, igual que publica el motor. Ningun push fue forzado.
