@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 7595775,
+  "bundle_sha256": "e91fdc0dca563105b779ed20a005f040a4fbe0a910fb03b11f32adfc89860779",
+  "extracted_tree": {
+    "bytes": 15876149,
+    "files": 533,
+    "sha256": "ce7447650ad4ec478c0de69b272d59fca9c40c8bfccbc33683daa662f269a879"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 7595775,
+      "name": "ui-ux-pro-max-skill.bundle.zip.part-0001",
+      "sha256": "e91fdc0dca563105b779ed20a005f040a4fbe0a910fb03b11f32adfc89860779"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "ui-ux-pro-max-skill",
+  "source_bytes": 15876149,
+  "source_commit": "b0ebb1797ebc6467fcf3a35f96d768d15faf5120",
+  "source_files": 533,
+  "source_ref": "b0ebb1797ebc6467fcf3a35f96d768d15faf5120",
+  "source_repo": "nextlevelbuilder/ui-ux-pro-max-skill",
+  "source_tree": {
+    "bytes": 15876149,
+    "files": 533,
+    "sha256": "ce7447650ad4ec478c0de69b272d59fca9c40c8bfccbc33683daa662f269a879"
+  }
+}
