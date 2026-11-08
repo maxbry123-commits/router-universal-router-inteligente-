@@ -1,4 +1,4 @@
-import time
+import asyncio
 from workflow_state import WorkflowState
 from health_monitor import is_shutting_down, HealthChecker
 from dag_engine import DAGEngine
@@ -8,7 +8,7 @@ class PipelineExecutor:
         self.dag = dag
         self.STATE_PATH = "workflow_state.json"
 
-    def execute(self, input_data: dict, _depth: int = 0) -> WorkflowState:
+    async def execute(self, input_data: dict, _depth: int = 0) -> WorkflowState:
         if is_shutting_down():
             state = WorkflowState.load(path=self.STATE_PATH, input_data=input_data)
             state.persist(self.STATE_PATH)
@@ -43,7 +43,11 @@ class PipelineExecutor:
             HealthChecker.refresh(in_flight_node=node_id)
 
             try:
+                await asyncio.wait_for(self._run_node(node), timeout=120.0)
                 state.completed_nodes.append(node_id)
+                state.persist(self.STATE_PATH)
+            except asyncio.TimeoutError:
+                state.errors.append(f"{node_id}: Timeout de 120s excedido")
                 state.persist(self.STATE_PATH)
             except Exception as e:
                 state.errors.append(f"{node_id}: {e}")
@@ -51,3 +55,6 @@ class PipelineExecutor:
 
         HealthChecker.refresh(status="done")
         return state
+
+    async def _run_node(self, node: dict):
+        raise NotImplementedError(f"Nodo {node.get('id')} sin ejecutor real: no se marca como completado")
