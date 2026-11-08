@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 201,
+  "bundle_sha256": "0d2a8fe969f62597a2936bc801526bd8de92b050805c741f10a3e53223cce1da",
+  "extracted_tree": {
+    "bytes": 101,
+    "files": 1,
+    "sha256": "ba33cf444ef1f02f10e294db6cac9f3a74c4098b27aff302b5d25deb553028e5"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 201,
+      "name": "ThetaEvolve.bundle.zip.part-0001",
+      "sha256": "0d2a8fe969f62597a2936bc801526bd8de92b050805c741f10a3e53223cce1da"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "ThetaEvolve",
+  "source_bytes": 101,
+  "source_commit": "f25fa880d9cf2141bad7adafd37c2f2ee2d8ad61",
+  "source_files": 1,
+  "source_ref": "f25fa880d9cf2141bad7adafd37c2f2ee2d8ad61",
+  "source_repo": "ypwang61/ThetaEvolve",
+  "source_tree": {
+    "bytes": 101,
+    "files": 1,
+    "sha256": "ba33cf444ef1f02f10e294db6cac9f3a74c4098b27aff302b5d25deb553028e5"
+  }
+}
