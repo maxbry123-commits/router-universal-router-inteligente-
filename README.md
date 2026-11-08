@@ -44,6 +44,14 @@ fichas, los motores, los agentes, la cola, el loop y el watchdog. El cableado of
   [`kernel/INPUT_BLOCK.yaml`](kernel/INPUT_BLOCK.yaml) (congelado) ·
   [`kernel/INPUT_BLOCK_YAIWES_CABLEADO.md`](kernel/INPUT_BLOCK_YAIWES_CABLEADO.md) (objetivos, verbatim).
 
+## Índice del cierre
+
+- **Índice y dibujo de la raíz**: [`handoff/INDEX.md`](handoff/INDEX.md).
+- **Sistema central de comunicación**: [`handoff/cierre/01_SISTEMA_CENTRAL_COMUNICACION.md`](handoff/cierre/01_SISTEMA_CENTRAL_COMUNICACION.md).
+- **Historial de cableado**: [`handoff/cierre/02_HISTORIAL_CABLEADO.md`](handoff/cierre/02_HISTORIAL_CABLEADO.md).
+- **Handoffs**: [`handoff/cierre/03_HANDOFFS.md`](handoff/cierre/03_HANDOFFS.md).
+- **URLs**: [`handoff/cierre/04_URLS.md`](handoff/cierre/04_URLS.md).
+
 ## Umbral para marcar una conexión como `ACTIVE`
 
 Las siete condiciones, todas obligatorias: autenticación válida · conexión real con el proveedor ·
