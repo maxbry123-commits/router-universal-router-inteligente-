@@ -3,10 +3,18 @@ import hashlib
 
 class ChatAArchitect:
     def ask_council(self, task: str) -> dict:
-        points = ["OBJECTIVE", "SCOPE", "ARCHITECTURE", "REUSE", "DEPENDENCIES", "CONTRACTS", "SECURITY", "DETERMINISM", "TESTABILITY", "INTEGRATION", "TRACEABILITY", "DONE"]
-        return {"decision": "AUTHORIZE", "evaluated": points, "task": task}
+        points = [
+            "OBJECTIVE", "SCOPE", "ARCHITECTURE", "REUSE",
+            "DEPENDENCIES", "CONTRACTS", "SECURITY", "DETERMINISM",
+            "TESTABILITY", "INTEGRATION", "TRACEABILITY", "DONE"
+        ]
+        return {
+            "decision": "AUTHORIZE",
+            "task": task,
+            "council_points": points
+        }
 
-    def decompose(self, task: str, max_loc: int = 500) -> dict:
+    def decompose(self, task: str, max_loc: int = 200) -> dict:
         subtasks = [
             {"id": "block_1", "desc": f"Definir modelos para {task}", "max_loc": max_loc},
             {"id": "block_2", "desc": f"Crear rutas y controladores para {task}", "max_loc": max_loc},
