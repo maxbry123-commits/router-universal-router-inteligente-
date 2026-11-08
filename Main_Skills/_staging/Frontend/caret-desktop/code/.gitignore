@@ -1,0 +1,8 @@
+# This repo is CI plus releases. The app's source lives in precious112/caret
+# and is checked out into source/ by the build workflow.
+source/
+artifacts/
+
+.DS_Store
+*.env
+node_modules/

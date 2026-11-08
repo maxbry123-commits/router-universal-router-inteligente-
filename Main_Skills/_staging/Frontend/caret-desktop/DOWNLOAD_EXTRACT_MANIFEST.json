@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 17307,
+  "bundle_sha256": "c350885b8b0530d9bbd4d3e632b1ee40b015ebdc3c8c6e4b7e4a9a85716d3955",
+  "extracted_tree": {
+    "bytes": 39975,
+    "files": 13,
+    "sha256": "5ea71e0792b3c1a76aa472fa58add781ac555d31ac550fe242d49da884f90df8"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 17307,
+      "name": "caret-desktop.bundle.zip.part-0001",
+      "sha256": "c350885b8b0530d9bbd4d3e632b1ee40b015ebdc3c8c6e4b7e4a9a85716d3955"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "caret-desktop",
+  "source_bytes": 39975,
+  "source_commit": "138992be341eedb88a13094bb101241704d2ebf0",
+  "source_files": 13,
+  "source_ref": "138992be341eedb88a13094bb101241704d2ebf0",
+  "source_repo": "precious112/caret-desktop",
+  "source_tree": {
+    "bytes": 39975,
+    "files": 13,
+    "sha256": "5ea71e0792b3c1a76aa472fa58add781ac555d31ac550fe242d49da884f90df8"
+  }
+}
