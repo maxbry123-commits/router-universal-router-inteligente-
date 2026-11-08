@@ -10,6 +10,7 @@ class EvidencePacket:
             "tests": [],
             "contracts": [],
             "dependencies": [],
+            "quality": [],
             "traceability": [],
             "final_status": "PENDING",
             "timestamp": time.time()

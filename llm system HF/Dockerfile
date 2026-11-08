@@ -14,7 +14,11 @@ RUN mkdir -p /opt/llama /app /data/models \
     && ln -sf "$BIN" /usr/local/bin/llama-server
 
 COPY manager.py /app/manager.py
+COPY download_model.py /app/download_model.py
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
 ENV PYTHONPATH=/app
 WORKDIR /app
 EXPOSE 7860
-CMD ["python3", "/app/manager.py"]
+CMD ["/app/entrypoint.sh"]

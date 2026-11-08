@@ -35,10 +35,11 @@ class ChatABOrchestrator:
         mode_config = route_mode(task_description)
         session_id = str(uuid.uuid4())
 
-        council = self.chat_a.ask_council(task_description)
-        contract = MissionContract(council["task"], ["Python"], ["py_compile OK"])
-
         plan = self.chat_a.decompose(task_description)
+
+        council = self.chat_a.ask_council(task_description)
+        contract = MissionContract(council["task"], plan["plan_sha256"], ["Python"], ["py_compile OK"])
+
         if plan["plan_sha256"] != self.plan_id:
             self.plan_id = plan["plan_sha256"]
             self.checkpoint = SemanticCheckpoint(self.plan_id, self.checkpoint.environment)
@@ -49,7 +50,8 @@ class ChatABOrchestrator:
 
         while next_block:
             block_id = next_block["id"]
-            contract.verify_goal_lock(council["task"], ["Python"])
+
+            contract.verify_goal_lock(council["task"], plan["plan_sha256"], ["Python"])
 
             cached = await self.cache.get(f"{self.plan_id}_{block_id}")
             if cached:

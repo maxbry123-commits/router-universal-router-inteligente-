@@ -11,6 +11,7 @@ BACKEND_PORT = 8081
 BACKEND = f"http://127.0.0.1:{BACKEND_PORT}"
 IDLE_UNLOAD_S = float(os.environ.get("IDLE_UNLOAD_S", "900"))
 ROUTER_API_KEY = os.getenv("ROUTER_API_KEY")
+MODEL_PATH = os.getenv("MODEL_PATH", "/data/models/qwen2.5-coder-0.5b-instruct-q5_k_m.gguf")
 
 if not ROUTER_API_KEY:
     raise RuntimeError("FATAL: ROUTER_API_KEY no configurada.")
@@ -27,7 +28,7 @@ class ModelProcess:
                 print("Cargando llama-server...")
                 try:
                     self.process = subprocess.Popen(
-                        ["llama-server", "-m", "/data/models/model.gguf", "--port", str(BACKEND_PORT)],
+                        ["llama-server", "-m", MODEL_PATH, "--port", str(BACKEND_PORT), "--ctx-size", "8192"],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                     )
                 except FileNotFoundError:
@@ -60,7 +61,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.headers.get("X-API-Key") != ROUTER_API_KEY:
                 self.send_response(401); self.end_headers(); self.wfile.write(b'{"error":"Invalid API Key"}')
                 return
-                
+
             try:
                 MODEL.load()
                 length = int(self.headers.get('Content-Length', 0))
@@ -77,5 +78,5 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     threading.Thread(target=idle_monitor, daemon=True).start()
-    server = ThreadingHTTPServer(("0.0.0.0", 8080), Handler)
+    server = ThreadingHTTPServer(("0.0.0.0", 7860), Handler)
     server.serve_forever()
