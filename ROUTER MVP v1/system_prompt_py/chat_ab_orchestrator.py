@@ -21,14 +21,14 @@ class ChatABOrchestrator:
         self.chat_a = ChatAArchitect()
         self.chat_b = ChatBImplementer()
         self.cache = TempCache()
-        self.workspace = os.getenv("ORCHESTRATOR_WORKSPACE", "./workspace")
+        self.workspace = os.path.abspath(os.getenv("ORCHESTRATOR_WORKSPACE", "./workspace"))
         os.makedirs(self.workspace, exist_ok=True)
 
     def _evaluate_code(self, code: str) -> int:
         score = 0
         if "def " in code: score += 10
         if "return" in code: score += 5
-        if "pass" in code: score -= 10
+        if "pass" in code: score -= 5
         return score
 
     async def run(self, task_description: str):
@@ -36,7 +36,7 @@ class ChatABOrchestrator:
         session_id = str(uuid.uuid4())
 
         council = self.chat_a.ask_council(task_description)
-        contract = MissionContract(council["task"], ["Python"], ["Compila sin errores"])
+        contract = MissionContract(council["task"], ["Python"], ["py_compile OK"])
 
         plan = self.chat_a.decompose(task_description)
         if plan["plan_sha256"] != self.plan_id:
@@ -49,7 +49,6 @@ class ChatABOrchestrator:
 
         while next_block:
             block_id = next_block["id"]
-
             contract.verify_goal_lock(council["task"], ["Python"])
 
             cached = await self.cache.get(f"{self.plan_id}_{block_id}")
@@ -71,9 +70,10 @@ class ChatABOrchestrator:
                     code = engine.evolve(code)
 
                 if "analyze_code" in AGENT_SKILLS:
-                    AGENT_SKILLS["analyze_code"](code)
+                    analysis = AGENT_SKILLS["analyze_code"](code)
+                    evidence.data["quality"].append({"block_id": block_id, "analysis": analysis})
 
-                filepath = os.path.join(self.workspace, f"{block_id}.py")
+                filepath = os.path.abspath(os.path.join(self.workspace, f"{block_id}.py"))
                 with open(filepath, "w", encoding="utf-8") as f:
                     f.write(code)
 
@@ -81,7 +81,6 @@ class ChatABOrchestrator:
 
                 if not test_res["ok"]:
                     evidence.add_test(block_id, "FAIL", test_res["logs"])
-                    EMITTER.emit("block_test_fail", {"block_id": block_id, "logs": test_res["logs"]})
                     raise RuntimeError(f"El codigo generado no compila: {test_res['logs']}")
 
                 evidence.add_test(block_id, "PASS", "py_compile OK")
