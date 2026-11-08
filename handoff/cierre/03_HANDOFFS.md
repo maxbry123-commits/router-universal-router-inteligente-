@@ -15,7 +15,13 @@ El dataset de auditoría es la fuente de evidencia de los jobs. Es **privado**: 
   - Contiene 14 jobs con evidencia: `j0_preflight`, `j1_inventory`, `j2_graph`, `j3_history`, `j4_plan`, `j5_apply`, `j6_rewrite`, `j6b_swap`, `j7_mirror`, `j8_audit`, `j9_remirror`, `j11_patterns`, `backend_smoke`, `bridge`. Además `audit/` y `research/`.
   - `j10_final_audit` **no existe** en esta carpeta, por lo que la evidencia está en 14 de 15 jobs.
 - Run de cierre (verificado): https://huggingface.co/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria/tree/main/20261107-cierre
-  - Solo contiene `audit/` en esta pasada. El contenido de `audit/` no se ha revisado.
+  - Ficheros en `audit/` (verificados con lectura): `audit_trace.json` (4.504 B), `CIERRE-20261108-TRAZABILIDAD-Y-HANDOFF.md` (29.297 B), `HANDOFF-CIERRE-20261108.md` (4.931 B), `handoff_link.md` (1.980 B) y la carpeta `gaps/`.
+
+## Subida de handoff_link.md al dataset: COMPLETADA (verificada)
+
+- Ruta: https://huggingface.co/datasets/COMAND-CENTER-1/router-universal-router-inteligente-auditoria/blob/main/20261107-cierre/audit/handoff_link.md
+- Verificación: existe y se puede leer (1.980 B).
+- Observación: su contenido es una copia de este mismo `03_HANDOFFS.md`. No incluye shas ni commits de referencia, así que no sirve como manifiesto de trazabilidad.
 
 ## Sub-handoffs por área (verificados en `handoff/docs/`)
 
