@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Bitácora Router Crazy Wall</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+/* Layout: a wall of pinned notes around one hub. Columns flow on wide screens, stack on phones. */
+:root {
+  --bg: #f4f1ea;
+  --ink: #1d1b18;
+  --muted: #5d5850;
+  --paper: #fffdf7;
+  --line: #2f2b25;
+  --ok: #2e7d4f;
+  --warn: #b26a00;
+  --risk: #b3261e;
+  --accent: #2b5fa8;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17161a;
+    --ink: #efebe3;
+    --muted: #aaa39a;
+    --paper: #25232a;
+    --line: #d9d3c8;
+    --ok: #7fd3a0;
+    --warn: #f0b35a;
+    --risk: #ff8a80;
+    --accent: #8fb8f0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17161a;
+  --ink: #efebe3;
+  --muted: #aaa39a;
+  --paper: #25232a;
+  --line: #d9d3c8;
+  --ok: #7fd3a0;
+  --warn: #f0b35a;
+  --risk: #ff8a80;
+  --accent: #8fb8f0;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 "Source Serif 4", Georgia, "Times New Roman", serif;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+  overflow-x: hidden;
+}
+h1, h2, h3 { font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(26px, 5vw, 40px); letter-spacing: -0.01em; }
+h2 { font-size: 17px; letter-spacing: 0.02em; }
+.kicker { font: 600 11px/1.2 "Space Grotesk", Arial, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.lede { color: var(--muted); max-width: 62ch; margin: 10px 0 0; }
+
+.hub {
+  margin: 26px auto 34px;
+  max-width: 760px;
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  padding: 20px 22px;
+  box-shadow: 6px 6px 0 var(--line);
+  transform: rotate(-0.4deg);
+}
+.hub p { margin: 8px 0 0; }
+
+.wall {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: start;
+}
+.note {
+  position: relative;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  padding: 18px 18px 16px;
+  min-width: 0;
+}
+.note:nth-child(odd) { transform: rotate(0.6deg); }
+.note:nth-child(even) { transform: rotate(-0.5deg); }
+.note::before {
+  content: "";
+  position: absolute;
+  top: -9px; left: 50%;
+  width: 46px; height: 16px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: var(--accent);
+  opacity: .35;
+}
+.note ul { margin: 10px 0 0; padding-left: 18px; }
+.note li { margin: 4px 0; overflow-wrap: anywhere; }
+.tag {
+  display: inline-block;
+  font: 600 11px/1 "Space Grotesk", Arial, sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 4px 7px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  margin-bottom: 8px;
+}
+.t-ok { color: var(--ok); }
+.t-warn { color: var(--warn); }
+.t-risk { color: var(--risk); }
+.t-accent { color: var(--accent); }
+.sub { color: var(--muted); font-size: 13px; }
+code { font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+
+.lanes { margin-top: 40px; }
+.lane-title { margin-bottom: 14px; }
+.tbl-wrap { overflow-x: auto; margin-top: 12px; border: 1.5px solid var(--line); border-radius: 4px; background: var(--paper); }
+table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 13.5px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 25%, transparent); vertical-align: top; }
+th { font: 600 11px/1.2 "Space Grotesk", Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { * { transform: none !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="kicker">Bitácora · Router MVP v1 + LLM system HF</div>
+  <h1>Lo que hicimos, lo que falta y dónde mirar</h1>
+  <p class="lede">Un mapa de una sola pantalla para el equipo de ingeniería. Cada nota es un bloque del trabajo. Las etiquetas indican el estado: verde verificado, ámbar pendiente, rojo riesgo.</p>
+</header>
+
+<section class="hub">
+  <div class="kicker">Hub</div>
+  <h2>Dos routers, una rama de trabajo</h2>
+  <p>Rama <code>ccr-f01c3de9-bmry0s</code>, último código <code>c38821dd87</code> (Lote 35), último documento <code>4dfe1d553d</code>. El router orquesta Chat A y Chat B sobre Groq y NVIDIA. El Space de modelos locales sirve un GGUF con <code>llama-server</code>.</p>
+</section>
+
+<main class="wall">
+
+  <article class="note">
+    <span class="tag t-ok">Verificado</span>
+    <h2>Resiliencia y proveedores</h2>
+    <ul>
+      <li>Ventana de 114 s por proveedor (Groq 8, NVIDIA 12).</li>
+      <li>429 espera en el mismo proveedor. Sin cambio de proveedor.</li>
+      <li>Sin saldo: evento <code>no_balance</code> y siguiente proveedor.</li>
+      <li>Todos sin saldo: <code>NoBalanceError</code>.</li>
+    </ul>
+    <p class="sub">Lote 35 · <code>provider_window.py</code>, <code>fallback_middleware.py</code></p>
+  </article>
+
+  <article class="note">
+    <span class="tag t-ok">Verificado</span>
+    <h2>Bloques ≤200 LOC</h2>
+    <ul>
+      <li>División determinista por AST en partes y agregador.</li>
+      <li>Imports propagados; partes posteriores importan las anteriores.</li>
+      <li>Nodo único &gt;200 LOC: <code>NodeTooLargeError</code>.</li>
+      <li>Evidencia por parte.</li>
+    </ul>
+    <p class="sub">Lote 35 · <code>code_splitter.py</code>, <code>evidence_packet.py</code></p>
+  </article>
+
+  <article class="note">
+    <span class="tag t-ok">Verificado</span>
+    <h2>Parcial persistente</h2>
+    <ul>
+      <li>Respuesta cortada tras 3 continuaciones: se guarda el parcial.</li>
+      <li>El reintento envía el parcial y continúa desde ahí.</li>
+      <li>Simulación: bloque 1 completado tras reanudar.</li>
+    </ul>
+    <p class="sub">Lote 35 · <code>semantic_checkpoint.py</code>, <code>chat_b_implementer.py</code></p>
+  </article>
+
+  <article class="note">
+    <span class="tag t-warn">Pendiente</span>
+    <h2>Herramienta web</h2>
+    <ul>
+      <li>Motor de búsqueda sin LLM existe: score, dominios de confianza, fail-closed.</li>
+      <li>No está cableado como <code>buscar_web</code> para el modelo.</li>
+    </ul>
+    <p class="sub">Lotes 33–34 · <code>research_engine.py</code>, <code>web_search_tool.py</code></p>
+  </article>
+
+  <article class="note">
+    <span class="tag t-warn">Pendiente</span>
+    <h2>Búsqueda de componentes</h2>
+    <ul>
+      <li>GitHub y Hugging Face en solo lectura (metadatos por API).</li>
+      <li>Sin implementar.</li>
+    </ul>
+  </article>
+
+  <article class="note">
+    <span class="tag t-risk">Requiere aprobación</span>
+    <h2>Motor de descarga y extracción</h2>
+    <ul>
+      <li>Ejecutaría código descargado.</li>
+      <li>Hasta aprobación explícita, no se implementa.</li>
+    </ul>
+  </article>
+
+  <article class="note">
+    <span class="tag t-risk">Riesgo</span>
+    <h2>Clave por defecto</h2>
+    <ul>
+      <li><code>control_api.py</code> usa <code>dev_key</code> si falta <code>ROUTER_API_KEY</code>.</li>
+      <li>Permite pausar y reiniciar Spaces. Debe fallar cerrado.</li>
+    </ul>
+  </article>
+
+  <article class="note">
+    <span class="tag t-risk">Riesgo</span>
+    <h2>Encendido automático</h2>
+    <ul>
+      <li><code>scaler_ram.py</code> despertaba el siguiente Space con RAM ≥85 %.</li>
+      <li>Quitado del CMD de la imagen del router en este handoff.</li>
+      <li>El archivo sigue en el repo.</li>
+    </ul>
+  </article>
+
+  <article class="note">
+    <span class="tag t-risk">Riesgo</span>
+    <h2>NVIDIA 410</h2>
+    <ul>
+      <li>Watchdogs del 6 al 7 de noviembre: Groq OK, NVIDIA 410.</li>
+      <li>Revisar endpoint o llave.</li>
+    </ul>
+  </article>
+
+  <article class="note">
+    <span class="tag t-risk">Riesgo</span>
+    <h2>Ramas divergidas</h2>
+    <ul>
+      <li><code>main</code> (<code>7ff5e111ba</code>) y la rama de trabajo no se contienen mutuamente.</li>
+      <li>Decidir la integración antes de cualquier PR.</li>
+    </ul>
+  </article>
+
+  <article class="note">
+    <span class="tag t-warn">Pendiente</span>
+    <h2>llm system HF</h2>
+    <ul>
+      <li>Un Space, un modelo: fijar <code>MODEL_ID</code>, <code>MODEL_FILE</code>, <code>MODEL_PATH</code> por Space.</li>
+      <li>Poner <code>GITHUB_BRANCH</code> de la rama de trabajo; el valor por defecto es <code>main</code>.</li>
+      <li>Añadir <code>timeout</code> a la llamada a <code>llama-server</code>.</li>
+      <li>Sin <code>stream=true</code>.</li>
+    </ul>
+  </article>
+
+  <article class="note">
+    <span class="tag t-warn">Sin verificar</span>
+    <h2>Estado en Hugging Face</h2>
+    <ul>
+      <li>Spaces PAUSED por saldo (402), según reporte.</li>
+      <li>Buckets y datasets, secretos: no comprobados en esta sesión.</li>
+    </ul>
+    <p class="sub">Detalle en <code>docs/SALIDA_3_ESTADO_HF_TRAZABILIDAD.md</code></p>
+  </article>
+
+  <article class="note">
+    <span class="tag t-warn">Pendiente</span>
+    <h2>Pruebas</h2>
+    <ul>
+      <li>Simulación <code>sim35.py</code> pasa, pero vive en scratchpad, no en el repo.</li>
+      <li>Falta prueba en vivo contra Groq (ventana de 114 s sin medir).</li>
+    </ul>
+  </article>
+
+</main>
+
+<section class="lanes">
+  <div class="kicker lane-title">Línea de tiempo resumida</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Fecha</th><th>Bloque</th><th>Resultado</th></tr></thead>
+      <tbody>
+        <tr><td>06–07 nov</td><td>Watchdogs</td><td>Health y MCP OK; Groq OK; NVIDIA 410.</td></tr>
+        <tr><td>08 nov</td><td>Lotes 01–15</td><td>Resiliencia, persistencia, orquestación, pytest, goal lock, Space de modelos.</td></tr>
+        <tr><td>08 nov</td><td>Lotes 30–34</td><td>Deduplicación, timeouts, herramientas HTTP, bucle de gaps fail-closed, dedup con caché.</td></tr>
+        <tr><td>08 nov</td><td>Lote 35</td><td>Ventana de proveedor, aviso de saldo, división ≤200 LOC, parcial persistente.</td></tr>
+        <tr><td>08 nov</td><td>Documentos</td><td>Salida 3 de Hugging Face; handoffs de ambos routers; esta bitácora.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  Fuentes: <code>git log ccr-f01c3de9-bmry0s</code>, <code>docs/handoff/</code>, <code>docs/SALIDA_3_ESTADO_HF_TRAZABILIDAD.md</code>. Sin secretos en este documento.
+</footer>
+
+</body>
+</html>
