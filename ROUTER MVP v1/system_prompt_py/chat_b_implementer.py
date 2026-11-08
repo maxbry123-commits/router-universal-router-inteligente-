@@ -1,15 +1,18 @@
-from fallback_middleware import execute_with_fallback_async
+from generic_model_adapter import GenericModelAdapter
 
-async def implement_block(block: dict, model_family: str = "qwen2.5") -> str:
-    prompt = f"Escribe código Python para: {block['desc']}. Máximo {block['max_loc']} líneas. Sin explicaciones."
-    providers = ["groq", "nvidia"]
+class ChatBImplementer:
+    def __init__(self):
+        self.adapter = GenericModelAdapter()
 
-    async def _call_llm(provider: str, p: str, mf: str) -> str:
-        return f"def func_{block['id']}():\n    return '{block['desc']}'\n"
+    async def implement(self, block: dict, prompt_context: str) -> str:
+        prompt = f"{prompt_context}\n\n[INSTRUCCIÓN DE CHAT B]\nEscribe código Python para: {block['desc']}.\nLímite estricto: {block['max_loc']} líneas.\nSin explicaciones, solo el código."
 
-    return await execute_with_fallback_async(
-        providers=providers,
-        llm_call_fn=_call_llm,
-        prompt=prompt,
-        model_family=model_family
-    )
+        schema_hint = '{"status": "ok", "code": "def func():\\n    pass", "tests": []}'
+        response = await self.adapter.generate_json(prompt, schema_hint)
+
+        code = response.get("code", "")
+        loc = len(code.splitlines())
+        if loc > block['max_loc']:
+            raise ValueError(f"LOC_EXCEEDED: {loc} > {block['max_loc']}")
+
+        return code
