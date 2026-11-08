@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 2380590,
+  "bundle_sha256": "49d8654878df3c4be18866c293bd8895dd9cd8ee8a21ae5c5bc204b87f59665b",
+  "extracted_tree": {
+    "bytes": 4794820,
+    "files": 294,
+    "sha256": "23bfc87bd709df7d51006c22d03d64d714a5fe1827bf8c7f517879c62c99d272"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 2380590,
+      "name": "Scrapling.bundle.zip.part-0001",
+      "sha256": "49d8654878df3c4be18866c293bd8895dd9cd8ee8a21ae5c5bc204b87f59665b"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "Scrapling",
+  "source_bytes": 4794820,
+  "source_commit": "0449bd366e31024d6a72232476cd45a167a5925f",
+  "source_files": 294,
+  "source_ref": "0449bd366e31024d6a72232476cd45a167a5925f",
+  "source_repo": "d4vinci/Scrapling",
+  "source_tree": {
+    "bytes": 4794820,
+    "files": 294,
+    "sha256": "23bfc87bd709df7d51006c22d03d64d714a5fe1827bf8c7f517879c62c99d272"
+  }
+}
