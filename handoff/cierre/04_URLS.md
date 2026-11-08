@@ -7,7 +7,7 @@
 | Recurso | URL | Resumen |
 |---|---|---|
 | Repo (rama de trabajo) | https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/ccr-f4604ccd-i68fpq | Rama creada desde `main` `958ec38d9da5` |
-| Repo (`main`) | https://github.com/maxbry123-commits/router-universal-router-inteligente-ng/tree/main | Código fuente, 435.923 ficheros según el documento |
+| Repo (`main`) | https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main | Código fuente, 435.923 ficheros según el documento |
 | Índice | https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/ccr-f4604ccd-i68fpq/handoff/INDEX.md | Índice y dibujo de la raíz |
 | Registro de conexiones | https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/ccr-f4604ccd-i68fpq/connections/registry.yaml | 38 conexiones en `pending_audit` |
 | Handoffs por área | https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/ccr-f4604ccd-i68fpq/handoff/docs | 5 sub-handoffs |
@@ -24,7 +24,3 @@
 | Chat UI | https://riu-jev-bridge.vercel.app |
 | Guía maestra | https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/kernel/GUIDE.md |
 | DAG de cierre | https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/ops/dag |
-
-## Nota
-
-El documento de cierre cita una URL de repo con el nombre `router-universal-router-inteligente-` seguido de `/tree/main-clean`. Esa rama no se ha comprobado en esta pasada.
