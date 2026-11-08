@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 15731,
+  "bundle_sha256": "94e75c958966f1889b3254606eaed2cf3abba731997aaa212af3d8f02b348489",
+  "extracted_tree": {
+    "bytes": 27890,
+    "files": 8,
+    "sha256": "8a7440ffe2a80495d54111e276055ab2001b05ac0dd3f26563d863d5bf499a13"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 15731,
+      "name": "vercel-labs--agent-skills.bundle.zip.part-0001",
+      "sha256": "94e75c958966f1889b3254606eaed2cf3abba731997aaa212af3d8f02b348489"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "vercel-labs--agent-skills",
+  "source_bytes": 27890,
+  "source_commit": "515cc821216df59f87a3c4590f833644888ef0eb",
+  "source_files": 8,
+  "source_ref": "515cc821216df59f87a3c4590f833644888ef0eb",
+  "source_repo": "vercel-labs/agent-skills",
+  "source_tree": {
+    "bytes": 27890,
+    "files": 8,
+    "sha256": "8a7440ffe2a80495d54111e276055ab2001b05ac0dd3f26563d863d5bf499a13"
+  }
+}
