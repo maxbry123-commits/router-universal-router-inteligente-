@@ -3,6 +3,13 @@ import httpx
 import os
 import random
 from fallback_middleware import execute_with_fallback_async
+from provider_window import ProviderHTTPError
+
+def _retry_after(headers) -> float:
+    try:
+        return float(headers.get("retry-after", "")) if headers.get("retry-after") else None
+    except ValueError:
+        return None
 
 class GenericModelAdapter:
     def __init__(self):
@@ -22,7 +29,8 @@ class GenericModelAdapter:
             payload = {"model": model_name, "messages": [{"role": "user", "content": p}], "temperature": 0.1}
             async with httpx.AsyncClient(timeout=60) as client:
                 r = await client.post(f"{base_url}/chat/completions", json=payload, headers=headers)
-                r.raise_for_status()
+                if r.status_code >= 400:
+                    raise ProviderHTTPError(provider, r.status_code, _retry_after(r.headers), r.text[:300])
                 choice = r.json()["choices"][0]
                 return {"content": choice["message"]["content"] or "", "finish_reason": choice.get("finish_reason") or ""}
 

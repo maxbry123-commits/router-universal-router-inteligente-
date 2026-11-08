@@ -10,6 +10,7 @@ from key_pool import KeyPool
 from fallback_middleware import execute_with_fallback_async
 from queue_manager import QueueManager
 from provider_timeouts import get_timeout
+from provider_window import ProviderHTTPError
 
 app = FastAPI()
 GROQ_KEYS = [k.strip() for k in os.getenv('GROQ_KEYS', '').split(',') if k.strip()]
@@ -57,10 +58,10 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
             timeout = get_timeout(provider)
             async with httpx.AsyncClient(timeout=timeout) as client:
                 r = await client.post(f'{cfg["base_url"]}/chat/completions', json=payload, headers=headers)
-                if r.status_code == 429:
-                    cfg['pool'].mark_rate_limited(key)
-                    raise RuntimeError('429')
-                r.raise_for_status()
+                if r.status_code >= 400:
+                    if r.status_code == 429:
+                        cfg['pool'].mark_rate_limited(key)
+                    raise ProviderHTTPError(provider, r.status_code, None, r.text[:300])
                 return r.json()['choices'][0]['message']['content']
 
         result = await execute_with_fallback_async(providers_order, call_provider, body['messages'][-1]['content'], session_id=session_id)

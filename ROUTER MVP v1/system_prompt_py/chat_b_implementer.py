@@ -3,6 +3,11 @@ from tool_call_validator import ToolCallValidator
 from tool_executor import ToolExecutor
 from loc_limits import MAX_BLOCK_LOC, MAX_CONTINUATIONS
 
+class IncompleteResponse(Exception):
+    def __init__(self, partial: str):
+        super().__init__("RESPUESTA_INCOMPLETA")
+        self.partial = partial
+
 class ChatBImplementer:
     def __init__(self):
         self.adapter = GenericModelAdapter()
@@ -20,24 +25,24 @@ class ChatBImplementer:
             text += more
             rounds += 1
         if finish == "length":
-            raise ValueError(f"RESPUESTA_INCOMPLETA: {MAX_CONTINUATIONS} continuaciones agotadas")
+            raise IncompleteResponse(text)
         return text
 
-    async def implement(self, block: dict, prompt_context: str, session_id: str = 'default') -> dict:
+    async def implement(self, block: dict, prompt_context: str, session_id: str = 'default', partial: str = '') -> dict:
         max_loc = min(int(block.get('max_loc', MAX_BLOCK_LOC)), MAX_BLOCK_LOC)
         prompt = f"{prompt_context}\n\n[INSTRUCCIÓN]\nEscribe codigo para: {block['desc']}. Maximo {max_loc} lineas. Si necesitas una herramienta, responde JSON: {{\"tool\": \"nombre\", \"args\": {{}}}}. Si escribes codigo, responde JSON: {{\"code\": \"...\", \"tests\": \"...\"}}."
-        response_text = await self._collect(prompt, session_id)
-        parsed = ToolCallValidator.validate(response_text)
+        if partial:
+            prompt += f"\n[PARCIAL YA RECIBIDO: continua exactamente despues de este texto, sin repetirlo]\n{partial[-3000:]}"
+        text = await self._collect(prompt, session_id)
+        if partial:
+            text = partial + text
+        parsed = ToolCallValidator.validate(text)
 
         if parsed['type'] == 'code':
-            loc = len(parsed['code'].splitlines())
-            if loc > max_loc:
-                raise ValueError(f"LOC_EXCEEDED: {loc} > {max_loc}")
-            return {'type': 'code', 'code': parsed['code'], 'tests': parsed.get('tests', '')}
-
+            return {'type': 'code', 'code': parsed['code'], 'tests': parsed.get('tests', ''),
+                    'loc': len(parsed['code'].splitlines())}
         elif parsed['type'] == 'tool_call':
             result = await self.executor.execute(parsed['tool'], parsed['args'])
             return {'type': 'tool_result', 'tool': parsed['tool'], 'args': parsed['args'], 'result': result}
-
         else:
             raise ValueError(f"Respuesta no valida: {parsed}")

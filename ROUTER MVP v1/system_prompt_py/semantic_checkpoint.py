@@ -59,3 +59,27 @@ class SemanticCheckpoint:
         locked = self.state.get("locked_objective")
         if locked and locked != current_objective:
             raise ValueError(f"GOAL_LOCK_VIOLADO: '{current_objective}' != '{locked}'")
+
+    def _ensure(self):
+        self.state.setdefault("partials", {})
+        self.state.setdefault("parts", {})
+
+    def save_partial(self, block_id: str, text: str):
+        self._ensure()
+        self.state["partials"][block_id] = {"text": text, "hash": hashlib.sha256(text.encode("utf-8")).hexdigest()}
+        atomic_write_json(str(self.state_file), self.state)
+
+    def get_partial(self, block_id: str) -> str:
+        self._ensure()
+        entry = self.state["partials"].get(block_id)
+        return entry["text"] if entry else ""
+
+    def clear_partial(self, block_id: str):
+        self._ensure()
+        if self.state["partials"].pop(block_id, None) is not None:
+            atomic_write_json(str(self.state_file), self.state)
+
+    def save_parts(self, block_id: str, names: list):
+        self._ensure()
+        self.state["parts"][block_id] = list(names)
+        atomic_write_json(str(self.state_file), self.state)
