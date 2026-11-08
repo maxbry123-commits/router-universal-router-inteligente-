@@ -6,7 +6,6 @@ from key_pool import KeyPool
 from quota_budget import QuotaBudget
 from fallback_middleware import execute_with_fallback
 from model_format_adapter import ModelFormatAdapter
-from keep_alive import SpaceKeepAlive
 
 app = FastAPI(title="Advanced LLM Proxy")
 
@@ -28,10 +27,9 @@ PROVIDERS = {
     }
 }
 
-MODEL_SPACE_URL = os.getenv("LOCAL_MODEL_SPACE_URL")
-if MODEL_SPACE_URL:
-    keep_alive = SpaceKeepAlive(MODEL_SPACE_URL, interval_s=300)
-    keep_alive.start()
+# keep_alive eliminado (DAG hf-emergency-cleanup): el ping periodico a /health
+# mantenia los Spaces de modelo encendidos sin carga real. El escalado real lo
+# hace swe-code-s*/scaler.py, que mide la CPU del contenedor.
 
 async def stream_with_heartbeat(upstream_client, url, headers, payload, heartbeat_s=15.0):
     async with upstream_client.stream("POST", url, json=payload, headers=headers) as response:
