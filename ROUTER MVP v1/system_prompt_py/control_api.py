@@ -4,7 +4,9 @@ import os
 
 app = FastAPI()
 api = HfApi(token=os.getenv("HF_TOKEN"))
-ROUTER_API_KEY = os.getenv("ROUTER_API_KEY", "dev_key")
+ROUTER_API_KEY = os.getenv("ROUTER_API_KEY")
+if not ROUTER_API_KEY:
+    raise RuntimeError("FATAL: ROUTER_API_KEY no configurada.")
 
 def verify_key(x_api_key: str = Header(None)):
     if x_api_key != ROUTER_API_KEY:
