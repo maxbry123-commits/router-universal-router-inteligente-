@@ -15,15 +15,20 @@ def ram_pct():
             current = int(f.read())
         with open("/sys/fs/cgroup/memory.max") as f:
             limit = f.read().strip()
-        if limit == "max":
-            return 0.0
+        if limit == "max": return 0.0
         return (current / int(limit)) * 100.0
     except:
-        return 0.0
+        try:
+            with open('/proc/meminfo') as f:
+                lines = f.readlines()
+                total = int(lines[0].split()[1])
+                avail = int(lines[2].split()[1])
+                return ((total - avail) / total) * 100.0
+        except:
+            return 0.0
 
 def wake_next():
-    if not NEXT:
-        return False
+    if not NEXT: return False
     try:
         req = urllib.request.Request(NEXT + "/health", headers={"User-Agent": "scaler"})
         urllib.request.urlopen(req, timeout=10)

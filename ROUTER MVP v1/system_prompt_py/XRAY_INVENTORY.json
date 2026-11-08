@@ -1,0 +1,212 @@
+{
+  "sync_to_hf.py": {
+    "sha256": "e8564837764866308536c897eb35e54bdef754e49fe54ec2a973f91335724be6",
+    "bytes": 391,
+    "lines": 16
+  },
+  "api_limiter.py": {
+    "sha256": "bf0097351f1fe725480b2c1fe4a4fe840be96acfd26bae46c2d217e2cfcfd736",
+    "bytes": 1297,
+    "lines": 41
+  },
+  "scaler_ram.py": {
+    "sha256": "b70c6224ad350efd54ddaf52cd2b192aa314bcf4ebc39f2b80831f2d94ecb88c",
+    "bytes": 1651,
+    "lines": 55
+  },
+  "forensic_dlq.py": {
+    "sha256": "7b94be4f95785c574edf001f6c903464cf5284f555b926ba727866b95b46adfb",
+    "bytes": 1698,
+    "lines": 49
+  },
+  "motor_dispatcher.py": {
+    "sha256": "144974cf611bea32d7f3711a7e082e9fb501196adab52acbc476e68f94ab1be7",
+    "bytes": 2068,
+    "lines": 55
+  },
+  "core_recovery.py": {
+    "sha256": "ef325fd1903c2eaea4182f483398b60174a5d148bda6b4a629ea8002803f8db3",
+    "bytes": 596,
+    "lines": 19
+  },
+  "inject_scaler.py": {
+    "sha256": "ca1405d290cccc739b8fece9f784875abd99022dece49a55eeda496a9b13a44b",
+    "bytes": 1885,
+    "lines": 64
+  },
+  "pipeline_executor.py": {
+    "sha256": "84d7550c475f69da0140182b2c60657a8b02ddc42ff62ca17b2b3263813124fc",
+    "bytes": 1911,
+    "lines": 53
+  },
+  "persistence_engine.py": {
+    "sha256": "2f84058da1950cc09cd31c8fd96871e9e52d99f399cf1cd8e80d8318d6a497c2",
+    "bytes": 5168,
+    "lines": 133
+  },
+  "manager.py": {
+    "sha256": "92f98b20132638ad94677c9a45adc68ddbc5da3dd85dc2a80abf1bc391ea64b6",
+    "bytes": 1686,
+    "lines": 52
+  },
+  "model_format_adapter.py": {
+    "sha256": "61f9ecfa5a90fcb144b530cddb810de96acdd347258b78a1dd0a663c38114e40",
+    "bytes": 2048,
+    "lines": 52
+  },
+  "pruebas_motor.py": {
+    "sha256": "2910e5277dc02b0e4684752be5992a0471426703a12cd81bd7e1e9072a03bc67",
+    "bytes": 1371,
+    "lines": 37
+  },
+  "dag_engine.py": {
+    "sha256": "1f4b798743cd69cdabc4674d2a84c3ef8989b467ff3ea8ffebdb9f0fa9d3654a",
+    "bytes": 1095,
+    "lines": 36
+  },
+  "workflow_state.py": {
+    "sha256": "bb584d7a297acc0b8302de0ebeca1430c706e910f4b01ec91293cdd17ccfd954",
+    "bytes": 1907,
+    "lines": 53
+  },
+  "control_api.py": {
+    "sha256": "5692c45ece51864a889857e05d2f73fa98e58864f93bc4528ee41b157b98045b",
+    "bytes": 1061,
+    "lines": 30
+  },
+  "bulkhead.py": {
+    "sha256": "1aab7cf4786dd78bf67e52f1aead37bac870b542dddbc6e95835a520fb261c94",
+    "bytes": 830,
+    "lines": 28
+  },
+  "subprocess_bridge.py": {
+    "sha256": "adff0956dcabb522007cc97d372e4bb2977c79a2ba5a62f0d67bef6d1a71f014",
+    "bytes": 719,
+    "lines": 25
+  },
+  "resume_validator.py": {
+    "sha256": "bf0c0c659fc7c760d7e63b5b59896bb719637c812690fc06b2103be5a75fe76e",
+    "bytes": 1033,
+    "lines": 27
+  },
+  "context_rehydrator.py": {
+    "sha256": "0bfd214a0dba9085e97b84c3382ae23500752f79084caf09a1cf455dcc83c011",
+    "bytes": 1024,
+    "lines": 31
+  },
+  "key_pool.py": {
+    "sha256": "69678fb2a769f465ee50b50e9e2f4c9169ed6c3495a4566d9f5373ece6aa996a",
+    "bytes": 1576,
+    "lines": 39
+  },
+  "schema_validator.py": {
+    "sha256": "b41fc495724c3096bb1fd04bcb7adec2c9d514845e4b02e3b5fd99f507907f5b",
+    "bytes": 1295,
+    "lines": 32
+  },
+  "gap_resolution_loop.py": {
+    "sha256": "b9b212010ceb646c40c88e4b3a8b730ca7ae6c5734c2d3b118027c5a188cbb86",
+    "bytes": 1696,
+    "lines": 38
+  },
+  "chat_b_implementer.py": {
+    "sha256": "32eafc2c5a95311f66da5f722181922a67bfdc097bac08600752e4a60e026a5e",
+    "bytes": 602,
+    "lines": 15
+  },
+  "effect_ledger.py": {
+    "sha256": "dfc19bfc3e27981b8281291157a5635f2528d2e16f74ad49c4cfc10651c76793",
+    "bytes": 1494,
+    "lines": 34
+  },
+  "sqlite_memory.py": {
+    "sha256": "0d3c586ab0d14c74d872ee33d3f7ded0329a19ad574fa40f81fcae1260f13c53",
+    "bytes": 1059,
+    "lines": 29
+  },
+  "chat_a_architect.py": {
+    "sha256": "fbda06663cf35f0d1ae6b849252a6bd1ed7f7060d8e9fcf1b9e480feb87b1519",
+    "bytes": 670,
+    "lines": 20
+  },
+  "semantic_checkpoint.py": {
+    "sha256": "33f3bce65320fa38e21a6d5f34d07d08ce3728b9cc8945a14bdce95af053e79e",
+    "bytes": 1938,
+    "lines": 46
+  },
+  "rsi_engines.py": {
+    "sha256": "ce5cc747d9afd9899d1842b6e230e45870be3379915712722505d20754f58274",
+    "bytes": 1046,
+    "lines": 31
+  },
+  "openai_compatible_proxy.py": {
+    "sha256": "3a1edcc7fb69ab5125e2ab538cf19ade68517150fc140eea846af474e70e7490",
+    "bytes": 2510,
+    "lines": 67
+  },
+  "generic_model_adapter.py": {
+    "sha256": "8021f85865d5ccefa66548501abca2beaa5ac27a9edbec33b7b2d304df7a52a3",
+    "bytes": 1682,
+    "lines": 37
+  },
+  "agent_skills_28.py": {
+    "sha256": "fb4cb62ad9dc58d21be0be2453515d759aadf9a77ccb489beafed13319816d1f",
+    "bytes": 1006,
+    "lines": 28
+  },
+  "recovery_engine.py": {
+    "sha256": "ac514135f66feee80f2ac462f14ed08dd9b7526af11559b50a6fb32fee32c3b3",
+    "bytes": 2276,
+    "lines": 60
+  },
+  "chat_ab_orchestrator.py": {
+    "sha256": "43a8b482f2759b71bca55ac5db58f051090888ab642a1f8b3623160aeb64b6a1",
+    "bytes": 2442,
+    "lines": 55
+  },
+  "keep_alive.py": {
+    "sha256": "755d9368e844fcf6ccd47eb6c5233b4af39d111667045ad4ad4baf761177b9d9",
+    "bytes": 678,
+    "lines": 24
+  },
+  "fallback_middleware.py": {
+    "sha256": "a9bbdafcb323ee46b7fcc225ec5d4276bcfad112661825ff5b720dd98898df73",
+    "bytes": 1019,
+    "lines": 32
+  },
+  "event_emitter.py": {
+    "sha256": "215b5b2ea7748ee11ee0604a1c6e1ccf1be0e25fd6861809fa809073ce6f6f83",
+    "bytes": 1103,
+    "lines": 35
+  },
+  "temp_cache.py": {
+    "sha256": "667725b0c47e6fc420ece44bc8ff54a9f91ba8cb5fa55c14b37febb0de79eb3c",
+    "bytes": 1844,
+    "lines": 54
+  },
+  "mode_router_v2.py": {
+    "sha256": "e26790d284c91fab7e1b56373878dc86c4e78af42710e32b406a68a5fdef8482",
+    "bytes": 2524,
+    "lines": 28
+  },
+  "checkpoint_manager.py": {
+    "sha256": "764d5bb713fe7c3703260673013994d1b84eaf84b6e55ee7814d25bb154285f4",
+    "bytes": 1604,
+    "lines": 39
+  },
+  "web_search_tool.py": {
+    "sha256": "342043b50d4b45fe9142b55d8ed1ca17ae8bfdd6239c7bf0efdb1663786c47de",
+    "bytes": 1815,
+    "lines": 43
+  },
+  "health_monitor.py": {
+    "sha256": "0892e6116e45fc709876fff6d6770dc23c87a05b01f56c9487b9a2ec8d4e8ab1",
+    "bytes": 869,
+    "lines": 33
+  },
+  "provider_budget.py": {
+    "sha256": "a09466ba80060cb554a8fad72dd984979bed4fa5fc71d5650450a5b638986530",
+    "bytes": 842,
+    "lines": 24
+  }
+}
