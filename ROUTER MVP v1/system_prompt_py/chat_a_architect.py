@@ -1,5 +1,6 @@
 import json
 import hashlib
+from loc_limits import MAX_BLOCK_LOC
 
 class ChatAArchitect:
     def ask_council(self, task: str) -> dict:
@@ -14,7 +15,8 @@ class ChatAArchitect:
             "council_points": points
         }
 
-    def decompose(self, task: str, max_loc: int = 200) -> dict:
+    def decompose(self, task: str, max_loc: int = MAX_BLOCK_LOC) -> dict:
+        max_loc = min(max_loc, MAX_BLOCK_LOC)
         subtasks = [
             {"id": "block_1", "desc": f"Definir modelos para {task}", "max_loc": max_loc},
             {"id": "block_2", "desc": f"Crear rutas y controladores para {task}", "max_loc": max_loc},

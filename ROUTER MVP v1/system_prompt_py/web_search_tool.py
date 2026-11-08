@@ -1,43 +1,39 @@
+import asyncio
+import re
 import httpx
-from bs4 import BeautifulSoup
-from ddgs import DDGS
 
-class WebSearchTool:
-    def __init__(self, max_results: int = 5, timeout: int = 10):
-        self.max_results = max_results
-        self.timeout = timeout
+FETCH_TIMEOUT = 10.0
+SEARCH_TIMEOUT = 15.0
+MAX_BYTES = 300_000
+MAX_TEXT = 4000
 
-    async def search(self, query: str) -> str:
-        results = []
-        try:
-            with DDGS() as ddgs:
-                for r in ddgs.text(query, max_results=self.max_results):
-                    results.append({
-                        "title": r.get("title", ""),
-                        "url": r.get("href", ""),
-                        "snippet": r.get("body", "")
-                    })
-        except Exception as e:
-            return f"[ERROR DE BÚSQUEDA: {e}]"
+def _ddg_sync(query: str, max_results: int) -> list:
+    from ddgs import DDGS
+    with DDGS() as ddgs:
+        return [
+            {"title": r.get("title", ""), "url": r.get("href", ""), "snippet": r.get("body", "")}
+            for r in ddgs.text(query, max_results=max_results)
+        ]
 
-        if not results:
-            return "[SIN RESULTADOS]"
+async def search(query: str, max_results: int = 8) -> list:
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(_ddg_sync, query, max_results), timeout=SEARCH_TIMEOUT)
+    except Exception:
+        return []
 
-        enriched = []
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            for r in results[:2]:
-                try:
-                    resp = await client.get(r["url"], headers={"User-Agent": "Mozilla/5.0"})
-                    soup = BeautifulSoup(resp.text, "html.parser")
-                    for tag in soup(["script", "style", "nav", "footer", "header"]):
-                        tag.decompose()
-                    text = soup.get_text(separator="\n", strip=True)
-                    content = "\n".join([line for line in text.splitlines() if line.strip()])
-                    enriched.append({"title": r["title"], "url": r["url"], "content": content[:1500]})
-                except Exception:
-                    enriched.append({"title": r["title"], "url": r["url"], "content": "[NO DISPONIBLE]"})
+def _clean(html: str) -> str:
+    text = re.sub(r"(?is)<(script|style|nav|footer|header)[^>]*>.*?</\1>", " ", html)
+    text = re.sub(r"(?s)<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:MAX_TEXT]
 
-        md = "### CONTEXTO DE INVESTIGACIÓN\n\n"
-        for i, r in enumerate(enriched, 1):
-            md += f"**[Fuente {i}]** {r['title']}\nURL: {r['url']}\n{r['content']}\n\n---\n\n"
-        return md
+async def fetch_text(url: str) -> str:
+    try:
+        async with httpx.AsyncClient(timeout=FETCH_TIMEOUT, follow_redirects=True,
+                                     headers={"User-Agent": "Mozilla/5.0"}) as client:
+            r = await client.get(url)
+            r.raise_for_status()
+            raw = r.text[:MAX_BYTES]
+    except Exception:
+        return ""
+    return _clean(raw)

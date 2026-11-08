@@ -1,38 +1,50 @@
+import hashlib
 import re
-from typing import Callable, Optional, Awaitable
-from web_search_tool import WebSearchTool
+from research_engine import ResearchEngine
 
 class GapBlockedError(Exception):
     pass
 
+class GapUnresolvedError(Exception):
+    pass
+
+BLOCKING = ("API_KEY_MISSING", "PERMISSION_DENIED", "BILLING_REQUIRED", "NO_INTERNET")
+
+def detect_gap(text: str):
+    m = re.search(r"GAP(?:_DETECTADO)?:\s*(.+)", text, re.IGNORECASE)
+    return m.group(1).strip() if m else None
+
+def _key(text: str) -> str:
+    return hashlib.sha256(text.lower().encode("utf-8")).hexdigest()
+
 class GapResolutionLoop:
-    BLOCKING_KEYWORDS = ["API_KEY_MISSING", "PERMISSION_DENIED", "BILLING_REQUIRED", "NO_INTERNET"]
-
-    def __init__(self, max_rounds: int = 5, search_tool: Optional[WebSearchTool] = None):
+    def __init__(self, engine: ResearchEngine, max_rounds: int = 3):
+        self.engine = engine
         self.max_rounds = max_rounds
-        self.search_tool = search_tool or WebSearchTool()
-        self.history = []
 
-    def detect_gap(self, model_output: str) -> Optional[str]:
-        match = re.search(r"GAP(?:_DETECTADO)?:\s*(.+)", model_output, re.IGNORECASE)
-        return match.group(1).strip() if match else None
-
-    def is_blocking(self, gap: str) -> bool:
-        return any(kw in gap.upper() for kw in self.BLOCKING_KEYWORDS)
-
-    async def resolve(self, gap: str) -> str:
-        self.history.append({"gap": gap, "round": len(self.history) + 1})
-        return await self.search_tool.search(gap)
-
-    async def run_with_loop(self, model_call_fn: Callable[[str], Awaitable[str]], initial_prompt: str) -> str:
-        current_prompt = initial_prompt
-        for round_num in range(1, self.max_rounds + 1):
-            model_output = await model_call_fn(current_prompt)
-            gap = self.detect_gap(model_output)
-            if not gap:
-                return model_output
-            if self.is_blocking(gap):
-                raise GapBlockedError(f"Gap bloqueante: {gap}")
-            context = await self.resolve(gap)
-            current_prompt = f"[CONTEXTO RECUPERADO]\n{context}\n\n[INSTRUCCIÓN]\nResuelve el gap: {gap}\nSi falta info, reporta GAP_DETECTADO. Si no, TERMINADO."
-        return model_output
+    async def run(self, model_call_fn, initial_prompt: str, format_ok=None) -> str:
+        prompt = initial_prompt
+        seen_gaps = set()
+        seen_urls = set()
+        for _ in range(self.max_rounds):
+            out = await model_call_fn(prompt)
+            gap = detect_gap(out)
+            bad_format = format_ok is not None and not format_ok(out)
+            if gap is None and not bad_format:
+                return out
+            if gap and any(b in gap.upper() for b in BLOCKING):
+                raise GapBlockedError(gap)
+            trigger = gap or initial_prompt[:120]
+            if gap:
+                k = _key(gap)
+                if k in seen_gaps:
+                    raise GapUnresolvedError("mismo gap repetido sin evidencia nueva")
+                seen_gaps.add(k)
+            res = await self.engine.run(trigger, seen_urls)
+            if res["status"] != "OK":
+                raise GapUnresolvedError(f"investigacion sin resultado util: {res['status']}")
+            seen_urls.update(res["sources"])
+            prompt = (f"{res['pack']}\n\n[INSTRUCCION]\n{initial_prompt[:500]}\n"
+                      f"Resuelve: {trigger}. Si aun falta informacion responde GAP: <descripcion>; "
+                      f"si no, devuelve la salida pedida.")
+        raise GapUnresolvedError("rondas agotadas con el gap abierto")
