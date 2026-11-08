@@ -1,6 +1,5 @@
 import os
 import time
-import threading
 import urllib.request
 
 THRESHOLD = float(os.environ.get("RAM_SCALE_THRESHOLD", "85"))
@@ -37,6 +36,7 @@ def wake_next():
         return False
 
 def loop():
+    print(f"[scaler] start threshold={THRESHOLD}% next={NEXT or '(none)'}", flush=True)
     streak = 0
     last_wake = 0
     while True:
@@ -52,4 +52,4 @@ def loop():
             streak = 0
 
 if __name__ == "__main__":
-    threading.Thread(target=loop, daemon=True).start()
+    loop()

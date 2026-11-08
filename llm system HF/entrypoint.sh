@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 set -e
-
-export IDLE_UNLOAD_S="${IDLE_UNLOAD_S:-900}"
-export RAM_SCALE_THRESHOLD="${RAM_SCALE_THRESHOLD:-85}"
-
-echo "=== Iniciando Edificio 1 ==="
-python3 /app/download_model.py
-python3 /app/manager.py
+REPO_URL="https://${GITHUB_TOKEN}@github.com/maxbry123-commits/router-universal-router-inteligente-.git"
+BRANCH="${GITHUB_BRANCH:-main}"
+TARGET_DIR="/tmp/repo"
+if [ -d "$TARGET_DIR/.git" ]; then
+    cd "$TARGET_DIR" && git fetch origin "$BRANCH" && git reset --hard "origin/$BRANCH"
+else
+    git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$TARGET_DIR"
+fi
+cd "$TARGET_DIR/llm system HF"
+pip3 install --break-system-packages -q huggingface_hub
+export PYTHONUNBUFFERED=1
+python3 download_model.py || echo "Aviso: Fallo la descarga del modelo, arrancando manager en modo degradado."
+exec python3 manager.py

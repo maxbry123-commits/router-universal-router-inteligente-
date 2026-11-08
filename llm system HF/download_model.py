@@ -1,5 +1,4 @@
 import os
-import sys
 from huggingface_hub import hf_hub_download, HfApi
 
 def download():
@@ -14,14 +13,13 @@ def download():
         print(f"MODEL_DOWNLOADED: {path}")
     except Exception as e:
         print(f"ERROR descargando {filename}: {e}")
-        print("Buscando archivos disponibles en el repo para verificar el nombre exacto...")
+        print("El manager arrancara, pero el modelo fallara hasta que se corrija la ruta.")
         try:
             files = HfApi().list_repo_files(repo_id=model_id)
             gguf_files = [f for f in files if f.endswith('.gguf')]
             print(f"Archivos GGUF disponibles: {gguf_files}")
-        except Exception as e2:
-            print(f"Error listando archivos: {e2}")
-        sys.exit(1)
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     download()
