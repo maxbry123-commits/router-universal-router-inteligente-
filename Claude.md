@@ -113,3 +113,28 @@ Regla de ejecución: ninguna tarea se detiene por dudas. Si la decisión está e
 - [ ] R-10 Auto pull: toda la raíz de `chat-router/` puede hacer auto pull; la integración pasa por rama de trabajo y PR, nunca push directo a `main`.
 
 Pendientes de búsqueda que siguen abiertos: Rufo y Rotboat en todas las ramas remotas, y la auditoría X-Ray de 3 pasadas.
+
+## 10. Decisiones del owner (vuelta 4, 2026-11-09). Anotadas 1 a 1
+
+- [x] D-1 Enchufe Fables: aprobado. Un solo archivo Python `enchufe_universal_v2.py`, fusionado desde el enchufe v2 y las fuentes adicionales. Se toma solo lo que aporta conexión universal. Entregable en Markdown. Lo demás de las fuentes se omite y se explica. (pendiente de ejecutar)
+- [x] D-2 Integración automática: regla obligatoria en `Claude notas.md` y en el README del repo. Auto pull siempre.
+- [x] D-3 Ventanas nuevas: primero aisladas. Después del test de sandbox, el sistema pide autorización del owner para la fase final.
+- [x] D-4 Sistema aislado de frontend: aprobado. Cualquier otro sistema que se implemente se agrega también para frontend.
+- [x] D-5 Frontend: la función de 2 vías existe y funcionaba parcialmente. Hay que mejorarla con 0 fricción y que corra como workflow automático. Entregar un HTML para ver cada cambio.
+- [x] D-6 Protocolo de cambio de frontend: copiar el código de la ventana, crear una nueva, con autorización de sandbox editar quirúrgicamente, eliminar la ventana vieja y añadir el sistema aislado. ALERTA en `Claude notas.md`.
+- [x] D-7 Delegación: las tareas menores (descarga, integración, búsqueda) van a subagentes. Un agente ejecuta, otro subagente revisa (centinela, sheriff, guardián, supervisor) y verifica que se cumplió el input block.
+
+## 11. Tareas pendientes nuevas (del owner)
+
+- [ ] T-K Integrar descarga de componentes para tool.
+- [ ] T-L Sistema para crear markdown. (texto de la instrucción incompleto: "sistema para crear a…". Pendiente de aclarar.)
+- [ ] T-M Catálogo de componentes UI con repositorio público (lista del owner, 2026-11-09): assistant-ui/tool-ui, thesysdev/openui, vercel/ai-elements, open-mercato/open-mercato, Artui/ag-ui-web-component. Solo npm o PyPI (sin repo claro): langgraph-ui-components, @zuilib/ai, nicegui-ai, @filigran/chatbot (repo archivado), agentic-ui-kit, sir-chats-a-lot. Repo directo: Zorro909/hitl. Nota: composeai no es componente de UI. Requiere revisión de licencia antes de integrar.
+- [ ] T-N Frontend: mejorar la función de 2 vías (modelo + agente) y dejarla como workflow automático.
+- [ ] T-O Enrutadores de 100 entradas (MCP, HTTP, URL, web, SDK): plugin listo primero, contenido después. (R-6)
+
+## 12. Gaps abiertos
+
+- G-1 Rufo y Rotboat en todas las ramas: pendiente.
+- G-2 Auditoría X-Ray de 3 pasadas: pendiente de ubicar o rehacer.
+- G-3 Enchufe Fables: base elegida (ver preguntas).
+- G-4 Sandbox de skills: pendiente de decisión.

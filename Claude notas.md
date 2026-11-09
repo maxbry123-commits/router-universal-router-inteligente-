@@ -178,3 +178,24 @@ Estado: sin cambios de carpeta todavía. Pendiente de respuesta del owner (ver p
 - G-6 Frontend: falta aprobar el enfoque de iframe por ventana.
 
 Estado: stop para preguntas. Nada más se ejecuta hasta respuesta del owner.
+
+## ALERTA (regla del owner, 2026-11-09)
+
+Cambio de frontend, obligatorio:
+1. Copiar el código de la ventana actual.
+2. Crear la ventana nueva en paralelo.
+3. Con autorización de sandbox, editar quirúrgicamente.
+4. Eliminar la ventana vieja.
+5. Añadir el sistema aislado de frontend.
+
+Integración automática: auto pull siempre; ninguna integración se hace sin test de sandbox y autorización final del owner.
+
+## Tareas pendientes del owner (2026-11-09)
+
+- T-K Integrar descarga de componentes para tool.
+- T-L Sistema para crear markdown (instrucción incompleta).
+- T-M Catálogo de componentes UI (ver Claude.md §11).
+- T-N Mejorar el selector de 2 vías.
+- T-O Enrutadores de 100 entradas.
+
+Estado: stop para preguntas del owner. Ninguna tarea ejecutada en esta vuelta; no hay tareas completadas que borrar.
