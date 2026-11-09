@@ -1,0 +1,74 @@
+{
+  "models": {
+    "mode": "replace",
+    "providers": {
+      "swecode": {
+        "baseUrl": "http://127.0.0.1:7860/v1",
+        "apiKey": "local",
+        "api": "openai-completions",
+        "models": [
+          {"id": "swecode-asesoria", "name": "SWE Code · Asesoría", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 32768, "maxTokens": 4096},
+          {"id": "swecode-revision", "name": "SWE · revision", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 32768, "maxTokens": 4096},
+          {"id": "swecode-solucion", "name": "SWE · solucion", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 32768, "maxTokens": 4096},
+          {"id": "swecode-arquitectura", "name": "SWE · arquitectura", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 32768, "maxTokens": 4096},
+          {"id": "swecode-archivos", "name": "SWE · archivos", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 32768, "maxTokens": 4096},
+          {"id": "swecode-prompt_code", "name": "SWE · prompt_code", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 32768, "maxTokens": 4096},
+          {"id": "swecode-despliega", "name": "SWE · despliega", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 32768, "maxTokens": 4096},
+          {"id": "groq/qwen/qwen3.8-27b", "name": "Groq · Qwen 3.8 27B", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192},
+          {"id": "nvidia/minimaxai/minimax-m3.1-flash", "name": "NVIDIA · MiniMax M3.1 Flash (puente)", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192},
+          {"id": "nvidia/meta/muse-glimmer-30b", "name": "NVIDIA · Muse Glimmer 30B (puente)", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192},
+          {"id": "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "name": "NVIDIA · Nemotron 3 Ultra (puente)", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192},
+          {"id": "nvidia/z-ai/glm-5.3", "name": "NVIDIA · GLM 5.3 (puente)", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192},
+          {"id": "nvidia/z-ai/glm-5.3-flash", "name": "NVIDIA · GLM 5.3 Flash (puente)", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192}
+        ]
+      },
+      "groq": {
+        "baseUrl": "https://api.groq.com/openai/v1",
+        "api": "openai-completions",
+        "models": [
+          {"id": "qwen/qwen3.8-27b", "name": "Groq · Qwen 3.8 27B", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192}
+        ]
+      },
+      "nvidia": {
+        "baseUrl": "https://integrate.api.nvidia.com/v1",
+        "api": "openai-completions",
+        "models": [
+          {"id": "minimaxai/minimax-m3.1-flash", "name": "NVIDIA · MiniMax M3.1 Flash", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192},
+          {"id": "meta/muse-glimmer-30b", "name": "NVIDIA · Muse Glimmer 30B", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192},
+          {"id": "nvidia/nemotron-3-ultra-550b-a55b", "name": "NVIDIA · Nemotron 3 Ultra", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192},
+          {"id": "z-ai/glm-5.3", "name": "NVIDIA · GLM 5.3", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192},
+          {"id": "z-ai/glm-5.3-flash", "name": "NVIDIA · GLM 5.3 Flash", "reasoning": false, "input": ["text"], "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}, "contextWindow": 131072, "maxTokens": 8192}
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "swecode/groq/qwen/qwen3.8-27b",
+        "fallbacks": ["swecode/nvidia/z-ai/glm-5.3", "swecode/nvidia/minimaxai/minimax-m3.1-flash"]
+      },
+      "models": {
+        "swecode/swecode-asesoria": {},
+        "swecode/swecode-revision": {},
+        "swecode/swecode-solucion": {},
+        "swecode/swecode-arquitectura": {},
+        "swecode/swecode-archivos": {},
+        "swecode/swecode-prompt_code": {},
+        "swecode/swecode-despliega": {},
+        "swecode/groq/qwen/qwen3.8-27b": {},
+        "swecode/nvidia/minimaxai/minimax-m3.1-flash": {},
+        "swecode/nvidia/meta/muse-glimmer-30b": {},
+        "swecode/nvidia/nvidia/nemotron-3-ultra-550b-a55b": {},
+        "swecode/nvidia/z-ai/glm-5.3": {},
+        "swecode/nvidia/z-ai/glm-5.3-flash": {},
+        "groq/qwen/qwen3.8-27b": {},
+        "nvidia/minimaxai/minimax-m3.1-flash": {},
+        "nvidia/meta/muse-glimmer-30b": {},
+        "nvidia/nvidia/nemotron-3-ultra-550b-a55b": {},
+        "nvidia/z-ai/glm-5.3": {},
+        "nvidia/z-ai/glm-5.3-flash": {}
+      }
+    }
+  }
+}
