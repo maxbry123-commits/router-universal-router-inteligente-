@@ -39,3 +39,15 @@ Regla: un Claude solo escribe en su carpeta. Si necesita tocar la del otro, lo a
 - 2026-11-09 — Creado `Claude.md` con la checklist del input block verbatim (secciones 2 a 6) y las tareas heredadas.
 - 2026-11-09 — Creado `Claude notas.md` (esta pizarra) y el reparto de trabajo entre Router 1 y Router 2.
 - 2026-11-09 — Plan de Hugging Face como borrador, a la espera de la auditoría de 4 pasadas.
+
+## Resolución de flags (2026-11-09)
+
+- 🚩1 RESUELTO. `riu-router/proxy.py` no lee ningún banco de claves. Solo reenvía a los puertos internos. Las claves llegan por variables de entorno del Space (`GITHUB_TOKEN`, `RIU_API_KEY`, `WEB_ACCOUNTS`, `WEB_PASS`, `PUENTE_TOKEN`). `swecode_provider.json` no contiene claves (`apiKey: "local"`). Hallazgo: `riu-router/boot.sh` clona la rama `main` (no la de trabajo) con sparse-checkout que excluye `chat-router/agentes/*`, `chat-router/chatbot/`, `chat-router/memoria/`, `chat-router/otros/`, `chat-router/workflow-loop-code-yaiwes/`. Va a Router 2 como tarea.
+- 🚩2 Pendiente de Router 2: `scaler.py` (autoarranque) y `door.py`/`fleet.py`/`mini.py` sin dueño claro.
+- 🚩3 Pendiente de Router 2: duplicados `manager.py`/`scaler.py`/`fetch_models.py` en s1/s2/s3.
+
+## Router 2: prompt y handoff
+
+- Handoff: `handoff/HF_PLAN_ROUTER2.md` (solo lectura para Router 2 salvo la sección de estado).
+- Única bitácora que edita Router 2: esta `Claude notas.md`.
+- Router 2 escribe solo en `HUGGUEFACE SPACE/` y en esta notas.
