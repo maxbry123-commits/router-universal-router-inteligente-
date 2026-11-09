@@ -1,0 +1,111 @@
+# connections/wiring_registry.yaml — centro de distribución por servicio.
+# Fuente: servicios declarados en SYSTEM_WIRING_REGISTRY.yaml (maestro completo).
+# Solo referencias. Ningún secreto. Estados: DISCOVERED, CONFIGURED, TESTING, ACTIVE, FAILED, BLOCKED, DEPRECATED, ORPHANED.
+# Un servicio pasa a ACTIVE solo con prueba real de ejecución (7 condiciones del umbral del maestro).
+version: 1
+servicios:
+  nvidia:
+    consumidor: [selector_de_modelos, harness_deepseek, agentes]
+    proveedor: NVIDIA_BASE_URL
+    contrato: chat_completion
+    healthcheck: inferencia real (requerido)
+    fallback: [groq, modelos_locales]
+    estado: DISCOVERED
+  groq:
+    consumidor: [selector_de_modelos, harness_deepseek]
+    proveedor: GROQ_BASE_URL
+    contrato: chat_completion
+    healthcheck: inferencia real (requerido)
+    fallback: [modelos_locales]
+    estado: DISCOVERED
+  deepseek_harness:
+    consumidor: [chat_router, agentes, motores, loop_cola_watchdog]
+    proveedor: chat-router/chat/backend/deepseek_harness/
+    contrato: handoff/contracts/harness_contract.md
+    healthcheck: contrato (requerido)
+    fallback: []
+    estado: CONFIGURED
+  modelos_locales:
+    consumidor: [selector_de_modelos, chat_router]
+    proveedor: chat-router/SWE CODE/
+    contrato: http 1 modelo por servidor
+    healthcheck: inferencia real (requerido)
+    fallback: [nvidia, groq]
+    estado: DISCOVERED
+  memoria:
+    consumidor: [chat_router, agentes, loop_cola_watchdog]
+    proveedor: chat-router/memoria/
+    contrato: harness_plugin
+    healthcheck: escribir, ACK, leer, comparar (requerido)
+    fallback: []
+    estado: DISCOVERED
+  storage:
+    consumidor: [chat_router, agentes, loop_cola_watchdog]
+    proveedor: chat-router/memoria/hf_datasets/
+    contrato: harness_plugin
+    healthcheck: escribir, reiniciar, leer (requerido)
+    fallback: []
+    estado: DISCOVERED
+  mcp_router_riu:
+    consumidor: [chat_router, agentes, watchdog]
+    proveedor: COMAND-CENTER-1/riu-router
+    contrato: mcp initialize, tools/list, tools/call
+    healthcheck: mcp (requerido)
+    fallback: []
+    estado: TESTING
+  space_riu_router:
+    consumidor: [chat_router, vercel, watchdog]
+    proveedor: COMAND-CENTER-1/riu-router (cpu-upgrade)
+    contrato: http /health
+    healthcheck: http 200 con commit
+    fallback: []
+    estado: TESTING
+  vercel_frontend:
+    consumidor: [usuarios]
+    proveedor: VERCEL_PROJECT
+    contrato: https
+    healthcheck: no es gate
+    fallback: []
+    estado: DISCOVERED
+  github_source:
+    consumidor: [huggingface_mirror, vercel_frontend, agentes]
+    proveedor: main (rama de respaldo y tag de rollback en el maestro)
+    contrato: git
+    healthcheck: git (requerido)
+    fallback: []
+    estado: CONFIGURED
+  huggingface_mirror:
+    consumidor: [space_riu_router]
+    proveedor: COMAND-CENTER-1/riu-router (auto-pull en arranque)
+    contrato: git
+    healthcheck: commit del health == HEAD (requerido)
+    fallback: []
+    estado: CONFIGURED
+  cola_servidores:
+    consumidor: [chat_router, agentes, modelos_locales]
+    proveedor: chat-router/Loop cola wachdog/Cola/
+    contrato: pending, running, completed, failed, rejected
+    healthcheck: contrato (requerido)
+    fallback: []
+    estado: DISCOVERED
+  watchdog:
+    consumidor: [vercel_frontend, queue, space_riu_router]
+    proveedor: chat-router/Loop cola wachdog/wachdog/
+    contrato: encendido y reinicio de servidores
+    healthcheck: servicio (requerido)
+    fallback: []
+    estado: DISCOVERED
+  system_prompt:
+    consumidor: [harness_deepseek, agentes, motores]
+    proveedor: router-mvp/raiz_fichas_prompt/
+    contrato: recorrido ficha, motor, harness, adaptador, modelo
+    healthcheck: identificador de prueba y SHA del prompt
+    fallback: []
+    estado: DISCOVERED
+  openclaw:
+    consumidor: [usuarios, agentes]
+    proveedor: chat-router/chat/espejo/espejo_prod.js
+    contrato: mcp_http
+    healthcheck: responde con el Router caído (requerido)
+    fallback: []
+    estado: DISCOVERED
