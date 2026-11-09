@@ -41,9 +41,9 @@ D2. El revisor no escribe código. Solo verifica.
 
 ## 4. Reglas
 
-- Modo Loop: avanzar tarea por tarea hasta terminar. No parar por dudas menores.
-- Dudas: se resuelven con el input block y este plan. Si aún así no se resuelven, se anotan como 🚩 al final.
-- Ninguna preguntas en medio del loop. Al terminar, una lista de preguntas por inciso, y el loop sigue.
+- MODO: Loops, bucle, cola, preline hasta terminar TODAS las tareas. No stop. No escalas. No expliques de más.
+- Dudas: se resuelven con el input block y este plan. Si aún así no se resuelven, flag 🚩 y se dejan para el final.
+- Ninguna pregunta en medio del loop. Al terminar TODO el loop: lista de 🚩 y lista de preguntas por inciso.
 - Cada tarea: DSL DAG en `Claude notas.md`, handoff JSON, y al cerrarse se marca y se borra de la sección activa (queda en la sección temporal archivada).
 - Atribución: `Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>` y `Claude-Session: https://claude.ai/code/session_01BK5y7GKUQ8CNDJSn8vc749`.
 - Sin GitHub Actions, sin LFS, sin despliegue nuevo en Vercel o Hugging Face sin autorización.
@@ -80,6 +80,8 @@ Lee primero:
 - Checklist: Claude.md (main)
 - Pizarra: Claude notas.md (main)
 - Input block verbatim: kernel/INPUT_BLOCK_YAIWES_CABLEADO.md (main)
+
+Modo: Loops, bucle, cola, preline hasta terminar todas las tareas. No stop. No escalas. Flags 🚩 al final.
 
 Empieza por A1, A2 y A3 (búsqueda en todas las ramas y todo el repo). Delega la búsqueda a un sub-agente. Después sigue con B1 (ventana en sandbox), luego C1 (mapa de cableado, solo lectura) y D1 (revisión de las entregas de Router 1 y Router 2).
 
