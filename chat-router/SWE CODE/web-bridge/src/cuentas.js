@@ -1,5 +1,6 @@
 // cuentas.js — rotacion de cuentas web (5-9 correos, misma clave)
 // Vía 5+13: validar pool → pool.json; rotar solo índices ok; marcar fallos.
+// G2: session-affinity con lease+TTL por conv_id (cuentaParaConv).
 // credenciales: OpenClaw las inyecta por llamada (setCuentas) o env (respaldo)
 import fs from 'node:fs';
 import path from 'node:path';
@@ -137,6 +138,33 @@ export function cuentaActual() {
     if (cuentasOk(j)) { idx = j; break; }
   }
   return { email: mails[idx], index: idx, total: mails.length };
+}
+
+// G2 — session-affinity: la conversacion queda pegada a su cuenta hasta TTL
+// (BRIDGE_LEASE_TTL_S, default 1800 s) o hasta que esa cuenta se marque fallida.
+// Sin lease vigente toma la cuenta actual y la registra. Solo guarda índices, nunca secretos.
+const LEASE_TTL_MS = parseInt(process.env.BRIDGE_LEASE_TTL_S || '1800', 10) * 1000;
+const leases = new Map(); // convId -> {index, ts}
+export function cuentaParaConv(convId) {
+  const key = String(convId || '');
+  const now = Date.now();
+  const l = key ? leases.get(key) : null;
+  if (l && now - l.ts < LEASE_TTL_MS && cuentasOk(l.index)) {
+    l.ts = now; // renueva el lease mientras se use
+    const mails = pool();
+    return { email: mails[l.index], index: l.index, total: mails.length, lease: true };
+  }
+  const c = cuentaActual();
+  if (key) {
+    leases.delete(key);
+    leases.set(key, { index: c.index, ts: now });
+    if (leases.size > 500) leases.delete(leases.keys().next().value);
+  }
+  return { ...c, lease: false };
+}
+// Libera el lease de una conversacion (p. ej. tras 429 o fallo de cuenta).
+export function soltarLease(convId) {
+  leases.delete(String(convId || ''));
 }
 
 // Rota al siguiente correo OK (salta fallidos). Si todos fallaron → SIN_CUENTAS_OK.
