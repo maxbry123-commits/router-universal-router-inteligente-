@@ -19,6 +19,7 @@ import { clavesAcceso, claveAccesoDe } from './acceso.js';
 import { aplicarDefectos } from './defaults.js';
 import { pool, cuentaActual, setCuentas, estadoPool, validarYGuardarPool } from './cuentas.js';
 import nodeFs from 'node:fs';
+import { validarAdjuntos } from './attachments.js';
 import { vigilarWorkspace, vigilarModelosOpenClaw, rutaWorkspace, configVigente, vigilarConfig, espejo, normalizarEjecutor } from './openclaw.js';
 import { MODELOS_API, respaldo, externo, local, esExterno, esLocal, idsRespaldo, estadoRespaldo, estadoMetricas, disponibilidad, disponibilidadLocal, estadosModelosLocales, modeloDefecto, setClaves, limpiarClaves } from './respaldo.js';
 import { listarCheckpoints, registrarLeccion, proponerMejoras, checkpointCrudo, checkpointGuardar } from './bloques.js';
@@ -460,6 +461,8 @@ app.post('/v1/chat/completions', async (req, res) => {
     let { model = 'swecode-consulta', messages: mensajesIn = [], modo, conv_id, proyecto, documentos, cuentas, clave: claveReq, claves: clavesReq } = req.body;
     if (typeof model !== 'string' || !/^[\w.\/:-]{1,100}$/.test(model)) return res.status(400).json({ error: { code: 'MODELO_INVALIDO', model: String(model).slice(0, 50) } });
     if (!Array.isArray(mensajesIn)) return res.status(400).json({ error: { code: 'MENSAJES_INVALIDOS', message: 'messages debe ser una lista' } });
+    const adj = validarAdjuntos(mensajesIn);  // G7: antes de textoDe(), que aplana las partes
+    if (!adj.ok) return res.status(400).json({ error: { code: adj.code, message: adj.message } });
     mensajesIn = mensajesIn.filter(m => m && typeof m === 'object').map(m => ({ ...m, content: textoDe(m.content) }));
     const iUlt = mensajesIn.map(m => m.role).lastIndexOf('user');
     const act = activar && iUlt >= 0 ? activar(mensajesIn[iUlt].content) : null;
