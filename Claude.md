@@ -83,3 +83,18 @@ Orden: F1 → F2 → grafo AST → F3 → F4 → F5 → motores → F6 (Chat YAI
 - [x] Copia del router LLM en `llm system HF/llm_router/` (proxy OpenAI-compatible y dependencias), commit c214932c54
 - [ ] Retiro del original en `ROUTER MVP v1/` — 🚩 requiere aprobación del owner (no se borra sin aprobación)
 - [ ] Decidir si `llm_router` tiene su propio Space (hoy solo es código; el CMD del Dockerfile de MVP v1 aún apunta al original)
+
+## 8. Tareas nuevas del owner (Router 1, 2026-11-09). Cada una: DSL DAG en `Claude notas.md`
+
+Regla de ejecución: ninguna tarea se detiene por dudas. Si la decisión está en el input block o aquí, se decide y se sigue. Solo se marca 🚩 al final si es bloqueante real (sin llave, sin acceso, o acción destructiva).
+
+- [ ] T-A Agentes: Rufo y Rowbot. Búsqueda en `chat-router/`, `chat-router/agentes/` y `chat-router/workflow-loop-code-yaiwes/` de main. Resultado previo: no existen archivos con esos nombres. Acción: buscar en el repo y en GitHub público (`gh api search`, solo lectura). Si no existen, 🚩 final.
+- [ ] T-B Agentes: Cline y Hermes. Cline: no hay carpeta propia; hay soporte en `Main_Skills/Code/get-shit-done` (tests cline-install). Hermes: hay plugin en `Main_Skills/Code/headroom/code/plugins/hermes`. Acción: integrar como adaptadores en `chat-router/agentes/adaptadores/` y dejar el archivo espejo único.
+- [ ] T-C Adaptadores de agentes existentes en `chat-router/agentes/adaptadores/` (claude_code, codex, openclaw, opencode, openhands, swe_agent, dispatcher, workflows): mapear contrato, consumidor y cableado hacia Harness DeepSeek.
+- [ ] T-D Motor de descarga (mejorado): NO es un tool de código descargado. Es un motor determinista que: busca con motores existentes (sin LLM) skills, componentes, adaptadores, plugins, guías, RAG y bibliotecas; el modelo elige 1 a 10 candidatos por valoración; el motor descarga; el motor fusiona. Destinos: un solo directorio de skills y un solo directorio de componentes. Requiere aprobación para ejecutar código descargado: el motor descarga y extrae, no ejecuta. → Esta tarea SÍ tiene un punto de aprobación; se marca 🚩 solo al llegar a la ejecución.
+- [ ] T-E Búsqueda dual: GitHub (top 10 por valoración, revisar código fuente para la finalidad) y Hugging Face. Búsqueda por nombre o por URL. 10 métodos por Hugging Face y 10 por GitHub para skills.
+- [ ] T-F Conversión de skill a mini sistema Python: análisis de README, código y prompt; resultado: archivo Python ejecutable determinista, 95% determinista y 5% LLM solo para razonamiento. Destino: raíz única de tools.
+- [ ] T-G Raíz única de tools (skills, adaptadores, acopladores, plugins) con workflow schema. Todo expuesto como tool nativa al modelo y a los agentes.
+- [ ] T-H Enchufe Fables como conector de todos los tools y workflows. Plugin de cómputo que registra cientos de mini workflows de forma automática. Botón de activación manual y activación por el modelo.
+- [ ] T-I Frontend: botón que inicia el ciclo búsqueda → descarga → fusión → conversión. Cableado frontend → backend → Harness DeepSeek → plugins → agentes/memoria/cómputo, según la arquitectura del owner.
+- [ ] T-J Crazy wall de Router 2 y plan de Hugging Face: revisión y cierre (ver `Claude notas.md`).

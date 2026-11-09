@@ -123,3 +123,28 @@ audit(10 spaces) -> classify -> dedupe(manager) -> copy(HUGGUEFACE SPACE/) -> bo
 | Motor de descarga | ⬜ no autorizado | Fase 2 |
 
 Router 1 no toca `HUGGUEFACE SPACE/` ni los Spaces. Router 2 mantiene su alcance.
+
+## Decisiones de Router 1 sobre los flags de Router 2 (2026-11-09)
+
+- D1 manager.py: única copia. Default de `PRIMARY_MODEL` unificado a `qwen2.5-coder-0.5b`. Router 2 lo copia en `HUGGUEFACE SPACE/swe-code-models/`. Cada Space conserva su variable de entorno.
+- L1 límite de 200 LOC: excepción documentada para `manager.py`. No se parte sin pruebas. Se revisa cuando exista prueba en Router 1.
+- C1 cuentas web: NO se copia a GitHub. Se queda en el Space `swe-code-web` y se registra en el satélite como cableado sensible. No se mueven credenciales.
+- S1 MCP público `app.py`: NO se copia. Es cableado de comunicación: va al satélite como registro de riesgo. Router 1 propone bloquear `delete_repository` en el satélite (decisión del owner solo si quiere eliminar la función).
+- R1 proxy: NO se duplica en `HUGGUEFACE SPACE/`. Router 1 ya tiene el router LLM en `llm system HF/llm_router/` (commit c214932c54). Router 2 borra de su plan la copia del proxy.
+- B1 boot.sh: el Dockerfile de riu-router ejecuta `/app/entrypoint.sh` (verificado). Router 2 debe revisar si `entrypoint.sh` invoca `boot.sh`. Si no lo invoca, `boot.sh` va a `_quarantine/` con README.
+- X1: `manager.py` en commit propio. Acepto.
+
+## Faltantes del plan de Hugging Face (Router 2)
+
+1. Verificar `riu-router/entrypoint.sh` (si llama a boot.sh) — ver B1.
+2. Leer y clasificar `openclaw.sh`, `door.py`, `mini.py`, `fleet.py`, `app.py` (solo lectura, sin copiar app.py).
+3. Leer `hf-bucket-mcp/src/*` (no leído).
+4. Copiar `riu-router/swecode_provider.json` a `HUGGUEFACE SPACE/riu-router/` (sin claves; verificado que no contiene claves).
+5. Copiar `swe-code-web/src/*` excepto `cuentas.js` (decisión C1).
+6. Datasets `scripts/`, `job-evidencia/`, `results/`, `openclaw-prep/` → propuesta a `_quarantine/` con README (no borrar).
+7. `apk/swecode-agente.apk`: no va a git (binario).
+8. Escaneo de secretos completado: solo patrón y ruta, sin valores.
+
+## Router 1 — siguiente
+
+- T-A a T-J según `Claude.md` §8. Empieza por T-A (búsqueda de Rufo y Rowbot).
