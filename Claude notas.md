@@ -12,60 +12,83 @@ Estado: 2026-11-09 · Fuente de tareas: `Claude.md` · Verbatim: `kernel/INPUT_B
 
 Regla: Router 2 hace `git pull --rebase origin main` antes de cada push a `main`. Nunca escribe en `llm system HF/` ni en `ROUTER MVP v1/`.
 
-## Estado por tarea (Router 2)
+## Estado de tareas (Router 2)
 
 | # | Tarea | Estado | Evidencia |
 |---|---|---|---|
-| 1 | Auditoría 4 pasadas (10 Spaces) | 🟡 pasadas 1-2 hechas en 6 Spaces; pasada 3 y 4 en curso | Inventario `hf_fs find`; lectura de código ver abajo |
-| 2 | Clasificación de cada archivo | 🟡 parcial (tabla abajo) | Esta notas |
-| 3 | Fusionar duplicados s1/s2/s3 | 🟡 análisis hecho; copia única pendiente en commit separado | `manager.py` idéntico salvo default `PRIMARY` (ver flags) |
-| 4 | Copiar código a `HUGGUEFACE SPACE/<space>/` | 🟡 parcial | Commit `6922765390c01a3f88a10ee5d48933f1f12ded99` en `ccr-42f0e753-ni96xs`: `scaler.py`, `fetch_models.py`, `proxy.py`, `boot.sh` |
-| 5 | Corregir rama de arranque en `boot.sh` | ✅ en código; ⚠️ ver flag 🚩B1 | `HUGGUEFACE SPACE/riu-router/boot.sh` usa `GITHUB_BRANCH` (default `ccr-f01c3de9-bmry0s`) |
-| 6 | Cerrar lista | ⬜ | Al final del loop |
+| 1 | Auditoría 4 pasadas (10 Spaces) | ✅ | Pasada 1 inventario (`hf_fs find`), pasada 2 lectura de código, pasada 3 cableado (abajo), pasada 4 secretos (abajo) |
+| 2 | Clasificación de cada archivo | ✅ | Tabla final abajo |
+| 3 | Fusionar duplicados s1/s2/s3 | ✅ | `HUGGUEFACE SPACE/swe-code-models/manager.py` (una copia) · `de49e5b` |
+| 4 | Copiar código a `HUGGUEFACE SPACE/<space>/` | ✅ | `6922765` (fetch_models, proxy, boot), `a9cab4d` (provider), `1f52588` (swe-code-web sin cuentas.js), `de49e5b` (manager) |
+| 5 | Corregir rama de arranque | ✅ | `_quarantine/boot.sh` con `GITHUB_BRANCH` (default `ccr-f01c3de9-bmry0s`). El arranque real es `riu-router/entrypoint.sh`, que ya usa esa rama |
+| 6 | Cerrar lista | ✅ | Esta notas |
 
-## Hallazgos de la pasada 1-2 (inventario y lectura)
+## Commits de Router 2 (`ccr-42f0e753-ni96xs`)
 
-- **Spaces auditados (10):** `swe-code-s1`, `swe-code-s2`, `swe-code-s3`, `riu-router`, `swe-code-web` (privado), `claude-github-mcp-backup`, `local-llm-router`, `local-llm-router-v2`, `local-llm-router-v7`, `hf-bucket-mcp`. Los cuatro últimos: inventario y clasificación, sin copia.
-- **Secretos (pasada 4, parcial):** en el código leído no aparece ningún valor literal de clave. Todas las credenciales se leen de variables de entorno (`GITHUB_TOKEN`, `RIU_API_KEY`, `WEB_ACCOUNTS`, `WEB_PASS`, `PUENTE_TOKEN`, `HF_TOKEN`, `GITHUB_PERSONAL_ACCESS_TOKEN`, `MCP_SECRET_PATH`, `MCP_SECRET_HF`). Reportado solo por patrón y ruta, nunca valor.
-- **Cableado:** `riu-router/entrypoint.sh` (el que ejecuta el Dockerfile) clona `ccr-f01c3de9-bmry0s` y arranca `ROUTER MVP v1/system_prompt_py/openai_compatible_proxy`. `boot.sh` no es invocado por el Dockerfile: es código muerto en el Space.
-- **s1/s2/s3:** `entrypoint.sh` de s1 clona el repo en tiempo de arranque y ejecuta `llm system HF/download_model.py` y `llm system HF/manager.py` (código de Router 1). Los `manager.py` locales de s1 no se ejecutan. s2 y s3 sí ejecutan su copia local, vía Dockerfile.
+- `6922765` código inicial: fetch_models, proxy, boot, scaler (luego retirados)
+- `de49e5b` manager.py única copia (default PRIMARY `qwen2.5-coder-0.5b`)
+- `a9cab4d` swecode_provider.json (sin claves) y cuarentena de scaler/boot
+- `3992231` retirar proxy.py (router LLM vive en `llm system HF/`, Router 1)
+- `fd8e680` mover scaler.py a `_quarantine/`
+- `cfe557a` mover boot.sh a `_quarantine/`
+- `f6d865c` restaurar boot.sh completo en `_quarantine/` y README
+- `1f52588` swe-code-web/src sin cuentas.js
 
-## Clasificación (Router 2)
+Atribución: `de49e5b`, `a9cab4d`, `fd8e680`, `cfe557a`, `f6d865c`, `1f52588` llevan el trailer. `6922765` y el commit de notas `9d4edd3` en `main` no lo llevan. No se reescriben historiales.
+
+## Clasificación final
 
 | Elemento | Destino | Motivo |
 |---|---|---|
-| GGUF y adaptadores (datasets) | Se queda en HF | Binarios grandes |
+| GGUF y LoRA (`swe-code-hf-gguf`, `swe-code-loras`) | Se queda en HF | Binarios |
 | Bucket `yaiwes-memoria-storage` | Se queda en HF | Almacenamiento |
-| `Dockerfile`, `README.md`, `entrypoint.sh` de cada Space | Se queda en HF | Cascarón mínimo |
-| `manager.py` (s1/s2/s3) | `HUGGUEFACE SPACE/swe-code-models/manager.py` (una copia) | Duplicado; pendiente de commit |
-| `scaler.py`, `fetch_models.py` | `HUGGUEFACE SPACE/swe-code-models/` | Duplicados; copiados |
-| `riu-router/proxy.py` | `HUGGUEFACE SPACE/riu-router/proxy.py` | Copiado. 🚩 Según el plan iría a `llm system HF`; Router 2 no escribe ahí |
-| `riu-router/swecode_provider.json` | Pendiente | Sin claves (`apiKey: "local"`). Copiar en el siguiente commit |
-| `riu-router/boot.sh` | `HUGGUEFACE SPACE/riu-router/boot.sh` (corregido) | Copiado con `GITHUB_BRANCH` |
-| `riu-router/openclaw.sh` | Pendiente de lectura | 12 KB, no leído |
-| `swe-code-web/src/*` (8 archivos) | Pendiente de copia | 🚩C1 (ver abajo) |
-| `claude-github-mcp-backup/app.py` | Cableado (MCP público), no copiar | 🚩S1 (ver abajo) |
-| `claude-github-mcp-backup/fleet.py` | Pendiente de decisión | Flota de replicas; cableado de router |
-| `claude-github-mcp-backup/door.py`, `mini.py` | Pendiente de lectura | No leídos |
-| `hf-bucket-mcp/src/*` | Pendiente de lectura | No leídos |
-| `local-llm-router*` (3) | Inventario, sin copia | Fuera del plan de copia |
+| `Dockerfile`, `README.md`, `entrypoint.sh` de cada Space | Se queda en HF | Cascarón |
+| `manager.py` (s1/s2/s3) | `HUGGUEFACE SPACE/swe-code-models/` | Copia única |
+| `fetch_models.py` | `HUGGUEFACE SPACE/swe-code-models/` | Idéntico en s1/s2/s3 |
+| `scaler.py` | `HUGGUEFACE SPACE/_quarantine/` | Autoarranque retirado por owner |
+| `riu-router/boot.sh` | `HUGGUEFACE SPACE/_quarantine/` | No invocado por el Dockerfile ni por `entrypoint.sh` |
+| `riu-router/swecode_provider.json` | `HUGGUEFACE SPACE/riu-router/` | Sin claves |
+| `riu-router/proxy.py` | Retirado (no copiado) | Router LLM de Router 1 (`llm system HF/llm_router/`) |
+| `riu-router/openclaw.sh` | Satélite de comunicación (no copiar) | Gateway; requiere `OPENCLAW_GATEWAY_TOKEN` |
+| `swe-code-web/src/*` excepto `cuentas.js` | `HUGGUEFACE SPACE/swe-code-web/src/` | Decisión del owner |
+| `swe-code-web/src/cuentas.js` | No copiado | Decisión del owner (rotación de cuentas) |
+| `claude-github-mcp-backup/app.py`, `door.py`, `mini.py`, `fleet.py` | Satélite de comunicación (no copiar) | Puerta MCP y orquestación del Router |
+| `hf-bucket-mcp/src/*` | Satélite de comunicación (no copiar) | Servidor MCP de subida a buckets |
+| `local-llm-router`, `-v2`, `-v7` | Inventario, sin copia | Fuera del plan de copia |
 
-## Flags 🚩
+## Pasada 3 — cableado vs `SYSTEM_WIRING_REGISTRY.yaml` y `connections/`
 
-- 🚩1 RESUELTO (pasada 2). `riu-router/proxy.py` no lee ningún banco de claves; solo reenvía. `swecode_provider.json` no tiene claves.
-- 🚩B1 BLOQUEANTE MENOR. `boot.sh` no es el arranque real: el Dockerfile ejecuta `entrypoint.sh`, que ya usa `ccr-f01c3de9-bmry0s`. La corrección de `boot.sh` queda documentada y no afecta al despliegue. Además, la lista de exclusiones en `boot.sh` no coincide con la de esta notas: `boot.sh` excluye `chat-router/agentes/{agentes-listos,frameworks,investigacion}/`, no `chat-router/agentes/*`.
-- 🚩D1 DUPLICADO CON DIFERENCIA. `manager.py` en s1/s2/s3: el código es idéntico salvo el default de `PRIMARY` (`qwen2.5-coder-0.5b` / `lfm2.5-350m` / `qwen3.5-0.8b`) y un comentario. Cada entrypoint fija `PRIMARY_MODEL`, así que el default se unifica a `qwen2.5-coder-0.5b`. La copia única aún no está en GitHub. No se pudo verificar por hash: la sandbox bloquea `huggingface.co`.
-- 🚩L1 LÍMITE DE 200 LÍNEAS. `manager.py` tiene ~400 líneas. Dividirlo sin poder ejecutarlo tiene riesgo. Se copia íntegro y se deja como excepción documentada hasta que Router 1 o el owner decidan.
-- 🚩C1 CUENTAS WEB. `swe-code-web/src/cuentas.js` rota entre varios correos con una misma clave (`WEB_ACCOUNTS`, `WEB_PASS`) para reautenticar sesiones de sitios de chat de terceros con Playwright. Requiere revisión del owner antes de copiarlo o reubicarlo. Router 2 no lo copia en esta pasada.
-- 🚩S1 MCP PÚBLICO. `claude-github-mcp-backup/app.py` expone herramientas que borran repositorios (`delete_repository`) y un `github_api` genérico con el PAT. El único control es la ruta secreta (`MCP_SECRET_PATH`, mínimo 20 caracteres) y no hay autenticación a nivel MCP. Es cableado de comunicación: no se copia a `HUGGUEFACE SPACE/`. Requiere decisión del owner.
-- 🚩R1 DIRECTORIO DE ROUTER 1. El plan pide mover `proxy.py` y `manager.py` a `llm system HF/`, pero esa carpeta es de Router 1. Router 2 deja las copias en `HUGGUEFACE SPACE/` y Router 1 decide si las reubica.
-- 🚩X1 LÍMITE DE TAMAÑO. `manager.py` (20 KB) y `proxy.py` (10 KB) no caben en un solo `push_files` junto con el resto sin riesgo. `manager.py` queda pendiente de un commit propio.
+- **C-011** (`space_riu_router` ← `github_source`, apunta a `router-mvp/router/boot.sh`): el Space ejecuta `riu-router/entrypoint.sh`, que clona `ccr-f01c3de9-bmry0s`. Discrepancia registrada.
+- **O1** (espejo vs auto-pull): respondido por evidencia. `riu-router/entrypoint.sh` hace auto-pull de GitHub en cada arranque (`git fetch` + `reset --hard` de la rama). `boot.sh`, que clona `main`, no se ejecuta.
+- **`huggingface_mirror`**: el registro dice `push_por_protocolo_git_allowlist`; el código real es auto-pull en arranque. Corrección pendiente en el registro (satélite, fuera de Router 2).
+- **`mcp_router_riu`, `space_riu_router`**: el registro los marca TESTING con evidencia de 2026-11-06. No re-probados en esta pasada.
+- **Dataset**: el plan menciona `scripts/`, `job-evidencia/`, `results/`, `openclaw-prep/`, `apk/`. En `swe-code-hf-gguf` no existen. Solo hay 3 GGUF, `README.md` y `manifest.json`. No se borró nada.
 
-## Preguntas para el owner
+## Pasada 4 — escaneo de secretos (patrón y ruta, nunca valor)
 
-1. ¿Autorizas mover `cuentas.js` y la rotación de cuentas web fuera de `swe-code-web`, o prefieres que quede como está y documentado?
-2. ¿Qué hacemos con `app.py` (MCP público con `delete_repository`)? ¿Lo restringimos o lo dejamos como está?
-3. ¿Cuándo se autoriza el borrado en Hugging Face (lo ejecuta MiniMax)?
+- En el código leído (riu-router, s1/s2/s3, swe-code-web, claude-github-mcp-backup, hf-bucket-mcp, openclaw.sh) no hay valor literal de clave.
+- Nombres de variables de secreto referenciadas: `GITHUB_TOKEN`, `RIU_API_KEY`, `WEB_ACCOUNTS`, `WEB_PASS`, `PUENTE_TOKEN`, `HF_TOKEN`, `HUGGING_FACE_HUB_TOKEN`, `GITHUB_PERSONAL_ACCESS_TOKEN`, `MCP_SECRET_PATH`, `MCP_SECRET_HF`, `OPENCLAW_GATEWAY_TOKEN`, `GROQ_API_KEY`, `NVIDIA_API_KEY`, `RIU_VAULT_PASSPHRASE`, `RIU_AGENT_API_KEYS`, `RIU_DIRECTOR_KEY_HASH`, `FASTMCP_JWT_SIGNING_KEY`.
+- Patrón a revisar: `hf-bucket-mcp/src/hf_bucket_mcp/auth.py`, función `build_huggingface_auth`, usa `"dev-change-me"` como valor por defecto de `FASTMCP_JWT_SIGNING_KEY`.
+
+## Flags 🚩 (resueltos por Router 2, sin escalar)
+
+- 🚩1 RESUELTO. `proxy.py` no lee claves; `swecode_provider.json` sin claves.
+- 🚩B1 RESUELTO. `boot.sh` no es el arranque real: `entrypoint.sh` no lo invoca (verificado). Movido a `_quarantine/` con README.
+- 🚩D1 RESUELTO. `manager.py` único en `swe-code-models/`. Default `PRIMARY` unificado.
+- 🚩L1 EXCEPCIÓN DOCUMENTADA. `manager.py` ~400 líneas (límite 200). Copiado íntegro; dividirlo sin pruebas tiene riesgo. Acordado con Router 1.
+- 🚩R1 RESUELTO. `proxy.py` retirado de `HUGGUEFACE SPACE/`. Router LLM en `llm system HF/` (Router 1).
+- 🚩X1 RESUELTO. `manager.py` en commit propio (`de49e5b`).
+- 🚩C1 DOCUMENTADO, NO COPIADO. `cuentas.js` rota varias cuentas con una misma clave. `browser.js` lo importa: sin él, el módulo no arranca. Decisión del owner, sin cambios.
+- 🚩S1 DOCUMENTADO, NO COPIADO. `claude-github-mcp-backup/app.py` expone `delete_repository` y `github_api` genérico. Único control: ruta secreta (`MCP_SECRET_PATH`). Restringir es decisión del owner.
+
+## Flags 🚩 abiertos (owner, no bloquean el cierre de Router 2)
+
+- 🚩S2 Default de clave JWT en `hf-bucket-mcp/auth.py` (`dev-change-me`) si `FASTMCP_JWT_SIGNING_KEY` no está definida.
+- 🚩S3 `hf-bucket-mcp/server.py` expone `write_file`, que escribe en repos y buckets con el token del llamador cuando `HF_USE_CALLER_TOKEN_FOR_UPLOAD` está activo. Sin `HF_ALLOWED_USERS`, cualquier cuenta autenticada puede escribir.
+- 🚩D2 Plan HF vs dataset real: carpetas `scripts/`, `job-evidencia/`, `results/`, `openclaw-prep/`, `apk/` no existen en el dataset de `main`. Revisar el plan.
+- 🚩D3 `door.py` define `ROOT = router-inteligente-universal` y bucket `yaiwes-memoria-storage`. El repo usa otras raíces. Confirmar la raíz vigente.
+- 🚩O2 (registro) Watchdog publica en `main` fuera del DAG.
+- 🚩REG Registro `huggingface_mirror` describe push por git; el código real es auto-pull en arranque. Actualizar el registro.
 
 ## Handoff Router 2 (JSON)
 
@@ -73,39 +96,26 @@ Regla: Router 2 hace `git pull --rebase origin main` antes de cada push a `main`
 {
   "router": "ROUTER 2",
   "branch": "ccr-42f0e753-ni96xs",
-  "commit_codigo": "6922765390c01a3f88a10ee5d48933f1f12ded99",
-  "tareas": {
-    "1_auditoria": "parcial: pasadas 1-2 completas en 6 Spaces de copia; pasada 3 y 4 en curso",
-    "2_clasificacion": "parcial",
-    "3_dedupe": "analisis listo; manager.py unico pendiente",
-    "4_copia": "parcial: scaler, fetch_models, proxy, boot",
-    "5_boot_branch": "hecho en codigo; boot.sh no es el arranque real",
-    "6_cierre": "pendiente"
-  },
-  "flags_abiertos": ["D1", "L1", "C1", "S1", "R1", "X1", "B1"],
-  "pendiente_siguiente_commit": [
-    "HUGGUEFACE SPACE/swe-code-models/manager.py (unico)",
-    "HUGGUEFACE SPACE/riu-router/swecode_provider.json",
-    "HUGGUEFACE SPACE/swe-code-web/src/* (tras decision C1)",
-    "lectura de openclaw.sh, door.py, mini.py, hf-bucket-mcp/src/*"
-  ]
+  "tareas": {"1_auditoria": "cerrada", "2_clasificacion": "cerrada", "3_dedupe": "cerrada", "4_copia": "cerrada", "5_boot_branch": "cerrada", "6_cierre": "cerrada"},
+  "commits": ["6922765", "de49e5b", "a9cab4d", "3992231", "fd8e680", "cfe557a", "f6d865c", "1f52588"],
+  "flags_abiertos_owner": ["S2", "S3", "D2", "D3", "O2", "REG"],
+  "flags_documentados_no_copiados": ["S1", "C1"]
 }
 ```
 
 ## DSL DAG (Router 2)
 
 ```
-audit(10 spaces) -> classify -> dedupe(manager) -> copy(HUGGUEFACE SPACE/) -> boot_branch -> close
-   ✅ inventario     🟡 parcial    🟡 analisis        🟡 parcial              ✅ codigo       ⬜
+audit(10) -> classify -> dedupe(manager) -> copy(HUGGUEFACE SPACE/) -> boot_branch -> wiring(p3) -> secrets(p4) -> close
+   ✅           ✅            ✅                  ✅                       ✅              ✅            ✅         ✅
 ```
 
 ## Bitácora
 
-- 2026-11-09 — Creado `Claude.md` con la checklist del input block verbatim (secciones 2 a 6) y las tareas heredadas.
-- 2026-11-09 — Creado `Claude notas.md` (esta pizarra) y el reparto de trabajo entre Router 1 y Router 2.
-- 2026-11-09 — Plan de Hugging Face como borrador, a la espera de la auditoría de 4 pasadas.
-- 2026-11-09 — Router 2: rama `ccr-42f0e753-ni96xs` creada desde `main` (`5e239762526`). Inventario de 10 Spaces. Commit de código `6922765` con scaler, fetch_models, proxy y boot.
-- 2026-11-09 — Router 2: flags 🚩D1, 🚩L1, 🚩C1, 🚩S1, 🚩R1, 🚩X1, 🚩B1 abiertos.
+- 2026-11-09 — Creado `Claude.md` con la checklist del input block verbatim y las tareas heredadas.
+- 2026-11-09 — Creado `Claude notas.md` y reparto Router 1 / Router 2.
+- 2026-11-09 — Router 2: rama `ccr-42f0e753-ni96xs` creada desde `main` (`5e239762526`). Inventario de 10 Spaces.
+- 2026-11-09 — Router 2: cierre de auditoría. Pasadas 3 y 4 completas. Flags finales listados.
 
 ## Resolución de flags (2026-11-09)
 
@@ -131,19 +141,8 @@ Router 1 no toca `HUGGUEFACE SPACE/` ni los Spaces. Router 2 mantiene su alcance
 - C1 cuentas web: NO se copia a GitHub. Se queda en el Space `swe-code-web` y se registra en el satélite como cableado sensible. No se mueven credenciales.
 - S1 MCP público `app.py`: NO se copia. Es cableado de comunicación: va al satélite como registro de riesgo. Router 1 propone bloquear `delete_repository` en el satélite (decisión del owner solo si quiere eliminar la función).
 - R1 proxy: NO se duplica en `HUGGUEFACE SPACE/`. Router 1 ya tiene el router LLM en `llm system HF/llm_router/` (commit c214932c54). Router 2 borra de su plan la copia del proxy.
-- B1 boot.sh: el Dockerfile de riu-router ejecuta `/app/entrypoint.sh` (verificado). Router 2 debe revisar si `entrypoint.sh` invoca `boot.sh`. Si no lo invoca, `boot.sh` va a `_quarantine/` con README.
+- B1 boot.sh: verificado. `entrypoint.sh` no invoca `boot.sh`. Va a `_quarantine/` con README.
 - X1: `manager.py` en commit propio. Acepto.
-
-## Faltantes del plan de Hugging Face (Router 2)
-
-1. Verificar `riu-router/entrypoint.sh` (si llama a boot.sh) — ver B1.
-2. Leer y clasificar `openclaw.sh`, `door.py`, `mini.py`, `fleet.py`, `app.py` (solo lectura, sin copiar app.py).
-3. Leer `hf-bucket-mcp/src/*` (no leído).
-4. Copiar `riu-router/swecode_provider.json` a `HUGGUEFACE SPACE/riu-router/` (sin claves; verificado que no contiene claves).
-5. Copiar `swe-code-web/src/*` excepto `cuentas.js` (decisión C1).
-6. Datasets `scripts/`, `job-evidencia/`, `results/`, `openclaw-prep/` → propuesta a `_quarantine/` con README (no borrar).
-7. `apk/swecode-agente.apk`: no va a git (binario).
-8. Escaneo de secretos completado: solo patrón y ruta, sin valores.
 
 ## Router 1 — siguiente
 
