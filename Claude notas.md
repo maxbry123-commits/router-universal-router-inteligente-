@@ -305,3 +305,10 @@ Estado: NO integrado. Pendiente de decisión del owner.
 Recomendación de Router 1: reutilizar `workflow_tools` + `semantic_checkpoint` + `code_splitter`, corregir F-RE-3, F-RE-4 y F-RE-5 en esos archivos, y cablear el orquestador existente. No crear `router_engine/` sin decisión del owner.
 
 Estado: stop para decisión del owner (recepción).
+
+
+## Frente 5 — Almacenamiento y memoria (2026-11-09)
+
+Anexo de cableado: `chat-router/plan/ANEXO_CABLEADO_ALMACENAMIENTO_MEMORIA.md`.
+Estado: recepción. Lote recibido en R-01 a R-11 (ver anexo). 🚩 abiertos.
+Bugs del lote: B1 a B5 (ver anexo, R-09). No ejecutar `router_engine/` ni `memory_repair.dag.yaml` sin decisión del owner.
