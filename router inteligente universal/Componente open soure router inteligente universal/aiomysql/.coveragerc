@@ -1,4 +1,0 @@
-[run]
-branch = True
-source = aiomysql, tests
-omit = site-packages, .tox

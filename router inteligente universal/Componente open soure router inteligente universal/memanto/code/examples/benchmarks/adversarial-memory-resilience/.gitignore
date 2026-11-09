@@ -1,7 +1,0 @@
-.env
-results/*
-!results/live/
-results/live/work/
-work/
-__pycache__/
-.pytest_cache/

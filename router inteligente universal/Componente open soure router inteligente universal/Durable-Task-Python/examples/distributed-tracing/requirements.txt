@@ -1,4 +1,0 @@
-durabletask[opentelemetry]
-durabletask-azuremanaged
-azure-identity
-opentelemetry-exporter-otlp-proto-grpc

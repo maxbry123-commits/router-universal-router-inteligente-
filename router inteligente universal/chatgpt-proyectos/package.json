@@ -1,3 +1,0 @@
-{ "name": "riu-chatgpt-proyectos", "private": true, "type": "module",
-  "scripts": { "preparar": "bash preparar.sh", "start": "node server.mjs" },
-  "engines": { "node": ">=22" } }

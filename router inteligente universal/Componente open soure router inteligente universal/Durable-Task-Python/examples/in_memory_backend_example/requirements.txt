@@ -1,4 +1,0 @@
-durabletask
-durabletask-azuremanaged
-azure-identity
-pytest

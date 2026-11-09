@@ -1,1 +1,0 @@
-"""ASGI Framework Compatibility Tests"""

@@ -1,2 +1,0 @@
-durabletask-azuremanaged
-azure-identity

@@ -1,4 +1,0 @@
-Diagnostics:
-  Includes:
-    IgnoreHeader:
-      - "pythoncapi_compat.*\\.h"

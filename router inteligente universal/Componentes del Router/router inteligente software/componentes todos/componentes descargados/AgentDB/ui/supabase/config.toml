@@ -1,4 +1,0 @@
-project_id = "yoyrnfdeqygvfpmhjwty"
-
-[functions.agentdb-ai]
-verify_jwt = false

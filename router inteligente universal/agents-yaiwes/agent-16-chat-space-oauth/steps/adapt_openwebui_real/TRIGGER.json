@@ -1,1 +1,0 @@
-{"schema": "yaiwes.trigger/v1", "run_id": "CHAT-100-AGENT16-20260923", "input_block": "ORDEN DE AGENT 14 / DIRECTOR: ejecutar el cableado de Open WebUI usando SOLO componentes existentes.\nNo redescargar Open WebUI. No GitHub Actions. No tocar motores. No crear UI paralela.\n"}

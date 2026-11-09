@@ -1,3 +1,0 @@
-# This directory contains SSL certificates generated for testing.
-# Certificates are generated automatically by conftest.py.
-# Do not commit actual certificate files.
