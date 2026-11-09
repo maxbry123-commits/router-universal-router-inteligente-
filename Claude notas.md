@@ -282,3 +282,26 @@ Cierre
 - Clave: no se usa ni se guarda. Recomendado rotarla.
 - NVIDIA 410 y pruebas en vivo: 🚩 hasta que haya llave en el entorno.
 - T-L (sistema para crear a…): pendiente de aclarar por el owner; 🚩.
+
+## RECEPCIÓN (2026-11-09) — propuesta externa "router_engine" (modo recepción, sin ejecutar)
+
+Entrada recibida: propuesta de un nuevo paquete `router_engine/` (models, splitter AST, checkpoint JSONL, runtime, orchestrator) con 4 bloques de código y un DSL DAG.
+
+Estado: NO integrado. Pendiente de decisión del owner.
+
+🚩 Flags de la revisión:
+- F-RE-1 Duplica piezas que ya existen: `workflow_tools.py`, `semantic_checkpoint.py`, `code_splitter.py`. Contradice la regla de reutilizar y no crear más archivos.
+- F-RE-2 Nueva raíz `router_engine/` fuera de la organización R-4 (`chat-router/` por grupo).
+- F-RE-3 Bug en `runtime.resume`: marca como completado un nodo en vuelo con `{"resumed": true}` sin ejecutarlo. Eso falsea el resultado tras un kill -9.
+- F-RE-4 Bug en `checkpoint.append`: tras una línea corrupta no añade salto de línea; la siguiente escritura se pierde con ella. El comentario "truncar en el siguiente append" no está implementado.
+- F-RE-5 El splitter usa `ast.unparse`: pierde comentarios y formato, y tras inyectar imports no vuelve a comprobar el límite de 200 LOC.
+- F-RE-6 Las simulaciones son narrativas: no se ejecutaron. La simulación 4 (CONTRACT_FAILURE) no existe en el código.
+- F-RE-7 Mezcla de fuentes: el "harness DeepSeek con JSONL atómico" citado es un tutorial externo, no el harness de este repo.
+- F-RE-8 Referencias externas (AbstractRuntime, DagPipe, OpenArmature, cognivault, bernstein, semarun, pykomodo, Haystack): no verificadas en esta entrada.
+- F-RE-9 "Ask Council AUTHORIZE" lo emite el propio documento. La decisión es del owner.
+- F-RE-10 Restricción nueva no pedida por el owner: "máx. 25k caracteres por salida".
+- F-RE-11 El planificador no reintenta cuando el JSON del LLM es inválido: `json.loads` lanza.
+
+Recomendación de Router 1: reutilizar `workflow_tools` + `semantic_checkpoint` + `code_splitter`, corregir F-RE-3, F-RE-4 y F-RE-5 en esos archivos, y cablear el orquestador existente. No crear `router_engine/` sin decisión del owner.
+
+Estado: stop para decisión del owner (recepción).
