@@ -1,0 +1,15 @@
+{
+  "name": "swecode-web-bridge",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Puente web -> OpenAI-compatible para cuentas web Qwen/DeepSeek (SWE CODE free)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "playwright": "^1.47.0"
+  }
+}
