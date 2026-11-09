@@ -148,3 +148,20 @@ Router 1 no toca `HUGGUEFACE SPACE/` ni los Spaces. Router 2 mantiene su alcance
 ## Router 1 — siguiente
 
 - T-A a T-J según `Claude.md` §8. Empieza por T-A (búsqueda de Rufo y Rowbot).
+
+## Router 1 — loop (2026-11-09, segunda vuelta)
+
+| Tarea | Estado | Evidencia |
+|---|---|---|
+| T-A Rufo / Rowbot | ✅ búsqueda hecha, no encontrados | GitHub público (search) y ls-remote de la cuenta owner |
+| T-B Hermes / OpenClaw / Cline | ✅ | 39fa94257a (agentes.py), b836d6c1d2 (Cline en componentes_descargados, 4452 archivos, 84 MB, fuera de git) |
+| T-D Motor de descarga | ✅ | b836d6c1d2: solo descarga, nunca ejecuta; hosts permitidos; límite 200 MB; zip/tar con control de rutas |
+| T-E Búsqueda dual | 🟡 | motor_descarga.buscar_github / buscar_huggingface; faltan 10 métodos por fuente y búsqueda por URL |
+| T-G Raíz de tools | ✅ | 02fb25bcc5 (tools/__init__.py, 9 tools registradas) |
+| T-F, T-H, T-I | ⬜ | pendientes |
+
+Pruebas locales: 15 pasan en `ROUTER MVP v1/system_prompt_py/tests` y `llm system HF/llm_router`.
+
+🚩 (para el final):
+- 🚩 Rufo y Rowbot no existen en ninguna fuente. Pendiente de confirmación del owner: el nombre exacto o la URL.
+- 🚩 Ejecutar skills descargadas (requiere aprobación al pasar de descargar a ejecutar).
