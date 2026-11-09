@@ -98,3 +98,18 @@ Regla de ejecución: ninguna tarea se detiene por dudas. Si la decisión está e
 - [ ] T-H Enchufe Fables (pendiente: no iniciado) como conector de todos los tools y workflows. Plugin de cómputo que registra cientos de mini workflows de forma automática. Botón de activación manual y activación por el modelo.
 - [ ] T-I Frontend (pendiente: no iniciado): botón que inicia el ciclo búsqueda → descarga → fusión → conversión. Cableado frontend → backend → Harness DeepSeek → plugins → agentes/memoria/cómputo, según la arquitectura del owner.
 - [ ] T-J Crazy wall de Router 2 y plan de Hugging Face: revisión y cierre (ver `Claude notas.md`).
+
+## 9. Reglas del owner (vuelta 3, 2026-11-09). Anotadas 1 a 1
+
+- [ ] R-1 Búsqueda antes de escalar: buscar cómo se hace y cómo se resuelve (research system: fuentes S01–S20, ruta de gaps en 10 pasos). Solo después de agotar la búsqueda se escala.
+- [ ] R-2 Frontend: criterio obligatorio. Cualquier resultado fuera de criterio es un Gap: se resuelve o queda en tareas pendientes.
+- [ ] R-3 Integración automática obligatoria: el sistema prueba en sandbox, integra el tool en la carpeta de tools y conecta sin LLM. El LLM solo razona o escribe la conversión a Python. El motor es plantilla: el modelo anota qué quiere y el sistema corre solo.
+- [ ] R-4 Organización de la raíz: dentro de `chat-router/`, por grupo: Agentes, Componentes, Skills, Chatbot, Backend chat, Frontend chat, Motores de descarga y extracción y otros, Tool plugins. En `main` solo puede existir un puente que apunte a esa ubicación.
+- [ ] R-5 Enchufe Fables: un solo archivo Python, fusionado a partir de las 3 fuentes. Reemplazar código del router solo si el actual no cumple las mismas características de conexión. Solo Python.
+- [ ] R-6 Enrutadores: archivos de plugins (100 MCP, 100 HTTP, 100 URL/web, 100 SDK de los modelos) que se conectan a ambos routers sin tocar su código. Viven en el banco ahora y en una APK local en el futuro. Primero dejar el plugin listo; el contenido después.
+- [ ] R-7 Selector de dos vías: una sola ventana con el modelo que razona y el agente que ejecuta. El modelo lo ve como tool interno. Cero fricción.
+- [ ] R-8 Método de trabajo: Claude notas, README de cada raíz, y un handoff por archivo, uno por cada punto del input block verbatim.
+- [ ] R-9 Atribución: todo commit lleva Co-Authored-By y Claude-Session.
+- [ ] R-10 Auto pull: toda la raíz de `chat-router/` puede hacer auto pull; la integración pasa por rama de trabajo y PR, nunca push directo a `main`.
+
+Pendientes de búsqueda que siguen abiertos: Rufo y Rotboat en todas las ramas remotas, y la auditoría X-Ray de 3 pasadas.

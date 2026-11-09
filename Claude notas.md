@@ -151,3 +151,30 @@ Pruebas locales: 15 pasan en `ROUTER MVP v1/system_prompt_py/tests` y `llm syste
 🚩 (para el final):
 - 🚩 Rufo y Rowbot no existen en ninguna fuente. Pendiente de confirmación del owner: el nombre exacto o la URL.
 - 🚩 Ejecutar skills descargadas (requiere aprobación al pasar de descargar a ejecutar).
+
+## Organización de la raíz (copia de la instrucción del owner, 2026-11-09)
+
+Destino en `chat-router/`, por grupo:
+- 📂 Agentes
+- 📂 Componentes
+- 📂 Skills
+- 📂 Chatbot
+- 📂 Backend chat
+- 📂 Frontend chat
+- 📂 Motores de descarga y extracción y otros
+- 📂 Tool plugins
+
+En `main` puede existir una raíz falsa: un puente que apunta a esa ubicación. Se mueve poco a poco, en cada toque, sin mover todo de una vez.
+
+Estado: sin cambios de carpeta todavía. Pendiente de respuesta del owner (ver preguntas).
+
+## Gaps y decisiones pendientes (Router 1, 2026-11-09)
+
+- G-1 Búsqueda Rufo/Rotboat en todas las ramas: pendiente.
+- G-2 Auditoría X-Ray de 3 pasadas: pendiente de ubicar o rehacer.
+- G-3 Enchufe Fables: falta decidir cuál archivo Python es la base.
+- G-4 Modo de integración automática: falta decidir PR con auto-merge o push directo.
+- G-5 Sandbox de skills: falta elegir entre sandbox propio y el de cada agente.
+- G-6 Frontend: falta aprobar el enfoque de iframe por ventana.
+
+Estado: stop para preguntas. Nada más se ejecuta hasta respuesta del owner.
