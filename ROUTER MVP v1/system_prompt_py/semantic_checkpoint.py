@@ -83,3 +83,6 @@ class SemanticCheckpoint:
         self._ensure()
         self.state["parts"][block_id] = list(names)
         atomic_write_json(str(self.state_file), self.state)
+
+    def _save(self):
+        atomic_write_json(str(self.state_file), self.state)

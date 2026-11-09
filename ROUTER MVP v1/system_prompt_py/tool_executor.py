@@ -1,14 +1,20 @@
 import httpx
 import os
 import web_search_tool
+WORKFLOW_TOOLS = {'dividir_tarea', 'entregar_parte', 'checkpoint_guardar', 'recuperar_checkpoint', 'continuar_cola'}
 
 class ToolExecutor:
     def __init__(self):
+        self.workflow = None
         self.agent_url = os.getenv('AGENT_HARNESS_URL')
         if not self.agent_url:
             raise RuntimeError('FATAL: AGENT_HARNESS_URL no configurada. El router no puede ejecutar herramientas sin el Harness.')
 
     async def execute(self, tool_name: str, args: dict) -> dict:
+        if tool_name in WORKFLOW_TOOLS:
+            if self.workflow is None:
+                return {'status': 'failed', 'error': 'workflow no inicializado'}
+            return self.workflow.dispatch(tool_name, args)
         if tool_name == 'buscar_web':
             return await self._buscar_web(args)
         payload = {'tool': tool_name, 'args': args}
