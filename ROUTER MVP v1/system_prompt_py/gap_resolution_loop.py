@@ -48,3 +48,7 @@ class GapResolutionLoop:
                       f"Resuelve: {trigger}. Si aun falta informacion responde GAP: <descripcion>; "
                       f"si no, devuelve la salida pedida.")
         raise GapUnresolvedError("rondas agotadas con el gap abierto")
+
+def default_engine() -> "ResearchEngine":
+    import web_search_tool
+    return ResearchEngine(web_search_tool.search, web_search_tool.fetch_text)
