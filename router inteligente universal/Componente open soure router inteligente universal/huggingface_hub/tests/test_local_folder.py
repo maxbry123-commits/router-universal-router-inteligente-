@@ -1,0 +1,349 @@
+# coding=utf-8
+# Copyright 2024-present, the HuggingFace Inc. team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Contains tests for the `.cache/huggingface` folder in local directories.
+
+See `huggingface_hub/src/_local_folder.py` for the implementation.
+"""
+
+import logging
+import os
+import threading
+import time
+from pathlib import Path, WindowsPath
+
+import pytest
+
+from huggingface_hub._local_folder import (
+    CACHEDIR_TAG_CONTENT,
+    LocalDownloadFileMetadata,
+    LocalDownloadFilePaths,
+    LocalUploadFilePaths,
+    _create_cachedir_tag,
+    _huggingface_dir,
+    _validate_relative_filename,
+    get_local_download_paths,
+    get_local_upload_paths,
+    read_download_metadata,
+    write_download_metadata,
+)
+
+
+def test_creates_huggingface_dir_with_gitignore(tmp_path: Path):
+    """Test `.cache/huggingface/` dir is ignored by git."""
+    local_dir = tmp_path / "path" / "to" / "local"
+    huggingface_dir = _huggingface_dir(local_dir)
+    assert huggingface_dir == local_dir / ".cache" / "huggingface"
+    assert huggingface_dir.exists()  # all subdirectories have been created
+    assert huggingface_dir.is_dir()
+
+    # Whole folder must be ignored
+    assert (huggingface_dir / ".gitignore").exists()
+    assert (huggingface_dir / ".gitignore").read_text() == "*"
+
+    # CACHEDIR.TAG must exist so backup tools can skip this directory
+    assert (huggingface_dir / "CACHEDIR.TAG").exists()
+    assert (huggingface_dir / "CACHEDIR.TAG").read_text() == CACHEDIR_TAG_CONTENT
+
+
+def test_create_cachedir_tag(tmp_path: Path):
+    """Test CACHEDIR.TAG is created and not overwritten."""
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+
+    _create_cachedir_tag(cache_dir)
+    tag_path = cache_dir / "CACHEDIR.TAG"
+    assert tag_path.exists()
+    assert tag_path.read_text().startswith("Signature: 8a477f597d28d172789f06886806bc55\n")
+
+    # Calling again does not overwrite
+    tag_path.write_text("custom content")
+    _create_cachedir_tag(cache_dir)
+    assert tag_path.read_text() == "custom content"
+
+
+def test_gitignore_lock_timeout_is_ignored(tmp_path: Path):
+    local_dir = tmp_path / "path" / "to" / "local"
+
+    threads = [threading.Thread(target=_huggingface_dir, args=(local_dir,)) for _ in range(10)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert (local_dir / ".cache" / "huggingface" / ".gitignore").exists()
+    assert not (local_dir / ".cache" / "huggingface" / ".gitignore.lock").exists()
+
+
+# Filenames that must be rejected because they would escape the target directory when joined onto it.
+# Kept platform-independent on purpose: a file materialized on Linux must not be able to escape when
+# later consumed on Windows, so the validation interprets names under both POSIX and Windows rules.
+# See https://github.com/huggingface/huggingface_hub/pull/1429 (original relative-path fix) and the
+# absolute/UNC variant (CVE-2026-15717).
+UNSAFE_FILENAMES = [
+    "../../../etc/passwd",  # POSIX parent traversal
+    "folder/../../../etc/passwd",  # nested POSIX parent traversal
+    "..\\..\\Windows\\evil",  # Windows parent traversal
+    "folder\\..\\..\\evil",  # nested Windows parent traversal
+    "/etc/passwd",  # POSIX absolute
+    "C:\\Windows\\System32\\evil",  # Windows drive-absolute
+    "C:/Windows/System32/evil",  # Windows drive-absolute (forward slashes)
+    "D:relative\\evil",  # Windows drive-relative
+    "\\\\attacker\\share\\evil",  # UNC path (also triggers SMB auth / NetNTLMv2 leak on Windows)
+    "\\evil",  # Windows root-relative
+    "folder/C:\\Windows\\evil",  # nested Windows drive-absolute
+    "folder/\\\\attacker\\share\\evil",  # nested UNC path
+    "folder/\\evil",  # nested Windows root-relative
+]
+
+SAFE_FILENAMES = [
+    "file.txt",
+    "path/in/repo.txt",
+    "weird but valid/name.txt",
+]
+
+
+@pytest.mark.parametrize("filename", UNSAFE_FILENAMES)
+def test_validate_relative_filename_rejects_unsafe(filename: str):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        _validate_relative_filename(filename)
+
+
+@pytest.mark.parametrize("filename", SAFE_FILENAMES)
+def test_validate_relative_filename_accepts_safe(filename: str):
+    _validate_relative_filename(filename)  # does not raise
+
+
+@pytest.mark.parametrize("filename", UNSAFE_FILENAMES)
+def test_local_download_paths_rejects_unsafe_filename(tmp_path: Path, filename: str):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        get_local_download_paths(tmp_path, filename)
+
+
+@pytest.mark.parametrize("filename", UNSAFE_FILENAMES)
+def test_local_upload_paths_rejects_unsafe_filename(tmp_path: Path, filename: str):
+    with pytest.raises(ValueError, match="Invalid filename"):
+        get_local_upload_paths(tmp_path, filename)
+
+
+def test_local_download_paths(tmp_path: Path):
+    """Test local download paths are valid + usable."""
+    paths = get_local_download_paths(tmp_path, "path/in/repo.txt")
+
+    # Correct paths (also sanitized on windows)
+    assert isinstance(paths, LocalDownloadFilePaths)
+    assert paths.file_path == tmp_path / "path" / "in" / "repo.txt"
+    assert (
+        paths.metadata_path == tmp_path / ".cache" / "huggingface" / "download" / "path" / "in" / "repo.txt.metadata"
+    )
+    assert paths.lock_path == tmp_path / ".cache" / "huggingface" / "download" / "path" / "in" / "repo.txt.lock"
+
+    # Paths are usable (parent directories have been created)
+    assert paths.file_path.parent.is_dir()
+    assert paths.metadata_path.parent.is_dir()
+    assert paths.lock_path.parent.is_dir()
+
+    # Incomplete paths are etag-based
+    incomplete_path = paths.incomplete_path("etag123")
+    assert incomplete_path.parent == tmp_path / ".cache" / "huggingface" / "download" / "path" / "in"
+    assert incomplete_path.name.endswith(".etag123.incomplete")
+    assert paths.incomplete_path("etag123").parent.is_dir()
+
+    # Incomplete paths are unique per file per etag
+    other_paths = get_local_download_paths(tmp_path, "path/in/repo_other.txt")
+    other_incomplete_path = other_paths.incomplete_path("etag123")
+    assert incomplete_path != other_incomplete_path  # different .incomplete files to prevent concurrency issues
+
+
+def test_local_download_paths_are_recreated_each_time(tmp_path: Path):
+    paths1 = get_local_download_paths(tmp_path, "path/in/repo.txt")
+    assert paths1.file_path.parent.is_dir()
+    assert paths1.metadata_path.parent.is_dir()
+
+    paths1.file_path.parent.rmdir()
+    paths1.metadata_path.parent.rmdir()
+
+    paths2 = get_local_download_paths(tmp_path, "path/in/repo.txt")
+    assert paths2.file_path.parent.is_dir()
+    assert paths2.metadata_path.parent.is_dir()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows-specific test.")
+def test_local_download_paths_long_paths(tmp_path: Path):
+    """Test long path handling on Windows."""
+    long_file_name = "a" * 255
+    paths = get_local_download_paths(tmp_path, f"path/long/{long_file_name}.txt")
+
+    # WindowsPath on Windows platform
+    assert isinstance(paths.file_path, WindowsPath)
+    assert isinstance(paths.lock_path, WindowsPath)
+    assert isinstance(paths.metadata_path, WindowsPath)
+
+    # Correct path prefixes
+    assert str(paths.file_path).startswith("\\\\?\\")
+    assert str(paths.lock_path).startswith("\\\\?\\")
+    assert str(paths.metadata_path).startswith("\\\\?\\")
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows-specific test.")
+@pytest.mark.parametrize("cache_dir_len", [252, 300])
+def test_local_download_paths_long_local_dir(tmp_path: Path, cache_dir_len: int):
+    r"""A deep ``local_dir`` must not crash when its ``.cache/huggingface`` folder exceeds the
+    Windows directory path limit (247 chars, i.e. MAX_PATH minus room for an 8.3 file name).
+
+    Unlike ``test_local_download_paths_long_paths`` (long *filename*, short dir), here the
+    ``local_dir`` itself is long, so the limit is first hit while ``_huggingface_dir`` creates
+    ``<local_dir>/.cache/huggingface``. Without the extended-length ``\\?\`` prefix that ``mkdir``
+    raised ``FileNotFoundError`` (WinError 206) before the download/upload paths were built.
+    Both boundary cases are covered: 248-259 (only directory creation exceeds the limit) and
+    260+ (file creation would fail too).
+    """
+    # Create a `local_dir` so that `<local_dir>/.cache/huggingface` is `cache_dir_len` chars long.
+    # Use the extended-length prefix here since a plain mkdir of such a path would itself fail.
+    padding = "d" * max(1, cache_dir_len - len(str(tmp_path / ".cache" / "huggingface")) - 1)
+    local_dir = tmp_path / padding
+    os.makedirs("\\\\?\\" + os.path.abspath(local_dir), exist_ok=True)
+    assert len(str(local_dir / ".cache" / "huggingface")) >= max(cache_dir_len, 248)
+
+    # Must not raise, and the (extended-length) parent directories must have been created.
+    paths = get_local_download_paths(local_dir, "config.json")
+    assert str(paths.metadata_path).startswith("\\\\?\\")
+    assert paths.metadata_path.parent.is_dir()
+    assert paths.file_path.parent.is_dir()
+
+
+def test_write_download_metadata(tmp_path: Path):
+    """Test download metadata content is valid."""
+    # Write metadata
+    write_download_metadata(tmp_path, filename="file.txt", commit_hash="commit_hash", etag="123456789")
+    metadata_path = tmp_path / ".cache" / "huggingface" / "download" / "file.txt.metadata"
+    assert metadata_path.exists()
+
+    # Metadata is valid
+    with metadata_path.open() as f:
+        assert f.readline() == "commit_hash\n"
+        assert f.readline() == "123456789\n"
+        timestamp = float(f.readline().strip())
+    assert timestamp <= time.time()  # in the past
+    assert timestamp >= time.time() - 1  # but less than 1 seconds ago (we're not that slow)
+
+    time.sleep(0.2)  # for deterministic tests
+
+    # Overwriting works as expected
+    write_download_metadata(tmp_path, filename="file.txt", commit_hash="commit_hash2", etag="987654321")
+    with metadata_path.open() as f:
+        assert f.readline() == "commit_hash2\n"
+        assert f.readline() == "987654321\n"
+        timestamp2 = float(f.readline().strip())
+    assert timestamp <= timestamp2  # updated timestamp
+
+
+def test_read_download_metadata_valid_metadata(tmp_path: Path):
+    """Test reading download metadata when metadata is valid."""
+    # Create file + write correct metadata
+    (tmp_path / "file.txt").write_text("content")
+    write_download_metadata(tmp_path, filename="file.txt", commit_hash="commit_hash", etag="123456789")
+
+    # Read metadata
+    metadata = read_download_metadata(tmp_path, filename="file.txt")
+    assert isinstance(metadata, LocalDownloadFileMetadata)
+    assert metadata.filename == "file.txt"
+    assert metadata.commit_hash == "commit_hash"
+    assert metadata.etag == "123456789"
+    assert isinstance(metadata.timestamp, float)
+
+
+def test_read_download_metadata_no_metadata(tmp_path: Path):
+    """Test reading download metadata when there is no metadata."""
+    # No metadata file => return None
+    assert read_download_metadata(tmp_path, filename="file.txt") is None
+
+
+def test_read_download_metadata_corrupted_metadata(tmp_path: Path, caplog: pytest.LogCaptureFixture):
+    """Test reading download metadata when metadata is corrupted."""
+    # Write corrupted metadata
+    metadata_path = tmp_path / ".cache" / "huggingface" / "download" / "file.txt.metadata"
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    metadata_path.write_text("invalid content")
+
+    # Corrupted metadata file => delete it + warn + return None
+    with caplog.at_level(logging.WARNING):
+        assert read_download_metadata(tmp_path, filename="file.txt") is None
+        assert not metadata_path.exists()
+    assert "Invalid metadata file" in caplog.text
+
+
+def test_read_download_metadata_correct_metadata_missing_file(tmp_path: Path):
+    """Test reading download metadata when metadata is correct but file is missing."""
+    # Write correct metadata
+    write_download_metadata(tmp_path, filename="file.txt", commit_hash="commit_hash", etag="123456789")
+
+    # File missing => return None
+    assert read_download_metadata(tmp_path, filename="file.txt") is None
+
+
+def test_read_download_metadata_correct_metadata_but_outdated(tmp_path: Path):
+    """Test reading download metadata when metadata is correct but outdated."""
+    # Write correct metadata
+    write_download_metadata(tmp_path, filename="file.txt", commit_hash="commit_hash", etag="123456789")
+    time.sleep(2)  # We allow for a 1s difference in practice, so let's wait a bit
+
+    # File is outdated => return None
+    (tmp_path / "file.txt").write_text("content")
+    assert read_download_metadata(tmp_path, filename="file.txt") is None
+
+
+def test_local_upload_paths(tmp_path: Path):
+    """Test local upload paths are valid + usable."""
+    paths = get_local_upload_paths(tmp_path, "path/in/repo.txt")
+
+    # Correct paths (also sanitized on windows)
+    assert isinstance(paths, LocalUploadFilePaths)
+    assert paths.file_path == tmp_path / "path" / "in" / "repo.txt"
+    assert paths.metadata_path == tmp_path / ".cache" / "huggingface" / "upload" / "path" / "in" / "repo.txt.metadata"
+    assert paths.lock_path == tmp_path / ".cache" / "huggingface" / "upload" / "path" / "in" / "repo.txt.lock"
+
+    # Paths are usable (parent directories have been created)
+    assert paths.file_path.parent.is_dir()
+    assert paths.metadata_path.parent.is_dir()
+    assert paths.lock_path.parent.is_dir()
+
+
+def test_local_upload_paths_are_recreated_each_time(tmp_path: Path):
+    paths1 = get_local_upload_paths(tmp_path, "path/in/repo.txt")
+    assert paths1.file_path.parent.is_dir()
+    assert paths1.metadata_path.parent.is_dir()
+
+    paths1.file_path.parent.rmdir()
+    paths1.metadata_path.parent.rmdir()
+
+    paths2 = get_local_upload_paths(tmp_path, "path/in/repo.txt")
+    assert paths2.file_path.parent.is_dir()
+    assert paths2.metadata_path.parent.is_dir()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows-specific test.")
+def test_local_upload_paths_long_paths(tmp_path: Path):
+    """Test long path handling on Windows."""
+    long_file_name = "a" * 255
+    paths = get_local_upload_paths(tmp_path, f"path/long/{long_file_name}.txt")
+
+    # WindowsPath on Windows platform
+    assert isinstance(paths.file_path, WindowsPath)
+    assert isinstance(paths.lock_path, WindowsPath)
+    assert isinstance(paths.metadata_path, WindowsPath)
+
+    # Correct path prefixes
+    assert str(paths.file_path).startswith("\\\\?\\")
+    assert str(paths.lock_path).startswith("\\\\?\\")
+    assert str(paths.metadata_path).startswith("\\\\?\\")

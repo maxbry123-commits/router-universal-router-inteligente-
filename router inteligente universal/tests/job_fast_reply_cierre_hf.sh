@@ -1,0 +1,50 @@
+#!/bin/bash
+# Job final HF cpu-basic. BANCO OPERATIVO UNIFICADO = plugins/fichas_qwen/sellos/proveedores.sello (clave FICHA_CLAVE_BANCO). No imprime secretos.
+set -u
+exec 2>&1
+B="router inteligente universal"
+cd /tmp && rm -rf r && git clone -q --depth 1 -b fast-reply-boton --filter=blob:none --sparse "https://github.com/maxbry123-commits/router-universal-router-inteligente-.git" r || { echo CLONE_FAIL; exit 3; }
+cd r && git sparse-checkout set --cone "$B/integration" "$B/plugins" "$B/security" "$B/red" "$B/agent-microkernel" "$B/Banco de claves" "$B/tests" "chat router" "$B/Componente open soure router inteligente universal/graphiti" "$B/Componente open soure router inteligente universal/graphify" || exit 3
+(apt-get update -qq && apt-get install -y -qq nodejs >/dev/null) 2>&1 | tail -1
+pip install -q --break-system-packages -r "$B/requirements.txt" fastapi uvicorn pydantic huggingface_hub cryptography pyyaml requests httpx psutil neo4j 2>&1 | tail -3
+export RIU_DATA_DIR=/data RIU_GRAPHITI_ENABLE=1 RIU_CHAT_ALLOW_PROVIDER_LIVE=1 RIU_AUTOSYNC_SECONDS=60 RIU_ROUTER_URL=http://127.0.0.1:8000
+mkdir -p /data; cd "$B"
+export PYTHONPATH="$PWD:$PWD/security:$PWD/integration:$PWD/../chat router"
+if [ "${FR_GRAPH:-}" = 1 ]; then  # contador de llamadas a codigo Graphiti/Graphify DENTRO del proceso del Router (solo para medir; no cambia nada)
+mkdir -p /tmp/sc && cat > /tmp/sc/sitecustomize.py <<'PYEOF'
+import sys, threading, json, time, os
+if 'uvicorn' in ' '.join(sys.argv):
+    C = {'graphiti': 0, 'graphify': 0}; K = {}
+    def _p(frame, event, arg):
+        if event != 'call':
+            return
+        c = frame.f_code; k = K.get(c)
+        if k is None:
+            s = (c.co_filename + '|' + c.co_name).lower(); k = 1 if 'graphiti' in s else (2 if 'graphify' in s else 0); K[c] = k
+        if k == 1: C['graphiti'] += 1
+        elif k == 2: C['graphify'] += 1
+    def _w():
+        while True:
+            try:
+                open('/tmp/gcount.json.tmp', 'w').write(json.dumps(C)); os.replace('/tmp/gcount.json.tmp', '/tmp/gcount.json')
+            except Exception:
+                pass
+            time.sleep(0.3)
+    threading.Thread(target=_w, daemon=True).start(); threading.setprofile(_p); sys.setprofile(_p)
+PYEOF
+export PYTHONPATH="$PYTHONPATH:/tmp/sc"
+fi
+cat > /tmp/start.sh <<'ES'
+cd "/tmp/r/router inteligente universal"
+nohup python -m uvicorn integration.chat_mvp.app:app --host 0.0.0.0 --port 8000 > /tmp/app.log 2>&1 &
+echo $! > /tmp/uv.pid
+for i in $(seq 1 90); do python -c "import socket;s=socket.socket();s.settimeout(1);s.connect(('127.0.0.1',8000))" 2>/dev/null && break; sleep 2; done
+ES
+bash /tmp/start.sh
+echo ---CIERRE ${FR_TESTS:-}
+case "${FR_TESTS:-}" in
+  *SMOKE*) rm -rf /tmp/fe; cp -r "/tmp/r/chat router/chat frontend" /tmp/fe; echo '{"type":"module"}' > /tmp/fe/package.json; node --version; ROUTER_URL=http://127.0.0.1:8000 node tests/job_fast_reply_smoke.mjs /tmp/fe 2>&1 | cut -c1-3000; rc=${PIPESTATUS[0]};;
+  *) ROUTER_URL=http://127.0.0.1:8000 python -u tests/job_fast_reply_cierre_t.py ${FR_TESTS:-} 2>&1 | cut -c1-9000; rc=${PIPESTATUS[0]};;
+esac
+echo ---app.log; tail -12 /tmp/app.log | cut -c1-200
+echo CIERRE_DONE rc=$rc

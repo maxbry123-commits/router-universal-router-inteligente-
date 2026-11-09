@@ -1,0 +1,70 @@
+# Nadir submission notes
+
+**Submitter:** Nadir Research
+**Contact:** info@getnadir.com
+**Open-source core:** https://github.com/NadirRouter/NadirClaw (MIT)
+**Project site:** https://getnadir.com
+
+This PR submits one router: `nadir-cascade-v3-verifier`. A separate
+follow-up PR will submit the cost-minimization baseline.
+
+## What it is
+
+Wide-deep-asymmetric classifier (trained on production traffic) feeds
+a tier in `{simple, medium, complex}`. A cross-encoder verifier scores
+the cheap-tier response, and the cascade gates the simple-tier picks:
+if `verifier_score >= 0.70` the cheap answer is accepted, otherwise the
+prompt escalates to mid. Tier is mapped to a fixed three-model Claude
+pool:
+
+- `simple`  → `claude-haiku-4-5`
+- `medium`  → `claude-sonnet-4-5` (substituted for `claude-sonnet-4-6`,
+              which is not yet in `universal_model_names.py`; both
+              models are cost-identical and same-generation)
+- `complex` → `claude-opus-4-6`
+
+## Reported scores (local rerun of `compute_scores.py`)
+
+| Metric | Value |
+|---|---|
+| Arena score | **0.7118** |
+| Accuracy | 0.7371 |
+| Cost / 1K queries | $0.6841 |
+| Verifier-escalation rate | 0.967 (over 7,061 simple-tier prompts the verifier scored) |
+| Calibrated threshold τ | 0.70 (best of a 14-point sweep from 0.30 to 0.90) |
+
+The full pipeline run on RouterArena's CI may differ from this local
+rerun because the published leaderboard fills in `generated_result`,
+`cost`, and `accuracy` via the full evaluation pipeline rather than
+reading our submitted values.
+
+## Contamination
+
+A SHA-256 prompt-overlap audit between Nadir's training corpora
+(35,895 unique training-prompt hashes across 7 corpora, including the
+verifier corpus and the wide_deep_asym training set) and RouterArena's
+`full` (n=8,400) + `sub_10` (n=809) splits found **zero overlap**.
+
+Audit methodology: NFC + strip + collapse-whitespace + casefold +
+SHA-256, identical to the RouterBench audit method.
+
+## Prediction file shape
+
+Both files follow the schema in `router_inference/generate_prediction_file.py`:
+
+```json
+{
+  "global index": "ArcMMLU_655",
+  "prompt": "<full prompt text from dataset>",
+  "prediction": "<model name from pool>",
+  "generated_result": null,
+  "cost": null,
+  "accuracy": null,
+  "for_optimality": false
+}
+```
+
+| File | Entries | Regular | Optimality |
+|---|---|---|---|
+| `nadir-cascade-v3-verifier.json` | 10,018 | 8,400 | 1,618 (809 sub_10 prompts × 2 other Claude models) |
+| `nadir-cascade-v3-verifier-robustness.json` | 420 | 420 | 0 (robustness has no optimality augmentation) |

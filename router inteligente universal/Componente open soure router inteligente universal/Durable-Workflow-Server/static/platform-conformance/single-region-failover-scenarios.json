@@ -1,0 +1,63 @@
+{
+  "schema": "durable-workflow.v2.platform-conformance.runtime-scenarios",
+  "version": 8,
+  "category": "single_region_failover_contract",
+  "suite_schema": "durable-workflow.v2.platform-conformance.suite",
+  "artifact_policy": {
+    "published_artifacts_only": true,
+    "server_runtime_reference": "resolved_repo_digest",
+    "reject_local_product_images": true,
+    "reject_compose_builds": true,
+    "reject_product_source_mounts": true
+  },
+  "scenarios": [
+    {
+      "id": "published_artifact_provenance",
+      "requirement": "Pull every runtime image from its public registry and launch the server by immutable repository digest.",
+      "required_evidence": ["requested_references", "resolved_digests", "image_ids", "compose_config_sha256", "local_product_source_checkouts_used"]
+    },
+    {
+      "id": "cross_node_workflow_completion",
+      "requirement": "Accept through the shared endpoint, claim through API node A, complete through API node B, and describe completion through the shared endpoint.",
+      "required_evidence": ["workflow_id", "run_id", "task_id", "claim_node", "completion_node", "final_status"]
+    },
+    {
+      "id": "api_node_loss",
+      "requirement": "Abruptly terminate one API node while an acknowledged workflow-task lease is live, preserve an identity-matching nonterminal run description through the shared endpoint, then complete the same lease through the survivor before its advertised expiry.",
+      "required_evidence": ["workflow_id", "run_id", "task_id", "lost_node", "lost_node_stopped", "node_loss_mode", "surviving_node", "shared_endpoint_reached_surviving_node", "survivor_response", "completion_node", "lease_expires_at", "lease_timing", "completion_before_lease_expiry", "final_description", "recovery_ms", "acknowledged_state_present"]
+    },
+    {
+      "id": "database_interruption",
+      "requirement": "Readiness and writes fail during database loss; after bounded recovery, an identity-matching nonterminal run description remains and the workflow completes exactly once through either the live claimant or a bounded replacement reclaim after proving the expired owner is fenced.",
+      "required_evidence": ["readiness_down", "readiness_recovered", "failed_write_status", "recovery_ms", "workflow_id", "run_id", "task_id", "lease_expires_at", "lease_timing", "post_recovery_description", "completion", "completion_before_lease_expiry", "stale_owner_fence", "replacement_reclaim", "duplicate_completion_refused", "final_description", "final_status", "acknowledged_state_present"]
+    },
+    {
+      "id": "redis_interruption",
+      "requirement": "Readiness reports the acceleration layer as warning, request-ID polling falls back to durable discovery without duplicate leases, and discovery after Redis return is measured.",
+      "required_evidence": ["readiness_transitions", "degraded_poll_discovery_ms", "recovered_poll_discovery_ms", "poll_request_id", "duplicate_lease_observed", "workflow_id", "run_id", "durable_state_preserved"]
+    },
+    {
+      "id": "worker_lease_loss",
+      "requirement": "Abandon a leased workflow task, preserve an identity-matching canonical nonterminal run description, reclaim under a different worker only after lease expiry, and complete exactly once without changing workflow input or history.",
+      "required_evidence": ["workflow_id", "run_id", "task_id", "initial_lease_owner", "recovery_lease_owner", "lease_expires_at", "pre_recovery_description", "recovery_ms", "completion", "duplicate_completion_refused", "final_description", "final_status"]
+    },
+    {
+      "id": "singleton_scheduler_restart",
+      "requirement": "Stop the only scheduler before a durable schedule is due, observe no fire while stopped, restart it, and observe exactly one fire within the configured bound.",
+      "required_evidence": ["schedule_id", "scheduler_instances", "fires_while_stopped", "fires_after_restart", "workflow_id", "run_id", "recovery_ms"]
+    }
+  ],
+  "result_contract": {
+    "schema": "durable-workflow.v2.single-region-failover.result",
+    "version": 1,
+    "required_outcome": "pass",
+    "required_topology": {
+      "api_nodes": 2,
+      "shared_endpoint": 1,
+      "durable_database": 1,
+      "shared_redis": 1,
+      "queue_workers": 1,
+      "scheduler_maintenance_runners": 1
+    }
+  }
+}

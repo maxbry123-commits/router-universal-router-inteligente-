@@ -1,0 +1,163 @@
+{
+  "schema": "durable-workflow.v2.php-sdk-conformance-contract",
+  "version": 3,
+  "status": "stable",
+  "purpose": "prove_the_released_framework_neutral_php_sdk_against_the_released_standalone_server",
+  "product_boundary": {
+    "remote_package": "durable-workflow/sdk",
+    "remote_package_repository": "durable-workflow/sdk-php",
+    "embedded_server_engine": "durable-workflow/workflow",
+    "sdk_must_not_depend_on_embedded_engine": true,
+    "server_keeps_embedded_engine_dependency": true
+  },
+  "artifact_policy": {
+    "sdk": "Composer package durable-workflow/sdk:<exact published version>",
+    "sdk_source": "packagist://durable-workflow/sdk@<exact version>",
+    "server": "Docker image durableworkflow/server:<matching exact published version or digest>",
+    "payload_dependency": "Composer package apache/avro:<resolved official version>",
+    "preferred_install": "dist",
+    "local_product_source_checkouts_used_must_be_false": true,
+    "path_and_vcs_repositories_forbidden": true,
+    "compatibility_shims_for_prior_alpha_apis_forbidden": true
+  },
+  "topology": {
+    "server_process": "exact_public_server_image",
+    "client_process": "composer_installed_sdk_php_client",
+    "worker_processes": [
+      "initial_composer_installed_sdk_php_worker",
+      "replacement_composer_installed_sdk_php_worker"
+    ],
+    "client_and_worker_process_ids_must_differ": true,
+    "replacement_worker_process_id_must_differ": true
+  },
+  "required_scenarios": [
+    "start_result",
+    "signal_query",
+    "update",
+    "cancellation",
+    "termination",
+    "activities",
+    "namespaces",
+    "search_attributes",
+    "schedules",
+    "workflow_lifecycle",
+    "failure_envelopes",
+    "heartbeat",
+    "worker_restart",
+    "durable_replay"
+  ],
+  "required_evidence": [
+    "client_processes",
+    "worker_processes",
+    "worker_identities",
+    "worker_readiness",
+    "server_visible_workflow_command_contracts",
+    "workflow_started_command_contract",
+    "artifact_version",
+    "server_version",
+    "server_image",
+    "server_cluster_info",
+    "artifact_source",
+    "install_provenance",
+    "apache_avro_provenance",
+    "callback_counts",
+    "history_assertions",
+    "scenario_assertions",
+    "local_product_source_checkouts_used"
+  ],
+  "history_requirements": [
+    "activity_completed_before_worker_restart",
+    "timer_scheduled_before_worker_restart",
+    "timer_fired_after_worker_restart",
+    "activity_callback_not_repeated_during_replay",
+    "addressable_started_contract_snapshotted_before_client_commands"
+  ],
+  "failure_routing": {
+    "sdk": "sdk-php",
+    "server": "server",
+    "package-publication": "sdk-php-release",
+    "runner": "conformance_harness"
+  },
+  "runtime_failure_evidence": {
+    "durable_observed_evidence_required": true,
+    "diagnostic_file_reference_alone_forbidden": true,
+    "retained_diagnostic_excerpt_max_bytes": 4096,
+    "retained_diagnostic_credential_redaction_required": true,
+    "worker_startup_outcome_and_process_state_required_on_start_failure": true,
+    "readiness_failure_retains_expected_and_observed_contracts": true,
+    "assertion_failure_retains_expected_and_observed_per_operation": true,
+    "assertion_failure_retains_worker_and_sdk_response_layers_when_observed": true,
+    "client_timeout_and_unavailable_worker_retain_companion_process_and_server_state": true,
+    "companion_diagnostic_schema": "durable-workflow.v2.php-sdk-companion-failure",
+    "companion_diagnostic_max_bytes": 6144,
+    "companion_evidence_led_ownership_required": true,
+    "early_exit_scenario_result_required": true,
+    "early_exit_scenario_result_must_be_keyed": true,
+    "early_exit_scenario_ids_by_scope": {
+      "lifecycle": "php_sdk_lifecycle_surface",
+      "namespace": "php_worker_task_queue_namespace_isolation",
+      "search-attributes": "php_worker_start_and_upsert_visibility"
+    },
+    "early_exit_required_observed_fields": [
+      "failure_stage",
+      "failure_classification",
+      "failure_owner",
+      "worker_evidence",
+      "server_evidence"
+    ],
+    "failure_scenario_max_bytes": 24576,
+    "failure_evidence_component_max_bytes": 3072,
+    "public_error_envelope_max_bytes": 2048,
+    "required_http_failure_fields": [
+      "status_code",
+      "public_error_envelope",
+      "operation",
+      "workflow_id_when_available",
+      "run_id_when_available",
+      "owning_surface"
+    ]
+  },
+  "host_runner_contract": {
+    "runner_id": "workflow-lifecycle",
+    "host_runner_path": "scripts/conformance/workflow-lifecycle-host-published-artifacts.sh",
+    "scenario_runner_path": "scripts/conformance/php-sdk-published-artifacts.sh",
+    "scenario_runner_image_path": "/app/scripts/conformance/php-sdk-published-artifacts.sh",
+    "result_file": "php-sdk-conformance-result.json",
+    "lifecycle_sidecar_file": "php-sdk-lifecycle-evidence.json",
+    "required_environment": [
+      "DW_PHP_SDK_VERSION",
+      "DW_SERVER_VERSION",
+      "DW_SERVER_IMAGE",
+      "DW_PHP_SDK_CONFORMANCE_SERVER_URL"
+    ],
+    "docker_capable_host_required": true,
+    "published_server_image_required": true,
+    "published_packagist_sdk_required": true,
+    "host_runner_implemented": true,
+    "focused_scopes": {
+      "search-attributes": {
+        "command": "scripts/conformance/php-sdk-published-artifacts.sh --scope search-attributes --result-dir <result-dir>",
+        "result_file": "sdk-php-search-attributes-shard.json",
+        "aggregate_handoff": "scripts/conformance/search-attributes-published-artifacts.sh",
+        "standalone_connectivity_package": "durable-workflow/sdk",
+        "workflow_standalone_client_or_worker_loaded": false,
+        "required_environment": [
+          "DW_PHP_SDK_VERSION",
+          "DW_SERVER_VERSION",
+          "DW_SERVER_IMAGE",
+          "DW_PHP_SDK_CONFORMANCE_SERVER_URL",
+          "DW_PHP_SDK_CONFORMANCE_NAMESPACE"
+        ],
+        "required_evidence": [
+          "worker_start_and_upsert_visibility",
+          "typed_values",
+          "query_visibility",
+          "namespace_isolation",
+          "python_to_php_codec_reader",
+          "php_to_python_codec_writer_handoff",
+          "bounded_failure_attribution"
+        ]
+      }
+    }
+  }
+}

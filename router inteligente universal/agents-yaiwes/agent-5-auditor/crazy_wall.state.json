@@ -1,0 +1,29 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-5-auditor",
+ "framework": "smolagents",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-25T08:21:26Z",
+ "group": "audit",
+ "chain": [
+  "lens_chat",
+  "lens_storage",
+  "lens_models",
+  "lens_cross"
+ ],
+ "completed": [
+  "lens_chat",
+  "lens_storage"
+ ],
+ "failed": [
+  "lens_models"
+ ],
+ "next_nodes": [
+  "lens_cross"
+ ],
+ "route": [
+  "deepseek_flash"
+ ],
+ "current_nodes": [],
+ "router_connected": false
+}

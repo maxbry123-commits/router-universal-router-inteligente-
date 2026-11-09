@@ -1,0 +1,135 @@
+[
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Regular.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Regular.ttf.chunks",
+    "bytes": 8443316,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-SemiBold.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-SemiBold.ttf.chunks",
+    "bytes": 8410164,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Thin.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Thin.ttf.chunks",
+    "bytes": 8544472,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-ExtraLight.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-ExtraLight.ttf.chunks",
+    "bytes": 8519612,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Light.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Light.ttf.chunks",
+    "bytes": 8479380,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Bold.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Bold.ttf.chunks",
+    "bytes": 8414200,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Medium.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Medium.ttf.chunks",
+    "bytes": 8412820,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Text.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/unhinted/IBMPlexSansSC-Text.ttf.chunks",
+    "bytes": 8431268,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Regular.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Regular.ttf.chunks",
+    "bytes": 8455892,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-SemiBold.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-SemiBold.ttf.chunks",
+    "bytes": 8422796,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Thin.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Thin.ttf.chunks",
+    "bytes": 8557524,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-ExtraLight.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-ExtraLight.ttf.chunks",
+    "bytes": 8532332,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Light.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Light.ttf.chunks",
+    "bytes": 8492124,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Bold.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Bold.ttf.chunks",
+    "bytes": 8426792,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Medium.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Medium.ttf.chunks",
+    "bytes": 8425496,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": "packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Text.ttf",
+    "chunks_dir": "plex/packages/plex-sans-sc/fonts/complete/ttf/hinted/IBMPlexSansSC-Text.ttf.chunks",
+    "bytes": 8444124,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": ".yarn/cache/typescript-patch-6391300c18-7e2b9a9f4a.zip",
+    "chunks_dir": "plex/.yarn/cache/typescript-patch-6391300c18-7e2b9a9f4a.zip.chunks",
+    "bytes": 11733114,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": ".yarn/cache/@parcel-transformer-js-npm-2.5.0-eec37e98be-74d3d0b2f3.zip",
+    "chunks_dir": "plex/.yarn/cache/@parcel-transformer-js-npm-2.5.0-eec37e98be-74d3d0b2f3.zip.chunks",
+    "bytes": 46861536,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "plex",
+    "path": ".yarn/cache/typescript-npm-4.7.2-82fa810e5c-5163585e6b.zip",
+    "chunks_dir": "plex/.yarn/cache/typescript-npm-4.7.2-82fa810e5c-5163585e6b.zip.chunks",
+    "bytes": 11718550,
+    "chunk_bytes": 8388608
+  }
+]

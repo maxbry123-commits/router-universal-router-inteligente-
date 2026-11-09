@@ -1,0 +1,24 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-11-download-extraction",
+ "framework": "smolagents",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-22T08:38:59Z",
+ "group": "downloads",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "failed": [
+  "tool_calling_agent"
+ ],
+ "gaps": [
+  "cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:\nError code: 402 - {'message': 'Payment required t",
+  "cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:\nError code: 402 - {'message': 'Payment required t",
+  "cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:\nError code: 402 - {'message': 'Payment required t",
+  "hf/MiniMaxAI/MiniMax-M3:AgentGenerationError:Error while generating output:\nRequest timed out."
+ ],
+ "attempts": 10
+}

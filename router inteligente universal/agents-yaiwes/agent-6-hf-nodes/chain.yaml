@@ -1,0 +1,121 @@
+schema: yaiwes.chain/v1
+run_id: CHAT-100-AGENT6-STORAGE-MEMORY
+input_block: |
+  ORDEN DE AGENT 14 / DIRECTOR:
+  Eres responsable exclusivo del almacenamiento y memoria persistente del CHAT YAIWES.
+  NO descargas componentes: si falta uno, genera COMPONENT_REQUEST para Agent 11.
+  NO GitHub Actions.
+  NO modificar motores.
+  Reutiliza componentes OSS y código existente; no construyas equivalentes desde cero.
+
+agent:
+  id: agent-6-hf-nodes
+  framework: pocketflow
+  group: chat-storage
+  route: [deepseek_flash, minimax_m3, nvidia, groq]
+  fallback: []
+  max_tokens: 3800
+
+context:
+  text: |
+    OBJETIVO DE ALMACENAMIENTO/MEMORIA:
+
+    1. PostgreSQL = verdad durable:
+       conversaciones, mensajes, usuarios/ids, tareas, estado, auditoría y referencias.
+
+    2. Redis = estado efímero:
+       cache, TTL, sesiones, locks, colas, rate-limit, dedupe.
+       PROHIBIDO guardar secretos.
+
+    3. Graphiti + FalkorDB = memoria relacional/temporal:
+       entidades, hechos, relaciones, contexto temporal.
+
+    4. AgentDB = memoria agentic:
+       episodios, patrones, skills, decisiones reutilizables.
+
+    5. HF Storage Bucket / object storage:
+       archivos originales, adjuntos, artefactos, snapshots y vault cifrado.
+
+    6. Niveles de memoria:
+       - CHAT MEMORY
+       - PROJECT MEMORY
+       - GLOBAL MEMORY
+
+    7. Identificadores mínimos:
+       project_id
+       conversation_id
+       memory_id
+       file_id
+       file_version
+       file_hash
+       chunk_id
+       source_uri
+       created_at
+
+    8. Persistencia obligatoria:
+       adjuntar archivo
+       -> cerrar chat
+       -> abrir nuevo/reabrir
+       -> recuperar conversación
+       -> recuperar archivo
+       -> recuperar memoria/contexto.
+
+    9. Secret Bank:
+       solo referencias/credential_ref en memoria normal.
+       Nunca secretos en PostgreSQL plano, Redis, logs o respuestas.
+
+    Código existente a revisar/reutilizar:
+    - integration/chat_mvp/store.py
+    - integration/chat_mvp/router.py
+    - integration/chat_mvp/vault_api.py
+    - integration/chat_mvp/jobs.py
+    - HF bucket/config existente.
+
+steps:
+  - id: storage_memory_integration
+    context_file:
+      - "router inteligente universal/integration/chat_mvp/store.py"
+      - "router inteligente universal/integration/chat_mvp/router.py"
+      - "router inteligente universal/integration/chat_mvp/vault_api.py"
+      - "router inteligente universal/integration/chat_mvp/jobs.py"
+    task: |
+      REUTILIZA/ADAPTA -> CABLEA -> PRUEBA.
+
+      Audita solo lo necesario para integrar almacenamiento/memoria.
+      Reutiliza lo que ya existe.
+      Para cada componente faltante de PostgreSQL, Redis, Graphiti, FalkorDB o AgentDB:
+      NO lo descargues;
+      genera COMPONENT_REQUEST con:
+      nombre + URL/origen + destino requerido + consumidor=agent-6.
+
+      Integra los componentes disponibles y deja contrato claro entre:
+      Open WebUI <-> Chat MVP/Router <-> storage/memory.
+
+      PASS exige prueba:
+      crear conversación -> guardar mensajes -> adjuntar archivo ->
+      guardar memoria -> cerrar/reabrir -> recuperar conversación/archivo/memoria.
+
+      HANDOFF:
+      COMPONENTES_REUTILIZADOS
+      COMPONENT_REQUESTS
+      CABLEADO
+      PRUEBAS
+      PERSISTENCIA
+      GAP
+      FIX
+    checks:
+      - kind: contains
+        values:
+          - PostgreSQL
+          - Redis
+          - Graphiti
+          - FalkorDB
+          - AgentDB
+          - CHAT MEMORY
+          - PROJECT MEMORY
+          - GLOBAL MEMORY
+          - COMPONENT_REQUEST
+          - PERSISTENCIA
+          - GAP
+          - FIX
+      - kind: no_secrets

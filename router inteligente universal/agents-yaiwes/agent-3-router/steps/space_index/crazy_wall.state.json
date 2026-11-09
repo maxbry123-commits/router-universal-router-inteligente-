@@ -1,0 +1,27 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-3-router",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T08:23:19Z",
+ "group": "hf-chat",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "nvidia",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "via": "route",
+ "attempts": 1,
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "493de047382d98fe9b551eb04636ef40b2618cbfc4b512d94a09ce107ffa5b0b",
+   "chars": 3572
+  }
+ ],
+ "route_trace": []
+}

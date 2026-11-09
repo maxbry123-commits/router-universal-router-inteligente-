@@ -1,0 +1,69 @@
+name: Single-Region Failover Rehearsal
+
+on:
+  workflow_dispatch:
+    inputs:
+      server_image:
+        description: Exact public durableworkflow/server tag or digest
+        required: false
+  schedule:
+    - cron: "17 4 * * 3"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: single-region-failover-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bounded-rehearsal:
+    name: Exact public image / MySQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout runner contract
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          fetch-depth: 0
+
+      - name: Select exact released server image
+        env:
+          REQUESTED_IMAGE: ${{ inputs.server_image }}
+        run: |
+          image="$(scripts/ci/select-single-region-failover-server-image.sh)"
+          echo "DW_SERVER_IMAGE=$image" >> "$GITHUB_ENV"
+
+      - name: Run bounded published-artifact rehearsal
+        env:
+          DW_FAILOVER_MODE: bounded
+          DW_FAILOVER_PROJECT: single-region-failover-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+          DW_FAILOVER_SERVER_A_PORT: "0"
+          DW_FAILOVER_SERVER_B_PORT: "0"
+          DW_FAILOVER_LB_PORT: "0"
+        run: scripts/conformance/single-region-failover-published-artifacts.sh --result-dir artifacts/single-region-failover
+
+      - name: Clean up failover Docker resources
+        if: always()
+        env:
+          DW_FAILOVER_PROJECT: single-region-failover-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+        run: |
+          docker ps -aq \
+            --filter "label=com.docker.compose.project=$DW_FAILOVER_PROJECT" \
+            | xargs -r docker rm -f >/dev/null 2>&1 || true
+          docker network ls -q \
+            --filter "label=com.docker.compose.project=$DW_FAILOVER_PROJECT" \
+            | xargs -r docker network rm >/dev/null 2>&1 || true
+          docker volume ls -q \
+            --filter "label=com.docker.compose.project=$DW_FAILOVER_PROJECT" \
+            | xargs -r docker volume rm -f >/dev/null 2>&1 || true
+
+      - name: Upload machine-readable recovery packet
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        with:
+          name: single-region-failover-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/single-region-failover/single-region-failover-result.json
+          if-no-files-found: error
+          retention-days: 30

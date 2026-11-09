@@ -1,0 +1,26 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-44-motor-hermes-openclaw",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-27T00:39:16Z",
+ "router_connected": false,
+ "group": "chat",
+ "chain": [
+  "hermes",
+  "openclaw"
+ ],
+ "completed": [
+  "hermes"
+ ],
+ "failed": [
+  "openclaw"
+ ],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "nvidia",
+  "cerebras",
+  "groq"
+ ]
+}

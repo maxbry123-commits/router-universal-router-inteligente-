@@ -1,0 +1,23 @@
+[
+ {
+  "id": "auditoria-noche",
+  "activo": false,
+  "zona": "America/Bogota",
+  "cuando": {
+   "diario": "02:00"
+  },
+  "objetivo_ref": "chat router/workflow Loops code Yaiwes/objetivos/auditoria.json",
+  "ficha": "2",
+  "modelo": "ficha-qwen38max"
+ },
+ {
+  "id": "revisar-cada-2h",
+  "activo": false,
+  "cuando": {
+   "cada_min": 120
+  },
+  "objetivo_ref": "",
+  "ficha": "1",
+  "modelo": "ficha-qwen38flash"
+ }
+]

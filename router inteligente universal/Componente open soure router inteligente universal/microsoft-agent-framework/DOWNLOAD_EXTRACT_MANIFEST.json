@@ -1,0 +1,38 @@
+{
+  "bundle_bytes": 18460493,
+  "bundle_sha256": "aa372d23555929547a7d2369ee9891b3818092cda27feb855150fa89178465a2",
+  "extracted_tree": {
+    "bytes": 57339475,
+    "files": 5398,
+    "sha256": "a88950c5fd3d1df4c5fd27e746a1355f87d915b9e308f49143a35b6e70dad6d0"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "microsoft-agent-framework.bundle.zip.part-0001",
+      "sha256": "5d40f61be27092877227eb2d78233a94f2069beb191f291b6c531ecb88f51066"
+    },
+    {
+      "bytes": 5877581,
+      "name": "microsoft-agent-framework.bundle.zip.part-0002",
+      "sha256": "f82352c3a13ecda7a4a73e6f9b1cfb0a458ac1d8e3bd9ef25ef490b79f122ac9"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "microsoft-agent-framework",
+  "source_bytes": 57339475,
+  "source_commit": "2c46deb91e70ea6d7bbc99263147e0f470d52546",
+  "source_files": 5398,
+  "source_ref": "main",
+  "source_repo": "microsoft/agent-framework",
+  "source_tree": {
+    "bytes": 57339475,
+    "files": 5398,
+    "sha256": "a88950c5fd3d1df4c5fd27e746a1355f87d915b9e308f49143a35b6e70dad6d0"
+  }
+}

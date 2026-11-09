@@ -1,0 +1,1 @@
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "LEY PERMANENTE: NO crear backend/chat nuevo desde cero. Reutilizar Open WebUI + backend Chat MVP existente.\nConservar todo código adicional. Solo adaptar, cablear e incorporar. Claude audita; este agente ejecuta.\n"}

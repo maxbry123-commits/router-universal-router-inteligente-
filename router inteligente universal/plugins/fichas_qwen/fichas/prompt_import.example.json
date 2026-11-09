@@ -1,0 +1,20 @@
+{
+  "prompt_import_version": "1.0.0",
+  "prompt_id": "fable-ejemplo-v1",
+  "mode_id": "m02_objetivo",
+  "source": {
+    "origin": "fable",
+    "note": "EJEMPLO: no es un prompt real"
+  },
+  "position": "after_mode_block",
+  "sections": [
+    {
+      "title": "EJEMPLO - reemplaza por el prompt de Fable convertido",
+      "lines": [
+        "Linea 1 del prompt convertido.",
+        "Linea 2 del prompt convertido."
+      ]
+    }
+  ],
+  "sha256": "01afbf6d72f4134a863e46d179024109cd93cfb2106f30fda7b853450e409387"
+}

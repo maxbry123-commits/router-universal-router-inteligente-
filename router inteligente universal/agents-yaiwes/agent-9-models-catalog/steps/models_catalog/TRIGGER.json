@@ -1,0 +1,1 @@
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "Busca los otros modelos que te di que tienes anotados\nSalte al siguiente HF procesador si hace falta llevas a 10 procesador HF 32 de ram para tener suficiente cómputos de trabajo sin colapsar\n"}

@@ -1,0 +1,406 @@
+name: Release
+
+run-name: Release ${{ inputs.tag || github.ref_name }} at ${{ inputs.release_commit || github.sha }}
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing immutable release tag (for example 0.0.1-test)'
+        required: true
+      release_commit:
+        description: 'Full source commit for the existing immutable release tag'
+        required: true
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  DOCKERHUB_IMAGE: durableworkflow/server
+  GHCR_IMAGE: ghcr.io/durable-workflow/server
+  RELEASE_IMAGE_PLATFORMS: linux/amd64,linux/arm64
+  PHPREDIS_VERSION: 6.3.0
+  PHPREDIS_COMMIT: df4fab2de7fc327c54c94a13af2b9542e4fbd720
+
+jobs:
+  publish:
+    name: Build and push Docker image
+    runs-on: ubuntu-latest
+    environment: dockerhub
+    if: >-
+      (github.event_name == 'workflow_dispatch' &&
+       github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+    permissions:
+      contents: write
+      packages: write
+    outputs:
+      release_source_commit: ${{ steps.release_source.outputs.commit }}
+      exact_publish_outcome: ${{ steps.exact.outputs.exact_publish_outcome }}
+    steps:
+      - name: Check out trusted release tooling
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+
+      - name: Check out immutable release source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          fetch-depth: 0
+          path: release-source
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+
+      - name: Resolve exact source identity
+        id: release_source
+        env:
+          REQUESTED_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          REQUESTED_COMMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.release_commit || '' }}
+        run: |
+          set -euo pipefail
+          head_commit="$(git -C release-source rev-parse HEAD)"
+          tag_commit="$(git -C release-source rev-list -n 1 "$REQUESTED_TAG")"
+          if [ "$tag_commit" != "$head_commit" ]; then
+            printf 'release tag %s points to %s, not checkout commit %s\n' \
+              "$REQUESTED_TAG" "$tag_commit" "$head_commit" >&2
+            exit 1
+          fi
+          if [ -n "$REQUESTED_COMMIT" ] && [ "$head_commit" != "$REQUESTED_COMMIT" ]; then
+            printf 'release checkout %s does not match planned commit %s\n' \
+              "$head_commit" "$REQUESTED_COMMIT" >&2
+            exit 1
+          fi
+          printf 'commit=%s\n' "$head_commit" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve source release version
+        id: source_release
+        env:
+          ALLOW_LEGACY_SOURCE_RELEASE: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          set -euo pipefail
+          manifest="release-source/resources/release/source-release.json"
+          if [ -f "$manifest" ]; then
+            node scripts/ci/sync-source-release.mjs --root release-source --check
+            version="$(node scripts/ci/sync-source-release.mjs --root release-source --print server-version)"
+          elif [ "$ALLOW_LEGACY_SOURCE_RELEASE" = "true" ]; then
+            version="$(node scripts/ci/sync-source-release.mjs --root release-source --print-legacy-server-version)"
+          else
+            printf 'release source is missing resources/release/source-release.json\n' >&2
+            exit 1
+          fi
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Validate release publish context and credentials
+        id: release_publish
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          SOURCE_RELEASE_VERSION: ${{ steps.source_release.outputs.version }}
+          DOCKERHUB_IMAGE: ${{ env.DOCKERHUB_IMAGE }}
+          GHCR_IMAGE: ${{ env.GHCR_IMAGE }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: scripts/ci/validate-release-image-publish.sh
+
+      - name: Resolve locked workflow package authority
+        id: workflow
+        env:
+          COMPOSER_JSON_PATH: release-source/composer.json
+          COMPOSER_LOCK_PATH: release-source/composer.lock
+        run: php scripts/ci/resolve-workflow-package-authority.php
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8  # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0  # v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0  # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract exact image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302  # v6
+        with:
+          images: |
+            ${{ env.DOCKERHUB_IMAGE }}
+            ${{ env.GHCR_IMAGE }}
+          # On a release tag like 0.1.0, produces immutable tags:
+          #   durableworkflow/server:0.1.0
+          #   ghcr.io/durable-workflow/server:0.1.0
+          # workflow_dispatch checks out the existing immutable tag before it
+          # reproduces these exact image identities for recovery.
+          # yamllint disable rule:line-length
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.release_publish.outputs.tag }},enable=${{ steps.release_publish.outputs.is_semver == 'true' }}
+            type=raw,value=${{ steps.release_publish.outputs.tag }},enable=${{ steps.release_publish.outputs.is_semver != 'true' }}
+          # yamllint enable rule:line-length
+          flavor: |
+            latest=false
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.release_source.outputs.commit }}
+            dev.durable-workflow.release.tag=${{ steps.release_publish.outputs.tag }}
+            dev.durable-workflow.release.run-id=${{ github.run_id }}
+            dev.durable-workflow.release.run-attempt=${{ github.run_attempt }}
+            dev.durable-workflow.workflow.package=durable-workflow/workflow
+            dev.durable-workflow.workflow.source=${{ steps.workflow.outputs.source }}
+            dev.durable-workflow.workflow.version=${{ steps.workflow.outputs.ref }}
+            dev.durable-workflow.workflow.commit=${{ steps.workflow.outputs.commit }}
+
+      - name: Verify immutable release tag at publication boundary
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release_publish.outputs.tag }}
+          RELEASE_COMMIT: >-
+            ${{ github.event_name == 'workflow_dispatch'
+            && inputs.release_commit || steps.release_source.outputs.commit }}
+        run: scripts/ci/verify-release-tag-source.sh
+
+      - name: Resolve shared release image cache
+        id: cache
+        env:
+          RELEASE_IMAGE_CACHE_ROOT: release-source
+          RELEASE_SOURCE_COMMIT: ${{ steps.release_source.outputs.commit }}
+          WORKFLOW_PACKAGE_SOURCE: ${{ steps.workflow.outputs.source }}
+          WORKFLOW_PACKAGE_REF: ${{ steps.workflow.outputs.ref }}
+          WORKFLOW_PACKAGE_COMMIT: ${{ steps.workflow.outputs.commit }}
+        run: node scripts/ci/resolve-release-image-cache.mjs
+
+      - name: Start exact image build timer
+        id: build_started
+        run: printf 'epoch_seconds=%s\n' "$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push exact image tags
+        id: build
+        timeout-minutes: 45
+        continue-on-error: true
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a  # v7
+        with:
+          context: release-source
+          platforms: ${{ env.RELEASE_IMAGE_PLATFORMS }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          pull: true
+          cache-from: ${{ steps.cache.outputs.cache_from }}
+          cache-to: ${{ steps.cache.outputs.cache_to }}
+          provenance: false
+          build-args: |
+            PHPREDIS_VERSION=${{ env.PHPREDIS_VERSION }}
+            PHPREDIS_COMMIT=${{ env.PHPREDIS_COMMIT }}
+            WORKFLOW_PACKAGE_SOURCE=${{ steps.workflow.outputs.source }}
+            WORKFLOW_PACKAGE_REF=${{ steps.workflow.outputs.ref }}
+            WORKFLOW_PACKAGE_COMMIT=${{ steps.workflow.outputs.commit }}
+
+      - name: Record exact image build timing
+        id: build_timing
+        if: ${{ always() && steps.build_started.outputs.epoch_seconds != '' }}
+        env:
+          BUILD_STARTED_AT: ${{ steps.build_started.outputs.epoch_seconds }}
+        run: |
+          finished_at="$(date +%s)"
+          duration_seconds="$((finished_at - BUILD_STARTED_AT))"
+          printf 'duration_seconds=%s\n' "$duration_seconds" >> "$GITHUB_OUTPUT"
+          printf 'Exact multi-platform image build took %s seconds.\n' "$duration_seconds" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify exact image publication
+        id: exact
+        env:
+          RELEASE_TAG: ${{ steps.release_publish.outputs.tag }}
+          DOCKERHUB_IMAGE: ${{ env.DOCKERHUB_IMAGE }}
+          GHCR_IMAGE: ${{ env.GHCR_IMAGE }}
+          DOCKER_BUILD_OUTCOME: ${{ steps.build.outcome || 'skipped' }}
+          BUILT_IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          BUILT_IMAGE_METADATA: ${{ steps.build.outputs.metadata }}
+          RELEASE_COMMIT: ${{ steps.release_source.outputs.commit }}
+          RELEASE_RUN_ID: ${{ github.run_id }}
+          RELEASE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORKFLOW_PACKAGE_SOURCE: ${{ steps.workflow.outputs.source }}
+          WORKFLOW_PACKAGE_REF: ${{ steps.workflow.outputs.ref }}
+          WORKFLOW_PACKAGE_COMMIT: ${{ steps.workflow.outputs.commit }}
+        run: scripts/ci/verify-release-exact-images.sh
+
+      - name: Verify bare image first-run readiness
+        id: first_run_readiness
+        if: ${{ always() && success() && steps.exact.outputs.exact_publish_outcome == 'success' }}
+        env:
+          DW_SERVER_IMAGE: ${{ env.DOCKERHUB_IMAGE }}:${{ steps.release_publish.outputs.tag }}
+          DW_FIRST_RUN_SCOPE: release-first-run-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+        working-directory: release-source
+        run: scripts/smoke-published-first-run.sh
+
+      - name: Verify source-free Compose bootstrap
+        id: source_free_compose
+        if: ${{ always() && success() && steps.first_run_readiness.outcome == 'success' }}
+        env:
+          DW_SERVER_IMAGE: ${{ env.DOCKERHUB_IMAGE }}:${{ steps.release_publish.outputs.tag }}
+          DW_SERVER_PLATFORM: linux/amd64
+          DW_PUBLISHED_COMPOSE_PROFILE: local
+          DW_PUBLISHED_COMPOSE_PROJECT: release-compose-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+          SERVER_PORT: "0"
+          DW_AUTH_TOKEN: published-compose-token
+        working-directory: release-source
+        run: scripts/smoke-published-compose.sh
+
+      - name: Clean up bare image first-run resources
+        if: always()
+        env:
+          DW_FIRST_RUN_SCOPE: release-first-run-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+        run: |
+          docker rm -f \
+            "${DW_FIRST_RUN_SCOPE}-server" \
+            "${DW_FIRST_RUN_SCOPE}-bootstrap" >/dev/null 2>&1 || true
+          docker volume rm -f \
+            "${DW_FIRST_RUN_SCOPE}-database" >/dev/null 2>&1 || true
+
+      - name: Clean up source-free Compose resources
+        if: always()
+        env:
+          DW_PUBLISHED_COMPOSE_PROJECT: release-compose-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+        run: >-
+          docker compose -p "$DW_PUBLISHED_COMPOSE_PROJECT"
+          -f release-source/docker-compose.published.yml down -v --remove-orphans
+          >/dev/null 2>&1 || true
+
+      - name: Verify published protocol catalog convergence
+        id: protocol_catalog
+        if: ${{ always() && success() && steps.exact.outputs.exact_publish_outcome == 'success' }}
+        env:
+          RELEASE_TAG: ${{ steps.release_publish.outputs.tag }}
+          SERVER_IMAGE: ${{ env.DOCKERHUB_IMAGE }}:${{ steps.release_publish.outputs.tag }}
+          WORKFLOW_PACKAGE_SOURCE: ${{ steps.workflow.outputs.source }}
+          WORKFLOW_PACKAGE_REF: ${{ steps.workflow.outputs.ref }}
+          WORKFLOW_PACKAGE_COMMIT: ${{ steps.workflow.outputs.commit }}
+          PUBLIC_CATALOG_URL: https://durable-workflow.github.io/platform-protocol-specs.json
+          PROTOCOL_CATALOG_CONFORMANCE_EVIDENCE: release-protocol-catalog-conformance.json
+          RELEASE_PROTOCOL_CATALOG_SCOPE: release-protocol-catalog-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+          RELEASE_PROTOCOL_CATALOG_PORT: "0"
+        run: scripts/ci/verify-release-protocol-catalog.sh
+
+      - name: Clean up protocol catalog Docker resources
+        if: always()
+        env:
+          RELEASE_PROTOCOL_CATALOG_SCOPE: release-protocol-catalog-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+        run: |
+          docker rm -f "$RELEASE_PROTOCOL_CATALOG_SCOPE" \
+            "${RELEASE_PROTOCOL_CATALOG_SCOPE}-bootstrap" >/dev/null 2>&1 || true
+          docker volume rm -f "${RELEASE_PROTOCOL_CATALOG_SCOPE}-database" \
+            >/dev/null 2>&1 || true
+
+      - name: Resolve rolling image aliases
+        id: rolling
+        if: >-
+          steps.release_publish.outputs.is_semver == 'true' &&
+          steps.exact.outputs.exact_publish_outcome == 'success' &&
+          steps.first_run_readiness.outcome == 'success' &&
+          steps.source_free_compose.outcome == 'success' &&
+          steps.protocol_catalog.outputs.protocol_catalog_conformance_outcome == 'success'
+        env:
+          RELEASE_TAG: ${{ steps.release_publish.outputs.tag }}
+          DOCKERHUB_IMAGE: ${{ env.DOCKERHUB_IMAGE }}
+          GHCR_IMAGE: ${{ env.GHCR_IMAGE }}
+          RELEASE_IMAGE_TAG_SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}.git
+        run: scripts/ci/resolve-release-image-rolling-tags.sh
+
+      - name: Promote rolling image aliases
+        id: promote_rolling
+        if: ${{ steps.rolling.outputs.rolling_should_promote == 'true' }}
+        env:
+          RELEASE_TAG: ${{ steps.release_publish.outputs.tag }}
+          DOCKERHUB_IMAGE: ${{ env.DOCKERHUB_IMAGE }}
+          GHCR_IMAGE: ${{ env.GHCR_IMAGE }}
+          ROLLING_SHOULD_PROMOTE: ${{ steps.rolling.outputs.rolling_should_promote }}
+          RELEASE_IMAGE_TAG_SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}.git
+        run: scripts/ci/promote-release-image-rolling-tags.sh
+
+      - name: Write release image publish evidence
+        if: ${{ always() }}
+        env:
+          RELEASE_TAG: ${{ steps.release_publish.outputs.tag || github.event.inputs.tag || github.ref_name }}
+          DOCKERHUB_IMAGE: ${{ env.DOCKERHUB_IMAGE }}
+          GHCR_IMAGE: ${{ env.GHCR_IMAGE }}
+          VALIDATION_OUTCOME: ${{ steps.release_publish.outcome || 'skipped' }}
+          EXACT_PUBLISH_OUTCOME: ${{ steps.exact.outputs.exact_publish_outcome || steps.exact.outcome || steps.build.outcome || 'skipped' }}
+          EXACT_PUBLISH_REASON: ${{ steps.exact.outputs.exact_publish_reason }}
+          EXACT_VERIFY_OUTCOME: ${{ steps.exact.outcome || 'skipped' }}
+          DOCKER_BUILD_OUTCOME: ${{ steps.build.outcome || 'skipped' }}
+          BUILD_CACHE_IDENTITY: ${{ steps.cache.outputs.identity }}
+          BUILD_CACHE_REF: ${{ steps.cache.outputs.ref }}
+          BUILD_DURATION_SECONDS: ${{ steps.build_timing.outputs.duration_seconds }}
+          WARM_CACHE_TARGET_SECONDS: 600
+          PROTOCOL_CATALOG_CONFORMANCE_OUTCOME: >-
+            ${{ steps.protocol_catalog.outputs.protocol_catalog_conformance_outcome
+            || steps.protocol_catalog.outcome || 'skipped' }}
+          ROLLING_GUARD_OUTCOME: ${{ steps.rolling.outcome || 'skipped' }}
+          ROLLING_PROMOTE_OUTCOME: ${{ steps.promote_rolling.outcome || 'skipped' }}
+          ROLLING_ARTIFACT_STATUS: ${{ steps.promote_rolling.outputs.artifact_status || steps.rolling.outputs.artifact_status }}
+          ROLLING_SHOULD_PROMOTE: >-
+            ${{ steps.promote_rolling.outputs.rolling_should_promote
+            || steps.rolling.outputs.rolling_should_promote || 'false' }}
+          ROLLING_SUPERSEDED_BY: ${{ steps.promote_rolling.outputs.superseded_by || steps.rolling.outputs.superseded_by }}
+          IMAGE_DIGEST: ${{ steps.exact.outputs.image_digest || steps.build.outputs.digest }}
+          RELEASE_COMMIT: ${{ steps.release_source.outputs.commit }}
+          RELEASE_RUN_ID: ${{ github.run_id }}
+          RELEASE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORKFLOW_PACKAGE_SOURCE: ${{ steps.workflow.outputs.source }}
+          WORKFLOW_PACKAGE_REF: ${{ steps.workflow.outputs.ref }}
+          WORKFLOW_PACKAGE_COMMIT: ${{ steps.workflow.outputs.commit }}
+        run: scripts/ci/write-release-image-publish-evidence.sh
+
+      - name: Create the source GitHub Release
+        if: >-
+          steps.exact.outputs.exact_publish_outcome == 'success' &&
+          steps.first_run_readiness.outcome == 'success' &&
+          steps.source_free_compose.outcome == 'success' &&
+          steps.protocol_catalog.outputs.protocol_catalog_conformance_outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release_publish.outputs.tag }}
+        run: scripts/ci/create-github-release.sh
+
+      - name: Upload release image publish evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        with:
+          name: release-image-publish-evidence
+          path: |
+            release-image-publish-evidence.json
+            release-protocol-catalog-conformance.json
+            release-protocol-catalog-bootstrap.log
+            release-protocol-catalog-server.log
+          if-no-files-found: error
+
+  publish-chart:
+    name: Publish matching immutable Helm chart
+    needs: publish
+    if: >-
+      always() &&
+      needs.publish.outputs.exact_publish_outcome == 'success' &&
+      github.repository == 'durable-workflow/server' &&
+      ((github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main') ||
+       (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')))
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/helm-chart-publish.yml  # local
+    with:
+      source_ref: ${{ needs.publish.outputs.release_source_commit }}
+      allow_missing_image: false

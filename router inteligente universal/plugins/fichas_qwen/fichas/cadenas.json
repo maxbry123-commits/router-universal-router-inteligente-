@@ -1,0 +1,84 @@
+{
+ "version": 1,
+ "limites": {
+  "max_pasos": 8,
+  "max_chars_contexto_entre_pasos": 6000,
+  "pausa_entre_pasos_s": 2
+ },
+ "cadenas": {
+  "construir_feature": {
+   "descripcion": "Planear, construir, verificar y reportar un cambio de codigo",
+   "activar_si": {
+    "modo": [
+     "agente",
+     "agente_code",
+     "m04_agentico_loop"
+    ],
+    "task_type": [
+     "implement_feature"
+    ]
+   },
+   "pasos": [
+    {
+     "id": "P1",
+     "tarea": "Analiza la tarea: archivos afectados, dependencias y riesgos. No cambies nada.",
+     "capas": [
+      "core",
+      "b2"
+     ],
+     "tools": "lectura",
+     "timeout_s": 120,
+     "max_tokens": 1500
+    },
+    {
+     "id": "P2",
+     "tarea": "Escribe el plan minimo paso a paso con archivos exactos.",
+     "capas": [
+      "core",
+      "b2"
+     ],
+     "tools": "ninguna",
+     "timeout_s": 90,
+     "max_tokens": 1500,
+     "pide_aprobacion": true
+    },
+    {
+     "id": "P3",
+     "tarea": "Implementa el plan aprobado. Cada cambio con herramienta real.",
+     "capas": [
+      "core",
+      "b3"
+     ],
+     "tools": "escritura",
+     "requiere_evidencia": true,
+     "timeout_s": 300,
+     "max_tokens": 6000
+    },
+    {
+     "id": "P4",
+     "tarea": "Verifica con pruebas reales lo implementado. Devuelve VEREDICTO: PASS/FAIL + evidencia.",
+     "capas": [
+      "core",
+      "b4"
+     ],
+     "tools": "lectura",
+     "timeout_s": 180,
+     "max_tokens": 3000,
+     "corrige": "P3"
+    },
+    {
+     "id": "P5",
+     "tarea": "Arma la salida final para el Director con el formato obligatorio.",
+     "capas": [
+      "core",
+      "b5"
+     ],
+     "tools": "ninguna",
+     "final": true,
+     "timeout_s": 90,
+     "max_tokens": 3000
+    }
+   ]
+  }
+ }
+}

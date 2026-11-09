@@ -1,0 +1,25 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-15-orchestrator-grok",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T07:23:01Z",
+ "group": "orchestrators",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "72585352f15cf7cb1eed630b547c2fe0bc310d359e334d25a3cc8c013064f972",
+   "chars": 8558
+  }
+ ],
+ "model": "hf/deepseek-ai/DeepSeek-V4-Flash",
+ "attempts": 1,
+ "route_trace": []
+}

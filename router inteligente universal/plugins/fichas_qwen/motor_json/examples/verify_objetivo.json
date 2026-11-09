@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "name": "verificacion-demo"
+  },
+  "ops": [
+    {
+      "id": "V1",
+      "op": "verify_exists",
+      "path": "entregables/estado.md"
+    },
+    {
+      "id": "V2",
+      "op": "verify_contains",
+      "path": "entregables/estado.md",
+      "text": "Ejecución controlada.",
+      "depends_on": ["V1"]
+    },
+    {
+      "id": "V3",
+      "op": "finish",
+      "depends_on": ["V2"]
+    }
+  ]
+}

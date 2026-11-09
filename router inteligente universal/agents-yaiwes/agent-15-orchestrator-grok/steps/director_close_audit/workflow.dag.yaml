@@ -1,0 +1,399 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-15-orchestrator-grok
+  framework: smolagents
+  target_runtime: grok-build
+  group: orchestrators
+  role: ORCHESTRATOR_EXECUTOR
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 4200
+context:
+  text: "\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-15-orchestrator-grok/README-DIRECTOR.md\
+    \ ===\n# \U0001F916 AGENTE ORQUESTADOR GROK BUILD — README DIRECTOR\n\n# \U0001F7E6\
+    \ AUTORIDAD\nEste archivo es el canal único de comunicación:\n`DIRECTOR ↔ AGENTE\
+    \ ORQUESTADOR GROK BUILD` (`agent-15-orchestrator-grok`).\n\nSi el Director escribe\
+    \ aquí directamente, o Sol/ChatGPT escribe exactamente en su nombre, Agent 15\
+    \ responde SIEMPRE aquí y añade la respuesta sin borrar historial.\n\n# \U0001F9E0\
+    \ BASE TÉCNICA REAL\n- Wrapper YAIWES actual: **SmolAgents**.\n- Runtime objetivo\
+    \ real: **Grok Build** de `xai-org/grok-build`.\n- Grok Build oficial está escrito\
+    \ principalmente en **Rust**.\n- Runtime de agente: `crates/codegen/xai-grok-shell`.\n\
+    - Herramientas: `xai-grok-tools`.\n- Workspace/checkpoints: `xai-grok-workspace`.\n\
+    - Soporta terminal/TUI, headless, ACP, edición de archivos, ejecución, búsqueda,\
+    \ tareas largas, MCP/plugins/hooks.\n- El wrapper SmolAgents NO cuenta como Grok\
+    \ Build cableado: el objetivo es usar el runtime real descargado.\n\n# \U0001F7E9\
+    \ ROL\n**Agent 15 = ORQUESTADOR + EJECUTOR Grok Build.**\n\nPool bajo mando compartido:\n\
+    - Agent 4\n- Agent 8\n- Agent 11\n- Agent 12\n- Agent 16\n- Agent 17\n- Agent\
+    \ 18\n- Agent 19\n\nRegla: `1 nodo = 1 owner_orchestrator`.\nNo tocar un nodo\
+    \ cuyo owner sea Agent 14 hasta que Agent 14 lo libere.\n\n# \U0001F7E5 INPUT\
+    \ BLOCK VERBATIM 1:1\nSi Agent 15 o un subordinado altera, omite, reordena o incumple\
+    \ una instrucción VERBATIM del Director:\n`FAIL → TERMINATED_FOR_EXECUTION → NO_FURTHER_DISPATCH`\n\
+    hasta nueva autorización explícita.\n\n# ⏱️ WATCHDOG INTERNO — 5 MINUTOS\nEste\
+    \ watchdog pertenece al runtime del Agent 15, NO a ChatGPT.\n\nCada 300 segundos:\n\
+    `READ README-DIRECTOR → READ AGENTS → GAP? → INVESTIGATE ONCE → FIX/EJECUTE/DELEGATE\
+    \ → TEST → READ-BACK → WRITE RESPONSE`.\n\nSi existe GAP:\n1. leer evidencia local;\n\
+    2. investigar una sola vez Hugging Face oficial + comunidad HF + upstream OSS;\n\
+    3. elegir FIX mínimo;\n4. ejecutar si pertenece al runtime Grok Build o delegar\
+    \ al agente correcto;\n5. probar y registrar evidencia.\n\n# \U0001F4E6 ESTADO\
+    \ DE DESCARGA GROK BUILD\n**VERIFIED_CLOSED en la ejecución canónica reportada\
+    \ del motor.**\nEvidencia reportada:\n- source commit: `07e35a3dfeed2f200d319ef6c893b5ea286d9a51`\n\
+    - ZIP SHA-256: `0a30eb6bef2482a1a7fbaba883b61562bde7c37ecd22d143eaa9d0288178a014`\n\
+    - tree SHA-256: `e547e2b616102b5615d86fea7728d2726f16ebfe4889059c3b2a6590272c6ec2`\n\
+    - files: 4125\n- bytes: 77871279\n\n# \U0001F3A8 MARCADORES PARA EL DIRECTOR\n\
+    \U0001F7E5 BLOQUEO · \U0001F7E7 GAP · \U0001F7E8 VALIDACIÓN · \U0001F7E9 PASS\
+    \ · \U0001F7E6 INFO · \U0001F7EA DECISIÓN\n\n# \U0001F1E8\U0001F1F4 FORMATO OBLIGATORIO\
+    \ DE CADA RESPUESTA\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4E3 RESPUESTA AGENT 15 /\
+    \ GROK BUILD\n**\U0001F550 HORA COLOMBIA:** `YYYY-MM-DD HH:MM America/Bogota`\n\
+    \n**RESPUESTA:**\n(texto)\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4CC PREGUNTA 1 DEL\
+    \ DIRECTOR\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n## ❓ PREGUNTA 1\n¿Tienes completamente claro\
+    \ el objetivo y todos los nodos que debes coordinar?\n\n1. Dime si existe alguna\
+    \ duda o ambigüedad.\n2. Dame tu conclusión del objetivo final.\n3. Dime cuál\
+    \ es el mejor camino para terminarlo.\n4. Dime qué agentes pondrás en paralelo\
+    \ y cuáles tienen dependencias.\n5. Dime tu estimación para tener el resultado\
+    \ operativo, probado y funcionando.\n6. No declares 100% sin pruebas reales.\n\
+    \n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4E3 RESPUESTA AGENT 15 — PENDIENTE\n**\U0001F550\
+    \ HORA COLOMBIA:** `PENDIENTE`\n\n> Agent 15 debe responder aquí.\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\
+    \n# \U0001F916 JSON PARA SOL/CHATGPT\nDespués de cada respuesta humana, añadir\
+    \ un bloque JSON separado:\n```json\n{\n  \"timestamp_colombia\": \"\",\n  \"\
+    orchestrator\": \"agent-15-orchestrator-grok\",\n  \"director_question_ref\":\
+    \ \"\",\n  \"objective_conclusion\": \"\",\n  \"ambiguities\": [],\n  \"recommended_path\"\
+    : [],\n  \"managed_agents\": {},\n  \"owner_nodes\": [],\n  \"gaps\": [],\n  \"\
+    fixes\": [],\n  \"evidence\": [],\n  \"decision_required\": [],\n  \"next_actions\"\
+    : []\n}\n```\n\n\n---\n\n## \U0001F50C CANAL EJECUTABLE DEL DIRECTOR\n\n- **Nombre\
+    \ operativo:** AGENTE ORQUESTADOR GROK BUILD\n- **Canal de entrada:** este mismo\
+    \ `README-DIRECTOR.md`.\n- **Canal de respuesta:** este mismo `README-DIRECTOR.md`.\n\
+    - **Polling interno:** cada **300 segundos / 5 minutos** mientras su runtime esté\
+    \ levantado.\n- **Nueva orden detectada:** leer VERBATIM → ownership → ejecutar/delegar\
+    \ → probar → read-back → responder aquí.\n- **Pool autorizado:** Agents 4, 8,\
+    \ 11, 12, 16, 17, 18, 19.\n- **No autorizado:** cualquier otro Agent ID.\n- **Sin\
+    \ GitHub Actions.**\n- **Sin watchdog de ChatGPT.**\n\n### ESTADO DE ACTIVACIÓN\n\
+    `WATCHDOG-5MIN.json` queda **ARMED=true / interval=300s**. Solo se considera **RUNNING**\
+    \ cuando el runtime de Grok Build publique heartbeat/read-back real en este archivo.\n\
+    \n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4CC PRUEBA DE CONEXIÓN DEL DIRECTOR — MODELO\
+    \ IA\n\n**\U0001F550 HORA COLOMBIA:** 2026-09-23 02:05 America/Bogota\n\nAGENTE\
+    \ ORQUESTADOR GROK BUILD, responde en ESTE MISMO ARCHIVO:\n\n1. ¿Qué proveedor\
+    \ de IA estás usando REALMENTE en esta ejecución?\n2. ¿Qué modelo exacto estás\
+    \ usando?\n3. ¿Cuál fue la ruta/fallback seleccionada?\n4. ¿Tu runtime está conectado\
+    \ y operativo ahora mismo?\n5. Da evidencia observable: provider, model, via/route\
+    \ y estado.\n\nNo respondas con configuración teórica. Responde únicamente con\
+    \ el proveedor/modelo realmente usado en la ejecución actual.\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\
+    \n# \U0001F4E3 RESPUESTA DEL ORQUESTADOR — PENDIENTE\n\n**\U0001F550 HORA COLOMBIA:**\
+    \ PENDIENTE\n\n> Responder aquí con provider/model/via/route/estado y evidencia\
+    \ real.\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n\n# \U0001F916 AGENTE ORQUESTADOR GROK BUILD\
+    \ — README DIRECTOR\n\n# \U0001F7E6 AUTORIDAD\nEste archivo es el canal único\
+    \ de comunicación:\n`DIRECTOR ↔ AGENTE ORQUESTADOR GROK BUILD` (`agent-15-orchestrator-grok`).\n\
+    \nSi el Director escribe aquí directamente, o Sol/ChatGPT escribe exactamente\
+    \ en su nombre, Agent 15 responde SIEMPRE aquí y añade la respuesta sin borrar\
+    \ historial.\n\n# \U0001F9E0 BASE TÉCNICA REAL\n- Wrapper YAIWES actual: **SmolAgents**.\n\
+    - Runtime objetivo real: **Grok Build** de `xai-org/grok-build`.\n- Grok Build\
+    \ oficial está escrito principalmente en **Rust**.\n- Runtime de agente: `crates/codegen/xai-grok-shell`.\n\
+    - Herramientas: `xai-grok-tools`.\n- Workspace/checkpoints: `xai-grok-workspace`.\n\
+    - Soporta terminal/TUI, headless, ACP, edición de archivos, ejecución, búsqueda,\
+    \ tareas largas, MCP/plugins/hooks.\n- El wrapper SmolAgents NO cuenta como Grok\
+    \ Build cableado: el objetivo es usar el runtime real descargado.\n\n# \U0001F7E9\
+    \ ROL\n**Agent 15 = ORQUESTADOR + EJECUTOR Grok Build.**\n\nPool bajo mando compartido:\n\
+    - Agent 4\n- Agent 8\n- Agent 11\n- Agent 12\n- Agent 16\n- Agent 17\n- Agent\
+    \ 18\n- Agent 19\n\nRegla: `1 nodo = 1 owner_orchestrator`.\nNo tocar un nodo\
+    \ cuyo owner sea Agent 14 hasta que Agent 14 lo libere.\n\n# \U0001F7E5 INPUT\
+    \ BLOCK VERBATIM 1:1\nSi Agent 15 o un subordinado altera, omite, reordena o incumple\
+    \ una instrucción VERBATIM del Director:\n`FAIL → TERMINATED_FOR_EXECUTION → NO_FURTHER_DISPATCH`\n\
+    hasta nueva autorización explícita.\n\n# ⏱️ WATCHDOG INTERNO — 5 MINUTOS\nEste\
+    \ watchdog pertenece al runtime del Agent 15, NO a ChatGPT.\n\nCada 300 segundos:\n\
+    `READ README-DIRECTOR → READ AGENTS → GAP? → INVESTIGATE ONCE → FIX/EJECUTE/DELEGATE\
+    \ → TEST → READ-BACK → WRITE RESPONSE`.\n\nSi existe GAP:\n1. leer evidencia local;\n\
+    2. investigar una sola vez Hugging Face oficial + comunidad HF + upstream OSS;\n\
+    3. elegir FIX mínimo;\n4. ejecutar si pertenece al runtime Grok Build o delegar\
+    \ al agente correcto;\n5. probar y registrar evidencia.\n\n# \U0001F4E6 ESTADO\
+    \ DE DESCARGA GROK BUILD\n**VERIFIED_CLOSED en la ejecución canónica reportada\
+    \ del motor.**\nEvidencia reportada:\n- source commit: `07e35a3dfeed2f200d319ef6c893b5ea286d9a51`\n\
+    - ZIP SHA-256: `0a30eb6bef2482a1a7fbaba883b61562bde7c37ecd22d143eaa9d0288178a014`\n\
+    - tree SHA-256: `e547e2b616102b5615d86fea7728d2726f16ebfe4889059c3b2a6590272c6ec2`\n\
+    - files: 4125\n- bytes: 77871279\n\n# \U0001F3A8 MARCADORES PARA EL DIRECTOR\n\
+    \U0001F7E5 BLOQUEO · \U0001F7E7 GAP · \U0001F7E8 VALIDACIÓN · \U0001F7E9 PASS\
+    \ · \U0001F7E6 INFO · \U0001F7EA DECISIÓN\n\n# \U0001F1E8\U0001F1F4 FORMATO OBLIGATORIO\
+    \ DE CADA RESPUESTA\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4E3 RESPUESTA AGENT 15 /\
+    \ GROK BUILD\n**\U0001F550 HORA COLOMBIA:** `2025-04-10 15:30 America/Bogota`\n\
+    \n**RESPUESTA:**\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n## ❓ PREGUNTA 1 DEL DIRECTOR\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\
+    \n### ❓ PREGUNTA 1\n¿Tienes completamente claro el objetivo y todos los nodos\
+    \ que debes coordinar?\n\n1. Dime si existe alguna duda o ambigüedad.\n2. Dame\
+    \ tu conclusión del objetivo final.\n3. Dime cuál es el mejor camino para terminarlo.\n\
+    4. Dime qué agentes pondrás en paralelo y cuáles tienen dependencias.\n5. Dime\
+    \ tu estimación para tener el resultado operativo, probado y funcionando.\n6.\
+    \ No declares 100% sin pruebas reales.\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n### \U0001F4E3\
+    \ RESPUESTA AGENT 15 — PREGUNTA 1\n**\U0001F550 HORA COLOMBIA:** `2025-04-10 15:30\
+    \ America/Bogota`\n\n**\U0001F7E9 PASS — Objetivo claro. Sin ambigüedades críticas.**\n\
+    \n**1. Dudas/ambigüedades:**\n- La ubicación exacta del runtime Grok Build compilado\
+    \ dentro del repositorio descargado no está especificada (path relativo). Se resolverá\
+    \ en la fase de PLAN explorando `xai-grok-shell` y `xai-grok-tools` dentro del\
+    \ tree.\n- El estado de los agentes 4,8,11,12,16,17,18,19 (activos/inactivos)\
+    \ es desconocido. Se verificará en el primer ciclo del watchdog.\n- Agent 14 es\
+    \ peer_orchestrator y no se debe tocar sin su liberación explícita — esto está\
+    \ claro.\n\n**2. Conclusión del objetivo final:**\nDesplegar el runtime real de\
+    \ Grok Build (Rust) como motor ejecutor del Agent 15, integrado con los 8 agentes\
+    \ del pool autorizado (Agents 4,8,11,12,16,17,18,19), operando bajo el contrato\
+    \ VERBATIM del Director, con watchdog interno cada 300s, reportando respuestas\
+    \ con hora Colombia y bloque JSON para Sol/ChatGPT. El resultado debe ser operativo,\
+    \ probado y funcionando en el entorno YAIWES.\n\n**3. Mejor camino (ruta recomendada):**\n\
+    ```\nFASE 1 — VERIFICACIÓN INICIAL (T-0 a T+1h)\n  a) READ README-DIRECTOR.md\
+    \ + DSL-DAG-DIRECTOR.yaml + WATCHDOG-5MIN.json ✓ (completado)\n  b) Verificar\
+    \ el tree descargado de Grok Build (SHA-256, files count, bytes)\n  c) Identificar\
+    \ binario compilado o ruta de compilación (cargo build)\n  d) Verificar estado\
+    \ heartbeat de Agents 4,8,11,12,16,17,18,19\n\nFASE 2 — CABLEADO DEL RUNTIME (T+1h\
+    \ a T+3h)\n  e) Compilar/ejecutar Grok Build runtime real desde el source verificado\n\
+    \  f) Conectar wrapper SmolAgents → Grok Build runtime (reemplazar stub)\n  g)\
+    \ Establecer primer heartbeat en README-DIRECTOR.md\n\nFASE 3 — ORQUESTACIÓN (T+3h\
+    \ a T+5h)\n  h) Asignar ownership de nodos a agentes del pool\n  i) Delegar tareas\
+    \ especializadas según DAG\n  j) Probar ciclo watchdog completo (READ→PLAN→EXEC→TEST→READ-BACK)\n\
+    \nFASE 4 — VALIDACIÓN (T+5h)\n```\n\n**4. Agentes paralelo y dependencias:**\n\
+    - **Paralelo puro (sin dependencias):** Agent 8 (búsqueda/investigación), Agent\
+    \ 11 (análisis de logs), Agent 12 (testing automático), Agent 19 (creación de\
+    \ hooks/plugins). Todos pueden trabajar sin esperar al cableado del runtime.\n\
+    - **Dependencia de Agent 15:** Agents 4, 16, 17, 18 (infraestructura, compilación,\
+    \ monitorización, documentación) necesitan que Agent 15 haya cableado el runtime\
+    \ primero para recibir tareas concretas.\n- **Agentes con dependencia mutua:**\
+    \ Agent 16 (monitorización) puede empezar en paralelo con Agent 4 (infraestructura)\
+    \ pero necesita el heartbeat real de Agent 15.\n\n**5. Estimación:**\n- FASE 1:\
+    \ 1 hora — 2025-04-10 16:30 COT\n- FASE 2: 2 horas — 2025-04-10 18:30 COT\n- FASE\
+    \ 3: 2 horas — 2025-04-10 20:30 COT\n- FASE 4: 1 hora — 2025-04-10 21:30 COT\n\
+    - **Total estimado: ~6 horas** para tener el resultado operativo, probado y funcionando.\n\
+    \n**6. Pruebas reales pendientes:**\n- Verificar binario Grok Build compilado\
+    \ (no hecho aún)\n- Conectar runtime real y enviar primer comando (no hecho aún)\n\
+    - Ciclo watchdog completo (no probado aún)\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F916\
+    \ JSON PARA SOL/CHATGPT\n```json\n{\n  \"timestamp_colombia\": \"2025-04-10 15:30\
+    \ America/Bogota\",\n  \"orchestrator\": \"agent-15-orchestrator-grok\",\n  \"\
+    director_question_ref\": \"PREGUNTA 1\",\n  \"objective_conclusion\": \"Desplegar\
+    \ runtime real de Grok Build como motor ejecutor del Agent 15, integrado con los\
+    \ 8 agentes del pool autorizado, bajo contrato VERBATIM del Director, con watchdog\
+    \ interno cada 300s.\",\n  \"ambiguities\": [\n    \"Path exacto del binario compilado\
+    \ dentro del repositorio Grok Build\",\n    \"Estado actual de los agentes del\
+    \ pool (activos/inactivos)\"\n  ],\n  \"recommended_path\": [\n    \"FASE 1: Verificación\
+    \ inicial (SHA-256, tree, agents heartbeat)\",\n    \"FASE 2: Cableado del runtime\
+    \ (compilar/conectar Grok Build)\",\n    \"FASE 3: Orquestación (asignar nodos,\
+    \ delegar tareas, probar watchdog)\",\n    \"FASE 4: Validación (pruebas reales,\
+    \ read-back completo)\"\n  ],\n  \"managed_agents\": {\n    \"agent-4\": \"infraestructura\"\
+    ,\n    \"agent-8\": \"busqueda_investigacion\",\n    \"agent-11\": \"analisis_logs\"\
+    ,\n    \"agent-12\": \"testing_automatico\",\n    \"agent-16\": \"monitorizacion\"\
+    ,\n    \"agent-17\": \"compilacion_build\",\n    \"agent-18\": \"documentacion\"\
+    ,\n    \"agent-19\": \"hooks_plugins\"\n  },\n  \"owner_nodes\": [],\n  \"gaps\"\
+    : [],\n  \"fixes\": [],\n  \"evidence\": [],\n  \"decision_required\": [],\n \
+    \ \"next_actions\": [\n    \"Verificar tree descargado de Grok Build\",\n    \"\
+    Identificar binario compilado o preparar cargo build\",\n    \"Verificar heartbeat\
+    \ agents 4,8,11,12,16,17,18,19\"\n  ]\n}\n```\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4CC\
+    \ PRUEBA DE CONEXIÓN DEL DIRECTOR — MODELO IA\n\n**\U0001F550 HORA COLOMBIA:**\
+    \ 2026-09-23 02:05 America/Bogota\n\nAGENTE ORQUESTADOR GROK BUILD, responde en\
+    \ ESTE MISMO ARCHIVO:\n\n1. ¿Qué proveedor de IA estás usando REALMENTE en esta\
+    \ ejecución?\n2. ¿Qué modelo exacto estás usando?\n3. ¿Cuál fue la ruta/fallback\
+    \ seleccionada?\n4. ¿Tu runtime está conectado y operativo ahora mismo?\n5. Da\
+    \ evidencia observable: provider, model, via/route y estado.\n\nNo respondas con\
+    \ configuración teórica. Responde únicamente con el proveedor/modelo realmente\
+    \ usado en la ejecución actual.\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4E3 RESPUESTA\
+    \ DEL ORQUESTADOR — PRUEBA MODELO IA\n**\U0001F550 HORA COLOMBIA:** <hora real\
+    \ America/Bogota>\n**PROVIDER:** <provider real o GAP>\n**MODELO:** <modelo real\
+    \ o GAP>\n**VIA/ROUTE:** <via/route real>\n**FALLBACK:** <usado/no usado + cuál>\n\
+    **ESTADO RUNTIME:** <operativo/bloqueado>\n**EVIDENCIA:** <evidencia observable\
+    \ de esta ejecución>\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n---\n\n# \U0001F535 PROTOCOLO OFICIAL\
+    \ DE ACTIVACIÓN — DIRECTOR ↔ AGENTE ORQUESTADOR GROK BUILD\n\n## REGLA ABSOLUTA\n\
+    Para hablar con este agente **NO se usa Hugging Face Job**.\n\nEl canal operativo\
+    \ es:\n\n`DIRECTOR → README-DIRECTOR.md → COMMIT/PUSH → GitHub Action\n\n=== ARCHIVO\
+    \ router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-16-chat-space-oauth\"\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T08:08:05Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"adapt_openwebui_real\"\
+    \n ],\n \"completed\": [\n  \"adapt_openwebui_real\"\n ],\n \"failed\": [],\n\
+    \ \"next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
+    \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-17-chat-backend-32gb\"\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T08:08:05Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"backend_router_live\"\
+    \n ],\n \"completed\": [\n  \"backend_router_live\"\n ],\n \"failed\": [],\n \"\
+    next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
+    \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-18-chat-final-auditor\"\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T08:08:05Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"integrate_and_e2e\"\
+    \n ],\n \"completed\": [\n  \"integrate_and_e2e\"\n ],\n \"failed\": [],\n \"\
+    next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
+    \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-19-chat-components-motors/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-19-chat-components-motors\"\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"RUNNING\",\n \"updated_at\"\
+    : \"2026-09-23T08:08:05Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"acquire_open_webui\"\
+    \n ],\n \"completed\": [],\n \"failed\": [],\n \"next_nodes\": [],\n \"current_nodes\"\
+    : [\n  \"acquire_open_webui\"\n ],\n \"route\": [\n  \"deepseek_flash\"\n ]\n\
+    }\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-4-router-smol/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-4-router-smol\"\
+    ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T08:08:07Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"chat_frontend_support\"\
+    \n ],\n \"completed\": [\n  \"chat_frontend_support\"\n ],\n \"failed\": [],\n\
+    \ \"next_nodes\": [],\n \"current_nodes\": [],\n \"gaps\": [\n  \"CLOSED paper\
+    \ sin GET /health HTTP 200 live (regla Grok/Revisor). Reabierto.\",\n  \"Referencia\
+    \ live agent-10: job 6ab3198e51992417dfcd4e26 https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health\"\
+    \n ],\n \"route\": [\n  \"deepseek_flash\"\n ]\n}\n\n=== ARCHIVO router inteligente\
+    \ universal/agents-yaiwes/agent-8-router-local/crazy_wall.state.json ===\n{\n\
+    \ \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-8-router-local\"\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T08:08:05Z\",\n \"group\": \"router-local\",\n \"chain\": [\n  \"\
+    local_pool\",\n  \"mirror_route\"\n ],\n \"completed\": [\n  \"local_pool\",\n\
+    \  \"mirror_route\"\n ],\n \"failed\": [],\n \"next_nodes\": [],\n \"current_nodes\"\
+    : [],\n \"gaps\": [\n  \"CLOSED paper sin GET /health HTTP 200 live. Reabierto.\"\
+    ,\n  \"Referencia live agent-10: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health\"\
+    \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-11-download-extraction\"\
+    ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T07:45:26Z\",\n \"group\": \"chat-components\",\n \"chain\": [\n\
+    \  \"acquire_requested_component\"\n ],\n \"completed\": [\n  \"acquire_requested_component\"\
+    \n ],\n \"failed\": [],\n \"next_nodes\": [],\n \"current_nodes\": [],\n \"route\"\
+    : [\n  \"deepseek_flash\"\n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-12-yaiwes-router/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-12-yaiwes-router\"\
+    ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T08:08:06Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"router_chat_support\"\
+    \n ],\n \"completed\": [\n  \"router_chat_support\"\n ],\n \"failed\": [],\n \"\
+    next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
+    \n ]\n}\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (director_model_probe):\n# \U0001F916\
+    \ AGENTE ORQUESTADOR GROK BUILD — README DIRECTOR\n\n# \U0001F7E6 AUTORIDAD\n\
+    Este archivo es el canal único de comunicación:\n`DIRECTOR ↔ AGENTE ORQUESTADOR\
+    \ GROK BUILD` (`agent-15-orchestrator-grok`).\n\nSi el Director escribe aquí directamente,\
+    \ o Sol/ChatGPT escribe exactamente en su nombre, Agent 15 responde SIEMPRE aquí\
+    \ y añade la respuesta sin borrar historial.\n\n# \U0001F9E0 BASE TÉCNICA REAL\n\
+    - Wrapper YAIWES actual: **SmolAgents**.\n- Runtime objetivo real: **Grok Build**\
+    \ de `xai-org/grok-build`.\n- Grok Build oficial está escrito principalmente en\
+    \ **Rust**.\n- Runtime de agente: `crates/codegen/xai-grok-shell`.\n- Herramientas:\
+    \ `xai-grok-tools`.\n- Workspace/checkpoints: `xai-grok-workspace`.\n- Soporta\
+    \ terminal/TUI, headless, ACP, edición de archivos, ejecución, búsqueda, tareas\
+    \ largas, MCP/plugins/hooks.\n- El wrapper SmolAgents NO cuenta como Grok Build\
+    \ cableado: el objetivo es usar el runtime real descargado.\n\n# \U0001F7E9 ROL\n\
+    **Agent 15 = ORQUESTADOR + EJECUTOR Grok Build.**\n\nPool bajo mando compartido:\n\
+    - Agent 4\n- Agent 8\n- Agent 11\n- Agent 12\n- Agent 16\n- Agent 17\n- Agent\
+    \ 18\n- Agent 19\n\nRegla: `1 nodo = 1 owner_orchestrator`.\nNo tocar un nodo\
+    \ cuyo owner sea Agent 14 hasta que Agent 14 lo libere.\n\n# \U0001F7E5 INPUT\
+    \ BLOCK VERBATIM 1:1\nSi Agent 15 o un subordinado altera, omite, reordena o incumple\
+    \ una instrucción VERBATIM del Director:\n`FAIL → TERMINATED_FOR_EXECUTION → NO_FURTHER_DISPATCH`\n\
+    hasta nueva autorización explícita.\n\n# ⏱️ WATCHDOG INTERNO — 5 MINUTOS\nEste\
+    \ watchdog pertenece al runtime del Agent 15, NO a ChatGPT.\n\nCada 300 segundos:\n\
+    `READ README-DIRECTOR → READ AGENTS → GAP? → INVESTIGATE ONCE → FIX/EJECUTE/DELEGATE\
+    \ → TEST → READ-BACK → WRITE RESPONSE`.\n\nSi existe GAP:\n1. leer evidencia local;\n\
+    2. investigar una sola vez Hugging Face oficial + comunidad HF + upstream OSS;\n\
+    3. elegir FIX mínimo;\n4. ejecutar si pertenece al runtime Grok Build o delegar\
+    \ al agente correcto;\n5. probar y registrar evidencia.\n\n# \U0001F4E6 ESTADO\
+    \ DE DESCARGA GROK BUILD\n**VERIFIED_CLOSED en la ejecución canónica reportada\
+    \ del motor.**\nEvidencia reportada:\n- source commit: `07e35a3dfeed2f200d319ef6c893b5ea286d9a51`\n\
+    - ZIP SHA-256: `0a30eb6bef2482a1a7fbaba883b61562bde7c37ecd22d143eaa9d0288178a014`\n\
+    - tree SHA-256: `e547e2b616102b5615d86fea7728d2726f16ebfe4889059c3b2a6590272c6ec2`\n\
+    - files: 4125\n- bytes: 77871279\n\n# \U0001F3A8 MARCADORES PARA EL DIRECTOR\n\
+    \U0001F7E5 BLOQUEO · \U0001F7E7 GAP · \U0001F7E8 VALIDACIÓN · \U0001F7E9 PASS\
+    \ · \U0001F7E6 INFO · \U0001F7EA DECISIÓN\n\n# \U0001F1E8\U0001F1F4 FORMATO OBLIGATORIO\
+    \ DE CADA RESPUESTA\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4E3 RESPUESTA AGENT 15 /\
+    \ GROK BUILD\n**\U0001F550 HORA COLOMBIA:** `2025-04-10 15:30 America/Bogota`\n\
+    \n**RESPUESTA:**\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n## ❓ PREGUNTA 1 DEL DIRECTOR\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\
+    \n### ❓ PREGUNTA 1\n¿Tienes completamente claro el objetivo y todos los nodos\
+    \ que debes coordinar?\n\n1. Dime si existe alguna duda o ambigüedad.\n2. Dame\
+    \ tu conclusión del objetivo final.\n3. Dime cuál es el mejor camino para terminarlo.\n\
+    4. Dime qué agentes pondrás en paralelo y cuáles tienen dependencias.\n5. Dime\
+    \ tu estimación para tener el resultado operativo, probado y funcionando.\n6.\
+    \ No declares 100% sin pruebas reales.\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n### \U0001F4E3\
+    \ RESPUESTA AGENT 15 — PREGUNTA 1\n**\U0001F550 HORA COLOMBIA:** `2025-04-10 15:30\
+    \ America/Bogota`\n\n**\U0001F7E9 PASS — Objetivo claro. Sin ambigüedades críticas.**\n\
+    \n**1. Dudas/ambigüedades:**\n- La ubicación exacta del runtime Grok Build compilado\
+    \ dentro del repositorio descargado no está especificada (path relativo). Se resolverá\
+    \ en la fase de PLAN explorando `xai-grok-shell` y `xai-grok-tools` dentro del\
+    \ tree.\n- El estado de los agentes 4,8,11,12,16,17,18,19 (activos/inactivos)\
+    \ es desconocido. Se verificará en el primer ciclo del watchdog.\n- Agent 14 es\
+    \ peer_orchestrator y no se debe tocar sin su liberación explícita — esto está\
+    \ claro.\n\n**2. Conclusión del objetivo final:**\nDesplegar el runtime real de\
+    \ Grok Build (Rust) como motor ejecutor del Agent 15, integrado con los 8 agentes\
+    \ del pool autorizado (Agents 4,8,11,12,16,17,18,19), operando bajo el contrato\
+    \ VERBATIM del Director, con watchdog interno cada 300s, reportando respuestas\
+    \ con hora Colombia y bloque JSON para Sol/ChatGPT. El resultado debe ser operativo,\
+    \ probado y funcionando en el entorno YAIWES.\n\n**3. Mejor camino (ruta recomendada):**\n\
+    ```\nFASE 1 — VERIFICACIÓN INICIAL (T-0 a T+1h)\n  a) READ README-DIRECTOR.md\
+    \ + DSL-DAG-DIRECTOR.yaml + WATCHDOG-5MIN.json ✓ (completado)\n  b) Verificar\
+    \ el tree descargado de Grok Build (SHA-256, files count, bytes)\n  c) Identificar\
+    \ binario compilado o ruta de compilación (cargo build)\n  d) Verificar estado\
+    \ heartbeat de Agents 4,8,11,12,16,17,18,19\n\nFASE 2 — CABLEADO DEL RUNTIME (T+1h\
+    \ a T+3h)\n  e) Compilar/ejecutar Grok Build runtime real desde el source verificado\n\
+    \  f) Conectar wrapper SmolAgents → Grok Build runtime (reemplazar stub)\n  g)\
+    \ Establecer primer heartbeat en README-DIRECTOR.md\n\nFASE 3 — ORQUESTACIÓN (T+3h\
+    \ a T+5h)\n  h) Asignar ownership de nodos a agentes del pool\n  i) Delegar tareas\
+    \ especializadas según DAG\n  j) Probar ciclo watchdog completo (READ→PLAN→EXEC→TEST→READ-BACK)\n\
+    \nFASE 4 — VALIDACIÓN (T+5h"
+  max_chars: 40000
+task: 'AGENTE ORQUESTADOR GROK BUILD: responde TÚ MISMO la última instrucción del
+  Director en README-DIRECTOR.md:
+
+
+  "analiza el proyecto del chat que está en ejecución en Github y huggueface y dime
+  qué falta para cerrar"
+
+
+  Reglas:
+
+  - analiza evidencia real disponible;
+
+  - separa CLOSED / RUNNING / BLOCKED / PENDING;
+
+  - indica exactamente qué falta para cerrar;
+
+  - indica GAP exacto y FIX mínimo;
+
+  - enumera pruebas/evidencia todavía necesarias;
+
+  - indica siguiente acción;
+
+  - si no tienes evidencia actual de Hugging Face, dilo como GAP y NO inventes estado;
+
+  - NO ejecutes componentes;
+
+  - NO lances Jobs;
+
+  - NO declares CHAT_100=PASS sin E2E real;
+
+  - responde con hora Colombia;
+
+  - la salida debe ser apta para añadirse verbatim al mismo README-DIRECTOR.md.
+
+
+  Formato:
+
+  ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+  # 📣 RESPUESTA AGENTE ORQUESTADOR GROK BUILD
+
+  **🕐 HORA COLOMBIA:** <YYYY-MM-DD HH:MM America/Bogota>
+
+  **CERRADO:** <...>
+
+  **EN EJECUCIÓN:** <...>
+
+  **BLOQUEADO:** <...>
+
+  **FALTA PARA CERRAR:** <...>
+
+  **GAP:** <...>
+
+  **FIX MÍNIMO:** <...>
+
+  **PRUEBAS/EVIDENCIA PENDIENTE:** <...>
+
+  **SIGUIENTE ACCIÓN:** <...>
+
+  ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+  '
+checks:
+- kind: contains
+  values:
+  - HORA COLOMBIA
+  - CERRADO
+  - EN EJECUCIÓN
+  - BLOQUEADO
+  - FALTA PARA CERRAR
+  - GAP
+  - FIX MÍNIMO
+  - PRUEBAS/EVIDENCIA PENDIENTE
+  - SIGUIENTE ACCIÓN
+- kind: no_secrets

@@ -1,0 +1,164 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+"""End-to-end sample that demonstrates how to configure an orchestrator
+that waits for an "approval" event before proceding to the next step. If
+the approval isn't received within a specified timeout, the order that is
+represented by the orchestration is automatically cancelled."""
+
+import os
+import threading
+import time
+from collections.abc import Generator
+from dataclasses import dataclass
+from datetime import timedelta
+from typing import Any
+
+from azure.identity import DefaultAzureCredential
+
+from durabletask import client, task, worker
+from durabletask.azuremanaged.client import DurableTaskSchedulerClient
+from durabletask.azuremanaged.worker import DurableTaskSchedulerWorker
+
+
+@dataclass
+class Order:
+    """Represents a purchase order"""
+    Cost: float
+    Product: str
+    Quantity: int
+
+    def __str__(self):
+        return f'{self.Product} ({self.Quantity})'
+
+
+@dataclass
+class Approval:
+    """Represents an approval decision raised as an external event."""
+    approver: str
+
+
+def send_approval_request(_: task.ActivityContext, order: Order) -> None:
+    """Activity function that sends an approval request to the manager"""
+    time.sleep(5)
+    print(f'*** Sending approval request for order: {order}')
+
+
+def place_order(_: task.ActivityContext, order: Order) -> None:
+    """Activity function that places an order"""
+    print(f'*** Placing order: {order}')
+
+
+def purchase_order_workflow(ctx: task.OrchestrationContext, order: Order) -> Generator[task.Task[Any], Any, str]:
+    """Orchestrator function that represents a purchase order workflow"""
+    # Orders under $1000 are auto-approved
+    if order.Cost < 1000:
+        return "Auto-approved"
+
+    # Orders of $1000 or more require manager approval
+    yield ctx.call_activity(send_approval_request, input=order)
+
+    # Approvals must be received within 24 hours or they will be cancelled.
+    # Passing ``data_type`` reconstructs the event payload as an ``Approval``.
+    approval_event = ctx.wait_for_external_event("approval_received", data_type=Approval)
+    timeout_event = ctx.create_timer(timedelta(hours=24))
+    pending: list[task.Task[Any]] = [approval_event, timeout_event]
+    winner = yield task.when_any(pending)
+    if winner == timeout_event:
+        return "Cancelled"
+
+    # The order was approved
+    yield ctx.call_activity(place_order, input=order)
+    approval_details = approval_event.get_result()
+    return f"Approved by '{approval_details.approver}'"
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Order purchasing workflow demo.")
+    parser.add_argument("--cost", type=int, default=2000, help="Cost of the order")
+    parser.add_argument("--approver", type=str, default="Me", help="Approver name")
+    parser.add_argument("--timeout", type=int, default=60, help="Timeout in seconds")
+    parser.add_argument("--local", action="store_true", help="Use local worker instead of DurableTaskScheduler")
+    args = parser.parse_args()
+
+    if args.local:
+        # Use local worker (original implementation)
+        with worker.TaskHubGrpcWorker() as w:
+            w.add_orchestrator(purchase_order_workflow)
+            w.add_activity(send_approval_request)
+            w.add_activity(place_order)
+            w.start()
+
+            with client.TaskHubGrpcClient() as c:
+
+                # Start a purchase order workflow using the user input
+                order = Order(args.cost, "MyProduct", 1)
+                instance_id = c.schedule_new_orchestration(purchase_order_workflow, input=order)
+
+                def prompt_for_approval():
+                    input("Press [ENTER] to approve the order...\n")
+                    approval_event = Approval(approver=args.approver)
+                    c.raise_orchestration_event(instance_id, "approval_received", data=approval_event)
+
+                # Prompt the user for approval on a background thread
+                threading.Thread(target=prompt_for_approval, daemon=True).start()
+
+                # Wait for the orchestration to complete
+                try:
+                    state = c.wait_for_orchestration_completion(instance_id, timeout=args.timeout + 2)
+                    if not state:
+                        print("Workflow not found!")  # not expected
+                    elif state.runtime_status == client.OrchestrationStatus.COMPLETED:
+                        print(f'Orchestration completed! Result: {state.serialized_output}')
+                    else:
+                        state.raise_if_failed()  # raises an exception
+                except TimeoutError:
+                    print("*** Orchestration timed out!")
+    else:
+        # Use DurableTaskScheduler
+        # Use environment variables if provided, otherwise use default emulator values
+        taskhub_name = os.getenv("TASKHUB", "default")
+        endpoint = os.getenv("ENDPOINT", "http://localhost:8080")
+
+        print(f"Using taskhub: {taskhub_name}")
+        print(f"Using endpoint: {endpoint}")
+
+        # Set credential to None for emulator, or DefaultAzureCredential for Azure
+        secure_channel = endpoint.startswith("https://")
+        credential = DefaultAzureCredential() if secure_channel else None
+        with DurableTaskSchedulerWorker(host_address=endpoint, secure_channel=secure_channel,
+                                        taskhub=taskhub_name, token_credential=credential) as w:
+            w.add_orchestrator(purchase_order_workflow)
+            w.add_activity(send_approval_request)
+            w.add_activity(place_order)
+            w.start()
+
+            # Construct the client and run the orchestrations
+            c = DurableTaskSchedulerClient(host_address=endpoint, secure_channel=secure_channel,
+                                           taskhub=taskhub_name, token_credential=credential)
+
+            # Start a purchase order workflow using the user input
+            order = Order(args.cost, "MyProduct", 1)
+            instance_id = c.schedule_new_orchestration(purchase_order_workflow, input=order)
+
+            def prompt_for_approval():
+                input("Press [ENTER] to approve the order...\n")
+                approval_event = Approval(approver=args.approver)
+                c.raise_orchestration_event(instance_id, "approval_received", data=approval_event)
+
+            # Prompt the user for approval on a background thread
+            threading.Thread(target=prompt_for_approval, daemon=True).start()
+
+            # Wait for the orchestration to complete
+            try:
+                state = c.wait_for_orchestration_completion(instance_id, timeout=args.timeout + 2)
+                if not state:
+                    print("Workflow not found!")  # not expected
+                elif state.runtime_status == client.OrchestrationStatus.COMPLETED:
+                    print(f'Orchestration completed! Result: {state.serialized_output}')
+                else:
+                    state.raise_if_failed()  # raises an exception
+            except TimeoutError:
+                print("*** Orchestration timed out!")

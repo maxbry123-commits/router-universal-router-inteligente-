@@ -1,0 +1,82 @@
+name: Unit tests
+
+on:
+  push:
+    branches:
+      - main
+      - "*-release"
+  pull_request:
+    branches:
+      - main
+      - "*-release"
+  workflow_dispatch:
+
+env:
+  TRANSFORMERS_IS_CI: 1
+  HF_HUB_DISABLE_PROGRESS_BARS: 1  # The Transformers v5 weight loading progress bars heavily expand the logs
+  HF_TOKEN: ${{ secrets.HF_TOKEN }}  # Read token to avoid rate limits / gated-repo failures when downloading from the Hub
+
+jobs:
+  test_sampling:
+    name: Run unit tests
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        os: [ubuntu-latest, windows-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Remove unnecessary files
+        run: |
+          df -h /
+          # Remove software and language runtimes we're not using
+          sudo rm -rf \
+            "$AGENT_TOOLSDIRECTORY" \
+            /opt/google/chrome \
+            /opt/microsoft/msedge \
+            /opt/microsoft/powershell \
+            /opt/pipx \
+            /usr/lib/mono \
+            /usr/local/julia* \
+            /usr/local/lib/android \
+            /usr/local/lib/node_modules \
+            /usr/local/share/chromium \
+            /usr/local/share/powershell \
+            /usr/share/dotnet \
+            /usr/share/swift
+          df -h /
+        if: runner.os == 'Linux'
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Setup Python environment
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d  # v10.0.1
+
+      # kenlm doesn't compile on Python 3.13, and pyctcdecode pins numpy<2.0.0
+      # which conflicts with the rest of the stack. transformers[audio] also pulls
+      # librosa, which needs numba, which needs llvmlite. On Python 3.13 uv backtracks
+      # to the old numba 0.53.1, whose pinned llvmlite==0.36.0 only supports Python
+      # <3.10 and fails to build. Exclude all of them on Python 3.13.
+      - name: Create excludes file for packages without Python 3.13 support
+        shell: bash
+        run: |
+          if [ "${{ matrix.python-version }}" = "3.13" ]; then
+            echo -e "kenlm\npyctcdecode\nlibrosa\nnumba\nllvmlite" > excludes.txt
+          else
+            touch excludes.txt
+          fi
+      - name: Install dependencies
+        run: uv pip install '.[train]' --group test --excludes excludes.txt --system
+
+      - name: Install model2vec
+        run: uv pip install model2vec --system
+
+      - name: Run unit tests
+        run: |
+          python -m pytest --durations 20 -sv tests/

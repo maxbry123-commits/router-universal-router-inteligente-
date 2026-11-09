@@ -1,0 +1,35 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-6-hf-nodes",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T14:57:35Z",
+ "group": "hf-nodes",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "hf",
+ "model": "deepseek-ai/DeepSeek-V4-Flash",
+ "via": "route",
+ "attempts": 1,
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "ea438103815cd4ee16b5a43d0b005cc3c8ff9c67a19d555cef731e8b0e61ac39",
+   "chars": 1361
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "hf_nodes.py",
+   "sha256": "a2c7530eab48537ed4f248216e43b2a88b1b2fd90820e009e82646123c82cb4e"
+  }
+ ],
+ "route_trace": [
+  "hf/MiniMaxAI/MiniMax-M3:PROVIDER_ERROR:TimeoutError:request failed"
+ ]
+}

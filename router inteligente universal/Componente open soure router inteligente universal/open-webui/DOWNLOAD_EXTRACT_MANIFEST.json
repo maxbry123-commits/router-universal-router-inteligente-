@@ -1,0 +1,38 @@
+{
+  "bundle_bytes": 15882421,
+  "bundle_sha256": "f7a2fc250b400f305f245913df41856521f6e973c8c6e3c438f3a5e4e955f07f",
+  "extracted_tree": {
+    "bytes": 43625476,
+    "files": 5065,
+    "sha256": "dd391139939bf7771ca531c2fcc076f084a634a5f0ca65e092767a6c5162c5fe"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "open-webui.bundle.zip.part-0001",
+      "sha256": "16163f885f2fb445e2f1fede84341677fff9cd62f6c8cb5fbfbcc53e86806aea"
+    },
+    {
+      "bytes": 3299509,
+      "name": "open-webui.bundle.zip.part-0002",
+      "sha256": "d67480ec7e466b1036a21c01d64e5ec65d792c2fb83eeef642a74e183de2e724"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "open-webui",
+  "source_bytes": 43625476,
+  "source_commit": "8bd8b4fac5e059578ac0c74b3c18d11139f88b7d",
+  "source_files": 5065,
+  "source_ref": "main",
+  "source_repo": "open-webui/open-webui",
+  "source_tree": {
+    "bytes": 43625476,
+    "files": 5065,
+    "sha256": "dd391139939bf7771ca531c2fcc076f084a634a5f0ca65e092767a6c5162c5fe"
+  }
+}

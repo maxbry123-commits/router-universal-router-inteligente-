@@ -1,0 +1,9 @@
+[flake8]
+ignore = E501,C901,W503
+exclude = 
+    .git
+    *_pb2*
+    __pycache__
+    .venv
+    .nox
+    .python_packages

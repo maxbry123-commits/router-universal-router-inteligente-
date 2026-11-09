@@ -1,0 +1,42 @@
+{
+  "schema": "riu.hf-skills/v1",
+  "owner": "integration/huggingface",
+  "routing_owner": false,
+  "upstream": {
+    "repository": "https://github.com/huggingface/skills",
+    "commit": "abc20ae526d8b4c0e4dff89f904adce28a4a0eb6",
+    "verified_commit_signature": true,
+    "observed_version": "1.0.29"
+  },
+  "bootstrap": {
+    "recommended_skill": "hf-cli",
+    "mode": "REFERENCE_PINNED_UPSTREAM",
+    "runtime_install_verified": false
+  },
+  "skills": [
+    "hf-cli",
+    "huggingface-datasets",
+    "huggingface-llm-trainer",
+    "huggingface-vision-trainer",
+    "huggingface-community-evals",
+    "huggingface-trackio",
+    "huggingface-papers",
+    "huggingface-paper-publisher",
+    "huggingface-tool-builder",
+    "gradio",
+    "transformers-js"
+  ],
+  "boundaries": {
+    "skills": "static task guidance and support resources",
+    "mcp": "live Hub/tools access; separate auth/runtime boundary",
+    "router": "RedUniversal remains routing owner",
+    "secrets": "SECRET_REF_ONLY"
+  },
+  "gates": {
+    "official_source_pinned": true,
+    "registry_materialized": true,
+    "runtime_install_verified": false,
+    "agent_discovery_verified": false,
+    "mcp_remote_oauth_e2e_verified": false
+  }
+}

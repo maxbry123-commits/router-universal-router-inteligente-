@@ -1,0 +1,33 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-7-llama-hf",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T14:55:53Z",
+ "group": "hf-llama",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "6781aa5f17bb7d3c8991488617d6ec7be33b2d9921fc161830d561c8a01f628f",
+   "chars": 1312
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "llama_cmd.py",
+   "sha256": "17c8c245cfb2bf9832a6301cbc0465931be1e051c6636bc41a659f1a639009e4"
+  }
+ ],
+ "model": "hf/deepseek-ai/DeepSeek-V4-Flash",
+ "attempts": 2,
+ "route_trace": [
+  "hf/MiniMaxAI/MiniMax-M3:AgentGenerationError:Error while generating output:\nRequest timed out."
+ ]
+}

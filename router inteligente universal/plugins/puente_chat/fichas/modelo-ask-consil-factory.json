@@ -1,0 +1,13 @@
+{
+  "id": "ask-consil-factory",
+  "nombre": "\ud83e\udde0 ask consil factory",
+  "proveedor": "pipeline",
+  "modelo": "pipeline",
+  "timeout_s": 420,
+  "tipo": "consil",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true,
+  "pasos": ["investiga", "ultra-550b goals", "consil groq-muse-kimi x12", "nemotron-super ejecuta", "kimi refactoriza"]
+}

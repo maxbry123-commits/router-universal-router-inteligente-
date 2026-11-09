@@ -1,0 +1,31 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-4-router-smol",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T14:24:04Z",
+ "group": "hf-models",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "be39247ce66e9d0fa658cf0c8870cc5e2458f2faab36bbac4133d629d666ce20",
+   "chars": 1091
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "node_monitor.py",
+   "sha256": "9aab8cc99c752380e91b44803fab241ba502efc9db3346a76994f3c2c254076e"
+  }
+ ],
+ "model": "hf/deepseek-ai/DeepSeek-V4-Flash",
+ "attempts": 1,
+ "route_trace": []
+}

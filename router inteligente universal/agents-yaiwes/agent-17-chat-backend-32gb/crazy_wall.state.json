@@ -1,0 +1,25 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-17-chat-backend-32gb",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T08:18:43Z",
+ "group": "chat",
+ "chain": [
+  "modelos_modos",
+  "memoria_persistente",
+  "config_openwebui"
+ ],
+ "completed": [
+  "modelos_modos",
+  "memoria_persistente",
+  "config_openwebui"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ],
+ "router_connected": false
+}

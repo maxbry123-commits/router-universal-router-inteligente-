@@ -1,0 +1,14 @@
+{
+  "id": "motor-xray",
+  "nombre": "\ud83d\udd2c MOTOR X-RAY auditoria forense archivos",
+  "proveedor": "pipeline",
+  "modelo": "pipeline",
+  "timeout_s": 200,
+  "tipo": "xray",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true,
+  "enlazados": ["nvidia/nemotron-3-super-120b-a12b"],
+  "salidas": ["resumen compacto", "urls visibles", "estructura raiz", "mapa mental", "microflujo horizontal", "goals G1..G12"]
+}

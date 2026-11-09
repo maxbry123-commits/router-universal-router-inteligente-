@@ -1,0 +1,102 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-17-chat-backend-32gb
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Open WebUI en: router inteligente universal/Componente open soure router\
+    \ inteligente universal/open-webui/\nRouter (FastAPI): router inteligente universal/integration/chat_mvp/\
+    \ (app.py, router.py, route_api.py, store.py, providers.py)\nRutas existentes:\
+    \ /chat/send, /chat/agents, /chat/documents, /chat/github/*, /chat/storage, /v1/chat/completions,\
+    \ /v1/models\nLIVE_URL: leer ROUTER_JOB_PAUSE.flag. Headers: Authorization Bearer\
+    \ HF_TOKEN + X-API-Key (secreto RIU_ROUTER_API_KEY). Nunca valores en archivos.\n\
+    Memoria: PostgreSQL + Redis (como servicio) + Graphiti + FalkorDB + HF Storage\
+    \ Bucket; hoy store.py. Solo deepseek_flash. CPU.\n\n\nSALIDA VERIFICADA DEL PASO\
+    \ ANTERIOR (memoria_persistente):\n```python\nimport os\nimport json\nimport sqlite3\n\
+    import psycopg2\nimport psycopg2.extras\nfrom typing import Optional, List, Dict,\
+    \ Any\nimport aiohttp\nimport asyncio\n\nclass MemoryAdapter:\n    def __init__(self):\n\
+    \        self.hf_token = os.environ.get(\"HF_TOKEN\", \"\")\n        self.hf_bucket\
+    \ = os.environ.get(\"HF_BUCKET\", \"\")\n        self.database_url = os.environ.get(\"\
+    DATABASE_URL\", \"\")\n        self._pg_conn = None\n        self._sqlite_conn\
+    \ = None\n        \n    def _get_pg_connection(self):\n        if self._pg_conn\
+    \ is None and self.database_url:\n            self._pg_conn = psycopg2.connect(self.database_url)\n\
+    \            self._pg_conn.autocommit = True\n        return self._pg_conn\n \
+    \   \n    def _get_sqlite_connection(self):\n        if self._sqlite_conn is None:\n\
+    \            self._sqlite_conn = sqlite3.connect(\"memory.db\")\n            self._sqlite_conn.row_factory\
+    \ = sqlite3.Row\n            self._init_sqlite()\n        return self._sqlite_conn\n\
+    \    \n    def _init_sqlite(self):\n        conn = self._get_sqlite_connection()\n\
+    \        conn.execute(\"\"\"\n            CREATE TABLE IF NOT EXISTS memory (\n\
+    \                scope TEXT NOT NULL,\n                key TEXT NOT NULL,\n  \
+    \              text TEXT NOT NULL,\n                created_at TIMESTAMP DEFAULT\
+    \ CURRENT_TIMESTAMP,\n                PRIMARY KEY (scope, key)\n            )\n\
+    \        \"\"\")\n        conn.execute(\"\"\"\n            CREATE INDEX IF NOT\
+    \ EXISTS idx_memory_scope_key ON memory(scope, key)\n        \"\"\")\n    \n \
+    \   def _init_pg(self):\n        conn = self._get_pg_connection()\n        if\
+    \ conn:\n            with conn.cursor() as cur:\n                cur.execute(\"\
+    \"\"\n                    CREATE TABLE IF NOT EXISTS memory (\n              \
+    \          scope TEXT NOT NULL,\n                        key TEXT NOT NULL,\n\
+    \                        text TEXT NOT NULL,\n                        created_at\
+    \ TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n                        PRIMARY KEY (scope,\
+    \ key)\n                    )\n                \"\"\")\n                cur.execute(\"\
+    \"\"\n                    CREATE INDEX IF NOT EXISTS idx_memory_scope_key ON memory(scope,\
+    \ key)\n                \"\"\")\n    \n    def save(self, scope: str, key: str,\
+    \ text: str):\n        \"\"\"Save memory to database and HF mirror\"\"\"\n   \
+    \     self._save_local(scope, key, text)\n        if self.hf_bucket:\n       \
+    \     asyncio.create_task(self._save_hf_mirror(scope, key, text))\n    \n    def\
+    \ load(self, scope: str, key: str) -> Optional[str]:\n        \"\"\"Load memory\
+    \ from database\"\"\"\n        return self._load_local(scope, key)\n    \n   \
+    \ def search(self, scope: str, query: str) -> List[Dict[str, Any]]:\n        \"\
+    \"\"Search memory by scope and query text\"\"\"\n        results = self._search_local(scope,\
+    \ query)\n        return results\n    \n    def _save_local(self, scope: str,\
+    \ key: str, text: str):\n        pg_conn = self._get_pg_connection()\n       \
+    \ if pg_conn:\n            with pg_conn.cursor() as cur:\n                cur.execute(\n\
+    \                    \"INSERT INTO memory (scope, key, text) VALUES (%s, %s, %s)\
+    \ \"\n                    \"ON CONFLICT (scope, key) DO UPDATE SET text = EXCLUDED.text\"\
+    ,\n                    (scope, key, text)\n                )\n        else:\n\
+    \            conn = self._get_sqlite_connection()\n            conn.execute(\n\
+    \                \"INSERT OR REPLACE INTO memory (scope, key, text) VALUES (?,\
+    \ ?, ?)\",\n                (scope, key, text)\n            )\n            conn.commit()\n\
+    \    \n    def _load_local(self, scope: str, key: str) -> Optional[str]:\n   \
+    \     pg_conn = self._get_pg_connection()\n        if pg_conn:\n            with\
+    \ pg_conn.cursor() as cur:\n                cur.execute(\n                   \
+    \ \"SELECT text FROM memory WHERE scope = %s AND key = %s\",\n               \
+    \     (scope, key)\n                )\n                row = cur.fetchone()\n\
+    \                return row[0] if row else None\n        else:\n            conn\
+    \ = self._get_sqlite_connection()\n            cursor = conn.execute(\n      \
+    \          \"SELECT text FROM memory WHERE scope = ? AND key = ?\",\n        \
+    \        (scope, key)\n            )\n            row = cursor.fetchone()\n  \
+    \          return row[0] if row else None\n    \n    def _search_local(self, scope:\
+    \ str, query: str) -> List[Dict[str, Any]]:\n        pg_conn = self._get_pg_connection()\n\
+    \        search_pattern = f\"%{query}%\"\n        if pg_conn:\n            with\
+    \ pg_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:\n    \
+    \            cur.execute(\n                    \"SELECT key, text FROM memory\
+    \ WHERE scope = %s AND text ILIKE %s LIMIT 50\",\n                    (scope,\
+    \ search_pattern)\n                )\n                return [dict(row) for row\
+    \ in cur.fetchall()]\n        else:\n            conn = self._get_sqlite_connection()\n\
+    \            cursor = conn.execute(\n                \"SELECT key, text FROM memory\
+    \ WHERE scope = ? AND text LIKE ? LIMIT 50\",\n                (scope, search_pattern)\n\
+    \            )\n            return [{\"key\": row[0], \"text\": row[1]} for row\
+    \ in cursor.fetchall()]\n    \n    async def _save_hf_mirror(self, scope: str,\
+    \ key: str, text: st"
+  max_chars: 40000
+task: 'Entrega la lista de variables de entorno para Open WebUI apuntando al Router
+
+  (OPENAI_API_BASE_URL=<LIVE_URL>/v1, nombres de secretos, sin valores) y los pasos
+  para arrancarlo en CPU en el Router.
+
+  Termina con la prueba de éxito y los GAPs.
+
+  '
+checks:
+- kind: min_chars
+  value: 300
+- kind: no_secrets

@@ -1,0 +1,36 @@
+{
+  "plugin_host": {
+    "schema": "plugin_host/v1",
+    "id": "ssh_bridge",
+    "enabled_default": false,
+    "health_action": "status",
+    "nota_roja": "Transporte SSH del Router: run/put/get contra hosts en lista blanca (config.json). Credenciales solo por env. paramiko perezoso: si falta, degraded."
+  },
+  "artifact_id": "riu.plugins.ssh_bridge",
+  "version": "0.1.0",
+  "estado": "testing",
+  "categoria": "pipeline",
+  "etapa": "P",
+  "contrato": {
+    "rol": "service"
+  },
+  "ejecucion": {
+    "kind": "api",
+    "transport": "ssh",
+    "runtime_type": "compute",
+    "entry_point": "plugins.ssh_bridge.plugin:handle",
+    "idempotente": false,
+    "allowed_actions": ["status", "run", "put", "get"]
+  },
+  "seguridad": {
+    "sandbox": "egress-allowlist",
+    "permisos": ["network:ssh"],
+    "limites": {
+      "timeout_ms": 20000
+    }
+  },
+  "firma": {
+    "gpg_key_id": "PENDIENTE",
+    "revocation_ref": "contracts/revocation_list.json"
+  }
+}

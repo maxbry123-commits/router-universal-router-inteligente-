@@ -1,0 +1,43 @@
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+
+# Test databases
+*.db
+*.db-*
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*~
+
+# npm pack output
+*.tgz
+
+# build / validation artefacts
+docker-report.txt
+validation-results.txt
+
+# Benchmark / runtime data caches (regenerated)
+bench-data/*
+!bench-data/.gitkeep
+data/*
+!data/.gitkeep

@@ -1,0 +1,85 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-17-chat-backend-32gb
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Open WebUI en: router inteligente universal/Componente open soure router\
+    \ inteligente universal/open-webui/\nRouter (FastAPI): router inteligente universal/integration/chat_mvp/\
+    \ (app.py, router.py, route_api.py, store.py, providers.py)\nRutas existentes:\
+    \ /chat/send, /chat/agents, /chat/documents, /chat/github/*, /chat/storage, /v1/chat/completions,\
+    \ /v1/models\nLIVE_URL: leer ROUTER_JOB_PAUSE.flag. Headers: Authorization Bearer\
+    \ HF_TOKEN + X-API-Key (secreto RIU_ROUTER_API_KEY). Nunca valores en archivos.\n\
+    Memoria: PostgreSQL + Redis (como servicio) + Graphiti + FalkorDB + HF Storage\
+    \ Bucket; hoy store.py. Solo deepseek_flash. CPU.\n\n\nSALIDA VERIFICADA DEL PASO\
+    \ ANTERIOR (modelos_modos):\n```python\nimport os\nimport asyncio\nimport aiohttp\n\
+    import json\nfrom typing import Optional, Dict, List, Any\nfrom fastapi import\
+    \ FastAPI, HTTPException, Request\nfrom pydantic import BaseModel\nimport store\n\
+    \napp = FastAPI()\n\nHF_TOKEN = os.environ.get(\"HF_TOKEN\", \"\")\nRIU_ROUTER_API_KEY\
+    \ = os.environ.get(\"RIU_ROUTER_API_KEY\", \"\")\nROUTER_BASE_URL = os.environ.get(\"\
+    ROUTER_BASE_URL\", \"http://localhost:8000\")\n\nclass ChatRequest(BaseModel):\n\
+    \    model: str\n    messages: List[Dict[str, str]]\n    stream: Optional[bool]\
+    \ = False\n\n@app.get(\"/v1/models\")\nasync def get_models():\n    return {\n\
+    \        \"object\": \"list\",\n        \"data\": [\n            {\n         \
+    \       \"id\": \"deepseek-flash\",\n                \"object\": \"model\",\n\
+    \                \"created\": 1234567890,\n                \"owned_by\": \"ria\"\
+    ,\n                \"permission\": []\n            },\n            {\n       \
+    \         \"id\": \"deepseek-flash+agentes\",\n                \"object\": \"\
+    model\",\n                \"created\": 1234567890,\n                \"owned_by\"\
+    : \"ria\",\n                \"permission\": []\n            }\n        ]\n   \
+    \ }\n\n@app.post(\"/v1/chat/completions\")\nasync def chat_completion(request:\
+    \ ChatRequest, fastapi_request: Request):\n    auth_header = fastapi_request.headers.get(\"\
+    Authorization\", \"\")\n    api_key = fastapi_request.headers.get(\"X-API-Key\"\
+    , \"\")\n    \n    if not auth_header.startswith(\"Bearer \") or not api_key:\n\
+    \        raise HTTPException(status_code=401, detail=\"Invalid authentication\"\
+    )\n    \n    token = auth_header.replace(\"Bearer \", \"\")\n    if token != HF_TOKEN\
+    \ or api_key != RIU_ROUTER_API_KEY:\n        raise HTTPException(status_code=401,\
+    \ detail=\"Invalid credentials\")\n    \n    model = request.model\n    messages\
+    \ = request.messages\n    last_message = messages[-1][\"content\"] if messages\
+    \ else \"\"\n    \n    # Save user message\n    store.save_message(\"user\", \"\
+    user\", last_message)\n    \n    if model.endswith(\"+agentes\"):\n        router_endpoint\
+    \ = \"/chat/agents\"\n    else:\n        router_endpoint = \"/chat/send\"\n  \
+    \  \n    headers = {\n        \"Authorization\": f\"Bearer {HF_TOKEN}\",\n   \
+    \     \"X-API-Key\": RIU_ROUTER_API_KEY,\n        \"Content-Type\": \"application/json\"\
+    \n    }\n    \n    async with aiohttp.ClientSession() as session:\n        async\
+    \ with session.post(\n            f\"{ROUTER_BASE_URL}{router_endpoint}\",\n \
+    \           json={\"messages\": messages},\n            headers=headers\n    \
+    \    ) as resp:\n            if resp.status != 200:\n                error_text\
+    \ = await resp.text()\n                raise HTTPException(status_code=resp.status,\
+    \ detail=error_text)\n            \n            response_data = await resp.json()\n\
+    \    \n    # Save assistant message\n    assistant_text = response_data.get(\"\
+    response\", response_data.get(\"text\", \"\"))\n    store.save_message(\"assistant\"\
+    , model, assistant_text)\n    \n    return {\n        \"id\": \"chatcmpl-\" +\
+    \ os.urandom(12).hex(),\n        \"object\": \"chat.completion\",\n        \"\
+    created\": int(asyncio.get_event_loop().time()),\n        \"model\": model,\n\
+    \        \"choices\": [\n            {\n                \"index\": 0,\n      \
+    \          \"message\": {\n                    \"role\": \"assistant\",\n    \
+    \                \"content\": assistant_text\n                },\n           \
+    \     \"finish_reason\": \"stop\"\n            }\n        ],\n        \"usage\"\
+    : {\n            \"prompt_tokens\": 0,\n            \"completion_tokens\": 0,\n\
+    \            \"total_tokens\": 0\n        }\n    }\n```"
+  max_chars: 40000
+task: 'Entrega el código Python completo de memory_adapter.py que guarda y lee memoria
+  en 3 niveles (chat, proyecto, global)
+
+  usando PostgreSQL si hay variable DATABASE_URL, si no SQLite local, y un espejo
+  en HF Storage Bucket (variable HF_BUCKET).
+
+  Funciones: save(scope, key, text), load(scope, key), search(scope, query). Sin claves
+  en el código. Solo el código.
+
+  '
+checks:
+- kind: python_ast
+- kind: min_chars
+  value: 600
+- kind: no_secrets

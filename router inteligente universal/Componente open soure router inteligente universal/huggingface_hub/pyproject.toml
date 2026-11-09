@@ -1,0 +1,97 @@
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.ty]
+[tool.ty.terminal]
+# Do not fail CI on warnings; keep output readable
+error-on-warning = false
+output-format = "concise"
+
+[tool.ty.rules]
+# Minimize noise from optional/extra dependencies not installed in CI or local
+unresolved-import = "ignore"
+unresolved-attribute = "ignore"
+
+# Keep type: ignore comments for mypy compatibility
+unused-ignore-comment = "ignore"
+unused-type-ignore-comment = "ignore"
+
+# Be tolerant with framework/typing edge-cases and runtime-validated code paths
+unsupported-base = "ignore"
+unsupported-operator = "ignore"
+possibly-missing-attribute = "ignore"
+possibly-missing-implicit-call = "ignore"
+not-subscriptable = "ignore"
+call-non-callable = "ignore"
+
+# Loosen strictness a bit on type matching
+missing-argument = "ignore"
+deprecated = "ignore"
+
+[tool.ty.src]
+exclude = ["src/huggingface_hub/cli/spaces.py"] # TypedDict not yet fully supported by ty
+
+[tool.pytest.ini_options]
+# Add the specified `OPTS` to the set of command line arguments as if they had
+# been specified by the user.
+addopts = "-Werror::FutureWarning --log-cli-level=INFO -sv --durations=0 --strict-markers"
+# Custom markers. Xet policy (enforced by the `xet_mode` fixture in tests/conftest.py):
+# tests marked `xet` require `hf_xet` (skipped if not installed, Xet force-enabled);
+# tests marked `no_xet` must run without `hf_xet` (skipped if installed);
+# unmarked tests must work regardless of Xet and run in both CI jobs (with and
+# without `hf_xet` installed).
+markers = [
+    "xet: test requires the `hf_xet` package; Xet is force-enabled (skipped if `hf_xet` is not installed)",
+    "no_xet: test must run without `hf_xet`; skipped if `hf_xet` is installed",
+    "inference: inference test (client, providers, types); runs in the dedicated 'Inference only' CI job",
+    "production: test runs against the production Hub endpoint (patches `ENDPOINT` and the download URL template, like the former `with_production_testing` decorator)",
+    "deprecated: test is expected to emit a `FutureWarning` mentioning the given function name(s), e.g. `@pytest.mark.deprecated('duplicate_space')`",
+    "git_lfs: test requires git-lfs; skipped unless the `RUN_GIT_LFS_TESTS` environment variable is truthy",
+]
+# The defined variables will be added to the environment before any tests are
+# run, part of pytest-env plugin
+env = [
+    "DISABLE_SYMLINKS_IN_WINDOWS_TESTS=1",
+    "HF_TOKEN=",
+    "HUGGINGFACE_CO_STAGING=1",
+    "HUGGING_FACE_HUB_TOKEN=",
+]
+
+[tool.ruff]
+exclude = [
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".venv*",
+    "__pypackages__",
+    "_build",
+    "build",
+    "dist",
+    "venv",
+    "src/huggingface_hub/_hot_reload/sse_client.py", # Vendored
+]
+line-length = 119
+# Ignored rules:
+# "E501" -> line length violation
+lint.ignore = ["E501"]
+lint.select = ["E", "F", "I", "W"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["huggingface_hub"]
+lines-after-imports = 2
+
+[tool.tomlsort]
+all = true
+in_place = true
+spaces_before_inline_comment = 2  # Match Python PEP 8
+spaces_indent_inline_array = 4  # Match Python PEP 8
+trailing_comma_inline_array = true

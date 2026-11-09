@@ -1,0 +1,25 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-17-chat-backend-32gb",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-23T01:45:13Z",
+ "group": "chat",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "hf",
+ "model": "deepseek-ai/DeepSeek-V4-Flash",
+ "via": "route",
+ "attempts": 3,
+ "gaps": [
+  "falta 'Volume'",
+  "la prueba falló (exit=1): ImportError: cannot import name 'run' from 'chat_backend_32gb' (/home/runner/work/router-universal-router-inteligente-/router-universal-router-inteligente-/router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/steps/backend_live/results/chat_backend_32gb.py)"
+ ],
+ "failed": [
+  "execute"
+ ]
+}

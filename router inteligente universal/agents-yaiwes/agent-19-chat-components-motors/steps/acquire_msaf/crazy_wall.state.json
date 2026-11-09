@@ -1,0 +1,34 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-19-chat-components-motors",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T02:20:55Z",
+ "router_connected": true,
+ "group": "chat",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "hf",
+ "model": "deepseek-ai/DeepSeek-V4-Flash",
+ "via": "route",
+ "attempts": 1,
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "f8373c7e51109dde73e6f5a7d98ecfba36838bed2f6b56e05237e99bc3c57bc8",
+   "chars": 23
+  },
+  {
+   "kind": "motor_exec",
+   "exit": 0,
+   "path": "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py",
+   "verdict": "VERIFIED_CLOSED"
+  }
+ ],
+ "route_trace": []
+}

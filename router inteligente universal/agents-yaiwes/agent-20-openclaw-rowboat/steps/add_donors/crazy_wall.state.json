@@ -1,0 +1,32 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-20-openclaw-rowboat",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T12:08:51Z",
+ "router_connected": false,
+ "group": "downloads",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "584da5c9790fea39defbda71cc51abe015ad611f8b22a5604eda76a2a49eccd6",
+   "chars": 198
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "openclaw_rowboat_donors.py",
+   "sha256": "9f6797aa34e04fcc4fcea8264c973cbbb5f3d98ca9d2e44725f2c87f7b366f6b"
+  }
+ ],
+ "model": "hf/deepseek-ai/DeepSeek-V4-Flash",
+ "attempts": 1,
+ "route_trace": []
+}

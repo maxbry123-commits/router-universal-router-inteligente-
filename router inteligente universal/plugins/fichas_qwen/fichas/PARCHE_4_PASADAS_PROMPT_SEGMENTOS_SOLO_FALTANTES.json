@@ -1,0 +1,542 @@
+[
+  {
+    "op": "add",
+    "path": "/additional_director_literals_available/-",
+    "value": "No toques Github"
+  },
+  {
+    "op": "add",
+    "path": "/additional_director_literals_available/-",
+    "value": "Archivos Jason  para adaptar el todo el promt que te di y los segmentos en la fichas solo haces el Jason con el code sin instrucciones"
+  },
+  {
+    "op": "add",
+    "path": "/additional_director_literals_available/-",
+    "value": "lista de de gaps de las fichas instrucciones+ code que se va cambiar como lo va a resolver"
+  },
+  {
+    "op": "add",
+    "path": "/additional_director_literals_available/-",
+    "value": "Ficha de la 1 a la 5 de edita conservando lo que no es Gaps y incorporar lo que falte de los archivos Jason que yo le de"
+  },
+  {
+    "op": "add",
+    "path": "/additional_director_literals_available/-",
+    "value": "Ficha 2 y 3 de mantenee la arquitectura solo eliminar lo que es Gaps y incorporar lo que falte de los archivos Jason"
+  },
+  {
+    "op": "add",
+    "path": "/additional_director_literals_available/-",
+    "value": "Fase de backend y frontend Gaps"
+  },
+  {
+    "op": "add",
+    "path": "/additional_director_literals_available/-",
+    "value": "conector selector de cierre de tool agente y de botón thinking y de los demás Gaps"
+  },
+  {
+    "op": "add",
+    "path": "/additional_director_literals_available/-",
+    "value": "Gaps encontrados"
+  },
+  {
+    "op": "add",
+    "path": "/additional_director_literals_available/-",
+    "value": "Tiempo agotado"
+  },
+  {
+    "op": "add",
+    "path": "/additional_director_literals_available/-",
+    "value": "Resuelve el Gaps de mínimo de token sin límites en ficha 1 2 y 3 y 4 y 5 primero"
+  },
+  {
+    "op": "add",
+    "path": "/claude_json_adaptation/reference_only/language",
+    "value": "es"
+  },
+  {
+    "op": "add",
+    "path": "/claude_json_adaptation/reference_only/gate",
+    "value": {
+      "required": true,
+      "trigger_words": [
+        "INICIA",
+        "RUN",
+        "IMPUTA"
+      ],
+      "on_missing": "REJECT"
+    }
+  },
+  {
+    "op": "add",
+    "path": "/claude_json_adaptation/reference_only/input",
+    "value": {
+      "goal": "Implementar el modulo X con pruebas y dejar el repo en verde",
+      "workspace": {
+        "repo": "maxbry123-commits/agentes",
+        "branch": "feat/loop-nostop",
+        "worktree_isolation": true
+      },
+      "task_source": {
+        "kind": "inline_dag"
+      },
+      "constraints": [
+        "Solo cambios aditivos",
+        "Sin secretos en texto plano",
+        "Un modulo, una autoridad"
+      ],
+      "forbidden_paths": [
+        ".env",
+        "secrets/",
+        ".git/"
+      ]
+    }
+  },
+  {
+    "op": "add",
+    "path": "/claude_json_adaptation/reference_only/dag",
+    "value": {
+      "max_parallel": 4,
+      "nodes": [
+        {
+          "id": "n01_init",
+          "type": "init",
+          "title": "Inicializar estado y lista de features",
+          "depends_on": [],
+          "executor": {
+            "kind": "self",
+            "target": "initializer"
+          },
+          "instruction": "Crear progress.json y features.json con todas las tareas en estado pending; crear checkpoint git inicial.",
+          "outputs": [
+            "state/progress.json",
+            "state/features.json"
+          ],
+          "acceptance": [
+            {
+              "id": "a01_files",
+              "kind": "file_exists",
+              "spec": {
+                "paths": [
+                  "state/progress.json",
+                  "state/features.json"
+                ]
+              },
+              "required": true
+            },
+            {
+              "id": "a01_schema",
+              "kind": "json_schema",
+              "spec": {
+                "file": "state/features.json",
+                "schema": "schemas/features.schema.json"
+              },
+              "required": true
+            }
+          ],
+          "retry": {
+            "max_attempts": 3,
+            "on_exhausted": "run_stuck_ladder"
+          }
+        },
+        {
+          "id": "n02_analisis",
+          "type": "task",
+          "task_type": "plan",
+          "title": "Analizar codigo existente y fijar plan",
+          "depends_on": [
+            "n01_init"
+          ],
+          "executor": {
+            "kind": "subagent",
+            "target": "architect"
+          },
+          "acceptance": [
+            {
+              "id": "a02_plan",
+              "kind": "file_exists",
+              "spec": {
+                "paths": [
+                  "state/plan.md"
+                ]
+              },
+              "required": true
+            },
+            {
+              "id": "a02_scope",
+              "kind": "diff_scope",
+              "spec": {
+                "allowed_globs": [
+                  "state/**"
+                ]
+              },
+              "required": true
+            }
+          ],
+          "retry": {
+            "max_attempts": 3,
+            "on_exhausted": "run_stuck_ladder"
+          }
+        },
+        {
+          "id": "n03_impl_a",
+          "type": "task",
+          "task_type": "implement_feature",
+          "title": "Implementar parte A",
+          "depends_on": [
+            "n02_analisis"
+          ],
+          "executor": {
+            "kind": "subagent",
+            "target": "coder_main"
+          },
+          "acceptance": [
+            {
+              "id": "a03_tests",
+              "kind": "test_suite",
+              "spec": {
+                "command": "npm test -- --testPathPattern=a"
+              },
+              "expect": {
+                "exit_code": 0
+              },
+              "required": true,
+              "timeout_s": 600
+            },
+            {
+              "id": "a03_lint",
+              "kind": "command",
+              "spec": {
+                "command": "npm run lint"
+              },
+              "expect": {
+                "exit_code": 0
+              },
+              "required": true
+            }
+          ],
+          "retry": {
+            "max_attempts": 6,
+            "on_exhausted": "run_stuck_ladder"
+          },
+          "timeout_s": 1800
+        },
+        {
+          "id": "n04_impl_b",
+          "type": "task",
+          "task_type": "implement_feature",
+          "title": "Implementar parte B (paralelo a A)",
+          "depends_on": [
+            "n02_analisis"
+          ],
+          "executor": {
+            "kind": "subagent",
+            "target": "coder_main"
+          },
+          "acceptance": [
+            {
+              "id": "a04_tests",
+              "kind": "test_suite",
+              "spec": {
+                "command": "npm test -- --testPathPattern=b"
+              },
+              "expect": {
+                "exit_code": 0
+              },
+              "required": true,
+              "timeout_s": 600
+            }
+          ],
+          "retry": {
+            "max_attempts": 6,
+            "on_exhausted": "run_stuck_ladder"
+          },
+          "timeout_s": 1800
+        },
+        {
+          "id": "n05_join",
+          "type": "join",
+          "title": "Integrar A y B y correr regresion",
+          "depends_on": [
+            "n03_impl_a",
+            "n04_impl_b"
+          ],
+          "executor": {
+            "kind": "subagent",
+            "target": "evaluator"
+          },
+          "acceptance": [
+            {
+              "id": "a05_full",
+              "kind": "test_suite",
+              "spec": {
+                "command": "npm test"
+              },
+              "expect": {
+                "exit_code": 0
+              },
+              "required": true,
+              "timeout_s": 1200
+            },
+            {
+              "id": "a05_git",
+              "kind": "git_state",
+              "spec": {
+                "no_conflict_markers": true
+              },
+              "required": true
+            }
+          ],
+          "retry": {
+            "max_attempts": 4,
+            "on_exhausted": "mark_blocked_with_evidence_and_continue"
+          }
+        },
+        {
+          "id": "n06_final",
+          "type": "final",
+          "title": "Compuerta final: todas las tareas terminales",
+          "depends_on": [
+            "n05_join"
+          ],
+          "executor": {
+            "kind": "subagent",
+            "target": "evaluator"
+          },
+          "acceptance": [
+            {
+              "id": "a06_all",
+              "kind": "command",
+              "spec": {
+                "command": "python3 validate_contract.py --check-state state/progress.json"
+              },
+              "expect": {
+                "exit_code": 0
+              },
+              "required": true
+            }
+          ],
+          "retry": {
+            "max_attempts": 3,
+            "on_exhausted": "mark_blocked_with_evidence_and_continue"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "from": "n01_init",
+          "to": "n02_analisis"
+        },
+        {
+          "from": "n02_analisis",
+          "to": "n03_impl_a"
+        },
+        {
+          "from": "n02_analisis",
+          "to": "n04_impl_b"
+        },
+        {
+          "from": "n03_impl_a",
+          "to": "n05_join"
+        },
+        {
+          "from": "n04_impl_b",
+          "to": "n05_join"
+        },
+        {
+          "from": "n05_join",
+          "to": "n06_final",
+          "condition": "on_terminal"
+        }
+      ]
+    }
+  },
+  {
+    "op": "add",
+    "path": "/claude_json_adaptation/reference_only/loop",
+    "value": {
+      "kind": "no_stop_until_done",
+      "phases": [
+        "gather_context",
+        "act",
+        "verify",
+        "repeat"
+      ],
+      "no_escalation": true,
+      "completion": {
+        "condition": "all_nodes_terminal AND all_required_checks_passed",
+        "promise_token": "<<TODO_COMPLETO>>",
+        "evaluator": {
+          "kind": "both",
+          "script": "validate_contract.py",
+          "judge_model_tier": "balanced",
+          "judge_independent_of_builder": true
+        }
+      },
+      "on_stuck": {
+        "no_progress_iterations_trigger": 3,
+        "ladder": [
+          "retry_with_error_context",
+          "decompose_node",
+          "switch_model_tier",
+          "switch_executor",
+          "reset_context_from_state",
+          "alternative_approach",
+          "rollback_to_checkpoint",
+          "mark_blocked_with_evidence_and_continue"
+        ]
+      },
+      "hard_limits": {
+        "max_iterations": 500,
+        "max_wall_clock_s": 43200,
+        "max_cost_usd": 150,
+        "max_consecutive_no_progress": 15,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "state": {
+        "progress_file": "state/progress.json",
+        "features_file": "state/features.json",
+        "checkpoint": {
+          "strategy": "both",
+          "every": "node_passed"
+        },
+        "fresh_context_per_iteration": true
+      }
+    }
+  },
+  {
+    "op": "add",
+    "path": "/claude_json_adaptation/reference_only/verdict_policy",
+    "value": {
+      "fail_closed": true,
+      "pass_requires_evidence": true,
+      "self_report_counts_as_evidence": false,
+      "terminal_states": [
+        "DONE",
+        "DONE_WITH_BLOCKED",
+        "TERMINATED_BY_LIMIT"
+      ]
+    }
+  },
+  {
+    "op": "add",
+    "path": "/claude_json_adaptation/reference_only/observability",
+    "value": {
+      "event_log": "state/events.jsonl",
+      "folio": "LOOP-{YYYYMMDD}-{seq}",
+      "emit_events": [
+        "node_started",
+        "node_passed",
+        "node_failed",
+        "stuck_ladder_step",
+        "mode_switched",
+        "limit_reached",
+        "terminal"
+      ]
+    }
+  },
+  {
+    "op": "add",
+    "path": "/claude_json_adaptation/reference_only/research_policy",
+    "value": {
+      "enabled": true,
+      "triggers": [
+        "unknown_error",
+        "missing_api_info",
+        "stuck_ladder_step"
+      ],
+      "max_searches_per_node": 5,
+      "prefer_sources": [
+        "official_docs",
+        "repo_issues",
+        "changelog"
+      ],
+      "record_to": "state/research.md",
+      "must_log_source_in_state": true
+    }
+  },
+  {
+    "op": "add",
+    "path": "/claude_json_adaptation/reference_only/context_policy",
+    "value": {
+      "state_injection": {
+        "files": [
+          "state/progress.json",
+          "state/requirements.json",
+          "state/assumptions.md"
+        ],
+        "max_tokens": 3000
+      },
+      "compaction": {
+        "trigger_ratio": 0.7,
+        "keep": [
+          "pinned_instructions",
+          "progress_state",
+          "last_tool_results",
+          "open_errors"
+        ]
+      }
+    }
+  },
+  {
+    "op": "add",
+    "path": "/claude_json_adaptation/reference_only/review_points",
+    "value": [
+      {
+        "id": "rp01_front",
+        "after_node": "n05_join",
+        "kind": "frontend_approval",
+        "artifact": "state/preview.md",
+        "blocking": false,
+        "on_timeout": "continue_independent_nodes"
+      }
+    ]
+  },
+  {
+    "op": "add",
+    "path": "/claude_json_adaptation/reference_only/harness_selftest",
+    "value": {
+      "enabled": true,
+      "run_before_loop": true,
+      "on_fail": "REJECT_START",
+      "cases": [
+        {
+          "id": "t01",
+          "description": "Pedir leer un archivo y luego usar su contenido SIN volver a leerlo",
+          "assert": {
+            "kind": "tool_result_visible_next_turn"
+          }
+        },
+        {
+          "id": "t02",
+          "description": "Tarea con dato faltante: debe asumir y registrar, no preguntar",
+          "assert": {
+            "kind": "no_repeated_question"
+          }
+        },
+        {
+          "id": "t03",
+          "description": "Tarea simple de edicion: debe ejecutar una accion en N turnos",
+          "assert": {
+            "kind": "acts_within_n_turns",
+            "n": 3
+          }
+        },
+        {
+          "id": "t04",
+          "description": "El historial reenviado no contiene bloques de thinking",
+          "assert": {
+            "kind": "thinking_blocks_not_replayed"
+          }
+        },
+        {
+          "id": "t05",
+          "description": "Llamada de herramienta forzada se ejecuta realmente",
+          "assert": {
+            "kind": "forced_tool_call_executes"
+          }
+        }
+      ]
+    }
+  }
+]

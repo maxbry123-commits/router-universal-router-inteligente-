@@ -1,0 +1,11 @@
+{
+  "schema": "yaiwes.trigger/v1",
+  "run_id": "RUN-A3-OPT3-PUBLIC-2026-09-29",
+  "input_block": "P1 MICRO Sentinela: INVALIDATE WAITING_GROK stale 22-sep. Opcion 3 Static+OAuth. GOLDEN publish_live.py con private=False. python_exec ONLY. CERO rewrite/regen. Status PENDING_VERIFY. Job 32GB APLAZADO. PASS=space_url live!=401/404.",
+  "requested_by": "orquestador-chat",
+  "source": "Sentinela-MICRO-2026-09-29",
+  "deadline": "2026-09-29T23:59:00-05:00",
+  "hardware_requirement": "NONE_STATIC_OPTION3",
+  "dispatch_status": "ORCH_DISPATCH_READY",
+  "invalidates": "WAITING_GROK_OR_DIRECTOR_AUTH expired 2026-09-22"
+}

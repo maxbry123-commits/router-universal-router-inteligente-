@@ -1,0 +1,12 @@
+{
+  "id": "qw-glm-5-2",
+  "nombre": "GLM 5.2",
+  "proveedor": "qwencloud",
+  "modelo": "glm-5.2",
+  "timeout_s": 90,
+  "tipo": "api",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true
+}

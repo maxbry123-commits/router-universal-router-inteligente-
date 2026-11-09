@@ -1,0 +1,15 @@
+{
+  "hosts": {},
+  "timeout_s": 20,
+  "max_output_bytes": 65536,
+  "max_file_bytes": 65536,
+  "_ejemplo_host_NO_ACTIVO": {
+    "host": "203.0.113.10",
+    "port": 22,
+    "user": "deploy",
+    "allowed_commands": ["uptime", "df", "free", "nvidia-smi"],
+    "allow_any_command": false,
+    "sftp_root": "/srv/riu",
+    "credenciales": "solo por env: SSH_BRIDGE_KEY_<HOST> (clave privada PEM) o SSH_BRIDGE_PASSWORD_<HOST>; host key via SSH_BRIDGE_KNOWN_HOSTS"
+  }
+}

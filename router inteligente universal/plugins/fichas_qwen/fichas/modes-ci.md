@@ -1,0 +1,40 @@
+# CI de modos y bucle. Copiar a .github/workflows/modes-ci.yml
+# Ajusta PKG_DIR a la carpeta donde pusiste el paquete (por defecto la raiz del repo).
+name: modes-ci
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+env:
+  PKG_DIR: "."
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Instalar jsonschema
+        run: pip install jsonschema
+      - name: Registro de modos y fuentes (strict)
+        working-directory: ${{ env.PKG_DIR }}
+        run: python3 validate_modes.py --strict
+      - name: Especificacion Mythos
+        working-directory: ${{ env.PKG_DIR }}
+        run: python3 mythos_engine.py mythos_engine.json
+      - name: Contrato del bucle v1.1 (con esquema)
+        working-directory: ${{ env.PKG_DIR }}
+        run: python3 validate_contract_v11.py loop_contract.example.v1_1.json
+      - name: Pruebas (router, pool, Mythos, controlador, prompts)
+        working-directory: ${{ env.PKG_DIR }}
+        run: python3 -m unittest test_mode_router test_additional -v
+      - name: Sintaxis del selector JS
+        working-directory: ${{ env.PKG_DIR }}
+        run: node --check mode_selector.js
+      - name: Integracion aplicada en el repo
+        working-directory: ${{ env.PKG_DIR }}
+        run: python3 check_integration.py "${GITHUB_WORKSPACE}"
