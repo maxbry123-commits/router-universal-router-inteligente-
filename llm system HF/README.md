@@ -40,11 +40,12 @@ entrypoint.sh ─────► clona el repo (GITHUB_BRANCH) y arranca manager
 | `MODEL_FILE` | `qwen2.5-coder-0.5b-instruct-q5_k_m.gguf` | Archivo GGUF. |
 | `MODEL_PATH` | `/data/models/qwen2.5-coder-0.5b-instruct-q5_k_m.gguf` | Ruta para `llama-server`. Debe coincidir con `MODEL_FILE`. |
 | `IDLE_UNLOAD_S` | `900` | Segundos de inactividad antes de descargar el modelo de RAM. |
+| `LLAMA_TIMEOUT_S` | `300` | Tiempo máximo de espera a `llama-server` por petición. |
 
 ## Limitaciones conocidas
 
 - Sin `stream=true`: la respuesta se lee completa.
-- La llamada interna a `llama-server` no tiene `timeout`.
+- La llamada interna a `llama-server` tiene `timeout` configurable con `LLAMA_TIMEOUT_S` (300 s por defecto).
 
 ## Verificar
 

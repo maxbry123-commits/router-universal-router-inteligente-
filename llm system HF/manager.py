@@ -10,6 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 BACKEND_PORT = 8081
 BACKEND = f"http://127.0.0.1:{BACKEND_PORT}"
 IDLE_UNLOAD_S = float(os.environ.get("IDLE_UNLOAD_S", "900"))
+LLAMA_TIMEOUT_S = float(os.environ.get("LLAMA_TIMEOUT_S", "300"))
 ROUTER_API_KEY = os.getenv("ROUTER_API_KEY")
 MODEL_PATH = os.getenv("MODEL_PATH", "/data/models/qwen2.5-coder-0.5b-instruct-q5_k_m.gguf")
 
@@ -67,7 +68,7 @@ class Handler(BaseHTTPRequestHandler):
                 length = int(self.headers.get('Content-Length', 0))
                 body = self.rfile.read(length)
                 req = urllib.request.Request(BACKEND + "/v1/chat/completions", data=body, headers={"Content-Type": "application/json"})
-                with urllib.request.urlopen(req) as resp:
+                with urllib.request.urlopen(req, timeout=LLAMA_TIMEOUT_S) as resp:
                     self.send_response(resp.status); self.end_headers(); self.wfile.write(resp.read())
             except Exception as e:
                 self.send_response(500); self.end_headers(); self.wfile.write(str(e).encode())
