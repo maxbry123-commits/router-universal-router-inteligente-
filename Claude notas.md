@@ -110,3 +110,16 @@ audit(10 spaces) -> classify -> dedupe(manager) -> copy(HUGGUEFACE SPACE/) -> bo
 ## Resolución de flags (2026-11-09)
 
 - 🚩1 RESUELTO. `riu-router/proxy.py` no lee ningún banco de claves. Solo reenvía a los puertos internos. Las claves llegan por variables de entorno del Space. `swecode_provider.json` no contiene claves (`apiKey: "local"`).
+
+## Router 1 — progreso (2026-11-09)
+
+| Tarea | Estado | Evidencia |
+|---|---|---|
+| Motor de gaps con buscar_web | ✅ | d6fbfd63fb, tests/test_gap_web.py |
+| Chat A/B como tools nativas | ✅ | 6a76a9b8b8, tests/test_workflow_tools.py (4 pruebas) |
+| Router LLM unificado en llm system HF | ✅ copia | c214932c54, llm_router/ (import y 401/200 verificados) |
+| Retiro del proxy original en MVP v1 | 🚩 | Requiere aprobación del owner |
+| Diagnóstico NVIDIA 410 | 🚩 | Requiere llave NVIDIA en entorno |
+| Motor de descarga | ⬜ no autorizado | Fase 2 |
+
+Router 1 no toca `HUGGUEFACE SPACE/` ni los Spaces. Router 2 mantiene su alcance.

@@ -72,8 +72,14 @@ Orden: F1 → F2 → grafo AST → F3 → F4 → F5 → motores → F6 (Chat YAI
 - [x] Rama por defecto del entrypoint, 2612953567
 - [x] Nombres exactos de GGUF en Hugging Face (verificados en solo lectura), 296900b211
 - [x] `buscar_web` como herramienta del ToolExecutor, 296900b211 (sin prueba en vivo)
-- [ ] Diagnóstico del 410 de NVIDIA (requiere llave NVIDIA)
-- [ ] Chat A/B como tools nativas: dividir_tarea, entregar_parte, checkpoint_guardar, recuperar_checkpoint, continuar_cola
-- [ ] Conectar `buscar_web` al motor de gaps
+- [ ] Diagnóstico del 410 de NVIDIA — 🚩 bloqueado: requiere llave NVIDIA en entorno
+- [x] Chat A/B como tools nativas: dividir_tarea, entregar_parte, checkpoint_guardar, recuperar_checkpoint, continuar_cola — `workflow_tools.py`, commit 6a76a9b8b8
+- [x] Conectar `buscar_web` al motor de gaps — `gap_resolution_loop.default_engine()`, commit d6fbfd63fb
 - [ ] Motor de descarga y extracción: NO AUTORIZADO (Fase 2)
 - [ ] Auditoría forense de 4 pasadas de los Spaces de Hugging Face (ver `handoff/HF_PLAN_ROUTER2.md`)
+
+## 7. Router 1: proxy LLM unificado
+
+- [x] Copia del router LLM en `llm system HF/llm_router/` (proxy OpenAI-compatible y dependencias), commit c214932c54
+- [ ] Retiro del original en `ROUTER MVP v1/` — 🚩 requiere aprobación del owner (no se borra sin aprobación)
+- [ ] Decidir si `llm_router` tiene su propio Space (hoy solo es código; el CMD del Dockerfile de MVP v1 aún apunta al original)
