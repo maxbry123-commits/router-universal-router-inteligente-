@@ -1,0 +1,15 @@
+{
+  "schema": "router-state/1",
+  "phases": {
+    "N1": "completa",
+    "N2": "completa",
+    "N3": "completa"
+  },
+  "mission_id": "router-recovery-2026",
+  "dag_sha": "a7875aab35696f1fffc2118e9bad43b11e06b736f146a5e270a34838709d0727",
+  "node_ids": [
+    "N1",
+    "N2",
+    "N3"
+  ]
+}
