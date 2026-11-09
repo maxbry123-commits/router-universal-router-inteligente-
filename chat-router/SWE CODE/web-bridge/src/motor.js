@@ -3,7 +3,7 @@
 import { SITES, MODELOS_WEB, escribe, enviar, leerRespuesta, sesionMuerta, elegirModelo, selectorMuestraOtroModelo, verificarSesionApi } from './sites.js';
 import { asegurar, nuevaPagina, cerrarPagina } from './browser.js';
 import { partir, cabecera, checkpointLeer, checkpointGuardar, resumeCard, huella } from './bloques.js';
-import { cuentaActual, cuentaParaConv } from './cuentas.js';
+import { cuentaActual, cuentaParaConv, enfriarCuenta, soltarLease } from './cuentas.js';
 import { preambulo } from './modos.js';
 
 // convId -> {modelo_verificado} de la última consulta (server lo expone en la respuesta)
@@ -76,6 +76,11 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
       try {
         salida = await leerRespuesta(page, siteCfg, { previo, timeoutMs:145000 });
       } catch (e) {
+        // 429 / limite: enfriar la cuenta (Retry-After si existe) y soltar su lease.
+        if (e.status === 429 || e.code === 'RATE_LIMIT') {
+          if (cuenta != null) enfriarCuenta(cuenta, ck.intentos_429 || 0, e.retry_after_ms ?? null);
+          soltarLease(convId);
+        }
         if (e.code === 'WEB_SALIDA_PARCIAL' && e.texto_parcial) {
           // Preservar lo recibido como PARCIAL, jamás declarar DONE o repetir herramientas.
           checkpointGuardar(convId, { ...ck, ultima_salida:String(e.texto_parcial).slice(0,20000),
