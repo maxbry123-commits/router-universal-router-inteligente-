@@ -72,4 +72,7 @@ El `curl` de chat carga el modelo y tarda; el primer intento puede pasar de 30 s
 2. Fijar `MODEL_ID`, `MODEL_FILE` y `MODEL_PATH` por Space (s1, s2, s3).
 3. Añadir `timeout` a la llamada a `llama-server` (R3).
 4. Soportar `stream=true` o documentar que no está soportado (R2).
-5. Confirmar que `lfm2.5-350m` y `qwen3-0.6b` existen con esos nombres de archivo en Hugging Face antes de configurarlos.
+5. Nombres verificados (solo lectura, 2026-11-09):
+   - s1: `MODEL_ID=Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF`, `MODEL_FILE=qwen2.5-coder-0.5b-instruct-q5_k_m.gguf` (existe).
+   - s2: `MODEL_ID=LiquidAI/LFM2.5-350M-GGUF`, `MODEL_FILE=LFM2.5-350M-Q4_K_M.gguf` (existe; mayúsculas exactas).
+   - s3: `MODEL_ID=Qwen/Qwen3-0.6B-GGUF`, `MODEL_FILE=Qwen3-0.6B-Q8_0.gguf` (existe; el repo solo publica Q8_0). El dataset `swe-code-hf-gguf` NO contiene un GGUF de Qwen3-0.6B: tiene Qwen3.5-0.8B-IQ4_XS.
