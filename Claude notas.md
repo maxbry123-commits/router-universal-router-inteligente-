@@ -319,3 +319,15 @@ Bugs del lote: B1 a B5 (ver anexo, R-09). No ejecutar `router_engine/` ni `memor
 - Estado: recepción. Anexo 1 a 1: F-01 a F-06. F-02 no leído.
 - Preguntas de memoria: en `HANDOFF.md` §5 (6 preguntas).
 - Frente Claude Code 4 para memoria: PENDIENTE.
+
+## REGLAS DE EJECUCIÓN CONFIRMADAS POR EL OWNER (2026-11-09)
+
+- E-1 Lenguaje: solo Python para el código de cómputo, memoria y recuperación.
+- E-2 Reemplazar o fusionar. Si no se sabe fusionar, se deja lo que dio el owner. Lo sobrante se elimina.
+- E-3 No escalar. Solo proponer mejoras del código recibido, siguiendo el DSL DAG.
+- E-4 No inventar. Lo que el owner fijó (por ejemplo, un valor de 1.60) no se cambia.
+- E-5 Dudas: primero el input block verbatim; luego los motores de investigación, vía sub-agente.
+- E-6 Ejecución en loop. Tareas delegadas a sub-agentes con DSL DAG.
+- E-7 Supervisión: sheriff, guardián, centinela, supervisor y juez revisan a los sub-agentes contra el input block y los DSL DAG.
+- E-8 Bloqueantes reales: flag 🚩 al final de todo el loop, no antes.
+- E-9 Frente de almacenamiento y memoria: PENDIENTE. No se ejecuta hasta que el owner lo indique.
