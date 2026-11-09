@@ -199,3 +199,15 @@ Integración automática: auto pull siempre; ninguna integración se hace sin te
 - T-O Enrutadores de 100 entradas.
 
 Estado: stop para preguntas del owner. Ninguna tarea ejecutada en esta vuelta; no hay tareas completadas que borrar.
+
+## Vuelta 5 — estado (2026-11-09)
+
+Prioridad 1: cerrar Router 1 (ROUTER MVP v1, llm system HF/llm_router) y Router 2 (HUGGUEFACE SPACE/) al 100 % PASS en sandbox. Después: DeepSeek audita, y solo al decir "cerrado" se entrega la limpieza de Hugging Face para MiniMax.
+
+Prioridad 2: chat, agentes, frontend, almacenamiento y memoria cableados.
+
+Pendientes del owner en esta vuelta: P-1 a P-9 (ver Claude.md §13).
+
+🚩 Dudas abiertas: (1) skill "Maxbry UI frontend" no aparece en mi lista de skills; (2) pruebas en vivo sin llaves ni red; (3) sub-agentes: dónde se registran si generan ruido.
+
+Estado: stop para preguntas del owner.

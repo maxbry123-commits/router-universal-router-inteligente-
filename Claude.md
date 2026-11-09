@@ -138,3 +138,17 @@ Pendientes de búsqueda que siguen abiertos: Rufo y Rotboat en todas las ramas r
 - G-2 Auditoría X-Ray de 3 pasadas: pendiente de ubicar o rehacer.
 - G-3 Enchufe Fables: base elegida (ver preguntas).
 - G-4 Sandbox de skills: pendiente de decisión.
+
+## 13. Instrucciones del owner (vuelta 5, 2026-11-09). Anotadas 1 a 1
+
+- [ ] P-1 Búsqueda de DeepSeek (salida de la búsqueda) integrada al chat en frontend y backend.
+- [ ] P-2 Entregar luego los archivos finales para descargar (sin copiar repos completos).
+- [ ] P-3 Selección de archivos de repos: evaluar la solución, descargar solo lo necesario, proponer lista de adicionales. Los sub-agentes solo para revisión.
+- [ ] P-4 Frontend: pruebas en sandbox y HTML de la ventana para aprobación. Tras "Ok" del owner: edición quirúrgica, eliminación de la ventana vieja y nuevo criterio de reglas de frontend en archivos separados. Usar siempre el skill "Maxbry UI frontend". Cablear al README de arquitectura y a Claude notas.
+- [ ] P-5 Sandbox: usar el agente conectado.
+- [ ] P-6 Autorización para sub-agentes: sí.
+- [ ] P-7 Paso 1 (prioridad): cerrar los 2 routers al 100 % PASS en sandbox, cada uno, operativos y cableados. Luego DeepSeek audita. Al decir "cerrado": entregar la limpieza de Hugging Face para que MiniMax la ejecute.
+- [ ] P-8 Si los sub-agentes generan ruido, se pasan a otra sección de Claude code (como se hizo con Hugging Face).
+- [ ] P-9 Paso 2: chat, agentes, frontend, sistema de almacenamiento y memoria, todo cableado.
+
+Nota de alcance: "100 % PASS" se mide con pruebas locales y de contrato. Las pruebas en vivo (NVIDIA, Groq, Hugging Face) dependen de llaves y red que el sandbox no tiene; quedan como 🚩 si no se pueden ejecutar.
