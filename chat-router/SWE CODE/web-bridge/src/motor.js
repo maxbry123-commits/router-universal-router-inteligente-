@@ -3,7 +3,7 @@
 import { SITES, MODELOS_WEB, escribe, enviar, leerRespuesta, sesionMuerta, elegirModelo, selectorMuestraOtroModelo, verificarSesionApi } from './sites.js';
 import { asegurar, nuevaPagina, cerrarPagina } from './browser.js';
 import { partir, cabecera, checkpointLeer, checkpointGuardar, resumeCard, huella } from './bloques.js';
-import { cuentaActual } from './cuentas.js';
+import { cuentaActual, cuentaParaConv } from './cuentas.js';
 import { preambulo } from './modos.js';
 
 // convId -> {modelo_verificado} de la última consulta (server lo expone en la respuesta)
@@ -48,7 +48,8 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
     ck = checkpointLeer(convId, h);
     if (ck && ck.total !== bloques.length) ck = null;  // el checkpoint no es de este texto/modo
     ck = ck || { modo, total: bloques.length, enviados: 0, ultima_salida: '', huella: h };
-    const cuenta = (() => { try { return cuentaActual().index; } catch { return null; } })();
+    // G2: la cuenta de la conversacion (lease con TTL), no la global.
+    const cuenta = (() => { try { return cuentaParaConv(convId).index; } catch { return null; } })();
     ck = { ...ck, modelo, texto: String(texto).slice(0, 200000) };  // lo necesario para retomar sola, sin que el cliente reenvie nada
 
     // retomo: reabre la MISMA conversacion web (url del checkpoint) en vez de un chat nuevo; si no abre, sigue con el chat nuevo + tarjeta
