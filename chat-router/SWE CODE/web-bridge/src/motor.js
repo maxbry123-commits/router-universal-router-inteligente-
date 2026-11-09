@@ -9,6 +9,14 @@ import { preambulo } from './modos.js';
 // convId -> {modelo_verificado} de la última consulta (server lo expone en la respuesta)
 export const ultimaVerificacion = new Map();
 
+// G8: evento estructurado (una linea JSON por evento). Nunca incluye texto del usuario ni secretos.
+export function evento(tipo, datos = {}) {
+  const linea = JSON.stringify({ ts: new Date().toISOString(), evento: tipo, ...datos });
+  if (process.env.BRIDGE_LOG_JSON === '0') return linea;
+  console.log(linea);
+  return linea;
+}
+
 // consultarWeb(modelo_web, texto, {modo, convId}) -> respuesta del sitio
 export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = null } = {}) {
   const cfg = MODELOS_WEB[modelo];
@@ -16,6 +24,7 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
   const site = cfg.site;
   convId = convId || `${site}-${modelo}-${Date.now()}`;
   // cada conv = slot sobre la página maestra del sitio (mutex/cola en browser.js)
+  const t0 = Date.now();
   const page = await nuevaPagina(site, convId);
   let ck = null;
   try {
@@ -42,7 +51,7 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
     }
     if (ultimaVerificacion.size > 500) ultimaVerificacion.clear();
     ultimaVerificacion.set(convId, { modelo, site, modelo_verificado: verificado, ts: Date.now() });
-    if (!verificado) console.warn(`[motor] ${site}/${modelo}: selector no visible; respuesta marcada modelo_verificado=false`);
+    if (!verificado) evento('modelo_no_verificado', { site, modelo, conv_id: convId });
     const bloques = partir(`${preambulo(modo)}\n${texto}`);
     const h = huella(texto, modo);
     ck = checkpointLeer(convId, h);
@@ -92,9 +101,13 @@ export async function consultarWeb(modelo, texto, { modo = 'consulta', convId = 
       ck = { ...ck, enviados: i + 1, ultima_salida: salida || '', cuenta, url: (() => { try { return page.url(); } catch { return ck.url; } })() };
       checkpointGuardar(convId, ck);
     }
+  } catch (e) {
+    evento('consulta_error', { site, modelo, conv_id: convId, codigo: e.code || 'ERROR', ms: null });
+    throw e;
   } finally {
     await cerrarPagina(convId).catch(() => {});  // libera slot maestra; no destruye el contexto
   }
+  evento('consulta_ok', { site, modelo, conv_id: convId, cuenta: ck.cuenta ?? null, bloques: ck.total, ms: Date.now() - t0 });
   const final = ck.ultima_salida;
   checkpointGuardar(convId, { ...ck, completo: true });
   return final;
