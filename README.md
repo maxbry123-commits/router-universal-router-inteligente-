@@ -76,3 +76,8 @@ python ops/bridge.py                   # informe central de conexiones (sondas r
 Estado y plan completo: `kernel/KERNEL.yaml`. Rollback: etiqueta `pre-reorg-20261104-kernel01` ·
 `safety/pre-reorg-original-20261104-kernel01` · rama `respaldo-main-pre-swap-20261104-kernel01` ·
 bundle de 8 GB en el Dataset (`backups/20261104-kernel01.bundle`).
+
+
+## Memoria y almacenamiento
+
+Raíz de memoria: [`chat-router/memoria/`](chat-router/memoria/README.md) · Handoff: [`chat-router/memoria/HANDOFF.md`](chat-router/memoria/HANDOFF.md) · Anexo de input block: [`chat-router/memoria/ANEXO_INPUT_BLOCK.md`](chat-router/memoria/ANEXO_INPUT_BLOCK.md).

@@ -312,3 +312,10 @@ Estado: stop para decisión del owner (recepción).
 Anexo de cableado: `chat-router/plan/ANEXO_CABLEADO_ALMACENAMIENTO_MEMORIA.md`.
 Estado: recepción. Lote recibido en R-01 a R-11 (ver anexo). 🚩 abiertos.
 Bugs del lote: B1 a B5 (ver anexo, R-09). No ejecutar `router_engine/` ni `memory_repair.dag.yaml` sin decisión del owner.
+
+## 📂 memoria/ — frente de almacenamiento y memoria (2026-11-09)
+
+- Raíz: `chat-router/memoria/` (README.md, HANDOFF.md, ANEXO_INPUT_BLOCK.md).
+- Estado: recepción. Anexo 1 a 1: F-01 a F-06. F-02 no leído.
+- Preguntas de memoria: en `HANDOFF.md` §5 (6 preguntas).
+- Frente Claude Code 4 para memoria: PENDIENTE.
