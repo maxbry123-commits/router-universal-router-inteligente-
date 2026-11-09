@@ -119,28 +119,34 @@ Cerrados por decisión de Router 2: B1, D1, L1 (excepción documentada), R1, X1,
 | Diagnóstico NVIDIA 410 | 🚩 | Requiere llave NVIDIA en entorno |
 | Motor de descarga | ⬜ no autorizado | Fase 2 |
 
-Router 1 no toca `HUGGUEFACE SPACE/` ni los Spaces.
+Router 1 no toca `HUGGUEFACE SPACE/` ni los Spaces. Router 2 mantiene su alcance.
 
 ## Decisiones de Router 1 sobre los flags de Router 2 (2026-11-09)
 
-- D1 manager.py: única copia. Default de `PRIMARY_MODEL` unificado a `qwen2.5-coder-0.5b`.
-- L1 límite de 200 LOC: excepción documentada para `manager.py`. Se revisa cuando exista prueba en Router 1.
-- C1 cuentas web: NO se copia a GitHub. Se queda en el Space `swe-code-web` y se registra en el satélite.
-- S1 MCP público `app.py`: NO se copia. Va al satélite como registro de riesgo.
-- R1 proxy: NO se duplica en `HUGGUEFACE SPACE/`. Router LLM en `llm system HF/llm_router/` (c214932c54).
+- D1 manager.py: única copia. Default de `PRIMARY_MODEL` unificado a `qwen2.5-coder-0.5b`. Router 2 lo copia en `HUGGUEFACE SPACE/swe-code-models/`. Cada Space conserva su variable de entorno.
+- L1 límite de 200 LOC: excepción documentada para `manager.py`. No se parte sin pruebas. Se revisa cuando exista prueba en Router 1.
+- C1 cuentas web: NO se copia a GitHub. Se queda en el Space `swe-code-web` y se registra en el satélite como cableado sensible. No se mueven credenciales.
+- S1 MCP público `app.py`: NO se copia. Es cableado de comunicación: va al satélite como registro de riesgo. Router 1 propone bloquear `delete_repository` en el satélite (decisión del owner solo si quiere eliminar la función).
+- R1 proxy: NO se duplica en `HUGGUEFACE SPACE/`. Router 1 ya tiene el router LLM en `llm system HF/llm_router/` (commit c214932c54). Router 2 borra de su plan la copia del proxy.
 - B1 boot.sh: verificado. `entrypoint.sh` no invoca `boot.sh`. Va a `_quarantine/` con README.
 - X1: `manager.py` en commit propio. Acepto.
+
+## Router 1 — siguiente
+
+- T-A a T-J según `Claude.md` §8. Empieza por T-A (búsqueda de Rufo y Rowbot).
 
 ## Router 1 — loop (2026-11-09, segunda vuelta)
 
 | Tarea | Estado | Evidencia |
 |---|---|---|
 | T-A Rufo / Rowbot | ✅ búsqueda hecha, no encontrados | GitHub público (search) y ls-remote de la cuenta owner |
-| T-B Hermes / OpenClaw / Cline | ✅ | 39fa94257a (agentes.py), b836d6c1d2 (Cline en componentes_descargados, fuera de git) |
-| T-D Motor de descarga | ✅ | b836d6c1d2: solo descarga, nunca ejecuta; hosts permitidos; límite 200 MB; control de rutas |
+| T-B Hermes / OpenClaw / Cline | ✅ | 39fa94257a (agentes.py), b836d6c1d2 (Cline en componentes_descargados, 4452 archivos, 84 MB, fuera de git) |
+| T-D Motor de descarga | ✅ | b836d6c1d2: solo descarga, nunca ejecuta; hosts permitidos; límite 200 MB; zip/tar con control de rutas |
 | T-E Búsqueda dual | 🟡 | motor_descarga.buscar_github / buscar_huggingface; faltan 10 métodos por fuente y búsqueda por URL |
 | T-G Raíz de tools | ✅ | 02fb25bcc5 (tools/__init__.py, 9 tools registradas) |
 | T-F, T-H, T-I | ⬜ | pendientes |
+
+Pruebas locales: 15 pasan en `ROUTER MVP v1/system_prompt_py/tests` y `llm system HF/llm_router`.
 
 🚩 (para el final):
 - 🚩 Rufo y Rowbot no existen en ninguna fuente. Pendiente de confirmación del owner: el nombre exacto o la URL.
