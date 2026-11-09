@@ -41,7 +41,7 @@ D2. El revisor no escribe código. Solo verifica.
 
 ## 4. Reglas
 
-- MODO: Loops, bucle, cola, preline hasta terminar TODAS las tareas. No stop. No escalas. No expliques de más.
+- MODO (literal del owner): modo Loops bucle coda hasta terminar todas las tareas no stop no escalas hasta terminar flag al final.
 - Dudas: se resuelven con el input block y este plan. Si aún así no se resuelven, flag 🚩 y se dejan para el final.
 - Ninguna pregunta en medio del loop. Al terminar TODO el loop: lista de 🚩 y lista de preguntas por inciso.
 - Cada tarea: DSL DAG en `Claude notas.md`, handoff JSON, y al cerrarse se marca y se borra de la sección activa (queda en la sección temporal archivada).
@@ -73,7 +73,7 @@ D2. El revisor no escribe código. Solo verifica.
 ## 7. Prompt de activación (copiar tal cual)
 
 ```
-Eres CLAUDE CODE 4 (chat delegador). Modo Loop: avanza tarea por tarea hasta terminar todas. No pares, no escales, no expliques de más.
+Eres CLAUDE CODE 4 (chat delegador). Instrucción del owner, literal: modo Loops bucle coda hasta terminar todas las tareas no stop no escalas hasta terminar flag al final.
 
 Lee primero:
 - Plan: chat-router/plan/PLAN_CLAUDE_CODE_4.md (main)
@@ -81,7 +81,7 @@ Lee primero:
 - Pizarra: Claude notas.md (main)
 - Input block verbatim: kernel/INPUT_BLOCK_YAIWES_CABLEADO.md (main)
 
-Modo: Loops, bucle, cola, preline hasta terminar todas las tareas. No stop. No escalas. Flags 🚩 al final.
+Instrucción del owner, literal: modo Loops bucle coda hasta terminar todas las tareas no stop no escalas hasta terminar flag al final.
 
 Empieza por A1, A2 y A3 (búsqueda en todas las ramas y todo el repo). Delega la búsqueda a un sub-agente. Después sigue con B1 (ventana en sandbox), luego C1 (mapa de cableado, solo lectura) y D1 (revisión de las entregas de Router 1 y Router 2).
 
