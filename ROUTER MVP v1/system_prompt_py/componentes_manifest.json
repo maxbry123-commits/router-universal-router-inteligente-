@@ -1,0 +1,7 @@
+{
+  "destino": "componentes",
+  "ruta_local": "ROUTER MVP v1/system_prompt_py/componentes_descargados/cline__cline",
+  "entradas": [
+    {"nombre": "cline__cline", "url": "https://github.com/cline/cline", "tipo": "agente", "commit": "94eecbbe1a2f899c66b118d13656651b0a884e1f", "archivos": 4452, "estado": "descargado_sin_ejecutar", "nota": "clonado con motor_descarga.descargar_repo, shallow, sin .git, sin ejecutar"}
+  ]
+}
