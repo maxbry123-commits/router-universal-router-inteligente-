@@ -70,7 +70,29 @@ export function limpiarFallos() {
 export function cuentasOk(index) {
   const meta = leerPoolMeta();
   const f = meta.fallidos || {};
+  const enf = meta.enfriados || {};
+  if (enf[String(index)] && Date.now() < enf[String(index)]) return false;
   return !f[String(index)];
+}
+
+// Backoff exponencial con jitter total ("full jitter"): espera aleatoria entre 0 y el tope
+// base * 2^intento, con tope maximo. Fuente: AWS Architecture Blog (retry with jitter).
+const BACKOFF_BASE_MS = parseInt(process.env.BRIDGE_BACKOFF_BASE_MS || '1000', 10);
+const BACKOFF_CAP_MS = parseInt(process.env.BRIDGE_BACKOFF_CAP_MS || '300000', 10);
+export function backoffMs(intento) {
+  const tope = Math.min(BACKOFF_CAP_MS, BACKOFF_BASE_MS * 2 ** Math.max(0, intento));
+  return Math.floor(Math.random() * tope);
+}
+
+// Enfria una cuenta tras un fallo transitorio (429/limite). retryAfterMs del servidor tiene prioridad.
+export function enfriarCuenta(index, intento = 0, retryAfterMs = null) {
+  const meta = leerPoolMeta();
+  meta.enfriados = meta.enfriados || {};
+  const espera = retryAfterMs != null ? Math.min(BACKOFF_CAP_MS, retryAfterMs) : backoffMs(intento);
+  meta.enfriados[String(index)] = Date.now() + espera;
+  meta.actualizado = new Date().toISOString();
+  try { escribirAtomico(POOL_FILE, meta); } catch { /* ignore */ }
+  return { index, espera_ms: espera };
 }
 
 export function estadoPool() {
