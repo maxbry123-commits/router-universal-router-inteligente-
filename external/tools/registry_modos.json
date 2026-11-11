@@ -1,0 +1,92 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-11-11",
+  "modes": {
+    "code_generate": {
+      "seed": "write a function to implement a class",
+      "keywords": ["write", "implement", "create a function", "escribir", "implementar"],
+      "dataset": "NickIBrody/python-code-instructions-85k",
+      "lora_path": "lora-code-gen",
+      "tier0_confidence": 0.85
+    },
+    "code_refactor": {
+      "seed": "refactor clean up restructure this code",
+      "keywords": ["refactor", "clean up", "restructure", "refactorizar"],
+      "dataset": "KavinduHansaka/Python_Refactor_Dataset",
+      "lora_path": "lora-refactor",
+      "tier0_confidence": 0.85
+    },
+    "code_debug": {
+      "seed": "fix debug error stack trace",
+      "keywords": ["fix", "debug", "error", "stack trace", "arreglar", "depurar"],
+      "dataset": "scthornton/securecode-web",
+      "lora_path": "lora-debug",
+      "tier0_confidence": 0.85
+    },
+    "code_review": {
+      "seed": "review critique what's wrong",
+      "keywords": ["review", "critique", "what's wrong", "revisar"],
+      "dataset": "Arain/UnitTest-Finetuning",
+      "lora_path": "lora-code-review",
+      "tier0_confidence": 0.85
+    },
+    "architecture": {
+      "seed": "design architect system design tradeoffs",
+      "keywords": ["design", "architect", "system design", "tradeoffs", "arquitectura"],
+      "dataset": "custom-architecture",
+      "lora_path": "lora-arch",
+      "tier0_confidence": 0.85
+    },
+    "reasoning": {
+      "seed": "prove analyze why deduce",
+      "keywords": ["prove", "analyze", "why", "deduce", "razonar", "analizar"],
+      "dataset": "nuhmanpk/dev-knowledge-base",
+      "lora_path": "lora-reason",
+      "tier0_confidence": 0.85
+    },
+    "tool_call": {
+      "seed": "tools array function calling",
+      "keywords": [],
+      "detect_by": "presence_of_tools_field",
+      "dataset": "alibayram/qwen3.5-toolcalling-v2",
+      "lora_path": "lora-tool",
+      "tier0_confidence": 0.95
+    },
+    "creative": {
+      "seed": "write a story generate creative imagine",
+      "keywords": ["write a story", "generate", "creative", "imagine", "creativo"],
+      "dataset": "custom-creative",
+      "lora_path": "lora-creative",
+      "tier0_confidence": 0.85
+    },
+    "quick_fact": {
+      "seed": "short direct question under twenty tokens",
+      "keywords": [],
+      "detect_by": "length_lt_20_tokens",
+      "dataset": null,
+      "lora_path": null,
+      "tier0_confidence": 0.80
+    },
+    "planning": {
+      "seed": "plan roadmap steps checklist",
+      "keywords": ["plan", "roadmap", "steps", "checklist", "planificar"],
+      "dataset": "NickIBrody/python-code-instructions-85k",
+      "lora_path": "lora-plan",
+      "tier0_confidence": 0.85
+    },
+    "documentation": {
+      "seed": "document explain boilerplate",
+      "keywords": ["document", "explain", "boilerplate", "documentar"],
+      "dataset": "argilla/Synth-APIGen-v0.1",
+      "lora_path": "lora-doc",
+      "tier0_confidence": 0.85
+    },
+    "agentic": {
+      "seed": "multiple steps use tools agent system prompt",
+      "keywords": ["agent", "multi-step", "autonomous"],
+      "dataset": "mstrasser/Jeff-Qwen3.5-0.8B-tools",
+      "lora_path": "lora-agent",
+      "tier0_confidence": 0.85
+    }
+  }
+}
