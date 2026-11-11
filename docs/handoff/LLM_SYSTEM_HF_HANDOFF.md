@@ -1,6 +1,6 @@
 # Handoff — LLM system HF (Plano HF)
 
-Actualizado: 2026-11-11 · Rama: ccr-f01c3de9-bmry0s · Salida 3/3 CERRADA.
+Actualizado: 2026-11-11 · Rama: ccr-f01c3de9-bmry0s · Salida 1/3 HF CERRADA.
 
 ## Estado
 Space Docker que sirve un modelo GGUF local con llama-server, detras de proxy
@@ -21,7 +21,7 @@ GITHUB_TOKEN (obligatoria) · GITHUB_BRANCH (poner ccr-f01c3de9-bmry0s)
 ROUTER_API_KEY (obligatoria, falla cerrado) · MODEL_ID · MODEL_FILE · MODEL_PATH
 IDLE_UNLOAD_S (900) · LLAMA_TIMEOUT_S (300) · SPACE_ID (s1/s2/s3)
 
-## Cerrado en Salida 3/3
+## Cerrado en Salida 1/3 HF
 - Stream SSE (R2 resuelto: stream=true funciona via _sse_proxy)
 - Verificacion SHA-256 al cargar (Objetivo 3.6)
 - registry.json por Space (Objetivo 3.8)
