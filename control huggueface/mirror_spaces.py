@@ -1,23 +1,35 @@
-"""
-mirror_spaces.py — Duplicar Spaces a region de respaldo (Salida 1/3 HF)
+"""mirror_spaces.py — Duplicar Spaces a region de respaldo (HF Control)
 Ubicacion: control huggueface/mirror_spaces.py
-Rol: Objetivo 3.2. Usa HfApi.duplicate_repo. No ejecuta logica de negocio.
+Usa HfApi.duplicate_space (NO duplicate_repo, que no existe para spaces).
 """
 import os
 import logging
 from huggingface_hub import HfApi
 
 logger = logging.getLogger(__name__)
-api = HfApi(token=os.getenv("HF_TOKEN"))
+
+
+def _api() -> HfApi:
+    token = os.getenv("HF_TOKEN")
+    if not token:
+        raise RuntimeError("HF_TOKEN no configurada")
+    return HfApi(token=token)
 
 
 def mirror(source_id: str, dest_id: str = None, private: bool = True) -> dict:
     dest = dest_id or f"{source_id}-mirror"
     try:
-        api.duplicate_repo(
-            source_id,
-            repo_type="space",
-            target_repo=dest,
+        api = _api()
+        parts = dest.split("/")
+        if len(parts) == 2:
+            to_namespace, to_name = parts
+        else:
+            to_namespace = parts[0].split("/")[0] if "/" in source_id else None
+            to_name = dest
+        api.duplicate_space(
+            from_space=source_id,
+            to_namespace=to_namespace,
+            new_name=to_name,
             private=private,
         )
         logger.info("Mirror OK: %s -> %s", source_id, dest)
