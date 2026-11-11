@@ -1,6 +1,6 @@
 # README ARQUITECTURA — 1. SISTEMA DE MEMORIA Y ALMACENAMIENTO
 
-Raíz (destino): `Memoria/` · Hermano: `chat-router/chatbot/arquitectura/README-ARQUITECTURA-CHATBOT.md`
+Raíz (destino): `chat-router/memoria/` · Hermano: `chat-router/chatbot/arquitectura/README-ARQUITECTURA-CHATBOT.md`
 Estado: **arquitectura documentada, nada nuevo cableado** (modo recepción). Fecha: 2026-10-25.
 
 ## 1. Objetivo
@@ -8,12 +8,12 @@ Convertir la memoria en **software de control de contexto** que funciona (a) com
 Regla: *la memoria no piensa constantemente; sabe qué cambió, dónde está, qué tarea está activa y qué entregar.*
 
 ## 2. Qué se conserva intacto (ya cableado y funcional — NO se toca)
-`chat/backend/mvp/memoria.py` · `hf_store.py` · `trabajos.py` · herramienta `almacen` · `plugins/hf_storage` · `plugins/memoria` (enlace → `Memoria/memoria-yaiwes`) · `router/integration/chat_mvp/memoria_loader.py` · frontend `chat-ancla.js` (IndexedDB), `proyecto.js`, `handoff-editor.js`, `contexto.js`, `pendientes-panel.js`, `objetivos-ancla.js`, `anclaje-*.js`.
+`chat/backend/mvp/memoria.py` · `hf_store.py` · `trabajos.py` · herramienta `almacen` · `plugins/hf_storage` · `plugins/memoria` (enlace → `chat-router/memoria/memoria-yaiwes`) · `router/integration/chat_mvp/memoria_loader.py` · frontend `chat-ancla.js` (IndexedDB), `proyecto.js`, `handoff-editor.js`, `contexto.js`, `pendientes-panel.js`, `objetivos-ancla.js`, `anclaje-*.js`.
 Todo lo nuevo entra **por adaptadores y contratos**, con la guardia `chat/auditoria/guardia_cableado.py` como red.
 
 ## 3. Mapa de carpetas de esta raíz
 ```
-Memoria/
+chat-router/memoria/
 ├── arquitectura/            ← este README + INPUT-BLOCK-ANTONIO.md (texto literal)
 ├── memoria-yaiwes/          motor existente (SQLite, grafo, adaptadores)   [enlace plugins/memoria]
 ├── hf_datasets/             almacenamiento HF datasets                      [enlace plugins/hf_datasets]

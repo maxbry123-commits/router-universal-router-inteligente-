@@ -37,7 +37,7 @@
       "ficha": true
     },
     "hf_datasets": {
-      "destino": "../../Memoria/hf_datasets",
+      "destino": "../memoria/hf_datasets",
       "enlace": true,
       "ficha": true
     },
@@ -57,7 +57,7 @@
       "ficha": true
     },
     "memoria": {
-      "destino": "../../Memoria/memoria-yaiwes",
+      "destino": "../memoria/memoria-yaiwes",
       "enlace": true,
       "ficha": false
     },

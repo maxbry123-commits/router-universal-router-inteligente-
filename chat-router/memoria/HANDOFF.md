@@ -4,7 +4,7 @@ Fecha: 2026-11-09 · Estado: RECEPCIÓN · Ramas: `main` (raíz y documentos), `
 
 ## 1. Qué hay en la raíz
 
-Ver `README.md`. La raíz es `Memoria/`. No se crea una raíz `memoria/` de primer nivel: la organización R-4 pone cada grupo dentro de `chat-router/`.
+Ver `README.md`. La raíz es `chat-router/memoria/`. No se crea una raíz `memoria/` de primer nivel: la organización R-4 pone cada grupo dentro de `chat-router/`.
 
 ## 2. Qué se verificó
 

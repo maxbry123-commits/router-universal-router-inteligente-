@@ -80,4 +80,4 @@ bundle de 8 GB en el Dataset (`backups/20261104-kernel01.bundle`).
 
 ## Memoria y almacenamiento
 
-Raíz de memoria: [`Memoria/`](Memoria/README.md) · Handoff: [`Memoria/HANDOFF.md`](Memoria/HANDOFF.md) · Anexo de input block: [`Memoria/ANEXO_INPUT_BLOCK.md`](Memoria/ANEXO_INPUT_BLOCK.md).
+Raíz de memoria: [`chat-router/memoria/`](chat-router/memoria/README.md) · Handoff: [`chat-router/memoria/HANDOFF.md`](chat-router/memoria/HANDOFF.md) · Anexo de input block: [`chat-router/memoria/ANEXO_INPUT_BLOCK.md`](chat-router/memoria/ANEXO_INPUT_BLOCK.md).
