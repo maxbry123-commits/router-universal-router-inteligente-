@@ -1,14 +1,11 @@
-"""
-router_worker_watchdog.py — Ejecucion aislada con heartbeat y cancelacion
-Ubicacion: external/tools/router_worker_watchdog.py
-Patron: 100 lineas asyncio (Router/Worker/Watchdog)
-"""
+"""router_worker_watchdog.py — Router/Worker/Watchdog con heartbeat real."""
 import asyncio
 import time
 import logging
 from typing import Callable, Any, Dict
 
 logger = logging.getLogger(__name__)
+HEARTBEAT_INTERVAL = 30.0
 
 
 class Worker:
@@ -20,20 +17,34 @@ class Worker:
         self.status = "running"
         self.task = None
         self.result = None
+        self._heartbeat_task = None
+
+    def tick(self):
+        self.heartbeat = time.monotonic()
+
+    async def _beat_loop(self):
+        while self.status == "running":
+            await asyncio.sleep(HEARTBEAT_INTERVAL)
+            self.tick()
 
     async def run(self):
+        self._heartbeat_task = asyncio.create_task(self._beat_loop())
         try:
-            self.result = await self.fn()
-            self.heartbeat = time.monotonic()
+            if asyncio.iscoroutinefunction(self.fn):
+                self.result = await self.fn()
+            else:
+                self.result = await asyncio.get_event_loop().run_in_executor(None, self.fn)
+            self.status = "done"
             await self.router.report(self.wid, self.result, success=True)
         except asyncio.CancelledError:
             self.status = "cancelled"
-            logger.warning(f"[Worker] {self.wid} cancelado por Watchdog")
             await self.router.report(self.wid, "Cancelled", success=False)
         except Exception as e:
             self.status = "failed"
-            logger.error(f"[Worker] {self.wid} fallo: {e}")
             await self.router.report(self.wid, str(e), success=False)
+        finally:
+            if self._heartbeat_task:
+                self._heartbeat_task.cancel()
 
 
 class Router:
@@ -41,6 +52,7 @@ class Router:
         self.workers: Dict[str, Worker] = {}
         self.watchdog_timeout = watchdog_timeout
         self._watchdog_task = None
+        self._counter = 0
 
     async def start_watchdog(self):
         self._watchdog_task = asyncio.create_task(self._watchdog_loop())
@@ -51,22 +63,27 @@ class Router:
             now = time.monotonic()
             for wid, w in list(self.workers.items()):
                 if w.status == "running" and (now - w.heartbeat) > self.watchdog_timeout:
-                    logger.warning(f"[Watchdog] Timeout en {wid}. Cancelando...")
+                    logger.warning(f"[Watchdog] timeout {wid}")
                     w.task.cancel()
 
     async def dispatch(self, name: str, fn: Callable) -> str:
-        wid = f"worker-{len(self.workers)+1:02d}"
+        self._counter += 1
+        wid = f"{name}-{self._counter:03d}"
         w = Worker(wid, fn, self)
         self.workers[wid] = w
         w.task = asyncio.create_task(w.run())
         return wid
 
     async def report(self, wid: str, result: Any, success: bool):
-        logger.info(f"[Router] {wid} reporto: {'EXITO' if success else 'FALLO'} -> {result}")
+        logger.info(f"[Router] {wid} {'OK' if success else 'FAIL'}: {result}")
         self.workers.pop(wid, None)
+
+    def active(self) -> list:
+        return [w.wid for w in self.workers.values() if w.status == "running"]
 
     async def shutdown(self):
         if self._watchdog_task:
             self._watchdog_task.cancel()
         for w in self.workers.values():
-            w.task.cancel()
+            if w.task:
+                w.task.cancel()
