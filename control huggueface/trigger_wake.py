@@ -1,7 +1,5 @@
-"""
-trigger_wake.py — Despertar Spaces SLEEPING/PAUSED (Salida 1/3 HF)
+"""trigger_wake.py — Despertar Spaces SLEEPING/PAUSED (HF Control)
 Ubicacion: control huggueface/trigger_wake.py
-Rol: Objetivo 3.3. restart_space si stage in (SLEEPING, PAUSED). Espera RUNNING.
 """
 import os
 import time
@@ -9,7 +7,13 @@ import logging
 from huggingface_hub import HfApi
 
 logger = logging.getLogger(__name__)
-api = HfApi(token=os.getenv("HF_TOKEN"))
+
+
+def _api() -> HfApi:
+    token = os.getenv("HF_TOKEN")
+    if not token:
+        raise RuntimeError("HF_TOKEN no configurada")
+    return HfApi(token=token)
 
 
 def _stage_of(info) -> str:
@@ -21,6 +25,7 @@ def _stage_of(info) -> str:
 
 def wake_if_needed(space_id: str, max_wait_s: int = 30) -> dict:
     try:
+        api = _api()
         info = api.get_space_info(space_id, repo_type="space")
         stage = _stage_of(info)
         if stage in ("SLEEPING", "PAUSED"):

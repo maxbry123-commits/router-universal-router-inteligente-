@@ -1,12 +1,11 @@
-"""
-registry_models.py — Generar/verificar registry.json con SHA-256 (Salida 1/3 HF)
+"""registry_models.py — SHA-256 de GGUF/LoRA, fill-on-first-run (HF Control)
 Ubicacion: control huggueface/registry_models.py
-Rol: Objetivo 3.6 y 3.8. Fill-on-first-run: si sha256 es null, lo calcula y escribe.
 """
 import hashlib
 import json
 import os
 import logging
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +18,14 @@ def sha256_file(path: str) -> str:
     return h.hexdigest()
 
 
-def load_registry(path: str) -> dict:
+def load_registry(path: str) -> Dict:
     if not os.path.exists(path):
         return {"version": "1.0.0", "models": {}}
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def verify_or_fill(registry_path: str, model_paths: dict) -> list:
+def verify_or_fill(registry_path: str, model_paths: Dict[str, str]) -> List[Dict]:
     reg = load_registry(registry_path)
     models = reg.setdefault("models", {})
     results = []
@@ -45,12 +44,8 @@ def verify_or_fill(registry_path: str, model_paths: dict) -> list:
         elif expected == actual:
             results.append({"space": space, "status": "ok", "sha256": actual})
         else:
-            results.append({
-                "space": space,
-                "status": "mismatch",
-                "expected": expected,
-                "actual": actual,
-            })
+            results.append({"space": space, "status": "mismatch",
+                            "expected": expected, "actual": actual})
     with open(registry_path, "w", encoding="utf-8") as f:
         json.dump(reg, f, indent=2, ensure_ascii=False)
     return results
