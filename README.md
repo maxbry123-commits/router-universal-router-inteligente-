@@ -36,3 +36,6 @@ HF nunca aloja logica de control. Control HF solo gestiona ciclo de vida.
 ## Cierre (2026-11-11)
 Salidas 1/3, 2/3, 3/3 publicadas en rama ccr-f01c3de9-bmry0s.
 Pendiente operacional: prueba Groq, secrets HF, decision main.
+
+## Organización y motores
+Inventario de raíces, mapeo de los motores de búsqueda, descarga, extracción y copiar/mover, y plan de movimientos (sin ejecutar): [docs/handoff/ORGANIZACION_RAICES_Y_MOTORES.md](docs/handoff/ORGANIZACION_RAICES_Y_MOTORES.md).
