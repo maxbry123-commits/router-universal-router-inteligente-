@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
-set -e
-REPO_URL="https://${GITHUB_TOKEN}@github.com/maxbry123-commits/router-universal-router-inteligente-.git"
-BRANCH="${GITHUB_BRANCH:-ccr-f01c3de9-bmry0s}"
-TARGET_DIR="/tmp/repo"
-if [ -d "$TARGET_DIR/.git" ]; then
-    cd "$TARGET_DIR" && git fetch origin "$BRANCH" && git reset --hard "origin/$BRANCH"
+# entrypoint.sh — Auto-pull + descarga + arranque (Salida 3/3)
+# Ubicacion: llm system HF/entrypoint.sh
+set -euo pipefail
+
+: "${GITHUB_TOKEN:?Falta GITHUB_TOKEN}"
+: "${GITHUB_BRANCH:=main}"
+: "${ROUTER_API_KEY:?Falta ROUTER_API_KEY}"
+
+REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/maxbry123-commits/router-universal-router-inteligente-.git"
+APP_DIR="/app"
+
+if [ -d "$APP_DIR/.git" ]; then
+  git -C "$APP_DIR" fetch origin "$GITHUB_BRANCH"
+  git -C "$APP_DIR" reset --hard "origin/$GITHUB_BRANCH"
 else
-    git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$TARGET_DIR"
+  git clone --depth 1 --branch "$GITHUB_BRANCH" "$REPO_URL" "$APP_DIR"
 fi
-cd "$TARGET_DIR/llm system HF"
-pip3 install --break-system-packages -q huggingface_hub
-export PYTHONUNBUFFERED=1
-python3 download_model.py || echo "Aviso: Fallo la descarga del modelo, arrancando manager en modo degradado."
+
+cd "$APP_DIR/llm system HF"
+python3 download_model.py
 exec python3 manager.py
