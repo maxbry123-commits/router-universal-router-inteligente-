@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-11-11",
+  "models": {
+    "s1": {
+      "model_id": "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF",
+      "model_file": "qwen2.5-coder-0.5b-instruct-q5_k_m.gguf",
+      "model_path": "/data/models/qwen2.5-coder-0.5b-instruct-q5_k_m.gguf",
+      "sha256": null
+    },
+    "s2": {
+      "model_id": "LiquidAI/LFM2.5-350M-GGUF",
+      "model_file": "LFM2.5-350M-Q4_K_M.gguf",
+      "model_path": "/data/models/LFM2.5-350M-Q4_K_M.gguf",
+      "sha256": null
+    },
+    "s3": {
+      "model_id": "Qwen/Qwen3-0.6B-GGUF",
+      "model_file": "Qwen3-0.6B-Q8_0.gguf",
+      "model_path": "/data/models/Qwen3-0.6B-Q8_0.gguf",
+      "sha256": null
+    }
+  }
+}
