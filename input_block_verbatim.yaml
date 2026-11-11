@@ -1,32 +1,26 @@
-# input_block_verbatim.yaml  (no modificar)
+# input_block_verbatim.yaml — reglas y referencias de metodo (limpio, 2026-11-11)
+# Solo reglas vigentes y referencias de metodo. El estado de runs anteriores queda en el historial de git.
+
 input_block:
   version: "1.0"
-  run_id: "20261107-cierre"
   repo: "maxbry123-commits/router-universal-router-inteligente-"
   repo_url: "https://github.com/maxbry123-commits/router-universal-router-inteligente-.git"
-  dataset: "COMAND-CENTER-1/router-universal-router-inteligente-auditoria"
-  space: "COMAND-CENTER-1/riu-router"
-  space_health: "https://comand-center-1-riu-router.hf.space/health"
-  branches:
-    main: "refs/heads/main"
-    main_clean: "refs/heads/main-clean"
-    safety_tag: "refs/tags/pre-reorg-20261104-kernel01"
-    backup_branch: "refs/heads/respaldo-main-pre-swap-20261104-kernel01"
   forbidden:
     - "force-push sin --force-with-lease"
-    - "push a main en este DAG (solo N5 con owner_gate)"
+    - "push a main sin autorizacion expresa del owner"
     - "push de arbol al Space (solo rebuild por API)"
     - "modificar ops/research_prepass.py"
     - "crear GitHub Actions, LFS o despliegues nuevos"
     - "rotar o imprimir claves"
   limits:
-    max_pack_gib: 1.5
     max_nodes_parallel: 2
     max_retries_per_node: 3
-  expected:
-    main_clean_remote_prefix: ""   # se lee en runtime, no se fija
-    baseline_entries: 65914
-    bundle_bytes: 8068832804
   accept:
     push_ok_requires: ["rc=0", "ls-remote == HEAD"]
     rebuild_ok_requires: ["stage==RUNNING", "health.commit == main_sha"]
+  metodos:
+    reglas_de_trabajo: "Claude notas.md (main), seccion Reglas de trabajo"
+    frontend_skill: "Skills/fromted-yaiwes-frontend (rama ccr-f01c3de9-bmry0s)"
+    frontend_handoff: "docs/handoff/SKILL_FRONTEND_FROMTED_YAIWES.md (rama ccr-f01c3de9-bmry0s)"
+    organizacion_raices_motores: "docs/handoff/ORGANIZACION_RAICES_Y_MOTORES.md (rama ccr-f01c3de9-bmry0s)"
+    handoffs_por_tarea: "docs/handoff/T01..T10 (rama ccr-f01c3de9-bmry0s)"
