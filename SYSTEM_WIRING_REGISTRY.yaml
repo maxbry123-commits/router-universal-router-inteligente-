@@ -115,8 +115,8 @@ componentes:
     responsabilidad: raiz del system prompt y de las fichas; motores que lo reciben y ejecutan
   - id: memoria
     nombre: Memoria y almacenamiento
-    ruta: chat-router/memoria/
-    subrutas: {memoria_yaiwes: chat-router/memoria/memoria-yaiwes/, hf_datasets: chat-router/memoria/hf_datasets/, arquitectura: chat-router/memoria/arquitectura/}
+    ruta: Memoria/
+    subrutas: {memoria_yaiwes: Memoria/memoria-yaiwes/, hf_datasets: Memoria/hf_datasets/, arquitectura: Memoria/arquitectura/}
     responsabilidad: persistencia y datasets de HF
   - id: plugins
     nombre: Plugins (Harness DeepSeek)
@@ -177,7 +177,7 @@ servicios:
   - id: memoria
     tipo: storage
     consumidor: [chat_router, agentes, loop_cola_watchdog]
-    proveedor: {ruta: chat-router/memoria/, subrutas: [chat-router/memoria/memoria-yaiwes/, chat-router/memoria/hf_datasets/]}
+    proveedor: {ruta: Memoria/, subrutas: [Memoria/memoria-yaiwes/, Memoria/hf_datasets/]}
     transporte: harness_plugin
     healthcheck: {tipo: escribir_leer, requerido: true, prueba: "escribir -> ACK -> leer -> comparar"}
     estado: DISCOVERED
@@ -185,7 +185,7 @@ servicios:
   - id: storage
     tipo: storage
     consumidor: [chat_router, agentes, loop_cola_watchdog]
-    proveedor: {ruta: chat-router/memoria/hf_datasets/, plugin: chat-router/plugins/hf_storage/}
+    proveedor: {ruta: Memoria/hf_datasets/, plugin: chat-router/plugins/hf_storage/}
     transporte: harness_plugin
     healthcheck: {tipo: persistencia, requerido: true, prueba: "escribir -> reiniciar -> leer"}
     estado: DISCOVERED

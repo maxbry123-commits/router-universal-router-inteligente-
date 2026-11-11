@@ -34,8 +34,8 @@ chat-router/chatbot/componentes/vite/packages/vite/src/node/__tests__/plugins/fi
 chat-router/chatbot/componentes/vite/packages/vite/src/node/__tests__/plugins/importGlob/fixture-a/node_modules/
 chat-router/chatbot/componentes/vite/playground/glob-import/root/dir/node_modules/
 chat-router/chatbot/componentes/vllm/requirements/build/
-chat-router/memoria/componentes/chroma/chroma/docs/mintlify/guides/build/
-chat-router/memoria/componentes/redis/deps/xxhash/build/
+Memoria/componentes/chroma/chroma/docs/mintlify/guides/build/
+Memoria/componentes/redis/deps/xxhash/build/
 chat-router/otros/descartados/vLLM-Semantic-Router/vLLM-Semantic-Router/src/semantic-router/.cache/
 chat-router/workflow-loop-code-yaiwes/skills/workflow-loop-yaiwes/firecrawl-skills/build/
 router-mvp/raiz_router/sdk_qwen/Qwen-Live-Harness/code/packages/qwen-live-harness-host/build/

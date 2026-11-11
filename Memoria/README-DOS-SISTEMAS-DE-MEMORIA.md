@@ -10,7 +10,7 @@ UI YAIWES **no es un sistema de memoria ni un agente**: es el sistema operativo 
 |---|---|---|
 | Nombre | **UI YAIWES** (sistema operativo de interfaz con triggers) | **Sistema de memoria y almacenamiento** |
 | Qué guarda | Solo preferencias y caché de interfaz en el navegador; muestra lo que el Sistema 1 le informa. No guarda la verdad | Estado (planilla / handoff), conocimiento con evidencia, almacenamiento HF, auditoría, recursos, gobierno de agentes |
-| Dónde vive | Repo `maxbry123-commits/ui-yaiwes` (https://github.com/maxbry123-commits/ui-yaiwes). Servida en `/yaiwes` desde `chat/frontend/yaiwes/` | `chat-router/memoria/` de este repo |
+| Dónde vive | Repo `maxbry123-commits/ui-yaiwes` (https://github.com/maxbry123-commits/ui-yaiwes). Servida en `/yaiwes` desde `chat/frontend/yaiwes/` | `Memoria/` de este repo |
 | Quién la controla | La interfaz pide y muestra, sin lógica propia; no decide ni escribe memoria | El software del sistema (los agentes no escriben libremente) |
 
 - **EXISTENTE:** UI YAIWES con 39 ventanas, host y action bus (fábrica F0–F3); puente `puente-yaiwes.js` hacia el Harness. En memoria de agentes: `chat/backend/mvp/{memoria.py,hf_store.py,trabajos.py}` cableado, y `memoria-yaiwes/` (SQLite, grafo, adaptadores) sin cablear del todo.

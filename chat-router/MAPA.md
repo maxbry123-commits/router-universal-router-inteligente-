@@ -16,9 +16,9 @@ Estado: **Fase 1 hecha** (carpetas, mapa, enlaces). Nada se movió. Cada fila se
 | `componentes/chat-bot/{OpenHands,OpenManus,Agent-S,agent-zero,strix,artemis,rea,browser-use,CLI-Anything,…}` | `chat-router/agentes/agentes-listos/` | 3 | medio | `componentes/chat-bot` (lo cita puente_chat) |
 | `componentes/{n8n,Prefect,Temporal-*,Durable-*,ruflo,rowboat,autogen,crewAI,langgraph,pydantic-ai,microsoft-agent-framework,haystack,agents-deep-research,open_deep_research,dzhng-deep-research,gpt-researcher}` | `chat-router/agentes/` | 3 | bajo | no |
 | `componentes/{open-webui,react,vite,tailwindcss,zustand,lucide,Chart.js,TypeScript,plex,ollama,vllm,llama.cpp,SGLang,guardrails,docker-py,grafana}` | `chat-router/chatbot/` | 3 | bajo | no |
-| `componentes/{memanto,graphiti,graphify,chroma,qdrant*,Sentence-Transformers,llama_index,redis*,postgres,asyncpg,aiomysql,prometheus,PyGithub,phoenix}` | `chat-router/memoria/` | 3 | bajo | no |
+| `componentes/{memanto,graphiti,graphify,chroma,qdrant*,Sentence-Transformers,llama_index,redis*,postgres,asyncpg,aiomysql,prometheus,PyGithub,phoenix}` | `Memoria/` | 3 | bajo | no |
 | `plugins/chat-router/{10-CHAT-FUNCIONES,13-CHAT-UI-SUITE,chat_space,space,frontend-yaiwes}` | `chat-router/chatbot/` | 4 | bajo | opcional (2 Dockerfile) |
-| `plugins/memoria`, `plugins/hf_datasets` | `chat-router/memoria/` | 5 | medio | `plugins/<nombre>` → destino |
+| `plugins/memoria`, `plugins/hf_datasets` | `Memoria/` | 5 | medio | `plugins/<nombre>` → destino |
 | `plugins/{chat,chat-router/espejos}`, `Prueba/` | `chat-router/otros/` | 5 | bajo | no |
 | `componentes/OmniRoute` (vacío) | eliminar | 3 | ninguno | — |
 | LiteLLM, pydantic-settings, vLLM-Router, vLLM-Semantic-Router, RouterArena, gunicorn, python-dotenv | descartados | 3 | ninguno | — |
