@@ -1,0 +1,18 @@
+{
+  "name": "fromted-yaiwes-visual-profile",
+  "version": "0.2.0-review",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "test": "playwright test",
+    "test:browser": "playwright test tests/panel-01-chat.spec.js",
+    "snapshot": "python3 tools/build_snapshot.py"
+  },
+  "devDependencies": {
+    "vite": "^7.1.0",
+    "@playwright/test": "^1.55.0"
+  }
+}

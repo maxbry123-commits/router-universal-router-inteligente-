@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="es" data-theme="little">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1C1B1A">
+  <meta name="description" content="Laboratorio funcional de interfaces FROMTED × YAIWES. Siete temas visuales, acciones locales y puente remoto fail-closed.">
+  <title>FROMTED × YAIWES — Perfil visual</title>
+  <style>
+/* FROMTED × YAIWES — visual profiles. Three canonical originals untouched; four candidate palettes. */
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-synthesis:none;--radius-phone:24px;--radius-card:12px;--radius-button:10px;--radius-sheet:28px;--status-green:#50df94;--status-blue:#65a7ff;--status-red:#ff777e;--status-soft-green:rgba(80,223,148,.13);--status-soft-blue:rgba(101,167,255,.13);--status-soft-red:rgba(255,119,126,.13)}
+html[data-theme="little"]{--bg:#1C1B1A;--surface:#2A2927;--card:#2A2927;--hover:#353330;--border:rgba(255,255,255,.1);--border-strong:rgba(255,255,255,.18);--title:#F5F4F0;--text:#F5F4F0;--sub:#A8A29E;--dim:#9C9590;--brand:#C65D3B;--brand-hover:#b05031;--brand-wash:rgba(198,93,59,.15);--primary-bg:#C65D3B;--primary-text:#fff;--scene:radial-gradient(ellipse 78% 64% at 92% 0%,rgba(198,93,59,.07),transparent 76%);--shadow:0 16px 44px rgba(0,0,0,.11)}
+html[data-theme="matte"]{--bg:#0a0a0d;--surface:#141417;--card:#202025;--hover:#282830;--border:#2a2a33;--border-strong:#3f3f4e;--title:#fff;--text:#e4e4e7;--sub:#a1a1aa;--dim:#71717a;--brand:#2563eb;--brand-hover:#1d4ed8;--brand-wash:rgba(37,99,235,.12);--primary-bg:#e4e4e7;--primary-text:#0a0a0d;--scene:none;--shadow:0 20px 40px rgba(0,0,0,.24)}
+html[data-theme="blanco"]{--bg:#f4f4f5;--surface:#fff;--card:#fff;--hover:#f8f8f9;--border:#e4e4e7;--border-strong:#d4d4d8;--title:#18181b;--text:#3f3f46;--sub:#71717a;--dim:#a1a1aa;--brand:#2563eb;--brand-hover:#1d4ed8;--brand-wash:rgba(37,99,235,.08);--primary-bg:#18181b;--primary-text:#fff;--scene:none;--shadow:0 12px 32px rgba(24,24,27,.045)}
+html[data-theme="crystal"]{--bg:#0c1421;--surface:rgba(230,247,255,.065);--card:rgba(242,250,255,.095);--hover:rgba(237,251,255,.13);--border:rgba(190,232,252,.2);--border-strong:rgba(190,232,252,.38);--title:#f2fbff;--text:#e6f4ff;--sub:#a5bfce;--dim:#829ba9;--brand:#b8f5fa;--brand-hover:#d3fcff;--brand-wash:rgba(184,245,250,.13);--primary-bg:#b8f5fa;--primary-text:#15323c;--scene:radial-gradient(ellipse at 70% 2%,rgba(93,88,218,.29),transparent 50%),radial-gradient(ellipse at 12% 80%,rgba(47,196,207,.19),transparent 55%);--shadow:0 15px 38px rgba(4,9,24,.25)}
+html[data-theme="orange"]{--bg:#100e0d;--surface:#1c1714;--card:#26211d;--hover:#342a23;--border:#3c3029;--border-strong:#554233;--title:#fff5eb;--text:#f5e9df;--sub:#b7a49b;--dim:#907c71;--brand:#ef823c;--brand-hover:#f79351;--brand-wash:rgba(239,130,60,.14);--primary-bg:#ef823c;--primary-text:#26140b;--scene:radial-gradient(ellipse at 85% 0%,rgba(239,130,60,.12),transparent 65%);--shadow:0 12px 40px rgba(0,0,0,.26)}
+html[data-theme="blue"]{--bg:#0a1424;--surface:#11223a;--card:#192c45;--hover:#233b56;--border:#30435b;--border-strong:#42617f;--title:#f4faff;--text:#e1edfa;--sub:#a1bad5;--dim:#829ab5;--brand:#66b7ff;--brand-hover:#8ecaff;--brand-wash:rgba(102,183,255,.15);--primary-bg:#66b7ff;--primary-text:#0c2137;--scene:radial-gradient(ellipse at 85% 0%,rgba(46,115,215,.19),transparent 60%);--shadow:0 20px 45px rgba(0,5,23,.2)}
+/* NUEVA propuesta: grises medios/claro-oscuro, sin superficies #000. */
+html[data-theme="gris"]{--bg:#969ba2;--surface:#b6bac0;--card:#d6d9de;--hover:#e5e7ea;--border:#858a93;--border-strong:#5c626d;--title:#1f2228;--text:#252932;--sub:#484f59;--dim:#59616b;--brand:#3b444e;--brand-hover:#252e37;--brand-wash:rgba(51,58,68,.12);--primary-bg:#303740;--primary-text:#fff;--scene:linear-gradient(145deg,rgba(255,255,255,.14),transparent 70%);--shadow:0 12px 30px rgba(48,53,60,.12);--status-green:#147a44;--status-blue:#1158b6;--status-red:#b1253e;--status-soft-green:rgba(20,122,68,.13);--status-soft-blue:rgba(17,88,182,.13);--status-soft-red:rgba(177,37,62,.12)}
+html[data-theme="blanco"]{--status-green:#157748;--status-blue:#1c59bd;--status-red:#bd2840;--status-soft-green:rgba(21,119,72,.1);--status-soft-blue:rgba(28,89,189,.1);--status-soft-red:rgba(189,40,64,.09)}
+*{box-sizing:border-box}html,body{min-height:100%;margin:0}body{background:var(--bg);background-image:var(--scene);background-attachment:fixed;color:var(--text);font-size:14px;line-height:1.55}button,input,textarea,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--brand);outline-offset:3px}a{color:inherit}svg.icon{display:inline-block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}.symbol-defs{position:absolute;width:0;height:0;overflow:hidden}::selection{background:var(--brand-wash);color:var(--title)}
+.workspace{min-height:100dvh;display:flex;width:100%}.sidebar{width:244px;padding:29px 16px 18px;border-right:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;gap:26px;flex-shrink:0}.logo{display:flex;align-items:center;gap:11px;padding:2px 12px}.logo-mark,.mobile-mark{display:grid;place-items:center;background:var(--title);color:var(--bg);font-size:22px;font-weight:800;letter-spacing:-.13em;border-radius:13px;width:40px;height:40px;padding-right:4px}.logo-mark span{color:var(--brand)}.logo b{font-size:15px;letter-spacing:.07em;color:var(--title)}.logo small{display:block;font-size:9px;letter-spacing:.2em;color:var(--dim);margin-top:1px}.side-label,.eyebrow{font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--dim);text-transform:uppercase}.side-label{padding-left:12px}.side-nav{display:flex;flex-direction:column;gap:6px}.nav-button{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:12px;color:var(--sub);padding:13px 13px;font-size:13px;font-weight:550}.nav-button.active{background:var(--brand-wash);color:var(--title);border-color:var(--border-strong)}.nav-button.active .icon{color:var(--brand)}.nav-button:hover:not(.active){background:var(--hover);color:var(--text)}.side-spacer{flex:1}.mini-preview{padding:16px;border-radius:15px;background:var(--card);border:1px solid var(--border);display:flex;flex-direction:column;gap:8px}.mini-preview strong{font-size:17px;color:var(--title);font-weight:650}.mini-preview small{font-size:11px;color:var(--sub)}.text-action{display:flex;align-items:center;justify-content:space-between;background:none;border:0;color:var(--brand);font-size:11px;font-weight:650;padding:9px 0 0}.text-action svg{width:15px}.sidebar-foot{border-top:1px solid var(--border);padding:14px 9px 0;font-size:10px;color:var(--dim);display:flex;flex-direction:column;gap:5px;letter-spacing:.08em}.sidebar-foot span{font-size:9px}.main-shell{min-width:0;flex:1;display:flex;flex-direction:column}.topbar{height:73px;padding:0 clamp(16px,3vw,42px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface)}.page-breadcrumb{display:flex;align-items:center;gap:10px;letter-spacing:.08em;font-size:10px;color:var(--dim);font-weight:650}.page-breadcrumb svg{width:12px;height:12px}.page-breadcrumb strong{font-size:12px;letter-spacing:0;color:var(--title)}.top-actions{display:flex;align-items:center;gap:12px}.top-status{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);padding:9px 12px;border:1px solid var(--border);border-radius:50px}.signal{width:7px;height:7px;background:var(--dim);border-radius:50%;display:inline-block;flex:none}.signal.active{background:var(--status-green)}.icon-button{width:36px;height:36px;border:1px solid var(--border);border-radius:10px;color:var(--text);display:grid;place-items:center;background:var(--card)}.icon-button:hover{background:var(--hover)}.avatar-button{width:36px;height:36px;background:var(--brand-wash);border:1px solid var(--border-strong);border-radius:50%;color:var(--brand);font-weight:800}.mobile-brand,.bottom-nav{display:none}.content-grid{display:grid;grid-template-columns:minmax(0,1fr) 277px;flex:1;min-height:0}.main-content{min-width:0;max-width:1020px;width:100%;padding:clamp(20px,3vw,42px) clamp(16px,4.2vw,56px) 45px;margin:0 auto}.inspector{border-left:1px solid var(--border);background:color-mix(in srgb,var(--surface) 88%,transparent);padding:31px 20px;min-width:0}.inspector>div{position:sticky;top:26px}.inspector h3{font-size:14px;color:var(--title);margin:9px 0 4px}.inspector p{color:var(--sub);font-size:11px;margin:0 0 18px}.inspect-divider{height:1px;background:var(--border);margin:22px 0}.micro-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;gap:9px;margin:10px 0;color:var(--sub)}.micro-row strong{color:var(--title);font-weight:600}.code-chip{font:11px/1.4 ui-monospace,monospace;padding:4px 7px;border-radius:6px;background:var(--card);border:1px solid var(--border)}.status-key{display:flex;align-items:center;gap:10px;border-radius:10px;margin-top:8px;padding:10px 12px;background:var(--card);border:1px solid var(--border);color:var(--sub);font-size:12px}.status-key .signal{width:9px;height:9px}.signal.progress{background:var(--status-green)}.signal.enabled{background:var(--status-blue)}.signal.warning{background:var(--status-red)}.inspect-log{font-size:10px;color:var(--dim);word-break:break-word;max-height:120px;overflow:auto;border:1px solid var(--border);border-radius:10px;background:var(--card);padding:10px}
+.header-line{display:flex;justify-content:space-between;align-items:center;gap:14px}.mini-kicker{text-transform:uppercase;font-size:10px;letter-spacing:.17em;font-weight:750;color:var(--brand)}.page-title{font-size:clamp(26px,2.6vw,36px);line-height:1.18;letter-spacing:-.055em;font-weight:660;color:var(--title);margin:8px 0 10px}.lead{color:var(--sub);font-size:13px;max-width:600px;margin:0}.page-intro{margin-bottom:29px}.pill{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;background:var(--card);color:var(--sub);border:1px solid var(--border);border-radius:60px;font-size:10px;font-weight:650;white-space:nowrap}.pill.soft{background:var(--brand-wash);color:var(--brand)}.section-label{font-size:11px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;font-weight:750;margin:25px 0 10px}.surface-card{border:1px solid var(--border);border-radius:16px;background:var(--card);padding:20px;box-shadow:var(--shadow)}.surface-card + .surface-card{margin-top:12px}.card-heading{color:var(--title);font-size:14px;font-weight:650}.card-desc{color:var(--sub);font-size:12px;line-height:1.55;margin:6px 0 0}.chip{font-size:10px;letter-spacing:.07em;padding:5px 9px;border:1px solid var(--border);color:var(--sub);background:var(--surface);border-radius:30px;white-space:nowrap}.tiny-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:var(--radius-button);font-weight:650;font-size:12px;min-height:42px;white-space:nowrap}.btn-primary{background:var(--primary-bg);color:var(--primary-text);border:1px solid transparent}.btn-primary:hover{filter:brightness(1.08)}.btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover,.tab-button:hover{background:var(--hover)}.btn-ghost{background:transparent;color:var(--sub);border:1px solid transparent}.btn-ghost:hover{background:var(--hover);color:var(--title)}.btn .icon{height:16px;width:16px}.tag-status{display:inline-flex;gap:6px;align-items:center;font-size:11px;font-weight:750;padding:6px 9px;border-radius:8px}.tag-status.progress{color:var(--status-green);background:var(--status-soft-green)}.tag-status.enabled{color:var(--status-blue);background:var(--status-soft-blue)}.tag-status.warning{color:var(--status-red);background:var(--status-soft-red)}.tag-status.pending{color:var(--sub);background:var(--hover)}.tag-status .signal{width:7px;height:7px;background:currentColor}.status-selector{display:flex;gap:7px;flex-wrap:wrap}.status-button{display:inline-flex;align-items:center;gap:7px;padding:9px 11px;font-size:11px;border:1px solid var(--border);background:var(--card);color:var(--sub);border-radius:9px}.status-button[data-status="progress"]{color:var(--status-green)}.status-button[data-status="enabled"]{color:var(--status-blue)}.status-button[data-status="warning"]{color:var(--status-red)}.status-button.selected{border-color:currentColor;background:var(--hover)}
+.chat-main{display:flex;flex-direction:column;gap:17px}.chat-hero{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:25px 26px;position:relative;overflow:hidden}.chat-hero::after{content:"✳";position:absolute;right:22px;top:3px;font-size:105px;color:var(--brand);opacity:.09;line-height:1}.hero-overline{font-size:10px;letter-spacing:.15em;color:var(--brand);font-weight:700}.chat-hero h2{font-size:25px;letter-spacing:-.045em;font-weight:650;margin:8px 0 7px;color:var(--title);position:relative;z-index:1}.chat-hero p{color:var(--sub);max-width:400px;margin:0;font-size:12px;position:relative;z-index:1}.header-tools{display:flex;align-items:center;justify-content:space-between;gap:8px}.chat-messages{min-height:185px;max-height:395px;overflow-y:auto;display:flex;flex-direction:column;gap:13px;padding:5px 2px 2px}.empty-message{padding:30px;border:1px dashed var(--border-strong);border-radius:14px;color:var(--sub);display:flex;flex-direction:column;gap:5px;align-items:center;text-align:center;font-size:12px}.empty-message svg{color:var(--brand);width:25px;height:25px}.empty-message strong{color:var(--title);font-size:13px}.chat-bubble{max-width:84%;border:1px solid var(--border);border-radius:14px;padding:13px 15px;background:var(--card);align-self:flex-start}.chat-bubble.user{align-self:flex-end;background:var(--brand-wash);border-color:var(--border-strong)}.bubble-meta{font-size:10px;color:var(--dim);margin-bottom:6px;font-weight:650}.chat-bubble p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:var(--text)}.chat-bubble .delivery{color:var(--status-red);font-size:10px;margin-top:7px}.composer{padding:14px 15px;background:var(--card);border:1px solid var(--border-strong);border-radius:17px}.composer:focus-within{border-color:var(--brand)}.composer textarea{width:100%;background:transparent;border:0;resize:vertical;min-height:72px;max-height:230px;color:var(--text);outline:none;font-size:13px}.composer textarea::placeholder,.search-input::placeholder{color:var(--dim)}.composer textarea:focus-visible{outline:none}.compose-bottom{border-top:1px solid var(--border);padding-top:11px;display:flex;align-items:center;justify-content:space-between;gap:7px}.compose-tools{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.tool-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:transparent;border-radius:9px;color:var(--sub);padding:8px 10px;font-size:11px}.tool-btn.on{border-color:var(--status-blue);color:var(--status-blue);background:var(--status-soft-blue)}.tool-btn:hover{background:var(--hover)}.tool-btn .icon{width:15px;height:15px}.send-btn{padding:9px 12px;min-width:44px}.attachments{display:flex;flex-wrap:wrap;gap:6px;padding:9px 0}.attachment-chip{display:inline-flex;align-items:center;gap:4px;background:var(--hover);color:var(--text);padding:6px 8px;border-radius:8px;font-size:11px;border:1px solid var(--border);max-width:100%}.attachment-chip button{border:0;background:transparent;color:var(--sub);font-weight:800}.chat-notice{display:flex;gap:10px;align-items:flex-start;color:var(--sub);font-size:12px;background:var(--surface);border:1px solid var(--border);padding:12px 14px;border-radius:10px}.chat-notice svg{color:var(--status-red);width:16px;height:16px;flex:none}
+.select-wrap{display:flex;align-items:center;gap:8px}.input-control,.search-input,.textarea-control{padding:11px 13px;color:var(--text);background:var(--card);border:1px solid var(--border);border-radius:10px;min-height:43px;min-width:0}.input-control option{background:var(--surface);color:var(--text)}.field-label{display:block;font-size:11px;color:var(--sub);font-weight:650;margin-bottom:7px}.search-wrap{position:relative}.search-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--dim);height:17px;width:17px}.search-input{padding-left:40px;width:100%}.segmented{display:flex;gap:5px;padding:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px}.tab-button{flex:1;padding:10px;border:1px solid transparent;background:transparent;border-radius:9px;color:var(--sub);font-size:12px}.tab-button.active{background:var(--card);color:var(--title);border-color:var(--border-strong);font-weight:700}.file-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;margin-bottom:14px}.file-row{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid var(--border);border-radius:12px;background:var(--card);margin-bottom:9px}.file-icon{height:40px;width:40px;display:grid;place-items:center;background:var(--hover);border-radius:10px;color:var(--sub)}.file-row .name{font-size:13px;color:var(--title);font-weight:650;overflow-wrap:anywhere}.file-row .sub{color:var(--dim);font-size:11px;margin-top:3px}.file-data{flex:1;min-width:0}.file-actions{display:flex;gap:5px}.file-actions button{border:1px solid var(--border);border-radius:9px;padding:8px;color:var(--sub);background:transparent;display:grid;place-items:center}.file-actions button.on{color:var(--brand);background:var(--brand-wash)}.file-actions button:hover{background:var(--hover)}.file-actions svg{width:16px;height:16px}.file-actions .download-text{color:var(--brand);padding:8px 11px;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700}.download-text .icon{width:15px}html[data-theme="matte"] .download-text{color:#ff5500}html[data-theme="blanco"] .download-text{color:#2563eb}
+.flow-track{display:flex;gap:6px;overflow-x:auto;padding:12px 0;scrollbar-width:thin}.flow-track span{font-size:10px;font-weight:700;white-space:nowrap;padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:9px;color:var(--text)}.flow-track i{align-self:center;font-style:normal;color:var(--dim)}.wall-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.root-card{text-align:left;min-width:0;border:1px solid var(--border);border-radius:14px;padding:16px;background:var(--card);display:flex;flex-direction:column;gap:11px}.root-card:hover{border-color:var(--brand);background:var(--hover)}.root-card h3{font-size:13px;line-height:1.4;color:var(--title);margin:0}.root-card small{color:var(--sub);font-size:11px;overflow-wrap:anywhere}.root-card .root-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px}.root-card .root-index{color:var(--dim);font-size:11px;font-weight:750}.empty-state{padding:26px;text-align:center;color:var(--sub);font-size:12px;border:1px dashed var(--border-strong);border-radius:12px}.progress-line{width:100%;height:3px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:4px}.progress-line span{display:block;width:30%;height:100%;background:var(--status-green)}
+.themes-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.theme-option{background:var(--card);text-align:left;padding:12px;border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;gap:9px;min-width:0}.theme-option.selected{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}.theme-option .theme-swatch{height:85px;border-radius:9px;border:1px solid rgba(127,127,127,.25);display:flex;align-items:end;gap:6px;padding:13px}.theme-swatch span{height:24px;width:44px;border-radius:7px;display:block;border:1px solid rgba(127,127,127,.2)}.theme-option strong{font-size:13px;color:var(--title)}.theme-option small{font-size:10px;color:var(--sub)}.theme-option .theme-meta{display:flex;justify-content:space-between;gap:8px;align-items:center}.theme-option .theme-meta .icon{width:16px;height:16px;color:var(--brand)}.setting-row{display:flex;align-items:center;justify-content:space-between;gap:15px;border-bottom:1px solid var(--border);padding:15px 0}.setting-row:last-child{border-bottom:none}.setting-row strong{display:block;color:var(--title);font-size:13px}.setting-row small{display:block;color:var(--sub);font-size:11px;margin-top:4px}.switch{width:43px;height:25px;background:var(--hover);border:1px solid var(--border-strong);border-radius:30px;position:relative;flex:none}.switch::after{content:"";position:absolute;left:3px;top:3px;width:17px;height:17px;background:var(--sub);border-radius:50%;transition:transform .2s,background .2s}.switch[aria-checked="true"]{background:var(--status-soft-blue);border-color:var(--status-blue)}.switch[aria-checked="true"]::after{background:var(--status-blue);transform:translateX(17px)}
+.sheet{width:min(490px,calc(100% - 28px));max-height:min(85dvh,760px);border:1px solid var(--border-strong);border-radius:var(--radius-sheet);background:var(--surface);color:var(--text);padding:0;box-shadow:0 25px 90px rgba(0,0,0,.35);overflow-y:auto}.sheet::backdrop{background:rgba(0,0,0,.63);backdrop-filter:blur(3px)}.sheet-wrap{padding:22px}.sheet-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding-bottom:18px}.sheet-header h2{color:var(--title);font-size:21px;margin:2px 0 4px}.sheet-header p{color:var(--sub);font-size:12px;margin:0}.sheet-footer{display:flex;justify-content:flex-end;gap:8px;padding-top:20px}.mode-option{display:flex;align-items:center;gap:11px;width:100%;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:14px;text-align:left;color:var(--text);margin-top:9px}.mode-option.selected{border-color:var(--brand);background:var(--brand-wash)}.mode-option strong{color:var(--title);font-size:13px}.mode-option small{display:block;color:var(--sub);font-size:11px;margin-top:3px}.mode-option .icon{color:var(--brand)}.mode-option .check{margin-left:auto;color:var(--brand)}.sheet-close{border:0;background:var(--card);height:32px;width:32px;display:grid;place-items:center;border-radius:50%;color:var(--text)}.sheet-close svg{width:16px}.sheet .textarea-control{width:100%;min-height:88px;resize:vertical}.sheet input.input-control{width:100%}.toast-area{position:fixed;bottom:24px;right:26px;z-index:100;display:flex;flex-direction:column;gap:6px}.toast{max-width:min(380px,calc(100vw - 34px));color:var(--title);background:var(--card);border:1px solid var(--border-strong);border-left:3px solid var(--brand);box-shadow:0 10px 35px rgba(0,0,0,.2);border-radius:10px;padding:12px 16px;font-size:12px}.toast.error{border-left-color:var(--status-red)}.toast.success{border-left-color:var(--status-green)}.muted-note{font-size:11px;color:var(--dim)}.footer-line{font-size:10px;color:var(--dim);letter-spacing:.07em;margin-top:28px;text-align:center}
+@media(min-width:1350px){.main-content{max-width:1060px}.chat-messages{max-height:470px}}
+@media(max-width:1160px){.content-grid{grid-template-columns:minmax(0,1fr)}.inspector{display:none}}
+@media(max-width:770px){.sidebar{display:none}.workspace{display:block}.main-shell{padding-bottom:calc(69px + env(safe-area-inset-bottom))}.topbar{height:63px;padding:0 17px}.page-breadcrumb{display:none}.mobile-brand{display:flex;align-items:center;gap:9px;color:var(--title);font-size:13px;font-weight:800;letter-spacing:.06em}.mobile-mark{width:31px;height:31px;border-radius:9px;font-size:18px}.top-status{font-size:10px;padding:7px 9px}.top-actions{gap:8px}.avatar-button{height:32px;width:32px}.top-actions .icon-button{height:32px;width:32px}.main-content{padding:25px 15px 35px;max-width:600px}.bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);height:calc(65px + env(safe-area-inset-bottom));z-index:25;padding:7px 8px env(safe-area-inset-bottom)}.bottom-nav .nav-button{flex:1;display:flex;flex-direction:column;gap:3px;padding:4px;border-radius:10px;font-size:10px;justify-content:center;text-align:center;align-items:center;white-space:nowrap}.bottom-nav .nav-button svg{height:20px;width:20px}.toast-area{bottom:calc(80px + env(safe-area-inset-bottom));left:12px;right:12px}.sheet{margin:auto auto 0;max-height:88dvh;width:100%;border-radius:var(--radius-sheet) var(--radius-sheet) 0 0;border-bottom:0}}
+@media(max-width:480px){.page-title{font-size:26px}.chat-hero{padding:20px}.chat-hero h2{font-size:22px}.chat-hero::after{font-size:80px}.surface-card{padding:15px}.file-toolbar{grid-template-columns:minmax(0,1fr) auto}.file-actions{gap:3px}.file-actions .download-text{font-size:0;gap:0;padding:8px}.file-actions .download-text svg{width:17px;height:17px}.wall-grid{gap:9px}.root-card{padding:12px}.root-card h3{font-size:12px}.root-card small{font-size:10px}.themes-grid{gap:8px}.theme-option{padding:8px}.theme-option .theme-swatch{height:71px}.compose-tools{gap:2px}.tool-btn{font-size:0;padding:8px}.tool-btn svg{width:18px;height:18px}.tool-btn.on{font-size:10px}.send-btn{padding:8px 11px}.section-label{font-size:10px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}html[data-motion="off"] *,html[data-motion="off"] *:before,html[data-motion="off"] *:after{transition:none!important;animation:none!important}
+/* Compact conversation on a real phone: composer stays visible above bottom nav. */
+@media(max-width:770px){
+  .chat-main{gap:10px}
+  .chat-main .chat-hero{padding:14px 17px}
+  .chat-main .chat-hero h2{font-size:18px;line-height:1.3;margin:6px 0 0;max-width:90%}
+  .chat-main .chat-hero p{display:none}
+  .chat-main .chat-hero::after{font-size:63px}
+  .chat-main .chat-messages{min-height:95px;max-height:185px}
+  .chat-main .empty-message{padding:13px 12px;gap:4px}
+  .chat-main .empty-message .icon{width:19px;height:19px}
+  .chat-main .composer{padding:11px 13px}
+  .chat-main .composer textarea{min-height:47px}
+  .chat-main .chat-notice{padding:8px 10px;font-size:10px}
+  .chat-main .section-label{font-size:10px}
+  .page-intro{margin-bottom:16px}
+}
+
+</style>
+  
+  
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" class="symbol-defs" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.3 8.3 0 0 1-3.8-.9L3 21l1.9-5.7A8.3 8.3 0 0 1 4 11.5a8.5 8.5 0 0 1 17 0Z"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2.3 2H19a2 2 0 0 1 2 2v10H3Z"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 3l2 1 2.2-.5 1.1 2 2.2 1-.4 2.3 1.4 1.7-1.4 1.8.4 2.2-2.2 1-1.1 2-2.2-.5-2 1-2-1-2.2.5-1.1-2-2.2-1 .4-2.2L3.5 10.5 5 8.8 4.6 6.5l2.2-1 1.1-2L10 4l2-1Z" transform="translate(0 1.5)"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 2 2.1 7.9L22 12l-7.9 2.1L12 22l-2.1-7.9L2 12l7.9-2.1Z"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m3 20 18-8L3 4l2.5 7L14 12l-8.5 1Z"/></symbol>
+    <symbol id="i-attach" viewBox="0 0 24 24"><path d="m9 13 5.5-5.5a3 3 0 0 1 4.2 4.2l-8 8a5 5 0 0 1-7.1-7.1l8.4-8.4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 19h16"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="m9 3 6 6-2 3 4 4-1.5 1.5-4-4L8 16l-3-3 4-4Z"/><path d="m9 15-6 6"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2 20 5v6c0 5-3 8-8 11-5-3-8-6-8-11V5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 3 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 3"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 5-5 13 0 18M12 3c5 5 5 13 0 18"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 6-6 4 4 3-3 4 5"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M5 2h10l5 5v15H5Z"/><path d="M15 2v5h5M8 12h9M8 16h9"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10M6 5a9 9 0 1 0 12 0"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M5 2h10l5 5v15H5Z"/><path d="M15 2v5h5"/></symbol>
+  </svg>
+  <div class="workspace" id="workspace">
+    <aside class="sidebar" aria-label="Navegación principal">
+      <div class="logo"><div class="logo-mark">Y<span>·</span></div><div><b>YAIWES</b><small>DESIGN STUDIO</small></div></div>
+      <div class="side-label" data-i18n="workspace">ESPACIO DE TRABAJO</div>
+      <nav id="sideNav" class="side-nav" aria-label="Secciones"></nav>
+      <div class="side-spacer"></div>
+      <div class="mini-preview"><span class="eyebrow" data-i18n="design_lock">PERFIL VISUAL</span><strong id="sidebarThemeName">Little · Principal</strong><small data-i18n="theme_lock_hint">Tokens conservados · vistas en revisión</small><button class="text-action" type="button" data-nav="settings"><span data-i18n="customize">Personalizar apariencia</span><svg class="icon"><use href="#i-chevron"/></svg></button></div>
+      <div class="sidebar-foot">FROMTED / YAIWES <span>v0.2 · REVIEW</span></div>
+    </aside>
+    <div class="main-shell">
+      <header class="topbar">
+        <div class="mobile-brand"><span class="mobile-mark">Y·</span> YAIWES</div>
+        <div class="page-breadcrumb"><span data-i18n="product">FROMTED PRODUCT</span><svg class="icon"><use href="#i-chevron"/></svg><strong id="pageLocation">Chat</strong></div>
+        <div class="top-actions">
+          <div class="top-status" id="topBridgeStatus"><span class="signal neutral"></span><span data-i18n="not_connected">Sin backend</span></div>
+          <button type="button" class="icon-button" data-action="chat.export" id="quickExport" aria-label="Exportar" title="Exportar JSON"><svg class="icon"><use href="#i-download"/></svg></button>
+          <button type="button" class="avatar-button" data-nav="settings" aria-label="Configuración">Y</button>
+        </div>
+      </header>
+      <div class="content-grid">
+        <main class="main-content" id="mainContent" tabindex="-1" aria-live="polite"></main>
+        <aside class="inspector" id="inspector" aria-label="Panel de verificación"></aside>
+      </div>
+    </div>
+    <nav id="bottomNav" class="bottom-nav" aria-label="Navegación móvil"></nav>
+  </div>
+  <dialog id="sheet" class="sheet" aria-labelledby="sheetTitle"><div id="sheetInner"></div></dialog>
+  <input id="filePicker" type="file" multiple hidden aria-label="Seleccionar archivos locales">
+  <input id="restorePicker" type="file" accept="application/json" hidden aria-label="Importar estado JSON">
+  <div id="toastArea" class="toast-area" role="status" aria-live="polite"></div>
+<script>
+/* YAIWES UI action bus. Only allowlisted actions; remote calls are fail-closed. */
+(function (root) {
+  'use strict';
+  const allowed = new Set([
+    'chat.close','chat.export','chat.attach','chat.send',
+    'mode.thinking.toggle','mode.select','model.select',
+    'tool.document.toggle','tool.website.toggle','tool.image.toggle',
+    'files.add','files.pin','files.download','files.search',
+    'wall.status.set','wall.root.add','wall.note.set',
+    'theme.select','locale.select','ui.navigate','ui.settings',
+    'state.export','state.import','state.reset'
+  ]);
+  async function execute(actionId, payload = {}, { remote = false } = {}) {
+    if (!allowed.has(actionId)) return { ok:false, code:'UNKNOWN_ACTION', actionId };
+    root.dispatchEvent(new CustomEvent('yaiwes:ui-action', {
+      detail:{ actionId, payload, remote, timestamp:Date.now() }
+    }));
+    if (!remote) return { ok:true, code:'LOCAL_ACTION' };
+    const bridge = root.YAIWES_PLUGIN_BRIDGE;
+    if (!bridge || typeof bridge.execute !== 'function') {
+      return {ok:false, code:'BRIDGE_MISSING', actionId};
+    }
+    try {
+      const result = await bridge.execute(actionId, payload);
+      if (!result || !(result.ok === true || ['success','done','completed'].includes(result.status))) {
+        return {ok:false, code:'BRIDGE_REJECTED', result};
+      }
+      return {ok:true, code:'REMOTE_OK', result};
+    } catch (error) {
+      return {ok:false, code:'BRIDGE_ERROR', error:String(error?.message || error)};
+    }
+  }
+  root.YAIWESActionBus = Object.freeze({execute, allowed:Object.freeze([...allowed])});
+})(window);
+
+</script><script>
+/* FROMTED × YAIWES v0.2: local UI functionality + explicit remote fail-closed integration. */
+(() => {
+  'use strict';
+  const KEY = 'yaiwes.visual.review.v02';
+  const makeId = () => (window.crypto && typeof window.crypto.randomUUID==='function') ? window.makeId() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  const MODES = ['fast','think','balanced'];
+  const THEMES = {
+    little: {label:'Little',category:'CANÓNICO · PRINCIPAL',bg:'#1C1B1A',card:'#2A2927',accent:'#C65D3B',swatch:'#F5F4F0'},
+    matte: {label:'Negro mate',category:'CANÓNICO',bg:'#0a0a0d',card:'#202025',accent:'#2563eb',swatch:'#e4e4e7'},
+    crystal: {label:'Cristal holográfico',category:'EN REVISIÓN',bg:'#0c1421',card:'rgba(135,190,210,.36)',accent:'#b8f5fa',swatch:'#e6f4ff'},
+    orange: {label:'Naranja / negro',category:'EN REVISIÓN',bg:'#100e0d',card:'#26211d',accent:'#ef823c',swatch:'#f5e9df'},
+    blue: {label:'Azul profundo',category:'EN REVISIÓN',bg:'#0a1424',card:'#192c45',accent:'#66b7ff',swatch:'#e1edfa'},
+    blanco: {label:'Blanco',category:'CANÓNICO',bg:'#f4f4f5',card:'#ffffff',accent:'#2563eb',swatch:'#3f3f46'},
+    gris: {label:'Gris neutro',category:'NUEVO · EN REVISIÓN',bg:'#969ba2',card:'#d6d9de',accent:'#303740',swatch:'#252932'}
+  };
+  const LABELS = {
+    es:{workspace:'ESPACIO DE TRABAJO',product:'FROMTED PRODUCT',chat:'Chat',files:'Archivos',wall:'Crazy Wall',settings:'Configuración',design_lock:'PERFIL VISUAL',theme_lock_hint:'Tokens conservados · vistas en revisión',customize:'Personalizar apariencia',not_connected:'Sin backend',connected:'Puente disponible',hello:'Un espacio para crear.',tagline:'Diseño modular FROMTED × YAIWES. Cada función se prueba antes de aprobar el perfil visual.',chat_intro:'Tu conversación, tus herramientas y tus modelos en un solo lugar.',conversation:'CONVERSACIÓN',new_chat:'Nuevo chat',mode:'Modo',fast:'Rápido',think:'Pensar',balanced:'Equilibrado',fast_desc:'Respuestas directas',think_desc:'Mayor profundidad',balanced_desc:'Velocidad y detalle',model:'Modelo',empty_chat:'Escribe para comenzar',no_invent:'Sin motor conectado: nunca se inventarán respuestas.',type_message:'Escribe aquí tu mensaje…',document:'Documento',website:'Web',image:'Imagen',send:'Enviar',attach:'Adjuntar',offline_note:'Sin backend: el envío se bloquea. El borrador y las herramientas siguen funcionando.',gallery:'Tus archivos locales',file_intro:'Añade archivos reales desde tu dispositivo. Se guardan localmente los de hasta 1 MB.',add_files:'Añadir archivos',search_files:'Buscar archivos…',local:'Local',pinned:'Anclados',empty_files:'Todavía no has agregado archivos.',empty_search:'No hay archivos que coincidan.',all_local:'Todos',pin:'Anclar',download:'Descargar',file_session:'Solo esta sesión',file_saved:'Conservado localmente',wall_intro:'Raíces editables del ejemplo YAIWES. Los estados son locales; no representan comprobaciones de GitHub.',workflow:'FLUJO DE TRABAJO',edit:'Abrir ficha',roots:'Raíces registradas',add_root:'Añadir raíz',progress:'En curso',enabled:'Encendido',warning:'Advertencia',pending:'Pendiente',save:'Guardar',cancel:'Cancelar',close:'Cerrar',note:'Bitácora / nota',name:'Nombre',apply:'Aplicar',choose_mode:'Cómo quieres que trabaje el modelo conectado',choose_visual:'Selecciona una apariencia. Little es el diseño principal.',themes:'TEMAS DISPONIBLES',appearance:'Apariencia de la interfaz',theme_intro:'7 estilos · 3 canónicos + 4 propuestas (incluido gris neutro).',status_legend:'CÓDIGO DE ESTADOS',status_help:'Estos indicadores semánticos funcionan en los siete temas.',preferences:'PREFERENCIAS',motion:'Animaciones',motion_desc:'Transiciones discretas',hints:'Ayudas de contexto',hints_desc:'Mostrar información de referencia',language:'Idioma',export:'Exportar',import:'Importar',reset:'Reiniciar estado',reset_confirm:'¿Borrar datos locales?',reset_explain:'Se eliminarán los archivos guardados, notas y opciones de este navegador.',test:'PRUEBA FUNCIONAL',action_log:'Última acción',verified:'Verificación',local_only:'Local · no simula backend',design_review:'EN REVISIÓN',storage:'Persistencia local',message_blocked:'No enviado: falta un bridge funcional.',invalid_file:'Archivo no válido.',saved:'Guardado en este navegador',updated:'Actualizado',file_added:'Archivo añadido',sent_ok:'Enviado mediante bridge',import_ok:'Estado importado',no_messages:'No hay mensajes enviados.',choose_file:'Selecciona un archivo',delete:'Eliminar',attached:'Adjunto',how_works:'REFERENCIA → SKILL → CÓDIGO → NAVEGADOR → TEST → PASS',meta_label:'Diseño principal',no_bridge:'No hay bridge conectado',no_notes:'Sin notas todavía',root_name:'Ruta o nombre',file_persist_note:'Los archivos mayores de 1 MB solo permanecen disponibles mientras esta pestaña esté abierta.',remote_label:'Motor externo',local_actions:'Herramientas locales'},
+    en:{workspace:'WORKSPACE',product:'FROMTED PRODUCT',chat:'Chat',files:'Files',wall:'Crazy Wall',settings:'Settings',design_lock:'VISUAL PROFILE',theme_lock_hint:'Original tokens · under review',customize:'Customize appearance',not_connected:'No backend',connected:'Bridge available',hello:'A space to create.',tagline:'Modular FROMTED × YAIWES design. Every feature is tested before approval.',chat_intro:'Your conversation, tools, and models together.',conversation:'CONVERSATION',new_chat:'New chat',mode:'Mode',fast:'Fast',think:'Think',balanced:'Balanced',fast_desc:'Direct answers',think_desc:'Deeper reasoning',balanced_desc:'Speed and detail',model:'Model',empty_chat:'Type to begin',no_invent:'No connected engine: replies will never be invented.',type_message:'Write your message…',document:'Document',website:'Web',image:'Image',send:'Send',attach:'Attach',offline_note:'No backend: sending is blocked. Drafts and tools work.',gallery:'Local files',file_intro:'Add real files from your device. Files under 1 MB are stored locally.',add_files:'Add files',search_files:'Search files…',local:'Local',pinned:'Pinned',empty_files:'No files added yet.',empty_search:'No matching files.',all_local:'All',pin:'Pin',download:'Download',file_session:'This session only',file_saved:'Saved locally',wall_intro:'Editable YAIWES sample roots. Local statuses are not verified GitHub states.',workflow:'WORKFLOW',edit:'Open item',roots:'Registered roots',add_root:'Add root',progress:'In progress',enabled:'Enabled',warning:'Warning',pending:'Pending',save:'Save',cancel:'Cancel',close:'Close',note:'Log / note',name:'Name',apply:'Apply',choose_mode:'Choose how the connected model should work',choose_visual:'Choose a look. Little is the primary design.',themes:'AVAILABLE THEMES',appearance:'Interface appearance',theme_intro:'7 styles · 3 canonical + 4 proposals (including neutral gray).',status_legend:'STATE COLORS',status_help:'These semantic indicators work across all seven themes.',preferences:'PREFERENCES',motion:'Animations',motion_desc:'Subtle transitions',hints:'Context hints',hints_desc:'Show reference information',language:'Language',export:'Export',import:'Import',reset:'Reset state',reset_confirm:'Delete local data?',reset_explain:'This browser’s files, notes and options will be deleted.',test:'FUNCTIONAL TEST',action_log:'Last action',verified:'Verification',local_only:'Local · no backend simulation',design_review:'UNDER REVIEW',storage:'Local persistence',message_blocked:'Not sent: no functional bridge.',invalid_file:'Invalid file.',saved:'Saved in this browser',updated:'Updated',file_added:'File added',sent_ok:'Sent through bridge',import_ok:'State imported',no_messages:'No messages sent yet.',choose_file:'Choose file',delete:'Delete',attached:'Attached',how_works:'REFERENCE → SKILL → CODE → BROWSER → TEST → PASS',meta_label:'Primary design',no_bridge:'No bridge connected',no_notes:'No notes yet',root_name:'Path or name',file_persist_note:'Files above 1 MB only remain available while this tab is open.',remote_label:'External engine',local_actions:'Local tools'},
+    fr:{workspace:'ESPACE DE TRAVAIL',product:'PRODUIT FROMTED',chat:'Chat',files:'Fichiers',wall:'Crazy Wall',settings:'Paramètres',design_lock:'PROFIL VISUEL',theme_lock_hint:'Tokens originaux · en révision',customize:'Personnaliser',not_connected:'Backend absent',connected:'Bridge disponible',hello:'Un espace pour créer.',tagline:'Design modulaire FROMTED × YAIWES, testé avant approbation.',chat_intro:'Vos conversations et outils au même endroit.',conversation:'CONVERSATION',new_chat:'Nouveau chat',mode:'Mode',fast:'Rapide',think:'Réfléchir',balanced:'Équilibré',fast_desc:'Réponses directes',think_desc:'Analyse approfondie',balanced_desc:'Vitesse et détails',model:'Modèle',empty_chat:'Commencez à écrire',no_invent:'Aucun moteur connecté : aucune réponse inventée.',type_message:'Votre message…',document:'Document',website:'Web',image:'Image',send:'Envoyer',attach:'Joindre',offline_note:'Pas de backend : envoi bloqué. Brouillons et outils actifs.',gallery:'Fichiers locaux',file_intro:'Ajoutez de vrais fichiers. Jusqu’à 1 Mo stockés localement.',add_files:'Ajouter',search_files:'Rechercher…',local:'Local',pinned:'Épinglés',empty_files:'Aucun fichier ajouté.',empty_search:'Aucun résultat.',all_local:'Tous',pin:'Épingler',download:'Télécharger',file_session:'Session uniquement',file_saved:'Sauvegardé localement',wall_intro:'Racines YAIWES éditables. Statuts locaux, non vérifiés sur GitHub.',workflow:'PROCESSUS',edit:'Ouvrir',roots:'Racines',add_root:'Ajouter une racine',progress:'En cours',enabled:'Activé',warning:'Avertissement',pending:'En attente',save:'Enregistrer',cancel:'Annuler',close:'Fermer',note:'Journal / note',name:'Nom',apply:'Appliquer',choose_mode:'Choisir le mode du modèle connecté',choose_visual:'Choisissez un style. Little est le design principal.',themes:'THÈMES',appearance:'Apparence',theme_intro:'7 styles · 3 canoniques + 4 propositions.',status_legend:'COULEURS D’ÉTAT',status_help:'Les états sont disponibles sur les sept thèmes.',preferences:'PRÉFÉRENCES',motion:'Animations',motion_desc:'Transitions discrètes',hints:'Aide contextuelle',hints_desc:'Afficher les références',language:'Langue',export:'Exporter',import:'Importer',reset:'Réinitialiser',reset_confirm:'Effacer les données locales ?',reset_explain:'Tous les fichiers, notes et réglages de ce navigateur seront supprimés.',test:'TEST FONCTIONNEL',action_log:'Dernière action',verified:'Vérification',local_only:'Local · backend non simulé',design_review:'EN RÉVISION',storage:'Stockage local',message_blocked:'Non envoyé : bridge indisponible.',invalid_file:'Fichier invalide.',saved:'Sauvegardé localement',updated:'Mis à jour',file_added:'Fichier ajouté',sent_ok:'Envoyé via bridge',import_ok:'État importé',no_messages:'Aucun message envoyé.',choose_file:'Choisir un fichier',delete:'Supprimer',attached:'Pièce jointe',how_works:'RÉFÉRENCE → SKILL → CODE → NAVIGATEUR → TEST → PASS',meta_label:'Design principal',no_bridge:'Bridge indisponible',no_notes:'Aucune note',root_name:'Chemin ou nom',file_persist_note:'Au-delà de 1 Mo, fichiers disponibles durant cette session seulement.',remote_label:'Moteur distant',local_actions:'Outils locaux'},
+    pt:{workspace:'ÁREA DE TRABALHO',product:'PRODUTO FROMTED',chat:'Chat',files:'Arquivos',wall:'Crazy Wall',settings:'Configurações',design_lock:'PERFIL VISUAL',theme_lock_hint:'Tokens originais · em revisão',customize:'Personalizar aparência',not_connected:'Sem backend',connected:'Bridge disponível',hello:'Um espaço para criar.',tagline:'Design modular FROMTED × YAIWES, testado antes da aprovação.',chat_intro:'Suas conversas, ferramentas e modelos em um lugar.',conversation:'CONVERSA',new_chat:'Novo chat',mode:'Modo',fast:'Rápido',think:'Pensar',balanced:'Equilibrado',fast_desc:'Respostas diretas',think_desc:'Mais profundidade',balanced_desc:'Velocidade e detalhe',model:'Modelo',empty_chat:'Escreva para começar',no_invent:'Sem motor conectado: nenhuma resposta será inventada.',type_message:'Escreva sua mensagem…',document:'Documento',website:'Web',image:'Imagem',send:'Enviar',attach:'Anexar',offline_note:'Sem backend: envio bloqueado. Rascunhos e ferramentas continuam ativos.',gallery:'Arquivos locais',file_intro:'Adicione arquivos reais. Arquivos até 1 MB são salvos localmente.',add_files:'Adicionar arquivos',search_files:'Pesquisar arquivos…',local:'Local',pinned:'Fixados',empty_files:'Nenhum arquivo adicionado.',empty_search:'Nenhum arquivo encontrado.',all_local:'Todos',pin:'Fixar',download:'Baixar',file_session:'Somente nesta sessão',file_saved:'Salvo localmente',wall_intro:'Raízes YAIWES editáveis. Estados locais não são dados confirmados do GitHub.',workflow:'FLUXO DE TRABALHO',edit:'Abrir',roots:'Raízes',add_root:'Adicionar raiz',progress:'Em andamento',enabled:'Ativado',warning:'Aviso',pending:'Pendente',save:'Salvar',cancel:'Cancelar',close:'Fechar',note:'Registro / nota',name:'Nome',apply:'Aplicar',choose_mode:'Escolha como o modelo conectado deve trabalhar',choose_visual:'Escolha o visual. Little é o principal.',themes:'TEMAS',appearance:'Aparência',theme_intro:'7 estilos · 3 canônicos + 4 propostas.',status_legend:'CORES DE STATUS',status_help:'Estados semânticos nos sete temas.',preferences:'PREFERÊNCIAS',motion:'Animações',motion_desc:'Transições discretas',hints:'Dicas de contexto',hints_desc:'Mostrar referências',language:'Idioma',export:'Exportar',import:'Importar',reset:'Redefinir estado',reset_confirm:'Apagar dados locais?',reset_explain:'Arquivos, notas e opções deste navegador serão apagados.',test:'TESTE FUNCIONAL',action_log:'Última ação',verified:'Verificação',local_only:'Local · sem simulação do backend',design_review:'EM REVISÃO',storage:'Armazenamento local',message_blocked:'Não enviado: bridge indisponível.',invalid_file:'Arquivo inválido.',saved:'Salvo neste navegador',updated:'Atualizado',file_added:'Arquivo adicionado',sent_ok:'Enviado pelo bridge',import_ok:'Estado importado',no_messages:'Nenhuma mensagem enviada.',choose_file:'Escolher arquivo',delete:'Excluir',attached:'Anexo',how_works:'REFERÊNCIA → SKILL → CÓDIGO → NAVEGADOR → TESTE → PASS',meta_label:'Visual principal',no_bridge:'Bridge indisponível',no_notes:'Sem notas',root_name:'Caminho ou nome',file_persist_note:'Arquivos acima de 1 MB permanecem apenas durante esta sessão.',remote_label:'Motor externo',local_actions:'Ferramentas locais'}
+  };
+  const ic = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const baseRoots = [
+    {id:'r1',name:'Desplegar/',description:'Entrada de lotes y entrega',status:'pending',note:''},
+    {id:'r2',name:'PIPELINE/',description:'Planes y checkpoints',status:'pending',note:''},
+    {id:'r3',name:'Método de trabajo/',description:'Leyes y reglas',status:'pending',note:''},
+    {id:'r4',name:'Refactoria/',description:'Preservación y paridad',status:'pending',note:''},
+    {id:'r5',name:'Yaiwes wordflow/',description:'Agente y kernel',status:'pending',note:''},
+    {id:'r6',name:'Wordflow Code/',description:'Runner y evidencia',status:'pending',note:''}
+  ];
+  const defaults = () => ({version:2,theme:'little',locale:'es',page:'chat',mode:'fast',model:'MiniMax M3',settings:{motion:true,hints:true},draft:'',tools:{document:false,website:false,image:false},messages:[],files:[],attachments:[],filter:'local',search:'',roots:structuredClone(baseRoots),selectedRoot:'r1'});
+  let state = defaults(), modeDraft='fast', sheetKind=null, uploadPurpose='files', toastTimer=null, sending=false;
+  const volatileUrls = new Map();
+  const $ = sel => document.querySelector(sel);
+  const t = key => (LABELS[state.locale] || LABELS.es)[key] || LABELS.es[key] || key;
+  const knownStatus = new Set(['progress','enabled','warning','pending']);
+  const knownPages = ['chat','files','wall','settings'];
+  const knownModels = ['MiniMax M3','Grok','Claude','GPT','DeepSeek','Qwen'];
+  const bridgeReady = () => !!(window.YAIWES_PLUGIN_BRIDGE && typeof window.YAIWES_PLUGIN_BRIDGE.execute === 'function');
+  function bus(action,payload={},remote=false){return window.YAIWESActionBus.execute(action,payload,{remote});}
+  function persist(){
+    try {
+      const saved = {...state,files:state.files.filter(f=>!f.volatile)};
+      localStorage.setItem(KEY,JSON.stringify(saved));
+    } catch(err){console.warn('Local state could not be persisted:',err);}
+  }
+  function validImport(obj){
+    if(!obj || typeof obj!=='object' || obj.version!==2 || !Object.hasOwn(THEMES,obj.theme)) throw Error('version/theme invalid');
+    if(!['es','en','fr','pt'].includes(obj.locale) || !Array.isArray(obj.roots) || obj.roots.length>100 || !Array.isArray(obj.files) || obj.files.length>120) throw Error('shape invalid');
+    if(!obj.roots.every(x => x && typeof x.id==='string' && typeof x.name==='string' && x.name.length<200 && knownStatus.has(x.status))) throw Error('roots invalid');
+    if(!obj.files.every(f=>f && typeof f.name==='string' && typeof f.data==='string' && f.data.startsWith('data:') && f.data.length<1500000)) throw Error('file invalid');
+    const d=defaults();
+    return {...d,...obj,page:knownPages.includes(obj.page)?obj.page:'chat',mode:MODES.includes(obj.mode)?obj.mode:'fast',model:knownModels.includes(obj.model)?obj.model:'MiniMax M3',messages:Array.isArray(obj.messages)?obj.messages.slice(-200).filter(x=>x && typeof x.text==='string' && typeof x.role==='string'):[],draft:typeof obj.draft==='string'?obj.draft.slice(0,20000):'',tools:{...d.tools,...obj.tools},settings:{...d.settings,...obj.settings},attachments:Array.isArray(obj.attachments)?obj.attachments:[],files:obj.files.filter(f=>!f.volatile)};
+  }
+  try{const raw=localStorage.getItem(KEY);if(raw)state=validImport(JSON.parse(raw));}catch(err){console.warn('State was invalid; safe defaults loaded.',err);state=defaults();}
+  function local(action,payload={}) {bus(action,payload).catch(()=>{});}
+  function statusBadge(status){return `<span class="tag-status ${esc(status)}"><span class="signal"></span>${esc(t(status))}</span>`;}
+  function nav(){
+    const navs=[['chat','message'],['files','folder'],['wall','grid'],['settings','settings']];
+    const markup = navs.map(([id,icon])=>`<button type="button" class="nav-button ${state.page===id?'active':''}" data-nav="${id}" aria-current="${state.page===id?'page':'false'}">${ic(icon)}<span>${esc(t(id))}</span></button>`).join('');
+    $('#sideNav').innerHTML=markup;
+    $('#bottomNav').innerHTML=markup;
+  }
+  function drawInspector(){
+    const last=window.__YAIWES_LAST_ACTION__||'—';
+    $('#inspector').innerHTML=`<div><div class="eyebrow">${esc(t('design_lock'))}</div><h3>${esc(THEMES[state.theme].label)}</h3><p>${esc(THEMES[state.theme].category)}</p><div class="micro-row"><span>${esc(t('meta_label'))}</span><strong>Little</strong></div><div class="micro-row"><span>${esc(t('model'))}</span><strong>${esc(state.model)}</strong></div><div class="micro-row"><span>${esc(t('mode'))}</span><strong>${esc(t(state.mode))}</strong></div><div class="micro-row"><span>${esc(t('remote_label'))}</span><span class="code-chip">${bridgeReady()?'BRIDGE OK':'FAIL-CLOSED'}</span></div><div class="inspect-divider"></div><div class="eyebrow">${esc(t('status_legend'))}</div><p style="margin-top:9px">${esc(t('status_help'))}</p><div class="status-key"><span class="signal progress"></span>${esc(t('progress'))}</div><div class="status-key"><span class="signal enabled"></span>${esc(t('enabled'))}</div><div class="status-key"><span class="signal warning"></span>${esc(t('warning'))}</div><div class="inspect-divider"></div><div class="eyebrow">${esc(t('action_log'))}</div><div class="inspect-log" id="actionLog">${esc(last)}</div><div class="inspect-divider"></div><p>${ic('shield')} ${esc(t('how_works'))}</p></div>`;
+  }
+  function footer(){return `<div class="footer-line">FROMTED × YAIWES · v0.2.0 · ${esc(t('design_review'))}</div>`;}
+  function intro(kicker,title,desc,actions=''){return `<section class="page-intro"><div class="header-line"><span class="mini-kicker">${esc(kicker)}</span>${actions}</div><h1 class="page-title">${esc(title)}</h1><p class="lead">${esc(desc)}</p></section>`;}
+  function chatPage(){
+    const bubbles = state.messages.length ? state.messages.map(m=>`<article class="chat-bubble ${m.role==='user'?'user':''}"><div class="bubble-meta">${m.role==='user'?'TÚ':esc(state.model)} · ${esc(m.time||'')}</div><p>${esc(m.text)}</p></article>`).join('') : `<div class="empty-message">${ic('message')}<strong>${esc(t('empty_chat'))}</strong><span>${esc(t('no_invent'))}</span></div>`;
+    return `${intro('YAIWES / '+t('chat'),t('hello'),t('tagline'),'<span class="pill soft">'+ic('spark')+' '+esc(t('meta_label'))+': Little</span>')}
+      <div class="chat-main"><section class="chat-hero"><span class="hero-overline">◈ FROMTED / CHAT</span><h2>${esc(t('chat_intro'))}</h2><p>${esc(t('how_works'))}</p></section>
+      <div class="header-tools"><span class="section-label" style="margin:0">${esc(t('conversation'))}</span><button type="button" class="btn btn-ghost" data-action="chat.close">${ic('plus')}${esc(t('new_chat'))}</button></div>
+      <div class="chat-messages" id="chatMessages">${bubbles}</div>
+      <div class="surface-card" style="padding:12px 15px"><div class="header-line"><label class="select-wrap"><span class="field-label" style="margin:0">${esc(t('model'))}</span><select class="input-control" id="modelSelect" style="max-width:160px">${knownModels.map(x=>`<option value="${esc(x)}" ${state.model===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label><button type="button" class="btn btn-secondary" data-action="mode.open">${ic('spark')}${esc(t(state.mode))}${ic('down')}</button></div></div>
+      <form class="composer" id="chatForm"><label for="composeText" class="field-label">${esc(t('chat'))} / ${esc(t('type_message'))}</label><textarea id="composeText" maxlength="20000" placeholder="${esc(t('type_message'))}" autocomplete="off">${esc(state.draft)}</textarea>
+      ${state.attachments.length?`<div class="attachments">${state.attachments.map(id=>{const f=state.files.find(x=>x.id===id);return f?`<span class="attachment-chip">${ic('file')}${esc(f.name)}<button type="button" data-remove-attach="${esc(id)}" aria-label="${esc(t('delete'))} ${esc(f.name)}">×</button></span>`:''}).join('')}</div>`:''}
+      <div class="compose-bottom"><div class="compose-tools"><button type="button" data-action="chat.attach" class="tool-btn" title="${esc(t('attach'))}">${ic('attach')}<span>${esc(t('attach'))}</span></button>${[['document','doc'],['website','globe'],['image','photo']].map(([k,ico])=>`<button type="button" data-tool="${k}" class="tool-btn ${state.tools[k]?'on':''}" aria-pressed="${state.tools[k]}" title="${esc(t(k))}">${ic(ico)}<span>${esc(t(k))}</span></button>`).join('')}</div><button type="submit" class="btn btn-primary send-btn" id="sendButton" ${sending?'disabled':''}>${ic('send')}<span>${esc(t('send'))}</span></button></div></form>
+      <div class="chat-notice">${ic('shield')}<span>${esc(bridgeReady()?t('connected'):t('offline_note'))}</span></div></div>${footer()}`;
+  }
+  function filesPage(){
+    const entries = state.files.filter(f=>state.filter==='local'||f.pinned).filter(f=>f.name.toLowerCase().includes(state.search.toLowerCase()));
+    const rows = entries.map(f=>`<div class="file-row" data-file-id="${esc(f.id)}"><div class="file-icon">${ic('file')}</div><div class="file-data"><div class="name">${esc(f.name)}</div><div class="sub">${esc(formatBytes(f.size))} · ${esc(f.volatile?t('file_session'):t('file_saved'))}</div></div><div class="file-actions"><button title="${esc(t('pin'))}" aria-label="${esc(t('pin'))} ${esc(f.name)}" data-pin="${esc(f.id)}" class="${f.pinned?'on':''}">${ic('pin')}</button><button class="download-text" title="${esc(t('download'))}" aria-label="${esc(t('download'))} ${esc(f.name)}" data-download="${esc(f.id)}">${ic('download')}<span>${esc(t('download'))}</span></button><button title="${esc(t('delete'))}" aria-label="${esc(t('delete'))} ${esc(f.name)}" data-delete="${esc(f.id)}">${ic('trash')}</button></div></div>`).join('');
+    return `${intro('YAIWES / '+t('files'),t('gallery'),t('file_intro'),`<button type="button" class="btn btn-primary" data-action="files.add">${ic('plus')}${esc(t('add_files'))}</button>`)}<div class="file-toolbar"><div class="search-wrap">${ic('search')}<input type="search" id="fileSearch" class="search-input" placeholder="${esc(t('search_files'))}" value="${esc(state.search)}" autocomplete="off"></div><span class="pill">${state.files.length} ${esc(t('files'))}</span></div><div class="segmented" role="tablist"><button role="tab" type="button" class="tab-button ${state.filter==='local'?'active':''}" data-filter="local" aria-selected="${state.filter==='local'}">${esc(t('local'))}</button><button role="tab" type="button" class="tab-button ${state.filter==='pinned'?'active':''}" data-filter="pinned" aria-selected="${state.filter==='pinned'}">${esc(t('pinned'))} · ${state.files.filter(x=>x.pinned).length}</button></div><div style="margin-top:17px" id="fileRows">${rows||`<div class="empty-state">${ic('folder')}<p>${esc(state.files.length?t('empty_search'):t('empty_files'))}</p><button type="button" class="btn btn-secondary" data-action="files.add">${esc(t('add_files'))}</button></div>`}</div><p class="muted-note">${esc(t('file_persist_note'))}</p>${footer()}`;
+  }
+  function wallPage(){
+    const cards=state.roots.map((r,i)=>`<button type="button" class="root-card" data-root="${esc(r.id)}" aria-label="${esc(t('edit'))}: ${esc(r.name)}"><div class="root-bottom"><span class="root-index">ROOT · ${String(i+1).padStart(2,'0')}</span>${statusBadge(r.status)}</div><h3>${ic('folder')} ${esc(r.name)}</h3><small>${esc(r.description||r.note||'—')}</small><div class="root-bottom"><span class="muted-note">${esc(t('edit'))}</span>${ic('chevron')}</div></button>`).join('');
+    return `${intro('YAIWES / '+t('wall'),t('workflow'),t('wall_intro'),`<button type="button" class="btn btn-primary" data-action="wall.root.add">${ic('plus')}${esc(t('add_root'))}</button>`)}<div class="section-label">${esc(t('how_works'))}</div><div class="flow-track" aria-label="Flujo de trabajo">${['INPUT','MISIÓN','KERNEL','WORDFLOW','EVIDENCIA','OUT'].map((x,i)=>`${i?'<i>→</i>':''}<span>${x}</span>`).join('')}</div><div class="header-line" style="margin:9px 0 13px"><h2 class="section-label" style="margin:0">${esc(t('roots'))}</h2><span class="pill">${state.roots.length} ROOTS</span></div><div class="wall-grid" id="wallGrid">${cards||`<div class="empty-state">${esc(t('roots'))}: 0</div>`}</div>${footer()}`;
+  }
+  function settingsPage(){
+    const grid=Object.entries(THEMES).map(([id,meta])=>`<button type="button" class="theme-option ${state.theme===id?'selected':''}" data-theme="${id}" aria-pressed="${state.theme===id}"><div class="theme-swatch" style="background:${meta.bg}"><span style="background:${meta.card}"></span><span style="background:${meta.accent};width:21px"></span><span style="background:${meta.swatch};width:13px"></span></div><div class="theme-meta"><strong>${esc(meta.label)}</strong>${state.theme===id?ic('check'):''}</div><small>${esc(meta.category)}</small></button>`).join('');
+    return `${intro('YAIWES / '+t('settings'),t('appearance'),t('choose_visual'),'<span class="pill soft">'+ic('shield')+' DESIGN LOCK</span>')}<div class="section-label">${esc(t('themes'))}</div><div class="themes-grid" id="themeGrid">${grid}</div><p class="muted-note">${esc(t('theme_intro'))}</p><div class="section-label">${esc(t('status_legend'))}</div><div class="surface-card"><p class="card-desc" style="margin:0 0 13px">${esc(t('status_help'))}</p><div class="tiny-row">${statusBadge('progress')}${statusBadge('enabled')}${statusBadge('warning')}</div></div><div class="section-label">${esc(t('preferences'))}</div><div class="surface-card"><div class="setting-row"><div><strong>${esc(t('language'))}</strong><small>es · en · fr · pt</small></div><select id="localeSelect" class="input-control" aria-label="${esc(t('language'))}">${[['es','Español'],['en','English'],['fr','Français'],['pt','Português']].map(([k,label])=>`<option value="${k}" ${state.locale===k?'selected':''}>${label}</option>`).join('')}</select></div>${[['motion','motion_desc'],['hints','hints_desc']].map(([id,desc])=>`<div class="setting-row"><div><strong>${esc(t(id))}</strong><small>${esc(t(desc))}</small></div><button type="button" class="switch" role="switch" data-setting="${id}" aria-label="${esc(t(id))}" aria-checked="${state.settings[id]}"></button></div>`).join('')}</div><div class="section-label">${esc(t('storage'))}</div><div class="tiny-row"><button type="button" class="btn btn-secondary" data-action="state.export">${ic('download')}${esc(t('export'))} JSON</button><button type="button" class="btn btn-secondary" data-action="state.import">${ic('folder')}${esc(t('import'))}</button><button type="button" class="btn btn-ghost" data-action="state.reset">${ic('trash')}${esc(t('reset'))}</button></div>${footer()}`;
+  }
+  function refresh(){
+    document.documentElement.dataset.theme=state.theme;
+    document.documentElement.dataset.motion=state.settings.motion?'on':'off';
+    document.documentElement.lang=state.locale;
+    document.querySelector('meta[name="theme-color"]').content=THEMES[state.theme].bg;
+    $('#sidebarThemeName').textContent=THEMES[state.theme].label+(state.theme==='little'?' · Principal':'');
+    $('#pageLocation').textContent=t(state.page);
+    $('[data-i18n="not_connected"]').textContent=bridgeReady()?t('connected'):t('not_connected');
+    $('#topBridgeStatus .signal').className='signal '+(bridgeReady()?'active':'neutral');
+    document.querySelectorAll('[data-i18n]').forEach(el=>{if(el.dataset.i18n!=='not_connected')el.textContent=t(el.dataset.i18n);});
+    nav();
+    $('#mainContent').innerHTML=state.page==='chat'?chatPage():state.page==='files'?filesPage():state.page==='wall'?wallPage():settingsPage();
+    drawInspector();
+  }
+  function go(page){if(!knownPages.includes(page))return;state.page=page;local('ui.navigate',{page});persist();refresh();}
+  function theme(id){if(!Object.hasOwn(THEMES,id))return;state.theme=id;local('theme.select',{theme:id});persist();refresh();toast(THEMES[id].label+' · '+t('updated'),'success');}
+  function toast(text,type='success'){
+    const node=document.createElement('div');node.className='toast '+type;node.textContent=text;$('#toastArea').append(node);
+    while($('#toastArea').children.length>3)$('#toastArea').firstChild.remove();
+    setTimeout(()=>node.remove(),4000);
+  }
+  function formatBytes(bytes){if(bytes<1024)return bytes+' B';if(bytes<1024**2)return (bytes/1024).toFixed(1)+' KB';return (bytes/1024**2).toFixed(1)+' MB';}
+  function filePicker(purpose='files') {uploadPurpose=purpose;$('#filePicker').value='';$('#filePicker').click();}
+  function fileAsDataURL(file) {return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(Error('read failed'));r.readAsDataURL(file);});}
+  async function addFiles(fileList){
+    let count=0;
+    for(const file of [...fileList].slice(0,20)){
+      if(!file || !file.name)continue;
+      const id='f-'+makeId();
+      let data='',volatile=false;
+      try{if(file.size<=1024*1024)data=await fileAsDataURL(file);else {volatile=true;volatileUrls.set(id,URL.createObjectURL(file));}}
+      catch(err){toast(t('invalid_file')+' '+file.name,'error');continue;}
+      state.files.unshift({id,name:file.name,mime:file.type||'application/octet-stream',size:file.size,data,volatile,pinned:false});
+      if(uploadPurpose==='attach')state.attachments.push(id);
+      local('files.add',{id,name:file.name,size:file.size,volatile});count++;
+    }
+    if(count){persist();refresh();toast(`${count} · ${t('file_added')}`,'success');}
+  }
+  function getFile(id){return state.files.find(f=>f.id===id);}
+  function download(file){
+    let href=file.volatile?volatileUrls.get(file.id):file.data;
+    if(!href || !(href.startsWith('blob:')||href.startsWith('data:'))) {toast(t('invalid_file'),'error');return;}
+    const a=document.createElement('a');a.href=href;a.download=file.name;document.body.append(a);a.click();a.remove();local('files.download',{id:file.id,name:file.name});
+  }
+  function triggerDownload(data,filename,type='application/json'){
+    const url=URL.createObjectURL(new Blob([data],{type}));const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  function exportState(){
+    const output={...state,files:state.files.filter(f=>!f.volatile)};
+    triggerDownload(JSON.stringify(output,null,2),'YAIWES-PERFIL-ESTADO-v02.json');local('state.export',{count:output.roots.length});toast(t('export')+' JSON','success');
+  }
+  function exportChat(){triggerDownload(JSON.stringify({model:state.model,mode:state.mode,messages:state.messages},null,2),'YAIWES-CHAT.json');local('chat.export',{messages:state.messages.length});toast(t('export')+' Chat JSON','success');}
+  async function send(){
+    if(sending)return;
+    const text=state.draft.trim();if(!text){$('#composeText')?.focus();return;}
+    const attachments=state.attachments.map(getFile).filter(Boolean);
+    if(attachments.some(f=>f.volatile)){toast(t('file_session')+': bridge de archivos grande no implementado','error');return;}
+    sending=true;const btn=$('#sendButton');if(btn)btn.disabled=true;
+    const payload={message:text,model:state.model,mode:state.mode,tools:{...state.tools},attachments:attachments.map(({name,mime,size,data})=>({name,mime,size,dataUrl:data}))};
+    const result=await bus('chat.send',payload,true);
+    sending=false;
+    if(!result.ok){refresh();toast(t('message_blocked')+' ['+result.code+']','error');return;}
+    state.messages.push({id:'m'+makeId(),role:'user',text,time:new Date().toLocaleTimeString(state.locale,{hour:'2-digit',minute:'2-digit'})});
+    const remote=result.result;
+    const reply=typeof remote.reply==='string'?remote.reply:typeof remote.message==='string'?remote.message:null;
+    if(reply)state.messages.push({id:'m'+makeId(),role:'assistant',text:reply,time:new Date().toLocaleTimeString(state.locale,{hour:'2-digit',minute:'2-digit'})});
+    state.draft='';state.attachments=[];persist();refresh();toast(t('sent_ok'),'success');
+    $('#chatMessages')?.scrollTo(0,999999);
+  }
+  function openSheet(kind,rootId=null){
+    sheetKind=kind;const dlg=$('#sheet');
+    const header=(title,sub)=>`<div class="sheet-header"><div><span class="eyebrow">FROMTED / YAIWES</span><h2 id="sheetTitle">${esc(title)}</h2><p>${esc(sub)}</p></div><button type="button" class="sheet-close" data-close aria-label="${esc(t('close'))}">${ic('x')}</button></div>`;
+    let content='';
+    if(kind==='mode'){
+      modeDraft=state.mode;
+      content=`${header(t('mode'),t('choose_mode'))}${MODES.map((m,i)=>`<button type="button" class="mode-option ${modeDraft===m?'selected':''}" data-mode="${m}" aria-pressed="${modeDraft===m}">${ic(['clock','spark','grid'][i])}<span style="flex:1"><strong>${esc(t(m))}</strong><small>${esc(t(m+'_desc'))}</small></span>${modeDraft===m?`<span class="check">${ic('check')}</span>`:''}</button>`).join('')}<div class="sheet-footer"><button type="button" class="btn btn-secondary" data-close>${esc(t('cancel'))}</button><button type="button" class="btn btn-primary" data-confirm-mode>${esc(t('apply'))}</button></div>`;
+    } else if(kind==='root'){
+      const r=state.roots.find(x=>x.id===rootId);if(!r)return;
+      content=`${header(r.name,t('local_only'))}<div class="section-label">${esc(t('status_legend'))}</div><div class="status-selector">${['pending','progress','enabled','warning'].map(x=>`<button type="button" class="status-button ${r.status===x?'selected':''}" data-status="${x}"><span class="signal ${x}"></span>${esc(t(x))}</button>`).join('')}</div><div class="section-label">${esc(t('note'))}</div><textarea class="textarea-control" id="rootNote" placeholder="${esc(t('no_notes'))}">${esc(r.note)}</textarea><div class="sheet-footer"><button type="button" class="btn btn-secondary" data-close>${esc(t('cancel'))}</button><button type="button" class="btn btn-primary" data-save-root="${esc(r.id)}">${esc(t('save'))}</button></div>`;
+    } else if(kind==='new-root'){
+      content=`${header(t('add_root'),t('local_only'))}<label class="field-label" for="rootName">${esc(t('root_name'))}</label><input class="input-control" id="rootName" maxlength="150" autocomplete="off" placeholder="nuevo-proyecto/"><label class="field-label" for="rootDesc" style="margin-top:14px">${esc(t('note'))}</label><textarea class="textarea-control" id="rootDesc"></textarea><div class="sheet-footer"><button type="button" class="btn btn-secondary" data-close>${esc(t('cancel'))}</button><button type="button" class="btn btn-primary" data-add-root>${esc(t('save'))}</button></div>`;
+    } else if(kind==='reset'){
+      content=`${header(t('reset_confirm'),t('reset_explain'))}<div class="sheet-footer"><button type="button" class="btn btn-secondary" data-close>${esc(t('cancel'))}</button><button type="button" class="btn btn-primary" data-reset-confirm>${esc(t('reset'))}</button></div>`;
+    }
+    $('#sheetInner').innerHTML=`<div class="sheet-wrap">${content}</div>`;
+    dlg.showModal();
+  }
+  function closeSheet(){const dlg=$('#sheet');if(dlg.open)dlg.close();sheetKind=null;}
+  function notifyAction(event){
+    window.__YAIWES_LAST_ACTION__=event.detail.actionId;
+    const el=$('#actionLog');if(el)el.textContent=event.detail.actionId;
+  }
+  window.addEventListener('yaiwes:ui-action',notifyAction);
+  document.addEventListener('click',async e=>{
+    const button=e.target.closest('button');if(!button)return;
+    const {nav:page,theme:id,action,tool,filter,pin,download:downloadId,delete:deleteId,root,setting,mode,status,removeAttach}=button.dataset;
+    if(page){go(page);return;}
+    if(id){theme(id);return;}
+    if(action){
+      if(action==='mode.open'){openSheet('mode');return;}
+      if(action==='chat.export'){exportChat();return;}
+      if(action==='chat.close'){state.messages=[];state.attachments=[];state.draft='';persist();refresh();local('chat.close',{});toast(t('new_chat'),'success');return;}
+      if(action==='chat.attach'){local('chat.attach',{});filePicker('attach');return;}
+      if(action==='files.add'){filePicker('files');return;}
+      if(action==='wall.root.add'){openSheet('new-root');return;}
+      if(action==='state.export'){exportState();return;}
+      if(action==='state.import'){$('#restorePicker').value='';$('#restorePicker').click();return;}
+      if(action==='state.reset'){openSheet('reset');return;}
+    }
+    if(tool){state.tools[tool]=!state.tools[tool];local('tool.'+tool+'.toggle',{enabled:state.tools[tool]});persist();refresh();return;}
+    if(filter){state.filter=filter;persist();refresh();return;}
+    if(pin){const f=getFile(pin);if(f){f.pinned=!f.pinned;local('files.pin',{id:pin,pinned:f.pinned});persist();refresh();}return;}
+    if(downloadId){const f=getFile(downloadId);if(f)download(f);return;}
+    if(deleteId){const f=getFile(deleteId);if(f){if(f.volatile&&volatileUrls.has(f.id)){URL.revokeObjectURL(volatileUrls.get(f.id));volatileUrls.delete(f.id);}state.files=state.files.filter(x=>x.id!==f.id);state.attachments=state.attachments.filter(x=>x!==f.id);persist();refresh();toast(t('delete'),'success');}return;}
+    if(root){state.selectedRoot=root;persist();openSheet('root',root);return;}
+    if(setting){state.settings[setting]=!state.settings[setting];local('ui.settings',{key:setting,value:state.settings[setting]});persist();refresh();return;}
+    if(removeAttach){state.attachments=state.attachments.filter(x=>x!==removeAttach);persist();refresh();return;}
+    if(mode){modeDraft=mode;document.querySelectorAll('[data-mode]').forEach(x=>{x.classList.toggle('selected',x.dataset.mode===mode);x.setAttribute('aria-pressed',String(x.dataset.mode===mode));const prior=x.querySelector('.check');if(prior)prior.remove();if(x.dataset.mode===mode)x.insertAdjacentHTML('beforeend',`<span class="check">${ic('check')}</span>`);});return;}
+    if(status&&sheetKind==='root'){document.querySelectorAll('[data-status]').forEach(x=>x.classList.toggle('selected',x.dataset.status===status));button.dataset.selected=status;return;}
+    if(button.hasAttribute('data-close')){closeSheet();return;}
+    if(button.hasAttribute('data-confirm-mode')){state.mode=modeDraft;local('mode.select',{mode:modeDraft});local('mode.thinking.toggle',{enabled:modeDraft==='think'});closeSheet();persist();refresh();toast(t('mode')+': '+t(state.mode),'success');return;}
+    if(button.hasAttribute('data-save-root')){
+      const r=state.roots.find(x=>x.id===button.dataset.saveRoot);if(r){const selected=$('#sheet .status-button.selected');if(selected)r.status=selected.dataset.status;r.note=$('#rootNote').value.slice(0,5000);local('wall.status.set',{id:r.id,status:r.status});local('wall.note.set',{id:r.id,note:r.note});persist();closeSheet();refresh();toast(t('saved'),'success');}return;
+    }
+    if(button.hasAttribute('data-add-root')){
+      const name=$('#rootName').value.trim().slice(0,150);if(!name){$('#rootName').focus();return;}
+      state.roots.push({id:'r-'+makeId(),name,description:$('#rootDesc').value.trim().slice(0,300),status:'pending',note:''});local('wall.root.add',{name});persist();closeSheet();refresh();toast(t('saved'),'success');return;
+    }
+    if(button.hasAttribute('data-reset-confirm')){volatileUrls.forEach(u=>URL.revokeObjectURL(u));volatileUrls.clear();state=defaults();local('state.reset',{});persist();closeSheet();refresh();toast(t('reset'),'success');return;}
+  });
+  $('#sheet').addEventListener('click',e=>{if(e.target===$('#sheet'))closeSheet();});
+  document.addEventListener('input',e=>{
+    if(e.target.id==='composeText'){state.draft=e.target.value;persist();}
+    if(e.target.id==='fileSearch'){state.search=e.target.value;local('files.search',{query:state.search});persist();const entries=state.files.filter(f=>(state.filter==='local'||f.pinned)&&f.name.toLowerCase().includes(state.search.toLowerCase()));/* Keep input focus while updating list. */
+      const list=$('#fileRows');if(list){const old=document.activeElement;const pos=e.target.selectionStart;const html=filesPage();const temp=document.createElement('div');temp.innerHTML=html;list.innerHTML=temp.querySelector('#fileRows').innerHTML;}}
+  });
+  document.addEventListener('change',e=>{
+    if(e.target.id==='modelSelect'){state.model=e.target.value;local('model.select',{model:state.model});persist();drawInspector();return;}
+    if(e.target.id==='localeSelect'){state.locale=e.target.value;local('locale.select',{locale:state.locale});persist();refresh();return;}
+  });
+  document.addEventListener('submit',e=>{if(e.target.id==='chatForm'){e.preventDefault();send();}});
+  $('#filePicker').addEventListener('change',e=>{addFiles(e.target.files);});
+  $('#restorePicker').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{if(f.size>3*1024*1024)throw Error('too large');const parsed=validImport(JSON.parse(await f.text()));volatileUrls.forEach(u=>URL.revokeObjectURL(u));volatileUrls.clear();state=parsed;local('state.import',{version:2});persist();refresh();toast(t('import_ok'),'success');}catch(err){toast(t('invalid_file')+' '+err.message,'error');}});
+  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();go('files');$('#fileSearch')?.focus();}if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&state.page==='chat'){e.preventDefault();send();}});
+  refresh();
+  window.YAIWES_UI_DEBUG = Object.freeze({getState:()=>structuredClone(state),themes:()=>Object.keys(THEMES),version:'0.2.0'});
+})();
+
+</script></body>
+</html>
