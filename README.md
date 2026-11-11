@@ -29,10 +29,10 @@ HF nunca aloja logica de control. Control HF solo gestiona ciclo de vida.
 
 ## Handoffs
 - docs/handoff/ROUTER_MVP_V1_HANDOFF.md (Salida 1/3)
-- docs/handoff/LLM_SYSTEM_HF_HANDOFF.md (Salida 3/3)
-- docs/handoff/CONTROL_HUGGUEFACE_HANDOFF.md (Salida 3/3)
+- docs/handoff/LLM_SYSTEM_HF_HANDOFF.md (Salida 1/3 HF)
+- docs/handoff/CONTROL_HUGGUEFACE_HANDOFF.md (Salida 1/3 HF)
 - docs/handoff/ROUTER2_AUDITORIA.md (main)
 
 ## Cierre (2026-11-11)
-Salidas 1/3, 2/3, 3/3 publicadas en rama ccr-f01c3de9-bmry0s.
+Salidas 1/3, 2/3, 1/3 HF, 2/3 DOCS, 3/3 EXTERNA publicadas en rama ccr-f01c3de9-bmry0s.
 Pendiente operacional: prueba Groq, secrets HF, decision main.
