@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# entrypoint.sh — Auto-pull + descarga + arranque (Salida 3/3)
+# entrypoint.sh — Auto-pull + descarga + arranque (Salida 1/3 HF)
 # Ubicacion: llm system HF/entrypoint.sh
 set -euo pipefail
 
