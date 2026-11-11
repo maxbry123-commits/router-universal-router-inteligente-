@@ -1,5 +1,5 @@
 """
-registry_models.py — Generar/verificar registry.json con SHA-256 (Salida 3/3)
+registry_models.py — Generar/verificar registry.json con SHA-256 (Salida 1/3 HF)
 Ubicacion: control huggueface/registry_models.py
 Rol: Objetivo 3.6 y 3.8. Fill-on-first-run: si sha256 es null, lo calcula y escribe.
 """

@@ -1,5 +1,5 @@
 """
-trigger_wake.py — Despertar Spaces SLEEPING/PAUSED (Salida 3/3)
+trigger_wake.py — Despertar Spaces SLEEPING/PAUSED (Salida 1/3 HF)
 Ubicacion: control huggueface/trigger_wake.py
 Rol: Objetivo 3.3. restart_space si stage in (SLEEPING, PAUSED). Espera RUNNING.
 """

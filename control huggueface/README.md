@@ -28,5 +28,5 @@ ROUTER_API_KEY (obligatoria para control_api)
 python3 -m py_compile control_api.py mirror_spaces.py trigger_wake.py registry_models.py
 bash -n hf_upload.sh
 
-## Cierre (Salida 3/3, 2026-11-11)
+## Cierre (Salida 1/3 HF, 2026-11-11)
 Code cerrado: mirror, wake, registry. Pendiente operacional: fijar secrets en Spaces.

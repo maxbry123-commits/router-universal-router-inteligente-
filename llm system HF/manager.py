@@ -1,5 +1,5 @@
 """
-manager.py — Proxy + llama-server + stream SSE + verificacion SHA-256 (Salida 3/3)
+manager.py — Proxy + llama-server + stream SSE + verificacion SHA-256 (Salida 1/3 HF)
 Ubicacion: llm system HF/manager.py
 Carga bajo demanda, idle unload, stream opcional, health con sha256.
 """

@@ -1,6 +1,6 @@
 # Handoff — Centro de control Hugging Face (control huggueface/)
 
-Actualizado: 2026-11-11 · Rama: ccr-f01c3de9-bmry0s · Salida 3/3 CERRADA.
+Actualizado: 2026-11-11 · Rama: ccr-f01c3de9-bmry0s · Salida 1/3 HF CERRADA.
 
 ## Estado
 Control externo del plano HF. Pausa, reinicio, sleep-time, mirror, wake,
@@ -22,7 +22,7 @@ registry de modelos. No ejecuta logica de negocio de los routers.
 - HF_TOKEN por entorno, nunca en repo.
 - Escaneo de patrones de clave: 0 coincidencias.
 
-## Cerrado en Salida 3/3
+## Cerrado en Salida 1/3 HF
 - mirror, wake, registry (Objetivos 3.2, 3.3, 3.6, 3.8)
 - docs del centro de control
 
