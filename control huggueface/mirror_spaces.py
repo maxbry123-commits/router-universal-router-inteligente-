@@ -1,5 +1,5 @@
 """
-mirror_spaces.py — Duplicar Spaces a region de respaldo (Salida 3/3)
+mirror_spaces.py — Duplicar Spaces a region de respaldo (Salida 1/3 HF)
 Ubicacion: control huggueface/mirror_spaces.py
 Rol: Objetivo 3.2. Usa HfApi.duplicate_repo. No ejecuta logica de negocio.
 """
