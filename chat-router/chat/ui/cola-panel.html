@@ -28,24 +28,24 @@ main{padding:12px}.pn{background:var(--p);border:1px solid var(--l);border-radiu
 </head>
 <body>
 <header>
-<h1>COLA</h1>
+<h1>COLA · Prioridad</h1>
 <input id="api" size="22" value="http://localhost:7861">
-<input id="key" size="10" type="password">
+<input id="key" size="10" type="password" placeholder="API Key">
 <button id="mM">DEMO</button>
 <button id="mR">REFRESH</button>
 <span id="c" class="b w">DEMO</span>
 </header>
 <main>
-<section class="pn"><h2>Prioridades</h2>
+<section class="pn"><h2>Prioridades (QueueManager)</h2>
 <div class="grid">
 <div class="cell h"><div class="n" id="pH">0</div><div class="l">HIGH</div></div>
 <div class="cell n"><div class="n" id="pN">0</div><div class="l">NORMAL</div></div>
 <div class="cell l"><div class="n" id="pL">0</div><div class="l">LOW</div></div>
 </div></section>
-<section class="pn"><h2>Estado</h2>
+<section class="pn"><h2>Estado · MAX_RAM_PCT = 85.0</h2>
 <div class="r"><span class="k">encoladas</span><span class="v" id="qS">0</span></div>
-<div class="r"><span class="k">activas</span><span class="v" id="qA">0</span></div>
-<div class="r"><span class="k">saltos RAM</span><span class="v" id="qK">0</span></div>
+<div class="r"><span class="k">activas (1 por modelo)</span><span class="v" id="qA">0</span></div>
+<div class="r"><span class="k">saltos por RAM</span><span class="v" id="qK">0</span></div>
 <div class="bar" id="rB"><i id="rF"></i></div>
 <div class="r"><span class="k">RAM %</span><span class="v" id="rP">0</span></div>
 </section>
