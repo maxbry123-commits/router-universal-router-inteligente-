@@ -1,7 +1,18 @@
-# Claude notas.md — Reglas de trabajo
+# Claude notas.md — Tareas pendientes y reglas de trabajo
 
-Tareas pendientes: `input_block_verbatim.yaml`, seccion `tareas_pendientes` (una por una).
-Metodos y referencias: `input_block_verbatim.yaml`, seccion `metodos`.
+## Tareas pendientes (1 a 1, del input block verbatim)
+
+- T01 Auditar notas de agentes en el repo; dejar solo codigo, README, handoffs y cableado.
+- T02 Skill unificado de frontend FROMTED x YAIWES, con revision del chat.
+- T03 Organizar raices y motores de descarga, extraccion, busqueda, copiar y mover.
+- T04 Verificar componentes open source sueltos y enviarlos a Componentes/.
+- T05 Mover agentes a Agentes/.
+- T06 Mover almacenamiento y memoria a Memoria/ y luego a memoria/, con centinela de conteos.
+- T07 Recablear con el Satelite Central.
+- T08 Listar componentes de memoria y almacenamiento conectados al harness DeepSeek.
+- T09 Dar la URL de origen de cada componente y los enlaces a los motores de descarga y extraccion.
+- T10 Limpiar Claude notas.md e input_block_verbatim.yaml, dejando reglas y referencias de metodo.
+- T11 Confirmar fe57c122ed en main (limpieza de Claude notas.md subida sin autorizacion registrada).
 
 ## Reglas de trabajo
 
