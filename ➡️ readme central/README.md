@@ -23,7 +23,7 @@ Indice de todos los READMEs del repo. Enlaces; el contenido queda en su carpeta.
 - LLM system HF (Space): https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/ccr-f01c3de9-bmry0s/llm%20system%20HF/README.md
 - Control HF (Space): https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/ccr-f01c3de9-bmry0s/control%20huggueface/README.md
 - Capa externa: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/ccr-f01c3de9-bmry0s/external/README.md
-- Skill frontend (ccr): https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/ccr-f01c3de9-bmry0s/Skills/fromted-yaiwes-frontend/%F0%9F%98%84SKILL.md
+- Skill frontend (ccr): https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/ccr-f01c3de9-bmry0s/Skills/fromted-yaiwes-frontend/SKILL.md
 
 ## Pendiente
 - README de ROUTER MVP v1 y de Router 2 (HUGGUEFACE SPACE): no verificados en esta pasada.
