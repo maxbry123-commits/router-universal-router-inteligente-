@@ -1,6 +1,7 @@
-# Claude notas.md — Pizarra compartida (limpia, 2026-11-11)
+# Claude notas.md — Reglas de trabajo
 
-Fuente de tareas: `Claude.md` · Input block: `input_block_verbatim.yaml` · Solo reglas y referencias de metodo.
+Tareas pendientes: `input_block_verbatim.yaml`, seccion `tareas_pendientes` (una por una).
+Metodos y referencias: `input_block_verbatim.yaml`, seccion `metodos`.
 
 ## Reglas de trabajo
 
@@ -52,6 +53,7 @@ Seguridad y entrega
 - S-3 Sin despliegue nuevo en Vercel ni en Hugging Face sin autorizacion expresa.
 - S-4 Atribucion en cada commit: Co-Authored-By y Claude-Session.
 - S-5 `main` queda limpio; los puentes van en Markdown.
+- S-6 Para tareas del owner no se usa disco del contenedor ni sandbox: solo API de GitHub.
 
 Cierre
 - C-1 Paso 1: cerrar Router 1 y Router 2 al 100 % en sandbox, lo que se pueda probar localmente. Lo que dependa de servicios externos queda como flag.
@@ -68,37 +70,3 @@ Ejecucion (confirmadas por el owner)
 - E-7 Supervision: sheriff, guardian, centinela, supervisor y juez revisan a los sub-agentes contra el input block y los DSL DAG.
 - E-8 Bloqueantes reales: flag al final de todo el loop, no antes.
 - E-9 Frente de almacenamiento y memoria: PENDIENTE. No se ejecuta hasta que el owner lo indique.
-
-## Metodos de trabajo de frontend
-
-- Skill vigente: `Skills/fromted-yaiwes-frontend` (rama `ccr-f01c3de9-bmry0s`): https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/ccr-f01c3de9-bmry0s/Skills/fromted-yaiwes-frontend
-- Handoff del skill: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/ccr-f01c3de9-bmry0s/docs/handoff/SKILL_FRONTEND_FROMTED_YAIWES.md
-- Skill "Maxbry UI frontend" (nuevo): PENDIENTE. Lo entrega el owner.
-
-## Organizacion y motores
-
-- Plan de raices y motores: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/ccr-f01c3de9-bmry0s/docs/handoff/ORGANIZACION_RAICES_Y_MOTORES.md
-- Motores de descarga, extraccion, busqueda, copiar y mover: PENDIENTE. Su codigo lo entrega el owner.
-
-## Tareas en curso
-
-Handoffs en https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/ccr-f01c3de9-bmry0s/docs/handoff
-
-| Tarea | Estado | Handoff |
-|---|---|---|
-| T01 Auditar notas de agentes | Auditada; limpieza pendiente de confirmacion | T01_auditar_notas_agentes.md |
-| T02 Skill frontend | Creado; revision del chat pendiente | T02_skill_frontend_fromted_yaiwes.md |
-| T03 Raices y motores | Plan creado; motores pendientes | T03_organizar_raices_motores.md |
-| T04 Componentes open source | Pendiente | T04_verificar_componentes_open_source.md |
-| T05 Mover agentes | Pendiente | T05_mover_agentes.md |
-| T06 Mover memoria | No completado (movimiento revertido) | T06_mover_memoria.md |
-| T07 Recablear satelite | Pendiente; satelite por confirmar | T07_recablear_satelite_central.md |
-| T08 Listar componentes del harness | Pendiente (depende de T06) | T08_listar_componentes_memoria_harness.md |
-| T09 URLs de origen | Pendiente | T09_urls_origen_motores.md |
-| T10 Limpiar notas e input block | Hecho en `main` | T10_limpiar_claude_notas_input_block.md |
-
-## Pendiente del owner
-
-- Skill "Maxbry UI frontend" nuevo.
-- Codigo de los motores de descarga, extraccion, mover y copiar.
-- Confirmar si el satelite es `connections/`.
