@@ -61,6 +61,11 @@ COMMITS: List[Dict[str, Any]] = [
     {"commit": "fd07fae", "archivo": "router_llm_hf/README.md",
      "categoria": "error_sesion_GH", "loc_esperadas": None, "descripcion": "README Control Plane",
      "flag": "F1"},
+    # Categoria D: puente Data->Control (gap G-A, faltaba en el inventario)
+    {"commit": "a5f7d6a", "archivo": "ROUTER MVP v1/system_prompt_py/control_bridge.py",
+     "categoria": "diff_no_visible", "loc_esperadas": None,
+     "descripcion": "Puente BRIDGE.run: watchdog + recall sobre el Data Plane",
+     "flag": "F1e"},
 ]
 
 
@@ -87,6 +92,7 @@ def fetch_raw(archivo: str, timeout: float = 20.0) -> Dict[str, Any]:
             "sha256": sha256_text(text),
             "sha256_bytes": sha256_bytes(r.content),
             "preview": text[:200],
+            "full_text": text,
         }
     except httpx.HTTPStatusError as e:
         return {"status": f"HTTP_{e.response.status_code}", "url": url, "error": str(e)}
@@ -126,14 +132,15 @@ def verify_commit(commit_data: Dict[str, Any]) -> Dict[str, Any]:
             result["delta"] = delta
             return result
     if archivo.endswith(".py"):
-        preview = raw.get("preview", "")
-        syntax = check_syntax_python(preview) if preview else "n/a"
+        full = raw.get("full_text", "")
+        syntax = check_syntax_python(full) if full else "FAIL_EMPTY"
         result["syntax"] = syntax
-        if syntax.startswith("SYNTAX_ERROR"):
+        if syntax != "OK":
             result["veredicto"] = "SYNTAX_ERROR"
             return result
     result["veredicto"] = "OK"
     result["loc_real"] = loc_real
+    raw.pop("full_text", None)
     return result
 
 
@@ -190,9 +197,14 @@ def print_summary_table(audit: Dict[str, Any]) -> None:
     s = audit["resumen"]
     print(f"Total: {s['total']} | OK: {s['ok']} | FAIL_FETCH: {s['fail_fetch']} | "
           f"LOC_MISMATCH: {s['loc_mismatch']} | SYNTAX_ERROR: {s['syntax_error']}")
-    print(f"Diff visible OK: {s['diff_visible_ok']}/7 | "
-          f"Diff vacio OK: {s['diff_vacio_ok']}/5 | "
-          f"Error sesion OK: {s['error_sesion_ok']}/1")
+    tot_vis = sum(1 for r in audit["resultados"] if r["categoria"] == "diff_visible")
+    tot_vac = sum(1 for r in audit["resultados"] if r["categoria"] == "diff_vacio_F1")
+    tot_ses = sum(1 for r in audit["resultados"] if r["categoria"] == "error_sesion_GH")
+    tot_nov = sum(1 for r in audit["resultados"] if r["categoria"] == "diff_no_visible")
+    print(f"Diff visible OK: {s['diff_visible_ok']}/{tot_vis} | "
+          f"Diff vacio OK: {s['diff_vacio_ok']}/{tot_vac} | "
+          f"Error sesion OK: {s['error_sesion_ok']}/{tot_ses} | "
+          f"Puente OK: {sum(1 for r in audit['resultados'] if r['categoria'] == 'diff_no_visible' and r['veredicto'] == 'OK')}/{tot_nov}")
     print("=" * 100)
 
 
