@@ -29,7 +29,7 @@
     const f = d.fetch || g.fetch, ss = d.sessionStorage || g.sessionStorage, loc = d.location || g.location;
     try {
       const now = Date.now(), last = +(ss.getItem(KT) || 0);
-      if (R.cargada && !d.forzar && now - last < 5 * 60 * 1000) return "throttle";
+      if (R.cargada && !d.forzar && now - last < 30 * 60 * 1000) return "throttle";
       ss.setItem(KT, String(now));
       const v = await json(f, "/chat/ui/version.json?t=" + now, 4000);
       const front = v && String(v.commit || "").trim();
@@ -48,7 +48,7 @@
   g.RIU_VERSION = R;
   if (!g.RIU_VERSION_NO_AUTO) {
     check();
-    setInterval(() => check(), 5 * 60 * 1000);
+    setInterval(() => check(), 30 * 60 * 1000);
     if (g.document && g.document.addEventListener) g.document.addEventListener("visibilitychange", () => { if (g.document.visibilityState === "visible") check(); });
   }
 })(typeof window !== "undefined" ? window : globalThis);

@@ -1,0 +1,76 @@
+schema: "router.dag/v1"
+mission_id: "router-recovery-2026"
+objective: "Ejecutar pipeline de recuperacion con 3 nodos deterministas"
+
+# Reglas de validacion (fail-closed, aplicadas ANTES de ejecutar).
+# Nota: estas reglas las aplica pydantic_models.py en codigo; este bloque es documental.
+validation:
+  reject_if:
+    - "node_id duplicado"
+    - "depends_on apunta a node_id inexistente"
+    - "ciclo en el grafo (Kahn)"
+    - "estimated_loc > 2000"
+    - "max_loc_per_block > 200"
+    - "acceptance vacio"
+  on_reject: "BLOCKER - no se ejecuta ningun nodo"
+
+nodes:
+  - node_id: "N1"
+    name: "setup_checkpoint_dir"
+    role: "architect"
+    objective: "Crear .checkpoints/ y verificar escritura atomica"
+    root_ids: ["ROOT-CKPT-001"]
+    files:
+      - path: ".checkpoints/"
+        action: "create"
+    depends_on: []
+    estimated_loc: 40
+    max_loc_per_block: 200
+    acceptance:
+      - ".checkpoints/ existe"
+      - "STATE.json inicial escrito"
+    failure_policy: "fail_closed"
+    handler: "dispatch_architect"
+
+  - node_id: "N2"
+    name: "validate_dag_spec"
+    role: "tester"
+    objective: "Validar DagSpec con Pydantic + Kahn"
+    root_ids: ["ROOT-VAL-001"]
+    files:
+      - path: "router_recovery/pydantic_models.py"
+        action: "reuse"
+    depends_on: ["N1"]
+    estimated_loc: 60
+    max_loc_per_block: 200
+    acceptance:
+      - "DAG con ciclo -> ValueError"
+      - "depends_on inexistente -> ValueError"
+    failure_policy: "fail_closed"
+    handler: "dispatch_tester"
+
+  - node_id: "N3"
+    name: "execute_topological"
+    role: "implementer"
+    objective: "Ejecutar nodos en orden topologico con checkpoint por nodo"
+    root_ids: ["ROOT-EXEC-001"]
+    files:
+      - path: "router_recovery/runner.py"
+        action: "reuse"
+    depends_on: ["N2"]
+    estimated_loc: 120
+    max_loc_per_block: 200
+    acceptance:
+      - "cada nodo deja node_start + node_done"
+      - "resume tras kill -9 no repite nodos completados"
+    failure_policy: "fail_closed"
+    handler: "dispatch_implementer"
+
+# Informativo: las dependencias reales son depends_on.
+edges:
+  - from: "N1"
+    to: "N2"
+    condition: "on_success"
+  - from: "N2"
+    to: "N3"
+    condition: "on_success"

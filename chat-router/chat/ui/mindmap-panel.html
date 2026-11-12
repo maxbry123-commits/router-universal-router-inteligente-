@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MINDMAP · Panel</title>
+<style>
+body{margin:0;font:13px/1.4 monospace;background:#0d1117;color:#e6edf3}
+header{padding:10px;border-bottom:1px solid #30363d;display:flex;gap:8px;align-items:center}
+h1{font-size:14px;margin:0;color:#58a6ff}
+input,button{background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:5px 8px;font:inherit}
+button{cursor:pointer}button:hover{border-color:#58a6ff}
+#frame{width:100%;height:calc(100vh - 52px);border:0}
+</style></head><body>
+<header>
+<h1>🧠 MINDMAP</h1>
+<input id="src" size="34" placeholder="/artifacts/mindmaps/mindmap.html">
+<button id="load">LOAD</button>
+<button id="refresh">REFRESH</button>
+</header>
+<iframe id="frame" sandbox="allow-scripts allow-same-origin"></iframe>
+<script>
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"'`\/]/g,c=>`&#${c.charCodeAt(0)};`)}
+$("load").onclick=()=>{const u=$("src").value.trim()||"/artifacts/mindmaps/mindmap.html";$("frame").src=esc(u)};
+$("refresh").onclick=()=>{$("frame").src=$("frame").src};
+window.addEventListener("message",e=>{if(e.data?.type==="mindmap:refresh")$("refresh").click()});
+try{window.parent.postMessage({type:"capa:ready",panel:"mindmap"},"*")}catch(e){}
+</script>
+</body></html>

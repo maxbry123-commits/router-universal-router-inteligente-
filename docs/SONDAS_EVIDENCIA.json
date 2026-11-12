@@ -1,0 +1,10 @@
+{
+  "ts": "2026-11-12T03:03:16Z",
+  "branch": "ccr-f01c3de9-bmry0s",
+  "head_commit": "0f22a2601f37da07a5dabfff89b6fd8714de7668",
+  "total_pares": 0,
+  "con_evidencia_real": 0,
+  "sin_evidencia": 0,
+  "nota": "registry de main no se modifica; promocion a active es decision del owner",
+  "pares": []
+}

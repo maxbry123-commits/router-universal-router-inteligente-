@@ -1,0 +1,64 @@
+schema: "router.recovery/v1"
+mission_id: "router-recovery-2026"
+workspace_id: "chat-router/SWE CODE free/web-bridge/"
+
+objective: >
+  Ejecutar un DAG validado de forma determinista, persistir cada nodo en
+  LEDGER.jsonl con escritura atomica, y reanudar desde el primer nodo en
+  vuelo tras kill -9 sin repetir nodos completados.
+
+in_scope:
+  - "Validacion Pydantic del DAG (ciclos, depends_on inexistente, node_id duplicado)"
+  - "Ejecucion en orden topologico determinista (Kahn)"
+  - "Checkpoint por nodo: node_start -> ejecucion -> node_done | error"
+  - "Resume desde el primer node_start sin node_done"
+  - "Rebuild de STATE.json desde LEDGER.jsonl si STATE esta corrupto"
+
+out_of_scope:
+  - "Busqueda hibrida (bm25s, sqlite-vec)"
+  - "MemoryAuditor (memwatch, contradiction-judge)"
+  - "ContextFabric (packer P0-P8)"
+  - "ResourceRegistry (C01-C08)"
+  - "Handoff MCP sidecar"
+  - "OCR (PaddleOCR / Baidu AIP)"
+  - "AnchorEngine, Watchdog, MemoryCheckpoint"
+
+goals:
+  - "DAG invalido -> BLOCKER antes de ejecutar cualquier nodo"
+  - "Ningun bloque de codigo supera 200 LOC"
+  - "kill -9 en nodo N -> resume desde nodo N, nodos 1..N-1 no se repiten"
+  - "STATE.json corrupto -> rebuild desde LEDGER.jsonl"
+  - "Cada nodo deja node_start + node_done (o error) en el ledger"
+
+constraints:
+  - "Python 3.11+"
+  - "Unica dependencia dura: pydantic>=2.7 (y pyyaml para cargar el DAG)"
+  - "Escritura atomica: tmp + fsync + os.replace"
+  - "Sin GitHub Actions, sin LFS, sin secretos en disco"
+  - "Sin LLM en el path critico"
+
+success_conditions:
+  - "DAG con ciclo -> ValueError antes de ejecutar"
+  - "depends_on inexistente -> ValueError antes de ejecutar"
+  - "node_id duplicado -> ValueError antes de ejecutar"
+  - "Bloque >200 LOC -> ValueError"
+  - "kill -9 -> resume sin repetir nodos completados"
+  - "STATE.json corrupto -> reconstruido desde ledger"
+
+contracts:
+  DagSpec: "validacion Pydantic + Kahn en pydantic_models.py"
+  LedgerEvent: "ts, mission_id, node_id, event, payload, checksum"
+  Runtime: "start(dag) -> run(dag) -> resume(dag)"
+  CheckpointStore: "load_state / save_state / append / read_ledger"
+
+quality_bar:
+  correctness: "todo DAG ejecutado es aciclico y con deps resueltas"
+  determinism: "mismo DAG + mismo estado -> misma secuencia de nodos"
+  crash_safety: "kill -9 en cualquier punto no corrompe el ledger"
+  traceability: "cada nodo deja node_start + node_done en el ledger"
+  minimal_dependencies: "solo pydantic"
+
+definition_of_done: >
+  El runner carga el DAG, valida con Pydantic, ejecuta en orden topologico,
+  persiste node_start/node_done por nodo, y el test kill -9 en nodo 2
+  demuestra que el nodo 1 NO se re-ejecuta al hacer resume.

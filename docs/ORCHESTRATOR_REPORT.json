@@ -1,0 +1,68 @@
+{
+  "ts": "2026-11-12T03:03:16Z",
+  "branch": "ccr-f01c3de9-bmry0s",
+  "pass": 8,
+  "fail": 1,
+  "stages": [
+    {
+      "stage": "F1_memoria",
+      "status": "PASS",
+      "detail": "{\"status\": \"ok\", \"configured\": true, \"memoria_dir\": \"state/memoria\", \"total_entries\": 0}",
+      "ts": "2026-11-12T03:03:15Z"
+    },
+    {
+      "stage": "F2_busqueda",
+      "status": "PASS",
+      "detail": "{\"status\": \"ok\", \"query\": \"orquestador\", \"results\": [{\"key\": \"_orch_probe\", \"timestamp\": 1794452595.850513, \"preview\": \"{\\\"probe\\\": \\\"orquestador\\\"}\"}], \"count\": 1}",
+      "ts": "2026-11-12T03:03:15Z"
+    },
+    {
+      "stage": "F3_ligas",
+      "status": "PASS",
+      "detail": "services=13",
+      "ts": "2026-11-12T03:03:15Z"
+    },
+    {
+      "stage": "F4_harness",
+      "status": "FAIL",
+      "detail": "{\"status\": \"degraded\", \"reason\": \"sin RIU_DEEPSEEK_HARNESS_URL: harness no configurado\"}",
+      "ts": "2026-11-12T03:03:15Z"
+    },
+    {
+      "stage": "F5_connectivity",
+      "status": "PASS",
+      "detail": "{\"status\": \"ok\", \"config\": {\"fastapi_url\": \"http://127.0.0.1:7860\", \"http_allowlist\": [\"api.github.com\", \"huggingface.co\"], \"mcp_configurado\": false}}",
+      "ts": "2026-11-12T03:03:15Z"
+    },
+    {
+      "stage": "F6_control_plane",
+      "status": "PASS",
+      "detail": "6/6 importables",
+      "ts": "2026-11-12T03:03:16Z"
+    },
+    {
+      "stage": "F7_data_plane",
+      "status": "PASS",
+      "detail": "py_compile OK (sin ejecutar)",
+      "ts": "2026-11-12T03:03:16Z"
+    },
+    {
+      "stage": "F8_persistencia",
+      "status": "PASS",
+      "detail": "state/ escribible con fsync",
+      "ts": "2026-11-12T03:03:16Z"
+    },
+    {
+      "stage": "F9_gobernanza",
+      "status": "PASS",
+      "detail": "OutputContract strict valida",
+      "ts": "2026-11-12T03:03:16Z"
+    },
+    {
+      "stage": "F10_reporte",
+      "status": "PASS",
+      "detail": "docs/ORCHESTRATOR_REPORT.json",
+      "ts": "2026-11-12T03:03:16Z"
+    }
+  ]
+}

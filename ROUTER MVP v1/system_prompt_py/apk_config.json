@@ -1,0 +1,14 @@
+{
+  "edificio_1": {
+    "s1": "https://comand-center-1-swe-code-s1.hf.space/v1/chat/completions",
+    "s2": "https://comand-center-1-swe-code-s2.hf.space/v1/chat/completions",
+    "s3": "https://comand-center-1-swe-code-s3.hf.space/v1/chat/completions"
+  },
+  "edificio_2": {
+    "router": "https://comand-center-1-riu-router.hf.space",
+    "mcp": "https://comand-center-1-riu-router.hf.space/mcp",
+    "openclaw": "wss://comand-center-1-riu-router.hf.space:443/openclaw"
+  },
+  "auth_header": "X-API-Key",
+  "timeout_s": 120
+}
