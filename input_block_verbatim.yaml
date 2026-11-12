@@ -1,5 +1,4 @@
-# input_block_verbatim.yaml — reglas y tareas pendientes (2026-11-12)
-# Solo reglas, referencias de metodo y tareas pendientes. El estado de runs anteriores queda en el historial de git.
+# input_block_verbatim.yaml — reglas y tareas pendientes
 
 input_block:
   version: "1.0"
@@ -19,66 +18,27 @@ input_block:
   accept:
     push_ok_requires: ["rc=0", "ls-remote == HEAD"]
     rebuild_ok_requires: ["stage==RUNNING", "health.commit == main_sha"]
-  metodos:
-    reglas_de_trabajo: "Claude notas.md (main), seccion Reglas de trabajo"
-    frontend_skill: "Skills/fromted-yaiwes-frontend (rama ccr-f01c3de9-bmry0s)"
-    frontend_handoff: "docs/handoff/SKILL_FRONTEND_FROMTED_YAIWES.md (rama ccr-f01c3de9-bmry0s)"
-    organizacion_raices_motores: "docs/handoff/ORGANIZACION_RAICES_Y_MOTORES.md (rama ccr-f01c3de9-bmry0s)"
-    skill_maxbry_ui_frontend: "Skill Maxbry UI fromtend/ (raiz en main; archivos en rama ccr-f01c3de9-bmry0s)"
 
   tareas_pendientes:
     - id: T01
       tarea: "Auditar notas de agentes en el repo; dejar solo codigo, README, handoffs y cableado"
-      estado: "auditada; limpieza pendiente de confirmacion del owner"
-      bloqueo: "confirmacion del owner para editar chat-router/agentes/LEEME.md en main"
-      handoff: "docs/handoff/T01_auditar_notas_agentes.md (ccr-f01c3de9-bmry0s)"
     - id: T02
       tarea: "Skill unificado de frontend FROMTED x YAIWES, con revision del chat"
-      estado: "creado en la rama; revision del chat pendiente"
-      bloqueo: "skill Maxbry UI frontend pendiente de subida completa"
-      handoff: "docs/handoff/T02_skill_frontend_fromted_yaiwes.md (ccr-f01c3de9-bmry0s)"
     - id: T03
       tarea: "Organizar raices y motores de descarga, extraccion, busqueda, copiar y mover"
-      estado: "plan creado; motores no implementados"
-      bloqueo: "codigo de los motores pendiente de entrega del owner"
-      handoff: "docs/handoff/T03_organizar_raices_motores.md (ccr-f01c3de9-bmry0s)"
     - id: T04
       tarea: "Verificar componentes open source sueltos y enviarlos a Componentes/"
-      estado: "pendiente"
-      bloqueo: "lista de componentes sueltos; Componentes/ no existe"
-      handoff: "docs/handoff/T04_verificar_componentes_open_source.md (ccr-f01c3de9-bmry0s)"
     - id: T05
       tarea: "Mover agentes a Agentes/"
-      estado: "pendiente"
-      bloqueo: "esperar ambos skills y el codigo de motores"
-      handoff: "docs/handoff/T05_mover_agentes.md (ccr-f01c3de9-bmry0s)"
     - id: T06
       tarea: "Mover almacenamiento y memoria a Memoria/ y luego a memoria/, con centinela de conteos"
-      estado: "no completado; el movimiento hecho en main fue revertido (a99ed1b228)"
-      bloqueo: "esperar ambos skills y el codigo de motores; E-9 del owner"
-      handoff: "docs/handoff/T06_mover_memoria.md (ccr-f01c3de9-bmry0s)"
     - id: T07
       tarea: "Recablear con el Satelite Central"
-      estado: "pendiente"
-      bloqueo: "confirmar cual es el satelite (no encuentro SATELITE CENTRAL CONECCION; hay connections/)"
-      handoff: "docs/handoff/T07_recablear_satelite_central.md (ccr-f01c3de9-bmry0s)"
     - id: T08
       tarea: "Listar componentes de memoria y almacenamiento conectados al harness DeepSeek"
-      estado: "pendiente; solo lectura por API"
-      bloqueo: "depende de T06 para la ubicacion final"
-      handoff: "docs/handoff/T08_listar_componentes_memoria_harness.md (ccr-f01c3de9-bmry0s)"
     - id: T09
       tarea: "Dar la URL de origen de cada componente y los enlaces a los motores de descarga y extraccion"
-      estado: "pendiente; solo lectura por API"
-      bloqueo: "motores pendientes (T03)"
-      handoff: "docs/handoff/T09_urls_origen_motores.md (ccr-f01c3de9-bmry0s)"
     - id: T10
       tarea: "Limpiar Claude notas.md e input_block_verbatim.yaml, dejando reglas y referencias de metodo"
-      estado: "hecho en main (88db4026, 3db5b7a); se anade el registro de tareas pendientes"
-      bloqueo: "ninguno"
-      handoff: "docs/handoff/T10_limpiar_claude_notas_input_block.md (ccr-f01c3de9-bmry0s)"
     - id: T11
       tarea: "Confirmar fe57c122ed en main (limpieza de Claude notas.md subida sin autorizacion registrada)"
-      estado: "pendiente de decision del owner"
-      bloqueo: "decision del owner: conservar o revertir"
-      handoff: "docs/handoff/T10_limpiar_claude_notas_input_block.md (ccr-f01c3de9-bmry0s)"
