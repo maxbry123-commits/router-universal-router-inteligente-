@@ -15,8 +15,6 @@ button{cursor:pointer}button:hover{border-color:var(--a)}
 .b.ok{color:var(--ok);border-color:var(--ok)}.b.w{color:var(--w);border-color:var(--w)}.b.e{color:var(--e);border-color:var(--e)}
 main{padding:12px}.pn{background:var(--p);border:1px solid var(--l);border-radius:8px;padding:10px;margin-bottom:12px}
 .pn h2{font-size:13px;margin:0 0 8px;color:var(--d);text-transform:uppercase}
-.r{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--l)}
-.r:last-child{border:0}.k{color:var(--d)}.v{color:var(--t)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
 .cell{background:var(--bg);border:1px solid var(--l);border-radius:6px;padding:8px;text-align:center}
 .cell .n{font-size:20px;color:var(--a)}.cell .l{font-size:11px;color:var(--d)}
@@ -32,11 +30,11 @@ main{padding:12px}.pn{background:var(--p);border:1px solid var(--l);border-radiu
 <span id="c" class="b w">DEMO</span>
 </header>
 <main>
-<section class="pn"><h2>Config</h2>
+<section class="pn"><h2>Config (router_llm_hf/watchdog.py)</h2>
 <div class="grid">
-<div class="cell"><div class="n">96</div><div class="l">timeout s</div></div>
-<div class="cell"><div class="n">5</div><div class="l">scan s</div></div>
-<div class="cell"><div class="n">30</div><div class="l">heartbeat s</div></div>
+<div class="cell"><div class="n">96</div><div class="l">CALL_TIMEOUT s</div></div>
+<div class="cell"><div class="n">30</div><div class="l">HEARTBEAT s</div></div>
+<div class="cell"><div class="n">60</div><div class="l">stall = 2x HB</div></div>
 </div></section>
 <section class="pn"><h2>Eventos</h2>
 <div class="grid">
