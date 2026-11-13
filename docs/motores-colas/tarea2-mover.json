@@ -1,0 +1,33 @@
+{
+ "schema": "yaiwes.tarea2.mover.v1",
+ "input_block": "docs/INPUT-BLOCKS-VERBATIM.md (INPUT BLOCK 3)",
+ "motor": "motor_4_move_batches.py (inmutable)",
+ "repo": "maxbry123-commits/Yaiwes",
+ "branch": "main",
+ "dest_root": "➡️ core kernel Yaiwes/",
+ "regla": "un motor_4 por carpeta: SOURCE_DIR=<source_root>/<carpeta>, DEST_DIR=<dest_root>/<carpeta>; COLLISION_POLICY=fail; BATCH_SIZE=25; STATE_FILE fuera de las raices",
+ "agentes": {"imput_sharck": 5, "yaiwes_componentes": 5},
+ "supervisores": 2,
+ "lugar_de_ejecucion": "pendiente de Hy (motor_4 mueve carpetas de un disco local: necesita una maquina con el repo clonado)",
+ "grupo_imput_sharck": {
+  "source_root": "imput sharck/📂 Core imput sharck",
+  "motores": [
+   {"id": "B01", "carpetas": "core-01-* y core-02-*"},
+   {"id": "B02", "carpetas": "core-03-* y core-04-*"},
+   {"id": "B03", "carpetas": "core-05-01 a core-05-06"},
+   {"id": "B04", "carpetas": "core-05-07 a core-05-12"},
+   {"id": "B05", "carpetas": "core-06-*"}
+  ]
+ },
+ "grupo_yaiwes_componentes": {
+  "source_root": "Yaiwes core/componentes para integrar al core Yaiwes",
+  "motores": [
+   {"id": "B06", "carpetas": ["ACT-R", "BehaviorTree.CPP", "Dream", "HRM", "LLaDA", "LightZero", "MoDr", "OpenSearch", "PaddleOCR", "SoarGroup.github.io"]},
+   {"id": "B07", "carpetas": ["TinyRecursiveModels", "bazel", "blt", "calcite", "coconut", "continuous-thought-machines", "differential-dataflow", "dreamerv3", "egglog", "elasticsearch"]},
+   {"id": "B08", "carpetas": ["hyperon-experimental", "incubator-kie", "jsonschema", "kubernetes", "large_concept_model", "lucene", "milvus", "nengo", "networkx", "opennars"]},
+   {"id": "B09", "carpetas": ["or-tools", "pyahocorasick", "rabbitmq-server", "recurrent-pretraining", "rules", "solr", "souffle", "spaun1.0", "sqlite", "swipl-devel"]},
+   {"id": "B10", "carpetas": ["systemd", "typesense", "uima-uimaj", "vespa", "vjepa2", "weaviate", "whisper.cpp"]}
+  ]
+ },
+ "estado": "escrito, NO ejecutado"
+}
