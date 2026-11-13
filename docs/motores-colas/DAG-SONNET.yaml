@@ -1,36 +1,35 @@
-dag: yaiwes.motores.continuacion.v2
-autor: opus-5.5 (2026-11-13)
+dag: yaiwes.motores.continuacion.v3
+autor: fable-5.2 (2026-11-13)
 lectura_obligatoria_previa:
-  - Yaiwes main: "motores de descarga y extracción/➡️📂 skills descargar extraer zip copiar mover archivos readme.md"
+  - Yaiwes main: "motores de descarga y extracción/➡️📂 skills descargar extraer zip copiar mover archivos readme.md" (incluye §11 paralelo)
   - router reorganizacion: docs/motores-colas/GUIA-ANTI-ALUCINACION.md
   - router reorganizacion: docs/INPUT-BLOCKS-VERBATIM.md
-reglas_duras: [no_sandbox_ia, no_disco_ia, no_clonar_en_ia, no_github_actions, no_lfs, no_force_push, no_inventar, evidencia_commit_url]
+reglas_duras: [no_github_actions, no_lfs, no_force_push, no_inventar, no_reescribir_motores, evidencia_commit_url, sandbox_ia_solo_con_autorizacion_expresa_de_hy]
+hecho:
+  motores_publicados_y_bloqueados: {repo: maxbry123-commits/Yaiwes, commit: 5aed8717, motor_2: WORKERS, engine: carril_push+NET_SLOTS+precheck, motor_4: MODE=git}
 nodos:
-  N1_publicar_motor4_git:
-    hace: publicar docs/motores-colas/motor_4_move_batches.MODE-GIT.py como "motores de descarga y extracción/➡️📂motor de moves archivos/motor_4_move_batches.py" en Yaiwes main, byte a byte
-    via: conector GitHub; si falla (repo enorme) -> puente Vercel proyecto `puente` sin teamId, git sparse sin blobs, commit, push sin force, parar sandbox
-    gap_si_falla: PUBLISH_GAP (reportar a Hy, no improvisar)
-  N2_relock:
-    depende: [N1_publicar_motor4_git]
-    hace: leer blob SHA real del motor_4 publicado; actualizar MOTORES_VERSION.json y skill §3 (fila motor_4), §4 (fila 4: MODE=git REPO BRANCH MOVES_FILE) y §10 (registro) en UN commit
-  N3_colas_moves:
-    depende: [N2_relock]
-    hace: generar B01..B10 desde docs/motores-colas/tarea2-mover.json; cada item {src: "<source_root>/<carpeta>", dst: "➡️ core kernel Yaiwes/<carpeta>"}; subir a docs/motores-colas/moves/
+  N0_ejecutor:
+    hace: confirmar con Hy que ejecutor arranca los motores (una sola pregunta, texto plano). Sin respuesta -> EXECUTOR_GAP y parar. No elegir por el.
+  N1_colas_moves:
+    depende: [N0_ejecutor]
+    hace: desde docs/motores-colas/tarea2-mover.json generar 2 archivos MOVES (uno por grupo de origen), items {src: "<source_root>/<carpeta>", dst: "➡️ core kernel Yaiwes/<carpeta>"}; subir a docs/motores-colas/moves/
+    nota: 10 motores por tarea se cumple con BATCH/commits del mismo motor; mover no necesita mas (guia A5). Si Hy exige 10 procesos, partir cada MOVES en 5.
     prohibido: cambiar origen o destino del INPUT BLOCK 3
-  N4_ejecutar:
-    depende: [N3_colas_moves]
-    hace: MODE=git REPO=maxbry123-commits/Yaiwes BRANCH=main MOVES_FILE=moves/Bxx.json COLLISION_POLICY=fail BATCH_SIZE=25
-    grupos: {imput_sharck: [B01, B02, B03, B04, B05], yaiwes_componentes: [B06, B07, B08, B09, B10]}
-    agentes: 5 + 5; supervisores: 2
-    ejecutor: el que indique Hy. Si no lo indico -> EXECUTOR_GAP y parar
-  N5_tarea1_resto:
-    hace: motor_2 con queues/core-1.json, core-3.json (los items publicados se saltan solos); core-02-08 espera decision de Hy (LFS)
-    ejecutor: mismo que N4
-  N6_docs_fusion:
+  N2_mover:
+    depende: [N1_colas_moves]
+    comando: MODE=git REPO=maxbry123-commits/Yaiwes BRANCH=main MOVES_FILE=<moves> BATCH_SIZE=100 COLLISION_POLICY=fail python motor_4_move_batches.py
+    cierre: verdict VERIFIED_CLOSED
+  N3_tarea1_resto:
+    depende: [N0_ejecutor]
+    comando: QUEUE_FILE=<cola con core-01-09, core-03-03, core-03-10, core-03-11> STATE_FILE=<fuera de raices> WORKERS=4 MAX_RETRIES=6 python motor_2_queue_download_extract.py
+    excluido: core-02-08 (qdrant, puntero LFS) hasta que Hy decida
+  N4_docs_fusion:
     hace: 1 agente fusiona "imput sharck/📂 Documentos imput sharck proyecto" en un solo archivo + handoff
-  N7_supervision:
-    depende: [N4_ejecutar, N5_tarea1_resto]
-    hace: 2 supervisores exigen verdict VERIFIED_CLOSED y releen el arbol en GitHub
-  N8_reporte:
-    depende: [N7_supervision]
+  N5_supervision:
+    depende: [N2_mover, N3_tarea1_resto]
+    hace: 2 supervisores releen el arbol en GitHub y exigen VERIFIED_CLOSED por motor
+  N6_mirror:
+    hace: copiar el paquete de motores a los demas repos con motor_copy_root_to_repo (skill §6), solo cuando Hy lo ordene y con destino dado por el
+  N7_reporte:
+    depende: [N5_supervision]
     hace: commit + URL por motor en docs/motores-colas/ y reporte JSON §9 del skill
