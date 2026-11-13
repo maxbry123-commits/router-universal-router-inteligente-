@@ -1,0 +1,12 @@
+[
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "docs-01",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Documentos imput sharck proyecto",
+  "source_paths_file": "/home/claude/work/paths/docs.txt"
+ }
+]
