@@ -1,0 +1,110 @@
+[
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-01-01",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/media-input-router/WhisperX"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-01-02",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/media-input-router/msgspec"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-01-03",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/media-input-router/yt-transcript"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-01-04",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/search/browser-use"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-01-05",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/search/open_deep_research"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-01-06",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/skills/mcp-skills-registry"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-01-07",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B01-web-research/scrapy"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-01-08",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B02-ir-evidence/OpenSearch"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-01-09",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B04-context-engineering/datasets"
+  ]
+ }
+]

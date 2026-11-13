@@ -1,0 +1,146 @@
+[
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-01",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/orchestration/semantic-kernel"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-02",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/rag/faiss"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-03",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/rag/txtai"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-04",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/search/firecrawl"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-05",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/search/local-deep-researcher"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-06",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/skills/ToolUniverse"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-07",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/skills/toolhive-catalog"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-08",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B01-web-research/scira"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-09",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B02-ir-evidence/datasketch"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-10",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B02-ir-evidence/pyterrier"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-11",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B03-code-runtime/kythe"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-05-12",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B03-code-runtime/smolagents"
+  ]
+ }
+]

@@ -1,0 +1,134 @@
+[
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-02-01",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/code/ast-grep"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-02-02",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/code/jedi"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-02-03",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/code/opengrok"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-02-04",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/media-input-router/marshmallow"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-02-05",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/orchestration/langgraph"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-02-06",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/rag/ColBERT"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-02-07",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/rag/haystack"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-02-08",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/rag/qdrant"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-02-09",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/search/gpt-researcher"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-02-10",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B01-web-research/heritrix3"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-02-11",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B03-code-runtime/sqry"
+  ]
+ }
+]

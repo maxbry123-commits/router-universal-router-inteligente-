@@ -1,0 +1,134 @@
+[
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-03-01",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/media-input-router/outlines"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-03-02",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/media-input-router/whisper.cpp"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-03-03",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/rag/llama_index"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-03-04",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/search/MindSearch"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-03-05",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/search/crawl4ai"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-03-06",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/search/deer-flow"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-03-07",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/skills/skill-hub"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-03-08",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B01-web-research/MinerU"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-03-09",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B01-web-research/nutch"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-03-10",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B03-code-runtime/continue"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-03-11",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B04-context-engineering/markitdown"
+  ]
+ }
+]

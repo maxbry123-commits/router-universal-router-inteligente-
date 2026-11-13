@@ -1,0 +1,134 @@
+[
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-04-01",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/code/tree-sitter"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-04-02",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/media-input-router/antlr4"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-04-03",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/rag/langchain"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-04-04",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/rag/sentence-transformers"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-04-05",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/search/Vane"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-04-06",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 Shack imput/📂 Componentes para integración sharck imput/skills/ToolBench"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-04-07",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B02-ir-evidence/rdflib"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-04-08",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B04-context-engineering/deepeval"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-04-09",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B04-context-engineering/hf-mcp-server"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-04-10",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B04-context-engineering/spaCy"
+  ]
+ },
+ {
+  "source_repo": "maxbry123-commits/osquestador-auditor",
+  "source_ref": "main",
+  "slug": "core-04-11",
+  "publish": true,
+  "dest_repo": "maxbry123-commits/Yaiwes",
+  "dest_branch": "main",
+  "dest_root": "imput sharck/📂 Core imput sharck",
+  "source_paths": [
+   "➡️📂 sharck imput/📂 input sharck code principal/📂 componentes open source/B10-retrieval-eval/ir_measures"
+  ]
+ }
+]
