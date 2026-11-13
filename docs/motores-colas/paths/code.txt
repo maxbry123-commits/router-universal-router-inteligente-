@@ -1,0 +1,104 @@
+➡️📂 Shack imput/➡️📂 shart imput code Run/README.md
+➡️📂 Shack imput/➡️📂 shart imput code Run/acquisition_gap_audit.py
+➡️📂 Shack imput/➡️📂 shart imput code Run/audit_existing_destination_exact.py
+➡️📂 Shack imput/➡️📂 shart imput code Run/audit_other_push_race.py
+➡️📂 Shack imput/➡️📂 shart imput code Run/community_registry.json
+➡️📂 Shack imput/➡️📂 shart imput code Run/component_registry.json
+➡️📂 Shack imput/➡️📂 shart imput code Run/memoria búsqueda.md
+➡️📂 Shack imput/➡️📂 shart imput code Run/queues/01-search.json
+➡️📂 Shack imput/➡️📂 shart imput code Run/queues/02-code.json
+➡️📂 Shack imput/➡️📂 shart imput code Run/queues/03-rag.json
+➡️📂 Shack imput/➡️📂 shart imput code Run/queues/04-skills.json
+➡️📂 Shack imput/➡️📂 shart imput code Run/queues/05-media-input-router.json
+➡️📂 Shack imput/➡️📂 shart imput code Run/queues/06-orchestration.json
+➡️📂 Shack imput/➡️📂 shart imput code Run/queues/07-existing-destination-recovery.json
+➡️📂 Shack imput/➡️📂 shart imput code Run/repair_firecrawl_additive.py
+➡️📂 Shack imput/➡️📂 shart imput code Run/repair_firecrawl_exact_one.py
+➡️📂 Shack imput/➡️📂 shart imput code Run/repair_ignored_publication.py
+➡️📂 Shack imput/➡️📂 shart imput code Run/research_dispatch.py
+➡️📂 Shack imput/➡️📂 shart imput code Run/residual_gap_audit.py
+➡️📂 Shack imput/➡️📂 shart imput code Run/role_router.py
+➡️📂 Shack imput/➡️📂 shart imput code Run/shark_input_lock.py
+➡️📂 Shack imput/➡️📂 shart imput code Run/tests/test_shark_core.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/queues/B01-web-research.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/queues/B02-ir-evidence.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/queues/B03-code-runtime.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/queues/B04-context-engineering.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/queues/M58-B07-query-search-primitives.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/queues/M58-B08-web-parse-extract.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/queues/M58-B09-retrieval-rerank.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/queues/M58-B10-retrieval-eval.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/queues/M67-ALL-PENDING-REPAIR.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/B01-INDEX.md
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/B01-state.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/B02-INDEX.md
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/B02-state.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/B03-INDEX.md
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/B03-state.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/B04-INDEX.md
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/B04-state.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/M58-B07-index.md
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/M58-B07-state.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/M58-B10-index.md
+➡️📂 sharck imput/📂 input sharck code principal/📂 component acquisition/state/M58-B10-state.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/TIMESFM-SKILL.md
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/sharck_root_runner.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/test_timesfm_capability.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/timesfm_capability.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/timesfm_request.example.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/📂 research-prepass-native/RESEARCH-PREPASS-TRAZABILIDAD.md
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/📂 research-prepass-native/context_packet.schema.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/📂 research-prepass-native/research_prepass.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/📂 research-prepass-native/source_registry.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/📂 research-prepass-native/source_registry_no_hf.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/📂 research-prepass-native/test_research_prepass.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/📂 research-prepass-native/test_websearch_engine.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 root-only-runtime/📂 research-prepass-native/websearch_engine.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/CI-TRIGGER-M59.txt
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/M59-SHARCK-V3-PARALLEL-11-LANE-DESIGN.md
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/README.md
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/STRICT-ENTRYPOINT-M59.md
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/V3-SOURCE-MANIFEST.json
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/handoff_index.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/provider_adapters.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/sharck_v3_entrypoint.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/sharck_v3_presearch.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/sharck_v3_runtime.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/sharck_v3_strict.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/skill_library_provider.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/test_provider_adapters.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/test_sharck_v3_entrypoint.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/test_sharck_v3_presearch.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/test_sharck_v3_runtime.py
+➡️📂 sharck imput/📂 input sharck code principal/📂 sharck-v3-parallel-candidate/test_sharck_v3_strict.py
+➡️📂 sharck imput/📂 motores canónicos copiados/hf_download_extract_engine.py
+➡️📂 sharck imput/📂 motores canónicos copiados/motor_2_queue_download_extract.py
+➡️📂 sharck imput/📂 motores caso/motor_repair_download_extract.py
+➡️📂 sharck imput/📂 motores caso/test_motor_repair_download_extract.py
+➡️📂 sharck imput/📂 workflows reubicados/README.md
+➡️📂 sharck imput/📂 workflows reubicados/shack-input-components.yml
+➡️📂 sharck imput/📂 workflows reubicados/shack-input-existing-destination-audit.yml
+➡️📂 sharck imput/📂 workflows reubicados/shack-input-firecrawl-additive-repair.yml
+➡️📂 sharck imput/📂 workflows reubicados/shack-input-firecrawl-content-audit.yml
+➡️📂 sharck imput/📂 workflows reubicados/shack-input-firecrawl-exact-one-repair.yml
+➡️📂 sharck imput/📂 workflows reubicados/shack-input-gap-recovery.yml
+➡️📂 sharck imput/📂 workflows reubicados/shack-input-ignored-repair.yml
+➡️📂 sharck imput/📂 workflows reubicados/shack-input-other-push-race-audit.yml
+➡️📂 sharck imput/📂 workflows reubicados/shack-input-residual-gap-audit.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-input-b04-spacy-diff.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-input-b04-spacy-readback.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-input-exception-eol-xray.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-input-ignore-attr-xray-fast.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-input-ignore-attr-xray.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-input-staging-strategydelta-lite.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-input-staging-strategydelta-sim.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-input-v2-b04-context.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-input-v2-components.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-input-v2-partials-diff.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-input-v2-readback-recover.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-m58-b07-query-search.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-m58-b08-web-parse.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-m58-b09-retrieval-rerank.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-m58-b10-retrieval-eval.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-m59-v3-candidate-tests.yml
+➡️📂 sharck imput/📂 workflows reubicados/sharck-sw-n46-rapidfuzz-full-byte-replay.yml
