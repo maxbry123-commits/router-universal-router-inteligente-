@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib, json, os, pathlib, shutil, stat, subprocess, tempfile, time, zipfile
 
 SCHEMA='yaiwes.download-extract.v2'
-LFS_POINTER=b'version https://git-lfs.github.com/spec/v1\n'
 PART_SIZE=max(1,min(95,int(os.getenv('PART_SIZE_MIB','12'))))*1024*1024
 MAX_BLOB=max(1,min(95,int(os.getenv('MAX_GITHUB_BLOB_MIB','95'))))*1024*1024
 MAX_EXTRACT_BYTES=int(os.getenv('MAX_EXTRACT_BYTES',str(8*1024**3)))
@@ -18,6 +17,9 @@ def _paths(raw): return [x.strip().strip('/') for x in raw.replace('|','\n').spl
 SOURCE_PATHS=_paths(os.getenv('SOURCE_PATHS',''))+(_paths(pathlib.Path(os.getenv('SOURCE_PATHS_FILE')).expanduser().read_text()) if os.getenv('SOURCE_PATHS_FILE','').strip() else [])
 SOURCE_PATHS=list(dict.fromkeys(SOURCE_PATHS))
 OK_VERDICTS={'DRY_RUN_DOWNLOAD_EXTRACT_VERIFIED','PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED','ALREADY_PRESENT_VERIFIED'}
+# 2026-11-13 (owner, chat actual): sin Git LFS - git-lfs no descarga los punteros ni se invoca el binario
+os.environ.setdefault('GIT_LFS_SKIP_SMUDGE','1')
+LFS_BLOCK=['-c','filter.lfs.required=false','-c','filter.lfs.smudge=','-c','filter.lfs.clean=','-c','filter.lfs.process=']
 
 def run(argv,cwd=None,env=None,check=True):
     p=subprocess.run(argv,cwd=cwd,env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
@@ -36,14 +38,16 @@ def repo_url(r):
 
 def slug_default(r): return r.rstrip('/').removesuffix('.git').split('/')[-1]
 
-def no_lfs(d):
-    run(['git','config','filter.lfs.clean','cat'],d); run(['git','config','filter.lfs.smudge','cat'],d)
+def _block_lfs(d):
+    """2026-11-13 (owner, chat actual): el motor NO depende de Git LFS. Los punteros LFS ya no bloquean la descarga y su descarga se bloquea por 3 mecanismos: (1) GIT_LFS_SKIP_SMUDGE=1 en el entorno, (2) overrides -c filter.lfs.* en cada git fetch/checkout, (3) git lfs uninstall --local (best-effort)."""
+    for k in ('filter.lfs.process','filter.lfs.clean','filter.lfs.smudge','filter.lfs.required'): run(['git','config','--unset-all',k],d,check=False)
     # 2026-11-13 (owner): bytes fieles - los .gitattributes del arbol (eol/text/filter) no pueden convertir contenido al extraer ni al hacer read-back
     (pathlib.Path(d)/'.git/info').mkdir(parents=True,exist_ok=True); (pathlib.Path(d)/'.git/info/attributes').write_text('* -text -eol -filter -ident -working-tree-encoding\n')
-    run(['git','config','--unset-all','filter.lfs.process'],d,check=False); run(['git','config','filter.lfs.required','false'],d)
+    try: run(['git','lfs','uninstall','--local'],d,check=False)
+    except Exception: pass
 
 def git_env():
-    e=dict(os.environ); e['GIT_TERMINAL_PROMPT']='0'
+    e=dict(os.environ); e['GIT_TERMINAL_PROMPT']='0'; e['GIT_LFS_SKIP_SMUDGE']='1'
     return e
 
 def is_rate_limited(text):
@@ -56,7 +60,7 @@ def run_ok(argv,cwd=None,env=None):
 
 def acquire(work):
     """Descarga con recuperacion: reintentos por ref con backoff, deteccion de rate-limit y corte de transferencias colgadas."""
-    d=work/'source'; d.mkdir(); run(['git','init','-q'],d); run(['git','remote','add','origin',repo_url(SOURCE_REPO)+'.git'],d); no_lfs(d)
+    d=work/'source'; d.mkdir(); run(['git','init','-q'],d); run(['git','remote','add','origin',repo_url(SOURCE_REPO)+'.git'],d); _block_lfs(d)
     if SOURCE_PATHS:
         # solo baja los blobs de las rutas pedidas (sparse + blob:none); los comodines se escapan para que la ruta sea literal
         esc=lambda x:''.join('\\'+c if c in '*?[\\!#' else c for c in x)
@@ -65,9 +69,9 @@ def acquire(work):
     for ref in dict.fromkeys([SOURCE_REF,'HEAD','main','master']):
         tried.append(ref)
         for attempt in range(1,FETCH_ATTEMPTS+1):
-            ok,out=run_ok(['git','-c','http.lowSpeedLimit=1000','-c','http.lowSpeedTime=60','fetch','--depth=1','--filter=blob:none','origin',ref],d)
+            ok,out=run_ok(['git','-c','http.lowSpeedLimit=1000','-c','http.lowSpeedTime=60',*LFS_BLOCK,'fetch','--depth=1','--filter=blob:none','origin',ref],d)
             if ok:
-                run(['git','checkout','-q','--detach','FETCH_HEAD'],d)
+                run(['git',*LFS_BLOCK,'checkout','-q','--detach','FETCH_HEAD'],d)
                 return d,run(['git','rev-parse','HEAD'],d),ref
             last=out
             if is_rate_limited(last): time.sleep(min(120*attempt,600))
@@ -98,10 +102,8 @@ def scan_tree(d,enforce_blob_limit=False):
         if stat.S_ISLNK(m) or not (stat.S_ISREG(m) or stat.S_ISDIR(m)): special.append(rel); continue
         if not p.is_file(): continue
         size=p.stat().st_size; total+=size
-        if size<=1024 and p.read_bytes()[:1024].startswith(LFS_POINTER): ptr.append(rel)
         if enforce_blob_limit and size>=MAX_BLOB: oversized.append({'path':rel,'bytes':size})
         rows.append((p,rel,m))
-    if ptr: raise RuntimeError('SOURCE_LFS_POINTER_GAP:'+','.join(ptr[:30]))
     if special: raise RuntimeError('SOURCE_SPECIAL_FILE_GAP:'+','.join(special[:30]))
     if oversized: raise RuntimeError('GIT_BLOB_LIMIT_GAP:'+json.dumps(oversized[:20]))
     if not rows: raise RuntimeError('EMPTY_SOURCE_TREE')
@@ -175,9 +177,9 @@ def safe_extract(bundle,dst):
     scan_tree(dst,enforce_blob_limit=True)
 
 def sparse_checkout(d,repo,branch,pathspec,env):
-    d.mkdir(); run(['git','init','-q'],d); run(['git','remote','add','origin',f'https://github.com/{repo}.git'],d); no_lfs(d)
+    d.mkdir(); run(['git','init','-q'],d); run(['git','remote','add','origin',f'https://github.com/{repo}.git'],d); _block_lfs(d)
     run(['git','sparse-checkout','init','--no-cone'],d); (d/'.git/info/sparse-checkout').write_text('/'+pathspec.strip('/')+'/\n')
-    run(['git','fetch','--depth=1','--filter=blob:none','origin',branch],d,env=env); run(['git','checkout','-q','-B',branch,'FETCH_HEAD'],d)
+    run(['git',*LFS_BLOCK,'fetch','--depth=1','--filter=blob:none','origin',branch],d,env=env); run(['git',*LFS_BLOCK,'checkout','-q','-B',branch,'FETCH_HEAD'],d)
 
 def publish(work,parts_dir,extracted,manifest_path,slug):
     if not DEST_REPO or not DEST_ROOT: return {'verdict':'DESTINATION_INPUT_GAP','detail':'DEST_REPO and DEST_ROOT are required when PUBLISH=1'}

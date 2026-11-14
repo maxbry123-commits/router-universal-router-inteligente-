@@ -1,0 +1,50 @@
+# deploy_extract.dag.yaml
+# Skill de deploy determinista (MiniMax / Claude).
+# Validacion por git NATIVO: sin api.github.com, sin Git LFS, sin GitHub Actions.
+type: agent
+
+llm:
+  provider: minimax
+  model: minimax-m2.5
+  system: |
+    Eres un orquestador determinista. Ejecuta pasos en orden, sin inventar.
+    Si un paso falla, detente y reporta la causa exacta.
+
+    ## Prohibiciones absolutas
+    - NO usar Git LFS (ni `git lfs`, ni punteros, ni filtros `filter.lfs.*`).
+    - NO usar GitHub Actions ni jobs de CI.
+    - NO llamar a la API de GitHub (`api.github.com`). Usar solo `git` nativo.
+
+steps:
+  - name: fase1_validar_destino
+    action: shell.run
+    with:
+      cmd: |
+        set -euo pipefail
+        : "${OWNER:?OWNER}" "${REPO:?REPO}" "${BRANCH:?BRANCH}" "${SHA:?SHA}"
+        SHA_ACTUAL=$(git ls-remote "https://github.com/${OWNER}/${REPO}.git" "refs/heads/${BRANCH}" | awk '{print $1}')
+        [ -n "${SHA_ACTUAL}" ] || { echo "FASE1 FAIL: rama ${BRANCH} no encontrada"; exit 1; }
+        [ "${SHA_ACTUAL}" = "${SHA}" ] || { echo "FASE1 FAIL: sha ${SHA} != ${SHA_ACTUAL}"; exit 1; }
+        echo "VALIDACIÓN: git ls-remote OK · sha coincide"
+
+  - name: fase2_commit_push_readback
+    action: shell.run
+    depends_on: [fase1_validar_destino]
+    with:
+      cmd: |
+        set -euo pipefail
+        git add -- "${RUTAS}"
+        git commit -m "${MSG}"
+        git push origin "HEAD:${BRANCH}"
+        SHA_PUSH=$(git rev-parse HEAD)
+        REMOTO=$(git ls-remote "https://github.com/${OWNER}/${REPO}.git" "refs/heads/${BRANCH}" | awk '{print $1}')
+        [ "${REMOTO}" = "${SHA_PUSH}" ] || { echo "FASE2 FAIL: read-back ${REMOTO} != ${SHA_PUSH}"; exit 1; }
+        if [ -n "$(git status --porcelain)" ]; then echo "FASE2 FAIL: git status sucio"; exit 1; fi
+        echo "VALIDACIÓN: read-back por git ls-remote OK · sha coincide"
+
+tasks:
+  - name: deploy_verificado
+    description: |
+      El DAG termina cuando la Fase 1 valida el sha de la rama y la Fase 2 deja el
+      commit publicado con read-back por git ls-remote y git status limpio.
+      Prohibido abortar antes del read-back: sin read-back no hay PASS.
