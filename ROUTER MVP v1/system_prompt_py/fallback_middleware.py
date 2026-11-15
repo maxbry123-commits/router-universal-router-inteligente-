@@ -47,3 +47,9 @@ async def execute_with_fallback_async(
     if no_balance and len(no_balance) == len(providers):
         raise NoBalanceError(f"SIN SALDO en: {', '.join(no_balance)}")
     raise AllProvidersFailedError(f"Todos los proveedores fallaron. Último error: {last_error}")
+
+async def fallback_chain(prompt: str, local_fn=None):
+    """Local → NVIDIA (4 APIs) → Groq (6 APIs)."""
+    from external.core.provider_fallback import ProviderFallback
+    fb = ProviderFallback()
+    return await fb.call(prompt, local_fn=local_fn)
