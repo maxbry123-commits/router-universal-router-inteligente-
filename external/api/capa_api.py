@@ -31,12 +31,41 @@ def _check(key: str):
 
 
 @app.get("/capa/status")
-def status(x_api_key: str = Header(default="")):
+async def status(x_api_key: str = Header(None)):
     _check(x_api_key)
-    if _queue is None:
-        return {"queue_size": 0, "active_tasks": [], "ram_pct": 0, "skips_by_ram": 0, "high": 0, "normal": 0, "low": 0}
-    s = _queue.stats()
-    return JSONResponse(s)
+    snap = {"queued": 0, "running": 0, "high": 0, "normal": 0,
+            "low": 0, "ram_pct": 0, "skips_by_ram": 0}
+    try:
+        from external.hf.space_queue import SPACE_QUEUE
+        snap = await SPACE_QUEUE.snapshot()
+    except Exception:
+        pass
+    handoff_total = 0
+    wall_lines = 0
+    try:
+        from external.nct import handoff
+        handoff_total = handoff.HANDOFF.snapshot(last_n=1)["total_entries"]
+    except Exception:
+        pass
+    try:
+        from external.nct import crazy_wall
+        wall_lines = crazy_wall.WALL.size()["lines"]
+    except Exception:
+        pass
+    return {
+        "workers": {},
+        "queue_size": snap.get("queued", 0),
+        "active_tasks": [],
+        "high": snap.get("high", 0),
+        "normal": snap.get("normal", 0),
+        "low": snap.get("low", 0),
+        "ram_pct": snap.get("ram_pct", 0),
+        "skips_by_ram": snap.get("skips_by_ram", 0),
+        "pending_approvals": [],
+        "handoff_total": handoff_total,
+        "wall_lines": wall_lines,
+        "uptime": "ok",
+    }
 
 
 @app.get("/health")
