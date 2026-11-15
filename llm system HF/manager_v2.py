@@ -12,7 +12,7 @@ if not ROUTER_API_KEY:
 MODEL_ID = os.getenv("MODEL_ID", "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF")
 MODEL_FILE = os.getenv("MODEL_FILE", "qwen2.5-coder-0.5b-instruct-q5_k_m.gguf")
 MODEL_PATH = os.getenv("MODEL_PATH", f"/data/models/{MODEL_FILE}")
-IDLE_UNLOAD_S = int(os.getenv("IDLE_UNLOAD_S", "900"))
+IDLE_UNLOAD_S = int(os.getenv("IDLE_UNLOAD_S", "1800"))
 LLAMA_TIMEOUT_S = int(os.getenv("LLAMA_TIMEOUT_S", "300"))
 LLAMA_PORT = 8082  # puerto distinto a manager.py (8081)
 HERE = os.path.dirname(os.path.abspath(__file__))
