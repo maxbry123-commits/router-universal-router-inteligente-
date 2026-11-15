@@ -5,7 +5,6 @@ Delega control via control_bridge; nunca decide, solo ejecuta.
 """
 from fastapi import FastAPI, Request, HTTPException, Header
 from fastapi.responses import JSONResponse
-import asyncio
 import httpx
 import os
 import uuid
@@ -65,10 +64,22 @@ def daily_cleanup_loop():
 threading.Thread(target=daily_cleanup_loop, daemon=True).start()
 
 
+def _content_of(response) -> str:
+    """Extrae el texto de una respuesta OpenAI-compatible."""
+    try:
+        return response["choices"][0]["message"]["content"]
+    except Exception:
+        return str(response)
+
+
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request, x_api_key: str = Header(None)):
     if x_api_key != ROUTER_API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API Key")
+
+    # FAIL_CLOSED: sin banco de memoria no hay checkpoint, luego no hay respuesta.
+    if not os.getenv("MCP_MEMORY_URL"):
+        raise HTTPException(status_code=503, detail="MCP_MEMORY_URL no configurada: checkpoint al banco de memoria obligatorio (fail-closed)")
 
     try:
         body = await request.json()
@@ -86,19 +97,11 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
 
     # 1. Cadena de fallback: HF local (Grupo 2) -> NVIDIA (4 APIs) -> Groq (6 APIs).
     #    provider_fb decide el proveedor; la ejecucion real la hace el pool de claves.
-    async def local_execution(p: str):
+    async def local_execution(msgs: list):
         # El modelo local vive en los Spaces del Grupo 2: no cableado en este Data Plane.
         raise NotImplementedError("modelo local no cableado en el Data Plane")
 
-    fallback_result = await provider_fb.call(prompt, local_fn=local_execution)
-    selected = fallback_result.get("provider")
-    if selected == "none":
-        raise HTTPException(status_code=503, detail="Todos los proveedores fallaron")
-    default_order = ["groq", "nvidia"] if "groq" in model_requested.lower() else ["nvidia", "groq"]
-    if selected == "hf_local":
-        providers_order = default_order
-    else:
-        providers_order = [selected] + [p for p in default_order if p != selected]
+    providers_order = ["groq", "nvidia"] if "groq" in model_requested.lower() else ["nvidia", "groq"]
 
     await QUEUE.acquire()
     try:
@@ -129,23 +132,37 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
                     raise ProviderHTTPError(provider, r.status_code, None, r.text[:300])
                 return r.json()["choices"][0]["message"]["content"]
 
-        result = await BRIDGE.run(
-            task_id,
-            execute_with_fallback_async(
-                providers_order,
-                call_provider,
-                prompt,
-                session_id=session_id,
-            ),
-        )
+        provider_used = None
+        try:
+            result = await BRIDGE.run(
+                task_id,
+                execute_with_fallback_async(
+                    providers_order,
+                    call_provider,
+                    prompt,
+                    session_id=session_id,
+                ),
+            )
+            provider_used = providers_order[0]
+        except Exception:
+            # Fallback real (HTTP): local -> NVIDIA (4 APIs) -> Groq (6 APIs).
+            fallback_result = await provider_fb.call(messages, local_fn=local_execution)
+            if fallback_result.get("provider") == "none":
+                raise HTTPException(status_code=503, detail="Todos los proveedores fallaron")
+            provider_used = fallback_result.get("provider")
+            result = _content_of(fallback_result.get("response"))
 
-        # 2. Checkpoint al Harness / banco de memoria (sin bloquear la respuesta).
-        if os.getenv("MCP_MEMORY_URL"):
-            asyncio.create_task(harness_client.send_checkpoint({
+        # 2. Checkpoint al Harness / banco de memoria (obligatorio: fail-closed).
+        try:
+            checkpoint = await harness_client.send_checkpoint({
                 "model": model_requested,
-                "provider_used": selected,
+                "provider_used": provider_used,
                 "messages": messages
-            }))
+            })
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"checkpoint al banco de memoria fallo: {e}")
+        if isinstance(checkpoint, dict) and checkpoint.get("error"):
+            raise HTTPException(status_code=502, detail=f"checkpoint al banco de memoria fallo: {checkpoint['error']}")
 
         return JSONResponse({"choices": [{"message": {"role": "assistant", "content": result}}]})
     except HTTPException:
