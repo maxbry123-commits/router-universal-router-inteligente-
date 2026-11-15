@@ -21,24 +21,26 @@ except ImportError:
 
 class HITLIntegration:
     def __init__(self):
-        if _GATE is None:
-            logger.error("approval_gate NO disponible — sistema en modo FAIL-CLOSED")
-        self.gate = _GATE() if _GATE else None
-
-    async def maybe_gate(self, action: str, payload: Dict[str, Any],
-                         executor: Callable[[Dict], Awaitable[Any]]) -> Any:
-        if self.gate is None:
+        if ApprovalGate is None:
             raise RuntimeError(
-                "HITL FAIL-CLOSED: approval_gate ausente. "
-                "Acciones sensibles bloqueadas."
+                "FATAL: approval_gate.py no disponible. "
+                "HITL no puede operar."
             )
+        self.gate = ApprovalGate()
+
+    async def maybe_gate(self, action, payload, executor):
         return await self.gate.gate(action, payload, executor)
 
-    def is_sensitive(self, action: str) -> bool:
-        return action in _SENSITIVE
+    def is_sensitive(self, action):
+        return action in SENSITIVE_ACTIONS
 
-    def pending(self) -> list:
-        return self.gate.pending() if self.gate else []
+    def pending(self):
+        return self.gate.pending()
 
 
-HITL = HITLIntegration()
+try:
+    HITL = HITLIntegration()
+except RuntimeError as e:
+    import logging
+    logging.getLogger(__name__).error(str(e))
+    HITL = None
