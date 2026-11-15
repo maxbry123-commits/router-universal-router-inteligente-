@@ -1,25 +1,56 @@
-import os
-from huggingface_hub import hf_hub_download, HfApi
+"""download_model.py — Descarga el GGUF del dataset HF al arrancar el Space.
+Este archivo SÍ va en GitHub porque es runtime (lo llama entrypoint.sh).
+"""
+import os, sys, hashlib, logging
+from pathlib import Path
 
-def download():
-    model_id = os.getenv("MODEL_ID", "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF")
-    filename = os.getenv("MODEL_FILE", "qwen2.5-coder-0.5b-instruct-q5_k_m.gguf")
-    target_dir = "/data/models"
-    os.makedirs(target_dir, exist_ok=True)
+logging.basicConfig(level=logging.INFO, format="[download] %(message)s")
+logger = logging.getLogger(__name__)
 
-    print(f"Intentando descargar {filename} de {model_id}...")
+MODEL_REPO = os.getenv("MODEL_REPO", "COMAND-CENTER-1/swe-code-hf-gguf")
+MODEL_FILE = os.getenv("MODEL_FILE")
+MODEL_PATH = os.getenv("MODEL_PATH", "")
+HF_TOKEN = os.getenv("HF_TOKEN", "")
+
+
+def sha256_of(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def main():
+    if not MODEL_FILE:
+        logger.error("MODEL_FILE no configurado")
+        return 1
+    if not HF_TOKEN:
+        logger.error("HF_TOKEN no configurado")
+        return 1
+    dest = Path(MODEL_PATH) if MODEL_PATH else Path("/data/models") / MODEL_FILE
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if dest.exists():
+        logger.info(f"Ya existe: {dest} ({dest.stat().st_size} B, sha={sha256_of(str(dest))[:16]}...)")
+        return 0
     try:
-        path = hf_hub_download(repo_id=model_id, filename=filename, local_dir=target_dir)
-        print(f"MODEL_DOWNLOADED: {path}")
+        from huggingface_hub import hf_hub_download
+    except ImportError:
+        logger.error("huggingface_hub no instalado")
+        return 1
+    try:
+        logger.info(f"Descargando {MODEL_REPO}/{MODEL_FILE}")
+        local = hf_hub_download(
+            repo_id=MODEL_REPO, filename=MODEL_FILE,
+            repo_type="dataset", token=HF_TOKEN,
+            local_dir=str(dest.parent),
+        )
+        logger.info(f"OK: {local} ({Path(local).stat().st_size} B)")
+        return 0
     except Exception as e:
-        print(f"ERROR descargando {filename}: {e}")
-        print("El manager arrancara, pero el modelo fallara hasta que se corrija la ruta.")
-        try:
-            files = HfApi().list_repo_files(repo_id=model_id)
-            gguf_files = [f for f in files if f.endswith('.gguf')]
-            print(f"Archivos GGUF disponibles: {gguf_files}")
-        except Exception:
-            pass
+        logger.error(f"Falló descarga: {type(e).__name__}: {e}")
+        return 1
+
 
 if __name__ == "__main__":
-    download()
+    sys.exit(main())
