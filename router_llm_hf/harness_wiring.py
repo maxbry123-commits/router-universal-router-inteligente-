@@ -1,4 +1,7 @@
-"""harness_wiring.py — Conecta el Router LLM HF con el Harness y Memoria."""
+"""harness_wiring.py — Conecta el Router LLM HF con el Harness y Memoria.
+FAIL_CLOSED: si la URL no esta configurada, se lanza el error; nunca se devuelve
+un mensaje falso tipo {"error": ...} que el llamante pueda leer como exito.
+"""
 import os
 import logging
 from external.core.mcp_pool import MCPPool
@@ -17,12 +20,12 @@ class HarnessClient:
 
     async def send_checkpoint(self, payload: dict) -> dict:
         if not self.memory_url:
-            return {"error": "MCP_MEMORY_URL no configurada"}
+            raise RuntimeError("MCP_MEMORY_URL no configurada: checkpoint al banco de memoria obligatorio (fail-closed)")
         url = f"{self.memory_url.rstrip('/')}/checkpoint"
         return await self.pool.post(url, headers=self._headers(), payload=payload)
 
     async def ask_harness(self, payload: dict) -> dict:
         if not self.harness_url:
-            return {"error": "AGENT_HARNESS_URL no configurada"}
+            raise RuntimeError("AGENT_HARNESS_URL no configurada: Harness DeepSeek obligatorio (fail-closed)")
         url = f"{self.harness_url.rstrip('/')}/execute"
         return await self.pool.post(url, headers=self._headers(), payload=payload)
