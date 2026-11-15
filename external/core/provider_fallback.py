@@ -1,84 +1,66 @@
-"""provider_fallback.py — Cadena de fallback para LLMs externos.
-Prioridad: HF local (Grupo 2) → NVIDIA (4 APIs) → Groq (6 APIs).
-"""
+"""provider_fallback.py — Cadena de fallback real (HTTP)."""
 import os
+import httpx
 import logging
+import asyncio
 from typing import Optional, Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
-
 class ProviderFallback:
-    """Gestor de fallback. Trigger: fallo, saldo agotado, o modo mirror."""
-
     def __init__(self):
         self.nvidia_keys = self._parse_keys(os.getenv("NVIDIA_KEYS", ""))
         self.groq_keys = self._parse_keys(os.getenv("GROQ_KEYS", ""))
         self.nvidia_idx = 0
         self.groq_idx = 0
+        # 10 conexiones HTTP compartidas
+        self.limits = httpx.Limits(max_connections=10, max_keepalive_connections=10)
+        self.client = httpx.AsyncClient(limits=self.limits, timeout=60.0)
 
     def _parse_keys(self, raw: str) -> List[str]:
         return [k.strip() for k in raw.split(",") if k.strip()]
 
     def _next_key(self, keys: List[str], idx_attr: str) -> Optional[str]:
-        if not keys:
-            return None
+        if not keys: return None
         idx = getattr(self, idx_attr)
         key = keys[idx % len(keys)]
         setattr(self, idx_attr, (idx + 1) % len(keys))
         return key
 
-    def nvidia_model(self) -> str:
-        """Modelo NVIDIA activo (rota entre los 4)."""
-        models = [
-            "minimaxai/minimax-m3.1-flash",
-            "meta/llama-3.3-70b-instruct",
-            "nvidia/llama-3.1-nemotron-70b-instruct",
-            "nvidia/llama-3.1-nemotron-ultra-253b-v1",
-        ]
-        return models[self.nvidia_idx % len(models)]
-
-    def get_nvidia_key(self) -> Optional[str]:
-        return self._next_key(self.nvidia_keys, "nvidia_idx")
-
-    def get_groq_key(self) -> Optional[str]:
-        return self._next_key(self.groq_keys, "groq_idx")
-
-    async def call(self, prompt: str, local_fn=None) -> Dict[str, Any]:
-        """Intenta local → NVIDIA (4 APIs) → Groq (6 APIs)."""
+    async def call(self, messages: list, local_fn=None) -> Dict[str, Any]:
+        """Intenta local -> NVIDIA (4 APIs) -> Groq (6 APIs) con HTTP real."""
+        
+        # 1. Local
         if local_fn:
             try:
-                result = await local_fn(prompt)
-                return {"provider": "hf_local", "result": result}
+                return {"provider": "hf_local", "response": await local_fn(messages)}
             except Exception as e:
-                logger.warning(f"HF local falló: {e}, saltando a NVIDIA")
+                logger.warning(f"HF local falló: {e}. Saltando a NVIDIA...")
 
+        # 2. NVIDIA
         for _ in range(len(self.nvidia_keys) or 1):
-            key = self.get_nvidia_key()
-            if not key:
-                break
+            key = self._next_key(self.nvidia_keys, "nvidia_idx")
+            if not key: break
             try:
-                return {
-                    "provider": "nvidia",
-                    "model": self.nvidia_model(),
-                    "key_used": key[:8] + "...",
-                }
+                headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+                payload = {"model": "meta/llama-3.3-70b-instruct", "messages": messages}
+                resp = await self.client.post("https://integrate.api.nvidia.com/v1/chat/completions", headers=headers, json=payload)
+                if resp.status_code == 200:
+                    return {"provider": "nvidia", "response": resp.json()}
             except Exception as e:
-                logger.warning(f"NVIDIA falló: {e}, siguiente")
-                continue
+                logger.warning(f"NVIDIA key falló: {e}")
 
+        # 3. Groq
         for _ in range(len(self.groq_keys) or 1):
-            key = self.get_groq_key()
-            if not key:
-                break
+            key = self._next_key(self.groq_keys, "groq_idx")
+            if not key: break
             try:
-                return {
-                    "provider": "groq",
-                    "model": "qwen/qwen3-32b",
-                    "key_used": key[:8] + "...",
-                }
+                headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+                payload = {"model": "qwen/qwen3-32b", "messages": messages}
+                resp = await self.client.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
+                if resp.status_code == 200:
+                    return {"provider": "groq", "response": resp.json()}
             except Exception as e:
-                logger.warning(f"Groq falló: {e}, siguiente")
-                continue
+                logger.warning(f"Groq key falló: {e}")
 
-        return {"provider": "none", "error": "todos los proveedores agotados"}
+        return {"provider": "none", "error": "Todos los proveedores agotados"}
