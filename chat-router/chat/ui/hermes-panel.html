@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Hermes · Agente de Comunicación</title>
+<style>
+  body { margin: 0; background: #0d1117; color: #e6edf3; font-family: monospace; }
+  .header { background: #161b22; padding: 10px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; }
+  iframe { width: 100%; height: calc(100vh - 40px); border: none; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span style="color: #58a6ff; font-weight: bold;">📡 Hermes</span>
+    <span style="color: #8b949e; font-size: 12px;">Conectado vía WSS</span>
+  </div>
+  <iframe id="hermes-frame" src="https://comand-center-1-hermes-mirror.hf.space" sandbox="allow-scripts allow-same-origin"></iframe>
+</body>
+</html>

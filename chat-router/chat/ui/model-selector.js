@@ -1,43 +1,88 @@
-// Selector de modelos del chat. 3 locales + NVIDIA (4) + Groq (6 Qwen3.8).
-const MODELS = {
-  local: [
-    { id: "qwen2.5-coder-0.5b", label: "Qwen 2.5 Coder 0.5B", group: "HF Local" },
-    { id: "lfm2.5-350m", label: "LFM 2.5 350M", group: "HF Local" },
-    { id: "qwen3.5-0.8b", label: "Qwen 3.5 0.8B", group: "HF Local" }
-  ],
-  nvidia: [
-    { id: "minimax-m3.1-flash", label: "Minimax M3.1 Flash", group: "NVIDIA" },
-    { id: "granite-meta", label: "Granite Meta", group: "NVIDIA" },
-    { id: "nemotron-super", label: "Nemotron Super", group: "NVIDIA" },
-    { id: "nemotron-ultra", label: "Nemotron Ultra", group: "NVIDIA" }
-  ],
-  groq: [
-    { id: "qwen3.8-32b", label: "Qwen 3.8 32B", group: "Groq" }
-  ]
+// model-selector.js
+export const MODEL_GROUPS = {
+  yaiwes_local: {
+    label: "YAIWES HF (Grupo 2)",
+    endpoint: "https://comand-center-1-swe-code-s1.hf.space/v1",
+    models: [
+      { id: "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF", label: "Qwen 2.5 Coder 0.5B" },
+      { id: "LiquidAI/LFM2.5-350M-GGUF", label: "LFM 2.5 350M" },
+      { id: "unsloth/Qwen3.5-0.8B-GGUF", label: "Qwen 3.5 0.8B" }
+    ]
+  },
+  nvidia: {
+    label: "NVIDIA (Fallback Externo)",
+    endpoint: "https://comand-center-1-local-llm-router.hf.space/v1/nvidia",
+    models: [
+      { id: "minimaxai/minimax-m3.1-flash", label: "Minimax M3.1 Flash" },
+      { id: "meta/llama-3.3-70b-instruct", label: "Granite Meta" },
+      { id: "nvidia/llama-3.1-nemotron-70b-instruct", label: "Nemotron Super" },
+      { id: "nvidia/llama-3.1-nemotron-ultra-253b-v1", label: "Nemotron Ultra" }
+    ]
+  },
+  groq: {
+    label: "Groq (Fallback Externo)",
+    endpoint: "https://comand-center-1-local-llm-router.hf.space/v1/groq",
+    models: [
+      { id: "qwen/qwen3-32b", label: "Qwen 3.8" } // 6 APIs rotativas
+    ]
+  },
+  swe_code_free: {
+    label: "SWE CODE Free",
+    endpoint: "https://comand-center-1-local-llm-router.hf.space/v1/swe-free",
+    models: [{ id: "swe-code-free", label: "Agente Auto" }]
+  },
+  swe_code: {
+    label: "SWE CODE",
+    endpoint: "https://comand-center-1-local-llm-router.hf.space/v1/swe",
+    models: [{ id: "swe-code-standard", label: "Agente Standard" }]
+  },
+  team_qwe: {
+    label: "Team QWE",
+    endpoint: "https://comand-center-1-local-llm-router.hf.space/v1/team-qwe",
+    models: [{ id: "team-qwe-orchestrator", label: "Orquestador Múltiple" }]
+  },
+  openclaw: {
+    label: "OpenClaw Agent",
+    endpoint: "wss://comand-center-1-riu-router.hf.space/openclaw",
+    models: [{ id: "openclaw", label: "OpenClaw WS" }]
+  },
+  hermes: {
+    label: "Hermes Agent",
+    endpoint: "wss://comand-center-1-riu-router.hf.space/hermes",
+    models: [{ id: "hermes", label: "Hermes WS" }]
+  }
 };
 
-function buildSelector(containerId) {
+export function renderSelector(containerId, onSelect) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const groups = [
-    { name: "HF Local (Grupo 2)", models: MODELS.local },
-    { name: "NVIDIA (4 APIs)", models: MODELS.nvidia },
-    { name: "Groq (6 APIs)", models: MODELS.groq }
-  ];
-  let html = '<select id="model-select">';
-  for (const g of groups) {
-    html += `<optgroup label="${g.name}">`;
-    for (const m of g.models) html += `<option value="${m.id}">${m.label}</option>`;
-    html += `</optgroup>`;
+  
+  const select = document.createElement("select");
+  select.className = "model-selector";
+  select.id = "model-select";
+
+  for (const [key, group] of Object.entries(MODEL_GROUPS)) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = group.label;
+    
+    for (const model of group.models) {
+      const option = document.createElement("option");
+      option.value = `${key}:${model.id}`;
+      option.textContent = model.label;
+      optgroup.appendChild(option);
+    }
+    select.appendChild(optgroup);
   }
-  html += '</select>';
-  container.innerHTML = html;
+
+  select.addEventListener("change", (e) => {
+    const [groupKey, modelId] = e.target.value.split(":");
+    onSelect(MODEL_GROUPS[groupKey].endpoint, modelId, groupKey);
+  });
+
+  container.innerHTML = "";
+  container.appendChild(select);
 }
 
-function getSelectedModel() {
-  const sel = document.getElementById("model-select");
-  return sel ? sel.value : "qwen2.5-coder-0.5b";
+export function getEndpointFor(groupKey) {
+  return MODEL_GROUPS[groupKey]?.endpoint || MODEL_GROUPS.yaiwes_local.endpoint;
 }
-
-window.buildSelector = buildSelector;
-window.getSelectedModel = getSelectedModel;
