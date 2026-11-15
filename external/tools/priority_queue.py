@@ -37,17 +37,29 @@ class ToolPriorityQueue:
             finally:
                 self.active.pop(pt.task_id, None)
 
-    async def worker_loop(self, router):
-        self._running = True
-        while self._running:
-            try:
-                pt = await asyncio.wait_for(self.queue.get(), timeout=1.0)
-            except asyncio.TimeoutError:
-                continue
-            if pt.task_id in self.active:
-                self.queue.task_done()
-                continue
-            await self._run_one(pt, router)
+async def worker_loop(self, router):
+    while True:
+        task = await self.queue.get()
+        if task.task_id in self.active_tasks:
+            self.queue.task_done()
+            continue
+        self.active_tasks.add(task.task_id)
+        try:
+            async def wrapped_fn():
+                try:
+                    return await task.fn()
+                except Exception as e:
+                    logger.error(f"[Queue] {task.task_id} error: {e}")
+                    return None
+                finally:
+                    self.active_tasks.discard(task.task_id)
+            await router.dispatch(task.task_id, wrapped_fn)
+            while task.task_id in self.active_tasks:
+                await asyncio.sleep(0.1)
+        except Exception as e:
+            logger.error(f"[Queue] dispatch {task.task_id} fallo: {e}")
+            self.active_tasks.discard(task.task_id)
+        finally:
             self.queue.task_done()
 
     async def start(self, router):
