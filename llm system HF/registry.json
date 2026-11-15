@@ -1,24 +1,39 @@
 {
-  "version": "1.0.0",
-  "updated": "2026-11-11",
-  "models": {
-    "s1": {
-      "model_id": "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF",
-      "model_file": "qwen2.5-coder-0.5b-instruct-q5_k_m.gguf",
-      "model_path": "/data/models/qwen2.5-coder-0.5b-instruct-q5_k_m.gguf",
-      "sha256": null
+  "version": "2.0.0",
+  "updated": "2026-11-15",
+  "groups": {
+    "group_1_compute": {
+      "spaces": ["local-llm-router", "local-llm-router-v2", "local-llm-router-v7"],
+      "ram_threshold_pct": 90.0,
+      "behavior": "jump_to_next_on_90pct"
     },
-    "s2": {
-      "model_id": "LiquidAI/LFM2.5-350M-GGUF",
-      "model_file": "LFM2.5-350M-Q4_K_M.gguf",
-      "model_path": "/data/models/LFM2.5-350M-Q4_K_M.gguf",
-      "sha256": null
-    },
-    "s3": {
-      "model_id": "Qwen/Qwen3-0.6B-GGUF",
-      "model_file": "Qwen3-0.6B-Q8_0.gguf",
-      "model_path": "/data/models/Qwen3-0.6B-Q8_0.gguf",
-      "sha256": null
+    "group_2_llm": {
+      "spaces": ["swe-code-s1", "swe-code-s2", "swe-code-s3"],
+      "idle_unload_s": 1800,
+      "one_model_per_space": true,
+      "behavior": "queue_if_all_busy"
     }
-  }
+  },
+  "models": {
+    "local": {
+      "s1": {"id": "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF", "file": "qwen2.5-coder-0.5b-instruct-q5_k_m.gguf"},
+      "s2": {"id": "LiquidAI/LFM2.5-350M-GGUF", "file": "LFM2.5-350M-Q4_K_M.gguf"},
+      "s3": {"id": "unsloth/Qwen3.5-0.8B-GGUF", "file": "Qwen3.5-0.8B-IQ4_XS.gguf"}
+    },
+    "nvidia": {
+      "count": 4,
+      "models": [
+        "minimaxai/minimax-m3.1-flash",
+        "meta/llama-3.3-70b-instruct",
+        "nvidia/llama-3.1-nemotron-70b-instruct",
+        "nvidia/llama-3.1-nemotron-ultra-253b-v1"
+      ]
+    },
+    "groq": {
+      "count": 6,
+      "models": ["qwen/qwen3-32b"],
+      "note": "6 APIs rotan entre el mismo modelo Qwen 3.8"
+    }
+  },
+  "fallback_chain": ["hf_local", "nvidia", "groq"]
 }
