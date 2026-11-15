@@ -40,19 +40,20 @@ class SpaceQueue:
             self._queue.sort(key=lambda t: t.priority)
         return tid
 
-    async def next_task(self) -> Optional[SpaceTask]:
-        async with self._lock:
-            ram = await self._current_ram_pct()
-            if ram >= self.MAX_RAM_PCT:
-                self._skips_by_ram += 1
-                logger.warning("RAM %.1f%% >= %.1f%%: salto", ram, self.MAX_RAM_PCT)
-                return None
-            for task in self._queue:
-                if task.space_id not in self._running:
-                    self._running[task.space_id] = task
-                    self._queue = [t for t in self._queue if t.task_id != task.task_id]
-                    return task
+async def next_task(self) -> Optional[SpaceTask]:
+    async with self._lock:
+        ram = await self._current_ram_pct()
+        if ram >= self.MAX_RAM_PCT:
+            self._skips_by_ram += 1
+            logger.warning(f"RAM {ram:.1f}% >= {self.MAX_RAM_PCT}%: salto")
             return None
+        self._queue.sort(key=lambda t: t.priority)
+        for idx, task in enumerate(self._queue):
+            if task.space_id not in self._running:
+                del self._queue[idx]
+                self._running[task.space_id] = task
+                return task
+        return None
 
     async def complete(self, task_id: str):
         async with self._lock:
