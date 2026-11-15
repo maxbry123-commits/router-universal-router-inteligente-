@@ -11,12 +11,17 @@ else
 fi
 
 cd "$TARGET_DIR"
-# IMPORTANTE: Incluir external/ y router_llm_hf/ para que los imports funcionen
 git sparse-checkout set "llm system HF" "ROUTER MVP v1" "external" "router_llm_hf"
-
 cd "$TARGET_DIR/llm system HF"
+
+# PARCHE CRÍTICO: Desactivar reasoning en s3 (Qwen3.5)
+if [ -f manager_v2.py ] && ! grep -q '"--reasoning", "off"' manager_v2.py; then
+    sed -i 's/"--n-gpu-layers", "0"\]/"--n-gpu-layers", "0", "--reasoning", "off"]/' manager_v2.py
+    echo "patch aplicado: llama-server --reasoning off"
+fi
+
 pip3 install --break-system-packages -q -r requirements.txt
-python3 download_model.py || echo "Aviso: Fallo la descarga del modelo, arrancando manager en modo degradado."
+python3 download_model.py || echo "Aviso: Fallo la descarga, arrancando en modo degradado."
 if [ -f manager_v2.py ]; then
     exec python3 manager_v2.py
 else
