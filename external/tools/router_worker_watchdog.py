@@ -9,7 +9,7 @@ HEARTBEAT_INTERVAL = 30.0
 
 
 class Worker:
-    def __init__(self, wid: str, fn: Callable, router: 'Router'):
+    def __init__(self, wid, fn, router):
         self.wid = wid
         self.fn = fn
         self.router = router
@@ -18,14 +18,15 @@ class Worker:
         self.task = None
         self.result = None
         self._heartbeat_task = None
+        self._stop_flag = False
 
-    def tick(self):
+    def _tick(self):
         self.heartbeat = time.monotonic()
 
     async def _beat_loop(self):
-        while self.status == "running":
-            await asyncio.sleep(HEARTBEAT_INTERVAL)
-            self.tick()
+        while not self._stop_flag:
+            self._tick()
+            await asyncio.sleep(30)
 
     async def run(self):
         self._heartbeat_task = asyncio.create_task(self._beat_loop())
@@ -33,8 +34,10 @@ class Worker:
             if asyncio.iscoroutinefunction(self.fn):
                 self.result = await self.fn()
             else:
-                self.result = await asyncio.get_event_loop().run_in_executor(None, self.fn)
+                loop = asyncio.get_event_loop()
+                self.result = await loop.run_in_executor(None, self.fn)
             self.status = "done"
+            self._tick()
             await self.router.report(self.wid, self.result, success=True)
         except asyncio.CancelledError:
             self.status = "cancelled"
@@ -43,8 +46,13 @@ class Worker:
             self.status = "failed"
             await self.router.report(self.wid, str(e), success=False)
         finally:
+            self._stop_flag = True
             if self._heartbeat_task:
                 self._heartbeat_task.cancel()
+                try:
+                    await self._heartbeat_task
+                except asyncio.CancelledError:
+                    pass
 
 
 class Router:
