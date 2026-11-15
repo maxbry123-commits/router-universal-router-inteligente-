@@ -5,6 +5,7 @@ Delega control via control_bridge; nunca decide, solo ejecuta.
 """
 from fastapi import FastAPI, Request, HTTPException, Header
 from fastapi.responses import JSONResponse
+import asyncio
 import httpx
 import os
 import uuid
@@ -21,6 +22,8 @@ from provider_timeouts import get_timeout
 from provider_window import ProviderHTTPError
 from queue_manager import QueueManager
 from control_bridge import BRIDGE
+from router_llm_hf.harness_wiring import HarnessClient
+from external.core.provider_fallback import ProviderFallback
 
 app = FastAPI()
 GROQ_KEYS = [k.strip() for k in os.getenv("GROQ_KEYS", "").split(",") if k.strip()]
@@ -45,6 +48,10 @@ if not ROUTER_API_KEY:
 
 QUEUE = QueueManager(max_concurrent=3)
 
+# Minimax 1 — pool MCP (10 conexiones) + cadena de fallback NVIDIA/Groq
+harness_client = HarnessClient()
+provider_fb = ProviderFallback()
+
 
 def daily_cleanup_loop():
     while True:
@@ -63,13 +70,35 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
     if x_api_key != ROUTER_API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API Key")
 
-    body = await request.json()
-    model = body.get("model", "groq")
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    messages = body.get("messages") or []
+    if not messages:
+        raise HTTPException(status_code=400, detail="messages vacio")
+    model_requested = body.get("model", "auto")
     session_id = request.headers.get("X-Session-Id") or str(uuid.uuid4())
-    providers_order = (
-        ["groq", "nvidia"] if "groq" in model.lower() else ["nvidia", "groq"]
-    )
     task_id = str(uuid.uuid4())
+    last = messages[-1]
+    prompt = last.get("content", "") if isinstance(last, dict) else str(last)
+
+    # 1. Cadena de fallback: HF local (Grupo 2) -> NVIDIA (4 APIs) -> Groq (6 APIs).
+    #    provider_fb decide el proveedor; la ejecucion real la hace el pool de claves.
+    async def local_execution(p: str):
+        # El modelo local vive en los Spaces del Grupo 2: no cableado en este Data Plane.
+        raise NotImplementedError("modelo local no cableado en el Data Plane")
+
+    fallback_result = await provider_fb.call(prompt, local_fn=local_execution)
+    selected = fallback_result.get("provider")
+    if selected == "none":
+        raise HTTPException(status_code=503, detail="Todos los proveedores fallaron")
+    default_order = ["groq", "nvidia"] if "groq" in model_requested.lower() else ["nvidia", "groq"]
+    if selected == "hf_local":
+        providers_order = default_order
+    else:
+        providers_order = [selected] + [p for p in default_order if p != selected]
 
     await QUEUE.acquire()
     try:
@@ -105,16 +134,26 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
             execute_with_fallback_async(
                 providers_order,
                 call_provider,
-                body["messages"][-1]["content"],
+                prompt,
                 session_id=session_id,
             ),
         )
+
+        # 2. Checkpoint al Harness / banco de memoria (sin bloquear la respuesta).
+        if os.getenv("MCP_MEMORY_URL"):
+            asyncio.create_task(harness_client.send_checkpoint({
+                "model": model_requested,
+                "provider_used": selected,
+                "messages": messages
+            }))
+
         return JSONResponse({"choices": [{"message": {"role": "assistant", "content": result}}]})
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(502, detail=str(e))
     finally:
         await QUEUE.release()
-
 
 @app.get("/health")
 def health():
