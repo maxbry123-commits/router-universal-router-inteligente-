@@ -15,7 +15,7 @@ class SpaceTask:
     payload: Dict = field(default_factory=dict, compare=False)
 
 class SpaceQueue:
-    MAX_RAM_PCT = 85.0
+    MAX_RAM_PCT = 90.0
 
     def __init__(self):
         self._queue: List[SpaceTask] = []
