@@ -1,43 +1,42 @@
-"""
-mode_router.py — 12 modos a (dataset, LoRA) (Control Plane)
-"""
-from __future__ import annotations
-import logging
-from typing import Dict, Optional, Tuple
+"""mode_router.py — Enruta por modo usando el registro central y los adapters de HF."""
+import json, os, logging
+from .mode_detector import detect_mode
 
 logger = logging.getLogger(__name__)
+REGISTRY_PATH = os.path.join(os.path.dirname(__file__), "SATELITE_CENTRAL_CONECCION.json")
+HF_ADAPTERS_BASE = "https://huggingface.co/COMAND-CENTER-1/swe-code-adapters/resolve/main"
 
+def load_registry():
+    if not os.path.exists(REGISTRY_PATH):
+        logger.warning("Registro central no encontrado.")
+        return {}
+    with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
 
-class ModeRouter:
-    MODES = {
-        "code_gen": ("swe-code-dataset", "lora-code-gen"),
-        "code_review": ("swe-code-dataset", "lora-code-review"),
-        "debug": ("swe-code-dataset", "lora-debug"),
-        "test_gen": ("swe-code-dataset", "lora-test-gen"),
-        "doc_gen": ("doc-dataset", "lora-doc-gen"),
-        "refactor": ("swe-code-dataset", "lora-refactor"),
-        "security_audit": ("security-dataset", "lora-security"),
-        "performance": ("perf-dataset", "lora-perf"),
-        "translate": ("i18n-dataset", "lora-translate"),
-        "summarize": ("sum-dataset", "lora-sum"),
-        "explain": ("explain-dataset", "lora-explain"),
-        "chat": ("chat-dataset", "lora-chat"),
+def get_adapter_config(mode: str) -> dict:
+    """Lee el adapter_config.json del repo de HF (vía URL raw)."""
+    url = f"{HF_ADAPTERS_BASE}/{mode}/adapter_config.json"
+    try:
+        import urllib.request
+        with urllib.request.urlopen(url, timeout=5) as r:
+            return json.loads(r.read().decode())
+    except Exception as e:
+        logger.warning(f"No se pudo leer adapter_config para {mode}: {e}")
+        return {}
+
+def route(payload: dict) -> dict:
+    """Detecta el modo (si no viene) y devuelve el plan de enrutamiento."""
+    prompt = ""
+    for m in payload.get("messages", []):
+        if m.get("role") == "user":
+            prompt = m.get("content", "")
+            break
+    mode = payload.get("mode") or detect_mode(prompt)
+    adapter = get_adapter_config(mode)
+    return {
+        "mode": mode,
+        "base_model": adapter.get("base_model"),
+        "lora": adapter.get("lora"),
+        "dataset": adapter.get("dataset"),
+        "adapter_config": adapter,
     }
-
-    def __init__(self) -> None:
-        self._registry: Dict[str, Tuple[str, str]] = self.MODES.copy()
-
-    def select(self, mode: str) -> Optional[Tuple[str, str]]:
-        result = self._registry.get(mode.lower().strip())
-        if not result:
-            logger.warning("Modo desconocido: %s", mode)
-        return result
-
-    def register_mode(self, mode: str, dataset: str, lora: str) -> None:
-        self._registry[mode.lower().strip()] = (dataset, lora)
-
-    def list_modes(self) -> list:
-        return sorted(self._registry.keys())
-
-    def validate_mode(self, mode: str) -> bool:
-        return mode.lower().strip() in self._registry
