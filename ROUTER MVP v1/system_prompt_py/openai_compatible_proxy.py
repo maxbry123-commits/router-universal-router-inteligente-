@@ -71,7 +71,7 @@ PROVIDERS = {
     "nvidia": {
         "base_url": "https://integrate.api.nvidia.com/v1",
         "pool": KeyPool("nvidia", NVIDIA_KEYS),
-        "default_model": "meta/llama-3.3-70b-instruct",
+        "default_model": "google/gemma-4-31b-it",
     },
 }
 
