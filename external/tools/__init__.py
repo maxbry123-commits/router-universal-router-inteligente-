@@ -9,14 +9,17 @@ try:  # pragma: no cover - el paquete no debe romperse si falta la dependencia
 
     import huggingface_hub as _hf
 
-    _errors = None
+    # Se recorren TODOS los modulos candidatos y se fusionan sus clases de
+    # error. El `break` anterior paraba en el primero importable: con
+    # huggingface_hub 0.22.2 (pin del Space) `huggingface_hub.errors` existe pero
+    # NO contiene HfHubHTTPError (solo errores de generacion), de modo que los
+    # errores de `huggingface_hub.utils` nunca se inyectaban y el proxy no
+    # arrancaba (ImportError en external/tools/space_power_manager.py).
     for _mod_name in ("huggingface_hub.errors", "huggingface_hub.utils"):
         try:
             _errors = importlib.import_module(_mod_name)
-            break
         except ImportError:
             continue
-    if _errors is not None:
         for _name in dir(_errors):
             _obj = getattr(_errors, _name)
             if (
