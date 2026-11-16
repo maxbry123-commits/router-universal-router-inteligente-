@@ -13,6 +13,8 @@ class ProviderFallback:
         self.groq_keys = self._parse_keys(os.getenv("GROQ_KEYS", ""))
         self.nvidia_idx = 0
         self.groq_idx = 0
+        # Diagnostico operativo: cuantas claves hay y el ultimo error por proveedor (nunca valores)
+        self.diag = {"nvidia_keys": 0, "groq_keys": 0, "nvidia_error": None, "groq_error": None}
         # 10 conexiones HTTP compartidas
         self.limits = httpx.Limits(max_connections=10, max_keepalive_connections=10)
         self.client = httpx.AsyncClient(limits=self.limits, timeout=60.0)
@@ -47,6 +49,9 @@ class ProviderFallback:
 
     async def call(self, messages: list, model_requested: str = None, local_fn=None) -> Dict[str, Any]:
         """Local -> Enrutamiento por modelo (NVIDIA o Groq) -> Fallback."""
+        # Conteo de claves refrescado en cada llamada (fuente de verdad: el entorno actual)
+        self.diag["nvidia_keys"] = len(self.nvidia_keys)
+        self.diag["groq_keys"] = len(self.groq_keys)
 
         # 1. Intentar Local
         if local_fn:
@@ -76,7 +81,9 @@ class ProviderFallback:
         if "nvidia" in order:
             for _ in range(len(self.nvidia_keys) or 1):
                 key = self._next_key(self.nvidia_keys, "nvidia_idx")
-                if not key: break
+                if not key:
+                    self.diag["nvidia_error"] = "sin claves en NVIDIA_KEYS"
+                    break
                 try:
                     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
                     # Usamos el modelo pedido o el default
@@ -86,14 +93,18 @@ class ProviderFallback:
                     if resp.status_code == 200:
                         return {"provider": "nvidia", "response": resp.json(), "degraded": "nvidia" in order[1:]}
                     logger.warning(f"NVIDIA HTTP {resp.status_code}")
+                    self.diag["nvidia_error"] = f"HTTP {resp.status_code}"
                 except Exception as e:
                     logger.warning(f"NVIDIA key falló: {e}")
+                    self.diag["nvidia_error"] = f"{type(e).__name__}: {e}"[:200]
 
         # 4. Intentar Groq
         if "groq" in order:
             for _ in range(len(self.groq_keys) or 1):
                 key = self._next_key(self.groq_keys, "groq_idx")
-                if not key: break
+                if not key:
+                    self.diag["groq_error"] = "sin claves en GROQ_KEYS"
+                    break
                 try:
                     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
                     # Groq siempre usa qwen3-32b según el registry
@@ -102,7 +113,9 @@ class ProviderFallback:
                     if resp.status_code == 200:
                         return {"provider": "groq", "response": resp.json(), "degraded": "groq" in order[1:]}
                     logger.warning(f"Groq HTTP {resp.status_code}")
+                    self.diag["groq_error"] = f"HTTP {resp.status_code}"
                 except Exception as e:
                     logger.warning(f"Groq key falló: {e}")
+                    self.diag["groq_error"] = f"{type(e).__name__}: {e}"[:200]
 
-        return {"provider": "none", "error": "Todos los proveedores agotados"}
+        return {"provider": "none", "error": "Todos los proveedores agotados", "diag": dict(self.diag)}
