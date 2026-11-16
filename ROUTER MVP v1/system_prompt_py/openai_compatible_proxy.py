@@ -27,7 +27,43 @@ from control_bridge import BRIDGE
 from router_llm_hf.harness_wiring import HarnessClient
 from external.core.provider_fallback import ProviderFallback
 
+# --- MINIMAX 4: ciclo de vida de infraestructura ---
+from external.core.power_daemon import PowerDaemon
+from external.core.billing_monitor import BillingMonitor
+from external.core.storage_wiring import StorageWiring
+_power_daemon = PowerDaemon()
+_storage_ok = False
+# --- FIN MINIMAX 4 ---
+
+
 app = FastAPI()
+
+# --- MINIMAX 4: MCP_MEMORY_URL desde bucket ---
+import os as _os
+if not _os.getenv("MCP_MEMORY_URL"):
+    _os.environ["MCP_MEMORY_URL"] = "https://huggingface.co/buckets/COMAND-CENTER-1/yaiwes-memoria-storage"
+    print("[INFRA] MCP_MEMORY_URL configurada desde bucket.")
+# --- FIN MINIMAX 4 ---
+
+
+# --- MINIMAX 4: eventos de ciclo de vida ---
+@app.on_event("startup")
+async def _infra_startup():
+    global _storage_ok
+    _storage_ok = StorageWiring.verify_storage_connection()
+    _power_daemon.start()
+    print(f"[INFRA] storage_ok={_storage_ok} power_daemon=ON")
+
+@app.on_event("shutdown")
+async def _infra_shutdown():
+    _power_daemon.stop()
+    print("[INFRA] power_daemon=OFF")
+
+@app.get("/billing/status")
+def billing_status():
+    return BillingMonitor.check_runtime_cost()
+# --- FIN MINIMAX 4 ---
+
 
 # Minimax 1 - CORS para que el navegador del frontend (montado en /chat) pueda llamar al proxy
 app.add_middleware(
