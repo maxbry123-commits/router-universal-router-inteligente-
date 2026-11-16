@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YAIWES Chat Router</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--txt:#e6edf3;--acc:#58a6ff;--ok:#3fb950;--err:#f85149}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 ui-monospace,monospace;background:var(--bg);color:var(--txt);display:flex;height:100vh;overflow:hidden}
+  
+  /* Sidebar para paneles */
+  #sidebar{width:250px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:10px;overflow-y:auto}
+  #sidebar h2{font-size:14px;color:var(--acc);margin:0 0 10px}
+  .btn-panel{background:transparent;border:1px solid var(--line);color:var(--txt);padding:8px;margin-bottom:5px;cursor:pointer;border-radius:6px;text-align:left}
+  .btn-panel:hover{border-color:var(--acc);background:rgba(88,166,255,0.1)}
+  .btn-panel.active{border-color:var(--acc);background:var(--acc);color:#fff}
+  
+  /* Área principal del chat */
+  #main{flex:1;display:flex;flex-direction:column}
+  header{padding:10px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+  
+  #chat-container{flex:1;display:flex;flex-direction:column;padding:20px;overflow-y:auto}
+  #messages{flex:1;display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+  .msg{padding:10px;border-radius:6px;max-width:80%}
+  .msg.user{align-self:flex-end;background:#1f6feb;color:#fff}
+  .msg.bot{align-self:flex-start;background:var(--panel);border:1px solid var(--line)}
+  
+  #input-area{display:flex;gap:10px;padding:10px;border-top:1px solid var(--line)}
+  #msg-input{flex:1;background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:10px}
+  #send-btn{background:var(--acc);color:#fff;border:none;border-radius:6px;padding:10px 20px;cursor:pointer;font-weight:bold}
+  
+  /* Overlay para paneles */
+  #panel-overlay{position:fixed;top:0;right:-800px;width:800px;height:100vh;background:var(--panel);border-left:1px solid var(--line);transition:right 0.3s;z-index:100;box-shadow:-5px 0 15px rgba(0,0,0,0.5)}
+  #panel-overlay.open{right:0}
+  #panel-header{padding:10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  #panel-frame{width:100%;height:calc(100% - 50px);border:none}
+  .close-btn{background:var(--err);color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer}
+</style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <h2>🛠️ Paneles</h2>
+    <button class="btn-panel" onclick="openPanel('loop-panel.html')">🔁 LOOP</button>
+    <button class="btn-panel" onclick="openPanel('watchdog-panel.html')">🐕 WATCHDOG</button>
+    <button class="btn-panel" onclick="openPanel('cola-panel.html')">📋 COLA</button>
+    <button class="btn-panel" onclick="openPanel('mindmap-panel.html')">🧠 MINDMAP</button>
+    <button class="btn-panel" onclick="openPanel('motion-panel.html')">🎬 MOTION</button>
+    <button class="btn-panel" onclick="openPanel('hitl-panel.html')">✅ HITL</button>
+    <button class="btn-panel" onclick="openPanel('openclaw-panel.html')">🤖 OPENCLAW</button>
+    <button class="btn-panel" onclick="openPanel('hermes-panel.html')">📡 HERMES</button>
+  </div>
+
+  <!-- Chat Principal -->
+  <div id="main">
+    <header>
+      <div id="model-selector-container"></div>
+      <span id="status-badge" style="margin-left:auto;color:var(--txt);font-size:12px;">Listo</span>
+    </header>
+    <div id="chat-container">
+      <div id="messages">
+        <div class="msg bot">¡Hola! Selecciona un modelo y empieza a chatear.</div>
+      </div>
+      <div id="input-area">
+        <input id="msg-input" type="text" placeholder="Escribe tu mensaje aquí..." onkeydown="if(event.key==='Enter') sendMessage()">
+        <button id="send-btn" onclick="sendMessage()">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Overlay -->
+  <div id="panel-overlay">
+    <div id="panel-header">
+      <span id="panel-title">Panel</span>
+      <button class="close-btn" onclick="closePanel()">Cerrar</button>
+    </div>
+    <iframe id="panel-frame" src="about:blank"></iframe>
+  </div>
+
+  <script type="module">
+    import { renderSelector } from './ui/model-selector.js';
+    
+    let currentEndpoint = "";
+    let currentModel = "";
+
+    // Inicializar Selector
+    renderSelector('model-selector-container', (endpoint, modelId, groupKey) => {
+      currentEndpoint = endpoint;
+      currentModel = modelId;
+      document.getElementById('status-badge').textContent = `Modelo: ${modelId}`;
+      document.getElementById('status-badge').style.color = "var(--ok)";
+    });
+
+    // Enviar Mensaje
+    window.sendMessage = async () => {
+      const input = document.getElementById('msg-input');
+      const text = input.value.trim();
+      if (!text || !currentEndpoint) return;
+
+      // UI
+      addMessage(text, 'user');
+      input.value = '';
+      const badge = document.getElementById('status-badge');
+      badge.textContent = "Pensando...";
+      badge.style.color = "var(--acc)";
+
+      try {
+        // Llamada al proxy
+        const res = await fetch(`${currentEndpoint}/chat/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: currentModel,
+            messages: [{ role: 'user', content: text }]
+          })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content || "Sin respuesta";
+        
+        addMessage(reply, 'bot');
+        badge.textContent = "Listo";
+        badge.style.color = "var(--txt)";
+      } catch (e) {
+        addMessage(`Error: ${e.message}`, 'bot');
+        badge.textContent = "Error";
+        badge.style.color = "var(--err)";
+      }
+    };
+
+    window.addMessage = (text, sender) => {
+      const msgs = document.getElementById('messages');
+      const div = document.createElement('div');
+      div.className = `msg ${sender}`;
+      div.textContent = text;
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+    };
+
+    // Paneles
+    window.openPanel = (url) => {
+      document.getElementById('panel-title').textContent = url.replace('-panel.html', '').toUpperCase();
+      document.getElementById('panel-frame').src = `./ui/${url}`;
+      document.getElementById('panel-overlay').classList.add('open');
+    };
+    window.closePanel = () => {
+      document.getElementById('panel-frame').src = "about:blank";
+      document.getElementById('panel-overlay').classList.remove('open');
+    };
+  </script>
+</body>
+</html>
