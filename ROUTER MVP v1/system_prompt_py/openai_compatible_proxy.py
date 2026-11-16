@@ -5,6 +5,7 @@ Delega control via control_bridge; nunca decide, solo ejecuta.
 """
 from fastapi import FastAPI, Request, HTTPException, Header
 from fastapi.responses import JSONResponse
+import asyncio
 import httpx
 import os
 import uuid
@@ -64,6 +65,16 @@ def daily_cleanup_loop():
 threading.Thread(target=daily_cleanup_loop, daemon=True).start()
 
 
+def _log_checkpoint_error(task):
+    """Log del fallo del checkpoint (no bloqueante)."""
+    try:
+        exc = task.exception()
+        if exc:
+            print(f"[WARN] Fallo checkpoint (no bloqueante): {exc}")
+    except Exception as e:
+        print(f"[WARN] Fallo checkpoint (no bloqueante): {e}")
+
+
 def _content_of(response) -> str:
     """Extrae el texto de una respuesta OpenAI-compatible."""
     try:
@@ -72,99 +83,92 @@ def _content_of(response) -> str:
         return str(response)
 
 
+# Modelos locales (Grupo 2) -> Space que los sirve. registry.json 2.0.0 models.local
+LOCAL_SPACES = {
+    "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF": "swe-code-s1",
+    "LiquidAI/LFM2.5-350M-GGUF": "swe-code-s2",
+    "unsloth/Qwen3.5-0.8B-GGUF": "swe-code-s3",
+}
+LOCAL_TIMEOUT_S = 30.0
+
+@app.post("/v1/nvidia")
+@app.post("/v1/groq")
+@app.post("/v1/swe")
+@app.post("/v1/swe-free")
+@app.post("/v1/team-qwe")
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request, x_api_key: str = Header(None)):
     if x_api_key != ROUTER_API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API Key")
 
-    # FAIL_CLOSED: sin banco de memoria no hay checkpoint, luego no hay respuesta.
-    if not os.getenv("MCP_MEMORY_URL"):
-        raise HTTPException(status_code=503, detail="MCP_MEMORY_URL no configurada: checkpoint al banco de memoria obligatorio (fail-closed)")
-
     try:
         body = await request.json()
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON")
+        raise HTTPException(400, detail="Invalid JSON")
 
     messages = body.get("messages") or []
     if not messages:
-        raise HTTPException(status_code=400, detail="messages vacio")
-    model_requested = body.get("model", "auto")
-    session_id = request.headers.get("X-Session-Id") or str(uuid.uuid4())
-    task_id = str(uuid.uuid4())
-    last = messages[-1]
-    prompt = last.get("content", "") if isinstance(last, dict) else str(last)
+        raise HTTPException(400, detail="messages vacio")
+    # Extraemos el modelo. Si el selector envia "nvidia:minimax...", lo limpiamos.
+    raw_model = body.get("model", "auto")
+    model_requested = raw_model.split(":")[-1] if ":" in raw_model else raw_model
 
-    # 1. Cadena de fallback: HF local (Grupo 2) -> NVIDIA (4 APIs) -> Groq (6 APIs).
-    #    provider_fb decide el proveedor; la ejecucion real la hace el pool de claves.
+    # 1. Ejecucion local: Space del Grupo 2 que sirve ese modelo.
     async def local_execution(msgs: list):
-        # El modelo local vive en los Spaces del Grupo 2: no cableado en este Data Plane.
-        raise NotImplementedError("modelo local no cableado en el Data Plane")
+        space = LOCAL_SPACES.get(model_requested)
+        if not space:
+            raise NotImplementedError(f"modelo no local: {model_requested}")
+        url = f"https://comand-center-1-{space}.hf.space/v1/chat/completions"
+        headers = {"x-api-key": ROUTER_API_KEY, "Content-Type": "application/json"}
+        try:
+            r = await provider_fb.client.post(
+                url, headers=headers,
+                json={"model": model_requested, "messages": msgs},
+                timeout=LOCAL_TIMEOUT_S,
+            )
+        except Exception as e:
+            raise RuntimeError(f"Space {space} inaccesible: {e}")
+        if r.status_code != 200:
+            raise RuntimeError(f"Space {space} HTTP {r.status_code}")
+        return r.json()
 
-    providers_order = ["groq", "nvidia"] if "groq" in model_requested.lower() else ["nvidia", "groq"]
-
+    # 2. Cadena de fallback: Local -> NVIDIA (4 APIs) -> Groq (6 APIs), con HTTP real.
     await QUEUE.acquire()
     try:
-        async def call_provider(provider, prompt, model_family):
-            cfg = PROVIDERS[provider]
-            key = cfg["pool"].get_key(session_id=session_id)
-            if not key:
-                raise RuntimeError(f"Sin keys en {provider}")
-            headers = {
-                "Authorization": f"Bearer {key}",
-                "Content-Type": "application/json",
-            }
-            payload = {
-                "model": body.get("model", cfg["default_model"]),
-                "messages": body["messages"],
-                "temperature": 0.1,
-            }
-            timeout = get_timeout(provider)
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                r = await client.post(
-                    f'{cfg["base_url"]}/chat/completions',
-                    json=payload,
-                    headers=headers,
-                )
-                if r.status_code >= 400:
-                    if r.status_code == 429:
-                        cfg["pool"].mark_rate_limited(key)
-                    raise ProviderHTTPError(provider, r.status_code, None, r.text[:300])
-                return r.json()["choices"][0]["message"]["content"]
+        fallback_result = await BRIDGE.run(
+            str(uuid.uuid4()),
+            provider_fb.call(messages, model_requested=model_requested, local_fn=local_execution),
+        )
+        if fallback_result.get("provider") == "none":
+            raise HTTPException(503, "Todos los proveedores fallaron")
 
-        provider_used = None
-        try:
-            result = await BRIDGE.run(
-                task_id,
-                execute_with_fallback_async(
-                    providers_order,
-                    call_provider,
-                    prompt,
-                    session_id=session_id,
-                ),
-            )
-            provider_used = providers_order[0]
-        except Exception:
-            # Fallback real (HTTP): local -> NVIDIA (4 APIs) -> Groq (6 APIs).
-            fallback_result = await provider_fb.call(messages, local_fn=local_execution)
-            if fallback_result.get("provider") == "none":
-                raise HTTPException(status_code=503, detail="Todos los proveedores fallaron")
-            provider_used = fallback_result.get("provider")
-            result = _content_of(fallback_result.get("response"))
+        provider_used = fallback_result.get("provider")
+        content = _content_of(fallback_result.get("response"))
 
-        # 2. Checkpoint al Harness / banco de memoria (obligatorio: fail-closed).
-        try:
-            checkpoint = await harness_client.send_checkpoint({
+        # 3. Checkpoint opcional: si hay MCP_MEMORY_URL, guardamos; si no, avisamos y continuamos.
+        memory_url = os.getenv("MCP_MEMORY_URL")
+        if memory_url:
+            task = asyncio.create_task(harness_client.send_checkpoint({
                 "model": model_requested,
                 "provider_used": provider_used,
                 "messages": messages
-            })
-        except Exception as e:
-            raise HTTPException(status_code=502, detail=f"checkpoint al banco de memoria fallo: {e}")
-        if isinstance(checkpoint, dict) and checkpoint.get("error"):
-            raise HTTPException(status_code=502, detail=f"checkpoint al banco de memoria fallo: {checkpoint['error']}")
+            }))
+            task.add_done_callback(_log_checkpoint_error)
+        else:
+            print("[WARN] MCP_MEMORY_URL no configurada. Chat en modo degradado (sin persistencia).")
 
-        return JSONResponse({"choices": [{"message": {"role": "assistant", "content": result}}]})
+        # 4. Respuesta con el contenido real del proveedor.
+        return JSONResponse({
+            "id": "chatcmpl-fallback",
+            "object": "chat.completion",
+            "provider": provider_used,
+            "model": model_requested,
+            "choices": [{
+                "index": 0,
+                "message": {"role": "assistant", "content": content},
+                "finish_reason": "stop"
+            }]
+        })
     except HTTPException:
         raise
     except Exception as e:
