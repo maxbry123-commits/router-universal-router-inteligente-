@@ -1,5 +1,5 @@
 """mode_router.py — Enruta por modo usando el registro central y los adapters de HF."""
-import json, os, logging
+import json, os, logging, urllib.request
 from .mode_detector import detect_mode
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,6 @@ def get_adapter_config(mode: str) -> dict:
     """Lee el adapter_config.json del repo de HF (vía URL raw)."""
     url = f"{HF_ADAPTERS_BASE}/{mode}/adapter_config.json"
     try:
-        import urllib.request
         with urllib.request.urlopen(url, timeout=5) as r:
             return json.loads(r.read().decode())
     except Exception as e:

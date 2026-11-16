@@ -1,4 +1,7 @@
-"""mode_detector.py — Detector determinista de los 12 modos por palabras clave."""
+"""mode_detector.py — Detector determinista de los 12 modos por palabras clave.
+Usa re.IGNORECASE para que HTML/CSS/React/API/README/3D/Blender coincidan
+aunque el prompt esté en minúsculas.
+"""
 import re
 
 RULES = {
@@ -12,7 +15,7 @@ RULES = {
     "planning": [r"\bplan", r"\broadmap", r"\bfases", r"\bcronograma"],
     "documentation": [r"\bdocumenta", r"\bREADME", r"\bdocstring", r"\bcomenta"],
     "frontend": [r"\bHTML", r"\bCSS", r"\bReact", r"\binterfaz", r"\bbotón"],
-    "3d_code": [r"\b3D", r"\bmalla", r"\bmodelo 3D", r"\bBlender", r"\bThree.js"],
+    "3d_code": [r"\b3D", r"\bmalla", r"\bmodelo 3D", r"\bBlender", r"\bThree\.js"],
     "verification": [r"\bverifica", r"\btest", r"\bprueba unitaria", r"\bassert"],
 }
 DEFAULT_MODE = "code_generate"
@@ -22,7 +25,7 @@ def detect_mode(prompt: str) -> str:
     scores = {m: 0 for m in RULES}
     for m, pats in RULES.items():
         for pat in pats:
-            if re.search(pat, p):
+            if re.search(pat, p, re.IGNORECASE):  # <-- FIX: IGNORECASE
                 scores[m] += 1
     best = max(scores, key=scores.get)
     return best if scores[best] > 0 else DEFAULT_MODE
