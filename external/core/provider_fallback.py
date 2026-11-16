@@ -30,12 +30,19 @@ class ProviderFallback:
         return key
 
     # ids cortos del selector -> ids completos de NVIDIA/Groq (registry 2.0.0)
+    # Modelos Groq en produccion (doc de Groq, 2026-11-16): si el id pedido no esta aqui,
+    # se usa el de produccion verificado.
+    GROQ_MODELS = {"llama-3.1-8b-instant", "llama-3.3-70b-versatile", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"}
+    GROQ_DEFAULT = "llama-3.3-70b-versatile"
+    # Prefijos de modelo servidos por NVIDIA NIM
+    NVIDIA_PREFIXES = ("meta/", "nvidia/", "google/", "mistralai/", "z-ai/", "deepseek-ai/", "bigcode/", "stepfun-ai/", "poolside/", "snowflake/")
+
     MODEL_ALIASES = {
         "minimax-m3.1-flash": "minimaxai/minimax-m3.1-flash",
-        "granite-meta": "google/gemma-4-31b-it",
+        "granite-meta": "nvidia/nemotron-3.5-lightning-30b-a3b",
         "nemotron-super": "nvidia/nemotron-3.5-lightning-30b-a3b",
         "nemotron-ultra": "nvidia/nemotron-3-ultra-550b-a55b",
-        "qwen3.8-32b": "qwen/qwen3-32b",
+        "qwen3.8-32b": "qwen/qwen3.8-27b",
     }
 
     def _resolve_model(self, model: Optional[str], default: str) -> str:
@@ -64,10 +71,16 @@ class ProviderFallback:
         provider_priority = []
         if model_requested:
             low = model_requested.lower()
-            if "minimax" in low or "meta" in low or "nemotron" in low or "nvidia" in low:
-                provider_priority = ["nvidia"]
+            if model_requested in self.GROQ_MODELS:
+                provider_priority = ["groq"]
             elif "qwen" in low or "groq" in low:
                 provider_priority = ["groq"]
+            elif "llama" in low and "/" not in low:
+                provider_priority = ["groq"]
+            elif low.startswith(self.NVIDIA_PREFIXES):
+                provider_priority = ["nvidia"]
+            elif "minimax" in low or "nemotron" in low or "nvidia" in low:
+                provider_priority = ["groq" if "qwen" in low else "nvidia"]
 
         # Si no se especificó o no coincide, usar ambos por defecto
         if not provider_priority:
@@ -77,45 +90,43 @@ class ProviderFallback:
         if len(order) == 1:
             order.append("groq" if order[0] == "nvidia" else "nvidia")
 
-        # 3. Intentar NVIDIA
-        if "nvidia" in order:
-            for _ in range(len(self.nvidia_keys) or 1):
-                key = self._next_key(self.nvidia_keys, "nvidia_idx")
-                if not key:
-                    self.diag["nvidia_error"] = "sin claves en NVIDIA_KEYS"
-                    break
-                try:
-                    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-                    # Usamos el modelo pedido o el default
-                    nv_model = self._resolve_model(model_requested, "google/gemma-4-31b-it")
-                    payload = {"model": nv_model, "messages": messages}
-                    resp = await self.client.post("https://integrate.api.nvidia.com/v1/chat/completions", headers=headers, json=payload)
-                    if resp.status_code == 200:
-                        return {"provider": "nvidia", "response": resp.json(), "degraded": "nvidia" in order[1:]}
-                    logger.warning(f"NVIDIA HTTP {resp.status_code}")
-                    self.diag["nvidia_error"] = f"HTTP {resp.status_code}"
-                except Exception as e:
-                    logger.warning(f"NVIDIA key falló: {e}")
-                    self.diag["nvidia_error"] = f"{type(e).__name__}: {e}"[:200]
-
-        # 4. Intentar Groq
-        if "groq" in order:
-            for _ in range(len(self.groq_keys) or 1):
-                key = self._next_key(self.groq_keys, "groq_idx")
-                if not key:
-                    self.diag["groq_error"] = "sin claves en GROQ_KEYS"
-                    break
-                try:
-                    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-                    # Groq siempre usa qwen3-32b según el registry
-                    payload = {"model": "qwen/qwen3-32b", "messages": messages}
-                    resp = await self.client.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
-                    if resp.status_code == 200:
-                        return {"provider": "groq", "response": resp.json(), "degraded": "groq" in order[1:]}
-                    logger.warning(f"Groq HTTP {resp.status_code}")
-                    self.diag["groq_error"] = f"HTTP {resp.status_code}"
-                except Exception as e:
-                    logger.warning(f"Groq key falló: {e}")
-                    self.diag["groq_error"] = f"{type(e).__name__}: {e}"[:200]
+        # 3. Cadena real en el ORDEN de prioridad (NVIDIA/Groq): se respeta el proveedor del modelo.
+        for prov in order:
+            if prov == "nvidia":
+                for _ in range(len(self.nvidia_keys) or 1):
+                    key = self._next_key(self.nvidia_keys, "nvidia_idx")
+                    if not key:
+                        self.diag["nvidia_error"] = "sin claves en NVIDIA_KEYS"
+                        break
+                    try:
+                        headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+                        nv_model = self._resolve_model(model_requested, "nvidia/nemotron-3.5-lightning-30b-a3b")
+                        payload = {"model": nv_model, "messages": messages}
+                        resp = await self.client.post("https://integrate.api.nvidia.com/v1/chat/completions", headers=headers, json=payload)
+                        if resp.status_code == 200:
+                            return {"provider": "nvidia", "response": resp.json(), "degraded": "nvidia" in order[1:]}
+                        logger.warning(f"NVIDIA HTTP {resp.status_code}")
+                        self.diag["nvidia_error"] = f"HTTP {resp.status_code}"
+                    except Exception as e:
+                        logger.warning(f"NVIDIA key fallo: {e}")
+                        self.diag["nvidia_error"] = f"{type(e).__name__}: {e}"[:200]
+            elif prov == "groq":
+                for _ in range(len(self.groq_keys) or 1):
+                    key = self._next_key(self.groq_keys, "groq_idx")
+                    if not key:
+                        self.diag["groq_error"] = "sin claves en GROQ_KEYS"
+                        break
+                    try:
+                        headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+                        gq_model = model_requested if model_requested in self.GROQ_MODELS else self.GROQ_DEFAULT
+                        payload = {"model": gq_model, "messages": messages}
+                        resp = await self.client.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
+                        if resp.status_code == 200:
+                            return {"provider": "groq", "response": resp.json(), "degraded": "groq" in order[1:]}
+                        logger.warning(f"Groq HTTP {resp.status_code}")
+                        self.diag["groq_error"] = f"HTTP {resp.status_code}"
+                    except Exception as e:
+                        logger.warning(f"Groq key fallo: {e}")
+                        self.diag["groq_error"] = f"{type(e).__name__}: {e}"[:200]
 
         return {"provider": "none", "error": "Todos los proveedores agotados", "diag": dict(self.diag)}
