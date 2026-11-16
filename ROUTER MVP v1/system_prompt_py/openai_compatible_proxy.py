@@ -71,7 +71,7 @@ PROVIDERS = {
     "nvidia": {
         "base_url": "https://integrate.api.nvidia.com/v1",
         "pool": KeyPool("nvidia", NVIDIA_KEYS),
-        "default_model": "google/gemma-4-31b-it",
+        "default_model": "nvidia/nemotron-3.5-lightning-30b-a3b",
     },
 }
 
@@ -111,7 +111,11 @@ def _log_checkpoint_error(task):
 def _content_of(response) -> str:
     """Extrae el texto de una respuesta OpenAI-compatible."""
     try:
-        return response["choices"][0]["message"]["content"]
+        msg = response["choices"][0]["message"]
+        content = msg.get("content")
+        if not content:
+            content = msg.get("reasoning_content")   # modelos de razonamiento
+        return content or ""
     except Exception:
         return str(response)
 
