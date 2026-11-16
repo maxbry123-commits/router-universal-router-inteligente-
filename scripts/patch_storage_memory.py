@@ -1,22 +1,23 @@
-"""patch_storage_memory.py — Configura MCP_MEMORY_URL desde el bucket y lo
-inyecta en el entorno del proxy antes de que arranque.
+"""patch_storage_memory.py — Configura MCP_MEMORY_URL con el esquema correcto
+de HF para buckets: hf://buckets/<owner>/<repo>.
 """
-import os
 from pathlib import Path
 
 PROXY = Path("ROUTER MVP v1/system_prompt_py/openai_compatible_proxy.py")
-BUCKET_ID = "COMAND-CENTER-1/yaiwes-memoria-storage"
+BUCKET_URI = "hf://buckets/COMAND-CENTER-1/yaiwes-memoria-storage"
 
 BLOCK = f"""
-# --- MINIMAX 4: MCP_MEMORY_URL desde bucket ---
+# --- MINIMAX 4: MCP_MEMORY_URL ---
 import os as _os
 if not _os.getenv("MCP_MEMORY_URL"):
-    _os.environ["MCP_MEMORY_URL"] = "https://huggingface.co/buckets/{BUCKET_ID}"
-    print("[INFRA] MCP_MEMORY_URL configurada desde bucket.")
+    _os.environ["MCP_MEMORY_URL"] = "{BUCKET_URI}"
+    print("[INFRA] MCP_MEMORY_URL configurada: {BUCKET_URI}")
 # --- FIN MINIMAX 4 ---
 """
 
 def patch():
+    if not PROXY.exists():
+        raise FileNotFoundError(f"No existe {PROXY} — revisa la ruta real.")
     text = PROXY.read_text(encoding="utf-8")
     if "MINIMAX 4: MCP_MEMORY_URL" in text:
         print("Proxy ya tiene MCP_MEMORY_URL (idempotente).")
@@ -28,7 +29,7 @@ def patch():
     else:
         raise RuntimeError("No se encontró app = FastAPI() ni app = create_app()")
     PROXY.write_text(text, encoding="utf-8")
-    print("Proxy parcheado: MCP_MEMORY_URL desde bucket.")
+    print("Proxy parcheado: MCP_MEMORY_URL con esquema hf://buckets.")
 
 if __name__ == "__main__":
     patch()
