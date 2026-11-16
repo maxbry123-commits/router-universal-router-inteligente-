@@ -1,153 +1,278 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="little">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>YAIWES Chat Router</title>
-<style>
-  :root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--txt:#e6edf3;--acc:#58a6ff;--ok:#3fb950;--err:#f85149}
-  *{box-sizing:border-box}
-  body{margin:0;font:14px/1.5 ui-monospace,monospace;background:var(--bg);color:var(--txt);display:flex;height:100vh;overflow:hidden}
-  
-  #sidebar{width:250px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:10px;overflow-y:auto}
-  #sidebar h2{font-size:14px;color:var(--acc);margin:0 0 10px}
-  .btn-panel{background:transparent;border:1px solid var(--line);color:var(--txt);padding:8px;margin-bottom:5px;cursor:pointer;border-radius:6px;text-align:left}
-  .btn-panel:hover{border-color:var(--acc);background:rgba(88,166,255,0.1)}
-  
-  #main{flex:1;display:flex;flex-direction:column}
-  header{padding:10px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
-  
-  #chat-container{flex:1;display:flex;flex-direction:column;padding:20px;overflow-y:auto}
-  #messages{flex:1;display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
-  .msg{padding:10px;border-radius:6px;max-width:80%}
-  .msg.user{align-self:flex-end;background:#1f6feb;color:#fff}
-  .msg.bot{align-self:flex-start;background:var(--panel);border:1px solid var(--line)}
-  
-  #input-area{display:flex;gap:10px;padding:10px;border-top:1px solid var(--line)}
-  #msg-input{flex:1;background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:10px}
-  #send-btn{background:var(--acc);color:#fff;border:none;border-radius:6px;padding:10px 20px;cursor:pointer;font-weight:bold}
-  
-  #panel-overlay{position:fixed;top:0;right:-800px;width:800px;height:100vh;background:var(--panel);border-left:1px solid var(--line);transition:right 0.3s;z-index:100;box-shadow:-5px 0 15px rgba(0,0,0,0.5)}
-  #panel-overlay.open{right:0}
-  #panel-header{padding:10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-  #panel-frame{width:100%;height:calc(100% - 50px);border:none}
-  .close-btn{background:var(--err);color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer}
-</style>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1C1B1A">
+<title>YAIWES · Chat Router</title>
+<link rel="stylesheet" href="./ui/theme.css">
+<link rel="stylesheet" href="./ui/app.css">
 </head>
 <body>
-  <div id="sidebar">
-    <h2>🛠️ Paneles</h2>
-    <button class="btn-panel" onclick="openPanel('loop-panel.html')">🔁 LOOP</button>
-    <button class="btn-panel" onclick="openPanel('watchdog-panel.html')">🐕 WATCHDOG</button>
-    <button class="btn-panel" onclick="openPanel('cola-panel.html')">📋 COLA</button>
-    <button class="btn-panel" onclick="openPanel('mindmap-panel.html')">🧠 MINDMAP</button>
-    <button class="btn-panel" onclick="openPanel('motion-panel.html')">🎬 MOTION</button>
-    <button class="btn-panel" onclick="openPanel('hitl-panel.html')">✅ HITL</button>
-    <button class="btn-panel" onclick="openPanel('openclaw-panel.html')">🤖 OPENCLAW</button>
-    <button class="btn-panel" onclick="openPanel('hermes-panel.html')">📡 HERMES</button>
-  </div>
-
-  <div id="main">
-    <header style="flex-wrap:wrap;">
-      <div id="model-selector-container"></div>
-      <input id="api-key-input" type="password" placeholder="API Key requerida" style="background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:5px; width:150px;">
-      <span id="status-badge" style="margin-left:auto;color:var(--txt);font-size:12px;">Listo</span>
-    </header>
-    <div id="chat-container">
-      <div id="messages">
-        <div class="msg bot">¡Hola! Selecciona un modelo, ingresa tu API Key y empieza a chatear.</div>
-      </div>
-      <div id="input-area">
-        <input id="msg-input" type="text" placeholder="Escribe tu mensaje aquí..." onkeydown="if(event.key==='Enter') sendMessage()">
-        <button id="send-btn" onclick="sendMessage()">Enviar</button>
-      </div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">Y</div>
+      <div><b>YAIWES</b><small>CHAT ROUTER</small></div>
     </div>
-  </div>
-
-  <div id="panel-overlay">
-    <div id="panel-header">
-      <span id="panel-title">Panel</span>
-      <button class="close-btn" onclick="closePanel()">Cerrar</button>
+    <div>
+      <div class="eyebrow">Ventanas</div>
+      <nav class="nav" id="nav">
+        <button type="button" class="nav-btn active" data-view="chat" aria-current="page"><span class="n">1</span>Chat</button>
+        <button type="button" class="nav-btn" data-view="paneles"><span class="n">2</span>Paneles</button>
+        <button type="button" class="nav-btn" data-view="motores"><span class="n">3</span>Motores</button>
+      </nav>
     </div>
-    <iframe id="panel-frame" src="about:blank"></iframe>
+    <div style="margin-top:auto">
+      <div class="eyebrow">Tema</div>
+      <div class="themes" id="themes"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="hdr">
+      <div>
+        <h1 id="title">Chat</h1>
+        <p id="subtitle">Selector de motores + API Key</p>
+      </div>
+      <span class="badge" id="status">● LISTO</span>
+    </div>
+
+    <!-- VENTANA 1 · CHAT -->
+    <section class="view active" id="v-chat">
+      <div class="card">
+        <h2>Motor + credencial</h2>
+        <div class="row">
+          <div id="model-selector-container"></div>
+          <input class="key-input" id="api-key-input" type="password" placeholder="API Key (x-api-key)" autocomplete="off">
+          <span class="badge" id="model-badge">sin motor</span>
+        </div>
+        <div class="note"><b>Ley de clave:</b> los Spaces validan la cabecera <code>x-api-key</code>; sin ella la respuesta es <b>401</b>. La clave vive solo en memoria: nunca se guarda en disco ni en el navegador.</div>
+      </div>
+      <div class="card">
+        <h2>Conversacion</h2>
+        <div class="msg" id="messages"></div>
+        <textarea class="area" id="msg-input" placeholder="Escribe tu mensaje..."></textarea>
+        <div class="row" style="margin-top:10px">
+          <button type="button" class="btn primary" id="send-btn">Enviar</button>
+          <button type="button" class="btn ghost" id="clear-btn">Limpiar</button>
+          <span class="badge" id="conn">idle</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- VENTANA 2 · PANELES -->
+    <section class="view" id="v-paneles">
+      <div class="card">
+        <h2>Paneles</h2>
+        <p>Una ventana por panel. Se abren en una sheet aislada sin salir de la estructura.</p>
+        <div class="grid-files" id="panel-grid"></div>
+        <div class="note"><b>1 ventana = 1 archivo.</b> Los 8 paneles resuelven; HITL, OpenClaw y Hermes ya son paneles de estado real, no mirrors inexistentes.</div>
+      </div>
+    </section>
+
+    <!-- VENTANA 3 · MOTORES -->
+    <section class="view" id="v-motores">
+      <div class="card">
+        <h2>Motores</h2>
+        <p>Estado real de cada Space. Nada de datos inventados: cada fila consulta su propio endpoint.</p>
+        <div class="list" id="motor-list"></div>
+        <div class="row" style="margin-top:10px">
+          <button type="button" class="btn" id="probe-btn">Consultar estado</button>
+          <span class="badge" id="probe-badge">sin consultar</span>
+        </div>
+        <div class="note">Semáforo fijo (<code>success</code> / <code>warning</code> / <code>danger</code>): nunca cambia por tema.</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <b id="sheet-title">Panel</b>
+      <button type="button" class="btn ghost" id="sheet-close">Cerrar</button>
+    </div>
+    <iframe id="sheet-frame" src="about:blank" title="panel"></iframe>
   </div>
+</div>
 
-  <script type="module">
-    import { renderSelector } from './ui/model-selector.js';
-    
-    let currentEndpoint = "";
-    let currentModel = "";
+<script type="module">
+import { getActiveEndpoint, getActiveModel } from './ui/ui-controller.js';
 
-    renderSelector('model-selector-container', (endpoint, modelId, groupKey) => {
-      currentEndpoint = endpoint;
-      currentModel = modelId;
-      document.getElementById('status-badge').textContent = `Modelo: ${modelId}`;
-      document.getElementById('status-badge').style.color = "var(--ok)";
+(function(){
+'use strict';
+var THEMES={little:{label:'Little',bg:'#1C1B1A',accent:'#C65D3B'},matte:{label:'Matte',bg:'#0a0a0d',accent:'#2563eb'},blanco:{label:'Blanco',bg:'#f4f4f5',accent:'#2563eb'},crystal:{label:'Crystal',bg:'#0c1421',accent:'#b8f5fa'},orange:{label:'Orange',bg:'#100e0d',accent:'#ef823c'},blue:{label:'Blue',bg:'#0a1424',accent:'#66b7ff'}};
+var ORDER=['little','matte','blanco','crystal','orange','blue'];
+var PANELS=[
+ {file:'loop-panel.html',name:'LOOP',sub:'Ciclo de trabajo'},
+ {file:'watchdog-panel.html',name:'WATCHDOG',sub:'Supervision'},
+ {file:'cola-panel.html',name:'COLA',sub:'Cola de tareas'},
+ {file:'mindmap-panel.html',name:'MINDMAP',sub:'Mapa mental'},
+ {file:'motion-panel.html',name:'MOTION',sub:'Movimiento'},
+ {file:'hitl-panel.html',name:'HITL',sub:'Aprobaciones'},
+ {file:'openclaw-panel.html',name:'OPENCLAW',sub:'Agente autonomo'},
+ {file:'hermes-panel.html',name:'HERMES',sub:'Comunicacion'}
+];
+var MOTORS=[
+ {name:'Router · proxy',url:'https://comand-center-1-local-llm-router.hf.space/health',model:'NVIDIA -> Groq -> local'},
+ {name:'LLM S1 · Qwen2.5-Coder-0.5B',url:'https://comand-center-1-swe-code-s1.hf.space/health',model:'Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF'},
+ {name:'LLM S2 · LFM2.5-350M',url:'https://comand-center-1-swe-code-s2.hf.space/health',model:'LiquidAI/LFM2.5-350M-GGUF'},
+ {name:'LLM S3 · Qwen3.5-0.8B',url:'https://comand-center-1-swe-code-s3.hf.space/health',model:'unsloth/Qwen3.5-0.8B-GGUF'},
+ {name:'MCP · bucket',url:'https://comand-center-1-hf-bucket-mcp.hf.space/metrics',model:'huggingface.co/mcp'}
+];
+var S={theme:'little',view:'chat',endpoint:'',model:'',key:'',messages:[{who:'bot',text:'Hola. Elige motor, pega la API Key y escribe.'}]};
+
+function el(id){return document.getElementById(id);}
+function toast(msg){
+  var t=el('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface-alt);color:var(--text);border:1px solid var(--border-strong);box-shadow:0 8px 24px rgba(0,0,0,.4);padding:10px 18px;border-radius:10px;font-size:12px;z-index:100';document.body.appendChild(t);}
+  t.textContent=msg;clearTimeout(t.tm);t.tm=setTimeout(function(){t.style.opacity='0';},2200);
+}
+
+/* ---------- TEMA (R14: yaiwes-demo-theme; lee tambien la clave legacy) ---------- */
+function applyTheme(id){
+  if(!THEMES[id])return;
+  S.theme=id;
+  document.documentElement.dataset.theme=id;
+  var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',THEMES[id].bg);
+  try{localStorage.setItem('yaiwes-demo-theme',id);}catch(e){}
+  paintThemes();
+}
+function paintThemes(){
+  el('themes').innerHTML=ORDER.map(function(id){var t=THEMES[id];
+    return '<button type="button" class="theme-btn" data-tid="'+id+'" aria-pressed="'+(id===S.theme)+'">'+
+      '<span class="theme-sw" style="--sw-bg:'+t.bg+';--sw-accent:'+t.accent+'"></span>'+t.label+'</button>';
+  }).join('');
+}
+
+/* ---------- URL: los grupos locales son /v1; los externos ya son ruta completa ---------- */
+function chatUrl(endpoint){
+  if(!endpoint)return '';
+  return /\/v1$/.test(endpoint)?endpoint+'/chat/completions':endpoint;
+}
+
+/* ---------- MENSAJES ---------- */
+function paintMessages(){
+  var box=el('messages');if(!box)return;
+  box.innerHTML=S.messages.map(function(m){
+    return '<div class="msg-row '+(m.who==='user'?'user':'')+'"><span class="who">'+m.who+'</span><div class="bubble"></div></div>';
+  }).join('');
+  var rows=box.querySelectorAll('.bubble');
+  for(var i=0;i<rows.length;i++)rows[i].textContent=S.messages[i].text;
+  box.scrollTop=box.scrollHeight;
+}
+
+/* ---------- VENTANAS ---------- */
+var TITLES={chat:'Chat',paneles:'Paneles',motores:'Motores'};
+var SUBS={chat:'Selector de motores + API Key',paneles:'Una ventana por panel',motores:'Estado real de cada Space'};
+function render(){
+  el('title').textContent=TITLES[S.view];
+  el('subtitle').textContent=SUBS[S.view];
+  document.querySelectorAll('.view').forEach(function(v){v.classList.toggle('active',v.id==='v-'+S.view);});
+  document.querySelectorAll('.nav-btn').forEach(function(b){
+    var on=b.getAttribute('data-view')===S.view;
+    b.classList.toggle('active',on);
+    if(on){b.setAttribute('aria-current','page');}else{b.removeAttribute('aria-current');}
+  });
+  if(S.view==='motores')probe();
+}
+
+function paintPaneles(){
+  el('panel-grid').innerHTML=PANELS.map(function(p){
+    return '<button type="button" class="file-icon" data-panel="'+p.file+'"><div class="nm">'+p.name+'</div><div class="sub">'+p.sub+'</div></button>';
+  }).join('');
+  document.querySelectorAll('[data-panel]').forEach(function(b){
+    b.onclick=function(){
+      var file=b.getAttribute('data-panel');
+      el('sheet-title').textContent=file.replace('-panel.html','').toUpperCase();
+      el('sheet-frame').src='./ui/'+file;
+      el('overlay').classList.add('open');
+    };
+  });
+}
+function paintMotores(){
+  el('motor-list').innerHTML=MOTORS.map(function(m,i){
+    return '<div class="list-row" data-motor="'+i+'"><div class="name">'+m.name+'<small>'+m.model+'</small></div><span class="status wait" id="st-'+i+'">···</span></div>';
+  }).join('');
+}
+function probe(){
+  var badge=el('probe-badge');
+  MOTORS.forEach(function(m,i){
+    var b=el('st-'+i);if(!b)return;
+    b.className='status wait';b.textContent='···';
+    fetch(m.url,{method:'GET'}).then(function(r){
+      b.className='status '+(r.ok?'ok':'fail');
+      b.textContent=r.ok?'OK':'HTTP '+r.status;
+    }).catch(function(){
+      b.className='status fail';b.textContent='SIN RED';
     });
+  });
+  if(badge){badge.textContent='consultando...';badge.className='badge warning';}
+}
 
-    window.sendMessage = async () => {
-      const input = document.getElementById('msg-input');
-      const apiKeyInput = document.getElementById('api-key-input');
-      const text = input.value.trim();
-      
-      if (!text || !currentEndpoint) return;
-      if (!apiKeyInput.value) {
-        alert("Por favor, ingresa la API Key.");
-        return;
-      }
+/* ---------- ENVIO ---------- */
+function sendMessage(){
+  var input=el('msg-input');if(!input)return;
+  var text=input.value.trim();
+  if(!text)return;
+  if(!S.key){toast('Falta la API Key (x-api-key)');return;}
+  if(!S.endpoint){toast('Sin motor seleccionado');return;}
+  S.messages.push({who:'user',text:text});input.value='';paintMessages();
+  var st=el('status');if(st){st.textContent='● PENSANDO';st.className='badge warning';}
+  fetch(chatUrl(S.endpoint),{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':S.key},
+    body:JSON.stringify({model:S.model,messages:[{role:'user',content:text}]})
+  }).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+  .then(function(res){
+    var txt=res.ok?((res.j.choices&&res.j.choices[0]&&res.j.choices[0].message&&res.j.choices[0].message.content)||'Sin respuesta'):('HTTP '+(res.j.detail||res.j.error||'error'));
+    S.messages.push({who:'bot',text:String(txt)});paintMessages();
+    if(st){st.textContent=res.ok?'● LISTO':'● ERROR';st.className='badge '+(res.ok?'success':'danger');}
+  }).catch(function(e){
+    S.messages.push({who:'bot',text:'Error de red: '+e.message});paintMessages();
+    if(st){st.textContent='● ERROR';st.className='badge danger';}
+  });
+}
 
-      addMessage(text, 'user');
-      input.value = '';
-      const badge = document.getElementById('status-badge');
-      badge.textContent = "Pensando...";
-      badge.style.color = "var(--acc)";
+/* ---------- ARRANQUE ---------- */
+el('nav').addEventListener('click',function(e){
+  var b=e.target.closest('.nav-btn');if(!b)return;
+  S.view=b.getAttribute('data-view');render();
+});
+el('themes').addEventListener('click',function(e){
+  var b=e.target.closest('.theme-btn');if(!b)return;
+  applyTheme(b.getAttribute('data-tid'));
+});
+el('sheet-close').onclick=function(){el('sheet-frame').src='about:blank';el('overlay').classList.remove('open');};
+el('overlay').onclick=function(e){if(e.target===el('overlay')){el('sheet-frame').src='about:blank';el('overlay').classList.remove('open');}};
+el('send-btn').onclick=sendMessage;
+el('clear-btn').onclick=function(){S.messages=[{who:'bot',text:'Conversacion reiniciada.'}];paintMessages();};
+el('msg-input').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}};
+el('api-key-input').oninput=function(e){S.key=e.target.value;};
+el('probe-btn').onclick=probe;
 
-      try {
-        // URL del proxy
-        const res = await fetch(`${currentEndpoint}/chat/completions`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'x-api-key': apiKeyInput.value 
-          },
-          body: JSON.stringify({
-            model: currentModel,
-            messages: [{ role: 'user', content: text }]
-          })
-        });
+window.addEventListener('model:changed',function(e){
+  S.endpoint=e.detail.endpoint;S.model=e.detail.modelId;
+  var b=el('model-badge');if(b){b.textContent=e.detail.modelId;b.className='badge success';}
+  var c=el('conn');if(c){c.textContent='motor listo';c.className='badge success';}
+});
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const reply = data.choices?.[0]?.message?.content || "Sin respuesta";
-        
-        addMessage(reply, 'bot');
-        badge.textContent = "Listo";
-        badge.style.color = "var(--txt)";
-      } catch (e) {
-        addMessage(`Error: ${e.message}`, 'bot');
-        badge.textContent = "Error";
-        badge.style.color = "var(--err)";
-      }
-    };
-
-    window.addMessage = (text, sender) => {
-      const msgs = document.getElementById('messages');
-      const div = document.createElement('div');
-      div.className = `msg ${sender}`;
-      div.textContent = text;
-      msgs.appendChild(div);
-      msgs.scrollTop = msgs.scrollHeight;
-    };
-
-    window.openPanel = (url) => {
-      document.getElementById('panel-title').textContent = url.replace('-panel.html', '').toUpperCase();
-      document.getElementById('panel-frame').src = `./ui/${url}`;
-      document.getElementById('panel-overlay').classList.add('open');
-    };
-    window.closePanel = () => {
-      document.getElementById('panel-frame').src = "about:blank";
-      document.getElementById('panel-overlay').classList.remove('open');
-    };
-  </script>
+document.addEventListener('DOMContentLoaded',function(){
+  var stored=null;try{stored=localStorage.getItem('yaiwes-demo-theme')||localStorage.getItem('fromted-deploy-theme');}catch(e){}
+  applyTheme(THEMES[stored]?stored:'little');
+  var sel=el('model-select');
+  if(sel&&sel.selectedOptions.length){
+    var opt=sel.selectedOptions[0];
+    S.endpoint=opt.dataset.endpoint||getActiveEndpoint()||'';
+    S.model=(opt.value||'').split(':').pop()||getActiveModel()||'';
+  }else{
+    S.endpoint=getActiveEndpoint()||'';S.model=getActiveModel()||'';
+  }
+  var b=el('model-badge');if(b&&S.model){b.textContent=S.model;b.className='badge success';}
+  paintMessages();paintPaneles();paintMotores();render();
+});
+})();
+</script>
 </body>
 </html>

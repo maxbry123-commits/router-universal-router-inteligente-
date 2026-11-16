@@ -1,18 +1,51 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="little">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1C1B1A">
 <title>HITL · Aprobaciones</title>
+<link rel="stylesheet" href="./theme.css">
 <style>
-  body { margin: 0; background: #0d1117; color: #e6edf3; font-family: monospace; padding: 20px; }
-  h2 { color: #58a6ff; text-align: center; }
-  .empty { text-align: center; color: #8b949e; margin-top: 50px; }
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text-primary);font-family:var(--font);-webkit-font-smoothing:antialiased}
+.wrap{padding:18px;max-width:640px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary);margin:0 0 12px;font-weight:700}
+.empty{text-align:center;color:var(--text-tertiary);padding:34px 10px;font-size:12px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:12px;margin-bottom:6px}
+.row b{color:var(--text-primary)}
+.row small{display:block;color:var(--text-tertiary);font-size:10px;margin-top:2px}
+.status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em}
+.status.ok{background:var(--success);color:#000;opacity:.85}
+.status.wait{background:var(--warning);color:#000}
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:9px 12px;border-radius:0 8px 8px 0;font-size:11px;color:var(--text-secondary);margin-top:12px}
+button:focus-visible{outline:2px solid var(--selected);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-  <h2>✅ HITL — Aprobaciones Pendientes</h2>
-  <div id="lista">
-    <div class="empty">No hay aprobaciones pendientes.</div>
+<div class="wrap">
+  <div class="card">
+    <h2>HITL · aprobaciones pendientes</h2>
+    <div id="lista">
+      <div class="empty">No hay aprobaciones pendientes.</div>
+    </div>
+    <div class="note">Ventana propia: el estado se lee del control HITL. Si no hay nada que aprobar, se dice — no se inventa.</div>
   </div>
+</div>
+<script>
+(function(){
+'use strict';
+var ROOT='https://comand-center-1-local-llm-router.hf.space';
+function paint(){
+  var stored=null;try{stored=localStorage.getItem('yaiwes-demo-theme')||localStorage.getItem('fromted-deploy-theme');}catch(e){}
+  if(stored){document.documentElement.dataset.theme=stored;}
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m){var bg=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();if(bg)m.setAttribute('content',bg);}
+}
+paint();
+})();
+</script>
 </body>
 </html>
