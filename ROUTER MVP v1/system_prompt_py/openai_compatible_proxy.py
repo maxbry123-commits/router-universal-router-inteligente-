@@ -173,7 +173,8 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
             provider_fb.call(messages, model_requested=model_requested, local_fn=local_execution),
         )
         if fallback_result.get("provider") == "none":
-            raise HTTPException(503, "Todos los proveedores fallaron")
+            # 503 con diagnostico real (conteo de claves y ultimo error), no una cadena generica
+            return JSONResponse(status_code=503, content={"detail": "Todos los proveedores fallaron", "diag": fallback_result.get("diag") or {}})
 
         provider_used = fallback_result.get("provider")
         content = _content_of(fallback_result.get("response"))
