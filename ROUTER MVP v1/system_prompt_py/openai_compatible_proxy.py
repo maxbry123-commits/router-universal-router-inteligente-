@@ -126,7 +126,7 @@ LOCAL_SPACES = {
     "LiquidAI/LFM2.5-350M-GGUF": "swe-code-s2",
     "unsloth/Qwen3.5-0.8B-GGUF": "swe-code-s3",
 }
-LOCAL_TIMEOUT_S = 30.0
+LOCAL_TIMEOUT_S = 75.0   # el Space puede estar dormido: despertar + cargar modelo cabe en el watchdog de 96 s
 
 @app.post("/v1/nvidia")
 @app.post("/v1/groq")
