@@ -5,6 +5,8 @@ Delega control via control_bridge; nunca decide, solo ejecuta.
 """
 from fastapi import FastAPI, Request, HTTPException, Header
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import httpx
 import os
@@ -26,6 +28,37 @@ from router_llm_hf.harness_wiring import HarnessClient
 from external.core.provider_fallback import ProviderFallback
 
 app = FastAPI()
+
+# Minimax 1 - CORS para que el navegador del frontend (montado en /chat) pueda llamar al proxy
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Minimax 1 - montaje del frontend estatico (chat-router/chat) en /chat
+# Ruta ABSOLUTA: el Space arranca con CWD en "ROUTER MVP v1/system_prompt_py"
+FRONTEND_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "chat-router", "chat",
+)
+
+
+def create_app():
+    """Monta el frontend estatico en /chat y devuelve la app."""
+    try:
+        if not os.path.isdir(FRONTEND_DIR):
+            raise FileNotFoundError(f"no existe: {FRONTEND_DIR}")
+        app.mount("/chat", StaticFiles(directory=FRONTEND_DIR, html=True), name="chat")
+        print(f"[OK] Frontend montado en /chat -> {FRONTEND_DIR}")
+    except Exception as e:
+        print(f"[WARN] No se pudo montar el frontend: {e}")
+    return app
+
+
+app = create_app()
 GROQ_KEYS = [k.strip() for k in os.getenv("GROQ_KEYS", "").split(",") if k.strip()]
 NVIDIA_KEYS = [k.strip() for k in os.getenv("NVIDIA_KEYS", "").split(",") if k.strip()]
 

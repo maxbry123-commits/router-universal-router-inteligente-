@@ -1,38 +1,32 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "last_updated": "2026-11-15",
   "agents": {
     "openclaw": {
       "type": "websocket",
-      "endpoint": "wss://comand-center-1-riu-router.hf.space/openclaw",
-      "mirror_endpoint": "wss://comand-center-1-openclaw-mirror.hf.space",
+      "endpoint": "wss://comand-center-1-local-llm-router.hf.space/v1/openclaw",
+      "mirror_endpoint": null,
       "role": "frontend_automation",
-      "status": "active"
+      "status": "offline"
     },
     "hermes": {
       "type": "websocket",
-      "endpoint": "wss://comand-center-1-riu-router.hf.space/hermes",
-      "mirror_endpoint": "wss://comand-center-1-hermes-mirror.hf.space",
+      "endpoint": "wss://comand-center-1-local-llm-router.hf.space/v1/hermes",
+      "mirror_endpoint": null,
       "role": "communication_agent",
-      "status": "active"
+      "status": "offline"
     },
     "chat_a": {
       "type": "internal",
       "endpoint": "internal://router_llm_hf/chat_a_architect.py",
-      "mirror_endpoint": null,
       "role": "architect",
       "status": "active"
     },
     "chat_b": {
       "type": "internal",
       "endpoint": "internal://router_llm_hf/chat_b_implementer.py",
-      "mirror_endpoint": null,
       "role": "implementer",
       "status": "active"
     }
-  },
-  "permissions": {
-    "github_access": ["openclaw", "hermes", "chat_a", "chat_b"],
-    "hf_access": ["openclaw", "hermes", "chat_a", "chat_b"]
   }
 }

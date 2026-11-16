@@ -9,14 +9,11 @@
   *{box-sizing:border-box}
   body{margin:0;font:14px/1.5 ui-monospace,monospace;background:var(--bg);color:var(--txt);display:flex;height:100vh;overflow:hidden}
   
-  /* Sidebar para paneles */
   #sidebar{width:250px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:10px;overflow-y:auto}
   #sidebar h2{font-size:14px;color:var(--acc);margin:0 0 10px}
   .btn-panel{background:transparent;border:1px solid var(--line);color:var(--txt);padding:8px;margin-bottom:5px;cursor:pointer;border-radius:6px;text-align:left}
   .btn-panel:hover{border-color:var(--acc);background:rgba(88,166,255,0.1)}
-  .btn-panel.active{border-color:var(--acc);background:var(--acc);color:#fff}
   
-  /* Área principal del chat */
   #main{flex:1;display:flex;flex-direction:column}
   header{padding:10px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
   
@@ -30,7 +27,6 @@
   #msg-input{flex:1;background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:10px}
   #send-btn{background:var(--acc);color:#fff;border:none;border-radius:6px;padding:10px 20px;cursor:pointer;font-weight:bold}
   
-  /* Overlay para paneles */
   #panel-overlay{position:fixed;top:0;right:-800px;width:800px;height:100vh;background:var(--panel);border-left:1px solid var(--line);transition:right 0.3s;z-index:100;box-shadow:-5px 0 15px rgba(0,0,0,0.5)}
   #panel-overlay.open{right:0}
   #panel-header{padding:10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
@@ -39,7 +35,6 @@
 </style>
 </head>
 <body>
-  <!-- Sidebar -->
   <div id="sidebar">
     <h2>🛠️ Paneles</h2>
     <button class="btn-panel" onclick="openPanel('loop-panel.html')">🔁 LOOP</button>
@@ -52,15 +47,15 @@
     <button class="btn-panel" onclick="openPanel('hermes-panel.html')">📡 HERMES</button>
   </div>
 
-  <!-- Chat Principal -->
   <div id="main">
-    <header>
+    <header style="flex-wrap:wrap;">
       <div id="model-selector-container"></div>
+      <input id="api-key-input" type="password" placeholder="API Key requerida" style="background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:5px; width:150px;">
       <span id="status-badge" style="margin-left:auto;color:var(--txt);font-size:12px;">Listo</span>
     </header>
     <div id="chat-container">
       <div id="messages">
-        <div class="msg bot">¡Hola! Selecciona un modelo y empieza a chatear.</div>
+        <div class="msg bot">¡Hola! Selecciona un modelo, ingresa tu API Key y empieza a chatear.</div>
       </div>
       <div id="input-area">
         <input id="msg-input" type="text" placeholder="Escribe tu mensaje aquí..." onkeydown="if(event.key==='Enter') sendMessage()">
@@ -69,7 +64,6 @@
     </div>
   </div>
 
-  <!-- Panel Overlay -->
   <div id="panel-overlay">
     <div id="panel-header">
       <span id="panel-title">Panel</span>
@@ -84,7 +78,6 @@
     let currentEndpoint = "";
     let currentModel = "";
 
-    // Inicializar Selector
     renderSelector('model-selector-container', (endpoint, modelId, groupKey) => {
       currentEndpoint = endpoint;
       currentModel = modelId;
@@ -92,13 +85,17 @@
       document.getElementById('status-badge').style.color = "var(--ok)";
     });
 
-    // Enviar Mensaje
     window.sendMessage = async () => {
       const input = document.getElementById('msg-input');
+      const apiKeyInput = document.getElementById('api-key-input');
       const text = input.value.trim();
+      
       if (!text || !currentEndpoint) return;
+      if (!apiKeyInput.value) {
+        alert("Por favor, ingresa la API Key.");
+        return;
+      }
 
-      // UI
       addMessage(text, 'user');
       input.value = '';
       const badge = document.getElementById('status-badge');
@@ -106,10 +103,13 @@
       badge.style.color = "var(--acc)";
 
       try {
-        // Llamada al proxy
+        // URL del proxy
         const res = await fetch(`${currentEndpoint}/chat/completions`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': apiKeyInput.value 
+          },
           body: JSON.stringify({
             model: currentModel,
             messages: [{ role: 'user', content: text }]
@@ -139,7 +139,6 @@
       msgs.scrollTop = msgs.scrollHeight;
     };
 
-    // Paneles
     window.openPanel = (url) => {
       document.getElementById('panel-title').textContent = url.replace('-panel.html', '').toUpperCase();
       document.getElementById('panel-frame').src = `./ui/${url}`;
