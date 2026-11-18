@@ -524,8 +524,14 @@ def push_fast_forward(repo, branch, expected_head, files, token=None, env=None, 
                           "El commit no es fast-forward respecto al HEAD esperado.",
                           {"parent": (parents[0] or {}).get("sha") if parents else None,
                            "remote_head": remote_head})
-    read_tree = _req("GET", api + "/git/trees/" + ((read_commit.get("tree") or {}).get("sha") or tree_sha))
-    read_entries = {e.get("path"): e.get("sha") for e in (read_tree.get("tree") or [])}
+    # El arbol hay que pedirlo RECURSIVO: sin ?recursive=1 GitHub devuelve solo
+    # las entradas de primer nivel (p.ej. "chat-router"), no las rutas anidadas,
+    # y la comparacion de blobs no encontraria nunca los ficheros escritos.
+    read_tree = _req("GET", api + "/git/trees/"
+                     + ((read_commit.get("tree") or {}).get("sha") or tree_sha)
+                     + "?recursive=1")
+    read_entries = {e.get("path"): e.get("sha") for e in (read_tree.get("tree") or [])
+                    if e.get("type") == "blob"}
     missing = [b["path"] for b in blobs if read_entries.get(b["path"]) != b["blob"]]
     if missing:
         raise DeployAbort("PUSH_READBACK_BLOBS",
