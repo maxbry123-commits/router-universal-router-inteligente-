@@ -1,0 +1,16 @@
+# Canvas Backend (N4-A) · dependencias base
+# Instalacion: pip install -r requirements.txt   (NO ejecutado por este nodo: instalacion prohibida)
+
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.6
+websockets>=12
+
+# --- Opcionales (NO son requisito: el motor degrada con warning explícito) ---
+# edge-tts>=6.1        # TTS principal (Microsoft Edge Neural TTS, sin API key)
+# deep-translator>=1.11 # traduccion opcional (Google/DeepL)
+# pyttsx3>=2.90       # fallback TTS offline (calidad 1.5/5, deja warning)
+#
+# Nota: si edge-tts no esta instalado -> fallback pyttsx3.
+# Si deep-translator no esta instalado o no hay red -> no se traduce y se
+# devuelve el texto original. Sin secretos: edge-tts no requiere API key.

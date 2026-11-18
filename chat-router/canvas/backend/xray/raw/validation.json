@@ -1,0 +1,77 @@
+{
+  "PASS": true,
+  "checks": [
+    {
+      "evidence": "STATE.json presente; fases 0-8 completas=9/9; fase9=EXECUTING (se marca COMPLETED al cerrar la fase)",
+      "id": "1_STATE_FASES_0_9",
+      "status": "PASS"
+    },
+    {
+      "evidence": "commit_sha=bb3559e66f9ca160031b9da3c5b65aecb807fa45 tree_sha=560e9d06f9463f30ff5714a3c43b1d2c83eb67a8 commit_date=2026-11-16T08:00:06+00:00",
+      "id": "2_FINGERPRINT_COMMIT_TREE",
+      "status": "PASS"
+    },
+    {
+      "evidence": "tracked=66 inventariados=41 excluidos=25 ausentes=0",
+      "id": "3_INVENTARIO_COBRE_100",
+      "status": "PASS"
+    },
+    {
+      "evidence": "imports=152 con_ruta_linea=152",
+      "id": "4_WIRING_IMPORTS_NO_VACIOS",
+      "status": "PASS"
+    },
+    {
+      "evidence": "CONTRACTS.md presente; endpoints=17 env_vars=20 filas_sin_ruta_linea=0",
+      "id": "5_CONTRACTS_RUTA_LINEA",
+      "status": "PASS"
+    },
+    {
+      "evidence": "filas_gap=0 filas_verificacion=25 veredictos_invalidos=0",
+      "id": "6_GAPS_VEREDICTOS",
+      "status": "PASS"
+    },
+    {
+      "evidence": "acciones=0 invalidas=0 gaps=0",
+      "id": "7_NEXT_ACTIONS_EVIDENCIA",
+      "status": "PASS"
+    },
+    {
+      "evidence": "raw/validation.json escrito con PASS=True",
+      "id": "8_VALIDATION_PASS",
+      "status": "PASS"
+    },
+    {
+      "evidence": "gaps_json=0 invalidos=0",
+      "id": "9_GAPS_JSON_EVIDENCIA",
+      "status": "PASS"
+    },
+    {
+      "evidence": "gaps_sin_estado=0 ([])",
+      "id": "10_GAPS_CON_ESTADO",
+      "status": "PASS"
+    },
+    {
+      "evidence": "fugas=0 []; ocurrencias_literal_prefijo=28",
+      "id": "11_CERO_SECRETOS",
+      "status": "PASS"
+    },
+    {
+      "evidence": "fingerprint=bb3559e66f9c GAPS.md=bb3559e66f9c NEXT_ACTIONS.md=bb3559e66f9c",
+      "id": "12_V4_MISMO_COMMIT",
+      "status": "PASS"
+    },
+    {
+      "evidence": "ficheros=41 sha_distinto=0 ausentes=0",
+      "id": "13_SHA256_RECOMPROBADO",
+      "status": "PASS"
+    }
+  ],
+  "closure": {
+    "passed": 13,
+    "total": 13
+  },
+  "errors": [],
+  "generated_at": "2026-11-16T08:00:07Z",
+  "schema": "xray-validation/1"
+}

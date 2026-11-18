@@ -1,0 +1,228 @@
+{
+  "schema": "yaiwes.guide.actions.v1",
+  "version": "1.0.0",
+  "description": "Catálogo vivo de ACCIONES de la guía. Cada acción define: sus verbos (para localizar la entrada desde texto libre), las SEÑALES que delatan que la acción YA ESTÁ DEFINIDA en un bloque de código, la ANCLA que fija las LÍNEAS EXACTAS a tocar, la FORMA ESPERADA DEL PARCHE y el EJEMPLO (antes / después) contra el que se hace MIRROR.",
+  "reglas": {
+    "veredicto": {
+      "DEFINIDA": "todas las senales_requeridas aparecen en el bloque candidato",
+      "PARCIAL": "aparecen algunas (no todas) de las senales_requeridas",
+      "NECESARIA": "no aparece ninguna señal y la acción es aplicable al bloque",
+      "NO_APLICA": "las condiciones de aplicabilidad no se cumplen (otro lenguaje, otro dominio o la acción no tiene sentido aquí)"
+    },
+    "ancla_modos": {
+      "reemplazar_linea": "la línea que casa con `patron` se sustituye por `patch_esperado.lineas`",
+      "insertar_despues_linea": "se insertan `patch_esperado.lineas` justo después de la línea que casa con `patron`",
+      "insertar_en_cuerpo": "se insertan al inicio del cuerpo de la función que casa con `patron` (después del `def` y del docstring)",
+      "al_final": "se anexan `patch_esperado.lineas` al final del fichero",
+      "extraccion": "el cuerpo de la función se mueve a una función de módulo (`_impl`) y el original delega en ella"
+    },
+    "placeholders": {
+      "{funcion}": "nombre de la función anclada en el bloque candidato",
+      "{parametro}": "primer parámetro de la función anclada en el bloque candidato",
+      "{modulo}": "nombre del módulo destino de la extracción (derivado del nombre de la función)"
+    },
+    "escalado_aprobacion": "true ⇒ la acción habla de AUTORIZACIÓN / ADVERTENCIA / SECRETOS y DEBE escalarse a aprobación humana antes de ejecutarse"
+  },
+  "acciones": [
+    {
+      "action_id": "add_retry_backoff",
+      "titulo": "añadir reintento con backoff",
+      "alias": ["retry con backoff", "reintentos con espera exponencial", "add retry with backoff"],
+      "verbos": ["añadir", "add", "create", "implementar"],
+      "tipo": "CREACION",
+      "aplicabilidad": ["(?i)^\\s*(async\\s+def|def|function)\\b"],
+      "senales_requeridas": [
+        "(?i)\\bintentos\\b|\\bretry\\b|\\breintento\\b",
+        "(?i)backoff|2 \\*\\* intento|exponencial|time\\.sleep"
+      ],
+      "ancla": {
+        "patron": "(?i)^\\s*return\\s+\\w+(\\.\\w+)*\\(",
+        "modo": "reemplazar_linea"
+      },
+      "patch_esperado": {
+        "tipo": "reemplazo",
+        "lineas": [
+          "    intentos = 3",
+          "    for intento in range(intentos):",
+          "        try:",
+          "            return transporte.post(destino, json=payload)",
+          "        except Exception:",
+          "            if intento == intentos - 1:",
+          "                raise",
+          "            time.sleep(2 ** intento)"
+        ],
+        "lineas_max": 14,
+        "descripcion": "Sustituye UNA sola línea de la llamada por el bloque de reintento con espera exponencial. No reescribe el bloque entero."
+      },
+      "antes": [
+        "def enviar(destino, payload):",
+        "    return transporte.post(destino, json=payload)"
+      ],
+      "ejemplo": [
+        "def enviar(destino, payload):",
+        "    intentos = 3",
+        "    for intento in range(intentos):",
+        "        try:",
+        "            return transporte.post(destino, json=payload)",
+        "        except Exception:",
+        "            if intento == intentos - 1:",
+        "                raise",
+        "            time.sleep(2 ** intento)"
+      ]
+    },
+    {
+      "action_id": "validate_input",
+      "titulo": "validar entrada",
+      "alias": ["validar entrada de usuario", "validate input", "comprobar entrada"],
+      "verbos": ["validar", "validate", "verify", "comprobar"],
+      "tipo": "VALIDACION",
+      "aplicabilidad": ["(?i)^\\s*(async\\s+def|def|function)\\b"],
+      "senales_requeridas": [
+        "(?i)raise\\s+ValueError",
+        "(?i)^\\s*if\\s+not\\s+\\w+\\s*:"
+      ],
+      "ancla": {
+        "patron": "(?i)^\\s*(async\\s+def|def)\\s+(?P<funcion>\\w+)\\s*\\(",
+        "modo": "insertar_en_cuerpo"
+      },
+      "patch_esperado": {
+        "tipo": "insercion",
+        "lineas": [
+          "    if not {parametro}:",
+          "        raise ValueError(\"{parametro} requerido\")"
+        ],
+        "lineas_max": 6,
+        "descripcion": "Inserta la validación al inicio del cuerpo de la función; NO toca el resto del cuerpo."
+      },
+      "antes": [
+        "def recibir(datos):",
+        "    return datos"
+      ],
+      "ejemplo": [
+        "def recibir(datos):",
+        "    if not datos:",
+        "        raise ValueError(\"datos requerido\")",
+        "    return datos"
+      ]
+    },
+    {
+      "action_id": "extract_function_to_module",
+      "titulo": "extraer función a módulo",
+      "alias": ["extraer a modulo", "extract function to module", "mover función a módulo"],
+      "verbos": ["extraer", "extract", "refactorizar", "split"],
+      "tipo": "REFACTOR",
+      "aplicabilidad": ["(?i)^\\s*(async\\s+def|def|function)\\b"],
+      "senales_requeridas": [
+        "(?i)^\\s*def\\s+\\w+_impl\\b",
+        "(?i)return\\s+\\w+_impl\\("
+      ],
+      "ancla": {
+        "patron": "(?i)^\\s*(async\\s+def|def)\\s+(?P<funcion>\\w+)\\s*\\(",
+        "modo": "extraccion"
+      },
+      "patch_esperado": {
+        "tipo": "extraccion",
+        "lineas": [
+          "",
+          "",
+          "def {funcion}_impl({parametros}):",
+          "    <cuerpo original movido aquí>"
+        ],
+        "lineas_max": 40,
+        "descripcion": "El cuerpo original se mueve a una función `_impl` a nivel de módulo; la función original delega en ella. Solo se reescriben las líneas del cuerpo."
+      },
+      "antes": [
+        "def calcular_total(items):",
+        "    total = 0",
+        "    for item in items:",
+        "        total += item[\"precio\"]",
+        "    return total"
+      ],
+      "ejemplo": [
+        "def calcular_total(items):",
+        "    return calcular_total_impl(items)",
+        "",
+        "",
+        "def calcular_total_impl(items):",
+        "    total = 0",
+        "    for item in items:",
+        "        total += item[\"precio\"]",
+        "    return total"
+      ]
+    },
+    {
+      "action_id": "add_test",
+      "titulo": "añadir test",
+      "alias": ["añadir test unitario", "add unit test", "escribir test"],
+      "verbos": ["añadir", "add", "test", "escribir"],
+      "tipo": "TEST",
+      "aplicabilidad": ["(?i)^\\s*(async\\s+def|def|function)\\b"],
+      "senales_requeridas": [
+        "(?i)^\\s*def\\s+test_",
+        "(?i)\\bassert\\b"
+      ],
+      "ancla": {
+        "patron": "(?i)^\\s*(async\\s+def|def|function)\\s+(?P<funcion>\\w+)",
+        "modo": "al_final"
+      },
+      "patch_esperado": {
+        "tipo": "anexado",
+        "lineas": [
+          "",
+          "",
+          "def test_{funcion}():",
+          "    assert {funcion}(1, 2) == 3"
+        ],
+        "lineas_max": 8,
+        "descripcion": "Anexa una función de test al final del fichero. No modifica ninguna línea previa."
+      },
+      "antes": [
+        "def sumar(a, b):",
+        "    return a + b"
+      ],
+      "ejemplo": [
+        "def sumar(a, b):",
+        "    return a + b",
+        "",
+        "",
+        "def test_sumar():",
+        "    assert sumar(1, 2) == 3"
+      ]
+    },
+    {
+      "action_id": "rotate_token",
+      "titulo": "rotar token",
+      "alias": ["rotar token de acceso", "rotate access token", "renovar credencial"],
+      "verbos": ["rotar", "rotate", "renovar", "refrescar", "refresh"],
+      "tipo": "SEGURIDAD",
+      "aplicabilidad": ["(?i)(token|secret|api[_-]?key|credencial)"],
+      "senales_requeridas": [
+        "(?i)rotar|rotacion|rotation|renovar",
+        "(?i)ultima_rotacion|last_rotated"
+      ],
+      "ancla": {
+        "patron": "(?i)^\\s*(async\\s+def|def)\\s+(?P<funcion>\\w+)\\s*\\(",
+        "modo": "insertar_en_cuerpo"
+      },
+      "patch_esperado": {
+        "tipo": "insercion",
+        "lineas": [
+          "    if cliente.ultima_rotacion is None:",
+          "        cliente.rotar_token()"
+        ],
+        "lineas_max": 6,
+        "descripcion": "Inserta la comprobación/rotación al inicio del cuerpo. La acción habla de credenciales: exige aprobación humana antes de aplicarla."
+      },
+      "antes": [
+        "def obtener_token(cliente):",
+        "    return cliente.credenciales[\"token\"]"
+      ],
+      "ejemplo": [
+        "def obtener_token(cliente):",
+        "    if cliente.ultima_rotacion is None:",
+        "        cliente.rotar_token()",
+        "    return cliente.credenciales[\"token\"]"
+      ]
+    }
+  ]
+}

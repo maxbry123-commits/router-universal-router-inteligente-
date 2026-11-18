@@ -1,0 +1,2180 @@
+{
+  "commit_sha": "bb3559e66f9ca160031b9da3c5b65aecb807fa45",
+  "counts": {
+    "broken_local": 0,
+    "imports_total": 152,
+    "resolved": 0,
+    "unverified_third_party": 152
+  },
+  "edges": [],
+  "generated_at": "2026-11-16T08:00:06Z",
+  "imports": [
+    {
+      "from_path": "backend/adapters/d2.py",
+      "from_sha256": "bc49d9ad986d8d6bde979db5cb7b06dc62e3bb45a99aae6927fd3c2f24a3227e",
+      "kind": "python",
+      "line": 13,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/d2.py",
+      "from_sha256": "bc49d9ad986d8d6bde979db5cb7b06dc62e3bb45a99aae6927fd3c2f24a3227e",
+      "kind": "python",
+      "line": 15,
+      "module": "shutil",
+      "names": [
+        "shutil"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/d2.py",
+      "from_sha256": "bc49d9ad986d8d6bde979db5cb7b06dc62e3bb45a99aae6927fd3c2f24a3227e",
+      "kind": "python",
+      "line": 16,
+      "module": "subprocess",
+      "names": [
+        "subprocess"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/d2.py",
+      "from_sha256": "bc49d9ad986d8d6bde979db5cb7b06dc62e3bb45a99aae6927fd3c2f24a3227e",
+      "kind": "python",
+      "line": 17,
+      "module": "tempfile",
+      "names": [
+        "tempfile"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/d2.py",
+      "from_sha256": "bc49d9ad986d8d6bde979db5cb7b06dc62e3bb45a99aae6927fd3c2f24a3227e",
+      "kind": "python",
+      "line": 18,
+      "module": "pathlib",
+      "names": [
+        "Path"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/d2.py",
+      "from_sha256": "bc49d9ad986d8d6bde979db5cb7b06dc62e3bb45a99aae6927fd3c2f24a3227e",
+      "kind": "python",
+      "line": 19,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Dict",
+        "Optional"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/excalidraw.py",
+      "from_sha256": "83b755c16dac84601af573b645d280818527f69620fd703c39ef1f8d28583d0f",
+      "kind": "python",
+      "line": 13,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/excalidraw.py",
+      "from_sha256": "83b755c16dac84601af573b645d280818527f69620fd703c39ef1f8d28583d0f",
+      "kind": "python",
+      "line": 15,
+      "module": "json",
+      "names": [
+        "json"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/excalidraw.py",
+      "from_sha256": "83b755c16dac84601af573b645d280818527f69620fd703c39ef1f8d28583d0f",
+      "kind": "python",
+      "line": 16,
+      "module": "os",
+      "names": [
+        "os"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/excalidraw.py",
+      "from_sha256": "83b755c16dac84601af573b645d280818527f69620fd703c39ef1f8d28583d0f",
+      "kind": "python",
+      "line": 17,
+      "module": "urllib.error",
+      "names": [
+        "urllib.error"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/excalidraw.py",
+      "from_sha256": "83b755c16dac84601af573b645d280818527f69620fd703c39ef1f8d28583d0f",
+      "kind": "python",
+      "line": 18,
+      "module": "urllib.request",
+      "names": [
+        "urllib.request"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/excalidraw.py",
+      "from_sha256": "83b755c16dac84601af573b645d280818527f69620fd703c39ef1f8d28583d0f",
+      "kind": "python",
+      "line": 19,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Dict",
+        "Optional"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/hyperframes.py",
+      "from_sha256": "1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b",
+      "kind": "python",
+      "line": 12,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/hyperframes.py",
+      "from_sha256": "1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b",
+      "kind": "python",
+      "line": 14,
+      "module": "json",
+      "names": [
+        "json"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/hyperframes.py",
+      "from_sha256": "1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b",
+      "kind": "python",
+      "line": 15,
+      "module": "os",
+      "names": [
+        "os"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/hyperframes.py",
+      "from_sha256": "1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b",
+      "kind": "python",
+      "line": 16,
+      "module": "shutil",
+      "names": [
+        "shutil"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/hyperframes.py",
+      "from_sha256": "1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b",
+      "kind": "python",
+      "line": 17,
+      "module": "subprocess",
+      "names": [
+        "subprocess"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/hyperframes.py",
+      "from_sha256": "1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b",
+      "kind": "python",
+      "line": 18,
+      "module": "urllib.error",
+      "names": [
+        "urllib.error"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/hyperframes.py",
+      "from_sha256": "1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b",
+      "kind": "python",
+      "line": 19,
+      "module": "urllib.request",
+      "names": [
+        "urllib.request"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/hyperframes.py",
+      "from_sha256": "1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b",
+      "kind": "python",
+      "line": 20,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Dict",
+        "Optional"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/mermaid.py",
+      "from_sha256": "629fd60c196cf4db078095d4bf9666eab199227a6aa758c51cb209bb55812b75",
+      "kind": "python",
+      "line": 13,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/mermaid.py",
+      "from_sha256": "629fd60c196cf4db078095d4bf9666eab199227a6aa758c51cb209bb55812b75",
+      "kind": "python",
+      "line": 15,
+      "module": "shutil",
+      "names": [
+        "shutil"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/mermaid.py",
+      "from_sha256": "629fd60c196cf4db078095d4bf9666eab199227a6aa758c51cb209bb55812b75",
+      "kind": "python",
+      "line": 16,
+      "module": "subprocess",
+      "names": [
+        "subprocess"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/mermaid.py",
+      "from_sha256": "629fd60c196cf4db078095d4bf9666eab199227a6aa758c51cb209bb55812b75",
+      "kind": "python",
+      "line": 17,
+      "module": "tempfile",
+      "names": [
+        "tempfile"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/mermaid.py",
+      "from_sha256": "629fd60c196cf4db078095d4bf9666eab199227a6aa758c51cb209bb55812b75",
+      "kind": "python",
+      "line": 18,
+      "module": "pathlib",
+      "names": [
+        "Path"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/mermaid.py",
+      "from_sha256": "629fd60c196cf4db078095d4bf9666eab199227a6aa758c51cb209bb55812b75",
+      "kind": "python",
+      "line": 19,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Dict",
+        "Optional"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/remotion.py",
+      "from_sha256": "62f1870324e07cd35061692317b3efa73ee50d7b69b6464b78a3f928e1aa3ba1",
+      "kind": "python",
+      "line": 17,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/remotion.py",
+      "from_sha256": "62f1870324e07cd35061692317b3efa73ee50d7b69b6464b78a3f928e1aa3ba1",
+      "kind": "python",
+      "line": 19,
+      "module": "json",
+      "names": [
+        "json"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/remotion.py",
+      "from_sha256": "62f1870324e07cd35061692317b3efa73ee50d7b69b6464b78a3f928e1aa3ba1",
+      "kind": "python",
+      "line": 20,
+      "module": "os",
+      "names": [
+        "os"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/remotion.py",
+      "from_sha256": "62f1870324e07cd35061692317b3efa73ee50d7b69b6464b78a3f928e1aa3ba1",
+      "kind": "python",
+      "line": 21,
+      "module": "shutil",
+      "names": [
+        "shutil"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/remotion.py",
+      "from_sha256": "62f1870324e07cd35061692317b3efa73ee50d7b69b6464b78a3f928e1aa3ba1",
+      "kind": "python",
+      "line": 22,
+      "module": "subprocess",
+      "names": [
+        "subprocess"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/remotion.py",
+      "from_sha256": "62f1870324e07cd35061692317b3efa73ee50d7b69b6464b78a3f928e1aa3ba1",
+      "kind": "python",
+      "line": 23,
+      "module": "tempfile",
+      "names": [
+        "tempfile"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/remotion.py",
+      "from_sha256": "62f1870324e07cd35061692317b3efa73ee50d7b69b6464b78a3f928e1aa3ba1",
+      "kind": "python",
+      "line": 24,
+      "module": "pathlib",
+      "names": [
+        "Path"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/remotion.py",
+      "from_sha256": "62f1870324e07cd35061692317b3efa73ee50d7b69b6464b78a3f928e1aa3ba1",
+      "kind": "python",
+      "line": 25,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Dict",
+        "List",
+        "Optional"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/rive.py",
+      "from_sha256": "6a1e9f392cb3ce8a3270cff92371be456dbae03a15edc952a351cc9fe539cdc0",
+      "kind": "python",
+      "line": 12,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/rive.py",
+      "from_sha256": "6a1e9f392cb3ce8a3270cff92371be456dbae03a15edc952a351cc9fe539cdc0",
+      "kind": "python",
+      "line": 14,
+      "module": "os",
+      "names": [
+        "os"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/rive.py",
+      "from_sha256": "6a1e9f392cb3ce8a3270cff92371be456dbae03a15edc952a351cc9fe539cdc0",
+      "kind": "python",
+      "line": 15,
+      "module": "shutil",
+      "names": [
+        "shutil"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/rive.py",
+      "from_sha256": "6a1e9f392cb3ce8a3270cff92371be456dbae03a15edc952a351cc9fe539cdc0",
+      "kind": "python",
+      "line": 16,
+      "module": "subprocess",
+      "names": [
+        "subprocess"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/rive.py",
+      "from_sha256": "6a1e9f392cb3ce8a3270cff92371be456dbae03a15edc952a351cc9fe539cdc0",
+      "kind": "python",
+      "line": 17,
+      "module": "pathlib",
+      "names": [
+        "Path"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/adapters/rive.py",
+      "from_sha256": "6a1e9f392cb3ce8a3270cff92371be456dbae03a15edc952a351cc9fe539cdc0",
+      "kind": "python",
+      "line": 18,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Dict",
+        "List",
+        "Optional"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 32,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 34,
+      "module": "asyncio",
+      "names": [
+        "asyncio"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 35,
+      "module": "json",
+      "names": [
+        "json"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 36,
+      "module": "os",
+      "names": [
+        "os"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 37,
+      "module": "sys",
+      "names": [
+        "sys"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 38,
+      "module": "time",
+      "names": [
+        "time"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 39,
+      "module": "pathlib",
+      "names": [
+        "Path"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 40,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Dict",
+        "Optional"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 47,
+      "module": "fastapi",
+      "names": [
+        "FastAPI",
+        "HTTPException",
+        "WebSocket",
+        "WebSocketDisconnect  # noqa: E402"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 48,
+      "module": "fastapi.middleware.cors",
+      "names": [
+        "CORSMiddleware  # noqa: E402"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 49,
+      "module": "fastapi.responses",
+      "names": [
+        "FileResponse",
+        "PlainTextResponse  # noqa: E402"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 50,
+      "module": "fastapi.staticfiles",
+      "names": [
+        "StaticFiles  # noqa: E402"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 51,
+      "module": "pydantic",
+      "names": [
+        "BaseModel",
+        "Field  # noqa: E402"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 53,
+      "module": "audio_engine",
+      "names": [
+        "audio_engine"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 54,
+      "module": "canvas_engine",
+      "names": [
+        "canvas_engine"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 55,
+      "module": "health",
+      "names": [
+        "health"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 61,
+      "module": "audit_runner",
+      "names": [
+        "audit_runner"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 62,
+      "module": "gaps_store",
+      "names": [
+        "gaps_store"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/api.py",
+      "from_sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "kind": "python",
+      "line": 67,
+      "module": "mcp_router",
+      "names": [
+        "router"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/audio_engine.py",
+      "from_sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "kind": "python",
+      "line": 25,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/audio_engine.py",
+      "from_sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "kind": "python",
+      "line": 27,
+      "module": "asyncio",
+      "names": [
+        "asyncio"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/audio_engine.py",
+      "from_sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "kind": "python",
+      "line": 28,
+      "module": "hashlib",
+      "names": [
+        "hashlib"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/audio_engine.py",
+      "from_sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "kind": "python",
+      "line": 29,
+      "module": "os",
+      "names": [
+        "os"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/audio_engine.py",
+      "from_sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "kind": "python",
+      "line": 30,
+      "module": "re",
+      "names": [
+        "re"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/audio_engine.py",
+      "from_sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "kind": "python",
+      "line": 31,
+      "module": "time",
+      "names": [
+        "time"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/audio_engine.py",
+      "from_sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "kind": "python",
+      "line": 32,
+      "module": "pathlib",
+      "names": [
+        "Path"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/audio_engine.py",
+      "from_sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "kind": "python",
+      "line": 33,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Dict",
+        "Optional"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/audio_engine.py",
+      "from_sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "kind": "python",
+      "line": 139,
+      "module": "deep_translator",
+      "names": [
+        "GoogleTranslator  # type: ignore"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/audio_engine.py",
+      "from_sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "kind": "python",
+      "line": 186,
+      "module": "pyttsx3",
+      "names": [
+        "pyttsx3"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/audio_engine.py",
+      "from_sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "kind": "python",
+      "line": 247,
+      "module": "edge_tts",
+      "names": [
+        "edge_tts"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/canvas_engine.py",
+      "from_sha256": "8dc1c3dd648ee7310d553064d1a3fa7bdbc3e6eafaf234c396c4414f052cc373",
+      "kind": "python",
+      "line": 17,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/canvas_engine.py",
+      "from_sha256": "8dc1c3dd648ee7310d553064d1a3fa7bdbc3e6eafaf234c396c4414f052cc373",
+      "kind": "python",
+      "line": 19,
+      "module": "importlib.util",
+      "names": [
+        "importlib.util"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/canvas_engine.py",
+      "from_sha256": "8dc1c3dd648ee7310d553064d1a3fa7bdbc3e6eafaf234c396c4414f052cc373",
+      "kind": "python",
+      "line": 20,
+      "module": "sys",
+      "names": [
+        "sys"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/canvas_engine.py",
+      "from_sha256": "8dc1c3dd648ee7310d553064d1a3fa7bdbc3e6eafaf234c396c4414f052cc373",
+      "kind": "python",
+      "line": 21,
+      "module": "time",
+      "names": [
+        "time"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/canvas_engine.py",
+      "from_sha256": "8dc1c3dd648ee7310d553064d1a3fa7bdbc3e6eafaf234c396c4414f052cc373",
+      "kind": "python",
+      "line": 22,
+      "module": "pathlib",
+      "names": [
+        "Path"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/canvas_engine.py",
+      "from_sha256": "8dc1c3dd648ee7310d553064d1a3fa7bdbc3e6eafaf234c396c4414f052cc373",
+      "kind": "python",
+      "line": 23,
+      "module": "types",
+      "names": [
+        "ModuleType"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/canvas_engine.py",
+      "from_sha256": "8dc1c3dd648ee7310d553064d1a3fa7bdbc3e6eafaf234c396c4414f052cc373",
+      "kind": "python",
+      "line": 24,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Dict",
+        "List",
+        "Optional"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/deploy_engine.py",
+      "from_sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "kind": "python",
+      "line": 33,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/deploy_engine.py",
+      "from_sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "kind": "python",
+      "line": 35,
+      "module": "hashlib",
+      "names": [
+        "hashlib"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/deploy_engine.py",
+      "from_sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "kind": "python",
+      "line": 36,
+      "module": "hmac",
+      "names": [
+        "hmac"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/deploy_engine.py",
+      "from_sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "kind": "python",
+      "line": 37,
+      "module": "json",
+      "names": [
+        "json"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/deploy_engine.py",
+      "from_sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "kind": "python",
+      "line": 38,
+      "module": "os",
+      "names": [
+        "os"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/deploy_engine.py",
+      "from_sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "kind": "python",
+      "line": 39,
+      "module": "re",
+      "names": [
+        "re"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/deploy_engine.py",
+      "from_sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "kind": "python",
+      "line": 40,
+      "module": "sys",
+      "names": [
+        "sys"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/deploy_engine.py",
+      "from_sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "kind": "python",
+      "line": 41,
+      "module": "time",
+      "names": [
+        "time"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/deploy_engine.py",
+      "from_sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "kind": "python",
+      "line": 42,
+      "module": "urllib.error",
+      "names": [
+        "urllib.error"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/deploy_engine.py",
+      "from_sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "kind": "python",
+      "line": 43,
+      "module": "urllib.parse",
+      "names": [
+        "urllib.parse"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/deploy_engine.py",
+      "from_sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "kind": "python",
+      "line": 44,
+      "module": "urllib.request",
+      "names": [
+        "urllib.request"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/mcp_server.py",
+      "from_sha256": "5bda096cc8ca90dfa7ff613dc3ef45c3e266558234fff04376320de33106b3b3",
+      "kind": "python",
+      "line": 15,
+      "module": "mcp_server",
+      "names": [
+        "handle_rpc    -> funciona (delega en mcp_router)"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/mcp_server.py",
+      "from_sha256": "5bda096cc8ca90dfa7ff613dc3ef45c3e266558234fff04376320de33106b3b3",
+      "kind": "python",
+      "line": 18,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/mcp_server.py",
+      "from_sha256": "5bda096cc8ca90dfa7ff613dc3ef45c3e266558234fff04376320de33106b3b3",
+      "kind": "python",
+      "line": 20,
+      "module": "os",
+      "names": [
+        "os"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/mcp_server.py",
+      "from_sha256": "5bda096cc8ca90dfa7ff613dc3ef45c3e266558234fff04376320de33106b3b3",
+      "kind": "python",
+      "line": 21,
+      "module": "sys",
+      "names": [
+        "sys"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/deploy/mcp_server.py",
+      "from_sha256": "5bda096cc8ca90dfa7ff613dc3ef45c3e266558234fff04376320de33106b3b3",
+      "kind": "python",
+      "line": 29,
+      "module": "mcp_router",
+      "names": [
+        "(  # noqa: E402",
+        "F401  (reexportado a proposito)"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 18,
+      "module": "discovery",
+      "names": [
+        "discover"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 22,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 24,
+      "module": "hashlib",
+      "names": [
+        "hashlib"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 25,
+      "module": "importlib.util",
+      "names": [
+        "importlib.util"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 26,
+      "module": "json",
+      "names": [
+        "json"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 27,
+      "module": "os",
+      "names": [
+        "os"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 28,
+      "module": "pathlib",
+      "names": [
+        "pathlib"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 29,
+      "module": "re",
+      "names": [
+        "re"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 30,
+      "module": "sys",
+      "names": [
+        "sys"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 31,
+      "module": "tempfile",
+      "names": [
+        "tempfile"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 32,
+      "module": "time",
+      "names": [
+        "time"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 33,
+      "module": "urllib.parse",
+      "names": [
+        "urllib.parse"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 34,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Callable"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 106,
+      "module": "grammar",
+      "names": [
+        "grammar"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 109,
+      "module": "importlib.util",
+      "names": [
+        "importlib.util"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/discovery.py",
+      "from_sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "kind": "python",
+      "line": 110,
+      "module": "pathlib",
+      "names": [
+        "pathlib"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/grammar.py",
+      "from_sha256": "e67c187845e9fb21f402b26e1e84dcbdb37c8a5af6892bc3efbf5a125e0c52cb",
+      "kind": "python",
+      "line": 24,
+      "module": "grammar",
+      "names": [
+        "decompose"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/grammar.py",
+      "from_sha256": "e67c187845e9fb21f402b26e1e84dcbdb37c8a5af6892bc3efbf5a125e0c52cb",
+      "kind": "python",
+      "line": 28,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/grammar.py",
+      "from_sha256": "e67c187845e9fb21f402b26e1e84dcbdb37c8a5af6892bc3efbf5a125e0c52cb",
+      "kind": "python",
+      "line": 30,
+      "module": "re",
+      "names": [
+        "re"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/grammar.py",
+      "from_sha256": "e67c187845e9fb21f402b26e1e84dcbdb37c8a5af6892bc3efbf5a125e0c52cb",
+      "kind": "python",
+      "line": 31,
+      "module": "typing",
+      "names": [
+        "Any"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/grammar.py",
+      "from_sha256": "e67c187845e9fb21f402b26e1e84dcbdb37c8a5af6892bc3efbf5a125e0c52cb",
+      "kind": "python",
+      "line": 215,
+      "module": "unicodedata",
+      "names": [
+        "unicodedata"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/match.py",
+      "from_sha256": "f11620fb43a928c71a54f7b918cc4b1ce5f2016cc1f13a854773e5525144723d",
+      "kind": "python",
+      "line": 20,
+      "module": "match",
+      "names": [
+        "match_action",
+        "apply_match",
+        "verify_surgical"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/match.py",
+      "from_sha256": "f11620fb43a928c71a54f7b918cc4b1ce5f2016cc1f13a854773e5525144723d",
+      "kind": "python",
+      "line": 25,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/match.py",
+      "from_sha256": "f11620fb43a928c71a54f7b918cc4b1ce5f2016cc1f13a854773e5525144723d",
+      "kind": "python",
+      "line": 27,
+      "module": "difflib",
+      "names": [
+        "difflib"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/match.py",
+      "from_sha256": "f11620fb43a928c71a54f7b918cc4b1ce5f2016cc1f13a854773e5525144723d",
+      "kind": "python",
+      "line": 28,
+      "module": "json",
+      "names": [
+        "json"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/match.py",
+      "from_sha256": "f11620fb43a928c71a54f7b918cc4b1ce5f2016cc1f13a854773e5525144723d",
+      "kind": "python",
+      "line": 29,
+      "module": "os",
+      "names": [
+        "os"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/match.py",
+      "from_sha256": "f11620fb43a928c71a54f7b918cc4b1ce5f2016cc1f13a854773e5525144723d",
+      "kind": "python",
+      "line": 30,
+      "module": "re",
+      "names": [
+        "re"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/match.py",
+      "from_sha256": "f11620fb43a928c71a54f7b918cc4b1ce5f2016cc1f13a854773e5525144723d",
+      "kind": "python",
+      "line": 31,
+      "module": "typing",
+      "names": [
+        "Any"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/trigger.py",
+      "from_sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "kind": "python",
+      "line": 22,
+      "module": "trigger",
+      "names": [
+        "build_trigger",
+        "validate_trigger"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/trigger.py",
+      "from_sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "kind": "python",
+      "line": 27,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/trigger.py",
+      "from_sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "kind": "python",
+      "line": 29,
+      "module": "hashlib",
+      "names": [
+        "hashlib"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/trigger.py",
+      "from_sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "kind": "python",
+      "line": 30,
+      "module": "json",
+      "names": [
+        "json"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/trigger.py",
+      "from_sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "kind": "python",
+      "line": 31,
+      "module": "re",
+      "names": [
+        "re"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/trigger.py",
+      "from_sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "kind": "python",
+      "line": 32,
+      "module": "sys",
+      "names": [
+        "sys"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/trigger.py",
+      "from_sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "kind": "python",
+      "line": 33,
+      "module": "pathlib",
+      "names": [
+        "PurePosixPath"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/trigger.py",
+      "from_sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "kind": "python",
+      "line": 34,
+      "module": "typing",
+      "names": [
+        "Any"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/trigger.py",
+      "from_sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "kind": "python",
+      "line": 40,
+      "module": "grammar",
+      "names": [
+        "grammar"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/trigger.py",
+      "from_sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "kind": "python",
+      "line": 43,
+      "module": "importlib.util",
+      "names": [
+        "importlib.util"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/guide/trigger.py",
+      "from_sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "kind": "python",
+      "line": 44,
+      "module": "pathlib",
+      "names": [
+        "pathlib"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/health.py",
+      "from_sha256": "4d9f10cdd04f9b64f9a95e9a052cdcfdee5228e4537da00cf0eb9763d213b976",
+      "kind": "python",
+      "line": 11,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/health.py",
+      "from_sha256": "4d9f10cdd04f9b64f9a95e9a052cdcfdee5228e4537da00cf0eb9763d213b976",
+      "kind": "python",
+      "line": 13,
+      "module": "time",
+      "names": [
+        "time"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/health.py",
+      "from_sha256": "4d9f10cdd04f9b64f9a95e9a052cdcfdee5228e4537da00cf0eb9763d213b976",
+      "kind": "python",
+      "line": 14,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Dict",
+        "List"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/health.py",
+      "from_sha256": "4d9f10cdd04f9b64f9a95e9a052cdcfdee5228e4537da00cf0eb9763d213b976",
+      "kind": "python",
+      "line": 16,
+      "module": "canvas_engine",
+      "names": [
+        "canvas_engine"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 32,
+      "module": "__future__",
+      "names": [
+        "annotations"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 34,
+      "module": "json",
+      "names": [
+        "json"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 35,
+      "module": "os",
+      "names": [
+        "os"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 36,
+      "module": "sys",
+      "names": [
+        "sys"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 37,
+      "module": "time",
+      "names": [
+        "time"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 38,
+      "module": "uuid",
+      "names": [
+        "uuid"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 39,
+      "module": "pathlib",
+      "names": [
+        "Path"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 40,
+      "module": "typing",
+      "names": [
+        "Any",
+        "Dict",
+        "List",
+        "Optional",
+        "Tuple"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 42,
+      "module": "fastapi",
+      "names": [
+        "APIRouter",
+        "Request"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 43,
+      "module": "fastapi.responses",
+      "names": [
+        "JSONResponse"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 50,
+      "module": "audio_engine",
+      "names": [
+        "audio_engine"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 51,
+      "module": "canvas_engine",
+      "names": [
+        "canvas_engine"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 56,
+      "module": "audit_runner",
+      "names": [
+        "audit_runner"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 62,
+      "module": "deploy_engine",
+      "names": [
+        "deploy_engine"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 663,
+      "module": "match",
+      "names": [
+        "match"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    },
+    {
+      "from_path": "backend/mcp_router.py",
+      "from_sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "kind": "python",
+      "line": 664,
+      "module": "grammar",
+      "names": [
+        "grammar"
+      ],
+      "reason": "modulo externo: no verificable offline",
+      "resolved": false,
+      "status": "UNKNOWN",
+      "target_path": null
+    }
+  ],
+  "schema": "xray-wiring/1"
+}

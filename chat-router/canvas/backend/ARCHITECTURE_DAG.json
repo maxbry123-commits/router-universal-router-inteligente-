@@ -1,0 +1,190 @@
+{
+  "schema": "yaiwes.dag.backend.v1",
+  "description": "DAG de ejecución unificado para el Canvas Backend (FastAPI). Un solo proceso: api.py monta el MCP y sirve el frontend.",
+  "entrypoint": {
+    "file": "backend/api.py",
+    "command": "python3 -m uvicorn api:app --host 0.0.0.0 --port 7860",
+    "note": "En un Space de Hugging Face este es el UNICO proceso. El MCP ya no es un http.server aparte (puerto 8078).",
+    "port_env": "PORT"
+  },
+  "nodes": {
+    "api_gateway": {
+      "file": "backend/api.py",
+      "type": "fastapi_app",
+      "dependencies": ["canvas_engine", "audio_engine", "health", "mcp_router", "deploy_engine", "xray_store", "audit_runner"],
+      "exposes": [
+        "/health",
+        "/render/diagram",
+        "/render/motion",
+        "/convert",
+        "/audio/explain",
+        "/audio/{audio_id}",
+        "/gaps",
+        "/xray/{artifact}",
+        "/xray/audit",
+        "/ws/progress",
+        "/mcp",
+        "/mcp/health",
+        "/guide/match",
+        "/guide/status",
+        "/ui/"
+      ],
+      "cors": "CANVAS_ALLOWED_ORIGINS (CSV, por defecto *)",
+      "rules": ["fail_closed", "value_error_400", "otros_502", "sin_mock"]
+    },
+    "canvas_engine": {
+      "file": "backend/canvas_engine.py",
+      "type": "orchestrator",
+      "dependencies": ["adapters/*"],
+      "exposes": ["render_diagram", "render_motion", "cross_convert", "health_all"],
+      "rules": ["aislamiento_por_adapter", "ok_false_con_causa"]
+    },
+    "adapters": {
+      "type": "fail_closed_modules",
+      "files": [
+        "backend/adapters/excalidraw.py",
+        "backend/adapters/mermaid.py",
+        "backend/adapters/d2.py",
+        "backend/adapters/hyperframes.py",
+        "backend/adapters/remotion.py",
+        "backend/adapters/rive.py"
+      ],
+      "contract": "ping() y render(payload) -> dict; si el motor no esta -> status OMITIDO + ping_command",
+      "rules": ["sin_instalar_componentes", "nunca_svg_inventado"]
+    },
+    "audio_engine": {
+      "file": "backend/audio_engine.py",
+      "type": "service",
+      "dependencies": ["edge_tts", "deep_translator", "pyttsx3"],
+      "exposes": ["build_summary", "translate", "tts", "explain", "resolve_audio"],
+      "rules": ["resumen_max_150_palabras", "cache_por_hash", "fallback_pyttsx3"]
+    },
+    "health": {
+      "file": "backend/health.py",
+      "type": "aggregator",
+      "dependencies": ["canvas_engine"],
+      "exposes": ["health_snapshot", "health_payload"]
+    },
+    "mcp_router": {
+      "file": "backend/mcp_router.py",
+      "type": "fastapi_router",
+      "mounted_in": "backend/api.py (sin prefijo: las rutas ya son /mcp y /guide/*)",
+      "tools": ["memory_profile", "memory_index", "render_diagram", "render_motion", "audio_explain", "xray_audit", "deploy_plan"],
+      "windows": {
+        "w1": ["memory_profile", "memory_index"],
+        "w2": ["render_diagram", "render_motion", "audio_explain"],
+        "w3": ["xray_audit", "deploy_plan"]
+      },
+      "rules": [
+        "allowlist_por_ventana",
+        "rechazo_credenciales_en_payload",
+        "limite_payload_413",
+        "validacion_de_origen_403",
+        "errores_en_forma_jsonrpc",
+        "sesiones_con_tope",
+        "tool_ejecutada_en_proceso_sin_http_loopback"
+      ]
+    },
+    "guide_engine": {
+      "file": "backend/guide/",
+      "type": "service",
+      "files": ["grammar.py", "match.py", "trigger.py", "discovery.py", "guide_actions.json"],
+      "exposes": ["decompose", "match_action", "apply_match", "verify_surgical", "build_trigger", "discover"],
+      "rules": ["veredicto_real", "parche_quirurgico", "solo_lineas_declaradas"]
+    },
+    "deploy_engine": {
+      "file": "backend/deploy/deploy_engine.py",
+      "type": "deterministic_worker",
+      "exposes": ["plan", "validate_preconditions", "execute", "push_fast_forward"],
+      "rules": [
+        "dry_run_default",
+        "expected_head",
+        "fast_forward_only",
+        "no_lfs",
+        "no_actions",
+        "no_symlinks",
+        "no_credenciales_en_payload",
+        "limite_por_fichero_y_total",
+        "doble_autorizacion",
+        "readback_sha256",
+        "un_solo_commit_por_push"
+      ],
+      "push_transport": "git_data_api (blobs -> tree -> commit -> ref, force=false)"
+    },
+    "mcp_server_legacy": {
+      "file": "backend/deploy/mcp_server.py",
+      "type": "shim",
+      "status": "RETIRADO como servidor; reexporta la API real y avisa si se ejecuta solo"
+    },
+    "xray_audit": {
+      "file": "backend/xray/xray_audit.py",
+      "type": "auditor",
+      "phases": 10,
+      "exposes": ["INVENTORY.json", "FINGERPRINT.json", "CONTRACTS.md", "GAPS.md", "NEXT_ACTIONS.md", "XRAY_REPORT.md", "raw/*"],
+      "rules": ["veredictos_confirmado_contradicto_sin_evidencia", "comparador_determinista", "sin_porcentajes_estimados"]
+    },
+    "audit_runner": {
+      "file": "backend/xray/audit_runner.py",
+      "type": "runner",
+      "exposes": ["run_audit"],
+      "note": "unico lugar que ejecuta el auditor; lo usan api.py y mcp_router.py"
+    },
+    "xray_store": {
+      "file": "backend/xray/gaps_store.py",
+      "type": "storage",
+      "persists": "gaps.json",
+      "rules": ["evidencia_validada_contra_inventory", "append_only"]
+    },
+    "frontend": {
+      "file": "frontend/",
+      "type": "static",
+      "mounted_at": "/ui (StaticFiles)",
+      "files": [
+        "frontend/index.html",
+        "frontend/shared/api.js",
+        "frontend/shared/ws.js",
+        "frontend/shared/theme.css",
+        "frontend/shared/app.css",
+        "frontend/w_mcp.js",
+        "frontend/v1_canvas.html",
+        "frontend/v2_progress.html",
+        "frontend/v3_architecture.html",
+        "frontend/v4_audit.html",
+        "frontend/w1_mirror.html",
+        "frontend/w2_diff_editor.html",
+        "frontend/w3_deploy.html"
+      ],
+      "rules": ["mismo_origen_que_la_api", "base_mcp_relativa", "0_mock"]
+    }
+  },
+  "edges": [
+    {"from": "api_gateway", "to": "canvas_engine", "protocol": "python_import"},
+    {"from": "api_gateway", "to": "audio_engine", "protocol": "python_import"},
+    {"from": "api_gateway", "to": "health", "protocol": "python_import"},
+    {"from": "api_gateway", "to": "mcp_router", "protocol": "fastapi_include_router"},
+    {"from": "api_gateway", "to": "xray_store", "protocol": "python_import"},
+    {"from": "api_gateway", "to": "audit_runner", "protocol": "python_import"},
+    {"from": "api_gateway", "to": "frontend", "protocol": "StaticFiles", "path": "/ui"},
+    {"from": "mcp_router", "to": "canvas_engine", "protocol": "python_import"},
+    {"from": "mcp_router", "to": "audio_engine", "protocol": "python_import"},
+    {"from": "mcp_router", "to": "deploy_engine", "protocol": "python_import"},
+    {"from": "mcp_router", "to": "xray_audit", "protocol": "subprocess_audit_runner"},
+    {"from": "mcp_router", "to": "guide_engine", "protocol": "python_import"},
+    {"from": "audit_runner", "to": "xray_audit", "protocol": "subprocess"},
+    {"from": "canvas_engine", "to": "adapters", "protocol": "import_isolado"}
+  ],
+  "contracts": {
+    "jsonrpc": "2.0",
+    "protocol_version": "2025-06-18",
+    "window_header": "X-MCP-Window: w1|w2|w3",
+    "session_header": "Mcp-Session-Id",
+    "origin_env": "MCP_ALLOWED_ORIGINS",
+    "payload_limit_env": "MCP_MAX_PAYLOAD_BYTES"
+  },
+  "deployment": {
+    "authorized_deploy": [],
+    "single_process": true,
+    "no_lfs": true,
+    "no_github_actions": true
+  }
+}

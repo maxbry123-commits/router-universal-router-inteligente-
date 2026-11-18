@@ -1,0 +1,39 @@
+{
+  "branch": "master",
+  "bytes_total": 563445,
+  "commit_date": "2026-11-16T08:00:06+00:00",
+  "commit_sha": "bb3559e66f9ca160031b9da3c5b65aecb807fa45",
+  "constitution_ref": "TAREA_01_FUENTE_DE_LA_VERDAD.md",
+  "file_count": 41,
+  "generated_at": "2026-11-16T08:00:07Z",
+  "languages": {
+    "CSS": 2,
+    "HTML": 8,
+    "JSON": 2,
+    "JavaScript": 3,
+    "Markdown": 7,
+    "Other": 1,
+    "Python": 17,
+    "Text": 1
+  },
+  "repo": "canvas",
+  "roots": [
+    {
+      "files": 1,
+      "path": "(root)",
+      "sha256": "f052f5898f95d3c743f3cb01e14fe07be2051caee184ccd83428331e944db079"
+    },
+    {
+      "files": 26,
+      "path": "backend",
+      "sha256": "afa22d7ceb1c3d0aa50351a9c0a5c9b9cccf76c5ee2a5aabfc2be1ce12a3d036"
+    },
+    {
+      "files": 14,
+      "path": "frontend",
+      "sha256": "d0392290c7ea30fdb4b02a4d4be24ef2d9a1740e948f4dd1326f5d5875312f41"
+    }
+  ],
+  "schema": "xray-fingerprint/1",
+  "tree_sha": "560e9d06f9463f30ff5714a3c43b1d2c83eb67a8"
+}

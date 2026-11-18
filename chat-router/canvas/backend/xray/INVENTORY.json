@@ -1,0 +1,328 @@
+{
+  "commit_sha": "bb3559e66f9ca160031b9da3c5b65aecb807fa45",
+  "coverage": {
+    "coverage_complete": true,
+    "excluded": [
+      "backend/xray/ARCHITECTURE.md",
+      "backend/xray/CONTRACTS.md",
+      "backend/xray/FINGERPRINT.json",
+      "backend/xray/GAPS.md",
+      "backend/xray/INFORME.md",
+      "backend/xray/INVENTORY.json",
+      "backend/xray/MANIFEST.md",
+      "backend/xray/NEXT_ACTIONS.md",
+      "backend/xray/README.md",
+      "backend/xray/STATE.json",
+      "backend/xray/WIRING.json",
+      "backend/xray/XRAY_REPORT.md",
+      "backend/xray/audit_runner.py",
+      "backend/xray/gaps_store.py",
+      "backend/xray/raw/actions.json",
+      "backend/xray/raw/claims.json",
+      "backend/xray/raw/closure.json",
+      "backend/xray/raw/comparison.json",
+      "backend/xray/raw/contracts.json",
+      "backend/xray/raw/gaps.json",
+      "backend/xray/raw/imports.json",
+      "backend/xray/raw/symbols.json",
+      "backend/xray/raw/tree.json",
+      "backend/xray/raw/validation.json",
+      "backend/xray/xray_audit.py"
+    ],
+    "inventoried": 41,
+    "missing": [],
+    "tracked_files": 66
+  },
+  "files": [
+    {
+      "bytes": 11371,
+      "language": "Markdown",
+      "lines": 175,
+      "path": "TAREA_01_FUENTE_DE_LA_VERDAD.md",
+      "sha256": "ee9bf580411a37c8460a6568b8faa5f715bfbaeaea5291970625d47fe46d5599"
+    },
+    {
+      "bytes": 7454,
+      "language": "JSON",
+      "lines": 190,
+      "path": "backend/ARCHITECTURE_DAG.json",
+      "sha256": "b5c604fe0c4939f1cc2368403f1cc35d839df5bebe8728aa690617f2ac9e83d8"
+    },
+    {
+      "bytes": 21411,
+      "language": "Markdown",
+      "lines": 213,
+      "path": "backend/INFORME.md",
+      "sha256": "f0ba5aa2f95e6a921c6628a81c959c4e69e833125fbbd84f52b6e913d4eb5e3b"
+    },
+    {
+      "bytes": 9075,
+      "language": "Markdown",
+      "lines": 152,
+      "path": "backend/README.md",
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9"
+    },
+    {
+      "bytes": 6179,
+      "language": "Python",
+      "lines": 197,
+      "path": "backend/adapters/d2.py",
+      "sha256": "bc49d9ad986d8d6bde979db5cb7b06dc62e3bb45a99aae6927fd3c2f24a3227e"
+    },
+    {
+      "bytes": 7339,
+      "language": "Python",
+      "lines": 223,
+      "path": "backend/adapters/excalidraw.py",
+      "sha256": "83b755c16dac84601af573b645d280818527f69620fd703c39ef1f8d28583d0f"
+    },
+    {
+      "bytes": 8797,
+      "language": "Python",
+      "lines": 259,
+      "path": "backend/adapters/hyperframes.py",
+      "sha256": "1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b"
+    },
+    {
+      "bytes": 6412,
+      "language": "Python",
+      "lines": 200,
+      "path": "backend/adapters/mermaid.py",
+      "sha256": "629fd60c196cf4db078095d4bf9666eab199227a6aa758c51cb209bb55812b75"
+    },
+    {
+      "bytes": 7962,
+      "language": "Python",
+      "lines": 233,
+      "path": "backend/adapters/remotion.py",
+      "sha256": "62f1870324e07cd35061692317b3efa73ee50d7b69b6464b78a3f928e1aa3ba1"
+    },
+    {
+      "bytes": 7246,
+      "language": "Python",
+      "lines": 213,
+      "path": "backend/adapters/rive.py",
+      "sha256": "6a1e9f392cb3ce8a3270cff92371be456dbae03a15edc952a351cc9fe539cdc0"
+    },
+    {
+      "bytes": 15430,
+      "language": "Python",
+      "lines": 388,
+      "path": "backend/api.py",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "bytes": 13550,
+      "language": "Python",
+      "lines": 400,
+      "path": "backend/audio_engine.py",
+      "sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76"
+    },
+    {
+      "bytes": 12224,
+      "language": "Python",
+      "lines": 346,
+      "path": "backend/canvas_engine.py",
+      "sha256": "8dc1c3dd648ee7310d553064d1a3fa7bdbc3e6eafaf234c396c4414f052cc373"
+    },
+    {
+      "bytes": 24509,
+      "language": "Markdown",
+      "lines": 288,
+      "path": "backend/deploy/INFORME.md",
+      "sha256": "267ab6ecf902a2c7a8c6595cf0c97739989f784102b2931511c8432807f30057"
+    },
+    {
+      "bytes": 31009,
+      "language": "Python",
+      "lines": 702,
+      "path": "backend/deploy/deploy_engine.py",
+      "sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501"
+    },
+    {
+      "bytes": 4373,
+      "language": "Other",
+      "lines": 19,
+      "path": "backend/deploy/ledger.jsonl",
+      "sha256": "e6e5d24d5b733cc90f8c7d7b72b8f4fc5046070e88d55676e703e400174dfec6"
+    },
+    {
+      "bytes": 1986,
+      "language": "Python",
+      "lines": 59,
+      "path": "backend/deploy/mcp_server.py",
+      "sha256": "5bda096cc8ca90dfa7ff613dc3ef45c3e266558234fff04376320de33106b3b3"
+    },
+    {
+      "bytes": 18652,
+      "language": "Markdown",
+      "lines": 269,
+      "path": "backend/guide/INFORME.md",
+      "sha256": "61e809b33a850a0d9d20a304ef940f9b6f0cd63ce4789126c3b87c6fc2d4e42f"
+    },
+    {
+      "bytes": 9464,
+      "language": "Markdown",
+      "lines": 170,
+      "path": "backend/guide/README.md",
+      "sha256": "b9afe5ac86ff59c1e88c24377214d9ec1181983e0562c9cbeee7eeed3a897611"
+    },
+    {
+      "bytes": 24709,
+      "language": "Python",
+      "lines": 631,
+      "path": "backend/guide/discovery.py",
+      "sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4"
+    },
+    {
+      "bytes": 12083,
+      "language": "Python",
+      "lines": 342,
+      "path": "backend/guide/grammar.py",
+      "sha256": "e67c187845e9fb21f402b26e1e84dcbdb37c8a5af6892bc3efbf5a125e0c52cb"
+    },
+    {
+      "bytes": 8828,
+      "language": "JSON",
+      "lines": 228,
+      "path": "backend/guide/guide_actions.json",
+      "sha256": "620eb3cc3f4d9fbc352f2ee1f026757e1292590694cbf235408aa2c7199f0cb6"
+    },
+    {
+      "bytes": 18160,
+      "language": "Python",
+      "lines": 501,
+      "path": "backend/guide/match.py",
+      "sha256": "f11620fb43a928c71a54f7b918cc4b1ce5f2016cc1f13a854773e5525144723d"
+    },
+    {
+      "bytes": 25063,
+      "language": "Python",
+      "lines": 601,
+      "path": "backend/guide/trigger.py",
+      "sha256": "15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3"
+    },
+    {
+      "bytes": 2079,
+      "language": "Python",
+      "lines": 70,
+      "path": "backend/health.py",
+      "sha256": "4d9f10cdd04f9b64f9a95e9a052cdcfdee5228e4537da00cf0eb9763d213b976"
+    },
+    {
+      "bytes": 27959,
+      "language": "Python",
+      "lines": 683,
+      "path": "backend/mcp_router.py",
+      "sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052"
+    },
+    {
+      "bytes": 722,
+      "language": "Text",
+      "lines": 16,
+      "path": "backend/requirements.txt",
+      "sha256": "f570d2e3d85aac7f37f68e1c95582d555ef8085ab7d51d6bb9349804d06b52e9"
+    },
+    {
+      "bytes": 20432,
+      "language": "Markdown",
+      "lines": 302,
+      "path": "frontend/INFORME.md",
+      "sha256": "f09f57912fa766d4403922fd41e60a0cd166e35921438897419861f01be50126"
+    },
+    {
+      "bytes": 8217,
+      "language": "HTML",
+      "lines": 234,
+      "path": "frontend/index.html",
+      "sha256": "5cb491ce3d67d87de3157cb1e4ff46b26a22d0ed3a47ddd2762320b3875e88f0"
+    },
+    {
+      "bytes": 13125,
+      "language": "JavaScript",
+      "lines": 333,
+      "path": "frontend/shared/api.js",
+      "sha256": "ba45c7b5f24cb647fac24db69861f14223554ebc6c2003c225debcef68767de2"
+    },
+    {
+      "bytes": 14584,
+      "language": "CSS",
+      "lines": 154,
+      "path": "frontend/shared/app.css",
+      "sha256": "daa8c5e3e944cd48910632750caf57ba1649457c7129f25bb697f55912bd222a"
+    },
+    {
+      "bytes": 4561,
+      "language": "CSS",
+      "lines": 40,
+      "path": "frontend/shared/theme.css",
+      "sha256": "dcd4b1ebaa68333082e7b6069c584a8a5087d22edcc598dc8162b34f718f628f"
+    },
+    {
+      "bytes": 4665,
+      "language": "JavaScript",
+      "lines": 154,
+      "path": "frontend/shared/ws.js",
+      "sha256": "2594083ce695130cf01ec0776def6209ad869c904d48a5be124da7d4370823d7"
+    },
+    {
+      "bytes": 13394,
+      "language": "HTML",
+      "lines": 330,
+      "path": "frontend/v1_canvas.html",
+      "sha256": "c17b80c92262a0b30bd0dcd97f7b9c406ff1c292ae3266ab64dbd92f6b7cbd75"
+    },
+    {
+      "bytes": 16748,
+      "language": "HTML",
+      "lines": 420,
+      "path": "frontend/v2_progress.html",
+      "sha256": "60dbf89afe0d8c0868fd48c7e75bfbe71ab606ac96dae5993b292b71ceb30633"
+    },
+    {
+      "bytes": 6205,
+      "language": "HTML",
+      "lines": 178,
+      "path": "frontend/v3_architecture.html",
+      "sha256": "5439b353f6a9167955fa2a37c545af477078429e219fcf73493904efdda403a6"
+    },
+    {
+      "bytes": 11859,
+      "language": "HTML",
+      "lines": 309,
+      "path": "frontend/v4_audit.html",
+      "sha256": "bd3bcd677ff67b3b50a7963c3dec9c05a6b46dc13c0b8fb5e45210e1214d7a45"
+    },
+    {
+      "bytes": 28579,
+      "language": "HTML",
+      "lines": 516,
+      "path": "frontend/w1_mirror.html",
+      "sha256": "bebe926b46b3d3690ac13d23d69680bb67729ed7d381f869c5b57d2d85abbb53"
+    },
+    {
+      "bytes": 40459,
+      "language": "HTML",
+      "lines": 742,
+      "path": "frontend/w2_diff_editor.html",
+      "sha256": "11680492b56d0278373a299208f098a543b3ce0b7a6f6c67a2026703384bed7a"
+    },
+    {
+      "bytes": 25785,
+      "language": "HTML",
+      "lines": 440,
+      "path": "frontend/w3_deploy.html",
+      "sha256": "a512ff0f8dce9a8e3ad1480cabaa6ab49719d917e769c08c8269ff26db7d002f"
+    },
+    {
+      "bytes": 10786,
+      "language": "JavaScript",
+      "lines": 280,
+      "path": "frontend/w_mcp.js",
+      "sha256": "73313a547445eb1393b89ae033d60792e78456b8b59471e967224c36fd2de041"
+    }
+  ],
+  "generated_at": "2026-11-16T08:00:06Z",
+  "root": "/run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/audit/canvas_20261116/xray_repo/canvas",
+  "schema": "xray-inventory/1"
+}

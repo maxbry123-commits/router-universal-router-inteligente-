@@ -1,0 +1,233 @@
+{
+  "commit_sha": "bb3559e66f9ca160031b9da3c5b65aecb807fa45",
+  "gaps": [],
+  "generated_at": "2026-11-16T08:00:07Z",
+  "schema": "xray-gaps/1",
+  "verifications": [
+    {
+      "doc": "TAREA_01_FUENTE_DE_LA_VERDAD.md",
+      "doc_line": 150,
+      "estado": "PRESERVED",
+      "evidencia": "backend/api.py:1 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "id": "CLM-0001",
+      "notas": "| 1 FUNC = 1 FICHERO | Sin monolitos. `api.py` solo enruta; la lógica va en su módulo. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/INFORME.md",
+      "doc_line": 157,
+      "estado": "PRESERVED",
+      "evidencia": "backend/requirements.txt:1 sha256:f570d2e3d85aac7f37f68e1c95582d555ef8085ab7d51d6bb9349804d06b52e9",
+      "id": "CLM-0002",
+      "notas": "| G3 | FastAPI/uvicorn/pydantic/websockets no están en el intérprete del sistema | `python3 -m uvicorn` → `No module named uvicorn`; instalar está **prohibido** | ✅ Resuelto con ruta alternativa **sin instalar**: se validó con el intérprete `/workspace/.venv-canvas/bin/python` que ya existía (creado por otro nodo). El entregable declara sus dependencias en `requirements.txt` |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 23,
+      "estado": "PRESERVED",
+      "evidencia": "backend/api.py:1 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "id": "CLM-0003",
+      "notas": "| **backend/api.py** | módulo de entrada: enruta REST, WebSocket, MCP y frontend. No contiene lógica de negocio. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 24,
+      "estado": "PRESERVED",
+      "evidencia": "backend/health.py:1 sha256:4d9f10cdd04f9b64f9a95e9a052cdcfdee5228e4537da00cf0eb9763d213b976",
+      "id": "CLM-0004",
+      "notas": "| **backend/health.py** | módulo agregador: estado real de los 6 adapters con contadores OK / OMITIDO / ERROR. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 25,
+      "estado": "PRESERVED",
+      "evidencia": "backend/canvas_engine.py:1 sha256:8dc1c3dd648ee7310d553064d1a3fa7bdbc3e6eafaf234c396c4414f052cc373",
+      "id": "CLM-0005",
+      "notas": "| **backend/canvas_engine.py** | módulo orquestador: carga aislada de adapters, render de diagramas y motions, conversión entre herramientas. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 26,
+      "estado": "PRESERVED",
+      "evidencia": "backend/audio_engine.py:1 sha256:c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "id": "CLM-0006",
+      "notas": "| **backend/audio_engine.py** | módulo de voz: resumen de ≤150 palabras, traducción opcional, TTS con edge‑tts y respaldo en pyttsx3, caché por hash. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 27,
+      "estado": "PRESERVED",
+      "evidencia": "backend/mcp_router.py:1 sha256:8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "id": "CLM-0007",
+      "notas": "| **backend/mcp_router.py** | módulo MCP: protocolo JSON‑RPC sobre FastAPI, allowlist por ventana, rechazo de credenciales, límite de payload. Sustituye al servidor http.server retirado. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 49,
+      "estado": "PRESERVED",
+      "evidencia": "backend/adapters/excalidraw.py:1 sha256:83b755c16dac84601af573b645d280818527f69620fd703c39ef1f8d28583d0f",
+      "id": "CLM-0008",
+      "notas": "| **backend/adapters/excalidraw.py** | módulo adaptador: convierte elementos Excalidraw en un diagrama contra la API de Excalidraw. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 50,
+      "estado": "PRESERVED",
+      "evidencia": "backend/adapters/mermaid.py:1 sha256:629fd60c196cf4db078095d4bf9666eab199227a6aa758c51cb209bb55812b75",
+      "id": "CLM-0009",
+      "notas": "| **backend/adapters/mermaid.py** | módulo adaptador: renderiza código Mermaid a SVG con el comando mmdc. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 51,
+      "estado": "PRESERVED",
+      "evidencia": "backend/adapters/d2.py:1 sha256:bc49d9ad986d8d6bde979db5cb7b06dc62e3bb45a99aae6927fd3c2f24a3227e",
+      "id": "CLM-0010",
+      "notas": "| **backend/adapters/d2.py** | módulo adaptador: renderiza código D2 a SVG con el comando d2. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 52,
+      "estado": "PRESERVED",
+      "evidencia": "backend/adapters/hyperframes.py:1 sha256:1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b",
+      "id": "CLM-0011",
+      "notas": "| **backend/adapters/hyperframes.py** | módulo adaptador: genera motion HTML a partir de una especificación. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 53,
+      "estado": "PRESERVED",
+      "evidencia": "backend/adapters/remotion.py:1 sha256:62f1870324e07cd35061692317b3efa73ee50d7b69b6464b78a3f928e1aa3ba1",
+      "id": "CLM-0012",
+      "notas": "| **backend/adapters/remotion.py** | módulo adaptador: genera una composición Remotion desde props. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 54,
+      "estado": "PRESERVED",
+      "evidencia": "backend/adapters/rive.py:1 sha256:6a1e9f392cb3ce8a3270cff92371be456dbae03a15edc952a351cc9fe539cdc0",
+      "id": "CLM-0013",
+      "notas": "| **backend/adapters/rive.py** | módulo adaptador: genera una animación Rive desde un fichero y una máquina de estados. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 62,
+      "estado": "PRESERVED",
+      "evidencia": "backend/deploy/deploy_engine.py:1 sha256:bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "id": "CLM-0014",
+      "notas": "| **backend/deploy/deploy_engine.py** | módulo motor de deploy: 10 checks fail‑closed, dry‑run por defecto, expected HEAD, push transaccional de un solo commit, read‑back y manifiesto. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 63,
+      "estado": "PRESERVED",
+      "evidencia": "backend/deploy/mcp_server.py:1 sha256:5bda096cc8ca90dfa7ff613dc3ef45c3e266558234fff04376320de33106b3b3",
+      "id": "CLM-0015",
+      "notas": "| **backend/deploy/mcp_server.py** | módulo shim: reexporta la API del router MCP y avisa si alguien intenta arrancarlo como servidor standalone ya retirado. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 114,
+      "estado": "PRESERVED",
+      "evidencia": "backend/guide/grammar.py:1 sha256:e67c187845e9fb21f402b26e1e84dcbdb37c8a5af6892bc3efbf5a125e0c52cb",
+      "id": "CLM-0016",
+      "notas": "| **backend/guide/grammar.py** | módulo gramatical: descompone una frase de acción en verbo, sujeto, adjetivo y estado. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 115,
+      "estado": "PRESERVED",
+      "evidencia": "backend/guide/match.py:1 sha256:f11620fb43a928c71a54f7b918cc4b1ce5f2016cc1f13a854773e5525144723d",
+      "id": "CLM-0017",
+      "notas": "| **backend/guide/match.py** | módulo de emparejamiento: cruza la acción con el catálogo, devuelve veredicto y parche quirúrgico por líneas. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 116,
+      "estado": "PRESERVED",
+      "evidencia": "backend/guide/trigger.py:1 sha256:15feb60b94b4b0e1619d4923eac6ec0774d48f9f3a04b4b0aa9ca2860327b7f3",
+      "id": "CLM-0018",
+      "notas": "| **backend/guide/trigger.py** | módulo disparador: construye y valida el contrato de ejecución por pasos. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 117,
+      "estado": "PRESERVED",
+      "evidencia": "backend/guide/discovery.py:1 sha256:143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "id": "CLM-0019",
+      "notas": "| **backend/guide/discovery.py** | módulo de descubrimiento: busca candidatos en las fuentes configuradas con caché y presupuesto. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 127,
+      "estado": "PRESERVED",
+      "evidencia": "frontend/shared/api.js:1 sha256:ba45c7b5f24cb647fac24db69861f14223554ebc6c2003c225debcef68767de2",
+      "id": "CLM-0020",
+      "notas": "| **frontend/shared/api.js** | módulo de cliente: base de API same‑origin, fetch real, tema de 7 apariencias, utilidades de estado. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 128,
+      "estado": "PRESERVED",
+      "evidencia": "frontend/shared/ws.js:1 sha256:2594083ce695130cf01ec0776def6209ad869c904d48a5be124da7d4370823d7",
+      "id": "CLM-0021",
+      "notas": "| **frontend/shared/ws.js** | módulo de WebSocket: suscripción al progreso con reconexión y origen validado. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 129,
+      "estado": "PRESERVED",
+      "evidencia": "frontend/shared/theme.css:1 sha256:dcd4b1ebaa68333082e7b6069c584a8a5087d22edcc598dc8162b34f718f628f",
+      "id": "CLM-0022",
+      "notas": "| **frontend/shared/theme.css** | módulo de estilos: los 7 temas de la ley de diseño. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 130,
+      "estado": "PRESERVED",
+      "evidencia": "frontend/shared/app.css:1 sha256:daa8c5e3e944cd48910632750caf57ba1649457c7129f25bb697f55912bd222a",
+      "id": "CLM-0023",
+      "notas": "| **frontend/shared/app.css** | módulo de estilos: geometría, tarjetas y estados demostrables. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/README.md",
+      "doc_line": 131,
+      "estado": "PRESERVED",
+      "evidencia": "frontend/w_mcp.js:1 sha256:73313a547445eb1393b89ae033d60792e78456b8b59471e967224c36fd2de041",
+      "id": "CLM-0024",
+      "notas": "| **frontend/w_mcp.js** | módulo cliente MCP del navegador: initialize, listado de herramientas y llamada, con allowlist por ventana. |",
+      "veredicto": "CONFIRMADO"
+    },
+    {
+      "doc": "backend/guide/README.md",
+      "doc_line": 144,
+      "estado": "PRESERVED",
+      "evidencia": "backend/guide/discovery.py:1 sha256:143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "id": "CLM-0025",
+      "notas": "| variable GUIDE_REPO_ROOT | auto (ancestros del módulo) | Raíz del repo; el motor de búsqueda y su catálogo de fuentes se resuelven desde backend/guide/discovery.py |",
+      "veredicto": "CONFIRMADO"
+    }
+  ]
+}
