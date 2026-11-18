@@ -21,11 +21,12 @@ RULES = {
 DEFAULT_MODE = "code_generate"
 
 def detect_mode(prompt: str) -> str:
-    p = prompt.lower()
+    """Devuelve el modo detectado. Si no hay coincidencia, DEFAULT_MODE."""
+    p = (prompt or "").lower()
     scores = {m: 0 for m in RULES}
     for m, pats in RULES.items():
         for pat in pats:
-            if re.search(pat, p, re.IGNORECASE):  # <-- FIX: IGNORECASE
+            if re.search(pat, p, re.IGNORECASE):
                 scores[m] += 1
     best = max(scores, key=scores.get)
     return best if scores[best] > 0 else DEFAULT_MODE

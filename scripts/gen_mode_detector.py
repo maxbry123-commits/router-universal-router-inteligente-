@@ -1,12 +1,6 @@
-"""gen_mode_detector.py — Genera router_llm_hf/mode_detector.py con reglas
-deterministas para los 12 modos. Sin ML, sin LLM.
-
-NOTA DEL DIRECTOR (2026-11-16): el CODE de abajo es la versión YA CORREGIDA
-que adjunta el owner (re.IGNORECASE). El bloque original del DAG traía
-`re.search(pat, p)`, que dejaba muertos los literales en MAYÚSCULAS
-(HTML, CSS, React, API, README, 3D, Blender, Three.js) porque detect_mode()
-pasa el prompt a minúsculas. No se sustituye la lógica: se usa el fichero
-corregido tal cual lo entrega el owner.
+"""gen_mode_detector.py — Escribe router_llm_hf/mode_detector.py con
+re.IGNORECASE para que los patrones en mayúsculas (HTML, CSS, React, API,
+README, 3D, Blender, Three.js) coincidan aunque el prompt esté en minúsculas.
 """
 import os
 
@@ -38,11 +32,12 @@ RULES = {
 DEFAULT_MODE = "code_generate"
 
 def detect_mode(prompt: str) -> str:
-    p = prompt.lower()
+    """Devuelve el modo detectado. Si no hay coincidencia, DEFAULT_MODE."""
+    p = (prompt or "").lower()
     scores = {m: 0 for m in RULES}
     for m, pats in RULES.items():
         for pat in pats:
-            if re.search(pat, p, re.IGNORECASE):  # <-- FIX: IGNORECASE
+            if re.search(pat, p, re.IGNORECASE):
                 scores[m] += 1
     best = max(scores, key=scores.get)
     return best if scores[best] > 0 else DEFAULT_MODE
@@ -53,6 +48,7 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(CODE)
     print(f"mode_detector.py escrito en {OUT}")
+
 
 if __name__ == "__main__":
     main()
