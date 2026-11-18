@@ -85,7 +85,7 @@ def tree_paths(repo, kind="models"):
     """Arbol del repo de HF en UNA llamada. (El HEAD contra el CDN xet falla
     de forma intermitente: daba 0 en 3 de 12 ficheros que existen. El arbol de
     la API es la fuente fiable.)"""
-    prefix = "datasets/" if kind == "datasets" else ""
+    prefix = {"models": "models/", "datasets": "datasets/"}.get(kind, "")
     code, body, _ = http("https://huggingface.co/api/{}{}/tree/main?recursive=true".format(prefix, repo))
     if code != 200:
         return set()
@@ -202,17 +202,19 @@ def main():
 
     code_rows = [r for r in rows if r["family"] == "codigo"]
     svc_rows = [r for r in rows if r["family"] == "servicio"]
+    adapters_tree = tree_paths(ADAPTERS_REPO, kind="models")
+    n_adapters = len([p for p in adapters_tree if p.endswith("/adapter_config.json")])
     summary = {
         "generado": "2026-11-18",
         "total_simulaciones": len(rows),
         "codigo": {"total": len(code_rows), "pass": sum(1 for r in code_rows if r["verdict"] == "PASS")},
         "servicio": {"total": len(svc_rows), "pass": sum(1 for r in svc_rows if r["verdict"] == "PASS")},
-        "adaptadores_en_hf": 16,
+        "adaptadores_en_hf": n_adapters,
         "detalle": rows,
     }
-    with open(os.path.join(OUT_DIR, "sim_16_modos.json"), "w", encoding="utf-8") as fh:
+    with open(os.path.join(OUT_DIR, "sim_18_modos.json"), "w", encoding="utf-8") as fh:
         json.dump(summary, fh, indent=2, ensure_ascii=False)
-    with open(os.path.join(OUT_DIR, "sim_16_modos.json"), "rb") as fh:
+    with open(os.path.join(OUT_DIR, "sim_18_modos.json"), "rb") as fh:
         print("JSON sha256: {}".format(hashlib.sha256(fh.read()).hexdigest()))
 
     lines = ["| # | Familia | Modo | Detectado | Adapter | Dataset | LoRA | Destino | Veredicto |",
@@ -228,7 +230,7 @@ def main():
             i, r["family"], r["mode"], det, ad, ds_txt, lo_txt,
             r.get("destino", "-"), r["verdict"]))
     md = "\n".join(lines) + "\n"
-    with open(os.path.join(OUT_DIR, "sim_16_modos.md"), "w", encoding="utf-8") as fh:
+    with open(os.path.join(OUT_DIR, "sim_18_modos.md"), "w", encoding="utf-8") as fh:
         fh.write(md)
     print(md)
     print("SIM_CODIGO {}/{} | SIM_SERVICIO {}/{}".format(

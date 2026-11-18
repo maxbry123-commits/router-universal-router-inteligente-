@@ -5,9 +5,9 @@
 | 3 | codigo | code_review | code_review | OK | OK | OK | swe-code-s2 | PASS |
 | 4 | codigo | code_generate | code_generate | OK | OK | OK | swe-code-s1 | PASS |
 | 5 | codigo | architecture | architecture | OK | OK | OK | swe-code-s3 | PASS |
-| 6 | codigo | reasoning | reasoning | n/a | n/a | n/a | - | SIN ADAPTER |
+| 6 | codigo | reasoning | reasoning | OK | OK | n/a | swe-code-s1 | PASS |
 | 7 | codigo | tool_call | tool_call | OK | OK | OK | proveedor externo (NVIDIA/Groq) | PASS |
-| 8 | codigo | planning | planning | n/a | n/a | n/a | - | SIN ADAPTER |
+| 8 | codigo | planning | planning | OK | OK | n/a | swe-code-s1 | PASS |
 | 9 | codigo | documentation | documentation | OK | OK | n/a | swe-code-s1 | PASS |
 | 10 | codigo | frontend | frontend | OK | OK | OK | swe-code-s1 | PASS |
 | 11 | codigo | 3d_code | 3d_code | OK | OK | OK | swe-code-s3 | PASS |

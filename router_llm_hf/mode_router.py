@@ -10,7 +10,9 @@ de 12), asi que route() pedia adapters inexistentes y devolvia base_model=None.
 Solucion: una sola lista de modos validos (12 del detector + 4 de servicio + los
 nombres de carpeta de HF) y un alias explicito detector -> carpeta del adapter.
 Los modos sin equivalente (reasoning, planning) se declaran None: NO se inventa
-adapter.
+adapter. 2026-11-18: ambos tienen ya adapter real en HF (reasoning: IFM/Code-Reasoning
+code-thinking-hard, planning: multimodal-reasoning-lab/Robot-Planning), asi que el alias
+apunta a su propia carpeta.
 """
 import json, os, logging, urllib.request
 from .mode_detector import detect_mode, RULES, SERVICE_MODE_NAMES
@@ -30,8 +32,8 @@ HF_ADAPTER_ALIAS = {
     "code_refactor": "verification_refactor",
     "verification": "verification_refactor",
     "tool_call": "agentic_tool",
-    "reasoning": None,
-    "planning": None,
+    "reasoning": "reasoning",
+    "planning": "planning",
     # modos de servicio: adapters propios en HF
     "swe_code": "swe_code",
     "swe_free": "swe_free",

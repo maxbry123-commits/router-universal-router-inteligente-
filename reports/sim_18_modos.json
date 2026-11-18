@@ -3,13 +3,13 @@
   "total_simulaciones": 16,
   "codigo": {
     "total": 12,
-    "pass": 10
+    "pass": 12
   },
   "servicio": {
     "total": 4,
     "pass": 4
   },
-  "adaptadores_en_hf": 16,
+  "adaptadores_en_hf": 18,
   "detalle": [
     {
       "family": "codigo",
@@ -122,11 +122,20 @@
       "prompt": "razona por que falla el pool de conexiones",
       "detected": "reasoning",
       "detect_ok": true,
-      "adapter_folder": null,
-      "adapter_http": null,
-      "adapter_ok": false,
-      "verdict": "SIN ADAPTER",
-      "gap": "sin equivalente explicito en el repo de adapters (declarado, no inventado)"
+      "adapter_folder": "reasoning",
+      "adapter_http": 200,
+      "adapter_ok": true,
+      "base_model": "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF",
+      "lora": null,
+      "dataset_source": "IFM/Code-Reasoning",
+      "dataset_combined": "COMAND-CENTER-1/swe-code-modes/reasoning/dataset/combined.jsonl",
+      "dataset_rows": 576,
+      "dataset_http": 200,
+      "dataset_path_rel": "reasoning/dataset/combined.jsonl",
+      "lora_present": null,
+      "destino": "swe-code-s1",
+      "local_space": "swe-code-s1",
+      "verdict": "PASS"
     },
     {
       "family": "codigo",
@@ -155,11 +164,20 @@
       "prompt": "plan de fases para migrar el router",
       "detected": "planning",
       "detect_ok": true,
-      "adapter_folder": null,
-      "adapter_http": null,
-      "adapter_ok": false,
-      "verdict": "SIN ADAPTER",
-      "gap": "sin equivalente explicito en el repo de adapters (declarado, no inventado)"
+      "adapter_folder": "planning",
+      "adapter_http": 200,
+      "adapter_ok": true,
+      "base_model": "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF",
+      "lora": null,
+      "dataset_source": "multimodal-reasoning-lab/Robot-Planning",
+      "dataset_combined": "COMAND-CENTER-1/swe-code-modes/planning/dataset/combined.jsonl",
+      "dataset_rows": 1500,
+      "dataset_http": 200,
+      "dataset_path_rel": "planning/dataset/combined.jsonl",
+      "lora_present": null,
+      "destino": "swe-code-s1",
+      "local_space": "swe-code-s1",
+      "verdict": "PASS"
     },
     {
       "family": "codigo",
