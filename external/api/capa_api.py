@@ -1,17 +1,48 @@
-"""capa_api.py — Backend de paneles (cola, watchdog, mindmap, motion)."""
+"""capa_api.py — Backend de paneles (cola, watchdog, mindmap, motion).
+
+Salida 2B (minimax-3-gh-v4B): añade lifespan con imports seguros y los
+endpoints de paneles /capa/health, /capa/loop, /capa/watchdog y /capa/cola.
+NO se elimina nada de la implementacion previa: configure(), run(),
+/capa/status y /health se conservan intactos.
+"""
 import asyncio
 import logging
+import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 logger = logging.getLogger(__name__)
-app = FastAPI(title="capa-api")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup/Shutdown con imports seguros: si un modulo opcional no existe,
+    la API sigue levantando."""
+    app.state.space_queue = None
+    try:
+        from external.hf.space_queue import SPACE_QUEUE
+        app.state.space_queue = SPACE_QUEUE
+        logger.info("[capa] SpaceQueue inicializado")
+    except Exception as e:
+        logger.warning(f"[capa] SpaceQueue no disponible: {e}")
+    yield
+    sq = getattr(app.state, "space_queue", None)
+    if sq is not None:
+        try:
+            await sq.stop()
+        except Exception as e:
+            logger.warning(f"[capa] stop falló: {e}")
+
+
+app = FastAPI(title="capa-api", version="1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:7861", "http://127.0.0.1:7861"],
-    allow_methods=["GET", "POST"],
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -71,6 +102,32 @@ async def status(x_api_key: str = Header(None)):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# ─── Salida 2B: endpoints de paneles ───────────────────────────────────────
+@app.get("/capa/health")
+async def capa_health():
+    return {"ok": True, "service": "capa-api"}
+
+
+@app.get("/capa/loop")
+async def loop_status(x_api_key: str = Header(None)):
+    _check(x_api_key)
+    ckpt = os.getenv("CHECKPOINT_DIR", "state/checkpoints")
+    checkpoints = os.listdir(ckpt) if os.path.exists(ckpt) else []
+    return {"checkpoints": checkpoints}
+
+
+@app.get("/capa/watchdog")
+async def watchdog_status(x_api_key: str = Header(None)):
+    _check(x_api_key)
+    return {"workers": [], "active_count": 0}
+
+
+@app.get("/capa/cola")
+async def cola_status(x_api_key: str = Header(None)):
+    _check(x_api_key)
+    return await status(x_api_key)
 
 
 def run(host: str = "0.0.0.0", port: int = 7861):

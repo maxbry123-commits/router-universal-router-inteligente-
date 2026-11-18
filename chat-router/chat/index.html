@@ -274,5 +274,17 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 })();
 </script>
+<script type="module">
+// ─── Salida 2B: persistencia de API Key en sessionStorage ───
+function _persistApiKey() {
+    const input = document.getElementById('api-key-input');
+    if (!input) { console.warn('[initApp] api-key-input no encontrado'); return; }
+    const saved = sessionStorage.getItem('api_key');
+    if (saved) input.value = saved;
+    input.addEventListener('change', e => sessionStorage.setItem('api_key', e.target.value));
+    input.addEventListener('input', e => sessionStorage.setItem('api_key', e.target.value));
+}
+document.addEventListener('DOMContentLoaded', _persistApiKey);
+</script>
 </body>
 </html>
