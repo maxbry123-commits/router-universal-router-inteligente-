@@ -2,6 +2,22 @@
 import json, os, logging, urllib.request
 from .mode_detector import detect_mode
 
+VALID_MODES = ['python', 'backend', 'architecture', 'agentic_tool']
+_ADAPTER_REPO = "COMAND-CENTER-1/swe-code-adapters"
+
+def _verify_adapter(mode: str) -> dict:
+    """Verifica adapter_config.json en HF. Devuelve cfg o {'error': ...}."""
+    import json, urllib.request
+    url = f"https://huggingface.co/{_ADAPTER_REPO}/resolve/main/{mode}/adapter_config.json"
+    try:
+        with urllib.request.urlopen(url, timeout=8) as r:
+            if r.status != 200:
+                return {"error": f"http_{r.status}"}
+            return json.loads(r.read())
+    except Exception as e:
+        return {"error": f"{type(e).__name__}:{e}"}
+
+
 logger = logging.getLogger(__name__)
 REGISTRY_PATH = os.path.join(os.path.dirname(__file__), "SATELITE_CENTRAL_CONECCION.json")
 HF_ADAPTERS_BASE = "https://huggingface.co/COMAND-CENTER-1/swe-code-adapters/resolve/main"
@@ -35,18 +51,34 @@ def get_adapter_config(mode: str) -> dict:
 
 
 def route(payload: dict) -> dict:
-    """Detecta el modo (si no viene) y devuelve el plan de enrutamiento."""
+    try:
+        return _route_impl(payload)
+    except Exception as e:
+        return {'error': str(e), 'mode': payload.get('mode')}
+
+def _route_impl(payload: dict) -> dict:
+    from .mode_detector import detect_mode
     prompt = ""
     for m in payload.get("messages", []):
         if m.get("role") == "user":
-            prompt = m.get("content", "")
-            break
+            prompt = m.get("content", ""); break
     mode = payload.get("mode") or detect_mode(prompt)
-    adapter = get_adapter_config(mode)
-    return {
-        "mode": mode,
-        "base_model": adapter.get("base_model"),
-        "lora": adapter.get("lora"),
-        "dataset": adapter.get("dataset"),
-        "adapter_config": adapter,
-    }
+    if mode not in VALID_MODES:
+        return {"mode": mode, "error": f"invalid_mode, valid={VALID_MODES}"}
+    # Re-integrado (MiniMax 3, riesgo 4 del bloque): _ADAPTER_CACHE evita pedir
+    # el adapter a HF en cada request; el shape cacheado es adapter_config.json.
+    if mode in _ADAPTER_CACHE:
+        adapter = _ADAPTER_CACHE[mode]
+    else:
+        adapter = _verify_adapter(mode)
+        _ADAPTER_CACHE[mode] = {} if adapter.get("error") else adapter
+    if adapter.get("error"):
+        return {"mode": mode, "adapter_config": {},
+                "dataset": None, "error": adapter["error"]}
+    if not adapter:
+        return {"mode": mode, "adapter_config": {},
+                "dataset": None, "error": "adapter_not_found"}
+    return {"mode": mode, "adapter_config": adapter,
+            "dataset": adapter.get("dataset") or adapter.get("dataset_combined"),
+            "base_model": adapter.get("base_model") or adapter.get("base_model_name_or_path"),
+            "lora": adapter.get("lora")}

@@ -45,6 +45,10 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app):
+    from external.core.env_config import get_env
+    _c = get_env()
+    if not _c.ROUTER_API_KEY:
+        raise RuntimeError('ROUTER_API_KEY ausente')
     """Startup/Shutdown: inicializa y cierra el pool MCP."""
     try:
         from external.core.mcp_pool import get_pool
@@ -333,3 +337,18 @@ async def loop_error(request: Request):
     if task_id in _LOOP_STATE:
         _LOOP_STATE[task_id]["status"] = "error"
     return {"ok": True, "logged": True}
+
+
+@app.get("/v1/loop/resume")
+async def loop_resume(taskId: str):
+    import json
+    from router_llm_hf.checkpoint_manager import CheckpointManager
+    cm = CheckpointManager()
+    try:
+        if taskId not in cm.list_checkpoints():
+            return {"ok": False, "reason": "not_found"}
+        state = json.loads(open(f"state/checkpoints/{taskId}.json").read())
+        return {"ok": True, "state": state,
+                "next_iteration": state.get("iteration", 0)}
+    except Exception as e:
+        return {"ok": False, "error": f"{type(e).__name__}:{e}"}

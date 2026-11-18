@@ -66,3 +66,14 @@ class CheckpointManager:
             path.unlink()
             return True
         return False
+
+    def prune(self, max_age_days: int = 7) -> int:
+        import time
+        cutoff = time.time() - max_age_days * 86400
+        n = 0
+        for p in self.state_dir.glob("*.json"):
+            try:
+                if p.stat().st_mtime < cutoff:
+                    p.unlink(); n += 1
+            except Exception: pass
+        return n

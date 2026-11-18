@@ -50,7 +50,7 @@ async def call_harness(payload: dict, timeout: float = 60.0) -> dict:
             "Configura el secret en HF o desactiva harness_wiring."
         )
 
-    key = os.getenv("HARNESS_KEY") or os.getenv("ROUTER_API_KEY", "")
+    key = os.getenv("HARNESS_KEY", "")
     if not key:
         raise RuntimeError("HARNESS_KEY/ROUTER_API_KEY no configurada.")
 

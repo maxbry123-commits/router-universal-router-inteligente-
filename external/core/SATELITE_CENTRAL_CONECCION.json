@@ -3,27 +3,107 @@
   "canonical_source": "router_llm_hf/SATELITE_CENTRAL_CONECCION.json",
   "nota": "Subset rápido para lookup. Sin secretos: valores en banco/secrets.json del bucket HF.",
   "mcp": {
-    "github":     {"env": "GITHUB_TOKEN",      "auth": "bearer"},
-    "playwright": {"env": null,                "auth": "stdio"},
-    "context7":   {"env": "CONTEXT7_API_KEY",  "auth": "api_key"},
-    "supabase":   {"env": "SUPABASE_TOKEN",    "auth": "oauth_pending"},
-    "notion":     {"env": "NOTION_TOKEN",      "auth": "oauth_pending"},
-    "stripe":     {"env": "STRIPE_TOKEN",      "auth": "oauth_pending"},
-    "filesystem": {"env": null,                "auth": "stdio"},
-    "sentry":     {"env": "SENTRY_TOKEN",      "auth": "oauth_pending"},
-    "linear":     {"env": "LINEAR_TOKEN",      "auth": "oauth_pending"},
-    "firecrawl":  {"env": "FIRECRAWL_API_KEY", "auth": "api_key"}
+    "github": {
+      "env": "GITHUB_TOKEN",
+      "auth": "bearer"
+    },
+    "playwright": {
+      "env": null,
+      "auth": "stdio"
+    },
+    "context7": {
+      "env": "CONTEXT7_API_KEY",
+      "auth": "api_key"
+    },
+    "supabase": {
+      "env": "SUPABASE_TOKEN",
+      "auth": "oauth_pending"
+    },
+    "notion": {
+      "env": "NOTION_TOKEN",
+      "auth": "oauth_pending"
+    },
+    "stripe": {
+      "env": "STRIPE_TOKEN",
+      "auth": "oauth_pending"
+    },
+    "filesystem": {
+      "env": null,
+      "auth": "stdio"
+    },
+    "sentry": {
+      "env": "SENTRY_TOKEN",
+      "auth": "oauth_pending"
+    },
+    "linear": {
+      "env": "LINEAR_TOKEN",
+      "auth": "oauth_pending"
+    },
+    "firecrawl": {
+      "env": "FIRECRAWL_API_KEY",
+      "auth": "api_key"
+    }
   },
   "http": {
-    "router_health":    {"path": "/health",                  "method": "GET"},
-    "control_status":   {"path": "/control-plane/status",    "method": "GET"},
-    "chat_completions": {"path": "/v1/chat/completions",     "method": "POST"},
-    "nvidia_direct":    {"path": "/v1/nvidia",               "method": "POST"},
-    "groq_direct":      {"path": "/v1/groq",                 "method": "POST"},
-    "swe_free":         {"path": "/v1/swe-free",             "method": "POST"},
-    "team_qwe":         {"path": "/v1/team-qwe",             "method": "POST"},
-    "loop_start":       {"path": "/v1/loop/start",           "method": "POST"},
-    "frontend_chat":    {"path": "/chat/",                   "method": "GET"},
-    "billing_status":   {"path": "/billing/status",          "method": "GET"}
+    "router_health": {
+      "path": "/health",
+      "method": "GET"
+    },
+    "control_status": {
+      "path": "/control-plane/status",
+      "method": "GET"
+    },
+    "chat_completions": {
+      "path": "/v1/chat/completions",
+      "method": "POST"
+    },
+    "nvidia_direct": {
+      "path": "/v1/nvidia",
+      "method": "POST"
+    },
+    "groq_direct": {
+      "path": "/v1/groq",
+      "method": "POST"
+    },
+    "swe_free": {
+      "path": "/v1/swe-free",
+      "method": "POST"
+    },
+    "team_qwe": {
+      "path": "/v1/team-qwe",
+      "method": "POST"
+    },
+    "loop_start": {
+      "path": "/v1/loop/start",
+      "method": "POST"
+    },
+    "frontend_chat": {
+      "path": "/chat/",
+      "method": "GET"
+    },
+    "billing_status": {
+      "path": "/billing/status",
+      "method": "GET"
+    }
+  },
+  "tool_registry": {
+    "fs": [
+      "read_file",
+      "write_file",
+      "list_dir",
+      "grep"
+    ],
+    "shell": [
+      "run_shell"
+    ],
+    "verify": [
+      "run_tests",
+      "run_lint",
+      "run_types",
+      "py_compile",
+      "ast_parse",
+      "json_load",
+      "yaml_load"
+    ]
   }
 }

@@ -96,6 +96,7 @@ async def status(x_api_key: str = Header(None)):
         "handoff_total": handoff_total,
         "wall_lines": wall_lines,
         "uptime": "ok",
+        "healthy": __import__("external.core.health_check", fromlist=["probe_all"]).probe_all().get("ok", False),
     }
 
 

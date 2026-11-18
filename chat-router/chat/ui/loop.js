@@ -51,3 +51,13 @@ export async function runLoop(taskId) {
         sessionStorage.setItem(lockKey, 'false');
     }
 }
+
+
+export async function resumeLoop(taskId) {
+    try {
+        const r = await fetch(`/v1/loop/resume?taskId=${encodeURIComponent(taskId)}`);
+        if (!r.ok) return { ok: false };
+        const d = await r.json();
+        return d.ok ? { ok: true, next: d.next_iteration || 0 } : { ok: false };
+    } catch (_) { return { ok: false }; }
+}
