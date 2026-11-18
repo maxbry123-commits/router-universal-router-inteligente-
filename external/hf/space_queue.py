@@ -22,6 +22,7 @@ class SpaceQueue:
         self._running: Dict[str, SpaceTask] = {}
         self._skips_by_ram = 0
         self._lock = asyncio.Lock()
+        self._closed = False
 
     async def _current_ram_pct(self) -> float:
         try:
@@ -32,6 +33,8 @@ class SpaceQueue:
 
     async def enqueue(self, space_id: str, payload: Dict,
                       priority: int = 1, task_id: str = None) -> str:
+        if self._closed:
+            raise RuntimeError("SpaceQueue cerrada: no se admiten tareas nuevas")
         tid = task_id or str(uuid.uuid4())
         task = SpaceTask(priority=priority, task_id=tid,
                          space_id=space_id, payload=payload)
@@ -40,20 +43,20 @@ class SpaceQueue:
             self._queue.sort(key=lambda t: t.priority)
         return tid
 
-async def next_task(self) -> Optional[SpaceTask]:
-    async with self._lock:
-        ram = await self._current_ram_pct()
-        if ram >= self.MAX_RAM_PCT:
-            self._skips_by_ram += 1
-            logger.warning(f"RAM {ram:.1f}% >= {self.MAX_RAM_PCT}%: salto")
+    async def next_task(self) -> Optional[SpaceTask]:
+        async with self._lock:
+            ram = await self._current_ram_pct()
+            if ram >= self.MAX_RAM_PCT:
+                self._skips_by_ram += 1
+                logger.warning(f"RAM {ram:.1f}% >= {self.MAX_RAM_PCT}%: salto")
+                return None
+            self._queue.sort(key=lambda t: t.priority)
+            for idx, task in enumerate(self._queue):
+                if task.space_id not in self._running:
+                    del self._queue[idx]
+                    self._running[task.space_id] = task
+                    return task
             return None
-        self._queue.sort(key=lambda t: t.priority)
-        for idx, task in enumerate(self._queue):
-            if task.space_id not in self._running:
-                del self._queue[idx]
-                self._running[task.space_id] = task
-                return task
-        return None
 
     async def complete(self, task_id: str):
         async with self._lock:
@@ -61,6 +64,20 @@ async def next_task(self) -> Optional[SpaceTask]:
                 if task.task_id == task_id:
                     del self._running[sid]
                     break
+
+    async def stop(self) -> Dict:
+        """Cierra la cola de forma limpia: cancela lo pendiente y lo en curso.
+        Idempotente (llamarla dos veces no falla). Tras el cierre, enqueue()
+        falla cerrado con RuntimeError en vez de perder la tarea en silencio.
+        """
+        async with self._lock:
+            pending = len(self._queue)
+            running = len(self._running)
+            self._queue.clear()
+            self._running.clear()
+            self._closed = True
+        logger.info(f"[SpaceQueue] cerrada: {pending} pendientes, {running} en curso cancelados")
+        return {"cancelled_pending": pending, "cancelled_running": running}
 
     async def snapshot(self) -> Dict:
         async with self._lock:
