@@ -9,12 +9,20 @@ logger = logging.getLogger(__name__)
 
 class ProviderFallback:
     def __init__(self):
+        # El banco manda: si NVIDIA_KEYS/GROQ_KEYS no vienen del entorno, se hidratan
+        # descifrando el sello del repo con HF_VAULT_KEY (fail-open, nunca rompe).
+        try:
+            from external.core.bank_keys import hydrate as _hydrate_banco
+            self.banco = _hydrate_banco()
+        except Exception as _e:
+            self.banco = {"origen": "import fallido: {}".format(type(_e).__name__)}
         self.nvidia_keys = self._parse_keys(os.getenv("NVIDIA_KEYS", ""))
         self.groq_keys = self._parse_keys(os.getenv("GROQ_KEYS", ""))
         self.nvidia_idx = 0
         self.groq_idx = 0
         # Diagnostico operativo: cuantas claves hay y el ultimo error por proveedor (nunca valores)
-        self.diag = {"nvidia_keys": 0, "groq_keys": 0, "nvidia_error": None, "groq_error": None}
+        self.diag = {"nvidia_keys": 0, "groq_keys": 0, "nvidia_error": None, "groq_error": None,
+                     "banco_origen": (self.banco or {}).get("origen")}
         # 10 conexiones HTTP compartidas
         self.limits = httpx.Limits(max_connections=10, max_keepalive_connections=10)
         self.client = httpx.AsyncClient(limits=self.limits, timeout=60.0)
