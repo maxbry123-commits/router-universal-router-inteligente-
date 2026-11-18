@@ -26,6 +26,14 @@ from queue_manager import QueueManager
 from control_bridge import BRIDGE
 from router_llm_hf.harness_wiring import HarnessClient
 from external.core.provider_fallback import ProviderFallback
+# Control Plane cableado (Op2): los modos de servicio y su contrato, y el
+# detector. Antes el proxy NUNCA detectaba modo ni resolvia adapter.
+from router_llm_hf.service_routes import (
+    SERVICE_MODES,
+    service_mode_for_path,
+    local_target_for_mode,
+)
+from router_llm_hf.mode_detector import detect_mode, detect_service_route
 
 # --- MINIMAX 4: lifecycle ---
 try:
@@ -215,6 +223,7 @@ LOCAL_TIMEOUT_S = 75.0   # el Space puede estar dormido: despertar + cargar mode
 @app.post("/v1/swe")
 @app.post("/v1/swe-free")
 @app.post("/v1/team-qwe")
+@app.post("/v1/deployment")
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request, x_api_key: str = Header(None)):
     if x_api_key != ROUTER_API_KEY:
@@ -231,10 +240,41 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
     # Extraemos el modelo. Si el selector envia "nvidia:minimax...", lo limpiamos.
     raw_model = body.get("model", "auto")
     model_requested = raw_model.split(":")[-1] if ":" in raw_model else raw_model
+    model_auto = model_requested in ("auto", "", "default")
+
+    # --- RUTA DE SERVICIO (Op2) --------------------------------------------
+    # /v1/swe, /v1/swe-free, /v1/team-qwe y /v1/deployment dejan de ser el
+    # mismo handler generico: cada una tiene su modo y su destino.
+    route_path = request.url.path
+    service_mode = service_mode_for_path(route_path)
+    if service_mode and model_auto:
+        _target = local_target_for_mode(service_mode)
+        if _target:
+            model_requested = _target[1]
+
+    # --- CONTROL PLANE (Op2): deteccion de modo + adapter -------------------
+    prompt = ""
+    for _m in messages:
+        if _m.get("role") == "user":
+            prompt = _m.get("content") or ""
+            break
+    detected_mode = detect_service_route(prompt) or detect_mode(prompt)
+    adapter = {}
+    try:
+        from router_llm_hf.mode_router import get_adapter_config
+        adapter = get_adapter_config(detected_mode) or {}
+    except Exception as _e:
+        print(f"[CTRL] adapter no resoluble para {detected_mode}: {_e}")
 
     # 1. Ejecucion local: Space del Grupo 2 que sirve ese modelo.
     async def local_execution(msgs: list):
         space = LOCAL_SPACES.get(model_requested)
+        model_to_serve = model_requested
+        # Ruta de servicio: el Space del Grupo 2 lo decide el modo (Op2).
+        if not space and service_mode:
+            _target = local_target_for_mode(service_mode)
+            if _target:
+                space, model_to_serve = _target
         if not space:
             raise NotImplementedError(f"modelo no local: {model_requested}")
         url = f"https://comand-center-1-{space}.hf.space/v1/chat/completions"
@@ -242,7 +282,7 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
         try:
             r = await provider_fb.client.post(
                 url, headers=headers,
-                json={"model": model_requested, "messages": msgs},
+                json={"model": model_to_serve, "messages": msgs},
                 timeout=LOCAL_TIMEOUT_S,
             )
         except Exception as e:
@@ -260,7 +300,13 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
         )
         if fallback_result.get("provider") == "none":
             # 503 con diagnostico real (conteo de claves y ultimo error), no una cadena generica
-            return JSONResponse(status_code=503, content={"detail": "Todos los proveedores fallaron", "diag": fallback_result.get("diag") or {}})
+            return JSONResponse(status_code=503, content={
+                "detail": "Todos los proveedores fallaron",
+                "diag": fallback_result.get("diag") or {},
+                "mode": detected_mode,
+                "service_mode": service_mode,
+                "route": route_path,
+            })
 
         provider_used = fallback_result.get("provider")
         content = _content_of(fallback_result.get("response"))
@@ -282,6 +328,15 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
             "id": "chatcmpl-fallback",
             "object": "chat.completion",
             "provider": provider_used,
+            "degraded": bool(fallback_result.get("degraded")),
+            "mode": detected_mode,
+            "service_mode": service_mode,
+            "route": route_path,
+            "adapter": {
+                "base_model": adapter.get("base_model"),
+                "lora": adapter.get("lora"),
+                "dataset": adapter.get("dataset"),
+            },
             "model": model_requested,
             "choices": [{
                 "index": 0,
@@ -299,6 +354,141 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/v1/modes")
+def modes():
+    """Catalogo de modos: 12 de codigo + 4 de servicio (Op2)."""
+    from router_llm_hf.mode_detector import RULES, SERVICE_MODE_NAMES
+    return {
+        "code_modes": sorted(RULES.keys()),
+        "service_modes": sorted(SERVICE_MODE_NAMES),
+        "total": len(RULES) + len(SERVICE_MODE_NAMES),
+        "service_routes": {m: c["route"] for m, c in SERVICE_MODES.items()},
+        "adapters_repo": "COMAND-CENTER-1/swe-code-adapters",
+    }
+
+
+@app.get("/v1/agents")
+def agents():
+    """Registro de agentes + si su ruta existe REALMENTE en esta app."""
+    import json as _json
+    reg_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "router_llm_hf", "AGENTS_REGISTRY.json",
+    )
+    try:
+        with open(reg_path, "r", encoding="utf-8") as fh:
+            registry = _json.load(fh)
+    except Exception as e:
+        return {"ok": False, "error": str(e), "agents": {}}
+    app_paths = {getattr(r, "path", "") for r in app.routes}
+    out = {}
+    for name, cfg in (registry.get("agents") or {}).items():
+        endpoint = cfg.get("endpoint") or ""
+        path = ""
+        if endpoint.startswith(("http://", "https://", "wss://", "ws://")):
+            rest = endpoint.split("://", 1)[1]
+            path = "/" + rest.split("/", 1)[1] if "/" in rest else "/"
+        implemented = bool(path) and path in app_paths
+        out[name] = {
+            "type": cfg.get("type"),
+            "endpoint": endpoint,
+            "declared_status": cfg.get("status"),
+            "route": path,
+            "implemented": implemented,
+        }
+    return {"ok": True, "agents": out}
+
+
+@app.get("/v1/modes")
+def modes():
+    """Catalogo de modos: 12 de codigo + 4 de servicio (Op2)."""
+    from router_llm_hf.mode_detector import RULES, SERVICE_MODE_NAMES
+    return {
+        "code_modes": sorted(RULES.keys()),
+        "service_modes": sorted(SERVICE_MODE_NAMES),
+        "total": len(RULES) + len(SERVICE_MODE_NAMES),
+        "service_routes": {m: c["route"] for m, c in SERVICE_MODES.items()},
+        "adapters_repo": "COMAND-CENTER-1/swe-code-adapters",
+    }
+
+
+@app.get("/v1/agents")
+def agents():
+    """Registro de agentes + si su ruta existe REALMENTE en esta app."""
+    import json as _json
+    reg_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "router_llm_hf", "AGENTS_REGISTRY.json",
+    )
+    try:
+        with open(reg_path, "r", encoding="utf-8") as fh:
+            registry = _json.load(fh)
+    except Exception as e:
+        return {"ok": False, "error": str(e), "agents": {}}
+    app_paths = {getattr(r, "path", "") for r in app.routes}
+    out = {}
+    for name, cfg in (registry.get("agents") or {}).items():
+        endpoint = cfg.get("endpoint") or ""
+        path = ""
+        if endpoint.startswith(("http://", "https://", "wss://", "ws://")):
+            rest = endpoint.split("://", 1)[1]
+            path = "/" + rest.split("/", 1)[1] if "/" in rest else "/"
+        implemented = bool(path) and path in app_paths
+        out[name] = {
+            "type": cfg.get("type"),
+            "endpoint": endpoint,
+            "declared_status": cfg.get("status"),
+            "route": path,
+            "implemented": implemented,
+        }
+    return {"ok": True, "agents": out}
+
+
+@app.get("/v1/modes")
+def modes():
+    """Catalogo de modos: 12 de codigo + 4 de servicio (Op2)."""
+    from router_llm_hf.mode_detector import RULES, SERVICE_MODE_NAMES
+    return {
+        "code_modes": sorted(RULES.keys()),
+        "service_modes": sorted(SERVICE_MODE_NAMES),
+        "total": len(RULES) + len(SERVICE_MODE_NAMES),
+        "service_routes": {m: c["route"] for m, c in SERVICE_MODES.items()},
+        "adapters_repo": "COMAND-CENTER-1/swe-code-adapters",
+    }
+
+
+@app.get("/v1/agents")
+def agents():
+    """Registro de agentes + si su ruta existe REALMENTE en esta app."""
+    import json as _json
+    reg_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "router_llm_hf", "AGENTS_REGISTRY.json",
+    )
+    try:
+        with open(reg_path, "r", encoding="utf-8") as fh:
+            registry = _json.load(fh)
+    except Exception as e:
+        return {"ok": False, "error": str(e), "agents": {}}
+    app_paths = {getattr(r, "path", "") for r in app.routes}
+    out = {}
+    for name, cfg in (registry.get("agents") or {}).items():
+        endpoint = cfg.get("endpoint") or ""
+        path = ""
+        if endpoint.startswith(("http://", "https://", "wss://", "ws://")):
+            rest = endpoint.split("://", 1)[1]
+            path = "/" + rest.split("/", 1)[1] if "/" in rest else "/"
+        implemented = bool(path) and path in app_paths
+        out[name] = {
+            "type": cfg.get("type"),
+            "endpoint": endpoint,
+            "declared_status": cfg.get("status"),
+            "route": path,
+            "implemented": implemented,
+        }
+    return {"ok": True, "agents": out}
 
 
 @app.get("/control-plane/status")

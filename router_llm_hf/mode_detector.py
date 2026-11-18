@@ -20,13 +20,68 @@ RULES = {
 }
 DEFAULT_MODE = "code_generate"
 
+# --- Modos de SERVICIO (4) -------------------------------------------------
+# No son modos entrenables: son RUTAS del proxy (ver router_llm_hf/service_routes.py).
+# Se detectan aparte y TIENEN PRIORIDAD sobre los modos de codigo cuando el
+# usuario los pide de forma explicita.
+SERVICE_RULES = {
+    "swe_code": [r"\bswe[\s_-]?code\b"],
+    "swe_free": [r"\bswe[\s_-]?free\b"],
+    "team_qwe": [r"\bteam[\s_-]?qwe\b", r"\bqwe\b"],
+    "deployment": [r"\bdeploy", r"\bdesplieg", r"\bdockerfile\b", r"\bkubernetes\b"],
+}
+
+SERVICE_MODE_NAMES = tuple(SERVICE_RULES.keys())
+
+
 def detect_mode(prompt: str) -> str:
-    """Devuelve el modo detectado. Si no hay coincidencia, DEFAULT_MODE."""
+    """Devuelve el modo detectado. Si no hay coincidencia, DEFAULT_MODE.
+
+    Puntuacion por ESPECIFICIDAD: cada patron que casa suma len(patron), asi
+    "modelo 3D" (10) gana a "genera" (5) y "razona" (7) gana a "falla" (6).
+    Empate -> el match mas temprano en el prompt; ultimo desempate -> orden de
+    declaracion. (El desempate anterior, "gana el primero del dict", hacia que
+    3d_code y reasoning perdieran contra code_generate y code_debug.)
+    """
     p = (prompt or "").lower()
-    scores = {m: 0 for m in RULES}
-    for m, pats in RULES.items():
+    best = None
+    for order, (mode, pats) in enumerate(RULES.items()):
+        score = 0
+        count = 0
+        first = None
         for pat in pats:
-            if re.search(pat, p, re.IGNORECASE):
-                scores[m] += 1
-    best = max(scores, key=scores.get)
-    return best if scores[best] > 0 else DEFAULT_MODE
+            for mt in re.finditer(pat, p, re.IGNORECASE):
+                score += len(pat)
+                count += 1
+                if first is None or mt.start() < first:
+                    first = mt.start()
+        if count == 0:
+            continue
+        key = (-score, first, order)
+        if best is None or key < best[0]:
+            best = (key, mode)
+    return best[1] if best else DEFAULT_MODE
+
+
+def detect_service_route(prompt: str):
+    """Modo de SERVICIO explicito (o None).
+
+    Desempate determinista: gana el modo cuyo PATIDO aparece antes en el prompt
+    (intencion principal del usuario); a igualdad, el que mas patrones casa y,
+    en ultimo termino, el orden de declaracion.
+    """
+    p = (prompt or "").lower()
+    hits = {}
+    for order, (mode, pats) in enumerate(SERVICE_RULES.items()):
+        first = None
+        count = 0
+        for pat in pats:
+            for m in re.finditer(pat, p, re.IGNORECASE):
+                count += 1
+                if first is None or m.start() < first:
+                    first = m.start()
+        if count:
+            hits[mode] = (first, -count, order)
+    if not hits:
+        return None
+    return min(hits.items(), key=lambda kv: kv[1])[0]
