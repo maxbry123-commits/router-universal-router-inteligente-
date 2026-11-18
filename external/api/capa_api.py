@@ -79,3 +79,11 @@ def run(host: str = "0.0.0.0", port: int = 7861):
 
 if __name__ == "__main__":
     run()
+
+
+@app.get("/capa/env")
+async def env_summary(x_api_key: str = Header(None)):
+    _check(x_api_key)
+    from external.core.env_config import get_env
+    cfg = get_env()
+    return {"masked": cfg.masked_summary(), "missing_required": cfg.validate_required()}
