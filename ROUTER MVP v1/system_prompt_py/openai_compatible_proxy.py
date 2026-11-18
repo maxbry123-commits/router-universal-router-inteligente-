@@ -41,7 +41,29 @@ _storage_ok = False
 # --- FIN MINIMAX 4 ---
 
 
-app = FastAPI()
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
+    """Startup/Shutdown: inicializa y cierra el pool MCP."""
+    try:
+        from external.core.mcp_pool import get_pool
+        get_pool()
+    except Exception as e:
+        print(f"[lifespan] pool no disponible: {e}")
+    try:
+        from external.tools.storage_wiring import StorageWiring
+        StorageWiring.ensure_bucket()
+    except Exception as e:
+        print(f"[lifespan] storage_wiring: {e}")
+    yield
+    try:
+        from external.core.mcp_pool import get_pool
+        await get_pool().close()
+    except Exception as e:
+        print(f"[lifespan] shutdown: {e}")
+
+app = FastAPI(lifespan=lifespan)
 
 # --- MINIMAX 4: MCP_MEMORY_URL ---
 import os as _os
@@ -278,3 +300,36 @@ def health():
 @app.get("/control-plane/status")
 def control_plane_status():
     return BRIDGE.status()
+
+
+# ─── ENDPOINTS /v1/loop/* (para el LOOP del frontend) ───
+_LOOP_STATE: dict = {}
+
+@app.get("/v1/loop/config")
+async def loop_config():
+    return {"max_iterations": int(os.getenv("LOOP_MAX_ITER", "8"))}
+
+@app.post("/v1/loop/start")
+async def loop_start(request: Request):
+    body = await request.json()
+    task_id = body.get("taskId", "default")
+    _LOOP_STATE[task_id] = {"iteration": 0, "status": "running"}
+    return {"ok": True, "taskId": task_id}
+
+@app.post("/v1/loop/step")
+async def loop_step(request: Request):
+    body = await request.json()
+    task_id = body.get("taskId", "default")
+    state = _LOOP_STATE.get(task_id, {})
+    if not state:
+        raise HTTPException(404, f"Task {task_id} no iniciada")
+    state["iteration"] = state.get("iteration", 0) + 1
+    return {"ok": True, "iteration": state["iteration"], "state": state}
+
+@app.post("/v1/loop/error")
+async def loop_error(request: Request):
+    body = await request.json()
+    task_id = body.get("taskId", "default")
+    if task_id in _LOOP_STATE:
+        _LOOP_STATE[task_id]["status"] = "error"
+    return {"ok": True, "logged": True}

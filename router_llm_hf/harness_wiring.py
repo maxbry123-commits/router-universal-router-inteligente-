@@ -29,3 +29,51 @@ class HarnessClient:
             raise RuntimeError("AGENT_HARNESS_URL no configurada: Harness DeepSeek obligatorio (fail-closed)")
         url = f"{self.harness_url.rstrip('/')}/execute"
         return await self.pool.post(url, headers=self._headers(), payload=payload)
+
+
+# ─── Salida 2A: helpers de llamada al Harness (fail-closed) ───────────────
+# ADAPTACION sobre el codigo del owner: el pool real del repo es
+# external.core.mcp_pool.MCPPool, que NO expone `.client` (expone
+# `await get_client()`) y NO tiene `get_pool()` en su version original
+# (añadido en esta misma salida). Se conserva la semántica exacta:
+# fail-closed si falta AGENT_HARNESS_URL o la clave, raise_for_status y
+# RuntimeError en cualquier fallo (nunca un {"error": ...} leido como éxito).
+
+async def call_harness(payload: dict, timeout: float = 60.0) -> dict:
+    """Llama al Harness DeepSeek usando el pool MCP."""
+    from external.core.mcp_pool import get_pool
+
+    url = os.getenv("AGENT_HARNESS_URL")
+    if not url:
+        raise RuntimeError(
+            "AGENT_HARNESS_URL no configurada. "
+            "Configura el secret en HF o desactiva harness_wiring."
+        )
+
+    key = os.getenv("HARNESS_KEY") or os.getenv("ROUTER_API_KEY", "")
+    if not key:
+        raise RuntimeError("HARNESS_KEY/ROUTER_API_KEY no configurada.")
+
+    headers = {
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+    }
+
+    pool = get_pool()
+    try:
+        client = await pool.get_client()
+        resp = await client.post(url, json=payload, headers=headers, timeout=timeout)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as e:
+        logger.error(f"[harness] error: {type(e).__name__}: {e}")
+        raise RuntimeError(f"Harness falló: {e}") from e
+
+
+async def health_harness() -> dict:
+    """Health check del Harness. No lanza excepción."""
+    try:
+        result = await call_harness({"messages": [{"role": "user", "content": "ping"}], "max_tokens": 5})
+        return {"ok": True, "response": result}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}

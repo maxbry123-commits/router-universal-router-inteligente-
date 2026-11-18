@@ -42,3 +42,10 @@ class MCPPool:
         except Exception as e:
             logger.error(f"MCPPool POST failed to {url}: {e}")
             return {"error": str(e)}
+
+
+def get_pool(pool_size: int = 10) -> MCPPool:
+    """Singleton del pool MCP (MCPPool ya es singleton por __new__).
+    Usado por el lifespan del proxy y por router_llm_hf.harness_wiring.
+    """
+    return MCPPool(pool_size=pool_size)
