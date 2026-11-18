@@ -1,10 +1,21 @@
 import httpx
 import asyncio
 
-SPACES = [
-    "swe-code-s1", "swe-code-s2", "swe-code-s3",
-    "riu-router", "claude-github-mcp-backup", "swe-code-web"
-]
+import os
+import sys
+
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+try:
+    from external.core.space_inventory import all_spaces
+    SPACES = list(all_spaces())
+except ImportError:  # pragma: no cover
+    SPACES = [
+        "local-llm-router", "local-llm-router-v2", "local-llm-router-v7",
+        "swe-code-s1", "swe-code-s2", "swe-code-s3",
+    ]
 
 async def check_space(space_name):
     url = f"https://comand-center-1-{space_name}.hf.space/health"

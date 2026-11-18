@@ -5,10 +5,11 @@
     "s3": "https://comand-center-1-swe-code-s3.hf.space/v1/chat/completions"
   },
   "edificio_2": {
-    "router": "https://comand-center-1-riu-router.hf.space",
-    "mcp": "https://comand-center-1-riu-router.hf.space/mcp",
-    "openclaw": "wss://comand-center-1-riu-router.hf.space:443/openclaw"
+    "router": "https://comand-center-1-local-llm-router.hf.space",
+    "mcp": "https://comand-center-1-hf-bucket-mcp.hf.space/mcp",
+    "openclaw": "wss://comand-center-1-local-llm-router.hf.space/v1/openclaw"
   },
   "auth_header": "X-API-Key",
-  "timeout_s": 120
+  "timeout_s": 120,
+  "nota": "El router son 2 grupos x 3 Spaces = 6 (Grupo 1 proxy, Grupo 2 LLM local). hf-bucket-mcp es el servidor MCP del bucket: infraestructura, no un grupo del router."
 }

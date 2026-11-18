@@ -7,8 +7,29 @@ from huggingface_hub import HfApi, HfHubHTTPError
 logger = logging.getLogger(__name__)
 api = HfApi(token=os.getenv("HF_TOKEN"))
 
-GROUP_1_COMPUTE = ["local-llm-router", "local-llm-router-v2", "local-llm-router-v7"]
-GROUP_2_LLM = ["swe-code-s1", "swe-code-s2", "swe-code-s3"]
+try:
+    # Inventario canonico (Op1): fuente unica de verdad de los 6 Spaces.
+    from external.core.space_inventory import (
+        GROUP_1_COMPUTE,
+        GROUP_2_LLM,
+        SPACE_COUNT,
+        all_spaces,
+        group_of,
+    )
+except ImportError:  # pragma: no cover - arranca igual sin el paquete "external"
+    GROUP_1_COMPUTE = ["local-llm-router", "local-llm-router-v2", "local-llm-router-v7"]
+    GROUP_2_LLM = ["swe-code-s1", "swe-code-s2", "swe-code-s3"]
+    SPACE_COUNT = 6
+
+    def all_spaces():
+        return tuple(GROUP_1_COMPUTE) + tuple(GROUP_2_LLM)
+
+    def group_of(space):
+        if space in GROUP_1_COMPUTE:
+            return "compute"
+        if space in GROUP_2_LLM:
+            return "llm"
+        return None
 
 class SpacePowerManager:
     @staticmethod
@@ -18,13 +39,12 @@ class SpacePowerManager:
         results = []
         for space in spaces:
             repo_id = f"COMAND-CENTER-1/{space}"
+            action = "wake" if on else "pause"
             try:
                 if on:
                     api.restart_space(repo_id, repo_type="space", factory_reboot=False)
-                    action = "wake"
                 else:
                     api.pause_space(repo_id, repo_type="space")
-                    action = "pause"
                 logger.info(f"[{action.upper()}] {space} -> OK")
                 results.append({"space": space, "action": action, "status": "ok"})
             except HfHubHTTPError as e:
