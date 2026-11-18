@@ -6,3 +6,5 @@ __pycache__/
 router inteligente universal/plugins/fichas_qwen/riu_data/
 ROUTER MVP v1/system_prompt_py/componentes_descargados/
 ROUTER MVP v1/system_prompt_py/skills/
+artifacts/
+state/

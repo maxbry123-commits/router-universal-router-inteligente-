@@ -1,7 +1,10 @@
-// model-selector.js — FIX MINIMAX 2E:
+// model-selector.js — FIX MINIMAX 2E + 2F:
 //  · falta el grupo del ROUTER PRINCIPAL (el proxy con la cadena Local->NVIDIA->Groq)
 //  · los ids de NVIDIA/Groq que habia estaban MUERTOS (410/404) -> el chat fallaba
 //  · no habia forma de hablar con los agentes (openclaw/hermes/chat_a/chat_b)
+//  · MINIMAX 2F: los agentes se leen del REGISTRO VIVO (GET /v1/agents), se
+//    anaden ruflo y rowboat (las dos raices reales del workspace) y cada agente
+//    aparece con su interruptor ON/OFF: un agente OFF no se puede elegir.
 // Las fuentes de verdad son: external/core/space_inventory.py (Spaces) y
 // router_llm_hf/AGENTS_REGISTRY.json (agentes). Aqui no hay secretos.
 
@@ -40,17 +43,6 @@ export const MODEL_GROUPS = {
       { id: "openai/gpt-oss-120b", label: "GPT OSS 120B" }
     ]
   },
-  // Agentes del registro central: se hablan por /v1/agents/<nombre> (espejo).
-  // El motor es el mismo que el del chat, asi que el espejo es determinista.
-  agentes: {
-    label: "AGENTES (espejo del registro central)",
-    models: [
-      { id: "minimaxai/minimax-m3.1-flash", label: "OpenClaw · agente autonomo", endpoint: "/v1/agents/openclaw" },
-      { id: "minimaxai/minimax-m3.1-flash", label: "Hermes · comunicacion", endpoint: "/v1/agents/hermes" },
-      { id: "minimaxai/minimax-m3.1-flash", label: "ChatA · arquitecto", endpoint: "/v1/agents/chat_a" },
-      { id: "minimaxai/minimax-m3.1-flash", label: "ChatB · implementador", endpoint: "/v1/agents/chat_b" }
-    ]
-  },
   swe_code_free: {
     label: "SWE CODE Free",
     endpoint: "https://comand-center-1-local-llm-router.hf.space/v1/swe-free",
@@ -68,7 +60,48 @@ export const MODEL_GROUPS = {
   }
 };
 
-export function renderSelector(containerId, onSelect) {
+// Reserva (solo si el registro vivo no responde): los 6 agentes declarados.
+export const AGENTS_FALLBACK = [
+  { name: "openclaw", enabled: true,  type: "mirror",   chat_path: "/v1/agents/openclaw", role: "Agente autonomo" },
+  { name: "hermes",   enabled: true,  type: "mirror",   chat_path: "/v1/agents/hermes",   role: "Comunicacion" },
+  { name: "chat_a",  enabled: true,  type: "internal", chat_path: "/v1/agents/chat_a",  role: "Arquitecto" },
+  { name: "chat_b",  enabled: true,  type: "internal", chat_path: "/v1/agents/chat_b",  role: "Implementador" },
+  { name: "ruflo",    enabled: false, type: "workspace", chat_path: "/v1/agents/ruflo",   role: "Raiz claude-flow" },
+  { name: "rowboat",  enabled: false, type: "workspace", chat_path: "/v1/agents/rowboat", role: "Raiz rowboat" }
+];
+
+// Ultimo registro vivo cargado (lo consume la ventana AGENTES).
+export let AGENT_REGISTRY = { agents: [], roots: {}, ok: false };
+
+export async function loadAgents(apiBase = "") {
+  """Lee el registro vivo de agentes. Sin red -> lista de reserva (nunca inventada)."""
+  const url = (apiBase || "") + "/v1/agents";
+  try {
+    const res = await fetch(url, { method: "GET", headers: { "x-api-key": window.__YAWES_KEY__ || "" } });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const agents = Object.entries(data.agents || {}).map(([name, cfg]) => ({
+      name,
+      enabled: !!cfg.enabled,
+      type: cfg.type,
+      role: cfg.role,
+      chat_path: cfg.chat_path,
+      root: cfg.root,
+      tools: cfg.tools || [],
+      history_count: cfg.history_count || 0,
+      memory_keys: cfg.memory_keys || [],
+      implemented: !!cfg.implemented
+    }));
+    if (!agents.length) throw new Error("registro vacio");
+    AGENT_REGISTRY = { agents, roots: data.roots || {}, ok: true, version: data.version };
+    return AGENT_REGISTRY;
+  } catch (e) {
+    AGENT_REGISTRY = { agents: AGENTS_FALLBACK.slice(), roots: {}, ok: false, error: String(e && e.message || e) };
+    return AGENT_REGISTRY;
+  }
+}
+
+export function renderSelector(containerId, onSelect, agents) {
   const container = document.getElementById(containerId);
   if (!container) return;
   const select = document.createElement("select");
@@ -89,6 +122,22 @@ export function renderSelector(containerId, onSelect) {
     }
     select.appendChild(optgroup);
   }
+
+  // Grupo AGENTES: se construye con el registro vivo (nada hardcodeado).
+  const list = (agents && agents.length) ? agents : AGENTS_FALLBACK;
+  const optgroup = document.createElement("optgroup");
+  optgroup.label = "AGENTES (registro central · ON/OFF)";
+  for (const agent of list) {
+    const option = document.createElement("option");
+    option.value = `agentes:${agent.name}`;
+    option.dataset.endpoint = agent.chat_path || ("/v1/agents/" + agent.name);
+    option.dataset.agent = agent.name;
+    option.dataset.enabled = agent.enabled ? "1" : "0";
+    option.textContent = `${agent.enabled ? "" : "⏻ "}${agent.name} · ${agent.role || agent.type || ""}`;
+    if (!agent.enabled) option.disabled = true;
+    optgroup.appendChild(option);
+  }
+  select.appendChild(optgroup);
 
   select.addEventListener("change", (e) => {
     const selected = e.target.selectedOptions[0];
