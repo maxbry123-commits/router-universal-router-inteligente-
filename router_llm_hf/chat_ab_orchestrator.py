@@ -1,7 +1,15 @@
 import os
 import uuid
-from chat_a_architect import ChatAArchitect
-from chat_b_implementer import ChatBImplementer, IncompleteResponse
+# FIX (MINIMAX 2E): los dos agentes son hermanos de este modulo. El import
+# absoluto (from chat_a_architect import ...) solo funcionaba si el paquete
+# estaba suelto en sys.path; como modulo del paquete reventaba. Ahora se
+# resuelve como relativo y, si el fichero se ejecuta suelto, cae al absoluto.
+try:
+    from .chat_a_architect import ChatAArchitect
+    from .chat_b_implementer import ChatBImplementer, IncompleteResponse
+except ImportError:  # pragma: no cover - ejecucion como script suelto
+    from chat_a_architect import ChatAArchitect
+    from chat_b_implementer import ChatBImplementer, IncompleteResponse
 from semantic_checkpoint import SemanticCheckpoint
 from context_rehydrator import ContextRehydrator
 from evidence_packet import EvidencePacket

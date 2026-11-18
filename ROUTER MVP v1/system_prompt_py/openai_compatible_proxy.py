@@ -17,6 +17,11 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+# FIX (MINIMAX 2E): el proxy importa modulos que viven en SU MISMA carpeta
+# (key_pool, fallback_middleware, control_bridge, ...). Con uvicorn y cwd en
+# esa carpeta funcionaba, pero importarlo desde otro sitio (tests, otro
+# proceso) reventaba con ModuleNotFoundError: key_pool.
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from key_pool import KeyPool
 from fallback_middleware import execute_with_fallback_async
@@ -64,8 +69,13 @@ async def lifespan(app):
     except Exception as e:
         print(f"[lifespan] pool no disponible: {e}")
     try:
-        from external.tools.storage_wiring import StorageWiring
-        StorageWiring.ensure_bucket()
+        # FIX (MINIMAX 2E): el adaptador del nucleo verifica el bucket con la API
+        # real de HF (GET, solo lectura) y NO crea nada. La version de
+        # external/tools usaba repo_type="bucket" (invalido en huggingface_hub)
+        # e intentaba crear el bucket en cada arranque del Space.
+        from external.core.storage_wiring import StorageWiring
+        _st = StorageWiring.ensure_bucket()
+        print(f"[lifespan] storage_wiring: {_st.get('status')}")
     except Exception as e:
         print(f"[lifespan] storage_wiring: {e}")
     yield
@@ -218,6 +228,164 @@ LOCAL_SPACES = {
 }
 LOCAL_TIMEOUT_S = 75.0   # el Space puede estar dormido: despertar + cargar modelo cabe en el watchdog de 96 s
 
+# --- MINIMAX 2E: agentes + espejo (mirror) ---
+# Los agentes del registro central (router_llm_hf/AGENTS_REGISTRY.json) se
+# exponen por HTTP para que el chat y sus paneles (OpenClaw, Hermes) los usen
+# con el MISMO motor de los Motores: la ruta es determinista y no depende de
+# ningun servicio externo adicional.
+AGENT_PROMPTS = {
+    "openclaw": (
+        "Eres OpenClaw, el agente autonomo del router. Resuelves la tarea de "
+        "punta a punta y no pides confirmacion en cada paso."
+    ),
+    "hermes": (
+        "Eres Hermes, el agente de comunicacion del router. Redactas, "
+        "resumes y mantienes el hilo con la persona."
+    ),
+    "chat_a": (
+        "Eres ChatA, el arquitecto del router. Descompones la tarea, propones "
+        "el plan y el consejo tecnico antes de escribir codigo."
+    ),
+    "chat_b": (
+        "Eres ChatB, el implementador del router. Escribes el codigo, usas las "
+        "herramientas y devuelves el resultado verificable."
+    ),
+}
+
+
+def _agent_prompt(agent_name: str):
+    return AGENT_PROMPTS.get(agent_name)
+
+
+async def _run_chat_chain(messages, model_requested, *, service_mode=None, route_path="",
+                          detected_mode=None, adapter=None, agent=None):
+    """Nucleo de ejecucion del chat (compartido por el chat y por el espejo).
+
+    Orden determinista:
+      1. Harness DeepSeek, si AGENT_HARNESS_URL esta configurada.
+      2. Motores: Local (S1/S2/S3) -> NVIDIA -> Groq.
+      3. Checkpoint en el banco de memoria, si hay endpoint HTTP.
+    """
+    adapter = adapter or {}
+
+    # 0. Harness DeepSeek (env-gated). Si responde, su respuesta es la que sale:
+    #    es el motor mas determinista de la casa. Si falla, se avisa y se sigue
+    #    con la cadena de Motores (el error nunca se pierde en silencio).
+    harness_url = os.getenv("AGENT_HARNESS_URL")
+    if harness_url:
+        try:
+            from router_llm_hf.harness_wiring import call_harness
+            hres = await call_harness({"messages": messages, "max_tokens": 1024})
+            hcontent = _content_of(hres)
+            if hcontent:
+                return JSONResponse({
+                    "id": "chatcmpl-harness",
+                    "object": "chat.completion",
+                    "provider": "harness",
+                    "agent": agent,
+                    "mode": detected_mode,
+                    "service_mode": service_mode,
+                    "route": route_path,
+                    "model": model_requested,
+                    "choices": [{
+                        "index": 0,
+                        "message": {"role": "assistant", "content": hcontent},
+                        "finish_reason": "stop"
+                    }]
+                })
+        except Exception as e:
+            print(f"[harness] fallback a Motores: {type(e).__name__}: {e}")
+
+    # 1. Ejecucion local: Space del Grupo 2 que sirve ese modelo.
+    async def local_execution(msgs: list):
+        space = LOCAL_SPACES.get(model_requested)
+        model_to_serve = model_requested
+        # Ruta de servicio: el Space del Grupo 2 lo decide el modo (Op2).
+        if not space and service_mode:
+            _target = local_target_for_mode(service_mode)
+            if _target:
+                space, model_to_serve = _target
+        if not space:
+            raise NotImplementedError(f"modelo no local: {model_requested}")
+        url = f"https://comand-center-1-{space}.hf.space/v1/chat/completions"
+        headers = {"x-api-key": ROUTER_API_KEY, "Content-Type": "application/json"}
+        try:
+            r = await provider_fb.client.post(
+                url, headers=headers,
+                json={"model": model_to_serve, "messages": msgs},
+                timeout=LOCAL_TIMEOUT_S,
+            )
+        except Exception as e:
+            raise RuntimeError(f"Space {space} inaccesible: {e}")
+        if r.status_code != 200:
+            raise RuntimeError(f"Space {space} HTTP {r.status_code}")
+        return r.json()
+
+    # 2. Cadena de fallback: Local -> NVIDIA (4 APIs) -> Groq (6 APIs), con HTTP real.
+    await QUEUE.acquire()
+    try:
+        fallback_result = await BRIDGE.run(
+            str(uuid.uuid4()),
+            provider_fb.call(messages, model_requested=model_requested, local_fn=local_execution),
+        )
+        if fallback_result.get("provider") == "none":
+            # 503 con diagnostico real (conteo de claves y ultimo error), no una cadena generica
+            return JSONResponse(status_code=503, content={
+                "detail": "Todos los proveedores fallaron",
+                "diag": fallback_result.get("diag") or {},
+                "mode": detected_mode,
+                "service_mode": service_mode,
+                "route": route_path,
+            })
+
+        provider_used = fallback_result.get("provider")
+        content = _content_of(fallback_result.get("response"))
+
+        # 3. Checkpoint en el banco de memoria. Si MCP_MEMORY_URL es hf:// no hay
+        #    POST posible: harness_wiring lo deja encolado en local (sin falso OK).
+        memory_url = os.getenv("MCP_MEMORY_URL")
+        memory_http = os.getenv("MCP_MEMORY_HTTP_URL")
+        if memory_url or memory_http:
+            task = asyncio.create_task(harness_client.send_checkpoint({
+                "model": model_requested,
+                "provider_used": provider_used,
+                "agent": agent,
+                "messages": messages
+            }))
+            task.add_done_callback(_log_checkpoint_error)
+        else:
+            print("[WARN] MCP_MEMORY_URL no configurada. Chat en modo degradado (sin persistencia).")
+
+        # 4. Respuesta con el contenido real del proveedor.
+        return JSONResponse({
+            "id": "chatcmpl-fallback",
+            "object": "chat.completion",
+            "provider": provider_used,
+            "agent": agent,
+            "degraded": bool(fallback_result.get("degraded")),
+            "mode": detected_mode,
+            "service_mode": service_mode,
+            "route": route_path,
+            "adapter": {
+                "base_model": adapter.get("base_model"),
+                "lora": adapter.get("lora"),
+                "dataset": adapter.get("dataset"),
+            },
+            "model": model_requested,
+            "choices": [{
+                "index": 0,
+                "message": {"role": "assistant", "content": content},
+                "finish_reason": "stop"
+            }]
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(502, detail=str(e))
+    finally:
+        await QUEUE.release()
+
+
 @app.post("/v1/nvidia")
 @app.post("/v1/groq")
 @app.post("/v1/swe")
@@ -266,90 +434,86 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
     except Exception as _e:
         print(f"[CTRL] adapter no resoluble para {detected_mode}: {_e}")
 
-    # 1. Ejecucion local: Space del Grupo 2 que sirve ese modelo.
-    async def local_execution(msgs: list):
-        space = LOCAL_SPACES.get(model_requested)
-        model_to_serve = model_requested
-        # Ruta de servicio: el Space del Grupo 2 lo decide el modo (Op2).
-        if not space and service_mode:
-            _target = local_target_for_mode(service_mode)
-            if _target:
-                space, model_to_serve = _target
-        if not space:
-            raise NotImplementedError(f"modelo no local: {model_requested}")
-        url = f"https://comand-center-1-{space}.hf.space/v1/chat/completions"
-        headers = {"x-api-key": ROUTER_API_KEY, "Content-Type": "application/json"}
-        try:
-            r = await provider_fb.client.post(
-                url, headers=headers,
-                json={"model": model_to_serve, "messages": msgs},
-                timeout=LOCAL_TIMEOUT_S,
-            )
-        except Exception as e:
-            raise RuntimeError(f"Space {space} inaccesible: {e}")
-        if r.status_code != 200:
-            raise RuntimeError(f"Space {space} HTTP {r.status_code}")
-        return r.json()
+    return await _run_chat_chain(
+        messages, model_requested,
+        service_mode=service_mode, route_path=route_path,
+        detected_mode=detected_mode, adapter=adapter,
+    )
 
-    # 2. Cadena de fallback: Local -> NVIDIA (4 APIs) -> Groq (6 APIs), con HTTP real.
-    await QUEUE.acquire()
+
+async def _agent_request(agent_name, request: Request, x_api_key):
+    """Espejo HTTP de un agente del registro central.
+
+    El chat y sus paneles usan esta ruta: el agente se ejecuta con el MISMO
+    motor de los Motores, asi que el espejo es determinista.
+    """
+    if x_api_key != ROUTER_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+    prompt = _agent_prompt(agent_name)
+    if not prompt:
+        raise HTTPException(404, detail=f"agente desconocido: {agent_name}; known={sorted(AGENT_PROMPTS)}")
     try:
-        fallback_result = await BRIDGE.run(
-            str(uuid.uuid4()),
-            provider_fb.call(messages, model_requested=model_requested, local_fn=local_execution),
-        )
-        if fallback_result.get("provider") == "none":
-            # 503 con diagnostico real (conteo de claves y ultimo error), no una cadena generica
-            return JSONResponse(status_code=503, content={
-                "detail": "Todos los proveedores fallaron",
-                "diag": fallback_result.get("diag") or {},
-                "mode": detected_mode,
-                "service_mode": service_mode,
-                "route": route_path,
-            })
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, detail="Invalid JSON")
+    user_messages = body.get("messages") or []
+    if not user_messages:
+        raise HTTPException(400, detail="messages vacio")
+    messages = [{"role": "system", "content": prompt}] + user_messages
+    raw_model = body.get("model", "auto")
+    model_requested = raw_model.split(":")[-1] if ":" in raw_model else raw_model
+    user_prompt = ""
+    for _m in user_messages:
+        if _m.get("role") == "user":
+            user_prompt = _m.get("content") or ""
+            break
+    detected = detect_service_route(user_prompt) or detect_mode(user_prompt)
+    return await _run_chat_chain(
+        messages, model_requested,
+        service_mode=None, route_path=f"/v1/agents/{agent_name}",
+        detected_mode=detected, adapter={}, agent=agent_name,
+    )
 
-        provider_used = fallback_result.get("provider")
-        content = _content_of(fallback_result.get("response"))
 
-        # 3. Checkpoint opcional: si hay MCP_MEMORY_URL, guardamos; si no, avisamos y continuamos.
-        memory_url = os.getenv("MCP_MEMORY_URL")
-        if memory_url:
-            task = asyncio.create_task(harness_client.send_checkpoint({
-                "model": model_requested,
-                "provider_used": provider_used,
-                "messages": messages
-            }))
-            task.add_done_callback(_log_checkpoint_error)
-        else:
-            print("[WARN] MCP_MEMORY_URL no configurada. Chat en modo degradado (sin persistencia).")
+@app.post("/v1/agents/{agent_name}")
+async def agent_chat(agent_name: str, request: Request, x_api_key: str = Header(None)):
+    return await _agent_request(agent_name, request, x_api_key)
 
-        # 4. Respuesta con el contenido real del proveedor.
-        return JSONResponse({
-            "id": "chatcmpl-fallback",
-            "object": "chat.completion",
-            "provider": provider_used,
-            "degraded": bool(fallback_result.get("degraded")),
-            "mode": detected_mode,
-            "service_mode": service_mode,
-            "route": route_path,
-            "adapter": {
-                "base_model": adapter.get("base_model"),
-                "lora": adapter.get("lora"),
-                "dataset": adapter.get("dataset"),
-            },
-            "model": model_requested,
-            "choices": [{
-                "index": 0,
-                "message": {"role": "assistant", "content": content},
-                "finish_reason": "stop"
-            }]
-        })
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(502, detail=str(e))
-    finally:
-        await QUEUE.release()
+
+@app.post("/v1/openclaw")
+async def openclaw_chat(request: Request, x_api_key: str = Header(None)):
+    return await _agent_request("openclaw", request, x_api_key)
+
+
+@app.post("/v1/hermes")
+async def hermes_chat(request: Request, x_api_key: str = Header(None)):
+    return await _agent_request("hermes", request, x_api_key)
+
+
+@app.get("/v1/agents")
+async def list_agents():
+    """Agentes del registro central: el chat los lee de aqui (no hardcodeados)."""
+    from router_llm_hf.agent_router import load_registry
+    reg = load_registry()
+    return {
+        "agents": [
+            {
+                "name": name,
+                "status": data.get("status"),
+                "chat_path": data.get("chat_path"),
+                "mirror": bool(data.get("mirror_endpoint")),
+                "role": data.get("role"),
+            }
+            for name, data in reg.get("agents", {}).items()
+        ]
+    }
+
+
+@app.get("/harness/health")
+async def harness_health():
+    """Estado real del Harness DeepSeek (no lanza excepcion)."""
+    from router_llm_hf.harness_wiring import health_harness
+    return await health_harness()
 
 @app.get("/health")
 def health():
@@ -512,13 +676,46 @@ async def loop_start(request: Request):
 
 @app.post("/v1/loop/step")
 async def loop_step(request: Request):
+    """Un paso del loop REAL: ejecuta el motor determinista y deja checkpoint.
+
+    FIX (MINIMAX 2E): antes solo incrementaba un contador, asi que el panel LOOP
+    del chat no ejecutaba nada y /v1/loop/resume no encontraba ningun
+    checkpoint que reanudar.
+    """
     body = await request.json()
     task_id = body.get("taskId", "default")
     state = _LOOP_STATE.get(task_id, {})
     if not state:
         raise HTTPException(404, f"Task {task_id} no iniciada")
     state["iteration"] = state.get("iteration", 0) + 1
-    return {"ok": True, "iteration": state["iteration"], "state": state}
+    engine = {}
+    try:
+        from router_llm_hf.loop_engine import main as engine_main
+        import json as _json
+        import io as _io
+        import contextlib as _ctx
+        buf = _io.StringIO()
+        with _ctx.redirect_stdout(buf):
+            rc = engine_main([
+                "loop_engine",
+                _json.dumps({
+                    "input": body.get("input", ""),
+                    "iteration": state["iteration"],
+                    "max_iterations": int(body.get("maxIterations") or os.getenv("LOOP_MAX_ITER", "8")),
+                    "task_id": task_id,
+                }),
+            ])
+        engine = _json.loads(buf.getvalue() or "{}")
+        if rc not in (0, 2):
+            engine = {"error": f"motor rc={rc}"}
+        state["status"] = "done" if engine.get("done") else "running"
+        state["mode"] = engine.get("mode")
+        state["engine"] = engine
+    except Exception as e:
+        state["status"] = "error"
+        state["error"] = f"{type(e).__name__}: {e}"
+    _LOOP_STATE[task_id] = state
+    return {"ok": True, "iteration": state["iteration"], "state": state, "engine": engine}
 
 @app.post("/v1/loop/error")
 async def loop_error(request: Request):

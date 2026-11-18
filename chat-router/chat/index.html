@@ -116,12 +116,14 @@ var PANELS=[
 ];
 var MOTORS=[
  {name:'Router · proxy',url:'https://comand-center-1-local-llm-router.hf.space/health',model:'NVIDIA -> Groq -> local'},
+ {name:'Router · proxy v2',url:'https://comand-center-1-local-llm-router-v2.hf.space/health',model:'NVIDIA -> Groq -> local'},
+ {name:'Router · proxy v7',url:'https://comand-center-1-local-llm-router-v7.hf.space/health',model:'NVIDIA -> Groq -> local'},
  {name:'LLM S1 · Qwen2.5-Coder-0.5B',url:'https://comand-center-1-swe-code-s1.hf.space/health',model:'Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF'},
  {name:'LLM S2 · LFM2.5-350M',url:'https://comand-center-1-swe-code-s2.hf.space/health',model:'LiquidAI/LFM2.5-350M-GGUF'},
  {name:'LLM S3 · Qwen3.5-0.8B',url:'https://comand-center-1-swe-code-s3.hf.space/health',model:'unsloth/Qwen3.5-0.8B-GGUF'},
  {name:'MCP · bucket',url:'https://comand-center-1-hf-bucket-mcp.hf.space/metrics',model:'huggingface.co/mcp'}
 ];
-var S={theme:'little',view:'chat',endpoint:'',model:'',key:'',messages:[{who:'bot',text:'Hola. Elige motor, pega la API Key y escribe.'}]};
+var S={theme:'little',view:'chat',endpoint:'',model:'',key:'',agent:'',messages:[{who:'bot',text:'Hola. Elige motor, pega la API Key y escribe.'}]};
 
 function el(id){return document.getElementById(id);}
 function toast(msg){
@@ -227,7 +229,7 @@ function sendMessage(){
   }).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
   .then(function(res){
     var txt=res.ok?((res.j.choices&&res.j.choices[0]&&res.j.choices[0].message&&res.j.choices[0].message.content)||'Sin respuesta'):('HTTP '+(res.j.detail||res.j.error||'error'));
-    S.messages.push({who:'bot',text:String(txt)});paintMessages();
+    S.messages.push({who:'bot',text:(S.agent?('['+S.agent+'] '):'')+String(txt)});paintMessages();
     if(st){st.textContent=res.ok?'● LISTO':'● ERROR';st.className='badge '+(res.ok?'success':'danger');}
   }).catch(function(e){
     S.messages.push({who:'bot',text:'Error de red: '+e.message});paintMessages();
@@ -253,10 +255,32 @@ el('api-key-input').oninput=function(e){S.key=e.target.value;};
 el('probe-btn').onclick=probe;
 
 window.addEventListener('model:changed',function(e){
-  S.endpoint=e.detail.endpoint;S.model=e.detail.modelId;
-  var b=el('model-badge');if(b){b.textContent=e.detail.modelId;b.className='badge success';}
+  S.endpoint=e.detail.endpoint;S.model=e.detail.modelId;S.agent=e.detail.agent||'';
+  var b=el('model-badge');if(b){b.textContent=(S.agent?S.agent+' · ':'')+e.detail.modelId;b.className='badge success';}
   var c=el('conn');if(c){c.textContent='motor listo';c.className='badge success';}
 });
+
+/* ---------- PUENTE CON LOS PANELES (espejo OpenClaw / Hermes) ----------
+   Los paneles (iframes del mismo origen) leen el ultimo mensaje del chat y
+   lo reenvian al espejo del agente (/v1/agents/<nombre>). El espejo usa el
+   MISMO motor de los Motores, asi que el resultado es determinista. */
+window.chatBridge={
+  version:'2.0.0',
+  getMessages:function(){return S.messages.slice();},
+  getLastUserMessage:function(){
+    for(var i=S.messages.length-1;i>=0;i--){if(S.messages[i].who==='user')return S.messages[i].text;}
+    return '';
+  },
+  getApiKey:function(){return S.key||'';},
+  getActiveAgent:function(){return S.agent||'';},
+  getActiveModel:function(){return S.model||'';},
+  sendToAgent:function(agent,text){
+    var body={model:S.model||'auto',messages:[{role:'user',content:text}]};
+    var url=chatUrl('/v1/agents/'+agent);
+    return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':S.key},body:JSON.stringify(body)})
+      .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});});
+  }
+};
 
 document.addEventListener('DOMContentLoaded',function(){
   var stored=null;try{stored=localStorage.getItem('yaiwes-demo-theme')||localStorage.getItem('fromted-deploy-theme');}catch(e){}
@@ -266,6 +290,7 @@ document.addEventListener('DOMContentLoaded',function(){
     var opt=sel.selectedOptions[0];
     S.endpoint=opt.dataset.endpoint||getActiveEndpoint()||'';
     S.model=(opt.value||'').split(':').pop()||getActiveModel()||'';
+    S.agent=opt.dataset.agent||'';
   }else{
     S.endpoint=getActiveEndpoint()||'';S.model=getActiveModel()||'';
   }

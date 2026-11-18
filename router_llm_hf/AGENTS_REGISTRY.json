@@ -1,32 +1,43 @@
 {
   "version": "2.0.0",
-  "last_updated": "2026-11-15",
+  "nota": "Registro central de agentes. FIX MINIMAX 2E: cada agente declara endpoint + espejo (mirror_endpoint) + ruta de chat (chat_path). El espejo es la via por la que el chat (y sus paneles) hablan con el agente usando el MISMO motor de los Motores, de forma determinista. Sin credenciales aqui: van por env.",
+  "base_url": "https://comand-center-1-local-llm-router.hf.space",
   "agents": {
     "openclaw": {
-      "type": "websocket",
-      "endpoint": "wss://comand-center-1-local-llm-router.hf.space/v1/openclaw",
-      "mirror_endpoint": null,
-      "role": "frontend_automation",
-      "status": "offline"
+      "status": "active",
+      "endpoint": "https://comand-center-1-local-llm-router.hf.space/v1/agents/openclaw",
+      "mirror_endpoint": "https://comand-center-1-local-llm-router.hf.space/v1/agents/openclaw",
+      "chat_path": "/v1/agents/openclaw",
+      "module": null,
+      "role": "Agente autonomo: ejecuta la tarea de punta a punta, sin pedir confirmacion en cada paso.",
+      "verificacion": "Ruta definida en el proxy (codigo). La verificacion en vivo depende de que el Space local-llm-router tenga saldo (hoy PAUSED)."
     },
     "hermes": {
-      "type": "websocket",
-      "endpoint": "wss://comand-center-1-local-llm-router.hf.space/v1/hermes",
-      "mirror_endpoint": null,
-      "role": "communication_agent",
-      "status": "offline"
+      "status": "active",
+      "endpoint": "https://comand-center-1-local-llm-router.hf.space/v1/agents/hermes",
+      "mirror_endpoint": "https://comand-center-1-local-llm-router.hf.space/v1/agents/hermes",
+      "chat_path": "/v1/agents/hermes",
+      "module": null,
+      "role": "Agente de comunicacion: redacta, resume y mantiene el hilo con la persona.",
+      "verificacion": "Ruta definida en el proxy (codigo). La verificacion en vivo depende de que el Space local-llm-router tenga saldo (hoy PAUSED)."
     },
     "chat_a": {
-      "type": "internal",
+      "status": "active",
       "endpoint": "internal://router_llm_hf/chat_a_architect.py",
-      "role": "architect",
-      "status": "active"
+      "mirror_endpoint": "https://comand-center-1-local-llm-router.hf.space/v1/agents/chat_a",
+      "chat_path": "/v1/agents/chat_a",
+      "module": "router_llm_hf/chat_a_architect.py",
+      "role": "Arquitecto: descompone la tarea, propone el plan y el consejo tecnico.",
+      "verificacion": "Modulo importable y con test de import real. Sus dependencias viven en ROUTER MVP v1/system_prompt_py (bootstrap en router_llm_hf/__init__.py)."
     },
     "chat_b": {
-      "type": "internal",
+      "status": "active",
       "endpoint": "internal://router_llm_hf/chat_b_implementer.py",
-      "role": "implementer",
-      "status": "active"
+      "mirror_endpoint": "https://comand-center-1-local-llm-router.hf.space/v1/agents/chat_b",
+      "chat_path": "/v1/agents/chat_b",
+      "module": "router_llm_hf/chat_b_implementer.py",
+      "role": "Implementador: escribe el codigo, ejecuta las herramientas y devuelve el resultado.",
+      "verificacion": "Modulo importable y con test de import real. Sus dependencias viven en ROUTER MVP v1/system_prompt_py (bootstrap en router_llm_hf/__init__.py)."
     }
   }
 }
