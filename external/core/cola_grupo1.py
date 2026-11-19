@@ -88,9 +88,11 @@ async def estado_agregado(timeout_s: float = 4.0) -> Dict[str, Any]:
                 r = await c.get(url + "/v1/queue")
             if r.status_code == 200:
                 j = r.json()
-                fila.update({"responde": True, "in_flight": j.get("in_flight"),
-                             "max_in_flight": j.get("max_in_flight"),
-                             "libre": j.get("libre")})
+                # el espejo responde {"este": {...}} -> se lee ese bloque
+                est = j.get("este") if isinstance(j.get("este"), dict) else j
+                fila.update({"responde": True, "in_flight": est.get("in_flight"),
+                             "max_in_flight": est.get("max_in_flight"),
+                             "libre": est.get("libre")})
         except Exception as e:
             fila["error"] = repr(e)[:90]
         otros.append(fila)
