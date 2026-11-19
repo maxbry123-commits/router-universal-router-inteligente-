@@ -1,0 +1,478 @@
+{
+  "version": "1.1",
+  "generated_at": "2026-11-18",
+  "titulo": "Router: 10 HTTP + 10 MCP conectadas (router, chat, UI, openclaw)",
+  "router": {
+    "base_url_activo": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space",
+    "base_url_destino_nuevo": "https://comand-center-1-router-universal-router-inteligente.hf.space",
+    "auth_header": "x-api-key",
+    "auth_value_ref": "banco/vault.json (cifrado AES-256-GCM, clave HF_VAULT_KEY)",
+    "spaces_router": [
+      "space-grupo-1-router-mvp-1",
+      "space-grupo-1-router-mvp-1-v2",
+      "space-grupo-1-router-mvp-1-v7",
+      "space-grupo-2-router-llm-hf-1",
+      "space-grupo-2-router-llm-hf-2",
+      "space-grupo-2-router-llm-hf-3"
+    ],
+    "infraestructura_no_grupo": [
+      "hf-bucket-mcp"
+    ],
+    "estado_global": "6 Spaces del router PAUSED (402) + hf-bucket-mcp PAUSED + Space destino RUNNING (static) -> las 10 rutas vivas devuelven 503",
+    "verificacion_codigo": "route table real del proxy (import real): 10/10 rutas presentes",
+    "grupos": {
+      "grupo_1_compute_proxy": [
+        "space-grupo-1-router-mvp-1",
+        "space-grupo-1-router-mvp-1-v2",
+        "space-grupo-1-router-mvp-1-v7"
+      ],
+      "grupo_2_llm_local": [
+        "space-grupo-2-router-llm-hf-1",
+        "space-grupo-2-router-llm-hf-2",
+        "space-grupo-2-router-llm-hf-3"
+      ]
+    },
+    "espacios_del_router": 6,
+    "espacio_destino": {
+      "id": "router-universal-router-inteligente",
+      "sdk": "static",
+      "estado": "RUNNING",
+      "nota": "Space destino nuevo; con PRO pasa a docker (P2)"
+    },
+    "grupos_hf": {
+      "grupo_1_router_mvp_1": {
+        "nombre": "space grupo 1 router MVP 1",
+        "rol": "compute (proxy OpenAI-compatible, Router MVP v1)",
+        "funcion": "Enruta y ejecuta: decide el modo, llama al LLM y devuelve la respuesta. No sirve modelos.",
+        "spaces": [
+          {
+            "id": "space-grupo-1-router-mvp-1",
+            "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space",
+            "app_port": 7860
+          },
+          {
+            "id": "space-grupo-1-router-mvp-1-v2",
+            "url": "https://comand-center-1-space-grupo-1-router-mvp-1-v2.hf.space",
+            "app_port": 7860
+          },
+          {
+            "id": "space-grupo-1-router-mvp-1-v7",
+            "url": "https://comand-center-1-space-grupo-1-router-mvp-1-v7.hf.space",
+            "app_port": 7860
+          }
+        ],
+        "compute": "HF Space docker · hardware cpu-upgrade (32 GB RAM, CPU de pago) · puerto 7860",
+        "almacenamiento": {
+          "disco_persistente": "/data (disco persistente del Space de pago)",
+          "memoria_compartida": "hf://buckets/COMAND-CENTER-1/yaiwes-memoria-storage via hf-bucket-mcp (MCP_MEMORY_HTTP_URL)"
+        }
+      },
+      "grupo_2_router_llm_hf": {
+        "nombre": "space grupo 2 router LLM HF",
+        "rol": "llm local (GGUF servido en HF)",
+        "funcion": "Sirve UN modelo local en el puerto 7861. No enruta ni decide.",
+        "spaces": [
+          {
+            "id": "space-grupo-2-router-llm-hf-1",
+            "url": "https://comand-center-1-space-grupo-2-router-llm-hf-1.hf.space",
+            "app_port": 7861,
+            "modelo": "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF"
+          },
+          {
+            "id": "space-grupo-2-router-llm-hf-2",
+            "url": "https://comand-center-1-space-grupo-2-router-llm-hf-2.hf.space",
+            "app_port": 7861,
+            "modelo": "LiquidAI/LFM2.5-350M-GGUF"
+          },
+          {
+            "id": "space-grupo-2-router-llm-hf-3",
+            "url": "https://comand-center-1-space-grupo-2-router-llm-hf-3.hf.space",
+            "app_port": 7861,
+            "modelo": "unsloth/Qwen3.5-0.8B-GGUF"
+          }
+        ],
+        "compute": "HF Space docker · hardware cpu-upgrade (32 GB RAM, CPU de pago) · puerto 7861",
+        "almacenamiento": {
+          "disco_persistente": "/data (disco persistente del Space de pago): cache del GGUF y estado del modelo",
+          "memoria_compartida": "hf://buckets/COMAND-CENTER-1/yaiwes-memoria-storage via hf-bucket-mcp (MCP_MEMORY_HTTP_URL)"
+        }
+      }
+    }
+  },
+  "mcp_memory": {
+    "url": "https://comand-center-1-hf-bucket-mcp.hf.space/mcp",
+    "bucket": "COMAND-CENTER-1/yaiwes-memoria-storage",
+    "estado": "Space PAUSED (503); escritura de contenido disponible (gratis)"
+  },
+  "http": [
+    {
+      "id": "router_health",
+      "metodo": "GET",
+      "ruta": "/health",
+      "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/health",
+      "url_destino_nuevo": "https://comand-center-1-router-universal-router-inteligente.hf.space/health",
+      "existe_en_codigo": true,
+      "probe_vivo_http": "503",
+      "estado": "SPACE PAUSED (402) -> 503",
+      "consumidores": [
+        "router (watchdog)",
+        "UI chat (index.html: health strip)"
+      ],
+      "auth": "x-api-key: ROUTER_API_KEY (banco: vault.json)"
+    },
+    {
+      "id": "control_status",
+      "metodo": "GET",
+      "ruta": "/control-plane/status",
+      "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/control-plane/status",
+      "url_destino_nuevo": "https://comand-center-1-router-universal-router-inteligente.hf.space/control-plane/status",
+      "existe_en_codigo": true,
+      "probe_vivo_http": "503",
+      "estado": "SPACE PAUSED (402) -> 503",
+      "consumidores": [
+        "router (control plane)",
+        "UI chat",
+        "openclaw"
+      ],
+      "auth": "x-api-key: ROUTER_API_KEY (banco: vault.json)"
+    },
+    {
+      "id": "chat_completions",
+      "metodo": "POST",
+      "ruta": "/v1/chat/completions",
+      "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/chat/completions",
+      "url_destino_nuevo": "https://comand-center-1-router-universal-router-inteligente.hf.space/v1/chat/completions",
+      "existe_en_codigo": true,
+      "probe_vivo_http": "503",
+      "estado": "SPACE PAUSED (402) -> 503",
+      "consumidores": [
+        "chat (UI)",
+        "openclaw",
+        "router (fallback chain)"
+      ],
+      "auth": "x-api-key: ROUTER_API_KEY (banco: vault.json)"
+    },
+    {
+      "id": "nvidia_direct",
+      "metodo": "POST",
+      "ruta": "/v1/nvidia",
+      "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/nvidia",
+      "url_destino_nuevo": "https://comand-center-1-router-universal-router-inteligente.hf.space/v1/nvidia",
+      "existe_en_codigo": true,
+      "probe_vivo_http": "503",
+      "estado": "SPACE PAUSED (402) -> 503",
+      "consumidores": [
+        "UI chat (model-selector.js)",
+        "chat"
+      ],
+      "auth": "x-api-key: ROUTER_API_KEY (banco: vault.json)"
+    },
+    {
+      "id": "groq_direct",
+      "metodo": "POST",
+      "ruta": "/v1/groq",
+      "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/groq",
+      "url_destino_nuevo": "https://comand-center-1-router-universal-router-inteligente.hf.space/v1/groq",
+      "existe_en_codigo": true,
+      "probe_vivo_http": "503",
+      "estado": "SPACE PAUSED (402) -> 503",
+      "consumidores": [
+        "UI chat (model-selector.js)",
+        "chat"
+      ],
+      "auth": "x-api-key: ROUTER_API_KEY (banco: vault.json)"
+    },
+    {
+      "id": "swe_free",
+      "metodo": "POST",
+      "ruta": "/v1/swe-free",
+      "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/swe-free",
+      "url_destino_nuevo": "https://comand-center-1-router-universal-router-inteligente.hf.space/v1/swe-free",
+      "existe_en_codigo": true,
+      "probe_vivo_http": "503",
+      "estado": "SPACE PAUSED (402) -> 503",
+      "consumidores": [
+        "UI chat (model-selector.js: swe_code_free)",
+        "chat"
+      ],
+      "auth": "x-api-key: ROUTER_API_KEY (banco: vault.json)"
+    },
+    {
+      "id": "team_qwe",
+      "metodo": "POST",
+      "ruta": "/v1/team-qwe",
+      "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/team-qwe",
+      "url_destino_nuevo": "https://comand-center-1-router-universal-router-inteligente.hf.space/v1/team-qwe",
+      "existe_en_codigo": true,
+      "probe_vivo_http": "503",
+      "estado": "SPACE PAUSED (402) -> 503",
+      "consumidores": [
+        "UI chat (model-selector.js: team_qwe)",
+        "openclaw"
+      ],
+      "auth": "x-api-key: ROUTER_API_KEY (banco: vault.json)"
+    },
+    {
+      "id": "loop_start",
+      "metodo": "POST",
+      "ruta": "/v1/loop/start",
+      "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/loop/start",
+      "url_destino_nuevo": "https://comand-center-1-router-universal-router-inteligente.hf.space/v1/loop/start",
+      "existe_en_codigo": true,
+      "probe_vivo_http": "503",
+      "estado": "SPACE PAUSED (402) -> 503",
+      "consumidores": [
+        "UI chat (ui/loop.js)",
+        "router (loop engine)"
+      ],
+      "auth": "x-api-key: ROUTER_API_KEY (banco: vault.json)"
+    },
+    {
+      "id": "frontend_chat",
+      "metodo": "GET",
+      "ruta": "/chat/",
+      "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/chat/",
+      "url_destino_nuevo": "https://comand-center-1-router-universal-router-inteligente.hf.space/chat/",
+      "existe_en_codigo": true,
+      "probe_vivo_http": "503",
+      "estado": "SPACE PAUSED (402) -> 503",
+      "consumidores": [
+        "UI chat (frontend estatico /chat)"
+      ],
+      "auth": "x-api-key: ROUTER_API_KEY (banco: vault.json)"
+    },
+    {
+      "id": "billing_status",
+      "metodo": "GET",
+      "ruta": "/billing/status",
+      "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/billing/status",
+      "url_destino_nuevo": "https://comand-center-1-router-universal-router-inteligente.hf.space/billing/status",
+      "existe_en_codigo": true,
+      "probe_vivo_http": "503",
+      "estado": "SPACE PAUSED (402) -> 503",
+      "consumidores": [
+        "router (billing_monitor)",
+        "UI (panel de coste)"
+      ],
+      "auth": "x-api-key: ROUTER_API_KEY (banco: vault.json)"
+    }
+  ],
+  "mcp": [
+    {
+      "id": "github",
+      "env": "GITHUB_TOKEN",
+      "auth": "bearer",
+      "en_banco": true,
+      "valor_ref": "vault://banco/vault.json#github_token",
+      "disponible": true,
+      "consumidores": [
+        "openclaw/hermes (agents)",
+        "router (push/clone)",
+        "chat (commits)"
+      ],
+      "estado": "listo"
+    },
+    {
+      "id": "playwright",
+      "env": null,
+      "auth": "stdio",
+      "en_banco": true,
+      "valor_ref": null,
+      "disponible": true,
+      "consumidores": [
+        "UI chat (navegacion)",
+        "openclaw"
+      ],
+      "estado": "listo"
+    },
+    {
+      "id": "context7",
+      "env": "CONTEXT7_API_KEY",
+      "auth": "api_key",
+      "en_banco": false,
+      "valor_ref": null,
+      "disponible": false,
+      "consumidores": [
+        "chat (documentacion)",
+        "UI chat"
+      ],
+      "estado": "falta credencial (owner)"
+    },
+    {
+      "id": "supabase",
+      "env": "SUPABASE_TOKEN",
+      "auth": "oauth_pending",
+      "en_banco": false,
+      "valor_ref": null,
+      "disponible": false,
+      "consumidores": [
+        "chat (persistencia)",
+        "openclaw"
+      ],
+      "estado": "oauth pendiente (owner)"
+    },
+    {
+      "id": "notion",
+      "env": "NOTION_TOKEN",
+      "auth": "oauth_pending",
+      "en_banco": false,
+      "valor_ref": null,
+      "disponible": false,
+      "consumidores": [
+        "chat (handoff/notas)",
+        "openclaw"
+      ],
+      "estado": "oauth pendiente (owner)"
+    },
+    {
+      "id": "stripe",
+      "env": "STRIPE_TOKEN",
+      "auth": "oauth_pending",
+      "en_banco": false,
+      "valor_ref": null,
+      "disponible": false,
+      "consumidores": [
+        "chat (pagos)",
+        "openclaw"
+      ],
+      "estado": "oauth pendiente (owner)"
+    },
+    {
+      "id": "filesystem",
+      "env": null,
+      "auth": "stdio",
+      "en_banco": true,
+      "valor_ref": null,
+      "disponible": true,
+      "consumidores": [
+        "router (fs_tools)",
+        "chat",
+        "UI chat (ficheros)"
+      ],
+      "estado": "listo"
+    },
+    {
+      "id": "sentry",
+      "env": "SENTRY_TOKEN",
+      "auth": "oauth_pending",
+      "en_banco": false,
+      "valor_ref": null,
+      "disponible": false,
+      "consumidores": [
+        "router (observabilidad)",
+        "UI chat"
+      ],
+      "estado": "oauth pendiente (owner)"
+    },
+    {
+      "id": "linear",
+      "env": "LINEAR_TOKEN",
+      "auth": "oauth_pending",
+      "en_banco": false,
+      "valor_ref": null,
+      "disponible": false,
+      "consumidores": [
+        "openclaw (tareas)",
+        "chat"
+      ],
+      "estado": "oauth pendiente (owner)"
+    },
+    {
+      "id": "firecrawl",
+      "env": "FIRECRAWL_API_KEY",
+      "auth": "api_key",
+      "en_banco": false,
+      "valor_ref": null,
+      "disponible": false,
+      "consumidores": [
+        "chat (investigacion web)",
+        "openclaw"
+      ],
+      "estado": "falta credencial (owner)"
+    }
+  ],
+  "resumen": {
+    "http_total": 10,
+    "http_en_codigo": 10,
+    "http_up": 0,
+    "mcp_total": 10,
+    "mcp_con_credencial": 3,
+    "pendientes_con_saldo": [
+      "P1",
+      "P2",
+      "P3",
+      "P4"
+    ]
+  },
+  "en_espera": [
+    {
+      "id": "P1",
+      "que": "Reiniciar los 6 Spaces del router (2 grupos x 3) + hf-bucket-mcp (infraestructura MCP, no es un grupo del router)",
+      "bloqueo": "HF 402: 'You must purchase pre-paid credits to host Spaces with paid hardware'",
+      "comando": "POST /api/spaces/COMAND-CENTER-1/{space}/restart  (los 6 del router + hf-bucket-mcp)",
+      "verificacion": "GET /api/spaces/... -> stage RUNNING y GET /health -> 200",
+      "necesita": "creditos prepago",
+      "ejecutable_por_mi": "si, con saldo confirmado por el owner"
+    },
+    {
+      "id": "P2",
+      "que": "Convertir el Space destino en el runtime docker",
+      "bloqueo": "HF 402: Docker en cpu-basic exige PRO",
+      "comando": "cambiar 'sdk: static' por 'sdk: docker' en el README del Space COMAND-CENTER-1/router-universal-router-inteligente y push (1 linea)",
+      "verificacion": "GET /api/spaces/... -> sdk docker + stage RUNNING + /health 200",
+      "necesita": "PRO",
+      "ejecutable_por_mi": "si, con PRO confirmado por el owner"
+    },
+    {
+      "id": "P3",
+      "que": "Reconstruir los 12 datasets + LoRAs con Job de HF (si se quiere rehacer desde cero)",
+      "bloqueo": "HF 402 en POST /api/jobs (creditos)",
+      "comando": "POST /api/jobs/COMAND-CENTER-1 con dockerImage+command (los scripts estaban en hf-job-scripts, hoy RETIRADOS)",
+      "verificacion": "GET /api/jobs/{ns}/{id} -> status.stage COMPLETED",
+      "necesita": "creditos prepago",
+      "ejecutable_por_mi": "si, con saldo; alternativa YA FUNCIONANDO y gratis: instalacion en local + push por git",
+      "nota": "no es necesario: los 12 modos + 4 de servicio ya estan instalados y publicados"
+    },
+    {
+      "id": "P4",
+      "que": "Probar Groq de verdad desde un Space vivo",
+      "bloqueo": "las 6 claves GROQ_KEYS devuelven 404 tambien desde HF; el egress del sandbox esta bloqueado por Cloudflare 1010",
+      "comando": "POST {host}/v1/groq con x-api-key",
+      "verificacion": "HTTP 200 y provider=groq (hoy responde el rescate NVIDIA)",
+      "necesita": "claves Groq validas (owner)",
+      "ejecutable_por_mi": "si, con las claves nuevas del owner"
+    },
+    {
+      "id": "P5",
+      "que": "Completar las credenciales de los 10 MCP",
+      "bloqueo": "7 de 10 sin credencial: context7, firecrawl (api_key) y supabase, notion, stripe, sentry, linear (oauth)",
+      "comando": "descifrar banco/vault.json con HF_VAULT_KEY y anadir el valor; indice banco/secrets.json -> present=true",
+      "verificacion": "GET /api/banks o lectura del indice: present=true para los 10",
+      "necesita": "credenciales del owner (no saldo)",
+      "ejecutable_por_mi": "si, cuando el owner las aporte"
+    }
+  ],
+  "fuente_canonica": "external/core/SATELITE_CENTRAL_CONECCION.json + banco/secrets.json (bucket HF)",
+  "almacenamiento_hf": {
+    "capa_1_disco_del_space": {
+      "ruta": "/data",
+      "que_es": "Disco persistente del Space de HF (solo hardware de pago). Estado, checkpoints y cache de los GGUF.",
+      "montado_por": "HF Space (cpu-upgrade, 32 GB RAM)"
+    },
+    "capa_2_bucket_de_memoria": {
+      "bucket": "COMAND-CENTER-1/yaiwes-memoria-storage",
+      "uri": "hf://buckets/COMAND-CENTER-1/yaiwes-memoria-storage",
+      "que_es": "Memoria compartida entre los 6 Spaces y el chat: banco cifrado, memoria de agentes y auditoria.",
+      "mcp": "COMAND-CENTER-1/hf-bucket-mcp (MCP oficial de HF, puerto 7860) -> MCP_MEMORY_HTTP_URL",
+      "escritura": "Gratis (contenido). El bucket no es repo git: se escribe con el CLI hf."
+    },
+    "como_se_conectan_los_2_grupos": [
+      "1. compute: el Grupo 1 (proxy, 7860) es el unico que entra desde fuera (router, chat, UI chat, openclaw).",
+      "2. El Grupo 1 elige el LLM del modo y llama por HTTPS al Grupo 2 (7861); si el Grupo 2 no responde, cae a NVIDIA NIM y luego Groq.",
+      "3. El Grupo 2 devuelve la inferencia al Grupo 1, que la devuelve al cliente. El Grupo 2 tambien llama al Grupo 1 con ROUTER_BASE_URL para reportar estado.",
+      "4. persistencia: los dos grupos escriben en su /data y comparten la memoria del bucket (hf-bucket-mcp): un checkpoint escrito por uno lo ve el otro.",
+      "5. credenciales: las claves de proveedor NO estan en HF Secrets; se hidratan del sello cifrado del repo (fichas/fichas_qwen/sellos/proveedores.sello) con HF_VAULT_KEY."
+    ]
+  },
+  "nota_renombrado": "Los 6 Spaces se renombraron en HF el 2026-11-18: el Grupo 1 ahora se llama 'space grupo 1 router MVP 1' (compute) y el Grupo 2 'space grupo 2 router LLM HF' (LLM locales). Los nombres anteriores (local-llm-router*, swe-code-s1/s2/s3) ya no existen."
+}
