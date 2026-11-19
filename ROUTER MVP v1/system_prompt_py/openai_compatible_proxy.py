@@ -911,6 +911,7 @@ async def _agent_request(agent_name, request: Request, x_api_key):
         messages, model_requested,
         service_mode=None, route_path=f"/v1/agents/{agent_name}",
         detected_mode=detected, adapter={}, agent=agent_name,
+        max_tokens=body.get("max_tokens"), temperature=body.get("temperature"),
     )
 
 
