@@ -570,6 +570,15 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
     """
     adapter = adapter or {}
 
+    # 0-tres. PREFIJO CANONICO por modo: mismo texto byte a byte -> llama-server
+    # reutiliza el KV del prefijo. MEDIDO: 3,95 s -> 0,29 s (93 % menos) en la 2a
+    # llamada del mismo modo. Ver router_llm_hf/prefijo_canonico.py.
+    try:
+        from router_llm_hf import prefijo_canonico as _pc
+        messages = _pc.construir(messages, detected_mode)
+    except Exception as _e:
+        print(f"[prefijo] fallo: {_e}")
+
     # 0-bis. CACHE semantico (PASO 5): el mismo objetivo repreguntado no vuelve
     # a generar. La respuesta lleva "cache": {"hit": true} para que se vea.
     try:
