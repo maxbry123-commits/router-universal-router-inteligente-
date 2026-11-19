@@ -42,12 +42,12 @@
       },
       "s3": {
         "id": "unsloth/Qwen3.5-0.8B-GGUF",
-        "file": "unsloth__Qwen3.5-0.8B-GGUF__Qwen3.5-0.8B-Q4_K_M.gguf",
-        "sha256": "bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517",
-        "quant": "Q4_K_M",
-        "bytes": 532517120,
+        "file": "unsloth__Qwen3.5-0.8B-GGUF__Qwen3.5-0.8B-IQ4_XS.gguf",
+        "sha256": "619917ae92f61eb6515a7070e944a0a7c2b198a2cf6536386f475485188a36ff",
+        "quant": "IQ4_XS",
+        "bytes": 492605696,
         "space": "space-grupo-2-router-llm-hf-3",
-        "nota": "Sustituye a IQ4_XS: medido con llama-bench b12000 real, Q4_K_M da +9% en decode y +30% en prompt."
+        "nota": "IQ4_XS se queda: MEDIDO en el Space (EPYC 7R13, 8 vCPU) 60,5 t/s frente a 48,2 t/s de Q4_K_M (-20%). El bench local con b12000 daba +9% a Q4_K_M, pero no se traslada a este hardware: 8 hilos penalizan el fichero mayor. Q4_K_M queda subido en swe-code-hf-gguf por si se cambia de hardware."
       }
     },
     "nvidia": {
