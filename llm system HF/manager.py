@@ -98,6 +98,23 @@ def _verify_model():
         entry = reg.get("models", {}).get(space, {})
         expected = entry.get("sha256")
         if not expected:
+            # El SPACE_ID no esta definido en los Spaces: se resuelve por MODEL_FILE
+            # (el nombre real del fichero en el registro), que es lo que se descarga.
+            models = reg.get("models") or {}
+            candidatos = []
+            for k, v in models.items():
+                if isinstance(v, dict):
+                    if v.get("file"):
+                        candidatos.append(v)
+                    for k2, v2 in v.items():
+                        if isinstance(v2, dict) and v2.get("file"):
+                            candidatos.append(v2)
+            for c in candidatos:
+                if c.get("file") == MODEL_FILE or str(c.get("file", "")).endswith(MODEL_FILE):
+                    expected = c.get("sha256")
+                    if expected:
+                        break
+        if not expected:
             entry["sha256"] = actual
             entry["path"] = MODEL_PATH
             reg.setdefault("models", {})[space] = entry

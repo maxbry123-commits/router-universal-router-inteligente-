@@ -1,14 +1,22 @@
 {
-  "version": "2.0.0",
-  "updated": "2026-11-15",
+  "version": "3.0.0",
+  "updated": "2026-11-19",
   "groups": {
     "group_1_compute": {
-      "spaces": ["local-llm-router", "local-llm-router-v2", "local-llm-router-v7"],
+      "spaces": [
+        "space-grupo-1-router-mvp-1",
+        "space-grupo-1-router-mvp-1-v2",
+        "space-grupo-1-router-mvp-1-v7"
+      ],
       "ram_threshold_pct": 90.0,
       "behavior": "jump_to_next_on_90pct"
     },
     "group_2_llm": {
-      "spaces": ["swe-code-s1", "swe-code-s2", "swe-code-s3"],
+      "spaces": [
+        "space-grupo-2-router-llm-hf-1",
+        "space-grupo-2-router-llm-hf-2",
+        "space-grupo-2-router-llm-hf-3"
+      ],
       "idle_unload_s": 1800,
       "one_model_per_space": true,
       "behavior": "queue_if_all_busy"
@@ -16,9 +24,31 @@
   },
   "models": {
     "local": {
-      "s1": {"id": "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF", "file": "qwen2.5-coder-0.5b-instruct-q5_k_m.gguf"},
-      "s2": {"id": "LiquidAI/LFM2.5-350M-GGUF", "file": "LFM2.5-350M-Q4_K_M.gguf"},
-      "s3": {"id": "unsloth/Qwen3.5-0.8B-GGUF", "file": "Qwen3.5-0.8B-IQ4_XS.gguf"}
+      "s1": {
+        "id": "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF",
+        "file": "Qwen__Qwen2.5-Coder-0.5B-Instruct-GGUF__qwen2.5-coder-0.5b-instruct-q5_k_m.gguf",
+        "sha256": "7f6a0b1670c9fff2cccbf8746dff19bb9c023708c8ca7702e4d49805985ecbac",
+        "quant": "Q5_K_M",
+        "bytes": 522186624,
+        "space": "space-grupo-2-router-llm-hf-1"
+      },
+      "s2": {
+        "id": "LiquidAI/LFM2.5-350M-GGUF",
+        "file": "LiquidAI__LFM2.5-350M-GGUF__LFM2.5-350M-Q4_K_M.gguf",
+        "sha256": "7e6f72643caafc9a68256686638c4d7916f2cec76d1df478d4c3ddcd95a6aed4",
+        "quant": "Q4_K_M",
+        "bytes": 229312224,
+        "space": "space-grupo-2-router-llm-hf-2"
+      },
+      "s3": {
+        "id": "unsloth/Qwen3.5-0.8B-GGUF",
+        "file": "unsloth__Qwen3.5-0.8B-GGUF__Qwen3.5-0.8B-Q4_K_M.gguf",
+        "sha256": "bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517",
+        "quant": "Q4_K_M",
+        "bytes": 532517120,
+        "space": "space-grupo-2-router-llm-hf-3",
+        "nota": "Sustituye a IQ4_XS: medido con llama-bench b12000 real, Q4_K_M da +9% en decode y +30% en prompt."
+      }
     },
     "nvidia": {
       "count": 4,
@@ -31,9 +61,15 @@
     },
     "groq": {
       "count": 6,
-      "models": ["qwen/qwen3-32b"],
+      "models": [
+        "qwen/qwen3-32b"
+      ],
       "note": "6 APIs rotan entre el mismo modelo Qwen 3.8"
     }
   },
-  "fallback_chain": ["hf_local", "nvidia", "groq"]
+  "fallback_chain": [
+    "hf_local",
+    "nvidia",
+    "groq"
+  ]
 }
