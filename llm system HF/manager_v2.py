@@ -134,9 +134,13 @@ def _load_llama():
     # (sed sobre '"--n-gpu-layers", "0"]').
     cmd += ["--threads", str(LLAMA_THREADS),
             "--threads-batch", str(LLAMA_THREADS)]
-    # PASO 5: KV cache cuantizado a q8_0 (se mide en vivo; si no mejora, se quita).
-    # Menos RAM de KV y menos trafico de memoria en CPU (el cuello real aqui).
-    if os.getenv("LLAMA_KV_QUANT", "1") == "1":
+    # KV cache cuantizado: MEDIDO en vivo el 2026-11-19 -> NO compensa.
+    #   0.5B  97,0 -> 93,1 tok/s (-4 %)   RAM 633 -> 603 MB (-4,7 %)
+    #   350M  139,7 -> 137,2 tok/s (-2 %)  RAM 462 -> 433 MB (-6,3 %)
+    #   0.8B   56,5 -> 47,9 tok/s (-15 %)  RAM 953 -> 861 MB (-9,7 %)
+    # Ahorra RAM que aqui no sobra (32 GB) y quita velocidad: queda OFF.
+    # Se deja el interruptor por si el hardware cambia (cuantizar a q4 si acaso).
+    if os.getenv("LLAMA_KV_QUANT", "0") == "1":
         cmd += ["--cache-type-k", "q8_0", "--cache-type-v", "q8_0"]
     # Flags de CPU medidos/verificados contra el binario oficial b12000:
     #   --cpu-strict 1  : colocacion estricta de CPU (+5% medido en la literatura)
