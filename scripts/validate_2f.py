@@ -26,6 +26,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+import pathlib
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
@@ -276,6 +277,34 @@ git reset --hard HEAD~1
           c_f1["kind"] == "pregunta" and c_f1["format_in"] == "F1" and c_f1["format_out"] == "F3"
           and c_f2["kind"] == "agentico" and c_f2["format_in"] == "F2" and c_f2["format_out"] == "F4",
           f"F1={c_f1['kind']}/{c_f1['format_in']} F2={c_f2['kind']}/{c_f2['format_in']}")
+
+    # ── V15 · sintaxis JS real (node --check) ──────────────────────────────
+    import re as _re
+    import tempfile as _tf
+    js_ok = True
+    js_det = []
+    with _tf.TemporaryDirectory(prefix="jscheck-") as _td:
+        for _js in ("chat-router/chat/ui/model-selector.js", "chat-router/chat/ui/ui-controller.js"):
+            src_js = (REPO / _js).read_text(encoding="utf-8")
+            tmp_js = pathlib.Path(_td) / (pathlib.Path(_js).stem + ".mjs")
+            tmp_js.write_text(src_js, encoding="utf-8")
+            proc_js = subprocess.run(["node", "--check", str(tmp_js)], capture_output=True, text=True)
+            if proc_js.returncode != 0:
+                js_ok = False
+                js_det.append(f"{_js}: {proc_js.stderr.strip().splitlines()[0][:120] if proc_js.stderr.strip() else 'error'}")
+        # scripts inline del index.html
+        html_full = (REPO / "chat-router" / "chat" / "index.html").read_text(encoding="utf-8")
+        for i, block in enumerate(_re.findall(r"<script(?![^>]*src=)[^>]*>(.*?)</script>", html_full, _re.S)):
+            if not block.strip():
+                continue
+            tmp_js = pathlib.Path(_td) / f"inline_{i}.mjs"
+            tmp_js.write_text(block, encoding="utf-8")
+            proc_js = subprocess.run(["node", "--check", str(tmp_js)], capture_output=True, text=True)
+            if proc_js.returncode != 0:
+                js_ok = False
+                js_det.append(f"index.html bloque {i}: {proc_js.stderr.strip().splitlines()[0][:120] if proc_js.stderr.strip() else 'error'}")
+    check("V15 sintaxis JS real (node --check en los 2 modulos y los scripts inline)", js_ok,
+          "; ".join(js_det) if js_det else "2 modulos + scripts inline sin error de sintaxis")
 
     # ── RESUMEN ───────────────────────────────────────────────────────────
     fallos = [n for n, ok, _ in RESULTS if not ok]

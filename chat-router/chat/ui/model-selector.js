@@ -74,7 +74,7 @@ export const AGENTS_FALLBACK = [
 export let AGENT_REGISTRY = { agents: [], roots: {}, ok: false };
 
 export async function loadAgents(apiBase = "") {
-  """Lee el registro vivo de agentes. Sin red -> lista de reserva (nunca inventada)."""
+  // Lee el registro vivo de agentes. Sin red -> lista de reserva (nunca inventada).
   const url = (apiBase || "") + "/v1/agents";
   try {
     const res = await fetch(url, { method: "GET", headers: { "x-api-key": window.__YAWES_KEY__ || "" } });
