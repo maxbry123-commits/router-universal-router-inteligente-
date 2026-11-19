@@ -96,6 +96,11 @@ from provider_timeouts import get_timeout
 from provider_window import ProviderHTTPError
 from queue_manager import QueueManager
 from control_bridge import BRIDGE
+try:
+    from router_llm_hf.local_pool import POOL as LOCAL_POOL
+except Exception as _e:  # sin el modulo, el proxy sigue con el Space fijo
+    LOCAL_POOL = None
+    print(f"[pool] local_pool no importado: {_e}")
 from router_llm_hf.harness_wiring import HarnessClient
 from external.core.provider_fallback import ProviderFallback
 # Control Plane cableado (Op2): los modos de servicio y su contrato, y el
@@ -561,7 +566,9 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
         except Exception as e:
             print(f"[harness] fallback a Motores: {type(e).__name__}: {e}")
 
-    # 1. Ejecucion local: Space del Grupo 2 que sirve ese modelo.
+    # 1. Ejecucion local: COLA de los 3 Spaces del Grupo 2 (1 modelo por Space).
+    #    Si el asignado esta ocupado -> el siguiente; si los 3 estan ocupados ->
+    #    espera en cola; los 3 son espejo entre si (router_llm_hf/local_pool.py).
     async def local_execution(msgs: list):
         space = LOCAL_SPACES.get(model_requested)
         model_to_serve = model_requested
@@ -572,19 +579,38 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
                 space, model_to_serve = _target
         if not space:
             raise NotImplementedError(f"modelo no local: {model_requested}")
-        url = f"https://comand-center-1-{space}.hf.space/v1/chat/completions"
         headers = {"x-api-key": ROUTER_API_KEY, "Content-Type": "application/json"}
-        try:
-            r = await provider_fb.client.post(
-                url, headers=headers,
-                json={"model": model_to_serve, "messages": msgs},
-                timeout=LOCAL_TIMEOUT_S,
-            )
-        except Exception as e:
-            raise RuntimeError(f"Space {space} inaccesible: {e}")
-        if r.status_code != 200:
-            raise RuntimeError(f"Space {space} HTTP {r.status_code}")
-        return r.json()
+
+        async def _call(space_name: str):
+            url = f"https://comand-center-1-{space_name}.hf.space/v1/chat/completions"
+            try:
+                r = await provider_fb.client.post(
+                    url, headers=headers,
+                    json={"model": model_to_serve, "messages": msgs},
+                    timeout=LOCAL_TIMEOUT_S,
+                )
+            except Exception as e:
+                return {"ok": False, "error": f"inaccesible: {e}"}
+            if r.status_code != 200:
+                txt = (r.text or "")[:160]
+                # 503 "Loading model" = el Space esta despertando: reintentable.
+                cargando = ("Loading model" in txt) or (r.status_code == 503)
+                return {"ok": False, "error": f"HTTP {r.status_code}: {txt}",
+                        "retryable": cargando}
+            try:
+                return {"ok": True, "json": r.json()}
+            except Exception as e:
+                return {"ok": False, "error": f"json invalido: {e}"}
+
+        res = await LOCAL_POOL.execute(_call, preferred=space, model=model_requested,
+                                       mode=service_mode)
+        data = res.get("json") or {}
+        if res.get("space"):
+            data["local_space"] = res["space"]
+            data["local_mirror"] = bool(res.get("mirror"))
+            if res.get("queued"):
+                data["local_queued"] = True
+        return data
 
     # 2. Cadena de fallback: Local -> NVIDIA (4 APIs) -> Groq (6 APIs), con HTTP real.
     await QUEUE.acquire()
@@ -915,6 +941,15 @@ async def harness_health():
     """Estado real del Harness DeepSeek (no lanza excepcion)."""
     from router_llm_hf.harness_wiring import health_harness
     return await health_harness()
+
+@app.get("/v1/local/pool")
+def local_pool_state():
+    """Estado REAL de la cola local: que Space sirve que modelo, cual esta
+    ocupado, cuantos esperan y cuales son los espejos de cada uno."""
+    if LOCAL_POOL is None:
+        return {"enabled": False, "why": "local_pool no importado"}
+    return LOCAL_POOL.snapshot()
+
 
 @app.get("/health")
 def health():
