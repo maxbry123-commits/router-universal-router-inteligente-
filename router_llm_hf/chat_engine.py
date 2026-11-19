@@ -23,6 +23,31 @@ artefactos, modos de servicio). No hay numeros inventados.
 """
 from __future__ import annotations
 
+def _safe_json(path, default):
+    try:
+        import json as _j
+        return _j.loads(Path(path).read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError, OSError, UnicodeDecodeError):
+        return default
+
+def _safe_artifact_path(artifact_dir: str, name: str) -> Path:
+    """Resuelve un nombre de artefacto garantizando que quede dentro de artifact_dir."""
+    base = Path(artifact_dir).resolve()
+    base.mkdir(parents=True, exist_ok=True)
+    raw = str(name)
+    safe_name = Path(raw).name
+    if not safe_name or safe_name in (".", ".."):
+        raise ValueError(f"nombre inválido: {name!r}")
+    # ADAPTACION DECLARADA (contrato del smoke del DAG): un nombre con separador
+    # o ".." se RECHAZA con ValueError en vez de sanitizarse en silencio
+    # (sanitizar convertiria un intento de traversal en una escritura legitima).
+    if raw != safe_name or ".." in Path(raw).parts:
+        raise ValueError(f"path traversal bloqueado: {name!r}")
+    target = (base / safe_name).resolve()
+    if not target.is_relative_to(base):
+        raise ValueError(f"path traversal bloqueado: {name!r}")
+    return target
+
 import hashlib
 import json
 import os
@@ -74,8 +99,16 @@ def pide_archivo(prompt: str) -> Optional[Dict[str, Any]]:
     m = re.search(r"\.(" + "|".join(EXTENSIONES) + r")\b", t)
     if m:
         ext = m.group(1)
-    verbo = any(v in t for v in VERBOS_ARCHIVO)
-    sustantivo = any(s in t for s in SUSTANTIVOS_ARCHIVO)
+    # C3: verbos y sustantivos tolerantes (acentos, mayusculas, variantes).
+    verbo = any(v in t for v in VERBOS_ARCHIVO) or any(
+        v in t for v in ("dame", "damel", "damelos", "genera", "generame", "generá",
+                         "hazme", "haceme", "crea", "creame", "escribe", "escribime",
+                         "muestra", "mostrame", "muéstrame", "enséñame", "enseniame",
+                         "necesito", "quiero", "pásame", "pasame", "enviame", "envíame",
+                         "exporta", "exportame"))
+    sustantivo = any(s in t for s in SUSTANTIVOS_ARCHIVO) or any(
+        n in t for n in ("archivo", "fichero", "documento", "doc", "ficha", "reporte",
+                         "csv", "json", "markdown", "txt", "py", "sh", "yaml", "html"))
     if not (ext or (verbo and sustantivo) or (verbo and ext)):
         return None
     # Nombre propuesto (determinista, sin inventar rutas del usuario).
@@ -83,9 +116,14 @@ def pide_archivo(prompt: str) -> Optional[Dict[str, Any]]:
     base = " ".join(base.split())
     vacias = {"con", "del", "la", "el", "de", "y", "en", "un", "una", "los", "las",
               "para", "por", "sobre", "que", "del", "al", "a", "the", "of"}
+    verbos_c3 = ("dame", "damel", "damelos", "genera", "generame", "generá", "hazme",
+                 "haceme", "crea", "creame", "escribe", "escribime", "muestra",
+                 "mostrame", "muéstrame", "enséñame", "enseniame", "necesito",
+                 "quiero", "pásame", "pasame", "enviame", "envíame", "exporta",
+                 "exportame")
     palabras = [p for p in base.split(" ")
                 if p not in VERBOS_ARCHIVO and p not in SUSTANTIVOS_ARCHIVO
-                and p not in vacias and p != ext and len(p) > 2][:4]
+                and p not in verbos_c3 and p not in vacias and p != ext and len(p) > 2][:4]
     slug = "-".join(palabras) or "salida"
     kind = ext or "md"
     if kind == "yml":
@@ -106,7 +144,7 @@ def estado_real() -> Dict[str, Any]:
     # 1. Agentes: registro central + interruptor real en disco.
     try:
         from router_llm_hf.agent_state import list_state, is_enabled
-        reg = json.loads((raiz / "router_llm_hf" / "AGENTS_REGISTRY.json").read_text(encoding="utf-8"))
+        reg = _safe_json(raiz / "router_llm_hf" / "AGENTS_REGISTRY.json", {})
         for nombre, cfg in (reg.get("agents") or {}).items():
             est["agentes"].append({
                 "nombre": nombre,
@@ -119,7 +157,7 @@ def estado_real() -> Dict[str, Any]:
 
     # 2. Raices: informe real de auto-pull (solo lo que el informe afirma).
     try:
-        rep = json.loads((raiz / "reports" / "roots_pull.json").read_text(encoding="utf-8"))
+        rep = _safe_json(raiz / "reports" / "roots_pull.json", {})
         for nombre, info in (rep.get("roots") or {}).items():
             est["raices"].append({
                 "nombre": nombre,
@@ -241,7 +279,8 @@ def responde(prompt: str, *, artifact_dir: str, artifact_kinds=("md", "py", "htm
     if pedido:
         os.makedirs(artifact_dir, exist_ok=True)
         nombre = pedido["nombre"]
-        destino = os.path.join(artifact_dir, nombre)
+        # C1: la escritura usa la ruta resuelta y verificada (sin traversal).
+        destino = str(_safe_artifact_path(artifact_dir, nombre))
         doc = _cuerpo_documento(prompt, est, destino, respuesta_externa)
         with open(destino, "w", encoding="utf-8") as fh:
             fh.write(doc)

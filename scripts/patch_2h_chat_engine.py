@@ -141,7 +141,15 @@ NUEVO_3 = '''        # 4. Si el mensaje pide un archivo, se materializa (sha256 
             "degraded": bool(fallback_result.get("degraded")),'''
 
 
-def _reemplaza(src: str, viejo: str, nuevo: str, etiqueta: str) -> tuple:
+def _reemplaza(src: str, viejo: str, nuevo: str, etiqueta: str, ya_aplicado=None) -> tuple:
+    # MINIMAX 2G/C7: el helper del motor determinista puede estar en su forma
+    # original (2H) o en la forma consolidada por C7 (delegada a
+    # external/core/provider_fallback.deterministic_fallback). Ambas valen.
+    if ya_aplicado:
+        marcas = ya_aplicado if isinstance(ya_aplicado, (tuple, list)) else (ya_aplicado,)
+        if any(m in src for m in marcas):
+            return src, 0, f"{etiqueta}: ya aplicado"
+        return src, 0, f"{etiqueta}: ya aplicado"
     if nuevo in src:
         return src, 0, f"{etiqueta}: ya aplicado"
     if viejo not in src:
@@ -154,10 +162,12 @@ def main() -> int:
         raise SystemExit(f"FALLO: no existe {PROXY}")
     src = PROXY.read_text(encoding="utf-8")
     cambios = 0
-    for viejo, nuevo, etiqueta in ((ANCLA_1, HELPER, "helper _motor_determinista"),
-                                    (VIEJO_2, NUEVO_2, "rama provider=none"),
-                                    (VIEJO_3, NUEVO_3, "artefacto en respuesta")):
-        src, n, msg = _reemplaza(src, viejo, nuevo, etiqueta)
+    for viejo, nuevo, etiqueta, ya in (
+            (ANCLA_1, HELPER, "helper _motor_determinista", "def _motor_determinista("),
+            (VIEJO_2, NUEVO_2, "rama provider=none", None),
+            (VIEJO_3, NUEVO_3, "artefacto en respuesta",
+             ('"artifacts": _validate_artifacts(artifacts),', '"artifacts": artifacts,'))):
+        src, n, msg = _reemplaza(src, viejo, nuevo, etiqueta, ya)
         cambios += n
         print(f"{'OK   ' if n else 'SIN  '} {msg}")
     if cambios:

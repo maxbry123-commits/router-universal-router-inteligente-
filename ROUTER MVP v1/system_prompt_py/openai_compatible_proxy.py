@@ -4,6 +4,48 @@ Ubicacion: ROUTER MVP v1/system_prompt_py/openai_compatible_proxy.py
 Delega control via control_bridge; nunca decide, solo ejecuta.
 """
 from fastapi import FastAPI, Request, HTTPException, Header
+
+# --- C6: errores tipados (aditivo) ---
+_ERROR_CODES = {
+    "sin claves en NVIDIA_KEYS": ("NO_PROVIDER_KEYS", "configura NVIDIA_KEYS o GROQ_KEYS"),
+    "sin claves en GROQ_KEYS":   ("NO_PROVIDER_KEYS", "configura NVIDIA_KEYS o GROQ_KEYS"),
+    "Todos los proveedores fallaron": ("ALL_PROVIDERS_DOWN", "revisa /v1/providers/health o usa determinista"),
+}
+def _typed_error(detail: str, request_id: str = "", extra: dict = None) -> dict:
+    code, recovery = _ERROR_CODES.get(detail, ("UNKNOWN", "revisar logs"))
+    body = {"error": {"code": code, "message": detail,
+                      "recovery": recovery, "request_id": request_id}}
+    if extra: body["error"].update(extra)
+    return body
+
+# --- C5: x-request-id middleware ---
+import uuid as _uuid_c5
+from starlette.middleware.base import BaseHTTPMiddleware as _BaseMW_C5
+class _RequestIdMiddleware(_BaseMW_C5):
+    async def dispatch(self, request, call_next):
+        rid = request.headers.get("x-request-id") or str(_uuid_c5.uuid4())
+        request.state.request_id = rid
+        response = await call_next(request)
+        response.headers["x-request-id"] = rid
+        return response
+
+# --- C4: contrato artifacts[] (aditivo) ---
+from typing import TypedDict as _TD_C4, List as _L_C4
+class _ArtifactDict(_TD_C4, total=False):
+    name: str
+    sha256: str
+    path: str
+    bytes: int
+
+def _validate_artifact(a: dict) -> dict:
+    return {"name": str(a.get("name","")),
+            "sha256": str(a.get("sha256","")),
+            "path": str(a.get("path","")),
+            "bytes": int(a.get("bytes",0) or 0)}
+
+def _validate_artifacts(items) -> _L_C4[dict]:
+    if not items: return []
+    return [_validate_artifact(x) for x in items if isinstance(x, dict)]
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -86,6 +128,7 @@ async def lifespan(app):
         print(f"[lifespan] shutdown: {e}")
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(_RequestIdMiddleware)
 
 # --- MINIMAX 4: MCP_MEMORY_URL ---
 import os as _os
@@ -266,36 +309,29 @@ def _agent_prompt(agent_name: str):
     return AGENT_PROMPTS.get(agent_name)
 
 
-def _motor_determinista(messages, respuesta_externa: str = "") -> dict:
-    """Ultimo eslabon de la cadena del chat + materializacion del archivo.
-
-    Si Local (Space GGUF), NVIDIA y Groq fallan, la cadena se queda sin
-    proveedor. Antes el proxy devolvia 503 y el chat quedaba muerto. Ahora
-    responde el motor determinista local, con el estado REAL del sistema; y si
-    el mensaje pide un archivo, lo escribe de verdad en el store de artefactos
-    (sha256 real) y devuelve el bloque para que el chat lo muestre.
-    """
+def _motor_determinista(messages=None, respuesta_externa="", **kw):
+    # C7: consolidado en el fallback unificado (external/core/provider_fallback.py).
+    # ADAPTACION DECLARADA: el DAG delegaba con *a/**kw, asi que el primer
+    # argumento (la lista de mensajes) llegaba como prompt y el motor recibia la
+    # repr de la lista -> no detectaba la peticion de archivo. Aqui se extrae el
+    # prompt del usuario antes de delegar (mismo comportamiento real).
+    from external.core.provider_fallback import deterministic_fallback
     prompt = ""
-    for _m in messages or []:
-        if _m.get("role") == "user":
-            prompt = _m.get("content") or ""
-            break
-    try:
-        from router_llm_hf import chat_engine
-        det = chat_engine.responde(
-            prompt,
-            artifact_dir=ARTIFACT_DIR,
-            artifact_kinds=ARTIFACT_KINDS,
-            respuesta_externa=respuesta_externa,
-        )
-    except Exception as e:  # pragma: no cover - el error se ve, no se esconde
-        print(f"[DETERMINISTA] no disponible: {type(e).__name__}: {e}")
-        det = {"content": f"Motor determinista no disponible: {e}", "artifacts": [],
-               "tipo": "error", "modo": "determinista"}
+    if isinstance(messages, str):
+        prompt = messages
+    else:
+        for _m in (messages or []):
+            if isinstance(_m, dict) and _m.get("role") == "user":
+                prompt = _m.get("content") or ""
+                break
+    det = deterministic_fallback(prompt, artifact_dir=ARTIFACT_DIR)
+    if not isinstance(det, dict):
+        det = {"content": str(det), "artifacts": []}
+    det.setdefault("artifacts", [])
+    det.setdefault("content", "")
     if respuesta_externa:
         det["content"] = f"{respuesta_externa}\n\n{det.get('content') or ''}"
     return det
-
 
 async def _run_chat_chain(messages, model_requested, *, service_mode=None, route_path="",
                           detected_mode=None, adapter=None, agent=None):
@@ -437,7 +473,7 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
             "object": "chat.completion",
             "provider": provider_used,
             "agent": agent,
-            "artifacts": artifacts,
+            "artifacts": _validate_artifacts(artifacts),
             "degraded": bool(fallback_result.get("degraded")),
             "mode": detected_mode,
             "service_mode": service_mode,

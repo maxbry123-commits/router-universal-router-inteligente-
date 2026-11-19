@@ -1,5 +1,15 @@
 """provider_fallback.py — Cadena de fallback real (HTTP)."""
 import os
+
+# --- C7: último eslabón determinista ---
+def deterministic_fallback(prompt: str, artifact_dir: str = "artifacts") -> dict:
+    """Devuelve bloque de artefacto si el motor determinista está disponible."""
+    try:
+        from router_llm_hf.chat_engine import responde
+        return responde(prompt, artifact_dir=artifact_dir,
+                        artifact_kinds=("md","py","html","json","txt","csv","yaml","yml","sh"))
+    except Exception as e:
+        return {"error": f"deterministic_unavailable: {e}"}
 import httpx
 import logging
 import asyncio
