@@ -216,7 +216,7 @@ try:
     class _ColaGrupo1Middleware(_BMW_COLA):
         async def dispatch(self, request, call_next):
             path = request.url.path
-            if path in ("/v1/queue", "/health"):
+            if path in ("/v1/cola", "/health"):
                 return await call_next(request)
             if not (path.startswith("/v1/") or path.startswith("/chat/") or path == "/"):
                 return await call_next(request)
@@ -1002,7 +1002,7 @@ async def cache_estado():
         return {"ok": False, "error": repr(e)[:160]}
 
 
-@app.get("/v1/queue")
+@app.get("/v1/cola")
 async def cola_grupo1_endpoint():
     """Cola del Grupo 1: estado real de los 3 espejos (HTTP+MCP+memoria)."""
     try:
