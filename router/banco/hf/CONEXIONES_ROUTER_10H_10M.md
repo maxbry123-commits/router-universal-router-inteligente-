@@ -1,6 +1,6 @@
 # Router: 10 HTTP + 10 MCP conectadas
 
-Generado el 2026-11-18. Router activo: `https://comand-center-1-space-grupo-1-router-mvp-1.hf.space` | Destino nuevo: `https://comand-center-1-router-universal-router-inteligente.hf.space`
+Generado el 2026-11-18. Router activo: `https://comand-center-1-space-grupo-1-router-mvp-1.hf.space` | Destino nuevo (Space estatico -> host `.static`): `https://comand-center-1-router-universal-router-inteligente.static.hf.space`
 
 Estado: **los 6 Spaces del router (2 grupos x 3) estan PAUSED** (HF 402, sin creditos prepago) + `hf-bucket-mcp` (infraestructura MCP, tambien PAUSED) -> las 10 rutas vivas devuelven **503**. El Space destino `router-universal-router-inteligente` esta **RUNNING** (static).
 En codigo, las **10/10 rutas existen** (route table real del proxy, import real). Auth: `x-api-key` = `ROUTER_API_KEY` (banco cifrado `banco/vault.json`, clave `HF_VAULT_KEY`).
