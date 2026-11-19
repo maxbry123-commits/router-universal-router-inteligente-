@@ -31,7 +31,11 @@ _started = time.time()
 
 
 def _me() -> str:
-    return os.getenv("SPACE_ID", ESPACIOS[0] if ESPACIOS else "desconocido")
+    """SPACE_ID llega como 'COMAND-CENTER-1/space-x': nos quedamos con el nombre."""
+    v = os.getenv("SPACE_ID", "") or ""
+    if "/" in v:
+        v = v.split("/")[-1]
+    return v or (ESPACIOS[0] if ESPACIOS else "desconocido")
 
 
 def try_acquire() -> bool:

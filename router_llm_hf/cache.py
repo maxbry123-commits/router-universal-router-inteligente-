@@ -39,7 +39,7 @@ def _key(model: str, mode: Optional[str], service_mode: Optional[str], messages:
 
 def get(model: str, mode: Optional[str], service_mode: Optional[str], messages: Any) -> Optional[Dict[str, Any]]:
     """Devuelve la respuesta cacheada si sigue viva; None si no."""
-    global _hits, _misses
+    global _hits, _misses, _hits_total, _misses_total
     if not ENABLED:
         return None
     k = _key(model, mode, service_mode, messages)
