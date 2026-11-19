@@ -35,7 +35,10 @@ class ProviderFallback:
                      "banco_origen": (self.banco or {}).get("origen")}
         # 10 conexiones HTTP compartidas
         self.limits = httpx.Limits(max_connections=10, max_keepalive_connections=10)
-        self.client = httpx.AsyncClient(limits=self.limits, timeout=60.0)
+        # MEDIDO: con 60 s un proveedor muerto se comia el watchdog (96 s) y el chat
+        # se quedaba en PENSANDO. 25 s deja pasar a la cadena antes de tiempo.
+        # (las llamadas al Space local usan su propio timeout: LOCAL_TIMEOUT_S.)
+        self.client = httpx.AsyncClient(limits=self.limits, timeout=25.0)
 
     def _parse_keys(self, raw: str) -> List[str]:
         return [k.strip() for k in raw.split(",") if k.strip()]

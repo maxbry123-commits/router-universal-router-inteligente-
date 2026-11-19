@@ -13,7 +13,7 @@ export const MODEL_GROUPS = {
     label: "ROUTER (proxy principal)",
     endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1",
     models: [
-      { id: "minimaxai/minimax-m3.1-flash", label: "Router · Minimax M3.1 Flash", endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1" }
+      { id: "auto", label: "Router · Auto (recomendado)", endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1" }
     ]
   },
   yaiwes_local: {

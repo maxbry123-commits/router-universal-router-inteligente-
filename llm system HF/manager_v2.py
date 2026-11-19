@@ -144,6 +144,25 @@ def _load_llama():
     _model_loaded = True
     _last_call = time.time()
 
+def _esperar_llama_ready(timeout_s: int = 90) -> bool:
+    """Espera a que llama-server este listo (su /health responde).
+
+    Sin esto, la peticion se reenviaba nada mas arrancar el servidor y
+    devolvia 503 'Loading model' (el usuario veia un error en vez de esperar).
+    """
+    import urllib.request as _u
+    deadline = time.time() + timeout_s
+    while time.time() < deadline:
+        try:
+            with _u.urlopen("http://127.0.0.1:%d/health" % LLAMA_PORT, timeout=3) as r:
+                if r.status == 200:
+                    return True
+        except Exception:
+            pass
+        time.sleep(1.0)
+    return False
+
+
 def _unload_llama():
     global _llama_proc, _model_loaded
     if _llama_proc is not None:
@@ -176,6 +195,8 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
     _load_llama()
     if not _model_loaded:
         raise HTTPException(503, "Modelo no disponible")
+    if not _esperar_llama_ready():
+        raise HTTPException(503, "El modelo no esta listo tras esperar la carga")
     body = await request.json()
     stream = bool(body.get("stream", False))
     global _last_call
