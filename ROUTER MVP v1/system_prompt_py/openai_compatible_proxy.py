@@ -570,6 +570,17 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
     """
     adapter = adapter or {}
 
+    # 0-bis. CACHE semantico (PASO 5): el mismo objetivo repreguntado no vuelve
+    # a generar. La respuesta lleva "cache": {"hit": true} para que se vea.
+    try:
+        from router_llm_hf import cache as _cache
+        _hit = _cache.get(model_requested, detected_mode, service_mode, messages)
+        if _hit:
+            print(f"[cache] HIT {model_requested}/{detected_mode} -> respuesta inmediata")
+            return JSONResponse(_hit)
+    except Exception as _e:
+        print(f"[cache] lookup fallo: {_e}")
+
     # 0. Harness DeepSeek (env-gated). Si responde, su respuesta es la que sale:
     #    es el motor mas determinista de la casa. Si falla, se avisa y se sigue
     #    con la cadena de Motores (el error nunca se pierde en silencio).
@@ -680,6 +691,13 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
 
         provider_used = fallback_result.get("provider")
         content = _content_of(fallback_result.get("response"))
+        # cache: se guarda la respuesta cruda del proveedor para reutilizarla
+        try:
+            from router_llm_hf import cache as _cache
+            _cache.put(model_requested, detected_mode, service_mode, messages,
+                       dict(fallback_result.get("response") or {}))
+        except Exception as _e:
+            print(f"[cache] put fallo: {_e}")
 
         # 3. Checkpoint en el banco de memoria. Si MCP_MEMORY_URL es hf:// no hay
         #    POST posible: harness_wiring lo deja encolado en local (sin falso OK).
@@ -973,6 +991,16 @@ async def harness_health():
     """Estado real del Harness DeepSeek (no lanza excepcion)."""
     from router_llm_hf.harness_wiring import health_harness
     return await health_harness()
+
+@app.get("/v1/cache")
+async def cache_estado():
+    """Estado real de la cache semantica del router."""
+    try:
+        from router_llm_hf import cache as _cache
+        return _cache.estado()
+    except Exception as _e:
+        return {"ok": False, "error": repr(e)[:160]}
+
 
 @app.get("/v1/queue")
 async def cola_grupo1_endpoint():
