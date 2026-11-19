@@ -92,8 +92,17 @@ class ProviderFallback:
         # id corto desconocido: se usa el default del proveedor (no se manda un id invalido)
         return self.MODEL_ALIASES.get(key, default)
 
-    async def call(self, messages: list, model_requested: str = None, local_fn=None) -> Dict[str, Any]:
-        """Local -> Enrutamiento por modelo (NVIDIA o Groq) -> Fallback."""
+    async def call(self, messages: list, model_requested: str = None, local_fn=None,
+                   forced_provider: str = None) -> Dict[str, Any]:
+        """Local -> enrutado por modelo (NVIDIA o Groq) -> error real si ese proveedor falla.
+
+        ORDEN DEL OWNER: un modelo NUNCA cambia de API. Si el modelo es de Groq se
+        llama solo a Groq; si es de NVIDIA, solo a NVIDIA. Si ese proveedor se agota
+        se devuelve su error real (nunca un OK de otro proveedor).
+        forced_provider: /v1/nvidia -> "nvidia", /v1/groq -> "groq" (ruta explicita).
+        Tambien se puede fijar como atributo: provider_fb.forced_provider = "groq".
+        """
+        forced_provider = forced_provider or getattr(self, "forced_provider", None)
         # Conteo de claves refrescado en cada llamada (fuente de verdad: el entorno actual)
         self.diag["nvidia_keys"] = len(self.nvidia_keys)
         self.diag["groq_keys"] = len(self.groq_keys)

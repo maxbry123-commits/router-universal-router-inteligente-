@@ -667,6 +667,12 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
                 _forced = "nvidia"
             elif _rp.endswith("/groq"):
                 _forced = "groq"
+        # el proveedor forzado se fija como atributo y tambien como kwarg: asi
+        # sigue funcionando aunque el modulo vaya desfasado en algun Space.
+        try:
+            provider_fb.forced_provider = _forced
+        except Exception:
+            pass
         fallback_result = await BRIDGE.run(
             str(uuid.uuid4()),
             provider_fb.call(messages, model_requested=model_requested, local_fn=local_execution,
