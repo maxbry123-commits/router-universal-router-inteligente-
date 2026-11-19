@@ -5,6 +5,26 @@ Generado el 2026-11-18. Router activo: `https://comand-center-1-space-grupo-1-ro
 Estado: **los 6 Spaces del router (2 grupos x 3) estan PAUSED** (HF 402, sin creditos prepago) + `hf-bucket-mcp` (infraestructura MCP, tambien PAUSED) -> las 10 rutas vivas devuelven **503**. El Space destino `router-universal-router-inteligente` esta **RUNNING** (static).
 En codigo, las **10/10 rutas existen** (route table real del proxy, import real). Auth: `x-api-key` = `ROUTER_API_KEY` (banco cifrado `banco/vault.json`, clave `HF_VAULT_KEY`).
 
+## Los 2 grupos de servidores en HF (compute + almacenamiento persistente)
+
+| Grupo | Rol | Spaces (3) | Puerto | Compute |
+|---|---|---|---|---|
+| 1 · space grupo 1 router MVP 1 | compute (proxy Router MVP v1) | `space-grupo-1-router-mvp-1`, `space-grupo-1-router-mvp-1-v2`, `space-grupo-1-router-mvp-1-v7` | 7860 | Space docker · `cpu-upgrade` (32 GB RAM, CPU de pago) |
+| 2 · space grupo 2 router LLM HF | LLM local GGUF | `space-grupo-2-router-llm-hf-1`, `space-grupo-2-router-llm-hf-2`, `space-grupo-2-router-llm-hf-3` | 7861 | Space docker · `cpu-upgrade` (32 GB RAM, CPU de pago) |
+
+Renombrados en HF el 2026-11-18 (`move_repo`). Los nombres anteriores (`local-llm-router*`, `swe-code-s1/s2/s3`) ya no existen.
+
+**Almacenamiento persistente, 2 capas**
+1. `/data` — disco persistente de cada Space de pago: estado, checkpoints y cache de los GGUF.
+2. `hf://buckets/COMAND-CENTER-1/yaiwes-memoria-storage` — memoria compartida por el MCP oficial de HF `hf-bucket-mcp` (`MCP_MEMORY_HTTP_URL`): banco cifrado, memoria de agentes y auditoria.
+
+**Como se conectan los 2 grupos**
+1. Solo entra el **Grupo 1** (proxy, 7860) desde router, chat, UI chat y openclaw.
+2. El Grupo 1 elige el LLM del modo y llama por HTTPS al **Grupo 2** (7861); si no responde, cae a NVIDIA NIM y luego Groq.
+3. El Grupo 2 devuelve la inferencia al Grupo 1; el Grupo 2 tambien llama al Grupo 1 con `ROUTER_BASE_URL` para reportar estado.
+4. Los dos grupos escriben en su `/data` y comparten la memoria del bucket: un checkpoint escrito por uno lo ve el otro.
+5. Las claves de proveedor **no** estan en HF Secrets: se hidratan del sello cifrado del repo (`fichas/fichas_qwen/sellos/proveedores.sello`) con `HF_VAULT_KEY`.
+
 ## Las 10 HTTP del router
 
 | # | ID | Metodo | Ruta | En codigo | Probe vivo | Consumidores |
