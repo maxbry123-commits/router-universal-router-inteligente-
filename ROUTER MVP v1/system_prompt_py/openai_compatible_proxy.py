@@ -5,6 +5,14 @@ Delega control via control_bridge; nunca decide, solo ejecuta.
 """
 from fastapi import FastAPI, Request, HTTPException, Header
 
+# --- Salida 3B: endpoints operativos ---
+try:
+    from ext_ops import ext_ops
+    _HAS_OPS = True
+except Exception as _e:
+    ext_ops = None; _HAS_OPS = False
+    print(f"[ops] import falló: {_e}")
+
 # --- Salida 2B: endpoints aditivos ---
 try:
     from ext_endpoints import ext_router
@@ -137,6 +145,35 @@ async def lifespan(app):
         print(f"[lifespan] shutdown: {e}")
 
 app = FastAPI(lifespan=lifespan)
+# --- Salida 3B: rate limit 429 (aditivo) ---
+_WIRE_RATE_LIMIT = True
+try:
+    from ext_ops import rate_allow as _rate_allow_w
+    from starlette.middleware.base import BaseHTTPMiddleware as _BMW
+    from starlette.responses import JSONResponse as _JR
+    class _RateMiddleware(_BMW):
+        async def dispatch(self, request, call_next):
+            if not (request.method == "POST" and request.url.path.endswith("/v1/chat/completions")):
+                return await call_next(request)
+            allow, used = _rate_allow_w()
+            if not allow:
+                return _JR({"error": {"code": "RATE_LIMITED",
+                                      "message": f"límite {used}/min superado",
+                                      "recovery": "esperar 60s"}},
+                           status_code=429, headers={"Retry-After": "60"})
+            return await call_next(request)
+    app.add_middleware(_RateMiddleware)
+    print("[rate] middleware 429 montado")
+except Exception as _e:
+    print(f"[rate] falló: {_e}")
+
+try:
+    if _HAS_OPS and ext_ops is not None:
+        app.include_router(ext_ops)
+        print("[ops] mounted: /v1/providers/*, /v1/sandbox/*, /v1/audit, /v1/artifacts/{name}/*, /v1/service-modes")
+except Exception as _e:
+    print(f"[ops] mount falló: {_e}")
+
 try:
     if _HAS_EXT and ext_router is not None:
         app.include_router(ext_router)
@@ -1070,3 +1107,57 @@ async def loop_resume(taskId: str):
                 "next_iteration": state.get("iteration", 0)}
     except Exception as e:
         return {"ok": False, "error": f"{type(e).__name__}:{e}"}
+
+
+# --- Salida 3B: instrumentación de proveedores (monkey-patch aditivo) ---
+_WIRE_PROVIDER_STATS = True
+try:
+    import time as _t_wire
+    from ext_ops import record_provider_call as _rpc_wire
+    _orig_run_chain = globals().get("_run_chat_chain")
+    if callable(_orig_run_chain) and not getattr(_orig_run_chain, "_instrumented", False):
+        # ADAPTACION DECLARADA: el wrapper debe ser async (la originals es async);
+        # en sync devolvia una coroutine y no podia leer el proveedor.
+        async def _instrumented_run_chain(*args, **kwargs):
+            t0 = _t_wire.time()
+            provider = "unknown"
+            ok = False
+            try:
+                # ADAPTACION DECLARADA (bug real del DAG): sin await, result era
+                # una COROUTINE -> el proveedor nunca se leia y las stats de
+                # /v1/providers/health se quedaban siempre a 0.
+                result = await _orig_run_chain(*args, **kwargs)
+                try:
+                    if isinstance(result, dict):
+                        provider = result.get("provider") or result.get("mode") or "unknown"
+                    else:
+                        # ADAPTACION DECLARADA: _run_chat_chain devuelve un
+                        # JSONResponse (no un dict) -> el proveedor se lee de su
+                        # cuerpo; sin esto las stats quedaban siempre a 0.
+                        import json as _j_wire
+                        _body = getattr(result, "body", None)
+                        _d = _j_wire.loads(_body) if _body else {}
+                        if isinstance(_d, dict):
+                            provider = _d.get("provider") or _d.get("mode") or "unknown"
+                    ok = True
+                except Exception: pass
+                return result
+            except Exception:
+                ok = False
+                raise
+            finally:
+                dt = _t_wire.time() - t0
+                # ADAPTACION DECLARADA: el proxy reporta el proveedor como
+                # "determinista" y ext_ops lo lista como "deterministic" ->
+                # sin normalizar, las stats NUNCA se registraban.
+                provider = {"determinista": "deterministic"}.get(provider, provider)
+                for p in (provider, "local", "nvidia", "groq"):
+                    if p == provider:
+                        _rpc_wire(p, ok, dt); break
+        _instrumented_run_chain._instrumented = True
+        globals()["_run_chat_chain"] = _instrumented_run_chain
+        print("[wire] _run_chat_chain instrumentado")
+    else:
+        print("[wire] _run_chat_chain no encontrado o ya instrumentado; se omite")
+except Exception as _e:
+    print(f"[wire] falló: {_e}")

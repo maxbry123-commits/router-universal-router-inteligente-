@@ -8,3 +8,7 @@ ROUTER MVP v1/system_prompt_py/componentes_descargados/
 ROUTER MVP v1/system_prompt_py/skills/
 artifacts/
 state/
+# estado de runtime de la Salida 2/3 (tasks, feedback, audit): no se versiona
+.tasks/
+.feedback.jsonl
+.audit.jsonl
