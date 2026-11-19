@@ -477,6 +477,25 @@ def _log_checkpoint_error(task):
         print(f"[WARN] Fallo checkpoint (no bloqueante): {e}")
 
 
+def _payload_local(model_to_serve, msgs, max_tokens=None, temperature=None):
+    """Cuerpo de la peticion al Space local. SIN max_tokens el modelo genera
+    hundreds de tokens de mas (medido: 8,2 s por una respuesta de 40 tokens)."""
+    payload = {"model": model_to_serve, "messages": msgs}
+    if max_tokens:
+        try:
+            n = int(max_tokens)
+            if n > 0:
+                payload["max_tokens"] = n
+        except Exception:
+            pass
+    if temperature is not None:
+        try:
+            payload["temperature"] = float(temperature)
+        except Exception:
+            pass
+    return payload
+
+
 def _content_of(response) -> str:
     """Extrae el texto de una respuesta OpenAI-compatible."""
     try:
@@ -560,7 +579,8 @@ def _motor_determinista(messages=None, respuesta_externa="", **kw):
     return det
 
 async def _run_chat_chain(messages, model_requested, *, service_mode=None, route_path="",
-                          detected_mode=None, adapter=None, agent=None):
+                          detected_mode=None, adapter=None, agent=None, max_tokens=None,
+                          temperature=None):
     """Nucleo de ejecucion del chat (compartido por el chat y por el espejo).
 
     Orden determinista:
@@ -639,7 +659,7 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
             try:
                 r = await provider_fb.client.post(
                     url, headers=headers,
-                    json={"model": model_to_serve, "messages": msgs},
+                    json=_payload_local(model_to_serve, msgs, max_tokens, temperature),
                     timeout=LOCAL_TIMEOUT_S,
                 )
             except Exception as e:
@@ -841,6 +861,7 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
         messages, model_requested,
         service_mode=service_mode, route_path=route_path,
         detected_mode=detected_mode, adapter=adapter,
+        max_tokens=body.get("max_tokens"), temperature=body.get("temperature"),
     )
 
 
