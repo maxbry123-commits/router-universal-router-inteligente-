@@ -106,12 +106,31 @@ GROUPS = {
         "compute": "HF Space docker · hardware cpu-upgrade (32 GB RAM, CPU de pago) · puerto {}".format(
             APP_PORT_LLM
         ),
+        # AISLAMIENTO (orden del owner): el Grupo 2 es SOLO LLM.
+        # No monta HTTP, ni MCP, ni almacenamiento/memoria compartida, ni cola.
+        "aislamiento": "solo_llm",
+        "comparte_con_grupo_1": False,
         "almacenamiento": {
             "disco_persistente": DISCO_PERSISTENTE,
-            "memoria_compartida": "{} via {} (MCP_MEMORY_HTTP_URL)".format(BUCKET_URI, MCP_MEMORY_SPACE),
+            "memoria_compartida": None,
+            "nota": "El Grupo 2 NO usa el MCP de memoria ni el bucket compartido: "
+                    "eso vive solo en el Grupo 1 (cola de 3 espejos).",
         },
     },
 }
+
+# El Grupo 2 sirve SOLO modelos: nada de HTTP/MCP/memoria compartida.
+GRUPO_2_SOLO_LLM = True
+
+
+def grupo_2_solo_llm() -> bool:
+    """True si el Grupo 2 esta desacoplado del Grupo 1 (regla de arquitectura)."""
+    return GRUPO_2_SOLO_LLM and GROUPS["grupo_2_router_llm_hf"].get("comparte_con_grupo_1") is False
+
+
+def grupo_1_sin_cola() -> bool:
+    """El Grupo 1 es el unico con HTTP + MCP + memoria (+ cola de 3 espejos)."""
+    return bool(GROUP_1_COMPUTE) and len(GROUP_1_COMPUTE) == 3
 
 # Modelo local que sirve cada Space del Grupo 2 (variables reales del Space).
 GROUP_2_MODELOS = {

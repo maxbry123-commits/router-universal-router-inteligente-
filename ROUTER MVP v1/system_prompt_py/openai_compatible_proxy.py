@@ -204,6 +204,38 @@ except Exception as _e:
 
 app.add_middleware(_RequestIdMiddleware)
 
+# --- PASO 4: COLA del Grupo 1 (HTTP + MCP + almacenamiento/memoria) ----------
+# 3 espejos, 1 peticion en vuelo por Space (GRUPO1_MAX_INFLIGHT). Si el Space
+# esta al limite -> 429 con los OTROS espejos: el cliente rota y la peticion
+# espera en la cola. El Grupo 2 (LLM) no participa de esta cola.
+try:
+    from starlette.middleware.base import BaseHTTPMiddleware as _BMW_COLA
+    from starlette.responses import JSONResponse as _JR_COLA
+    from external.core import cola_grupo1 as _cola1
+
+    class _ColaGrupo1Middleware(_BMW_COLA):
+        async def dispatch(self, request, call_next):
+            path = request.url.path
+            if path in ("/v1/queue", "/health"):
+                return await call_next(request)
+            if not (path.startswith("/v1/") or path.startswith("/chat/") or path == "/"):
+                return await call_next(request)
+            if not _cola1.try_acquire():
+                return _JR_COLA({"error": {"code": "COLA_GRUPO1_LLENA",
+                                           "message": "grupo de compute al limite; rota a otro espejo",
+                                           "otros_mirrors": _cola1.otros_mirrors(),
+                                           "retry_after_s": 2}},
+                                status_code=429, headers={"Retry-After": "2"})
+            try:
+                return await call_next(request)
+            finally:
+                _cola1.release()
+
+    app.add_middleware(_ColaGrupo1Middleware)
+    print("[cola] cola del Grupo 1 montada (3 espejos, %d en vuelo por Space)" % _cola1.MAX_INFLIGHT)
+except Exception as _e:
+    print(f"[cola] fallo: {_e}")
+
 # --- MINIMAX 4: MCP_MEMORY_URL ---
 import os as _os
 if not _os.getenv("MCP_MEMORY_URL"):
@@ -941,6 +973,16 @@ async def harness_health():
     """Estado real del Harness DeepSeek (no lanza excepcion)."""
     from router_llm_hf.harness_wiring import health_harness
     return await health_harness()
+
+@app.get("/v1/queue")
+async def cola_grupo1_endpoint():
+    """Cola del Grupo 1: estado real de los 3 espejos (HTTP+MCP+memoria)."""
+    try:
+        from external.core import cola_grupo1 as _c1
+        return await _c1.estado_agregado()
+    except Exception as _e:
+        return {"ok": False, "error": repr(e)[:160]}
+
 
 @app.get("/v1/local/pool")
 def local_pool_state():

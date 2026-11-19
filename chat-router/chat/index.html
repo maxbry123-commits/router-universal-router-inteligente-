@@ -446,17 +446,36 @@ function api(path){
   if(!base && location.protocol==='file:')return '';
   return base+path;
 }
+/* PASO 4: el Grupo 1 son 3 espejos con COLA. Si un espejo esta lleno (429)
+   o cae (503), el cliente rota al siguiente en vez de quedarse colgado. */
+var ESPEJOS=[
+  'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space',
+  'https://comand-center-1-space-grupo-1-router-mvp-1-v2.hf.space',
+  'https://comand-center-1-space-grupo-1-router-mvp-1-v7.hf.space'
+];
+var _espejo=0;
 function apiJSON(path,opts){
   var u=api(path);
   if(!u)return Promise.reject(new Error('sin destino'));
   var h=Object.assign({'Content-Type':'application/json'},opts&&opts.headers||{});
   if(S.key)h['x-api-key']=S.key;
-  return fetch(u,Object.assign({},opts,{headers:h})).then(function(r){
-    return r.json().catch(function(){return{};}).then(function(j){
-      if(!r.ok){var e=new Error((j&&(j.detail||j.error))||('HTTP '+r.status));e.status=r.status;throw e;}
-      return j;
+  var intento=0;
+  function probar(destino){
+    return fetch(destino,Object.assign({},opts,{headers:h})).then(function(r){
+      return r.json().catch(function(){return{};}).then(function(j){
+        if((r.status===429||r.status===503)&&intento<ESPEJOS.length-1&&path.indexOf('/v1/queue')<0){
+          intento++;
+          var e2=j&&j.error;
+          var otros=(e2&&typeof e2==='object'&&e2.otros_mirrors)||null;
+          var next=otros&&otros.length?otros[0]:ESPEJOS[(_espejo=intento)%ESPEJOS.length];
+          return new Promise(function(r2){setTimeout(function(){r2();},250);}).then(function(){return probar(next);});
+        }
+        if(!r.ok){var e=new Error((j&&(j.detail||j.error))||('HTTP '+r.status));e.status=r.status;throw e;}
+        return j;
+      });
     });
-  });
+  }
+  return probar(u);
 }
 function badge(id,text,cls){var b=el(id);if(!b)return;b.textContent=text;b.className='badge '+(cls||'warning');}
 function bubbleHTML(text){
