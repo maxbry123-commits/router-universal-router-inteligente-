@@ -918,7 +918,8 @@ async def harness_health():
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok",
+            "auto_pull": (AUTO_PULL.status() if AUTO_PULL is not None else {"enabled": False})}
 
 
 # ─── MINIMAX 2F · ARTIFACTOS (crear/leer md, py, html y otros) ───────────
@@ -1296,3 +1297,41 @@ try:
         print("[wire] _run_chat_chain no encontrado o ya instrumentado; se omite")
 except Exception as _e:
     print(f"[wire] falló: {_e}")
+
+
+# ─── AUTO-PULL: cada push a GitHub se aplica en el Space VIVO, sin reiniciar ───
+# HF solo ofrece sleep->wake (necesita inactividad) o restart (tira el contenedor).
+# Aqui un watcher dentro del contenedor: fetch -> reset --hard -> refresco de las
+# 3 raices -> recarga in-place (execv). El Space NO se reinicia: no hay rebuild
+# ni se re-descarga el modelo.
+def _arranca_auto_pull():
+    try:
+        import importlib.util as _ilu
+        import os as _os
+        _here = _os.path.dirname(_os.path.abspath(__file__))
+        _mod = None
+        for _up in range(1, 6):
+            _cand = _os.path.join(_here, *([_os.pardir] * _up), "external", "core", "auto_pull.py")
+            if _os.path.isfile(_cand):
+                _spec = _ilu.spec_from_file_location("auto_pull", _cand)
+                _mod = _ilu.module_from_spec(_spec)
+                _spec.loader.exec_module(_mod)
+                break
+        if _mod is None:
+            print("[auto-pull] no se encuentra external/core/auto_pull.py")
+            return None
+        _mod.start()
+        return _mod
+    except Exception as _e:
+        print(f"[auto-pull] no arranca: {_e}")
+        return None
+
+AUTO_PULL = _arranca_auto_pull()
+
+
+@app.get("/v1/auto-pull")
+def auto_pull_state():
+    """Estado REAL del auto-pull (rama, HEAD, pulls aplicados, estado de las raices)."""
+    if AUTO_PULL is None:
+        return {"enabled": False, "why": "watcher no arrancado"}
+    return AUTO_PULL.status()

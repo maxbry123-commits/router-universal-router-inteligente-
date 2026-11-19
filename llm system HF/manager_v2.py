@@ -139,7 +139,8 @@ def health():
     return {"status": "ok", "model_loaded": _model_loaded, "model_id": MODEL_ID,
             "model_file": MODEL_FILE, "sha256": _model_sha256,
             "idle_unload_s": IDLE_UNLOAD_S, "api_port": API_PORT,
-            "llama_threads": LLAMA_THREADS}
+            "llama_threads": LLAMA_THREADS,
+            "auto_pull": (AUTO_PULL.status() if AUTO_PULL is not None else {"enabled": False})}
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request, x_api_key: str = Header(None)):
@@ -175,6 +176,52 @@ async def chat_completions(request: Request, x_api_key: str = Header(None)):
 @app.on_event("shutdown")
 def shutdown():
     _unload_llama()
+
+# ─── AUTO-PULL: cada push a GitHub se aplica en el Space VIVO, sin reiniciar ───
+def _reload_matar_llama():
+    """Antes de sustituir el proceso, para su llama-server hijo (el puerto 8082
+    lo ocupa en exclusiva: si no, el manager nuevo no podria arrancarlo)."""
+    global _llama_proc
+    try:
+        if _llama_proc is not None:
+            _llama_proc.send_signal(signal.SIGTERM)
+            try:
+                _llama_proc.wait(timeout=10)
+            except Exception:
+                _llama_proc.kill()
+            _llama_proc = None
+            print("[auto-pull] llama-server detenido para la recarga")
+    except Exception as _e:
+        print(f"[auto-pull] no se pudo parar llama-server: {_e}")
+    import sys as _sys
+    import os as _os
+    _os.execv(_sys.executable, [_sys.executable] + list(_sys.argv))
+
+
+def _arranca_auto_pull():
+    try:
+        import importlib.util as _ilu
+        import os as _os
+        _here = _os.path.dirname(_os.path.abspath(__file__))
+        _mod = None
+        for _up in range(1, 6):
+            _cand = _os.path.join(_here, *([_os.pardir] * _up), "external", "core", "auto_pull.py")
+            if _os.path.isfile(_cand):
+                _spec = _ilu.spec_from_file_location("auto_pull", _cand)
+                _mod = _ilu.module_from_spec(_spec)
+                _spec.loader.exec_module(_mod)
+                break
+        if _mod is None:
+            print("[auto-pull] no se encuentra external/core/auto_pull.py")
+            return None
+        _mod.start(on_reload=_reload_matar_llama)
+        return _mod
+    except Exception as _e:
+        print(f"[auto-pull] no arranca: {_e}")
+        return None
+
+AUTO_PULL = _arranca_auto_pull()
+
 
 if __name__ == "__main__":
     import uvicorn
