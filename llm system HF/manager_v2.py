@@ -144,6 +144,20 @@ def _load_llama():
     _model_loaded = True
     _last_call = time.time()
 
+def _rss_mb() -> float:
+    """RAM real (RSS) del proceso llama-server en MB (0 si no esta cargado)."""
+    try:
+        if _llama_proc is None:
+            return 0.0
+        with open("/proc/%d/status" % _llama_proc.pid, "r", encoding="utf-8") as f:
+            for ln in f:
+                if ln.startswith("VmRSS:"):
+                    return round(int(ln.split()[1]) / 1024.0, 1)
+    except Exception:
+        pass
+    return 0.0
+
+
 def _esperar_llama_ready(timeout_s: int = 90) -> bool:
     """Espera a que llama-server este listo (su /health responde).
 
@@ -185,6 +199,7 @@ def health():
             "model_file": MODEL_FILE, "sha256": _model_sha256,
             "idle_unload_s": IDLE_UNLOAD_S, "api_port": API_PORT,
             "llama_threads": LLAMA_THREADS,
+            "rss_mb": _rss_mb(),
             "auto_pull": (AUTO_PULL.status() if AUTO_PULL is not None else {"enabled": False})}
 
 @app.post("/v1/chat/completions")
