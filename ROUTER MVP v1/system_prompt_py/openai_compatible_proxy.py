@@ -5,6 +5,14 @@ Delega control via control_bridge; nunca decide, solo ejecuta.
 """
 from fastapi import FastAPI, Request, HTTPException, Header
 
+# --- Salida 4/4: search + export.md (ficha 017) ---
+try:
+    from ext_search import ext_search
+    _HAS_SEARCH = True
+except Exception as _e:
+    ext_search = None; _HAS_SEARCH = False
+    print(f"[search] import falló: {_e}")
+
 # --- Salida 3B: endpoints operativos ---
 try:
     from ext_ops import ext_ops
@@ -145,6 +153,13 @@ async def lifespan(app):
         print(f"[lifespan] shutdown: {e}")
 
 app = FastAPI(lifespan=lifespan)
+try:
+    if _HAS_SEARCH and ext_search is not None:
+        app.include_router(ext_search)
+        print("[search] mounted: /v1/chat/search + /v1/chat/export.md")
+except Exception as _e:
+    print(f"[search] mount falló: {_e}")
+
 # --- Salida 3B: rate limit 429 (aditivo) ---
 _WIRE_RATE_LIMIT = True
 try:

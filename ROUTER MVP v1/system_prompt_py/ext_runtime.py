@@ -32,11 +32,16 @@ class ChatRuntimeMiddleware(BaseHTTPMiddleware):
                             headers={"x-request-id": getattr(request.state, "request_id", "")})
 
         raw = await request.body()
-        wants_stream = False
-        try: wants_stream = bool(json.loads(raw or b"{}").get("stream"))
+        req_data = {}
+        try: req_data = json.loads(raw or b"{}") or {}
         except Exception: pass
+        wants_stream = bool(req_data.get("stream"))
 
-        task = task_store.create(kind="chat", status="sending")
+        # ADAPTACION DECLARADA (ficha 017): el task se creaba SIN payload, asi que
+        # /v1/chat/search y /v1/chat/export.md no tenian NINGUN mensaje que leer
+        # (el store ya soporta payload; solo faltaba guardarlo).
+        task = task_store.create(kind="chat", status="sending",
+                                  payload={"messages": req_data.get("messages") or []})
         tid = task["task_id"]
         try:
             response = await call_next(request)
