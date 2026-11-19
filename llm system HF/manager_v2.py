@@ -119,9 +119,10 @@ def _load_llama():
     #   -ub 1024        : micro-lote mayor (el Job de flags medio +12% en el 0.8B)
     #   --cache-reuse   : reuso del prefijo de prompt (TTFT en bucles agenticos;
     #                     en los modelos con rope por secciones es un no-op)
-    cmd += ["--cpu-strict", os.getenv("LLAMA_CPU_STRICT", "1"),
-            "-ub", os.getenv("LLAMA_UBATCH", "1024"),
-            "--cache-reuse", os.getenv("LLAMA_CACHE_REUSE", "256")]
+    # MEDIDO en vivo (2026-11-19): -ub 1024 y --cache-reuse 256 RESTABAN
+    # rendimiento (350M 144 -> 93 t/s; 0.8B 58,7 -> 52,4 t/s). Solo se deja
+    # --cpu-strict, que si lo mejora (+4% en el 0.5B). Los demas, por defecto.
+    cmd += ["--cpu-strict", os.getenv("LLAMA_CPU_STRICT", "1")]
     _llama_proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     _model_loaded = True
     _last_call = time.time()
