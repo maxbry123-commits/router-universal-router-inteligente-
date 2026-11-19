@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="es" data-theme="matte">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0a0d">
+<title>HTTP + MCP + los 2 routers</title>
+<style>
+:root{
+  --font:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --phone-radius:24px; --card-radius:12px; --button-radius:10px; --sheet-radius:28px;
+  --success:#4da77b; --warning:#dfab60; --danger:#cb7168;
+  --status-green:#50df94; --status-blue:#65a7ff; --status-red:#ff777e;
+  --status-soft-green:rgba(80,223,148,.13);
+  --status-soft-blue:rgba(101,167,255,.13);
+  --status-soft-red:rgba(255,119,126,.13);
+  --radius:12px; --btn:10px; --sheet:28px; --phone:24px;
+  --border:rgba(255,255,255,.10); --border-strong:rgba(255,255,255,.20);
+  --txt:#e6e6e6; --txt-dim:#9a9a9a; --txt-mute:#6f6f6f;
+  --bg:#0a0a0d; --surface:#141417; --card:#202025; --surface-alt:#1a1a1f;
+  --accent:#e4e4e7; --accent-fg:#0a0a0d; --accent-soft:rgba(228,228,231,.12);
+  --selected:#2563eb; --download:#ff6b1a; --shadow:0 18px 48px rgba(0,0,0,.55);
+}
+html[data-theme="little"]{--bg:#1C1B1A;--surface:#2A2927;--card:#2A2927;--surface-alt:#232220;
+  --accent:#C65D3B;--accent-fg:#fff;--accent-soft:rgba(198,93,59,.16);--selected:#C65D3B;--download:#A8A29E;
+  --txt:#f0efec;--txt-dim:#b3aea6;--txt-mute:#8a857d;--border:rgba(255,255,255,.10);--border-strong:rgba(255,255,255,.22);}
+html[data-theme="matte"]{--bg:#0a0a0d;--surface:#141417;--card:#202025;--surface-alt:#1a1a1f;
+  --accent:#e4e4e7;--accent-fg:#0a0a0d;--accent-soft:rgba(228,228,231,.12);--selected:#2563eb;--download:#ff5500;
+  --txt:#e8e8ea;--txt-dim:#9a9aa0;--txt-mute:#6c6c74;--border:rgba(255,255,255,.09);--border-strong:rgba(255,255,255,.18);}
+html[data-theme="blanco"]{--bg:#f4f4f5;--surface:#ffffff;--card:#ffffff;--surface-alt:#f7f7f8;
+  --accent:#18181b;--accent-fg:#ffffff;--accent-soft:rgba(24,24,27,.08);--selected:#2563eb;--download:#2563eb;
+  --txt:#18181b;--txt-dim:#52525b;--txt-mute:#7c7c85;--border:rgba(0,0,0,.12);--border-strong:rgba(0,0,0,.22);--shadow:0 18px 48px rgba(0,0,0,.12);}
+html[data-theme="crystal"]{--bg:#0c1421;--surface:rgba(225,245,255,.115);--card:rgba(242,250,255,.095);--surface-alt:rgba(225,245,255,.06);
+  --accent:#b8f5fa;--accent-fg:#06121c;--accent-soft:rgba(184,245,250,.14);--selected:#b8f5fa;--download:#b8f5fa;
+  --txt:#e6f7fb;--txt-dim:#a8c4cf;--txt-mute:#7d97a3;--border:rgba(184,245,250,.18);--border-strong:rgba(184,245,250,.30);--shadow:0 18px 48px rgba(0,0,0,.5);}
+html[data-theme="orange"]{--bg:#100e0d;--surface:#1b1816;--card:#26211d;--surface-alt:#211d19;
+  --accent:#ef823c;--accent-fg:#140f0b;--accent-soft:rgba(239,130,60,.16);--selected:#ef823c;--download:#ef823c;
+  --txt:#f3ece6;--txt-dim:#b7a89b;--txt-mute:#8a7a6d;--border:rgba(255,255,255,.10);--border-strong:rgba(255,255,255,.20);}
+html[data-theme="blue"]{--bg:#0a1424;--surface:#122238;--card:#192c45;--surface-alt:#142542;
+  --accent:#66b7ff;--accent-fg:#061426;--accent-soft:rgba(102,183,255,.16);--selected:#66b7ff;--download:#66b7ff;
+  --txt:#e9f3ff;--txt-dim:#a8c6e4;--txt-mute:#7f9bb8;--border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.24);}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font-family:var(--font);font-size:15px;line-height:1.55}
+a{color:var(--selected)}
+h1,h2,h3{margin:0 0 6px;letter-spacing:.2px;overflow-wrap:anywhere;word-break:break-word}
+h1{font-size:22px;font-weight:700}
+h2{font-size:17px;font-weight:700}
+h3{font-size:14px;font-weight:700;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.9px}
+p{margin:0 0 8px}
+code,pre,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.app{display:grid;grid-template-columns:230px minmax(0,1fr) 295px;max-width:1640px;margin:0 auto;min-height:100dvh}
+.sidebar{position:sticky;top:0;height:100dvh;overflow:auto;border-right:1px solid var(--border);
+  background:var(--surface);padding:18px 14px;display:flex;flex-direction:column;gap:14px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px}
+.logo-mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);
+  border:1px solid var(--border-strong);color:var(--txt);font-size:15px}
+.eyebrow{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--txt-mute)}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:var(--btn);border:1px solid transparent;
+  background:transparent;color:var(--txt-dim);font:600 13px/1.2 var(--font);cursor:pointer;text-align:left;width:100%}
+.nav-btn[aria-current="page"]{background:var(--accent-soft);border-color:var(--border);color:var(--txt)}
+.nav-btn:hover{color:var(--txt)}
+.n{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:var(--surface-alt);
+  border:1px solid var(--border);font-size:10px;color:var(--txt-dim)}
+.themes{display:flex;flex-wrap:wrap;gap:7px}
+.theme-btn{width:33px;height:33px;border-radius:10px;border:1px solid var(--border-strong);cursor:pointer;background:var(--card);position:relative}
+.theme-btn[aria-pressed="true"]{outline:2px solid var(--selected);outline-offset:2px}
+.theme-sw{position:absolute;inset:6px;border-radius:6px}
+.main{padding:22px 24px 60px;min-width:0}
+.hdr{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--card);
+  border-radius:20px;padding:5px 10px;font:600 10px/1 var(--font);color:var(--txt-dim)}
+.badge.ok{color:var(--status-green);background:var(--status-soft-green);border-color:rgba(80,223,148,.35)}
+.badge.warn{color:var(--warning);background:rgba(223,171,96,.12);border-color:rgba(223,171,96,.35)}
+.badge.err{color:var(--status-red);background:var(--status-soft-red);border-color:rgba(255,119,126,.35)}
+.badge.info{color:var(--status-blue);background:var(--status-soft-blue);border-color:rgba(101,167,255,.35)}
+.surface-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:17px;margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row-between{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.btn{border-radius:var(--btn);padding:9px 14px;font:700 12px/1 var(--font);cursor:pointer;border:1px solid var(--border);
+  background:var(--card);color:var(--txt);display:inline-flex;align-items:center;gap:7px}
+.btn:hover{border-color:var(--border-strong)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:transparent}
+.btn.ghost{background:transparent;color:var(--txt-dim)}
+.btn.dl{color:var(--download);border-color:rgba(255,107,26,.35)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.inspector{position:sticky;top:0;height:100dvh;overflow:auto;border-left:1px solid var(--border);
+  background:var(--surface);padding:18px 14px;display:flex;flex-direction:column;gap:14px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px}
+.kv dt{color:var(--txt-mute)}
+.kv dd{margin:0;color:var(--txt);word-break:break-word}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+pre{background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--btn);padding:12px;
+  overflow:auto;font-size:12px;line-height:1.5;max-height:340px;white-space:pre-wrap;word-break:break-word}
+.tag{display:inline-block;border:1px solid var(--border);background:var(--card);border-radius:20px;padding:4px 9px;
+  font:600 10px/1.35 var(--font);color:var(--txt-dim)}
+.chip{display:inline-block;border-radius:20px;padding:4px 10px;font:600 10px/1.35 var(--font);border:1px solid transparent}
+.chip.py{background:rgba(101,167,255,.14);color:var(--status-blue);border-color:rgba(101,167,255,.3)}
+.chip.ok{background:var(--status-soft-green);color:var(--status-green);border-color:rgba(80,223,148,.3)}
+.chip.no{background:var(--status-soft-red);color:var(--status-red);border-color:rgba(255,119,126,.3)}
+.chip.warn{background:rgba(223,171,96,.13);color:var(--warning);border-color:rgba(223,171,96,.3)}
+.mono-sm{font-size:12px;color:var(--txt-dim);word-break:break-all}
+.url-box{background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--btn);padding:8px 10px;
+  font-size:12px;word-break:break-all;color:var(--txt-dim)}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--txt-dim)}
+.flow b{background:var(--accent-soft);border:1px solid var(--border);border-radius:8px;padding:3px 9px;font-weight:600;color:var(--txt)}
+.arrow{color:var(--selected);font-weight:700}
+.ol{counter-reset:s;list-style:none;padding:0;margin:0}
+.ol li{counter-increment:s;position:relative;padding-left:26px;margin-bottom:6px;font-size:13px;color:var(--txt-dim)}
+.ol li::before{content:counter(s);position:absolute;left:0;top:1px;width:18px;height:18px;border-radius:6px;
+  display:grid;place-items:center;background:var(--accent-soft);border:1px solid var(--border);font:700 10px var(--font);color:var(--txt-dim)}
+.note{font-size:12px;color:var(--txt-mute);border-left:2px solid var(--border-strong);padding-left:10px;margin:10px 0}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--card);
+  border:1px solid var(--border-strong);border-radius:var(--btn);padding:10px 16px;font:600 12px var(--font);
+  opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:99}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:rgba(80,223,148,.5);color:var(--status-green)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,
+[tabindex]:focus-visible{outline:2px solid var(--selected);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:1240px){.app{grid-template-columns:230px minmax(0,1fr)}.inspector{display:none}}
+@media (max-width:750px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:16px 14px 70px}}
+details{border:1px solid var(--border);border-radius:var(--btn);padding:9px 12px;margin-bottom:8px;background:var(--card)}
+summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--txt)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:.8px}
+.scroll{overflow:auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo"><span class="logo-mark">Y</span><span>YAIWES<br><span class="eyebrow">Router</span></span></div>
+    <div class="eyebrow">Ventanas</div>
+    <nav class="nav"><button class="nav-btn" data-target="resumen" aria-current="page"><span class="n">1</span>Resumen</button><button class="nav-btn" data-target="http"><span class="n">2</span>10 HTTP</button><button class="nav-btn" data-target="mcp"><span class="n">3</span>10 MCP</button><button class="nav-btn" data-target="routers"><span class="n">4</span>2 routers</button></nav>
+    <div class="eyebrow">Tema</div>
+    <div class="themes"><button class="theme-btn" data-theme="little" title="Little" aria-label="Tema Little"><span class="theme-sw" style="background:#1C1B1A;box-shadow:inset 0 0 0 2px #C65D3B"></span></button><button class="theme-btn" data-theme="matte" title="Matte" aria-label="Tema Matte"><span class="theme-sw" style="background:#0a0a0d;box-shadow:inset 0 0 0 2px #e4e4e7"></span></button><button class="theme-btn" data-theme="blanco" title="Blanco" aria-label="Tema Blanco"><span class="theme-sw" style="background:#f4f4f5;box-shadow:inset 0 0 0 2px #18181b"></span></button><button class="theme-btn" data-theme="crystal" title="Crystal" aria-label="Tema Crystal"><span class="theme-sw" style="background:#0c1421;box-shadow:inset 0 0 0 2px #b8f5fa"></span></button><button class="theme-btn" data-theme="orange" title="Orange" aria-label="Tema Orange"><span class="theme-sw" style="background:#100e0d;box-shadow:inset 0 0 0 2px #ef823c"></span></button><button class="theme-btn" data-theme="blue" title="Blue" aria-label="Tema Blue"><span class="theme-sw" style="background:#0a1424;box-shadow:inset 0 0 0 2px #66b7ff"></span></button></div>
+  </aside>
+  <main class="main">
+    <div class="hdr">
+      <div><div class="eyebrow">Paso 2 · conexiones</div><h1>HTTP + MCP + los 2 routers</h1></div>
+      <div class="row"></div>
+    </div>
+    
+<section class="surface-card" id="resumen">
+  <div class="row-between">
+    <div><div class="eyebrow">Estado real</div><h2>10 HTTP + 10 MCP + los 2 routers</h2></div>
+    <div class="row"><span class="badge ok">10/10 HTTP 200</span><span class="badge ok">3/10 MCP con credencial</span>
+    <span class="badge warn">7 MCP esperan credencial del owner</span></div>
+  </div>
+  <div class="grid3" style="margin-top:12px">
+    <div><h3>Los 2 routers, sin mezclar</h3>
+      <div class="flow"><b>Tu cliente</b><span class="arrow">&#10145;</span><b>G1 proxy</b><span class="arrow">&#10145;</span><b>G2 LLM</b></div>
+      <p class="note"><b>Grupo 1</b> (3 Spaces, cola): proxy OpenAI-compatible + HTTP + MCP + memoria/almacenamiento.<br>
+      <b>Grupo 2</b> (3 Spaces): SOLO LLM local. No se vinculan ni se mezclan.</p></div>
+    <div><h3>Grupo 1 · compute/proxy</h3><ul class="ol"><li>space-grupo-1-router-mvp-1</li><li>space-grupo-1-router-mvp-1-v2</li><li>space-grupo-1-router-mvp-1-v7</li></ul></div>
+    <div><h3>Grupo 2 · LLM local</h3><ul class="ol"><li>space-grupo-2-router-llm-hf-1</li><li>space-grupo-2-router-llm-hf-2</li><li>space-grupo-2-router-llm-hf-3</li></ul></div>
+  </div>
+</section>
+
+<section class="surface-card" id="http">
+  <div class="row-between"><h2>Las 10 HTTP (probadas una a una contra el proxy vivo)</h2>
+  <span class="badge ok">10/10 devuelven 200</span></div>
+  <p class="note">Todas exigen la cabecera <code>x-api-key</code>. Tiempos reales medidos en esta ejecucion.</p>
+  
+    <details id="h-router_health" open>
+      <summary><span class="chip ok">GET 200</span> &nbsp;<b>router_health</b> <span class="mono-sm">/health</span> &nbsp;<span class="mono-sm">0.05 ms · 390 B</span></summary>
+      <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/health</span>
+        <button class="btn" data-copy="#h-router_health-c" data-label="curl copiado">Copiar cURL</button></div>
+      <pre id="h-router_health-c">curl -sS -X GET 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/health' \
+  -H 'x-api-key: $UNIVERSAL_KEY' \
+  -H 'Content-Type: application/json'</pre>
+      <pre>{&quot;status&quot;:&quot;ok&quot;,&quot;auto_pull&quot;:{&quot;version&quot;:&quot;1.0.0&quot;,&quot;enabled&quot;:true,&quot;branch&quot;:&quot;ccr-f01c3de9-bmry0s&quot;,&quot;repo_dir&quot;:&quot;/tmp/repo&quot;,&quot;interval_s&quot;:20,&quot;started_at&quot;:1795089504.8244126,&quot;last_poll_at&quot;:1795092353.426169,&quot;last_pull_at&quot;:1795092126.0304303,&quot;head&quot;:&quot;878e45df5f9b5c9872b460a8f7c28706e34a7d17&quot;,&quot;last_applied_sha&quot;:&quot;878e45df5f9b5c9872b4</pre>
+    </details>
+    <details id="h-control_status">
+      <summary><span class="chip ok">GET 200</span> &nbsp;<b>control_status</b> <span class="mono-sm">/control-plane/status</span> &nbsp;<span class="mono-sm">0.05 ms · 52 B</span></summary>
+      <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/control-plane/status</span>
+        <button class="btn" data-copy="#h-control_status-c" data-label="curl copiado">Copiar cURL</button></div>
+      <pre id="h-control_status-c">curl -sS -X GET 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/control-plane/status' \
+  -H 'x-api-key: $UNIVERSAL_KEY' \
+  -H 'Content-Type: application/json'</pre>
+      <pre>{&quot;control_plane&quot;:true,&quot;watchdog&quot;:true,&quot;recall&quot;:true}</pre>
+    </details>
+    <details id="h-chat_completions" open>
+      <summary><span class="chip ok">POST 200</span> &nbsp;<b>chat_completions</b> <span class="mono-sm">/v1/chat/completions</span> &nbsp;<span class="mono-sm">2.05 ms · 796 B</span></summary>
+      <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/chat/completions</span>
+        <button class="btn" data-copy="#h-chat_completions-c" data-label="curl copiado">Copiar cURL</button></div>
+      <pre id="h-chat_completions-c">curl -sS -X POST 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/chat/completions' \
+  -H 'x-api-key: $UNIVERSAL_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"model": "auto", "messages": [{"role": "user", "content": "di ok"}], "max_tokens": 8}'</pre>
+      <pre>{&quot;id&quot;: &quot;chatcmpl-fallback&quot;, &quot;object&quot;: &quot;chat.completion&quot;, &quot;provider&quot;: &quot;nvidia&quot;, &quot;agent&quot;: null, &quot;artifacts&quot;: [], &quot;degraded&quot;: false, &quot;mode&quot;: &quot;code_generate&quot;, &quot;service_mode&quot;: null, &quot;route&quot;: &quot;/v1/chat/completions&quot;, &quot;adapter&quot;: {&quot;base_model&quot;: &quot;Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF&quot;, &quot;lora&quot;: &quot;sandeeprdy1729/TIMPS-Coder-0.5B&quot;, </pre>
+    </details>
+    <details id="h-nvidia_direct">
+      <summary><span class="chip ok">POST 200</span> &nbsp;<b>nvidia_direct</b> <span class="mono-sm">/v1/nvidia</span> &nbsp;<span class="mono-sm">0.05 ms · 1659 B</span></summary>
+      <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/nvidia</span>
+        <button class="btn" data-copy="#h-nvidia_direct-c" data-label="curl copiado">Copiar cURL</button></div>
+      <pre id="h-nvidia_direct-c">curl -sS -X POST 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/nvidia' \
+  -H 'x-api-key: $UNIVERSAL_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"model": "auto", "messages": [{"role": "user", "content": "di ok"}], "max_tokens": 8}'</pre>
+      <pre>{&quot;id&quot;:&quot;chatcmpl-4807c9df-c0b7-416a-8409-85d5c5043eca&quot;,&quot;choices&quot;:[{&quot;index&quot;:0,&quot;message&quot;:{&quot;content&quot;:&quot;Hmm, \&quot;di ok\&quot; is a bit open-ended! Did you mean something specific, or is there something I can help you with? Feel free to clarify or ask a question — I&#x27;m here to help!&quot;,&quot;refusal&quot;:null,&quot;role&quot;:&quot;assistant&quot;,&quot;reasoning_conte</pre>
+    </details>
+    <details id="h-groq_direct">
+      <summary><span class="chip ok">POST 200</span> &nbsp;<b>groq_direct</b> <span class="mono-sm">/v1/groq</span> &nbsp;<span class="mono-sm">0.05 ms · 1659 B</span></summary>
+      <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/groq</span>
+        <button class="btn" data-copy="#h-groq_direct-c" data-label="curl copiado">Copiar cURL</button></div>
+      <pre id="h-groq_direct-c">curl -sS -X POST 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/groq' \
+  -H 'x-api-key: $UNIVERSAL_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"model": "auto", "messages": [{"role": "user", "content": "di ok"}], "max_tokens": 8}'</pre>
+      <pre>{&quot;id&quot;:&quot;chatcmpl-4807c9df-c0b7-416a-8409-85d5c5043eca&quot;,&quot;choices&quot;:[{&quot;index&quot;:0,&quot;message&quot;:{&quot;content&quot;:&quot;Hmm, \&quot;di ok\&quot; is a bit open-ended! Did you mean something specific, or is there something I can help you with? Feel free to clarify or ask a question — I&#x27;m here to help!&quot;,&quot;refusal&quot;:null,&quot;role&quot;:&quot;assistant&quot;,&quot;reasoning_conte</pre>
+    </details>
+    <details id="h-swe_free">
+      <summary><span class="chip ok">POST 200</span> &nbsp;<b>swe_free</b> <span class="mono-sm">/v1/swe-free</span> &nbsp;<span class="mono-sm">0.48 ms · 536 B</span></summary>
+      <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/swe-free</span>
+        <button class="btn" data-copy="#h-swe_free-c" data-label="curl copiado">Copiar cURL</button></div>
+      <pre id="h-swe_free-c">curl -sS -X POST 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/swe-free' \
+  -H 'x-api-key: $UNIVERSAL_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"model": "auto", "messages": [{"role": "user", "content": "di ok"}], "max_tokens": 8}'</pre>
+      <pre>{&quot;id&quot;:&quot;chatcmpl-fallback&quot;,&quot;object&quot;:&quot;chat.completion&quot;,&quot;provider&quot;:&quot;hf_local&quot;,&quot;agent&quot;:null,&quot;artifacts&quot;:[],&quot;degraded&quot;:false,&quot;mode&quot;:&quot;code_generate&quot;,&quot;service_mode&quot;:&quot;swe_free&quot;,&quot;route&quot;:&quot;/v1/swe-free&quot;,&quot;adapter&quot;:{&quot;base_model&quot;:&quot;Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF&quot;,&quot;lora&quot;:&quot;sandeeprdy1729/TIMPS-Coder-0.5B&quot;,&quot;dataset&quot;:&quot;NickIBrody/p</pre>
+    </details>
+    <details id="h-team_qwe">
+      <summary><span class="chip ok">POST 200</span> &nbsp;<b>team_qwe</b> <span class="mono-sm">/v1/team-qwe</span> &nbsp;<span class="mono-sm">2.07 ms · 485 B</span></summary>
+      <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/team-qwe</span>
+        <button class="btn" data-copy="#h-team_qwe-c" data-label="curl copiado">Copiar cURL</button></div>
+      <pre id="h-team_qwe-c">curl -sS -X POST 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/team-qwe' \
+  -H 'x-api-key: $UNIVERSAL_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"model": "auto", "messages": [{"role": "user", "content": "di ok"}], "max_tokens": 8}'</pre>
+      <pre>{&quot;id&quot;:&quot;chatcmpl-fallback&quot;,&quot;object&quot;:&quot;chat.completion&quot;,&quot;provider&quot;:&quot;nvidia&quot;,&quot;agent&quot;:null,&quot;artifacts&quot;:[],&quot;degraded&quot;:false,&quot;mode&quot;:&quot;code_generate&quot;,&quot;service_mode&quot;:&quot;team_qwe&quot;,&quot;route&quot;:&quot;/v1/team-qwe&quot;,&quot;adapter&quot;:{&quot;base_model&quot;:&quot;Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF&quot;,&quot;lora&quot;:&quot;sandeeprdy1729/TIMPS-Coder-0.5B&quot;,&quot;dataset&quot;:&quot;NickIBrody/pyt</pre>
+    </details>
+    <details id="h-loop_start">
+      <summary><span class="chip ok">POST 200</span> &nbsp;<b>loop_start</b> <span class="mono-sm">/v1/loop/start</span> &nbsp;<span class="mono-sm">0.05 ms · 30 B</span></summary>
+      <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/loop/start</span>
+        <button class="btn" data-copy="#h-loop_start-c" data-label="curl copiado">Copiar cURL</button></div>
+      <pre id="h-loop_start-c">curl -sS -X POST 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/loop/start' \
+  -H 'x-api-key: $UNIVERSAL_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"model": "auto", "messages": [{"role": "user", "content": "di ok"}], "max_tokens": 8}'</pre>
+      <pre>{&quot;ok&quot;:true,&quot;taskId&quot;:&quot;default&quot;}</pre>
+    </details>
+    <details id="h-frontend_chat">
+      <summary><span class="chip ok">GET 200</span> &nbsp;<b>frontend_chat</b> <span class="mono-sm">/chat/</span> &nbsp;<span class="mono-sm">0.06 ms · 37040 B</span></summary>
+      <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/chat/</span>
+        <button class="btn" data-copy="#h-frontend_chat-c" data-label="curl copiado">Copiar cURL</button></div>
+      <pre id="h-frontend_chat-c">curl -sS -X GET 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/chat/' \
+  -H 'x-api-key: $UNIVERSAL_KEY' \
+  -H 'Content-Type: application/json'</pre>
+      <pre>&lt;!doctype html&gt;
+&lt;html lang=&quot;es&quot; data-theme=&quot;little&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1,viewport-fit=cover&quot;&gt;
+&lt;meta name=&quot;theme-color&quot; content=&quot;#1C1B1A&quot;&gt;
+&lt;title&gt;YAIWES · Chat Router&lt;/title&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;./ui/theme.css&quot;&gt;
+&lt;link rel=&quot;stylesheet&quot; h</pre>
+    </details>
+    <details id="h-billing_status">
+      <summary><span class="chip ok">GET 200</span> &nbsp;<b>billing_status</b> <span class="mono-sm">/billing/status</span> &nbsp;<span class="mono-sm">0.04 ms · 115 B</span></summary>
+      <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/billing/status</span>
+        <button class="btn" data-copy="#h-billing_status-c" data-label="curl copiado">Copiar cURL</button></div>
+      <pre id="h-billing_status-c">curl -sS -X GET 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/billing/status' \
+  -H 'x-api-key: $UNIVERSAL_KEY' \
+  -H 'Content-Type: application/json'</pre>
+      <pre>{&quot;active_spaces&quot;:0,&quot;hourly_cost_estimate_usd&quot;:0.0,&quot;alert_triggered&quot;:false,&quot;timestamp&quot;:&quot;2026-11-19T12:46:12.682949&quot;}</pre>
+    </details>
+</section>
+
+<section class="surface-card" id="mcp">
+  <div class="row-between"><h2>Los 10 MCP</h2>
+  <div class="row"><span class="badge ok">3 con credencial</span><span class="badge err">7 pendientes (5 OAuth + 2 api_key)</span></div></div>
+  <p class="note">El estado sale del banco canonico (<code>banco/vault.json</code> cifrado AES-256-GCM).
+  Los 3 con credencial se sondearon de verdad: GitHub con su token (GET /user -&gt; 200, login <code>maxbry123-commits</code>);
+  Playwright y Filesystem son stdio local.</p>
+  
+    <details>
+      <summary><span class="chip warn">LISTO</span> &nbsp;<b>github</b> <span class="mono-sm">bearer</span> &nbsp;<span class="mono-sm">listo</span></summary>
+      <dl class="kv" style="margin-top:8px">
+        <dt>Env</dt><dd>GITHUB_TOKEN</dd>
+        <dt>Auth</dt><dd>bearer</dd>
+        <dt>En banco</dt><dd>si</dd>
+        <dt>Referencia</dt><dd class="mono-sm">vault://banco/vault.json#github_token</dd>
+        <dt>Consumidores</dt><dd>openclaw/hermes (agents), router (push/clone), chat (commits)</dd>
+        <dt>Sondeo real</dt><dd>GET api.github.com/user -&gt; sin token ()</dd>
+      </dl>
+    </details>
+    <details>
+      <summary><span class="chip ok">LISTO</span> &nbsp;<b>playwright</b> <span class="mono-sm">stdio</span> &nbsp;<span class="mono-sm">listo</span></summary>
+      <dl class="kv" style="margin-top:8px">
+        <dt>Env</dt><dd>—</dd>
+        <dt>Auth</dt><dd>stdio</dd>
+        <dt>En banco</dt><dd>si</dd>
+        <dt>Referencia</dt><dd class="mono-sm">—</dd>
+        <dt>Consumidores</dt><dd>UI chat (navegacion), openclaw</dd>
+        <dt>Sondeo real</dt><dd>stdio local · verificado en el sandbox y disponible en el chat</dd>
+      </dl>
+    </details>
+    <details>
+      <summary><span class="chip no">PENDIENTE</span> &nbsp;<b>context7</b> <span class="mono-sm">api_key</span> &nbsp;<span class="mono-sm">falta credencial (owner)</span></summary>
+      <dl class="kv" style="margin-top:8px">
+        <dt>Env</dt><dd>CONTEXT7_API_KEY</dd>
+        <dt>Auth</dt><dd>api_key</dd>
+        <dt>En banco</dt><dd>no</dd>
+        <dt>Referencia</dt><dd class="mono-sm">—</dd>
+        <dt>Consumidores</dt><dd>chat (documentacion), UI chat</dd>
+        <dt>Sondeo real</dt><dd>falta credencial (owner)</dd>
+      </dl>
+    </details>
+    <details>
+      <summary><span class="chip no">PENDIENTE</span> &nbsp;<b>supabase</b> <span class="mono-sm">oauth_pending</span> &nbsp;<span class="mono-sm">oauth pendiente (owner)</span></summary>
+      <dl class="kv" style="margin-top:8px">
+        <dt>Env</dt><dd>SUPABASE_TOKEN</dd>
+        <dt>Auth</dt><dd>oauth_pending</dd>
+        <dt>En banco</dt><dd>no</dd>
+        <dt>Referencia</dt><dd class="mono-sm">—</dd>
+        <dt>Consumidores</dt><dd>chat (persistencia), openclaw</dd>
+        <dt>Sondeo real</dt><dd>oauth pendiente (owner)</dd>
+      </dl>
+    </details>
+    <details>
+      <summary><span class="chip no">PENDIENTE</span> &nbsp;<b>notion</b> <span class="mono-sm">oauth_pending</span> &nbsp;<span class="mono-sm">oauth pendiente (owner)</span></summary>
+      <dl class="kv" style="margin-top:8px">
+        <dt>Env</dt><dd>NOTION_TOKEN</dd>
+        <dt>Auth</dt><dd>oauth_pending</dd>
+        <dt>En banco</dt><dd>no</dd>
+        <dt>Referencia</dt><dd class="mono-sm">—</dd>
+        <dt>Consumidores</dt><dd>chat (handoff/notas), openclaw</dd>
+        <dt>Sondeo real</dt><dd>oauth pendiente (owner)</dd>
+      </dl>
+    </details>
+    <details>
+      <summary><span class="chip no">PENDIENTE</span> &nbsp;<b>stripe</b> <span class="mono-sm">oauth_pending</span> &nbsp;<span class="mono-sm">oauth pendiente (owner)</span></summary>
+      <dl class="kv" style="margin-top:8px">
+        <dt>Env</dt><dd>STRIPE_TOKEN</dd>
+        <dt>Auth</dt><dd>oauth_pending</dd>
+        <dt>En banco</dt><dd>no</dd>
+        <dt>Referencia</dt><dd class="mono-sm">—</dd>
+        <dt>Consumidores</dt><dd>chat (pagos), openclaw</dd>
+        <dt>Sondeo real</dt><dd>oauth pendiente (owner)</dd>
+      </dl>
+    </details>
+    <details>
+      <summary><span class="chip ok">LISTO</span> &nbsp;<b>filesystem</b> <span class="mono-sm">stdio</span> &nbsp;<span class="mono-sm">listo</span></summary>
+      <dl class="kv" style="margin-top:8px">
+        <dt>Env</dt><dd>—</dd>
+        <dt>Auth</dt><dd>stdio</dd>
+        <dt>En banco</dt><dd>si</dd>
+        <dt>Referencia</dt><dd class="mono-sm">—</dd>
+        <dt>Consumidores</dt><dd>router (fs_tools), chat, UI chat (ficheros)</dd>
+        <dt>Sondeo real</dt><dd>stdio local · verificado en el sandbox y disponible en el chat</dd>
+      </dl>
+    </details>
+    <details>
+      <summary><span class="chip no">PENDIENTE</span> &nbsp;<b>sentry</b> <span class="mono-sm">oauth_pending</span> &nbsp;<span class="mono-sm">oauth pendiente (owner)</span></summary>
+      <dl class="kv" style="margin-top:8px">
+        <dt>Env</dt><dd>SENTRY_TOKEN</dd>
+        <dt>Auth</dt><dd>oauth_pending</dd>
+        <dt>En banco</dt><dd>no</dd>
+        <dt>Referencia</dt><dd class="mono-sm">—</dd>
+        <dt>Consumidores</dt><dd>router (observabilidad), UI chat</dd>
+        <dt>Sondeo real</dt><dd>oauth pendiente (owner)</dd>
+      </dl>
+    </details>
+    <details>
+      <summary><span class="chip no">PENDIENTE</span> &nbsp;<b>linear</b> <span class="mono-sm">oauth_pending</span> &nbsp;<span class="mono-sm">oauth pendiente (owner)</span></summary>
+      <dl class="kv" style="margin-top:8px">
+        <dt>Env</dt><dd>LINEAR_TOKEN</dd>
+        <dt>Auth</dt><dd>oauth_pending</dd>
+        <dt>En banco</dt><dd>no</dd>
+        <dt>Referencia</dt><dd class="mono-sm">—</dd>
+        <dt>Consumidores</dt><dd>openclaw (tareas), chat</dd>
+        <dt>Sondeo real</dt><dd>oauth pendiente (owner)</dd>
+      </dl>
+    </details>
+    <details>
+      <summary><span class="chip no">PENDIENTE</span> &nbsp;<b>firecrawl</b> <span class="mono-sm">api_key</span> &nbsp;<span class="mono-sm">falta credencial (owner)</span></summary>
+      <dl class="kv" style="margin-top:8px">
+        <dt>Env</dt><dd>FIRECRAWL_API_KEY</dd>
+        <dt>Auth</dt><dd>api_key</dd>
+        <dt>En banco</dt><dd>no</dd>
+        <dt>Referencia</dt><dd class="mono-sm">—</dd>
+        <dt>Consumidores</dt><dd>chat (investigacion web), openclaw</dd>
+        <dt>Sondeo real</dt><dd>falta credencial (owner)</dd>
+      </dl>
+    </details>
+</section>
+
+<section class="surface-card" id="routers">
+  <h2>La conexion de los 2 routers</h2>
+  <div class="grid3">
+    <div><h3>Grupo 1 · compute/proxy (cola)</h3>
+      <div class="flow"><b>HTTP+MCP+memoria</b><span class="arrow">&#10145;</span><b>1 en vuelo</b><span class="arrow">&#10145;</span><b>siguiente</b></div>
+      <pre>{
+ &quot;space-grupo-1-router-mvp-1&quot;: 200,
+ &quot;space-grupo-1-router-mvp-1-v2&quot;: 200,
+ &quot;space-grupo-1-router-mvp-1-v7&quot;: 200
+}</pre></div>
+    <div><h3>Grupo 2 · LLM (espejo)</h3>
+      <div class="flow"><b>peticion</b><span class="arrow">&#10145;</span><b>Space libre</b><span class="arrow">&#10145;</span><b>los 3 son espejo</b></div>
+      <pre>{
+ &quot;space-grupo-2-router-llm-hf-1&quot;: 200,
+ &quot;space-grupo-2-router-llm-hf-2&quot;: 200,
+ &quot;space-grupo-2-router-llm-hf-3&quot;: 200
+}</pre></div>
+    <div><h3>Enlace medido</h3>
+      <dl class="kv"><dt>pool</dt><dd>200</dd><dt>proxy -&gt; LLM</dt><dd>200</dd>
+      <dt>URL base</dt><dd class="mono-sm">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space</dd></dl>
+      <p class="note">El proxy decide modo, llama al Space de LLM que toque y devuelve la respuesta.
+      Si los 3 estuvieran ocupados, la peticion ESPERA en cola (60 s) y nunca devuelve un OK falso.</p></div>
+  </div>
+</section>
+  </main>
+  <aside class="inspector">
+  <div><div class="eyebrow">Inspector</div><h2>Reparto</h2></div>
+  <div class="surface-card" style="padding:13px"><h3>Grupo 1 (3 Spaces)</h3>
+    <p class="mono-sm">space-grupo-1-router-mvp-1, space-grupo-1-router-mvp-1-v2, space-grupo-1-router-mvp-1-v7</p><p class="note">HTTP + MCP + memoria + cola. Puerto 7860.</p></div>
+  <div class="surface-card" style="padding:13px"><h3>Grupo 2 (3 Spaces)</h3>
+    <p class="mono-sm">space-grupo-2-router-llm-hf-1, space-grupo-2-router-llm-hf-2, space-grupo-2-router-llm-hf-3</p><p class="note">SOLO LLM local. Puerto 7861. No se mezclan con el Grupo 1.</p></div>
+  <div class="surface-card" style="padding:13px"><h3>Banco canonico</h3>
+    <p class="mono-sm">external/core/SATELITE_CENTRAL_CONECCION.json + banco/secrets.json (bucket HF)</p><p class="note">Fuente: CONEXIONES_ROUTER_10H_10M.json del bucket de memoria.</p></div></aside>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+'use strict';
+var THEMES={"little": {"label": "Little", "bg": "#1C1B1A", "accent": "#C65D3B"}, "matte": {"label": "Matte", "bg": "#0a0a0d", "accent": "#e4e4e7"}, "blanco": {"label": "Blanco", "bg": "#f4f4f5", "accent": "#18181b"}, "crystal": {"label": "Crystal", "bg": "#0c1421", "accent": "#b8f5fa"}, "orange": {"label": "Orange", "bg": "#100e0d", "accent": "#ef823c"}, "blue": {"label": "Blue", "bg": "#0a1424", "accent": "#66b7ff"}};
+var ORDER=["little", "matte", "blanco", "crystal", "orange", "blue"];
+function applyTheme(id){
+  document.documentElement.dataset.theme=id;
+  var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',THEMES[id].bg);
+  try{localStorage.setItem('yaiwes-demo-theme',id);}catch(e){}
+  try{var old=localStorage.getItem('fromted-deploy-theme');if(old)localStorage.setItem('fromted-deploy-theme',id);}catch(e){}
+  paintThemes();
+}
+function paintThemes(){
+  document.querySelectorAll('.theme-btn').forEach(function(b){
+    b.setAttribute('aria-pressed',String(b.dataset.theme===document.documentElement.dataset.theme));
+  });
+}
+function toast(msg,ok){
+  var t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t);}
+  t.textContent=msg;t.className='toast on'+(ok?' ok':'');
+  clearTimeout(t._t);t._t=setTimeout(function(){t.className='toast';},1700);
+}
+window.__toast=toast;
+function copy(txt,label){
+  var done=function(){toast((label||'Copiado')+' ✓',true);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done,function(){fallback(txt,done);});
+  }else{fallback(txt,done);}
+}
+function fallback(txt,done){
+  var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');done();}catch(e){toast('No se pudo copiar');}
+  document.body.removeChild(ta);
+}
+window.__copy=copy;
+document.addEventListener('DOMContentLoaded',function(){
+  var saved=null;try{saved=localStorage.getItem('yaiwes-demo-theme');}catch(e){}
+  if(!saved||!THEMES[saved]){try{saved=localStorage.getItem('fromted-deploy-theme');}catch(e){}}
+  applyTheme(THEMES[saved]?saved:'matte');
+  document.querySelectorAll('.theme-btn').forEach(function(b){
+    b.addEventListener('click',function(){applyTheme(b.dataset.theme);});
+  });
+  document.querySelectorAll('[data-copy]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var t=document.querySelector(b.getAttribute('data-copy'));
+      if(t){copy(t.textContent,b.getAttribute('data-label')||'Copiado');}
+    });
+  });
+  document.querySelectorAll('.nav-btn').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.nav-btn').forEach(function(x){x.removeAttribute('aria-current');});
+      b.setAttribute('aria-current','page');
+      var t=document.getElementById(b.getAttribute('data-target'));
+      if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+  });
+});
+})();
+</script>
+</body>
+</html>

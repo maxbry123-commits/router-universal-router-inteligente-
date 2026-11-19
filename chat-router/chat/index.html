@@ -245,6 +245,10 @@ function paintThemes(){
 
 /* ---------- URL: los grupos locales son /v1; los externos ya son ruta completa ---------- */
 function chatUrl(endpoint){
+  /* Servido desde Vercel: TODO el trafico pasa por la funcion serverless /api/chat,
+     que es la que despierta los Spaces del router (HF devuelve 404 si estan dormidos).
+     Servido desde el Space: se llama al proxy directamente. */
+  if(/(^|\.)vercel\.app$/.test(location.hostname))return '/api/chat';
   if(!endpoint)return '';
   return /\/v1$/.test(endpoint)?endpoint+'/chat/completions':endpoint;
 }
@@ -459,6 +463,7 @@ function apiJSON(path,opts){
   if(!u)return Promise.reject(new Error('sin destino'));
   var h=Object.assign({'Content-Type':'application/json'},opts&&opts.headers||{});
   if(S.key)h['x-api-key']=S.key;
+  if(/(^|\.)vercel\.app$/.test(location.hostname))delete h['x-api-key'];  /* la lleva la funcion */
   var intento=0;
   function probar(destino){
     return fetch(destino,Object.assign({},opts,{headers:h})).then(function(r){

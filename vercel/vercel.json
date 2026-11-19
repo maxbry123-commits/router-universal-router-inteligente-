@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "python3 build_public.py",
+  "outputDirectory": "public",
+  "functions": { "api/chat.py": { "memory": 1024, "maxDuration": 60 } },
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" },
+      { "key": "X-Content-Type-Options", "value": "nosniff" } ] }
+  ]
+}
