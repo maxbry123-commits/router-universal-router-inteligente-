@@ -27,21 +27,21 @@ WORK = "/workspace/hf_service_adapters"
 SERVICE_MODES = {
     "swe_code": {
         "route": "/v1/swe",
-        "space": "swe-code-s1",
+        "space": "space-grupo-2-router-llm-hf-1",
         "model": "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF",
         "local_first": True,
         "description": "SWE CODE con clave: ejecuta en el Space local del Grupo 2.",
     },
     "swe_free": {
         "route": "/v1/swe-free",
-        "space": "swe-code-s3",
+        "space": "space-grupo-2-router-llm-hf-3",
         "model": "unsloth/Qwen3.5-0.8B-GGUF",
         "local_first": True,
         "description": "SWE CODE gratuito: mismo codigo, ruta propia y coste cero.",
     },
     "team_qwe": {
         "route": "/v1/team-qwe",
-        "space": "swe-code-s2",
+        "space": "space-grupo-2-router-llm-hf-2",
         "model": "LiquidAI/LFM2.5-350M-GGUF",
         "local_first": False,
         "description": "Orquestador multi-agente: cadena de proveedores.",

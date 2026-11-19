@@ -11,22 +11,22 @@
 export const MODEL_GROUPS = {
   router: {
     label: "ROUTER (proxy principal)",
-    endpoint: "https://comand-center-1-local-llm-router.hf.space/v1",
+    endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1",
     models: [
-      { id: "minimaxai/minimax-m3.1-flash", label: "Router · Minimax M3.1 Flash", endpoint: "https://comand-center-1-local-llm-router.hf.space/v1" }
+      { id: "minimaxai/minimax-m3.1-flash", label: "Router · Minimax M3.1 Flash", endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1" }
     ]
   },
   yaiwes_local: {
     label: "YAIWES HF (Grupo 2 · motores locales)",
     models: [
-      { id: "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF", label: "Qwen 2.5 Coder 0.5B", endpoint: "https://comand-center-1-swe-code-s1.hf.space/v1" },
-      { id: "LiquidAI/LFM2.5-350M-GGUF", label: "LFM 2.5 350M", endpoint: "https://comand-center-1-swe-code-s2.hf.space/v1" },
-      { id: "unsloth/Qwen3.5-0.8B-GGUF", label: "Qwen 3.5 0.8B", endpoint: "https://comand-center-1-swe-code-s3.hf.space/v1" }
+      { id: "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF", label: "Qwen 2.5 Coder 0.5B", endpoint: "https://comand-center-1-space-grupo-2-router-llm-hf-1.hf.space/v1" },
+      { id: "LiquidAI/LFM2.5-350M-GGUF", label: "LFM 2.5 350M", endpoint: "https://comand-center-1-space-grupo-2-router-llm-hf-2.hf.space/v1" },
+      { id: "unsloth/Qwen3.5-0.8B-GGUF", label: "Qwen 3.5 0.8B", endpoint: "https://comand-center-1-space-grupo-2-router-llm-hf-3.hf.space/v1" }
     ]
   },
   nvidia: {
     label: "NVIDIA (Fallback Externo)",
-    endpoint: "https://comand-center-1-local-llm-router.hf.space/v1/nvidia",
+    endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/nvidia",
     models: [
       { id: "minimaxai/minimax-m3.1-flash", label: "Minimax M3.1 Flash" },
       { id: "nvidia/nemotron-3.5-lightning-30b-a3b", label: "Nemotron 3.5 Lightning 30B" },
@@ -35,7 +35,7 @@ export const MODEL_GROUPS = {
   },
   groq: {
     label: "Groq (Fallback Externo)",
-    endpoint: "https://comand-center-1-local-llm-router.hf.space/v1/groq",
+    endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/groq",
     models: [
       { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant" },
       { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
@@ -44,18 +44,18 @@ export const MODEL_GROUPS = {
     ]
   },
   swe_code_free: {
-    label: "SWE CODE Free",
-    endpoint: "https://comand-center-1-local-llm-router.hf.space/v1/swe-free",
+    label: "Grupo 2 · LLM local (gratis)",
+    endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/swe-free",
     models: [{ id: "swe-code-free", label: "Agente Auto" }]
   },
   swe_code: {
-    label: "SWE CODE",
-    endpoint: "https://comand-center-1-local-llm-router.hf.space/v1/swe",
+    label: "Grupo 2 · LLM local",
+    endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/swe",
     models: [{ id: "swe-code-standard", label: "Agente Standard" }]
   },
   team_qwe: {
     label: "Team QWE",
-    endpoint: "https://comand-center-1-local-llm-router.hf.space/v1/team-qwe",
+    endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/team-qwe",
     models: [{ id: "team-qwe-orchestrator", label: "Orquestador Múltiple" }]
   }
 };

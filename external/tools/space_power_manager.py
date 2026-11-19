@@ -17,8 +17,8 @@ try:
         group_of,
     )
 except ImportError:  # pragma: no cover - arranca igual sin el paquete "external"
-    GROUP_1_COMPUTE = ["local-llm-router", "local-llm-router-v2", "local-llm-router-v7"]
-    GROUP_2_LLM = ["swe-code-s1", "swe-code-s2", "swe-code-s3"]
+    GROUP_1_COMPUTE = ["space-grupo-1-router-mvp-1", "space-grupo-1-router-mvp-1-v2", "space-grupo-1-router-mvp-1-v7"]
+    GROUP_2_LLM = ["space-grupo-2-router-llm-hf-1", "space-grupo-2-router-llm-hf-2", "space-grupo-2-router-llm-hf-3"]
     SPACE_COUNT = 6
 
     def all_spaces():

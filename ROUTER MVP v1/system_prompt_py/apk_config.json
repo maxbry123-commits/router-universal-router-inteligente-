@@ -1,13 +1,13 @@
 {
   "edificio_1": {
-    "s1": "https://comand-center-1-swe-code-s1.hf.space/v1/chat/completions",
-    "s2": "https://comand-center-1-swe-code-s2.hf.space/v1/chat/completions",
-    "s3": "https://comand-center-1-swe-code-s3.hf.space/v1/chat/completions"
+    "s1": "https://comand-center-1-space-grupo-2-router-llm-hf-1.hf.space/v1/chat/completions",
+    "s2": "https://comand-center-1-space-grupo-2-router-llm-hf-2.hf.space/v1/chat/completions",
+    "s3": "https://comand-center-1-space-grupo-2-router-llm-hf-3.hf.space/v1/chat/completions"
   },
   "edificio_2": {
-    "router": "https://comand-center-1-local-llm-router.hf.space",
+    "router": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space",
     "mcp": "https://comand-center-1-hf-bucket-mcp.hf.space/mcp",
-    "openclaw": "wss://comand-center-1-local-llm-router.hf.space/v1/openclaw"
+    "openclaw": "wss://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/openclaw"
   },
   "auth_header": "X-API-Key",
   "timeout_s": 120,

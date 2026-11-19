@@ -1,5 +1,5 @@
 {
-  "LIVE_URL": "https://comand-center-1-local-llm-router.hf.space",
+  "LIVE_URL": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space",
   "updated": "2026-11-02",
   "note": "Space principal del router. Si cae, reiniciar en Hugging Face."
 }

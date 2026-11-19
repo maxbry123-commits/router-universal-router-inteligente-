@@ -17,8 +17,8 @@ ALCANCE Y SEGURIDAD
 
 USO
   python3 scripts/hf_restart_space.py --list
-  python3 scripts/hf_restart_space.py --space local-llm-router
-  python3 scripts/hf_restart_space.py --space local-llm-router --apply
+  python3 scripts/hf_restart_space.py --space space-grupo-1-router-mvp-1
+  python3 scripts/hf_restart_space.py --space space-grupo-1-router-mvp-1 --apply
   python3 scripts/hf_restart_space.py --all --apply
 
 CODIGOS DE SALIDA

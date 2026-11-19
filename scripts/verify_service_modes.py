@@ -162,7 +162,7 @@ def v5_routing(mod):
     body = r.json() if ok else {}
     hit = calls[0] if calls else ("", {})
     ok = ok and body.get("service_mode") == "swe_free" and body.get("provider") == "hf_local" \
-        and "swe-code-s3" in hit[0] and hit[1].get("model") == "unsloth/Qwen3.5-0.8B-GGUF"
+        and "space-grupo-2-router-llm-hf-3" in hit[0] and hit[1].get("model") == "unsloth/Qwen3.5-0.8B-GGUF"
     check("V5", ok, "swe-free -> {} modelo={} provider={}".format(
         hit[0].split("/")[2] if hit[0] else "-", hit[1].get("model"), body.get("provider")))
 
@@ -173,7 +173,7 @@ def v5_routing(mod):
                            "model": "auto"})
     hit2 = calls[0] if calls else ("", {})
     ok2 = r2.status_code == 200 and r2.json().get("service_mode") == "swe_code" \
-        and "swe-code-s1" in hit2[0] and hit2[1].get("model") == "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF"
+        and "space-grupo-2-router-llm-hf-1" in hit2[0] and hit2[1].get("model") == "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF"
     check("V5b", ok2, "swe -> {} modelo={}".format(
         hit2[0].split("/")[2] if hit2[0] else "-", hit2[1].get("model")))
 

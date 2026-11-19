@@ -32,9 +32,9 @@ OUT_DIR = "/workspace/simulations"
 
 # Modelos servidos por el Grupo 2 (3 Spaces) -> Space
 LOCAL_GGUF = {
-    "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF": "swe-code-s1",
-    "LiquidAI/LFM2.5-350M-GGUF": "swe-code-s2",
-    "unsloth/Qwen3.5-0.8B-GGUF": "swe-code-s3",
+    "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF": "space-grupo-2-router-llm-hf-1",
+    "LiquidAI/LFM2.5-350M-GGUF": "space-grupo-2-router-llm-hf-2",
+    "unsloth/Qwen3.5-0.8B-GGUF": "space-grupo-2-router-llm-hf-3",
 }
 
 CODE_PROMPTS = {

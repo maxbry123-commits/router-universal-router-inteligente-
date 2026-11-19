@@ -222,9 +222,9 @@ def _content_of(response) -> str:
 
 # Modelos locales (Grupo 2) -> Space que los sirve. registry.json 2.0.0 models.local
 LOCAL_SPACES = {
-    "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF": "swe-code-s1",
-    "LiquidAI/LFM2.5-350M-GGUF": "swe-code-s2",
-    "unsloth/Qwen3.5-0.8B-GGUF": "swe-code-s3",
+    "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF": "space-grupo-2-router-llm-hf-1",
+    "LiquidAI/LFM2.5-350M-GGUF": "space-grupo-2-router-llm-hf-2",
+    "unsloth/Qwen3.5-0.8B-GGUF": "space-grupo-2-router-llm-hf-3",
 }
 LOCAL_TIMEOUT_S = 75.0   # el Space puede estar dormido: despertar + cargar modelo cabe en el watchdog de 96 s
 

@@ -13,8 +13,8 @@ try:
     SPACES = list(all_spaces())
 except ImportError:  # pragma: no cover
     SPACES = [
-        "local-llm-router", "local-llm-router-v2", "local-llm-router-v7",
-        "swe-code-s1", "swe-code-s2", "swe-code-s3",
+        "space-grupo-1-router-mvp-1", "space-grupo-1-router-mvp-1-v2", "space-grupo-1-router-mvp-1-v7",
+        "space-grupo-2-router-llm-hf-1", "space-grupo-2-router-llm-hf-2", "space-grupo-2-router-llm-hf-3",
     ]
 
 async def check_space(space_name):

@@ -1,14 +1,14 @@
-"""fix_frontend_urls.py — Reemplaza riu-router por local-llm-router en el frontend.
+"""fix_frontend_urls.py — Reemplaza riu-router por space-grupo-1-router-mvp-1 en el frontend.
 
 Alcance (ampliado sobre el borrador del Director, con evidencia):
-  - chat-router/chat/**  -> ya estaba limpio (MiniMax 2 migró los hosts a local-llm-router)
+  - chat-router/chat/**  -> ya estaba limpio (MiniMax 2 migró los hosts a space-grupo-1-router-mvp-1)
   - LIVE_URL.json (raiz) -> era el UNICO puntero vivo a riu-router y la causa del 404
     ("https://comand-center-1-riu-router.hf.space" -> Space inexistente, API 404).
-    Reemplazo: "comand-center-1-riu-router.hf.space" -> "comand-center-1-local-llm-router.hf.space"
+    Reemplazo: "comand-center-1-riu-router.hf.space" -> "comand-center-1-space-grupo-1-router-mvp-1.hf.space"
     (Space verificado, API 200).
 
-El Space riu-router NO existe (404) y local-llm-router sí (200), por eso la sustitucion
-de la cadena "riu-router" por "local-llm-router" conserva el prefijo "comand-center-1-".
+El Space riu-router NO existe (404) y space-grupo-1-router-mvp-1 sí (200), por eso la sustitucion
+de la cadena "riu-router" por "space-grupo-1-router-mvp-1" conserva el prefijo "comand-center-1-".
 """
 import os, logging
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(ROOT, "chat-router", "chat")
 ROOT_FILES = ["LIVE_URL.json"]
-OLD, NEW = "riu-router", "local-llm-router"
+OLD, NEW = "riu-router", "space-grupo-1-router-mvp-1"
 EXTS = (".html", ".js", ".json", ".css")
 
 

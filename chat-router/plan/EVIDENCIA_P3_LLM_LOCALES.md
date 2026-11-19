@@ -1,4 +1,4 @@
-# Evidencia P3 — LLM locales conectadas a SWE CODE
+# Evidencia P3 — LLM locales conectadas al Grupo 2 (space grupo 2 router LLM HF)
 
 Rama: `ccr-f01c3de9-bmry0s` · Sub-agente A-4 (llm-locales) · Plan: `chat-router/plan/PLAN_PASOS_1_A_5.md`
 Fecha: 2026-11-09
@@ -12,7 +12,7 @@ Fecha: 2026-11-09
 | Harness DeepSeek (metodo de referencia: URL por env, POST, degraded si falta) | `plugins/deepseek_harness/plugin.py` | https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/90d569b8e7b93058649bf3f681ddb261ed9e31ce/plugins/deepseek_harness/plugin.py |
 | Puerta LLM del harness (`action=llm` -> `puente_chat.llm_call`) | `plugins/deepseek_harness/plugin.py` | misma URL que arriba |
 | Ficha 4 / gateway de modelos | `fichas/fichas_qwen/` | https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/90d569b8e7b93058649bf3f681ddb261ed9e31ce/fichas/fichas_qwen |
-| Modelos SWE CODE (swe-code-s1/s2/s3) | `docs/handoff/LLM_SYSTEM_HF_HANDOFF.md` §7 | https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2de7e38f9385af7eeb97df7a2157f0cc2ce1c262/docs/handoff/LLM_SYSTEM_HF_HANDOFF.md |
+| Modelos del Grupo 2 (space-grupo-2-router-llm-hf-1/2/3) | `docs/handoff/LLM_SYSTEM_HF_HANDOFF.md` §7 | https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2de7e38f9385af7eeb97df7a2157f0cc2ce1c262/docs/handoff/LLM_SYSTEM_HF_HANDOFF.md |
 
 Nota: la busqueda de codigo de GitHub devolvio `incomplete_results` para los terminos `SWE CODE`, `deepseek` y `deepseek_harness`; no se usa como prueba.
 
