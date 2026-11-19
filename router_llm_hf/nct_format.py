@@ -67,6 +67,31 @@ STATES = [
     "VALIDATING", "GAP", "FIXING", "RETESTING", "STABLE", "BLOCKED", "CLOSED",
 ]
 
+# FIX (MINIMAX 2F-bis) — el boilerplate de las plantillas F1/F2containsia la
+# palabra "REFACTORÍA" (micro-flujo) y "PLAN PROPUESTO", asi que TODO input
+# se clasificaba como "auditoria" o "proyecto" por su propia plantilla. Para
+# clasificar se elimina ese relleno: lo que decide es el objetivo real.
+BOILERPLATE_PATTERNS = (
+    r"ACCIÓN\s+A\s*→.*VALIDACIÓN",
+    r"PLAN\s+PROPUESTO",
+    r"PLANIFICACI[ÓO]N",
+    r"PREGUNTAS\s+DE\s+CLARIFICACI[ÓO]N",
+    r"MI\s+INTERPRETACI[ÓO]N",
+    r"CRITERIOS\s+DE\s+[ÉE]XITO",
+    r"ARCHIVOS\s+A\s+MODIFICAR",
+    r"ROLLBACK\s+SI\s+FALLA",
+    r"DECISI[ÓO]N",
+)
+
+
+def _sin_boilerplate(text: str) -> str:
+    """Quita el relleno de las plantillas F1/F2 antes de clasificar."""
+    limpio = text or ""
+    for patron in BOILERPLATE_PATTERNS:
+        limpio = re.sub(patron, " ", limpio, flags=re.IGNORECASE)
+    return limpio
+
+
 BOTONERA = [
     {"id": "audit_xray", "label": "🔍 AUDIT X-RAY", "action": "Auditar respuesta, docs y codigo", "approval": False},
     {"id": "input_shark", "label": "🦈 INPUT SHARK", "action": "Investigar y contrastar fuentes", "approval": False},
@@ -89,7 +114,7 @@ def classify_input(text: str) -> Dict[str, Any]:
     aunque tambien case "refactor" (1 regla). Empate -> la primera regla en
     orden de peso.
     """
-    raw = (text or "").lower()
+    raw = _sin_boilerplate(text).lower()
     scores: Dict[str, int] = {}
     matched: List[str] = []
     for name, patterns in CLASSIFIER_RULES:
@@ -104,10 +129,14 @@ def classify_input(text: str) -> Dict[str, Any]:
     if scores:
         order = {name: i for i, (name, _p) in enumerate(CLASSIFIER_RULES)}
         kind = max(scores.items(), key=lambda kv: (kv[1], -order[kv[0]]))[0]
-    long_input = len(raw) > 400 or "### PLANIFICACIÓN" in (text or "")
+    long_input = len(raw) > 400 or bool(re.search(r"###\s*PLANIFICACI", text or "", re.IGNORECASE))
     fmt_in = "F2" if (long_input or kind not in ("pregunta",)) else "F1"
     if kind == "pregunta" and long_input:
         fmt_in = "F2"
+    # Si el propio bloque declara su formato (F1/F2), se respeta su declaracion.
+    declarado = re.search(r"\bF([12])\s*[-—·]", text or "", re.IGNORECASE)
+    if declarado:
+        fmt_in = "F" + declarado.group(1)
     return {
         "kind": kind,
         "format_in": fmt_in,

@@ -263,6 +263,20 @@ git reset --hard HEAD~1
     except Exception as exc:
         check("V13 funcional: TestClient del proxy", False, f"no ejecutable: {exc}")
 
+    # ── V14 · el boilerplate de las plantillas NO falsea la clasificacion ─
+    f1_b = ("# 🟢 F1 — INPUT CORTO\n\n**Objetivo:** ¿por qué el chat no recuerda la conversación?\n\n"
+            "**PLAN PROPUESTO — requiere aprobación**\nMicro-flujo horizontal:\n"
+            "ACCIÓN A → ACCIÓN B → REVISIÓN → REFACTORÍA → VALIDACIÓN\n➡️➡️➡️➡️➡️\n")
+    f2_b = ("# 🔵 F2 — INPUT LARGO · MODO AGÉNTICO / TOOL\n\n**Objetivo:** cablear los 6 agentes al chat\n\n"
+            "**PLAN PROPUESTO — requiere aprobación**\nMicro-flujo horizontal:\n"
+            "ACCIÓN A → ACCIÓN B → REVISIÓN → REFACTORÍA → VALIDACIÓN\n")
+    c_f1 = nct.classify_input(f1_b)
+    c_f2 = nct.classify_input(f2_b)
+    check("V14 clasificador: la plantilla no falsea el tipo (F1=pregunta, F2=agentico)",
+          c_f1["kind"] == "pregunta" and c_f1["format_in"] == "F1" and c_f1["format_out"] == "F3"
+          and c_f2["kind"] == "agentico" and c_f2["format_in"] == "F2" and c_f2["format_out"] == "F4",
+          f"F1={c_f1['kind']}/{c_f1['format_in']} F2={c_f2['kind']}/{c_f2['format_in']}")
+
     # ── RESUMEN ───────────────────────────────────────────────────────────
     fallos = [n for n, ok, _ in RESULTS if not ok]
     print(f"\nRESUMEN 2F: {len(RESULTS) - len(fallos)}/{len(RESULTS)} PASS")
