@@ -49,6 +49,8 @@ ROOT_SOURCES: Dict[str, Dict[str, Any]] = {
                "path": "chat-router/agentes/donors"},
 }
 
+STATE_FILE = os.getenv("AUTO_PULL_STATE_FILE", "/tmp/autopull_state.json")
+
 STATE: Dict[str, Any] = {
     "version": VERSION,
     "enabled": False,
@@ -65,6 +67,37 @@ STATE: Dict[str, Any] = {
     "roots": {},
     "errors": [],
 }
+
+
+# ----------------------------------------------------------------------------- estado persistente
+def _state_load() -> Dict[str, Any]:
+    """El estado sobrevive a la recarga in-place (execv reinicia el proceso)."""
+    try:
+        with open(STATE_FILE, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        if isinstance(data, dict):
+            for k in ("pulls", "reloads", "last_pull_at", "last_applied_sha",
+                      "last_poll_at", "started_at"):
+                if data.get(k) is not None:
+                    STATE[k] = data[k]
+    except Exception:
+        pass
+    return STATE
+
+
+def _state_save() -> None:
+    try:
+        tmp = STATE_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump({"pulls": STATE.get("pulls"), "reloads": STATE.get("reloads"),
+                       "last_pull_at": STATE.get("last_pull_at"),
+                       "last_applied_sha": STATE.get("last_applied_sha"),
+                       "last_poll_at": STATE.get("last_poll_at"),
+                       "started_at": STATE.get("started_at"),
+                       "version": VERSION}, fh)
+        os.replace(tmp, STATE_FILE)
+    except Exception:
+        pass
 
 
 # ----------------------------------------------------------------------------- git
@@ -278,6 +311,7 @@ def poll_once() -> Dict[str, Any]:
     STATE["pulls"] = int(STATE.get("pulls", 0)) + 1
     STATE["last_applied_sha"] = sha
     STATE["last_pull_at"] = time.time()
+    _state_save()
     res["ok"] = True
     return res
 
@@ -287,6 +321,7 @@ def reload_in_place() -> None:
     """Recarga el proceso SIN reiniciar el Space (execv sustituye la imagen del proceso)."""
     import sys
     STATE["reloads"] = int(STATE.get("reloads", 0)) + 1
+    _state_save()
     print("[auto-pull] recarga in-place: %s" % " ".join(sys.argv), flush=True)
     sys.stdout.flush()
     os.execv(sys.executable, [sys.executable] + list(sys.argv))
@@ -298,6 +333,7 @@ def _loop(interval: int, on_reload) -> None:
         try:
             res = poll_once()
             STATE["last_poll_at"] = time.time()
+            _state_save()
             if res.get("changed"):
                 print("[auto-pull] commit nuevo aplicado: %s -> %s (raices: %s)" % (
                     (res.get("from") or "?")[:12], (res.get("to") or "?")[:12],
@@ -326,6 +362,7 @@ def start(on_reload=None, interval: Optional[int] = None) -> bool:
     STATE.update({"enabled": True, "interval_s": interval, "started_at": time.time(),
                   "branch": os.getenv("AUTO_PULL_BRANCH") or os.getenv("GITHUB_BRANCH") or DEFAULT_BRANCH,
                   "repo_dir": repo_dir})
+    _state_load()
     rc, head, _e = _git(["rev-parse", "HEAD"], cwd=repo_dir)
     STATE["head"] = head
     t = threading.Thread(target=_loop, args=(interval, on_reload), name="auto-pull", daemon=True)
