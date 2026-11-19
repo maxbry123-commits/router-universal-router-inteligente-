@@ -263,6 +263,8 @@ def create_app():
     try:
         if not os.path.isdir(FRONTEND_DIR):
             raise FileNotFoundError(f"no existe: {FRONTEND_DIR}")
+        if not os.path.isfile(os.path.join(FRONTEND_DIR, "index.html")):
+            raise FileNotFoundError(f"sin index.html: {FRONTEND_DIR}")
         app.mount("/chat", StaticFiles(directory=FRONTEND_DIR, html=True), name="chat")
         print(f"[OK] Frontend montado en /chat -> {FRONTEND_DIR}")
     except Exception as e:
@@ -271,6 +273,124 @@ def create_app():
 
 
 app = create_app()
+
+
+# ===== PASO 6 (backend): el chat nunca da 404 y no se cachea =====
+# 1) Anti-cache en "/" y "/chat/*": el navegador llevaba una copia vieja (404)
+#    y hacia falta borrar la cache a mano para ver la pagina nueva.
+# 2) "/" -> 307 a "/chat/" (antes: 404).
+# 3) Si el frontend NO esta montado (p.ej. tras el rollback de chat-router/chat),
+#    el proxy sirve esta pagina de chat minima -> el chat NUNCA da 404.
+# Tokens TOMADOS del CSS real del repo (main:chat-router/chat/frontend/shell.css).
+from fastapi.responses import HTMLResponse as _HTMLResponse
+from fastapi.responses import RedirectResponse as _RedirectResponse
+
+CHAT_CACHE_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
+CHAT_FALLBACK_HTML = """<!doctype html>
+<html lang="es"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="cache-control" content="no-store, no-cache, must-revalidate"/>
+<title>YAIWES · Chat Router</title>
+<style>
+:root{--bg:#1B1B1B;--surface:#202020;--surface-alt:#252525;--panel:#2A2A2A;--module-selected:#3C3C3C;--border:#3A3A3A;--border-strong:#525252;--muted:#484848;--active:#0848F7;--title:#FAFAFA;--text:#EDEDED;--quiet:#BFBFBF;--quiet-2:#A0A0A0;--status-green:#12D86A;--status-blue:#0848F7;--status-red:#FF475F;--status-orange:#FF7B1A;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:24px;border-bottom:1px solid var(--border);background:var(--surface)}
+h1{margin:0;font-size:16px;font-weight:600;color:var(--title);letter-spacing:.2px}
+.key{display:flex;gap:12px;align-items:center;margin-left:auto;flex-wrap:wrap}
+input,textarea{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px;font:inherit}
+input:focus,textarea:focus{outline:2px solid var(--active);outline-offset:1px}
+input{width:260px;min-height:44px}
+button{background:var(--active);color:#fff;border:0;border-radius:10px;padding:0 18px;min-height:44px;font:inherit;font-weight:600;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+main{flex:1;overflow:auto;padding:24px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:860px;width:100%;padding:12px 16px;border-radius:10px;border:1px solid var(--border);background:var(--panel);white-space:pre-wrap;word-break:break-word}
+.msg.user{background:var(--surface-alt);border-color:var(--border-strong)}
+.msg .meta{display:block;margin-bottom:8px;font-size:12px;color:var(--quiet-2)}
+.msg .meta b{color:var(--status-green);font-weight:600}
+.msg .meta .prov{color:var(--status-blue)}
+.err{color:var(--status-red)}
+footer{border-top:1px solid var(--border);background:var(--surface);padding:24px;display:flex;gap:12px;align-items:flex-end}
+textarea{flex:1;min-height:44px;max-height:160px;resize:vertical}
+.note{padding:0 24px 12px;color:var(--quiet-2);font-size:12px;background:var(--surface)}
+@media (max-width:750px){header{padding:12px}.key{margin-left:0;width:100%}input{width:100%}main,footer{padding:12px}}
+</style></head>
+<body>
+<header>
+  <h1>YAIWES · Chat Router</h1>
+  <div class="key">
+    <input id="key" type="password" placeholder="API Key (x-api-key)" autocomplete="off"/>
+    <button id="save">Guardar clave</button>
+  </div>
+</header>
+<div class="note">Los Spaces validan la cabecera <b>x-api-key</b>: sin ella la respuesta es <b>401</b>. La clave vive solo en memoria de esta pagina (nunca en disco).</div>
+<main id="log"><div class="msg"><span class="meta">estado</span>Conecta una clave y escribe. La pagina se sirve sin cache: recargarla siempre trae la version actual.</div></main>
+<footer>
+  <textarea id="q" placeholder="Escribe tu mensaje (Ej.: escribe un informe en markdown del estado del router)"></textarea>
+  <button id="send">Enviar</button>
+</footer>
+<script>
+(function(){
+  var S={key:''},log=document.getElementById('log'),q=document.getElementById('q'),send=document.getElementById('send');
+  function add(who,txt,meta){
+    var d=document.createElement('div');d.className='msg'+(who==='user'?' user':'');
+    if(meta){var m=document.createElement('span');m.className='meta';m.innerHTML=meta;d.appendChild(m);}
+    d.appendChild(document.createTextNode(txt||''));
+    log.appendChild(d);log.scrollTop=log.scrollHeight;return d;
+  }
+  document.getElementById('save').onclick=function(){S.key=document.getElementById('key').value.trim();
+    add('sys',S.key?'Clave guardada en memoria.':'Falta la clave (x-api-key).');};
+  function api(path){var b=(new URLSearchParams(location.search).get('api')||'').replace(/\/$/,'');return b+path;}
+  send.onclick=function(){
+    var t=q.value.trim();if(!t)return;if(!S.key){add('sys','Falta la API Key (x-api-key).','<span class="err">error</span>');return;}
+    q.value='';add('user',t);send.disabled=true;
+    fetch(api('/v1/chat/completions'),{method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':S.key},
+      body:JSON.stringify({model:'auto',messages:[{role:'user',content:t}]})})
+      .then(function(r){return r.json().catch(function(){return {};}).then(function(j){
+        if(!r.ok)throw new Error((j&&(j.detail||j.error))||('HTTP '+r.status));
+        return j;});})
+      .then(function(j){
+        var c=(j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'';
+        var meta='<b>'+(j.provider||'desconocido')+'</b> <span class="prov">'+(j.model||'')+'</span>';
+        if(j.artifacts&&j.artifacts.length){meta+=' · '+j.artifacts.length+' artefacto(s)';}
+        add('bot',c,meta);})
+      .catch(function(e){add('sys',String(e.message||e),'<span class="err">error</span>');})
+      .then(function(){send.disabled=false;q.focus();});
+  };
+  q.addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){send.click();}});
+})();
+</script>
+</body></html>
+"""
+
+
+@app.middleware("http")
+async def _chat_no_cache(request, call_next):
+    resp = await call_next(request)
+    p = request.url.path
+    if p == "/" or p.startswith("/chat"):
+        for k, v in CHAT_CACHE_HEADERS.items():
+            resp.headers[k] = v
+    return resp
+
+
+@app.get("/", include_in_schema=False)
+async def _chat_root():
+    return _RedirectResponse(url="/chat/", status_code=307)
+
+
+@app.get("/chat", include_in_schema=False)
+@app.get("/chat/{ruta:path}", include_in_schema=False)
+async def _chat_fallback(ruta: str = ""):
+    return _HTMLResponse(CHAT_FALLBACK_HTML, headers=CHAT_CACHE_HEADERS)
+
+# ===== FIN PASO 6 =====
 GROQ_KEYS = [k.strip() for k in os.getenv("GROQ_KEYS", "").split(",") if k.strip()]
 NVIDIA_KEYS = [k.strip() for k in os.getenv("NVIDIA_KEYS", "").split(",") if k.strip()]
 
