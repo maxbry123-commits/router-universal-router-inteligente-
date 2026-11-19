@@ -306,6 +306,32 @@ git reset --hard HEAD~1
     check("V15 sintaxis JS real (node --check en los 2 modulos y los scripts inline)", js_ok,
           "; ".join(js_det) if js_det else "2 modulos + scripts inline sin error de sintaxis")
 
+    # ── V16 · los 6 Spaces renombrados: mi cableado no puede apuntar a los RETIRADOS ──
+    RETIRADOS = ("comand-center-1-local-llm-router", "comand-center-1-swe-code-s")
+    NUEVOS = ("space-grupo-1-router-mvp-1", "space-grupo-2-router-llm-hf-1")
+    ficheros_2g = (
+        "chat-router/chat/index.html",
+        "chat-router/chat/ui/model-selector.js",
+        "router_llm_hf/AGENTS_REGISTRY.json",
+        "ROUTER MVP v1/system_prompt_py/openai_compatible_proxy.py",
+    )
+    restos, falta_nuevo = [], []
+    for _f in ficheros_2g:
+        _txt = (REPO / _f).read_text(encoding="utf-8")
+        for _v in RETIRADOS:
+            if _v in _txt:
+                restos.append(f"{_f}:{_v}")
+        if _f != "ROUTER MVP v1/system_prompt_py/openai_compatible_proxy.py":
+            if not any(n in _txt for n in NUEVOS):
+                falta_nuevo.append(_f)
+    # el proxy debe mapear los 3 modelos locales a los nombres NUEVOS
+    _proxy_txt = (REPO / "ROUTER MVP v1" / "system_prompt_py" / "openai_compatible_proxy.py").read_text(encoding="utf-8")
+    mapa_ok = all(f'"{n}"' in _proxy_txt for n in ("space-grupo-2-router-llm-hf-1", "space-grupo-2-router-llm-hf-2",
+                                                 "space-grupo-2-router-llm-hf-3"))
+    check("V16 URLs de los 6 Spaces renombrados (0 retired, nombres nuevos en los 4 ficheros)",
+          not restos and not falta_nuevo and mapa_ok,
+          f"retirados={restos or 0} sin_nuevo={falta_nuevo or 0} mapa_proxy={'ok' if mapa_ok else 'mal'}")
+
     # ── RESUMEN ───────────────────────────────────────────────────────────
     fallos = [n for n, ok, _ in RESULTS if not ok]
     print(f"\nRESUMEN 2F: {len(RESULTS) - len(fallos)}/{len(RESULTS)} PASS")
