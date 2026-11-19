@@ -56,6 +56,10 @@ PREFERRED_BY_MODE: Dict[str, str] = {
 
 WAIT_S = float(os.getenv("LOCAL_QUEUE_WAIT_S", "60"))
 DEGRADED_S = float(os.getenv("LOCAL_DEGRADED_S", "20"))
+# Un Space que responde 503 "Loading model" esta DESPERTANDO: se reintenta el
+# MISMO Space (no se cambia de modelo por prisa). "cargando" no cuenta como error.
+LOAD_RETRY = int(os.getenv("LOCAL_LOAD_RETRY", "4"))
+LOAD_RETRY_WAIT_S = float(os.getenv("LOCAL_LOAD_RETRY_WAIT_S", "5"))
 
 
 class LocalPoolError(RuntimeError):
@@ -135,6 +139,24 @@ class LocalPool:
                 t.cancel()
         return libre
 
+    async def _call_with_load_retry(self, call, space: str) -> Dict[str, Any]:
+        """Reintenta el MISMO Space mientras responda 503 'Loading model'."""
+        res: Dict[str, Any] = {"ok": False, "error": "sin resultado"}
+        for intento in range(LOAD_RETRY):
+            try:
+                res = await call(space)
+            except Exception as exc:
+                res = {"ok": False, "error": str(exc)[:200]}
+            if res.get("ok"):
+                res["intentos"] = intento + 1
+                return res
+            if res.get("retryable") and intento < LOAD_RETRY - 1:
+                await asyncio.sleep(LOAD_RETRY_WAIT_S)
+                continue
+            res["intentos"] = intento + 1
+            return res
+        return res
+
     # ------------------------------------------------------------------ ejecucion
     async def execute(self, call, preferred: Optional[str] = None,
                       model: Optional[str] = None, mode: Optional[str] = None,
@@ -157,7 +179,7 @@ class LocalPool:
             await self._locks[space].acquire()
             self._mark(space, in_flight=self.state[space]["in_flight"] + 1, state="ocupado")
             try:
-                res = await call(space)
+                res = await self._call_with_load_retry(call, space)
                 if res.get("ok"):
                     self._mark(space, served=self.state[space]["served"] + 1,
                                last_ok_at=time.time(), degraded_until=0.0, state="libre")
@@ -168,7 +190,8 @@ class LocalPool:
                     return res
                 err = str(res.get("error") or "error desconocido")
                 errores.append("%s: %s" % (space, err))
-                self._penalize(space, err)
+                if not res.get("retryable"):
+                    self._penalize(space, err)
             except Exception as exc:
                 errores.append("%s: %s" % (space, exc))
                 self._penalize(space, str(exc))
@@ -192,7 +215,7 @@ class LocalPool:
                     % (", ".join(ocupados), wait_s))
             self._mark(space, in_flight=self.state[space]["in_flight"] + 1, state="ocupado")
             try:
-                res = await call(space)
+                res = await self._call_with_load_retry(call, space)
                 if res.get("ok"):
                     self._mark(space, served=self.state[space]["served"] + 1,
                                last_ok_at=time.time(), degraded_until=0.0, state="libre")
@@ -203,7 +226,8 @@ class LocalPool:
                     return res
                 err = str(res.get("error") or "error desconocido")
                 errores.append("%s: %s" % (space, err))
-                self._penalize(space, err)
+                if not res.get("retryable"):
+                    self._penalize(space, err)
             except Exception as exc:
                 errores.append("%s: %s" % (space, exc))
                 self._penalize(space, str(exc))

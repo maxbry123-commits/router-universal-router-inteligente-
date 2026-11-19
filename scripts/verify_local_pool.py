@@ -75,8 +75,9 @@ async def main():
         return {"ok": True, "json": {"choices": []}}
 
     r = await pool2.execute(call_cargando, preferred=SPACES[0])
-    check("V4 503 Loading model se reintenta", r.get("ok") and intentos["n"] == 3,
-          "intentos=%s" % intentos["n"])
+    check("V4 503 Loading model se reintenta", r.get("ok") and intentos["n"] == 3
+          and r.get("space") == SPACES[0],
+          "intentos=%s space=%s (debe ser el PREFERIDO, no un espejo)" % (intentos["n"], r.get("space")))
 
     # ---------------- V5: fallo real -> penaliza y pasa al siguiente
     pool3 = LocalPool()
