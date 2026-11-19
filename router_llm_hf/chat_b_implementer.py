@@ -46,3 +46,6 @@ class ChatBImplementer:
             return {'type': 'tool_result', 'tool': parsed['tool'], 'args': parsed['args'], 'result': result}
         else:
             raise ValueError(f"Respuesta no valida: {parsed}")
+
+
+ChatB = ChatBImplementer

@@ -27,3 +27,6 @@ class ChatAArchitect:
             "plan_sha256": hashlib.sha256(plan_json.encode()).hexdigest(),
             "blocks": subtasks
         }
+
+
+ChatA = ChatAArchitect
