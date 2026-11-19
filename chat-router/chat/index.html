@@ -25,6 +25,9 @@
         <button type="button" class="nav-btn" data-view="input"><span class="n">5</span>Input</button>
         <button type="button" class="nav-btn" data-view="artefactos"><span class="n">6</span>Artefactos</button>
         <button type="button" class="nav-btn" data-view="cuadros"><span class="n">7</span>Cuadros</button>
+        <a class="nav-btn" href="sdk.html"><span class="n">8</span>SDK/API</a>
+        <a class="nav-btn" href="http-mcp.html"><span class="n">9</span>HTTP/MCP</a>
+        <a class="nav-btn" href="propuestas.html"><span class="n">10</span>Propuestas</a>
       </nav>
     </div>
     <div style="margin-top:auto">
@@ -352,6 +355,7 @@ function sendMessage(){
 /* ---------- ARRANQUE ---------- */
 el('nav').addEventListener('click',function(e){
   var b=e.target.closest('.nav-btn');if(!b)return;
+  if(b.tagName==='A')return;   /* 8-10 son paginas propias (1 ventana = 1 archivo) */
   S.view=b.getAttribute('data-view');render();
 });
 el('themes').addEventListener('click',function(e){
