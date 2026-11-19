@@ -146,12 +146,12 @@ class ProviderFallback:
         # DEADLINE POR PROVEEDOR: con 5-6 claves y 25 s cada una, un proveedor caido
         # se comia el watchdog entero (96 s). Ahora el proveedor tiene un tope total.
         import time as _t
-        deadline = _t.time() + PROVIDER_DEADLINE_S
+        deadline = _t.time() + self.PROVIDER_DEADLINE_S
         for prov in order:
             if prov == "nvidia":
                 for _ in range(len(self.nvidia_keys) or 1):
                     if _t.time() > deadline:
-                        self.diag["nvidia_error"] = "deadline de proveedor agotado (%ss)" % PROVIDER_DEADLINE_S
+                        self.diag["nvidia_error"] = "deadline de proveedor agotado (%ss)" % self.PROVIDER_DEADLINE_S
                         break
                     key = self._next_key(self.nvidia_keys, "nvidia_idx")
                     if not key:
@@ -174,7 +174,7 @@ class ProviderFallback:
             elif prov == "groq":
                 for _ in range(len(self.groq_keys) or 1):
                     if _t.time() > deadline:
-                        self.diag["groq_error"] = "deadline de proveedor agotado (%ss)" % PROVIDER_DEADLINE_S
+                        self.diag["groq_error"] = "deadline de proveedor agotado (%ss)" % self.PROVIDER_DEADLINE_S
                         break
                     key = self._next_key(self.groq_keys, "groq_idx")
                     if not key:
