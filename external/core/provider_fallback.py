@@ -54,6 +54,8 @@ class ProviderFallback:
     # Modelos Groq en produccion (doc de Groq, 2026-11-16): si el id pedido no esta aqui,
     # se usa el de produccion verificado.
     # Modelos que sirve GROQ (api.groq.com/openai/v1). Un modelo, un proveedor.
+    # Tope TOTAL por proveedor (segundos) antes de pasar al siguiente
+    PROVIDER_DEADLINE_S = 30.0
     GROQ_MODELS = {
         "llama-3.1-8b-instant", "llama-3.3-70b-versatile", "llama-3.1-70b-versatile",
         "openai/gpt-oss-20b", "openai/gpt-oss-120b",
@@ -141,9 +143,16 @@ class ProviderFallback:
         # (solo 'auto' usa los dos, en ese orden)
 
         # 3. Cadena real en el ORDEN de prioridad (NVIDIA/Groq): se respeta el proveedor del modelo.
+        # DEADLINE POR PROVEEDOR: con 5-6 claves y 25 s cada una, un proveedor caido
+        # se comia el watchdog entero (96 s). Ahora el proveedor tiene un tope total.
+        import time as _t
+        deadline = _t.time() + PROVIDER_DEADLINE_S
         for prov in order:
             if prov == "nvidia":
                 for _ in range(len(self.nvidia_keys) or 1):
+                    if _t.time() > deadline:
+                        self.diag["nvidia_error"] = "deadline de proveedor agotado (%ss)" % PROVIDER_DEADLINE_S
+                        break
                     key = self._next_key(self.nvidia_keys, "nvidia_idx")
                     if not key:
                         self.diag["nvidia_error"] = "sin claves en NVIDIA_KEYS"
@@ -164,6 +173,9 @@ class ProviderFallback:
                         self.diag["nvidia_error"] = f"{type(e).__name__}: {e}"[:200]
             elif prov == "groq":
                 for _ in range(len(self.groq_keys) or 1):
+                    if _t.time() > deadline:
+                        self.diag["groq_error"] = "deadline de proveedor agotado (%ss)" % PROVIDER_DEADLINE_S
+                        break
                     key = self._next_key(self.groq_keys, "groq_idx")
                     if not key:
                         self.diag["groq_error"] = "sin claves en GROQ_KEYS"
