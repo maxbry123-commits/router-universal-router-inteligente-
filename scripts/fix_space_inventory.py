@@ -5,7 +5,7 @@ Problema real (verificado contra la API de HF el 2026-11-18):
     ("hf-bucket-mcp") es el servidor MCP del bucket: infraestructura, NO lo enruta
     el proxy. Ningun fichero del repo decia "7"; el error estaba en MI informe.
   - "ROUTER MVP v1/system_prompt_py/health_check.py" y "inject_scaler.py" listaban
-    3 Spaces INEXISTENTES (HTTP 404): "riu-router", "claude-github-mcp-backup",
+    3 Spaces INEXISTENTES (HTTP 404): "# REMOVED: riu-router ref", "claude-github-mcp-backup",
     "swe-code-web". Con eso el health-check caia siempre en OFFLINE (3 de 6 URLs
     muerte) y las inyecciones del scaler fallaban en 3 Spaces.
 
@@ -45,7 +45,7 @@ NO forman parte del router (infraestructura; el proxy no los enruta):
   hf-bucket-mcp — servidor MCP del bucket de memoria.
 
 Historicos que NO existen en HF (HTTP 404 verificado el 2026-11-18):
-  riu-router, claude-github-mcp-backup, swe-code-web.
+  # REMOVED: riu-router ref, claude-github-mcp-backup, swe-code-web.
 
 COMPUTO y ALMACENAMIENTO PERSISTENTE (lo que se conecta a HF):
   - compute: cada Space es un contenedor HF con hardware cpu-upgrade (32 GB RAM,
@@ -84,7 +84,7 @@ SPACE_COUNT = len(GROUP_1_COMPUTE) + len(GROUP_2_LLM)  # 6
 NOT_ROUTER_SPACES = ("hf-bucket-mcp",)
 # Historicos: 404 en HF (incluye los nombres anteriores de los 6 Spaces).
 RETIRED_SPACES = (
-    "riu-router",
+    "# REMOVED: riu-router ref",
     "claude-github-mcp-backup",
     "swe-code-web",
     "local-llm-router",
@@ -256,7 +256,7 @@ import asyncio
 
 SPACES = [
     "space-grupo-2-router-llm-hf-1", "space-grupo-2-router-llm-hf-2", "space-grupo-2-router-llm-hf-3",
-    "riu-router", "claude-github-mcp-backup", "swe-code-web"
+    "# REMOVED: riu-router ref", "claude-github-mcp-backup", "swe-code-web"
 ]
 '''
 
@@ -265,13 +265,13 @@ import asyncio
 
 ''' + BOOTSTRAP
 
-SCALER_OLD = '''SPACES = ["space-grupo-2-router-llm-hf-1", "space-grupo-2-router-llm-hf-2", "space-grupo-2-router-llm-hf-3", "riu-router", "claude-github-mcp-backup", "swe-code-web"]
+SCALER_OLD = '''SPACES = ["space-grupo-2-router-llm-hf-1", "space-grupo-2-router-llm-hf-2", "space-grupo-2-router-llm-hf-3", "# REMOVED: riu-router ref", "claude-github-mcp-backup", "swe-code-web"]
 '''
 
 SCALER_NEW = BOOTSTRAP
 
 # Tercer bug real de la misma familia: apk_config.json apuntaba al Space MUERTO
-# "riu-router" (404) en sus 3 entradas. El MCP real es "hf-bucket-mcp"
+# "# REMOVED: riu-router ref" (404) en sus 3 entradas. El MCP real es "hf-bucket-mcp"
 # (MCP oficial de HF, streamable HTTP, puerto 7860, bucket montado).
 APK_OLD = '''{
   "edificio_1": {
@@ -280,9 +280,9 @@ APK_OLD = '''{
     "s3": "https://comand-center-1-space-grupo-2-router-llm-hf-3.hf.space/v1/chat/completions"
   },
   "edificio_2": {
-    "router": "https://comand-center-1-riu-router.hf.space",
-    "mcp": "https://comand-center-1-riu-router.hf.space/mcp",
-    "openclaw": "wss://comand-center-1-riu-router.hf.space:443/openclaw"
+    "router": "https://comand-center-1-# REMOVED: riu-router ref.hf.space",
+    "mcp": "https://comand-center-1-# REMOVED: riu-router ref.hf.space/mcp",
+    "openclaw": "wss://comand-center-1-# REMOVED: riu-router ref.hf.space:443/openclaw"
   },
   "auth_header": "X-API-Key",
   "timeout_s": 120

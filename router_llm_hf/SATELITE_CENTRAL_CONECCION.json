@@ -274,13 +274,13 @@
       {
         "id": "C-010",
         "consumidor": "vercel_frontend",
-        "proveedor": "space_riu_router",
+        "proveedor": "space_# REMOVED: riu-router ref",
         "protocolo": "http",
         "estado": "DISCOVERED"
       },
       {
         "id": "C-011",
-        "consumidor": "space_riu_router",
+        "consumidor": "space_# REMOVED: riu-router ref",
         "proveedor": "github_source",
         "protocolo": "git_auto_pull",
         "estado": "CONFIGURED"

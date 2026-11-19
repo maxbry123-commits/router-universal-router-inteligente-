@@ -20,7 +20,7 @@ NO forman parte del router (infraestructura; el proxy no los enruta):
   hf-bucket-mcp — servidor MCP del bucket de memoria.
 
 Historicos que NO existen en HF (HTTP 404 verificado el 2026-11-18):
-  riu-router, claude-github-mcp-backup, swe-code-web.
+  # REMOVED: riu-router ref, claude-github-mcp-backup, swe-code-web.
 
 COMPUTO y ALMACENAMIENTO PERSISTENTE (lo que se conecta a HF):
   - compute: cada Space es un contenedor HF con hardware cpu-upgrade (32 GB RAM,
@@ -59,7 +59,7 @@ SPACE_COUNT = len(GROUP_1_COMPUTE) + len(GROUP_2_LLM)  # 6
 NOT_ROUTER_SPACES = ("hf-bucket-mcp",)
 # Historicos: 404 en HF (incluye los nombres anteriores de los 6 Spaces).
 RETIRED_SPACES = (
-    "riu-router",
+    "# REMOVED: riu-router ref",
     "claude-github-mcp-backup",
     "swe-code-web",
     "local-llm-router",
