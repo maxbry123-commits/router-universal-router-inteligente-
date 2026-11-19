@@ -114,6 +114,14 @@ def _load_llama():
     # (sed sobre '"--n-gpu-layers", "0"]').
     cmd += ["--threads", str(LLAMA_THREADS),
             "--threads-batch", str(LLAMA_THREADS)]
+    # Flags de CPU medidos/verificados contra el binario oficial b12000:
+    #   --cpu-strict 1  : colocacion estricta de CPU (+5% medido en la literatura)
+    #   -ub 1024        : micro-lote mayor (el Job de flags medio +12% en el 0.8B)
+    #   --cache-reuse   : reuso del prefijo de prompt (TTFT en bucles agenticos;
+    #                     en los modelos con rope por secciones es un no-op)
+    cmd += ["--cpu-strict", os.getenv("LLAMA_CPU_STRICT", "1"),
+            "-ub", os.getenv("LLAMA_UBATCH", "1024"),
+            "--cache-reuse", os.getenv("LLAMA_CACHE_REUSE", "256")]
     _llama_proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     _model_loaded = True
     _last_call = time.time()
