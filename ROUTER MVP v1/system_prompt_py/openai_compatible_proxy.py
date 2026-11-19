@@ -5,6 +5,15 @@ Delega control via control_bridge; nunca decide, solo ejecuta.
 """
 from fastapi import FastAPI, Request, HTTPException, Header
 
+# --- Salida 2B: endpoints aditivos ---
+try:
+    from ext_endpoints import ext_router
+    from ext_runtime import ChatRuntimeMiddleware
+    _HAS_EXT = True
+except Exception as _e:
+    ext_router = None; ChatRuntimeMiddleware = None; _HAS_EXT = False
+    print(f"[ext] import falló: {_e}")
+
 # --- C6: errores tipados (aditivo) ---
 _ERROR_CODES = {
     "sin claves en NVIDIA_KEYS": ("NO_PROVIDER_KEYS", "configura NVIDIA_KEYS o GROQ_KEYS"),
@@ -128,6 +137,14 @@ async def lifespan(app):
         print(f"[lifespan] shutdown: {e}")
 
 app = FastAPI(lifespan=lifespan)
+try:
+    if _HAS_EXT and ext_router is not None:
+        app.include_router(ext_router)
+        app.add_middleware(ChatRuntimeMiddleware)
+        print("[ext] mounted: feedback, tasks, queue, versions + ChatRuntimeMiddleware")
+except Exception as _e:
+    print(f"[ext] mount falló: {_e}")
+
 app.add_middleware(_RequestIdMiddleware)
 
 # --- MINIMAX 4: MCP_MEMORY_URL ---
