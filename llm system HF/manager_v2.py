@@ -12,7 +12,10 @@ if not ROUTER_API_KEY:
 MODEL_ID = os.getenv("MODEL_ID", "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF")
 MODEL_FILE = os.getenv("MODEL_FILE", "qwen2.5-coder-0.5b-instruct-q5_k_m.gguf")
 MODEL_PATH = os.getenv("MODEL_PATH", f"/data/models/{MODEL_FILE}")
-IDLE_UNLOAD_S = int(os.getenv("IDLE_UNLOAD_S", "1800"))
+# PASO 5: el Space se paga por HORA de contenedor, no por CPU. Descargar el
+# modelo tras 30 min de inactividad solo hacia que la PRIMERA peticion espere
+# la carga. Con IDLE_UNLOAD_S=0 el modelo queda caliente siempre.
+IDLE_UNLOAD_S = int(os.getenv("IDLE_UNLOAD_S", "0"))
 LLAMA_TIMEOUT_S = int(os.getenv("LLAMA_TIMEOUT_S", "300"))
 LLAMA_PORT = 8082  # puerto distinto a manager.py (8081)
 
@@ -131,6 +134,10 @@ def _load_llama():
     # (sed sobre '"--n-gpu-layers", "0"]').
     cmd += ["--threads", str(LLAMA_THREADS),
             "--threads-batch", str(LLAMA_THREADS)]
+    # PASO 5: KV cache cuantizado a q8_0 (se mide en vivo; si no mejora, se quita).
+    # Menos RAM de KV y menos trafico de memoria en CPU (el cuello real aqui).
+    if os.getenv("LLAMA_KV_QUANT", "1") == "1":
+        cmd += ["--cache-type-k", "q8_0", "--cache-type-v", "q8_0"]
     # Flags de CPU medidos/verificados contra el binario oficial b12000:
     #   --cpu-strict 1  : colocacion estricta de CPU (+5% medido en la literatura)
     #   -ub 1024        : micro-lote mayor (el Job de flags medio +12% en el 0.8B)
@@ -189,7 +196,7 @@ def _unload_llama():
     _model_loaded = False
 
 def _idle_check():
-    if _llama_proc is not None and (time.time() - _last_call) > IDLE_UNLOAD_S:
+    if IDLE_UNLOAD_S > 0 and _llama_proc is not None and (time.time() - _last_call) > IDLE_UNLOAD_S:
         _unload_llama()
 
 @app.get("/health")
