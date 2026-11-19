@@ -574,7 +574,8 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
     # a generar. La respuesta lleva "cache": {"hit": true} para que se vea.
     try:
         from router_llm_hf import cache as _cache
-        _hit = _cache.get(model_requested, detected_mode, service_mode, messages)
+        _hit = _cache.get(model_requested, detected_mode, service_mode, messages,
+                          ruta=route_path)
         if _hit:
             print(f"[cache] HIT {model_requested}/{detected_mode} -> respuesta inmediata")
             return JSONResponse(_hit)
@@ -658,9 +659,18 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
     # 2. Cadena de fallback: Local -> NVIDIA (4 APIs) -> Groq (6 APIs), con HTTP real.
     await QUEUE.acquire()
     try:
+        # /v1/nvidia fuerza NVIDIA y /v1/groq fuerza Groq (sin caida cruzada).
+        _forced = None
+        if route_path:
+            _rp = route_path.rstrip("/").lower()
+            if _rp.endswith("/nvidia"):
+                _forced = "nvidia"
+            elif _rp.endswith("/groq"):
+                _forced = "groq"
         fallback_result = await BRIDGE.run(
             str(uuid.uuid4()),
-            provider_fb.call(messages, model_requested=model_requested, local_fn=local_execution),
+            provider_fb.call(messages, model_requested=model_requested, local_fn=local_execution,
+                             forced_provider=_forced),
         )
         if fallback_result.get("provider") == "none":
             # MINIMAX 2H: la cadena se queda sin proveedor externo (NVIDIA/Groq
@@ -695,7 +705,8 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
         try:
             from router_llm_hf import cache as _cache
             _cache.put(model_requested, detected_mode, service_mode, messages,
-                       dict(fallback_result.get("response") or {}))
+                       dict(fallback_result.get("response") or {}),
+                       ruta=route_path, proveedor=fallback_result.get("provider"))
         except Exception as _e:
             print(f"[cache] put fallo: {_e}")
 

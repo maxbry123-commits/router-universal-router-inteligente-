@@ -53,8 +53,25 @@ class ProviderFallback:
     # ids cortos del selector -> ids completos de NVIDIA/Groq (registry 2.0.0)
     # Modelos Groq en produccion (doc de Groq, 2026-11-16): si el id pedido no esta aqui,
     # se usa el de produccion verificado.
-    GROQ_MODELS = {"llama-3.1-8b-instant", "llama-3.3-70b-versatile", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"}
+    # Modelos que sirve GROQ (api.groq.com/openai/v1). Un modelo, un proveedor.
+    GROQ_MODELS = {
+        "llama-3.1-8b-instant", "llama-3.3-70b-versatile", "llama-3.1-70b-versatile",
+        "openai/gpt-oss-20b", "openai/gpt-oss-120b",
+        "google/gemma3-27b-it", "google/gemma-3-27b-it",
+        "moonshotai/kimi-k2-instruct", "qwen/qwen3-32b", "qwen/qwen3-32b",
+        "deepseek-r1-distill-llama-70b", "qwen/qwen3.8-27b",
+    }
     GROQ_DEFAULT = "llama-3.3-70b-versatile"
+    # Modelos que sirve NVIDIA (integrate.api.nvidia.com). Un modelo, un proveedor.
+    NVIDIA_MODELS = {
+        "minimaxai/minimax-m3.1-flash", "minimaxai/minimax-m3.1",
+        "nvidia/nemotron-3.5-lightning-30b-a3b", "nvidia/nemotron-3.5-bolt-e4b",
+        "nvidia/nemotron-3-ultra-550b-a55b", "nvidia/nemotron-3-super-49b-v1.5",
+        "nvidia/llama-3.1-8b-instruct", "nvidia/llama-3.3-70b-instruct",
+        "nvidia/gpt-oss-20b", "nvidia/gpt-oss-120b",
+        "meta/llama-3.1-8b-instruct", "meta/llama-3.3-70b-instruct",
+        "openai/gpt-oss-20b-nvidia", "openai/gpt-oss-120b-nvidia",
+    }
     # Prefijos de modelo servidos por NVIDIA NIM
     NVIDIA_PREFIXES = ("meta/", "nvidia/", "google/", "mistralai/", "z-ai/", "deepseek-ai/", "bigcode/", "stepfun-ai/", "poolside/", "snowflake/")
 
@@ -88,12 +105,16 @@ class ProviderFallback:
             except Exception as e:
                 logger.warning(f"HF local falló: {e}. Saltando a proveedores externos...")
 
-        # 2. Determinar prioridad basada en el modelo
+        # 2. Determinar el proveedor segun el modelo (UN modelo -> UN proveedor)
         provider_priority = []
-        if model_requested:
+        if forced_provider in ("nvidia", "groq"):
+            provider_priority = [forced_provider]
+        elif model_requested:
             low = model_requested.lower()
             if model_requested in self.GROQ_MODELS:
                 provider_priority = ["groq"]
+            elif model_requested in self.NVIDIA_MODELS:
+                provider_priority = ["nvidia"]
             elif "qwen" in low or "groq" in low:
                 provider_priority = ["groq"]
             elif "llama" in low and "/" not in low:
@@ -101,15 +122,14 @@ class ProviderFallback:
             elif low.startswith(self.NVIDIA_PREFIXES):
                 provider_priority = ["nvidia"]
             elif "minimax" in low or "nemotron" in low or "nvidia" in low:
-                provider_priority = ["groq" if "qwen" in low else "nvidia"]
+                provider_priority = ["nvidia"]
 
-        # Si no se especificó o no coincide, usar ambos por defecto
+        # Si no se especifico o no coincide: ambos, en ese orden
         if not provider_priority:
             provider_priority = ["nvidia", "groq"]
-        # Rescate: si el modelo fijaba un solo proveedor, el otro queda como ultimo recurso
         order = list(provider_priority)
-        if len(order) == 1:
-            order.append("groq" if order[0] == "nvidia" else "nvidia")
+        # SIN rescate automatico: si el modelo fijaba proveedor, no se cambia de API.
+        # (solo 'auto' usa los dos, en ese orden)
 
         # 3. Cadena real en el ORDEN de prioridad (NVIDIA/Groq): se respeta el proveedor del modelo.
         for prov in order:
@@ -121,7 +141,9 @@ class ProviderFallback:
                         break
                     try:
                         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-                        nv_model = self._resolve_model(model_requested, "nvidia/nemotron-3.5-lightning-30b-a3b")
+                        # si el modelo pedido es de NVIDIA se manda EXACTO; si no, el default
+                        nv_model = (model_requested if model_requested in self.NVIDIA_MODELS
+                                    else self._resolve_model(model_requested, "nvidia/nemotron-3.5-lightning-30b-a3b"))
                         payload = {"model": nv_model, "messages": messages}
                         resp = await self.client.post("https://integrate.api.nvidia.com/v1/chat/completions", headers=headers, json=payload)
                         if resp.status_code == 200:
@@ -150,4 +172,8 @@ class ProviderFallback:
                         logger.warning(f"Groq key fallo: {e}")
                         self.diag["groq_error"] = f"{type(e).__name__}: {e}"[:200]
 
+        if len(order) == 1:
+            return {"provider": "none",
+                    "error": "Proveedor {} agotado para el modelo pedido (sin cambiar de API)".format(order[0]),
+                    "diag": dict(self.diag)}
         return {"provider": "none", "error": "Todos los proveedores agotados", "diag": dict(self.diag)}

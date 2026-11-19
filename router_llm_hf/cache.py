@@ -26,23 +26,28 @@ _hits_total = 0
 _misses_total = 0
 
 
-def _key(model: str, mode: Optional[str], service_mode: Optional[str], messages: Any) -> str:
+def _key(model: str, mode: Optional[str], service_mode: Optional[str], messages: Any,
+         ruta: Optional[str] = None, proveedor: Optional[str] = None) -> str:
+    """La clave incluye la RUTA y el PROVEEDOR: /v1/groq nunca puede devolver lo
+    cacheado de /v1/nvidia (era justo el bug que hacia que Groq respondiera NVIDIA)."""
     norm = []
     for m in (messages or []):
         if not isinstance(m, dict):
             continue
         norm.append([str(m.get("role") or ""), str(m.get("content") or "").strip()])
-    raw = json.dumps([str(model or ""), str(mode or ""), str(service_mode or ""), norm],
+    raw = json.dumps([str(model or ""), str(mode or ""), str(service_mode or ""),
+                      str(ruta or ""), str(proveedor or ""), norm],
                      ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
-def get(model: str, mode: Optional[str], service_mode: Optional[str], messages: Any) -> Optional[Dict[str, Any]]:
+def get(model: str, mode: Optional[str], service_mode: Optional[str], messages: Any,
+        ruta: Optional[str] = None, proveedor: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """Devuelve la respuesta cacheada si sigue viva; None si no."""
     global _hits, _misses, _hits_total, _misses_total
     if not ENABLED:
         return None
-    k = _key(model, mode, service_mode, messages)
+    k = _key(model, mode, service_mode, messages, ruta, proveedor)
     ent = _store.get(k)
     if ent is None:
         _misses += 1
@@ -62,10 +67,11 @@ def get(model: str, mode: Optional[str], service_mode: Optional[str], messages: 
 
 
 def put(model: str, mode: Optional[str], service_mode: Optional[str], messages: Any,
-        response: Dict[str, Any]) -> None:
+        response: Dict[str, Any], ruta: Optional[str] = None,
+        proveedor: Optional[str] = None) -> None:
     if not ENABLED or not isinstance(response, dict):
         return
-    k = _key(model, mode, service_mode, messages)
+    k = _key(model, mode, service_mode, messages, ruta, proveedor)
     _store[k] = (time.time() + TTL_S, response)
     if len(_store) > MAX_ENTRIES:
         viejo = sorted(_store.items(), key=lambda kv: kv[1][0])[: len(_store) - MAX_ENTRIES]
