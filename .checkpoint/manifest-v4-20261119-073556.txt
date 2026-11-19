@@ -1,0 +1,11 @@
+# Checkpoint YAIWES chat backend 100/100
+# stamp=20261119-073556 tag=checkpoint-yaiwes-chat-v4-20261119-073556
+# branch=ccr-f01c3de9-bmry0s commit=c6e24e762177f4bc63754242d7408b066af02ac4
+
+router_llm_hf/chat_engine.py  15cdd6ea4cc65fe6a529f021a3dad4aeff0f02e01ad11dc46a3861ead49d04eb  14635b
+ROUTER MVP v1/system_prompt_py/openai_compatible_proxy.py  fb67c382c61e223016ef7f0ea090208efe9a13c873b88353c85cb4656e0e3181  46727b
+external/core/provider_fallback.py  2b27c206bf5cabed97214a030bb408f995d65da0fb4ae766648a71711b74b68d  8053b
+ROUTER MVP v1/system_prompt_py/ext_endpoints.py  245783e8501033551493995d3ee82987dde9e67f611747a315bca94a45efdc6d  7027b
+ROUTER MVP v1/system_prompt_py/ext_runtime.py  b0556bb2d83f98a86da61ba257a0a864d8043938474e97d80443aaa4b5c41699  4839b
+ROUTER MVP v1/system_prompt_py/ext_ops.py  4ff8a8f732e144b9625ac3ff74e5ac98e5323b364bfb3f3e1081ad041cad8c38  10279b
+ROUTER MVP v1/system_prompt_py/ext_search.py  4545250f469b8eefebab01a6c13ce09226ee0e885ff19d8cff3b34b43d4ce903  2862b
