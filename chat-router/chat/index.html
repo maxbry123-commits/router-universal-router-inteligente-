@@ -329,12 +329,18 @@ function sendMessage(){
        Si el endpoint de render no responde, se muestra el texto crudo:
        la respuesta NUNCA se pierde. */
     apiJSON('/v1/nct/render',{method:'POST',body:JSON.stringify({data:{
-      objetivo:text.slice(0,200)||'—',texto:String(txt),estado:'EXECUTING',progreso:'—',tiempo:'—',
+      objetivo:text.slice(0,200)||'—',texto:'',estado:'EXECUTING',progreso:'—',tiempo:'—',
       pendientes:0,confirma_input:false,instrucciones:true,motores_activos:!!res.ok,
       grupos:[{name:'Chat',done:null,total:null,piezas:[]}],
       evidencias:[res.ok?('motor '+(res.j.provider||'ok')):('HTTP '+res.status)],
       analisis:prefix,plan:['Revisar salida','Validar','Cerrar']},format:'F3'})})
-      .then(function(r){S.messages.push({who:'bot',text:(r&&r.markdown)?r.markdown:(prefix+String(txt))});paintMessages();})
+      .then(function(r){
+        /* La RESPUESTA va PRIMERO (es lo que el usuario pregunta) y el render
+           NCT/APEX va debajo como vista estructurada. El render recibe texto
+           vacio para no repetir la respuesta dos veces. */
+        var cab=prefix+String(txt||'Sin respuesta');
+        var md=(r&&r.markdown)?String(r.markdown):'';
+        S.messages.push({who:'bot',text:md?(cab+'\n\n'+md):cab});paintMessages();})
       .catch(function(){S.messages.push({who:'bot',text:prefix+String(txt)});paintMessages();});
     if(st){st.textContent=res.ok?'● LISTO':'● ERROR';st.className='badge '+(res.ok?'success':'danger');}
   }).catch(function(e){
