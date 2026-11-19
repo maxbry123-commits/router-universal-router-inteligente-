@@ -23,6 +23,50 @@ MODEL_PATH = os.getenv("MODEL_PATH", f"/data/models/{MODEL_FILE}")
 IDLE_UNLOAD_S = int(os.getenv("IDLE_UNLOAD_S", "900"))
 LLAMA_TIMEOUT_S = int(os.getenv("LLAMA_TIMEOUT_S", "300"))
 LLAMA_PORT = 8081
+
+
+def _detect_threads(default: int = 8,
+                    cgroup_v2: str = "/sys/fs/cgroup/cpu.max",
+                    cgroup_v1_quota: str = "/sys/fs/cgroup/cpu/cpu.cfs_quota_us",
+                    cgroup_v1_period: str = "/sys/fs/cgroup/cpu/cpu.cfs_period_us") -> int:
+    """Numero real de hilos para llama-server.
+
+    En un Space de HF (cpu-upgrade = 8 vCPU) el contenedor ve NPROC=64 (los
+    nucleos del host), pero la cuota real es de 8 vCPU. Sin --threads,
+    llama.cpp usa std::thread::hardware_concurrency() -> 64 hilos sobre 8 vCPU
+    (oversubscribcion) y se pierde 3-7x de velocidad de generacion.
+    Aqui se lee la cuota real del cgroup (v2 y v1). Override: LLAMA_THREADS.
+    """
+    env = os.getenv("LLAMA_THREADS")
+    if env:
+        try:
+            n = int(env)
+            if n > 0:
+                return n
+        except ValueError:
+            pass
+    try:  # cgroup v2: "<quota> <period>" o "max <period>"
+        with open(cgroup_v2, "r", encoding="utf-8") as f:
+            parts = f.read().split()
+        if len(parts) >= 2 and parts[0] != "max":
+            quota, period = int(parts[0]), int(parts[1])
+            if quota > 0 and period > 0:
+                return max(1, int(round(quota / period)))
+    except Exception:
+        pass
+    try:  # cgroup v1
+        with open(cgroup_v1_quota, "r", encoding="utf-8") as f:
+            quota = int(f.read().strip())
+        with open(cgroup_v1_period, "r", encoding="utf-8") as f:
+            period = int(f.read().strip())
+        if quota > 0 and period > 0:
+            return max(1, int(round(quota / period)))
+    except Exception:
+        pass
+    return default
+
+
+LLAMA_THREADS = _detect_threads()
 HERE = os.path.dirname(os.path.abspath(__file__))
 REGISTRY_PATH = os.path.join(HERE, "registry.json")
 
@@ -79,6 +123,12 @@ def _load_llama():
         "--ctx-size", "4096",
         "--n-gpu-layers", "0",
     ]
+    # --threads explicito: evita la oversubscribcion del cgroup de HF
+    # (NPROC=64 con cuota de 8 vCPU -> 3-7x mas lento). Se anade FUERA de la
+    # lista para no romper el parche --reasoning off que aplica entrypoint_v5.sh
+    # (sed sobre '"--n-gpu-layers", "0"]').
+    cmd += ["--threads", str(LLAMA_THREADS),
+            "--threads-batch", str(LLAMA_THREADS)]
     _llama_proc = subprocess.Popen(
         cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
@@ -113,6 +163,7 @@ def health():
         "model_file": MODEL_FILE,
         "sha256": _model_sha256,
         "idle_unload_s": IDLE_UNLOAD_S,
+        "llama_threads": LLAMA_THREADS,
     }
 
 
