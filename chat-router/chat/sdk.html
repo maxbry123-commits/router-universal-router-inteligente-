@@ -160,7 +160,7 @@ th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px
       <dt>0.8B</dt><dd>56,5 tok/s · 953 MB · $0,1475/1M</dd></dl></div>
     <div><h3>Conexion total</h3>
       <dl class="kv"><dt>Agentes</dt><dd>chat_a, chat_b, hermes, openclaw, rowboat, ruflo</dd><dt>Raices</dt><dd>ruflo, rowboat, donors</dd>
-      <dt>Pool</dt><dd>3 Spaces con espejo</dd><dt>Auto-pull</dt><dd>rama ccr-f01c3de9-bmry0s · 3 pulls</dd></dl></div>
+      <dt>Pool</dt><dd>3 Spaces con espejo</dd><dt>Auto-pull</dt><dd>rama ccr-f01c3de9-bmry0s · 13 pulls</dd></dl></div>
   </div>
 </section>
 <section class="surface-card" id="m-1">
@@ -171,9 +171,9 @@ th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px
       <p class="mono-sm">Qwen__Qwen2.5-Coder-0.5B-Instruct-GGUF__qwen2.5-coder-0.5b-instruct-q5_k_m.gguf</p>
     </div>
     <div class="row">
-      <span class="badge ok">97.0 tok/s</span>
-      <span class="badge info">$0.0859 / 1M tok</span>
-      <span class="badge">633.4 MB RAM</span>
+      <span class="badge ok">96.9 tok/s</span>
+      <span class="badge info">$0.086 / 1M tok</span>
+      <span class="badge">627.1 MB RAM</span>
     </div>
   </div>
   <div class="grid3" style="margin-top:12px">
@@ -182,7 +182,7 @@ th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px
       <dl class="kv">
         <dt>Modelo</dt><dd>Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF</dd>
         <dt>Fichero</dt><dd class="mono-sm">Qwen__Qwen2.5-Coder-0.5B-Instruct-GGUF__qwen2.5-coder-0.5b-instruct-q5_k_m.gguf</dd>
-        <dt>sha256</dt><dd class="mono-sm">7f6a0b1670c9fff2cccbf8746dff19bb9c023708c8ca7702e4d49805985ecbac</dd>
+        <dt>sha256</dt><dd class="mono-sm">—</dd>
         <dt>Space</dt><dd class="mono-sm">space-grupo-2-router-llm-hf-1</dd>
         <dt>URL directa</dt><dd class="mono-sm">https://comand-center-1-space-grupo-2-router-llm-hf-1.hf.space/v1/chat/completions</dd>
         <dt>Alias router</dt><dd><code>qwen2.5-coder-0.5b</code></dd>
@@ -192,12 +192,12 @@ th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px
     <div>
       <h3>Rendimiento medido ahora</h3>
       <dl class="kv">
-        <dt>tok/s</dt><dd><b>97.0</b> (200 tokens, modelo caliente)</dd>
+        <dt>tok/s</dt><dd><b>96.9</b> (200 tokens, modelo caliente)</dd>
         <dt>Tiempo</dt><dd>2.06 s</dd>
-        <dt>Precio / 1M</dt><dd>$0.0859 · 2.86 h por 1M</dd>
+        <dt>Precio / 1M</dt><dd>$0.086 · 2.87 h por 1M</dd>
         <dt>Coste Space</dt><dd>$0.03/h (cpu-upgrade 32 GB, 8 vCPU)</dd>
-        <dt>RAM RSS</dt><dd>633.4 MB</dd>
-        <dt>Medido</dt><dd>2026-11-19 12:14:44 UTC</dd>
+        <dt>RAM RSS</dt><dd>627.1 MB</dd>
+        <dt>Medido</dt><dd>2026-11-19 12:45:41 UTC</dd>
       </dl>
     </div>
     <div>
@@ -205,21 +205,19 @@ th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px
       <p class="chip ok">JSON de tool valido</p>
       <pre>{&quot;tool&quot;:&quot;buscar_archivo&quot;,&quot;args&quot;:{&quot;query&quot;:&quot;*.py&quot;}}</pre>
       <h3 style="margin-top:10px">Agéntico (real)</h3>
-      <pre>Plan:
+      <pre>1. Crear un fichero nota.md con tres pasos.
+2. Ejecutar el comando exacto que ejecutarias.
 
-1. Crear un fichero nota.md
-2. Escribir tres pasos
+Plan:
+1. Crear un fichero nota.md con tres pasos.
+2. Ejecutar el comando exacto que ejecutarias.
 
-Comando exacto:
-
-```sh
+Comando exacto que ejecutarias:
+```bash
 touch nota.md
-echo &quot; Paso 1: Crear un fichero nota.md&quot; &gt;&gt; nota.md
-echo &quot; Paso 2: Escribir tres pasos&quot; &gt;&gt; nota.md
-echo &quot; Paso 3: Finalizar&quot; &gt;&gt; nota.md
 ```
 
-Este comando ejecutará los pasos en el fichero `nota.md`.</pre>
+Este comando crea un nuevo fichero named `nota.md` en la carpeta actual.</pre>
     </div>
   </div>
   <div class="row-between" style="margin-top:12px">
@@ -288,9 +286,9 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
       <p class="mono-sm">LiquidAI__LFM2.5-350M-GGUF__LFM2.5-350M-Q4_K_M.gguf</p>
     </div>
     <div class="row">
-      <span class="badge ok">139.7 tok/s</span>
-      <span class="badge info">$0.0597 / 1M tok</span>
-      <span class="badge">461.7 MB RAM</span>
+      <span class="badge ok">146.2 tok/s</span>
+      <span class="badge info">$0.057 / 1M tok</span>
+      <span class="badge">457.0 MB RAM</span>
     </div>
   </div>
   <div class="grid3" style="margin-top:12px">
@@ -299,7 +297,7 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
       <dl class="kv">
         <dt>Modelo</dt><dd>LiquidAI/LFM2.5-350M-GGUF</dd>
         <dt>Fichero</dt><dd class="mono-sm">LiquidAI__LFM2.5-350M-GGUF__LFM2.5-350M-Q4_K_M.gguf</dd>
-        <dt>sha256</dt><dd class="mono-sm">7e6f72643caafc9a68256686638c4d7916f2cec76d1df478d4c3ddcd95a6aed4</dd>
+        <dt>sha256</dt><dd class="mono-sm">—</dd>
         <dt>Space</dt><dd class="mono-sm">space-grupo-2-router-llm-hf-2</dd>
         <dt>URL directa</dt><dd class="mono-sm">https://comand-center-1-space-grupo-2-router-llm-hf-2.hf.space/v1/chat/completions</dd>
         <dt>Alias router</dt><dd><code>lfm2.5-350m</code></dd>
@@ -309,28 +307,26 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
     <div>
       <h3>Rendimiento medido ahora</h3>
       <dl class="kv">
-        <dt>tok/s</dt><dd><b>139.7</b> (200 tokens, modelo caliente)</dd>
-        <dt>Tiempo</dt><dd>1.43 s</dd>
-        <dt>Precio / 1M</dt><dd>$0.0597 · 1.99 h por 1M</dd>
+        <dt>tok/s</dt><dd><b>146.2</b> (200 tokens, modelo caliente)</dd>
+        <dt>Tiempo</dt><dd>1.37 s</dd>
+        <dt>Precio / 1M</dt><dd>$0.057 · 1.9 h por 1M</dd>
         <dt>Coste Space</dt><dd>$0.03/h (cpu-upgrade 32 GB, 8 vCPU)</dd>
-        <dt>RAM RSS</dt><dd>461.7 MB</dd>
-        <dt>Medido</dt><dd>2026-11-19 12:14:44 UTC</dd>
+        <dt>RAM RSS</dt><dd>457.0 MB</dd>
+        <dt>Medido</dt><dd>2026-11-19 12:45:41 UTC</dd>
       </dl>
     </div>
     <div>
       <h3>Tool (real)</h3>
       <p class="chip no">NO emitio JSON de tool</p>
-      <pre>```json
-{&quot;tool&quot;:&quot;buscar_archivo&quot;,&quot;args&quot;:{&quot;query&quot;:&quot;*.py&quot;}}}
-```</pre>
+      <pre>{&quot;tool&quot;:&quot;buscar_archivo&quot;&quot;,&quot;args&quot;:{&quot;query&quot;:&quot;*.py&quot;}}&quot;}</pre>
       <h3 style="margin-top:10px">Agéntico (real)</h3>
       <pre>**Plan:**
 
-1. **Editar el archivo:** Utiliza el comando `cat notas.md` para abrir el archivo y leer su contenido.
-2. **Revisar el contenido:** Lee el archivo para asegurarte de que todo esté correcto y cumpla con los requisitos.
-3. **Guardar el archivo:** Guarda el archivo modificado con el comando `cp notas.md salida.txt` para asegurarte de que no se pierda ningún dato.
+1. **Ejecutar el comando:** `echo -e &quot;Nota: Este es un ejemplo de nota.md&quot;`  
+2. **Verificar la salida:** `cat nota.md`  
+3. **Guardar el archivo:** `cp nota.md /muebles/`  
 
-**Comando:** `cat notas.md`</pre>
+**Comando ejecutado:** `echo -e &quot;Nota guardada en /muebles/&quot;`</pre>
     </div>
   </div>
   <div class="row-between" style="margin-top:12px">
@@ -399,9 +395,9 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
       <p class="mono-sm">unsloth__Qwen3.5-0.8B-GGUF__Qwen3.5-0.8B-IQ4_XS.gguf</p>
     </div>
     <div class="row">
-      <span class="badge ok">56.5 tok/s</span>
-      <span class="badge info">$0.1475 / 1M tok</span>
-      <span class="badge">952.7 MB RAM</span>
+      <span class="badge ok">56.2 tok/s</span>
+      <span class="badge info">$0.1483 / 1M tok</span>
+      <span class="badge">884.4 MB RAM</span>
     </div>
   </div>
   <div class="grid3" style="margin-top:12px">
@@ -410,7 +406,7 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
       <dl class="kv">
         <dt>Modelo</dt><dd>unsloth/Qwen3.5-0.8B-GGUF</dd>
         <dt>Fichero</dt><dd class="mono-sm">unsloth__Qwen3.5-0.8B-GGUF__Qwen3.5-0.8B-IQ4_XS.gguf</dd>
-        <dt>sha256</dt><dd class="mono-sm">619917ae92f61eb6515a7070e944a0a7c2b198a2cf6536386f475485188a36ff</dd>
+        <dt>sha256</dt><dd class="mono-sm">—</dd>
         <dt>Space</dt><dd class="mono-sm">space-grupo-2-router-llm-hf-3</dd>
         <dt>URL directa</dt><dd class="mono-sm">https://comand-center-1-space-grupo-2-router-llm-hf-3.hf.space/v1/chat/completions</dd>
         <dt>Alias router</dt><dd><code>qwen3.5-0.8b</code></dd>
@@ -420,12 +416,12 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
     <div>
       <h3>Rendimiento medido ahora</h3>
       <dl class="kv">
-        <dt>tok/s</dt><dd><b>56.5</b> (200 tokens, modelo caliente)</dd>
-        <dt>Tiempo</dt><dd>3.54 s</dd>
-        <dt>Precio / 1M</dt><dd>$0.1475 · 4.92 h por 1M</dd>
+        <dt>tok/s</dt><dd><b>56.2</b> (200 tokens, modelo caliente)</dd>
+        <dt>Tiempo</dt><dd>3.56 s</dd>
+        <dt>Precio / 1M</dt><dd>$0.1483 · 4.94 h por 1M</dd>
         <dt>Coste Space</dt><dd>$0.03/h (cpu-upgrade 32 GB, 8 vCPU)</dd>
-        <dt>RAM RSS</dt><dd>952.7 MB</dd>
-        <dt>Medido</dt><dd>2026-11-19 12:14:44 UTC</dd>
+        <dt>RAM RSS</dt><dd>884.4 MB</dd>
+        <dt>Medido</dt><dd>2026-11-19 12:45:41 UTC</dd>
       </dl>
     </div>
     <div>
@@ -438,14 +434,13 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
   }
 }</pre>
       <h3 style="margin-top:10px">Agéntico (real)</h3>
-      <pre>¡Claro que sí! Aquí tienes el plan para crear el archivo `nota.md` con los tres pasos solicitados:
+      <pre>¡Claro! Aquí tienes el plan para crear un archivo `nota.md` con los tres pasos solicitados:
 
-1.  **Crear el archivo**
-    *   Usa un editor de texto (como Notepad, VS Code, o cualquier editor de texto) para crear un nuevo archivo llamado `nota.md`.
-    *   **Comando exacto:** `nano` o `vi` (para texto) o `notepad++` (para código) para crear el archivo.
+1.  **Identificar el objetivo principal:** Determinar qué tarea o proyecto necesitas completar.
+2.  **Definir los recursos necesarios:** Listar los materiales, herramientas o datos que necesitas para ejecutar el plan.
+3.  **Ejecutar el comando:** Generar el código o instrucciones que debes usar para crear el archivo.
 
-2.  **Incorporar el primer paso**
-    *   Dentro del arch</pre>
+Aquí ti</pre>
     </div>
   </div>
   <div class="row-between" style="margin-top:12px">
@@ -507,18 +502,62 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
   </details>
 </section>
 <section class="surface-card" id="cache">
-  <h2>Caché y estado de la cola (real)</h2>
+  <h2>Caché y estado de la cola (real, medido ahora)</h2>
   <div class="grid3">
-    <div><h3>Cola local (1 en vuelo por Space)</h3>
+    <div><h3>Cache semantica del router</h3>
+      <div class="flow"><b>mismo prompt</b><span class="arrow">&#10145;</span><b>hash sha256</b><span class="arrow">&#10145;</span><b>respuesta al instante</b></div>
+      <dl class="kv"><dt>TTL</dt><dd>300.0 s</dd><dt>Entradas</dt><dd>7</dd><dt>Aciertos</dt><dd>2</dd>
+      <dt>Fallos</dt><dd>7</dd><dt>Tasa</dt><dd>0.222</dd></dl>
+      <p class="note">MEDIDO: 1a llamada 4,73 s -> 2a llamada <b>0,05 s</b> con
+      <code>"cache": {"hit": true}</code> en la respuesta. El bucle agéntico no vuelve a generar.</p></div>
+    <div><h3>Cola del Grupo 1 (3 espejos)</h3>
+      <div class="flow"><b>peticion</b><span class="arrow">&#10145;</span><b>1 en vuelo</b><span class="arrow">&#10145;</span><b>siguiente espejo</b></div>
+      <pre>{
+ &quot;ok&quot;: true,
+ &quot;grupo&quot;: &quot;grupo_1_compute_proxy&quot;,
+ &quot;funcion&quot;: &quot;HTTP + MCP + almacenamiento/memoria (cola de 3 espejos)&quot;,
+ &quot;desvinculado_de&quot;: &quot;grupo_2_router_llm_hf (solo LLM, no comparte HTTP/MCP/memoria)&quot;,
+ &quot;este&quot;: {
+  &quot;espacio&quot;: &quot;space-grupo-1-router-mvp-1&quot;,
+  &quot;url&quot;: &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space&quot;,
+  &quot;in_flight&quot;: 0,
+  &quot;max_in_flight&quot;: 4,
+  &quot;libre&quot;: true,
+  &quot;peak&quot;: 0,
+  &quot;uptime_s&quot;: 269.9,
+  &quot;responde&quot;: true
+ },
+ &quot;espejos&quot;: [
+  {
+   &quot;url&quot;: &quot;https://comand-center-1-space-grupo-1-router-mvp-1-v2.hf.space&quot;,
+   &quot;responde&quot;: true,
+   &quot;in_flight&quot;: null,
+   &quot;max_in_flight&quot;: null,
+   &quot;libre&quot;: null
+  },
+  {
+   &quot;url&quot;: &quot;https://comand-center-1-space-grupo-1-router-mvp-1-v7.hf.space&quot;,
+   &quot;responde&quot;: true,
+   &quot;in_flight&quot;: null,
+   &quot;max_in_flight&quot;: null,
+   &quot;libre&quot;: null
+  }
+ ],
+ &quot;libres&quot;: [
+  &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space&quot;
+ ],
+ &quot;siguiente&quot;: &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space&quot;
+}</pre></div>
+    <div><h3>Cola local del Grupo 2 + auto-pull</h3>
       <pre>{
  &quot;spaces&quot;: [
   {
    &quot;space&quot;: &quot;space-grupo-2-router-llm-hf-1&quot;,
    &quot;model&quot;: &quot;Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF&quot;,
    &quot;in_flight&quot;: 0,
-   &quot;served&quot;: 1,
+   &quot;served&quot;: 0,
    &quot;errors&quot;: 0,
-   &quot;last_ok_at&quot;: 1795090425.5453598,
+   &quot;last_ok_at&quot;: null,
    &quot;last_error&quot;: null,
    &quot;degraded_until&quot;: 0.0,
    &quot;state&quot;: &quot;libre&quot;,
@@ -550,57 +589,7 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
   },
   {
    &quot;space&quot;: &quot;space-grupo-2-router-llm-hf-3&quot;,
-   &quot;model&quot;: &quot;unsloth/Qwen3.5-0.8B-GGUF&quot;,
-   &quot;in_flight&quot;: 0,
-   &quot;served&quot;: 0,
-   &quot;errors&quot;: 0,
-   &quot;last_ok_at&quot;: null,
-   &quot;last_error&quot;: null,
-   &quot;degraded_until&quot;: 0.0,
-   &quot;state&quot;: &quot;libre&quot;,
-   &quot;busy&quot;: false,
-   &quot;degra</pre></div>
-    <div><h3>Auto-pull (push -&gt; Space vivo, sin reiniciar)</h3>
-      <pre>{
- &quot;version&quot;: &quot;1.0.0&quot;,
- &quot;enabled&quot;: true,
- &quot;branch&quot;: &quot;ccr-f01c3de9-bmry0s&quot;,
- &quot;repo_dir&quot;: &quot;/tmp/repo&quot;,
- &quot;interval_s&quot;: 20,
- &quot;started_at&quot;: 1795089504.8244126,
- &quot;last_poll_at&quot;: 1795090473.370193,
- &quot;last_pull_at&quot;: 1795090369.2428563,
- &quot;head&quot;: &quot;5a9e7675e53d800d63848284c6cd7d7ca33a3069&quot;,
- &quot;last_applied_sha&quot;: &quot;5a9e7675e53d800d63848284c6cd7d7ca33a3069&quot;,
- &quot;pulls&quot;: 3,
- &quot;reloads&quot;: 3,
- &quot;roots&quot;: {},
- &quot;errors&quot;: []
-}</pre></div>
-    <div><h3>Artefactos + modos</h3>
-      <pre>{
- &quot;artefactos&quot;: 2,
- &quot;modos_codigo&quot;: [
-  &quot;3d_code&quot;,
-  &quot;architecture&quot;,
-  &quot;code_debug&quot;,
-  &quot;code_generate&quot;,
-  &quot;code_refactor&quot;,
-  &quot;code_review&quot;,
-  &quot;documentation&quot;,
-  &quot;frontend&quot;,
-  &quot;planning&quot;,
-  &quot;reasoning&quot;,
-  &quot;tool_call&quot;,
-  &quot;verification&quot;
- ],
- &quot;modos_servicio&quot;: [
-  &quot;deployment&quot;,
-  &quot;swe_code&quot;,
-  &quot;swe_free&quot;,
-  &quot;team_qwe&quot;
- ]
-}</pre></div>
+   &quot;model&quot;: &quot;unsloth/Qwen3</pre></div>
   </div>
 </section>
   </main>
@@ -626,7 +615,7 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
   </div>
   <div class="surface-card" style="padding:13px">
     <h3>Fuente de los datos</h3>
-    <p class="mono-sm">medido en vivo el 2026-11-19 12:14:44 UTC contra los 6 Spaces vivos. Sin numeros de memoria: todo lo de
+    <p class="mono-sm">medido en vivo el 2026-11-19 12:45:41 UTC contra los 6 Spaces vivos. Sin numeros de memoria: todo lo de
     esta pagina se acaba de medir.</p>
   </div></aside>
 </div>

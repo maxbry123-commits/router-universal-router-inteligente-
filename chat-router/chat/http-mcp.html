@@ -165,13 +165,13 @@ th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px
   <p class="note">Todas exigen la cabecera <code>x-api-key</code>. Tiempos reales medidos en esta ejecucion.</p>
   
     <details id="h-router_health" open>
-      <summary><span class="chip ok">GET 200</span> &nbsp;<b>router_health</b> <span class="mono-sm">/health</span> &nbsp;<span class="mono-sm">0.05 ms · 389 B</span></summary>
+      <summary><span class="chip ok">GET 200</span> &nbsp;<b>router_health</b> <span class="mono-sm">/health</span> &nbsp;<span class="mono-sm">0.05 ms · 390 B</span></summary>
       <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/health</span>
         <button class="btn" data-copy="#h-router_health-c" data-label="curl copiado">Copiar cURL</button></div>
       <pre id="h-router_health-c">curl -sS -X GET 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/health' \
   -H 'x-api-key: $UNIVERSAL_KEY' \
   -H 'Content-Type: application/json'</pre>
-      <pre>{&quot;status&quot;:&quot;ok&quot;,&quot;auto_pull&quot;:{&quot;version&quot;:&quot;1.0.0&quot;,&quot;enabled&quot;:true,&quot;branch&quot;:&quot;ccr-f01c3de9-bmry0s&quot;,&quot;repo_dir&quot;:&quot;/tmp/repo&quot;,&quot;interval_s&quot;:20,&quot;started_at&quot;:1795089504.8244126,&quot;last_poll_at&quot;:1795090595.9984157,&quot;last_pull_at&quot;:1795090369.2428563,&quot;head&quot;:&quot;5a9e7675e53d800d63848284c6cd7d7ca33a3069&quot;,&quot;last_applied_sha&quot;:&quot;5a9e7675e53d800d638</pre>
+      <pre>{&quot;status&quot;:&quot;ok&quot;,&quot;auto_pull&quot;:{&quot;version&quot;:&quot;1.0.0&quot;,&quot;enabled&quot;:true,&quot;branch&quot;:&quot;ccr-f01c3de9-bmry0s&quot;,&quot;repo_dir&quot;:&quot;/tmp/repo&quot;,&quot;interval_s&quot;:20,&quot;started_at&quot;:1795089504.8244126,&quot;last_poll_at&quot;:1795092353.426169,&quot;last_pull_at&quot;:1795092126.0304303,&quot;head&quot;:&quot;878e45df5f9b5c9872b460a8f7c28706e34a7d17&quot;,&quot;last_applied_sha&quot;:&quot;878e45df5f9b5c9872b4</pre>
     </details>
     <details id="h-control_status">
       <summary><span class="chip ok">GET 200</span> &nbsp;<b>control_status</b> <span class="mono-sm">/control-plane/status</span> &nbsp;<span class="mono-sm">0.05 ms · 52 B</span></summary>
@@ -183,7 +183,7 @@ th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px
       <pre>{&quot;control_plane&quot;:true,&quot;watchdog&quot;:true,&quot;recall&quot;:true}</pre>
     </details>
     <details id="h-chat_completions" open>
-      <summary><span class="chip ok">POST 200</span> &nbsp;<b>chat_completions</b> <span class="mono-sm">/v1/chat/completions</span> &nbsp;<span class="mono-sm">4.17 ms · 648 B</span></summary>
+      <summary><span class="chip ok">POST 200</span> &nbsp;<b>chat_completions</b> <span class="mono-sm">/v1/chat/completions</span> &nbsp;<span class="mono-sm">2.05 ms · 796 B</span></summary>
       <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/chat/completions</span>
         <button class="btn" data-copy="#h-chat_completions-c" data-label="curl copiado">Copiar cURL</button></div>
       <pre id="h-chat_completions-c">curl -sS -X POST 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/chat/completions' \
@@ -193,27 +193,27 @@ th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px
       <pre>{&quot;id&quot;: &quot;chatcmpl-fallback&quot;, &quot;object&quot;: &quot;chat.completion&quot;, &quot;provider&quot;: &quot;nvidia&quot;, &quot;agent&quot;: null, &quot;artifacts&quot;: [], &quot;degraded&quot;: false, &quot;mode&quot;: &quot;code_generate&quot;, &quot;service_mode&quot;: null, &quot;route&quot;: &quot;/v1/chat/completions&quot;, &quot;adapter&quot;: {&quot;base_model&quot;: &quot;Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF&quot;, &quot;lora&quot;: &quot;sandeeprdy1729/TIMPS-Coder-0.5B&quot;, </pre>
     </details>
     <details id="h-nvidia_direct">
-      <summary><span class="chip ok">POST 200</span> &nbsp;<b>nvidia_direct</b> <span class="mono-sm">/v1/nvidia</span> &nbsp;<span class="mono-sm">2.21 ms · 543 B</span></summary>
+      <summary><span class="chip ok">POST 200</span> &nbsp;<b>nvidia_direct</b> <span class="mono-sm">/v1/nvidia</span> &nbsp;<span class="mono-sm">0.05 ms · 1659 B</span></summary>
       <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/nvidia</span>
         <button class="btn" data-copy="#h-nvidia_direct-c" data-label="curl copiado">Copiar cURL</button></div>
       <pre id="h-nvidia_direct-c">curl -sS -X POST 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/nvidia' \
   -H 'x-api-key: $UNIVERSAL_KEY' \
   -H 'Content-Type: application/json' \
   -d '{"model": "auto", "messages": [{"role": "user", "content": "di ok"}], "max_tokens": 8}'</pre>
-      <pre>{&quot;id&quot;:&quot;chatcmpl-fallback&quot;,&quot;object&quot;:&quot;chat.completion&quot;,&quot;provider&quot;:&quot;nvidia&quot;,&quot;agent&quot;:null,&quot;artifacts&quot;:[],&quot;degraded&quot;:false,&quot;mode&quot;:&quot;code_generate&quot;,&quot;service_mode&quot;:null,&quot;route&quot;:&quot;/v1/nvidia&quot;,&quot;adapter&quot;:{&quot;base_model&quot;:&quot;Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF&quot;,&quot;lora&quot;:&quot;sandeeprdy1729/TIMPS-Coder-0.5B&quot;,&quot;dataset&quot;:&quot;NickIBrody/python-code</pre>
+      <pre>{&quot;id&quot;:&quot;chatcmpl-4807c9df-c0b7-416a-8409-85d5c5043eca&quot;,&quot;choices&quot;:[{&quot;index&quot;:0,&quot;message&quot;:{&quot;content&quot;:&quot;Hmm, \&quot;di ok\&quot; is a bit open-ended! Did you mean something specific, or is there something I can help you with? Feel free to clarify or ask a question — I&#x27;m here to help!&quot;,&quot;refusal&quot;:null,&quot;role&quot;:&quot;assistant&quot;,&quot;reasoning_conte</pre>
     </details>
     <details id="h-groq_direct">
-      <summary><span class="chip ok">POST 200</span> &nbsp;<b>groq_direct</b> <span class="mono-sm">/v1/groq</span> &nbsp;<span class="mono-sm">1.79 ms · 493 B</span></summary>
+      <summary><span class="chip ok">POST 200</span> &nbsp;<b>groq_direct</b> <span class="mono-sm">/v1/groq</span> &nbsp;<span class="mono-sm">0.05 ms · 1659 B</span></summary>
       <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/groq</span>
         <button class="btn" data-copy="#h-groq_direct-c" data-label="curl copiado">Copiar cURL</button></div>
       <pre id="h-groq_direct-c">curl -sS -X POST 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/groq' \
   -H 'x-api-key: $UNIVERSAL_KEY' \
   -H 'Content-Type: application/json' \
   -d '{"model": "auto", "messages": [{"role": "user", "content": "di ok"}], "max_tokens": 8}'</pre>
-      <pre>{&quot;id&quot;:&quot;chatcmpl-fallback&quot;,&quot;object&quot;:&quot;chat.completion&quot;,&quot;provider&quot;:&quot;nvidia&quot;,&quot;agent&quot;:null,&quot;artifacts&quot;:[],&quot;degraded&quot;:false,&quot;mode&quot;:&quot;code_generate&quot;,&quot;service_mode&quot;:null,&quot;route&quot;:&quot;/v1/groq&quot;,&quot;adapter&quot;:{&quot;base_model&quot;:&quot;Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF&quot;,&quot;lora&quot;:&quot;sandeeprdy1729/TIMPS-Coder-0.5B&quot;,&quot;dataset&quot;:&quot;NickIBrody/python-code-i</pre>
+      <pre>{&quot;id&quot;:&quot;chatcmpl-4807c9df-c0b7-416a-8409-85d5c5043eca&quot;,&quot;choices&quot;:[{&quot;index&quot;:0,&quot;message&quot;:{&quot;content&quot;:&quot;Hmm, \&quot;di ok\&quot; is a bit open-ended! Did you mean something specific, or is there something I can help you with? Feel free to clarify or ask a question — I&#x27;m here to help!&quot;,&quot;refusal&quot;:null,&quot;role&quot;:&quot;assistant&quot;,&quot;reasoning_conte</pre>
     </details>
     <details id="h-swe_free">
-      <summary><span class="chip ok">POST 200</span> &nbsp;<b>swe_free</b> <span class="mono-sm">/v1/swe-free</span> &nbsp;<span class="mono-sm">0.6 ms · 546 B</span></summary>
+      <summary><span class="chip ok">POST 200</span> &nbsp;<b>swe_free</b> <span class="mono-sm">/v1/swe-free</span> &nbsp;<span class="mono-sm">0.48 ms · 536 B</span></summary>
       <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/swe-free</span>
         <button class="btn" data-copy="#h-swe_free-c" data-label="curl copiado">Copiar cURL</button></div>
       <pre id="h-swe_free-c">curl -sS -X POST 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/swe-free' \
@@ -223,7 +223,7 @@ th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px
       <pre>{&quot;id&quot;:&quot;chatcmpl-fallback&quot;,&quot;object&quot;:&quot;chat.completion&quot;,&quot;provider&quot;:&quot;hf_local&quot;,&quot;agent&quot;:null,&quot;artifacts&quot;:[],&quot;degraded&quot;:false,&quot;mode&quot;:&quot;code_generate&quot;,&quot;service_mode&quot;:&quot;swe_free&quot;,&quot;route&quot;:&quot;/v1/swe-free&quot;,&quot;adapter&quot;:{&quot;base_model&quot;:&quot;Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF&quot;,&quot;lora&quot;:&quot;sandeeprdy1729/TIMPS-Coder-0.5B&quot;,&quot;dataset&quot;:&quot;NickIBrody/p</pre>
     </details>
     <details id="h-team_qwe">
-      <summary><span class="chip ok">POST 200</span> &nbsp;<b>team_qwe</b> <span class="mono-sm">/v1/team-qwe</span> &nbsp;<span class="mono-sm">3.33 ms · 496 B</span></summary>
+      <summary><span class="chip ok">POST 200</span> &nbsp;<b>team_qwe</b> <span class="mono-sm">/v1/team-qwe</span> &nbsp;<span class="mono-sm">2.07 ms · 485 B</span></summary>
       <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/team-qwe</span>
         <button class="btn" data-copy="#h-team_qwe-c" data-label="curl copiado">Copiar cURL</button></div>
       <pre id="h-team_qwe-c">curl -sS -X POST 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/team-qwe' \
@@ -243,7 +243,7 @@ th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px
       <pre>{&quot;ok&quot;:true,&quot;taskId&quot;:&quot;default&quot;}</pre>
     </details>
     <details id="h-frontend_chat">
-      <summary><span class="chip ok">GET 200</span> &nbsp;<b>frontend_chat</b> <span class="mono-sm">/chat/</span> &nbsp;<span class="mono-sm">0.05 ms · 35786 B</span></summary>
+      <summary><span class="chip ok">GET 200</span> &nbsp;<b>frontend_chat</b> <span class="mono-sm">/chat/</span> &nbsp;<span class="mono-sm">0.06 ms · 37040 B</span></summary>
       <div class="row" style="margin:8px 0"><span class="url-box">https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/chat/</span>
         <button class="btn" data-copy="#h-frontend_chat-c" data-label="curl copiado">Copiar cURL</button></div>
       <pre id="h-frontend_chat-c">curl -sS -X GET 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/chat/' \
@@ -266,7 +266,7 @@ th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px
       <pre id="h-billing_status-c">curl -sS -X GET 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/billing/status' \
   -H 'x-api-key: $UNIVERSAL_KEY' \
   -H 'Content-Type: application/json'</pre>
-      <pre>{&quot;active_spaces&quot;:0,&quot;hourly_cost_estimate_usd&quot;:0.0,&quot;alert_triggered&quot;:false,&quot;timestamp&quot;:&quot;2026-11-19T12:17:05.019915&quot;}</pre>
+      <pre>{&quot;active_spaces&quot;:0,&quot;hourly_cost_estimate_usd&quot;:0.0,&quot;alert_triggered&quot;:false,&quot;timestamp&quot;:&quot;2026-11-19T12:46:12.682949&quot;}</pre>
     </details>
 </section>
 
