@@ -266,6 +266,37 @@ def _agent_prompt(agent_name: str):
     return AGENT_PROMPTS.get(agent_name)
 
 
+def _motor_determinista(messages, respuesta_externa: str = "") -> dict:
+    """Ultimo eslabon de la cadena del chat + materializacion del archivo.
+
+    Si Local (Space GGUF), NVIDIA y Groq fallan, la cadena se queda sin
+    proveedor. Antes el proxy devolvia 503 y el chat quedaba muerto. Ahora
+    responde el motor determinista local, con el estado REAL del sistema; y si
+    el mensaje pide un archivo, lo escribe de verdad en el store de artefactos
+    (sha256 real) y devuelve el bloque para que el chat lo muestre.
+    """
+    prompt = ""
+    for _m in messages or []:
+        if _m.get("role") == "user":
+            prompt = _m.get("content") or ""
+            break
+    try:
+        from router_llm_hf import chat_engine
+        det = chat_engine.responde(
+            prompt,
+            artifact_dir=ARTIFACT_DIR,
+            artifact_kinds=ARTIFACT_KINDS,
+            respuesta_externa=respuesta_externa,
+        )
+    except Exception as e:  # pragma: no cover - el error se ve, no se esconde
+        print(f"[DETERMINISTA] no disponible: {type(e).__name__}: {e}")
+        det = {"content": f"Motor determinista no disponible: {e}", "artifacts": [],
+               "tipo": "error", "modo": "determinista"}
+    if respuesta_externa:
+        det["content"] = f"{respuesta_externa}\n\n{det.get('content') or ''}"
+    return det
+
+
 async def _run_chat_chain(messages, model_requested, *, service_mode=None, route_path="",
                           detected_mode=None, adapter=None, agent=None):
     """Nucleo de ejecucion del chat (compartido por el chat y por el espejo).
@@ -338,13 +369,30 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
             provider_fb.call(messages, model_requested=model_requested, local_fn=local_execution),
         )
         if fallback_result.get("provider") == "none":
-            # 503 con diagnostico real (conteo de claves y ultimo error), no una cadena generica
-            return JSONResponse(status_code=503, content={
-                "detail": "Todos los proveedores fallaron",
-                "diag": fallback_result.get("diag") or {},
+            # MINIMAX 2H: la cadena se queda sin proveedor externo (NVIDIA/Groq
+            # sin clave, Spaces PAUSED por 402). Antes: 503 y el chat muerto.
+            # Ahora el ultimo eslabon es el motor determinista local, que
+            # responde con el estado REAL del sistema. El diagnostico se
+            # conserva: el error nunca se pierde en silencio.
+            det = _motor_determinista(messages)
+            return JSONResponse({
+                "id": "chatcmpl-determinista",
+                "object": "chat.completion",
+                "provider": "determinista",
+                "degraded": True,
                 "mode": detected_mode,
                 "service_mode": service_mode,
                 "route": route_path,
+                "agent": agent,
+                "model": model_requested,
+                "diag": fallback_result.get("diag") or {},
+                "artifacts": det.get("artifacts") or [],
+                "tipo": det.get("tipo"),
+                "choices": [{
+                    "index": 0,
+                    "message": {"role": "assistant", "content": det.get("content") or ""},
+                    "finish_reason": "stop"
+                }]
             })
 
         provider_used = fallback_result.get("provider")
@@ -365,12 +413,31 @@ async def _run_chat_chain(messages, model_requested, *, service_mode=None, route
         else:
             print("[WARN] MCP_MEMORY_URL no configurada. Chat en modo degradado (sin persistencia).")
 
-        # 4. Respuesta con el contenido real del proveedor.
+        # 4. Si el mensaje pide un archivo, se materializa (sha256 real) y el
+        #    bloque del artefacto se antepone al contenido: el chat lo muestra.
+        _prompt = ""
+        for _m in messages or []:
+            if _m.get("role") == "user":
+                _prompt = _m.get("content") or ""
+                break
+        artifacts: list = []
+        try:
+            from router_llm_hf.chat_engine import pide_archivo
+            _pide = pide_archivo(_prompt)
+        except Exception:
+            _pide = None
+        if _pide:
+            det = _motor_determinista(messages, respuesta_externa=content)
+            artifacts = det.get("artifacts") or []
+            content = det.get("content") or content
+
+        # 5. Respuesta con el contenido real del proveedor.
         return JSONResponse({
             "id": "chatcmpl-fallback",
             "object": "chat.completion",
             "provider": provider_used,
             "agent": agent,
+            "artifacts": artifacts,
             "degraded": bool(fallback_result.get("degraded")),
             "mode": detected_mode,
             "service_mode": service_mode,
