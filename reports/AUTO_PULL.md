@@ -17,3 +17,14 @@ Variables: `AUTO_PULL=1` (activo), `AUTO_PULL_INTERVAL_S=20`, `AUTO_PULL_BRANCH`
 
 Por que no sirve lo de HF: `set_space_sleep_time` exige inactividad y recarga el modelo;
 `restart_space` tira el contenedor. Ninguno de los dos aplica un push "de inmediato".
+
+## Medido en vivo (2026-11-19)
+
+| Momento | Suceso |
+|---|---|
+| 08:21Z | Bootstrap: 6 Spaces reiniciados 1 vez para instalar el watcher (unico reinicio). |
+| 08:34:07Z | `push` commit `ad643a6c`. |
+| 08:34:25Z | Los 6 Spaces:apply `ad643a6c` **solos** (18 s). Sin rebuild, sin reinicio, sin re-descargar el modelo. |
+| 08:39:56Z | `push` commit `e20ecb2d` (estado persistente). |
+| 08:40:20Z | Los 6 Spaces: `head=e20ecb2d` **sin tocar nada**. |
+| tras la recarga | `/chat/` 200 (la pagina de respaldo), `/` 307 -> `/chat/`, y los 3 modelos locales vuelven a responder. |
