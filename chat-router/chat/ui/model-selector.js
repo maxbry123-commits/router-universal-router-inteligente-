@@ -24,11 +24,14 @@ export const MODEL_GROUPS = {
       { id: "unsloth/Qwen3.5-0.8B-GGUF", label: "Qwen 3.5 0.8B", endpoint: "https://comand-center-1-space-grupo-2-router-llm-hf-3.hf.space/v1" }
     ]
   },
+  // VERIFICADOS en vivo el 2026-11-19 contra cada API (no se ofrece lo que da 404):
+  //   NVIDIA (integrate.api.nvidia.com): 2 de 15 probados responden 200.
+  //   Groq   (api.groq.com/openai/v1):   2 de 12 probados responden 200 (gpt-oss).
+  // Cada modelo usa SOLO su API: /v1/nvidia nunca cae en Groq ni al reves.
   nvidia: {
     label: "NVIDIA (Fallback Externo)",
     endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/nvidia",
     models: [
-      { id: "minimaxai/minimax-m3.1-flash", label: "Minimax M3.1 Flash" },
       { id: "nvidia/nemotron-3.5-lightning-30b-a3b", label: "Nemotron 3.5 Lightning 30B" },
       { id: "nvidia/nemotron-3.5-bolt-e4b", label: "Nemotron 3.5 Bolt 4B" }
     ]
@@ -37,8 +40,6 @@ export const MODEL_GROUPS = {
     label: "Groq (Fallback Externo)",
     endpoint: "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/groq",
     models: [
-      { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant" },
-      { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
       { id: "openai/gpt-oss-20b", label: "GPT OSS 20B" },
       { id: "openai/gpt-oss-120b", label: "GPT OSS 120B" }
     ]
