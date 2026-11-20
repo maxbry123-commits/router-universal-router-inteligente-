@@ -37,7 +37,7 @@ function disparar(e) {
 }
 function pasoMotor(e) {
   try {
-    const r = spawnSync("python3", [path.join(__dirname, "ecc_motor.py")], { input: JSON.stringify(e), encoding: "utf8", timeout: 2000 });
+    const r = spawnSync("python3", [path.join(__dirname, "..", "tools", "ecc_motor.py")], { input: JSON.stringify(e), encoding: "utf8", timeout: 2000 });
     if (r.status === 0 && r.stdout) {
       const out = JSON.parse(r.stdout);
       if (out && out.fase) return out;
