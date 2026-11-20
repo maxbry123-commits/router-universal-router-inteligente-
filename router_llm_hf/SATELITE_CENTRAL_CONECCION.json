@@ -274,13 +274,15 @@
       {
         "id": "C-010",
         "consumidor": "vercel_frontend",
-        "proveedor": "space_riu_router",
+        "proveedor": "space_grupo_1_router_mvp_1",
         "protocolo": "http",
-        "estado": "DISCOVERED"
+        "estado": "CONFIGURED",
+        "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space",
+        "nota": "El Space riu-router fue RENOMBRADO (daba 404): el frontend de Vercel apuntaba ahi."
       },
       {
         "id": "C-011",
-        "consumidor": "space_riu_router",
+        "consumidor": "space_grupo_1_router_mvp_1",
         "proveedor": "github_source",
         "protocolo": "git_auto_pull",
         "estado": "CONFIGURED"
