@@ -1,0 +1,9 @@
+{
+  "name": "riu-jev-bridge-vercel",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "python3 build_public.py",
+    "vercel-build": "python3 build_public.py"
+  }
+}

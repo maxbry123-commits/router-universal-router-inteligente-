@@ -15,3 +15,16 @@ state/
 
 # output generado por el build de Vercel (lo genera vercel/build_public.py)
 /public/
+
+# outputs generados por el build de Vercel
+/public/
+/dist/
+/build/
+/out/
+/chat-router/public/
+/chat-router/dist/
+/chat-router/build/
+/chat-router/out/
+/vercel/dist/
+/vercel/build/
+/vercel/out/

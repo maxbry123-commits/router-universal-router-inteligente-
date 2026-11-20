@@ -87,9 +87,18 @@ def main():
     if not os.path.isdir(ORIGEN):
         print("FATAL: no existe el frontend canonico:", ORIGEN)
         sys.exit(1)
-    destinos = [os.path.join(AQUI, "public"), os.path.join(RAIZ, "public")]
+    # Se escribe en TODOS los destinos plausibles: asi el build de Vercel
+    # funciona con cualquier Root Directory (raiz, vercel/, chat-router/) y con
+    # cualquier Output Directory (public, dist, build, out).
+    candidatos = [
+        os.path.join(AQUI, "public"), os.path.join(AQUI, "dist"),
+        os.path.join(AQUI, "build"), os.path.join(AQUI, "out"),
+        os.path.join(RAIZ, "public"), os.path.join(RAIZ, "dist"),
+        os.path.join(RAIZ, "build"), os.path.join(RAIZ, "out"),
+        os.path.join(RAIZ, "chat-router", "public"),
+    ]
     hechos = []
-    for d in destinos:
+    for d in candidatos:
         try:
             n = _copiar_arbol(ORIGEN, d)
             hechos.append((d, n))
