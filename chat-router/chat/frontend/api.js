@@ -197,7 +197,7 @@ async function puenteRouter(base, body, qs, headers) {
 }
 async function puente(base, body, qs, method, headers) {
   if (String(base).includes('/plugins/puente_chat')) return puenteRouter(base, body, qs, headers);
-  const r = await fetchT(base + (qs || ''), { method: method || 'POST', headers, body: method === 'GET' ? undefined : JSON.stringify(body) }, 15000);
+  const r = await fetchT(base + (qs || ''), { method: method || 'POST', headers, body: method === 'GET' ? undefined : JSON.stringify(body) }, 450000);
   const p = await r.json().catch(() => ({}));
   return { status: r.status, ok: r.ok, p };
 }
@@ -230,10 +230,16 @@ export async function plugin(id, action, body) {
 }
 window.RIU_PLUGIN = plugin;
 export async function harness({ model, message, max_tokens, avisar, anclados, sesion, anclados_sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id, instrucciones_fijas, mode_request, thinking_mode, tools = false, agente_tool = false, llm_tool = false }) {  // >>> MODOS <<< mode_request viaja en el payload
-  const base = (window.RIU_CONFIG || {}).harnessUrl;
+  /* En Vercel el chat se envia por el TRIGGER /api/chat (serverless): el
+     Router vivo NO implementa el puente de plugins /plugins/puente_chat/call,
+     pero si habla /v1/chat/completions (OpenAI-compatible) y el trigger
+     ya lleva la clave del servidor. Servido fuera de Vercel se usa el puente. */
+  const _enVercel = /(^|\.)vercel\.app$/.test(location.hostname);
+  const base = _enVercel ? '/api/chat' : ((window.RIU_CONFIG || {}).harnessUrl);
   const headers = { 'Content-Type': 'application/json' };
   const pw = clave();
   if (pw) headers['X-Chat-Password'] = pw;
+  if (pw) headers['x-api-key'] = pw;   // el trigger y el proxy leen x-api-key
   const messages = [{ role: 'user', content: message }];
   const extra = Object.assign(
     { active_anchors_v1: true, tools: !!tools, agente_tool: !!agente_tool, llm_tool: !!llm_tool },
