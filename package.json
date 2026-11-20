@@ -1,0 +1,10 @@
+{
+  "name": "riu-jev-bridge",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Puente RIU (router HF) <-> frontend en Vercel. El build solo copia el chat canonico.",
+  "scripts": {
+    "build": "python3 vercel/build_public.py",
+    "vercel-build": "python3 vercel/build_public.py"
+  }
+}

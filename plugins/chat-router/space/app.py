@@ -11,6 +11,7 @@ import re
 import time
 
 import requests
+from huggingface_hub import HfApi
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 
@@ -20,6 +21,7 @@ AGENTS_FLAG = "router inteligente universal/agents-yaiwes/AGENTS_PAUSE.flag"
 ROUTER_WF = "riu-router-job-central.yml"
 AGENT_WFS = ("riu-agents-run.yml", "riu-watchdog.yml", "riu-agent-inbox-poller.yml")
 HF = os.getenv("HF_TOKEN", "")
+ROUTER_SPACE = "COMAND-CENTER-1/riu-router"
 KEY = os.getenv("RIU_ROUTER_API_KEY", "")
 GH = os.getenv("GH_TOKEN", "")
 PROXY = ("v1/", "chat/", "control/", "groups", "workflows", "health")
@@ -74,13 +76,11 @@ def live_url() -> str:
 
 def router_alive(url: str) -> bool:
     def get() -> bool:
-        if not url:
-            return False
         try:
-            return requests.get(url + "/health", headers={"Authorization": f"Bearer {HF}"}, timeout=8).status_code == 200
-        except requests.RequestException:
+            return HfApi(token=HF or None).get_space_runtime(ROUTER_SPACE).stage == "RUNNING"
+        except Exception:
             return False
-    return cached("alive:" + url, 15, get)
+    return cached("alive", 15, get)
 
 
 @app.get("/")

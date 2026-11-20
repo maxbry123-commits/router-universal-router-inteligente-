@@ -1,0 +1,30 @@
+{
+  "repo": "COMAND-CENTER-1/swe-code-adapters",
+  "modes": [
+    {
+      "mode": "python",
+      "ok": true,
+      "base_model": null,
+      "dataset": "NickIBrody/python-code-instructions-85k"
+    },
+    {
+      "mode": "backend",
+      "ok": true,
+      "base_model": null,
+      "dataset": "bernabepuente/backend-api-instruction-dataset"
+    },
+    {
+      "mode": "architecture",
+      "ok": true,
+      "base_model": null,
+      "dataset": "nvidia/OpenCodeReasoning-2"
+    },
+    {
+      "mode": "agentic_tool",
+      "ok": true,
+      "base_model": null,
+      "dataset": "hudsongouge/microagent-sft-v1"
+    }
+  ],
+  "ok_count": 4
+}

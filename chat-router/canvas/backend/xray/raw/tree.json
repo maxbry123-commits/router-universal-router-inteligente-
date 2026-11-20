@@ -1,0 +1,35 @@
+{
+  "commit_sha": "bb3559e66f9ca160031b9da3c5b65aecb807fa45",
+  "generated_at": "2026-11-16T08:00:06Z",
+  "roots": {
+    "(root)": {
+      "bytes": 11371,
+      "files": 1,
+      "languages": {
+        "Markdown": 1
+      }
+    },
+    "backend": {
+      "bytes": 332675,
+      "files": 26,
+      "languages": {
+        "JSON": 2,
+        "Markdown": 5,
+        "Other": 1,
+        "Python": 17,
+        "Text": 1
+      }
+    },
+    "frontend": {
+      "bytes": 219399,
+      "files": 14,
+      "languages": {
+        "CSS": 2,
+        "HTML": 8,
+        "JavaScript": 3,
+        "Markdown": 1
+      }
+    }
+  },
+  "schema": "xray-tree/1"
+}

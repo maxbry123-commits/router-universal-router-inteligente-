@@ -1,0 +1,1 @@
+# La funcion /api/chat usa solo la libreria estandar (json, os, urllib).

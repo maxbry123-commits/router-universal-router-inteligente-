@@ -1,0 +1,118 @@
+{
+  "created_at": "2026-11-16T06:42:24Z",
+  "current_phase": 9,
+  "out": "/run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/stage_canvas/chat-router/canvas/backend/xray",
+  "phases": {
+    "0": {
+      "evidence": {
+        "branch": "master",
+        "commit_date": "2026-11-16T08:00:06+00:00",
+        "commit_sha": "bb3559e66f9ca160031b9da3c5b65aecb807fa45",
+        "constitution_ref": "TAREA_01_FUENTE_DE_LA_VERDAD.md",
+        "git_toplevel": "/run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/audit/canvas_20261116/xray_repo",
+        "out": "/run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/audit/canvas_20261116/xray_repo/canvas/backend/xray",
+        "python": "3.11.2",
+        "remote": "(sin remote)",
+        "repo": "canvas",
+        "root": "/run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/audit/canvas_20261116/xray_repo/canvas",
+        "tree_sha": "560e9d06f9463f30ff5714a3c43b1d2c83eb67a8"
+      },
+      "name": "preflight",
+      "status": "COMPLETED",
+      "updated_at": "2026-11-16T08:00:06Z"
+    },
+    "1": {
+      "evidence": {
+        "coverage_complete": true,
+        "excluded": 25,
+        "inventoried": 41,
+        "missing": 0,
+        "tracked_files": 66
+      },
+      "name": "inventario determinista",
+      "status": "COMPLETED",
+      "updated_at": "2026-11-16T08:00:06Z"
+    },
+    "2": {
+      "evidence": {
+        "files_with_symbols": 20,
+        "symbols": 370
+      },
+      "name": "simbolos",
+      "status": "COMPLETED",
+      "updated_at": "2026-11-16T08:00:06Z"
+    },
+    "3": {
+      "evidence": {
+        "broken_local": 0,
+        "imports_total": 152,
+        "resolved": 0,
+        "unverified_third_party": 152
+      },
+      "name": "cableado (imports)",
+      "status": "COMPLETED",
+      "updated_at": "2026-11-16T08:00:06Z"
+    },
+    "4": {
+      "evidence": {
+        "endpoints": 17,
+        "env_vars": 20
+      },
+      "name": "contratos (endpoints/env vars)",
+      "status": "COMPLETED",
+      "updated_at": "2026-11-16T08:00:06Z"
+    },
+    "5": {
+      "evidence": {
+        "by_state": {
+          "PRESERVED": 25
+        },
+        "claims": 25,
+        "rows": 25
+      },
+      "name": "cruce docs vs code",
+      "status": "COMPLETED",
+      "updated_at": "2026-11-16T08:00:06Z"
+    },
+    "6": {
+      "evidence": {
+        "by_verdict": {},
+        "gaps": 0,
+        "store_gaps": 0
+      },
+      "name": "huecos",
+      "status": "COMPLETED",
+      "updated_at": "2026-11-16T08:00:07Z"
+    },
+    "7": {
+      "evidence": {
+        "actions": 0,
+        "by_priority": {}
+      },
+      "name": "acciones",
+      "status": "COMPLETED",
+      "updated_at": "2026-11-16T08:00:07Z"
+    },
+    "8": {
+      "evidence": {
+        "arch": "ARCHITECTURE.md",
+        "report": "XRAY_REPORT.md"
+      },
+      "name": "compresion",
+      "status": "COMPLETED",
+      "updated_at": "2026-11-16T08:00:07Z"
+    },
+    "9": {
+      "evidence": {
+        "PASS": true,
+        "errors": 0
+      },
+      "name": "fingerprint + validacion",
+      "status": "COMPLETED",
+      "updated_at": "2026-11-16T08:00:07Z"
+    }
+  },
+  "root": "/tmp/canvas_repo",
+  "schema": "xray-state/1",
+  "updated_at": "2026-11-16T08:00:07Z"
+}

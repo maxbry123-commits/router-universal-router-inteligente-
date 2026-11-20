@@ -1,0 +1,2090 @@
+{
+  "version": "1.0",
+  "fuente_maestra": "SATÉLITE CENTRAL CONECCION.yaml (main) + SYSTEM_WIRING_REGISTRY.yaml (ccr) + connections/registry.yaml",
+  "plataformas": {
+    "github": {
+      "rol": "codigo_fuente_unico",
+      "rama_publicada": "main"
+    },
+    "huggingface": {
+      "rol": "espejo_auto_pull_minimo",
+      "regla": "nunca es la fuente; el Space arranca con auto-pull del repo"
+    },
+    "vercel": {
+      "rol": "frontend_publicado",
+      "regla": "sin despliegue nuevo sin autorizacion expresa"
+    },
+    "computo": {
+      "rol": "servidores_de_pago",
+      "perfil": {
+        "ram_gb": 32,
+        "tipo": "cpu",
+        "en_hf": "cpu-upgrade"
+      },
+      "prohibido": "cpu-basic"
+    }
+  },
+  "componentes": [
+    {
+      "id": "chatbot",
+      "ruta": "chat-router/chatbot/"
+    },
+    {
+      "id": "chat_router",
+      "ruta": "chat-router/chat/",
+      "subrutas": {
+        "frontend": "chat-router/chat/frontend/",
+        "backend": "chat-router/chat/backend/",
+        "espejo_openclaw": "chat-router/chat/espejo/espejo_prod.js"
+      }
+    },
+    {
+      "id": "swe_code_free",
+      "ruta": "chat-router/SWE CODE free/"
+    },
+    {
+      "id": "swe_code",
+      "ruta": "chat-router/SWE CODE/"
+    },
+    {
+      "id": "router_mvp",
+      "ruta": "router-mvp/",
+      "subrutas": {
+        "raiz_router": "router-mvp/raiz_router/",
+        "raiz_fichas_prompt": "router-mvp/raiz_fichas_prompt/",
+        "mvp": "router-mvp/mvp/",
+        "router": "router-mvp/router/"
+      }
+    },
+    {
+      "id": "router_swe_code",
+      "ruta": "chat-router/SWE CODE/mini_router.py"
+    },
+    {
+      "id": "harness_deepseek",
+      "ruta": "chat-router/harness/",
+      "subrutas": {
+        "backend": "chat-router/chat/backend/deepseek_harness/",
+        "plugin_registrado": "chat-router/plugins/deepseek_harness/"
+      }
+    },
+    {
+      "id": "registro_central",
+      "ruta": "connections/",
+      "subrutas": {
+        "maestro": "SYSTEM_WIRING_REGISTRY.yaml",
+        "pares": "connections/registry.yaml",
+        "topologia": "connections/topology.yaml",
+        "endpoints": "connections/endpoints.yaml",
+        "healthchecks": "connections/healthchecks.yaml",
+        "mapa": "chat-router/MAPA.md"
+      }
+    },
+    {
+      "id": "agentes",
+      "ruta": "chat-router/agentes/"
+    },
+    {
+      "id": "loop_cola_watchdog",
+      "ruta": "chat-router/Loop cola wachdog/",
+      "subrutas": {
+        "loop": "Loop/",
+        "cola": "Cola/",
+        "watchdog": "wachdog/",
+        "workflow": "chat-router/workflow-loop-code-yaiwes/"
+      }
+    },
+    {
+      "id": "system_prompt_motores",
+      "ruta": "router-mvp/raiz_fichas_prompt/",
+      "subrutas": {
+        "motores": "chat-router/motores/",
+        "fabrica_motores": "chat-router/motores/fabrica-motores/"
+      }
+    },
+    {
+      "id": "memoria",
+      "ruta": "chat-router/memoria/",
+      "subrutas": {
+        "memoria_yaiwes": "chat-router/memoria/memoria-yaiwes/",
+        "hf_datasets": "chat-router/memoria/hf_datasets/"
+      }
+    },
+    {
+      "id": "plugins",
+      "ruta": "chat-router/plugins/"
+    }
+  ],
+  "umbral_active": {
+    "condiciones": [
+      "autenticacion_valida",
+      "conexion_real_con_el_proveedor",
+      "solicitud_de_inferencia_ejecutada",
+      "respuesta_valida_del_modelo",
+      "tiempo_de_respuesta_registrado",
+      "sin_errores_criticos"
+    ],
+    "regla": "una prueba superficial NO activa una conexion"
+  },
+  "grupos_hf": {
+    "grupo_1_router_mvp_1": {
+      "nombre": "space grupo 1 router MVP 1",
+      "rol": "compute (proxy OpenAI-compatible, Router MVP v1)",
+      "funcion": "Enruta y ejecuta: decide el modo, llama al LLM y devuelve la respuesta. No sirve modelos.",
+      "spaces": [
+        {
+          "id": "space-grupo-1-router-mvp-1",
+          "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space",
+          "app_port": 7860
+        },
+        {
+          "id": "space-grupo-1-router-mvp-1-v2",
+          "url": "https://comand-center-1-space-grupo-1-router-mvp-1-v2.hf.space",
+          "app_port": 7860
+        },
+        {
+          "id": "space-grupo-1-router-mvp-1-v7",
+          "url": "https://comand-center-1-space-grupo-1-router-mvp-1-v7.hf.space",
+          "app_port": 7860
+        }
+      ],
+      "compute": "HF Space docker · hardware cpu-upgrade (32 GB RAM, CPU de pago) · puerto 7860",
+      "almacenamiento": {
+        "disco_persistente": "/data (disco persistente del Space de pago)",
+        "memoria_compartida": "hf://buckets/COMAND-CENTER-1/yaiwes-memoria-storage via hf-bucket-mcp (MCP_MEMORY_HTTP_URL)"
+      }
+    },
+    "grupo_2_router_llm_hf": {
+      "nombre": "space grupo 2 router LLM HF",
+      "rol": "llm local (GGUF servido en HF)",
+      "funcion": "Sirve UN modelo local en el puerto 7861. No enruta ni decide.",
+      "spaces": [
+        {
+          "id": "space-grupo-2-router-llm-hf-1",
+          "url": "https://comand-center-1-space-grupo-2-router-llm-hf-1.hf.space",
+          "app_port": 7861,
+          "modelo": "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF"
+        },
+        {
+          "id": "space-grupo-2-router-llm-hf-2",
+          "url": "https://comand-center-1-space-grupo-2-router-llm-hf-2.hf.space",
+          "app_port": 7861,
+          "modelo": "LiquidAI/LFM2.5-350M-GGUF"
+        },
+        {
+          "id": "space-grupo-2-router-llm-hf-3",
+          "url": "https://comand-center-1-space-grupo-2-router-llm-hf-3.hf.space",
+          "app_port": 7861,
+          "modelo": "unsloth/Qwen3.5-0.8B-GGUF"
+        }
+      ],
+      "compute": "HF Space docker · hardware cpu-upgrade (32 GB RAM, CPU de pago) · puerto 7861",
+      "almacenamiento": {
+        "disco_persistente": "/data (disco persistente del Space de pago): cache del GGUF y estado del modelo",
+        "memoria_compartida": "hf://buckets/COMAND-CENTER-1/yaiwes-memoria-storage via hf-bucket-mcp (MCP_MEMORY_HTTP_URL)"
+      }
+    }
+  },
+  "almacenamiento_hf": {
+    "capa_1_disco_del_space": {
+      "ruta": "/data",
+      "que_es": "Disco persistente del Space de HF (solo hardware de pago). Estado, checkpoints y cache de los GGUF.",
+      "montado_por": "HF Space (cpu-upgrade, 32 GB RAM)"
+    },
+    "capa_2_bucket_de_memoria": {
+      "bucket": "COMAND-CENTER-1/yaiwes-memoria-storage",
+      "uri": "hf://buckets/COMAND-CENTER-1/yaiwes-memoria-storage",
+      "que_es": "Memoria compartida entre los 6 Spaces y el chat: banco cifrado, memoria de agentes y auditoria.",
+      "mcp": "COMAND-CENTER-1/hf-bucket-mcp (MCP oficial de HF, puerto 7860) -> MCP_MEMORY_HTTP_URL",
+      "escritura": "Gratis (contenido). El bucket no es repo git: se escribe con el CLI hf."
+    },
+    "como_se_conectan_los_2_grupos": [
+      "1. compute: el Grupo 1 (proxy, 7860) es el unico que entra desde fuera (router, chat, UI chat, openclaw).",
+      "2. El Grupo 1 elige el LLM del modo y llama por HTTPS al Grupo 2 (7861); si el Grupo 2 no responde, cae a NVIDIA NIM y luego Groq.",
+      "3. El Grupo 2 devuelve la inferencia al Grupo 1, que la devuelve al cliente. El Grupo 2 tambien llama al Grupo 1 con ROUTER_BASE_URL para reportar estado.",
+      "4. persistencia: los dos grupos escriben en su /data y comparten la memoria del bucket (hf-bucket-mcp): un checkpoint escrito por uno lo ve el otro.",
+      "5. credenciales: las claves de proveedor NO estan en HF Secrets; se hidratan del sello cifrado del repo (fichas/fichas_qwen/sellos/proveedores.sello) con HF_VAULT_KEY."
+    ]
+  },
+  "conexiones": {
+    "main": [
+      {
+        "id": "C-001",
+        "consumidor": "chat_router",
+        "proveedor": "deepseek_harness",
+        "protocolo": "inproc_python",
+        "estado": "DISCOVERED"
+      },
+      {
+        "id": "C-002",
+        "consumidor": "deepseek_harness",
+        "proveedor": "nvidia",
+        "protocolo": "http",
+        "estado": "DISCOVERED"
+      },
+      {
+        "id": "C-003",
+        "consumidor": "deepseek_harness",
+        "proveedor": "groq",
+        "protocolo": "http",
+        "estado": "DISCOVERED"
+      },
+      {
+        "id": "C-004",
+        "consumidor": "deepseek_harness",
+        "proveedor": "modelos_locales",
+        "protocolo": "http",
+        "estado": "DISCOVERED"
+      },
+      {
+        "id": "C-005",
+        "consumidor": "agentes",
+        "proveedor": "deepseek_harness",
+        "protocolo": "harness_plugin",
+        "estado": "DISCOVERED"
+      },
+      {
+        "id": "C-006",
+        "consumidor": "loop_cola_watchdog",
+        "proveedor": "deepseek_harness",
+        "protocolo": "harness_plugin",
+        "estado": "DISCOVERED"
+      },
+      {
+        "id": "C-007",
+        "consumidor": "chat_router",
+        "proveedor": "mcp_router_riu",
+        "protocolo": "mcp",
+        "estado": "DISCOVERED"
+      },
+      {
+        "id": "C-008",
+        "consumidor": "chat_router",
+        "proveedor": "memoria",
+        "protocolo": "harness_plugin",
+        "estado": "DISCOVERED"
+      },
+      {
+        "id": "C-009",
+        "consumidor": "agentes",
+        "proveedor": "storage",
+        "protocolo": "harness_plugin",
+        "estado": "DISCOVERED"
+      },
+      {
+        "id": "C-010",
+        "consumidor": "vercel_frontend",
+        "proveedor": "space_grupo_1_router_mvp_1",
+        "protocolo": "http",
+        "estado": "CONFIGURED",
+        "url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space",
+        "nota": "El Space riu-router fue RENOMBRADO (daba 404): el frontend de Vercel apuntaba ahi."
+      },
+      {
+        "id": "C-011",
+        "consumidor": "space_grupo_1_router_mvp_1",
+        "proveedor": "github_source",
+        "protocolo": "git_auto_pull",
+        "estado": "CONFIGURED"
+      },
+      {
+        "id": "C-012",
+        "consumidor": "watchdog",
+        "proveedor": "modelos_locales",
+        "protocolo": "http",
+        "estado": "DISCOVERED"
+      },
+      {
+        "id": "C-013",
+        "consumidor": "watchdog",
+        "proveedor": "queue",
+        "protocolo": "inproc_python",
+        "estado": "DISCOVERED"
+      },
+      {
+        "id": "C-014",
+        "consumidor": "openclaw",
+        "proveedor": "modelos_locales",
+        "protocolo": "http",
+        "estado": "DISCOVERED"
+      }
+    ],
+    "ccr": [
+      {
+        "consumidor": "data_plane",
+        "proveedor": "control_plane",
+        "via": "control_bridge.py import router_llm_hf",
+        "fallback": "passthrough si control_plane ausente"
+      },
+      {
+        "consumidor": "control_hf",
+        "proveedor": "hf_plane",
+        "via": "HfApi restart_space/pause_space/set_space_sleep_time"
+      },
+      {
+        "consumidor": "hf_plane",
+        "proveedor": "data_plane",
+        "via": "entrypoint.sh git clone de GitHub"
+      }
+    ],
+    "pares": [
+      {
+        "id": "CON-001",
+        "name": "agents_to_backend",
+        "source": "agents",
+        "target": "backend",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "agents",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "agents",
+        "to": "backend",
+        "via": "gateway_pending_audit",
+        "provides": "backend",
+        "requires": "agents",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/agentes/adaptadores/tests/test_adaptadores_disponibilidad_estados.py",
+            "chat-router/chat/backend/mvp/externos.py"
+          ],
+          [
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/examples/03_github_workflows/03_todo_management/agent_script.py",
+            "chat-router/chat/backend/mvp/prompt.py"
+          ]
+        ],
+        "observed_edges": 2
+      },
+      {
+        "id": "CON-002",
+        "name": "agents_to_engines",
+        "source": "agents",
+        "target": "engines",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "agents",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "agents",
+        "to": "engines",
+        "via": "gateway_pending_audit",
+        "provides": "engines",
+        "requires": "agents",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/agentes/agentes-listos/SWE-agent/SWE-agent-main/tools/windowed/lib/flake8_utils.py",
+            "chat-router/motores/fabrica-motores/registry.py"
+          ],
+          [
+            "chat-router/agentes/agentes-listos/SWE-agent/SWE-agent-main/tools/windowed/lib/windowed_file.py",
+            "chat-router/motores/fabrica-motores/registry.py"
+          ],
+          [
+            "chat-router/agentes/frameworks/Prefect/tests/engine/reliability/test_sync_async.py",
+            "chat-router/motores/evidencia/tests/__init__.py"
+          ],
+          [
+            "chat-router/agentes/frameworks/Prefect/tests/engine/reliability/test_sync_async.py",
+            "chat-router/motores/fabrica-motores/tests/__init__.py"
+          ],
+          [
+            "chat-router/agentes/frameworks/Temporal-Python-SDK/tests/test_envconfig.py",
+            "chat-router/motores/evidencia/tests/__init__.py"
+          ]
+        ],
+        "observed_edges": 14
+      },
+      {
+        "id": "CON-003",
+        "name": "agents_to_fichas",
+        "source": "agents",
+        "target": "fichas",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "agents",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "agents",
+        "to": "fichas",
+        "via": "gateway_pending_audit",
+        "provides": "fichas",
+        "requires": "agents",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/agentes/adaptadores/tests/test_adaptadores_disponibilidad_estados.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ]
+        ],
+        "observed_edges": 1
+      },
+      {
+        "id": "CON-004",
+        "name": "agents_to_harness",
+        "source": "agents",
+        "target": "harness",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "agents",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "agents",
+        "to": "harness",
+        "via": "gateway_pending_audit",
+        "provides": "harness",
+        "requires": "agents",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/agentes/agentes-listos/SWE-agent/SWE-agent-main/sweagent/inspector/static.py",
+            "chat-router/chat/backend/deepseek_harness/server.py"
+          ],
+          [
+            "chat-router/agentes/agentes-listos/codex/codex-main/scripts/mcp_conformance/review_regressions.py",
+            "chat-router/chat/backend/deepseek_harness/server.py"
+          ],
+          [
+            "chat-router/agentes/agentes-listos/codex/codex-main/scripts/mcp_conformance/test_server.py",
+            "chat-router/chat/backend/deepseek_harness/server.py"
+          ],
+          [
+            "chat-router/agentes/frameworks/Prefect/src/integrations/prefect-azure/tests/test_credentials.py",
+            "chat-router/chat/backend/deepseek_harness/conftest.py"
+          ],
+          [
+            "chat-router/agentes/frameworks/Prefect/src/integrations/prefect-dbt/tests/core/test_freshness.py",
+            "chat-router/chat/backend/deepseek_harness/conftest.py"
+          ]
+        ],
+        "observed_edges": 28
+      },
+      {
+        "id": "CON-005",
+        "name": "agents_to_mvp",
+        "source": "agents",
+        "target": "mvp",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "agents",
+        "verification": {
+          "type": "import",
+          "root": "router-mvp",
+          "module": "router.integration.chat_mvp.core",
+          "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.core\"",
+          "result": "ok",
+          "checked_at": "20261104-kernel01"
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "agents",
+        "to": "mvp",
+        "via": "gateway_pending_audit",
+        "provides": "mvp",
+        "requires": "agents",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/agentes/adaptadores/_comun.py",
+            "router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py"
+          ],
+          [
+            "chat-router/agentes/adaptadores/_comun.py",
+            "router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py"
+          ],
+          [
+            "chat-router/agentes/adaptadores/_comun.py",
+            "router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py"
+          ],
+          [
+            "chat-router/agentes/adaptadores/_comun.py",
+            "router-mvp/router-componentes/pydantic/pydantic/json.py"
+          ],
+          [
+            "chat-router/agentes/adaptadores/_comun.py",
+            "router-mvp/router-componentes/pydantic/pydantic/v1/json.py"
+          ]
+        ],
+        "observed_edges": 62234,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.core\"",
+            "result": "ok",
+            "verified_in": "clon local",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-006",
+        "name": "agents_to_ops",
+        "source": "agents",
+        "target": "ops",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "agents",
+        "verification": {
+          "type": "import",
+          "root": ".",
+          "module": "kernel",
+          "command": "python -c \"import sys;sys.path.insert(0,'.');import kernel\"",
+          "result": "ok",
+          "checked_at": "20261104-kernel01"
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "agents",
+        "to": "ops",
+        "via": "gateway_pending_audit",
+        "provides": "ops",
+        "requires": "agents",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/agentes/agentes-yaiwes/agent-microkernel/kernel/runner.py",
+            "ops/kernel.py"
+          ],
+          [
+            "chat-router/agentes/agentes-yaiwes/agents-yaiwes/auditor_agent.py",
+            "ops/common.py"
+          ],
+          [
+            "chat-router/agentes/agentes-yaiwes/agents-yaiwes/auditor_agent.py",
+            "ops/kernel.py"
+          ],
+          [
+            "chat-router/agentes/agentes-yaiwes/agents-yaiwes/chain.py",
+            "ops/common.py"
+          ],
+          [
+            "chat-router/agentes/agentes-yaiwes/agents-yaiwes/common/probe_keys.py",
+            "ops/common.py"
+          ]
+        ],
+        "observed_edges": 16,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'.');import kernel\"",
+            "result": "ok",
+            "verified_in": "clon local",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-007",
+        "name": "agents_to_plugins",
+        "source": "agents",
+        "target": "plugins",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "agents",
+        "verification": {
+          "type": "import",
+          "root": "chat-router",
+          "module": "plugins.router_api_cliente",
+          "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente\"",
+          "result": "ok",
+          "verified_in": "/tmp/r2",
+          "detail": null
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "agents",
+        "to": "plugins",
+        "via": "gateway_pending_audit",
+        "provides": "plugins",
+        "requires": "agents",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/agentes/orquestacion/orquestador/deploy.py",
+            "chat-router/plugins/__init__.py"
+          ],
+          [
+            "chat-router/agentes/orquestacion/orquestador/deploy.py",
+            "chat-router/plugins/router_api_cliente.py"
+          ],
+          [
+            "chat-router/agentes/orquestacion/orquestador/plugin.py",
+            "chat-router/plugins/router_api_cliente.py"
+          ],
+          [
+            "chat-router/agentes/orquestacion/orquestador/sandbox.py",
+            "chat-router/plugins/__init__.py"
+          ],
+          [
+            "chat-router/agentes/orquestacion/orquestador/sandbox.py",
+            "chat-router/plugins/router_api_cliente.py"
+          ]
+        ],
+        "observed_edges": 6,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import plugins.router_api_cliente\"",
+            "result": "ok",
+            "verified_in": "/tmp/r2",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-008",
+        "name": "backend_to_agents",
+        "source": "backend",
+        "target": "agents",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "backend",
+        "verification": {
+          "type": "import",
+          "root": "chat-router",
+          "module": "agentes.adaptadores.modelos",
+          "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos\"",
+          "result": "ok",
+          "verified_in": "/tmp/r2",
+          "detail": null
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "backend",
+        "to": "agents",
+        "via": "gateway_pending_audit",
+        "provides": "agents",
+        "requires": "backend",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/chat/backend/mvp/app.py",
+            "chat-router/agentes/adaptadores/modelos.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/app.py",
+            "chat-router/agentes/agentes-listos/CLI-Anything/code/shotcut/agent-harness/cli_anything/shotcut/utils/time.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/app.py",
+            "chat-router/agentes/agentes-listos/openhands-automation/code/openhands/automation/utils/time.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/app.py",
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/app.py",
+            "chat-router/agentes/agentes-listos/strix/code/strix/telemetry/logging.py"
+          ]
+        ],
+        "observed_edges": 1362,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores.modelos\"",
+            "result": "ok",
+            "verified_in": "/tmp/r2",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-009",
+        "name": "backend_to_fichas",
+        "source": "backend",
+        "target": "fichas",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "backend",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "backend",
+        "to": "fichas",
+        "via": "gateway_pending_audit",
+        "provides": "fichas",
+        "requires": "backend",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/chat/backend/mvp/app.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/compute.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/control.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/estado_tarea.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/externos.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ]
+        ],
+        "observed_edges": 64
+      },
+      {
+        "id": "CON-010",
+        "name": "backend_to_mvp",
+        "source": "backend",
+        "target": "mvp",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "backend",
+        "verification": {
+          "type": "import",
+          "root": "router-mvp",
+          "module": "router.mcp_puente_github",
+          "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import router.mcp_puente_github\"",
+          "result": "ok",
+          "checked_at": "20261104-kernel01"
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "backend",
+        "to": "mvp",
+        "via": "gateway_pending_audit",
+        "provides": "mvp",
+        "requires": "backend",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/chat/backend/mvp/app.py",
+            "router-mvp/router-componentes/MCP-Python-SDK/docs_src/logging/__init__.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/app.py",
+            "router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/app.py",
+            "router-mvp/router-componentes/MCP-Python-SDK/src/mcp/server/mcpserver/utilities/logging.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/app.py",
+            "router-mvp/router-componentes/cryptography/cryptography/src/cryptography/hazmat/primitives/hmac.py"
+          ],
+          [
+            "chat-router/chat/backend/mvp/app.py",
+            "router-mvp/router-componentes/fastapi/fastapi/__init__.py"
+          ]
+        ],
+        "observed_edges": 616,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import router.mcp_puente_github\"",
+            "result": "ok",
+            "verified_in": "clon local",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-011",
+        "name": "building_to_agents",
+        "source": "building",
+        "target": "agents",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "building",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "building",
+        "to": "agents",
+        "via": "gateway_pending_audit",
+        "provides": "agents",
+        "requires": "building",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/raiz_router/sdk_qwen/Qwen-Live-Harness/code/integration-tests/test-fixtures/qwen-tui-pty.py",
+            "chat-router/agentes/investigacion/agents-deep-research/deep_researcher/utils/os.py"
+          ],
+          [
+            "router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py",
+            "chat-router/agentes/agentes-listos/CLI-Anything/code/shotcut/agent-harness/cli_anything/shotcut/utils/time.py"
+          ],
+          [
+            "router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py",
+            "chat-router/agentes/agentes-listos/openhands-automation/code/openhands/automation/utils/time.py"
+          ],
+          [
+            "router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py",
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py"
+          ],
+          [
+            "router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py",
+            "chat-router/agentes/frameworks/Prefect/tests/fixtures/time.py"
+          ]
+        ],
+        "observed_edges": 113
+      },
+      {
+        "id": "CON-012",
+        "name": "building_to_mvp",
+        "source": "building",
+        "target": "mvp",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "building",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "building",
+        "to": "mvp",
+        "via": "gateway_pending_audit",
+        "provides": "mvp",
+        "requires": "building",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/raiz_router/sdk_qwen/Qwen-Live-Harness/code/integration-tests/test-fixtures/qwen-tui-pty.py",
+            "router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py"
+          ],
+          [
+            "router-mvp/raiz_router/sdk_qwen/Qwen-Live-Harness/code/integration-tests/test-fixtures/qwen-tui-pty.py",
+            "router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py"
+          ],
+          [
+            "router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py",
+            "router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py"
+          ],
+          [
+            "router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py",
+            "router-mvp/router-componentes/pydantic/pydantic/json.py"
+          ],
+          [
+            "router-mvp/raiz_router/sdk_qwen/qwencloud-ai/code/skills/audio/qwencloud-audio-tts/scripts/gossamer.py",
+            "router-mvp/router-componentes/pydantic/pydantic/v1/json.py"
+          ]
+        ],
+        "observed_edges": 109
+      },
+      {
+        "id": "CON-013",
+        "name": "chat_to_agents",
+        "source": "chat",
+        "target": "agents",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "chat",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "chat",
+        "to": "agents",
+        "via": "gateway_pending_audit",
+        "provides": "agents",
+        "requires": "chat",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/chat/frontend/api/ecc_motor.py",
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py"
+          ],
+          [
+            "chat-router/chat/frontend/api/ecc_motor.py",
+            "chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py"
+          ]
+        ],
+        "observed_edges": 2
+      },
+      {
+        "id": "CON-014",
+        "name": "chat_to_mvp",
+        "source": "chat",
+        "target": "mvp",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "chat",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "chat",
+        "to": "mvp",
+        "via": "gateway_pending_audit",
+        "provides": "mvp",
+        "requires": "chat",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/chat/frontend/api/ecc_motor.py",
+            "router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py"
+          ],
+          [
+            "chat-router/chat/frontend/api/ecc_motor.py",
+            "router-mvp/router-componentes/pydantic/pydantic/json.py"
+          ],
+          [
+            "chat-router/chat/frontend/api/ecc_motor.py",
+            "router-mvp/router-componentes/pydantic/pydantic/v1/json.py"
+          ]
+        ],
+        "observed_edges": 3
+      },
+      {
+        "id": "CON-015",
+        "name": "engines_to_agents",
+        "source": "engines",
+        "target": "agents",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "engines",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "engines",
+        "to": "agents",
+        "via": "gateway_pending_audit",
+        "provides": "agents",
+        "requires": "engines",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/motores/evidencia/buscadores.py",
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/datetime.py"
+          ],
+          [
+            "chat-router/motores/evidencia/buscadores.py",
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py"
+          ],
+          [
+            "chat-router/motores/evidencia/buscadores.py",
+            "chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py"
+          ],
+          [
+            "chat-router/motores/evidencia/buscadores.py",
+            "chat-router/agentes/investigacion/agents-deep-research/deep_researcher/utils/os.py"
+          ],
+          [
+            "chat-router/motores/evidencia/parser.py",
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py"
+          ]
+        ],
+        "observed_edges": 174
+      },
+      {
+        "id": "CON-016",
+        "name": "engines_to_mvp",
+        "source": "engines",
+        "target": "mvp",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "engines",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "engines",
+        "to": "mvp",
+        "via": "gateway_pending_audit",
+        "provides": "mvp",
+        "requires": "engines",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/motores/evidencia/buscadores.py",
+            "router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py"
+          ],
+          [
+            "chat-router/motores/evidencia/buscadores.py",
+            "router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py"
+          ],
+          [
+            "chat-router/motores/evidencia/buscadores.py",
+            "router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py"
+          ],
+          [
+            "chat-router/motores/evidencia/buscadores.py",
+            "router-mvp/router-componentes/pydantic/pydantic/json.py"
+          ],
+          [
+            "chat-router/motores/evidencia/buscadores.py",
+            "router-mvp/router-componentes/pydantic/pydantic/v1/json.py"
+          ]
+        ],
+        "observed_edges": 110
+      },
+      {
+        "id": "CON-017",
+        "name": "fichas_to_agents",
+        "source": "fichas",
+        "target": "agents",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "fichas",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "fichas",
+        "to": "agents",
+        "via": "gateway_pending_audit",
+        "provides": "agents",
+        "requires": "fichas",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/fichas/fichas_qwen/modos/apply_addon.py",
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/apply_addon.py",
+            "chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/check_integration.py",
+            "chat-router/agentes/investigacion/agents-deep-research/deep_researcher/utils/os.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/programador.py",
+            "chat-router/agentes/agentes-listos/CLI-Anything/code/shotcut/agent-harness/cli_anything/shotcut/utils/time.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/programador.py",
+            "chat-router/agentes/agentes-listos/openhands-automation/code/openhands/automation/utils/time.py"
+          ]
+        ],
+        "observed_edges": 217
+      },
+      {
+        "id": "CON-018",
+        "name": "fichas_to_backend",
+        "source": "fichas",
+        "target": "backend",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "fichas",
+        "verification": {
+          "type": "import",
+          "root": "chat-router/chat",
+          "module": "backend.mvp.herramientas.modos",
+          "command": "python -c \"import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.herramientas.modos\"",
+          "result": "ok",
+          "checked_at": "20261104-kernel01"
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "fichas",
+        "to": "backend",
+        "via": "gateway_pending_audit",
+        "provides": "backend",
+        "requires": "fichas",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/fichas/fichas_qwen/motor_json/pruebas_motor.py",
+            "chat-router/chat/backend/mvp/herramientas/motor_cli.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/motor_json/pruebas_motor.py",
+            "chat-router/chat/backend/mvp/herramientas/yaiwes_motor.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/plugin.py",
+            "chat-router/chat/backend/mvp/herramientas/modos/loop_controller.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/plugin.py",
+            "chat-router/chat/backend/mvp/herramientas/modos/mode_router.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/plugin.py",
+            "chat-router/chat/backend/mvp/herramientas/modos/motor_objetivo.py"
+          ]
+        ],
+        "observed_edges": 16,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.herramientas.modos\"",
+            "result": "ok",
+            "verified_in": "clon local",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-019",
+        "name": "fichas_to_harness",
+        "source": "fichas",
+        "target": "harness",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "fichas",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "fichas",
+        "to": "harness",
+        "via": "gateway_pending_audit",
+        "provides": "harness",
+        "requires": "fichas",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py",
+            "chat-router/chat/backend/deepseek_harness/plugin.py"
+          ]
+        ],
+        "observed_edges": 1
+      },
+      {
+        "id": "CON-020",
+        "name": "fichas_to_mvp",
+        "source": "fichas",
+        "target": "mvp",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "fichas",
+        "verification": {
+          "type": "import",
+          "root": "router-mvp",
+          "module": "router.red.http_plugins",
+          "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import router.red.http_plugins\"",
+          "result": "ok",
+          "checked_at": "20261104-kernel01"
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "fichas",
+        "to": "mvp",
+        "via": "gateway_pending_audit",
+        "provides": "mvp",
+        "requires": "fichas",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/fichas/fichas_qwen/modos/apply_addon.py",
+            "router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/apply_addon.py",
+            "router-mvp/router-componentes/pydantic/pydantic/json.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/apply_addon.py",
+            "router-mvp/router-componentes/pydantic/pydantic/v1/json.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/check_integration.py",
+            "router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/check_integration.py",
+            "router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py"
+          ]
+        ],
+        "observed_edges": 120,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import router.red.http_plugins\"",
+            "result": "ok",
+            "verified_in": "clon local",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-021",
+        "name": "fichas_to_plugins",
+        "source": "fichas",
+        "target": "plugins",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "fichas",
+        "verification": {
+          "type": "import",
+          "root": "chat-router",
+          "module": "plugins.puente_chat.plugin",
+          "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import plugins.puente_chat.plugin\"",
+          "result": "ok",
+          "verified_in": "/tmp/r2",
+          "detail": null
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "fichas",
+        "to": "plugins",
+        "via": "gateway_pending_audit",
+        "provides": "plugins",
+        "requires": "fichas",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py",
+            "chat-router/plugins/connectivity/plugin.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py",
+            "chat-router/plugins/hf_compute/plugin.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py",
+            "chat-router/plugins/hf_storage/plugin.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py",
+            "chat-router/plugins/lifeguard/plugin.py"
+          ],
+          [
+            "router-mvp/fichas/fichas_qwen/modos/test_dsl_cableado.py",
+            "chat-router/plugins/puente_chat/plugin.py"
+          ]
+        ],
+        "observed_edges": 27,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import plugins.puente_chat.plugin\"",
+            "result": "ok",
+            "verified_in": "/tmp/r2",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-022",
+        "name": "harness_to_agents",
+        "source": "harness",
+        "target": "agents",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "harness",
+        "verification": {
+          "type": "import",
+          "root": "chat-router",
+          "module": "agentes.adaptadores",
+          "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores\"",
+          "result": "ok",
+          "verified_in": "/tmp/r2",
+          "detail": null
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "harness",
+        "to": "agents",
+        "via": "gateway_pending_audit",
+        "provides": "agents",
+        "requires": "harness",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/chat/backend/deepseek_harness/plugin.py",
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py"
+          ],
+          [
+            "chat-router/chat/backend/deepseek_harness/plugin.py",
+            "chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py"
+          ],
+          [
+            "chat-router/chat/backend/deepseek_harness/plugin.py",
+            "chat-router/agentes/frameworks/langgraph/libs/langgraph/langgraph/typing.py"
+          ],
+          [
+            "chat-router/chat/backend/deepseek_harness/plugin.py",
+            "chat-router/agentes/investigacion/agents-deep-research/deep_researcher/utils/os.py"
+          ],
+          [
+            "chat-router/chat/backend/deepseek_harness/server.py",
+            "chat-router/agentes/adaptadores/__init__.py"
+          ]
+        ],
+        "observed_edges": 44,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import agentes.adaptadores\"",
+            "result": "ok",
+            "verified_in": "/tmp/r2",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-023",
+        "name": "harness_to_backend",
+        "source": "harness",
+        "target": "backend",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "harness",
+        "verification": {
+          "type": "import",
+          "root": "chat-router/chat",
+          "module": "backend.mvp.prompt",
+          "command": "python -c \"import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.prompt\"",
+          "result": "ok",
+          "checked_at": "20261104-kernel01"
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "harness",
+        "to": "backend",
+        "via": "gateway_pending_audit",
+        "provides": "backend",
+        "requires": "harness",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/chat/backend/deepseek_harness/server.py",
+            "chat-router/chat/backend/mvp/prompt.py"
+          ],
+          [
+            "chat-router/chat/backend/deepseek_harness/test_swe_herramientas.py",
+            "chat-router/chat/backend/mvp/harness_client.py"
+          ]
+        ],
+        "observed_edges": 2,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp.prompt\"",
+            "result": "ok",
+            "verified_in": "clon local",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-024",
+        "name": "harness_to_fichas",
+        "source": "harness",
+        "target": "fichas",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "harness",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "harness",
+        "to": "fichas",
+        "via": "gateway_pending_audit",
+        "provides": "fichas",
+        "requires": "harness",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/chat/backend/deepseek_harness/server.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ],
+          [
+            "chat-router/chat/backend/deepseek_harness/test_swe_herramientas.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ]
+        ],
+        "observed_edges": 2
+      },
+      {
+        "id": "CON-025",
+        "name": "harness_to_mvp",
+        "source": "harness",
+        "target": "mvp",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "harness",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "harness",
+        "to": "mvp",
+        "via": "gateway_pending_audit",
+        "provides": "mvp",
+        "requires": "harness",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/chat/backend/deepseek_harness/plugin.py",
+            "router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py"
+          ],
+          [
+            "chat-router/chat/backend/deepseek_harness/plugin.py",
+            "router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py"
+          ],
+          [
+            "chat-router/chat/backend/deepseek_harness/plugin.py",
+            "router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py"
+          ],
+          [
+            "chat-router/chat/backend/deepseek_harness/plugin.py",
+            "router-mvp/router-componentes/pydantic/pydantic/json.py"
+          ],
+          [
+            "chat-router/chat/backend/deepseek_harness/plugin.py",
+            "router-mvp/router-componentes/pydantic/pydantic/typing.py"
+          ]
+        ],
+        "observed_edges": 44
+      },
+      {
+        "id": "CON-026",
+        "name": "harness_to_plugins",
+        "source": "harness",
+        "target": "plugins",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "harness",
+        "verification": {
+          "type": "import",
+          "root": "chat-router",
+          "module": "plugins",
+          "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import plugins\"",
+          "result": "ok",
+          "verified_in": "/tmp/r2",
+          "detail": null
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "harness",
+        "to": "plugins",
+        "via": "gateway_pending_audit",
+        "provides": "plugins",
+        "requires": "harness",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/chat/backend/deepseek_harness/plugin.py",
+            "chat-router/plugins/puente_chat/plugin.py"
+          ],
+          [
+            "chat-router/chat/backend/deepseek_harness/server.py",
+            "chat-router/plugins/router_api_cliente.py"
+          ]
+        ],
+        "observed_edges": 2,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'chat-router');import plugins\"",
+            "result": "ok",
+            "verified_in": "/tmp/r2",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-027",
+        "name": "mvp_to_agents",
+        "source": "mvp",
+        "target": "agents",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "mvp",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "mvp",
+        "to": "agents",
+        "via": "gateway_pending_audit",
+        "provides": "agents",
+        "requires": "mvp",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/router-componentes/MCP-Python-SDK/.github/actions/conformance/client.py",
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py"
+          ],
+          [
+            "router-mvp/router-componentes/MCP-Python-SDK/.github/actions/conformance/client.py",
+            "chat-router/agentes/agentes-listos/strix/code/strix/telemetry/logging.py"
+          ],
+          [
+            "router-mvp/router-componentes/MCP-Python-SDK/.github/actions/conformance/client.py",
+            "chat-router/agentes/frameworks/Prefect/src/prefect/_internal/pydantic/__init__.py"
+          ],
+          [
+            "router-mvp/router-componentes/MCP-Python-SDK/.github/actions/conformance/client.py",
+            "chat-router/agentes/frameworks/Prefect/src/prefect/concurrency/asyncio.py"
+          ],
+          [
+            "router-mvp/router-componentes/MCP-Python-SDK/.github/actions/conformance/client.py",
+            "chat-router/agentes/frameworks/Prefect/src/prefect/concurrency/v1/asyncio.py"
+          ]
+        ],
+        "observed_edges": 34688
+      },
+      {
+        "id": "CON-028",
+        "name": "mvp_to_backend",
+        "source": "mvp",
+        "target": "backend",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "mvp",
+        "verification": {
+          "type": "import",
+          "root": "router-mvp",
+          "module": "router.integration.chat_mvp.swen_mcp",
+          "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.swen_mcp\"",
+          "result": "ok",
+          "checked_at": "20261104-kernel01"
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "mvp",
+        "to": "backend",
+        "via": "gateway_pending_audit",
+        "provides": "backend",
+        "requires": "mvp",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/router/integration/chat_mvp/swen_mcp.py",
+            "chat-router/chat/backend/mvp/app.py"
+          ],
+          [
+            "router-mvp/router/integration/chat_mvp/swen_mcp.py",
+            "chat-router/chat/backend/mvp/externos.py"
+          ]
+        ],
+        "observed_edges": 2,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import router.integration.chat_mvp.swen_mcp\"",
+            "result": "ok",
+            "verified_in": "clon local",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-029",
+        "name": "mvp_to_fichas",
+        "source": "mvp",
+        "target": "fichas",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "mvp",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "mvp",
+        "to": "fichas",
+        "via": "gateway_pending_audit",
+        "provides": "fichas",
+        "requires": "mvp",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/router/integration/chat_mvp/swen_mcp.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ],
+          [
+            "router-mvp/router/tests/test_team5_simple.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ]
+        ],
+        "observed_edges": 2
+      },
+      {
+        "id": "CON-030",
+        "name": "mvp_to_harness",
+        "source": "mvp",
+        "target": "harness",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "mvp",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "mvp",
+        "to": "harness",
+        "via": "gateway_pending_audit",
+        "provides": "harness",
+        "requires": "mvp",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/router-componentes/httpx/tests/test_exceptions.py",
+            "chat-router/chat/backend/deepseek_harness/conftest.py"
+          ],
+          [
+            "router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/test_concurrency.py",
+            "chat-router/chat/backend/deepseek_harness/conftest.py"
+          ],
+          [
+            "router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/test_e2e.py",
+            "chat-router/chat/backend/deepseek_harness/conftest.py"
+          ],
+          [
+            "router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/test_mvcc.py",
+            "chat-router/chat/backend/deepseek_harness/conftest.py"
+          ]
+        ],
+        "observed_edges": 4
+      },
+      {
+        "id": "CON-031",
+        "name": "mvp_to_ops",
+        "source": "mvp",
+        "target": "ops",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "mvp",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "mvp",
+        "to": "ops",
+        "via": "gateway_pending_audit",
+        "provides": "ops",
+        "requires": "mvp",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/flow/_test_crash_handler.py",
+            "ops/common.py"
+          ],
+          [
+            "router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/flow/effects_common.py",
+            "ops/common.py"
+          ],
+          [
+            "router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/flow/test_access_del_entity.py",
+            "ops/common.py"
+          ],
+          [
+            "router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/flow/test_aggregation.py",
+            "ops/common.py"
+          ],
+          [
+            "router-mvp/router-componentes/router-software/componentes descargados/FalkorDB/tests/flow/test_all_shortest_paths.py",
+            "ops/common.py"
+          ]
+        ],
+        "observed_edges": 136
+      },
+      {
+        "id": "CON-032",
+        "name": "mvp_to_plugins",
+        "source": "mvp",
+        "target": "plugins",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "mvp",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "mvp",
+        "to": "plugins",
+        "via": "gateway_pending_audit",
+        "provides": "plugins",
+        "requires": "mvp",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "router-mvp/router/tests/smoke_harness_qwen_read.py",
+            "chat-router/plugins/puente_chat/plugin.py"
+          ],
+          [
+            "router-mvp/router/tests/test_plugins_bloque3.py",
+            "chat-router/plugins/connectivity/__init__.py"
+          ],
+          [
+            "router-mvp/router/tests/test_plugins_bloque3.py",
+            "chat-router/plugins/connectivity/plugin.py"
+          ],
+          [
+            "router-mvp/router/tests/test_ssh_bridge.py",
+            "chat-router/plugins/ssh_bridge/__init__.py"
+          ],
+          [
+            "router-mvp/router/tests/test_ssh_bridge.py",
+            "chat-router/plugins/ssh_bridge/plugin.py"
+          ]
+        ],
+        "observed_edges": 5
+      },
+      {
+        "id": "CON-033",
+        "name": "ops_to_agents",
+        "source": "ops",
+        "target": "agents",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "ops",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "ops",
+        "to": "agents",
+        "via": "gateway_pending_audit",
+        "provides": "agents",
+        "requires": "ops",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "ops/common.py",
+            "chat-router/agentes/agentes-listos/CLI-Anything/code/shotcut/agent-harness/cli_anything/shotcut/utils/time.py"
+          ],
+          [
+            "ops/common.py",
+            "chat-router/agentes/agentes-listos/openhands-automation/code/openhands/automation/utils/time.py"
+          ],
+          [
+            "ops/common.py",
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py"
+          ],
+          [
+            "ops/common.py",
+            "chat-router/agentes/frameworks/Prefect/tests/fixtures/time.py"
+          ],
+          [
+            "ops/common.py",
+            "chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py"
+          ]
+        ],
+        "observed_edges": 189
+      },
+      {
+        "id": "CON-034",
+        "name": "ops_to_mvp",
+        "source": "ops",
+        "target": "mvp",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "ops",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "ops",
+        "to": "mvp",
+        "via": "gateway_pending_audit",
+        "provides": "mvp",
+        "requires": "ops",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "ops/common.py",
+            "router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py"
+          ],
+          [
+            "ops/common.py",
+            "router-mvp/router-componentes/huggingface_hub/src/huggingface_hub/__init__.py"
+          ],
+          [
+            "ops/common.py",
+            "router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py"
+          ],
+          [
+            "ops/common.py",
+            "router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py"
+          ],
+          [
+            "ops/common.py",
+            "router-mvp/router-componentes/pydantic/pydantic/json.py"
+          ]
+        ],
+        "observed_edges": 85
+      },
+      {
+        "id": "CON-035",
+        "name": "plugins_to_agents",
+        "source": "plugins",
+        "target": "agents",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "plugins",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "plugins",
+        "to": "agents",
+        "via": "gateway_pending_audit",
+        "provides": "agents",
+        "requires": "plugins",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/plugins/connectivity/plugin.py",
+            "chat-router/agentes/agentes-listos/openhands-software-agent-sdk/code/openhands-sdk/openhands/sdk/utils/json.py"
+          ],
+          [
+            "chat-router/plugins/connectivity/plugin.py",
+            "chat-router/agentes/frameworks/haystack/haystack/components/converters/json.py"
+          ],
+          [
+            "chat-router/plugins/connectivity/plugin.py",
+            "chat-router/agentes/frameworks/langgraph/libs/langgraph/langgraph/typing.py"
+          ],
+          [
+            "chat-router/plugins/connectivity/plugin.py",
+            "chat-router/agentes/investigacion/agents-deep-research/deep_researcher/utils/os.py"
+          ],
+          [
+            "chat-router/plugins/hf_compute/plugin.py",
+            "chat-router/agentes/agentes-listos/CLI-Anything/code/lldb/agent-harness/cli_anything/lldb/core/inspect.py"
+          ]
+        ],
+        "observed_edges": 332
+      },
+      {
+        "id": "CON-036",
+        "name": "plugins_to_backend",
+        "source": "plugins",
+        "target": "backend",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "plugins",
+        "verification": {
+          "type": "import",
+          "root": "chat-router/chat",
+          "module": "backend.mvp",
+          "command": "python -c \"import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp\"",
+          "result": "ok",
+          "checked_at": "20261104-kernel01"
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "plugins",
+        "to": "backend",
+        "via": "gateway_pending_audit",
+        "provides": "backend",
+        "requires": "plugins",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/plugins/hf_storage/plugin.py",
+            "chat-router/chat/backend/mvp/app.py"
+          ],
+          [
+            "chat-router/plugins/puente_chat/plugin.py",
+            "chat-router/chat/backend/mvp/prompt.py"
+          ]
+        ],
+        "observed_edges": 2,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'chat-router/chat');import backend.mvp\"",
+            "result": "ok",
+            "verified_in": "clon local",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-037",
+        "name": "plugins_to_fichas",
+        "source": "plugins",
+        "target": "fichas",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "plugins",
+        "verification": {
+          "type": "import",
+          "root": "router-mvp",
+          "module": "fichas.fichas_qwen.plugin",
+          "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import fichas.fichas_qwen.plugin\"",
+          "result": "ok",
+          "verified_in": "/tmp/r2",
+          "detail": null
+        },
+        "notes": "pendiente de evidencia; par observado en el grafo j2 | R7: degradada a pending_audit (sin sonda real)",
+        "from": "plugins",
+        "to": "fichas",
+        "via": "gateway_pending_audit",
+        "provides": "fichas",
+        "requires": "plugins",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/plugins/hf_storage/plugin.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ],
+          [
+            "chat-router/plugins/puente_chat/herramientas.py",
+            "router-mvp/fichas/fichas_qwen/plugin.py"
+          ],
+          [
+            "chat-router/plugins/puente_chat/plugin.py",
+            "router-mvp/fichas/fichas_qwen/mvp.py"
+          ],
+          [
+            "chat-router/plugins/puente_chat/plugin.py",
+            "router-mvp/fichas/fichas_qwen/plugin.py"
+          ],
+          [
+            "chat-router/plugins/puente_chat/tests/test_capacidad.py",
+            "router-mvp/fichas/fichas_qwen/plugin.py"
+          ]
+        ],
+        "observed_edges": 5,
+        "prior_evidence": {
+          "kind": "import_probe_not_wire_probe",
+          "detail": "import ejecutado: el modulo carga y se importa sin error",
+          "commit": null,
+          "ts": null,
+          "legacy_evidence": {
+            "type": "import",
+            "command": "python -c \"import sys;sys.path.insert(0,'router-mvp');import fichas.fichas_qwen.plugin\"",
+            "result": "ok",
+            "verified_in": "/tmp/r2",
+            "detail": "import ejecutado: el modulo carga y se importa sin error"
+          },
+          "reason": "R7: la evidencia era un import, no una sonda real (HTTP status / MCP initialize+tools/list / file exists)"
+        }
+      },
+      {
+        "id": "CON-038",
+        "name": "plugins_to_mvp",
+        "source": "plugins",
+        "target": "mvp",
+        "protocol": "gateway_pending_audit",
+        "direction": "outbound",
+        "endpoint": null,
+        "status": "pending_audit",
+        "dependencies": "plugins",
+        "verification": null,
+        "notes": "pendiente de evidencia; par observado en el grafo j2",
+        "from": "plugins",
+        "to": "mvp",
+        "via": "gateway_pending_audit",
+        "provides": "mvp",
+        "requires": "plugins",
+        "evidence": null,
+        "observed_paths": [
+          [
+            "chat-router/plugins/connectivity/plugin.py",
+            "router-mvp/router-componentes/MCP-Python-SDK/src/mcp/os/__init__.py"
+          ],
+          [
+            "chat-router/plugins/connectivity/plugin.py",
+            "router-mvp/router-componentes/mcp-python-sdk/code/src/mcp/os/__init__.py"
+          ],
+          [
+            "chat-router/plugins/connectivity/plugin.py",
+            "router-mvp/router-componentes/pydantic/pydantic/deprecated/json.py"
+          ],
+          [
+            "chat-router/plugins/connectivity/plugin.py",
+            "router-mvp/router-componentes/pydantic/pydantic/json.py"
+          ],
+          [
+            "chat-router/plugins/connectivity/plugin.py",
+            "router-mvp/router-componentes/pydantic/pydantic/typing.py"
+          ]
+        ],
+        "observed_edges": 148
+      }
+    ]
+  },
+  "nota": "Registro central de modos y cableado. Sin secretos. Los 10 MCP/HTTP viven en external/core/SATELITE_CENTRAL_CONECCION.json y en el bucket privado."
+}

@@ -1,0 +1,286 @@
+{
+  "claims": [
+    {
+      "doc": "TAREA_01_FUENTE_DE_LA_VERDAD.md",
+      "id": "CLM-0001",
+      "line": 150,
+      "paths": [
+        "api.py"
+      ],
+      "sha256": "ee9bf580411a37c8460a6568b8faa5f715bfbaeaea5291970625d47fe46d5599",
+      "symbols": [
+        "api.py"
+      ],
+      "text": "| 1 FUNC = 1 FICHERO | Sin monolitos. `api.py` solo enruta; la lógica va en su módulo. |"
+    },
+    {
+      "doc": "backend/INFORME.md",
+      "id": "CLM-0002",
+      "line": 157,
+      "paths": [
+        "requirements.txt"
+      ],
+      "sha256": "f0ba5aa2f95e6a921c6628a81c959c4e69e833125fbbd84f52b6e913d4eb5e3b",
+      "symbols": [
+        "requirements.txt"
+      ],
+      "text": "| G3 | FastAPI/uvicorn/pydantic/websockets no están en el intérprete del sistema | `python3 -m uvicorn` → `No module named uvicorn`; instalar está **prohibido** | ✅ Resuelto con ruta alternativa **sin instalar**: se validó con el intérprete `/workspace/.venv-canvas/bin/python` que ya existía (creado por otro nodo). El entregable declara sus dependencias en `requirements.txt` |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0003",
+      "line": 23,
+      "paths": [
+        "backend/api.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/api.py** | módulo de entrada: enruta REST, WebSocket, MCP y frontend. No contiene lógica de negocio. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0004",
+      "line": 24,
+      "paths": [
+        "backend/health.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/health.py** | módulo agregador: estado real de los 6 adapters con contadores OK / OMITIDO / ERROR. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0005",
+      "line": 25,
+      "paths": [
+        "backend/canvas_engine.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/canvas_engine.py** | módulo orquestador: carga aislada de adapters, render de diagramas y motions, conversión entre herramientas. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0006",
+      "line": 26,
+      "paths": [
+        "backend/audio_engine.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/audio_engine.py** | módulo de voz: resumen de ≤150 palabras, traducción opcional, TTS con edge‑tts y respaldo en pyttsx3, caché por hash. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0007",
+      "line": 27,
+      "paths": [
+        "backend/mcp_router.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/mcp_router.py** | módulo MCP: protocolo JSON‑RPC sobre FastAPI, allowlist por ventana, rechazo de credenciales, límite de payload. Sustituye al servidor http.server retirado. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0008",
+      "line": 49,
+      "paths": [
+        "backend/adapters/excalidraw.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/adapters/excalidraw.py** | módulo adaptador: convierte elementos Excalidraw en un diagrama contra la API de Excalidraw. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0009",
+      "line": 50,
+      "paths": [
+        "backend/adapters/mermaid.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/adapters/mermaid.py** | módulo adaptador: renderiza código Mermaid a SVG con el comando mmdc. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0010",
+      "line": 51,
+      "paths": [
+        "backend/adapters/d2.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/adapters/d2.py** | módulo adaptador: renderiza código D2 a SVG con el comando d2. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0011",
+      "line": 52,
+      "paths": [
+        "backend/adapters/hyperframes.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/adapters/hyperframes.py** | módulo adaptador: genera motion HTML a partir de una especificación. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0012",
+      "line": 53,
+      "paths": [
+        "backend/adapters/remotion.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/adapters/remotion.py** | módulo adaptador: genera una composición Remotion desde props. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0013",
+      "line": 54,
+      "paths": [
+        "backend/adapters/rive.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/adapters/rive.py** | módulo adaptador: genera una animación Rive desde un fichero y una máquina de estados. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0014",
+      "line": 62,
+      "paths": [
+        "backend/deploy/deploy_engine.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/deploy/deploy_engine.py** | módulo motor de deploy: 10 checks fail‑closed, dry‑run por defecto, expected HEAD, push transaccional de un solo commit, read‑back y manifiesto. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0015",
+      "line": 63,
+      "paths": [
+        "backend/deploy/mcp_server.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/deploy/mcp_server.py** | módulo shim: reexporta la API del router MCP y avisa si alguien intenta arrancarlo como servidor standalone ya retirado. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0016",
+      "line": 114,
+      "paths": [
+        "backend/guide/grammar.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/guide/grammar.py** | módulo gramatical: descompone una frase de acción en verbo, sujeto, adjetivo y estado. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0017",
+      "line": 115,
+      "paths": [
+        "backend/guide/match.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/guide/match.py** | módulo de emparejamiento: cruza la acción con el catálogo, devuelve veredicto y parche quirúrgico por líneas. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0018",
+      "line": 116,
+      "paths": [
+        "backend/guide/trigger.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/guide/trigger.py** | módulo disparador: construye y valida el contrato de ejecución por pasos. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0019",
+      "line": 117,
+      "paths": [
+        "backend/guide/discovery.py"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **backend/guide/discovery.py** | módulo de descubrimiento: busca candidatos en las fuentes configuradas con caché y presupuesto. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0020",
+      "line": 127,
+      "paths": [
+        "frontend/shared/api.js"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **frontend/shared/api.js** | módulo de cliente: base de API same‑origin, fetch real, tema de 7 apariencias, utilidades de estado. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0021",
+      "line": 128,
+      "paths": [
+        "frontend/shared/ws.js"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **frontend/shared/ws.js** | módulo de WebSocket: suscripción al progreso con reconexión y origen validado. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0022",
+      "line": 129,
+      "paths": [
+        "frontend/shared/theme.css"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **frontend/shared/theme.css** | módulo de estilos: los 7 temas de la ley de diseño. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0023",
+      "line": 130,
+      "paths": [
+        "frontend/shared/app.css"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **frontend/shared/app.css** | módulo de estilos: geometría, tarjetas y estados demostrables. |"
+    },
+    {
+      "doc": "backend/README.md",
+      "id": "CLM-0024",
+      "line": 131,
+      "paths": [
+        "frontend/w_mcp.js"
+      ],
+      "sha256": "b1baa2cc16be4412a8964cb952bb894f9ac9f37a89465924976cc063d06eb2d9",
+      "symbols": [],
+      "text": "| **frontend/w_mcp.js** | módulo cliente MCP del navegador: initialize, listado de herramientas y llamada, con allowlist por ventana. |"
+    },
+    {
+      "doc": "backend/guide/README.md",
+      "id": "CLM-0025",
+      "line": 144,
+      "paths": [
+        "backend/guide/discovery.py"
+      ],
+      "sha256": "b9afe5ac86ff59c1e88c24377214d9ec1181983e0562c9cbeee7eeed3a897611",
+      "symbols": [],
+      "text": "| variable GUIDE_REPO_ROOT | auto (ancestros del módulo) | Raíz del repo; el motor de búsqueda y su catálogo de fuentes se resuelven desde backend/guide/discovery.py |"
+    }
+  ],
+  "commit_sha": "bb3559e66f9ca160031b9da3c5b65aecb807fa45",
+  "generated_at": "2026-11-16T08:00:06Z",
+  "schema": "xray-claims/1"
+}

@@ -1,0 +1,30 @@
+# .vercelignore — acota lo que se sube al build de Vercel.
+# Solo se excluye lo que es enorme y NO forma parte del frontend:
+# el repo completo son ~12 GB y sin esto el build se pasa de tiempo/tamano.
+# NO se excluye el codigo del motor (external/, router_llm_hf/, fichas/...):
+# si el build command del proyecto los usa, deben estar presentes.
+
+componentes/
+Main_Skills/
+chat-router/agentes/
+chat-router/canvas/
+chat-router/plan/
+chat-router/Loop cola wachdog/
+
+# pesos y artefactos pesados
+*.gguf
+*.gguf.*
+**/*.gguf
+**/*.bin
+**/*.safetensors
+**/*.pt
+**/*.pth
+**/*.tar
+**/*.tar.gz
+**/*.zip
+
+# vcs y ruido
+.git/
+**/.DS_Store
+**/__pycache__/
+**/*.pyc

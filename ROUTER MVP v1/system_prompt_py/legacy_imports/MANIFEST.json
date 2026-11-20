@@ -1,0 +1,114 @@
+{
+  "batch": "batch-27-28-rescue",
+  "rama_origen": "origin/main @ 7ff5e111ba",
+  "archivos": [
+    {
+      "categoria": "fichas",
+      "origen": "origin/main:router-mvp/fichas/system-prompt/system_core.md",
+      "blob_sha": "058496971d382899a00ac97386df6d81f587fedf",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_fichas_system_core.md",
+      "bytes": 5485,
+      "sha256": "adee734198892068b55fb311cde9cbcbd35ffabf6a73a5fe7db77af0f9248ce6",
+      "estado": "COPIADO_1_A_1"
+    },
+    {
+      "categoria": "fichas",
+      "origen": "origin/main:router-mvp/fichas/system-prompt/bloques/bloque_2.md",
+      "blob_sha": "4d840ef97e8eddfe0f3081644b42ca551971f9c7",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_fichas_bloque_2.md",
+      "bytes": 8047,
+      "sha256": "d7cedaf8a7b3818f4316fe845f76d166552349ec8ffd374f36acc2a54ea545ee",
+      "estado": "COPIADO_1_A_1"
+    },
+    {
+      "categoria": "fichas",
+      "origen": "origin/main:router-mvp/fichas/system-prompt/bloques/bloque_3.md",
+      "blob_sha": "0548a145288507efc292440b98fd3a76485dd302",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_fichas_bloque_3.md",
+      "bytes": 7840,
+      "sha256": "574e743ae5cebe9addbc5719c71322b96898a64e29836171a324b8c27bb9e6dc",
+      "estado": "COPIADO_1_A_1"
+    },
+    {
+      "categoria": "motores",
+      "origen": "origin/main:router-mvp/fichas/fichas_qwen/motor_json/qwen_blender_adapter.py",
+      "blob_sha": "02a5bff050bf2f09ae8312a4a58eb8f53fd1e2d9",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_motores_qwen_blender_adapter.py",
+      "bytes": 12690,
+      "sha256": "aa835589edd750bf9a253924d49deb560eb3c84b6687dd433da8444da950dfe6",
+      "estado": "COPIADO_1_A_1"
+    },
+    {
+      "categoria": "motores",
+      "origen": "origin/main:router-mvp/fichas/fichas_qwen/motor_json/motor_cli.py",
+      "blob_sha": "c45c7e3bcdef11758772d4e2c7262c0dff65155f",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_motores_motor_cli.py",
+      "bytes": 6383,
+      "sha256": "bbb03b9ba58102709c65ff4eecb46dd15a284bd59a73542ecf0ba58a6cc8c8f3",
+      "estado": "COPIADO_1_A_1"
+    },
+    {
+      "categoria": "motores",
+      "origen": "origin/main:router-mvp/fichas/fichas_qwen/motor_json/pruebas_motor.py",
+      "blob_sha": "71b38f7c836b26f44d926da589eeeb88f4b4de25",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_motores_pruebas_motor.py",
+      "bytes": 4993,
+      "sha256": "0b53fd00e13d4d6b1ae3b610cb93673ac50fc56a5c1abac658cb44a6ac903a3e",
+      "estado": "COPIADO_1_A_1"
+    },
+    {
+      "categoria": "motores",
+      "origen": "origin/main:chat-router/chat/backend/mvp/herramientas/modos/loop_controller.py",
+      "blob_sha": "6402476c6d6d8e356a1e972a0e892dbfcb1ea39a",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_motores_loop_controller.py",
+      "bytes": 14066,
+      "sha256": "9e862c08a047f225af327b263298cc25cbad7b5da0399bebf0abc79971845f4e",
+      "estado": "COPIADO_1_A_1"
+    },
+    {
+      "categoria": "motores",
+      "origen": "origin/main:chat-router/Loop cola wachdog/Cola/plugin.py",
+      "blob_sha": "3c5f84605e0df69edbd2d212db060f05bf439bbe",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_motores_plugin_CANDIDATO_cola.py",
+      "bytes": 10194,
+      "sha256": "dcf28e70298a00a12e31fd3b010ee0e1b9a5d94b214b4b0d7cba79f426c7fa2b",
+      "estado": "COPIADO_1_A_1"
+    },
+    {
+      "categoria": "motores",
+      "origen": "origin/main:chat-router/Loop cola wachdog/Loop/plugin.py",
+      "blob_sha": "2cb6a9475d159acadeebe39d5c243e3e1d0c46b4",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_motores_plugin_CANDIDATO_loop.py",
+      "bytes": 49562,
+      "sha256": "8ffe8fd4688f6131745768f635860b1e704d0448128501d3be8558a22d08fce3",
+      "estado": "COPIADO_1_A_1"
+    },
+    {
+      "categoria": "motores",
+      "origen": "origin/main:chat-router/Loop cola wachdog/wachdog/plugin.py",
+      "blob_sha": "dd99e94c8a96634f95e4ff156f1bc66b5c354448",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_motores_plugin_CANDIDATO_wachdog.py",
+      "bytes": 5804,
+      "sha256": "e0d415c3be20a455bdd1d72ce91cffac63d429d9ce96131e86eb5479706f5c7a",
+      "estado": "COPIADO_1_A_1"
+    },
+    {
+      "categoria": "router",
+      "origen": "origin/main:chat-router/SWE CODE/mini_router.py",
+      "blob_sha": "b43e8346bf5699a4e73f7db05e34137de93cff82",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_router_mini_router.py",
+      "bytes": 16806,
+      "sha256": "d07dc5714fcaedc164612dbe945f0674da2b81d7d4312e89bc0adac0ba99422e",
+      "estado": "COPIADO_1_A_1"
+    },
+    {
+      "categoria": "fichas",
+      "origen": "origin/main:chat-router/chat/backend/mvp/prompts/SYSTEM_QWEN_JSON_PROPUESTO.md",
+      "blob_sha": "cda9a9d737e59fa3e9cb78be11302c0162929113",
+      "destino": "ROUTER MVP v1/system_prompt_py/legacy_imports/legacy_fichas_SYSTEM_QWEN_JSON_PROPUESTO.md",
+      "bytes": 2887,
+      "sha256": "6fc7fa09a5d3cb0eb27ddc0c21c957fcf208a76488617172d098f7b7a302d9db",
+      "estado": "COPIADO_1_A_1"
+    }
+  ]
+}

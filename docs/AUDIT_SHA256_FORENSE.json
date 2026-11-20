@@ -1,0 +1,290 @@
+{
+  "timestamp": "2026-11-12T03:05:29Z",
+  "repo": "maxbry123-commits/router-universal-router-inteligente-",
+  "branch": "ccr-f01c3de9-bmry0s",
+  "resumen": {
+    "total": 14,
+    "ok": 13,
+    "fail_fetch": 1,
+    "loc_mismatch": 0,
+    "syntax_error": 0,
+    "diff_visible_ok": 7,
+    "diff_vacio_ok": 5,
+    "error_sesion_ok": 0
+  },
+  "resultados": [
+    {
+      "commit": "3fa2974",
+      "archivo": "ROUTER MVP v1/system_prompt_py/openai_compatible_proxy.py",
+      "categoria": "diff_visible",
+      "descripcion": "Data Plane proxy",
+      "flag": null,
+      "loc_esperadas": 126,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/ROUTER MVP v1/system_prompt_py/openai_compatible_proxy.py",
+        "size_bytes": 4131,
+        "lines": 126,
+        "sha256": "b39f5e94a17b7fcbf76b3f4241740fad054e4bcb91e715866a0a35f92e86bf7c",
+        "sha256_bytes": "b39f5e94a17b7fcbf76b3f4241740fad054e4bcb91e715866a0a35f92e86bf7c",
+        "preview": "\"\"\"\nopenai_compatible_proxy.py — Data Plane (Salida 1/3)\nUbicacion: ROUTER MVP v1/system_prompt_py/openai_compatible_proxy.py\nDelega control via control_bridge; nunca decide, solo ejecuta.\n\"\"\"\nfrom fa"
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 126
+    },
+    {
+      "commit": "077f1ef",
+      "archivo": "ROUTER MVP v1/system_prompt_py/README.md",
+      "categoria": "diff_visible",
+      "descripcion": "README Data Plane",
+      "flag": null,
+      "loc_esperadas": 51,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/ROUTER MVP v1/system_prompt_py/README.md",
+        "size_bytes": 2037,
+        "lines": 51,
+        "sha256": "6620878313026f253c2d067fe26abc05a766a50b8891044e92c424f965906fc5",
+        "sha256_bytes": "6620878313026f253c2d067fe26abc05a766a50b8891044e92c424f965906fc5",
+        "preview": "# Router MVP v1 — Data Plane\n\n## Rol\nData Plane del sistema. Recibe peticiones HTTP OpenAI-compatible, gestiona pool de\nclaves (Groq y NVIDIA), ejecuta llamadas a proveedores y aplica fallback y rate "
+      },
+      "veredicto": "OK",
+      "loc_real": 51
+    },
+    {
+      "commit": "12b1a6f7",
+      "archivo": "router_llm_hf/watchdog.py",
+      "categoria": "diff_visible",
+      "descripcion": "Watchdog 30s/96s",
+      "flag": null,
+      "loc_esperadas": 67,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/router_llm_hf/watchdog.py",
+        "size_bytes": 2266,
+        "lines": 67,
+        "sha256": "8b66d9da70da94e6bbcf192f942ed3b4fbe66886a528a63335aad9b3cc520fff",
+        "sha256_bytes": "8b66d9da70da94e6bbcf192f942ed3b4fbe66886a528a63335aad9b3cc520fff",
+        "preview": "\"\"\"\nwatchdog.py — Heartbeat 30s y timeout 96s por llamada (Control Plane)\n\"\"\"\nfrom __future__ import annotations\nimport asyncio\nimport time\nimport logging\nfrom typing import Dict, Optional, Callable, "
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 67
+    },
+    {
+      "commit": "c1bde4da",
+      "archivo": "router_llm_hf/queue_manager.py",
+      "categoria": "diff_visible",
+      "descripcion": "Queue prioridad 85% RAM",
+      "flag": null,
+      "loc_esperadas": 99,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/router_llm_hf/queue_manager.py",
+        "size_bytes": 3399,
+        "lines": 99,
+        "sha256": "766666bcb9de11cdbcc9501ed1259b03c8927e23d2c26b454920b6917e5850e5",
+        "sha256_bytes": "766666bcb9de11cdbcc9501ed1259b03c8927e23d2c26b454920b6917e5850e5",
+        "preview": "\"\"\"\nqueue_manager.py — Cola con prioridad (Control Plane)\n1 tarea por modelo en ejecucion; salto al 85% de RAM.\n\"\"\"\nfrom __future__ import annotations\nimport asyncio\nimport time\nimport uuid\nimport log"
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 99
+    },
+    {
+      "commit": "bce0065",
+      "archivo": "router_llm_hf/output_contract.py",
+      "categoria": "diff_visible",
+      "descripcion": "Pydantic strict 8 campos",
+      "flag": null,
+      "loc_esperadas": 42,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/router_llm_hf/output_contract.py",
+        "size_bytes": 1594,
+        "lines": 42,
+        "sha256": "b26e3e09b3ffb5441fe926a08ed9cd8abe93990f19fc5ac33d6825be23577071",
+        "sha256_bytes": "b26e3e09b3ffb5441fe926a08ed9cd8abe93990f19fc5ac33d6825be23577071",
+        "preview": "\"\"\"\noutput_contract.py — Contrato de salida Pydantic estricto (Control Plane)\n\"\"\"\nfrom __future__ import annotations\nfrom pydantic import BaseModel, ConfigDict, Field\nfrom typing import Literal, List,"
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 42
+    },
+    {
+      "commit": "48ab8f6d",
+      "archivo": "router_llm_hf/mode_router.py",
+      "categoria": "diff_visible",
+      "descripcion": "12 modos a (dataset, LoRA)",
+      "flag": null,
+      "loc_esperadas": 43,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/router_llm_hf/mode_router.py",
+        "size_bytes": 1562,
+        "lines": 43,
+        "sha256": "18eead0458da1d0d8957a6ac8042387e1aeb5f6a6bb3235ac00105d31d59be32",
+        "sha256_bytes": "18eead0458da1d0d8957a6ac8042387e1aeb5f6a6bb3235ac00105d31d59be32",
+        "preview": "\"\"\"\nmode_router.py — 12 modos a (dataset, LoRA) (Control Plane)\n\"\"\"\nfrom __future__ import annotations\nimport logging\nfrom typing import Dict, Optional, Tuple\n\nlogger = logging.getLogger(__name__)\n\n\nc"
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 43
+    },
+    {
+      "commit": "0ef04d83",
+      "archivo": "router_llm_hf/recall_engine.py",
+      "categoria": "diff_visible",
+      "descripcion": "Recall 8 intentos",
+      "flag": null,
+      "loc_esperadas": 55,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/router_llm_hf/recall_engine.py",
+        "size_bytes": 2081,
+        "lines": 55,
+        "sha256": "d76f68ad789359ecd366a987343f8973e4f9b02ca9356691cce472e0eaca8775",
+        "sha256_bytes": "d76f68ad789359ecd366a987343f8973e4f9b02ca9356691cce472e0eaca8775",
+        "preview": "\"\"\"\nrecall_engine.py — Re-invocacion con feedback, maximo 8 intentos (Control Plane)\n\"\"\"\nfrom __future__ import annotations\nimport asyncio\nimport logging\nfrom typing import Any, Dict, Optional, Callab"
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 55
+    },
+    {
+      "commit": "138a54f",
+      "archivo": "ROUTER MVP v1/system_prompt_py/tests/test_control_bridge.py",
+      "categoria": "diff_vacio_F1",
+      "descripcion": "Test cierre Data Plane",
+      "flag": "F1a",
+      "loc_esperadas": 40,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/ROUTER MVP v1/system_prompt_py/tests/test_control_bridge.py",
+        "size_bytes": 878,
+        "lines": 40,
+        "sha256": "a472fe488b4783615a747f69e3e1b9e3e4f0a51f6289e3554eac6049c3c385b5",
+        "sha256_bytes": "a472fe488b4783615a747f69e3e1b9e3e4f0a51f6289e3554eac6049c3c385b5",
+        "preview": "\"\"\"\ntest_control_bridge.py — Cierre Salida 1/3\nUbicacion: ROUTER MVP v1/system_prompt_py/tests/test_control_bridge.py\n\"\"\"\nimport ast\nimport asyncio\nimport pathlib\nimport sys\n\nBASE = pathlib.Path(__fil"
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 40
+    },
+    {
+      "commit": "9efd12d",
+      "archivo": "router_llm_hf/tests/__init__.py",
+      "categoria": "diff_vacio_F1",
+      "descripcion": "Init tests Control Plane",
+      "flag": "F1a",
+      "loc_esperadas": 1,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/router_llm_hf/tests/__init__.py",
+        "size_bytes": 31,
+        "lines": 1,
+        "sha256": "e6daa32e060d229af5e42c35ece8f7bee758aa97ce377c62a8e71c4ccb997c6f",
+        "sha256_bytes": "e6daa32e060d229af5e42c35ece8f7bee758aa97ce377c62a8e71c4ccb997c6f",
+        "preview": "\"\"\"Tests para router_llm_hf\"\"\"\n"
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 1
+    },
+    {
+      "commit": "cd095fc",
+      "archivo": "router_llm_hf/escalation_guard.py",
+      "categoria": "diff_vacio_F1",
+      "descripcion": "AND-gate anti-escalada",
+      "flag": "F1b",
+      "loc_esperadas": 44,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/router_llm_hf/escalation_guard.py",
+        "size_bytes": 1437,
+        "lines": 44,
+        "sha256": "d08c93c06aa89c67b9b04f2dadb9dd600574ce581d81d2d547c5f3b37079d4b0",
+        "sha256_bytes": "d08c93c06aa89c67b9b04f2dadb9dd600574ce581d81d2d547c5f3b37079d4b0",
+        "preview": "\"\"\"\nescalation_guard.py — AND-gate anti-escalada (Control Plane)\n\"\"\"\nfrom __future__ import annotations\nimport logging\nfrom typing import Dict, Any\n\nlogger = logging.getLogger(__name__)\n\n\nclass Escala"
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 44
+    },
+    {
+      "commit": "c506896",
+      "archivo": "router_llm_hf/tests/test_queue_manager.py",
+      "categoria": "diff_vacio_F1",
+      "descripcion": "Test queue Control Plane",
+      "flag": "F1c",
+      "loc_esperadas": 42,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/router_llm_hf/tests/test_queue_manager.py",
+        "size_bytes": 1304,
+        "lines": 42,
+        "sha256": "c0823947cd77dd1bf32cb5cd901c162931659489d8b781846cf46472ae66fbb6",
+        "sha256_bytes": "c0823947cd77dd1bf32cb5cd901c162931659489d8b781846cf46472ae66fbb6",
+        "preview": "\"\"\"\ntest_queue_manager.py — Cierre Salida 2/3\nUbicacion: router_llm_hf/tests/test_queue_manager.py\n\"\"\"\nimport asyncio\nimport pathlib\nimport sys\n\nBASE = pathlib.Path(__file__).resolve().parents[2]\nsys."
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 42
+    },
+    {
+      "commit": "561a97a",
+      "archivo": "router_llm_hf/__init__.py",
+      "categoria": "diff_vacio_F1",
+      "descripcion": "Init paquete Control Plane",
+      "flag": "F1d",
+      "loc_esperadas": 23,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/router_llm_hf/__init__.py",
+        "size_bytes": 526,
+        "lines": 23,
+        "sha256": "5e344e944c8caa45acecb75a865df0fc2cd0cc7f0c3dc1fee33cbba7dea03a17",
+        "sha256_bytes": "5e344e944c8caa45acecb75a865df0fc2cd0cc7f0c3dc1fee33cbba7dea03a17",
+        "preview": "\"\"\"\nrouter_llm_hf — Control Plane del sistema\nRegla: nunca computa, solo controla\n\"\"\"\nfrom .queue_manager import QueueManager, Priority, Task\nfrom .watchdog import Watchdog\nfrom .recall_engine import "
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 23
+    },
+    {
+      "commit": "fd07fae",
+      "archivo": "router_llm_hf/README.md",
+      "categoria": "error_sesion_GH",
+      "descripcion": "README Control Plane",
+      "flag": "F1",
+      "loc_esperadas": null,
+      "fetch": {
+        "status": "HTTP_404",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/router_llm_hf/README.md",
+        "error": "Client error '404 Not Found' for url 'https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/router_llm_hf/README.md'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      },
+      "veredicto": "FAIL_FETCH"
+    },
+    {
+      "commit": "a5f7d6a",
+      "archivo": "ROUTER MVP v1/system_prompt_py/control_bridge.py",
+      "categoria": "diff_no_visible",
+      "descripcion": "Puente BRIDGE.run: watchdog + recall sobre el Data Plane",
+      "flag": "F1e",
+      "loc_esperadas": null,
+      "fetch": {
+        "status": "OK",
+        "url": "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/ROUTER MVP v1/system_prompt_py/control_bridge.py",
+        "size_bytes": 1443,
+        "lines": 47,
+        "sha256": "396cdffdd92d9b7eb0fd814d729ab70ba624674b9dc073bfee58a842a7990618",
+        "sha256_bytes": "396cdffdd92d9b7eb0fd814d729ab70ba624674b9dc073bfee58a842a7990618",
+        "preview": "\"\"\"\ncontrol_bridge.py — Puente Data Plane a Control Plane (Salida 1/3)\nUbicacion: ROUTER MVP v1/system_prompt_py/control_bridge.py\nSi router_llm_hf existe: watchdog 96s + heartbeat + recall disponible"
+      },
+      "syntax": "OK",
+      "veredicto": "OK",
+      "loc_real": 47
+    }
+  ]
+}

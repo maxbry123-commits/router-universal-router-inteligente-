@@ -4,3 +4,27 @@ router inteligente universal/agents-yaiwes/agent-10-model-install/steps/**/resul
 __pycache__/
 *.pyc
 router inteligente universal/plugins/fichas_qwen/riu_data/
+ROUTER MVP v1/system_prompt_py/componentes_descargados/
+ROUTER MVP v1/system_prompt_py/skills/
+artifacts/
+state/
+# estado de runtime de la Salida 2/3 (tasks, feedback, audit): no se versiona
+.tasks/
+.feedback.jsonl
+.audit.jsonl
+
+# output generado por el build de Vercel (lo genera vercel/build_public.py)
+/public/
+
+# outputs generados por el build de Vercel
+/public/
+/dist/
+/build/
+/out/
+/chat-router/public/
+/chat-router/dist/
+/chat-router/build/
+/chat-router/out/
+/vercel/dist/
+/vercel/build/
+/vercel/out/

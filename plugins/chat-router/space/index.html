@@ -190,17 +190,12 @@ button{cursor:pointer}
     e.target.value='';
   };
   document.querySelectorAll('[data-p]').forEach(b=>b.onclick=async()=>{
-    try{const d=await api('/power/'+b.dataset.p,{method:'POST'});say(d.estado);setTimeout(status,4000)}catch(e){say(e.message)}
+    try{const d=await api('/power/'+b.dataset.p,{method:'POST'});say(d.estado);if(b.dataset.p.endsWith('/on'))setTimeout(status,4000)}catch(e){say(e.message)}
   });
   $('stop').onclick=async()=>{
     if(!confirm('¿Parar todo (agentes y Router)?'))return;
-    try{await api('/power/agents/off',{method:'POST'});await api('/power/router/off',{method:'POST'});say('Todo parado');status()}catch(e){say(e.message)}
+    try{await api('/power/agents/off',{method:'POST'});await api('/power/router/off',{method:'POST'});say('Todo parado')}catch(e){say(e.message)}
   };
-  (async()=>{
-    const s=await status();
-    if(s&&s.router!=='encendido'){say('Encendiendo el Router, tarda 2 a 5 minutos…');try{await api('/power/router/on',{method:'POST'})}catch(e){}}
-    setInterval(status,20000);
-  })();
 })();
 </script>
 </body>

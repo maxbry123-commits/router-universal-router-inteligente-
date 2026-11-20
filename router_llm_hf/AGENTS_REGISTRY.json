@@ -1,0 +1,127 @@
+{
+  "version": "3.0.0",
+  "nota": "Registro central de agentes (MINIMAX 2F). Cada agente declara: tipo, estado, interruptor ON/OFF, endpoint, espejo, ruta de chat, raiz en disco, memoria/historial propios y politica de modelo (modo agentico / herramientas). Los agentes de espacio (ruflo, rowboat) nacen OFF: se encienden desde el chat. Sin credenciales aqui: van por env.",
+  "base_url": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space",
+  "state_dir": "state/agents",
+  "policy": {
+    "default_agent_enabled": true,
+    "default_workspace_enabled": false,
+    "model_policy": {
+      "agente_modo": "agentic",
+      "herramientas": ["mcp", "files", "shell"],
+      "nota": "El motor del agente es el MISMO que el de los Motores (determinista). 'agente_modo' activa el modo agentico del router; 'herramientas' es la lista de capacidades MCP declaradas."
+    }
+  },
+  "roots": {
+    "ruflo": {
+      "path": "chat-router/agentes/ruflo",
+      "kind": "workspace",
+      "source": "vendor",
+      "auto_pull": true,
+      "manifest": null,
+      "note": "Raiz TypeScript/npm (claude-flow). Se actualiza por zip (ruflo_000N.zip)."
+    },
+    "rowboat": {
+      "path": "chat-router/agentes/rowboat",
+      "kind": "workspace",
+      "source": "bundle",
+      "auto_pull": true,
+      "manifest": "chat-router/agentes/rowboat/DOWNLOAD_EXTRACT_MANIFEST.json",
+      "note": "Raiz descargada y extraida (bundle por partes con sha256)."
+    },
+    "donors": {
+      "path": "chat-router/agentes/donors",
+      "kind": "donors",
+      "source": "git",
+      "auto_pull": true,
+      "manifest": "chat-router/agentes/donors/MANIFEST.json",
+      "note": "Cookbooks de terceros con commit fijado; se actualizan por git."
+    }
+  },
+  "agents": {
+    "openclaw": {
+      "type": "mirror",
+      "status": "active",
+      "enabled": true,
+      "endpoint": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/agents/openclaw",
+      "mirror_endpoint": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/agents/openclaw",
+      "chat_path": "/v1/agents/openclaw",
+      "module": null,
+      "root": null,
+      "role": "Agente autonomo: ejecuta la tarea de punta a punta, sin pedir confirmacion en cada paso.",
+      "tools": ["mcp", "files", "shell"],
+      "memory": {"history": "state/agents/openclaw/history.jsonl", "kv": "state/agents/openclaw/memory.json"},
+      "verificacion": "Ruta definida en el proxy (codigo). La verificacion en vivo depende de que el Space space-grupo-1-router-mvp-1 tenga saldo (hoy PAUSED)."
+    },
+    "hermes": {
+      "type": "mirror",
+      "status": "active",
+      "enabled": true,
+      "endpoint": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/agents/hermes",
+      "mirror_endpoint": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/agents/hermes",
+      "chat_path": "/v1/agents/hermes",
+      "module": null,
+      "root": null,
+      "role": "Agente de comunicacion: redacta, resume y mantiene el hilo con la persona.",
+      "tools": ["mcp"],
+      "memory": {"history": "state/agents/hermes/history.jsonl", "kv": "state/agents/hermes/memory.json"},
+      "verificacion": "Ruta definida en el proxy (codigo). La verificacion en vivo depende de que el Space space-grupo-1-router-mvp-1 tenga saldo (hoy PAUSED)."
+    },
+    "chat_a": {
+      "type": "internal",
+      "status": "active",
+      "enabled": true,
+      "endpoint": "internal://router_llm_hf/chat_a_architect.py",
+      "mirror_endpoint": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/agents/chat_a",
+      "chat_path": "/v1/agents/chat_a",
+      "module": "router_llm_hf/chat_a_architect.py",
+      "root": null,
+      "role": "Arquitecto: descompone la tarea, propone el plan y el consejo tecnico.",
+      "tools": ["mcp"],
+      "memory": {"history": "state/agents/chat_a/history.jsonl", "kv": "state/agents/chat_a/memory.json"},
+      "verificacion": "Modulo importable y con test de import real. Sus dependencias viven en ROUTER MVP v1/system_prompt_py (bootstrap en router_llm_hf/__init__.py)."
+    },
+    "chat_b": {
+      "type": "internal",
+      "status": "active",
+      "enabled": true,
+      "endpoint": "internal://router_llm_hf/chat_b_implementer.py",
+      "mirror_endpoint": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/agents/chat_b",
+      "chat_path": "/v1/agents/chat_b",
+      "module": "router_llm_hf/chat_b_implementer.py",
+      "root": null,
+      "role": "Implementador: escribe el codigo, ejecuta las herramientas y devuelve el resultado.",
+      "tools": ["mcp", "files", "shell"],
+      "memory": {"history": "state/agents/chat_b/history.jsonl", "kv": "state/agents/chat_b/memory.json"},
+      "verificacion": "Modulo importable y con test de import real. Sus dependencias viven en ROUTER MVP v1/system_prompt_py (bootstrap en router_llm_hf/__init__.py)."
+    },
+    "ruflo": {
+      "type": "workspace",
+      "status": "idle",
+      "enabled": false,
+      "endpoint": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/agents/ruflo",
+      "mirror_endpoint": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/agents/ruflo",
+      "chat_path": "/v1/agents/ruflo",
+      "module": null,
+      "root": "chat-router/agentes/ruflo",
+      "role": "Raiz de agente en el workspace (claude-flow / @claude-flow). Se enruta por su espejo con el motor del router.",
+      "tools": ["mcp", "files", "shell"],
+      "memory": {"history": "state/agents/ruflo/history.jsonl", "kv": "state/agents/ruflo/memory.json"},
+      "verificacion": "Raiz presente en el repo (5622 ficheros). El espejo expone /v1/agents/ruflo; la ejecucion nativa (npm) no se arranca desde el Space."
+    },
+    "rowboat": {
+      "type": "workspace",
+      "status": "idle",
+      "enabled": false,
+      "endpoint": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/agents/rowboat",
+      "mirror_endpoint": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/agents/rowboat",
+      "chat_path": "/v1/agents/rowboat",
+      "module": null,
+      "root": "chat-router/agentes/rowboat",
+      "role": "Raiz de agente en el workspace (rowboat). Se enruta por su espejo con el motor del router.",
+      "tools": ["mcp", "files", "shell"],
+      "memory": {"history": "state/agents/rowboat/history.jsonl", "kv": "state/agents/rowboat/memory.json"},
+      "verificacion": "Raiz presente en el repo (1519 ficheros, bundle verificado por sha256). El espejo expone /v1/agents/rowboat."
+    }
+  }
+}

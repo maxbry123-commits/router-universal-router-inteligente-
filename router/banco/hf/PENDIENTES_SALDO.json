@@ -1,0 +1,52 @@
+{
+  "generated_at": "2026-11-18",
+  "nota": "P1-P3 necesitan saldo HF; el owner confirma y se ejecutan tal cual.",
+  "pendientes": [
+    {
+      "id": "P1",
+      "que": "Reiniciar los 6 Spaces del router (Grupo 1 compute + Grupo 2 LLM local) + hf-bucket-mcp (infraestructura MCP, no es un grupo del router)",
+      "bloqueo": "HF 402: 'You must purchase pre-paid credits to host Spaces with paid hardware'",
+      "comando": "POST /api/spaces/COMAND-CENTER-1/{space}/restart  (los 6 del router + hf-bucket-mcp)",
+      "verificacion": "GET /api/spaces/... -> stage RUNNING y GET /health -> 200",
+      "necesita": "creditos prepago",
+      "ejecutable_por_mi": "si, con saldo confirmado por el owner"
+    },
+    {
+      "id": "P2",
+      "que": "Convertir el Space destino en el runtime docker",
+      "bloqueo": "HF 402: Docker en cpu-basic exige PRO",
+      "comando": "cambiar 'sdk: static' por 'sdk: docker' en el README del Space COMAND-CENTER-1/router-universal-router-inteligente y push (1 linea)",
+      "verificacion": "GET /api/spaces/... -> sdk docker + stage RUNNING + /health 200",
+      "necesita": "PRO",
+      "ejecutable_por_mi": "si, con PRO confirmado por el owner"
+    },
+    {
+      "id": "P3",
+      "que": "Reconstruir los 12 datasets + LoRAs con Job de HF (si se quiere rehacer desde cero)",
+      "bloqueo": "HF 402 en POST /api/jobs (creditos)",
+      "comando": "POST /api/jobs/COMAND-CENTER-1 con dockerImage+command (los scripts estaban en hf-job-scripts, hoy RETIRADOS)",
+      "verificacion": "GET /api/jobs/{ns}/{id} -> status.stage COMPLETED",
+      "necesita": "creditos prepago",
+      "ejecutable_por_mi": "si, con saldo; alternativa YA FUNCIONANDO y gratis: instalacion en local + push por git",
+      "nota": "no es necesario: los 12 modos + 4 de servicio ya estan instalados y publicados"
+    },
+    {
+      "id": "P4",
+      "que": "Probar Groq de verdad desde un Space vivo",
+      "bloqueo": "las 6 claves GROQ_KEYS devuelven 404 tambien desde HF; el egress del sandbox esta bloqueado por Cloudflare 1010",
+      "comando": "POST {host}/v1/groq con x-api-key",
+      "verificacion": "HTTP 200 y provider=groq (hoy responde el rescate NVIDIA)",
+      "necesita": "claves Groq validas (owner)",
+      "ejecutable_por_mi": "si, con las claves nuevas del owner"
+    },
+    {
+      "id": "P5",
+      "que": "Completar las credenciales de los 10 MCP",
+      "bloqueo": "7 de 10 sin credencial: context7, firecrawl (api_key) y supabase, notion, stripe, sentry, linear (oauth)",
+      "comando": "descifrar banco/vault.json con HF_VAULT_KEY y anadir el valor; indice banco/secrets.json -> present=true",
+      "verificacion": "GET /api/banks o lectura del indice: present=true para los 10",
+      "necesita": "credenciales del owner (no saldo)",
+      "ejecutable_por_mi": "si, cuando el owner las aporte"
+    }
+  ]
+}

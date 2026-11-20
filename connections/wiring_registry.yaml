@@ -1,0 +1,129 @@
+# connections/wiring_registry.yaml — centro de distribucion (input block §5, item 3)
+# Rama: ccr-f01c3de9-bmry0s. Vista por servicio; el maestro completo es
+# SYSTEM_WIRING_REGISTRY.yaml (raiz de esta rama).
+# El inventario de 38 pares pending_audit vive en main:connections/registry.yaml
+# y se ENLAZA, no se copia (regla del satelite).
+version: "1.0.0"
+updated: "2026-11-12"
+branch: "ccr-f01c3de9-bmry0s"
+master_registry: "SYSTEM_WIRING_REGISTRY.yaml"
+links:
+  satelite_main: "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/SAT%C3%89LITE%20CENTRAL%20CONECCION/SAT%C3%89LITE%20CENTRAL%20CONECCION.yaml"
+  pares_main: "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/connections/registry.yaml"
+  handoff_central: "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/handoff%20central/README.md"
+  pares_pending_audit: 38
+  regla_R7: "active exige evidence {kind, detail, commit, ts} de sonda real; import no cuenta"
+
+services:
+  data_plane:
+    ruta: "ROUTER MVP v1/system_prompt_py/"
+    entry: "openai_compatible_proxy.py"
+    puerto: 7860
+    endpoints: ["POST /v1/chat/completions", "GET /health", "GET /control-plane/status"]
+    consume: ["control_plane"]
+    env: ["ROUTER_API_KEY", "GROQ_KEYS", "NVIDIA_KEYS"]
+    estado: "desplegado (commit 3fa2974)"
+
+  control_plane:
+    ruta: "router_llm_hf/"
+    entry: "__init__.py"
+    modulos: ["queue_manager.py", "watchdog.py", "recall_engine.py",
+              "output_contract.py", "escalation_guard.py", "mode_router.py"]
+    consume: []
+    provee_a: ["data_plane"]
+    estado: "desplegado (salida 2/3, commits 561a97a..c506896)"
+    flags: ["F1b/F1c/F1d: diffs vacios en UI GitHub; verificar via RAW"]
+
+  capa_externa_api:
+    ruta: "external/api/"
+    entry: "capa_api.py"
+    puerto: 7861
+    endpoints: ["GET /capa/status", "POST /capa/mode", "POST /capa/tool",
+                "POST /capa/approval/decide", "GET /capa/artifacts",
+                "GET /capa/handoff", "GET /capa/wall", "GET /capa/mental_map"]
+    consume: ["capa_externa_core", "capa_externa_nct", "capa_externa_tools"]
+    env: ["CAPA_API_KEY", "CAPA_CORS"]
+    estado: "desplegado (fix-and-complete-v1 F15)"
+
+  capa_externa_core:
+    ruta: "external/core/"
+    modulos: ["classifier.py", "input_validator.py", "output_contract.py",
+              "escalation_guard.py", "queue_manager.py", "recall_engine.py",
+              "mode_router.py", "hitl_integration.py"]
+    estado: "desplegado (commit 676a6a1, R1)"
+
+  capa_externa_nct:
+    ruta: "external/nct/"
+    modulos: ["handoff.py", "crazy_wall.py", "input_shark.py", "audit_xray.py",
+              "mental_map.py", "botonera.py", "recovery_gate.py", "handoff_viewer.py"]
+    estado: "desplegado (commit 24c6daa, R2)"
+
+  capa_externa_tools:
+    ruta: "external/tools/"
+    modulos: ["download_manager.py", "approval_gate.py", "artifact_registry.py",
+              "mode_detector.py", "priority_queue.py", "router_worker_watchdog.py",
+              "archify_engine.py", "motion_engine.py", "mindmap_engine.py",
+              "verify_deploy_trace.py"]
+    estado: "desplegado (S1-EXT/S2-EXT + fix-and-complete-v1)"
+
+  hf_plane:
+    ruta: "llm system HF/"
+    entry: "manager.py"
+    entry_v2: "manager_v2.py"
+    puerto: 7860
+    puerto_v2: 7861
+    llama_port: 8081
+    llama_port_v2: 8082
+    consume: ["github_repo"]
+    env: ["GITHUB_TOKEN", "GITHUB_BRANCH", "ROUTER_API_KEY", "MODEL_ID",
+          "MODEL_FILE", "MODEL_PATH", "SPACE_ID", "IDLE_UNLOAD_S", "LLAMA_TIMEOUT_S"]
+    estado: "desplegado (manager: S1-HF file6; manager_v2: 4a09e39; entrypoint: FIX_G7)"
+
+  control_hf:
+    ruta: "control huggueface/"
+    modulos: ["control_api.py", "bootstrap_spaces.py", "sync_to_hf.py",
+              "hf_upload.sh", "mirror_spaces.py", "trigger_wake.py", "registry_models.py"]
+    consume: ["hf_plane"]
+    env: ["HF_TOKEN", "ROUTER_API_KEY"]
+    estado: "desplegado (32e43d7, R4)"
+
+  memoria_plugin:
+    ruta: "plugins/memoria/"
+    entry: "plugin.py"
+    acciones: ["status", "save", "load", "search", "list"]
+    consume: []
+    provee_a: ["harness_deepseek", "puente_chat"]
+    env: ["RIU_MEMORIA_DIR"]
+    estado: "a desplegar en este cierre (C3-01)"
+
+  harness_deepseek:
+    ruta_rama: "plugins/deepseek_harness/"
+    ruta_main: "chat-router/chat/backend/deepseek_harness/"
+    entry: "plugin.py"
+    acciones: ["status", "invoke", "llm"]
+    consume: ["data_plane", "memoria_plugin"]
+    env: ["RIU_DEEPSEEK_HARNESS_URL", "RIU_DEEPSEEK_HARNESS_API_KEY", "RIU_DEEPSEEK_HARNESS_PATH"]
+    estado: "desplegado (reorganizacion etapa 2); fail-closed sin URL"
+
+  connectivity:
+    ruta: "plugins/connectivity/"
+    entry: "plugin.py"
+    acciones: ["status", "check"]
+    transportes: ["fastapi", "http_allowlist", "mcp", "ssh"]
+    env: ["RIU_SELF_URL", "RIU_HTTP_ALLOWLIST", "RIU_MCP_URL", "RIU_MCP_CONFIG"]
+    estado: "desplegado (reorganizacion etapa 2)"
+
+  chat_ui:
+    ruta: "chat-router/chat/ui/"
+    paneles: ["loop-panel.html", "watchdog-panel.html", "cola-panel.html",
+              "mindmap-panel.html", "motion-panel.html"]
+    consume: ["capa_externa_api"]
+    postmessage: ["capa:refresh", "capa:ready", "capa:mode"]
+    estado: "loop/watchdog/cola: este cierre (C1-01..03); mindmap/motion: 9badb8d"
+
+  engine:
+    ruta: "engine/"
+    modulos: ["orchestrator.py", "swe_code_free_tool.py", "probe_sondas.py",
+              "tests/test_cierre.py"]
+    consume: ["capa_externa_api", "memoria_plugin", "harness_deepseek"]
+    estado: "a desplegar en salidas 3/4 y 4/4 de este cierre"

@@ -1,0 +1,165 @@
+{
+  "mode": "dry-run",
+  "ok": true,
+  "roots": {
+    "donors": {
+      "exists": true,
+      "integrity": {
+        "donors": [
+          {
+            "commit": "4dc252c1a31b02ff676dce0358d297ffbc5d8784",
+            "declared_status": "OK",
+            "donor": "muse-code-sdk",
+            "files": 167,
+            "files_match": true,
+            "local_exists": true,
+            "local_files": 167,
+            "sparse": null,
+            "url": "https://github.com/meta-models/muse-code-sdk"
+          },
+          {
+            "commit": "3d33cb1eae658cf92b134ec20530aeb1b32c31f1",
+            "declared_status": "OK",
+            "donor": "meta-oss-cookbook-agentic-fundamentals",
+            "files": 4,
+            "files_match": true,
+            "local_exists": true,
+            "local_files": 4,
+            "sparse": [
+              "agentic-fundamentals"
+            ],
+            "url": "https://github.com/meta-models/meta-oss-cookbook"
+          },
+          {
+            "commit": "c5a9882b4c7f3900e9c93122249d37317c8abff4",
+            "declared_status": "OK",
+            "donor": "meta-model-cookbook-12-computer-use",
+            "files": 2,
+            "files_match": true,
+            "local_exists": true,
+            "local_files": 2,
+            "sparse": [
+              "03_use_cases/12_computer_use"
+            ],
+            "url": "https://github.com/meta-models/meta-model-cookbook"
+          },
+          {
+            "commit": "c5a9882b4c7f3900e9c93122249d37317c8abff4",
+            "declared_status": "OK",
+            "donor": "meta-model-cookbook-13-macos-cua",
+            "files": 47,
+            "files_match": true,
+            "local_exists": true,
+            "local_files": 47,
+            "sparse": [
+              "03_use_cases/13_macos_cua"
+            ],
+            "url": "https://github.com/meta-models/meta-model-cookbook"
+          },
+          {
+            "commit": "30bb1161095dbae2271e6bc3cc4c219cc3897a57",
+            "declared_status": "OK",
+            "donor": "smolagents",
+            "files": 27,
+            "files_match": true,
+            "local_exists": true,
+            "local_files": 27,
+            "sparse": [
+              "src/smolagents",
+              "README.md"
+            ],
+            "url": "https://github.com/huggingface/smolagents"
+          },
+          {
+            "commit": "f74d023f93607b8c3268133339a5e532a949898c",
+            "declared_status": "OK",
+            "donor": "pocketflow",
+            "files": 60,
+            "files_match": true,
+            "local_exists": true,
+            "local_files": 60,
+            "sparse": [
+              "pocketflow",
+              "README.md"
+            ],
+            "url": "https://github.com/The-Pocket/PocketFlow"
+          }
+        ],
+        "manifest": "MANIFEST.json",
+        "ok": true
+      },
+      "path": "chat-router/agentes/donors",
+      "remote": {
+        "donors": 6,
+        "state": "INLINE"
+      },
+      "verdict": "OK"
+    },
+    "rowboat": {
+      "exists": true,
+      "integrity": {
+        "extraction_verified": true,
+        "manifest": "DOWNLOAD_EXTRACT_MANIFEST.json",
+        "ok": true,
+        "parts": [
+          {
+            "bytes": 12582912,
+            "part": "rowboat.bundle.zip.part-0001",
+            "state": "OK"
+          },
+          {
+            "bytes": 12582912,
+            "part": "rowboat.bundle.zip.part-0002",
+            "state": "OK"
+          },
+          {
+            "bytes": 3944284,
+            "part": "rowboat.bundle.zip.part-0003",
+            "state": "OK"
+          }
+        ],
+        "pinned_commit": "d31c03813451ffab5a1c4e1d5870fbbb90ba6108",
+        "source_commit": "d31c03813451ffab5a1c4e1d5870fbbb90ba6108",
+        "source_repo": "rowboatlabs/rowboat"
+      },
+      "path": "chat-router/agentes/rowboat",
+      "remote": {
+        "head": "f667d39ffc14dc0e2fa9741f58ef1a3cc5d7ac67",
+        "pinned": "d31c03813451ffab5a1c4e1d5870fbbb90ba6108",
+        "repo": "rowboatlabs/rowboat",
+        "state": "DRIFT"
+      },
+      "verdict": "DRIFT"
+    },
+    "ruflo": {
+      "exists": true,
+      "integrity": {
+        "files": [
+          {
+            "actual": "4b4c5826c9d1cdb8bd70a5c097a1d1b9a79b2d4850fdf05149b9ea84bfefa502",
+            "expected": "4b4c5826c9d1cdb8bd70a5c097a1d1b9a79b2d4850fdf05149b9ea84bfefa502",
+            "file": ".harness/mcp-policy.json",
+            "state": "OK"
+          },
+          {
+            "actual": "b560b28c6ac9c76d2ab140ac3536ae795f45324fa2771b3d557181ab4ed71b8e",
+            "expected": "ba278b1f9ccf8e170e4cef3748a6bcb4efc0850b7ec66d34690fec328fdabeb1",
+            "file": ".claude/settings.json",
+            "state": "DRIFT"
+          }
+        ],
+        "manifest": ".harness/manifest.json",
+        "ok": false,
+        "template_version": "3.11.0"
+      },
+      "path": "chat-router/agentes/ruflo",
+      "remote": {
+        "head": "edf7ddb3fefa15bca87986225b5a5ef7d4d059e5",
+        "pinned": null,
+        "repo": "ruvnet/ruflo",
+        "state": "OK"
+      },
+      "verdict": "DRIFT"
+    }
+  }
+}

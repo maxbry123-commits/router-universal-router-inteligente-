@@ -1,0 +1,1897 @@
+{
+  "commit_sha": "bb3559e66f9ca160031b9da3c5b65aecb807fa45",
+  "generated_at": "2026-11-16T08:00:06Z",
+  "schema": "xray-symbols/1",
+  "symbols": {
+    "backend/adapters/d2.py": [
+      {
+        "kind": "constant",
+        "line": 21,
+        "name": "TOOL_ID"
+      },
+      {
+        "kind": "constant",
+        "line": 22,
+        "name": "TOOL_NAME"
+      },
+      {
+        "kind": "constant",
+        "line": 23,
+        "name": "SOURCE_REPO"
+      },
+      {
+        "kind": "constant",
+        "line": 24,
+        "name": "CLI"
+      },
+      {
+        "kind": "constant",
+        "line": 25,
+        "name": "PING_COMMAND"
+      },
+      {
+        "kind": "constant",
+        "line": 26,
+        "name": "TIMEOUT"
+      },
+      {
+        "kind": "constant",
+        "line": 27,
+        "name": "THEME"
+      },
+      {
+        "kind": "def",
+        "line": 30,
+        "name": "_run"
+      },
+      {
+        "kind": "def",
+        "line": 73,
+        "name": "_extract_code"
+      },
+      {
+        "kind": "def",
+        "line": 87,
+        "name": "ping"
+      },
+      {
+        "kind": "def",
+        "line": 132,
+        "name": "render"
+      }
+    ],
+    "backend/adapters/excalidraw.py": [
+      {
+        "kind": "constant",
+        "line": 21,
+        "name": "TOOL_ID"
+      },
+      {
+        "kind": "constant",
+        "line": 22,
+        "name": "TOOL_NAME"
+      },
+      {
+        "kind": "constant",
+        "line": 23,
+        "name": "SOURCE_REPO"
+      },
+      {
+        "kind": "constant",
+        "line": 24,
+        "name": "DEFAULT_BASE_URL"
+      },
+      {
+        "kind": "constant",
+        "line": 25,
+        "name": "PING_COMMAND"
+      },
+      {
+        "kind": "constant",
+        "line": 26,
+        "name": "TIMEOUT"
+      },
+      {
+        "kind": "def",
+        "line": 29,
+        "name": "_base_url"
+      },
+      {
+        "kind": "def",
+        "line": 33,
+        "name": "_request"
+      },
+      {
+        "kind": "def",
+        "line": 95,
+        "name": "ping"
+      },
+      {
+        "kind": "def",
+        "line": 137,
+        "name": "render"
+      },
+      {
+        "kind": "def",
+        "line": 186,
+        "name": "from_mermaid"
+      }
+    ],
+    "backend/adapters/hyperframes.py": [
+      {
+        "kind": "constant",
+        "line": 22,
+        "name": "TOOL_ID"
+      },
+      {
+        "kind": "constant",
+        "line": 23,
+        "name": "TOOL_NAME"
+      },
+      {
+        "kind": "constant",
+        "line": 24,
+        "name": "SOURCE_REPO"
+      },
+      {
+        "kind": "constant",
+        "line": 25,
+        "name": "DEFAULT_BASE_URL"
+      },
+      {
+        "kind": "constant",
+        "line": 26,
+        "name": "PING_COMMAND"
+      },
+      {
+        "kind": "constant",
+        "line": 27,
+        "name": "CLI"
+      },
+      {
+        "kind": "constant",
+        "line": 28,
+        "name": "CLI_PING_COMMAND"
+      },
+      {
+        "kind": "constant",
+        "line": 29,
+        "name": "TIMEOUT"
+      },
+      {
+        "kind": "constant",
+        "line": 30,
+        "name": "RENDER_TIMEOUT"
+      },
+      {
+        "kind": "def",
+        "line": 33,
+        "name": "_base_url"
+      },
+      {
+        "kind": "def",
+        "line": 37,
+        "name": "_request"
+      },
+      {
+        "kind": "def",
+        "line": 99,
+        "name": "_cli_version"
+      },
+      {
+        "kind": "def",
+        "line": 132,
+        "name": "ping"
+      },
+      {
+        "kind": "def",
+        "line": 184,
+        "name": "render"
+      }
+    ],
+    "backend/adapters/mermaid.py": [
+      {
+        "kind": "constant",
+        "line": 21,
+        "name": "TOOL_ID"
+      },
+      {
+        "kind": "constant",
+        "line": 22,
+        "name": "TOOL_NAME"
+      },
+      {
+        "kind": "constant",
+        "line": 23,
+        "name": "SOURCE_REPO"
+      },
+      {
+        "kind": "constant",
+        "line": 24,
+        "name": "CLI"
+      },
+      {
+        "kind": "constant",
+        "line": 25,
+        "name": "PING_COMMAND"
+      },
+      {
+        "kind": "constant",
+        "line": 26,
+        "name": "TIMEOUT"
+      },
+      {
+        "kind": "def",
+        "line": 29,
+        "name": "_run"
+      },
+      {
+        "kind": "def",
+        "line": 72,
+        "name": "_extract_code"
+      },
+      {
+        "kind": "def",
+        "line": 86,
+        "name": "ping"
+      },
+      {
+        "kind": "def",
+        "line": 131,
+        "name": "render"
+      }
+    ],
+    "backend/adapters/remotion.py": [
+      {
+        "kind": "constant",
+        "line": 27,
+        "name": "TOOL_ID"
+      },
+      {
+        "kind": "constant",
+        "line": 28,
+        "name": "TOOL_NAME"
+      },
+      {
+        "kind": "constant",
+        "line": 29,
+        "name": "SOURCE_REPO"
+      },
+      {
+        "kind": "constant",
+        "line": 30,
+        "name": "CLI"
+      },
+      {
+        "kind": "constant",
+        "line": 31,
+        "name": "PING_COMMAND"
+      },
+      {
+        "kind": "constant",
+        "line": 32,
+        "name": "TIMEOUT"
+      },
+      {
+        "kind": "constant",
+        "line": 33,
+        "name": "RENDER_TIMEOUT"
+      },
+      {
+        "kind": "def",
+        "line": 36,
+        "name": "_run"
+      },
+      {
+        "kind": "def",
+        "line": 79,
+        "name": "_local_binary"
+      },
+      {
+        "kind": "def",
+        "line": 95,
+        "name": "_version_cmd"
+      },
+      {
+        "kind": "def",
+        "line": 103,
+        "name": "ping"
+      },
+      {
+        "kind": "def",
+        "line": 142,
+        "name": "render"
+      }
+    ],
+    "backend/adapters/rive.py": [
+      {
+        "kind": "constant",
+        "line": 20,
+        "name": "TOOL_ID"
+      },
+      {
+        "kind": "constant",
+        "line": 21,
+        "name": "TOOL_NAME"
+      },
+      {
+        "kind": "constant",
+        "line": 22,
+        "name": "SOURCE_REPO"
+      },
+      {
+        "kind": "constant",
+        "line": 23,
+        "name": "CLI"
+      },
+      {
+        "kind": "constant",
+        "line": 24,
+        "name": "PING_COMMAND"
+      },
+      {
+        "kind": "constant",
+        "line": 25,
+        "name": "TIMEOUT"
+      },
+      {
+        "kind": "constant",
+        "line": 26,
+        "name": "RENDER_TIMEOUT"
+      },
+      {
+        "kind": "def",
+        "line": 29,
+        "name": "_run"
+      },
+      {
+        "kind": "def",
+        "line": 72,
+        "name": "ping"
+      },
+      {
+        "kind": "def",
+        "line": 117,
+        "name": "render"
+      }
+    ],
+    "backend/api.py": [
+      {
+        "kind": "constant",
+        "line": 43,
+        "name": "BACKEND_DIR"
+      },
+      {
+        "kind": "constant",
+        "line": 58,
+        "name": "XRAY_DIR"
+      },
+      {
+        "kind": "constant",
+        "line": 72,
+        "name": "XRAY_OUT_DIR"
+      },
+      {
+        "kind": "constant",
+        "line": 73,
+        "name": "XRAY_ARTIFACTS"
+      },
+      {
+        "kind": "constant",
+        "line": 92,
+        "name": "WS_PROGRESS_INTERVAL"
+      },
+      {
+        "kind": "constant",
+        "line": 97,
+        "name": "ALLOWED_ORIGINS"
+      },
+      {
+        "kind": "class",
+        "line": 116,
+        "name": "RenderRequest"
+      },
+      {
+        "kind": "class",
+        "line": 121,
+        "name": "ConvertRequest"
+      },
+      {
+        "kind": "class",
+        "line": 127,
+        "name": "AudioExplainRequest"
+      },
+      {
+        "kind": "class",
+        "line": 133,
+        "name": "GapRequest"
+      },
+      {
+        "kind": "class",
+        "line": 144,
+        "name": "XrayAuditRequest"
+      },
+      {
+        "kind": "def",
+        "line": 152,
+        "name": "_fail"
+      },
+      {
+        "kind": "def",
+        "line": 163,
+        "name": "get_health"
+      },
+      {
+        "kind": "def",
+        "line": 172,
+        "name": "post_render_diagram"
+      },
+      {
+        "kind": "def",
+        "line": 181,
+        "name": "post_render_motion"
+      },
+      {
+        "kind": "def",
+        "line": 190,
+        "name": "post_convert"
+      },
+      {
+        "kind": "def",
+        "line": 199,
+        "name": "post_audio_explain"
+      },
+      {
+        "kind": "def",
+        "line": 212,
+        "name": "get_audio"
+      },
+      {
+        "kind": "def",
+        "line": 233,
+        "name": "_xray_store"
+      },
+      {
+        "kind": "def",
+        "line": 237,
+        "name": "_xray_inventory"
+      },
+      {
+        "kind": "def",
+        "line": 242,
+        "name": "post_gap"
+      },
+      {
+        "kind": "def",
+        "line": 261,
+        "name": "get_gaps"
+      },
+      {
+        "kind": "def",
+        "line": 274,
+        "name": "get_xray_artifact"
+      },
+      {
+        "kind": "def",
+        "line": 300,
+        "name": "post_xray_audit"
+      },
+      {
+        "kind": "def",
+        "line": 314,
+        "name": "ws_progress"
+      },
+      {
+        "kind": "def",
+        "line": 341,
+        "name": "root"
+      },
+      {
+        "kind": "constant",
+        "line": 380,
+        "name": "FRONTEND_DIR"
+      },
+      {
+        "kind": "def",
+        "line": 385,
+        "name": "ui_missing"
+      }
+    ],
+    "backend/audio_engine.py": [
+      {
+        "kind": "constant",
+        "line": 35,
+        "name": "CACHE_DIR"
+      },
+      {
+        "kind": "constant",
+        "line": 36,
+        "name": "MAX_WORDS"
+      },
+      {
+        "kind": "constant",
+        "line": 37,
+        "name": "DEFAULT_VOICE"
+      },
+      {
+        "kind": "def",
+        "line": 43,
+        "name": "_ensure_cache_dir"
+      },
+      {
+        "kind": "def",
+        "line": 51,
+        "name": "_word_count"
+      },
+      {
+        "kind": "def",
+        "line": 55,
+        "name": "_truncate_words"
+      },
+      {
+        "kind": "def",
+        "line": 63,
+        "name": "build_summary"
+      },
+      {
+        "kind": "def",
+        "line": 121,
+        "name": "translate"
+      },
+      {
+        "kind": "def",
+        "line": 179,
+        "name": "_audio_hash"
+      },
+      {
+        "kind": "def",
+        "line": 183,
+        "name": "_pyttsx3_save"
+      },
+      {
+        "kind": "def",
+        "line": 212,
+        "name": "tts"
+      },
+      {
+        "kind": "def",
+        "line": 300,
+        "name": "explain"
+      },
+      {
+        "kind": "def",
+        "line": 349,
+        "name": "resolve_audio"
+      },
+      {
+        "kind": "def",
+        "line": 369,
+        "name": "audio_id_from_path"
+      },
+      {
+        "kind": "def",
+        "line": 379,
+        "name": "cache_info"
+      }
+    ],
+    "backend/canvas_engine.py": [
+      {
+        "kind": "constant",
+        "line": 26,
+        "name": "BACKEND_DIR"
+      },
+      {
+        "kind": "constant",
+        "line": 27,
+        "name": "ADAPTERS_DIR"
+      },
+      {
+        "kind": "def",
+        "line": 47,
+        "name": "load_adapter"
+      },
+      {
+        "kind": "def",
+        "line": 71,
+        "name": "health_all"
+      },
+      {
+        "kind": "def",
+        "line": 131,
+        "name": "_call_adapter"
+      },
+      {
+        "kind": "def",
+        "line": 165,
+        "name": "render_diagram"
+      },
+      {
+        "kind": "def",
+        "line": 177,
+        "name": "render_motion"
+      },
+      {
+        "kind": "def",
+        "line": 220,
+        "name": "_elements_to_mermaid"
+      },
+      {
+        "kind": "def",
+        "line": 236,
+        "name": "label_for"
+      },
+      {
+        "kind": "def",
+        "line": 259,
+        "name": "cross_convert"
+      }
+    ],
+    "backend/deploy/deploy_engine.py": [
+      {
+        "kind": "constant",
+        "line": 50,
+        "name": "MAX_FILE_BYTES"
+      },
+      {
+        "kind": "constant",
+        "line": 51,
+        "name": "MAX_TOTAL_BYTES"
+      },
+      {
+        "kind": "constant",
+        "line": 53,
+        "name": "LFS_POINTER_MARKER"
+      },
+      {
+        "kind": "constant",
+        "line": 54,
+        "name": "LFS_REF_SUFFIX"
+      },
+      {
+        "kind": "constant",
+        "line": 55,
+        "name": "GITATTRIBUTES"
+      },
+      {
+        "kind": "constant",
+        "line": 56,
+        "name": "WORKFLOWS_PREFIX"
+      },
+      {
+        "kind": "constant",
+        "line": 59,
+        "name": "TOKEN_ENV_VARS"
+      },
+      {
+        "kind": "constant",
+        "line": 60,
+        "name": "AUTH_ENV_VAR"
+      },
+      {
+        "kind": "constant",
+        "line": 63,
+        "name": "FORBIDDEN_PAYLOAD_KEYS"
+      },
+      {
+        "kind": "class",
+        "line": 69,
+        "name": "DeployAbort"
+      },
+      {
+        "kind": "def",
+        "line": 72,
+        "name": "__init__"
+      },
+      {
+        "kind": "def",
+        "line": 78,
+        "name": "to_dict"
+      },
+      {
+        "kind": "def",
+        "line": 86,
+        "name": "_now_iso"
+      },
+      {
+        "kind": "def",
+        "line": 90,
+        "name": "sha256_bytes"
+      },
+      {
+        "kind": "def",
+        "line": 94,
+        "name": "sha256_text"
+      },
+      {
+        "kind": "def",
+        "line": 98,
+        "name": "_env"
+      },
+      {
+        "kind": "def",
+        "line": 102,
+        "name": "_token_from_env"
+      },
+      {
+        "kind": "def",
+        "line": 112,
+        "name": "_redact"
+      },
+      {
+        "kind": "def",
+        "line": 125,
+        "name": "_norm_rel"
+      },
+      {
+        "kind": "def",
+        "line": 144,
+        "name": "_abs"
+      },
+      {
+        "kind": "def",
+        "line": 148,
+        "name": "_inside"
+      },
+      {
+        "kind": "def",
+        "line": 156,
+        "name": "_local_head"
+      },
+      {
+        "kind": "def",
+        "line": 178,
+        "name": "_scan_payload_keys"
+      },
+      {
+        "kind": "def",
+        "line": 182,
+        "name": "walk"
+      },
+      {
+        "kind": "def",
+        "line": 197,
+        "name": "_normalize_files"
+      },
+      {
+        "kind": "def",
+        "line": 235,
+        "name": "_chk"
+      },
+      {
+        "kind": "def",
+        "line": 239,
+        "name": "validate_preconditions"
+      },
+      {
+        "kind": "def",
+        "line": 354,
+        "name": "plan"
+      },
+      {
+        "kind": "def",
+        "line": 406,
+        "name": "_github_ref_path"
+      },
+      {
+        "kind": "def",
+        "line": 411,
+        "name": "push_fast_forward"
+      },
+      {
+        "kind": "def",
+        "line": 441,
+        "name": "_req"
+      },
+      {
+        "kind": "def",
+        "line": 539,
+        "name": "execute"
+      },
+      {
+        "kind": "def",
+        "line": 671,
+        "name": "_cli"
+      }
+    ],
+    "backend/deploy/mcp_server.py": [
+      {
+        "kind": "constant",
+        "line": 23,
+        "name": "HERE"
+      },
+      {
+        "kind": "constant",
+        "line": 24,
+        "name": "BACKEND_DIR"
+      },
+      {
+        "kind": "def",
+        "line": 46,
+        "name": "main"
+      }
+    ],
+    "backend/guide/discovery.py": [
+      {
+        "kind": "constant",
+        "line": 36,
+        "name": "SCHEMA"
+      },
+      {
+        "kind": "constant",
+        "line": 38,
+        "name": "MAX_DOMAINS"
+      },
+      {
+        "kind": "constant",
+        "line": 39,
+        "name": "MIN_PER_DOMAIN"
+      },
+      {
+        "kind": "constant",
+        "line": 40,
+        "name": "MAX_PER_DOMAIN"
+      },
+      {
+        "kind": "constant",
+        "line": 41,
+        "name": "DEFAULT_PER_DOMAIN"
+      },
+      {
+        "kind": "constant",
+        "line": 42,
+        "name": "DEFAULT_PROVIDERS"
+      },
+      {
+        "kind": "constant",
+        "line": 43,
+        "name": "DEFAULT_TIMEOUT_S"
+      },
+      {
+        "kind": "constant",
+        "line": 44,
+        "name": "DEFAULT_BUDGET_TOKENS"
+      },
+      {
+        "kind": "constant",
+        "line": 45,
+        "name": "DEFAULT_CACHE_TTL_S"
+      },
+      {
+        "kind": "constant",
+        "line": 47,
+        "name": "ENGINE_RELATIVE"
+      },
+      {
+        "kind": "constant",
+        "line": 48,
+        "name": "SOURCES_RELATIVE"
+      },
+      {
+        "kind": "constant",
+        "line": 66,
+        "name": "PESO_EVIDENCIA"
+      },
+      {
+        "kind": "constant",
+        "line": 82,
+        "name": "FORBIDDEN_PATTERNS"
+      },
+      {
+        "kind": "constant",
+        "line": 92,
+        "name": "APROBACION_RE"
+      },
+      {
+        "kind": "constant",
+        "line": 97,
+        "name": "DATE_RE"
+      },
+      {
+        "kind": "constant",
+        "line": 98,
+        "name": "VERSION_RE"
+      },
+      {
+        "kind": "constant",
+        "line": 99,
+        "name": "LICENSE_RE"
+      },
+      {
+        "kind": "def",
+        "line": 103,
+        "name": "_grammar"
+      },
+      {
+        "kind": "def",
+        "line": 123,
+        "name": "_repo_roots"
+      },
+      {
+        "kind": "def",
+        "line": 141,
+        "name": "_resolve"
+      },
+      {
+        "kind": "def",
+        "line": 153,
+        "name": "load_sources"
+      },
+      {
+        "kind": "def",
+        "line": 183,
+        "name": "load_engine"
+      },
+      {
+        "kind": "def",
+        "line": 204,
+        "name": "default_provider"
+      },
+      {
+        "kind": "def",
+        "line": 206,
+        "name": "provider"
+      },
+      {
+        "kind": "def",
+        "line": 212,
+        "name": "canon_url"
+      },
+      {
+        "kind": "def",
+        "line": 250,
+        "name": "hostname_matches"
+      },
+      {
+        "kind": "def",
+        "line": 260,
+        "name": "_records_from_payload"
+      },
+      {
+        "kind": "def",
+        "line": 290,
+        "name": "_sanitize_steps"
+      },
+      {
+        "kind": "def",
+        "line": 301,
+        "name": "_prioridad"
+      },
+      {
+        "kind": "def",
+        "line": 333,
+        "name": "_build_option"
+      },
+      {
+        "kind": "def",
+        "line": 399,
+        "name": "_cache_dir"
+      },
+      {
+        "kind": "def",
+        "line": 406,
+        "name": "_cache_key"
+      },
+      {
+        "kind": "def",
+        "line": 411,
+        "name": "_cache_read"
+      },
+      {
+        "kind": "def",
+        "line": 423,
+        "name": "_cache_write"
+      },
+      {
+        "kind": "def",
+        "line": 434,
+        "name": "discover"
+      }
+    ],
+    "backend/guide/grammar.py": [
+      {
+        "kind": "constant",
+        "line": 33,
+        "name": "SCHEMA"
+      },
+      {
+        "kind": "def",
+        "line": 162,
+        "name": "_compile_verb_pattern"
+      },
+      {
+        "kind": "def",
+        "line": 179,
+        "name": "normalize_text"
+      },
+      {
+        "kind": "def",
+        "line": 186,
+        "name": "_tokens"
+      },
+      {
+        "kind": "def",
+        "line": 190,
+        "name": "_strip_prefix"
+      },
+      {
+        "kind": "def",
+        "line": 199,
+        "name": "_find_verb"
+      },
+      {
+        "kind": "def",
+        "line": 214,
+        "name": "_deaccent"
+      },
+      {
+        "kind": "def",
+        "line": 222,
+        "name": "_split_qualifier"
+      },
+      {
+        "kind": "def",
+        "line": 262,
+        "name": "decompose"
+      },
+      {
+        "kind": "def",
+        "line": 302,
+        "name": "decompose_verbose"
+      },
+      {
+        "kind": "def",
+        "line": 323,
+        "name": "lexicon"
+      }
+    ],
+    "backend/guide/match.py": [
+      {
+        "kind": "constant",
+        "line": 33,
+        "name": "SCHEMA"
+      },
+      {
+        "kind": "constant",
+        "line": 34,
+        "name": "CATALOG_FILENAME"
+      },
+      {
+        "kind": "constant",
+        "line": 36,
+        "name": "VERDICTS"
+      },
+      {
+        "kind": "def",
+        "line": 54,
+        "name": "_default_catalog_path"
+      },
+      {
+        "kind": "def",
+        "line": 58,
+        "name": "load_catalog"
+      },
+      {
+        "kind": "def",
+        "line": 70,
+        "name": "_tokens"
+      },
+      {
+        "kind": "def",
+        "line": 81,
+        "name": "_identifiers"
+      },
+      {
+        "kind": "def",
+        "line": 90,
+        "name": "_jaccard"
+      },
+      {
+        "kind": "def",
+        "line": 96,
+        "name": "select_action"
+      },
+      {
+        "kind": "def",
+        "line": 112,
+        "name": "_as_lines"
+      },
+      {
+        "kind": "def",
+        "line": 118,
+        "name": "_find_anchor"
+      },
+      {
+        "kind": "def",
+        "line": 127,
+        "name": "_parse_signature"
+      },
+      {
+        "kind": "def",
+        "line": 146,
+        "name": "_body_extent"
+      },
+      {
+        "kind": "def",
+        "line": 162,
+        "name": "_substitute"
+      },
+      {
+        "kind": "def",
+        "line": 172,
+        "name": "_build_patch"
+      },
+      {
+        "kind": "def",
+        "line": 270,
+        "name": "_apply_ops"
+      },
+      {
+        "kind": "def",
+        "line": 290,
+        "name": "_touched_ranges"
+      },
+      {
+        "kind": "def",
+        "line": 304,
+        "name": "match_action"
+      },
+      {
+        "kind": "def",
+        "line": 409,
+        "name": "_extract_window"
+      },
+      {
+        "kind": "def",
+        "line": 420,
+        "name": "apply_match"
+      },
+      {
+        "kind": "def",
+        "line": 429,
+        "name": "verify_surgical"
+      },
+      {
+        "kind": "def",
+        "line": 480,
+        "name": "_dentro"
+      }
+    ],
+    "backend/guide/trigger.py": [
+      {
+        "kind": "def",
+        "line": 37,
+        "name": "_load_grammar"
+      },
+      {
+        "kind": "constant",
+        "line": 61,
+        "name": "SCHEMA"
+      },
+      {
+        "kind": "constant",
+        "line": 62,
+        "name": "RUNNER_SCHEMA"
+      },
+      {
+        "kind": "constant",
+        "line": 65,
+        "name": "ID_RE"
+      },
+      {
+        "kind": "constant",
+        "line": 66,
+        "name": "SHA_RE"
+      },
+      {
+        "kind": "constant",
+        "line": 67,
+        "name": "REF_RE"
+      },
+      {
+        "kind": "constant",
+        "line": 68,
+        "name": "ROLES"
+      },
+      {
+        "kind": "constant",
+        "line": 69,
+        "name": "CATEGORIES"
+      },
+      {
+        "kind": "constant",
+        "line": 74,
+        "name": "PREDICATES"
+      },
+      {
+        "kind": "constant",
+        "line": 78,
+        "name": "STEP_KINDS"
+      },
+      {
+        "kind": "constant",
+        "line": 79,
+        "name": "READ_OPS"
+      },
+      {
+        "kind": "constant",
+        "line": 80,
+        "name": "WRITE_OPS"
+      },
+      {
+        "kind": "constant",
+        "line": 81,
+        "name": "OPS"
+      },
+      {
+        "kind": "constant",
+        "line": 82,
+        "name": "TOP_FIELDS"
+      },
+      {
+        "kind": "constant",
+        "line": 87,
+        "name": "REQUIRED_TOP_FIELDS"
+      },
+      {
+        "kind": "constant",
+        "line": 91,
+        "name": "TRANSITIONS"
+      },
+      {
+        "kind": "constant",
+        "line": 98,
+        "name": "SEMAPHORE"
+      },
+      {
+        "kind": "constant",
+        "line": 99,
+        "name": "HANDLER_RUNTIME"
+      },
+      {
+        "kind": "constant",
+        "line": 100,
+        "name": "HANDLER_SOLICITADOS"
+      },
+      {
+        "kind": "constant",
+        "line": 104,
+        "name": "MAPA_CAMPOS"
+      },
+      {
+        "kind": "class",
+        "line": 118,
+        "name": "TriggerError"
+      },
+      {
+        "kind": "def",
+        "line": 121,
+        "name": "__init__"
+      },
+      {
+        "kind": "def",
+        "line": 128,
+        "name": "canonical"
+      },
+      {
+        "kind": "def",
+        "line": 132,
+        "name": "sha256"
+      },
+      {
+        "kind": "def",
+        "line": 136,
+        "name": "_fields"
+      },
+      {
+        "kind": "def",
+        "line": 147,
+        "name": "_id"
+      },
+      {
+        "kind": "def",
+        "line": 153,
+        "name": "_safe_path"
+      },
+      {
+        "kind": "def",
+        "line": 163,
+        "name": "validate_trigger"
+      },
+      {
+        "kind": "def",
+        "line": 284,
+        "name": "visit"
+      },
+      {
+        "kind": "constant",
+        "line": 304,
+        "name": "TIPO_CATEGORY"
+      },
+      {
+        "kind": "constant",
+        "line": 317,
+        "name": "TIPO_ROLE"
+      },
+      {
+        "kind": "constant",
+        "line": 331,
+        "name": "APROBACION_RE"
+      },
+      {
+        "kind": "def",
+        "line": 337,
+        "name": "_needs_approval"
+      },
+      {
+        "kind": "def",
+        "line": 344,
+        "name": "_slug"
+      },
+      {
+        "kind": "def",
+        "line": 352,
+        "name": "build_trigger"
+      },
+      {
+        "kind": "def",
+        "line": 394,
+        "name": "add_step"
+      },
+      {
+        "kind": "def",
+        "line": 578,
+        "name": "_primary_signal"
+      },
+      {
+        "kind": "def",
+        "line": 584,
+        "name": "fingerprint"
+      }
+    ],
+    "backend/health.py": [
+      {
+        "kind": "constant",
+        "line": 18,
+        "name": "STATUS_OK"
+      },
+      {
+        "kind": "constant",
+        "line": 19,
+        "name": "STATUS_OMITIDO"
+      },
+      {
+        "kind": "constant",
+        "line": 20,
+        "name": "STATUS_ERROR"
+      },
+      {
+        "kind": "def",
+        "line": 23,
+        "name": "health_snapshot"
+      },
+      {
+        "kind": "def",
+        "line": 50,
+        "name": "health_payload"
+      }
+    ],
+    "backend/mcp_router.py": [
+      {
+        "kind": "constant",
+        "line": 46,
+        "name": "BACKEND_DIR"
+      },
+      {
+        "kind": "constant",
+        "line": 53,
+        "name": "XRAY_DIR"
+      },
+      {
+        "kind": "constant",
+        "line": 59,
+        "name": "DEPLOY_DIR"
+      },
+      {
+        "kind": "constant",
+        "line": 64,
+        "name": "CANVAS_ROOT"
+      },
+      {
+        "kind": "constant",
+        "line": 65,
+        "name": "FRONTEND_ROOT"
+      },
+      {
+        "kind": "constant",
+        "line": 66,
+        "name": "GUIDE_DIR"
+      },
+      {
+        "kind": "constant",
+        "line": 72,
+        "name": "PROTOCOL_VERSION"
+      },
+      {
+        "kind": "constant",
+        "line": 73,
+        "name": "SERVER_NAME"
+      },
+      {
+        "kind": "constant",
+        "line": 74,
+        "name": "SERVER_VERSION"
+      },
+      {
+        "kind": "constant",
+        "line": 76,
+        "name": "MAX_PAYLOAD_BYTES"
+      },
+      {
+        "kind": "constant",
+        "line": 77,
+        "name": "MAX_SESSIONS"
+      },
+      {
+        "kind": "constant",
+        "line": 78,
+        "name": "DEFAULT_ALLOWED_ORIGINS"
+      },
+      {
+        "kind": "constant",
+        "line": 87,
+        "name": "WINDOW_ALLOWLIST"
+      },
+      {
+        "kind": "constant",
+        "line": 93,
+        "name": "WINDOW_NAMES"
+      },
+      {
+        "kind": "constant",
+        "line": 99,
+        "name": "TOOL_CATALOG"
+      },
+      {
+        "kind": "def",
+        "line": 180,
+        "name": "_new_session"
+      },
+      {
+        "kind": "def",
+        "line": 189,
+        "name": "_session_ok"
+      },
+      {
+        "kind": "def",
+        "line": 200,
+        "name": "_close_session"
+      },
+      {
+        "kind": "def",
+        "line": 207,
+        "name": "_allowed_origins"
+      },
+      {
+        "kind": "def",
+        "line": 212,
+        "name": "_origin_ok"
+      },
+      {
+        "kind": "def",
+        "line": 220,
+        "name": "_payload_has_credentials"
+      },
+      {
+        "kind": "def",
+        "line": 236,
+        "name": "_jsonrpc_error"
+      },
+      {
+        "kind": "def",
+        "line": 243,
+        "name": "_text_result"
+      },
+      {
+        "kind": "def",
+        "line": 254,
+        "name": "_scan_files"
+      },
+      {
+        "kind": "def",
+        "line": 266,
+        "name": "_tool_memory_profile"
+      },
+      {
+        "kind": "def",
+        "line": 283,
+        "name": "_tool_memory_index"
+      },
+      {
+        "kind": "def",
+        "line": 317,
+        "name": "_render_payload"
+      },
+      {
+        "kind": "def",
+        "line": 328,
+        "name": "_tool_render_diagram"
+      },
+      {
+        "kind": "def",
+        "line": 347,
+        "name": "_tool_render_motion"
+      },
+      {
+        "kind": "def",
+        "line": 366,
+        "name": "_tool_audio_explain"
+      },
+      {
+        "kind": "def",
+        "line": 384,
+        "name": "_tool_xray_audit"
+      },
+      {
+        "kind": "def",
+        "line": 402,
+        "name": "_tool_deploy_plan"
+      },
+      {
+        "kind": "constant",
+        "line": 431,
+        "name": "TOOL_IMPL"
+      },
+      {
+        "kind": "def",
+        "line": 445,
+        "name": "_resolve_window"
+      },
+      {
+        "kind": "def",
+        "line": 457,
+        "name": "handle_rpc"
+      },
+      {
+        "kind": "def",
+        "line": 535,
+        "name": "_meta"
+      },
+      {
+        "kind": "def",
+        "line": 544,
+        "name": "mcp_endpoint"
+      },
+      {
+        "kind": "def",
+        "line": 584,
+        "name": "mcp_delete"
+      },
+      {
+        "kind": "def",
+        "line": 594,
+        "name": "mcp_health"
+      },
+      {
+        "kind": "def",
+        "line": 615,
+        "name": "_guide_modules_present"
+      },
+      {
+        "kind": "def",
+        "line": 622,
+        "name": "guide_status"
+      },
+      {
+        "kind": "def",
+        "line": 633,
+        "name": "guide_match"
+      }
+    ],
+    "frontend/shared/api.js": [
+      {
+        "kind": "function",
+        "line": 29,
+        "name": "escapeHtml"
+      },
+      {
+        "kind": "function",
+        "line": 35,
+        "name": "bytes"
+      },
+      {
+        "kind": "function",
+        "line": 42,
+        "name": "stamp"
+      },
+      {
+        "kind": "function",
+        "line": 44,
+        "name": "p"
+      },
+      {
+        "kind": "function",
+        "line": 50,
+        "name": "rawBase"
+      },
+      {
+        "kind": "const",
+        "line": 54,
+        "name": "fromWindow"
+      },
+      {
+        "kind": "function",
+        "line": 60,
+        "name": "apiBase"
+      },
+      {
+        "kind": "function",
+        "line": 62,
+        "name": "apiUrl"
+      },
+      {
+        "kind": "function",
+        "line": 70,
+        "name": "apiLabel"
+      },
+      {
+        "kind": "function",
+        "line": 79,
+        "name": "isSameOriginBase"
+      },
+      {
+        "kind": "function",
+        "line": 86,
+        "name": "fetchRaw"
+      },
+      {
+        "kind": "const",
+        "line": 90,
+        "name": "ctrl"
+      },
+      {
+        "kind": "const",
+        "line": 118,
+        "name": "reason"
+      },
+      {
+        "kind": "function",
+        "line": 127,
+        "name": "getHealth"
+      },
+      {
+        "kind": "function",
+        "line": 129,
+        "name": "renderDiagram"
+      },
+      {
+        "kind": "function",
+        "line": 133,
+        "name": "renderMotion"
+      },
+      {
+        "kind": "function",
+        "line": 137,
+        "name": "convert"
+      },
+      {
+        "kind": "function",
+        "line": 141,
+        "name": "audioExplain"
+      },
+      {
+        "kind": "function",
+        "line": 149,
+        "name": "audioIdFrom"
+      },
+      {
+        "kind": "function",
+        "line": 159,
+        "name": "audioUrl"
+      },
+      {
+        "kind": "function",
+        "line": 162,
+        "name": "xray"
+      },
+      {
+        "kind": "function",
+        "line": 166,
+        "name": "normalizeHealth"
+      },
+      {
+        "kind": "const",
+        "line": 174,
+        "name": "src"
+      },
+      {
+        "kind": "const",
+        "line": 176,
+        "name": "it"
+      },
+      {
+        "kind": "function",
+        "line": 187,
+        "name": "statusOf"
+      },
+      {
+        "kind": "function",
+        "line": 195,
+        "name": "findProgress"
+      },
+      {
+        "kind": "function",
+        "line": 218,
+        "name": "readStoredTheme"
+      },
+      {
+        "kind": "function",
+        "line": 225,
+        "name": "applyTheme"
+      },
+      {
+        "kind": "function",
+        "line": 237,
+        "name": "currentTheme"
+      },
+      {
+        "kind": "function",
+        "line": 240,
+        "name": "renderThemePicker"
+      },
+      {
+        "kind": "const",
+        "line": 250,
+        "name": "sw"
+      },
+      {
+        "kind": "function",
+        "line": 265,
+        "name": "bootTheme"
+      },
+      {
+        "kind": "const",
+        "line": 267,
+        "name": "id"
+      },
+      {
+        "kind": "function",
+        "line": 272,
+        "name": "toParent"
+      },
+      {
+        "kind": "function",
+        "line": 279,
+        "name": "currentPage"
+      },
+      {
+        "kind": "function",
+        "line": 284,
+        "name": "onParentMessage"
+      },
+      {
+        "kind": "function",
+        "line": 294,
+        "name": "toast"
+      },
+      {
+        "kind": "function",
+        "line": 309,
+        "name": "setBadge"
+      },
+      {
+        "kind": "function",
+        "line": 315,
+        "name": "describe"
+      }
+    ],
+    "frontend/shared/ws.js": [
+      {
+        "kind": "function",
+        "line": 27,
+        "name": "normalizeOrigin"
+      },
+      {
+        "kind": "function",
+        "line": 34,
+        "name": "httpOrigin"
+      },
+      {
+        "kind": "const",
+        "line": 35,
+        "name": "base"
+      },
+      {
+        "kind": "function",
+        "line": 40,
+        "name": "wsUrl"
+      },
+      {
+        "kind": "const",
+        "line": 41,
+        "name": "base"
+      },
+      {
+        "kind": "function",
+        "line": 56,
+        "name": "emit"
+      },
+      {
+        "kind": "function",
+        "line": 63,
+        "name": "set"
+      },
+      {
+        "kind": "function",
+        "line": 69,
+        "name": "on"
+      },
+      {
+        "kind": "function",
+        "line": 76,
+        "name": "snapshot"
+      },
+      {
+        "kind": "function",
+        "line": 83,
+        "name": "disconnect"
+      },
+      {
+        "kind": "function",
+        "line": 91,
+        "name": "connect"
+      }
+    ],
+    "frontend/w_mcp.js": [
+      {
+        "kind": "function",
+        "line": 22,
+        "name": "readConfig"
+      },
+      {
+        "kind": "function",
+        "line": 44,
+        "name": "McpClient"
+      },
+      {
+        "kind": "const",
+        "line": 90,
+        "name": "ct"
+      },
+      {
+        "kind": "const",
+        "line": 100,
+        "name": "msg"
+      },
+      {
+        "kind": "const",
+        "line": 107,
+        "name": "reason"
+      },
+      {
+        "kind": "function",
+        "line": 168,
+        "name": "esc"
+      },
+      {
+        "kind": "function",
+        "line": 174,
+        "name": "mount"
+      },
+      {
+        "kind": "function",
+        "line": 211,
+        "name": "setStatus"
+      },
+      {
+        "kind": "function",
+        "line": 216,
+        "name": "setOut"
+      },
+      {
+        "kind": "function",
+        "line": 220,
+        "name": "fillTools"
+      }
+    ]
+  }
+}

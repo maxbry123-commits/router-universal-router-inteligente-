@@ -1,0 +1,285 @@
+{
+  "commit_sha": "bb3559e66f9ca160031b9da3c5b65aecb807fa45",
+  "endpoints": [
+    {
+      "evidence": "backend/api.py:162 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 162,
+      "method": "GET",
+      "path": "/health",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:171 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 171,
+      "method": "POST",
+      "path": "/render/diagram",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:180 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 180,
+      "method": "POST",
+      "path": "/render/motion",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:189 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 189,
+      "method": "POST",
+      "path": "/convert",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:198 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 198,
+      "method": "POST",
+      "path": "/audio/explain",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:211 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 211,
+      "method": "GET",
+      "path": "/audio/{audio_id}",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:241 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 241,
+      "method": "POST",
+      "path": "/gaps",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:260 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 260,
+      "method": "GET",
+      "path": "/gaps",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:273 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 273,
+      "method": "GET",
+      "path": "/xray/{artifact}",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:299 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 299,
+      "method": "POST",
+      "path": "/xray/audit",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:340 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 340,
+      "method": "GET",
+      "path": "/",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:384 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 384,
+      "method": "GET",
+      "path": "/ui",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/mcp_router.py:543 sha256:8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "file": "backend/mcp_router.py",
+      "line": 543,
+      "method": "POST",
+      "path": "/mcp",
+      "sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052"
+    },
+    {
+      "evidence": "backend/mcp_router.py:583 sha256:8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "file": "backend/mcp_router.py",
+      "line": 583,
+      "method": "DELETE",
+      "path": "/mcp",
+      "sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052"
+    },
+    {
+      "evidence": "backend/mcp_router.py:593 sha256:8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "file": "backend/mcp_router.py",
+      "line": 593,
+      "method": "GET",
+      "path": "/mcp/health",
+      "sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052"
+    },
+    {
+      "evidence": "backend/mcp_router.py:621 sha256:8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "file": "backend/mcp_router.py",
+      "line": 621,
+      "method": "GET",
+      "path": "/guide/status",
+      "sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052"
+    },
+    {
+      "evidence": "backend/mcp_router.py:632 sha256:8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "file": "backend/mcp_router.py",
+      "line": 632,
+      "method": "POST",
+      "path": "/guide/match",
+      "sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052"
+    }
+  ],
+  "env_vars": [
+    {
+      "evidence": "backend/adapters/excalidraw.py:30 sha256:83b755c16dac84601af573b645d280818527f69620fd703c39ef1f8d28583d0f",
+      "file": "backend/adapters/excalidraw.py",
+      "line": 30,
+      "name": "EXCALIDRAW_URL",
+      "sha256": "83b755c16dac84601af573b645d280818527f69620fd703c39ef1f8d28583d0f"
+    },
+    {
+      "evidence": "backend/adapters/hyperframes.py:34 sha256:1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b",
+      "file": "backend/adapters/hyperframes.py",
+      "line": 34,
+      "name": "HYPERFRAMES_URL",
+      "sha256": "1a9e1a41869cf707b0bcfc5ced316ce8bc29d8ef6e2226b063532193e2acec8b"
+    },
+    {
+      "evidence": "backend/api.py:72 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 72,
+      "name": "XRAY_OUT_DIR",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:97 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 97,
+      "name": "CANVAS_ALLOWED_ORIGINS",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:234 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 234,
+      "name": "XRAY_STORE",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/api.py:238 sha256:ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8",
+      "file": "backend/api.py",
+      "line": 238,
+      "name": "XRAY_INVENTORY",
+      "sha256": "ed45a581a500ec854fc6956a629f78cc7e8822fd57c1920631ebd9b88f3a74a8"
+    },
+    {
+      "evidence": "backend/audio_engine.py:35 sha256:c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76",
+      "file": "backend/audio_engine.py",
+      "line": 35,
+      "name": "CANVAS_AUDIO_DIR",
+      "sha256": "c99a889aa081be463093146bece6fc4a14f64e8a52b882241f8768d5940cdf76"
+    },
+    {
+      "evidence": "backend/deploy/deploy_engine.py:50 sha256:bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "file": "backend/deploy/deploy_engine.py",
+      "line": 50,
+      "name": "DEPLOY_MAX_FILE_BYTES",
+      "sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501"
+    },
+    {
+      "evidence": "backend/deploy/deploy_engine.py:51 sha256:bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501",
+      "file": "backend/deploy/deploy_engine.py",
+      "line": 51,
+      "name": "DEPLOY_MAX_TOTAL_BYTES",
+      "sha256": "bb739bee729f4ce0f1b4ded0df7d8faf768667d84b22ee4deb784f5fd283f501"
+    },
+    {
+      "evidence": "backend/guide/discovery.py:42 sha256:143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "file": "backend/guide/discovery.py",
+      "line": 42,
+      "name": "GUIDE_SEARCH_PROVIDERS",
+      "sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4"
+    },
+    {
+      "evidence": "backend/guide/discovery.py:43 sha256:143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "file": "backend/guide/discovery.py",
+      "line": 43,
+      "name": "GUIDE_SEARCH_TIMEOUT_SECONDS",
+      "sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4"
+    },
+    {
+      "evidence": "backend/guide/discovery.py:44 sha256:143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "file": "backend/guide/discovery.py",
+      "line": 44,
+      "name": "GUIDE_DISCOVERY_BUDGET_TOKENS",
+      "sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4"
+    },
+    {
+      "evidence": "backend/guide/discovery.py:45 sha256:143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "file": "backend/guide/discovery.py",
+      "line": 45,
+      "name": "GUIDE_DISCOVERY_CACHE_TTL_SECONDS",
+      "sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4"
+    },
+    {
+      "evidence": "backend/guide/discovery.py:125 sha256:143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "file": "backend/guide/discovery.py",
+      "line": 125,
+      "name": "GUIDE_REPO_ROOT",
+      "sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4"
+    },
+    {
+      "evidence": "backend/guide/discovery.py:400 sha256:143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4",
+      "file": "backend/guide/discovery.py",
+      "line": 400,
+      "name": "GUIDE_DISCOVERY_CACHE_DIR",
+      "sha256": "143e94a8993c8b13295f999b4789da0631d737e9fec2c3d25ee7b8ab97d603d4"
+    },
+    {
+      "evidence": "backend/guide/match.py:60 sha256:f11620fb43a928c71a54f7b918cc4b1ce5f2016cc1f13a854773e5525144723d",
+      "file": "backend/guide/match.py",
+      "line": 60,
+      "name": "GUIDE_ACTIONS_CATALOG",
+      "sha256": "f11620fb43a928c71a54f7b918cc4b1ce5f2016cc1f13a854773e5525144723d"
+    },
+    {
+      "evidence": "backend/mcp_router.py:76 sha256:8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "file": "backend/mcp_router.py",
+      "line": 76,
+      "name": "MCP_MAX_PAYLOAD_BYTES",
+      "sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052"
+    },
+    {
+      "evidence": "backend/mcp_router.py:77 sha256:8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "file": "backend/mcp_router.py",
+      "line": 77,
+      "name": "MCP_MAX_SESSIONS",
+      "sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052"
+    },
+    {
+      "evidence": "backend/mcp_router.py:208 sha256:8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "file": "backend/mcp_router.py",
+      "line": 208,
+      "name": "MCP_ALLOWED_ORIGINS",
+      "sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052"
+    },
+    {
+      "evidence": "backend/mcp_router.py:418 sha256:8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052",
+      "file": "backend/mcp_router.py",
+      "line": 418,
+      "name": "DEPLOY_WORKDIR",
+      "sha256": "8acf93638d20f532825dc31986e06bfc81a973b9a9cbddd97efbf727511d4052"
+    }
+  ],
+  "generated_at": "2026-11-16T08:00:06Z",
+  "schema": "xray-contracts/1"
+}

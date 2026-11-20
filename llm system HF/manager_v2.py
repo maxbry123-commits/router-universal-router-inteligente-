@@ -1,0 +1,301 @@
+"""manager_v2.py — Idle unload 15 min (HF Plane, v2)
+NOTA: NO reemplaza manager.py existente (commit 3fa2974). Corre paralelo.
+"""
+from fastapi import FastAPI, Request, HTTPException, Header
+from fastapi.responses import JSONResponse, StreamingResponse
+import httpx, os, json, hashlib, subprocess, time, signal
+
+ROUTER_API_KEY = os.getenv("ROUTER_API_KEY")
+if not ROUTER_API_KEY:
+    raise RuntimeError("FATAL: ROUTER_API_KEY no configurada.")
+
+MODEL_ID = os.getenv("MODEL_ID", "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF")
+MODEL_FILE = os.getenv("MODEL_FILE", "qwen2.5-coder-0.5b-instruct-q5_k_m.gguf")
+MODEL_PATH = os.getenv("MODEL_PATH", f"/data/models/{MODEL_FILE}")
+# PASO 5: el Space se paga por HORA de contenedor, no por CPU. Descargar el
+# modelo tras 30 min de inactividad solo hacia que la PRIMERA peticion espere
+# la carga. Con IDLE_UNLOAD_S=0 el modelo queda caliente siempre.
+IDLE_UNLOAD_S = int(os.getenv("IDLE_UNLOAD_S", "0"))
+LLAMA_TIMEOUT_S = int(os.getenv("LLAMA_TIMEOUT_S", "300"))
+LLAMA_PORT = 8082  # puerto distinto a manager.py (8081)
+
+
+def _detect_threads(default: int = 8,
+                    cgroup_v2: str = "/sys/fs/cgroup/cpu.max",
+                    cgroup_v1_quota: str = "/sys/fs/cgroup/cpu/cpu.cfs_quota_us",
+                    cgroup_v1_period: str = "/sys/fs/cgroup/cpu/cpu.cfs_period_us") -> int:
+    """Numero real de hilos para llama-server.
+
+    En un Space de HF (cpu-upgrade = 8 vCPU) el contenedor ve NPROC=64 (los
+    nucleos del host), pero la cuota real es de 8 vCPU. Sin --threads,
+    llama.cpp usa std::thread::hardware_concurrency() -> 64 hilos sobre 8 vCPU
+    (oversubscribcion) y se pierde 3-7x de velocidad de generacion.
+    Aqui se lee la cuota real del cgroup (v2 y v1). Override: LLAMA_THREADS.
+    """
+    env = os.getenv("LLAMA_THREADS")
+    if env:
+        try:
+            n = int(env)
+            if n > 0:
+                return n
+        except ValueError:
+            pass
+    try:  # cgroup v2: "<quota> <period>" o "max <period>"
+        with open(cgroup_v2, "r", encoding="utf-8") as f:
+            parts = f.read().split()
+        if len(parts) >= 2 and parts[0] != "max":
+            quota, period = int(parts[0]), int(parts[1])
+            if quota > 0 and period > 0:
+                return max(1, int(round(quota / period)))
+    except Exception:
+        pass
+    try:  # cgroup v1
+        with open(cgroup_v1_quota, "r", encoding="utf-8") as f:
+            quota = int(f.read().strip())
+        with open(cgroup_v1_period, "r", encoding="utf-8") as f:
+            period = int(f.read().strip())
+        if quota > 0 and period > 0:
+            return max(1, int(round(quota / period)))
+    except Exception:
+        pass
+    return default
+
+
+LLAMA_THREADS = _detect_threads()
+HERE = os.path.dirname(os.path.abspath(__file__))
+REGISTRY_PATH = os.path.join(HERE, "registry.json")
+API_PORT = 7861  # puerto distinto a manager.py (7860)
+
+app = FastAPI()
+_llama_proc = None
+_last_call = 0.0
+_model_loaded = False
+_model_sha256 = None
+
+def _sha256_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def _verify_model():
+    global _model_sha256
+    if not os.path.exists(MODEL_PATH):
+        return False
+    actual = _sha256_file(MODEL_PATH)
+    _model_sha256 = actual
+    try:
+        with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
+            reg = json.load(f)
+        space = os.getenv("SPACE_ID", "s1")
+        entry = reg.get("models", {}).get(space, {})
+        expected = entry.get("sha256")
+        if not expected:
+            # El SPACE_ID no esta definido en los Spaces: se resuelve por MODEL_FILE
+            # (el nombre real del fichero en el registro), que es lo que se descarga.
+            models = reg.get("models") or {}
+            candidatos = []
+            for k, v in models.items():
+                if isinstance(v, dict):
+                    if v.get("file"):
+                        candidatos.append(v)
+                    for k2, v2 in v.items():
+                        if isinstance(v2, dict) and v2.get("file"):
+                            candidatos.append(v2)
+            for c in candidatos:
+                if c.get("file") == MODEL_FILE or str(c.get("file", "")).endswith(MODEL_FILE):
+                    expected = c.get("sha256")
+                    if expected:
+                        break
+        if not expected:
+            entry["sha256"] = actual
+            entry["path"] = MODEL_PATH
+            reg.setdefault("models", {})[space] = entry
+            with open(REGISTRY_PATH, "w", encoding="utf-8") as f:
+                json.dump(reg, f, indent=2, ensure_ascii=False)
+            return True
+        return expected == actual
+    except Exception:
+        return True
+
+def _load_llama():
+    global _llama_proc, _model_loaded, _last_call
+    if _llama_proc is not None:
+        return
+    if not _verify_model():
+        _model_loaded = False
+        return
+    cmd = ["llama-server", "--model", MODEL_PATH, "--port", str(LLAMA_PORT),
+           "--ctx-size", "4096", "--n-gpu-layers", "0"]
+    # --threads explicito: evita la oversubscribcion del cgroup de HF
+    # (NPROC=64 con cuota de 8 vCPU -> 3-7x mas lento). Se anade FUERA de la
+    # lista para no romper el parche --reasoning off que aplica entrypoint_v5.sh
+    # (sed sobre '"--n-gpu-layers", "0"]').
+    cmd += ["--threads", str(LLAMA_THREADS),
+            "--threads-batch", str(LLAMA_THREADS)]
+    # KV cache cuantizado: MEDIDO en vivo el 2026-11-19 -> NO compensa.
+    #   0.5B  97,0 -> 93,1 tok/s (-4 %)   RAM 633 -> 603 MB (-4,7 %)
+    #   350M  139,7 -> 137,2 tok/s (-2 %)  RAM 462 -> 433 MB (-6,3 %)
+    #   0.8B   56,5 -> 47,9 tok/s (-15 %)  RAM 953 -> 861 MB (-9,7 %)
+    # Ahorra RAM que aqui no sobra (32 GB) y quita velocidad: queda OFF.
+    # Se deja el interruptor por si el hardware cambia (cuantizar a q4 si acaso).
+    if os.getenv("LLAMA_KV_QUANT", "0") == "1":
+        cmd += ["--cache-type-k", "q8_0", "--cache-type-v", "q8_0"]
+    # Flags de CPU medidos/verificados contra el binario oficial b12000:
+    #   --cpu-strict 1  : colocacion estricta de CPU (+5% medido en la literatura)
+    #   -ub 1024        : micro-lote mayor (el Job de flags medio +12% en el 0.8B)
+    #   --cache-reuse   : reuso del prefijo de prompt (TTFT en bucles agenticos;
+    #                     en los modelos con rope por secciones es un no-op)
+    # MEDIDO en vivo (2026-11-19): ningun flag extra mejora de forma
+    # reproducible en estos 3 modelos (--cpu-strict 1: +1,6% / -2,8% / -15%;
+    # -ub 1024: -35% en el 350M; --cache-reuse 256: -11% en el 0.8B).
+    # Config final: solo --threads/--threads-batch (cuota real del cgroup).
+    _llama_proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    _model_loaded = True
+    _last_call = time.time()
+
+def _rss_mb() -> float:
+    """RAM real (RSS) del proceso llama-server en MB (0 si no esta cargado)."""
+    try:
+        if _llama_proc is None:
+            return 0.0
+        with open("/proc/%d/status" % _llama_proc.pid, "r", encoding="utf-8") as f:
+            for ln in f:
+                if ln.startswith("VmRSS:"):
+                    return round(int(ln.split()[1]) / 1024.0, 1)
+    except Exception:
+        pass
+    return 0.0
+
+
+def _esperar_llama_ready(timeout_s: int = 90) -> bool:
+    """Espera a que llama-server este listo (su /health responde).
+
+    Sin esto, la peticion se reenviaba nada mas arrancar el servidor y
+    devolvia 503 'Loading model' (el usuario veia un error en vez de esperar).
+    """
+    import urllib.request as _u
+    deadline = time.time() + timeout_s
+    while time.time() < deadline:
+        try:
+            with _u.urlopen("http://127.0.0.1:%d/health" % LLAMA_PORT, timeout=3) as r:
+                if r.status == 200:
+                    return True
+        except Exception:
+            pass
+        time.sleep(1.0)
+    return False
+
+
+def _unload_llama():
+    global _llama_proc, _model_loaded
+    if _llama_proc is not None:
+        _llama_proc.send_signal(signal.SIGTERM)
+        try:
+            _llama_proc.wait(timeout=10)
+        except Exception:
+            _llama_proc.kill()
+        _llama_proc = None
+    _model_loaded = False
+
+def _idle_check():
+    if IDLE_UNLOAD_S > 0 and _llama_proc is not None and (time.time() - _last_call) > IDLE_UNLOAD_S:
+        _unload_llama()
+
+@app.get("/health")
+def health():
+    _idle_check()
+    return {"status": "ok", "model_loaded": _model_loaded, "model_id": MODEL_ID,
+            "model_file": MODEL_FILE, "sha256": _model_sha256,
+            "idle_unload_s": IDLE_UNLOAD_S, "api_port": API_PORT,
+            "llama_threads": LLAMA_THREADS,
+            "rss_mb": _rss_mb(),
+            "auto_pull": (AUTO_PULL.status() if AUTO_PULL is not None else {"enabled": False})}
+
+@app.post("/v1/chat/completions")
+async def chat_completions(request: Request, x_api_key: str = Header(None)):
+    if x_api_key != ROUTER_API_KEY:
+        raise HTTPException(401, "Invalid API Key")
+    _idle_check()
+    _load_llama()
+    if not _model_loaded:
+        raise HTTPException(503, "Modelo no disponible")
+    if not _esperar_llama_ready():
+        raise HTTPException(503, "El modelo no esta listo tras esperar la carga")
+    body = await request.json()
+    stream = bool(body.get("stream", False))
+    global _last_call
+    _last_call = time.time()
+    payload = {"messages": body.get("messages", []),
+               "temperature": body.get("temperature", 0.1),
+               "max_tokens": body.get("max_tokens", 512), "stream": stream}
+    if stream:
+        async def sse():
+            async with httpx.AsyncClient(timeout=LLAMA_TIMEOUT_S) as client:
+                async with client.stream("POST",
+                    f"http://127.0.0.1:{LLAMA_PORT}/v1/chat/completions",
+                    json=payload) as r:
+                    async for line in r.aiter_lines():
+                        yield line + "\n"
+        return StreamingResponse(sse(), media_type="text/event-stream")
+    async with httpx.AsyncClient(timeout=LLAMA_TIMEOUT_S) as client:
+        r = await client.post(
+            f"http://127.0.0.1:{LLAMA_PORT}/v1/chat/completions", json=payload)
+        if r.status_code >= 400:
+            raise HTTPException(502, r.text[:300])
+        return JSONResponse(r.json())
+
+@app.on_event("shutdown")
+def shutdown():
+    _unload_llama()
+
+# ─── AUTO-PULL: cada push a GitHub se aplica en el Space VIVO, sin reiniciar ───
+def _reload_matar_llama():
+    """Antes de sustituir el proceso, para su llama-server hijo (el puerto 8082
+    lo ocupa en exclusiva: si no, el manager nuevo no podria arrancarlo)."""
+    global _llama_proc
+    try:
+        if _llama_proc is not None:
+            _llama_proc.send_signal(signal.SIGTERM)
+            try:
+                _llama_proc.wait(timeout=10)
+            except Exception:
+                _llama_proc.kill()
+            _llama_proc = None
+            print("[auto-pull] llama-server detenido para la recarga")
+    except Exception as _e:
+        print(f"[auto-pull] no se pudo parar llama-server: {_e}")
+    import sys as _sys
+    import os as _os
+    _os.execv(_sys.executable, [_sys.executable] + list(_sys.argv))
+
+
+def _arranca_auto_pull():
+    try:
+        import importlib.util as _ilu
+        import os as _os
+        _here = _os.path.dirname(_os.path.abspath(__file__))
+        _mod = None
+        for _up in range(1, 6):
+            _cand = _os.path.join(_here, *([_os.pardir] * _up), "external", "core", "auto_pull.py")
+            if _os.path.isfile(_cand):
+                _spec = _ilu.spec_from_file_location("auto_pull", _cand)
+                _mod = _ilu.module_from_spec(_spec)
+                _spec.loader.exec_module(_mod)
+                break
+        if _mod is None:
+            print("[auto-pull] no se encuentra external/core/auto_pull.py")
+            return None
+        _mod.start(on_reload=_reload_matar_llama)
+        return _mod
+    except Exception as _e:
+        print(f"[auto-pull] no arranca: {_e}")
+        return None
+
+AUTO_PULL = _arranca_auto_pull()
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=API_PORT)
