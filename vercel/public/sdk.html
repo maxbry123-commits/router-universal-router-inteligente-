@@ -90,6 +90,12 @@ code,pre,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .kv dt{color:var(--txt-mute)}
 .kv dd{margin:0;color:var(--txt);word-break:break-word}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.dos-cols{display:grid;grid-template-columns:1fr;gap:12px}
+.prop{border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--surface-alt);display:grid;grid-template-columns:1fr 1fr;gap:14px;position:relative}
+.prop-l,.prop-r{min-width:0}
+.prop .resumen{margin:0;padding-left:18px;font-size:12px;color:var(--txt-dim)}
+.prop .resumen li{margin-bottom:4px}
+@media (max-width:820px){.prop{grid-template-columns:1fr}}
 pre{background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--btn);padding:12px;
   overflow:auto;font-size:12px;line-height:1.5;max-height:340px;white-space:pre-wrap;word-break:break-word}
 .tag{display:inline-block;border:1px solid var(--border);background:var(--card);border-radius:20px;padding:4px 9px;
@@ -501,13 +507,20 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
     </dl>
   </details>
 </section>
+<section class="surface-card" id="externos">
+  <div class="row-between"><h2>Modelos externos verificados hoy (2026-11-19)</h2>
+  <div class="row"><span class="badge ok">4 funcionan</span><span class="badge err">21 no disponibles</span></div></div>
+  <p class="note">Cada modelo usa <b>SOLO su API</b>: /v1/nvidia nunca cae en Groq ni al reves (se elimino el
+  cambio automatico de proveedor). Los que no dan 200 se retiraron del selector para que el chat no falle.</p>
+  <div class="scroll"><table><thead><tr><th>Modelo</th><th>API</th><th>Estado</th><th>Tiempo real</th></tr></thead><tbody><tr><td><b>nvidia/nemotron-3.5-lightning-30b-a3b</b></td><td class='mono-sm'>NVIDIA</td><td><span class='chip ok'>200</span></td><td class='mono-sm'>3,1 s s</td></tr><tr><td><b>nvidia/nemotron-3.5-bolt-e4b</b></td><td class='mono-sm'>NVIDIA</td><td><span class='chip ok'>200</span></td><td class='mono-sm'>1,6 s s</td></tr><tr><td><b>openai/gpt-oss-20b</b></td><td class='mono-sm'>Groq</td><td><span class='chip ok'>200</span></td><td class='mono-sm'>0,4 s s</td></tr><tr><td><b>openai/gpt-oss-120b</b></td><td class='mono-sm'>Groq</td><td><span class='chip ok'>200</span></td><td class='mono-sm'>0,4 s s</td></tr><tr><td class='mono-sm'>meta/llama-3.1-8b-instruct</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>meta/llama-3.3-70b-instruct</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>nvidia/gpt-oss-20b</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>nvidia/gpt-oss-120b</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>nvidia/llama-3.1-nemotron-70b-instruct</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>mistralai/mistral-large-2411</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>qwen/qwen3-coder-480b-a35b-instruct</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>deepseek-ai/deepseek-r1</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>minimaxai/minimax-m3.1-flash</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>timeout 50 s</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>nvidia/nemotron-3-super-49b-v1.5</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>google/gemma-3-27b-it</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>nvidia/llama-3.3-nemotron-super-49b-v1.5</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>openai/gpt-oss-20b</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>llama-3.3-70b-versatile</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>llama-3.1-8b-instant</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>llama-3.1-70b-versatile</td><td class='mono-sm'>Groq</td><td><span class='chip no'>400</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>google/gemma3-27b-it</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>moonshotai/kimi-k2-instruct</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>qwen/qwen3-32b</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>deepseek-r1-distill-llama-70b</td><td class='mono-sm'>Groq</td><td><span class='chip no'>400</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>meta-llama/llama-4-scout-17b-16e-instruct</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr></tbody></table></div>
+</section>
 <section class="surface-card" id="cache">
   <h2>Caché y estado de la cola (real, medido ahora)</h2>
   <div class="grid3">
     <div><h3>Cache semantica del router</h3>
       <div class="flow"><b>mismo prompt</b><span class="arrow">&#10145;</span><b>hash sha256</b><span class="arrow">&#10145;</span><b>respuesta al instante</b></div>
-      <dl class="kv"><dt>TTL</dt><dd>300.0 s</dd><dt>Entradas</dt><dd>7</dd><dt>Aciertos</dt><dd>2</dd>
-      <dt>Fallos</dt><dd>7</dd><dt>Tasa</dt><dd>0.222</dd></dl>
+      <dl class="kv"><dt>TTL</dt><dd>300.0 s</dd><dt>Entradas</dt><dd>0</dd><dt>Aciertos</dt><dd>0</dd>
+      <dt>Fallos</dt><dd>0</dd><dt>Tasa</dt><dd>0.0</dd></dl>
       <p class="note">MEDIDO: 1a llamada 4,73 s -> 2a llamada <b>0,05 s</b> con
       <code>"cache": {"hit": true}</code> en la respuesta. El bucle agéntico no vuelve a generar.</p></div>
     <div><h3>Cola del Grupo 1 (3 espejos)</h3>
@@ -524,7 +537,7 @@ curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.spa
   &quot;max_in_flight&quot;: 4,
   &quot;libre&quot;: true,
   &quot;peak&quot;: 0,
-  &quot;uptime_s&quot;: 269.9,
+  &quot;uptime_s&quot;: 63.8,
   &quot;responde&quot;: true
  },
  &quot;espejos&quot;: [

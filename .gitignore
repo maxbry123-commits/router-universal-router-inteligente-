@@ -12,3 +12,6 @@ state/
 .tasks/
 .feedback.jsonl
 .audit.jsonl
+
+# output generado por el build de Vercel (lo genera vercel/build_public.py)
+/public/

@@ -3,7 +3,13 @@
   "framework": null,
   "buildCommand": "python3 build_public.py",
   "outputDirectory": "public",
-  "functions": { "api/chat.py": { "memory": 1024, "maxDuration": 60 } },
+  "functions": {
+    "api/chat.py": { "memory": 1024, "maxDuration": 60 }
+  },
+  "rewrites": [
+    { "source": "/health", "destination": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/health" },
+    { "source": "/live", "destination": "/LIVE_URL.json" }
+  ],
   "headers": [
     { "source": "/(.*)", "headers": [
       { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" },

@@ -445,9 +445,15 @@ var ACTIVE_BTN=[];
 
 function api(path){
   /* Mismo origen: el proxy sirve el chat y las rutas. Con ?api= se puede
-     apuntar a otro host. Sin destino NO se llama a la red (anti-ruido). */
+     apuntar a otro host. Sin destino NO se llama a la red (anti-ruido).
+     En Vercel el chat vive en Vercel (sin CPU) y las rutas /v1/* se piden
+     al Space vivo del Grupo 1; /api/chat se queda en Vercel (es el trigger). */
   var base=(new URLSearchParams(location.search).get('api')||'').replace(/\/$/,'');
   if(!base && location.protocol==='file:')return '';
+  if(!base && /(^|\.)vercel\.app$/.test(location.hostname) && path.indexOf('/api/')!==0){
+    var esp=(typeof ESPEJOS!=='undefined'&&ESPEJOS.length)?ESPEJOS:['https://comand-center-1-space-grupo-1-router-mvp-1.hf.space'];
+    base=esp[_espejo%esp.length];
+  }
   return base+path;
 }
 /* PASO 4: el Grupo 1 son 3 espejos con COLA. Si un espejo esta lleno (429)
@@ -463,7 +469,8 @@ function apiJSON(path,opts){
   if(!u)return Promise.reject(new Error('sin destino'));
   var h=Object.assign({'Content-Type':'application/json'},opts&&opts.headers||{});
   if(S.key)h['x-api-key']=S.key;
-  if(/(^|\.)vercel\.app$/.test(location.hostname))delete h['x-api-key'];  /* la lleva la funcion */
+  /* En Vercel la clave SI se manda: la funcion trigger la acepta del cliente y,
+     si no viene, usa la que tenga en sus variables de entorno. */
   var intento=0;
   function probar(destino){
     return fetch(destino,Object.assign({},opts,{headers:h})).then(function(r){

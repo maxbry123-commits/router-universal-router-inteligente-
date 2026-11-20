@@ -46,11 +46,11 @@ CORS = {
 }
 
 
-def _post(url, payload, timeout):
+def _post(url, payload, timeout, key):
     datos = json.dumps(payload).encode()
     req = urllib.request.Request(
         url + "/v1/chat/completions", data=datos, method="POST",
-        headers={"Content-Type": "application/json", "x-api-key": KEY},
+        headers={"Content-Type": "application/json", "x-api-key": key},
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:
         crudo = r.read().decode("utf-8", "replace")
@@ -63,6 +63,22 @@ def _post(url, payload, timeout):
 def handler(request):
     if request.method == "OPTIONS":
         return (204, CORS, "")
+
+    # La clave puede venir de las dos fuentes: la que teclea el usuario en el
+    # chat (cabecera x-api-key) o la variable de entorno de Vercel. Con una de
+    # las dos basta; no hace falta tocar el panel de Vercel.
+    key = ""
+    cabeceras = getattr(request, "headers", None) or {}
+    try:
+        key = cabeceras.get("x-api-key") or cabeceras.get("X-API-Key") or ""
+    except Exception:
+        key = ""
+    key = key or KEY
+    if not key:
+        return (401, CORS, json.dumps({"error": {
+            "message": "falta la clave del router: tecleala en el chat o define ROUTER_API_KEY en Vercel",
+            "http": 401}}))
+
     try:
         body = json.loads(request.body or b"{}")
     except Exception:
@@ -84,7 +100,7 @@ def handler(request):
     for intento in range(INTENTOS):
         base = MIRRORS[intento % len(MIRRORS)] if MIRRORS else BASE
         try:
-            status, data = _post(base.rstrip("/"), payload, TIMEOUT_S)
+            status, data = _post(base.rstrip("/"), payload, TIMEOUT_S, key)
             if status == 200:
                 data = dict(data)
                 data.setdefault("trigger", {})["vacio"] = False

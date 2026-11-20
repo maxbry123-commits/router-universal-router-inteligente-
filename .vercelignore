@@ -1,0 +1,58 @@
+# .vercelignore — Vercel solo necesita el frontend del chat + la funcion trigger.
+# Sin esto, el build sube el repo entero (>12 GB: componentes/, Main_Skills/,
+# agentes/donors, GGUF, datasets) y el build falla por tiempo/tamano.
+# OJO: esto NO borra nada del repo; solo acota lo que se sube al build.
+
+# frontend (se sirve) — NO excluir
+# chat-router/chat/**
+# vercel/**
+# LIVE_URL.json
+
+# la funcion trigger SIEMPRE sube (si el Root Directory es la raiz del repo)
+api/
+!api/chat.py
+
+# components third-party (GB)
+Main_Skills/
+componentes/
+chat-router/agentes/
+chat-router/canvas/
+chat-router/plan/
+chat-router/Loop cola wachdog/
+
+# motor y bancos (viven en HF, no en Vercel)
+"ROUTER MVP v1/"
+"llm system HF/"
+router_llm_hf/
+external/
+router/
+fichas/
+audit/
+ops/
+kernel/
+_quarantine/
+Readme/
+handoff/
+handoff central/
+"Yaiwes motor arquitecto/"
+"motores de descarga y extracción/"
+"SATÉLITE CENTRAL CONECCION/"
+
+# pesos y artefactos pesados
+*.gguf
+*.gguf.*
+**/*.gguf
+**/*.bin
+**/*.safetensors
+**/*.pt
+**/*.pth
+**/*.tar
+**/*.tar.gz
+**/*.zip
+
+# vcs y ruido
+.git/
+.github/
+**/.DS_Store
+**/__pycache__/
+**/*.pyc
