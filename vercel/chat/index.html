@@ -324,12 +324,27 @@ function sendMessage(){
   if(!S.endpoint){toast('Sin motor seleccionado');return;}
   S.messages.push({who:'user',text:text});input.value='';paintMessages();
   var st=el('status');if(st){st.textContent='● PENSANDO';st.className='badge warning';}
-  fetch(chatUrl(S.endpoint),{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':S.key},
-    body:JSON.stringify({model:S.model,messages:[{role:'user',content:text}]})
-  }).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
-  .then(function(res){
+  /* ARRANQUE AUTO: Hugging Face devuelve 404 (y 503 "Loading model") mientras el
+     Space se despierta o reinicia. Se reintenta: la propia llamada lo despierta,
+     asi que el chat ARRANCA solo en vez de quedarse muerto. */
+  var intentos=0;
+  function enviar(){
+    return fetch(chatUrl(S.endpoint),{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':S.key},
+      body:JSON.stringify({model:S.model,messages:[{role:'user',content:text}]})
+    }).then(function(r){
+      if((r.status===404||r.status===503)&&intentos<3){
+        intentos++;
+        var bd=el('status');
+        if(bd){bd.textContent='● DESPERTANDO ESPACIO ('+intentos+'/3)';bd.className='badge warning';}
+        return new Promise(function(r2){setTimeout(function(){r2();},8000);}).then(enviar);
+      }
+      return r.json().then(function(j){return {ok:r.ok,j:j,status:r.status};})
+                   .catch(function(){return {ok:false,j:{detail:String(r.status)},status:r.status};});
+    });
+  }
+  enviar().then(function(res){
     var txt=res.ok?((res.j.choices&&res.j.choices[0]&&res.j.choices[0].message&&res.j.choices[0].message.content)||'Sin respuesta'):('HTTP '+(res.j.detail||res.j.error||'error'));
     var prefix=S.agent?('['+S.agent+'] '):'';
     /* MINIMAX 2F: la salida del chat se normaliza a NCT/APEX (F3 corto).
@@ -481,6 +496,13 @@ function apiJSON(path,opts){
           var otros=(e2&&typeof e2==='object'&&e2.otros_mirrors)||null;
           var next=otros&&otros.length?otros[0]:ESPEJOS[(_espejo=intento)%ESPEJOS.length];
           return new Promise(function(r2){setTimeout(function(){r2();},250);}).then(function(){return probar(next);});
+        }
+        /* 404 en HF = el Space se esta despertando: se reintenta el mismo destino
+           (la llamada lo despierta). Sin esto, abrir el chat en un Space dormido
+           se queda en HTTP 404 sin remedio. */
+        if(r.status===404&&intento<2){
+          intento++;
+          return new Promise(function(r2){setTimeout(function(){r2();},8000);}).then(function(){return probar(destino);});
         }
         if(!r.ok){var e=new Error((j&&(j.detail||j.error))||('HTTP '+r.status));e.status=r.status;throw e;}
         return j;
