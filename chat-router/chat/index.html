@@ -244,6 +244,15 @@ function paintThemes(){
 }
 
 /* ---------- URL: los grupos locales son /v1; los externos ya son ruta completa ---------- */
+/* Destino explicito del router: embebido (sitio publicado) o ?api= en la URL.
+   Sin regex y sin lineas partidas: se lee bien y no rompe el parser del modulo. */
+function destinoBase(){
+  var b = String(window.RIU_API_BASE || '');
+  if(!b){ try{ b = String(new URLSearchParams(location.search).get('api') || ''); }catch(e){ b=''; } }
+  while(b.length>1 && b.charAt(b.length-1)==='/') b = b.slice(0,-1);
+  return b;
+}
+
 function chatUrl(endpoint){
   /* Servido desde Vercel: TODO el trafico pasa por la funcion serverless /api/chat,
      que es la que despierta los Spaces del router (HF devuelve 404 si estan dormidos).
@@ -251,8 +260,7 @@ function chatUrl(endpoint){
      Servido desde CUALQUIER sitio (con destino explicito): todo pasa por el proxy
      del Grupo 1, que enruta a los 3 modelos locales + NVIDIA/Groq. */
   if(/(^|\.)vercel\.app$/.test(location.hostname))return '/api/chat';
-  var base=(window.RIU_API_BASE||'').replace(/\/$/'')||
-           (new URLSearchParams(location.search).get('api')||'').replace(/\/$/,'');
+  var base=destinoBase();
   if(base)return base+'/v1/chat/completions';
   if(!endpoint)return '';
   return /\/v1$/.test(endpoint)?endpoint+'/chat/completions':endpoint;
@@ -469,8 +477,7 @@ function api(path){
      En Vercel el chat vive en Vercel (sin CPU) y las rutas /v1/* se piden
      al Space vivo del Grupo 1; /api/chat se queda en Vercel (es el trigger).
      RIU_API_BASE es el destino embebido (sitio publicado): el proxy del Grupo 1. */
-  var base=(window.RIU_API_BASE||'').replace(/\/$/'')|
-           (new URLSearchParams(location.search).get('api')||'').replace(/\/$/,'');
+  var base=destinoBase();
   if(!base && location.protocol==='file:')return '';
   if(!base && /(^|\.)vercel\.app$/.test(location.hostname) && path.indexOf('/api/')!==0){
     var esp=(typeof ESPEJOS!=='undefined'&&ESPEJOS.length)?ESPEJOS:['https://comand-center-1-space-grupo-1-router-mvp-1.hf.space'];
@@ -712,6 +719,15 @@ function paintCuadros(){
   }).catch(function(){el('cuadro-memoria').innerHTML='<div class="list-row"><div class="name">SIN CONEXION</div></div>';});
   Promise.all([pAgents,pModes,pRoots,pMem]).then(function(){badge('cuadros-badge','cuadros al dia','success');});
 }
+
+/* ─── TRIGGER: el primer visitante DESPUERTA el router ───
+   Hugging Face devuelve 404 mientras el Space esta dormido o reiniciandose.
+   Al abrir el chat se hace un ping al proxy: esa llamada es la que lo arranca.
+   apiJSON ya reintenta el 404 (3 intentos, 8 s) y rota de espejo, asi que el
+   chat "arranca solo" en vez de quedarse en HTTP 404. */
+setTimeout(function(){
+  try{ apiJSON('/health').catch(function(){}); }catch(e){}
+},400);
 })();
 </script>
 <script type="module">
@@ -726,19 +742,6 @@ function _persistApiKey() {
 }
 document.addEventListener('DOMContentLoaded', _persistApiKey);
 
-/* ─── TRIGGER: el primer visitante DESPUERTA el router ───
-   Hugging Face devuelve 404 mientras el Space esta dormido o reiniciandose.
-   Al abrir el chat se hace un ping al proxy: esa llamada es la que lo arranca.
-   apiJSON ya reintenta el 404 (3 intentos, 8 s) y rota de espejo, asi que el
-   chat "arranca solo" en vez de quedarse en HTTP 404. */
-(function(){
-  function trigger(){
-    try{ apiJSON('/health').catch(function(){}); }catch(e){}
-  }
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',trigger);
-  }else{ trigger(); }
-})();
 </script>
 </body>
 </html>
