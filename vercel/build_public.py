@@ -62,20 +62,41 @@ def _live_url():
 
 
 def _copiar_arbol(origen, destino):
+    """Copia el frontend al destino con DOS layouts:
+      L1  <dest>/index.html + <dest>/ui/*        (index en la raiz)
+      L2  <dest>/chat/index.html + <dest>/chat/ui/*  (index dentro de chat/)
+    El deployment vivo de Vercel usa L2 (su / sirve YAIWES - Organizacion y sus
+    assets estan en /chat/ui/), asi que se generan los dos: asi el build vale
+    con el output directory que tenga configurado el proyecto.
+    """
     if os.path.isdir(destino):
         shutil.rmtree(destino)
-    shutil.copytree(origen, destino)
-    # el index publico es el chat
+    os.makedirs(destino, exist_ok=True)
+
+    def _ui_de(dest_ui):
+        os.makedirs(dest_ui, exist_ok=True)
+        src_ui = os.path.join(origen, "ui")
+        if os.path.isdir(src_ui):
+            for n in os.listdir(src_ui):
+                s = os.path.join(src_ui, n)
+                if os.path.isfile(s):
+                    shutil.copyfile(s, os.path.join(dest_ui, n))
+        with open(os.path.join(dest_ui, "config.js"), "w", encoding="utf-8") as f:
+            f.write(CONFIG_JS.replace("__LIVE__", _live_url())
+                             .replace("__ESPACIO__", SPACE_VIVO)
+                             .replace("__ESPACIOS__", json.dumps(ESPEJOS)))
+
     idx = os.path.join(origen, "index.html")
+    # L1
     if os.path.isfile(idx):
         shutil.copyfile(idx, os.path.join(destino, "index.html"))
-    # config del frontend con el Space vivo
-    ui = os.path.join(destino, "ui")
-    os.makedirs(ui, exist_ok=True)
-    with open(os.path.join(ui, "config.js"), "w", encoding="utf-8") as f:
-        f.write(CONFIG_JS.replace("__LIVE__", _live_url())
-                         .replace("__ESPACIO__", SPACE_VIVO)
-                         .replace("__ESPACIOS__", json.dumps(ESPEJOS)))
+    _ui_de(os.path.join(destino, "ui"))
+    # L2
+    chat = os.path.join(destino, "chat")
+    os.makedirs(chat, exist_ok=True)
+    if os.path.isfile(idx):
+        shutil.copyfile(idx, os.path.join(chat, "index.html"))
+    _ui_de(os.path.join(chat, "ui"))
     # URL viva del router
     live = os.path.join(RAIZ, "LIVE_URL.json")
     if os.path.isfile(live):
