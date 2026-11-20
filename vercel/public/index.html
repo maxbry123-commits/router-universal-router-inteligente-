@@ -247,8 +247,13 @@ function paintThemes(){
 function chatUrl(endpoint){
   /* Servido desde Vercel: TODO el trafico pasa por la funcion serverless /api/chat,
      que es la que despierta los Spaces del router (HF devuelve 404 si estan dormidos).
-     Servido desde el Space: se llama al proxy directamente. */
+     Servido desde el Space: se llama al proxy directamente.
+     Servido desde CUALQUIER sitio (con destino explicito): todo pasa por el proxy
+     del Grupo 1, que enruta a los 3 modelos locales + NVIDIA/Groq. */
   if(/(^|\.)vercel\.app$/.test(location.hostname))return '/api/chat';
+  var base=(window.RIU_API_BASE||'').replace(/\/$/'')||
+           (new URLSearchParams(location.search).get('api')||'').replace(/\/$/,'');
+  if(base)return base+'/v1/chat/completions';
   if(!endpoint)return '';
   return /\/v1$/.test(endpoint)?endpoint+'/chat/completions':endpoint;
 }
@@ -462,8 +467,10 @@ function api(path){
   /* Mismo origen: el proxy sirve el chat y las rutas. Con ?api= se puede
      apuntar a otro host. Sin destino NO se llama a la red (anti-ruido).
      En Vercel el chat vive en Vercel (sin CPU) y las rutas /v1/* se piden
-     al Space vivo del Grupo 1; /api/chat se queda en Vercel (es el trigger). */
-  var base=(new URLSearchParams(location.search).get('api')||'').replace(/\/$/,'');
+     al Space vivo del Grupo 1; /api/chat se queda en Vercel (es el trigger).
+     RIU_API_BASE es el destino embebido (sitio publicado): el proxy del Grupo 1. */
+  var base=(window.RIU_API_BASE||'').replace(/\/$/'')|
+           (new URLSearchParams(location.search).get('api')||'').replace(/\/$/,'');
   if(!base && location.protocol==='file:')return '';
   if(!base && /(^|\.)vercel\.app$/.test(location.hostname) && path.indexOf('/api/')!==0){
     var esp=(typeof ESPEJOS!=='undefined'&&ESPEJOS.length)?ESPEJOS:['https://comand-center-1-space-grupo-1-router-mvp-1.hf.space'];
@@ -718,6 +725,20 @@ function _persistApiKey() {
     input.addEventListener('input', e => sessionStorage.setItem('api_key', e.target.value));
 }
 document.addEventListener('DOMContentLoaded', _persistApiKey);
+
+/* ─── TRIGGER: el primer visitante DESPUERTA el router ───
+   Hugging Face devuelve 404 mientras el Space esta dormido o reiniciandose.
+   Al abrir el chat se hace un ping al proxy: esa llamada es la que lo arranca.
+   apiJSON ya reintenta el 404 (3 intentos, 8 s) y rota de espejo, asi que el
+   chat "arranca solo" en vez de quedarse en HTTP 404. */
+(function(){
+  function trigger(){
+    try{ apiJSON('/health').catch(function(){}); }catch(e){}
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',trigger);
+  }else{ trigger(); }
+})();
 </script>
 </body>
 </html>
