@@ -109,7 +109,10 @@ def handler(request):
                 return (200, CORS, json.dumps(data, ensure_ascii=False))
             ultimo = data
         except urllib.error.HTTPError as e:
-            crudo = e.read().decode("utf-8", "replace")[:300]
+            try:
+                crudo = e.read().decode("utf-8", "replace")[:300]
+            except Exception:
+                crudo = "HTTP %s" % e.code
             # 404/503 = Space dormido o reiniciandose: se reintenta (el trigger lo despierta)
             if e.code in (404, 429, 500, 502, 503, 504):
                 ultimo = {"error": {"code": "ESPACIO_DORMIDO", "http": e.code, "detalle": crudo}}
