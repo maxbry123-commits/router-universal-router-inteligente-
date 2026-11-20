@@ -1488,15 +1488,3 @@ def auto_pull_state():
     if AUTO_PULL is None:
         return {"enabled": False, "why": "watcher no arrancado"}
     return AUTO_PULL.status()
-
-
-# --- MINIMAX (proveedor opcional, aditivo) ---
-# El modulo ext_minimax vive en esta misma carpeta y se registra con try/except:
-# si el modulo falta o falla al importar, el router ARRANCA IGUAL y solo se
-# pierde la ruta /v1/minimax/*. No altera el nucleo del proxy.
-try:
-    from ext_minimax import register_minimax as _register_minimax
-    _register_minimax(app)
-    print("[minimax] mounted: /v1/minimax/chat + /v1/minimax/health")
-except Exception as _e:
-    print(f"[minimax] mount fallo: {_e}")
