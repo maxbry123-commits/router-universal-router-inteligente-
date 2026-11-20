@@ -19,6 +19,7 @@ Variables de entorno:
   ROUTER_BASE_URL    proxy del Grupo 1 (por defecto, el Space vivo)
   ROUTER_MIRRORS     lista de espejos separados por coma (opcional)
   ROUTER_API_KEY     clave del router (cabecera x-api-key)
+  RIU_ROUTER_API_KEY como lo llama el panel de Vercel (mismo valor)
   UNIVERSAL_KEY      alternativa a ROUTER_API_KEY
   TRIGGER_INTENTOS   reintentos para despertar el Space (por defecto 10)
   TRIGGER_PAUSA_S    pausa entre reintentos, en segundos (por defecto 5)
@@ -37,7 +38,10 @@ BASE = os.environ.get(
     "ROUTER_BASE_URL",
     "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space",
 ).rstrip("/")
-KEY = os.environ.get("ROUTER_API_KEY", "") or os.environ.get("UNIVERSAL_KEY", "")
+KEY = (os.environ.get("ROUTER_API_KEY")
+       or os.environ.get("RIU_ROUTER_API_KEY")   # como lo llama el panel de Vercel
+       or os.environ.get("UNIVERSAL_KEY")
+       or "")
 MIRRORS = [
     m.strip() for m in os.environ.get(
         "ROUTER_MIRRORS",
