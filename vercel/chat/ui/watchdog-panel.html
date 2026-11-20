@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WATCHDOG Panel</title>
+<style>
+:root{--bg:#0d1117;--p:#161b22;--l:#30363d;--t:#e6edf3;--d:#8b949e;--ok:#3fb950;--w:#d29922;--e:#f85149;--a:#58a6ff}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 ui-monospace,Menlo,monospace;background:var(--bg);color:var(--t)}
+header{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--l);flex-wrap:wrap}
+h1{font-size:15px;margin:0 12px 0 0;color:var(--a)}
+input,button{background:var(--p);color:var(--t);border:1px solid var(--l);border-radius:6px;padding:6px 8px;font:inherit}
+button{cursor:pointer}button:hover{border-color:var(--a)}
+.b{padding:3px 8px;border-radius:999px;font-size:12px;border:1px solid var(--l)}
+.b.ok{color:var(--ok);border-color:var(--ok)}.b.w{color:var(--w);border-color:var(--w)}.b.e{color:var(--e);border-color:var(--e)}
+main{padding:12px}.pn{background:var(--p);border:1px solid var(--l);border-radius:8px;padding:10px;margin-bottom:12px}
+.pn h2{font-size:13px;margin:0 0 8px;color:var(--d);text-transform:uppercase}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.cell{background:var(--bg);border:1px solid var(--l);border-radius:6px;padding:8px;text-align:center}
+.cell .n{font-size:20px;color:var(--a)}.cell .l{font-size:11px;color:var(--d)}
+</style>
+</head>
+<body>
+<header>
+<h1>WATCHDOG</h1>
+<input id="api" size="22" value="http://localhost:7861">
+<input id="key" size="10" type="password">
+<button id="mM">DEMO</button>
+<button id="mR">REFRESH</button>
+<span id="c" class="b w">DEMO</span>
+</header>
+<main>
+<section class="pn"><h2>Config (router_llm_hf/watchdog.py)</h2>
+<div class="grid">
+<div class="cell"><div class="n">96</div><div class="l">CALL_TIMEOUT s</div></div>
+<div class="cell"><div class="n">30</div><div class="l">HEARTBEAT s</div></div>
+<div class="cell"><div class="n">60</div><div class="l">stall = 2x HB</div></div>
+</div></section>
+<section class="pn"><h2>Eventos</h2>
+<div class="grid">
+<div class="cell"><div class="n" id="e1">0</div><div class="l">cancelados</div></div>
+<div class="cell"><div class="n" id="e2">0</div><div class="l">activos</div></div>
+<div class="cell"><div class="n" id="e3">0</div><div class="l">stalled</div></div>
+</div></section>
+</main>
+<script>
+var ALLOWED=["http://localhost:7860","http://localhost:7861","http://localhost:8080"];
+var $=function(i){return document.getElementById(i)};
+var live=false,loop=true,tick=0,cancel=0,stall=0;
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/`/g,"&#96;").replace(/\//g,"&#47;")}
+function api(p,o){var h={};var k=$("key").value.trim();if(k)h["X-API-Key"]=k;o=o||{};o.headers=Object.assign({},h,o.headers);return fetch($("api").value.replace(/\/$/,"")+p,o).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})}
+function demo(){tick++;if(tick%7===0)cancel++;if(tick%5===0)stall++;return{active:tick%2,cancel:cancel,stall:stall}}
+function render(d){$("e1").textContent=d.cancel;$("e2").textContent=d.active;$("e3").textContent=d.stall}
+function refresh(){if(live){api("/capa/status").then(function(s){var act=Object.keys(s.workers||{}).filter(function(w){return s.workers[w].status==="running"}).length;render({active:act,cancel:cancel,stall:stall});$("c").className="b ok";$("c").textContent="LIVE"}).catch(function(){live=false;$("mM").textContent="DEMO";$("c").className="b e";$("c").textContent="DEMO";render(demo())});return}render(demo())}
+$("mM").onclick=function(){live=!live;$("mM").textContent=live?"LIVE":"DEMO";refresh()};
+$("mR").onclick=refresh;
+window.addEventListener("message",function(ev){
+var origin=ev.origin||"";
+var ok=ALLOWED.indexOf(origin)>=0||ev.source===window.parent;
+if(!ok){console.warn("postMessage rechazado:",origin);return}
+var d=ev.data||{};
+if(d&&d.type==="capa:refresh")refresh();
+});
+try{if(window.parent!==window)window.parent.postMessage({type:"capa:ready",panel:"watchdog"},"*")}catch(e){}
+setInterval(function(){if(loop)refresh()},2000);
+render(demo());
+</script>
+</body>
+</html>

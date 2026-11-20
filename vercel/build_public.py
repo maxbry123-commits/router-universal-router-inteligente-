@@ -22,7 +22,16 @@ import sys
 
 AQUI = os.path.dirname(os.path.abspath(__file__))          # .../vercel
 RAIZ = os.path.dirname(AQUI)                                # raiz del repo
-ORIGEN = os.path.join(RAIZ, "chat-router", "chat")
+
+# Cascada de origen del frontend:
+#  1. chat-router/chat   (si el Root Directory es la raiz del repo)
+#  2. vercel/chat        (si el Root Directory es vercel/ -> Vercel solo sube esa carpeta)
+#  3. descarga desde GitHub raw (ultimo recurso, el repo es publico)
+ORIGEN_LOCAL = os.path.join(RAIZ, "chat-router", "chat")
+ORIGEN_EMBARCADO = os.path.join(AQUI, "chat")
+RAW_BASE = ("https://raw.githubusercontent.com/maxbry123-commits/"
+            "router-universal-router-inteligente-/ccr-f01c3de9-bmry0s/chat-router/chat")
+ORIGEN = ORIGEN_LOCAL
 
 # El Space vivo (el renombrado); el antiguo riu-router daba 404.
 SPACE_VIVO = "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space"
@@ -104,7 +113,43 @@ def _copiar_arbol(origen, destino):
     return len(os.listdir(destino))
 
 
+def _descargar_origen(destino):
+    """Ultimo recurso: baja el frontend canonico desde GitHub raw (repo publico)."""
+    import urllib.request
+    ficheros = ["index.html", "sdk.html", "http-mcp.html", "propuestas.html"]
+    os.makedirs(os.path.join(destino, "ui"), exist_ok=True)
+    ui = ["app.css", "theme.css", "ui-controller.js", "model-selector.js", "loop.js",
+          "cola-panel.html", "hermes-panel.html", "hitl-panel.html", "loop-panel.html",
+          "mindmap-panel.html", "motion-panel.html", "openclaw-panel.html",
+          "watchdog-panel.html"]
+    for n in ficheros:
+        with urllib.request.urlopen(RAW_BASE + "/" + n, timeout=45) as r:
+            open(os.path.join(destino, n), "wb").write(r.read())
+    for n in ui:
+        try:
+            with urllib.request.urlopen(RAW_BASE + "/ui/" + n, timeout=45) as r:
+                open(os.path.join(destino, "ui", n), "wb").write(r.read())
+        except Exception as e:
+            print("  aviso: no se pudo bajar ui/%s (%s)" % (n, e))
+    return destino
+
+
 def main():
+    global ORIGEN
+    if os.path.isdir(ORIGEN_LOCAL):
+        ORIGEN = ORIGEN_LOCAL
+        print("origen: chat-router/chat (repo completo)")
+    elif os.path.isdir(ORIGEN_EMBARCADO):
+        ORIGEN = ORIGEN_EMBARCADO
+        print("origen: vercel/chat (embarcado en el Root Directory)")
+    else:
+        ORIGEN = os.path.join(AQUI, "_chat_descargado")
+        print("origen: descarga desde GitHub raw")
+        try:
+            _descargar_origen(ORIGEN)
+        except Exception as e:
+            print("FATAL: no se pudo obtener el frontend:", e)
+            sys.exit(1)
     if not os.path.isdir(ORIGEN):
         print("FATAL: no existe el frontend canonico:", ORIGEN)
         sys.exit(1)
