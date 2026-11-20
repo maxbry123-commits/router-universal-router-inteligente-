@@ -218,7 +218,7 @@ var MOTORS=[
  {name:'LLM S3 · Qwen3.5-0.8B',url:'https://comand-center-1-space-grupo-2-router-llm-hf-3.hf.space/health',model:'unsloth/Qwen3.5-0.8B-GGUF'},
  {name:'MCP · bucket',url:'https://comand-center-1-hf-bucket-mcp.hf.space/metrics',model:'huggingface.co/mcp'}
 ];
-var S={theme:'little',view:'chat',endpoint:'',model:'',key:'',agent:'',messages:[{who:'bot',text:'Hola. Elige motor, pega la API Key y escribe.'}]};
+var S={theme:'little',view:'chat',endpoint:'',model:'',key:'',agent:'',messages:[{who:'bot',text:'Hola. Elige motor y escribe. (La API Key solo hace falta si sirves el chat fuera de Vercel.)'}]};
 
 function el(id){return document.getElementById(id);}
 function toast(msg){
@@ -333,7 +333,11 @@ function sendMessage(){
   var input=el('msg-input');if(!input)return;
   var text=input.value.trim();
   if(!text)return;
-  if(!S.key){toast('Falta la API Key (x-api-key)');return;}
+  /* En Vercel el trigger /api/chat ya lleva la clave del servidor
+     (RIU_ROUTER_API_KEY): no hace falta teclearla. Servido DIRECTO al
+     Space si hace falta, porque ahi el proxy exige x-api-key. */
+  var _triggerVercel=/(^|\.)vercel\.app$/.test(location.hostname);
+  if(!S.key&&!_triggerVercel){toast('Falta la API Key (x-api-key)');return;}
   if(!S.endpoint){toast('Sin motor seleccionado');return;}
   S.messages.push({who:'user',text:text});input.value='';paintMessages();
   var st=el('status');if(st){st.textContent='● PENSANDO';st.className='badge warning';}
