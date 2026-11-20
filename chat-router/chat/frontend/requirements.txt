@@ -1,0 +1,9 @@
+# La funcion /api/chat (trigger) usa SOLO la libreria estandar de Python 3:
+#   json, os, time, urllib.error, urllib.request
+#
+# No hay dependencias externas a proposito: Vercel no necesita instalar nada
+# y el build de la funcion no puede fallar por una instalacion rota.
+#
+# Este requirements.txt DEBE estar en el Root Directory del proyecto
+# (junto a api/chat.py): sin el, algunas versiones de Vercel rechazan la
+# funcion Python en el build.

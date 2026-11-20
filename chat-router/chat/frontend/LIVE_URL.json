@@ -1,0 +1,12 @@
+{
+  "LIVE_URL": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space",
+  "espejos": [
+    "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space",
+    "https://comand-center-1-space-grupo-1-router-mvp-1-v2.hf.space",
+    "https://comand-center-1-space-grupo-1-router-mvp-1-v7.hf.space"
+  ],
+  "chat": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/chat/",
+  "landing": "https://comand-center-1-router-universal-router-inteligente.static.hf.space/",
+  "updated": "2026-11-20",
+  "note": "Space principal del router (Grupo 1, compute/proxy). Los espejos -v2 y -v7 son el mismo codigo. Si cae, reiniciar en Hugging Face. NO usar 'comand-center-1-riu-router.hf.space': ese repo fue borrado y HF no redirige hosts."
+}

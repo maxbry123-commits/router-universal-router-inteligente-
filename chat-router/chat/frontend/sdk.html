@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="es" data-theme="matte">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0a0d">
+<title>SDK / API · 3 LLM locales de HF</title>
+<style>
+:root{
+  --font:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --phone-radius:24px; --card-radius:12px; --button-radius:10px; --sheet-radius:28px;
+  --success:#4da77b; --warning:#dfab60; --danger:#cb7168;
+  --status-green:#50df94; --status-blue:#65a7ff; --status-red:#ff777e;
+  --status-soft-green:rgba(80,223,148,.13);
+  --status-soft-blue:rgba(101,167,255,.13);
+  --status-soft-red:rgba(255,119,126,.13);
+  --radius:12px; --btn:10px; --sheet:28px; --phone:24px;
+  --border:rgba(255,255,255,.10); --border-strong:rgba(255,255,255,.20);
+  --txt:#e6e6e6; --txt-dim:#9a9a9a; --txt-mute:#6f6f6f;
+  --bg:#0a0a0d; --surface:#141417; --card:#202025; --surface-alt:#1a1a1f;
+  --accent:#e4e4e7; --accent-fg:#0a0a0d; --accent-soft:rgba(228,228,231,.12);
+  --selected:#2563eb; --download:#ff6b1a; --shadow:0 18px 48px rgba(0,0,0,.55);
+}
+html[data-theme="little"]{--bg:#1C1B1A;--surface:#2A2927;--card:#2A2927;--surface-alt:#232220;
+  --accent:#C65D3B;--accent-fg:#fff;--accent-soft:rgba(198,93,59,.16);--selected:#C65D3B;--download:#A8A29E;
+  --txt:#f0efec;--txt-dim:#b3aea6;--txt-mute:#8a857d;--border:rgba(255,255,255,.10);--border-strong:rgba(255,255,255,.22);}
+html[data-theme="matte"]{--bg:#0a0a0d;--surface:#141417;--card:#202025;--surface-alt:#1a1a1f;
+  --accent:#e4e4e7;--accent-fg:#0a0a0d;--accent-soft:rgba(228,228,231,.12);--selected:#2563eb;--download:#ff5500;
+  --txt:#e8e8ea;--txt-dim:#9a9aa0;--txt-mute:#6c6c74;--border:rgba(255,255,255,.09);--border-strong:rgba(255,255,255,.18);}
+html[data-theme="blanco"]{--bg:#f4f4f5;--surface:#ffffff;--card:#ffffff;--surface-alt:#f7f7f8;
+  --accent:#18181b;--accent-fg:#ffffff;--accent-soft:rgba(24,24,27,.08);--selected:#2563eb;--download:#2563eb;
+  --txt:#18181b;--txt-dim:#52525b;--txt-mute:#7c7c85;--border:rgba(0,0,0,.12);--border-strong:rgba(0,0,0,.22);--shadow:0 18px 48px rgba(0,0,0,.12);}
+html[data-theme="crystal"]{--bg:#0c1421;--surface:rgba(225,245,255,.115);--card:rgba(242,250,255,.095);--surface-alt:rgba(225,245,255,.06);
+  --accent:#b8f5fa;--accent-fg:#06121c;--accent-soft:rgba(184,245,250,.14);--selected:#b8f5fa;--download:#b8f5fa;
+  --txt:#e6f7fb;--txt-dim:#a8c4cf;--txt-mute:#7d97a3;--border:rgba(184,245,250,.18);--border-strong:rgba(184,245,250,.30);--shadow:0 18px 48px rgba(0,0,0,.5);}
+html[data-theme="orange"]{--bg:#100e0d;--surface:#1b1816;--card:#26211d;--surface-alt:#211d19;
+  --accent:#ef823c;--accent-fg:#140f0b;--accent-soft:rgba(239,130,60,.16);--selected:#ef823c;--download:#ef823c;
+  --txt:#f3ece6;--txt-dim:#b7a89b;--txt-mute:#8a7a6d;--border:rgba(255,255,255,.10);--border-strong:rgba(255,255,255,.20);}
+html[data-theme="blue"]{--bg:#0a1424;--surface:#122238;--card:#192c45;--surface-alt:#142542;
+  --accent:#66b7ff;--accent-fg:#061426;--accent-soft:rgba(102,183,255,.16);--selected:#66b7ff;--download:#66b7ff;
+  --txt:#e9f3ff;--txt-dim:#a8c6e4;--txt-mute:#7f9bb8;--border:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.24);}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font-family:var(--font);font-size:15px;line-height:1.55}
+a{color:var(--selected)}
+h1,h2,h3{margin:0 0 6px;letter-spacing:.2px;overflow-wrap:anywhere;word-break:break-word}
+h1{font-size:22px;font-weight:700}
+h2{font-size:17px;font-weight:700}
+h3{font-size:14px;font-weight:700;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.9px}
+p{margin:0 0 8px}
+code,pre,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.app{display:grid;grid-template-columns:230px minmax(0,1fr) 295px;max-width:1640px;margin:0 auto;min-height:100dvh}
+.sidebar{position:sticky;top:0;height:100dvh;overflow:auto;border-right:1px solid var(--border);
+  background:var(--surface);padding:18px 14px;display:flex;flex-direction:column;gap:14px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px}
+.logo-mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);
+  border:1px solid var(--border-strong);color:var(--txt);font-size:15px}
+.eyebrow{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--txt-mute)}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:var(--btn);border:1px solid transparent;
+  background:transparent;color:var(--txt-dim);font:600 13px/1.2 var(--font);cursor:pointer;text-align:left;width:100%}
+.nav-btn[aria-current="page"]{background:var(--accent-soft);border-color:var(--border);color:var(--txt)}
+.nav-btn:hover{color:var(--txt)}
+.n{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:var(--surface-alt);
+  border:1px solid var(--border);font-size:10px;color:var(--txt-dim)}
+.themes{display:flex;flex-wrap:wrap;gap:7px}
+.theme-btn{width:33px;height:33px;border-radius:10px;border:1px solid var(--border-strong);cursor:pointer;background:var(--card);position:relative}
+.theme-btn[aria-pressed="true"]{outline:2px solid var(--selected);outline-offset:2px}
+.theme-sw{position:absolute;inset:6px;border-radius:6px}
+.main{padding:22px 24px 60px;min-width:0}
+.hdr{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--card);
+  border-radius:20px;padding:5px 10px;font:600 10px/1 var(--font);color:var(--txt-dim)}
+.badge.ok{color:var(--status-green);background:var(--status-soft-green);border-color:rgba(80,223,148,.35)}
+.badge.warn{color:var(--warning);background:rgba(223,171,96,.12);border-color:rgba(223,171,96,.35)}
+.badge.err{color:var(--status-red);background:var(--status-soft-red);border-color:rgba(255,119,126,.35)}
+.badge.info{color:var(--status-blue);background:var(--status-soft-blue);border-color:rgba(101,167,255,.35)}
+.surface-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:17px;margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row-between{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.btn{border-radius:var(--btn);padding:9px 14px;font:700 12px/1 var(--font);cursor:pointer;border:1px solid var(--border);
+  background:var(--card);color:var(--txt);display:inline-flex;align-items:center;gap:7px}
+.btn:hover{border-color:var(--border-strong)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:transparent}
+.btn.ghost{background:transparent;color:var(--txt-dim)}
+.btn.dl{color:var(--download);border-color:rgba(255,107,26,.35)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.inspector{position:sticky;top:0;height:100dvh;overflow:auto;border-left:1px solid var(--border);
+  background:var(--surface);padding:18px 14px;display:flex;flex-direction:column;gap:14px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px}
+.kv dt{color:var(--txt-mute)}
+.kv dd{margin:0;color:var(--txt);word-break:break-word}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.dos-cols{display:grid;grid-template-columns:1fr;gap:12px}
+.prop{border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--surface-alt);display:grid;grid-template-columns:1fr 1fr;gap:14px;position:relative}
+.prop-l,.prop-r{min-width:0}
+.prop .resumen{margin:0;padding-left:18px;font-size:12px;color:var(--txt-dim)}
+.prop .resumen li{margin-bottom:4px}
+@media (max-width:820px){.prop{grid-template-columns:1fr}}
+pre{background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--btn);padding:12px;
+  overflow:auto;font-size:12px;line-height:1.5;max-height:340px;white-space:pre-wrap;word-break:break-word}
+.tag{display:inline-block;border:1px solid var(--border);background:var(--card);border-radius:20px;padding:4px 9px;
+  font:600 10px/1.35 var(--font);color:var(--txt-dim)}
+.chip{display:inline-block;border-radius:20px;padding:4px 10px;font:600 10px/1.35 var(--font);border:1px solid transparent}
+.chip.py{background:rgba(101,167,255,.14);color:var(--status-blue);border-color:rgba(101,167,255,.3)}
+.chip.ok{background:var(--status-soft-green);color:var(--status-green);border-color:rgba(80,223,148,.3)}
+.chip.no{background:var(--status-soft-red);color:var(--status-red);border-color:rgba(255,119,126,.3)}
+.chip.warn{background:rgba(223,171,96,.13);color:var(--warning);border-color:rgba(223,171,96,.3)}
+.mono-sm{font-size:12px;color:var(--txt-dim);word-break:break-all}
+.url-box{background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--btn);padding:8px 10px;
+  font-size:12px;word-break:break-all;color:var(--txt-dim)}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--txt-dim)}
+.flow b{background:var(--accent-soft);border:1px solid var(--border);border-radius:8px;padding:3px 9px;font-weight:600;color:var(--txt)}
+.arrow{color:var(--selected);font-weight:700}
+.ol{counter-reset:s;list-style:none;padding:0;margin:0}
+.ol li{counter-increment:s;position:relative;padding-left:26px;margin-bottom:6px;font-size:13px;color:var(--txt-dim)}
+.ol li::before{content:counter(s);position:absolute;left:0;top:1px;width:18px;height:18px;border-radius:6px;
+  display:grid;place-items:center;background:var(--accent-soft);border:1px solid var(--border);font:700 10px var(--font);color:var(--txt-dim)}
+.note{font-size:12px;color:var(--txt-mute);border-left:2px solid var(--border-strong);padding-left:10px;margin:10px 0}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--card);
+  border:1px solid var(--border-strong);border-radius:var(--btn);padding:10px 16px;font:600 12px var(--font);
+  opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:99}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:rgba(80,223,148,.5);color:var(--status-green)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,
+[tabindex]:focus-visible{outline:2px solid var(--selected);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:1240px){.app{grid-template-columns:230px minmax(0,1fr)}.inspector{display:none}}
+@media (max-width:750px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:16px 14px 70px}}
+details{border:1px solid var(--border);border-radius:var(--btn);padding:9px 12px;margin-bottom:8px;background:var(--card)}
+summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--txt)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--txt-mute);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:.8px}
+.scroll{overflow:auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo"><span class="logo-mark">Y</span><span>YAIWES<br><span class="eyebrow">Router</span></span></div>
+    <div class="eyebrow">Ventanas</div>
+    <nav class="nav"><button class="nav-btn" data-target="resumen" aria-current="page"><span class="n">1</span>Resumen</button><button class="nav-btn" data-target="m-1"><span class="n">2</span>Qwen2.5 Coder 0.5B</button><button class="nav-btn" data-target="m-2"><span class="n">3</span>LFM2.5 350M</button><button class="nav-btn" data-target="m-3"><span class="n">4</span>Qwen3.5 0.8B</button><button class="nav-btn" data-target="cache"><span class="n">5</span>Cache y cola</button></nav>
+    <div class="eyebrow">Tema</div>
+    <div class="themes"><button class="theme-btn" data-theme="little" title="Little" aria-label="Tema Little"><span class="theme-sw" style="background:#1C1B1A;box-shadow:inset 0 0 0 2px #C65D3B"></span></button><button class="theme-btn" data-theme="matte" title="Matte" aria-label="Tema Matte"><span class="theme-sw" style="background:#0a0a0d;box-shadow:inset 0 0 0 2px #e4e4e7"></span></button><button class="theme-btn" data-theme="blanco" title="Blanco" aria-label="Tema Blanco"><span class="theme-sw" style="background:#f4f4f5;box-shadow:inset 0 0 0 2px #18181b"></span></button><button class="theme-btn" data-theme="crystal" title="Crystal" aria-label="Tema Crystal"><span class="theme-sw" style="background:#0c1421;box-shadow:inset 0 0 0 2px #b8f5fa"></span></button><button class="theme-btn" data-theme="orange" title="Orange" aria-label="Tema Orange"><span class="theme-sw" style="background:#100e0d;box-shadow:inset 0 0 0 2px #ef823c"></span></button><button class="theme-btn" data-theme="blue" title="Blue" aria-label="Tema Blue"><span class="theme-sw" style="background:#0a1424;box-shadow:inset 0 0 0 2px #66b7ff"></span></button></div>
+  </aside>
+  <main class="main">
+    <div class="hdr">
+      <div><div class="eyebrow">Paso 1 · conexion SDK</div><h1>SDK / API · 3 LLM locales de HF</h1></div>
+      <div class="row"></div>
+    </div>
+    
+<section class="surface-card" id="resumen">
+  <div class="row-between">
+    <div><div class="eyebrow">Estado real</div><h2>Conectividad SDK/API de las 3 LLM locales de HF</h2></div>
+    <div class="row"><span class="badge ok">3/3 LLM vivas</span><span class="badge ok">10/10 HTTP 200</span>
+    <span class="badge info">6 Spaces RUNNING</span></div>
+  </div>
+  <div class="grid3" style="margin-top:12px">
+    <div><h3>Como se conecta</h3>
+      <div class="flow"><b>Tu sistema</b><span class="arrow">&#10145;</span><b>Router (G1)</b><span class="arrow">&#10145;</span><b>LLM local (G2)</b></div>
+      <p class="note">Grupo 1 = proxy + HTTP + MCP + memoria (3 Spaces, cola). Grupo 2 = SOLO LLM (3 Spaces).
+      No se mezclan: el proxy enruta, el Space de LLM solo genera.</p></div>
+    <div><h3>Medido ahora</h3>
+      <dl class="kv"><dt>0.5B</dt><dd>97,0 tok/s · 633 MB · $0,0859/1M</dd>
+      <dt>350M</dt><dd>139,7 tok/s · 462 MB · $0,0596/1M</dd>
+      <dt>0.8B</dt><dd>56,5 tok/s · 953 MB · $0,1475/1M</dd></dl></div>
+    <div><h3>Conexion total</h3>
+      <dl class="kv"><dt>Agentes</dt><dd>chat_a, chat_b, hermes, openclaw, rowboat, ruflo</dd><dt>Raices</dt><dd>ruflo, rowboat, donors</dd>
+      <dt>Pool</dt><dd>3 Spaces con espejo</dd><dt>Auto-pull</dt><dd>rama ccr-f01c3de9-bmry0s · 13 pulls</dd></dl></div>
+  </div>
+</section>
+<section class="surface-card" id="m-1">
+  <div class="row-between">
+    <div>
+      <div class="eyebrow">Grupo 2 · Space 1</div>
+      <h2>Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF</h2>
+      <p class="mono-sm">Qwen__Qwen2.5-Coder-0.5B-Instruct-GGUF__qwen2.5-coder-0.5b-instruct-q5_k_m.gguf</p>
+    </div>
+    <div class="row">
+      <span class="badge ok">96.9 tok/s</span>
+      <span class="badge info">$0.086 / 1M tok</span>
+      <span class="badge">627.1 MB RAM</span>
+    </div>
+  </div>
+  <div class="grid3" style="margin-top:12px">
+    <div>
+      <h3>Identidad</h3>
+      <dl class="kv">
+        <dt>Modelo</dt><dd>Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF</dd>
+        <dt>Fichero</dt><dd class="mono-sm">Qwen__Qwen2.5-Coder-0.5B-Instruct-GGUF__qwen2.5-coder-0.5b-instruct-q5_k_m.gguf</dd>
+        <dt>sha256</dt><dd class="mono-sm">—</dd>
+        <dt>Space</dt><dd class="mono-sm">space-grupo-2-router-llm-hf-1</dd>
+        <dt>URL directa</dt><dd class="mono-sm">https://comand-center-1-space-grupo-2-router-llm-hf-1.hf.space/v1/chat/completions</dd>
+        <dt>Alias router</dt><dd><code>qwen2.5-coder-0.5b</code></dd>
+        <dt>Hilos llama</dt><dd>8</dd>
+      </dl>
+    </div>
+    <div>
+      <h3>Rendimiento medido ahora</h3>
+      <dl class="kv">
+        <dt>tok/s</dt><dd><b>96.9</b> (200 tokens, modelo caliente)</dd>
+        <dt>Tiempo</dt><dd>2.06 s</dd>
+        <dt>Precio / 1M</dt><dd>$0.086 · 2.87 h por 1M</dd>
+        <dt>Coste Space</dt><dd>$0.03/h (cpu-upgrade 32 GB, 8 vCPU)</dd>
+        <dt>RAM RSS</dt><dd>627.1 MB</dd>
+        <dt>Medido</dt><dd>2026-11-19 12:45:41 UTC</dd>
+      </dl>
+    </div>
+    <div>
+      <h3>Tool (real)</h3>
+      <p class="chip ok">JSON de tool valido</p>
+      <pre>{&quot;tool&quot;:&quot;buscar_archivo&quot;,&quot;args&quot;:{&quot;query&quot;:&quot;*.py&quot;}}</pre>
+      <h3 style="margin-top:10px">Agéntico (real)</h3>
+      <pre>1. Crear un fichero nota.md con tres pasos.
+2. Ejecutar el comando exacto que ejecutarias.
+
+Plan:
+1. Crear un fichero nota.md con tres pasos.
+2. Ejecutar el comando exacto que ejecutarias.
+
+Comando exacto que ejecutarias:
+```bash
+touch nota.md
+```
+
+Este comando crea un nuevo fichero named `nota.md` en la carpeta actual.</pre>
+    </div>
+  </div>
+  <div class="row-between" style="margin-top:12px">
+    <h3 style="margin:0">SDK / API para este modelo (copiar y pegar)</h3>
+    <div class="row">
+      <button class="btn primary" data-copy="#snip-1" data-label="Snippet copiado">Copiar snippet</button>
+      <button class="btn" data-copy="#snip-1" data-label="cURL copiado">Copiar cURL</button>
+    </div>
+  </div>
+  <pre id="snip-1"># ==== Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF · SDK/API (OpenAI-compatible) ====
+# El router acepta &#x27;model: qwen2.5-coder-0.5b&#x27; y enruta a ESTA LLM local (Grupo 2).
+# Autenticacion: cabecera x-api-key = la clave del router.
+#
+# --- 1) Python (SDK openai) -------------------------------
+from openai import OpenAI
+import os
+
+client = OpenAI(
+    base_url=&quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1&quot;,
+    api_key=os.environ[&quot;UNIVERSAL_KEY&quot;],
+    default_headers={&quot;x-api-key&quot;: os.environ[&quot;UNIVERSAL_KEY&quot;]},
+)
+r = client.chat.completions.create(
+    model=&quot;qwen2.5-coder-0.5b&quot;,
+    max_tokens=200,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Escribe una funcion Python&quot;}],
+)
+print(r.choices[0].message.content)
+
+# --- 2) Sin router: contra el Space directamente -----------
+import requests, os
+r = requests.post(
+    &quot;https://comand-center-1-space-grupo-2-router-llm-hf-1.hf.space/v1/chat/completions&quot;,
+    headers={&quot;x-api-key&quot;: os.environ[&quot;UNIVERSAL_KEY&quot;]},
+    json={&quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;di ok&quot;}], &quot;max_tokens&quot;: 64},
+    timeout=120)
+print(r.json()[&quot;choices&quot;][0][&quot;message&quot;][&quot;content&quot;])
+
+# --- 3) cURL (pegar en cualquier sistema) ------------------
+curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/chat/completions&quot; \
+  -H &#x27;Content-Type: application/json&#x27; \
+  -H &#x27;x-api-key: $UNIVERSAL_KEY&#x27; \
+  -d &#x27;{&quot;model&quot;:&quot;qwen2.5-coder-0.5b&quot;,&quot;messages&quot;:[{&quot;role&quot;:&quot;user&quot;,&quot;content&quot;:&quot;di ok&quot;}],&quot;max_tokens&quot;:64}&#x27;
+</pre>
+  <details><summary>Como funciona el dataset de este modelo y que hay instalado en HF</summary>
+    <div class="note">Los 3 pesos viven en el dataset <b>COMAND-CENTER-1/swe-code-hf-gguf</b> (GGUF, prefijo
+    <code>owner__repo__fichero</code>). El Space los descarga, verifica el <b>sha256</b> contra
+    <code>llm system HF/registry.json</code> y los sirve con llama-server (b12000) en CPU.
+    Encima hay <b>datasets por modo</b> (swe-code-modes) y <b>LoRAs</b> (swe-code-loras): el dataset es el
+    formato de la tarea (instruccion/respuesta/LoRA) y el LoRA el delta de pesos que el Space puede
+    aplicar en caliente; el router elige dataset+LoRA segun el modo detectado.</div>
+    <dl class="kv">
+      <dt>Dataset de pesos</dt><dd>COMAND-CENTER-1/swe-code-hf-gguf (7 ficheros: los 3 GGUFs + el Q4_K_M de repuesto)</dd>
+      <dt>Datasets de modo</dt><dd>COMAND-CENTER-1/swe-code-modes (61 ficheros: instruccion/respuesta por modo)</dd>
+      <dt>LoRAs</dt><dd>COMAND-CENTER-1/swe-code-loras (342 ficheros: LoRA por modo, LFS vivo)</dd>
+      <dt>Espacio</dt><dd>https://comand-center-1-space-grupo-2-router-llm-hf-1.hf.space</dd>
+      <dt>Modos servidos</dt><dd>3d_code, architecture, code_debug, code_generate, code_refactor, code_review …</dd>
+    </dl>
+  </details>
+</section>
+<section class="surface-card" id="m-2">
+  <div class="row-between">
+    <div>
+      <div class="eyebrow">Grupo 2 · Space 2</div>
+      <h2>LiquidAI/LFM2.5-350M-GGUF</h2>
+      <p class="mono-sm">LiquidAI__LFM2.5-350M-GGUF__LFM2.5-350M-Q4_K_M.gguf</p>
+    </div>
+    <div class="row">
+      <span class="badge ok">146.2 tok/s</span>
+      <span class="badge info">$0.057 / 1M tok</span>
+      <span class="badge">457.0 MB RAM</span>
+    </div>
+  </div>
+  <div class="grid3" style="margin-top:12px">
+    <div>
+      <h3>Identidad</h3>
+      <dl class="kv">
+        <dt>Modelo</dt><dd>LiquidAI/LFM2.5-350M-GGUF</dd>
+        <dt>Fichero</dt><dd class="mono-sm">LiquidAI__LFM2.5-350M-GGUF__LFM2.5-350M-Q4_K_M.gguf</dd>
+        <dt>sha256</dt><dd class="mono-sm">—</dd>
+        <dt>Space</dt><dd class="mono-sm">space-grupo-2-router-llm-hf-2</dd>
+        <dt>URL directa</dt><dd class="mono-sm">https://comand-center-1-space-grupo-2-router-llm-hf-2.hf.space/v1/chat/completions</dd>
+        <dt>Alias router</dt><dd><code>lfm2.5-350m</code></dd>
+        <dt>Hilos llama</dt><dd>8</dd>
+      </dl>
+    </div>
+    <div>
+      <h3>Rendimiento medido ahora</h3>
+      <dl class="kv">
+        <dt>tok/s</dt><dd><b>146.2</b> (200 tokens, modelo caliente)</dd>
+        <dt>Tiempo</dt><dd>1.37 s</dd>
+        <dt>Precio / 1M</dt><dd>$0.057 · 1.9 h por 1M</dd>
+        <dt>Coste Space</dt><dd>$0.03/h (cpu-upgrade 32 GB, 8 vCPU)</dd>
+        <dt>RAM RSS</dt><dd>457.0 MB</dd>
+        <dt>Medido</dt><dd>2026-11-19 12:45:41 UTC</dd>
+      </dl>
+    </div>
+    <div>
+      <h3>Tool (real)</h3>
+      <p class="chip no">NO emitio JSON de tool</p>
+      <pre>{&quot;tool&quot;:&quot;buscar_archivo&quot;&quot;,&quot;args&quot;:{&quot;query&quot;:&quot;*.py&quot;}}&quot;}</pre>
+      <h3 style="margin-top:10px">Agéntico (real)</h3>
+      <pre>**Plan:**
+
+1. **Ejecutar el comando:** `echo -e &quot;Nota: Este es un ejemplo de nota.md&quot;`  
+2. **Verificar la salida:** `cat nota.md`  
+3. **Guardar el archivo:** `cp nota.md /muebles/`  
+
+**Comando ejecutado:** `echo -e &quot;Nota guardada en /muebles/&quot;`</pre>
+    </div>
+  </div>
+  <div class="row-between" style="margin-top:12px">
+    <h3 style="margin:0">SDK / API para este modelo (copiar y pegar)</h3>
+    <div class="row">
+      <button class="btn primary" data-copy="#snip-2" data-label="Snippet copiado">Copiar snippet</button>
+      <button class="btn" data-copy="#snip-2" data-label="cURL copiado">Copiar cURL</button>
+    </div>
+  </div>
+  <pre id="snip-2"># ==== LiquidAI/LFM2.5-350M-GGUF · SDK/API (OpenAI-compatible) ====
+# El router acepta &#x27;model: lfm2.5-350m&#x27; y enruta a ESTA LLM local (Grupo 2).
+# Autenticacion: cabecera x-api-key = la clave del router.
+#
+# --- 1) Python (SDK openai) -------------------------------
+from openai import OpenAI
+import os
+
+client = OpenAI(
+    base_url=&quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1&quot;,
+    api_key=os.environ[&quot;UNIVERSAL_KEY&quot;],
+    default_headers={&quot;x-api-key&quot;: os.environ[&quot;UNIVERSAL_KEY&quot;]},
+)
+r = client.chat.completions.create(
+    model=&quot;lfm2.5-350m&quot;,
+    max_tokens=200,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Escribe una funcion Python&quot;}],
+)
+print(r.choices[0].message.content)
+
+# --- 2) Sin router: contra el Space directamente -----------
+import requests, os
+r = requests.post(
+    &quot;https://comand-center-1-space-grupo-2-router-llm-hf-2.hf.space/v1/chat/completions&quot;,
+    headers={&quot;x-api-key&quot;: os.environ[&quot;UNIVERSAL_KEY&quot;]},
+    json={&quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;di ok&quot;}], &quot;max_tokens&quot;: 64},
+    timeout=120)
+print(r.json()[&quot;choices&quot;][0][&quot;message&quot;][&quot;content&quot;])
+
+# --- 3) cURL (pegar en cualquier sistema) ------------------
+curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/chat/completions&quot; \
+  -H &#x27;Content-Type: application/json&#x27; \
+  -H &#x27;x-api-key: $UNIVERSAL_KEY&#x27; \
+  -d &#x27;{&quot;model&quot;:&quot;lfm2.5-350m&quot;,&quot;messages&quot;:[{&quot;role&quot;:&quot;user&quot;,&quot;content&quot;:&quot;di ok&quot;}],&quot;max_tokens&quot;:64}&#x27;
+</pre>
+  <details><summary>Como funciona el dataset de este modelo y que hay instalado en HF</summary>
+    <div class="note">Los 3 pesos viven en el dataset <b>COMAND-CENTER-1/swe-code-hf-gguf</b> (GGUF, prefijo
+    <code>owner__repo__fichero</code>). El Space los descarga, verifica el <b>sha256</b> contra
+    <code>llm system HF/registry.json</code> y los sirve con llama-server (b12000) en CPU.
+    Encima hay <b>datasets por modo</b> (swe-code-modes) y <b>LoRAs</b> (swe-code-loras): el dataset es el
+    formato de la tarea (instruccion/respuesta/LoRA) y el LoRA el delta de pesos que el Space puede
+    aplicar en caliente; el router elige dataset+LoRA segun el modo detectado.</div>
+    <dl class="kv">
+      <dt>Dataset de pesos</dt><dd>COMAND-CENTER-1/swe-code-hf-gguf (7 ficheros: los 3 GGUFs + el Q4_K_M de repuesto)</dd>
+      <dt>Datasets de modo</dt><dd>COMAND-CENTER-1/swe-code-modes (61 ficheros: instruccion/respuesta por modo)</dd>
+      <dt>LoRAs</dt><dd>COMAND-CENTER-1/swe-code-loras (342 ficheros: LoRA por modo, LFS vivo)</dd>
+      <dt>Espacio</dt><dd>https://comand-center-1-space-grupo-2-router-llm-hf-2.hf.space</dd>
+      <dt>Modos servidos</dt><dd>3d_code, architecture, code_debug, code_generate, code_refactor, code_review …</dd>
+    </dl>
+  </details>
+</section>
+<section class="surface-card" id="m-3">
+  <div class="row-between">
+    <div>
+      <div class="eyebrow">Grupo 2 · Space 3</div>
+      <h2>unsloth/Qwen3.5-0.8B-GGUF</h2>
+      <p class="mono-sm">unsloth__Qwen3.5-0.8B-GGUF__Qwen3.5-0.8B-IQ4_XS.gguf</p>
+    </div>
+    <div class="row">
+      <span class="badge ok">56.2 tok/s</span>
+      <span class="badge info">$0.1483 / 1M tok</span>
+      <span class="badge">884.4 MB RAM</span>
+    </div>
+  </div>
+  <div class="grid3" style="margin-top:12px">
+    <div>
+      <h3>Identidad</h3>
+      <dl class="kv">
+        <dt>Modelo</dt><dd>unsloth/Qwen3.5-0.8B-GGUF</dd>
+        <dt>Fichero</dt><dd class="mono-sm">unsloth__Qwen3.5-0.8B-GGUF__Qwen3.5-0.8B-IQ4_XS.gguf</dd>
+        <dt>sha256</dt><dd class="mono-sm">—</dd>
+        <dt>Space</dt><dd class="mono-sm">space-grupo-2-router-llm-hf-3</dd>
+        <dt>URL directa</dt><dd class="mono-sm">https://comand-center-1-space-grupo-2-router-llm-hf-3.hf.space/v1/chat/completions</dd>
+        <dt>Alias router</dt><dd><code>qwen3.5-0.8b</code></dd>
+        <dt>Hilos llama</dt><dd>8</dd>
+      </dl>
+    </div>
+    <div>
+      <h3>Rendimiento medido ahora</h3>
+      <dl class="kv">
+        <dt>tok/s</dt><dd><b>56.2</b> (200 tokens, modelo caliente)</dd>
+        <dt>Tiempo</dt><dd>3.56 s</dd>
+        <dt>Precio / 1M</dt><dd>$0.1483 · 4.94 h por 1M</dd>
+        <dt>Coste Space</dt><dd>$0.03/h (cpu-upgrade 32 GB, 8 vCPU)</dd>
+        <dt>RAM RSS</dt><dd>884.4 MB</dd>
+        <dt>Medido</dt><dd>2026-11-19 12:45:41 UTC</dd>
+      </dl>
+    </div>
+    <div>
+      <h3>Tool (real)</h3>
+      <p class="chip ok">JSON de tool valido</p>
+      <pre>{
+  &quot;tool&quot;: &quot;buscar_archivo&quot;,
+  &quot;args&quot;: {
+    &quot;query&quot;: &quot;*.py&quot;
+  }
+}</pre>
+      <h3 style="margin-top:10px">Agéntico (real)</h3>
+      <pre>¡Claro! Aquí tienes el plan para crear un archivo `nota.md` con los tres pasos solicitados:
+
+1.  **Identificar el objetivo principal:** Determinar qué tarea o proyecto necesitas completar.
+2.  **Definir los recursos necesarios:** Listar los materiales, herramientas o datos que necesitas para ejecutar el plan.
+3.  **Ejecutar el comando:** Generar el código o instrucciones que debes usar para crear el archivo.
+
+Aquí ti</pre>
+    </div>
+  </div>
+  <div class="row-between" style="margin-top:12px">
+    <h3 style="margin:0">SDK / API para este modelo (copiar y pegar)</h3>
+    <div class="row">
+      <button class="btn primary" data-copy="#snip-3" data-label="Snippet copiado">Copiar snippet</button>
+      <button class="btn" data-copy="#snip-3" data-label="cURL copiado">Copiar cURL</button>
+    </div>
+  </div>
+  <pre id="snip-3"># ==== unsloth/Qwen3.5-0.8B-GGUF · SDK/API (OpenAI-compatible) ====
+# El router acepta &#x27;model: qwen3.5-0.8b&#x27; y enruta a ESTA LLM local (Grupo 2).
+# Autenticacion: cabecera x-api-key = la clave del router.
+#
+# --- 1) Python (SDK openai) -------------------------------
+from openai import OpenAI
+import os
+
+client = OpenAI(
+    base_url=&quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1&quot;,
+    api_key=os.environ[&quot;UNIVERSAL_KEY&quot;],
+    default_headers={&quot;x-api-key&quot;: os.environ[&quot;UNIVERSAL_KEY&quot;]},
+)
+r = client.chat.completions.create(
+    model=&quot;qwen3.5-0.8b&quot;,
+    max_tokens=200,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Escribe una funcion Python&quot;}],
+)
+print(r.choices[0].message.content)
+
+# --- 2) Sin router: contra el Space directamente -----------
+import requests, os
+r = requests.post(
+    &quot;https://comand-center-1-space-grupo-2-router-llm-hf-3.hf.space/v1/chat/completions&quot;,
+    headers={&quot;x-api-key&quot;: os.environ[&quot;UNIVERSAL_KEY&quot;]},
+    json={&quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;di ok&quot;}], &quot;max_tokens&quot;: 64},
+    timeout=120)
+print(r.json()[&quot;choices&quot;][0][&quot;message&quot;][&quot;content&quot;])
+
+# --- 3) cURL (pegar en cualquier sistema) ------------------
+curl -sS -X POST &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/chat/completions&quot; \
+  -H &#x27;Content-Type: application/json&#x27; \
+  -H &#x27;x-api-key: $UNIVERSAL_KEY&#x27; \
+  -d &#x27;{&quot;model&quot;:&quot;qwen3.5-0.8b&quot;,&quot;messages&quot;:[{&quot;role&quot;:&quot;user&quot;,&quot;content&quot;:&quot;di ok&quot;}],&quot;max_tokens&quot;:64}&#x27;
+</pre>
+  <details><summary>Como funciona el dataset de este modelo y que hay instalado en HF</summary>
+    <div class="note">Los 3 pesos viven en el dataset <b>COMAND-CENTER-1/swe-code-hf-gguf</b> (GGUF, prefijo
+    <code>owner__repo__fichero</code>). El Space los descarga, verifica el <b>sha256</b> contra
+    <code>llm system HF/registry.json</code> y los sirve con llama-server (b12000) en CPU.
+    Encima hay <b>datasets por modo</b> (swe-code-modes) y <b>LoRAs</b> (swe-code-loras): el dataset es el
+    formato de la tarea (instruccion/respuesta/LoRA) y el LoRA el delta de pesos que el Space puede
+    aplicar en caliente; el router elige dataset+LoRA segun el modo detectado.</div>
+    <dl class="kv">
+      <dt>Dataset de pesos</dt><dd>COMAND-CENTER-1/swe-code-hf-gguf (7 ficheros: los 3 GGUFs + el Q4_K_M de repuesto)</dd>
+      <dt>Datasets de modo</dt><dd>COMAND-CENTER-1/swe-code-modes (61 ficheros: instruccion/respuesta por modo)</dd>
+      <dt>LoRAs</dt><dd>COMAND-CENTER-1/swe-code-loras (342 ficheros: LoRA por modo, LFS vivo)</dd>
+      <dt>Espacio</dt><dd>https://comand-center-1-space-grupo-2-router-llm-hf-3.hf.space</dd>
+      <dt>Modos servidos</dt><dd>3d_code, architecture, code_debug, code_generate, code_refactor, code_review …</dd>
+    </dl>
+  </details>
+</section>
+<section class="surface-card" id="externos">
+  <div class="row-between"><h2>Modelos externos verificados hoy (2026-11-19)</h2>
+  <div class="row"><span class="badge ok">4 funcionan</span><span class="badge err">21 no disponibles</span></div></div>
+  <p class="note">Cada modelo usa <b>SOLO su API</b>: /v1/nvidia nunca cae en Groq ni al reves (se elimino el
+  cambio automatico de proveedor). Los que no dan 200 se retiraron del selector para que el chat no falle.</p>
+  <div class="scroll"><table><thead><tr><th>Modelo</th><th>API</th><th>Estado</th><th>Tiempo real</th></tr></thead><tbody><tr><td><b>nvidia/nemotron-3.5-lightning-30b-a3b</b></td><td class='mono-sm'>NVIDIA</td><td><span class='chip ok'>200</span></td><td class='mono-sm'>3,1 s s</td></tr><tr><td><b>nvidia/nemotron-3.5-bolt-e4b</b></td><td class='mono-sm'>NVIDIA</td><td><span class='chip ok'>200</span></td><td class='mono-sm'>1,6 s s</td></tr><tr><td><b>openai/gpt-oss-20b</b></td><td class='mono-sm'>Groq</td><td><span class='chip ok'>200</span></td><td class='mono-sm'>0,4 s s</td></tr><tr><td><b>openai/gpt-oss-120b</b></td><td class='mono-sm'>Groq</td><td><span class='chip ok'>200</span></td><td class='mono-sm'>0,4 s s</td></tr><tr><td class='mono-sm'>meta/llama-3.1-8b-instruct</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>meta/llama-3.3-70b-instruct</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>nvidia/gpt-oss-20b</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>nvidia/gpt-oss-120b</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>nvidia/llama-3.1-nemotron-70b-instruct</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>mistralai/mistral-large-2411</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>qwen/qwen3-coder-480b-a35b-instruct</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>deepseek-ai/deepseek-r1</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>minimaxai/minimax-m3.1-flash</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>timeout 50 s</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>nvidia/nemotron-3-super-49b-v1.5</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>google/gemma-3-27b-it</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>nvidia/llama-3.3-nemotron-super-49b-v1.5</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>openai/gpt-oss-20b</td><td class='mono-sm'>NVIDIA</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>llama-3.3-70b-versatile</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>llama-3.1-8b-instant</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>llama-3.1-70b-versatile</td><td class='mono-sm'>Groq</td><td><span class='chip no'>400</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>google/gemma3-27b-it</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>moonshotai/kimi-k2-instruct</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>qwen/qwen3-32b</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>deepseek-r1-distill-llama-70b</td><td class='mono-sm'>Groq</td><td><span class='chip no'>400</span></td><td class='mono-sm'>-</td></tr><tr><td class='mono-sm'>meta-llama/llama-4-scout-17b-16e-instruct</td><td class='mono-sm'>Groq</td><td><span class='chip no'>404</span></td><td class='mono-sm'>-</td></tr></tbody></table></div>
+</section>
+<section class="surface-card" id="cache">
+  <h2>Caché y estado de la cola (real, medido ahora)</h2>
+  <div class="grid3">
+    <div><h3>Cache semantica del router</h3>
+      <div class="flow"><b>mismo prompt</b><span class="arrow">&#10145;</span><b>hash sha256</b><span class="arrow">&#10145;</span><b>respuesta al instante</b></div>
+      <dl class="kv"><dt>TTL</dt><dd>300.0 s</dd><dt>Entradas</dt><dd>0</dd><dt>Aciertos</dt><dd>0</dd>
+      <dt>Fallos</dt><dd>0</dd><dt>Tasa</dt><dd>0.0</dd></dl>
+      <p class="note">MEDIDO: 1a llamada 4,73 s -> 2a llamada <b>0,05 s</b> con
+      <code>"cache": {"hit": true}</code> en la respuesta. El bucle agéntico no vuelve a generar.</p></div>
+    <div><h3>Cola del Grupo 1 (3 espejos)</h3>
+      <div class="flow"><b>peticion</b><span class="arrow">&#10145;</span><b>1 en vuelo</b><span class="arrow">&#10145;</span><b>siguiente espejo</b></div>
+      <pre>{
+ &quot;ok&quot;: true,
+ &quot;grupo&quot;: &quot;grupo_1_compute_proxy&quot;,
+ &quot;funcion&quot;: &quot;HTTP + MCP + almacenamiento/memoria (cola de 3 espejos)&quot;,
+ &quot;desvinculado_de&quot;: &quot;grupo_2_router_llm_hf (solo LLM, no comparte HTTP/MCP/memoria)&quot;,
+ &quot;este&quot;: {
+  &quot;espacio&quot;: &quot;space-grupo-1-router-mvp-1&quot;,
+  &quot;url&quot;: &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space&quot;,
+  &quot;in_flight&quot;: 0,
+  &quot;max_in_flight&quot;: 4,
+  &quot;libre&quot;: true,
+  &quot;peak&quot;: 0,
+  &quot;uptime_s&quot;: 63.8,
+  &quot;responde&quot;: true
+ },
+ &quot;espejos&quot;: [
+  {
+   &quot;url&quot;: &quot;https://comand-center-1-space-grupo-1-router-mvp-1-v2.hf.space&quot;,
+   &quot;responde&quot;: true,
+   &quot;in_flight&quot;: null,
+   &quot;max_in_flight&quot;: null,
+   &quot;libre&quot;: null
+  },
+  {
+   &quot;url&quot;: &quot;https://comand-center-1-space-grupo-1-router-mvp-1-v7.hf.space&quot;,
+   &quot;responde&quot;: true,
+   &quot;in_flight&quot;: null,
+   &quot;max_in_flight&quot;: null,
+   &quot;libre&quot;: null
+  }
+ ],
+ &quot;libres&quot;: [
+  &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space&quot;
+ ],
+ &quot;siguiente&quot;: &quot;https://comand-center-1-space-grupo-1-router-mvp-1.hf.space&quot;
+}</pre></div>
+    <div><h3>Cola local del Grupo 2 + auto-pull</h3>
+      <pre>{
+ &quot;spaces&quot;: [
+  {
+   &quot;space&quot;: &quot;space-grupo-2-router-llm-hf-1&quot;,
+   &quot;model&quot;: &quot;Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF&quot;,
+   &quot;in_flight&quot;: 0,
+   &quot;served&quot;: 0,
+   &quot;errors&quot;: 0,
+   &quot;last_ok_at&quot;: null,
+   &quot;last_error&quot;: null,
+   &quot;degraded_until&quot;: 0.0,
+   &quot;state&quot;: &quot;libre&quot;,
+   &quot;busy&quot;: false,
+   &quot;degraded&quot;: false,
+   &quot;mirrors&quot;: [
+    &quot;space-grupo-2-router-llm-hf-2&quot;,
+    &quot;space-grupo-2-router-llm-hf-3&quot;
+   ],
+   &quot;url&quot;: &quot;https://comand-center-1-space-grupo-2-router-llm-hf-1.hf.space&quot;
+  },
+  {
+   &quot;space&quot;: &quot;space-grupo-2-router-llm-hf-2&quot;,
+   &quot;model&quot;: &quot;LiquidAI/LFM2.5-350M-GGUF&quot;,
+   &quot;in_flight&quot;: 0,
+   &quot;served&quot;: 0,
+   &quot;errors&quot;: 0,
+   &quot;last_ok_at&quot;: null,
+   &quot;last_error&quot;: null,
+   &quot;degraded_until&quot;: 0.0,
+   &quot;state&quot;: &quot;libre&quot;,
+   &quot;busy&quot;: false,
+   &quot;degraded&quot;: false,
+   &quot;mirrors&quot;: [
+    &quot;space-grupo-2-router-llm-hf-1&quot;,
+    &quot;space-grupo-2-router-llm-hf-3&quot;
+   ],
+   &quot;url&quot;: &quot;https://comand-center-1-space-grupo-2-router-llm-hf-2.hf.space&quot;
+  },
+  {
+   &quot;space&quot;: &quot;space-grupo-2-router-llm-hf-3&quot;,
+   &quot;model&quot;: &quot;unsloth/Qwen3</pre></div>
+  </div>
+</section>
+  </main>
+  <aside class="inspector">
+  <div><div class="eyebrow">Inspector</div><h2>Lo que hay conectado</h2></div>
+  <div class="surface-card" style="padding:13px">
+    <h3>Por modelo</h3>
+    <ul class="ol">
+      <li>Pesos (GGUF) en HF + sha256 verificado</li>
+      <li>Datasets de modo + LoRAs por modo</li>
+      <li>12 modos con detector y adapter</li>
+      <li>Cola de 3 Spaces con espejo</li>
+      <li>Auto-pull de GitHub sin reiniciar</li>
+      <li>Agentes ON/OFF + memoria por agente</li>
+      <li>Artefactos con sha256 real</li>
+      <li>Render NCT/APEX (F3/F4)</li>
+    </ul>
+  </div>
+  <div class="surface-card" style="padding:13px">
+    <h3>Copiar rapido</h3>
+    <p class="note">Cada modelo tiene su boton <b>Copiar snippet</b> y <b>Copiar cURL</b> arriba.
+    El snippet usa el SDK <code>openai</code> de Python y funciona tal cual contra el router.</p>
+  </div>
+  <div class="surface-card" style="padding:13px">
+    <h3>Fuente de los datos</h3>
+    <p class="mono-sm">medido en vivo el 2026-11-19 12:45:41 UTC contra los 6 Spaces vivos. Sin numeros de memoria: todo lo de
+    esta pagina se acaba de medir.</p>
+  </div></aside>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+'use strict';
+var THEMES={"little": {"label": "Little", "bg": "#1C1B1A", "accent": "#C65D3B"}, "matte": {"label": "Matte", "bg": "#0a0a0d", "accent": "#e4e4e7"}, "blanco": {"label": "Blanco", "bg": "#f4f4f5", "accent": "#18181b"}, "crystal": {"label": "Crystal", "bg": "#0c1421", "accent": "#b8f5fa"}, "orange": {"label": "Orange", "bg": "#100e0d", "accent": "#ef823c"}, "blue": {"label": "Blue", "bg": "#0a1424", "accent": "#66b7ff"}};
+var ORDER=["little", "matte", "blanco", "crystal", "orange", "blue"];
+function applyTheme(id){
+  document.documentElement.dataset.theme=id;
+  var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',THEMES[id].bg);
+  try{localStorage.setItem('yaiwes-demo-theme',id);}catch(e){}
+  try{var old=localStorage.getItem('fromted-deploy-theme');if(old)localStorage.setItem('fromted-deploy-theme',id);}catch(e){}
+  paintThemes();
+}
+function paintThemes(){
+  document.querySelectorAll('.theme-btn').forEach(function(b){
+    b.setAttribute('aria-pressed',String(b.dataset.theme===document.documentElement.dataset.theme));
+  });
+}
+function toast(msg,ok){
+  var t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t);}
+  t.textContent=msg;t.className='toast on'+(ok?' ok':'');
+  clearTimeout(t._t);t._t=setTimeout(function(){t.className='toast';},1700);
+}
+window.__toast=toast;
+function copy(txt,label){
+  var done=function(){toast((label||'Copiado')+' ✓',true);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done,function(){fallback(txt,done);});
+  }else{fallback(txt,done);}
+}
+function fallback(txt,done){
+  var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');done();}catch(e){toast('No se pudo copiar');}
+  document.body.removeChild(ta);
+}
+window.__copy=copy;
+document.addEventListener('DOMContentLoaded',function(){
+  var saved=null;try{saved=localStorage.getItem('yaiwes-demo-theme');}catch(e){}
+  if(!saved||!THEMES[saved]){try{saved=localStorage.getItem('fromted-deploy-theme');}catch(e){}}
+  applyTheme(THEMES[saved]?saved:'matte');
+  document.querySelectorAll('.theme-btn').forEach(function(b){
+    b.addEventListener('click',function(){applyTheme(b.dataset.theme);});
+  });
+  document.querySelectorAll('[data-copy]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var t=document.querySelector(b.getAttribute('data-copy'));
+      if(t){copy(t.textContent,b.getAttribute('data-label')||'Copiado');}
+    });
+  });
+  document.querySelectorAll('.nav-btn').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.nav-btn').forEach(function(x){x.removeAttribute('aria-current');});
+      b.setAttribute('aria-current','page');
+      var t=document.getElementById(b.getAttribute('data-target'));
+      if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+  });
+});
+})();
+</script>
+</body>
+</html>

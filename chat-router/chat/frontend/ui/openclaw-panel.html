@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es" data-theme="little">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1C1B1A">
+<title>OpenClaw · Agente Autónomo</title>
+<link rel="stylesheet" href="./theme.css">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text-primary);font-family:var(--font);-webkit-font-smoothing:antialiased}
+.wrap{padding:18px;max-width:640px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary);margin:0 0 14px;font-weight:700}
+.icon{width:52px;height:52px;border-radius:12px;background:var(--surface-alt);display:grid;place-items:center;font-size:24px;margin:0 auto 12px;border:1px solid var(--border)}
+.state{font-size:13px;color:var(--text-secondary);min-height:38px}
+.btn{border:1px solid var(--border);background:var(--card);color:var(--text-primary);border-radius:10px;padding:9px 14px;font-size:12px;font-weight:600}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:transparent}
+.btn:hover{filter:brightness(1.08)}
+button:focus-visible{outline:2px solid var(--selected);outline-offset:3px}
+.badge{display:inline-flex;border:1px solid var(--border);background:var(--card);color:var(--text-secondary);padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;margin-top:12px}
+.badge.success{color:var(--success);border-color:var(--success)}
+.badge.danger{color:var(--danger);border-color:var(--danger)}
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:9px 12px;border-radius:0 8px 8px 0;font-size:11px;color:var(--text-secondary);margin-top:12px;text-align:left}
+.mirror{margin-top:16px;text-align:left}
+.mirror h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary);margin:0 0 8px}
+.ctx{background:var(--surface-alt);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--text-secondary);white-space:pre-wrap;word-break:break-word;max-height:120px;overflow:auto}
+.reply{background:var(--surface-alt);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:12px;margin-top:8px;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h2>OpenClaw · agente autonomo</h2>
+    <div class="icon" id="status-icon">···</div>
+    <div class="state" id="status-text">Verificando conexion con el router...</div>
+    <div><button type="button" class="btn primary" id="retry">Reintentar</button></div>
+    <div class="badge" id="status-badge">···</div>
+
+    <div class="mirror">
+      <h3>Espejo del chat · OpenClaw</h3>
+      <div class="ctx" id="ctx">(sin mensaje en el chat)</div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn primary" id="mirror-send">Enviar al agente</button>
+        <button type="button" class="btn" id="mirror-refresh">Traer ultimo mensaje</button>
+      </div>
+      <div class="reply" id="reply" hidden></div>
+    </div>
+
+    <div class="note">Estado real: consulta el <code>/health</code> del router. El espejo usa la
+      ruta <code>/v1/agents/openclaw</code> (mismo motor de los Motores).</div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+var AGENT='openclaw';
+var ROUTER='https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/health';
+function bridge(){
+  try{return (window.parent&&window.parent.chatBridge)||null;}catch(e){return null;}
+}
+function paint(){
+  var stored=null;try{stored=localStorage.getItem('yaiwes-demo-theme')||localStorage.getItem('fromted-deploy-theme');}catch(e){}
+  if(stored){document.documentElement.dataset.theme=stored;}
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m){var bg=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();if(bg)m.setAttribute('content',bg);}
+}
+function checkStatus(){
+  var icon=document.getElementById('status-icon');
+  var text=document.getElementById('status-text');
+  var badge=document.getElementById('status-badge');
+  text.textContent='Consultando al router...';
+  badge.textContent='···';badge.className='badge';
+  fetch(ROUTER,{method:'GET'}).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    icon.textContent='✅';
+    text.textContent='Router vivo: el agente tiene ruta de entrada.';
+    badge.textContent='CONECTADO';badge.className='badge success';
+  }).catch(function(e){
+    icon.textContent='❌';
+    text.textContent='Router no disponible: '+e.message;
+    badge.textContent='SIN CONEXION';badge.className='badge danger';
+  });
+}
+function refreshCtx(){
+  var b=bridge();
+  var el=document.getElementById('ctx');
+  if(!b){el.textContent='Abre el chat (esta ventana es un panel del chat) para usar el espejo.';return;}
+  var msg=b.getLastUserMessage();
+  el.textContent=msg||'(sin mensaje en el chat)';
+}
+function mirrorSend(){
+  var b=bridge();
+  var reply=document.getElementById('reply');
+  if(!b){reply.hidden=false;reply.textContent='Sin chat: el espejo necesita el chat abierto.';return;}
+  var msg=b.getLastUserMessage();
+  if(!msg){reply.hidden=false;reply.textContent='No hay ningun mensaje del chat que reflejar.';return;}
+  var key=b.getApiKey();
+  if(!key){reply.hidden=false;reply.textContent='Falta la API Key en el chat.';return;}
+  reply.hidden=false;reply.textContent='Enviando al agente...';
+  b.sendToAgent(AGENT,msg).then(function(res){
+    if(!res.ok){
+      reply.textContent='HTTP '+(res.j&&(res.j.detail||res.j.error)||res.j&&res.j.status||'error');
+      return;
+    }
+    var t=(res.j.choices&&res.j.choices[0]&&res.j.choices[0].message&&res.j.choices[0].message.content)||'Sin respuesta';
+    reply.textContent=t;
+  }).catch(function(e){
+    reply.textContent='Error de red: '+e.message;
+  });
+}
+document.addEventListener('DOMContentLoaded',function(){
+  paint();
+  document.getElementById('retry').onclick=checkStatus;
+  document.getElementById('mirror-refresh').onclick=refreshCtx;
+  document.getElementById('mirror-send').onclick=mirrorSend;
+  checkStatus();
+  refreshCtx();
+});
+})();
+</script>
+</body>
+</html>
