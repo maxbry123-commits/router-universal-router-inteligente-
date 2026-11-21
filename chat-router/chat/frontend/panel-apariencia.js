@@ -181,10 +181,10 @@ export async function mount(root, { api, tell } = {}) {
     finally { if (btn) btn.disabled = false; }
   };
   for (const g of [1, 2]) {
-    const map = { "srv-on-" + g: "on", "srv-off-" + g: "off", "srv-restart-" + g: "restart", "srv-trigger-" + g: "trigger" };
-    for (const id in map) {
-      const b = q("#" + id);
-      if (b) b.addEventListener("click", (e) => srvAccion(map[id], g, e.currentTarget));
+    const ACC = { "srv-on": "on", "srv-off": "off", "srv-restart": "restart", "srv-trigger": "trigger" };
+    for (const pre in ACC) {
+      const b = q("#" + pre + "-" + g);
+      if (b) b.addEventListener("click", (e) => srvAccion(ACC[pre], g, e.currentTarget));
     }
   }
   srvEstado();
