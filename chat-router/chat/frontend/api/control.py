@@ -78,10 +78,18 @@ def _token():
             or os.environ.get("HUGGING_FACE_HUB_TOKEN") or "")
 
 
-def _req(url, method="GET", body=None, token=False, timeout=None):
+def _clave_router():
+    """Clave del Router (la misma cadena que usa el trigger /api/chat)."""
+    return (os.environ.get("RIU_ROUTER_API_KEY") or os.environ.get("ROUTER_API_KEY")
+            or os.environ.get("UNIVERSAL_KEY") or "")
+
+
+def _req(url, method="GET", body=None, token=False, timeout=None, headers_extra=None):
     headers = {"User-Agent": "YAIWES-Control/1.0"}
     if token and _token():
         headers["Authorization"] = "Bearer " + _token()
+    if headers_extra:
+        headers.update(headers_extra)
     data = None
     if body is not None:
         data = json.dumps(body).encode("utf-8")
@@ -143,6 +151,41 @@ def _estado_grupos():
             "hardware": (spaces[0] or {}).get("hardware"),
         }
     return out
+
+
+def _agentes():
+    """Registro real de agentes del Router (GET /v1/agents, sin clave)."""
+    st, d = _req(f"https://{ROUTER_HOST}/v1/agents", timeout=20)
+    if st != 200 or not isinstance(d, dict):
+        return []
+    salida = []
+    for aid, v in (d.get("agents") or {}).items():
+        if not isinstance(v, dict):
+            continue
+        salida.append({
+            "id": aid,
+            "nombre": v.get("name") or v.get("nombre") or aid,
+            "tipo": v.get("type") or v.get("tipo") or "",
+            "rol": v.get("role") or v.get("rol") or "",
+            "estado": v.get("status") or v.get("estado") or "",
+            "enabled": bool(v.get("enabled")),
+            "declared_enabled": bool(v.get("declared_enabled")),
+            "ruta": v.get("route") or v.get("chat_path") or ("/v1/agents/" + aid),
+            "tools": v.get("tools") or [],
+            "history_count": v.get("history_count", 0),
+            "mirror": bool(v.get("mirror")),
+        })
+    return salida
+
+
+def _estado_agente(aid, enabled):
+    """Interruptor ON/OFF real del agente (POST /v1/agents/<id>/state)."""
+    st, d = _req(f"https://{ROUTER_HOST}/v1/agents/{aid}/state", method="POST",
+                 body={"enabled": bool(enabled)},
+                 headers_extra={"x-api-key": _clave_router()} if _clave_router() else None,
+                 timeout=25)
+    return {"agente": aid, "enabled": bool(enabled), "http": st, "ok": st in (200, 201, 202),
+            "respuesta": d if st != 200 else "ok"}
 
 
 def _catalogo():
@@ -210,7 +253,9 @@ def control_estado():
         "ok": True,
         "grupos": _estado_grupos(),
         "catalogo": _catalogo(),
+        "agentes": _agentes(),
         "token_hf": bool(_token()),
+        "token_router": bool(_clave_router()),
     })
 
 
@@ -230,6 +275,47 @@ async def control_accion(request: Request):
     if grupo not in GRUPOS:
         return JSONResponse(status_code=400,
                             content={"ok": False, "error": "grupo debe ser 1 o 2"})
+    if accion == "agente-probar":
+        aid = str(body.get("agente") or "").strip()
+        if not aid:
+            return JSONResponse(status_code=400, content={"ok": False, "error": "falta 'agente'"})
+        msg = str(body.get("mensaje") or "Responde en una frase: que puedes hacer.")
+        st, d = _req(f"https://{ROUTER_HOST}/v1/agents/{aid}", method="POST",
+                     body={"message": msg, "messages": [{"role": "user", "content": msg}],
+                           "max_tokens": int(body.get("max_tokens") or 160)},
+                     headers_extra={"x-api-key": _clave_router()} if _clave_router() else None,
+                     timeout=120)
+        salida = ""
+        if isinstance(d, dict):
+            ch = d.get("choices") or []
+            if ch and isinstance(ch[0], dict):
+                salida = str(((ch[0].get("message") or {}).get("content")) or "")
+            elif isinstance(d.get("detail"), str):
+                salida = d["detail"]
+        return JSONResponse(status_code=200, content={
+            "ok": st == 200, "accion": accion, "agente": aid, "http": st,
+            "salida": salida, "respuesta": d if st != 200 else "ok"})
+
+    if accion in ("agente-on", "agente-off"):
+        aid = str(body.get("agente") or "").strip()
+        if not aid:
+            return JSONResponse(status_code=400,
+                                content={"ok": False, "error": "falta 'agente'"})
+        r = _estado_agente(aid, accion == "agente-on")
+        return JSONResponse(status_code=200, content={
+            "ok": r["ok"], "accion": accion, "agente": aid, "detalle": [r],
+            "agentes": _agentes()})
+
+    if accion in ("agentes-on", "agentes-off"):
+        enable = accion == "agentes-on"
+        detalle = []
+        for a in _agentes():
+            detalle.append(_estado_agente(a["id"], enable))
+        return JSONResponse(status_code=200, content={
+            "ok": all(x["ok"] for x in detalle) if detalle else False,
+            "accion": accion, "grupo": grupo, "detalle": detalle,
+            "agentes": _agentes()})
+
     if accion not in ("on", "off", "restart", "trigger"):
         return JSONResponse(status_code=400,
                             content={"ok": False, "error": "accion: on|off|restart|trigger"})

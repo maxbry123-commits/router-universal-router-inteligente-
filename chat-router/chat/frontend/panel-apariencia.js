@@ -194,7 +194,17 @@ export async function mount(root, { api, tell } = {}) {
     const tgA = q("#tg-agentes");
     if (tgA) tgA.addEventListener("click", async (e) => {
       const b = e.currentTarget;
-      if (await llamarControl(b.classList.contains("on") ? "pause-agents" : "resume-agents")) b.classList.toggle("on");
+      // /control/pause-agents no existe en el Router vivo: el interruptor real es
+      // POST /v1/agents/<id>/state {"enabled":bool} y lo aplica la funcion /api/control.
+      const on = b.classList.contains("on");
+      b.disabled = true;
+      try {
+        const r = await fetch("/api/control", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: on ? "agentes-off" : "agentes-on" }) });
+        const d = await r.json().catch(() => ({}));
+        if (d.ok) { b.classList.toggle("on"); avisa("Agentes: " + (on ? "apagados" : "encendidos") + " (" + ((d.detalle || []).length) + ")"); }
+        else avisa("No se pudo cambiar los agentes (" + JSON.stringify(d.detalle || d).slice(0, 140) + ")");
+      } catch (err) { avisa("Agentes: " + err.message); }
+      finally { b.disabled = false; }
     });
     const tgR = q("#tg-router");
     if (tgR) tgR.addEventListener("click", async (e) => {
