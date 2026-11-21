@@ -59,8 +59,15 @@ export async function cargar() {
   // Es la unica fuente que funciona con el Router actual (las rutas /chat/providers* del
   // Router MVP no existen en el Space vivo y por eso todo salia "SIN VERIFICAR").
   try {
-    const r = await fetch("/api/catalogo", { cache: "no-store", credentials: "omit" });
-    const c = r.ok ? await r.json() : null;
+    // /api/control es la ruta que Vercel enruta de verdad (una funcion = un fichero);
+    // /api/catalogo se deja como alternativa por si se despliega aparte.
+    let r = await fetch("/api/control", { cache: "no-store", credentials: "omit" });
+    let ctl = r.ok ? await r.json() : null;
+    let c = ctl && ctl.catalogo ? ctl.catalogo : null;
+    if (!c) {
+      r = await fetch("/api/catalogo", { cache: "no-store", credentials: "omit" });
+      c = r.ok ? await r.json() : null;
+    }
     if (c && c.ok && Array.isArray(c.modelos)) {
       const de = (prov) => (c.modelos || []).filter((m) => m.proveedor === prov).map((m) => ({
         id: m.id,
