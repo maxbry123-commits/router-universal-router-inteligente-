@@ -192,11 +192,20 @@ def _catalogo():
     """Catalogo real, verificado en vivo, en el formato que espera el frontend."""
     # 1) el router vivo dice si tiene claves de NVIDIA/Groq
     st, prov = _req(f"https://{ROUTER_HOST}/v1/providers/health", timeout=20)
-    configurados = {"nvidia": False, "groq": False}
+    # Si el Space NO responde (PAUSED por falta de credito prepaid), los modelos
+    # de API siguen disponibles: las claves estan en el servidor (NVIDIA_KEYS /
+    # GROQ_KEYS) y el trigger llama DIRECTO al proveedor. Los locales (GGUF)
+    # si necesitan el Space.
+    tiene_claves = {
+        "nvidia": bool([k for k in os.environ.get("NVIDIA_KEYS", "").split(",") if k.strip()]),
+        "groq": bool([k for k in os.environ.get("GROQ_KEYS", "").split(",") if k.strip()]),
+    }
+    configurados = dict(tiene_claves)
     if st == 200 and isinstance(prov, dict):
         for it in prov.get("items", []) or []:
             if it.get("id") in ("nvidia", "groq") and it.get("configured"):
                 configurados[it["id"]] = True
+    space_vivo = (st == 200)
 
     # 2) los 3 GGUF del Grupo 2: vivos si su Space responde /health
     locales = []
@@ -211,6 +220,11 @@ def _catalogo():
     with ThreadPoolExecutor(max_workers=3) as ex:
         vivos = list(ex.map(_sonda, g2["spaces"]))
     for (cid, nombre), disponible in zip(MODELOS_LOCALES, vivos):
+        if not space_vivo:
+            # El Space esta PAUSED (sin credito prepaid): los locales no corren.
+            locales.append({"id": cid, "estado": "NO DISPONIBLE", "disponible": False,
+                            "etiqueta": nombre + " — Space PAUSED (falta credito HF)"})
+            continue
         locales.append({
             "id": cid,
             "estado": "DISPONIBLE" if disponible else "SIN VERIFICAR",
@@ -233,8 +247,10 @@ def _catalogo():
         "modelos": modelos,
         "locales": locales,
         "configurados": configurados,
-        "avisoGroq": "" if configurados["groq"] else "sin claves Groq en el Router",
-        "avisoNvidia": "" if configurados["nvidia"] else "sin claves NVIDIA en el Router",
+        "space_vivo": space_vivo,
+        "avisoGroq": "" if configurados["groq"] else "sin claves Groq",
+        "avisoNvidia": "" if configurados["nvidia"] else "sin claves NVIDIA",
+        "avisoEspacio": "" if space_vivo else "El Space del Router esta PAUSED (falta credito prepago en HF): los modelos de API siguen funcionando; los GGUF locales y los agentes, no.",
     }
 
 
