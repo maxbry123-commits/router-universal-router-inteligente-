@@ -144,6 +144,50 @@ export async function mount(root, { api, tell } = {}) {
   const pintarTodo = () => { pintarTemas(); pintarSenal(); pintarPresets(); pintarRoles(); pintarEstudio(); pintarDestinos(); pintarIconos(); pintarAvisos(); if (extra) extra.pintar(); };
   extra = montarExtra(root, { est: () => est, guardar, avisa });
   pintarTodo();
+  // ---- Servidores: 2 grupos (on/off/restart/trigger) via la funcion /api/control ----
+  // El token de HF vive en Vercel (HF_TOKEN_1): el navegador nunca lo ve.
+  const srvEstado = async () => {
+    try {
+      const r = await fetch("/api/control", { cache: "no-store", credentials: "omit" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const d = await r.json();
+      for (const g of [1, 2]) {
+        const el = q("#srv-est-" + g);
+        const info = (d.grupos || {})[String(g)] || {};
+        if (el) {
+          const vivos = info.vivos || 0, total = info.total || 0;
+          const gt = info.gcTimeout;
+          el.textContent = vivos + "/" + total + " activos" +
+            (gt === -1 ? " · sin apagado" : (gt ? " · apaga en " + Math.round(gt / 60) + " min" : ""));
+          el.dataset.estado = vivos ? "on" : "off";
+        }
+        const on = q("#srv-on-" + g);
+        if (on) on.classList.toggle("on", gt === -1);
+      }
+      return d;
+    } catch (e) {
+      for (const g of [1, 2]) { const el = q("#srv-est-" + g); if (el) el.textContent = "sin control (" + e.message + ")"; }
+      return null;
+    }
+  };
+  const srvAccion = async (accion, grupo, btn) => {
+    if (btn) btn.disabled = true;
+    try {
+      const r = await fetch("/api/control", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: accion, grupo: grupo }) });
+      const d = await r.json().catch(() => ({}));
+      avisa("Grupo " + grupo + " · " + accion + ": " + (d.ok ? "hecho" : ("falló " + JSON.stringify(d.detalle || d).slice(0, 160))));
+      await srvEstado();
+    } catch (e) { avisa("Grupo " + grupo + " · " + accion + ": " + e.message); }
+    finally { if (btn) btn.disabled = false; }
+  };
+  for (const g of [1, 2]) {
+    const map = { "srv-on-" + g: "on", "srv-off-" + g: "off", "srv-restart-" + g: "restart", "srv-trigger-" + g: "trigger" };
+    for (const id in map) {
+      const b = q("#" + id);
+      if (b) b.addEventListener("click", (e) => srvAccion(map[id], g, e.currentTarget));
+    }
+  }
+  srvEstado();
   // Control (antes en el chat): Agentes, Router/Emergencia, Respaldo
   if (api) {
     const llamarControl = async (accion) => { try { await api(`/control/${accion}`, { method: "POST" }); avisa(accion + ": ejecutado"); return true; } catch (error) { avisa(error.message); return false; } };

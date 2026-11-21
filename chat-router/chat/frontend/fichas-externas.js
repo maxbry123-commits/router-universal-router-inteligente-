@@ -54,6 +54,31 @@ for (const p of ["groq", "nvidia"]) cacheInicial[p] = (cacheInicial[p] || []).ma
 aplicar(cacheInicial);
 export async function cargar() {
   const d = { groq: [], nvidia: [], locales: [] };
+  // ---- Fuente primaria (Vercel): catalogo REAL verificado en vivo por /api/catalogo ----
+  // La funcion serverless tiene el token de HF en el servidor: el navegador NUNCA lo ve.
+  // Es la unica fuente que funciona con el Router actual (las rutas /chat/providers* del
+  // Router MVP no existen en el Space vivo y por eso todo salia "SIN VERIFICAR").
+  try {
+    const r = await fetch("/api/catalogo", { cache: "no-store", credentials: "omit" });
+    const c = r.ok ? await r.json() : null;
+    if (c && c.ok && Array.isArray(c.modelos)) {
+      const de = (prov) => (c.modelos || []).filter((m) => m.proveedor === prov).map((m) => ({
+        id: m.id,
+        estado: m.disponible === true ? "DISPONIBLE" : (m.disponible === false ? "NO DISPONIBLE" : "SIN VERIFICAR"),
+        disponible: m.disponible === true ? true : (m.disponible === false ? false : null),
+        etiqueta: m.etiqueta || (MARCA[prov] + (NOMBRES[m.id] || m.id))
+      }));
+      d.groq = de("groq"); d.nvidia = de("nvidia");
+      d.locales = (c.locales || []).map((m) => ({
+        id: m.id, estado: m.estado || "SIN VERIFICAR",
+        disponible: m.disponible === true ? true : (m.disponible === false ? false : null),
+        etiqueta: m.etiqueta || m.id
+      }));
+      d.avisoGroq = c.avisoGroq || ""; d.avisoNvidia = c.avisoNvidia || "";
+      try { localStorage.setItem(CACHE, JSON.stringify(d)); } catch (e) {}
+      aplicar(d); return;
+    }
+  } catch (e) { /* sin la funcion del servidor (fuera de Vercel): se sigue con el bridge */ }
   // Fuente primaria: MISMO bridge y banco cifrado que hacen la inferencia de YAIWES y OpenClaw.
   // Si se consulta solo /chat/providers del Router MVP, faltan las claves guardadas en el bridge y aparecen falsos NO CONFIGURADO.
   try {
