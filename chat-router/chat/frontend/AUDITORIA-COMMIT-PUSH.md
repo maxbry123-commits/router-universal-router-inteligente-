@@ -157,3 +157,23 @@ Identidad usada: **`COMAND-CENTER-1` (Antonio Mendoza)** — o sea, **mis pushes
 el código de los 8 Spaces del owner (0 commits), tus 7 variables de Vercel (intactas),
 tus 4 secrets de HF (intactos), y tu catálogo de modelos (`MODELOS_SELECCIONADOS` con
 0 líneas de diferencia contra tu árbol original `7e80b77257c`).
+
+---
+
+## 6) CIERRE — EL REVERT TOTAL (`268caf23e6`, 21/11 11:59:44 UTC = 06:59:44 NY)
+
+| Plataforma | Estado tras el revert | Verificado |
+|---|---|---|
+| **GitHub `main`** | el frontend vuelve a ser **byte-idéntico** a `7e80b77257c` (12-nov) | `git diff --stat 7e80b77257c` ⇒ sólo la constancia (2 ficheros) |
+| Ficheros añadidos por mí | eliminados: `api/chat.py`, `api/control.py`, `LIVE_URL.json`, `ventana-agentes.js`, `requirements.txt`, `tools/ecc_motor.py` | **404** en raw.githubusercontent |
+| `api/ecc_motor.py` | devuelto a su sitio original | **200** |
+| **HF · Spaces** | borrados `riu-router` y `yaiwes-wiring-doctor` | **404 Repository not found** |
+| **HF · reloj de sueño** | los 9 Spaces restaurados a `172800 s` | leído en los 9 ✔ |
+| **HF · commits** | 0 commits míos en tus 8 Spaces (nunca hubo) | verificado Space por Space |
+| **HF · secret** | `FICHA_CLAVE_BANCO` fuera de los 3 mirrors | ya borrado en `d4127437cb7` |
+| **HF · cuenta** | 8 Spaces, los tuyos | `api/spaces?author=COMAND-CENTER-1` |
+| **Vercel** | 22 variables: las 7 originales intactas; `NVIDIA_KEYS`/`GROQ_KEYS` fuera | ya corregido en `d4127437cb7` |
+| **Historia** | **no reescrita**: los 24 commits míos siguen visibles con fecha y autor | `git log main` |
+
+El informe detallado del revert está en **`HISTORIAL-BACK-REVERT.md`** (y dentro del repo, en
+`chat-router/chat/frontend/HISTORIAL-BACK-REVERT.md`).
