@@ -69,10 +69,7 @@ def _post(base, payload, timeout, key):
     req = urllib.request.Request(
         base + "/v1/chat/completions",
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json", "x-api-key": key,
-                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                               "(KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-                 "Accept": "application/json"},
+        headers={"Content-Type": "application/json", "x-api-key": key},
         method="POST",
     )
     try:
@@ -90,60 +87,6 @@ def _post(base, payload, timeout, key):
         return e.code, {"raw": texto}
     except Exception as e:
         raise
-
-
-# ===== FALLBACK DIRECTO A LOS PROVEEDORES (sin depender de los Spaces de HF) =====
-# Si el Space del router esta PAUSED (sin credito prepago), el chat sigue
-# funcionando para NVIDIA y Groq: son APIs externas y solo necesitan su clave.
-# Las claves vienen del sello del banco (NVIDIA_KEYS / GROQ_KEYS en el servidor).
-DIRECTO = {
-    "nvidia": ("https://integrate.api.nvidia.com/v1/chat/completions", "NVIDIA_KEYS"),
-    "groq": ("https://api.groq.com/openai/v1/chat/completions", "GROQ_KEYS"),
-}
-
-
-def _fallback_directo(modelo, payload):
-    """Llama a NVIDIA o Groq directamente. Devuelve (status, datos) o None."""
-    m = str(modelo or "").lower()
-    if m.startswith("nvidia/"):
-        prov = "nvidia"
-    elif m.startswith(("openai/", "groq/")):
-        prov = "groq"
-    else:
-        return None
-    url, var = DIRECTO[prov]
-    claves = [k.strip() for k in os.environ.get(var, "").split(",") if k.strip()]
-    if not claves:
-        return None
-    cuerpo = {"model": modelo, "messages": payload.get("messages") or []}
-    if payload.get("max_tokens"):
-        cuerpo["max_tokens"] = int(payload["max_tokens"])
-    if payload.get("temperature") is not None:
-        cuerpo["temperature"] = float(payload["temperature"])
-    ultimo = None
-    for clave in claves:
-        req = urllib.request.Request(
-            url, data=json.dumps(cuerpo).encode("utf-8"),
-            headers={"Content-Type": "application/json", "Authorization": "Bearer " + clave,
-                     # Groq (Cloudflare) bloquea el UA de urllib con 403/1010:
-                     # hay que enviar un UA de navegador.
-                     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                                   "(KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-                     "Accept": "application/json"},
-            method="POST")
-        try:
-            with urllib.request.urlopen(req, timeout=TIMEOUT_S) as resp:
-                crudo = resp.read().decode("utf-8", "replace")
-                try:
-                    return resp.status, json.loads(crudo)
-                except Exception:
-                    return resp.status, {"raw": crudo[:2000]}
-        except urllib.error.HTTPError as e:
-            ultimo = {"http": e.code, "detalle": e.read().decode("utf-8", "replace")[:300]}
-        except Exception as e:
-            ultimo = {"http": 0, "detalle": repr(e)[:200]}
-        time.sleep(0.4)
-    return ( ultimo.get("http", 0) if ultimo else 0, {"error": ultimo} )
 
 
 async def _core(request: Request):
@@ -186,36 +129,6 @@ async def _core(request: Request):
         payload["max_tokens"] = int(body["max_tokens"])
     if body.get("temperature") is not None:
         payload["temperature"] = float(body["temperature"])
-
-    # --- PRIMERO: el Space. Si no responde (PAUSED / 503 / sin credito), se va
-    # DIRECTO al proveedor externo (NVIDIA/Groq) para que el chat no se caiga.
-    try:
-        base0 = (MIRRORS[0] if MIRRORS else BASE).rstrip("/")
-        st0, d0 = _post(base0, payload, 12, key)
-        if st0 == 200:
-            d0 = dict(d0)
-            d0.setdefault("trigger", {})["vacio"] = False
-            d0["trigger"]["ruta"] = "space"
-            return (200, CORS, json.dumps(d0, ensure_ascii=False))
-        if st0 in (503, 502, 404, 0):
-            fb = _fallback_directo(payload.get("model"), payload)
-            if fb:
-                sfb, dfb = fb
-                if sfb == 200:
-                    dfb = dict(dfb)
-                    dfb.setdefault("trigger", {})["vacio"] = False
-                    dfb["trigger"]["ruta"] = "directo (sin Space)"
-                    return (200, CORS, json.dumps(dfb, ensure_ascii=False))
-    except Exception:
-        pass
-    fb = _fallback_directo(payload.get("model"), payload)
-    if fb:
-        sfb, dfb = fb
-        if sfb == 200:
-            dfb = dict(dfb)
-            dfb.setdefault("trigger", {})["vacio"] = False
-            dfb["trigger"]["ruta"] = "directo (sin Space)"
-            return (200, CORS, json.dumps(dfb, ensure_ascii=False))
 
     ultimo = {"error": {"message": "sin respuesta del router"}}
     for intento in range(INTENTOS):

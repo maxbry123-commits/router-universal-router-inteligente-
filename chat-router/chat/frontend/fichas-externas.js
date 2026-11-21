@@ -9,8 +9,8 @@ const CACHE = "riu_fichas_ext_v3", KG = "riu_groq_modelo", VIEJAS = /^nv-/;
 // VERIFICADOS en vivo contra cada API (los demas dan 404 en su API):
 //   NVIDIA (integrate.api.nvidia.com): 2 de 15 probados responden 200.
 //   Groq   (api.groq.com/openai/v1):   2 de 12 probados responden 200 (gpt-oss).
-export const MODELOS_SELECCIONADOS = new Set(["nvidia/nemotron-3.5-lightning-30b-a3b", "nvidia/nemotron-3.5-bolt-e4b", "openai/gpt-oss-20b", "openai/gpt-oss-120b"]);
-const NOMBRES = { "nvidia/nemotron-3.5-lightning-30b-a3b": "Nemotron 3.5 Lightning 30B", "nvidia/nemotron-3.5-bolt-e4b": "Nemotron 3.5 Bolt 4B", "openai/gpt-oss-20b": "GPT OSS 20B", "openai/gpt-oss-120b": "GPT OSS 120B" };
+export const MODELOS_SELECCIONADOS = new Set(["groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"]);
+const NOMBRES = { "groq/qwen/qwen3.8-27b": "Qwen 3.8 27B", "nvidia/minimaxai/minimax-m3.1-flash": "MiniMax M3.1 Flash", "nvidia/meta/muse-glimmer-30b": "Muse Glimmer 30B", "nvidia/nvidia/nemotron-3-ultra-550b-a55b": "Nemotron 3 Ultra 550B", "nvidia/z-ai/glm-5.3": "GLM 5.3" };
 const MARCA = { groq: "Groq · ", nvidia: "NVIDIA · " };
 // catálogo real del proveedor (ids «<prov>/…») -> [{id, etiqueta, disponible}]: los elegidos presentes primero y, después, los ausentes como NO DISPONIBLE
 export function seleccionar(prov, catalogo) {

@@ -20,15 +20,13 @@ export const SWE_LISTAS = {
     ["hf-liquid-lfm25", "Liquid LFM2.5 350M", "HF local"],
     ["hf-qwen25-coder-05b", "Qwen2.5 Coder 0.5B", "HF local"],
     ["hf-qwen35-08b", "Qwen3.5 0.8B", "HF local"]] },
-  "swen-code-free": { nombre: "SWE CODE free", titulo: "SWE CODE free · locales + APIs gratuitas", modelos: [
-    ["hf-liquid-lfm25", "Liquid LFM2.5 350M", "HF local"],
-    ["hf-qwen25-coder-05b", "Qwen2.5 Coder 0.5B", "HF local"],
-    ["hf-qwen35-08b", "Qwen3.5 0.8B", "HF local"],
-    ["openai/gpt-oss-20b", "GPT OSS 20B", "API Groq"],
-    ["openai/gpt-oss-120b", "GPT OSS 120B", "API Groq"],
-    ["nvidia/nemotron-3.5-lightning-30b-a3b", "Nemotron 3.5 Lightning 30B", "API NVIDIA"],
-    ["nvidia/nemotron-3.5-bolt-e4b", "Nemotron 3.5 Bolt 4B", "API NVIDIA"]] },
-};
+  "swen-code-free": { nombre: "SWEN CODE free", titulo: "SWE CODE free · cuentas web", modelos: [
+    ["hf-qwen3-06b", "Qwen3 0.6B", "HF local"],
+    ["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max", "opiniones web + decisión Qwen 3.8 Max"],
+    ["web-qwen38max", "Qwen 3.8 Max (web)", "suscripción web"],
+    ["web-qwen37max", "Qwen 3.7 Max (web)", "suscripción web"],
+    ["web-dsv4-flash", "DeepSeek V4 Flash (web)", "suscripción web"],
+    ["web-claude-sonnet", "Claude Sonnet (web)", "sesión web autorizada · verificación obligatoria"]] },};
 // Modelos web de SWEN CODE free (cuentas web del bridge): no estan en el catalogo del Harness, solo sirven para el chat directo por el bridge.
 export const MODELOS_WEB = [["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"], ["web-claude-sonnet", "Claude Sonnet (web)"]];
 // MODO DE TRABAJO (antes «modelos» swecode-<modo>): el bridge ya acepta `modo` junto a cualquier modelo (server.js: conPreambulo). Vacio = sin modo.
@@ -48,12 +46,20 @@ export function leerEjecutorTools() { return ejecutorDeAgente(leerSeleccion().ag
 // ---- Selectores de agente/modelo/workflow (contrato TareaSWE de chat-router/agentes/adaptadores/contrato.py) ----
 // Catalogo unico de agentes/adaptadores/modelos.py: el frontend solo lo refleja; el servidor valida y la disponibilidad real la reporta el Harness.
 export const MODELOS_SWE = [
-  ["hf/lfm2.5-350m", "Liquid LFM2.5 350M", "HF local"], ["hf/qwen2.5-coder-0.5b", "Qwen2.5 Coder 0.5B", "HF local"],
-  ["hf/qwen3.5-0.8b", "Qwen3.5 0.8B", "HF local"],
-  ["openai/gpt-oss-20b", "GPT OSS 20B", "API Groq"], ["openai/gpt-oss-120b", "GPT OSS 120B", "API Groq"],
-  ["nvidia/nemotron-3.5-lightning-30b-a3b", "Nemotron 3.5 Lightning 30B", "API NVIDIA"],
-  ["nvidia/nemotron-3.5-bolt-e4b", "Nemotron 3.5 Bolt 4B", "API NVIDIA"]
-];
+  ["hf/lfm2.5-350m", "Liquid LFM2.5 350M", "HF local"], ["hf/qwen2.5-coder-0.5b", "Qwen2.5 Coder 1.5B", "HF local"],
+  ["hf/qwen3.5-0.8b", "Qwen3.5 0.8B", "HF local"], ["hf/qwen3-0.6b", "Qwen3 0.6B", "HF local"],
+  ["swecode-consulta", "Ask Cónsil · Qwen 3.8", "web"],
+  ["web-qwen38max", "Qwen 3.8 Max", "web"], ["web-qwen37max", "Qwen 3.7 Max", "web"],
+  ["web-dsv4-flash", "DeepSeek V4 Flash", "web"], ["web-claude-sonnet", "Claude Sonnet", "web"],
+  ["groq/qwen/qwen3.8-27b", "Qwen 3.8 Groq", "API Groq"], ["nvidia/minimaxai/minimax-m3.1-flash", "MiniMax M3.1 Flash", "API NVIDIA"],
+  ["nvidia/meta/muse-glimmer-30b", "Muse Glimmer 30B", "API NVIDIA"], ["nvidia/nvidia/nemotron-3-ultra-550b-a55b", "Nemotron 3 Ultra", "API NVIDIA"],
+  ["nvidia/z-ai/glm-5.3", "GLM 5.3", "API NVIDIA"],
+  ["deepseek/deepseek-v4-pro", "DeepSeek V4 Pro", "API DeepSeek"],
+  ["deepseek/deepseek-flash", "DeepSeek Flash", "API DeepSeek"],
+  ["minimax/MiniMax-M3", "MiniMax M3", "API MiniMax"],
+  ["minimax/MiniMax-M2.7", "MiniMax M2.7", "API MiniMax"],
+  ["openai/gpt-5.6", "OpenAI GPT-5.6", "API OpenAI"],
+  ["openai/gpt-5.5", "OpenAI GPT-5.5", "API OpenAI"]];
 export const AGENTES_SWE = [["openclaw", "OpenClaw"], ["swe-agent", "SWE-agent"], ["openhands", "OpenHands"], ["opencode", "OpenCode"], ["codex", "Codex"], ["claude-code", "Claude Code"]];
 export const WORKFLOWS_SWE = [["individual", "Individual"], ["swe_code", "SWE CODE cuatro pasos"], ["liquid_mirror", "Liquid Mirror"]];
 // Liquid Mirror: dos participantes propios (mismo modelo, servidores HF independientes), sin mezclar con los modelos web.

@@ -193,15 +193,7 @@ def _catalogo():
     """Catalogo real, verificado en vivo, en el formato que espera el frontend."""
     # 1) el router vivo dice si tiene claves de NVIDIA/Groq
     st, prov = _req(f"https://{ROUTER_HOST}/v1/providers/health", timeout=20)
-    # Si el Space NO responde (PAUSED por falta de credito prepaid), los modelos
-    # de API siguen disponibles: las claves estan en el servidor (NVIDIA_KEYS /
-    # GROQ_KEYS) y el trigger llama DIRECTO al proveedor. Los locales (GGUF)
-    # si necesitan el Space.
-    tiene_claves = {
-        "nvidia": bool([k for k in os.environ.get("NVIDIA_KEYS", "").split(",") if k.strip()]),
-        "groq": bool([k for k in os.environ.get("GROQ_KEYS", "").split(",") if k.strip()]),
-    }
-    configurados = dict(tiene_claves)
+    configurados = {"nvidia": False, "groq": False}
     if st == 200 and isinstance(prov, dict):
         for it in prov.get("items", []) or []:
             if it.get("id") in ("nvidia", "groq") and it.get("configured"):
@@ -254,7 +246,7 @@ def _catalogo():
         "space_vivo": space_vivo,
         "avisoGroq": "" if configurados["groq"] else "sin claves Groq",
         "avisoNvidia": "" if configurados["nvidia"] else "sin claves NVIDIA",
-        "avisoEspacio": "" if space_vivo else "El Space del Router esta PAUSED (falta credito prepago en HF): los modelos de API siguen funcionando; los GGUF locales y los agentes, no.",
+        "avisoEspacio": "" if space_vivo else "El Space del Router esta PAUSED (falta credito prepago en HF): los GGUF locales y los agentes no pueden funcionar.",
     }
 
 
