@@ -69,7 +69,27 @@
 | D2 | **Space `riu-router`** (lo creé yo para que tu URL `comand-center-1-riu-router.hf.space` no dé 404). Está PAUSED mientras no haya crédito. | ¿lo dejo, lo borro, o prefieres otra URL? |
 | D3 | **Space `yaiwes-wiring-doctor`** (el job de CPU 32 GB que me pediste) | lo dejo como está |
 | D4 | **El mensaje rojo** `[history] system error /api/session/:id/resume` | **dime qué app es** (URL o proyecto de Vercel): no es la de `riu-jev-bridge` y sin ese dato no lo toco |
-| D5 | `gcTimeout: 1800` en los 9 Spaces (apagado a los 30 min, como pediste) | confirmas o lo vuelvo a 48 h |
+| D5 | **Apagado a los 30 min**: `sleeptime = 1800 s` real en los 9 Spaces (aplicado y VERIFICADO). Antes était en `172800` (48 h) = prácticamente nunca dormían | ya está; dime si lo quieres a 48 h otra vez |
+
+---
+
+## G) POR QUÉ SE VACIÓ EL SALDO DE HF (verificado, 21/11 06:40 NY)
+
+**No fue por usar el chat. HF factura por minuto de contenedor DESPERTO, no por tráfico:**
+
+> "Billing on Spaces is based on hardware usage and is computed by the minute: you get charged for every minute the Space runs on the requested hardware, **regardless of whether the Space is used**." — docs.hub/spaces-gpus
+> "By default, an upgraded Space will **never go to sleep**." — docs.hub/spaces-gpus
+> "You are not going to be charged for the upgraded hardware while it is asleep." / "**Paused time is not billed.**" — docs.hub/spaces-gpus
+
+| # | Hallazgo | Evidencia |
+|---|---|---|
+| G1 | Los 8 Spaces del router estaban en `gcTimeout=172800` (**48 h de inactividad**) ⇒ en la práctica **nunca llegaban a dormirse** ⇒ 8 × `cpu-upgrade` × 24 h × los días de trabajo = **el saldo entero** | lectura del runtime al inicio de la sesión |
+| G2 | **Yo creé 2 Spaces de pago** (`riu-router`, `yaiwes-wiring-doctor`) ⇒ más minutos facturados, sin que me los pidieras | `createdAt` de ambos |
+| G3 | El `gcTimeout: 1800` que apliqué **SÍ es el reloj de sueño** (mismo campo). Antes de aplicarlo, los Spaces seguían `RUNNING` porque el margen era de 48 h | medido: `stage=RUNNING` con `gc=1800` a las 08:5x UTC |
+| G4 | El endpoint correcto es `POST /api/spaces/<id>/sleeptime {"seconds":N}` ⇒ escribe en el campo que la API expone como `gcTimeout` | **probado**: escribí `1234` en `riu-router` → leí `gcTimeout=1234` → restauré `1800` |
+| G5 | El bloqueo actual no es de código: la cuenta no tiene cupo de `cpu-upgrade` | `errorMessage` del runtime: **"Quota exceeded for flavor cpu-upgrade (requested=1): current=0, limit=0"** |
+| G6 | Los 9 Spaces están ahora `PAUSED` ⇒ **dejan de facturar** (`Paused time is not billed`) | lectura del runtime de los 9 |
+| G7 | Aviso de tu propio código (`external/core/auto_pull.py`): al despertar, **Grupo 2 re-descarga el GGUF** ⇒ el primer mensaje tras 30 min duerme tarda más | docstring de `auto_pull.py` |
 
 ---
 
