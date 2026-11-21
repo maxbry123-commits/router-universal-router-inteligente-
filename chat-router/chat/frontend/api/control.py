@@ -261,20 +261,15 @@ def control_estado():
 
 @app.post("/api/control")
 async def control_accion(request: Request):
-    """Acciones sobre un grupo: on | off | restart | trigger."""
+    """Acciones: on | off | restart | trigger (por grupo) y agente-on |
+    agente-off | agentes-on | agentes-off | agente-probar (por agente)."""
     try:
         body = json.loads((await request.body()) or b"{}")
     except Exception:
         body = {}
     accion = str(body.get("accion") or "").lower()
-    grupo = body.get("grupo")
-    try:
-        grupo = int(grupo)
-    except Exception:
-        grupo = 0
-    if grupo not in GRUPOS:
-        return JSONResponse(status_code=400,
-                            content={"ok": False, "error": "grupo debe ser 1 o 2"})
+
+    # ---- acciones de AGENTE (no necesitan grupo) ----
     if accion == "agente-probar":
         aid = str(body.get("agente") or "").strip()
         if not aid:
@@ -299,8 +294,7 @@ async def control_accion(request: Request):
     if accion in ("agente-on", "agente-off"):
         aid = str(body.get("agente") or "").strip()
         if not aid:
-            return JSONResponse(status_code=400,
-                                content={"ok": False, "error": "falta 'agente'"})
+            return JSONResponse(status_code=400, content={"ok": False, "error": "falta 'agente'"})
         r = _estado_agente(aid, accion == "agente-on")
         return JSONResponse(status_code=200, content={
             "ok": r["ok"], "accion": accion, "agente": aid, "detalle": [r],
@@ -313,22 +307,28 @@ async def control_accion(request: Request):
             detalle.append(_estado_agente(a["id"], enable))
         return JSONResponse(status_code=200, content={
             "ok": all(x["ok"] for x in detalle) if detalle else False,
-            "accion": accion, "grupo": grupo, "detalle": detalle,
-            "agentes": _agentes()})
+            "accion": accion, "detalle": detalle, "agentes": _agentes()})
 
+    # ---- acciones de GRUPO (exigen grupo 1 o 2) ----
+    grupo = body.get("grupo")
+    try:
+        grupo = int(grupo)
+    except Exception:
+        grupo = 0
+    if grupo not in GRUPOS:
+        return JSONResponse(status_code=400,
+                            content={"ok": False, "error": "grupo debe ser 1 o 2"})
     if accion not in ("on", "off", "restart", "trigger"):
         return JSONResponse(status_code=400,
-                            content={"ok": False, "error": "accion: on|off|restart|trigger"})
+                            content={"ok": False, "error": "accion: on|off|restart|trigger|agente-on|agente-off|agentes-on|agentes-off|agente-probar"})
     info = GRUPOS[grupo]
     detalle = []
 
     if accion == "trigger":
-        # Despierta el grupo: un GET a su /health lo levanta (HF lo arranca solo).
         r = _despierta(info["host"])
         detalle.append({"accion": "trigger", "host": info["host"], **r})
 
     elif accion in ("on", "off"):
-        # on  -> no se duerme nunca (sleep=-1); off -> vuelve a 30 min sin llamada.
         segundos = SLEEP_JAMAS if accion == "on" else SLEEP_30MIN
         for repo in info["spaces"]:
             st, d = _req(f"{HF}/api/spaces/{OWNER}/{repo}/sleeptime", method="POST",
@@ -337,7 +337,6 @@ async def control_accion(request: Request):
                             "sleep_time": segundos,
                             "respuesta": d if st != 200 else "ok"})
         if accion == "off":
-            # Ademas el grupo 1 se duerme ya; el 2 tambien (sleep=1800).
             for repo in info["spaces"]:
                 _req(f"https://{OWNER.lower()}-{repo}.hf.space/health", timeout=8)
 
