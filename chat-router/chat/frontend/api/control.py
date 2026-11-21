@@ -65,6 +65,7 @@ MODELOS_LOCALES = [
     ("hf/qwen2.5-coder-0.5b", "Qwen2.5 Coder 0.5B"),
     ("hf/lfm2.5-350m", "LFM2.5 350M"),
     ("hf/qwen3.5-0.8b", "Qwen3.5 0.8B"),
+    ("hf/qwen3-0.6b", "Qwen3 0.6B"),
 ]
 SLEEP_30MIN = 1800
 SLEEP_JAMAS = -1
@@ -219,6 +220,9 @@ def _catalogo():
 
     with ThreadPoolExecutor(max_workers=3) as ex:
         vivos = list(ex.map(_sonda, g2["spaces"]))
+    if len(MODELOS_LOCALES) > len(vivos):
+        # el 4º modelo (Qwen3 0.6B) todavia no tiene Space propio en el Grupo 2
+        vivos = vivos + [False] * (len(MODELOS_LOCALES) - len(vivos))
     for (cid, nombre), disponible in zip(MODELOS_LOCALES, vivos):
         if not space_vivo:
             # El Space esta PAUSED (sin credito prepaid): los locales no corren.
