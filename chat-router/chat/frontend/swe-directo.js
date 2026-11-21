@@ -26,7 +26,8 @@ export const SWE_LISTAS = {
     ["web-qwen38max", "Qwen 3.8 Max (web)", "suscripción web"],
     ["web-qwen37max", "Qwen 3.7 Max (web)", "suscripción web"],
     ["web-dsv4-flash", "DeepSeek V4 Flash (web)", "suscripción web"],
-    ["web-claude-sonnet", "Claude Sonnet (web)", "sesión web autorizada · verificación obligatoria"]] },};
+    ["web-claude-sonnet", "Claude Sonnet (web)", "sesión web autorizada · verificación obligatoria"]] },
+};
 // Modelos web de SWEN CODE free (cuentas web del bridge): no estan en el catalogo del Harness, solo sirven para el chat directo por el bridge.
 export const MODELOS_WEB = [["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max"], ["web-qwen38max", "Qwen 3.8 Max (web)"], ["web-qwen37max", "Qwen 3.7 Max (web)"], ["web-dsv4-flash", "DeepSeek V4 Flash (web)"], ["web-claude-sonnet", "Claude Sonnet (web)"]];
 // MODO DE TRABAJO (antes «modelos» swecode-<modo>): el bridge ya acepta `modo` junto a cualquier modelo (server.js: conPreambulo). Vacio = sin modo.
