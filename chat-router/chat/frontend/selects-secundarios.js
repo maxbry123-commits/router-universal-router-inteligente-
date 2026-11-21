@@ -22,11 +22,17 @@ export async function montarSelectsSecundarios(ctx) {
   const cat = (control && control.catalogo) || {};
 
   try {
+    // UN proveedor por fila (los modelos no se repiten).
     const lista = [];
+    const vistos = new Set();
     for (const m of cat.modelos || []) {
-      if (m.proveedor === "nvidia" || m.proveedor === "groq") lista.push({ id: m.proveedor, label: m.proveedor.toUpperCase() });
+      const pv = m.proveedor;
+      if ((pv === "nvidia" || pv === "groq") && !vistos.has(pv)) {
+        vistos.add(pv);
+        lista.push({ id: pv, label: pv.toUpperCase() });
+      }
     }
-    for (const l of cat.locales || []) lista.push({ id: "local", label: "SWE CODE local (HF)" });
+    if ((cat.locales || []).length) lista.push({ id: "local", label: "SWE CODE local (HF)" });
     const sel = q("#provider");
     if (sel && lista.length) select("#provider", lista, "id", "label");
   } catch (error) { tell("Proveedores: " + error.message); }
