@@ -1,16 +1,8 @@
 // swe-directo.js — los modelos de SWE CODE / SWEN CODE free del selector responden por su router propio (el bridge), sin pasar por el Router MVP.
 // El chat llama POST /v1/chat/completions del mismo origen (el proxy del Space manda web-* y swecode-* al bridge); mismo historial, misma sesion.
 const REAL = { "hf-liquid-lfm25": "lfm2.5-350m", "swe-agent-lfm25": "lfm2.5-350m", "swe-openhands-lfm25": "lfm2.5-350m",
-  "swe-codex-qwen25-15b": "qwen2.5-coder-1.5b", "hf-qwen25-coder-15b": "qwen2.5-coder-1.5b", "hf-qwen25-coder-05b": "qwen2.5-coder-0.5b", "swe-opencode-qwen35-08b": "qwen3.5-0.8b", "hf-qwen35-08b": "qwen3.5-0.8b", "hf-qwen3-06b": "qwen3-0.6b" };  // los alias swe-* son ids viejos (solo para lo ya guardado): la lista ya no mezcla agentes con modelos
-const LOCALES = ["lfm2.5-350m", "qwen2.5-coder-0.5b", "qwen3.5-0.8b"];  // los 3 GGUF REALES del Grupo 2 (space_inventory.py:GROUP_2_MODELOS)
-// Id REAL del modelo en el Router (Grupo 2). El Router enruta por el id del repo HF
-// (space_inventory.py:GROUP_2_MODELOS); sin este mapa el proxy no reconoce el modelo
-// y cae al motor determinista.
-const LOCAL_REAL = {
-  "lfm2.5-350m": "LiquidAI/LFM2.5-350M-GGUF",
-  "qwen2.5-coder-0.5b": "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF",
-  "qwen3.5-0.8b": "unsloth/Qwen3.5-0.8B-GGUF"
-};
+  "swe-codex-qwen25-15b": "qwen2.5-coder-1.5b", "hf-qwen25-coder-15b": "qwen2.5-coder-1.5b", "swe-opencode-qwen35-08b": "qwen3.5-0.8b", "hf-qwen35-08b": "qwen3.5-0.8b", "hf-qwen3-06b": "qwen3-0.6b" };  // los alias swe-* son ids viejos (solo para lo ya guardado): la lista ya no mezcla agentes con modelos
+const LOCALES = ["lfm2.5-350m", "qwen2.5-coder-1.5b", "qwen3.5-0.8b", "qwen3-0.6b"];
 const MAX_HISTORIAL = 20;  // mensajes previos: un modelo de 350M-1.5B o una UI web se desbordan con el chat entero
 
 // Ventanas con el selector central: [id del modelo, etiqueta, descripcion]. SOLO nombres de modelo: el agente se elige en el selector central y
@@ -18,10 +10,10 @@ const MAX_HISTORIAL = 20;  // mensajes previos: un modelo de 350M-1.5B o una UI 
 export const SWE_LISTAS = {
   "swe-code": { nombre: "SWE CODE", titulo: "SWE CODE · modelos locales (HF)", modelos: [
     ["hf-liquid-lfm25", "Liquid LFM2.5 350M", "HF local"],
-    ["hf-qwen25-coder-05b", "Qwen2.5 Coder 0.5B", "HF local"],
-    ["hf-qwen35-08b", "Qwen3.5 0.8B", "HF local"]] },
+    ["hf-qwen25-coder-15b", "Qwen2.5 Coder 1.5B", "HF local"],
+    ["hf-qwen35-08b", "Qwen3.5 0.8B", "HF local"],
+    ["hf-qwen3-06b", "Qwen3 0.6B", "HF local"]] },
   "swen-code-free": { nombre: "SWEN CODE free", titulo: "SWE CODE free · cuentas web", modelos: [
-    ["hf-qwen3-06b", "Qwen3 0.6B", "HF local"],
     ["swecode-consulta", "Ask Cónsil · arbitra Qwen 3.8 Max", "opiniones web + decisión Qwen 3.8 Max"],
     ["web-qwen38max", "Qwen 3.8 Max (web)", "suscripción web"],
     ["web-qwen37max", "Qwen 3.7 Max (web)", "suscripción web"],
@@ -47,7 +39,7 @@ export function leerEjecutorTools() { return ejecutorDeAgente(leerSeleccion().ag
 // ---- Selectores de agente/modelo/workflow (contrato TareaSWE de chat-router/agentes/adaptadores/contrato.py) ----
 // Catalogo unico de agentes/adaptadores/modelos.py: el frontend solo lo refleja; el servidor valida y la disponibilidad real la reporta el Harness.
 export const MODELOS_SWE = [
-  ["hf/lfm2.5-350m", "Liquid LFM2.5 350M", "HF local"], ["hf/qwen2.5-coder-0.5b", "Qwen2.5 Coder 1.5B", "HF local"],
+  ["hf/lfm2.5-350m", "Liquid LFM2.5 350M", "HF local"], ["hf/qwen2.5-coder-1.5b", "Qwen2.5 Coder 1.5B", "HF local"],
   ["hf/qwen3.5-0.8b", "Qwen3.5 0.8B", "HF local"], ["hf/qwen3-0.6b", "Qwen3 0.6B", "HF local"],
   ["swecode-consulta", "Ask Cónsil · Qwen 3.8", "web"],
   ["web-qwen38max", "Qwen 3.8 Max", "web"], ["web-qwen37max", "Qwen 3.7 Max", "web"],
@@ -354,9 +346,8 @@ export async function aprobarYContinuarSwe(api, d, alPaso) {
 export function armar({ model, historial = [], mensaje, imagenes = [], sesion, proyecto, contexto_de, ejecutor_tools, modo, tools = false, agente_tool = false, llm_tool = false }) {
   const h = historial.slice(-MAX_HISTORIAL);
   const m = modo === undefined ? leerSeleccion().modo_trabajo : modo, mt = en(MODOS_TRABAJO, m) ? m : "";  // MODO DE TRABAJO: `modo` junto al modelo; Concilio lleva el modo en el id (swecode-<modo>)
-  const _alias = Object.hasOwn(REAL, model) ? REAL[model]
+  const real = Object.hasOwn(REAL, model) ? REAL[model]
     : typeof model === "string" && model.startsWith("hf/") && LOCALES.includes(model.slice(3)) ? model.slice(3) : model;
-  const real = LOCAL_REAL[_alias] || _alias;   // id real del Router para los GGUF locales
   // Multimodal OpenAI: las fotos resueltas por el Router viajan como image_url; el texto permanece verbatim.
   const fotos = (Array.isArray(imagenes) ? imagenes : []).filter(i => i && typeof i.url === "string" && /^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(i.url)).slice(0, 4);
   const contenido = fotos.length ? [{ type: "text", text: mensaje }, ...fotos.map((i) => ({ type: "image_url", image_url: { url: i.url } }))] : mensaje;

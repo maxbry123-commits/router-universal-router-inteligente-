@@ -144,67 +144,13 @@ export async function mount(root, { api, tell } = {}) {
   const pintarTodo = () => { pintarTemas(); pintarSenal(); pintarPresets(); pintarRoles(); pintarEstudio(); pintarDestinos(); pintarIconos(); pintarAvisos(); if (extra) extra.pintar(); };
   extra = montarExtra(root, { est: () => est, guardar, avisa });
   pintarTodo();
-  // ---- Servidores: 2 grupos (on/off/restart/trigger) via la funcion /api/control ----
-  // El token de HF vive en Vercel (HF_TOKEN_1): el navegador nunca lo ve.
-  const srvEstado = async () => {
-    try {
-      const r = await fetch("/api/control", { cache: "no-store", credentials: "omit" });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const d = await r.json();
-      for (const g of [1, 2]) {
-        const el = q("#srv-est-" + g);
-        const info = (d.grupos || {})[String(g)] || {};
-        const gt = info.gcTimeout;
-        if (el) {
-          const vivos = info.vivos || 0, total = info.total || 0;
-          el.textContent = vivos + "/" + total + " activos" +
-            (gt === -1 ? " · sin apagado" : (gt ? " · apaga en " + Math.round(gt / 60) + " min" : ""));
-          el.dataset.estado = vivos ? "on" : "off";
-        }
-        const on = q("#srv-on-" + g);
-        if (on) on.classList.toggle("on", gt === -1);
-      }
-      return d;
-    } catch (e) {
-      for (const g of [1, 2]) { const el = q("#srv-est-" + g); if (el) el.textContent = "sin control (" + e.message + ")"; }
-      return null;
-    }
-  };
-  const srvAccion = async (accion, grupo, btn) => {
-    if (btn) btn.disabled = true;
-    try {
-      const r = await fetch("/api/control", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: accion, grupo: grupo }) });
-      const d = await r.json().catch(() => ({}));
-      avisa("Grupo " + grupo + " · " + accion + ": " + (d.ok ? "hecho" : ("falló " + JSON.stringify(d.detalle || d).slice(0, 160))));
-      await srvEstado();
-    } catch (e) { avisa("Grupo " + grupo + " · " + accion + ": " + e.message); }
-    finally { if (btn) btn.disabled = false; }
-  };
-  for (const g of [1, 2]) {
-    const ACC = { "srv-on": "on", "srv-off": "off", "srv-restart": "restart", "srv-trigger": "trigger" };
-    for (const pre in ACC) {
-      const b = q("#" + pre + "-" + g);
-      if (b) b.addEventListener("click", (e) => srvAccion(ACC[pre], g, e.currentTarget));
-    }
-  }
-  srvEstado();
   // Control (antes en el chat): Agentes, Router/Emergencia, Respaldo
   if (api) {
     const llamarControl = async (accion) => { try { await api(`/control/${accion}`, { method: "POST" }); avisa(accion + ": ejecutado"); return true; } catch (error) { avisa(error.message); return false; } };
     const tgA = q("#tg-agentes");
     if (tgA) tgA.addEventListener("click", async (e) => {
       const b = e.currentTarget;
-      // /control/pause-agents no existe en el Router vivo: el interruptor real es
-      // POST /v1/agents/<id>/state {"enabled":bool} y lo aplica la funcion /api/control.
-      const on = b.classList.contains("on");
-      b.disabled = true;
-      try {
-        const r = await fetch("/api/control", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: on ? "agentes-off" : "agentes-on" }) });
-        const d = await r.json().catch(() => ({}));
-        if (d.ok) { b.classList.toggle("on"); avisa("Agentes: " + (on ? "apagados" : "encendidos") + " (" + ((d.detalle || []).length) + ")"); }
-        else avisa("No se pudo cambiar los agentes (" + JSON.stringify(d.detalle || d).slice(0, 140) + ")");
-      } catch (err) { avisa("Agentes: " + err.message); }
-      finally { b.disabled = false; }
+      if (await llamarControl(b.classList.contains("on") ? "pause-agents" : "resume-agents")) b.classList.toggle("on");
     });
     const tgR = q("#tg-router");
     if (tgR) tgR.addEventListener("click", async (e) => {

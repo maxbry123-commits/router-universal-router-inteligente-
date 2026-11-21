@@ -1,57 +1,15 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
   "buildCommand": "sh build.sh",
   "outputDirectory": ".",
-  "functions": {
-    "api/chat.py": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/loop.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/power.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    }
-  },
   "rewrites": [
-    {
-      "source": "/",
-      "destination": "/shell.html"
-    },
-    {
-      "source": "/chat/ui/:path*",
-      "destination": "/:path*"
-    },
-    {
-      "source": "/health",
-      "destination": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/health"
-    },
-    {
-      "source": "/live",
-      "destination": "/LIVE_URL.json"
-    },
-    {
-      "source": "/v1/:path*",
-      "destination": "https://comand-center-1-space-grupo-1-router-mvp-1.hf.space/v1/:path*"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, no-cache, must-revalidate, max-age=0"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        }
-      ]
-    }
+    { "source": "/", "destination": "/shell.html" },
+    { "source": "/chat/ui/:path*", "destination": "/:path*" },
+    { "source": "/plugins/:path*", "destination": "https://comand-center-1-riu-router.hf.space/plugins/:path*" },
+    { "source": "/almacen", "destination": "https://comand-center-1-riu-router.hf.space/almacen" },
+    { "source": "/memoria/:path*", "destination": "https://comand-center-1-riu-router.hf.space/memoria/:path*" },
+    { "source": "/mcp", "destination": "https://comand-center-1-riu-router.hf.space/mcp" },
+    { "source": "/web/:path*", "destination": "https://comand-center-1-riu-router.hf.space/web/:path*" },
+    { "source": "/vault/:path*", "destination": "https://comand-center-1-riu-router.hf.space/vault/:path*" },
+    { "source": "/health", "destination": "https://comand-center-1-riu-router.hf.space/health" }
   ]
 }

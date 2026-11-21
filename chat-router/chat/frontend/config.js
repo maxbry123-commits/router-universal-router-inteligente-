@@ -3,9 +3,9 @@
 window.RIU_CONFIG = {
   routerStopped: false,
   apiBase: '',  // direccion inicial verificada en proxyDestino
-  liveUrl: '/live',
+  liveUrl: '',
   harnessUrl: '',  // puente dentro del Router: se rellena desde proxyDestino al iniciar
-  proxyDestino: 'https://comand-center-1-space-grupo-1-router-mvp-1.hf.space',  // destino fijo de los rewrites /plugins, /vault, /health de vercel.json y direccion inicial sin esperar LIVE_URL.json
+  proxyDestino: 'https://comand-center-1-riu-router.hf.space',  // destino fijo de los rewrites /plugins, /vault, /health de vercel.json y direccion inicial sin esperar LIVE_URL.json
   authHeader: 'X-API-Key',
   defecto: 'nv-muse-glimmer',  // RESPALDO: ficha NVIDIA mientras el catalogo real no carga; fichas-externas.js lo reemplaza por los modelos reales de NVIDIA (nvidia/<modelo>)
   modelos: [

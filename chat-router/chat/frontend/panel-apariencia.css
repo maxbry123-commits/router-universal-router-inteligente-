@@ -47,15 +47,3 @@
 #ap-pin .ap-fila{margin:8px 0}
 .ap-docs{margin:0 0 10px;padding-left:18px}
 .ap-docs a{color:var(--active)}
-
-/* --- Ventana AGENTES (registro central + interruptor ON/OFF real) --- */
-.fila-agente{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;
-  padding:10px 0;border-bottom:1px solid var(--line,rgba(255,255,255,.12));flex-wrap:wrap}
-.fila-agente:last-child{border-bottom:0}
-.agente-info{min-width:0;flex:1 1 240px}
-.agente-meta{font-size:12px;margin-top:2px}
-.agente-rol{font-size:12px;margin-top:2px;opacity:.75}
-.agente-acc{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-#agente-salida{white-space:pre-wrap;word-break:break-word;background:rgba(255,255,255,.05);
-  border:1px solid var(--line,rgba(255,255,255,.12));border-radius:10px;padding:10px;
-  font-size:12.5px;margin-top:10px;max-height:40vh;overflow:auto}

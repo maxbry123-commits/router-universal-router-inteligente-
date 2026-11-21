@@ -6,9 +6,6 @@
 // uno elegido que el catálogo no trae se muestra «NO DISPONIBLE» y nunca se sustituye por otro en silencio (el backend tampoco).
 import { api } from "./api.js";
 const CACHE = "riu_fichas_ext_v3", KG = "riu_groq_modelo", VIEJAS = /^nv-/;
-// VERIFICADOS en vivo contra cada API (los demas dan 404 en su API):
-//   NVIDIA (integrate.api.nvidia.com): 2 de 15 probados responden 200.
-//   Groq   (api.groq.com/openai/v1):   2 de 12 probados responden 200 (gpt-oss).
 export const MODELOS_SELECCIONADOS = new Set(["groq/qwen/qwen3.8-27b", "nvidia/minimaxai/minimax-m3.1-flash", "nvidia/meta/muse-glimmer-30b", "nvidia/nvidia/nemotron-3-ultra-550b-a55b", "nvidia/z-ai/glm-5.3"]);
 const NOMBRES = { "groq/qwen/qwen3.8-27b": "Qwen 3.8 27B", "nvidia/minimaxai/minimax-m3.1-flash": "MiniMax M3.1 Flash", "nvidia/meta/muse-glimmer-30b": "Muse Glimmer 30B", "nvidia/nvidia/nemotron-3-ultra-550b-a55b": "Nemotron 3 Ultra 550B", "nvidia/z-ai/glm-5.3": "GLM 5.3" };
 const MARCA = { groq: "Groq · ", nvidia: "NVIDIA · " };
@@ -54,38 +51,6 @@ for (const p of ["groq", "nvidia"]) cacheInicial[p] = (cacheInicial[p] || []).ma
 aplicar(cacheInicial);
 export async function cargar() {
   const d = { groq: [], nvidia: [], locales: [] };
-  // ---- Fuente primaria (Vercel): catalogo REAL verificado en vivo por /api/catalogo ----
-  // La funcion serverless tiene el token de HF en el servidor: el navegador NUNCA lo ve.
-  // Es la unica fuente que funciona con el Router actual (las rutas /chat/providers* del
-  // Router MVP no existen en el Space vivo y por eso todo salia "SIN VERIFICAR").
-  try {
-    // /api/control es la ruta que Vercel enruta de verdad (una funcion = un fichero);
-    // /api/catalogo se deja como alternativa por si se despliega aparte.
-    let r = await fetch("/api/control", { cache: "no-store", credentials: "omit" });
-    let ctl = r.ok ? await r.json() : null;
-    let c = ctl && ctl.catalogo ? ctl.catalogo : null;
-    if (!c) {
-      r = await fetch("/api/catalogo", { cache: "no-store", credentials: "omit" });
-      c = r.ok ? await r.json() : null;
-    }
-    if (c && c.ok && Array.isArray(c.modelos)) {
-      const de = (prov) => (c.modelos || []).filter((m) => m.proveedor === prov).map((m) => ({
-        id: m.id,
-        estado: m.disponible === true ? "DISPONIBLE" : (m.disponible === false ? "NO DISPONIBLE" : "SIN VERIFICAR"),
-        disponible: m.disponible === true ? true : (m.disponible === false ? false : null),
-        etiqueta: m.etiqueta || (MARCA[prov] + (NOMBRES[m.id] || m.id))
-      }));
-      d.groq = de("groq"); d.nvidia = de("nvidia");
-      d.locales = (c.locales || []).map((m) => ({
-        id: m.id, estado: m.estado || "SIN VERIFICAR",
-        disponible: m.disponible === true ? true : (m.disponible === false ? false : null),
-        etiqueta: m.etiqueta || m.id
-      }));
-      d.avisoGroq = c.avisoGroq || ""; d.avisoNvidia = c.avisoNvidia || "";
-      try { localStorage.setItem(CACHE, JSON.stringify(d)); } catch (e) {}
-      aplicar(d); return;
-    }
-  } catch (e) { /* sin la funcion del servidor (fuera de Vercel): se sigue con el bridge */ }
   // Fuente primaria: MISMO bridge y banco cifrado que hacen la inferencia de YAIWES y OpenClaw.
   // Si se consulta solo /chat/providers del Router MVP, faltan las claves guardadas en el bridge y aparecen falsos NO CONFIGURADO.
   try {
