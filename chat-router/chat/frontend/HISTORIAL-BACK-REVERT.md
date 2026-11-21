@@ -83,13 +83,23 @@ Método: `git checkout 7e80b77257c -- chat-router/chat/frontend/` + borrado de l
 
 ---
 
-## 4) AVISO IMPORTANTE SOBRE PRODUCCIÓN
+## 4) PRODUCCIÓN TRAS EL REVERT — qué funciona y qué no
 
-Al volver al estado del 12-nov, el frontend vuelve a tener `api/ecc_motor.py` dentro de `api/` **sin entrypoint ASGI/WSGI** ⇒ **Vercel marca el build como `unused_function` y el deployment falla**. Ése es exactamente el motivo por el que los 19 deployments previos a mi sesión (19/11 22:29 → 20/11 06:55, todos ERROR) fallaban.
+**Corrección**: avisé de que el build de Vercel iba a fallar. **Me equivoqué**: el deployment `268caf23e6` salió **READY** (build correcto). Sin `requirements.txt` ya no hay runtime Python que Vercel intente construir, así que no salta el error `unused_function`.
 
-Es decir: **el estado al que has vuelto estaba roto**, y lo estaba desde antes de que yo tocara nada. Lo he hecho porque es lo que me has pedido ("como estaba antes de iniciar"), pero quiero que lo sepas explícitamente: con este revert, **producción vuelve a fallar el build** hasta que se corrija `api/ecc_motor.py` (moverlo a `tools/`, como estaba) o se añada un entrypoint.
+Estado medido ahora mismo en producción (`https://riu-jev-bridge.vercel.app`):
 
-**El camino mínimo para tener producción viva Y el estado revertido**: mover `api/ecc_motor.py` → `tools/ecc_motor.py` (un `mv`, sin cambiar ni una línea de su contenido). Dime y lo hago.
+| Qué | Estado | Por qué |
+|---|---|---|
+| La **página** del chat | **200** · `<title>YAIWES · Organización</title>` | el HTML es el del 12-nov |
+| `version.json` | `{"commit":"268caf23e6…"}` | ya sirve el revert |
+| `/api/chat` | **404 Not Found** | el trigger `api/chat.py` ya no existe (no estaba antes de iniciar) |
+| `/api/control` | **404 Not Found** | el panel no existía antes de iniciar |
+| Envío de mensajes | **no funciona** | `api.js` (12-nov) toma su base de `LIVE_URL.json`, que **tampoco existía** antes de iniciar; cae al `proxyDestino` de `config.js` = `https://comand-center-1-riu-router.hf.space`, y ese host da **404** (el repo fue borrado del Hub) |
+
+⇒ **El estado al que has vuelto es exactamente el que tenías antes de este chat, y ese estado estaba roto**: el chat carga la interfaz pero no puede enviar nada, porque su destino (`riu-router`) fue borrado del Hub y su `LIVE_URL.json` no existía. Los 19 deployments previos a mi sesión (19/11 22:29 → 20/11 06:55, todos ERROR) son de esa misma época.
+
+**Lo mínimo para que el chat vuelva a enviar, sin tocar nada de lo revertido**: (a) crear `LIVE_URL.json` con la dirección del router vivo, y (b) que exista `/api/chat` o una ruta equivalente en `vercel.json`. **Ambas cosas son cambios nuevos ⇒ espero tu OK.**
 
 ---
 
