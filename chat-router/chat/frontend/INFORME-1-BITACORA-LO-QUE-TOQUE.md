@@ -80,16 +80,16 @@ chat-router/chat/frontend/tools/ecc_motor.py  (MOVIDO desde api/)   chat-router/
 
 | Comprobación | Resultado |
 |---|---|
-| Ramas | **19 en el repo; sólo toqué `main`**. Las otras 18 son tuyas (`banco-claves`, `fix/cpu-upgrade-policy`, `fix/remove-riu-router`, `main-clean`, `respaldo-*`…) |
+| Ramas | **19 en el repo; toqué 2**: `main` (25 commits) y `ccr-f01c3de9-bmry0s` (4 commits, contenido neto idéntico al original ⇒ revertido). Las otras 17 son tuyas (`banco-claves`, `fix/cpu-upgrade-policy`, `fix/remove-riu-router`, `main-clean`, `respaldo-*`…) |
 | PRs | **0 creados por mí** (34 en el repo, todos tuyos o del bot devin) |
 | Issues | **0 creados por mí** (35 en el repo) |
 | Otros repos | **0**: `agentes`, `Yaiwes`, `nct-core`, `openclaw`, `hermes-agent`… su último push es del 11–15 de noviembre |
-| Rama `ccr-f01c3de9-bmry0s` (la del router) | **0 commits míos** |
+| Rama `ccr-f01c3de9-bmry0s` (la del router) | **4 commits míos** (2 cambios + sus 2 reverts) ⇒ contenido neto idéntico al original |
 | Tu catálogo `MODELOS_SELECCIONADOS` / `NOMBRES` | **0 líneas** de diferencia contra tu árbol `7e80b77257c` |
 
 ---
 
-## 2) HUGGING FACE — 4 Spaces (2 de esta sesión + 2 de sesiones anteriores), 10 commits, 8 escrituras
+## 2) HUGGING FACE — 4 Spaces (2 de esta sesión + 2 de sesiones anteriores), 21 commits, 8 escrituras
 
 ### 2.1 Spaces
 
@@ -137,13 +137,13 @@ chat-router/chat/frontend/tools/ecc_motor.py  (MOVIDO desde api/)   chat-router/
 
 ---
 
-## 3) VERCEL — 23 deployments + 2 variables que añadí y borré
+## 3) VERCEL — 27 despliegues + 2 variables que añadí y borré
 
 Proyecto `riu-jev-bridge` (`prj_m8Lk3iaB3eN6dwlIq1ND2un8FWTD`), root `chat-router/chat/frontend`.
 
 | Qué | Detalle |
 |---|---|
-| Deployments míos | **23** (del 20/11 03:52 al 21/11 07:19 NY). El último en curso es el del informe final |
+| Deployments míos | **27** (1 por commit; del 20/11 03:52 al 21/11 07:22 NY). El último es el del informe final |
 | Variables **añadidas** por mí | `NVIDIA_KEYS`, `GROQ_KEYS` (20/11, commit `16bffbc56d9`) ⇒ **BORRADAS** en `d4127437cb7` |
 | Variables **finales** | exactamente las 7 tuyas: `HF_JOB_FLAVOR`, `HF_TOKEN_1`, `RIU_CHAT_PASSWORD`, `RIU_ROUTER_API_KEY`, `RIU_ROUTER_URL` (dev/prod/preview) |
 | Ajustes de proyecto | **ninguno**: no toqué build command, root directory, ni dominios |
@@ -154,8 +154,8 @@ Proyecto `riu-jev-bridge` (`prj_m8Lk3iaB3eN6dwlIq1ND2un8FWTD`), root `chat-route
 
 | Plataforma | Commits míos | Escrituras | Revertido | Residual |
 |---|---|---|---|---|
-| **GitHub** | **28** (24 de trabajo + 4 de historial back) en 1 repo / 1 rama | 18 rutas del frontend | **todo el contenido** | **0** (solo los 3 documentos de constancia) |
-| **Hugging Face** | **10** (en los 2 Spaces de esta sesión) | 4 Spaces + 8 escrituras de settings/secrets | **todo** | **0** en tus 6 Spaces, datasets, models, secrets y variables |
-| **Vercel** | 23 deployments | 2 variables de entorno | las 2 | **0** (tus 7 intactas) |
+| **GitHub** | **29** (24 de trabajo + 5 de historial back) en 1 repo / 2 ramas | 18 rutas del frontend | **todo el contenido** | **0** (solo los 3 documentos de constancia) |
+| **Hugging Face** | **21** (4 Spaces: 5+5 de esta sesión + 4+7 de sesiones anteriores) | 4 Spaces + 8 escrituras de settings/secrets | **todo** | **0** en tus 6 Spaces, datasets, models, secrets y variables |
+| **Vercel** | 27 despliegues | 2 variables de entorno | las 2 | **0** (tus 7 intactas) |
 
 **Cero** ramas nuevas · **cero** PRs · **cero** issues · **cero** commits en tus 6 Spaces, en tus 3 datasets ni en tus 2 modelos · **cero** secrets o variables residuales · **cero** cambios en tus otros 12 repos de GitHub.
