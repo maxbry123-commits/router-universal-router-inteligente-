@@ -154,9 +154,9 @@ export async function mount(root, { api, tell } = {}) {
       for (const g of [1, 2]) {
         const el = q("#srv-est-" + g);
         const info = (d.grupos || {})[String(g)] || {};
+        const gt = info.gcTimeout;
         if (el) {
           const vivos = info.vivos || 0, total = info.total || 0;
-          const gt = info.gcTimeout;
           el.textContent = vivos + "/" + total + " activos" +
             (gt === -1 ? " · sin apagado" : (gt ? " · apaga en " + Math.round(gt / 60) + " min" : ""));
           el.dataset.estado = vivos ? "on" : "off";
