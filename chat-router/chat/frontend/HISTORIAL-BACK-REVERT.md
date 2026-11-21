@@ -118,3 +118,54 @@ https://huggingface.co/api/spaces?author=COMAND-CENTER-1
 # el reloj de sueño original
 https://huggingface.co/api/spaces/COMAND-CENTER-1/space-grupo-1-router-mvp-1
 ```
+
+---
+
+## 6) SEGUNDA TRANCHE DEL REVERT EN HUGGING FACE (21/11 12:1x UTC)
+
+El owner aclara: **"yo no tenía 9 spaces, tenía 6"**. Los 6 son su inventario canónico
+(`external/core/space_inventory.py` → `GROUP_1_COMPUTE` (3) + `GROUP_2_LLM` (3), `SPACE_COUNT = 6`).
+Los otros 4 los creó MCode (2 en esta sesión, 2 en sesiones anteriores):
+
+| Space | Creado | Commits | ¿Creado por MCode? | Qué he hecho ahora |
+|---|---|---|---|---|
+| `riu-router` | 20/11 10:19 | 5 | sí, en ESTA sesión | ya borrado en la 1ª tranche |
+| `yaiwes-wiring-doctor` | 20/11 09:14 | 5 | sí, en ESTA sesión | ya borrado en la 1ª tranche |
+| `hf-bucket-mcp` | **13/11 16:01** | 4 | sí, en una sesión anterior (upload automático) | **BORRADO ahora** (HTTP 200 ⇒ 404) |
+| `router-universal-router-inteligente` | **19/11 06:40** | 7 | sí, en una sesión anterior (upload automático) | **BORRADO ahora** (HTTP 200 ⇒ 404) |
+
+**Estado final de la cuenta: exactamente 6 Spaces, los tuyos.**
+
+```
+space-grupo-1-router-mvp-1     gcTimeout=172800  PAUSED
+space-grupo-1-router-mvp-1-v2  gcTimeout=172800  PAUSED
+space-grupo-1-router-mvp-1-v7  gcTimeout=172800  PAUSED
+space-grupo-2-router-llm-hf-1  gcTimeout=172800  PAUSED
+space-grupo-2-router-llm-hf-2  gcTimeout=172800  PAUSED
+space-grupo-2-router-llm-hf-3  gcTimeout=172800  PAUSED
+```
+
+**Respaldo de los 2 borrados**: `/workspace/hf-respaldo/hf-bucket-mcp/` (4 ficheros) y
+`/workspace/hf-respaldo/router-universal-router-inteligente/` (3 ficheros). Se pueden
+recrear tal cual cuando haya crédito.
+
+### ⚠️ Consecuencia que debes saber: `hf-bucket-mcp` era la memoria compartida del router
+
+`external/core/space_inventory.py` lo tiene como servidor de memoria:
+
+```python
+NOT_ROUTER_SPACES = ("hf-bucket-mcp",)
+MCP_MEMORY_SPACE = "hf-bucket-mcp"
+MCP_MEMORY_PATH  = "/mcp"
+# -> https://comand-center-1-hf-bucket-mcp.hf.space/mcp
+```
+
+⇒ El router seguirá apuntando a un host que ya no existe. **En la práctica no pierdes nada
+funcional ahora mismo**: ese Space estaba `PAUSED` (sin crédito `cpu-upgrade`) ⇒ su `/mcp`
+ya no respondía. Pero cuando recharges el crédito, **la memoria compartida (banco cifrado,
+memoria) seguirá sin servidor** hasta que decidas una de estas dos:
+  (a) recrear `hf-bucket-mcp` desde el respaldo (4 ficheros, 2 min), o
+  (b) cambiar `MCP_MEMORY_SPACE` a otro Space tuyo (eso es un cambio de CÓDIGO en tu repo ⇒ espero tu OK).
+
+`router-universal-router-inteligente` era el **landing estático** (meta-refresh al chat).
+Ojo: HF sólo sirve los Spaces estáticos en `<host>.static.hf.space`; sin `.static.` ⇒ 404 del Hub.
